@@ -75,7 +75,7 @@ public:
   /*!
    * \brief Register actuators with mechanism control
    */
-  void initXml(TiXmlElement *config, MechanismControl &mc);
+  void initXml(TiXmlElement *config, bool allow_override);
 
   /*!
    * \brief Publish diagnostic messages

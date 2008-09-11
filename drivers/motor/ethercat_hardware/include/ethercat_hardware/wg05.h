@@ -67,6 +67,48 @@ struct WG05MbxCmd
   void build(unsigned address, unsigned length, bool write_nread, void const* data);
 }__attribute__ ((__packed__));
 
+struct WG05SpiEepromCmd
+{
+  uint16_t page_;
+  union
+  {
+    uint8_t command_;
+    struct
+    {
+      uint8_t operation_ :4;
+      uint8_t start_ :1;
+      uint8_t busy_ :1;
+      uint8_t unused2_ :2;
+    }__attribute__ ((__packed__));
+  };
+
+  void build_read(unsigned page)
+  {
+    this->page_ = page & 0xffff;
+    this->operation_ = SPI_READ_OP;
+    this->start_ = 1;
+  }
+  void build_write(unsigned page)
+  {
+    this->page_ = page & 0xffff;
+    this->operation_ = SPI_WRITE_OP;
+    this->start_ = 1;
+  }
+  void build_arbitrary(unsigned length)
+  {
+    this->page_ = (length-1) & 0xffff;
+    this->operation_ = SPI_ARBITRARY_OP;
+    this->start_ = 1;
+  }
+
+  static const unsigned SPI_READ_OP = 0;
+  static const unsigned SPI_WRITE_OP = 1;
+  static const unsigned SPI_ARBITRARY_OP = 3;
+
+  static const unsigned SPI_COMMAND_ADDR = 0x0230;
+  static const unsigned SPI_BUFFER_ADDR = 0xF400;
+}__attribute__ ((__packed__));
+
 struct WG05ConfigInfo
 {
   uint32_t product_id_;
@@ -95,6 +137,25 @@ struct WG05ConfigInfo
 
   static const unsigned CONFIG_INFO_BASE_ADDR = 0x0080;
 }__attribute__ ((__packed__));
+
+struct WG05ActuatorInfo
+{
+  uint16_t major_;              // Major revision
+  uint16_t minor_;              // Minor revision
+  uint32_t id_;                 // Actuator ID
+  char name_[64];               // Actuator name
+  char robot_name_[32];         // Robot name
+  char motor_make_[32];         // Motor manufacturer
+  char motor_model_[32];        // Motor model #
+  double max_current_;          // Maximum current
+  double backemf_constant_;     // BackEMF constant
+  double resistance_;           // Resistance
+  double motor_torque_constant_; // Motor torque constant
+  uint32_t pulses_per_revolution_; // # of encoder ticks per revolution
+  int32_t sign_;                // Sign of encoder count, should be 1 or -1
+  uint8_t pad[52];              // Pad entire structure to 264 bytes
+  uint32_t crc32_;              // CRC32 over structure (minus last 4 bytes)
+};
 
 struct WG05Status
 {
@@ -136,6 +197,8 @@ public:
   WG05() : EthercatDevice(true, sizeof(WG05Command), sizeof(WG05Status)) {}
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
+  int initialize(Actuator *, bool);
+  void initXml(TiXmlElement *);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
@@ -148,10 +211,16 @@ public:
     PRODUCT_CODE = 6805005
   };
 
-private:
-  int mailboxRead(EtherCAT_SlaveHandler *sh, int address, void *data, int length);
-  int writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length);
+  void program(WG05ActuatorInfo *);
+  bool isProgrammed() { return actuator_info_.crc32_ != 0;}
 
+private:
+  int readEeprom(EtherCAT_SlaveHandler *sh);
+  int writeEeprom(EtherCAT_SlaveHandler *sh);
+  int sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd);
+  int writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data, EC_UINT length);
+  int readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length);
+  int writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length);
   int readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length);
 
   static const int COMMAND_PHY_ADDR = 0x1000;
@@ -174,8 +243,9 @@ private:
   };
 
   // Board configuration parameters
-  double max_current_;
   WG05ConfigInfo config_info_;
+  WG05ActuatorInfo actuator_info_;
+  static const int ACTUATOR_INFO_PAGE = 4095;
 };
 
 #endif /* WG05_H */

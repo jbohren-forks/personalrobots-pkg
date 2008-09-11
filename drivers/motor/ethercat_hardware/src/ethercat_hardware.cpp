@@ -114,18 +114,19 @@ void EthercatHardware::init(char *interface)
 
     if ((slaves_[slave] = configSlave(sh)) != NULL)
     {
-      num_actuators += slaves_[slave]->has_actuator_;
-      buffer_size_ += slaves_[slave]->command_size_ + slaves_[slave]->status_size_;
       if (!sh->to_state(EC_OP_STATE))
       {
-        node->log(ros::FATAL, "Unable change to OP_STATE");
+        node->log(ros::FATAL, "Unable to initialize slave #%d, product code: %d", slave, sh->get_product_code());
       }
+      num_actuators += slaves_[slave]->has_actuator_;
+      buffer_size_ += slaves_[slave]->command_size_ + slaves_[slave]->status_size_;
     }
     else
     {
       node->log(ros::FATAL, "Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
     }
   }
+
   buffers_ = new unsigned char[2 * buffer_size_];
   current_buffer_ = buffers_;
   last_buffer_ = buffers_ + buffer_size_;
@@ -134,6 +135,14 @@ void EthercatHardware::init(char *interface)
   hw_ = new HardwareInterface(num_actuators);
   hw_->current_time_ = now();
 
+  for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
+  {
+    if (slaves_[slave]->initialize(hw_->actuators_[a]) < 0)
+    {
+      node->log(ros::FATAL, "Unable to initialize slave #%d", slave);
+    }
+    a += slaves_[slave]->has_actuator_;
+  }
   // Initialize diagnostic data structures
   diagnostic_message_.set_status_size(1 + num_slaves_);
   diagnostic_message_.status[0].set_values_size(3);
@@ -143,15 +152,32 @@ void EthercatHardware::init(char *interface)
   }
 }
 
-void EthercatHardware::initXml(TiXmlElement *config, MechanismControl &mc)
+void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
 {
-  int i = 0;
-  // Determine configuration from XML file 'configuration'
-  // TODO: match actuator name to name supplied by board
+  ros::node *node = ros::node::instance();
+  unsigned int a = 0, s = 0;
+
   for (TiXmlElement *elt = config->FirstChildElement("actuator"); elt; elt = elt->NextSiblingElement("actuator"))
   {
-    hw_->actuators_[i]->name_ = elt->Attribute("name");
-    ++i;
+    while (s < num_slaves_ && !slaves_[s]->has_actuator_)
+      ++s;
+    if (s == num_slaves_)
+      node->log(ros::FATAL, "Too many actuators defined in XML file");
+
+    if (allow_override)
+    {
+      hw_->actuators_[a]->name_ = elt->Attribute("name");
+      slaves_[s]->initXml(elt);
+      ++s;
+    }
+    else
+    {
+      if (hw_->actuators_[a]->name_ != elt->Attribute("name"))
+      {
+        node->log(ros::FATAL, "Name programmed into board ('%s') does not equal actuator name in XML file ('%s')\n", hw_->actuators_[a]->name_.c_str(), elt->Attribute("name"));
+      }
+    }
+    ++a;
   }
 }
 
@@ -191,7 +217,7 @@ void EthercatHardware::publishDiagnostics()
 
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
-    robot_msgs::DiagnosticStatus *device= diagnostic_message_.status + 1 + slave;
+    robot_msgs::DiagnosticStatus *device = diagnostic_message_.status + 1 + slave;
     robot_msgs::DiagnosticValue *value = device->values;
 
     stringstream str;
@@ -270,10 +296,13 @@ EthercatHardware::configSlave(EtherCAT_SlaveHandler *sh)
   static int startAddress = 0x00010000;
 
   EthercatDevice *p = NULL;
-  try {
+  try
+  {
     p = DeviceFactory::Instance().CreateObject(sh->get_product_code());
     p = p->configure(startAddress, sh);
-  } catch (Loki::DefaultFactoryError<unsigned int, EthercatDevice>::Exception) {
+  }
+  catch (Loki::DefaultFactoryError<unsigned int, EthercatDevice>::Exception)
+  {
   }
   return p;
 }

@@ -38,8 +38,10 @@ static bool reg = DeviceFactory::Instance().Register(EK1122::PRODUCT_CODE, devic
 
 EthercatDevice *EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
+  sh_ = sh;
   sh->set_fmmu_config( new EtherCAT_FMMU_Config(0) );
   sh->set_pd_config( new EtherCAT_PD_Config(0) );
+  printf("Device #%02d: EK1122 (%#08x)\n", sh->get_ring_position(), sh->get_product_code());
   return this;
 }
 

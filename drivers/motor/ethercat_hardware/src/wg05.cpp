@@ -34,12 +34,16 @@
 
 #include <math.h>
 
+#include <ros/node.h>
+
 #include <ethercat_hardware/wg05.h>
 
 #include <dll/ethercat_dll.h>
 #include <al/ethercat_AL.h>
 #include <dll/ethercat_device_addressed_telegram.h>
 #include <dll/ethercat_frame.h>
+
+#include <boost/crc.hpp>
 
 static bool reg = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
 
@@ -67,7 +71,7 @@ static unsigned compute_checksum(void const *data, unsigned length)
 void WG05MbxHdr::build(uint16_t address, uint16_t length, bool write_nread)
 {
   address_ = address;
-  length_ = length;
+  length_ = length - 1;
   pad_ = 0;
   write_nread_ = write_nread;
   checksum_ = rotate_right_8(compute_checksum(this, sizeof(*this) - 1));
@@ -95,7 +99,7 @@ void WG05MbxCmd::build(unsigned address, unsigned length, bool write_nread, void
 
 EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
-  printf("configure WG05\n");
+  sh_ = sh;
   EC_FMMU *statusFMMU = new EC_FMMU(startAddress, // Logical start address
                                     sizeof(WG05Status), // Logical length
                                     0x00, // Logical StartBit
@@ -135,15 +139,13 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
   EC_SyncMan *statusSM = new EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG05Status));
   statusSM->ChannelEnable = true;
-  statusSM->ALEventEnable = true;
 
   EC_SyncMan *mbxCommandSM = new EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
-  commandSM->ChannelEnable = true;
-  commandSM->ALEventEnable = true;
+  mbxCommandSM->ChannelEnable = true;
+  mbxCommandSM->ALEventEnable = true;
 
   EC_SyncMan *mbxStatusSM = new EC_SyncMan(MBX_STATUS_PHY_ADDR, MBX_STATUS_SIZE, EC_QUEUED);
-  commandSM->ChannelEnable = true;
-  commandSM->ALEventEnable = true;
+  mbxStatusSM->ChannelEnable = true;
 
   (*pd)[0] = *commandSM;
   (*pd)[1] = *statusSM;
@@ -151,18 +153,103 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   (*pd)[3] = *mbxStatusSM;
 
   sh->set_pd_config(pd);
-/*
-  if (mailboxRead(sh, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
-  {
-    return NULL;
-  }*/
-  config_info_.nominal_current_scale_ = 1.0 / 2000.;
-  max_current_ = 1.5;
+
   return this;
 }
 
-static const double motor_torque_constant = -0.0603;
-static const int pulses_per_revolution = 1200;
+int WG05::initialize(Actuator *actuator, bool allow_unprogrammed)
+{
+  ros::node *node = ros::node::instance();
+
+  unsigned int revision = sh_->get_revision();
+  unsigned int major = (revision >> 8) & 0xff;
+  unsigned int minor = revision & 0xff;
+
+  printf("Device #%02d: WG05 (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d\n", sh_->get_ring_position(),
+         sh_->get_product_code(), major, minor,
+         'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
+
+  if (major != 1 || minor < 2)
+  {
+    node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
+    return -1;
+  }
+  config_info_.nominal_current_scale_ = 1.0 / 2000.;
+  if (readMailbox(sh_, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
+  {
+    node->log(ros::FATAL, "Unable to load configuration information");
+    return -1;
+  }
+
+  if (readEeprom(sh_) < 0)
+  {
+    node->log(ros::FATAL, "Unable to read actuator info from EEPROM\n");
+    return -1;
+  }
+
+  boost::crc_32_type crc32;
+  crc32.process_bytes(&actuator_info_, sizeof(actuator_info_)-sizeof(actuator_info_.crc32_));
+  if (actuator_info_.crc32_ == crc32.checksum())
+  {
+    actuator->name_ = actuator_info_.name_;
+
+    printf("read eeprom:\n");
+    printf("  revision: %d.%d\n", actuator_info_.major_, actuator_info_.minor_);
+    printf("  id: %08x\n", actuator_info_.id_);
+    printf("  name: %s\n", actuator_info_.name_);
+    printf("  motor make: %s\n", actuator_info_.motor_make_);
+    printf("  motor model: %s\n", actuator_info_.motor_model_);
+    printf("  max current: %f\n", actuator_info_.max_current_);
+    printf("  backemf: %f\n", actuator_info_.backemf_constant_);
+    printf("  motor torque: %f\n", actuator_info_.motor_torque_constant_);
+    printf("  pulses per revolution: %d\n", actuator_info_.pulses_per_revolution_);
+    printf("  sign: %d\n", actuator_info_.sign_);
+    printf("  crc32: %08x\n", actuator_info_.crc32_);
+  }
+  else if (allow_unprogrammed)
+  {
+    printf("WARNING: Device #%02d is not programmed\n", sh_->get_ring_position());
+    actuator_info_.crc32_ = 0;
+  }
+  else
+  {
+    node->log(ros::FATAL, "Device #%02d: Invalid CRC32 in actuator_info_", sh_->get_ring_position());
+    return -1;
+  }
+
+  return 0;
+}
+
+#define GET_ATTR(a) \
+{ \
+  TiXmlElement *c; \
+  attr = elt->Attribute((a)); \
+  if (!attr) { \
+    c = elt->FirstChildElement((a)); \
+    if (!c || !(attr = c->GetText())) { \
+      node->log(ros::FATAL, "Actuator is missing the attribute "#a"\n"); \
+    } \
+  } \
+}
+
+void WG05::initXml(TiXmlElement *elt)
+{
+  ros::node *node = ros::node::instance();
+  printf("Overriding actuator: %s\n", actuator_info_.name_);
+
+  const char *attr;
+  GET_ATTR("name");
+  strcpy(actuator_info_.name_, attr);
+
+  GET_ATTR("motorTorqueConstant");
+  actuator_info_.motor_torque_constant_ = atof(attr);
+
+  GET_ATTR("pulsesPerRevolution");
+  actuator_info_.pulses_per_revolution_ = atof(attr);
+
+  GET_ATTR("sign");
+  actuator_info_.sign_ = atoi(attr);
+}
 
 void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 {
@@ -170,8 +257,8 @@ void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   memset(&c, 0, sizeof(c));
 
-  double current = command.effort_ / motor_torque_constant;
-  current = max(min(current, max_current_), -max_current_);
+  double current = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+  current = max(min(current, actuator_info_.max_current_), -actuator_info_.max_current_);
 
   c.programmed_current_ = int(current / config_info_.nominal_current_scale_);
   c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
@@ -198,18 +285,18 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   state.timestamp_ = current_status.timestamp_ / 1e+6;
   state.encoder_count_ = current_status.encoder_count_;
-  state.position_ = double(current_status.encoder_count_) / pulses_per_revolution * 2 * M_PI - state.zero_offset_;
+  state.position_ = double(current_status.encoder_count_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI - state.zero_offset_;
   state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_))
       / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
-  state.velocity_ = state.encoder_velocity_ / pulses_per_revolution * 2 * M_PI;
+  state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.calibration_reading_ = current_status.calibration_reading_ & LIMIT_SENSOR_0_STATE;
-  state.last_calibration_high_transition_ = double(current_status.last_calibration_high_transition_) / pulses_per_revolution;
-  state.last_calibration_low_transition_ = double(current_status.last_calibration_low_transition_) / pulses_per_revolution;
+  state.last_calibration_high_transition_ = double(current_status.last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_;
+  state.last_calibration_low_transition_ = double(current_status.last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_;
   state.is_enabled_ = current_status.mode_ != MODE_OFF;
   state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
 
-  state.last_commanded_effort_ = current_status.programmed_current_ * config_info_.nominal_current_scale_ * motor_torque_constant;
-  state.last_measured_effort_ = current_status.measured_current_ * config_info_.nominal_current_scale_ * motor_torque_constant;
+  state.last_commanded_effort_ = current_status.programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+  state.last_measured_effort_ = current_status.measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
 
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
@@ -326,12 +413,104 @@ int WG05::writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buff
   return 0;
 }
 
-int WG05::mailboxRead(EtherCAT_SlaveHandler *sh, int address, void *data, int length)
+int WG05::sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd)
+{
+  // Send command
+  if (writeMailbox(sh, WG05SpiEepromCmd::SPI_COMMAND_ADDR, cmd, sizeof(*cmd)))
+  {
+    fprintf(stderr, "ERROR WRITING EEPROM COMMAND\n");
+    return -1;
+  }
+
+  for (int tries = 0; tries < 10; ++tries)
+  {
+    WG05SpiEepromCmd stat;
+    if (readMailbox(sh, WG05SpiEepromCmd::SPI_COMMAND_ADDR, &stat, sizeof(stat)))
+    {
+      fprintf(stderr, "ERROR READING EEPROM BUSY STATUS\n");
+      return -1;
+    }
+
+    if (stat.operation_ != cmd->operation_)
+    {
+      fprintf(stderr, "READBACK OF OPERATION INVALID : got 0x%X, expected 0x%X\n", stat.operation_, cmd->operation_);
+      return -1;
+    }
+
+    // Keep looping while SPI command is running
+    if (!stat.busy_)
+    {
+      return 0;
+    }
+
+    fprintf(stderr, "eeprom busy reading again, waiting...\n");
+    usleep(100);
+  }
+
+  fprintf(stderr, "ERROR : EEPROM READING BUSY AFTER 10 TRIES\n");
+  return -1;
+}
+
+int WG05::readEeprom(EtherCAT_SlaveHandler *sh)
+{
+  assert(sizeof(actuator_info_) == 264);
+  WG05SpiEepromCmd cmd;
+  cmd.build_read(ACTUATOR_INFO_PAGE);
+  if (sendSpiCommand(sh, &cmd)) {
+    fprintf(stderr, "ERROR SENDING SPI EEPROM READ COMMAND\n");
+    return -1;
+  }
+  // Read buffered data in multiple chunks
+  if (readMailbox(sh, WG05SpiEepromCmd::SPI_BUFFER_ADDR, &actuator_info_, sizeof(actuator_info_))) {
+    fprintf(stderr, "ERROR READING BUFFERED EEPROM PAGE DATA\n");
+    return -1;
+  }
+
+  return 0;
+
+}
+
+void WG05::program(WG05ActuatorInfo *info)
+{
+
+  writeMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, info, sizeof(WG05ActuatorInfo));
+  WG05SpiEepromCmd cmd;
+  cmd.build_write(ACTUATOR_INFO_PAGE);
+  if (sendSpiCommand(sh_, &cmd)) {
+    fprintf(stderr, "ERROR SENDING SPI EEPROM WRITE COMMAND\n");
+  }
+
+  char data[2];
+  memset(data, 0, sizeof(data));
+  data[0] = 0xD7;
+
+  if (writeMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
+    fprintf(stderr, "ERROR WRITING EEPROM COMMAND BUFFER\n");
+  }
+
+
+  { // Start arbitrary command
+    WG05SpiEepromCmd cmd;
+    cmd.build_arbitrary(sizeof(data));
+    if (sendSpiCommand(sh_, &cmd)) {
+      printf("reading eeprom status failed");
+    }
+  }
+
+
+  if (readMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
+    fprintf(stderr, "ERROR READING EEPROM COMMAND BUFFER\n");
+  }
+  printf("data[1] = %08x\n", data[1]);
+}
+
+int WG05::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length)
 {
   // first (re)read current status mailbox data to prevent issues with
   // the status mailbox being full (and unread) from last command
   WG05MbxCmd stat;
   int result = readData(sh, MBX_STATUS_PHY_ADDR, &stat, sizeof(stat));
+
   if ((result != 0) && (result != -2))
   {
     fprintf(stderr, "CLEARING STATUS MBX FAILED result = %d\n", result);
@@ -404,4 +583,45 @@ int WG05::mailboxRead(EtherCAT_SlaveHandler *sh, int address, void *data, int le
   memcpy(data, &stat, length);
   return 0;
 }
+
+// Write <length> byte of <data> to <address> on FPGA local bus using the ethercat mailbox for communication
+// Returns 0 for success and non-zero for failure.
+int WG05::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data, EC_UINT length)
+{
+  // Build mailbox message and write command
+  {
+    WG05MbxCmd cmd;
+    cmd.build(address, length, true /*write*/, data);
+    int tries;
+    for (tries = 0; tries < 10; ++tries)
+    {
+      int result = writeData(sh, MBX_COMMAND_PHY_ADDR, &cmd, sizeof(cmd));
+      if (result == -2)
+      {
+        // FPGA hasn't written responded with status data, wait a
+        // tiny bit and try again.
+        usleep(100); // 1/10th of a millisecond
+        continue;
+      }
+      else if (result == 0)
+      {
+        // Successfull read of status data
+        return 0;
+      }
+      else
+      {
+        fprintf(stderr, "WRITING COMMAND MBX FAILED\n");
+        return -1;
+      }
+    }
+    if (tries >= 10)
+    {
+      fprintf(stderr, "do_mailbox_write : Too many tries writing mailbox\n");
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 

@@ -37,6 +37,8 @@
 
 #include <vector>
 
+#include <tinyxml/tinyxml.h>
+
 #include <ethercat/ethercat_defs.h>
 #include <al/ethercat_slave_handler.h>
 
@@ -52,7 +54,10 @@ public:
   EthercatDevice(bool has_actuator = false, int command_size = 0, int status_size = 0) :
     has_actuator_(has_actuator), command_size_(command_size), status_size_(status_size) {}
 
+
   virtual EthercatDevice *configure(int &startAddress, EtherCAT_SlaveHandler *sh) = 0;
+  virtual int initialize(Actuator *, bool allow_unprogrammed=0) = 0;
+  virtual void initXml(TiXmlElement *) {}
 
   virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
@@ -63,6 +68,7 @@ public:
   bool has_actuator_;
   unsigned int command_size_;
   unsigned int status_size_;
+  EtherCAT_SlaveHandler *sh_;
 };
 
 
