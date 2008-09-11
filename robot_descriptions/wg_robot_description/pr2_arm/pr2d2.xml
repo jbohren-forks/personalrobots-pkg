@@ -255,8 +255,8 @@
     <calibration reference_position="0"/>
     <limit effort="10" velocity="0" min="-2.5" max="2.5"/>
     <!-- safety code -->
-    <safety_limit_min spring_constant="200.0" safety_length="0.5" damping_constant="0.1"/>
-    <safety_limit_max spring_constant="200.0" safety_length="0.5" damping_constant="0.1"/>
+    <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
   </joint>
   <joint name="shoulder_pitch_right_joint" type="revolute" >
     <insert_const_block name="pr2_shoulder_pitch_joint"/>
@@ -264,15 +264,15 @@
     <limit effort="10" velocity="0" min="-0.4" max="1.5"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
-    <safety_limit_max spring_constant="400.0" safety_length="0.4" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
   </joint>
   <joint name="shoulder_pan_right_joint" type="revolute" >
     <insert_const_block name="pr2_shoulder_pan_joint"/>
     <calibration reference_position="-0.7"/>
     <limit effort="10" velocity="0" min="-2" max="0.9"/>
     <!-- safety code -->
-    <safety_limit_min spring_constant="200.0" safety_length="0.5" damping_constant="0.1"/>
-    <safety_limit_max spring_constant="200.0" safety_length="0.5" damping_constant="0.1"/>
+    <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
   </joint>
     
   <joint name="base_joint" type="planar"> 
