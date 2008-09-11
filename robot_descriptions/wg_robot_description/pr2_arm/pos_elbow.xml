@@ -1,0 +1,6 @@
+  <controller name="elbow_controller" topic="elbow_controller" type="JointPositionControllerNode">
+    <filter smoothing_factor="0.1" />
+    <joint name="elbow_right_joint">
+      <pid p="18" i="274" d="3.5" iClamp="0.5" />
+    </joint>
+  </controller>

@@ -1,0 +1,9 @@
+<controller name="elbow_calibration" topic="elbow_calibration" type="JointCalibrationControllerNode">
+  <param joint_name="elbow_right_joint" actuator_name="elbow_right_act" velocity="0.1"/>
+  <controller name="elbow_controller" topic="elbow_controller" type="JointVelocityController">
+    <param smoothing_window="100" />
+    <joint name="elbow_flex_left_joint">
+      <pid p="0" i="0" d="0" iClamp="0" />
+    </joint>
+  </controller>
+</controller>
