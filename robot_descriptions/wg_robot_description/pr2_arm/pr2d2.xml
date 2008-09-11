@@ -464,5 +464,12 @@
       <elem key="celldim" value="0.1 0.1"/>
     </map>
   </group>
-          
+  
+  <group name="collision_check" flags="collision">
+    shoulder_pan_right
+    shoulder_pitch_right
+    upperarm_roll_right
+    elbow_right    
+  </group>
+  
   </robot>
