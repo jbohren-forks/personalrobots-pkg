@@ -159,9 +159,11 @@ public:
     int col = (int)projected(1,1);
 
     // -- Get all the features for that point and construct the point object.
+    clock_t start, end;
     Matrix* result;
     object obj;
     obj.label = -1; //To be classified.
+    start = clock();
     for(unsigned int d=0; d<descriptors_.size(); d++) {
       (*descriptors_[d])(ss_, *img_, x, y, z, row, col, &result);
       obj.features[descriptors_[d]->name_] = *result;      
@@ -170,15 +172,21 @@ public:
 //       cout << descriptors_[d]->name_ << " descriptor." << endl;
 //       cout << obj.features[descriptors_[d]->name_];
     }
+    end = clock();
+    cout << "Feature computation took " << (double(end)-double(start))/CLOCKS_PER_SEC << " seconds." << endl;
     
 
     // -- Classify 
+    start = clock();
     Matrix response = d_.classify(obj);
+    end = clock();
+    cout << "Classification took " << (double(end)-double(start))/CLOCKS_PER_SEC << " seconds." << endl;
+
     int label_idx, trash;
     float val;
     val = response.Maximum2(label_idx, trash);
     int label = d_.classes_[label_idx-1];
-    char* label_str;
+    char label_str[10];
     
     cout << "Response: " << endl << response;
     cout << "Class " << label << endl;  
@@ -525,8 +533,8 @@ int main(int argc, char **argv) {
     }
     else {
       int nSamples = 1;
-      int nBG_pts = 1000;
-      int nRepetitions_per_obj = 1000;
+      int nBG_pts = 500;
+      int nRepetitions_per_obj = 100;
       dn.buildDataset(nSamples, datafiles, savename, false, nBG_pts, nRepetitions_per_obj);
     }
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
@@ -543,7 +551,7 @@ int main(int argc, char **argv) {
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
     dn.d_.loadDataset(&dn.dd_);
-    dn.train(100, 60*35, 50);
+    dn.train(100, 60*60*10, 209);
     dn.d_.save(string(argv[2]));
 
 //     Dorylus d2;

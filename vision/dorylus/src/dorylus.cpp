@@ -396,8 +396,8 @@ bool Dorylus::load(string filename, bool quiet)
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
 	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	cout << "Stored new wc." << endl;
-	cout << displayWeakClassifier(*pwc);
+	// cout << "Stored new wc." << endl;
+// 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
       }	
       pwc = new weak_classifier;
@@ -630,12 +630,26 @@ bool Dorylus::learnWC(int nCandidates) {
 //       cout << dists[j] << endl;
 //     }
 
+    cand[i].theta = 0;
+    //float max_util_this_cand = 0;
     for(int iTheta=0; iTheta<nThetas; iTheta++) {
     
       //For now, take thetas between 0 and .5sqrt(dimensionality) of the feature space uniformly.
       //This requires that the features all be normalized so that the max element is +1 and the min is 0.
       Matrix& f = dd_->objs_[0].features[cand[i].descriptor];
-      cand[i].theta = ((float)rand() / (float)RAND_MAX) * (1.0/2.0) * sqrt(f.Nrows());
+      float MAX_THETA = (1.0/2.0) * sqrt(f.Nrows());
+
+      // Rejection sampling to take small thetas more often.
+      while(true) {
+	cand[i].theta = ((float)rand() / (float)RAND_MAX) * MAX_THETA;
+	float probability = -2 / (MAX_THETA * MAX_THETA) * cand[i].theta + 2 / MAX_THETA;
+	float random = (float)rand() / (float)RAND_MAX;
+	if(random < probability)
+	  break;
+      }
+
+      //cand[i].theta += MAX_THETA / nThetas;
+      //cout << "mx theta " << MAX_THETA << "  and " << cand[i].theta;
       //cout << "Max theta is " << (1.0/2.0) * sqrt(f.Nrows()) << endl;
       //cout << "Using theta of " << theta << endl;
 
@@ -690,8 +704,12 @@ bool Dorylus::learnWC(int nCandidates) {
 
       //cout << "  Theta " << cand[i].theta << ": objective " << objective << ",  new_objective " << new_objective << ", max_util " << max_util << ", util " << util;
       //If this is the best wc so far, save it.
+//       cout << " with util " << util;
+//       if(util > max_util_this_cand) {
+// 	cout << " *";
+// 	max_util_this_cand = util;
+//       }
       if(util > max_util) {
-	//cout << "***" << endl;
 	found_better = true;
 	max_util = util;
 	best = cand[i];
@@ -699,9 +717,11 @@ bool Dorylus::learnWC(int nCandidates) {
 	best_mmt = mmt;
       }
       delete *ppweights; *ppweights = NULL;
+      //cout << endl;
     }
     //cout << "WC " << i <<": Tried " << nThetas << " thetas, max utility is " << max_util << endl;
     cout << "."; cout.flush();
+    //cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   }
   cout << endl;
 
@@ -746,7 +766,7 @@ float Dorylus::computeObjective() {
 
 //mmt is a M_m^t specific to this weak classifier and this dataset.
 Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matrix& mmt) {
-  Matrix act(dd_->nClasses_, dd_->objs_.size()); act=0.0;
+  Matrix act(dd_->nClasses_, dd_->objs_.size()); act = 0.0;
   
   for(unsigned int m=0; m<dd_->objs_.size(); m++) {
 
@@ -756,30 +776,44 @@ Matrix Dorylus::computeDatasetActivations(const weak_classifier& wc, const Matri
     }
   }
 
-  return act;
+  Matrix act2(dd_->nClasses_, dd_->objs_.size());
+  act2 = wc.vals * mmt;
+
+  for(unsigned int m=0; m<dd_->objs_.size(); m++) {
+    for(unsigned int c=0; c<dd_->nClasses_; c++) {
+      if(act2(c+1, m+1) != act(c+1, m+1)) {
+	cout << act2(c+1, m+1) << " " <<  act(c+1, m+1) << endl;
+	cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+      }
+    }
+  }
+
+
+  return act2;
 }
 
 
 float Dorylus::computeNewObjective(const weak_classifier& wc, const Matrix& mmt, Matrix** new_weights) {
   Matrix weights = weights_;
-  Matrix act = computeDatasetActivations(wc, mmt);
+  //Matrix act = computeDatasetActivations(wc, mmt);
+  Matrix act;
+  act = wc.vals * mmt;
   
+
+  // -- Compute the new weights.
   float new_weight;
-  for(unsigned int c=0; c<dd_->nClasses_; c++) {
-    for(unsigned int m=0; m<dd_->objs_.size(); m++) {
+  for(unsigned int m=0; m<dd_->objs_.size(); m++) {
+    if(mmt(1, m+1) == 0) 
+      continue;
+
+    for(unsigned int c=0; c<dd_->nClasses_; c++) {
       new_weight = weights(c+1, m+1) * exp(-dd_->ymc_(c+1, m+1) * act(c+1,m+1));
-      if(new_weight < 0) {
-	cerr << "One of the weights is negative!" << endl;
-	exit(0);
+
+      if(new_weight == 0) {
+	new_weight = FLT_MIN;
       }
-      else if(new_weight == 0) {
-// 	cerr << "One of the weights is zero! Obj " << m << ", label " << classes_[c] << ", nPts in this obj: " << dd_->objs_[m].features.begin()->second.Ncols();
-// 	cerr << "  Old weight was " << weights(c+1, m+1) << ", ymc was " << dd_->ymc_(c+1,m+1) << " act was " << act(c+1, m+1) << " and FLT_MIN is " << FLT_MIN << endl;
-	weights(c+1, m+1) = FLT_MIN;
-      }
-      else
-	weights(c+1, m+1) = new_weight;
-	
+
+      weights(c+1, m+1) = new_weight;
     }
   }
 

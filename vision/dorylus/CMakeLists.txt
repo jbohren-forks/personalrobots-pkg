@@ -3,4 +3,4 @@ include(rosbuild)
 rospack(dorylus)
 add_definitions(-Wall)
 rospack_add_executable(dorylus_node src/dorylus_node.cpp src/dorylus.cpp)
-
+target_link_libraries(dorylus_node profiler)
