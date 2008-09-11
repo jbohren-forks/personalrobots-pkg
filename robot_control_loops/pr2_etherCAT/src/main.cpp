@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <stdio.h>
+#include <getopt.h>
 #include <execinfo.h>
 #include <signal.h>
 #include <sys/mman.h>
@@ -43,35 +44,53 @@
 #include <ros/node.h>
 #include <std_srvs/Empty.h>
 
+static struct
+{
+  char *program_;
+  char *interface_;
+  char *xml_;
+  bool allow_override_;
+} g_options;
+
+void Usage(string msg = "")
+{
+  fprintf(stderr, "Usage: %s [options]\n", g_options.program_);
+  if (msg != "")
+  {
+    fprintf(stderr, "Error: %s\n", msg.c_str());
+    exit(-1);
+  }
+  else
+  {
+    exit(0);
+  }
+}
+
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
 
-void *controlLoop(void *arg)
+void *controlLoop(void *)
 {
-  char **args = (char **) arg;
-  char *interface = args[1];
-  char *xml_file = args[2];
-
-  // Initialize the hardware inteface
+  // Initialize the hardware interface
   EthercatHardware ec;
-  ec.init(interface);
+  ec.init(g_options.interface_);
 
   // Create mechanism control
   MechanismControl mc(ec.hw_);
   MechanismControlNode mcn(&mc);
 
   // Load robot description
-  TiXmlDocument xml(xml_file);
+  TiXmlDocument xml(g_options.xml_);
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
   if (!root)
   {
-    fprintf(stderr, "Could not load the xml file: %s\n", xml_file);
+    fprintf(stderr, "Could not load the xml file: %s\n", g_options.xml_);
     exit(1);
   }
 
   // Register actuators with mechanism control
-  ec.initXml(root, mc);
+  ec.initXml(root, g_options.allow_override_);
 
   // Initialize mechanism control from robot description
   mcn.initXml(root);
@@ -161,11 +180,44 @@ int main(int argc, char *argv[])
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
 
-  if (argc != 3)
+  // Parse options
+  g_options.program_ = argv[0];
+  while (1)
   {
-    fprintf(stderr, "Usage: %s <interface> <xml>\n", argv[0]);
-    exit(-1);
+    static struct option long_options[] = {
+      {"help", no_argument, 0, 'h'},
+      {"allow_override", no_argument, 0, 'a'},
+      {"interface", required_argument, 0, 'i'},
+      {"xml", required_argument, 0, 'x'},
+    };
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "ahi:x:", long_options, &option_index);
+    if (c == -1) break;
+    switch (c)
+    {
+      case 'h':
+        Usage();
+        break;
+      case 'a':
+        g_options.allow_override_ = 1;
+        break;
+      case 'i':
+        g_options.interface_ = optarg;
+        break;
+      case 'x':
+        g_options.xml_ = optarg;
+        break;
+    }
   }
+  if (optind < argc)
+  {
+    Usage("Extra arguments");
+  }
+
+  if (!g_options.interface_)
+    Usage("You must specify a network interface");
+  if (!g_options.xml_)
+    Usage("You must specify a robot description XML file");
 
   ros::node *node = new ros::node("mechanism_control",
                                   ros::node::DONT_HANDLE_SIGINT);
@@ -187,7 +239,7 @@ int main(int argc, char *argv[])
 
   //Start thread
   int rv;
-  if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, argv)) != 0)
+  if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, 0)) != 0)
   {
     node->log(ros::FATAL, "Unable to create realtime thread: rv = %d\n", rv);
   }
