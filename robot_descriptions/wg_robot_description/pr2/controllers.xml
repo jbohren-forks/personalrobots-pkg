@@ -192,7 +192,13 @@
       </joint>
   </controller>
 
-  <!-- laser scanner controller seems to be broken
+  <controller name="tilt_laser_controller" topic="tilt_laser_controller" type="LaserScannerControllerNode">
+    <joint name="tilt_laser_joint" >
+      <pid p="0.4" d="0" i="0" iClamp="0.1" />
+    </joint>
+  </controller>
+
+  <!-- this version of laser scanner controller seems to be broken
   <controller name="tilt_laser_controller" topic="laser_test" type="LaserScannerControllerNode">
     <velocity>
       <velocityFilter smoothing="0.2"/>
