@@ -26,6 +26,7 @@
 
 #define RADIUS 2
 #define MAXDISP 80
+#define XOFFSET 70
 #define NIMAGES 30
 
 struct calib_params{
@@ -62,6 +63,8 @@ int w;
 int h;
 
 int maxdisp;
+int xoffset;
+
 double disp_scale;
 int radius;		//radius of correlation window
 
@@ -285,6 +288,8 @@ sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &
 void stereo_standard_sad(stereo_params par){
 
 int maxdisp = par.maxdisp;
+int xoffset = par.xoffset;
+
 int r = par.radius;
 int w = par.w;
 int h = par.h;
@@ -308,7 +313,7 @@ for(d=0; d<maxdisp; d++){
 	for(i=maxdisp; i<maxdisp+n; i++){
 		V[i][d] = 0;
 		for(j=0; j<n; j++){
-			V[i][d] += abs( L[j*w+i] - R[j*w+i-d] );
+			V[i][d] += abs( L[j*w+i] - R[j*w+i-d-xoffset] );
 		}
 		//acc[d] += V[i][d];			
 	}		
@@ -319,7 +324,7 @@ for(x=maxdisp+r+1; x<w-r; x++){
 	for(d=0; d<maxdisp; d++){
 		V[x+r][d] = 0;
 		for(j=0; j<n; j++)
-			V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d] );
+			V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d-xoffset] );
 		//acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
 	}//d
 }//x
@@ -334,16 +339,16 @@ for(y=r+1; y<h-r; y++){
 	for(d=0; d<maxdisp; d++){
 		acc[d] = 0;
 		for(i=maxdisp; i<maxdisp+n; i++){
-			V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d] );
+			V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d-xoffset] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d-xoffset] );
 			acc[d] += V[i][d];			
 		}	
 	}
 	
 	//other positions
 	lp = (unsigned char *) L + (y+r)*w + ind1;
-	rp =  (unsigned char *) R + (y+r)*w + ind1;
+	rp =  (unsigned char *) R + (y+r)*w + ind1 - xoffset;
 	lpp = (unsigned char *) L + (y-r-1)*w + ind1;
-	rpp = (unsigned char *) R + (y-r-1)*w + ind1;
+	rpp = (unsigned char *) R + (y-r-1)*w + ind1 - xoffset;
 
 	for(x=maxdisp+r+1; x<w-r; x++){
 		
@@ -387,8 +392,11 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 
 	par.radius = RADIUS;
 	par.maxdisp = MAXDISP;
+	par.xoffset = XOFFSET;	
 	
 	int maxdisp = par.maxdisp;
+	int xoffset = par.xoffset;
+
 	int r = par.radius;
 	int w = left_frames[0]->width;
 	int h = left_frames[0]->height;
@@ -652,6 +660,7 @@ printf("Done; press q to quit, other key to continue.. \n");
 
 cvShowImage("Disp Image", idisp);
 cvShowImage("Ref Image", left_frames[0]);
+cvShowImage("Tar Image", right_frames[0]);
 cvReleaseImage(&idisp);
 
 wait = 1;
@@ -683,6 +692,8 @@ int main(int argc, char **argv){
 //#ifdef DISPLAY
 cvNamedWindow("Disp Image", 1);
 cvNamedWindow("Ref Image", 1);
+cvNamedWindow("Tar Image", 1);
+
 //#endif
 
 	ros::init(argc, argv);
@@ -703,6 +714,7 @@ cvNamedWindow("Ref Image", 1);
 //#ifdef DISPLAY
 cvDestroyWindow("Disp Image");
 cvDestroyWindow("Ref Image");
+cvDestroyWindow("Tar Image");
 //#endif
 
 return 0;
