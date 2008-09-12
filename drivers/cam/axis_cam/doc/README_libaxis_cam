@@ -1,5 +1,0 @@
-libaxis_cam attempts to provide a simple, framework-independent way to communicate with the Axis IP camera. 
-
-To use it, just instantiate an AxisCam object, supplying the IP/hostname of the camera in the constructor.
-
-Then, call AxisCam::wget_jpeg whenever you want an image. This will give you a pointer to a buffer holding a JPEG and the buffer size. That's all there is to it. See include/axis_cam/axis_cam.h  for the exact usage syntax.

@@ -1,3 +1,0 @@
-This program outputs an image on its "image" source flow whenever it receives on its "shutter" sink flow.
-
-You can use a ROS_FlowPair in other nodes to grab images only when you want them. See stair.axis_cam_demos/keyboard_shutter for an example of how to do this.
