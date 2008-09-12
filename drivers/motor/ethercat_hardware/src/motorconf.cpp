@@ -50,12 +50,12 @@ static struct
   int model;
   WG05ActuatorInfo config;
 } configurations[] = {
-  {148877, {0, 1, 0, "motor1", "PR2", "Maxon", "148877", 3.12, 1.0 / 158, 1.16, 0.0603, 1200, -1, "", 0}},
-  {148877, {0, 1, 0, "motor2", "PR2", "Maxon", "148877", 3.12, 1.0 / 158, 1.16, 0.0603, 1200, -1, "", 0}},
+  {148877, {0, 1, 0, "", "PR2", "Maxon", "148877", 3.12, 1.0 / 158, 1.16, 0.0603, 1200, -1, "", 0}},
   {310007, {0, 1, 0, "", "PR2", "Maxon", "310007", 3.44, 1.0 / 369, 0.611, 0.0199, 1200, -1, "", 0}}
 };
 
 
+vector<WG05 *> devices;
 void init(char *interface)
 {
   struct netif *ni;
@@ -91,7 +91,6 @@ void init(char *interface)
     exit(-1);
   }
 
-  vector<WG05 *> devices;
   static int startAddress = 0x00010000;
 
   for (unsigned int slave = 0; slave < num_slaves; ++slave)
@@ -146,13 +145,22 @@ int main(int argc, char *argv[])
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  if (argc != 2)
+  if (argc < 2)
   {
     fprintf(stderr, "Usage: %s <interface>\n", argv[0]);
     exit(-1);
   }
 
   init(argv[1]);
+
+  for (int i = 0; i < argc - 2; ++i) {
+    printf("Programming device %d, to be named: %s\n", i, argv[i+2]);
+    strcpy(configurations[0].config.name_, argv[i+2]);
+    boost::crc_32_type crc32;
+    crc32.process_bytes(&configurations[0].config, sizeof(configurations[0].config)-sizeof(configurations[0].config.crc32_));
+    configurations[0].config.crc32_ = crc32.checksum();
+    devices[i]->program(&configurations[0].config);
+  }
 
   return 0;
 }
