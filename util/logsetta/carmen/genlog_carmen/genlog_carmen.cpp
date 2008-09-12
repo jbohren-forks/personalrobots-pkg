@@ -100,7 +100,7 @@ void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
   fprintf(clog, "ROBOTLASER1 0 %f %f %f %f %f 0 %d ",
           scan->angle_min, fov, fov / scan->angle_increment,
           scan->range_max, acc, scan->get_ranges_size());
-  for (int i = 0; i < scan->get_ranges_size(); i++)
+  for (uint32_t i = 0; i < scan->get_ranges_size(); i++)
     fprintf(clog, "%.3f ", scan->ranges[scan->get_ranges_size() - i - 1]);
   double laser_x = prev_x + 0.30 * cos(prev_th); // in the robot frame
   double laser_y = prev_y + 0.30 * sin(prev_th);
