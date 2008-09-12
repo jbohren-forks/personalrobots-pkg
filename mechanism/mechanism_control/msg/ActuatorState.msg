@@ -12,6 +12,6 @@ byte run_stop_hit
 float64 last_requested_effort
 float64 last_commanded_effort
 float64 last_measured_effort
-int32 motor_voltage
+float64 motor_voltage
 int32 num_encoder_errors
 
