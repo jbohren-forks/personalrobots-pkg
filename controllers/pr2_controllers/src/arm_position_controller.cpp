@@ -39,11 +39,12 @@
 using namespace controller;
 using namespace std;
 
-ROS_REGISTER_CONTROLLER(ArmPositionController)
+ROS_REGISTER_CONTROLLER(ArmPositionController);
 
-ArmPositionController::ArmPositionController()
+ArmPositionController::ArmPositionController() :
+  goal_achieved_(false),
+  refresh_rt_vals_(false)
 {
-//   cout<<"new dummy"<<endl;
 }
 
 ArmPositionController::~ArmPositionController()
@@ -51,12 +52,10 @@ ArmPositionController::~ArmPositionController()
   // Assumes the joint controllers are owned by this class.
   for(unsigned int i=0; i<joint_position_controllers_.size();++i)
     delete joint_position_controllers_[i];
-//   cout<<"deleted dummy"<<endl;
 }
 
 bool ArmPositionController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
-//   cout<<"CONFIGURE DUMMY "<<joint_position_controllers_.size()<<endl;
   robot_ = robot->model_;
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
@@ -67,49 +66,57 @@ bool ArmPositionController::initXml(mechanism::RobotState * robot, TiXmlElement 
     joint_position_controllers_.push_back(jpc);
     if(!jpc->initXml(robot, elt))
       return false;
-    
+
     elt = elt->NextSiblingElement("controller");
   }
   goals_.resize(joint_position_controllers_.size());
-  goals_rt_.resize(joint_position_controllers_.size());
   error_margins_.resize(joint_position_controllers_.size());
-  
-//   cout<<"CONFIGURE DUMMY "<<joint_position_controllers_.size()<<endl;
+
+  goals_rt_.resize(joint_position_controllers_.size());
+  error_margins_rt_.resize(joint_position_controllers_.size());
   return true;
 }
 
-void ArmPositionController::setJointPosCmd(std::vector<double> &req_goals_)
+void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values, const std::vector<std::string> & j_names)
 {
-//   std::cout<<req_goals_.size()<< " = " <<goals_.size()<<std::endl;
-  assert(req_goals_.size() == goals_.size());
+  assert(j_values.size() == j_names.size());
+  for(uint i=0;i<j_values.size();++i)
+  {
+    const std::string & name = j_names[i];
+    const int id = getJointControllerPosByName(name);
+    if(id>=0)
+      goals_[id] = j_values[i];
+  }
+  goal_achieved_ = false;
+
   arm_controller_lock_.lock();
-  for (uint i=0; i<req_goals_.size(); i++) goals_[i] = req_goals_[i];
-  for (uint i=0; i<goals_.size(); ++i) error_margins_[i] = -1;
-  goalAchieved = true;
+  refresh_rt_vals_ = true;
   arm_controller_lock_.unlock();
 }
 
-void ArmPositionController::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req)
+void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values)
 {
-//   cout<<"SET COMMANDS"<<endl;
+  assert(j_values.size() == joint_position_controllers_.size());
+  for(uint i=0;i<j_values.size();++i)
+  {
+      goals_[i] = j_values[i];
+      error_margins_[i] = -1;
+  }
+
+  goal_achieved_ = false;
+
   arm_controller_lock_.lock();
-  std::cout<<req.get_positions_size()<<std::endl;
-  std::cout<<goals_.size()<<std::endl;
-  assert(req.get_positions_size() == goals_.size());
-  req.get_positions_vec(goals_);
-  for (uint i=0; i<goals_.size(); ++i) error_margins_[i] = -1;
-  goalAchieved = true;
+  refresh_rt_vals_ = true;
   arm_controller_lock_.unlock();
 }
 
 void ArmPositionController::setJointPosCmd(const pr2_controllers::JointPosCmd & cmd)
 {
-//   cout<<"SET COMMANDS JT"<<endl;
-  arm_controller_lock_.lock();
-  
+  assert(cmd.get_names_size()==cmd.get_positions_size());
+
   for(uint i=0;i<error_margins_.size();++i)
     error_margins_[i]=-1;
-  assert(cmd.get_names_size()==cmd.get_positions_size());
+
   for(uint i=0;i<cmd.get_names_size();++i)
   {
     const std::string & name = cmd.names[i];
@@ -118,10 +125,12 @@ void ArmPositionController::setJointPosCmd(const pr2_controllers::JointPosCmd & 
     {
       goals_[id] = cmd.positions[i];
       error_margins_[id] = cmd.margins[i];
-//       std::cout<<">"<<name<<"("<<id<<")"<<goals_[id]<<" "<<error_margins_[id]<<std::endl;
     }
   }
-  goalAchieved = false;
+  goal_achieved_ = false;
+
+  arm_controller_lock_.lock();
+  refresh_rt_vals_ = true;
   arm_controller_lock_.unlock();
 }
 
@@ -151,44 +160,33 @@ int ArmPositionController::getJointControllerPosByName(std::string name)
   return -1;
 }
 
-void ArmPositionController::getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp)
-{
-  arm_controller_lock_.lock();
-  resp.set_positions_size(goals_.size());
-  resp.set_names_size(joint_position_controllers_.size());
-  assert(resp.get_positions_size() == goals_.size()); // TODO:Check intended behaviour here.
-  resp.set_positions_vec(goals_);
-  for(unsigned int i=0;i<joint_position_controllers_.size();++i)
-    resp.names[i] = joint_position_controllers_[i]->getJointName();
-  arm_controller_lock_.unlock();
-}
-
-void ArmPositionController::getCurrentConfiguration(std::vector<double> &vec)
-{
-  //TODO: warning: this read is not safe, since we cannot lock the realtime loop
-  // A more complex mechanism is necessary here
-  vec.resize(joint_position_controllers_.size());
-  arm_controller_lock_.lock();
-  for(unsigned int i=0; i<joint_position_controllers_.size(); ++i)
-  {
-    vec[i] = joint_position_controllers_[i]->getMeasuredPosition();
-  }
-  arm_controller_lock_.unlock();
-}
+//void ArmPositionController::getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp)
+//{
+//  arm_controller_lock_.lock();
+//  resp.set_positions_size(goals_.size());
+//  resp.set_names_size(joint_position_controllers_.size());
+//  assert(resp.get_positions_size() == goals_.size()); // TODO:Check intended behaviour here.
+//  resp.set_positions_vec(goals_);
+//  for(unsigned int i=0;i<joint_position_controllers_.size();++i)
+//    resp.names[i] = joint_position_controllers_[i]->getJointName();
+//  arm_controller_lock_.unlock();
+//}
 
 void ArmPositionController::update(void)
 {
-  if(arm_controller_lock_.trylock())
+  if(refresh_rt_vals_ && arm_controller_lock_.trylock())
   {
     assert(goals_.size() == goals_rt_.size());
     for(unsigned int i=0; i<goals_.size(); ++i)
       goals_rt_[i] = goals_[i];
+    for(unsigned int i=0; i<error_margins_.size(); ++i)
+      error_margins_rt_[i] = error_margins_[i];
     arm_controller_lock_.unlock();
   }
-  
+
   for(unsigned int i=0;i<goals_rt_.size();++i)
     joint_position_controllers_[i]->setCommand(goals_rt_[i]);
-  
+
   updateJointControllers();
   checkForGoalAchieved_();
 }
@@ -202,11 +200,9 @@ void ArmPositionController::updateJointControllers(void)
 
 void ArmPositionController::checkForGoalAchieved_(void)
 {
-  if(goals_.size()==0)
-    return;
-  goalAchieved = true;
+  goal_achieved_ = true;
   for(unsigned int i=0;i<goals_rt_.size();++i)
-      goalAchieved=goalAchieved&&(error_margins_[i]<=0||std::abs(joint_position_controllers_[i]->getMeasuredPosition()-goals_rt_[i])<error_margins_[i]);
+    goal_achieved_=goal_achieved_&&(error_margins_[i]<=0||std::abs(joint_position_controllers_[i]->getMeasuredPosition()-goals_rt_[i])<error_margins_[i]);
 }
 
 
@@ -236,39 +232,39 @@ bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
   ros::node * const node = ros::node::instance();
   string prefix = config->Attribute("name");
-  
+
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosCmd, this);
-    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
-    
-    node->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::jointPosCmd, this);
+    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosSrv, this);
+//    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+
+    node->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
+
+    node->advertise_service(prefix + "/set_target_headless", &ArmPositionControllerNode::setJointPosHeadless, this);
 
     return true;
   }
-  return false;  
+  return false;
 }
 
-bool ArmPositionControllerNode::setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
+bool ArmPositionControllerNode::setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
                                    pr2_controllers::SetJointPosCmd::response &resp)
 {
-  c_->setJointPosCmd(req);
+  std::vector<double> pos;
+  req.set_positions_vec(pos);
+  c_->setJointPosCmd(pos);
   return true;
 }
 
-void ArmPositionControllerNode::setJointPosCmd(std::vector<double> &req_goals_)
-{
-  c_->setJointPosCmd(req_goals_);
-}
-bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-                                   pr2_controllers::GetJointPosCmd::response &resp)
-{
-  c_->getJointPosCmd(resp);
-  return true;
-}
+//bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
+//                                   pr2_controllers::GetJointPosCmd::response &resp)
+//{
+//  c_->getJointPosCmd(resp);
+//  return true;
+//}
 
-bool ArmPositionControllerNode::setSingleTargetCmd(const pr2_controllers::JointPosCmd & cmd)
+bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPosCmd & cmd)
 {
   std::cout<<"waypoint "<<std::flush;
   for(unsigned int i=0;i<cmd.positions_size;++i)
@@ -276,10 +272,10 @@ bool ArmPositionControllerNode::setSingleTargetCmd(const pr2_controllers::JointP
   std::cout<<std::flush;
   c_->setJointPosCmd(cmd);
   int ticks=0;
-  double interval=1e-2;
+  static const double interval=1e-2;
   const int max_ticks = int(cmd.timeout/interval);
   ros::Duration d=ros::Duration(interval);
-  while(!(c_->goalAchieved ||  ticks >= max_ticks))
+  while(!(c_->goalAchieved() ||  ticks >= max_ticks))
   {
     d.sleep();
     ticks++;
@@ -293,15 +289,27 @@ bool ArmPositionControllerNode::setSingleTargetCmd(const pr2_controllers::JointP
   return true;
 }
 
-bool ArmPositionControllerNode::jointPosCmd(pr2_controllers::SetJointTarget::request &req,
+bool ArmPositionControllerNode::setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
+                  pr2_controllers::SetJointTarget::response &resp)
+{
+  if(req.get_positions_size()!=1)
+  {
+    std::cout<<"setting a target in headless mode requires only one configuration in the list\n";
+    return false;
+  }
+  c_->setJointPosCmd(req.positions[0]);
+  return true;
+}
+
+bool ArmPositionControllerNode::setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
                   pr2_controllers::SetJointTarget::response &resp)
 {
   bool reached=true;
   for(unsigned int i=0;i<req.get_positions_size();++i)
-    reached = reached&&setSingleTargetCmd(req.positions[i]);
-  std::vector<double> end_pos;
-  c_->getCurrentConfiguration(end_pos);
-  resp.set_end_positions_vec(end_pos);
+    reached = reached&&setJointPosSingle(req.positions[i]);
+//  std::vector<double> end_pos;
+//  c_->getCurrentConfiguration(end_pos);
+//  resp.set_end_positions_vec(end_pos);
   return reached;
 
 //   const pr2_controllers::JointPosCmd cmd=req.positions;
@@ -309,7 +317,7 @@ bool ArmPositionControllerNode::jointPosCmd(pr2_controllers::SetJointTarget::req
 //   int ticks=0;
 //   const int max_ticks = int(100*cmd.timeout);
 //   ros::Duration d=ros::Duration(0,1000000);
-//   while(!(c_->goalAchieved ||  ticks >= max_ticks))
+//   while(!(c_->goal_achieved_ ||  ticks >= max_ticks))
 //   {
 //     d.sleep();
 //     ticks++;
@@ -320,7 +328,7 @@ bool ArmPositionControllerNode::jointPosCmd(pr2_controllers::SetJointTarget::req
 //   resp.set_end_positions_vec(end_pos);
 //   if(ticks>=max_ticks)
 //     return false;
-//   
+//
 //   return true;
 
 }

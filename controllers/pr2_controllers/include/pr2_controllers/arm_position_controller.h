@@ -64,88 +64,107 @@
 namespace controller
 {
 
-  // The maximum number of joints expected in an arm.
-  static const int MAX_ARM_JOINTS = 7;
-  
-  class ArmPositionController : public Controller
-  {
-    public:
-  
-  /*!
-     * \brief Default Constructor of the JointController class.
-     *
-   */
-      ArmPositionController();
+// The maximum number of joints expected in an arm.
+static const int MAX_ARM_JOINTS = 7;
+
+class ArmPositionController : public Controller
+{
+public:
 
   /*!
-       * \brief Destructor of the JointController class.
+   * \brief Default Constructor of the JointController class.
+   *
    */
-      virtual ~ArmPositionController();
+  ArmPositionController();
 
   /*!
-       * \brief Functional way to initialize limits and gains.
-       *
+   * \brief Destructor of the JointController class.
    */
-      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-  
-  /*!
-       * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-       *
-       * \param double pos Position command to issue
-   */
-      void setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req);
+  virtual ~ArmPositionController();
 
   /*!
-       * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
-       *
-       * \param double pos Position command to issue
-   */
-    void setJointPosCmd(std::vector<double> &req_goals_);
-    
-    void setJointPosCmd(const pr2_controllers::JointPosCmd & cmd);
+   * \brief Functional way to initialize limits and gains.
+   *
+  */
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
-       * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-   */
-          void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
-          
-          void getCurrentConfiguration(std::vector<double> &);
+   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+   *
+   * \param double pos Position command to issue
+  */
+
+
   /*!
-       * \brief Issues commands to the joint. Should be called at regular intervals
-   */
-      virtual void update(void); // Real time safe.
+   * \brief Sets a goal for some joint, specified as a pair of (joint values, joint names)
+   *
+   * \param j_values the positions of the joints
+   * \param j_names the names of the joints
+  */
+  void setJointPosCmd(const std::vector<double> &j_values, const std::vector<std::string> & j_names);
+  void setJointPosCmd(const std::vector<double> &j_values);
 
-      ros::thread::mutex arm_controller_lock_;
+//  /**
+//   * @brief Overloaded method for convenience
+//   * @param req
+//   */
+//  void setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req);
 
-      void setJointGains(const pr2_controllers::SetJointGains::request &req);
+  void setJointPosCmd(const pr2_controllers::JointPosCmd & cmd);
 
-      void getJointGains(pr2_controllers::GetJointGains::response &resp);
+  /*!
+   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+  */
+//  void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
 
-      controller::JointPositionController* getJointControllerByName(std::string name);
-      
-      bool goalAchieved;
+//  void getCurrentConfiguration(std::vector<double> &);
 
-    private:
+  /*!
+     * \brief Issues commands to the joint. Should be called at regular intervals
+  */
+  virtual void update(void); // Real time safe.
 
-      std::vector<JointPositionController *> joint_position_controllers_;     
+  ros::thread::mutex arm_controller_lock_;
 
-      // Goal of the joints
-      std::vector<double> goals_;
-      // Goal of the joints - used by the realtime code only
-      std::vector<double> goals_rt_; 
+//  void setJointGains(const pr2_controllers::SetJointGains::request &req);
 
-      // Error margins of the goals. If set to <=0, they are not enforced
-      std::vector<double> error_margins_;
-      
-      mechanism::Robot* robot_;
+//  void getJointGains(pr2_controllers::GetJointGains::response &resp);
 
-      void updateJointControllers(void);
-      
-      int getJointControllerPosByName(std::string name);
-      
-      void checkForGoalAchieved_(void);
+  controller::JointPositionController* getJointControllerByName(std::string name);
 
-  };
+  bool goalAchieved() const { return goal_achieved_; }
+
+private:
+
+  std::vector<JointPositionController *> joint_position_controllers_;
+
+  // Goal of the joints
+  std::vector<double> goals_;
+
+  // Error margins of the goals. If set to <=0, they are not enforced
+  std::vector<double> error_margins_;
+
+  // Goal of the joints - used by the realtime code only
+  std::vector<double> goals_rt_;
+
+  // Error margins of the goals. If set to <=0, they are not enforced
+  // Accessed by real-time code only
+  std::vector<double> error_margins_rt_;
+
+  mechanism::Robot* robot_;
+
+  void updateJointControllers(void);
+
+  int getJointControllerPosByName(std::string name);
+
+  void checkForGoalAchieved_(void);
+
+  bool goal_achieved_;
+
+  // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
+  bool refresh_rt_vals_;
+
+};
 
   class ArmPositionControllerNode : public Controller
   {
@@ -165,21 +184,24 @@ namespace controller
 
       bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-      void setJointPosCmd(std::vector<double> &req_goals_);
+//      void setJointPosCmd(std::vector<double> &req_goals_);
 
-      bool setSingleTargetCmd(const pr2_controllers::JointPosCmd & cmd);
+      bool setJointPosSingle(const pr2_controllers::JointPosCmd & cmd);
 
       // Services
-      bool setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req,
+      bool setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
                       pr2_controllers::SetJointPosCmd::response &resp);
 
-      bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-                      pr2_controllers::GetJointPosCmd::response &resp);
-      
-      bool jointPosCmd(pr2_controllers::SetJointTarget::request &req,
+//      bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
+//                      pr2_controllers::GetJointPosCmd::response &resp);
+
+      bool setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
                        pr2_controllers::SetJointTarget::response &resp);
-    
-//       bool setJointGains(pr2_controllers::SetJointGains::request &req,
+
+      bool setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
+                       pr2_controllers::SetJointTarget::response &resp);
+
+      //       bool setJointGains(pr2_controllers::SetJointGains::request &req,
 //                                                     pr2_controllers::SetJointGains::response &resp);
 
 //       bool getJointGains(pr2_controllers::GetJointGains::request &req,
