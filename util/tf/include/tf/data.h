@@ -19,6 +19,10 @@ class Stamped{
   Stamped(const T& input, const uint64_t& timestamp, const std::string & frame_id):
     data_ (input), stamp_ ( timestamp ), frame_id_ (frame_id){ };
 
+  Stamped(const Stamped<T>& input):data_(input.data_), stamp_(input.stamp_), frame_id_(input.frame_id_){};
+
+  Stamped& operator=(const Stamped<T>& input){data_ = input.data_; stamp_ = input.stamp_; frame_id_ = input.frame_id_; return *this;};
+
   void stripStamp(T & output) { output = data_;};
 };
 

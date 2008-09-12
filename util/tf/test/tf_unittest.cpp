@@ -1,7 +1,8 @@
 #include <gtest/gtest.h>
-#include <libTF/libTF.h>
+#include <tf/tf.h>
 #include <math_utils/angles.h>
 #include <sys/time.h>
+#include "LinearMath/btVector3.h"
 
 
 void seed_rand()
@@ -12,7 +13,71 @@ void seed_rand()
   srand(temp_time_struct.tv_usec);
 };
 
-using namespace libTF;
+using namespace tf;
+
+
+TEST(tf, ListBuilding)
+{
+  unsigned int runs = 2;
+
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> values(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    //    printf("%d %g\n",i,values[i]);
+
+
+    /*    mTR.setWithEulers("2",
+                      "1",
+                      values[i],
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      0.0,
+                      10 + i);
+    */
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(values[i],0,0)), 10 + i, "child");
+    mTR.setTransform(tranStamped, "my_parent");
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(values[i],0,0)), 10 + i, "my_parent");
+    mTR.setTransform(tranStamped2, "my_parent2");
+  }
+
+  std::cout << mTR.allFramesAsString() << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
+
+    /*    libTF::TFPose2D inpose;
+    inpose.x = 0.0;
+    inpose.y = 0.0;
+    inpose.yaw = 0.0;
+    inpose.frame = "2";
+    inpose.time = 10 + i;
+    */
+    try{
+    Stamped<btTransform> outpose;
+    mTR.transformStamped("child",inpose, outpose);
+    EXPECT_EQ(outpose.data_.getOrigin().x(), values[i]);
+    }
+    catch (tf::TFException & ex)
+    {
+      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
+
+
+#ifdef UNDEFINED
 /** @todo Make this actually Assert something */
 
 TEST(libTF, DataTypes)
@@ -421,7 +486,7 @@ TEST(libTF, Interpolation)
   }
 }
 
-
+#endif //0
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

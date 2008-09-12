@@ -17,7 +17,9 @@ namespace tf
 class  TransformStorage : public Stamped<btTransform>
 {
 public:
-  int parent_frame_id;
+  TransformStorage(){};
+  TransformStorage(const Stamped<btTransform>& data, unsigned int parent_id): Stamped<btTransform>(data), parent_frame_id(parent_id){}; 
+  unsigned int parent_frame_id;
 };
 
 
@@ -42,8 +44,6 @@ class TimeCache
     {};
   
 
-  void clearCache(void);
-  
   int64_t getData(uint64_t time, TransformStorage & data_out); //returns distance in time to nearest value
 
   void insertData(const TransformStorage& new_data)
@@ -91,6 +91,7 @@ class TimeCache
       {
         storage_.pop_back();
       }
+
       storage_lock_.unlock();
     };
 
@@ -119,7 +120,7 @@ class TimeCache
       }
       else
       {
-        if(interpolating_)
+        if(interpolating_ && ( p_temp_1.parent_frame_id == p_temp_2.parent_frame_id) ) // if we're interpolating and haven't reparented
           interpolate(p_temp_1, p_temp_2, time, data_out);
         else
           data_out = p_temp_1;
@@ -234,6 +235,8 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
   one.data_.getBasis().getRotation(q1);
   two.data_.getBasis().getRotation(q2);
   output.data_.setRotation(slerp( q1, q2 , ratio));
+  output.frame_id_ = one.frame_id_;
+  output.parent_frame_id = one.parent_frame_id;
 };
 
 

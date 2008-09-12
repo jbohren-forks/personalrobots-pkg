@@ -43,7 +43,7 @@ Transformer::Transformer(bool interpolating,
   max_extrapolation_distance(max_extrapolation_distance)
 {
   frameIDs_["NO_PARENT"] = 0;
-  frames_.push_back( new TimeCache(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
+  frames_.push_back(NULL);// new TimeCache(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
   frameIDs_reverse.push_back("NO_PARENT");
 
   return;
@@ -72,35 +72,46 @@ void Transformer::clear()
   frame_mutex_.unlock();
 }
 
-
-
-/*AT::Matrix Transformer::getMatrix(const std::string & target_frame, const std::string & source_frame, uint64_t time)
+void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& parent_id)
 {
-  unsigned int target_frame_num = lookup(target_frame);
-  unsigned int source_frame_num = lookup(source_frame);
-  NEWMAT::Matrix myMat(4,4);
-  TransformLists lists = lookUpList(target_frame_num, source_frame_num);
-  myMat = computeTransformFromList(lists,time);
-  return myMat;
-}
-*/
+  getFrame(lookupFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupFrameNumber(parent_id)));
+  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
+};
+  
 
-
-/*void lookupTransform(const std::string& target_frame, const std::string& source_frame, 
+void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame, 
                      uint64_t time, Stamped<btTransform>& transform)
 {
-  lookupTransform(lookupFrameID( target_frame),lookupFrameID( source_frame), uint64_t time, Stamped<btTransform>& transform);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), time, 0);
+
+  transform.data_ = computeTransformFromList(t_list);
+  transform.stamp_ = time;
+  transform.frame_id_ = target_frame;
+
 };
-*/
 
-//void Transformer::lookupTransform(unsigned int target_frame,unsigned int source_frame, uint64_t time, Stamped<btTransform>& transform)
+void Transformer::lookupTransform(const std::string& target_frame, uint64_t target_time, const std::string& source_frame, 
+                     uint64_t source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( source_frame), source_time, lookupFrameNumber(fixed_frame));
 
-TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int source_frame, uint64_t time)
+  transform.data_ = computeTransformFromList(t_list);
+  transform.stamp_ = target_time;
+  transform.frame_id_ = target_frame;
+
+};
+
+
+
+
+TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t target_time, unsigned int source_frame, uint64_t source_time, unsigned int fixed_frame)
 {
   /*  timeval tempt;
   gettimeofday(&tempt,NULL);
   std::cerr << "Looking up list at " <<tempt.tv_sec * 1000000ULL + tempt.tv_usec << std::endl;
   */
+
+  ///\todo add fixed frame support
 
   TransformLists mTfLs;
 
@@ -112,12 +123,20 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
     throw LookupException("Frame didn't exist");
   while (true)
     {
+      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
 
       TimeCache* pointer = getFrame(frame);
       if (pointer == NULL) break;
 
-      pointer->getData(time, temp);
-      mTfLs.inverseTransforms.push_back(TransformWithID(temp.stamp_, temp.data_));
+      try{
+        pointer->getData(source_time, temp);
+      }
+      catch (tf::LookupException & ex)
+      {
+        // this is thrown when there is no data
+        break;
+      }
+      mTfLs.inverseTransforms.push_back((Stamped<btTransform>)temp);
 
       frame = temp.parent_frame_id;
 
@@ -145,8 +164,20 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
       if (pointer == NULL) break;
 
 
-      pointer->getData(time, temp);
-      mTfLs.forwardTransforms.push_back(TransformWithID(temp.stamp_, temp.data_));
+      try{
+        printf("trying\n");
+        pointer->getData(target_time, temp);
+      }
+      catch (tf::LookupException & ex)
+      {
+        std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
+        // this is thrown when there is no data for the link
+        break;
+      }
+      printf("done trying\n");
+      std::cout << "pushing back" << temp.frame_id_ << std::endl;
+      //      printf("pushing back forward %d\n", temp.frame_id_);
+      mTfLs.forwardTransforms.push_back((Stamped<btTransform>)temp);
 
       frame = temp.parent_frame_id;
 
@@ -172,10 +203,12 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
       ss<< "No Common ParentD" << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
-    if (mTfLs.forwardTransforms.back().frame_id != source_frame)
+    if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != source_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentC" << std::endl << allFramesAsString() << std::endl;
+      ss<< "No Common ParentC forward.back ="<< mTfLs.forwardTransforms.back().frame_id_ << " but source frame =" 
+        << frameIDs_reverse[source_frame]
+        << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" << std::endl;
       throw(ConnectivityException(ss.str()));
     }
   }
@@ -188,7 +221,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
       ss<< "No Common ParentB" << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
-    if (mTfLs.inverseTransforms.back().frame_id != target_frame)
+    if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != target_frame)
     {
       std::stringstream ss;
       ss<< "No Common ParentA" << std::endl << allFramesAsString() << std::endl;
@@ -196,22 +229,24 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
     }
   }
   
+  printf("forward size %d, inverse size %d\n", mTfLs.forwardTransforms.size(), mTfLs.inverseTransforms.size());
+
   /* Make sure the end of the search shares a parent. */
-  if (mTfLs.inverseTransforms.back().frame_id != mTfLs.forwardTransforms.back().frame_id)
+  if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_)) /// \todo rethink since the map is actually doing a string comparison inside
   {
     std::stringstream ss;
-    ss<< "No Common Parent, at top of search" << std::endl << allFramesAsString() << std::endl;
+    ss<< "No Common Parent, at top of search inverse:"<<mTfLs.inverseTransforms.back().frame_id_ << " vs forward:" << mTfLs.forwardTransforms.back().frame_id_ << std::endl << allFramesAsString() << std::endl;
     throw(ConnectivityException(ss.str()));
   }
   /* Make sure that we don't have a no parent at the top */
-  if (mTfLs.inverseTransforms.back().frame_id == 0 ||  mTfLs.forwardTransforms.back().frame_id == 0)
+  if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) == 0 || lookupFrameNumber( mTfLs.forwardTransforms.back().frame_id_) == 0)
     throw(ConnectivityException("NO_PARENT at top of tree"));
   /*
   gettimeofday(&tempt2,NULL);
   std::cerr << "Base Cases done" <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
   */
   
-  while (mTfLs.inverseTransforms.back().frame_id == mTfLs.forwardTransforms.back().frame_id)
+  while (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) == lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_))
   {
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
@@ -230,7 +265,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame,unsigned int s
 
 }
 
-btTransform Transformer::computeTransformFromList(const TransformLists & lists, uint64_t time)
+btTransform Transformer::computeTransformFromList(const TransformLists & lists)
 {
   btTransform retTrans;
   
@@ -238,24 +273,24 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists, 
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       try {
-        retTrans *= (lists.inverseTransforms[lists.inverseTransforms.size() -1 - i]).transform; //Reverse to get left multiply
+        retTrans *= (lists.inverseTransforms[lists.inverseTransforms.size() -1 - i]).data_; //Reverse to get left multiply
       }
       catch (tf::ExtrapolationException &ex)
       {
         std::stringstream ss;
-        ss << "Frame "<< lists.inverseTransforms[lists.inverseTransforms.size() -1 - i].frame_id << " is out of date. " << ex.what();
+        ss << "Frame "<< lists.inverseTransforms[lists.inverseTransforms.size() -1 - i].frame_id_ << " is out of date. " << ex.what();
         throw ExtrapolationException(ss.str());
       }
     }
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       try {
-        retTrans *= (lists.forwardTransforms[i]).transform.inverse(); //Do this list backwards(from backwards) for it was generated traveling the wrong way
+        retTrans *= (lists.forwardTransforms[i]).data_.inverse(); //Do this list backwards(from backwards) for it was generated traveling the wrong way
       }
       catch (tf::ExtrapolationException &ex)
       {
         std::stringstream ss;
-        ss << "Frame "<< lists.forwardTransforms[i].frame_id << " is out of date. " << ex.what();
+        ss << "Frame "<< lists.forwardTransforms[i].frame_id_ << " is out of date. " << ex.what();
         throw ExtrapolationException(ss.str());
       }
     }
@@ -264,22 +299,22 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists, 
 }
 
 
-std::string Transformer::chainAsString(const std::string & target_frame, const std::string & source_frame, uint64_t time)
+std::string Transformer::chainAsString(const std::string & target_frame, uint64_t target_time, const std::string & source_frame, uint64_t source_time, const std::string& fixed_frame)
 {
   std::stringstream mstream;
-  TransformLists lists = lookupLists(lookupFrameID(target_frame), lookupFrameID(source_frame), time);
+  TransformLists lists = lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame), source_time, lookupFrameNumber(fixed_frame));
 
   mstream << "Inverse Transforms:" <<std::endl;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      mstream << lists.inverseTransforms[i].frame_id<<", ";
+      mstream << lists.inverseTransforms[i].frame_id_<<", ";
     }
   mstream << std::endl;
 
   mstream << "Forward Transforms: "<<std::endl ;
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
-      mstream << lists.forwardTransforms[i].frame_id<<", ";
+      mstream << lists.forwardTransforms[i].frame_id_<<", ";
     }
   mstream << std::endl;
   return mstream.str();
@@ -289,11 +324,24 @@ std::string Transformer::allFramesAsString()
 {
   std::stringstream mstream;
   frame_mutex_.lock();
+
+  TransformStorage temp;
+
   
+
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    mstream << "Frame "<< counter << " exists with parent " << /*frames_[counter]->getParent() <<*/ "." <<std::endl; /** \todo fixme */
+    unsigned int parent_id;
+    try{
+      getFrame(counter)->getData(0, temp);
+      parent_id = temp.parent_frame_id;
+    }
+    catch (tf::LookupException& ex)
+    {
+      parent_id = 0;
+    }
+    mstream << "Frame "<< frameIDs_reverse[counter] << " exists with parent " << frameIDs_reverse[parent_id] << "." <<std::endl;
   }
   frame_mutex_.unlock();
   return mstream.str();
@@ -306,19 +354,8 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
     return NULL;
   else 
     return frames_[frame_id];
-
-  /*  frame_mutex_.lock();
-  std::map<unsigned int, TimeCache*>::const_iterator it = frames_.find(frame_id);
-  bool found = it != frames_.end();
-  TimeCache *frame = found ? it->second : NULL;
-  frame_mutex_.unlock();
-  
-  if (!found){ 
-    return NULL; // @todo check where HOBBLED THROW may effect
-    std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
-                             << " Frames Present are: " <<std::endl << allFramesAsString() <<std::endl; 
-    throw LookupException(ss.str());
-  }
-  return frame;
-  */
 };
+
+
+
+

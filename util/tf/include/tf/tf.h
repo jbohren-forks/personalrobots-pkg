@@ -60,8 +60,8 @@ public:
    * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
   typedef struct 
   {
-    std::vector<TransformWithID> inverseTransforms;
-    std::vector<TransformWithID> forwardTransforms;
+    std::vector<Stamped<btTransform> > inverseTransforms;
+    std::vector<Stamped<btTransform> > forwardTransforms;
   } TransformLists;
 
 /** \brief A Class which provides coordinate transforms between any two frames in a system. 
@@ -107,7 +107,6 @@ public:
   void setTransform(const Stamped<btTransform>& transform, const std::string& parent_id);
 
 
-
   /*********** Accessors *************/
 
   /** \brief Get the transform between two frames by frame ID.  
@@ -137,7 +136,7 @@ public:
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string chainAsString(const std::string & target_frame, const std::string & source_frame, uint64_t time);
+  std::string chainAsString(const std::string & target_frame, uint64_t target_time, const std::string & source_frame, uint64_t source_time, const std::string & fixed_frame);
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
@@ -190,7 +189,7 @@ protected:
    */
   TimeCache* getFrame(unsigned int frame_number);
 
-  unsigned int lookupFrameID(const std::string& frameid_str){
+  unsigned int lookupFrameNumber(const std::string& frameid_str){
     unsigned int retval = 0;
     frame_mutex_.lock();
     std::map<std::string, unsigned int>::iterator it = frameIDs_.find(frameid_str);
@@ -207,13 +206,44 @@ protected:
     return retval;
   };
 
+  std::string lookupFrameString(unsigned int frame_id_num)
+  {
+    if (frame_id_num >= frameIDs_reverse.size())
+    {
+      std::stringstream ss;
+      ss << "Reverse lookup of frame id " << frame_id_num << " failed!";
+      throw LookupException(ss.str());
+    }
+    else 
+      return frameIDs_reverse[frame_id_num];
+
+  };
+
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookupLists(unsigned int target_frame, unsigned int source_frame, uint64_t time);
+  TransformLists  lookupLists(unsigned int target_frame, uint64_t target_time, unsigned int source_frame, uint64_t souce_time, unsigned int fixed_frame);
   
   /** Compute the transform based on the list of frames */
-  btTransform computeTransformFromList(const TransformLists & list, uint64_t time);
+  btTransform computeTransformFromList(const TransformLists & list);
 
 };
+
+
+template<typename T>
+void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+
+  stamped_out.data_ = transform * stamped_out.data_;  ///\todo bt supports vector and transform, need to define transform on quaternion method
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
+
+
+
+
+
 }
 #endif //LIBTF_HH
