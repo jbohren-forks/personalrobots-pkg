@@ -301,7 +301,7 @@ void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, uns
   state.num_encoder_errors_ = current_status.num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
 
-  state.motor_voltage_ = int(current_status.motor_voltage_ * config_info_.nominal_voltage_scale_);
+  state.motor_voltage_ = current_status.motor_voltage_ * config_info_.nominal_voltage_scale_;
 }
 
 void WG05::verifyState(unsigned char *buffer)

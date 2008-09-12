@@ -175,7 +175,7 @@ struct WG05Status
   uint16_t board_temperature_;
   uint16_t bridge_temperature_;
   uint16_t supply_voltage_;
-  uint16_t motor_voltage_;
+  int16_t motor_voltage_;
   uint16_t packet_count_;
   uint8_t pad_;
   uint8_t checksum_;
