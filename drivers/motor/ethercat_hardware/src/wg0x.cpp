@@ -36,7 +36,7 @@
 
 #include <ros/node.h>
 
-#include <ethercat_hardware/wg05.h>
+#include <ethercat_hardware/wg0x.h>
 
 #include <dll/ethercat_dll.h>
 #include <al/ethercat_AL.h>
