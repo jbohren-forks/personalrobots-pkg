@@ -73,8 +73,8 @@ public:
   TestActuators(Entity *parent);
   virtual ~TestActuators();
 
-  //void LoadFrameTransformOffsets();
-  //void PublishFrameTransforms();
+  void LoadFrameTransformOffsets();
+  void PublishFrameTransforms();
   int AdvertiseSubscribeMessages();
 
 protected:
@@ -186,6 +186,17 @@ private:
 
   // pointer to ros node
   ros::node *rosnode_;
+
+  // transform server
+  private: rosTFServer *tfs;
+  double base_center_offset_z;
+  double base_laser_offset_x;
+  double base_laser_offset_y;
+  double base_laser_offset_z;
+  double tilt_laser_offset_x;
+  double tilt_laser_offset_y;
+  double tilt_laser_offset_z;
+
 
 };
 

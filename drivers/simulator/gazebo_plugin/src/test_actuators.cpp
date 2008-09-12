@@ -70,6 +70,10 @@ namespace gazebo {
       rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
       printf("-------------------- starting node in test actuators \n");
     }
+
+    // for publishing frame transforms
+    tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
+
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
 
@@ -196,6 +200,8 @@ namespace gazebo {
     pr2Description.getLinks(pr2Links);
     std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
 
+    // as the name states
+    LoadFrameTransformOffsets();
     //-----------------------------------------------------------------------------------------
     //
     // ACTUATOR XML
@@ -471,6 +477,8 @@ namespace gazebo {
     if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
     rosnode_->publish("right_pr2arm_pos", rarm);
 
+    PublishFrameTransforms();
+
     this->lock.unlock();
   }
 
@@ -566,6 +574,120 @@ namespace gazebo {
     
     return(0);
   }
+
+
+  void
+  TestActuators::LoadFrameTransformOffsets()
+  {
+    // get all links in pr2.xml
+    robot_desc::URDF::Link* link;
+
+    // get all the parameters needed for frame transforms
+    link = pr2Description.getLink("base");
+    if (link)
+    {
+      base_center_offset_z = link->collision->xyz[2];
+    }
+    // get all the parameters needed for frame transforms
+    link = pr2Description.getLink("base_laser");
+    if (link)
+    {
+      base_laser_offset_x = link->xyz[0];
+      base_laser_offset_y = link->xyz[1];
+      base_laser_offset_z = link->xyz[2];
+    }
+    link = pr2Description.getLink("tilt_laser");
+    if (link)
+    {
+      tilt_laser_offset_x = link->xyz[0];
+      tilt_laser_offset_y = link->xyz[1];
+      tilt_laser_offset_z = link->xyz[2];
+    }
+
+  }
+
+
+  void
+  TestActuators::PublishFrameTransforms()
+  {
+
+
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    // FIXME: the frame transforms should be published by individual mechanism joints, not here
+    /***************************************************************/
+    /*                                                             */
+    /*  frame transforms                                           */
+    /*                                                             */
+    /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
+    /*        localization                                         */
+    /*                                                             */
+    /***************************************************************/
+    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
+    controller::Controller* bc = mc_.getControllerByName( "base_controller" );
+    controller::BaseControllerNode* bcn = dynamic_cast<controller::BaseControllerNode*>(bc);
+    if (bcn) bcn->getOdometry(x,y,yaw,vx,vy,vyaw);
+
+    // FIXME: z, roll, pitch not accounted for
+    tfs->sendInverseEuler("FRAMEID_ODOM",
+                 "base",
+                 x,
+                 y,
+                 z, //z - base_center_offset_z, /* get infor from xml: half height of base box */
+                 yaw,
+                 pitch,
+                 roll,
+                 timeMsg.rostime);
+
+    /***************************************************************/
+    /*                                                             */
+    /*  frame transforms                                           */
+    /*                                                             */
+    /*  x,y,z,yaw,pitch,roll                                       */
+    /*                                                             */
+    /***************************************************************/
+    tfs->sendEuler("base",
+                 "FRAMEID_ROBOT",
+                 0,
+                 0,
+                 0, 
+                 0,
+                 0,
+                 0,
+                 timeMsg.rostime);
+
+
+    // base laser location
+    tfs->sendEuler("base_laser",
+                 "base",
+                 base_laser_offset_x,
+                 base_laser_offset_y,
+                 base_laser_offset_z,
+                 0.0,
+                 0.0,
+                 0.0,
+                 timeMsg.rostime);
+
+    // tilt laser location
+    double tilt_laser_angle=0;
+    controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
+    controller::LaserScannerControllerNode* tlcn = dynamic_cast<controller::LaserScannerControllerNode*>(tlc);
+    if (tlcn) tilt_laser_angle = tlcn->getMeasuredPosition();
+    tfs->sendEuler("tilt_laser",
+                 "torso",
+                 tilt_laser_offset_x,
+                 tilt_laser_offset_y,
+                 tilt_laser_offset_z,
+                 0.0,
+                 tilt_laser_angle,
+                 0.0,
+                 timeMsg.rostime);
+  }
+
+
+
+
+
 
   void
   TestActuators::CmdLeftarmconfigReceived()
