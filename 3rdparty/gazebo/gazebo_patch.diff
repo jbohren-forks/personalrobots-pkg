@@ -1,6 +1,6 @@
 Index: player/SConscript
 ===================================================================
---- player/SConscript	(revision 7016)
+--- player/SConscript	(revision 7019)
 +++ player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
@@ -14,7 +14,7 @@ Index: player/SConscript
             'GazeboClient.cc',
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 7016)
+--- libgazebo/gazebo.h	(revision 7019)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -556,7 +556,7 @@
  
@@ -183,7 +183,7 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/SphereGeom.cc
 ===================================================================
---- server/physics/SphereGeom.cc	(revision 7016)
+--- server/physics/SphereGeom.cc	(revision 7019)
 +++ server/physics/SphereGeom.cc	(working copy)
 @@ -66,11 +66,18 @@
    this->radiusP->SetValue( radius );
@@ -209,7 +209,7 @@ Index: server/physics/SphereGeom.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/physics/BoxGeom.cc
 ===================================================================
---- server/physics/BoxGeom.cc	(revision 7016)
+--- server/physics/BoxGeom.cc	(revision 7019)
 +++ server/physics/BoxGeom.cc	(working copy)
 @@ -66,9 +66,18 @@
    this->sizeP->SetValue( size );
@@ -235,9 +235,9 @@ Index: server/physics/BoxGeom.cc
    // Create a box geometry with box mass matrix
 Index: server/physics/Geom.hh
 ===================================================================
---- server/physics/Geom.hh	(revision 7016)
+--- server/physics/Geom.hh	(revision 7019)
 +++ server/physics/Geom.hh	(working copy)
-@@ -171,6 +171,20 @@
+@@ -180,6 +180,20 @@
      ///  Mass as a double
      protected: ParamT<double> *massP;
  
@@ -260,7 +260,7 @@ Index: server/physics/Geom.hh
  
 Index: server/physics/Body.hh
 ===================================================================
---- server/physics/Body.hh	(revision 7016)
+--- server/physics/Body.hh	(revision 7019)
 +++ server/physics/Body.hh	(working copy)
 @@ -180,6 +180,7 @@
    
@@ -272,7 +272,7 @@ Index: server/physics/Body.hh
    /// \}
 Index: server/physics/HingeJoint.hh
 ===================================================================
---- server/physics/HingeJoint.hh	(revision 7016)
+--- server/physics/HingeJoint.hh	(revision 7019)
 +++ server/physics/HingeJoint.hh	(working copy)
 @@ -126,6 +126,7 @@
      private: ParamT<Vector3> *axisP;
@@ -284,7 +284,7 @@ Index: server/physics/HingeJoint.hh
    
 Index: server/physics/CylinderGeom.cc
 ===================================================================
---- server/physics/CylinderGeom.cc	(revision 7016)
+--- server/physics/CylinderGeom.cc	(revision 7019)
 +++ server/physics/CylinderGeom.cc	(working copy)
 @@ -64,11 +64,21 @@
    this->sizeP->SetValue( size );
@@ -312,7 +312,7 @@ Index: server/physics/CylinderGeom.cc
  //////////////////////////////////////////////////////////////////////////////
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7016)
+--- server/physics/Geom.cc	(revision 7019)
 +++ server/physics/Geom.cc	(working copy)
 @@ -73,6 +73,17 @@
  
@@ -406,7 +406,7 @@ Index: server/physics/Geom.cc
      dMassRotate(&this->bodyMass, r);
 Index: server/physics/Body.cc
 ===================================================================
---- server/physics/Body.cc	(revision 7016)
+--- server/physics/Body.cc	(revision 7019)
 +++ server/physics/Body.cc	(working copy)
 @@ -70,6 +70,7 @@
  
@@ -437,7 +437,7 @@ Index: server/physics/Body.cc
  
 Index: server/physics/HingeJoint.cc
 ===================================================================
---- server/physics/HingeJoint.cc	(revision 7016)
+--- server/physics/HingeJoint.cc	(revision 7019)
 +++ server/physics/HingeJoint.cc	(working copy)
 @@ -44,6 +44,7 @@
    this->axisP = new ParamT<Vector3>("axis",Vector3(0,1,0), 1);
@@ -466,7 +466,7 @@ Index: server/physics/HingeJoint.cc
  
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
---- server/physics/ode/ODEPhysics.hh	(revision 7016)
+--- server/physics/ode/ODEPhysics.hh	(revision 7019)
 +++ server/physics/ode/ODEPhysics.hh	(working copy)
 @@ -133,6 +133,7 @@
  
@@ -478,9 +478,20 @@ Index: server/physics/ode/ODEPhysics.hh
  /** \}*/
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 7016)
+--- server/physics/ode/ODEPhysics.cc	(revision 7019)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
-@@ -70,6 +70,7 @@
+@@ -44,6 +44,10 @@
+ #include "XMLConfig.hh"
+ #include "ODEPhysics.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -70,6 +74,7 @@
    Param::Begin(&this->parameters);
    this->globalCFMP = new ParamT<double>("cfm", 10e-5, 0);
    this->globalERPP = new ParamT<double>("erp", 0.2, 0);
@@ -488,7 +499,7 @@ Index: server/physics/ode/ODEPhysics.cc
    Param::End();
  }
  
-@@ -88,6 +89,7 @@
+@@ -88,6 +93,7 @@
  
    delete this->globalCFMP;
    delete this->globalERPP;
@@ -496,7 +507,7 @@ Index: server/physics/ode/ODEPhysics.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -103,6 +105,7 @@
+@@ -103,6 +109,7 @@
    this->updateRateP->Load(cnode);
    this->globalCFMP->Load(cnode);
    this->globalERPP->Load(cnode);
@@ -504,7 +515,7 @@ Index: server/physics/ode/ODEPhysics.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -115,6 +118,7 @@
+@@ -115,6 +122,7 @@
    stream << prefix << "  " << *(this->updateRateP) << "\n";
    stream << prefix << "  " << *(this->globalCFMP) << "\n";
    stream << prefix << "  " << *(this->globalERPP) << "\n";
@@ -512,9 +523,22 @@ Index: server/physics/ode/ODEPhysics.cc
    stream << prefix << "</physics:ode>\n";
  }
  
-@@ -137,8 +141,10 @@
+@@ -133,13 +141,29 @@
+ // Update the ODE engine
+ void ODEPhysics::Update()
+ {
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++  
+   // Do collision detection; this will add contacts to the contact group
    dSpaceCollide( this->spaceId, this, CollisionCallback );
  
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "    collision dt (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
    // Update the dynamical model
 -  dWorldStep( this->worldId, this->stepTimeP->GetValue() );
 -  //dWorldQuickStep(this->worldId, this->stepTime);
@@ -523,9 +547,15 @@ Index: server/physics/ode/ODEPhysics.cc
 +  else
 +    dWorldStep( this->worldId, this->stepTimeP->GetValue() );
  
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << "    ode step dt (" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
    // Very important to clear out the contact group
    dJointGroupEmpty( this->contactGroup );
-@@ -266,15 +272,16 @@
+ 
+@@ -266,15 +290,16 @@
          contact.surface.mode = dContactSlip1 | dContactSlip2 | 
                                 dContactSoftERP | dContactSoftCFM |  
                                 dContactBounce | dContactMu2 | dContactApprox1;
@@ -546,7 +576,7 @@ Index: server/physics/ode/ODEPhysics.cc
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
 Index: server/physics/TrimeshGeom.cc
 ===================================================================
---- server/physics/TrimeshGeom.cc	(revision 7016)
+--- server/physics/TrimeshGeom.cc	(revision 7019)
 +++ server/physics/TrimeshGeom.cc	(working copy)
 @@ -208,7 +208,13 @@
  
@@ -565,7 +595,7 @@ Index: server/physics/TrimeshGeom.cc
    this->SetGeom(this->geomId, true);
 Index: server/sensors/Sensor.hh
 ===================================================================
---- server/sensors/Sensor.hh	(revision 7016)
+--- server/sensors/Sensor.hh	(revision 7019)
 +++ server/sensors/Sensor.hh	(working copy)
 @@ -70,6 +70,7 @@
  
@@ -585,7 +615,7 @@ Index: server/sensors/Sensor.hh
  #endif
 Index: server/sensors/ray/RaySensor.cc
 ===================================================================
---- server/sensors/ray/RaySensor.cc	(revision 7016)
+--- server/sensors/ray/RaySensor.cc	(revision 7019)
 +++ server/sensors/ray/RaySensor.cc	(working copy)
 @@ -273,7 +273,7 @@
  // Update the sensor information
@@ -598,7 +628,7 @@ Index: server/sensors/ray/RaySensor.cc
      Pose3d poseDelta;
 Index: server/sensors/Sensor.cc
 ===================================================================
---- server/sensors/Sensor.cc	(revision 7016)
+--- server/sensors/Sensor.cc	(revision 7019)
 +++ server/sensors/Sensor.cc	(working copy)
 @@ -33,6 +33,7 @@
  #include "ControllerFactory.hh"
@@ -635,9 +665,21 @@ Index: server/sensors/Sensor.cc
 +}
  
 +
+Index: server/Global.hh
+===================================================================
+--- server/Global.hh	(revision 7019)
++++ server/Global.hh	(working copy)
+@@ -88,4 +88,7 @@
+ 
+ #define GZ_DELETE(p) { if(p) { delete (p);  (p)=NULL; } }
+ 
++// Timing Debug
++//#define TIMING
++
+ #endif
 Index: server/Simulator.cc
 ===================================================================
---- server/Simulator.cc	(revision 7016)
+--- server/Simulator.cc	(revision 7019)
 +++ server/Simulator.cc	(working copy)
 @@ -72,6 +72,7 @@
    timeout(-1),
@@ -647,29 +689,44 @@ Index: server/Simulator.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -291,6 +292,9 @@
+@@ -291,6 +292,11 @@
    {
      currTime = this->GetRealTime();
  
-+    //double tmpT1 = this->GetWallTime();
-+    //fprintf(stderr, " before World::Instance()->Update() sim: %.5f t %.5f",this->simTime ,  tmpT1);
++#ifdef TIMING
++    double tmpT1 = this->GetWallTime();
++    std::cout << "CURRENT simTime(" << this->simTime << ") current world time (" << tmpT1 << ")" << std::endl;
++#endif
 +
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -315,6 +319,9 @@
+@@ -315,6 +321,11 @@
        World::Instance()->Update();
      }
  
-+    //double tmpT2 = this->GetWallTime();
-+    //fprintf(stderr, " world dt %.5f",tmpT2-tmpT1);
++#ifdef TIMING
++    double tmpT2 = this->GetWallTime();
++    std::cout << " World::Instance() TOTAL DT(" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
 +
      // Update the rendering
      if (renderUpdateRate == 0 || 
          currTime - this->prevRenderTime >= renderUpdatePeriod)
+@@ -327,6 +338,10 @@
+     if (this->gui)
+     {
+       this->gui->Update();
++#ifdef TIMING
++    double tmpT3 = this->GetWallTime();
++    std::cout << " GUI dt(" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
+     }
+ 
+     elapsedTime = (this->GetRealTime() - currTime);
 Index: server/XMLConfig.cc
 ===================================================================
---- server/XMLConfig.cc	(revision 7016)
+--- server/XMLConfig.cc	(revision 7019)
 +++ server/XMLConfig.cc	(working copy)
 @@ -513,29 +513,59 @@
  ///////////////////////////////////////////////////////////////////////////
@@ -747,7 +804,7 @@ Index: server/XMLConfig.cc
  
 Index: server/GazeboConfig.cc
 ===================================================================
---- server/GazeboConfig.cc	(revision 7016)
+--- server/GazeboConfig.cc	(revision 7019)
 +++ server/GazeboConfig.cc	(working copy)
 @@ -67,31 +67,34 @@
      this->gazeboPaths.push_back(gazebo_resource_path);
@@ -821,9 +878,80 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7019)
++++ server/Model.cc	(working copy)
+@@ -47,6 +47,10 @@
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -305,7 +309,7 @@
+ 
+   return this->InitChild();
+ }
+-
++  
+ ////////////////////////////////////////////////////////////////////////////////
+ // Update the model
+ int Model::Update()
+@@ -316,6 +320,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +332,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +345,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,6 +368,11 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
+   return this->UpdateChild();
+ }
+ 
 Index: server/gui/StatusBar.cc
 ===================================================================
---- server/gui/StatusBar.cc	(revision 7016)
+--- server/gui/StatusBar.cc	(revision 7019)
 +++ server/gui/StatusBar.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
@@ -835,7 +963,7 @@ Index: server/gui/StatusBar.cc
  #include <FL/Fl_Button.H>
 Index: server/gui/GLWindow.cc
 ===================================================================
---- server/gui/GLWindow.cc	(revision 7016)
+--- server/gui/GLWindow.cc	(revision 7019)
 +++ server/gui/GLWindow.cc	(working copy)
 @@ -227,21 +227,10 @@
      }
@@ -865,7 +993,7 @@ Index: server/gui/GLWindow.cc
      {
 Index: server/World.hh
 ===================================================================
---- server/World.hh	(revision 7016)
+--- server/World.hh	(revision 7019)
 +++ server/World.hh	(working copy)
 @@ -92,6 +92,26 @@
    /// \return Pointer to the physics engine
@@ -906,7 +1034,7 @@ Index: server/World.hh
  };
 Index: server/controllers/Controller.hh
 ===================================================================
---- server/controllers/Controller.hh	(revision 7016)
+--- server/controllers/Controller.hh	(revision 7019)
 +++ server/controllers/Controller.hh	(working copy)
 @@ -105,6 +105,9 @@
    /// \brief The entity that owns this controller
@@ -920,7 +1048,7 @@ Index: server/controllers/Controller.hh
    protected: ParamT<double> *updatePeriodP;
 Index: server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- server/controllers/camera/generic/Generic_Camera.cc	(revision 7016)
+--- server/controllers/camera/generic/Generic_Camera.cc	(revision 7019)
 +++ server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -86,7 +86,24 @@
  // Update the controller
@@ -950,7 +1078,7 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/controllers/Controller.cc
 ===================================================================
---- server/controllers/Controller.cc	(revision 7016)
+--- server/controllers/Controller.cc	(revision 7019)
 +++ server/controllers/Controller.cc	(working copy)
 @@ -43,6 +43,7 @@
  {
@@ -1010,7 +1138,7 @@ Index: server/controllers/Controller.cc
      if ((*iter)->GetOpenCount() > 0)
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
---- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7016)
+--- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7019)
 +++ server/controllers/ptz/generic/Generic_PTZ.cc	(working copy)
 @@ -70,10 +70,10 @@
  // Destructor
@@ -1029,7 +1157,7 @@ Index: server/controllers/ptz/generic/Generic_PTZ.cc
    this->tiltJoint = NULL;
 Index: server/World.cc
 ===================================================================
---- server/World.cc	(revision 7016)
+--- server/World.cc	(revision 7019)
 +++ server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -1057,24 +1185,27 @@ Index: server/World.cc
    this->toAddModels.clear();
    this->toDeleteModels.clear();
  
-@@ -185,6 +190,11 @@
+@@ -185,6 +190,12 @@
    std::vector< Model* >::iterator miter;
    std::vector< Model* >::iterator miter2;
  
 +  this->simTime += this->physicsEngine->GetStepTime();
 +
-+  //double tmpT1 = this->GetWallTime();
-+  //fprintf(stderr, " | sim ");
++#ifdef TIMING
++  double tmpT1 = this->GetWallTime();
++#endif
 +
    // Update all the models
    for (miter=this->models.begin(); miter!=this->models.end(); miter++)
    {
-@@ -194,14 +204,27 @@
+@@ -194,14 +205,33 @@
      }
    }
  
-+  //double tmpT2 = this->GetWallTime();
-+  //fprintf(stderr, " model dt: %.5f",tmpT2-tmpT1);
++#ifdef TIMING
++  double tmpT2 = this->GetWallTime();
++  std::cout << " models update dt(" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
 +
    if (!Simulator::Instance()->IsPaused() &&
         Simulator::Instance()->GetPhysicsEnabled())
@@ -1086,28 +1217,34 @@ Index: server/World.cc
 +    this->pauseTime += this->physicsEngine->GetStepTime();
 +  }
  
-+  //double tmpT3 = this->GetWallTime();
-+  //fprintf(stderr, " physics dt: %.5f",tmpT3-tmpT2);
++#ifdef TIMING
++  double tmpT3 = this->GetWallTime();
++  std::cout << " physics engine dt(" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
 +
    this->UpdateSimulationIface();
  
-+  //double tmpT4 = this->GetWallTime();
-+  //fprintf(stderr, " Iface dt: %.5f",tmpT4-tmpT3);
++#ifdef TIMING
++  double tmpT4 = this->GetWallTime();
++  std::cout << " sim Iface dt(" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
 +
    // Copy the newly created models into the main model vector
    std::copy(this->toAddModels.begin(), this->toAddModels.end(),
              std::back_inserter(this->models));
-@@ -219,6 +242,9 @@
+@@ -219,6 +249,11 @@
  
    this->toDeleteModels.clear();
  
-+  //double tmpT5 = this->GetWallTime();
-+  //fprintf(stderr, " add/del models dt: %.5f | ",tmpT5-tmpT4);
++#ifdef TIMING
++  double tmpT5 = this->GetWallTime();
++  std::cout << " add/del models dt(" << tmpT5-tmpT4 << ")" << std::endl;
++#endif
 +
    return 0;
  }
  
-@@ -273,6 +299,41 @@
+@@ -273,6 +308,41 @@
    return this->physicsEngine;
  }
  
@@ -1151,7 +1288,7 @@ Index: server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 7016)
+--- SConstruct	(revision 7019)
 +++ SConstruct	(working copy)
 @@ -22,8 +22,9 @@
  # 3rd party packages
