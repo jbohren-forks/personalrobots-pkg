@@ -27,7 +27,7 @@
 #define RADIUS 2
 #define MAXDISP 80
 #define XOFFSET 70
-#define NIMAGES 30
+#define NIMAGES 40
 
 struct calib_params{
 
@@ -618,7 +618,7 @@ ros_cloud.chan[0].set_vals_size(tot_points);
 for(j=0; j<h; j++)
 for(i=0; i<w; i++)
 if( disp[j*w+i] > 0) {
-	zf = (abs(cpar.tx) * cpar.feq) / ( (disp[j*w+i]*1.0) / SUBPIXEL) ;
+	zf = (abs(cpar.tx) * cpar.feq) / ( XOFFSET + ( (disp[j*w+i]*1.0) / SUBPIXEL) ) ;
 	xf = ((i - cpar.u0) * zf) / cpar.fx;
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
@@ -656,7 +656,7 @@ for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
 	}
 }}
 
-printf("Done; press q to quit, other key to continue.. \n");
+printf("Done; press q to quit, space-key to continue.. \n");
 
 cvShowImage("Disp Image", idisp);
 cvShowImage("Ref Image", left_frames[0]);
