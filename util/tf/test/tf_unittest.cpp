@@ -16,33 +16,25 @@ void seed_rand()
 using namespace tf;
 
 
-TEST(tf, ListBuilding)
+TEST(tf, ListBuildingAndLookup)
 {
-  unsigned int runs = 2;
-
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
-  std::vector<double> values(runs);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
   for ( unsigned int i = 0; i < runs ; i++ )
   {
-    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    //    printf("%d %g\n",i,values[i]);
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
 
-
-    /*    mTR.setWithEulers("2",
-                      "1",
-                      values[i],
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      10 + i);
-    */
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(values[i],0,0)), 10 + i, "child");
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child");
     mTR.setTransform(tranStamped, "my_parent");
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(values[i],0,0)), 10 + i, "my_parent");
+
+    /// \todo remove fix for graphing problem
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
     mTR.setTransform(tranStamped2, "my_parent2");
   }
 
@@ -52,19 +44,15 @@ TEST(tf, ListBuilding)
   for ( unsigned int i = 0; i < runs ; i++ )
 
   {
-    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
 
-    /*    libTF::TFPose2D inpose;
-    inpose.x = 0.0;
-    inpose.y = 0.0;
-    inpose.yaw = 0.0;
-    inpose.frame = "2";
-    inpose.time = 10 + i;
-    */
     try{
     Stamped<btTransform> outpose;
-    mTR.transformStamped("child",inpose, outpose);
-    EXPECT_EQ(outpose.data_.getOrigin().x(), values[i]);
+    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformStamped("my_parent",inpose, outpose);
+    EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
     }
     catch (tf::TFException & ex)
     {

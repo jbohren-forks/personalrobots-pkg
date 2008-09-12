@@ -235,7 +235,7 @@ void Transformer::transformStamped(const std::string& target_frame, const Stampe
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
   
   btTransform transform = computeTransformFromList(t_list);
-
+  
   stamped_out.data_ = transform * stamped_out.data_;  ///\todo bt supports vector and transform, need to define transform on quaternion method
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;

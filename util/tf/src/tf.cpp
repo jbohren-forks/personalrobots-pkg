@@ -268,7 +268,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t targ
 btTransform Transformer::computeTransformFromList(const TransformLists & lists)
 {
   btTransform retTrans;
-  
+  retTrans.setIdentity();
   ///@todo change these to iterators
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
