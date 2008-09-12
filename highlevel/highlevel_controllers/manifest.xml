@@ -4,7 +4,7 @@
 		    a given goal. All such controllers can be tasked with a goal, will report state periodically, can have a goal recalled,
 		    and operate with general semantics of being active or inactive.'>
 </description>
-<author>E. Gil Jones</author>
+<author>Conor McGann</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
@@ -12,5 +12,5 @@
 <depend package="robot_msgs"/>
 <depend package="robot_srvs"/>
 <depend package="pr2_msgs"/>
-<depend package="ompl"/>
+<depend package="kinematic_planning"/>
 </package>
