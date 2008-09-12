@@ -70,7 +70,7 @@ public:
   double last_commanded_effort_;
   double last_measured_effort_;
 
-  int motor_voltage_;
+  double motor_voltage_;
 
   int num_encoder_errors_;
   int num_communication_errors_;
