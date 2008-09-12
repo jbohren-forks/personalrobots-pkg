@@ -224,9 +224,8 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  // Only publish on every 100th call to update()
-  static int count = 0;
-  if (count++ % 100 == 0)
+  static double last_publish_time = 0.0;
+  if (mc_->hw_->current_time_ - last_publish_time > STATE_PUBLISHING_PERIOD)
   {
     assert(mc_->model_.joints_.size() == mechanism_state_.get_joint_states_size());
     for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
@@ -287,6 +286,8 @@ void MechanismControlNode::update()
       out.zr = quat.z;
     }
     transform_array_publisher_.publish(transform_array_msg_);
+
+    last_publish_time = mc_->hw_->current_time_;
   }
 }
 
