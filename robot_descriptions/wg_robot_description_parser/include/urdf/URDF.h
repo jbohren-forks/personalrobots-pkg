@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #ifndef URDF_PARSER_
 #define URDF_PARSER_

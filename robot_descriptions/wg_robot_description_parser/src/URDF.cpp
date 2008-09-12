@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #include <urdf/URDF.h>
 #include <math_utils/MathExpression.h>
@@ -1148,12 +1148,12 @@ namespace robot_desc {
 	    {
 		if (node->ValueStr() == "axis" && !free)
 		{
-		    if (loadDoubleValues(node, 3, joint->axis, "xyz"), true)
+		    if (loadDoubleValues(node, 3, joint->axis, "xyz", true))
 			MARK_SET(node, joint, axis);
 		}		
 		else if (node->ValueStr() == "anchor" && !free)
 		{
-		    if (loadDoubleValues(node, 3, joint->anchor, "xyz"), true)
+		    if (loadDoubleValues(node, 3, joint->anchor, "xyz", true))
 			MARK_SET(node, joint, anchor);
 		}		
 		else if (node->ValueStr() == "limit" && !free)
@@ -1175,12 +1175,12 @@ namespace robot_desc {
 		}
 		else if (node->ValueStr() == "safety_limit_min" && !free)
 		{
-		    if (loadDoubleValues(node, 1, joint->safetyLength + 0, "safety_length"))
+		    if (loadDoubleValues(node, 1, joint->safetyLength + 0, "safety_length", true))
 			MARK_SET(node, joint, safetyLengthMin);
 		}
 		else if (node->ValueStr() == "safety_limit_max" && !free)
 		{
-		    if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length"))
+		    if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length", true))
 			MARK_SET(node, joint, safetyLengthMax);
 		}
 		else if (node->ValueStr() == "calibration")
@@ -2128,8 +2128,17 @@ namespace robot_desc {
 		{
 		    if (joint->axis[0] == 0.0 && joint->axis[1] == 0.0 && joint->axis[2] == 0.0)
 			errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its axis properly set");
-		    if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC) && joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
-			errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set");
+		    if ((joint->isSet["limit"] || joint->type == Link::Joint::PRISMATIC))
+		    {
+			if (joint->limit[0] == 0.0 && joint->limit[1] == 0.0)
+			    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set (they are both 0)");
+			else
+			    if (joint->limit[0] > joint->limit[1])
+				errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set (max < min)");
+			    else
+				if (joint->limit[0] + joint->safetyLength[0] > joint->limit[1] - joint->safetyLength[1])
+				    errorMessage("Joint '" + joint->name + "' in link '" + links[i]->name + "' does not seem to have its limits properly set (max < min after safety length imposed)");
+		    }
 		}
 	    }
 	    else
