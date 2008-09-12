@@ -41,7 +41,7 @@
 #include <al/ethercat_master.h>
 #include <al/ethercat_slave_handler.h>
 
-#include <ethercat_hardware/wg05.h>
+#include <ethercat_hardware/wg0x.h>
 
 #include <boost/crc.hpp>
 
