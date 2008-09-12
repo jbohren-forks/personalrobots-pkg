@@ -148,7 +148,34 @@ public:
 	req.goal_state.set_vals_size(4);
 	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
 	    req.goal_state.vals[i] = 0.0;
-        req.goal_state.vals[0] = -1.3;    
+        req.goal_state.vals[0] = -1.5;    
+
+	req.allowed_time = 30.0;
+	
+	req.params.volumeMin.x = -5.0 + m_basePos[0];	req.params.volumeMin.y = -5.0 + m_basePos[1];	req.params.volumeMin.z = 0.0;
+	req.params.volumeMax.x = 5.0 + m_basePos[0];	req.params.volumeMax.y = 5.0 + m_basePos[1];	req.params.volumeMax.z = 0.0;
+	
+	performCall(req);
+    }
+    
+    
+    void runTestRightArmReverse(void)
+    {
+	robot_srvs::KinematicPlanState::request  req;
+	
+	req.params.model_id = "pr2::right_arm";
+	req.params.distance_metric = "L2Square";
+	req.params.planner_id = "SBL";
+	req.threshold = 0.01;
+	req.interpolate = 1;
+	req.times = 1;
+
+	initialState(req.start_state);
+	
+	req.goal_state.set_vals_size(4);
+	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	    req.goal_state.vals[i] = 0.0;
+	req.start_state.vals[3] = -1.5;    
 
 	req.allowed_time = 30.0;
 	
@@ -402,6 +429,9 @@ int main(int argc, char **argv)
 		break;
 	    case 'r':
 		plan->runTestRightArm();    
+		break;
+	    case 's':
+	        plan->runTestRightArmReverse();    
 		break;
 	    case 'e':
 		plan->runTestLeftEEf();    
