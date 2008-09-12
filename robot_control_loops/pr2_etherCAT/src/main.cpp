@@ -50,6 +50,7 @@ static struct
   char *interface_;
   char *xml_;
   bool allow_override_;
+  bool quiet_;
 } g_options;
 
 void Usage(string msg = "")
@@ -163,10 +164,13 @@ void warnOnSecondary(int sig)
 
   // Dump a backtrace of the frame which caused the switch to
   // secondary mode
-  nentries = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
-  backtrace_symbols_fd(bt, nentries, fileno(stdout));
-  printf("\n");
-  fflush(stdout);
+  if (!g_options.quiet_)
+  {
+    nentries = backtrace(bt, sizeof(bt) / sizeof(bt[0]));
+    backtrace_symbols_fd(bt, nentries, fileno(stdout));
+    printf("\n");
+    fflush(stdout);
+  }
 }
 
 static pthread_t rtThread;
@@ -187,11 +191,12 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
       {"help", no_argument, 0, 'h'},
       {"allow_override", no_argument, 0, 'a'},
+      {"quiet", no_argument, 0, 'q'},
       {"interface", required_argument, 0, 'i'},
       {"xml", required_argument, 0, 'x'},
     };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "ahi:x:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "ahi:qx:", long_options, &option_index);
     if (c == -1) break;
     switch (c)
     {
@@ -200,6 +205,9 @@ int main(int argc, char *argv[])
         break;
       case 'a':
         g_options.allow_override_ = 1;
+        break;
+      case 'q':
+        g_options.quiet_ = 1;
         break;
       case 'i':
         g_options.interface_ = optarg;
