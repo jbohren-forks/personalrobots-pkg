@@ -233,9 +233,10 @@ public:
   
   
   void run(string classifier_file, bool mouse) {
-    subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
+    //subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
     subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
     subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
+    subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
 
     d_.load(classifier_file);
 
@@ -248,49 +249,45 @@ public:
       cvSetMouseCallback("Classification Visualization", on_mouse, &mode );
     }
 
-    bool first = true;
+    bool xidxed = false;
     while(true) {
-      char c = cvWaitKey(5);
+      char c = cvWaitKey(20);
       if(c == 'q')
 	return;
-      if(c == ' ' || first) {
-	first = false;
+      if(c == ' ') {
 	if(img_)
 	  cvReleaseImage(&img_);
 	img_ = NULL;
 	has_img_ = has_ptcld_ = has_cal_params_ = false;
-	subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 1); 
-	
-	//Wait for a new videre/images.
-	cout << "waiting for messages" << endl;
-	while(!has_img_ || !has_ptcld_ || !has_cal_params_) 
-	  usleep(100000);
-	cout << "Done." << endl;
-	cvShowImage("Classification Visualization", vis_);
+	xidxed = false;
+      }
 
-	if(mouse) {
+      if(!has_img_ || !has_ptcld_ || !has_cal_params_) {
+	cout << "img " << has_img_ << ", ptcld " << has_ptcld_ << ", cal " << has_cal_params_ << endl;
+	continue;
+      }
+
+      cvShowImage("Classification Visualization", vis_);
+
+      if(mouse) {
+	if(!xidxed) {
 	  //Setup index of image points to 3d points.
 	  sls.loadMsgsFromMem(images_msg_, ptcld_msg_, cal_params_msg_);
 	  sls.projectAndCrossIndex();  //sls.xidx_ is available now.
+	  xidxed = true;
 	}
+	if(!g_recent_mouse_move) {
+	  continue;
+	}
+	g_recent_mouse_move = false;
 
-      }
-
-      if(has_img_)
-	unsubscribe(images_msg_);
-
-      if(mouse && !g_recent_mouse_move) {
-	continue;
-      }
-      g_recent_mouse_move = false;
-
-      if(mouse) {
 	int pt_id = sls.xidx_[g_mouse_y][g_mouse_x];
 	if(pt_id != -1) //If there's a corresponding 3d point.
 	  classifyPoint(pt_id);
       }
-      else
+      else {
 	classifyPoint();
+      }
     }
   }
 
