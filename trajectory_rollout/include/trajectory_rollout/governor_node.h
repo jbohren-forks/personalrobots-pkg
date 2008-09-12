@@ -55,13 +55,13 @@
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
 
-#define MAP_ROWS 10
-#define MAP_COLS 10
+#define MAP_SIZE_X 10
+#define MAP_SIZE_Y 10
 #define MAX_ACC_X 1.0
 #define MAX_ACC_Y 1.0
 #define MAX_ACC_THETA 1.0
 #define SIM_TIME 2.0
-#define SIM_STEPS 20
+#define SIM_STEPS 25
 #define VEL_SAMPLES 25
 
 class GovernorNode: public ros::node
@@ -79,6 +79,7 @@ class GovernorNode: public ros::node
     void processPlan();
 
     //sleep for remaining time of cycle
+    //TODO: ros::Duration.sleep --- check it out
     void sleep(double loopstart);
 
     //a map
@@ -109,6 +110,9 @@ class GovernorNode: public ros::node
 
     //how long for each cycle
     double cycle_time_;
+
+    //for debugging output
+    std_msgs::Polyline2D path_msg;
     
 
 };

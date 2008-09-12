@@ -43,10 +43,9 @@ class MapCell{
     MapCell();
 
     MapCell(const MapCell& mc);
-    MapCell(const MapCell* mc);
 
     //cell index in the grid map
-    unsigned ci, cj;
+    unsigned int cx, cy;
 
     //distance to planner's path
     double path_dist;

@@ -11,6 +11,7 @@
   <depend package="rosTF" />
   <depend package="xmlparam" />
   <depend package="rosTF" />
+  <depend package="rospy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

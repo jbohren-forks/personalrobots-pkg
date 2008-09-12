@@ -36,68 +36,95 @@
 using namespace std;
 using namespace trajectory_rollout;
 
-MapGrid::MapGrid(unsigned rows, unsigned cols) 
-  : rows_(rows), cols_(cols)
+MapGrid::MapGrid(unsigned int size_x, unsigned int size_y) 
+  : size_x_(size_x), size_y_(size_y)
 {
   //don't allow construction of zero size grid
-  assert(rows != 0 && cols != 0);
+  assert(size_y != 0 && size_x != 0);
 
-  map_.resize(rows * cols);
+  map_.resize(size_y * size_x);
 
   //make each cell aware of its location in the grid
-  for(unsigned int i = 0; i < rows; ++i){
-    for(unsigned int j = 0; j < cols; ++j){
-      map_[cols * i + j].ci = i;
-      map_[cols * i + j].cj = j;
+  for(unsigned int i = 0; i < size_y; ++i){
+    for(unsigned int j = 0; j < size_x; ++j){
+      map_[size_x * i + j].cx = j;
+      map_[size_x * i + j].cy = i;
     }
   }
 }
 
-MapCell& MapGrid::operator() (unsigned row, unsigned col){
-  assert(row < rows_ && col < cols_);
+MapCell& MapGrid::operator() (unsigned int x, unsigned int y){
+  assert(y < size_y_ && x < size_x_);
   //check for legal index
-  return map_[cols_ * row + col];
+  return map_[size_x_ * y + x];
 }
 
-MapCell MapGrid::operator() (unsigned row, unsigned col) const {
+MapCell MapGrid::operator() (unsigned int x, unsigned int y) const {
   //check for legal index
-  assert(row < rows_ && col < cols_);
-  return map_[cols_ * row + col];
+  assert(y < size_y_ && x < size_x_);
+  return map_[size_x_ * y + x];
 }
 
 
 MapGrid::MapGrid(const MapGrid& mg){
-  rows_ = mg.rows_;
-  cols_ = mg.cols_;
+  size_y_ = mg.size_y_;
+  size_x_ = mg.size_x_;
   map_ = mg.map_;
 }
 
+size_t MapGrid::getIndex(int x, int y){
+  return size_x_ * y + x;
+}
+
 MapGrid& MapGrid::operator= (const MapGrid& mg){
-  rows_ = mg.rows_;
-  cols_ = mg.cols_;
+  size_y_ = mg.size_y_;
+  size_x_ = mg.size_x_;
   map_ = mg.map_;
   return *this;
 }
 
 //allow easy updating from message representations
-void MapGrid::update(ScoreMap2D new_map){
-  if(map_.size() != new_map.rows * new_map.cols)
-    map_.resize(new_map.rows * new_map.cols);
+void MapGrid::update(ScoreMap2D& new_map){
+  if(map_.size() != new_map.size_y * new_map.size_x){
+    map_.resize(new_map.size_y * new_map.size_x);
+  }
 
-  rows_ = new_map.rows;
-  cols_ = new_map.cols;
+  size_y_ = new_map.size_y;
+  size_x_ = new_map.size_x;
   scale = new_map.scale;
   origin_x = new_map.origin.x;
   origin_y = new_map.origin.y;
 
-  for(unsigned int i = 0; i < rows_; ++i){
-    for(unsigned int j = 0; j < cols_; ++j){
-      int index = cols_ * i + j;
-      map_[index].ci = i;
-      map_[index].cj = j;
-      map_[index].path_dist = new_map.data[i].path_dist;
-      map_[index].goal_dist = new_map.data[i].goal_dist;
-      map_[index].occ_state = new_map.data[i].occ_state;
+  for(unsigned int i = 0; i < size_y_; ++i){
+    for(unsigned int j = 0; j < size_x_; ++j){
+      int index = size_x_ * i + j;
+      map_[index].cx = j;
+      map_[index].cy = i;
+      map_[index].path_dist = new_map.data[index].path_dist;
+      map_[index].goal_dist = new_map.data[index].goal_dist;
+      map_[index].occ_state = new_map.data[index].occ_state;
     }
   }
+}
+
+//allow easy creation of messages
+ScoreMap2D MapGrid::genMsg(){
+  ScoreMap2D map_msg;
+  map_msg.size_y = size_y_;
+  map_msg.size_x = size_x_;
+  map_msg.scale =scale;
+  map_msg.origin.x = origin_x;
+  map_msg.origin.y = origin_y;
+
+  map_msg.set_data_size(size_y_ * size_x_);
+
+  for(unsigned int i = 0; i < size_y_; ++i){
+    for(unsigned int j = 0; j < size_x_; ++j){
+      int index = size_x_ * i + j;
+      map_msg.data[i].path_dist = map_[index].path_dist;
+      map_msg.data[i].goal_dist = map_[index].goal_dist;
+      map_msg.data[i].occ_state =map_[index].occ_state;
+    }
+  }
+  return map_msg;
 }

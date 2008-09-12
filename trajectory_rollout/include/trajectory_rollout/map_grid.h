@@ -45,11 +45,11 @@
 //A grid of MapCells
 class MapGrid{
   public:
-    MapGrid(unsigned rows, unsigned cols);
+    MapGrid(unsigned int size_x, unsigned int size_y);
 
-    //cells will be accessed by (row, col)
-    MapCell& operator() (unsigned row, unsigned col);
-    MapCell operator() (unsigned row, unsigned col) const;
+    //cells will be accessed by (col, row)
+    MapCell& operator() (unsigned int x, unsigned int y);
+    MapCell operator() (unsigned int x, unsigned int y) const;
 
     ~MapGrid(){}
 
@@ -57,9 +57,14 @@ class MapGrid{
     MapGrid& operator= (const MapGrid& mg);
     
     //allow easy updating from message representations
-    void update(trajectory_rollout::ScoreMap2D new_map);
+    void update(trajectory_rollout::ScoreMap2D& new_map);
 
-    unsigned rows_, cols_;
+    size_t getIndex(int x, int y);
+
+    //allow easy creation of messages
+    trajectory_rollout::ScoreMap2D genMsg();
+
+    unsigned int size_x_, size_y_;
     std::vector<MapCell> map_;
 
     //lower left corner of grid in world space

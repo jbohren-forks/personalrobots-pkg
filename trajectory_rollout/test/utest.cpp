@@ -47,40 +47,40 @@ using namespace std;
 //make sure that we are getting the path distance map expected
 TEST(TrajectoryController, correctPathDistance){
   MapGrid mg(6, 6);
-  mg(2, 0).path_dist = 0.0;
-  mg(2, 1).path_dist = 0.0;
-  mg(3, 1).path_dist = 0.0;
-  mg(4, 1).path_dist = 0.0;
-  mg(4, 2).path_dist = 0.0;
-  mg(4, 3).path_dist = 0.0;
-  mg(3, 3).path_dist = 0.0;
-  mg(2, 3).path_dist = 0.0;
+  mg(0, 2).path_dist = 0.0;
+  mg(1, 2).path_dist = 0.0;
   mg(1, 3).path_dist = 0.0;
   mg(1, 4).path_dist = 0.0;
-  mg(1, 5).path_dist = 0.0;
-  mg(2, 5).path_dist = 0.0;
-  mg(3, 5).path_dist = 0.0;
+  mg(2, 4).path_dist = 0.0;
+  mg(3, 4).path_dist = 0.0;
+  mg(3, 3).path_dist = 0.0;
+  mg(3, 2).path_dist = 0.0;
+  mg(3, 1).path_dist = 0.0;
+  mg(4, 1).path_dist = 0.0;
+  mg(5, 1).path_dist = 0.0;
+  mg(5, 2).path_dist = 0.0;
+  mg(5, 3).path_dist = 0.0;
   
   //place some obstacles
-  mg(3,2).occ_state = 1;
-  mg(5,3).occ_state = 1;
-  mg(2,4).occ_state = 1;
-  mg(0,5).occ_state = 1;
+  mg(2, 3).occ_state = 1;
+  mg(3, 5).occ_state = 1;
+  mg(4, 2).occ_state = 1;
+  mg(5, 0).occ_state = 1;
 
   //create a trajectory_controller
-  TrajectoryController tc(mg, 1, 1, 1, 2.0, 20, 20, NULL);
+  TrajectoryController tc(mg, 2.0, 20, 20, NULL);
 
   tc.computePathDistance();
 
   //test enough of the 36 cell grid to be convinced
-  EXPECT_FLOAT_EQ(tc.map_(0,0).path_dist, 2.0);
-  EXPECT_FLOAT_EQ(tc.map_(1,0).path_dist, 1.0);
-  EXPECT_FLOAT_EQ(tc.map_(2,4).path_dist, DBL_MAX);
-  EXPECT_FLOAT_EQ(tc.map_(5,0).path_dist, sqrt(2));
-  EXPECT_FLOAT_EQ(tc.map_(0,4).path_dist, 1.0);
-  EXPECT_FLOAT_EQ(tc.map_(3,3).path_dist, 0.0);
-  EXPECT_FLOAT_EQ(tc.map_(0,1).path_dist, 2.0);
-  EXPECT_FLOAT_EQ(tc.map_(0,5).path_dist, DBL_MAX);
+  EXPECT_FLOAT_EQ(tc.map_(0, 0).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc.map_(0, 1).path_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc.map_(4, 2).path_dist, DBL_MAX);
+  EXPECT_FLOAT_EQ(tc.map_(0, 5).path_dist, sqrt(2));
+  EXPECT_FLOAT_EQ(tc.map_(4, 0).path_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc.map_(3, 3).path_dist, 0.0);
+  EXPECT_FLOAT_EQ(tc.map_(1, 0).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc.map_(5, 0).path_dist, DBL_MAX);
 
   //reset the map
   for(unsigned int i = 0; i < mg.map_.size(); ++i)
@@ -109,33 +109,32 @@ TEST(TrajectoryController, correctPathDistance){
 TEST(TrajectoryController, properIntegration){
   MapGrid mg(6, 6);
 
-  //create a path through the world
-  mg(2, 0).path_dist = 0.0;
-  mg(2, 1).path_dist = 0.0;
-  mg(3, 1).path_dist = 0.0;
-  mg(4, 1).path_dist = 0.0;
-  mg(4, 2).path_dist = 0.0;
-  mg(4, 3).path_dist = 0.0;
-  mg(3, 3).path_dist = 0.0;
-  mg(2, 3).path_dist = 0.0;
+  mg(0, 2).path_dist = 0.0;
+  mg(1, 2).path_dist = 0.0;
   mg(1, 3).path_dist = 0.0;
   mg(1, 4).path_dist = 0.0;
-  mg(1, 5).path_dist = 0.0;
-  mg(2, 5).path_dist = 0.0;
-  mg(3, 5).path_dist = 0.0;
-
+  mg(2, 4).path_dist = 0.0;
+  mg(3, 4).path_dist = 0.0;
+  mg(3, 3).path_dist = 0.0;
+  mg(3, 2).path_dist = 0.0;
+  mg(3, 1).path_dist = 0.0;
+  mg(4, 1).path_dist = 0.0;
+  mg(5, 1).path_dist = 0.0;
+  mg(5, 2).path_dist = 0.0;
+  mg(5, 3).path_dist = 0.0;
+  
   //place some obstacles
-  mg(3,2).occ_state = 1;
-  mg(5,3).occ_state = 1;
-  mg(2,4).occ_state = 1;
-  mg(0,5).occ_state = 1;
+  mg(2, 3).occ_state = 1;
+  mg(3, 5).occ_state = 1;
+  mg(4, 2).occ_state = 1;
+  mg(5, 0).occ_state = 1;
 
   //create a trajectory_controller
-  TrajectoryController tc(mg, 1, 1, 1, 2.0, 20, 20, NULL);
+  TrajectoryController tc(mg, 2.0, 20, 20, NULL);
 
   tc.computePathDistance();
 
-  Trajectory t1 = tc.generateTrajectory(2, 1, 0, 0, 0, 0, 1, 1, 1);
+  Trajectory t1 = tc.generateTrajectory(2, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1);
 
   //check x integration fo position and velocity
   EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].x_, 3.45);
@@ -169,16 +168,16 @@ TEST(MapGrid, properGridConstruction){
 
   for(int i = 0; i < 10; ++i){
     for(int j = 0; j < 10; ++j){
-      mc.ci = i;
-      mc.cj = j;
+      mc.cx = i;
+      mc.cy = j;
       mg(i, j) = mc;
     }
   }
 
   for(int i = 0; i < 10; ++i){
     for(int j = 0; j < 10; ++j){
-      EXPECT_FLOAT_EQ(mg(i, j).ci, i);
-      EXPECT_FLOAT_EQ(mg(i, j).cj, j);
+      EXPECT_FLOAT_EQ(mg(i, j).cx, i);
+      EXPECT_FLOAT_EQ(mg(i, j).cy, j);
     }
   }
 }
