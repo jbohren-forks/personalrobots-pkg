@@ -1,0 +1,15 @@
+<package>
+  <description>
+    Calonder features.
+  </description>
+  <author>Patrick</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="boost"/>
+  <depend package="opencv_latest"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lcalonder"/>
+  </export>
+
+
+</package>

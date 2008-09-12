@@ -1,0 +1,13 @@
+Dependencies:
+  - OpenCV
+  - Boost (headers only for the library)
+    The Makefiles assume $BOOST_ROOT is set appropriately.
+    Some programs in src/test/ require Boost.ProgramOptions and
+    Boost.Filesystem binary libraries.
+  - GSL (could be removed)
+    sudo apt-get install libgsl0 libgsl0-dev
+
+The top-level Makefile builds libsignatures.so in lib/.
+
+example/example.cpp shows how to detect keypoints, compute their
+signatures, and match them.
