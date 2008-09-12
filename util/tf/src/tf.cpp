@@ -75,7 +75,7 @@ void Transformer::clear()
 void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& parent_id)
 {
   getFrame(lookupFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupFrameNumber(parent_id)));
-  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
+  //  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
 };
   
 
@@ -123,7 +123,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t targ
     throw LookupException("Frame didn't exist");
   while (true)
     {
-      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
+      //      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
 
       TimeCache* pointer = getFrame(frame);
       if (pointer == NULL) break;
@@ -165,18 +165,15 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t targ
 
 
       try{
-        printf("trying\n");
         pointer->getData(target_time, temp);
       }
       catch (tf::LookupException & ex)
       {
-        std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
+        //        std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
         // this is thrown when there is no data for the link
         break;
       }
-      printf("done trying\n");
-      std::cout << "pushing back" << temp.frame_id_ << std::endl;
-      //      printf("pushing back forward %d\n", temp.frame_id_);
+      //      std::cout << "pushing back" << temp.frame_id_ << std::endl;
       mTfLs.forwardTransforms.push_back((Stamped<btTransform>)temp);
 
       frame = temp.parent_frame_id;
@@ -229,7 +226,6 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t targ
     }
   }
   
-  printf("forward size %d, inverse size %d\n", mTfLs.forwardTransforms.size(), mTfLs.inverseTransforms.size());
 
   /* Make sure the end of the search shares a parent. */
   if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_)) /// \todo rethink since the map is actually doing a string comparison inside
