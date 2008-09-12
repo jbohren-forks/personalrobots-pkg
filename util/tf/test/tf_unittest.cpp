@@ -16,7 +16,98 @@ void seed_rand()
 using namespace tf;
 
 
-TEST(tf, ListBuildingAndLookup)
+TEST(tf, ListOneForward)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child");
+    mTR.setTransform(tranStamped, "my_parent");
+  }
+
+  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
+
+    try{
+    Stamped<btTransform> outpose;
+    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformStamped("my_parent",inpose, outpose);
+    EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
+    }
+    catch (tf::TFException & ex)
+    {
+      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
+
+TEST(tf, ListOneInverse)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child");
+    mTR.setTransform(tranStamped, "my_parent");
+  }
+
+  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
+
+    try{
+    Stamped<btTransform> outpose;
+    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformStamped("child",inpose, outpose);
+    EXPECT_NEAR(outpose.data_.getOrigin().x(), -xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().y(), -yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().z(), -zvalues[i], epsilon);
+    }
+    catch (tf::TFException & ex)
+    {
+      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
+
+
+TEST(tf, TransformTransformsCartesian)
 {
   unsigned int runs = 400;
   double epsilon = 1e-6;
@@ -38,7 +129,7 @@ TEST(tf, ListBuildingAndLookup)
     mTR.setTransform(tranStamped2, "my_parent2");
   }
 
-  std::cout << mTR.allFramesAsString() << std::endl;
+  //std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
   for ( unsigned int i = 0; i < runs ; i++ )
@@ -53,6 +144,54 @@ TEST(tf, ListBuildingAndLookup)
     EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
+    }
+    catch (tf::TFException & ex)
+    {
+      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
+TEST(tf, TransformVector3Cartesian)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child");
+    mTR.setTransform(tranStamped, "my_parent");
+
+    /// \todo remove fix for graphing problem
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
+    mTR.setTransform(tranStamped2, "my_parent2");
+  }
+
+  //  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btVector3> invec (btVector3(0,0,0), 10 + i, "child");
+
+    try{
+    Stamped<btVector3> outvec(btVector3(0,0,0), 10 + i, "child");
+    //    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformStamped("my_parent",invec, outvec);
+    EXPECT_NEAR(outvec.data_.x(), xvalues[i], epsilon);
+    EXPECT_NEAR(outvec.data_.y(), yvalues[i], epsilon);
+    EXPECT_NEAR(outvec.data_.z(), zvalues[i], epsilon);
     }
     catch (tf::TFException & ex)
     {
