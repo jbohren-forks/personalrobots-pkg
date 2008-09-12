@@ -12,6 +12,10 @@
 #include <smartScan.h>
 #include <iostream>
 #include <fstream>
+#include <calonder_descriptor/matcher.h>
+#include <calonder_descriptor/rtree_classifier.h>
+#include <cvwimage.h>
+
 
 class Descriptor 
 {
@@ -21,7 +25,7 @@ class Descriptor
   unsigned int result_size_; 
 
   //Unfortunately ss cannot be const because it might create vtkdata.
-  virtual bool operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false)
+  virtual bool operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false)
   {
     return false;
   }
@@ -69,7 +73,29 @@ class SpinImage : public Descriptor
     }
     
 
-  bool operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false);
+  bool operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false);
+  void display(const NEWMAT::Matrix& result);
+};
+
+
+
+class Calonder : public Descriptor
+{
+ public:
+  features::RTreeClassifier rt_;
+
+  Calonder(string name, string rt_file)
+    {
+      name_ = name;
+      rt_.read(rt_file.c_str());
+      result_size_ = rt_.classes();
+    }
+
+  ~Calonder()
+    {
+    }
+    
+  bool operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false);
   void display(const NEWMAT::Matrix& result);
 };
 

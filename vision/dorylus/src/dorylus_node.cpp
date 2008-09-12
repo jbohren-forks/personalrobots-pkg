@@ -3,6 +3,18 @@
 #define Matrix NEWMAT::Matrix
 
 using namespace std;
+using namespace features;
+
+int g_mouse_x=0, g_mouse_y=0;
+bool g_recent_mouse_move=false;
+
+void on_mouse(int event, int x, int y, int flags, void* param) {
+  //cout << "Event " << event << " at " << x << " " << y << " with flags " << flags  << endl;
+  g_mouse_x = x;
+  g_mouse_y = y;
+  g_recent_mouse_move = true;
+}
+
 
 class DorylusNode : public ros::node
 {
@@ -14,6 +26,7 @@ public:
   SpinImage *spinM_fixed_, *spinL_fixed_, *spinS_fixed_;
   SpinImage *spinM_fixed_HR_, *spinL_fixed_HR_, *spinS_fixed_HR_;
   SpinImage *spinM_nat_, *spinL_nat_, *spinS_nat_;
+  Calonder *cal_land50_, *cal_land30_;
   vector<int> times;
   Dorylus d_;
 
@@ -46,10 +59,14 @@ public:
     spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
     spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
     spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
+    cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees");
+    cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees");
 //     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
 //     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
 //     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
 
+    descriptors_.push_back(cal_land50_);  
+    descriptors_.push_back(cal_land30_);  
     descriptors_.push_back(spinL_fixed_);  
     descriptors_.push_back(spinM_fixed_);  
     descriptors_.push_back(spinS_fixed_);  
@@ -127,7 +144,7 @@ public:
     has_cal_params_ = true;
   }   
     
-  void classifyRandomPoint() {
+  void classifyPoint(int randId=-1) {
     if(!has_img_ || !has_ptcld_ || !has_cal_params_) {
       usleep(100000);
       cout << "Don't have all msgs yet..." << endl;
@@ -138,8 +155,9 @@ public:
     cout << "classifying point." << endl;
 
     // -- Get a random point from the pointcloud and project it into the image.
-    int randId = 0;
-    randId = rand() % ss_.size();
+    if(randId==-1)
+      randId = rand() % ss_.size();
+
     std_msgs::Point3DFloat32 pt = ss_.getPoint(randId);
     float x = pt.x;
     float y = pt.y;
@@ -214,7 +232,7 @@ public:
   }
   
   
-  void run(string classifier_file) {
+  void run(string classifier_file, bool mouse) {
     subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
     subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
     subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
@@ -223,11 +241,20 @@ public:
 
     cout << "Press spacebar to listen for new data, q to quit." << endl;
     cvNamedWindow("Classification Visualization", 0);
+
+    SceneLabelerStereo sls(this);
+    if(mouse) {
+      int mode = 0;
+      cvSetMouseCallback("Classification Visualization", on_mouse, &mode );
+    }
+
+    bool first = true;
     while(true) {
       char c = cvWaitKey(5);
       if(c == 'q')
-	break;
-      if(c == ' ') {
+	return;
+      if(c == ' ' || first) {
+	first = false;
 	if(img_)
 	  cvReleaseImage(&img_);
 	img_ = NULL;
@@ -235,20 +262,37 @@ public:
 	subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 1); 
 	
 	//Wait for a new videre/images.
-	cout << "waiting for img" << endl;
-	while(!has_img_) 
+	cout << "waiting for messages" << endl;
+	while(!has_img_ || !has_ptcld_ || !has_cal_params_) 
 	  usleep(100000);
-	cout << "got one" << endl;
+	cout << "Done." << endl;
+	cvShowImage("Classification Visualization", vis_);
+
+	if(mouse) {
+	  //Setup index of image points to 3d points.
+	  sls.loadMsgsFromMem(images_msg_, ptcld_msg_, cal_params_msg_);
+	  sls.projectAndCrossIndex();  //sls.xidx_ is available now.
+	}
+
       }
 
       if(has_img_)
 	unsubscribe(images_msg_);
 
-      classifyRandomPoint();
+      if(mouse && !g_recent_mouse_move) {
+	continue;
+      }
+      g_recent_mouse_move = false;
+
+      if(mouse) {
+	int pt_id = sls.xidx_[g_mouse_y][g_mouse_x];
+	if(pt_id != -1) //If there's a corresponding 3d point.
+	  classifyPoint(pt_id);
+      }
+      else
+	classifyPoint();
     }
   }
-
-
 
   void train(int nCandidates, int max_secs, int max_wcs) {
     time_t start, end;
@@ -387,7 +431,8 @@ public:
     for(unsigned int iFile=0; iFile<datafiles.size(); iFile++) {
       SceneLabelerStereo sls(this);
       cout << "** Loading scene " << iFile << " out of " << datafiles.size() << " with name "  << datafiles[iFile] << endl;
-      sls.processMsgs(datafiles[iFile]);
+      sls.loadMsgsFromFile(datafiles[iFile]);
+      sls.processMsgs();
       
       object obj;
       // -- Collect data from background.
@@ -444,7 +489,7 @@ private:
 
 
 
-bool SpinImage::operator()(SmartScan &ss, const IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
+bool SpinImage::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
 
   // -- Reset psi_.
   for(int i=0; i<width_; i++) {
@@ -485,6 +530,45 @@ bool SpinImage::operator()(SmartScan &ss, const IplImage &img, float x, float y,
   return true;
 }
 
+bool Calonder::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
+  CvPoint pt = cvPoint(col, row); 
+  cv::WImageView_b view = extractPatch3(&img, pt);
+  IplImage *patch = view.Ipl();
+
+  IplImage *gray = cvCreateImage(cvSize(patch->width, patch->height), IPL_DEPTH_8U, 1);
+  cvCvtColor(patch,gray,CV_BGR2GRAY);
+  DenseSignature sig = rt_.getDenseSignature(gray);
+
+  Matrix* res = new Matrix(sig.size(),1); 
+  for(unsigned int i=1; i<=sig.size(); i++) {
+    (*res)(i,1) = sig(i-1);
+  }
+
+  // -- Normalize.  This may be a terrible idea.
+  Matrix div(1,1); div = 1/res->MaximumAbsoluteValue();
+  *res = KP(*res, div);
+
+  *result = res;
+  
+  if(debug) {
+    cvNamedWindow("patch", 0);
+    cvShowImage("patch", gray);
+    cvWaitKey(100);
+    display(**result);
+  }
+  //cvReleaseImage(&patch);  cvwimage.
+  cvReleaseImage(&gray);
+  return true;
+}
+
+void Calonder::display(const Matrix& result) {
+  cout << "Starting display of " << name_ << " feature." << endl;
+  cout << result.t() << endl;
+
+  cout << "Press Enter to continue. . .\n";
+  cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+}
 
 void SpinImage::display(const Matrix& result) {
   cout << "Starting display of " << name_ << " feature." << endl;
@@ -514,7 +598,6 @@ void SpinImage::display(const Matrix& result) {
 }
 
 
-
 int main(int argc, char **argv) {
   ros::init(argc, argv);
   DorylusNode dn;
@@ -534,8 +617,17 @@ int main(int argc, char **argv) {
     else {
       int nSamples = 1;
       int nBG_pts = 500;
-      int nRepetitions_per_obj = 100;
-      dn.buildDataset(nSamples, datafiles, savename, false, nBG_pts, nRepetitions_per_obj);
+      int nRepetitions_per_obj = 50;
+      bool debug = false;
+
+      if(getenv("TEST") != NULL) {
+	cout << "TEST environment variable set.  Testing..." << endl;
+	nSamples = 1;
+	nBG_pts = 2;
+	nRepetitions_per_obj = 2;
+	debug = false;
+      }
+      dn.buildDataset(nSamples, datafiles, savename, debug, nBG_pts, nRepetitions_per_obj);
     }
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
 //  dd2.save(string("savename2.dd"));
@@ -551,8 +643,15 @@ int main(int argc, char **argv) {
     //cout << dn.dd_.displayFeatures() << endl;
     cout << dn.dd_.status() << endl;
     dn.d_.loadDataset(&dn.dd_);
-    dn.train(50, 60*60*10, 1000);
-    dn.d_.save(string(argv[2]));
+
+    if(getenv("TEST") != NULL) {
+      cout << "TEST environment variable set.  Testing..." << endl;
+      dn.train(50, 60*60*10, 1);
+    }
+    else {
+      dn.train(50, 60*60*1, 1000);
+      dn.d_.save(string(argv[2]));
+    }
 
 //     Dorylus d2;
 //     d2.load(argv[2]);
@@ -570,7 +669,11 @@ int main(int argc, char **argv) {
   }
 
   else if(argc == 3 && !strcmp(argv[1], "--run")) {
-    dn.run(string(argv[2]));
+    dn.run(string(argv[2]), false);
+  }
+
+  else if(argc == 3 && !strcmp(argv[1], "--mouse")) {
+    dn.run(string(argv[2]), true);
   }
 	
   else {
@@ -578,6 +681,7 @@ int main(int argc, char **argv) {
     cout << "  dorylus_node --dataset [DORYLUS DATASET SAVENAME] [BAGFILES]" << endl;
     cout << "  dorylus_node --train [CLASSIFIER SAVENAME] [DORYLUS DATASET]" << endl;
     cout << "  dorylus_node --run [CLASSIFIER]" << endl;
+    cout << "  dorylus_node --mouse [CLASSIFIER]" << endl;
     cout << "  dorylus_node --testDatasetSave" << endl;
   }
 
