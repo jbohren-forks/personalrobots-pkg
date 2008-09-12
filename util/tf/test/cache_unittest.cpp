@@ -183,9 +183,9 @@ TEST(TimeCache, CartesianInterpolation)
       double x_out = stor.data_.getOrigin().x();
       double y_out = stor.data_.getOrigin().y();
       double z_out = stor.data_.getOrigin().z();
-      EXPECT_TRUE(fabs(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0 - x_out) < epsilon);
-      EXPECT_TRUE(fabs(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0 - y_out) < epsilon);
-      EXPECT_TRUE(fabs(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0 - z_out) < epsilon);
+      EXPECT_NEAR(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0, x_out, epsilon);
+      EXPECT_NEAR(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0, y_out, epsilon);
+      EXPECT_NEAR(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0, z_out, epsilon);
     }
     
     /// \todo check for interpolation not crossing between reparenting
@@ -235,15 +235,39 @@ TEST(TimeCache, CartesianExtrapolation)
       double x_out = stor.data_.getOrigin().x();
       double y_out = stor.data_.getOrigin().y();
       double z_out = stor.data_.getOrigin().z();
-      EXPECT_TRUE(fabs(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0 - x_out) < epsilon);
-      EXPECT_TRUE(fabs(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0 - y_out) < epsilon);
-      EXPECT_TRUE(fabs(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0 - z_out) < epsilon);
+      EXPECT_NEAR(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0, x_out, epsilon);
+      EXPECT_NEAR(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0, y_out, epsilon);
+      EXPECT_NEAR(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0, z_out, epsilon);
     }
     
     cache.clearList();
   }
 
   
+}
+
+
+TEST(Bullet, Slerp)
+{
+
+  unsigned int runs = 100;
+  seed_rand();
+
+  btQuaternion q1, q2;
+  q1.setEuler(0,0,0);
+  
+  for (unsigned int i = 0 ; i < runs ; i++)
+  {
+    q2.setEuler(1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX,
+                1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX,
+                1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX);
+    
+    
+    btQuaternion q3 = slerp(q1,q2,0.5);
+    
+    EXPECT_NEAR(q3.angle(q1), q2.angle(q3), 1e-5);
+  }
+
 }
 
 /*

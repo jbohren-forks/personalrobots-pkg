@@ -47,6 +47,7 @@ TEST(tf, ListBuilding)
   }
 
   std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
   for ( unsigned int i = 0; i < runs ; i++ )
 
@@ -479,9 +480,7 @@ TEST(libTF, Interpolation)
   //  std::cout << "slope " << slope << std::endl;
 
   // Make sure that the interpolation complies in linear case
-  EXPECT_TRUE(fabs(outpose.x - intercept) < 0.000000001);
-  if( fabs(outpose.x - intercept) >= 0.000000001)
-    std::cout << outpose.x << " did not equal " << intercept <<" as it should." << std::endl;
+  EXPECT_NEAR(outpose.x, intercept, 0.000000001);
   mTR.clear(); //Clear cached data to allow reset.
   }
 }
