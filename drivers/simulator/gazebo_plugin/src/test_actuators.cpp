@@ -70,7 +70,7 @@ namespace gazebo {
       rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
       printf("-------------------- starting node in test actuators \n");
     }
-    tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
+    //tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
 
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
@@ -199,7 +199,7 @@ namespace gazebo {
     std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
 
     // as the name states
-    LoadFrameTransformOffsets();
+    //LoadFrameTransformOffsets();
 
     //-----------------------------------------------------------------------------------------
     //
@@ -476,7 +476,8 @@ namespace gazebo {
     if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
     rosnode_->publish("right_pr2arm_pos", rarm);
 
-    PublishFrameTransforms();
+    //PublishFrameTransforms();
+    rosnode_->publish("transform",this->shutterMsg);
 
     this->lock.unlock();
   }
