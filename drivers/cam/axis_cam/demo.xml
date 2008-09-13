@@ -5,8 +5,8 @@
   <param name="axis_ptz/host" type="str" value="axis-00408c7dfe2b.local"/>
 
   <node pkg="axis_cam" type="axis_cam" respawn="false"/>
-  <node pkg="axis_cam" type="axis_ptz" respawn="false" output="screen"/>
-  <node pkg="axis_cam" type="axis_demo" respawn="false"/>
+  <node pkg="axis_cam" type="axis_ptz" respawn="false"/>
+  <node pkg="axis_cam" type="axis_demo" respawn="false"  output="screen"/>
 </launch>
 
 
