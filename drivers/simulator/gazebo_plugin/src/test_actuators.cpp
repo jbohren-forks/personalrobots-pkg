@@ -683,6 +683,9 @@ namespace gazebo {
     this->lock.lock();
     printf("hoo!\n");
 
+    pr2_controllers::SetJointPosCmd::request req;
+    pr2_controllers::SetJointPosCmd::response resp;
+
     std::vector<double> goals;
     goals.push_back(leftarmMsg.turretAngle       );
     goals.push_back(leftarmMsg.shoulderLiftAngle );
@@ -692,8 +695,10 @@ namespace gazebo {
     goals.push_back(leftarmMsg.wristPitchAngle   );
     goals.push_back(leftarmMsg.wristRollAngle    );
 
+    req.set_positions_vec(goals);
+
     controller::Controller* j1 = mc_.getControllerByName( "left_arm_controller" );
-    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosCmd(goals);
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosSrv(req,resp);
 
     controller::Controller* j8 = mc_.getControllerByName( "gripper_left_controller" );
     dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(leftarmMsg.gripperGapCmd);
@@ -706,6 +711,9 @@ namespace gazebo {
     this->lock.lock();
     printf("hoo!\n");
 
+    pr2_controllers::SetJointPosCmd::request req;
+    pr2_controllers::SetJointPosCmd::response resp;
+
     std::vector<double> goals;
     goals.push_back(rightarmMsg.turretAngle       );
     goals.push_back(rightarmMsg.shoulderLiftAngle );
@@ -715,8 +723,10 @@ namespace gazebo {
     goals.push_back(rightarmMsg.wristPitchAngle   );
     goals.push_back(rightarmMsg.wristRollAngle    );
 
+    req.set_positions_vec(goals);
+
     controller::Controller* j1 = mc_.getControllerByName( "right_arm_controller" );
-    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosCmd(goals);
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosSrv(req,resp);
 
     controller::Controller* j8 = mc_.getControllerByName( "gripper_right_controller" );
     dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(rightarmMsg.gripperGapCmd);
