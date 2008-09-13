@@ -440,20 +440,8 @@ namespace gazebo {
     timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
     rosnode_->publish("time",timeMsg);
 
-    /***************************************************************/
-    /*                                                             */
-    /*   object position                                           */
-    /*   FIXME: move this to the P3D plugin (update P3D required)  */
-    /*                                                             */
-    /***************************************************************/
-    //this->PR2Copy->GetObjectPositionActual(&x,&y,&z,&roll,&pitch,&yaw);
-    //this->objectPosMsg.x  = x;
-    //this->objectPosMsg.y  = y;
-    //this->objectPosMsg.z  = z;
-    //rosnode_->publish("object_position", this->objectPosMsg);
 
-
-
+    // FIXME: move to arm controller
     /* get left arm position */
     if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
     if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
