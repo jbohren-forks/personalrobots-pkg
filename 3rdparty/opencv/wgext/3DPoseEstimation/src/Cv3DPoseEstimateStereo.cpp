@@ -57,8 +57,10 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 
 	switch(mMatchMethod) {
 	case CalonderDescriptor:{
-		string modelFile("land50.trees");
+//    string modelFile("land30.trees");
+    string modelFile("land50.trees");
 		mCalonderMatcher = new CalonderMatcher(modelFile);
+		cout << "loaded model file "<<modelFile.c_str()<<" for Calonder descriptor"<<endl;
 		break;
 	}
 	case CrossCorrelation:
@@ -78,7 +80,7 @@ bool Cv3DPoseEstimateStereo::getDisparityMap(
 		WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap) {
 	bool status = true;
 
-	if (leftImage.Width() != mSize.width || leftImage.Height() != mSize.height ||
+	if (leftImage.Width()  != mSize.width || leftImage.Height()  != mSize.height ||
 			rightImage.Width() != mSize.width || rightImage.Height() != mSize.height ) {
 		cerr << __PRETTY_FUNCTION__ <<"(): size of images incompatible. "<< endl;
 		return false;

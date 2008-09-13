@@ -23,6 +23,9 @@
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
+//#define SEED time(NULL)
+#define SEED 20080910  // use the same seed for ease of debugging
+
 Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
 	mNumIterations(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
 	mNumTriesForRandomTriple(100),
@@ -31,7 +34,7 @@ Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
 	mW1(cvMat(4, 1, CV_64F, mW1_Data)),
 	mT(cvMat(4, 4, CV_XF, mT_Data)),
-	mRng(time(NULL)),
+	mRng(SEED),
 	mInliers0(NULL),
 	mInliers1(NULL)
 {
@@ -286,6 +289,8 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     cvmSet(trans, 2, 0, param[5]);
 
 #endif
+    if (mInliers0) cvReleaseMat(&mInliers0);
+    if (mInliers1) cvReleaseMat(&mInliers1);
     mInliers0 = points0Inlier;
     mInliers1 = points1Inlier;
 	return numInLiers0;

@@ -172,7 +172,7 @@ protected:
 
 	StarDetector mStarDetector;
 
-	MatchMethod mMatchMethod;
+	 MatchMethod mMatchMethod;
 	CalonderMatcher* mCalonderMatcher;
 
 	double mTemplateMatchThreshold; // minimum threshold for template matching

@@ -21,8 +21,8 @@ public:
 
 	/**
 	 * INPUT:
- 	 * pionts0: 3D points in Cartesian coordinates from camera 0
- 	 * points1: 3D points in Cartesian coordinates from camera 1
+ 	 * @param pionts0: 3D points in Cartesian coordinates from camera 0
+ 	 * @param points1: 3D points in Cartesian coordinates from camera 1
  	 *
  	 * The points are stored as
  	 *       x0, y0, z0
@@ -32,12 +32,10 @@ public:
  	 *
 	 *
 	 * OUTPUT:
-	 * rot: rotation matrix
- 	 * trans: translation matrix
+	 * @param rot: rotation matrix
+ 	 * @param trans: translation matrix
  	 *
- 	 * RETURN:
- 	 * number of inliers
-	 *
+ 	 * @return number of inliers
 	 */
 	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans);
 

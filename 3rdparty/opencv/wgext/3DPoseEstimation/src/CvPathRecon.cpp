@@ -21,6 +21,7 @@ using namespace std;
 //#define DISPLAY
 
 //#undef DEBUG
+#define DEBUG  // to print debug message in release build
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -240,7 +241,7 @@ void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
 
 void CvPathRecon::keepGoodFrame(WImageBuffer1_b& image,
 		WImageBuffer1_16s & dispMap, vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
-		int numTrackablePairs, int numInliers, int frameIndex, const WImageBuffer3_b* imageC3a,
+		int numTrackablePairs, int numInliers, int frameIndex, WImageBuffer3_b* imageC3a,
 		CvMat* inliers0, CvMat* inliers1)
 {
     mNumFramesSkipped++;
@@ -286,8 +287,9 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
   mRightImageFilenameFmt = dirname;
   mRightImageFilenameFmt += rightFileFmt;
 
-  double ransacInlierthreshold = 2.0;
-  int numRansacIterations = 200;
+//  double ransacInlierthreshold = 2.0;
+  double ransacInlierthreshold = 1.5;
+  int numRansacIterations = 500;
 
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
@@ -354,6 +356,7 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
       mPoseEstimator.getDisparityMap(leftImage, rightImage, dispMap);
       TIMEREND2(DisparityMap);
       TIMERSTART2(FeaturePoint);
+      keyPointsCurr.clear();
       status = mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap, keyPointsCurr);
       TIMEREND2(FeaturePoint);
       mTotalKeypoints += keyPointsCurr.size();
@@ -443,7 +446,11 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
         numTrackablePairs = mLastGoodFrame->mNumTrackablePairs;
         numInliers = mLastGoodFrame->mNumInliers;
 #ifdef DISPLAY
-        leftimgC3a = mLastGoodFrame->mImageC3a.Ipl();
+        if (mLastGoodFrame->mImageC3a) {
+          leftimgC3a = mLastGoodFrame->mImageC3a->Ipl();
+        } else {
+          leftimgC3a = NULL;
+        }
 #endif
 
         // keep track of the trajectory
@@ -490,10 +497,10 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
         int numTrackablePairs = trackablePairs.size();
 #ifdef DISPLAY
         keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
-            numTrackablePairs, numInliers, frameIndex, &leftImageC3a, inliers0, inliers1);
+            numTrackablePairs, numInliers, frameIndex, &leftImageC3a, cvCloneMat(inliers0), cvCloneMat(inliers1));
 #else
         keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
-                    numTrackablePairs, numInliers, frameIndex, NULL, inliers0, inliers1);
+                    numTrackablePairs, numInliers, frameIndex, NULL, cvCloneMat(inliers0), cvCloneMat(inliers1));
 #endif
         break;
       }
@@ -607,7 +614,7 @@ CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b& image, WImage
     vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
     int numTrackablePair,
     int numInliers, int frameIndex,
-    const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1){
+    WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1){
   mRot   = cvMat(3, 3, CV_64FC1, _mRot);
   mShift = cvMat(3, 1, CV_64FC1, _mShift);
   mImage.CloneFrom(image);
@@ -619,8 +626,18 @@ CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b& image, WImage
   mNumInliers = numInliers;
   mFrameIndex = frameIndex;
 
-  if (imageC3a)
-    mImageC3a.CloneFrom(*imageC3a);
-  mInliers0 = cvCloneMat(inliers0);
-  mInliers1 = cvCloneMat(inliers1);
+  mImageC3a = imageC3a;
+  mInliers0 = inliers0;
+  mInliers1 = inliers1;
+}
+
+void CvPathRecon::PoseEstFrameEntry::clear() {
+  if (mInliers0) cvReleaseMat(&mInliers0);
+  if (mInliers1) cvReleaseMat(&mInliers1);
+  delete mImageC3a;
+  mImageC3a = NULL;
+}
+
+CvPathRecon::PoseEstFrameEntry::~PoseEstFrameEntry(){
+  clear();
 }

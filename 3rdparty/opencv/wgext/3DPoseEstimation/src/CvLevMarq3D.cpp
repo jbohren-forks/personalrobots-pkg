@@ -382,11 +382,11 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 
 	    		TIMERSTART(JtJJtErr);
 
-	    		// compute the part of jacobian regarding this point
+	    		// Compute the part of jacobian regarding this point
 	    		// Each entry JtJ[s,t] is the dot product of column s and column t of J, or
 	    		// in other words, the sum of the product of errors of point i in a specific dimension
 	    		// (e.g. x) w.r.t parameters s and t
-	    		// or \Sigma_{i=0, d=\{x,y,z\}}^n (\partial E_{i,d} / \partial s) (\partial E_{i,d} / \partial t)
+	    		// or \sum_{i=0, d=\{x,y,z\}}^n (\partial E_{i,d} / \partial s) (\partial E_{i,d} / \partial t)
 	    		// so in each iteration we update JtJ with the contribution of point i
 	    		// into the sum
 
@@ -540,115 +540,115 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 
 // TODO: This function is not completed
 bool CvLevMarqTransform::optimizeDefault(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
-	cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
-	bool status=true;
-	//initialize the initial vector of paramters
-	if (_param == NULL){
-	   	cvSetZero(mLevMarq.param);
-	} else {
-	   for (int i=0; i<numParams; i++) {
-     		cvSetReal2D(mLevMarq.param, i, 0, _param[i]);
-       }
-	}
-
-	int numPoints = xyzs0->rows;
-	if (numPoints != xyzs1->rows) {
-		cerr << "Fatal Error, num of points unmatched in input"<<endl;
-	}
-	// two buffers to hold errors (residues)
-	CvMat* errBuf0 = cvCreateMat(numPoints*3, 1, CV_64F);
-	CvMat* errBuf1 = cvCreateMat(numPoints*3, 1, CV_64F);
-//    CvMat* resVector  = cvCreateMat(4, numPoints, CV_64F);
-//    CvMat* resVector1 = cvCreateMat(4, numPoints, CV_64F);
-
-	CvMat* currErr = errBuf0;
-
-	double delta = CV_PI/(180.*100.);
-
-	CvMyReal _param1[numParams];
-	CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
-
-	for(int i=0;
-        ;
-		i++
-	) {
-	    CvMat *_param0=NULL, *J=NULL, *err=NULL;
-		bool moreUpdate = mLevMarq.update( (const CvMat*&)_param0, J, err );
-		if (moreUpdate == false) {
-			break;
-		}
-#ifdef DEBUG
-		cout << "iteration: "<<i<<endl;
-#endif
-		if (i > defMaxTimesOfUpdates){
-			cout << "Rearch the max number of iteration that jdc can tolerate"<<endl;
-			double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
-			cout << "norm diff of param:" << change<<endl;
-			cout << "num of iter in cvLevMarq:" << mLevMarq.iters<<endl;
-			break;
-		}
-#ifdef DEBUG
-		if (_param0) {
-			cout << "param: "<< endl;
-			CvMatUtils::printMat(_param0);
-		}
-#endif
-    	// construct the transformation matrix
-    	constructTransformationMatrix(_param0);
-    	// compute current error = xyzs1^T  - Transformation * xyzs0^T
-#ifdef DEBUG
-    	cout << "compute residue on curr param:"<<endl;
-#endif
-
-    	if (err) {
-    		currErr = err;
-    	} else {
-    		currErr = errBuf0;
-    	}
-    	TIMERSTART(ErrNorm);
-    	CvMat currRes;
-    	cvReshape(currErr, &currRes, 0, numPoints);
-    	computeResidue(xyzs0, xyzs1, &currRes);
-    	TIMEREND(ErrNorm);
-
-	    if( J )
-	    {
-	    	constructTransformationMatrices(_param0, delta);
-	    	TIMERSTART(JtJJtErr);
-	    	// TODO: skip the last 3 parameters as they are linear
-	    	for (int k=0; k<numParams; k++){
-	    		for (int j=0; j<numPoints; j++){
-	    			for (int l=0; l<3; l++) {
-	    				// TODO: compute the jacobian
-	    			}
-	    		}
-	    	}
-	    	TIMEREND(JtJJtErr);
-#ifdef DEBUG
-	    	cout << "Jacobian on iter: "<<i<<endl;
-	    	CvMatUtils::printMat(J);
-#endif
-	    }
-#ifdef DEBUG
-	    printf("current parameters: %f, %f, %f, %f, %f, %f\n",
-			   cvmGet(mLevMarq.param, 0, 0)/CV_PI*180.,
-			   cvmGet(mLevMarq.param, 1, 0)/CV_PI*180.,
-			   cvmGet(mLevMarq.param, 2, 0)/CV_PI*180.,
-			   cvmGet(mLevMarq.param, 3, 0),
-			   cvmGet(mLevMarq.param, 4, 0),
-			   cvmGet(mLevMarq.param, 5, 0));
-#endif
-	}
-	// now solver.params contains the solution.
-	cvReleaseMat(&errBuf0);
-	cvReleaseMat(&errBuf1);
-    if (_param) {
-        // copy the parameters out
-        for (int i=0; i<numParams; i++) {
-             _param[i] = cvmGet(mLevMarq.param, i, 0);
-        }
+  cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
+  bool status=true;
+  //initialize the initial vector of paramters
+  if (_param == NULL){
+    cvSetZero(mLevMarq.param);
+  } else {
+    for (int i=0; i<numParams; i++) {
+      cvSetReal2D(mLevMarq.param, i, 0, _param[i]);
     }
-	return status;
+  }
+
+  int numPoints = xyzs0->rows;
+  if (numPoints != xyzs1->rows) {
+    cerr << "Fatal Error, num of points unmatched in input"<<endl;
+  }
+  // two buffers to hold errors (residues)
+  CvMat* errBuf0 = cvCreateMat(numPoints*3, 1, CV_64F);
+  CvMat* errBuf1 = cvCreateMat(numPoints*3, 1, CV_64F);
+  //    CvMat* resVector  = cvCreateMat(4, numPoints, CV_64F);
+  //    CvMat* resVector1 = cvCreateMat(4, numPoints, CV_64F);
+
+  CvMat* currErr = errBuf0;
+
+  double delta = CV_PI/(180.*100.);
+
+  CvMyReal _param1[numParams];
+  CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
+
+  for(int i=0;
+  ;
+  i++
+  ) {
+    CvMat *_param0=NULL, *J=NULL, *err=NULL;
+    bool moreUpdate = mLevMarq.update( (const CvMat*&)_param0, J, err );
+    if (moreUpdate == false) {
+      break;
+    }
+#ifdef DEBUG
+    cout << "iteration: "<<i<<endl;
+#endif
+    if (i > defMaxTimesOfUpdates){
+      cout << "Rearch the max number of iteration that jdc can tolerate"<<endl;
+      double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
+      cout << "norm diff of param:" << change<<endl;
+      cout << "num of iter in cvLevMarq:" << mLevMarq.iters<<endl;
+      break;
+    }
+#ifdef DEBUG
+    if (_param0) {
+      cout << "param: "<< endl;
+      CvMatUtils::printMat(_param0);
+    }
+#endif
+    // construct the transformation matrix
+    constructTransformationMatrix(_param0);
+    // compute current error = xyzs1^T  - Transformation * xyzs0^T
+#ifdef DEBUG
+    cout << "compute residue on curr param:"<<endl;
+#endif
+
+    if (err) {
+      currErr = err;
+    } else {
+      currErr = errBuf0;
+    }
+    TIMERSTART(ErrNorm);
+    CvMat currRes;
+    cvReshape(currErr, &currRes, 0, numPoints);
+    computeResidue(xyzs0, xyzs1, &currRes);
+    TIMEREND(ErrNorm);
+
+    if( J )
+    {
+      constructTransformationMatrices(_param0, delta);
+      TIMERSTART(JtJJtErr);
+      // TODO: skip the last 3 parameters as they are linear
+      for (int k=0; k<numParams; k++){
+        for (int j=0; j<numPoints; j++){
+          for (int l=0; l<3; l++) {
+            // TODO: compute the jacobian
+          }
+        }
+      }
+      TIMEREND(JtJJtErr);
+#ifdef DEBUG
+      cout << "Jacobian on iter: "<<i<<endl;
+      CvMatUtils::printMat(J);
+#endif
+    }
+#ifdef DEBUG
+    printf("current parameters: %f, %f, %f, %f, %f, %f\n",
+        cvmGet(mLevMarq.param, 0, 0)/CV_PI*180.,
+        cvmGet(mLevMarq.param, 1, 0)/CV_PI*180.,
+        cvmGet(mLevMarq.param, 2, 0)/CV_PI*180.,
+        cvmGet(mLevMarq.param, 3, 0),
+        cvmGet(mLevMarq.param, 4, 0),
+        cvmGet(mLevMarq.param, 5, 0));
+#endif
+  }
+  // now solver.params contains the solution.
+  cvReleaseMat(&errBuf0);
+  cvReleaseMat(&errBuf1);
+  if (_param) {
+    // copy the parameters out
+    for (int i=0; i<numParams; i++) {
+      _param[i] = cvmGet(mLevMarq.param, i, 0);
+    }
+  }
+  return status;
 }
 
 

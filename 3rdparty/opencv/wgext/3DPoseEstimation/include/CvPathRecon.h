@@ -24,29 +24,35 @@ using namespace std;
  */
 class CvPathRecon {
 public:
+  /**
+   * subclass PoseEstFrameEntry is used for keeping (somewhat intermediate)
+   * results of pose estimation w.r.t a frame
+   */
 	class PoseEstFrameEntry {
 	public:
 		PoseEstFrameEntry(WImageBuffer1_b& image, WImageBuffer1_16s& dispMap,
 				vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
 				int numTrackablePair,
 				int numInliers, int frameIndex,
-				const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
-		WImageBuffer1_b   mImage;
-		WImageBuffer1_16s mDispMap;
-		vector<Keypoint>  mKeypoints;
+				WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
+		~PoseEstFrameEntry();
+		WImageBuffer1_b   mImage;     //< the input image
+		WImageBuffer1_16s mDispMap;   // disparity map
+		vector<Keypoint>  mKeypoints; // key points found in image
 
-		CvMat mRot;
-		CvMat mShift;
-		int   mNumTrackablePairs;
-		int   mNumInliers;
-		int   mFrameIndex;
+		CvMat mRot;   // estimated rotation mat from prev key frame
+		CvMat mShift; // estimated shift vector from prev key frame
+		int   mNumTrackablePairs;  // num of trackable pairs used in estimation
+		int   mNumInliers;   // num of inliers found in estimation
+		int   mFrameIndex;   // index of the frame
 		// display and debugging stuff
-		WImageBuffer3_b  mImageC3a;
-		CvMat* mInliers0;
-		CvMat* mInliers1;
+		WImageBuffer3_b*  mImageC3a;  // optional image for visualization
+		CvMat* mInliers0;    // inliers found in estimation, from prev. key frame
+		CvMat* mInliers1;    // inliers found in estimation, from this frame
 	protected:
-		double _mRot[9];
-		double _mShift[3];
+	  void clear();
+		double _mRot[9];     // data portion of mRot
+		double _mShift[3];   // data portion of mShift
 	};
 	/**
 	 * a record of the pose of a frame
@@ -108,7 +114,7 @@ public:
     void keepGoodFrame(WImageBuffer1_b & image, WImageBuffer1_16s & dispMap,
     		vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
     		int numTrackablePairs, int numInliers, int frameIndex,
-    		const WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
+    		WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1);
 
     /**
      * Given a sequence of stereo video, reconstruct the path of the
