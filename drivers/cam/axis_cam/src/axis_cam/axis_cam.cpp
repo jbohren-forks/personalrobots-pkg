@@ -60,7 +60,7 @@ public:
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
-    printf("axis_cam host set to [%s]\n", axis_host.c_str());
+    printf("axis_ptz host set to [%s]\n", axis_host.c_str());
 
     self_test_.addTest(&Axis_cam_node::checkImage);
     self_test_.addTest(&Axis_cam_node::checkMac);

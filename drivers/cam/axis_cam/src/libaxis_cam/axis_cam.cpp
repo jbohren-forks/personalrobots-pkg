@@ -120,9 +120,9 @@ int AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size)
     {
       RETURN_CURL_ERR(code);
     }
-    if (jpeg_buf[0] == 0 && jpeg_buf[1] == 0)
+    if (jpeg_file_size >= 2 && jpeg_buf[0] == 0 && jpeg_buf[1] == 0)
       printf("[axis_cam] ODD...first two bytes are zero...\n");
-  } while (jpeg_buf[0] == 0 && jpeg_buf[1] == 0);
+  } while (jpeg_file_size < 2 || (jpeg_buf[0] == 0 && jpeg_buf[1] == 0));
 
   size_t i = 0;
   while (jpeg_buf[i] != 0xFF && jpeg_buf[i+1] != 0xD8 && i < jpeg_file_size - 1) {
@@ -149,9 +149,17 @@ size_t AxisCam::jpeg_write(void *buf, size_t size, size_t nmemb, void *userp)
   {
     // overalloc
     a->jpeg_buf_size = 2 * (a->jpeg_file_size + (size*nmemb));
+
+    uint8_t* tmp = new uint8_t[a->jpeg_buf_size];
+
     if (a->jpeg_buf)
+    {
+      memcpy(tmp, a->jpeg_buf, a->jpeg_file_size);
       delete[] a->jpeg_buf;
-    a->jpeg_buf = new uint8_t[a->jpeg_buf_size];
+    } else {
+      memset(tmp, 0, a->jpeg_buf_size);
+    }
+    a->jpeg_buf = tmp;
   }
   memcpy(a->jpeg_buf + a->jpeg_file_size, buf, size*nmemb);
   a->jpeg_file_size += size*nmemb;

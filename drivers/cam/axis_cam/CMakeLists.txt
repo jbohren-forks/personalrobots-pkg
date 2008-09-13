@@ -14,6 +14,9 @@ target_link_libraries(axis_cam axis curl)
 rospack_add_executable(axis_ptz src/axis_ptz/axis_ptz.cpp)
 target_link_libraries(axis_ptz axis curl)
 
+rospack_add_executable(axis_demo src/axis_demo/axis_demo.cpp)
+target_link_libraries(axis_demo axis curl)
+
 add_subdirectory(src/libaxis_cam/demo)
 
 

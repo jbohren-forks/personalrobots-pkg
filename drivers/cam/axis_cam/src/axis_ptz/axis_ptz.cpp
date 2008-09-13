@@ -49,11 +49,11 @@ public:
 
   Axis_PTZ_node() : node("axis_ptz"), cam(NULL), cmd_updated(false)
   {
-    advertise<axis_cam::PTZActuatorState>("ptz_state");
+    advertise<axis_cam::PTZActuatorState>("ptz_state",1);
 
-    subscribe("ptz_cmd", ptz_cmd, &Axis_PTZ_node::ptz_callback);
+    subscribe("ptz_cmd", ptz_cmd, &Axis_PTZ_node::ptz_callback, this, 1);
 
-    param("host", axis_host, string("192.168.0.90"));
+    param("~host", axis_host, string("192.168.0.90"));
     printf("axis_cam host set to [%s]\n", axis_host.c_str());
 
     cam = new AxisCam(axis_host);
@@ -76,7 +76,7 @@ public:
 
   bool get_and_send_ptz()
   {
-    if (!cam->query_params()) {
+    if (cam->query_params()) {
       return false;
     }
 
@@ -144,7 +144,7 @@ public:
       printf("Sending cmd: %s\n", oss.str().c_str());
 
       if (oss.str().size() > 0)
-        if (!cam->send_params(oss.str()))
+        if (cam->send_params(oss.str()))
           return false;
 
       cmd_updated = false;
@@ -155,6 +155,30 @@ public:
     return true;
   }
 
+
+  bool spin()
+  {
+    while (ok())
+    {
+      if (!get_and_send_ptz())
+      {
+        log(ros::ERROR,"Couldn't acquire ptz info.");
+        usleep(1000000);
+        param("~host", axis_host, string("192.168.0.90"));
+        cam->set_host(axis_host);
+      }
+      if (!do_ptz_control())
+      {
+        log(ros::ERROR,"Couldn't command ptz.");
+        usleep(1000000);
+        param("~host", axis_host, string("192.168.0.90"));
+        cam->set_host(axis_host);
+      }
+    }
+    return true;
+  }
+
+
 };
 
 int main(int argc, char **argv)
@@ -162,18 +186,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   Axis_PTZ_node a;
-  while (a.ok()) {
-    if (!a.get_and_send_ptz())
-    {
-      a.log(ros::ERROR,"Couldn't acquire ptz info.");
-      break;
-    }
-    if (!a.do_ptz_control())
-    {
-      a.log(ros::ERROR,"Couldn't command ptz.");
-      break;
-    }
-  }
+
+  a.spin();
 
   ros::fini();
 
