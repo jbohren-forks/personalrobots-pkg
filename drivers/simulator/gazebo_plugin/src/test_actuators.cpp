@@ -53,7 +53,7 @@ namespace gazebo {
   GZ_REGISTER_DYNAMIC_CONTROLLER("test_actuators", TestActuators);
 
   TestActuators::TestActuators(Entity *parent)
-    : Controller(parent) , hw_(0), mc_(&hw_), fake_state_(NULL) , mcn_(&mc_)
+    : Controller(parent) , mc_(&hw_), mcn_(&mc_), fake_state_(NULL) , hw_(0)
   {
      this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
@@ -102,7 +102,7 @@ namespace gazebo {
     //   robot->joints
     //   actuators
     //   transmissions
-    // 
+    //
     //---------------------------------------------------------------------
     LoadMC(node);
 
@@ -125,7 +125,7 @@ namespace gazebo {
     if (tlcn)
     {
       std::cout << " initializing tile laser scanner\n" << std::endl;
-      //Typical scan of 100 degrees yields the following amplitudes 
+      //Typical scan of 100 degrees yields the following amplitudes
       //tlcn->setProfile(controller::LaserScannerController::SINEWAVE, 20, 0.872, 100, 0.3475);
       tlcn->setProfile(controller::LaserScannerController::SAWTOOTH, 20, 0.872, 100, 0.3475); //FIXME: sawtooth disappeared in r4180, I reverted it for now.
     }
@@ -378,8 +378,8 @@ namespace gazebo {
     //controller::Controller* cc = mc_.getControllerByName( "base_controller" );
     //controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
     //bc->setCommand(0.0,0.0,0.5);
-    //mechanism::Joint* joint =mc_.model_.getJoint("forearm_roll_left_joint");    
-    // mechanism::Joint* joint =mc_.model_.getJoint("shoulder_pan_left_joint");    
+    //mechanism::Joint* joint =mc_.model_.getJoint("forearm_roll_left_joint");
+    // mechanism::Joint* joint =mc_.model_.getJoint("shoulder_pan_left_joint");
     //controller::Controller* mcc = mc_.getControllerByName( "shoulder_pan_left_controller" );
     //dynamic_cast<controller::JointPositionController*>(mcc)->setCommand(-1);
     /*
@@ -683,6 +683,7 @@ namespace gazebo {
     this->lock.lock();
     printf("hoo!\n");
 
+    //Note: this API should not be used
     pr2_controllers::SetJointPosCmd::request req;
     pr2_controllers::SetJointPosCmd::response resp;
 
@@ -698,7 +699,22 @@ namespace gazebo {
     req.set_positions_vec(goals);
 
     controller::Controller* j1 = mc_.getControllerByName( "left_arm_controller" );
-    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosSrv(req,resp);
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosArray(goals);
+
+    //Note: this is how the arm position controller should be used
+    //TODO the names of the joints are incorrect
+    pr2_controllers::JointPosCmd cmd;
+    std::vector<std::string> arm_joint_names;
+    arm_joint_names.push_back("left_turret_joint");
+    arm_joint_names.push_back("left_shoulder_lift_joint");
+    arm_joint_names.push_back("left_upperarm_roll_joint");
+    arm_joint_names.push_back("left_elbow_joint");
+    arm_joint_names.push_back("left_forearm_joint");
+    arm_joint_names.push_back("left_wrist_pitch_joint");
+    arm_joint_names.push_back("left_wrist_roll_joint");
+    cmd.set_positions_vec(goals);
+    cmd.set_names_vec(arm_joint_names);
+//    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosSingleHeadless(cmd);
 
     controller::Controller* j8 = mc_.getControllerByName( "gripper_left_controller" );
     dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(leftarmMsg.gripperGapCmd);
@@ -711,6 +727,8 @@ namespace gazebo {
     this->lock.lock();
     printf("hoo!\n");
 
+    //Note: this API should not be used
+    // see CmdLefarmconfigReceived
     pr2_controllers::SetJointPosCmd::request req;
     pr2_controllers::SetJointPosCmd::response resp;
 
@@ -726,7 +744,7 @@ namespace gazebo {
     req.set_positions_vec(goals);
 
     controller::Controller* j1 = mc_.getControllerByName( "right_arm_controller" );
-    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosSrv(req,resp);
+    dynamic_cast<controller::ArmPositionControllerNode*>(j1)->setJointPosArray(goals);
 
     controller::Controller* j8 = mc_.getControllerByName( "gripper_right_controller" );
     dynamic_cast<controller::JointPositionControllerNode*>(j8)->setCommand(rightarmMsg.gripperGapCmd);
