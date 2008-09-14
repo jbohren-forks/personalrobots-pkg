@@ -110,6 +110,17 @@ void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values)
   arm_controller_lock_.unlock();
 }
 
+void ArmPositionController::getJointPosCmd(pr2_controllers::JointPosCmd & cmd) const
+{
+  const unsigned int n = joint_position_controllers_.size();
+  cmd.set_names_size(n);
+  for(unsigned int i=0; i<n; ++i)
+      cmd.names[i] = joint_position_controllers_[i]->getJointName();
+
+  cmd.set_positions_vec(goals_);
+  cmd.set_margins_vec(error_margins_);
+}
+
 void ArmPositionController::setJointPosCmd(const pr2_controllers::JointPosCmd & cmd)
 {
   assert(cmd.get_names_size()==cmd.get_positions_size());
@@ -232,16 +243,27 @@ bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
   ros::node * const node = ros::node::instance();
   string prefix = config->Attribute("name");
-
+  std::cout<<"the prefix is "<<prefix<<std::endl;
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosSrv, this);
-//    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
-
+    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
+    node->advertise_service(prefix + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
+    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
     node->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
 
-    node->advertise_service(prefix + "/set_target_headless", &ArmPositionControllerNode::setJointPosHeadless, this);
+    TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
+    if(ros_cb)
+    {
+      const char * topic_name=ros_cb->Attribute("name");
+      if(!topic_name)
+      {
+        std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
+        return false;
+      }
+      node->subscribe(topic_name, msg_, &ArmPositionControllerNode::setJointPosSingleHeadless_cb, this, 1);
+      std::cout<<"Listening to topic: "<<topic_name<<std::endl;
+    }
 
     return true;
   }
@@ -257,6 +279,11 @@ bool ArmPositionControllerNode::setJointPosSrv(pr2_controllers::SetJointPosCmd::
   return true;
 }
 
+void ArmPositionControllerNode::setJointPosArray(const std::vector<double> & joint_pos)
+{
+  c_->setJointPosCmd(joint_pos);
+}
+
 //bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
 //                                   pr2_controllers::GetJointPosCmd::response &resp)
 //{
@@ -264,9 +291,9 @@ bool ArmPositionControllerNode::setJointPosSrv(pr2_controllers::SetJointPosCmd::
 //  return true;
 //}
 
+
 bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPosCmd & cmd)
 {
-  std::cout<<"waypoint "<<std::flush;
   for(unsigned int i=0;i<cmd.positions_size;++i)
     std::cout<<cmd.positions[i]<<' ';
   std::cout<<std::flush;
@@ -289,6 +316,26 @@ bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPo
   return true;
 }
 
+bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_controllers::JointPosCmd & cmd)
+{
+  std::cout<<"Called service"<<std::endl;
+
+  // msg
+  std::cout<<"waypoint "<<std::flush;
+  for(unsigned int i=0;i<cmd.positions_size;++i)
+    std::cout<<cmd.positions[i]<<' ';
+  std::cout<<std::flush;
+  std::cout<<" headless"<<std::endl;
+
+  // Removes any error margin info so that the controller returns true on target reached and frees any blocking call
+  cmd.set_margins_size(cmd.positions_size);
+  for(unsigned int i=0;i<cmd.positions_size;++i)
+    cmd.margins[i]=-1;
+
+  c_->setJointPosCmd(cmd);
+  return true;
+}
+
 bool ArmPositionControllerNode::setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
                   pr2_controllers::SetJointTarget::response &resp)
 {
@@ -297,7 +344,7 @@ bool ArmPositionControllerNode::setJointPosHeadless(pr2_controllers::SetJointTar
     std::cout<<"setting a target in headless mode requires only one configuration in the list\n";
     return false;
   }
-  c_->setJointPosCmd(req.positions[0]);
+  setJointPosSingleHeadless(req.positions[0]);
   return true;
 }
 
@@ -332,5 +379,20 @@ bool ArmPositionControllerNode::setJointPosTarget(pr2_controllers::SetJointTarge
 //   return true;
 
 }
+
+bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
+                    pr2_controllers::GetJointPosCmd::response &resp)
+{
+  pr2_controllers::JointPosCmd cmd;
+  c_->getJointPosCmd(cmd);
+  resp.command = cmd;
+  return true;
+}
+
+void ArmPositionControllerNode::setJointPosSingleHeadless_cb()
+{
+  setJointPosSingleHeadless(msg_);
+}
+
 
 

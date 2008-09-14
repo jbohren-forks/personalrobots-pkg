@@ -112,6 +112,8 @@ public:
 
   void setJointPosCmd(const pr2_controllers::JointPosCmd & cmd);
 
+  void getJointPosCmd(pr2_controllers::JointPosCmd & cmd) const;
+
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
   */
@@ -166,51 +168,120 @@ private:
 
 };
 
-  class ArmPositionControllerNode : public Controller
-  {
-    public:
-  /*!
-     * \brief Default Constructor
+/** @class ArmPositionControllerNode
+ *  @brief ROS interface for the arm controller.
+ *  @author Timothy Hunter <tjhunter@willowgarage.com>
+ *
+ *  This class provides a ROS interface for controlling the arm by setting position configurations. If offers several ways to control the arms:
+ *  - through listening to ROS messages: this is specified in the XML configuration file by the following parameters:
+ *      <listen_topic name="the name of my message" />
+ *      (only one topic can be specified)
+ *  - through a non blocking service call: this service call can specify a single configuration as a target (and maybe multiple configuration in the future)
+ *  - through a blocking service call: this service can receive a list of position commands that will be followed one after the other
+ *
+ */
+class ArmPositionControllerNode : public Controller
+{
+  public:
+    /*!
+    * \brief Default Constructor
+    *
+    */
+    ArmPositionControllerNode();
+
+    /*!
+    * \brief Destructor
+    */
+    ~ArmPositionControllerNode();
+
+    void update();
+
+    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+
+    /** @brief sets a target for some joints managed by the controller (blocking)
      *
-   */
-      ArmPositionControllerNode();
+     * Sets a target position for some joints managed by the controller and waits to the position to be reached.
+     * Given an array of tuples (name, position, error margin), the controllers sets this as a new objective for the arm controller, for these elements only. This service returns when:
+     * 1) all joints specified in the tuple have a position specified with the error margin, or
+     * 2) the timeout value has been reached.
+     * If you assign a new target for one joint only, this service will return as soon as this target is reached. The other joints will try to enforce the position command they had prior to this command, but this command may not be enforced when the service cal returns.
+     * \note the blocking behavior is currently achieved by sleeping 1/100th of a second
+     * @note if you want a non blocking version, use setJointPosSingleHeadless
+     * @param cmd
+     * @return
+     */
+    bool setJointPosSingle(const pr2_controllers::JointPosCmd & cmd);
 
-  /*!
-       * \brief Destructor
-   */
-      ~ArmPositionControllerNode();
+    /** @brief sets a target for some joints managed by the controller (non-blocking)
+     * This is the non-blocking version of setJointPosSingle
+     * @note the error margins and timeout values are discarded
+     * @param cmd
+     * @return
+     */
+    bool setJointPosSingleHeadless(pr2_controllers::JointPosCmd & cmd);
 
-      void update();
+    /** @brief sets a command for all the joints managed by the controller at once
+     * This is a lightweight version of setJointPosHeadless when the caller knows the order of the joints.
+     * @note this service should not be used. use setJointPosHeadless instead
+     * This service returns immediately
+     * @param req an array of position
+     * @param resp The response is empty
+     * @return
+     */
+    bool setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
+                    pr2_controllers::SetJointPosCmd::response &resp);
 
-      bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+    /** @brief sets a command for all the joints managed by the controller at once, by specifying an array
+     * This is a lightweight version of setJointPosHeadless when the caller knows the order of the joints.
+     * @note this method should be used for debugging purpose only. You should first consider using the associated service setJointPosSrv
+     * This function returns immediately
+     * @param joint_pos an array of position
+     */
+    void setJointPosArray(const std::vector<double> & joint_pos);
 
-//      void setJointPosCmd(std::vector<double> &req_goals_);
+    /** @brief blocking service to specify trajectory tracking
+     * Given an array of JointPosCmd, the controller will try to visit each of these point one after the other
+     * In case on of the points cannot be reached, the service will stop execution of the trajectory and return false
+     * @note: this service should be used only in scripting applications
+     * @param req an array of JointPosCmd elements
+     * @param resp empty
+     * @return true if the trajectory could be followed
+     */
+    bool setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
+                     pr2_controllers::SetJointTarget::response &resp);
 
-      bool setJointPosSingle(const pr2_controllers::JointPosCmd & cmd);
+    /** @brief non blocking service to specify a position target
+     * Given an array of tuples (name, position, error margin), the controllers sets this as a new objective for the arm controller, for these elements only. This service retutrns immediately.
+     * @note a request (('joint0',pos0),('joint1',pos1)) is equivalent to 2 simutaneous requests ('joint0',pos0) and ('joint1',pos1)
+     * @note the service expects only one position to be given, and will return false if more the one position configuration are found in the SetJointTarget request
+     * @note the error margins and timeout values are discarded when passing the message to the controller
+     * @param req
+     * @param resp
+     * @return
+     */
+    bool setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
+                     pr2_controllers::SetJointTarget::response &resp);
 
-      // Services
-      bool setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
-                      pr2_controllers::SetJointPosCmd::response &resp);
+    /** @brief service that returns the goal of the controller
+     * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm
+     * @param req
+     * @param resp the response, contains a JointPosCmd message with the goal of the controller
+     * @return
+     */
+    bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
+                        pr2_controllers::GetJointPosCmd::response &resp);
 
-//      bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-//                      pr2_controllers::GetJointPosCmd::response &resp);
+    /** @brief ROS callback hook
+     *  Provides a ROS callback to set a new goal. The topic the controller listens to is set in the xml init file.
+     */
+    void setJointPosSingleHeadless_cb();
 
-      bool setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
-                       pr2_controllers::SetJointTarget::response &resp);
 
-      bool setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
-                       pr2_controllers::SetJointTarget::response &resp);
+  private:
+    pr2_controllers::JointPosCmd msg_;   //The message used by the ROS callback
+    ArmPositionController *c_;
 
-      //       bool setJointGains(pr2_controllers::SetJointGains::request &req,
-//                                                     pr2_controllers::SetJointGains::response &resp);
-
-//       bool getJointGains(pr2_controllers::GetJointGains::request &req,
-//                                                     pr2_controllers::GetJointGains::response &resp);
-
-    private:
-      ArmPositionController *c_;
-
-  };
+};
 
 }
 
