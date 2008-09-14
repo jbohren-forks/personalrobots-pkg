@@ -53,26 +53,6 @@ public:
 
     transform_ = Matrix(3,4); transform_ = 0.0;
 
-    spinL_fixed_ = new SpinImage(string("FixedSpinLarge"), .20, 50, true);
-    spinM_fixed_ = new SpinImage(string("FixedSpinMedium"), .10, 100, true);
-    spinS_fixed_ = new SpinImage(string("FixedSpinSmall"), .05, 200, true);
-    spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
-    spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
-    spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
-    cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees");
-    cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees");
-//     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
-//     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
-//     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
-
-    descriptors_.push_back(cal_land50_);  
-    descriptors_.push_back(cal_land30_);  
-    descriptors_.push_back(spinL_fixed_);  
-    descriptors_.push_back(spinM_fixed_);  
-    descriptors_.push_back(spinS_fixed_);  
-//     descriptors_.push_back(spinL_fixed_HR_);  
-//     descriptors_.push_back(spinM_fixed_HR_);  
-//     descriptors_.push_back(spinS_fixed_HR_);  
 
     has_ptcld_ = has_img_ = has_cal_params_ = false;
     built_bridge_ = false;
@@ -100,6 +80,29 @@ public:
   ~DorylusNode() {
 //     if(bridge_)
 //       delete bridge_;
+  }
+
+  void setupDescriptors() {
+    spinL_fixed_ = new SpinImage(string("FixedSpinLarge"), .20, 50, true);
+    spinM_fixed_ = new SpinImage(string("FixedSpinMedium"), .10, 100, true);
+    spinS_fixed_ = new SpinImage(string("FixedSpinSmall"), .05, 200, true);
+    spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
+    spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
+    spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
+    cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees");
+    cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees");
+//     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
+//     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
+//     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
+
+    descriptors_.push_back(cal_land50_);  
+    descriptors_.push_back(cal_land30_);  
+    descriptors_.push_back(spinL_fixed_);  
+    descriptors_.push_back(spinM_fixed_);  
+    descriptors_.push_back(spinS_fixed_);  
+//     descriptors_.push_back(spinL_fixed_HR_);  
+//     descriptors_.push_back(spinM_fixed_HR_);  
+//     descriptors_.push_back(spinS_fixed_HR_);  
   }
 
   void cbImageArray() {
@@ -233,6 +236,8 @@ public:
   
   
   void run(string classifier_file, bool mouse) {
+    setupDescriptors();
+
     //subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
     subscribe(ptcld_topic_, ptcld_msg_, &DorylusNode::cbPtcld, 10); 
     subscribe("videre/cal_params", cal_params_msg_, &DorylusNode::cbCalParams, 10); 
@@ -250,7 +255,7 @@ public:
     }
 
     bool xidxed = false;
-    while(true) {
+    while(ok()) {
       char c = cvWaitKey(20);
       if(c == 'q')
 	return;
@@ -263,17 +268,16 @@ public:
       }
 
       if(!has_img_ || !has_ptcld_ || !has_cal_params_) {
-	cout << "img " << has_img_ << ", ptcld " << has_ptcld_ << ", cal " << has_cal_params_ << endl;
+	//cout << "img " << has_img_ << ", ptcld " << has_ptcld_ << ", cal " << has_cal_params_ << endl;
 	continue;
       }
-
-      cvShowImage("Classification Visualization", vis_);
 
       if(mouse) {
 	if(!xidxed) {
 	  //Setup index of image points to 3d points.
 	  sls.loadMsgsFromMem(images_msg_, ptcld_msg_, cal_params_msg_);
 	  sls.projectAndCrossIndex();  //sls.xidx_ is available now.
+	  cvShowImage("Classification Visualization", vis_);
 	  xidxed = true;
 	}
 	if(!g_recent_mouse_move) {
@@ -292,6 +296,8 @@ public:
   }
 
   void train(int nCandidates, int max_secs, int max_wcs) {
+    setupDescriptors();
+
     time_t start, end;
     time(&start);
   
@@ -423,6 +429,7 @@ public:
   void buildDataset(unsigned int nSamples, vector<string> datafiles, string savename, bool debug=false, int nBG_pts=0, int nRepetitions_per_obj=1)
   {
     vector<object> objs;
+    setupDescriptors();
 
     cout << "Building dataset." << endl;
     for(unsigned int iFile=0; iFile<datafiles.size(); iFile++) {
@@ -486,6 +493,47 @@ private:
 
 
 
+bool Calonder::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
+  CvPoint pt = cvPoint(col, row); 
+  cv::WImageView_b view = extractPatch3(&img, pt);
+  IplImage *patch = view.Ipl();
+
+  IplImage *gray = cvCreateImage(cvSize(patch->width, patch->height), IPL_DEPTH_8U, 1);
+  cvCvtColor(patch,gray,CV_BGR2GRAY);
+  DenseSignature sig = rt_.getDenseSignature(gray);
+
+  Matrix* res = new Matrix(sig.size(),1); 
+  for(unsigned int i=1; i<=sig.size(); i++) {
+    (*res)(i,1) = sig(i-1);
+  }
+
+  // -- Normalize.  This may be a terrible idea.
+//   Matrix div(1,1); div = 1/res->MaximumAbsoluteValue();
+//   *res = KP(*res, div);
+
+  *result = res;
+  
+  if(debug) {
+    cvNamedWindow("patch", 0);
+    cvShowImage("patch", gray);
+    cvWaitKey(100);
+    display(**result);
+  }
+  //cvReleaseImage(&patch);  cvwimage.
+  cvReleaseImage(&gray);
+  return true;
+}
+
+void Calonder::display(const Matrix& result) {
+  cout << "Starting display of " << name_ << " feature." << endl;
+  cout << result.t() << endl;
+
+  cout << "Press Enter to continue. . .\n";
+  cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+}
+
+
 bool SpinImage::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
 
   // -- Reset psi_.
@@ -515,56 +563,26 @@ bool SpinImage::operator()(SmartScan &ss, IplImage &img, float x, float y, float
     }
   }
 
-  // -- Normalize.
-  Matrix div(1,1); div = 1/res->MaximumAbsoluteValue();
+  // -- Whiten the data.
+  float var=0.0;
+  float mean = res->Sum() / res->Nrows();
+  for(int i=1; i<=res->Nrows(); i++) {
+    (*res)(i,1) = (*res)(i,1) - mean;
+    var += pow((*res)(i,1), 2);
+  }
+  var /= res->Nrows();
+
+  cout << "New mean: " << res->Sum() / res->Nrows() << endl;
+
+  Matrix div(1,1); div = 1/(sqrt(var));
   *res = KP(*res, div);
-  *result = res;
 
   if(debug) {
     display(*res);
   }
-    
-  return true;
-}
-
-bool Calonder::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
-  CvPoint pt = cvPoint(col, row); 
-  cv::WImageView_b view = extractPatch3(&img, pt);
-  IplImage *patch = view.Ipl();
-
-  IplImage *gray = cvCreateImage(cvSize(patch->width, patch->height), IPL_DEPTH_8U, 1);
-  cvCvtColor(patch,gray,CV_BGR2GRAY);
-  DenseSignature sig = rt_.getDenseSignature(gray);
-
-  Matrix* res = new Matrix(sig.size(),1); 
-  for(unsigned int i=1; i<=sig.size(); i++) {
-    (*res)(i,1) = sig(i-1);
-  }
-
-  // -- Normalize.  This may be a terrible idea.
-  Matrix div(1,1); div = 1/res->MaximumAbsoluteValue();
-  *res = KP(*res, div);
-
-  *result = res;
   
-  if(debug) {
-    cvNamedWindow("patch", 0);
-    cvShowImage("patch", gray);
-    cvWaitKey(100);
-    display(**result);
-  }
-  //cvReleaseImage(&patch);  cvwimage.
-  cvReleaseImage(&gray);
+  *result = res;
   return true;
-}
-
-void Calonder::display(const Matrix& result) {
-  cout << "Starting display of " << name_ << " feature." << endl;
-  cout << result.t() << endl;
-
-  cout << "Press Enter to continue. . .\n";
-  cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
 }
 
 void SpinImage::display(const Matrix& result) {
@@ -588,6 +606,18 @@ void SpinImage::display(const Matrix& result) {
   f.close();
   system(cmd);
   remove(filename);
+
+  // -- Check.
+  float var=0.0;
+  float mean = result.Sum() / result.Nrows();
+  for(int i=1; i<=result.Nrows(); i++) {
+    var += pow(result(i,1), 2);
+  }
+  var /= result.Nrows();
+  cout << "Var: " << var << endl;
+  cout << "Mean: " << mean << endl;
+  assert(fabs(mean) < 1e-4);
+  assert(fabs(1-var) < 1e-4);
 
   cout << "Press Enter to continue. . .\n";
   cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
@@ -622,7 +652,7 @@ int main(int argc, char **argv) {
 	nSamples = 1;
 	nBG_pts = 2;
 	nRepetitions_per_obj = 2;
-	debug = false;
+	debug = true;
       }
       dn.buildDataset(nSamples, datafiles, savename, debug, nBG_pts, nRepetitions_per_obj);
     }
@@ -646,7 +676,7 @@ int main(int argc, char **argv) {
       dn.train(50, 60*60*10, 1);
     }
     else {
-      dn.train(50, 60*60*1, 1000);
+      dn.train(100, 60*60*17, 100000);
       dn.d_.save(string(argv[2]));
     }
 
