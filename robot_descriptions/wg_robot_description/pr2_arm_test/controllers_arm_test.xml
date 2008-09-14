@@ -6,6 +6,7 @@
       <!-- ========================================= -->
       <!-- left arm array -->
       <controller name="left_arm_controller" type="ArmPositionControllerNode">
+              <listen_topic name="/left_arm_cmd" />
 	      <kinematics>
 		      <elem key="kdl_chain_name">left_arm</elem>
 	      </kinematics>
