@@ -37,6 +37,7 @@
 #include <string>
 #include <vector>
 #include "ros/node.h"
+#include "rostools/Time.h"
 #include <tinyxml/tinyxml.h>
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
@@ -126,6 +127,9 @@ private:
 
   rosTF::TransformArray transform_array_msg_;
   misc_utils::RealtimePublisher<rosTF::TransformArray> transform_array_publisher_;
+
+  rostools::Time time_msg_;
+  misc_utils::RealtimePublisher<rostools::Time> time_publisher_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

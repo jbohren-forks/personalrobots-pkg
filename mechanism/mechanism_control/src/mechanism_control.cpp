@@ -185,7 +185,7 @@ bool MechanismControl::killController(const std::string &name)
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1),
-    transform_array_publisher_("TransformArray", 1)
+    transform_array_publisher_("TransformArray", 1), time_publisher_("time", 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -287,6 +287,10 @@ void MechanismControlNode::update()
       out.zr = quat.z;
     }
     transform_array_publisher_.publish(transform_array_msg_);
+
+    // rostime
+    time_msg_.rostime.from_double(mc_->hw_->current_time_);
+    time_publisher_.publish(time_msg_);
 
     last_publish_time = mc_->hw_->current_time_;
   }
