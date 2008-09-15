@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <stdio.h>
+#include <getopt.h>
 #include <sys/mman.h>
 
 #include <ethercat/ethercat_xenomai_drv.h>
@@ -48,14 +49,97 @@
 static struct
 {
   int model;
-  WG05ActuatorInfo config;
+  WG0XActuatorInfo config;
 } configurations[] = {
-  {148877, {0, 1, 0, "", "PR2", "Maxon", "148877", 3.12, 1.0 / 158, 1.16, 0.0603, 1200, -1, "", 0}},
-  {310007, {0, 1, 0, "", "PR2", "Maxon", "310007", 3.44, 1.0 / 369, 0.611, 0.0199, 1200, -1, "", 0}}
-};
+  // Elbow, shoulder, spine
+  // Maxon 148877
+  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE40.pdf
+  {148877,
+    {0, 1,              // Revision
+     0, "",             // Id and name
+     "PR2",             // Robot name
+     "Maxon", "148877", // Motor make and model
+     3.12,              // Max current [Amps]
+     0.000017,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     1.16,              // Resistance [Ohms]
+     0.0603,            // Motor torque constant [Nm/A]
+     1200, -1,          // Encoder pulses and sign
+     "", 0              // Pad and CRC32
+    }
+  },
+ 
+  // Wrist
+  // Maxon 310007
+  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE30.pdf
+  {310007,
+    {0, 1,              // Revision
+     0, "",             // Id and name
+     "PR2",             // Robot name
+     "Maxon", "310007", // Motor make and model
+     3.44,              // Max current [Amps]
+     0.000010,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     0.611,             // Resistance [Ohms]
+     0.0259,            // Motor torque constant [Nm/A]
+     1200, -1,          // Encoder pulses and sign
+     "", 0              // Pad and CRC32
+    }
+  },
+
+  // Head
+  // Maxon 310009
+  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE30.pdf
+  {310009,
+    {0, 1,              // Revision
+     0, "",             // Id and name
+     "PR2",             // Robot name
+     "Maxon", "310009", // Motor make and model
+     1.72,              // Max current [Amps]
+     0.000015,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     2.52,              // Resistance [Ohms]
+     0.0538,            // Motor torque constant [Nm/A]
+     1200, -1,          // Encoder pulses and sign
+     "", 0              // Pad and CRC32
+    }
+  },
+
+  // Caster
+  // Maxon 236672
+  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonAMAX32.pdf
+  {236672,
+    {0, 1,              // Revision
+     0, "",             // Id and name
+     "PR2",             // Robot name
+     "Maxon", "236672", // Motor make and model
+     0.655,             // Max current [Amps]
+     0.000020,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     16.7,              // Resistance [Ohms]
+     0.0704,            // Motor torque constant [Nm/A]
+     1200, -1,          // Encoder pulses and sign
+     "", 0              // Pad and CRC32
+    }
+  },
+
+  // Gripper
+  // Maxon 222057
+  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonREMAX24.pdf
+  {222057,
+    {0, 1,              // Revision
+     0, "",             // Id and name
+     "PR2",             // Robot name
+     "Maxon", "222057", // Motor make and model
+     0.204,             // Max current [Amps]
+     0.000017,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     56.2,              // Resistance [Ohms]
+     0.0613,            // Motor torque constant [Nm/A]
+     1200, -1,          // Encoder pulses and sign
+     "", 0              // Pad and CRC32
+    }
+  },
+
+ };
 
 
-vector<WG05 *> devices;
+vector<WG0X *> devices;
 void init(char *interface)
 {
   struct netif *ni;
@@ -110,9 +194,16 @@ void init(char *interface)
       dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
+    else if (sh->get_product_code() == WG06::PRODUCT_CODE)
+    {
+      printf("found a WG06 at #%d\n", slave);
+      WG06 *dev = new WG06();
+      dev->configure(startAddress, sh);
+      devices.push_back(dev);
+    }
   }
 
-  vector<WG05 *>::const_iterator device;
+  vector<WG0X *>::const_iterator device;
   for (device = devices.begin(); device != devices.end(); ++device)
   {
     Actuator a;
@@ -123,21 +214,67 @@ void init(char *interface)
     (*device)->initialize(&a, true);
   }
 
-  for (int i = 0; i < sizeof(configurations)/sizeof(configurations[0]); ++i)
-  {
-    boost::crc_32_type crc32;
-    crc32.process_bytes(&configurations[i].config, sizeof(configurations[i].config)-sizeof(configurations[i].config.crc32_));
-    configurations[i].config.crc32_ = crc32.checksum();
-  }
-
   for (device = devices.begin(); device != devices.end(); ++device)
   {
     printf("isProgrammed = %d\n", (*device)->isProgrammed());
   }
-#if 0
-  devices[0]->program(&configurations[0].config);
-  devices[1]->program(&configurations[1].config);
-#endif
+}
+
+void programDevice(int device, WG0XActuatorInfo *configuration, char *name)
+{
+  WG0XActuatorInfo config;
+
+  config = *configuration;
+  printf("Programming device %d, to be named: %s\n", device, name);
+  strcpy(config.name_, name);
+  boost::crc_32_type crc32;
+  crc32.process_bytes(&config, sizeof(config)-sizeof(config.crc32_));
+  config.crc32_ = crc32.checksum();
+  devices[device]->program(&config);
+}
+
+int lookupMotor(int motor)
+{
+  for (int i = 0; i < int(sizeof(configurations)/sizeof(configurations[0])); ++i)
+  {
+    if (configurations[i].model == motor)
+      return i;
+  }
+  return -1;
+}
+static struct
+{
+  char *program_name_;
+  char *interface_;
+  char *name_;
+  bool program_;
+  int device_;
+  int motor_;
+} g_options;
+
+void Usage(string msg = "")
+{
+  fprintf(stderr, "Usage: %s [options]\n", g_options.program_name_);
+  fprintf(stderr, " -i, --interface <i>    Use the network interface <i>\n");
+  fprintf(stderr, " -d, --device <d>       Select the device to program\n");
+  fprintf(stderr, " -p, --program          Program a motor control board\n");
+  fprintf(stderr, " -n, --name <n>         Set the name of the motor control board to <n>\n");
+  fprintf(stderr, " -m, --motor <m>        Set the configuration for motor <m>\n");
+  fprintf(stderr, "     Legal motor values are:\n");
+  for (uint32_t i = 0; i < sizeof(configurations)/sizeof(configurations[0]); ++i)
+  {
+    fprintf(stderr, "       %d - %s %s\n", configurations[i].model, configurations[i].config.motor_make_, configurations[i].config.motor_model_);
+  }
+  fprintf(stderr, " -h, --help    Print this message and exit\n");
+  if (msg != "")
+  {
+    fprintf(stderr, "Error: %s\n", msg.c_str());
+    exit(-1);
+  }
+  else
+  {
+    exit(0);
+  }
 }
 
 int main(int argc, char *argv[])
@@ -145,21 +282,66 @@ int main(int argc, char *argv[])
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
-  if (argc < 2)
+  // Parse options
+  g_options.program_name_ = argv[0];
+  g_options.device_ = -1;
+  while (1)
   {
-    fprintf(stderr, "Usage: %s <interface>\n", argv[0]);
-    exit(-1);
+    static struct option long_options[] = {
+      {"help", no_argument, 0, 'h'},
+      {"interface", required_argument, 0, 'i'},
+      {"name", required_argument, 0, 'n'},
+      {"device", required_argument, 0, 'd'},
+      {"motor", required_argument, 0, 'm'},
+      {"program", no_argument, 0, 'p'},
+    };
+    int option_index = 0;
+    int c = getopt_long(argc, argv, "d:hi:m:n:p", long_options, &option_index);
+    if (c == -1) break;
+    switch (c)
+    {
+      case 'h':
+        Usage();
+        break;
+      case 'd':
+        g_options.device_ = atoi(optarg);
+        break;
+      case 'i':
+        g_options.interface_ = optarg;
+        break;
+      case 'n':
+        g_options.name_ = optarg;
+        break;
+      case 'm':
+        g_options.motor_ = atoi(optarg);
+        break;
+      case 'p':
+        g_options.program_ = 1;
+        break;
+    }
   }
 
-  init(argv[1]);
+  if (optind < argc)
+  {
+    Usage("Extra arguments");
+  }
 
-  for (int i = 0; i < argc - 2; ++i) {
-    printf("Programming device %d, to be named: %s\n", i, argv[i+2]);
-    strcpy(configurations[0].config.name_, argv[i+2]);
-    boost::crc_32_type crc32;
-    crc32.process_bytes(&configurations[0].config, sizeof(configurations[0].config)-sizeof(configurations[0].config.crc32_));
-    configurations[0].config.crc32_ = crc32.checksum();
-    devices[i]->program(&configurations[0].config);
+  if (!g_options.interface_)
+    Usage("You must specify a network interface");
+
+  init(g_options.interface_);
+
+  if (g_options.program_)
+  {
+    if (!g_options.name_)
+      Usage("You must specify a name");
+    if (g_options.device_ == -1)
+      Usage("You must specify a device #");
+    int c = lookupMotor(g_options.motor_);
+    if (c == -1)
+      Usage("You must specify a valid motor");
+
+    programDevice(g_options.device_, &configurations[c].config, g_options.name_);
   }
 
   return 0;
