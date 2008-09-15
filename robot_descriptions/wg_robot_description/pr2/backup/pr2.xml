@@ -826,22 +826,22 @@
     <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
   </joint>
   <joint name="ptz_pan_left_joint" type="revolute"> 
-    <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 0 -1 " /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
   </joint>
   <joint name="ptz_tilt_left_joint" type="revolute"> 
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 -1 0 " /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
   </joint>
   <joint name="ptz_pan_right_joint" type="revolute"> 
-    <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 0 -1 " /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_pan_min_limit" max="ptz_pan_max_limit" effort="10" velocity="5" />
   </joint>
   <joint name="ptz_tilt_right_joint" type="revolute"> 
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+    <axis xyz=" 0 -1 0 " /> <!-- direction of the joint in a local coordinate frame, axis ptz uses opposite sign than our robot frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" ptz_tilt_min_limit" max="ptz_tilt_max_limit" effort="10" velocity="5" />
   </joint>
@@ -1465,7 +1465,7 @@
     <map name="finger_l_left_gravity" flag="gazebo">
       <elem key="turnGravityOff">true</elem>
     </map>
-  </link>
+   </link>
   <!-- End   left hand l finger proximal digit definition -->
   <!-- Begin left hand l finger tip (distal digit) definition -->
   <link name="finger_tip_l_left"><!-- link specifying the shoulder of the robot -->
@@ -1487,6 +1487,23 @@
     <map name="finger_tip_l_left_gravity" flag="gazebo">
       <elem key="turnGravityOff">true</elem>
     </map>
+    <!--
+    <map name="sensor" flag="gazebo">
+      <verbatim key="contact_sensor">
+        <sensor:contact name="finger_tip_l_left_contact_sensor">
+          <updateRate>15.0</updateRate>
+          <geom>pr2_finger_tip_l_collision_geom</geom>
+          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>finger_tip_l_contact</topicName>
+            <frameName>finger_tip_l_contact</frameName>
+            <interface:bumper name="dummy_bumper_iface" />
+          </controller:ros_bumper>
+        </sensor:contact>
+      </verbatim>
+    </map>
+    -->
   </link>
   <!-- End   left hand l finger tip (distal digit) definition -->
   <!-- Begin left hand r finger proximal digit definition -->
@@ -1755,6 +1772,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>tilt_scan</topicName>
             <frameName>tilt_laser</frameName>
@@ -1816,6 +1834,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
 	    <updateRate>10</updateRate>
 	    <topicName>base_scan</topicName>
 	    <frameName>base_laser</frameName>
@@ -1873,6 +1892,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
 	    <updateRate>15.0</updateRate>
 	    <topicName>image_wrist_left</topicName>
 	    <frameName>wrist_camera_left</frameName>
@@ -1880,6 +1900,7 @@
           </controller:ros_camera>
           <!--
 	      <controller:generic_camera name="wrist_cam_left_controller">
+                <alwaysOn>true</alwaysOn>
 		<updateRate>15.0</updateRate>
 		<interface:camera name="wrist_cam_left_iface_1" />
 	      </controller:generic_camera>
@@ -1936,6 +1957,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_wrist_right</topicName>
             <frameName>wrist_camera_right</frameName>
@@ -1943,6 +1965,7 @@
           </controller:ros_camera>
           <!--
               <controller:generic_camera name="wrist_cam_right_controller">
+                <alwaysOn>true</alwaysOn>
 		<updateRate>15.0</updateRate>
 		<interface:camera name="wrist_cam_right_iface_1" />
               </controller:generic_camera>
@@ -1999,6 +2022,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_left</topicName>
             <frameName>forearm_roll_left</frameName>
@@ -2056,6 +2080,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>image_forearm_right</topicName>
             <frameName>forearm_roll_right</frameName>
@@ -2143,6 +2168,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>PTZL_image</topicName>
             <frameName>ptz_left</frameName>
@@ -2231,6 +2257,7 @@
           <farClip>100</farClip>
           <updateRate>15.0</updateRate>
           <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>PTZR_image</topicName>
             <frameName>ptz_right</frameName>
@@ -2295,14 +2322,19 @@
           <saveFramePath>frames</saveFramePath>
           <baseline>0.2</baseline>
           <updateRate>15.0</updateRate>
-          <controller:stereocamera name="stereo_camera_controller">
+          <controller:ros_stereocamera name="stereo_camera_controller" plugin="libRos_Stereo_Camera.so">
+            <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <interface:stereocamera name="stereo_iface_0" />
             <interface:camera name="camera_iface_0" />
             <interface:camera name="camera_iface_1" />
             <leftcamera>camera_iface_0</leftcamera>
             <rightcamera>camera_iface_1</rightcamera>
-          </controller:stereocamera>
+            <topicName>stereo_cloud</topicName>
+            <leftTopicName>stereo_left_image</leftTopicName>
+            <rightTopicName>stereo_right_image</rightTopicName>
+            <frameName>stereo</frameName>
+          </controller:ros_stereocamera>
         </sensor:stereocamera>
         -->
       </verbatim>
@@ -2326,5 +2358,9 @@
   <include>controllers.xml</include>
   <include>actuators.xml</include> 
   <include>transmissions.xml</include> 
+
+  <!-- Kinematic chains -->
+  <chain root="torso" tip="gripper_roll_left" />
+  <chain root="torso" tip="gripper_roll_right" />
 
 </robot>
