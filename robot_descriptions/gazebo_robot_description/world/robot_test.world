@@ -40,23 +40,9 @@
     <size>1024 800</size>
     <pos>0 0</pos>
     <frames>
-      <row height="50%">
-        <camera width="50%">
-          <xyz>0 0 10</xyz>
-          <rpy>0 90 90</rpy>
-        </camera>
-        <camera width="50%">
-          <xyz>0 0 30</xyz>
-          <rpy>0 90 90</rpy>
-        </camera>
-      </row>
-      <row height="50%">
-        <camera width="50%">
-          <xyz>0 0 100</xyz>
-          <rpy>0 90 90</rpy>
-        </camera>
-        <camera width="50%">
-          <xyz>0 0 300</xyz>
+      <row height="100%">
+        <camera width="100%">
+          <xyz>0 0 20</xyz>
           <rpy>0 90 90</rpy>
         </camera>
       </row>
@@ -71,7 +57,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
-    <maxUpdateRate>100</maxUpdateRate>
+    <maxUpdateRate>10</maxUpdateRate>
   </rendering:ogre>
 
 
