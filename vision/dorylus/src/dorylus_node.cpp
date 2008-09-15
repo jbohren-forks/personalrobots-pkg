@@ -303,9 +303,13 @@ public:
   
     cout << "Objective: " << d_.computeObjective() << endl;
     cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
+
+    	  
+    map<string, float> max_thetas = d_.computeMaxThetas(*d_.dd_);
+
     int wcs=0;
     while(true) {
-      bool found_better = d_.learnWC(nCandidates);
+      bool found_better = d_.learnWC(nCandidates, max_thetas);
       if(!found_better) {
 	continue;
       }
@@ -572,8 +576,6 @@ bool SpinImage::operator()(SmartScan &ss, IplImage &img, float x, float y, float
   }
   var /= res->Nrows();
 
-  cout << "New mean: " << res->Sum() / res->Nrows() << endl;
-
   Matrix div(1,1); div = 1/(sqrt(var));
   *res = KP(*res, div);
 
@@ -676,7 +678,7 @@ int main(int argc, char **argv) {
       dn.train(50, 60*60*10, 1);
     }
     else {
-      dn.train(100, 60*60*17, 100000);
+      dn.train(100, 60*60*9, 100000);
       dn.d_.save(string(argv[2]));
     }
 

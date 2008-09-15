@@ -498,35 +498,7 @@ vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, con
   return activated;
 }
 
-
-void Dorylus::train(int nCandidates, int max_secs, int max_wcs) {
-  time_t start, end;
-  time(&start);
-
-  cout << "Use training function in node!" << endl;
-  
-  cout << "Objective: " << computeObjective() << endl;
-  cout << "Objective (from classify()): " << classify(*dd_) << endl;
-  int wcs=0;
-  while(true) {
-    if(!learnWC(nCandidates))
-      continue;
-    wcs++;
-    time(&end);
-    cout << "Objective: " << computeObjective() << endl;
-    cout << "Objective (from classify()): " << classify(*dd_) << endl;
-    cout << "Difference: " << computeObjective() - classify(*dd_) << endl;
-
-    if(difftime(end,start) > max_secs)
-      break;
-    if(wcs >= max_wcs)
-      break;
-  }
-
-  cout << "Done training." << endl;
-}
-
-bool Dorylus::learnWC(int nCandidates) {
+bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
   int nThetas = 100;
   assert(dd_!=0);
   weak_classifier best;
@@ -605,6 +577,7 @@ bool Dorylus::learnWC(int nCandidates) {
     //cout << "Added a new candidate: " << wc.descriptor << " with feature id " << feature_id << " from obj " << obj_id << endl;
   }
   cout << "Added " << nCandidates << " candidate wcs" << endl;
+    
 
   // -- For all candidates, try several thetas and get their utilities.
   Matrix best_weights, *pweights=NULL;
@@ -614,8 +587,9 @@ bool Dorylus::learnWC(int nCandidates) {
   Matrix best_mmt;
   bool found_better = false;
   for(unsigned int i=0; i<cand.size(); i++) {
+    
+    // -- Get the distances from this candidate to all other points.
     vector<Matrix> dists;
-
     for(unsigned int j=0; j<dd_->objs_.size(); j++) {
       Matrix &f = dd_->objs_[j].features[cand[i].descriptor];
       dists.push_back(Matrix(1, f.Ncols()));  
@@ -629,6 +603,7 @@ bool Dorylus::learnWC(int nCandidates) {
 //       cout << "*** obj " << j << endl;
 //       cout << dists[j] << endl;
 //     }
+    
 
     cand[i].theta = 0;
     //float max_util_this_cand = 0;
@@ -636,8 +611,11 @@ bool Dorylus::learnWC(int nCandidates) {
     
       //For now, take thetas between 0 and .5sqrt(dimensionality) of the feature space uniformly.
       //This requires that the features all be normalized so that the max element is +1 and the min is 0.
-      Matrix& f = dd_->objs_[0].features[cand[i].descriptor];
-      float MAX_THETA = (1.0/2.0) * sqrt(f.Nrows());
+//       Matrix& f = dd_->objs_[0].features[cand[i].descriptor];
+//       float MAX_THETA = (1.0/2.0) * sqrt(f.Nrows());
+
+      //Use the MLE variance estimate in computeMaxThetas.
+      float MAX_THETA = max_thetas[cand[i].descriptor];
 
       // Rejection sampling to take small thetas more often.
       while(true) {
@@ -749,6 +727,70 @@ bool Dorylus::learnWC(int nCandidates) {
   delete *ppweights; *ppweights = NULL;
   return true;
 }
+
+// Choose MAX_THETA by fitting a multidimensional gaussian using MLE.
+map<string, float> Dorylus::computeMaxThetas(const DorylusDataset &dd) {
+  map<string, float> max_thetas;
+  map<string, float> variances;
+  map<string, Matrix> means;
+  map<string, float> nPts;
+
+  // -- Get the means and the nPts for each descriptor space.
+  for(unsigned int m=0; m<dd.objs_.size(); m++) {
+    map<string, Matrix>::const_iterator fit = dd.objs_[m].features.begin();
+    for(; fit!=dd.objs_[m].features.end(); fit++) {
+      string const& descr = fit->first;
+      Matrix const& f = fit->second;
+      if(means.find(descr) == means.end()) {
+	means[descr] = Matrix(f.Nrows(), 1);
+	means[descr] = 0.0;
+      }
+      if(nPts.find(descr) == nPts.end())
+	nPts[descr] = 0;
+
+      for(int k=1; k<=f.Ncols(); k++) {
+	means[descr] += f.Column(k);
+	nPts[descr]++;
+      }
+    }
+  }
+
+  map<string, Matrix>::iterator mit;
+  for(mit = means.begin(); mit != means.end(); mit++) {
+    Matrix div(1,1); div = 1 / nPts[mit->first];
+    mit->second = KP(mit->second, div);
+  }
+
+  // -- Get the variances for each descriptor space.
+  for(unsigned int m=0; m<dd.objs_.size(); m++) {
+    map<string, Matrix>::const_iterator fit = dd.objs_[m].features.begin();
+    for(; fit!=dd.objs_[m].features.end(); fit++) {
+      string const& descr = fit->first;
+      if(variances.find(descr) == variances.end())
+	variances[descr] = 0;
+
+      Matrix const& f = fit->second;
+      for(int k=1; k<=f.Ncols(); k++) {
+	Matrix zeroed = f.Column(k) - means[descr];
+	variances[descr] += DotProduct(zeroed, zeroed);
+      }
+    }
+  }
+
+  map<string, float>::iterator vit;
+  for(vit = variances.begin(); vit != variances.end(); vit++) {
+    vit->second = vit->second / (nPts[vit->first] * means[vit->first].Nrows());
+    max_thetas[vit->first] = 10*sqrt(vit->second); //10 stdevs.
+  }
+
+  // -- Display some statistics.
+  for(vit = variances.begin(); vit != variances.end(); vit++) {
+    cout << vit->first << " variance: " << vit->second << ", nPts: " << nPts[vit->first] << ", max_theta: " << max_thetas[vit->first] << endl;
+  }
+
+  return max_thetas;
+}
+  
 
 
 string displayWeakClassifier(const weak_classifier &wc) {

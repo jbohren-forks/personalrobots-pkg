@@ -79,10 +79,11 @@ class Dorylus {
 
   void loadDataset(DorylusDataset *dd);
   void normalizeWeights();
-  bool learnWC(int nCandidates);
+  bool learnWC(int nCandidates, map<string, float> max_thetas);
+  map<string, float> computeMaxThetas(const DorylusDataset &dd);
   float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeObjective();
-  void train(int nCandidates, int max_secs, int max_wcs);
+  //void train(int nCandidates, int max_secs, int max_wcs);
   bool save(string filename);
   bool load(string filename, bool quiet=false);
   std::string status();
