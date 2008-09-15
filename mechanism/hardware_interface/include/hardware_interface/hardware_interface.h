@@ -60,8 +60,8 @@ public:
   double velocity_;
 
   bool calibration_reading_;
-  int last_calibration_high_transition_;
-  int last_calibration_low_transition_;
+  double last_calibration_high_transition_;
+  double last_calibration_low_transition_;
 
   bool is_enabled_;
   bool run_stop_hit_;
@@ -75,7 +75,8 @@ public:
   int num_encoder_errors_;
   int num_communication_errors_;
 
-  int zero_offset_; // In encoder counts
+  // The difference between the actual reading from the encoder and the calibrated position of the actuator.  This field is write only; you should set it when calibrating the actuator, and then the actuator will take the zero offset into account when setting the position values.
+  double zero_offset_;
 };
 
 class ActuatorCommand
