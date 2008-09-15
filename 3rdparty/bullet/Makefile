@@ -9,6 +9,7 @@ include $(shell rospack find mk)/download_unpack.mk
 
 bullet: $(SOURCE_DIR) quaternion.patch
 	patch -p0 < quaternion.patch
+	patch -p0 < aCos_overflow.diff
 	cd $(SOURCE_DIR) && cmake .
 	make -C $(SOURCE_DIR) LibLinearMath
 	touch bullet

@@ -1,0 +1,29 @@
+*** bullet-2.71/src/LinearMath/btQuaternion.h	2008-08-26 19:24:11.000000000 -0700
+--- bullet-2.71/src/LinearMath/btQuaternion.new	2008-09-15 16:27:04.319927054 -0700
+*************** subject to the following restrictions:
+*** 17,22 ****
+--- 17,23 ----
+  #ifndef SIMD__QUATERNION_H_
+  #define SIMD__QUATERNION_H_
+  
++ #include <algorithm>
+  #include "btVector3.h"
+  
+  ///The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform.
+*************** public:
+*** 146,152 ****
+  	{
+  		btScalar s = btSqrt(length2() * q.length2());
+  		assert(s != btScalar(0.0));
+! 		return btAcos(dot(q) / s);
+  	}
+  
+  	btScalar getAngle() const 
+--- 147,153 ----
+  	{
+  		btScalar s = btSqrt(length2() * q.length2());
+  		assert(s != btScalar(0.0));
+! 		return btAcos(std::min(dot(q), 1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
+  	}
+  
+  	btScalar getAngle() const 
