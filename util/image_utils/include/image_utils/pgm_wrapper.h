@@ -10,8 +10,8 @@ using std::string;
 class PgmWrapper
 {
 public:
-  static char *write_file(string filename, int width, int height, 
-                          uint8_t *raster)
+  static const char *write_file(string filename, int width, int height, 
+                                uint8_t *raster)
   {
     FILE *f = fopen(filename.c_str(), "wb");
     if (!f)
