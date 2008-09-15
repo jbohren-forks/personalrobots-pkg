@@ -1,0 +1,5 @@
+float64 start_frequency
+float64 end_frequency
+float64 duration
+float64 amplitude
+---
