@@ -77,8 +77,6 @@ namespace gazebo {
     // uses info from wg_robot_description_parser/send.xml
     std::string pr2Content;
 
-    AdvertiseSubscribeMessages();
-
   }
 
   TestActuators::~TestActuators()
@@ -200,8 +198,6 @@ namespace gazebo {
     pr2Description.getLinks(pr2Links);
     std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
 
-    // as the name states
-    //LoadFrameTransformOffsets();
     //-----------------------------------------------------------------------------------------
     //
     // ACTUATOR XML
@@ -342,8 +338,6 @@ namespace gazebo {
       lastRealTime = currentRealTime;
     }
 
-    PublishROS();
-
     //---------------------------------------------------------------------
     // Real time update calls to mechanism control
     // this is what the hard real time loop does,
@@ -428,48 +422,6 @@ namespace gazebo {
 
   }
 
-  void TestActuators::PublishROS()
-  {
-    this->lock.lock();
-    /***************************************************************/
-    /*                                                             */
-    /*  publish time to ros                                        */
-    /*                                                             */
-    /***************************************************************/
-    timeMsg.rostime.sec  = (unsigned long)floor(hw_.current_time_);
-    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  hw_.current_time_ - timeMsg.rostime.sec) );
-    rosnode_->publish("time",timeMsg);
-
-
-    // FIXEDME: deprecated by mechanism state messages!!!
-    /* get left arm position */
-    // if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
-    // if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
-    // if( mc_.state_->getJointState("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_left_joint") ->position_;
-    // if( mc_.state_->getJointState("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.state_->getJointState("elbow_flex_left_joint")    ->position_;
-    // if( mc_.state_->getJointState("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_left_joint")  ->position_;
-    // if( mc_.state_->getJointState("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_left_joint")    ->position_;
-    // if( mc_.state_->getJointState("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_left_joint")  ->position_;
-    // if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.state_->getJointState("gripper_left_joint")       ->applied_effort_;
-    // if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.state_->getJointState("gripper_left_joint")       ->position_;
-    // rosnode_->publish("left_pr2arm_pos", larm);
-    // /* get right arm position */
-    // if( mc_.state_->getJointState("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.state_->getJointState("shoulder_pan_right_joint")  ->position_;
-    // if( mc_.state_->getJointState("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_right_joint")->position_;
-    // if( mc_.state_->getJointState("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_right_joint") ->position_;
-    // if( mc_.state_->getJointState("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.state_->getJointState("elbow_flex_right_joint")    ->position_;
-    // if( mc_.state_->getJointState("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_right_joint")  ->position_;
-    // if( mc_.state_->getJointState("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_right_joint")    ->position_;
-    // if( mc_.state_->getJointState("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_right_joint")  ->position_;
-    // if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.state_->getJointState("gripper_right_joint")       ->applied_effort_;
-    // if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
-    // rosnode_->publish("right_pr2arm_pos", rarm);
-
-    //PublishFrameTransforms();
-
-    this->lock.unlock();
-  }
-
 
   void TestActuators::UpdateGazeboJoints()
   {
@@ -547,99 +499,15 @@ namespace gazebo {
   }
 
 
-  int
-  TestActuators::AdvertiseSubscribeMessages()
-  {
-    //rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
-    //rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
-    rosnode_->advertise<rostools::Time>("time");
-
-    //rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived,this);
-    //rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
-    //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
-    //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &TestActuators::CmdRightarmcartesianReceived);
-
-    return(0);
-  }
-
-
-  void
-  TestActuators::LoadFrameTransformOffsets()
-  {
-    // get all links in pr2.xml
-    robot_desc::URDF::Link* link;
-
-    // get all the parameters needed for frame transforms
-    link = pr2Description.getLink("base");
-    if (link)
-    {
-      base_center_offset_z = link->collision->xyz[2];
-    }
-    // get all the parameters needed for frame transforms
-    link = pr2Description.getLink("base_laser");
-    if (link)
-    {
-      base_laser_offset_x = link->xyz[0];
-      base_laser_offset_y = link->xyz[1];
-      base_laser_offset_z = link->xyz[2];
-    }
-    link = pr2Description.getLink("tilt_laser");
-    if (link)
-    {
-      tilt_laser_offset_x = link->xyz[0];
-      tilt_laser_offset_y = link->xyz[1];
-      tilt_laser_offset_z = link->xyz[2];
-    }
-
-  }
-
-
-  void
-  TestActuators::PublishFrameTransforms()
-  {
-
-
-
-    /***********************************************************************************************/
-    /*                                                                                             */
-    /*  frame transforms for laser sensors                                                         */
-    /*                                                                                             */
-    /*  FIXME mechanism transform should treat <sensor> in pr2.xml same way <link> is treated,     */
-    /*        i.e. publish frame transform for <sensor> as well.                                   */
-    /*                                                                                             */
-    /***********************************************************************************************/
-    // base laser location
-    tfs->sendEuler("base_laser",
-                 "base",
-                 base_laser_offset_x,
-                 base_laser_offset_y,
-                 base_laser_offset_z,
-                 0.0,
-                 0.0,
-                 0.0,
-                 timeMsg.rostime);
-
-    // tilt laser location
-    double tilt_laser_angle=0;
-    controller::Controller* tlc = mc_.getControllerByName( "tilt_laser_controller" );
-    controller::LaserScannerControllerNode* tlcn = dynamic_cast<controller::LaserScannerControllerNode*>(tlc);
-    if (tlcn) tilt_laser_angle = tlcn->getMeasuredPosition();
-    tfs->sendEuler("tilt_laser",
-                 "torso",
-                 tilt_laser_offset_x,
-                 tilt_laser_offset_y,
-                 tilt_laser_offset_z,
-                 0.0,
-                 tilt_laser_angle,
-                 0.0,
-                 timeMsg.rostime);
-  }
-
-
 
 
 
 #if 0
+  //
+  //
+  // FIXME: left overs from grasping demo from Advait, reimplement in arm controller
+  //
+  //
   void
   TestActuators::CmdLeftarmconfigReceived()
   {

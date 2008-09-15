@@ -71,10 +71,6 @@ public:
   TestActuators(Entity *parent);
   virtual ~TestActuators();
 
-  void LoadFrameTransformOffsets();
-  void PublishFrameTransforms();
-  int AdvertiseSubscribeMessages();
-
 protected:
   // Inherited from gazebo::Controller
   virtual void LoadChild(XMLConfigNode *node);
@@ -105,19 +101,6 @@ protected:
 
 private:
 
-  // arm joint data
-  //std_msgs::PR2Arm leftarmMsg;
-  //std_msgs::PR2Arm rightarmMsg;
-  // end effector cmds
-  //pr2_msgs::EndEffectorState leftarmcartesianMsg;
-  //pr2_msgs::EndEffectorState rightarmcartesianMsg;
-
-  rostools::Time timeMsg;
-
-  std_msgs::Point3DFloat32 objectPosMsg;
-
- 
-
   Model *parent_model_;
 
   std::vector<robot_desc::URDF::Link*> pr2Links;
@@ -133,7 +116,6 @@ private:
 
   void LoadMC(XMLConfigNode *node);
   void UpdateMC();
-  void PublishROS();
   void UpdateMCJoints();
   void UpdateGazeboJoints();
 
