@@ -1,0 +1,34 @@
+*** bullet-2.71/src/LinearMath/btTransform.h.original	2008-09-15 09:52:50.803009498 -0700
+--- bullet-2.71/src/LinearMath/btTransform.h	2008-09-15 09:54:50.399737258 -0700
+*************** public:
+*** 155,160 ****
+--- 155,162 ----
+  
+  	btTransform operator*(const btTransform& t) const;
+  
++ 	btQuaternion operator*(const btQuaternion& q) const;
++ 
+  	static btTransform	getIdentity()
+  	{
+  		btTransform tr;
+*************** btTransform::operator*(const btTransform
+*** 191,196 ****
+--- 193,210 ----
+  		(*this)(t.m_origin));
+  }
+  
++ SIMD_FORCE_INLINE btQuaternion 
++ btTransform::operator*(const btQuaternion& q) const
++ {
++   btMatrix3x3 basis(q);
++   basis = (m_basis * basis);
++ 
++   btQuaternion q_out;
++   basis.getRotation(q_out);
++   return q_out;
++ };
++ 
++ 
+  SIMD_FORCE_INLINE bool operator==(const btTransform& t1, const btTransform& t2)
+  {
+     return ( t1.getBasis()  == t2.getBasis() &&

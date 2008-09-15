@@ -7,12 +7,12 @@ MD5SUM_FILE = bullet-2.71-SDK.tgz.md5sum
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk
 
-bullet: $(SOURCE_DIR)
-	mkdir -p src
+bullet: $(SOURCE_DIR) quaternion.patch
+	patch -p0 < quaternion.patch
 	cd $(SOURCE_DIR) && cmake .
 	make -C $(SOURCE_DIR) LibLinearMath
 	touch bullet
 clean:
-	rm -rf src $(SOURCE_DIR)
+	rm -rf $(SOURCE_DIR)
 wipe: clean
 	rm -rf $(TARBALL)
