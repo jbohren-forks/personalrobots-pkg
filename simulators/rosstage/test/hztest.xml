@@ -3,32 +3,41 @@
   <node pkg="rosstage" type="rosstage" args="world/willow-erratic.world"/>
 
   <!-- Test for publication of 'scan' topic -->
-  <!-- The topic to listen for -->
-  <param name="scan_test/topic" value="scan" />  
-  <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
-  at least one message is received. -->
-  <param name="scan_test/hz" value="10.0" />
-  <!-- Acceptable error in the publication rate [Hz].  Ignored if hz is set
-  to 0.0. -->
-  <param name="scan_test/hzerror" value="0.5" />
-  <!-- Time to listen for [seconds] -->
-  <param name="scan_test/test_duration" value="2.0" />    
-  <!-- Whether each inter-message time interval should be checked against
-  the expected publication rate and error bound [boolean].  If true, then
-  the test will fail if the time elapsed between *any* two consecutive
-  messages exceeded the specified limits.  If false, then we only check
-  the average publication rate over the entire test.  Default: false. -->
-  <param name="scan_test/check_intervals" value="true" />    
   <!-- Run hztest -->
-  <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="scan_test" />
+  <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="scan_test">
+    <!-- The topic to listen for -->
+    <param name="topic" value="scan" />  
+    <!-- 
+      The expected publication rate [Hz].  Set to 0.0 to only check that
+      at least one message is received. -->
+    <param name="hz" value="10.0" />
+    <!--
+      Acceptable error in the publication rate [Hz].  Ignored if hz is set
+      to 0.0. -->
+    <param name="hzerror" value="0.5" />
+    <!-- Time to listen for [seconds] -->
+    <param name="test_duration" value="2.0" />
+    
+    <!-- 
+      Whether each inter-message time interval should be checked
+      against the expected publication rate and error bound [boolean].
+      If true, then the test will fail if the time elapsed between
+      *any* two consecutive messages exceeded the specified limits.
+      If false, then we only check the average publication rate over
+      the entire test.  Default: false. -->
+    <param name="check_intervals" value="true" />    
+  </test>
 
   <!-- Test for publication of 'odom' topic. -->
-  <!-- Note how we use a different parameter namespace and node name
-  for this test (odom_test vs. scan_test). -->
-  <param name="odom_test/topic" value="scan" />  
-  <param name="odom_test/hz" value="10.0" />
-  <param name="odom_test/hzerror" value="0.5" />
-  <param name="odom_test/test_duration" value="2.0" />    
-  <param name="odom_test/check_intervals" value="true" />    
-  <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test" />
+  
+  <!-- Note how we use a different node name for this test (odom_test
+       vs. scan_test). -->
+  <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test">
+    <param name="topic" value="scan" />  
+    <param name="hz" value="10.0" />
+    <param name="hzerror" value="0.5" />
+    <param name="test_duration" value="2.0" />    
+    <param name="check_intervals" value="true" />    
+  </test>
+  
 </launch>
