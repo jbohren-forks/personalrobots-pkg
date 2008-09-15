@@ -2,6 +2,8 @@
 #include <tf/tf.h>
 #include <math_utils/angles.h>
 #include <sys/time.h>
+#define BT_USE_DOUBLE_PRECISION 1
+
 #include "LinearMath/btVector3.h"
 
 
@@ -203,6 +205,53 @@ TEST(tf, TransformVector3Cartesian)
   
 }
 
+TEST(tf, TransformQuaternionCartesian)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child");
+    mTR.setTransform(tranStamped, "my_parent");
+
+    /// \todo remove fix for graphing problem
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
+    mTR.setTransform(tranStamped2, "my_parent2");
+  }
+
+  //  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btQuaternion> invec (btQuaternion(xvalues[i],yvalues[i],zvalues[i]), 10 + i, "child");
+    //    printf("%f, %f, %f\n", xvalues[i],yvalues[i], zvalues[i]);
+
+    try{
+    Stamped<btQuaternion> outvec(btQuaternion(xvalues[i],yvalues[i],zvalues[i]), 10 + i, "child");
+
+    mTR.transformStamped("my_parent",invec, outvec);
+    EXPECT_NEAR(outvec.data_.angle(invec.data_) , 0, epsilon);
+    }
+    catch (tf::TFException & ex)
+    {
+      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
 
 
 #ifdef UNDEFINED

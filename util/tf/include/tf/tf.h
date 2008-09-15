@@ -30,6 +30,8 @@
 //ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 //POSSIBILITY OF SUCH DAMAGE.
 
+/** \author Tully Foote */
+
 #ifndef LIBTF_HH
 #define LIBTF_HH
 #include <iostream>
@@ -43,18 +45,9 @@
 #include "tf/cache.h"
 #include <rosthread/mutex.h>
 
+
 namespace tf
 {
-
-
-class TransformWithID
-{
-public:
-  unsigned int frame_id;
-  btTransform transform;
-  TransformWithID(unsigned int frame, btTransform trans):frame_id(frame), transform(trans) {};
-} ;
-
   /** \brief An internal representation of transform chains
    * 
    * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
@@ -229,6 +222,7 @@ protected:
 };
 
 
+
 template<typename T>
 void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
 {
@@ -236,7 +230,7 @@ void Transformer::transformStamped(const std::string& target_frame, const Stampe
   
   btTransform transform = computeTransformFromList(t_list);
   
-  stamped_out.data_ = transform * stamped_out.data_;  ///\todo bt supports vector and transform, need to define transform on quaternion method
+  stamped_out.data_ = transform * stamped_out.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };

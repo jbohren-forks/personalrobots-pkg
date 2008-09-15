@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(tf)
 
+add_definitions(-DBT_USE_DOUBLE_PRECISION)
+
 rospack_add_library(tf src/tf.cpp)
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)
