@@ -201,7 +201,7 @@ namespace gazebo {
     std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
 
     // as the name states
-    LoadFrameTransformOffsets();
+    //LoadFrameTransformOffsets();
     //-----------------------------------------------------------------------------------------
     //
     // ACTUATOR XML
@@ -465,7 +465,7 @@ namespace gazebo {
     // if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
     // rosnode_->publish("right_pr2arm_pos", rarm);
 
-    PublishFrameTransforms();
+    //PublishFrameTransforms();
 
     this->lock.unlock();
   }
@@ -558,7 +558,7 @@ namespace gazebo {
     //rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
     //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
     //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &TestActuators::CmdRightarmcartesianReceived);
-    
+
     return(0);
   }
 
