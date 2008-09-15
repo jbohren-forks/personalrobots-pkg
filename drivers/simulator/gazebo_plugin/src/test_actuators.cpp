@@ -441,29 +441,29 @@ namespace gazebo {
     rosnode_->publish("time",timeMsg);
 
 
-    // FIXME: move to arm controller
+    // FIXEDME: deprecated by mechanism state messages!!!
     /* get left arm position */
-    if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
-    if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
-    if( mc_.state_->getJointState("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_left_joint") ->position_;
-    if( mc_.state_->getJointState("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.state_->getJointState("elbow_flex_left_joint")    ->position_;
-    if( mc_.state_->getJointState("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_left_joint")  ->position_;
-    if( mc_.state_->getJointState("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_left_joint")    ->position_;
-    if( mc_.state_->getJointState("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_left_joint")  ->position_;
-    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.state_->getJointState("gripper_left_joint")       ->applied_effort_;
-    if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.state_->getJointState("gripper_left_joint")       ->position_;
-    rosnode_->publish("left_pr2arm_pos", larm);
-    /* get right arm position */
-    if( mc_.state_->getJointState("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.state_->getJointState("shoulder_pan_right_joint")  ->position_;
-    if( mc_.state_->getJointState("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_right_joint")->position_;
-    if( mc_.state_->getJointState("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_right_joint") ->position_;
-    if( mc_.state_->getJointState("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.state_->getJointState("elbow_flex_right_joint")    ->position_;
-    if( mc_.state_->getJointState("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_right_joint")  ->position_;
-    if( mc_.state_->getJointState("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_right_joint")    ->position_;
-    if( mc_.state_->getJointState("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_right_joint")  ->position_;
-    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.state_->getJointState("gripper_right_joint")       ->applied_effort_;
-    if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
-    rosnode_->publish("right_pr2arm_pos", rarm);
+    // if( mc_.state_->getJointState("shoulder_pan_left_joint")   ) larm.turretAngle       = mc_.state_->getJointState("shoulder_pan_left_joint")  ->position_;
+    // if( mc_.state_->getJointState("shoulder_pitch_left_joint") ) larm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_left_joint")->position_;
+    // if( mc_.state_->getJointState("upperarm_roll_left_joint")  ) larm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_left_joint") ->position_;
+    // if( mc_.state_->getJointState("elbow_flex_left_joint")     ) larm.elbowAngle        = mc_.state_->getJointState("elbow_flex_left_joint")    ->position_;
+    // if( mc_.state_->getJointState("forearm_roll_left_joint")   ) larm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_left_joint")  ->position_;
+    // if( mc_.state_->getJointState("wrist_flex_left_joint")     ) larm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_left_joint")    ->position_;
+    // if( mc_.state_->getJointState("gripper_roll_left_joint")   ) larm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_left_joint")  ->position_;
+    // if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperForceCmd   = mc_.state_->getJointState("gripper_left_joint")       ->applied_effort_;
+    // if( mc_.state_->getJointState("gripper_left_joint")        ) larm.gripperGapCmd     = mc_.state_->getJointState("gripper_left_joint")       ->position_;
+    // rosnode_->publish("left_pr2arm_pos", larm);
+    // /* get right arm position */
+    // if( mc_.state_->getJointState("shoulder_pan_right_joint")   ) rarm.turretAngle       = mc_.state_->getJointState("shoulder_pan_right_joint")  ->position_;
+    // if( mc_.state_->getJointState("shoulder_pitch_right_joint") ) rarm.shoulderLiftAngle = mc_.state_->getJointState("shoulder_pitch_right_joint")->position_;
+    // if( mc_.state_->getJointState("upperarm_roll_right_joint")  ) rarm.upperarmRollAngle = mc_.state_->getJointState("upperarm_roll_right_joint") ->position_;
+    // if( mc_.state_->getJointState("elbow_flex_right_joint")     ) rarm.elbowAngle        = mc_.state_->getJointState("elbow_flex_right_joint")    ->position_;
+    // if( mc_.state_->getJointState("forearm_roll_right_joint")   ) rarm.forearmRollAngle  = mc_.state_->getJointState("forearm_roll_right_joint")  ->position_;
+    // if( mc_.state_->getJointState("wrist_flex_right_joint")     ) rarm.wristPitchAngle   = mc_.state_->getJointState("wrist_flex_right_joint")    ->position_;
+    // if( mc_.state_->getJointState("gripper_roll_right_joint")   ) rarm.wristRollAngle    = mc_.state_->getJointState("gripper_roll_right_joint")  ->position_;
+    // if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperForceCmd   = mc_.state_->getJointState("gripper_right_joint")       ->applied_effort_;
+    // if( mc_.state_->getJointState("gripper_right_joint")        ) rarm.gripperGapCmd     = mc_.state_->getJointState("gripper_right_joint")       ->position_;
+    // rosnode_->publish("right_pr2arm_pos", rarm);
 
     PublishFrameTransforms();
 
@@ -550,13 +550,13 @@ namespace gazebo {
   int
   TestActuators::AdvertiseSubscribeMessages()
   {
-    rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
-    rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
+    //rosnode_->advertise<std_msgs::PR2Arm>("left_pr2arm_pos");
+    //rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
     rosnode_->advertise<rostools::Time>("time");
 
-    rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived, this);
-    rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived,this);
-    rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
+    //rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived, this);
+    //rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived,this);
+    //rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
     //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
     //rosnode_->subscribe("cmd_rightarm_cartesian", rightarmcartesianMsg, &TestActuators::CmdRightarmcartesianReceived);
     
@@ -676,7 +676,7 @@ namespace gazebo {
 
 
 
-
+#if 0
   void
   TestActuators::CmdLeftarmconfigReceived()
   {
@@ -767,7 +767,6 @@ namespace gazebo {
 
 
 
-#if 0
   void
   TestActuators::CmdLeftarmcartesianReceived()
   {

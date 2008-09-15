@@ -53,6 +53,7 @@
 #include <newmat10/newmatap.h>
 
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/BaseVel.h>
 
 #include <pthread.h>
 
@@ -154,7 +155,6 @@ namespace controller
      * \brief mutex lock for setting and getting commands
      */
     pthread_mutex_t base_controller_lock_;
-
 
     /*!
      * \brief URDF representation of the robot model
@@ -345,6 +345,17 @@ namespace controller
     private:
 
     BaseController *c_;
+
+    /*!
+     * \brief deal with cmd_vel command from 2dnav stack
+     */
+    void CmdBaseVelReceived();
+    std_msgs::BaseVel velMsg;
+
+    /*!
+     * \brief mutex lock for setting and getting ros messages
+     */
+    ros::thread::mutex ros_lock_;
 
   };
 

@@ -433,7 +433,17 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   node->advertise<std_msgs::RobotBase2DOdom>("odom");
 
+  // receive messages from 2dnav stack
+  node->subscribe("cmd_vel", velMsg, &BaseControllerNode::CmdBaseVelReceived, this);
+
   return true;
+}
+
+void BaseControllerNode::CmdBaseVelReceived()
+{
+  this->ros_lock_.lock();
+  this->setCommand(velMsg.vx,0.0,velMsg.vw);
+  this->ros_lock_.unlock();
 }
 
 void BaseControllerNode::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)

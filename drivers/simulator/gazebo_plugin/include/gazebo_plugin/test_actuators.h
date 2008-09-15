@@ -49,10 +49,10 @@
 // roscpp - used for broadcasting time over ros
 #include <rostools/Time.h>
 // ros messages
-#include <std_msgs/RobotBase2DOdom.h>
-#include <std_msgs/BaseVel.h>
-#include <std_msgs/PR2Arm.h>
-#include <pr2_msgs/EndEffectorState.h>
+//#include <std_msgs/RobotBase2DOdom.h>
+//#include <std_msgs/BaseVel.h>
+//#include <std_msgs/PR2Arm.h>
+//#include <pr2_msgs/EndEffectorState.h>
 
 // Ioan's parser
 #include <urdf/URDF.h>
@@ -85,11 +85,11 @@ protected:
   virtual void FiniChild();
 
   // Callbacks for subscribed messages
-  void CmdBaseVelReceived();
-  void CmdLeftarmconfigReceived();
-  void CmdRightarmconfigReceived();
-  void CmdLeftarmcartesianReceived();
-  void CmdRightarmcartesianReceived();
+  //void CmdBaseVelReceived();
+  //void CmdLeftarmconfigReceived();
+  //void CmdRightarmconfigReceived();
+  //void CmdLeftarmcartesianReceived();
+  //void CmdRightarmcartesianReceived();
 #if 0
   bool reset_IK_guess(gazebo_plugin::VoidVoid::request &req, gazebo_plugin::VoidVoid::response &res);
   bool SetRightArmCartesian(gazebo_plugin::MoveCartesian::request &req, gazebo_plugin::MoveCartesian::response &res);
@@ -108,13 +108,13 @@ protected:
 
 private:
 
-  std_msgs::BaseVel velMsg;
-   // arm joint data
-  std_msgs::PR2Arm leftarmMsg;
-  std_msgs::PR2Arm rightarmMsg;
+  //std_msgs::BaseVel velMsg;
+  // arm joint data
+  //std_msgs::PR2Arm leftarmMsg;
+  //std_msgs::PR2Arm rightarmMsg;
   // end effector cmds
-  pr2_msgs::EndEffectorState leftarmcartesianMsg;
-  pr2_msgs::EndEffectorState rightarmcartesianMsg;
+  //pr2_msgs::EndEffectorState leftarmcartesianMsg;
+  //pr2_msgs::EndEffectorState rightarmcartesianMsg;
 
   rostools::Time timeMsg;
 
@@ -163,7 +163,7 @@ private:
   // for storing reverse transmission results
   //mechanism::Robot* reverse_mech_robot_;
 
-  std_msgs::PR2Arm larm,rarm;
+  //std_msgs::PR2Arm larm,rarm;
 
   // for storing controller xml
   struct Gazebo_joint_
