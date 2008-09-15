@@ -33,12 +33,7 @@
  *********************************************************************/
 #include "trajectory_rollout/trajectory.h"
 
-Trajectory::Trajectory(double xv, double yv, double thetav, size_t steps)
-  : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0), points_(steps)
+Trajectory::Trajectory(double xv, double yv, double thetav)
+  : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0)
 {
 }
-
-void Trajectory::addPoint(int step, TrajectoryPoint tp){
-  points_[step] = tp;
-}
-

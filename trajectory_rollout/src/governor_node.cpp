@@ -138,23 +138,30 @@ void GovernorNode::processPlan(){
   //we need to lock the map while we process it
   map_lock.lock();
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
-  Trajectory path = tc_.findBestPath(robot_pose, robot_vel, robot_acc);
+  int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc);
   //give map_ back
   map_lock.unlock();
 
-  libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(path);
+  printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.x, robot_vel.y, robot_vel.yaw);
+
+  if(path_index == -1)
+    return;
+
+  libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(tc_.trajectories_[path_index]);
+
+  printf("Path index: %d Cost: %.2f\n", path_index, tc_.trajectories_[path_index].cost_);
 
   //let's print debug output to the screen
-  path_msg.set_points_size(path.points_.size());
+  path_msg.set_points_size(tc_.num_steps_);
   path_msg.color.r = 1.0;
   path_msg.color.g = 0;
   path_msg.color.b = 0;
   path_msg.color.a = 0;
-  for(unsigned int i = 0; i < path.points_.size(); ++i){
+  for(int i = 0; i < tc_.num_steps_; ++i){
     //path_msg.points[i].x = ((int)((path.points_[i].x_ - map_.origin_x) / map_.scale));
     //path_msg.points[i].y = ((int)((path.points_[i].y_ - map_.origin_y) / map_.scale));
-    path_msg.points[i].x = path.points_[i].x_;
-    path_msg.points[i].y = path.points_[i].y_;
+    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i);
+    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
     //printf("(%.2f, %.2f), ", path_msg.points[i].x, path_msg.points[i].y);
   }
   //printf("(%.2f, %.2f)\n ", path_msg.points[0].x, path_msg.points[0].y);
@@ -167,6 +174,7 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vx = drive_cmds.x;
   cmd_vel_msg_.vy = drive_cmds.y;
   cmd_vel_msg_.vw = drive_cmds.yaw;
+  printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", drive_cmds.x, drive_cmds.y, drive_cmds.yaw);
   //publish("cmd_vel", cmd_vel_msg_);
 }
 
@@ -190,10 +198,14 @@ int main(int argc, char** argv){
 
   struct timeval curr;
 
+  int i = 0;
   while(gn.ok()){
     gettimeofday(&curr,NULL);
     gn.processPlan();
     gn.sleep(curr.tv_sec + curr.tv_usec / 1e6);
+    if(i > 10)
+      exit(0);
+    ++i;
   }
 
   ros::fini();

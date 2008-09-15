@@ -42,6 +42,10 @@
 #include <cstdlib>
 #include <ctime>
 
+//for matrix support
+#include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+
 //For transform support
 #include <rosTF/rosTF.h>
 
@@ -60,7 +64,7 @@ class TrajectoryController {
     TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf);
     
     //given the current state of the robot, find a good trajectory
-    Trajectory findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc);
+    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc);
 
     //compute the distance from each cell in the map grid to the planned path
     void computePathDistance();
@@ -73,16 +77,26 @@ class TrajectoryController {
         double acc_x, double acc_y, double acc_theta);
 
     //create a trajectory given the current pose of the robot and selected velocities
-    Trajectory generateTrajectory(double x, double y, double theta, double vx, double vy, 
+    Trajectory generateTrajectory(int t_num, double x, double y, double theta, double vx, double vy, 
         double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y,
         double acc_theta);
 
     
     //possible trajectories for this run
     std::vector<Trajectory> trajectories_;
-    
+
+    //needed to convert between map and robot space efficiently
+    NEWMAT::Matrix trajectory_pts_;
+    NEWMAT::Matrix trajectory_theta_;
+
+    //the number of trajectories we'll create
+    int num_trajectories_;
+
     //the map passed on from the planner
     MapGrid& map_;
+    
+    //the number of points we generate for each trajectory
+    int num_steps_;
 
   private:
     //compute the distance from an individual cell to the planned path
@@ -95,7 +109,7 @@ class TrajectoryController {
     void trajectoriesToWorld();
 
     //compute the cost for a single trajectory
-    double trajectoryCost(Trajectory t, double pdist_scale, double gdist_scale, double dfast_scale);
+    double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double dfast_scale);
 
     //given a position (in map space) return the containing cell
     std::pair<int, int> getMapCell(double x, double y);
@@ -108,7 +122,7 @@ class TrajectoryController {
     
     //the simulation parameters for generating trajectories
     double sim_time_;
-    int num_steps_, samples_per_dim_;
+    int samples_per_dim_;
 
     //transform client
     rosTFClient* tf_;

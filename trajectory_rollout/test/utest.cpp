@@ -134,7 +134,7 @@ TEST(TrajectoryController, properIntegration){
 
   tc.computePathDistance();
 
-  Trajectory t1 = tc.generateTrajectory(2, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1);
+  Trajectory t1 = tc.generateTrajectory(0, 2, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1);
 
   //check x integration fo position and velocity
   EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].x_, 3.45);

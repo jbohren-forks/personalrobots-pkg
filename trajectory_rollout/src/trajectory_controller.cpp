@@ -36,8 +36,18 @@
 using namespace std;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf)
-  : map_(mg), sim_time_(sim_time), num_steps_(num_steps), samples_per_dim_(samples_per_dim), tf_(tf)
+  : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), tf_(tf)
 {
+  num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim;
+  int total_pts = num_trajectories_ * num_steps_;
+
+  //even though we only have x,y we need to multiply by a 4x4 matrix
+  trajectory_pts_ = NEWMAT::Matrix(4, total_pts);
+  trajectory_pts_ = 0.0;
+
+  //storage for our theta values
+  trajectory_theta_ = NEWMAT::Matrix(1, total_pts);
+  trajectory_theta_ = 0.0;
 }
 
 //compute the distance from each cell in the map grid to the planned path
@@ -91,7 +101,7 @@ void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
 }
 
 //create a trajectory given the current pose of the robot and selected velocities
-Trajectory TrajectoryController::generateTrajectory(double x, double y, double theta, double vx, double vy, 
+Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double y, double theta, double vx, double vy, 
     double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y, double acc_theta){
   double x_i = x;
   double y_i = y;
@@ -101,10 +111,22 @@ Trajectory TrajectoryController::generateTrajectory(double x, double y, double t
   double vtheta_i = vtheta;
   double dt = sim_time_ / num_steps_;
 
-  Trajectory traj(vx_samp, vy_samp, vtheta_samp, num_steps_);
+  //get the index for this trajectory in the matricies
+  int mat_index = t_num * num_steps_;
+
+  Trajectory traj(vx_samp, vy_samp, vtheta_samp);
 
   for(int i = 0; i < num_steps_; ++i){
-    traj.addPoint(i, TrajectoryPoint(i * dt, x_i, y_i, theta_i, vx_i, vy_i, vtheta_i));
+    //add the point to the matrix
+    trajectory_pts_.element(0, mat_index) = x_i;
+    trajectory_pts_.element(1, mat_index) = y_i;
+    trajectory_pts_.element(2, mat_index) = 0;
+    trajectory_pts_.element(3, mat_index) = 1;
+
+    //add theta to the matrix
+    trajectory_theta_.element(0, mat_index) = theta_i;
+
+    ++mat_index;
 
     //calculate velocities
     vx_i = computeNewVelocity(vx_samp, vx_i, acc_x, dt);
@@ -121,66 +143,51 @@ Trajectory TrajectoryController::generateTrajectory(double x, double y, double t
   return traj;
 }
 
-//convert the trajectories computed in robot space to world space
-//TODO: This is WAYYY SLOW need to change this to a matrix multiplication
 void TrajectoryController::trajectoriesToWorld(){
-  for(unsigned int i = 0; i < trajectories_.size(); ++i){
-    for(unsigned int j = 0; j < trajectories_[i].points_.size(); ++j){
-      libTF::TFPose2D pos;
-      libTF::TFPose2D vel;
-      pos.x = trajectories_[i].points_[j].x_;
-      vel.x = trajectories_[i].points_[j].xv_;
+  NEWMAT::Matrix transform;
 
-      pos.y = trajectories_[i].points_[j].y_;
-      vel.y = trajectories_[i].points_[j].yv_;
-
-      pos.yaw = trajectories_[i].points_[j].theta_;
-      vel.yaw = trajectories_[i].points_[j].thetav_;
-      
-      pos.frame = "FRAMEID_ROBOT";
-      vel.frame = "FRAMEID_ROBOT";
-
-      pos.time = 0;
-      vel.time = 0;
-
-      if(tf_){
-        try
-        {
-          //convert the trajectory point to map space
-          pos = tf_->transformPose2D("FRAMEID_MAP", pos);
-          vel = tf_->transformPose2D("FRAMEID_MAP", vel);
-        }
-        catch(libTF::TransformReference::LookupException& ex)
-        {
-          puts("no global->local Tx yet");
-          printf("%s\n", ex.what());
-          return;
-        }
-        catch(libTF::TransformReference::ConnectivityException& ex)
-        {
-          puts("no global->local Tx yet");
-          printf("%s\n", ex.what());
-          return;
-        }
-        catch(libTF::TransformReference::ExtrapolateException& ex)
-        {
-          //      puts("extrapolation required");
-          //      printf("%s\n", ex.what());
-          return;
-        }
-      }
-
-      trajectories_[i].points_[j].x_ = pos.x;
-      trajectories_[i].points_[j].xv_ = vel.x;
-
-      trajectories_[i].points_[j].y_ = pos.y;
-      trajectories_[i].points_[j].yv_ = vel.y;
-
-      trajectories_[i].points_[j].theta_ = pos.yaw;
-      trajectories_[i].points_[j].thetav_ = vel.yaw;
+  if(tf_){
+    try
+    {
+      transform = tf_->getMatrix("FRAMEID_MAP", "FRAMEID_ROBOT", 0);
+    }
+    catch(libTF::TransformReference::LookupException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
+    catch(libTF::TransformReference::ConnectivityException& ex)
+    {
+      puts("no global->local Tx yet");
+      printf("%s\n", ex.what());
+      return;
+    }
+    catch(libTF::TransformReference::ExtrapolateException& ex)
+    {
+      //      puts("extrapolation required");
+      //      printf("%s\n", ex.what());
+      return;
     }
   }
+  trajectory_pts_ = transform * trajectory_pts_;
+
+  //next transform theta
+  NEWMAT::Matrix unit_vec_robot(4, 1);
+  unit_vec_robot << 1.0 << 0.0 << 0.0 << 1.0;
+
+  NEWMAT::Matrix unit_vec_map;
+  unit_vec_map = transform * unit_vec_robot;
+  
+  //compute the angle between the two vectors
+  double angle = atan2(unit_vec_map.element(0, 0) - unit_vec_robot.element(0, 0),
+      unit_vec_map.element(1, 0) - unit_vec_robot.element(1,0));
+
+  //add the angle to theta values to apply the rotation
+  trajectory_theta_ = trajectory_theta_ + angle;
+
 }
+
 
 //compute position based on velocity
 double TrajectoryController::computeNewPosition(double xi, double v, double dt){
@@ -223,21 +230,28 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   //make sure to reset the list of trajectories
   trajectories_.clear();
 
+  //keep track of which trajectory we're working on
+  int t_num = 0;
+
   //generate trajectories for regularly sampled velocities
   for(int i = 0; i < samples_per_dim_; ++i){
+    vtheta_samp = min_vel_theta;
+    vy_samp = min_vel_y;
     for(int j = 0; j < samples_per_dim_; ++j){
+      vtheta_samp = min_vel_theta;
       for(int k = 0; k < samples_per_dim_; ++k){
-        trajectories_.push_back(generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
+        trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
+        ++t_num;
         vtheta_samp += dvtheta;
       }
-    vy_samp += dvy;
+      vy_samp += dvy;
     }
     vx_samp += dvx;
   }
 }
 
 //given the current state of the robot, find a good trajectory
-Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc){
+int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
   printf("Path distance computed\n");
@@ -255,39 +269,46 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
   double min_cost = DBL_MAX;
 
   //default to a trajectory that goes nowhere
-  Trajectory best(0, 0, 0, 1);
+  int best_index = -1;
 
   for(unsigned int i = 0; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(trajectories_[i], .33, .33, .33);
+    double cost = trajectoryCost(i, .33, .33, .33);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
 
     //find the minimum cost path
     if(cost < min_cost){
-      best = trajectories_[i];
+      best_index = i;
       min_cost = cost;
     }
   }
   printf("Trajectories scored\n");
 
-  return best;
+  return best_index;
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(Trajectory t, double pdist_scale, double gdist_scale, double dfast_scale){
-  //we need to know in which cell the path ends
-  pair<int, int> point_cell = getMapCell(t.points_.back().x_, t.points_.back().y_);
+double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double dfast_scale){
+  Trajectory t = trajectories_[t_index];
+  double path_dist = 0.0;
+  double goal_dist = 0.0;
+  for(int i = 0; i < num_steps_; ++i){
+    //we need to know in which cell the path ends
+    pair<int, int> point_cell = getMapCell(trajectory_pts_.element(0, t_index * num_steps_ + i), trajectory_pts_.element(1, t_index * num_steps_ + i));
 
-  //we don't want a path that ends off the known map
-  if(!VALID_CELL(map_, point_cell.first, point_cell.second)){
-    return DBL_MAX;
+    //we don't want a path that ends off the known map
+    if(!VALID_CELL(map_, point_cell.first, point_cell.second)){
+      return DBL_MAX;
+    }
+
+    path_dist += map_(point_cell.first, point_cell.second).path_dist;
+    goal_dist += map_(point_cell.first, point_cell.second).goal_dist;
+
   }
-
-  double path_dist = map_(point_cell.first, point_cell.second).path_dist;
-  double goal_dist = map_(point_cell.first, point_cell.second).goal_dist;
-
-  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_ + t.yv_ * t.yv_));
+  double cost = path_dist + (1.0 / (t.xv_ * t.xv_));
+  //double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_ + t.yv_ * t.yv_));
+  //double cost = gdist_scale * goal_dist;
   
   return cost;
 }
@@ -311,34 +332,5 @@ libTF::TFPose2D TrajectoryController::getDriveVelocities(Trajectory t){
   tVel.yaw = t.thetav_;
   tVel.frame = "FRAMEID_ROBOT";
   tVel.time = 0;
-
-  /*
-  //might not have a transform client with unit tests
-  if(tf_){
-    try
-    {
-      tVel = tf_->transformPose2D("FRAMEID_ROBOT", tVel);
-    }
-    catch(libTF::TransformReference::LookupException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return libTF::TFPose2D();
-    }
-    catch(libTF::TransformReference::ConnectivityException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return libTF::TFPose2D();
-    }
-    catch(libTF::TransformReference::ExtrapolateException& ex)
-    {
-      //      puts("extrapolation required");
-      //      printf("%s\n", ex.what());
-      return libTF::TFPose2D();
-    }
-  }
-  */
-
   return tVel;
 }
