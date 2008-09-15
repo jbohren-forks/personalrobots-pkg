@@ -54,5 +54,4 @@ class Controller:
     
   def __del__(self):
     print 'Destroying controller %s...' % self._name
-    pdb.set_trace()
     mechanism.kill_controller(self._name)

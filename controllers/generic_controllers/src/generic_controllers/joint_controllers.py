@@ -80,7 +80,8 @@ JointAutotuner = JointAutotunerProxy
 class JointSineSweepProxy(Controller):
   def __init__(self, topic_name):
     Controller.__init__(self,topic_name)
+    print '/%s/begin_sweep' % self.topic_name
     self.sweep_ = rospy.ServiceProxy('/%s/begin_sweep' % self.topic_name, SetCommand).call
 
   def sweep(self, start_freq, end_freq, duration, amplitude):
-    return self.sweep_(BeginJointSineSweepequest(start_freq, end_freq, duration, amplitude))
+    return self.sweep_(BeginJointSineSweepRequest(start_freq, end_freq, duration, amplitude))
