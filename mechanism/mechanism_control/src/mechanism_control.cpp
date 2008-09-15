@@ -275,6 +275,7 @@ void MechanismControlNode::update()
       mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
       rosTF::TransformQuaternion &out = transform_array_msg_.quaternions[i];
 
+      out.header.stamp.from_double(mc_->hw_->current_time_);
       out.header.frame_id = mc_->model_.links_[i]->name_;
       out.parent = mc_->model_.links_[i]->parent_name_;
       out.xt = pos.x;
