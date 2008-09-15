@@ -32,12 +32,12 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#ifndef WG05_H
-#define WG05_H
+#ifndef WG0X_H
+#define WG0X_H
 
 #include <ethercat_hardware/ethercat_device.h>
 
-struct WG05MbxHdr
+struct WG0XMbxHdr
 {
   uint16_t address_;
   union
@@ -57,17 +57,17 @@ struct WG05MbxHdr
 }__attribute__ ((__packed__));
 
 static const unsigned MBX_SIZE = 512;
-static const unsigned MBX_DATA_SIZE = (MBX_SIZE - sizeof(WG05MbxHdr) - 1);
-struct WG05MbxCmd
+static const unsigned MBX_DATA_SIZE = (MBX_SIZE - sizeof(WG0XMbxHdr) - 1);
+struct WG0XMbxCmd
 {
-  WG05MbxHdr hdr_;
+  WG0XMbxHdr hdr_;
   uint8_t data_[MBX_DATA_SIZE];
   uint8_t checksum_;
 
   void build(unsigned address, unsigned length, bool write_nread, void const* data);
 }__attribute__ ((__packed__));
 
-struct WG05SpiEepromCmd
+struct WG0XSpiEepromCmd
 {
   uint16_t page_;
   union
@@ -109,7 +109,7 @@ struct WG05SpiEepromCmd
   static const unsigned SPI_BUFFER_ADDR = 0xF400;
 }__attribute__ ((__packed__));
 
-struct WG05ConfigInfo
+struct WG0XConfigInfo
 {
   uint32_t product_id_;
   union
@@ -138,7 +138,7 @@ struct WG05ConfigInfo
   static const unsigned CONFIG_INFO_BASE_ADDR = 0x0080;
 }__attribute__ ((__packed__));
 
-struct WG05ActuatorInfo
+struct WG0XActuatorInfo
 {
   uint16_t major_;              // Major revision
   uint16_t minor_;              // Minor revision
@@ -157,7 +157,7 @@ struct WG05ActuatorInfo
   uint32_t crc32_;              // CRC32 over structure (minus last 4 bytes)
 };
 
-struct WG05Status
+struct WG0XStatus
 {
   uint8_t mode_;
   uint8_t digital_out_;
@@ -181,7 +181,7 @@ struct WG05Status
   uint8_t checksum_;
 }__attribute__ ((__packed__));
 
-struct WG05Command
+struct WG0XCommand
 {
   uint8_t mode_;
   uint8_t digital_out_;
@@ -191,33 +191,28 @@ struct WG05Command
   uint8_t checksum_;
 }__attribute__ ((__packed__));
 
-class WG05 : public EthercatDevice
+class WG0X : public EthercatDevice
 {
 public:
-  WG05() : EthercatDevice(true, sizeof(WG05Command), sizeof(WG05Status)) {}
+  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size) {}
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool);
   void initXml(TiXmlElement *);
 
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
-  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+  virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
 
   void truncateCurrent(ActuatorCommand &command);
   void verifyState(unsigned char *buffer);
 
-  enum
-  {
-    PRODUCT_CODE = 6805005
-  };
-
-  void program(WG05ActuatorInfo *);
+  void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
 
 private:
   int readEeprom(EtherCAT_SlaveHandler *sh);
   int writeEeprom(EtherCAT_SlaveHandler *sh);
-  int sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd);
+  int sendSpiCommand(EtherCAT_SlaveHandler *sh, WG0XSpiEepromCmd const * cmd);
   int writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data, EC_UINT length);
   int readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length);
   int writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length);
@@ -225,6 +220,7 @@ private:
 
   static const int COMMAND_PHY_ADDR = 0x1000;
   static const int STATUS_PHY_ADDR = 0x2000;
+  static const int PRESSURE_PHY_ADDR = 0x2200;
   static const int MBX_COMMAND_PHY_ADDR = 0x1400;
   static const int MBX_COMMAND_SIZE = 512;
   static const int MBX_STATUS_PHY_ADDR = 0x2400;
@@ -243,9 +239,40 @@ private:
   };
 
   // Board configuration parameters
-  WG05ConfigInfo config_info_;
-  WG05ActuatorInfo actuator_info_;
+  WG0XConfigInfo config_info_;
+  WG0XActuatorInfo actuator_info_;
   static const int ACTUATOR_INFO_PAGE = 4095;
 };
 
-#endif /* WG05_H */
+class WG05 : public WG0X
+{
+public:
+  enum
+  {
+    PRODUCT_CODE = 6805005
+  };
+};
+
+struct WG06Pressure
+{
+  uint32_t timestamp_;
+  uint16_t data0_[22];
+  uint16_t data1_[22];
+  uint8_t pad_;
+  uint8_t checksum_;
+} __attribute__((__packed__));
+
+class WG06 : public WG0X
+{
+public:
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)) {}
+  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
+  enum
+  {
+    PRODUCT_CODE = 6805006
+  };
+private:
+  uint32_t last_pressure_time_;
+};
+
+#endif /* WG0X_H */

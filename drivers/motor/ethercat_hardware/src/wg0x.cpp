@@ -45,7 +45,8 @@
 
 #include <boost/crc.hpp>
 
-static bool reg = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
+static bool reg05 = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
+static bool reg06 = DeviceFactory::Instance().Register(WG06::PRODUCT_CODE, deviceCreator<WG06> );
 
 static unsigned int rotate_right_8(unsigned in)
 {
@@ -68,7 +69,7 @@ static unsigned compute_checksum(void const *data, unsigned length)
   return checksum;
 }
 
-void WG05MbxHdr::build(uint16_t address, uint16_t length, bool write_nread)
+void WG0XMbxHdr::build(uint16_t address, uint16_t length, bool write_nread)
 {
   address_ = address;
   length_ = length - 1;
@@ -77,12 +78,12 @@ void WG05MbxHdr::build(uint16_t address, uint16_t length, bool write_nread)
   checksum_ = rotate_right_8(compute_checksum(this, sizeof(*this) - 1));
 }
 
-bool WG05MbxHdr::verify_checksum(void) const
+bool WG0XMbxHdr::verify_checksum(void) const
 {
   return compute_checksum(this, sizeof(*this)) != 0;
 }
 
-void WG05MbxCmd::build(unsigned address, unsigned length, bool write_nread, void const *data)
+void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void const *data)
 {
   this->hdr_.build(address, length, write_nread);
   if (data != NULL)
@@ -97,11 +98,13 @@ void WG05MbxCmd::build(unsigned address, unsigned length, bool write_nread, void
   data_[length] = checksum;
 }
 
-EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
+EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 {
   sh_ = sh;
+  bool isWG06 = sh->get_product_code() == WG06::PRODUCT_CODE;
+
   EC_FMMU *statusFMMU = new EC_FMMU(startAddress, // Logical start address
-                                    sizeof(WG05Status), // Logical length
+                                    sizeof(WG0XStatus), // Logical length
                                     0x00, // Logical StartBit
                                     0x07, // Logical EndBit
                                     STATUS_PHY_ADDR, // Physical Start address
@@ -110,10 +113,10 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
                                     false, // Write Enable
                                     true); // Enable
 
-  startAddress += sizeof(WG05Status);
+  startAddress += sizeof(WG0XStatus);
 
   EC_FMMU *commandFMMU = new EC_FMMU(startAddress, // Logical start address
-                                    sizeof(WG05Command),// Logical length
+                                    sizeof(WG0XCommand),// Logical length
                                     0x00, // Logical StartBit
                                     0x07, // Logical EndBit
                                     COMMAND_PHY_ADDR, // Physical Start address
@@ -122,23 +125,47 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
                                     true, // Write Enable
                                     true); // Enable
 
-  startAddress += sizeof(WG05Command);
+  startAddress += sizeof(WG0XCommand);
 
-  EtherCAT_FMMU_Config *fmmu = new EtherCAT_FMMU_Config(2);
+  EtherCAT_FMMU_Config *fmmu;
+  if (isWG06)
+  {
+    EC_FMMU *pressureFMMU = new EC_FMMU(startAddress, // Logical start address
+                                      sizeof(WG06Pressure), // Logical length
+                                      0x00, // Logical StartBit
+                                      0x07, // Logical EndBit
+                                      PRESSURE_PHY_ADDR, // Physical Start address
+                                      0x00, // Physical StartBit
+                                      true, // Read Enable
+                                      false, // Write Enable
+                                      true); // Enable
+
+    startAddress += sizeof(WG06Pressure);
+
+    fmmu = new EtherCAT_FMMU_Config(3);
+    (*fmmu)[2] = *pressureFMMU;
+  }
+  else
+  {
+    fmmu = new EtherCAT_FMMU_Config(2);
+  }
   (*fmmu)[0] = *statusFMMU;
   (*fmmu)[1] = *commandFMMU;
-
   sh->set_fmmu_config(fmmu);
 
-  EtherCAT_PD_Config *pd = new EtherCAT_PD_Config(4);
+
+  EtherCAT_PD_Config *pd = isWG06 ? new EtherCAT_PD_Config(5) : new EtherCAT_PD_Config(4);
 
   // Sync managers
-  EC_SyncMan *commandSM = new EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG05Command), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
+  EC_SyncMan *commandSM = new EC_SyncMan(COMMAND_PHY_ADDR, sizeof(WG0XCommand), EC_BUFFERED, EC_WRITTEN_FROM_MASTER);
   commandSM->ChannelEnable = true;
   commandSM->ALEventEnable = true;
 
-  EC_SyncMan *statusSM = new EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG05Status));
+  EC_SyncMan *statusSM = new EC_SyncMan(STATUS_PHY_ADDR, sizeof(WG0XStatus));
   statusSM->ChannelEnable = true;
+
+  EC_SyncMan *pressureSM = new EC_SyncMan(PRESSURE_PHY_ADDR, sizeof(WG06Pressure));
+  pressureSM->ChannelEnable = true;
 
   EC_SyncMan *mbxCommandSM = new EC_SyncMan(MBX_COMMAND_PHY_ADDR, MBX_COMMAND_SIZE, EC_QUEUED, EC_WRITTEN_FROM_MASTER);
   mbxCommandSM->ChannelEnable = true;
@@ -151,13 +178,14 @@ EthercatDevice *WG05::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   (*pd)[1] = *statusSM;
   (*pd)[2] = *mbxCommandSM;
   (*pd)[3] = *mbxStatusSM;
+  if (isWG06) (*pd)[4] = *pressureSM;
 
   sh->set_pd_config(pd);
 
   return this;
 }
 
-int WG05::initialize(Actuator *actuator, bool allow_unprogrammed)
+int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 {
   ros::node *node = ros::node::instance();
 
@@ -165,17 +193,29 @@ int WG05::initialize(Actuator *actuator, bool allow_unprogrammed)
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
 
-  printf("Device #%02d: WG05 (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d\n", sh_->get_ring_position(),
+  printf("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d\n", sh_->get_ring_position(),
+         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6, 
          sh_->get_product_code(), major, minor,
          'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
 
-  if (major != 1 || minor < 2)
+  if (sh_->get_product_code() == WG05::PRODUCT_CODE)
   {
-    node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
-    return -1;
+    if (major != 1 || minor < 2)
+    {
+      node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
+      return -1;
+    }
   }
-  config_info_.nominal_current_scale_ = 1.0 / 2000.;
-  if (readMailbox(sh_, WG05ConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
+  else
+  {
+    if (major != 0 || minor < 4)
+    {
+      node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
+      return -1;
+    }
+  }
+
+  if (readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
   {
     node->log(ros::FATAL, "Unable to load configuration information");
     return -1;
@@ -232,7 +272,7 @@ int WG05::initialize(Actuator *actuator, bool allow_unprogrammed)
   } \
 }
 
-void WG05::initXml(TiXmlElement *elt)
+void WG0X::initXml(TiXmlElement *elt)
 {
   ros::node *node = ros::node::instance();
   printf("Overriding actuator: %s\n", actuator_info_.name_);
@@ -249,65 +289,95 @@ void WG05::initXml(TiXmlElement *elt)
 
   GET_ATTR("sign");
   actuator_info_.sign_ = atoi(attr);
+
+  GET_ATTR("maxCurrent");
+  actuator_info_.max_current_ = atof(attr);
 }
 
-void WG05::convertCommand(ActuatorCommand &command, unsigned char *buffer)
+void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 {
-  WG05Command c;
+  WG0XCommand *c = (WG0XCommand *)(buffer + sizeof(WG0XStatus));
 
-  memset(&c, 0, sizeof(c));
+  memset(c, 0, sizeof(WG0XCommand));
 
   double current = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
   current = max(min(current, actuator_info_.max_current_), -actuator_info_.max_current_);
 
-  c.programmed_current_ = int(current / config_info_.nominal_current_scale_);
-  c.mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
-  c.checksum_ = rotate_right_8(compute_checksum(&c, sizeof(c) - 1));
-
-  memcpy(buffer + sizeof(WG05Status), &c, sizeof(c));
+  c->programmed_current_ = int(current / config_info_.nominal_current_scale_);
+  c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
+  c->checksum_ = rotate_right_8(compute_checksum(c, sizeof(WG0XCommand) - 1));
 }
 
-void WG05::truncateCurrent(ActuatorCommand &command)
+void WG0X::truncateCurrent(ActuatorCommand &command)
 {
   //command.current_ = max(min(command.current_, max_current_), -max_current_);
 }
 
-void WG05::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
+void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
-  WG05Status current_status, last_status;
-  WG05Command current_command, last_command;
-
-  memcpy(&current_status, current_buffer, sizeof(current_status));
-  memcpy(&current_command, current_buffer + sizeof(current_status), sizeof(current_command));
-
-  memcpy(&last_status, last_buffer, sizeof(last_status));
-  memcpy(&last_command, last_buffer + sizeof(last_status), sizeof(last_command));
-
-  state.timestamp_ = current_status.timestamp_ / 1e+6;
-  state.encoder_count_ = current_status.encoder_count_;
-  state.position_ = double(current_status.encoder_count_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI - state.zero_offset_;
-  state.encoder_velocity_ = double(int(current_status.encoder_count_ - last_status.encoder_count_))
-      / (current_status.timestamp_ - last_status.timestamp_) * 1e+6;
-  state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
-  state.calibration_reading_ = current_status.calibration_reading_ & LIMIT_SENSOR_0_STATE;
-  state.last_calibration_high_transition_ = double(current_status.last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_;
-  state.last_calibration_low_transition_ = double(current_status.last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_;
-  state.is_enabled_ = current_status.mode_ != MODE_OFF;
-  state.run_stop_hit_ = (current_status.mode_ & MODE_UNDERVOLTAGE) != 0;
-
-  state.last_commanded_effort_ = current_status.programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
-  state.last_measured_effort_ = current_status.measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
-
-  state.num_encoder_errors_ = current_status.num_encoder_errors_;
-  state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
-
-  state.motor_voltage_ = current_status.motor_voltage_ * config_info_.nominal_voltage_scale_;
+  WG06Pressure *p = (WG06Pressure *)(current_buffer + sizeof(WG0XCommand) + sizeof(WG0XStatus));
+#if 0
+  static WG06Pressure orig;
+  static int first_time = 1;
+  
+  if (first_time) {
+    first_time = 0;
+    orig = *p;
+  }
+  if (p->timestamp_ - last_pressure_time_)
+  {
+    printf("WG06::convertState: %d\n", p->timestamp_- last_pressure_time_);
+    for (int i = 0; i < 22; ++i ) {
+      uint16_t o0 = orig.data0_[i];
+      uint16_t p0 = p->data0_[i];
+      uint16_t o1 = orig.data1_[i];
+      uint16_t p1 = p->data1_[i];
+      o0 = ((o0 >> 8) & 0xff) | ((o0 << 8) & 0xff00);
+      p0 = ((p0 >> 8) & 0xff) | ((p0 << 8) & 0xff00);
+      o1 = ((o1 >> 8) & 0xff) | ((o1 << 8) & 0xff00);
+      p1 = ((p1 >> 8) & 0xff) | ((p1 << 8) & 0xff00);
+      uint16_t d0 = abs(o0 - p0) & 0xffc0;
+      uint16_t d1 = abs(o1 - p1) & 0xffc0;
+      printf("%04x %04x\n", d0, d1);
+    }
+  }
+#endif
+  WG0X::convertState(state, current_buffer, last_buffer);
+  last_pressure_time_ = p->timestamp_;
 }
 
-void WG05::verifyState(unsigned char *buffer)
+void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer)
+{
+  WG0XStatus *this_status, *prev_status;
+
+  this_status = (WG0XStatus *)this_buffer;
+  prev_status = (WG0XStatus *)prev_buffer;
+
+  state.timestamp_ = this_status->timestamp_ / 1e+6;
+  state.encoder_count_ = this_status->encoder_count_;
+  state.position_ = double(this_status->encoder_count_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI - state.zero_offset_;
+  state.encoder_velocity_ = double(int(this_status->encoder_count_ - prev_status->encoder_count_))
+      / (this_status->timestamp_ - prev_status->timestamp_) * 1e+6;
+  state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
+  state.calibration_reading_ = this_status->calibration_reading_ & LIMIT_SENSOR_0_STATE;
+  state.last_calibration_high_transition_ = double(this_status->last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_;
+  state.last_calibration_low_transition_ = double(this_status->last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_;
+  state.is_enabled_ = this_status->mode_ != MODE_OFF;
+  state.run_stop_hit_ = (this_status->mode_ & MODE_UNDERVOLTAGE) != 0;
+
+  state.last_commanded_effort_ = this_status->programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+  state.last_measured_effort_ = this_status->measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+
+  state.num_encoder_errors_ = this_status->num_encoder_errors_;
+  state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
+
+  state.motor_voltage_ = this_status->motor_voltage_ * config_info_.nominal_voltage_scale_;
+}
+
+void WG0X::verifyState(unsigned char *buffer)
 {
 #if 0
-  WG05Status status;
+  WG0XStatus status;
 
   memcpy(&status, buffer, sizeof(status));
 
@@ -339,7 +409,7 @@ void WG05::verifyState(unsigned char *buffer)
 #endif
 }
 
-int WG05::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length)
+int WG0X::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length)
 {
   unsigned char *p = (unsigned char *)buffer;
   EtherCAT_DataLinkLayer *dll = EtherCAT_DataLinkLayer::instance();
@@ -377,7 +447,7 @@ int WG05::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_
 }
 
 // Writes <length> amount of data from ethercat slave <sh_hub> from physical address <address> to <buffer>
-int WG05::writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length)
+int WG0X::writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buffer, EC_UINT length)
 {
   unsigned char *p = (unsigned char *)buffer;
   EtherCAT_DataLinkLayer *m_dll_instance = EtherCAT_DataLinkLayer::instance();
@@ -413,10 +483,10 @@ int WG05::writeData(EtherCAT_SlaveHandler *sh, EC_UINT address, void const* buff
   return 0;
 }
 
-int WG05::sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd)
+int WG0X::sendSpiCommand(EtherCAT_SlaveHandler *sh, WG0XSpiEepromCmd const * cmd)
 {
   // Send command
-  if (writeMailbox(sh, WG05SpiEepromCmd::SPI_COMMAND_ADDR, cmd, sizeof(*cmd)))
+  if (writeMailbox(sh, WG0XSpiEepromCmd::SPI_COMMAND_ADDR, cmd, sizeof(*cmd)))
   {
     fprintf(stderr, "ERROR WRITING EEPROM COMMAND\n");
     return -1;
@@ -424,8 +494,8 @@ int WG05::sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd
 
   for (int tries = 0; tries < 10; ++tries)
   {
-    WG05SpiEepromCmd stat;
-    if (readMailbox(sh, WG05SpiEepromCmd::SPI_COMMAND_ADDR, &stat, sizeof(stat)))
+    WG0XSpiEepromCmd stat;
+    if (readMailbox(sh, WG0XSpiEepromCmd::SPI_COMMAND_ADDR, &stat, sizeof(stat)))
     {
       fprintf(stderr, "ERROR READING EEPROM BUSY STATUS\n");
       return -1;
@@ -451,17 +521,17 @@ int WG05::sendSpiCommand(EtherCAT_SlaveHandler *sh, WG05SpiEepromCmd const * cmd
   return -1;
 }
 
-int WG05::readEeprom(EtherCAT_SlaveHandler *sh)
+int WG0X::readEeprom(EtherCAT_SlaveHandler *sh)
 {
   assert(sizeof(actuator_info_) == 264);
-  WG05SpiEepromCmd cmd;
+  WG0XSpiEepromCmd cmd;
   cmd.build_read(ACTUATOR_INFO_PAGE);
   if (sendSpiCommand(sh, &cmd)) {
     fprintf(stderr, "ERROR SENDING SPI EEPROM READ COMMAND\n");
     return -1;
   }
   // Read buffered data in multiple chunks
-  if (readMailbox(sh, WG05SpiEepromCmd::SPI_BUFFER_ADDR, &actuator_info_, sizeof(actuator_info_))) {
+  if (readMailbox(sh, WG0XSpiEepromCmd::SPI_BUFFER_ADDR, &actuator_info_, sizeof(actuator_info_))) {
     fprintf(stderr, "ERROR READING BUFFERED EEPROM PAGE DATA\n");
     return -1;
   }
@@ -470,11 +540,11 @@ int WG05::readEeprom(EtherCAT_SlaveHandler *sh)
 
 }
 
-void WG05::program(WG05ActuatorInfo *info)
+void WG0X::program(WG0XActuatorInfo *info)
 {
 
-  writeMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, info, sizeof(WG05ActuatorInfo));
-  WG05SpiEepromCmd cmd;
+  writeMailbox(sh_, WG0XSpiEepromCmd::SPI_BUFFER_ADDR, info, sizeof(WG0XActuatorInfo));
+  WG0XSpiEepromCmd cmd;
   cmd.build_write(ACTUATOR_INFO_PAGE);
   if (sendSpiCommand(sh_, &cmd)) {
     fprintf(stderr, "ERROR SENDING SPI EEPROM WRITE COMMAND\n");
@@ -484,13 +554,13 @@ void WG05::program(WG05ActuatorInfo *info)
   memset(data, 0, sizeof(data));
   data[0] = 0xD7;
 
-  if (writeMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
+  if (writeMailbox(sh_, WG0XSpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
     fprintf(stderr, "ERROR WRITING EEPROM COMMAND BUFFER\n");
   }
 
 
   { // Start arbitrary command
-    WG05SpiEepromCmd cmd;
+    WG0XSpiEepromCmd cmd;
     cmd.build_arbitrary(sizeof(data));
     if (sendSpiCommand(sh_, &cmd)) {
       printf("reading eeprom status failed");
@@ -498,17 +568,17 @@ void WG05::program(WG05ActuatorInfo *info)
   }
 
 
-  if (readMailbox(sh_, WG05SpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
+  if (readMailbox(sh_, WG0XSpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
     fprintf(stderr, "ERROR READING EEPROM COMMAND BUFFER\n");
   }
   printf("data[1] = %08x\n", data[1]);
 }
 
-int WG05::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length)
+int WG0X::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length)
 {
   // first (re)read current status mailbox data to prevent issues with
   // the status mailbox being full (and unread) from last command
-  WG05MbxCmd stat;
+  WG0XMbxCmd stat;
   int result = readData(sh, MBX_STATUS_PHY_ADDR, &stat, sizeof(stat));
 
   if ((result != 0) && (result != -2))
@@ -518,7 +588,7 @@ int WG05::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UIN
   }
 
   // Build mailbox message and send read command
-  WG05MbxCmd cmd;
+  WG0XMbxCmd cmd;
   cmd.build(address, length, false /*read*/, data);
   int tries;
   for (tries = 0; tries < 10; ++tries)
@@ -586,11 +656,11 @@ int WG05::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UIN
 
 // Write <length> byte of <data> to <address> on FPGA local bus using the ethercat mailbox for communication
 // Returns 0 for success and non-zero for failure.
-int WG05::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data, EC_UINT length)
+int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data, EC_UINT length)
 {
   // Build mailbox message and write command
   {
-    WG05MbxCmd cmd;
+    WG0XMbxCmd cmd;
     cmd.build(address, length, true /*write*/, data);
     int tries;
     for (tries = 0; tries < 10; ++tries)
@@ -623,5 +693,3 @@ int WG05::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
 
   return 0;
 }
-
-
