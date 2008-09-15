@@ -55,6 +55,8 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
 
+#include <rosTF/rosTF.h>
+
 #include <pthread.h>
 
 namespace controller
@@ -163,15 +165,14 @@ namespace controller
 
 
     /*!
-     * \brief Set the publish count (number of update ticks between odometry message publishing).
-     */
-    void setPublishCount(int publish_count);
-
-    /*!
      * \brief returns odometry data
      */
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
+    /*!
+     * \brief set odometry message
+     */
+    void setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_);
 
     private:
 
@@ -185,14 +186,6 @@ namespace controller
      * \brief number of casters
      */
     int num_casters_;
-
-
-    /*!
-     * \brief number of update ticks to wait before publishing ROS odom message
-     * defaults to 10.
-     */
-    int odom_publish_count_;
-
 
     /*!
      * \brief local gain used for speed control of the caster (to achieve resultant position control)
@@ -297,21 +290,9 @@ namespace controller
 
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
-
     std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
 
-
-    /*!
-     * \brief std_msgs representation of an odometry message
-     */
-    std_msgs::RobotBase2DOdom odom_msg_;
-
-
     double last_time_; /** time corresponding to when update was last called */
-
-
-    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */
-
   };
 
   class BaseControllerNode : public Controller
@@ -350,13 +331,36 @@ namespace controller
      * \brief deal with cmd_vel command from 2dnav stack
      */
     void CmdBaseVelReceived();
-    std_msgs::BaseVel velMsg;
+    std_msgs::BaseVel baseVelMsg;
 
     /*!
      * \brief mutex lock for setting and getting ros messages
      */
     ros::thread::mutex ros_lock_;
 
+    /*!
+     * \brief frame transform server for publishing base odometry frame
+     */
+    private: rosTFServer *tfs;
+
+    /*!
+     * \brief Set the publish count (number of update ticks between odometry message publishing).
+     */
+    void setPublishCount(int publish_count); //FIXME: use time rather than count
+
+    /*!
+     * \brief std_msgs representation of an odometry message
+     */
+    std_msgs::RobotBase2DOdom odom_msg_;
+
+    /*!
+     * \brief number of update ticks to wait before publishing ROS odom message
+     * defaults to 10.
+     */
+    int odom_publish_count_; //FIXME: use time rather than count
+
+
+    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */ //FIXME: use time rather than count
   };
 
     /** \brief A namespace ostream overload for displaying parameters */

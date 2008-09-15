@@ -49,8 +49,6 @@
 // roscpp - used for broadcasting time over ros
 #include <rostools/Time.h>
 // ros messages
-//#include <std_msgs/RobotBase2DOdom.h>
-//#include <std_msgs/BaseVel.h>
 //#include <std_msgs/PR2Arm.h>
 //#include <pr2_msgs/EndEffectorState.h>
 
@@ -85,7 +83,6 @@ protected:
   virtual void FiniChild();
 
   // Callbacks for subscribed messages
-  //void CmdBaseVelReceived();
   //void CmdLeftarmconfigReceived();
   //void CmdRightarmconfigReceived();
   //void CmdLeftarmcartesianReceived();
@@ -108,7 +105,6 @@ protected:
 
 private:
 
-  //std_msgs::BaseVel velMsg;
   // arm joint data
   //std_msgs::PR2Arm leftarmMsg;
   //std_msgs::PR2Arm rightarmMsg;

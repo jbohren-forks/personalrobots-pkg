@@ -554,7 +554,6 @@ namespace gazebo {
     //rosnode_->advertise<std_msgs::PR2Arm>("right_pr2arm_pos");
     rosnode_->advertise<rostools::Time>("time");
 
-    //rosnode_->subscribe("cmd_vel", velMsg, &TestActuators::CmdBaseVelReceived, this);
     //rosnode_->subscribe("cmd_leftarmconfig", leftarmMsg, &TestActuators::CmdLeftarmconfigReceived,this);
     //rosnode_->subscribe("cmd_rightarmconfig", rightarmMsg, &TestActuators::CmdRightarmconfigReceived,this);
     //rosnode_->subscribe("cmd_leftarm_cartesian", leftarmcartesianMsg, &TestActuators::CmdLeftarmcartesianReceived);
@@ -600,51 +599,15 @@ namespace gazebo {
   {
 
 
-    // FIXME: the frame transforms should be published by individual mechanism joints, not here
-    // FIXME: the frame transforms should be published by individual mechanism joints, not here
-    // FIXME: the frame transforms should be published by individual mechanism joints, not here
-    /***************************************************************/
-    /*                                                             */
-    /*  frame transforms                                           */
-    /*                                                             */
-    /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
-    /*        localization                                         */
-    /*                                                             */
-    /***************************************************************/
-    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
-    controller::Controller* bc = mc_.getControllerByName( "base_controller" );
-    controller::BaseControllerNode* bcn = dynamic_cast<controller::BaseControllerNode*>(bc);
-    if (bcn) bcn->getOdometry(x,y,yaw,vx,vy,vyaw);
 
-    // FIXME: z, roll, pitch not accounted for
-    tfs->sendInverseEuler("FRAMEID_ODOM",
-                 "base",
-                 x,
-                 y,
-                 z, //z - base_center_offset_z, /* get infor from xml: half height of base box */
-                 yaw,
-                 pitch,
-                 roll,
-                 timeMsg.rostime);
-
-    /***************************************************************/
-    /*                                                             */
-    /*  frame transforms                                           */
-    /*                                                             */
-    /*  x,y,z,yaw,pitch,roll                                       */
-    /*                                                             */
-    /***************************************************************/
-    tfs->sendEuler("base",
-                 "FRAMEID_ROBOT",
-                 0,
-                 0,
-                 0, 
-                 0,
-                 0,
-                 0,
-                 timeMsg.rostime);
-
-
+    /***********************************************************************************************/
+    /*                                                                                             */
+    /*  frame transforms for laser sensors                                                         */
+    /*                                                                                             */
+    /*  FIXME mechanism transform should treat <sensor> in pr2.xml same way <link> is treated,     */
+    /*        i.e. publish frame transform for <sensor> as well.                                   */
+    /*                                                                                             */
+    /***********************************************************************************************/
     // base laser location
     tfs->sendEuler("base_laser",
                  "base",
@@ -751,21 +714,6 @@ namespace gazebo {
 
     this->lock.unlock();
   }
-
-
-  void
-  TestActuators::CmdBaseVelReceived()
-  {
-    this->lock.lock();
-    controller::Controller* cc = mc_.getControllerByName( "base_controller" );
-    controller::BaseControllerNode* bc = dynamic_cast<controller::BaseControllerNode*>(cc);
-    if (bc)
-      bc->setCommand(velMsg.vx,0.0,velMsg.vw);
-    this->lock.unlock();
-  }
-
-
-
 
   void
   TestActuators::CmdLeftarmcartesianReceived()

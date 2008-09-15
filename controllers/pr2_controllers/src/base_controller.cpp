@@ -43,7 +43,7 @@ using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-BaseController::BaseController() : num_wheels_(0), num_casters_(0), odom_publish_count_(10), odom_publish_counter_(0)
+BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
   cmd_vel_.x = 0;
   cmd_vel_.y = 0;
@@ -88,19 +88,12 @@ libTF::Vector BaseController::getCommand()// Return the current position command
   return cmd_vel;
 }
 
-void BaseController::setPublishCount(int publish_count)
-{
-  odom_publish_count_ = publish_count;
-};
-
-
 void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotState *robot_state)
 {
   std::vector<JointControlParam>::iterator jcp_iter;
   robot_desc::URDF::Link *link;
   std::string joint_name;
 
-//  ros::g_node->advertise<std_msgs::RobotBase2DOdom>("odom");
   std::string xml_content;
   (ros::g_node)->get_param("robotdesc/pr2",xml_content);
   if(!urdf_model_.loadString(xml_content.c_str()))
@@ -291,17 +284,9 @@ void BaseController::update()
 
   computeOdometry(current_time);
 
-  if(odom_publish_counter_ > odom_publish_count_) // FIXME: time based rate limiting
-  {
-    (ros::g_node)->publish("odom", odom_msg_);
-    odom_publish_counter_ = 0;
-  }
-
   updateJointControllers();
 
   last_time_ = current_time;
-
-  odom_publish_counter_++;
 }
 
 void BaseController::computeAndSetCasterSteer()
@@ -362,9 +347,26 @@ void BaseController::updateJointControllers()
     base_casters_[i].controller_.update();
 }
 
+void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
+{
+  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
+  odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
+  odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
+
+  odom_msg_.pos.x  = base_odom_position_.x;
+  odom_msg_.pos.y  = base_odom_position_.y;
+  odom_msg_.pos.th = base_odom_position_.z;
+
+  odom_msg_.vel.x  = base_odom_velocity_.x;
+  odom_msg_.vel.y  = base_odom_velocity_.y;
+  odom_msg_.vel.th = base_odom_velocity_.z;
+
+//   cout << "Base Odometry: Velocity " << base_odom_velocity_;
+//   cout << "Base Odometry: Position " << base_odom_position_;
+}
 
 ROS_REGISTER_CONTROLLER(BaseControllerNode)
-  BaseControllerNode::BaseControllerNode()
+  BaseControllerNode::BaseControllerNode() : odom_publish_count_(10), odom_publish_counter_(0)
 {
   c_ = new BaseController();
 }
@@ -374,9 +376,65 @@ BaseControllerNode::~BaseControllerNode()
   delete c_;
 }
 
+void BaseControllerNode::setPublishCount(int publish_count)
+{
+  odom_publish_count_ = publish_count;
+};
+
 void BaseControllerNode::update()
 {
   c_->update();
+
+  c_->setOdomMessage(odom_msg_);
+
+  if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
+  {
+    (ros::g_node)->publish("odom", odom_msg_);
+    odom_publish_counter_ = 0;
+
+    // FIXME: should this be in here?
+    /***************************************************************/
+    /*                                                             */
+    /*  frame transforms                                           */
+    /*                                                             */
+    /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
+    /*        localization                                         */
+    /*                                                             */
+    /***************************************************************/
+    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
+    this->getOdometry(x,y,yaw,vx,vy,vyaw);
+    // FIXME: z, roll, pitch not accounted for
+    this->tfs->sendInverseEuler("FRAMEID_ODOM",
+                 "base",
+                 x,
+                 y,
+                 0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
+                 yaw,
+                 pitch,
+                 roll,
+                 odom_msg_.header.stamp);
+
+    /***************************************************************/
+    /*                                                             */
+    /*  frame transforms                                           */
+    /*                                                             */
+    /*  x,y,z,yaw,pitch,roll                                       */
+    /*                                                             */
+    /***************************************************************/
+    this->tfs->sendEuler("base",
+                 "FRAMEID_ROBOT",
+                 0,
+                 0,
+                 0, 
+                 0,
+                 0,
+                 0,
+                 odom_msg_.header.stamp);
+
+  }
+
+  odom_publish_counter_++;
+
 }
 
 bool BaseControllerNode::setCommand(
@@ -434,7 +492,10 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   node->advertise<std_msgs::RobotBase2DOdom>("odom");
 
   // receive messages from 2dnav stack
-  node->subscribe("cmd_vel", velMsg, &BaseControllerNode::CmdBaseVelReceived, this);
+  node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this);
+
+  // for publishing odometry frame transforms FRAMEID_ODOM
+  this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
 
   return true;
 }
@@ -442,7 +503,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 void BaseControllerNode::CmdBaseVelReceived()
 {
   this->ros_lock_.lock();
-  this->setCommand(velMsg.vx,0.0,velMsg.vw);
+  this->setCommand(baseVelMsg.vx,0.0,baseVelMsg.vw);
   this->ros_lock_.unlock();
 }
 
@@ -497,21 +558,6 @@ void BaseController::computeOdometry(double time)
 
   base_odom_delta.z = base_odom_velocity_.z * dt;
   base_odom_position_ += base_odom_delta;
-
-  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
-  odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
-  odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
-
-  odom_msg_.pos.x  = base_odom_position_.x;
-  odom_msg_.pos.y  = base_odom_position_.y;
-  odom_msg_.pos.th = base_odom_position_.z;
-
-  odom_msg_.vel.x  = base_odom_velocity_.x;
-  odom_msg_.vel.y  = base_odom_velocity_.y;
-  odom_msg_.vel.th = base_odom_velocity_.z;
-
-//   cout << "Base Odometry: Velocity " << base_odom_velocity_;
-//   cout << "Base Odometry: Position " << base_odom_position_;
 }
 
 void BaseController::computeBaseVelocity()
