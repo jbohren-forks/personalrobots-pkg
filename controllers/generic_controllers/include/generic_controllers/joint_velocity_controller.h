@@ -63,6 +63,7 @@
 namespace controller
 {
 
+//TODO: dpcument smoothing
 class JointVelocityController : public Controller
 {
 public:
@@ -120,6 +121,9 @@ private:
   Pid pid_;
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
+  
+  double smoothed_velocity_; /** */
+  double smoothing_factor_;
 
 };
 

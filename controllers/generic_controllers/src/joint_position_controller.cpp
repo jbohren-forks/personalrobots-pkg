@@ -40,7 +40,7 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
-: joint_state_(NULL), robot_(NULL)
+  : joint_state_(NULL), robot_(NULL), smoothed_error_(0), smoothing_factor_(1)
 {
   // Initialize PID class
   pid_controller_.initPid(0, 0, 0, 0, 0);
@@ -80,6 +80,17 @@ bool JointPositionController::initXml(mechanism::RobotState *robot, TiXmlElement
   else
     fprintf(stderr, "JointPositionController's config did not specify the default pid parameters.\n");
 
+  TiXmlElement *s = config->FirstChildElement("filter");
+  if(s)
+  {
+    if(s->QueryDoubleAttribute("smoothing_factor", & smoothing_factor_)!=TIXML_SUCCESS)
+    {
+      std::cerr<<"You specified a filter option but not the smoothing_factor parameter\n";
+      return false;
+    }
+    else
+      std::cout<<"Smoothing factor: "<<smoothing_factor_<<std::endl;
+  }
   return true;
 }
 
@@ -126,21 +137,23 @@ void JointPositionController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
+  
+  assert(joint_state_->joint_);
 
-  if(joint_state_->joint_)
+  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY ||
+     joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
   {
-    if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY ||
-       joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
-    {
-      error = math_utils::shortest_angular_distance(command_, joint_state_->position_);
-    }
-    else
-    {
-      error = joint_state_->position_ - command_;
-    }
-
-    joint_state_->commanded_effort_ = pid_controller_.updatePid(error, time - last_time_);
+    error = math_utils::shortest_angular_distance(command_, joint_state_->position_);
   }
+  else
+  {
+    error = joint_state_->position_ - command_;
+  }
+  
+  smoothed_error_ = smoothing_factor_*error + (1-smoothing_factor_)*smoothed_error_;
+
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(smoothed_error_, time - last_time_);
+  
   last_time_ = time;
 }
 

@@ -84,7 +84,7 @@ public:
    * \param *joint The joint that is being controlled.
    */
   void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -124,10 +124,12 @@ public:
 private:
   bool tune_velocity_; /**<If true, uses velocity to tune. Otherwise uses position>*/
   mechanism::Joint* joint_;  /**< Joint we're controlling.> */
+  mechanism::JointState* joint_state_;  /**< Joint we're controlling.> */
   Pid pid_controller_;       /**< Internal PID controller.> */
   double last_time_;         /**< Last time stamp of update.> */
   double command_;           /**< Last commanded position.> */
   mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
+  mechanism::RobotState *robot_state_;  /**< Pointer to robot structure.> */
   const char* file_path_; /**<Filename and location to write results. >*/
   void writeGainValues(double period, double amplitude, double relay_height); /**<Calculate and write gain values> */
 
@@ -177,7 +179,7 @@ public:
 
   void update();
 
-  bool initXml(mechanism::Robot *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
   bool setCommand(generic_controllers::SetCommand::request &req,

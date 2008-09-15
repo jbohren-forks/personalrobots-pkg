@@ -41,7 +41,12 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
-: joint_state_(NULL), robot_state_(NULL), last_time_(0), command_(0)
+: joint_state_(NULL), 
+  robot_state_(NULL),
+  last_time_(0),
+  command_(0), 
+  smoothed_velocity_(0),
+  smoothing_factor_(1)  // No smoothing
 {
 }
 
@@ -89,6 +94,19 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot_state, TiXmlE
     fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
     return false;
   }
+  
+  TiXmlElement *s = config->FirstChildElement("filter");
+  if(s)
+  {
+    if(s->QueryDoubleAttribute("smoothing_factor", & smoothing_factor_)!=TIXML_SUCCESS)
+    {
+      std::cerr<<"You specified a filter option but not the smoothing_factor parameter\n";
+      return false;
+    }
+    else
+      std::cout<<"Smoothing factor: "<<smoothing_factor_<<std::endl;
+  }
+
 
   return this->init(robot_state, joint_name, pid);
 }
@@ -126,7 +144,9 @@ void JointVelocityController::update()
   double error(0);
   double time = robot_state_->hw_->current_time_;
 
-  error = joint_state_->velocity_ - command_;
+  smoothed_velocity_ = smoothing_factor_*joint_state_->velocity_
+      +(1-smoothing_factor_)*smoothed_velocity_;
+  error = smoothed_velocity_ - command_;
   joint_state_->commanded_effort_ = pid_.updatePid(error, time - last_time_);
   last_time_ = time;
 }
