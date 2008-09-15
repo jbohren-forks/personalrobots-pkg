@@ -9,7 +9,6 @@ rospack_add_library(generic_controllers
  src/joint_velocity_controller.cpp 
  src/ramp_effort_controller.cpp 
  src/sine_sweep_controller.cpp 
- src/joint_sine_sweep_controller.cpp
  src/joint_autotuner.cpp 
  src/joint_pd_controller.cpp 
  src/joint_calibration_controller.cpp
