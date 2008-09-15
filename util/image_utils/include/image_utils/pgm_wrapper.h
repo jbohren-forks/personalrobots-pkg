@@ -10,9 +10,6 @@ using std::string;
 class PgmWrapper
 {
 public:
-  PgmWrapper();
-  ~PgmWrapper();
-
   static char *write_file(string filename, int width, int height, 
                           uint8_t *raster)
   {
