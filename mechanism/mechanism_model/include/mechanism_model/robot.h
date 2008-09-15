@@ -92,11 +92,16 @@ public:
   int getJointIndex(const std::string &name);
   int getActuatorIndex(const std::string &name);
   int getLinkIndex(const std::string &name);
+  int getTransmissionIndex(const std::string &name);
 
   // All return NULL on failure
   Joint* getJoint(const std::string &name);
   Actuator* getActuator(const std::string &name);
   Link* getLink(const std::string &name);
+  Transmission* getTransmission(const std::string &name);
+
+  // For debugging
+  void printLinkTree();
 };
 
 class RobotState

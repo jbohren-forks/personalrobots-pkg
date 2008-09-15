@@ -54,7 +54,39 @@ static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0])
 
 void Joint::enforceLimits(JointState *s)
 {
-  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
+  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_),effort_limit_);  //Always truncate to limits
+  double max_effort, min_effort, damping_force,spring_force,distance, equilibrium_position;
+
+  //TODO: add velocity control
+
+  if(!(has_safety_limits_&&s->calibrated_))
+    return;
+  const double middle = (joint_limit_max_ + joint_limit_min_)/2; //Center of the workspace.
+
+  if(s->position_>=middle) //Use the upper virtual spring
+  {
+    equilibrium_position = joint_limit_max_ - safety_length_max_;
+    //Distance from equilibrium in corrected coordinates.
+    distance = s->position_ - equilibrium_position;
+    damping_force = -damping_constant_max_ * s->velocity_;
+    spring_force  = -spring_constant_max_*distance;
+    max_effort = min(effort_limit_, spring_force+damping_force);
+    min_effort = -effort_limit_;
+  }
+  else
+  {
+    equilibrium_position = joint_limit_min_ + safety_length_min_;
+    //Distance from equilibrium in corrected coordinates.
+    distance = s->position_-equilibrium_position;
+    damping_force = -damping_constant_min_*s->velocity_;
+    spring_force  = -spring_constant_min_*distance;
+    max_effort = effort_limit_;
+    min_effort = max(-effort_limit_,spring_force + damping_force);
+  }
+
+  //Truncate to artificial limits
+  s->commanded_effort_ = min(s->commanded_effort_, max_effort);
+  s->commanded_effort_ = max(s->commanded_effort_, min_effort);
 }
 
 bool Joint::initXml(TiXmlElement *elt)
@@ -74,10 +106,11 @@ bool Joint::initXml(TiXmlElement *elt)
     return false;
   }
   type_ = g_type_map[type];
+  TiXmlElement *limits;
 
   if (type_ != JOINT_PLANAR && type_ != JOINT_FIXED)
   {
-    TiXmlElement *limits = elt->FirstChildElement("limit");
+    limits = elt->FirstChildElement("limit");
     if (!limits)
     {
       fprintf(stderr, "Error: Joint \"%s\" has no limits specified.\n", name_.c_str());
@@ -93,6 +126,13 @@ bool Joint::initXml(TiXmlElement *elt)
     if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
       velocity_limit_ = 0.0;
 
+    TiXmlElement *calibration = elt->FirstChildElement("calibration");
+    if(calibration)
+    {
+      if(calibration->QueryDoubleAttribute("reference_position", &reference_position_) == TIXML_SUCCESS)
+         std::cout<<"Found reference point at "<<reference_position_<<std::endl;
+    }
+
 
     int min_ret = limits->QueryDoubleAttribute("min", &joint_limit_min_);
     int max_ret = limits->QueryDoubleAttribute("max", &joint_limit_max_);
@@ -106,6 +146,46 @@ bool Joint::initXml(TiXmlElement *elt)
       fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
       return false;
     }
+  }
+
+  // Safety limit code
+  if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
+  {
+	  // Loads safety limits
+	  TiXmlElement *safetyMinElt =elt->FirstChildElement("safety_limit_min");
+
+	  if(!safetyMinElt)
+	  return SAFETY_LIMS_STRICTLY_ENFORCED == false;
+
+	  if(safetyMinElt->QueryDoubleAttribute("spring_constant", &spring_constant_min_) != TIXML_SUCCESS)
+	  return false;
+	  if(safetyMinElt->QueryDoubleAttribute("damping_constant", &damping_constant_min_) != TIXML_SUCCESS)
+	  return false;
+	  if(safetyMinElt->QueryDoubleAttribute("safety_length", &safety_length_min_) != TIXML_SUCCESS)
+	  return false;
+
+	  TiXmlElement *safetyMaxElt =elt->FirstChildElement("safety_limit_max");
+	  if(!safetyMaxElt)
+	  return SAFETY_LIMS_STRICTLY_ENFORCED == false;
+
+	  if(safetyMaxElt->QueryDoubleAttribute("spring_constant", &spring_constant_max_) != TIXML_SUCCESS)
+	  return false;
+	  if(safetyMaxElt->QueryDoubleAttribute("damping_constant", &damping_constant_max_) != TIXML_SUCCESS)
+	  return false;
+	  if(safetyMaxElt->QueryDoubleAttribute("safety_length", &safety_length_max_) != TIXML_SUCCESS)
+	  return false;
+
+	  std::cout<<"Loaded safety limit code for joint "<<name_<<std::endl;
+	  std::cout<<spring_constant_min_<<" "<<damping_constant_min_<<" "<<safety_length_min_<<"\n";
+
+	  assert(safety_length_max_ > 0);
+	  assert(safety_length_min_ > 0);
+	  assert(joint_limit_max_ > joint_limit_min_);
+	  const double midpoint = 0.5*(joint_limit_max_+joint_limit_min_);
+	  assert(joint_limit_max_ - safety_length_max_ > midpoint);
+	  assert(joint_limit_min_ + safety_length_min_ < midpoint);
+
+	  has_safety_limits_ = true;
   }
 
   if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
@@ -128,7 +208,6 @@ bool Joint::initXml(TiXmlElement *elt)
     axis_[1] = axis_pieces[1];
     axis_[2] = axis_pieces[2];
   }
-
   return true;
 }
 

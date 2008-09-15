@@ -107,6 +107,11 @@ int Robot::getLinkIndex(const std::string &name)
   return findIndexByName(links_, name);
 }
 
+int Robot::getTransmissionIndex(const std::string &name)
+{
+  return findIndexByName(transmissions_, name);
+}
+
 Joint* Robot::getJoint(const std::string &name)
 {
   int i = getJointIndex(name);
@@ -123,6 +128,12 @@ Link* Robot::getLink(const std::string &name)
 {
   int i = getLinkIndex(name);
   return i >= 0 ? links_[i] : NULL;
+}
+
+Transmission* Robot::getTransmission(const std::string &name)
+{
+  int i = getTransmissionIndex(name);
+  return i >= 0 ? transmissions_[i] : NULL;
 }
 
 RobotState::RobotState(Robot *model, HardwareInterface *hw)

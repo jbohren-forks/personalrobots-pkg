@@ -45,7 +45,7 @@ class JointState;
 
 class Joint{
 public:
-  Joint() {}
+  Joint() : reference_position_(0), has_safety_limits_(false), safety_length_min_(0), safety_length_max_(0){}
   ~Joint() {}
 
   void enforceLimits(JointState *s);
@@ -59,6 +59,22 @@ public:
   double joint_limit_max_;  // In radians
   double effort_limit_;
   double velocity_limit_;
+
+  // Calibration parameters
+  double reference_position_; // The reading of the reference position, in radians
+  /** \brief indicates wether the offset calibration value has been determined and wether the position safety parameters should be enforced.
+   * \note The velocity and effort safety parameters are always enforced.
+   */
+  // Safety parameters
+  /** Indicates if some safety limit parameters have been provided. Should be deprecated soon.*/
+  bool has_safety_limits_;
+  double spring_constant_min_;
+  double damping_constant_min_;
+  double safety_length_min_;
+
+  double spring_constant_max_;
+  double damping_constant_max_;
+  double safety_length_max_;
 
   // Axis of motion (x,y,z).  Axis of rotation for revolute/continuous
   // joints, axis of translation for prismatic joints.
@@ -79,11 +95,14 @@ public:
   // Command
   double commanded_effort_;
 
-  JointState() : joint_(NULL), commanded_effort_(0) {}
+  bool calibrated_;
+
+  JointState() : joint_(NULL), commanded_effort_(0), calibrated_(false) {}
   JointState(const JointState &s)
     : joint_(s.joint_), position_(s.position_), velocity_(s.velocity_),
-      applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_)
+      applied_effort_(s.applied_effort_), commanded_effort_(s.commanded_effort_), calibrated_(s.calibrated_)
   {}
+
 };
 
 enum
@@ -96,6 +115,10 @@ enum
   JOINT_PLANAR,
   JOINT_TYPES_MAX
 };
+
+/** Some joints do not advertise their minimum and maximum values, or do not advertise safety limit infomrations. When set to true, this behaviour is considered illegal and generates an assertion failure. */
+static const bool SAFETY_LIMS_STRICTLY_ENFORCED = false;
+
 
 }
 
