@@ -1,6 +1,6 @@
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/rng.h"
-#include "calonder_descriptor/detectors.h"
+#include "detectors.h"
 #include "timer.h"
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>

@@ -1,4 +1,4 @@
-#include "calonder_descriptor/detectors.h"
+#include "detectors.h"
 #include <detector.h> // Star detector
 #include <lowe_key.h> // SIFT interface
 

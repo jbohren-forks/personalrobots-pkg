@@ -1,6 +1,6 @@
 #include "calonder_descriptor/matcher.h"
 #include "calonder_descriptor/rtree_classifier.h"
-#include "calonder_descriptor/detectors.h"
+#include "detectors.h"
 #include "transform_utils.h"
 #include <cvwimage.h>
 #include <highgui.h>

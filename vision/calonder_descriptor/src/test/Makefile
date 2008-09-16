@@ -1,33 +1,42 @@
+# TODO: integrate with ROS build system
 CC = g++
-FEATURES = ../../..
 CFLAGS = -c -g -Wall
 # OpenCV
-CFLAGS += `pkg-config opencv --cflags`
-LDFLAGS = `pkg-config opencv --libs`
+CV_LATEST = $(shell rospack find opencv_latest)/opencv
+CFLAGS += -I$(CV_LATEST)/include/opencv
+LDFLAGS = -L$(CV_LATEST)/lib -lcv -lhighgui
 # Boost
 CFLAGS += -I$(BOOST_ROOT)/include
 LDFLAGS += -L$(BOOST_ROOT)/lib -lboost_program_options-gcc42-mt -lboost_filesystem-gcc42-mt
 #LDFLAGS += -lboost_thread-gcc42-mt
 # Descriptor
-CFLAGS += -I/usr/include -I$(FEATURES)/calonder_descriptor/include
+CALONDER = $(shell rospack find calonder_descriptor)
+CFLAGS += -I/usr/include -I$(CALONDER)/include
+LDFLAGS += -L$(CALONDER)/lib -lcalonder
 # Star detector
+FEATURES = /u/mihelich/projects/features
 CFLAGS += -I$(FEATURES)/star_detector/include -I$(FEATURES)/star_detector/src/test
 LDFLAGS += -L$(FEATURES)/star_detector/lib -lwgdetect
 # GSL
 #CFLAGS += -DHAVE_GSL
 #LDFLAGS += -L/usr/lib -lgsl -lgslcblas
-# SIFT
+# SIFT (get rid of this?)
 CFLAGS += -I$(SIFT_ROOT)
 LDFLAGS += -L$(SIFT_ROOT)/lib -lsift
 # Optimization settings
 CFLAGS += -O3 -DNDEBUG
+#CFLAGS += -march=native
+#CFLAGS += -mfpmath=sse
+#CFLAGS += -ffast-math
+#CFLAGS += -fomit-frame-pointer
+#CFLAGS += -fno-rtti
 #CFLAGS += -O0
 
-SOURCES = ../patch_generator.cpp ../randomized_tree.cpp ../rtree_classifier.cpp
-SOURCES += detectors.cpp
+SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-PROGRAMS = baseset_test matcher_test recognition_test show_base_set patch_test
-#PROGRAMS += patch_test rtree_test classifier_test
+PROGRAMS = baseset_test recognition_test show_base_set patch_test write_posteriors
+PROGRAMS += match_benchmark
+#PROGRAMS += matcher_test rtree_test classifier_test
 
 all: $(PROGRAMS)
 
@@ -40,4 +49,4 @@ $(PROGRAMS): $$@.o $(OBJECTS)
 	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm $(PROGRAMS) *.o ../*.o
+	rm -f $(PROGRAMS) *.o
