@@ -15,6 +15,18 @@ void seed_rand()
   srand(temp_time_struct.tv_usec);
 };
 
+void generate_rand_vectors(double scale, unsigned int runs, std::vector<double>& xvalues, std::vector<double>& yvalues, std::vector<double>&zvalues)
+{
+  seed_rand();
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+  }
+}
+
+
 using namespace tf;
 
 
@@ -251,6 +263,161 @@ TEST(tf, TransformQuaternionCartesian)
     }
   }
   
+}
+
+TEST(tf, Vector3Conversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    btVector3 btv = btVector3(xvalues[i], yvalues[i], zvalues[i]);
+    btVector3 btv_out = btVector3(0,0,0);
+    std_msgs::Vector3 msgv;
+    Vector3BtToMsg(btv, msgv);
+    Vector3MsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
+    EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
+    EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
+  } 
+  
+}
+
+TEST(tf, Vector3StampedConversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    Stamped<btVector3> btv = Stamped<btVector3>(btVector3(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
+    Stamped<btVector3> btv_out;
+    std_msgs::Vector3Stamped msgv;
+    Vector3StampedBtToMsg(btv, msgv);
+    Vector3StampedMsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
+    EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
+    EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
+    EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
+    EXPECT_EQ(btv.stamp_, btv_out.stamp_);
+  } 
+}
+
+TEST(tf, QuaternionConversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    btQuaternion btv = btQuaternion(xvalues[i], yvalues[i], zvalues[i]);
+    btQuaternion btv_out = btQuaternion(0,0,0);
+    std_msgs::Quaternion msgv;
+    QuaternionBtToMsg(btv, msgv);
+    QuaternionMsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
+    EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
+    EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
+    EXPECT_NEAR(btv.w(), btv_out.w(), epsilon);
+  } 
+  
+}
+
+TEST(tf, QuaternionStampedConversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    Stamped<btQuaternion> btv = Stamped<btQuaternion>(btQuaternion(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
+    Stamped<btQuaternion> btv_out;
+    std_msgs::QuaternionStamped msgv;
+    QuaternionStampedBtToMsg(btv, msgv);
+    QuaternionStampedMsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
+    EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
+    EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
+    EXPECT_NEAR(btv.data_.w(), btv_out.data_.w(), epsilon);
+    EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
+    EXPECT_EQ(btv.stamp_, btv_out.stamp_);
+  } 
+}
+
+TEST(tf, TransformConversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  std::vector<double> xvalues2(runs), yvalues2(runs), zvalues2(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    btTransform btv = btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i]));
+    btTransform btv_out;
+    std_msgs::Transform msgv;
+    TransformBtToMsg(btv, msgv);
+    TransformMsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
+    EXPECT_NEAR(btv.getOrigin().y(), btv_out.getOrigin().y(), epsilon);
+    EXPECT_NEAR(btv.getOrigin().z(), btv_out.getOrigin().z(), epsilon);
+    EXPECT_NEAR(btv.getRotation().x(), btv_out.getRotation().x(), epsilon);
+    EXPECT_NEAR(btv.getRotation().y(), btv_out.getRotation().y(), epsilon);
+    EXPECT_NEAR(btv.getRotation().z(), btv_out.getRotation().z(), epsilon);
+    EXPECT_NEAR(btv.getRotation().w(), btv_out.getRotation().w(), epsilon);
+  } 
+  
+}
+
+TEST(tf, TransformStampedConversions)
+{
+  
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  std::vector<double> xvalues2(runs), yvalues2(runs), zvalues2(runs);
+  generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
+  
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    Stamped<btTransform> btv = Stamped<btTransform>(btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i])), 1000000000ULL, "no frame");
+    Stamped<btTransform> btv_out;
+    std_msgs::TransformStamped msgv;
+    TransformStampedBtToMsg(btv, msgv);
+    TransformStampedMsgToBt(msgv, btv_out);
+    EXPECT_NEAR(btv.data_.getOrigin().x(), btv_out.data_.getOrigin().x(), epsilon);
+    EXPECT_NEAR(btv.data_.getOrigin().y(), btv_out.data_.getOrigin().y(), epsilon);
+    EXPECT_NEAR(btv.data_.getOrigin().z(), btv_out.data_.getOrigin().z(), epsilon);
+    EXPECT_NEAR(btv.data_.getRotation().x(), btv_out.data_.getRotation().x(), epsilon);
+    EXPECT_NEAR(btv.data_.getRotation().y(), btv_out.data_.getRotation().y(), epsilon);
+    EXPECT_NEAR(btv.data_.getRotation().z(), btv_out.data_.getRotation().z(), epsilon);
+    EXPECT_NEAR(btv.data_.getRotation().w(), btv_out.data_.getRotation().w(), epsilon);
+    EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
+    EXPECT_EQ(btv.stamp_, btv_out.stamp_);
+  } 
 }
 
 
