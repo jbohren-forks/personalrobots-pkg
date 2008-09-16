@@ -10,6 +10,7 @@
     <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
     <node pkg="wavefront_player" type="wavefront_player" args="" respawn="false" />
+
     <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
 
 <!-- Until we resolve mechanism state issue - comment out other arm

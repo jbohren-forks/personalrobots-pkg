@@ -1,18 +1,6 @@
 
 <launch>
-  <master auto="start"/>
-  <include file="$(find wg_robot_description)/send_test.xml"/>
-  <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
-  <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/robot_floorobj.world" respawn="true" />
-  
-  <include file="$(find world_3d_map)/run.xml"/>
-  
-  <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
-  <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
-  <node pkg="wavefront_player" type="wavefront_player" args="" respawn="false" />
-  <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false" />
-  <node pkg="highlevel_controllers" type="move_arm" args="left" respawn="false" />
-  
+  <include file="$(find executive_trex_pr2)/cfg/launch_gazebo.xml"/>
   <node pkg="executive_trex_pr2" type="runtesttrex.sh" args="$(find executive_trex_pr2)/test/arm.1.output $(find executive_trex_pr2)/arm.1" respawn="false" />
   <test test-name="executive_trex_arm_1" pkg="executive_trex_pr2" type="test.arm.1.py" />
 </launch>
