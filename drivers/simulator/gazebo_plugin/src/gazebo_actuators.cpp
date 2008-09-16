@@ -44,6 +44,7 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 #include <urdf/parser.h>
+#include <map>
 
 namespace gazebo {
 
@@ -66,61 +67,44 @@ GazeboActuators::~GazeboActuators()
 
 void GazeboActuators::LoadChild(XMLConfigNode *node)
 {
-  XMLConfigNode *robot = node->GetChild("robot");
-  if (!robot)
-  {
-    fprintf(stderr, "Error loading gazebo_actuators config: no robot element\n");
-    return;
-  }
-
-  std::string filename = robot->GetFilename("filename", "", 1);
-  printf("Loading %s\n", filename.c_str());
-
-  TiXmlDocument doc(filename);
-  if (!doc.LoadFile())
-  {
-    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file: %s\n",
-            filename.c_str());
-    abort();
-  }
-  urdf::normalizeXml(doc.RootElement());
-
-  // Pulls out the list of actuators used in the robot configuration.
-  struct GetActuators : public TiXmlVisitor
-  {
-    std::set<std::string> actuators;
-    virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
-    {
-      if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
-        actuators.insert(elt.Attribute("name"));
-      return true;
-    }
-  } get_actuators;
-  doc.RootElement()->Accept(&get_actuators);
-
-  // Places the found actuators into the hardware interface.
-  std::set<std::string>::iterator it;
-  for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
-  {
-    hw_.actuators_.push_back(new Actuator(*it));
-  }
-
-  mcn_.initXml(doc.RootElement());
+  // read pr2.xml (pr2_gazebo_actuators.xml)
+  ReadPr2Xml(node);
 
   // Initializes the fake state (for running the transmissions backwards).
   fake_state_ = new mechanism::RobotState(&mc_.model_, &hw_);
+
+  // Get gazebo joint properties such as explicit damping coefficient, simulation specific.
+  // Currently constructs a map of joint-name/damping-value pairs.
+  ReadGazeboPhysics(node);
 
   // The gazebo joints and mechanism joints should match up.
   for (unsigned int i = 0; i < mc_.model_.joints_.size(); ++i)
   {
     std::string joint_name = mc_.model_.joints_[i]->name_;
+      
+    // fill in gazebo joints pointer
     gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
     if (joint)
+    {
       joints_.push_back(joint);
+    }
     else
     {
       fprintf(stderr, "Gazebo does not know about a joint named \"%s\"\n", joint_name.c_str());
       joints_.push_back(NULL);
+    }
+
+    // fill in gazebo joints / damping value pairs
+    std::map<std::string,double>::iterator jt = joints_damping_map_.find(joint_name);
+    if (jt!=joints_damping_map_.end())
+    {
+      joints_damping_.push_back(jt->second);
+      std::cout << "adding gazebo joint name (" << joint_name << ") with damping=" << jt->second << std::endl;
+    }
+    else
+    {
+      joints_damping_.push_back(0); // no damping
+      std::cout << "adding gazebo joint name (" << joint_name << ") with no damping." << std::endl;
     }
   }
 
@@ -135,6 +119,7 @@ void GazeboActuators::InitChild()
 void GazeboActuators::UpdateChild()
 {
   assert(joints_.size() == fake_state_->joint_states_.size());
+  assert(joints_.size() == joints_damping_.size());
 
   //--------------------------------------------------
   //  Pushes out simulation state
@@ -189,14 +174,17 @@ void GazeboActuators::UpdateChild()
     if (!joints_[i])
       continue;
 
+    double damping_force;
     double effort = fake_state_->joint_states_[i].commanded_effort_;
     switch (joints_[i]->GetType())
     {
     case Joint::HINGE:
-      ((HingeJoint*)joints_[i])->SetTorque(effort);
+      damping_force = joints_damping_[i] * ((HingeJoint*)joints_[i])->GetAngleRate();
+      ((HingeJoint*)joints_[i])->SetTorque(effort - damping_force);
       break;
     case Joint::SLIDER:
-      ((SliderJoint*)joints_[i])->SetSliderForce(effort);
+      damping_force = joints_damping_[i] * ((SliderJoint*)joints_[i])->GetPositionRate();
+      ((SliderJoint*)joints_[i])->SetSliderForce(effort - damping_force);
       break;
     default:
       abort();
@@ -209,4 +197,100 @@ void GazeboActuators::FiniChild()
 
 }
 
+void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
+{
+  XMLConfigNode *robot = node->GetChild("robot");
+  if (!robot)
+  {
+    fprintf(stderr, "Error loading gazebo_actuators config: no robot element\n");
+    return;
+  }
+
+  std::string filename = robot->GetFilename("filename", "", 1);
+  printf("Loading %s\n", filename.c_str());
+
+  TiXmlDocument doc(filename);
+  if (!doc.LoadFile())
+  {
+    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file: %s\n",
+            filename.c_str());
+    abort();
+  }
+  urdf::normalizeXml(doc.RootElement());
+
+  // Pulls out the list of actuators used in the robot configuration.
+  struct GetActuators : public TiXmlVisitor
+  {
+    std::set<std::string> actuators;
+    virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
+    {
+      if (elt.ValueStr() == std::string("actuator") && elt.Attribute("name"))
+        actuators.insert(elt.Attribute("name"));
+      return true;
+    }
+  } get_actuators;
+  doc.RootElement()->Accept(&get_actuators);
+
+  // Places the found actuators into the hardware interface.
+  std::set<std::string>::iterator it;
+  for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
+  {
+    hw_.actuators_.push_back(new Actuator(*it));
+  }
+
+  mcn_.initXml(doc.RootElement());
+}
+
+void GazeboActuators::ReadGazeboPhysics(XMLConfigNode *node)
+{
+  XMLConfigNode *robot = node->GetChild("gazebo_physics");
+  if (!robot)
+  {
+    fprintf(stderr, "Error loading gazebo_physics config: no robot element\n");
+    return;
+  }
+
+  std::string filename = robot->GetFilename("filename", "", 1);
+  printf("Loading %s\n", filename.c_str());
+
+  TiXmlDocument doc(filename);
+  if (!doc.LoadFile())
+  {
+    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file for gazebo physics: %s\n",
+            filename.c_str());
+    abort();
+  }
+  // Pulls out the list of joints used in the gazebo physics configuration.
+  struct GetActuators : public TiXmlVisitor
+  {
+    std::map<const char*,double> joints;
+    virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
+    {
+      if (elt.ValueStr() == std::string("joint") && elt.Attribute("name"))
+      {
+        double damp;
+        //extract damping coefficient value
+        if (elt.FirstChildElement("explicitDampingCoefficient"))
+          //std::cout <<  "damp : " <<  elt.FirstChildElement("explicitDampingCoefficient")->GetText() << std::endl;
+          damp = atof(elt.FirstChildElement("explicitDampingCoefficient")->GetText());
+        else
+          damp = 0;
+
+        //std::cout << "inserting pair to map " << elt.Attribute("name") << " " << damp << std::endl;
+        joints.insert(make_pair(elt.Attribute("name"),damp));
+      }
+      return true;
+    }
+  } get_joints;
+  doc.RootElement()->Accept(&get_joints);
+
+  // Copy the found joint/damping pairs into the class variable
+  std::map<const char*,double>::iterator it;
+  for (it = get_joints.joints.begin(); it != get_joints.joints.end(); ++it)
+  {
+    std::string *jn = new std::string((it->first));
+    joints_damping_map_.insert(make_pair(*jn,it->second));
+  }
+
+}
 } // namespace gazebo

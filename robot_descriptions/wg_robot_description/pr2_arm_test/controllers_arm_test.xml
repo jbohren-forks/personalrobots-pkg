@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<robot name="pr2"><!-- name of the robot-->
+<controllers>
 
 
       <!-- ========================================= -->
@@ -56,4 +56,4 @@
         <gripper_defaults effortLimit="100" velocityLimit="10" />
       </joint>
   </controller>
-</robot>
+</controllers>

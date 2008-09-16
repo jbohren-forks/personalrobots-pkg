@@ -287,7 +287,7 @@ namespace gazebo {
     //-----------------------------------------------------------------------------------------
     // make mc parse xml for controllers
     std::cout << " Loading controllers : " <<  std::endl;
-    for (TiXmlElement *xit = controller_xml->FirstChildElement("robot"); xit ; xit = xit->NextSiblingElement("robot") )
+    for (TiXmlElement *xit = controller_xml->FirstChildElement("controllers"); xit ; xit = xit->NextSiblingElement("robot") )
     for (TiXmlElement *zit = xit->FirstChildElement("controller"); zit ; zit = zit->NextSiblingElement("controller") )
     {
       std::string* controller_name = new std::string(zit->Attribute("name"));
