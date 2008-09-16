@@ -117,6 +117,8 @@ void MoveArm::updateStateMsg(){
 }
 
 bool MoveArm::makePlan(){
+  std::cout << "Invoking Kinematic Planner\n";
+
   robot_srvs::KinematicPlanState::request req;
     
   req.params.model_id = kinematicModel;
@@ -163,9 +165,9 @@ bool MoveArm::makePlan(){
 
   if (foundPlan) {
     currentWaypoint = 0;
-    printf("Obtained solution path with %u states\n", nstates);
+    std::cout << "Obtained solution path with " << nstates << " states\n";
   } else {
-    fprintf(stderr, "Service 'plan_kinematic_path_state' failed\n"); 	
+    std::cout << "Service 'plan_kinematic_path_state' failed\n";
   }
 
   return foundPlan;
@@ -187,6 +189,7 @@ bool MoveArm::goalReached(){
     }
   }
 
+  std::cout << "Goal Reached" << std::endl;
   return true;
 }
 

@@ -40,7 +40,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <math.h>
-
+#include <iostream>
 /**
  * @brief Abstract base class for a high level controller node which is parameterized by the state update
  * and goal messages exchanged with a client. The controller utilizes a pattern where the controller is tasked with
@@ -118,10 +118,12 @@ public:
 
 protected:
   void goalCallback(){
+    /*
     if(goalMsg.enable)
-      puts("Received goal request");
+      std::cout << "Received goal request\n";
     else
-      puts("Received recall request");
+      std::cout << "Received recall request\n";
+    */
   }
 
   /**
@@ -129,7 +131,7 @@ protected:
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
   void activate(){
-    puts("Activating controller");
+    std::cout << "Activating controller\n";
     this->state = ACTIVE;
     this->stateMsg.active = 1;
     this->stateMsg.valid = 0;
@@ -140,7 +142,7 @@ protected:
    * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
    */
   void deactivate(){
-    puts("Deactivating controller");
+    std::cout << "Deactivating controller\n";
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
@@ -160,7 +162,7 @@ protected:
     currt = curr.tv_sec + curr.tv_usec/1e6;
     tdiff = this->cycleTime - (currt-loopstart);
     if(tdiff <= 0.0)
-      puts("Missed deadline and not sleeping; check machine load");
+      std::cout << "Missed deadline and not sleeping; check machine load\n";
     else
       usleep((unsigned int)rint(tdiff*1e6));
   }
