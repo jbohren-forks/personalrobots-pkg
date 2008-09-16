@@ -318,12 +318,12 @@ bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPo
 
 bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_controllers::JointPosCmd & cmd)
 {
-  std::cout<<"Called service"<<std::endl;
+  std::cout<<"Implementing callback"<<std::endl;
 
   // msg
   std::cout<<"waypoint "<<std::flush;
   for(unsigned int i=0;i<cmd.positions_size;++i)
-    std::cout<<cmd.positions[i]<<' ';
+    std::cout << cmd.names[i] << "==" << cmd.positions[i] <<' ';
   std::cout<<std::flush;
   std::cout<<" headless"<<std::endl;
 
