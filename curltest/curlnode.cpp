@@ -42,7 +42,10 @@ public:
   {
     advertise<std_msgs::String>("chatter",1);
 
-    curl = new CurlTest(string("axis-00408c7dfe2b.local"));
+    //    curl = new CurlTest(string("axis-00408c7dfe2b.local"));
+    curl = new CurlTest(string("localhost"));
+    msg_out.data.insert(0, 100, 'a');
+
   }
 
   virtual ~CurlNode()
@@ -58,7 +61,6 @@ public:
       if (curl->get())
         log(ros::ERROR,"Get failed.");
 
-      msg_out.data = (char*)(curl->buf);
       publish("chatter", msg_out);
     }
     return true;

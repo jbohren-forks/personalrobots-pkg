@@ -62,6 +62,11 @@ CurlTest::CurlTest(string ip) : ip(ip)
   curl_easy_setopt(get_curl, CURLOPT_POSTFIELDS, "query=position");
   curl_easy_setopt(get_curl, CURLOPT_TIMEOUT, 1);
   curl_easy_setopt(get_curl, CURLOPT_FAILONERROR, 1);
+
+  buf_size = 100;
+
+  buf = new uint8_t[buf_size];
+  memset(buf, 0, buf_size);
 }
 
 CurlTest::~CurlTest()
