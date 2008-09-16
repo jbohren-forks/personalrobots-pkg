@@ -59,14 +59,14 @@ TIMEOUT = 10.0 #seconds
 class TestMechanismState(unittest.TestCase):
 
     def setUp(self):
-        self.callback_data = None
+        self.callback_data = []
         
     def _test_ms_callback(self, data):
         print "GOT CALLBACK DATA"
-        self.callback_data = data
+        self.callback_data.append(data)
     
     def test_ms_msg(self):
-        self.assert_(self.callback_data is None, "invalid test fixture")
+        self.assertEquals(0, len(self.callback_data), "invalid test fixture")
 
         if 0:
             # wait at most 5 seconds for publisher to be registered
@@ -83,32 +83,34 @@ class TestMechanismState(unittest.TestCase):
         print "Subscribing to ", SUBTOPIC
         rospy.TopicSub(SUBTOPIC, MSG, self._test_ms_callback) 
 
-        print "Waiting 5 seconds to collect messages"
-        time.sleep(5.0)
+        sleep_time = 3.0
+        print "Waiting %s seconds to collect messages"%sleep_time
+        time.sleep(sleep_time)
         
-        # listenerpublisher is supposed to repeat our messages back onto /listenerpublisher,
         # make sure we got it
-        self.assert_(self.callback_data is not None, "no callback data from listenerpublisher")
-        print "Got ", self.callback_data.time
-        errorstr = "callback msg field [%%s] from %s does not match"%PUBNODE
-        self.assertAlmostEqual(3.14, self.callback_data.time,2,
-                               errorstr%"time")
-        self.assertEquals(5, len(self.callback_data.joint_states))
-        self.assertEquals(6, len(self.callback_data.actuator_states))
+        self.assert_(len(self.callback_data), "no callback data from %s"%PUBNODE)
+        for d in self.callback_data:
+            errorstr = "callback msg field [%%s] from %s does not match"%PUBNODE
+            self.assertAlmostEqual(3.14, d.time,2,
+                                   errorstr%"time")
+            self.assertEquals(250, len(d.joint_states))
+            self.assertEquals(260, len(d.actuator_states))
 
-        for f in self.callback_data.joint_states:
-            self.assertEquals("jointstate", f.name)
-            self.assertAlmostEqual(1.0, f.position, 1)
-            self.assertAlmostEqual(1.0, f.velocity, 1)   
-            self.assertAlmostEqual(1.0, f.applied_effort, 1)
-            self.assertAlmostEqual(1.0, f.commanded_effort, 1)               
-        for f in self.callback_data.actuator_states:
-            self.assertEquals("actuatorstate", f.name)
-            self.assertEquals(1.0, f.motor_voltage)
-            self.assertEquals(0, f.encoder_count)
-            self.assertEquals(0, f.calibration_reading)        
-            self.assertEquals(0, f.last_calibration_high_transition)
-            self.assertEquals(0, f.num_encoder_errors)
+            for f in d.joint_states:
+                self.assertEquals("jointstate", f.name)
+                self.assertAlmostEqual(1.0, f.position, 1)
+                self.assertAlmostEqual(1.0, f.velocity, 1)   
+                self.assertAlmostEqual(1.0, f.applied_effort, 1)
+                self.assertAlmostEqual(1.0, f.commanded_effort, 1)
+            for i in xrange(0, len(d.actuator_states)):
+                f = d.actuator_states[i]
+                self.assertEquals("actuatorstate", f.name)
+                self.assertEquals(1.0, f.motor_voltage)
+                self.assertEquals(i, f.encoder_count)
+                self.assertEquals(0, f.calibration_reading)        
+                self.assertEquals(i+1, f.last_calibration_low_transition)
+                self.assertEquals(i+2, f.last_calibration_high_transition)
+                self.assertEquals(0, f.num_encoder_errors)
         
 if __name__ == '__main__':
     rospy.ready(NAME)

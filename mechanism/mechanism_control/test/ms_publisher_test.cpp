@@ -34,8 +34,8 @@ void publish(ros::node *node)
 {
   mechanism_control::MechanismState mechanism_state;
 
-  mechanism_state.set_joint_states_size(5);
-  mechanism_state.set_actuator_states_size(6);
+  mechanism_state.set_joint_states_size(250);
+  mechanism_state.set_actuator_states_size(260);
 
   if (1)
   {
@@ -53,14 +53,14 @@ void publish(ros::node *node)
     {
       mechanism_control::ActuatorState *out = mechanism_state.actuator_states + i;
       out->name = "actuatorstate";
-      out->encoder_count = 1;
+      out->encoder_count = i;
       out->position = 1.0;
       out->timestamp = 1.0;
       out->encoder_velocity = 1.0;
       out->velocity = 1.0;
       out->calibration_reading = 0;
-      out->last_calibration_high_transition = 1;
-      out->last_calibration_low_transition = 1;
+      out->last_calibration_high_transition = i+2;
+      out->last_calibration_low_transition = i+1;
       out->is_enabled = 1;
       out->run_stop_hit = 1;
       out->last_requested_effort = 1.0;
