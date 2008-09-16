@@ -29,6 +29,12 @@
 #define XOFFSET 70
 #define NIMAGES 40
 
+#define	PI1S  70
+#define	PI2S  15
+#define	PI1T  20
+#define	PI2T  10
+
+
 struct calib_params{
 
 float b;		//baseline, meters
@@ -258,31 +264,198 @@ class SpacetimeStereoNode : public ros::node
 
 
 
-/*
-void extract_cal_params(string cal_string, calib_params cpar){
 
-int position = cal_string.find("Tx");
+inline int min3(int a, int b, int c){
+return (a<b) ? ((a<c)?a:c) : ((b<c)?b:c);
+}
 
-string substring = cal_string.substr(position, cal_string.find("Ty") - position);
-printf("SUBSTRING: %s \n", substring.c_str()); 
-float tempf;
-sscanf(substring.c_str(), "%*s %f", &tempf);
-cpar.tx = tempf;
-printf("tempf: %f\n", tempf);
-substring = cal_string.substr(cal_string.find("dpx"), cal_string.find("alpha"));
-sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &cpar.dpx, &cpar.dpy, &cpar.u0, &cpar.v0, &cpar.fx, &cpar.fy);
+inline int min4(int a, int b, int c, int d){
 
-// cpar.tx = 59.934176;
-// cpar.u0 = 332.544501;
-// cpar.v0 = 254.563215;
-// cpar.dpx = 0.006;
-// cpar.dpy = 0.006;
-// cpar.fx = 945.598886;
-// cpar.fy =  950.594644;
- cpar.feq =  (cpar.fx+cpar.fy) / 2;
+int t1 = (a<b)?a:b;
+int t2 = (c<d)?c:d;
+return (t1<t2)?t1:t2;
 
-}*/
+}
 
+void stereo_SOst(stereo_params par){
+
+	int maxdisp = par.maxdisp;
+	int xoffset = par.xoffset;
+	
+	int r = par.radius;
+	int w = par.w;
+	int h = par.h;
+
+	unsigned char *L = par.L;
+	unsigned char *R = par.R;
+
+	int x,y,i,j,d;
+	int n = 2*r+1;
+	int dbest=0;
+
+	int sqn = n*n;
+	int costmin;
+
+	int **F = (int **)calloc(w, sizeof(int *));
+	int **B = (int **)calloc(w, sizeof(int *));
+	for(x=0; x<w; x++){
+		F[x] = (int *)calloc(maxdisp, sizeof(int));
+		B[x] = (int *)calloc(maxdisp, sizeof(int));
+	}
+	
+	int **acc = (int **)calloc(w, sizeof(int *));
+	int **V = (int **)calloc(w, sizeof(int*));
+	for(d=0; d<w; d++){
+		V[d] = (int *)calloc(maxdisp, sizeof(int)); 
+		acc[d] = (int *)calloc(maxdisp, sizeof(int)); 	
+	}
+	int *tempc = (int *)calloc(maxdisp, sizeof(int));
+
+	int **C = par.mins;
+
+	int pi = PI1S * sqn;
+	int pi2 = PI2S * sqn;
+
+	int pit = PI1T * sqn;
+	int pi2t = PI2T * sqn;
+	
+	//BEGIN SPATIAL 2-PASS DP
+	
+	//FIRST ROW
+	//STAGE 1 - init acc
+	for(d=0; d<maxdisp; d++){
+		for(i=maxdisp; i<maxdisp+n; i++){
+			V[i][d]=0;
+			for(j=0; j<n; j++)
+				V[i][d] += abs( L[j*w+i] - R[j*w+i-d-xoffset] );
+			//acc[d] += V[i][d];			
+		}		
+	}
+	
+	//STAGE 2: other positions
+	for(x=maxdisp+r+1; x<w-r; x++){
+		for(d=0; d<maxdisp; d++){
+			V[x+r][d]=0;
+			for(j=0; j<n; j++)
+				V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d-xoffset] );
+			//acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
+		}//d
+	}//x
+	unsigned char *lp, *rp, *lpp, *rpp;
+	int ind1 = r+r+maxdisp;
+	
+	for(y=r+1; y<h-r; y++){
+	
+		//first position
+		for(d=0; d<maxdisp; d++){
+			acc[maxdisp+r][d] = 0;
+			for(i=maxdisp; i<maxdisp+n; i++){
+				V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d-xoffset] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d-xoffset] );
+				acc[maxdisp+r][d] += V[i][d];			
+			}	
+		}
+			
+		//compute ACC for all other positions
+		lp = (unsigned char *) L + (y+r)*w + ind1;
+		rp =  (unsigned char *) R + (y+r)*w + ind1 -xoffset;
+		lpp = (unsigned char *) L + (y-r-1)*w + ind1;
+		rpp = (unsigned char *) R + (y-r-1)*w + ind1 -xoffset;
+			
+		for(x=maxdisp+r+1; x<w-r; x++){
+				
+			lp++;
+			rp++;
+			lpp++;
+			rpp++;
+					
+			//int dbestprev = dbest;
+			for(d=0; d<maxdisp; d++){
+					
+				V[x+r][d] = V[x+r][d] + abs( *lp - *rp ) - abs( *lpp - *rpp ); 
+				rp--;
+				rpp--;
+				acc[x][d] = acc[x-1][d] + V[x+r][d] - V[x-r-1][d];
+			}//d
+			rp += maxdisp;
+			rpp += maxdisp;
+		}//x to compute ACC
+
+		//BEGIN FORWARD
+		//BORDO
+		for(d=0; d<maxdisp; d++)
+			F[maxdisp+r][d] = acc[maxdisp+r][d];
+	
+		for(x=maxdisp+r; x<w-r; x++){
+	
+			costmin = F[x-1][0];
+			dbest = 0;
+			for(d=1; d<maxdisp; d++)
+			if(F[x-1][d] < costmin){
+				costmin = F[x-1][d];
+				dbest = d;
+			}
+	
+			F[x][0] =  acc[x][0] - costmin + min3(F[x-1][0], F[x-1][1]+pi2, costmin+pi);
+			for(d=1; d<maxdisp-1; d++){
+				F[x][d] = acc[x][d] - costmin + min4(F[x-1][d], F[x-1][d-1]+pi2, F[x-1][d+1]+pi2, costmin+pi);
+			} //d
+			F[x][maxdisp-1] = acc[x][maxdisp-1] - costmin + min3(F[x-1][maxdisp-1], F[x-1][maxdisp-2]+pi2, costmin+pi);
+		}//x1
+		//END FORWARD
+		//BEGIN BACKWARD
+		//BORDO	
+		for(d=0; d<maxdisp; d++)
+			B[w-1-r][d] = acc[w-1-r][d];
+		
+		for(x=w-2-r; x>=maxdisp+r; x--){
+
+			costmin = B[x+1][0];
+			dbest = 0;
+			for(d=1; d<maxdisp; d++)
+			if(B[x+1][d] < costmin){
+				costmin = B[x+1][d];
+				dbest = d;
+			}
+	
+			B[x][0] =  acc[x][0] - costmin + min3(B[x+1][0], B[x+1][1]+pi2, costmin+pi);
+			for(d=1; d<maxdisp-1; d++){
+				B[x][d] = acc[x][d] - costmin + min4(B[x+1][d], B[x+1][d-1]+pi2, B[x+1][d+1]+pi2, costmin+pi);
+			} //d
+			B[x][maxdisp-1] = acc[x][maxdisp-1] - costmin + min3(B[x+1][maxdisp-1], B[x+1][maxdisp-2]+pi2, costmin+pi);
+			//END BACKWARD
+			//END SPATIAL 2-PASS DP
+
+			costmin = C[y*w+x][0];
+			dbest = 0;
+			for(d=1; d<maxdisp; d++)
+			if(C[y*w+x][d] < costmin){
+				costmin = C[y*w+x][d];
+				dbest = d;
+			}
+			
+			tempc[0] = F[x][0] + B[x][0] + min3(costmin+pit, C[y*w+x][d], C[y*w+x][d+1]+pi2t) - costmin;
+			for(d=1; d<maxdisp-1; d++)
+				tempc[d] = F[x][d] + B[x][d] + min4(costmin+pit, C[y*w+x][d], C[y*w+x][d-1]+pi2t, C[y*w+x][d+1]+pi2t) - costmin;
+			tempc[maxdisp-1] = F[x][maxdisp-1] + B[x][maxdisp-1] + min3(costmin+pit, C[y*w+x][d], C[y*w+x][d-1]+pi2t) - costmin;
+
+			for(d=0; d<maxdisp; d++)
+				C[y*w+x][d] = tempc[d];
+		}//x
+	}//y
+
+	for(x=0; x<w; x++){
+		free(acc[x]);
+		free(F[x]);
+		free(B[x]);
+		free(V[x]);
+	}
+	
+	free(F);
+	free(B);
+	free(V);
+	free(acc);
+	free(tempc);
+}
 
 
 void stereo_standard_sad(stereo_params par){
@@ -395,7 +568,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	par.xoffset = XOFFSET;	
 	
 	int maxdisp = par.maxdisp;
-	int xoffset = par.xoffset;
+	//int xoffset = par.xoffset;
 
 	int r = par.radius;
 	int w = left_frames[0]->width;
@@ -466,7 +639,8 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 		cv2array(Leftg, L);
 		cv2array(Rightg, R);
 		
-		stereo_standard_sad(par);
+		//stereo_standard_sad(par);
+		stereo_SOst(par);
 
 	} //framecount
 	printf("\n");
@@ -531,15 +705,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 			uniqueness_constraint_reducedrange(par, min_scores, y);
 		#endif
 	}//y
-	
-// 	IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 1);
-// 	for(y=r; y<h-r; y++){
-// 	for(x=maxdisp+r+1; x<w-r; x++){
-// 		((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x] = disp[y*w+x]/8;
-// 	}}
-// 	cvNamedWindow("Disp Image", 0);
-// 	cvShowImage("Disp Image", idisp);
-// 	cvWaitKey(10);
+
 	for(d=0; d<w*h;d++)
 		free(mins[d]);	
 	free(mins);
@@ -567,35 +733,14 @@ position = cal_string.find("proj");
 substring = cal_string.substr(position, cal_string.find("rect")-position);
 sscanf(substring.c_str(), "%*s \n %f %*f %f %*f \n %*f %f %f", &cpar.fx, &cpar.u0, &cpar.fy, &cpar.v0);
 
-// position = cal_string.find("dpx");
-// substring = cal_string.substr(position, cal_string.find("alpha")-position);
-// sscanf(substring.c_str(), "%*s %f %*s %f %*s %*f %*s %f %*s %f %*s %f %*s %f", &cpar.dpx, &cpar.dpy, &cpar.u0, &cpar.v0, &cpar.fx, &cpar.fy);
-
-// cpar.tx = 59.934176;
-// cpar.u0 = 332.544501;
-// cpar.v0 = 254.563215;
-// cpar.dpx = 0.006;
-// cpar.dpy = 0.006;
-// cpar.fx = 945.598886;
-// cpar.fy =  950.594644;
- cpar.feq =  (cpar.fx+cpar.fy) / 2;
+cpar.feq =  (cpar.fx+cpar.fy) / 2;
 
 printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
-
-// cpar.tx = 59.934176;
-// cpar.u0 = 332.544501;
-// cpar.v0 = 254.563215;
-// cpar.dpx = 0.006;
-// cpar.dpy = 0.006;
-// cpar.fx = 945.598886;
-// cpar.fy =  950.594644;
-// cpar.feq =  (cpar.fx+cpar.fy) / 2;
 
 std_msgs::PointCloudFloat32 ros_cloud;
 
 ros_cloud.set_chan_size(1);
 ros_cloud.chan[0].name = "intensities";
-
 
 int i,j;
 float xf,yf,zf;
