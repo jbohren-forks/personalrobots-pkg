@@ -1,0 +1,9 @@
+<launch>
+  <include file="$(find executive_trex_pr2)/cfg/launch_gazebo.xml"/>
+  <test test-name="hz_mechanism_state" pkg="rostest" type="hztest" name="hztest">
+    <param name="topic" value="mechanism_state"/>  
+    <param name="hz" value="5.0" />
+    <param name="hzerror" value="5.0" />
+    <param name="test_duration" value="10.0"/>
+  </test>
+</launch>

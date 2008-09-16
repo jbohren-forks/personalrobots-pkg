@@ -1,0 +1,9 @@
+<launch>
+  <include file="$(find executive_trex_pr2)/cfg/launch_stage.xml"/>
+  <test test-name="hz_localizedpose" pkg="rostest" type="hztest" name="hztest">
+    <param name="topic" value="localizedpose"/>  
+    <param name="hz" value="10.0" />
+    <param name="hzerror" value="1.0" />
+    <param name="test_duration" value="10.0"/>
+  </test>
+</launch>
