@@ -1,6 +1,6 @@
 <launch>
   <group name="wg">
-    <include file="$(find gazebo_robot_description)/pr2_test_wg.xml"/>
+    <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators_wg.xml"/>
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" />
     <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" />
