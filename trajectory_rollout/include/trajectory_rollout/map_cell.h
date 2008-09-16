@@ -53,6 +53,9 @@ class MapCell{
     //distance to goal
     double goal_dist;
 
+    //grown obstacles
+    double occ_dist;
+
     //occupancy state (-1 = free, 0 = unknown, 1 = occupied)
     int occ_state;
 

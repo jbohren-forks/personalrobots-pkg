@@ -34,6 +34,7 @@
 #include <trajectory_rollout/trajectory_controller.h>
 
 using namespace std;
+using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), tf_(tf)
@@ -50,8 +51,20 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   trajectory_theta_ = 0.0;
 }
 
+//update what map cells are considered path based on the global_plan
+void TrajectoryController::setPathCells(){
+  map_.resetPathDist();
+  for(unsigned int i = 0; i < global_plan_.size(); ++i){
+    if(VALID_CELL(map_, global_plan_[i].x, global_plan_[i].y))
+      map_(global_plan_[i].x, global_plan_[i].y).path_dist = 0.0;
+  }
+}
+
 //compute the distance from each cell in the map grid to the planned path
 void TrajectoryController::computePathDistance(){
+  //make sure that we update our path based on the global plan
+  setPathCells();
+
   //two sweeps are needed to compute path distance for the grid
 
   //sweep bottom-top / left-right
@@ -141,6 +154,13 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
   }
   
   return traj;
+}
+
+void TrajectoryController::updatePlan(vector<Position2DInt>& new_plan){
+  global_plan_.resize(new_plan.size());
+  for(unsigned int i = 0; i < new_plan.size(); ++i){
+    global_plan_[i] = new_plan[i];
+  }
 }
 
 void TrajectoryController::trajectoriesToWorld(){

@@ -51,7 +51,7 @@ GovernorNode::GovernorNode() :
 
   advertise<std_msgs::Polyline2D>("local_path");
   advertise<std_msgs::BaseVel>("cmd_vel");
-  subscribe("score_map", map_msg_, &GovernorNode::mapReceived, 1);
+  subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
   subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
 }
 
@@ -67,12 +67,20 @@ void GovernorNode::odomReceived(){
   vel_lock.unlock();
 }
 
-void GovernorNode::mapReceived(){
+void GovernorNode::planReceived(){
   //make sure we don't process the map while we update it
   map_lock.lock();
   
   //update the map from the message
-  map_.update(map_msg_);
+  map_.update(plan_msg_.map);
+
+  //update the global plan from the message
+  vector<std_msgs::Position2DInt> plan;
+
+  for(unsigned int i = 0; i < plan_msg_.plan.path_size; ++i){
+    plan.push_back(plan_msg_.plan.path[i]);
+  }
+  tc_.updatePlan(plan);
 
   map_lock.unlock();
 }
@@ -126,8 +134,8 @@ void GovernorNode::processPlan(){
   for(int i = 0; i < tc_.num_steps_; ++i){
     //path_msg.points[i].x = ((int)((path.points_[i].x_ - map_.origin_x) / map_.scale));
     //path_msg.points[i].y = ((int)((path.points_[i].y_ - map_.origin_y) / map_.scale));
-    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i);
-    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
+    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i) + tc_.map_.origin_x;
+    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i) + tc_.map_.origin_y;
     //printf("(%.2f, %.2f), ", path_msg.points[i].x, path_msg.points[i].y);
   }
   //printf("(%.2f, %.2f)\n ", path_msg.points[0].x, path_msg.points[0].y);
@@ -140,6 +148,7 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vx = drive_cmds.x;
   cmd_vel_msg_.vy = drive_cmds.y;
   cmd_vel_msg_.vw = drive_cmds.yaw;
+
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", drive_cmds.x, drive_cmds.y, drive_cmds.yaw);
   publish("cmd_vel", cmd_vel_msg_);
 }

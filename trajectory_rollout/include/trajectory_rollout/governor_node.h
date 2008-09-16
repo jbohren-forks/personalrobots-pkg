@@ -39,6 +39,7 @@
 //The messages that we'll use
 #include <std_msgs/BaseVel.h>
 #include <trajectory_rollout/ScoreMap2D.h>
+#include <trajectory_rollout/WavefrontPlan.h>
 #include <std_msgs/RobotBase2DOdom.h>
 
 //for GUI debugging
@@ -70,7 +71,7 @@ class GovernorNode: public ros::node
     GovernorNode();
 
     //callback for when the planned passes a new map
-    void mapReceived();
+    void planReceived();
 
     //callback for odometry information
     void odomReceived();
@@ -92,7 +93,7 @@ class GovernorNode: public ros::node
     TrajectoryController tc_;
 
     //incoming messages
-    trajectory_rollout::ScoreMap2D map_msg_;
+    trajectory_rollout::WavefrontPlan plan_msg_;
     std_msgs::RobotBase2DOdom odom_msg_;
 
     //outgoing messages
@@ -102,7 +103,7 @@ class GovernorNode: public ros::node
     //since both odomReceived and processPlan access robot_vel we need to lock
     ros::thread::mutex vel_lock;
 
-    //since both mapReceived and processPlan access map_ we need to lock
+    //since both planReceived and processPlan access map_ we need to lock
     ros::thread::mutex map_lock;
 
     //keep track of the robot's velocity

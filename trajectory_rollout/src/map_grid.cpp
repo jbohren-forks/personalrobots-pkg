@@ -102,8 +102,16 @@ void MapGrid::update(ScoreMap2D& new_map){
       map_[index].cy = i;
       map_[index].path_dist = new_map.data[index].path_dist;
       map_[index].goal_dist = new_map.data[index].goal_dist;
+      map_[index].occ_dist = new_map.data[index].occ_dist;
       map_[index].occ_state = new_map.data[index].occ_state;
     }
+  }
+}
+
+//reset the path_dist field for all cells
+void MapGrid::resetPathDist(){
+  for(unsigned int i = 0; i < map_.size(); ++i){
+    map_[i].path_dist = DBL_MAX;
   }
 }
 
@@ -123,7 +131,8 @@ ScoreMap2D MapGrid::genMsg(){
       int index = size_x_ * i + j;
       map_msg.data[i].path_dist = map_[index].path_dist;
       map_msg.data[i].goal_dist = map_[index].goal_dist;
-      map_msg.data[i].occ_state =map_[index].occ_state;
+      map_msg.data[i].occ_state = map_[index].occ_state;
+      map_msg.data[i].occ_dist = map_[index].occ_dist;
     }
   }
   return map_msg;

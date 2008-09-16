@@ -54,7 +54,10 @@
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
 
-#define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < (int)(map).size_x_) && ((y) >= 0) && ((y) < (int)(map).size_y_))
+//we'll take in a path as a vector of points
+#include <std_msgs/Position2DInt.h>
+
+#define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < ((int)(map).size_x_)) && ((y) >= 0) && ((y) < ((int)(map).size_y_)))
 
 //convert from map to world coords
 #define MX_WX(map, i) ((map).origin_x + (i) * (map).scale)
@@ -89,6 +92,8 @@ class TrajectoryController {
         double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y,
         double acc_theta);
 
+    void updatePlan(std::vector<std_msgs::Position2DInt>& new_plan);
+
     
     //possible trajectories for this run
     std::vector<Trajectory> trajectories_;
@@ -106,9 +111,15 @@ class TrajectoryController {
     //the number of points we generate for each trajectory
     int num_steps_;
 
+    //the global plan for the robot to follow
+    std::vector<std_msgs::Position2DInt> global_plan_;
+
   private:
     //compute the distance from an individual cell to the planned path
     void cellPathDistance(int cx, int cy, int dx, int dy);
+
+    //update what map cells are considered path based on the global_plan
+    void setPathCells();
 
     //update neighboring path distance
     void updateNeighbors(int cx, int cy);

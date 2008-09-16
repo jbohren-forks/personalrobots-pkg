@@ -59,6 +59,9 @@ class MapGrid{
     //allow easy updating from message representations
     void update(trajectory_rollout::ScoreMap2D& new_map);
 
+    //reset path distance fields for all cells
+    void resetPathDist();
+
     size_t getIndex(int x, int y);
 
     //allow easy creation of messages
