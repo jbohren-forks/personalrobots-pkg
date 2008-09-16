@@ -9,6 +9,9 @@ Main loop that runs the robot.
   <depend package="ethercat_hardware"/>
   <depend package="hardware_interface"/>
   <depend package="std_srvs"/>
+  <depend package="generic_controllers"/>
+  <depend package="pr2_controllers"/>
+  <depend package="motor_qualification_controllers"/>
 
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

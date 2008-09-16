@@ -140,9 +140,12 @@ void MotorTest1::analysis()
 {
   double f_delta = fixture_joint_end_pos_-fixture_joint_start_pos_;
   double t_delta = test_joint_end_pos_-test_joint_start_pos_;
+  double error = fabs(fabs(f_delta)-fabs(t_delta))/((fabs(f_delta)+fabs(t_delta))/2);
+  printf("f: %f , t: %f\n", f_delta, t_delta);
   diagnostic_message_.set_status_size(1);
   robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
   status->name = "MotorTest";
+  printf("error: %f\n", error);
   if (f_delta==0 && t_delta==0)
   {
     //the motor isn't moving
@@ -156,7 +159,7 @@ void MotorTest1::analysis()
     status->message = "ERROR: The motor encoder is not attached or not powered.";
     
   }
-  else if(f_delta+1<t_delta || f_delta-1>t_delta)
+  else if(error<0.005)
   {
     //the encoder is slipping
     status->level = 2;
