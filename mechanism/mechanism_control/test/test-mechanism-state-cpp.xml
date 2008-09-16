@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="mechanism_control" type="ms_publisher_test" />
+  <test test-name="mechanism_state_py" pkg="mechanism_control" type="test_ms_cpp.py" />
+</launch>
