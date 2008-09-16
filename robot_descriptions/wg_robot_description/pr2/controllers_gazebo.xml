@@ -64,7 +64,7 @@
     <alwaysOn>true</alwaysOn>
     <updateRate>100.0</updateRate>
     <bodyName>base</bodyName>
-    <topicName>base_pose</topicName>
+    <topicName>base_pose_gazebo_ground_truth</topicName>
     <frameName>base_frame</frameName>
     <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
     <rpyOffsets>0 0 0</rpyOffsets>

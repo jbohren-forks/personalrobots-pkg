@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_gazebo_ground_truth"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -99,7 +99,7 @@ public:
 
 	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 	
-	subscribe("base_pose", m_basePosMsg, &FakeOdomNode::basePosReceived);
+	subscribe("base_pose_gazebo_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
 	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
