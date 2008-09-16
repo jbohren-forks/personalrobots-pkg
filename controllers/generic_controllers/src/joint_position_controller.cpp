@@ -225,8 +225,31 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
 
   if (!c_->initXml(robot, config))
     return false;
+
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
+
+  TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
+  if(ros_cb)
+  {
+    const char * topic_name=ros_cb->Attribute("name");
+    if(!topic_name)
+    {
+      std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
+      return false;
+    }
+    node->subscribe(topic_name, msg_, &JointPositionControllerNode::setJointPosSingle, this, 1);
+    std::cout<<"Listening to topic: "<<topic_name<<std::endl;
+  }
+
+
+
   return true;
 }
+
+void JointPositionControllerNode::setJointPosSingle()
+{
+  c_->setCommand(msg_.position);
+}
+
 

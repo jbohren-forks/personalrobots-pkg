@@ -61,6 +61,8 @@
 #include <generic_controllers/SetCommand.h>
 #include <generic_controllers/GetActual.h>
 
+#include <generic_controllers/SingleJointPosCmd.h>
+
 namespace controller
 {
 
@@ -176,7 +178,13 @@ public:
   bool getActual(generic_controllers::GetActual::request &req,
                  generic_controllers::GetActual::response &resp);
 
+  /*!
+   * \brief ROS topic callback
+   */
+  void setJointPosSingle();
+
 private:
+  generic_controllers::SingleJointPosCmd msg_;   //The message used by the ROS callback
   JointPositionController *c_;
 };
 }

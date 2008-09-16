@@ -55,7 +55,7 @@
   - None
 
   Publishes to (name / type):
-  - @b "cmd_leftarmconfig"/PR2Arm : configuration of the left arm (all the joint angles); sent on every keypress.
+  - @b "lArmCmd"/JointPosCmd : configuration of the left arm (all the joint angles); sent on every keypress.
 
   <hr>
 
@@ -70,7 +70,8 @@
 #include <math.h>
 
 #include <ros/node.h>
-#include <std_msgs/PR2Arm.h>
+#include <pr2_controllers/JointPosCmd.h>
+#include <generic_controllers/SingleJointPosCmd.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -125,8 +126,10 @@ enum PR2_JOINT_ID
 class TArmK_Node : public ros::node
 {
   private:
-    std_msgs::PR2Arm cmd_leftarmconfig;
-    std_msgs::PR2Arm cmd_rightarmconfig;
+    pr2_controllers::JointPosCmd lArmCmd;
+    pr2_controllers::JointPosCmd rArmCmd;
+    generic_controllers::SingleJointPosCmd lGripperCmd;
+    generic_controllers::SingleJointPosCmd rGripperCmd;
 
   public:
     TArmK_Node() : ros::node("tarmk"), tf(*this, true)
@@ -134,58 +137,97 @@ class TArmK_Node : public ros::node
     // cmd_armconfig should probably be initialised
     // with the current joint angles of the arm rather
     // than zeros.
-    this->cmd_leftarmconfig.turretAngle = 0;
-    this->cmd_leftarmconfig.shoulderLiftAngle = 0;
-    this->cmd_leftarmconfig.upperarmRollAngle = 0;
-    this->cmd_leftarmconfig.elbowAngle        = 0;
-    this->cmd_leftarmconfig.forearmRollAngle  = 0;
-    this->cmd_leftarmconfig.wristPitchAngle   = 0;
-    this->cmd_leftarmconfig.wristRollAngle    = 0;
-    this->cmd_leftarmconfig.gripperForceCmd   = 1000;
-    this->cmd_leftarmconfig.gripperGapCmd     = 0;
-    this->cmd_rightarmconfig.turretAngle = 0;
-    this->cmd_rightarmconfig.shoulderLiftAngle = 0;
-    this->cmd_rightarmconfig.upperarmRollAngle = 0;
-    this->cmd_rightarmconfig.elbowAngle        = 0;
-    this->cmd_rightarmconfig.forearmRollAngle  = 0;
-    this->cmd_rightarmconfig.wristPitchAngle   = 0;
-    this->cmd_rightarmconfig.wristRollAngle    = 0;
-    this->cmd_rightarmconfig.gripperForceCmd   = 1000;
-    this->cmd_rightarmconfig.gripperGapCmd     = 0;
-    advertise<std_msgs::PR2Arm>("cmd_leftarmconfig");
-    advertise<std_msgs::PR2Arm>("cmd_rightarmconfig");
+    this->lArmCmd.set_names_size(7);
+    this->rArmCmd.set_names_size(7);
+    this->lArmCmd.set_positions_size(7);
+    this->rArmCmd.set_positions_size(7);
+    this->lArmCmd.set_margins_size(7);
+    this->rArmCmd.set_margins_size(7);
 
-    _leftInit = false;
-    _rightInit = false;
+    this->lArmCmd.names[0] = "shoulder_pan_left_joint";
+    this->lArmCmd.names[1] = "shoulder_pitch_left_joint";
+    this->lArmCmd.names[2] = "upperarm_roll_left_joint";
+    this->lArmCmd.names[3] = "elbow_flex_left_joint";
+    this->lArmCmd.names[4] = "forearm_roll_left_joint";
+    this->lArmCmd.names[5] = "wrist_flex_left_joint";
+    this->lArmCmd.names[6] = "gripper_roll_left_joint";
 
-    //for getting positions
-    subscribe("left_pr2arm_pos", leftArmPosMsg, &TArmK_Node::leftArmPosReceived);
-    subscribe("right_pr2arm_pos", rightArmPosMsg, &TArmK_Node::rightArmPosReceived);
+    this->lArmCmd.positions[0] = 0;
+    this->lArmCmd.positions[1] = 0;
+    this->lArmCmd.positions[2] = 0;
+    this->lArmCmd.positions[3] = 0;
+    this->lArmCmd.positions[4] = 0;
+    this->lArmCmd.positions[5] = 0;
+    this->lArmCmd.positions[6] = 0;
+
+    this->lArmCmd.margins[0] = 0;
+    this->lArmCmd.margins[1] = 0;
+    this->lArmCmd.margins[2] = 0;
+    this->lArmCmd.margins[3] = 0;
+    this->lArmCmd.margins[4] = 0;
+    this->lArmCmd.margins[5] = 0;
+    this->lArmCmd.margins[6] = 0;
+
+    this->rArmCmd.names[0] = "shoulder_pan_right_joint";
+    this->rArmCmd.names[1] = "shoulder_pitch_right_joint";
+    this->rArmCmd.names[2] = "upperarm_roll_right_joint";
+    this->rArmCmd.names[3] = "elbow_flex_right_joint";
+    this->rArmCmd.names[4] = "forearm_roll_right_joint";
+    this->rArmCmd.names[5] = "wrist_flex_right_joint";
+    this->rArmCmd.names[6] = "gripper_roll_right_joint";
+
+    this->rArmCmd.positions[0] = 0;
+    this->rArmCmd.positions[1] = 0;
+    this->rArmCmd.positions[2] = 0;
+    this->rArmCmd.positions[3] = 0;
+    this->rArmCmd.positions[4] = 0;
+    this->rArmCmd.positions[5] = 0;
+    this->rArmCmd.positions[6] = 0;
+
+    this->rArmCmd.margins[0] = 0;
+    this->rArmCmd.margins[1] = 0;
+    this->rArmCmd.margins[2] = 0;
+    this->rArmCmd.margins[3] = 0;
+    this->rArmCmd.margins[4] = 0;
+    this->rArmCmd.margins[5] = 0;
+    this->rArmCmd.margins[6] = 0;
+
+    advertise<pr2_controllers::JointPosCmd>("left_arm_commands");
+    advertise<pr2_controllers::JointPosCmd>("right_arm_commands");
+    advertise<generic_controllers::SingleJointPosCmd>("left_gripper_commands");
+    advertise<generic_controllers::SingleJointPosCmd>("right_gripper_commands");
+
+    // deal with grippers separately
+    this->lGripperCmd.position      = 0;
+    this->rGripperCmd.position     = 0;
+
   }
     ~TArmK_Node() { }
 
     void printCurrentJointValues() {
-      std::cout << "Left joint angles:" << std::endl;
-      std::cout << "turretAngle " << leftArmPosMsg.turretAngle << std::endl;
-      std::cout << "shoulderLiftAngle " << leftArmPosMsg.shoulderLiftAngle << std::endl;
-      std::cout << "upperarmRollAngle " << leftArmPosMsg.upperarmRollAngle << std::endl;
-      std::cout << "elbowAngle        " << leftArmPosMsg.elbowAngle << std::endl;
-      std::cout << "forearmRollAngle  " << leftArmPosMsg.forearmRollAngle << std::endl;
-      std::cout << "wristPitchAngle   " << leftArmPosMsg.wristPitchAngle << std::endl;
-      std::cout << "wristRollAngle    " << leftArmPosMsg.wristRollAngle << std::endl;
-      std::cout << "gripperForceCmd   " << leftArmPosMsg.gripperForceCmd << std::endl;
-      std::cout << "gripperGapCmd     " << leftArmPosMsg.gripperGapCmd << std::endl;
+      std::cout << "left arm " << std::endl;
+      std::cout << " cmds: "
+          << " " << this->lArmCmd.positions[0]
+          << " " << this->lArmCmd.positions[1]
+          << " " << this->lArmCmd.positions[2]
+          << " " << this->lArmCmd.positions[3]
+          << " " << this->lArmCmd.positions[4]
+          << " " << this->lArmCmd.positions[5]
+          << " " << this->lArmCmd.positions[6]
+          << " " << this->lGripperCmd.position
+          << std::endl;
+      std::cout << "right arm " << std::endl;
+      std::cout << " cmds: "
+          << " " << this->rArmCmd.positions[0]
+          << " " << this->rArmCmd.positions[1]
+          << " " << this->rArmCmd.positions[2]
+          << " " << this->rArmCmd.positions[3]
+          << " " << this->rArmCmd.positions[4]
+          << " " << this->rArmCmd.positions[5]
+          << " " << this->rArmCmd.positions[6]
+          << " " << this->rGripperCmd.position
+          << std::endl;
 
-      std::cout << "Right joint angles:" << std::endl;
-      std::cout << "turretAngle " << rightArmPosMsg.turretAngle << std::endl;
-      std::cout << "shoulderLiftAngle " << rightArmPosMsg.shoulderLiftAngle << std::endl;
-      std::cout << "upperarmRollAngle " << rightArmPosMsg.upperarmRollAngle << std::endl;
-      std::cout << "elbowAngle        " << rightArmPosMsg.elbowAngle << std::endl;
-      std::cout << "forearmRollAngle  " << rightArmPosMsg.forearmRollAngle << std::endl;
-      std::cout << "wristPitchAngle   " << rightArmPosMsg.wristPitchAngle << std::endl;
-      std::cout << "wristRollAngle    " << rightArmPosMsg.wristRollAngle << std::endl;
-      std::cout << "gripperForceCmd   " << rightArmPosMsg.gripperForceCmd << std::endl;
-      std::cout << "gripperGapCmd     " << rightArmPosMsg.gripperGapCmd << std::endl;
     }
 
     void printCurrentEndEffectorWorldCoord() {
@@ -224,45 +266,11 @@ class TArmK_Node : public ros::node
       std::cout << "In shoulder frame z " << inOdomFrame.z << std::endl;
     }
 
-    void leftArmPosReceived() {
-      if(_leftInit == false) {
-        this->cmd_leftarmconfig.turretAngle = leftArmPosMsg.turretAngle;
-        this->cmd_leftarmconfig.shoulderLiftAngle = leftArmPosMsg.shoulderLiftAngle;
-        this->cmd_leftarmconfig.upperarmRollAngle = leftArmPosMsg.upperarmRollAngle;
-        this->cmd_leftarmconfig.elbowAngle        = leftArmPosMsg.elbowAngle;
-        this->cmd_leftarmconfig.forearmRollAngle  = leftArmPosMsg.forearmRollAngle;
-        this->cmd_leftarmconfig.wristPitchAngle   = leftArmPosMsg.wristPitchAngle;
-        this->cmd_leftarmconfig.wristRollAngle    = leftArmPosMsg.wristRollAngle;
-        this->cmd_leftarmconfig.gripperForceCmd   = leftArmPosMsg.gripperForceCmd;
-        this->cmd_leftarmconfig.gripperGapCmd     = leftArmPosMsg.gripperGapCmd;
-        _leftInit = true;
-      }
-    }
-
-    void rightArmPosReceived() {
-      if(_rightInit == false) {
-        this->cmd_rightarmconfig.turretAngle = rightArmPosMsg.turretAngle;
-        this->cmd_rightarmconfig.shoulderLiftAngle = rightArmPosMsg.shoulderLiftAngle;
-        this->cmd_rightarmconfig.upperarmRollAngle = rightArmPosMsg.upperarmRollAngle;
-        this->cmd_rightarmconfig.elbowAngle        = rightArmPosMsg.elbowAngle;
-        this->cmd_rightarmconfig.forearmRollAngle  = rightArmPosMsg.forearmRollAngle;
-        this->cmd_rightarmconfig.wristPitchAngle   = rightArmPosMsg.wristPitchAngle;
-        this->cmd_rightarmconfig.wristRollAngle    = rightArmPosMsg.wristRollAngle;
-        this->cmd_rightarmconfig.gripperForceCmd   = rightArmPosMsg.gripperForceCmd;
-        this->cmd_rightarmconfig.gripperGapCmd     = rightArmPosMsg.gripperGapCmd;
-        _rightInit = true;
-      }
-    }
-
     void keyboardLoop();
     void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
     void openGripper(PR2_JOINT_ID jointID);
     void closeGripper(PR2_JOINT_ID jointID);
 
-
-    bool _leftInit;
-    bool _rightInit;
-    std_msgs::PR2Arm leftArmPosMsg, rightArmPosMsg;
     rosTFClient tf;
 };
 
@@ -295,103 +303,88 @@ main(int argc, char** argv)
 
 void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
   if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
-  if(_leftInit == false || _rightInit == false) {
-    printf("No init, so not sending command.\n");
-    return;
-  }
   if(jointID == ARM_R_GRIPPER_GAP) {
-    this->cmd_rightarmconfig.gripperForceCmd = 50;
-    this->cmd_rightarmconfig.gripperGapCmd = .2;
+    this->rGripperCmd.position = .2;
     printf("Opening right gripper\n");
   } else { 
-    this->cmd_leftarmconfig.gripperForceCmd = 50;
-    this->cmd_leftarmconfig.gripperGapCmd = .2;
+    this->lGripperCmd.position = .2;
     printf("Opening left gripper\n");
   }
 }
 
 void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
   if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
-  if(_leftInit == false || _rightInit == false) {
-    printf("No init, so not sending command.\n");
-    return;
-  }
   if(jointID == ARM_R_GRIPPER_GAP) {
-    this->cmd_rightarmconfig.gripperForceCmd = 50;
-    this->cmd_rightarmconfig.gripperGapCmd = 0;
+    this->rGripperCmd.position = 0;
   } else { 
-    this->cmd_leftarmconfig.gripperForceCmd = 50;
-    this->cmd_leftarmconfig.gripperGapCmd = 0;
+    this->lGripperCmd.position = 0;
   }
 }
 
 
 void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 {
-  if(_leftInit == false || _rightInit == false) {
-    printf("No init, so not sending command.\n");
-    return;
-  }
   float jointCmdStep = 5*M_PI/180;
-  float gripperStep = 0.002;
+  float gripperStep = 1*M_PI/180;
   if (increment == false)
   {
     jointCmdStep *= -1;
     gripperStep *= -1;
   }
 
-  this->cmd_leftarmconfig.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
-  this->cmd_rightarmconfig.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
+  //this->lArmCmd.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
+  //this->rArmCmd.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
 
   switch(jointID)
   {
     case ARM_L_PAN:
-      this->cmd_leftarmconfig.turretAngle += jointCmdStep;
+      this->lArmCmd.positions[0] += jointCmdStep;
+      std::cout << " lp " << this->lArmCmd.positions[0] << std::endl;
       break;
     case ARM_L_SHOULDER_PITCH:
-      this->cmd_leftarmconfig.shoulderLiftAngle += jointCmdStep;
+      this->lArmCmd.positions[1] += jointCmdStep;
       break;
     case ARM_L_SHOULDER_ROLL:
-      this->cmd_leftarmconfig.upperarmRollAngle += jointCmdStep;
+      this->lArmCmd.positions[2] += jointCmdStep;
       break;
     case ARM_L_ELBOW_PITCH:
-      this->cmd_leftarmconfig.elbowAngle += jointCmdStep;
+      this->lArmCmd.positions[3] += jointCmdStep;
       break;
     case ARM_L_ELBOW_ROLL:
-      this->cmd_leftarmconfig.forearmRollAngle += jointCmdStep;
+      this->lArmCmd.positions[4] += jointCmdStep;
       break;
     case ARM_L_WRIST_PITCH:
-      this->cmd_leftarmconfig.wristPitchAngle += jointCmdStep;
+      this->lArmCmd.positions[5] += jointCmdStep;
       break;
     case ARM_L_WRIST_ROLL:
-      this->cmd_leftarmconfig.wristRollAngle += jointCmdStep;
+      this->lArmCmd.positions[6] += jointCmdStep;
       break;
     case ARM_L_GRIPPER_GAP:
-      this->cmd_leftarmconfig.gripperGapCmd += gripperStep;
+      this->lGripperCmd.position += gripperStep;
       break;
     case ARM_R_PAN:
-      this->cmd_rightarmconfig.turretAngle += jointCmdStep;
+      this->rArmCmd.positions[0] += jointCmdStep;
       break;
     case ARM_R_SHOULDER_PITCH:
-      this->cmd_rightarmconfig.shoulderLiftAngle += jointCmdStep;
+      this->rArmCmd.positions[1] += jointCmdStep;
       break;
     case ARM_R_SHOULDER_ROLL:
-      this->cmd_rightarmconfig.upperarmRollAngle += jointCmdStep;
+      this->rArmCmd.positions[2] += jointCmdStep;
       break;
     case ARM_R_ELBOW_PITCH:
-      this->cmd_rightarmconfig.elbowAngle += jointCmdStep;
+      this->rArmCmd.positions[3] += jointCmdStep;
       break;
     case ARM_R_ELBOW_ROLL:
-      this->cmd_rightarmconfig.forearmRollAngle += jointCmdStep;
+      this->rArmCmd.positions[4] += jointCmdStep;
       break;
     case ARM_R_WRIST_PITCH:
-      this->cmd_rightarmconfig.wristPitchAngle += jointCmdStep;
+      this->rArmCmd.positions[5] += jointCmdStep;
       break;
     case ARM_R_WRIST_ROLL:
-      this->cmd_rightarmconfig.wristRollAngle += jointCmdStep;
+      this->rArmCmd.positions[6] += jointCmdStep;
       break;
     case ARM_R_GRIPPER_GAP:
-      this->cmd_rightarmconfig.gripperGapCmd += gripperStep;
+      this->rGripperCmd.position += gripperStep;
       break;
     default:
       printf("This joint is not handled.\n");
@@ -457,14 +450,10 @@ TArmK_Node::keyboardLoop()
         dirty=true;
         break;
       case '.':
-        _rightInit = false;
-        _leftInit = false;
         openGripper(curr_jointID);
         dirty = true;
         break;
       case '/':
-        _rightInit = false;
-        _leftInit = false;
         sleep(1);
         closeGripper(curr_jointID);
         dirty = true;
@@ -519,7 +508,6 @@ TArmK_Node::keyboardLoop()
           printf("left gripper\n");
           break;
         case '9':
-          _leftInit = false;
           printf("Resetting left commands to current position.\n");
         default:
           break;
@@ -562,7 +550,6 @@ TArmK_Node::keyboardLoop()
           printf("right gripper\n");
           break;
         case '9':
-          _rightInit = false;
           printf("Resetting right commands to current position.\n");
         default:
           break;
@@ -572,9 +559,11 @@ TArmK_Node::keyboardLoop()
     if (dirty == true) {
       dirty=false; // Sending the command only once for each key press.
       if(!right_arm) {
-        publish("cmd_leftarmconfig",cmd_leftarmconfig);
+        publish("left_arm_commands",lArmCmd);
+        publish("left_gripper_commands",lGripperCmd);
       } else {
-        publish("cmd_rightarmconfig",cmd_rightarmconfig);
+        publish("right_arm_commands",rArmCmd);
+        publish("right_gripper_commands",rGripperCmd);
       }
     }
   }

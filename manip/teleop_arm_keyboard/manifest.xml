@@ -4,6 +4,7 @@ individual joints of the PR2Arm from keyboard input</description>
   <author>Advait Jain</author>
   <license>BSD</license>
   <depend package="roscpp"/>
-  <depend package="std_msgs"/>
+  <depend package="generic_controllers"/>
+  <depend package="pr2_controllers"/>
   <depend package="rosTF"/>
 </package>
