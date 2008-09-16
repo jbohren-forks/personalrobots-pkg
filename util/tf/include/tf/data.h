@@ -2,6 +2,8 @@
 #define TF_DATA_H
 
 #include <string>
+#include "std_msgs/Vector3.h"
+#include "LinearMath/btVector3.h"
 
 namespace tf
 {
@@ -25,6 +27,12 @@ class Stamped{
 
   void stripStamp(T & output) { output = data_;};
 };
+
+
+static inline void Vector3MsgToBt(const std_msgs::Vector3& msg_v, btVector3& bt_v) {bt_v = btVector3(msg_v.x, msg_v.y, msg_v.z);};
+static inline void Vector3BtToMsg(const btVector3& bt_v, std_msgs::Vector3& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
+
+
 
 }
 #endif //TF_DATA_H
