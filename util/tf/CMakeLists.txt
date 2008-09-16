@@ -21,3 +21,6 @@ rospack_add_gtest(tf_unittest test/tf_unittest.cpp)
 target_link_libraries(tf_unittest tf)
 rospack_add_gtest(cache_unittest test/cache_unittest.cpp)
 target_link_libraries(cache_unittest tf)
+
+
+rospack_add_executable(btTest test/quaternion.cpp)
