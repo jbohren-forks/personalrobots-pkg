@@ -2,7 +2,12 @@
   <group name="wg">
     <include file="$(find wg_robot_description)/send_arm_test_headless.xml"/>
     <!-- -g flag runs gazebo in gui-less mode -->
-    <node pkg="gazebo" type="run-gazebo.sh" args="-g $(find gazebo_robot_description)/world/robot_arm_test_headless.world" respawn="false" output="screen" />
+    <node pkg="gazebo" type="gazebo" args="-g $(find gazebo_robot_description)/world/robot_arm_test_headless.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
   </group>
 </launch>
 

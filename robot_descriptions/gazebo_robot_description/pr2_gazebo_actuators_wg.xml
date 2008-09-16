@@ -1,7 +1,8 @@
 <launch>
   <group name="wg">
-    <include file="$(find wg_robot_description)/send_test.xml"/>
-    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_test.world" respawn="false" output="screen">
+    <include file="$(find wg_robot_description)/send.xml"/>
+    <!-- -g flag runs gazebo in gui-less mode -->
+    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_wg.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
