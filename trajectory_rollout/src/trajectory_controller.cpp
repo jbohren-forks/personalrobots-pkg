@@ -134,9 +134,9 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
     vtheta_i = computeNewVelocity(vtheta_samp, vtheta_i, acc_theta, dt);
 
     //calculate positions
-    x_i = computeNewPosition(x_i, vx_i, dt);
-    y_i = computeNewPosition(y_i, vy_i, dt);
-    theta_i = computeNewPosition(theta_i, vtheta_i, dt);
+    x_i = computeNewXPosition(x_i, vx_i, vy_i, theta_i, dt);
+    y_i = computeNewYPosition(y_i, vx_i, vy_i, theta_i, dt);
+    theta_i = computeNewThetaPosition(theta_i, vtheta_i, dt);
     
   }
   
@@ -190,15 +190,25 @@ void TrajectoryController::trajectoriesToWorld(){
 
 
 //compute position based on velocity
-double TrajectoryController::computeNewPosition(double xi, double v, double dt){
-  return xi + v * dt;
+double TrajectoryController::computeNewXPosition(double xi, double vx, double vy, double theta, double dt){
+  return xi + (vx * cos(theta) + vy * sin(theta)) * dt;
+}
+
+//compute position based on velocity
+double TrajectoryController::computeNewYPosition(double yi, double vx, double vy, double theta, double dt){
+  return yi + (vx * sin(theta) + vy * cos(theta)) * dt;
+}
+
+//compute position based on velocity
+double TrajectoryController::computeNewThetaPosition(double thetai, double vth, double dt){
+  return thetai + vth * dt;
 }
 
 //compute velocity based on acceleration
 double TrajectoryController::computeNewVelocity(double vg, double vi, double a_max, double dt){
   if(vg >= 0)
-    return MIN(vg, vi + a_max * dt);
-  return MAX(vg, vi - a_max * dt);
+    return min(vg, vi + a_max * dt);
+  return max(vg, vi - a_max * dt);
 }
 
 
@@ -272,7 +282,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   int best_index = -1;
 
   for(unsigned int i = 0; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(i, .33, .33, .33);
+    double cost = trajectoryCost(i, .5, 0, .5);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -294,34 +304,24 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
   double path_dist = 0.0;
   double goal_dist = 0.0;
   for(int i = 0; i < num_steps_; ++i){
+    int mat_index = t_index * num_steps_ + i;
     //we need to know in which cell the path ends
-    pair<int, int> point_cell = getMapCell(trajectory_pts_.element(0, t_index * num_steps_ + i), trajectory_pts_.element(1, t_index * num_steps_ + i));
+    int cell_x = WX_MX(map_, trajectory_pts_.element(0, mat_index));
+    int cell_y = WY_MY(map_, trajectory_pts_.element(1, mat_index));
 
     //we don't want a path that ends off the known map
-    if(!VALID_CELL(map_, point_cell.first, point_cell.second)){
+    if(!VALID_CELL(map_, cell_x, cell_y)){
       return DBL_MAX;
     }
 
-    path_dist += map_(point_cell.first, point_cell.second).path_dist;
-    goal_dist += map_(point_cell.first, point_cell.second).goal_dist;
+    path_dist += map_(cell_x, cell_y).path_dist;
+    goal_dist += map_(cell_x, cell_y).goal_dist;
 
   }
-  double cost = path_dist + (1.0 / (t.xv_ * t.xv_));
-  //double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_ + t.yv_ * t.yv_));
+  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_));
   //double cost = gdist_scale * goal_dist;
   
   return cost;
-}
-
-//given a position (in map space) return the containing cell
-pair<int, int> TrajectoryController::getMapCell(double x, double y){
-  //size of each cell meters/cell
-  double scale = map_.scale;
-
-  int i = (int)(x / scale);
-  int j = (int)(y / scale);
-
-  return pair<int, int>(i, j);
 }
 
 //given a trajectory in map space get the drive commands to send to the robot

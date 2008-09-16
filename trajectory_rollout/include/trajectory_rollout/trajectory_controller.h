@@ -41,6 +41,7 @@
 #include <utility>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 //for matrix support
 #include <newmat10/newmat.h>
@@ -53,9 +54,16 @@
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
 
-#define MAX(x, y) x > y ? x : y
-#define MIN(x, y) x < y ? x : y
-#define VALID_CELL(map, x, y) ((x >= 0) && (x < (int)map.size_x_) && (y >= 0) && (y < (int)map.size_y_))
+#define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < (int)(map).size_x_) && ((y) >= 0) && ((y) < (int)(map).size_y_))
+
+//convert from map to world coords
+#define MX_WX(map, i) ((map).origin_x + (i) * (map).scale)
+#define MY_WY(map, j) ((map).origin_y + (j) * (map).scale)
+
+
+//convert from world to map coords
+#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
+#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale + 0.5))
 
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
@@ -111,15 +119,14 @@ class TrajectoryController {
     //compute the cost for a single trajectory
     double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double dfast_scale);
 
-    //given a position (in map space) return the containing cell
-    std::pair<int, int> getMapCell(double x, double y);
-
     //compute position based on velocity
-    double computeNewPosition(double xi, double v, double dt);
+    double computeNewXPosition(double xi, double vx, double vy, double theta, double dt);
+    double computeNewYPosition(double yi, double vx, double vy, double theta, double dt);
+    double computeNewThetaPosition(double thetai, double vth, double dt);
 
     //compute velocity based on acceleration
     double computeNewVelocity(double vg, double vi, double amax, double dt);
-    
+
     //the simulation parameters for generating trajectories
     double sim_time_;
     int samples_per_dim_;

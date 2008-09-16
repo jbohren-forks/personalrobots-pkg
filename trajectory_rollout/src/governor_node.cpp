@@ -50,7 +50,7 @@ GovernorNode::GovernorNode() :
   robot_vel_.time = 0.0;
 
   advertise<std_msgs::Polyline2D>("local_path");
-  //advertise<std_msgs::BaseVel>("cmd_vel");
+  advertise<std_msgs::BaseVel>("cmd_vel");
   subscribe("score_map", map_msg_, &GovernorNode::mapReceived, 1);
   subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
 }
@@ -101,40 +101,6 @@ void GovernorNode::processPlan(){
   //give robot_vel_ back
   vel_lock.unlock();
 
-  /*uncomment if controller wants to operate in world space
-  libTF::TFPose2D global_pose;
-  libTF::TFPose2D global_vel;
-  libTF::TFPose2D global_acc;
-
-  //transform
-  try
-  {
-    global_pose = tf_.transformPose2D("FRAMEID_MAP", robot_pose);
-    global_vel = tf_.transformPose2D("FRAMEID_MAP", robot_vel);
-    global_acc = tf_.transformPose2D("FRAMEID_MAP", robot_acc);
-  }
-  catch(libTF::TransformReference::LookupException& ex)
-  {
-    puts("no global->local Tx yet");
-    printf("%s\n", ex.what());
-    return;
-  }
-  catch(libTF::TransformReference::ConnectivityException& ex)
-  {
-    puts("no global->local Tx yet");
-    printf("%s\n", ex.what());
-    return;
-  }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
-  {
-    //      puts("extrapolation required");
-    //      printf("%s\n", ex.what());
-    return;
-  }
-  printf("Transforms done\n");
-  */
-
-
   //we need to lock the map while we process it
   map_lock.lock();
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
@@ -175,7 +141,7 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vy = drive_cmds.y;
   cmd_vel_msg_.vw = drive_cmds.yaw;
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", drive_cmds.x, drive_cmds.y, drive_cmds.yaw);
-  //publish("cmd_vel", cmd_vel_msg_);
+  publish("cmd_vel", cmd_vel_msg_);
 }
 
 //wait out remaining time of cycle
@@ -198,14 +164,10 @@ int main(int argc, char** argv){
 
   struct timeval curr;
 
-  int i = 0;
   while(gn.ok()){
     gettimeofday(&curr,NULL);
     gn.processPlan();
     gn.sleep(curr.tv_sec + curr.tv_usec / 1e6);
-    if(i > 10)
-      exit(0);
-    ++i;
   }
 
   ros::fini();

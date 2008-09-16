@@ -136,28 +136,16 @@ TEST(TrajectoryController, properIntegration){
 
   Trajectory t1 = tc.generateTrajectory(0, 2, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1);
 
-  //check x integration fo position and velocity
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].x_, 3.45);
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].xv_, 1.00);
-  EXPECT_FLOAT_EQ(t1.points_[2].xv_, 0.20);
+  int mat_index = tc.num_steps_ - 1;
 
-  //check y integration fo position and velocity
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].y_, 2.45);
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].yv_, 1.00);
-  EXPECT_FLOAT_EQ(t1.points_[2].yv_, 0.20);
+  //check x integration fo position
+  EXPECT_FLOAT_EQ(tc.trajectory_pts_.element(0, mat_index), 3.45);
+
+  //check y integration fo position
+  EXPECT_FLOAT_EQ(tc.trajectory_pts_.element(1, mat_index), 2.45);
 
   //check theta integration fo position and velocity
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].theta_, 1.45);
-  EXPECT_FLOAT_EQ(t1.points_[t1.points_.size() - 1].thetav_, 1.00);
-  EXPECT_FLOAT_EQ(t1.points_[2].thetav_, 0.20);
-
-  /*
-  for(unsigned int i = 0; i < t1.points_.size(); ++i){
-    TrajectoryPoint p = t1.points_[i];
-    printf("%d -  time: %4f, x: %4f, y: %4f, theta: %4f\n", i, p.t_, p.x_, p.y_, p.theta_);
-    printf("%d -  time: %4f, xv: %4f, yv: %4f, thetav: %4f\n", i, p.t_, p.xv_, p.yv_, p.thetav_);
-  }
-  */
+  EXPECT_FLOAT_EQ(tc.trajectory_theta_.element(0, mat_index), 1.45);
 
 }
 

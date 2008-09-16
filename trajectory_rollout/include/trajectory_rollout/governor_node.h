@@ -62,7 +62,7 @@
 #define MAX_ACC_THETA 1.0
 #define SIM_TIME 2.0
 #define SIM_STEPS 25
-#define VEL_SAMPLES 10
+#define VEL_SAMPLES 25
 
 class GovernorNode: public ros::node
 {
