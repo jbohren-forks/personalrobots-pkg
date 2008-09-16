@@ -60,7 +60,7 @@ static struct
      "PR2",             // Robot name
      "Maxon", "148877", // Motor make and model
      3.12,              // Max current [Amps]
-     0.000017,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     158,               // Speed constant [rpm/V]
      1.16,              // Resistance [Ohms]
      0.0603,            // Motor torque constant [Nm/A]
      1200, -1,          // Encoder pulses and sign
@@ -77,7 +77,7 @@ static struct
      "PR2",             // Robot name
      "Maxon", "310007", // Motor make and model
      3.44,              // Max current [Amps]
-     0.000010,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     369,               // Speed constant [rpm/V]
      0.611,             // Resistance [Ohms]
      0.0259,            // Motor torque constant [Nm/A]
      1200, -1,          // Encoder pulses and sign
@@ -94,7 +94,7 @@ static struct
      "PR2",             // Robot name
      "Maxon", "310009", // Motor make and model
      1.72,              // Max current [Amps]
-     0.000015,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     178,               // Speed constant [rpm/V]
      2.52,              // Resistance [Ohms]
      0.0538,            // Motor torque constant [Nm/A]
      1200, -1,          // Encoder pulses and sign
@@ -111,7 +111,7 @@ static struct
      "PR2",             // Robot name
      "Maxon", "236672", // Motor make and model
      0.655,             // Max current [Amps]
-     0.000020,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     136,               // Speed constant [rpm/V]
      16.7,              // Resistance [Ohms]
      0.0704,            // Motor torque constant [Nm/A]
      1200, -1,          // Encoder pulses and sign
@@ -128,7 +128,7 @@ static struct
      "PR2",             // Robot name
      "Maxon", "222057", // Motor make and model
      0.204,             // Max current [Amps]
-     0.000017,          // Backemf (1 / (speed constant * 2pi * 60)) [Volts/radians/sec]
+     156,               // Speed constant [rpm/V]
      56.2,              // Resistance [Ohms]
      0.0613,            // Motor torque constant [Nm/A]
      1200, -1,          // Encoder pulses and sign

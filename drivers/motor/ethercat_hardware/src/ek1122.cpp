@@ -60,3 +60,26 @@ void EK1122::convertState(ActuatorState &state, unsigned char *current_buffer, u
 void EK1122::verifyState(unsigned char *buffer)
 {
 }
+
+void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d)
+{
+  vector<robot_msgs::DiagnosticString> strings;
+  vector<robot_msgs::DiagnosticValue> values;
+  robot_msgs::DiagnosticValue v;
+  robot_msgs::DiagnosticString s;
+
+  stringstream str;
+  str << "EtherCAT Device #" << sh_->get_ring_position();
+  d.name = str.str();
+  d.message = "OK";
+  d.level = 0;
+
+  s.label = "Product code";
+  str.str("");
+  str << "EK1122 (" << sh_->get_product_code() << ")";
+  s.value = str.str();
+  strings.push_back(s);
+
+  d.set_strings_vec(strings);
+  d.set_values_vec(values);
+}

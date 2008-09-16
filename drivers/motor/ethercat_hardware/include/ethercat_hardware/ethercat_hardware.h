@@ -47,7 +47,6 @@
 #include "ethercat_hardware/ethercat_device.h"
 
 #include <misc_utils/realtime_publisher.h>
-#include <robot_msgs/DiagnosticMessage.h>
 
 class EthercatHardware
 {

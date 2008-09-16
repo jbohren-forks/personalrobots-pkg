@@ -146,9 +146,11 @@ void EthercatHardware::init(char *interface)
   // Initialize diagnostic data structures
   diagnostic_message_.set_status_size(1 + num_slaves_);
   diagnostic_message_.status[0].set_values_size(3);
+  diagnostic_message_.status[0].set_strings_size(1);
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
     diagnostic_message_.status[1 + slave].set_values_size(1);
+    diagnostic_message_.status[1 + slave].set_strings_size(1);
   }
 }
 
@@ -186,53 +188,55 @@ void EthercatHardware::publishDiagnostics()
   vector<robot_msgs::DiagnosticStatus> status_vec;
 
   // Publish status of EtherCAT master
+  vector<robot_msgs::DiagnosticStatus> statuses;
+  vector<robot_msgs::DiagnosticValue> values;
+  vector<robot_msgs::DiagnosticString> strings;
+
+  robot_msgs::DiagnosticStatus status;
+  robot_msgs::DiagnosticValue v;
+  robot_msgs::DiagnosticString s;
+
+  status.level = 0;
+  status.name = "EtherCAT Master";
+  status.message = "OK";
+
+  // Num devices
+  v.value = num_slaves_;
+  v.value_label = "EtherCAT devices";
+  values.push_back(v);
+
+  // Interface
+  s.value = interface_;
+  s.label = "Interface";
+  strings.push_back(s);
+
+  // Roundtrip
+  double total = 0;
+  for (int i = 0; i < 1000; ++i)
   {
-    robot_msgs::DiagnosticStatus *master = diagnostic_message_.status;
-    master->level = 0;
-    master->name = "EtherCAT Master";
-    master->message = "OK";
-
-    robot_msgs::DiagnosticValue *value = master->values;
-
-    // Num devices
-    value->value = num_slaves_;
-    value->value_label = "EtherCAT devices";
-    ++value;
-
-    // Roundtrip
-    double total = 0;
-    for (int i = 0; i < 1000; ++i)
-    {
-      total += diagnostics_.iteration_[i].roundtrip_;
-      diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
-    }
-    value->value = total / 1000.0;
-    value->value_label = "Average roundtrip time";
-    ++value;
-
-    value->value = diagnostics_.max_roundtrip_;
-    value->value_label = "Maximum roundtrip time";
-    ++value;
+    total += diagnostics_.iteration_[i].roundtrip_;
+    diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
   }
+  v.value = total / 1000.0;
+  v.value_label = "Average roundtrip time";
+  values.push_back(v);
+
+  v.value = diagnostics_.max_roundtrip_;
+  v.value_label = "Maximum roundtrip time";
+  values.push_back(v);
+
+  status.set_values_vec(values);
+  status.set_strings_vec(strings);
+  statuses.push_back(status);
 
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
-    robot_msgs::DiagnosticStatus *device = diagnostic_message_.status + 1 + slave;
-    robot_msgs::DiagnosticValue *value = device->values;
-
-    stringstream str;
-    str << "EtherCAT Device #" << slave;
-    device->name = str.str();
-
-    device->message = "OK";
-    device->level = 0;
-
-    value->value = 10;
-    value->value_label = "Temperature";
-    value++;
+    slaves_[slave]->diagnostics(status);
+    statuses.push_back(status);
   }
 
   // Publish status of each EtherCAT device
+  diagnostic_message_.set_status_vec(statuses);
   publisher_.publish(diagnostic_message_);
 }
 

@@ -148,7 +148,7 @@ struct WG0XActuatorInfo
   char motor_make_[32];         // Motor manufacturer
   char motor_model_[32];        // Motor model #
   double max_current_;          // Maximum current
-  double backemf_constant_;     // BackEMF constant
+  double speed_constant_;       // Speed constant
   double resistance_;           // Resistance
   double motor_torque_constant_; // Motor torque constant
   uint32_t pulses_per_revolution_; // # of encoder ticks per revolution
@@ -208,6 +208,8 @@ public:
 
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
+
+  void diagnostics(robot_msgs::DiagnosticStatus &d);
 
 private:
   int readEeprom(EtherCAT_SlaveHandler *sh);

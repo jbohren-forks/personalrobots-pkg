@@ -32,6 +32,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <iomanip>
+
 #include <math.h>
 
 #include <ros/node.h>
@@ -240,7 +242,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
     printf("  motor make: %s\n", actuator_info_.motor_make_);
     printf("  motor model: %s\n", actuator_info_.motor_model_);
     printf("  max current: %f\n", actuator_info_.max_current_);
-    printf("  backemf: %f\n", actuator_info_.backemf_constant_);
+    printf("  speed constant: %f\n", actuator_info_.speed_constant_);
     printf("  motor torque: %f\n", actuator_info_.motor_torque_constant_);
     printf("  pulses per revolution: %d\n", actuator_info_.pulses_per_revolution_);
     printf("  sign: %d\n", actuator_info_.sign_);
@@ -692,4 +694,50 @@ int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
   }
 
   return 0;
+}
+
+#define ADD_STRING(lab, val) \
+  s.label = (lab); \
+  s.value = (val); \
+  strings.push_back(s)
+#define ADD_VALUE(lab, val) \
+  v.value_label = (lab); \
+  v.value = (val); \
+  values.push_back(v)
+void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
+{
+  vector<robot_msgs::DiagnosticString> strings;
+  vector<robot_msgs::DiagnosticValue> values;
+  robot_msgs::DiagnosticValue v;
+  robot_msgs::DiagnosticString s;
+
+  stringstream str;
+  str << "EtherCAT Device #" << sh_->get_ring_position();
+  d.name = str.str();
+  d.message = "OK";
+  d.level = 0;
+
+  str.str("");
+  str << (sh_->get_product_code() == WG05::PRODUCT_CODE ? "WG05 (" : "WG06 (") << sh_->get_product_code() << ")";
+  ADD_STRING("Product code", str.str());
+  ADD_STRING("Name", actuator_info_.name_);
+  ADD_STRING("Robot", actuator_info_.robot_name_);
+  str.str("");
+  str << actuator_info_.motor_make_ << " " << actuator_info_.motor_model_;
+  ADD_STRING("Motor", str.str());
+
+  str.str("");
+  str << setfill('0') << config_info_.product_id_ / 100000 << "-" << setw(5) << config_info_.product_id_ % 100000 << "-" << setw(5) << config_info_.device_serial_number_;
+  ADD_STRING("Serial Number", str.str());
+  ADD_VALUE("Nominal Current Scale", config_info_.nominal_current_scale_);
+  ADD_VALUE("Nominal Voltage Scale", config_info_.nominal_voltage_scale_);
+  ADD_VALUE("Max Current", actuator_info_.max_current_);
+  ADD_VALUE("Speed Constant", actuator_info_.speed_constant_);
+  ADD_VALUE("Resistance", actuator_info_.resistance_);
+  ADD_VALUE("Motor Torque Constant", actuator_info_.motor_torque_constant_);
+  ADD_VALUE("Pulses Per Revolution", actuator_info_.pulses_per_revolution_);
+  ADD_VALUE("Sign", actuator_info_.sign_);
+
+  d.set_strings_vec(strings);
+  d.set_values_vec(values);
 }
