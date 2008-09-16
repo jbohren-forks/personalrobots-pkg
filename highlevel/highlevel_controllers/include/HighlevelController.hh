@@ -39,6 +39,7 @@
 #include <ros/node.h>
 #include <sys/time.h>
 #include <time.h>
+#include <math.h>
 
 /**
  * @brief Abstract base class for a high level controller node which is parameterized by the state update

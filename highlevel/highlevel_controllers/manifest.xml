@@ -11,6 +11,7 @@
 <depend package="std_msgs"/>
 <depend package="robot_msgs"/>
 <depend package="robot_srvs"/>
+<depend package="pr2_controllers"/>
 <depend package="pr2_msgs"/>
 <depend package="kinematic_planning"/>
 </package>
