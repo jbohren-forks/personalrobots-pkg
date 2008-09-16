@@ -79,6 +79,7 @@
   <!-- ========================================= -->
   <!-- left arm array -->
   <controller name="left_arm_controller" type="ArmPositionControllerNode">
+    <listen_topic name="left_arm_commands" />
     <kinematics>
       <elem key="kdl_chain_name">left_arm</elem>
     </kinematics>
@@ -123,14 +124,16 @@
   </controller>
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
-        <joint name="finger_l_left_joint">
-        <pid p="10" d="0" i="0" iClamp="0" />
-        <gripper_defaults effortLimit="100" velocityLimit="10" />
-      </joint>
+    <listen_topic name="left_gripper_commands" />
+    <joint name="finger_l_left_joint">
+      <pid p="10" d="0" i="0" iClamp="0" />
+      <gripper_defaults effortLimit="100" velocityLimit="10" />
+    </joint>
   </controller>
   <!-- ========================================= -->
   <!-- right arm array -->
   <controller name="right_arm_controller" type="ArmPositionControllerNode">
+    <listen_topic name="right_arm_commands" />
     <kinematics>
       <elem key="kdl_chain_name">right_arm</elem>
     </kinematics>
@@ -175,6 +178,7 @@
   </controller>
   <!-- Special gripper joint -->
   <controller name="gripper_right_controller" topic="gripper_right_controller" type="JointPositionControllerNode">
+    <listen_topic name="right_gripper_commands" />
     <joint name="finger_l_right_joint">
       <pid p="10" d="0" i="0" iClamp="0" />
       <gripper_defaults effortLimit="100" velocityLimit="10" />
