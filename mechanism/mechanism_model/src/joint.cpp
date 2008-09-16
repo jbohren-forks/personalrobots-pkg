@@ -130,7 +130,7 @@ bool Joint::initXml(TiXmlElement *elt)
     if(calibration)
     {
       if(calibration->QueryDoubleAttribute("reference_position", &reference_position_) == TIXML_SUCCESS)
-         std::cout<<"Found reference point at "<<reference_position_<<std::endl;
+        std::cout<<"Found reference point at "<<reference_position_<<std::endl;
     }
 
 
@@ -151,41 +151,43 @@ bool Joint::initXml(TiXmlElement *elt)
   // Safety limit code
   if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
   {
-	  // Loads safety limits
-	  TiXmlElement *safetyMinElt =elt->FirstChildElement("safety_limit_min");
+    // Loads safety limits
+    TiXmlElement *safetyMinElt =elt->FirstChildElement("safety_limit_min");
 
-	  if(!safetyMinElt)
-	  return SAFETY_LIMS_STRICTLY_ENFORCED == false;
+    if(!safetyMinElt && SAFETY_LIMS_STRICTLY_ENFORCED)
+      return false;
+    else if (safetyMinElt)
+    {
+      if(safetyMinElt->QueryDoubleAttribute("spring_constant", &spring_constant_min_) != TIXML_SUCCESS)
+        return false;
+      if(safetyMinElt->QueryDoubleAttribute("damping_constant", &damping_constant_min_) != TIXML_SUCCESS)
+        return false;
+      if(safetyMinElt->QueryDoubleAttribute("safety_length", &safety_length_min_) != TIXML_SUCCESS)
+        return false;
 
-	  if(safetyMinElt->QueryDoubleAttribute("spring_constant", &spring_constant_min_) != TIXML_SUCCESS)
-	  return false;
-	  if(safetyMinElt->QueryDoubleAttribute("damping_constant", &damping_constant_min_) != TIXML_SUCCESS)
-	  return false;
-	  if(safetyMinElt->QueryDoubleAttribute("safety_length", &safety_length_min_) != TIXML_SUCCESS)
-	  return false;
+      TiXmlElement *safetyMaxElt =elt->FirstChildElement("safety_limit_max");
+      if(!safetyMaxElt)
+        return SAFETY_LIMS_STRICTLY_ENFORCED == false;
 
-	  TiXmlElement *safetyMaxElt =elt->FirstChildElement("safety_limit_max");
-	  if(!safetyMaxElt)
-	  return SAFETY_LIMS_STRICTLY_ENFORCED == false;
+      if(safetyMaxElt->QueryDoubleAttribute("spring_constant", &spring_constant_max_) != TIXML_SUCCESS)
+        return false;
+      if(safetyMaxElt->QueryDoubleAttribute("damping_constant", &damping_constant_max_) != TIXML_SUCCESS)
+        return false;
+      if(safetyMaxElt->QueryDoubleAttribute("safety_length", &safety_length_max_) != TIXML_SUCCESS)
+        return false;
 
-	  if(safetyMaxElt->QueryDoubleAttribute("spring_constant", &spring_constant_max_) != TIXML_SUCCESS)
-	  return false;
-	  if(safetyMaxElt->QueryDoubleAttribute("damping_constant", &damping_constant_max_) != TIXML_SUCCESS)
-	  return false;
-	  if(safetyMaxElt->QueryDoubleAttribute("safety_length", &safety_length_max_) != TIXML_SUCCESS)
-	  return false;
+      std::cout<<"Loaded safety limit code for joint "<<name_<<std::endl;
+      std::cout<<spring_constant_min_<<" "<<damping_constant_min_<<" "<<safety_length_min_<<"\n";
 
-	  std::cout<<"Loaded safety limit code for joint "<<name_<<std::endl;
-	  std::cout<<spring_constant_min_<<" "<<damping_constant_min_<<" "<<safety_length_min_<<"\n";
+      assert(safety_length_max_ > 0);
+      assert(safety_length_min_ > 0);
+      assert(joint_limit_max_ > joint_limit_min_);
+      const double midpoint = 0.5*(joint_limit_max_+joint_limit_min_);
+      assert(joint_limit_max_ - safety_length_max_ > midpoint);
+      assert(joint_limit_min_ + safety_length_min_ < midpoint);
 
-	  assert(safety_length_max_ > 0);
-	  assert(safety_length_min_ > 0);
-	  assert(joint_limit_max_ > joint_limit_min_);
-	  const double midpoint = 0.5*(joint_limit_max_+joint_limit_min_);
-	  assert(joint_limit_max_ - safety_length_max_ > midpoint);
-	  assert(joint_limit_min_ + safety_length_min_ < midpoint);
-
-	  has_safety_limits_ = true;
+      has_safety_limits_ = true;
+    }
   }
 
   if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
