@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find gazebo_robot_description)/pr2_test.xml"/>
+  <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
 
   <!-- Run hztest -->
   <!-- Test for publication of 'base_scan' topic -->
@@ -12,15 +12,15 @@
     <param name="hz" value="10.0" />
     <!-- Acceptable error in the publication rate [Hz].  Ignored if hz is set
     to 0.0. -->
-    <param name="hzerror" value="0.5" />
+    <param name="hzerror" value="3.0" />
     <!-- Time to listen for [seconds] -->
-    <param name="test_duration" value="3.0" />    
+    <param name="test_duration" value="1.0" />    
     <!-- Whether each inter-message time interval should be checked against
     the expected publication rate and error bound [boolean].  If true, then
     the test will fail if the time elapsed between *any* two consecutive
     messages exceeded the specified limits.  If false, then we only check
     the average publication rate over the entire test.  Default: false. -->
-    <param name="check_intervals" value="true" />    
+    <param name="check_intervals" value="false" />    
   </test>
 
   <!-- Test for publication of 'odom' topic. -->
@@ -28,9 +28,9 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (odom_test vs. scan_test). -->
     <param name="topic" value="odom" />
-    <param name="hz" value="10.0" />
-    <param name="hzerror" value="0.5" />
-    <param name="test_duration" value="3.0" />
-    <param name="check_intervals" value="true" />
+    <param name="hz" value="3.0" />
+    <param name="hzerror" value="1.0" />
+    <param name="test_duration" value="5.0" />
+    <param name="check_intervals" value="false" />
   </test>
 </launch>
