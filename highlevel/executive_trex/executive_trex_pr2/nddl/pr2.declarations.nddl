@@ -99,15 +99,13 @@ class ArmState extends AgentTimeline {
   bool isLeft; // true if the left arm
 
   predicate Holds{
-    float turretAngle;
-    float shoulderLiftAngle;
-    float upperarmRollAngle;
-    float elbowAngle;
-    float forearmRollAngle;
-    float wristPitchAngle;
-    float wristRollAngle;
-    float gripperForceCmd;
-    float gripperGapCmd;
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
   }
 
   ArmState(Mode _mode, bool _isLeft){
@@ -165,37 +163,32 @@ class MoveArm extends Behavior {
   bool isLeft; // True if this is for the left arm, else false.
   
   predicate Inactive{
-    float turretAngle;
-    float shoulderLiftAngle;
-    float upperarmRollAngle;
-    float elbowAngle;
-    float forearmRollAngle;
-    float wristPitchAngle;
-    float wristRollAngle;
-    float gripperForceCmd;
-    float gripperGapCmd;
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
 
-    float desTurretAngle;
-    float desShoulderLiftAngle;
-    float desUpperarmRollAngle;
-    float desElbowAngle;
-    float desForearmRollAngle;
-    float desWristPitchAngle;
-    float desWristRollAngle;
-    float desGripperForceCmd;
-    float desGripperGapCmd;
+    float des_shoulder_pan;
+    float des_shoulder_pitch;
+    float des_upperarm_roll;
+    float des_elbow_flex;
+    float des_forearm_roll;
+    float des_wrist_flex;
+    float des_gripper_roll;
   }
 
   predicate Active {
-    float turretAngle;
-    float shoulderLiftAngle;
-    float upperarmRollAngle;
-    float elbowAngle;
-    float forearmRollAngle;
-    float wristPitchAngle;
-    float wristRollAngle;
-    float gripperForceCmd;
-    float gripperGapCmd;
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+
   }
   
   MoveArm(Mode _mode, bool _isLeft){

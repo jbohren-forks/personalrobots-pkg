@@ -1,23 +1,22 @@
 #include "exec.init.nddl"
 
-rejectable(moveLeftArm.Inactive leftArmGoal_0);
-leftArmGoal_0.desTurretAngle = 1.0;
-leftArmGoal_0.desShoulderLiftAngle = 0.0;
-leftArmGoal_0.desUpperarmRollAngle = 0.0;
-leftArmGoal_0.desElbowAngle = 0.0;
-leftArmGoal_0.desForearmRollAngle = 0.0;
-leftArmGoal_0.desWristPitchAngle = 0.0;
-leftArmGoal_0.desWristRollAngle = 0.0;
-leftArmGoal_0.desGripperForceCmd = 0.0;
-leftArmGoal_0.desGripperGapCmd = 0.0;
-
 rejectable(moveRightArm.Inactive rightArmGoal_0);
-rightArmGoal_0.desTurretAngle = -1.0;
-rightArmGoal_0.desShoulderLiftAngle = 0.0;
-rightArmGoal_0.desUpperarmRollAngle = 0.0;
-rightArmGoal_0.desElbowAngle = 0.0;
-rightArmGoal_0.desForearmRollAngle = 0.0;
-rightArmGoal_0.desWristPitchAngle = 0.0;
-rightArmGoal_0.desWristRollAngle = 0.0;
-rightArmGoal_0.desGripperForceCmd = 0.0;
-rightArmGoal_0.desGripperGapCmd = 0.0;
+rightArmGoal_0.des_shoulder_pan = -1.0;
+rightArmGoal_0.des_shoulder_pitch= 0.0;
+rightArmGoal_0.des_upperarm_roll = 0.0;
+rightArmGoal_0.des_elbow_flex = 0.0;
+rightArmGoal_0.des_forearm_roll = 0.0;
+rightArmGoal_0.des_wrist_flex = 0.0;
+rightArmGoal_0.des_gripper_roll = 0.0;
+
+
+/*
+rejectable(moveLeftArm.Inactive leftArmGoal_0);
+leftArmGoal_0.des_shoulder_pan = 1.0;
+leftArmGoal_0.des_shoulder_pitch= 0.0;
+leftArmGoal_0.des_upperarm_roll = 0.0;
+leftArmGoal_0.des_elbow_flex = 0.0;
+leftArmGoal_0.des_forearm_roll = 0.0;
+leftArmGoal_0.des_wrist_flex = 0.0;
+leftArmGoal_0.des_gripper_roll = 0.0;
+*/

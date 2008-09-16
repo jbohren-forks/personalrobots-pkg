@@ -53,12 +53,12 @@ namespace TREX {
     }
 
     void registerSubscribers() {
-      debugMsg("ROS", "Registering subscriber on topic:" << stateTopic);
+      debugMsg("ROS", "Registering subscriber for " << timelineName << " on topic:" << stateTopic);
       m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSControllerAdapter<S, G>::handleCallback, this, QUEUE_MAX());
     }
 
     void registerPublishers(){
-      debugMsg("ROS", "Registering publisher on topic:" << goalTopic);
+      debugMsg("ROS", "Registering publisher for " << timelineName << " on topic:" << goalTopic);
       m_node->registerPublisher<G>(goalTopic, QUEUE_MAX());
     }
 

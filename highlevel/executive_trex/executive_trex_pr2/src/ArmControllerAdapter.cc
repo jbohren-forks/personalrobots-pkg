@@ -18,54 +18,44 @@ namespace TREX {
   protected:
 
     void fillActiveObservationParameters(ObservationByValue* obs){
-      obs->push_back("turretAngle", new IntervalDomain(stateMsg.goal.turretAngle));
-      obs->push_back("shoulderLiftAngle", new IntervalDomain(stateMsg.goal.shoulderLiftAngle));
-      obs->push_back("upperarmRollAngle", new IntervalDomain(stateMsg.goal.upperarmRollAngle));
-      obs->push_back("elbowAngle", new IntervalDomain(stateMsg.goal.elbowAngle));
-      obs->push_back("forearmRollAngle", new IntervalDomain(stateMsg.goal.forearmRollAngle));
-      obs->push_back("wristPitchAngle", new IntervalDomain(stateMsg.goal.wristPitchAngle));
-      obs->push_back("gripperForceCmd", new IntervalDomain(stateMsg.goal.gripperForceCmd));
-      obs->push_back("gripperGapCmd", new IntervalDomain(stateMsg.goal.gripperGapCmd));
+      obs->push_back("shoulder_pan", new IntervalDomain(stateMsg.goal.shoulder_pan));
+      obs->push_back("shoulder_pitch", new IntervalDomain(stateMsg.goal.shoulder_pitch));
+      obs->push_back("upperarm_roll", new IntervalDomain(stateMsg.goal.upperarm_roll));
+      obs->push_back("elbow_flex", new IntervalDomain(stateMsg.goal.elbow_flex));
+      obs->push_back("forearm_roll", new IntervalDomain(stateMsg.goal.forearm_roll));
+      obs->push_back("wrist_flex", new IntervalDomain(stateMsg.goal.wrist_flex));
     }
 
     void fillInactiveObservationParameters(ObservationByValue* obs){
-      obs->push_back("turretAngle", new IntervalDomain(stateMsg.configuration.turretAngle));
-      obs->push_back("shoulderLiftAngle", new IntervalDomain(stateMsg.configuration.shoulderLiftAngle));
-      obs->push_back("upperarmRollAngle", new IntervalDomain(stateMsg.configuration.upperarmRollAngle));
-      obs->push_back("elbowAngle", new IntervalDomain(stateMsg.configuration.elbowAngle));
-      obs->push_back("forearmRollAngle", new IntervalDomain(stateMsg.configuration.forearmRollAngle));
-      obs->push_back("wristPitchAngle", new IntervalDomain(stateMsg.configuration.wristPitchAngle));
-      obs->push_back("gripperForceCmd", new IntervalDomain(stateMsg.configuration.gripperForceCmd));
-      obs->push_back("gripperGapCmd", new IntervalDomain(stateMsg.configuration.gripperGapCmd));
+      obs->push_back("shoulder_pan", new IntervalDomain(stateMsg.configuration.shoulder_pan));
+      obs->push_back("shoulder_pitch", new IntervalDomain(stateMsg.configuration.shoulder_pitch));
+      obs->push_back("upperarm_roll", new IntervalDomain(stateMsg.configuration.upperarm_roll));
+      obs->push_back("elbow_flex", new IntervalDomain(stateMsg.configuration.elbow_flex));
+      obs->push_back("forearm_roll", new IntervalDomain(stateMsg.configuration.forearm_roll));
+      obs->push_back("wrist_flex", new IntervalDomain(stateMsg.configuration.wrist_flex));    
     }
 
     void fillRequestParameters(pr2_msgs::MoveArmGoal& goalMsg, const TokenId& goalToken){
-      const IntervalDomain& turretAngle = goalToken->getVariable("turretAngle")->lastDomain();
-      const IntervalDomain& shoulderLiftAngle = goalToken->getVariable("shoulderLiftAngle")->lastDomain();
-      const IntervalDomain& upperarmRollAngle = goalToken->getVariable("upperarmRollAngle")->lastDomain();
-      const IntervalDomain& elbowAngle = goalToken->getVariable("elbowAngle")->lastDomain();
-      const IntervalDomain& forearmRollAngle = goalToken->getVariable("forearmRollAngle")->lastDomain();
-      const IntervalDomain& wristPitchAngle = goalToken->getVariable("wristPitchAngle")->lastDomain();
-      const IntervalDomain& gripperForceCmd = goalToken->getVariable("gripperForceCmd")->lastDomain();
-      const IntervalDomain& gripperGapCmd = goalToken->getVariable("gripperGapCmd")->lastDomain();
+      const IntervalDomain& shoulder_pan = goalToken->getVariable("shoulder_pan")->lastDomain();
+      const IntervalDomain& shoulder_pitch = goalToken->getVariable("shoulder_pitch")->lastDomain();
+      const IntervalDomain& upperarm_roll = goalToken->getVariable("upperarm_roll")->lastDomain();
+      const IntervalDomain& elbow_flex = goalToken->getVariable("elbow_flex")->lastDomain();
+      const IntervalDomain& forearm_roll = goalToken->getVariable("forearm_roll")->lastDomain();
+      const IntervalDomain& wrist_flex = goalToken->getVariable("wrist_flex")->lastDomain();
 
-      assertTrue(turretAngle.isSingleton() && 
-		 shoulderLiftAngle.isSingleton() && 
-		 upperarmRollAngle.isSingleton() && 
-		 elbowAngle.isSingleton() && 
-		 forearmRollAngle.isSingleton() && 
-		 wristPitchAngle.isSingleton() && 
-		 gripperForceCmd.isSingleton() && 
-		 gripperGapCmd.isSingleton(), "Values for dispatch are not bound");
+      assertTrue(shoulder_pan.isSingleton() && 
+		 shoulder_pitch.isSingleton() && 
+		 upperarm_roll.isSingleton() && 
+		 elbow_flex.isSingleton() && 
+		 forearm_roll.isSingleton() && 
+		 wrist_flex.isSingleton() , "Values for dispatch are not bound");
 
-      goalMsg.configuration.turretAngle = turretAngle.getSingletonValue();
-      goalMsg.configuration.shoulderLiftAngle = shoulderLiftAngle.getSingletonValue();
-      goalMsg.configuration.upperarmRollAngle = upperarmRollAngle.getSingletonValue();
-      goalMsg.configuration.elbowAngle = elbowAngle.getSingletonValue();
-      goalMsg.configuration.forearmRollAngle = forearmRollAngle.getSingletonValue();
-      goalMsg.configuration.wristPitchAngle = wristPitchAngle.getSingletonValue();
-      goalMsg.configuration.gripperForceCmd = gripperForceCmd.getSingletonValue();
-      goalMsg.configuration.gripperGapCmd = gripperGapCmd.getSingletonValue();
+      goalMsg.configuration.shoulder_pan = shoulder_pan.getSingletonValue();
+      goalMsg.configuration.shoulder_pitch = shoulder_pitch.getSingletonValue();
+      goalMsg.configuration.upperarm_roll = upperarm_roll.getSingletonValue();
+      goalMsg.configuration.elbow_flex = elbow_flex.getSingletonValue();
+      goalMsg.configuration.forearm_roll = forearm_roll.getSingletonValue();
+      goalMsg.configuration.wrist_flex = wrist_flex.getSingletonValue();
     }
 
   };
