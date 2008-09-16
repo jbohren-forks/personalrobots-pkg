@@ -42,6 +42,7 @@
 #include <al/ethercat_master.h>
 #include <al/ethercat_slave_handler.h>
 
+#define WG0X_STANDALONE
 #include <ethercat_hardware/wg0x.h>
 
 #include <boost/crc.hpp>

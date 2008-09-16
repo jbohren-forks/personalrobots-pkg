@@ -37,6 +37,11 @@
 
 #include <ethercat_hardware/ethercat_device.h>
 
+#ifndef WG0X_STANDALONE
+#include <misc_utils/realtime_publisher.h>
+#include <ethercat_hardware/PressureState.h>
+#endif
+
 struct WG0XMbxHdr
 {
   uint16_t address_;
@@ -267,7 +272,11 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)) {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure))
+#ifndef WG0X_STANDALONE
+    , publisher_("pressure", 1)
+#endif
+    {}
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   enum
   {
@@ -275,6 +284,9 @@ public:
   };
 private:
   uint32_t last_pressure_time_;
+#ifndef WG0X_STANDALONE
+  misc_utils::RealtimePublisher<ethercat_hardware::PressureState> publisher_;
+#endif
 };
 
 #endif /* WG0X_H */

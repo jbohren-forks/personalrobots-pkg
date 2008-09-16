@@ -318,32 +318,19 @@ void WG0X::truncateCurrent(ActuatorCommand &command)
 void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
 {
   WG06Pressure *p = (WG06Pressure *)(current_buffer + sizeof(WG0XCommand) + sizeof(WG0XStatus));
-#if 0
-  static WG06Pressure orig;
-  static int first_time = 1;
-  
-  if (first_time) {
-    first_time = 0;
-    orig = *p;
-  }
-  if (p->timestamp_ - last_pressure_time_)
+
+  if (p->timestamp_ != last_pressure_time_)
   {
-    printf("WG06::convertState: %d\n", p->timestamp_- last_pressure_time_);
+    ethercat_hardware::PressureState pressure_;
+    pressure_.set_data0_size(22);
+    pressure_.set_data1_size(22);
     for (int i = 0; i < 22; ++i ) {
-      uint16_t o0 = orig.data0_[i];
-      uint16_t p0 = p->data0_[i];
-      uint16_t o1 = orig.data1_[i];
-      uint16_t p1 = p->data1_[i];
-      o0 = ((o0 >> 8) & 0xff) | ((o0 << 8) & 0xff00);
-      p0 = ((p0 >> 8) & 0xff) | ((p0 << 8) & 0xff00);
-      o1 = ((o1 >> 8) & 0xff) | ((o1 << 8) & 0xff00);
-      p1 = ((p1 >> 8) & 0xff) | ((p1 << 8) & 0xff00);
-      uint16_t d0 = abs(o0 - p0) & 0xffc0;
-      uint16_t d1 = abs(o1 - p1) & 0xffc0;
-      printf("%04x %04x\n", d0, d1);
+      pressure_.data0[i] = ((p->data0_[i] >> 8) & 0xff) | ((p->data0_[i] << 8) & 0xff00);
+      pressure_.data1[i] = ((p->data1_[i] >> 8) & 0xff) | ((p->data1_[i] << 8) & 0xff00);
     }
+    publisher_.publish(pressure_);
   }
-#endif
+
   WG0X::convertState(state, current_buffer, last_buffer);
   last_pressure_time_ = p->timestamp_;
 }

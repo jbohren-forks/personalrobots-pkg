@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(ethercat_hardware)
+genmsg()
+gensrv()
 add_definitions(-Wall)
 rospack_add_library(ethercat_hardware src/ethercat_hardware.cpp src/wg0x.cpp src/ek1122.cpp)
 rospack_add_executable(motorconf src/motorconf.cpp src/ethercat_hardware.cpp src/wg0x.cpp src/ek1122.cpp)
