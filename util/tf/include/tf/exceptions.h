@@ -9,10 +9,10 @@ namespace tf{
  * This inherits from ros::exception 
  * which inherits from std::runtime_exception
  */
-class TFException: public ros::Exception
+class TransformException: public ros::Exception
 { 
 public:
-  TFException(const std::string errorDescription) : ros::Exception(errorDescription) { ; };
+  TransformException(const std::string errorDescription) : ros::Exception(errorDescription) { ; };
 };
 
 
@@ -21,10 +21,10 @@ public:
    * This is an exception class to be thrown in the case 
    * that the Reference Frame tree is not connected between
    * the frames requested. */
-class ConnectivityException:public TFException
+class ConnectivityException:public TransformException
 { 
 public:
-  ConnectivityException(const std::string errorDescription) : tf::TFException(errorDescription) { ; };
+  ConnectivityException(const std::string errorDescription) : tf::TransformException(errorDescription) { ; };
 };
 
 
@@ -36,19 +36,19 @@ public:
  * being published, or a parent frame was not set correctly 
  * causing the tree to be broken.  
  */
-class LookupException: public TFException
+class LookupException: public TransformException
 { 
 public:
-  LookupException(const std::string errorDescription) : tf::TFException(errorDescription) { ; };
+  LookupException(const std::string errorDescription) : tf::TransformException(errorDescription) { ; };
 };
 
   /** \brief An exception class to notify that the requested value would have required extrapolation beyond current limits.
    * 
    */
-class ExtrapolationException: public TFException 
+class ExtrapolationException: public TransformException 
 { 
 public:
-  ExtrapolationException(const std::string errorDescription) : tf::TFException(errorDescription) { ; };
+  ExtrapolationException(const std::string errorDescription) : tf::TransformException(errorDescription) { ; };
 };
 
 

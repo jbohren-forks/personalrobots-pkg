@@ -64,9 +64,9 @@ TEST(tf, ListOneForward)
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
     }
-    catch (tf::TFException & ex)
+    catch (tf::TransformException & ex)
     {
-      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
       bool exception_improperly_thrown = true;
       EXPECT_FALSE(exception_improperly_thrown);
     }
@@ -109,9 +109,9 @@ TEST(tf, ListOneInverse)
     EXPECT_NEAR(outpose.data_.getOrigin().y(), -yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), -zvalues[i], epsilon);
     }
-    catch (tf::TFException & ex)
+    catch (tf::TransformException & ex)
     {
-      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
       bool exception_improperly_thrown = true;
       EXPECT_FALSE(exception_improperly_thrown);
     }
@@ -159,9 +159,9 @@ TEST(tf, TransformTransformsCartesian)
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
     }
-    catch (tf::TFException & ex)
+    catch (tf::TransformException & ex)
     {
-      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
       bool exception_improperly_thrown = true;
       EXPECT_FALSE(exception_improperly_thrown);
     }
@@ -207,9 +207,9 @@ TEST(tf, TransformVector3Cartesian)
     EXPECT_NEAR(outvec.data_.y(), yvalues[i], epsilon);
     EXPECT_NEAR(outvec.data_.z(), zvalues[i], epsilon);
     }
-    catch (tf::TFException & ex)
+    catch (tf::TransformException & ex)
     {
-      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
       bool exception_improperly_thrown = true;
       EXPECT_FALSE(exception_improperly_thrown);
     }
@@ -255,9 +255,9 @@ TEST(tf, TransformQuaternionCartesian)
     mTR.transformStamped("my_parent",invec, outvec);
     EXPECT_NEAR(outvec.data_.angle(invec.data_) , 0, epsilon);
     }
-    catch (tf::TFException & ex)
+    catch (tf::TransformException & ex)
     {
-      std::cout << "TFExcepion got through!!!!! " << ex.what() << std::endl;
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
       bool exception_improperly_thrown = true;
       EXPECT_FALSE(exception_improperly_thrown);
     }
