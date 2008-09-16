@@ -6,6 +6,6 @@ byte valid
 #Did we actually successfully arrive at the goal?
 byte done
 #Current arm configuration
-std_msgs/PR2Arm configuration
+ArmConfiguration configuration
 #Goal arm configuration
-std_msgs/PR2Arm goal
+ArmConfiguration goal
