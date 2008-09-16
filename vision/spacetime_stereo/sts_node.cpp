@@ -25,8 +25,8 @@
 #define FILTERS
 
 #define RADIUS 2
-#define MAXDISP 80
-#define XOFFSET 70
+#define MAXDISP 100
+#define XOFFSET 50
 #define NIMAGES 40
 
 #define	PI1S  70
