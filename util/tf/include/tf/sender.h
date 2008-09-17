@@ -30,8 +30,8 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_TRANSFORMSERVER_H
-#define TF_TRANSFORMSERVER_H
+#ifndef TF_TRANSFORMSENDER_H
+#define TF_TRANSFORMSENDER_H
 
 #include "ros/node.h"
 #include "tf/tf.h"
@@ -75,4 +75,4 @@ private:
 
 }
 
-#endif //TF_TRANSFORMSERVER_H
+#endif //TF_TRANSFORMSENDER_H
