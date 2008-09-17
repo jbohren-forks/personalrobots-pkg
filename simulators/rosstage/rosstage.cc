@@ -85,6 +85,7 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/BaseVel.h>
 
 #include "rosTF/rosTF.h"
@@ -99,6 +100,7 @@ class StageNode : public ros::node
     std_msgs::BaseVel velMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::RobotBase2DOdom odomMsg;
+    std_msgs::Pose3DStamped groundTruthMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -204,6 +206,7 @@ StageNode::SubscribeModels()
 
   advertise<std_msgs::LaserScan>("scan",10);
   advertise<std_msgs::RobotBase2DOdom>("odom",10);
+  advertise<std_msgs::Pose3DStamped>("base_pose_ground_truth",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
@@ -270,8 +273,6 @@ StageNode::Update()
   //this->odomMsg.header.stamp.nsec = 
           //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
                                      //this->odomMsg.header.stamp.sec * 1e6));
-  publish("odom",this->odomMsg);
-
   //  printf("%u \n",world->SimTimeNow());
   //printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
 
@@ -283,10 +284,23 @@ StageNode::Update()
                       odomMsg.pos.th,
                       0.0,
                       0.0,
-                      odomMsg.header.stamp);//rostime?
-                      //                      ros::Time(odomMsg.header.stamp.sec,
-                      //odomMsg.header.stamp.nsec));
-  
+                      odomMsg.header.stamp);
+
+  publish("odom",this->odomMsg);
+
+  // Also publish the ground truth pose
+  Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
+  // Use libTF to construct our outgoing message
+  libTF::Pose3D pose;
+  // Note that we correct for Stage's screwed-up coord system.
+  pose.setFromEuler(gpose.y, -gpose.x, 0.0, 
+                    Stg::normalize(gpose.a-M_PI/2.0), 0.0, 0.0);
+  this->groundTruthMsg.pose3D = pose.getMessage();
+  this->groundTruthMsg.header.frame_id = "FRAMEID_ODOM";
+  this->groundTruthMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
+
+  publish("base_pose_ground_truth", this->groundTruthMsg);
+
   this->lock.unlock();
 }
 
