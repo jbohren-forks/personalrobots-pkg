@@ -9,7 +9,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP_REVERT_PATCH bullet
 
-bullet: $(SVN_DIR) quaternion.patch aCos_overflow.diff
+bullet: $(SVN_DIR) quaternion.patch 
 	cd $(SVN_DIR) && cmake .
 	make -C $(SVN_DIR) LibLinearMath
 	touch bullet
