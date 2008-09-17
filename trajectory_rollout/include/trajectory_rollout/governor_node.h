@@ -58,10 +58,10 @@
 
 #define MAP_SIZE_X 10
 #define MAP_SIZE_Y 10
-#define MAX_ACC_X 1.0
+#define MAX_ACC_X 0.15
 #define MAX_ACC_Y 1.0
 #define MAX_ACC_THETA 1.0
-#define SIM_TIME 2.0
+#define SIM_TIME 3.0
 #define SIM_STEPS 25
 #define VEL_SAMPLES 25
 

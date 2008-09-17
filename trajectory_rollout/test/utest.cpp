@@ -41,16 +41,16 @@
 #include <trajectory_rollout/trajectory_controller.h>
 #include <math.h>
 
-#include <std_msgs/Position2DInt.h>
+#include <std_msgs/Point2DFloat32.h>
 
 
 using namespace std;
 using namespace std_msgs;
 
-vector<Position2DInt> generatePlan(){
+vector<Point2DFloat32> generatePlan(){
   //create a global plan
-  vector<Position2DInt> path;
-  Position2DInt point;
+  vector<Point2DFloat32> path;
+  Point2DFloat32 point;
   point.x = 0; point.y = 2;
   path.push_back(point);
   point.x = 1; point.y = 2;
@@ -84,6 +84,7 @@ vector<Position2DInt> generatePlan(){
 //make sure that we are getting the path distance map expected
 TEST(TrajectoryController, correctPathDistance){
   MapGrid mg(6, 6);
+  mg.scale = 1.0;
   //place some obstacles
   mg(2, 3).occ_state = 1;
   mg(3, 5).occ_state = 1;
@@ -93,7 +94,7 @@ TEST(TrajectoryController, correctPathDistance){
   //create a trajectory_controller
   TrajectoryController tc(mg, 2.0, 20, 20, NULL);
 
-  vector<Position2DInt> path = generatePlan();
+  vector<Point2DFloat32> path = generatePlan();
   tc.updatePlan(path);
 
   tc.computePathDistance();
@@ -107,6 +108,10 @@ TEST(TrajectoryController, correctPathDistance){
   EXPECT_FLOAT_EQ(tc.map_(3, 3).path_dist, 0.0);
   EXPECT_FLOAT_EQ(tc.map_(1, 0).path_dist, 2.0);
   EXPECT_FLOAT_EQ(tc.map_(5, 0).path_dist, DBL_MAX);
+
+  //check for goal dist as well
+  EXPECT_FLOAT_EQ(tc.map_(5, 3).goal_dist, 0.0);
+  EXPECT_FLOAT_EQ(tc.map_(5, 2).goal_dist, 1.0);
 
   mg(5,5).occ_state = 1;
 
@@ -164,6 +169,7 @@ TEST(TrajectoryController, properIntegration){
 //sanity check to make sure the grid functions correctly
 TEST(MapGrid, properGridConstruction){
   MapGrid mg(10, 10);
+  mg.scale = 1.0;
   MapCell mc;
 
   for(int i = 0; i < 10; ++i){

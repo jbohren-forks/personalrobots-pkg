@@ -1,1 +1,1 @@
-std_msgs/Position2DInt[] path
+std_msgs/Point2DFloat32[] path

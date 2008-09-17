@@ -55,7 +55,7 @@
 #include <trajectory_rollout/trajectory.h>
 
 //we'll take in a path as a vector of points
-#include <std_msgs/Position2DInt.h>
+#include <std_msgs/Point2DFloat32.h>
 
 #define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < ((int)(map).size_x_)) && ((y) >= 0) && ((y) < ((int)(map).size_y_)))
 
@@ -92,7 +92,7 @@ class TrajectoryController {
         double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y,
         double acc_theta);
 
-    void updatePlan(std::vector<std_msgs::Position2DInt>& new_plan);
+    void updatePlan(std::vector<std_msgs::Point2DFloat32>& new_plan);
 
     
     //possible trajectories for this run
@@ -112,7 +112,7 @@ class TrajectoryController {
     int num_steps_;
 
     //the global plan for the robot to follow
-    std::vector<std_msgs::Position2DInt> global_plan_;
+    std::vector<std_msgs::Point2DFloat32> global_plan_;
 
   private:
     //compute the distance from an individual cell to the planned path
@@ -128,7 +128,7 @@ class TrajectoryController {
     void trajectoriesToWorld();
 
     //compute the cost for a single trajectory
-    double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double dfast_scale);
+    double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale);
 
     //compute position based on velocity
     double computeNewXPosition(double xi, double vx, double vy, double theta, double dt);

@@ -54,9 +54,26 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 //update what map cells are considered path based on the global_plan
 void TrajectoryController::setPathCells(){
   map_.resetPathDist();
+  int local_goal_x = -1;
+  int local_goal_y = -1;
+  bool started_path = false;
   for(unsigned int i = 0; i < global_plan_.size(); ++i){
-    if(VALID_CELL(map_, global_plan_[i].x, global_plan_[i].y))
-      map_(global_plan_[i].x, global_plan_[i].y).path_dist = 0.0;
+    int map_x = WX_MX(map_, global_plan_[i].x);
+    int map_y = WY_MY(map_, global_plan_[i].y);
+    if(VALID_CELL(map_, map_x, map_y)){
+      map_(map_x, map_y).path_dist = 0.0;
+      local_goal_x = map_x;
+      local_goal_y = map_y;
+      started_path = true;
+    }
+    else{
+      if(started_path)
+        break;
+    }
+  }
+
+  if(local_goal_x >= 0 && local_goal_y >= 0){
+    map_(local_goal_x, local_goal_y).goal_dist = 0.0;
   }
 }
 
@@ -96,21 +113,23 @@ void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
   int ny = cy + dy;
 
   //determine whether to add 1 to distance or sqrt(2) (for corner neighbors)
-  double new_dist = map_(cx, cy).path_dist + sqrt( dx * dx + dy * dy);
+  double new_path_dist = map_(cx, cy).path_dist + sqrt( dx * dx + dy * dy);
+  double new_goal_dist = map_(cx, cy).goal_dist + sqrt( dx * dx + dy * dy);
 
 
   //make sure we are looking at a cell that exists
   if(!VALID_CELL(map_, nx, ny))
     return;
 
-  //only modify the neighboring cell if its distance from the path will shrink
-  //also, do nothing with cells that contain obstacles
-  if(map_(nx, ny).occ_state == 1 || map_(nx, ny).path_dist < new_dist){
-    return;
-  }
-
   //update path distance
-  map_(nx, ny).path_dist = new_dist;
+  if(new_path_dist < map_(nx, ny).path_dist){
+    map_(nx, ny).path_dist = new_path_dist;
+  }
+  
+  //update goal distance
+  if(new_goal_dist < map_(nx, ny).goal_dist){
+    map_(nx, ny).goal_dist = new_goal_dist;
+  }
 }
 
 //create a trajectory given the current pose of the robot and selected velocities
@@ -156,7 +175,7 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
   return traj;
 }
 
-void TrajectoryController::updatePlan(vector<Position2DInt>& new_plan){
+void TrajectoryController::updatePlan(vector<Point2DFloat32>& new_plan){
   global_plan_.resize(new_plan.size());
   for(unsigned int i = 0; i < new_plan.size(); ++i){
     global_plan_[i] = new_plan[i];
@@ -231,7 +250,6 @@ double TrajectoryController::computeNewVelocity(double vg, double vi, double a_m
   return max(vg, vi - a_max * dt);
 }
 
-
 //create the trajectories we wish to score
 void TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta,
     double acc_x, double acc_y, double acc_theta){
@@ -239,14 +257,18 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   double max_vel_x, max_vel_y, max_vel_theta;
   double min_vel_x, min_vel_y, min_vel_theta;
 
-  max_vel_x = vx + acc_x * sim_time_;
-  min_vel_x = vx - acc_x * sim_time_;
+  max_vel_x = min(1.0, vx + acc_x * sim_time_);
+  //min_vel_x = vx - acc_x * sim_time_;
+  min_vel_x = 0.0;
 
   max_vel_y = vy + acc_y * sim_time_;
   min_vel_y = vy - acc_y * sim_time_;
 
-  max_vel_theta = vtheta + acc_theta * sim_time_;
-  min_vel_theta = vtheta - acc_theta * sim_time_;
+  //max_vel_theta = vtheta + acc_theta * sim_time_;
+  //min_vel_theta = vtheta - acc_theta * sim_time_;
+
+  max_vel_theta = 1.0;
+  min_vel_theta = -1.0;
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
@@ -254,8 +276,9 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   double dvtheta = (max_vel_theta - min_vel_theta) / samples_per_dim_;
 
   double vx_samp = min_vel_x;
-  double vy_samp = min_vel_y;
   double vtheta_samp = min_vel_theta;
+  //double vy_samp = min_vel_y;
+  double vy_samp = 0.0;
 
   //make sure to reset the list of trajectories
   trajectories_.clear();
@@ -265,16 +288,16 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 
   //generate trajectories for regularly sampled velocities
   for(int i = 0; i < samples_per_dim_; ++i){
+    //vy_samp = min_vel_y;
     vtheta_samp = min_vel_theta;
-    vy_samp = min_vel_y;
     for(int j = 0; j < samples_per_dim_; ++j){
-      vtheta_samp = min_vel_theta;
-      for(int k = 0; k < samples_per_dim_; ++k){
+      //vy_samp = min_vel_y;
+      //for(int k = 0; k < samples_per_dim_; ++k){
         trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
         ++t_num;
-        vtheta_samp += dvtheta;
-      }
-      vy_samp += dvy;
+        //vy_samp += dvy;
+      //}
+      vtheta_samp += dvtheta;
     }
     vx_samp += dvx;
   }
@@ -302,7 +325,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   int best_index = -1;
 
   for(unsigned int i = 0; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(i, .5, 0, .5);
+    double cost = trajectoryCost(i, .40, .10, .40, .10);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -319,27 +342,28 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double dfast_scale){
+double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
   double goal_dist = 0.0;
+  double occ_dist = 0.0;
   for(int i = 0; i < num_steps_; ++i){
     int mat_index = t_index * num_steps_ + i;
     //we need to know in which cell the path ends
     int cell_x = WX_MX(map_, trajectory_pts_.element(0, mat_index));
     int cell_y = WY_MY(map_, trajectory_pts_.element(1, mat_index));
 
-    //we don't want a path that ends off the known map
-    if(!VALID_CELL(map_, cell_x, cell_y)){
+    //we don't want a path that ends off the known map or in an obstacle
+    if(!VALID_CELL(map_, cell_x, cell_y) || map_(cell_x, cell_y).occ_state == 1){
       return DBL_MAX;
     }
 
     path_dist += map_(cell_x, cell_y).path_dist;
-    goal_dist += map_(cell_x, cell_y).goal_dist;
-
+    occ_dist += map_(cell_x, cell_y).occ_dist;
+      goal_dist += map_(cell_x, cell_y).goal_dist;
   }
-  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / (t.xv_ * t.xv_));
-  //double cost = gdist_scale * goal_dist;
+  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / occ_dist);
+  //double cost = goal_dist;
   
   return cost;
 }

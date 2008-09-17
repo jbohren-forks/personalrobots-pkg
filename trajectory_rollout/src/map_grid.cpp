@@ -108,10 +108,11 @@ void MapGrid::update(ScoreMap2D& new_map){
   }
 }
 
-//reset the path_dist field for all cells
+//reset the path_dist and goal_dist fields for all cells
 void MapGrid::resetPathDist(){
   for(unsigned int i = 0; i < map_.size(); ++i){
     map_[i].path_dist = DBL_MAX;
+    map_[i].goal_dist = DBL_MAX;
   }
 }
 

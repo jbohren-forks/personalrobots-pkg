@@ -75,7 +75,7 @@ void GovernorNode::planReceived(){
   map_.update(plan_msg_.map);
 
   //update the global plan from the message
-  vector<std_msgs::Position2DInt> plan;
+  vector<std_msgs::Point2DFloat32> plan;
 
   for(unsigned int i = 0; i < plan_msg_.plan.path_size; ++i){
     plan.push_back(plan_msg_.plan.path[i]);
@@ -123,24 +123,16 @@ void GovernorNode::processPlan(){
 
   libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(tc_.trajectories_[path_index]);
 
-  printf("Path index: %d Cost: %.2f\n", path_index, tc_.trajectories_[path_index].cost_);
-
   //let's print debug output to the screen
   path_msg.set_points_size(tc_.num_steps_);
-  path_msg.color.r = 1.0;
+  path_msg.color.r = 0;
   path_msg.color.g = 0;
-  path_msg.color.b = 0;
+  path_msg.color.b = 1.0;
   path_msg.color.a = 0;
   for(int i = 0; i < tc_.num_steps_; ++i){
-    //path_msg.points[i].x = ((int)((path.points_[i].x_ - map_.origin_x) / map_.scale));
-    //path_msg.points[i].y = ((int)((path.points_[i].y_ - map_.origin_y) / map_.scale));
-    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i) + tc_.map_.origin_x;
-    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i) + tc_.map_.origin_y;
-    //printf("(%.2f, %.2f), ", path_msg.points[i].x, path_msg.points[i].y);
+    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i); 
+    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
   }
-  //printf("(%.2f, %.2f)\n ", path_msg.points[0].x, path_msg.points[0].y);
-  //printf("(%.2f, %.2f)\n ", path.points_[0].x_, path.points_[0].y_);
-  //printf("(%.2f, %.2f)\n ", map_.origin_x, map_.origin_y);
   publish("local_path", path_msg);
   printf("path msg\n");
 
@@ -148,6 +140,12 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vx = drive_cmds.x;
   cmd_vel_msg_.vy = drive_cmds.y;
   cmd_vel_msg_.vw = drive_cmds.yaw;
+
+  /*
+  cmd_vel_msg_.vx = 0.0;
+  cmd_vel_msg_.vy = 0.0;
+  cmd_vel_msg_.vw = 0.0;
+  */
 
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", drive_cmds.x, drive_cmds.y, drive_cmds.yaw);
   publish("cmd_vel", cmd_vel_msg_);
