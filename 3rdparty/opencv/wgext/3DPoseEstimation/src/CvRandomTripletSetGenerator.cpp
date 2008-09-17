@@ -100,7 +100,7 @@ CvTripletSet CvRandomTripletSetGenerator::newSet()
       triplet = newSetWithDuplicate()) {
       // sort the triplet
       _sort(triplet);
-      boost::long_long_type encoded = mEncodeSetInLong(triplet);
+      uint64 encoded = mEncodeSetInLong(triplet);
       if (mSetOfSets.find(encoded) == mSetOfSets.end() ) {
         // new set that we have not seen before
         mSetOfSets.insert(encoded);
@@ -117,7 +117,7 @@ uint64 CvRandomTripletSetGenerator::mEncodeSetInLong(CvTripletSet const & _tripl
   uint64 t0 = triplet[0] - mLower;
   uint64 t1 = triplet[1] - mLower;
   uint64 t2 = triplet[2] - mLower;
-  uint64 encoded = ((t0 << 21)+t1) << 21 + t2;
+  uint64 encoded = (((t0 << 21)+t1) << 21) + t2;
 
 #if 0
   boost::long_long_type encoded =  triplet[0] - mLower;
