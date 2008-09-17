@@ -31,7 +31,7 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/Image.h"
+#include "std_msgs/ImageArray.h"
 #include "std_srvs/PolledImage.h"
 #include "image_utils/image_codec.h"
 
@@ -42,8 +42,8 @@
 class Axis_cam_node : public ros::node
 {
 public:
-  std_msgs::Image image;
-  ImageCodec<std_msgs::Image> codec;
+  std_msgs::ImageArray images;
+  ImageCodec<std_msgs::Image>* codec;
 
   string axis_host;
   AxisCam *cam;
@@ -54,9 +54,10 @@ public:
   ros::Time next_time;
   int count_;
 
-  Axis_cam_node() : ros::node("axis_cam"), codec(&image), cam(NULL), frame_id(0), self_test_(this)
+  Axis_cam_node() : ros::node("axis_cam"), cam(NULL), frame_id(0), self_test_(this)
   {
     advertise<std_msgs::Image>("image", 1);
+    advertise<std_msgs::ImageArray>("images", 1);
     advertise_service("polled_image", &Axis_cam_node::polled_image_cb);
 
     param("~host", axis_host, string("192.168.0.90"));
@@ -66,6 +67,10 @@ public:
     self_test_.addTest(&Axis_cam_node::checkMac);
 
     cam = new AxisCam(axis_host);
+
+    images.set_images_size(1);
+
+    codec = new ImageCodec<std_msgs::Image>(&(images.images[0]));
 
     next_time = ros::Time::now();
     count_ = 0;
@@ -80,9 +85,9 @@ public:
   bool polled_image_cb(std_srvs::PolledImage::request  &req,
                        std_srvs::PolledImage::response &res )
   {
-    image.lock();
-    res.image = image;
-    image.unlock();
+    images.lock();
+    res.image = images.images[0];
+    images.unlock();
     return true;
   }
 
@@ -97,14 +102,15 @@ public:
       return false;
     }
 
-    image.set_data_size(jpeg_size);
-    memcpy(image.data, jpeg, jpeg_size);
+    images.images[0].set_data_size(jpeg_size);
+    memcpy(images.images[0].data, jpeg, jpeg_size);
 
-    image.compression = "jpeg";
+    images.images[0].compression = "jpeg";
 
-    codec.inflate_header();
+    codec->inflate_header();
 
-    publish("image", image);
+    publish("image", images.images[0]);
+    publish("images", images);
 
     return true;
   }
@@ -152,11 +158,11 @@ public:
     } else {
 
 
-      image.set_data_size(jpeg_size);
-      memcpy(image.data, jpeg, jpeg_size);
-      image.compression = "jpeg";
+      images.images[0].set_data_size(jpeg_size);
+      memcpy(images.images[0].data, jpeg, jpeg_size);
+      images.images[0].compression = "jpeg";
 
-      if (!codec.inflate_header())
+      if (!codec->inflate_header())
       {
         status.level = 2;
         status.message = "Could not process header from jpeg.";
@@ -165,9 +171,9 @@ public:
         status.message = "Retrieved image successfully.";
         status.set_values_size(2);
         status.values[0].label = "Width";
-        status.values[0].value       = image.width;
+        status.values[0].value       = images.images[0].width;
         status.values[1].label = "Height";
-        status.values[1].value       = image.height;
+        status.values[1].value       = images.images[0].height;
       }
     }
   }
