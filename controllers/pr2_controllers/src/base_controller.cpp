@@ -58,6 +58,8 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
   base_odom_velocity_.x = 0;
   base_odom_velocity_.y = 0;
   base_odom_velocity_.z = 0;
+  ils_weight_type_ = "Gaussian";
+  ils_max_iterations_ = 1;
 
   pthread_mutex_init(&base_controller_lock_,NULL);
 }
@@ -138,6 +140,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       wheel_speed_actual_.push_back(0);
       libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
+      wheel_speed_cmd_.push_back(0);      
       num_wheels_++;
     }
   }
@@ -195,10 +198,9 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
-//    std::cout << "name:" << jcp.joint_name << std::endl;
-//    std::cout << "controller type:" << jcp.control_type << std::endl;
-//    std::cout << std::endl << *elt << std::endl;
-//    std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
+    std::cout << "name:" << jcp.joint_name << std::endl;
+    std::cout << "controller type:" << jcp.control_type << std::endl;
+    std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
 
     elt = elt->NextSiblingElement("controller");
 
@@ -276,17 +278,110 @@ void BaseController::update()
 
   getJointValues();
 
-  computeWheelPositions();
+  computeCommands();
+
+  setCommands();
+
+/*  computeWheelPositions();
 
   computeAndSetCasterSteer();
 
   computeAndSetWheelSpeeds();
-
+*/
   computeOdometry(current_time);
 
   updateJointControllers();
 
   last_time_ = current_time;
+}
+
+
+void BaseController::computeCommands()
+{
+  computeWheelPositions();
+
+  computeCasterSteer();
+
+  computeWheelSpeeds();  
+}
+
+void BaseController::setCommands()
+{
+  setCasterSteer();
+
+  setWheelSpeeds();
+}
+
+void BaseController::computeCasterSteer()
+{
+  libTF::Vector result;
+
+  double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
+  double error_steer(0.0),error_steer_m_pi(0.0);
+
+  for(int i=0; i < num_casters_; i++)
+  {
+    result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
+
+    steer_angle_desired = atan2(result.y,result.x);
+    steer_angle_desired_m_pi = normalize_angle_positive(steer_angle_desired+M_PI);
+
+    error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
+    error_steer_m_pi = shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
+
+    if(fabs(error_steer_m_pi) < fabs(error_steer))
+    {
+      error_steer = error_steer_m_pi;
+      steer_angle_desired = steer_angle_desired_m_pi;
+    }
+    steer_velocity_desired_[i] = -kp_speed_*error_steer;
+
+//    printf("Steering cmd: %d, %f\n",i,steer_angle_desired);
+  }
+}
+
+void BaseController::setCasterSteer()
+{
+  for(int i=0; i < num_casters_; i++)
+    base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
+}
+
+void BaseController::computeWheelSpeeds()
+{
+  libTF::Vector wheel_point_velocity;
+  libTF::Vector wheel_point_velocity_projected;
+  libTF::Vector wheel_caster_steer_component;
+  libTF::Vector caster_2d_velocity;
+
+  caster_2d_velocity.x = 0;
+  caster_2d_velocity.y = 0;
+  caster_2d_velocity.z = 0;
+
+  double wheel_speed_cmd = 0;
+  double steer_angle_actual = 0;
+  for(int i=0; i < (int) num_wheels_; i++)
+  {
+
+    caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
+    steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
+    wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
+
+//    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
+
+    wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
+//    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
+    wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
+    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
+//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << std::endl;
+  }
+}
+
+void BaseController::setWheelSpeeds()
+{
+  for(int i=0; i < (int) num_wheels_; i++)
+  {
+    base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]);
+  }
 }
 
 void BaseController::computeAndSetCasterSteer()
@@ -326,9 +421,7 @@ void BaseController::computeAndSetWheelSpeeds()
     caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
-
     //    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
-
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
     //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
@@ -503,7 +596,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 void BaseControllerNode::CmdBaseVelReceived()
 {
   this->ros_lock_.lock();
-  this->setCommand(baseVelMsg.vx,0.0,baseVelMsg.vw);
+  this->setCommand(baseVelMsg.vx,baseVelMsg.vy,baseVelMsg.vw);
   this->ros_lock_.unlock();
 }
 
@@ -544,18 +637,6 @@ void BaseController::computeOdometry(double time)
 
   libTF::Vector base_odom_delta = (base_odom_velocity_*dt).rot2D(base_odom_position_.z);
 
-//   if(isnan(dt))
-//   {
-//     cout << "time nan" << endl;
-//     exit(-1);
-//   }
-
-//   if(isnan(base_odom_velocity_.x) || isnan(base_odom_velocity_.y) || isnan(base_odom_velocity_.z))
-//   {
-//     cout << "base odometry velocity :: nan" << endl;
-//     exit(-1);
-//   }
-
   base_odom_delta.z = base_odom_velocity_.z * dt;
   base_odom_position_ += base_odom_delta;
 }
@@ -571,16 +652,6 @@ void BaseController::computeBaseVelocity()
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
     A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
-//     if(isnan(steer_angle))
-//     {
-//       cout << "steer angle - nan for wheel " << i << endl;
-//       exit(-1);
-//     }
-//     if(isnan(wheel_speed_actual_[i]))
-//     {
-//       cout << "wheel speed actual - nan for wheel " << i << endl;
-//       exit(-1);
-//     }
   }
 
   for(int i = 0; i < num_wheels_; i++) {
@@ -590,20 +661,8 @@ void BaseController::computeBaseVelocity()
     C.element(i*2+1, 0) = 0;
     C.element(i*2+1, 1) = 1;
     C.element(i*2+1, 2) =  base_wheels_position_[i].x;
-//     if(isnan(base_wheels_position_[i].y) || isnan(base_wheels_position_[i].x))
-//     {
-//       cout << "base odom position - nan for wheel " << i  << endl;
-//       exit(-1);
-//     }
   }
   D = pseudoInverse(C)*A;
-
-//   if(isnan(base_odom_velocity_.x) || isnan(base_odom_velocity_.y) || isnan(base_odom_velocity_.z))
-//   {
-//     cout << "base odom velocity - nan" << endl;
-//     exit(-1);
-//   }
-
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
@@ -623,12 +682,135 @@ Matrix BaseController::pseudoInverse(const Matrix M)
   return result;
 }
 
-
 std::ostream & controller::operator<<(std::ostream& mystream, const controller::BaseParam &bp)
 {
   mystream << "BaseParam" << bp.name_ << endl << "position " << bp.pos_ << "id " << bp.local_id_ << endl << "joint " << bp.joint_state_->joint_->name_ << endl << endl;
   return mystream;
 };
+
+NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter)
+{
+  NEWMAT::IdentityMatrix ident_matrix(2*num_wheels_);
+  NEWMAT::Matrix weight_matrix(2*num_wheels_,2*num_wheels_);
+  NEWMAT::Matrix a_fit(2*num_wheels_,3);
+  NEWMAT::Matrix b_fit(2*num_wheels_,1);
+  NEWMAT::Matrix residual(2*num_wheels_,1);
+  NEWMAT::Matrix x_fit(3,1);
+
+  weight_matrix = ident_matrix;
+
+  cout << "num_wheels: " << num_wheels_ << endl;
+  for(int i=0; i < max_iter; i++)
+  {
+    a_fit = weight_matrix * A;
+    b_fit = weight_matrix * b;
+    x_fit = pseudoInverse(a_fit)*b_fit;
+    residual = b - A * x_fit;
+
+    cout << "Residual::" << residual << endl;
+
+    residual = residual/x_fit.NormFrobenius();
+
+    cout << "afit::" << a_fit << endl << endl;
+    cout << "bfit::" << b_fit << endl << endl;
+    cout << "xfit::" << endl << x_fit << endl;
+    cout << "Residual::" << residual << endl;
+
+    weight_matrix = findWeightMatrix(residual,weight_type);
+
+    cout << "weight_matrix" << endl << weight_matrix  << endl << endl;
+  }
+  return x_fit;
+};
+
+NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::string weight_type)
+{
+  NEWMAT::Matrix w_fit(2*num_wheels_,2*num_wheels_);
+  NEWMAT::IdentityMatrix ident_matrix(2*num_wheels_);
+
+  w_fit = ident_matrix;
+  double epsilon = 0;
+  double g_sigma = 0.1;
+
+  if(weight_type == std::string("BubeLagan"))
+  {
+    for(int i=1; i <= 2*num_wheels_; i++) //NEWMAT indexing starts from 1
+    {
+      if(fabs(residual(i,1) > epsilon))
+        epsilon = fabs(residual(i,1));
+    }
+    epsilon = epsilon/100.0;
+  }
+  for(int i=1; i <= 2*num_wheels_; i++) //NEWMAT indexing starts from 1
+  {
+    if(weight_type == std::string("L1norm"))
+    {
+      w_fit(i,i) = 1.0/(1 + sqrt(fabs(residual(i,1))));
+      cout << residual(i,1) << endl;
+    }
+    else if(weight_type == std::string("fair"))
+    {
+      w_fit(i,i) = 1.0/(1 + fabs(residual(i,1)));
+    }
+    else if(weight_type == std::string("Cauchy"))
+    {
+      w_fit(i,i) = 1.0/(1 + residual(i,1)*residual(i,1));
+    }
+    else if(weight_type == std::string("BubeLangan"))
+    {
+      w_fit(i,i) = 1.0/pow((1 + pow((residual(i,1)/epsilon),2)),0.25);
+      cout << residual(i,1) << endl;
+    }
+    else if(weight_type == std::string("Gaussian"))
+    {
+      w_fit(i,i) = sqrt(exp(-pow(residual(i,1),2)/(2*g_sigma*g_sigma)));
+    }
+    else // default to fair
+    {
+      cout << "Default" << endl;
+      w_fit(i,i) = 1.0/(0.1 + sqrt(fabs(residual(i,1))));
+    }
+  }
+  return w_fit;
+};
+
+// % USAGE: IterativeLeastSquares(x)
+// %
+// % INPUT: x (m x n)
+// % where m is the dimension of the data and n is the number of data points
+// % available. The fit is to a linear function of the form a(1)x(1) + a(2)x(2) +
+// % .... + a(m-1)x(m-1) + a(m) = x(m)
+// %
+// % OUTPUT:
+// % result is the vector a (m x 1)
+
+// Adata = [x(1:end-1,:)' ones(1,size(x,2))'];
+// bdata = x(end,:)';
+// % Initial estimate for the weighting matrix is the identity matrix
+// W = eye(size(Adata,1));
+
+// for i=1:10
+//     % calculate the residual
+//     Afit = W*Adata;
+//     bfit = W*bdata;
+//     xfit = Afit\bfit;
+//     dfit = bdata-Adata*xfit;
+// wfit = 1./(0.1 + sqrt(abs(dfit))); % L1 norm
+// % wfit = 1./(1 + dfit.*dfit); % Cauchy
+//     clear W
+//     W = diag(wfit);
+// end
+// result = xfit;
+
+// % c_fit = (dw/Afitw)';
+// % Different types of weights for least squares:
+// % wfit = 1./(0.1 + sqrt(abs(dfit))); % L1 norm
+// % wfit = 1./(1 + abs(dfit)); % fair
+// % wfit = exp(-.5*(dfit./STEREO.disparity_sigma).^2); % Gaussian
+// % wfit = 1./(1 + dfit.*dfit); % Cauchy
+
+
+
 
 
 

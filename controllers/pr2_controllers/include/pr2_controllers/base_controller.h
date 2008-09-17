@@ -174,6 +174,26 @@ namespace controller
      */
     void setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_);
 
+    void computeWheelSpeeds();
+
+    void setWheelSpeeds();
+
+    void computeCasterSteer();
+
+    void setCasterSteer();
+
+    void computeCommands();
+
+    void setCommands();
+
+    NEWMAT::Matrix iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter);
+
+    NEWMAT::Matrix findWeightMatrix(NEWMAT::Matrix residual, std::string weight_type);
+
+    int ils_max_iterations_;
+
+    std::string ils_weight_type_;
+
     private:
 
     /*!
@@ -254,6 +274,8 @@ namespace controller
 
     std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
 
+    std::vector<double> wheel_speed_cmd_; /** vector of desired wheel speeds */
+
 
     /*!
      * \brief compute the speed of the base for odometry calculations
@@ -293,6 +315,10 @@ namespace controller
     std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
 
     double last_time_; /** time corresponding to when update was last called */
+
+
+    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odometry message will be published on ROS */
+
   };
 
   class BaseControllerNode : public Controller

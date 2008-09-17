@@ -154,8 +154,9 @@ void ArmVelocityController::update(void)
   }
 
   for(unsigned int i=0;i<goals_rt_.size();++i)
+  {
     joint_velocity_controllers_[i]->setCommand(goals_rt_[i]);
-
+  }
   updateJointControllers();
 }
 
@@ -264,7 +265,7 @@ bool ArmVelocityControllerNode::getJointGains(pr2_controllers::GetJointGains::re
 bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_controllers::SetCartesianVelCmd::request &req,
                   pr2_controllers::SetCartesianVelCmd::response &resp)
 {
-  const int size = arm_chain_->num_joints_;
+  const int size =       arm_chain_->num_joints_;
 
   KDL::Vector linear_vel = KDL::Vector(req.vx, req.vy, req.vz);
   KDL::Vector angular_vel = KDL::Vector(req.wx, req.wy, req.wz);
@@ -281,13 +282,13 @@ bool ArmVelocityControllerNode::setCartesianVelCmd(pr2_controllers::SetCartesian
   arm_chain_->computeDKInv(cur_joint_pos,end_effector_twist,target_joint_vel);
   std::cout << "TARGET VEL\n" << target_joint_vel << std::endl;
 
-/*  // Sends commands to the controllers
+  // Sends commands to the controllers
   pr2_controllers::SetJointVelCmd::request commands;
   commands.set_velocity_size(size);
   for(int i=0;i<size;++i)
     commands.velocity[i] = target_joint_vel(i);
   c_->setJointVelCmd(commands);
-*/
+
   return true;
 }
 

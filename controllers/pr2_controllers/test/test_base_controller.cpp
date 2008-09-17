@@ -1,7 +1,7 @@
 
 #include <pr2_controllers/base_controller.h>
 #include <mechanism_model/robot.h>
-
+#include <hardware_interface/hardware_interface.h>
 #include <ros/node.h>
 
 int main( int argc, char** argv )
@@ -24,6 +24,7 @@ int main( int argc, char** argv )
   TiXmlDocument xml(xml_robot_file);   // Load robot description
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
+
   robot_model->initXml(root);
 
 
@@ -36,6 +37,37 @@ int main( int argc, char** argv )
   mechanism::RobotState *robot_state = new mechanism::RobotState(robot_model, &hw);
 
   bc.initXml(robot_state,root_controller);
+
+  NEWMAT::Matrix A(16,3);
+
+  A.Row(1) << 10 << 8.95 << 0.05;
+  A.Row(2) << 0 <<  -2 << 0;
+  A.Row(3) << 1 << -0.1 << 0.01;
+  A.Row(4) << 2 << 1.1 << 0;
+
+  A.Row(5) << 3 << 2 << -0.05;
+  A.Row(6) << 4 << 3 << 0.01;
+  A.Row(7) << 5 << 4.1 << 0.05;
+  A.Row(8) << -1 << -2 << 0.025;
+
+  A.Row(9) << 6.15 << 5.05 << 0.01;
+  A.Row(10) << 6.985 << 6.02 << 0.01;
+  A.Row(11) << 8.01 << 8.05 << -0.05;
+  A.Row(12) << 9.03 << 8.1 << -0.01;
+
+  A.Row(13) << -8.03 << -9.1 << 0.01;
+  A.Row(14) << -10.03 << -13.1 << 0.05;
+  A.Row(15) << -15.03 << -16.1 << -0.015;
+  A.Row(16) << -16.03 << -17.1 << -0.01;
+
+  NEWMAT::Matrix B(16,1); 
+  B << 1.1 << 1 << 1.1 << 1.15 << 0.95 << 0.99 << 0.98 << 0.95 << 1.05 << 1.1 << 1.05 << 1 << 1.13 << 0.995 << 1.035 << 1.08;
+
+  NEWMAT::Matrix xfit(3,1);
+
+  xfit = bc.iterativeLeastSquares(A,B,"Gaussian",10);
+
+  cout << "done" << xfit << endl;
   ros::fini();
   delete robot_model;
   delete robot_state;
