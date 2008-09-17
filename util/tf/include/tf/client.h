@@ -40,6 +40,10 @@
 namespace tf{
 
 class TransformClient : public Transformer { //subscribes to message and automatically stores incoming data
+  
+private: 
+  ros::node& node_;
+
 public:
   TransformClient(ros::node & rosnode, 
                   bool interpolating = true,
@@ -51,10 +55,9 @@ public:
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");
-    node_.subscribe("/tfMessage", msg_in, &TransformClient::subscription_callback, this,100); ///\todo magic number
+    node_.subscribe("/tfMessage", msg_in_, &TransformClient::subscription_callback, this,100); ///\todo magic number
   };
-  { 
-
+  
     //Use Transformer interface for Stamped data types
 
     void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped & vin, std_msgs::Vector3Stamped & vout);  //output to msg or Stamped< >??
@@ -63,15 +66,14 @@ public:
     //Duplicate for time transforming (add target_time and fixed_frame)
 
     ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout); 
-  
-  private:
-    tfMessage msg_in_;
-    void subscription_callback();
 
-    ros::node node_;
-  
-  };
 
+private:
+  tfMessage msg_in_;
+  void subscription_callback();
+  
+  
+};
 }
 
 #endif //TF_TRANSFORMCLIENT_H
