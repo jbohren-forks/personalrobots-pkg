@@ -25,3 +25,8 @@ target_link_libraries(cache_unittest tf)
 
 
 rospack_add_executable(btTest test/quaternion.cpp)
+rospack_add_executable(testClient test/testClient.cpp)
+target_link_libraries(testClient tf)
+                                 
+rospack_add_executable(testServer test/testServer.cpp)
+target_link_libraries(testServer tf)

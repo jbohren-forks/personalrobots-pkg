@@ -33,6 +33,10 @@
 #ifndef TF_TRANSFORMSERVER_H
 #define TF_TRANSFORMSERVER_H
 
+#include "ros/node.h"
+#include "tf/tf.h"
+#include "tf/tfMessage.h"
+
 namespace tf
 {
 
@@ -41,10 +45,10 @@ public:
   TransformSender(ros::node& anode):
     node_(anode)
   {
-    node_.advertise<rosTF::TransformArray>("/tfMessage", 100);
+    node_.advertise<tfMessage>("/tfMessage", 100);
   };
-
-  sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
+  
+  void sendTransform(const Stamped<btTransform> & transform, const std::string& parent_id)
   {
     tfMessage message;
     message.header.stamp = ros::Time(transform.stamp_);
@@ -54,7 +58,7 @@ public:
     node_.publish("/tfMessage", message);
   } 
   
-  sendTransform(const btTransform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
+  void sendTransform(const btTransform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
   {
     tfMessage message;
     message.header.stamp = ros::Time(time);
@@ -67,7 +71,7 @@ public:
 private:
   ros::node & node_;
 
-}
+};
 
 }
 
