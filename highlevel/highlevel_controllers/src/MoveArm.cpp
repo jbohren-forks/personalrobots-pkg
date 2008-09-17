@@ -71,7 +71,7 @@ protected:
   mechanism_control::MechanismState mechanismState;
   robot_srvs::KinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
-  unsigned int base; /*!< Base rom which offsets in mechanism state are obtained */
+  unsigned int base; /*!< Base from which offsets in mechanism state are obtained */
 };
 
 

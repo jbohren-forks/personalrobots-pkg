@@ -41,6 +41,7 @@
 #include <time.h>
 #include <math.h>
 #include <iostream>
+
 /**
  * @brief Abstract base class for a high level controller node which is parameterized by the state update
  * and goal messages exchanged with a client. The controller utilizes a pattern where the controller is tasked with
@@ -79,17 +80,7 @@ public:
     deactivate();
   }
 
-  virtual ~HighlevelController(){}
-
-  /**
-   * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
-   * are received to make sure it only publishes meaningful states
-   */
-  void initialize(){
-    initialized = true;
-  }
-
-  /**
+  virtual ~HighlevelController(){}  /**
    * @brief Test if the node has received required inputs allowing it to commence business as usual.
    * @see initialize()
    */
@@ -117,14 +108,59 @@ public:
   }
 
 protected:
-  void goalCallback(){
-    /*
-    if(goalMsg.enable)
-      std::cout << "Received goal request\n";
-    else
-      std::cout << "Received recall request\n";
-    */
+
+  /**
+   * @brief Accessor for state of the controller
+   */
+  bool isActive() const {
+    return this->state == ACTIVE;
   }
+
+  /**
+   * @brief Access for valid status of the controller
+   */
+  bool isValid() const {
+    return this->stateMsg.valid;
+  }
+
+  /**
+   * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
+   * are received to make sure it only publishes meaningful states
+   */
+  void initialize(){
+    initialized = true;
+  }
+
+
+  /**
+   * @brief Subclass will implement this method to update the published state msssage with data from telemetry input
+   */
+  virtual void updateStateMsg(){}
+
+  /**
+   * @brief Subclass will implement this message to generate a plan.
+   * @return true if a plan is found, otherwise false
+   */
+  virtual bool makePlan(){return true;}
+
+  /**
+   * @brief Subclass will implement this method to test of the goal has been reached
+   * @return true if goal reached, otherwise false.
+   */
+  virtual bool goalReached() = 0;
+
+  /**
+   * @brief Subclass will implement this method to generate command messages in order to accomplish its goal
+   * @brief return true if plan is still valid, otherwise return false.
+   */
+  virtual bool dispatchCommands() = 0;
+
+  G goalMsg; /*!< Message populated by callback */
+  S stateMsg; /*!< Message published. Will be populated in the control loop */
+
+private:
+
+  void goalCallback(){}
 
   /**
    * @brief Activation of the controller will set the state, the stateMsg but indicate that the
@@ -151,6 +187,7 @@ protected:
     goalMsg.enable = false;
     goalMsg.unlock();
   }
+
   /**
    * @brief Sleep for remaining time of the cycle
    */
@@ -207,31 +244,6 @@ protected:
   }
 
   /**
-   * @brief Subclass will implement this method to update the published state msssage with data from telemetry input
-   */
-  virtual void updateStateMsg(){}
-
-  /**
-   * @brief Subclass will implement this message to generate a plan.
-   * @return true if a plan is found, otherwise false
-   */
-  virtual bool makePlan(){return true;}
-
-  /**
-   * @brief Accessor for state of the controller
-   */
-  bool isActive() const {
-    return this->state == ACTIVE;
-  }
-
-  /**
-   * @brief Access for valid status of the controller
-   */
-  bool isValid() const {
-    return this->stateMsg.valid;
-  }
-
-  /**
    * @brief Setter for state msg done flag
    */
   void setDone(bool isDone){
@@ -244,28 +256,6 @@ protected:
   void setValid(bool isValid){
     this->stateMsg.valid = isValid;
   }
-
-  /**
-   * @brief Subclass will implement this method to test of the goal has been reached
-   * @return true if goal reached, otherwise false.
-   */
-  virtual bool goalReached() = 0;
-
-  /**
-   * @brief Subclass will implement this method to generate command messages in order to accomplish its goal
-   * @brief return true if plan is still valid, otherwise return false.
-   */
-  virtual bool dispatchCommands() = 0;
-
-  bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
-  const std::string stateTopic; /*!< The topic on which state updates are published */
-  const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
-  G goalMsg; /*!< Message populated by callback */
-  S stateMsg; /*!< Message published. Will be populated in the control loop */
-  State state; /*!< Tracks the overall state of the controller */
-  const double cycleTime; /*!< The duration for each control cycle */
-
-private:
 
   /**
    * @brief Will evaluate if we have received an update on the goal state and will transition the controller state
@@ -283,6 +273,12 @@ private:
       deactivate();
     }
   }
+
+  bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
+  const std::string stateTopic; /*!< The topic on which state updates are published */
+  const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
+  State state; /*!< Tracks the overall state of the controller */
+  const double cycleTime; /*!< The duration for each control cycle */
 };
 
 #endif
