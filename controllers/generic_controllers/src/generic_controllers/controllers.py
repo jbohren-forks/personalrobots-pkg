@@ -18,6 +18,10 @@ def set_controller(controller, command):
     resp = s.call(SetCommandRequest(command))
     print resp.command
 
+def set_controller_vector(controller, command):
+    s = rospy.ServiceProxy(controller + '/set_command', SetVectorCommand)
+    resp = s(*command)
+
 def get_controller(controller):
     s = rospy.ServiceProxy(controller + '/get_actual', GetActual)
     resp = s.call(GetActualRequest())

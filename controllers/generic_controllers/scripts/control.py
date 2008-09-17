@@ -14,6 +14,7 @@ def print_usage(exit_code = 0):
     print '''Commands:
     ls                         - List controllers
     set <controller> <command> - Set the controller's commanded value
+    setv <controller> <x> <y> <z>  - Set the controller's command as a vector
     get <controller>           - Get the controller's commanded value
     profile <controller> <upper turnaround offset> <lower turnaround offset> <upper decel buffer> <lower decel bufer>
                                - Define how far away from joint limit to turn around. Buffers indicate how far from that point to start decelerating. Set to 0 to disable'''
@@ -28,8 +29,12 @@ if __name__ == '__main__':
         if len(sys.argv) != 4:
           print_usage()
         controllers.set_controller(sys.argv[2], float(sys.argv[3]))
+    elif sys.argv[1] == 'setv':
+        if len(sys.argv) < 6:
+            print_usage()
+        controllers.set_controller_vector(sys.argv[2], map(float, sys.argv[3:6]))
     elif sys.argv[1] == 'get':
-        if len(sys.argv) != 3:
+        if len(sys.argv) < 3:
           print_usage()
         controllers.get_controller(sys.argv[2])
     elif sys.argv[1] == 'profile':

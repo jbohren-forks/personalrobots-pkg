@@ -9,6 +9,7 @@
   <depend package="stl_utils" />
   <depend package="misc_utils" />
   <depend package="rospy" />
+  <depend package="bullet" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
