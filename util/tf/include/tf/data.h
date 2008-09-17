@@ -1,6 +1,9 @@
 #ifndef TF_DATA_H
 #define TF_DATA_H
 
+#include <iostream> //needed before newmat
+#include "newmat10/newmat.h"
+
 #include <string>
 #include "std_msgs/Vector3Stamped.h"
 #include "std_msgs/QuaternionStamped.h"
@@ -71,6 +74,45 @@ static inline void TransformStampedBtToMsg(const Stamped<btTransform>& bt, std_m
 {TransformBtToMsg(bt.data_, msg.transform); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
 
+/** \brief Convert the transform to a Homogeneous matrix for large operations */
+static inline NEWMAT::Matrix transformAsMatrix(const btTransform& bt)
+{
+  NEWMAT::Matrix outMat(4,4);
+  
+  double * mat = outMat.Store();
+    
+  btQuaternion  rotation = bt.getRotation();
+  btVector3 origin = bt.getOrigin();
+
+  // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
+  double xx      = rotation.x() * rotation.x();
+  double xy      = rotation.x() * rotation.y();
+  double xz      = rotation.x() * rotation.z();
+  double xw      = rotation.x() * rotation.w();
+  double yy      = rotation.y() * rotation.y();
+  double yz      = rotation.y() * rotation.z();
+  double yw      = rotation.y() * rotation.w();
+  double zz      = rotation.z() * rotation.z();
+  double zw      = rotation.z() * rotation.w();
+  mat[0]  = 1 - 2 * ( yy + zz );
+  mat[1]  =     2 * ( xy - zw );
+  mat[2]  =     2 * ( xz + yw );
+  mat[4]  =     2 * ( xy + zw );
+  mat[5]  = 1 - 2 * ( xx + zz );
+  mat[6]  =     2 * ( yz - xw );
+  mat[8]  =     2 * ( xz - yw );
+  mat[9]  =     2 * ( yz + xw );
+  mat[10] = 1 - 2 * ( xx + yy );
+  mat[12]  = mat[13] = mat[14] = 0;
+  mat[3] = origin.x();
+  mat[7] = origin.y();
+  mat[11] = origin.z();
+  mat[15] = 1;
+    
+    
+  return outMat;
+};
+  
 
 
 
