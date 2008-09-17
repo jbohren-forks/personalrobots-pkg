@@ -427,6 +427,7 @@ bool LaserScannerControllerNode::setCommand(
   else if(req.command==43)c_->setSawtoothProfile(2,0.5,100,0.5);
   else if(req.command==44)c_->setSawtoothProfile(0.5,0.5,100,0);
   else if(req.command==45)c_->setSawtoothProfile(1,0.5,0);
+  else if(req.command==46)c_->setSawtoothProfile(20,0.872,100,0.3475); // JMH- latest running numbers from David with proper range considered
   else if(req.command==-41)c_->setSinewaveProfile(2,0.5,100,0.5);
   else if(req.command==-42)c_->setSinewaveProfile(2,0.5,100,0);
   else if(req.command==-43)c_->setSinewaveProfile(1,0.5,100,0);
@@ -493,6 +494,7 @@ void LaserScannerControllerNode::setProfile(LaserScannerController::LaserControl
       c_->setSinewaveProfile(period, amplitude,offset);
       break;
     case LaserScannerController::SAWTOOTH:
+      std::cout << " setting sawtooth with these numbers " << period << " " << amplitude << " " << num_elements << " " << offset << std::endl;
       c_->setSawtoothProfile(period, amplitude, num_elements, offset);
       break;
     case LaserScannerController::DYNAMIC_SAWTOOTH:
