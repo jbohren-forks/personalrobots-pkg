@@ -388,6 +388,7 @@ public:
         advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"), 1);
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"), 1);
+        advertise<std_msgs::Image>(cd.name + string("/images"), 1);
       }
 
       cams_.push_back(cd);
@@ -520,6 +521,7 @@ public:
       } else {
         img_.images[0].header.frame_id = cd.frameid;
         publish(cd.name + "/image", img_.images[0]);
+        publish(cd.name + "/images", img_);
       }
     }    
   }
