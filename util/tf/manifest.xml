@@ -14,6 +14,7 @@ Library for doing transformations.
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
 <depend package="bullet"/>
+<depend package="rosTF"/> <!-- For backwards compatibility only Fixme remove /-->
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF"/>
 </export>

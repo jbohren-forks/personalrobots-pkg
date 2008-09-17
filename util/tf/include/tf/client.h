@@ -37,12 +37,21 @@
 #include "tf/tf.h"
 #include "ros/node.h"
 
+/// \todo remove backward compatability only
+#include "rosTF/TransformArray.h"
+// end remove
+
 namespace tf{
 
 class TransformClient : public Transformer { //subscribes to message and automatically stores incoming data
   
 private: 
   ros::node& node_;
+
+  /// \todo remove backward compatability only
+  //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
+  rosTF::TransformArray tfArrayIn;
+
 
 public:
   TransformClient(ros::node & rosnode, 
@@ -56,6 +65,10 @@ public:
   {
     //  printf("Constructed rosTF\n");
     node_.subscribe("/tfMessage", msg_in_, &TransformClient::subscription_callback, this,100); ///\todo magic number
+
+    /// \todo remove backward compatability only
+    node_.subscribe("/TransformArray", tfArrayIn, &TransformClient::receiveArray, this,100);
+
   };
   
     //Use Transformer interface for Stamped data types
@@ -71,6 +84,54 @@ public:
 private:
   tfMessage msg_in_;
   void subscription_callback();
+
+  ///\todo Remove : for backwards compatability only
+void receiveArray()
+{
+  for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
+  {
+    try{
+      //      setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
+      setTransform(Stamped<btTransform>(btTransform(btQuaternion(tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll), 
+                                                    btVector3(tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z)), 
+                                        tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec, 
+                                        tfArrayIn.eulers[i].header.frame_id ), 
+                   tfArrayIn.eulers[i].parent);
+    }    
+    catch (tf::TransformException &ex)
+    {
+      std::cerr << "receiveArray: setWithEulers failed with frame_id "<< tfArrayIn.eulers[i].header.frame_id << " parent " << tfArrayIn.eulers[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
+  }
+  //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+  for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
+  {
+    std::cerr << "receiveArray: setWithDH failed No longer supported" << std::endl;
+  }
+  
+  for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
+  {
+    try{
+      //    setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
+      setTransform(Stamped<btTransform>(btTransform(btQuaternion(tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w), 
+                                                    btVector3(tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt)), 
+                                        tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec, 
+                                        tfArrayIn.quaternions[i].header.frame_id ), 
+                   tfArrayIn.quaternions[i].parent);
+    }    
+    catch (tf::TransformException &ex)
+    {
+      std::cerr << "receiveArray: setWithQuaternion failed with frame_id "<< tfArrayIn.quaternions[i].header.frame_id << " parent " << tfArrayIn.quaternions[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
+    //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
+  }
+  for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
+  {
+    std::cerr << "receiveArray: setWithMatrix failed No longer supported" << std::endl;
+  }
+};
   
   
 };
