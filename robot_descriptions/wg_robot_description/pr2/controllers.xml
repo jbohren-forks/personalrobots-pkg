@@ -8,7 +8,7 @@
     </map>
     <controller name="caster_front_left_controller" topic="caster_front_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_left_joint" >
-          <pid p="1" d="0" i="0" iClamp="0" />
+          <pid p="3" d="0" i="0.001" iClamp="0.01" />
         </joint>
     </controller>
     <controller name="wheel_front_left_l_controller" topic="wheel_front_left_l_controller" type="JointVelocityControllerNode">
@@ -23,7 +23,7 @@
     </controller>
     <controller name="caster_front_right_controller" topic="caster_front_right_controller" type="JointVelocityControllerNode">
         <joint name="caster_front_right_joint" >
-          <pid p="1" d="0" i="0" iClamp="0" />
+          <pid p="3" d="0" i="0.001" iClamp="0.01" />
         </joint>
     </controller>
     <controller name="wheel_front_right_l_controller" topic="wheel_front_right_l_controller" type="JointVelocityControllerNode">
@@ -38,7 +38,7 @@
     </controller>
     <controller name="caster_rear_left_controller" topic="caster_rear_left_controller" type="JointVelocityControllerNode">
         <joint name="caster_rear_left_joint" >
-          <pid p="1" d="0" i="0" iClamp="0" />
+          <pid p="3" d="0" i="0.001" iClamp="0.01" />
         </joint>
     </controller>
     <controller name="wheel_rear_left_l_controller" topic="wheel_rear_left_l_controller" type="JointVelocityControllerNode">
@@ -53,7 +53,7 @@
     </controller>
     <controller name="caster_rear_right_controller" topic="caster_rear_right_controller" type="JointVelocityControllerNode">
         <joint name="caster_rear_right_joint" >
-          <pid p="1" d="0" i="0" iClamp="0" />
+          <pid p="3" d="0" i="0.001" iClamp="0.01" />
         </joint>
     </controller>
     <controller name="wheel_rear_right_l_controller" topic="wheel_rear_right_l_controller" type="JointVelocityControllerNode">

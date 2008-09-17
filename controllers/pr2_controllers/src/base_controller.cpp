@@ -298,11 +298,11 @@ void BaseController::computeAndSetCasterSteer()
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
     steer_angle_desired = atan2(result.y,result.x);
-//     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
+    //     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
 
-    error_steer = steer_angle_actual_[i] - steer_angle_desired;
+    error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
-//    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
+    //    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
     base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
   }
 }
@@ -327,13 +327,13 @@ void BaseController::computeAndSetWheelSpeeds()
     steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
 
-//    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
+    //    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
 
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-//    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
+    //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
+    //    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
     base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd);
   }
 
