@@ -1,0 +1,16 @@
+<launch>
+
+  <group name="wg">
+    <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.pgm 0.1" respawn="false" />
+    <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
+    <node pkg="nav_view" type="nav_view" respawn="true"/>
+
+    <!-- TODO: remove this remap after fake_localization is fixed to listen
+    to base_pose_ground_truth, and gazebo is fixed to publish on that topic -->
+    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
+    <param name="max_publish_frequency" value="20.0"/>
+    <node pkg="fake_localization" type="fake_localization" respawn="false" />
+  </group>
+</launch>
+
