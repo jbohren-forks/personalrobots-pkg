@@ -27,48 +27,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
 /** \author Tully Foote */
 
-#ifndef TF_TRANSFORMSERVER_H
-#define TF_TRANSFORMSERVER_H
+#ifndef TF_TRANSFORMCLIENT_H
+#define TF_TRANSFORMCLIENT_H
 
-namespace tf
-{
+#include "std_msgs/PointCloud.h"
+#include "tf/tfMessage.h"
+#include "tf/tf.h"
+#include "ros/node.h"
 
-class TransformSender{
+namespace tf{
+
+class TransformClient : public Transformer { //subscribes to message and automatically stores incoming data
 public:
-  TransformSender(ros::node& anode):
-    node_(anode)
+  TransformClient(ros::node & rosnode, 
+                  bool interpolating = true,
+                  unsigned long long max_cache_time = DEFAULT_CACHE_TIME,
+                  unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE):
+    Transformer(interpolating,
+                max_cache_time,
+                max_extrapolation_distance),
+    node_(rosnode)
   {
-    node_.advertise<rosTF::TransformArray>("/tfMessage", 100);
+    //  printf("Constructed rosTF\n");
+    node_.subscribe("/tfMessage", msg_in, &TransformClient::subscription_callback, this,100); ///\todo magic number
+  };
+  { 
+
+    //Use Transformer interface for Stamped data types
+
+    void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped & vin, std_msgs::Vector3Stamped & vout);  //output to msg or Stamped< >??
+    void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped & qin, std_msgs::QuaternionStamped & oout);
+    void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
+    //Duplicate for time transforming (add target_time and fixed_frame)
+
+    ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout); 
+  
+  private:
+    tfMessage msg_in_;
+    void subscription_callback();
+
+    ros::node node_;
+  
   };
 
-  sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
-  {
-    tfMessage message;
-    message.header.stamp = ros::Time(transform.stamp_);
-    message.header.frame_id = transform.frame_id_;
-    message.parent = parent_id;
-    TransformBtToMsg(transform.data_, message.transform);
-    node_.publish("/tfMessage", message);
-  } 
-  
-  sendTransform(const btTransform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
-  {
-    tfMessage message;
-    message.header.stamp = ros::Time(time);
-    message.header.frame_id = frame_id;
-    message.parent = parent_id;
-    TransformBtToMsg(transform, message.transform);
-    node_.publish("/tfMessage", message);
-  }
-  
-private:
-  ros::node & node_;
-
 }
 
-}
-
-#endif //TF_TRANSFORMSERVER_H
+#endif //TF_TRANSFORMCLIENT_H
