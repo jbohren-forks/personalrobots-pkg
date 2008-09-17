@@ -113,6 +113,8 @@ public:
 
   bool do_ptz_control() {
 
+    bool retval = true;
+
     control_mutex.lock();
 
     if (cmd_updated)
@@ -145,14 +147,16 @@ public:
 
       if (oss.str().size() > 0)
         if (cam->send_params(oss.str()))
-          return false;
-
-      cmd_updated = false;
+        {
+          retval = false;
+        } else {
+          cmd_updated = false;
+        }
     }
 
     control_mutex.unlock();
     
-    return true;
+    return retval;
   }
 
 
