@@ -114,9 +114,21 @@ bool CartesianEffortController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 void CartesianEffortController::update()
 {
+
+  btVector3 F = command_;  // force vector, will be transformed to the current link's frame
+
+  libTF::Vector tempF(F.x(), F.y(), F.z());
+  for (unsigned int i = 1; i < links_.size(); ++i)
+  {
+    libTF::Pose3D transform(links_[i]->rel_frame_);
+    transform.invert();
+    transform.applyToVector(tempF);
+  }
+  F.setValue(tempF.x, tempF.y, tempF.z);
+  // At this point, F is the desired force in the current link's frame
+
   // TODO: actual tip offset, not a made-up offset
-  btVector3 r(0,0.1,0);  // position of the force in the current frame
-  btVector3 F = command_;  // force vector in the current frame
+  btVector3 r(0.1,0,0);  // position of the force in the current frame
 
   for (int i = links_.size() - 2; i >= 0; --i)
   {
