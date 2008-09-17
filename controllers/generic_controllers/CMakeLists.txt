@@ -3,7 +3,6 @@ include(rosbuild)
 rospack(generic_controllers)
 genmsg()
 gensrv()
-add_definitions(-DBT_USE_DOUBLE_PRECISION)
 rospack_add_library(generic_controllers
  src/joint_effort_controller.cpp
  src/joint_position_controller.cpp
