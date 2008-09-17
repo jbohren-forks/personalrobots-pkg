@@ -289,8 +289,8 @@
     </geometry>
     
     <map name="friction_coefficients" flag="gazebo">
-      <elem key="mu1" value="5.0" /> <!-- john needed so wheel can slip and steer -->
-      <elem key="mu2" value="5.0" /> <!-- john needed so wheel can slip and steer -->
+      <elem key="mu1" value="50.0" /> <!-- john needed so wheel can slip and steer -->
+      <elem key="mu2" value="50.0" /> <!-- john needed so wheel can slip and steer -->
     </map>
     
   </const_block> 
@@ -1150,7 +1150,7 @@
   <!-- Begin arm definitions -->
   
   
-  <link name="shoulder_pan_left"><!-- link specifying the shoulder of the robot -->
+  <link name="shoulder_pan_left">
     <parent name=" torso" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 torso_shoulder_pan_offset_y 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1170,7 +1170,7 @@
     </map>
   </link>
   
-  <link name="shoulder_pan_right"><!-- link specifying the shoulder of the robot -->
+  <link name="shoulder_pan_right">
     <parent name=" torso" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1193,7 +1193,7 @@
   
   
   
-  <link name="shoulder_pitch_left"><!-- link specifying the shoulder of the robot -->
+  <link name="shoulder_pitch_left">
     <parent name=" shoulder_pan_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1213,7 +1213,7 @@
     </map>
   </link>
   
-  <link name="shoulder_pitch_right"><!-- link specifying the shoulder of the robot -->
+  <link name="shoulder_pitch_right">
     <parent name=" shoulder_pan_right" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1235,7 +1235,7 @@
   </link>
   
   
-  <link name="upperarm_roll_left"><!-- link specifying the shoulder of the robot -->
+  <link name="upperarm_roll_left">
     <parent name=" shoulder_pitch_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1255,7 +1255,7 @@
     </map>
   </link>
   
-  <link name="upperarm_roll_right"><!-- link specifying the shoulder of the robot -->
+  <link name="upperarm_roll_right">
     <parent name=" shoulder_pitch_right" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1278,7 +1278,7 @@
   
   
   
-  <link name="elbow_flex_left"><!-- link specifying the shoulder of the robot -->
+  <link name="elbow_flex_left">
     <parent name=" upperarm_roll_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" upperarm_roll_elbow_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1298,7 +1298,7 @@
     </map>
   </link>
   
-  <link name="elbow_flex_right"><!-- link specifying the shoulder of the robot -->
+  <link name="elbow_flex_right">
     <parent name=" upperarm_roll_right" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1319,7 +1319,7 @@
     </map>
   </link>
   
-  <link name="forearm_roll_left"><!-- link specifying the shoulder of the robot -->
+  <link name="forearm_roll_left">
     <parent name=" elbow_flex_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1339,7 +1339,7 @@
     </map>
   </link>
   
-  <link name="forearm_roll_right"><!-- link specifying the shoulder of the robot -->
+  <link name="forearm_roll_right">
     <parent name=" elbow_flex_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1359,7 +1359,7 @@
     </map>
   </link>
   
-  <link name="wrist_flex_left"><!-- link specifying the shoulder of the robot -->
+  <link name="wrist_flex_left">
     <parent name=" forearm_roll_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" elbow_roll_wrist_flex_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1379,7 +1379,7 @@
     </map>
   </link>
   
-  <link name="wrist_flex_right"><!-- link specifying the shoulder of the robot -->
+  <link name="wrist_flex_right">
     <parent name=" forearm_roll_right" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1400,7 +1400,7 @@
     </map>
   </link>
   
-  <link name="gripper_roll_left"><!-- link specifying the shoulder of the robot -->
+  <link name="gripper_roll_left">
     <parent name=" wrist_flex_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1420,7 +1420,7 @@
     </map>
   </link>
   
-  <link name="gripper_roll_right"><!-- link specifying the shoulder of the robot -->
+  <link name="gripper_roll_right">
     <parent name=" wrist_flex_right" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1446,7 +1446,7 @@
   
   <!-- Begin left hand  -->
   <!-- Begin left hand l finger proximal digit definition -->
-  <link name="finger_l_left"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_l_left">
     <parent name=" gripper_roll_left " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1468,7 +1468,7 @@
    </link>
   <!-- End   left hand l finger proximal digit definition -->
   <!-- Begin left hand l finger tip (distal digit) definition -->
-  <link name="finger_tip_l_left"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_tip_l_left">
     <parent name=" finger_l_left " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1507,7 +1507,7 @@
   </link>
   <!-- End   left hand l finger tip (distal digit) definition -->
   <!-- Begin left hand r finger proximal digit definition -->
-  <link name="finger_r_left"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_r_left">
     <parent name=" gripper_roll_left " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1529,7 +1529,7 @@
   </link>
   <!-- End   left hand r finger proximal digit definition -->
   <!-- Begin left hand r finger tip (distal digit) definition -->
-  <link name="finger_tip_r_left"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_tip_r_left">
     <parent name=" finger_r_left " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1555,7 +1555,7 @@
   
   <!-- Begin right hand  -->
   <!-- Begin right hand l finger proximal digit definition -->
-  <link name="finger_l_right"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_l_right">
     <parent name=" gripper_roll_right " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1577,7 +1577,7 @@
   </link>
   <!-- End   right hand l finger proximal digit definition -->
   <!-- Begin right hand l finger tip (distal digit) definition -->
-  <link name="finger_tip_l_right"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_tip_l_right">
     <parent name=" finger_l_right " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1599,7 +1599,7 @@
   </link>
   <!-- End   right hand l finger tip (distal digit) definition -->
   <!-- Begin right hand r finger proximal digit definition -->
-  <link name="finger_r_right"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_r_right">
     <parent name=" gripper_roll_right " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1621,7 +1621,7 @@
   </link>
   <!-- End   right hand r finger proximal digit definition -->
   <!-- Begin right hand r finger tip (distal digit) definition -->
-  <link name="finger_tip_r_right"><!-- link specifying the shoulder of the robot -->
+  <link name="finger_tip_r_right">
     <parent name=" finger_r_right " />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -1649,7 +1649,7 @@
   <!-- Begin head definition -->
   
   
-  <link name="head_pan"><!-- link specifying the shoulder of the robot -->
+  <link name="head_pan">
     <parent name="torso" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" torso_head_pan_offset_x 0 torso_head_pan_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -1683,7 +1683,7 @@
     
   </link>
   
-  <link name="head_tilt"><!-- link specifying the shoulder of the robot -->
+  <link name="head_tilt">
     <parent name=" head_pan" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
@@ -2093,7 +2093,7 @@
   </sensor>
   
   
-  <link name="ptz_pan_left"><!-- link specifying the shoulder of the robot -->
+  <link name="ptz_pan_left">
     <parent name="torso" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" torso_ptz_pan_left_offset_x torso_ptz_pan_left_offset_y torso_ptz_pan_left_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -2127,7 +2127,7 @@
     
   </link>
   
-  <sensor name="ptz_tilt_left" type="camera"><!-- link specifying the shoulder of the robot -->
+  <sensor name="ptz_tilt_left" type="camera">
     <parent name="ptz_pan_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" ptz_pan_ptz_tilt_left_offset_x ptz_pan_ptz_tilt_left_offset_y ptz_pan_ptz_tilt_left_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -2180,7 +2180,7 @@
     
   </sensor>
   
-  <link name="ptz_pan_right"><!-- link specifying the shoulder of the robot -->
+  <link name="ptz_pan_right">
     <parent name="torso" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" torso_ptz_pan_right_offset_x torso_ptz_pan_right_offset_y torso_ptz_pan_right_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -2215,7 +2215,7 @@
     
   </link>
   
-  <sensor name="ptz_tilt_right" type="camera"><!-- link specifying the shoulder of the robot -->
+  <sensor name="ptz_tilt_right" type="camera">
     <parent name="ptz_pan_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" ptz_pan_ptz_tilt_right_offset_x ptz_pan_ptz_tilt_right_offset_y ptz_pan_ptz_tilt_right_offset_z" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
@@ -2278,7 +2278,7 @@
   
   
   <!-- stereo camera -->
-  <sensor name="stereo" type="camera"><!-- link specifying the shoulder of the robot -->
+  <sensor name="stereo" type="camera">
     <parent name="head_tilt" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" head_tilt_stereo_offset_x 0 head_tilt_stereo_offset_z" rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
