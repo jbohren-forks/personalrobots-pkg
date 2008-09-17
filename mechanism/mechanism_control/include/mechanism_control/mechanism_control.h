@@ -119,7 +119,7 @@ private:
 
   MechanismControl *mc_;
 
-  static const double STATE_PUBLISHING_PERIOD = 0.1;  // in seconds, higher rates are useless with the current speed of the simulator
+  static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
 
   mechanism_control::MechanismState mechanism_state_;
   const char* const mechanism_state_topic_;
