@@ -56,9 +56,6 @@ Ros_Stereo_Camera::Ros_Stereo_Camera(Entity *parent)
   if (!this->myParent)
     gzthrow("Ros_Stereo_Camera controller requires a Stereo Camera Sensor as its parent");
 
-  // set parent sensor to active automatically
-  this->myParent->SetActive(true);
-
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
   char** argv = NULL;
@@ -102,13 +99,19 @@ void Ros_Stereo_Camera::LoadChild(XMLConfigNode *node)
   if (!this->stereoIface)
     gzthrow("Ros_Stereo_Camera controller requires a StereoCameraIface");
 
-  this->topicName = node->GetString("topicName","default_ros_stereocamera",0); //read from xml file
+  // set parent sensor to active automatically
+  this->myParent->SetActive(true);
+
+  this->leftCloudTopicName = node->GetString("leftCloudTopicName","default_ros_stereocamera_left_cloud",0); //read from xml file
+  this->rightCloudTopicName = node->GetString("rightCloudTopicName","default_ros_stereocamera_right_cloud",0); //read from xml file
   this->leftTopicName = node->GetString("leftTopicName","default_ros_stereocamera_left_image",0); //read from xml file
   this->rightTopicName = node->GetString("rightTopicName","default_ros_stereocamera_right_image",0); //read from xml file
-  this->frameName = node->GetString("frameName","default_ros_stereocamera",0); //read from xml file
+  this->leftFrameName = node->GetString("leftFrameName","default_ros_stereocamera_left_frame",0); //read from xml file
+  this->rightFrameName = node->GetString("rightFrameName","default_ros_stereocamera_right_frame",0); //read from xml file
 
-  std::cout << "================= " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::PointCloud>(this->topicName);
+  std::cout << "================= " << this->leftCloudTopicName << std::endl;
+  rosnode->advertise<std_msgs::PointCloud>(this->leftCloudTopicName);
+  rosnode->advertise<std_msgs::PointCloud>(this->rightCloudTopicName);
   rosnode->advertise<std_msgs::Image>(this->leftTopicName);
   rosnode->advertise<std_msgs::Image>(this->rightTopicName);
 }
@@ -139,11 +142,34 @@ bool Ros_Stereo_Camera::StereoIfaceConnected() const
 // Update the controller
 void Ros_Stereo_Camera::UpdateChild()
 {
+  std::map< std::string, CameraIface*>::iterator iter;
 
-  this->PutCameraData( 0 );
-  this->PutCameraData( 1 );
+  for (iter = this->cameraIfaces.begin(); 
+       iter != this->cameraIfaces.end(); iter++)
+  {
+    iter->second->Lock(1);
 
-  this->PutStereoData();
+    if ( true || iter->second->data->head.openCount > 0)
+    {
+      if (**(this->leftCameraNameP) == iter->first)
+        this->PutCameraData( iter->second->data, 0 );
+      else
+        this->PutCameraData( iter->second->data, 1 );
+    }
+
+    iter->second->Unlock();
+    iter->second->Post();
+  }
+
+  if (this->stereoIface)
+  {
+    this->stereoIface->Lock(1);
+    if (true || this->stereoIface->data->head.openCount > 0)
+      this->PutStereoData();
+    this->stereoIface->Unlock();
+
+    this->stereoIface->Post();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -156,7 +182,9 @@ void Ros_Stereo_Camera::FiniChild()
 // Put stereo data to the interface
 void Ros_Stereo_Camera::PutStereoData()
 {
-  StereoCameraData* stereo_data = new StereoCameraData();
+  //StereoCameraData* stereo_data = new StereoCameraData();
+  StereoCameraData* stereo_data = this->stereoIface->data;
+  int sizeFloat;
 
   const float *disp_src;
   float *disp_dst;
@@ -178,37 +206,98 @@ void Ros_Stereo_Camera::PutStereoData()
   assert (stereo_data->right_depth_size <= sizeof(stereo_data->right_depth));
   assert (stereo_data->left_depth_size <= sizeof(stereo_data->left_depth));
 
+  sizeFloat  = stereo_data->width * stereo_data->height;
+
   // Copy the left depth data to the interface
   disp_src = this->myParent->GetDepthData(0);
   disp_dst = stereo_data->left_depth;
   memcpy(disp_dst, disp_src, stereo_data->left_depth_size);
+
+  // Copy into ros
+  if (disp_src)
+  {
+    this->lock.lock();
+    // copy data into point cloud
+    this->leftCloudMsg.header.frame_id = this->leftFrameName;
+    this->leftCloudMsg.header.stamp.sec = (unsigned long)floor(stereo_data->head.time);
+    this->leftCloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->leftCloudMsg.header.stamp.sec) );
+    this->leftCloudMsg.set_pts_size(sizeFloat);
+    this->leftCloudMsg.set_chan_size(sizeFloat);
+    std::cout << " stereo size " << sizeFloat << std::endl;
+
+    // which way first?
+    for (unsigned int c=0; c< stereo_data->width; c++)
+    for (unsigned int r=0; r< stereo_data->height; r++)
+    {
+      // direct access of image element
+      int n = stereo_data->width * r + c;
+      // get angles in image frame, from [-hfov/2,-vfov/2] to [hfov/2,vfov/2]
+      double a = stereo_data->hfov * ((double)c - (double)stereo_data->width/2.0)/((double)stereo_data->width/2.0);
+      double b = stereo_data->vfov * ((double)r - (double)stereo_data->height/2.0)/((double)stereo_data->height/2.0);
+      // analytical solution for 2 transforms
+      this->leftCloudMsg.pts[n].x =  cos(b)*cos(a)*disp_src[n];
+      this->leftCloudMsg.pts[n].y =         sin(a)*disp_src[n];
+      this->leftCloudMsg.pts[n].z = -sin(b)*cos(a)*disp_src[n];
+      // std::cout << " cloud (" << r << "," << c << ") "
+      //           << " x:" << this->leftCloudMsg.pts[n].x
+      //           << " y:" << this->leftCloudMsg.pts[n].y
+      //           << " z:" << this->leftCloudMsg.pts[n].z
+      //           << std::endl;
+      this->leftCloudMsg.chan[n].set_vals_size(1);
+      this->leftCloudMsg.chan[n].vals[0] = 255;
+    }
+    rosnode->publish(this->leftCloudTopicName,this->leftCloudMsg);
+    this->lock.unlock();
+
+  }
 
   // Copy the right depth data to the interface
   disp_src = this->myParent->GetDepthData(1);
   disp_dst = stereo_data->right_depth;
   memcpy(disp_dst, disp_src, stereo_data->right_depth_size);
 
-  //FIXME: the does nothing except get time for now
+  // Copy into ros
   if (disp_src)
   {
     this->lock.lock();
     // copy data into point cloud
-    this->cloudMsg.header.frame_id = this->frameName;
-    this->cloudMsg.header.stamp.sec = (unsigned long)floor(stereo_data->head.time);
-    this->cloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->cloudMsg.header.stamp.sec) );
-    //this->cloudMsg.set_data_size(10000);
-    //this->cloudMsg.data        = (unsigned char*)NULL;
-    // publish to ros
-    rosnode->publish(this->topicName,this->cloudMsg);
+    this->rightCloudMsg.header.frame_id = this->rightFrameName;
+    this->rightCloudMsg.header.stamp.sec = (unsigned long)floor(stereo_data->head.time);
+    this->rightCloudMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  stereo_data->head.time - this->rightCloudMsg.header.stamp.sec) );
+    this->rightCloudMsg.set_pts_size(sizeFloat);
+    this->rightCloudMsg.set_chan_size(sizeFloat);
+
+    // which way first?
+    for (unsigned int c=0; c< stereo_data->width; c++)
+    for (unsigned int r=0; r< stereo_data->height; r++)
+    {
+      // direct access of image element
+      int n = stereo_data->width * r + c;
+      // get angles in image frame, from [-hfov/2,-vfov/2] to [hfov/2,vfov/2]
+      double a = stereo_data->hfov * ((double)c - (double)stereo_data->width/2.0)/((double)stereo_data->width/2.0);
+      double b = stereo_data->vfov * ((double)r - (double)stereo_data->height/2.0)/((double)stereo_data->height/2.0);
+      // analytical solution for 2 transforms
+      this->rightCloudMsg.pts[n].x =  cos(b)*cos(a)*disp_src[n];
+      this->rightCloudMsg.pts[n].y =         sin(a)*disp_src[n];
+      this->rightCloudMsg.pts[n].z = -sin(b)*cos(a)*disp_src[n];
+      // std::cout << " cloud (" << r << "," << c << ") "
+      //           << " x:" << this->rightCloudMsg.pts[n].x
+      //           << " y:" << this->rightCloudMsg.pts[n].y
+      //           << " z:" << this->rightCloudMsg.pts[n].z
+      //           << std::endl;
+      this->rightCloudMsg.chan[n].set_vals_size(1);
+      this->rightCloudMsg.chan[n].vals[0] = 255;
+    }
+    rosnode->publish(this->rightCloudTopicName,this->rightCloudMsg);
     this->lock.unlock();
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Put camera data to the interface
-void Ros_Stereo_Camera::PutCameraData(unsigned int camera)
+void Ros_Stereo_Camera::PutCameraData(CameraData *camera_data, unsigned int camera)
 {
-  CameraData *camera_data = new CameraData();
+  //CameraData *camera_data = new CameraData();
   const unsigned char *rgb_src = NULL;
   unsigned char *rgb_dst = NULL;
   Pose3d cameraPose;
@@ -238,12 +327,14 @@ void Ros_Stereo_Camera::PutCameraData(unsigned int camera)
 
   memcpy(rgb_dst, rgb_src, camera_data->image_size);
 
-
   if (rgb_src)
   {
     this->lock.lock();
     // copy data into image
-    this->imageMsg[camera].header.frame_id = this->frameName;
+    if (camera==0)
+      this->imageMsg[camera].header.frame_id = this->leftFrameName;
+    else
+      this->imageMsg[camera].header.frame_id = this->rightFrameName;
     this->imageMsg[camera].header.stamp.sec = (unsigned long)floor(camera_data->head.time);
     this->imageMsg[camera].header.stamp.nsec = (unsigned long)floor(  1e9 * (  camera_data->head.time - this->imageMsg[camera].header.stamp.sec) );
 
@@ -270,8 +361,6 @@ void Ros_Stereo_Camera::PutCameraData(unsigned int camera)
 
     this->lock.unlock();
   }
-
-
 
 }
 

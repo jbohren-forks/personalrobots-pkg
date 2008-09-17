@@ -45,7 +45,9 @@
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
 
-// new parser by stu
+// Ioan's parser
+#include <urdf/URDF.h>
+// new parser by stu for normalizing xml
 #include <urdf/parser.h>
 
 namespace gazebo {
@@ -60,23 +62,6 @@ namespace gazebo {
      if (!this->parent_model_)
         gzthrow("TestActuators controller requires a Model as its parent");
 
-    rosnode_ = ros::g_node; // comes from where?
-    int argc = 0;
-    char** argv = NULL;
-    if (rosnode_ == NULL)
-    {
-      // this only works for a single camera.
-      ros::init(argc,argv);
-      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-      printf("-------------------- starting node in test actuators \n");
-    }
-
-    // for publishing frame transforms
-    tfs = new rosTFServer(*rosnode_); //, true, 1 * 1000000000ULL, 0ULL);
-
-    // uses info from wg_robot_description_parser/send.xml
-    std::string pr2Content;
-
   }
 
   TestActuators::~TestActuators()
@@ -86,12 +71,6 @@ namespace gazebo {
 
   void TestActuators::LoadChild(XMLConfigNode *node)
   {
-    // if we were doing some ros publishing...
-    //this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
-    //this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
-    //std::cout << "================= " << this->topicName << std::endl;
-    //rosnode_->advertise<std_msgs::Image>(this->topicName);
-
     //---------------------------------------------------------------------
     // setup mechanism control - non-gazebo stuff,
     // same as implemented on realtime system
@@ -108,8 +87,6 @@ namespace gazebo {
 
   void TestActuators::InitChild()
   {
-    // TODO: mc_.init();
-
     hw_.current_time_ = Simulator::Instance()->GetSimTime();
 
     // simulator time
@@ -141,14 +118,7 @@ namespace gazebo {
 
   void TestActuators::FiniChild()
   {
-    // TODO: will be replaced by global ros node eventually
-    if (rosnode_ != NULL)
-    {
-      std::cout << "shutdown rosnode in test_actuators" << std::endl;
-      //ros::fini();
-      rosnode_->shutdown();
-      //delete rosnode_;
-    }
+
   }
 
   void TestActuators::LoadMC(XMLConfigNode *node)
@@ -192,11 +162,10 @@ namespace gazebo {
     //-------------------------------------------------------------------------------------------
 
     // parse pr2.xml from filename specified
-    pr2Description.loadFile(pr2_xml_filename.c_str());
-
+    //pr2Description.loadFile(pr2_xml_filename.c_str());
     // get all links in pr2.xml
-    pr2Description.getLinks(pr2Links);
-    std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
+    //pr2Description.getLinks(pr2Links);
+    //std::cout << " pr2.xml contains " << pr2Links.size() << " links." << std::endl;
 
     //-----------------------------------------------------------------------------------------
     //

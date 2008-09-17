@@ -43,17 +43,12 @@
 #include "hardware_interface/hardware_interface.h"
 #include <mechanism_control/mechanism_control.h>
 
-#include <rosTF/rosTF.h>
-#include <ros/node.h>
+//#include <rosTF/rosTF.h>
+//#include <ros/node.h>
 
-// roscpp - used for broadcasting time over ros
-#include <rostools/Time.h>
 // ros messages
 //#include <std_msgs/PR2Arm.h>
 //#include <pr2_msgs/EndEffectorState.h>
-
-// Ioan's parser
-#include <urdf/URDF.h>
 
 // Advait and Gil's cartesian services
 //#include <gazebo_plugin/MoveCartesian.h>
@@ -103,8 +98,6 @@ private:
 
   Model *parent_model_;
 
-  std::vector<robot_desc::URDF::Link*> pr2Links;
-
   //---------------------------------------------------------------------
   //  for mechanism control
   //---------------------------------------------------------------------
@@ -133,7 +126,8 @@ private:
   //                                                                   --
   //---------------------------------------------------------------------
   // Ioan's ultimate parser
-  robot_desc::URDF pr2Description;
+  //robot_desc::URDF pr2Description;
+  //std::vector<robot_desc::URDF::Link*> pr2Links;
 
   // for storing pr2 xml
   //mechanism::Robot* mech_robot_;
@@ -155,26 +149,6 @@ private:
   std::vector<Gazebo_joint_*> gazebo_joints_;
   double currentTime;
   double lastTime;
-
-  // topic name
-  //std::string topicName;
-
-  // A mutex to lock access to fields that are used in message callbacks
-  private: ros::thread::mutex lock;
-
-  // pointer to ros node
-  ros::node *rosnode_;
-
-  // transform server
-  private: rosTFServer *tfs;
-  double base_center_offset_z;
-  double base_laser_offset_x;
-  double base_laser_offset_y;
-  double base_laser_offset_z;
-  double tilt_laser_offset_x;
-  double tilt_laser_offset_y;
-  double tilt_laser_offset_z;
-
 
 };
 

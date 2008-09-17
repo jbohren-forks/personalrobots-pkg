@@ -110,7 +110,7 @@ class Ros_Stereo_Camera : public Controller
   private: void PutStereoData();
 
   /// \brief Put camera data to the iface
-  private: void PutCameraData( unsigned int camera);
+  private: void PutCameraData(CameraData *camera_data, unsigned int camera);
 
   /// The camera interface
   private: StereoCameraIface *stereoIface;
@@ -126,22 +126,24 @@ class Ros_Stereo_Camera : public Controller
   private: ros::node *rosnode;
 
   // ros message
-  private: std_msgs::PointCloud cloudMsg;
+  private: std_msgs::PointCloud leftCloudMsg;
+  private: std_msgs::PointCloud rightCloudMsg;
   // ros message
   private: std_msgs::Image imageMsg[2];
 
   // topic name
-  private: std::string topicName;
+  private: std::string leftCloudTopicName;
+  private: std::string rightCloudTopicName;
   private: std::string leftTopicName;
   private: std::string rightTopicName;
 
   // frame transform name, should match link name
   // FIXME: extract link name directly?
-  private: std::string frameName;
+  private: std::string leftFrameName;
+  private: std::string rightFrameName;
 
   // A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
-
 
 };
 

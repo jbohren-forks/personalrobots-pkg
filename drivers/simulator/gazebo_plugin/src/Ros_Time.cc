@@ -35,81 +35,83 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <gazebo_plugin/Ros_Node.hh>
+#include <gazebo_plugin/Ros_Time.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("ros_node", Ros_Node);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_time", Ros_Time);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Ros_Node::Ros_Node(Entity *parent)
+Ros_Time::Ros_Time(Entity *parent)
     : Controller(parent)
 {
-  this->myBodyParent = dynamic_cast<Body*>(this->parent);
 
-  if (!this->myBodyParent)
-    gzthrow("Ros_Node controller requires a Body as its parent");
+    rosnode_ = ros::g_node; // comes from where?
+    int argc = 0;
+    char** argv = NULL;
+    if (rosnode_ == NULL)
+    {
+      // this only works for a single camera.
+      ros::init(argc,argv);
+      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+      printf("-------------------- starting node in Ros_Time \n");
+    }
 
-  //  int argc = 0;
-  //  char** argv = NULL;
-  //  // start a node
-  //  ros::init(argc,argv);
-  //  this->nodeName = node->GetString("nodeName","default_gazebo_ros_node",0); //read from xml file
-  //  rosnode = new ros::node(this->nodeName);
-
-  rosnode = ros::g_node; // comes from where?
-  int argc;
-  char** argv = NULL;
-  if (rosnode == NULL)
-  {
-    // this only works for a single camera.
-    ros::init(argc,argv);
-    rosnode = new ros::node("ros_gazebo");
-  }
-
-
+    // for rostime
+    rosnode_->advertise<rostools::Time>("time");
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Ros_Node::~Ros_Node()
+Ros_Time::~Ros_Time()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Ros_Node::LoadChild(XMLConfigNode *node)
+void Ros_Time::LoadChild(XMLConfigNode *node)
 {
-  //this->cameraIface = dynamic_cast<CameraIface*>(this->ifaces[0]);
-
-  //if (!this->cameraIface)
-  //  gzthrow("Ros_Node controller requires a CameraIface");
-
 
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Ros_Node::InitChild()
+void Ros_Time::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Ros_Node::UpdateChild()
+void Ros_Time::UpdateChild()
 {
+    // pass time to robot
+    double currentTime = Simulator::Instance()->GetSimTime();
+    //std::cout << "sim time: " << currentTime << std::endl;
 
+    /***************************************************************/
+    /*                                                             */
+    /*  publish time to ros                                        */
+    /*                                                             */
+    /***************************************************************/
+    this->lock.lock();
+    timeMsg.rostime.sec  = (unsigned long)floor(currentTime);
+    timeMsg.rostime.nsec = (unsigned long)floor(  1e9 * (  currentTime - timeMsg.rostime.sec) );
+    rosnode_->publish("time",timeMsg);
+    this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Ros_Node::FiniChild()
+void Ros_Time::FiniChild()
 {
-  // TODO: will be replaced by global ros node eventually
-  delete rosnode;
-  ros::fini();
+    // TODO: will be replaced by global ros node eventually
+    if (rosnode_ != NULL)
+    {
+      std::cout << "shutdown rosnode in Ros_Time" << std::endl;
+      rosnode_->shutdown();
+    }
 }
 
 

@@ -24,8 +24,8 @@
  * Date: 19 Sept 2007
  * SVN: $Id$
  */
-#ifndef ROS_NODE_HH
-#define ROS_NODE_HH
+#ifndef ROS_TIME_HH
+#define ROS_TIME_HH
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Body.hh>
@@ -33,18 +33,20 @@
 
 #include <ros/node.h>
 #include <std_msgs/Image.h>
+// roscpp - used for broadcasting time over ros
+#include <rostools/Time.h>
 
 namespace gazebo
 {
-/// This is a controller that starts a ros node
-class Ros_Node : public Controller
+/// This is a controller that starts a ros time
+class Ros_Time : public Controller
 {
   /// \brief Constructor
   /// \param parent The parent entity, must be a Model or a Sensor
-  public: Ros_Node(Entity *parent);
+  public: Ros_Time(Entity *parent);
 
   /// \brief Destructor
-  public: virtual ~Ros_Node();
+  public: virtual ~Ros_Time();
 
   /// \brief Load the controller
   /// \param node XML config node
@@ -63,14 +65,11 @@ class Ros_Node : public Controller
   /// \return 0 on success
   protected: virtual void FiniChild();
 
-  // pointer to parent
-  private: Body *myBodyParent;
-
+  // A mutex to lock access to fields that are used in message callbacks
+  private: ros::thread::mutex lock;
   // pointer to ros node
-  private: ros::node *rosnode;
-
-  // topic name
-  private: std::string nodeName;
+  ros::node *rosnode_;
+  rostools::Time timeMsg;
 
 };
 
