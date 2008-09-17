@@ -23,7 +23,7 @@
   	{
   		btScalar s = btSqrt(length2() * q.length2());
   		assert(s != btScalar(0.0));
-! 		return btAcos(std::min(dot(q), 1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
+! 		return btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
   	}
   
   	btScalar getAngle() const 
