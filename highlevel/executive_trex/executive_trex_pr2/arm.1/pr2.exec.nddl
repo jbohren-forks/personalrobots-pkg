@@ -1,6 +1,5 @@
 #include "exec.init.nddl"
 
-
 rejectable(moveRightArm.Inactive rightArmGoal_0);
 rightArmGoal_0.des_shoulder_pan = -1.0;
 rightArmGoal_0.des_shoulder_pitch= 0.0;
@@ -20,4 +19,10 @@ rightArmGoal_1.des_forearm_roll = 0.0;
 rightArmGoal_1.des_wrist_flex = 0.0;
 rightArmGoal_1.des_gripper_roll = 0.0;
 
+// Order goals in time
 rightArmGoal_0 before rightArmGoal_1;
+
+// Force a wait for at least 15 seconds before we get started
+rejectable(moveRightArm.Inactive waitingForGazebo);
+leq(15, waitingForGazebo.duration);
+waitingForGazebo before rightArmGoal_0;
