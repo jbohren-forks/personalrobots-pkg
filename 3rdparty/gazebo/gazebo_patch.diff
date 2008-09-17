@@ -1,6 +1,6 @@
 Index: player/SConscript
 ===================================================================
---- player/SConscript	(revision 7019)
+--- player/SConscript	(revision 7023)
 +++ player/SConscript	(working copy)
 @@ -1,7 +1,8 @@
  import os
@@ -12,9 +12,22 @@ Index: player/SConscript
  
  sources = ['GazeboDriver.cc',
             'GazeboClient.cc',
+Index: libgazebo/SConscript
+===================================================================
+--- libgazebo/SConscript	(revision 7023)
++++ libgazebo/SConscript	(working copy)
+@@ -20,6 +20,8 @@
+ # setup a special build environment for libgazebo. Do this so we can control
+ # what libgazebo depends upon
+ #
++#  CC = '/opt/intel/cc/10.1.008/bin/icpc',
++#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
+ env = Environment (
+   CC = 'g++',
+   CCFLAGS = Split ('-pthread -pipe  -W -Wall -O2'),
 Index: libgazebo/gazebo.h
 ===================================================================
---- libgazebo/gazebo.h	(revision 7019)
+--- libgazebo/gazebo.h	(revision 7023)
 +++ libgazebo/gazebo.h	(working copy)
 @@ -556,7 +556,7 @@
  
@@ -183,7 +196,7 @@ Index: libgazebo/gazebo.h
  };
 Index: server/physics/SphereGeom.cc
 ===================================================================
---- server/physics/SphereGeom.cc	(revision 7019)
+--- server/physics/SphereGeom.cc	(revision 7023)
 +++ server/physics/SphereGeom.cc	(working copy)
 @@ -66,11 +66,18 @@
    this->radiusP->SetValue( radius );
@@ -209,7 +222,7 @@ Index: server/physics/SphereGeom.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/physics/BoxGeom.cc
 ===================================================================
---- server/physics/BoxGeom.cc	(revision 7019)
+--- server/physics/BoxGeom.cc	(revision 7023)
 +++ server/physics/BoxGeom.cc	(working copy)
 @@ -66,9 +66,18 @@
    this->sizeP->SetValue( size );
@@ -235,7 +248,7 @@ Index: server/physics/BoxGeom.cc
    // Create a box geometry with box mass matrix
 Index: server/physics/Geom.hh
 ===================================================================
---- server/physics/Geom.hh	(revision 7019)
+--- server/physics/Geom.hh	(revision 7023)
 +++ server/physics/Geom.hh	(working copy)
 @@ -180,6 +180,20 @@
      ///  Mass as a double
@@ -260,7 +273,7 @@ Index: server/physics/Geom.hh
  
 Index: server/physics/Body.hh
 ===================================================================
---- server/physics/Body.hh	(revision 7019)
+--- server/physics/Body.hh	(revision 7023)
 +++ server/physics/Body.hh	(working copy)
 @@ -180,6 +180,7 @@
    
@@ -272,7 +285,7 @@ Index: server/physics/Body.hh
    /// \}
 Index: server/physics/HingeJoint.hh
 ===================================================================
---- server/physics/HingeJoint.hh	(revision 7019)
+--- server/physics/HingeJoint.hh	(revision 7023)
 +++ server/physics/HingeJoint.hh	(working copy)
 @@ -126,6 +126,7 @@
      private: ParamT<Vector3> *axisP;
@@ -284,7 +297,7 @@ Index: server/physics/HingeJoint.hh
    
 Index: server/physics/CylinderGeom.cc
 ===================================================================
---- server/physics/CylinderGeom.cc	(revision 7019)
+--- server/physics/CylinderGeom.cc	(revision 7023)
 +++ server/physics/CylinderGeom.cc	(working copy)
 @@ -64,11 +64,21 @@
    this->sizeP->SetValue( size );
@@ -312,7 +325,7 @@ Index: server/physics/CylinderGeom.cc
  //////////////////////////////////////////////////////////////////////////////
 Index: server/physics/Geom.cc
 ===================================================================
---- server/physics/Geom.cc	(revision 7019)
+--- server/physics/Geom.cc	(revision 7023)
 +++ server/physics/Geom.cc	(working copy)
 @@ -73,6 +73,17 @@
  
@@ -406,7 +419,7 @@ Index: server/physics/Geom.cc
      dMassRotate(&this->bodyMass, r);
 Index: server/physics/Body.cc
 ===================================================================
---- server/physics/Body.cc	(revision 7019)
+--- server/physics/Body.cc	(revision 7023)
 +++ server/physics/Body.cc	(working copy)
 @@ -70,6 +70,7 @@
  
@@ -437,7 +450,7 @@ Index: server/physics/Body.cc
  
 Index: server/physics/HingeJoint.cc
 ===================================================================
---- server/physics/HingeJoint.cc	(revision 7019)
+--- server/physics/HingeJoint.cc	(revision 7023)
 +++ server/physics/HingeJoint.cc	(working copy)
 @@ -44,6 +44,7 @@
    this->axisP = new ParamT<Vector3>("axis",Vector3(0,1,0), 1);
@@ -466,7 +479,7 @@ Index: server/physics/HingeJoint.cc
  
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
---- server/physics/ode/ODEPhysics.hh	(revision 7019)
+--- server/physics/ode/ODEPhysics.hh	(revision 7023)
 +++ server/physics/ode/ODEPhysics.hh	(working copy)
 @@ -133,6 +133,7 @@
  
@@ -478,7 +491,7 @@ Index: server/physics/ode/ODEPhysics.hh
  /** \}*/
 Index: server/physics/ode/ODEPhysics.cc
 ===================================================================
---- server/physics/ode/ODEPhysics.cc	(revision 7019)
+--- server/physics/ode/ODEPhysics.cc	(revision 7023)
 +++ server/physics/ode/ODEPhysics.cc	(working copy)
 @@ -44,6 +44,10 @@
  #include "XMLConfig.hh"
@@ -576,7 +589,7 @@ Index: server/physics/ode/ODEPhysics.cc
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
 Index: server/physics/TrimeshGeom.cc
 ===================================================================
---- server/physics/TrimeshGeom.cc	(revision 7019)
+--- server/physics/TrimeshGeom.cc	(revision 7023)
 +++ server/physics/TrimeshGeom.cc	(working copy)
 @@ -208,7 +208,13 @@
  
@@ -595,7 +608,7 @@ Index: server/physics/TrimeshGeom.cc
    this->SetGeom(this->geomId, true);
 Index: server/sensors/Sensor.hh
 ===================================================================
---- server/sensors/Sensor.hh	(revision 7019)
+--- server/sensors/Sensor.hh	(revision 7023)
 +++ server/sensors/Sensor.hh	(working copy)
 @@ -70,6 +70,7 @@
  
@@ -613,22 +626,9 @@ Index: server/sensors/Sensor.hh
    /// \}
  }
  #endif
-Index: server/sensors/ray/RaySensor.cc
-===================================================================
---- server/sensors/ray/RaySensor.cc	(revision 7019)
-+++ server/sensors/ray/RaySensor.cc	(working copy)
-@@ -273,7 +273,7 @@
- // Update the sensor information
- void RaySensor::UpdateChild()
- {
--//  if (this->active)
-+  if (this->active)
-   {
-     std::vector<RayGeom*>::iterator iter;
-     Pose3d poseDelta;
 Index: server/sensors/Sensor.cc
 ===================================================================
---- server/sensors/Sensor.cc	(revision 7019)
+--- server/sensors/Sensor.cc	(revision 7023)
 +++ server/sensors/Sensor.cc	(working copy)
 @@ -33,6 +33,7 @@
  #include "ControllerFactory.hh"
@@ -667,7 +667,7 @@ Index: server/sensors/Sensor.cc
 +
 Index: server/Global.hh
 ===================================================================
---- server/Global.hh	(revision 7019)
+--- server/Global.hh	(revision 7023)
 +++ server/Global.hh	(working copy)
 @@ -88,4 +88,7 @@
  
@@ -679,7 +679,7 @@ Index: server/Global.hh
  #endif
 Index: server/Simulator.cc
 ===================================================================
---- server/Simulator.cc	(revision 7019)
+--- server/Simulator.cc	(revision 7023)
 +++ server/Simulator.cc	(working copy)
 @@ -72,6 +72,7 @@
    timeout(-1),
@@ -726,7 +726,7 @@ Index: server/Simulator.cc
      elapsedTime = (this->GetRealTime() - currTime);
 Index: server/XMLConfig.cc
 ===================================================================
---- server/XMLConfig.cc	(revision 7019)
+--- server/XMLConfig.cc	(revision 7023)
 +++ server/XMLConfig.cc	(working copy)
 @@ -513,29 +513,59 @@
  ///////////////////////////////////////////////////////////////////////////
@@ -804,7 +804,7 @@ Index: server/XMLConfig.cc
  
 Index: server/GazeboConfig.cc
 ===================================================================
---- server/GazeboConfig.cc	(revision 7019)
+--- server/GazeboConfig.cc	(revision 7023)
 +++ server/GazeboConfig.cc	(working copy)
 @@ -67,31 +67,34 @@
      this->gazeboPaths.push_back(gazebo_resource_path);
@@ -880,7 +880,7 @@ Index: server/GazeboConfig.cc
  }
 Index: server/Model.cc
 ===================================================================
---- server/Model.cc	(revision 7019)
+--- server/Model.cc	(revision 7023)
 +++ server/Model.cc	(working copy)
 @@ -47,6 +47,10 @@
  #include "IfaceFactory.hh"
@@ -951,7 +951,7 @@ Index: server/Model.cc
  
 Index: server/gui/StatusBar.cc
 ===================================================================
---- server/gui/StatusBar.cc	(revision 7019)
+--- server/gui/StatusBar.cc	(revision 7023)
 +++ server/gui/StatusBar.cc	(working copy)
 @@ -25,6 +25,7 @@
   */
@@ -961,39 +961,9 @@ Index: server/gui/StatusBar.cc
  #include <FL/Fl_Value_Output.H>
  #include <FL/Fl_Output.H>
  #include <FL/Fl_Button.H>
-Index: server/gui/GLWindow.cc
-===================================================================
---- server/gui/GLWindow.cc	(revision 7019)
-+++ server/gui/GLWindow.cc	(working copy)
-@@ -227,21 +227,10 @@
-     }
-     else if (this->rightMousePressed)
-     {
--      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
--      if (model)
--      {
--        Pose3d pose = model->GetPose();
--        pose.pos.y -= d.x * 0.05;
--        pose.pos.x -= d.y * 0.05;
--        model->SetPose(pose);
--      }
--      else
--      {
--        Vector2<int> d = this->mousePos - this->prevMousePos;
--        this->directionVec.x = 0;
--        this->directionVec.y =  d.x * this->moveAmount;
--        this->directionVec.z =  d.y * this->moveAmount;
--      }
-+      Vector2<int> d = this->mousePos - this->prevMousePos;
-+      this->directionVec.x = 0;
-+      this->directionVec.y =  d.x * this->moveAmount;
-+      this->directionVec.z =  d.y * this->moveAmount;
-     }
-     else if (this->middleMousePressed)
-     {
 Index: server/World.hh
 ===================================================================
---- server/World.hh	(revision 7019)
+--- server/World.hh	(revision 7023)
 +++ server/World.hh	(working copy)
 @@ -92,6 +92,26 @@
    /// \return Pointer to the physics engine
@@ -1034,7 +1004,7 @@ Index: server/World.hh
  };
 Index: server/controllers/Controller.hh
 ===================================================================
---- server/controllers/Controller.hh	(revision 7019)
+--- server/controllers/Controller.hh	(revision 7023)
 +++ server/controllers/Controller.hh	(working copy)
 @@ -105,6 +105,9 @@
    /// \brief The entity that owns this controller
@@ -1048,7 +1018,7 @@ Index: server/controllers/Controller.hh
    protected: ParamT<double> *updatePeriodP;
 Index: server/controllers/camera/generic/Generic_Camera.cc
 ===================================================================
---- server/controllers/camera/generic/Generic_Camera.cc	(revision 7019)
+--- server/controllers/camera/generic/Generic_Camera.cc	(revision 7023)
 +++ server/controllers/camera/generic/Generic_Camera.cc	(working copy)
 @@ -86,7 +86,24 @@
  // Update the controller
@@ -1078,7 +1048,7 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  ////////////////////////////////////////////////////////////////////////////////
 Index: server/controllers/Controller.cc
 ===================================================================
---- server/controllers/Controller.cc	(revision 7019)
+--- server/controllers/Controller.cc	(revision 7023)
 +++ server/controllers/Controller.cc	(working copy)
 @@ -43,6 +43,7 @@
  {
@@ -1138,7 +1108,7 @@ Index: server/controllers/Controller.cc
      if ((*iter)->GetOpenCount() > 0)
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
---- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7019)
+--- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7023)
 +++ server/controllers/ptz/generic/Generic_PTZ.cc	(working copy)
 @@ -70,10 +70,10 @@
  // Destructor
@@ -1157,7 +1127,7 @@ Index: server/controllers/ptz/generic/Generic_PTZ.cc
    this->tiltJoint = NULL;
 Index: server/World.cc
 ===================================================================
---- server/World.cc	(revision 7019)
+--- server/World.cc	(revision 7023)
 +++ server/World.cc	(working copy)
 @@ -27,6 +27,7 @@
  #include <assert.h>
@@ -1288,7 +1258,7 @@ Index: server/World.cc
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
 Index: SConstruct
 ===================================================================
---- SConstruct	(revision 7019)
+--- SConstruct	(revision 7023)
 +++ SConstruct	(working copy)
 @@ -22,8 +22,9 @@
  # 3rd party packages
@@ -1301,7 +1271,16 @@ Index: SConstruct
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
-@@ -81,7 +82,7 @@
+@@ -31,6 +32,8 @@
+ #
+ # setup the build environment
+ #
++#  CC = '/opt/intel/cc/10.1.008/bin/icc',
++#  CXX = '/opt/intel/cc/10.1.008/bin/icpc',
+ env = Environment (
+   CC = 'g++',
+ 
+@@ -81,7 +84,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
