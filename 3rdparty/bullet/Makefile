@@ -1,19 +1,20 @@
 all: bullet
 
-TARBALL = bullet-2.71-SDK.tgz
-TARBALL_URL = http://bullet.googlecode.com/files/bullet-2.71-SDK.tgz
-SOURCE_DIR = bullet-2.71
-MD5SUM_FILE = bullet-2.71-SDK.tgz.md5sum
-UNPACK_CMD = tar xzf
-include $(shell rospack find mk)/download_unpack.mk
+SVN_DIR = bullet_svn
+SVN_URL = http://bullet.googlecode.com/svn/trunk/
+SVN_PATCH = quaternion.patch
+include $(shell rospack find mk)/svn_checkout.mk
 
-bullet: $(SOURCE_DIR) quaternion.patch
-	patch -p0 < quaternion.patch
-	patch -p0 < aCos_overflow.diff
-	cd $(SOURCE_DIR) && cmake .
-	make -C $(SOURCE_DIR) LibLinearMath
+.PHONY: bullet
+
+build: SVN_UP_REVERT_PATCH bullet
+
+bullet: $(SVN_DIR) quaternion.patch aCos_overflow.diff
+	cd $(SVN_DIR) && cmake .
+	make -C $(SVN_DIR) LibLinearMath
 	touch bullet
 clean:
-	rm -rf $(SOURCE_DIR)
+	make -C $(SVN_DIR) clean
+
 wipe: clean
-	rm -rf $(TARBALL)
+	rm -rf $(SVN_DIR)

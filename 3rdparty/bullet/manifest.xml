@@ -8,7 +8,7 @@ The Bullet Physics Engine
 <license>ZLib</license>
 <url>http://code.google.com/p/bullet/</url>
 <export>
-<cpp cflags="-I${prefix}/bullet-2.71/src -DBT_USE_DOUBLE_PRECISION" lflags="-L${prefix}/bullet-2.71/src/LinearMath/ -lLibLinearMath" />
+<cpp cflags="-I${prefix}/bullet_svn/src -DBT_USE_DOUBLE_PRECISION" lflags="-L${prefix}/bullet_svn/src/LinearMath/ -lLibLinearMath" />
   <doxymaker external="http://code.google.com/p/bullet/" />
 </export>
 </package>
