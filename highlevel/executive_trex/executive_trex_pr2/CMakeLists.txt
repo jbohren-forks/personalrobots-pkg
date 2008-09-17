@@ -32,13 +32,13 @@ set(TREX_FILES src/Executive.cc
 	       src/ArmStateAdapter.cc
 	       src/ArmControllerAdapter.cc)
 
-rospack_add_executable(build/trex_debug ${TREX_FILES})
-target_link_libraries(build/trex_debug Utils_g TREX_g)
+rospack_add_executable(trex_debug ${TREX_FILES})
+target_link_libraries(trex_debug Utils_g TREX_g)
 
 
-rospack_add_executable(build/trex_fast ${TREX_FILES})
-target_link_libraries(build/trex_fast Utils_o TREX_o)
-rospack_add_compile_flags(build/trex_fast "-O3 -DEUROPA_FAST")
+rospack_add_executable(trex_fast ${TREX_FILES})
+target_link_libraries(trex_fast Utils_o TREX_o)
+rospack_add_compile_flags(trex_fast "-O3 -DEUROPA_FAST")
 
 rospack_add_rostest(test/test.wpc.0.xml) 
 rospack_add_rostest(test/test.wpc.1.xml) 
