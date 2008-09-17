@@ -4,7 +4,7 @@
 #include "CvMat3x3.h"
 
 /**
- *  class for 3x3 symmetric matrix
+ *  class template for 3x3 symmetric matrix
  */
 template <typename DataT>
 class CvMat3x3Sym: public CvMat3x3<DataT>
@@ -51,7 +51,7 @@ public:
 		QtQ[index(1,1)] = DOTPROD3QtQ(Q, 1, 1);
 		QtQ[index(1,2)] = DOTPROD3QtQ(Q, 1, 2);
 		QtQ[index(2,2)] = DOTPROD3QtQ(Q, 2, 2);
-	};	
+	};
 	/**
 	 * compute the eigenvalue of a symmetric 3x3 matrix with rank 2
 	 * QQt is given as [QQt[0], QQt[1], QQt[2],
@@ -60,14 +60,14 @@ public:
 	 */
 	static void eigValsSymmetricRank2(DataT QQt[], DataT ev[3]){
 		// construct the characteristic equation as a x^3 + b x^2 + c x + d = 0
-		// the char. equation is 
+		// the char. equation is
 		//  	[ a00 - x    a01        a02     ]
 		// det( [ a01        a11 - x    a12     ] ) = 0
 		//      [ a02        a12        a22 - x ]
-		// 
-		// or  
+		//
+		// or
 		//     a = -1
-		//     b = a00 + a11 + a22 
+		//     b = a00 + a11 + a22
 		//     c = -a11*a22 - a00*a22 - a00*a11 + a12*a12 + a01*a01 + a02*a02
 		//     d = a00*a11*a22 + 2*a01*a12*a02 - a00*a12*a12 - a01*a01*a22 + a11*a02*a02
 		// as the rank of QQt is 2, we know that d == 0
@@ -76,9 +76,9 @@ public:
 //		b = QQt[0] + QQt[3] + QQt[5];
 		b = elem(QQt, 0, 0) + elem(QQt, 1, 1) + elem(QQt,2, 2);
 //		c = -QQt[0]*QQt[3] - QQt[3]*QQt[5] - QQt[5]*QQt[0] + QQt[1]*QQt[1] + QQt[2]*QQt[2] + QQt[4]*QQt[4];
-		c = - elem(QQt, 0, 0)*(elem(QQt, 1, 1) + elem(QQt, 2, 2)) - elem(QQt, 1, 1)*elem(QQt, 2, 2) 
+		c = - elem(QQt, 0, 0)*(elem(QQt, 1, 1) + elem(QQt, 2, 2)) - elem(QQt, 1, 1)*elem(QQt, 2, 2)
 			+ elem(QQt, 0, 1)*elem(QQt, 0, 1) + elem(QQt, 0, 2)*elem(QQt, 0, 2) + elem(QQt, 1, 2)*elem(QQt, 1, 2);
-		
+
 		// now we are solving a quadratic equation
 		DataT D = b*b+4.*c;  // D = b*b-4*a*c
 		// D is expected to be positive
@@ -118,7 +118,7 @@ public:
 		// make a copy
 		for (int i=0; i<9; i++) A[i] = QQt[i];
 		// solve for an eigen vectors of unit length
-		
+
 		// solve for eigenvalue equals to zero
 		solveSymmetricHomogeneous(A, v);
 		ELEM3(eigenVectors, 0, 0) = v[0];
@@ -129,7 +129,7 @@ public:
 		A[index(0,0)] = elem(QQt, 0, 0) - eigenVals[0];
 		A[index(1,1)] = elem(QQt, 1, 1) - eigenVals[0];
 		A[index(2,2)] = elem(QQt, 2, 2) - eigenVals[0];
-		
+
 		solveSymmetricHomogeneous(A, v);
 		ELEM3(eigenVectors, 0, 0) = v[0];
 		ELEM3(eigenVectors, 0, 1) = v[1];
@@ -155,9 +155,9 @@ public:
 		DataT ev[3];
 		eigValsSymmetricRank2(QQt, ev);
 		// it can be shown that the eigenvalue of QtQ is the same as QQt
-		
+
 		// now compute the eigenvectors of QQt and QtQ, given their eigenvalue ev[3]
-		
+
 	}
 
 };

@@ -21,7 +21,9 @@ using namespace std;
 //#define DISPLAY
 
 //#undef DEBUG
+#ifndef DEBUG
 #define DEBUG  // to print debug message in release build
+#endif
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well

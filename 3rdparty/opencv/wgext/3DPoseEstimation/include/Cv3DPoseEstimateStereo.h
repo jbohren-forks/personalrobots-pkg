@@ -24,6 +24,9 @@ using namespace cv;
 #include <calonder_descriptor/include/rtree_classifier.h>
 using namespace features;
 
+/**
+ * Pose estimation based on two frames of stereo image pairs.
+ */
 class Cv3DPoseEstimateStereo: public Cv3DPoseEstimateDisp {
 public:
 	typedef Cv3DPoseEstimateDisp Parent;
@@ -82,6 +85,9 @@ public:
 	 */
 	bool goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints);
 
+	/**
+	 *  Data structure for the Calonder matcher.
+	 */
 	class CalonderMatcher {
 	public:
 		// load random forests classifier
@@ -97,25 +103,26 @@ public:
 		static const float SIG_THRESHOLD = 0.0;
 	};
 	/**
-	 *  img0
-	 *  img1
-	 *  dispMap0,
-	 *  dispMap1
-	 *  keyPoints0
-	 *  keyPoints1
-	 *  trackablePairs -- output
 	 *  Match up two list of key points and output a list of trackable pairs.
-	 *  returns true if the status of execution is normal.
+	 *  @return true if the status of execution is normal.
 	 */
 	bool getTrackablePairs(
-			WImage1_b& img0, WImage1_b& img1,
-			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
+	    /// input image 0
+			WImage1_b& img0,
+			/// input image 1
+			WImage1_b& img1,
+			/// disparity map of input image 0
+			WImage1_16s& dispMap0,
+			/// disparity map of input image 1
+			WImage1_16s& dispMap1,
+			/// Detected key points in image 0
+			vector<Keypoint>& keyPoints0,
+			/// Detected Key points in image 1
+			vector<Keypoint>& keyPoints1,
+			/// (Output) pairs of corresponding 3d locations for possibly the same
+			/// 3d features. Used for pose estimation.
 			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
 			);
-	using Parent::estimate;
-	int estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs, CvMat& rot, CvMat& shift,
-			bool reversed=false);
 
 	bool makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect);
 

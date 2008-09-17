@@ -563,40 +563,6 @@ bool Cv3DPoseEstimateStereo::getTrackablePairs(
 	return status;
 }
 
-int Cv3DPoseEstimateStereo::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
-		CvMat& rot, CvMat& shift, bool reversed) {
-	int numTrackablePairs = trackablePairs.size();
-	double _uvds0[3*numTrackablePairs];
-	double _uvds1[3*numTrackablePairs];
-	CvMat uvds0 = cvMat(numTrackablePairs, 3, CV_64FC1, _uvds0);
-	CvMat uvds1 = cvMat(numTrackablePairs, 3, CV_64FC1, _uvds1);
-
-	int iPt=0;
-	for (vector<pair<CvPoint3D64f, CvPoint3D64f> >::const_iterator iter = trackablePairs.begin();
-	iter != trackablePairs.end(); iter++) {
-		const pair<CvPoint3D64f, CvPoint3D64f>& p = *iter;
-		_uvds0[iPt*3 + 0] = p.first.x;
-		_uvds0[iPt*3 + 1] = p.first.y;
-		_uvds0[iPt*3 + 2] = p.first.z;
-
-		_uvds1[iPt*3 + 0] = p.second.x;
-		_uvds1[iPt*3 + 1] = p.second.y;
-		_uvds1[iPt*3 + 2] = p.second.z;
-		iPt++;
-	}
-
-	// estimate the transform the observed points from current back to last position
-	// it should be equivalent to the transform of the camera frame from
-	// last position to current position
-	int numInliers;
-	if (reversed == true) {
-		numInliers = this->estimate(&uvds1, &uvds0, &rot, &shift);
-	} else {
-		numInliers = this->estimate(&uvds0, &uvds1, &rot, &shift);
-	}
-	return numInliers;
-}
-
 double Cv3DPoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res,
 		CvPoint& loc){
 	cvMatchTemplate(&neighborhood, &templ, &res, CV_TM_CCORR_NORMED );

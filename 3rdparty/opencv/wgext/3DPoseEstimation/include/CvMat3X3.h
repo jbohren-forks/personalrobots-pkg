@@ -53,16 +53,17 @@ do {(rx) = TRANSFORM_X(T, x0, y0, z0) - (x1); \
 	(ry) = TRANSFORM_Y(T, x0, y0, z0)*_s - (y1); \
 	(rz) = TRANSFORM_Z(T, x0, y0, z0)*_s - (z1);} while (0)
 
-
+/**
+ * Template class for fast matrix operations over 3x3 matrices.
+ */
 template <typename DataT>
 class CvMat3X3
 {
 public:
 	CvMat3X3(){};
 	virtual ~CvMat3X3(){};
-	
 
-	/*
+	/**
 	 * compute Q = A * B^T
 	 * where A and B is 3x2 matrix.
 	 * In one applications, Each of them stores
@@ -72,126 +73,158 @@ public:
 		ELEM3(Q, 0, 0) = DOTPROD2(A, 0, B, 0);
 		ELEM3(Q, 0, 1) = DOTPROD2(A, 0, B, 1);
 		ELEM3(Q, 0, 2) = DOTPROD2(A, 0, B, 2);
-		
+
 		ELEM3(Q, 1, 0) = DOTPROD2(A, 1, B, 0);
 		ELEM3(Q, 1, 1) = DOTPROD2(A, 1, B, 1);
 		ELEM3(Q, 1, 2) = DOTPROD2(A, 1, B, 2);
-		
+
 		ELEM3(Q, 2, 0) = DOTPROD2(A, 2, B, 0);
 		ELEM3(Q, 2, 1) = DOTPROD2(A, 2, B, 1);
 		ELEM3(Q, 2, 2) = DOTPROD2(A, 2, B, 2);
 	};
+	/// conventions of Euler angles
 	typedef enum  {
-		XYZ,
-		ZYX,
+		XYZ,  //< The rotation is around X-axis first, then Y, then Z, i.e. Rx*Ry*Rz =>R
+		ZYX,  //< The rotation is around Z-axis first, then Y, then X, i.e. Rz*Ry*Rx =>R
 	} EulerAngleConvention;
-    static void rotMatrix(DataT x, DataT y, DataT z, DataT R[3*3],
-    		EulerAngleConvention eulerAngleConvention=ZYX
-    ){
-        double cosz = cos(z);
-        double sinz = sin(z);
-        double _Rz[3*3] = { cosz, -sinz, 0.,
-                            sinz,  cosz, 0.,
-                              0.,    0., 1. };
-        double cosy = cos(y);
-        double siny = sin(y);
-        double _Ry[3*3] = { cosy, 0., -siny,
-                              0., 1.,    0.,
-                            siny, 0.,  cosy };
-                             
-        double cosx = cos(x);
-        double sinx = sin(x);
-        
-        double _Rx[3*3] = { 1.,    0.,    0.,
-                            0.,  cosx, -sinx,
-                            0.,  sinx,  cosx };
-                           
-        CvMat Rx, Ry, Rz;
-        cvInitMatHeader(&Rx, 3, 3, CV_64FC1, _Rx);
-        cvInitMatHeader(&Ry, 3, 3, CV_64FC1, _Ry);
-        cvInitMatHeader(&Rz, 3, 3, CV_64FC1, _Rz);
-        double _Rxy[9], _Rxyz[9];
-        CvMat Rxy, Rxyz;
-        cvInitMatHeader(&Rxy,  3, 3, CV_64FC1, _Rxy);
-        cvInitMatHeader(&Rxyz, 3, 3, CV_64FC1, _Rxyz);
-        // TODO: would it be more efficient to follow symbolic computation
-        switch (eulerAngleConvention){
-        case ZYX:
-        	// Rx*Ry*Rz =>R                   
-        	cvMatMul(&Rx, &Ry, &Rxy);
-        	cvMatMul(&Rxy, &Rz, &Rxyz);
-        	break;
-        case XYZ:
-        	// Rz*Ry*Rx =>R
-        	cvMatMul(&Ry, &Rx, &Rxy);
-        	cvMatMul(&Rz, &Rxy, &Rxyz);
-        	break;
-        default:
-        	cerr <<"Not implemented yet"<<endl;
-        	return;
-        }
-        // copy the result into R[]
-        for (int i=0; i<3; i++) {
-            for (int j=0; j<3; j++) {
-                R[i*3+j] = cvmGet(&Rxyz, i, j);
-            }
-        }
-#if DEBUG        
-        cout << "CvMat3x3::rotMatrix()"<<endl;
-        printMat(R);
-        cout << "Qx:"<< endl;
-        printMat(_Rx);
-        cout << "Qy:"<<endl;
-        printMat(_Ry);
-        cout << "Qz:"<<endl;
-        printMat(_Rz);
+	/**
+	 * Construct the rotation matrix, given Euler angles
+	 */
+	static void rotMatrix(
+      /// Euler angle for X-axis
+	    DataT x,
+      /// Euler angle for Y-axis
+	    DataT y,
+      /// Euler angle for Z-axis
+	    DataT z,
+	    /// (Output) constructed rotation matrix.
+	    DataT R[3*3],
+	    /// Convention of Euler angles
+	    EulerAngleConvention eulerAngleConvention=ZYX
+	){
+	  double cosz = cos(z);
+	  double sinz = sin(z);
+	  double _Rz[3*3] = { cosz, -sinz, 0.,
+	      sinz,  cosz, 0.,
+	      0.,    0., 1. };
+	  double cosy = cos(y);
+	  double siny = sin(y);
+	  double _Ry[3*3] = { cosy, 0., -siny,
+	      0., 1.,    0.,
+	      siny, 0.,  cosy };
+
+	  double cosx = cos(x);
+	  double sinx = sin(x);
+
+	  double _Rx[3*3] = { 1.,    0.,    0.,
+	      0.,  cosx, -sinx,
+	      0.,  sinx,  cosx };
+
+	  CvMat Rx, Ry, Rz;
+	  cvInitMatHeader(&Rx, 3, 3, CV_64FC1, _Rx);
+	  cvInitMatHeader(&Ry, 3, 3, CV_64FC1, _Ry);
+	  cvInitMatHeader(&Rz, 3, 3, CV_64FC1, _Rz);
+	  double _Rxy[9], _Rxyz[9];
+	  CvMat Rxy, Rxyz;
+	  cvInitMatHeader(&Rxy,  3, 3, CV_64FC1, _Rxy);
+	  cvInitMatHeader(&Rxyz, 3, 3, CV_64FC1, _Rxyz);
+	  // TODO: would it be more efficient to follow symbolic computation
+	  switch (eulerAngleConvention){
+	  case ZYX:
+	    // Rx*Ry*Rz =>R
+	    cvMatMul(&Rx, &Ry, &Rxy);
+	    cvMatMul(&Rxy, &Rz, &Rxyz);
+	    break;
+	  case XYZ:
+	    // Rz*Ry*Rx =>R
+	    cvMatMul(&Ry, &Rx, &Rxy);
+	    cvMatMul(&Rz, &Rxy, &Rxyz);
+	    break;
+	  default:
+	    cerr <<"Not implemented yet"<<endl;
+	    return;
+	  }
+	  // copy the result into R[]
+	  for (int i=0; i<3; i++) {
+	    for (int j=0; j<3; j++) {
+	      R[i*3+j] = cvmGet(&Rxyz, i, j);
+	    }
+	  }
+#ifdef DEBUG
+	  cout << "CvMat3x3::rotMatrix()"<<endl;
+	  printMat(R);
+	  cout << "Qx:"<< endl;
+	  printMat(_Rx);
+	  cout << "Qy:"<<endl;
+	  printMat(_Ry);
+	  cout << "Qz:"<<endl;
+	  printMat(_Rz);
 #endif
-    };
-    static void transformMatrix(DataT x, DataT y, DataT z, 
-    		DataT tx, DataT ty, DataT tz,
-    		DataT RT[], int numCols,
-    		EulerAngleConvention eulerAngleConvention=ZYX
-    ){
-    	DataT rot[3*3];
-    	rotMatrix(x, y, z, rot, eulerAngleConvention);
-    	for (int i=0; i<3; i++){
-    		for (int j=0; j<3; j++) {
-    			RT[i*numCols + j] = rot[i*3+j];
-    		}
-    	}
-		RT[0*numCols + 3] = tx;
-		RT[1*numCols + 3] = ty;
-		RT[2*numCols + 3] = tz;
-    }
-    static void transformMatrixSq(DataT x, DataT y, DataT z, 
-    		DataT tx, DataT ty, DataT tz,
-    		DataT RT[], int numCols,
-    		EulerAngleConvention eulerAngleConvention=ZYX
-    ){
-    	DataT rot[3*3];
-    	rotMatrix(x, y, z, rot, eulerAngleConvention);
-    	for (int i=0; i<3; i++){
-    		for (int j=0; j<3; j++) {
-    			RT[i*numCols + j] = rot[i*3+j];
-    		}
-    	}
-		RT[0*numCols + 3] = tx;
-		RT[1*numCols + 3] = ty;
-		RT[2*numCols + 3] = tz;
-		// last row;
-		RT[3*numCols + 0] = 0.0;
-		RT[3*numCols + 1] = 0.0;
-		RT[3*numCols + 2] = 0.0;
-		RT[3*numCols + 3] = 1.0;
-    }
-    static void printMat(DataT mat[]){
-    	for (int i=0; i<3; i++) {
-    		for (int j=0; j<3; j++) {
-    			printf("%12.5f,", mat[i*3+j]);
-    		}
-    		cout << endl;
-    	}
-    }
+	};
+	/**
+	 * Construct transformation matrix given the euler angles
+	 * and translation vectors.
+	 */
+	static void transformMatrix(
+	    /// Euler angle for X-axis
+	    DataT x,
+	    /// Euler angle for Y-axis
+	    DataT y,
+	    /// Euler angle for Z-axis
+	    DataT z,
+	    /// translation in X-axis
+	    DataT tx,
+	    /// translation in Y-axis
+	    DataT ty,
+	    /// translation in Z-axis
+	    DataT tz,
+	    /// (Output) transformation matrix
+	    DataT RT[],
+	    /// number of columns in RT.
+	    int numCols,
+	    /// Euler angle convention.
+	    EulerAngleConvention eulerAngleConvention=ZYX
+	){
+	  DataT rot[3*3];
+	  rotMatrix(x, y, z, rot, eulerAngleConvention);
+	  for (int i=0; i<3; i++){
+	    for (int j=0; j<3; j++) {
+	      RT[i*numCols + j] = rot[i*3+j];
+	    }
+	  }
+	  RT[0*numCols + 3] = tx;
+	  RT[1*numCols + 3] = ty;
+	  RT[2*numCols + 3] = tz;
+	}
+	static void transformMatrixSq(DataT x, DataT y, DataT z,
+	    DataT tx, DataT ty, DataT tz,
+	    DataT RT[], int numCols,
+	    EulerAngleConvention eulerAngleConvention=ZYX
+	){
+	  DataT rot[3*3];
+	  rotMatrix(x, y, z, rot, eulerAngleConvention);
+	  for (int i=0; i<3; i++){
+	    for (int j=0; j<3; j++) {
+	      RT[i*numCols + j] = rot[i*3+j];
+	    }
+	  }
+	  RT[0*numCols + 3] = tx;
+	  RT[1*numCols + 3] = ty;
+	  RT[2*numCols + 3] = tz;
+	  // last row;
+	  RT[3*numCols + 0] = 0.0;
+	  RT[3*numCols + 1] = 0.0;
+	  RT[3*numCols + 2] = 0.0;
+	  RT[3*numCols + 3] = 1.0;
+	}
+	static void printMat(DataT mat[]){
+	  for (int i=0; i<3; i++) {
+	    for (int j=0; j<3; j++) {
+	      printf("%12.5f,", mat[i*3+j]);
+	    }
+	    cout << endl;
+	  }
+	}
 private:
 	static int chooseGoodDiagElem(DataT A[]){
 		return 0;

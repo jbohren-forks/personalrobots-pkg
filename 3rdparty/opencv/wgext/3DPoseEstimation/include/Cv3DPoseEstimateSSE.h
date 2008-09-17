@@ -3,6 +3,9 @@
 
 #include "Cv3DPoseEstimate.h"
 
+/**
+ * Pose estimation optimized by SSE (not implemented yet)
+ */
 class Cv3DPoseEstimateSSE : public Cv3DPoseEstimate
 {
 public:

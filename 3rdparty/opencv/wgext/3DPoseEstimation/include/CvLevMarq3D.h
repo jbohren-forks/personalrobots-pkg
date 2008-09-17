@@ -1,7 +1,7 @@
 #ifndef CVLEVMARQ3D_H_
 #define CVLEVMARQ3D_H_
 
-#include "calib_stereo.h"
+#include "CvLevMarq2.h"
 #include "CvMatUtils.h"
 
 /**
@@ -184,7 +184,7 @@ protected:
 	 */
 	const bool mUseUpdateAlt;
 	/*** A member object of Levenberg Marqardt in its general form */
-	CvLevMarq_JDC mLevMarq;
+	CvLevMarq2 mLevMarq;
 	CvMyReal mRTData[16]; ///< Data part of CvLevMarqTransform::mRT
 	CvMat mRT;  ///< A transient buffer for transformation matrix. @warning Do not assume it is updated.
 	CvMat mRT3x4; ///< A transient view for the upper 3x4 transformation matrix. @warning Do not assume it is updated.

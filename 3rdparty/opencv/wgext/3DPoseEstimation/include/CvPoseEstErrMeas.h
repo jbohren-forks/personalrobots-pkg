@@ -9,14 +9,22 @@
 #ifndef CVPOSEESTERRMEAS_H_
 #define CVPOSEESTERRMEAS_H_
 
+/**
+ * Error measurement of pose estimation, in Cartesian space.
+ * Used for debugging and analysis of pose estimation tools.
+ */
 class CvPoseEstErrMeas {
 public:
 	CvPoseEstErrMeas();
 	virtual ~CvPoseEstErrMeas();
 
+	/** Set up the transformations */
 	bool setTransform(const CvMat& rot, const CvMat& shift);
+	/** Perform transformation */
 	void transform(const CvMat &src, CvMat &dst);
+	/** Measure errors */
 	void measure(const CvMat& xyzs0,  const CvMat& xyzs1);
+	/** Compare two point clouds for error analysis */
 	void compare(const CvMat& xyzs11, const CvMat& xyzs1);
 
 	CvMat mRotation;

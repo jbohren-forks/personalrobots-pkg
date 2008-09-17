@@ -78,15 +78,8 @@ bool CvLevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * pa
 }
 
 bool CvLevMarqTransformDispSpace::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
-//	CvMyReal x  = cvmGet(param, 0, 0);
-//	CvMyReal y  = cvmGet(param, 1, 0);
-//	CvMyReal z  = cvmGet(param, 2, 0);
-//	CvMyReal tx = cvmGet(param, 3, 0);
-//	CvMyReal ty = cvmGet(param, 4, 0);
-//	CvMyReal tz = cvmGet(param, 5, 0);
 
 	constructTransformationMatrix(param);
-//	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<CvMyReal>::XYZ);
 
 	CvMyReal _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_XF, _param1);
@@ -153,7 +146,7 @@ bool CvLevMarqTransformDispSpace::computeResidue(const CvMat* xyzs0, const CvMat
 // residue computation
 bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
 	bool status=true;
-	//initialize the initial vector of paramters
+	//initialize the initial vector of parameters
 	if (_param == NULL){
 		cvSetZero(mLevMarq.param);
 	} else {
@@ -190,10 +183,10 @@ bool CvLevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *x
 		CvMat * _JtErr=NULL;
 		double *_errNorm=NULL;
 		bool moreUpdate;
-		TIMERSTART(CvLevMarq_JDC)
+		TIMERSTART(CvLevMarq2)
 		moreUpdate = mLevMarq.updateAlt(param0,
 				_JtJ, _JtErr, _errNorm );
-		TIMEREND(CvLevMarq_JDC)
+		TIMEREND(CvLevMarq2)
 		if (moreUpdate == false) {
 			break;
 		}

@@ -3,17 +3,31 @@
 
 #include "CvLevMarq3D.h"
 
+/**
+ * Levenberg-Marquardt optimization optimized for estimate
+ * transformation of 3d point clouds in disparity coordinates.
+ */
 class CvLevMarqTransformDispSpace : public CvLevMarqTransform
 {
 public:
 	CvLevMarqTransformDispSpace(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
         int numMaxInter = defNumMaxIter);
 	virtual ~CvLevMarqTransformDispSpace();
-	/**
-	 *  initParams [alpha, beta, gamma, x, y, z];
-	 */
-	bool optimize(const CvMat* A, const CvMat* B, double param[]) {
-		return optimizeAlt(A, B, param);
+  /**  A routine that performs optimization.
+   *  @param P0  - Nx3 matrix stores data point list P0, one point (x, y, z) each row
+   *  @param P1  - Nx3 matrix stores data point list P1, one point (x, y, z) each row
+   *  @param param - Transformation parameters. [alpha, beta, gamma, dx, dy, dz] if Euler angles are used, or
+   *  [rx, ry, rz, dx, dy, dz] if Rodrigues parameters are used for rotation representation, where
+   *  [alpha, beta, gamma] are the Euler angles, [rx, ry, rz] the Rodrigues parameters, and
+   *  [dx, dy, dz] the shift (translation) vector.
+   *  They are input as initial parameters, output as optimized parameters.
+   *  @return   true if optimization is successful.
+   */
+	bool optimize(
+	    const CvMat* P0,
+	    const CvMat* P1,
+	    double param[]) {
+		return optimizeAlt(P0, P1, param);
 	}
 private:
 	bool constructHomographyMatrix(const CvMat* params);

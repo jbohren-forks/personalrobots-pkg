@@ -1,22 +1,34 @@
 #ifndef WGSTEREOCAMPARAMS_H_
 #define WGSTEREOCAMPARAMS_H_
 
+/**
+ *  A class for stereo camera parameters
+ */
 class CvStereoCamParams
 {
 public:
     /**
-     *  Fx  - focal length in x direction of the rectified image in pixels.
-     *  Fy  - focal length in y direction of the rectified image in pixels.
-     *  Tx  - Translatation in x direction from the left camera to the right camera.
-     *  Clx - x coordinate of the optical center of the left  camera
-     *  Crx - x coordinate of the optical center of the right camera
-     *  Cy  - y coordinate of the optical center of both left and right cameras (they have to be the same)
+     *  @param Fx  - focal length in x direction of the rectified image in pixels.
+     *  @param Fy  - focal length in y direction of the rectified image in pixels.
+     *  @param Tx  - Translatation in x direction from the left camera to the right camera.
+     *  @param Clx - x coordinate of the optical center of the left  camera
+     *  @param Crx - x coordinate of the optical center of the right camera
+     *  @param Cy  - y coordinate of the optical center of both left and right cameras (they have to be the same)
      */
     CvStereoCamParams(double Fx, double Fy, double Tx, double Clx=DefaultClx, double Crx=DefaultCrx, double Cy=DefaultCy);
     CvStereoCamParams() {
     	*this = CvStereoCamParams(DefaultFx, DefaultFy, DefaultTx, DefaultClx, DefaultCrx, DefaultCy);
     }
 
+    /**
+     * Set camera parameters
+     *  @param Fx  - focal length in x direction of the rectified image in pixels.
+     *  @param Fy  - focal length in y direction of the rectified image in pixels.
+     *  @param Tx  - Translatation in x direction from the left camera to the right camera.
+     *  @param Clx - x coordinate of the optical center of the left  camera
+     *  @param Crx - x coordinate of the optical center of the right camera
+     *  @param Cy  - y coordinate of the optical center of both left and right cameras (they have to be the same)
+     */
     void setParams(double Fx, double Fy, double Tx, double Clx=DefaultClx, double Crx=DefaultCrx, double Cy=DefaultCy){
     	mFx = Fx;
     	mFy = Fy;
@@ -42,9 +54,9 @@ public:
 #endif
 
 protected:
-    double mFx, mFy;   // focal lengths of the rectified image (in pixels)
-    double mTx;        // translation of right camera relative to left camera
-    double mClx, mCrx, mCy;  // the optical centers in pixels left: (mClx, mCy) right: (mCrx, mCy)
+    double mFx, mFy;   //< focal lengths of the rectified image (in pixels)
+    double mTx;        //< translation of right camera relative to left camera
+    double mClx, mCrx, mCy;  //< the optical centers in pixels left: (mClx, mCy) right: (mCrx, mCy)
 };
 
 #endif /*WGSTEREOCAMPARAMS_H_*/

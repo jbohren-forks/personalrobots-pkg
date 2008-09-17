@@ -52,7 +52,7 @@ void CvTestTimer::printStat() {
 	PRINTSTAT2("LevMarq::FwdResidue ", FwdResidue);
 	PRINTSTAT("LevMarq::errNorm    ", ErrNorm);
 	PRINTSTAT("LevMarq::JtJJtErr   ", JtJJtErr);
-	PRINTSTAT("LevMarq::CvLevMarq  ", CvLevMarq);
+	PRINTSTAT("LevMarq::CvLevMarq  ", CvLevMarq2);
 	PRINTSTAT("LevMarq::CnstrctMats", ConstructMatrices);
 	PRINTSTAT2("LoadImage           ", LoadImage);
 	PRINTSTAT2("DisparityMap        ", DisparityMap);

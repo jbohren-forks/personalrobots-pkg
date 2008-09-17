@@ -1,6 +1,5 @@
 #include <iostream.h>
 #include <opencv/cxtypes.h>
-#include "calib_stereo.h"
 #include <opencv/cv.h>
 #include "Cv3DPoseEstimateDispSpaceRef.h"
 #include "CvStereoCamModel.h"
@@ -290,7 +289,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	return numInliers0;
 }
 
-bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(CvMat *R, CvMat *T,
+bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(const CvMat *R, const CvMat *T,
     CvMat *H){
 	if (R == NULL || T == NULL) {
 		return false;

@@ -293,10 +293,10 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    CvMat * _JtErr=NULL;
 	    double *_errNorm=NULL;
 	    bool moreUpdate;
-	    TIMERSTART(CvLevMarq_JDC)
+	    TIMERSTART(CvLevMarq2)
 		moreUpdate = mLevMarq.updateAlt(param0,
 				_JtJ, _JtErr, _errNorm );
-		TIMEREND(CvLevMarq_JDC)
+		TIMEREND(CvLevMarq2)
 
 		TIMERSTART2(LevMarq3);
 		if (moreUpdate == false) {

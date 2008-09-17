@@ -11,6 +11,9 @@
 #include "CvPoseEstErrMeas.h"
 #include "CvStereoCamModel.h"
 
+/**
+ * Error measurement of pose estimation, in disparity space.
+ */
 class CvPoseEstErrMeasDisp: public CvPoseEstErrMeas, public CvStereoCamModel {
 public:
 	CvPoseEstErrMeasDisp();

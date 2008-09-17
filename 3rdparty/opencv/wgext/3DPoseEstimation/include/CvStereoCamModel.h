@@ -4,40 +4,61 @@
 #include "CvStereoCamParams.h"
 #include <opencv/cxtypes.h>
 
+/**
+ * A class for stereo camera model.
+ */
 class CvStereoCamModel : public CvStereoCamParams
 {
 public:
-    typedef CvStereoCamParams Parent;
-    /**
-     *  Fx  - focal length in x direction of the rectified image in pixels.
-     *  Fy  - focal length in y direction of the rectified image in pixels.
-     *  Tx  - Translatation in x direction from the left camera to the right camera.
-     *  Clx - x coordinate of the optical center of the left  camera
-     *  Crx - x coordinate of the optical center of the right camera
-     *  Cy  - y coordinate of the optical center of both left and right camera
-     */
-    CvStereoCamModel(double Fx, double Fy, double Tx, double Clx=0.0, double Crx=0.0, double Cy=0.0);
-    CvStereoCamModel(CvStereoCamParams camParams);
-    CvStereoCamModel();
-    virtual ~CvStereoCamModel();
-    /**
-     *  Fx  - focal length in x direction of the rectified image in pixels.
-     *  Fy  - focal length in y direction of the rectified image in pixels.
-     *  Tx  - Translatation in x direction from the left camera to the right camera.
-     *  Clx - x coordinate of the optical center of the left  camera
-     *  Crx - x coordinate of the optical center of the right camera
-     *  Cy  - y coordinate of the optical center of both left and right camera
-     */
-    bool setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy);
-    bool setCameraParams(const CvStereoCamParams& params);
-#if 0
-    bool convert3DToDisparitySpace(CvMat* src, CvMat* dst);
-#endif
-	bool projection(const CvMat *XYZs, CvMat *uvds);
-	bool reprojection(const CvMat *uvds, CvMat *XYZs);
+  typedef CvStereoCamParams Parent;
+  /**
+   *  @param Fx  - focal length in x direction of the rectified image in pixels.
+   *  @param Fy  - focal length in y direction of the rectified image in pixels.
+   *  @param Tx  - Translation in x direction from the left camera to the right camera.
+   *  @param Clx - x coordinate of the optical center of the left  camera
+   *  @param Crx - x coordinate of the optical center of the right camera
+   *  @param Cy  - y coordinate of the optical center of both left and right camera
+   */
+  CvStereoCamModel(double Fx, double Fy, double Tx, double Clx=0.0, double Crx=0.0, double Cy=0.0);
+  CvStereoCamModel(CvStereoCamParams camParams);
+  CvStereoCamModel();
+  virtual ~CvStereoCamModel();
+  /**
+   *  @param Fx  - focal length in x direction of the rectified image in pixels.
+   *  @param Fy  - focal length in y direction of the rectified image in pixels.
+   *  @param Tx  - Translation in x direction from the left camera to the right camera.
+   *  @param Clx - x coordinate of the optical center of the left  camera
+   *  @param Crx - x coordinate of the optical center of the right camera
+   *  @param Cy  - y coordinate of the optical center of both left and right camera
+   */
+  bool setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy);
+  bool setCameraParams(const CvStereoCamParams& params);
 
-	bool dispToCart(const CvMat& XYZs, CvMat& uvds);
-	bool cartToDisp(const CvMat& uvds, CvMat& XYZs);
+  /// Convert 3D points from Cartesian coordinates to disparity coordinates.
+	bool projection(
+      /// (Input) 3D points stored in rows, in Cartesian coordinates.
+	    const CvMat *XYZs,
+      /// (Output) 3D points stored in rows, in disparity coordinates.
+	    CvMat *uvds);
+  /// Convert 3D points from disparity coordinates to Cartesian coordinates.
+	bool reprojection(
+      /// (Input) 3D points stored in rows, in disparity coordinates.
+	    const CvMat *uvds,
+      /// (Output) 3D points stored in rows, in Cartesian coordinates.
+	    CvMat *XYZs);
+
+  /// Convert 3D points from Cartesian coordinates to disparity coordinates.
+	bool dispToCart(
+      /// (Input) 3D points stored in rows, in disparity coordinates.
+	    const CvMat& uvds,
+      /// (Output) 3D points stored in rows, in Cartesian coordinates.
+	    CvMat& XYZs);
+  /// Convert 3D points from disparity coordinates to Cartesian coordinates.
+	bool cartToDisp(
+      /// (Input) 3D points stored in rows, in Cartesian coordinates.
+	    const CvMat& XYZs,
+      /// (Output) 3D points stored in rows, in disparity coordinates.
+	    CvMat& uvds);
 
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
@@ -50,10 +71,10 @@ protected:
     double _mMatCartToScreenRight[3*4];
     double _mMatCartToDisp[4*4];
     double _mMatDispToCart[4*4];
-    CvMat  mMatCartToScreenLeft;  // projection matrix from Cartesian coordinate to the screen image of the left  camera
-    CvMat  mMatCartToScreenRight; // projection matrix from Cartesian coordinate to the screen image of the right camera
-    CvMat  mMatCartToDisp;  // projection matrix from Cartesian coordinate to the disparity space
-    CvMat  mMatDispToCart;  // projection matrix from disparity space to Cartesian space
+    CvMat  mMatCartToScreenLeft;  //< projection matrix from Cartesian coordinate to the screen image of the left  camera
+    CvMat  mMatCartToScreenRight; //< projection matrix from Cartesian coordinate to the screen image of the right camera
+    CvMat  mMatCartToDisp;  //< projection matrix from Cartesian coordinate to the disparity space
+    CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/

@@ -7,12 +7,16 @@ using namespace std;
 #define DECLARE(timerName) RecordType m##timerName;
 #define RESET(timerName)   do {m##timerName.reset();} while(0)
 
+/**
+ * A class for setting up and displaying statistics of timers
+ */
 class CvTestTimer
 {
 public:
 	CvTestTimer();
 	virtual ~CvTestTimer();
 
+	/// Timer record
 	class RecordType {
 	public:
 		int64 mTime;
@@ -33,8 +37,8 @@ public:
 		mCountJtJJtErr = 0;
 		mLevMarq  = 0;
 		mCountLevMarq  = 0;
-		mCvLevMarq = 0;
-		mCountCvLevMarq = 0;
+		mCvLevMarq2 = 0;
+		mCountCvLevMarq2 = 0;
 		mLevMarqDoit = 0;
 		mCountLevMarqDoit = 0;
 		mIsInLier = 0;
@@ -72,8 +76,8 @@ public:
 	int64 mCountLevMarq;
 	int64 mCopyInliers;
 	int64 mCountCopyInliers;
-	int64 mCvLevMarq;
-	int64 mCountCvLevMarq;
+	int64 mCvLevMarq2;
+	int64 mCountCvLevMarq2;
 	int64 mLevMarqDoit;
 	int64 mCountLevMarqDoit;
 	int64 mIsInLier;

@@ -8,6 +8,10 @@
 #ifndef CVPATHRECONDISPLAY_H_
 #define CVPATHRECONDISPLAY_H_
 
+/**
+ * A wrapper class to perform path reconstruction and display images
+ * a long the way (Under reconstruction).
+ */
 class CvPathReconDisplay {
 public:
   CvPathReconDisplay();
