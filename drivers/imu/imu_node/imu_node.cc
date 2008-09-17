@@ -328,12 +328,12 @@ public:
     status.message = "Successfully calculated gyro biases.";
 
     status.set_values_size(3);
-    status.values[0].value_label = "Bias_X";
-    status.values[0].value       = bias_x;
-    status.values[1].value_label = "Bias_Y";
-    status.values[1].value       = bias_y;
-    status.values[2].value_label = "Bias_Z";
-    status.values[2].value       = bias_z;
+    status.values[0].label = "Bias_X";
+    status.values[0].value = bias_x;
+    status.values[1].label = "Bias_Y";
+    status.values[1].value = bias_y;
+    status.values[2].label = "Bias_Z";
+    status.values[2].value = bias_z;
 
   }
 
@@ -417,10 +417,10 @@ public:
       }
 
       status.set_values_size(2);
-      status.values[0].value_label = "Measured gravity";
-      status.values[0].value       = grav;
-      status.values[1].value_label = "Gravity error";
-      status.values[1].value       = err;
+      status.values[0].label = "Measured gravity";
+      status.values[0].value = grav;
+      status.values[1].label = "Gravity error";
+      status.values[1].value = err;
     }
   }
 

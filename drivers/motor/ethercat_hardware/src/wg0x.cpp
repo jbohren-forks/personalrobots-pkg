@@ -688,7 +688,7 @@ int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
   s.value = (val); \
   strings.push_back(s)
 #define ADD_VALUE(lab, val) \
-  v.value_label = (lab); \
+  v.label = (lab); \
   v.value = (val); \
   values.push_back(v)
 void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)

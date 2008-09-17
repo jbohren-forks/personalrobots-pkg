@@ -202,7 +202,7 @@ void EthercatHardware::publishDiagnostics()
 
   // Num devices
   v.value = num_slaves_;
-  v.value_label = "EtherCAT devices";
+  v.label = "EtherCAT devices";
   values.push_back(v);
 
   // Interface
@@ -218,11 +218,11 @@ void EthercatHardware::publishDiagnostics()
     diagnostics_.max_roundtrip_ = max(diagnostics_.max_roundtrip_, diagnostics_.iteration_[i].roundtrip_);
   }
   v.value = total / 1000.0;
-  v.value_label = "Average roundtrip time";
+  v.label = "Average roundtrip time";
   values.push_back(v);
 
   v.value = diagnostics_.max_roundtrip_;
-  v.value_label = "Maximum roundtrip time";
+  v.label = "Maximum roundtrip time";
   values.push_back(v);
 
   status.set_values_vec(values);

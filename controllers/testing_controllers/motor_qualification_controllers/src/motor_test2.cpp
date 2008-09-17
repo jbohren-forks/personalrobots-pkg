@@ -171,9 +171,9 @@ void MotorTest2::analysis()
     //the motor isn't moving
     status->level = 2;
     status->message = "ERROR: The motor is not correctly labeled. The speed constant is not correct.";
-    status->values[0].value_label = "measured speed constant";
+    status->values[0].label = "measured speed constant";
     status->values[0].value = speed_const_meas;
-    status->values[1].value_label = "expected speed constant";
+    status->values[1].label = "expected speed constant";
     status->values[1].value = speed_constant_;
   }
   else
@@ -181,9 +181,9 @@ void MotorTest2::analysis()
     //test passed
     status->level = 0;
     status->message = "OK: Passed.";
-    status->values[0].value_label = "measured speed constant";
+    status->values[0].label = "measured speed constant";
     status->values[0].value = speed_const_meas;
-    status->values[1].value_label = "expected speed constant";
+    status->values[1].label = "expected speed constant";
     status->values[1].value = speed_constant_;
    }
    publisher_.publish(diagnostic_message_);
