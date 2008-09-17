@@ -1,0 +1,8 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <include file="$(find executive_trex_pr2)/cfg/launch.xml"/>
+    <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/robot_floorobj.world" respawn="false" />
+    <node pkg="executive_trex_pr2" type="trex_fast" args="$(find executive_trex_pr2)/cfg/pr2.cfg" respawn="false" />
+  </group>
+</launch>
