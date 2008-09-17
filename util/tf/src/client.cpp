@@ -78,3 +78,22 @@ void TransformClient::transformPointCloud(const std::string & target_frame, cons
       cloudOut.pts[i].z = matrixPtr[2*length + i];
     };
 }
+
+void TransformClient::subscription_callback()
+{
+  try 
+  {
+    btTransform temp;
+    TransformMsgToBt(msg_in_.transform, temp);
+    setTransform(Stamped<btTransform>(temp, msg_in_.header.stamp.to_ull(), msg_in_.header.frame_id), msg_in_.parent);
+  }
+  catch (TransformException& ex)
+  {
+    ///\todo Use error reporting
+    std::string temp = ex.what();
+    printf("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.header.frame_id.c_str(), msg_in_.parent.c_str(), temp.c_str());
+  }
+
+
+
+};

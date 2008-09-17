@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(tf)
 
+genmsg()
+
 rospack_add_library(tf src/tf.cpp src/client.cpp src/cache.cpp)
 
 rospack_add_executable(simpletest simpletest.cpp)
