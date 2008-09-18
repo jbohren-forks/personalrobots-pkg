@@ -3,14 +3,15 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
-<depend package='roscpp'/>
-<depend package='hardware_interface'/>
+<depend package="roscpp" />
+<depend package="hardware_interface" />
 <depend package="stl_utils" />
 <depend package="misc_utils" />
 <depend package="tinyxml" />
 <depend package="wg_robot_description_parser" />
 <depend package="kdl" />
 <depend package="libTF" />
+<depend package="control_toolbox" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib"/>

@@ -50,7 +50,7 @@
 #include "tinyxml/tinyxml.h"
 #include "mechanism_model/transmission.h"
 #include "mechanism_model/robot.h"
-#include "mechanism_model/pid.h"
+#include "control_toolbox/pid.h"
 
 namespace mechanism {
 
@@ -68,7 +68,7 @@ public:
   void propagateEffortBackwards(std::vector<Actuator*>&, std::vector<JointState*>&);
 
   std::vector<double> reductions_;  // Mechanical reduction for each joint
-  std::vector<Pid> pids_;  // For keeping the joint angles aligned in Gazebo
+  std::vector<control_toolbox::Pid> pids_;  // For keeping the joint angles aligned in Gazebo
 
   double motor_torque_constant_;
   double pulses_per_revolution_;

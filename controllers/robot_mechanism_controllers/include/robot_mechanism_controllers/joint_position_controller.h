@@ -128,7 +128,7 @@ public:
 private:
   mechanism::JointState *joint_state_;  /**< Joint we're controlling. */
   mechanism::RobotState *robot_;  /**< Pointer to robot structure. */
-  control_toolbox::control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
+  control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;         /**< Last time stamp of update. */
   double command_;           /**< Last commanded position. */
 

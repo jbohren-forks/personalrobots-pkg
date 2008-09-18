@@ -76,7 +76,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
   TiXmlElement *pel = config->FirstChildElement("pid");
   if (pel)
   {
-    Pid pid;
+    control_toolbox::Pid pid;
     pid.initXml(pel);
     for (unsigned int i = 0; i < pids_.size(); ++i)
       pids_[i] = pid;
