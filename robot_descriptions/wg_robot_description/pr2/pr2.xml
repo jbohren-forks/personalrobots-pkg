@@ -117,9 +117,9 @@
   <!-- stereo camera -->
   <const name="head_tilt_stereo_offset_x" value="0.0232" />  <!-- mp 20080801 -->
   <const name="head_tilt_stereo_offset_z" value="0.0645" />  <!-- mp 20080801 -->
-  <const name="stereo_size_x" value=" 0.05 " /> <!-- for definint visual and collision geometry -->
-  <const name="stereo_size_y" value=" 0.10 " /> <!-- for definint visual and collision geometry -->
-  <const name="stereo_size_z" value=" 0.05 " /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_size_x" value=" 0.005 " /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_size_y" value=" 0.010 " /> <!-- for definint visual and collision geometry -->
+  <const name="stereo_size_z" value=" 0.005 " /> <!-- for definint visual and collision geometry -->
   <const name="stereo_center_box_center_offset_x" value=" 0.00 " /> <!-- from center of stereo to stereo mount point, which is provided above -->
   <const name="stereo_center_box_center_offset_z" value=" 0.05 " /> <!-- from center of stereo to stereo mount point, which is provided above -->
   
@@ -2170,7 +2170,7 @@
           <controller:ros_camera name="ptz_cam_left_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
-            <topicName>PTZL_image</topicName>
+            <topicName>axis_left/image</topicName>
             <frameName>ptz_left</frameName>
             <interface:camera name="ptz_cam_left_iface" />
           </controller:ros_camera>
@@ -2259,7 +2259,7 @@
           <controller:ros_camera name="ptz_cam_right_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
-            <topicName>PTZR_image</topicName>
+            <topicName>axis_right/image</topicName>
             <frameName>ptz_right</frameName>
             <interface:camera name="ptz_cam_right_iface" />
           </controller:ros_camera>
@@ -2310,9 +2310,9 @@
       </geometry>
     </collision> 
     
+    <!--
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
-        <!--
         <sensor:stereocamera name="stereo_camera_sensor">
           <imageSize>640 480</imageSize>
           <hfov>60</hfov>
@@ -2330,16 +2330,50 @@
             <interface:camera name="camera_iface_1" />
             <leftcamera>camera_iface_0</leftcamera>
             <rightcamera>camera_iface_1</rightcamera>
-            <topicName>stereo_cloud</topicName>
+            <leftCloudTopicName>stereo_left_cloud</leftCloudTopicName>
+            <rightCloudTopicName>stereo_right_cloud</rightCloudTopicName>
             <leftTopicName>stereo_left_image</leftTopicName>
             <rightTopicName>stereo_right_image</rightTopicName>
-            <frameName>stereo</frameName>
+            <leftFrameName>stereo_left</leftFrameName>
+            <rightFrameName>stereo_right</rightFrameName>
           </controller:ros_stereocamera>
         </sensor:stereocamera>
-        -->
       </verbatim>
     </map>
-    
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_ray_block">
+        <sensor:ray name="stereo_laser">
+          <gaussianNoise>0.05</gaussianNoise>
+          <rayCount>320</rayCount>
+          <rangeCount>320</rangeCount>
+          <laserCount>1</laserCount>
+	  
+          <origin>0.0 0.0 0.05</origin>
+          <displayRays>false</displayRays>
+	  
+          <minAngle>-70</minAngle>
+          <maxAngle> 70</maxAngle>
+	  
+          <minRange>0.05</minRange>
+          <maxRange>10.0</maxRange>
+          <updateRate>10.0</updateRate>
+
+          <verticalCount>240</verticalCount>
+          <verticalMinAngle>-70</verticalMinAngle>
+          <verticalMaxAngle> 70</verticalMaxAngle>
+
+          <controller:ros_laser name="stereo_laser_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>stereo_scan</topicName>
+            <frameName>stereo_laser</frameName>
+            <interface:laser name="stereo_laser_iface" />
+          </controller:ros_laser>
+        </sensor:ray>
+      </verbatim>
+    </map>
+    -->
+  
   </sensor>
   
   <!-- End sensor definitions -->
@@ -2355,7 +2389,6 @@
   <!-- Define groups of links; a link may be part of multiple groups -->
   <include>groups.xml</include>
    <!-- new definitions for mechanism controls - JMH -->
-  <include>controllers.xml</include>
   <include>actuators.xml</include> 
   <include>transmissions.xml</include> 
 

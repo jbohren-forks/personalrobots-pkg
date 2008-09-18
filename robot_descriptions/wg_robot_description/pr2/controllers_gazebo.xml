@@ -32,8 +32,8 @@
     <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
     <panJoint>ptz_pan_left_joint</panJoint>
     <tiltJoint>ptz_tilt_left_joint</tiltJoint>
-    <commandTopicName>PTZL_cmd</commandTopicName>
-    <stateTopicName>PTZL_state</stateTopicName>
+    <commandTopicName>axis_left/ptz_cmd</commandTopicName>
+    <stateTopicName>axis_left/ptz_state</stateTopicName>
     <interface:ptz name="ptz_left_iface" />
   </controller:Ros_PTZ>
 
@@ -42,8 +42,8 @@
     <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
     <panJoint>ptz_pan_right_joint</panJoint>
     <tiltJoint>ptz_tilt_right_joint</tiltJoint>
-    <commandTopicName>PTZR_cmd</commandTopicName>
-    <stateTopicName>PTZR_state</stateTopicName>
+    <commandTopicName>axis_right/ptz_cmd</commandTopicName>
+    <stateTopicName>axis_right/ptz_state</stateTopicName>
     <interface:ptz name="ptz_right_iface" />
   </controller:Ros_PTZ>
 
