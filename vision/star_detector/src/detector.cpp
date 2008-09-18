@@ -1,5 +1,4 @@
 #include "star_detector/detector.h"
-#include "star_detector/integral.h"
 
 StarDetector::StarDetector(CvSize size, int n, float threshold, float line_threshold)
     : m_n(n), m_W(size.width), m_H(size.height),
@@ -48,23 +47,6 @@ StarDetector::~StarDetector()
     }
     delete[] m_responses;
     delete[] m_filter_sizes;
-}
-
-std::vector<Keypoint> StarDetector::DetectPoints(IplImage* source)
-{
-    assert(source && source->depth == (int)IPL_DEPTH_8U);
-
-    cvIntegral(source, m_upright, NULL, NULL);
-    TiltedIntegral(source, m_tilted, m_flat);
-
-    FilterResponses();
-
-    return FindExtrema();
-}
-
-void StarDetector::interpolate(bool value)
-{
-    m_interpolate = value;
 }
 
 inline
@@ -220,35 +202,9 @@ void StarDetector::FilterResponses2()
     }
 }
 
-inline void StarDetector::FilterResponses()
+/*inline*/ void StarDetector::FilterResponses()
 {
     for (int scale = 1; scale <= m_n; ++scale) {
         BilevelFilter(m_responses[scale-1], scale);
-    }
-}
-
-std::vector<Keypoint> StarDetector::FindExtrema()
-{
-    std::vector<Keypoint> keypoints;
-
-    m_nonmax(m_responses, m_n, keypoints, m_border);
-    m_nonmin(m_responses, m_n, keypoints, m_border);
-
-    if (m_interpolate) InterpolateScales(keypoints);
-    
-    return keypoints;
-}
-
-void StarDetector::InterpolateScales(std::vector<Keypoint> &keypoints)
-{
-    typedef std::vector<Keypoint>::iterator iter;
-    for (iter i = keypoints.begin(); i != keypoints.end(); ++i) {
-        // Do quadratic interpolation using finite differences
-        float r1 = CV_IMAGE_ELEM(m_responses[i->s - 2], float, i->y, i->x);
-        float r2 = CV_IMAGE_ELEM(m_responses[i->s - 1], float, i->y, i->x);
-        float r3 = CV_IMAGE_ELEM(m_responses[i->s], float, i->y, i->x);
-        float s_hat = 0.5*(r1 - r3) / (r1 - 2*r2 + r3);
-
-        i->scale = pow(SCALE_RATIO, s_hat + i->s);
     }
 }

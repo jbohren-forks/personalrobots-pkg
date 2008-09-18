@@ -62,13 +62,12 @@ void on_trackbar(int h)
     
     // Detect and threshold keypoints in the warped image
     StarDetector detector(warped_size, 7, 0);
-    out_keypts = detector.DetectPoints(warped);
+    out_keypts.clear();
+    detector.DetectPoints(warped, std::back_inserter(out_keypts));
     out_keypts.erase(std::remove_if(out_keypts.begin(), out_keypts.end(),
                                     OutsideSource(W, H, inv_matrix)),
                      out_keypts.end());
-    std::partial_sort(out_keypts.begin(), out_keypts.begin() + POINTS_TO_TAKE,
-                      out_keypts.end());
-    out_keypts.erase(out_keypts.begin() + POINTS_TO_TAKE, out_keypts.end());
+    KeepBestPoints(out_keypts, POINTS_TO_TAKE);
 
     // Make list of points in the warped image corresponding to keypoints
     // from the source image
@@ -115,10 +114,9 @@ int main( int argc, char** argv )
     cvSetMouseCallback(src_wndname, on_mouse_find_keypts, &src_data);
     cvSetMouseCallback(out_wndname, on_mouse_find_keypts, &out_data);
 
-    src_keypts = detector.DetectPoints(loaded);
-    std::partial_sort(src_keypts.begin(), src_keypts.begin()+ POINTS_TO_TAKE,
-                      src_keypts.end());
-    src_keypts.erase(src_keypts.begin() + POINTS_TO_TAKE, src_keypts.end());
+    detector.DetectPoints(loaded, std::back_inserter(src_keypts));
+    KeepBestPoints(src_keypts, POINTS_TO_TAKE);
+
     cvCvtColor(loaded, loaded_color, CV_GRAY2BGR);
     DrawPoints(loaded_color, src_keypts);
     cvShowImage(src_wndname, loaded_color);

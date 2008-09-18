@@ -5,6 +5,7 @@
 #include "star_detector/threshold.h"
 #include <cv.h>
 #include <vector>
+#include <iterator>
 #include <functional>
 
 // TODO: this is a simple implementation, may be optimizable
@@ -39,85 +40,88 @@ template< typename T = float, typename PostThreshold = NullThreshold,
           typename Compare = std::greater_equal<T> >
 struct NonmaxSuppress3x3xN
 {
-    T m_response_thresh;
-    PostThreshold m_post_thresh;
-    Compare m_compare;
-
-    //! Constructor taking the thresholds and comparison function to be used.
-    NonmaxSuppress3x3xN(T response_thresh = T(), PostThreshold post_thresh = PostThreshold(),
-                        Compare compare = Compare())
-        : m_response_thresh(response_thresh), m_post_thresh(post_thresh),
-          m_compare(compare)
-    {}
-
-    //! Appends all maxima found to pts and returns how many were found.
-    int operator() (IplImage** responses, int n, std::vector<Keypoint> &pts, int border) {
-        int W = responses[0]->width, H = responses[0]->height;
-        int num_pts = 0;
-
-        // NOTE: We use a constant, conservative border here, even though we may miss some
-        // small features near the edges of the image.
-        for (int y = border; y < H - border; ++y) {
-            for (int x = border; x < W - border; ++x) {
-                // Determine scale which maximizes response
-                int scale = 1;
-                T response = CV_IMAGE_ELEM(responses[0], T, y, x);
-                for (int s = 1; s < n; ++s) {
-                    T next_response = CV_IMAGE_ELEM(responses[s], T, y, x);
-                    if (m_compare(next_response, response)) {
-                        response = next_response;
-                        scale = s + 1;
-                    }
-                }
-
-                // Discard if first or last scale is maximal
-                if (scale == 1 || scale == n) continue;
-
-                IplImage *curr = responses[scale - 1];
-                IplImage *prev = responses[scale - 2];
-                IplImage *next = responses[scale];
-                // NOTE: searching only the 3x3 spatial neighborhood seems to allow
-                // too many redundant keypoints at wedge-shaped features. And the
-                // 3x3x3 version is actually faster when using line suppression.
-                    // Reject immediately if not strong enough
-                if (m_compare(m_response_thresh, response) ||
-                    // Compare orthogonal points looking for quick rejection
-                    m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
-                    // Corners of 3x3 spatial neighborhood
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
-                    // Remaining comparisons from 3x3x3 neighborhood
-                    m_compare(CV_IMAGE_ELEM(prev, T, y, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y-1, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(prev, T, y+1, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y-1, x+1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x-1), response) ||
-                    m_compare(CV_IMAGE_ELEM(next, T, y+1, x+1), response) ||
-                    m_post_thresh(x, y, scale)
-                    )
-                    continue;
-                pts.push_back(Keypoint(x, y, (float)scale, response, scale));
-                ++num_pts;
-            }
+  T m_response_thresh;
+  PostThreshold m_post_thresh;
+  Compare m_compare;
+  
+  //! Constructor taking the thresholds and comparison function to be used.
+  NonmaxSuppress3x3xN(T response_thresh = T(), PostThreshold post_thresh = PostThreshold(),
+                      Compare compare = Compare())
+    : m_response_thresh(response_thresh), m_post_thresh(post_thresh),
+      m_compare(compare)
+  {}
+  
+  //! Appends all maxima found to pts and returns how many were found.
+  template< typename Sequence >
+  int operator() (IplImage** responses, int n,
+                  std::back_insert_iterator<Sequence> inserter, int border) {
+    int W = responses[0]->width, H = responses[0]->height;
+    int num_pts = 0;
+    
+    // NOTE: We use a constant, conservative border here, even though we may miss some
+    // small features near the edges of the image.
+    for (int y = border; y < H - border; ++y) {
+      for (int x = border; x < W - border; ++x) {
+        // Determine scale which maximizes response
+        int scale = 1;
+        T response = CV_IMAGE_ELEM(responses[0], T, y, x);
+        for (int s = 1; s < n; ++s) {
+          T next_response = CV_IMAGE_ELEM(responses[s], T, y, x);
+          if (m_compare(next_response, response)) {
+            response = next_response;
+            scale = s + 1;
+          }
         }
         
-        return num_pts;
+        // Discard if first or last scale is maximal
+        if (scale == 1 || scale == n) continue;
+        
+        IplImage *curr = responses[scale - 1];
+        IplImage *prev = responses[scale - 2];
+        IplImage *next = responses[scale];
+        // NOTE: searching only the 3x3 spatial neighborhood seems to allow
+        // too many redundant keypoints at wedge-shaped features. And the
+        // 3x3x3 version is actually faster when using line suppression.
+        // Reject immediately if not strong enough
+        if (m_compare(m_response_thresh, response) ||
+            // Compare orthogonal points looking for quick rejection
+            m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
+            // Corners of 3x3 spatial neighborhood
+            m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
+            // Remaining comparisons from 3x3x3 neighborhood
+            m_compare(CV_IMAGE_ELEM(prev, T, y, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y-1, x), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y+1, x), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y-1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y-1, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y+1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(prev, T, y+1, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y-1, x), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y+1, x), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y-1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y-1, x+1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y+1, x-1), response) ||
+            m_compare(CV_IMAGE_ELEM(next, T, y+1, x+1), response) ||
+            m_post_thresh(x, y, scale)
+          )
+          continue;
+        
+        *inserter = Keypoint(x, y, (float)scale, response, scale);
+        ++num_pts;
+      }
     }
+    
+    return num_pts;
+  }
 };
 
 /*!
@@ -143,70 +147,70 @@ template< typename T = float, typename PostThreshold = NullThreshold,
           typename Compare = std::greater_equal<T> >
 struct NonmaxSuppress3x3x3
 {
-    T m_response_thresh;
-    PostThreshold m_post_thresh;
-    Compare m_compare;
+  T m_response_thresh;
+  PostThreshold m_post_thresh;
+  Compare m_compare;
+  
+  //! Constructor taking the thresholds and comparison function to be used.
+  NonmaxSuppress3x3x3(T response_thresh = T(), PostThreshold post_thresh = PostThreshold(),
+                      Compare compare = Compare())
+    : m_response_thresh(response_thresh), m_post_thresh(post_thresh),
+      m_compare(compare)
+  {}
 
-    //! Constructor taking the thresholds and comparison function to be used.
-    NonmaxSuppress3x3x3(T response_thresh = T(), PostThreshold post_thresh = PostThreshold(),
-                        Compare compare = Compare())
-        : m_response_thresh(response_thresh), m_post_thresh(post_thresh),
-          m_compare(compare)
-    {}
-
-    //! Appends all maxima found to pts and returns how many were found.
-    int operator() (IplImage** responses, int n, std::vector<Keypoint> &pts) {
-        int W = responses[0]->width, H = responses[0]->height;
-        int num_pts = 0;
-        
-        for (int s = 2; s < n; ++s) {
-            // TODO: this offset is no longer correct, need array of filter sizes
-            int offset = 3*(s+1);
-            IplImage *prev = responses[s-2];
-            IplImage *curr = responses[s-1];
-            IplImage *next = responses[s];
-            for (int y = offset; y < H - offset; ++y) {
-                for (int x = offset; x < W - offset; ++x) {
-                    T response = CV_IMAGE_ELEM(curr, T, y, x);
-                    // Compare orthogonal points first to try to get a quick rejection
-                    if (m_compare(m_response_thresh, response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y-1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y+1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y-1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y-1, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y+1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(prev, T, y+1, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y-1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y+1, x), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y-1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y-1, x+1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y+1, x-1), response) ||
-                        m_compare(CV_IMAGE_ELEM(next, T, y+1, x+1), response) ||
-                        m_post_thresh(x, y, s)
-                        )
-                        continue;
-                    pts.push_back(Keypoint(x, y, (float)s, response, s));
-                    ++num_pts;
-                }
-            }
+  //! Appends all maxima found to pts and returns how many were found.
+  int operator() (IplImage** responses, int n, std::vector<Keypoint> &pts) {
+    int W = responses[0]->width, H = responses[0]->height;
+    int num_pts = 0;
+    
+    for (int s = 2; s < n; ++s) {
+      // TODO: this offset is no longer correct, need array of filter sizes
+      int offset = 3*(s+1);
+      IplImage *prev = responses[s-2];
+      IplImage *curr = responses[s-1];
+      IplImage *next = responses[s];
+      for (int y = offset; y < H - offset; ++y) {
+        for (int x = offset; x < W - offset; ++x) {
+          T response = CV_IMAGE_ELEM(curr, T, y, x);
+          // Compare orthogonal points first to try to get a quick rejection
+          if (m_compare(m_response_thresh, response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y-1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y+1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y, x), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y, x), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y-1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y-1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y+1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(curr, T, y+1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y-1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y+1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y-1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y-1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y+1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(prev, T, y+1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y-1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y+1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y-1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y-1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y+1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(next, T, y+1, x+1), response) ||
+              m_post_thresh(x, y, s)
+            )
+            continue;
+          pts.push_back(Keypoint(x, y, (float)s, response, s));
+          ++num_pts;
         }
-        
-        return num_pts;
+      }
     }
+    
+    return num_pts;
+  }
 };
 
 #endif

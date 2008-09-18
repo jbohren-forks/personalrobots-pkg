@@ -91,7 +91,7 @@ int main( int argc, char** argv )
     std::vector<Keypoint> keypts;
     {
         Timer t("Willow detector");
-        keypts = detector.DetectPoints(source);
+        detector.DetectPoints(source, std::back_inserter(keypts));
     }
 
     if (scale_ub1 > 0)
@@ -108,13 +108,7 @@ int main( int argc, char** argv )
                                     OutsideSource(warped->width, warped->height, transform)),
                      keypts.end());
     }
-    if ((int)keypts.size() < num_points) {
-        num_points = keypts.size();
-        printf("WARNING: Only taking %d points!\n", num_points);
-        std::sort(keypts.begin(), keypts.end());
-    } else {
-        std::partial_sort(keypts.begin(), keypts.begin()+ num_points, keypts.end());
-    }
+    num_points = std::min(num_points, (int)keypts.size());
     
     if (warped_file) {
         // Find keypoints in warped image
@@ -123,7 +117,7 @@ int main( int argc, char** argv )
         std::vector<Keypoint> warp_keypts;
         {
             Timer t("Willow detector (warped)");
-            warp_keypts = warp_detector.DetectPoints(warped);
+            warp_detector.DetectPoints(warped, std::back_inserter(warp_keypts));
         }
         if (scale_ub2 > 0)
             warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
@@ -136,20 +130,13 @@ int main( int argc, char** argv )
         warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),
                                          OutsideSource(W, H, inv)),
                           warp_keypts.end());
-        if ((int)warp_keypts.size() < num_points) {
-            num_points = warp_keypts.size();
-            printf("WARNING: Only taking %d points!\n", num_points);
-            std::sort(warp_keypts.begin(), warp_keypts.end());
-        } else {
-            std::partial_sort(warp_keypts.begin(), warp_keypts.begin() + num_points,
-                              warp_keypts.end());
-            warp_keypts.erase(warp_keypts.begin() + num_points, warp_keypts.end());
-        }
+        num_points = std::min(num_points, (int)warp_keypts.size());
+        KeepBestPoints(warp_keypts, num_points);
 
         WriteKeypoints(warped_key_file, warp_keypts);
     }
 
-    keypts.erase(keypts.begin() + num_points, keypts.end());
+    KeepBestPoints(keypts, num_points);
     WriteKeypoints(key_file, keypts);
     
     cvReleaseMat(&inv);
