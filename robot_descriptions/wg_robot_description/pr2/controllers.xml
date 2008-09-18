@@ -198,7 +198,7 @@
   </controller>
 
   <controller name="tilt_laser_controller" topic="tilt_laser_controller" type="LaserScannerControllerNode">
-    <joint name="tilt_laser_joint" >
+    <joint name="tilt_laser_mount_joint" >
       <pid p="0.4" d="0" i="0" iClamp="0.1" />
     </joint>
   </controller>
@@ -207,7 +207,7 @@
   <controller name="tilt_laser_controller" topic="laser_test" type="LaserScannerControllerNode">
     <velocity>
       <velocityFilter smoothing="0.2"/>
-      <joint name="tilt_laser_joint" type="velocity">
+      <joint name="tilt_laser_mount_joint" type="velocity">
         <pid p="0.56" i = "14" d = "0.000001" iClamp = "0.02" />     
       </joint>
     </velocity>

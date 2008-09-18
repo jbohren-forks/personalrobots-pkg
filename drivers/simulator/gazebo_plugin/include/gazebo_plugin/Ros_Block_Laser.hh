@@ -106,7 +106,7 @@ class Ros_Block_Laser : public Controller
   private: FiducialIface *fiducialIface;
 
   /// The parent sensor
-  private: RayBlockSensor *myParent;
+  private: RaySensor *myParent;
 
   // pointer to ros node
   private: ros::node *rosnode;

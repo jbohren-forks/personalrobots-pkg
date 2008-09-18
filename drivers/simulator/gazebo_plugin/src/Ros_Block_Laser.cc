@@ -37,7 +37,7 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <RayBlockSensor.hh>
+#include <RaySensor.hh>
 #include <gazebo_plugin/Ros_Block_Laser.hh>
 
 using namespace gazebo;
@@ -49,10 +49,10 @@ GZ_REGISTER_DYNAMIC_CONTROLLER("ros_block_laser", Ros_Block_Laser);
 Ros_Block_Laser::Ros_Block_Laser(Entity *parent)
     : Controller(parent)
 {
-  this->myParent = dynamic_cast<RayBlockSensor*>(this->parent);
+  this->myParent = dynamic_cast<RaySensor*>(this->parent);
 
   if (!this->myParent)
-    gzthrow("Ros_Block_Laser controller requires a Ray Block Sensor as its parent");
+    gzthrow("Ros_Block_Laser controller requires a Ray Sensor as its parent");
 
   // set parent sensor to active automatically
   this->myParent->SetActive(true);

@@ -116,7 +116,7 @@
       <joint name="head_tilt_joint" >
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
-      <joint name="tilt_laser_joint" >
+      <joint name="tilt_laser_mount_joint" >
           <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
       </joint>
 

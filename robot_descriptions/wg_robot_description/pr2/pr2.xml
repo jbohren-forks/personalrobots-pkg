@@ -209,10 +209,15 @@
   
   
   <!-- to be used by sensors -->
-  <const name="torso_tilt_laser_offset_x" value="0.10000" />  <!-- mp 20080801 -->
-  <const name="torso_tilt_laser_offset_z" value="0.19525" />  <!-- mp 20080801 -->
-  <const name="tilt_laser_center_box_center_offset_z" value="0.0" />  <!-- FIXME -->
-  
+  <const name="torso_tilt_laser_mount_offset_x" value="0.10000" />  <!-- mp 20080801 -->
+  <const name="torso_tilt_laser_mount_offset_z" value="0.19525" />  <!-- mp 20080801 -->
+  <const name="tilt_laser_mount_center_box_center_offset_z" value="0.0" />  <!-- FIXME -->
+
+  <!-- from sensor frame to mount bracket frame for tilt laser -->
+  <const name="tilt_laser_mount_tilt_laser_offset_x" value="0.00" /> <!-- FIXME -->
+  <const name="tilt_laser_mount_tilt_laser_offset_z" value="0.03" /> <!-- FIXME -->
+
+
   <const name="base_base_laser_offset_x" value="0.275" />  <!-- mp 20080801 -->
   <const name="base_base_laser_offset_z" value="0.182" />  <!-- mp 20080801 -->
   <const name="base_laser_center_box_center_offset_z" value="0.12" />  <!-- FIXME -->
@@ -800,10 +805,14 @@
   <joint name="caster_front_right_joint" type="revolute" >
     <insert_const_block name="pr2_caster_joint"/>
   </joint>
-  <joint name="tilt_laser_joint" type="revolute"> 
+  <joint name="tilt_laser_mount_joint" type="revolute"> 
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
+  </joint>
+  <joint name="tilt_laser_joint" type="fixed"> 
+    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
   </joint>
   <joint name="base_laser_joint" type="fixed"> 
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
@@ -1720,15 +1729,13 @@
   <!-- End head definition -->
   
   
-  <!-- Begin sensor definitions -->
-  <sensor name="tilt_laser" type="laser"> 
+  <link name="tilt_laser_mount"> 
     
-    <calibration filename="calib_filename" />
     <parent name="torso" />
-    <origin xyz=" torso_tilt_laser_offset_x 0 torso_tilt_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <origin xyz=" torso_tilt_laser_mount_offset_x 0 torso_tilt_laser_mount_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
     
-    <joint name="tilt_laser_joint" /> 
+    <joint name="tilt_laser_mount_joint" /> 
     <inertial>
       <mass value="1.0" />
       <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
@@ -1736,18 +1743,51 @@
     </inertial> 
     
     <visual>
-      <origin xyz="0   0   tilt_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <origin xyz="0   0   tilt_laser_mount_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <map name="gazebo_material" flag="gazebo">
         <elem key="material">Gazebo/PioneerBody</elem>
       </map>
-      <geometry name="pr2_tilt_laser_mesh_file">
+      <geometry name="pr2_tilt_laser_mount_mesh_file">
         <mesh filename="hok_tilt" /> <!-- mesh specified using an obj file --> 
       </geometry>
     </visual>
     
     <collision>
-      <origin xyz="0   0   tilt_laser_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <origin xyz="0   0   tilt_laser_mount_center_box_center_offset_z  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="tilt_laser_mount_collision_geom" ><!-- geometry specified using a simple geometric object -->
+        <box size=".001 .001 .001" /> 
+      </geometry>
+    </collision>
+    
+  </link>
+
+  <!-- Begin sensor definitions -->
+  <sensor name="tilt_laser" type="laser"> 
+   
+    <calibration filename="calib_filename" />
+    <parent name="tilt_laser_mount" />
+    <origin xyz=" tilt_laser_mount_tilt_laser_offset_x 0 tilt_laser_mount_tilt_laser_offset_z " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    <!-- rotation of a local coordinate frame attached to the sensor with respect to the parent link's coordinate frame -->
+    
+    <joint name="tilt_laser_joint" /> 
+    <inertial>
+      <mass value="0.1" />
+      <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the sensor's local coordinate frame -->
+      <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+    </inertial> 
+    
+    <visual>
+      <origin xyz="0   0   0  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
+      <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+      <geometry name="pr2_tilt_laser_visual_geom">
+        <mesh scale="0.001 0.001 0.001" /> <!-- mesh specified using an obj file --> 
+      </geometry>
+    </visual>
+    
+    <collision>
+      <origin xyz="0   0   0  " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in the sensor's local coordinate frame -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry name="tilt_laser_collision_geom" ><!-- geometry specified using a simple geometric object -->
         <box size=".001 .001 .001" /> 
@@ -1757,12 +1797,11 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="tilt_laser">
-          <gaussianNoise>0.05</gaussianNoise>
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
 	  
-          <origin>0.0 0.0 0.05</origin>
+          <origin>0.0 0.0 0.0</origin>
           <displayRays>false</displayRays>
 	  
           <minAngle>-45</minAngle>
@@ -1772,6 +1811,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
             <topicName>tilt_scan</topicName>
@@ -1820,7 +1860,6 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="base_laser">
-          <gaussianNoise>0.05</gaussianNoise>
           <rayCount>683</rayCount>
           <rangeCount>683</rangeCount>
           <laserCount>1</laserCount>
@@ -1834,6 +1873,7 @@
           <maxRange>10.0</maxRange>
           <updateRate>10.0</updateRate>
           <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
             <alwaysOn>true</alwaysOn>
 	    <updateRate>10</updateRate>
 	    <topicName>base_scan</topicName>
@@ -2342,9 +2382,8 @@
     </map>
     -->
     <map name="sensor" flag="gazebo">
-      <verbatim key="sensor_ray_block">
-        <sensor:ray_block name="stereo_laser">
-          <gaussianNoise>0.05</gaussianNoise>
+      <verbatim key="sensor_ray">
+        <sensor:ray name="stereo_laser">
           <rayCount>100</rayCount>
           <rangeCount>100</rangeCount>
           <laserCount>1</laserCount>
@@ -2365,13 +2404,14 @@
           <verticalMaxAngle>  0</verticalMaxAngle>
 
           <controller:ros_block_laser name="stereo_laser_controller" plugin="libRos_Block_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
             <alwaysOn>true</alwaysOn>
             <updateRate>10.0</updateRate>
             <topicName>full_cloud</topicName>
             <frameName>stereo</frameName>
             <interface:laser name="stereo_laser_iface" />
           </controller:ros_block_laser>
-        </sensor:ray_block>
+        </sensor:ray>
       </verbatim>
     </map>
   
