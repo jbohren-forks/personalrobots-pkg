@@ -234,9 +234,9 @@ void Ros_Laser::PutLaserData()
 
       // Range is linear interpolation if values are close,
       // and min if they are very different
-      if (fabs(ra - rb) < 0.10)
+      //if (fabs(ra - rb) < 0.10)
         r = (1 - b) * ra + b * rb;
-      else r = std::min(ra, rb);
+      //else r = std::min(ra, rb);
 
       // Intensity is either-or
       v = (int) this->myParent->GetRetro(ja) || (int) this->myParent->GetRetro(jb);
@@ -250,9 +250,9 @@ void Ros_Laser::PutLaserData()
       /*                                                             */
       /***************************************************************/
       if (r == maxRange)
-        this->laserMsg.ranges[i]        = r; // no noise if at max range
+        this->laserMsg.ranges[i]        = r + minRange; // no noise if at max range
       else
-        this->laserMsg.ranges[i]        = r + this->GaussianKernel(0,this->gaussianNoise) ;
+        this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
       this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,this->gaussianNoise) ;
     }
 

@@ -301,15 +301,15 @@ void Ros_Block_Laser::PutLaserData()
         if (r == maxRange)
         {
           // no noise if at max range
-          this->cloudMsg.pts[n].x      = r * cos(pAngle)*cos(yAngle);
-          this->cloudMsg.pts[n].y      = r *             sin(yAngle);
-          this->cloudMsg.pts[n].z      = r * sin(pAngle)*cos(yAngle);
+          this->cloudMsg.pts[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle);
+          this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle);
+          this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle);
         }
         else
         {
-          this->cloudMsg.pts[n].x      = r * cos(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
-          this->cloudMsg.pts[n].y      = r *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
-          this->cloudMsg.pts[n].z      = r * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+          this->cloudMsg.pts[n].x      = (r+minRange) * cos(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+          this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
+          this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
         }
         this->cloudMsg.chan[n].vals[0] = v + this->GaussianKernel(0,this->gaussianNoise) ;
       }
