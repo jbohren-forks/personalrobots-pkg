@@ -225,6 +225,8 @@ void Ros_PTZ::UpdateChild()
 // Finalize the controller
 void Ros_PTZ::FiniChild()
 {
+  rosnode->unadvertise(this->stateTopicName);
+  rosnode->unsubscribe(commandTopicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -250,9 +252,9 @@ void Ros_PTZ::PutPTZData()
   this->lock.lock();
   // also put data into ros message
   PTZStateMessage.pan.pos_valid =1;
-  PTZStateMessage.pan.pos       = this->panJoint->GetAngle();
+  PTZStateMessage.pan.pos       = RTOD(this->panJoint->GetAngle());
   PTZStateMessage.tilt.pos_valid=1;
-  PTZStateMessage.tilt.pos      = this->tiltJoint->GetAngle();
+  PTZStateMessage.tilt.pos      = RTOD(this->tiltJoint->GetAngle());
   // publish topic
   this->rosnode->publish(this->stateTopicName,PTZStateMessage);
   this->lock.unlock();
