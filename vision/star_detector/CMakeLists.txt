@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(star_detector)
+add_definitions(-Wall -O3 -DNDEBUG)
+rospack_add_library(starfeature src/detector.cpp src/integral.cpp src/keypoint.cpp)

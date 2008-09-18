@@ -1,0 +1,15 @@
+<package>
+  <description>
+    Star feature detector based on integral images.
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="boost"/>
+  <depend package="opencv_latest"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>
+  </export>
+
+
+</package>
