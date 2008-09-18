@@ -626,6 +626,461 @@ Index: server/sensors/Sensor.hh
    /// \}
  }
  #endif
+Index: server/sensors/ray/RayBlockSensor.cc
+===================================================================
+--- server/sensors/ray/RayBlockSensor.cc	(revision 0)
++++ server/sensors/ray/RayBlockSensor.cc	(revision 0)
+@@ -0,0 +1,450 @@
++/*
++ *  Gazebo - Outdoor Multi-Robot Simulator
++ *  Copyright (C) 2003
++ *     Nate Koenig & Andrew Howard
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++/* Desc: Ray proximity sensor
++ * Author: Carle Cote
++ * Date: 23 february 2004
++ * SVN: $Id: RayBlockSensor.cc 7000 2008-09-01 18:56:47Z natepak $
++*/
++
++#include <assert.h>
++#include <float.h>
++#include <sstream>
++
++#include "SensorFactory.hh"
++#include "XMLConfig.hh"
++#include "Global.hh"
++#include "RayGeom.hh"
++#include "World.hh"
++#include "PhysicsEngine.hh"
++#include "GazeboError.hh"
++#include "ODEPhysics.hh"
++#include "XMLConfig.hh"
++#include "Controller.hh"
++#include "RayBlockSensor.hh"
++
++#include "Vector3.hh"
++
++using namespace gazebo;
++
++GZ_REGISTER_STATIC_SENSOR("ray_block", RayBlockSensor);
++
++//////////////////////////////////////////////////////////////////////////////
++// Constructor
++RayBlockSensor::RayBlockSensor(Body *body)
++    : Sensor(body)
++{
++  this->active = false;
++
++  this->typeName = "ray";
++
++  Param::Begin(&this->parameters);
++  this->rayCountP = new ParamT<int>("rayCount",0,1);
++  this->rangeCountP = new ParamT<int>("rangeCount",0,1);
++  this->minAngleP = new ParamT<Angle>("minAngle",DTOR(-90),1);
++  this->maxAngleP = new ParamT<Angle>("maxAngle",DTOR(-90),1);
++  this->minRangeP = new ParamT<double>("minRange",0,1);
++  this->maxRangeP = new ParamT<double>("maxRange",0,1);
++  this->originP = new ParamT<Vector3>("origin", Vector3(0,0,0), 0);
++  this->displayRaysP = new ParamT<bool>("displayRays", true, 0);
++
++  // for block rays, vertical setting
++  this->verticalRayCountP = new ParamT<int>("verticalRayCount", 1, 0);
++  this->verticalRangeCountP = new ParamT<int>("verticalRangeCount", 1, 0);
++  this->verticalMinAngleP = new ParamT<Angle>("verticalMinAngle", DTOR(0), 0);
++  this->verticalMaxAngleP = new ParamT<Angle>("verticalMaxAngle", DTOR(0), 0);
++  Param::End();
++}
++
++
++//////////////////////////////////////////////////////////////////////////////
++// Destructor
++RayBlockSensor::~RayBlockSensor()
++{
++  delete this->rayCountP;
++  delete this->rangeCountP;
++  delete this->minAngleP;
++  delete this->maxAngleP;
++  delete this->minRangeP;
++  delete this->maxRangeP;
++  delete this->originP;
++  delete this->displayRaysP;
++
++  delete this->verticalRayCountP;
++  delete this->verticalRangeCountP;
++  delete this->verticalMinAngleP;
++  delete this->verticalMaxAngleP;
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Load the ray using parameter from an XMLConfig node
++void RayBlockSensor::LoadChild(XMLConfigNode *node)
++{
++  if (this->body == NULL)
++  {
++    gzthrow("Null body in the ray sensor");
++  }
++
++  this->rayCountP->Load(node);
++  this->rangeCountP->Load(node);
++  this->minAngleP->Load(node);
++  this->maxAngleP->Load(node);
++  this->minRangeP->Load(node);
++  this->maxRangeP->Load(node);
++  this->originP->Load(node);
++  this->displayRaysP->Load(node);
++  this->verticalRayCountP->Load(node);
++  this->verticalRangeCountP->Load(node);
++  this->verticalMinAngleP->Load(node);
++  this->verticalMaxAngleP->Load(node);
++
++
++  // Create a space to contain the ray space
++  this->superSpaceId = dSimpleSpaceCreate( 0 );
++
++  // Create a space to contain all the rays
++  this->raySpaceId = dSimpleSpaceCreate( this->superSpaceId );
++
++  // Set collision bits
++  dGeomSetCategoryBits((dGeomID) this->raySpaceId, GZ_LASER_COLLIDE);
++  dGeomSetCollideBits((dGeomID) this->raySpaceId, ~GZ_LASER_COLLIDE);
++
++  //this->body->spaceId = this->superSpaceId;
++  this->body->spaceId = this->raySpaceId;
++
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Save the sensor info in XML format
++void RayBlockSensor::SaveChild(std::string &prefix, std::ostream &stream)
++{
++  stream << prefix << "  " << *(this->minAngleP) << "\n";
++  stream << prefix << "  " << *(this->maxAngleP) << "\n";
++  stream << prefix << "  " << *(this->minRangeP) << "\n";
++  stream << prefix << "  " << *(this->maxRangeP) << "\n";
++  stream << prefix << "  " << *(this->originP) << "\n";
++  stream << prefix << "  " << *(this->rayCountP) << "\n";
++  stream << prefix << "  " << *(this->rangeCountP) << "\n";
++  stream << prefix << "  " << *(this->displayRaysP) << "\n";
++  stream << prefix << "  " << *(this->verticalRayCountP) << "\n";
++  stream << prefix << "  " << *(this->verticalRangeCountP) << "\n";
++  stream << prefix << "  " << *(this->verticalMinAngleP) << "\n";
++  stream << prefix << "  " << *(this->verticalMaxAngleP) << "\n";
++}
++
++//////////////////////////////////////////////////////////////////////////////
++// Init the ray
++void RayBlockSensor::InitChild()
++{
++  Pose3d bodyPose;
++  double yawAngle, pitchAngle;
++  Vector3 start, end, axis;
++  RayGeom *ray;
++
++  bodyPose = this->body->GetPose();
++  this->prevPose = bodyPose;
++
++  double pDiff = (**(this->verticalMaxAngleP) - **(this->verticalMinAngleP)).GetAsRadian();
++  double yDiff = (**(this->maxAngleP) - **(this->minAngleP)).GetAsRadian();
++  // Create and array of ray geoms
++  for (int j = 0; j < this->verticalRayCountP->GetValue(); j++)
++  {
++
++    for (int i = 0; i < this->rayCountP->GetValue(); i++)
++    //for (int i = this->rayCount-1; i >= 0; i--)
++    {
++
++      yawAngle = i * yDiff / (rayCountP->GetValue() - 1) + (**(this->minAngleP)).GetAsRadian();
++
++      pitchAngle = j * pDiff / (verticalRayCountP->GetValue() - 1) + (**(this->verticalMinAngleP)).GetAsRadian();
++
++      axis.Set(cos(pitchAngle)*cos(yawAngle), sin(yawAngle),sin(pitchAngle)*cos(yawAngle));
++
++      start = (axis * this->minRangeP->GetValue()) + this->originP->GetValue();
++      end = (axis * this->maxRangeP->GetValue()) + this->originP->GetValue();
++
++      ray = new RayGeom(this->body, displayRaysP->GetValue());
++
++      ray->SetPoints(start, end);
++      //ray->SetCategoryBits( GZ_LASER_COLLIDE );
++      //ray->SetCollideBits( ~GZ_LASER_COLLIDE );
++
++      this->rays.push_back(ray);
++
++      //this->body->AttachGeom(ray);
++    }
++  }
++
++}
++
++//////////////////////////////////////////////////////////////////////////////
++// Init the ray
++void RayBlockSensor::FiniChild()
++{
++  std::vector<RayGeom*>::iterator iter;
++  for (iter=this->rays.begin(); iter!=this->rays.end(); iter++)
++  {
++    delete *iter;
++  }
++  this->rays.clear();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the minimum angle
++Angle RayBlockSensor::GetMinAngle() const
++{
++  return **(this->minAngleP);
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the maximum angle
++Angle RayBlockSensor::GetMaxAngle() const
++{
++  return **(this->maxAngleP);
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the minimum range
++double RayBlockSensor::GetMinRange() const
++{
++  return this->minRangeP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++///  Get the maximum range
++double RayBlockSensor::GetMaxRange() const
++{
++  return this->maxRangeP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the ray count
++int RayBlockSensor::GetRayCount() const
++{
++  return this->rayCountP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the range count
++int RayBlockSensor::GetRangeCount() const
++{
++  return this->rangeCountP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the vertical scan line count
++int RayBlockSensor::GetVerticalRayCount() const
++{
++  return this->verticalRayCountP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the vertical scan line count
++int RayBlockSensor::GetVerticalRangeCount() const
++{
++  return this->verticalRangeCountP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the vertical min angle
++Angle RayBlockSensor::GetVerticalMinAngle() const
++{
++  return this->verticalMinAngleP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Get the vertical max angle
++Angle RayBlockSensor::GetVerticalMaxAngle() const
++{
++  return this->verticalMaxAngleP->GetValue();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++// Get detected range for a ray
++double RayBlockSensor::GetRange(int index)
++{
++  if (index < 0 || index >= (int)this->rays.size())
++  {
++    std::ostringstream stream;
++    stream << "index[" << index << "] out of range[0-"
++    << this->rays.size() << "]";
++    gzthrow(stream.str());
++  }
++
++  return this->rays[index]->GetLength();
++}
++
++
++//////////////////////////////////////////////////////////////////////////////
++// Get detected retro (intensity) value for a ray.
++double RayBlockSensor::GetRetro(int index)
++{
++  if (index < 0 || index >= (int)this->rays.size())
++  {
++    std::ostringstream stream;
++    stream << "index[" << index << "] out of range[0-"
++    << this->rays.size() << "]";
++    gzthrow(stream.str());
++  }
++
++  return this->rays[index]->GetRetro();
++}
++
++
++//////////////////////////////////////////////////////////////////////////////
++// Get detected fiducial value for a ray.
++int RayBlockSensor::GetFiducial(int index)
++{
++  if (index < 0 || index >= (int)this->rays.size())
++  {
++    std::ostringstream stream;
++    stream << "index[" << index << "] out of range[0-"
++    << this->rays.size() << "]";
++    gzthrow(stream.str());
++  }
++
++  return this->rays[index]->GetFiducial();
++}
++
++//////////////////////////////////////////////////////////////////////////////
++// Update the sensor information
++void RayBlockSensor::UpdateChild()
++{
++  if (this->active)
++  {
++    std::vector<RayGeom*>::iterator iter;
++    Pose3d poseDelta;
++    Vector3 a, b;
++
++    // Get the pose of the sensor body (global cs)
++    poseDelta = this->body->GetPose() - this->prevPose;
++    this->prevPose = this->body->GetPose();
++
++    // Reset the ray lengths and mark the geoms as dirty (so they get
++    // redrawn)
++    for (iter = this->rays.begin(); iter != this->rays.end(); iter++)
++    {
++      (*iter)->SetLength( this->maxRangeP->GetValue() );
++      (*iter)->SetRetro( 0.0 );
++      (*iter)->SetFiducial( -1 );
++
++      // Get the global points of the line
++      (*iter)->Update();
++    }
++
++    ODEPhysics *ode = dynamic_cast<ODEPhysics*>(World::Instance()->GetPhysicsEngine());
++
++    if (ode == NULL)
++    {
++      gzthrow( "Invalid physics engine. Must use ODE." );
++    }
++
++    // Do collision detection
++    dSpaceCollide2( ( dGeomID ) ( this->superSpaceId ),
++                    ( dGeomID ) ( ode->GetSpaceId() ),
++                    this, &UpdateCallback );
++  }
++}
++
++
++
++/////////////////////////////////////////////////////////////////////////////
++// Callback for ray intersection test
++void RayBlockSensor::UpdateCallback( void *data, dGeomID o1, dGeomID o2 )
++{
++  int n = 0;
++  dContactGeom contact;
++  dxGeom *geom1, *geom2 = NULL;
++  RayGeom *rayGeom = NULL;
++  Geom *hitGeom = NULL;
++  RayBlockSensor *self = NULL;
++
++  self = (RayBlockSensor*) data;
++
++  // Check space
++  if ( dGeomIsSpace( o1 ) || dGeomIsSpace( o2 ) )
++  {
++    if (dGeomGetSpace(o1) == self->superSpaceId || dGeomGetSpace(o2) == self->superSpaceId)
++    {
++      dSpaceCollide2( o1, o2, self, &UpdateCallback );
++    }
++    if (dGeomGetSpace(o1) == self->raySpaceId || dGeomGetSpace(o2) == self->raySpaceId)
++    {
++      dSpaceCollide2( o1, o2, self, &UpdateCallback );
++    }
++  }
++  else
++  {
++    geom1 = NULL;
++    geom2 = NULL;
++
++    // Get pointers to the underlying geoms
++    if (dGeomGetClass(o1) == dGeomTransformClass)
++      geom1 = (dxGeom*) dGeomGetData(dGeomTransformGetGeom(o1));
++    else
++      geom1 = (dxGeom*) dGeomGetData(o1);
++
++    if (dGeomGetClass(o2) == dGeomTransformClass)
++      geom2 = (dxGeom*) dGeomGetData(dGeomTransformGetGeom(o2));
++    else
++      geom2 = (dxGeom*) dGeomGetData(o2);
++
++    assert(geom1 && geom2);
++
++    rayGeom = NULL;
++    hitGeom = NULL;
++
++    // Figure out which one is a ray; note that this assumes
++    // that the ODE dRayClass is used *soley* by the RayGeom.
++    if (dGeomGetClass(o1) == dRayClass)
++    {
++      rayGeom = (RayGeom*) geom1;
++      hitGeom = (Geom*) geom2;
++      dGeomRaySetParams(o1, 0, 0);
++      dGeomRaySetClosestHit(o1, 1);
++    }
++
++    if (dGeomGetClass(o2) == dRayClass)
++    {
++      assert(rayGeom == NULL);
++      rayGeom = (RayGeom*) geom2;
++      hitGeom = (Geom* )geom1;
++      dGeomRaySetParams(o2, 0, 0);
++      dGeomRaySetClosestHit(o2, 1);
++    }
++
++    // Check for ray/geom intersections
++    if ( rayGeom && hitGeom )
++    {
++
++      n = dCollide(o1, o2, 1, &contact, sizeof(contact));
++
++      if ( n > 0 )
++      {
++        if (contact.depth < rayGeom->GetLength())
++        {
++          rayGeom->SetLength( contact.depth );
++          rayGeom->SetRetro( hitGeom->GetLaserRetro() );
++          rayGeom->SetFiducial( hitGeom->GetLaserFiducialId() );
++        }
++      }
++    }
++  }
++}
 Index: server/sensors/ray/SConscript
 ===================================================================
 --- server/sensors/ray/SConscript	(revision 7023)
@@ -639,6 +1094,182 @@ Index: server/sensors/ray/SConscript
  
  #staticObjs.append(env.StaticObject(sources))
  sharedObjs.append(env.SharedObject(sources))
+Index: server/sensors/ray/RayBlockSensor.hh
+===================================================================
+--- server/sensors/ray/RayBlockSensor.hh	(revision 0)
++++ server/sensors/ray/RayBlockSensor.hh	(revision 0)
+@@ -0,0 +1,171 @@
++/*
++ *  Gazebo - Outdoor Multi-Robot Simulator
++ *  Copyright (C) 2003  
++ *     Nate Koenig & Andrew Howard
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
++ *
++ */
++/* Desc: RayBlockSensor proximity sensor
++ * Author: Carle Cote
++ * Date: 23 february 2004
++ * SVN: $Id: RayBlockSensor.hh 7000 2008-09-01 18:56:47Z natepak $
++*/
++
++#ifndef RAYBLOCKSENSOR_HH
++#define RAYBLOCKSENSOR_HH
++
++#include <vector>
++
++#include "Angle.hh"
++#include "Sensor.hh"
++#include "Body.hh"
++
++namespace gazebo
++{
++
++  class XMLConfigNode;
++  class RayGeom;
++/// \addtogroup gazebo_sensor
++/// \brief Sensor with one or more rays.
++/// \{
++/// \defgroup gazebo_ray Ray
++/// \brief Sensor with one or more rays.
++// \{
++
++/// \brief Sensor with one or more rays.
++///
++/// This sensor cast rays into the world, tests for intersections, and
++/// reports the range to the nearest object.  It is used by ranging
++/// sensor models (e.g., sonars and scanning laser range finders).
++class RayBlockSensor: public Sensor
++{
++  /// \brief Constructor
++  /// \param body The underlying collision test uses an ODE geom, so
++  ///             ray sensors must be attached to a body.
++  public: RayBlockSensor(Body *body);
++
++  /// \brief Destructor
++  public: virtual ~RayBlockSensor();
++
++  /// Load the ray using parameter from an XMLConfig node
++  /// \param node The XMLConfig node
++  protected: virtual void LoadChild(XMLConfigNode *node);
++
++  /// \brief Save the sensor info in XML format
++  protected: virtual void SaveChild(std::string &prefix, std::ostream &stream);
++
++  /// Initialize the ray
++  protected: virtual void InitChild();
++
++  ///  Update sensed values
++  protected: virtual void UpdateChild();
++  
++  /// Finalize the ray
++  protected: virtual void FiniChild();
++
++  /// \brief Get the minimum angle
++  /// \return The minimum angle
++  public: Angle GetMinAngle() const;
++
++  /// \brief Get the maximum angle
++  /// \return the maximum angle
++  public: Angle GetMaxAngle() const;
++
++  /// \brief Get the minimum range
++  /// \return The minimum range
++  public: double GetMinRange() const;
++
++  /// \brief Get the maximum range
++  /// \return The maximum range
++  public: double GetMaxRange() const;
++
++  /// \brief Get the ray count
++  /// \return The number of rays
++  public: int GetRayCount() const;
++
++  /// \brief Get the range count
++  /// \return The number of ranges
++  public: int GetRangeCount() const;
++
++  /// \brief Get the vertical scan line count
++  /// \return The number of scan lines vertically
++  public: int GetVerticalRayCount() const;
++
++  /// \brief Get the vertical scan line count
++  /// \return The number of scan lines vertically
++  public: int GetVerticalRangeCount() const;
++
++  /// \brief Get the vertical scan bottom angle
++  /// \return The minimum angle of the scan block
++  public: Angle GetVerticalMinAngle() const;
++
++  /// \brief Get the vertical scan line top angle
++  /// \return The Maximum angle of the scan block
++  public: Angle GetVerticalMaxAngle() const;
++
++  /// \brief Set ray parameters
++  /// \param index Rayindex (from 0 to rayCount - 1).
++  /// \param a, b Ray endpoints (initial and final points).  These are
++  /// in body-relative coordiantes.
++  public: void SetRay(int index, const Vector3 &a, const Vector3 &b);
++
++  /// Get ray parameters
++  /// \param index Ray index (from 0 to rayCount -1).
++  /// \param pos, dir Ray position and direction.
++  public: void GetRay(int index, Vector3 &pos, Vector3 &dir);
++
++  /// \brief Get detected range for a ray.
++  /// \returns Returns DBL_MAX for no detection.
++  public: double GetRange(int index);   
++
++  /// \brief Get detected retro (intensity) value for a ray.
++  public: double GetRetro(int index);   
++
++  /// \brief Get detected fiducial value for a ray.
++  public: int GetFiducial(int index);   
++
++  /// \brief Ray-intersection callback
++  private: static void UpdateCallback( void *data, dGeomID o1, dGeomID o2 );
++  
++  /// Ray space for collision detector
++  private: dSpaceID superSpaceId;
++  private: dSpaceID raySpaceId; 
++
++  /// Ray data
++  private: std::vector<RayGeom*> rays;
++
++  private: ParamT<Angle> *minAngleP, *maxAngleP;
++  private: ParamT<double> *minRangeP, *maxRangeP;
++  private: ParamT<Vector3> *originP;
++
++  private: Pose3d prevPose;
++  private: ParamT<int> *rayCountP;
++  private: ParamT<int> *rangeCountP;
++  
++  /// Display rays when rendering images
++  private: ParamT<bool> *displayRaysP;
++
++  // For ray blocks such as Velodyne
++  private: ParamT<int> *verticalRayCountP;
++  private: ParamT<int> *verticalRangeCountP;
++  private: ParamT<Angle> *verticalMinAngleP;
++  private: ParamT<Angle> *verticalMaxAngleP;
++};
++/// \}
++/// \}
++}
++
++#endif
 Index: server/sensors/Sensor.cc
 ===================================================================
 --- server/sensors/Sensor.cc	(revision 7023)
@@ -891,18 +1522,6 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7023)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7023)
@@ -974,6 +1593,18 @@ Index: server/Model.cc
    return this->UpdateChild();
  }
  
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7023)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7023)
