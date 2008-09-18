@@ -60,11 +60,11 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
   robot_ = robot;
   joint_state_ = robot->getJointState(name);
 
-  start_freq_=start_freq; //in Hz
-  end_freq_=end_freq; //in Hz
-  amplitude_=amplitude; //in Newtons
-  duration_=duration; //in seconds
-  initial_time_=time;
+  start_freq_=start_freq;   //in Hz
+  end_freq_=end_freq;       //in Hz
+  amplitude_=amplitude;     //in Newtons
+  duration_=duration;       //in seconds
+  initial_time_=time;       //in seconds
 
   start_angular_freq_ =2*M_PI*start_freq_;
   end_angular_freq_ =2*M_PI*end_freq_;

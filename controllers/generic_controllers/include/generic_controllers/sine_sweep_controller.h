@@ -39,7 +39,21 @@
     \brief Sine Sweep Controller
 
     This class basically gives a sine sweep to an
-    acuator.
+    acuator. Where the signal is a sine wave, whose 
+    frequency is exponentially increased from \f$\omega_1\f$ 
+    to \f$\omega_2\f$ over \f$T\f$ seconds. 
+    
+    \f$s(n) = A\sin [ K(e^{\deltat/L} - 1) ]\f$	
+
+    where \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$ 
+    and \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
+    
+    xml config example:
+    <controller name="test_controller" type="SineSweepControllerNode">
+      <joint name="test_joint">
+        <controller_defaults start_freq="1" end_freq="100" duration="20" amplitude =".04"/>
+      </joint>
+    </controller>
 
 */
 /***************************************************/
@@ -80,7 +94,7 @@ public:
    * \param *robot The robot that is being controlled.
    */
   void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot);
-
+  
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
@@ -106,26 +120,23 @@ public:
   virtual void update();
 
 private:
-  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
-  double start_freq_;           /**< Begining of the sweep. */
-  double end_freq_;             /**< End of the sweep. */
-  double amplitude_;            /**< Amplitude of the sweep. */
-  double duration_;             /**< Duration of the sweep. */
-  double initial_time_;         /**< Start time of the sweep. */
-  double start_angular_freq_;   /**< Start time of the sweep. */
-  double end_angular_freq_;    /**< Start time of the sweep. */
-  double K_factor_ ;            /**< Start time of the sweep. */
-  double L_factor_ ;            /**< Start time of the sweep. */
+  mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
+  mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
+  double start_freq_;                       /**< Begining of the sweep. */
+  double end_freq_;                         /**< End of the sweep. */
+  double amplitude_;                        /**< Amplitude of the sweep. */
+  double duration_;                         /**< Duration of the sweep. */
+  double initial_time_;                     /**< Start time of the sweep. */
+  double start_angular_freq_;               /**< Start time of the sweep. */
+  double end_angular_freq_;                 /**< Start time of the sweep. */
+  double K_factor_ ;                        /**< Start time of the sweep. */
+  double L_factor_ ;                        /**< Start time of the sweep. */
 
 };
 
 /***************************************************/
 /*! \class controller::SineSweepControllerNode
-    \brief Ram Input Controller ROS Node
-
-    This class basically gives a ramp input to an
-    acuator.
+    \brief Sine Sweep Controller ROS Node
 
 */
 /***************************************************/
