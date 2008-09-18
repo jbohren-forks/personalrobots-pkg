@@ -9,7 +9,6 @@
 
     <!-- for visualization -->
     <node pkg="wx_camera_panel" type="standalone_camera.py" args="axis_left --ptz" respawn="true" output="screen" />
-    <node pkg="wx_camera_panel" type="standalone_camera.py" args="axis_right --ptz" respawn="true" output="screen" />
     <node pkg="ogre_visualizer" type="standalone_visualizer.py" respawn="true" output="screen" />
     <node pkg="laser_view" type="laser_view" args="scan:=tilt_scan" respawn="true" output="screen" />
     <!--node pkg="wxpy_ros" type="ros_panel" respawn="false" output="screen" /--><!-- does not start correctly-->
