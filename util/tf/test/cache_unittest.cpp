@@ -258,7 +258,6 @@ TEST(TimeCache, CartesianInterpolation)
       EXPECT_NEAR(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0, z_out, epsilon);
     }
     
-    /// \todo check for interpolation not crossing between reparenting
 
     cache.clearList();
   }
@@ -266,6 +265,57 @@ TEST(TimeCache, CartesianInterpolation)
   
 }
 
+/** \brief Make sure we dont' interpolate across reparented data */
+TEST(TimeCache, ReparentingInterpolationProtection)
+{
+  double epsilon = 1e-6;
+  unsigned int offset = 555;
+
+  tf::TimeCache cache;
+  std::vector<double> xvalues(2);
+  std::vector<double> yvalues(2);
+  std::vector<double> zvalues(2);
+
+  TransformStorage stor;
+  stor.data_.setIdentity();
+
+  for (unsigned int step = 0; step < 2 ; step++)
+  {
+    xvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    
+    stor.data_.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
+    stor.frame_id_ = "NO_NEED";
+    stor.parent_frame_id = step + 4;
+    stor.stamp_ = step * 100 + offset;
+    cache.insertData(stor);
+  }
+  
+  for (int pos = 0; pos < 100 ; pos ++)
+  {
+    cache.getData(offset + pos, stor);
+    double x_out = stor.data_.getOrigin().x();
+    double y_out = stor.data_.getOrigin().y();
+    double z_out = stor.data_.getOrigin().z();
+    EXPECT_NEAR(xvalues[0], x_out, epsilon);
+    EXPECT_NEAR(yvalues[0], y_out, epsilon);
+    EXPECT_NEAR(zvalues[0], z_out, epsilon);
+  }
+  
+  for (int pos = 100; pos < 120 ; pos ++)
+  {
+    cache.getData(offset + pos, stor);
+    double x_out = stor.data_.getOrigin().x();
+    double y_out = stor.data_.getOrigin().y();
+    double z_out = stor.data_.getOrigin().z();
+    EXPECT_NEAR(xvalues[1], x_out, epsilon);
+    EXPECT_NEAR(yvalues[1], y_out, epsilon);
+    EXPECT_NEAR(zvalues[1], z_out, epsilon);
+  }
+
+
+}
 
 TEST(TimeCache, CartesianExtrapolation)
 {
