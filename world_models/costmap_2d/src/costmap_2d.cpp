@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: E. Gil Jones
+ * Authors: E. Gil Jones, Conor McGann
  */
 
 /*
@@ -52,187 +52,121 @@ t| (0, height-1) ... (width-1, height-1)
 
 #include "costmap_2d/costmap_2d.h"
 
-CostMap2D::CostMap2D(double window_length) :
-window_length_(window_length)
-{  
-  static_data_ = NULL;
-  full_data_ = NULL;
-  obs_count_ = NULL;
-  width_ = 0;
-  height_ = 0;
-  resolution_ = 0;
-  total_obs_points_ = 0;
+CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data, 
+		     double resolution, double window_length,  unsigned char threshold)
+: width_(width), 
+   height_(height),  
+   resolution_(resolution), 
+   tickLength_(window_length/WATCHDOG_LIMIT),
+   threshold_(threshold),
+   staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
+{
+  staticData_ = new unsigned char[width_*height_];
+  fullData_ = new unsigned char[width_*height_];
+  obsWatchDog_ = new TICK[width_*height_];
+  memcpy(staticData_, data, width_*height_);
+  memcpy(fullData_, staticData_, width_*height_);
+  memset(obsWatchDog_, 0, width_*height_);
+
+  // Iterate over the map and get the occupied cells
+  for (unsigned int i=0;i<width_;i++){
+    for (unsigned int j=0;j<height_;j++){
+      size_t ind = getMapIndexFromCellCoords(i, j);
+      if(staticData_[ind] >= threshold_)
+	permanentlyOccupiedCells_.push_back(ind);
+    }
+  }
 }
 
 CostMap2D::~CostMap2D() {
-  std::list<ObstaclePts*>::iterator oit = obstacle_pts_.begin();
-  while(oit != obstacle_pts_.end()) {
-    delete (*oit);
-    oit++;
-  }
-  obstacle_pts_.clear();
-  
-  if(static_data_ != NULL) delete[] static_data_;
-  if(full_data_ != NULL) delete[] full_data_;
-  if(obs_count_ != NULL) delete[] obs_count_;
+  if(staticData_ != NULL) delete[] staticData_;
+  if(fullData_ != NULL) delete[] fullData_;
+  if(obsWatchDog_ != NULL) delete[] obsWatchDog_;
 }
 
-void CostMap2D::setStaticMap(size_t width, size_t height,
-			     double resolution, const unsigned char* data)
+void CostMap2D::updateDynamicObstacles(double ts,
+				       const std_msgs::PointCloudFloat32& cloud,
+				       std::vector<unsigned int>& newObstacles, 
+				       std::vector<unsigned int>& deletedObstacles)
 {
-  width_ = width;
-  height_ = height;
-  resolution_ = resolution;
+  newObstacles.clear();
 
-  //TODO handle resize?
-  static_data_ = new unsigned char[width_*height_];
-  full_data_ = new unsigned char[width_*height_];
-  obs_count_ = new unsigned int[width_*height_];
-  //if(size(data) < (width_*height_)) {
-  //  std::cerr << "CostMap2D::setStaticMap Error - data has " << sizeof(data) << " bytes instead of the required " << width_*height_ << std::endl;
-  //  return;
-  //}
-  memcpy(static_data_, data, width_*height_);
-  memcpy(full_data_, static_data_, width_*height_);
-  memset(obs_count_, 0, width_*height_);
+  for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+    unsigned int ind = getMapIndexFromWorldCoords(cloud.pts[i].x, cloud.pts[i].y);
+
+    // If the cell is not occupied, then we have a new obstacle to report
+    if(obsWatchDog_[ind] == 0 && staticData_[ind] < threshold_){
+      newObstacles.push_back(ind);
+      dynamicObstacles_.push_back(ind);
+      fullData_[ind] = threshold_;
+    }
+
+    // Now pet the watchdog
+    obsWatchDog_[ind] = WATCHDOG_LIMIT;
+  }
+
+  // We always process deletions too
+  removeStaleObstacles(ts, deletedObstacles);
 }
 
-void CostMap2D::addObstacles(const std_msgs::PointCloudFloat32* cloud,
-                             std::list<unsigned int>& occ_ids,
-                             std::list<unsigned int>& unocc_ids) 
-{
-  //assume that these points are in the map frame
-  
-  if(full_data_ == NULL) {
-    std::cerr << "CostMap2D::addObstacles warning - addObstacles called before static map initialization.\n";
-    return;
+/**
+ * This algorithm uses the concept of a watchdog timer to decide when an obstacle can be removed.
+ */
+void CostMap2D::removeStaleObstacles(double ts, std::vector<unsigned int>& deletedObstacles){
+  deletedObstacles.clear();
+
+  // Calculate elapsed time in terms of ticks
+  TICK elapsedTime = getElapsedTime(ts);
+
+  // Iterate over the set of dyanmic obstacles
+  std::list<unsigned int>::iterator it = dynamicObstacles_.begin();
+
+  while(it != dynamicObstacles_.end()){
+    unsigned int ind = *it;
+    TICK timeLeft = obsWatchDog_[ind];
+
+    // Case 1: The watchdog has just been reset. Here we decrement the watchdog by 1 and move on
+    if(timeLeft == WATCHDOG_LIMIT){
+      obsWatchDog_[ind]--;
+      ++it;
+      continue;
+    }
+
+    // Case 2: The watchdog has timed out. Here we remove the obstacle, zero the watchdog timer, and move on.
+    if(timeLeft <= elapsedTime){
+      it = dynamicObstacles_.erase(it);
+      obsWatchDog_[ind] = 0;
+      fullData_[ind] = staticData_[ind];
+      deletedObstacles.push_back(ind);
+      continue;
+    }
+
+    // Otherwise: Just have to decrement the watchdog and move on
+    obsWatchDog_[ind] = timeLeft - elapsedTime;
+    ++it;
   }
-
-  //no points to add
-  if(cloud->get_pts_size() == 0) return;
-
-  //update cur time from scan as long as it advances us
-  if(cloud->header.stamp > cur_time_) {
-    cur_time_ = cloud->header.stamp;
-  } else {
-    //sanity check that scan isn't already old compared to cur_time_
-    if(!isTimeWithinWindow(cloud->header.stamp)) return;
-  }
-
-  ObstaclePts* obs = new ObstaclePts();
-  obs->setSize(cloud->get_pts_size());
-  obs->ts_ = cloud->header.stamp;
-
-  for(size_t i = 0; i < cloud->get_pts_size(); i++) {
-    obs->setPoint(i, cloud->pts[i].x, cloud->pts[i].y);
-  }
-  
-  addObstaclePointsToFullMap(obs, occ_ids);
-  obstacle_pts_.push_back(obs);  
-
-  refreshFullMap(unocc_ids);
-}
-
-void CostMap2D::update(ros::Time ts, std::list<unsigned int>& unocc_ids) {
-  if(ts > cur_time_ || ts == cur_time_) {
-    cur_time_ = ts;
-  } else {
-    std::cerr << "CostMap2D::update warning - this map has data more recent than the update time " << ts << std::endl;
-  }
-  refreshFullMap(unocc_ids);
 }
 
 const unsigned char* CostMap2D::getMap() const {
-  return full_data_;
+  return fullData_;
 }
 
-std::list<unsigned int> CostMap2D::getOccupiedCellDataIndexList() const {
-  std::list<unsigned int> ret_ind;
+void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const {
+  results = permanentlyOccupiedCells_;
 
-  for(std::map<unsigned int, bool>::const_iterator it = obstacle_index_map_.begin();
-      it != obstacle_index_map_.end();
-      it++) {
-    ret_ind.push_back(it->first);
-  }
-  return ret_ind;
+  for(std::list<unsigned int>::const_iterator it = dynamicObstacles_.begin(); it != dynamicObstacles_.end(); ++it)
+    results.push_back(*it);
 }
 
-void CostMap2D::refreshFullMap(std::list<unsigned int>& unocc_ids) {
-  //this encodes a system whereby if a cell is an obstacle in
-  //any scan we treat is as an obstacle, only reverting to the static map if all
-  //scans think it's free
-  //std::cout << "Cur time " << cur_time_ << std::endl;
-
-  std::list<ObstaclePts*>::iterator oit = obstacle_pts_.begin();
-  while(oit != obstacle_pts_.end()) {
-    if(!isTimeWithinWindow((*oit)->ts_)) 
-    {
-      //std::cout << "Ditching obstacle time " << (*oit)->ts_ << std::endl;
-      for(size_t i = 0; i < (*oit)->pts_num_; i++) 
-      {
-        size_t mx, my;
-        convertFromWorldCoordToIndexes((*oit)->pts_[i*2],(*oit)->pts_[i*2+1], mx, my);
-        size_t ind = getMapIndex(mx, my);
-        //full map reverts to static map
-        if(obs_count_[ind] == 0) {
-          std::cout << "CostMap2D::refreshFullMap problem - obs_count for cell ind " << ind << " is zero and we're trying to decrement.\n";
-        } else {
-          obs_count_[ind]--;
-        }
-        //this means that no scans think this is an obstacle, and we can get rid of it.
-        if(obs_count_[ind] == 0) {
-          full_data_[ind] = static_data_[ind];
-          //erasing entry in obstacle map
-          obstacle_index_map_.erase(ind); 
-          unocc_ids.push_back(ind);
-          if(total_obs_points_ == 0) {
-            std::cout << "CostMap2D::refreshFullMap problem - total_obs_points_ is zero and we're trying to decrement.\n";
-          } else {
-            total_obs_points_--;
-          }
-        }
-      }
-      //can get rid of this
-      delete (*oit);
-      oit = obstacle_pts_.erase(oit);
-    } else {
-      //std::cout << "Obstacle time " << (*oit)->ts_ << std::endl;
-      oit++;
-    }
-  }
-}
-
-void CostMap2D::addObstaclePointsToFullMap(const ObstaclePts* pts, std::list<unsigned int>& occ_ids) {
-  //sanity check
-  if(!isTimeWithinWindow(pts->ts_)) {
-    std::cerr << " CostMap2D::addObstaclePointsToFullMap won't add old data to map.\n";
-    return;
-  }
-  for(size_t i = 0; i < pts->pts_num_; i++) {
-    size_t mx, my;
-    convertFromWorldCoordToIndexes(pts->pts_[i*2],pts->pts_[i*2+1], mx, my);
-    size_t ind = getMapIndex(mx, my);
-    if(full_data_[ind] != 75) {
-      //this is a new obstacle cell being set
-      total_obs_points_++;
-      occ_ids.push_back(ind);
-    }
-    full_data_[ind] = 75;
-    obs_count_[ind]++;
-    obstacle_index_map_[ind] = true;
-  }
-}
-
-bool CostMap2D::isTimeWithinWindow(ros::Time ts) const {
-  if(ts+window_length_ > cur_time_ || ts+window_length_ == cur_time_) {
-    return true;
-  } 
-  return false;
-}
-
-size_t CostMap2D::getMapIndex(unsigned int x, unsigned int y) const 
+size_t CostMap2D::getMapIndexFromCellCoords(unsigned int x, unsigned int y) const 
 {
   return(x+y*width_);
+}
+
+size_t CostMap2D::getMapIndexFromWorldCoords(double wx, double wy) const {
+  size_t mx, my;
+  convertFromWorldCoordToIndexes(wx, wy, mx, my);
+  return getMapIndexFromCellCoords(mx, my);
 }
 
 void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
@@ -250,12 +184,12 @@ void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
   my = (int) (wy/resolution_);
 
   if(mx > width_) {
-    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
+    std::cout << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
     mx = 0;
     return;
   } 
   if(my > height_) {
-    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex converted y " << wy << " greater than height " << height_ << std::endl;
+    std::cout << "CostMap2D::convertFromWorldCoordToIndex converted y " << wy << " greater than height " << height_ << std::endl;
     my = 0;
     return;
   }
@@ -285,6 +219,19 @@ size_t CostMap2D::getHeight() const {
   return height_;
 }
 
-unsigned int CostMap2D::getTotalObsPoints() const {
-  return total_obs_points_;
+TICK CostMap2D::getElapsedTime(double ts) {
+  //ROS_ASSERT(ts >= lastTimeStamp_);
+
+  double count = (ts - lastTimeStamp_) / tickLength_;
+
+  TICK result = (count > WATCHDOG_LIMIT ? WATCHDOG_LIMIT : (TICK) count);
+
+  lastTimeStamp_ = ts;
+
+  return result;
+}
+
+unsigned char CostMap2D::operator [](unsigned int ind) const{
+  // ROS_ASSERT on index
+  return fullData_[ind];
 }

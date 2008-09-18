@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * Author: E. Gil Jones
+ * Authors: E. Gil Jones, Conor McGann
  */
 
 #ifndef COSTMAP_2D_COSTMAP_2D_H
@@ -41,49 +41,21 @@
 This library provides functionality for maintaining a 2D cost map.  The primary inputs are:
   - a priori 2-D occupancy grid map
   - obstacle data
-This library is initialized with the a priori map, and thereafter updated 
+This cost map is initialized with the a priori map, and thereafter updated 
 with obstacle data.  A sliding window model of persistence is used, in which
 obstacle data lives in the map for a fixed (but configurable) amount of time
 before being discarded.  The static map lives forever.
-
 */
 
 //c++
 #include <list>
+#include <vector>
 #include <map>
 
-// For time support
-#include "ros/time.h"
-
-// For point clouds
+// For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
 
-// A bunch of x,y points, with a timestamp
-typedef struct ObstaclePts
-{
-  ObstaclePts() {
-    pts_ = NULL;
-    pts_num_ = 0;
-    ts_ = 0;
-  }
-  void setSize(size_t num) {
-    if(pts_ != NULL) {
-      delete pts_;
-      pts_ = NULL;
-    }
-    pts_ = new double[num*2];
-    pts_num_ = num;
-  }
-  void setPoint(size_t i, double x, double y) {
-    if(pts_ == NULL) return;
-    if(i > pts_num_) return;
-    pts_[i*2] = x;
-    pts_[i*2+1] = y;
-  }
-  double* pts_;
-  size_t pts_num_;
-  ros::Time ts_;
-};
+typedef unsigned char TICK;
 
 class CostMap2D
 {
@@ -91,51 +63,45 @@ public:
   /**
    * @brief Constructor.
    *
+   * @param width width of map [cells]
+   * @param height height of map [cells]
+   * @param data row-major obstacle data, each value indicates a cost
+   * @param resolution resolution of map [m/cell]
    * @param window_length how long to hold onto obstacle data [sec]
+   * @param threshold The cost threshold where a cell is considered an obstacle
    */
-  CostMap2D(double window_length);
+  CostMap2D(size_t width, size_t height, const unsigned char* data, 
+	    double resolution, double window_length,  unsigned char threshold = 75);
   
   /**
    * @brief Destructor.
    */
-  ~CostMap2D();
-  
-  /** 
-   * @brief Initialize with a static map.
-   *
-   * @param width width of map [cells]
-   * @param height height of map [cells]
-   * @param resolution resolution of map [m/cell]
-   * @data row-major obstacle data, each value in the range [0,100] to
-   *       indicate probability of occupancy, -1 to indicate no
-   *       information
-   */
-  void setStaticMap(size_t width, size_t height, 
-                    double resolution, const unsigned char* data);
+  virtual ~CostMap2D();
   
   /**
-   * @brief Add dynamic obstacles to the map.
-   *
-   * Updates the map to contain the new dynamic obstacles, in addition to
-   * any previously added obstacles (but only those that are still within
-   * the window_length).
+   * @brief Updates the const map accounting for the new value of time and a new set of obstacles. 
+   * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
+   * @param current time stamp
    * @param cloud holds projected scan data
-   * @param occ_ids holds list for returning newly occupied ids
-   * @param unocc_ids holds list for returning newly unoccupied ids
-   */
-  void addObstacles(const std_msgs::PointCloudFloat32* cloud,
-                    std::list<unsigned int>& occ_ids,
-                    std::list<unsigned int>& unocc_ids);
-  
-  /**
-   * @brief A hook to allow time-based maintenance to occur (e.g.,
-   * removing stale obstacles, in the case that addObstacles() doesn't
-   * get called that often).
+   * @param newObstacleCells holds vector for returning newly occupied ids
+   * @param deletedObstacleCells holds vector for returning newly unoccupied ids
    *
-   * @param ts current time
+   * @see removeStaleObstacles
    */
-  void update(ros::Time ts, std::list<unsigned int>& unocc_ids);
-  
+  void updateDynamicObstacles(double ts,
+			      const std_msgs::PointCloudFloat32& cloud,
+			      std::vector<unsigned int>& newObstacleCells, 
+			      std::vector<unsigned int>& deletedObstacleCells);
+
+  /**
+   * @brief Updates the cost map, removing stale obstacles based on the new time stamp. This
+   * method is linear in the number of dynamic obstacles.
+   * 
+   * @param current time stamp
+   * @param deletedObstacleCells holds vector for returning newly unoccupied ids
+   */
+  void removeStaleObstacles(double ts, std::vector<unsigned int>& deletedObstacleCells);
+
   /**
    * @brief Get pointer into the obstacle map (which contains both static
    * and dynamic obstacles)
@@ -143,10 +109,9 @@ public:
   const unsigned char* getMap() const;
 
   /**
-   * @brief Converts from the occupied cell index map into a list of indexes
-   * that contain obstacles
+   * @brief Obtain the collection of all occupied cells: the union of static and dynamic obstacles
    */
-  std::list<unsigned int> getOccupiedCellDataIndexList() const;
+  void getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const;
 
   /**
    * @brief Get index of given (x,y) point into data
@@ -154,7 +119,15 @@ public:
    * @param x x-index of the cell
    * @param y y-index of the cell
    */
-  unsigned int getMapIndex(unsigned int x, unsigned int y) const; 
+  unsigned int getMapIndexFromCellCoords(unsigned int x, unsigned int y) const; 
+
+  /**
+   * @brief Get index of given (x,y) point into data
+   * 
+   * @param wx world x location of the cell
+   * @param wy world y location of the cell
+   */
+  unsigned int getMapIndexFromWorldCoords(double we, double wy) const;
 
   /**
    * @brief Get index of given world (x,y) point in map indexes
@@ -164,8 +137,8 @@ public:
    * @param mx map x index return value
    * @param my map y index return value
    */
-  void convertFromWorldCoordToIndexes(double wx, double wy,
-                                    size_t& mx, size_t& my) const;
+  void convertFromWorldCoordToIndexes(double wx, double wy, size_t& mx, size_t& my) const;
+
   /**
    * @brief Get world (x,y) point given map indexes
    * 
@@ -174,8 +147,7 @@ public:
    * @param wx world x return value
    * @param wy world y return value
    */
-  void convertFromIndexesToWorldCoord(size_t mx, size_t my,
-                                      double& wx, double& wy) const;
+  void convertFromIndexesToWorldCoord(size_t mx, size_t my, double& wx, double& wy) const;
 
   
   /**
@@ -185,42 +157,46 @@ public:
    * @param x 2d map return value
    * @param y 2d map return value
    */
-  void convertFromMapIndexToXY(unsigned int ind,
-                               unsigned int& x,
-                               unsigned int& y) const;
+  void convertFromMapIndexToXY(unsigned int ind, unsigned int& x, unsigned int& y) const;
   
-  //accessors
+  /**
+   * @brief Returns the Width of the map in cells
+   */
   size_t getWidth() const;
+
+  /**
+   * @brief Returns the height of the map in cells
+   */
   size_t getHeight() const;
-  unsigned int getTotalObsPoints() const;
-  
+
+  /**
+   * @broef Accessor for contents of full map cell by cell index
+   */
+  unsigned char operator [](unsigned int ind) const;
+
 private:
-  
-  //refreshes the full_map, chucking old data
-  void refreshFullMap(std::list<unsigned int>& unocc_ids);
-  
-  //adds the points in the pts arg to the full_map
-  void addObstaclePointsToFullMap(const ObstaclePts* pts, std::list<unsigned int>& occ_ids);
-  
-  //checks if the time param t falls within the window of our current time
-  bool isTimeWithinWindow(ros::Time t) const;
-  
-  double window_length_; /**< window length for remembering data */
-  size_t width_; /**< width of the map */
-  size_t height_; /**< height of the map */
-  double resolution_; /**< resolution of the map, currently unused */ 
-  unsigned char* static_data_; /**< data loaded from the static map */
-  unsigned char* full_data_; /**< the full map data that has both static and obstacle data */
-  unsigned int* obs_count_; /**< this holds the count among current scans of a particular cell as an obstacle cell */
+  /**
+   * @brief Compute the number of ticks that have elapsed between the given timestamp ts and the last time stamp.
+   * Will update the last time stamp value
+   *
+   * @param ts The current time stamp. Must be >= lastTimeStamp_
+   */
+  TICK getElapsedTime(double ts);
 
-  std::list<ObstaclePts*> obstacle_pts_; /**< a list of obstacle points corresponding to scans */
-  std::map<unsigned int, bool> obstacle_index_map_; /**a map for holding occupied points */
-  ros::Time cur_time_; /**< the map's current notion of time */
-  
-  unsigned int total_obs_points_; /**< running total of number of non-static obstacle points in the map */
+  static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
+  const size_t width_; /**< width of the map */
+  const size_t height_; /**< height of the map */
+  const double resolution_; /**< resolution of the map, currently unused */
+  const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
+  const unsigned char threshold_; /**< The threshold for interpreting costs as obstacles */
 
+  unsigned char* staticData_; /**< data loaded from the static map */
+  unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
+  TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
+  double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
+
+  std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
+  
+  std::vector<unsigned int> permanentlyOccupiedCells_; /**< Vector of statically occupied cells */
 };
-
-
-
 #endif
