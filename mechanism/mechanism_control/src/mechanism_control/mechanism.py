@@ -16,6 +16,7 @@ def list_controller_types():
         print t
 
 def list_controllers():
+    rospy.wait_for_service('list_controllers')
     s = rospy.ServiceProxy('list_controllers', ListControllers)
     resp = s.call(ListControllersRequest())
     for c in resp.controllers:
@@ -31,6 +32,7 @@ def spawn_controller(xml):
         print "Error when spawning", resp.ok
 
 def kill_controller(name):
+    rospy.wait_for_service('kill_controller')
     s = rospy.ServiceProxy('kill_controller', KillController)
     resp = s.call(KillControllerRequest(name))
     if resp.ok == 1:
