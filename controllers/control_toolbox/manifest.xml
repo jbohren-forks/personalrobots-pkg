@@ -1,0 +1,15 @@
+<package>
+  <description brief="Control Toolbox">
+    The control toolbox contains modules that are useful across all controllers.
+  </description>
+  <author>Melonee Wise</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com</url>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <depend package="tinyxml" />
+  <export>
+    <cpp cflags="-I${prefix}/include "
+	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcontrol_toolbox" />
+  </export>
+
+</package>
