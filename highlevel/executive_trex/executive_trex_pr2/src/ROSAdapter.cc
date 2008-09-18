@@ -15,6 +15,20 @@ namespace TREX {
       timelineType(extractData(configData, "timelineType").toString()), 
       stateTopic(extractData(configData, "stateTopic").toString()){
     m_node = ROSNode::request();
+
+    // Iterate over child xml nodes and look for nodes of type Param to populate the nddl to ros mappings
+    // Iterate over internal and external configuration specifications
+    for (TiXmlElement * child = configData.FirstChildElement();
+           child != NULL;
+           child = child->NextSiblingElement()) {
+
+        if(strcmp(child->Value(), "Param") == 0) {
+	  LabelStr nddl = extractData(*child, "nddl");
+	  LabelStr ros = extractData(*child, "ros");
+	  nddlNames_.push_back(nddl.toString());
+	  rosNames_.push_back(ros.toString());
+	}
+    }
   }
 
   void ROSAdapter::handleInit(TICK initialTick, const std::map<double, ServerId>& serversByTimeline, const ObserverId& observer){

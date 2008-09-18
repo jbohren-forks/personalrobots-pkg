@@ -32,6 +32,46 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/**
+ * @mainpage
+ *
+ * @htmlinclude manifest.html
+ *
+ * @b move_arm is a highlevel controller for moving an arm to a goal joint configuration.
+ *
+ * This node uses the kinematic path planning service provided in the ROS ompl library where a
+ * range of motion planners are available. The control is accomplished by incremental dispatch
+ * of joint positions reflecting waypoints in the computed path, until all are accomplished. The current
+ * implementation is limited to operatng on left or right arms of a pr2 and is dependent on
+ * the kinematic model of that robot.
+ *
+ * <hr>
+ *
+ *  @section usage Usage
+ *  @verbatim
+ *  $ move_arm left|right
+ *  @endverbatim
+ *
+ * <hr>
+ *
+ * @section topic ROS topics
+ *
+ * Subscribes to (name/type):
+ * - @b "mechanism_state"/mechanism_control::MechanismState : The state of the robot joints and actuators
+ * - @b "right_arm_goal"/pr2_msgs::MoveArmGoal : The new goal containing a setpoint to achieve for the joint angles
+ * - @b "left_arm_goal"/pr2_msgs::MoveArmGoal : The new goal containing a setpoint to achieve for the joint angles
+ *
+ * Publishes to (name / type):
+ * - @b "left_arm_state"/pr2_msgs::MoveArmState : The published state of the controller
+ * - @b "left_arm_commands"/pr2_controllers::JointPosCmd : A commanded joint position for the right arm
+ *
+ *  <hr>
+ *
+ * @section parameters ROS parameters
+ *
+ * - None
+ **/
+
 #include <HighlevelController.hh>
 #include <pr2_controllers/JointPosCmd.h>
 #include <mechanism_control/MechanismState.h>
@@ -50,11 +90,17 @@ public:
    * @brief Constructor
    */
   MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
-	  const std::string& _armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel, unsigned int base_);
+	  const std::string& _armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel);
 
   virtual ~MoveArm();
 
-protected:
+private:
+
+  /**
+   * @brief Helper Method to obtain the joint value by name
+   * @return true if the joint is present, otherwise false
+   */
+  bool readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value);
 
   void handleArmConfigurationCallback();
   void updateStateMsg();
@@ -63,24 +109,38 @@ protected:
   bool dispatchCommands();
   bool withinBounds(unsigned waypointIndex);
 
-  virtual void setStartState(robot_srvs::KinematicPlanState::request& req) = 0;
-  virtual void setCommandParameters(pr2_controllers::JointPosCmd& cmd) = 0;
+  void setStartState(robot_srvs::KinematicPlanState::request& req);
+  void setCommandParameters(pr2_controllers::JointPosCmd& cmd);
 
   const std::string armCmdTopic;
   const std::string kinematicModel;
   mechanism_control::MechanismState mechanismState;
   robot_srvs::KinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
-  unsigned int base; /*!< Base from which offsets in mechanism state are obtained */
+
+protected:
+  std::vector<std::string> jointNames_; /*< The collection of joint names of interest. Instantiate in the  derived class.*/
 };
 
+
+bool MoveArm::readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value){
+  for(unsigned int i = 0; i < mechanismStateMsg.get_joint_states_size(); i++){
+    const std::string& jointName = mechanismStateMsg.joint_states[i].name;
+    if(name == jointName){
+      value = mechanismStateMsg.joint_states[i].position;
+      return true;
+    }
+  }
+
+  return false;
+}
 
 static const double L1_JOINT_DIFF_MAX = .05;
 
 MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
-		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel, unsigned int base_)
+		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(nodeName, stateTopic, goalTopic),
-    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), base(base_){
+    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0){
 
   // Subscribe to arm configuration messages
   subscribe(armPosTopic, mechanismState, &MoveArm::handleArmConfigurationCallback, QUEUE_MAX());
@@ -96,15 +156,23 @@ void MoveArm::handleArmConfigurationCallback(){
 }
 
 void MoveArm::updateStateMsg(){
+  // Read vailable name value pairs
+  std::vector<std::pair< std::string, double> > nameValuePairs;
   mechanismState.lock();
-  stateMsg.configuration.shoulder_pan = mechanismState.joint_states[base + 12].position;
-  stateMsg.configuration.shoulder_pitch = mechanismState.joint_states[base + 10].position;
-  stateMsg.configuration.upperarm_roll = mechanismState.joint_states[base + 8].position;
-  stateMsg.configuration.elbow_flex = mechanismState.joint_states[base + 6].position;
-  stateMsg.configuration.forearm_roll = mechanismState.joint_states[base + 4].position;
-  stateMsg.configuration.wrist_flex = mechanismState.joint_states[base + 2].position;
-  stateMsg.configuration.gripper_roll = mechanismState.joint_states[base + 0].position;
+  for(std::vector< std::string >::const_iterator it = jointNames_.begin(); it != jointNames_.end(); ++it){
+    double value;
+    const std::string& name = *it;
+    if(readJointValue(mechanismState, name, value))
+      nameValuePairs.push_back(std::pair<std::string, double>(name, value));
+  }
   mechanismState.unlock();
+
+  // Now set the state msg up for publication
+  stateMsg.set_configuration_size(nameValuePairs.size());
+  for(unsigned int i = 0; i < nameValuePairs.size(); i++){
+    stateMsg.configuration[i].name = nameValuePairs[i].first;
+    stateMsg.configuration[i].position = nameValuePairs[i].second;
+  }
 
   if(isActive()){
     goalMsg.lock();
@@ -136,20 +204,16 @@ bool MoveArm::makePlan(){
   // TODO: Adjust based on parameters for left vs right arms
 
   // Fill out the start state from current arm configuration
-  mechanismState.lock();
-  setStartState(req);
-  mechanismState.unlock();
+  //mechanismState.lock();
+  //setStartState(req);
+  //mechanismState.unlock();
 
   // Filling out goal state from data in the goal message
   goalMsg.lock();
-  req.goal_state.set_vals_size(7);
-  req.goal_state.vals[0] = goalMsg.configuration.shoulder_pan;
-  req.goal_state.vals[1] = goalMsg.configuration.shoulder_pitch;
-  req.goal_state.vals[2] = goalMsg.configuration.upperarm_roll;
-  req.goal_state.vals[3] = goalMsg.configuration.elbow_flex;
-  req.goal_state.vals[4] = goalMsg.configuration.forearm_roll;
-  req.goal_state.vals[5] = goalMsg.configuration.wrist_flex;
-  req.goal_state.vals[6] = goalMsg.configuration.gripper_roll;
+  req.goal_state.set_vals_size(jointNames_.size());
+  for(unsigned int i = 0; i<jointNames_.size(); i++)
+    req.goal_state.vals[i] = goalMsg.configuration[i].position;
+
   goalMsg.unlock();
 
   req.allowed_time = 10.0;
@@ -193,16 +257,17 @@ bool MoveArm::goalReached(){
   return true;
 }
 
+/**
+ * @brief Iterate over all published joint values we match on
+ */
 bool MoveArm::withinBounds(unsigned waypointIndex){
   double sum_joint_diff = 0.0;
   mechanismState.lock();
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 12].position - plan.path.states[waypointIndex].vals[0]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 10].position - plan.path.states[waypointIndex].vals[1]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 8].position - plan.path.states[waypointIndex].vals[2]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 6].position - plan.path.states[waypointIndex].vals[3]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 4].position - plan.path.states[waypointIndex].vals[4]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 2].position - plan.path.states[waypointIndex].vals[5]);
-  sum_joint_diff += fabs(mechanismState.joint_states[base + 0].position - plan.path.states[waypointIndex].vals[6]);
+  for(unsigned int i=0; i<jointNames_.size(); i++){
+    double value;
+    if(readJointValue(mechanismState, jointNames_[i], value))
+       sum_joint_diff += fabs(value - plan.path.states[waypointIndex].vals[i]);
+  }
   mechanismState.unlock();
 
   if(L1_JOINT_DIFF_MAX > sum_joint_diff)
@@ -216,7 +281,7 @@ bool MoveArm::withinBounds(unsigned waypointIndex){
  */
 bool MoveArm::dispatchCommands(){
   if(currentWaypoint >= plan.path.get_states_size()){
-    printf("SetStateGoalFromPlan:: trying to set state greater than number of states in path.\n");
+    std::cout << "SetStateGoalFromPlan:: trying to set state greater than number of states in path.\n";
     return false;
   }
 
@@ -238,12 +303,24 @@ bool MoveArm::dispatchCommands(){
   return true;
 }
 
-class MoveRightArm: public MoveArm {
-public:
-  MoveRightArm(): MoveArm("rightArmController", "right_arm_state", "right_arm_goal", "mechanism_state", "right_arm_commands", "pr2::right_arm", RIGHT_ARM_JOINTS_BASE_INDEX){}
 
-protected:
-  void setStartState(robot_srvs::KinematicPlanState::request& req){
+void MoveArm::setCommandParameters(pr2_controllers::JointPosCmd& armCommand){
+    static const double TOLERANCE(0.25);
+
+    // Set up message size
+    armCommand.set_names_size(jointNames_.size());
+    armCommand.set_positions_size(jointNames_.size());
+    armCommand.set_margins_size(jointNames_.size());
+
+    for(unsigned int i = 0; i < jointNames_.size(); i++){
+      armCommand.names[i] = jointNames_[i];
+      armCommand.positions[i] = plan.path.states[currentWaypoint].vals[i];
+      armCommand.margins[i] = TOLERANCE;
+    }
+}
+
+void MoveArm::setStartState(robot_srvs::KinematicPlanState::request& req){
+    /*
     req.start_state.vals[33] = mechanismState.joint_states[base + 12].position;
     req.start_state.vals[34] = mechanismState.joint_states[base + 10].position;
     req.start_state.vals[35] = mechanismState.joint_states[base + 8].position;
@@ -251,92 +328,35 @@ protected:
     req.start_state.vals[37] = mechanismState.joint_states[base + 4].position;
     req.start_state.vals[38] = mechanismState.joint_states[base + 2].position;
     req.start_state.vals[39] = mechanismState.joint_states[base + 0].position;
-  }
+    */
+}
 
-  void setCommandParameters(pr2_controllers::JointPosCmd& armCommand){
-    static const double TOLERANCE(0.25);
-    armCommand.set_names_size(7);
-    armCommand.set_positions_size(7);
-    armCommand.set_margins_size(7);
+class MoveRightArm: public MoveArm {
+public:
+  MoveRightArm(): MoveArm("rightArmController", "right_arm_state", "right_arm_goal", "mechanism_state", "right_arm_commands", "pr2::right_arm"){
+    jointNames_.push_back("shoulder_pan_right_joint");
+    jointNames_.push_back("shoulder_pitch_right_joint");
+    jointNames_.push_back("upperarm_roll_right_joint");
+    jointNames_.push_back("elbow_flex_right_joint");
+    jointNames_.push_back("forearm_roll_right_joint");
+    jointNames_.push_back("wrist_flex_right_joint");
+    jointNames_.push_back("gripper_roll_right_joint");
+  };
 
-    armCommand.names[0] = "shoulder_pan_right_joint";
-    armCommand.positions[0] = plan.path.states[currentWaypoint].vals[0];
-    armCommand.margins[0] = TOLERANCE;
-
-    armCommand.names[1] = "shoulder_pitch_right_joint";
-    armCommand.positions[1] = plan.path.states[currentWaypoint].vals[1];
-    armCommand.margins[1] = TOLERANCE;
-
-    armCommand.names[2] = "upperarm_roll_right_joint";
-    armCommand.positions[2] = plan.path.states[currentWaypoint].vals[2];
-    armCommand.margins[2] = TOLERANCE;
-
-    armCommand.names[3] = "elbow_flex_right_joint";
-    armCommand.positions[3] = plan.path.states[currentWaypoint].vals[3];
-    armCommand.margins[3] = TOLERANCE;
-
-    armCommand.names[4] = "forearm_roll_right_joint";
-    armCommand.positions[4] = plan.path.states[currentWaypoint].vals[4];
-    armCommand.margins[4] = TOLERANCE;
-
-    armCommand.names[5] = "wrist_flex_right_joint";
-    armCommand.positions[5] = plan.path.states[currentWaypoint].vals[5];
-    armCommand.margins[5] = TOLERANCE;
-
-    armCommand.names[6] = "gripper_roll_right_joint";
-    armCommand.positions[6] = plan.path.states[currentWaypoint].vals[6];
-    armCommand.margins[6] = TOLERANCE;
-  }
+protected:
 };
 
 class MoveLeftArm: public MoveArm {
 public:
-  MoveLeftArm(): MoveArm("leftArmController", "left_arm_state", "left_arm_goal", "mechanism_state", "left_arm_commands", "pr2::left_arm", LEFT_ARM_JOINTS_BASE_INDEX){}
-
-protected:
-  void setStartState(robot_srvs::KinematicPlanState::request& req){
-    req.start_state.vals[22] = mechanismState.joint_states[base + 12].position;
-    req.start_state.vals[23] = mechanismState.joint_states[base + 10].position;
-    req.start_state.vals[24] = mechanismState.joint_states[base + 8].position;
-    req.start_state.vals[25] = mechanismState.joint_states[base + 6].position;
-    req.start_state.vals[26] = mechanismState.joint_states[base + 4].position;
-    req.start_state.vals[27] = mechanismState.joint_states[base + 2].position;
-    req.start_state.vals[28] = mechanismState.joint_states[base + 0].position;
-  }
-
-  void setCommandParameters(pr2_controllers::JointPosCmd& armCommand){
-    static const double TOLERANCE(0.25);
-    armCommand.set_names_size(7);
-    armCommand.set_positions_size(7);
-    armCommand.set_margins_size(7);
-
-    armCommand.names[0] = "shoulder_pan_left_joint";
-    armCommand.positions[0] = plan.path.states[currentWaypoint].vals[0];
-    armCommand.margins[0] = TOLERANCE;
-
-    armCommand.names[1] = "shoulder_pitch_left_joint";
-    armCommand.positions[1] = plan.path.states[currentWaypoint].vals[1];
-    armCommand.margins[1] = TOLERANCE;
-
-    armCommand.names[2] = "upperarm_roll_left_joint";
-    armCommand.positions[2] = plan.path.states[currentWaypoint].vals[2];
-    armCommand.margins[2] = TOLERANCE;
-
-    armCommand.names[3] = "elbow_flex_left_joint";
-    armCommand.positions[3] = plan.path.states[currentWaypoint].vals[3];
-    armCommand.margins[3] = TOLERANCE;
-
-    armCommand.names[4] = "forearm_roll_left_joint";
-    armCommand.positions[4] = plan.path.states[currentWaypoint].vals[4];
-    armCommand.margins[4] = TOLERANCE;
-
-    armCommand.names[5] = "wrist_flex_left_joint";
-    armCommand.positions[5] = plan.path.states[currentWaypoint].vals[5];
-    armCommand.margins[5] = TOLERANCE;
-
-    armCommand.names[6] = "gripper_roll_left_joint";
-    armCommand.positions[6] = plan.path.states[currentWaypoint].vals[6];
-    armCommand.margins[6] = TOLERANCE;
+  MoveLeftArm(): MoveArm("leftArmController", "left_arm_state", "left_arm_goal", "mechanism_state", "left_arm_commands", "pr2::left_arm"){
+    // Instantiate joint vector
+    jointNames_.push_back("shoulder_pan_left_joint");
+    jointNames_.push_back("shoulder_pitch_left_joint");
+    jointNames_.push_back("upperarm_roll_left_joint");
+    jointNames_.push_back("elbow_flex_left_joint");
+    jointNames_.push_back("forearm_roll_left_joint");
+    jointNames_.push_back("wrist_flex_left_joint");
+    jointNames_.push_back("gripper_roll_left_joint");
   }
 };
 

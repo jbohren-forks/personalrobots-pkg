@@ -27,6 +27,9 @@ namespace TREX {
 
     void handleRecall(const TokenId& goal);
 
+    std::vector<std::string> nddlNames_;
+    std::vector<std::string> rosNames_;
+
   protected:
     static unsigned int QUEUE_MAX(){return 10;}
     virtual void handleCallback();
@@ -34,6 +37,9 @@ namespace TREX {
     virtual void registerPublishers() {}
     virtual Observation* getObservation() = 0;
     virtual void dispatchRequest(const TokenId& goal, bool enabled){}
+
+    const std::vector<std::string>& nddlNames() const {return nddlNames_;}
+    const std::vector<std::string>& rosNames() const {return rosNames_;}
 
     ROSNodeId m_node; /*! The ROS node. */
     const std::string timelineName;
