@@ -53,12 +53,13 @@ t| (0, height-1) ... (width-1, height-1)
 #include "costmap_2d/costmap_2d.h"
 
 CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data, 
-		     double resolution, double window_length,  unsigned char threshold)
+		     double resolution, double window_length,  unsigned char threshold, double maxZ)
 : width_(width), 
    height_(height),  
    resolution_(resolution), 
    tickLength_(window_length/WATCHDOG_LIMIT),
    threshold_(threshold),
+   maxZ_(maxZ),
    staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
 {
   staticData_ = new unsigned char[width_*height_];
@@ -92,6 +93,9 @@ void CostMap2D::updateDynamicObstacles(double ts,
   newObstacles.clear();
 
   for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+    if(cloud.pts[i].z > maxZ_)
+      continue;
+
     unsigned int ind = getMapIndexFromWorldCoords(cloud.pts[i].x, cloud.pts[i].y);
 
     // If the cell is not occupied, then we have a new obstacle to report

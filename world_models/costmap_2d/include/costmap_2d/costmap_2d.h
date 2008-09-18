@@ -69,9 +69,10 @@ public:
    * @param resolution resolution of map [m/cell]
    * @param window_length how long to hold onto obstacle data [sec]
    * @param threshold The cost threshold where a cell is considered an obstacle
+   * @param maxZ gives the cut-off for points in 3D space
    */
   CostMap2D(size_t width, size_t height, const unsigned char* data, 
-	    double resolution, double window_length,  unsigned char threshold = 75);
+	    double resolution, double window_length,  unsigned char threshold, double maxZ = 0);
   
   /**
    * @brief Destructor.
@@ -189,6 +190,7 @@ private:
   const double resolution_; /**< resolution of the map, currently unused */
   const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
   const unsigned char threshold_; /**< The threshold for interpreting costs as obstacles */
+  const double maxZ_; /**< Points above this will be excluded from consideration */
 
   unsigned char* staticData_; /**< data loaded from the static map */
   unsigned char* fullData_; /**< the full map data that has both static and obstacle data */

@@ -55,6 +55,7 @@ const unsigned int GRID_HEIGHT(10);
 const double RESOLUTION(1);
 const double WINDOW_LENGTH(10);
 const unsigned char THRESHOLD(100);
+const double MAX_Z(1.0);
 
 bool find(const std::vector<unsigned int>& l, unsigned int n){
   for(std::vector<unsigned int>::const_iterator it = l.begin(); it != l.end(); ++it){
@@ -235,11 +236,26 @@ TEST(costmap, test5){
 }
 
 /**
- * Test:
- * Make sure that we never remove a static obstacle when we remove a dyanmic obstacle. 
- * Should not generate a dynamic obstacle in the first place. 
- * Should ensure that the intesrection of static and dyanmic obstacles is empty
+ * Make sure we ignore points outside of our z threshold
  */
+TEST(costmap, test6){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z);
+
+  std::vector<unsigned int> insertions, deletions;
+
+  // A point cloud with 2 points falling in a cell with a non-lethal cost
+  std_msgs::PointCloudFloat32 c0;
+  c0.set_pts_size(2);
+  c0.pts[0].x = 0;
+  c0.pts[0].y = 5;
+  c0.pts[0].z = 0.4;
+  c0.pts[1].x = 1;
+  c0.pts[1].y = 5;
+  c0.pts[1].z = 1.2;
+
+  map.updateDynamicObstacles(1, c0, insertions, deletions);
+  ASSERT_EQ(insertions.size(), 1);
+}
 
 int main(int argc, char** argv){
   testing::InitGoogleTest(&argc, argv);
