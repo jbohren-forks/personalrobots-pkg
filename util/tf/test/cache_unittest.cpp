@@ -68,9 +68,79 @@ TEST(TimeCache, Repeatability)
     
     cache.insertData(stor);
   }
+  for ( unsigned int i = 1; i < runs ; i++ )
+
+  {
+    cache.getData(i, stor);
+    EXPECT_EQ(stor.parent_frame_id, i);
+    EXPECT_EQ(stor.stamp_, i);
+    std::stringstream ss;
+    ss << values[i];
+    EXPECT_EQ(stor.frame_id_, ss.str());
+  }
+  
+}
 
 
+TEST(TimeCache, RepeatabilityReverseInsertOrder)
+{
+  unsigned int runs = 100;
 
+  seed_rand();
+  
+  tf::TimeCache  cache;
+  std::vector<double> values(runs);
+
+  TransformStorage stor;
+  stor.data_.setIdentity();
+  
+  for ( int i = runs -1; i >= 0 ; i-- )
+  {
+    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    std::stringstream ss;
+    ss << values[i];
+    stor.frame_id_ = ss.str();
+    stor.parent_frame_id = i;
+    stor.stamp_ = i;
+    
+    cache.insertData(stor);
+  }
+  for ( unsigned int i = 1; i < runs ; i++ )
+
+  {
+    cache.getData(i, stor);
+    EXPECT_EQ(stor.parent_frame_id, i);
+    EXPECT_EQ(stor.stamp_, i);
+    std::stringstream ss;
+    ss << values[i];
+    EXPECT_EQ(stor.frame_id_, ss.str());
+  }
+  
+}
+
+TEST(TimeCache, RepeatabilityRandomInsertOrder)
+{
+
+  seed_rand();
+  
+  tf::TimeCache  cache;
+  double my_vals[] = {13,2,5,4,9,7,3,11,15,14,12,1,6,10,0,8};
+  std::vector<double> values (my_vals, my_vals + sizeof(my_vals)/sizeof(double)); 
+  unsigned int runs = values.size();
+
+  TransformStorage stor;
+  stor.data_.setIdentity();
+  for ( unsigned int i = 0; i <runs ; i++ )
+  {
+    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    std::stringstream ss;
+    ss << values[i];
+    stor.frame_id_ = ss.str();
+    stor.parent_frame_id = i;
+    stor.stamp_ = i;
+    
+    cache.insertData(stor);
+  }
   for ( unsigned int i = 1; i < runs ; i++ )
 
   {
@@ -270,7 +340,7 @@ TEST(Bullet, Slerp)
 
 }
 
-/*
+
 TEST(TimeCache, AngularInterpolation)
 {
   unsigned int runs = 100;
@@ -281,8 +351,9 @@ TEST(TimeCache, AngularInterpolation)
   std::vector<double> yawvalues(2);
   std::vector<double> pitchvalues(2);
   std::vector<double> rollvalues(2);
-
   unsigned int offset = 200;
+
+  std::vector<btQuaternion> quats(2);
 
   TransformStorage stor;
   stor.data_.setIdentity();
@@ -295,26 +366,28 @@ TEST(TimeCache, AngularInterpolation)
       yawvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX / 100.0;
       pitchvalues[step] = 0;//10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       rollvalues[step] = 0;//10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    
-      stor.data_.setRotation(btQuaternion(yawvalues[step], pitchvalues[step], rollvalues[step]));
+      quats[step] = btQuaternion(yawvalues[step], pitchvalues[step], rollvalues[step]);
+      stor.data_.setRotation(quats[step]);
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 3;
-      stor.stamp_ = step * 100 + offset;
+      stor.stamp_ = offset + (step * 100); //step = 0 or 1
       cache.insertData(stor);
     }
     
-    for (int pos = 0; pos < 100 ; pos ++)
+    for (int pos = -100; pos < 200 ; pos ++)
     {
-      cache.getData(offset + pos, stor);
-      btQuaternion quat;
-      btScalar yaw_out, pitch_out, roll_out;
-      stor.data_.getBasis().getEuler(yaw_out, pitch_out, roll_out);
+      cache.getData(offset + pos, stor); //get the transform for the position
+      btQuaternion quat = stor.data_.getRotation(); //get the quaternion out of the transform
+
+      //Generate a ground truth quaternion directly calling slerp
+      btQuaternion ground_truth = quats[0].slerp(quats[1], pos/100.0);
       
-      EXPECT_TRUE(fabs(yawvalues[0] + (yawvalues[1] - yawvalues[0]) * (double)pos/100.0 - yaw_out) < epsilon);
-      EXPECT_EQ(yawvalues[0] + (yawvalues[1] - yawvalues[0]) * (double)pos/100.0, (double)yaw_out);
-      /// \todo switch to quaternion or matrix so as not to have to deal with degeneracy etc.  This test isn't working at all
-      //      EXPECT_TRUE(fabs(pitchvalues[0] + (pitchvalues[1] - pitchvalues[0]) * (double)pos/100.0 - pitch_out) < epsilon);
-      //EXPECT_TRUE(fabs(rollvalues[0] + (rollvalues[1] - rollvalues[0]) * (double)pos/100.0 - roll_out) < epsilon);
+      //Make sure the transformed one and the direct call match
+      EXPECT_NEAR(ground_truth.x(), quat.x(), epsilon);
+      EXPECT_NEAR(ground_truth.y(), quat.y(), epsilon);
+      EXPECT_NEAR(ground_truth.z(), quat.z(), epsilon);
+      EXPECT_NEAR(ground_truth.w(), quat.w(), epsilon);
+            
     }
     
     cache.clearList();
@@ -322,9 +395,7 @@ TEST(TimeCache, AngularInterpolation)
 
   
 }
-*/
 
-/** \todo test insert out of order */
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
