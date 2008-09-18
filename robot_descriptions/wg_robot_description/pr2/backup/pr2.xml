@@ -2345,30 +2345,30 @@
       <verbatim key="sensor_ray_block">
         <sensor:ray_block name="stereo_laser">
           <gaussianNoise>0.05</gaussianNoise>
-          <rayCount>20</rayCount>
-          <rangeCount>20</rangeCount>
+          <rayCount>100</rayCount>
+          <rangeCount>100</rangeCount>
           <laserCount>1</laserCount>
 	  
           <origin>0.0 0.0 0.05</origin>
           <displayRays>false</displayRays>
 	  
-          <minAngle>-30</minAngle>
-          <maxAngle> 30</maxAngle>
+          <minAngle>-15</minAngle>
+          <maxAngle> 15</maxAngle>
 	  
           <minRange>0.05</minRange>
           <maxRange>100.0</maxRange>
           <updateRate>10.0</updateRate>
 
-          <verticalRayCount>30</verticalRayCount>
-          <verticalRangeCount>30</verticalRangeCount>
-          <verticalMinAngle>-30</verticalMinAngle>
+          <verticalRayCount>100</verticalRayCount>
+          <verticalRangeCount>100</verticalRangeCount>
+          <verticalMinAngle>-20</verticalMinAngle>
           <verticalMaxAngle>  0</verticalMaxAngle>
 
           <controller:ros_block_laser name="stereo_laser_controller" plugin="libRos_Block_Laser.so">
             <alwaysOn>true</alwaysOn>
-            <updateRate>15.0</updateRate>
+            <updateRate>10.0</updateRate>
             <topicName>full_cloud</topicName>
-            <frameName>stereo_cloud</frameName>
+            <frameName>stereo</frameName>
             <interface:laser name="stereo_laser_iface" />
           </controller:ros_block_laser>
         </sensor:ray_block>
