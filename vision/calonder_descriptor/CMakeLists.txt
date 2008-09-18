@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(calonder_descriptor)
-add_definitions(-Wall)
-add_definitions(-I`rospack find opencv_latest`/opencv-cvs/cxcore/include)
+add_definitions(-Wall -O3 -DNDEBUG)
 rospack_add_library(calonder src/randomized_tree.cpp src/rtree_classifier.cpp src/patch_generator.cpp)

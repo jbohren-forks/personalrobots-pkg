@@ -7,10 +7,26 @@
 #include <cvwimage.h> // Google C++ wrappers
 #include <highgui.h>
 #include <boost/foreach.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics/stats.hpp>
+#include <boost/accumulators/statistics/variance.hpp>
 #include <cassert>
+#include <cstdlib>
+#include <cmath>
 #include <cstdio>
 
 using namespace features;
+using namespace boost::accumulators;
+
+void print_signature_stats(std::vector< SparseSignature > const& sigs)
+{
+  accumulator_set<int, stats<tag::variance> > acc;
+  BOOST_FOREACH( SparseSignature const& sig, sigs ) {
+    acc( sig.nnz() );
+  }
+
+  printf("\tMean length = %.1f, stddev = %.1f\n", mean(acc), sqrt(variance(acc)) );
+}
 
 // Usage: ./match_benchmark land30.trees img1.pgm img2.pgm
 int main( int argc, char** argv )
@@ -20,14 +36,14 @@ int main( int argc, char** argv )
   // effectively dense vectors. Increasing the threshold makes the
   // signatures sparser, increasing the speed of matching at some cost
   // in the recognition rate. Reasonable thresholds are in [0, 0.01].
-  static const float SIG_THRESHOLD = 0.005;
+  //static const float SIG_THRESHOLD = 0.005;
 
-  assert(argc > 3);
+  assert(argc > 4);
 
   // Load random forests classifier and input images
   RTreeClassifier classifier;
   classifier.read(argv[1]);
-  classifier.setThreshold(SIG_THRESHOLD);
+  classifier.setThreshold(atof(argv[4]));
   cv::WImageBuffer1_b reference( cvLoadImage(argv[2], CV_LOAD_IMAGE_GRAYSCALE) );
   cv::WImageBuffer1_b query( cvLoadImage(argv[3], CV_LOAD_IMAGE_GRAYSCALE) );
   
@@ -38,6 +54,8 @@ int main( int argc, char** argv )
   std::sort(ref_keypts.begin(), ref_keypts.end());
   if ((int)ref_keypts.size() > NUM_PTS)
     ref_keypts.erase(ref_keypts.begin() + NUM_PTS, ref_keypts.end());
+  else
+    printf("WARNING: Only %u reference keypoints\n", ref_keypts.size());
   
   // Extract patches and add their signatures to matcher database
   BruteForceMatcher< SparseSignature, CvPoint > matcher;
@@ -52,7 +70,8 @@ int main( int argc, char** argv )
       matcher.addSignature(sig, cvPoint(pt.x, pt.y));
     }
   }
-
+  print_signature_stats(matcher.signatures_);
+  
   // Detect points in query image
   StarDetector query_detector( cvSize(query.Width(), query.Height()) );
   query_detector.interpolate(false);
@@ -60,6 +79,8 @@ int main( int argc, char** argv )
   std::sort(query_keypts.begin(), query_keypts.end());
   if ((int)query_keypts.size() > NUM_PTS)
     query_keypts.erase(query_keypts.begin() + NUM_PTS, query_keypts.end());
+  else
+    printf("WARNING: Only %u query keypoints\n", query_keypts.size());
 
   // Find matches
   float distance;
@@ -76,6 +97,8 @@ int main( int argc, char** argv )
       query_sigs.push_back(sig);
     }
   }
+  print_signature_stats(query_sigs);
+  
   int match;
   {
     Timer match_timer("Matching");

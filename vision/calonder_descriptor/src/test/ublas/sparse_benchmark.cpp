@@ -1,7 +1,7 @@
 #include "timer.h"
-#include "rng.h"
-#include "signature.h"
-#include "least_distance.h"
+#include "calonder_descriptor/rng.h"
+#include "calonder_descriptor/signature.h"
+//#include "least_distance.h"
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>
 #include <boost/numeric/ublas/vector_expression.hpp>
@@ -64,7 +64,7 @@ int main( int argc, char** argv )
         BOOST_FOREACH( SparseSignature &query, queries) {
           //float d = euclideanDistance(query, sig);
           //float d = squaredDistance(query, sig);
-          //best_distance = std::min(d, best_distance);
+          //if (d < best_distance) best_distance = d;
           leastSquaredDistance(query, sig, best_distance);
         }
       }

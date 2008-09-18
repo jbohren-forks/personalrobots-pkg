@@ -1,10 +1,14 @@
 CC = g++
-FEATURES = ../../../..
 CFLAGS = -c -g -Wall
-CFLAGS += -I/usr/include
-CFLAGS += -I$(FEATURES)/star_detector/src/test -I$(FEATURES)/calonder_descriptor/include
-LDFLAGS = -L/usr/lib -lgsl -lgslcblas
-
+# Boost
+CFLAGS += -I$(BOOST_ROOT)/include
+# Star detector (for timer.h)
+FEATURES = /u/mihelich/projects/features
+CFLAGS += -I$(FEATURES)/star_detector/src/test
+CFLAGS += -I$(FEATURES)/calonder_descriptor/include
+# Descriptor
+CALONDER = $(shell rospack find calonder_descriptor)
+CFLAGS += -I/usr/include -I$(CALONDER)/include
 # Optimization options
 CFLAGS += -O3 -DNDEBUG
 #CFLAGS += -march=native -mfpmath=sse

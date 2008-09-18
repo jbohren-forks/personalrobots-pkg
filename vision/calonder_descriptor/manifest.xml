@@ -1,8 +1,8 @@
 <package>
   <description>
-    Calonder features.
+    Calonder feature descriptors.
   </description>
-  <author>Patrick</author>
+  <author>Patrick Mihelich</author>
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="boost"/>

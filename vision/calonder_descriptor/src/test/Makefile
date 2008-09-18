@@ -34,9 +34,9 @@ CFLAGS += -O3 -DNDEBUG
 
 SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
-PROGRAMS = baseset_test recognition_test show_base_set patch_test write_posteriors
+PROGRAMS = baseset_test recognition_test show_base_set patch_test
 PROGRAMS += match_benchmark
-#PROGRAMS += matcher_test rtree_test classifier_test
+#PROGRAMS += matcher_test rtree_test classifier_test write_posteriors
 
 all: $(PROGRAMS)
 
