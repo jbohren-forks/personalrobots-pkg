@@ -112,9 +112,17 @@ void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
   int nx = cx + dx;
   int ny = cy + dy;
 
+  double new_path_dist, new_goal_dist;
+
   //determine whether to add 1 to distance or sqrt(2) (for corner neighbors)
-  double new_path_dist = map_(cx, cy).path_dist + sqrt( dx * dx + dy * dy);
-  double new_goal_dist = map_(cx, cy).goal_dist + sqrt( dx * dx + dy * dy);
+  if(abs(dx) == 1 && abs(dy) == 1){
+    new_path_dist = map_(cx, cy).path_dist + 1.41;
+    new_goal_dist = map_(cx, cy).goal_dist + 1.41;
+  }
+  else{
+    new_path_dist = map_(cx, cy).path_dist + 1;
+    new_goal_dist = map_(cx, cy).goal_dist + 1;
+  }
 
 
   //make sure we are looking at a cell that exists
