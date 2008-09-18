@@ -34,7 +34,7 @@
 
 // Original version: Timothy Hunter <tjhunter@willowgarage.com>
 
-#include "pr2_controllers/arm_position_controller.h"
+#include "pr2_mechanism_controllers/arm_position_controller.h"
 
 using namespace controller;
 using namespace std;
@@ -110,7 +110,7 @@ void ArmPositionController::setJointPosCmd(const std::vector<double> &j_values)
   arm_controller_lock_.unlock();
 }
 
-void ArmPositionController::getJointPosCmd(pr2_controllers::JointPosCmd & cmd) const
+void ArmPositionController::getJointPosCmd(pr2_mechanism_controllers::JointPosCmd & cmd) const
 {
   const unsigned int n = joint_position_controllers_.size();
   cmd.set_names_size(n);
@@ -121,7 +121,7 @@ void ArmPositionController::getJointPosCmd(pr2_controllers::JointPosCmd & cmd) c
   cmd.set_margins_vec(error_margins_);
 }
 
-void ArmPositionController::setJointPosCmd(const pr2_controllers::JointPosCmd & cmd)
+void ArmPositionController::setJointPosCmd(const pr2_mechanism_controllers::JointPosCmd & cmd)
 {
   assert(cmd.get_names_size()==cmd.get_positions_size());
 
@@ -171,7 +171,7 @@ int ArmPositionController::getJointControllerPosByName(std::string name)
   return -1;
 }
 
-//void ArmPositionController::getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp)
+//void ArmPositionController::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::response &resp)
 //{
 //  arm_controller_lock_.lock();
 //  resp.set_positions_size(goals_.size());
@@ -270,8 +270,8 @@ bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool ArmPositionControllerNode::setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
-                                   pr2_controllers::SetJointPosCmd::response &resp)
+bool ArmPositionControllerNode::setJointPosSrv(pr2_mechanism_controllers::SetJointPosCmd::request &req,
+                                   pr2_mechanism_controllers::SetJointPosCmd::response &resp)
 {
   std::vector<double> pos;
   req.set_positions_vec(pos);
@@ -284,15 +284,15 @@ void ArmPositionControllerNode::setJointPosArray(const std::vector<double> & joi
   c_->setJointPosCmd(joint_pos);
 }
 
-//bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-//                                   pr2_controllers::GetJointPosCmd::response &resp)
+//bool ArmPositionControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
+//                                   pr2_mechanism_controllers::GetJointPosCmd::response &resp)
 //{
 //  c_->getJointPosCmd(resp);
 //  return true;
 //}
 
 
-bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPosCmd & cmd)
+bool ArmPositionControllerNode::setJointPosSingle(const pr2_mechanism_controllers::JointPosCmd & cmd)
 {
   for(unsigned int i=0;i<cmd.positions_size;++i)
     std::cout<<cmd.positions[i]<<' ';
@@ -316,7 +316,7 @@ bool ArmPositionControllerNode::setJointPosSingle(const pr2_controllers::JointPo
   return true;
 }
 
-bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_controllers::JointPosCmd & cmd)
+bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_mechanism_controllers::JointPosCmd & cmd)
 {
   std::cout<<"Implementing callback"<<std::endl;
 
@@ -336,8 +336,8 @@ bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_controllers::Joint
   return true;
 }
 
-bool ArmPositionControllerNode::setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
-                  pr2_controllers::SetJointTarget::response &resp)
+bool ArmPositionControllerNode::setJointPosHeadless(pr2_mechanism_controllers::SetJointTarget::request &req,
+                  pr2_mechanism_controllers::SetJointTarget::response &resp)
 {
   if(req.get_positions_size()!=1)
   {
@@ -348,8 +348,8 @@ bool ArmPositionControllerNode::setJointPosHeadless(pr2_controllers::SetJointTar
   return true;
 }
 
-bool ArmPositionControllerNode::setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
-                  pr2_controllers::SetJointTarget::response &resp)
+bool ArmPositionControllerNode::setJointPosTarget(pr2_mechanism_controllers::SetJointTarget::request &req,
+                  pr2_mechanism_controllers::SetJointTarget::response &resp)
 {
   bool reached=true;
   for(unsigned int i=0;i<req.get_positions_size();++i)
@@ -359,7 +359,7 @@ bool ArmPositionControllerNode::setJointPosTarget(pr2_controllers::SetJointTarge
 //  resp.set_end_positions_vec(end_pos);
   return reached;
 
-//   const pr2_controllers::JointPosCmd cmd=req.positions;
+//   const pr2_mechanism_controllers::JointPosCmd cmd=req.positions;
 //   c_->setJointPosCmd(cmd);
 //   int ticks=0;
 //   const int max_ticks = int(100*cmd.timeout);
@@ -380,10 +380,10 @@ bool ArmPositionControllerNode::setJointPosTarget(pr2_controllers::SetJointTarge
 
 }
 
-bool ArmPositionControllerNode::getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-                    pr2_controllers::GetJointPosCmd::response &resp)
+bool ArmPositionControllerNode::getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
+                    pr2_mechanism_controllers::GetJointPosCmd::response &resp)
 {
-  pr2_controllers::JointPosCmd cmd;
+  pr2_mechanism_controllers::JointPosCmd cmd;
   c_->getJointPosCmd(cmd);
   resp.command = cmd;
   return true;

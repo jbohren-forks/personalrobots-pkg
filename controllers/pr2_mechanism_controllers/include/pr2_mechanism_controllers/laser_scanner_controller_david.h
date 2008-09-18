@@ -36,16 +36,16 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_position_controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_position_controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetCommand.h>
-#include <generic_controllers/SetProfile.h>
-#include <generic_controllers/SetPosition.h>
-#include <generic_controllers/GetPosition.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetCommand.h>
+#include <robot_mechanism_controllers/SetProfile.h>
+#include <robot_mechanism_controllers/SetPosition.h>
+#include <robot_mechanism_controllers/GetPosition.h>
 namespace controller
 {
 
@@ -101,7 +101,7 @@ public:
   virtual void update();
 
   /*!
-   * \brief Returns the time 
+   * \brief Returns the time
    */
   double getTime();
 
@@ -123,10 +123,10 @@ public:
 
   double upper_deceleration_zone_; /*!<Location near upper endstop where deceleration starts>*/
   double upper_turnaround_location_;/*!<Location near upper endstop where turnaround actually occurs>*/
-  
+
   double lower_deceleration_zone_;/*!<Location near lower endstop where deceleration starts>*/
   double lower_turnaround_location_;/*!<Location near lower endstop where turnaround actually occurs>*/
-  
+
    /*!
    * \brief Actually issue torque set command of the joint motor.
    */
@@ -138,7 +138,7 @@ public:
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::RobotState *robot_; /*!< Pointer to robot structure>*/
- 
+
  };
 
 class LaserScannerControllerNode : public Controller
@@ -161,43 +161,43 @@ public:
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  // Services 
+  // Services
    /*!
    * \brief Send velocity command
    */
 
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool getCommand(generic_controllers::GetCommand::request &req,
-                  generic_controllers::GetCommand::response &resp);
+  bool getCommand(robot_mechanism_controllers::GetCommand::request &req,
+                  robot_mechanism_controllers::GetCommand::response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool setPosition(generic_controllers::SetPosition::request &req,
-                  generic_controllers::SetPosition::response &resp);
+  bool setPosition(robot_mechanism_controllers::SetPosition::request &req,
+                  robot_mechanism_controllers::SetPosition::response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool getPosition(generic_controllers::GetPosition::request &req,
-                  generic_controllers::GetPosition::response &resp);
+  bool getPosition(robot_mechanism_controllers::GetPosition::request &req,
+                  robot_mechanism_controllers::GetPosition::response &resp);
  /*!
    * \brief Send velocity command
    */
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
   /*!
    * \brief Send velocity command
    */
 
-  bool setProfile(generic_controllers::SetProfile::request &req,
-  generic_controllers::SetProfile::response &resp);
+  bool setProfile(robot_mechanism_controllers::SetProfile::request &req,
+  robot_mechanism_controllers::SetProfile::response &resp);
   /*!
    * \brief Send velocity command
    */

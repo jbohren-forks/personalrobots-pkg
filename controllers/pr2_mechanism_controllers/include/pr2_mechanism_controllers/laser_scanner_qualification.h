@@ -36,13 +36,13 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetCommand.h>
-#include <generic_controllers/SetProfile.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetCommand.h>
+#include <robot_mechanism_controllers/SetProfile.h>
 namespace controller
 {
 
@@ -109,7 +109,7 @@ private:
   double effort_test_start_; /*!< Start time of effort test>*/
   double effort_test_percent_;/*!< Percentage of max effort to apply for effort test>*/
   double effort_test_length_; /*!< Length of time to apply effort>*/
- 
+
 
   double sinesweep_test_start_;/*!< Start time of sinesweep>*/
   double sinesweep_start_freq_;/*!< Starting frequency for sinesweep>*/
@@ -153,15 +153,15 @@ public:
   bool initXml(mechanism::Robot *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
 
-  bool getCommand(generic_controllers::GetCommand::request &req,
-                  generic_controllers::GetCommand::response &resp);
+  bool getCommand(robot_mechanism_controllers::GetCommand::request &req,
+                  robot_mechanism_controllers::GetCommand::response &resp);
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
- 
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
+
 
 
 private:

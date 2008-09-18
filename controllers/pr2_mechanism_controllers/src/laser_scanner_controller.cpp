@@ -33,7 +33,7 @@
  *********************************************************************/
 #include <algorithm>
 
-#include <pr2_controllers/laser_scanner_controller.h>
+#include <pr2_mechanism_controllers/laser_scanner_controller.h>
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -415,8 +415,8 @@ double LaserScannerControllerNode::getMeasuredPosition()
 }
 
 bool LaserScannerControllerNode::setCommand(
-  generic_controllers::SetCommand::request &req,
-  generic_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::request &req,
+  robot_mechanism_controllers::SetCommand::response &resp)
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
@@ -439,8 +439,8 @@ bool LaserScannerControllerNode::setCommand(
 }
 
 bool LaserScannerControllerNode::getCommand(
-  generic_controllers::GetCommand::request &req,
-  generic_controllers::GetCommand::response &resp)
+  robot_mechanism_controllers::GetCommand::request &req,
+  robot_mechanism_controllers::GetCommand::response &resp)
 {
   resp.command = c_->getCommand();
 
@@ -448,8 +448,8 @@ bool LaserScannerControllerNode::getCommand(
 }
 
 bool LaserScannerControllerNode::setProfileCall(
-  pr2_controllers::SetProfile::request &req,
-  pr2_controllers::SetProfile::response &resp)
+  pr2_mechanism_controllers::SetProfile::request &req,
+  pr2_mechanism_controllers::SetProfile::response &resp)
 {
   setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,req.offset);
   resp.time = c_->getTime();
@@ -469,8 +469,8 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   return true;
 }
 bool LaserScannerControllerNode::getActual(
-  generic_controllers::GetActual::request &req,
-  generic_controllers::GetActual::response &resp)
+  robot_mechanism_controllers::GetActual::request &req,
+  robot_mechanism_controllers::GetActual::response &resp)
 {
   resp.command = c_->getMeasuredPosition();
   resp.time = c_->getTime();

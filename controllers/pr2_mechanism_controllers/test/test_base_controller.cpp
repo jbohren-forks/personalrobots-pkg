@@ -1,5 +1,5 @@
 
-#include <pr2_controllers/base_controller.h>
+#include <pr2_mechanism_controllers/base_controller.h>
 #include <mechanism_model/robot.h>
 #include <hardware_interface/hardware_interface.h>
 #include <ros/node.h>
@@ -60,7 +60,7 @@ int main( int argc, char** argv )
   A.Row(15) << -15.03 << -16.1 << -0.015;
   A.Row(16) << -16.03 << -17.1 << -0.01;
 
-  NEWMAT::Matrix B(16,1); 
+  NEWMAT::Matrix B(16,1);
   B << 1.1 << 1 << 1.1 << 1.15 << 0.95 << 0.99 << 0.98 << 0.95 << 1.05 << 1.1 << 1.05 << 1 << 1.13 << 0.995 << 1.035 << 1.08;
 
   NEWMAT::Matrix xfit(3,1);

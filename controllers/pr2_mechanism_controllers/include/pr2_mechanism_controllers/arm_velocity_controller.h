@@ -37,18 +37,18 @@
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 // Services
-#include <pr2_controllers/SetJointVelCmd.h>
-#include <pr2_controllers/GetJointVelCmd.h>
+#include <pr2_mechanism_controllers/SetJointVelCmd.h>
+#include <pr2_mechanism_controllers/GetJointVelCmd.h>
 
-#include <pr2_controllers/SetJointGains.h>
-#include <pr2_controllers/GetJointGains.h>
+#include <pr2_mechanism_controllers/SetJointGains.h>
+#include <pr2_mechanism_controllers/GetJointGains.h>
 
-#include <pr2_controllers/SetCartesianVelCmd.h>
-#include <pr2_controllers/GetCartesianVelCmd.h>
+#include <pr2_mechanism_controllers/SetCartesianVelCmd.h>
+#include <pr2_mechanism_controllers/GetCartesianVelCmd.h>
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
@@ -85,12 +85,12 @@ namespace controller
        *
        * \param double pos Position command to issue
    */
-      void setJointVelCmd(pr2_controllers::SetJointVelCmd::request &req);
+      void setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::request &req);
 
   /*!
        * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-          void getJointVelCmd(pr2_controllers::GetJointVelCmd::response &resp);
+          void getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::response &resp);
 
           void getCurrentConfiguration(std::vector<double> &);
   /*!
@@ -100,9 +100,9 @@ namespace controller
 
       ros::thread::mutex arm_controller_lock_;
 
-      void setJointGains(const pr2_controllers::SetJointGains::request &req);
+      void setJointGains(const pr2_mechanism_controllers::SetJointGains::request &req);
 
-      void getJointGains(pr2_controllers::GetJointGains::response &resp);
+      void getJointGains(pr2_mechanism_controllers::GetJointGains::response &resp);
 
       controller::JointVelocityController* getJointControllerByName(std::string name);
 
@@ -139,21 +139,21 @@ namespace controller
       bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
       // Services
-      bool setJointVelCmd(pr2_controllers::SetJointVelCmd::request &req,
-                      pr2_controllers::SetJointVelCmd::response &resp);
+      bool setJointVelCmd(pr2_mechanism_controllers::SetJointVelCmd::request &req,
+                      pr2_mechanism_controllers::SetJointVelCmd::response &resp);
 
-      bool getJointVelCmd(pr2_controllers::GetJointVelCmd::request &req,
-                      pr2_controllers::GetJointVelCmd::response &resp);
+      bool getJointVelCmd(pr2_mechanism_controllers::GetJointVelCmd::request &req,
+                      pr2_mechanism_controllers::GetJointVelCmd::response &resp);
 
-      bool setCartesianVelCmd(pr2_controllers::SetCartesianVelCmd::request &req,pr2_controllers::SetCartesianVelCmd::response &resp);
+      bool setCartesianVelCmd(pr2_mechanism_controllers::SetCartesianVelCmd::request &req,pr2_mechanism_controllers::SetCartesianVelCmd::response &resp);
 
-      bool getCartesianVelCmd(pr2_controllers::GetCartesianVelCmd::request &req,pr2_controllers::GetCartesianVelCmd::response &resp);
+      bool getCartesianVelCmd(pr2_mechanism_controllers::GetCartesianVelCmd::request &req,pr2_mechanism_controllers::GetCartesianVelCmd::response &resp);
 
-      bool setJointGains(pr2_controllers::SetJointGains::request &req,
-                                                    pr2_controllers::SetJointGains::response &resp);
+      bool setJointGains(pr2_mechanism_controllers::SetJointGains::request &req,
+                                                    pr2_mechanism_controllers::SetJointGains::response &resp);
 
-      bool getJointGains(pr2_controllers::GetJointGains::request &req,
-                                                    pr2_controllers::GetJointGains::response &resp);
+      bool getJointGains(pr2_mechanism_controllers::GetJointGains::request &req,
+                                                    pr2_mechanism_controllers::GetJointGains::response &resp);
 
     private:
       ArmVelocityController *c_;

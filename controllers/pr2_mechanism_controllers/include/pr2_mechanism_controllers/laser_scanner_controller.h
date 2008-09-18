@@ -36,13 +36,13 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_position_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_position_controller.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetCommand.h>
-#include <pr2_controllers/SetProfile.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetCommand.h>
+#include <pr2_mechanism_controllers/SetProfile.h>
 
 namespace controller
 {
@@ -214,17 +214,17 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
 
-  bool getCommand(generic_controllers::GetCommand::request &req,
-                  generic_controllers::GetCommand::response &resp);
+  bool getCommand(robot_mechanism_controllers::GetCommand::request &req,
+                  robot_mechanism_controllers::GetCommand::response &resp);
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
 
-  bool setProfileCall(pr2_controllers::SetProfile::request &req,
-  pr2_controllers::SetProfile::response &resp);
+  bool setProfileCall(pr2_mechanism_controllers::SetProfile::request &req,
+  pr2_mechanism_controllers::SetProfile::response &resp);
 
   void setCommand(double command);
 

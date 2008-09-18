@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <pr2_controllers/base_controller.h>
+#include <pr2_mechanism_controllers/base_controller.h>
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -116,7 +116,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     if (base_object.joint_state_==NULL)
       std::cout << " unsuccessful getting joint state for " << joint_name << std::endl;
 
-    base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
+    base_object.controller_.init(robot_state, joint_name, control_toolbox::Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
     if(joint_name.find("caster") != string::npos)
     {
@@ -140,7 +140,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       wheel_speed_actual_.push_back(0);
       libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
-      wheel_speed_cmd_.push_back(0);      
+      wheel_speed_cmd_.push_back(0);
       num_wheels_++;
     }
   }
@@ -302,7 +302,7 @@ void BaseController::computeCommands()
 
   computeCasterSteer();
 
-  computeWheelSpeeds();  
+  computeWheelSpeeds();
 }
 
 void BaseController::setCommands()
@@ -510,8 +510,8 @@ void BaseControllerNode::update()
 }
 
 bool BaseControllerNode::setCommand(
-  pr2_controllers::SetBaseCommand::request &req,
-  pr2_controllers::SetBaseCommand::response &resp)
+  pr2_mechanism_controllers::SetBaseCommand::request &req,
+  pr2_mechanism_controllers::SetBaseCommand::response &resp)
 {
   libTF::Vector command;
   command.x = req.x_vel;
@@ -538,8 +538,8 @@ void BaseControllerNode::setCommand(double vx, double vy, double vw)
 
 
 bool BaseControllerNode::getCommand(
-  pr2_controllers::GetBaseCommand::request &req,
-  pr2_controllers::GetBaseCommand::response &resp)
+  pr2_mechanism_controllers::GetBaseCommand::request &req,
+  pr2_mechanism_controllers::GetBaseCommand::response &resp)
 {
   libTF::Vector command;
   command = c_->getCommand();

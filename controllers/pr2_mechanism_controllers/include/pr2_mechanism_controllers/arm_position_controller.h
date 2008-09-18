@@ -37,23 +37,23 @@
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_position_controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
-#include <generic_controllers/joint_effort_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_position_controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include <robot_mechanism_controllers/joint_effort_controller.h>
 
 // Services
-#include <pr2_controllers/SetJointPosCmd.h>
-#include <pr2_controllers/GetJointPosCmd.h>
+#include <pr2_mechanism_controllers/SetJointPosCmd.h>
+#include <pr2_mechanism_controllers/GetJointPosCmd.h>
 
-#include <pr2_controllers/SetJointGains.h>
-#include <pr2_controllers/GetJointGains.h>
+#include <pr2_mechanism_controllers/SetJointGains.h>
+#include <pr2_mechanism_controllers/GetJointGains.h>
 
-#include <pr2_controllers/SetCartesianPosCmd.h>
-#include <pr2_controllers/GetCartesianPosCmd.h>
+#include <pr2_mechanism_controllers/SetCartesianPosCmd.h>
+#include <pr2_mechanism_controllers/GetCartesianPosCmd.h>
 
-#include <pr2_controllers/SetJointTarget.h>
-#include <pr2_controllers/JointPosCmd.h>
+#include <pr2_mechanism_controllers/SetJointTarget.h>
+#include <pr2_mechanism_controllers/JointPosCmd.h>
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
@@ -108,16 +108,16 @@ public:
 //   * @brief Overloaded method for convenience
 //   * @param req
 //   */
-//  void setJointPosCmd(pr2_controllers::SetJointPosCmd::request &req);
+//  void setJointPosCmd(pr2_mechanism_controllers::SetJointPosCmd::request &req);
 
-  void setJointPosCmd(const pr2_controllers::JointPosCmd & cmd);
+  void setJointPosCmd(const pr2_mechanism_controllers::JointPosCmd & cmd);
 
-  void getJointPosCmd(pr2_controllers::JointPosCmd & cmd) const;
+  void getJointPosCmd(pr2_mechanism_controllers::JointPosCmd & cmd) const;
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
   */
-//  void getJointPosCmd(pr2_controllers::GetJointPosCmd::response &resp);
+//  void getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::response &resp);
 
 //  void getCurrentConfiguration(std::vector<double> &);
 
@@ -128,9 +128,9 @@ public:
 
   ros::thread::mutex arm_controller_lock_;
 
-//  void setJointGains(const pr2_controllers::SetJointGains::request &req);
+//  void setJointGains(const pr2_mechanism_controllers::SetJointGains::request &req);
 
-//  void getJointGains(pr2_controllers::GetJointGains::response &resp);
+//  void getJointGains(pr2_mechanism_controllers::GetJointGains::response &resp);
 
   controller::JointPositionController* getJointControllerByName(std::string name);
 
@@ -210,7 +210,7 @@ class ArmPositionControllerNode : public Controller
      * @param cmd
      * @return
      */
-    bool setJointPosSingle(const pr2_controllers::JointPosCmd & cmd);
+    bool setJointPosSingle(const pr2_mechanism_controllers::JointPosCmd & cmd);
 
     /** @brief sets a target for some joints managed by the controller (non-blocking)
      * This is the non-blocking version of setJointPosSingle
@@ -218,7 +218,7 @@ class ArmPositionControllerNode : public Controller
      * @param cmd
      * @return
      */
-    bool setJointPosSingleHeadless(pr2_controllers::JointPosCmd & cmd);
+    bool setJointPosSingleHeadless(pr2_mechanism_controllers::JointPosCmd & cmd);
 
     /** @brief sets a command for all the joints managed by the controller at once
      * This is a lightweight version of setJointPosHeadless when the caller knows the order of the joints.
@@ -228,8 +228,8 @@ class ArmPositionControllerNode : public Controller
      * @param resp The response is empty
      * @return
      */
-    bool setJointPosSrv(pr2_controllers::SetJointPosCmd::request &req,
-                    pr2_controllers::SetJointPosCmd::response &resp);
+    bool setJointPosSrv(pr2_mechanism_controllers::SetJointPosCmd::request &req,
+                    pr2_mechanism_controllers::SetJointPosCmd::response &resp);
 
     /** @brief sets a command for all the joints managed by the controller at once, by specifying an array
      * This is a lightweight version of setJointPosHeadless when the caller knows the order of the joints.
@@ -247,8 +247,8 @@ class ArmPositionControllerNode : public Controller
      * @param resp empty
      * @return true if the trajectory could be followed
      */
-    bool setJointPosTarget(pr2_controllers::SetJointTarget::request &req,
-                     pr2_controllers::SetJointTarget::response &resp);
+    bool setJointPosTarget(pr2_mechanism_controllers::SetJointTarget::request &req,
+                     pr2_mechanism_controllers::SetJointTarget::response &resp);
 
     /** @brief non blocking service to specify a position target
      * Given an array of tuples (name, position, error margin), the controllers sets this as a new objective for the arm controller, for these elements only. This service retutrns immediately.
@@ -259,8 +259,8 @@ class ArmPositionControllerNode : public Controller
      * @param resp
      * @return
      */
-    bool setJointPosHeadless(pr2_controllers::SetJointTarget::request &req,
-                     pr2_controllers::SetJointTarget::response &resp);
+    bool setJointPosHeadless(pr2_mechanism_controllers::SetJointTarget::request &req,
+                     pr2_mechanism_controllers::SetJointTarget::response &resp);
 
     /** @brief service that returns the goal of the controller
      * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm
@@ -268,8 +268,8 @@ class ArmPositionControllerNode : public Controller
      * @param resp the response, contains a JointPosCmd message with the goal of the controller
      * @return
      */
-    bool getJointPosCmd(pr2_controllers::GetJointPosCmd::request &req,
-                        pr2_controllers::GetJointPosCmd::response &resp);
+    bool getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::request &req,
+                        pr2_mechanism_controllers::GetJointPosCmd::response &resp);
 
     /** @brief ROS callback hook
      *  Provides a ROS callback to set a new goal. The topic the controller listens to is set in the xml init file.
@@ -278,7 +278,7 @@ class ArmPositionControllerNode : public Controller
 
 
   private:
-    pr2_controllers::JointPosCmd msg_;   //The message used by the ROS callback
+    pr2_mechanism_controllers::JointPosCmd msg_;   //The message used by the ROS callback
     ArmPositionController *c_;
 
 };

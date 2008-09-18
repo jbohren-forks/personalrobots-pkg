@@ -43,14 +43,14 @@
 
 #include <algorithm>
 
-#include <pr2_controllers/laser_scanner_qualification.h>
+#include <pr2_mechanism_controllers/laser_scanner_qualification.h>
 #include <math_utils/angles.h>
 
 using namespace std;
 using namespace controller;
-//#define DEBUG 1 
+//#define DEBUG 1
 ROS_REGISTER_CONTROLLER(LaserScannerQualification)
- 
+
 LaserScannerQualification::LaserScannerQualification()
 {
   robot_ = NULL;
@@ -68,7 +68,7 @@ LaserScannerQualification::LaserScannerQualification()
 
 LaserScannerQualification::~LaserScannerQualification()
 {
- 
+
 }
 
 void LaserScannerQualification::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::Robot *robot)
@@ -96,16 +96,16 @@ bool LaserScannerQualification::initXml(mechanism::Robot *robot, TiXmlElement *c
   }
 
   effort_test_percent_  = atof(j->FirstChildElement("effort_test")->Attribute("effort_percent"));
-  effort_test_length_  = atof(j->FirstChildElement("effort_test")->Attribute("effort_length")); 
+  effort_test_length_  = atof(j->FirstChildElement("effort_test")->Attribute("effort_length"));
 
   sinesweep_start_freq_ = atof(j->FirstChildElement("sinesweep_test")->Attribute("start_freq"));
   sinesweep_end_freq_ = atof(j->FirstChildElement("sinesweep_test")->Attribute("end_freq"));
   sinesweep_amplitude_ = atof(j->FirstChildElement("sinesweep_test")->Attribute("amplitude"));
   sinesweep_duration_ = atof(j->FirstChildElement("sinesweep_test")->Attribute("duration"));
- 
+
   endstop_velocity_  = atof(j->FirstChildElement("endstop_test")->Attribute("velocity"));
-  endstop_stopped_length_ = atof(j->FirstChildElement("endstop_test")->Attribute("velocity_stopped_length")); 
-  endstop_stopped_velocity_ = atof(j->FirstChildElement("endstop_test")->Attribute("stopped_velocity")); 
+  endstop_stopped_length_ = atof(j->FirstChildElement("endstop_test")->Attribute("velocity_stopped_length"));
+  endstop_stopped_velocity_ = atof(j->FirstChildElement("endstop_test")->Attribute("stopped_velocity"));
 
   double start_angular_freq =2*M_PI*sinesweep_start_freq_;
   double end_angular_freq =2*M_PI*sinesweep_end_freq_;
@@ -173,21 +173,21 @@ void LaserScannerQualification::update()
         joint_->commanded_effort_= command;
       }
       else
-      { 
+      {
         #ifdef DEBUG
           std::cout<<" DEBUG Finished sinesweep test\n";
         #endif
         sinesweep_test_status_ = COMPLETE;
         endstop_test_status_ = INPROGRESS;
-        current_mode_ = ENDSTOPTEST;  
+        current_mode_ = ENDSTOPTEST;
       }
       break;
     case ENDSTOPTEST:
         if(!found_positive_endstop_) //We just started moving
-        {         
+        {
           joint_velocity_controller_.setCommand(endstop_velocity_);
           joint_velocity_controller_.update();
-        
+
           //If we're close to stopped, mark current time
           if(joint_->velocity_>endstop_stopped_velocity_) endstop_stopped_time_ = time;
           //We've stopped long enough to register the endstop
@@ -205,7 +205,7 @@ void LaserScannerQualification::update()
         {
           //Move in negative direction
           joint_velocity_controller_.setCommand(-endstop_velocity_);
-          joint_velocity_controller_.update(); 
+          joint_velocity_controller_.update();
 
           #ifdef DEBUG
             std::cout<<" DEBUG Commanded effort negative:"<<joint_->commanded_effort_<<"\n";
@@ -220,7 +220,7 @@ void LaserScannerQualification::update()
               endstop_test_status_ = COMPLETE;
           #ifdef DEBUG
               std::cout<<" DEBUG Effort Test:";
-              printStatus(effort_test_status_);        
+              printStatus(effort_test_status_);
               std::cout<<" DEBUG Sinesweep Test:";
               printStatus(sinesweep_test_status_);
               std::cout<<" DEBUG Endstop Test:";
@@ -248,7 +248,7 @@ void LaserScannerQualification::printStatus(LaserScannerQualification::TestStatu
 {
   switch(status)
   {
-    case INCOMPLETE: 
+    case INCOMPLETE:
       std::cout<<"Incomplete";
       break;
     case INPROGRESS:
@@ -264,7 +264,7 @@ void LaserScannerQualification::printStatus(LaserScannerQualification::TestStatu
       std::cout<<"Passed";
       break;
   }
-    
+
   std::cout<<"\n";
 }
 
@@ -292,15 +292,15 @@ double LaserScannerQualificationNode::getMeasuredPosition()
 }
 
 bool LaserScannerQualificationNode::setCommand(
-  generic_controllers::SetCommand::request &req,
-  generic_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::request &req,
+  robot_mechanism_controllers::SetCommand::response &resp)
 {
   return true;
 }
 
 bool LaserScannerQualificationNode::getCommand(
-  generic_controllers::GetCommand::request &req,
-  generic_controllers::GetCommand::response &resp)
+  robot_mechanism_controllers::GetCommand::request &req,
+  robot_mechanism_controllers::GetCommand::response &resp)
 {
   return true;
 }
@@ -317,8 +317,8 @@ bool LaserScannerQualificationNode::initXml(mechanism::Robot *robot, TiXmlElemen
   return true;
 }
 bool LaserScannerQualificationNode::getActual(
-  generic_controllers::GetActual::request &req,
-  generic_controllers::GetActual::response &resp)
+  robot_mechanism_controllers::GetActual::request &req,
+  robot_mechanism_controllers::GetActual::response &resp)
 {
   resp.command = c_->getMeasuredPosition();
   resp.time = c_->getTime();

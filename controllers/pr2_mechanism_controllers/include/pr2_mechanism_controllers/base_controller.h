@@ -36,14 +36,14 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_position_controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
-#include <generic_controllers/joint_effort_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_position_controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
+#include <robot_mechanism_controllers/joint_effort_controller.h>
 
 // Services
-#include <pr2_controllers/SetBaseCommand.h>
-#include <pr2_controllers/GetBaseCommand.h>
+#include <pr2_mechanism_controllers/SetBaseCommand.h>
+#include <pr2_mechanism_controllers/GetBaseCommand.h>
 
 #include <libTF/Pose3D.h>
 #include <urdf/URDF.h>
@@ -341,11 +341,11 @@ namespace controller
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     // Services
-    bool setCommand(pr2_controllers::SetBaseCommand::request &req,
-                    pr2_controllers::SetBaseCommand::response &resp);
+    bool setCommand(pr2_mechanism_controllers::SetBaseCommand::request &req,
+                    pr2_mechanism_controllers::SetBaseCommand::response &resp);
 
-    bool getCommand(pr2_controllers::GetBaseCommand::request &req,
-                    pr2_controllers::GetBaseCommand::response &resp);
+    bool getCommand(pr2_mechanism_controllers::GetBaseCommand::request &req,
+                    pr2_mechanism_controllers::GetBaseCommand::response &resp);
 
     void setCommand(double vx, double vy, double vw);
 
