@@ -195,14 +195,8 @@ int main( int argc, char** argv )
         keys = siftKeypoints(img);
       else
         keys = starKeypoints(img, 7, 0);
-      
-      // Keep the best keypoints
-      if ( (int)keys.size() < samples )
-        std::sort(keys.begin(), keys.end());
-      else {
-        std::partial_sort(keys.begin(), keys.begin() + samples, keys.end());
-        keys.erase(keys.begin() + samples, keys.end());
-      }
+
+      KeepBestPoints(keys, samples);
       
       BOOST_FOREACH( Keypoint &key, keys ) {
         base_set.push_back( BaseKeypoint(key.x, key.y, img) );

@@ -47,6 +47,9 @@ public:
   int findMatches(Signature const& signature, float *d1, int *second,
                   float *d2) const;
 
+  // FIXME: for testing/debugging only
+  const std::vector<Signature>& signatures() { return signatures_; }
+
 private:
   std::vector< Signature > signatures_;
   std::vector< Data > data_;

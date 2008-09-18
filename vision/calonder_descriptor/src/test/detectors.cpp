@@ -1,5 +1,5 @@
 #include "detectors.h"
-#include <detector.h> // Star detector
+#include <star_detector/detector.h> // Star detector
 #include <lowe_key.h> // SIFT interface
 
 namespace features {
@@ -7,8 +7,9 @@ namespace features {
 std::vector<Keypoint> starKeypoints(IplImage *image, int scales, float threshold)
 {
   StarDetector detector( cvSize(image->width, image->height), scales, threshold );
-  detector.interpolate(false);
-  return detector.DetectPoints(image);
+  std::vector<Keypoint> pts;
+  detector.DetectPoints(image, std::back_inserter(pts));
+  return pts;
 }
 
 std::vector<Keypoint> siftKeypoints(IplImage *image)

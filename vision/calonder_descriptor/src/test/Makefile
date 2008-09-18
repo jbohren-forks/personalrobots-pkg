@@ -14,9 +14,9 @@ CALONDER = $(shell rospack find calonder_descriptor)
 CFLAGS += -I/usr/include -I$(CALONDER)/include
 LDFLAGS += -L$(CALONDER)/lib -lcalonder
 # Star detector
-FEATURES = /u/mihelich/projects/features
-CFLAGS += -I$(FEATURES)/star_detector/include -I$(FEATURES)/star_detector/src/test
-LDFLAGS += -L$(FEATURES)/star_detector/lib -lwgdetect
+STAR_DIR = $(shell rospack find star_detector)
+CFLAGS += -I/usr/include -I$(STAR_DIR)/include -I$(STAR_DIR)/src/test
+LDFLAGS += -L$(STAR_DIR)/lib -lstarfeature
 # GSL
 #CFLAGS += -DHAVE_GSL
 #LDFLAGS += -L/usr/lib -lgsl -lgslcblas

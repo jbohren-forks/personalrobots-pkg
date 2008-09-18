@@ -1,5 +1,5 @@
 #include <vector>
-#include <keypoint.h>
+#include <star_detector/keypoint.h>
 #include <cv.h>
 
 namespace features {
