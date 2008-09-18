@@ -478,10 +478,10 @@ void BaseControllerNode::update()
 {
   c_->update();
 
-  c_->setOdomMessage(odom_msg_);
-
   if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
   {
+    c_->setOdomMessage(odom_msg_);
+
     (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;
 
@@ -494,34 +494,24 @@ void BaseControllerNode::update()
     /*        localization                                         */
     /*                                                             */
     /***************************************************************/
-    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
+    double x=0,y=0,yaw=0,vx,vy,vyaw;
     this->getOdometry(x,y,yaw,vx,vy,vyaw);
-    // FIXME: z, roll, pitch not accounted for
-    this->tfs->sendInverseEuler("FRAMEID_ODOM",
-                 "base",
-                 x,
-                 y,
-                 0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
-                 yaw,
-                 pitch,
-                 roll,
+    this->tfs->sendInverseEuler(
+                 "FRAMEID_ODOM",
+                 "FRAMEID_ROBOT",
+                 x, y, 0,
+                 yaw, 0, 0,
                  odom_msg_.header.stamp);
 
     /***************************************************************/
     /*                                                             */
-    /*  frame transforms                                           */
-    /*                                                             */
-    /*  x,y,z,yaw,pitch,roll                                       */
+    /*  FRAMEID_ROBOT is the base frame                            */
     /*                                                             */
     /***************************************************************/
-    this->tfs->sendEuler("base",
+    this->tfs->sendInverseEuler(
                  "FRAMEID_ROBOT",
-                 0,
-                 0,
-                 0, 
-                 0,
-                 0,
-                 0,
+                 "base",
+                 0, 0, 0, 0, 0, 0,
                  odom_msg_.header.stamp);
 
   }
