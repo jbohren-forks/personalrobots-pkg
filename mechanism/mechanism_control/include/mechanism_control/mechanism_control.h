@@ -42,7 +42,7 @@
 #include <hardware_interface/hardware_interface.h>
 #include <mechanism_model/robot.h>
 #include <rosthread/mutex.h>
-#include <generic_controllers/controller.h>
+#include <mechanism_model/controller.h>
 #include <misc_utils/realtime_publisher.h>
 
 #include "mechanism_control/ListControllerTypes.h"

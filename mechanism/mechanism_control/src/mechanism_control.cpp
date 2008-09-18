@@ -29,7 +29,6 @@
  */
 
 #include "mechanism_control/mechanism_control.h"
-#include "generic_controllers/controller.h"
 #include "rosthread/member_thread.h"
 #include "rosTF/rosTF.h"
 
