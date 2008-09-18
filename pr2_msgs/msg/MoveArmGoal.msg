@@ -1,5 +1,6 @@
 Header header
 # The desired joint configuratin
-ArmConfiguration configuration
+mechanism_control/JointState[] configuration
+
 # Indicate if the goal is being enabled or disabled
 byte enable
