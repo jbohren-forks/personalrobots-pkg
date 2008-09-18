@@ -865,7 +865,7 @@
   
   <link name="base"><!-- link specifying the base of the robot -->
     
-    <parent name=" world" />
+    <parent name="world" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" robot_inital_position_x robot_inital_position_y robot_inital_position_z " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
