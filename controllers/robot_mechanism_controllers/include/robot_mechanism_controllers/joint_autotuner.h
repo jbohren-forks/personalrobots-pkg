@@ -37,21 +37,21 @@
 /***************************************************/
 /*! \class controller::JointAutotuner
     \brief Joint Position Controller
-    
+
     This class closes the loop around positon using
-    a pid loop. 
+    a pid loop.
 
 */
 /***************************************************/
 
 #include <ros/node.h>
 #include <vector>
-#include <generic_controllers/controller.h>
-#include <mechanism_model/pid.h>
+#include <mechanism_model/controller.h>
+#include <control_toolbox/pid.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetActual.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetActual.h>
 
 namespace controller
 {
@@ -59,7 +59,7 @@ namespace controller
 class JointAutotuner : public Controller
 {
  enum AutoControlState
-  { 
+  {
     START,POSITIVE_PEAK,NEGATIVE_PEAK, DONE, MANUAL
   };
 public:
@@ -80,7 +80,7 @@ public:
    * \param i_gain Integral gain.
    * \param d_gain Derivative gain.
    * \param windup Intergral limit.
-   * \param time The current hardware time. 
+   * \param time The current hardware time.
    * \param *joint The joint that is being controlled.
    */
   void init(double p_gain, double i_gain, double d_gain, double windup, double time,mechanism::Robot *robot, mechanism::Joint *joint);
@@ -89,7 +89,7 @@ public:
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
    *
-   * \param command 
+   * \param command
    */
   void setCommand(double command);
 
@@ -120,12 +120,12 @@ public:
   double d_gain_;
 
   AutoControlState current_state_;
- 
+
 private:
   bool tune_velocity_; /**<If true, uses velocity to tune. Otherwise uses position>*/
   mechanism::Joint* joint_;  /**< Joint we're controlling.> */
   mechanism::JointState* joint_state_;  /**< Joint we're controlling.> */
-  Pid pid_controller_;       /**< Internal PID controller.> */
+  control_toolbox::Pid pid_controller_;       /**< Internal PID controller.> */
   double last_time_;         /**< Last time stamp of update.> */
   double command_;           /**< Last commanded position.> */
   mechanism::Robot *robot_;  /**< Pointer to robot structure.> */
@@ -156,8 +156,8 @@ private:
 /***************************************************/
 /*! \class controller::JointAutotunerNode
     \brief Joint Position Controller ROS Node
-    
-   This class performs an autotuning routine using the relay method. 
+
+   This class performs an autotuning routine using the relay method.
 
 
 */
@@ -182,11 +182,11 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
 
 private:
   JointAutotuner *c_;

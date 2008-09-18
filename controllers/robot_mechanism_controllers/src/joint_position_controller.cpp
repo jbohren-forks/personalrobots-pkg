@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <generic_controllers/joint_position_controller.h>
+#include <robot_mechanism_controllers/joint_position_controller.h>
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -137,7 +137,7 @@ void JointPositionController::update()
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
-  
+
   assert(joint_state_->joint_);
 
   if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY ||
@@ -149,11 +149,11 @@ void JointPositionController::update()
   {
     error = joint_state_->position_ - command_;
   }
-  
+
   smoothed_error_ = smoothing_factor_*error + (1-smoothing_factor_)*smoothed_error_;
 
   joint_state_->commanded_effort_ = pid_controller_.updatePid(smoothed_error_, time - last_time_);
-  
+
   last_time_ = time;
 }
 
@@ -174,8 +174,8 @@ void JointPositionControllerNode::update()
 }
 
 bool JointPositionControllerNode::setCommand(
-  generic_controllers::SetCommand::request &req,
-  generic_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::request &req,
+  robot_mechanism_controllers::SetCommand::response &resp)
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
@@ -197,8 +197,8 @@ double JointPositionControllerNode::getCommand()
 
 
 bool JointPositionControllerNode::getActual(
-  generic_controllers::GetActual::request &req,
-  generic_controllers::GetActual::response &resp)
+  robot_mechanism_controllers::GetActual::request &req,
+  robot_mechanism_controllers::GetActual::response &resp)
 {
   resp.command = c_->getMeasuredPosition();
   resp.time = c_->getTime();

@@ -53,13 +53,13 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <mechanism_model/pid.h>
+#include <mechanism_model/controller.h>
+#include <control_toolbox/pid.h>
 
 // Services
-#include <generic_controllers/SetPDCommand.h>
-#include <generic_controllers/GetPDActual.h>
-#include <generic_controllers/GetPDCommand.h>
+#include <robot_mechanism_controllers/SetPDCommand.h>
+#include <robot_mechanism_controllers/GetPDActual.h>
+#include <robot_mechanism_controllers/GetPDCommand.h>
 
 namespace controller
 {
@@ -134,7 +134,7 @@ namespace controller
 
     mechanism::JointState* joint_; /**< Joint we're controlling. */
     mechanism::RobotState *robot_; /**< Pointer to robot structure. */
-    Pid pid_controller_;      /**< Internal PID controller. */
+    control_toolbox::Pid pid_controller_;      /**< Internal PID controller. */
     double last_time_;        /**< Last time stamp of update. */
     double command_;          /**< Last commanded position. */
     double command_dot_;
@@ -182,15 +182,15 @@ namespace controller
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
     // Services
-    bool setPDCommand(generic_controllers::SetPDCommand::request &req,
-                    generic_controllers::SetPDCommand::response &resp);
+    bool setPDCommand(robot_mechanism_controllers::SetPDCommand::request &req,
+                    robot_mechanism_controllers::SetPDCommand::response &resp);
 
     // Services
-    bool getPDCommand(generic_controllers::GetPDCommand::request &req,
-                    generic_controllers::GetPDCommand::response &resp);
+    bool getPDCommand(robot_mechanism_controllers::GetPDCommand::request &req,
+                    robot_mechanism_controllers::GetPDCommand::response &resp);
 
-    bool getPDActual(generic_controllers::GetPDActual::request &req,
-                   generic_controllers::GetPDActual::response &resp);
+    bool getPDActual(robot_mechanism_controllers::GetPDActual::request &req,
+                   robot_mechanism_controllers::GetPDActual::response &resp);
 
     private:
     JointPDController *c_;

@@ -1,19 +1,20 @@
 <package>
-  <description brief='Generic Controller Library'>
-    Library for doing generic controls.
+  <description brief="Generic Mechanism Controller Library">
   </description>
   <author>John Hsu, David Li, Melonee Wise</author>
   <license>BSD</license>
   <depend package="mechanism_model" />
-  <depend package="wg_robot_description_parser" />
+  <depend package="control_toolbox" />
+  <depend package="tinyxml" />
   <depend package="stl_utils" />
   <depend package="misc_utils" />
-  <depend package="rospy" />
+  <depend package="roscpp" />
   <depend package="bullet" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lgeneric_controllers'/>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp"
+	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lrobot_mechanism_controllers" />
   </export>
 
 </package>

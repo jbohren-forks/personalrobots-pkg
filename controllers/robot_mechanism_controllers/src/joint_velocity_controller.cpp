@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <generic_controllers/joint_velocity_controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 
 using namespace std;
@@ -41,10 +41,10 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointVelocityController)
 
 JointVelocityController::JointVelocityController()
-: joint_state_(NULL), 
+: joint_state_(NULL),
   robot_state_(NULL),
   last_time_(0),
-  command_(0), 
+  command_(0),
   smoothed_velocity_(0),
   smoothing_factor_(1)  // No smoothing
 {
@@ -54,7 +54,7 @@ JointVelocityController::~JointVelocityController()
 {
 }
 
-bool JointVelocityController::init(mechanism::RobotState *robot_state, const std::string &joint_name, const Pid &pid)
+bool JointVelocityController::init(mechanism::RobotState *robot_state, const std::string &joint_name, const control_toolbox::Pid &pid)
 {
   assert(robot_state);
   robot_state_ = robot_state;
@@ -85,7 +85,7 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot_state, TiXmlE
   const char *jn = j->Attribute("name");
   std::string joint_name = jn ? jn : "";
 
-  Pid pid;
+  control_toolbox::Pid pid;
   TiXmlElement *p = j->FirstChildElement("pid");
   if (p)
     pid.initXml(p);
@@ -94,7 +94,7 @@ bool JointVelocityController::initXml(mechanism::RobotState *robot_state, TiXmlE
     fprintf(stderr, "JointVelocityController's config did not specify the default pid parameters.\n");
     return false;
   }
-  
+
   TiXmlElement *s = config->FirstChildElement("filter");
   if(s)
   {
@@ -179,8 +179,8 @@ void JointVelocityControllerNode::update()
 }
 
 bool JointVelocityControllerNode::setCommand(
-  generic_controllers::SetCommand::request &req,
-  generic_controllers::SetCommand::response &resp)
+  robot_mechanism_controllers::SetCommand::request &req,
+  robot_mechanism_controllers::SetCommand::response &resp)
 {
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
@@ -189,8 +189,8 @@ bool JointVelocityControllerNode::setCommand(
 }
 
 bool JointVelocityControllerNode::getActual(
-  generic_controllers::GetActual::request &req,
-  generic_controllers::GetActual::response &resp)
+  robot_mechanism_controllers::GetActual::request &req,
+  robot_mechanism_controllers::GetActual::response &resp)
 {
   resp.command = c_->getMeasuredVelocity();
   resp.time = c_->getTime();

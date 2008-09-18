@@ -50,7 +50,7 @@
 #include "joint_manual_calibration_controller.h"
 
 // Services
-#include <generic_controllers/CalibrateJoint.h>
+#include <robot_mechanism_controllers/CalibrateJoint.h>
 
 
 namespace controller
@@ -123,8 +123,8 @@ public:
    * @param resp
    * @return
    */
-  bool calibrateCommand(generic_controllers::CalibrateJoint::request &req,
-                        generic_controllers::CalibrateJoint::response &resp);
+  bool calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req,
+                        robot_mechanism_controllers::CalibrateJoint::response &resp);
 
 private:
   JointCalibrationController *c_;

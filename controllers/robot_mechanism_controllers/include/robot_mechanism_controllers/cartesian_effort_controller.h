@@ -44,8 +44,8 @@
 
 #include <vector>
 #include "ros/node.h"
-#include "generic_controllers/SetVectorCommand.h"
-#include "generic_controllers/controller.h"
+#include "robot_mechanism_controllers/SetVectorCommand.h"
+#include "mechanism_model/controller.h"
 #include "LinearMath/btVector3.h"
 
 namespace controller {
@@ -75,8 +75,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(generic_controllers::SetVectorCommand::request &req,
-                  generic_controllers::SetVectorCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetVectorCommand::request &req,
+                  robot_mechanism_controllers::SetVectorCommand::response &resp);
 
 private:
   CartesianEffortController c_;

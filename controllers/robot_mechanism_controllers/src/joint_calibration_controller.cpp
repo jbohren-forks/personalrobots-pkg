@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <generic_controllers/joint_calibration_controller.h>
+#include <robot_mechanism_controllers/joint_calibration_controller.h>
 #include <ros/time.h>
 
 using namespace std;
@@ -71,20 +71,20 @@ bool JointCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElem
     std::cerr<<"Velocity value was not specified\n";
     return false;
   }
-  
+
   if(search_velocity_ == 0)
   {
     std::cerr<<"You gave zero velocity\n";
     return false;
-  } 
-  
+  }
+
   TiXmlElement *v = config->FirstChildElement("controller");
   if(!v)
   {
     std::cerr<<"JointCalibrationController was not given a controller to move the joint."<<std::endl;
     return false;
   }
-  
+
   return vcontroller_.initXml(robot, v);
 }
 
@@ -92,7 +92,7 @@ void JointCalibrationController::update()
 {
   assert(joint_state_);
   assert(actuator_);
-  
+
   const double cur_reading = actuator_->state_.calibration_reading_;
   if(state_ == Begin)
   {
@@ -110,7 +110,7 @@ void JointCalibrationController::update()
     std::cout<<"Found offset at "<<offset_<<std::endl;
     state_ = Initialized;
   }
-  
+
   if(state_ == Initialized)
   {
     joint_state_->calibrated_ = true;
@@ -121,9 +121,9 @@ void JointCalibrationController::update()
 
   if(state_ == Stop)
   {
-    velocity_cmd_ = 0;  
+    velocity_cmd_ = 0;
   }
-  
+
   if(state_!=Stop)
   {
     vcontroller_.setCommand(velocity_cmd_);
@@ -150,7 +150,7 @@ void JointCalibrationControllerNode::update()
 }
 
 
-  bool JointCalibrationControllerNode::calibrateCommand(generic_controllers::CalibrateJoint::request &req, generic_controllers::CalibrateJoint::response &resp)
+  bool JointCalibrationControllerNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
   c_->beginCalibration();
   ros::Duration d=ros::Duration(0,1000000);

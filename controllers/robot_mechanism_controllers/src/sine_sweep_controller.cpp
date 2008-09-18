@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <generic_controllers/sine_sweep_controller.h>
+#include <robot_mechanism_controllers/sine_sweep_controller.h>
 #include <math.h>
 
 using namespace std;

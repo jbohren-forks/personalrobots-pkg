@@ -31,7 +31,7 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <generic_controllers/ramp_effort_controller.h>
+#include <robot_mechanism_controllers/ramp_effort_controller.h>
 
 using namespace std;
 
@@ -144,8 +144,8 @@ void RampEffortControllerNode::update()
 
 
 bool RampEffortControllerNode::getActual(
-  generic_controllers::GetActual::request &req,
-  generic_controllers::GetActual::response &resp)
+  robot_mechanism_controllers::GetActual::request &req,
+  robot_mechanism_controllers::GetActual::response &resp)
 {
   resp.command = c_->getMeasuredEffort();
   resp.time = c_->getTime();

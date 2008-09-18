@@ -35,100 +35,121 @@
 #pragma once
 
 /***************************************************/
-/*! \class controller::JointCalibratonController
-    \brief Joint Controller that finds zerop point
-    \author Timothy Hunter <tjhunter@willowgarage.com>
+/*! \class controller::JointEffortController
+    \brief Joint Torque Controller
 
-    
-    This class moves the joint and reads the value of the clibration_reading_ field to find the zero position of the joint. Once these are determined, these values
- * are passed to the joint and enable the joint for the other controllers.
+    This class basically passes the commanded effort
+    down through the transmissions and safety code.
+
+    <controller type="JointEffortController" name="controller_name">
+      <joint name="joint_to_control" />
+    </controller>
 
 */
 /***************************************************/
 
 
-#include "joint_manual_calibration_controller.h"
+#include <ros/node.h>
+#include <mechanism_model/controller.h>
 
 // Services
-#include <generic_controllers/CalibrateJoint.h>
-
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetActual.h>
 
 namespace controller
 {
 
-class JointBlindCalibrationController : public JointManualCalibrationController
+class JointEffortController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor.
+   * \brief Default Constructor of the JointEffortController class.
    *
    */
-  JointBlindCalibrationController();
+  JointEffortController();
 
   /*!
-   * \brief Destructor.
+   * \brief Destructor of the JointEffortController class.
    */
-  virtual ~JointBlindCalibrationController();
+  ~JointEffortController();
 
   /*!
    * \brief Functional way to initialize limits and gains.
    *
    */
-  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
+  /*!
+   * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+   *
+   * \param command
+   */
+  void setCommand(double command);
+
+  /*!
+   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+   */
+  double getCommand();
+
+  /*!
+   * \brief Read the effort of the joint
+   */
+  double getMeasuredEffort();
+
+  /*!
+   * \brief Get latest time..
+   */
+  double getTime();
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
    */
+
   virtual void update();
-  
-protected:
 
-  enum {SearchUp=100,SearchDown,SearchingUp,SearchingDown};
-  
-  double search_velocity_;
-  
-  double velocity_cmd_;
-  
-  double init_time;
-
-  controller::JointVelocityController vcontroller_; /** The joint velocity controller used to sweep the joint.*/
+private:
+  mechanism::JointState *joint_; /**< Joint we're controlling. */
+  mechanism::RobotState *robot_; /**< Pointer to robot structure. */
+  double command_;          /**< Last commanded position. */
 };
 
-
 /***************************************************/
-/*! \class controller::JointBlindCalibrationControllerNode
-    \brief Joint Limit Controller ROS Node
-    
-    This class starts and stops the initialization sequence
+/*! \class controller::JointEffortControllerNode
+    \brief Joint Torque Controller ROS Node
+
+    This class basically passes the commanded effort
+    down through the transmissions and safety code.
 
 */
 /***************************************************/
 
-class JointBlindCalibrationControllerNode : public Controller
+class JointEffortControllerNode : public Controller
 {
 public:
   /*!
    * \brief Default Constructor
    *
    */
-  JointBlindCalibrationControllerNode();
+  JointEffortControllerNode();
 
   /*!
    * \brief Destructor
    */
-  ~JointBlindCalibrationControllerNode();
+  ~JointEffortControllerNode();
 
   void update();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool calibrateCommand(generic_controllers::CalibrateJoint::request &req,
-                        generic_controllers::CalibrateJoint::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
+
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
 
 private:
-  JointBlindCalibrationController *c_;
+  JointEffortController *c_;
 };
 }
 

@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <generic_controllers/joint_pd_controller.h>
+#include <robot_mechanism_controllers/joint_pd_controller.h>
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -46,7 +46,6 @@ JointPDController::JointPDController()
   joint_=NULL;
 
   // Initialize PID class
-  pid_controller_.initPid(0, 0, 0, 0, 0);
   command_ = 0;
   command_dot_ = 0;
   last_time_=0;
@@ -58,6 +57,7 @@ JointPDController::~JointPDController()
 }
 
 void JointPDController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
+
 {
   robot_ = robot;
   joint_ = robot->getJointState(name);
@@ -185,8 +185,8 @@ void JointPDControllerNode::update()
 }
 
 bool JointPDControllerNode::setPDCommand(
-  generic_controllers::SetPDCommand::request &req,
-  generic_controllers::SetPDCommand::response &resp)
+  robot_mechanism_controllers::SetPDCommand::request &req,
+  robot_mechanism_controllers::SetPDCommand::response &resp)
 {
   c_->setPDCommand(req.command,req.command_dot);
   c_->getPDCommand(resp.command,resp.command_dot);
@@ -195,8 +195,8 @@ bool JointPDControllerNode::setPDCommand(
 }
 
 bool JointPDControllerNode::getPDActual(
-  generic_controllers::GetPDActual::request &req,
-  generic_controllers::GetPDActual::response &resp)
+  robot_mechanism_controllers::GetPDActual::request &req,
+  robot_mechanism_controllers::GetPDActual::response &resp)
 {
   resp.state_dot = c_->getMeasuredVelocity();
   resp.state = c_->getMeasuredPosition();
@@ -205,8 +205,8 @@ bool JointPDControllerNode::getPDActual(
   return true;
 }
 bool JointPDControllerNode::getPDCommand(
-  generic_controllers::GetPDCommand::request &req,
-  generic_controllers::GetPDCommand::response &resp)
+  robot_mechanism_controllers::GetPDCommand::request &req,
+  robot_mechanism_controllers::GetPDCommand::response &resp)
 {
   double command, command_dot;
   c_->getPDCommand(command, command_dot);

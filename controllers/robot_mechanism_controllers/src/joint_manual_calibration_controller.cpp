@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <generic_controllers/joint_calibration_controller.h>
+#include <robot_mechanism_controllers/joint_calibration_controller.h>
 #include <ros/time.h>
 
 using namespace std;
@@ -61,7 +61,7 @@ bool JointManualCalibrationController::initXml(mechanism::RobotState *robot, TiX
   assert(robot);
   assert(config);
   robot_ = robot->model_;
-  
+
   TiXmlElement *j = config->FirstChildElement("param");
   if (!j)
   {
@@ -76,14 +76,14 @@ bool JointManualCalibrationController::initXml(mechanism::RobotState *robot, TiX
     fprintf(stderr, "JointManualCalibrationController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-  
+
   const int i = robot_->getJointIndex(joint_name);
   if(i<0)
   {
     std::cout<<"Could not find joint state\n";
     return false;
   }
-  joint_state_ = &(robot->joint_states_[i]);    
+  joint_state_ = &(robot->joint_states_[i]);
 
   const char *act_name = j->Attribute("actuator_name");
   actuator_ = act_name ? robot_->getActuator(act_name) : NULL;
@@ -92,7 +92,7 @@ bool JointManualCalibrationController::initXml(mechanism::RobotState *robot, TiX
     std::cout<<"JointManualCalibrationController could not find an actuator called "<<act_name<<std::endl;
     return false;
   }
-  
+
   const char *trans_name = j->Attribute("transmission_name");
   transmission_ = trans_name ? robot_->getTransmission(trans_name) : NULL;
   if(!transmission_)
@@ -100,7 +100,7 @@ bool JointManualCalibrationController::initXml(mechanism::RobotState *robot, TiX
     std::cout<<"JointManualCalibrationController could not find a transmission called "<<trans_name<<std::endl;
     return false;
   }
-  
+
   return true;
 }
 
@@ -129,7 +129,7 @@ void JointManualCalibrationController::update()
 {
   assert(joint_state_);
   assert(actuator_);
-  
+
   if(state_ == Begin)
   {
     joint_state_->calibrated_ = false;
@@ -137,13 +137,13 @@ void JointManualCalibrationController::update()
     max_ = actuator_->state_.position_;
     state_ = Search;
   }
-  
+
   if(state_ == Search)
   {
     min_= std::min(min_, actuator_->state_.position_);
     max_= std::max(max_, actuator_->state_.position_);
   }
-  
+
   if(state_ == Stop)
   {
     // Compute the offset:
@@ -154,7 +154,7 @@ void JointManualCalibrationController::update()
     std::cout<<"Offset found: "<<offset_min<<'\t'<<offset_max<<'\t'<<offset_avg<<std::endl;
     actuator_->state_.zero_offset_=offset_avg;
     state_ = Initialized;
-    
+
   }
 
   if(state_ == Initialized)
@@ -175,14 +175,14 @@ double JointManualCalibrationController::offset(double act_pos, double joint_ref
   std::cout<<"act_pos = "<<act_pos<<'\n';
   std::cout<<"ref_pos = "<<joint_ref_pos<<'\n';
   assert(transmission_);
-  
+
   Actuator act;
   mechanism::JointState jState;
   std::vector<Actuator *> acts;
   std::vector<mechanism::JointState*> jStates;
   acts.push_back(&act);
   jStates.push_back(&jState);
-  
+
   jState.position_ = joint_ref_pos;
 
   transmission_->propagatePositionBackwards(jStates, acts);
@@ -208,13 +208,13 @@ void JointManualCalibrationControllerNode::update()
   c_->update();
 }
 
-  bool JointManualCalibrationControllerNode::beginCalibrationCommand(generic_controllers::CalibrateJoint::request &req, generic_controllers::CalibrateJoint::response &resp)
+  bool JointManualCalibrationControllerNode::beginCalibrationCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
   c_->beginCalibration();
   return true;
 }
 
-  bool JointManualCalibrationControllerNode::endCalibrationCommand(generic_controllers::CalibrateJoint::request &req, generic_controllers::CalibrateJoint::response &resp)
+  bool JointManualCalibrationControllerNode::endCalibrationCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
   c_->endCalibration();
   ros::Duration d=ros::Duration(0,1000000);

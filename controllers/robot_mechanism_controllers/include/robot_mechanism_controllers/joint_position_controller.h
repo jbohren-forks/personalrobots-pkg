@@ -54,14 +54,14 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <mechanism_model/pid.h>
+#include <mechanism_model/controller.h>
+#include <control_toolbox/pid.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetActual.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetActual.h>
 
-#include <generic_controllers/SingleJointPosCmd.h>
+#include <robot_mechanism_controllers/SingleJointPosCmd.h>
 
 namespace controller
 {
@@ -128,10 +128,10 @@ public:
 private:
   mechanism::JointState *joint_state_;  /**< Joint we're controlling. */
   mechanism::RobotState *robot_;  /**< Pointer to robot structure. */
-  Pid pid_controller_;       /**< Internal PID controller. */
+  control_toolbox::control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
   double last_time_;         /**< Last time stamp of update. */
   double command_;           /**< Last commanded position. */
-  
+
   double smoothed_error_; /** */
   double smoothing_factor_;
 
@@ -167,16 +167,16 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
   void setCommand(double command);
 
   double getCommand();
 
   double getMeasuredPosition();
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                 generic_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                 robot_mechanism_controllers::GetActual::response &resp);
 
   /*!
    * \brief ROS topic callback
@@ -184,7 +184,7 @@ public:
   void setJointPosSingle();
 
 private:
-  generic_controllers::SingleJointPosCmd msg_;   //The message used by the ROS callback
+  robot_mechanism_controllers::SingleJointPosCmd msg_;   //The message used by the ROS callback
   JointPositionController *c_;
 };
 }

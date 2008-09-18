@@ -35,41 +35,66 @@
 #pragma once
 
 /***************************************************/
-/*! \class controller::RampEffortController
-    \brief Ramp Input Controller
+/*! \class controller::SineSweepController
+    \brief Sine Sweep Controller
 
-    This class basically gives a ramp input to an
-    acuator.
+    This class basically gives a sine sweep to an
+    acuator. Where the signal is a sine wave, whose 
+    frequency is exponentially increased from \f$\omega_1\f$ 
+    to \f$\omega_2\f$ over \f$T\f$ seconds. 
+    
+    \f$s(n) = A\sin [ K(e^{\deltat/L} - 1) ]\f$	
+
+    where \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$ 
+    and \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
+    
+    xml config example:
+    <controller name="test_controller" type="SineSweepControllerNode">
+      <joint name="test_joint">
+        <controller_defaults start_freq="1" end_freq="100" duration="20" amplitude =".04"/>
+      </joint>
+    </controller>
 
 */
 /***************************************************/
 
 
 #include <ros/node.h>
-#include <generic_controllers/controller.h>
+#include <mechanism_model/controller.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetActual.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetActual.h>
 
 namespace controller
 {
 
-class RampEffortController : public Controller
+class SineSweepController : public Controller
 {
 public:
   /*!
-   * \brief Default Constructor of the RampEffortController class.
+   * \brief Default Constructor of the SineSweepController class.
    *
    */
-  RampEffortController();
+  SineSweepController();
 
   /*!
-   * \brief Destructor of the RampEffortController class.
+   * \brief Destructor of the SineSweepController class.
    */
-  ~RampEffortController();
+  ~SineSweepController();
 
-  void init(double input_start, double input_end, double duration, double time,std::string name,mechanism::RobotState *robot);
+  /*!
+   * \brief Functional way to initialize.
+   * \param start_freq The start value of the sweep.
+   * \param end_freq  The end value of the sweep.
+   * \param sample_freq  The update frequency of the sweep.
+   * \param amplitude The amplitude of the sweep.
+   * \param duration The duration in seconds from start to finish.
+   * \param time The current hardware time.
+   * \param *robot The robot that is being controlled.
+   */
+  void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot);
+  
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
@@ -82,10 +107,6 @@ public:
    */
   double getMeasuredEffort();
 
-  /*!
-   * \brief Read the velocity of the joint
-   */
-  double getVelocity();
 
   /*!
    * \brief Get latest time..
@@ -99,48 +120,47 @@ public:
   virtual void update();
 
 private:
-  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
-  mechanism::RobotState *robot_;     /**< Pointer to robot structure. */
-  double input_start_;          /**< Begining of the ramp. */
-  double input_end_;            /**< End of the ramp. */
-  double duration_;             /**< Duration of the ramp. */
-  double initial_time_;         /**< Start time of the ramp. */
+  mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
+  mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
+  double start_freq_;                       /**< Begining of the sweep. */
+  double end_freq_;                         /**< End of the sweep. */
+  double amplitude_;                        /**< Amplitude of the sweep. */
+  double duration_;                         /**< Duration of the sweep. */
+  double initial_time_;                     /**< Start time of the sweep. */
+  double start_angular_freq_;               /**< Start time of the sweep. */
+  double end_angular_freq_;                 /**< Start time of the sweep. */
+  double K_factor_ ;                        /**< Start time of the sweep. */
+  double L_factor_ ;                        /**< Start time of the sweep. */
 
 };
 
 /***************************************************/
-/*! \class controller::RampEffortControllerNode
-    \brief Ram Input Controller ROS Node
-
-    This class basically gives a ramp input to an
-    acuator.
+/*! \class controller::SineSweepControllerNode
+    \brief Sine Sweep Controller ROS Node
 
 */
 /***************************************************/
 
-class RampEffortControllerNode : public Controller
+class SineSweepControllerNode : public Controller
 {
 public:
   /*!
    * \brief Default Constructor
    *
    */
-  RampEffortControllerNode();
+  SineSweepControllerNode();
 
   /*!
    * \brief Destructor
    */
-  ~RampEffortControllerNode();
+  ~SineSweepControllerNode();
 
   void update();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
-
 private:
-  RampEffortController *c_;
+  SineSweepController *c_;
 };
 }
 

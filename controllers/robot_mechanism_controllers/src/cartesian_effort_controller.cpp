@@ -31,7 +31,7 @@
  * Author: Stuart Glaser
  */
 
-#include "generic_controllers/cartesian_effort_controller.h"
+#include "robot_mechanism_controllers/cartesian_effort_controller.h"
 #include <algorithm>
 
 namespace controller {
@@ -204,8 +204,8 @@ void CartesianEffortControllerNode::update()
 }
 
 bool CartesianEffortControllerNode::setCommand(
-  generic_controllers::SetVectorCommand::request &req,
-  generic_controllers::SetVectorCommand::response &resp)
+  robot_mechanism_controllers::SetVectorCommand::request &req,
+  robot_mechanism_controllers::SetVectorCommand::response &resp)
 {
   c_.command_ = btVector3(req.x, req.y, req.z);
   return true;

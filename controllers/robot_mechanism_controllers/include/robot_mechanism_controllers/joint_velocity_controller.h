@@ -53,12 +53,12 @@
 
 #include <ros/node.h>
 
-#include <generic_controllers/controller.h>
-#include <mechanism_model/pid.h>
+#include <mechanism_model/controller.h>
+#include <control_toolbox/pid.h>
 
 // Services
-#include <generic_controllers/SetCommand.h>
-#include <generic_controllers/GetActual.h>
+#include <robot_mechanism_controllers/SetCommand.h>
+#include <robot_mechanism_controllers/GetActual.h>
 
 namespace controller
 {
@@ -78,7 +78,7 @@ public:
    */
   ~JointVelocityController();
 
-  bool init(mechanism::RobotState *robot_state, const std::string &joint_name, const Pid &pid);
+  bool init(mechanism::RobotState *robot_state, const std::string &joint_name, const control_toolbox::Pid &pid);
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
   /*!
@@ -118,10 +118,10 @@ public:
 private:
   mechanism::JointState *joint_state_;
   mechanism::RobotState *robot_state_; /**< Pointer to robot structure. */
-  Pid pid_;
+  control_toolbox::Pid pid_;
   double last_time_;        /**< Last time stamp of update. */
   double command_;          /**< Last commanded position. */
-  
+
   double smoothed_velocity_; /** */
   double smoothing_factor_;
 
@@ -160,11 +160,11 @@ public:
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
   // Services
-  bool setCommand(generic_controllers::SetCommand::request &req,
-                  generic_controllers::SetCommand::response &resp);
+  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
+                  robot_mechanism_controllers::SetCommand::response &resp);
 
-  bool getActual(generic_controllers::GetActual::request &req,
-                  generic_controllers::GetActual::response &resp);
+  bool getActual(robot_mechanism_controllers::GetActual::request &req,
+                  robot_mechanism_controllers::GetActual::response &resp);
 
 private:
   JointVelocityController *c_;

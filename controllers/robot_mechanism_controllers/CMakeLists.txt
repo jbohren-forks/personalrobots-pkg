@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-rospack(generic_controllers)
+rospack(robot_mechanism_controllers)
 genmsg()
 gensrv()
-rospack_add_library(generic_controllers
+rospack_add_library(robot_mechanism_controllers
  src/joint_effort_controller.cpp
  src/joint_position_controller.cpp
  src/joint_velocity_controller.cpp

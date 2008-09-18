@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-#include <generic_controllers/joint_blind_calibration_controller.h>
+#include <robot_mechanism_controllers/joint_blind_calibration_controller.h>
 #include <ros/time.h>
 
 using namespace std;
@@ -201,7 +201,7 @@ void JointBlindCalibrationControllerNode::update()
 }
 
 
-  bool JointBlindCalibrationControllerNode::calibrateCommand(generic_controllers::CalibrateJoint::request &req, generic_controllers::CalibrateJoint::response &resp)
+  bool JointBlindCalibrationControllerNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
   c_->beginCalibration();
   ros::Duration d=ros::Duration(0,1000000);
