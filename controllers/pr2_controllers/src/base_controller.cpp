@@ -442,7 +442,7 @@ void BaseController::updateJointControllers()
 
 void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
 {
-  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
+  odom_msg_.header.frame_id   = "odom";
   odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
   odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
 
@@ -497,21 +497,10 @@ void BaseControllerNode::update()
     double x=0,y=0,yaw=0,vx,vy,vyaw;
     this->getOdometry(x,y,yaw,vx,vy,vyaw);
     this->tfs->sendInverseEuler(
-                 "FRAMEID_ODOM",
-                 "FRAMEID_ROBOT",
+                 "odom",
+                 "base",
                  x, y, 0,
                  yaw, 0, 0,
-                 odom_msg_.header.stamp);
-
-    /***************************************************************/
-    /*                                                             */
-    /*  FRAMEID_ROBOT is the base frame                            */
-    /*                                                             */
-    /***************************************************************/
-    this->tfs->sendInverseEuler(
-                 "FRAMEID_ROBOT",
-                 "base",
-                 0, 0, 0, 0, 0, 0,
                  odom_msg_.header.stamp);
 
   }
@@ -577,7 +566,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   // receive messages from 2dnav stack
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this);
 
-  // for publishing odometry frame transforms FRAMEID_ODOM
+  // for publishing odometry frame transforms odom
   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
 
   return true;

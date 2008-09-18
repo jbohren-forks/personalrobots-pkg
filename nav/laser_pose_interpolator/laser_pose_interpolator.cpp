@@ -30,36 +30,36 @@ public:
     robotPose.yaw = 0;
     robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + laserMsg.header.stamp.nsec;
     try {
-      robotPose.frame = "FRAMEID_ROBOT";
+      robotPose.frame = "base";
     } catch(libTF::TransformReference::LookupException& ex) {
-      std::cerr << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
-      std::cout << "LookupException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
+      std::cerr << "LookupException in lookup(\"base\"): " << ex.what() << "\n";
+      std::cout << "LookupException in lookup(\"base\"): " << ex.what() << "\n";
       return;
     } catch(libTF::TransformReference::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
-      std::cout << "ExtrapolateException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
+      std::cerr << "ExtrapolateException in lookup(\"base\"): " << ex.what() << "\n";
+      std::cout << "ExtrapolateException in lookup(\"base\"): " << ex.what() << "\n";
       return;
     } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
-      std::cout << "ConnectivityException in lookup(\"FRAMEID_ROBOT\"): " << ex.what() << "\n";
+      std::cerr << "ConnectivityException in lookup(\"base\"): " << ex.what() << "\n";
+      std::cout << "ConnectivityException in lookup(\"base\"): " << ex.what() << "\n";
       return;
     }
 
 
     try {
-      global_pose = this->tf.transformPose2D("FRAMEID_ODOM", robotPose);
+      global_pose = this->tf.transformPose2D("odom", robotPose);
     } catch(libTF::TransformReference::LookupException& ex) {
       std::cerr << tf.viewFrames();
-      std::cerr << "LookupException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
-      std::cout << "LookupException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
+      std::cerr << "LookupException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
+      std::cout << "LookupException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
       return;
     } catch(libTF::TransformReference::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
-      std::cout << "ExtrapolateException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
+      std::cerr << "ExtrapolateException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
+      std::cout << "ExtrapolateException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
       return;
     } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
-      std::cout << "ConnectivityException in transformPose2D(\"FRAMEID_ODOM\", robotPose): " << ex.what() << "\n";
+      std::cerr << "ConnectivityException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
+      std::cout << "ConnectivityException in transformPose2D(\"odom\", robotPose): " << ex.what() << "\n";
       return;
     }
     msg.scan = laserMsg;

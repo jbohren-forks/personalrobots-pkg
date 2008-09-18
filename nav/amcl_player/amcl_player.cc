@@ -366,8 +366,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     
     // publish new transform robot->map
-    this->tf->sendEuler("FRAMEID_ROBOT",
-                        "FRAMEID_MAP",
+    this->tf->sendEuler("base",
+                        "map",
                         pdata->pos.px,
                         pdata->pos.py,
                         0.0,
@@ -393,7 +393,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
     try
     {
-	localizedOdomMsg.header.frame_id = "FRAMEID_MAP";
+	localizedOdomMsg.header.frame_id = "map";
     }
     catch(...)
     {

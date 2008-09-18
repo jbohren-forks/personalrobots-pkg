@@ -151,10 +151,10 @@ private:
 	m_currentPos.pos.x += m_iniPos.x;
 	m_currentPos.pos.y += m_iniPos.y;
 	m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
-	m_currentPos.header.frame_id = "FRAMEID_MAP";
+	m_currentPos.header.frame_id = "map";
 	
-	m_tfServer->sendEuler("FRAMEID_ROBOT",
-			      "FRAMEID_MAP",
+	m_tfServer->sendEuler("base",
+			      "map",
 			      m_currentPos.pos.x,
 			      m_currentPos.pos.y,
 			      0.0,

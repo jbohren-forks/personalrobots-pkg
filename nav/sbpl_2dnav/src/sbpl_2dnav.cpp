@@ -273,13 +273,13 @@ void Sbpl2DNav::doOneCycle() {
   robot_pose.x = 0;
   robot_pose.y = 0;
   robot_pose.yaw = 0;
-  robot_pose.frame = "FRAMEID_ROBOT";
+  robot_pose.frame = "base";
   robot_pose.time = 0; // request most recent pose
   //robot_pose_.time = laserMsg.header.stamp.sec * 1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
-    global_pose = tf_.transformPose2D("FRAMEID_MAP", robot_pose);
+    global_pose = tf_.transformPose2D("map", robot_pose);
   }
   catch(libTF::TransformReference::LookupException& ex)
   {
