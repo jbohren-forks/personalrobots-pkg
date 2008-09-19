@@ -1,6 +1,6 @@
-  <controller name="elbow_controller" topic="elbow_controller" type="JointVelocityControllerNode">
-    <param smoothing_window="400" />
-    <joint name="elbow_joint">
+<controller name="elbow_controller" topic="elbow_controller" type="JointVelocityControllerNode">
+    <filter smoothing_factor="0.1" />
+    <joint name="elbow_right_joint">
       <pid p="5" i="0" d="0" iClamp="0" />
     </joint>
-  </controller>
+</controller>
