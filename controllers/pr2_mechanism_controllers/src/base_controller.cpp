@@ -37,20 +37,21 @@
 
 using namespace std;
 using namespace controller;
+using namespace control_toolbox;
 using namespace libTF;
 using namespace NEWMAT;
 using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-BaseController::BaseController() : num_wheels_(0), num_casters_(0)
+  BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
   cmd_vel_.x = 0;
   cmd_vel_.y = 0;
   cmd_vel_.z = 0;
   cmd_vel_t_.x = 0;
   cmd_vel_t_.y = 0;
-  cmd_vel_t_.z = 0;
+  cmd_vel_t_.z = 0.5;
   kp_speed_ = KP_SPEED_DEFAULT;
   base_odom_position_.x = 0;
   base_odom_position_.y = 0;
@@ -59,7 +60,7 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
   base_odom_velocity_.y = 0;
   base_odom_velocity_.z = 0;
   ils_weight_type_ = "Gaussian";
-  ils_max_iterations_ = 1;
+  ils_max_iterations_ = 3;
 
   pthread_mutex_init(&base_controller_lock_,NULL);
 }
@@ -116,7 +117,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     if (base_object.joint_state_==NULL)
       std::cout << " unsuccessful getting joint state for " << joint_name << std::endl;
 
-    base_object.controller_.init(robot_state, joint_name, control_toolbox::Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
+    base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
     if(joint_name.find("caster") != string::npos)
     {
@@ -140,7 +141,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       wheel_speed_actual_.push_back(0);
       libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
-      wheel_speed_cmd_.push_back(0);
+      wheel_speed_cmd_.push_back(0);      
       num_wheels_++;
     }
   }
@@ -258,7 +259,7 @@ void BaseController::computeWheelPositions()
     res1 += base_wheels_[i].parent_->pos_;
 //    cout << "added position" << res1;
     base_wheels_position_[i] = res1;
-//    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
+    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
   }
 //  exit(-1);
 }
@@ -284,9 +285,9 @@ void BaseController::update()
 
 /*  computeWheelPositions();
 
-  computeAndSetCasterSteer();
+computeAndSetCasterSteer();
 
-  computeAndSetWheelSpeeds();
+computeAndSetWheelSpeeds();
 */
   computeOdometry(current_time);
 
@@ -302,7 +303,7 @@ void BaseController::computeCommands()
 
   computeCasterSteer();
 
-  computeWheelSpeeds();
+  computeWheelSpeeds();  
 }
 
 void BaseController::setCommands()
@@ -324,7 +325,8 @@ void BaseController::computeCasterSteer()
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
 
     steer_angle_desired = atan2(result.y,result.x);
-    steer_angle_desired_m_pi = normalize_angle_positive(steer_angle_desired+M_PI);
+    steer_angle_desired_m_pi = normalize_angle(steer_angle_desired+M_PI);
+//    printf("Steering cmd choices: %d, %f, %f\n",i,steer_angle_desired,steer_angle_desired_m_pi);
 
     error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
     error_steer_m_pi = shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
@@ -336,7 +338,7 @@ void BaseController::computeCasterSteer()
     }
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
 
-//    printf("Steering cmd: %d, %f\n",i,steer_angle_desired);
+//    printf("Steering cmd: %d, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i]);
   }
 }
 
@@ -357,12 +359,11 @@ void BaseController::computeWheelSpeeds()
   caster_2d_velocity.y = 0;
   caster_2d_velocity.z = 0;
 
-  double wheel_speed_cmd = 0;
   double steer_angle_actual = 0;
   for(int i=0; i < (int) num_wheels_; i++)
   {
 
-    caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
+    caster_2d_velocity.z = 0.01*steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
 
@@ -372,7 +373,7 @@ void BaseController::computeWheelSpeeds()
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << std::endl;
+    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << "caster: " << wheel_caster_steer_component.x << std::endl;
   }
 }
 
@@ -442,7 +443,7 @@ void BaseController::updateJointControllers()
 
 void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
 {
-  odom_msg_.header.frame_id   = "odom";
+  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
   odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
   odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
 
@@ -478,10 +479,10 @@ void BaseControllerNode::update()
 {
   c_->update();
 
+  c_->setOdomMessage(odom_msg_);
+
   if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
   {
-    c_->setOdomMessage(odom_msg_);
-
     (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;
 
@@ -494,14 +495,35 @@ void BaseControllerNode::update()
     /*        localization                                         */
     /*                                                             */
     /***************************************************************/
-    double x=0,y=0,yaw=0,vx,vy,vyaw;
+    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
     this->getOdometry(x,y,yaw,vx,vy,vyaw);
-    this->tfs->sendInverseEuler(
-                 "odom",
-                 "base",
-                 x, y, 0,
-                 yaw, 0, 0,
-                 odom_msg_.header.stamp);
+    // FIXME: z, roll, pitch not accounted for
+    this->tfs->sendInverseEuler("FRAMEID_ODOM",
+                                "base",
+                                x,
+                                y,
+                                0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
+                                yaw,
+                                pitch,
+                                roll,
+                                odom_msg_.header.stamp);
+
+    /***************************************************************/
+    /*                                                             */
+    /*  frame transforms                                           */
+    /*                                                             */
+    /*  x,y,z,yaw,pitch,roll                                       */
+    /*                                                             */
+    /***************************************************************/
+    this->tfs->sendEuler("base",
+                         "FRAMEID_ROBOT",
+                         0,
+                         0,
+                         0, 
+                         0,
+                         0,
+                         0,
+                         odom_msg_.header.stamp);
 
   }
 
@@ -566,7 +588,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   // receive messages from 2dnav stack
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this);
 
-  // for publishing odometry frame transforms odom
+  // for publishing odometry frame transforms FRAMEID_ODOM
   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
 
   return true;
@@ -642,9 +664,12 @@ void BaseController::computeBaseVelocity()
     C.element(i*2+1, 2) =  base_wheels_position_[i].x;
   }
   D = pseudoInverse(C)*A;
+//  D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
+
+  cout << "Base odom velocity " << base_odom_velocity_ << endl;
 }
 
 Matrix BaseController::pseudoInverse(const Matrix M)
@@ -678,7 +703,7 @@ NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::M
 
   weight_matrix = ident_matrix;
 
-  cout << "num_wheels: " << num_wheels_ << endl;
+//  cout << "num_wheels: " << num_wheels_ << endl;
   for(int i=0; i < max_iter; i++)
   {
     a_fit = weight_matrix * A;
@@ -686,18 +711,33 @@ NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::M
     x_fit = pseudoInverse(a_fit)*b_fit;
     residual = b - A * x_fit;
 
-    cout << "Residual::" << residual << endl;
+//    cout << "Residual::" << residual << endl;
 
-    residual = residual/x_fit.NormFrobenius();
 
-    cout << "afit::" << a_fit << endl << endl;
-    cout << "bfit::" << b_fit << endl << endl;
-    cout << "xfit::" << endl << x_fit << endl;
-    cout << "Residual::" << residual << endl;
+    for(int j=1; j <= num_wheels_; j++)
+    {
+      int fw = 2*j-1;
+      int sw = fw+1;
+      if(fabs(residual(fw,1)) > fabs(residual(sw,1)))
+      {
+        residual(fw,1) = fabs(residual(fw,1));
+        residual(sw,1) = residual(fw,1);
+      }
+      else
+      {
+        residual(fw,1) = fabs(residual(sw,1));
+        residual(sw,1) = residual(fw,1);
+      }
+    }
+
+//    cout << "afit::" << a_fit << endl << endl;
+//    cout << "bfit::" << b_fit << endl << endl;
+//    cout << "xfit::" << endl << x_fit << endl;
+//    cout << "Residual::" << residual << endl;
 
     weight_matrix = findWeightMatrix(residual,weight_type);
 
-    cout << "weight_matrix" << endl << weight_matrix  << endl << endl;
+//    cout << "weight_matrix" << endl << weight_matrix  << endl << endl;
   }
   return x_fit;
 };

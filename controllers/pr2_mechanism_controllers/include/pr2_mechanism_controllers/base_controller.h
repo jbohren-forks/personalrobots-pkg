@@ -61,7 +61,7 @@
 
 namespace controller
 {
-  #define KP_SPEED_DEFAULT 0.1
+  #define KP_SPEED_DEFAULT 100
   #define DEFAULT_WHEEL_RADIUS 0.079
 
   /*! \class
