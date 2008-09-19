@@ -665,19 +665,6 @@ Index: server/sensors/ray/RaySensor.hh
  };
  /// \}
  /// \}
-Index: server/sensors/ray/SConscript
-===================================================================
---- server/sensors/ray/SConscript	(revision 7023)
-+++ server/sensors/ray/SConscript	(working copy)
-@@ -1,7 +1,7 @@
- #Import variable
- Import('env sharedObjs')
- 
--sources = Split('RaySensor.cc')
-+sources = Split('RaySensor.cc RayBlockSensor.cc')
- 
- #staticObjs.append(env.StaticObject(sources))
- sharedObjs.append(env.SharedObject(sources))
 Index: server/sensors/ray/RaySensor.cc
 ===================================================================
 --- server/sensors/ray/RaySensor.cc	(revision 7023)
