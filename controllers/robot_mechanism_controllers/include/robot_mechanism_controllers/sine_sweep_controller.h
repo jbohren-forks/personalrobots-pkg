@@ -38,22 +38,16 @@
 /*! \class controller::SineSweepController
     \brief Sine Sweep Controller
 
-    This class basically gives a sine sweep to an
-    acuator. Where the signal is a sine wave, whose 
-    frequency is exponentially increased from \f$\omega_1\f$ 
-    to \f$\omega_2\f$ over \f$T\f$ seconds. 
+    This class basically calculates the output for
+    a sine sweep. Where the signal is a sine wave, 
+    whose frequency is exponentially increased from 
+    \f$\omega_1\f$ to \f$\omega_2\f$ over \f$T\f$ seconds.<br> 
     
-    \f$s(n) = A\sin [ K(e^{\deltat/L} - 1) ]\f$	
+    \f$s(n) = A \sin [ K(e^{\delta t/L} - 1) ]\f$	<br>
 
-    where \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$ 
-    and \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
-    
-    xml config example:
-    <controller name="test_controller" type="SineSweepControllerNode">
-      <joint name="test_joint">
-        <controller_defaults start_freq="1" end_freq="100" duration="20" amplitude =".04"/>
-      </joint>
-    </controller>
+    where:<br>
+    \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$<br> 
+    \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$.  
 
 */
 /***************************************************/
