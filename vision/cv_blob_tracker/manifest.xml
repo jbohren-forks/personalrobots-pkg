@@ -9,7 +9,7 @@ A package to track multiple blobs. OpenCV images received through ROS and output
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
-  <depend package="generic_controllers"/> 
+  <depend package="robot_mechanism_controllers"/> 
 
 <url>http://pr.willowgarage.com</url>
 <export>
