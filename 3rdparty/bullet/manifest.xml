@@ -9,7 +9,7 @@ The Bullet Physics Engine
 <url>http://code.google.com/p/bullet/</url>
 <export>
 <cpp cflags="-I${prefix}/bullet_svn/src -DBT_USE_DOUBLE_PRECISION" lflags="-L${prefix}/bullet_svn/src/LinearMath/ -lLibLinearMath" />
-  <doxymaker external="http://code.google.com/p/bullet/" />
+  <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
 </export>
 </package>
 
