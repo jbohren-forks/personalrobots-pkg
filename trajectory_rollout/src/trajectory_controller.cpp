@@ -36,8 +36,10 @@
 using namespace std;
 using namespace std_msgs;
 
-TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf)
-  : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), tf_(tf)
+TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
+    double robot_front_radius, double robot_side_radius, double max_occ_dist, rosTFClient* tf)
+  : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
+  robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), tf_(tf)
 {
   num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim;
   int total_pts = num_trajectories_ * num_steps_;
@@ -98,7 +100,7 @@ void TrajectoryController::computePathDistance(){
 
 //update neighboring path distance
 void TrajectoryController::updateNeighbors(int cx, int cy){
-  //update the 6 neighbors of the current cell
+  //update the 8 neighbors of the current cell
   for(int dx = -1; dx <= 1; ++dx){
     for(int dy = -1; dy <= 1; ++dy){
       if(!(dx == 0 && dy == 0))
@@ -114,14 +116,16 @@ void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
 
   double new_path_dist, new_goal_dist;
 
+  MapCell& current_cell = map_(cx, cy);
+
   //determine whether to add 1 to distance or sqrt(2) (for corner neighbors)
-  if(abs(dx) == 1 && abs(dy) == 1){
-    new_path_dist = map_(cx, cy).path_dist + 1.41;
-    new_goal_dist = map_(cx, cy).goal_dist + 1.41;
+  if(dx && dy){
+    new_path_dist = current_cell.path_dist + 1.41;
+    new_goal_dist = current_cell.goal_dist + 1.41;
   }
   else{
-    new_path_dist = map_(cx, cy).path_dist + 1;
-    new_goal_dist = map_(cx, cy).goal_dist + 1;
+    new_path_dist = current_cell.path_dist + 1;
+    new_goal_dist = current_cell.goal_dist + 1;
   }
 
 
@@ -130,13 +134,14 @@ void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
     return;
 
   //update path distance
-  if(new_path_dist < map_(nx, ny).path_dist){
-    map_(nx, ny).path_dist = new_path_dist;
+  MapCell& new_cell = map_(nx, ny);
+  if(new_path_dist < new_cell.path_dist){
+    new_cell.path_dist = new_path_dist;
   }
   
   //update goal distance
-  if(new_goal_dist < map_(nx, ny).goal_dist){
-    map_(nx, ny).goal_dist = new_goal_dist;
+  if(new_goal_dist < new_cell.goal_dist){
+    new_cell.goal_dist = new_goal_dist;
   }
 }
 
@@ -339,7 +344,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
     trajectories_[i].cost_ = cost;
 
     //find the minimum cost path
-    if(cost < min_cost){
+    if(cost >= 0 && cost < min_cost){
       best_index = i;
       min_cost = cost;
     }
@@ -357,20 +362,32 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
   double occ_dist = 0.0;
   for(int i = 0; i < num_steps_; ++i){
     int mat_index = t_index * num_steps_ + i;
+    double x = trajectory_pts_.element(0, mat_index);
+    double y = trajectory_pts_.element(1, mat_index);
+    double theta = trajectory_theta_.element(0, mat_index);
+
     //we need to know in which cell the path ends
-    int cell_x = WX_MX(map_, trajectory_pts_.element(0, mat_index));
-    int cell_y = WY_MY(map_, trajectory_pts_.element(1, mat_index));
+    int cell_x = WX_MX(map_, x);
+    int cell_y = WY_MY(map_, y);
 
     //we don't want a path that ends off the known map or in an obstacle
     if(!VALID_CELL(map_, cell_x, cell_y) || map_(cell_x, cell_y).occ_state == 1){
-      return DBL_MAX;
+      return -1.0;
     }
 
     path_dist += map_(cell_x, cell_y).path_dist;
-    occ_dist += map_(cell_x, cell_y).occ_dist;
-      goal_dist += map_(cell_x, cell_y).goal_dist;
+    goal_dist += map_(cell_x, cell_y).goal_dist;
+
+    //first we decide if we need to lay down the footprint of the robot
+    if(map_(cell_x, cell_y).occ_dist < 2 * robot_front_radius_ + max_occ_dist_){
+      //if we do compute the obstacle cost for each cell in the footprint
+      double footprint_cost = footprintCost(x, y, theta);
+      if(footprint_cost < 0)
+        return -1.0;
+      occ_dist += footprint_cost;
+    }
   }
-  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / occ_dist);
+  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / (occ_dist + .05));
   //double cost = goal_dist;
   
   return cost;
@@ -385,4 +402,131 @@ libTF::TFPose2D TrajectoryController::getDriveVelocities(Trajectory t){
   tVel.frame = "FRAMEID_ROBOT";
   tVel.time = 0;
   return tVel;
+}
+
+void TrajectoryController::swap(int& a, int& b){
+  int temp = a;
+  a = b;
+  b = temp;
+}
+
+double TrajectoryController::pointCost(int x, int y){
+  //if the cell is in an obstacle the path is invalid
+  if(map_(x, y).occ_state == 1){
+    return -1;
+  }
+
+  //check if we need to add an obstacle distance
+  if(map_(x, y).occ_dist < max_occ_dist_)
+    return map_(x, y).occ_dist;
+
+  return 0.0;
+}
+
+double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
+  bool steep = abs(y1 - y0) > abs(x1 - x0);
+  if(steep){
+    swap(x0, y0);
+    swap(x1, y1);
+  }
+  if(x0 > x1){
+    swap(x0, x1);
+    swap(y0, y1);
+  }
+
+  int delta_x = x1 - x0;
+  int delta_y = abs(y1 - y0);
+  int error = delta_x / 2;
+  int ystep;
+  int y = y0;
+
+  double line_cost = 0.0;
+  double point_cost = -1.0;
+
+  if(y0 < y1)
+    ystep = 1;
+  else
+    ystep = -1;
+
+  for(int x = x0; x <= x1; ++x){
+    if(steep)
+      point_cost = pointCost(y, x);
+    else
+      point_cost = pointCost(x, y);
+
+    if(point_cost < 0)
+      return -1;
+
+    line_cost += point_cost;
+
+    error = error - delta_y;
+    if(error < 0){
+      y += ystep;
+      error += delta_x;
+    }
+  }
+  return line_cost;
+}
+
+double TrajectoryController::footprintCost(double x, double y, double theta){
+  double x_diff = robot_front_radius_ * cos(theta) + robot_side_radius_ * sin(theta);
+  double y_diff = robot_front_radius_ * sin(theta) + robot_side_radius_ * cos(theta);
+
+  double footprint_dist = 0.0;
+  double line_dist = -1.0;
+
+  //upper right corner
+  int x0 = WX_MX(map_, x + x_diff);
+  int y0 = WY_MY(map_, y + y_diff);
+
+  //lower right corner
+  int x1 = WX_MX(map_, x + x_diff);
+  int y1 = WY_MY(map_, y - y_diff);
+
+  if(!VALID_CELL(map_, x0, y0) || !VALID_CELL(map_, x1, y1))
+    return -1.0;
+
+  //check the front line
+  line_dist = lineCost(x0, x1, y0, y1);
+  if(line_dist < 0)
+    return -1;
+
+  footprint_dist += line_dist;
+
+  //lower left corner
+  int x2 = WX_MX(map_, x - x_diff);
+  int y2 = WY_MY(map_, y - y_diff);
+
+  if(!VALID_CELL(map_, x2, y2))
+    return -1.0;
+
+  //check the right side line
+  line_dist = lineCost(x1, x2, y1, y2);
+  if(line_dist < 0)
+    return -1;
+
+  footprint_dist += line_dist;
+  
+  //upper left corner
+  int x3 = WX_MX(map_, x - x_diff);
+  int y3 = WY_MY(map_, y + y_diff);
+
+  if(!VALID_CELL(map_, x3, y3))
+    return -1.0;
+
+  //check the back line
+  line_dist = lineCost(x2, x3, y2, y3);
+  if(line_dist < 0)
+    return -1;
+
+  footprint_dist += line_dist;
+
+  //check the left side line
+  line_dist = lineCost(x3, x0, y3, y0);
+  if(line_dist < 0)
+    return -1;
+
+  footprint_dist += line_dist;
+
+  return footprint_dist;
 }

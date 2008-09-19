@@ -64,6 +64,9 @@
 #define SIM_TIME 3.0
 #define SIM_STEPS 25
 #define VEL_SAMPLES 25
+#define ROBOT_FRONT_RADIUS .175
+#define ROBOT_SIDE_RADIUS .175
+#define SAFE_DIST .005
 
 class GovernorNode: public ros::node
 {

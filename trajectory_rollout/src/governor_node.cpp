@@ -40,8 +40,8 @@ using namespace trajectory_rollout;
 GovernorNode::GovernorNode() : 
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
-  tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, &tf_),
-  cycle_time_(0.1)
+  tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, &tf_),
+  cycle_time_(0.3)
 {
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;
@@ -109,45 +109,59 @@ void GovernorNode::processPlan(){
   //give robot_vel_ back
   vel_lock.unlock();
 
+  struct timeval start;
+  struct timeval end;
+  double start_t, end_t, t_diff;
   //we need to lock the map while we process it
   map_lock.lock();
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
+  gettimeofday(&start,NULL);
   int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc);
+  gettimeofday(&end,NULL);
+  start_t = start.tv_sec + start.tv_usec / 1e6;
+  end_t = end.tv_sec + end.tv_usec / 1e6;
+  t_diff = end_t - start_t;
+  fprintf(stderr, "Cycle Time: %.2f\n", t_diff);
   //give map_ back
   map_lock.unlock();
 
   printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.x, robot_vel.y, robot_vel.yaw);
 
-  if(path_index == -1)
-    return;
-
-  libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(tc_.trajectories_[path_index]);
-
-  //let's print debug output to the screen
-  path_msg.set_points_size(tc_.num_steps_);
-  path_msg.color.r = 0;
-  path_msg.color.g = 0;
-  path_msg.color.b = 1.0;
-  path_msg.color.a = 0;
-  for(int i = 0; i < tc_.num_steps_; ++i){
-    path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i); 
-    path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
+  if(path_index == -1){
+    cmd_vel_msg_.vx = 0.0;
+    cmd_vel_msg_.vy = 0.0;
+    cmd_vel_msg_.vw = 0.0;
   }
-  publish("local_path", path_msg);
-  printf("path msg\n");
+  else{
 
-  //drive the robot!
-  cmd_vel_msg_.vx = drive_cmds.x;
-  cmd_vel_msg_.vy = drive_cmds.y;
-  cmd_vel_msg_.vw = drive_cmds.yaw;
+    libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(tc_.trajectories_[path_index]);
 
-  /*
-  cmd_vel_msg_.vx = 0.0;
-  cmd_vel_msg_.vy = 0.0;
-  cmd_vel_msg_.vw = 0.0;
-  */
+    //let's print debug output to the screen
+    path_msg.set_points_size(tc_.num_steps_);
+    path_msg.color.r = 0;
+    path_msg.color.g = 0;
+    path_msg.color.b = 1.0;
+    path_msg.color.a = 0;
+    for(int i = 0; i < tc_.num_steps_; ++i){
+      path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i); 
+      path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
+    }
+    publish("local_path", path_msg);
+    printf("path msg\n");
 
-  printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", drive_cmds.x, drive_cmds.y, drive_cmds.yaw);
+    //drive the robot!
+    cmd_vel_msg_.vx = drive_cmds.x;
+    cmd_vel_msg_.vy = drive_cmds.y;
+    cmd_vel_msg_.vw = drive_cmds.yaw;
+
+    /*
+       cmd_vel_msg_.vx = 0.0;
+       cmd_vel_msg_.vy = 0.0;
+       cmd_vel_msg_.vw = 0.0;
+       */
+  }
+
+  printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
   publish("cmd_vel", cmd_vel_msg_);
 }
 
@@ -159,8 +173,7 @@ void GovernorNode::sleep(double loopstart){
   curr_t = curr.tv_sec + curr.tv_usec / 1e6;
   t_diff = cycle_time_ - (curr_t - loopstart);
   if(t_diff <= 0.0)
-    //printf("Governor Node missed deadline and is not sleeping\n");
-    return;
+    printf("Governor Node missed deadline and is not sleeping\n");
   else
     usleep((unsigned int) rint(t_diff * 1e6));
 }
@@ -169,12 +182,19 @@ int main(int argc, char** argv){
   ros::init(argc, argv);
   GovernorNode gn;
 
-  struct timeval curr;
+  struct timeval start;
+  //struct timeval end;
+  //double start_t, end_t, t_diff;
 
   while(gn.ok()){
-    gettimeofday(&curr,NULL);
+    gettimeofday(&start,NULL);
     gn.processPlan();
-    gn.sleep(curr.tv_sec + curr.tv_usec / 1e6);
+    gn.sleep(start.tv_sec + start.tv_usec / 1e6);
+    //gettimeofday(&end,NULL);
+    //start_t = start.tv_sec + start.tv_usec / 1e6;
+    //end_t = end.tv_sec + end.tv_usec / 1e6;
+    //t_diff = end_t - start_t;
+    //printf("Cycle Time: %.2f\n", t_diff);
   }
 
   ros::fini();

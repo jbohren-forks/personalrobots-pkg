@@ -92,7 +92,7 @@ TEST(TrajectoryController, correctPathDistance){
   mg(5, 0).occ_state = 1;
   
   //create a trajectory_controller
-  TrajectoryController tc(mg, 2.0, 20, 20, NULL);
+  TrajectoryController tc(mg, 2.0, 20, 20, 1, 1, .25, NULL);
 
   vector<Point2DFloat32> path = generatePlan();
   tc.updatePlan(path);

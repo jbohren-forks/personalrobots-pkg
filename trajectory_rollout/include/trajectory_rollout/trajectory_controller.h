@@ -72,7 +72,8 @@
 class TrajectoryController {
   public:
     //create a controller given a map and a path
-    TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim, rosTFClient* tf);
+    TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
+        double robot_front_radius, double robot_side_radius, double max_occ_dist, rosTFClient* tf);
     
     //given the current state of the robot, find a good trajectory
     int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc);
@@ -138,9 +139,15 @@ class TrajectoryController {
     //compute velocity based on acceleration
     double computeNewVelocity(double vg, double vi, double amax, double dt);
 
+    double footprintCost(double x, double y, double theta);
+    double lineCost(int x0, int x1, int y0, int y1);
+    double pointCost(int x, int y);
+    void swap(int& a, int& b);
+
     //the simulation parameters for generating trajectories
     double sim_time_;
     int samples_per_dim_;
+    double robot_front_radius_, robot_side_radius_, max_occ_dist_;
 
     //transform client
     rosTFClient* tf_;

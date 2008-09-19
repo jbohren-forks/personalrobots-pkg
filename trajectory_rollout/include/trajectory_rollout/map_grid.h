@@ -48,8 +48,13 @@ class MapGrid{
     MapGrid(unsigned int size_x, unsigned int size_y);
 
     //cells will be accessed by (col, row)
-    MapCell& operator() (unsigned int x, unsigned int y);
-    MapCell operator() (unsigned int x, unsigned int y) const;
+    inline MapCell& operator() (unsigned int x, unsigned int y){
+      return map_[size_x_ * y + x];
+    }
+
+    inline MapCell operator() (unsigned int x, unsigned int y) const {
+      return map_[size_x_ * y + x];
+    }
 
     ~MapGrid(){}
 

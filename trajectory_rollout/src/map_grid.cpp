@@ -53,19 +53,6 @@ MapGrid::MapGrid(unsigned int size_x, unsigned int size_y)
   }
 }
 
-MapCell& MapGrid::operator() (unsigned int x, unsigned int y){
-  assert(y < size_y_ && x < size_x_);
-  //check for legal index
-  return map_[size_x_ * y + x];
-}
-
-MapCell MapGrid::operator() (unsigned int x, unsigned int y) const {
-  //check for legal index
-  assert(y < size_y_ && x < size_x_);
-  return map_[size_x_ * y + x];
-}
-
-
 MapGrid::MapGrid(const MapGrid& mg){
   size_y_ = mg.size_y_;
   size_x_ = mg.size_x_;
