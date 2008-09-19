@@ -50,7 +50,7 @@
 static bool reg05 = DeviceFactory::Instance().Register(WG05::PRODUCT_CODE, deviceCreator<WG05> );
 static bool reg06 = DeviceFactory::Instance().Register(WG06::PRODUCT_CODE, deviceCreator<WG06> );
 
-static unsigned int rotate_right_8(unsigned in)
+static unsigned int rotateRight8(unsigned in)
 {
   in &= 0xff;
   in = (in >> 1) | (in << 7);
@@ -58,13 +58,13 @@ static unsigned int rotate_right_8(unsigned in)
   return in;
 }
 
-static unsigned compute_checksum(void const *data, unsigned length)
+static unsigned computeChecksum(void const *data, unsigned length)
 {
   unsigned char *d = (unsigned char *)data;
   unsigned int checksum = 0x42;
   for (unsigned int i = 0; i < length; ++i)
   {
-    checksum = rotate_right_8(checksum);
+    checksum = rotateRight8(checksum);
     checksum ^= d[i];
     checksum &= 0xff;
   }
@@ -77,12 +77,12 @@ void WG0XMbxHdr::build(uint16_t address, uint16_t length, bool write_nread)
   length_ = length - 1;
   pad_ = 0;
   write_nread_ = write_nread;
-  checksum_ = rotate_right_8(compute_checksum(this, sizeof(*this) - 1));
+  checksum_ = rotateRight8(computeChecksum(this, sizeof(*this) - 1));
 }
 
-bool WG0XMbxHdr::verify_checksum(void) const
+bool WG0XMbxHdr::verifyChecksum(void) const
 {
-  return compute_checksum(this, sizeof(*this)) != 0;
+  return computeChecksum(this, sizeof(*this)) != 0;
 }
 
 void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void const *data)
@@ -96,7 +96,7 @@ void WG0XMbxCmd::build(unsigned address, unsigned length, bool write_nread, void
   {
     memset(data_, 0, length);
   }
-  unsigned checksum = rotate_right_8(compute_checksum(data_, length));
+  unsigned int checksum = rotateRight8(computeChecksum(data_, length));
   data_[length] = checksum;
 }
 
@@ -304,7 +304,7 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
   c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
-  c->checksum_ = rotate_right_8(compute_checksum(c, sizeof(WG0XCommand) - 1));
+  c->checksum_ = rotateRight8(computeChecksum(c, sizeof(WG0XCommand) - 1));
 }
 
 void WG0X::computeCurrent(ActuatorCommand &command)
@@ -639,7 +639,7 @@ int WG0X::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UIN
     return -1;
   }
 
-  if (compute_checksum(&stat, length + 1) != 0)
+  if (computeChecksum(&stat, length + 1) != 0)
   {
     fprintf(stderr, "CHECKSUM ERROR READING MBX DATA\n");
     return -1;

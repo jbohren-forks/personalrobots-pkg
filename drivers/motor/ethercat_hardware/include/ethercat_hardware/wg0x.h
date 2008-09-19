@@ -58,7 +58,7 @@ struct WG0XMbxHdr
   uint8_t checksum_;
 
   void build(uint16_t address, uint16_t length, bool write_nread);
-  bool verify_checksum(void) const;
+  bool verifyChecksum(void) const;
 }__attribute__ ((__packed__));
 
 static const unsigned MBX_SIZE = 512;
