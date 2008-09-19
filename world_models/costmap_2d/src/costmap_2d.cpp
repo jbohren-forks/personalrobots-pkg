@@ -63,20 +63,30 @@ CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data,
    staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
 {
   staticData_ = new unsigned char[width_*height_];
-  fullData_ = new unsigned char[width_*height_];
-  obsWatchDog_ = new TICK[width_*height_];
-  memcpy(staticData_, data, width_*height_);
-  memcpy(fullData_, staticData_, width_*height_);
-  memset(obsWatchDog_, 0, width_*height_);
 
-  // Iterate over the map and get the occupied cells
+  // Iterate over the map and clean up cells to comply with expected structure
   for (unsigned int i=0;i<width_;i++){
     for (unsigned int j=0;j<height_;j++){
       size_t ind = getMapIndexFromCellCoords(i, j);
-      if(staticData_[ind] >= threshold_)
+      staticData_[ind] = data[ind];
+
+      // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
+      // then set it to the threshold
+      if(staticData_[ind] > threshold_ && staticData_[ind] < NO_INFORMATION)
+	staticData_[ind] = threshold_;
+
+      if(staticData_[ind] == threshold_)
 	permanentlyOccupiedCells_.push_back(ind);
     }
   }
+
+  // Now fill ot remaining grid structures
+  fullData_ = new unsigned char[width_*height_];
+  obsWatchDog_ = new TICK[width_*height_];
+  memcpy(fullData_, staticData_, width_*height_);
+  memset(obsWatchDog_, 0, width_*height_);
+
+  std::cout << "CostMap 2D created with " << permanentlyOccupiedCells_.size() << std::endl;
 }
 
 CostMap2D::~CostMap2D() {
@@ -90,9 +100,12 @@ void CostMap2D::updateDynamicObstacles(double ts,
 				       std::vector<unsigned int>& newObstacles, 
 				       std::vector<unsigned int>& deletedObstacles)
 {
+  //std::cout << "Updating for time: " << ts << std::endl;
+
   newObstacles.clear();
 
   for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+    //std::cout << "Evaluating point:" << i << std::endl;
     if(cloud.pts[i].z > maxZ_)
       continue;
 
@@ -106,11 +119,23 @@ void CostMap2D::updateDynamicObstacles(double ts,
     }
 
     // Now pet the watchdog
+    // std::cout << "Refreshing obstacle at:" << ind << std::endl;
     obsWatchDog_[ind] = WATCHDOG_LIMIT;
   }
 
   // We always process deletions too
   removeStaleObstacles(ts, deletedObstacles);
+
+  if(!newObstacles.empty() || !deletedObstacles.empty()){
+    std::cout << newObstacles.size() << " insertions, " << 
+      deletedObstacles.size() << " deletions: " << 
+      dynamicObstacles_.size() << " dynamic obstacles\n";
+  }
+}
+
+void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
+  std::vector<unsigned int> insertions, deletions;
+  updateDynamicObstacles(ts, cloud, insertions, deletions);
 }
 
 /**

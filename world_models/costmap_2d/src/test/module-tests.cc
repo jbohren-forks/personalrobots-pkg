@@ -39,14 +39,14 @@
 const unsigned char MAP_10_BY_10[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 255, 255, 255,
-  0, 0, 0, 0, 100, 0, 0, 255, 255, 255,
-  0, 0, 0, 0, 100, 0, 0, 255, 255, 255,
+  0, 0, 0, 0, 0, 0, 0, 200, 200, 200,
+  0, 0, 0, 0, 100, 0, 0, 200, 200, 200,
+  0, 0, 0, 0, 100, 0, 0, 200, 200, 200,
   70, 70, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 255, 255, 255, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+  0, 0, 0, 200, 200, 200, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 255, 255, 255,
+  0, 0, 0, 0, 0, 0, 0, 255, 255, 255
 };
 
 
@@ -76,7 +76,6 @@ TEST(costmap, test1){
   map.getOccupiedCellDataIndexList(occupiedCells);
   ASSERT_EQ(occupiedCells.size() == 14, true);
 
-
   // Iterate over all id's and verify that they are present according to their
   const unsigned char* costData = map.getMap();
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
@@ -88,7 +87,7 @@ TEST(costmap, test1){
     ASSERT_EQ(costData[ind] >= 100, true);
   }
 
-  // Block of 255
+  // Block of 200
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(7, 2)), true);
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(8, 2)), true);
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(9, 2)), true);
@@ -103,7 +102,7 @@ TEST(costmap, test1){
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(4, 3)), true);
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(4, 4)), true);
 
-  // Block of 255
+  // Block of 200
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(3, 7)), true);
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(4, 7)), true);
   ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(5, 7)), true);

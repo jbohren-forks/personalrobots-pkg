@@ -60,6 +60,12 @@ typedef unsigned char TICK;
 class CostMap2D
 {
 public:
+
+  /**
+   * @brief Defines the cell value to indicate that no information is available
+   */
+  static const unsigned char NO_INFORMATION = 255;
+
   /**
    * @brief Constructor.
    *
@@ -94,6 +100,14 @@ public:
 			      std::vector<unsigned int>& newObstacleCells, 
 			      std::vector<unsigned int>& deletedObstacleCells);
 
+  /**
+   * @brief A convenience method which will skip calculating the diffs
+   * @param current time stamp
+   * @param cloud holds projected scan data
+   *
+   * @see updateDynamicObstacles
+   */
+  void updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud);
   /**
    * @brief Updates the cost map, removing stale obstacles based on the new time stamp. This
    * method is linear in the number of dynamic obstacles.
