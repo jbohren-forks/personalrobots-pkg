@@ -472,13 +472,13 @@ WavefrontNode::laserReceived()
     }
     catch(libTF::TransformReference::LookupException& ex)
     {
-      puts("no global->local Tx yet");
+      puts("no global->local Tx yet (point cloud)");
       printf("%s\n", ex.what());
       return;
     }
     catch(libTF::TransformReference::ConnectivityException& ex)
     {
-      puts("no global->local Tx yet");
+      puts("no global->local Tx yet (point cloud)");
       printf("%s\n", ex.what());
       return;
     }
