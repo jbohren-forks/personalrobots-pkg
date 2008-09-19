@@ -73,7 +73,7 @@
  **/
 
 #include <HighlevelController.hh>
-#include <pr2_controllers/JointPosCmd.h>
+#include <pr2_mechanism_controllers/JointPosCmd.h>
 #include <mechanism_control/MechanismState.h>
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
@@ -110,7 +110,7 @@ private:
   bool withinBounds(unsigned waypointIndex);
 
   void setStartState(robot_srvs::KinematicPlanState::request& req);
-  void setCommandParameters(pr2_controllers::JointPosCmd& cmd);
+  void setCommandParameters(pr2_mechanism_controllers::JointPosCmd& cmd);
 
   const std::string armCmdTopic;
   const std::string kinematicModel;
@@ -146,7 +146,7 @@ MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, con
   subscribe(armPosTopic, mechanismState, &MoveArm::handleArmConfigurationCallback, QUEUE_MAX());
 
   // Advertise for messages to command the arm
-  advertise<pr2_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
+  advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
 }
 
 MoveArm::~MoveArm(){}
@@ -285,7 +285,7 @@ bool MoveArm::dispatchCommands(){
     return false;
   }
 
-  pr2_controllers::JointPosCmd armCommand;
+  pr2_mechanism_controllers::JointPosCmd armCommand;
 
   setCommandParameters(armCommand);
   
@@ -304,7 +304,7 @@ bool MoveArm::dispatchCommands(){
 }
 
 
-void MoveArm::setCommandParameters(pr2_controllers::JointPosCmd& armCommand){
+void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCommand){
     static const double TOLERANCE(0.25);
 
     // Set up message size
