@@ -40,6 +40,7 @@
 
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 
 /* \mainpage 
  * This is a class for laser scan utilities.  
@@ -66,6 +67,8 @@ namespace laser_scan{
        * \param range_cutoff An additional range cutoff which can be applied which is more limiting than max_range in the scan.
        * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
+      ///\todo depricated remove soon
       void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0, bool preservative = false);
 
       
