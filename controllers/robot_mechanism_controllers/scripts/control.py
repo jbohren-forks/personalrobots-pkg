@@ -2,13 +2,13 @@
 
 import rostools
 rostools.update_path('mechanism_control')
-rostools.update_path('generic_controllers')
+rostools.update_path('robot_mechanism_controllers')
 
 
 import rospy, sys
 from mechanism_control.srv import *
-from generic_controllers.srv import *
-from generic_controllers import controllers
+from robot_mechanism_controllers.srv import *
+from robot_mechanism_controllers import controllers
 
 def print_usage(exit_code = 0):
     print '''Commands:

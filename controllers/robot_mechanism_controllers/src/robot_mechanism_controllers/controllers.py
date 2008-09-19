@@ -1,11 +1,11 @@
 import rostools
 rostools.update_path('mechanism_control')
-rostools.update_path('generic_controllers')
+rostools.update_path('robot_mechanism_controllers')
 
 
 import rospy, sys
 from mechanism_control.srv import *
-from generic_controllers.srv import *
+from robot_mechanism_controllers.srv import *
 
 def list_controllers():
     rospy.wait_for_service('list_controllers')
