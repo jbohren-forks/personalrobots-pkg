@@ -1934,7 +1934,7 @@
           <controller:ros_camera name="wrist_cam_left_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
 	    <updateRate>15.0</updateRate>
-	    <topicName>image_wrist_left</topicName>
+	    <topicName>wrist_left/image</topicName>
 	    <frameName>wrist_camera_left</frameName>
 	    <interface:camera name="wrist_cam_left_iface" />
           </controller:ros_camera>
@@ -1999,7 +1999,7 @@
           <controller:ros_camera name="wrist_cam_right_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
-            <topicName>image_wrist_right</topicName>
+            <topicName>wrist_right/image</topicName>
             <frameName>wrist_camera_right</frameName>
             <interface:camera name="wrist_cam_right_iface" />
           </controller:ros_camera>
@@ -2064,7 +2064,7 @@
           <controller:ros_camera name="forearm_cam_left_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
-            <topicName>image_forearm_left</topicName>
+            <topicName>forearm_left/image</topicName>
             <frameName>forearm_roll_left</frameName>
             <interface:camera name="forearm_cam_left_iface" />
           </controller:ros_camera>
@@ -2122,7 +2122,7 @@
           <controller:ros_camera name="forearm_cam_right_controller" plugin="libRos_Camera.so">
             <alwaysOn>true</alwaysOn>
             <updateRate>15.0</updateRate>
-            <topicName>image_forearm_right</topicName>
+            <topicName>forearm_right/image</topicName>
             <frameName>forearm_roll_right</frameName>
             <interface:camera name="forearm_cam_right_iface" />
           </controller:ros_camera>
@@ -2382,6 +2382,24 @@
     </map>
     -->
     <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="stereo_left_sensor">
+          <imageSize>640 480</imageSize>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="stereo_left_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+	    <updateRate>15.0</updateRate>
+	    <topicName>stereo_left/image</topicName>
+	    <frameName>stereo</frameName>
+	    <interface:camera name="stereo_left_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="stereo_laser">
           <rayCount>30</rayCount>
