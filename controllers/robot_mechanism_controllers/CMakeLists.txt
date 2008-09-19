@@ -8,7 +8,6 @@ rospack_add_library(robot_mechanism_controllers
  src/joint_position_controller.cpp
  src/joint_velocity_controller.cpp
  src/cartesian_effort_controller.cpp
- src/ramp_effort_controller.cpp
  src/sine_sweep_controller.cpp
  src/joint_autotuner.cpp
  src/joint_pd_controller.cpp
