@@ -252,7 +252,9 @@ void EthercatHardware::update()
   {
     if (slaves_[s]->has_actuator_)
     {
+      slaves_[s]->computeCurrent(hw_->actuators_[a]->command_);
       hw_->actuators_[a]->state_.last_requested_effort_ = hw_->actuators_[a]->command_.effort_;
+      hw_->actuators_[a]->state_.last_requested_current_ = hw_->actuators_[a]->command_.current_;
       slaves_[s]->truncateCurrent(hw_->actuators_[a]->command_);
       slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;

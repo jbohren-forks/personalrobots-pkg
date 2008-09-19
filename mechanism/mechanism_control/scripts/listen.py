@@ -28,6 +28,9 @@ def callback(data):
       print "    last_calibration_low_transition: %d" % a.last_calibration_low_transition
       print "    is_enabled: %d" % a.is_enabled
       print "    run_stop_hit: %d" % a.run_stop_hit
+      print "    last_requested_current: %.4f" % a.last_requested_current
+      print "    last_commanded_current: %.4f" % a.last_commanded_current
+      print "    last_measured_current: %.4f" % a.last_measured_current
       print "    last_requested_effort: %.4f" % a.last_requested_effort
       print "    last_commanded_effort: %.4f" % a.last_commanded_effort
       print "    last_measured_effort: %.4f" % a.last_measured_effort

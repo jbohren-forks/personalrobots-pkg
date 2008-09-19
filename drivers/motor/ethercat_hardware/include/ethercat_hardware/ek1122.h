@@ -43,10 +43,11 @@ public:
   EK1122() : EthercatDevice() {}
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool) {return 0;}
-  void convertCommand(ActuatorCommand &command, unsigned char *buffer);
-  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
-  void truncateCurrent(ActuatorCommand &command);
-  void verifyState(unsigned char *buffer);
+  void convertCommand(ActuatorCommand &command, unsigned char *buffer) {}
+  void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) {}
+  void computeCurrent(ActuatorCommand &command) {}
+  void truncateCurrent(ActuatorCommand &command) {}
+  void verifyState(unsigned char *buffer) {}
   void diagnostics(robot_msgs::DiagnosticStatus &d);
 
   enum {PRODUCT_CODE = 0x4622c52};

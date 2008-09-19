@@ -45,22 +45,6 @@ EthercatDevice *EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   return this;
 }
 
-void EK1122::convertCommand(ActuatorCommand &command, unsigned char *buffer)
-{
-}
-
-void EK1122::truncateCurrent(ActuatorCommand &command)
-{
-}
-
-void EK1122::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
-{
-}
-
-void EK1122::verifyState(unsigned char *buffer)
-{
-}
-
 void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d)
 {
   vector<robot_msgs::DiagnosticString> strings;

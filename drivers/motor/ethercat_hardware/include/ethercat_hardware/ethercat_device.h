@@ -64,6 +64,7 @@ public:
   virtual void convertCommand(ActuatorCommand &command, unsigned char *buffer) = 0;
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) = 0;
 
+  virtual void computeCurrent(ActuatorCommand &command) = 0;
   virtual void truncateCurrent(ActuatorCommand &command) = 0;
   virtual void verifyState(unsigned char *buffer) = 0;
 

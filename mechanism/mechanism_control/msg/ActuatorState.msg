@@ -9,6 +9,9 @@ int32 last_calibration_high_transition
 int32 last_calibration_low_transition
 byte is_enabled
 byte run_stop_hit
+float64 last_requested_current
+float64 last_commanded_current
+float64 last_measured_current
 float64 last_requested_effort
 float64 last_commanded_effort
 float64 last_measured_effort

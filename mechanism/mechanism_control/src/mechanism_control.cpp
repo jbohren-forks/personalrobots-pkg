@@ -253,6 +253,9 @@ void MechanismControlNode::update()
       out->last_calibration_low_transition = in->last_calibration_low_transition_;
       out->is_enabled = in->is_enabled_;
       out->run_stop_hit = in->run_stop_hit_;
+      out->last_requested_current = in->last_requested_current_;
+      out->last_commanded_current = in->last_commanded_current_;
+      out->last_measured_current = in->last_measured_current_;
       out->last_requested_effort = in->last_requested_effort_;
       out->last_commanded_effort = in->last_commanded_effort_;
       out->last_measured_effort = in->last_measured_effort_;

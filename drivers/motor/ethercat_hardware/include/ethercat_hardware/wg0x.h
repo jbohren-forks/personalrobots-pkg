@@ -208,6 +208,7 @@ public:
   void convertCommand(ActuatorCommand &command, unsigned char *buffer);
   virtual void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
 
+  void computeCurrent(ActuatorCommand &command);
   void truncateCurrent(ActuatorCommand &command);
   void verifyState(unsigned char *buffer);
 

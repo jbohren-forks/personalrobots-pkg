@@ -46,6 +46,9 @@ public:
       last_calibration_low_transition_(0),
       is_enabled_(0),
       run_stop_hit_(0),
+      last_requested_current_(0),
+      last_commanded_current_(0),
+      last_measured_current_(0),
       last_requested_effort_(0),
       last_commanded_effort_(0),
       last_measured_effort_(0),
@@ -65,6 +68,10 @@ public:
 
   bool is_enabled_;
   bool run_stop_hit_;
+
+  double last_requested_current_;
+  double last_commanded_current_;
+  double last_measured_current_;
 
   double last_requested_effort_;
   double last_commanded_effort_;
@@ -87,6 +94,7 @@ public:
   {}
   bool enable_;
   double effort_;
+  double current_;
 };
 
 class Actuator

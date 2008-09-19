@@ -302,17 +302,19 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
   memset(c, 0, sizeof(WG0XCommand));
 
-  double current = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
-  current = max(min(current, actuator_info_.max_current_), -actuator_info_.max_current_);
-
-  c->programmed_current_ = int(current / config_info_.nominal_current_scale_);
+  c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
   c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
   c->checksum_ = rotate_right_8(compute_checksum(c, sizeof(WG0XCommand) - 1));
 }
 
+void WG0X::computeCurrent(ActuatorCommand &command)
+{
+  command.current_ = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+}
+
 void WG0X::truncateCurrent(ActuatorCommand &command)
 {
-  //command.current_ = max(min(command.current_, max_current_), -max_current_);
+  command.current_ = max(min(command.current_, actuator_info_.max_current_), -actuator_info_.max_current_);
 }
 
 void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer)
@@ -353,6 +355,9 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   state.last_calibration_low_transition_ = double(this_status->last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_;
   state.is_enabled_ = this_status->mode_ != MODE_OFF;
   state.run_stop_hit_ = (this_status->mode_ & MODE_UNDERVOLTAGE) != 0;
+
+  state.last_commanded_current_ = this_status->programmed_current_ * config_info_.nominal_current_scale_;
+  state.last_measured_current_ = this_status->measured_current_ * config_info_.nominal_current_scale_;
 
   state.last_commanded_effort_ = this_status->programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
   state.last_measured_effort_ = this_status->measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
