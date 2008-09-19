@@ -52,7 +52,7 @@ class WpcControllerTest:
             self.targets_passed.append(False)
 
     def positionInput2d(self, pos):
-        self.targets_passed = self.compareTargets(self.targets_passed, self.targets, self.tol, [pos.x + self.start[0], pos.y + self.start[1]])
+        self.targets_passed = self.compareTargets(self.targets_passed, self.targets, self.tol, [pos.x, pos.y])
 
     def advertiseInitalPose2d(self, name):
         self.pub = rospy.TopicPub("initialpose", Pose2DFloat32)
