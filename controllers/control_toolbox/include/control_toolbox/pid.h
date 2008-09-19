@@ -39,7 +39,7 @@ class TiXmlElement;
 namespace control_toolbox {
 
 /***************************************************/
-/*! \class controller::Pid
+/*! \class Pid
     \brief A basic pid class.
 
     This class implements a generic structure that

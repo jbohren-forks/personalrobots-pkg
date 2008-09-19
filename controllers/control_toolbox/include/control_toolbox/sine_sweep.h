@@ -33,6 +33,7 @@
  *********************************************************************/
 #pragma once
 
+namespace control_toolbox {
 /***************************************************/
 /*! \class SineSweep
     \brief A basic sine sweep class.
@@ -42,7 +43,11 @@
     whose frequency is exponentially increased from 
     \f$\omega_1\f$ to \f$\omega_2\f$ over \f$T\f$ seconds.<br> 
     
-    
+    \f$s(n) = A\sin [ K(e^{\deltat/L} - 1) ]\f$	<br>
+
+    where:<br>
+    \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$<br> 
+    \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
 
 */
 /***************************************************/
@@ -86,3 +91,4 @@ private:
   double L_;                                /**< Constant */
   double cmd_;                              /**< Command to send. */
 };
+}

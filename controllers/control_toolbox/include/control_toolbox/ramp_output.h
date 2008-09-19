@@ -31,46 +31,53 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
-#include <math.h>
-#include <control_toolbox/sine_sweep.h>
+#pragma once
 
 namespace control_toolbox {
+/***************************************************/
+/*! \class Ramp
+    \brief A basic ramp class.
 
-SineSweep::SineSweep()
+    This class basically calculates the output for
+    a ramp. 
+
+*/
+/***************************************************/
+
+class Ramp
 {
-  K_=0.0;
-  L_=0.0;
-  amplitude_=0.0;
-  cmd_ = 0.0;
-}
+public:
 
-SineSweep::~SineSweep()
-{
-}
+  /*!
+   * \brief Constructor
+   */
+  Ramp();
 
-void SineSweep::init(double start_freq, double end_freq, double duration, double amplitude)
-{
-  //keep the amplitude around
-  amplitude_=amplitude;
-  
-  //calculate the angular fequencies
-  start_angular_freq_ =2*M_PI*start_freq;
-  end_angular_freq_ =2*M_PI*end_freq;
-  
-  //calculate the constants
-  K_ = (start_angular_freq_*duration)/log(end_angular_freq_/start_angular_freq_);
-  L_ = (duration)/log(end_angular_freq_/start_angular_freq_);
-  
-  //zero out the command
-  cmd_ = 0.0;
-}
+  /*!
+   * \brief Destructor.
+   */
+  ~Ramp();
 
-double SineSweep::update( double dt)
-{
-  
-  cmd_= amplitude_*sin(K_*(exp((dt)/(L_))-1));
+  /*!
+   * \brief Update the SineSweep loop with nonuniform time step size.
+   *
+   * \param dt Change in time since last call
+   */
+  double update(double dt);
 
-  return cmd_;
-}
-}
+  /*!
+   * \brief Intializes everything and calculates the constants for the sweep.
+   *
+   * \param output_start  Start command of the ramp.
+   * \param output_end  End command of the ramp.
+   * \param duration  The duration of the ramp.
+   */
+  void init(double output_start, double output_end, double duration);
 
+private:
+  double output_start_;           /**< Begining of the ramp. */
+  double output_end_;             /**< End of the ramp. */
+  double duration_;               /**< Duration of the ramp. */
+  double cmd_;                    /**< Command to send. */
+};
+}

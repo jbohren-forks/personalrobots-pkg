@@ -32,45 +32,40 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <math.h>
-#include <control_toolbox/sine_sweep.h>
+#include <control_toolbox/ramp_output.h>
 
 namespace control_toolbox {
 
-SineSweep::SineSweep()
+Ramp::Ramp()
 {
-  K_=0.0;
-  L_=0.0;
-  amplitude_=0.0;
+  output_start_ = 0.0;
+  output_end_ = 0.0;
+  duration_ = 0.0;
   cmd_ = 0.0;
 }
 
-SineSweep::~SineSweep()
+Ramp::~Ramp()
 {
 }
 
-void SineSweep::init(double start_freq, double end_freq, double duration, double amplitude)
+void Ramp::init(double output_start, double output_end, double duration)
 {
-  //keep the amplitude around
-  amplitude_=amplitude;
-  
-  //calculate the angular fequencies
-  start_angular_freq_ =2*M_PI*start_freq;
-  end_angular_freq_ =2*M_PI*end_freq;
-  
-  //calculate the constants
-  K_ = (start_angular_freq_*duration)/log(end_angular_freq_/start_angular_freq_);
-  L_ = (duration)/log(end_angular_freq_/start_angular_freq_);
+  //store the values
+  output_start_ = output_start;
+  output_end_ = output_end;
+  duration_ = duration;
   
   //zero out the command
   cmd_ = 0.0;
 }
 
-double SineSweep::update( double dt)
+double Ramp::update(double dt)
 {
   
-  cmd_= amplitude_*sin(K_*(exp((dt)/(L_))-1));
+  cmd_= output_start_+(output_end_-output_start_)*(dt)/(duration_);
 
   return cmd_;
 }
+
 }
 
