@@ -268,6 +268,9 @@ void MechanismControlNode::update()
     assert(mc_->model_.links_.size() == transform_array_msg_.get_quaternions_size());
     for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
     {
+      if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
+        continue;
+
       libTF::Position pos;
       libTF::Quaternion quat;
       mc_->state_->link_states_[i].rel_frame_.getPosition(pos);
