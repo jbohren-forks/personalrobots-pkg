@@ -228,7 +228,7 @@ void Transformer::transformStamped(const std::string& target_frame, const Stampe
   
   btTransform transform = computeTransformFromList(t_list);
   
-  stamped_out.data_ = transform * stamped_out.data_;
+  stamped_out.data_ = transform * stamped_in.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
