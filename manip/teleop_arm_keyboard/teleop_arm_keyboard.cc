@@ -70,8 +70,8 @@
 #include <math.h>
 
 #include <ros/node.h>
-#include <pr2_controllers/JointPosCmd.h>
-#include <generic_controllers/SingleJointPosCmd.h>
+#include <pr2_mechanism_controllers/JointPosCmd.h>
+#include <robot_mechanism_controllers/SingleJointPosCmd.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -126,10 +126,10 @@ enum PR2_JOINT_ID
 class TArmK_Node : public ros::node
 {
   private:
-    pr2_controllers::JointPosCmd lArmCmd;
-    pr2_controllers::JointPosCmd rArmCmd;
-    generic_controllers::SingleJointPosCmd lGripperCmd;
-    generic_controllers::SingleJointPosCmd rGripperCmd;
+    pr2_mechanism_controllers::JointPosCmd lArmCmd;
+    pr2_mechanism_controllers::JointPosCmd rArmCmd;
+    robot_mechanism_controllers::SingleJointPosCmd lGripperCmd;
+    robot_mechanism_controllers::SingleJointPosCmd rGripperCmd;
 
   public:
     TArmK_Node() : ros::node("tarmk"), tf(*this, true)
@@ -192,10 +192,10 @@ class TArmK_Node : public ros::node
     this->rArmCmd.margins[5] = 0;
     this->rArmCmd.margins[6] = 0;
 
-    advertise<pr2_controllers::JointPosCmd>("left_arm_commands");
-    advertise<pr2_controllers::JointPosCmd>("right_arm_commands");
-    advertise<generic_controllers::SingleJointPosCmd>("left_gripper_commands");
-    advertise<generic_controllers::SingleJointPosCmd>("right_gripper_commands");
+    advertise<pr2_mechanism_controllers::JointPosCmd>("left_arm_commands");
+    advertise<pr2_mechanism_controllers::JointPosCmd>("right_arm_commands");
+    advertise<robot_mechanism_controllers::SingleJointPosCmd>("left_gripper_commands");
+    advertise<robot_mechanism_controllers::SingleJointPosCmd>("right_gripper_commands");
 
     // deal with grippers separately
     this->lGripperCmd.position      = 0;
