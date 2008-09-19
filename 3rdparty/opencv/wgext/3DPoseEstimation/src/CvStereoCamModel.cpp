@@ -100,7 +100,7 @@ bool CvStereoCamModel::constructProjectionMatrices(){
 	CvMat _Q = cvMat(4, 4, CV_64F, Q);
 	cvCopy(&_Q, &mMatDispToCart);
 
-    return status;
+	return status;
 }
 
 bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy){
@@ -118,9 +118,9 @@ bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx, double C
 }
 
 bool CvStereoCamModel::setCameraParams(const CvStereoCamParams& params) {
-  *this = params;
-  bool status = this->constructProjectionMatrices();
-  return status;
+  double Fx, Fy, Tx, Clx, Crx, Cy;
+  params.getParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  return setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
 }
 
 bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) {

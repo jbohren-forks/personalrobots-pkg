@@ -49,7 +49,8 @@ protected:
   /// Points are given in disparity coordinates (u, v, d).
 	/// @return number of inliers
 	virtual int getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-	    CvMat* points0Inlier, CvMat* points1Inlier);
+	    CvMat* points0Inlier, CvMat* points1Inlier,
+	    int *inlierIndices);
 };
 
 #endif /*CV3DPOSEESTIMATEDISP_H_*/

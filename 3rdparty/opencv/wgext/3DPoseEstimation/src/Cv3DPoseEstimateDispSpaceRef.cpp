@@ -103,6 +103,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 		CvMat *uvds0, CvMat *uvds1,
 		int numRefGrps, int refPoints[],
 		CvMat *rot, CvMat *shift) {
+  int numPoints = xyzs0->rows;
 	int numInLiers = 0;
 	double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _H[4*4];
 	CvMat P0, P1;
@@ -115,8 +116,9 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	cvInitMatHeader(&H,  4, 4, CV_64FC1, _H);  // disparity space homography
 
 	int maxNumInLiers=0;
+	mRandomTripletSetGenerator.reset(0, numPoints-1);
 	if (numRefGrps == 0) {
-		for (int i=0; i< mNumIterations; i++) {
+		for (int i=0; i< mNumRansacIter; i++) {
 #ifdef DEBUG
 			cout << "Iteration: "<< i << endl;
 #endif
@@ -124,7 +126,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 			// tooCloseToColinear
 			if (pick3RandomPoints(xyzs0, xyzs1, &P0, &P1)== false) {
 				cerr << "Cannot find points that are non colinear enough"<<endl;
-				continue;
+				break;
 			}
 
 			TIMERSTART2(SVD);
@@ -174,15 +176,16 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 		return maxNumInLiers;
 	}
 
-    // get a copy of all the inliers, original and transformed
-    CvMat *uvds0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    CvMat *uvds1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    // construct homography matrix
-    constructDisparityHomography(rot, shift, &H);
-    int numInliers0 = getInLiers(uvds0, uvds1, &H, uvds0Inlier, uvds1Inlier);
+	// get a copy of all the inliers, original and transformed
+	CvMat *uvds0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	CvMat *uvds1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	int   *inlierIndices = new int[maxNumInLiers];
+	// construct homography matrix
+	constructDisparityHomography(rot, shift, &H);
+	int numInliers0 = getInLiers(uvds0, uvds1, &H, uvds0Inlier, uvds1Inlier, inlierIndices);
 
-    // make a copy of the best Transformation before nonlinear optimization
-    cvCopy(&H, &mRTBestWithoutLevMarq);
+	// make a copy of the best Transformation before nonlinear optimization
+	cvCopy(&H, &mRTBestWithoutLevMarq);
 
 
 	// get the euler angle from rot
@@ -281,8 +284,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
     cvmSet(shift, 1, 0, param[4]);
     cvmSet(shift, 2, 0, param[5]);
 
-    mInliers0 = uvds0Inlier;
-    mInliers1 = uvds1Inlier;
+    updateInlierInfo(uvds0Inlier, uvds1Inlier, inlierIndices);
 
     // construct the final transformation matrix
     this->constructDisparityHomography(rot, shift, &mT);

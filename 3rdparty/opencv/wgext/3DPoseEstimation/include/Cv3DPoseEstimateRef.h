@@ -1,8 +1,11 @@
 #ifndef CV3DPOSEESTIMATEREF_H_
 #define CV3DPOSEESTIMATEREF_H_
 
+
 #include <opencv/cxcore.h>
 //#include "CvMatUtils.h"
+
+#include "CvRandomTripletSetGenerator.h"
 
 typedef double CvMyReal;
 #define CV_XF CV_64F
@@ -89,14 +92,15 @@ public:
 	void setNumRansacIterations(
 	    /// The number of iterations in the RANSAC step/
 	    int numIterations) {
-		this->mNumIterations = numIterations;
+		this->mNumRansacIter = numIterations;
 	}
 	/**
 	 * Get the references to the 2 corresponding lists of inliers.
-	 * The points are stored in rows, as in Cv3DPoseEstimateRef::estimate
+	 * The points are stored in rows, as in Cv3DPoseEstimateRef::estimate.
+	 * This method only gets a view to these objects, not ownership
 	 * @return -true if the inliers are available. false otherwise.
 	 */
-	bool getInliers(CvMat *& inliers0, CvMat*& inliers1){
+	bool getInliers(CvMat *& inliers0, CvMat*& inliers1) const {
 		if (mInliers0 == NULL || mInliers1 == NULL ){
 			return false;
 		} else {
@@ -105,6 +109,31 @@ public:
 			return true;
 		}
 	}
+	int* getInliers() const {
+	  return mInlierIndices;
+	}
+  /**
+   * Get the references to the 2 corresponding lists of inliers.
+   * The points are stored in rows, as in Cv3DPoseEstimateRef::estimate.
+   * This method also assumes ownership of the matrices of inliers.
+   * @return -true if the inliers are available. false otherwise.
+   */
+  bool fetchInliers(CvMat *& inliers0, CvMat*& inliers1){
+    if (mInliers0 == NULL || mInliers1 == NULL ){
+      return false;
+    } else {
+      inliers0 = mInliers0;
+      inliers1 = mInliers1;
+      mInliers0 = NULL;
+      mInliers1 = NULL;
+      return true;
+    }
+  }
+  int* fetchInliers() {
+    int * inliers = mInlierIndices;
+    mInlierIndices = NULL;
+    return inliers;
+  }
 	/**
 	 *  A convenient utility to construct a 4x4 transformation matrix
 	 *  from a 3x3 rotation matrix and a 3x1 translation matrix
@@ -148,7 +177,10 @@ protected:
 	    /// correspoding inliers in points0
 	    CvMat* points0Inlier,
 	    /// corresponding inliers in point1
-	    CvMat* points1Inlier);
+	    CvMat* points1Inlier,
+	    /// the indices of the inliers
+	    int    inlierIndices[]
+	);
 	/// Check if the point is an inlier.
 	/// @return true if point pair i in the 2 corresponding list
 	/// is an inlier. False otherwise.
@@ -159,7 +191,13 @@ protected:
 	    CvMat *points1,
 	    /// index of the point.
 	    int i);
-	int    mNumIterations; //< num of iteration in RANSAC
+	/// Update the record of inliers with current input.
+	/// Old data is erased and deallocated properly.
+	void updateInlierInfo(
+	    CvMat* points0Inlier,
+	    CvMat* points1Inlier,
+	    int* inlierIndices);
+	int    mNumRansacIter; //< num of iteration in RANSAC
 	double mMinDet; //< to decide if 3 points are tooCloseToColinear
 	/// minimum angle to decide if 3 points are too close to being
 	/// co-linear.
@@ -186,15 +224,22 @@ protected:
 	CvMyReal mT_Data[4*4];
 	CvMat    mT;
 
+#if 0
 	/// random number generator used in RANSAC
 	CvRNG   mRng;
+#endif
+	CvRandomTripletSetGenerator mRandomTripletSetGenerator;
 
 	/// store the best candidate before levmarq
 	CvMyReal mRTBestWithoutLevMarqData[16];
 	CvMat   mRTBestWithoutLevMarq;
 
+	/// inliers0 from list 0 of input points
 	CvMat*  mInliers0;
+	/// inliers1 from list 1 of input points.
 	CvMat*  mInliers1;
+	/// indices of the inliers in the input lists.
+	int*    mInlierIndices;
 };
 
 #endif /*CV3DPOSEESTIMATEREF_H_*/

@@ -25,7 +25,7 @@ public:
 protected:
 	virtual int checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation);
 	virtual int getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-	    CvMat* points0Inlier, CvMat* points1Inlier);
+	    CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices);
 //	int prodOwnTrans(double X[3*3], double XXt[3*3]);
 };
 

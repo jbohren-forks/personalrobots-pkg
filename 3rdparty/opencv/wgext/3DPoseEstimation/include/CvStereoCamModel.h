@@ -60,6 +60,13 @@ public:
       /// (Output) 3D points stored in rows, in disparity coordinates.
 	    CvMat& uvds);
 
+	/// Get references to the projection matrices. Used mostly for
+	/// debugging.
+	void getProjectionMatrices(CvMat& cartToDisp, CvMat& dispToCart) {
+	  cartToDisp = mMatCartToDisp;
+	  dispToCart = mMatDispToCart;
+	}
+
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
     		CvMat& mat);

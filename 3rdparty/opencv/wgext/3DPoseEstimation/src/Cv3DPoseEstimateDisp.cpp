@@ -79,7 +79,7 @@ int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* tr
 
 // almost the same as the function above
 int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier) {
+    CvMat* points0Inlier, CvMat* points1Inlier, int *inlierIndices) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -117,17 +117,20 @@ int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* tran
 			continue;
 		}
 
-        // store the inlier
-        if (points0Inlier) {
-            cvmSet(points0Inlier, numInLiers, 0, p0x);
-            cvmSet(points0Inlier, numInLiers, 1, p0y);
-            cvmSet(points0Inlier, numInLiers, 2, p0z);
-        }
-        if (points1Inlier) {
-            cvmSet(points1Inlier, numInLiers, 0, *(_P1-3));
-            cvmSet(points1Inlier, numInLiers, 1, *(_P1-2));
-            cvmSet(points1Inlier, numInLiers, 2, *(_P1-1));
-        }
+		// store the inlier
+		if (points0Inlier) {
+		  cvmSet(points0Inlier, numInLiers, 0, p0x);
+		  cvmSet(points0Inlier, numInLiers, 1, p0y);
+		  cvmSet(points0Inlier, numInLiers, 2, p0z);
+		}
+		if (points1Inlier) {
+		  cvmSet(points1Inlier, numInLiers, 0, *(_P1-3));
+		  cvmSet(points1Inlier, numInLiers, 1, *(_P1-2));
+		  cvmSet(points1Inlier, numInLiers, 2, *(_P1-1));
+		}
+		if (inlierIndices) {
+		  inlierIndices[numInLiers] = i;
+		}
 		numInLiers++;
 	}
 #ifdef DEBUG

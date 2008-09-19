@@ -10,6 +10,7 @@
 
 #include <iostream>
 #include "Cv3DPoseEstimateDisp.h"
+#include "CvMatUtils.h"
 using namespace std;
 
 CvPoseEstErrMeasDisp::CvPoseEstErrMeasDisp():
@@ -30,7 +31,9 @@ void CvPoseEstErrMeasDisp::transform(const CvMat& src, CvMat& dst){
 
 // compute the error in disparity space
 void CvPoseEstErrMeasDisp::measure(const CvMat& uvds0, const CvMat& uvds1) {
+#ifdef DEBUG
 	cout << "Entering "<< __PRETTY_FUNCTION__ <<endl;
+#endif
 
 	int n = uvds0.rows;
 	double _xyzs0[3*n], _xyzs1[3*n];

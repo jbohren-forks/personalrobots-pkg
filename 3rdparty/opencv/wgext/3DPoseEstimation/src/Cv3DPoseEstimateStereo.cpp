@@ -55,10 +55,14 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
 	mFeatureImgBufRight = new uint8_t[mSize.width*mSize.height];
 
+	setNumRansacIterations(DefNumRansacIter);
+	setInlierErrorThreshold(DefInlierThreshold);
+
+
 	switch(mMatchMethod) {
 	case CalonderDescriptor:{
-//    string modelFile("land30.trees");
-    string modelFile("land50.trees");
+    string modelFile("land30.trees");
+//    string modelFile("land50.trees");
 		mCalonderMatcher = new CalonderMatcher(modelFile);
 		cout << "loaded model file "<<modelFile.c_str()<<" for Calonder descriptor"<<endl;
 		break;
@@ -186,6 +190,7 @@ bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* ma
 #ifdef DEBUG
 			cout << "Num of keypoints have no disparity: "<< numKeyPointsHasNoDisp <<endl;
 #endif
+			mNumKeyPointsWithNoDisparity = numKeyPointsHasNoDisp;
 			return status;
 		} else {
 		  // make a copy, will compiler be smart enough to save real copying

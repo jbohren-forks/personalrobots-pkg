@@ -33,11 +33,11 @@ public:
 	static const int DefWidth        = 640;
 	static const int DefHeight       = 480;
 	// constants used in getDisparityMap
-	static const int DefFTZero       = 31;		// max 31 cutoff for prefilter value
-	static const int DefDLen         = 64;		// 64 disparities
-	static const int DefCorr         = 15;		// correlation window size
-	static const int DefTextThresh   = 10;		// texture threshold
-	static const int DefUniqueThresh = 15;		// uniqueness threshold
+	static const int DefFTZero       = 31;		//< max 31 cutoff for prefilter value
+	static const int DefDLen         = 64;		//< 64 disparities
+	static const int DefCorr         = 15;		//< correlation window size
+	static const int DefTextThresh   = 10;		//< texture threshold
+	static const int DefUniqueThresh = 15;		//< uniqueness threshold
 
 	// constants used in goodFeaturesToTrack/star_detector
 	static const int DefNumScales    = 7;
@@ -48,6 +48,12 @@ public:
 	static const CvPoint DefNeighborhoodSize;
 	static const CvPoint DefTemplateSize;
 	static const double  DefTemplateMatchThreshold = 0;
+
+	// constants used in RANSAC
+	static const int DefNumRansacIter = 500; //< default num of iterations in RANSAC
+	/// Default threshold for inliers checking in RANSAC
+	static const double DefInlierThreshold = 1.5;
+
 	/**
 	 * matching method to find a best match of a key point in a neighborhood
 	 */

@@ -44,17 +44,14 @@ using namespace std;
 CvPathRecon::CvPathRecon(const CvSize& imageSize):
 	mPoseEstimator(imageSize.width, imageSize.height),
 	mTransform(cvMat(4, 4, CV_64FC1, _transform)),
-	mRot(cvMat(3, 3, CV_64FC1, _rot)),
-	mShift(cvMat(3, 1, CV_64FC1, _shift)),
 	mReversed(true),
-	mLastGoodFrameAvailable(false),
 	mLastGoodFrame(NULL),
+	mCurrentFrame(NULL),
+  mNextFrame(NULL),
 	mNumFrames(-1),
 	mStartFrameIndex(0),
 	mEndFrameIndex(0),
 	mFrameStep(1),
-	mLastKeyFrameImage(imageSize.width, imageSize.height),
-	mLastKeyFrameDispMap(imageSize.width, imageSize.height),
 	mPathLength(0.),
   mNumFramesSkipped(0),
 	mTotalInliers(0),
@@ -126,7 +123,7 @@ CvPathRecon::keyFrameEval(
 	}
 
 	if (keyFrameNeeded == true) {
-		if (mLastGoodFrameAvailable == false) {
+		if (mLastGoodFrame == NULL) {
 			// nothing to back track to. What can I do except use it :(
 			kfd = KeyFrameUse;
 		} else {
@@ -231,7 +228,8 @@ bool CvPathRecon::saveFramePoses(const string& dirname) {
 }
 
 void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
-	mErrMeas.setTransform(mRot, mShift);
+  assert(mCurrentFrame);
+	mErrMeas.setTransform(mCurrentFrame->mRot, mCurrentFrame->mShift);
 	if (mReversed == true) {
 		// rot and shift transform inliers1 to inliers0
 		mErrMeas.measure(*inliers1, *inliers0);
@@ -241,16 +239,12 @@ void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
 	}
 }
 
-void CvPathRecon::keepGoodFrame(WImageBuffer1_b& image,
-		WImageBuffer1_16s & dispMap, vector<Keypoint>& keyPoints, CvMat& rot, CvMat& shift,
-		int numTrackablePairs, int numInliers, int frameIndex, WImageBuffer3_b* imageC3a,
-		CvMat* inliers0, CvMat* inliers1)
-{
-    mNumFramesSkipped++;
-    delete mLastGoodFrame;
-    mLastGoodFrame = new CvPathRecon::PoseEstFrameEntry(image, dispMap, keyPoints,
-    		rot, shift, numTrackablePairs, numInliers, frameIndex, imageC3a, inliers0, inliers1);
-    mLastGoodFrameAvailable = true;
+void CvPathRecon::keepCurrentAsGoodFrame(){
+  assert(mCurrentFrame != NULL);
+  delete mLastGoodFrame;
+  mLastGoodFrame = mCurrentFrame;
+  mCurrentFrame = NULL;
+  mNumFramesSkipped++;
 }
 
 void CvPathRecon::loadStereoImagePair(int & frameIndex,
@@ -277,127 +271,163 @@ void CvPathRecon::loadStereoImagePair(string& dirname, string& leftimagefmt,
   rightImage.SetIpl(rightimg);
 }
 
+bool CvPathRecon::loadAndProcessStereoFrame(int frameIndex, PoseEstFrameEntry* & frame){
+  frame = new PoseEstFrameEntry(frameIndex);
 
-bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
-    const string & rightFileFmt, int start, int end, int step)
+  return loadAndProcessStereoFrame(frameIndex, frame->mImage, frame->mDispMap, frame->mKeypoints);
+}
+
+bool CvPathRecon::loadAndProcessStereoFrame(int frameIndex,
+    WImageBuffer1_b* & leftImage, WImageBuffer1_16s* & dispMap,
+    vector<Keypoint>* & keypoints)
 {
-  bool status = false;
-
-  mDirname = dirname;
-  mLeftImageFilenameFmt = dirname;
-  mLeftImageFilenameFmt += leftFileFmt;
-  mRightImageFilenameFmt = dirname;
-  mRightImageFilenameFmt += rightFileFmt;
-
-//  double ransacInlierthreshold = 2.0;
-  double ransacInlierthreshold = 1.5;
-  int numRansacIterations = 500;
-
-  // The following parameters are from indoor1/proj.txt
-  // note that B (or Tx) is in mm
-  mPoseEstimator.setInlierErrorThreshold(ransacInlierthreshold);
-  mPoseEstimator.setNumRansacIterations(numRansacIterations);
-
-  vector<Keypoint>& keyPointsLast = mKeyPointsLast;
-
-  WImageBuffer1_b&   lastLeftImage = mLastKeyFrameImage;
-  WImageBuffer1_16s& lastDispMap   = mLastKeyFrameDispMap;
-
-  int maxDisp = (int)mPoseEstimator.getD(400); // the closest point we care is at least 1000 mm away
-  cout << "Max disparity is: "<< maxDisp<<endl;
-
-  mErrMeas.setCameraParams((const CvStereoCamParams&)mPoseEstimator);
-
-  mStartFrameIndex = start;
-  mNumFrames       = end - start;
-  mEndFrameIndex   = end;
-  mFrameStep       = step;
-
-  // current transformation w.r.t. to the current frame
-
-  bool& reversed = mReversed;
-
-  CvMat& rot   = mRot;
-  CvMat& shift = mShift;
-  CvSize& imgSize = mPoseEstimator.getSize();
-
-  int fBackTracked = false;
-
-  WImageBuffer1_16s dispMap(imgSize.width, imgSize.height);
-  WImageBuffer1_b leftImage;
+  bool status = true;
   WImageBuffer1_b rightImage;
-#ifdef DISPLAY
-  WImageBuffer3_b leftImageC3(imgSize.width, imgSize.height);
-  WImageBuffer3_b leftImageC3a(imgSize.width, imgSize.height);
-  IplImage *leftimgC3a = leftImageC3a.Ipl();
-  IplImage *leftimgC3  = leftImageC3.Ipl();
-#endif
-  vector<Keypoint>& keyPointsCurr = mKeyPointsCurr;
+  leftImage = new WImageBuffer1_b();
+  CvSize& imgSize = mPoseEstimator.getSize();
+  dispMap = new WImageBuffer1_16s(imgSize.width, imgSize.height);
+  keypoints = new vector<Keypoint>();
+  // load stereo image pair
+  TIMERSTART2(LoadImage);
+  loadStereoImagePair(frameIndex, *leftImage, rightImage);
+  TIMEREND2(LoadImage);
+  // compute disparity map
+  TIMERSTART2(DisparityMap);
+  mPoseEstimator.getDisparityMap(*leftImage, rightImage, *dispMap);
+  TIMEREND2(DisparityMap);
+  TIMERSTART2(FeaturePoint);
 
-  char inliersFilename[256];
-
-  for (int i=mStartFrameIndex;
-    i<mEndFrameIndex && mStop == false;
-    i+= (fBackTracked==false)?mFrameStep:0
-  ) {
-    TIMERSTART(Total);
-    int frameIndex=i;
-//    fBackTracked = false;
-
-    if (fBackTracked==true){
-      // do not need to load the image or compute the key points again
-#ifdef DISPLAY
-      leftimgC3a = leftImageC3a.Ipl();
-#endif
-      fBackTracked = false;
-    } else {
-      TIMERSTART2(LoadImage);
-      loadStereoImagePair(frameIndex, leftImage, rightImage);
-      TIMEREND2(LoadImage);
-      TIMERSTART2(DisparityMap);
-      mPoseEstimator.getDisparityMap(leftImage, rightImage, dispMap);
-      TIMEREND2(DisparityMap);
-      TIMERSTART2(FeaturePoint);
-      keyPointsCurr.clear();
-      status = mPoseEstimator.goodFeaturesToTrack(leftImage, &dispMap, keyPointsCurr);
-      TIMEREND2(FeaturePoint);
-      mTotalKeypoints += keyPointsCurr.size();
+  keypoints->clear();
+  status = mPoseEstimator.goodFeaturesToTrack(*leftImage, dispMap, *keypoints);
+  TIMEREND2(FeaturePoint);
+  mTotalKeypoints += keypoints->size();
 #ifdef DEBUG
-      cout << "Found " << keyPointsCurr.size() << " good features in left  image" << endl;
+  cout << "Found " << keypoints->size() << " good features in left  image" << endl;
 #endif
 
 #ifdef DISPLAY
-      cvCvtColor(leftImage.Ipl(),  leftimgC3,  CV_GRAY2RGB);
-      leftimgC3a = leftImageC3a.Ipl();
-      cvCvtColor(leftImage.Ipl(),  leftimgC3a, CV_GRAY2RGB);
+  cvCvtColor(leftImage.Ipl(),  leftimgC3,  CV_GRAY2RGB);
+  leftimgC3a = leftImageC3a.Ipl();
+  cvCvtColor(leftImage.Ipl(),  leftimgC3a, CV_GRAY2RGB);
 
-      showDisparityMap(dispMap, dispWindowName, outputDirname, frameIndex, maxDisp);
-      drawKeypoints(leftImageC3, keyPointsLast, keyPointsCurr);
+  showDisparityMap(dispMap, dispWindowName, outputDirname, frameIndex, maxDisp);
+  drawKeypoints(leftImageC3, keyPointsLast, keyPointsCurr);
 #endif
+  return status;
+}
+
+void CvPathRecon::setInputVideoParams(const string& dirname, const string& leftFileFmt,
+    const string& rightFileFmt, int start, int end, int step)
+{
+    mDirname = dirname;
+    mLeftImageFilenameFmt = dirname;
+    mLeftImageFilenameFmt += leftFileFmt;
+    mRightImageFilenameFmt = dirname;
+    mRightImageFilenameFmt += rightFileFmt;
+    mStartFrameIndex = start;
+    mNumFrames = end - start;
+    mEndFrameIndex = end;
+    mFrameStep = step;
+}
+
+void CvPathRecon::backTrack() {
+  assert(mNextFrame == NULL);
+  assert(mLastGoodFrame != NULL);
+  assert(mCurrentFrame != NULL);
+#ifdef DEBUG
+  cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
+  cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
+#endif
+  mNumFramesSkipped--;
+  mNextFrame     = mCurrentFrame;
+  mCurrentFrame  = mLastGoodFrame;
+  mLastGoodFrame = NULL;
+}
+
+void CvPathRecon::updateTrajectory() {
+  // keep track of the trajectory
+  appendTransform(mCurrentFrame->mRot, mCurrentFrame->mShift);
+  mTotalInliersInKeyFrames        += mCurrentFrame->mNumInliers;
+  mTotalKeypointsInKeyFrames      += mCurrentFrame->mKeypoints->size();
+  mTotalTrackablePairsInKeyFrames += mCurrentFrame->mNumTrackablePairs;
+
+  // save the inliers into a file
+  char inliersFilename[256];
+  sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", mCurrentFrame->mFrameIndex);
+  saveKeyPoints(*mCurrentFrame->mInliers1, string(inliersFilename));
+
+  // stores rotation mat and shift vector in rods and shifts
+  storeTransform(mCurrentFrame->mRot, mCurrentFrame->mShift, mCurrentFrame->mFrameIndex - mStartFrameIndex);
+
+#ifdef DISPLAY
+  CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, mCurrentFrame->mImageC3a,
+      rot, shift,
+      (Cv3DPoseEstimateDisp&)mPoseEstimator, reversed);
+#endif
+
+#ifdef DEBUG
+  // measure the errors
+  measureErr(mCurrentFrame->mInliers0, mCurrentFrame->mInliers1);
+#endif
+
+  // getting ready for next iteration
+  setLastKeyFrame(mCurrentFrame);
+  mCurrentFrame = NULL;
+}
+
+void CvPathRecon::getTrackablePairs(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs) {
+  TIMERSTART2(TrackablePair);
+  PoseEstFrameEntry* lastKeyFrame = getLastKeyFrame();
+  assert(lastKeyFrame != NULL);
+  mPoseEstimator.getTrackablePairs(
+      *lastKeyFrame->mImage,     *mCurrentFrame->mImage,
+      *lastKeyFrame->mDispMap,   *mCurrentFrame->mDispMap,
+      *lastKeyFrame->mKeypoints, *mCurrentFrame->mKeypoints,
+      trackablePairs);
+  mTotalTrackablePairs += trackablePairs.size();
+  mCurrentFrame->mNumTrackablePairs = trackablePairs.size();
+  TIMEREND2(TrackablePair);
+}
+
+/// reconstruction w.r.t one additional frame
+bool CvPathRecon::reconOneFrame(int frameIndex) {
+    bool insertNewKeyFrame = false;
+    TIMERSTART(Total);
+    bool & reversed = mReversed;
+    PoseEstFrameEntry *& currFrame = mCurrentFrame;
+
+    if (mNextFrame){
+      // do not need to load new images nor compute the key points again
+      currFrame = mNextFrame;
+      mNextFrame = NULL;
+    } else {
+      // load and process next stereo pair of images.
+      loadAndProcessStereoFrame(frameIndex, currFrame);
+    }
+
+    if (currFrame->mFrameIndex == mStartFrameIndex) {
+      // First frame ever, do not need to do anything more.
+      setLastKeyFrame(currFrame);
+      insertNewKeyFrame = true;
+      currFrame = NULL;
+      return insertNewKeyFrame;
     }
     //
-    // match the good feature points between this iteration and last
+    // match the good feature points between this iteration and last key frame
     //
     vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
-    TIMERSTART2(TrackablePair);
-    mPoseEstimator.getTrackablePairs(lastLeftImage, leftImage,
-        lastDispMap, dispMap, keyPointsLast, keyPointsCurr, trackablePairs);
-    TIMEREND2(TrackablePair);
-    mTotalTrackablePairs += trackablePairs.size();
-
+    getTrackablePairs(trackablePairs);
 #ifdef DEBUG
     cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() <<endl;
 #endif
 
-    int numTrackablePairs = trackablePairs.size();
-
-    if (numTrackablePairs<10) {
+    if (currFrame->mNumTrackablePairs<10) {
 #ifdef DEBUG
       cout << "Too few trackable pairs" <<endl;
 #endif
 #ifdef DISPLAY
       sprintf(info, "%04d, #TrackablePair: %d, Too few to track",
-          i, numTrackablePairs);
+          frameIndex, currFrame->mNumTrackablePairs);
 #endif
     } else {
 #ifdef DISPLAY
@@ -407,21 +437,25 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
 
       //  pose estimation given the feature point pairs
       TIMERSTART2(PoseEstimate);
-      int numInliers =
-        mPoseEstimator.estimate(trackablePairs, rot, shift, reversed);
+      currFrame->mNumInliers =
+        mPoseEstimator.estimate(trackablePairs,
+            currFrame->mRot, currFrame->mShift, reversed);
       TIMEREND2(PoseEstimate);
 
-      mTotalInliers += numInliers;
+      mTotalInliers += currFrame->mNumInliers;
 
-      CvMat *inliers0 = NULL;
-      CvMat *inliers1 = NULL;
-      getInliers(inliers0, inliers1);
+      currFrame->mInliers0 = NULL;
+      currFrame->mInliers1 = NULL;
+      fetchInliers(currFrame->mInliers0, currFrame->mInliers1);
 #ifdef DEBUG
-      cout << "num of inliers: "<< numInliers <<endl;
+      cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
 #endif
 
+      // Decide if we need select a key frame by now
       CvPathRecon::KeyFramingDecision kfd =
-        keyFrameEval(i, trackablePairs, keyPointsCurr, numInliers, inliers0, inliers1, rot, shift);
+        keyFrameEval(frameIndex, trackablePairs, *currFrame->mKeypoints, currFrame->mNumInliers,
+            currFrame->mInliers0, currFrame->mInliers1,
+            currFrame->mRot, currFrame->mShift);
 
       switch (kfd) {
       case CvPathRecon::KeyFrameSkip:  {
@@ -431,117 +465,21 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
       }
       case CvPathRecon::KeyFrameBackTrack:   {
         // go back to the last good frame
-        fBackTracked = true;
-#ifdef DEBUG
-        cerr << "Going back to last good frame  from frame "<<i<<endl;
-#endif
-        assert(mLastGoodFrame != NULL);
-
-        cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
-        mNumFramesSkipped--;
-        // show the inlier
-        inliers0 = mLastGoodFrame->mInliers0;
-        inliers1 = mLastGoodFrame->mInliers1;
-        cvCopy(&mLastGoodFrame->mRot, &rot);
-        cvCopy(&mLastGoodFrame->mShift, &shift);
-        frameIndex = mLastGoodFrame->mFrameIndex;
-        numTrackablePairs = mLastGoodFrame->mNumTrackablePairs;
-        numInliers = mLastGoodFrame->mNumInliers;
-#ifdef DISPLAY
-        if (mLastGoodFrame->mImageC3a) {
-          leftimgC3a = mLastGoodFrame->mImageC3a->Ipl();
-        } else {
-          leftimgC3a = NULL;
-        }
-#endif
-
-        // keep track of the trajectory
-        appendTransform(rot, shift);
-        mTotalInliersInKeyFrames += numInliers;
-        mTotalKeypointsInKeyFrames += mLastGoodFrame->mKeypoints.size();
-        mTotalTrackablePairsInKeyFrames += mLastGoodFrame->mNumTrackablePairs;
-
-        // save the inliers into a file
-        sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
-        saveKeyPoints(*inliers1, string(inliersFilename));
-
-        // stores rotation mat and shift vector in rods and shifts
-        storeTransform(rot, shift, frameIndex - mStartFrameIndex);
-
-#ifdef DISPLAY
-        CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, mLastGoodFrame->mImageC3a,
-            rot, shift,
-            (Cv3DPoseEstimateDisp&)mPoseEstimator, reversed);
-#endif
-
-#ifdef DEBUG
-        // measure the errors
-        measureErr(inliers0, inliers1);
-#endif
-
-#ifdef DISPLAY
-        cvShowImage(lastTrackedLeftCam.c_str(), lastLeftImage.Ipl());
-#endif
-
-        // getting ready for next key frame
-        // TODO: shall replace the next 3 lines with more efficient implementation
-        keyPointsLast = mLastGoodFrame->mKeypoints;
-        lastDispMap.CloneFrom(mLastGoodFrame->mDispMap);
-        lastLeftImage.CloneFrom(mLastGoodFrame->mImage);
-
-        // next we are supposed to try current image, frame i again with
-        // last good frame
-        mLastGoodFrameAvailable = false;
-
+        backTrack();
+        updateTrajectory();
+        insertNewKeyFrame = true;
+        // next we are supposed to try nextFrame with currFrame
         break;
       }
       case CvPathRecon::KeyFrameKeep:   {
-        int numTrackablePairs = trackablePairs.size();
-#ifdef DISPLAY
-        keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
-            numTrackablePairs, numInliers, frameIndex, &leftImageC3a, cvCloneMat(inliers0), cvCloneMat(inliers1));
-#else
-        keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
-                    numTrackablePairs, numInliers, frameIndex, NULL, cvCloneMat(inliers0), cvCloneMat(inliers1));
-#endif
+        // keep current frame as last good frame.
+        keepCurrentAsGoodFrame();
         break;
       }
       case CvPathRecon::KeyFrameUse:  {
-        // show the inliers
-        frameIndex = i;
-
-        // keep track of the trajectory
-        appendTransform(rot, shift);
-        mTotalInliersInKeyFrames   += numInliers;
-        mTotalKeypointsInKeyFrames += keyPointsCurr.size();
-        mTotalTrackablePairsInKeyFrames += trackablePairs.size();
-
-#ifdef DISPLAY
-        // save the inliers into a file
-        sprintf(inliersFilename, "Output/indoor1/inliers1_%04d.xml", frameIndex);
-        saveKeyPoints(*inliers1, string(inliersFilename));
-#endif
-
-        // stores rotation mat and shift vector in rods and shifts
-        storeTransform(rot, shift, frameIndex - mStartFrameIndex);
-
-#ifdef DISPLAY
-        CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, leftImageC3a,
-            rot, shift, (Cv3DPoseEstimateDisp&)mPoseEstimator, reversed);
-#endif
-
-#ifdef DEBUG
-        // measure the errors
-        measureErr(inliers0, inliers1);
-#endif
-        // getting ready for next key frame
-        keyPointsLast = keyPointsCurr;
-        lastDispMap.CloneFrom(dispMap);
-#ifdef DISPLAY
-        cvShowImage(lastTrackedLeftCam.c_str(), lastLeftImage.Ipl());
-#endif
-        lastLeftImage.CloneFrom(leftImage);
-
+        // use currFrame as key frame
+        updateTrajectory();
+        insertNewKeyFrame = true;
         break;
       }
       default:
@@ -552,9 +490,8 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
       CvPoint3D64f euler;
       CvMatUtils::eulerAngle(rot, euler);
       sprintf(info, "%04d, KyPt %d, TrckPir %d, Inlrs %d, eulr=(%4.2f,%4.2f,%4.2f), d=%4.1f",
-          frameIndex, keyPointsCurr.size(), numTrackablePairs, numInliers, euler.x, euler.y, euler.z, cvNorm((const CvMat *)&shift));
+          frameIndex, keyPointsCurr.size(), currFrame->mNumTrackablePairs, numInliers, euler.x, euler.y, euler.z, cvNorm((const CvMat *)&shift));
 #endif
-      TIMEREND(Total);
     }
 #ifdef DISPLAY
     cvPutText(leftimgC3a, info, org, &font, CvMatUtils::yellow);
@@ -564,43 +501,70 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
     // save the marked images
 #ifdef DISPLAY
     sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), frameIndex);
-    sprintf(rightCamWithMarks, "%s/rightCamwithMarks-%04d.png", outputDirname.c_str(), frameIndex);
     sprintf(poseEstFilename, "%s/poseEst-%04d.png", outputDirname.c_str(), frameIndex);
     cvSaveImage(leftCamWithMarks,  leftimgC3);
     cvSaveImage(poseEstFilename,   leftimgC3a);
 
-
     // wait for a while for opencv to draw stuff on screen
     cvWaitKey(25);  //  milliseconds
-//    cvWaitKey(0);  //  wait indefinitely
+    //    cvWaitKey(0);  //  wait indefinitely
 #endif
+    TIMEREND(Total);
+    return insertNewKeyFrame;
+}
 
-    //
-    //  getting ready for next iteration
-    //
+bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
+    const string & rightFileFmt, int start, int end, int step)
+{
+  bool status = false;
+  setInputVideoParams(dirname, leftFileFmt, rightFileFmt, start, end, step);
 
-    if (i==mStartFrameIndex) {
-      keyPointsLast = keyPointsCurr;
-      lastDispMap.CloneFrom(dispMap);
-      lastLeftImage.CloneFrom(leftImage);
+  int maxDisp = (int)(mPoseEstimator.getD(400));// the closest point we care is at least 1000 mm away
+  cout << "Max disparity is: " << maxDisp << endl;
+  mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
+
+  // current frame
+  PoseEstFrameEntry*& currFrame = mCurrentFrame;
+  delete currFrame;
+  currFrame = NULL;
+  // last good frame as candidate for next key frame
+  delete mLastGoodFrame;
+  mLastGoodFrame = NULL;
+
+  // next frame. Needed when backtracking happens
+  PoseEstFrameEntry* nextFrame = mNextFrame;
+  nextFrame = NULL;
+
+  for (int i=mStartFrameIndex;
+  i<mEndFrameIndex && mStop == false;
+  i+= (nextFrame==NULL)?mFrameStep:0
+  ) {
+    bool newKeyFrame = reconOneFrame(i);
+    if (newKeyFrame == false) {
+      continue;
+    }
+
+    // only keep the last frame in the queue
+    while(mActiveKeyFrames.size()>1) {
+      PoseEstFrameEntry* frame = mActiveKeyFrames.front();
+      mActiveKeyFrames.pop_front();
+      delete frame;
     }
   }
-
   int numKeyFrames = mEndFrameIndex - mStartFrameIndex - mNumFramesSkipped;
-  double scale   = 1./(double)(mEndFrameIndex - mStartFrameIndex);
-  double kfScale = 1./(double)numKeyFrames;
-  cout <<"Num of frames skipped: " << mNumFramesSkipped <<endl;
-  cout <<"Total distance covered: "<< mPathLength <<" mm"<<endl;
-  cout <<"Total/Average keypoints: "<< mTotalKeypoints << ","<< (double)mTotalKeypoints*scale <<endl;
-  cout <<"Total/Average trackable pairs: "<< mTotalTrackablePairs << ","<< (double)mTotalTrackablePairs*scale <<endl;
-  cout <<"Total/Average inliers: "<< mTotalInliers << ","<< (double)mTotalInliers*scale <<endl;
-  cout << "Total/Average keypoints with no disparity: "<< mPoseEstimator.mNumKeyPointsWithNoDisparity <<","<<
-  (double)mPoseEstimator.mNumKeyPointsWithNoDisparity*kfScale <<endl;
-
-  cout << "In Key Frames: "<<endl;
-  cout <<"Total/Average keypoints: "<< mTotalKeypointsInKeyFrames << ","<< (double)mTotalKeypointsInKeyFrames*kfScale <<endl;
-  cout <<"Total/Average trackable pairs: "<< mTotalTrackablePairsInKeyFrames << ","<< (double)mTotalTrackablePairsInKeyFrames*kfScale <<endl;
-  cout <<"Total/Average inliers: "<< mTotalInliersInKeyFrames << ","<< (double)mTotalInliersInKeyFrames*kfScale <<endl;
+  double scale = 1. / (double)((mEndFrameIndex - mStartFrameIndex));
+  double kfScale = 1. / (double)(numKeyFrames);
+  fprintf(stdout, "Num of frames skipped:    %d\n", mNumFramesSkipped);
+  fprintf(stdout, "Total distance covered:   %05.2f mm\n",mPathLength);
+  fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", mTotalKeypoints, (double)(mTotalKeypoints) * scale);
+  fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", mTotalTrackablePairs, (double)(mTotalTrackablePairs) * scale);
+  fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", mTotalInliers, (double)(mTotalInliers) * scale);
+  fprintf(stdout, "Total/Average keypoints w/o disp:  %d,   %05.2f\n", mPoseEstimator.mNumKeyPointsWithNoDisparity,
+      (double)(mPoseEstimator.mNumKeyPointsWithNoDisparity) * kfScale);
+  fprintf(stdout, "In Key Frames:\n");
+  fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", mTotalKeypointsInKeyFrames, (double)(mTotalKeypointsInKeyFrames) * kfScale);
+  fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", mTotalTrackablePairsInKeyFrames, (double)(mTotalTrackablePairsInKeyFrames) * kfScale);
+  fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", mTotalInliersInKeyFrames, (double)(mTotalInliersInKeyFrames) *kfScale);
 
   saveFramePoses(string("Output/indoor1/"));
 
@@ -611,16 +575,17 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
   return status;
 }
 
-// See CvPathRecon.h for comments
-CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b& image, WImageBuffer1_16s& dispMap,
-    vector<Keypoint>& keypoints, CvMat& rot, CvMat& shift,
+// See CvPathRecon.h for documentation
+CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
+    WImageBuffer1_16s* dispMap,
+    vector<Keypoint>* keypoints, CvMat& rot, CvMat& shift,
     int numTrackablePair,
     int numInliers, int frameIndex,
     WImageBuffer3_b* imageC3a, CvMat* inliers0, CvMat* inliers1){
   mRot   = cvMat(3, 3, CV_64FC1, _mRot);
   mShift = cvMat(3, 1, CV_64FC1, _mShift);
-  mImage.CloneFrom(image);
-  mDispMap.CloneFrom(dispMap);
+  mImage = image;
+  mDispMap = dispMap;
   mKeypoints  = keypoints;
   cvCopy(&rot,   &mRot);
   cvCopy(&shift, &mShift);
@@ -636,6 +601,12 @@ CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b& image, WImage
 void CvPathRecon::PoseEstFrameEntry::clear() {
   if (mInliers0) cvReleaseMat(&mInliers0);
   if (mInliers1) cvReleaseMat(&mInliers1);
+  delete this->mKeypoints;
+  mKeypoints = NULL;
+  delete this->mImage;
+  mImage = NULL;
+  delete this->mDispMap;
+  mDispMap = NULL;
   delete mImageC3a;
   mImageC3a = NULL;
 }

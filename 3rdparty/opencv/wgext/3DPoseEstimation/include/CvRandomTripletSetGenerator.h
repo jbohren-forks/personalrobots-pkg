@@ -15,6 +15,7 @@
 /// a struct to hold the triplet set of integers
 class CvTripletSet {
 public:
+  CvTripletSet(){}
   CvTripletSet(int a, int b, int c) {t[0]=a;t[1]=b;t[2]=c;}
   inline int& operator[] (const int i) { return t[i];}
   inline bool operator == (CvTripletSet const& a) {
@@ -23,8 +24,6 @@ public:
 private:
   int t[3];
 };
-
-bool operator == (CvTripletSet const& a, CvTripletSet const& b);
 
 /**
  * A generator of random triplet set of integers.
@@ -37,36 +36,58 @@ bool operator == (CvTripletSet const& a, CvTripletSet const& b);
  */
 class CvRandomTripletSetGenerator {
 public:
+  CvRandomTripletSetGenerator():mInitialized(false){}
   CvRandomTripletSetGenerator(
-      /// seed for the random number generator
-      const int64 seed,
       /// The smallest integer in a random set
       const int lower,
       /// The largest integer in a random set
       const int upper,
+      /// seed for the random number generator
+      const int64 seed = getDefaultSeed(),
+      /// If yes, no duplicated set is generated throughout the life span
+      /// of this object.
+      const bool noDuplicate=true) {
+    reset(lower, upper, seed, noDuplicate);
+  }
+  virtual ~CvRandomTripletSetGenerator();
+  void reset(
+      /// The smallest integer in a random set
+      const int lower,
+      /// The largest integer in a random set
+      const int upper,
+      /// seed for the random number generator
+      const int64 seed = getDefaultSeed(),
       /// If yes, no duplicated set is generated throughout the life span
       /// of this object.
       const bool noDuplicate=true);
-  virtual ~CvRandomTripletSetGenerator();
   /// generate a random set
-  /// @return a copy of a random triplet set
-  CvTripletSet newSet();
+  /// @return true if the next random set is available. False
+  /// if not (reach the max number of sets).
+  bool nextSet(/// (Output) the next random triplet set. Undefined
+      /// if the function returns false.
+      CvTripletSet& triplet);
+  static int64 getDefaultSeed() {
+//    return time(NULL);
+    return 20080910;
+  }
 protected:
+  /// If it has been initialized
+  bool mInitialized;
   /// Random number generator
   CvRNG mRandomNumberGenerator;
   /// The smallest integer
-  const int    mLower;
+  int    mLower;
   /// The number of possible integer random numbers, (largest-smallest+1)
-  const int    mRange;
+  int    mRange;
   /// No duplicate
-  const bool   mNoDuplicate;
+  bool   mNoDuplicate;
   /// The total number of non-duplicated sets
-  const unsigned int    mMaxNumSets;
+  unsigned int    mMaxNumSets;
   /// Encode the triplet into a 64 bit long
   uint64 mEncodeSetInLong(CvTripletSet const & triplet);
   boost::unordered_set<int64> mSetOfSets;
   /// return a new set, maybe a duplicate of a previously generated one.
-  CvTripletSet newSetWithDuplicate();
+  void nextSetWithDuplicate(CvTripletSet& triplet);
   /// sort the triplet into increasing order
   void _sort(CvTripletSet& s);
 };

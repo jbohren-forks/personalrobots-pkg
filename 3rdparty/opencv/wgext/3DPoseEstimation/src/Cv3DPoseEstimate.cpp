@@ -92,7 +92,7 @@ int Cv3DPoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transf
 
 // almost the same as the function above
 int Cv3DPoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier) {
+    CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -132,17 +132,20 @@ int Cv3DPoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transfor
 			continue;
 		}
 
-        // store the inlier
-        if (points0Inlier) {
-            cvmSet(points0Inlier, numInLiers, 0, p0x);
-            cvmSet(points0Inlier, numInLiers, 1, p0y);
-            cvmSet(points0Inlier, numInLiers, 2, p0z);
-        }
-        if (points1Inlier) {
-            cvmSet(points1Inlier, numInLiers, 0, *(_P1-3));
-            cvmSet(points1Inlier, numInLiers, 1, *(_P1-2));
-            cvmSet(points1Inlier, numInLiers, 2, *(_P1-1));
-        }
+		// store the inlier
+		if (points0Inlier) {
+		  cvmSet(points0Inlier, numInLiers, 0, p0x);
+		  cvmSet(points0Inlier, numInLiers, 1, p0y);
+		  cvmSet(points0Inlier, numInLiers, 2, p0z);
+		}
+		if (points1Inlier) {
+		  cvmSet(points1Inlier, numInLiers, 0, *(_P1-3));
+		  cvmSet(points1Inlier, numInLiers, 1, *(_P1-2));
+		  cvmSet(points1Inlier, numInLiers, 2, *(_P1-1));
+		}
+		if (inlierIndices) {
+		  inlierIndices[numInLiers] = i;
+		}
 		numInLiers++;
 	}
 #ifdef DEBUG
@@ -173,21 +176,24 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 	cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
 
 	int maxNumInLiers=0;
-	for (int i=0; i< mNumIterations; i++) {
+	mRandomTripletSetGenerator.reset(0, numPoints-1);
+	for (int i=0; i< mNumRansacIter; i++) {
 #ifdef DEBUG
 		cout << "Iteration: "<< i << endl;
 #endif
 		// randomly pick 3 points. make sure they are not
 		// tooCloseToColinear
-		pick3RandomPoints(points0, points1, &P0, &P1);
+		if (pick3RandomPoints(points0, points1, &P0, &P1)==false){
+		  break;
+		}
 
 		TIMERSTART2(SVD);
 		this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
 		TIMEREND2(SVD);
 
-        this->constructRT(&R, &T, &RT);
+		this->constructRT(&R, &T, &RT);
 
-        CvTestTimerStart(CheckInliers);
+		CvTestTimerStart(CheckInliers);
 		// scoring against all points
 		numInLiers = checkInLiers(points0, points1, &RT);
 		CvTestTimerEnd(CheckInliers);
@@ -212,25 +218,24 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 	}
 
 	int numInLiers0;
-    CvMat *points0Inlier;
-    CvMat *points1Inlier;
+	CvMat *points0Inlier;
+	CvMat *points1Inlier;
+	int   *inlierIndices;
 	TIMERSTART(CopyInliers);
 	// get a copy of all the inliers, original and transformed
-    points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    // construct homography matrix
-    constructRT(rot, trans, &RT);
+	points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	inlierIndices = new int[maxNumInLiers];
 
-    numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
+	// construct homography matrix
+	constructRT(rot, trans, &RT);
 
-    if (numInLiers0 == 0) {
-    	cout << "ZeroInLiers"<<endl;
-    	numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
-    }
-    TIMEREND(CopyInliers);
+	numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier, inlierIndices);
 
-    // make a copy of the best RT before nonlinear optimization
-    cvCopy(&RT, &mRTBestWithoutLevMarq);
+	TIMEREND(CopyInliers);
+
+	// make a copy of the best RT before nonlinear optimization
+	cvCopy(&RT, &mRTBestWithoutLevMarq);
 
 #ifdef USE_LEVMARQ
     TIMERSTART(LevMarq);
@@ -303,8 +308,8 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 
     TIMEREND(LevMarq);
 #endif
-    mInliers0 = points0Inlier;
-    mInliers1 = points1Inlier;
+
+    updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
 
     this->constructRT(rot, trans, &mT);
 	return maxNumInLiers;

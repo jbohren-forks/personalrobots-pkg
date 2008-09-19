@@ -35,7 +35,7 @@ void CvPoseEstErrMeas::transform(const CvMat& src, CvMat& dst) {
 
 bool CvPoseEstErrMeas::setTransform(const CvMat& rot, const CvMat& shift){
 	int status = true;
-	cvCopy(&rot, &mRotation);
+	cvCopy(&rot,   &mRotation);
 	cvCopy(&shift, &mShift);
 	return status;
 }

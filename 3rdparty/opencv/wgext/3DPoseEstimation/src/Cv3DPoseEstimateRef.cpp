@@ -23,20 +23,21 @@
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
-//#define SEED time(NULL)
-#define SEED 20080910  // use the same seed for ease of debugging
-
 Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
-	mNumIterations(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
+	mNumRansacIter(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
 	mNumTriesForRandomTriple(100),
 	mErrMapping(NULL), mErrNormType(CV_C),	mErrThreshold(mDefErrThreshold),
 	mResidue1(cvMat(3, 1, CV_64F, mResidue1_Data)),
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
 	mW1(cvMat(4, 1, CV_64F, mW1_Data)),
 	mT(cvMat(4, 4, CV_XF, mT_Data)),
+#if 0
 	mRng(SEED),
+#endif
+	mRandomTripletSetGenerator(0, 100),
 	mInliers0(NULL),
-	mInliers1(NULL)
+	mInliers1(NULL),
+	mInlierIndices(NULL)
 {
 	mRTBestWithoutLevMarq = cvMat(4, 4, CV_XF, mRTBestWithoutLevMarqData);
 }
@@ -138,30 +139,34 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
 	cvInitMatHeader(&P1, 3, 3, CV_64FC1, _P1); // 3 random points from caemra1, stored in columns
 
 	CvMat R, T, RT;
-	cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);  // rotation matrix, R = V * tranpose(U)
+	cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);  // rotation matrix, R = V * transpose(U)
 	cvInitMatHeader(&T,  3, 1, CV_64FC1, _T);  // translation matrix
 	cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
 
 	int maxNumInLiers=0;
-	for (int i=0; i< mNumIterations; i++) {
+	mRandomTripletSetGenerator.reset(0, numPoints-1);
+	for (int i=0; i< mNumRansacIter; i++) {
 #ifdef DEBUG
 		cout << "Iteration: "<< i << endl;
 #endif
 		// randomly pick 3 points. make sure they are not
 		// tooCloseToColinear
-		pick3RandomPoints(points0, points1, &P0, &P1);
+		if (pick3RandomPoints(points0, points1, &P0, &P1)==false) {
+		  // no more random triplet available
+		  break;
+		}
 
 		TIMERSTART2(SVD);
 		this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
 		TIMEREND2(SVD);
 
 //        this->constructRT(&R, &T, &RT);
-        this->constructRT(&R, &T, &mT);
+		this->constructRT(&R, &T, &mT);
 
-        CvTestTimerStart(CheckInliers)
+		CvTestTimerStart(CheckInliers)
 		// scoring against all points
 		numInLiers = checkInLiers(points0, points1, &RT);
-        CvTestTimerEnd(CheckInliers)
+		CvTestTimerEnd(CheckInliers)
 #ifdef DEBUG
 		cout << "R, T, and RT: "<<endl;
 		CvMatUtils::printMat(&R);
@@ -183,17 +188,19 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
 	}
 
 	// get a copy of all the inliers, original and transformed
-    CvMat *points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    CvMat *points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-    // construct homography matrix
-    constructRT(rot, trans, &RT);
-    int numInLiers0 = getInLiers(points0, points1, &RT, points0Inlier, points1Inlier);
+	CvMat *points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	CvMat *points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+	int   *inlierIndices = new int[maxNumInLiers];
+	// construct homography matrix
+	constructRT(rot, trans, &RT);
+	int numInLiers0 = getInLiers(points0, points1, &RT,
+	    points0Inlier, points1Inlier, inlierIndices);
 
-    cout << "Number of Inliers: "<< numInLiers0 << endl;
-    if (numInLiers0<6) {
-    	cout << "Too few inliers: "<< numInLiers0 << endl;
-    	return numInLiers0;
-    }
+	cout << "Number of Inliers: "<< numInLiers0 << endl;
+	if (numInLiers0<6) {
+	  cout << "Too few inliers: "<< numInLiers0 << endl;
+	  return numInLiers0;
+	}
 
 #ifdef USE_LEVMARQ
 
@@ -293,8 +300,20 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     if (mInliers1) cvReleaseMat(&mInliers1);
     mInliers0 = points0Inlier;
     mInliers1 = points1Inlier;
+    delete [] mInlierIndices;
+    mInlierIndices = inlierIndices;
 	return numInLiers0;
 }
+
+void Cv3DPoseEstimateRef::updateInlierInfo(CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
+  if (mInliers0) cvReleaseMat(&mInliers0);
+  if (mInliers1) cvReleaseMat(&mInliers1);
+  mInliers0 = points0Inlier;
+  mInliers1 = points1Inlier;
+  delete [] mInlierIndices;
+  mInlierIndices = inlierIndices;
+}
+
 #if 0
 bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat* points){
 	CvMat * temp = cvCloneMat(points);
@@ -351,14 +370,18 @@ bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat *points)  {
 bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1,
 		bool fInputPointsInRows){
 	bool status = false;
-	int numPoints = points0->rows;
 
 	for (int i=0; i<mNumTriesForRandomTriple; i++){
 
-		int pa = cvRandInt(&mRng) % numPoints;
-		int pb, pc;
-		do { pb = cvRandInt(&mRng) % numPoints; } while ( pb == pa);
-		do { pc = cvRandInt(&mRng) % numPoints; } while ( pc == pa || pc == pb);
+	  CvTripletSet triplet;
+	  if (mRandomTripletSetGenerator.nextSet(triplet)==false) {
+	    // no more random triplet set available
+	    status = false;
+	    break;
+	  }
+	  int pa = triplet[0];
+	  int pb = triplet[1];
+	  int pc = triplet[2];
 
 		// points in P0, and P1 are stored in columns
 		if (fInputPointsInRows == true ) {
@@ -435,7 +458,7 @@ bool Cv3DPoseEstimateRef::constructTransform(
 }
 
 int Cv3DPoseEstimateRef::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
-    return getInLiers(points0, points1, transformation, NULL, NULL);
+    return getInLiers(points0, points1, transformation, NULL, NULL, NULL);
 }
 
 bool Cv3DPoseEstimateRef::isInLier(CvMat *points0, CvMat *points1, int i){
@@ -479,7 +502,7 @@ bool Cv3DPoseEstimateRef::isInLier(CvMat *points0, CvMat *points1, int i){
 }
 
 int Cv3DPoseEstimateRef::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier) {
+    CvMat* points0Inlier, CvMat* points1Inlier, int inlierIndices[]) {
 
 	int numInLiers = 0;
 	int numPoints = points0->rows;
@@ -487,17 +510,20 @@ int Cv3DPoseEstimateRef::getInLiers(CvMat *points0, CvMat *points1, CvMat* trans
 	for (int i=0; i<numPoints; i++) {
 
 		if (isInLier(points0, points1, i) == true) {
-            // store the inlier
-            if (points0Inlier) {
-                cvmSet(points0Inlier, numInLiers, 0, cvmGet(points0, i, 0));
-                cvmSet(points0Inlier, numInLiers, 1, cvmGet(points0, i, 1));
-                cvmSet(points0Inlier, numInLiers, 2, cvmGet(points0, i, 2));
-            }
-            if (points1Inlier) {
-                cvmSet(points1Inlier, numInLiers, 0, cvmGet(points1, i, 0));
-                cvmSet(points1Inlier, numInLiers, 1, cvmGet(points1, i, 1));
-                cvmSet(points1Inlier, numInLiers, 2, cvmGet(points1, i, 2));
-            }
+		  // store the inlier
+		  if (points0Inlier) {
+		    cvmSet(points0Inlier, numInLiers, 0, cvmGet(points0, i, 0));
+		    cvmSet(points0Inlier, numInLiers, 1, cvmGet(points0, i, 1));
+		    cvmSet(points0Inlier, numInLiers, 2, cvmGet(points0, i, 2));
+		  }
+		  if (points1Inlier) {
+		    cvmSet(points1Inlier, numInLiers, 0, cvmGet(points1, i, 0));
+		    cvmSet(points1Inlier, numInLiers, 1, cvmGet(points1, i, 1));
+		    cvmSet(points1Inlier, numInLiers, 2, cvmGet(points1, i, 2));
+		  }
+		  if (inlierIndices) {
+		    inlierIndices[numInLiers] = i;
+		  }
 			numInLiers++;
 		}
 	}

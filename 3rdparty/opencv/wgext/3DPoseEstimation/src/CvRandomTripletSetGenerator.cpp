@@ -11,17 +11,11 @@ using namespace std;
 
 #include "CvRandomTripletSetGenerator.h"
 
-CvRandomTripletSetGenerator::CvRandomTripletSetGenerator(
-    const int64 seed,
+void CvRandomTripletSetGenerator::reset(
     const int lower,
     const int upper,
-    const bool noDuplicate):
-      mRandomNumberGenerator(cvRNG(seed)),
-      mLower(lower),
-      mRange(upper-lower+1),
-      mNoDuplicate(noDuplicate),
-      mMaxNumSets((mRange)*(mRange-1)*(mRange-2)/6)
-{
+    const int64 seed,
+    const bool noDuplicate) {
       if (lower>=upper) {
         std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: lower no less than upper"<<std::endl;
         throw std::exception();
@@ -30,21 +24,25 @@ CvRandomTripletSetGenerator::CvRandomTripletSetGenerator(
         std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: when noDuplicate is true, range shall be less than 2^21"<<std::endl;
         throw std::exception();
       }
+
+      mRandomNumberGenerator = cvRNG(seed);
+      mLower = lower;
+      mRange = upper-lower+1;
+      mNoDuplicate = noDuplicate;
+      mMaxNumSets=((mRange)*(mRange-1)*(mRange-2)/6);
+      mSetOfSets.clear();
+      mInitialized = true;
 }
 
 CvRandomTripletSetGenerator::~CvRandomTripletSetGenerator() {
 }
 
-bool operator == (CvTripletSet const& a, CvTripletSet const& b) {
-  return a == b;
-}
-
-CvTripletSet CvRandomTripletSetGenerator::newSetWithDuplicate(){
+void CvRandomTripletSetGenerator::nextSetWithDuplicate(CvTripletSet& triplet){
   int a = cvRandInt(&mRandomNumberGenerator) % mRange;
   int b, c;
   do { b = cvRandInt(&mRandomNumberGenerator) % mRange; } while ( b == a);
   do { c = cvRandInt(&mRandomNumberGenerator) % mRange; } while ( c == a || c == b);
-  return CvTripletSet(a+mLower, b+mLower, c+mLower);
+  triplet =  CvTripletSet(a+mLower, b+mLower, c+mLower);
 }
 void CvRandomTripletSetGenerator::_sort(CvTripletSet& s) {
   int a = s[0];
@@ -89,26 +87,28 @@ void CvRandomTripletSetGenerator::_sort(CvTripletSet& s) {
   }
 }
 
-CvTripletSet CvRandomTripletSetGenerator::newSet()
+bool CvRandomTripletSetGenerator::nextSet(CvTripletSet& triplet)
 {
-
+  if (mInitialized == false) {
+    cerr << "CvRandomTripletSetGenerator Not initialized yet"<<endl;
+    return false;
+  }
   if (mNoDuplicate == false) {
-    return newSetWithDuplicate();
+    nextSetWithDuplicate(triplet);
+    return true;
   } else {
-    for (CvTripletSet triplet = newSetWithDuplicate();
-      mSetOfSets.size() < mMaxNumSets;
-      triplet = newSetWithDuplicate()) {
+    while (mSetOfSets.size() < mMaxNumSets) {
+      nextSetWithDuplicate(triplet);
       // sort the triplet
       _sort(triplet);
       uint64 encoded = mEncodeSetInLong(triplet);
       if (mSetOfSets.find(encoded) == mSetOfSets.end() ) {
         // new set that we have not seen before
         mSetOfSets.insert(encoded);
-        return triplet;
+        return true;
       }
     }
-    cerr << "reach max num: "<<mMaxNumSets<<endl;
-    throw std::exception();
+    return false;
   }
 }
 
