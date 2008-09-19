@@ -80,7 +80,9 @@ public:
     deactivate();
   }
 
-  virtual ~HighlevelController(){}  /**
+  virtual ~HighlevelController(){}  
+
+  /**
    * @brief Test if the node has received required inputs allowing it to commence business as usual.
    * @see initialize()
    */
