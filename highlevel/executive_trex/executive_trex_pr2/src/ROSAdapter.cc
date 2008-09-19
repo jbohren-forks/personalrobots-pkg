@@ -83,4 +83,14 @@ namespace TREX {
   void ROSAdapter::handleRecall(const TokenId& goal){
     dispatchRequest(goal, false);
   }
+
+  bool ROSAdapter::rosIndex(const std::string& rosName, unsigned int& ind) const{
+    for(unsigned int i = 0; i < rosNames().size(); i++){
+      if(rosNames()[i] == rosName){
+	ind = i;
+	return true;
+      }
+    }
+    return false;
+  }
 }

@@ -16,22 +16,11 @@ namespace TREX {
     virtual ~ArmControllerAdapter(){}
 
   protected:
-
-    bool readJointIndex(const std::string& jointName, unsigned int& ind){
-      for(unsigned int i = 0; i < rosNames().size(); i++){
-	if(rosNames()[i] == jointName){
-	  ind = i;
-	  return true;
-	}
-      }
-
-      return false;
-    }
     
     void fillActiveObservationParameters(ObservationByValue* obs){
       for(unsigned int i = 0; i < stateMsg.get_goal_size(); i++){
 	unsigned int ind;
-	if(readJointIndex(stateMsg.goal[i].name, ind))
+	if(rosIndex(stateMsg.goal[i].name, ind))
 	   obs->push_back(nddlNames()[ind], new IntervalDomain(stateMsg.goal[i].position));
       }
     }
@@ -39,7 +28,7 @@ namespace TREX {
     void fillInactiveObservationParameters(ObservationByValue* obs){  
       for(unsigned int i = 0; i < stateMsg.get_configuration_size(); i++){
 	unsigned int ind;
-	if(readJointIndex(stateMsg.configuration[i].name, ind))
+	if(rosIndex(stateMsg.configuration[i].name, ind))
 	   obs->push_back(nddlNames()[ind], new IntervalDomain(stateMsg.configuration[i].position));
       }
     }

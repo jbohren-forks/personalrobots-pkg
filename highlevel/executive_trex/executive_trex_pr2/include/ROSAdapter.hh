@@ -41,6 +41,14 @@ namespace TREX {
     const std::vector<std::string>& nddlNames() const {return nddlNames_;}
     const std::vector<std::string>& rosNames() const {return rosNames_;}
 
+    /**
+     * @brief Helper methiod to obtain an index for a given ros name.
+     * @param The rosName to look for
+     * @param The index to fill if found
+     * @return True if found, else false
+     */
+    bool rosIndex(const std::string& rosName, unsigned int& ind) const;
+
     ROSNodeId m_node; /*! The ROS node. */
     const std::string timelineName;
     const std::string timelineType;
