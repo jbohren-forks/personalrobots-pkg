@@ -49,8 +49,8 @@
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <misc_utils/realtime_publisher.h>
-#include <generic_controllers/controller.h>
-#include <generic_controllers/joint_velocity_controller.h>
+#include <mechanism_model/controller.h>
+#include <robot_mechanism_controllers/joint_velocity_controller.h>
 
 namespace controller
 {

@@ -48,7 +48,7 @@
 #include <ros/node.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <misc_utils/realtime_publisher.h>
-#include <generic_controllers/controller.h>
+#include <mechanism_model/controller.h>
 
 namespace controller
 {
