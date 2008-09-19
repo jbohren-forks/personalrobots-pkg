@@ -42,10 +42,7 @@
     whose frequency is exponentially increased from 
     \f$\omega_1\f$ to \f$\omega_2\f$ over \f$T\f$ seconds.<br> 
     
-    \f$s(n) = A\sin [ K(e^{\deltat/L} - 1) ]\f$	<br>
-
-    where \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$ 
-    and \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
+    
 
 */
 /***************************************************/
