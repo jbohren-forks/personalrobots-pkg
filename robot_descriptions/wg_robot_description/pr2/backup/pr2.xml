@@ -865,7 +865,7 @@
   
   <link name="base"><!-- link specifying the base of the robot -->
     
-    <parent name=" world" />
+    <parent name="world" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" robot_inital_position_x robot_inital_position_y robot_inital_position_z " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
@@ -2384,8 +2384,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_ray">
         <sensor:ray name="stereo_laser">
-          <rayCount>100</rayCount>
-          <rangeCount>100</rangeCount>
+          <rayCount>30</rayCount>
+          <rangeCount>30</rangeCount>
           <laserCount>1</laserCount>
 	  
           <origin>0.0 0.0 0.05</origin>
@@ -2398,8 +2398,8 @@
           <maxRange>100.0</maxRange>
           <updateRate>10.0</updateRate>
 
-          <verticalRayCount>100</verticalRayCount>
-          <verticalRangeCount>100</verticalRangeCount>
+          <verticalRayCount>30</verticalRayCount>
+          <verticalRangeCount>30</verticalRangeCount>
           <verticalMinAngle>-20</verticalMinAngle>
           <verticalMaxAngle>  0</verticalMaxAngle>
 

@@ -8,11 +8,7 @@
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
 
     <!-- for visualization -->
-    <node pkg="wx_camera_panel" type="standalone_camera.py" args="-i PTZL_image -s PTZL_state -c PTZL_cmd" respawn="true" output="screen" />
-    <node pkg="wx_camera_panel" type="standalone_camera.py" args="-i PTZR_image -s PTZR_state -c PTZR_cmd" respawn="true" output="screen" />
-    <node pkg="laser_view" type="laser_view" args="scan:=tilt_scan" respawn="true" output="screen" />
-    <node pkg="ogre_visualizer" type="visualizer_test" respawn="true" output="screen" />
-    <!--node pkg="wxpy_ros" type="ros_panel" respawn="false" output="screen" /--><!-- does not start correctly-->
+    <node pkg="pr2_gui" type="pr2_gui" respawn="true" output="screen" />
 
     <!-- for manual control -->
     <!--node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" output="screen" /-->
