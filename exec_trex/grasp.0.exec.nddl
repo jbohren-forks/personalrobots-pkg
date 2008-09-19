@@ -1,7 +1,0 @@
-#include "exec.init.nddl"
-
-rejectable(GraspObject.Active g0);
-g0.x = .60;
-g0.y = -.5;
-g0.z = 1.25;
-
