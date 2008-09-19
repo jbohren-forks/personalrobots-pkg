@@ -5,4 +5,5 @@ genmsg()
 gensrv()
 rospack_add_library(control_toolbox
  src/pid.cpp
+ src/sine_sweep.cpp
  )

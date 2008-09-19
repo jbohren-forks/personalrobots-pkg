@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(controls_toolbox)
-genmsg()
-gensrv()
-rospack_add_library(controls_toolbox src/sine_sweep.cpp)
