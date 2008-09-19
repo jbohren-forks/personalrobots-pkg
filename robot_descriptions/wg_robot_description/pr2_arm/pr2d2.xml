@@ -168,7 +168,7 @@
   <const_block name="pr2_upperarm_roll_inertial">
     <mass value="4.9481" />
     <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
-    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+    <inertia  ixx="0.01" ixy="0.000547745916"  ixz="0.000119476885"  iyy="0.01"  iyz="0.001544932307"  izz="0.01" />
   </const_block> 
   
   <const_block name="pr2_upperarm_roll_collision">
