@@ -32,7 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <math.h>
-#include <controls_toolbox/sine_sweep.h>
+#include <control_toolbox/sine_sweep.h>
 
 SineSweep::SineSweep()
 {
