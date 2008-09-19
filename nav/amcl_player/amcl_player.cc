@@ -66,7 +66,9 @@ Publishes to (name / type):
 
 @section parameters ROS parameters
 
-- None
+- @b "robot_x_start" (double) : The starting X position of the robot, default: 0.
+- @b "robot_y_start" (double) : The starting Y position of the robot, default: 0.
+- @b "robot_th_start" (double) : The starting TH position of the robot, default: 0.
 
 @todo Expose the various amcl parameters via ROS.
 
@@ -340,6 +342,13 @@ AmclNode::AmclNode() :
 
   this->tf = new rosTFServer(*this);
 
+  double startX, startY, startTH;
+  param("robot_x_start", startX, 0.0);
+  param("robot_y_start", startY, 0.0);
+  param("robot_th_start", startTH, 0.0);
+  this->setPose(startX, startY, startTH);
+
+
 }
 
 AmclNode::~AmclNode()
@@ -534,7 +543,7 @@ AmclNode::start()
   }
   else
   {
-    this->setPose(0,0,0);
+    //this->setPose(0,0,0);
     return(0);
   }
 }
