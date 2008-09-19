@@ -61,9 +61,9 @@ void Ramp::init(double output_start, double output_end, double duration)
 
 double Ramp::update(double dt)
 {
-  
-  cmd_= output_start_+(output_end_-output_start_)*(dt)/(duration_);
 
+    cmd_= output_start_+(output_end_-output_start_)*(dt)/(duration_);
+    
   return cmd_;
 }
 

@@ -41,6 +41,7 @@ SineSweep::SineSweep()
   K_=0.0;
   L_=0.0;
   amplitude_=0.0;
+  duration_=0.0;
   cmd_ = 0.0;
 }
 
@@ -51,8 +52,8 @@ SineSweep::~SineSweep()
 void SineSweep::init(double start_freq, double end_freq, double duration, double amplitude)
 {
   //keep the amplitude around
-  amplitude_=amplitude;
-  
+  amplitude_ = amplitude;
+  duration_ = duration;
   //calculate the angular fequencies
   start_angular_freq_ =2*M_PI*start_freq;
   end_angular_freq_ =2*M_PI*end_freq;
@@ -67,8 +68,14 @@ void SineSweep::init(double start_freq, double end_freq, double duration, double
 
 double SineSweep::update( double dt)
 {
-  
-  cmd_= amplitude_*sin(K_*(exp((dt)/(L_))-1));
+  if(dt<=duration_)
+  {
+    cmd_= amplitude_*sin(K_*(exp((dt)/(L_))-1));
+  }
+  else
+  {
+    cmd_=0.0;
+  }
 
   return cmd_;
 }

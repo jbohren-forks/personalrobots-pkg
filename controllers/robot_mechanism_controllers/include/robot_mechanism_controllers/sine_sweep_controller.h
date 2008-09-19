@@ -38,24 +38,14 @@
 /*! \class controller::SineSweepController
     \brief Sine Sweep Controller
 
-    This class basically calculates the output for
-    a sine sweep. Where the signal is a sine wave, 
-    whose frequency is exponentially increased from 
-    \f$\omega_1\f$ to \f$\omega_2\f$ over \f$T\f$ seconds.<br> 
-    
-    \f$s(n) = A \sin [ K(e^{\delta t/L} - 1) ]\f$	<br>
-
-    where:<br>
-    \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$<br> 
-    \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$.  
-
+    This class basically applies a sine sweep to the joint.
 */
 /***************************************************/
 
 
 #include <ros/node.h>
 #include <mechanism_model/controller.h>
-
+#include <control_toolbox/sine_sweep.h>
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
 #include <robot_mechanism_controllers/GetActual.h>
@@ -79,11 +69,10 @@ public:
 
   /*!
    * \brief Functional way to initialize.
-   * \param start_freq The start value of the sweep.
-   * \param end_freq  The end value of the sweep.
-   * \param sample_freq  The update frequency of the sweep.
-   * \param amplitude The amplitude of the sweep.
-   * \param duration The duration in seconds from start to finish.
+   * \param start_freq The start value of the sweep (Hz).
+   * \param end_freq  The end value of the sweep (Hz).
+   * \param amplitude The amplitude of the sweep (N).
+   * \param duration The duration in seconds from start to finish (s).
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
@@ -116,15 +105,10 @@ public:
 private:
   mechanism::JointState *joint_state_;      /**< Joint we're controlling. */
   mechanism::RobotState *robot_;            /**< Pointer to robot structure. */
-  double start_freq_;                       /**< Begining of the sweep. */
-  double end_freq_;                         /**< End of the sweep. */
-  double amplitude_;                        /**< Amplitude of the sweep. */
+  control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
   double duration_;                         /**< Duration of the sweep. */
   double initial_time_;                     /**< Start time of the sweep. */
-  double start_angular_freq_;               /**< Start time of the sweep. */
-  double end_angular_freq_;                 /**< Start time of the sweep. */
-  double K_factor_ ;                        /**< Start time of the sweep. */
-  double L_factor_ ;                        /**< Start time of the sweep. */
+ 
 
 };
 

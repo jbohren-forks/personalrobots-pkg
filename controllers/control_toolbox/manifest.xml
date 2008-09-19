@@ -2,7 +2,7 @@
   <description brief="Control Toolbox">
     The control toolbox contains modules that are useful across all controllers.
   </description>
-  <author>Melonee Wise</author>
+  <author>Melonee Wise, Sachin Chitta, John Hsu</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

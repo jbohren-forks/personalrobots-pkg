@@ -47,7 +47,7 @@ namespace control_toolbox {
 
     where:<br>
     \f$K = \frac{\omega_1T}{\ln \frac{\omega_2}{\omega_1} }\f$<br> 
-    \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$. 
+    \f$L = \frac{T}{\ln \frac{\omega_2}{\omega_1} }\f$.<br>
 
 */
 /***************************************************/
@@ -76,19 +76,20 @@ public:
   /*!
    * \brief Intializes everything and calculates the constants for the sweep.
    *
-   * \param start_freq  Start frequency of the sweep.
-   * \param end_freq  End frequency of the sweep.
-   * \param duration  The duration of the sweep.
-   * \param amplitude The amplitude of the sweep.
+   * \param start_freq  Start frequency of the sweep, \f$\omega_1\f$ .
+   * \param end_freq  End frequency of the sweep, \f$\omega_2\f$.
+   * \param duration  The duration of the sweep, \f$T\f$.
+   * \param amplitude The amplitude of the sweep, \f$A\f$.
    */
   void init(double start_freq, double end_freq, double duration, double amplitude);
 
 private:
   double amplitude_;                        /**< Amplitude of the sweep. */
+  double duration_;                         /**< Duration of the sweep. */
   double start_angular_freq_;               /**< Start angular frequency of the sweep. */
   double end_angular_freq_;                 /**< End angular frequency of the sweep. */
-  double K_;                                /**< Constant. */
-  double L_;                                /**< Constant */
+  double K_;                                /**< Constant \f$K\f$. */
+  double L_;                                /**< Constant \f$L\f$.*/
   double cmd_;                              /**< Command to send. */
 };
 }
