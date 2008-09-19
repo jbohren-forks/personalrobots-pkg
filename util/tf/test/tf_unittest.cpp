@@ -2,7 +2,6 @@
 #include <tf/tf.h>
 #include <math_utils/angles.h>
 #include <sys/time.h>
-#define BT_USE_DOUBLE_PRECISION 1
 
 #include "LinearMath/btVector3.h"
 
@@ -265,7 +264,7 @@ TEST(tf, TransformQuaternionCartesian)
   
 }
 
-TEST(tf, Vector3Conversions)
+TEST(data, Vector3Conversions)
 {
   
   unsigned int runs = 400;
@@ -288,7 +287,7 @@ TEST(tf, Vector3Conversions)
   
 }
 
-TEST(tf, Vector3StampedConversions)
+TEST(data, Vector3StampedConversions)
 {
   
   unsigned int runs = 400;
@@ -312,7 +311,7 @@ TEST(tf, Vector3StampedConversions)
   } 
 }
 
-TEST(tf, QuaternionConversions)
+TEST(data, QuaternionConversions)
 {
   
   unsigned int runs = 400;
@@ -336,7 +335,7 @@ TEST(tf, QuaternionConversions)
   
 }
 
-TEST(tf, QuaternionStampedConversions)
+TEST(data, QuaternionStampedConversions)
 {
   
   unsigned int runs = 400;
@@ -361,7 +360,7 @@ TEST(tf, QuaternionStampedConversions)
   } 
 }
 
-TEST(tf, TransformConversions)
+TEST(data, TransformConversions)
 {
   
   unsigned int runs = 400;
@@ -390,7 +389,7 @@ TEST(tf, TransformConversions)
   
 }
 
-TEST(tf, TransformStampedConversions)
+TEST(data, TransformStampedConversions)
 {
   
   unsigned int runs = 400;
@@ -709,124 +708,6 @@ TEST(libTF, DataTypes)
 
 }
 
-
-
-/** @brief Check that the lookup is working
- * This will check whether the findClosest function is 
- * returning the same values at a point in time as 
- * were input for that time.  A failure would reveal that 
- * sequencing was incorrect.  */ 
-TEST(libTF, Lookup)
-{
-  unsigned int runs = 1000;
-
-  seed_rand();
-  
-  tf::Transformer mTR(true);
-  std::vector<double> values(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
-  {
-    values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    //    printf("%d %g\n",i,values[i]);
-    mTR.setWithEulers("2",
-                      "1",
-                      values[i],
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      10 + i);
-  }
-
-  for ( unsigned int i = 0; i < runs ; i++ )
-
-  {
-    libTF::TFPose2D inpose;
-    inpose.x = 0.0;
-    inpose.y = 0.0;
-    inpose.yaw = 0.0;
-    inpose.frame = "2";
-    inpose.time = 10 + i;
-    
-    try{
-    libTF::TFPose2D outpose = mTR.transformPose2D("1", inpose);
-    EXPECT_EQ(outpose.x, values[i]);
-    }
-    catch (libTF::Exception & ex)
-    {
-      std::cout << "LibTF Excepion" << ex.what() << std::endl;
-      bool exception_improperly_thrown = true;
-      EXPECT_FALSE(exception_improperly_thrown);
-    }
-  }
-  
-
-}
-
-/** Test basic functionality for linear interpolation */
-TEST(libTF, Interpolation)
-{
-  seed_rand();
-  tf::Transformer mTR(true);
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
-
-  // Test different values
-  for(int i=0;i<1000;i++)
-  {
-    unsigned long long btime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
-    unsigned long long ctime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
-    if ((long long) btime - (long long) ctime < 1000) ctime += 10000;
-    double xval = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    double xval1 = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    //std::cout <<"atime " << atime << " btime " << btime - atime <<" ctime " << (long long)ctime - (long long)atime
-    //          << " xval " << xval << " xval1 " << xval1 << std::endl;
-    mTR.setWithEulers("2",
-                      "1",
-                      xval,
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      0.0,
-                      btime);
-  
-  mTR.setWithEulers("2",
-                   "1",
-                    xval1,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    0.0,
-                    ctime);
-
-  libTF::TFPose2D inpose;
-  inpose.x = 0.0;
-  inpose.y = 0.0;
-  inpose.yaw = 0.0;
-  inpose.frame = "2";
-  inpose.time = atime;
-
-  libTF::TFPose2D outpose = mTR.transformPose2D("1", inpose);
-  /*
-    printf("in:  %.3f %.3f %.3f\n",
-         inpose.x, inpose.y, inpose.yaw);
-  printf("out: %.3f %.3f %.3f\n",
-         outpose.x, outpose.y, outpose.yaw);
-  */
-
-  double slope = (xval - xval1)/(double)((long long)btime - (long long)ctime);
-  double intercept = xval - ((long long)btime - (long long)atime) * slope;
-  //  std::cout << "slope " << slope << std::endl;
-
-  // Make sure that the interpolation complies in linear case
-  EXPECT_NEAR(outpose.x, intercept, 0.000000001);
-  mTR.clear(); //Clear cached data to allow reset.
-  }
-}
 
 #endif //0
 int main(int argc, char **argv){

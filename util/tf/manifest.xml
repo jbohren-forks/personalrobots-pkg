@@ -16,6 +16,6 @@ Library for doing transformations.
 <depend package="bullet"/>
 <depend package="rosTF"/> <!-- For backwards compatibility only Fixme remove /-->
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lTF"/>
+<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf"/>
 </export>
 </package>
