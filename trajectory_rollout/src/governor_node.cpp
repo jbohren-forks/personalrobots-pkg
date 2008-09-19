@@ -41,7 +41,7 @@ GovernorNode::GovernorNode() :
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, &tf_),
-  cycle_time_(0.3)
+  cycle_time_(0.05)
 {
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;
@@ -118,10 +118,10 @@ void GovernorNode::processPlan(){
   gettimeofday(&start,NULL);
   int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc);
   gettimeofday(&end,NULL);
-  start_t = start.tv_sec + start.tv_usec / 1e6;
-  end_t = end.tv_sec + end.tv_usec / 1e6;
+  start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
-  fprintf(stderr, "Cycle Time: %.2f\n", t_diff);
+  fprintf(stderr, "Cycle Time: %.3f\n", t_diff);
   //give map_ back
   map_lock.unlock();
 
@@ -143,8 +143,8 @@ void GovernorNode::processPlan(){
     path_msg.color.b = 1.0;
     path_msg.color.a = 0;
     for(int i = 0; i < tc_.num_steps_; ++i){
-      path_msg.points[i].x = tc_.trajectory_pts_.element(0, path_index * tc_.num_steps_ + i); 
-      path_msg.points[i].y = tc_.trajectory_pts_.element(1, path_index * tc_.num_steps_ + i);
+      path_msg.points[i].x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
+      path_msg.points[i].y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
     }
     publish("local_path", path_msg);
     printf("path msg\n");

@@ -38,6 +38,7 @@
 #include <utility>
 #include <iostream>
 #include <math.h>
+#include <sys/time.h>
 #include <utility>
 #include <cstdlib>
 #include <ctime>
@@ -46,6 +47,9 @@
 //for matrix support
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/io.hpp>
 
 //For transform support
 #include <rosTF/rosTF.h>
@@ -100,8 +104,8 @@ class TrajectoryController {
     std::vector<Trajectory> trajectories_;
 
     //needed to convert between map and robot space efficiently
-    NEWMAT::Matrix trajectory_pts_;
-    NEWMAT::Matrix trajectory_theta_;
+    boost::numeric::ublas::matrix<double> trajectory_pts_;
+    boost::numeric::ublas::matrix<double> trajectory_theta_;
 
     //the number of trajectories we'll create
     int num_trajectories_;
@@ -131,14 +135,6 @@ class TrajectoryController {
     //compute the cost for a single trajectory
     double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale);
 
-    //compute position based on velocity
-    double computeNewXPosition(double xi, double vx, double vy, double theta, double dt);
-    double computeNewYPosition(double yi, double vx, double vy, double theta, double dt);
-    double computeNewThetaPosition(double thetai, double vth, double dt);
-
-    //compute velocity based on acceleration
-    double computeNewVelocity(double vg, double vi, double amax, double dt);
-
     double footprintCost(double x, double y, double theta);
     double lineCost(int x0, int x1, int y0, int y1);
     double pointCost(int x, int y);
@@ -151,6 +147,39 @@ class TrajectoryController {
 
     //transform client
     rosTFClient* tf_;
+
+    inline void updateCell(MapCell* current_cell, MapCell* check_cell){
+      double new_path_dist = check_cell->path_dist + 1;
+      double new_goal_dist = check_cell->goal_dist + 1;
+
+      if(new_path_dist < current_cell->path_dist)
+        current_cell->path_dist = new_path_dist;
+
+      if(new_goal_dist < current_cell->goal_dist)
+        current_cell->goal_dist = new_goal_dist;
+    }
+
+    //compute position based on velocity
+    inline double computeNewXPosition(double xi, double vx, double vy, double theta, double dt){
+      return xi + (vx * cos(theta) + vy * sin(theta)) * dt;
+    }
+
+    //compute position based on velocity
+    inline double computeNewYPosition(double yi, double vx, double vy, double theta, double dt){
+      return yi + (vx * sin(theta) + vy * cos(theta)) * dt;
+    }
+
+    //compute position based on velocity
+    inline double computeNewThetaPosition(double thetai, double vth, double dt){
+      return thetai + vth * dt;
+    }
+
+    //compute velocity based on acceleration
+    inline double computeNewVelocity(double vg, double vi, double a_max, double dt){
+      if(vg >= 0)
+        return min(vg, vi + a_max * dt);
+      return max(vg, vi - a_max * dt);
+    }
     
 };
 

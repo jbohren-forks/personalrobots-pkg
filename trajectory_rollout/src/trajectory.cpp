@@ -33,6 +33,11 @@
  *********************************************************************/
 #include "trajectory_rollout/trajectory.h"
 
+Trajectory::Trajectory()
+  : xv_(0.0), yv_(0.0), thetav_(0.0), cost_(0.0)
+{
+}
+
 Trajectory::Trajectory(double xv, double yv, double thetav)
   : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0)
 {

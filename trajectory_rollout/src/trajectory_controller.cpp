@@ -33,6 +33,7 @@
  *********************************************************************/
 #include <trajectory_rollout/trajectory_controller.h>
 
+namespace ublas = boost::numeric::ublas;
 using namespace std;
 using namespace std_msgs;
 
@@ -45,12 +46,10 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   int total_pts = num_trajectories_ * num_steps_;
 
   //even though we only have x,y we need to multiply by a 4x4 matrix
-  trajectory_pts_ = NEWMAT::Matrix(4, total_pts);
-  trajectory_pts_ = 0.0;
+  trajectory_pts_ = ublas::zero_matrix<double>(4, total_pts);
 
   //storage for our theta values
-  trajectory_theta_ = NEWMAT::Matrix(1, total_pts);
-  trajectory_theta_ = 0.0;
+  trajectory_theta_ = ublas::zero_matrix<double>(1, total_pts);
 }
 
 //update what map cells are considered path based on the global_plan
@@ -84,6 +83,80 @@ void TrajectoryController::computePathDistance(){
   //make sure that we update our path based on the global plan
   setPathCells();
 
+  unsigned int map_size = map_.map_.size();
+  MapCell* current_cell, *check_cell;
+
+  unsigned int last_col = map_.size_x_ - 1;
+  for(unsigned int i = 0; i < map_size; ++i){
+    current_cell = &(map_.map_[i]);
+    check_cell = current_cell;
+
+    //check to see if we are in the first col
+    if(current_cell->cx > 0){
+      --check_cell;
+      updateCell(current_cell, check_cell);
+    }
+
+    //if we are in the first row we want to continue
+    if(current_cell->cy == 0)
+      continue;
+
+    //check to see if we are in the first col
+    if(current_cell->cx > 0){
+      check_cell -= map_.size_x_;
+      updateCell(current_cell, check_cell);
+      ++check_cell;
+    }
+    else
+      check_cell -= map_.size_x_;
+
+
+    updateCell(current_cell, check_cell);
+
+    //only check cell to bottom right if we're not in last col
+    if(current_cell->cx < last_col){
+      ++check_cell;
+      updateCell(current_cell, check_cell);
+    }
+  }
+
+  unsigned int end = map_size - 1;
+  unsigned int last_row = map_.size_y_ - 1;
+  for(int i = end; i >= 0; --i){
+    current_cell = &(map_.map_[i]);
+    check_cell = current_cell;
+
+    //check to see if we are in the last col
+    if(current_cell->cx < end){
+      ++check_cell;
+      updateCell(current_cell, check_cell);
+    }
+
+    //if we are in the last row we want to continue
+    if(current_cell->cy == last_row)
+      continue;
+
+    //check to see if we are in the last col
+    if(current_cell->cx < end){
+      check_cell += map_.size_x_;
+      updateCell(current_cell, check_cell);
+      --check_cell;
+    }
+    else
+      check_cell += map_.size_x_;
+
+
+    updateCell(current_cell, check_cell);
+
+    //only check cell to upper left if we're not in first col
+    if(current_cell->cx > 0){
+      ++check_cell;
+      updateCell(current_cell, check_cell);
+    }
+  }
+
+  /*
+
   //two sweeps are needed to compute path distance for the grid
 
   //sweep bottom-top / left-right
@@ -95,6 +168,7 @@ void TrajectoryController::computePathDistance(){
   for(int i = map_.size_x_ - 1; i >= 0; --i)
     for(int j = map_.size_y_ - 1; j >= 0; --j)
       updateNeighbors(i, j);
+  */
 
 }
 
@@ -163,13 +237,13 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
 
   for(int i = 0; i < num_steps_; ++i){
     //add the point to the matrix
-    trajectory_pts_.element(0, mat_index) = x_i;
-    trajectory_pts_.element(1, mat_index) = y_i;
-    trajectory_pts_.element(2, mat_index) = 0;
-    trajectory_pts_.element(3, mat_index) = 1;
+    trajectory_pts_(0, mat_index) = x_i;
+    trajectory_pts_(1, mat_index) = y_i;
+    trajectory_pts_(2, mat_index) = 0;
+    trajectory_pts_(3, mat_index) = 1;
 
     //add theta to the matrix
-    trajectory_theta_.element(0, mat_index) = theta_i;
+    trajectory_theta_(0, mat_index) = theta_i;
 
     ++mat_index;
 
@@ -196,12 +270,13 @@ void TrajectoryController::updatePlan(vector<Point2DFloat32>& new_plan){
 }
 
 void TrajectoryController::trajectoriesToWorld(){
-  NEWMAT::Matrix transform;
+  NEWMAT::Matrix transform_newmat;
+  ublas::matrix<double> transform(4, 4);
 
   if(tf_){
     try
     {
-      transform = tf_->getMatrix("FRAMEID_MAP", "FRAMEID_ROBOT", 0);
+      transform_newmat = tf_->getMatrix("FRAMEID_MAP", "FRAMEID_ROBOT", 0);
     }
     catch(libTF::TransformReference::LookupException& ex)
     {
@@ -222,45 +297,43 @@ void TrajectoryController::trajectoriesToWorld(){
       return;
     }
   }
-  trajectory_pts_ = transform * trajectory_pts_;
+
+  //because NEWMAT sucks at multiplication
+  for(unsigned int i = 0; i < 4; ++i){
+    for(unsigned int j = 0; j < 4; ++j){
+      transform(i, j) = transform_newmat.element(i, j);
+    }
+  }
+  struct timeval start;
+  struct timeval end;
+  double start_t, end_t, t_diff;
+  gettimeofday(&start,NULL);
+  trajectory_pts_ = ublas::prod(transform, trajectory_pts_);
+  gettimeofday(&end,NULL);
+  start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+  end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+  t_diff = end_t - start_t;
+  fprintf(stderr, "Matrix Time: %.3f\n", t_diff);
 
   //next transform theta
-  NEWMAT::Matrix unit_vec_robot(4, 1);
-  unit_vec_robot << 1.0 << 0.0 << 0.0 << 1.0;
+  ublas::matrix<double> unit_vec_robot(4, 1);
+  unit_vec_robot(0, 0) = 1.0;
+  unit_vec_robot(1, 0) = 0.0;
+  unit_vec_robot(2, 0) = 0.0;
+  unit_vec_robot(3, 0) = 1.0;
 
-  NEWMAT::Matrix unit_vec_map;
-  unit_vec_map = transform * unit_vec_robot;
+  ublas::matrix<double> unit_vec_map;
+  unit_vec_map = ublas::prod(transform, unit_vec_robot);
   
   //compute the angle between the two vectors
-  double angle = atan2(unit_vec_map.element(0, 0) - unit_vec_robot.element(0, 0),
-      unit_vec_map.element(1, 0) - unit_vec_robot.element(1,0));
+  double angle = atan2(unit_vec_map(0, 0) - unit_vec_robot(0, 0),
+      unit_vec_map(1, 0) - unit_vec_robot(1,0));
 
   //add the angle to theta values to apply the rotation
-  trajectory_theta_ = trajectory_theta_ + angle;
+  for(unsigned int i = 0; i < trajectory_theta_.size1(); ++i){
+    trajectory_theta_(i, 0) += angle;
+  }
 
-}
-
-
-//compute position based on velocity
-double TrajectoryController::computeNewXPosition(double xi, double vx, double vy, double theta, double dt){
-  return xi + (vx * cos(theta) + vy * sin(theta)) * dt;
-}
-
-//compute position based on velocity
-double TrajectoryController::computeNewYPosition(double yi, double vx, double vy, double theta, double dt){
-  return yi + (vx * sin(theta) + vy * cos(theta)) * dt;
-}
-
-//compute position based on velocity
-double TrajectoryController::computeNewThetaPosition(double thetai, double vth, double dt){
-  return thetai + vth * dt;
-}
-
-//compute velocity based on acceleration
-double TrajectoryController::computeNewVelocity(double vg, double vi, double a_max, double dt){
-  if(vg >= 0)
-    return min(vg, vi + a_max * dt);
-  return max(vg, vi - a_max * dt);
 }
 
 //create the trajectories we wish to score
@@ -320,16 +393,16 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
-  printf("Path distance computed\n");
+  //printf("Path distance computed\n");
 
   //next create the trajectories we wish to explore
   createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
       global_acc.x, global_acc.y, global_acc.yaw);
-  printf("Trajectories created\n");
+  //printf("Trajectories created\n");
 
   //we need to transform the trajectories to world space for scoring
   trajectoriesToWorld();
-  printf("Trajectories converted\n");
+  //printf("Trajectories converted\n");
 
   //now we want to score the trajectories that we've created and return the best one
   double min_cost = DBL_MAX;
@@ -349,7 +422,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
       min_cost = cost;
     }
   }
-  printf("Trajectories scored\n");
+  //printf("Trajectories scored\n");
 
   return best_index;
 }
@@ -362,9 +435,9 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
   double occ_dist = 0.0;
   for(int i = 0; i < num_steps_; ++i){
     int mat_index = t_index * num_steps_ + i;
-    double x = trajectory_pts_.element(0, mat_index);
-    double y = trajectory_pts_.element(1, mat_index);
-    double theta = trajectory_theta_.element(0, mat_index);
+    double x = trajectory_pts_(0, mat_index);
+    double y = trajectory_pts_(1, mat_index);
+    double theta = trajectory_theta_(0, mat_index);
 
     //we need to know in which cell the path ends
     int cell_x = WX_MX(map_, x);

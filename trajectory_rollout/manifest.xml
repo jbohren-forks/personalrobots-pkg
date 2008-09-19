@@ -9,6 +9,7 @@
   <depend package="stl_utils" />
   <depend package="std_msgs" />
   <depend package="newmat10" />
+  <depend package="boost" />
   <depend package="xmlparam" />
   <depend package="rosTF" />
   <depend package="rospy" />
