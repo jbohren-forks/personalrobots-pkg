@@ -48,4 +48,9 @@ add_custom_target(pr2_gazebo_model_test_headless ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Test Actuators")
 
+add_custom_target(pr2d2 ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm/pr2d2.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2d2_xml.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2D2 Arm Test")
+
 
