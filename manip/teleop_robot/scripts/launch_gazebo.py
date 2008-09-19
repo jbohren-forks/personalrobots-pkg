@@ -1,4 +1,4 @@
-#!/usr/bin/python -i 
+#!PYTHONPATH=$PYTHONPATH:`rospack find matplotlib`/src /usr/bin/ipython -i 
 # Software License Agreement (BSD License)
 #
 # Copyright (c) 2008, Willow Garage, Inc.
@@ -33,6 +33,7 @@
 #
 
 # Written by Timothy Hunter <tjhunter@willowgarage.com> 2008
+from __future__ import division
 
 import rostools
 
@@ -40,9 +41,36 @@ import rostools
 rostools.update_path('teleop_robot')
 from teleop_robot import *
 
-# manually loads arm interface
+# Manually loads arm interface
 rostools.update_path('pr2_controllers')
 from pr2_controllers import *
+
+# Import plotting/data utils
+rostools.update_path('scipy')
+from scipy import *
+
+rostools.update_path('matplotlib')
+from pylab import *
+
+# Data collecting utils
+rostools.update_path('wxpy_ros')
+import wxpy_ros
+
+def bodeplot(fi,f,tf,clear=True):
+    figure(fi)
+    if clear:
+        clf()
+    subplot(211)
+    semilogx(f,20*log10(abs(tf)))
+    ylabel('Mag. Ratio (dB)')
+    subplot(212)
+    semilogx(f,arctan2(imag(tf),real(tf))*180.0/pi)
+    ylabel('Phase (deg.)')
+    xlabel('Freq. (Hz)')
+
+
+import time
+import copy
 
 #c = ArmPositionProxy('left_arm_controller')
 
@@ -51,4 +79,58 @@ ri=RobotInterface()
 #ac = ri.spawnFile('pr2_arm/gazebo_blind_calibration_elbow.xml')
 #ac.calibrate()
 
-sw = ri.spawnFile('pr2_arm/gazebo_tune_elbow.xml')
+
+
+## Create a message handler
+#messageHandler = wxpy_ros.getHandler()
+## Unfortunately, we still need the #id of the element for now
+#channelY = messageHandler.subscribe('/mechanism_state/joint_states[%i]/position'%pos, '')
+#channelU = messageHandler.subscribe('/mechanism_state/joint_states[%i]/applied_effort'%pos, '')
+#channelCU = messageHandler.subscribe('/mechanism_state/joint_states[%i]/applied_effort'%pos, '')
+## Starts the sweep
+#sw.sweep(fmin,fmax,t,1)
+## Cleans the channel
+#channelY.flush()
+#channelU.flush()
+#channelCU.flush()
+## Wait the end of the sweep
+#time.sleep(t-1)
+## Copy the data
+#x = copy.deepcopy(channelY.x)
+#y = copy.deepcopy(channelY.y)
+#u = copy.deepcopy(channelU.y)
+#cu = copy.deepcopy(channelCU.y)
+## Deletes the channel to prevent it from further recording data
+#del channelY
+#del channelU
+#del channelCU
+#
+
+'''Freq analysis'''
+
+#sw = ri.spawnFile('pr2_arm/gazebo_tune_elbow.xml')
+#t = 4
+#pos = 7
+#fmin=0
+#fmax=10
+#
+#resp=sw.sweep_b(fmin,fmax,t,1)
+#times=resp.times
+#y=resp.positions
+#u=resp.inputs
+#cu=u
+#
+#l=min(len(y),len(u))
+#df=1.0/t
+#freqs=arange(fmin,fmax,df)
+#y=y[:l]
+#u=u[:l]
+#freqs=freqs[:int(l/2)]
+#fu=abs(fft(u)[:int(l/2)])*2/l
+#fcu=abs(fft(cu)[:int(l/2)])*2/l
+#fy=abs(fft(y)[:int(l/2)])*2/l
+#ftr=fy/fu
+
+ri.record()
+time.sleep(4)
+ri.stop_record()

@@ -52,10 +52,35 @@ from pr2_controllers import *
 rostools.update_path('generic_controllers')
 from generic_controllers import *
 
+# Loads logging utilities (used for record/replay)
+rostools.update_path('wxpy_ros')
+import wxpy_ros
+
+import copy
+
+__all__=['RobotInterface']
+
+class StateLogger(wxpy_ros.wxplot.Channel):
+  def __init__(self, slotName, style):
+    self._records = None
+    self._previous_time=None
+    print self
+    
+  def callback(self, m_state, time):
+    if self._records is not None:
+      print 'adding data'
+      if not self._previous_time:
+        self._previous_time = time
+      self._records.append((time-self._previous_time,[(j_state.name,j_state.position) for j_state in m_state.joint_states]))
+      self._previous_time = time
 
 class RobotInterface:
   def __init__(self):
-    pass
+    self._records = []
+    self._channel = None
+    m_name = '/mechanism_state/'
+    m_handler = wxpy_ros.getMessageHandler()
+    self._channel = m_handler.subscribe(m_name, '',StateLogger)
   
   def spawn(self, typename, name, param):
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
@@ -79,3 +104,26 @@ class RobotInterface:
   def spawnFile(self, fname):
     c1=open(fname)
     return self.spawnXml(c1.read())
+  
+  def createRecord(self):
+    self.stop_record()
+    self._records=[]
+    print 'Press enter when ready'
+    raw_input()
+    print 'press enter when finished'
+    self.record()
+    raw_input()
+    self.stop_record()
+    return copy.deepcopy(self._records)
+
+  
+  def record(self):
+    self._channel._records = self._records
+    print self._channel._records,self._records
+    
+  def stop_record(self):
+    self._channel._records = None
+    self._channel._previous_time = None
+
+  def calibrateArm(self):
+    pass
