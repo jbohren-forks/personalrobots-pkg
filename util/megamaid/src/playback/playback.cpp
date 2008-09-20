@@ -37,11 +37,11 @@
 
 using namespace std;
 
-bool at_once; 
+bool g_at_once; 
 
 void doPublish(string name, ros::msg* m, ros::Time t, void* n)
 {
-  if(!at_once) {
+  if(!g_at_once) {
     ros::Time now = ros::Time::now();
     ros::Duration delta = t - ros::Time::now();
 
@@ -70,10 +70,10 @@ int main(int argc, char **argv)
   MultiLogPlayer player;
 
   std::vector<std::string> topics;
-  at_once = false;
+  g_at_once = false;
   for (int i = 1; i < argc; i++) {
     if(!strcmp(argv[i], "--atonce"))
-      at_once = true;
+      g_at_once = true;
     else
       topics.push_back(argv[i]);
   }
@@ -93,14 +93,14 @@ int main(int argc, char **argv)
   }
 
   while(n.ok())
-  {
-    if(at_once)
+  {   
+    if(g_at_once)
       usleep(100000);
+
     if (!player.nextMsg())
     {
       n.self_destruct();
-    }
-
+    }    
   }
 
   usleep(100000);
