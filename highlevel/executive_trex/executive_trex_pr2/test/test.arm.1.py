@@ -54,23 +54,26 @@ import LogReadingTest
 class TestArm(unittest.TestCase):
     def __init__(self, *args):
         super(TestArm, self).__init__(*args)
-        self.test = LogReadingTest.LogReadingTest("arm.1.output/latest/TREX.log", [LogOnMessage("baseState", "BaseState.Holds", [RealInterval("x", 23, 1)])]))
+        self.test = LogReadingTest.LogReadingTest("arm.1.output/latest/TREX.log", 
+                                                  [LogReadingTest.LogOnMessage("rightArmState", "ArmState.Holds", [LogReadingTest.RealInterval("shoulder_pan", -1, 0.1)]),
+                                                   LogReadingTest.LogOnMessage("rightArmState", "ArmState.Holds", [LogReadingTest.RealInterval("shoulder_pan", 0, 0.1)]),])
+        self.test.debugEnable = True
         self.success = False
         
     
     def test_arm(self):
         pub = rospy.TopicPub("initialpose", Pose2DFloat32)
         rospy.ready(NAME, anonymous=True)
-        time.sleep(2.0)
+        time.sleep(10.0)
         start = Pose2DFloat32()
         start.x = 0
         start.y = 0
         start.th = 0
         pub.publish(start)
 
-        timeout_t = time.time() + 50.0 #59 seconds
+        timeout_t = time.time() + 110.0 #90 seconds
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            self.test.readLog()
+            self.test.readLogFile()
             self.success = self.test.getPassed()
             time.sleep(0.2)
         os.system("killall trex_fast")
