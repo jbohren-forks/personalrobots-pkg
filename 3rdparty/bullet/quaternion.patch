@@ -1,45 +1,83 @@
-*** src/LinearMath/btTransform.h.original	2008-09-16 14:53:44.985742529 -0700
---- src/LinearMath/btTransform.h	2008-09-16 14:54:48.335742901 -0700
-*************** public:
-*** 82,87 ****
---- 82,91 ----
-  		return (*this)(x);
-  	}
-  
-+ 	SIMD_FORCE_INLINE btQuaternion operator*(const btQuaternion& q) const
-+ 	{
-+ 		return getRotation() * q;
-+ 	}
-  	SIMD_FORCE_INLINE btMatrix3x3&       getBasis()          { return m_basis; }
-  	SIMD_FORCE_INLINE const btMatrix3x3& getBasis()    const { return m_basis; }
-  
-
-*** src/LinearMath/btQuaternion.h	2008-08-26 19:24:11.000000000 -0700
---- src/LinearMath/btQuaternion.new	2008-09-15 16:27:04.319927054 -0700
-*************** subject to the following restrictions:
-*** 17,22 ****
---- 17,23 ----
-  #ifndef SIMD__QUATERNION_H_
-  #define SIMD__QUATERNION_H_
-  
-+ #include <algorithm>
-  #include "btVector3.h"
-  
-  ///The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform.
-*************** public:
-*** 146,152 ****
-  	{
-  		btScalar s = btSqrt(length2() * q.length2());
-  		assert(s != btScalar(0.0));
-! 		return btAcos(dot(q) / s);
-  	}
-  
-  	btScalar getAngle() const 
---- 147,153 ----
-  	{
-  		btScalar s = btSqrt(length2() * q.length2());
-  		assert(s != btScalar(0.0));
-! 		return btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
-  	}
-  
-  	btScalar getAngle() const 
+Index: src/LinearMath/btTransform.h
+===================================================================
+--- src/LinearMath/btTransform.h	(revision 1313)
++++ src/LinearMath/btTransform.h	(working copy)
+@@ -82,6 +82,10 @@
+ 		return (*this)(x);
+ 	}
+ 
++	SIMD_FORCE_INLINE btQuaternion operator*(const btQuaternion& q) const
++	{
++		return getRotation() * q;
++	}
+ 	SIMD_FORCE_INLINE btMatrix3x3&       getBasis()          { return m_basis; }
+ 	SIMD_FORCE_INLINE const btMatrix3x3& getBasis()    const { return m_basis; }
+ 
+Index: src/LinearMath/btQuaternion.h
+===================================================================
+--- src/LinearMath/btQuaternion.h	(revision 1313)
++++ src/LinearMath/btQuaternion.h	(working copy)
+@@ -17,6 +17,7 @@
+ #ifndef SIMD__QUATERNION_H_
+ #define SIMD__QUATERNION_H_
+ 
++#include <algorithm>
+ #include "btVector3.h"
+ 
+ ///The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform.
+@@ -38,7 +39,11 @@
+ 
+ 	btQuaternion(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
+ 	{ 
++#ifndef BT_EULER_DEFAULT_ZYX
+ 		setEuler(yaw, pitch, roll); 
++#else
++		setEulerZYX(yaw, pitch, roll); 
++#endif 
+ 	}
+ 
+ 	void setRotation(const btVector3& axis, const btScalar& angle)
+@@ -67,6 +72,22 @@
+ 			cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw);
+ 	}
+ 
++	void setEulerZYX(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
++	{
++		btScalar halfYaw = btScalar(yaw) * btScalar(0.5);  
++		btScalar halfPitch = btScalar(pitch) * btScalar(0.5);  
++		btScalar halfRoll = btScalar(roll) * btScalar(0.5);  
++		btScalar cosYaw = btCos(halfYaw);
++		btScalar sinYaw = btSin(halfYaw);
++		btScalar cosPitch = btCos(halfPitch);
++		btScalar sinPitch = btSin(halfPitch);
++		btScalar cosRoll = btCos(halfRoll);
++		btScalar sinRoll = btSin(halfRoll);
++		setValue(sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw, //x
++                         cosRoll * sinPitch * cosYaw + sinRoll * cosPitch * sinYaw, //y
++                         cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw, //z
++                         cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw); //formerly yzx
++	}
+ 	btQuaternion& operator+=(const btQuaternion& q)
+ 	{
+ 		m_x += q.x(); m_y += q.y(); m_z += q.z(); m_unusedW += q.m_unusedW;
+@@ -146,7 +167,7 @@
+ 	{
+ 		btScalar s = btSqrt(length2() * q.length2());
+ 		assert(s != btScalar(0.0));
+-		return btAcos(dot(q) / s);
++		return btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
+ 	}
+ 
+ 	btScalar getAngle() const 
+Index: src/LinearMath/CMakeLists.txt
+===================================================================
+--- src/LinearMath/CMakeLists.txt	(revision 1313)
++++ src/LinearMath/CMakeLists.txt	(working copy)
+@@ -2,6 +2,7 @@
+ INCLUDE_DIRECTORIES(
+ ${BULLET_PHYSICS_SOURCE_DIR}/src }
+ )
++add_definitions(-DBT_EULER_DEFAULT_ZYX) 
+ 
+ ADD_LIBRARY(LibLinearMath
+ 		btAlignedObjectArray.h
