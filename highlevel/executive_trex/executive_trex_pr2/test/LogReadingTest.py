@@ -112,10 +112,10 @@ class LogReadingTest:
 
 
 
-if __name__ == '__main__':
-    print "Running test test."
-    lr = LogReadingTest("wpc.0.output/latest/TREX.log", [LogOnMessage("baseState", "BaseState.Holds", [RealInterval("x", 23, 1)])])
-    lr.debugEnable = True
-    lr.readLogFile()
-    print lr.getPassed()
+#if __name__ == '__main__':
+    #print "Running test test."
+    #lr = LogReadingTest("wpc.0.output/latest/TREX.log", [LogOnMessage("baseState", "BaseState.Holds", [RealInterval("x", 23, 1)])])
+    #lr.debugEnable = True
+    #lr.readLogFile()
+    #print lr.getPassed()
 
