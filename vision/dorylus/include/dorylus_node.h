@@ -83,12 +83,23 @@ class Calonder : public Descriptor
 {
  public:
   features::RTreeClassifier rt_;
+  int start_, end_; //0-indexed, not 1-indexed like newmat. 0, -1 is the entire thing; 0, 100 is just the first 100.  end_ is not included.
 
-  Calonder(string name, string rt_file)
+  Calonder(string name, string rt_file, int start, int end)
     {
+
+      start_ = start;
+      if(end == -1)
+	end_ = rt_.classes();
+      else
+	end_ = end;
+
+
       name_ = name;
       rt_.read(rt_file.c_str());
-      result_size_ = rt_.classes();
+      //result_size_ = rt_.classes();
+      result_size_ = end_ - start_;
+      assert(start_ >= 0 && end_ <= rt_.classes() && start <= end);
     }
 
   ~Calonder()
@@ -98,4 +109,3 @@ class Calonder : public Descriptor
   bool operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, NEWMAT::Matrix** result, bool debug=false);
   void display(const NEWMAT::Matrix& result);
 };
-

@@ -27,6 +27,7 @@ public:
   SpinImage *spinM_fixed_HR_, *spinL_fixed_HR_, *spinS_fixed_HR_;
   SpinImage *spinM_nat_, *spinL_nat_, *spinS_nat_;
   Calonder *cal_land50_, *cal_land30_;
+  Calonder *cal_land30_b_, *cal_land30_a_;
   vector<int> times;
   Dorylus d_;
 
@@ -89,24 +90,33 @@ public:
     spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
     spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
     spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
-    cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees");
-    cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees");
+//     cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees", 0, -1);
+//     cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees", 0, -1);
+//    cal_land50_200_ = new Calonder("Calonder_Land50_0:200", "/u/mihelich/Public/land50.trees", 0, 200);
+    //    cal_land30_200_ = new Calonder("Calonder_Land30_0:200", "/u/mihelich/Public/land30.trees", 0, 200);
+    cal_land30_a_ = new Calonder("Calonder_Land30_1:200", "/u/mihelich/Public/land30.trees", 0, 200);
+    cal_land30_b_ = new Calonder("Calonder_Land30_201:400", "/u/mihelich/Public/land30.trees", 200, 400);
 //     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
 //     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
 //     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
 
-    descriptors_.push_back(cal_land50_);  
-    descriptors_.push_back(cal_land30_);  
-    descriptors_.push_back(spinL_fixed_);  
-    descriptors_.push_back(spinM_fixed_);  
-    descriptors_.push_back(spinS_fixed_);  
+    descriptors_.push_back(cal_land30_a_);  
+    descriptors_.push_back(cal_land30_b_);  
+    if(getenv("NOSPIN") == NULL) {
+      descriptors_.push_back(spinL_fixed_);  
+      descriptors_.push_back(spinM_fixed_);  
+      descriptors_.push_back(spinS_fixed_);  
+    }
+    else 
+      cout << "Using only Calonder features." << endl;
+
 //     descriptors_.push_back(spinL_fixed_HR_);  
 //     descriptors_.push_back(spinM_fixed_HR_);  
 //     descriptors_.push_back(spinS_fixed_HR_);  
   }
 
   void cbImageArray() {
-    cout << " in imagearray cb" << endl;
+    //cout << " in imagearray cb" << endl;
     if(has_img_)
       return;
 
@@ -125,7 +135,7 @@ public:
   }
 
   void cbPtcld() {
-    cout << " in ptcld cb" << endl;
+    //cout << " in ptcld cb" << endl;
     if(has_ptcld_)
       return;
 
@@ -134,7 +144,7 @@ public:
   }
 
   void cbCalParams() {
-    cout << " in cal cb" << endl;
+    //cout << " in cal cb" << endl;
 
     // -- Extract the transformation matrix.
     string cal = cal_params_msg_.data;
@@ -142,7 +152,7 @@ public:
     NEWMAT::Real trnsele[12];
     sscanf(proj.c_str(), "%*s %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %*s", &trnsele[0], &trnsele[1], &trnsele[2], &trnsele[3], &trnsele[4], &trnsele[5], &trnsele[6], &trnsele[7], &trnsele[8], &trnsele[9], &trnsele[10], &trnsele[11]);
     transform_ << trnsele;
-    cout << transform_;
+    //cout << transform_;
 
     has_cal_params_ = true;
   }   
@@ -255,20 +265,32 @@ public:
     }
 
     bool xidxed = false;
+    bool showed_gray = false;
+    IplImage* gray;
     while(ok()) {
       char c = cvWaitKey(20);
       if(c == 'q')
 	return;
       if(c == ' ') {
+	cout << "listening..." << endl;
 	if(img_)
 	  cvReleaseImage(&img_);
 	img_ = NULL;
 	has_img_ = has_ptcld_ = has_cal_params_ = false;
 	xidxed = false;
+	showed_gray = false;
+	subscribe("videre/images", images_msg_, &DorylusNode::cbImageArray, 10); 
       }
 
       if(!has_img_ || !has_ptcld_ || !has_cal_params_) {
 	//cout << "img " << has_img_ << ", ptcld " << has_ptcld_ << ", cal " << has_cal_params_ << endl;
+	if(has_img_ && !showed_gray) {
+	  gray = cvCreateImage(cvSize(vis_->width, vis_->height), IPL_DEPTH_8U, 1);
+	  cvCvtColor(vis_,gray,CV_BGR2GRAY);
+	  cvShowImage("Classification Visualization", gray);
+	  unsubscribe("videre/images");
+	}
+
 	continue;
       }
 
@@ -297,19 +319,23 @@ public:
 
   void train(int nCandidates, int max_secs, int max_wcs) {
     setupDescriptors();
+    vector<string> desc_ignore;
+    if(getenv("NOSPIN") != NULL) {
+      desc_ignore.push_back("FixedSpinLarge");
+      desc_ignore.push_back("FixedSpinMedium");
+      desc_ignore.push_back("FixedSpinSmall");
+    }
 
     time_t start, end;
     time(&start);
   
     cout << "Objective: " << d_.computeObjective() << endl;
     cout << "Objective (from classify()): " << d_.classify(dd_) << endl;
-
     	  
     map<string, float> max_thetas = d_.computeMaxThetas(*d_.dd_);
-
     int wcs=0;
     while(true) {
-      bool found_better = d_.learnWC(nCandidates, max_thetas);
+      bool found_better = d_.learnWC(nCandidates, max_thetas, &desc_ignore);
       if(!found_better) {
 	continue;
       }
@@ -450,7 +476,7 @@ public:
 	obj = getObject(sls, ss, img, 1, debug);
 	obj.label = 0;
 	objs.push_back(obj);
-	cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
+	//cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
       }
 
 
@@ -462,12 +488,14 @@ public:
 	for(int iRep=0; iRep<nRepetitions_per_obj; iRep++) {
 	  obj = getObject(sls, ss, img, nSamples, debug);
 	  obj.label = sls.ss_objs_[iSS].first;
-	  cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
+	  //cout << "Adding object of class " << obj.label << " with " << obj.features.size() << " descriptors." << endl;
 	  objs.push_back(obj);
 	}
       }	
 
     }
+
+    cout << "Dataset has " << objs.size() << " objects." << endl;
 
     // -- Report average time to compute a descriptor.
     float ave=0.0;
@@ -498,22 +526,42 @@ private:
 
 
 bool Calonder::operator()(SmartScan &ss, IplImage &img, float x, float y, float z, int row, int col, Matrix** result, bool debug) {
+  Matrix* res = new Matrix(result_size_,1); 
+  
+  static const int offset = RandomizedTree::PATCH_SIZE / 2;
+  if(col - offset < 0 || col + offset >= img.width || row - offset < 0 || row + offset >= img.height) {
+      *res = 0.0;
+      *result = res;
+      return false;
+    }
+    
+    
+
   CvPoint pt = cvPoint(col, row); 
   cv::WImageView_b view = extractPatch3(&img, pt);
   IplImage *patch = view.Ipl();
+  cout << " properties: " <<  patch->nChannels << " " << patch->width << " " << patch->height << " " << patch->widthStep << " " << patch->depth << endl;
+  if(patch == NULL || patch->nChannels !=3)
+    printf("warning\n");
 
-  IplImage *gray = cvCreateImage(cvSize(patch->width, patch->height), IPL_DEPTH_8U, 1);
+  cout << "row: " << row << " col: " << col << endl;
+
+//   IplImage *patch2 = cvCreateImage(cvGetSize(patch), IPL_DEPTH_8U, 3);
+//   for(int j=0; j<patch2->height; j++) {
+//     for(int i=0; i<patch2->width; i++) {
+//       ((unsigned char *)(patch2->imageData))[j*patch2->widthStep+i*3] = ((unsigned char *)(patch->imageData))[j*patch2->widthStep+i*3];
+//       ((unsigned char *)(patch2->imageData))[j*patch2->widthStep+i*3+1] = ((unsigned char *)(patch->imageData))[j*patch2->widthStep+i*3+1];
+//       ((unsigned char *)(patch2->imageData))[j*patch2->widthStep+i*3+2] = ((unsigned char *)(patch->imageData))[j*patch2->widthStep+i*3+2];
+//     }
+//   }
+
+  IplImage *gray = cvCreateImage(cvGetSize(patch), IPL_DEPTH_8U, 1);
   cvCvtColor(patch,gray,CV_BGR2GRAY);
   DenseSignature sig = rt_.getDenseSignature(gray);
 
-  Matrix* res = new Matrix(sig.size(),1); 
-  for(unsigned int i=1; i<=sig.size(); i++) {
-    (*res)(i,1) = sig(i-1);
+  for(unsigned int i=0; i<result_size_; i++) {
+    (*res)(i+1,1) = sig(start_+i);
   }
-
-  // -- Normalize.  This may be a terrible idea.
-//   Matrix div(1,1); div = 1/res->MaximumAbsoluteValue();
-//   *res = KP(*res, div);
 
   *result = res;
   
@@ -524,6 +572,7 @@ bool Calonder::operator()(SmartScan &ss, IplImage &img, float x, float y, float 
     display(**result);
   }
   //cvReleaseImage(&patch);  cvwimage.
+  //cvReleaseImage(&patch2);
   cvReleaseImage(&gray);
   return true;
 }
@@ -648,6 +697,12 @@ int main(int argc, char **argv) {
       int nBG_pts = 500;
       int nRepetitions_per_obj = 50;
       bool debug = false;
+      
+      if(getenv("NBG") != NULL)
+	nBG_pts = atoi(getenv("NBG"));
+      if(getenv("NREPS") != NULL)
+	nRepetitions_per_obj = atoi(getenv("NREPS"));
+      
 
       if(getenv("TEST") != NULL) {
 	cout << "TEST environment variable set.  Testing..." << endl;
@@ -656,6 +711,8 @@ int main(int argc, char **argv) {
 	nRepetitions_per_obj = 2;
 	debug = true;
       }
+
+      cout << "Building dataset with " << nBG_pts << " pts per scene in BG, " << nRepetitions_per_obj << " repetitions per obj." << endl;
       dn.buildDataset(nSamples, datafiles, savename, debug, nBG_pts, nRepetitions_per_obj);
     }
 //  DorylusDataset dd2;  dd2.load(string("savename.dd"));
@@ -677,8 +734,19 @@ int main(int argc, char **argv) {
       cout << "TEST environment variable set.  Testing..." << endl;
       dn.train(50, 60*60*10, 1);
     }
-    else {
-      dn.train(100, 60*60*9, 100000);
+    else {					
+      int hours = 12;
+      int nwcs = 100000;
+      int nCandidates = 100;
+      if(getenv("HOURS") != NULL)
+	hours = atoi(getenv("HOURS"));
+      if(getenv("NCANDIDATES") != NULL)
+	nCandidates = atoi(getenv("NCANDIDATES"));
+
+
+      cout << "Training for " << hours << " hours or " << nwcs << " weak classifiers, using " << nCandidates << " candidates." << endl;
+    
+      dn.train(nCandidates, 60*60*hours, nwcs);
       dn.d_.save(string(argv[2]));
     }
 

@@ -2,8 +2,7 @@
 #include<dorylus.h>
 
 using namespace std;
-#define Matrix NEWMAT::Matrix
-//using namespace NEWMAT;
+#define Matrix NEWMAT::Matrix //TODO: Fix this dirty hack.
 
 float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes, float minDelta) {
   float delta = 1e10;
@@ -25,9 +24,7 @@ float newtonSingle(const Function &fcn, const Gradient &grad, const Hessian &hes
 void DorylusDataset::setObjs(const vector<object>& objs) 
 {
   //num_class_objs_ contains the number of bg objs.  classes_ does NOT, nor does nClasses_
-
   objs_ = objs;
-
   num_class_objs_.clear();
   classes_.clear();
 
@@ -123,8 +120,6 @@ std::string DorylusDataset::status()
     oss << "    nPts in " << pit->first << " space: " << pit->second << "\n";
   }
 
-  //oss << "ymc_: " << endl << ymc_ << endl;
-  //  oss << "object data" << endl << displayFeatures() << endl;
   return oss.str();
 }
 
@@ -242,9 +237,7 @@ bool DorylusDataset::load(string filename, bool quiet)
   }
 
   f.close();
-
-  setObjs(objs);    
-	  
+  setObjs(objs);    	  
   cout << "Done loading " << filename << endl;
   return true; 
 }
@@ -285,8 +278,6 @@ bool DorylusDataset::testSave()
   dd2.load(string("test.dd"));
   dd2.save(string("test2.dd"));
   cout << dd2.status() << endl;
-
-  
 
   return true;
 }
@@ -382,8 +373,6 @@ bool Dorylus::load(string filename, bool quiet)
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
 	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	// cout << "Stored new wc." << endl;
-// 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
       }	
       else {
@@ -396,8 +385,6 @@ bool Dorylus::load(string filename, bool quiet)
       if(pwc) {
 	battery_[pwc->descriptor].push_back(*pwc);
 	pwcs_.push_back(&battery_[pwc->descriptor].back());
-	// cout << "Stored new wc." << endl;
-// 	cout << displayWeakClassifier(*pwc);
 	delete pwc; pwc = NULL;
       }	
       pwc = new weak_classifier;
@@ -485,12 +472,11 @@ void Dorylus::normalizeWeights() {
     }
   }
 }
-	
-
 
 vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, const Matrix &pt) {
   vector<weak_classifier> &wcs = battery_[descriptor];
   vector<weak_classifier*> activated;
+
   for(unsigned int t=0; t<wcs.size(); t++) {
     if(euc(pt, wcs[t].center) <= wcs[t].theta)
       activated.push_back(&wcs[t]);
@@ -498,7 +484,7 @@ vector<weak_classifier*> Dorylus::findActivatedWCs(const string &descriptor, con
   return activated;
 }
 
-bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
+bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore) {
   int nThetas = 100;
   assert(dd_!=0);
   weak_classifier best;
@@ -523,19 +509,11 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
     m++;
   }
 
-//   cout << weights_;
-//   cout << "nbgw" << endl;
-//   cout << non_bg_weights;
-//   cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
   // -- Choose wc candidates from the distribution of weights over the objects.
   vector<weak_classifier> cand;
   for(int iCand=0; iCand<nCandidates; iCand++) {
-    //cout << "Constructing candidate " << iCand << endl;
     float dice = (float)rand() / (float)RAND_MAX * non_bg_weights.Sum(); //The weights aren't necessarily normalized.
-    //cout << "dice " << dice << endl;
     Matrix &ws = weights_;
-    //cout << ws << endl;
     float w = 0.0;
     int obj_id=-1;
     for(int i=0; i<ws.Ncols(); i++) {
@@ -543,28 +521,38 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
 	continue;
       w = ws.Column(i+1).Sum();
       dice -= w;
-      //cout << "dice " << dice << endl;
       if(dice <= 0) {
 	obj_id = i;
 	break;
       }
     }
     assert(obj_id >= 0);
-    //cout << "Picking from obj " << obj_id << " with label " << dd_->objs_[obj_id].label << endl;
 
-    //Get a random descriptor.
+    // -- Get a random descriptor from the object.
     map<string, Matrix> &ft = dd_->objs_[obj_id].features;
-    //cout << "ft.size " << ft.size() << endl;
-    
-    int desc_id = rand() % (int)ft.size();
-    map<string, Matrix>::iterator it = ft.begin();
-    //cout << desc_id << " desc id" << endl;
-    for(int i=0; i<desc_id; i++) {
-      //cout << i << " " << ft.size() << endl;
-      it++;
+    Matrix v;
+    string desc;
+    while(true) {
+      int desc_id = rand() % (int)ft.size();
+      
+
+      map<string, Matrix>::iterator it = ft.begin();
+      for(int i=0; i<desc_id; i++) {
+	it++;
+      }
+      v = (*it).second;
+      desc = (*it).first;
+
+      //Make sure it's not in the ignore list.
+      if(desc_ignore == NULL) {
+	break;
+      }
+      else {
+	if(find(desc_ignore->begin(), desc_ignore->end(), desc) == desc_ignore->end()) {
+	  break;
+	}
+      }
     }
-    Matrix& v = (*it).second;
-    string desc = (*it).first;
 
     //Get a random feature.
     int feature_id = (rand() % (int)v.Ncols()) + 1;
@@ -574,7 +562,6 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
     wc.descriptor = desc;
     wc.center = v.Column(feature_id);
     cand.push_back(wc);
-    //cout << "Added a new candidate: " << wc.descriptor << " with feature id " << feature_id << " from obj " << obj_id << endl;
   }
   cout << "Added " << nCandidates << " candidate wcs" << endl;
     
@@ -599,25 +586,11 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
       }
     }
 
-//     for(unsigned int j=0; j<dd_->objs_.size(); j++) {
-//       cout << "*** obj " << j << endl;
-//       cout << dists[j] << endl;
-//     }
-    
-
     cand[i].theta = 0;
-    //float max_util_this_cand = 0;
     for(int iTheta=0; iTheta<nThetas; iTheta++) {
-    
-      //For now, take thetas between 0 and .5sqrt(dimensionality) of the feature space uniformly.
-      //This requires that the features all be normalized so that the max element is +1 and the min is 0.
-//       Matrix& f = dd_->objs_[0].features[cand[i].descriptor];
-//       float MAX_THETA = (1.0/2.0) * sqrt(f.Nrows());
-
-      //Use the MLE variance estimate in computeMaxThetas.
       float MAX_THETA = max_thetas[cand[i].descriptor];
 
-      // Rejection sampling to take small thetas more often.
+      // -- Rejection sampling to take small thetas more often.
       while(true) {
 	cand[i].theta = ((float)rand() / (float)RAND_MAX) * MAX_THETA;
 	float probability = -2 / (MAX_THETA * MAX_THETA) * cand[i].theta + 2 / MAX_THETA;
@@ -625,11 +598,6 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
 	if(random < probability)
 	  break;
       }
-
-      //cand[i].theta += MAX_THETA / nThetas;
-      //cout << "mx theta " << MAX_THETA << "  and " << cand[i].theta;
-      //cout << "Max theta is " << (1.0/2.0) * sqrt(f.Nrows()) << endl;
-      //cout << "Using theta of " << theta << endl;
 
       //Get the M_m^t, number of points in the hypersphere for each object.
       Matrix mmt(1,dd_->objs_.size()); mmt=0.0;
@@ -640,9 +608,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
 	}
       }
 
-      //cout << mmt << endl;
-
-      // -- Use Newton's method to solve for the a_t^c's.
+//       // -- AdaBoost: Use Newton's method to solve for the a_t^c's.
 //       cand[i].vals = Matrix(dd_->nClasses_, 1); cand[i].vals = 0.0;
 //       for(unsigned int c=0; c<dd_->nClasses_; c++) {
 // 	//TODO: Check if the function is unbounded below.
@@ -669,7 +635,7 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
 	else
 	  cand[i].vals(c+1,1) = numerator / denominator;
 
-	// Non-negative responses test.
+// 	// -- Non-negative responses test.
 // 	if(cand[i].vals(c+1,1) < 0) {
 // 	  cand[i].vals(c+1,1) = 0;
 // 	}
@@ -680,13 +646,6 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
       float new_objective = computeNewObjective(cand[i], mmt, ppweights);
       float util = objective - new_objective;
 
-      //cout << "  Theta " << cand[i].theta << ": objective " << objective << ",  new_objective " << new_objective << ", max_util " << max_util << ", util " << util;
-      //If this is the best wc so far, save it.
-//       cout << " with util " << util;
-//       if(util > max_util_this_cand) {
-// 	cout << " *";
-// 	max_util_this_cand = util;
-//       }
       if(util > max_util) {
 	found_better = true;
 	max_util = util;
@@ -695,11 +654,8 @@ bool Dorylus::learnWC(int nCandidates, map<string, float> max_thetas) {
 	best_mmt = mmt;
       }
       delete *ppweights; *ppweights = NULL;
-      //cout << endl;
     }
-    //cout << "WC " << i <<": Tried " << nThetas << " thetas, max utility is " << max_util << endl;
     cout << "."; cout.flush();
-    //cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
   }
   cout << endl;
 
@@ -779,8 +735,8 @@ map<string, float> Dorylus::computeMaxThetas(const DorylusDataset &dd) {
 
   map<string, float>::iterator vit;
   for(vit = variances.begin(); vit != variances.end(); vit++) {
-    vit->second = vit->second / (nPts[vit->first] * means[vit->first].Nrows());
-    max_thetas[vit->first] = 10*sqrt(vit->second); //10 stdevs.
+    vit->second = vit->second / (nPts[vit->first]); // * means[vit->first].Nrows());  Use E[x^T x] for zero-mean data.
+    max_thetas[vit->first] = 2*sqrt(vit->second); //2 stdev.
   }
 
   // -- Display some statistics.
