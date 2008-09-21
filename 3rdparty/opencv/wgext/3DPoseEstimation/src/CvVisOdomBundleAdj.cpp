@@ -6,7 +6,10 @@
  */
 
 #include "CvVisOdomBundleAdj.h"
+#include "CvMatUtils.h"
 #include "CvTestTimer.h"
+
+#define DISPLAY 1
 
 CvVisOdomBundleAdj::CvVisOdomBundleAdj(const CvSize& imageSize):
   CvPathRecon(imageSize),
@@ -28,7 +31,12 @@ bool CvVisOdomBundleAdj::recon(const string & dirname, const string & leftFileFm
 
   int maxDisp = (int)(mPoseEstimator.getD(400));// the closest point we care is at least 1000 mm away
   cout << "Max disparity is: " << maxDisp << endl;
-  mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
+  mStat.mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
+
+#if DISPLAY
+  // Optionally, set up the visualizer
+  mVisualizer = new CvVisOdomBundleAdj::Visualizer(mPoseEstimator);
+#endif
 
   // current frame
   PoseEstFrameEntry*& currFrame = mCurrentFrame;
@@ -38,15 +46,8 @@ bool CvVisOdomBundleAdj::recon(const string & dirname, const string & leftFileFm
   delete mLastGoodFrame;
   mLastGoodFrame = NULL;
 
-  // next frame. Needed when backtracking happens
-  PoseEstFrameEntry* nextFrame = mNextFrame;
-  nextFrame = NULL;
-
-  for (int i=mStartFrameIndex;
-  i<mEndFrameIndex && mStop == false;
-  i+= (nextFrame==NULL)?mFrameStep:0
-  ) {
-    bool newKeyFrame = reconOneFrame(i);
+  for (setStartFrame(); notDoneWithIteration(); setNextFrame()){
+    bool newKeyFrame = reconOneFrame();
     if (newKeyFrame == false) {
       continue;
     }
@@ -64,28 +65,109 @@ bool CvVisOdomBundleAdj::recon(const string & dirname, const string & leftFileFm
 #ifdef DEBUG
     cout << "window size: "<< numWinSize << " # fixed: " << numFixedFrames << endl;
 #endif
-  }
-  int numKeyFrames = mEndFrameIndex - mStartFrameIndex - mNumFramesSkipped;
-  double scale = 1. / (double)((mEndFrameIndex - mStartFrameIndex));
-  double kfScale = 1. / (double)(numKeyFrames);
-  fprintf(stdout, "Num of frames skipped:    %d\n", mNumFramesSkipped);
-  fprintf(stdout, "Total distance covered:   %05.2f mm\n",mPathLength);
-  fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", mTotalKeypoints, (double)(mTotalKeypoints) * scale);
-  fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", mTotalTrackablePairs, (double)(mTotalTrackablePairs) * scale);
-  fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", mTotalInliers, (double)(mTotalInliers) * scale);
-  fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", mPoseEstimator.mNumKeyPointsWithNoDisparity, (double)(mPoseEstimator.mNumKeyPointsWithNoDisparity) * kfScale);
-  fprintf(stdout, "In Key Frames:\n");
-  fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", mTotalKeypointsInKeyFrames, (double)(mTotalKeypointsInKeyFrames) * kfScale);
-  fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", mTotalTrackablePairsInKeyFrames, (double)(mTotalTrackablePairsInKeyFrames) * kfScale);
-  fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", mTotalInliersInKeyFrames, (double)(mTotalInliersInKeyFrames) *kfScale);
 
-  saveFramePoses(string("Output/indoor1/"));
+    // construct the tracks
+    status = updateTracks(mActiveKeyFrames, mTracks);
+
+    if (mVisualizer) {
+      mVisualizer->draw(*mCurrentFrame, *getLastKeyFrame());
+      mVisualizer->show();
+      mVisualizer->save();
+    }
+  }
+
+  saveFramePoses(mOutputDir);
+
+  mStat.mNumKeyPointsWithNoDisparity = mPoseEstimator.mNumKeyPointsWithNoDisparity;
+  mStat.mPathLength = mPathLength;
+  mStat.print();
 
   CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters = mNumFrames/mFrameStep;
+  timer.mNumIters    = mNumFrames/mFrameStep;
   timer.printStat();
 
   return status;
 }
 
+bool CvVisOdomBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames, Tracks & tracks)
+{
+  bool status = true;
+  int lastFrame = tracks.mCurrentFrameIndex;
+  int firstFrameInWin = frames.front()->mFrameIndex;
+  BOOST_FOREACH( PoseEstFrameEntry* frame, frames) {
+    assert(frame != NULL);
+    if (frame->mFrameIndex <= lastFrame) {
+      continue;
+    }
+    // loop thru all the inlier pairs
+    for (int i=0; i<frame->mNumInliers; i++) {
+      // a pair of inliers will end up being either an extension to
+      // existing track, or the start of a new track.
+
+      // loop thru all the existing tracks to
+      // - extending old tracks,
+      // - adding new tracks, and
+      // - remove old tracks that will not be used anymore
+      if (extendTrack(tracks, *frame, i) == false) {
+        // no track extended. Add the new pair as a new track
+        addTrack(tracks, *frame, i);
+      }
+    }
+  }
+  return status;
+}
+
+bool CvVisOdomBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+    int inlierIndex){
+  bool status = false;
+  int inlier = frame.mInlierIndices[inlierIndex];
+  std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
+  BOOST_FOREACH( Track& track, tracks.mTracks ) {
+    if (track.mLastFrame != frame.mLastKeyFrameIndex) {
+      // The last frame of this track is not the same as
+      // the last frame of this inlier pair. Skip it.
+      continue;
+    }
+    TrackObserv& observ = track.mObservs.back();
+    if (observ.mKeypointIndex != p.first) {
+      // keypoint index does not match
+      // skip to next track
+      continue;
+    } else {
+      // found a matching track. Extend it.
+      CvPoint3D64f coord = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
+      TrackObserv obsv(frame.mFrameIndex, coord, p.second);
+      track.mObservs.push_back(obsv);
+      status = true;
+      break;
+    }
+  }
+  return status;
+}
+bool CvVisOdomBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+    int inlierIndex){
+  bool status = false;
+  int inlier = frame.mInlierIndices[inlierIndex];
+  std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
+  CvPoint3D64f dispCoord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
+  CvPoint3D64f dispCoord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
+  TrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.first);
+  TrackObserv obsv1(frame.mFrameIndex, dispCoord1, p.second);
+  // initial estimate of the position of the 3d point in Cartesian coord.
+  CvMat disp1;
+  cvGetRow(frame.mInliers1, &disp1, inlierIndex);
+  CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
+  CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
+  dispToGlobal(disp1, frame.mGlobalTransform, _cartCoord1);
+  Track newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex);
+  tracks.mTracks.push_back(newtrack);
+
+  return status;
+}
+
+void CvVisOdomBundleAdj::Visualizer::draw(
+    const PoseEstFrameEntry& frame,
+    const PoseEstFrameEntry& lastFrame) {
+  Parent::draw(frame, lastFrame);
+}
 

@@ -101,8 +101,23 @@ void CvMatUtils::cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
 }
 
+bool CvMatUtils::drawKeypoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
+    vector<Keypoint>& keyPointsCurr){
+  // draw the key points
+  IplImage* img = image.Ipl();
+  for (vector<Keypoint>::const_iterator ikp = keyPointsCurr.begin(); ikp != keyPointsCurr.end(); ikp++) {
+    cvCircle(img, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::green, 1, CV_AA, 0);
+  }
+  // draw the key points from last key frame
+  for (vector<Keypoint>::const_iterator ikp = keyPointsLast.begin(); ikp != keyPointsLast.end(); ikp++) {
+    // draw cross instead of circle
+    CvMatUtils::cvCross(img, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::yellow, 1, CV_AA, 0);
+  }
+  return true;
+}
+
 bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
-		CvMat& rot, CvMat& shift, Cv3DPoseEstimateDisp& pedisp, bool reversed) {
+		const CvMat& rot, const CvMat& shift, const Cv3DPoseEstimateDisp& pedisp, bool reversed) {
 	int numInliers = pts0.rows;
 	if (pts1.rows != numInliers) {
 		cerr << __PRETTY_FUNCTION__ << "matching pairs do not match in length"<<endl;
@@ -169,6 +184,14 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 
 	cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &euler);
 	return true;
+}
+
+CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
+  CvPoint3D64f coord;
+  coord.x = cvmGet(&mat, row, 0);
+  coord.y = cvmGet(&mat, row, 1);
+  coord.z = cvmGet(&mat, row, 2);
+  return coord;
 }
 
 

@@ -388,7 +388,7 @@ bool Cv3DPoseEstimateDispSpaceRef::setCameraParams(double Fx, double Fy,
 /*
  * A Convenient function to map z to d, at the optical center
  */
-double Cv3DPoseEstimateDispSpaceRef::getD(double z){
+double Cv3DPoseEstimateDispSpaceRef::getD(double z) const {
 	double _xyz[] = {0., 0., z};
 	double _uvd[3];
 	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
@@ -399,7 +399,7 @@ double Cv3DPoseEstimateDispSpaceRef::getD(double z){
 /*
  * A convenient function to map disparity d to Z, at the optical center
  */
-double Cv3DPoseEstimateDispSpaceRef::getZ(double d){
+double Cv3DPoseEstimateDispSpaceRef::getZ(double d) const {
 	double _uvd[] = {this->mClx, this->mCy, d};
 	double _xyz[3];
 	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);

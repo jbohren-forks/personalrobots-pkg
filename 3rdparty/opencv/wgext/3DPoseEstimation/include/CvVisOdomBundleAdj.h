@@ -17,8 +17,10 @@
 class CvVisOdomBundleAdj: public CvPathRecon {
 public:
   /// Record the observation of a tracked point w.r.t.  a frame
-  class TrackObservs {
+  class TrackObserv {
   public:
+    TrackObserv(const int fi, const CvPoint3D64f& coord, const int keypointIndex):
+      mFrameIndex(fi), mDispCoord(coord), mKeypointIndex(keypointIndex){}
     /// the index of the image frame;
     int           mFrameIndex;
     /// disparity coordinates of the point in this frame
@@ -29,9 +31,36 @@ public:
   /// A sequence of observations of a 3D feature over a sequence of
   /// video images.
   class Track {
-    deque<TrackObservs>  mObservs;
-    /// 3D Cartesian coordinates to be estimated.
+  public:
+    Track(const TrackObserv& obsv0, const TrackObserv& obsv1,
+        const CvPoint3D64f& coord, int frameIndex):
+      mCoordinates(coord), mFirstFrame(obsv0.mFrameIndex), mLastFrame(obsv1.mFrameIndex)
+    {
+      mObservs.push_back(obsv0);
+      mObservs.push_back(obsv1);
+    }
+    deque<TrackObserv>  mObservs;
+    /// estimated 3D Cartesian coordinates.
     CvPoint3D64f     mCoordinates;
+    /// Index of the frame with the lowest index in which
+    /// this track is detected.
+    int mFirstFrame;
+    /// Index of the frame with the highest index in which
+    /// this track is detected.
+    int mLastFrame;
+  };
+  /// A class to keep track of the tracks
+  class Tracks {
+  public:
+    Tracks():mCurrentFrameIndex(0){}
+    Tracks(Track& track, int frameIndex):mCurrentFrameIndex(frameIndex){
+      mTracks.push_back(track);
+    }
+    /// a container for all the tracks
+    deque<Track> mTracks;
+    /// The index of the last frame that tracks have been
+    /// constructed against.
+    int mCurrentFrameIndex;
   };
   CvVisOdomBundleAdj(
       /// Image size. Use for buffer allocation.
@@ -56,15 +85,49 @@ public:
   bool recon(const string& dirname, const string& leftFileFmt,
       const string& rightFileFmt, int start, int end, int step);
 
+  bool updateTracks(
+      deque<PoseEstFrameEntry*>& frames,
+      Tracks& tracks);
+
   /// Default size of the sliding window
   static const int DefaultSlideWindowSize  = 10;
   /// Default max number of frozen windows,
   static const int DefaultNumFrozenWindows = 3;
+
+  class Visualizer: public CvPathRecon::Visualizer {
+  public:
+    typedef CvPathRecon::Visualizer Parent;
+    Visualizer(Cv3DPoseEstimateDisp& poseEstimator):
+      Parent(poseEstimator){}
+    virtual void draw(
+        const PoseEstFrameEntry& frame,
+        const PoseEstFrameEntry& lastFrame);
+  };
 protected:
+  /// If matched, extend an existing old track.
+  /// @return true if a track is matched and extended. False otherwise.
+  bool extendTrack(
+      /// Reference to a collection of tracks.
+      Tracks& tracks,
+      /// The new frame, with new trackable pairs.
+      PoseEstFrameEntry& frame,
+      /// the index of the inlier,
+      int inlierIndex
+  );
+  bool addTrack(
+      /// Reference to a collection of tracks.
+      Tracks& tracks,
+      /// The new frame, with new trackable pairs.
+      PoseEstFrameEntry& frame,
+      /// the index of the inlier,
+      int inlierIndex
+  );
+  Tracks mTracks;
   /// size of the sliding window
   int mSlideWindowSize;
   /// number of windows shall be fixed in bundle adjustment
   int mNumFrozenWindows;
+
 };
 
 #endif /* CVVISODOMBUNDLEADJ_H_ */

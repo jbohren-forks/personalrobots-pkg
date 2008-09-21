@@ -123,14 +123,14 @@ bool CvStereoCamModel::setCameraParams(const CvStereoCamParams& params) {
   return setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
 }
 
-bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) {
+bool CvStereoCamModel::reprojection(const CvMat *uvds, CvMat *XYZs) const {
 	if (uvds == NULL || XYZs == NULL) {
 		return false;
 	}
 	return dispToCart(*uvds, *XYZs);
 }
 
-bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) {
+bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) const {
 	bool status = true;
 
 	CvMat uvds0;
@@ -141,14 +141,14 @@ bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) {
 	return status;
 }
 
-bool CvStereoCamModel::projection(const CvMat *XYZs, CvMat *uvds) {
+bool CvStereoCamModel::projection(const CvMat *XYZs, CvMat *uvds) const {
 	if (uvds == NULL || XYZs == NULL) {
 		return false;
 	}
 	return cartToDisp(*XYZs, *uvds);
 }
 
-bool CvStereoCamModel::cartToDisp(const CvMat& XYZs, CvMat& uvds) {
+bool CvStereoCamModel::cartToDisp(const CvMat& XYZs, CvMat& uvds) const {
 	bool status = true;
 	CvMat xyzs0;
 	CvMat uvds0;

@@ -127,7 +127,12 @@ public:
 			vector<Keypoint>& keyPoints1,
 			/// (Output) pairs of corresponding 3d locations for possibly the same
 			/// 3d features. Used for pose estimation.
-			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+			/// Set it to NULL if not interested.
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+			/// (Output) pairs of indices, to the input keypoints, of the corresponding
+			/// 3d locations for possibly the same 3d features. Used for pose estimation.
+			/// Set it to NULL if not interested.
+			vector<pair<int, int> >* trackbleIndexPairs
 			);
 
 	bool makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect);
@@ -144,20 +149,23 @@ protected:
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
-			vector<pair<CvPoint3D64f, CvPoint3D64f> > & trackablePairs
-			);
+			vector<pair<CvPoint3D64f, CvPoint3D64f> > * trackablePairs,
+			vector<pair<int, int> >* trackbleIndexPairs = NULL
+	);
 	bool getTrackablePairsByCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
-			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
-			);
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+			vector<pair<int, int> >* trackbleIndexPairs
+	);
 	bool  getTrackablePairsByKeypointCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
-			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
-			);
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+			vector<pair<int, int> >* trackbleIndexPairs
+	);
 	double 	getDisparity(WImage1_16s& dispMap, CvPoint& pt) {
 		// the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
 		return CV_IMAGE_ELEM(dispMap.Ipl(), int16_t, pt.y, pt.x)/mDisparityUnitInPixels;

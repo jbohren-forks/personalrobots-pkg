@@ -5,6 +5,7 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include "Cv3DPoseEstimateDisp.h"
+#include <star_detector/include/keypoint.h>
 
 /**
  * Misc utilities
@@ -22,6 +23,7 @@ public:
 	 *  Convert a rotation matrix to euler angles
 	 */
 	static bool eulerAngle(const CvMat& rot, CvPoint3D64f &euler);
+	static CvPoint3D64f rowToPoint(const CvMat& mat, int row);
 	/**
 	 * convert a disparity map to an image suitable for display
 	 */
@@ -43,8 +45,10 @@ public:
 	static void cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 	    int thickness=1, int line_type=8, int shift=0);
 
+	static bool drawKeypoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
+	    vector<Keypoint>& keyPointsCurr);
 	static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
-	    CvMat& rot, CvMat& shift, Cv3DPoseEstimateDisp& peDisp, bool reversed=true);
+	    const CvMat& rot, const CvMat& shift, const Cv3DPoseEstimateDisp& peDisp, bool reversed=true);
 
 	static const CvScalar red;
 	static const CvScalar green;

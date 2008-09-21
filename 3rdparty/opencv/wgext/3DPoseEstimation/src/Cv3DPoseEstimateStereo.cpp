@@ -239,7 +239,8 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
-		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+    vector<pair<int, int> >* trackableIndexPairs
 		) {
 	assert(this->mCalonderMatcher!=NULL);
 	bool status = true;
@@ -286,20 +287,23 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 			mNumKeyPointsWithNoDisparity++;
 			continue;
 		}
-		CvPoint pt0Int = cvPoint(pt.x, pt.y);
-		double disp0 = getDisparity(dispMap0, pt0Int);
-		CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x, pt0Int.y, disp0);
-		CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-#ifdef DEBUG
-		cout << "best match: "<<pt1.x<<","<<pt1.y<<","<<pt1.z<<endl;
-#endif
-		pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
-		trackablePairs.push_back(p);
+		if (trackablePairs) {
+	    CvPoint pt0Int = cvPoint(pt.x, pt.y);
+	    double disp0 = getDisparity(dispMap0, pt0Int);
+	    CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x,  pt0Int.y,  disp0);
+	    CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+	    pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
+		  trackablePairs->push_back(p);
+		}
+		if (trackableIndexPairs) {
+		  trackableIndexPairs->push_back(make_pair(index, match));
+		}
 		numTrackablePairs++;
 
 		++index;
 	}
-	assert(numTrackablePairs == (int)trackablePairs.size());
+	assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():
+	  (trackableIndexPairs?trackableIndexPairs->size():-1));
 	return status;
 }
 
@@ -309,7 +313,8 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCrossCorr(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
-		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+    vector<pair<int, int> >* trackableIndexPairs
 		) {
 	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
@@ -393,36 +398,26 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCrossCorr(
 		bestloc.x += rectNeighborhood.x + rectTempl.width/2;
 		bestloc.y += rectNeighborhood.y + rectTempl.height/2;
 
-#if 0
-		// shift bestloc to  coordinates w.r.t the neighborhood
-		bestloc.x += rectTempl.width/2;  // please note that they are integer
-		bestloc.y += rectTempl.height/2;
-		bestloc.x -= rectNeighborhood.width/2;
-		bestloc.y -= rectNeighborhood.height/2;
-
-#ifdef DEBUG
-		cout << "best match offset: "<< bestloc.x <<","<<bestloc.y<<endl;
-#endif
-		// further shift to the coordinates of the left image
-		bestloc.x += featurePtLastLeft.x;
-		bestloc.y += featurePtLastLeft.y;
-#endif
-
 		disp = getDisparity(dispMap1, bestloc);
 
 		if (disp<0) {
 			this->mNumKeyPointsWithNoDisparity++;
 			continue;
 		}
-		CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-#ifdef DEBUG
-		cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
-#endif
-		pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
-		trackablePairs.push_back(p);
+		if (trackablePairs) {
+		  CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+		  pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
+		  trackablePairs->push_back(p);
+		}
+		// Because we search for best match in image instead of keypoint,
+		// index pair does not make sense here.
+		// TODO: The closest approx maybe to find closes point in keyPoints1
+		if (trackableIndexPairs) {
+		  status = false;
+		}
 		numTrackablePairs++;
 	}
-	assert(numTrackablePairs == (int)trackablePairs.size());
+	assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():-1);
 	return status;
 }
 
@@ -431,8 +426,9 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
-		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
-		) {
+		vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+    vector<pair<int, int> >* trackableIndexPairs
+) {
 	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
 	CvPoint templSize        = DefTemplateSize;
@@ -442,7 +438,8 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 	int numTrackablePairs=0;
 
 	// loop thru the keypoints of image0 and look for best match from image1
-	for (vector<Keypoint>::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++) {
+	int iKeypoint0 = 0; //< the index of the current key point in keypoints0
+	for (vector<Keypoint>::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++, iKeypoint0++) {
 		CvPoint2D32f featurePtLastLeft = cvPoint2D32f(ikp->x, ikp->y);
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
@@ -486,8 +483,10 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		double threshold = _res[0]*.75;
 		CvPoint bestloc = cvPoint(-1,-1);
 		double maxScore = threshold;
+		int iKeypoint1 = 0; //< index of the current key point in keypoints1
 		for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
-		jkp!=keyPoints1.end(); jkp++) {
+		jkp!=keyPoints1.end();
+		jkp++, iKeypoint1++) {
 			CvPoint2D32f featurePtLeft = cvPoint2D32f(jkp->x, jkp->y);
 			float dx = featurePtLeft.x - featurePtLastLeft.x;
 			float dy = featurePtLeft.y - featurePtLastLeft.y;
@@ -529,15 +528,19 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 			mNumKeyPointsWithNoDisparity++;
 			continue;
 		}
-		CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-#ifdef DEBUG
-		cout << "best match: "<<pt.x<<","<<pt.y<<","<<pt.z<<endl;
-#endif
-		pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
-		trackablePairs.push_back(p);
+
+		if (trackablePairs) {
+		  CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+		  pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
+		  trackablePairs->push_back(p);
+		}
+		if (trackableIndexPairs) {
+		  trackableIndexPairs->push_back(make_pair(iKeypoint0, iKeypoint1));
+		}
 		numTrackablePairs++;
 	}
-	assert(numTrackablePairs == (int)trackablePairs.size());
+	assert(numTrackablePairs == (int)trackablePairs?trackablePairs->size():
+	  trackableIndexPairs?trackableIndexPairs->size():-1);
 	return status;
 }
 
@@ -545,21 +548,22 @@ bool Cv3DPoseEstimateStereo::getTrackablePairs(
 			WImage1_b& image0, WImage1_b& image1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
-			vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs
+			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+			vector<pair<int, int> >* trackableIndexPairs
 			) {
 	bool status = true;
 	switch(mMatchMethod){
 	case CrossCorrelation:
 		status = getTrackablePairsByCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
-				trackablePairs);
+				trackablePairs, trackableIndexPairs);
 		break;
 	case KeyPointCrossCorrelation:
 		status = getTrackablePairsByKeypointCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
-				trackablePairs);
+				trackablePairs, trackableIndexPairs);
 		break;
 	case CalonderDescriptor:
 		status = getTrackablePairsByCalonder(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
-						trackablePairs);
+						trackablePairs, trackableIndexPairs);
 		break;
 	default:
 		status = false;

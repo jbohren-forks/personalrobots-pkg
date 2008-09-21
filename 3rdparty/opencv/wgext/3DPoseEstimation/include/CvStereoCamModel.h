@@ -39,26 +39,26 @@ public:
       /// (Input) 3D points stored in rows, in Cartesian coordinates.
 	    const CvMat *XYZs,
       /// (Output) 3D points stored in rows, in disparity coordinates.
-	    CvMat *uvds);
+	    CvMat *uvds) const;
   /// Convert 3D points from disparity coordinates to Cartesian coordinates.
 	bool reprojection(
       /// (Input) 3D points stored in rows, in disparity coordinates.
 	    const CvMat *uvds,
       /// (Output) 3D points stored in rows, in Cartesian coordinates.
-	    CvMat *XYZs);
+	    CvMat *XYZs) const;
 
   /// Convert 3D points from Cartesian coordinates to disparity coordinates.
 	bool dispToCart(
       /// (Input) 3D points stored in rows, in disparity coordinates.
 	    const CvMat& uvds,
       /// (Output) 3D points stored in rows, in Cartesian coordinates.
-	    CvMat& XYZs);
+	    CvMat& XYZs) const;
   /// Convert 3D points from disparity coordinates to Cartesian coordinates.
 	bool cartToDisp(
       /// (Input) 3D points stored in rows, in Cartesian coordinates.
 	    const CvMat& XYZs,
       /// (Output) 3D points stored in rows, in disparity coordinates.
-	    CvMat& uvds);
+	    CvMat& uvds) const;
 
 	/// Get references to the projection matrices. Used mostly for
 	/// debugging.

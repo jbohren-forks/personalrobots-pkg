@@ -77,11 +77,11 @@ public:
 	/**
 	 * A Convenient function to map z to d, at the optical center
 	 */
-	double getD(double z);
+	double getD(double z) const;
 	/*
 	 * A convenient function to map disparity d to Z, at the optical center
 	 */
-	double getZ(double d);
+	double getZ(double d) const;
 
 protected:
   /// An internal method that performs estimation for all
