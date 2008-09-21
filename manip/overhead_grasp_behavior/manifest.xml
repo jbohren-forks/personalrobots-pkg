@@ -7,7 +7,6 @@
 <depend package="std_msgs"/>
 <depend package="pr2Core"/>
 <depend package="libpr2API"/>
-<depend package="pr2_gazebo"/>
 <depend package="pr2_kinematic_controllers"/>
 <depend package="gmmseg" />
 </package>
