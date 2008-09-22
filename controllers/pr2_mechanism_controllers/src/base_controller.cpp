@@ -259,7 +259,7 @@ void BaseController::computeWheelPositions()
     res1 += base_wheels_[i].parent_->pos_;
 //    cout << "added position" << res1;
     base_wheels_position_[i] = res1;
-    cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
+    //cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
   }
 //  exit(-1);
 }
@@ -373,7 +373,7 @@ void BaseController::computeWheelSpeeds()
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << "caster: " << wheel_caster_steer_component.x << std::endl;
+    //std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << "caster: " << wheel_caster_steer_component.x << std::endl;
   }
 }
 
@@ -443,7 +443,7 @@ void BaseController::updateJointControllers()
 
 void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
 {
-  odom_msg_.header.frame_id   = "FRAMEID_ODOM";
+  odom_msg_.header.frame_id   = "odom";
   odom_msg_.header.stamp.sec  = (unsigned long)floor(robot_state_->hw_->current_time_);
   odom_msg_.header.stamp.nsec = (unsigned long)floor(  1e9 * (  robot_state_->hw_->current_time_ - odom_msg_.header.stamp.sec) );
 
@@ -495,35 +495,13 @@ void BaseControllerNode::update()
     /*        localization                                         */
     /*                                                             */
     /***************************************************************/
-    double x=0,y=0,z=0,roll=0,pitch=0,yaw=0,vx,vy,vyaw;
+    double x=0,y=0,yaw=0,vx,vy,vyaw;
     this->getOdometry(x,y,yaw,vx,vy,vyaw);
-    // FIXME: z, roll, pitch not accounted for
-    this->tfs->sendInverseEuler("FRAMEID_ODOM",
+    this->tfs->sendInverseEuler("odom",
                                 "base",
-                                x,
-                                y,
-                                0, //z - base_center_offset_z, /* get infor from xml: half height of base box */
-                                yaw,
-                                pitch,
-                                roll,
+                                x, y, 0,
+                                yaw, 0, 0,
                                 odom_msg_.header.stamp);
-
-    /***************************************************************/
-    /*                                                             */
-    /*  frame transforms                                           */
-    /*                                                             */
-    /*  x,y,z,yaw,pitch,roll                                       */
-    /*                                                             */
-    /***************************************************************/
-    this->tfs->sendEuler("base",
-                         "FRAMEID_ROBOT",
-                         0,
-                         0,
-                         0, 
-                         0,
-                         0,
-                         0,
-                         odom_msg_.header.stamp);
 
   }
 
@@ -588,7 +566,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   // receive messages from 2dnav stack
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this);
 
-  // for publishing odometry frame transforms FRAMEID_ODOM
+  // for publishing odometry frame transforms odom
   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
 
   return true;
@@ -669,7 +647,7 @@ void BaseController::computeBaseVelocity()
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
 
-  cout << "Base odom velocity " << base_odom_velocity_ << endl;
+  //cout << "Base odom velocity " << base_odom_velocity_ << endl;
 }
 
 Matrix BaseController::pseudoInverse(const Matrix M)
