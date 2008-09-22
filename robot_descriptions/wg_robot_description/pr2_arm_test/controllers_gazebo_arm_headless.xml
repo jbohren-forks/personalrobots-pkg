@@ -8,22 +8,21 @@
   <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
   <!-- PR2_ACTARRAY -->
-  <!-- uncomment for testing -->
-  <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
 
-      <include>gazebo_joints_arm_test.xml</include>
+    <robot filename="pr2_arm.xml" />
 
-      <robot_filename>pr2_arm_test.xml</robot_filename>
-      <controller_filename>controllers_arm_test.xml</controller_filename>
-      <actuator_filename>actuators_arm_test.xml</actuator_filename>
+    <gazebo_physics filename="gazebo_joints_arm.xml" /> <!-- for simulator/physics specific settigs -->
 
-      <interface:audio name="test_actuators_dummy_iface" />
-  </controller:test_actuators>
+    <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
 
   </verbatim>
 </map>
+
+
 
 
 <map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->

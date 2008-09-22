@@ -18,39 +18,37 @@ add_custom_target(pr2_gazebo_model ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Standard Model")
 
-add_custom_target(pr2_gazebo_model_test ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test.model
+add_custom_target(pr2_gazebo_model_headless ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_gazebo_actuators_headless.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_headless.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Test Actuators")
 
-add_custom_target(pr2_gazebo_model_nolimit_test ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit_test.model 1
+add_custom_target(pr2_gazebo_model_nolimit ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_gazebo_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit.model 1
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2 Test Actuators with no limits")
 
-add_custom_target(pr2_gazebo_model_arm_test ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm_test.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_arm_test.model
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Arm Test")
-
-add_custom_target(pr2_gazebo_model_single_link ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/single_link_test/pr2_single_link.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_single_link.model
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Arm Test")
-
-add_custom_target(pr2_gazebo_model_arm_test_headless ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm_test_headless.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_arm_test_headless.model
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Arm Test")
-
-add_custom_target(pr2_gazebo_model_test_headless ALL
-		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/pr2_test_actuators_headless.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_test_headless.model
-		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Test Actuators")
-
+#pr2_arm
 add_custom_target(pr2d2 ALL
 		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm/pr2d2.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2d2_xml.model
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for PR2D2 Arm Test")
+
+# pr2_arm_test
+add_custom_target(pr2_gazebo_model_arm ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_arm.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Arm Test")
+
+add_custom_target(pr2_gazebo_model_arm_headless ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm_headless.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_arm_headless.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Arm Test")
+
+# single_link_test
+add_custom_target(pr2_gazebo_model_single_link ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/single_link_test/pr2_single_link.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_single_link.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Arm Test")
 
 

@@ -353,7 +353,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_test.model" />
+      <xi:include href="pr2_xml.model" />
     </include>
 
   </model:physical>

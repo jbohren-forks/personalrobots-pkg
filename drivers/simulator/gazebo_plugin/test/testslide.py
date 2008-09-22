@@ -34,7 +34,7 @@
 
 ## Gazebo collision validation 
 
-PKG = 'rosgazebo'
+PKG = 'gazebo_plugin'
 NAME = 'testslide'
 
 import rostools

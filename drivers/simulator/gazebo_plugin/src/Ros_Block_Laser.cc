@@ -246,7 +246,7 @@ void Ros_Block_Laser::PutLaserData()
     for (j = 0; j<verticalRangeCount; j++)
     {
       // interpolating in vertical direction
-      vb = (double) j * (verticalRayCount - 1) / (verticalRangeCount - 1);
+      vb = (verticalRangeCount == 1) ? 0 : (double) j * (verticalRayCount - 1) / (verticalRangeCount - 1);
       vja = (int) floor(vb);
       vjb = std::min(vja + 1, verticalRayCount - 1);
       vb = vb - floor(vb); // fraction from min
@@ -257,7 +257,7 @@ void Ros_Block_Laser::PutLaserData()
       for (i = 0; i<rangeCount; i++)
       {
         // Interpolate the range readings from the rays in horizontal direction
-        hb = (double) i * (rayCount - 1) / (rangeCount - 1);
+        hb = (rangeCount == 1)? 0 : (double) i * (rayCount - 1) / (rangeCount - 1);
         hja = (int) floor(hb);
         hjb = std::min(hja + 1, rayCount - 1);
         hb = hb - floor(hb); // fraction from min

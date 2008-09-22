@@ -1,8 +1,14 @@
 <launch>
   <master start="auto" />
   <include file="$(find wg_robot_description)/send_test.xml"/><!-- Include or you will not get position inputs. -->
-  <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/testslide.world" respawn="true" />
-  <!--<node pkg="rosgazebo" type="groundtruthtransform" args="" respawn="true" />-->
-  <!--node pkg="pr2_gazebo" type="run-pr2_gazebo.sh" args="" respawn="true" /-->
-  <test test-name="rosgazebo_testslide" pkg="rosgazebo" type="testslide.py" />
+
+  <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/testslide.world" respawn="true">
+    <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
+    <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+    <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+  </node>
+
+  <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
+  <test test-name="gazebo_plugin_testslide" pkg="gazebo_plugin" type="testslide.py" />
 </launch>

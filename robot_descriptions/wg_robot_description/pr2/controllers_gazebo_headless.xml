@@ -8,19 +8,16 @@
   <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
   <!-- PR2_ACTARRAY -->
-  <!-- uncomment for testing -->
-  <controller:test_actuators name="test_actuators" plugin="libtest_actuators.so">
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>100.0</updateRate>
+    <updateRate>1000.0</updateRate>
 
-    <!-- used exclusively by test_actuators to find out where these files are, in combination with env var MC_RESOURCE_PATH -->
-    <include>gazebo_joints.xml</include>
-    <robot_filename>pr2_test_actuators.xml</robot_filename>
-    <controller_filename>controllers.xml</controller_filename>
-    <actuator_filename>actuators.xml</actuator_filename>
+    <robot filename="pr2_gazebo_actuators.xml" />
 
-    <interface:audio name="test_actuators_dummy_iface" />
-  </controller:test_actuators>
+    <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs -->
+
+    <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
 
   </verbatim>
 </map>

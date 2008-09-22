@@ -6,6 +6,6 @@
   <include>pr2.xml</include>
 
   <!-- controllers for gazebo -->
-  <include>controllers_gazebo_test_headless.xml</include>
+  <include>controllers_gazebo_headless.xml</include>
   
 </robot>

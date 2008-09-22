@@ -114,12 +114,6 @@
   
   
   <!-- End constant dimensions -->
-  <const_block name="pr2_shoulder_pan_joint">
-    <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-  </const_block>
-  
   <const_block name="pr2_shoulder_pan_inertial">
     <mass value="16.29553" />
     <com xyz=" -0.005215 -0.030552 0.0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
@@ -179,7 +173,6 @@
   <const_block name="pr2_upperarm_roll_joint">
     <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_upperarm_roll_inertial">
@@ -208,9 +201,7 @@
   </const_block> 
   
   <const_block name="pr2_elbow_joint">
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_elbow_inertial">
@@ -244,7 +235,7 @@
   <joint name="elbow_right_joint" type="revolute" >
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
     <insert_const_block name="pr2_elbow_joint"/>
-    <calibration reference_position="0"/>
+    <calibration reference_position="0" values="1.5 1.0"/>
     <limit effort="10" velocity="0" min="0" max="2.3"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
@@ -253,8 +244,6 @@
   
   <joint name="upperarm_roll_right_joint" type="revolute" >
     <insert_const_block name="pr2_upperarm_roll_joint"/>
-    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration reference_position="0" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     <limit effort="10" velocity="0" min="-2.2" max="2.2"/>
     <!-- safety code -->
@@ -264,8 +253,6 @@
   </joint>
   <joint name="shoulder_pitch_right_joint" type="revolute" >
     <insert_const_block name="pr2_shoulder_pitch_joint"/>
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration reference_position="0.9" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
     <limit effort="10" velocity="0" min="-0.4" max="1.5"/>
     <!-- safety code -->
@@ -277,7 +264,6 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration reference_position="-0.7" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
 
-    <insert_const_block name="pr2_shoulder_pan_joint"/>
     <limit effort="10" velocity="0" min="-2" max="0.9"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>

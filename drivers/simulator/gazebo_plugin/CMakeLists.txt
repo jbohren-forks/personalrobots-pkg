@@ -7,8 +7,6 @@ gensrv()
 include_directories(srv/cpp)
 
 add_definitions(-Wall)
-#rospack_add_library(Pr2_Actarray src/Pr2_Actarray.cc)
-#rospack_add_library(Pr2_Gripper src/Pr2_Gripper.cc)
 rospack_add_library(Ros_Stereo_Camera src/Ros_Stereo_Camera.cc)
 rospack_add_library(Ros_Camera src/Ros_Camera.cc)
 rospack_add_library(Ros_Laser src/Ros_Laser.cc)
@@ -17,7 +15,6 @@ rospack_add_library(Ros_Time src/Ros_Time.cc)
 rospack_add_library(Ros_PTZ src/Ros_PTZ.cc)
 rospack_add_library(P3D src/P3D.cc)
 rospack_add_library(gazebo_actuators src/gazebo_actuators.cpp)
-#rospack_add_library(test_actuators src/test_actuators.cpp)
 
 # This target requires adding player to the manifest.xml.
 #rospack_add_executable(player_pr2 src/player/Pr2_Player.cc)

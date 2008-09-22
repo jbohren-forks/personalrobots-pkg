@@ -2103,6 +2103,8 @@ namespace robot_desc {
 		    }
 		    else if (node->ValueStr() == "map")
 			loadMap(node, &m_data);
+		    else if (node->ValueStr() == "chain")
+			std::cout << "WARNING: Should chain be defined here?" << std::endl; //FIXME:
 		    else
 			m_stage2.push_back(node);
 	    break;
