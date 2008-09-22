@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = gazebo-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
-SVN_REVISION = -r 7023
+SVN_REVISION = -r 7034
 SVN_PATCH = gazebo_patch.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
