@@ -1,6 +1,6 @@
 Index: src/LinearMath/btTransform.h
 ===================================================================
---- src/LinearMath/btTransform.h	(revision 1313)
+--- src/LinearMath/btTransform.h	(revision 1318)
 +++ src/LinearMath/btTransform.h	(working copy)
 @@ -82,6 +82,10 @@
  		return (*this)(x);
@@ -15,7 +15,7 @@ Index: src/LinearMath/btTransform.h
  
 Index: src/LinearMath/btQuaternion.h
 ===================================================================
---- src/LinearMath/btQuaternion.h	(revision 1313)
+--- src/LinearMath/btQuaternion.h	(revision 1318)
 +++ src/LinearMath/btQuaternion.h	(working copy)
 @@ -17,6 +17,7 @@
  #ifndef SIMD__QUATERNION_H_
@@ -71,7 +71,7 @@ Index: src/LinearMath/btQuaternion.h
  	btScalar getAngle() const 
 Index: src/LinearMath/CMakeLists.txt
 ===================================================================
---- src/LinearMath/CMakeLists.txt	(revision 1313)
+--- src/LinearMath/CMakeLists.txt	(revision 1318)
 +++ src/LinearMath/CMakeLists.txt	(working copy)
 @@ -2,6 +2,7 @@
  INCLUDE_DIRECTORIES(
@@ -81,3 +81,39 @@ Index: src/LinearMath/CMakeLists.txt
  
  ADD_LIBRARY(LibLinearMath
  		btAlignedObjectArray.h
+Index: src/LinearMath/btMatrix3x3.h
+===================================================================
+--- src/LinearMath/btMatrix3x3.h	(revision 1318)
++++ src/LinearMath/btMatrix3x3.h	(working copy)
+@@ -251,6 +251,31 @@
+ 			}
+ 		}
+ 		
++		void getEulerZYX(btScalar& yaw, btScalar& pitch, btScalar& roll) const
++		{
++			
++			if (btScalar(m_el[1].z()) < btScalar(1))
++			{
++				if (btScalar(m_el[1].z()) > -btScalar(1))
++				{
++					yaw = btScalar(btAtan2(-m_el[2].x(), m_el[0].x()));
++					pitch = btScalar(btAtan2(-m_el[1].z(), m_el[1].y()));
++					roll = btScalar(btAsin(-m_el[1].x()));
++				}
++				else 
++				{
++					yaw = btScalar(-btAtan2(m_el[0].z(), m_el[2].z()));
++					pitch = -SIMD_HALF_PI;
++					roll = btScalar(0.0);
++				}
++			}
++			else
++			{
++				yaw = btScalar(btAtan2(-m_el[0].z(), m_el[2].z()));
++				pitch = SIMD_HALF_PI;
++				roll = btScalar(0.0);
++			}
++		}
+ 
+ 	
+ 		
