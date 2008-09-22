@@ -278,8 +278,8 @@ TEST(data, Vector3Conversions)
     btVector3 btv = btVector3(xvalues[i], yvalues[i], zvalues[i]);
     btVector3 btv_out = btVector3(0,0,0);
     std_msgs::Vector3 msgv;
-    Vector3BtToMsg(btv, msgv);
-    Vector3MsgToBt(msgv, btv_out);
+    Vector3TFToMsg(btv, msgv);
+    Vector3MsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -301,8 +301,8 @@ TEST(data, Vector3StampedConversions)
     Stamped<btVector3> btv = Stamped<btVector3>(btVector3(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
     Stamped<btVector3> btv_out;
     std_msgs::Vector3Stamped msgv;
-    Vector3StampedBtToMsg(btv, msgv);
-    Vector3StampedMsgToBt(msgv, btv_out);
+    Vector3StampedTFToMsg(btv, msgv);
+    Vector3StampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
     EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
     EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
@@ -325,8 +325,8 @@ TEST(data, QuaternionConversions)
     btQuaternion btv = btQuaternion(xvalues[i], yvalues[i], zvalues[i]);
     btQuaternion btv_out = btQuaternion(0,0,0);
     std_msgs::Quaternion msgv;
-    QuaternionBtToMsg(btv, msgv);
-    QuaternionMsgToBt(msgv, btv_out);
+    QuaternionTFToMsg(btv, msgv);
+    QuaternionMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
     EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
     EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
@@ -349,8 +349,8 @@ TEST(data, QuaternionStampedConversions)
     Stamped<btQuaternion> btv = Stamped<btQuaternion>(btQuaternion(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
     Stamped<btQuaternion> btv_out;
     std_msgs::QuaternionStamped msgv;
-    QuaternionStampedBtToMsg(btv, msgv);
-    QuaternionStampedMsgToBt(msgv, btv_out);
+    QuaternionStampedTFToMsg(btv, msgv);
+    QuaternionStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
     EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
     EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
@@ -376,8 +376,8 @@ TEST(data, TransformConversions)
     btTransform btv = btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i]));
     btTransform btv_out;
     std_msgs::Transform msgv;
-    TransformBtToMsg(btv, msgv);
-    TransformMsgToBt(msgv, btv_out);
+    TransformTFToMsg(btv, msgv);
+    TransformMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
     EXPECT_NEAR(btv.getOrigin().y(), btv_out.getOrigin().y(), epsilon);
     EXPECT_NEAR(btv.getOrigin().z(), btv_out.getOrigin().z(), epsilon);
@@ -405,8 +405,8 @@ TEST(data, TransformStampedConversions)
     Stamped<btTransform> btv = Stamped<btTransform>(btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i])), 1000000000ULL, "no frame");
     Stamped<btTransform> btv_out;
     std_msgs::TransformStamped msgv;
-    TransformStampedBtToMsg(btv, msgv);
-    TransformStampedMsgToBt(msgv, btv_out);
+    TransformStampedTFToMsg(btv, msgv);
+    TransformStampedMsgToTF(msgv, btv_out);
     EXPECT_NEAR(btv.data_.getOrigin().x(), btv_out.data_.getOrigin().x(), epsilon);
     EXPECT_NEAR(btv.data_.getOrigin().y(), btv_out.data_.getOrigin().y(), epsilon);
     EXPECT_NEAR(btv.data_.getOrigin().z(), btv_out.data_.getOrigin().z(), epsilon);

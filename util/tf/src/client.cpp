@@ -37,7 +37,7 @@ void TransformClient::transformPointCloud(const std::string & target_frame, cons
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), cloudIn.header.stamp.to_ull(), lookupFrameNumber( cloudIn.header.frame_id), cloudIn.header.stamp.to_ull(), 0);
   
-  btTransform bttransform = computeTransformFromList(t_list);
+  Transform bttransform = computeTransformFromList(t_list);
   
   NEWMAT::Matrix transform = transformAsMatrix(bttransform);
 
@@ -83,9 +83,9 @@ void TransformClient::subscription_callback()
 {
   try 
   {
-    btTransform temp;
-    TransformMsgToBt(msg_in_.transform, temp);
-    setTransform(Stamped<btTransform>(temp, msg_in_.header.stamp.to_ull(), msg_in_.header.frame_id), msg_in_.parent);
+    Transform temp;
+    TransformMsgToTF(msg_in_.transform, temp);
+    setTransform(Stamped<Transform>(temp, msg_in_.header.stamp.to_ull(), msg_in_.header.frame_id), msg_in_.parent);
   }
   catch (TransformException& ex)
   {

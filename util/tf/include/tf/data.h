@@ -43,6 +43,14 @@
 
 namespace tf
 {
+/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
+typedef btTransform Transform;
+/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
+typedef btQuaternion Quaternion;
+/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
+typedef btVector3 Vector3;
+
+
 /** \brief The data type which will be cross compatable with std_msgs
  * this will require the associated rosTF package to convert */
 template <typename T>
@@ -65,55 +73,55 @@ class Stamped{
 };
 
 
-/** \brief convert Vector3 msg to btVector3 */
-static inline void Vector3MsgToBt(const std_msgs::Vector3& msg_v, btVector3& bt_v) {bt_v = btVector3(msg_v.x, msg_v.y, msg_v.z);};
-/** \brief convert btVector3 to Vector3 msg*/
-static inline void Vector3BtToMsg(const btVector3& bt_v, std_msgs::Vector3& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
+/** \brief convert Vector3 msg to Vector3 */
+static inline void Vector3MsgToTF(const std_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
+/** \brief convert Vector3 to Vector3 msg*/
+static inline void Vector3TFToMsg(const Vector3& bt_v, std_msgs::Vector3& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
 
-/** \brief convert Vector3Stamped msg to Stamped<btVector3> */
-static inline void Vector3StampedMsgToBt(const std_msgs::Vector3Stamped & msg, Stamped<btVector3>& bt) 
-{Vector3MsgToBt(msg.vector, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
-/** \brief convert Stamped<btVector3> to Vector3Stamped msg*/
-static inline void Vector3StampedBtToMsg(const Stamped<btVector3>& bt, std_msgs::Vector3Stamped & msg)
-{Vector3BtToMsg(bt.data_, msg.vector); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
+/** \brief convert Vector3Stamped msg to Stamped<Vector3> */
+static inline void Vector3StampedMsgToTF(const std_msgs::Vector3Stamped & msg, Stamped<Vector3>& bt) 
+{Vector3MsgToTF(msg.vector, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Vector3> to Vector3Stamped msg*/
+static inline void Vector3StampedTFToMsg(const Stamped<Vector3>& bt, std_msgs::Vector3Stamped & msg)
+{Vector3TFToMsg(bt.data_, msg.vector); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
 
-/** \brief convert Quaternion msg to btQuaternion */
-static inline void QuaternionMsgToBt(const std_msgs::Quaternion& msg, btQuaternion& bt) {bt = btQuaternion(msg.x, msg.y, msg.z, msg.w);};
-/** \brief convert btQuaternion to Quaternion msg*/
-static inline void QuaternionBtToMsg(const btQuaternion& bt, std_msgs::Quaternion& msg) {msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();};
+/** \brief convert Quaternion msg to Quaternion */
+static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) {bt = Quaternion(msg.x, msg.y, msg.z, msg.w);};
+/** \brief convert Quaternion to Quaternion msg*/
+static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion& msg) {msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();};
 
-/** \brief convert QuaternionStamped msg to Stamped<btQuaternion> */
-static inline void QuaternionStampedMsgToBt(const std_msgs::QuaternionStamped & msg, Stamped<btQuaternion>& bt) 
-{QuaternionMsgToBt(msg.quaternion, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
-/** \brief convert Stamped<btQuaternion> to QuaternionStamped msg*/
-static inline void QuaternionStampedBtToMsg(const Stamped<btQuaternion>& bt, std_msgs::QuaternionStamped & msg)
-{QuaternionBtToMsg(bt.data_, msg.quaternion); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
+/** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
+static inline void QuaternionStampedMsgToTF(const std_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt) 
+{QuaternionMsgToTF(msg.quaternion, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
+static inline void QuaternionStampedTFToMsg(const Stamped<Quaternion>& bt, std_msgs::QuaternionStamped & msg)
+{QuaternionTFToMsg(bt.data_, msg.quaternion); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
-/** \brief convert Transform msg to btTransform */
-static inline void TransformMsgToBt(const std_msgs::Transform& msg, btTransform& bt) 
-{bt = btTransform(btQuaternion(msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w), btVector3(msg.translation.x, msg.translation.y, msg.translation.z));};
-/** \brief convert btTransform to Transform msg*/
-static inline void TransformBtToMsg(const btTransform& bt, std_msgs::Transform& msg) 
-{Vector3BtToMsg(bt.getOrigin(), msg.translation);  QuaternionBtToMsg(bt.getRotation(), msg.rotation);};
+/** \brief convert Transform msg to Transform */
+static inline void TransformMsgToTF(const std_msgs::Transform& msg, Transform& bt) 
+{bt = Transform(Quaternion(msg.rotation.x, msg.rotation.y, msg.rotation.z, msg.rotation.w), Vector3(msg.translation.x, msg.translation.y, msg.translation.z));};
+/** \brief convert Transform to Transform msg*/
+static inline void TransformTFToMsg(const Transform& bt, std_msgs::Transform& msg) 
+{Vector3TFToMsg(bt.getOrigin(), msg.translation);  QuaternionTFToMsg(bt.getRotation(), msg.rotation);};
 
-/** \brief convert TransformStamped msg to Stamped<btTransform> */
-static inline void TransformStampedMsgToBt(const std_msgs::TransformStamped & msg, Stamped<btTransform>& bt) 
-{TransformMsgToBt(msg.transform, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
-/** \brief convert Stamped<btTransform> to TransformStamped msg*/
-static inline void TransformStampedBtToMsg(const Stamped<btTransform>& bt, std_msgs::TransformStamped & msg)
-{TransformBtToMsg(bt.data_, msg.transform); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
+/** \brief convert TransformStamped msg to Stamped<Transform> */
+static inline void TransformStampedMsgToTF(const std_msgs::TransformStamped & msg, Stamped<Transform>& bt) 
+{TransformMsgToTF(msg.transform, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Transform> to TransformStamped msg*/
+static inline void TransformStampedTFToMsg(const Stamped<Transform>& bt, std_msgs::TransformStamped & msg)
+{TransformTFToMsg(bt.data_, msg.transform); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief Convert the transform to a Homogeneous matrix for large operations */
-static inline NEWMAT::Matrix transformAsMatrix(const btTransform& bt)
+static inline NEWMAT::Matrix transformAsMatrix(const Transform& bt)
 {
   NEWMAT::Matrix outMat(4,4);
   
   double * mat = outMat.Store();
     
-  btQuaternion  rotation = bt.getRotation();
-  btVector3 origin = bt.getOrigin();
+  Quaternion  rotation = bt.getRotation();
+  Vector3 origin = bt.getOrigin();
 
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
   double xx      = rotation.x() * rotation.x();

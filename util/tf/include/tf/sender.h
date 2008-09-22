@@ -48,23 +48,23 @@ public:
     node_.advertise<tfMessage>("/tfMessage", 100);
   };
   
-  void sendTransform(const Stamped<btTransform> & transform, const std::string& parent_id)
+  void sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
   {
     tfMessage message;
     message.header.stamp = ros::Time(transform.stamp_);
     message.header.frame_id = transform.frame_id_;
     message.parent = parent_id;
-    TransformBtToMsg(transform.data_, message.transform);
+    TransformTFToMsg(transform.data_, message.transform);
     node_.publish("/tfMessage", message);
   } 
   
-  void sendTransform(const btTransform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
+  void sendTransform(const Transform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
   {
     tfMessage message;
     message.header.stamp = ros::Time(time);
     message.header.frame_id = frame_id;
     message.parent = parent_id;
-    TransformBtToMsg(transform, message.transform);
+    TransformTFToMsg(transform, message.transform);
     node_.publish("/tfMessage", message);
   }
   
