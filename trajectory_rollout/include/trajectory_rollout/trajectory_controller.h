@@ -131,6 +131,7 @@ class TrajectoryController {
 
     //convert the trajectories computed in robot space to world space
     void trajectoriesToWorld();
+    void transformTrajects(double x_i, double y_i, double th_i);
 
     //compute the cost for a single trajectory
     double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale);

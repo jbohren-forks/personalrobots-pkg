@@ -46,7 +46,7 @@ GovernorNode::GovernorNode() :
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;
   robot_vel_.yaw = 0.0;
-  robot_vel_.frame = "FRAMEID_ROBOT";
+  robot_vel_.frame = "base";
   robot_vel_.time = 0.0;
 
   advertise<std_msgs::Polyline2D>("local_path");
@@ -61,7 +61,7 @@ void GovernorNode::odomReceived(){
   robot_vel_.x = odom_msg_.vel.x;
   robot_vel_.y = odom_msg_.vel.y;
   robot_vel_.yaw = odom_msg_.vel.th;
-  robot_vel_.frame = "FRAMEID_ROBOT";
+  robot_vel_.frame = "base";
   robot_vel_.time = 0;
   //give robot_vel_ back
   vel_lock.unlock();
@@ -90,14 +90,14 @@ void GovernorNode::processPlan(){
   robot_pose.x = 0.0;
   robot_pose.y = 0.0;
   robot_pose.yaw = 0.0;
-  robot_pose.frame = "FRAMEID_ROBOT";
+  robot_pose.frame = "base";
   robot_pose.time = 0;
 
   libTF::TFPose2D robot_acc;
   robot_acc.x = MAX_ACC_X;
   robot_acc.y = MAX_ACC_Y;
   robot_acc.yaw = MAX_ACC_THETA;
-  robot_acc.frame = "FRAMEID_ROBOT";
+  robot_acc.frame = "base";
   robot_acc.time = 0;
 
 

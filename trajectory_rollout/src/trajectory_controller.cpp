@@ -270,13 +270,17 @@ void TrajectoryController::updatePlan(vector<Point2DFloat32>& new_plan){
 }
 
 void TrajectoryController::trajectoriesToWorld(){
-  NEWMAT::Matrix transform_newmat;
-  ublas::matrix<double> transform(4, 4);
+  libTF::TFPose2D robot_pose, global_pose;
+  robot_pose.x = 0;
+  robot_pose.y = 0;
+  robot_pose.yaw = 0;
+  robot_pose.frame = "base";
+  robot_pose.time = 0;
 
   if(tf_){
     try
     {
-      transform_newmat = tf_->getMatrix("FRAMEID_MAP", "FRAMEID_ROBOT", 0);
+      global_pose = tf_->transformPose2D("map", robot_pose);
     }
     catch(libTF::TransformReference::LookupException& ex)
     {
@@ -298,42 +302,38 @@ void TrajectoryController::trajectoriesToWorld(){
     }
   }
 
-  //because NEWMAT sucks at multiplication
-  for(unsigned int i = 0; i < 4; ++i){
-    for(unsigned int j = 0; j < 4; ++j){
-      transform(i, j) = transform_newmat.element(i, j);
-    }
-  }
   struct timeval start;
   struct timeval end;
   double start_t, end_t, t_diff;
   gettimeofday(&start,NULL);
-  trajectory_pts_ = ublas::prod(transform, trajectory_pts_);
+
+  transformTrajects(global_pose.x, global_pose.y, global_pose.yaw);
+
   gettimeofday(&end,NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
   fprintf(stderr, "Matrix Time: %.3f\n", t_diff);
 
-  //next transform theta
-  ublas::matrix<double> unit_vec_robot(4, 1);
-  unit_vec_robot(0, 0) = 1.0;
-  unit_vec_robot(1, 0) = 0.0;
-  unit_vec_robot(2, 0) = 0.0;
-  unit_vec_robot(3, 0) = 1.0;
+}
 
-  ublas::matrix<double> unit_vec_map;
-  unit_vec_map = ublas::prod(transform, unit_vec_robot);
-  
-  //compute the angle between the two vectors
-  double angle = atan2(unit_vec_map(0, 0) - unit_vec_robot(0, 0),
-      unit_vec_map(1, 0) - unit_vec_robot(1,0));
+void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i){
+  double cos_th = cos(th_i);
+  double sin_th = sin(th_i);
+  printf("th: %.2f, cos: %.2f, sin: %.2f\n", th_i, cos_th, sin_th);
 
-  //add the angle to theta values to apply the rotation
-  for(unsigned int i = 0; i < trajectory_theta_.size1(); ++i){
-    trajectory_theta_(i, 0) += angle;
+  double new_x, new_y, old_x, old_y;
+  for(unsigned int i = 0; i < trajectory_pts_.size2(); ++i){
+    //printf("BEFORE x: %.2f, y: %.2f, theta: %.2f \n", trajectory_pts_(0, i), trajectory_pts_(1, i), trajectory_theta_(0, i));
+    old_x = trajectory_pts_(0, i);
+    old_y = trajectory_pts_(1, i);
+    new_x = x_i + old_x * cos_th - old_y * sin_th;
+    new_y = y_i + old_x * sin_th + old_y * cos_th;
+    trajectory_pts_(0, i) = new_x;
+    trajectory_pts_(1, i) = new_y;
+    trajectory_theta_(0, i) += th_i;
+    //printf("AFTER x: %.2f, y: %.2f, theta: %.2f \n", trajectory_pts_(0, i), trajectory_pts_(1, i), trajectory_theta_(0, i));
   }
-
 }
 
 //create the trajectories we wish to score
@@ -472,7 +472,7 @@ libTF::TFPose2D TrajectoryController::getDriveVelocities(Trajectory t){
   tVel.x = t.xv_;
   tVel.y = t.yv_;
   tVel.yaw = t.thetav_;
-  tVel.frame = "FRAMEID_ROBOT";
+  tVel.frame = "base";
   tVel.time = 0;
   return tVel;
 }
