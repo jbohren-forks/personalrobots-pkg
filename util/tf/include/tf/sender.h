@@ -36,6 +36,8 @@
 #include "ros/node.h"
 #include "tf/tf.h"
 #include "tf/tfMessage.h"
+///\todo only for backwards compatabilty, remove!
+#include "rosTF/TransformArray.h"
 
 namespace tf
 {
@@ -56,6 +58,25 @@ public:
     message.parent = parent_id;
     TransformTFToMsg(transform.data_, message.transform);
     node_.publish("/tfMessage", message);
+
+    ///\todo only for backwards compatabilty, remove!
+    rosTF::TransformArray tfArray;
+    tfArray.set_quaternions_size(1);
+
+    tfArray.quaternions[0].header.frame_id = transform.frame_id_;
+    tfArray.quaternions[0].parent = parent_id;
+    Quaternion q = transform.data_.getRotation();
+    tfArray.quaternions[0].xt = transform.data_.getOrigin().x();
+    tfArray.quaternions[0].yt = transform.data_.getOrigin().y();
+    tfArray.quaternions[0].zt = transform.data_.getOrigin().z();
+    tfArray.quaternions[0].xr = q.x();
+    tfArray.quaternions[0].yr = q.y();
+    tfArray.quaternions[0].zr = q.z();
+    tfArray.quaternions[0].w = q.w();
+    tfArray.quaternions[0].header.stamp = ros::Time(transform.stamp_);
+
+    node_.publish("TransformArray", tfArray);
+
   } 
   
   void sendTransform(const Transform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
@@ -66,6 +87,24 @@ public:
     message.parent = parent_id;
     TransformTFToMsg(transform, message.transform);
     node_.publish("/tfMessage", message);
+
+    ///\todo only for backwards compatabilty, remove!
+    rosTF::TransformArray tfArray;
+    tfArray.set_quaternions_size(1);
+
+    tfArray.quaternions[0].header.frame_id = frame_id;
+    tfArray.quaternions[0].parent = parent_id;
+    Quaternion q = transform.getRotation();
+    tfArray.quaternions[0].xt = transform.getOrigin().x();
+    tfArray.quaternions[0].yt = transform.getOrigin().y();
+    tfArray.quaternions[0].zt = transform.getOrigin().z();
+    tfArray.quaternions[0].xr = q.x();
+    tfArray.quaternions[0].yr = q.y();
+    tfArray.quaternions[0].zr = q.z();
+    tfArray.quaternions[0].w = q.w();
+    tfArray.quaternions[0].header.stamp = ros::Time(time);
+
+    node_.publish("TransformArray", tfArray);
   }
   
 private:
