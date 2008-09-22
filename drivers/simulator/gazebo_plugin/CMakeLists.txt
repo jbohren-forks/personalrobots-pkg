@@ -14,6 +14,7 @@ rospack_add_library(Ros_Block_Laser src/Ros_Block_Laser.cc)
 rospack_add_library(Ros_Time src/Ros_Time.cc)
 rospack_add_library(Ros_PTZ src/Ros_PTZ.cc)
 rospack_add_library(P3D src/P3D.cc)
+rospack_add_library(F3D src/F3D.cc)
 rospack_add_library(gazebo_actuators src/gazebo_actuators.cpp)
 
 # This target requires adding player to the manifest.xml.

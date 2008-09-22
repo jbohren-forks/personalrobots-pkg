@@ -21,12 +21,12 @@ add_custom_target(pr2_gazebo_model ALL
 add_custom_target(pr2_gazebo_model_headless ALL
 		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/gazebo/pr2_gazebo_actuators_headless.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_headless.model
 		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Test Actuators")
+		  COMMENT "Building Gazebo model for PR2 Gazebo Actuators")
 
 add_custom_target(pr2_gazebo_model_nolimit ALL
 		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2/gazebo/pr2_gazebo_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit.model 1
 		  DEPENDS urdf2gazebo
-		  COMMENT "Building Gazebo model for PR2 Test Actuators with no limits")
+		  COMMENT "Building Gazebo model for PR2 Gazebo Actuators with no limits")
 
 #pr2_arm
 add_custom_target(pr2d2 ALL

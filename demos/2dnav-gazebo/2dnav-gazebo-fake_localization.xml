@@ -1,4 +1,5 @@
 <launch>
+  <!--master auto="start"/-->
   <group name="wg">
     <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />

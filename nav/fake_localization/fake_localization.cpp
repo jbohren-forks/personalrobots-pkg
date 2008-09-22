@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_gazebo_ground_truth"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -73,6 +73,7 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/TransformWithRateStamped.h>
 #include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
@@ -99,7 +100,7 @@ public:
 
 	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 	
-	subscribe("base_pose_gazebo_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
+	subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
 	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
@@ -116,7 +117,7 @@ private:
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     
-    std_msgs::Pose3DStamped m_basePosMsg;
+    std_msgs::TransformWithRateStamped m_basePosMsg;
     std_msgs::ParticleCloud2D      m_particleCloud;
     std_msgs::RobotBase2DOdom      m_currentPos;
     std_msgs::Pose2DFloat32        m_iniPos;
@@ -141,11 +142,23 @@ private:
 
   //since the msg uses Quaternion use libTF to get yaw
   libTF::Pose3D pose;
-  pose.setFromMessage(m_basePosMsg.pose3D);
+
+  // FIXME: temp work around during libtf upgrade transition
+  std_msgs::Pose3DStamped messagePose3D;
+  messagePose3D.header               = m_basePosMsg.header;
+  messagePose3D.pose3D.position.x    = m_basePosMsg.transform.translation.x;
+  messagePose3D.pose3D.position.y    = m_basePosMsg.transform.translation.y;
+  messagePose3D.pose3D.position.z    = m_basePosMsg.transform.translation.z;
+  messagePose3D.pose3D.orientation.x = m_basePosMsg.transform.rotation.x;
+  messagePose3D.pose3D.orientation.y = m_basePosMsg.transform.rotation.y;
+  messagePose3D.pose3D.orientation.z = m_basePosMsg.transform.rotation.z;
+  messagePose3D.pose3D.orientation.w = m_basePosMsg.transform.rotation.w;
+
+  pose.setFromMessage(messagePose3D.pose3D);
 	
 	m_currentPos.header = m_basePosMsg.header;	
-	m_currentPos.pos.x  = m_basePosMsg.pose3D.position.x;
-	m_currentPos.pos.y  = m_basePosMsg.pose3D.position.y;
+	m_currentPos.pos.x  = m_basePosMsg.transform.translation.x;
+	m_currentPos.pos.y  = m_basePosMsg.transform.translation.y;
 	m_currentPos.pos.th = pose.getEuler().yaw;
 
 	m_currentPos.pos.x += m_iniPos.x;

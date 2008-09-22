@@ -85,7 +85,8 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
-#include <std_msgs/Pose3DStamped.h>
+#include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/Pose3D.h>
 #include <std_msgs/BaseVel.h>
 
 #include "rosTF/rosTF.h"
@@ -100,7 +101,7 @@ class StageNode : public ros::node
     std_msgs::BaseVel velMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::RobotBase2DOdom odomMsg;
-    std_msgs::Pose3DStamped groundTruthMsg;
+    std_msgs::TransformWithRateStamped groundTruthMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -206,7 +207,7 @@ StageNode::SubscribeModels()
 
   advertise<std_msgs::LaserScan>("scan",10);
   advertise<std_msgs::RobotBase2DOdom>("odom",10);
-  advertise<std_msgs::Pose3DStamped>("base_pose_ground_truth",10);
+  advertise<std_msgs::TransformWithRateStamped>("base_pose_ground_truth",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
@@ -295,7 +296,17 @@ StageNode::Update()
   // Note that we correct for Stage's screwed-up coord system.
   pose.setFromEuler(gpose.y, -gpose.x, 0.0, 
                     Stg::normalize(gpose.a-M_PI/2.0), 0.0, 0.0);
-  this->groundTruthMsg.pose3D = pose.getMessage();
+
+  // FIXME: temp work around during libtf upgrade transition
+  std_msgs::Pose3D tmpPose3D = pose.getMessage();
+  this->groundTruthMsg.transform.translation.x = tmpPose3D.position.x;
+  this->groundTruthMsg.transform.translation.y = tmpPose3D.position.y;
+  this->groundTruthMsg.transform.translation.z = tmpPose3D.position.z;
+  this->groundTruthMsg.transform.rotation.x    = tmpPose3D.orientation.x;
+  this->groundTruthMsg.transform.rotation.y    = tmpPose3D.orientation.y;
+  this->groundTruthMsg.transform.rotation.z    = tmpPose3D.orientation.z;
+  this->groundTruthMsg.transform.rotation.w    = tmpPose3D.orientation.w;
+
   this->groundTruthMsg.header.frame_id = "odom";
   this->groundTruthMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
 

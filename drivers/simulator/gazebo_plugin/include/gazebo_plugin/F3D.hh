@@ -24,15 +24,15 @@
  * Date: 10 June 2008
  * SVN: $Id$
  */
-#ifndef P3D_HH
-#define P3D_HH
+#ifndef F3D_HH
+#define F3D_HH
 
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
 
 #include <ros/node.h>
 #include <std_msgs/Pose3DStamped.h>
-#include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/Vector3Stamped.h>
 
 namespace gazebo
 {
@@ -40,28 +40,28 @@ namespace gazebo
 
 /// \addtogroup gazebo_controller
    /// \{
-   /** \defgroup p3D p3D
+   /** \defgroup F3D f3D
 
-   \brief P3D controller.
+   \brief F3D controller.
 
    \verbatim
-   <controller:P3D name="controller-name">
+   <controller:F3D name="controller-name">
    <interface:actarray name="iface-name"/>
-   </controller:P3D>
+   </controller:F3D>
    \endverbatim
   
    \{
    */
 
-   /// \brief P3D controller
+   /// \brief F3D controller
    /// This is a controller that simulates a 6 dof position sensor
-   class P3D : public Controller
+   class F3D : public Controller
    {
          /// Constructor
-      public: P3D(Entity *parent );
+      public: F3D(Entity *parent );
 
          /// Destructor
-      public: virtual ~P3D();
+      public: virtual ~F3D();
 
          /// Load the controller
               /// \param node XML config node
@@ -95,18 +95,13 @@ namespace gazebo
       private: ros::node *rosnode;
 
       // ros message
-      private: std_msgs::TransformWithRateStamped transformMsg;
+      private: std_msgs::Vector3Stamped vector3Msg;
 
       // topic name
       private: std::string topicName;
 
-      // frame transform name, should match link name
-      // FIXME: extract link name directly?
+      // frame transform name, should match link name "map"
       private: std::string frameName;
-
-      // allow specifying constant xyz and rpy offsets
-      private: Vector3 xyzOffsets;
-      private: Vector3 rpyOffsets;
 
       // A mutex to lock access to fields that are used in message callbacks
       private: ros::thread::mutex lock;

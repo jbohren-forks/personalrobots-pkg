@@ -50,19 +50,19 @@
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>100.0</updateRate>
+    <updateRate>1000.0</updateRate>
     <bodyName>gripper_roll_right</bodyName>
     <topicName>gripper_roll_right_pose_ground_truth</topicName>
-    <frameName>gripper_roll_right_frame</frameName>
+    <frameName>map</frameName>
     <interface:position name="p3d_right_wrist_position"/>
   </controller:P3D>
 
   <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>100.0</updateRate>
+    <updateRate>1000.0</updateRate>
     <bodyName>gripper_roll_left</bodyName>
     <topicName>gripper_roll_left_pose_ground_truth</topicName>
-    <frameName>gripper_roll_left_frame</frameName>
+    <frameName>map</frameName>
     <interface:position name="p3d_left_wrist_position"/>
   </controller:P3D>
 
@@ -71,12 +71,47 @@
     <updateRate>1000.0</updateRate>
     <bodyName>base</bodyName>
     <topicName>base_pose_ground_truth</topicName>
-    <frameName>base_frame</frameName>
+    <frameName>map</frameName>
     <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
     <rpyOffsets>0 0 0</rpyOffsets>
     <interface:position name="p3d_base_position"/>
   </controller:P3D>
 
+  <controller:F3D name="f3d_finger_tip_l_left_controller" plugin="libF3D.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+    <bodyName>finger_tip_l_left</bodyName>
+    <topicName>finger_tip_l_left_ground_truth</topicName>
+    <frameName>map</frameName>
+    <interface:position name="f3d_finger_tip_l_left_position"/>
+  </controller:F3D>
+
+  <controller:F3D name="f3d_finger_tip_r_left_controller" plugin="libF3D.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+    <bodyName>finger_tip_r_left</bodyName>
+    <topicName>finger_tip_r_left_ground_truth</topicName>
+    <frameName>map</frameName>
+    <interface:position name="f3d_finger_tip_r_left_position"/>
+  </controller:F3D>
+
+  <controller:F3D name="f3d_finger_tip_l_right_controller" plugin="libF3D.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+    <bodyName>finger_tip_l_right</bodyName>
+    <topicName>finger_tip_l_right_ground_truth</topicName>
+    <frameName>map</frameName>
+    <interface:position name="f3d_finger_tip_l_right_position"/>
+  </controller:F3D>
+
+  <controller:F3D name="f3d_finger_tip_r_right_controller" plugin="libF3D.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+    <bodyName>finger_tip_r_right</bodyName>
+    <topicName>finger_tip_r_right_ground_truth</topicName>
+    <frameName>map</frameName>
+    <interface:position name="f3d_finger_tip_r_right_position"/>
+  </controller:F3D>
 
   </verbatim>
 </map>

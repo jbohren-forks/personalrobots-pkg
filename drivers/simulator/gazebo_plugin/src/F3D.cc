@@ -35,22 +35,22 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-#include <gazebo_plugin/P3D.hh>
+#include <gazebo_plugin/F3D.hh>
 
 using namespace gazebo;
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("P3D", P3D);
+GZ_REGISTER_DYNAMIC_CONTROLLER("F3D", F3D);
 
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-P3D::P3D(Entity *parent )
+F3D::F3D(Entity *parent )
    : Controller(parent)
 {
    this->myParent = dynamic_cast<Model*>(this->parent);
 
    if (!this->myParent)
-      gzthrow("P3D controller requires a Model as its parent");
+      gzthrow("F3D controller requires a Model as its parent");
 
   rosnode = ros::g_node; // comes from where?
   int argc = 0;
@@ -60,24 +60,24 @@ P3D::P3D(Entity *parent )
     // this only works for a single camera.
     ros::init(argc,argv);
     rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
-    printf("-------------------- starting node in P3D \n");
+    printf("-------------------- starting node in F3D \n");
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-P3D::~P3D()
+F3D::~F3D()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void P3D::LoadChild(XMLConfigNode *node)
+void F3D::LoadChild(XMLConfigNode *node)
 {
    this->myIface = dynamic_cast<PositionIface*>(this->ifaces[0]);
 
    if (!this->myIface)
-      gzthrow("P3D controller requires a Actarray Iface");
+      gzthrow("F3D controller requires a Actarray Iface");
 
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
@@ -85,78 +85,55 @@ void P3D::LoadChild(XMLConfigNode *node)
 
   this->topicName = node->GetString("topicName", "", 1);
   this->frameName = node->GetString("frameName", "", 1);
-  this->xyzOffsets  = node->GetVector3("xyzOffsets", Vector3(0,0,0));
-  this->rpyOffsets  = node->GetVector3("rpyOffsets", Vector3(0,0,0));
 
-  std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName);
+  std::cout << "==== topic name for F3D ======== " << this->topicName << std::endl;
+  rosnode->advertise<std_msgs::Vector3Stamped>(this->topicName);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void P3D::InitChild()
+void F3D::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void P3D::UpdateChild()
+void F3D::UpdateChild()
 {
-  Quatern rot;
-  Vector3 pos;
+  Vector3 torque;
+  Vector3 force;
 
-  // apply xyz offsets
-  pos = this->myBody->GetPosition() + this->xyzOffsets;
+  // get force on body
+  force = this->myBody->GetForce();
 
-  // apply rpy offsets
-  Vector3 rpyTotal;
-  rot = this->myBody->GetRotation();
-  rpyTotal.x = this->rpyOffsets.x + rot.GetRoll();
-  rpyTotal.y = this->rpyOffsets.y + rot.GetPitch();
-  rpyTotal.z = this->rpyOffsets.z + rot.GetYaw();
-  rot.SetFromEuler(rpyTotal);
+  // get torque on body
+  torque = this->myBody->GetTorque();
 
   this->myIface->Lock(1);
   this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
   
-  this->myIface->data->pose.pos.x = pos.x;
-  this->myIface->data->pose.pos.y = pos.y;
-  this->myIface->data->pose.pos.z = pos.z;
+  this->myIface->data->pose.pos.x = force.x;
+  this->myIface->data->pose.pos.y = force.y;
+  this->myIface->data->pose.pos.z = force.z;
 
-  this->myIface->data->pose.roll  = rot.GetRoll();
-  this->myIface->data->pose.pitch = rot.GetPitch();
-  this->myIface->data->pose.yaw   = rot.GetYaw();
+  this->myIface->data->pose.roll  = torque.x;
+  this->myIface->data->pose.pitch = torque.y;
+  this->myIface->data->pose.yaw   = torque.z;
 
-  // get Rates
-  Vector3 vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
-  Quatern vrot = this->myBody->GetRotationRate(); // get velocity in gazebo frame
-
+  //FIXME:  toque not published, need new message type of new topic name for torque
+  //FIXME:  use name space of body id (link name)?
   this->lock.lock();
   // copy data into pose message
-  this->transformMsg.header.frame_id = this->frameName;
-  this->transformMsg.header.stamp.sec = (unsigned long)floor(this->myIface->data->head.time);
-  this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->myIface->data->head.time - this->transformMsg.header.stamp.sec) );
+  this->vector3Msg.header.frame_id = this->frameName;
+  this->vector3Msg.header.stamp.sec = (unsigned long)floor(this->myIface->data->head.time);
+  this->vector3Msg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->myIface->data->head.time - this->vector3Msg.header.stamp.sec) );
 
-  this->transformMsg.transform.translation.x    = pos.x;
-  this->transformMsg.transform.translation.y    = pos.y;
-  this->transformMsg.transform.translation.z    = pos.z;
-
-  this->transformMsg.transform.rotation.x       = rot.x;
-  this->transformMsg.transform.rotation.y       = rot.y;
-  this->transformMsg.transform.rotation.z       = rot.z;
-  this->transformMsg.transform.rotation.w       = rot.u;
-
-  this->transformMsg.rate.translation.x         = vpos.x;
-  this->transformMsg.rate.translation.y         = vpos.y;
-  this->transformMsg.rate.translation.z         = vpos.z;
-
-  this->transformMsg.rate.rotation.x            = vrot.x;
-  this->transformMsg.rate.rotation.y            = vrot.y;
-  this->transformMsg.rate.rotation.z            = vrot.z;
-  this->transformMsg.rate.rotation.w            = vrot.u;
+  this->vector3Msg.vector.x    = force.x;
+  this->vector3Msg.vector.y    = force.y;
+  this->vector3Msg.vector.z    = force.z;
 
   // publish to ros
-  rosnode->publish(this->topicName,this->transformMsg);
+  rosnode->publish(this->topicName,this->vector3Msg);
   this->lock.unlock();
 
   this->myIface->Unlock();
@@ -164,12 +141,12 @@ void P3D::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void P3D::FiniChild()
+void F3D::FiniChild()
 {
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
-    std::cout << "shutdown rosnode in P3D" << std::endl;
+    std::cout << "shutdown rosnode in F3D" << std::endl;
     //ros::fini();
     rosnode->shutdown();
     //delete rosnode;
