@@ -38,9 +38,11 @@ using namespace std;
 using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
-    double robot_front_radius, double robot_side_radius, double max_occ_dist, rosTFClient* tf)
+    double robot_front_radius, double robot_side_radius, double max_occ_dist, double pdist_scale, double gdist_scale,
+    double dfast_scale, double occdist_scale, rosTFClient* tf)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
-  robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), tf_(tf)
+  robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
+  pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), tf_(tf)
 {
   num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim;
   int total_pts = num_trajectories_ * num_steps_;
@@ -410,8 +412,9 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   //default to a trajectory that goes nowhere
   int best_index = -1;
 
+  double safe_radius = sqrt(robot_front_radius_ * robot_front_radius_ + robot_side_radius_ * robot_side_radius_);
   for(unsigned int i = 0; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(i, .40, .10, .40, .10);
+    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -428,7 +431,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale){
+double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale, double safe_radius){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
   double goal_dist = 0.0;
@@ -452,7 +455,7 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
     goal_dist += map_(cell_x, cell_y).goal_dist;
 
     //first we decide if we need to lay down the footprint of the robot
-    if(map_(cell_x, cell_y).occ_dist < 2 * robot_front_radius_ + max_occ_dist_){
+    if(map_(cell_x, cell_y).occ_dist < safe_radius){
       //if we do compute the obstacle cost for each cell in the footprint
       double footprint_cost = footprintCost(x, y, theta);
       if(footprint_cost < 0)
@@ -542,7 +545,7 @@ double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
 }
 
 double TrajectoryController::footprintCost(double x, double y, double theta){
-  double x_diff = robot_front_radius_ * cos(theta) + robot_side_radius_ * sin(theta);
+  double x_diff = robot_front_radius_ * cos(theta) - robot_side_radius_ * sin(theta);
   double y_diff = robot_front_radius_ * sin(theta) + robot_side_radius_ * cos(theta);
 
   double footprint_dist = 0.0;

@@ -62,10 +62,14 @@
 #define MAX_ACC_Y 1.0
 #define MAX_ACC_THETA 1.0
 #define SIM_TIME 3.0
-#define SIM_STEPS 25
+#define SIM_STEPS 30
 #define VEL_SAMPLES 25
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
+#define PDIST_SCALE .4
+#define GDIST_SCALE .1
+#define OCCDIST_SCALE .4
+#define DFAST_SCALE .1
 #define SAFE_DIST .005
 
 class GovernorNode: public ros::node
