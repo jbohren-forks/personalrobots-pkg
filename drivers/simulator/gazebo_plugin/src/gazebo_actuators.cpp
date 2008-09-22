@@ -99,12 +99,12 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
     if (jt!=joints_damping_map_.end())
     {
       joints_damping_.push_back(jt->second);
-      std::cout << "adding gazebo joint name (" << joint_name << ") with damping=" << jt->second << std::endl;
+      //std::cout << "adding gazebo joint name (" << joint_name << ") with damping=" << jt->second << std::endl;
     }
     else
     {
       joints_damping_.push_back(0); // no damping
-      std::cout << "adding gazebo joint name (" << joint_name << ") with no damping." << std::endl;
+      //std::cout << "adding gazebo joint name (" << joint_name << ") with no damping." << std::endl;
     }
   }
 
