@@ -342,6 +342,27 @@ std::string Transformer::allFramesAsString()
   return mstream.str();
 }
 
+std::vector<std::string> Transformer::getFrameStrings()
+{
+  std::vector< std::string>output;
+  frame_mutex_.lock();
+
+  TransformStorage temp;
+
+  //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (unsigned int counter = 1; counter < frames_.size(); counter ++)
+  {
+    try{
+      getFrame(counter)->getData(0, temp);
+    }
+    catch (tf::LookupException& ex)
+    {
+    }
+    output.push_back(frameIDs_reverse[counter]);
+  }
+  frame_mutex_.unlock();
+  return output;
+}
 
 tf::TimeCache* Transformer::getFrame(unsigned int frame_id) 
 {

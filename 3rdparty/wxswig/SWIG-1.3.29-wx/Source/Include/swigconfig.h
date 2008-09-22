@@ -68,7 +68,7 @@
 #define SWIG_CXX "g++"
 
 /* Directory for SWIG system-independent libraries */
-#define SWIG_LIB "/u/jfaust/ros/ros-pkg/3rdparty/wxswig/share/swig/1.3.29"
+#define SWIG_LIB "/u/tfoote/pkg-ros/3rdparty/wxswig/share/swig/1.3.29"
 
 /* Platform that SWIG is built for */
 #define SWIG_PLATFORM "i686-pc-linux-gnu"

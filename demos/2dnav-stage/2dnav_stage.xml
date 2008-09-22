@@ -1,11 +1,11 @@
 <launch>
 
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false" />
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.pgm 0.1" respawn="false" />
-    <node pkg="amcl_player" type="amcl_player" respawn="false" />
-    <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
-    <node pkg="nav_view" type="nav_view" respawn="true"/>
+    <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false" output="screen"/>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.pgm 0.1" respawn="false" output="screen"/>
+    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen"/>
+    <node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen" />
+    <node pkg="nav_view" type="nav_view" respawn="true" output="screen"/>
   </group>
 </launch>
 
