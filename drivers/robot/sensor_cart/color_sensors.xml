@@ -22,7 +22,7 @@
   <param name="videre/frameid_cloud" type="str" value="FRAMEID_STEREO_BLOCK"/>
 
 
-  <node pkg="hokuyourg_player" type="hokuyourg_player" respawn="false"/>
+  <node pkg="hokuyourg_node" type="hokuyourg_node" respawn="false"/>
   <node pkg="etherdrive_old" type="etherdrive" respawn="false"/>
   <node pkg="tilting_laser" type="tilting_laser" respawn="false">
     <remap from="mot" to="mot0"/>
