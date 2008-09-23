@@ -12,7 +12,7 @@
     <alwaysOn>true</alwaysOn>
     <updateRate>100.0</updateRate>
 
-    <robot filename="pr2_gazebo_actuators.xml" />
+    <robot filename="pr2.xml" /> <!-- gazebo_actuators use this file to extract mechanism model -->
 
     <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs -->
 
