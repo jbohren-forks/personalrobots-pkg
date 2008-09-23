@@ -4,10 +4,10 @@
           <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="shoulder_pitch_right_joint" >
-          <explicitDampingCoefficient>500.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>50.0</explicitDampingCoefficient>
       </joint>
       <joint name="upperarm_roll_right_joint" >
-          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
       </joint>
       <joint name="elbow_flex_right_joint" >
           <explicitDampingCoefficient>10.0</explicitDampingCoefficient>

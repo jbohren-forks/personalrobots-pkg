@@ -139,11 +139,6 @@
     </geometry>
   </const_block> 
   
-  <const_block name="pr2_shoulder_pitch_joint">
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-  </const_block>
   
   <const_block name="pr2_shoulder_pitch_inertial">
     <mass value="2.41223" />
@@ -170,15 +165,10 @@
     </geometry>
   </const_block> 
   
-  <const_block name="pr2_upperarm_roll_joint">
-    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-  </const_block>
-  
   <const_block name="pr2_upperarm_roll_inertial">
     <mass value="4.9481" />
     <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
-    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+    <inertia  ixx="0.01" ixy="0.000547745916"  ixz="0.000119476885"  iyy="0.01"  iyz="0.001544932307"  izz="0.01" />
   </const_block> 
   
   <const_block name="pr2_upperarm_roll_collision">
@@ -199,10 +189,6 @@
       <mesh filename="upperarm_roll" />
     </geometry>
   </const_block> 
-  
-  <const_block name="pr2_elbow_joint">
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-  </const_block>
   
   <const_block name="pr2_elbow_inertial">
     <mass value="1.689246" />
@@ -229,13 +215,46 @@
     </geometry>
   </const_block> 
   
+  <const_block name="pr2_forearm_roll_inertial">
+    <mass value="1.804155" />
+    <com xyz=" 0.179474 -0.000058  0.013779 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now-->
+    <inertia  ixx="10.0" ixy="-0.000003671102" ixz="0.000029379389"  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+  </const_block> 
+  
+  <const_block name="pr2_forearm_roll_collision">
+    <origin xyz="forearm_roll_center_box_center_offset_x 0 0 " rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <geometry name="pr2_forearm_roll_collision_geom">
+      <box size="forearm_roll_size_x forearm_roll_size_y forearm_roll_size_z " />
+    </geometry>
+  </const_block> 
+  
+  <const_block name="pr2_forearm_roll_visual">
+    <origin xyz="0 0 0 " rpy=" 0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
+    <map name="gazebo_material" flag="gazebo">
+      <elem key="material">Gazebo/Blue</elem>
+    </map>
+    <geometry name="pr2_forearm_roll_mesh_file">
+      <mesh filename="forearm_roll" />
+    </geometry>
+  </const_block> 
   
   <!-- End template definitions for ease of reuse -->
+  <joint name="forearm_roll_right_joint" type="revolute" >
+    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration reference_position="0" values="1.5 -1"/>
+    <limit effort="10" velocity="0" min="-3.14" max="3.14"/>
+    <!-- safety code -->
+    <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+    <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+  </joint>
   
   <joint name="elbow_right_joint" type="revolute" >
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <insert_const_block name="pr2_elbow_joint"/>
-    <calibration reference_position="0" values="1.5 1.0"/>
+    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration reference_position="0" values="1.5 -1"/>
     <limit effort="10" velocity="0" min="0" max="2.3"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
@@ -243,17 +262,18 @@
   </joint>
   
   <joint name="upperarm_roll_right_joint" type="revolute" >
-    <insert_const_block name="pr2_upperarm_roll_joint"/>
-    <calibration reference_position="0" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-    <limit effort="10" velocity="0" min="-2.2" max="2.2"/>
+    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration reference_position="0" values="1.5 -1 "/>
+    <limit effort="10" velocity="0" min="-2.5" max="2.5"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
-    <safety_limit spring_constant_min="200.0" safety_length_min="0.2" damping_constant_min="0.1" spring_constant_max="200.0" safety_length_max="0.2" damping_constant_max="0.1"/>
     <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
   </joint>
   <joint name="shoulder_pitch_right_joint" type="revolute" >
-    <insert_const_block name="pr2_shoulder_pitch_joint"/>
-    <calibration reference_position="0.9" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <calibration reference_position="0.9" values="1.5 -1 "/>
     <limit effort="10" velocity="0" min="-0.4" max="1.5"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
@@ -262,8 +282,8 @@
   <joint name="shoulder_pan_right_joint" type="revolute" >
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <calibration reference_position="-0.7" values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
 
+    <calibration reference_position="-0.7" values="1.5 -1 " />
     <limit effort="10" velocity="0" min="-2" max="0.9"/>
     <!-- safety code -->
     <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
@@ -290,17 +310,17 @@
     <inertial>
       <mass value="1000" />
       <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
-      <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
+      <inertia ixx="10000"  ixy="0"  ixz="0" iyy="10000" iyz="0" izz="10000" />
     </inertial> 
     
     <visual>
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Green</elem>
+        <elem key="material">Gazebo/Red</elem>
       </map>
       <geometry name="pr2_base_mesh_file">
-        <mesh size="0.1 0.1 0.1" />
+        <mesh scale="1 1 0.01" />
       </geometry>
     </visual> 
     
@@ -308,7 +328,7 @@
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
-        <box size="0.1 0.1 0.1" />
+        <box size="1 1 0.01" />
       </geometry>
     </collision>
     
@@ -336,7 +356,7 @@
   
   
   <link name="shoulder_pitch_right"><!-- link specifying the shoulder of the robot -->
-    <parent name="shoulder_pan_right" />
+    <parent name=" shoulder_pan_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
@@ -357,7 +377,7 @@
   
   
   <link name="upperarm_roll_right"><!-- link specifying the shoulder of the robot -->
-    <parent name="shoulder_pitch_right" />
+    <parent name=" shoulder_pitch_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
@@ -377,17 +397,16 @@
   </link>
   
   <link name="elbow_right"><!-- link specifying the shoulder of the robot -->
-    <parent name="upperarm_roll_right" />
+    <parent name=" upperarm_roll_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <!-- <origin xyz="upperarm_roll_elbow_offset_x 0 0" rpy=" 0 0 0 " />-->
-    <origin xyz="0.4 0 0" rpy="0 0 0" />
+    <origin xyz=" upperarm_roll_elbow_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="elbow_right_joint" />
     <inertial >
       <insert_const_block name="pr2_elbow_inertial"/>
     </inertial>
     <visual >
-      <insert_const_block name="pr2_upperarm_roll_visual"/>
+      <insert_const_block name="pr2_elbow_visual"/>
     </visual>
     <collision >
       <insert_const_block name="pr2_elbow_collision"/>
@@ -397,6 +416,41 @@
     </map>
   </link>
 
+  <link name="forearm_roll_right">
+    <parent name=" elbow_right" />
+    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
+    <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    
+    <joint name="forearm_roll_right_joint" />
+    <inertial >
+      <insert_const_block name="pr2_forearm_roll_inertial"/>
+    </inertial>
+    <visual >
+      <insert_const_block name="pr2_forearm_roll_visual"/>
+    </visual>
+    <collision >
+      <insert_const_block name="pr2_forearm_roll_collision"/>
+    </collision>
+    <map name="pr2_forearm_roll_right_gravity" flag="gazebo">
+      <elem key="turnGravityOff">true</elem>
+    </map>
+  </link>
+  
+  <actuator name="shoulder_pan_right_act">
+  </actuator>
+  
+  <actuator name="elbow_right_act">
+  </actuator>
+  
+  <actuator name="upperarm_roll_right_act">
+  </actuator>
+  
+  <actuator name="shoulder_lift_right_act">
+  </actuator>
+
+  <actuator name="upperarm_roll_right_act">
+  </actuator>
+  
   <transmission type="SimpleTransmission" name="shoulder_pan_right_trans">
     <actuator name="shoulder_pan_right_act" />
     <joint name="shoulder_pan_right_joint" />
@@ -429,11 +483,20 @@
     <pulsesPerRevolution>1200</pulsesPerRevolution>
   </transmission>
   
+  <transmission type="SimpleTransmission" name="forearm_roll_left_trans">
+    <actuator name="forearm_roll_left_motor" />
+    <joint name="forearm_roll_left_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+
   <group name="right_arm" flags="planning kinematic">
     shoulder_pan_right
     shoulder_pitch_right
     upperarm_roll_right
     elbow_right
+    forearm_roll_right
     
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -454,27 +517,26 @@
     shoulder_pitch_right
     upperarm_roll_right
     elbow_right    
+    forearm_roll_right
   </group>
-  <!--
-  <controller name="elbow_controller" topic="elbow_controller" type="JointEffortControllerNode">
-    <joint name="elbow_right_joint">
-    </joint>
-  </controller>
-  <controller name="upperarm_controller" topic="upperarm_controller" type="JointEffortControllerNode">
+  
+<map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
-    <joint name="upperarm_roll_right_joint">
-    </joint>
-  </controller>
-  
-    <controller name="shoulder_lift_controller" topic="shoulder_lift_controller" type="JointEffortControllerNode">
-    <joint name="shoulder_pitch_right_joint">
-    </joint>
-  </controller>
-  
-    <controller name="shoulder_pan_controller" topic="shoulder_pan_controller" type="JointEffortControllerNode">
-    <joint name="shoulder_pan_right_joint">
-    </joint>
-  </controller>
-  
-  -->
+  <!-- PR2_ACTARRAY -->
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+
+    <robot filename="pr2d2.xml" />
+
+    <gazebo_physics filename="gazebo_joints_d2.xml" /> <!-- for simulator/physics specific settigs -->
+
+    <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
+
+  </verbatim>
+</map>
+
+
   </robot>
