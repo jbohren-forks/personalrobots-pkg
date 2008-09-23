@@ -120,6 +120,8 @@ public:
   std_msgs::ParticleCloud2D cloud;
   std_msgs::Planner2DGoal goal;
   std_msgs::Polyline2D pathline;
+  std_msgs::Polyline2D local_path;
+  std_msgs::Polyline2D robot_footprint;
   std_msgs::Polyline2D laserscan;
   std_msgs::Pose2DFloat32 initialpose;
   pr2_msgs::OccDiff occ_diff_;
@@ -149,6 +151,8 @@ public:
     advertise<std_msgs::Pose2DFloat32>("initialpose");
     subscribe("particlecloud", cloud, &NavView::generic_cb);
     subscribe("gui_path", pathline, &NavView::generic_cb);
+    subscribe("local_path", local_path, &NavView::generic_cb);
+    subscribe("robot_footprint", robot_footprint, &NavView::generic_cb);
     if(n_val_ == 0) {
       subscribe("gui_laser", laserscan, &NavView::generic_cb);
     } else {
@@ -402,6 +406,23 @@ NavView::render()
     glVertex2f(pathline.points[i].x,pathline.points[i].y);
   glEnd();
   pathline.unlock();
+
+  local_path.lock();
+  glColor3f(local_path.color.r,local_path.color.g,local_path.color.b);
+  glBegin(GL_LINES);
+  for(unsigned int i=0;i<local_path.get_points_size();i++)
+    glVertex2f(local_path.points[i].x,local_path.points[i].y);
+  glEnd();
+  local_path.unlock();
+
+  robot_footprint.lock();
+  glColor3f(robot_footprint.color.r,robot_footprint.color.g,robot_footprint.color.b);
+  glBegin(GL_LINES);
+  for(unsigned int i=0;i<robot_footprint.get_points_size();i++)
+    glVertex2f(robot_footprint.points[i].x,robot_footprint.points[i].y);
+  glEnd();
+  robot_footprint.unlock();
+
 
   if(n_val_ == 0) {
     laserscan.lock();
