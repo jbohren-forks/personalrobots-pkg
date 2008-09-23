@@ -50,7 +50,12 @@ GovernorNode::GovernorNode() :
   robot_vel_.frame = "base";
   robot_vel_.time = 0.0;
 
-  advertise<std_msgs::Polyline2D>("local_path");
+  //so we can draw the local path
+  advertise<std_msgs::Polyline2D>("local_path", 10);
+
+  //so we can draw the robot footprint to help with debugging
+  advertise<std_msgs::Polyline2D>("robot_footprint", 10);
+
   advertise<std_msgs::BaseVel>("cmd_vel");
   subscribe("wavefront_plan", plan_msg_, &GovernorNode::planReceived, 1);
   subscribe("odom", odom_msg_, &GovernorNode::odomReceived, 1);
@@ -110,6 +115,7 @@ void GovernorNode::processPlan(){
   //give robot_vel_ back
   vel_lock.unlock();
 
+  libTF::TFPose2D drive_cmds;
   struct timeval start;
   struct timeval end;
   double start_t, end_t, t_diff;
@@ -117,7 +123,7 @@ void GovernorNode::processPlan(){
   map_lock.lock();
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
   gettimeofday(&start,NULL);
-  int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc);
+  int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc, drive_cmds);
   gettimeofday(&end,NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
@@ -128,39 +134,48 @@ void GovernorNode::processPlan(){
 
   printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.x, robot_vel.y, robot_vel.yaw);
 
-  if(path_index == -1){
-    cmd_vel_msg_.vx = 0.0;
-    cmd_vel_msg_.vy = 0.0;
-    cmd_vel_msg_.vw = 0.0;
-  }
-  else{
-
-    libTF::TFPose2D drive_cmds = tc_.getDriveVelocities(tc_.trajectories_[path_index]);
-
+  if(path_index >= 0){
     //let's print debug output to the screen
     path_msg.set_points_size(tc_.num_steps_);
     path_msg.color.r = 0;
     path_msg.color.g = 0;
     path_msg.color.b = 1.0;
     path_msg.color.a = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double th = 0.0;
     for(int i = 0; i < tc_.num_steps_; ++i){
       path_msg.points[i].x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
       path_msg.points[i].y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
+
+      //so we can draw the footprint on the map
+      if(i == 0){
+        x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
+        y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
+        th = tc_.trajectory_theta_(0, path_index * tc_.num_steps_ + i);
+      }
     }
     publish("local_path", path_msg);
     printf("path msg\n");
 
-    //drive the robot!
-    cmd_vel_msg_.vx = drive_cmds.x;
-    cmd_vel_msg_.vy = drive_cmds.y;
-    cmd_vel_msg_.vw = drive_cmds.yaw;
-
-    /*
-       cmd_vel_msg_.vx = 0.0;
-       cmd_vel_msg_.vy = 0.0;
-       cmd_vel_msg_.vw = 0.0;
-       */
+    vector<std_msgs::Point2DFloat32> footprint = tc_.drawFootprint(x, y, th);
+    //let's also draw the footprint of the robot for the last point on the selected trajectory
+    footprint_msg.set_points_size(footprint.size());
+    footprint_msg.color.r = 1.0;
+    footprint_msg.color.g = 0;
+    footprint_msg.color.b = 0;
+    footprint_msg.color.a = 0;
+    for(unsigned int i = 0; i < footprint.size(); ++i){
+      footprint_msg.points[i].x = footprint[i].x;
+      footprint_msg.points[i].y = footprint[i].y;
+    }
+    publish("robot_footprint", footprint_msg);
   }
+
+  //drive the robot!
+  cmd_vel_msg_.vx = drive_cmds.x;
+  cmd_vel_msg_.vy = drive_cmds.y;
+  cmd_vel_msg_.vw = drive_cmds.yaw;
 
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
   publish("cmd_vel", cmd_vel_msg_);

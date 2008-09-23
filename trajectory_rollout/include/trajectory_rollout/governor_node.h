@@ -121,6 +121,7 @@ class GovernorNode: public ros::node
 
     //for debugging output
     std_msgs::Polyline2D path_msg;
+    std_msgs::Polyline2D footprint_msg;
     
 
 };

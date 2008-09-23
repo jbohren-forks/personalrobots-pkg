@@ -349,7 +349,8 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 }
 
 //given the current state of the robot, find a good trajectory
-int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc){
+int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
+    libTF::TFPose2D global_acc, libTF::TFPose2D& drive_velocities){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
   //printf("Path distance computed\n");
@@ -369,6 +370,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   //default to a trajectory that goes nowhere
   int best_index = -1;
 
+  //create a cirle containing the robot so we don't always have to lay down a footprint
   double safe_radius = sqrt(robot_front_radius_ * robot_front_radius_ + robot_side_radius_ * robot_side_radius_);
 
   //we know that everything except the last 2 sets of trajectories are in the forward direction
@@ -386,8 +388,11 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
     }
   }
 
-  if(best_index >= 0)
+  //if we have a valid path... return
+  if(best_index >= 0){
+    drive_velocities = getDriveVelocities(best_index);
     return best_index;
+  }
 
   //the second to last set of trajectories is rotation only
   unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
@@ -404,8 +409,11 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
     }
   }
 
-  if(best_index >= 0)
+  //if we have a valid path... return
+  if(best_index >= 0){
+    drive_velocities = getDriveVelocities(best_index);
     return best_index;
+  }
 
   //the last set of trajectories is for moving backwards
   for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
@@ -422,6 +430,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   }
   //printf("Trajectories scored\n");
 
+  drive_velocities = getDriveVelocities(best_index);
   return best_index;
 }
 
@@ -458,15 +467,26 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
       occ_dist += footprint_cost;
     }
   }
-  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / (occ_dist + .05));
-  //double cost = goal_dist;
+  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
   
   return cost;
 }
 
 //given a trajectory in map space get the drive commands to send to the robot
-libTF::TFPose2D TrajectoryController::getDriveVelocities(Trajectory t){
+libTF::TFPose2D TrajectoryController::getDriveVelocities(int t_num){
   libTF::TFPose2D tVel;
+  //if no legal trajectory was found... stop the robot
+  if(t_num < 0){
+    tVel.x = 0.0;
+    tVel.y = 0.0;
+    tVel.yaw = 0.0;
+    tVel.frame = "base";
+    tVel.time = 0;
+    return tVel;
+  }
+
+  //otherwise return the velocity cmds
+  const Trajectory& t = trajectories_[t_num];
   tVel.x = t.xv_;
   tVel.y = t.yv_;
   tVel.yaw = t.thetav_;
@@ -541,20 +561,29 @@ double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
 }
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
-double TrajectoryController::footprintCost(double x, double y, double theta){
-  double x_diff = robot_front_radius_ * cos(theta) - robot_side_radius_ * sin(theta);
-  double y_diff = robot_front_radius_ * sin(theta) + robot_side_radius_ * cos(theta);
+double TrajectoryController::footprintCost(double x_i, double y_i, double theta_i){
+  double cos_th = cos(theta_i);
+  double sin_th = sin(theta_i);
 
   double footprint_dist = 0.0;
   double line_dist = -1.0;
 
   //upper right corner
-  int x0 = WX_MX(map_, x + x_diff);
-  int y0 = WY_MY(map_, y + y_diff);
+  double old_x = 0.0 + robot_front_radius_;
+  double old_y = 0.0 + robot_side_radius_;
+  double new_x = x_i + old_x * cos_th - old_y * sin_th;
+  double new_y = y_i + old_x * sin_th + old_y * cos_th;
+
+  int x0 = WX_MX(map_, new_x);
+  int y0 = WY_MY(map_, new_y);
 
   //lower right corner
-  int x1 = WX_MX(map_, x + x_diff);
-  int y1 = WY_MY(map_, y - y_diff);
+  old_x = 0.0 + robot_front_radius_;
+  old_y = 0.0 - robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x1 = WX_MX(map_, new_x);
+  int y1 = WY_MY(map_, new_y);
 
   if(!VALID_CELL(map_, x0, y0) || !VALID_CELL(map_, x1, y1))
     return -1.0;
@@ -567,8 +596,12 @@ double TrajectoryController::footprintCost(double x, double y, double theta){
   footprint_dist += line_dist;
 
   //lower left corner
-  int x2 = WX_MX(map_, x - x_diff);
-  int y2 = WY_MY(map_, y - y_diff);
+  old_x = 0.0 - robot_front_radius_;
+  old_y = 0.0 - robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x2 = WX_MX(map_, new_x);
+  int y2 = WY_MY(map_, new_y);
 
   if(!VALID_CELL(map_, x2, y2))
     return -1.0;
@@ -581,8 +614,12 @@ double TrajectoryController::footprintCost(double x, double y, double theta){
   footprint_dist += line_dist;
   
   //upper left corner
-  int x3 = WX_MX(map_, x - x_diff);
-  int y3 = WY_MY(map_, y + y_diff);
+  old_x = 0.0 - robot_front_radius_;
+  old_y = 0.0 + robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x3 = WX_MX(map_, new_x);
+  int y3 = WY_MY(map_, new_y);
 
   if(!VALID_CELL(map_, x3, y3))
     return -1.0;
@@ -602,4 +639,110 @@ double TrajectoryController::footprintCost(double x, double y, double theta){
   footprint_dist += line_dist;
 
   return footprint_dist;
+}
+
+void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_msgs::Point2DFloat32>& pts){
+  bool steep = abs(y1 - y0) > abs(x1 - x0);
+  if(steep){
+    swap(x0, y0);
+    swap(x1, y1);
+  }
+  if(x0 > x1){
+    swap(x0, x1);
+    swap(y0, y1);
+  }
+
+  int delta_x = x1 - x0;
+  int delta_y = abs(y1 - y0);
+  int error = delta_x / 2;
+  int ystep;
+  int y = y0;
+
+  std_msgs::Point2DFloat32 pt;
+  if(y0 < y1)
+    ystep = 1;
+  else
+    ystep = -1;
+
+  for(int x = x0; x <= x1; ++x){
+    if(steep){
+      pt.x = MX_WX(map_, y);
+      pt.y = MY_WY(map_, x);
+      pts.push_back(pt);
+    }
+    else{
+      pt.x = MX_WX(map_, x);
+      pt.y = MY_WY(map_, y);
+      pts.push_back(pt);
+    }
+
+    error = error - delta_y;
+    if(error < 0){
+      y += ystep;
+      error += delta_x;
+    }
+  }
+}
+
+//its nice to be able to draw a footprint for a particular point for debugging info
+vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i, double y_i, double theta_i){
+  vector<std_msgs::Point2DFloat32> footprint_pts;
+  Point2DFloat32 pt;
+  double cos_th = cos(theta_i);
+  double sin_th = sin(theta_i);
+
+  //upper right corner
+  double old_x = 0.0 + robot_front_radius_;
+  double old_y = 0.0 + robot_side_radius_;
+  double new_x = x_i + old_x * cos_th - old_y * sin_th;
+  double new_y = y_i + old_x * sin_th + old_y * cos_th;
+
+  int x0 = WX_MX(map_, new_x);
+  int y0 = WY_MY(map_, new_y);
+  pt.x = MX_WX(map_, x0);
+  pt.y = MY_WY(map_, y0);
+
+  //lower right corner
+  old_x = 0.0 + robot_front_radius_;
+  old_y = 0.0 - robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x1 = WX_MX(map_, new_x);
+  int y1 = WY_MY(map_, new_y);
+  pt.x = MX_WX(map_, x1);
+  pt.y = MY_WY(map_, y1);
+
+  //check the front line
+  drawLine(x0, x1, y0, y1, footprint_pts);
+
+  //lower left corner
+  old_x = 0.0 - robot_front_radius_;
+  old_y = 0.0 - robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x2 = WX_MX(map_, new_x);
+  int y2 = WY_MY(map_, new_y);
+  pt.x = MX_WX(map_, x2);
+  pt.y = MY_WY(map_, y2);
+
+  //check the right side line
+  drawLine(x1, x2, y1, y2, footprint_pts);
+  
+  //upper left corner
+  old_x = 0.0 - robot_front_radius_;
+  old_y = 0.0 + robot_side_radius_;
+  new_x = x_i + old_x * cos_th - old_y * sin_th;
+  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  int x3 = WX_MX(map_, new_x);
+  int y3 = WY_MY(map_, new_y);
+  pt.x = MX_WX(map_, x3);
+  pt.y = MY_WY(map_, y3);
+
+  //check the back line
+  drawLine(x2, x3, y2, y3, footprint_pts);
+
+  //check the left side line
+  drawLine(x3, x0, y3, y0, footprint_pts);
+
+  return footprint_pts;
 }
