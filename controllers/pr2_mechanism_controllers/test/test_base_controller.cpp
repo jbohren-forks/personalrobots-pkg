@@ -19,6 +19,15 @@ int main( int argc, char** argv )
   ros::init(argc,argv);
   ros::node *node = new ros::node("test_base_controller"); //Can be found by ros::node *ros::g_node for now.  Will eventually be superceded by ros::peer interface
 
+
+// Listen for base odom messages
+
+
+
+
+
+
+
   printf("robot file:: %s, controller file:: %s\n",argv[1],argv[2]);
   char *xml_robot_file = argv[1];
   TiXmlDocument xml(xml_robot_file);   // Load robot description

@@ -347,7 +347,7 @@ void BaseController::computeCasterSteer()
     }
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
 
-//    printf("Steering cmd: %d, %f, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i],error_steer);
+    //  printf("Steering cmd: %d, %f, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i],error_steer);
   }
 }
 
@@ -634,11 +634,21 @@ void BaseController::computeBaseVelocity()
   Matrix C(2*num_wheels_,3);
   Matrix D(3,1);
   double steer_angle;
+  double wheel_speed;
+  libTF::Vector caster_2d_velocity;
+  libTF::Vector wheel_caster_steer_component;
+
+  caster_2d_velocity.x = 0;
+  caster_2d_velocity.y = 0;
 
   for(int i = 0; i < num_wheels_; i++) {
+    caster_2d_velocity.z = base_wheels_[i].parent_->joint_state_->velocity_;
+    wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
+    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/wheel_radius_; 
+
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
-    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
-    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*(wheel_speed_actual_[i]);
+    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
+    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*wheel_speed;
   }
 
   for(int i = 0; i < num_wheels_; i++) {
