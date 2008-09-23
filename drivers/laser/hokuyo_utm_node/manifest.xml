@@ -1,10 +1,10 @@
 <package>
-  <description>A ROS node that uses the Player liburglaser_standalone library, which provides access to a wide range of Hokuyo URG lasers.</description>
+  <description>A ROS node to provide acess to the Hokuyo UTM-30LX laser.</description>
   <author>Brian P. Gerkey, Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="hokuyourg_driver" />
+  <depend package="hokuyo_utm_driver" />
   <depend package="self_test" />
   <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>
 </package>

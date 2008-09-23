@@ -1,0 +1,13 @@
+<package>
+  <description brief="A standalone hokuyo driver">
+    A standalone driver for the UTM-30LX pulled from player distribution and
+    modified heavily.  It is isolated in its own package since it must
+    be licensed under the LGPL.  Eventually this may be merged back
+    with player, at which point this package would likely be removed.
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>LGPL</license>
+  <export>
+    <cpp cflags="-I${prefix}" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lhokuyoutm"/>
+  </export>
+</package>
