@@ -274,8 +274,8 @@ void EthercatHardware::update()
   {
     if (slaves_[s]->has_actuator_)
     {
-      slaves_[s]->verifyState(current);
       slaves_[s]->convertState(hw_->actuators_[a]->state_, current, last);
+      slaves_[s]->verifyState(hw_->actuators_[a]->state_, current);
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       last += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       ++a;

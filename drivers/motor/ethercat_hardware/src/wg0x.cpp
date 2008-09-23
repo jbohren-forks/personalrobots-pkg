@@ -368,9 +368,25 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   state.motor_voltage_ = this_status->motor_voltage_ * config_info_.nominal_voltage_scale_;
 }
 
-void WG0X::verifyState(unsigned char *buffer)
+void WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
 {
 #if 0
+  if (voltage_offset_ == 0)
+  {
+    voltage_offset_ = state.motor_voltage_;
+    printf("setting voltage_offset to %f\n", voltage_offset_);
+  }
+  WG0XStatus *status = (WG0XStatus *)buffer;
+  double volt_est = 30.6 * double(status->programmed_pwm_value_) / 0x4000;
+  double volt_est2 = status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(status->programmed_pwm_value_) / 0x4000;
+  double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
+  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
+  double error = fabs(expected_voltage - (state.motor_voltage_ - voltage_offset_));
+  double error2 = fabs(expected_voltage - volt_est2);
+
+  printf("%20s: est: %f, est2: %f, supply: %f, err: %f\n", actuator_info_.name_, volt_est, volt_est2,  status->supply_voltage_ * config_info_.nominal_voltage_scale_, error2);
+  printf("%20s: exp: %10f, real: %10f, err: %10f, d: %f\n", actuator_info_.name_, expected_voltage, state.motor_voltage_ - voltage_offset_, error, fabs(error2-error));
+
   WG0XStatus status;
 
   memcpy(&status, buffer, sizeof(status));

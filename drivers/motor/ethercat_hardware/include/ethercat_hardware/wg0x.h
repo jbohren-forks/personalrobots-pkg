@@ -166,7 +166,7 @@ struct WG0XStatus
 {
   uint8_t mode_;
   uint8_t digital_out_;
-  uint16_t programmed_pwm_value_;
+  int16_t programmed_pwm_value_;
   int16_t programmed_current_;
   int16_t measured_current_;
   uint32_t timestamp_;
@@ -199,7 +199,7 @@ struct WG0XCommand
 class WG0X : public EthercatDevice
 {
 public:
-  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size) {}
+  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size) {voltage_offset_=0;}
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool);
@@ -210,7 +210,7 @@ public:
 
   void computeCurrent(ActuatorCommand &command);
   void truncateCurrent(ActuatorCommand &command);
-  void verifyState(unsigned char *buffer);
+  void verifyState(ActuatorState &state, unsigned char *buffer);
 
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
@@ -250,6 +250,7 @@ private:
   WG0XConfigInfo config_info_;
   WG0XActuatorInfo actuator_info_;
   static const int ACTUATOR_INFO_PAGE = 4095;
+  double voltage_offset_;
 };
 
 class WG05 : public WG0X
