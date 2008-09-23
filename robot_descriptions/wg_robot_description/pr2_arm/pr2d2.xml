@@ -300,7 +300,7 @@
   
   <link name="base"><!-- link specifying the base of the robot -->
     
-    <parent name=" world" />
+    <parent name="world" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" 0 0 0.05 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
@@ -356,7 +356,7 @@
   
   
   <link name="shoulder_pitch_right"><!-- link specifying the shoulder of the robot -->
-    <parent name=" shoulder_pan_right" />
+    <parent name="shoulder_pan_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
@@ -377,7 +377,7 @@
   
   
   <link name="upperarm_roll_right"><!-- link specifying the shoulder of the robot -->
-    <parent name=" shoulder_pitch_right" />
+    <parent name="shoulder_pitch_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
@@ -397,7 +397,7 @@
   </link>
   
   <link name="elbow_right"><!-- link specifying the shoulder of the robot -->
-    <parent name=" upperarm_roll_right" />
+    <parent name="upperarm_roll_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" upperarm_roll_elbow_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
@@ -417,7 +417,7 @@
   </link>
 
   <link name="forearm_roll_right">
-    <parent name=" elbow_right" />
+    <parent name="elbow_right" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
     <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
