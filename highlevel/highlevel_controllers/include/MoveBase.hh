@@ -43,12 +43,7 @@
 // Message structures used
 #include <std_msgs/Planner2DState.h>
 #include <std_msgs/Planner2DGoal.h>
-#include <std_msgs/BaseVel.h>
-#include <std_msgs/PointCloudFloat32.h>
 #include <std_msgs/LaserScan.h>
-#include <std_msgs/Pose2DFloat32.h>
-#include <std_msgs/Polyline2D.h>
-#include <std_srvs/StaticMap.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -63,17 +58,56 @@ public:
   /**
    * @brief Constructor
    */
-  MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ);
+  MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius);
 
   virtual ~MoveBase();
 
 protected:
 
+  /**
+   * @brief Accessor for the cost map. Use mainly for initialization
+   * of specialized map strunture for planning
+   */
+  const CostMap2D& getCostMap() const {return *costMap_;}
+
+  /**
+   * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
+   * cost map. This is called on a map update, which means it will be on a separate thread to the main
+   * node control loop
+   */
+  virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){}
+
+  /**
+   * @brief Aquire lock to enforce a mutex between the cost map update thread and the main node thread.
+   */
+  void lock();
+
+  /**
+   * @brief Release lock  enforcing a mutex between the cost map update thread and the main node thread.
+   */
+  void unlock();
+
+  void publishPlan();
+
+  std::vector< std::pair<unsigned int, unsigned int> > plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
 private:
+  /**
+   * @brief Use global pose to publish currrent state data at the start of each cycle
+   */
   virtual void updateStateMsg();
+
+  /**
+   * @brief Evaluate if final goal x, y, th has been reached.
+   */
   virtual bool goalReached(){return true;}
+
+  /**
+   * @brief Send velocity commands based on local plan. Should check for consistency of
+   * local plan.
+   */
   virtual bool dispatchCommands(){return true;}
+
   /**
    * @brief Call back for handling new laser scans
    */

@@ -143,7 +143,7 @@ protected:
    * @brief Subclass will implement this message to generate a plan.
    * @return true if a plan is found, otherwise false
    */
-  virtual bool makePlan(){return true;}
+  virtual bool makePlan() = 0;
 
   /**
    * @brief Subclass will implement this method to test of the goal has been reached

@@ -32,41 +32,16 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-/**
- * @mainpage
- *
- * @htmlinclude manifest.html
- *
- * @b move_base is...
- *
- * <hr>
- *
- *  @section usage Usage
- *  @verbatim
- *  $ move_base
- *  @endverbatim
- *
- * <hr>
- *
- * @section topic ROS topics
- *
- * Subscribes to (name/type):
- * - @b 
- *
- * Publishes to (name / type):
- * - @b 
- *
- *  <hr>
- *
- * @section parameters ROS parameters
- *
- * - None
- **/
 
 #include <MoveBase.hh>
+#include <std_msgs/BaseVel.h>
+#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/Pose2DFloat32.h>
+#include <std_msgs/Polyline2D.h>
+#include <std_srvs/StaticMap.h>
 
-MoveBase::MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ)
-  : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("mobe_base", "state", "goal"),
+MoveBase::MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius)
+  : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
     tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
     costMap_(NULL),
     laserMaxRange_(4.0){
@@ -76,10 +51,17 @@ MoveBase::MoveBase(double windowLength, unsigned char lethalObstacleThreshold, u
   global_pose_.y = 0;
   global_pose_.yaw = 0;
 
+  // Initialize state message parameters that are unsused
+  stateMsg.waypoint.x = 0.0;
+  stateMsg.waypoint.y = 0.0;
+  stateMsg.waypoint.th = 0.0;
+  stateMsg.set_waypoints_size(0);
+  stateMsg.waypoint_idx = -1;
+
   // Set up transforms
   double laser_x_offset(0.05);
   //param("laser_x_offset", laser_x_offset, 0.05);
-  tf_.setWithEulers("FRAMEID_LASER", "FRAMEID_ROBOT", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+  tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
   // get map via RPC
   std_srvs::StaticMap::request  req;
@@ -113,16 +95,19 @@ MoveBase::MoveBase(double windowLength, unsigned char lethalObstacleThreshold, u
 
   // Now allocate the cost map
   costMap_ = new CostMap2D(resp.map.width, resp.map.height, mapdata, resp.map.resolution, 
-			   windowLength, lethalObstacleThreshold, maxZ);
+			   windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
 
   // Finish by deleting the mapdata
   delete mapdata;
 
   // Subscribe to laser scan messages
-  subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback);
+  subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
 
   // Advertize messages to publish path updates
-  advertise<std_msgs::Polyline2D>("gui_laser");
+  advertise<std_msgs::Polyline2D>("gui_laser", QUEUE_MAX());
+
+  // Advertize message to publish the plan
+  advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
 
   // Now initialize
   initialize();
@@ -138,11 +123,11 @@ void MoveBase::updateGlobalPose(){
   robotPose.x = 0;
   robotPose.y = 0;
   robotPose.yaw = 0;
-  robotPose.frame = "FRAMEID_ROBOT";
+  robotPose.frame = "base";
   robotPose.time = 0; 
 
   try{
-    global_pose_ = this->tf_.transformPose2D("FRAMEID_MAP", robotPose);
+    global_pose_ = this->tf_.transformPose2D("map", robotPose);
   }
   catch(libTF::TransformReference::LookupException& ex){
     std::cout << "No Transform available Error\n";
@@ -160,6 +145,17 @@ void MoveBase::updateGlobalPose(){
 void MoveBase::updateStateMsg(){
   // Get the current robot pose in the map frame
   updateGlobalPose();
+
+  // Assign state data 
+  stateMsg.pos.x = global_pose_.x;
+  stateMsg.pos.y = global_pose_.y;
+  stateMsg.pos.th = global_pose_.yaw;
+
+  goalMsg.lock();
+  stateMsg.goal.x = goalMsg.goal.x;
+  stateMsg.goal.y = goalMsg.goal.y;
+  stateMsg.goal.th = goalMsg.goal.th;
+  goalMsg.unlock();
 }
 
 /**
@@ -176,7 +172,7 @@ void MoveBase::laserScanCallback(){
 
   try
     {
-      global_cloud = this->tf_.transformPointCloud("FRAMEID_MAP", local_cloud);
+      global_cloud = this->tf_.transformPointCloud("map", local_cloud);
     }
   catch(libTF::TransformReference::LookupException& ex)
     {
@@ -195,13 +191,17 @@ void MoveBase::laserScanCallback(){
       puts("Extrapolation exception");
     }
 
-  /*std::cout << "Laser scan received (Laser Scan:" << laserScanMsg_.get_ranges_size() << 
+  /*
+  std::cout << "Laser scan received (Laser Scan:" << laserScanMsg_.get_ranges_size() << 
     ", localCloud:" << local_cloud.get_pts_size() << 
-    ", globalCloud:" << global_cloud.get_pts_size() << ")\n"; */
+    ", globalCloud:" << global_cloud.get_pts_size() << ")\n";
+  */
 
   // Update the cost map
   const double ts = laserScanMsg_.header.stamp.to_double();
-  costMap_->updateDynamicObstacles(ts, global_cloud);
+  std::vector<unsigned int> insertions, deletions;
+  costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
+  handleMapUpdates(insertions, deletions);
 
   // Pubish projected laser scan for rendering in map co-ordinates.
   std_msgs::Polyline2D pointCloudMsg;
@@ -218,4 +218,33 @@ void MoveBase::laserScanCallback(){
   }
 
   publish("gui_laser",pointCloudMsg);
+}
+
+void MoveBase::lock(){
+  //laserScanMsg_.lock();
+}
+
+void MoveBase::unlock(){
+  //laserScanMsg_.unlock();
+}
+
+void MoveBase::publishPlan(){
+  std_msgs::Polyline2D guiPathMsg;
+  guiPathMsg.set_points_size(plan_.size());
+  guiPathMsg.color.r = 0;
+  guiPathMsg.color.g = 1.0;
+  guiPathMsg.color.b = 0;
+  guiPathMsg.color.a = 0;
+
+  for(unsigned int i = 0; i < plan_.size(); i++){
+    size_t mx, my;
+    mx = plan_[i].first;
+    my = plan_[i].second;
+    double wx, wy;
+    getCostMap().convertFromIndexesToWorldCoord(mx, my, wx, wy);
+    guiPathMsg.points[i].x = wx;
+    guiPathMsg.points[i].y = wy;
+  }
+
+  publish("gui_path", guiPathMsg);
 }
