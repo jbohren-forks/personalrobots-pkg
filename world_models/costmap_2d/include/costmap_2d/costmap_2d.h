@@ -64,7 +64,7 @@ public:
   /**
    * @brief Defines the cell value to indicate that no information is available
    */
-  static const unsigned char NO_INFORMATION = 255;
+  static const unsigned char NO_INFORMATION;
 
   /**
    * @brief Constructor.
@@ -78,7 +78,8 @@ public:
    * @param maxZ gives the cut-off for points in 3D space
    */
   CostMap2D(size_t width, size_t height, const unsigned char* data, 
-	    double resolution, double window_length,  unsigned char threshold, double maxZ = 0);
+	    double resolution, double window_length,  
+	    unsigned char threshold, double maxZ = 0, double inflationRadius = 0);
   
   /**
    * @brief Destructor.
@@ -185,7 +186,7 @@ public:
   size_t getHeight() const;
 
   /**
-   * @broef Accessor for contents of full map cell by cell index
+   * @brief Accessor for contents of full map cell by cell index
    */
   unsigned char operator [](unsigned int ind) const;
 
@@ -198,13 +199,20 @@ private:
    */
   TICK getElapsedTime(double ts);
 
+  /**
+   * @brief Helper method to compute the inflated cells around an obstacle based on resolution and inflation radius
+   */
+  void computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const;
+
   static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
   const size_t width_; /**< width of the map */
   const size_t height_; /**< height of the map */
-  const double resolution_; /**< resolution of the map, currently unused */
+  const double resolution_; /**< resolution of the map, in meters */
   const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
   const unsigned char threshold_; /**< The threshold for interpreting costs as obstacles */
   const double maxZ_; /**< Points above this will be excluded from consideration */
+  const double inflationRadius_; /**< The radius in meters to inflate obstacles. 
+				    If greater then a single cell half width it will cause  obstacles to grow */
 
   unsigned char* staticData_; /**< data loaded from the static map */
   unsigned char* fullData_; /**< the full map data that has both static and obstacle data */

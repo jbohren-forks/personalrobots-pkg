@@ -33,7 +33,7 @@
  */
 
 #include <costmap_2d/costmap_2d.h>
-
+#include <set>
 #include <gtest/gtest.h>
 
 const unsigned char MAP_10_BY_10[] = {
@@ -56,6 +56,7 @@ const double RESOLUTION(1);
 const double WINDOW_LENGTH(10);
 const unsigned char THRESHOLD(100);
 const double MAX_Z(1.0);
+const double ROBOT_RADIUS(1.0);
 
 bool find(const std::vector<unsigned int>& l, unsigned int n){
   for(std::vector<unsigned int>::const_iterator it = l.begin(); it != l.end(); ++it){
@@ -68,13 +69,13 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
 
 TEST(costmap, test1){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
-  ASSERT_EQ(map.getWidth() == 10, true);
-  ASSERT_EQ(map.getHeight() == 10, true);
+  ASSERT_EQ(map.getWidth(), 10);
+  ASSERT_EQ(map.getHeight(), 10);
 
   // Verify that obstacles correctly identified from the static map.
   std::vector<unsigned int> occupiedCells;
   map.getOccupiedCellDataIndexList(occupiedCells);
-  ASSERT_EQ(occupiedCells.size() == 14, true);
+  ASSERT_EQ(occupiedCells.size(), 14);
 
   // Iterate over all id's and verify that they are present according to their
   const unsigned char* costData = map.getMap();
@@ -254,6 +255,88 @@ TEST(costmap, test6){
 
   map.updateDynamicObstacles(1, c0, insertions, deletions);
   ASSERT_EQ(insertions.size(), 1);
+}
+
+/**
+ * Test inflation for bot static and dynamic obstacles
+ */
+TEST(costmap, test7){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+
+
+  // Verify that obstacles correctly identified from the static map.
+  std::vector<unsigned int> occupiedCells;
+  map.getOccupiedCellDataIndexList(occupiedCells);
+
+  // There should be no duplicates
+  std::set<unsigned int> setOfCells;
+  for(unsigned int i=0;i<occupiedCells.size(); i++)
+    setOfCells.insert(i);
+
+  ASSERT_EQ(setOfCells.size(), occupiedCells.size());
+  ASSERT_EQ(setOfCells.size(), 47);
+
+  // Iterate over all id's and verify they are obstacles
+  const unsigned char* costData = map.getMap();
+  for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
+    unsigned int ind = *it;
+    size_t x, y;
+    map.convertFromMapIndexToXY(ind, x, y);
+    ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(x, y)), true);
+    ASSERT_EQ(costData[ind], THRESHOLD);
+  }
+
+  // Output the map for visual assitance
+  for(unsigned int y=0; y< GRID_HEIGHT; y++){
+    for(unsigned x =0; x<GRID_WIDTH; x++){
+      unsigned int ind = map.getMapIndexFromCellCoords(x, y);
+      if(MAP_10_BY_10[ind] < THRESHOLD && costData[ind] < THRESHOLD){
+	std::cout << "f";
+      }
+      else if(MAP_10_BY_10[ind] == CostMap2D::NO_INFORMATION){
+	ASSERT_EQ(costData[ind], CostMap2D::NO_INFORMATION);
+	std::cout << "?";
+      }
+      else if(MAP_10_BY_10[ind] < THRESHOLD && costData[ind] == THRESHOLD){
+	std::cout << "o";
+      }
+      else
+	std::cout << "x";
+
+      std::cout << ", ";
+    }
+    std::cout << std::endl;
+  }
+
+  // Set an obstacle at the origin and observe insertions for it and its neighbors
+  std::vector<unsigned int> insertions, deletions;
+
+  // A point cloud with 1 point at the origin
+  std_msgs::PointCloudFloat32 c0;
+  c0.set_pts_size(1);
+  c0.pts[0].x = 0;
+  c0.pts[0].y = 0;
+  c0.pts[0].z = 0.4;
+
+  map.updateDynamicObstacles(1, c0, insertions, deletions);
+
+  // It and its 3 neighbors makes 4 obstacles
+  ASSERT_EQ(insertions.size(), 4);
+
+  // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
+  std_msgs::PointCloudFloat32 c1;
+  c1.set_pts_size(1);
+  c1.pts[0].x = 2;
+  c1.pts[0].y = 0;
+  c1.pts[0].z = 0.0;
+  map.updateDynamicObstacles(WINDOW_LENGTH - 1, c1, insertions, deletions);
+
+  // Now we expect insertions for it, and 3 more neighbors, but not all 5
+  ASSERT_EQ(insertions.size(), 4);
+
+  // Now verify that some of the initial batch go away but others remain
+  map.removeStaleObstacles(WINDOW_LENGTH + 1, deletions);
+  ASSERT_EQ(deletions.size(), 2);
 }
 
 int main(int argc, char** argv){

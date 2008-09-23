@@ -51,20 +51,27 @@ t| (0, height-1) ... (width-1, height-1)
 */
 
 #include "costmap_2d/costmap_2d.h"
+#include <algorithm>
+#include <set>
+
+const unsigned char CostMap2D::NO_INFORMATION(255);
 
 CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data, 
-		     double resolution, double window_length,  unsigned char threshold, double maxZ)
+		     double resolution, double window_length,  unsigned char threshold, 
+		     double maxZ, double inflationRadius)
 : width_(width), 
    height_(height),  
    resolution_(resolution), 
    tickLength_(window_length/WATCHDOG_LIMIT),
    threshold_(threshold),
    maxZ_(maxZ),
+   inflationRadius_(inflationRadius),
    staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
 {
   staticData_ = new unsigned char[width_*height_];
 
-  // Iterate over the map and clean up cells to comply with expected structure
+  // For the first pass, just clean up the data and get the set of original obstacles.
+  std::set<unsigned int> obstacles;
   for (unsigned int i=0;i<width_;i++){
     for (unsigned int j=0;j<height_;j++){
       size_t ind = getMapIndexFromCellCoords(i, j);
@@ -75,12 +82,30 @@ CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data,
       if(staticData_[ind] > threshold_ && staticData_[ind] < NO_INFORMATION)
 	staticData_[ind] = threshold_;
 
-      if(staticData_[ind] == threshold_)
+      if(staticData_[ind] == threshold_){
+	obstacles.insert(ind);
 	permanentlyOccupiedCells_.push_back(ind);
+      }
     }
   }
 
-  // Now fill ot remaining grid structures
+  // Now for every original obstacle, go back and fill in the inflated obstacles
+  for(std::set<unsigned int>::const_iterator it = obstacles.begin(); it != obstacles.end(); ++it){
+    unsigned int ind = *it;
+    std::vector<unsigned int> inflation;
+    computeInflation(ind, inflation);
+
+    // All cells in the inflation which have not been marked yet, should be marked, and inserted as
+    // permanent obstacles
+    for(unsigned int i = 0; i<inflation.size(); i++){
+      unsigned int cellId = inflation[i];
+      if(staticData_[cellId] != threshold_){
+	staticData_[cellId] = threshold_;
+	permanentlyOccupiedCells_.push_back(cellId);
+      }
+    }
+  }
+
   fullData_ = new unsigned char[width_*height_];
   obsWatchDog_ = new TICK[width_*height_];
   memcpy(fullData_, staticData_, width_*height_);
@@ -111,16 +136,28 @@ void CostMap2D::updateDynamicObstacles(double ts,
 
     unsigned int ind = getMapIndexFromWorldCoords(cloud.pts[i].x, cloud.pts[i].y);
 
-    // If the cell is not occupied, then we have a new obstacle to report
-    if(obsWatchDog_[ind] == 0 && staticData_[ind] < threshold_){
-      newObstacles.push_back(ind);
-      dynamicObstacles_.push_back(ind);
-      fullData_[ind] = threshold_;
+    // Compute inflation set
+    std::vector<unsigned int> inflation;
+    computeInflation(ind, inflation);
+
+    for(unsigned int i = 0; i<inflation.size(); i++){
+      unsigned int cell = inflation[i];
+
+      // If the cell is not occupied, then we have a new obstacle to report
+      if(obsWatchDog_[cell] == 0 && staticData_[cell] < threshold_){
+
+	// Guard this to enforce set semantics
+	if(fullData_[cell] != threshold_){
+	  newObstacles.push_back(cell);
+	  fullData_[cell] = threshold_;
+	  dynamicObstacles_.push_back(cell);
+	}
+      }
+
+      // Pet the watchdog
+      obsWatchDog_[cell] = WATCHDOG_LIMIT;
     }
 
-    // Now pet the watchdog
-    // std::cout << "Refreshing obstacle at:" << ind << std::endl;
-    obsWatchDog_[ind] = WATCHDOG_LIMIT;
   }
 
   // We always process deletions too
@@ -263,4 +300,29 @@ TICK CostMap2D::getElapsedTime(double ts) {
 unsigned char CostMap2D::operator [](unsigned int ind) const{
   // ROS_ASSERT on index
   return fullData_[ind];
+}
+
+/**
+ * @brief Returns the set of cell id's for cells that should be considered obstacles given
+ * the inflation radius and the map resolution.
+ *
+ * @param ind The index of the new obstacle
+ * @param inflation The resulting inflation set
+ * @todo Consider using eurclidean distance check for inflation, by testng if the origin of a cell
+ * is within the inflation radius distance of the origitn of the given cell.
+ */
+void CostMap2D::computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const {
+  unsigned int mx, my;
+  convertFromMapIndexToXY(ind, mx, my);
+
+  unsigned int cellRadius = static_cast<unsigned int>(inflationRadius_/resolution_);
+  unsigned int x_min = static_cast<unsigned int>(std::max<int>(0, mx - cellRadius));
+  unsigned int x_max = static_cast<unsigned int>(std::min<int>(getWidth() - 1, mx + cellRadius));
+  unsigned int y_min = static_cast<unsigned int>(std::max<int>(0, my - cellRadius));
+  unsigned int y_max = static_cast<unsigned int>(std::min<int>(getHeight() - 1, my + cellRadius));
+
+  inflation.clear();
+  for(unsigned int i = x_min; i <= x_max; i++)
+    for(unsigned int j = y_min; j <= y_max; j++)
+      inflation.push_back(getMapIndexFromCellCoords(i, j));
 }
