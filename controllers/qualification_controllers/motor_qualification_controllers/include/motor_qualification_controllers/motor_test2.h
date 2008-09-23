@@ -47,6 +47,8 @@
 
 #include <ros/node.h>
 #include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+#include <newmat10/newmatap.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <misc_utils/realtime_publisher.h>
@@ -76,7 +78,7 @@ public:
    * \param time The current hardware time.
    * \param *robot The robot that is being controlled.
    */
-  void init(double speed_constant, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot);
+  void init(double speed_constant, double resistance, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   /*!
@@ -105,6 +107,7 @@ private:
   double speed_constant_;
   int count_;
   double torque_;                                   /**< Torque applied during the test. */
+  double resistance_;
   double initial_time_;                             /**< Start time of the test. */
   bool complete;
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
@@ -113,7 +116,10 @@ private:
   
   NEWMAT::ColumnVector test_voltage_;
   NEWMAT::ColumnVector test_velocity_;  
+  NEWMAT::ColumnVector test_current_;
   NEWMAT::ColumnVector test_baseline_;
+  NEWMAT::UpperTriangularMatrix U_;
+  NEWMAT::ColumnVector M_;
   
   
 };

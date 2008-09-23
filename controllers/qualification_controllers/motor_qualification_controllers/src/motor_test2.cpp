@@ -35,11 +35,12 @@
 
 using namespace std;
 using namespace controller;
+using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(MotorTest2)
 
 MotorTest2::MotorTest2():
-  publisher_("/diagnostics", 1), test_voltage_(5000),test_velocity_(5000),test_baseline_(5000)
+  publisher_("/diagnostics", 1), test_voltage_(5000),test_current_(5000),test_velocity_(5000),test_baseline_(5000), U_(5000), M_(5000)
 {
   robot_ = NULL;
   actuator_ = NULL;
@@ -49,6 +50,7 @@ MotorTest2::MotorTest2():
   duration_=4;
   torque_=0;
   speed_constant_=100;
+  resistance_=10;
   initial_time_=0;
   complete = false;
   
@@ -59,13 +61,14 @@ MotorTest2::~MotorTest2()
 {
 }
 
-void MotorTest2::init(double speed_constant, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot)
+void MotorTest2::init(double speed_constant, double resistance, double torque, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot)
 {
   robot_ = robot;
   joint_ = robot->getJointState(name);
   actuator_ = robot->model_->getActuator("test_motor");
   fixture_joint_ =robot->getJointState(fixture_name);
 
+  resistance_=resistance;
   torque_=torque;
   speed_constant_=speed_constant;
   initial_time_=time;
@@ -96,9 +99,10 @@ bool MotorTest2::initXml(mechanism::RobotState *robot, TiXmlElement *config)
   if (cd)
   {
     double speed_constant = atof(cd->Attribute("speed_constant"));
+    double resistance = atof(cd->Attribute("resistance"));
     double torque = atof(cd->Attribute("torque"));
     std::string fixture_name = cd->Attribute("fixture_name");
-    init(speed_constant, torque, fixture_name, robot->hw_->current_time_,j->Attribute("name"), robot);
+    init(speed_constant, resistance, torque, fixture_name, robot->hw_->current_time_,j->Attribute("name"), robot);
   }
   else
   {
@@ -141,7 +145,8 @@ void MotorTest2::update()
   else if((time-initial_time_)<3*duration_)
   {
     joint_->commanded_effort_ = torque_;
-    test_voltage_(count_) =actuator_->state_.motor_voltage_ - zero_offset;   
+    test_voltage_(count_) =actuator_->state_.motor_voltage_- zero_offset;  
+    test_current_(count_) = actuator_->state_.last_measured_current_;
     test_velocity_(count_) =joint_->velocity_;
     count_++;
   }
@@ -161,21 +166,25 @@ void MotorTest2::analysis()
   robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
   status->set_values_size(2);
   status->name = "MotorTest";
- 
-  double rms_voltage  = test_voltage_.NormFrobenius()/sqrt(count_);
-  double rms_velocity = test_velocity_.NormFrobenius()/sqrt(count_);
-  double speed_const_meas = rms_velocity/rms_voltage;
+  NEWMAT::Matrix test_matrix =test_velocity_ | test_current_;
+  QRZ(test_matrix, U_); 
+  QRZ(test_matrix, test_voltage_, M_);
+  NEWMAT::Matrix solution=U_.i()*M_;
+
+  double speed_const_meas = fabs(1/solution(1,1));
+  //ouble resistance_meas =fabs(solution(2,1)); this was all over the place no idea why??
    
-  if (speed_const_meas < speed_constant_-0.8 || speed_const_meas > speed_constant_+0.8)
+  if (fabs(speed_const_meas-speed_constant_)/speed_constant_ > 0.05)
   {
     //the motor isn't moving
     status->level = 2;
-    status->message = "ERROR: The motor is not correctly labeled. The speed constant is not correct.";
+    status->message = "ERROR: The motor is not correctly labeled. The speed constant or resistance is not correct.";
     status->values[0].label = "measured speed constant";
     status->values[0].value = speed_const_meas;
     status->values[1].label = "expected speed constant";
     status->values[1].value = speed_constant_;
-  }
+
+   }
   else
   {
     //test passed
