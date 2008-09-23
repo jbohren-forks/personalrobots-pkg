@@ -320,7 +320,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_arm_test_headless.model" />
+      <xi:include href="pr2_xml_arm_headless.model" />
     </include>
 
   </model:physical>
