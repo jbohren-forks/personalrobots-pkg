@@ -40,7 +40,7 @@
 #include <map>
 
 #include <tf/exceptions.h>
-#include "tf/cache.h"
+#include "tf/time_cache.h"
 #include <rosthread/mutex.h>
 
 
