@@ -9,42 +9,42 @@
     </map>
     <controller name="wheel_front_left_l_controller" topic="wheel_front_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_l_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_front_left_r_controller" topic="wheel_front_left_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_r_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_front_right_l_controller" topic="wheel_front_right_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_right_l_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_front_right_r_controller" topic="wheel_front_right_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_right_r_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_rear_left_l_controller" topic="wheel_rear_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_left_l_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_rear_left_r_controller" topic="wheel_rear_left_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_left_r_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_rear_right_l_controller" topic="wheel_rear_right_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_right_l_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
     <controller name="wheel_rear_right_r_controller" topic="wheel_rear_right_r_controller" type="JointVelocityControllerNode">
         <joint name="wheel_rear_right_r_joint" >
-          <pid p="2.8" d="0" i="0.2" iClamp="20" />
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
 
