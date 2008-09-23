@@ -39,10 +39,11 @@ using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
     double robot_front_radius, double robot_side_radius, double max_occ_dist, double pdist_scale, double gdist_scale,
-    double dfast_scale, double occdist_scale, rosTFClient* tf)
+    double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
   robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
-  pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), tf_(tf)
+  pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
+  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf)
 {
   //regularly sample the forward velocity space... sample rotational vel space... sample backward vel space
   num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim + samples_per_dim + samples_per_dim;
@@ -350,14 +351,14 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 
 //given the current state of the robot, find a good trajectory
 int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
-    libTF::TFPose2D global_acc, libTF::TFPose2D& drive_velocities){
+    libTF::TFPose2D& drive_velocities){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
   //printf("Path distance computed\n");
 
   //next create the trajectories we wish to explore
   createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
-      global_acc.x, global_acc.y, global_acc.yaw);
+      acc_lim_x_, acc_lim_y_, acc_lim_theta_);
   //printf("Trajectories created\n");
 
   //we need to transform the trajectories to world space for scoring

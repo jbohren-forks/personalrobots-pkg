@@ -41,7 +41,7 @@ GovernorNode::GovernorNode() :
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, 
-      PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, &tf_),
+      PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_),
   cycle_time_(0.1)
 {
   robot_vel_.x = 0.0;
@@ -99,15 +99,6 @@ void GovernorNode::processPlan(){
   robot_pose.frame = "base";
   robot_pose.time = 0;
 
-  libTF::TFPose2D robot_acc;
-  robot_acc.x = MAX_ACC_X;
-  robot_acc.y = MAX_ACC_Y;
-  robot_acc.yaw = MAX_ACC_THETA;
-  robot_acc.frame = "base";
-  robot_acc.time = 0;
-
-
-
   libTF::TFPose2D robot_vel;
   //we need robot_vel_ to compute global_vel so we'll lock
   vel_lock.lock();
@@ -123,7 +114,7 @@ void GovernorNode::processPlan(){
   map_lock.lock();
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
   gettimeofday(&start,NULL);
-  int path_index = tc_.findBestPath(robot_pose, robot_vel, robot_acc, drive_cmds);
+  int path_index = tc_.findBestPath(robot_pose, robot_vel, drive_cmds);
   gettimeofday(&end,NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;

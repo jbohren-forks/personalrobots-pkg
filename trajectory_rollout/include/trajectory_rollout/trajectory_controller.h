@@ -78,10 +78,11 @@ class TrajectoryController {
     //create a controller given a map and a path
     TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
         double robot_front_radius, double robot_side_radius, double max_occ_dist, 
-        double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, rosTFClient* tf);
+        double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
+        double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf);
     
     //given the current state of the robot, find a good trajectory
-    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, libTF::TFPose2D global_acc,
+    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
@@ -146,6 +147,7 @@ class TrajectoryController {
     int samples_per_dim_;
     double robot_front_radius_, robot_side_radius_, max_occ_dist_;
     double pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_;
+    double acc_lim_x_, acc_lim_y_, acc_lim_theta_;
 
     //transform client
     rosTFClient* tf_;
