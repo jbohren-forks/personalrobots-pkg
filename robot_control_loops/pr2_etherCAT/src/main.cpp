@@ -40,6 +40,7 @@
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
+#include <urdf/parser.h>
 
 #include <ros/node.h>
 #include <std_srvs/Empty.h>
@@ -83,6 +84,7 @@ void *controlLoop(void *)
   // Load robot description
   TiXmlDocument xml(g_options.xml_);
   xml.LoadFile();
+  urdf::normalizeXml(xml.RootElement());
   TiXmlElement *root = xml.FirstChildElement("robot");
   if (!root)
   {
