@@ -61,7 +61,7 @@ ROS_REGISTER_CONTROLLER(BaseController)
   base_odom_velocity_.z = 0;
   ils_weight_type_ = "Gaussian";
   ils_max_iterations_ = 3;
-
+  caster_steer_vel_gain_ = 0;
   pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
@@ -225,7 +225,10 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
         if(elt_key->Attribute("key") == std::string("kp_speed"))
         {
           kp_speed_ = atof(elt_key->GetText());
-          break;
+        }
+        if(elt_key->Attribute("key") == std::string("kp_caster_steer"))
+        {
+           caster_steer_vel_gain_ = atof(elt_key->GetText());
         }
         elt_key = elt->NextSiblingElement("elem");
       }
@@ -281,7 +284,7 @@ void BaseController::update()
     cmd_vel_.z = cmd_vel_t_.z;
     pthread_mutex_unlock(&base_controller_lock_);
   }
-  //std::cout << "command received in update : " << cmd_vel_ << std::endl;
+//  std::cout << "command received in update : " << cmd_vel_ << std::endl;
 
   getJointValues();
 
@@ -344,7 +347,7 @@ void BaseController::computeCasterSteer()
     }
     steer_velocity_desired_[i] = -kp_speed_*error_steer;
 
-//    printf("Steering cmd: %d, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i]);
+//    printf("Steering cmd: %d, %f, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i],error_steer);
   }
 }
 
@@ -368,8 +371,7 @@ void BaseController::computeWheelSpeeds()
   double steer_angle_actual = 0;
   for(int i=0; i < (int) num_wheels_; i++)
   {
-
-    caster_2d_velocity.z = 0.01*steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
+    caster_2d_velocity.z = caster_steer_vel_gain_*steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
 
@@ -379,7 +381,7 @@ void BaseController::computeWheelSpeeds()
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-    //std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << " r:" << wheel_radius_ << "caster: " << wheel_caster_steer_component.x << std::endl;
+//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << ", actual wheel speed" << wheel_speed_actual_[i] << ", caster: " << wheel_caster_steer_component.x/wheel_radius_ << ", caster_steer " << caster_2d_velocity.z << std::endl;
   }
 }
 
@@ -653,7 +655,7 @@ void BaseController::computeBaseVelocity()
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
 
-  //cout << "Base odom velocity " << base_odom_velocity_ << endl;
+//  cout << "Base odom velocity " << base_odom_velocity_ << endl;
 }
 
 Matrix BaseController::pseudoInverse(const Matrix M)

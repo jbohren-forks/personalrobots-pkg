@@ -319,6 +319,7 @@ namespace controller
 
     int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odometry message will be published on ROS */
 
+    double caster_steer_vel_gain_;
   };
 
   class BaseControllerNode : public Controller
