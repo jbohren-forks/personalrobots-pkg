@@ -1,13 +1,11 @@
 <package>
-<description brief='Gazebo Plugin for PR2 Actarray and Gripper'>
-
-Gazebo Plugin for PR2 Actarray and Gripper.
-A test file for Player interface.
-
+<description brief="Gazebo Plugins for Personal Robots">
+  Gazebo Plugin for PR2 Actarray and Gripper.
+  This module also contains a test file for Player interface.
 </description>
-<author>John Hsu</author>
+<author>Sachin Chitta, Stu Glaser, John Hsu</author>
 <license>BSD</license>
-<url>http://pr.willowgarage.com</url>
+<url>http://pr.willowgarage.com/repos</url>
 <depend package="gazebo"/>
 <depend package="opende"/>
 <depend package="newmat10"/>
