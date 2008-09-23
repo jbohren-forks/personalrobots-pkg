@@ -41,7 +41,7 @@
     <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Grey</elem>
+      <elem key="material">Gazebo/Red</elem>
     </map>
     <geometry name="pr2_sholder_roll_mesh_file">
       <mesh filename="upperarm_roll" />
@@ -63,10 +63,10 @@
   
   <link name="base"><!-- link specifying the base of the robot -->
     
-    <parent name=" world" />
+    <parent name="world" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <origin xyz=" 0 0 0.05 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <origin xyz="0 0 0.002 " rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
     
     <joint name="base_joint" />
     
@@ -77,13 +77,13 @@
     </inertial> 
     
     <visual>
-      <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+      <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Green</elem>
+        <elem key="material">Gazebo/GrassFloor</elem>
       </map>
-      <geometry name="pr2_base_mesh_file">
-        <mesh size="10 10 0.1" />
+      <geometry name="pr2_base_visual_geom">
+        <mesh scale="20 20 0.1" />
       </geometry>
     </visual> 
     
@@ -91,7 +91,7 @@
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
-        <box size="10 10 0.1" />
+        <box size="20 20 0.1" />
       </geometry>
     </collision>
     
@@ -100,7 +100,7 @@
   <link name="upperarm_roll_left"><!-- link specifying the shoulder of the robot -->
     <parent name="base" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <origin xyz=" 0 0 1 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <origin xyz="0 0 1" rpy="0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="upperarm_roll_left_joint" />
     <inertial >

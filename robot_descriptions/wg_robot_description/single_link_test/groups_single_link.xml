@@ -4,6 +4,7 @@
   
   <group name="left_arm" flags="planning kinematic">
     upperarm_roll_left
+  </group>
 
   
 </robot>

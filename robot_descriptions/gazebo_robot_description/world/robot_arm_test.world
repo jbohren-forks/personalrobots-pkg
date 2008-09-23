@@ -47,7 +47,6 @@
     </frames>
   </rendering:gui>
 
-
   <!-- GUI Camera -->
   <rendering:ogre>
     <ambient>1.0 1.0 1.0 1.0</ambient>
