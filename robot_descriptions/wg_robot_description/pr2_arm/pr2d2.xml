@@ -252,7 +252,7 @@
   </joint>
   
   <joint name="elbow_right_joint" type="revolute" >
-    <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a global coordinate frame -->
+    <axis xyz=" 0 -1 0 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration reference_position="0" values="1.5 -1"/>
     <limit effort="10" velocity="0" min="0" max="2.3"/>
