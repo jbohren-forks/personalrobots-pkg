@@ -89,7 +89,7 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->rpyOffsets  = node->GetVector3("rpyOffsets", Vector3(0,0,0));
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName);
+  rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

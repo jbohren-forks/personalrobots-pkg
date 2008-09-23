@@ -129,8 +129,8 @@ void Ros_PTZ::LoadChild(XMLConfigNode *node)
   std::cout << " publishing state topic for ptz " << this->stateTopicName << std::endl;
   std::cout << " subscribing command topic for ptz " << this->commandTopicName << std::endl;
 
-  rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName);
-  rosnode->subscribe( commandTopicName, PTZControlMessage, &Ros_PTZ::PTZCommandReceived,this);
+  rosnode->advertise<axis_cam::PTZActuatorState>(this->stateTopicName,10);
+  rosnode->subscribe( commandTopicName, PTZControlMessage, &Ros_PTZ::PTZCommandReceived,this,10);
 
   if (!this->panJoint)
     gzthrow("couldn't get pan hinge joint");
@@ -227,6 +227,12 @@ void Ros_PTZ::FiniChild()
 {
   rosnode->unadvertise(this->stateTopicName);
   rosnode->unsubscribe(commandTopicName);
+  // TODO: will be replaced by global ros node eventually
+  if (rosnode != NULL)
+  {
+    std::cout << "shutdown rosnode in Ros_PTZ" << std::endl;
+    rosnode->shutdown();
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

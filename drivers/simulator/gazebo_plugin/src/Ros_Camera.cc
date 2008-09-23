@@ -93,7 +93,7 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
   std::cout << "================= " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Image>(this->topicName);
+  rosnode->advertise<std_msgs::Image>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -135,13 +135,12 @@ void Ros_Camera::UpdateChild()
 // Finalize the controller
 void Ros_Camera::FiniChild()
 {
+  rosnode->unadvertise(this->topicName);
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
     std::cout << "shutdown rosnode in Ros_Camera" << std::endl;
-    //ros::fini();
     rosnode->shutdown();
-    //delete rosnode;
   }
 }
 

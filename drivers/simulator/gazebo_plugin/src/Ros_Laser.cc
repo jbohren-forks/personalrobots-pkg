@@ -96,7 +96,7 @@ void Ros_Laser::LoadChild(XMLConfigNode *node)
 
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   std::cout << "================= " << this->topicName <<  std::endl;
-  rosnode->advertise<std_msgs::LaserScan>(this->topicName);
+  rosnode->advertise<std_msgs::LaserScan>(this->topicName,10);
   this->frameName = node->GetString("frameName","default_ros_laser",0); //read from xml file
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 }
@@ -151,13 +151,12 @@ void Ros_Laser::UpdateChild()
 // Finalize the controller
 void Ros_Laser::FiniChild()
 {
+  rosnode->unadvertise(this->topicName);
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
     std::cout << "shutdown rosnode in Ros_Laser" << std::endl;
-    //ros::fini();
     rosnode->shutdown();
-    //delete rosnode;
   }
 }
 

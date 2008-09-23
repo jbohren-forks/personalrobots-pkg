@@ -87,7 +87,7 @@ void F3D::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName", "", 1);
 
   std::cout << "==== topic name for F3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Vector3Stamped>(this->topicName);
+  rosnode->advertise<std_msgs::Vector3Stamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
