@@ -396,11 +396,9 @@
     </map>
   </link>
   
-  <link name="elbow_right"><!-- link specifying the shoulder of the robot -->
+  <link name="elbow_right">
     <parent name="upperarm_roll_right" />
-    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <origin xyz=" upperarm_roll_elbow_offset_x 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
-    
+    <origin xyz="upperarm_roll_elbow_offset_x 0 0" rpy=" 0 0 0 " />
     <joint name="elbow_right_joint" />
     <inertial >
       <insert_const_block name="pr2_elbow_inertial"/>
@@ -418,8 +416,7 @@
 
   <link name="forearm_roll_right">
     <parent name="elbow_right" />
-    <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <origin xyz=" 0 0 0" rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <origin xyz=" 0 0 0" rpy=" 0 0 0 " />
     
     <joint name="forearm_roll_right_joint" />
     <inertial >
