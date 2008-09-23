@@ -280,6 +280,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
     {
       try {
+        ///\todo check whether r4608 applies here too
         retTrans *= (lists.forwardTransforms[i]).data_.inverse(); //Do this list backwards(from backwards) for it was generated traveling the wrong way
       }
       catch (tf::ExtrapolationException &ex)
