@@ -64,7 +64,7 @@ public:
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");
-    node_.subscribe("/tfMessage", msg_in_, &TransformClient::subscription_callback, this,100); ///\todo magic number
+    node_.subscribe("/tf_message", msg_in_, &TransformClient::subscription_callback, this,100); ///\todo magic number
 
     /// \todo remove backward compatability only
     node_.subscribe("/TransformArray", tfArrayIn, &TransformClient::receiveArray, this,100);

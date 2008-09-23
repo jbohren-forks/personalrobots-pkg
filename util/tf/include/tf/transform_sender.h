@@ -47,7 +47,7 @@ public:
   TransformSender(ros::node& anode):
     node_(anode)
   {
-    node_.advertise<tfMessage>("/tfMessage", 100);
+    node_.advertise<tfMessage>("/tf_message", 100);
   };
   
   void sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
@@ -57,7 +57,7 @@ public:
     message.header.frame_id = transform.frame_id_;
     message.parent = parent_id;
     TransformTFToMsg(transform.data_, message.transform);
-    node_.publish("/tfMessage", message);
+    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
     rosTF::TransformArray tfArray;
@@ -86,7 +86,7 @@ public:
     message.header.frame_id = frame_id;
     message.parent = parent_id;
     TransformTFToMsg(transform, message.transform);
-    node_.publish("/tfMessage", message);
+    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
     rosTF::TransformArray tfArray;
