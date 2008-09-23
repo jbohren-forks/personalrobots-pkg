@@ -436,21 +436,6 @@
     </map>
   </link>
   
-  <actuator name="shoulder_pan_right_act">
-  </actuator>
-  
-  <actuator name="elbow_right_act">
-  </actuator>
-  
-  <actuator name="upperarm_roll_right_act">
-  </actuator>
-  
-  <actuator name="shoulder_lift_right_act">
-  </actuator>
-
-  <actuator name="upperarm_roll_right_act">
-  </actuator>
-  
   <transmission type="SimpleTransmission" name="shoulder_pan_right_trans">
     <actuator name="shoulder_pan_right_act" />
     <joint name="shoulder_pan_right_joint" />
