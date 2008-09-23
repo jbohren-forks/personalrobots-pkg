@@ -29,11 +29,11 @@
 
 /** \author Tully Foote */
 
-#include "tf/transform_client.h"
+#include "tf/transform_listener.h"
 
 using namespace tf;
 
-void TransformClient::transformPointCloud(const std::string & target_frame, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
+void TransformListener::transformPointCloud(const std::string & target_frame, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), cloudIn.header.stamp.to_ull(), lookupFrameNumber( cloudIn.header.frame_id), cloudIn.header.stamp.to_ull(), 0);
   
@@ -79,7 +79,7 @@ void TransformClient::transformPointCloud(const std::string & target_frame, cons
     };
 }
 
-void TransformClient::subscription_callback()
+void TransformListener::subscription_callback()
 {
   try 
   {

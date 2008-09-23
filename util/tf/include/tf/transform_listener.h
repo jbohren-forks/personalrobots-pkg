@@ -29,8 +29,8 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_TRANSFORMCLIENT_H
-#define TF_TRANSFORMCLIENT_H
+#ifndef TF_TRANSFORMLISTENER_H
+#define TF_TRANSFORMLISTENER_H
 
 #include "std_msgs/PointCloud.h"
 #include "tf/tfMessage.h"
@@ -44,7 +44,7 @@
 namespace tf{
 
 /** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
-class TransformClient : public Transformer { //subscribes to message and automatically stores incoming data
+class TransformListener : public Transformer { //subscribes to message and automatically stores incoming data
   
 private: 
   ros::node& node_;
@@ -55,7 +55,7 @@ private:
 
 
 public:
-  TransformClient(ros::node & rosnode, 
+  TransformListener(ros::node & rosnode, 
                   bool interpolating = true,
                   unsigned long long max_cache_time = DEFAULT_CACHE_TIME,
                   unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE):
@@ -65,10 +65,10 @@ public:
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");
-    node_.subscribe("/tf_message", msg_in_, &TransformClient::subscription_callback, this,100); ///\todo magic number
+    node_.subscribe("/tf_message", msg_in_, &TransformListener::subscription_callback, this,100); ///\todo magic number
 
     /// \todo remove backward compatability only
-    node_.subscribe("/TransformArray", tfArrayIn, &TransformClient::receiveArray, this,100);
+    node_.subscribe("/TransformArray", tfArrayIn, &TransformListener::receiveArray, this,100);
 
   };
   
@@ -142,4 +142,4 @@ void receiveArray()
 };
 }
 
-#endif //TF_TRANSFORMCLIENT_H
+#endif //TF_TRANSFORMLISTENER_H

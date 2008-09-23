@@ -11,16 +11,16 @@ There is a ROS messaging independant library encompased in the tf::Transformer c
 For most use cases the basic library will not be used directly.  
 
 There are two helper classes to provide sending and recieving of ROS transform
-messages.  tf::TransformSender and tf::TransformClient. 
+messages.  tf::TransformSender and tf::TransformListener. 
 
-@subsection client TransformClient
-The tf::TransformClient class inherits from tf::Transformer to provide all the functionality of the 
+@subsection listener TransformListener
+The tf::TransformListener class inherits from tf::Transformer to provide all the functionality of the 
 basic library.  In addition it also provides methods to directly transform ROS messages.  
 And the third part of what it does is to automatically listen for and push transforms broadcast
 on ROS into the library.  
 
 @subsection sender TransformSender
-The tf::TransformSender class is the complement to the client class.  The sender class provides a 
+The tf::TransformSender class is the complement to the listener class.  The sender class provides a 
 simple API for broadcasting coordinate frame transforms.  
 
 */

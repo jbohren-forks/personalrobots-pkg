@@ -4,7 +4,7 @@ rospack(tf)
 
 genmsg()
 
-rospack_add_library(tf src/tf.cpp src/client.cpp src/cache.cpp)
+rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp)
 
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)

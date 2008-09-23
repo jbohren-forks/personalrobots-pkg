@@ -1,4 +1,4 @@
-#include "tf/transform_client.h"
+#include "tf/transform_listener.h"
 
 
 
@@ -6,11 +6,11 @@ class testListener : public ros::node
 {
 public:
 
-  tf::TransformClient tf;
+  tf::TransformListener tf;
   
   //constructor with name
   testListener() : 
-    ros::node("client"),  
+    ros::node("listener"),  
     tf(*this)
   {
   
@@ -30,7 +30,7 @@ int main(int argc, char ** argv)
   //Initialize ROS
   ros::init(argc, argv);
 
-  //Instantiate a local client
+  //Instantiate a local listener
   testListener testListener;
   
   //Nothing needs to be done except wait for a quit
