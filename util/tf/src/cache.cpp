@@ -101,18 +101,18 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
 
   //At least 2 values stored
   //Find the first value less than the target value
-  std::list<TransformStorage >::iterator it = storage_.begin();
-  while(it != storage_.end())
+  std::list<TransformStorage >::iterator storage_it = storage_.begin();
+  while(storage_it != storage_.end())
   {
-    if (it->stamp_ <= target_time)
+    if (storage_it->stamp_ <= target_time)
       break;
-    it++;
+    storage_it++;
   }
   //Catch the case it is the first value in the list
-  if (it == storage_.begin())
+  if (storage_it == storage_.begin())
   {
-    one = *it;
-    two = *(++it);
+    one = *storage_it;
+    two = *(++storage_it);
     time_diff = target_time - storage_.begin()->stamp_;
     if ((unsigned int) time_diff > max_extrapolation_time_) //Guarenteed in the future therefore positive
     {
@@ -126,10 +126,10 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
   }
 
   //Catch the case where it's in the past
-  if (it == storage_.end())
+  if (storage_it == storage_.end())
   {
-    one = *(--it);
-    two = *(--it);
+    one = *(--storage_it);
+    two = *(--storage_it);
     time_diff = target_time - one.stamp_;
     if (time_diff < -(long long)max_extrapolation_time_) //Guarenteed in the past
     {
@@ -143,8 +143,8 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
   }
 
   //Finally the case were somewhere in the middle  Guarenteed no extrapolation :-)
-  one = *(it); //Older
-  two = *(--it); //Newer
+  one = *(storage_it); //Older
+  two = *(--storage_it); //Newer
   if (fabs(target_time - one.stamp_) < fabs(target_time - two.stamp_))
     time_diff = target_time - one.stamp_;
   else

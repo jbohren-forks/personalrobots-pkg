@@ -52,9 +52,9 @@ Transformer::~Transformer()
 {
   /* deallocate all frames */
   frame_mutex_.lock();
-  for (std::vector<TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::vector<TimeCache*>::iterator  cache_it = frames_.begin(); cache_it != frames_.end(); ++cache_it)
   {
-    delete (*it);
+    delete (*cache_it);
   }
   frame_mutex_.unlock();
   
@@ -64,9 +64,9 @@ Transformer::~Transformer()
 void Transformer::clear()
 {
   frame_mutex_.lock();
-  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (std::vector< TimeCache*>::iterator  cache_it = frames_.begin(); cache_it != frames_.end(); ++cache_it)
   {
-    (*it)->clearList();
+    (*cache_it)->clearList();
   }
   frame_mutex_.unlock();
 }

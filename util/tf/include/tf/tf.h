@@ -186,8 +186,8 @@ protected:
   unsigned int lookupFrameNumber(const std::string& frameid_str){
     unsigned int retval = 0;
     frame_mutex_.lock();
-    std::map<std::string, unsigned int>::iterator it = frameIDs_.find(frameid_str);
-    if (it == frameIDs_.end())
+    std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
+    if (map_it == frameIDs_.end())
     {
       retval = frames_.size();
       frameIDs_[frameid_str] = retval;

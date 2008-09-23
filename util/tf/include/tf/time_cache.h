@@ -80,14 +80,14 @@ class TimeCache
   void insertData(const TransformStorage& new_data)
     {
       storage_lock_.lock();
-      std::list<TransformStorage >::iterator it = storage_.begin();
-      while(it != storage_.end())
+      std::list<TransformStorage >::iterator storage_it = storage_.begin();
+      while(storage_it != storage_.end())
       {
-        if (it->stamp_ <= new_data.stamp_)
+        if (storage_it->stamp_ <= new_data.stamp_)
           break;
-        it++;
+        storage_it++;
       }
-      storage_.insert(it, new_data);
+      storage_.insert(storage_it, new_data);
       storage_lock_.unlock();
       
       pruneList();
