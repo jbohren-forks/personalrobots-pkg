@@ -99,8 +99,14 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 
   std::string xml_content;
   (ros::g_node)->get_param("robotdesc/pr2",xml_content);
-  if(!urdf_model_.loadString(xml_content.c_str()))
-    return;
+
+  // wait for robotdesc/pr2 on param server
+  while(!urdf_model_.loadString(xml_content.c_str()))
+  {
+    std::cout << "base controller is waiting for robotdesc/pr2 in param server." << std::endl;
+    (ros::g_node)->get_param("robotdesc/pr2",xml_content);
+    usleep(100000); // wait a bit
+  }
 
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
