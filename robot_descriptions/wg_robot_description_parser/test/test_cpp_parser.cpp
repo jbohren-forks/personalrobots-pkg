@@ -175,6 +175,18 @@ TEST(URDF, NormalizeAnExpressionWithConstants)
   EXPECT_TRUE(xmlMatches(xml.RootElement(), desired.RootElement()));
 }
 
+TEST(URDF, NormalizeAVectorWithConstants)
+{
+  TiXmlDocument xml, desired;
+  xml.Parse("\
+<x> <const name='foo' value='0.4' />  \
+<grump arg='foo 0 0' />  \
+</x> ");
+  desired.Parse("<x><grump arg='0.4 0 0' /></x>");
+  EXPECT_TRUE(urdf::normalizeXml(xml.RootElement()));
+  EXPECT_TRUE(xmlMatches(xml.RootElement(), desired.RootElement()));
+}
+
 int main(int argc, char **argv)
 {
     testing::InitGoogleTest(&argc, argv);
