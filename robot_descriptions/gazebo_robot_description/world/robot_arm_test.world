@@ -40,8 +40,8 @@
     <frames>
       <row height="100%">
         <camera width="100%">
-          <xyz> .5 -2  1</xyz>
-          <rpy>  0  0 90</rpy>
+          <xyz> .25 1.5  2.5</xyz>
+          <rpy> 0   50  -90</rpy>
         </camera>
       </row>
     </frames>
@@ -142,9 +142,12 @@
       </geom:box>
     </body:box>
     <controller:P3D name="p3d_object_controller" plugin="libP3D.so">
-            <updateRate>100.0</updateRate>
-            <bodyName>object1_body</bodyName>
-            <interface:position name="p3d_object_position"/>
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <bodyName>object1_body</bodyName>
+      <topicName>object1_ground_truty</topicName>
+      <frameName>map</frameName>
+      <interface:position name="p3d_object_position"/>
     </controller:P3D>
   </model:physical>
 

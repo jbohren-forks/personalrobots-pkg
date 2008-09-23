@@ -201,8 +201,11 @@
 		</body:box>
 
 		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
+                        <alwaysOn>true</alwaysOn>
 			<updateRate>100.0</updateRate>
 			<bodyName>object1_body</bodyName>
+                        <topicName>object1_ground_truty</topicName>
+                        <frameName>map</frameName>
 			<interface:position name="p3d_object_position"/>
 		</controller:P3D>
 
