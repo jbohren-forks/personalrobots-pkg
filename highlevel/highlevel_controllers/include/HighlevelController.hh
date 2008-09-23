@@ -86,7 +86,12 @@ public:
    * @brief Test if the node has received required inputs allowing it to commence business as usual.
    * @see initialize()
    */
-  bool isInitialized(){return initialized;}
+  bool isInitialized(){
+    lock();
+    bool result =  initialized;
+    unlock();
+    return result;
+  }
 
   /**
    * @brief The main run loop of the controller
@@ -114,15 +119,21 @@ protected:
   /**
    * @brief Accessor for state of the controller
    */
-  bool isActive() const {
-    return this->state == ACTIVE;
+  bool isActive() {
+    lock();
+    bool result = this->state == ACTIVE;
+    unlock();
+    return result;
   }
 
   /**
    * @brief Access for valid status of the controller
    */
-  bool isValid() const {
-    return this->stateMsg.valid;
+  bool isValid() {
+    lock();
+    bool result =  this->stateMsg.valid;
+    unlock();
+    return result;
   }
 
   /**
@@ -130,12 +141,21 @@ protected:
    * are received to make sure it only publishes meaningful states
    */
   void initialize(){
+    lock();
     initialized = true;
+    unlock();
   }
 
 
   /**
-   * @brief Subclass will implement this method to update the published state msssage with data from telemetry input
+   * @brief Subclass will implement this method to update goal data based on new values in goalMsg. Derived class should
+   * be sure to lock and unlock when accessing member variables
+   */
+  virtual void updateGoalMsg(){}
+
+  /**
+   * @brief Subclass will implement this method to update the published state msssage with data from telemetry input. Derived class should
+   * be sure to lock and unlock when accessing member variables
    */
   virtual void updateStateMsg(){}
 
@@ -157,12 +177,34 @@ protected:
    */
   virtual bool dispatchCommands() = 0;
 
+  /**
+   * @brief Aquire node level lock
+   */
+  void lock(){lock_.lock();}
+
+  /**
+   * @brief Release node level lock
+   */
+  void unlock(){lock_.unlock();}
+
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */
 
 private:
 
-  void goalCallback(){}
+  void goalCallback(){
+    lock();
+    if(state == INACTIVE && goalMsg.enable){
+      activate();
+    }
+    else if(state == ACTIVE && !goalMsg.enable){
+      deactivate();
+    }
+    unlock();
+
+    // Call to allow derived class to update goal member variables
+    updateGoalMsg();
+  }
 
   /**
    * @brief Activation of the controller will set the state, the stateMsg but indicate that the
@@ -184,10 +226,6 @@ private:
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
-
-    goalMsg.lock();
-    goalMsg.enable = false;
-    goalMsg.unlock();
   }
 
   /**
@@ -210,8 +248,6 @@ private:
    * @brief The main control loop. Locking happens before and after
    */
   void doOneCycle(){
-    // Update the state for the goal
-    updateStateForGoal();
 
     // Update the state message with suitable data from inputs
     updateStateMsg();
@@ -249,14 +285,18 @@ private:
    * @brief Setter for state msg done flag
    */
   void setDone(bool isDone){
+    lock();
     this->stateMsg.done = isDone;
+    unlock();
   }
 
   /**
    * @brief Setter for state msg valid flag
    */
   void setValid(bool isValid){
+    lock();
     this->stateMsg.valid = isValid;
+    unlock();
   }
 
   /**
@@ -264,16 +304,6 @@ private:
    * accordingly. An update is where the logged state is not the same as the desired state.
    */
   void updateStateForGoal(){
-    goalMsg.lock();
-    bool enabled = goalMsg.enable;
-    goalMsg.unlock();
-
-    if(state == INACTIVE && enabled){
-      activate();
-    }
-    else if(state == ACTIVE && !enabled){
-      deactivate();
-    }
   }
 
   bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
@@ -281,6 +311,7 @@ private:
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
   State state; /*!< Tracks the overall state of the controller */
   const double cycleTime; /*!< The duration for each control cycle */
+  ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
 };
 
 #endif

@@ -130,19 +130,18 @@ MoveBaseSBPL::MoveBaseSBPL(double windowLength, unsigned char lethalObstacleThre
   envNav2D_.SetConfiguration(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0);
   envNav2D_.InitGeneral();
 
-  unlock();
-
   // Cleanup
   delete initialMapData;
   
-  //Initialize MDP Info
-  if(!envNav2D_.InitializeMDPCfg(&mdpCfg_)) 
-  {
+  bool success = envNav2D_.InitializeMDPCfg(&mdpCfg_);
+
+  unlock();
+
+  if(!success){
     printf("ERROR: InitializeMDPCfg failed\n");
     exit(1);
   }
 
-  // Finally, allocate the planner
   araPlanner_ = new ARAPlanner(&envNav2D_);
 }
 
@@ -157,18 +156,17 @@ MoveBaseSBPL::~MoveBaseSBPL(){
 void MoveBaseSBPL::handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){
   // Just buffer insertions and deletions. Environment can be updated in a batch prior to planning since planner is
   // not thread safe
-  lock();
   insertionsBuffer_.push_back(insertions);
   deletionsBuffer_.push_back(deletions);
-  unlock();
 }
 
 /**
- * Apply insert.deletion operations pairwise to replicate transaction order and preserve correct data. This will do a batch update
- * to the environment and should be called prior to planning.
+ * Apply insert &deletion operations pairwise to replicate transaction order and preserve correct data. This will do a batch update
+ * to the environment and should be called prior to planning. Note that we buffer so that the minimum locking is required between
+ * the planner and the cost map update routines.
  */
 void MoveBaseSBPL::applyMapUpdates(){
-  //lock();
+  lock();
   const CostMap2D& cm = getCostMap();
   for(unsigned int i = 0; i < insertionsBuffer_.size(); i++){
     const std::vector<unsigned int> insertions = insertionsBuffer_[i];
@@ -189,7 +187,7 @@ void MoveBaseSBPL::applyMapUpdates(){
   }
   insertionsBuffer_.clear();
   deletionsBuffer_.clear();
-  //unlock();
+  unlock();
 }
 
 bool MoveBaseSBPL::makePlan(){
@@ -209,9 +207,7 @@ bool MoveBaseSBPL::makePlan(){
   araPlanner_->set_start(envNav2D_.GetStateFromCoord(x, y));
 
   // Set goal state
-  goalMsg.lock();
-  cm.convertFromWorldCoordToIndexes(goalMsg.goal.x, goalMsg.goal.y, x, y);
-  goalMsg.unlock();
+  cm.convertFromWorldCoordToIndexes(stateMsg.goal.x, stateMsg.goal.y, x, y);
   envNav2D_.SetGoal(x, y);
   araPlanner_->set_goal(envNav2D_.GetStateFromCoord(x, y));
 

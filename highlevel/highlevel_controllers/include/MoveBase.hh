@@ -77,21 +77,17 @@ protected:
    */
   virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){}
 
-  /**
-   * @brief Aquire lock to enforce a mutex between the cost map update thread and the main node thread.
-   */
-  void lock();
-
-  /**
-   * @brief Release lock  enforcing a mutex between the cost map update thread and the main node thread.
-   */
-  void unlock();
-
   void publishPlan();
 
   std::vector< std::pair<unsigned int, unsigned int> > plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
 private:
+  /**
+   * @brief Will process a goal update message.
+   */
+  virtual void updateGoalMsg();
+
+
   /**
    * @brief Use global pose to publish currrent state data at the start of each cycle
    */

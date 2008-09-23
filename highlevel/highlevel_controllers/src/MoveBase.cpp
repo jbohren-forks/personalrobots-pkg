@@ -142,6 +142,15 @@ void MoveBase::updateGlobalPose(){
   //std::cout << "Robot at (" << global_pose_.x << ", " << global_pose_.y << ", " << global_pose_.yaw << ")\n";
 }
 
+
+void MoveBase::updateGoalMsg(){
+  lock();
+  stateMsg.goal.x = goalMsg.goal.x;
+  stateMsg.goal.y = goalMsg.goal.y;
+  stateMsg.goal.th = goalMsg.goal.th;
+  unlock();
+}
+
 void MoveBase::updateStateMsg(){
   // Get the current robot pose in the map frame
   updateGlobalPose();
@@ -150,12 +159,6 @@ void MoveBase::updateStateMsg(){
   stateMsg.pos.x = global_pose_.x;
   stateMsg.pos.y = global_pose_.y;
   stateMsg.pos.th = global_pose_.yaw;
-
-  goalMsg.lock();
-  stateMsg.goal.x = goalMsg.goal.x;
-  stateMsg.goal.y = goalMsg.goal.y;
-  stateMsg.goal.th = goalMsg.goal.th;
-  goalMsg.unlock();
 }
 
 /**
@@ -200,8 +203,12 @@ void MoveBase::laserScanCallback(){
   // Update the cost map
   const double ts = laserScanMsg_.header.stamp.to_double();
   std::vector<unsigned int> insertions, deletions;
+
+  // Surround with a lock since it can interact with planning
+  lock();
   costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
   handleMapUpdates(insertions, deletions);
+  unlock();
 
   // Pubish projected laser scan for rendering in map co-ordinates.
   std_msgs::Polyline2D pointCloudMsg;
@@ -218,14 +225,6 @@ void MoveBase::laserScanCallback(){
   }
 
   publish("gui_laser",pointCloudMsg);
-}
-
-void MoveBase::lock(){
-  //laserScanMsg_.lock();
-}
-
-void MoveBase::unlock(){
-  //laserScanMsg_.unlock();
 }
 
 void MoveBase::publishPlan(){

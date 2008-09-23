@@ -103,7 +103,7 @@ private:
   bool readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value);
 
   void handleArmConfigurationCallback();
-  void updateStateMsg();
+  void updateGoalMsg();
   bool makePlan();
   bool goalReached();
   bool dispatchCommands();
@@ -153,19 +153,17 @@ MoveArm::~MoveArm(){}
 
 void MoveArm::handleArmConfigurationCallback(){
   initialize();
-}
 
-void MoveArm::updateStateMsg(){
-  // Read vailable name value pairs
+  // Read available name value pairs
   std::vector<std::pair< std::string, double> > nameValuePairs;
-  mechanismState.lock();
   for(std::vector< std::string >::const_iterator it = jointNames_.begin(); it != jointNames_.end(); ++it){
     double value;
     const std::string& name = *it;
     if(readJointValue(mechanismState, name, value))
       nameValuePairs.push_back(std::pair<std::string, double>(name, value));
   }
-  mechanismState.unlock();
+
+  lock();
 
   // Now set the state msg up for publication
   stateMsg.set_configuration_size(nameValuePairs.size());
@@ -174,14 +172,13 @@ void MoveArm::updateStateMsg(){
     stateMsg.configuration[i].position = nameValuePairs[i].second;
   }
 
-  if(isActive()){
-    goalMsg.lock();
-    stateMsg.goal = goalMsg.configuration;
-    goalMsg.unlock();
-  }
-  else {
-    stateMsg.goal = stateMsg.configuration;
-  }
+  unlock();
+}
+
+void MoveArm::updateGoalMsg(){
+  lock();
+  stateMsg.goal = goalMsg.configuration;
+  unlock();
 }
 
 bool MoveArm::makePlan(){
