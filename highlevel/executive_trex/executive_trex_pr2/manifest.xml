@@ -16,6 +16,7 @@
   <depend package="nav_view" />
   <depend package="map_server" />
   <depend package="highlevel_controllers" />
+  <depend package="wavefront_player" />
   <depend package="gazebo" />
   <depend package="gazebo_plugin" />
   <depend package="world_3d_map" />
