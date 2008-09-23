@@ -121,14 +121,8 @@ class TrajectoryController {
     std::vector<std_msgs::Point2DFloat32> global_plan_;
 
   private:
-    //compute the distance from an individual cell to the planned path
-    void cellPathDistance(int cx, int cy, int dx, int dy);
-
     //update what map cells are considered path based on the global_plan
     void setPathCells();
-
-    //update neighboring path distance
-    void updateNeighbors(int cx, int cy);
 
     //convert the trajectories computed in robot space to world space
     void trajectoriesToWorld();

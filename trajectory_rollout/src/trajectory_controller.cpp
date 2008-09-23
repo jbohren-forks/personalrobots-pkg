@@ -44,7 +44,8 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), tf_(tf)
 {
-  num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim;
+  //regularly sample the forward velocity space... sample rotational vel space... sample backward vel space
+  num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim + samples_per_dim + samples_per_dim;
   int total_pts = num_trajectories_ * num_steps_;
 
   //even though we only have x,y we need to multiply by a 4x4 matrix
@@ -156,69 +157,6 @@ void TrajectoryController::computePathDistance(){
       updateCell(current_cell, check_cell);
     }
   }
-
-  /*
-
-  //two sweeps are needed to compute path distance for the grid
-
-  //sweep bottom-top / left-right
-  for(unsigned int i = 0; i < map_.size_x_; ++i)
-    for(unsigned int j = 0; j < map_.size_y_; ++j)
-      updateNeighbors(i, j);
-
-  //sweep top-bottom / right-left
-  for(int i = map_.size_x_ - 1; i >= 0; --i)
-    for(int j = map_.size_y_ - 1; j >= 0; --j)
-      updateNeighbors(i, j);
-  */
-
-}
-
-//update neighboring path distance
-void TrajectoryController::updateNeighbors(int cx, int cy){
-  //update the 8 neighbors of the current cell
-  for(int dx = -1; dx <= 1; ++dx){
-    for(int dy = -1; dy <= 1; ++dy){
-      if(!(dx == 0 && dy == 0))
-        cellPathDistance(cx, cy, dx, dy);
-    }
-  }
-}
-
-//compute the distance from an individual cell to the planned path
-void TrajectoryController::cellPathDistance(int cx, int cy, int dx, int dy){
-  int nx = cx + dx;
-  int ny = cy + dy;
-
-  double new_path_dist, new_goal_dist;
-
-  MapCell& current_cell = map_(cx, cy);
-
-  //determine whether to add 1 to distance or sqrt(2) (for corner neighbors)
-  if(dx && dy){
-    new_path_dist = current_cell.path_dist + 1.41;
-    new_goal_dist = current_cell.goal_dist + 1.41;
-  }
-  else{
-    new_path_dist = current_cell.path_dist + 1;
-    new_goal_dist = current_cell.goal_dist + 1;
-  }
-
-
-  //make sure we are looking at a cell that exists
-  if(!VALID_CELL(map_, nx, ny))
-    return;
-
-  //update path distance
-  MapCell& new_cell = map_(nx, ny);
-  if(new_path_dist < new_cell.path_dist){
-    new_cell.path_dist = new_path_dist;
-  }
-  
-  //update goal distance
-  if(new_goal_dist < new_cell.goal_dist){
-    new_cell.goal_dist = new_goal_dist;
-  }
 }
 
 //create a trajectory given the current pose of the robot and selected velocities
@@ -319,6 +257,7 @@ void TrajectoryController::trajectoriesToWorld(){
 
 }
 
+//transform trajectories from robot space to map space
 void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i){
   double cos_th = cos(th_i);
   double sin_th = sin(th_i);
@@ -326,7 +265,6 @@ void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i
 
   double new_x, new_y, old_x, old_y;
   for(unsigned int i = 0; i < trajectory_pts_.size2(); ++i){
-    //printf("BEFORE x: %.2f, y: %.2f, theta: %.2f \n", trajectory_pts_(0, i), trajectory_pts_(1, i), trajectory_theta_(0, i));
     old_x = trajectory_pts_(0, i);
     old_y = trajectory_pts_(1, i);
     new_x = x_i + old_x * cos_th - old_y * sin_th;
@@ -334,7 +272,6 @@ void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i
     trajectory_pts_(0, i) = new_x;
     trajectory_pts_(1, i) = new_y;
     trajectory_theta_(0, i) += th_i;
-    //printf("AFTER x: %.2f, y: %.2f, theta: %.2f \n", trajectory_pts_(0, i), trajectory_pts_(1, i), trajectory_theta_(0, i));
   }
 }
 
@@ -346,8 +283,7 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   double min_vel_x, min_vel_y, min_vel_theta;
 
   max_vel_x = min(1.0, vx + acc_x * sim_time_);
-  //min_vel_x = vx - acc_x * sim_time_;
-  min_vel_x = 0.0;
+  min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
   max_vel_y = vy + acc_y * sim_time_;
   min_vel_y = vy - acc_y * sim_time_;
@@ -389,6 +325,27 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
     }
     vx_samp += dvx;
   }
+
+  //next we want to generate trajectories for rotating in place
+  vtheta_samp = min_vel_theta;
+  vx_samp = 0.0;
+  vy_samp = 0.0;
+  for(int i = 0; i < samples_per_dim_; ++i){
+    trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
+    ++t_num;
+    vtheta_samp += dvtheta;
+  }
+
+  //and finally we want to generate trajectories that move backwards slowly
+  vtheta_samp = min_vel_theta;
+  vx_samp = -0.05;
+  vy_samp = 0.0;
+  for(int i = 0; i < samples_per_dim_; ++i){
+    trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
+    ++t_num;
+    vtheta_samp += dvtheta;
+  }
+  
 }
 
 //given the current state of the robot, find a good trajectory
@@ -413,7 +370,45 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   int best_index = -1;
 
   double safe_radius = sqrt(robot_front_radius_ * robot_front_radius_ + robot_side_radius_ * robot_side_radius_);
-  for(unsigned int i = 0; i < trajectories_.size(); ++i){
+
+  //we know that everything except the last 2 sets of trajectories are in the forward direction
+  unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
+  for(unsigned int i = 0; i < forward_traj_end; ++i){
+    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+
+    //so we can draw with cost info
+    trajectories_[i].cost_ = cost;
+
+    //find the minimum cost path
+    if(cost >= 0 && cost < min_cost){
+      best_index = i;
+      min_cost = cost;
+    }
+  }
+
+  if(best_index >= 0)
+    return best_index;
+
+  //the second to last set of trajectories is rotation only
+  unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
+  for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
+    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+
+    //so we can draw with cost info
+    trajectories_[i].cost_ = cost;
+
+    //find the minimum cost path
+    if(cost >= 0 && cost < min_cost){
+      best_index = i;
+      min_cost = cost;
+    }
+  }
+
+  if(best_index >= 0)
+    return best_index;
+
+  //the last set of trajectories is for moving backwards
+  for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
     double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
 
     //so we can draw with cost info
@@ -499,6 +494,7 @@ double TrajectoryController::pointCost(int x, int y){
   return 0.0;
 }
 
+//calculate the cost of a ray-traced line
 double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
   bool steep = abs(y1 - y0) > abs(x1 - x0);
   if(steep){
@@ -544,6 +540,7 @@ double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
   return line_cost;
 }
 
+//we need to take the footprint of the robot into account when we calculate cost to obstacles
 double TrajectoryController::footprintCost(double x, double y, double theta){
   double x_diff = robot_front_radius_ * cos(theta) - robot_side_radius_ * sin(theta);
   double y_diff = robot_front_radius_ * sin(theta) + robot_side_radius_ * cos(theta);
