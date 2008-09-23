@@ -35,7 +35,7 @@
 #include <sys/time.h>
 using namespace libTF;
 
-TransformReference::RefFrame::RefFrame(bool interpolating, 
+TransformReference::RefFrame::RefFrame(bool interpolating,
                                        unsigned long long max_cache_time,
                                        unsigned long long max_extrapolation_distance) :
   Pose3DCache(interpolating, max_cache_time, max_extrapolation_distance),
@@ -45,7 +45,7 @@ TransformReference::RefFrame::RefFrame(bool interpolating,
 }
 
 
-TransformReference::TransformReference(bool interpolating, 
+TransformReference::TransformReference(bool interpolating,
                                        ULLtime cache_time,
                                        unsigned long long max_extrapolation_distance):
   cache_time(cache_time),
@@ -68,12 +68,12 @@ TransformReference::~TransformReference()
     delete (*it);
   }
   frame_mutex_.unlock();
-  
+
 };
 
 void TransformReference::addFrame(unsigned int frame_id, unsigned int parent_id) {
-  
-  
+
+
   getFrame(frame_id)->setParent(parent_id);
 }
 
@@ -150,7 +150,7 @@ TFPoint TransformReference::transformPoint(const std::string & target_frame, con
 
   NEWMAT::Matrix myMat = getMatrix(target_frame, point_in.frame, point_in.time);
 
-  
+
   pointMat = myMat * pointMat;
   TFPoint retPoint;
   retPoint.x = pointMat(1,1);
@@ -168,7 +168,7 @@ TFPoint2D TransformReference::transformPoint2D(const std::string & target_frame,
 
   NEWMAT::Matrix myMat = getMatrix(target_frame, point_in.frame, point_in.time);
 
-  
+
   pointMat = myMat * pointMat;
   TFPoint2D retPoint;
   retPoint.x = pointMat(1,1);
@@ -185,7 +185,7 @@ TFVector TransformReference::transformVector(const std::string & target_frame, c
   vectorMat << vector_in.x << vector_in.y << vector_in.z << 0; // 0 vs 1 only difference between point and vector //fixme make this less copy and paste
 
   NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
-  
+
   vectorMat = myMat * vectorMat;
   TFVector retVector;
   retVector.x = vectorMat(1,1);
@@ -205,7 +205,7 @@ TFVector2D TransformReference::transformVector2D(const std::string & target_fram
 
   NEWMAT::Matrix myMat = getMatrix(target_frame, vector_in.frame, vector_in.time);
 
-  
+
   vectorMat = myMat * vectorMat;
   TFVector2D retVector;
   retVector.x = vectorMat(1,1);
@@ -220,10 +220,10 @@ TFEulerYPR TransformReference::transformEulerYPR(const std::string & target_fram
 
   NEWMAT::Matrix local = Pose3D::matrixFromEuler(0,0,0,euler_in.yaw, euler_in.pitch, euler_in.roll);
   NEWMAT::Matrix Transform = getMatrix(target_frame, euler_in.frame, euler_in.time);
-  
+
   NEWMAT::Matrix output = local.i() * Transform;
 
-  Euler eulers = Pose3D::eulerFromMatrix(output,1); 
+  Euler eulers = Pose3D::eulerFromMatrix(output,1);
 
   TFEulerYPR retEuler;
   retEuler.yaw = eulers.yaw;
@@ -343,7 +343,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
-        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl
           << viewFrames() << std::endl;
         throw(MaxDepthException(ss.str()));
       }
@@ -379,7 +379,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
-        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl
           << viewFrames() << std::endl;
         throw(MaxDepthException(ss.str()));
       }
@@ -405,7 +405,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       throw(ConnectivityException(ss.str()));
     }
   }
-  
+
   if (mTfLs.forwardTransforms.size() == 0)
   {
     if (mTfLs.inverseTransforms.size() == 0)
@@ -421,7 +421,7 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
       throw(ConnectivityException(ss.str()));
     }
   }
-  
+
   /* Make sure the end of the search shares a parent. */
   if (mTfLs.inverseTransforms.back() != mTfLs.forwardTransforms.back())
   {
@@ -436,14 +436,14 @@ TransformReference::TransformLists TransformReference::lookUpList(unsigned int t
   gettimeofday(&tempt2,NULL);
   std::cerr << "Base Cases done" <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
   */
-  
+
   while (mTfLs.inverseTransforms.back() == mTfLs.forwardTransforms.back())
   {
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
 
-      // Make sure we don't go beyond the beginning of the list.  
-      // (The while statement above doesn't fail if you hit the beginning of the list, 
+      // Make sure we don't go beyond the beginning of the list.
+      // (The while statement above doesn't fail if you hit the beginning of the list,
       // which happens in the zero distance case.)
       if (mTfLs.inverseTransforms.size() == 0 || mTfLs.forwardTransforms.size() == 0)
 	break;
@@ -463,7 +463,7 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
 	 << 0 << 1 << 0 << 0
 	 << 0 << 0 << 1 << 0
 	 << 0 << 0 << 0 << 1;
-  
+
   ///@todo change these to iterators
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
@@ -477,15 +477,15 @@ NEWMAT::Matrix TransformReference::computeTransformFromList(const TransformLists
         throw ExtrapolateException(ss.str());
       }
     }
-  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
+  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
       try {
-        retMat *= getFrame(lists.forwardTransforms[i])->getInverseMatrix(time); //Do this list backwards(from backwards) for it was generated traveling the wrong way
+        retMat = getFrame(lists.forwardTransforms[lists.forwardTransforms.size() -1 - i])->getInverseMatrix(time) * retMat;  //Do this list backwards(from backwards) for it was generated traveling the wrong way
       }
       catch (libTF::Pose3DCache::ExtrapolationException &ex)
       {
         std::stringstream ss;
-        ss << "Frame "<< lists.forwardTransforms[i] << " is out of date. " << ex.what();
+        ss << "Frame "<< lists.forwardTransforms[lists.forwardTransforms.size() -1 - i] << " is out of date. " << ex.what();
         throw ExtrapolateException(ss.str());
       }
     }
@@ -507,7 +507,7 @@ std::string TransformReference::viewChain(const std::string & target_frame, cons
   mstream << std::endl;
 
   mstream << "Forward Transforms: "<<std::endl ;
-  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
+  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
       mstream << lists.forwardTransforms[i]<<", ";
     }
@@ -519,7 +519,7 @@ std::string TransformReference::viewFrames()
 {
   stringstream mstream;
   frame_mutex_.lock();
-  
+
   //  for (std::vector< RefFrame*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
@@ -534,19 +534,19 @@ bool TransformReference::RefFrame::setParent(unsigned int parent_id)
 {
   if (parent_ != parent_id)
   {
-    parent_ = parent_id; 
-    clearList(); 
+    parent_ = parent_id;
+    clearList();
     return false;
-  } 
+  }
   return true;
 };
 
 
-TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_id) 
+TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_id)
 {
   if (frame_id == 0) /// @todo check larger values too
     return NULL;
-  else 
+  else
     return frames_[frame_id];
 
   /*  frame_mutex_.lock();
@@ -554,11 +554,11 @@ TransformReference::RefFrame* TransformReference::getFrame(unsigned int frame_id
   bool found = it != frames_.end();
   RefFrame *frame = found ? it->second : NULL;
   frame_mutex_.unlock();
-  
-  if (!found){ 
+
+  if (!found){
     return NULL; // @todo check where HOBBLED THROW may effect
     std::stringstream ss; ss << "getFrame: Frame " << frame_id  << " does not exist."
-                             << " Frames Present are: " <<std::endl << viewFrames() <<std::endl; 
+                             << " Frames Present are: " <<std::endl << viewFrames() <<std::endl;
     throw LookupException(ss.str());
   }
   return frame;
