@@ -79,7 +79,7 @@ public:
     void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped & qin, std_msgs::QuaternionStamped & oout);
   /** \brief Transform a std_msgs::PointCloud navively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
-    //Duplicate for time transforming (add target_time and fixed_frame)
+    ///\todo Duplicate for time transforming (add target_time and fixed_frame)
 
     ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout); 
 

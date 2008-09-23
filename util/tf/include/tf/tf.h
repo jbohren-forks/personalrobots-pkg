@@ -115,10 +115,14 @@ public:
                        const std::string& source_frame, uint64_t _source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
 
-
+  /** \brief Transform a Stamped data_in into data_out in traget frame */
   template<typename T>
   void transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
 
+  /** \brief Transform a Stamped data_in into data_out in traget frame at target time, using the given fixed frame
+   * This is a bit complicated.  The net effect is that the data will be transformed to the fixed frame
+   * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 
+   * \todo implement this. */
   template<typename T>
   void transformStamped(const std::string& target_frame, const uint64_t& _target_time,const std::string& fixed_frame, 
                         const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
@@ -183,6 +187,7 @@ protected:
    */
   TimeCache* getFrame(unsigned int frame_number);
 
+  /// String to number for frame lookup with dynamic allocation of new frames
   unsigned int lookupFrameNumber(const std::string& frameid_str){
     unsigned int retval = 0;
     frame_mutex_.lock();
@@ -200,6 +205,7 @@ protected:
     return retval;
   };
 
+  ///Number to string frame lookup may throw LookupException if number invalid
   std::string lookupFrameString(unsigned int frame_id_num)
   {
     if (frame_id_num >= frameIDs_reverse.size())
