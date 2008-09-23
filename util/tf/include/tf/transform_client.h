@@ -43,6 +43,7 @@
 
 namespace tf{
 
+/** \brief This class inherits from Transformer and automatically subscribes to ROS transform messages */
 class TransformClient : public Transformer { //subscribes to message and automatically stores incoming data
   
 private: 
@@ -72,9 +73,11 @@ public:
   };
   
     //Use Transformer interface for Stamped data types
-
+  /** \brief Transform a std_msgs::Vector navively */
     void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped & vin, std_msgs::Vector3Stamped & vout);  //output to msg or Stamped< >??
+  /** \brief Transform a std_msgs::Quaternion navively */
     void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped & qin, std_msgs::QuaternionStamped & oout);
+  /** \brief Transform a std_msgs::PointCloud navively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
     //Duplicate for time transforming (add target_time and fixed_frame)
 
@@ -82,7 +85,9 @@ public:
 
 
 private:
+  /// memory space for callback
   tfMessage msg_in_;
+  /// Callback function for ros message subscriptoin
   void subscription_callback();
 
   ///\todo Remove : for backwards compatability only

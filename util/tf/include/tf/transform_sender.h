@@ -42,14 +42,20 @@
 namespace tf
 {
 
+/** \brief This class provides an easy way to publish coordinate frame transform information.  
+ * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the 
+ * necessary data needed for each message.  */
+
 class TransformSender{
 public:
+  /** \brief Constructor (needs a ros::node reference) */
   TransformSender(ros::node& anode):
     node_(anode)
   {
     node_.advertise<tfMessage>("/tf_message", 100);
   };
-  
+  /** \brief Send a Stamped<Transform> with parent parent_id 
+   * The stamped data structure includes frame_id, and time already.  */
   void sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
   {
     tfMessage message;
@@ -79,6 +85,7 @@ public:
 
   } 
   
+  /** \brief Send a Transform, stamped with time, frame_id and parent_id */
   void sendTransform(const Transform & transform, const uint64_t & time, const std::string& frame_id, const std::string& parent_id)
   {
     tfMessage message;
@@ -108,6 +115,7 @@ public:
   }
   
 private:
+  /// Internal reference to ros::node
   ros::node & node_;
 
 };
