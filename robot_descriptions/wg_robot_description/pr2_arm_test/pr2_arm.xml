@@ -539,7 +539,7 @@
     <parent name=" world" />
     
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
-    <origin xyz=" 0 0 0.05 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
+    <origin xyz=" 0 0 0.002 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
     
     <joint name="base_joint" />
     
@@ -553,10 +553,10 @@
       <origin xyz="0 0 0" rpy="0 0 0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <map name="gazebo_material" flag="gazebo">
-        <elem key="material">Gazebo/Green</elem>
+        <elem key="material">Gazebo/GrassFloor</elem>
       </map>
       <geometry name="pr2_base_mesh_file">
-        <mesh scale="0.1 0.1 0.1" />
+        <mesh scale="20 20 0.01" />
       </geometry>
     </visual> 
     
@@ -564,7 +564,7 @@
       <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- default box is centered at the origin -->
       <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
       <geometry name="base_collision_geom"> <!-- think about putting mesh here as well -->
-        <box size="0.1 0.1 0.1" />
+        <box size="20 20 0.01" />
       </geometry>
     </collision>
     
@@ -936,25 +936,18 @@
   <!-- End sensor definitions -->
   
   <!--
-      <frame name="test">
-	<parent name="finger_l_left" />
-	<origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> // location defined with respect to the link origin in the sensor's local coordinate frame 
-	// All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis 
-      </frame>
-      -->
-  
-  
-  <!-- Define groups of links; a link may be part of multiple groups -->
-  
-  <include>groups_arm.xml</include>
-  
+  <frame name="test">
+    <parent name="finger_l_left" />
+    <origin xyz="0   0   0   " rpy="0.0 0.0 0.0 " /> // location defined with respect to the link origin in the sensor's local coordinate frame 
+    // All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis 
+  </frame>
+  -->
   
   <!-- new definitions for mechanism controls - JMH -->
-  <include>controllers_arm.xml</include>
   <include>actuators_arm.xml</include> 
   <include>transmissions_arm.xml</include> 
 
-  <!-- controllers for gazebo -->
-  <include>controllers_gazebo_arm.xml</include>
-
-</robot>
+  <!-- Define groups of links; a link may be part of multiple groups -->
+  <include>groups_arm.xml</include>
+  
+ </robot>

@@ -8,5 +8,7 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
   </group>
+  <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2_arm_test/controllers_arm.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
+  <node pkg="robot_mechanism_controllers" type="control.py" args="set gripper_left_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
 </launch>
 

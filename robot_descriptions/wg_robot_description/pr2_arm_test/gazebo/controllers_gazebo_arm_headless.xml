@@ -23,8 +23,6 @@
 </map>
 
 
-
-
 <map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
   <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
