@@ -34,7 +34,7 @@
 
 #include <list>
 #include "rosthread/mutex.h"
-#include "tf/data.h"
+#include "tf/transform_datatypes.h"
 #include "tf/exceptions.h"
 
 #include "LinearMath/btTransform.h"

@@ -29,7 +29,7 @@
 
 /** \author Tully Foote */
 
-#include "tf/client.h"
+#include "tf/transform_client.h"
 
 using namespace tf;
 
