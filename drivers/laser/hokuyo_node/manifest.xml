@@ -1,10 +1,10 @@
 <package>
-  <description>A ROS node to provide acess to the Hokuyo UTM-30LX laser.</description>
+  <description>A ROS node to provide access to SCIP2.0-compliant Hokuyo laser devices.</description>
   <author>Brian P. Gerkey, Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="std_msgs" />
-  <depend package="hokuyo_utm_driver" />
+  <depend package="hokuyo_driver" />
   <depend package="self_test" />
   <url>http://pr.willowgarage.com/wiki/Hokuyo_TOP-URG</url>
 </package>

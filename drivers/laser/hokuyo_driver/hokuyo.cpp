@@ -25,7 +25,7 @@
 #include <math.h>
 #include <poll.h>
 
-#include "hokuyo_utm.h"
+#include "hokuyo.h"
 
 #include <time.h>
 
@@ -35,18 +35,18 @@
 
 
 //! Macro for throwing an exception with a message
-#define UTM_EXCEPT(except, msg) \
+#define HOKUYO_EXCEPT(except, msg) \
   { \
     char buf[100]; \
-    snprintf(buf, 100, "hokuyo_utm::Laser::%s: " msg, __FUNCTION__); \
+    snprintf(buf, 100, "hokuyo::Laser::%s: " msg, __FUNCTION__); \
     throw except(buf); \
   }
 
 //! Macro for throwing an exception with a message, passing args
-#define UTM_EXCEPT_ARGS(except, msg, ...) \
+#define HOKUYO_EXCEPT_ARGS(except, msg, ...) \
   { \
     char buf[100]; \
-    snprintf(buf, 100, "hokuyo_utm::laser::%s: " msg, __FUNCTION__, __VA_ARGS__); \
+    snprintf(buf, 100, "hokuyo::laser::%s: " msg, __FUNCTION__, __VA_ARGS__); \
     throw except(buf); \
   }
 
@@ -67,7 +67,7 @@ static unsigned long long timeHelper()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-hokuyo_utm::Laser::Laser() :
+hokuyo::Laser::Laser() :
                       dmin_(0), dmax_(0), ares_(0), amin_(0), amax_(0), afrt_(0), rate_(0),
                       wrapped_(0), last_time_(0), offset_(0),
                       laser_port_(NULL), laser_fd_(-1)
@@ -75,7 +75,7 @@ hokuyo_utm::Laser::Laser() :
 
 
 ///////////////////////////////////////////////////////////////////////////////
-hokuyo_utm::Laser::~Laser ()
+hokuyo::Laser::~Laser ()
 {
   if (portOpen())
     close();
@@ -84,21 +84,21 @@ hokuyo_utm::Laser::~Laser ()
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo_utm::Laser::open(const char * port_name, bool use_serial, int baud)
+hokuyo::Laser::open(const char * port_name, bool use_serial, int baud)
 {
   if (portOpen())
     close();
   
   laser_port_ = fopen(port_name, "r+");
   if (laser_port_ == NULL)
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "Failed to open port: %s -- error = %d: %s", port_name, errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to open port: %s -- error = %d: %s", port_name, errno, strerror(errno));
 
   try
   {
 
     laser_fd_ = fileno (laser_port_);
     if (laser_fd_ == -1)
-      UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "Failed to get file descriptor --  error = %d: %s", errno, strerror(errno));
+      HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to get file descriptor --  error = %d: %s", errno, strerror(errno));
 
     int bauds[] = {B115200, B57600, B19200};
     
@@ -110,7 +110,7 @@ hokuyo_utm::Laser::open(const char * port_name, bool use_serial, int baud)
           break;
       }
       if (i == 3)
-        UTM_EXCEPT(hokuyo_utm::Exception, "Failed to connect at any baud rate");
+        HOKUYO_EXCEPT(hokuyo::Exception, "Failed to connect at any baud rate");
     }
     else
     {
@@ -130,15 +130,15 @@ hokuyo_utm::Laser::open(const char * port_name, bool use_serial, int baud)
 
     // Just in case a previous failure mode has left our Hokuyo
     // spewing data, we send the TM2 and QT commands to be safe.
-    utmFlush();
+    laserFlush();
     sendCmd("TM2", 1000);
     sendCmd("QT", 1000);
-    utmFlush();
+    laserFlush();
 
     querySensorConfig();
 
   }
-  catch (hokuyo_utm::Exception& e)
+  catch (hokuyo::Exception& e)
   {
     // These exceptions mean something failed on open and we should close
     if (laser_port_ != NULL)
@@ -152,7 +152,7 @@ hokuyo_utm::Laser::open(const char * port_name, bool use_serial, int baud)
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo_utm::Laser::close ()
+hokuyo::Laser::close ()
 {
   int retval = 0;
 
@@ -161,9 +161,9 @@ hokuyo_utm::Laser::close ()
     try
     {
       sendCmd("QT",1000);
-      utmFlush();
+      laserFlush();
     }
-    catch (hokuyo_utm::Exception& e) {
+    catch (hokuyo::Exception& e) {
       //Exceptions here can be safely ignored since we are closing the port anyways
     }
 
@@ -174,56 +174,56 @@ hokuyo_utm::Laser::close ()
   laser_fd_ = -1;
 
   if (retval != 0)
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "Failed to close port properly -- error = %d: %s\n", errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Failed to close port properly -- error = %d: %s\n", errno, strerror(errno));
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo_utm::Laser::sendCmd(const char* cmd, int timeout)
+hokuyo::Laser::sendCmd(const char* cmd, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   char buf[100]; 
 
-  utmWrite(cmd);
-  utmWrite("\n");
+  laserWrite(cmd);
+  laserWrite("\n");
 
-  utmReadlineAfter(buf, 100, cmd, timeout);
-  utmReadline(buf,100,timeout);
+  laserReadlineAfter(buf, 100, cmd, timeout);
+  laserReadline(buf,100,timeout);
 
   if (!checkSum(buf,4))
-    UTM_EXCEPT(hokuyo_utm::CorruptedDataException, "Checksum failed on status code.");
+    HOKUYO_EXCEPT(hokuyo::CorruptedDataException, "Checksum failed on status code.");
 
   buf[2] = 0;
   
   if (buf[0] - '0' >= 0 && buf[0] - '0' <= 9 && buf[1] - '0' >= 0 && buf[1] - '0' <= 9)
     return (buf[0] - '0')*10 + (buf[1] - '0');
   else
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "Hokuyo error code returned. Cmd: %s --  Error: %s", cmd, buf);
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "Hokuyo error code returned. Cmd: %s --  Error: %s", cmd, buf);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo_utm::Laser::utmWrite(const char* msg)
+hokuyo::Laser::laserWrite(const char* msg)
 {
   int retval = fputs(msg, laser_port_);
   if (retval != EOF)
     return retval;
   else
-    UTM_EXCEPT(hokuyo_utm::Exception, "fputs failed");
+    HOKUYO_EXCEPT(hokuyo::Exception, "fputs failed");
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo_utm::Laser::utmFlush()
+hokuyo::Laser::laserFlush()
 {
   int retval = tcflush(laser_fd_, TCIOFLUSH);
   if (retval != 0)
-    UTM_EXCEPT(hokuyo_utm::Exception, "tcflush failed");
+    HOKUYO_EXCEPT(hokuyo::Exception, "tcflush failed");
   
   return retval;
 } 
@@ -231,7 +231,7 @@ hokuyo_utm::Laser::utmFlush()
 
 ///////////////////////////////////////////////////////////////////////////////
 int 
-hokuyo_utm::Laser::utmReadline(char *buf, int len, int timeout)
+hokuyo::Laser::laserReadline(char *buf, int len, int timeout)
 {
   char* ret;
   int current=0;
@@ -250,25 +250,25 @@ hokuyo_utm::Laser::utmReadline(char *buf, int len, int timeout)
     if(timeout >= 0)
     {
       if ((retval = poll(ufd, 1, timeout)) < 0)
-        UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "poll failed   --  error = %d: %s", errno, strerror(errno));
+        HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "poll failed   --  error = %d: %s", errno, strerror(errno));
 
       if (retval == 0)
-        UTM_EXCEPT(hokuyo_utm::TimeoutException, "timeout reached");
+        HOKUYO_EXCEPT(hokuyo::TimeoutException, "timeout reached");
     }
 
     ret = fgets(&buf[current], len-current, laser_port_);
 
     if (ret != &buf[current])
-      UTM_EXCEPT(hokuyo_utm::Exception, "fgets failed");
+      HOKUYO_EXCEPT(hokuyo::Exception, "fgets failed");
 
     current += strlen(&buf[current]);
   }
-  UTM_EXCEPT(hokuyo_utm::Exception, "buffer filled without end of line being found");
+  HOKUYO_EXCEPT(hokuyo::Exception, "buffer filled without end of line being found");
 }
 
 
 char*
-hokuyo_utm::Laser::utmReadlineAfter(char* buf, int len, const char* str, int timeout)
+hokuyo::Laser::laserReadlineAfter(char* buf, int len, const char* str, int timeout)
 {
   buf[0] = 0;
   char* ind = &buf[0];
@@ -277,10 +277,10 @@ hokuyo_utm::Laser::utmReadlineAfter(char* buf, int len, const char* str, int tim
   int skipped = 0;
 
   while ((strncmp(buf, str, strlen(str))) != 0) {
-    bytes_read = utmReadline(buf,len,timeout);
+    bytes_read = laserReadline(buf,len,timeout);
 
     if ((skipped += bytes_read) > MAX_SKIPPED)
-      UTM_EXCEPT(hokuyo_utm::Exception, "too many bytes skipped while searching for match");
+      HOKUYO_EXCEPT(hokuyo::Exception, "too many bytes skipped while searching for match");
   }
 
   return ind += strlen(str);
@@ -289,36 +289,36 @@ hokuyo_utm::Laser::utmReadlineAfter(char* buf, int len, const char* str, int tim
 
 ///////////////////////////////////////////////////////////////////////////////
 void
-hokuyo_utm::Laser::querySensorConfig()
+hokuyo::Laser::querySensorConfig()
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   if (sendCmd("PP",1000) != 0)
-    UTM_EXCEPT(hokuyo_utm::Exception, "Error requesting configuration information");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Error requesting configuration information");
 
   char buf[100];
   char* ind;
     
-  ind = utmReadlineAfter(buf,100,"DMIN:",-1);
+  ind = laserReadlineAfter(buf,100,"DMIN:",-1);
   sscanf(ind, "%d", &dmin_);
     
-  ind = utmReadlineAfter(buf,100,"DMAX:",-1);
+  ind = laserReadlineAfter(buf,100,"DMAX:",-1);
   sscanf(ind, "%d", &dmax_);
     
-  ind = utmReadlineAfter(buf,100,"ARES:",-1);
+  ind = laserReadlineAfter(buf,100,"ARES:",-1);
   sscanf(ind, "%d", &ares_);
     
-  ind = utmReadlineAfter(buf,100,"AMIN:",-1);
+  ind = laserReadlineAfter(buf,100,"AMIN:",-1);
   sscanf(ind, "%d", &amin_);
     
-  ind = utmReadlineAfter(buf,100,"AMAX:",-1);
+  ind = laserReadlineAfter(buf,100,"AMAX:",-1);
   sscanf(ind, "%d", &amax_);
     
-  ind = utmReadlineAfter(buf,100,"AFRT:",-1);
+  ind = laserReadlineAfter(buf,100,"AFRT:",-1);
   sscanf(ind, "%d", &afrt_);
     
-  ind = utmReadlineAfter(buf,100,"SCAN:",-1);
+  ind = laserReadlineAfter(buf,100,"SCAN:",-1);
   sscanf(ind, "%d", &rate_);
     
   return;
@@ -326,24 +326,24 @@ hokuyo_utm::Laser::querySensorConfig()
 
 ///////////////////////////////////////////////////////////////////////////////
 bool
-hokuyo_utm::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
+hokuyo::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   struct termios newtio;
   int fd;
   fd = fileno (laser_port_);
 
   if (tcgetattr (fd, &newtio) < 0)
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
 
   cfmakeraw (&newtio);
   cfsetispeed (&newtio, curr_baud);
   cfsetospeed (&newtio, curr_baud);
 
   if (tcsetattr (fd, TCSAFLUSH, &newtio) < 0 )
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
 
   char buf[100];
   memset (buf,0,sizeof (buf));
@@ -360,7 +360,7 @@ hokuyo_utm::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
     sprintf(buf,"%s","S115200");
     break;
   default:
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "unknown baud rate: %d",new_baud);
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "unknown baud rate: %d",new_baud);
   }
   
   try
@@ -368,17 +368,17 @@ hokuyo_utm::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
     if (sendCmd(buf, timeout) != 0) {
       return false;
     }
-  } catch (hokuyo_utm::TimeoutException& e) { }
+  } catch (hokuyo::TimeoutException& e) { }
 
   if (tcgetattr (fd, &newtio) < 0)
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcgetattr failed  --  error = %d: %s\n", errno, strerror(errno));
 
   cfmakeraw (&newtio);
   cfsetispeed (&newtio, new_baud);
   cfsetospeed (&newtio, new_baud);
 
   if (tcsetattr (fd, TCSAFLUSH, &newtio) < 0 )
-    UTM_EXCEPT_ARGS(hokuyo_utm::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
+    HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "tcsetattr failed  --  error = %d: %s\n", errno, strerror(errno));
 
   usleep (200000);
   return (0);
@@ -387,7 +387,7 @@ hokuyo_utm::Laser::changeBaud (int curr_baud, int new_baud, int timeout)
 
 
 bool
-hokuyo_utm::Laser::checkSum(const char* buf, int buf_len)
+hokuyo::Laser::checkSum(const char* buf, int buf_len)
 {
   char sum = 0;
   for (int i = 0; i < buf_len - 2; i++)
@@ -401,28 +401,28 @@ hokuyo_utm::Laser::checkSum(const char* buf, int buf_len)
 
 
 unsigned long long
-hokuyo_utm::Laser::readTime(int timeout)
+hokuyo::Laser::readTime(int timeout)
 {
   char buf[100];
 
-  utmReadline(buf, 100, timeout);
+  laserReadline(buf, 100, timeout);
   if (!checkSum(buf, 6))
-    UTM_EXCEPT(hokuyo_utm::CorruptedDataException, "Checksum failed on time stamp.");
+    HOKUYO_EXCEPT(hokuyo::CorruptedDataException, "Checksum failed on time stamp.");
 
-  unsigned int urg_time = ((buf[0]-0x30) << 18) | ((buf[1]-0x30) << 12) | ((buf[2]-0x30) << 6) | (buf[3] - 0x30);
+  unsigned int laser_time = ((buf[0]-0x30) << 18) | ((buf[1]-0x30) << 12) | ((buf[2]-0x30) << 6) | (buf[3] - 0x30);
 
-  if (urg_time == last_time_)
+  if (laser_time == last_time_)
     fprintf(stderr, "This timestamp is same as the last timestamp.\nSomething is probably going wrong. Try decreasing data rate.");
-  else if (urg_time < last_time_)
+  else if (laser_time < last_time_)
     wrapped_++;
   
-  last_time_ = urg_time;
+  last_time_ = laser_time;
   
-  return (unsigned long long)((wrapped_ << 24) | urg_time)*(unsigned long long)(1000000);
+  return (unsigned long long)((wrapped_ << 24) | laser_time)*(unsigned long long)(1000000);
 }
 
 void
-hokuyo_utm::Laser::readData(hokuyo_utm::LaserScan* scan, bool has_intensity, int timeout)
+hokuyo::Laser::readData(hokuyo::LaserScan* scan, bool has_intensity, int timeout)
 {
   scan->num_readings = 0;
 
@@ -440,13 +440,13 @@ hokuyo_utm::Laser::readData(hokuyo_utm::LaserScan* scan, bool has_intensity, int
 
   for (;;)
   {
-    bytes = utmReadline(&buf[ind], 100 - ind, timeout);
+    bytes = laserReadline(&buf[ind], 100 - ind, timeout);
     
     if (bytes == 1)          // This is \n\n so we should be done
       return;
     
     if (!checkSum(&buf[ind], bytes))
-      UTM_EXCEPT(hokuyo_utm::CorruptedDataException, "Checksum failed on data read.");
+      HOKUYO_EXCEPT(hokuyo::CorruptedDataException, "Checksum failed on data read.");
     
     bytes += ind - 2;
     
@@ -465,7 +465,7 @@ hokuyo_utm::Laser::readData(hokuyo_utm::LaserScan* scan, bool has_intensity, int
 	scan->num_readings++;
       }
       else
-        UTM_EXCEPT(hokuyo_utm::CorruptedDataException, "Got more readings than expected");
+        HOKUYO_EXCEPT(hokuyo::CorruptedDataException, "Got more readings than expected");
     }
     // Shuffle remaining bytes to front of buffer to get them on the next loop
     ind = 0;
@@ -477,10 +477,10 @@ hokuyo_utm::Laser::readData(hokuyo_utm::LaserScan* scan, bool has_intensity, int
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo_utm::Laser::pollScan(hokuyo_utm::LaserScan* scan, double min_ang, double max_ang, int cluster, int timeout)
+hokuyo::Laser::pollScan(hokuyo::LaserScan* scan, double min_ang, double max_ang, int cluster, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   int status;
 
@@ -524,29 +524,29 @@ hokuyo_utm::Laser::pollScan(hokuyo_utm::LaserScan* scan, double min_ang, double 
 }
 
 int
-hokuyo_utm::Laser::laserOn() {
+hokuyo::Laser::laserOn() {
   int res = sendCmd("BM",1000);
   if (res == 1)
-    UTM_EXCEPT(hokuyo_utm::Exception, "Unable to control laser due to malfunction");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Unable to control laser due to malfunction");
   return res;
 }
 
 int
-hokuyo_utm::Laser::laserOff() {
+hokuyo::Laser::laserOff() {
   return sendCmd("QT",1000);
 }
 
 int
-hokuyo_utm::Laser::stopScanning() {
+hokuyo::Laser::stopScanning() {
   return laserOff();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int
-hokuyo_utm::Laser::requestScans(bool intensity, double min_ang, double max_ang, int cluster, int skip, int count, int timeout)
+hokuyo::Laser::requestScans(bool intensity, double min_ang, double max_ang, int cluster, int skip, int count, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   int status;
 
@@ -571,10 +571,10 @@ hokuyo_utm::Laser::requestScans(bool intensity, double min_ang, double max_ang, 
 
 
 int
-hokuyo_utm::Laser::serviceScan(hokuyo_utm::LaserScan* scan, int timeout)
+hokuyo::Laser::serviceScan(hokuyo::LaserScan* scan, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   // Always set num_readings to 0 so we can return easily in case of error
   scan->num_readings = 0;
@@ -593,7 +593,7 @@ hokuyo_utm::Laser::serviceScan(hokuyo_utm::LaserScan* scan, int timeout)
   int status = -1;
 
   do {
-    ind = utmReadlineAfter(buf, 100, "M",timeout);
+    ind = laserReadlineAfter(buf, 100, "M",timeout);
     scan->system_time_stamp = timeHelper() + offset_;
 
     if (ind[0] == 'D')
@@ -606,12 +606,12 @@ hokuyo_utm::Laser::serviceScan(hokuyo_utm::LaserScan* scan, int timeout)
     ind++;
 
     sscanf(ind, "%4d%4d%2d%1d%2d", &min_i, &max_i, &cluster, &skip, &left);  
-    utmReadline(buf,100,timeout);
+    laserReadline(buf,100,timeout);
 
     buf[4] = 0;
 
     if (!checkSum(buf, 4))
-      UTM_EXCEPT_ARGS(hokuyo_utm::CorruptedDataException, "Checksum failed on status code: %s", buf);
+      HOKUYO_EXCEPT_ARGS(hokuyo::CorruptedDataException, "Checksum failed on status code: %s", buf);
 
     sscanf(buf, "%2d", &status);
 
@@ -640,16 +640,16 @@ hokuyo_utm::Laser::serviceScan(hokuyo_utm::LaserScan* scan, int timeout)
 
 //////////////////////////////////////////////////////////////////////////////
 std::string 
-hokuyo_utm::Laser::getID()
+hokuyo::Laser::getID()
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   if (sendCmd("VV",1000) != 0)
-    UTM_EXCEPT(hokuyo_utm::Exception, "Error requesting version information");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Error requesting version information");
   
   char buf[100];
-  char* serial = utmReadlineAfter(buf, 100, "SERI:");
+  char* serial = laserReadlineAfter(buf, 100, "SERI:");
 
   std::string seristring(serial);
   seristring = std::string("H") + seristring.substr(1,seristring.length() - 4);
@@ -660,16 +660,16 @@ hokuyo_utm::Laser::getID()
 
 //////////////////////////////////////////////////////////////////////////////
 std::string
-hokuyo_utm::Laser::getStatus()
+hokuyo::Laser::getStatus()
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   if (sendCmd("II",1000) != 0)
-    UTM_EXCEPT(hokuyo_utm::Exception, "Error requesting device information information");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Error requesting device information information");
   
   char buf[100];
-  char* stat = utmReadlineAfter(buf, 100, "STAT:");
+  char* stat = laserReadlineAfter(buf, 100, "STAT:");
 
   std::string statstr(stat);
   statstr = statstr.substr(0,statstr.length() - 3);
@@ -680,15 +680,15 @@ hokuyo_utm::Laser::getStatus()
 
 //////////////////////////////////////////////////////////////////////////////
 long long
-hokuyo_utm::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int clustering, int skip, int num, int timeout)
+hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int clustering, int skip, int num, int timeout)
 {
   if (!portOpen())
-    UTM_EXCEPT(hokuyo_utm::Exception, "Port not open.");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Port not open.");
 
   offset_ = 0;
 
   unsigned long long comp_time = 0;
-  unsigned long long urg_time = 0;
+  unsigned long long laser_time = 0;
   long long diff_time = 0;
   long long drift_time = 0;
   long long tmp_offset1 = 0;
@@ -704,9 +704,9 @@ hokuyo_utm::Laser::calcLatency(bool intensity, double min_ang, double max_ang, i
     usleep(1000);
     sendCmd("TM1",timeout);
     comp_time = timeHelper();
-    urg_time = readTime();
+    laser_time = readTime();
 
-    diff_time = comp_time - urg_time;
+    diff_time = comp_time - laser_time;
 
     tmp_offset1 += diff_time / count;
   }
@@ -717,16 +717,16 @@ hokuyo_utm::Laser::calcLatency(bool intensity, double min_ang, double max_ang, i
   sendCmd("TM1;b",timeout);
   comp_time = timeHelper();
   drift_time = comp_time - start_time;
-  urg_time = readTime() + tmp_offset1;
-  diff_time = comp_time - urg_time;
+  laser_time = readTime() + tmp_offset1;
+  diff_time = comp_time - laser_time;
   double drift_rate = double(diff_time) / double(drift_time);
 
   sendCmd("TM2",timeout);
   
   if (requestScans(intensity, min_ang, max_ang, clustering, skip, num, timeout) != 0)
-    UTM_EXCEPT(hokuyo_utm::Exception, "Error requesting scans during latency calculation");
+    HOKUYO_EXCEPT(hokuyo::Exception, "Error requesting scans during latency calculation");
 
-  hokuyo_utm::LaserScan scan;
+  hokuyo::LaserScan scan;
 
   count = 200;
   for (int i = 0; i < count;i++)
@@ -734,14 +734,14 @@ hokuyo_utm::Laser::calcLatency(bool intensity, double min_ang, double max_ang, i
     try
     {
       serviceScan(&scan, 1000);
-    } catch (hokuyo_utm::CorruptedDataException &e) {
+    } catch (hokuyo::CorruptedDataException &e) {
       continue;
     }
 
     comp_time = scan.system_time_stamp;
     drift_time = comp_time - start_time;
-    urg_time = scan.self_time_stamp + tmp_offset1 + (long long)(drift_time*drift_rate);
-    diff_time = urg_time - comp_time;
+    laser_time = scan.self_time_stamp + tmp_offset1 + (long long)(drift_time*drift_rate);
+    diff_time = laser_time - comp_time;
 
     tmp_offset2 += diff_time / count;
   }

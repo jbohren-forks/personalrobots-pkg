@@ -22,17 +22,17 @@
  *  \htmlinclude manifest.html
  */
 
-#ifndef HOKUYO_UTM_HH
-#define HOKUYO_UTM_HH
+#ifndef HOKUYO_HH
+#define HOKUYO_HH
 
 #include <stdexcept>
 #include <termios.h>
 #include <string>
 
-//! A namespace containing the hokuyo_utm device driver
-namespace hokuyo_utm
+//! A namespace containing the hokuyo device driver
+namespace hokuyo
 {
-  //! The maximum number of readings that can be returned from a UTM
+  //! The maximum number of readings that can be returned from a hokuyo
   const int MAX_READINGS = 1128;
 
   //! The maximum length a command will ever be
@@ -48,7 +48,7 @@ namespace hokuyo_utm
     name(const char* msg) : parent(msg) {} \
   }
   
-  //! A standard UTM exception
+  //! A standard Hokuyo exception
   DEF_EXCEPTION(Exception, std::runtime_error);
 
   //! An exception for use when a timeout is exceeded
@@ -59,7 +59,7 @@ namespace hokuyo_utm
 
 #undef DEF_EXCEPTION
 
-  //! A struct for returning configuration from the UTM
+  //! A struct for returning configuration from the Hokuyo
   struct LaserConfig
   {
     //! Start angle for the laser scan [rad].
@@ -81,7 +81,7 @@ namespace hokuyo_utm
   };
 
 
-  //! A struct for returning laser readings from the UTM
+  //! A struct for returning laser readings from the Hokuyo
   struct LaserScan
   {
     //! Array of ranges
@@ -99,14 +99,14 @@ namespace hokuyo_utm
   };
 
 
-  //! A class for interfacing to the Hokuyo UTM laser device
+  //! A class for interfacing to an SCIP2.0-compliant Hokuyo laser device
   /*! 
    * NOTE: Just about all methods of this class may throw an exception
-   * of type UTM::exception in the event of an error when
+   * of type hokuyo::exception in the event of an error when
    * communicating with the device.  However, many methods which wrap
-   * commands that are sent to the UTM will return a UTM-supplied
+   * commands that are sent to the hokuyo will return a hokuyo-supplied
    * status code.  This code may indicate some form of failure on the
-   * part of the device itself.  For more information, consult the UTM
+   * part of the device itself.  For more information, consult the hokuyo
    * manual.
    */
   class Laser
@@ -120,7 +120,7 @@ namespace hokuyo_utm
   
     //! Open the port
     /*! 
-     * This must be done before the UTM can be used. This call essentially
+     * This must be done before the hokuyo can be used. This call essentially
      * wraps fopen, with some additional calls to tcsetattr.
      * 
      * \param port_name   A character array containing the name of the port
@@ -139,17 +139,17 @@ namespace hokuyo_utm
     //! Check whether the port is open
     bool portOpen() {  return laser_port_ != NULL; }
 
-    //! Sends an SCIP2.0 command to the utm
+    //! Sends an SCIP2.0 command to the hokuyo device
     /*!
-     *  This function allows commands to be sent directly to the UTM.
-     *  Possible commands can be found in the UTM documentation.  It
+     *  This function allows commands to be sent directly to the hokuyo.
+     *  Possible commands can be found in the hokuyo documentation.  It
      *  will only read up until the end of the status code.  Any
      *  additional bytes will be left on the line for parsing.
      *
      *  \param cmd    Command and arguments in a character array
      *  \param timeout Timeout in milliseconds.
      * 
-     *  \return Status code returned from utm device.
+     *  \return Status code returned from hokuyo device.
      */
     int sendCmd(const char* cmd, int timeout = -1);
 
@@ -167,7 +167,7 @@ namespace hokuyo_utm
      */
     bool changeBaud(int curr_baud, int new_baud, int timeout = -1);
 
-    //! Retrieve a single scan from the utm
+    //! Retrieve a single scan from the hokuyo
     /*!
      * \param scan       A pointer to an LaserScan which will be populated
      * \param min_ang    Minimal angle of the scan
@@ -175,13 +175,13 @@ namespace hokuyo_utm
      * \param clustering Number of adjascent ranges to be clustered into a single measurement.
      * \param timeout    Timeout in milliseconds.
      *
-     * \return Status code returned from utm device.
+     * \return Status code returned from hokuyo device.
      */
     int pollScan(LaserScan * scan, double min_ang, double max_ang, int clustering = 0, int timeout = -1);
 
-    //! Request a sequence of scans from the utm
+    //! Request a sequence of scans from the hokuyo
     /*!
-     *  This function will request a sequence of scans from the UTM.  If
+     *  This function will request a sequence of scans from the hokuyo.  If
      *  indefinite scans are requested, stop_scanning() must be called
      *  to terminate scanning.  Service_scan() must be called repeatedly
      *  to receive scans as they come in.
@@ -194,54 +194,54 @@ namespace hokuyo_utm
      * \param num        Number of scans to return (0 for indefinite)
      * \param timeout    Timeout in milliseconds.
      *
-     * \return Status code returned from utm device.
+     * \return Status code returned from hokuyo device.
      */
     int requestScans(bool intensity, double min_ang, double max_ang, int clustering = 0, int skip = 0, int num = 0, int timeout = -1);
 
     //! Retrieve a scan if they have been requested
     /*!
-     * \param scan       A pointer to an utm_LaserScan which will be populated.
+     * \param scan       A pointer to an LaserScan which will be populated.
      * \param timeout    Timeout in milliseconds.
      *
-     * \return 0 on succes, Status code returned from utm device on failure.  (Normally 99 is used for success)
+     * \return 0 on succes, Status code returned from hokuyo device on failure.  (Normally 99 is used for success)
      */
     int serviceScan(LaserScan * scan, int timeout = -1);
 
     //! Turn the laser off
     /*!
-     * \return Status code returned from utm device.
+     * \return Status code returned from hokuyo device.
      */
     int laserOff();
 
     //! Turn the laser on
     /*!
-     * \return Status code returned from utm device.
+     * \return Status code returned from hokuyo device.
      */
     int laserOn();
 
     //! Stop retrieving scans
     /*!
-     * \return Status code returned from utm device.
+     * \return Status code returned from hokuyo device.
      */
     int stopScanning();
 
-    //! Get serial number from the UTM
+    //! Get serial number from the hokuyo
     /*!
-     * \return  Serial number of UTM.
+     * \return  Serial number of hokuyo.
      */
     std::string getID();
 
-    //! Get status message from the UTM
+    //! Get status message from the hokuyo
     /*!
      * \return  Status message
      */
     std::string getStatus();
 
-    //! Compute latency between actual utm readings and system time
+    //! Compute latency between actual hokuyo readings and system time
     /*!
      *  This function will estimate the latency between when the data
-     *  is actually acquired by the utm and a read call returns from
-     *  the utm with the data.  This latency is stored in an offset
+     *  is actually acquired by the hokuyo and a read call returns from
+     *  the hokuyo with the data.  This latency is stored in an offset
      *  variable and applied to the measurement of system time which
      *  occurs immediately after a read.  This means that the
      *  system_time_stamp variable on LaserScan struct is corrected
@@ -264,20 +264,20 @@ namespace hokuyo_utm
     long long calcLatency(bool intensity, double min_ang, double max_ang, int clustering = 0, int skip = 0, int num = 0, int timeout = -1);
 
   private:
-    //! Query the sensor configuration of the utm
+    //! Query the sensor configuration of the hokuyo
     void querySensorConfig();
 
     //! Wrapper around tcflush
-    int utmFlush();
+    int laserFlush();
 
     //! Wrapper around fputs
-    int utmWrite(const char* msg);
+    int laserWrite(const char* msg);
 
-    //! Read a full line from the utm using fgets
-    int utmReadline(char *buf, int len, int timeout = -1);
+    //! Read a full line from the hokuyo using fgets
+    int laserReadline(char *buf, int len, int timeout = -1);
 
     //! Search for a particular sequence and then read the rest of the line
-    char* utmReadlineAfter(char *buf, int len, const char *str, int timeout = -1);
+    char* laserReadlineAfter(char *buf, int len, const char *str, int timeout = -1);
 
     //! Compute the checksum of a given buffer
     bool checkSum(const char* buf, int buf_len);

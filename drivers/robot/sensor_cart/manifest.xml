@@ -5,7 +5,7 @@
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="xmlparam"/>
-<depend package="hokuyo_utm_node"/>
+<depend package="hokuyo_node"/>
 <depend package="dc1394_cam_server"/>
 <depend package="etherdrive_old"/>
 <depend package="tilting_laser"/>

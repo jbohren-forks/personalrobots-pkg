@@ -38,27 +38,28 @@
 
 @htmlinclude manifest.html
 
-@b hokuyo_utm_node is a driver for the Hokuyo UTM-30LX laser range-finder, also 
+@b hokuyo_node is a driver for SCIP2.0 compliant Hokuyo laser range-finders.
+This driver has been designed, primarliy with the Hokuyo UTM-30LX in mind, also 
 known as the Hokuyo Top-URG.
 
 <hr>
 
 @section information Information
 
-Hokuyo UTM scans are taken in a counter-clockwise direction.  Angles are measured
+Hokuyo scans are taken in a counter-clockwise direction.  Angles are measured
 counter clockwise with 0 pointing directly forward.
 
 <hr>
 
 @section usage Usage
 @verbatim
-$ hokuyo_utm_node [standard ROS args]
+$ hokuyo_node [standard ROS args]
 @endverbatim
 
 @par Example
 
 @verbatim
-$ hokuyo_utm_node
+$ hokuyo_node
 @endverbatim
 
 <hr>
@@ -105,27 +106,27 @@ Reads the following parameters from the parameter server
 
 #include "self_test/self_test.h"
 
-#include "hokuyo_utm.h"
+#include "hokuyo.h"
 
 
 
 using namespace std;
 
-class HokuyoUTMNode: public ros::node
+class HokuyoNode: public ros::node
 {
 private:
-  hokuyo_utm::LaserScan  scan_;
-  hokuyo_utm::LaserConfig cfg_;
+  hokuyo::LaserScan  scan_;
+  hokuyo::LaserConfig cfg_;
 
   bool running_;
   
   int count_;
   ros::Time next_time_;
 
-  SelfTest<HokuyoUTMNode> self_test_;
+  SelfTest<HokuyoNode> self_test_;
 
 public:
-  hokuyo_utm::Laser utm_;
+  hokuyo::Laser laser_;
   std_msgs::LaserScan scan_msg_;
 
   double min_ang_;
@@ -137,7 +138,7 @@ public:
   bool calibrate_time_;
   string frameid_;
 
-  HokuyoUTMNode() : ros::node("hokuyo_utm"), running_(false), count_(0), self_test_(this)
+  HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this)
   {
     advertise<std_msgs::LaserScan>("scan", 100);
 
@@ -152,23 +153,23 @@ public:
     param("~calibrate_time", calibrate_time_, true);
     param("~frameid", frameid_, string("FRAMEID_LASER"));
 
-    self_test_.setPretest( &HokuyoUTMNode::pretest );
+    self_test_.setPretest( &HokuyoNode::pretest );
 
-    self_test_.addTest( &HokuyoUTMNode::interruptionTest );
-    self_test_.addTest( &HokuyoUTMNode::connectTest );
-    self_test_.addTest( &HokuyoUTMNode::IDTest );
-    self_test_.addTest( &HokuyoUTMNode::statusTest );
-    self_test_.addTest( &HokuyoUTMNode::laserTest );
-    self_test_.addTest( &HokuyoUTMNode::polledDataTest );
-    self_test_.addTest( &HokuyoUTMNode::streamedDataTest );
-    self_test_.addTest( &HokuyoUTMNode::streamedIntensityDataTest );
-    self_test_.addTest( &HokuyoUTMNode::laserOffTest );
-    self_test_.addTest( &HokuyoUTMNode::disconnectTest );
-    self_test_.addTest( &HokuyoUTMNode::resumeTest );
+    self_test_.addTest( &HokuyoNode::interruptionTest );
+    self_test_.addTest( &HokuyoNode::connectTest );
+    self_test_.addTest( &HokuyoNode::IDTest );
+    self_test_.addTest( &HokuyoNode::statusTest );
+    self_test_.addTest( &HokuyoNode::laserTest );
+    self_test_.addTest( &HokuyoNode::polledDataTest );
+    self_test_.addTest( &HokuyoNode::streamedDataTest );
+    self_test_.addTest( &HokuyoNode::streamedIntensityDataTest );
+    self_test_.addTest( &HokuyoNode::laserOffTest );
+    self_test_.addTest( &HokuyoNode::disconnectTest );
+    self_test_.addTest( &HokuyoNode::resumeTest );
 
   }
 
-  ~HokuyoUTMNode()
+  ~HokuyoNode()
   {
     stop();
   }
@@ -179,26 +180,26 @@ public:
 
     try
     {
-      utm_.open(port_.c_str());
+      laser_.open(port_.c_str());
 
-      string id = utm_.getID();
-      log(ros::INFO, "Connected to UTM with ID: %s", id.c_str());
+      string id = laser_.getID();
+      log(ros::INFO, "Connected to device with ID: %s", id.c_str());
 
-      utm_.laserOn();
+      laser_.laserOn();
 
       if (calibrate_time_)
-        utm_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
+        laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
         
-      int status = utm_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
+      int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
       if (status != 0) {
-        log(ros::WARNING,"Failed to request scans from UTM.  Status: %d.", status);
+        log(ros::WARNING,"Failed to request scans from device.  Status: %d.", status);
         return -1;
       }
 
       running_ = true;
 
-    } catch (hokuyo_utm::Exception& e) {
+    } catch (hokuyo::Exception& e) {
       log(ros::WARNING,"Exception thrown while starting urg.\n%s", e.what());
       return -1;
     }
@@ -214,8 +215,8 @@ public:
     {
       try
       {
-        utm_.close();
-      } catch (hokuyo_utm::Exception& e) {
+        laser_.close();
+      } catch (hokuyo::Exception& e) {
         log(ros::WARNING,"Exception thrown while trying to close:\n%s",e.what());
       }
       running_ = false;
@@ -228,17 +229,17 @@ public:
   {
     try
     {
-      int status = utm_.serviceScan(&scan_);
+      int status = laser_.serviceScan(&scan_);
       
       if(status != 0)
       {
         log(ros::WARNING,"Error getting scan: %d", status);
         return 0;
       }
-    } catch (hokuyo_utm::CorruptedDataException &e) {
+    } catch (hokuyo::CorruptedDataException &e) {
       log(ros::WARNING,"Skipping corrupted data");
       return 0;
-    } catch (hokuyo_utm::Exception& e) {
+    } catch (hokuyo::Exception& e) {
       log(ros::WARNING,"Exception thrown while trying to get scan.\n%s", e.what());
       running_ = false; //If we're here, we are no longer running
       return -1;
@@ -305,8 +306,8 @@ public:
     // Stop for good measure.
     try
     {
-      utm_.close();
-    } catch (hokuyo_utm::Exception& e) {
+      laser_.close();
+    } catch (hokuyo::Exception& e) {
       // Ignore exception here.
     }
   }
@@ -331,7 +332,7 @@ public:
   {
     status.name = "Connection Test";
 
-    utm_.open(port_.c_str());
+    laser_.open(port_.c_str());
 
     status.level = 0;
     status.message = "Connected successfully.";
@@ -341,7 +342,7 @@ public:
   {
     status.name = "ID Test";
 
-    string id = utm_.getID();
+    string id = laser_.getID();
 
     if (id == std::string("H0000000"))
     {
@@ -361,7 +362,7 @@ public:
   {
     status.name = "Status Test";
 
-    std::string stat = utm_.getStatus();
+    std::string stat = laser_.getStatus();
 
     if (stat != std::string("Sensor works well."))
     {
@@ -377,7 +378,7 @@ public:
   {
     status.name = "Laser Test";
 
-    utm_.laserOn();
+    laser_.laserOn();
 
     status.level = 0;
     status.message = "Laser turned on successfully.";
@@ -387,9 +388,9 @@ public:
   {
     status.name = "Polled Data Test";
 
-    hokuyo_utm::LaserScan  scan;
+    hokuyo::LaserScan  scan;
 
-    int res = utm_.pollScan(&scan, min_ang_, max_ang_, cluster_, 1000);
+    int res = laser_.pollScan(&scan, min_ang_, max_ang_, cluster_, 1000);
 
     if (res != 0)
     {
@@ -408,9 +409,9 @@ public:
   {
     status.name = "Streamed Data Test";
 
-    hokuyo_utm::LaserScan  scan;
+    hokuyo::LaserScan  scan;
 
-    int res = utm_.requestScans(false, min_ang_, max_ang_, cluster_, skip_, 99, 1000);
+    int res = laser_.requestScans(false, min_ang_, max_ang_, cluster_, skip_, 99, 1000);
 
     if (res != 0)
     {
@@ -423,7 +424,7 @@ public:
 
       for (int i = 0; i < 99; i++)
       {
-        utm_.serviceScan(&scan, 1000);
+        laser_.serviceScan(&scan, 1000);
       }
 
       status.level = 0;
@@ -436,9 +437,9 @@ public:
   {
     status.name = "Streamed Intensity Data Test";
 
-    hokuyo_utm::LaserScan  scan;
+    hokuyo::LaserScan  scan;
 
-    int res = utm_.requestScans(false, min_ang_, max_ang_, cluster_, skip_, 99, 1000);
+    int res = laser_.requestScans(false, min_ang_, max_ang_, cluster_, skip_, 99, 1000);
 
     if (res != 0)
     {
@@ -454,8 +455,8 @@ public:
       for (int i = 0; i < 99; i++)
       {
         try {
-          utm_.serviceScan(&scan, 1000);
-        } catch (hokuyo_utm::CorruptedDataException &e) {
+          laser_.serviceScan(&scan, 1000);
+        } catch (hokuyo::CorruptedDataException &e) {
           corrupted_data++;
         }
       }
@@ -481,7 +482,7 @@ public:
   {
     status.name = "Laser Off Test";
 
-    utm_.laserOff();
+    laser_.laserOff();
 
     status.level = 0;
     status.message = "Laser turned off successfully.";
@@ -491,7 +492,7 @@ public:
   {
     status.name = "Disconnect Test";
 
-    utm_.close();
+    laser_.close();
 
     status.level = 0;
     status.message = "Disconnected successfully.";
@@ -503,10 +504,10 @@ public:
 
     if (running_)
     {
-      utm_.open(port_.c_str());
-      utm_.laserOn();
+      laser_.open(port_.c_str());
+      laser_.laserOn();
 
-      int res = utm_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
+      int res = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
       if (res != 0)
       {
@@ -527,7 +528,7 @@ main(int argc, char** argv)
 {
   ros::init(argc, argv);
 
-  HokuyoUTMNode h;
+  HokuyoNode h;
 
   h.spin();
 

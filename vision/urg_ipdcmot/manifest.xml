@@ -9,5 +9,5 @@
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="ipdcmot" />
-  <depend package="hokuyo_utm_driver" />
+  <depend package="hokuyo_driver" />
 </package>
