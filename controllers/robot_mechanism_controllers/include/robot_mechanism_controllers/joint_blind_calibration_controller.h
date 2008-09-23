@@ -43,6 +43,15 @@
     This class moves the joint and reads the value of the clibration_reading_ field to find the zero position of the joint. Once these are determined, these values
  * are passed to the joint and enable the joint for the other controllers.
 
+ Example XML:
+ <controller type="JointBlindCalibrationController">
+   <calibrate joint="upperarm_roll_right_joint"
+              actuator="upperarm_roll_right_act"
+              transmission="upperarm_roll_right_trans"
+              velocity="0.3" />
+   <pid p="15" i="0" d="0" iClamp="0" />
+ </controller>
+
 */
 /***************************************************/
 
@@ -56,7 +65,7 @@
 namespace controller
 {
 
-class JointBlindCalibrationController : public JointManualCalibrationController
+class JointBlindCalibrationController : public Controller
 {
 public:
   /*!
@@ -82,17 +91,26 @@ public:
    */
   virtual void update();
 
+  bool calibrated() { return state_ == DONE; }
+  void beginCalibration() {
+    if (state_ == INITIALIZED)
+      state_ = BEGINNING;
+  }
+
 protected:
 
-  enum {SearchUp=100,SearchDown,SearchingUp,SearchingDown};
+  enum { INITIALIZED, BEGINNING, STARTING_UP, MOVING_UP,
+         STARTING_DOWN, MOVING_DOWN, DONE };
+  int state_;
 
   double search_velocity_;
-
-  double velocity_cmd_;
+  Actuator *actuator_;
+  mechanism::JointState *joint_;
+  mechanism::Transmission *transmission_;
 
   double init_time;
 
-  controller::JointVelocityController vcontroller_; /** The joint velocity controller used to sweep the joint.*/
+  controller::JointVelocityController vc_; /** The joint velocity controller used to sweep the joint.*/
 };
 
 

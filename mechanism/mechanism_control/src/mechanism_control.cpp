@@ -320,21 +320,40 @@ bool MechanismControlNode::spawnController(
   TiXmlDocument doc;
   doc.Parse(req.xml_config.c_str());
 
+  std::vector<uint8_t> oks;
+  std::vector<std::string> names;
+
   TiXmlElement *config = doc.RootElement();
-  if (0 == strcmp(config->Value(), "controllers"))
+  if (!config)
+    return false;
+  if (config->ValueStr() != "controllers" &&
+      config->ValueStr() != "controller")
+    return false;
+
+  if (config->ValueStr() == "controllers")
   {
     config = config->FirstChildElement("controller");
   }
 
   for (; config; config = config->NextSiblingElement("controller"))
   {
+    bool ok = true;
+
     if (!config->Attribute("type"))
-      resp.ok = false;
+      ok = false;
     else if (!config->Attribute("name"))
-      resp.ok = false;
+      ok = false;
     else
-      resp.ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
+    {
+      ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
+    }
+
+    oks.push_back(ok);
+    names.push_back(config->Attribute("name") ? config->Attribute("name") : "");
   }
+
+  resp.set_ok_vec(oks);
+  resp.set_name_vec(names);
 
   return true;
 }

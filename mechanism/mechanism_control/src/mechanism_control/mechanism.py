@@ -26,10 +26,11 @@ def spawn_controller(xml):
     rospy.wait_for_service('spawn_controller')
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
     resp = s.call(SpawnControllerRequest(xml))
-    if resp.ok == 1:
-        print "Spawned successfully"
-    else:
-        print "Error when spawning", resp.ok
+    for i in range(len(resp.ok)):
+        if resp.ok[i]:
+            print "Spawned", resp.name[i]
+        else:
+            print "Error when spawning", resp.name[i]
 
 def kill_controller(name):
     rospy.wait_for_service('kill_controller')

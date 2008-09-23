@@ -1,3 +1,4 @@
 string xml_config
 ---
-byte ok
+byte[] ok
+string[] name

@@ -41,145 +41,144 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointBlindCalibrationController)
 
 JointBlindCalibrationController::JointBlindCalibrationController()
-  : JointManualCalibrationController()
+: state_(INITIALIZED), joint_(NULL)
 {
-  std::cout<<"JointBlindCalibration created\n";
 }
 
 JointBlindCalibrationController::~JointBlindCalibrationController()
 {
-  std::cout<<"JointBlindCalibration destroyed\n";
 }
-
+#define GOTHERE printf("HERE %s %d\n", __FILE__, __LINE__);
 bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
   assert(config);
-  robot_ = robot->model_;
-  bool base=JointManualCalibrationController::initXml(robot, config);
-  if(!base)
-    return false;
-  TiXmlElement *j = config->FirstChildElement("param");
-  if (!j)
+
+  TiXmlElement *cal = config->FirstChildElement("calibrate");
+  if (!cal)
   {
-    std::cerr<<"JointBlindCalibrationController was not given parameters"<<std::endl;
+    std::cerr<<"JointBlindCalibrationController was not given calibration parameters"<<std::endl;
     return false;
   }
 
-  if(j->QueryDoubleAttribute("velocity", &search_velocity_ ) != TIXML_SUCCESS)
+  if(cal->QueryDoubleAttribute("velocity", &search_velocity_) != TIXML_SUCCESS)
   {
     std::cerr<<"Velocity value was not specified\n";
     return false;
   }
-  std::cout<<"search vel"<<search_velocity_<<std::endl;
-  if(search_velocity_ == 0)
+
+  const char *joint_name = cal->Attribute("joint");
+  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
+  if (!joint_)
   {
-    std::cerr<<"You gave zero velocity\n";
+    fprintf(stderr, "Error: JointBlindCalibrationController could not find joint \"%s\"\n",
+            joint_name);
     return false;
   }
 
-  TiXmlElement *v = config->FirstChildElement("controller");
-  if(!v)
+  const char *actuator_name = cal->Attribute("actuator");
+  actuator_ = actuator_name ? robot->model_->getActuator(actuator_name) : NULL;
+  if (!actuator_)
   {
-    std::cerr<<"JointBlindCalibrationController was not given a controller to move the joint."<<std::endl;
+    fprintf(stderr, "Error: JointBlindCalibrationController could not find actuator \"%s\"\n",
+            actuator_name);
     return false;
   }
 
-  return vcontroller_.initXml(robot, v);
+  const char *transmission_name = cal->Attribute("transmission");
+  transmission_ = transmission_name ? robot->model_->getTransmission(transmission_name) : NULL;
+  if (!transmission_)
+  {
+    fprintf(stderr, "Error: JointBlindCalibrationController could not find transmission \"%s\"\n",
+            transmission_name);
+    return false;
+  }
+
+  control_toolbox::Pid pid;
+  TiXmlElement *pid_el = config->FirstChildElement("pid");
+  if (!pid_el)
+  {
+    fprintf(stderr, "Error: JointBlindCalibrationController was not given a pid element.\n");
+    return false;
+  }
+  if (!pid.initXml(pid_el))
+    return false;
+
+  if (!vc_.init(robot, joint_name, pid))
+    return false;
+
+  return true;
 }
 
 void JointBlindCalibrationController::update()
 {
-  static const double v_thresh = 0.3*std::abs(search_velocity_);
-  assert(joint_state_);
+  assert(joint_);
   assert(actuator_);
 
-  if(state_ == Begin)
-  {
-    std::cout<<"begin procedure"<<std::endl;
-    joint_state_->calibrated_ = false;
-    init_time= robot_->hw_->current_time_;
-    velocity_cmd_ = search_velocity_;
-    if(search_velocity_>0)
-      state_ = SearchUp;
-    else
-      state_ = SearchDown;
-  }
+  static int count = 0;
+  static double joint_max_raw, joint_min_raw;  // Joint angles at the bumps
 
-  if(state_ == SearchUp)
+  switch (state_)
   {
-    if(joint_state_->velocity_ > v_thresh)
+  case INITIALIZED:
+    return;
+  case BEGINNING:
+    state_ = STARTING_UP;
+    count = 0;
+    joint_->calibrated_ = false;
+    actuator_->state_.zero_offset_ = 0.0;
+    break;
+  case STARTING_UP:
+    vc_.setCommand(search_velocity_);
+    if (++count > 500)
     {
-      std::cout<<"Searching up\n";
-      state_ = SearchingUp;
+      count = 0;
+      state_ = MOVING_UP;
     }
-    else
-      std::cout<<joint_state_->velocity_ <<'\t'<< v_thresh <<std::endl;
-  }
-
-  if(state_ == SearchDown)
-  {
-    if(joint_state_->velocity_ < -v_thresh)
+    break;
+  case MOVING_UP:
+    if (fabs(joint_->velocity_) < 0.001)
     {
-      std::cout<<"Searching down\n";
-      state_ = SearchingDown;
+      joint_max_raw = joint_->position_;
+      state_ = STARTING_DOWN;
+      count = 0;
     }
+    break;
+  case STARTING_DOWN:
+    vc_.setCommand(-search_velocity_);
+    if (++count > 500)
+    {
+      state_ = MOVING_DOWN;
+      count = 0;
+    }
+    break;
+  case MOVING_DOWN:
+    if (fabs(joint_->velocity_) < 0.001)
+    {
+      joint_min_raw = joint_->position_;
 
+      // Sets the desired joint zero based on where we bumped the limits.
+      double joint_zero = ((joint_max_raw - joint_->joint_->joint_limit_max_) +
+                           (joint_min_raw - joint_->joint_->joint_limit_min_)) / 2.0;
+      std::vector<Actuator*> fake_a;
+      std::vector<mechanism::JointState*> fake_j;
+      fake_a.push_back(new Actuator);
+      fake_j.push_back(new mechanism::JointState);
+      fake_j[0]->position_ = joint_zero;
+      transmission_->propagatePositionBackwards(fake_j, fake_a);
+      actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
+      joint_->calibrated_ = true;
+
+      state_ = DONE;
+      count = 0;
+    }
+    break;
+  case DONE:
+    vc_.setCommand(0.0);
+    break;
   }
 
-//  const double cur_time = robot_->hw_->current_time_;
-//
-//  if(cur_time - init_time > 1000)
-//  {
-//    std::cout<<"Finished\n";
-//    const double offset_ = offset(actuator_->state_.position_, joint_->joint_limit_max_);
-//    std::cout<<"offset "<<offset_<<std::endl;
-//    actuator_->state_.zero_offset_ = offset_;
-//    state_ = SearchDown; //TODO: get better results by a search down
-//    state_ = Initialized;
-//
-//  }
-
-   if(state_ == SearchingDown && joint_state_->velocity_>=0)
-   {
-     std::cout<<"Bump\n";
-     const double offset_down = offset(actuator_->state_.position_, joint_->joint_limit_min_);
-     std::cout<<"offset "<<offset_down<<std::endl;
-     actuator_->state_.zero_offset_ = offset_down;
-//     state_ = SearchUp; //TODO: get better results by a search down
-     state_ = Initialized;
-   }
-
-   if(state_ == SearchingUp && joint_state_->velocity_<=0)
-   {
-     std::cout<<"Bump\n";
-     const double offset_up = offset(actuator_->state_.position_, joint_->joint_limit_max_);
-     std::cout<<"offset "<<offset_up<<std::endl;
-     actuator_->state_.zero_offset_ = offset_up;
-//     state_ = SearchDown; //TODO: get better results by a search down
-     state_ = Initialized;
-   }
-
-  if(state_ == Initialized)
-  {
-    joint_state_->calibrated_ = true;
-    velocity_cmd_ = 0;
-    state_ = Stop;
-    state_mutex_.unlock();
-  }
-
-  if(state_ == Stop)
-  {
-    velocity_cmd_ = 0;
-  }
-
-
-
-  if(state_!=Stop)
-  {
-    vcontroller_.setCommand(velocity_cmd_);
-    vcontroller_.update();
-  }
+  vc_.update();
 }
 
 
@@ -204,10 +203,10 @@ void JointBlindCalibrationControllerNode::update()
   bool JointBlindCalibrationControllerNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
   c_->beginCalibration();
-  ros::Duration d=ros::Duration(0,1000000);
+  ros::Duration d = ros::Duration(0,1000000);
   while(!c_->calibrated())
     d.sleep();
-  c_->getOffset(resp.offset);
+  resp.offset = 0.0;
   return true;
 }
 
@@ -224,6 +223,7 @@ bool JointBlindCalibrationControllerNode::initXml(mechanism::RobotState *robot, 
 
   if (!c_->initXml(robot, config))
     return false;
+
   node->advertise_service(topic + "/calibrate", &JointBlindCalibrationControllerNode::calibrateCommand, this);
   return true;
 }
