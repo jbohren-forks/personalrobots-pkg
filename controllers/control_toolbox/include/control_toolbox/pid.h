@@ -110,7 +110,7 @@ public:
    */
   void initPid(double P, double I, double D, double I1, double I2);
 
-  void initXml(TiXmlElement *config);
+  bool initXml(TiXmlElement *config);
 
   /*!
    * \brief Set current command for this PID controller

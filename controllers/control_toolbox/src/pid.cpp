@@ -82,13 +82,14 @@ void Pid::setGains(double P, double I, double D, double I1, double I2)
   i_min_ = I2;
 }
 
-void Pid::initXml(TiXmlElement *config)
+bool Pid::initXml(TiXmlElement *config)
 {
   p_gain_ = config->Attribute("p") ? atof(config->Attribute("p")) : 0.0;
   i_gain_ = config->Attribute("i") ? atof(config->Attribute("i")) : 0.0;
   d_gain_ = config->Attribute("d") ? atof(config->Attribute("d")) : 0.0;
   i_max_ = config->Attribute("iClamp") ? atof(config->Attribute("iClamp")) : 0.0;
   i_min_ = -i_max_;
+  return true;
 }
 
 double Pid::updatePid(double error, double dt)
