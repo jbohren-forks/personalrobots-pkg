@@ -70,7 +70,8 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name / type):
-- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">LaserScan</a> : scan data from the laser.
+- @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">std_msgs/LaserScan</a> : scan data from the laser.
+- @b "diagnostic"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
 
@@ -81,14 +82,14 @@ Publishes to (name / type):
 
 Reads the following parameters from the parameter server
 
-- @b "~min_ang"       : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
-- @b "~max_ang"       : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
-- @b "~cluster"       : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
-- @b "~skip"          : @b [int]    the number of scans to skip between each measured scan (Default: 1)
-- @b "~port"          : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
-- @b "~autostart      : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
-- @b "~calibrate_time : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
-- @b "~frame_id       : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
+- @b "~min_ang"        : @b [double] the angle of the first range measurement in degrees (Default: -90.0)
+- @b "~max_ang"        : @b [double] the angle of the last range measurement in degrees (Default: 90.0)
+- @b "~cluster"        : @b [int]    the number of adjascent range measurements to cluster into a single reading (Default: 1)
+- @b "~skip"           : @b [int]    the number of scans to skip between each measured scan (Default: 1)
+- @b "~port"           : @b [string] the port where the hokuyo device can be found (Default: "/dev/ttyACM0")
+- @b "~autostart"      : @b [bool]   whether the node should automatically start the hokuyo (Default: true)
+- @b "~calibrate_time" : @b [bool]   whether the node should calibrate the hokuyo's time offset (Default: true)
+- @b "~frame_id"       : @b [string] the frame in which laser scans will be returned (Default: "FRAMEID_LASER")
 
  **/
 
