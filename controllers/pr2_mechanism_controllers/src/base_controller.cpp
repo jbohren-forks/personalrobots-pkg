@@ -563,6 +563,8 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
+  assert(robot_state); //this happens, see pr ticket 351,but not sure why yet
+
   if(!c_->initXml(robot_state, config))
     return false;
 
