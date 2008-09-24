@@ -56,6 +56,7 @@
 
 #include <mechanism_model/controller.h>
 #include <control_toolbox/pid.h>
+#include "misc_utils/advertised_service_guard.h"
 
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
@@ -186,6 +187,8 @@ public:
 private:
   robot_mechanism_controllers::SingleJointPosCmd msg_;   //The message used by the ROS callback
   JointPositionController *c_;
+
+  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
 };
 }
 

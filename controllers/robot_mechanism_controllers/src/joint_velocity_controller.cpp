@@ -212,6 +212,8 @@ bool JointVelocityControllerNode::initXml(mechanism::RobotState *robot_state, Ti
   if (!c_->initXml(robot_state, config))
     return false;
   node->advertise_service(topic + "/set_command", &JointVelocityControllerNode::setCommand, this);
+  guard_set_command_.set(topic + "/set_command");
   node->advertise_service(topic + "/get_actual", &JointVelocityControllerNode::getActual, this);
+  guard_get_actual_.set(topic + "/get_actual");
   return true;
 }

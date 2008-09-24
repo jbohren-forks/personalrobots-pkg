@@ -214,7 +214,7 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
 {
   ros::node *node = ros::node::instance();
   assert(node);
-  string prefix = config->Attribute("name");
+  std::string prefix = config->Attribute("name");
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")
@@ -227,7 +227,9 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
     return false;
 
   node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
+  guard_set_command_.set(prefix + "/set_command");
   node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
+  guard_get_actual_.set(prefix + "/get_actual");
 
   TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
   if(ros_cb)
