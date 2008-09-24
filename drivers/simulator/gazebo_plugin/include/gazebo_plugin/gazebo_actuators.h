@@ -26,6 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+
 #ifndef GAZEBO_ACTUATORS_H
 #define GAZEBO_ACTUATORS_H
 
@@ -46,6 +47,12 @@ class HingeJoint;
 class PositionIface;
 class XMLConfigNode;
 
+/**********************************************************/
+/*! \class GazeboActuators
+    This class implements a plugin for the
+    \ref{mechanism::MechanismControl} mechanisms controls class
+*/
+/**********************************************************/
 class GazeboActuators : public gazebo::Controller
 {
 public:

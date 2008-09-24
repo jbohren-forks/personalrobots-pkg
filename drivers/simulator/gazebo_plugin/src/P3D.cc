@@ -169,9 +169,8 @@ void P3D::FiniChild()
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
+    rosnode->unadvertise(this->topicName);
     std::cout << "shutdown rosnode in P3D" << std::endl;
-    //ros::fini();
     rosnode->shutdown();
-    //delete rosnode;
   }
 }

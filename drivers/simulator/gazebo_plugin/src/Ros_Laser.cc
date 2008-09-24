@@ -151,10 +151,10 @@ void Ros_Laser::UpdateChild()
 // Finalize the controller
 void Ros_Laser::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
+    rosnode->unadvertise(this->topicName);
     std::cout << "shutdown rosnode in Ros_Laser" << std::endl;
     rosnode->shutdown();
   }

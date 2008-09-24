@@ -19,9 +19,9 @@
  *
  */
 /*
- * Desc: Actuator array controller for a Pr2 robot.
- * Author: Nathan Koenig
- * Date: 19 Sept 2007
+ * Desc: A dynamic controller plugin that publishes ROS image topic for generic camera sensor.
+ * Author: John Hsu
+ * Date: 24 Sept 2008
  * SVN: $Id$
  */
 #ifndef ROS_CAMERA_HH
@@ -36,23 +36,25 @@ namespace gazebo
   class CameraIface;
   class MonoCameraSensor;
 
-/// @addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup genericcamera generic camera
+/** \defgroup roscamera Ros Camera Plugin
 
   \brief Ros camera controller.
   
-  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interfaace. This controller should only be used as a child of a camera sensor 
+  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interfaace as well as publish a ROS std_msgs::Image (under topicName). This controller should only be used as a child of a camera sensor 
 
   \verbatim
   <model:physical name="camera_model">
-    <body:empty name="camera_body">
+    <body:empty name="camera_body_name">
       <sensor:camera name="camera_sensor">
-
-        <controller:generic_camera name="controller-name">
-          <interface:camera name="iface-name"/>
-        </controller:generic_camera>
-
+        <controller:ros_camera name="controller-name" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>camera_name/image</topicName>
+            <frameName>camera_body_name</frameName>
+            <interface:camera name="ros_camera_iface" />
+        </controller:ros_camera>
       </sensor:camera>
     </body:empty>
   </model:phyiscal>
@@ -86,7 +88,7 @@ class Ros_Camera : public Controller
   /// \return 0 on success
   protected: virtual void UpdateChild();
 
-  /// \brief Finalize the controller
+  /// \brief Finalize the controller, unadvertise topics and shutdown ros node.
   /// \return 0 on success
   protected: virtual void FiniChild();
 

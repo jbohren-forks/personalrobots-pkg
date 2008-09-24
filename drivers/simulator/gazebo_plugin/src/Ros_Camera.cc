@@ -110,24 +110,6 @@ void Ros_Camera::UpdateChild()
   // do this first so there's chance for sensor to run 1 frame after activate
   if (this->myParent->IsActive())
     this->PutCameraData();
-#if 0
-  // do this first so there's chance for sensor to run 1 frame after activate
-  if (this->myParent->IsActive())
-    this->PutCameraData();
-
-  // activate if iface open
-  if (this->cameraIface->Lock(1))
-  {
-    if (this->cameraIface->GetOpenCount() > 0)
-      this->myParent->SetActive(true);
-    else
-      this->myParent->SetActive(false);
-
-    //std::cout << " camera open count " << this->cameraIface->GetOpenCount() << std::endl;
-    this->cameraIface->Unlock();
-  }
-  //std::cout << " camera     active " << this->myParent->IsActive() << std::endl;
-#endif
 
 }
 
@@ -135,10 +117,10 @@ void Ros_Camera::UpdateChild()
 // Finalize the controller
 void Ros_Camera::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
+    rosnode->unadvertise(this->topicName);
     std::cout << "shutdown rosnode in Ros_Camera" << std::endl;
     rosnode->shutdown();
   }

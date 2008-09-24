@@ -109,6 +109,7 @@ void Ros_Time::FiniChild()
     // TODO: will be replaced by global ros node eventually
     if (rosnode_ != NULL)
     {
+      rosnode_->unadvertise("time");
       std::cout << "shutdown rosnode in Ros_Time" << std::endl;
       rosnode_->shutdown();
     }

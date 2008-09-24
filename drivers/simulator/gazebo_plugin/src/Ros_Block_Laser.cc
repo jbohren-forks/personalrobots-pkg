@@ -171,10 +171,9 @@ void Ros_Block_Laser::FiniChild()
   // TODO: will be replaced by global ros node eventually
   if (rosnode != NULL)
   {
+    rosnode->unadvertise(this->topicName);
     std::cout << "shutdown rosnode in Ros_Block_Laser" << std::endl;
-    //ros::fini();
     rosnode->shutdown();
-    //delete rosnode;
   }
 }
 
