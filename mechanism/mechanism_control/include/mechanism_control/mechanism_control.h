@@ -83,12 +83,14 @@ private:
   controller::Controller* controllers_[MAX_NUM_CONTROLLERS];
   std::string controller_names_[MAX_NUM_CONTROLLERS];
 
-  // The realtime thread might still be using a controller when it is
-  // killed.  When it is killed, it's removed from the controllers_
-  // array and placed here, to be deleted by the realtime thread when
-  // it's safe to delete it.
-  const static int GARBAGE_SIZE = 20;
-  controller::Controller* garbage_[GARBAGE_SIZE];
+  // Killing a controller:
+  // 1. Non-realtime thread places the index of the controller into please_remove_
+  // 2. Realtime thread moves the controller out of the array and into removed_
+  // 3. Non-realtime thread can now delete the controller
+  // The non-realtime thread will hold controllers_lock_ throughout the process.
+  // please_remove_ must be -1 when not removing
+  int please_remove_;
+  controller::Controller* removed_;
 };
 
 /*

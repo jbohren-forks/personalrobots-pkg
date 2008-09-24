@@ -35,10 +35,9 @@
 using namespace mechanism;
 
 MechanismControl::MechanismControl(HardwareInterface *hw) :
-  state_(NULL), hw_(hw), initialized_(0)
+  state_(NULL), hw_(hw), initialized_(0), please_remove_(-1), removed_(NULL)
 {
   memset(controllers_, 0, MAX_NUM_CONTROLLERS * sizeof(void*));
-  memset(garbage_, 0, GARBAGE_SIZE * sizeof(void*));
   model_.hw_ = hw;
 }
 
@@ -83,14 +82,12 @@ void MechanismControl::update()
   state_->enforceSafety();
   state_->propagateEffort();
 
-  // Cleanup.  Deletes any controllers in the garbage.
-  for (int i = 0; i < GARBAGE_SIZE; ++i)
+  // If there's a controller to remove, we take it out of the controllers array.
+  if (please_remove_ >= 0)
   {
-    if (garbage_[i])
-    {
-      delete garbage_[i];
-      garbage_[i] = NULL;
-    }
+    removed_ = controllers_[please_remove_];
+    controllers_[please_remove_] = NULL;
+    please_remove_ = -1;
   }
 }
 
@@ -156,29 +153,29 @@ bool MechanismControl::spawnController(const std::string &type,
 
 bool MechanismControl::killController(const std::string &name)
 {
-  bool success = false;
+  bool found = false;
   controllers_lock_.lock();
+  removed_ = NULL;
   for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
   {
     if (controllers_[i] && controller_names_[i] == name)
     {
-      // Moves the controller into the garbage.
-      for (int j = 0; j < GARBAGE_SIZE; ++j)
-      {
-        if (NULL == garbage_[j])
-        {
-          garbage_[j] = controllers_[i];
-          controllers_[i] = NULL;
-          success = true;
-          break;
-        }
-      }
-
+      found = true;
+      please_remove_ = i;
       break;
     }
   }
+
+  if (found)
+  {
+    while (removed_ == NULL)
+      sleep(0.01);
+    delete removed_;
+    removed_ = NULL;
+  }
+
   controllers_lock_.unlock();
-  return success;
+  return found;
 }
 
 
