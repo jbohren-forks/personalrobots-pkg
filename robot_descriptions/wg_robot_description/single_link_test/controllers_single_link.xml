@@ -1,13 +1,10 @@
 <?xml version="1.0"?>
 
-<robot name="pr2"><!-- name of the robot-->
-
-
-  <!-- ========================================= -->
-  <!-- test controller -->
-  <controller name="upperarm_roll_left_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
+<controllers>
+  <controller name="test_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
     <joint name="upperarm_roll_left_joint" >
-      <pid p="200" d="0" i="0" iClamp="100" />
+      <pid p="2000" d="200" i="0.1" iClamp="1" />
     </joint>
   </controller>
-</robot>
+</controllers>
+

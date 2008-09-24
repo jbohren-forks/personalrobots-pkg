@@ -13,20 +13,20 @@
   
   <const name="upperarm_roll_elbow_flex_offset_x" value="0.4" />  <!-- mp 20080801 -->
   <const name="upperarm_roll_min_limit" value="-2.3562" />
-  <const name="upperarm_roll_max_limit" value=" 2.3562" />
+  <const name="upperarm_roll_max_limit" value="2.3562" />
   
   <!-- End constant dimensions -->
   <const_block name="pr2_upperarm_roll_joint">
-    <axis xyz=" 1 0 0 " /> <!-- direction of the joint in a global coordinate frame -->
-    <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
+    <axis xyz="1 0 0" /> <!-- direction of the joint in a global coordinate frame -->
+    <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
+    <limit min="upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_upperarm_roll_inertial">
     <mass value="4.9481" />
-    <com xyz=" 0.21227 0.001205 -0.016293  " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
-    <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+    <com xyz="0.21227 0.001205 -0.016293" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --> <!-- FIXME John switched x and z for now -->
+    <inertia  ixx="1.0" ixy="0.000547745916"  ixz="0.000119476885"  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
   </const_block> 
   
   <const_block name="pr2_upperarm_roll_collision">
@@ -72,7 +72,7 @@
     
     <inertial>
       <mass value="1000" />
-      <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+      <com xyz="0 0 0" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
       <inertia ixx="1000"  ixy="0"  ixz="0" iyy="1000" iyz="0" izz="1000" />
     </inertial> 
     
@@ -133,6 +133,7 @@
   <include>groups_single_link.xml</include>
   
   <!-- controllers for gazebo -->
-  <include>controllers_gazebo_single_link.xml</include>
+  <include>actuators_single_link.xml</include> 
+  <include>transmissions_single_link.xml</include> 
   
 </robot>

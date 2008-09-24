@@ -38,10 +38,24 @@
     <size>1024 800</size>
     <pos>0 0</pos>
     <frames>
-      <row height="100%">
-        <camera width="100%">
-          <xyz> .25 1.5  2.5</xyz>
-          <rpy> 0   50  -90</rpy>
+      <row height="50%">
+        <camera width="50%">
+          <xyz> .25 1.5  1.0</xyz>
+          <rpy> 0    0  -90</rpy>
+        </camera>
+        <camera width="50%">
+          <xyz>.25 0  2.5</xyz>
+          <rpy>  0 90 0</rpy>
+        </camera>
+      </row>
+      <row height="50%">
+        <camera width="50%">
+          <xyz>-1 0 1</xyz>
+          <rpy> 0 0 0</rpy>
+        </camera>
+        <camera width="50%">
+          <xyz>1.5 0 1</xyz>
+          <rpy>0 0 180</rpy>
         </camera>
       </row>
     </frames>
@@ -157,7 +171,7 @@
 
     <controller:ros_time name="ros_time" plugin="libRos_Time.so">
       <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
+      <updateRate>100.0</updateRate>
       <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
     </controller:ros_time>
 
@@ -176,10 +190,10 @@
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
-      <direction>0 -0.5 -0.5</direction>
+      <direction>0 -0.2 -0.5</direction>
       <diffuseColor>0.4 0.4 0.4</diffuseColor>
       <specularColor>0.0 0.0 0.0</specularColor>
-      <attenuation>1 0.0 1.0 0.4</attenuation>
+      <attenuation>0.1 0.0 0.1 0.4</attenuation>
     </light>
   </model:renderable>
   
