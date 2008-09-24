@@ -45,6 +45,8 @@
 #include <ros/node.h>
 #include <std_srvs/Empty.h>
 
+#include <misc_utils/realtime_publisher.h>
+
 static struct
 {
   char *program_;
@@ -71,8 +73,65 @@ void Usage(string msg = "")
 static int quit = 0;
 static const int NSEC_PER_SEC = 1e+9;
 
+static struct
+{
+  double ec[1000];
+  double mc[1000];
+} diagnostics;
+
+static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
+{
+  robot_msgs::DiagnosticMessage message;
+  vector<robot_msgs::DiagnosticStatus> statuses;
+  vector<robot_msgs::DiagnosticValue> values;
+  vector<robot_msgs::DiagnosticString> strings;
+  robot_msgs::DiagnosticStatus status;
+  robot_msgs::DiagnosticValue v;
+  robot_msgs::DiagnosticString s;
+
+  status.level = 0;
+  status.name = "Realtime Control Loop";
+  status.message = "OK";
+
+  static double max_ec = 0, max_mc = 0;
+  double total_ec = 0, total_mc = 0;
+
+  for (int i = 0; i < 1000; ++i)
+  {
+    total_ec += diagnostics.ec[i];
+    max_ec = max(max_ec, diagnostics.ec[i]);
+    total_mc += diagnostics.mc[i];
+    max_mc = max(max_mc, diagnostics.mc[i]);
+  }
+
+#define ADD_VALUE(lab, val) \
+  v.label = (lab); \
+  v.value = (val); \
+  values.push_back(v)
+
+  ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
+  ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
+  ADD_VALUE("Max Mechanism Control roundtrip (us)", max_ec*1e+6);
+  ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_ec*1e+6/1000);
+
+  status.set_values_vec(values);
+  status.set_strings_vec(strings);
+  statuses.push_back(status);
+  message.set_status_vec(statuses);
+  publisher.publish(message);
+}
+
+static inline double now()
+{
+  struct timespec n;
+  clock_gettime(CLOCK_REALTIME, &n);
+  return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
+}
+
 void *controlLoop(void *)
 {
+  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
+
   // Initialize the hardware interface
   EthercatHardware ec;
   ec.init(g_options.interface_);
@@ -115,10 +174,20 @@ void *controlLoop(void *)
   clock_gettime(CLOCK_REALTIME, &tick);
   int period = 1e+6; // 1 ms in nanoseconds
 
+  static int count = 0;
   while (!quit)
   {
+    double start = now();
     ec.update();
+    diagnostics.ec[count] = now() - start;
     mcn.update();
+    diagnostics.mc[count] = now() - start;
+
+    if (++count == 1000)
+    {
+      publishDiagnostics(publisher);
+      count = 0;
+    }
 
     tick.tv_nsec += period;
     while (tick.tv_nsec >= NSEC_PER_SEC)
@@ -136,6 +205,8 @@ void *controlLoop(void *)
     ec.hw_->actuators_[i]->command_.effort_ = 0;
   }
   ec.update();
+
+  publisher.stop();
 
   // Switch back from hard real-time
 #if defined(__XENO__)
