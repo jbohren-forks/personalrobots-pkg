@@ -39,7 +39,9 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(CartesianEffortController)
 
 CartesianEffortController::CartesianEffortController()
-: command_(0,0,0), links_(0,(mechanism::LinkState*)NULL), joints_(0,(mechanism::JointState*)NULL)
+: command_(0,0,0),
+  links_(0,(mechanism::LinkState*)NULL),
+  joints_(0,(mechanism::JointState*)NULL)
 {
 }
 
@@ -195,6 +197,7 @@ bool CartesianEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 
   node->advertise_service(topic + "/set_command",
                           &CartesianEffortControllerNode::setCommand, this);
+  guard_set_actual_.set(topic + "/set_command");
   return true;
 }
 

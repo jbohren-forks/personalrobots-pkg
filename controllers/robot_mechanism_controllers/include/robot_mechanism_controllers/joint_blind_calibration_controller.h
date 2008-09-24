@@ -56,7 +56,9 @@
 /***************************************************/
 
 
-#include "joint_manual_calibration_controller.h"
+#include "mechanism_model/controller.h"
+#include "robot_mechanism_controllers/joint_velocity_controller.h"
+#include "misc_utils/advertised_service_guard.h"
 
 // Services
 #include <robot_mechanism_controllers/CalibrateJoint.h>
@@ -147,6 +149,7 @@ public:
 
 private:
   JointBlindCalibrationController *c_;
+  AdvertisedServiceGuard guard_calibrate_;
 };
 }
 

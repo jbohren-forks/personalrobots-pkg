@@ -47,6 +47,7 @@
 #include "robot_mechanism_controllers/SetVectorCommand.h"
 #include "mechanism_model/controller.h"
 #include "LinearMath/btVector3.h"
+#include "misc_utils/advertised_service_guard.h"
 
 namespace controller {
 
@@ -80,6 +81,7 @@ public:
 
 private:
   CartesianEffortController c_;
+  AdvertisedServiceGuard guard_set_actual_;
 };
 
 }

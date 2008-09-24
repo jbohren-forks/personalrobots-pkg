@@ -30,6 +30,8 @@
 /*
  * Author: Stuart Glaser
  */
+#ifndef ADVERTISED_SERVICE_GUARD
+#define ADVERTISED_SERVICE_GUARD
 
 #include <ros/node.h>
 
@@ -61,3 +63,5 @@ private:
   bool valid_;
   std::string service_name_;
 };
+
+#endif

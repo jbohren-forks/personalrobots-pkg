@@ -225,5 +225,6 @@ bool JointBlindCalibrationControllerNode::initXml(mechanism::RobotState *robot, 
     return false;
 
   node->advertise_service(topic + "/calibrate", &JointBlindCalibrationControllerNode::calibrateCommand, this);
+  guard_calibrate_.set(topic + "/calibrate");
   return true;
 }

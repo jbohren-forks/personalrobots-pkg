@@ -51,6 +51,7 @@
 
 #include <ros/node.h>
 #include <mechanism_model/controller.h>
+#include "misc_utils/advertised_service_guard.h"
 
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
@@ -150,6 +151,7 @@ public:
 
 private:
   JointEffortController *c_;
+  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
 };
 }
 
