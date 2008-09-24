@@ -40,11 +40,18 @@
 
 This library provides functionality for maintaining a 2D cost map.  The primary inputs are:
   - a priori 2-D occupancy grid map
-  - obstacle data
+  - 3D obstacle data
+  - control parameters
+
 This cost map is initialized with the a priori map, and thereafter updated 
 with obstacle data.  A sliding window model of persistence is used, in which
 obstacle data lives in the map for a fixed (but configurable) amount of time
-before being discarded.  The static map lives forever.
+before being discarded.  The static map lives forever. Dynamic obstacle data is filtered
+to account for the robot body, and based on a z-value threshold to permit projection of 3D
+data to the 2D plane. Control parameters dictate the sliding window length, z threshold and
+inflation radius.
+
+For examples of usage see the test harness.
 */
 
 //c++
