@@ -135,9 +135,9 @@ void F3D::UpdateChild()
   this->vector3Msg.vector.y    = force.y;
   this->vector3Msg.vector.z    = force.z;
 
-  std::cout << "F3D: " << this->topicName
-            << "  f: " << force
-            << "  t: " << torque << std::endl;
+  //std::cout << "F3D: " << this->topicName
+  //          << "  f: " << force
+  //          << "  t: " << torque << std::endl;
   // publish to ros
   rosnode->publish(this->topicName,this->vector3Msg);
   this->lock.unlock();
