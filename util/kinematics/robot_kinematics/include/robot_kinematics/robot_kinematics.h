@@ -91,10 +91,11 @@ namespace robot_kinematics
 
     /*!
      * \brief load the robot kinematics from an XML file using a direct c_string representation of the file
+     *        returns true if scuccessful, false if fails to load correctly
      *
      * \param filename - xml file name
      */
-    void loadString(const char* model_string);
+    bool loadString(const char* model_string);
 
     /*!
      * \brief load the robot kinematics from a URDF model

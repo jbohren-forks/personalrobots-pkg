@@ -80,12 +80,13 @@ void RobotKinematics::loadXML(std::string filename)
   loadModel(model);
 }
 
-void RobotKinematics::loadString(const char* model_string)
+bool RobotKinematics::loadString(const char* model_string)
 {
   robot_desc::URDF model;
   if(!model.loadString(model_string))
-    return;
+    return false; // urdf fails
   loadModel(model);
+  return true;
 }
 
 void RobotKinematics::loadModel(const robot_desc::URDF &model)
