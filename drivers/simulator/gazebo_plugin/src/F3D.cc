@@ -19,10 +19,13 @@
  *
  */
 /*
- * Desc: 3D position interface for ground truth.
- * Author: Sachin Chitta and John Hsu
- * Date: 1 June 2008
- * SVN info: $Id$
+ @mainpage
+   Desc: Force Feed Back Ground Truth
+   Author: Sachin Chitta and John Hsu
+   Date: 1 June 2008
+   SVN info: $Id$
+ @htmlinclude manifest.html
+ @b F3D plugin broadcasts forces acting on the body specified by name.
  */
 
 #include <gazebo/Global.hh>
@@ -132,6 +135,9 @@ void F3D::UpdateChild()
   this->vector3Msg.vector.y    = force.y;
   this->vector3Msg.vector.z    = force.z;
 
+  std::cout << "F3D: " << this->topicName
+            << "  f: " << force
+            << "  t: " << torque << std::endl;
   // publish to ros
   rosnode->publish(this->topicName,this->vector3Msg);
   this->lock.unlock();
