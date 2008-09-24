@@ -210,7 +210,11 @@ bool ArmVelocityControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses kinematics description
   std::string pr2Contents;
   node->get_param("robotdesc/pr2", pr2Contents);
-  pr2_kin_.loadString(pr2Contents.c_str());
+  while (!pr2_kin_.loadString(pr2Contents.c_str())) // retry if load fails
+  {
+    std::cout << "WARNING: waitig for robotdesc/pr2 xml string on param server.  run roslaunch send.xml or similar." << std::endl;
+    usleep(100000);
+  }
   arm_chain_ = pr2_kin_.getSerialChain(kdl_chain_name.c_str());
 
   assert(arm_chain_);
