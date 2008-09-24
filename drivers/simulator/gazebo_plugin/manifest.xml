@@ -5,7 +5,7 @@
   </description>
   <author>Sachin Chitta, Stu Glaser, John Hsu</author>
   <license>BSD</license>
-  <url>http://pr.willowgarage.com/repos</url>
+  <url>http://pr.willowgarage.com/wiki/gazebo_plugin</url>
   <depend package="gazebo"/>
   <depend package="opende"/>
   <depend package="newmat10"/>

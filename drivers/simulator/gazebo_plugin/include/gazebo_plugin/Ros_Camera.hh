@@ -38,9 +38,9 @@ namespace gazebo
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup roscamera Ros Camera Plugin
+/** \defgroup Ros_Camera Ros Camera Plugin XML Reference and Example
 
-  \brief Ros camera controller.
+  \brief Ros Camera Plugin Controller.
   
   This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interfaace as well as publish a ROS std_msgs::Image (under topicName). This controller should only be used as a child of a camera sensor 
 
@@ -63,8 +63,7 @@ namespace gazebo
 \{
 */
 
-/// \brief Ros camera controller.
-/// 
+/// \brief Ros_Camera Plugin Controller
 /// This is a controller that simulates a generic camera
 class Ros_Camera : public Controller
 {
@@ -75,46 +74,42 @@ class Ros_Camera : public Controller
   /// \brief Destructor
   public: virtual ~Ros_Camera();
 
-  /// \brief Load the controller
+  /// \function Load the controller
   /// \param node XML config node
-  /// \return 0 on success
   protected: virtual void LoadChild(XMLConfigNode *node);
 
   /// \brief Init the controller
-  /// \return 0 on success
   protected: virtual void InitChild();
 
   /// \brief Update the controller
-  /// \return 0 on success
   protected: virtual void UpdateChild();
 
-  /// \brief Finalize the controller, unadvertise topics and shutdown ros node.
-  /// \return 0 on success
+  /// \brief Finalize the controller, unadvertise topics and shutdown ROS node.
   protected: virtual void FiniChild();
 
   /// \brief Put camera data to the iface
   private: void PutCameraData();
 
-  /// The camera interface
+  /// \brief The camera Iface
   private: CameraIface *cameraIface;
 
-  /// The parent sensor
+  /// \brief A pointer to the parent camera sensor
   private: MonoCameraSensor *myParent;
 
-  // pointer to ros node
+  /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
   private: ros::node *rosnode;
 
-  // ros message
+  /// \bridf ROS image message
   private: std_msgs::Image imageMsg;
 
-  // topic name
+  /// \brief ROS image topic name
   private: std::string topicName;
 
-  // frame transform name, should match link name
-  // FIXME: extract link name directly?
+  /// \brief ROS frame transform name to use in the image message header.
+  ///        This should typically match the link name the sensor is attached.
   private: std::string frameName;
 
-  // A mutex to lock access to fields that are used in message callbacks
+  /// \brief A mutex to lock access to fields that are used in ROS message callbacks
   private: ros::thread::mutex lock;
 
 };

@@ -44,12 +44,21 @@ namespace gazebo
 
    \brief P3D controller.
 
-   \verbatim
-   <controller:P3D name="controller-name">
-   <interface:actarray name="iface-name"/>
-   </controller:P3D>
-   \endverbatim
-  
+  \verbatim
+  <model:physical name="camera_model">
+    <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <bodyName>base</bodyName>
+      <topicName>base_pose_ground_truth</topicName>
+      <frameName>map</frameName>
+      <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+      <rpyOffsets>0 0 0</rpyOffsets>
+      <interface:position name="p3d_base_position"/>
+    </controller:P3D>
+  </model:phyiscal>
+  \endverbatim
+   
    \{
    */
 

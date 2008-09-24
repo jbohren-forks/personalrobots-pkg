@@ -90,7 +90,7 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
     }
     else
     {
-      fprintf(stderr, "Gazebo does not know about a joint named \"%s\"\n", joint_name.c_str());
+      fprintf(stderr, "WARNING (gazebo_actuators): A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
       joints_.push_back(NULL);
     }
 

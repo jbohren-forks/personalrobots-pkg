@@ -19,12 +19,14 @@
  *
  */
 /*
- * Desc: Actuator array controller for a Pr2 robot.
- * Author: Sachin Chitta and John Hsu
- * Date: 1 June 2008
- * SVN info: $Id$
+ @mainpage
+   Desc: Ros_Camera plugin for simulating cameras in Gazebo
+   Author: John Hsu
+   Date: 24 Sept 2008
+   SVN info: $Id$
+ @htmlinclude manifest.html
+ @b Ros_Camera plugin broadcasts ROS Image messages as well as fills in Iface.
  */
-
 
 #include <algorithm>
 #include <assert.h>
@@ -38,7 +40,6 @@
 #include <gazebo/gazebo.h>
 #include <gazebo/GazeboError.hh>
 #include <gazebo/ControllerFactory.hh>
-//#include "/u/johnhsu/projects/pr2/3rdparty/gazebo/gazebo-svn/server/sensors/camera/MonoCameraSensor.hh"
 #include "MonoCameraSensor.hh"
 
 using namespace gazebo;
