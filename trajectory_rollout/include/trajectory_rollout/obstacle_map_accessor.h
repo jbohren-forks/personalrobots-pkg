@@ -40,6 +40,7 @@
 //Interface call for accessing obstacle data
 class ObstacleMapAccessor{
   public:
+  virtual ~ObstacleMapAccessor(){}
     virtual unsigned int getWidth() const = 0;
     virtual unsigned int getHeight() const = 0;
     virtual bool isOccupied(unsigned int id) const = 0;
@@ -51,7 +52,7 @@ class ObstacleMapAccessor{
 class WavefrontMapAccessor : public ObstacleMapAccessor {
   public:
     WavefrontMapAccessor(MapGrid &map) : map_(map) {}
-
+  virtual ~WavefrontMapAccessor(){};
     virtual unsigned int getWidth() const {return  map_.size_x_;}
     virtual unsigned int getHeight() const {return map_.size_y_;}
 

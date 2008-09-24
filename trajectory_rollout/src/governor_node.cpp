@@ -48,7 +48,7 @@ GovernorNode::GovernorNode() :
   robot_vel_.y = 0.0;
   robot_vel_.yaw = 0.0;
   robot_vel_.frame = "base";
-  robot_vel_.time = 0.0;
+  robot_vel_.time = 0;
 
   //so we can draw the local path
   advertise<std_msgs::Polyline2D>("local_path", 10);
