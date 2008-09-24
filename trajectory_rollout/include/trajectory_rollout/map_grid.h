@@ -67,6 +67,9 @@ class MapGrid{
     //reset path distance fields for all cells
     void resetPathDist();
 
+    //check if we need to resize
+    void sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y);
+
     size_t getIndex(int x, int y);
 
     //allow easy creation of messages

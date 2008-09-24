@@ -57,6 +57,7 @@
 #include <trajectory_rollout/map_cell.h>
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
+#include <trajectory_rollout/obstacle_map_accessor.h>
 
 //we'll take in a path as a vector of points
 #include <std_msgs/Point2DFloat32.h>
@@ -82,7 +83,7 @@ class TrajectoryController {
         double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf);
     
     //given the current state of the robot, find a good trajectory
-    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
+    int findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
@@ -135,11 +136,12 @@ class TrajectoryController {
     void transformTrajects(double x_i, double y_i, double th_i);
 
     //compute the cost for a single trajectory
-    double trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale, double safe_raidus);
+    double trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
+        double gdist_scale, double occdist_scale, double dfast_scale, double safe_raidus);
 
-    double footprintCost(double x_i, double y_i, double theta_i);
-    double lineCost(int x0, int x1, int y0, int y1);
-    double pointCost(int x, int y);
+    double footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
+    double lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1);
+    double pointCost(const ObstacleMapAccessor& ma, int x, int y);
     void swap(int& a, int& b);
 
     //the simulation parameters for generating trajectories

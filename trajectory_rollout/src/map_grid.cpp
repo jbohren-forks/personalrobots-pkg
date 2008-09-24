@@ -70,6 +70,27 @@ MapGrid& MapGrid::operator= (const MapGrid& mg){
   return *this;
 }
 
+void MapGrid::sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, double o_y){
+  if(map_.size() != size_x * size_y)
+    map_.resize(size_x * size_y);
+
+  if(size_x_ != size_x || size_y_ != size_y){
+    size_x_ = size_x;
+    size_y_ = size_y;
+
+    origin_x = o_x;
+    origin_y = o_y;
+
+    for(unsigned int i = 0; i < size_y_; ++i){
+      for(unsigned int j = 0; j < size_x_; ++j){
+        int index = size_x_ * i + j;
+        map_[index].cx = j;
+        map_[index].cy = i;
+      }
+    }
+  }
+}
+
 //allow easy updating from message representations
 void MapGrid::update(ScoreMap2D& new_map){
   if(map_.size() != new_map.size_y * new_map.size_x){

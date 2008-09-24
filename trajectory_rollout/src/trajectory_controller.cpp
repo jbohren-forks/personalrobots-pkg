@@ -350,7 +350,7 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 }
 
 //given the current state of the robot, find a good trajectory
-int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
+int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
@@ -377,7 +377,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   //we know that everything except the last 2 sets of trajectories are in the forward direction
   unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
   for(unsigned int i = 0; i < forward_traj_end; ++i){
-    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -398,7 +398,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   //the second to last set of trajectories is rotation only
   unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
   for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
-    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -418,7 +418,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
 
   //the last set of trajectories is for moving backwards
   for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -436,7 +436,8 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, double gdist_scale, double occdist_scale, double dfast_scale, double safe_radius){
+double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale,
+    double gdist_scale, double occdist_scale, double dfast_scale, double safe_radius){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
   double goal_dist = 0.0;
@@ -452,7 +453,7 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
     int cell_y = WY_MY(map_, y);
 
     //we don't want a path that ends off the known map or in an obstacle
-    if(!VALID_CELL(map_, cell_x, cell_y) || map_(cell_x, cell_y).occ_state == 1){
+    if(!VALID_CELL(map_, cell_x, cell_y) || ma.isOccupied(cell_x, cell_y)){
       return -1.0;
     }
 
@@ -462,7 +463,7 @@ double TrajectoryController::trajectoryCost(int t_index, double pdist_scale, dou
     //first we decide if we need to lay down the footprint of the robot
     if(map_(cell_x, cell_y).occ_dist < safe_radius){
       //if we do compute the obstacle cost for each cell in the footprint
-      double footprint_cost = footprintCost(x, y, theta);
+      double footprint_cost = footprintCost(ma, x, y, theta);
       if(footprint_cost < 0)
         return -1.0;
       occ_dist += footprint_cost;
@@ -502,9 +503,9 @@ void TrajectoryController::swap(int& a, int& b){
   b = temp;
 }
 
-double TrajectoryController::pointCost(int x, int y){
+double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(map_(x, y).occ_state == 1){
+  if(ma.isOccupied(x, y)){
     return -1;
   }
 
@@ -516,7 +517,7 @@ double TrajectoryController::pointCost(int x, int y){
 }
 
 //calculate the cost of a ray-traced line
-double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
+double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1){
   bool steep = abs(y1 - y0) > abs(x1 - x0);
   if(steep){
     swap(x0, y0);
@@ -543,9 +544,9 @@ double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
 
   for(int x = x0; x <= x1; ++x){
     if(steep)
-      point_cost = pointCost(y, x);
+      point_cost = pointCost(ma, y, x);
     else
-      point_cost = pointCost(x, y);
+      point_cost = pointCost(ma, x, y);
 
     if(point_cost < 0)
       return -1;
@@ -562,7 +563,7 @@ double TrajectoryController::lineCost(int x0, int x1, int y0, int y1){
 }
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
-double TrajectoryController::footprintCost(double x_i, double y_i, double theta_i){
+double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i){
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
 
@@ -590,7 +591,7 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the front line
-  line_dist = lineCost(x0, x1, y0, y1);
+  line_dist = lineCost(ma, x0, x1, y0, y1);
   if(line_dist < 0)
     return -1;
 
@@ -608,7 +609,7 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the right side line
-  line_dist = lineCost(x1, x2, y1, y2);
+  line_dist = lineCost(ma, x1, x2, y1, y2);
   if(line_dist < 0)
     return -1;
 
@@ -626,14 +627,14 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the back line
-  line_dist = lineCost(x2, x3, y2, y3);
+  line_dist = lineCost(ma, x2, x3, y2, y3);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
   //check the left side line
-  line_dist = lineCost(x3, x0, y3, y0);
+  line_dist = lineCost(ma, x3, x0, y3, y0);
   if(line_dist < 0)
     return -1;
 

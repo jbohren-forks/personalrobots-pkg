@@ -55,6 +55,7 @@
 #include <trajectory_rollout/trajectory_controller.h>
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
+#include <trajectory_rollout/obstacle_map_accessor.h>
 
 #define MAP_SIZE_X 10
 #define MAP_SIZE_Y 10
@@ -118,6 +119,8 @@ class GovernorNode: public ros::node
 
     //how long for each cycle
     double cycle_time_;
+
+    WavefrontMapAccessor ma_;
 
     //for debugging output
     std_msgs::Polyline2D path_msg;
