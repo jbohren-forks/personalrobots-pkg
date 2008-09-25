@@ -74,18 +74,12 @@ def hex2dec(s):
 def readmask(hexstr):
     char = hex2dec(hexstr)
     mask = []
-    for i in range(0,8):
+    for i in range(0,16):
         if char & (1 << i):
             mask.append(True)
         else:
             mask.append(False)
     return mask
-
-
-#todo: automatically set 
-# set serial ports to 19200
-# the same as doing below
-# stty 19200 </dev/ttyUSBX
 
 
 class powerBattery:
@@ -99,7 +93,7 @@ class powerBattery:
         self.voltage = 0.0
         self.current = 0.0
         self.average_current = 0.0
-        self.error = False
+##        self.error = False
         self.temperature = 0.0
         self.max_relative_charge_error = 0
         self.absolute_charge = 0
@@ -109,14 +103,16 @@ class powerBattery:
         self.run_time_to_empty = 0
         self.average_time_to_empty = 0
         self.average_time_to_full = 0
-#        self.battery_status =
+        self.battery_status = ""
+        #self.capacity_mode = ""
+        self.conditioning_needed = 0
         self.cycle_count = 0
         self.design_capacity = 0
         self.design_voltage = 0
 #        self.secification_info = 
 #        self.manufacture_date = 
-        self.serial_number = 0
-        
+        self.serial_number = ""
+#        self.chemistry = ""
 
 class powerController:
     def __init__(self):
@@ -175,7 +171,7 @@ class robotPower:
             battery_counter = 0
             for b in controller.batteries:
                 if b.present:
-                    print "Controller:%d Battery:%d:: V: %.2f Vdesign: %.2f I: %.2f Iave: %.2f Temp: %.1f RelChg: %.1f AbsChg: %.1f RemCap: %.1f Capdesign: %.1f TTEAve: %.1f TTERun: %.1f TTF: %.1f Cycles: %d Serial: %d "%(controller_counter, battery_counter, b.voltage, b.design_voltage, b.current, b.average_current, b.temperature, b.relative_charge, b.absolute_charge, b.remaining_capacity, b.design_capacity, b.average_time_to_empty, b.run_time_to_empty, b.average_time_to_full, b.cycle_count, b.serial_number)
+                    print "Controller:%d Battery:%d:: V: %.2f Vdesign: %.2f I: %.2f Iave: %.2f Temp: %.1f RelChg: %.1f AbsChg: %.1f RemCap: %.1f Capdesign: %.1f TTEAve: %.1f TTERun: %.1f TTF: %.1f Cycles: %d Serial: %s "%(controller_counter, battery_counter, b.voltage, b.design_voltage, b.current, b.average_current, b.temperature, b.relative_charge, b.absolute_charge, b.remaining_capacity, b.design_capacity, b.average_time_to_empty, b.run_time_to_empty, b.average_time_to_full, b.cycle_count, b.serial_number)
                 battery_counter = battery_counter + 1 # There must be a better way to enumerate this
             controller_counter = controller_counter + 1
 
@@ -212,7 +208,7 @@ class robotPower:
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].voltage, "voltage (V)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].current, "current (A)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_current, "average current (1 minute average A)"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].error, "error (0,1)"))
+##                bval.append(DiagnosticValue(self.controllers[c].batteries[b].error, "error (0,1)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].temperature, "temperature (K)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].max_relative_charge_error, "max relative charge error (%)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].relative_charge, "relative charge (%)"))
@@ -221,11 +217,18 @@ class robotPower:
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].run_time_to_empty, "run time to empty (min)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_empty, "average time to empty (min)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_full, "average time to full (min)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].conditioning_needed, "conditioning needed"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].cycle_count, "cycle count"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_capacity, "design capacity (lookup)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_voltage, "design voltage (V)"))
-                stringval.append(DiagnosticString(self.controllers[c].batteries[b].serial_number, "Serial Number"))
-                stat.append(DiagnosticStatus(0, "Smart Battery %d.%d"%(c,b), "All good", bval, stringval))
+                stringval.append(DiagnosticString(str(self.controllers[c].batteries[b].serial_number), "Serial Number"))
+##stringval.append(DiagnosticString(self.controllers[c].batteries[b].chemistry, "Chemistry"))
+                status_string = "OK"
+                status_value = 0
+                if len(self.controllers[c].batteries[b].battery_status) != 0:
+                    status_value = 1
+                    status_string = self.controllers[c].batteries[b].battery_status
+                stat.append(DiagnosticStatus(status_value, "Smart Battery %d.%d"%(c,b), status_string, bval, stringval))
                 ## @todo make the status string represent errors etc
                             
 
@@ -393,9 +396,16 @@ def monitorBatteriesMain(argv, stdout, env):
                 for i in range(0,(len(splitmessage)-1)/2):
                     key = splitmessage[i*2+1]
                     value = splitmessage[i*2+2]
-#                print 'key %s , value %s'%(splitmessage[i*2+1],splitmessage[i*2+2])
-#                print 'key %s , value dec %s'%(splitmessage[i*2+1],hex2dec(splitmessage[i*2+2]))
+                    #                print 'key %s , value %s'%(splitmessage[i*2+1],splitmessage[i*2+2])
+                    #                print 'key %s , value dec %s'%(splitmessage[i*2+1],hex2dec(splitmessage[i*2+2]))
 
+                    if key == '03':
+                        mask = readmask(value)
+                        if mask[7] == 0:
+                            myPow.controllers[port].batteries[battery_number].conditioning_needed = 0
+                        else:
+                            myPow.controllers[port].batteries[battery_number].conditioning_needed = 1
+                            
 
                     # Temperature Degrees Kelvin
                     if key == '08':
@@ -457,9 +467,26 @@ def monitorBatteriesMain(argv, stdout, env):
                     if key == '13':
                         myPow.controllers[port].batteries[battery_number].average_time_to_full = float(hex2dec(value))
                         
-# 14 and 15 undocumented
-
+                        # 14 and 15 undocumented
+                        
 ## @todo 0x16 battery status a large bit field with lots of parsing
+                    if key == '16':
+                        myPow.controllers[port].batteries[battery_number].battery_status = ""
+                        mask = readmask(value)
+                        if mask[15] == 1:
+                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_CHARGED_ALARM "
+                        if mask[14] == 1:
+                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_CHARGE_ALARM "
+                        if mask[12] == 1:
+                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_TEMP_ALARM "
+                        if mask[11] == 1:
+                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_DISCHARGE_ALARM "
+                        if mask[7] == 0:
+                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "INITIALZED FALSE "
+##A test of actually capturing errors
+                            #myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TESTING ERROR FALSE "
+                        
+
 
                     if key == '17':
                         myPow.controllers[port].batteries[battery_number].cycle_count = float(hex2dec(value))
@@ -479,8 +506,13 @@ def monitorBatteriesMain(argv, stdout, env):
 
                     if key == '1C':
                         #print "Serial: %d"%hex2dec(value)
-                        myPow.controllers[port].batteries[battery_number].serial_number = hex2dec(value)
+                        myPow.controllers[port].batteries[battery_number].serial_number = str(hex2dec(value))
 
+
+#                    if key == '22':
+#                        myPow.controllers[port].batteries[battery_number].chemistry = hex2desc(value)
+
+                        
 
             #case System Data Parsing
             if message[0] == 'S':
