@@ -2,5 +2,5 @@
   <master start="auto" />
   <include file="$(find wg_robot_description)/send_test.xml"/>
   <node pkg="gazebo" type="run-gazebo.sh" args="$(find gazebo_robot_description)/world/testscan.world" respawn="true" />
-  <test test-name="rosgazebo_testpointclouds" pkg="rosgazebo" type="testscan.py" />
+  <test test-name="gazebo_plugin_testpointclouds" pkg="gazebo_plugin" type="testscan.py" />
 </launch>

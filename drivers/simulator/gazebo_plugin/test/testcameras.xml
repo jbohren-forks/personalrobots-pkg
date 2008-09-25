@@ -2,5 +2,5 @@
   <master start="auto" />
   <include file="$(find wg_robot_description)/send_test.xml"/>
   <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/testcameras.world" />
-  <test test-name="rosgazebo_testcameras" pkg="rosgazebo" type="testcameras.py" />
+  <test test-name="gazebo_plugin_testcameras" pkg="gazebo_plugin" type="testcameras.py" />
 </launch>

@@ -34,11 +34,14 @@
 
 ## Gazebo collision validation 
 
-PKG = 'gazebo_plugin'
 NAME = 'testslide'
 
 import rostools
-rostools.update_path(PKG)
+rostools.update_path('gazebo_plugin')
+rostools.update_path('std_msgs')
+rostools.update_path('robot_msgs')
+rostools.update_path('rostest')
+rostools.update_path('rospy')
 
 import unittest, sys, os, math
 import time
@@ -61,16 +64,19 @@ class TestSlide(unittest.TestCase):
         
     def positionInput(self, pose):
         self.runs = self.runs + 1
-        
+        print " got pose ", self.runs
         #if (pos.frame == 1):
-        dx = pose.position.x - TARGET_X
-        dy = pose.position.y - TARGET_Y
-        dz = pose.position.z - TARGET_Z
+        print "x ", pose.transform.translation.x
+        print "y ", pose.transform.translation.y
+        print "z ", pose.transform.translation.z
+        dx = pose.transform.translation.x - TARGET_X
+        dy = pose.transform.translation.y - TARGET_Y
+        dz = pose.transform.translation.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        print "P: " + str(pose.position.x) + " " + str(pose.position.y)
+        print "P: " + str(pose.transform.translation.x) + " " + str(pose.transform.translation.y)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
         if (d < TARGET_RAD):
-            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.position.x) + " " + str(pos.position.y)
+            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.transform.translation.x) + " " + str(pos.transform.translation.y)
             #print "DONE"
             self.hits = self.hits + 1
             print "Hit goal, " + str(self.hits)
@@ -78,34 +84,31 @@ class TestSlide(unittest.TestCase):
                 print "Obviously wrong transforms!"
                 self.success = False
                 self.fail = True
-                os.system("killall gazebo")
-                os.system("killall pr2_gazebo")
+                #os.system("killall gazebo")
                 
             if (self.hits > 200):
                 if (self.runs > 20):
                     self.success = True
-                os.system("killall gazebo")
-                os.system("killall pr2_gazebo")
+                #os.system("killall gazebo")
         
     
-    def test_slide(self):
+    def testslide(self):
         print "LINK\n"
         #rospy.TopicSub("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.TopicSub("base_pose", Pose3DEulerFloat32, self.positionInput)
+        rospy.TopicSub("base_pose_ground_truth", TransformWithRateStamped, self.positionInput)
         rospy.ready(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)
-        os.system("killall gazebo")
-        os.system("killall pr2_gazebo")
+        #os.system("killall gazebo")
         self.assert_(self.success)
         
     
 
 
 if __name__ == '__main__':
-    rostest.run(PKG, sys.argv[0], TestSlide, sys.argv) #, text_mode=True)
-    os.system("killall gazebo")
+    rostest.run('gazebo_plugin', sys.argv[0], TestSlide, sys.argv) #, text_mode=True)
+    #os.system("killall gazebo")
 
 

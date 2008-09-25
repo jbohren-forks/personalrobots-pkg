@@ -34,7 +34,7 @@
 
 ## Gazebo test cameras validation 
 
-PKG = 'rosgazebo'
+PKG = 'gazebo_plugin'
 NAME = 'testscan'
 
 import rostools
