@@ -112,7 +112,9 @@
       <geom:trimesh name="endbin_geom">
 	<static>true</static>
         <kp>10000000000.0</kp>
-        <kd>9000</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <scale> 4 2 4</scale>
         <mesh>cup.mesh</mesh>
 
@@ -142,16 +144,16 @@
     <xyz>   0.0    0.0    0.00</xyz>
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="slide1_legs_body">
-      <kp>10</kp>
-      <kd>0.1</kd>
       <geom:box name="slide_base_geom">
         <kp>1000000000000000</kp>
         <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>   0.0    5.0    13</xyz>
 
         <rpy>  45.0    0.0    0.00</rpy>
         <size>  2.0   14.14   1.0</size>
-        <mass> 10.0</mass>
+        <mass> 1000.0</mass>
         <visual>
           <size>2.0   14.14   1.0</size>
           <material>Gazebo/Rocky</material>
@@ -163,10 +165,12 @@
       <geom:box name="slide_side1_geom">
         <kp>100000</kp>
         <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>   1.0    5.0   13.7</xyz>
         <rpy> 135.0    0.0    0.00</rpy>
         <size>  1.0    1.0   14.14</size>
-        <mass> 10.0</mass>
+        <mass> 1000.0</mass>
         <visual>
           <size>0.1   1.0   14.14</size>
           <material>Gazebo/Rocky</material>
@@ -176,10 +180,12 @@
       <geom:box name="slide_side2_geom">
         <kp>100000</kp>
         <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>   -1.0    7.0  15.5</xyz>
         <rpy> 135.0    0.0    0.00</rpy>
         <size>  1.0    1.0   10.0</size>
-        <mass> 10.0</mass>
+        <mass> 1000.0</mass>
         <visual>
           <size>0.1    1.0    9.0</size>
           <material>Gazebo/Rocky</material>
@@ -191,7 +197,9 @@
 
       <geom:sphere name="slide_end_geom">
         <kp>1000000.0</kp>
-        <kd>0.1</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <mesh>default</mesh>
         <xyz>   1.0    -1.0    9.5</xyz>
         <size> 2.5</size>
@@ -216,7 +224,9 @@
 
       <geom:box name="support_1">
         <kp>10000000.0</kp>
-        <kd>0.1</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>1000.0 1000.0    1.00</xyz>
         <rpy>   0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -230,7 +240,9 @@
       </geom:box>
       <geom:box name="support_2">
         <kp>10000000.0</kp>
-        <kd>0.1</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>1000.0 -1000.0    1.00</xyz>
         <rpy>    0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -244,7 +256,9 @@
       </geom:box>
       <geom:box name="support_3">
         <kp>10000000.0</kp>
-        <kd>0.1</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>-1000.0 -1000.0    1.00</xyz>
         <rpy>     0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -258,7 +272,9 @@
       </geom:box>
       <geom:box name="support_4">
         <kp>10000000.0</kp>
-        <kd>0.1</kd>
+        <kd>1</kd>
+        <mu1>0.0</mu1>
+        <mu2>0.0</mu2>
         <xyz>-1000.0  1000.0    1.00</xyz>
         <rpy>    0.0     0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -282,6 +298,8 @@
       <geom:sphere name="ball_geom">
         <kp>100000.0</kp>
         <kd>1.0</kd>
+        <mu1>5.0</mu1>
+        <mu2>5.0</mu2>
         <mesh>default</mesh>
         <size> 0.25</size>
         <mass> 10.0</mass>

@@ -49,9 +49,9 @@ import rospy, rostest
 from std_msgs.msg import *
 from robot_msgs.msg import *
 
-TARGET_X = -5.4
-TARGET_Y = 0.0
-TARGET_Z = 2.6
+TARGET_X = -5.4 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
+TARGET_Y = 0.0 + 25.65 #contains offset specified in P3D for base, alternatively, use the gripper roll ground truths
+TARGET_Z = 3.8
 TARGET_RAD = 4.5
 
 class TestSlide(unittest.TestCase):

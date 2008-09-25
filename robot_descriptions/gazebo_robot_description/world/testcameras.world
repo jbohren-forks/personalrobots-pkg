@@ -29,10 +29,6 @@
     <erp>0.2</erp>
   </physics:ode>
 
-  <geo:origin>
-    <lat>37.4270909558</lat><lon>-122.077919338</lon>
-  </geo:origin>
-
   <rendering:gui>
     <type>fltk</type>
     <size>1024 800</size>
@@ -219,5 +215,27 @@
     </light>
   </model:renderable>
   
+  <geo:origin>
+    <lat>37.4270909558</lat><lon>-122.077919338</lon>
+  </geo:origin>
+
+  <model:physical name="robot_model1">
+
+    <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+    </controller:ros_time>
+
+    <xyz>0.0     0.0   0.0 </xyz>
+    <rpy>0.0     0.0   0.0 </rpy>
+
+    <!-- base, torso and arms -->
+    <include embedded="true">
+      <xi:include href="pr2_xml.model" />
+    </include>
+
+  </model:physical>
+
 
 </gazebo:world>
