@@ -101,7 +101,7 @@ void CvMatUtils::cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
 }
 
-bool CvMatUtils::drawKeypoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
+bool CvMatUtils::drawPoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
     vector<Keypoint>& keyPointsCurr){
   // draw the key points
   IplImage* img = image.Ipl();
@@ -194,4 +194,33 @@ CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
   return coord;
 }
 
+bool CvMatUtils::drawLines(
+    WImage3_b& canvas,
+    const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp){
+  for (vector<pair<CvPoint3D64f, CvPoint3D64f> >::const_iterator iter = pointPairsInDisp.begin();
+  iter != pointPairsInDisp.end(); iter++) {
+    const pair<CvPoint3D64f, CvPoint3D64f>& p = *iter;
+    CvPoint p0 = CvMatUtils::disparityToLeftCam(p.first);
+    CvPoint p1 = CvMatUtils::disparityToLeftCam(p.second);
+    int thickness =1;
+    cvLine(canvas.Ipl(), p0, p1, CvMatUtils::red, thickness, CV_AA);
+  }
+  return true;
+}
+bool CvMatUtils::drawLines(
+    WImage3_b& canvas,
+    const vector<pair<int, int> >& indexPairs,
+    const vector<Keypoint>& keypoints0,
+    const vector<Keypoint>& keypoints1){
+  for (vector<pair<int, int> >::const_iterator iter = indexPairs.begin();
+  iter != indexPairs.end();
+  iter++) {
+    const pair<int, int>& p = *iter;
+    CvPoint p0 = cvPoint(keypoints0[p.first].x, keypoints0[p.first].y);
+    CvPoint p1 = cvPoint(keypoints1[p.second].x, keypoints1[p.second].y);
+    int thickness =1;
+    cvLine(canvas.Ipl(), p0, p1, CvMatUtils::red, thickness, CV_AA);
+  }
+  return true;
+}
 

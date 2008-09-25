@@ -95,7 +95,7 @@ public:
 	const static int numNonLinearParams = 3;   ///< the num of nonlinear parameters, namely rotation related
 	const static int numParams = 6;	      ///< Total num of parameters
 	const static int defNumMaxIter = 50;  ///< Maximum num of iterations
-	const static int defMaxTimesOfUpdates = 300; //maximum num of times update() is called
+	const static int defMaxTimesOfUpdates = 300; //<maximum num of times update() or updateAlt() is called
 
 	/**
 	 *  A routine that performs optimization.
@@ -192,9 +192,10 @@ protected:
 	/// Buffer for transformation matrix of current param plus a delta vector
 	/// use in Jacobian approximation
 	CvMyReal mFwdTData[numParams][16];
-	/// Transformation matrices w.r.t. to updates on each parameters
+	/// Transformation matrices with respect to an delta change on each parameters.
+	/// Used for computation of partial differentials.
 	CvMat mFwdT[numParams];
-	/// Upper 3x4 views of each of the update transformation matrices mFwdT
+	/// Upper 3x4 views of CvLevMarqTransform::mFwdT
 	CvMat mFwdT3x4[numParams];
 };
 

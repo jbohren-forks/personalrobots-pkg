@@ -6,6 +6,9 @@
 #include <opencv/cvwimage.h>
 #include "Cv3DPoseEstimateDisp.h"
 #include <star_detector/include/keypoint.h>
+#include <cmath>
+#include <cvwimage.h>
+using namespace cv;
 
 /**
  * Misc utilities
@@ -45,10 +48,45 @@ public:
 	static void cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 	    int thickness=1, int line_type=8, int shift=0);
 
-	static bool drawKeypoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
-	    vector<Keypoint>& keyPointsCurr);
+	/// draw two collection of points onto canvas. first one in red circle, second one yellow cross.
+	static bool drawPoints(cv::WImage3_b& image, vector<Keypoint>& keypoints0,
+	    vector<Keypoint>& keypoints1);
 	static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 	    const CvMat& rot, const CvMat& shift, const Cv3DPoseEstimateDisp& peDisp, bool reversed=true);
+  /// Draw a line between two points (in disparity space) of each pair onto canvas.
+  /// The line is in red.
+  static bool drawLines(
+      /// pairs of points in disparity space
+      WImage3_b & canvas, const vector<pair<CvPoint3D64f,CvPoint3D64f> > & pointPairsInDisp);
+  /// Draw a line between two points (in disparity space) of each pair onto canvas.
+  /// The line is in red.
+  static bool drawLines(
+      WImage3_b & canvas,
+      /// index pairs of points, into keypoints0 and keypoints1, respectively
+      const vector<pair<int,int> > & pointPairIndices,
+      /// key point list 0 in disparity space
+      const vector<Keypoint>& keypoints0,
+      /// key point list 1 in disparity space
+      const vector<Keypoint>& keypoints1
+  );
+  /// Convert disparity coordinate into pixel location in left cam CvPoint
+  static inline CvPoint disparityToLeftCam(
+      /// coordinate in disparity coordinates
+      const CvPoint3D64f& dispCoord) {
+    return cvPoint(
+        (int)std::floor(dispCoord.x + .5),
+        (int)std::floor(dispCoord.y + .5)
+    );
+  }
+  /// Convert disparity coordinate into pixel location in left cam CvPoint
+  static inline CvPoint disparityToRightCam(
+      /// coordinate in disparity coordinates
+      const CvPoint3D64f& dispCoord) {
+    return cvPoint(
+        (int)std::floor(dispCoord.x + .5),
+        (int)std::floor(dispCoord.y - dispCoord.z + .5)
+    );
+  }
 
 	static const CvScalar red;
 	static const CvScalar green;

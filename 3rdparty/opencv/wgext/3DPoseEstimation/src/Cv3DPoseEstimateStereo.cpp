@@ -274,32 +274,31 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 		DenseSignature sig = mCalonderMatcher->mClassifier.getDenseSignature(view.Ipl());
 //		int match = matcher.findMatch(sig, &distance);
 		int match = matcher.findMatchInWindow(sig, rectNeighborhood, &distance);
-		if (match<0) {		  // no match
-		  continue;
-		}
 
-		Keypoint& kp = keyPoints1.at(match);
-		bestloc.x = kp.x;
-		bestloc.y = kp.y;
+		if (match>=0) { // got match
 
-		double disp = getDisparity(dispMap1, bestloc);
-		if (disp<0) {
-			mNumKeyPointsWithNoDisparity++;
-			continue;
-		}
-		if (trackablePairs) {
-	    CvPoint pt0Int = cvPoint(pt.x, pt.y);
-	    double disp0 = getDisparity(dispMap0, pt0Int);
-	    CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x,  pt0Int.y,  disp0);
-	    CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-	    pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
-		  trackablePairs->push_back(p);
-		}
-		if (trackableIndexPairs) {
-		  trackableIndexPairs->push_back(make_pair(index, match));
-		}
-		numTrackablePairs++;
+		  Keypoint& kp = keyPoints1.at(match);
+		  bestloc.x = kp.x;
+		  bestloc.y = kp.y;
 
+		  double disp = getDisparity(dispMap1, bestloc);
+		  if (disp<0) {
+		    mNumKeyPointsWithNoDisparity++;
+		  } else {
+		    if (trackablePairs) {
+		      CvPoint pt0Int = cvPoint(pt.x, pt.y);
+		      double disp0 = getDisparity(dispMap0, pt0Int);
+		      CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x,  pt0Int.y,  disp0);
+		      CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
+		      pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
+		      trackablePairs->push_back(p);
+		    }
+		    if (trackableIndexPairs) {
+		      trackableIndexPairs->push_back(make_pair(index, match));
+		    }
+		    numTrackablePairs++;
+		  }
+		}
 		++index;
 	}
 	assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():

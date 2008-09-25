@@ -20,12 +20,14 @@ using namespace std;
 #include <Cv3DPoseEstimateStereo.h>
 #include "CvPoseEstErrMeasDisp.h"
 
+namespace cv {
+namespace willow {
 /**
  * Visual Odometry by pose estimation of consecutive pairs of
  * key frames.
  * The input are a sequence of stereo video images.
  */
-class CvPathRecon {
+class PathRecon {
 public:
   class PoseEstFrameEntry
   {
@@ -69,8 +71,8 @@ public:
       mNumInliers(0),
       mFrameIndex(frameIndex),
       mImageC3a(NULL),
-      mInlierIndices(NULL),
       mTrackableIndexPairs(NULL),
+      mInlierIndices(NULL),
       mInliers0(NULL), mInliers1(NULL){}
 
     ~PoseEstFrameEntry();
@@ -135,8 +137,8 @@ public:
     /// translation matrix
     CvPoint3D64f mShift;
   };
-  CvPathRecon(const CvSize & imageSize);
-  virtual ~CvPathRecon();
+  PathRecon(const CvSize & imageSize);
+  virtual ~PathRecon();
   void _init();
   typedef enum { KeyFrameSkip = 0x0, KeyFrameKeep = 0x1, KeyFrameUse = 0x2, KeyFrameBackTrack = 0x3} KeyFramingDecision;
   KeyFramingDecision keyFrameEval(int frameIndex, vector<pair<CvPoint3D64f,CvPoint3D64f> > & trackablePairs,
@@ -207,7 +209,9 @@ public:
       int end,
       /// increment to add from the index of one image pair to next one
       int step);
-  void display();
+  /// A routine to visualize the keypoints, tracks, disparity images
+  /// etc. By default, it shows on the screen and save to disk.
+  virtual void visualize();
   static const int defMaxDisparity = 15;
   static const int defMinNumInliersForGoodFrame = 10;
   static const int defMinNumInliers = 50;
@@ -216,6 +220,8 @@ public:
   static const double defMaxAngleBeta = 15.;
   static const double defMaxAngleGamma = 15.;
   static const double defMaxShift = 300.;
+  static const int defMinNumTrackablePairs = 10;
+
   Cv3DPoseEstimateStereo mPoseEstimator;
   /// global transformation matrix up to the last key frame
   CvMat mTransform;
@@ -279,30 +285,40 @@ public:
   class Visualizer {
   public:
     Visualizer(Cv3DPoseEstimateDisp& poseEstimator);
-    virtual ~Visualizer();
-    virtual void draw(
-        const PoseEstFrameEntry& frame,
-        const PoseEstFrameEntry& lastFrame);
+    virtual ~Visualizer(){};
+    virtual void drawKeypoints(
+        const PoseEstFrameEntry& lastFrame,
+        const PoseEstFrameEntry& currentFrame,
+        const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
+    );
+    virtual void drawDispMap(const PoseEstFrameEntry& frame);
+    virtual void drawTracking(
+        const PoseEstFrameEntry& lastFrame,
+        const PoseEstFrameEntry& frame
+    );
     void show();
     void save();
+    void reset();
     string poseEstWinName;
     string leftCamWinName;
     string lastTrackedLeftCam;
     string dispWindowName;
     string outputDirname;
+    char dispMapFilename[PATH_MAX];
+    char poseEstFilename[PATH_MAX];
+    char leftCamWithMarks[PATH_MAX];
     /// a reference to the pose estimator, for projection transformations
     const Cv3DPoseEstimateDisp& poseEstimator;
 
     WImageBuffer3_b   canvasKeypoint;
     WImageBuffer3_b   canvasTracking;
     WImageBuffer3_b   canvasDispMap;
-    int frameIndex;
+
 protected:
     void drawDisparityMap(WImageBuffer1_16s& dispMap);
-    void showDisparityMap();
-    void saveDisparityMap();
-//    bool showDisparityMap(WImageBuffer1_16s& dispMap, string& dispWindowName,
-//        string& outputDirname, int frameIndex, int maxDisp);
+    bool canvasKeypointRedrawn;
+    bool canvasTrackingRedrawn;
+    bool canvasDispMapRedrawn;
   };
   Visualizer* mVisualizer;
 
@@ -313,7 +329,7 @@ protected:
   void getTrackablePairs(
       /// (Output) coordinates of trackable pairs
       vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
-      /// (Output) indices of the trackable pairs into
+      /// (Output and Optional) indices of the trackable pairs into
       /// their corresponding key points.
       vector<pair<int, int> >*  trackableIndexPairs = NULL);
   bool reconOneFrame();
@@ -348,5 +364,7 @@ protected:
 
   bool mStop;
 };
+} // willow
+} // cv
 
 #endif /* CVPATHRECON_H_ */

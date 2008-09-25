@@ -13,6 +13,8 @@ using namespace std;
 #include <opencv/highgui.h>
 
 #include "CvPathRecon.h"
+using namespace cv::willow;
+
 #include "../include/CvMatUtils.h"
 #include "../include/Cv3DPoseEstimate.h"
 
@@ -42,9 +44,9 @@ using namespace std;
 #define TIMEREND2(x)   CvTestTimerEnd2(x)
 #endif
 
-CvPathRecon::Stat::Stat(){}
+PathRecon::Stat::Stat(){}
 
-CvPathRecon::CvPathRecon(const CvSize& imageSize):
+PathRecon::PathRecon(const CvSize& imageSize):
 	mPoseEstimator(imageSize.width, imageSize.height),
 	mTransform(cvMat(4, 4, CV_64FC1, _transform)),
 	mReversed(true),
@@ -68,11 +70,12 @@ CvPathRecon::CvPathRecon(const CvSize& imageSize):
 	_init();
 }
 
-CvPathRecon::~CvPathRecon() {
+PathRecon::~PathRecon() {
 	// TODO Auto-generated destructor stub
+  delete mVisualizer;
 }
 
-void CvPathRecon::_init() {
+void PathRecon::_init() {
 	mMinNumInliersForGoodFrame  = defMinNumInliersForGoodFrame;
 	mMinNumInliers  = defMinNumInliers;
 	mMinInlierRatio = defMinInlierRatio;
@@ -82,10 +85,13 @@ void CvPathRecon::_init() {
 	mMaxShift       = defMaxShift;
 
 	cvSetIdentity(&mTransform);
+
+	delete mVisualizer;
+	mVisualizer = new Visualizer(mPoseEstimator);
 }
 
-CvPathRecon::KeyFramingDecision
-CvPathRecon::keyFrameEval(
+PathRecon::KeyFramingDecision
+PathRecon::keyFrameEval(
 		int frameIndex,
 		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
 		vector<Keypoint>& keyPoints,
@@ -145,7 +151,7 @@ CvPathRecon::keyFrameEval(
  * store the current transformation from starting point to current position
  * in transform as transform = transform * rt
  */
-bool CvPathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
+bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
 	Cv3DPoseEstimate::constructTransform(rot, shift, mRT);
 	cvCopy(&mTransform, &_mTempMat);
 	if (mReversed == true) {
@@ -159,7 +165,7 @@ bool CvPathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
 /**
  * Store the current key frame to key frame transformation with w.r.t to starting frame
  */
-bool CvPathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIndex){
+bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIndex){
 	CvMat rotGlobal;
 	CvMat shiftGlobal;
 	cvGetSubRect(&mTransform, &rotGlobal,   cvRect(0, 0, 3, 3));
@@ -183,25 +189,27 @@ bool CvPathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frame
 	return true;
 }
 
-void CvPathRecon::dispToGlobal(const CvMat& uvds, CvMat& xyzs){
+void PathRecon::dispToGlobal(const CvMat& uvds, CvMat& xyzs){
   dispToGlobal(uvds, mTransform, xyzs);
 }
-void CvPathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& xyzs) {
+void PathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& xyzs) {
   double _xyz[3*uvds.rows];
   CvMat localxyz = cvMat(uvds.rows, 3, CV_64FC1, _xyz);
   // Convert from disparity coordinates to Cartesian coordinates
   mPoseEstimator.reprojection(&uvds, &localxyz);
   double _inliers1t[3*uvds.rows];
   CvMat inliers1t = cvMat(uvds.rows, 1, CV_64FC3, _inliers1t);
-  CvMat inliers1Reshaped;
+  CvMat localxyzC3;
+  CvMat xyzsC3;
   CvMat transform3x4;
   // Transform from local Cartesian coordinates to Global Cartesian.
-  cvReshape(&localxyz, &inliers1Reshaped, 3, 0);
+  cvReshape(&localxyz, &localxyzC3, 3, 0);
+  cvReshape(&xyzs, &xyzsC3, 3, 0);
   cvGetRows(&transform, &transform3x4, 0, 3);
-  cvTransform(&inliers1Reshaped, &xyzs, &transform3x4);
+  cvTransform(&localxyzC3, &xyzsC3, &transform3x4);
 }
 
-bool CvPathRecon::saveKeyPoints(const CvMat& keypoints, const string& filename){
+bool PathRecon::saveKeyPoints(const CvMat& keypoints, const string& filename){
 	bool status = true;
 	if (mReversed == true) {
     double _xyzs[3*keypoints.rows];
@@ -216,7 +224,7 @@ bool CvPathRecon::saveKeyPoints(const CvMat& keypoints, const string& filename){
 	return status;
 }
 
-bool CvPathRecon::saveFramePoses(const string& dirname) {
+bool PathRecon::saveFramePoses(const string& dirname) {
 	bool status = true;
 	// TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
 	double _poses[mFramePoses.size()*7];
@@ -231,12 +239,14 @@ bool CvPathRecon::saveFramePoses(const string& dirname) {
 		_poses[i*7 + 5] = iter->mShift.y;
 		_poses[i*7 + 6] = iter->mShift.z;
 	}
-	string framePosesFilename("framePoses.xml");
-	cvSave((dirname+framePosesFilename).c_str(), &framePoses, "index-rod3-shift3", "indices, rodrigues and shifts w.r.t. starting frame");
+	if (i>0) {
+	  string framePosesFilename("framePoses.xml");
+	  cvSave((dirname+framePosesFilename).c_str(), &framePoses, "index-rod3-shift3", "indices, rodrigues and shifts w.r.t. starting frame");
+	}
 	return status;
 }
 
-void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
+void PathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
   assert(mCurrentFrame);
 	mStat.mErrMeas.setTransform(mCurrentFrame->mRot, mCurrentFrame->mShift);
 	if (mReversed == true) {
@@ -248,21 +258,21 @@ void CvPathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
 	}
 }
 
-void CvPathRecon::keepCurrentAsGoodFrame(){
+void PathRecon::keepCurrentAsGoodFrame(){
   assert(mCurrentFrame != NULL);
   delete mLastGoodFrame;
   mLastGoodFrame = mCurrentFrame;
   mCurrentFrame = NULL;
 }
 
-void CvPathRecon::loadStereoImagePair(int & frameIndex,
+void PathRecon::loadStereoImagePair(int & frameIndex,
     WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
 {
   loadStereoImagePair(mDirname, mLeftImageFilenameFmt,
       mRightImageFilenameFmt, frameIndex, leftImage, rightImage);
 }
 
-void CvPathRecon::loadStereoImagePair(string& dirname, string& leftimagefmt,
+void PathRecon::loadStereoImagePair(string& dirname, string& leftimagefmt,
     string& rightimagefmt, int & frameIndex,
     WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
 {
@@ -279,13 +289,13 @@ void CvPathRecon::loadStereoImagePair(string& dirname, string& leftimagefmt,
   rightImage.SetIpl(rightimg);
 }
 
-bool CvPathRecon::loadAndProcessStereoFrame(int frameIndex, PoseEstFrameEntry* & frame){
+bool PathRecon::loadAndProcessStereoFrame(int frameIndex, PoseEstFrameEntry* & frame){
   frame = new PoseEstFrameEntry(frameIndex);
 
   return loadAndProcessStereoFrame(frameIndex, frame->mImage, frame->mDispMap, frame->mKeypoints);
 }
 
-bool CvPathRecon::loadAndProcessStereoFrame(int frameIndex,
+bool PathRecon::loadAndProcessStereoFrame(int frameIndex,
     WImageBuffer1_b* & leftImage, WImageBuffer1_16s* & dispMap,
     vector<Keypoint>* & keypoints)
 {
@@ -316,7 +326,7 @@ bool CvPathRecon::loadAndProcessStereoFrame(int frameIndex,
   return status;
 }
 
-void CvPathRecon::setInputVideoParams(const string& dirname, const string& leftFileFmt,
+void PathRecon::setInputVideoParams(const string& dirname, const string& leftFileFmt,
     const string& rightFileFmt, int start, int end, int step)
 {
     mDirname = dirname;
@@ -330,7 +340,7 @@ void CvPathRecon::setInputVideoParams(const string& dirname, const string& leftF
     mFrameStep = step;
 }
 
-void CvPathRecon::backTrack() {
+void PathRecon::backTrack() {
   assert(mNextFrame.get() == NULL);
   assert(mLastGoodFrame != NULL);
   assert(mCurrentFrame != NULL);
@@ -343,7 +353,7 @@ void CvPathRecon::backTrack() {
   mLastGoodFrame = NULL;
 }
 
-void CvPathRecon::updateTrajectory() {
+void PathRecon::updateTrajectory() {
   // keep track of the trajectory
   appendTransform(mCurrentFrame->mRot, mCurrentFrame->mShift);
   int frameIndex = mCurrentFrame->mFrameIndex;
@@ -369,7 +379,7 @@ void CvPathRecon::updateTrajectory() {
   mCurrentFrame = NULL;
 }
 
-void CvPathRecon::getTrackablePairs(
+void PathRecon::getTrackablePairs(
     vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
     vector<pair<int, int> >* trackableIndexPairs
 ) {
@@ -381,6 +391,9 @@ void CvPathRecon::getTrackablePairs(
       *lastKeyFrame->mDispMap,   *mCurrentFrame->mDispMap,
       *lastKeyFrame->mKeypoints, *mCurrentFrame->mKeypoints,
       trackablePairs, trackableIndexPairs);
+  // record the number of trackable pairs. At lease one of
+  // trackablePairs of trackableIndexPairs is not NULL, if
+  // there are trackable pairs of interest.
   if (trackablePairs) {
     mStat.mHistoTrackablePairs.push_back(trackablePairs->size());
     mCurrentFrame->mNumTrackablePairs = trackablePairs->size();
@@ -392,7 +405,7 @@ void CvPathRecon::getTrackablePairs(
 }
 
 /// reconstruction w.r.t one additional frame
-bool CvPathRecon::reconOneFrame() {
+bool PathRecon::reconOneFrame() {
   int& frameIndex = mCurrentFrameIndex;
   bool insertNewKeyFrame = false;
   TIMERSTART(Total);
@@ -405,6 +418,7 @@ bool CvPathRecon::reconOneFrame() {
   } else {
     // load and process next stereo pair of images.
     loadAndProcessStereoFrame(frameIndex, currFrame);
+    if (mVisualizer) mVisualizer->drawDispMap(*currFrame);
   }
 
   if (currFrame->mFrameIndex == mStartFrameIndex) {
@@ -418,13 +432,23 @@ bool CvPathRecon::reconOneFrame() {
   // match the good feature points between this iteration and last key frame
   //
   vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
-  currFrame->mTrackableIndexPairs = new vector<pair<int, int> >();
+  if (currFrame->mTrackableIndexPairs == NULL) {
+    currFrame->mTrackableIndexPairs = new vector<pair<int, int> >();
+  } else {
+    currFrame->mTrackableIndexPairs->clear();
+  }
   getTrackablePairs(&trackablePairs, currFrame->mTrackableIndexPairs);
+  assert(currFrame->mTrackableIndexPairs->size() == trackablePairs.size());
 #ifdef DEBUG
-  cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() <<endl;
+  cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() << endl;
 #endif
 
-  if (currFrame->mNumTrackablePairs<10) {
+  // if applicable, pass a reference of the current frame for visualization
+  if (mVisualizer) {
+    mVisualizer->drawKeypoints(*getLastKeyFrame(), *currFrame, trackablePairs);
+  }
+
+  if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
 #ifdef DEBUG
     cout << "Too few trackable pairs" <<endl;
 #endif
@@ -447,19 +471,21 @@ bool CvPathRecon::reconOneFrame() {
 #ifdef DEBUG
     cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
 #endif
+    assert(getLastKeyFrame());
+    if (mVisualizer) mVisualizer->drawTracking(*getLastKeyFrame(), *currFrame);
 
     // Decide if we need select a key frame by now
-    CvPathRecon::KeyFramingDecision kfd =
+    PathRecon::KeyFramingDecision kfd =
       keyFrameEval(frameIndex, trackablePairs, *currFrame->mKeypoints, currFrame->mNumInliers,
           currFrame->mInliers0, currFrame->mInliers1,
           currFrame->mRot, currFrame->mShift);
 
     switch (kfd) {
-    case CvPathRecon::KeyFrameSkip:  {
+    case PathRecon::KeyFrameSkip:  {
       // skip this frame
       break;
     }
-    case CvPathRecon::KeyFrameBackTrack:   {
+    case PathRecon::KeyFrameBackTrack:   {
       // go back to the last good frame
       backTrack();
       updateTrajectory();
@@ -467,12 +493,12 @@ bool CvPathRecon::reconOneFrame() {
       // next we are supposed to try nextFrame with currFrame
       break;
     }
-    case CvPathRecon::KeyFrameKeep:   {
+    case PathRecon::KeyFrameKeep:   {
       // keep current frame as last good frame.
       keepCurrentAsGoodFrame();
       break;
     }
-    case CvPathRecon::KeyFrameUse:  {
+    case PathRecon::KeyFrameUse:  {
       // use currFrame as key frame
       updateTrajectory();
       insertNewKeyFrame = true;
@@ -486,102 +512,147 @@ bool CvPathRecon::reconOneFrame() {
   return insertNewKeyFrame;
 }
 
-CvPathRecon::Visualizer::Visualizer(Cv3DPoseEstimateDisp& pe):
+PathRecon::Visualizer::Visualizer(Cv3DPoseEstimateDisp& pe):
   poseEstWinName("Pose Estimated"),
   leftCamWinName("Left  Cam"),
   lastTrackedLeftCam(string("Last Tracked Left Cam")),
   dispWindowName(string("Disparity Map")),
   outputDirname("Output/indoor1/"),
-  poseEstimator(pe)  {
-
+  poseEstimator(pe),
+  canvasKeypointRedrawn(false),
+  canvasTrackingRedrawn(false),
+  canvasDispMapRedrawn(false)
+  {
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
   cvNamedWindow(leftCamWinName.c_str(), CV_WINDOW_AUTOSIZE);
   cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
-  cvNamedWindow(lastTrackedLeftCam.c_str(), CV_WINDOW_AUTOSIZE);
+//  cvNamedWindow(lastTrackedLeftCam.c_str(), CV_WINDOW_AUTOSIZE);
 
   cvMoveWindow(poseEstWinName.c_str(), 0, 0);
   cvMoveWindow(leftCamWinName.c_str(), 650, 0);
   cvMoveWindow(dispWindowName.c_str(), 650, 530);
-  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
+//  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
-void CvPathRecon::Visualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
+void PathRecon::Visualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
   double maxDisp = (int)poseEstimator.getD(400); // the closest point we care is at least 1000 mm away
   CvMatUtils::getVisualizableDisparityMap(dispMap, canvasDispMap, maxDisp);
 }
-void CvPathRecon::Visualizer::showDisparityMap() {
-  cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
-}
-void CvPathRecon::Visualizer::saveDisparityMap() {
-  char dispMapFilename[PATH_MAX];
-  sprintf(dispMapFilename, "%s/dispMap-%04d.png", outputDirname.c_str(), frameIndex);
-  cvSaveImage(dispMapFilename,    canvasDispMap.Ipl());
+
+void PathRecon::Visualizer::drawKeypoints(
+    const PoseEstFrameEntry& lastFrame,
+    const PoseEstFrameEntry& currentFrame,
+    const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
+) {
+  int imgWidth  = currentFrame.mImage->Width();
+  int imgHeight = currentFrame.mImage->Height();
+  // make sure the image buffers is allocated to the right sizes
+  canvasKeypoint.Allocate(imgWidth, imgHeight);
+
+  assert(currentFrame.mImage);
+  cvCvtColor(currentFrame.mImage->Ipl(), canvasKeypoint.Ipl(),  CV_GRAY2RGB);
+
+  CvMatUtils::drawPoints(canvasKeypoint, *lastFrame.mKeypoints,*currentFrame.mKeypoints);
+  // The following two line shall draw the same lines between point pairs.
+  //  CvMatUtils::drawLines(canvasKeypoint, pointPairsInDisp);
+  CvMatUtils::drawLines(canvasKeypoint, *currentFrame.mTrackableIndexPairs, *lastFrame.mKeypoints,*currentFrame.mKeypoints);
+  sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(),
+      currentFrame.mFrameIndex);
+  canvasKeypointRedrawn = true;
 }
 
-void CvPathRecon::Visualizer::draw(
-    const PoseEstFrameEntry& frame,
-    const PoseEstFrameEntry& lastFrame){
-  // create two copies of color version the image
+void PathRecon::Visualizer::drawDispMap(const PoseEstFrameEntry& frame) {
   int imgWidth  = frame.mImage->Width();
   int imgHeight = frame.mImage->Height();
-  WImageBuffer3_b   canvas(imgWidth, imgHeight);
-  WImageBuffer3_b   canvasTracking(imgWidth, imgHeight);
-  WImageBuffer3_16s canvasDispMap (imgWidth, imgHeight);
-
-  assert(frame.mImage);
-  cvCvtColor(frame.mImage->Ipl(), canvas.Ipl(),  CV_GRAY2RGB);
-  canvasKeypoint.CloneFrom(canvas);
-  canvasTracking.CloneFrom(canvas);
+  // make sure the image buffers is allocated to the right sizes
+  canvasDispMap.Allocate(imgWidth, imgHeight);
 
   assert(frame.mDispMap);
   drawDisparityMap(*frame.mDispMap);
-
-  CvMatUtils::drawKeypoints(canvasKeypoint, *lastFrame.mKeypoints,*frame.mKeypoints);
-
-  bool reversed = true;
-  CvMatUtils::drawMatchingPairs(*frame.mInliers0, *frame.mInliers1, canvasTracking,
-      frame.mRot, frame.mShift,
-      (Cv3DPoseEstimateDisp&)poseEstimator, reversed);
-
-
-  CvPoint3D64f euler;
-  CvMatUtils::eulerAngle(frame.mRot, euler);
-  char info[256];
-  CvPoint org = cvPoint(0, 475);
-  CvFont font;
-  cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
-  sprintf(info, "%04d, KyPt %d, TrckPir %d, Inlrs %d, eulr=(%4.2f,%4.2f,%4.2f), d=%4.1f",
-      frame.mFrameIndex, frame.mKeypoints->size(),
-      frame.mNumTrackablePairs, frame.mNumInliers,
-      euler.x, euler.y, euler.z, cvNorm((const CvMat *)&frame.mShift));
-
-  cvPutText(canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
-
-  frameIndex = frame.mFrameIndex;
+  sprintf(dispMapFilename, "%s/dispMap-%04d.png", outputDirname.c_str(), frame.mFrameIndex);
+  canvasDispMapRedrawn = true;
 }
 
-void CvPathRecon::Visualizer::show() {
-  cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
-  cvShowImage(poseEstWinName.c_str(), canvasTracking.Ipl());
-  cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
+void PathRecon::Visualizer::drawTracking(
+    const PoseEstFrameEntry& lastFrame,
+    const PoseEstFrameEntry& frame
+) {
+  int imgWidth  = frame.mImage->Width();
+  int imgHeight = frame.mImage->Height();
+  // make sure the image buffers is allocated to the right sizes
+  canvasTracking.Allocate(imgWidth, imgHeight);
+
+  assert(frame.mImage);
+  cvCvtColor(frame.mImage->Ipl(), canvasTracking.Ipl(),  CV_GRAY2RGB);
+
+  bool reversed = true;
+  if (frame.mInliers0) {
+    assert(frame.mInliers1);
+    CvMatUtils::drawMatchingPairs(*frame.mInliers0, *frame.mInliers1, canvasTracking,
+        frame.mRot, frame.mShift,
+        (Cv3DPoseEstimateDisp&)poseEstimator, reversed);
+
+
+    CvPoint3D64f euler;
+    CvMatUtils::eulerAngle(frame.mRot, euler);
+    char info[256];
+    CvPoint org = cvPoint(0, 475);
+    CvFont font;
+    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+    sprintf(info, "%04d, KyPt %d, TrckPir %d, Inlrs %d, eulr=(%4.2f,%4.2f,%4.2f), d=%4.1f",
+        frame.mFrameIndex, frame.mKeypoints->size(),
+        frame.mNumTrackablePairs, frame.mNumInliers,
+        euler.x, euler.y, euler.z, cvNorm((const CvMat *)&frame.mShift));
+
+    cvPutText(canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+    sprintf(poseEstFilename,  "%s/poseEst-%04d.png", outputDirname.c_str(), frame.mFrameIndex);
+    canvasTrackingRedrawn = true;
+  }
+}
+
+void PathRecon::Visualizer::show() {
+  if (canvasKeypointRedrawn && canvasKeypoint.Ipl())
+    cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
+  if (canvasTrackingRedrawn && canvasTracking.Ipl())
+    cvShowImage(poseEstWinName.c_str(), canvasTracking.Ipl());
+  if (canvasDispMapRedrawn && canvasDispMap.Ipl())
+    cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
+
   // wait for a while for opencv to draw stuff on screen
   cvWaitKey(25);  //  milliseconds
   //    cvWaitKey(0);  //  wait indefinitely
 }
 
-void CvPathRecon::Visualizer::save() {
+void PathRecon::Visualizer::save() {
 
   // save the marked images
-  char leftCamWithMarks[PATH_MAX];
-  char poseEstFilename[PATH_MAX];
-  sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(), frameIndex);
-  sprintf(poseEstFilename,  "%s/poseEst-%04d.png", outputDirname.c_str(), frameIndex);
-  cvSaveImage(leftCamWithMarks,  canvasKeypoint.Ipl());
-  cvSaveImage(poseEstFilename,   canvasTracking.Ipl());
-  saveDisparityMap();
+  if (canvasKeypointRedrawn && canvasKeypoint.Ipl()) {
+    cvSaveImage(leftCamWithMarks,  canvasKeypoint.Ipl());
+  }
+  if (canvasTrackingRedrawn && canvasTracking.Ipl()) {
+    cvSaveImage(poseEstFilename,   canvasTracking.Ipl());
+  }
+  if (canvasDispMapRedrawn && canvasDispMap.Ipl()) {
+    cvSaveImage(dispMapFilename,    canvasDispMap.Ipl());
+  }
 }
 
-bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
+void PathRecon::Visualizer::reset() {
+  // reset all the redrawn flags
+  canvasDispMapRedrawn = false;
+  canvasKeypointRedrawn = false;
+  canvasTrackingRedrawn = false;
+}
+
+void PathRecon::visualize() {
+  if (mVisualizer) {
+    mVisualizer->show();
+    mVisualizer->save();
+    mVisualizer->reset();
+  }
+}
+
+bool PathRecon::recon(const string & dirname, const string & leftFileFmt,
     const string & rightFileFmt, int start, int end, int step)
 {
   bool status = false;
@@ -606,24 +677,16 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
 
   for (setStartFrame(); notDoneWithIteration(); setNextFrame()){
     bool newKeyFrame = reconOneFrame();
-    display();
-    if (newKeyFrame == false) {
-      continue;
+    if (newKeyFrame == true) {
+      // TODO: make the following a separate method
+      // only keep the last frame in the queue
+      while(mActiveKeyFrames.size()>1) {
+        PoseEstFrameEntry* frame = mActiveKeyFrames.front();
+        mActiveKeyFrames.pop_front();
+        delete frame;
+      }
     }
-
-    if (mVisualizer) {
-      mVisualizer->draw(*mCurrentFrame, *getLastKeyFrame());
-      mVisualizer->show();
-      mVisualizer->save();
-    }
-
-    // TODO: make the following a separate method
-    // only keep the last frame in the queue
-    while(mActiveKeyFrames.size()>1) {
-      PoseEstFrameEntry* frame = mActiveKeyFrames.front();
-      mActiveKeyFrames.pop_front();
-      delete frame;
-    }
+    visualize();
   }
 
   saveFramePoses(mOutputDir);
@@ -639,9 +702,11 @@ bool CvPathRecon::recon(const string & dirname, const string & leftFileFmt,
   return status;
 }
 
-void CvPathRecon::Stat::print(){
-  assert(mHistoKeypoints.size() == mHistoTrackablePairs.size());
-  assert(mHistoKeypoints.size() == mHistoInliers.size());
+void PathRecon::Stat::print(){
+  // Please note that because of backtracking, the following two
+  // assertion in general will not be true
+  //assert(mHistoKeypoints.size() == mHistoTrackablePairs.size());
+  //assert(mHistoKeypoints.size() == mHistoInliers.size());
   assert(mHistoKeyFrameKeypoints.size() == mHistoKeyFrameTrackablePairs.size());
   assert(mHistoKeyFrameKeypoints.size() == mHistoKeyFrameInliers.size());
   int numFrames    = mHistoKeypoints.size();
@@ -688,7 +753,7 @@ void CvPathRecon::Stat::print(){
 }
 
 // See CvPathRecon.h for documentation
-CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
+PathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
     WImageBuffer1_16s* dispMap,
     vector<Keypoint>* keypoints, CvMat& rot, CvMat& shift,
     int numTrackablePair,
@@ -713,7 +778,7 @@ CvPathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
   mInliers1 = inliers1;
 }
 
-void CvPathRecon::PoseEstFrameEntry::clear() {
+void PathRecon::PoseEstFrameEntry::clear() {
   if (mInliers0) cvReleaseMat(&mInliers0);
   if (mInliers1) cvReleaseMat(&mInliers1);
   delete this->mKeypoints;
@@ -730,6 +795,6 @@ void CvPathRecon::PoseEstFrameEntry::clear() {
   mInlierIndices = NULL;
 }
 
-CvPathRecon::PoseEstFrameEntry::~PoseEstFrameEntry(){
+PathRecon::PoseEstFrameEntry::~PoseEstFrameEntry(){
   clear();
 }
