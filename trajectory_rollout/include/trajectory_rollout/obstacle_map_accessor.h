@@ -43,8 +43,9 @@ class ObstacleMapAccessor{
   virtual ~ObstacleMapAccessor(){}
     virtual unsigned int getWidth() const = 0;
     virtual unsigned int getHeight() const = 0;
-    virtual bool isOccupied(unsigned int id) const = 0;
-    virtual bool isOccupied(unsigned int mx, unsigned int my) const = 0;
+    virtual double getResolution() const = 0;
+    virtual bool isObstacle(unsigned int mx, unsigned int my) const = 0;
+    virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const = 0;
     virtual void getOriginInWorldCoordinates(double& wx, double& wy) const = 0;
 };
 
@@ -55,17 +56,16 @@ class WavefrontMapAccessor : public ObstacleMapAccessor {
   virtual ~WavefrontMapAccessor(){};
     virtual unsigned int getWidth() const {return  map_.size_x_;}
     virtual unsigned int getHeight() const {return map_.size_y_;}
+    virtual double getResolution() const {return map_.scale;}
 
-    virtual bool isOccupied(unsigned int id) const {
-      if(map_.map_[id].occ_state == 1)
+    virtual bool isObstacle(unsigned int mx, unsigned int my) const {
+      if(map_(mx, my).occ_state == 1)
         return true;
       return false;
     }
 
-    virtual bool isOccupied(unsigned int mx, unsigned int my) const {
-      if(map_(mx, my).occ_state == 1)
-        return true;
-      return false;
+    virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
+      return isObstacle(mx, my);
     }
 
     virtual void getOriginInWorldCoordinates(double& wx, double& wy) const {

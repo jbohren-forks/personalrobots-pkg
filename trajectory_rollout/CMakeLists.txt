@@ -6,6 +6,8 @@ genmsg()
 #uncomment for profiling
 #set(ROS_COMPILE_FLAGS "-pg" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-pg" ${ROS_LINK_FLAGS})
+set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
+set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
 rospack_add_library(trajectory_rollout src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp src/helmsman.cpp)

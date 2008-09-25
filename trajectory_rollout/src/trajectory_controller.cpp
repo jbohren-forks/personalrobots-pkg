@@ -455,8 +455,8 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
     int cell_y = WY_MY(map_, y);
 
     //we don't want a path that ends off the known map or in an obstacle
-    if(!VALID_CELL(map_, cell_x, cell_y) || ma.isOccupied(cell_x, cell_y)){
-      printf("Not a valid path: (%d, %d) OccState: %d\n", cell_x, cell_y, ma.isOccupied(cell_x, cell_y));
+    if(!VALID_CELL(map_, cell_x, cell_y) || ma.isObstacle(cell_x, cell_y)){
+      printf("Not a valid path: (%d, %d) OccState: %d\n", cell_x, cell_y, ma.isObstacle(cell_x, cell_y));
       return -1.0;
     }
 
@@ -510,7 +510,7 @@ void TrajectoryController::swap(int& a, int& b){
 
 double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(ma.isOccupied(x, y)){
+  if(ma.isObstacle(x, y)){
     return -1;
   }
 
