@@ -93,6 +93,7 @@ public:
   void publishingLoop()
   {
     is_running_ = true;
+    msg_updated_ = false;
     while (keep_running_)
     {
       // Locks msg_ and copies it
