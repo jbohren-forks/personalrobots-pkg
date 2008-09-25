@@ -1,36 +1,36 @@
 /*********************************************************************
-* Software License Agreement (BSD License)
-* 
-*  Copyright (c) 2008, Willow Garage, Inc.
-*  All rights reserved.
-* 
-*  Redistribution and use in source and binary forms, with or without
-*  modification, are permitted provided that the following conditions
-*  are met:
-* 
-*   * Redistributions of source code must retain the above copyright
-*     notice, this list of conditions and the following disclaimer.
-*   * Redistributions in binary form must reproduce the above
-*     copyright notice, this list of conditions and the following
-*     disclaimer in the documentation and/or other materials provided
-*     with the distribution.
-*   * Neither the name of the Willow Garage nor the names of its
-*     contributors may be used to endorse or promote products derived
-*     from this software without specific prior written permission.
-* 
-*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-*  POSSIBILITY OF SUCH DAMAGE.
-*********************************************************************/
+ * Software License Agreement (BSD License)
+ * 
+ *  Copyright (c) 2008, Willow Garage, Inc.
+ *  All rights reserved.
+ * 
+ *  Redistribution and use in source and binary forms, with or without
+ *  modification, are permitted provided that the following conditions
+ *  are met:
+ * 
+ *   * Redistributions of source code must retain the above copyright
+ *     notice, this list of conditions and the following disclaimer.
+ *   * Redistributions in binary form must reproduce the above
+ *     copyright notice, this list of conditions and the following
+ *     disclaimer in the documentation and/or other materials provided
+ *     with the distribution.
+ *   * Neither the name of the Willow Garage nor the names of its
+ *     contributors may be used to endorse or promote products derived
+ *     from this software without specific prior written permission.
+ * 
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+ *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+ *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+ *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+ *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ *  POSSIBILITY OF SUCH DAMAGE.
+ *********************************************************************/
 
 
 #include <MoveBase.hh>
@@ -39,211 +39,513 @@
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
+#include <trajectory_rollout/obstacle_map_accessor.h>
 
-MoveBase::MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius)
-  : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
-    tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
-    costMap_(NULL),
-    laserMaxRange_(4.0){
+namespace ros {
+  namespace highlevel_controllers {
 
-  // Initialize global pose. Will be set in control loop based on actual data.
-  global_pose_.x = 0;
-  global_pose_.y = 0;
-  global_pose_.yaw = 0;
+    /**
+     * Wrapper class to integrate cost map width controller
+     */
+    class CostMapAccessor: public ObstacleMapAccessor {
+    public:
+      CostMapAccessor(const CostMap2D& costMap, unsigned int width, unsigned int height, double origin_x, double origin_y)
+	: costMap_(costMap), width_(width), height_(height), wx_0_(origin_x), wy_0_(origin_y){
 
-  // Initialize state message parameters that are unsused
-  stateMsg.waypoint.x = 0.0;
-  stateMsg.waypoint.y = 0.0;
-  stateMsg.waypoint.th = 0.0;
-  stateMsg.set_waypoints_size(0);
-  stateMsg.waypoint_idx = -1;
+	// The origin locates this grid. Convert from world coordinates to cell co-ordinates
+	// to get the cell coordinates of the origin
+	costMap_.convertFromWorldCoordToIndexes(wx_0_, wy_0_, mx_0_, my_0_);
 
-  // Set up transforms
-  double laser_x_offset(0.05);
-  //param("laser_x_offset", laser_x_offset, 0.05);
-  tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+	std::cout << "Constructed local planning window: origin = <" << wx_0_ << ", " << wy_0_ << "> for " << 
+	  costMap_.getResolution() * width << " X " << costMap_.getResolution() * height << std::endl;
+      }
+  
+      unsigned int getWidth() const {return width_;}
 
-  // get map via RPC
-  std_srvs::StaticMap::request  req;
-  std_srvs::StaticMap::response resp;
-  std::cout << "Requesting the map..." << std::endl;
-  while(!ros::service::call("static_map", req, resp))
-  {
-    std::cout << "Request failed; trying again..." << std::endl;
-    usleep(1000000);
-  }
+      unsigned int getHeight() const {return height_;}
 
-  std::cout << "Received a " << resp.map.width << " X " << 
-    resp.map.height << " map at " << 
-    resp.map.resolution << "m/pix" << std::endl;
+      double getResolution() const {return costMap_.getResolution();}
 
-  // Convert to cost map
-  unsigned char* mapdata;
-  unsigned int numCells = resp.map.width*resp.map.height;
-  mapdata = new unsigned char[numCells];
-  for(unsigned int i=0;i<numCells;i++)
-  {
-    if(resp.map.data[i] == noInformation){
-      // Handle a translation for no information
-      mapdata[i] = CostMap2D::NO_INFORMATION;
+      bool contains(double x, double y) const {
+	if(x < wx_0_ || x >= (wx_0_ + getWidth() * costMap_.getResolution()))
+	  return false;
+
+	if(y < wy_0_ || y >= (wy_0_ + getHeight() * costMap_.getResolution()))
+	  return false;
+
+	return true;
+      }
+
+      bool isObstacle(unsigned int mx, unsigned int my) const {
+	unsigned int costMapIndex = costMap_.getMapIndexFromCellCoords(mx_0_ + mx, my_0_ + my);
+	return costMap_.isObstacle(costMapIndex);
+      }
+
+      bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
+	return isObstacle(mx, my);
+      }
+
+      void getOriginInWorldCoordinates(double& wx, double& wy) const {
+	wx = wx_0_;
+	wy = wy_0_;
+      }
+
+    private:
+
+      const CostMap2D& costMap_;
+      const unsigned int width_;
+      const unsigned int height_;
+      const double wx_0_;
+      const double wy_0_;
+      unsigned int mx_0_;
+      unsigned int my_0_;
+    };
+
+    TrajectoryRolloutController::TrajectoryRolloutController(double mapDeltaX, double mapDeltaY,
+							     double sim_time, int sim_steps, int samples_per_dim,
+							     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
+							     double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
+							     double acc_lim_x, double acc_lim_y, double acc_lim_th)
+      : mapDeltaX_(mapDeltaX),
+	mapDeltaY_(mapDeltaY),
+	sim_time_(sim_time),
+	sim_steps_(sim_steps),
+	samples_per_dim_(samples_per_dim),	  
+	robot_front_radius_(robot_front_radius), 
+	robot_side_radius_(robot_side_radius), 
+	max_occ_dist_(max_occ_dist), 	  
+	pdist_scale_(pdist_scale), 
+	gdist_scale_(gdist_scale), 
+	dfast_scale_(dfast_scale), 
+	occdist_scale_(occdist_scale), 	  
+	acc_lim_x_(acc_lim_x),
+	acc_lim_y_(acc_lim_y),
+	acc_lim_th_(acc_lim_th),
+	helmsman_(NULL){}
+
+    TrajectoryRolloutController::~TrajectoryRolloutController(){
+      if(helmsman_ != NULL)
+	delete helmsman_;
     }
-    else{
-      // Simply copy the actual cost value
-      mapdata[i] = resp.map.data[i];
+
+    void TrajectoryRolloutController::initialize(rosTFClient& tf){
+      // Should just be called once
+      if(helmsman_ !=NULL)
+	return;
+
+      helmsman_ = new Helmsman(tf, sim_time_, sim_steps_, samples_per_dim_,robot_front_radius_, robot_side_radius_, max_occ_dist_, 
+			       pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_, 
+			       acc_lim_x_, acc_lim_y_, acc_lim_th_);
     }
-  }
 
-  // Now allocate the cost map
-  costMap_ = new CostMap2D(resp.map.width, resp.map.height, mapdata, resp.map.resolution, 
-			   windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
+    bool TrajectoryRolloutController::computeVelocityCommands(const CostMap2D& costMap, 
+							      const vector<std_msgs::Pose2DFloat32>& plan,
+							      const libTF::TFPose2D& pose, unsigned int currentWaypointIndex,
+							      const std_msgs::BaseVel& currentVel,
+							      std_msgs::BaseVel& cmdVel){
+      if(helmsman_ == NULL){
+	cmdVel.vx = 0;
+	cmdVel.vy = 0;
+	cmdVel.vw = 0;
+	return false;
+      }
 
-  // Finish by deleting the mapdata
-  delete mapdata;
+      // Compute origin and dimensions for the controller's local map. Must check for bounds to stay in the global map
+      double origin_x = std::max(0.0, pose.x - mapDeltaX_/2);
+      origin_x = std::min(origin_x,  costMap.getWidth() * costMap.getResolution() - mapDeltaX_);
 
-  // Subscribe to laser scan messages
-  subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
+      double origin_y = std::max(0.0, pose.y - mapDeltaY_/2);
+      origin_y = std::min(origin_y, costMap.getHeight() * costMap.getResolution() - mapDeltaY_);
 
-  // Advertize messages to publish path updates
-  advertise<std_msgs::Polyline2D>("gui_laser", QUEUE_MAX());
+      // Now we should have a valid origin to construct the local map as a window onto the global map
+      CostMapAccessor ma(costMap, 
+			 static_cast<unsigned int>(mapDeltaX_/costMap.getResolution()),
+			 static_cast<unsigned int>(mapDeltaY_/costMap.getResolution()), 
+			 origin_x, origin_y);
 
-  // Advertize message to publish the plan
-  advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
+      // Formulate the path as beginning at the current active waypoint and ending when we find a waypoint that is not contained in the
+      // local map
+      vector<std_msgs::Point2DFloat32> localPlan;
+      for(unsigned int i = currentWaypointIndex; i < plan.size(); i++){
+	const std_msgs::Pose2DFloat32& waypoint = plan[i];
+	std::cout << "Evaluating waypoint [" << i << "]<" << waypoint.x << ", " << waypoint.y << "> for local planning\n";
+	if(!ma.contains(waypoint.x, waypoint.y)){
+	  std::cout << "waypoint [" << i << "]<" << waypoint.x << ", " << waypoint.y << "> is not in the local map\n";
+	  break;
+	}
 
-  // Now initialize
-  initialize();
-}
+	std_msgs::Point2DFloat32 p;
+	p.x = waypoint.x;
+	p.y = waypoint.y;
+	localPlan.push_back(p);
+      }
 
-MoveBase::~MoveBase(){
-  if(costMap_ != NULL)
-    delete costMap_;
-}
-
-void MoveBase::updateGlobalPose(){
-  libTF::TFPose2D robotPose;
-  robotPose.x = 0;
-  robotPose.y = 0;
-  robotPose.yaw = 0;
-  robotPose.frame = "base";
-  robotPose.time = 0; 
-
-  try{
-    global_pose_ = this->tf_.transformPose2D("map", robotPose);
-  }
-  catch(libTF::TransformReference::LookupException& ex){
-    std::cout << "No Transform available Error\n";
-  }
-  catch(libTF::TransformReference::ConnectivityException& ex){
-    std::cout << "Connectivity Error\n";
-  }
-  catch(libTF::TransformReference::ExtrapolateException& ex){
-    std::cout << "Extrapolation Error\n";
-  }
-
-  //std::cout << "Robot at (" << global_pose_.x << ", " << global_pose_.y << ", " << global_pose_.yaw << ")\n";
-}
+      double vx, vy, vw;
+      bool result = helmsman_->computeVelocityCommands(ma, localPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw);
+      printf("Selected velocity vector: (%f, %f, %f)\n", vx, vy, vw);
+      cmdVel.vx = vx;
+      cmdVel.vy = vy;
+      cmdVel.vw = vw;
+      return result;
+    }
 
 
-void MoveBase::updateGoalMsg(){
-  lock();
-  stateMsg.goal.x = goalMsg.goal.x;
-  stateMsg.goal.y = goalMsg.goal.y;
-  stateMsg.goal.th = goalMsg.goal.th;
-  unlock();
-}
+    MoveBase::MoveBase(VelocityController& vc, double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius)
+      : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
+	controller_(vc),
+	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
+	costMap_(NULL),
+	laserMaxRange_(4.0),
+	currentWaypointIndex_(0) {
 
-void MoveBase::updateStateMsg(){
-  // Get the current robot pose in the map frame
-  updateGlobalPose();
+      // Initialize the velocity controller with the transform client
+      controller_.initialize(tf_);
 
-  // Assign state data 
-  stateMsg.pos.x = global_pose_.x;
-  stateMsg.pos.y = global_pose_.y;
-  stateMsg.pos.th = global_pose_.yaw;
-}
+      // Initialize global pose. Will be set in control loop based on actual data.
+      global_pose_.x = 0;
+      global_pose_.y = 0;
+      global_pose_.yaw = 0;
 
-/**
- * The laserScanMsg_ member will have been updated. It is locked already too.
- */
-void MoveBase::laserScanCallback(){
+      // Initialize odometry
+      base_odom_.vel.x = 0;
+      base_odom_.vel.y = 0;
+      base_odom_.vel.th = 0;
 
-  // Assemble a point cloud, in the laser's frame
-  std_msgs::PointCloudFloat32 local_cloud;
-  projector_.projectLaser(laserScanMsg_, local_cloud, laserMaxRange_);
+      // Initialize state message parameters that are unsused
+      stateMsg.waypoint.x = 0.0;
+      stateMsg.waypoint.y = 0.0;
+      stateMsg.waypoint.th = 0.0;
+      stateMsg.set_waypoints_size(0);
+      stateMsg.waypoint_idx = -1;
+
+      // Set up transforms
+      double laser_x_offset(0.05);
+      //param("laser_x_offset", laser_x_offset, 0.05);
+      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+
+      // get map via RPC
+      std_srvs::StaticMap::request  req;
+      std_srvs::StaticMap::response resp;
+      std::cout << "Requesting the map..." << std::endl;
+      while(!ros::service::call("static_map", req, resp))
+	{
+	  std::cout << "Request failed; trying again..." << std::endl;
+	  usleep(1000000);
+	}
+
+      std::cout << "Received a " << resp.map.width << " X " << 
+	resp.map.height << " map at " << 
+	resp.map.resolution << "m/pix" << std::endl;
+
+      // Convert to cost map
+      unsigned char* mapdata;
+      unsigned int numCells = resp.map.width*resp.map.height;
+      mapdata = new unsigned char[numCells];
+      for(unsigned int i=0;i<numCells;i++)
+	{
+	  if(resp.map.data[i] == noInformation){
+	    // Handle a translation for no information
+	    mapdata[i] = CostMap2D::NO_INFORMATION;
+	  }
+	  else{
+	    // Simply copy the actual cost value
+	    mapdata[i] = resp.map.data[i];
+	  }
+	}
+
+      // Now allocate the cost map
+      costMap_ = new CostMap2D(resp.map.width, resp.map.height, mapdata, resp.map.resolution, 
+			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
+
+      // Finish by deleting the mapdata
+      delete mapdata;
+
+      // Subscribe to laser scan messages
+      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
+
+      // Subscribe to odometry messages
+      subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
+
+      // Advertize messages to publish path updates
+      advertise<std_msgs::Polyline2D>("gui_laser", QUEUE_MAX());
+
+      // Advertize message to publish the plan
+      advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
+
+      // Advertize message to publish velocity cmds
+      advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
+
+      // Now initialize
+      initialize();
+    }
+
+    MoveBase::~MoveBase(){
+
+      if(costMap_ != NULL)
+	delete costMap_;
+    }
+
+    void MoveBase::updateGlobalPose(){
+      libTF::TFPose2D robotPose;
+      robotPose.x = 0;
+      robotPose.y = 0;
+      robotPose.yaw = 0;
+      robotPose.frame = "base";
+      robotPose.time = 0; 
+
+      try{
+	global_pose_ = this->tf_.transformPose2D("map", robotPose);
+      }
+      catch(libTF::TransformReference::LookupException& ex){
+	std::cout << "No Transform available Error\n";
+      }
+      catch(libTF::TransformReference::ConnectivityException& ex){
+	std::cout << "Connectivity Error\n";
+      }
+      catch(libTF::TransformReference::ExtrapolateException& ex){
+	std::cout << "Extrapolation Error\n";
+      }
+
+      //std::cout << "Robot at (" << global_pose_.x << ", " << global_pose_.y << ", " << global_pose_.yaw << ")\n";
+    }
+
+
+    void MoveBase::updateGoalMsg(){
+      lock();
+      stateMsg.goal.x = goalMsg.goal.x;
+      stateMsg.goal.y = goalMsg.goal.y;
+      stateMsg.goal.th = goalMsg.goal.th;
+      unlock();
+    }
+
+    void MoveBase::updateStateMsg(){
+      // Get the current robot pose in the map frame
+      updateGlobalPose();
+
+      // Assign state data 
+      stateMsg.pos.x = global_pose_.x;
+      stateMsg.pos.y = global_pose_.y;
+      stateMsg.pos.th = global_pose_.yaw;
+    }
+
+    /**
+     * The laserScanMsg_ member will have been updated. It is locked already too.
+     */
+    void MoveBase::laserScanCallback(){
+
+      // Assemble a point cloud, in the laser's frame
+      std_msgs::PointCloudFloat32 local_cloud;
+      projector_.projectLaser(laserScanMsg_, local_cloud, laserMaxRange_);
     
-  // Convert to a point cloud in the map frame
-  std_msgs::PointCloudFloat32 global_cloud;
+      // Convert to a point cloud in the map frame
+      std_msgs::PointCloudFloat32 global_cloud;
 
-  try
-    {
-      global_cloud = this->tf_.transformPointCloud("map", local_cloud);
+      try
+	{
+	  global_cloud = this->tf_.transformPointCloud("map", local_cloud);
+	}
+      catch(libTF::TransformReference::LookupException& ex)
+	{
+	  puts("no global->local Tx yet");
+	  printf("%s\n", ex.what());
+	  return;
+	}
+      catch(libTF::TransformReference::ConnectivityException& ex)
+	{
+	  puts("no global->local Tx yet");
+	  printf("%s\n", ex.what());
+	  return;
+	}
+      catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	  puts("Extrapolation exception");
+	}
+
+      /*
+	std::cout << "Laser scan received (Laser Scan:" << laserScanMsg_.get_ranges_size() << 
+	", localCloud:" << local_cloud.get_pts_size() << 
+	", globalCloud:" << global_cloud.get_pts_size() << ")\n";
+      */
+
+      // Update the cost map
+      const double ts = laserScanMsg_.header.stamp.to_double();
+      std::vector<unsigned int> insertions, deletions;
+
+      // Surround with a lock since it can interact with planning
+      lock();
+      costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
+      handleMapUpdates(insertions, deletions);
+      unlock();
+
+      // Publish projected laser scan for rendering in map co-ordinates.
+      std_msgs::Polyline2D pointCloudMsg;
+      unsigned int pointCount = global_cloud.get_pts_size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 0.0;
+      pointCloudMsg.color.b = 1.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+	pointCloudMsg.points[i].x = global_cloud.pts[i].x;
+	pointCloudMsg.points[i].y = global_cloud.pts[i].y;
+      }
+
+      publish("gui_laser",pointCloudMsg);
     }
-  catch(libTF::TransformReference::LookupException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return;
+
+    /**
+     * The odomMsg_ will be updates and we will do the transform to update the odom in the base frame
+     */
+    void MoveBase::odomCallback(){
+      lock();
+      try
+	{
+	  libTF::TFVector v_in, v_out;
+	  v_in.x = odomMsg_.vel.x;
+	  v_in.y = odomMsg_.vel.y;
+	  v_in.z = odomMsg_.vel.th;	  
+	  v_in.time = 0; // Gets the latest
+	  v_in.frame = "odom";
+	  v_out = tf_.transformVector("base", v_in);
+	  base_odom_.vel.x = v_out.x;
+	  base_odom_.vel.y = v_out.y;
+	  base_odom_.vel.th = v_out.z;
+	}
+      catch(libTF::TransformReference::LookupException& ex)
+	{
+	  puts("no odom->base Tx yet");
+	  printf("%s\n", ex.what());
+	}
+      catch(libTF::TransformReference::ConnectivityException& ex)
+	{
+	  puts("no odom->base Tx yet");
+	  printf("%s\n", ex.what());
+	}
+      catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	  puts("Extrapolation exception");
+	}
+
+      unlock();
     }
-  catch(libTF::TransformReference::ConnectivityException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return;
-    }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
-    {
-      puts("Extrapolation exception");
+
+    void MoveBase::updatePlan(const std::vector<std_msgs::Pose2DFloat32>& newPlan){
+      plan_.clear();
+      plan_ = newPlan;
+      currentWaypointIndex_ = 0;
+      publishPlan();
     }
 
-  /*
-  std::cout << "Laser scan received (Laser Scan:" << laserScanMsg_.get_ranges_size() << 
-    ", localCloud:" << local_cloud.get_pts_size() << 
-    ", globalCloud:" << global_cloud.get_pts_size() << ")\n";
-  */
+    void MoveBase::publishPlan(){
+      std_msgs::Polyline2D guiPathMsg;
+      guiPathMsg.set_points_size(plan_.size());
+      guiPathMsg.color.r = 0;
+      guiPathMsg.color.g = 1.0;
+      guiPathMsg.color.b = 0;
+      guiPathMsg.color.a = 0;
 
-  // Update the cost map
-  const double ts = laserScanMsg_.header.stamp.to_double();
-  std::vector<unsigned int> insertions, deletions;
+      std::cout << "Path Found is:";
+ 
+      for(unsigned int i = 0; i < plan_.size(); i++){
+	guiPathMsg.points[i].x = plan_[i].x;
+	guiPathMsg.points[i].y = plan_[i].y;
+	//std::cout << "[" << i << "]" << plan_[i].x << ", " << plan_[i].y << "->";
+      }
 
-  // Surround with a lock since it can interact with planning
-  lock();
-  costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
-  handleMapUpdates(insertions, deletions);
-  unlock();
+      std::cout << std::endl;
 
-  // Pubish projected laser scan for rendering in map co-ordinates.
-  std_msgs::Polyline2D pointCloudMsg;
-  unsigned int pointCount = global_cloud.get_pts_size();
-  pointCloudMsg.set_points_size(pointCount);
-  pointCloudMsg.color.a = 0.0;
-  pointCloudMsg.color.r = 0.0;
-  pointCloudMsg.color.b = 1.0;
-  pointCloudMsg.color.g = 0.0;
+      publish("gui_path", guiPathMsg);
+    }
 
-  for(unsigned int i=0;i<pointCount;i++){
-    pointCloudMsg.points[i].x = global_cloud.pts[i].x;
-    pointCloudMsg.points[i].y = global_cloud.pts[i].y;
+    bool MoveBase::goalReached(){
+      // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
+      // and we have stopped the robot, then we are done
+      if(plan_.empty() && 
+	 fabs(global_pose_.yaw - stateMsg.goal.th) < 10 &&
+	 fabs(base_odom_.vel.x - 0) < 0.001 &&
+	 fabs(base_odom_.vel.y - 0) < 0.001 &&
+	 fabs(base_odom_.vel.th - 0) < 0.001){
+
+	printf("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+	       global_pose_.x, global_pose_.y, global_pose_.yaw,
+	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+
+	return true;
+      }
+
+      // If we have reached the end of the path then clear the plan
+      if(!plan_.empty() &&
+	 withinDistance(global_pose_.x, global_pose_.y, global_pose_.yaw,
+			stateMsg.goal.x, stateMsg.goal.y, global_pose_.yaw)){
+	printf("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+	       global_pose_.x, global_pose_.y, global_pose_.yaw,
+	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+
+	plan_.clear();
+      }
+
+      return false;
+    }
+
+    bool MoveBase::dispatchCommands(){
+      bool planOk = true; // Return value to trigger replanning or not
+      std_msgs::BaseVel cmdVel; // Commanded velocities
+
+      // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
+      // orientation
+      if(plan_.empty()){
+	std::cout << "Moving to desired goal orientation\n";
+	cmdVel.vx = 0;
+	cmdVel.vy = 0;
+	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
+      }
+      else {
+	const CostMap2D& cm = getCostMap();
+
+	// If the global plan is in collision then fail
+	for(unsigned int i = 0; i < plan_.size(); i++){
+	  const std_msgs::Pose2DFloat32& wp = plan_[i];
+	  unsigned int ind = cm.getMapIndexFromWorldCoords(wp.x, wp.y);
+	  if(cm.isObstacle(ind)){
+	    planOk = false;
+	    break;
+	  }
+	}
+      
+	std_msgs::BaseVel currentVel;
+
+	// Set current velocities from odometry
+	currentVel.vx = base_odom_.vel.x;
+	currentVel.vy = base_odom_.vel.y;
+	currentVel.vw = base_odom_.vel.th;
+
+	planOk = planOk && controller_.computeVelocityCommands(getCostMap(), plan_, global_pose_, currentWaypointIndex_, currentVel, cmdVel);
+
+	if(!planOk){
+	  // Zero out the velocities
+	  cmdVel.vx = 0;
+	  cmdVel.vy = 0;
+	  cmdVel.vw = 0;
+	  std::cout << "Local planning has failed :-(\n";
+	}
+      }
+
+      printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
+      publish("cmd_vel", cmdVel);
+      return planOk;
+    }
+
+    /**
+     * @todo Make based on loaded tolerances
+     */
+    bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
+      if(fabs(x1 - x2) < getCostMap().getResolution() &&
+	 fabs(y1 - y2) < getCostMap().getResolution() &&
+	 fabs(th1- th2)< 10)
+	return true;
+
+      return false;
+    }
   }
-
-  publish("gui_laser",pointCloudMsg);
-}
-
-void MoveBase::publishPlan(){
-  std_msgs::Polyline2D guiPathMsg;
-  guiPathMsg.set_points_size(plan_.size());
-  guiPathMsg.color.r = 0;
-  guiPathMsg.color.g = 1.0;
-  guiPathMsg.color.b = 0;
-  guiPathMsg.color.a = 0;
-
-  for(unsigned int i = 0; i < plan_.size(); i++){
-    size_t mx, my;
-    mx = plan_[i].first;
-    my = plan_[i].second;
-    double wx, wy;
-    getCostMap().convertFromIndexesToWorldCoord(mx, my, wx, wy);
-    guiPathMsg.points[i].x = wx;
-    guiPathMsg.points[i].y = wy;
-  }
-
-  publish("gui_path", guiPathMsg);
 }

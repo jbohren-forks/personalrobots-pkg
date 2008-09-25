@@ -44,6 +44,8 @@
 #include <std_msgs/Planner2DState.h>
 #include <std_msgs/Planner2DGoal.h>
 #include <std_msgs/LaserScan.h>
+#include <std_msgs/BaseVel.h>
+#include <std_msgs/RobotBase2DOdom.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -51,77 +53,174 @@
 // Laser projection
 #include "laser_scan_utils/laser_scan.h"
 
-class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
+// For Controller components
+#include <trajectory_rollout/obstacle_map_accessor.h>
+#include <trajectory_rollout/helmsman.h>
 
-public:
+namespace ros {
+  namespace highlevel_controllers {
 
-  /**
-   * @brief Constructor
-   */
-  MoveBase(double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius);
+    /**
+     * @brief Encapsualtion point to allow different algorithms to be used to compute velocity commands in following a path
+     */
+    class VelocityController {
+    public:
+      virtual ~VelocityController(){}
 
-  virtual ~MoveBase();
+      /**
+       * @brief Initialize with transform client
+       */
+      virtual void initialize(rosTFClient& tf){}
 
-protected:
+      /**
+       * @brief Compute velocities for x, y and theta based on an obstacle map, and a current path
+       */
+      virtual bool computeVelocityCommands(const CostMap2D& costMap, 
+					   const vector<std_msgs::Pose2DFloat32>& plan,
+					   const libTF::TFPose2D& pose, 
+					   unsigned int currentWaypointIndex,
+					   const std_msgs::BaseVel& currentVel, 
+					   std_msgs::BaseVel& cmdVel) = 0;
+    };
 
-  /**
-   * @brief Accessor for the cost map. Use mainly for initialization
-   * of specialized map strunture for planning
-   */
-  const CostMap2D& getCostMap() const {return *costMap_;}
+    /** 
+     * @brief For now stick an implementation in here
+     */
+    class TrajectoryRolloutController: public VelocityController {
+    public:
+      TrajectoryRolloutController(double mapDeltaX, double mapDeltaY,
+				  double sim_time, int sim_steps, int samples_per_dim,
+				  double robot_front_radius, double robot_side_radius, double max_occ_dist, 
+				  double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
+				  double acc_lim_x, double acc_lim_y, double acc_lim_th);
 
-  /**
-   * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
-   * cost map. This is called on a map update, which means it will be on a separate thread to the main
-   * node control loop
-   */
-  virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){}
+      virtual ~TrajectoryRolloutController();
 
-  void publishPlan();
+      virtual void initialize(rosTFClient& tf);
 
-  std::vector< std::pair<unsigned int, unsigned int> > plan_; /**< The 2D plan in grid co-ordinates of the cost map */
+      virtual bool computeVelocityCommands(const CostMap2D& costMap, 
+					   const vector<std_msgs::Pose2DFloat32>& plan, 
+					   const libTF::TFPose2D& pose, 
+					   unsigned int currentWaypointIndex,
+					   const std_msgs::BaseVel& currentVel, 
+					   std_msgs::BaseVel& cmdVel);
 
-private:
-  /**
-   * @brief Will process a goal update message.
-   */
-  virtual void updateGoalMsg();
+    private:
+      const double mapDeltaX_;
+      const double mapDeltaY_;
+      const double sim_time_;
+      const int sim_steps_;
+      const int samples_per_dim_;	  
+      const double robot_front_radius_; 
+      const double robot_side_radius_; 
+      const double max_occ_dist_; 	  
+      const double pdist_scale_; 
+      const double gdist_scale_; 
+      const double dfast_scale_; 
+      const double occdist_scale_; 	  
+      const double acc_lim_x_; 
+      const double acc_lim_y_; 
+      const double acc_lim_th_;
+      Helmsman* helmsman_;
+    };
 
+    class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
 
-  /**
-   * @brief Use global pose to publish currrent state data at the start of each cycle
-   */
-  virtual void updateStateMsg();
+    public:
 
-  /**
-   * @brief Evaluate if final goal x, y, th has been reached.
-   */
-  virtual bool goalReached(){return true;}
+      /**
+       * @brief Constructor
+       */
+      MoveBase(VelocityController& vc, double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius);
 
-  /**
-   * @brief Send velocity commands based on local plan. Should check for consistency of
-   * local plan.
-   */
-  virtual bool dispatchCommands(){return true;}
+      virtual ~MoveBase();
 
-  /**
-   * @brief Call back for handling new laser scans
-   */
-  void laserScanCallback();
+    protected:
 
-  void updateGlobalPose();
+      /**
+       * @brief Accessor for the cost map. Use mainly for initialization
+       * of specialized map strunture for planning
+       */
+      const CostMap2D& getCostMap() const {return *costMap_;}
 
-  std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
+      /**
+       * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
+       * cost map. This is called on a map update, which means it will be on a separate thread to the main
+       * node control loop
+       */
+      virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){}
 
-  laser_scan::LaserProjection projector_; /**< Used to project laser scans */
+      /**
+       * @brief Overwrites the current plan with a new one. Will handle suitable publication
+       * @see publishPlan
+       */
+      void updatePlan(const std::vector<std_msgs::Pose2DFloat32>& newPlan);
 
-  rosTFClient tf_; /**< Used to do transforms */
+    private:
+      /**
+       * @brief Will process a goal update message.
+       */
+      virtual void updateGoalMsg();
 
-  CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
+      /**
+       * @brief Use global pose to publish currrent state data at the start of each cycle
+       */
+      virtual void updateStateMsg();
 
-  libTF::TFPose2D global_pose_; /**< The global pose in the map frame */
+      /**
+       * @brief Evaluate if final goal x, y, th has been reached.
+       */
+      virtual bool goalReached();
 
-  /** Parameters that will be passed on initialization soon */
-  const double laserMaxRange_; /**< Used in laser scan projection */
-};
+      /**
+       * @brief Send velocity commands based on local plan. Should check for consistency of
+       * local plan.
+       */
+      virtual bool dispatchCommands();
+
+      /**
+       * @brief Call back for handling new laser scans
+       */
+      void laserScanCallback();
+
+      /**
+       * @brief Robot odometry call back
+       */
+      void odomCallback();
+
+      void updateGlobalPose();
+
+      void publishPlan();
+
+      /**
+       * @brief Utility for comparing 2 points to be within a required distance, which is specified as a
+       * configuration parameter of the object.
+       */
+      bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
+
+      /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
+      VelocityController& controller_;
+
+      std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
+
+      std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
+
+      laser_scan::LaserProjection projector_; /**< Used to project laser scans */
+
+      rosTFClient tf_; /**< Used to do transforms */
+
+      CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
+
+      libTF::TFPose2D global_pose_; /**< The global pose in the map frame */
+
+      std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
+
+      /** Parameters that will be passed on initialization soon */
+      const double laserMaxRange_; /**< Used in laser scan projection */
+
+      std::vector<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
+      unsigned int currentWaypointIndex_; /**!< Position in the plan under execution. The current working waypoint */
+    };
+  }
+}
 #endif
