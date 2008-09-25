@@ -88,7 +88,6 @@ namespace gazebo
 */
 
 /// \brief ros laser controller.
-/// 
 /// This is a controller that simulates a ros laser
 class Ros_Block_Laser : public Controller
 {
@@ -101,19 +100,15 @@ class Ros_Block_Laser : public Controller
 
   /// \brief Load the controller
   /// \param node XML config node
-  /// \return 0 on success
   protected: virtual void LoadChild(XMLConfigNode *node);
 
   /// \brief Init the controller
-  /// \return 0 on success
   protected: virtual void InitChild();
 
   /// \brief Update the controller
-  /// \return 0 on success
   protected: virtual void UpdateChild();
 
   /// \brief Finalize the controller
-  /// \return 0 on success
   protected: virtual void FiniChild();
 
   /// \brief Put laser data to the iface
@@ -122,32 +117,34 @@ class Ros_Block_Laser : public Controller
   /// \brief Put fiducial data to the iface
   private: void PutFiducialData();
 
-  /// The laser interface
+  /// \brief The laser interface
   private: LaserIface *laserIface;
 
   private: FiducialIface *fiducialIface;
 
-  /// The parent sensor
+  /// \brief The parent sensor
   private: RaySensor *myParent;
 
-  // pointer to ros node
+  /// \brief pointer to ros node
   private: ros::node *rosnode;
 
-  // ros message
+  /// \brief ros message
   private: std_msgs::PointCloudFloat32 cloudMsg;
  
-  // topic name
+  /// \brief topic name
   private: std::string topicName;
 
-  // frame transform name, should match link name
-  // FIXME: extract link name directly?
+  /// \brief frame transform name, should match link name
+  /// \brief FIXME: extract link name directly?
   private: std::string frameName;
 
+  /// \brief Gaussian noise
   private: double gaussianNoise;
 
+  /// \brief Gaussian noise generator
   private: double GaussianKernel(double mu,double sigma);
 
-  // A mutex to lock access to fields that are used in message callbacks
+  /// \brief A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
 };

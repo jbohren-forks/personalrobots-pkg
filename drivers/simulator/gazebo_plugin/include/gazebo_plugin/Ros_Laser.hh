@@ -19,10 +19,10 @@
  *
  */
 /*
- * Desc: ros laser controller.
- * Author: Nathan Koenig
- * Date: 01 Feb 2007
- * SVN: $Id: Ros_Laser.hh 6656 2008-06-20 22:52:19Z natepak $
+ * Desc: ROS laser controller.
+ * Author: John Hsu
+ * Date: 24 Sept 2007
+ * SVN: $Id$
  */
 
 #ifndef ROS_LASER_HH

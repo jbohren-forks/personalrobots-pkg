@@ -20,11 +20,11 @@
  */
 /*
  * Desc: Bumper Controller
- * Author: Nate Koenig
- * Date: 09 Sept 2008
+ * Author: Nate Koenig mod by John Hsu
+ * Date: 24 Sept 2008
  */
-#ifndef GENERICBUMPER_CONTROLLER_HH
-#define GENERICBUMPER_CONTROLLER_HH
+#ifndef ROS_BUMPER_CONTROLLER_HH
+#define ROS_BUMPER_CONTROLLER_HH
 
 #include <sys/time.h>
 
@@ -35,39 +35,53 @@ namespace gazebo
 {
   class ContactSensor;
 
-  /// \addtogroup gazebo_controller
+  /// \addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
   /// \{
-  /** \defgroup bumper bumper
+  /** \defgroup Ros_Bumper bumper
   
     \brief A controller that returns bump contacts
-  
+
+  \verbatim
+    <model:physical name="camera_model">
+      <body:empty name="camera_body_name">
+          <sensor:contact name="finger_tip_l_left_contact_sensor">
+          <updateRate>15.0</updateRate>
+          <geom>pr2_finger_tip_l_collision_geom</geom>
+          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>finger_tip_l_contact</topicName>
+            <frameName>finger_tip_l_contact</frameName>
+            <interface:bumper name="dummy_bumper_iface" />
+          </controller:ros_bumper>
+        </sensor:contact>
+      </body:empty>
+    </model:phyiscal>
+  \endverbatim
+
     \{
   */
   
   /// \brief A Bumper controller
-  class Generic_Bumper : public Controller
+  class Ros_Bumper : public Controller
   {
     /// Constructor
-      public: Generic_Bumper(Entity *parent );
+      public: Ros_Bumper(Entity *parent );
   
     /// Destructor
-      public: virtual ~Generic_Bumper();
+      public: virtual ~Ros_Bumper();
   
     /// Load the controller
     /// \param node XML config node
-    /// \return 0 on success
     protected: virtual void LoadChild(XMLConfigNode *node);
   
     /// Init the controller
-    /// \return 0 on success
     protected: virtual void InitChild();
   
     /// Update the controller
-    /// \return 0 on success
     protected: virtual void UpdateChild();
   
     /// Finalize the controller
-    /// \return 0 on success
     protected: virtual void FiniChild();
   
     /// The parent Model

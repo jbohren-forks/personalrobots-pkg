@@ -37,7 +37,7 @@ namespace gazebo
   class MonoCameraSensor;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
-/// \{
+/// @{
 /** \defgroup Ros_Camera Ros Camera Plugin XML Reference and Example
 
   \brief Ros Camera Plugin Controller.
@@ -115,7 +115,7 @@ class Ros_Camera : public Controller
 };
 
 /** \} */
-/// \}
+/// @}
 
 }
 #endif

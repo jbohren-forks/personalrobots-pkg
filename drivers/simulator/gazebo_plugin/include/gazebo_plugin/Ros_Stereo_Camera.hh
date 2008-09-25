@@ -45,9 +45,9 @@ namespace gazebo
   class CameraIface;
   class StereoCameraIface;
 
-/// @addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup stereocamera stereo camera
+/** \defgroup Ros_Stereo_Camera ROS stereo camera controller plugin
 
   \brief Stereo camera controller.
   
@@ -57,11 +57,29 @@ namespace gazebo
   <model:physical name="camera_model">
     <body:empty name="camera_body">
       <sensor:stereocamera name="stereo_camera_sensor">
-
-        <controller:stereo_camera name="controller-name">
-          <interface:stereocamera name="iface-name"/>
-        </controller:stereo_camera>
-
+        <imageSize>640 480</imageSize>
+        <hfov>60</hfov>
+        <nearClip>0.1</nearClip>
+        <farClip>100</farClip>
+        <saveFrames>false</saveFrames>
+        <saveFramePath>frames</saveFramePath>
+        <baseline>0.2</baseline>
+        <updateRate>15.0</updateRate>
+        <controller:ros_stereocamera name="stereo_camera_controller" plugin="libRos_Stereo_Camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>15.0</updateRate>
+          <interface:stereocamera name="stereo_iface_0" />
+          <interface:camera name="camera_iface_0" />
+          <interface:camera name="camera_iface_1" />
+          <leftcamera>camera_iface_0</leftcamera>
+          <rightcamera>camera_iface_1</rightcamera>
+          <leftCloudTopicName>stereo_left_cloud</leftCloudTopicName>
+          <rightCloudTopicName>stereo_right_cloud</rightCloudTopicName>
+          <leftTopicName>stereo_left_image</leftTopicName>
+          <rightTopicName>stereo_right_image</rightTopicName>
+          <leftFrameName>stereo_left</leftFrameName>
+          <rightFrameName>stereo_right</rightFrameName>
+        </controller:ros_stereocamera>
       </sensor:stereocamera>
     </body:empty>
   </model:phyiscal>
@@ -95,15 +113,12 @@ class Ros_Stereo_Camera : public Controller
   protected: void SaveChild(std::string &prefix, std::ostream &stream);
 
   /// \brief Init the controller
-  /// \return 0 on success
   protected: virtual void InitChild();
 
   /// \brief Update the controller
-  /// \return 0 on success
   protected: virtual void UpdateChild();
 
   /// \brief Finalize the controller
-  /// \return 0 on success
   protected: virtual void FiniChild();
 
   /// \brief Put stereo data to the iface
@@ -112,42 +127,42 @@ class Ros_Stereo_Camera : public Controller
   /// \brief Put camera data to the iface
   private: void PutCameraData(CameraData *camera_data, unsigned int camera);
 
-  /// The camera interface
+  /// \brief The camera interface
   private: StereoCameraIface *stereoIface;
   private: std::map< std::string, CameraIface*> cameraIfaces;
 
   private: ParamT<std::string> *leftCameraNameP;
   private: ParamT<std::string> *rightCameraNameP;
 
-  /// The parent sensor
+  /// \brief The parent sensor
   private: StereoCameraSensor *myParent;
 
-  // pointer to ros node
+  /// \brief pointer to ros node
   private: ros::node *rosnode;
 
-  // ros message
+  /// \brief ros message
   private: std_msgs::PointCloud leftCloudMsg;
   private: std_msgs::PointCloud rightCloudMsg;
-  // ros message
+  /// \brief ros message
   private: std_msgs::Image imageMsg[2];
 
-  // topic name
+  /// \brief topic name
   private: std::string leftCloudTopicName;
   private: std::string rightCloudTopicName;
   private: std::string leftTopicName;
   private: std::string rightTopicName;
 
-  // frame transform name, should match link name
-  // FIXME: extract link name directly?
+  /// \brief frame transform name, should match link name
+  /// \brief FIXME: extract link name directly?
   private: std::string leftFrameName;
   private: std::string rightFrameName;
 
-  // A mutex to lock access to fields that are used in message callbacks
+  /// \brief A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
 };
 
-/** /} */
+/** \} */
 /// @}
 
 }

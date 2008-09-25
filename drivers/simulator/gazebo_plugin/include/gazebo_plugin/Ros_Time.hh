@@ -38,6 +38,38 @@
 
 namespace gazebo
 {
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
+/// @{
+/** \defgroup Ros_Time ROS time broadcaster.
+
+  \brief Broadcast simulator time over ROS
+  
+  This is a controller that broadcasts simulator time over ros::time
+
+  \verbatim
+    <model:physical name="robot_model1">
+
+      <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+      </controller:ros_time>
+
+      <xyz>0.0 0.0 0.02</xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+
+      <!-- base, torso and arms -->
+      <include embedded="true">
+        <xi:include href="pr2_xml.model" />
+      </include>
+
+    </model:physical>
+  \endverbatim
+ 
+\{
+*/
+
+/// \brief starts a ROS time node and broadcast simulator time
 /// This is a controller that starts a ros time
 class Ros_Time : public Controller
 {
@@ -50,30 +82,26 @@ class Ros_Time : public Controller
 
   /// \brief Load the controller
   /// \param node XML config node
-  /// \return 0 on success
   protected: virtual void LoadChild(XMLConfigNode *node);
 
   /// \brief Init the controller
-  /// \return 0 on success
   protected: virtual void InitChild();
 
   /// \brief Update the controller
-  /// \return 0 on success
   protected: virtual void UpdateChild();
 
   /// \brief Finalize the controller
-  /// \return 0 on success
   protected: virtual void FiniChild();
 
-  // A mutex to lock access to fields that are used in message callbacks
+  /// \brief A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
-  // pointer to ros node
+  /// \brief pointer to ros node
   ros::node *rosnode_;
   rostools::Time timeMsg;
 
 };
 
-/** /} */
+/** \} */
 /// @}
 
 }

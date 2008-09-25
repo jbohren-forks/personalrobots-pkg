@@ -43,21 +43,25 @@ namespace gazebo
   class HingeJoint;
   class PTZIface;
 
-/// @addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup rosptz ros ptz
+/** \defgroup Ros_PTZ ROS PTZ Camera Controller Plugin
 
-  \brief Ros pan-tilt-zoom controller.
+  \brief ROS pan-tilt-zoom controller.
   
   This is a controller that controls a pan, tilt, zoom unit 
 
   \verbatim
   <model:physical name="ptz_model">
-    <body:empty name="ptz_body">
-      <controller:ros_ptz name="controller-name">
-        <interface:ptz name="iface-name"/>
-      </controller:ros_ptz>
-    </body:empty>
+    <controller:Ros_PTZ name="ptz_controller" plugin="libRos_PTZ.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>15.0</updateRate>
+      <panJoint>ptz_pan_joint_name</panJoint>
+      <tiltJoint>ptz_tilt_joint_name</tiltJoint>
+      <commandTopicName>camera_name/ptz_cmd</commandTopicName>
+      <stateTopicName>camera_name/ptz_state</stateTopicName>
+      <interface:ptz name="ptz_iface" />
+    </controller:Ros_PTZ>
   </model:phyiscal>
   \endverbatim
  
@@ -99,16 +103,16 @@ namespace gazebo
     /// \brief Put camera data to the iface
     private: void PutPTZData();
   
-    /// The camera interface
+    /// \brief The camera interface
     private: PTZIface *ptzIface;
   
-    /// The parent sensor
+    /// \brief The parent sensor
     private: Model *myParent;
 
-    /// Pan joint
+    /// \brief Pan joint
     private: HingeJoint *panJoint;
 
-    /// Tilt joint
+    /// \brief Tilt joint
     private: HingeJoint *tiltJoint;
 
     private: float cmdTilt;
@@ -122,30 +126,30 @@ namespace gazebo
     private: ParamT<std::string> *commandTopicNameP;
     private: ParamT<std::string> *stateTopicNameP;
 
-    // pointer to ros node
+    /// \brief pointer to ros node
     private: ros::node *rosnode;
-    // ros message
+    /// \brief ros message
     private: axis_cam::PTZActuatorState PTZStateMessage;
     private: axis_cam::PTZActuatorCmd   PTZControlMessage;
 
-    // receive message
+    /// \brief receive message
     private: void PTZCommandReceived();
 
-    // topic name
+    /// \brief topic name
     private: std::string commandTopicName;
     private: std::string stateTopicName;
 
-    // frame transform name, should match link name
-    // FIXME: extract link name directly? currently using joint names
+    /// \brief frame transform name, should match link name
+    /// \brief FIXME: extract link name directly? currently using joint names
     private: std::string panFrameName;
     private: std::string tiltFrameName;
 
-    // A mutex to lock access to fields that are used in message callbacks
+    /// \brief A mutex to lock access to fields that are used in message callbacks
     private: ros::thread::mutex lock;
 
   };
   
-  /** /} */
+  /** \} */
   /// @}
 
 }

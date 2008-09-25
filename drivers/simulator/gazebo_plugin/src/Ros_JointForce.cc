@@ -19,9 +19,9 @@
  *
  */
 /*
- * Desc: Joint Force controller
- * Author: Benjamin Kloster
- * Date: 13 March 2008
+ * Desc: Ros Joint Force controller
+ * Author: John Hsu
+ * Date: 24 Sept 2008
  */
 
 #include "Global.hh"
@@ -32,15 +32,15 @@
 #include "GazeboError.hh"
 #include "ControllerFactory.hh"
 #include "Simulator.hh"
-#include "JointForce.hh"
+#include "gazebo_plugin/Ros_JointForce.hh"
 
 using namespace gazebo;
 
-GZ_REGISTER_STATIC_CONTROLLER("jointforce", JointForce);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_jointforce", Ros_JointForce);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-JointForce::JointForce(Entity *parent )
+Ros_JointForce::Ros_JointForce(Entity *parent )
   : Controller(parent)
 {
     this->myParent = dynamic_cast<Model*>(this->parent);
@@ -51,13 +51,13 @@ JointForce::JointForce(Entity *parent )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-JointForce::~JointForce()
+Ros_JointForce::~Ros_JointForce()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void JointForce::LoadChild(XMLConfigNode *node)
+void Ros_JointForce::LoadChild(XMLConfigNode *node)
 {
     XMLConfigNode *jNode;
     Joint *joint;
@@ -66,10 +66,10 @@ void JointForce::LoadChild(XMLConfigNode *node)
     int i =0;
     this->myIface = dynamic_cast<OpaqueIface*>(this->ifaces[0]);
     if (!this->myIface) {
-        gzthrow("JointForce controller requires an  OpaqueIface");
+        gzthrow("Ros_JointForce controller requires an  OpaqueIface");
     }
     jNode = node->GetChild("joint");
-    while(jNode && i < GAZEBO_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS)
+    while(jNode && i < ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS)
     {
         jointName = jNode->GetString("name","",1);
         joint = this->myParent->GetJoint(jointName);
@@ -85,14 +85,14 @@ void JointForce::LoadChild(XMLConfigNode *node)
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void JointForce::InitChild()
+void Ros_JointForce::InitChild()
 {
     //this->myIface->data->data = new uint8_t[sizeof(dJointFeedback)*n_joints];
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void JointForce::UpdateChild()
+void Ros_JointForce::UpdateChild()
 {
   this->myIface->Lock(1);
   this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
@@ -116,6 +116,6 @@ void JointForce::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void JointForce::FiniChild()
+void Ros_JointForce::FiniChild()
 {
 }

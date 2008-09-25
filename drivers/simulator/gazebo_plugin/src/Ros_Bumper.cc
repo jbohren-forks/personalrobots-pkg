@@ -32,15 +32,15 @@
 #include "GazeboError.hh"
 #include "ControllerFactory.hh"
 #include "Simulator.hh"
-#include "Generic_Bumper.hh"
+#include "gazebo_plugin/Ros_Bumper.hh"
 
 using namespace gazebo;
 
-GZ_REGISTER_STATIC_CONTROLLER("bumper", Generic_Bumper);
+GZ_REGISTER_DYNAMIC_CONTROLLER("ros_bumper", Ros_Bumper);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Constructor
-Generic_Bumper::Generic_Bumper(Entity *parent )
+Ros_Bumper::Ros_Bumper(Entity *parent )
   : Controller(parent)
 {
   this->myParent = dynamic_cast<ContactSensor*>(this->parent);
@@ -51,31 +51,31 @@ Generic_Bumper::Generic_Bumper(Entity *parent )
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
-Generic_Bumper::~Generic_Bumper()
+Ros_Bumper::~Ros_Bumper()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
-void Generic_Bumper::LoadChild(XMLConfigNode *node)
+void Ros_Bumper::LoadChild(XMLConfigNode *node)
 {
   this->myIface = dynamic_cast<BumperIface*>(this->ifaces[0]);
 
   if (!this->myIface) 
   {
-    gzthrow("Generic_Bumper controller requires an BumperIface");
+    gzthrow("Ros_Bumper controller requires an BumperIface");
   }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
-void Generic_Bumper::InitChild()
+void Ros_Bumper::InitChild()
 {
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Update the controller
-void Generic_Bumper::UpdateChild()
+void Ros_Bumper::UpdateChild()
 {
   this->myIface->Lock(1);
 
@@ -94,6 +94,6 @@ void Generic_Bumper::UpdateChild()
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
-void Generic_Bumper::FiniChild()
+void Ros_Bumper::FiniChild()
 {
 }

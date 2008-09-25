@@ -39,7 +39,7 @@ namespace gazebo
    class PositionIface;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
-   /// \{
+/// @{
    /** \defgroup P3D Groud Truth Position Pose and Rates Interface
 
    \brief P3D controller.
@@ -82,11 +82,9 @@ namespace gazebo
       protected: virtual void InitChild();
 
       /// \brief Update the controller
-      /// \return 0 on success
       protected: virtual void UpdateChild();
 
       /// \brief Finalize the controller
-      /// \return 0 on success
       protected: virtual void FiniChild();
 
       /// \brief The actarray interface
@@ -123,7 +121,7 @@ namespace gazebo
    };
 
 /** \} */
-/// \}
+/// @}
 
 
 }

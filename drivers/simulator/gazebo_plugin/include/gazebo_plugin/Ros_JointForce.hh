@@ -19,15 +19,15 @@
  *
  */
 /*
- * Desc: Joint Force Controller
- * Author: Benjamin Kloster
- * Date: 13 March 2008
+ * Desc: ROS Joint Force Controller
+ * Author: John Hsu
+ * Date: 24 Sept 2008
  */
-#ifndef JOINTFORCE_CONTROLLER_HH
-#define JOINTFORCE_CONTROLLER_HH
+#ifndef ROS_JOINTFORCE_CONTROLLER_HH
+#define ROS_JOINTFORCE_CONTROLLER_HH
 
 /// Maximum number of joints that can be watched by one controller
-#define GAZEBO_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS 16
+#define ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS 16
 
 #include "Controller.hh"
 #include "Entity.hh"
@@ -37,49 +37,59 @@
 
 namespace gazebo
 {
-/// \addtogroup gazebo_controller
+/// \addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// \{
-/** \defgroup jointforce_controller jointforce
+/** \defgroup Ros_Jointforce Joint Force Controller Plugin
 
   \brief A controller that measures forces and torques exerted by joints
 
+  \verbatim
+    <model:physical name="test_model">
+      <body:empty name="body_name">
+          <controller:ros_jointforce name="ros_ray_sensor_controller" plugin="libRos_Laser.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>jointfoce_topic_name</topicName>
+            <frameName>test_model</frameName>
+            <interface:opaque name="jointforce_iface" />
+          </controller:ros_jointforce>
+      </body:empty>
+    </model:phyiscal>
+  \endverbatim
+ 
   \{
 */
 
 /// \brief A JointForce controller
-class JointForce : public Controller
+class Ros_JointForce : public Controller
 {
-  /// Constructor
-    public: JointForce(Entity *parent );
+  /// \brief Constructor
+    public: Ros_JointForce(Entity *parent );
 
-  /// Destructor
-    public: virtual ~JointForce();
+  /// \brief Destructor
+    public: virtual ~Ros_JointForce();
 
-  /// Load the controller
+  /// \brief Load the controller
   /// \param node XML config node
-  /// \return 0 on success
   protected: virtual void LoadChild(XMLConfigNode *node);
 
-  /// Init the controller
-  /// \return 0 on success
+  /// \brief Init the controller
   protected: virtual void InitChild();
 
-  /// Update the controller
-  /// \return 0 on success
+  /// \brief Update the controller
   protected: virtual void UpdateChild();
 
-  /// Finalize the controller
-  /// \return 0 on success
+  /// \brief Finalize the controller
   protected: virtual void FiniChild();
 
-  /// The parent Model
+  /// \brief The parent Model
   private: Model *myParent;
 
-  /// The Iface. The dJointFeedback structs are rather arbitrary, so we use an Opaque Interface
+  /// \brief The Iface. The dJointFeedback structs are rather arbitrary, so we use an Opaque Interface
   private: OpaqueIface *myIface;
-  /// The joint feedbacks
-  private: dJointFeedback *jointfeedbacks[GAZEBO_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS];
-  /// The number of joints we are watching
+  /// \brief The joint feedbacks
+  private: dJointFeedback *jointfeedbacks[ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS];
+  /// \brief The number of joints we are watching
   private: int n_joints;
 };
 
