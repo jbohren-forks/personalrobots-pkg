@@ -37,15 +37,23 @@
 PKG = 'gazebo_plugin'
 NAME = 'testcameras'
 
+import math
 import rostools
 rostools.update_path(PKG)
+rostools.update_path('rostest')
+rostools.update_path('std_msgs')
+rostools.update_path('robot_msgs')
+rostools.update_path('rostest')
+rostools.update_path('rospy')
 
 import sys, unittest
 import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
+from PIL import Image      as pili
+from PIL import ImageChops as pilic
 
-FRAME_TARGET = "cam_sen-0050.jpg"
+FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "testcameraframes"
 
 class PollCameraThread(threading.Thread):
@@ -69,11 +77,12 @@ class TestCameras(unittest.TestCase):
     def __init__(self, *args):
         super(TestCameras, self).__init__(*args)
         self.success = False
-        self.pollThread = PollCameraThread(self, FRAME_DIR)
+        self.tested  = False
+        #self.pollThread = PollCameraThread(self, FRAME_DIR)
 
     def onTargetFrame(self):
         time.sleep(0.5) #Safety, to make sure the image is really done being written.
-        ps = "diff -q " + FRAME_DIR + "/" + FRAME_TARGET + " test/testcamera.valid.jpg"
+        ps = "diff -q " + FRAME_DIR + "/" + FRAME_TARGET + " test/testcamera.valid.ppm"
         #print "CMD: " + ps + "\n"
         result = os.system(ps)
         if (result == 0):
@@ -82,26 +91,68 @@ class TestCameras(unittest.TestCase):
         else:
             self.success = False
             #print "Failure\n"
-        os.system("killall gazebo") #Huge temp hack to kill gazebo.
         rospy.signal_shutdown('test done')
-        
-    def test_cameras(self):
+
+    def images_are_the_same(self,i0,i1):
+        # assume len(i0)==len(i1)
+        print "lengths ",len(i0), len(i1)
+        for i in range(len(i0)):
+          (r0,g0,b0) = i0[i-1]
+          (r1,g1,b1) = i1[i-1]
+          if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
+            print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
+          tol = 10
+          if abs(r0-r1) > tol or abs(g0-g1) > tol or abs(b0-b1) > tol:
+            return False
+        return True
+
+    def imageInput(self,image):
+        print " got image from ROS, begin comparing images "
+        print "  - load validation image from file testcamera.valid.ppm "
+        im0 = pili.open("testcamera.valid.ppm")
+        print "  - load image from ROS "
+        size = image.width,image.height
+        im1 = pili.new("RGBA",size)
+        im1 = pili.frombuffer("RGB",size,str(image.data));
+        im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
+        imc = pilic.difference(im0,im1)
+        print "  - comparing images "
+        #im1.save("testsave.ppm") # to capture a new valid frame when things change
+        #im1.show()
+        #im0.show()
+        #imc.show()
+        comp_result = self.images_are_the_same(im0.getdata(),im1.getdata())
+        print "test comparison ", comp_result
+        #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
+        if (comp_result == 1):
+          print "  - images are the Same "
+          self.success = True
+        else:
+          print "  - images differ "
+          self.success = False
+        self.tested  = True
+
+    def testcameras(self):
+        print " wait 3 sec for objects to settle "
+        time.sleep(3)
+        print " subscribe image from ROS "
+        rospy.subscribe_topic("test_camera/image", Image, self.imageInput)
         rospy.ready(NAME, anonymous=True)
-        self.pollThread.start()
-        timeout_t = time.time() + 30.0 #30 seconds
-        while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
+        #self.pollThread.start()
+        timeout_t = time.time() + 60 #60 seconds delay for processing comparison
+        while not rospy.is_shutdown() and not self.tested and time.time() < timeout_t:
             time.sleep(0.1)
-        os.system("killall gazebo")
         self.assert_(self.success)
         
     
 
 
 if __name__ == '__main__':
-    while (os.path.isfile(FRAME_DIR + "/" + FRAME_TARGET)):
-        print "Old test case still alive."
-        time.sleep(0.00001)
+    #while (os.path.isfile(FRAME_DIR + "/" + FRAME_TARGET)):
+    #    print "Old test case still alive."
+    #    time.sleep(1)
     
-    rostest.run(PKG, sys.argv[0], TestCameras, sys.argv) #, text_mode=True)
+    print " starting test "
+    rostest.run(PKG, sys.argv[0], TestCameras, sys.argv)
 
 
