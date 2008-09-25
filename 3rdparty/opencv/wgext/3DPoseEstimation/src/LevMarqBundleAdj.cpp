@@ -11,7 +11,10 @@ namespace cv {
 
 namespace willow {
 
-LevMarqBundleAdj::LevMarqBundleAdj() {
+LevMarqBundleAdj::LevMarqBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity,
+    int numErrors, int numMaxIter) :
+      Parent(disparityTo3D, threeDToDisparity, numErrors, numMaxIter)
+      {
   // TODO Auto-generated constructor stub
 
 }

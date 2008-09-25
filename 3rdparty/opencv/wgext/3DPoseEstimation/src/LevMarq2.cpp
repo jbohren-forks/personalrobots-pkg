@@ -9,13 +9,14 @@
 #include <algorithm>
 #include <ctype.h>
 
-#include "CvLevMarq2.h"
-
 using namespace std;
+
+#include "LevMarq2.h"
+using namespace cv::willow;
 
 #undef DEBUG
 
-CvLevMarq2::CvLevMarq2()
+LevMarq::LevMarq()
 {
    prevParam = param = J = err = JtJ = JtJN = JtErr = JtJV = JtJW = 0;
    lambdaLg10 = 0; state = DONE;
@@ -23,13 +24,13 @@ CvLevMarq2::CvLevMarq2()
    iters = 0;
 }
 
-CvLevMarq2::CvLevMarq2( int nparams, int nerrs, CvTermCriteria criteria0 )
+LevMarq::LevMarq( int nparams, int nerrs, CvTermCriteria criteria0 )
 {
    prevParam = param = J = err = JtJ = JtJN = JtErr = JtJV = JtJW = 0;
    init(nparams, nerrs, criteria0);
 }
 
-void CvLevMarq2::clear()
+void LevMarq::clear()
 {
    cvReleaseMat(&prevParam);
    cvReleaseMat(&param);
@@ -42,12 +43,12 @@ void CvLevMarq2::clear()
    cvReleaseMat(&JtJW);
 }
 
-CvLevMarq2::~CvLevMarq2()
+LevMarq::~LevMarq()
 {
    clear();
 }
 
-void CvLevMarq2::init( int nparams, int nerrs, CvTermCriteria criteria0 )
+void LevMarq::init( int nparams, int nerrs, CvTermCriteria criteria0 )
 {
    if( !param || param->rows != nparams || nerrs != (err ? err->rows : 0) )
        clear();
@@ -78,7 +79,7 @@ void CvLevMarq2::init( int nparams, int nerrs, CvTermCriteria criteria0 )
    iters = 0;
 }
 
-bool CvLevMarq2::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
+bool LevMarq::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
 {
    double change;
 
@@ -147,81 +148,72 @@ bool CvLevMarq2::update( const CvMat*& _param, CvMat*& _J, CvMat*& _err )
 }
 
 
-bool CvLevMarq2::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, double*& _errNorm )
+bool LevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, double*& _errNorm )
 {
-   double change;
+  double change;
 
-   assert( err == 0 );
-   if( state == DONE )
-   {
-       _param = param;
-       return false;
-   }
+  assert( err == 0 );
+  if( state == DONE )
+  {
+    // new parameters output to the caller
+    _param = param;
+    return false;
+  }
 
-   if( state == STARTED )
-   {
-       _param = param;
-       _JtJ = JtJ;
-       _JtErr = JtErr;
-       _errNorm = &errNorm;
-       state = CALC_J;
-       return true;
-   }
+  if( state == STARTED )
+  {
+    // new para
+    _param = param;
+    _JtJ = JtJ;
+    _JtErr = JtErr;
+    _errNorm = &errNorm;
+    state = CALC_J;
+    return true;
+  }
 
-   if( state == CALC_J )
-   {
-       cvCopy( param, prevParam );
-       solve();
-       cvSub( prevParam, param, param );
-       _param = param;
-       prevErrNorm = errNorm;
-       _errNorm = &errNorm;
-       state = CHECK_ERR;
-       return true;
-   }
+  if( state == CALC_J )
+  {
+    cvCopy( param, prevParam );
+    solve();
+    cvSub( prevParam, param, param );
+    _param = param;
+    prevErrNorm = errNorm;
+    _errNorm = &errNorm;
+    state = CHECK_ERR;
+    return true;
+  }
 
-   assert( state == CHECK_ERR );
-   // jdc debugging
-   //   if (errNorm - prevErrNorm > -0.1e-10)
-   //   if( errNorm >= prevErrNorm )
-   if( errNorm > prevErrNorm)
-   {
-       lambdaLg10++;
-       solve();
-       cvSub( prevParam, param, param );
-       _param = param;
-       _errNorm = &errNorm;
-       state = CHECK_ERR;
-       return true;
-   }
+  assert( state == CHECK_ERR );
+  //   jdc debugging - numerically, what is the meaning of greater than
+  if( errNorm > prevErrNorm)
+  {
+    lambdaLg10++;
+    solve();
+    cvSub( prevParam, param, param );
+    _param = param;
+    _errNorm = &errNorm;
+    state = CHECK_ERR;
+    return true;
+  }
 
-   lambdaLg10 = MAX(lambdaLg10-1, -16);
-   if( ++iters >= criteria.max_iter ||
-       (change = cvNorm(param, prevParam, CV_RELATIVE_L2)) < criteria.epsilon )
-   {
-       _param = param;
-       state = DONE;
-#ifdef DEBUG
-       // jdc debugging
-       printf("cvLevMarq done: iter num: %d,  change: %f, errNorm: %f\n", iters, change, errNorm);
-#endif
-       return false;
-   }
-#ifdef DEBUG
-   // jdc debugging
-   printf("cvLevMarq continue: iter num: %d,  change: %le, %le, errNorm: %f\n",
-		   iters, change, criteria.epsilon, errNorm);
-#endif
+  lambdaLg10 = MAX(lambdaLg10-1, -16);
+  if( ++iters >= criteria.max_iter ||
+      (change = cvNorm(param, prevParam, CV_RELATIVE_L2)) < criteria.epsilon )
+  {
+    _param = param;
+    state = DONE;
+    return false;
+  }
 
-   prevErrNorm = errNorm;
-   _param = param;
-   _JtJ = JtJ;
-   _JtErr = JtErr;
-   state = CALC_J;
-   return true;
+  prevErrNorm = errNorm;
+  _param = param;
+  _JtJ = JtJ;
+  _JtErr = JtErr;
+  state = CALC_J;
+  return true;
 }
 
-void CvLevMarq2::solve()
+void LevMarq::solve()
 {
    const double LOG10 = log(10.);
    double lambda = exp(lambdaLg10*LOG10);
@@ -230,9 +222,5 @@ void CvLevMarq2::solve()
    cvAdd( JtJ, JtJN, JtJN );
    cvSVD( JtJN, JtJW, 0, JtJV, CV_SVD_MODIFY_A + CV_SVD_U_T + CV_SVD_V_T );
    cvSVBkSb( JtJW, JtJV, JtJV, JtErr, param, CV_SVD_U_T + CV_SVD_V_T );
-#ifdef DEBUG
-   // jdc debugging
-   printf("param changed\n");
-#endif
 }
 

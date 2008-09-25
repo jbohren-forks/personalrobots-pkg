@@ -1,13 +1,14 @@
 /*
- * CvPathReconDisplay.cpp
+ * PathReconDisplay.cpp
  *
  *  Created on: Sep 8, 2008
  *      Author: jdchen
  */
 
-#include "CvPathReconDisplay.h"
+#include "PathReconDisplay.h"
+using namespace cv::willow;
 
-CvPathReconDisplay::CvPathReconDisplay() {
+PathReconDisplay::PathReconDisplay() {
 #if 0
   // TODO Auto-generated constructor stub
   // create a list of windows to display results
@@ -36,6 +37,6 @@ CvPathReconDisplay::CvPathReconDisplay() {
 #endif
 }
 
-CvPathReconDisplay::~CvPathReconDisplay() {
+PathReconDisplay::~PathReconDisplay() {
   // TODO Auto-generated destructor stub
 }

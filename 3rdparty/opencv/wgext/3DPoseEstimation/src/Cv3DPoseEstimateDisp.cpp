@@ -1,7 +1,7 @@
 #include "Cv3DPoseEstimateDisp.h"
 
 #include "CvMat3X3.h"
-#include "CvLevMarq3D.h"
+#include "LevMarqTransform.h"
 
 #include <iostream>
 #include "CvTestTimer.h"

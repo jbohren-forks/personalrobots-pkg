@@ -29,8 +29,8 @@ namespace willow {
  */
 class PathRecon {
 public:
-  class PoseEstFrameEntry
-  {
+  /// Information of pose estimation for one frame.
+  class PoseEstFrameEntry  {
   public:
     /**
      * The object takes ownership of the images, keypoints and inliers
@@ -108,12 +108,13 @@ public:
   protected:
 
     void clear();
+    // buffers
     double _mRot[9];
     double _mShift[3];
     double _mTransform[16];
   };
-  class FramePose
-  {
+  /// transformation of each frame.
+  class FramePose   {
   public:
     FramePose()
     :mIndex(-1), mRod(cvPoint3D64f(0., 0., 0.)), mShift(cvPoint3D64f(0., 0., 0.))
@@ -282,6 +283,8 @@ public:
   };
   Stat   mStat; //< Statistics of the visual odometry process
 
+  /// Visualizing the process of visual odometry process with frame to frame
+  /// pose estimation.
   class Visualizer {
   public:
     Visualizer(Cv3DPoseEstimateDisp& poseEstimator);

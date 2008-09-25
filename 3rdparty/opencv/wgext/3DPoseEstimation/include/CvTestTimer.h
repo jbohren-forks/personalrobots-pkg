@@ -8,7 +8,7 @@ using namespace std;
 #define RESET(timerName)   do {m##timerName.reset();} while(0)
 
 /**
- * A class for setting up and displaying statistics of timers
+ * setting up and displaying statistics of timers
  */
 class CvTestTimer
 {

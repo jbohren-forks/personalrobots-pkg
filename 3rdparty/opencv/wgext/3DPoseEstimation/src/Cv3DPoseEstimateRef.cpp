@@ -3,10 +3,12 @@
 #include "opencv/cv.h"
 
 #include "CvMat3X3.h"
-#include "CvLevMarqDispSpace.h"
+#include "LevMarqTransformDispSpace.h"
 #include "Cv3DPoseEstimateRef.h"
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
+
+using namespace cv::willow;
 
 #undef DEBUG
 #define USE_LEVMARQ
@@ -253,7 +255,7 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
 	}
 
     // nonlinear optimization by Levenberg-Marquardt
-    CvLevMarqTransform levMarq(numInLiers0);
+    LevMarqTransform levMarq(numInLiers0);
 
     double param[6];
 

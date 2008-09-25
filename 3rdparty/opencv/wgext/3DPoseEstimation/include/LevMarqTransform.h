@@ -1,11 +1,14 @@
 #ifndef CVLEVMARQ3D_H_
 #define CVLEVMARQ3D_H_
 
-#include "CvLevMarq2.h"
+#include "LevMarq2.h"
 #include "CvMatUtils.h"
 
+namespace cv {
+namespace willow {
+
 /**
- *  A class that specializes on optimization of transformation of 3D point clouds.
+ *  A form of Levenberg-Marquardt that specializes on optimized estimation of transformation of 3D point clouds.
  *  There is 6 parameters for a transformation. The first 3 are for rotation
  * (either euler or rodrigues) and last 3 are shift (translation) vector.
  * For the case of Cartesian coordinates, the last 3 (shift vector) parameters are linearly related to
@@ -80,7 +83,7 @@
  *
  * @author Jindong (JD) Chen (jdchen@willowgarage.com)
  */
-class CvLevMarqTransform
+class LevMarqTransform
 {
 public:
 	/**
@@ -90,8 +93,8 @@ public:
 	 * For now please set it to zero, the other option is not fully test/implemented yet.
 	 * @param numMaxIter - maximum number of iterations in LevMar optimization
 	 */
-	CvLevMarqTransform(int numErrors=0, int numMaxIter = defNumMaxIter);
-	virtual ~CvLevMarqTransform();
+	LevMarqTransform(int numErrors=0, int numMaxIter = defNumMaxIter);
+	virtual ~LevMarqTransform();
 	const static int numNonLinearParams = 3;   ///< the num of nonlinear parameters, namely rotation related
 	const static int numParams = 6;	      ///< Total num of parameters
 	const static int defNumMaxIter = 50;  ///< Maximum num of iterations
@@ -135,7 +138,7 @@ protected:
 	virtual bool constructTransformationMatrices(const CvMat *param, CvMyReal delta);
 	/**
 	 * compute the residue error \f$ R = T \cdot P0 - P1 \f$, where
-	 * \f$ T \f$ is CvLevMarqTransform::mRT3x4.
+	 * \f$ T \f$ is LevMarqTransform::mRT3x4.
    * @param P0 - Input points before transformation. An n by 3 matrix where
    * each row is a point \f$ (x,y,z) \f$.
    * @param P1 - Input points after transformation. An n by 3 matrix where
@@ -174,18 +177,10 @@ protected:
 	 */
 	bool optimizeAlt(const CvMat* A, const CvMat* B,
 			double param[]);
-	/**
-	 * Use CvLevMarq.update() to do optimization.
-	 */
-	bool optimizeDefault(const CvMat* A, const CvMat* B, double param[]);
 
-	/** If true, CvLevMarq.updateAlt() is used for optimization instead of
-	 * CvLevMarq.update(). If false, CvLevMarq.update() is used.
-	 */
-	const bool mUseUpdateAlt;
 	/*** A member object of Levenberg Marqardt in its general form */
-	CvLevMarq2 mLevMarq;
-	CvMyReal mRTData[16]; ///< Data part of CvLevMarqTransform::mRT
+	LevMarq mLevMarq;
+	CvMyReal mRTData[16]; ///< Data part of LevMarqTransform::mRT
 	CvMat mRT;  ///< A transient buffer for transformation matrix. @warning Do not assume it is updated.
 	CvMat mRT3x4; ///< A transient view for the upper 3x4 transformation matrix. @warning Do not assume it is updated.
 
@@ -195,8 +190,9 @@ protected:
 	/// Transformation matrices with respect to an delta change on each parameters.
 	/// Used for computation of partial differentials.
 	CvMat mFwdT[numParams];
-	/// Upper 3x4 views of CvLevMarqTransform::mFwdT
+	/// Upper 3x4 views of LevMarqTransform::mFwdT
 	CvMat mFwdT3x4[numParams];
 };
-
+}
+}
 #endif /*CVLEVMARQ3D_H_*/

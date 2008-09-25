@@ -6,9 +6,11 @@ using namespace std;
 
 #include "CvMatUtils.h"
 #include "CvMat3X3.h"
-#include "CvLevMarq3D.h"
+#include "LevMarqTransform.h"
 
 #include "CvTestTimer.h"
+
+using namespace cv::willow;
 
 #undef DEBUG
 
@@ -32,8 +34,7 @@ using namespace std;
 #endif
 
 
-CvLevMarqTransform::CvLevMarqTransform(int numErrors, int numMaxIter):
-	mUseUpdateAlt(true)
+LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter)
 {
 	this->mAngleType = Euler;
 	cvInitMatHeader(&mRT,         4, 4, CV_XF, mRTData);
@@ -49,28 +50,19 @@ CvLevMarqTransform::CvLevMarqTransform(int numErrors, int numMaxIter):
 
 	}
 
-	if (mUseUpdateAlt) {
-		mLevMarq.init( numParams /* the number of parameters to optimize */,
-				0  /* dimensionality of the error vector, not needed if updateAlt is used */,
-				cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,numMaxIter, DBL_EPSILON)
-				/* optional termination criteria (i.e. it stops when the number of iterations exceeds the specified limit or
+	mLevMarq.init( numParams /* the number of parameters to optimize */,
+	    0  /* dimensionality of the error vector, not needed if updateAlt is used */,
+	    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,numMaxIter, DBL_EPSILON)
+	    /* optional termination criteria (i.e. it stops when the number of iterations exceeds the specified limit or
 				   when the change in the vector of parameters gets small enough */
-				);
-	} else {
-	mLevMarq.init(numParams /* the number of parameters to optimize */,
-			numErrors*3 /* dimensionality of the error vector. needed for buffer allocation */,
-			cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,numMaxIter, DBL_EPSILON)
-			/* optional termination criteria (i.e. it stops when the number of iterations exceeds the specified limit or
-			   when the change in the vector of parameters gets small enough */
-			);
-	}
+	);
 }
 
-CvLevMarqTransform::~CvLevMarqTransform()
+LevMarqTransform::~LevMarqTransform()
 {
 }
 
-bool CvLevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
+bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	CvMyReal x  = cvmGet(param, 0, 0);
 	CvMyReal y  = cvmGet(param, 1, 0);
 	CvMyReal z  = cvmGet(param, 2, 0);
@@ -91,7 +83,7 @@ bool CvLevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta)
 	return true;
 }
 
-bool CvLevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
+bool LevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	bool status = true;
 
 	switch(mAngleType) {
@@ -128,7 +120,7 @@ bool CvLevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 	return status;
 }
 
-bool CvLevMarqTransform::constructRTMatrix(const CvMat* param){
+bool LevMarqTransform::constructRTMatrix(const CvMat* param){
 	bool status = true;
 
 	double x = cvmGet(param, 0, 0);
@@ -160,18 +152,13 @@ bool CvLevMarqTransform::constructRTMatrix(const CvMat* param){
 	cvSetReal2D(&mRT, 3, 2, 0.);
 	cvSetReal2D(&mRT, 3, 3, 1.);
 
-#ifdef DEBUG
-	cout << "CvLevMarq3D:: constructRTMatrix"<< endl;
-	CvMatUtils::printMat(&mRT);
-#endif
-
 	return status;
 }
 
-bool CvLevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, CvMat* res){
+bool LevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, CvMat* res){
 	return computeResidue(xyzs0, xyzs1, &mRT3x4, res);
 }
-bool CvLevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, const CvMat *T, CvMat* res){
+bool LevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, const CvMat *T, CvMat* res){
 	TIMERSTART2(Residue);
 
 	CvMat _xyzs0;
@@ -185,7 +172,7 @@ bool CvLevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, 
 	return true;
 }
 
-bool CvLevMarqTransform::computeForwardResidues(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *res){
+bool LevMarqTransform::computeForwardResidues(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *res){
 	bool status = true;
 	for (int k=0; k<numParams; k++) {
 		CvMat r1_k;
@@ -195,19 +182,19 @@ bool CvLevMarqTransform::computeForwardResidues(const CvMat *xyzs0, const CvMat 
 	return status;
 }
 
-bool CvLevMarqTransform::constructTransformationMatrix(const CvMat *param){
+bool LevMarqTransform::constructTransformationMatrix(const CvMat *param){
 	return constructRTMatrix(param);
 }
 
-bool CvLevMarqTransform::constructTransformationMatrix(const CvMat *param, CvMyReal T[]){
+bool LevMarqTransform::constructTransformationMatrix(const CvMat *param, CvMyReal T[]){
 	return constructRTMatrix(param, T);
 }
 
-bool CvLevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
+bool LevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
 	return constructRTMatrices(param, delta);
 }
 
-bool CvLevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *rot, CvMat* trans) {
+bool LevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *rot, CvMat* trans) {
 	bool status = true;
 	double _param[6];
 	CvMat rod;
@@ -219,7 +206,7 @@ bool CvLevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, CvMat 
 	return status;
 }
 
-bool CvLevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
+bool LevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
 	// if xyzs0 or xyzs1 is not of a CvMat of CV_64FC1, with step = 64*3, we allocate two buffers and
 	// convert data into such
 	if (CV_IS_MAT_HDR(xyzs0)==false || CV_IS_MAT_HDR(xyzs1)==false ||
@@ -242,11 +229,7 @@ bool CvLevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, double
 		_xyzs1 = cvCreateMat(xyzs1->rows, xyzs1->cols, CV_64FC1);
 		cvConvert(xyzs1, _xyzs1);
 	}
-	if (mUseUpdateAlt) {
-		status = optimizeAlt(_xyzs0, _xyzs1, _param);
-	} else {
-		status = optimizeDefault(_xyzs0, _xyzs1, _param);
-	}
+	status = optimizeAlt(_xyzs0, _xyzs1, _param);
 
 	if (_xyzs0) {
 		cvReleaseMat(&_xyzs0);
@@ -257,7 +240,7 @@ bool CvLevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, double
 	return status;
 }
 
-bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
+bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 		const CvMat *xyzs1, double _param[]){
 	bool status=true;
 	TIMERSTART2(LevMarq2);
@@ -284,56 +267,38 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	CvMyReal _r1[3*numParams];
 	CvMat r1 = cvMat(numParams, 3, CV_64FC1, _r1);
 
-	for(int i=0;
-        ;
-		i++
+	int iterUpdates;
+	for(iterUpdates=0;	iterUpdates <= defMaxTimesOfUpdates;	iterUpdates++
 	) {
 	    const CvMat *param0=NULL;
 	    CvMat *_JtJ=NULL;
 	    CvMat * _JtErr=NULL;
 	    double *_errNorm=NULL;
 	    bool moreUpdate;
-	    TIMERSTART(CvLevMarq2)
-		moreUpdate = mLevMarq.updateAlt(param0,
-				_JtJ, _JtErr, _errNorm );
-		TIMEREND(CvLevMarq2)
+	    TIMERSTART(LevMarq);
+	    moreUpdate = mLevMarq.updateAlt(param0, _JtJ, _JtErr, _errNorm );
+	    TIMEREND(LevMarq)
 
-		TIMERSTART2(LevMarq3);
-		if (moreUpdate == false) {
-			break;
-		}
-#ifdef DEBUG
-		cout << "iteration: "<<i<<endl;
-#endif
-		if (i> defMaxTimesOfUpdates){
-			cout << "Reach the max number of iteration that jdc can tolerate"<<endl;
-			double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
-			cout << "norm diff of param:" << change<<endl;
-			cout << "error: "<< mLevMarq.errNorm<<","<<mLevMarq.prevErrNorm<<endl;
-			break;
-		}
-#ifdef DEBUG
-		if (param0) {
-			cout << "current param: "<< endl;
-			CvMatUtils::printMat(param0);
-		}
-#endif
+	    TIMERSTART2(LevMarq3);
+	    if (moreUpdate == false) {
+	      break;
+	    }
 
-        if( _JtJ )
-            cvZero( _JtJ );
-        if( _JtErr )
-            cvZero( _JtErr );
-        if( _errNorm )
-            *_errNorm = 0;
+	    if( _JtJ )
+	      cvZero( _JtJ );
+	    if( _JtErr )
+	      cvZero( _JtErr );
+	    if( _errNorm )
+	      *_errNorm = 0;
 
-		TIMERSTART2(LevMarq4);
+	    TIMERSTART2(LevMarq4);
 	    if( _JtJ || _JtErr )
 	    {
-	    	CvMyReal scale = 1./delta;
+	      CvMyReal scale = 1./delta;
 
-    		// Not sure if this is illegal;
-    		double* JtJData   = _JtJ->data.db;
-    		double* JtErrData = _JtErr->data.db;
+	      // Not sure if this is illegal;
+	      double* JtJData   = _JtJ->data.db;
+	      double* JtErrData = _JtErr->data.db;
 
     		TIMERSTART(ConstructMatrices);
     		// construct all the matrices need for JtJData JtErrData
@@ -411,6 +376,7 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    		// the entries involve linear parameters are filled out efficiently by exploiting
 	    		// the sparsity of the matrix
 	    		// Similar treatment is applied to JtJErr update.
+	        // TODO: not quite sure about it. Would like to investigate more.
 	    		_r1_k = _r1;
 	    		assert(numNonLinearParams == 3);
 	    		for (int k=0;	k<numNonLinearParams; k++) {
@@ -467,13 +433,6 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    	// or the number of points.
 	    	assert(numNonLinearParams == 3);
 	    	JtJData[3*numParams + 3] = JtJData[4*numParams+4] = JtJData[5*numParams+5] = numPoints;
-
-#ifdef DEBUG
-	    	cout << "JtJ on iter: "<<i<<endl;
-	    	CvMatUtils::printMat(_JtJ);
-	    	cout << "JtErr on iter: "<<i<<endl;
-	    	CvMatUtils::printMat(_JtErr);
-#endif
 	    }
 	    TIMEREND2(LevMarq4);
 	    TIMERSTART2(LevMarq5);
@@ -514,141 +473,26 @@ bool CvLevMarqTransform::optimizeAlt(const CvMat *xyzs0,
     			*_errNorm = errNorm;
     		}
     	}
-#ifdef DEBUG
-	    printf("current parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-	    		cvmGet(mLevMarq.param, 0, 0), cvmGet(mLevMarq.param, 0, 0)/CV_PI*180.,
-	    		cvmGet(mLevMarq.param, 1, 0), cvmGet(mLevMarq.param, 1, 0)/CV_PI*180.,
-	    		cvmGet(mLevMarq.param, 2, 0), cvmGet(mLevMarq.param, 2, 0)/CV_PI*180.,
-	    		cvmGet(mLevMarq.param, 3, 0),
-	    		cvmGet(mLevMarq.param, 4, 0),
-	    		cvmGet(mLevMarq.param, 5, 0));
-#endif
 	    TIMEREND2(LevMarq5);
 	    TIMEREND2(LevMarq3);
 	}
+
+	// If we get out of the loop only because we reach the max times of updates
+	// something is not quite right
+  if (iterUpdates> defMaxTimesOfUpdates){
+    cout << "Reach the max number of iteration that jdc can tolerate"<<endl;
+    double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
+    cout << "norm diff of param:" << change<<endl;
+    cout << "error: "<< mLevMarq.errNorm<<","<<mLevMarq.prevErrNorm<<endl;
+  }
+
 	// now mLevMarq.params contains the solution.
-    if (_param) {
-        // copy the parameters out
-        for (int i=0; i<numParams; i++) {
-             _param[i] = cvmGet(mLevMarq.param, i, 0);
-        }
-    }
-	TIMEREND2(LevMarq2);
-	return status;
-}
-
-
-// TODO: This function is not completed
-bool CvLevMarqTransform::optimizeDefault(const CvMat *xyzs0, const CvMat *xyzs1, double _param[]){
-  cout << "CvLevMarq3D::doit2 --- Not Fixed Yet"<<endl;
-  bool status=true;
-  //initialize the initial vector of paramters
-  if (_param == NULL){
-    cvSetZero(mLevMarq.param);
-  } else {
-    for (int i=0; i<numParams; i++) {
-      cvSetReal2D(mLevMarq.param, i, 0, _param[i]);
-    }
-  }
-
-  int numPoints = xyzs0->rows;
-  if (numPoints != xyzs1->rows) {
-    cerr << "Fatal Error, num of points unmatched in input"<<endl;
-  }
-  // two buffers to hold errors (residues)
-  CvMat* errBuf0 = cvCreateMat(numPoints*3, 1, CV_64F);
-  CvMat* errBuf1 = cvCreateMat(numPoints*3, 1, CV_64F);
-  //    CvMat* resVector  = cvCreateMat(4, numPoints, CV_64F);
-  //    CvMat* resVector1 = cvCreateMat(4, numPoints, CV_64F);
-
-  CvMat* currErr = errBuf0;
-
-  double delta = CV_PI/(180.*100.);
-
-  CvMyReal _param1[numParams];
-  CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
-
-  for(int i=0;
-  ;
-  i++
-  ) {
-    CvMat *_param0=NULL, *J=NULL, *err=NULL;
-    bool moreUpdate = mLevMarq.update( (const CvMat*&)_param0, J, err );
-    if (moreUpdate == false) {
-      break;
-    }
-#ifdef DEBUG
-    cout << "iteration: "<<i<<endl;
-#endif
-    if (i > defMaxTimesOfUpdates){
-      cout << "Rearch the max number of iteration that jdc can tolerate"<<endl;
-      double change = cvNorm(mLevMarq.param, mLevMarq.prevParam, CV_RELATIVE_L2);
-      cout << "norm diff of param:" << change<<endl;
-      cout << "num of iter in cvLevMarq:" << mLevMarq.iters<<endl;
-      break;
-    }
-#ifdef DEBUG
-    if (_param0) {
-      cout << "param: "<< endl;
-      CvMatUtils::printMat(_param0);
-    }
-#endif
-    // construct the transformation matrix
-    constructTransformationMatrix(_param0);
-    // compute current error = xyzs1^T  - Transformation * xyzs0^T
-#ifdef DEBUG
-    cout << "compute residue on curr param:"<<endl;
-#endif
-
-    if (err) {
-      currErr = err;
-    } else {
-      currErr = errBuf0;
-    }
-    TIMERSTART(ErrNorm);
-    CvMat currRes;
-    cvReshape(currErr, &currRes, 0, numPoints);
-    computeResidue(xyzs0, xyzs1, &currRes);
-    TIMEREND(ErrNorm);
-
-    if( J )
-    {
-      constructTransformationMatrices(_param0, delta);
-      TIMERSTART(JtJJtErr);
-      // TODO: skip the last 3 parameters as they are linear
-      for (int k=0; k<numParams; k++){
-        for (int j=0; j<numPoints; j++){
-          for (int l=0; l<3; l++) {
-            // TODO: compute the jacobian
-          }
-        }
-      }
-      TIMEREND(JtJJtErr);
-#ifdef DEBUG
-      cout << "Jacobian on iter: "<<i<<endl;
-      CvMatUtils::printMat(J);
-#endif
-    }
-#ifdef DEBUG
-    printf("current parameters: %f, %f, %f, %f, %f, %f\n",
-        cvmGet(mLevMarq.param, 0, 0)/CV_PI*180.,
-        cvmGet(mLevMarq.param, 1, 0)/CV_PI*180.,
-        cvmGet(mLevMarq.param, 2, 0)/CV_PI*180.,
-        cvmGet(mLevMarq.param, 3, 0),
-        cvmGet(mLevMarq.param, 4, 0),
-        cvmGet(mLevMarq.param, 5, 0));
-#endif
-  }
-  // now solver.params contains the solution.
-  cvReleaseMat(&errBuf0);
-  cvReleaseMat(&errBuf1);
   if (_param) {
     // copy the parameters out
     for (int i=0; i<numParams; i++) {
       _param[i] = cvmGet(mLevMarq.param, i, 0);
     }
   }
-  return status;
+	TIMEREND2(LevMarq2);
+	return status;
 }
-
-

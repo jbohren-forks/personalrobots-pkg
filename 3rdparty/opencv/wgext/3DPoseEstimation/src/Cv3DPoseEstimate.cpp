@@ -2,7 +2,7 @@
 
 #include "CvMat3X3.h"
 #include "Cv3DPoseEstimate.h"
-#include "CvLevMarq3D.h"
+#include "LevMarqTransform.h"
 
 #include <iostream>
 #include "CvTestTimer.h"
@@ -253,7 +253,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 	}
 
     // nonlinear optimization by Levenberg-Marquardt
-    CvLevMarqTransform levMarq(numInLiers0);
+    cv::willow::LevMarqTransform levMarq(numInLiers0);
 
     double param[6];
 

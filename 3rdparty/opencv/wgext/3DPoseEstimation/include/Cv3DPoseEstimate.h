@@ -4,7 +4,7 @@
 #include "Cv3DPoseEstimateRef.h"
 
 /**
- * A class to estimate pose transformations, given 2 list of corresponding
+ * Estimation of pose transformations, given 2 list of corresponding
  * 3D points.
  */
 class Cv3DPoseEstimate : public Cv3DPoseEstimateRef

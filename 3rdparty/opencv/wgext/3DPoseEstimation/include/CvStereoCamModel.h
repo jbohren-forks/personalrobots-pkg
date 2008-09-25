@@ -5,7 +5,7 @@
 #include <opencv/cxtypes.h>
 
 /**
- * A class for stereo camera model.
+ * Stereo camera model, including parameters and transformation derived from them.
  */
 class CvStereoCamModel : public CvStereoCamParams
 {

@@ -132,8 +132,8 @@ void VisOdomBundleAdj::Tracks::purge(int oldestFrameIndex) {
     } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
       // get rid of the entries that fall out of the slide window
       iTrack->purge(oldestFrameIndex);
-      // remove the track if its length is reduced to 0
-      if (iTrack->size() == 0) {
+      // remove the track if its length is reduced to 1 or less.
+      if (iTrack->size() < 2) {
         mTracks.erase(iTrack);
       }
     }
@@ -283,17 +283,25 @@ void VisOdomBundleAdj::Tracks::print() const {
   // print the stats
   int numTracks, maxLen, minLen;
   double avgLen;
-  stats(&numTracks, &maxLen, &minLen, &avgLen);
+  vector<int> lenHisto;
+  stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
   printf("printing %d tracks", mTracks.size());
   printf("Stat of the tracks: [num, maxLen, minLen, avgLen]=[%d,%d,%d,%f]\n",
       numTracks, maxLen, minLen, avgLen);
+  printf("Histogram of track lengths  [len, count]:\n");
+  int len = 0;
+  BOOST_FOREACH( const int count, lenHisto) {
+    printf("%d  %d\n", len, count);
+    len++;
+  }
 
   BOOST_FOREACH( const Track& track, mTracks) {
     track.print();
   }
 }
 
-void VisOdomBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen) const {
+void VisOdomBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
+    vector<int>* lenHisto) const {
   // note, we consider tracks that have at least two observations (detected in two frames)
   int nTracks = 0;
   int min = INT_MAX;
@@ -308,10 +316,19 @@ void VisOdomBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, d
       nTracks++;
     }
   }
+
   if (numTracks) *numTracks = mTracks.size();
   if (maxLen) *maxLen = max;
   if (minLen) *minLen = min;
   if (avgLen) *avgLen = (double)sum/(double)nTracks;
+
+  if (lenHisto) {
+    lenHisto->resize(max+1);
+    BOOST_FOREACH( const Track& track, mTracks ) {
+      int& count = lenHisto->at(track.size());
+      count++;
+    }
+  }
 }
 
 void VisOdomBundleAdj::Stat2::print() {
@@ -343,17 +360,35 @@ void VisOdomBundleAdj::Stat2::print() {
   printf("max avgTracklen = %f, ", extract::max( acc1 ));
   printf("mean avgTracklen = %f, ", extract::mean( acc1 ));
   printf("\n");
+
+  printf("Histogram of track lengths  [len, count, avg count]:\n");
+  int len = 0;
+  int numKeyFrames = minTrackLens.size();
+  BOOST_FOREACH( const int count, trackLenHisto) {
+    printf("%2d  %5d, %7.2f\n", len, count, (double)count/(double)numKeyFrames);
+    len++;
+  }
 }
 
 void VisOdomBundleAdj::updateStat2() {
   int numTracks, maxLen, minLen;
   double avgLen;
-  mTracks.stats(&numTracks, &maxLen, &minLen, &avgLen);
+  vector<int> lenHisto;
+  mTracks.stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
   if (numTracks>0) {
     mStat2.numTracks.push_back(numTracks);
     mStat2.maxTrackLens.push_back(maxLen);
     mStat2.minTrackLens.push_back(minLen);
     mStat2.avgTrackLens.push_back(avgLen);
+
+    if (lenHisto.size()>mStat2.trackLenHisto.size()) {
+      mStat2.trackLenHisto.resize(lenHisto.size());
+    }
+    int len=0;
+    BOOST_FOREACH( const int count, lenHisto ) {
+      mStat2.trackLenHisto.at(len) += count;
+      len++;
+    }
   }
 }
 

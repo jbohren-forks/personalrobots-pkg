@@ -2,7 +2,7 @@
 #define WGSTEREOCAMPARAMS_H_
 
 /**
- *  A class for stereo camera parameters
+ *  Stereo camera parameters
  */
 class CvStereoCamParams
 {

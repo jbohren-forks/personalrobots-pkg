@@ -64,7 +64,7 @@ public:
     CvPoint3D64f     mCoordinates;
   protected:
   };
-  /// A class to keep track of the tracks
+  /// Book keeping of the tracks.
   class Tracks {
   public:
     Tracks():mCurrentFrameIndex(0){}
@@ -75,7 +75,10 @@ public:
     /// that are older than oldestFrameIndex
     void purge(int oldestFrameIndex);
     void print() const;
-    void stats(int *numTracks, int *maxLen, int* minLen, double *avgLen) const;
+    /// collection stats of the tracks
+    void stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
+        /// histogram of the length of the tracks
+        vector<int>* lenHisto) const;
     /// a container for all the tracks
     deque<Track> mTracks;
     /// The index of the last frame that tracks have been
@@ -120,6 +123,7 @@ public:
   /// Default max number of frozen windows,
   static const int DefaultNumFrozenWindows = 3;
 
+  /// Visualizing the visual odometry process of bundle adjustment.
   class Visualizer: public PathRecon::Visualizer {
   public:
     typedef PathRecon::Visualizer Parent;
@@ -144,6 +148,7 @@ public:
     vector<int> maxTrackLens;
     vector<int> minTrackLens;
     vector<double> avgTrackLens;
+    vector<int> trackLenHisto;
   };
   Stat2 mStat2;
   void updateStat2();

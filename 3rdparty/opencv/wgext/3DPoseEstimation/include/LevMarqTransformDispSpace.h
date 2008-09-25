@@ -1,18 +1,22 @@
 #ifndef WGLEVMARQDISPSPACE_H_
 #define WGLEVMARQDISPSPACE_H_
 
-#include "CvLevMarq3D.h"
+#include "LevMarqTransform.h"
+
+namespace cv {
+namespace willow {
 
 /**
  * Levenberg-Marquardt optimization optimized for estimate
  * transformation of 3d point clouds in disparity coordinates.
+ * @see LevMarqTransform for similar detail description.
  */
-class CvLevMarqTransformDispSpace : public CvLevMarqTransform
+class LevMarqTransformDispSpace : public LevMarqTransform
 {
 public:
-	CvLevMarqTransformDispSpace(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
+	LevMarqTransformDispSpace(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
         int numMaxInter = defNumMaxIter);
-	virtual ~CvLevMarqTransformDispSpace();
+	virtual ~LevMarqTransformDispSpace();
   /**  A routine that performs optimization.
    *  @param P0  - Nx3 matrix stores data point list P0, one point (x, y, z) each row
    *  @param P1  - Nx3 matrix stores data point list P1, one point (x, y, z) each row
@@ -45,5 +49,6 @@ private:
 	const CvMat *m3DToDisparity; // projection from 3D coordinate to disparity coordinates
 	const CvMat *mDisparityTo3D; // projection from disparity coordinate to 3D coordinates
 };
-
+}
+}
 #endif /*WGLEVMARQDISPSPACE_H_*/

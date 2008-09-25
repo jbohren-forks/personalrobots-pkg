@@ -3,14 +3,17 @@
 
 #include "opencv/cxtypes.h"
 
+namespace cv {
+namespace willow {
+
 /// General Levenberg-Marquardt optimization (Same as CvLevMarq in calib_stereo.cpp).
 /// Keeping it before CvLevMarq is available in OpenCV interface.
-struct CvLevMarq2
+struct LevMarq
 {
-   CvLevMarq2();
-   CvLevMarq2( int nparams, int nerrs, CvTermCriteria criteria=
+   LevMarq();
+   LevMarq( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
-   ~CvLevMarq2();
+   ~LevMarq();
    void init( int nparams, int nerrs, CvTermCriteria criteria=
        cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
    bool update( const CvMat*& param, CvMat*& J, CvMat*& err );
@@ -35,5 +38,6 @@ struct CvLevMarq2
    int state;
    int iters;
 };
-
+}
+}
 #endif /*LEVMARQ_H_*/

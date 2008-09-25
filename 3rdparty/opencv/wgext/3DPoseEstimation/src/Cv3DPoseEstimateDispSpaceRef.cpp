@@ -3,7 +3,7 @@
 #include <opencv/cv.h>
 #include "Cv3DPoseEstimateDispSpaceRef.h"
 #include "CvStereoCamModel.h"
-#include "CvLevMarqDispSpace.h"
+#include "LevMarqTransformDispSpace.h"
 #include "CvMat3X3.h"
 #include "CvMatUtils.h"
 
@@ -192,102 +192,102 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	CvPoint3D64f eulerAngles;
 	{
 		double _R[9], _Q[9];
-        CvMat R, Q;
-        CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
-        cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
-        cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
+		CvMat R, Q;
+		CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
+		cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
+		cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
 
 #ifdef DEBUG // all debugging stuff
-        double _Qx[9], _Qy[9], _Qz[9], _Qyz[9], _Q1T[9];
-        CvMat Qx, Qy, Qz, Qyz, Q1T;  // optional. For debugging.
-        double _Q1[9];
-        CvMat Q1;
-        cvInitMatHeader(&Qx, 3, 3, CV_64FC1, _Qx);
-        cvInitMatHeader(&Qy, 3, 3, CV_64FC1, _Qy);
-        cvInitMatHeader(&Qz, 3, 3, CV_64FC1, _Qz);
-        cvInitMatHeader(&Qyz, 3, 3, CV_64FC1, _Qyz);
-        cvInitMatHeader(&Q1T, 3, 3, CV_64FC1, _Q1T);
-        cvInitMatHeader(&Q1, 3, 3, CV_64FC1, _Q1);
-        pQx = &Qx;
-        pQy = &Qy;
-        pQz = &Qz;
+		double _Qx[9], _Qy[9], _Qz[9], _Qyz[9], _Q1T[9];
+		CvMat Qx, Qy, Qz, Qyz, Q1T;  // optional. For debugging.
+		double _Q1[9];
+		CvMat Q1;
+		cvInitMatHeader(&Qx, 3, 3, CV_64FC1, _Qx);
+		cvInitMatHeader(&Qy, 3, 3, CV_64FC1, _Qy);
+		cvInitMatHeader(&Qz, 3, 3, CV_64FC1, _Qz);
+		cvInitMatHeader(&Qyz, 3, 3, CV_64FC1, _Qyz);
+		cvInitMatHeader(&Q1T, 3, 3, CV_64FC1, _Q1T);
+		cvInitMatHeader(&Q1, 3, 3, CV_64FC1, _Q1);
+		pQx = &Qx;
+		pQy = &Qy;
+		pQz = &Qz;
 #endif
 
-        cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
+		cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
 
 #ifdef DEBUG
-        cout << "RQ decomposition rot => R, Q"<< endl;
-        CvMatUtils::printMat(rot);
-        CvMatUtils::printMat(&R);
-        CvMatUtils::printMat(&Q);
-        cout << "reconstruct rot matrices. Qx, Qy and Qz"<<endl;
-        CvMatUtils::printMat(&Qx);
-        CvMatUtils::printMat(&Qy);
-        CvMatUtils::printMat(&Qz);
-        cout <<"euler angles"<<endl;
-        cout << eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<endl;
-        cvGEMM(&Qy, &Qz, 1, NULL, 0, &Qyz);
-        cvGEMM(&Qx, &Qyz, 1, NULL, 0, &Q1T);
-        cvTranspose(&Q1T, &Q1);
-        cout <<"(Qx * Qy * Qz)^T => Q1: "<< endl;
-        CvMatUtils::printMat(&Q1);
+		cout << "RQ decomposition rot => R, Q"<< endl;
+		CvMatUtils::printMat(rot);
+		CvMatUtils::printMat(&R);
+		CvMatUtils::printMat(&Q);
+		cout << "reconstruct rot matrices. Qx, Qy and Qz"<<endl;
+		CvMatUtils::printMat(&Qx);
+		CvMatUtils::printMat(&Qy);
+		CvMatUtils::printMat(&Qz);
+		cout <<"euler angles"<<endl;
+		cout << eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<endl;
+		cvGEMM(&Qy, &Qz, 1, NULL, 0, &Qyz);
+		cvGEMM(&Qx, &Qyz, 1, NULL, 0, &Q1T);
+		cvTranspose(&Q1T, &Q1);
+		cout <<"(Qx * Qy * Qz)^T => Q1: "<< endl;
+		CvMatUtils::printMat(&Q1);
 #endif
 	}
 
     // nonlinear optimization by Levenberg-Marquardt
-	CvLevMarqTransformDispSpace levMarq(&mMatDispToCart, &mMatCartToDisp,
-        numInliers0);
+	cv::willow::LevMarqTransformDispSpace
+	levMarq(&mMatDispToCart, &mMatCartToDisp, numInliers0);
 
-    double param[6];
+	double param[6];
 
-    //initialize the parameters
-    param[0] = eulerAngles.x/180. * CV_PI;
-    param[1] = eulerAngles.y/180. * CV_PI;
-    param[2] = eulerAngles.z/180. * CV_PI;
-    param[3] = cvmGet(shift, 0, 0);
-    param[4] = cvmGet(shift, 1, 0);
-    param[5] = cvmGet(shift, 2, 0);
+	//initialize the parameters
+	param[0] = eulerAngles.x/180. * CV_PI;
+	param[1] = eulerAngles.y/180. * CV_PI;
+	param[2] = eulerAngles.z/180. * CV_PI;
+	param[3] = cvmGet(shift, 0, 0);
+	param[4] = cvmGet(shift, 1, 0);
+	param[5] = cvmGet(shift, 2, 0);
 
 #ifdef DEBUG
-    printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
+	printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
+	    param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
+	    param[3], param[4], param[5]);
 #endif
 
 #ifdef    DEBUG_DISTURB_PARAM
-    for (int i=0; i<6; i++) param[i] *= 1.01;
-    printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
+	for (int i=0; i<6; i++) param[i] *= 1.01;
+	printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
+	    param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
+	    param[3], param[4], param[5]);
 #endif
 
-    CvTestTimerStart(LevMarqDoit);
-    levMarq.optimize(uvds0Inlier, uvds1Inlier, param);
-    CvTestTimerEnd(LevMarqDoit);
+	CvTestTimerStart(LevMarqDoit);
+	levMarq.optimize(uvds0Inlier, uvds1Inlier, param);
+	CvTestTimerEnd(LevMarqDoit);
 
 #ifdef DEBUG
-    printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
+	printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
+	    param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
+	    param[3], param[4], param[5]);
 #endif
 
 	// TODO: construct matrix with parameters from nonlinear optimization
-    double _rot[9];
+	double _rot[9];
 
-    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
-    		CvMat3X3<double>::XYZ);
-    for (int i=0;i<3;i++)
-        for (int j=0;j<3;j++) {
-            cvmSet(rot, i, j, _rot[i*3+j]);
-        }
-    cvmSet(shift, 0, 0, param[3]);
-    cvmSet(shift, 1, 0, param[4]);
-    cvmSet(shift, 2, 0, param[5]);
+	CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
+	    CvMat3X3<double>::XYZ);
+	for (int i=0;i<3;i++)
+	  for (int j=0;j<3;j++) {
+	    cvmSet(rot, i, j, _rot[i*3+j]);
+	  }
+	cvmSet(shift, 0, 0, param[3]);
+	cvmSet(shift, 1, 0, param[4]);
+	cvmSet(shift, 2, 0, param[5]);
 
-    updateInlierInfo(uvds0Inlier, uvds1Inlier, inlierIndices);
+	updateInlierInfo(uvds0Inlier, uvds1Inlier, inlierIndices);
 
-    // construct the final transformation matrix
-    this->constructDisparityHomography(rot, shift, &mT);
+	// construct the final transformation matrix
+	this->constructDisparityHomography(rot, shift, &mT);
 	return numInliers0;
 }
 
