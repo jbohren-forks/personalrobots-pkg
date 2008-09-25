@@ -30,7 +30,7 @@
 /*
  * Example config:
 
- <controller type="CartesianEffortController" name="controller_name">
+ <controller type="CartesianPositionController" name="controller_name">
    <chain root="root_link" tip="tip_link" />
  </controller>
 
@@ -39,38 +39,48 @@
  *
  * Author: Stuart Glaser
  */
-#ifndef CARTESIAN_EFFORT_CONTROLLER_H
-#define CARTESIAN_EFFORT_CONTROLLER_H
+
+#ifndef CARTESIAN_POSITION_CONTROLLER_H
+#define CARTESIAN_POSITION_CONTROLLER_H
+
 
 #include <vector>
 #include "ros/node.h"
 #include "robot_mechanism_controllers/SetVectorCommand.h"
+#include "robot_mechanism_controllers/cartesian_effort_controller.h"
+#include "control_toolbox/pid.h"
 #include "mechanism_model/controller.h"
 #include "LinearMath/btVector3.h"
 #include "misc_utils/advertised_service_guard.h"
 
 namespace controller {
 
-class CartesianEffortController : public Controller
+class CartesianPositionController : public Controller
 {
 public:
-  CartesianEffortController();
-  ~CartesianEffortController();
+  CartesianPositionController();
+  ~CartesianPositionController();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
   btVector3 command_;
 
-  std::vector<mechanism::LinkState*> links_;  // root to tip
-  std::vector<mechanism::JointState*> joints_;  // root to tip, 1 element smaller than links_
+private:
+  mechanism::RobotState *robot_;
+  mechanism::LinkState *tip_;
+  CartesianEffortController effort_;
+  control_toolbox::Pid pid_;
+  double last_time_;
+
+  bool reset_;
 };
 
-class CartesianEffortControllerNode : public Controller
+class CartesianPositionControllerNode : public Controller
 {
 public:
-  CartesianEffortControllerNode();
-  ~CartesianEffortControllerNode();
+  CartesianPositionControllerNode();
+  ~CartesianPositionControllerNode();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -79,7 +89,7 @@ public:
                   robot_mechanism_controllers::SetVectorCommand::response &resp);
 
 private:
-  CartesianEffortController c_;
+  CartesianPositionController c_;
   AdvertisedServiceGuard guard_set_actual_;
 };
 
