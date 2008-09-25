@@ -36,9 +36,9 @@
     <frames>
       <row height="100%">
 	<camera width="100%">
-	  <xyz>-1 0 3</xyz>	
-	  <rpy>0 45 0</rpy>
-	  <saveFrames>true</saveFrames>
+	  <xyz>-8 0 3</xyz>	
+	  <rpy>0 25 0</rpy>
+	  <saveFrames>false</saveFrames>
 	  <startSaveFrames>true</startSaveFrames>
 	  <saveFramePath>testguicameraframes</saveFramePath>
 	</camera>
@@ -58,7 +58,7 @@
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
             <updateRate>15.0</updateRate>
-            <saveFrames>true</saveFrames>
+            <saveFrames>false</saveFrames>
             <saveFramePath>testcameraframes</saveFramePath>
             <controller:ros_camera name="test_camera_controller" plugin="libRos_Camera.so">
                 <alwaysOn>true</alwaysOn>

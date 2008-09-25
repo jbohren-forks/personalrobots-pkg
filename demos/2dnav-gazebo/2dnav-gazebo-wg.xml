@@ -6,7 +6,7 @@
     <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="true" />
-    <node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" />
+    <!--node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" /-->
   </group>
 </launch>
 

@@ -8,5 +8,41 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
-    <test test-name="gazebo_plugin_testslide" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide0" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide1" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide2" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide3" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide4" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide5" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide6" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide7" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide8" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide9" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide10" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide11" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide12" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide13" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide14" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide15" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide16" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide17" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide18" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide19" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide20" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide21" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide22" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide23" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide24" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide25" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide26" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide27" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide28" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide29" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide30" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide31" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide32" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide33" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide34" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide35" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide36" pkg="gazebo_plugin" type="testslide.py" />
 </launch>
