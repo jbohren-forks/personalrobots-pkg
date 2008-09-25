@@ -3,51 +3,53 @@
 #include <mechanism_model/robot.h>
 #include <hardware_interface/hardware_interface.h>
 #include <ros/node.h>
+#include <urdf/parser.h>
+
+#include <libTF/libTF.h>
 
 int main( int argc, char** argv )
 {
-  mechanism::Robot *robot_model = new mechanism::Robot;
-  controller::BaseController bc;
-  HardwareInterface hw(0);
-
   if(argc != 3)
   {
     printf("Usage: %s <robot_xml> <controller_xml>\n",argv[0]);
     exit(-1);
   }
-
-  ros::init(argc,argv);
-  ros::node *node = new ros::node("test_base_controller"); //Can be found by ros::node *ros::g_node for now.  Will eventually be superceded by ros::peer interface
-
-
-// Listen for base odom messages
-
-
-
-
-
-
-
   printf("robot file:: %s, controller file:: %s\n",argv[1],argv[2]);
+
+
+  /*********** Create the robot model ****************/
+  mechanism::Robot *robot_model = new mechanism::Robot;
+  controller::BaseControllerNode bc;
+  HardwareInterface hw(0);
+  robot_model->hw_ = &hw;
+
+
+  /*********** Initialize ROS  ****************/
+  ros::init(argc,argv);
+  ros::node *node = new ros::node("test_base_controller"); 
+
+
+  /*********** Load the robot model and state file ************/
   char *xml_robot_file = argv[1];
   TiXmlDocument xml(xml_robot_file);   // Load robot description
   xml.LoadFile();
   TiXmlElement *root = xml.FirstChildElement("robot");
-
+  urdf::normalizeXml(root);
   robot_model->initXml(root);
+  mechanism::RobotState *robot_state = new mechanism::RobotState(robot_model, &hw);
 
 
+  /*********** Load the controller file ************/
   char *xml_control_file = argv[2];
   TiXmlDocument xml_control(xml_control_file);   // Load robot description
   xml_control.LoadFile();
-  TiXmlElement *root_control = xml_control.FirstChildElement("robot");
-  TiXmlElement *root_controller = root_control->FirstChildElement("controller");
-
-  mechanism::RobotState *robot_state = new mechanism::RobotState(robot_model, &hw);
-
+  TiXmlElement *root_control = xml_control.FirstChildElement("controllers");
+  TiXmlElement *root_controller = root_control->FirstChildElement("controller");  
   bc.initXml(robot_state,root_controller);
 
-  NEWMAT::Matrix A(16,3);
+
+  /************ Testing the odometry calculations themselves ******************/
+/*  NEWMAT::Matrix A(16,3);
 
   A.Row(1) << 10 << 8.95 << 0.05;
   A.Row(2) << 0 <<  -2 << 0;
@@ -71,17 +73,19 @@ int main( int argc, char** argv )
 
   NEWMAT::Matrix B(16,1);
   B << 1.1 << 1 << 1.1 << 1.15 << 0.95 << 0.99 << 0.98 << 0.95 << 1.05 << 1.1 << 1.05 << 1 << 1.13 << 0.995 << 1.035 << 1.08;
-
   NEWMAT::Matrix xfit(3,1);
 
-  xfit = bc.iterativeLeastSquares(A,B,"Gaussian",10);
-
+  xfit = bc.c_->iterativeLeastSquares(A,B,"Gaussian",10);
   cout << "done" << xfit << endl;
+*/  
   ros::fini();
   delete robot_model;
   delete robot_state;
-//void BaseController::initXml(mechanism::Robot *robot, TiXmlElement *config)
 }
+
+
+
+
 
 
 /*class BaseControllerTest : public testing::Test {

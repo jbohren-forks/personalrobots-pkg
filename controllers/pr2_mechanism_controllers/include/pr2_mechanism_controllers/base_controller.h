@@ -320,6 +320,10 @@ namespace controller
     int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odometry message will be published on ROS */
 
     double caster_steer_vel_gain_;
+
+    double cmd_received_timestamp_;
+
+    double timeout_;
   };
 
   class BaseControllerNode : public Controller
@@ -350,9 +354,9 @@ namespace controller
 
     void setCommand(double vx, double vy, double vw);
 
-    private:
-
     BaseController *c_;
+
+    private:
 
     /*!
      * \brief deal with cmd_vel command from 2dnav stack

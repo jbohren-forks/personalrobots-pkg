@@ -62,6 +62,7 @@ ROS_REGISTER_CONTROLLER(BaseController)
   ils_weight_type_ = "Gaussian";
   ils_max_iterations_ = 3;
   caster_steer_vel_gain_ = 0;
+  timeout_ = 3;
   pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
@@ -73,10 +74,11 @@ BaseController::~BaseController()
 void BaseController::setCommand(libTF::Vector cmd_vel)
 {
   pthread_mutex_lock(&base_controller_lock_);
-  //std::cout << "command received : " << cmd_vel_t_ << std::endl;
   cmd_vel_t_.x = cmd_vel.x;
   cmd_vel_t_.y = cmd_vel.y;
   cmd_vel_t_.z = cmd_vel.z;
+  cmd_received_timestamp_ = robot_state_->hw_->current_time_;
+//  std::cout << "command received : " << cmd_vel_t_ << std::endl;
   pthread_mutex_unlock(&base_controller_lock_);
 }
 
@@ -183,6 +185,8 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   robot_state_ = robot_state;
 
   last_time_ = robot_state_->hw_->current_time_;
+
+  cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 }
 
 bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
@@ -210,7 +214,6 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
 
     elt = elt->NextSiblingElement("controller");
-
   }
 
   elt = config->FirstChildElement("map");
@@ -219,7 +222,6 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     if(elt->Attribute("name") == std::string("velocity_control"))
     {
       TiXmlElement *elt_key = elt->FirstChildElement("elem");
-//      cout << "elt_key" << elt_key->Attribute("key") << endl;
       while(elt_key)
       {
         if(elt_key->Attribute("key") == std::string("kp_speed"))
@@ -230,12 +232,18 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
         {
            caster_steer_vel_gain_ = atof(elt_key->GetText());
         }
-        elt_key = elt->NextSiblingElement("elem");
+        if(elt_key->Attribute("key") == std::string("timeout"))
+        {
+           timeout_ = atof(elt_key->GetText());
+        }
+        elt_key = elt_key->NextSiblingElement("elem");
       }
     }
+    std::cout << "*************************************" << std::endl;
 //    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
     elt = config->NextSiblingElement("map");
   }
+
   init(jcp_vec,robot_state);
   return true;
 }
@@ -279,9 +287,20 @@ void BaseController::update()
 
   if(pthread_mutex_trylock(&base_controller_lock_)==0)
   {
+    if((robot_state_->hw_->current_time_ - cmd_received_timestamp_) > timeout_)
+    {
+//      cout << "BaseController:: timing out" << endl;
+    cmd_vel_.x = 0;
+    cmd_vel_.y = 0;
+    cmd_vel_.z = 0;
+    }
+    else
+    {
+//      cout << "BaseController:: running" << endl;
     cmd_vel_.x = cmd_vel_t_.x;
     cmd_vel_.y = cmd_vel_t_.y;
     cmd_vel_.z = cmd_vel_t_.z;
+    }
     pthread_mutex_unlock(&base_controller_lock_);
   }
 //  std::cout << "command received in update : " << cmd_vel_ << std::endl;
@@ -345,7 +364,7 @@ void BaseController::computeCasterSteer()
       error_steer = error_steer_m_pi;
       steer_angle_desired = steer_angle_desired_m_pi;
     }
-    steer_velocity_desired_[i] = -kp_speed_*error_steer;
+    steer_velocity_desired_[i] =  -kp_speed_*error_steer;
 
     //  printf("Steering cmd: %d, %f, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i],error_steer);
   }
@@ -374,13 +393,14 @@ void BaseController::computeWheelSpeeds()
     caster_2d_velocity.z = caster_steer_vel_gain_*steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
     steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
     wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
-
+//    cout << "gain " << caster_steer_vel_gain_ << endl;
 //    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
 
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
 //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
     wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
+
 //    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << ", actual wheel speed" << wheel_speed_actual_[i] << ", caster: " << wheel_caster_steer_component.x/wheel_radius_ << ", caster_steer " << caster_2d_velocity.z << std::endl;
   }
 }
