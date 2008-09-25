@@ -38,26 +38,28 @@ namespace gazebo
 {
    class PositionIface;
 
-/// \addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
    /// \{
-   /** \defgroup p3D p3D
+   /** \defgroup P3D Groud Truth Position Pose and Rates Interface
 
    \brief P3D controller.
 
-  \verbatim
-  <model:physical name="camera_model">
-    <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <bodyName>base</bodyName>
-      <topicName>base_pose_ground_truth</topicName>
-      <frameName>map</frameName>
-      <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
-      <rpyOffsets>0 0 0</rpyOffsets>
-      <interface:position name="p3d_base_position"/>
-    </controller:P3D>
-  </model:phyiscal>
-  \endverbatim
+   This controller requires to a model as its parent. The plugin broadcasts a specific body's pose and rates through a ROS TransformWithRateSTamped message as well as filling out a PositionIface.
+
+   \verbatim
+     <model:physical name="some_fancy_model">
+       <controller:P3D name="p3d_controller" plugin="libP3D.so">
+         <alwaysOn>true</alwaysOn>
+         <updateRate>1000.0</updateRate>
+         <bodyName>body_name</bodyName>
+         <topicName>body_pose_ground_truth</topicName>
+         <frameName>map</frameName>
+         <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
+         <rpyOffsets>0 0 0</rpyOffsets>
+         <interface:position name="p3d_position_iface"/>
+       </controller:P3D>
+     </model:phyiscal>
+   \endverbatim
    
    \{
    */
@@ -66,58 +68,56 @@ namespace gazebo
    /// This is a controller that simulates a 6 dof position sensor
    class P3D : public Controller
    {
-         /// Constructor
+      /// \brief Constructor
       public: P3D(Entity *parent );
 
-         /// Destructor
+      /// \brief Destructor
       public: virtual ~P3D();
 
-         /// Load the controller
-              /// \param node XML config node
-              /// \return 0 on success
+      /// \brief Load the controller
+      /// \param node XML config node
       protected: virtual void LoadChild(XMLConfigNode *node);
 
-         /// Init the controller
-                 /// \return 0 on success
+      /// \brief Init the controller
       protected: virtual void InitChild();
 
-         /// Update the controller
-                 /// \return 0 on success
+      /// \brief Update the controller
+      /// \return 0 on success
       protected: virtual void UpdateChild();
 
-         /// Finalize the controller
-                 /// \return 0 on success
+      /// \brief Finalize the controller
+      /// \return 0 on success
       protected: virtual void FiniChild();
 
-         /// The actarray interface
+      /// \brief The actarray interface
       private: PositionIface *myIface;
 
-         /// The parent Model
+      /// \brief The parent Model
       private: Model *myParent;
 
+      /// \brief The parent Model
       private: Body *myBody; //Gazebo/ODE body
 
 
 
-      // added for ros message
-      // pointer to ros node
+      /// \brief pointer to ros node
       private: ros::node *rosnode;
 
-      // ros message
+      /// \brief ros message
       private: std_msgs::TransformWithRateStamped transformMsg;
 
-      // topic name
+      /// \brief topic name
       private: std::string topicName;
 
-      // frame transform name, should match link name
-      // FIXME: extract link name directly?
+      /// \brief frame transform name, should match link name
+      /// FIXME: extract link name directly?
       private: std::string frameName;
 
-      // allow specifying constant xyz and rpy offsets
+      /// \brief allow specifying constant xyz and rpy offsets
       private: Vector3 xyzOffsets;
       private: Vector3 rpyOffsets;
 
-      // A mutex to lock access to fields that are used in message callbacks
+      /// \brief A mutex to lock access to fields that are used in message callbacks
       private: ros::thread::mutex lock;
 
    };

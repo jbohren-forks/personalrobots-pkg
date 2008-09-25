@@ -39,33 +39,45 @@ namespace gazebo
   class FiducialIface;
   class RaySensor;
 
-/// @addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup ros ros
+/** \defgroup Ros_Laser Rosl Laser Scanner Controller Plugin
 
-  \brief ros laser controller.
-   
-   This is a controller that collects data from a ray sensor, and populates a libgazebo laser interface. 
+  \brief Rosl Laser Scanner Controller Plugin
+  
+  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic and Iface.
 
   \verbatim
-  <model:physical name="laser_model">
-    <body:box name="laser_body">
-
-      <sensor:ray name="laser">
-        <controller:ros_laser name="controller-name">
-          <interface:laser name="iface-name"/>
+  <model:physical name="ray_model">
+    <body:empty name="ray_body_name">
+      <sensor:ray name="ray_laser">
+        <origin>0.0 0.0 0.0</origin>
+        <rayCount>683</rayCount>
+        <rangeCount>683</rangeCount>
+        <laserCount>1</laserCount>
+        <displayRays>false</displayRays>
+        <minAngle>-45</minAngle>
+        <maxAngle> 45</maxAngle>
+        <minRange>0.05</minRange>
+        <maxRange>10.0</maxRange>
+        <updateRate>10.0</updateRate>
+        <controller:ros_laser name="ros_ray_laser_controller" plugin="libRos_Laser.so">
+          <gaussianNoise>0.005</gaussianNoise>
+          <alwaysOn>true</alwaysOn>
+          <updateRate>15.0</updateRate>
+          <topicName>ray_scan</topicName>
+          <frameName>ray_laser</frameName>
+          <interface:laser name="ros_ray_laser_iface" />
         </controller:ros_laser>
       </sensor:ray>
-
-    </body:box>
-  </model:physical>
+    </body:empty>
+  </model:phyiscal>
   \endverbatim
  
 \{
 */
 
 /// \brief ros laser controller.
-/// 
 /// This is a controller that simulates a ros laser
 class Ros_Laser : public Controller
 {
@@ -78,19 +90,15 @@ class Ros_Laser : public Controller
 
   /// \brief Load the controller
   /// \param node XML config node
-  /// \return 0 on success
   protected: virtual void LoadChild(XMLConfigNode *node);
 
   /// \brief Init the controller
-  /// \return 0 on success
   protected: virtual void InitChild();
 
   /// \brief Update the controller
-  /// \return 0 on success
   protected: virtual void UpdateChild();
 
   /// \brief Finalize the controller
-  /// \return 0 on success
   protected: virtual void FiniChild();
 
   /// \brief Put laser data to the iface
@@ -99,37 +107,38 @@ class Ros_Laser : public Controller
   /// \brief Put fiducial data to the iface
   private: void PutFiducialData();
 
-  /// The laser interface
+  /// \brief The laser interface
   private: LaserIface *laserIface;
 
   private: FiducialIface *fiducialIface;
 
-  /// The parent sensor
+  /// \brief The parent sensor
   private: RaySensor *myParent;
 
-  // pointer to ros node
+  /// \brief pointer to ros node
   private: ros::node *rosnode;
 
-  // ros message
+  /// \brief ros message
   private: std_msgs::LaserScan laserMsg;
  
-  // topic name
+  /// \brief topic name
   private: std::string topicName;
 
-  // frame transform name, should match link name
-  // FIXME: extract link name directly?
+  /// \brief frame transform name, should match link name
   private: std::string frameName;
 
+  /// \brief Gaussian noise
   private: double gaussianNoise;
 
+  /// \brief Gaussian noise generator
   private: double GaussianKernel(double mu,double sigma);
 
-  // A mutex to lock access to fields that are used in message callbacks
+  /// \brief A mutex to lock access to fields that are used in message callbacks
   private: ros::thread::mutex lock;
 
 };
 
-/** /} */
+/** \} */
 /// @}
 
 }

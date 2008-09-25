@@ -37,7 +37,7 @@ namespace gazebo
   class MonoCameraSensor;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
-/// @{
+/// \{
 /** \defgroup Ros_Camera Ros Camera Plugin XML Reference and Example
 
   \brief Ros Camera Plugin Controller.
@@ -74,7 +74,7 @@ class Ros_Camera : public Controller
   /// \brief Destructor
   public: virtual ~Ros_Camera();
 
-  /// \function Load the controller
+  /// \brief Load the controller
   /// \param node XML config node
   protected: virtual void LoadChild(XMLConfigNode *node);
 
@@ -99,7 +99,7 @@ class Ros_Camera : public Controller
   /// \brief A pointer to the ROS node.  A node will be instantiated if it does not exist.
   private: ros::node *rosnode;
 
-  /// \bridf ROS image message
+  /// \brief ROS image message
   private: std_msgs::Image imageMsg;
 
   /// \brief ROS image topic name
@@ -114,8 +114,8 @@ class Ros_Camera : public Controller
 
 };
 
-/** /} */
-/// @}
+/** \} */
+/// \}
 
 }
 #endif
