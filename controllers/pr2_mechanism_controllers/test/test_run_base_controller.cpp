@@ -108,9 +108,6 @@ int main( int argc, char** argv )
   node->publish("cmd_vel",cmd);
   sleep(1);
 
-  double start_x = tb.ground_truth.transform.translation.x;
-  double start_y = tb.ground_truth.transform.translation.y;
-  double start_th = tb.ground_truth.transform.translation.z;
 
   while(!done)
   {
