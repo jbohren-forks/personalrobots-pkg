@@ -118,6 +118,7 @@ void GazeboActuators::InitChild()
 
 void GazeboActuators::UpdateChild()
 {
+
   assert(joints_.size() == fake_state_->joint_states_.size());
   assert(joints_.size() == joints_damping_.size());
 
@@ -159,7 +160,17 @@ void GazeboActuators::UpdateChild()
   //  Runs Mechanism Control
   //--------------------------------------------------
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
-  mcn_.update();
+  try
+  {
+    mcn_.update();
+  }
+  catch (const char* c)
+  {
+    if (strcmp(c,"dividebyzero")==0)
+      std::cout << "WARNING:pid controller reports divide by zero error" << std::endl;
+    else
+      std::cout << "unknown const char* exception: " << c << std::endl;
+  }
 
   //--------------------------------------------------
   //  Takes in actuation commands

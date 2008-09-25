@@ -283,11 +283,11 @@ void Ros_Block_Laser::PutLaserData()
         v = (int) this->myParent->GetRetro(j1) || (int) this->myParent->GetRetro(j2) ||
             (int) this->myParent->GetRetro(j3) || (int) this->myParent->GetRetro(j4);
 
-        std::cout << " block debug "
-                  << "  ij("<<i<<","<<j<<")"
-                  << "  j1234("<<j1<<","<<j2<<","<<j3<<","<<j4<<")"
-                  << "  r1234("<<r1<<","<<r2<<","<<r3<<","<<r4<<")"
-                  << std::endl;
+        // std::cout << " block debug "
+        //           << "  ij("<<i<<","<<j<<")"
+        //           << "  j1234("<<j1<<","<<j2<<","<<j3<<","<<j4<<")"
+        //           << "  r1234("<<r1<<","<<r2<<","<<r3<<","<<r4<<")"
+        //           << std::endl;
 
         this->laserIface->data->ranges[i] =  r + minRange;
         this->laserIface->data->intensity[i] = v;
