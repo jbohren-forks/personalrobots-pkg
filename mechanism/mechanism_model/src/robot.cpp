@@ -193,9 +193,9 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
 
     if (joint_index >= 0 && parent_index >= 0)
     {
-      links_joint_[i] = &joint_states_[joint_index];
-      links_parent_[i] = &link_states_[parent_index];
-      links_children_[parent_index].push_back(&link_states_[i]);
+      links_joint_[i] = joint_index;
+      links_parent_[i] = parent_index;
+      links_children_[parent_index].push_back(i);
     }
   }
 }
@@ -224,13 +224,13 @@ void RobotState::propagateState()
   // Computes the frame transform for each link relative to its parent.
   for (unsigned int i = 0; i < link_states_.size(); ++i)
   {
-    if (!links_joint_[i]) // Root link, attached to the world'
+    if (!links_joint_[i]) // Root link, attached to the world
     {
       link_states_[i].rel_frame_.setIdentity();
     }
     else
     {
-      JointState &j = *links_joint_[i];
+      JointState &j = joint_states_[links_joint_[i]];
       Link &l = *link_states_[i].link_;
 
       libTF::Pose3D offset;
@@ -262,6 +262,17 @@ void RobotState::propagateState()
       link_states_[i].rel_frame_.multiplyPose(offset);
       link_states_[i].rel_frame_.multiplyPose(joint_transform);
       link_states_[i].rel_frame_.multiplyPose(rotation);
+    }
+
+    // Computes the absolute pose of the links using the relative transforms
+    for (unsigned int i = 0; i < link_states_.size(); ++i)
+    {
+      if (!links_joint_[i]) // Root link, attached to the world
+      {
+        link_states_[i].abs_position_.setValue(0, 0, 0);
+        link_states_[i].abs_orientation_.setValue(0, 0, 0);
+        propagateAbsolutePose(i, libTF::Pose3D());
+      }
     }
   }
 }
@@ -305,6 +316,23 @@ void RobotState::propagateEffortBackwards()
     model_->transmissions_[i]->propagateEffortBackwards(transmissions_in_[i],
                                                         transmissions_out_[i]);
   }
+}
+
+void RobotState::propagateAbsolutePose(int index, const libTF::Pose3D &parent_transform)
+{
+  libTF::Pose3D my_transform(parent_transform);
+  my_transform.multiplyPose(link_states_[index].rel_frame_);
+
+  libTF::Position pos;
+  libTF::Euler orient;
+  my_transform.getPosition(pos);
+  my_transform.getEuler(orient);
+
+  link_states_[index].abs_position_.setValue(pos.x, pos.y, pos.z);
+  link_states_[index].abs_orientation_.setValue(orient.roll, orient.pitch, orient.yaw);
+
+  for (unsigned int i = 0; i < links_children_[index].size(); ++i)
+    propagateAbsolutePose(links_children_[index][i], my_transform);
 }
 
 } // namespace mechanism

@@ -118,9 +118,9 @@ public:
   std::vector<std::vector<Actuator*> > transmissions_in_;
   std::vector<std::vector<JointState*> > transmissions_out_;
 
-  std::vector<JointState*> links_joint_;
-  std::vector<LinkState*> links_parent_;
-  std::vector<std::vector<LinkState*> > links_children_;
+  std::vector<int> links_joint_;
+  std::vector<int> links_parent_;
+  std::vector<std::vector<int> > links_children_;
 
   JointState *getJointState(const std::string &name);
   LinkState *getLinkState(const std::string &name);
@@ -132,6 +132,10 @@ public:
 
   void propagateStateBackwards();
   void propagateEffortBackwards();
+
+private:
+  void propagateAbsolutePose(int index, const libTF::Pose3D&);
+
 };
 
 }

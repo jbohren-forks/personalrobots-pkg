@@ -37,6 +37,8 @@
 #include "mechanism_model/joint.h"
 #include <vector>
 #include "libTF/Pose3D.h"
+#include "LinearMath/btVector3.h"
+
 
 namespace mechanism {
 
@@ -64,6 +66,8 @@ public:
   Link *link_;
 
   libTF::Pose3D rel_frame_;  // Transformation relative to the parent's frame.
+  btVector3 abs_position_;  // Absolute position (in the robot frame)
+  btVector3 abs_orientation_;  // Absolute orientation (in the robot frame)
 
   LinkState() : link_(NULL) {}
   LinkState(const LinkState &s) : link_(s.link_), rel_frame_(s.rel_frame_) {}

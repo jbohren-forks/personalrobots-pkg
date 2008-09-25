@@ -12,6 +12,7 @@
 <depend package="kdl" />
 <depend package="libTF" />
 <depend package="control_toolbox" />
+<depend package="bullet" />
 <url>http://pr.willowgarage.com</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lmechanism_model -Wl,-rpath,${prefix}/lib"/>
