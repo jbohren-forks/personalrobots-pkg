@@ -158,9 +158,9 @@ void P3D::UpdateChild()
   // this->transformMsg.rate.rotation.w            = vrot.u;
 
   // pass euler anglular rates
-  this->transformMsg.rate.rotation.x            = vrot.x;
-  this->transformMsg.rate.rotation.y            = vrot.y;
-  this->transformMsg.rate.rotation.z            = vrot.z;
+  this->transformMsg.rate.rotation.x            = veul.x;
+  this->transformMsg.rate.rotation.y            = veul.y;
+  this->transformMsg.rate.rotation.z            = veul.z;
   this->transformMsg.rate.rotation.w            = 0;
 
   // publish to ros
