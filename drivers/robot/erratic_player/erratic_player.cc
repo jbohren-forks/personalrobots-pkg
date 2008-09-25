@@ -288,17 +288,17 @@ main(int argc, char** argv)
       en.odom.vel.th = pdata->vel.pa;
       en.odom.stall = pdata->stall;
 
-      en.odom.header.frame_id = "FRAMEID_ODOM";
+      en.odom.header.frame_id = "odom";
       
       en.odom.header.stamp.sec = (long long unsigned int)floor(hdr->timestamp);
-      en.odom.header.stamp.sec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
+      en.odom.header.stamp.nsec = (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL);
       
 
       // Publish the new data
       en.publish("odom", en.odom);
 
-      en.tf.sendInverseEuler("FRAMEID_ODOM",
-                             "FRAMEID_ROBOT",
+      en.tf.sendInverseEuler("odom",
+                             "base",
                              pdata->pos.px,
                              pdata->pos.py,
                              0.0,
