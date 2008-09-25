@@ -37,7 +37,7 @@ namespace gazebo
 
   /// \addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
   /// \{
-  /** \defgroup Ros_Bumper bumper
+  /** \defgroup Ros_Bumper Ros Bumper Plugin
   
     \brief A controller that returns bump contacts
 
