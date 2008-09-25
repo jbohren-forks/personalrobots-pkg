@@ -155,6 +155,7 @@ class robotPower:
         print "made robot power"
         self.controllers = [powerController(),powerController(),powerController(),powerController()]
         self.pub = rospy.TopicPub("/diagnostics", DiagnosticMessage)
+        self.battery_state_pub = rospy.TopicPub("battery_state", BatteryState)
 
     def print_remaining(self):
         print "___________________________________"
@@ -233,6 +234,23 @@ class robotPower:
         self.pub.publish(out)
 
         
+    ## Send out the state of the controller on a diagnostic message
+    def send_battery_state(self):
+        stat = []
+
+        energy = 0
+        power = 0
+        for c in self.controllers:
+            for b in c.batteries:
+                if b.present < 0.5:
+                    continue
+                energy = energy + b.design_voltage * b.remaining_capacity * 3.6 ## assuming mAh capacity
+                power = power + b.design_voltage * b.current ## assuming mAh capacity
+
+        out = BatteryState(None, energy, power)
+        print "Sent Energy: %.0f (J)  Power: %.2f (W)\n"%(energy, power)
+        self.pub.publish(out)
+
 
 
 def monitorBatteriesMain(argv, stdout, env):
@@ -278,6 +296,7 @@ def monitorBatteriesMain(argv, stdout, env):
 
     start_time = time.time()
     last_time = start_time
+    last_time_battery_state = start_time
     # continuously read from the ports while not shutdown
     while not rospy.is_shutdown():
         # select from all open ports to wait for new data
@@ -489,12 +508,26 @@ def monitorBatteriesMain(argv, stdout, env):
                         myPow.controllers[port].average_charge = int(hex2dec(value))
 
         #print time.time()
-        increment = 1.0
+        try:
+            increment = rospy.get_param("diagnostic_rate")
+        except KeyError:
+            increment = 1.0
         if time.time() - last_time > increment:
             last_time = last_time + increment
             print "displaying to screen"
             myPow.print_remaining()
             myPow.broadcast_diagnostic()
+
+        try:
+            increment = rospy.get_param("battery_state_rate")
+        except KeyError:
+            increment = 1.0
+        
+        if time.time() - last_time_battery_state > increment:
+            last_time_battery_state = last_time_battery_state + increment
+            print "displaying to screen"
+            myPow.print_remaining()
+            myPow.send_battery_state()
         
 if __name__ == '__main__':
     try:
