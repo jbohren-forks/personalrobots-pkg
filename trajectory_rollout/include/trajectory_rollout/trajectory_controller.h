@@ -102,7 +102,7 @@ class TrajectoryController {
         double acc_theta);
 
     //pass a global plan to the controller
-    void updatePlan(std::vector<std_msgs::Point2DFloat32>& new_plan);
+    void updatePlan(const std::vector<std_msgs::Point2DFloat32>& new_plan);
 
     std::vector<std_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
     void drawLine(int x0, int x1, int y0, int y1, std::vector<std_msgs::Point2DFloat32>& pts);

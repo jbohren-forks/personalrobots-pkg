@@ -70,6 +70,10 @@ bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vect
   double origin_x, origin_y;
   ma.getOriginInWorldCoordinates(origin_x, origin_y);
   map_.sizeCheck(ma.getWidth(), ma.getHeight(), origin_x, origin_y);
+  map_.scale = 0.1;
+  printf("Map scale: %.2f\n", map_.scale);
+
+  tc_.updatePlan(plan);
   
   //compute what trajectory to drive along
   int path_index = tc_.findBestPath(ma, robot_pose, robot_vel, drive_cmds);

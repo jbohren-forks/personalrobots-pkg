@@ -78,9 +78,6 @@ void MapGrid::sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, do
     size_x_ = size_x;
     size_y_ = size_y;
 
-    origin_x = o_x;
-    origin_y = o_y;
-
     for(unsigned int i = 0; i < size_y_; ++i){
       for(unsigned int j = 0; j < size_x_; ++j){
         int index = size_x_ * i + j;
@@ -89,6 +86,8 @@ void MapGrid::sizeCheck(unsigned int size_x, unsigned int size_y, double o_x, do
       }
     }
   }
+  origin_x = o_x;
+  origin_y = o_y;
 }
 
 //allow easy updating from message representations

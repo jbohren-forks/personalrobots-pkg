@@ -70,12 +70,14 @@ void TrajectoryController::setPathCells(){
       local_goal_x = map_x;
       local_goal_y = map_y;
       started_path = true;
+      printf("Valid Cell: (%.2f, %.2f) - (%d, %d), ", global_plan_[i].x, global_plan_[i].y, map_x, map_y);
     }
     else{
       if(started_path)
         break;
     }
   }
+  printf("\n");
 
   if(local_goal_x >= 0 && local_goal_y >= 0){
     map_(local_goal_x, local_goal_y).goal_dist = 0.0;
@@ -203,7 +205,7 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
   return traj;
 }
 
-void TrajectoryController::updatePlan(vector<Point2DFloat32>& new_plan){
+void TrajectoryController::updatePlan(const vector<Point2DFloat32>& new_plan){
   global_plan_.resize(new_plan.size());
   for(unsigned int i = 0; i < new_plan.size(); ++i){
     global_plan_[i] = new_plan[i];
@@ -354,16 +356,16 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
     libTF::TFPose2D& drive_velocities){
   //first compute the path distance for all cells in our map grid
   computePathDistance();
-  //printf("Path distance computed\n");
+  printf("Path distance computed\n");
 
   //next create the trajectories we wish to explore
   createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
       acc_lim_x_, acc_lim_y_, acc_lim_theta_);
-  //printf("Trajectories created\n");
+  printf("Trajectories created\n");
 
   //we need to transform the trajectories to world space for scoring
   trajectoriesToWorld();
-  //printf("Trajectories converted\n");
+  printf("Trajectories converted\n");
 
   //now we want to score the trajectories that we've created and return the best one
   double min_cost = DBL_MAX;
@@ -454,12 +456,14 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
 
     //we don't want a path that ends off the known map or in an obstacle
     if(!VALID_CELL(map_, cell_x, cell_y) || ma.isOccupied(cell_x, cell_y)){
+      printf("Not a valid path: (%d, %d) OccState: %d\n", cell_x, cell_y, ma.isOccupied(cell_x, cell_y));
       return -1.0;
     }
 
     path_dist += map_(cell_x, cell_y).path_dist;
     goal_dist += map_(cell_x, cell_y).goal_dist;
 
+    /*
     //first we decide if we need to lay down the footprint of the robot
     if(map_(cell_x, cell_y).occ_dist < safe_radius){
       //if we do compute the obstacle cost for each cell in the footprint
@@ -468,6 +472,7 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
         return -1.0;
       occ_dist += footprint_cost;
     }
+    */
   }
   double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
   
