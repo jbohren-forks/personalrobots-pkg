@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include "ros/node.h"
 #include "logging/LogRecorder.h"
+#include "logging/AnyMsg.h"
 #include <string>
 #include <rosthread/mutex.h>
 
@@ -44,11 +45,12 @@ using namespace std;
 ros::thread::mutex unsub_mutex;
 unsigned int nCallbacks;
 
-void doUnsubscribe(string name, ros::msg* m, void* n)
+void doUnsubscribe(string name, ros::msg* m, ros::Time t, void* n)
 {
-
   unsub_mutex.lock();
-  //((ros::node*)(n))->unsubscribe(name);
+
+  ((ros::node*)(n))->unsubscribe(name);
+
   cout << "Got a " << name << " message." << endl;
   nCallbacks++;
 
@@ -57,6 +59,7 @@ void doUnsubscribe(string name, ros::msg* m, void* n)
     ((ros::node*)(n))->self_destruct();
   }
   unsub_mutex.unlock();
+
 }
 
 int main(int argc, char **argv)
@@ -143,7 +146,7 @@ int main(int argc, char **argv)
     for (vector<std::string>::iterator i = topics.begin(); i != topics.end(); i++)
     {
       printf("dustbustering up [%s]\n", i->c_str());
-      l.addTopic<AnyMsg>(*i, &doUnsubscribe, (void*)(&n), false, 1);
+      l.addTopic<AnyMsg>(*i, 1, &doUnsubscribe, (void*)(&n), false);
     }
 
     l.start();

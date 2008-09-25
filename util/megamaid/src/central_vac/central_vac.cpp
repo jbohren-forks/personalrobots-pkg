@@ -36,7 +36,9 @@
 #include <sys/stat.h>
 #include "ros/node.h"
 #include "logging/LogRecorder.h"
+#include "logging/AnyMsg.h"
 #include <string>
+
 
 using namespace std;
 
@@ -73,7 +75,7 @@ int main(int argc, char **argv)
     for (vector<std::string>::iterator i = topics.begin(); i != topics.end(); i++)
     {
       printf("vacuum up [%s]\n", i->c_str());
-      l.addTopic<AnyMsg>(*i);
+      l.addTopic<AnyMsg>(*i, 100);
     }
 
     l.start();

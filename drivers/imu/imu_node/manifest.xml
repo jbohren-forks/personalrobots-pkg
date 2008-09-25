@@ -8,4 +8,7 @@
   <depend package='std_msgs'/>
   <depend package='3dmgx2_driver'/>
   <depend package='self_test'/>
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 </package>

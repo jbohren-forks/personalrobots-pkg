@@ -34,6 +34,7 @@
 #include <string>
 
 #include "logging/LogPlayer.h"
+#include "logging/AnyMsg.h"
 
 using namespace std;
 
@@ -41,6 +42,9 @@ bool g_at_once;
 
 void doPublish(string name, ros::msg* m, ros::Time t, void* n)
 {
+  if (((ros::node*)(n))->advertise<AnyMsg>(name, 0))
+    usleep(200000);
+
   if(!g_at_once) {
     ros::Time now = ros::Time::now();
     ros::Duration delta = t - ros::Time::now();
@@ -69,34 +73,24 @@ int main(int argc, char **argv)
 
   MultiLogPlayer player;
 
-  std::vector<std::string> topics;
+  std::vector<std::string> bags;
   g_at_once = false;
   for (int i = 1; i < argc; i++) {
     if(!strcmp(argv[i], "--atonce"))
       g_at_once = true;
     else
-      topics.push_back(argv[i]);
+      bags.push_back(argv[i]);
   }
 
   ros::Time start = ros::Time::now();
 
-  if (player.open(topics, start))
+  if (player.open(bags, start))
   {
-    std::vector<std::string> names = player.getNames();
-
-    for (std::vector<std::string>::iterator i = names.begin(); i != names.end(); i++)
-    {
-      n.advertise<AnyMsg>(*i, 1);
-    }
-    
     player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
   }
 
   while(n.ok())
   {   
-    if(g_at_once)
-      usleep(100000);
-
     if (!player.nextMsg())
     {
       n.self_destruct();

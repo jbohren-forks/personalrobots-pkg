@@ -11,8 +11,12 @@
 #include <time.h>
 #include "logging/LogPlayer.h"
 
+#include <set>
+
+
 using namespace std;
 
+set<string> g_names;
 
 void SplitFilename (const string& str, string *dir, string *file)
 {
@@ -33,6 +37,7 @@ template <class T>
 void copyMsg(string name, ros::msg* m, ros::Time t, void* n)
 {
   if (m != 0) {
+    g_names.insert(name);
     *((T*)(n)) = *((T*)(m));
   }
 }
@@ -85,15 +90,16 @@ public:
 
     // -- If we don't have all the expected messages, yell.
     bool hasImages = false, hasPtcld = false, hasCalparams = false;
-    vector<string> names = lp.getNames();
-    for (unsigned int i=0; i<names.size(); i++) { 
-      if(names[i].compare("videre/images") == 0) {
+
+    for (set<string>::iterator i = g_names.begin(); i != g_names.end(); i++)
+    { 
+      if(*i == "videre/images") {
 	hasImages = true;
       }
-      else if(names[i].compare("videre/cal_params") == 0) {
+      else if (*i == "videre/cal_params") {
 	hasCalparams = true;
       }
-      else if(names[i].compare("full_cloud") == 0) {
+      else if(*i == "full_cloud") {
 	hasPtcld = true;
       }
     }
@@ -102,7 +108,6 @@ public:
       cerr << "Doing as much conversion as possible..." << endl;
     }
     
-
     string outputname;
 
     // -- Save the pointcloud.

@@ -32,14 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "robot_msgs/BaseActualMsg.h"
+#include "std_msgs/BaseActualMsg.h"
 #include <string>
 #include "logging/LogPlayer.h"
 
-void odom_callback(std::string name, ros::msg* m, ros::Time t, void* f)
+void odom_callback(std::string name, std_msgs::BaseActualMsg* baseActual, ros::Time t, void* f)
 {
   FILE* file = (FILE*)f;
-  robot_msgs::BaseActualMsg* baseActual = (robot_msgs::BaseActualMsg*)(m);
 
   fprintf(file, "%.5f ",t.to_double());
 
@@ -80,13 +79,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("base_actual.txt", "w");
 
-  count = player.addHandler<robot_msgs::BaseActualMsg>(std::string("baseActual"), &odom_callback, file, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/odom' topics when expecting 1", count);
-    return 1;
-  }
+  player.addHandler<robot_msgs::BaseActualMsg>(std::string("baseActual"), &odom_callback, file, true);
 
   while(player.nextMsg())  {}
 

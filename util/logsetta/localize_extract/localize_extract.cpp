@@ -36,10 +36,9 @@
 #include <string>
 #include "logging/LogPlayer.h"
 
-void localize_callback(std::string name, ros::msg* m, ros::Time t, void* f)
+void localize_callback(std::string name, std_msgs::RobotBase2DOdom* bL, ros::Time t, void* f)
 {
   FILE* file = (FILE*)f;
-  std_msgs::RobotBase2DOdom* bL = (std_msgs::RobotBase2DOdom*)(m);
 
   fprintf(file, "%.5f ",t.to_double());
 
@@ -64,13 +63,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("localize_actual.txt", "w");
 
-  count = player.addHandler<std_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/odom' topics when expecting 1", count);
-    return 1;
-  }
+  player.addHandler<std_msgs::RobotBase2DOdom>(std::string("localizedPose"), &localize_callback, file);
 
   while(player.nextMsg())  {}
 

@@ -32,14 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "std_msgs/ImuData.h"
+#include "imu_node/ImuData.h"
 #include <string>
 #include "logging/LogPlayer.h"
 
-void imu_callback(std::string name, ros::msg* m, ros::Time t, void* f)
+void imu_callback(std::string name, imu_node::ImuData* imu, ros::Time t, void* f)
 {
   FILE* file = (FILE*)f;
-  std_msgs::ImuData* imu = (std_msgs::ImuData*)(m);
 
   fprintf(file, "%.5f %.5f %.5f %.5f %.5f %.5f %.5f %.5f\n",
           t.to_double(),
@@ -64,13 +63,7 @@ int main(int argc, char **argv)
 
   FILE* file = fopen("imu.txt", "w");
 
-  count = player.addHandler<std_msgs::ImuData>(std::string("/imu_data"), &imu_callback, file, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/imu_data' topics when expecting 1", count);
-    return 1;
-  }
+  player.addHandler<imu_node::ImuData>(std::string("*"), &imu_callback, file);
 
   while(player.nextMsg())  {}
 

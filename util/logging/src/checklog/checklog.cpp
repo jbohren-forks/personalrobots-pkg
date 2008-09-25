@@ -27,64 +27,62 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include <time.h>
-#include <sys/stat.h>
 #include "ros/node.h"
-#include "ros/time.h"
 #include <string>
-
-#include <stdio.h>
+#include <map>
 
 #include "logging/LogPlayer.h"
+#include "logging/AnyMsg.h"
 
 using namespace std;
 
-void doPublish(string name, ros::msg* m, ros::Time t, void* n)
+struct LogContent
 {
-  if (((ros::node*)(n))->advertise<AnyMsg>(name, 0))
-    usleep(200000);
+  string datatype;
+  int count;
+  LogContent(string d) : datatype(d), count(1) {}
+};
 
-  std::cout << "Hit enter to continue.";
-  std::cout.flush();
-  cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  
-  ((ros::node*)(n))->publish(name, *m);
+map<string, LogContent> g_content;
+
+void checkFile(string name, ros::msg* m, ros::Time t, void* n)
+{
+  map<string, LogContent>::iterator i = g_content.find(name);
+
+  if (i == g_content.end())
+  {
+    g_content.insert(pair<string, LogContent>(name, LogContent(m->__get_datatype())));
+  } else {
+    i->second.count++;
+  }
 }
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  if (argc <= 1)
+  if (argc != 2)
   {
-    printf("\nusage: playback BAG1 [BAG2] ...\n  this is a good place to use "
-           "the shell * feature\n\n");
+    printf("\nusage:\n");
+    printf("checklog BAG\n");
     return 1;
   }
 
-  ros::node n("player");  // Ros peer style usage.
+  LogPlayer player;
 
-  MultiLogPlayer player;
-
-  std::vector<std::string> ags;
-  for (int i = 1; i < argc; i++)
-    ags.push_back(argv[i]);
-
-  ros::Time start = ros::Time::now();
-
-  if (player.open(ags, start))
+  if (player.open(string(argv[1]), ros::Time(0)))
   {
-    player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
+    player.addHandler<AnyMsg>(string("*"), &checkFile, NULL, false);
   }
 
-  while(n.ok())
+  while(player.nextMsg())
   {
-    if (!player.nextMsg())
-    {
-      n.self_destruct();
-    }
   }
 
-  usleep(100000);
-  ros::fini();
+  for (map<string, LogContent>::iterator i = g_content.begin();
+       i != g_content.end();
+       i++)
+  {
+    printf(" Name: %s  Datatype: %s  Count: %d\n", i->first.c_str(), i->second.datatype.c_str(), i->second.count);
+  }
+
   return 0;
 }

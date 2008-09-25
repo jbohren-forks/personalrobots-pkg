@@ -38,21 +38,30 @@
 #include "ros/node.h"
 #include "ros/time.h"
 #include "logging/AnyMsg.h"
+#include "logging/LogFunctor.h"
 #include <fstream>
 #include <sstream>
+#include <cstdio>
 
 class LogPlayer
 {
- 
+  struct FilteredLogFunctor
+  {
+    std::string topic_name;
+    std::string md5sum;
+    std::string datatype;
+    bool inflate;
+    AbstractLogFunctor* f;
+  };
+
+
   class LogHelper : public ros::msg
   {
-    typedef std::pair<void (*)(std::string, ros::msg*, ros::Time, void*), void*> Callback;
+    LogPlayer* log_player_;
 
     std::string topic_name_;
-    std::string datatype_;
     std::string md5sum_;
-
-    std::vector<Callback> callbacks_;
+    std::string datatype_;
 
     ros::msg* msg_;
     uint8_t* next_msg_;
@@ -60,8 +69,8 @@ class LogPlayer
 
   public:
 
-    LogHelper(std::string topic_name, std::string datatype, std::string md5sum) 
-      : topic_name_(topic_name), datatype_(datatype), md5sum_(md5sum), 
+    LogHelper(LogPlayer* log_player, std::string topic_name, std::string md5sum, std::string datatype) 
+      : log_player_(log_player), topic_name_(topic_name),  md5sum_(md5sum), datatype_(datatype),
         msg_(NULL), next_msg_(NULL), next_msg_size_(0) {}
 
     virtual ~LogHelper()
@@ -70,38 +79,55 @@ class LogPlayer
         delete msg_;
     }
 
-    void addHandler(ros::msg* msg, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr)
+    void callHandlers()
     {
-      if (msg)
-      {
-        if (msg_)
-          delete msg_;
-        msg_ = msg;
-      }
 
-      callbacks_.push_back(Callback(fp, ptr));
-    }
-
-    void callHandlers(uint8_t* next_msg, uint32_t next_msg_size, ros::Time time)
-    {
-      next_msg_ = next_msg;
-      next_msg_size_ = next_msg_size;
+      next_msg_ = log_player_->next_msg_;
+      next_msg_size_ = log_player_->next_msg_size_;
 
       __serialized_length = next_msg_size_;
-
-      ros::msg* msg = this;
 
       if (msg_)
       {
         msg_->__serialized_length = next_msg_size_;
         msg_->deserialize(next_msg_);
-        msg = msg_;
       }
 
-      for (std::vector<Callback>::iterator cb_it = callbacks_.begin();
-           cb_it != callbacks_.end();
-           cb_it++)
-        (*(cb_it->first))(topic_name_, msg, time, (cb_it->second));
+      for (std::vector<FilteredLogFunctor>::iterator flf_it = log_player_->callbacks_.begin();
+           flf_it != log_player_->callbacks_.end();
+           flf_it++)
+      {
+
+        if (topic_name_  == flf_it->topic_name || 
+            flf_it->topic_name == std::string("*"))
+        {
+
+          if (flf_it->md5sum != md5sum_ &&
+              md5sum_ != std::string("*"))
+            break;
+          
+          if (flf_it->datatype != datatype_ && 
+              flf_it->datatype != std::string("*") && 
+              datatype_ != std::string("*"))
+            break;
+          
+          if (flf_it->inflate && msg_ == NULL)
+          {
+            msg_ = flf_it->f->allocateMsg();
+
+            if (msg_)
+            {
+              msg_->__serialized_length = next_msg_size_;
+              msg_->deserialize(next_msg_);
+            }
+          }
+          
+          if (flf_it->inflate)
+            flf_it->f->call(topic_name_, msg_, log_player_->next_msg_time_);
+          else
+            flf_it->f->call(topic_name_, this, log_player_->next_msg_time_);
+        }
+      }
     }
 
     std::string get_topic_name() {return topic_name_;}
@@ -124,25 +150,30 @@ class LogPlayer
 
   std::ifstream log_file_;
 
-  bool old_format_;
+  int version_;
 
   ros::Time start_time_;
 
   std::map<std::string, LogHelper*> topics_;
 
   std::string next_msg_name_;
-  uint8_t *next_msg_;
-  uint32_t next_msg_size_, next_msg_alloc_size_;
+
   ros::Time next_msg_time_;
 
   bool done_;
 
 public:
 
-  LogPlayer() : old_format_(false), next_msg_(NULL), next_msg_size_(0), next_msg_alloc_size_(0), done_(false) {}
+  LogPlayer() : version_(0),  done_(false), next_msg_(NULL), next_msg_size_(0), next_msg_alloc_size_(0) {}
 
   virtual ~LogPlayer()
   {
+    for (std::vector<FilteredLogFunctor>::iterator flf_it = callbacks_.begin();
+         flf_it != callbacks_.end();
+         flf_it++)
+      if (flf_it->f)
+        delete (flf_it->f);
+
     close();
   }
 
@@ -175,44 +206,65 @@ public:
       return false;
     }
 
-    std::string comment_line;
-    getline(log_file_, comment_line);
+    int version_major = 0;
+    int version_minor = 0;
 
-    if (comment_line[0] != '#')
-      log_file_.seekg(0, std::ios_base::beg);
+    std::string version_line;
+    getline(log_file_, version_line);
 
-    std::string quantity_line;
-    getline(log_file_,quantity_line);
+    sscanf(version_line.c_str(), "#ROSLOG V%d.%d", &version_major, &version_minor);
 
-    std::istringstream iss(quantity_line);
-
-    int quantity = -1;
-    iss >> quantity;
-    
-    std::cout << "Reading " << quantity << " topics from " << file_name << std::endl;
-
-    if (quantity == -1)
+    if (version_major == 0 && version_line[0] == '#')
     {
-      old_format_ = true;
-      quantity = 1;
-      log_file_.seekg(-(int)(quantity_line.size() + 1), std::ios_base::cur);
+      version_major = 1;
     }
 
-    std::string topic_name;
-    std::string md5sum;
-    std::string datatype;
+    version_ = version_major * 100 + version_minor;
 
-    for (int i = 0; i < quantity; i++)
+    int quantity = 0;
+
+    if (version_ == 0)
     {
-      getline(log_file_,topic_name);
-      getline(log_file_,md5sum);
-      getline(log_file_,datatype);
+      std::cout << "Opening ROSLOG version 0" << std::endl;
 
-      std::cout << " (" << i << "): " << topic_name << ", " << md5sum << ", " << datatype << std::endl;
+      log_file_.seekg(0, std::ios_base::beg);
 
-      LogHelper* l = new LogHelper(topic_name, md5sum, datatype);
+      quantity = 1;
 
-      topics_[topic_name] = l;
+    }
+    else if (version_ == 100)
+    {
+      std::cout << "Opening ROSLOG version 1.0" << std::endl;
+
+      std::string quantity_line;
+      getline(log_file_,quantity_line);
+      sscanf(quantity_line.c_str(), "%d", &quantity);
+    }
+    else if (version_ == 101)
+    {
+      std::cout << "Opening ROSLOG version 1.1" << std::endl;
+    }
+
+    if (version_ == 0 || version_ == 100)
+    {
+      //      std::cout << "Reading " << quantity << " topics from " << file_name << std::endl;
+
+      std::string topic_name;
+      std::string md5sum;
+      std::string datatype;
+
+      for (int i = 0; i < quantity; i++)
+      {
+        getline(log_file_,topic_name);
+        getline(log_file_,md5sum);
+        getline(log_file_,datatype);
+        
+        //        std::cout << " (" << i << "): " << topic_name << ", " << md5sum << ", " << datatype << std::endl;
+        
+        LogHelper* l = new LogHelper(this, topic_name, md5sum, datatype);
+        
+        topics_[topic_name] = l;
+      }
     }
 
     readNextMsg();
@@ -220,53 +272,62 @@ public:
     return true;
   }
 
+  template <class M>
+  void addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
+  {
+    FilteredLogFunctor flf;
 
-  std::vector<std::string> getNames() {
-    std::vector<std::string> names;
-    for (std::map<std::string, LogHelper*>::iterator topic_it = topics_.begin(); 
-         topic_it != topics_.end();
-         topic_it++)
-      names.push_back(topic_it->first);
+    flf.topic_name = topic_name;
+    flf.md5sum   = M::__s_get_md5sum();
+    flf.datatype = M::__s_get_datatype();
+    flf.inflate = inflate;
+    flf.f = new LogFunctor<M>(fp, ptr, inflate);
 
-    return names;
+    callbacks_.push_back(flf);
   }
 
   template <class M>
-  int addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
+  void addHandler(std::string topic_name, void (*fp)(std::string, M*, ros::Time, void*), void* ptr)
   {
+    FilteredLogFunctor flf;
 
-    int count = 0;
+    flf.topic_name = topic_name;
+    flf.md5sum   = M::__s_get_md5sum();
+    flf.datatype = M::__s_get_datatype();
+    flf.inflate = true;
+    flf.f = new LogFunctor<M>(fp, ptr);
 
-    for (std::map<std::string, LogHelper*>::iterator topic_it = topics_.begin();
-         topic_it != topics_.end();
-         topic_it++)
-    {
-      if (topic_name == std::string("*") ||
-          topic_name == (topic_it->second)->get_topic_name())
-      {
-
-        if (M::__s_get_md5sum() != (topic_it->second)->__get_md5sum() &&
-            (topic_it->second)->__get_md5sum() != std::string("*"))
-          break;
-
-        if (M::__s_get_datatype() != (topic_it->second)->__get_datatype() && 
-            M::__s_get_datatype() != std::string("*") && (topic_it->second)->__get_datatype() != std::string("*"))
-          break;
-        
-        M* msg = NULL;
-
-        if (inflate)
-          msg = new M;
-
-        (topic_it->second)->addHandler(msg, fp, ptr);
-        count++;
-        
-      }
-    }
-    return count;
+    callbacks_.push_back(flf);
   }
 
+  template <class M, class T>
+  void addHandler(std::string topic_name, void (T::*fp)(std::string, ros::msg*, ros::Time, void*), T* obj, void* ptr, bool inflate)
+  {
+    FilteredLogFunctor flf;
 
+    flf.topic_name = topic_name;
+    flf.md5sum   = M::__s_get_md5sum();
+    flf.datatype = M::__s_get_datatype();
+    flf.inflate = inflate;
+    flf.f = new LogFunctor<M, T>(obj, fp, ptr, inflate);
+
+    callbacks_.push_back(flf);
+  }
+
+  template <class M, class T>
+  void addHandler(std::string topic_name, void (T::*fp)(std::string, M*, ros::Time, void*), T* obj, void* ptr)
+  {
+    FilteredLogFunctor flf;
+
+    flf.topic_name = topic_name;
+    flf.md5sum   = M::__s_get_md5sum();
+    flf.datatype = M::__s_get_datatype();
+    flf.inflate = true;
+    flf.f = new LogFunctor<M, T>(obj, fp, ptr);
+
+    callbacks_.push_back(flf);
+  }
+    
   ros::Time get_next_msg_time()
   {
     if (!done_)
@@ -279,17 +340,24 @@ public:
   {
     if (done_)
       return false;
-
+    
     if (topics_.find(next_msg_name_) != topics_.end())
-      topics_[next_msg_name_]->callHandlers(next_msg_, next_msg_size_, next_msg_time_);
-
+    {
+      topics_[next_msg_name_]->callHandlers();
+    }
+    
     readNextMsg();
-
+    
     return true;
   }
-
+  
 protected:
 
+  uint8_t *next_msg_;
+  uint32_t next_msg_size_, next_msg_alloc_size_;
+  
+  std::vector<FilteredLogFunctor> callbacks_;
+  
   bool readNextMsg()
   {
     if (!log_file_.good())
@@ -297,28 +365,51 @@ protected:
       done_ = true;
       return false;
     }
-
-    if (old_format_)
+    
+    if (version_ <= 100)
     {
-      next_msg_name_ = (topics_.begin())->first;
+      if (version_ == 0)
+        next_msg_name_ = (topics_.begin())->first;
+      else
+        getline(log_file_, next_msg_name_);
+      
+      ros::Duration next_msg_dur;
+
+
     } else {
-      getline(log_file_, next_msg_name_);
+      
+      std::string topic_name;
+      std::string md5sum;
+      std::string datatype;
+      
+      getline(log_file_,topic_name);
+      getline(log_file_,md5sum);
+      getline(log_file_,datatype);
+
+      next_msg_name_ = topic_name;
+      
+      if (topics_.find(topic_name) == topics_.end())
+      {
+        LogHelper* l = new LogHelper(this, topic_name, md5sum, datatype);
+        topics_[topic_name] = l;
+      }
+      
     }
 
     ros::Duration next_msg_dur;
-      
+
     log_file_.read((char*)&next_msg_dur.sec, 4);
     log_file_.read((char*)&next_msg_dur.nsec, 4);
     log_file_.read((char*)&next_msg_size_, 4);
-
+      
     next_msg_time_ = start_time_ + next_msg_dur;
-
+      
     if (log_file_.eof())
     {
       done_ = true;
       return false;
     }
-
+      
     if (next_msg_size_ > next_msg_alloc_size_)
     {
       if (next_msg_)
@@ -326,7 +417,7 @@ protected:
       next_msg_alloc_size_ = next_msg_size_ * 2;
       next_msg_ = new uint8_t[next_msg_alloc_size_];
     }
-
+      
     log_file_.read((char*)next_msg_, next_msg_size_);
 
     if (log_file_.eof())
@@ -334,10 +425,10 @@ protected:
       done_ = true;
       return false;
     }
-
+      
     return true;
-  }
 
+  }
 };
 
 class MultiLogPlayer
@@ -379,25 +470,6 @@ public:
     return true;
   }
 
-  std::vector<std::string> getNames() {
-
-    std::vector<std::string> names;
-
-    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
-         player_it != players_.end();
-         player_it++)
-    {
-      std::vector<std::string> n = (*player_it)->getNames();
-
-      for (std::vector<std::string>::iterator topic_it = n.begin(); 
-           topic_it != n.end();
-           topic_it++)
-        names.push_back(*topic_it);
-    }
-
-    return names;
-  }
-
   bool nextMsg()
   {
     LogPlayer* next_player = 0;
@@ -433,17 +505,49 @@ public:
   }
 
   template <class M>
-  int addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
+  void addHandler(std::string topic_name, void (*fp)(std::string, ros::msg*, ros::Time, void*), void* ptr, bool inflate)
   {
-    int count = 0;
     for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
          player_it != players_.end();
          player_it++)
     {
-      count += (*player_it)->addHandler<M>(topic_name, fp, ptr, inflate);
+      (*player_it)->addHandler<M>(topic_name, fp, ptr, inflate);
     }
-    return count;
+  }
+
+  template <class M>
+  void addHandler(std::string topic_name, void (*fp)(std::string, M*, ros::Time, void*), void* ptr)
+  {
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      (*player_it)->addHandler<M>(topic_name, fp, ptr);
+    }
+  }
+
+  template <class M, class T>
+  void addHandler(std::string topic_name, void (T::*fp)(std::string, ros::msg*, ros::Time, void*), T* obj, void* ptr, bool inflate)
+  {
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      (*player_it)->addHandler<M>(topic_name, fp, obj, ptr, inflate);
+    }
+  }
+
+  template <class M, class T>
+  void addHandler(std::string topic_name, void (T::*fp)(std::string, M*, ros::Time, void*), T* obj, void* ptr)
+  {
+    for (std::vector<LogPlayer*>::iterator player_it = players_.begin();
+         player_it != players_.end();
+         player_it++)
+    {
+      (*player_it)->addHandler<M>(topic_name, fp, obj, ptr);
+    }
   }
 };
 
 #endif
+

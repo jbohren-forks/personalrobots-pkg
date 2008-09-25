@@ -42,11 +42,8 @@ FILE *test_log = NULL;
 
 const float LASER_POSITION = 0.05;
 
-void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
+void scan_callback(string name, laser_pose_interpolator::PoseLaserScan* scan, ros::Time t, void* n)
 {
-
-  laser_pose_interpolator::PoseLaserScan* scan = (laser_pose_interpolator::PoseLaserScan*)(m);
-
   double rel_time = t.to_double();
 
   //const double fov = fabs(scan->scan.angle_max - scan->scan.angle_min);
@@ -99,15 +96,7 @@ int main(int argc, char **argv)
 
   player.open(files, ros::Time(0));
 
-  int count;
-
-  count = player.addHandler<laser_pose_interpolator::PoseLaserScan>(string("pose_scan"), &scan_callback, NULL, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/pose_scan' topics when expecting 1\n", count);
-    return 1;
-  }
+  player.addHandler<laser_pose_interpolator::PoseLaserScan>(string("pose_scan"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");
 

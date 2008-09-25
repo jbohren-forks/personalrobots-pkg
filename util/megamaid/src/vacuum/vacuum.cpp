@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include "ros/node.h"
 #include "logging/LogRecorder.h"
+#include "logging/AnyMsg.h"
 #include <string>
 
 using namespace std;
@@ -81,7 +82,7 @@ int main(int argc, char **argv)
     std::string fname = std::string(logdir) + std::string("/") + sanitized + std::string(".bag");
     if (l->open(fname, start))
     {
-      l->addTopic<AnyMsg>(*i);
+      l->addTopic<AnyMsg>(*i, 100);
       logs.push_back(l);
     } else {
       cerr << "Could not open file: " << fname << endl;
@@ -89,10 +90,8 @@ int main(int argc, char **argv)
     }
   }
 
-
   for (vector<LogRecorder*>::iterator i = logs.begin(); i != logs.end(); i++)
     (*i)->start();
-
 
   if (logs.size() <= 0)
     n.self_destruct();

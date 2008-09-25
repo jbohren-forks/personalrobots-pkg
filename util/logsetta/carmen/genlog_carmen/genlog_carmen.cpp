@@ -42,11 +42,8 @@ FILE *clog = NULL;
 FILE *test_log = NULL;
 double prev_x = 0, prev_y = 0, prev_th = 0, dumb_rv = 0, dumb_tv = 0, prev_time;
 
-void odom_callback(string name, ros::msg* m, ros::Time t, void* n)
+void odom_callback(string name, std_msgs::RobotBase2DOdom* odom, ros::Time t, void* n)
 {
-
-  std_msgs::RobotBase2DOdom* odom = (std_msgs::RobotBase2DOdom*)(m);
-
   double rel_time = t.to_double();
 
   static bool vel_init = false;
@@ -87,10 +84,8 @@ void odom_callback(string name, ros::msg* m, ros::Time t, void* n)
           dumb_tv, dumb_rv, rel_time, rel_time);
 }
 
-void scan_callback(string name, ros::msg* m, ros::Time t, void* n)
+void scan_callback(string name, std_msgs::LaserScan* scan, ros::Time t, void* n)
 {
-
-  std_msgs::LaserScan* scan = (std_msgs::LaserScan*)(m);
 
   double rel_time = t.to_double();
 
@@ -132,23 +127,8 @@ int main(int argc, char **argv)
 
   player.open(files, ros::Time(0));
 
-  int count;
-
-  count = player.addHandler<std_msgs::RobotBase2DOdom>(string("odom"), &odom_callback, NULL, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/odom' topics when expecting 1\n", count);
-    return 1;
-  }
-
-  count = player.addHandler<std_msgs::LaserScan>(string("scan"), &scan_callback, NULL, true);
-
-  if (count != 1)
-  {
-    printf("Found %d '/scan' topics when expecting 1\n", count);
-    return 1;
-  }
+  player.addHandler<std_msgs::RobotBase2DOdom>(string("*"), &odom_callback, NULL);
+  player.addHandler<std_msgs::LaserScan>(string("*"), &scan_callback, NULL);
 
   clog = fopen("carmen.txt", "w");
 

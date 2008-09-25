@@ -27,64 +27,70 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //////////////////////////////////////////////////////////////////////////////
 
-#include <time.h>
-#include <sys/stat.h>
 #include "ros/node.h"
-#include "ros/time.h"
 #include <string>
-
-#include <stdio.h>
+#include <map>
 
 #include "logging/LogPlayer.h"
+#include "logging/AnyMsg.h"
+#include "std_msgs/String.h"
 
 using namespace std;
 
-void doPublish(string name, ros::msg* m, ros::Time t, void* n)
+void all_handler(string name, ros::msg* m, ros::Time t, void* n)
 {
-  if (((ros::node*)(n))->advertise<AnyMsg>(name, 0))
-    usleep(200000);
+  int* counter = (int*)(n);
 
-  std::cout << "Hit enter to continue.";
-  std::cout.flush();
-  cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-  
-  ((ros::node*)(n))->publish(name, *m);
+  cout << "all_handler saw a message named " << name << " with datatype: " << m->__get_datatype() << " Count at: " << (*counter)++ << endl;
 }
+
+void string_handler(string name, std_msgs::String* str, ros::Time t, void* n)
+{
+  cout << "string_handler saw a message named " << name << " with datatype: " << str->__get_datatype() << " and value: " << str->data << endl;
+}
+
+class LogHandler
+{
+public:
+  int counter;
+
+  LogHandler() : counter(0) {}
+
+  void all_handler(string name, ros::msg* m, ros::Time t, void* n)
+  {
+    cout << "LogHandler::all_handler saw a message named " << name << " with datatype: " << m->__get_datatype() << " Count at: " << counter++ << endl;
+  } 
+
+  void string_handler(string name, std_msgs::String* str, ros::Time t, void* n)
+  {
+    cout << "LogHandler::string_handler saw a message named " << name << " with  datatype: " << str->__get_datatype() << " and value: " << str->data << endl;
+  }
+};
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv);
-  if (argc <= 1)
+  if (argc != 2)
   {
-    printf("\nusage: playback BAG1 [BAG2] ...\n  this is a good place to use "
-           "the shell * feature\n\n");
+    cout << endl << "usage:" << endl <<  " demo BAG" << endl;
     return 1;
   }
 
-  ros::node n("player");  // Ros peer style usage.
+  LogPlayer player;
+  LogHandler handler;
 
-  MultiLogPlayer player;
+  int counter = 0;
 
-  std::vector<std::string> ags;
-  for (int i = 1; i < argc; i++)
-    ags.push_back(argv[i]);
-
-  ros::Time start = ros::Time::now();
-
-  if (player.open(ags, start))
+  if (player.open(string(argv[1]), ros::Time(0)))
   {
-    player.addHandler<AnyMsg>(string("*"), &doPublish, (void*)(&n), false);
+    player.addHandler<AnyMsg>(string("*"), &all_handler, &counter, false);
+    player.addHandler<std_msgs::String>(string("chatter"), &string_handler, NULL);
+    player.addHandler<AnyMsg>(string("babble"), &LogHandler::all_handler, &handler, &counter, false);
+    player.addHandler<std_msgs::String>(string("*"), &LogHandler::string_handler, &handler, NULL);
   }
 
-  while(n.ok())
+  while(player.nextMsg())
   {
-    if (!player.nextMsg())
-    {
-      n.self_destruct();
-    }
   }
 
-  usleep(100000);
-  ros::fini();
   return 0;
 }
