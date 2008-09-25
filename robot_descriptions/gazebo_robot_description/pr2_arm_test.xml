@@ -1,4 +1,5 @@
 <launch>
+  <master auto="start"/>
   <group name="wg">
     <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_arm_test/pr2_arm.xml&quot;" />
     <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_arm_test.world" respawn="false" output="screen">
