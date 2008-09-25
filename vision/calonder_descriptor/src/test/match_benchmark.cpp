@@ -1,3 +1,5 @@
+//#define BOOST_UBLAS_INLINE
+
 // calonder_descriptor
 #include "calonder_descriptor/matcher.h"
 #include "calonder_descriptor/rtree_classifier.h"
@@ -7,6 +9,7 @@
 #include <cvwimage.h> // Google C++ wrappers
 #include <highgui.h>
 #include <boost/foreach.hpp>
+#include <boost/range/iterator_range.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
 #include <boost/accumulators/statistics/variance.hpp>
@@ -21,11 +24,16 @@ using namespace boost::accumulators;
 void print_signature_stats(std::vector< SparseSignature > const& sigs)
 {
   accumulator_set<int, stats<tag::variance> > acc;
+  float max_value = 0;
   BOOST_FOREACH( SparseSignature const& sig, sigs ) {
     acc( sig.nnz() );
+    BOOST_FOREACH( float val, sig ) {
+      if (val > max_value) max_value = val;
+    }
   }
 
-  printf("\tMean length = %.1f, stddev = %.1f\n", mean(acc), sqrt(variance(acc)) );
+  printf("\t%u signatures, mean length = %.1f, stddev = %.1f, max value = %f\n",
+         sigs.size(), mean(acc), sqrt(variance(acc)), max_value);
 }
 
 // Usage: ./match_benchmark land30.trees img1.pgm img2.pgm
@@ -55,21 +63,31 @@ int main( int argc, char** argv )
   if (ref_keypts.size() < NUM_PTS) {
     printf("WARNING: Only %u reference keypoints\n", ref_keypts.size());
   }
+  // Partition into bright and dark features
+  typedef std::vector<Keypoint>::iterator KeyptIterator;
+  KeyptIterator ref_dark_begin = std::partition(ref_keypts.begin(), ref_keypts.end(),
+                                                DarkOrBright());
   
   // Extract patches and add their signatures to matcher database
-  BruteForceMatcher< SparseSignature, CvPoint > matcher;
-  //BruteForceMatcher< DenseSignature, CvPoint > matcher;
+  BruteForceMatcher< SparseSignature, CvPoint > bright_matcher, dark_matcher;
 
   {
     Timer ref_timer("Generating reference signatures");
-    BOOST_FOREACH( Keypoint &pt, ref_keypts ) {
+    BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(ref_keypts.begin(),
+                                                            ref_dark_begin) ) {
       cv::WImageView1_b view = extractPatch(reference.Ipl(), pt);
       SparseSignature sig = classifier.getSparseSignature(view.Ipl());
-      //DenseSignature sig = classifier.getDenseSignature(view.Ipl());
-      matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+      bright_matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+    }
+    BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(ref_dark_begin,
+                                                            ref_keypts.end()) ) {
+      cv::WImageView1_b view = extractPatch(reference.Ipl(), pt);
+      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      dark_matcher.addSignature(sig, cvPoint(pt.x, pt.y));
     }
   }
-  print_signature_stats(matcher.signatures());
+  print_signature_stats(bright_matcher.signatures());
+  print_signature_stats(dark_matcher.signatures());
   
   // Detect points in query image
   StarDetector query_detector( cvSize(query.Width(), query.Height()) );
@@ -79,20 +97,32 @@ int main( int argc, char** argv )
   if (query_keypts.size() < NUM_PTS) {
     printf("WARNING: Only %u query keypoints\n", query_keypts.size());
   }
+  // Partition into bright and dark features
+  KeyptIterator query_dark_begin = std::partition(query_keypts.begin(), query_keypts.end(),
+                                                  DarkOrBright());
+  int bright_features = std::distance(query_keypts.begin(), query_dark_begin);
 
   // Find matches
-  std::vector< SparseSignature > query_sigs;
-  query_sigs.reserve(query_keypts.size());
+  std::vector< SparseSignature > query_bright_sigs, query_dark_sigs;
+  query_bright_sigs.reserve(bright_features);
+  query_dark_sigs.reserve(query_keypts.size() - bright_features);
   {
     Timer query_timer("Generating query signatures");
-    BOOST_FOREACH( Keypoint &pt, query_keypts ) {
+    BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(query_keypts.begin(),
+                                                            query_dark_begin) ) {
       cv::WImageView1_b view = extractPatch(query.Ipl(), pt);
       SparseSignature sig = classifier.getSparseSignature(view.Ipl());
-      //DenseSignature sig = classifier.getDenseSignature(view.Ipl());
-      query_sigs.push_back(sig);
+      query_bright_sigs.push_back(sig);
+    }
+    BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(query_dark_begin,
+                                                            query_keypts.end()) ) {
+      cv::WImageView1_b view = extractPatch(query.Ipl(), pt);
+      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      query_dark_sigs.push_back(sig);
     }
   }
-  print_signature_stats(query_sigs);
+  print_signature_stats(query_bright_sigs);
+  print_signature_stats(query_dark_sigs);
   
   int match;
   float distance;
@@ -100,15 +130,16 @@ int main( int argc, char** argv )
   //CvRect rect = cvRect(32, 32, 224, 224);
   {
     Timer match_timer("Matching");
-    BOOST_FOREACH( SparseSignature &sig, query_sigs ) {
-      match = matcher.findMatch(sig, &distance);
+    // Match bright features
+    BOOST_FOREACH( SparseSignature &sig, query_bright_sigs ) {
+      match = bright_matcher.findMatch(sig, &distance);
       //match = matcher.findMatchInWindow(sig, rect, &distance);
-      //printf("%i -> %i, d = %f\n", index, match, distance);
-      //++index;
-
-      /* Do something with match */
+    }
+    // Match dark features
+    BOOST_FOREACH( SparseSignature &sig, query_dark_sigs ) {
+      match = dark_matcher.findMatch(sig, &distance);
     }
   }
-
+  
   return 0;
 }
