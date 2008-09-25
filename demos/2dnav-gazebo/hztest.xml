@@ -28,8 +28,8 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (odom_test vs. scan_test). -->
     <param name="topic" value="odom" />
-    <param name="hz" value="50.0" />
-    <param name="hzerror" value="3.0" />
+    <param name="hz" value="3.0" />
+    <param name="hzerror" value="2.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
