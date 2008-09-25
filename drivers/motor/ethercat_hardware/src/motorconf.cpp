@@ -32,6 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#include <map>
 #include <stdio.h>
 #include <getopt.h>
 #include <sys/mman.h>
@@ -46,101 +47,16 @@
 #include <ethercat_hardware/wg0x.h>
 
 #include <boost/crc.hpp>
-
-static struct
-{
-  int model;
-  WG0XActuatorInfo config;
-} configurations[] = {
-  // Elbow, shoulder, spine
-  // Maxon 148877
-  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE40.pdf
-  {148877,
-    {0, 1,              // Revision
-     0, "",             // Id and name
-     "PR2",             // Robot name
-     "Maxon", "148877", // Motor make and model
-     3.12,              // Max current [Amps]
-     158,               // Speed constant [rpm/V]
-     1.16,              // Resistance [Ohms]
-     0.0603,            // Motor torque constant [Nm/A]
-     1200, -1,          // Encoder pulses and sign
-     "", 0              // Pad and CRC32
-    }
-  },
- 
-  // Wrist
-  // Maxon 310007
-  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE30.pdf
-  {310007,
-    {0, 1,              // Revision
-     0, "",             // Id and name
-     "PR2",             // Robot name
-     "Maxon", "310007", // Motor make and model
-     3.44,              // Max current [Amps]
-     369,               // Speed constant [rpm/V]
-     0.611,             // Resistance [Ohms]
-     0.0259,            // Motor torque constant [Nm/A]
-     1200, -1,          // Encoder pulses and sign
-     "", 0              // Pad and CRC32
-    }
-  },
-
-  // Head
-  // Maxon 310009
-  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonRE30.pdf
-  {310009,
-    {0, 1,              // Revision
-     0, "",             // Id and name
-     "PR2",             // Robot name
-     "Maxon", "310009", // Motor make and model
-     1.72,              // Max current [Amps]
-     178,               // Speed constant [rpm/V]
-     2.52,              // Resistance [Ohms]
-     0.0538,            // Motor torque constant [Nm/A]
-     1200, -1,          // Encoder pulses and sign
-     "", 0              // Pad and CRC32
-    }
-  },
-
-  // Caster
-  // Maxon 236672
-  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonAMAX32.pdf
-  {236672,
-    {0, 1,              // Revision
-     0, "",             // Id and name
-     "PR2",             // Robot name
-     "Maxon", "236672", // Motor make and model
-     0.655,             // Max current [Amps]
-     136,               // Speed constant [rpm/V]
-     16.7,              // Resistance [Ohms]
-     0.0704,            // Motor torque constant [Nm/A]
-     1200, -1,          // Encoder pulses and sign
-     "", 0              // Pad and CRC32
-    }
-  },
-
-  // Gripper
-  // Maxon 222057
-  // http://pr.willowgarage.com/wiki/HardwareComponents/Motors?action=AttachFile&do=get&target=maxonREMAX24.pdf
-  {222057,
-    {0, 1,              // Revision
-     0, "",             // Id and name
-     "PR2",             // Robot name
-     "Maxon", "222057", // Motor make and model
-     0.204,             // Max current [Amps]
-     156,               // Speed constant [rpm/V]
-     56.2,              // Resistance [Ohms]
-     0.0613,            // Motor torque constant [Nm/A]
-     1200, -1,          // Encoder pulses and sign
-     "", 0              // Pad and CRC32
-    }
-  },
-
- };
-
+#include <boost/foreach.hpp>
 
 vector<WG0X *> devices;
+
+typedef pair<string, string> ActuatorPair;
+map<string, string> actuators;
+
+typedef pair<string, WG0XActuatorInfo> MotorPair;
+map<string, WG0XActuatorInfo> motors;
+
 void init(char *interface)
 {
   struct netif *ni;
@@ -202,47 +118,47 @@ void init(char *interface)
       dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
+    else
+    {
+      devices.push_back(NULL);
+    }
   }
 
-  vector<WG0X *>::const_iterator device;
-  for (device = devices.begin(); device != devices.end(); ++device)
+  BOOST_FOREACH(WG0X *device, devices)
   {
     Actuator a;
-    if (!(*device)->sh_->to_state(EC_OP_STATE))
+    if (!device) continue;
+    if (!device->sh_->to_state(EC_OP_STATE))
     {
-      fprintf(stderr, "Unable set device %d into OP_STATE", (*device)->sh_->get_ring_position());
+      fprintf(stderr, "Unable set device %d into OP_STATE", device->sh_->get_ring_position());
     }
-    (*device)->initialize(&a, true);
+    device->initialize(&a, true);
   }
 
-  for (device = devices.begin(); device != devices.end(); ++device)
+  BOOST_FOREACH(WG0X *device, devices)
   {
-    printf("isProgrammed = %d\n", (*device)->isProgrammed());
+    if (!device) continue;
+    printf("isProgrammed = %d\n", device->isProgrammed());
   }
 }
 
-void programDevice(int device, WG0XActuatorInfo *configuration, char *name)
+void programDevice(int device, WG0XActuatorInfo &config, char *name)
 {
-  WG0XActuatorInfo config;
-
-  config = *configuration;
-  printf("Programming device %d, to be named: %s\n", device, name);
-  strcpy(config.name_, name);
-  boost::crc_32_type crc32;
-  crc32.process_bytes(&config, sizeof(config)-sizeof(config.crc32_));
-  config.crc32_ = crc32.checksum();
-  devices[device]->program(&config);
-}
-
-int lookupMotor(int motor)
-{
-  for (int i = 0; i < int(sizeof(configurations)/sizeof(configurations[0])); ++i)
+  if (devices[device])
   {
-    if (configurations[i].model == motor)
-      return i;
+    printf("Programming device %d, to be named: %s\n", device, name);
+    strcpy(config.name_, name);
+    boost::crc_32_type crc32;
+    crc32.process_bytes(&config, sizeof(config)-sizeof(config.crc32_));
+    config.crc32_ = crc32.checksum();
+    devices[device]->program(&config);
   }
-  return -1;
+  else
+  {
+    printf("There is no device at position #%d\n", device);
+  }
 }
+
 static struct
 {
   char *program_name_;
@@ -250,7 +166,7 @@ static struct
   char *name_;
   bool program_;
   int device_;
-  int motor_;
+  string motor_;
 } g_options;
 
 void Usage(string msg = "")
@@ -262,9 +178,11 @@ void Usage(string msg = "")
   fprintf(stderr, " -n, --name <n>         Set the name of the motor control board to <n>\n");
   fprintf(stderr, " -m, --motor <m>        Set the configuration for motor <m>\n");
   fprintf(stderr, "     Legal motor values are:\n");
-  for (uint32_t i = 0; i < sizeof(configurations)/sizeof(configurations[0]); ++i)
+  BOOST_FOREACH(MotorPair p, motors)
   {
-    fprintf(stderr, "       %d - %s %s\n", configurations[i].model, configurations[i].config.motor_make_, configurations[i].config.motor_model_);
+    string name = p.first;
+    WG0XActuatorInfo info = p.second;
+    printf("        %s - %s %s\n", name.c_str(), info.motor_make_, info.motor_model_);
   }
   fprintf(stderr, " -h, --help    Print this message and exit\n");
   if (msg != "")
@@ -278,11 +196,63 @@ void Usage(string msg = "")
   }
 }
 
+void parseConfig(TiXmlElement *config)
+{
+  TiXmlElement *actuatorElt = config->FirstChildElement("actuators");
+  TiXmlElement *motorElt = config->FirstChildElement("motors");
+
+  for (TiXmlElement *elt = actuatorElt->FirstChildElement("actuator");
+       elt;
+       elt = elt->NextSiblingElement("actuator"))
+  {
+    const char *name = elt->Attribute("name");
+    const char *motor = elt->Attribute("motor");
+    actuators[name] = motor;
+  }
+
+  WG0XActuatorInfo info;
+  memset(&info, 0, sizeof(info));
+  info.minor_ = 1;
+  strcpy(info.robot_name_, "PR2");
+  for (TiXmlElement *elt = motorElt->FirstChildElement("motor");
+       elt;
+       elt = elt->NextSiblingElement("motor"))
+  {
+    const char *name = elt->Attribute("name");
+    TiXmlElement *params = elt->FirstChildElement("params");
+    TiXmlElement *encoder = elt->FirstChildElement("encoder");
+
+    strcpy(info.motor_make_, params->Attribute("make"));
+    strcpy(info.motor_model_, params->Attribute("model"));
+
+    info.max_current_ = atof(params->Attribute("max_current"));
+    info.speed_constant_ = atof(params->Attribute("speed_constant"));
+    info.resistance_ = atof(params->Attribute("resistance"));
+    info.motor_torque_constant_ = atof(params->Attribute("motor_torque_constant"));
+
+    info.pulses_per_revolution_ = atoi(encoder->Attribute("pulses_per_revolution"));
+    info.sign_ = atoi(encoder->Attribute("sign"));
+
+    motors[name] = info;
+  }
+}
+
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
+  // Parse configuration file
+  TiXmlDocument xml("actuators.conf");
+  if (xml.LoadFile())
+  {
+    parseConfig(xml.RootElement());
+  }
+  else
+  {
+    Usage("Unable to load configuration file");
+  }
+  //
   // Parse options
   g_options.program_name_ = argv[0];
   g_options.device_ = -1;
@@ -314,7 +284,7 @@ int main(int argc, char *argv[])
         g_options.name_ = optarg;
         break;
       case 'm':
-        g_options.motor_ = atoi(optarg);
+        g_options.motor_ = optarg;
         break;
       case 'p':
         g_options.program_ = 1;
@@ -330,19 +300,25 @@ int main(int argc, char *argv[])
   if (!g_options.interface_)
     Usage("You must specify a network interface");
 
+
   init(g_options.interface_);
 
   if (g_options.program_)
   {
     if (!g_options.name_)
       Usage("You must specify a name");
+    if (g_options.motor_ == "")
+    {
+      if (actuators.find(g_options.name_) == actuators.end())
+        Usage("No default motor for this name");
+      g_options.motor_ = actuators[g_options.name_];
+    }
     if (g_options.device_ == -1)
       Usage("You must specify a device #");
-    int c = lookupMotor(g_options.motor_);
-    if (c == -1)
+    if (motors.find(g_options.motor_) == motors.end())
       Usage("You must specify a valid motor");
 
-    programDevice(g_options.device_, &configurations[c].config, g_options.name_);
+    programDevice(g_options.device_, motors[g_options.motor_], g_options.name_);
   }
 
   return 0;
