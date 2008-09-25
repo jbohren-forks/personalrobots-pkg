@@ -47,12 +47,34 @@ class HingeJoint;
 class PositionIface;
 class XMLConfigNode;
 
-/**********************************************************/
-/*! \class GazeboActuators
-    This class implements a plugin for the
-    \ref{mechanism::MechanismControl} mechanisms controls class
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
+/// @{
+/** \defgroup gazebo_actuators GazeboActuators class
+
+  \brief GazeboActuators Plugin
+  
+  This is a controller that provides interface between simulator and the Robot Mechanism Control.
+  GazeboActuators requires model as its parent.
+
+  \verbatim
+  <model:physical name="ray_model">
+    <!-- GazeboActuators -->
+    <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <robot filename="pr2.xml" /> <!-- gazebo_actuators use this file to extract mechanism model -->
+      <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs, currently just damping -->
+      <interface:audio name="gazebo_actuators_dummy_iface" />
+    </controller:gazebo_actuators>
+  </model:phyiscal>
+  \endverbatim
+ 
+\{
 */
-/**********************************************************/
+
+
+
+
 class GazeboActuators : public gazebo::Controller
 {
 public:
@@ -96,6 +118,9 @@ private:
    */
   void ReadGazeboPhysics(XMLConfigNode *node);
 };
+
+/** \} */
+/// @}
 
 }
 

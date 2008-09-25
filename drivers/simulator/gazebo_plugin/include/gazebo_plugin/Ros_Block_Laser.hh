@@ -40,26 +40,48 @@ namespace gazebo
   class FiducialIface;
   class RaySensor;
 
-/// @addtogroup gazebo_controller
+/// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup ros ros
+/** \defgroup Ros_Block_Laser ROS Block Laser Scanner Controller Plugin
 
-  \brief ros laser controller.
-   
-   This is a controller that collects data from a ray sensor, and populates a libgazebo laser interface. 
+  \brief ROS Block Laser Scanner Controller Plugin
+  
+  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds and Iface.
 
   \verbatim
-  <model:physical name="laser_model">
-    <body:box name="laser_body">
+    <model:physical name="ray_model">
+      <body:empty name="ray_body_name">
+        <sensor:ray name="ray_sensor">
+          <rayCount>30</rayCount>
+          <rangeCount>30</rangeCount>
+          <laserCount>1</laserCount>
+          
+          <origin>0.0 0.0 0.05</origin>
+          <displayRays>false</displayRays>
+          
+          <minAngle>-15</minAngle>
+          <maxAngle> 15</maxAngle>
+          
+          <minRange>0.05</minRange>
+          <maxRange>100.0</maxRange>
+          <updateRate>10.0</updateRate>
 
-      <sensor:ray name="laser">
-        <controller:ros_laser name="controller-name">
-          <interface:laser name="iface-name"/>
-        </controller:ros_laser>
-      </sensor:ray>
+          <verticalRayCount>30</verticalRayCount>
+          <verticalRangeCount>30</verticalRangeCount>
+          <verticalMinAngle>-20</verticalMinAngle>
+          <verticalMaxAngle>  0</verticalMaxAngle>
 
-    </body:box>
-  </model:physical>
+          <controller:ros_block_laser name="ray_block_controller" plugin="libRos_Block_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <topicName>full_cloud</topicName>
+            <frameName>ray_model</frameName>
+            <interface:laser name="ray_block_iface" />
+          </controller:ros_block_laser>
+        </sensor:ray>
+      </body:empty>
+    </model:phyiscal>
   \endverbatim
  
 \{
@@ -130,7 +152,7 @@ class Ros_Block_Laser : public Controller
 
 };
 
-/** /} */
+/** \} */
 /// @}
 
 }

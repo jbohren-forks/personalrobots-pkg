@@ -130,6 +130,7 @@ void P3D::UpdateChild()
   // get Rates
   Vector3 vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
   Quatern vrot = this->myBody->GetRotationRate(); // get velocity in gazebo frame
+  Vector3 veul = this->myBody->GetEulerRate(); // get velocity in gazebo frame
 
   this->lock.lock();
   // copy data into pose message
@@ -150,10 +151,17 @@ void P3D::UpdateChild()
   this->transformMsg.rate.translation.y         = vpos.y;
   this->transformMsg.rate.translation.z         = vpos.z;
 
+  // pass quaternion
+  // this->transformMsg.rate.rotation.x            = vrot.x;
+  // this->transformMsg.rate.rotation.y            = vrot.y;
+  // this->transformMsg.rate.rotation.z            = vrot.z;
+  // this->transformMsg.rate.rotation.w            = vrot.u;
+
+  // pass euler anglular rates
   this->transformMsg.rate.rotation.x            = vrot.x;
   this->transformMsg.rate.rotation.y            = vrot.y;
   this->transformMsg.rate.rotation.z            = vrot.z;
-  this->transformMsg.rate.rotation.w            = vrot.u;
+  this->transformMsg.rate.rotation.w            = 0;
 
   // publish to ros
   rosnode->publish(this->topicName,this->transformMsg);
