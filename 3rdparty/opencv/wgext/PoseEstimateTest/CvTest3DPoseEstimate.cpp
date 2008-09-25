@@ -24,6 +24,9 @@
 #include "CvMat3X3.h"
 #include "CvTestTimer.h"
 #include <CvPathRecon.h>
+#include <CvVisOdomBundleAdj.h>
+
+using namespace cv::willow;
 
 // VTK headers
 #include <vtkConeSource.h>
@@ -40,6 +43,7 @@
 
 using namespace cv;
 using namespace std;
+
 
 #define GAUSSIANNOISE
 
@@ -197,6 +201,9 @@ bool CvTest3DPoseEstimate::test() {
   case Video:
     return testVideos();
     break;
+  case VideoBundleAdj:
+    return testVideoBundleAdj();
+    break;
   default:
     cout << "Unknown test type: "<<  mTestType << endl;
   }
@@ -216,6 +223,7 @@ void CvTest3DPoseEstimate::MyMouseCallback(int event, int x, int y, int flagsm, 
   }
 }
 
+#if 0 // TODO: moved. delete it
 /** display disparity map */
 bool CvTest3DPoseEstimate::showDisparityMap(WImageBuffer1_16s& dispMap, string& dispWindowName,
     string& outputDirname, int frameIndex, int maxDisp){
@@ -225,6 +233,7 @@ bool CvTest3DPoseEstimate::showDisparityMap(WImageBuffer1_16s& dispMap, string& 
   CvMatUtils::showDisparityMap(dispMap, dispWindowName, _dispMapFilename, maxDisp);
   return true;
 }
+#endif
 
 bool CvTest3DPoseEstimate::drawKeypoints(WImage3_b& image, vector<Keypoint>& keyPointsLast,
     vector<Keypoint>& keyPointsCurr){
@@ -241,6 +250,7 @@ bool CvTest3DPoseEstimate::drawKeypoints(WImage3_b& image, vector<Keypoint>& key
   return true;
 }
 
+#if 0 // TODO: delete it, as it has been moved to CvMatUtils
 bool CvTest3DPoseEstimate::drawTrackablePairs(
     WImage3_b& image,
     vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs){
@@ -254,6 +264,7 @@ bool CvTest3DPoseEstimate::drawTrackablePairs(
   }
   return true;
 }
+#endif
 
 void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
 {
@@ -268,10 +279,10 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
     rightImage.SetIpl(rightimg);
 }
 
-bool CvTest3DPoseEstimate::testVideos() {
+bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
-  CvPathRecon pathRecon(imgSize);
+  VisOdomBundleAdj pathRecon(imgSize);
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
@@ -288,6 +299,26 @@ bool CvTest3DPoseEstimate::testVideos() {
   return status;
 }
 
+bool CvTest3DPoseEstimate::testVideos() {
+  bool status = false;
+  CvSize imgSize = cvSize(640, 480);
+  PathRecon pathRecon(imgSize);
+  // The following parameters are from indoor1/proj.txt
+  // note that B (or Tx) is in mm
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  pathRecon.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+
+  string dirname("Data/indoor1");
+  string leftimgfmt("/left-%04d.ppm");
+  string rightimgfmt("/right-%04d.ppm");
+  int start = 0;
+  int end   = 1509;
+  int step  = 1;
+  pathRecon.recon(dirname, leftimgfmt, rightimgfmt, start, end, step);
+
+  return status;
+}
+#if 0
 bool CvTest3DPoseEstimate::testVideos1() {
   bool status = false;
   int numImages = 1509;
@@ -300,7 +331,7 @@ bool CvTest3DPoseEstimate::testVideos1() {
 
 
   CvSize imgSize = cvSize(640, 480);
-  CvPathRecon pathRecon(imgSize);
+  PathRecon pathRecon(imgSize);
 
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
@@ -396,7 +427,7 @@ bool CvTest3DPoseEstimate::testVideos1() {
       cvCvtColor(leftImage.Ipl(),  leftimgC3a, CV_GRAY2RGB);
 
       showDisparityMap(dispMap, dispWindowName, outputDirname, frameIndex, maxDisp);
-      drawKeypoints(leftImageC3, keyPointsLast, keyPointsCurr);
+      drawPoints(leftImageC3, keyPointsLast, keyPointsCurr);
     }
     //
     // match the good feature points between this iteration and last
@@ -432,16 +463,16 @@ bool CvTest3DPoseEstimate::testVideos1() {
 
       cout << "num of inliers: "<< numInliers <<endl;
 
-      CvPathRecon::KeyFramingDecision kfd =
+      PathRecon::KeyFramingDecision kfd =
         pathRecon.keyFrameEval(i, trackablePairs, keyPointsCurr, numInliers, inliers0, inliers1, rot, shift);
 
       switch (kfd) {
-      case CvPathRecon::KeyFrameSkip:  {
+      case PathRecon::KeyFrameSkip:  {
         // skip this frame
         pathRecon.mNumFramesSkipped++;
         break;
       }
-      case CvPathRecon::KeyFrameBackTrack:   {
+      case PathRecon::KeyFrameBackTrack:   {
         // go back to the last good frame
         fBackTracked = true;
 #if DEBUG==1
@@ -459,7 +490,7 @@ bool CvTest3DPoseEstimate::testVideos1() {
         frameIndex = pathRecon.mLastGoodFrame->mFrameIndex;
         numTrackablePairs = pathRecon.mLastGoodFrame->mNumTrackablePairs;
         numInliers = pathRecon.mLastGoodFrame->mNumInliers;
-        leftimgC3a = pathRecon.mLastGoodFrame->mImageC3a.Ipl();
+        leftimgC3a = pathRecon.mLastGoodFrame->mImageC3a->Ipl();
 
         // keep track of the trajectory
         pathRecon.appendTransform(rot, shift);
@@ -475,7 +506,7 @@ bool CvTest3DPoseEstimate::testVideos1() {
         pathRecon.storeTransform(rot, shift, frameIndex - pathRecon.mStartFrameIndex);
 
 
-        CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, pathRecon.mLastGoodFrame->mImageC3a,
+        CvMatUtils::drawMatchingPairs(*inliers0, *inliers1, *(pathRecon.mLastGoodFrame->mImageC3a),
             rot, shift,
             (Cv3DPoseEstimateDisp&)pathRecon.mPoseEstimator, reversed);
 
@@ -496,13 +527,13 @@ bool CvTest3DPoseEstimate::testVideos1() {
 
         break;
       }
-      case CvPathRecon::KeyFrameKeep:   {
+      case PathRecon::KeyFrameKeep:   {
         int numTrackablePairs = trackablePairs.size();
         pathRecon.keepGoodFrame(leftImage, dispMap, keyPointsCurr, rot, shift,
             numTrackablePairs, numInliers, frameIndex, &leftImageC3a, inliers0, inliers1);
         break;
       }
-      case CvPathRecon::KeyFrameUse:  {
+      case PathRecon::KeyFrameUse:  {
         // show the inliers
         frameIndex = i;
 
@@ -593,6 +624,7 @@ bool CvTest3DPoseEstimate::testVideos1() {
 
   return status;
 }
+#endif
 
 bool CvTest3DPoseEstimate::testPointClouds(){
     bool status = true;
@@ -943,6 +975,8 @@ int main(int argc, char **argv){
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::CartAndDisp;
     } else if (strcasecmp(option, "video") == 0) {
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video;
+    } else if (strcasecmp(option, "bundle") == 0) {
+      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::VideoBundleAdj;
     } else {
       cerr << "Unknown option: "<<option<<endl;
       exit(1);

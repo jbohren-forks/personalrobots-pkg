@@ -22,13 +22,18 @@ public:
     typedef enum {
     	Cartesian,
     	Disparity,
-    	CartAndDisp, Video} TestType;
+    	CartAndDisp,
+    	Video,
+    	/// bundle adjustment over a sequence of video images
+    	VideoBundleAdj
+    } TestType;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();
     virtual ~CvTest3DPoseEstimate();
     bool testPointClouds();
     bool testVideos1();
     bool testVideos();
+    bool testVideoBundleAdj();
     bool test();
     TestType mTestType;
 protected:
@@ -41,7 +46,6 @@ protected:
     static void MyMouseCallback(int event, int x, int y, int flagsm, void *param);
     bool showDisparityMap(WImageBuffer1_16s & dispMap, string & winname, string & outputDirname, int frameIndex, int maxDisp);
     bool drawKeypoints(WImage3_b & image, vector<Keypoint> & keyPointsLast, vector<Keypoint> & keyPointsCurr);
-    bool drawTrackablePairs(WImage3_b & image, vector<pair<CvPoint3D64f,CvPoint3D64f> > & trackablePairs);
     void loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
     CvPoint3D64f mEulerAngle;
     CvPoint3D64f mTranslation;
