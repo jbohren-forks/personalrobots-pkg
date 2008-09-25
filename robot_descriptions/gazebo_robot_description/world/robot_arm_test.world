@@ -163,7 +163,7 @@
     </controller:ros_time>
 
     <!-- location of robot in the world -->
-    <xyz>0.0 0.0 0.0</xyz>
+    <xyz>0.0 0.0 0.0408</xyz>
     <rpy>0.0 0.0 0.0</rpy>
 
     <!-- base and arm -->

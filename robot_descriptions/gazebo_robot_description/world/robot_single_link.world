@@ -175,7 +175,7 @@
       <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
     </controller:ros_time>
 
-    <xyz>0.0 0.0 0.0 </xyz>
+    <xyz>0.0 0.0 0.0408 </xyz>
     <rpy>0.0 0.0 0.0 </rpy>
 
     <!-- single link -->
