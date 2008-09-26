@@ -422,7 +422,7 @@ public:
 	  mark.r = 0;
 	  mark.g = 255;
 	  mark.b = 0;
-	  mark.text = string("");
+	  //mark.text = string("");
 	  publish("visualizationMarker", mark);
 	}
 	else {

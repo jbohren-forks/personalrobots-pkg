@@ -19,11 +19,16 @@
 
 typedef struct 
 {
+  //! The name of the descriptor this weak classifier is concerned with.
   string descriptor;
   NEWMAT::Matrix center;
   float theta;
+  //! The a_t^c's, i.e. the values of the weak classifier responses.
   NEWMAT::Matrix vals;
-  int id; //to identify which was learned first, second, third, etc.
+  //! to identify which was learned first, second, third, etc.
+  int id; 
+  //! For centroid voting, boundary fragments, etc.
+  map<string, void*> user_data;
 } weak_classifier;
 
 string displayWeakClassifier(const weak_classifier &wc); 
@@ -45,9 +50,12 @@ inline float euc(NEWMAT::Matrix a, NEWMAT::Matrix b)
 class DorylusDataset {
  public:
   vector<object> objs_;
+  //! Matrix of y_m^c values.  i.e. ymc_(c,m) = +1 if the label of training example m is c.
   NEWMAT::Matrix ymc_;
   unsigned int nClasses_;
-  map<int, unsigned int> num_class_objs_; //label, nExamples with that label.
+  //! num_class_objs[label] = num training examples with that label.
+  map<int, unsigned int> num_class_objs_; 
+  //! List of labels in the dataset.
   vector<int> classes_;
 
  DorylusDataset() : nClasses_(0)
@@ -68,9 +76,12 @@ class DorylusDataset {
 
 class Dorylus {
  public:
+  //! Weak classifiers are stored according to which descriptor they are from.
   map<string, vector<weak_classifier> > battery_;
-  vector<weak_classifier*> pwcs_; //In the order that they were learned.
-  NEWMAT::Matrix weights_; //nClasses x nTrEx.
+  //! Pointers to weak classifiers, in the order that they were learned.
+  vector<weak_classifier*> pwcs_; 
+  //! nClasses x nTrEx.
+  NEWMAT::Matrix weights_; 
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
   string version_string_;
@@ -84,8 +95,8 @@ class Dorylus {
   float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
-  bool save(string filename);
-  bool load(string filename, bool quiet=false);
+  bool save(string filename, string *user_data_str=NULL);
+  bool load(string filename, bool quiet=false, string *user_data_str=NULL);
   std::string status();
   vector<weak_classifier*> findActivatedWCs(const string &descriptor, const NEWMAT::Matrix &pt);
   NEWMAT::Matrix computeDatasetActivations(const weak_classifier& wc, const NEWMAT::Matrix& mmt);

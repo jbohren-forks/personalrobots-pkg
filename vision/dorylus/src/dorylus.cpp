@@ -282,7 +282,7 @@ bool DorylusDataset::testSave()
   return true;
 }
 
-bool Dorylus::save(string filename) 
+bool Dorylus::save(string filename, string *user_data_str) 
 {
   ofstream f;
   f.open(filename.c_str());
@@ -321,12 +321,17 @@ bool Dorylus::save(string filename)
       f << endl;
     }
   }
+  f << "User data." << endl;
+  if(user_data_str)
+    f << *user_data_str << endl;
+  f << "End user data." << endl;
+
   f.close();
   return true; 
 }
 
 
-bool Dorylus::load(string filename, bool quiet) 
+bool Dorylus::load(string filename, bool quiet, string *user_data_str) 
 {
   ifstream f;
   f.open(filename.c_str());
@@ -379,6 +384,16 @@ bool Dorylus::load(string filename, bool quiet)
 	cerr << "no wc??" << endl;
       }
       break;
+    }
+
+    else if(line.compare(string("User data.")) == 0) {
+      *user_data_str = string("");
+      while(true) {
+	getline(f, line);
+	if(line.compare(string("End user data.")) == 0 || line.size() == 0)
+	  break;
+	*user_data_str = *user_data_str + string("\n") + line;
+      }
     }
 
     else if(line.compare(string("New weak classifier.")) == 0) {	
