@@ -491,10 +491,16 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
   BaseControllerNode::BaseControllerNode() : odom_publish_count_(10), odom_publish_counter_(0)
 {
   c_ = new BaseController();
+  node = ros::node::instance();
 }
 
 BaseControllerNode::~BaseControllerNode()
 {
+  node->unadvertise_service(service_prefix + "/set_command");
+  node->unadvertise_service(service_prefix + "/get_actual");
+  node->unadvertise("odom");
+  node->unsubscribe("cmd_vel");
+
   delete c_;
 }
 
@@ -580,16 +586,15 @@ bool BaseControllerNode::getCommand(
 
 bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
-  string prefix = config->Attribute("name");
+  service_prefix = config->Attribute("name");
 
   assert(robot_state); //this happens, see pr ticket 351,but not sure why yet
 
   if(!c_->initXml(robot_state, config))
     return false;
 
-  node->advertise_service(prefix + "/set_command", &BaseControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+  node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
+  node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
   node->advertise<std_msgs::RobotBase2DOdom>("odom",10);
 

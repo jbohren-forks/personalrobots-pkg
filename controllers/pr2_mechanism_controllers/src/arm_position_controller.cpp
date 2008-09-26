@@ -222,7 +222,7 @@ void ArmPositionController::checkForGoalAchieved_(void)
 ROS_REGISTER_CONTROLLER(ArmPositionControllerNode)
 
 ArmPositionControllerNode::ArmPositionControllerNode()
-  : Controller()
+  : Controller(), node_(ros::node::instance())
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new ArmPositionController();
@@ -230,6 +230,7 @@ ArmPositionControllerNode::ArmPositionControllerNode()
 
 ArmPositionControllerNode::~ArmPositionControllerNode()
 {
+  node_->unsubscribe(topic_name_);
   delete c_;
 }
 
@@ -241,28 +242,27 @@ void ArmPositionControllerNode::update()
 bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
-  ros::node * const node = ros::node::instance();
   string prefix = config->Attribute("name");
   std::cout<<"the prefix is "<<prefix<<std::endl;
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
-    node->advertise_service(prefix + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
-    node->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
-    node->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
+    node_->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
+    node_->advertise_service(prefix + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
+    node_->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+    node_->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
 
     TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
     if(ros_cb)
     {
-      const char * topic_name=ros_cb->Attribute("name");
-      if(!topic_name)
+      topic_name_=ros_cb->Attribute("name");
+      if(!topic_name_)
       {
         std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
         return false;
       }
-      node->subscribe(topic_name, msg_, &ArmPositionControllerNode::setJointPosSingleHeadless_cb, this, 1);
-      std::cout<<"Listening to topic: "<<topic_name<<std::endl;
+      node_->subscribe(topic_name_, msg_, &ArmPositionControllerNode::setJointPosSingleHeadless_cb, this, 1);
+      std::cout<<"Listening to topic: "<<topic_name_<<std::endl;
     }
 
     return true;

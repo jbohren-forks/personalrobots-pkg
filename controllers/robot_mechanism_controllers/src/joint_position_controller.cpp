@@ -158,13 +158,16 @@ void JointPositionController::update()
 }
 
 ROS_REGISTER_CONTROLLER(JointPositionControllerNode)
-JointPositionControllerNode::JointPositionControllerNode()
+JointPositionControllerNode::JointPositionControllerNode(): node_(ros::node::instance())
 {
   c_ = new JointPositionController();
 }
 
 JointPositionControllerNode::~JointPositionControllerNode()
 {
+  node_->unadvertise_service(service_prefix_ + "/set_command");
+  node_->unadvertise_service(service_prefix_ + "/get_actual");
+  node_->unsubscribe(topic_name_);
   delete c_;
 }
 
@@ -212,9 +215,8 @@ double JointPositionControllerNode::getMeasuredPosition()
 
 bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
-  assert(node);
-  std::string prefix = config->Attribute("name");
+  assert(node_);
+  service_prefix_ = config->Attribute("name");
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "")
@@ -226,22 +228,22 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   if (!c_->initXml(robot, config))
     return false;
 
-  node->advertise_service(prefix + "/set_command", &JointPositionControllerNode::setCommand, this);
-  guard_set_command_.set(prefix + "/set_command");
-  node->advertise_service(prefix + "/get_actual", &JointPositionControllerNode::getActual, this);
-  guard_get_actual_.set(prefix + "/get_actual");
+  node_->advertise_service(service_prefix_ + "/set_command", &JointPositionControllerNode::setCommand, this);
+  guard_set_command_.set(service_prefix_ + "/set_command");
+  node_->advertise_service(service_prefix_ + "/get_actual", &JointPositionControllerNode::getActual, this);
+  guard_get_actual_.set(service_prefix_ + "/get_actual");
 
   TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
   if(ros_cb)
   {
-    const char * topic_name=ros_cb->Attribute("name");
-    if(!topic_name)
+    topic_name_=ros_cb->Attribute("name");
+    if(!topic_name_)
     {
       std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
       return false;
     }
-    node->subscribe(topic_name, msg_, &JointPositionControllerNode::setJointPosSingle, this, 1);
-    std::cout<<"Listening to topic: "<<topic_name<<std::endl;
+    node_->subscribe(topic_name_, msg_, &JointPositionControllerNode::setJointPosSingle, this, 1);
+    std::cout<<"Listening to topic: "<<topic_name_<<std::endl;
   }
 
 

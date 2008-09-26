@@ -280,7 +280,15 @@ class ArmPositionControllerNode : public Controller
   private:
     pr2_mechanism_controllers::JointPosCmd msg_;   //The message used by the ROS callback
     ArmPositionController *c_;
+    /*
+     * \brief save topic name for unsubscribe later
+     */
+    const char * topic_name_;
 
+    /*
+     * \brief pointer to ros node
+     */
+    ros::node * const node_;
 };
 
 }

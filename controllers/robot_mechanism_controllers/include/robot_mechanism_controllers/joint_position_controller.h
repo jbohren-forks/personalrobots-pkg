@@ -189,6 +189,21 @@ private:
   JointPositionController *c_;
 
   AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
+  
+  /*!
+   * \brief service prefix
+   */
+  std::string service_prefix_;
+
+  /*!
+   * \brief publish topic name
+   */
+  const char * topic_name_;
+  
+  /*!
+   * \brief A pointer to ros node
+   */
+  ros::node *node_;
 };
 }
 

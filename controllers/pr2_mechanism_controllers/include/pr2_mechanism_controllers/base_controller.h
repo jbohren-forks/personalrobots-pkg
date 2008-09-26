@@ -397,6 +397,14 @@ namespace controller
     /** \brief A namespace ostream overload for displaying parameters */
   std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
 
+    /*
+     * \brief pointer to ros node
+     */
+    ros::node *node;
+    /*
+     * \brief save service name prefix for unadvertise on exit
+     */
+    std::string service_prefix;
 }
 
 
