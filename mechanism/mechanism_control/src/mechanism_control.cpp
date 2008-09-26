@@ -169,7 +169,8 @@ bool MechanismControl::killController(const std::string &name)
   if (found)
   {
     while (removed_ == NULL)
-      sleep(0.01);
+      sleep(0.01); //FIXME: compile warning: mechanism/mechanism_control/src/mechanism_control.cpp:172: warning: passing ‘double’ for argument 1 to ‘unsigned int sleep(unsigned int)’
+
     delete removed_;
     removed_ = NULL;
   }
@@ -199,10 +200,17 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
 
   // Advertise topics
+  node_->advertise<mechanism_control::MechanismState>(mechanism_state_topic_,10);
 }
 
 MechanismControlNode::~MechanismControlNode()
 {
+  node_->unadvertise_service("list_controllers");
+  node_->unadvertise_service("list_controller_types");
+  node_->unadvertise_service("spawn_controller");
+  node_->unadvertise_service("kill_controller");
+
+  node_->unadvertise(mechanism_state_topic_);
   publisher_.stop();
 }
 

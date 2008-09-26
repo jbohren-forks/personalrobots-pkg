@@ -63,8 +63,8 @@ public:
   double velocity_;
 
   bool calibration_reading_;
-  double last_calibration_high_transition_;
-  double last_calibration_low_transition_;
+  int32_t last_calibration_high_transition_;
+  int32_t last_calibration_low_transition_;
 
   bool is_enabled_;
   bool run_stop_hit_;
