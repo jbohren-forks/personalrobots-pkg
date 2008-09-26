@@ -56,7 +56,7 @@ t| (0, height-1) ... (width-1, height-1)
 
 const unsigned char CostMap2D::NO_INFORMATION(255);
 
-CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data, 
+CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned char* data, 
 		     double resolution, double window_length,  unsigned char threshold, 
 		     double maxZ, double inflationRadius)
 : width_(width), 
@@ -74,7 +74,7 @@ CostMap2D::CostMap2D(size_t width, size_t height, const unsigned char* data,
   std::set<unsigned int> obstacles;
   for (unsigned int i=0;i<width_;i++){
     for (unsigned int j=0;j<height_;j++){
-      size_t ind = getMapIndexFromCellCoords(i, j);
+      unsigned int ind = getMapIndexFromCellCoords(i, j);
       staticData_[ind] = data[ind];
 
       // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
@@ -224,19 +224,19 @@ void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results)
     results.push_back(*it);
 }
 
-size_t CostMap2D::getMapIndexFromCellCoords(unsigned int x, unsigned int y) const 
+unsigned int CostMap2D::getMapIndexFromCellCoords(unsigned int x, unsigned int y) const 
 {
   return(x+y*width_);
 }
 
-size_t CostMap2D::getMapIndexFromWorldCoords(double wx, double wy) const {
-  size_t mx, my;
+unsigned int CostMap2D::getMapIndexFromWorldCoords(double wx, double wy) const {
+  unsigned int mx, my;
   convertFromWorldCoordToIndexes(wx, wy, mx, my);
   return getMapIndexFromCellCoords(mx, my);
 }
 
 void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
-					     size_t& mx, size_t& my) const {
+					     unsigned int& mx, unsigned int& my) const {
   
   if(wx < 0 || wy < 0) {
     //std::cerr << "CostMap2D::convertFromWorldCoordToIndex problem with " << wx << " or " << wy << std::endl;
@@ -261,7 +261,7 @@ void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
   }
 }
 
-void CostMap2D::convertFromIndexesToWorldCoord(size_t mx, size_t my,
+void CostMap2D::convertFromIndexesToWorldCoord(unsigned int mx, unsigned int my,
                                                double& wx, double& wy) const {
   wx = (mx*1.0)*resolution_;
   wy = (my*1.0)*resolution_;
@@ -277,12 +277,16 @@ void CostMap2D::convertFromMapIndexToXY(unsigned int ind,
   //std::cout << "Going from " << ind << " to " << x << " " << y << std::endl;
 }
 
-size_t CostMap2D::getWidth() const {
+unsigned int CostMap2D::getWidth() const {
   return width_;
 }
 
-size_t CostMap2D::getHeight() const {
+unsigned int CostMap2D::getHeight() const {
   return height_;
+}
+
+double CostMap2D::getResolution() const {
+  return resolution_;
 }
 
 TICK CostMap2D::getElapsedTime(double ts) {
@@ -295,6 +299,10 @@ TICK CostMap2D::getElapsedTime(double ts) {
   lastTimeStamp_ = ts;
 
   return result;
+}
+
+bool CostMap2D::isObstacle(unsigned int ind) const {
+  return(fullData_[ind] == threshold_);
 }
 
 unsigned char CostMap2D::operator [](unsigned int ind) const{

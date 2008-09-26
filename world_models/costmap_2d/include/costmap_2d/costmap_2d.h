@@ -84,7 +84,7 @@ public:
    * @param threshold The cost threshold where a cell is considered an obstacle
    * @param maxZ gives the cut-off for points in 3D space
    */
-  CostMap2D(size_t width, size_t height, const unsigned char* data, 
+  CostMap2D(unsigned int width, unsigned int height, const unsigned char* data, 
 	    double resolution, double window_length,  
 	    unsigned char threshold, double maxZ = 0, double inflationRadius = 0);
   
@@ -160,7 +160,7 @@ public:
    * @param mx map x index return value
    * @param my map y index return value
    */
-  void convertFromWorldCoordToIndexes(double wx, double wy, size_t& mx, size_t& my) const;
+  void convertFromWorldCoordToIndexes(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
   /**
    * @brief Get world (x,y) point given map indexes
@@ -170,7 +170,7 @@ public:
    * @param wx world x return value
    * @param wy world y return value
    */
-  void convertFromIndexesToWorldCoord(size_t mx, size_t my, double& wx, double& wy) const;
+  void convertFromIndexesToWorldCoord(unsigned int mx, unsigned int my, double& wx, double& wy) const;
 
   
   /**
@@ -185,17 +185,27 @@ public:
   /**
    * @brief Returns the Width of the map in cells
    */
-  size_t getWidth() const;
+  unsigned int getWidth() const;
 
   /**
    * @brief Returns the height of the map in cells
    */
-  size_t getHeight() const;
+  unsigned int getHeight() const;
+
+  /**
+   * @brief Returns the resolution of the map in meters
+   */
+  double getResolution() const;
 
   /**
    * @brief Accessor for contents of full map cell by cell index
    */
   unsigned char operator [](unsigned int ind) const;
+
+  /**
+   * @brief Test if a cell is an obstacle. Encapsualtes threshold interpretations
+   */
+  bool isObstacle(unsigned int ind) const;
 
 private:
   /**
@@ -212,8 +222,8 @@ private:
   void computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const;
 
   static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
-  const size_t width_; /**< width of the map */
-  const size_t height_; /**< height of the map */
+  const unsigned int width_; /**< width of the map */
+  const unsigned int height_; /**< height of the map */
   const double resolution_; /**< resolution of the map, in meters */
   const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
   const unsigned char threshold_; /**< The threshold for interpreting costs as obstacles */
