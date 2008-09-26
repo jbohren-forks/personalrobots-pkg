@@ -1,28 +1,26 @@
 <package>
-<description brief="gazebo">
-
-This package contains Gazebo, from the Player Project
-(http://playerstage.sf.net).
-
-</description>
-<author>Nate Koenig, with contributions from many others. See web page for a full credits llist.</author>
-<license>LGPL</license>
-<url>http://playerstage.sf.net</url>
-<depend package="opende" />
-<depend package="ogre" />
-<export>
-  <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn/server/controllers -I${prefix}/gazebo-svn/server/controllers/camera/generic -I${prefix}/gazebo-svn/server/physics -I${prefix}/gazebo-svn/server/sensors -I${prefix}/gazebo-svn/server/sensors/ray -I${prefix}/gazebo-svn/server/sensors/camera -I${prefix}/gazebo-svn/server -I${prefix}/gazebo-svn/server/rendering"/>
-  <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
-</export>
-<versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals1.34.1"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/>
+  <description brief="gazebo">
+  This package contains Gazebo, from the Player Project
+  (http://playerstage.sf.net).
+  </description>
+  <author>Nate Koenig, with contributions from many others. See web page for a full credits llist.</author>
+  <license>LGPL</license>
+  <depend package="opende" />
+  <depend package="ogre" />
+  <url>http://playerstage.sf.net</url>
+  <export>
+    <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn/server/controllers -I${prefix}/gazebo-svn/server/controllers/camera/generic -I${prefix}/gazebo-svn/server/physics -I${prefix}/gazebo-svn/server/sensors -I${prefix}/gazebo-svn/server/sensors/ray -I${prefix}/gazebo-svn/server/sensors/camera -I${prefix}/gazebo-svn/server -I${prefix}/gazebo-svn/server/rendering"/>
+    <doxymaker external="http://playerstage.sourceforge.net/doc/Gazebo-manual-svn-html/"/>
+  </export>
+  <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="scons"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="pkg-config"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals1.34.1"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/>
 </package>
 
 
