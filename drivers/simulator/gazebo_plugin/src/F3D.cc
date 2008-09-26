@@ -149,11 +149,7 @@ void F3D::UpdateChild()
 // Finalize the controller
 void F3D::FiniChild()
 {
-  // TODO: will be replaced by global ros node eventually
-  if (rosnode != NULL)
-  {
-    rosnode->unadvertise(this->topicName);
-    std::cout << "shutdown rosnode in F3D" << std::endl;
-    rosnode->shutdown();
-  }
+  this->lock.lock();
+  rosnode->unadvertise(this->topicName);
+  this->lock.unlock();
 }

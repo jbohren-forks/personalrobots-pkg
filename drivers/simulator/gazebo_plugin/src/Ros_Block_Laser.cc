@@ -168,13 +168,9 @@ void Ros_Block_Laser::UpdateChild()
 // Finalize the controller
 void Ros_Block_Laser::FiniChild()
 {
-  // TODO: will be replaced by global ros node eventually
-  if (rosnode != NULL)
-  {
-    rosnode->unadvertise(this->topicName);
-    std::cout << "shutdown rosnode in Ros_Block_Laser" << std::endl;
-    rosnode->shutdown();
-  }
+  this->lock.lock();
+  rosnode->unadvertise(this->topicName);
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

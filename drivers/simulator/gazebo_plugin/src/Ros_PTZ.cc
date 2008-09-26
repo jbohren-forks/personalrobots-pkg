@@ -225,14 +225,11 @@ void Ros_PTZ::UpdateChild()
 // Finalize the controller
 void Ros_PTZ::FiniChild()
 {
-  // TODO: will be replaced by global ros node eventually
-  if (rosnode != NULL)
-  {
-    rosnode->unadvertise(this->stateTopicName);
-    rosnode->unsubscribe(commandTopicName);
-    std::cout << "shutdown rosnode in Ros_PTZ" << std::endl;
-    rosnode->shutdown();
-  }
+  this->lock.lock();
+  rosnode->unadvertise(this->stateTopicName);
+  // FIXME: only unsubscribe if subscribed?
+  rosnode->unsubscribe(commandTopicName);
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

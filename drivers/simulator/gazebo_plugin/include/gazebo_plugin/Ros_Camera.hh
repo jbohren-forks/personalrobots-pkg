@@ -84,7 +84,7 @@ class Ros_Camera : public Controller
   /// \brief Update the controller
   protected: virtual void UpdateChild();
 
-  /// \brief Finalize the controller, unadvertise topics and shutdown ROS node.
+  /// \brief Finalize the controller, unadvertise topics
   protected: virtual void FiniChild();
 
   /// \brief Put camera data to the iface

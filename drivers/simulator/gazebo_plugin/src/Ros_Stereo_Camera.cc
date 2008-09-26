@@ -176,6 +176,12 @@ void Ros_Stereo_Camera::UpdateChild()
 // Finalize the controller
 void Ros_Stereo_Camera::FiniChild()
 {
+  this->lock.lock();
+  rosnode->unadvertise(this->leftCloudTopicName);
+  rosnode->unadvertise(this->rightCloudTopicName);
+  rosnode->unadvertise(this->leftTopicName);
+  rosnode->unadvertise(this->rightTopicName);
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

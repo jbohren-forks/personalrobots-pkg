@@ -118,13 +118,9 @@ void Ros_Camera::UpdateChild()
 // Finalize the controller
 void Ros_Camera::FiniChild()
 {
-  // TODO: will be replaced by global ros node eventually
-  if (rosnode != NULL)
-  {
-    rosnode->unadvertise(this->topicName);
-    std::cout << "shutdown rosnode in Ros_Camera" << std::endl;
-    rosnode->shutdown();
-  }
+  this->lock.lock();
+  rosnode->unadvertise(this->topicName);
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
