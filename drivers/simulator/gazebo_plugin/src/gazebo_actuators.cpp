@@ -61,8 +61,6 @@ GazeboActuators::GazeboActuators(Entity *parent)
 
 GazeboActuators::~GazeboActuators()
 {
-  deleteElements(&joints_);
-  delete fake_state_;
 }
 
 void GazeboActuators::LoadChild(XMLConfigNode *node)
@@ -205,7 +203,14 @@ void GazeboActuators::UpdateChild()
 
 void GazeboActuators::FiniChild()
 {
+  std::cout << "--------------- calling FiniChild in GazeboActuator --------------------" << std::endl;
 
+  hw_.~HardwareInterface();
+  mc_.~MechanismControl();
+  mcn_.~MechanismControlNode();
+
+  deleteElements(&joints_);
+  delete fake_state_;
 }
 
 void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
