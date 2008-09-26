@@ -111,8 +111,8 @@ static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::Diagnos
 
   ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
   ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
-  ADD_VALUE("Max Mechanism Control roundtrip (us)", max_ec*1e+6);
-  ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_ec*1e+6/1000);
+  ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
+  ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_mc*1e+6/1000);
 
   status.set_values_vec(values);
   status.set_strings_vec(strings);
@@ -179,9 +179,12 @@ void *controlLoop(void *)
   {
     double start = now();
     ec.update();
-    diagnostics.ec[count] = now() - start;
+    double after_ec = now();
     mcn.update();
-    diagnostics.mc[count] = now() - start;
+    double after_mc = now();
+
+    diagnostics.ec[count] = after_ec - start;
+    diagnostics.mc[count] = after_mc - after_ec;
 
     if (++count == 1000)
     {
