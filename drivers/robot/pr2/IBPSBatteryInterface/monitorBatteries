@@ -93,7 +93,6 @@ class powerBattery:
         self.voltage = 0.0
         self.current = 0.0
         self.average_current = 0.0
-##        self.error = False
         self.temperature = 0.0
         self.max_relative_charge_error = 0
         self.absolute_charge = 0
@@ -112,7 +111,8 @@ class powerBattery:
 #        self.secification_info = 
 #        self.manufacture_date = 
         self.serial_number = ""
-#        self.chemistry = ""
+##        self.chemistry = ""
+        self.last_time = time.time()
 
 class powerController:
     def __init__(self):
@@ -121,6 +121,7 @@ class powerController:
 #        self.batteries = [powerBattery(),powerBattery(),powerBattery(),powerBattery()]
         self.batteries = [powerBattery(),powerBattery(),powerBattery(),powerBattery(),powerBattery(),powerBattery(),powerBattery(),powerBattery()]
         self.latest_system_messages = []
+        self.last_time = time.time()
 
     def new_system_message(self, mess):
         self.latest_system_messages.append(mess)
@@ -165,13 +166,15 @@ class robotPower:
         print '1: %.2f, 2:%.2f, 3:%.2f, 4:%.2f'%(self.controllers[0].total_current(),self.controllers[1].total_current(),self.controllers[2].total_current(),self.controllers[3].total_current())
         print "average_voltage"
         print '1: %.2f, 2:%.2f, 3:%.2f, 4:%.2f'%(self.controllers[0].average_voltage(),self.controllers[1].average_voltage(),self.controllers[2].average_voltage(),self.controllers[3].average_voltage())
+        print "time since last update"
+        print '1: %.2f, 2:%.2f, 3:%.2f, 4:%.2f'%(time.time() - self.controllers[0].last_time,time.time() - self.controllers[1].last_time,time.time() - self.controllers[2].last_time,time.time() - self.controllers[3].last_time)
 
         controller_counter = 0
         for controller in self.controllers:
             battery_counter = 0
             for b in controller.batteries:
                 if b.present:
-                    print "Controller:%d Battery:%d:: V: %.2f Vdesign: %.2f I: %.2f Iave: %.2f Temp: %.1f RelChg: %.1f AbsChg: %.1f RemCap: %.1f Capdesign: %.1f TTEAve: %.1f TTERun: %.1f TTF: %.1f Cycles: %d Serial: %s "%(controller_counter, battery_counter, b.voltage, b.design_voltage, b.current, b.average_current, b.temperature, b.relative_charge, b.absolute_charge, b.remaining_capacity, b.design_capacity, b.average_time_to_empty, b.run_time_to_empty, b.average_time_to_full, b.cycle_count, b.serial_number)
+                    print "Controller:%d Battery:%d:: V: %.2f Vdesign: %.2f I: %.2f Iave: %.2f Temp: %.1f RelChg: %.1f AbsChg: %.1f RemCap: %.1f Capdesign: %.1f TTEAve: %.1f TTERun: %.1f TTF: %.1f Cycles: %d Serial: %s Update: %f"%(controller_counter, battery_counter, b.voltage, b.design_voltage, b.current, b.average_current, b.temperature, b.relative_charge, b.absolute_charge, b.remaining_capacity, b.design_capacity, b.average_time_to_empty, b.run_time_to_empty, b.average_time_to_full, b.cycle_count, b.serial_number, time.time() - b.last_time)
                 battery_counter = battery_counter + 1 # There must be a better way to enumerate this
             controller_counter = controller_counter + 1
 
@@ -184,14 +187,20 @@ class robotPower:
     ## Send out the state of the controller on a diagnostic message
     def broadcast_diagnostic(self):
         stat = []
-
+        timeout = 0
+        try:
+            timeout = rospy.get_param("timeout")
+        except KeyError:
+            timeout = 10.0
 
         for c in range(0,len(self.controllers)):
             sval = []
-            sval.append(DiagnosticValue(self.controllers[c].time_remaining, "Time Remaining Controller %d"%c))
-            sval.append(DiagnosticValue(self.controllers[c].average_charge, "Average charge percent Controller %d"%c))
-            sval.append(DiagnosticValue(self.controllers[c].total_current(), "Current Controller %d"%c))
-            sval.append(DiagnosticValue(self.controllers[c].average_voltage(), "Voltage Controller %d"%c))
+            sval.append(DiagnosticValue(self.controllers[c].time_remaining, "Time Remaining (min)"))
+            sval.append(DiagnosticValue(self.controllers[c].average_charge, "Average charge (percent)"))
+            sval.append(DiagnosticValue(self.controllers[c].total_current(), "Current (A)"))
+            sval.append(DiagnosticValue(self.controllers[c].average_voltage(), "Voltage (V)"))
+            sval.append(DiagnosticValue(time.time() - self.controllers[c].last_time, "Time since update (s)"))
+## if
             stat.append(DiagnosticStatus(0, "IBPS %d"%c, "All good", sval, []))
             ## @todo make the status string represent errors etc
 
@@ -208,26 +217,37 @@ class robotPower:
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].voltage, "voltage (V)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].current, "current (A)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_current, "average current (1 minute average A)"))
-##                bval.append(DiagnosticValue(self.controllers[c].batteries[b].error, "error (0,1)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].temperature, "temperature (K)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].max_relative_charge_error, "max relative charge error (%)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].relative_charge, "relative charge (%)"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].remaining_capacity, "remaining capacity (lookup)"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].full_charge_capacity, "full charge capacity (lookup"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].remaining_capacity, "remaining capacity (mAh"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].full_charge_capacity, "full charge capacity (mAh)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].run_time_to_empty, "run time to empty (min)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_empty, "average time to empty (min)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].average_time_to_full, "average time to full (min)"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].conditioning_needed, "conditioning needed"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].conditioning_needed, "conditioning needed (0,1)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].cycle_count, "cycle count"))
-                bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_capacity, "design capacity (lookup)"))
+                bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_capacity, "design capacity (mAh)"))
                 bval.append(DiagnosticValue(self.controllers[c].batteries[b].design_voltage, "design voltage (V)"))
-                stringval.append(DiagnosticString(str(self.controllers[c].batteries[b].serial_number), "Serial Number"))
+                bval.append(DiagnosticValue(time.time() - self.controllers[c].batteries[b].last_time, "Time since update (s)"))
+                stringval.append(DiagnosticString("%s"%self.controllers[c].batteries[b].serial_number, "Serial Number"))
 ##stringval.append(DiagnosticString(self.controllers[c].batteries[b].chemistry, "Chemistry"))
-                status_string = "OK"
+
+                status_string = ""
                 status_value = 0
+                
                 if len(self.controllers[c].batteries[b].battery_status) != 0:
                     status_value = 1
-                    status_string = self.controllers[c].batteries[b].battery_status
+                    status_string = status_string + " %s"%self.controllers[c].batteries[b].battery_status
+                if timeout < time.time() - self.controllers[c].batteries[b].last_time:
+                    status_string = status_string + " Timeout %f > %f"%(self.controllers[c].batteries[b].last_time, timeout)
+                    status_value = 2
+                    
+                # Record ok if no errors above
+                if len(status_string) == 0:
+                    status_string = "OK" 
+                    status_value = 0     
+
                 stat.append(DiagnosticStatus(status_value, "Smart Battery %d.%d"%(c,b), status_string, bval, stringval))
                 ## @todo make the status string represent errors etc
                             
@@ -235,6 +255,7 @@ class robotPower:
             
         out = DiagnosticMessage(None, stat)
         self.pub.publish(out)
+        print "Send Diagnostic"
 
         
     ## Send out the state of the controller on a diagnostic message
@@ -347,6 +368,7 @@ def monitorBatteriesMain(argv, stdout, env):
             # Controller Message Parsing
             if message[0] == 'C':
                 controller_number = int(message[1])
+                myPow.controllers[port].last_time = time.time()
                 #print 'Controller on port %s says:'%(port_string)
                 splitmessage = message.split(',')
 
@@ -390,6 +412,7 @@ def monitorBatteriesMain(argv, stdout, env):
                 battery_number = int(message[2]) -1 # -1 for 1 index to 0 index
 
                 #print 'Battery %d on Controller %d'%(battery_number, controller_number)
+                myPow.controllers[port].batteries[battery_number].last_time = time.time()
 
                 splitmessage = message.split(',')
 
