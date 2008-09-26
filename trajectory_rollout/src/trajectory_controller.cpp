@@ -138,6 +138,13 @@ void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma){
     current_cell = &(map_.map_[i]);
     check_cell = current_cell;
 
+    //if the current cell contains an obstacle... set distances to be max
+    if(ma.isObstacle(current_cell->cx, current_cell->cy)){
+      current_cell->path_dist = map_size;
+      current_cell->goal_dist = map_size;
+      continue;
+    }
+
     //make sure we are not in the last col
     if(current_cell->cx < last_col){
       ++check_cell;
@@ -501,7 +508,7 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
       return -1.0;
 
     path_dist += cell_pdist;
-    goal_dist = cell_gdist;
+    goal_dist += cell_gdist;
 
   }
   double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
