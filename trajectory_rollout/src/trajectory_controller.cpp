@@ -139,7 +139,7 @@ void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma){
     check_cell = current_cell;
 
     //make sure we are not in the last col
-    if(current_cell->cx < end){
+    if(current_cell->cx < last_col){
       ++check_cell;
       updateCell(current_cell, check_cell, 1);
     }
@@ -149,7 +149,7 @@ void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma){
       continue;
 
     //make sure we are not in the last col
-    if(current_cell->cx < end){
+    if(current_cell->cx < last_col){
       check_cell += map_.size_x_;
       updateCell(current_cell, check_cell, 1.41);
       --check_cell;
