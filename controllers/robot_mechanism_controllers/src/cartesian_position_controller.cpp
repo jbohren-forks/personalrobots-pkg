@@ -90,11 +90,6 @@ void CartesianPositionController::update()
   effort_.command_ = v * -pid_.updatePid(error, time - last_time_);
   effort_.update();
 
-  btVector3 &p = tip_->abs_position_;  btVector3 &ec = effort_.command_;
-  printf("      Error: %lf  Cmd: (%.2lf,%.2lf,%.2lf)  Pos: (%.2lf,%.2lf,%.2lf)  ECmd: (%.2lf,%.2lf,%.2lf)\n",
-         error, command_.x(), command_.y(), command_.z(), p.x(), p.y(), p.z(),
-         ec.x(), ec.y(), ec.z());
-
   last_time_ = time;
 }
 
