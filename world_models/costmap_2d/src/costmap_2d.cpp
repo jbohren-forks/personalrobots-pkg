@@ -55,6 +55,7 @@ t| (0, height-1) ... (width-1, height-1)
 #include <set>
 
 const unsigned char CostMap2D::NO_INFORMATION(255);
+const unsigned char CostMap2D::INFLATED_OBSTACLE(254);
 
 CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned char* data, 
 		     double resolution, double window_length,  unsigned char threshold, 
@@ -74,7 +75,7 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
   std::set<unsigned int> obstacles;
   for (unsigned int i=0;i<width_;i++){
     for (unsigned int j=0;j<height_;j++){
-      unsigned int ind = getMapIndexFromCellCoords(i, j);
+      unsigned int ind = MC_IND(i, j);
       staticData_[ind] = data[ind];
 
       // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
@@ -99,8 +100,8 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
     // permanent obstacles
     for(unsigned int i = 0; i<inflation.size(); i++){
       unsigned int cellId = inflation[i];
-      if(staticData_[cellId] != threshold_){
-	staticData_[cellId] = threshold_;
+      if(staticData_[cellId] != threshold_ && staticData_[cellId] != INFLATED_OBSTACLE){
+	staticData_[cellId] = INFLATED_OBSTACLE;
 	permanentlyOccupiedCells_.push_back(cellId);
       }
     }
@@ -134,7 +135,7 @@ void CostMap2D::updateDynamicObstacles(double ts,
     if(cloud.pts[i].z > maxZ_)
       continue;
 
-    unsigned int ind = getMapIndexFromWorldCoords(cloud.pts[i].x, cloud.pts[i].y);
+    unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
 
     // Compute inflation set
     std::vector<unsigned int> inflation;
@@ -148,9 +149,16 @@ void CostMap2D::updateDynamicObstacles(double ts,
 
 	// Guard this to enforce set semantics
 	if(fullData_[cell] != threshold_){
-	  newObstacles.push_back(cell);
-	  fullData_[cell] = threshold_;
-	  dynamicObstacles_.push_back(cell);
+
+	  // Only mark as a new object if it is not inflated - avoids duplication
+	  if(fullData_[cell] != INFLATED_OBSTACLE){
+	    newObstacles.push_back(cell);	  
+	    dynamicObstacles_.push_back(cell);
+	  }
+
+	  // Allows for the posibility that an actual obstacle will over-write
+	  // an inflated obstacle. The opposite should not occur.
+	  fullData_[cell] = (cell == ind ? threshold_ : INFLATED_OBSTACLE);
 	}
       }
 
@@ -224,28 +232,45 @@ void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results)
     results.push_back(*it);
 }
 
-unsigned int CostMap2D::getMapIndexFromCellCoords(unsigned int x, unsigned int y) const 
+
+void CostMap2D::IND_MC(unsigned int ind,
+		       unsigned int& mx,
+		       unsigned int& my) const {
+  //depending on implicit casting to get floors
+  my = ind/width_;
+  mx = ind-(my*width_);
+
+  //std::cout << "Going from " << ind << " to " << x << " " << y << std::endl;
+}
+
+void CostMap2D::IND_WC(unsigned int ind, double& wx, double& wy) const{
+  unsigned int mx, my;
+  IND_MC(ind, mx, my);
+  MC_WC(mx, my, wx, wy);
+}
+
+unsigned int CostMap2D::MC_IND(unsigned int x, unsigned int y) const 
 {
   return(x+y*width_);
 }
 
-unsigned int CostMap2D::getMapIndexFromWorldCoords(double wx, double wy) const {
-  unsigned int mx, my;
-  convertFromWorldCoordToIndexes(wx, wy, mx, my);
-  return getMapIndexFromCellCoords(mx, my);
+void CostMap2D::MC_WC(unsigned int mx, unsigned int my,
+		      double& wx, double& wy) const {
+  wx = (mx*1.0)*resolution_;
+  wy = (my*1.0)*resolution_;
 }
 
-void CostMap2D::IND_WX(unsigned int ind, double& wx, double& wy) const{
+unsigned int CostMap2D::WC_IND(double wx, double wy) const {
   unsigned int mx, my;
-  convertFromMapIndexToXY(ind, mx, my);
-  convertFromIndexesToWorldCoord(mx, my, wx, wy);
+  WC_MC(wx, wy, mx, my);
+  return MC_IND(mx, my);
 }
 
-void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
-					     unsigned int& mx, unsigned int& my) const {
+void CostMap2D::WC_MC(double wx, double wy,
+		      unsigned int& mx, unsigned int& my) const {
   
   if(wx < 0 || wy < 0) {
-    //std::cerr << "CostMap2D::convertFromWorldCoordToIndex problem with " << wx << " or " << wy << std::endl;
+    //std::cerr << "CostMap2D::WC_MC problem with " << wx << " or " << wy << std::endl;
     mx = 0;
     my = 0;
     return;
@@ -256,31 +281,15 @@ void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
   my = (int) (wy/resolution_);
 
   if(mx > width_) {
-    std::cout << "CostMap2D::convertFromWorldCoordToIndex converted x " << wx << " greater than width " << width_ << std::endl;
+    std::cout << "CostMap2D::WC_MC converted x " << wx << " greater than width " << width_ << std::endl;
     mx = 0;
     return;
   } 
   if(my > height_) {
-    std::cout << "CostMap2D::convertFromWorldCoordToIndex converted y " << wy << " greater than height " << height_ << std::endl;
+    std::cout << "CostMap2D::WC_MC converted y " << wy << " greater than height " << height_ << std::endl;
     my = 0;
     return;
   }
-}
-
-void CostMap2D::convertFromIndexesToWorldCoord(unsigned int mx, unsigned int my,
-                                               double& wx, double& wy) const {
-  wx = (mx*1.0)*resolution_;
-  wy = (my*1.0)*resolution_;
-}
-
-void CostMap2D::convertFromMapIndexToXY(unsigned int ind,
-                                        unsigned int& x,
-                                        unsigned int& y) const {
-  //depending on implicit casting to get floors
-  y = ind/width_;
-  x = ind-(y*width_);
-
-  //std::cout << "Going from " << ind << " to " << x << " " << y << std::endl;
 }
 
 unsigned int CostMap2D::getWidth() const {
@@ -311,6 +320,10 @@ bool CostMap2D::isObstacle(unsigned int ind) const {
   return(fullData_[ind] == threshold_);
 }
 
+bool CostMap2D::isInflatedObstacle(unsigned int ind) const {
+  return(fullData_[ind] == INFLATED_OBSTACLE);
+}
+
 unsigned char CostMap2D::operator [](unsigned int ind) const{
   // ROS_ASSERT on index
   return fullData_[ind];
@@ -322,12 +335,12 @@ unsigned char CostMap2D::operator [](unsigned int ind) const{
  *
  * @param ind The index of the new obstacle
  * @param inflation The resulting inflation set
- * @todo Consider using eurclidean distance check for inflation, by testng if the origin of a cell
+ * @todo Consider using euclidean distance check for inflation, by testng if the origin of a cell
  * is within the inflation radius distance of the origitn of the given cell.
  */
 void CostMap2D::computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const {
   unsigned int mx, my;
-  convertFromMapIndexToXY(ind, mx, my);
+  IND_MC(ind, mx, my);
 
   unsigned int cellRadius = static_cast<unsigned int>(inflationRadius_/resolution_);
   unsigned int x_min = static_cast<unsigned int>(std::max<int>(0, mx - cellRadius));
@@ -338,5 +351,5 @@ void CostMap2D::computeInflation(unsigned int ind, std::vector<unsigned int>& in
   inflation.clear();
   for(unsigned int i = x_min; i <= x_max; i++)
     for(unsigned int j = y_min; j <= y_max; j++)
-      inflation.push_back(getMapIndexFromCellCoords(i, j));
+      inflation.push_back(MC_IND(i, j));
 }

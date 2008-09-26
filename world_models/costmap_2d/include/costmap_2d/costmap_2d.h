@@ -52,6 +52,13 @@ data to the 2D plane. Control parameters dictate the sliding window length, z th
 inflation radius.
 
 For examples of usage see the test harness.
+
+Note that in some cases a dynamic obstacle may be detected, and that same cell may be
+inflated already. In this case it will become a proper obstacle. However, if that dynamic obstacle
+is aged out, the cell value will not revert to the INFLATED_OBSTACLE state. Thus the robot will
+have a more constrained viewpoint, until the cell is aged out. It is unclear if this will be
+an issue in practice so we are not going to extend the complexity of the map to
+handle this case at this time.
 */
 
 //c++
@@ -72,6 +79,11 @@ public:
    * @brief Defines the cell value to indicate that no information is available
    */
   static const unsigned char NO_INFORMATION;
+
+  /**
+   * @brief Defines the cell value to indicate an inflated obstacle
+   */
+  static const unsigned char INFLATED_OBSTACLE;
 
   /**
    * @brief Constructor.
@@ -142,7 +154,16 @@ public:
    * @param wx world x location of the cell
    * @param wy world y location of the cell
    */
-  void IND_WX(unsigned int ind, double& wx, double& wy) const;
+  void IND_WC(unsigned int ind, double& wx, double& wy) const;
+
+  /**
+   * @brief Converts from 1D map index into x y map coords
+   * 
+   * @param ind 1d map index
+   * @param x 2d map return value
+   * @param y 2d map return value
+   */
+  void IND_MC(unsigned int ind, unsigned int& x, unsigned int& y) const;
 
   /**
    * @brief Get index of given (x,y) point into data
@@ -150,25 +171,7 @@ public:
    * @param x x-index of the cell
    * @param y y-index of the cell
    */
-  unsigned int getMapIndexFromCellCoords(unsigned int x, unsigned int y) const; 
-
-  /**
-   * @brief Get index of given (x,y) point into data
-   * 
-   * @param wx world x location of the cell
-   * @param wy world y location of the cell
-   */
-  unsigned int getMapIndexFromWorldCoords(double we, double wy) const;
-
-  /**
-   * @brief Get index of given world (x,y) point in map indexes
-   * 
-   * @param wx world x location of the cell
-   * @param wy world y location of the cell
-   * @param mx map x index return value
-   * @param my map y index return value
-   */
-  void convertFromWorldCoordToIndexes(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+  unsigned int MC_IND(unsigned int mx, unsigned int my) const; 
 
   /**
    * @brief Get world (x,y) point given map indexes
@@ -178,17 +181,25 @@ public:
    * @param wx world x return value
    * @param wy world y return value
    */
-  void convertFromIndexesToWorldCoord(unsigned int mx, unsigned int my, double& wx, double& wy) const;
+  void MC_WC(unsigned int mx, unsigned int my, double& wx, double& wy) const;
 
-  
   /**
-   * @brief Converts from 1D map index into x y map coords
+   * @brief Get index of given (x,y) point into data
    * 
-   * @param ind 1d map index
-   * @param x 2d map return value
-   * @param y 2d map return value
+   * @param wx world x location of the cell
+   * @param wy world y location of the cell
    */
-  void convertFromMapIndexToXY(unsigned int ind, unsigned int& x, unsigned int& y) const;
+  unsigned int WC_IND(double wx, double wy) const;
+
+  /**
+   * @brief Get index of given world (x,y) point in map indexes
+   * 
+   * @param wx world x location of the cell
+   * @param wy world y location of the cell
+   * @param mx map x index return value
+   * @param my map y index return value
+   */
+  void WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const;
   
   /**
    * @brief Returns the Width of the map in cells
@@ -214,6 +225,12 @@ public:
    * @brief Test if a cell is an obstacle. Encapsualtes threshold interpretations
    */
   bool isObstacle(unsigned int ind) const;
+
+  /**
+   * @brief Test if a cell is an inflated obstacle, based on the given inflation radius
+   */
+  bool isInflatedObstacle(unsigned int ind) const;
+
 
 private:
   /**
