@@ -1,8 +1,6 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <!-- Sends robot description data to the param server -->
-    <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
 
     <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
 
