@@ -36,11 +36,11 @@
 ## Simple draft of teleop arm in python - not ready yet
 
 import rostools
-rostools.update_path('pr2_controllers')
+rostools.update_path('pr2_mechansim_controllers')
 
 import sys, os, string
 import rospy
-from pr2_controllers.srv import *
+from pr2_mechansim_controllers.srv import *
 
 class ArmInterface:
   def __init__(self, arm_name):
