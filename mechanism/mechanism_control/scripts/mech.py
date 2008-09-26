@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # Provides quick access to the services exposed by MechanismControlNode
 
-import rostools
+import rostools, time
 rostools.update_path('mechanism_control')
 
 import rospy, sys
@@ -19,7 +19,7 @@ def print_usage(exit_code = 0):
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print_usage()
-
+    time.sleep(2) #FIXME: added by john, this might have removed assert(robot) failure in controller initXml calls on startup. need to investigate why if any memory corruption or race condition for MC stack.
     if sys.argv[1] == 'lt':
         mechanism.list_controller_types()
     elif sys.argv[1] == 'lc':
