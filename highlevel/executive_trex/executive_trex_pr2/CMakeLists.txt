@@ -42,4 +42,5 @@ rospack_add_compile_flags(trex_fast "-O3 -DEUROPA_FAST")
 
 rospack_add_rostest(test/test.wpc.0.xml) 
 rospack_add_rostest(test/test.wpc.1.xml) 
+rospack_add_rostest(test/test.arm.0.xml) 
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

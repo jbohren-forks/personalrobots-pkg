@@ -54,7 +54,7 @@ import LogReadingTest
 class TestArm(unittest.TestCase):
     def __init__(self, *args):
         super(TestArm, self).__init__(*args)
-        self.test = LogReadingTest.LogReadingTest("arm.1.output/latest/TREX.log", 
+        self.test = LogReadingTest.LogReadingTest(rostools.packspec.get_pkg_dir("executive_trex_pr2") + "/test/arm.1.output/latest/TREX.log", 
                                                   [LogReadingTest.LogOnMessage("rightArmState", "ArmState.Holds", [LogReadingTest.RealInterval("shoulder_pan", -1, 0.1)]),
                                                    LogReadingTest.LogOnMessage("rightArmState", "ArmState.Holds", [LogReadingTest.RealInterval("shoulder_pan", 0, 0.1)]),])
         self.test.debugEnable = True
