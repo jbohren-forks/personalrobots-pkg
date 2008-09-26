@@ -1,0 +1,3 @@
+#!/bin/sh
+gcc `pkg-config opencv --cflags --libs` vid.cpp  -o vid
+
