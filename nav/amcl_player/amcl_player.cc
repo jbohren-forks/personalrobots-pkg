@@ -406,6 +406,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     }
     catch(...)
     {
+        printf("Somehow could not set frame_id to map\n");
     }
     publish("localizedpose", localizedOdomMsg);
 
