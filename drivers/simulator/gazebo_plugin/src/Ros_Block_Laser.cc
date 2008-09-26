@@ -168,9 +168,7 @@ void Ros_Block_Laser::UpdateChild()
 // Finalize the controller
 void Ros_Block_Laser::FiniChild()
 {
-  this->lock.lock();
   rosnode->unadvertise(this->topicName);
-  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -225,11 +225,8 @@ void Ros_PTZ::UpdateChild()
 // Finalize the controller
 void Ros_PTZ::FiniChild()
 {
-  this->lock.lock();
   rosnode->unadvertise(this->stateTopicName);
-  // FIXME: only unsubscribe if subscribed?
-  rosnode->unsubscribe(commandTopicName);
-  this->lock.unlock();
+  rosnode->unsubscribe(commandTopicName); // FIXME: only unsubscribe if subscribed?
 }
 
 ////////////////////////////////////////////////////////////////////////////////

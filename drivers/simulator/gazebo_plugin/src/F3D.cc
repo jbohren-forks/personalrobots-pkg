@@ -149,7 +149,5 @@ void F3D::UpdateChild()
 // Finalize the controller
 void F3D::FiniChild()
 {
-  this->lock.lock();
   rosnode->unadvertise(this->topicName);
-  this->lock.unlock();
 }

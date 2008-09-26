@@ -118,9 +118,7 @@ void Ros_Camera::UpdateChild()
 // Finalize the controller
 void Ros_Camera::FiniChild()
 {
-  this->lock.lock();
   rosnode->unadvertise(this->topicName);
-  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

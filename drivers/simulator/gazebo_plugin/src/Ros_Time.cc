@@ -106,9 +106,7 @@ void Ros_Time::UpdateChild()
 // Finalize the controller
 void Ros_Time::FiniChild()
 {
-  this->lock.lock();
   rosnode_->unadvertise("time");
-  this->lock.unlock();
 }
 
 

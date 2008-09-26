@@ -174,7 +174,5 @@ void P3D::UpdateChild()
 // Finalize the controller
 void P3D::FiniChild()
 {
-  this->lock.lock();
   rosnode->unadvertise(this->topicName);
-  this->lock.unlock();
 }
