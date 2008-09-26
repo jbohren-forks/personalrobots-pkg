@@ -500,7 +500,7 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
     if(impossible_cost <= cell_gdist || impossible_cost <= cell_pdist)
       return -1.0;
 
-    path_dist = cell_pdist;
+    path_dist += cell_pdist;
     goal_dist = cell_gdist;
 
   }
