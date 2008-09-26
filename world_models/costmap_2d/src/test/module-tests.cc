@@ -81,7 +81,7 @@ TEST(costmap, test1){
   const unsigned char* costData = map.getMap();
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
     unsigned int ind = *it;
-    size_t x, y;
+    unsigned int x, y;
     map.convertFromMapIndexToXY(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(x, y)), true);
     ASSERT_EQ(MAP_10_BY_10[ind] >= 100, true);
@@ -280,7 +280,7 @@ TEST(costmap, test7){
   const unsigned char* costData = map.getMap();
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
     unsigned int ind = *it;
-    size_t x, y;
+    unsigned int x, y;
     map.convertFromMapIndexToXY(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(x, y)), true);
     ASSERT_EQ(costData[ind], THRESHOLD);
