@@ -1000,7 +1000,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
     //fprintf(fStat, "%d %d\n", searchexpands, solcost);
 
-	return true;
+	return ret;
 
 }
 
