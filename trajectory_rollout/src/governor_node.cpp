@@ -42,7 +42,7 @@ GovernorNode::GovernorNode() :
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, 
       PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_),
-  cycle_time_(0.1), ma_(map_)
+  cycle_time_(0.1), ma_(map_, OUTER_RADIUS)
 {
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;

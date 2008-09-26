@@ -70,14 +70,12 @@ void TrajectoryController::setPathCells(){
       local_goal_x = map_x;
       local_goal_y = map_y;
       started_path = true;
-      printf("Valid Cell: (%.2f, %.2f) - (%d, %d), ", global_plan_[i].x, global_plan_[i].y, map_x, map_y);
     }
     else{
       if(started_path)
         break;
     }
   }
-  printf("\n");
 
   if(local_goal_x >= 0 && local_goal_y >= 0){
     map_(local_goal_x, local_goal_y).goal_dist = 0.0;
@@ -85,10 +83,7 @@ void TrajectoryController::setPathCells(){
 }
 
 //compute the distance from each cell in the map grid to the planned path
-void TrajectoryController::computePathDistance(){
-  //make sure that we update our path based on the global plan
-  setPathCells();
-
+void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma){
   unsigned int map_size = map_.map_.size();
   MapCell* current_cell, *check_cell;
 
@@ -97,32 +92,41 @@ void TrajectoryController::computePathDistance(){
     current_cell = &(map_.map_[i]);
     check_cell = current_cell;
 
-    //check to see if we are in the first col
+    //if the current cell contains an obstacle... set distances to be max
+    if(ma.isObstacle(current_cell->cx, current_cell->cy)){
+      current_cell->path_dist = map_size;
+      current_cell->goal_dist = map_size;
+      continue;
+    }
+
+
+    //make sure we aren't in the first col
     if(current_cell->cx > 0){
       --check_cell;
-      updateCell(current_cell, check_cell);
+      updateCell(current_cell, check_cell, 1);
     }
 
     //if we are in the first row we want to continue
-    if(current_cell->cy == 0)
+    if(current_cell->cy == 0){
       continue;
+    }
 
-    //check to see if we are in the first col
+    //make sure we are not in the first col
     if(current_cell->cx > 0){
       check_cell -= map_.size_x_;
-      updateCell(current_cell, check_cell);
+      updateCell(current_cell, check_cell, 1.41);
       ++check_cell;
     }
     else
       check_cell -= map_.size_x_;
 
 
-    updateCell(current_cell, check_cell);
+    updateCell(current_cell, check_cell, 1);
 
     //only check cell to bottom right if we're not in last col
     if(current_cell->cx < last_col){
       ++check_cell;
-      updateCell(current_cell, check_cell);
+      updateCell(current_cell, check_cell, 1.41);
     }
   }
 
@@ -132,32 +136,32 @@ void TrajectoryController::computePathDistance(){
     current_cell = &(map_.map_[i]);
     check_cell = current_cell;
 
-    //check to see if we are in the last col
+    //make sure we are not in the last col
     if(current_cell->cx < end){
       ++check_cell;
-      updateCell(current_cell, check_cell);
+      updateCell(current_cell, check_cell, 1);
     }
 
     //if we are in the last row we want to continue
     if(current_cell->cy == last_row)
       continue;
 
-    //check to see if we are in the last col
+    //make sure we are not in the last col
     if(current_cell->cx < end){
       check_cell += map_.size_x_;
-      updateCell(current_cell, check_cell);
+      updateCell(current_cell, check_cell, 1.41);
       --check_cell;
     }
     else
       check_cell += map_.size_x_;
 
 
-    updateCell(current_cell, check_cell);
+    updateCell(current_cell, check_cell, 1);
 
     //only check cell to upper left if we're not in first col
     if(current_cell->cx > 0){
-      ++check_cell;
-      updateCell(current_cell, check_cell);
+      --check_cell;
+      updateCell(current_cell, check_cell, 1.41);
     }
   }
 }
@@ -264,7 +268,6 @@ void TrajectoryController::trajectoriesToWorld(){
 void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i){
   double cos_th = cos(th_i);
   double sin_th = sin(th_i);
-  printf("th: %.2f, cos: %.2f, sin: %.2f\n", th_i, cos_th, sin_th);
 
   double new_x, new_y, old_x, old_y;
   for(unsigned int i = 0; i < trajectory_pts_.size2(); ++i){
@@ -354,9 +357,28 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 //given the current state of the robot, find a good trajectory
 int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
+  //make sure that we update our path based on the global plan
+  setPathCells();
+
   //first compute the path distance for all cells in our map grid
-  computePathDistance();
+  computePathDistance(ma);
   printf("Path distance computed\n");
+
+  /*
+  //If we want to print a ppm file to draw goal dist
+  printf("P3\n");
+  printf("%d %d\n", map_.size_x_, map_.size_y_);
+  printf("255\n");
+  for(int j = map_.size_y_ - 1; j >= 0; --j){
+    for(unsigned int i = 0; i < map_.size_x_; ++i){
+      int g_dist = 255 - int(map_(i, j).goal_dist);
+      if(g_dist < 0)
+        g_dist = 0;
+      printf("%d 0 0 ", g_dist);
+    }
+    printf("\n");
+  }
+  */
 
   //next create the trajectories we wish to explore
   createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
@@ -373,13 +395,13 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
   //default to a trajectory that goes nowhere
   int best_index = -1;
 
-  //create a cirle containing the robot so we don't always have to lay down a footprint
-  double safe_radius = sqrt(robot_front_radius_ * robot_front_radius_ + robot_side_radius_ * robot_side_radius_);
+  //anything with a cost greater than the size of the map is impossible
+  double impossible_cost = map_.map_.size();
 
   //we know that everything except the last 2 sets of trajectories are in the forward direction
   unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
   for(unsigned int i = 0; i < forward_traj_end; ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -400,7 +422,7 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
   //the second to last set of trajectories is rotation only
   unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
   for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -420,7 +442,7 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
 
   //the last set of trajectories is for moving backwards
   for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, safe_radius);
+    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -439,40 +461,46 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
 
 //compute the cost for a single trajectory
 double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale,
-    double gdist_scale, double occdist_scale, double dfast_scale, double safe_radius){
+    double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
   double goal_dist = 0.0;
   double occ_dist = 0.0;
+  int start_index = t_index * num_steps_;
   for(int i = 0; i < num_steps_; ++i){
-    int mat_index = t_index * num_steps_ + i;
+    int mat_index = start_index + i;
     double x = trajectory_pts_(0, mat_index);
     double y = trajectory_pts_(1, mat_index);
     double theta = trajectory_theta_(0, mat_index);
 
-    //we need to know in which cell the path ends
+    //convert world to map coords
     int cell_x = WX_MX(map_, x);
     int cell_y = WY_MY(map_, y);
 
-    //we don't want a path that ends off the known map or in an obstacle
-    if(!VALID_CELL(map_, cell_x, cell_y) || ma.isObstacle(cell_x, cell_y)){
-      printf("Not a valid path: (%d, %d) OccState: %d\n", cell_x, cell_y, ma.isObstacle(cell_x, cell_y));
+    //we don't want a path that goes off the known map
+    if(!VALID_CELL(map_, cell_x, cell_y)){
       return -1.0;
     }
 
-    path_dist += map_(cell_x, cell_y).path_dist;
-    goal_dist += map_(cell_x, cell_y).goal_dist;
-
-    /*
-    //first we decide if we need to lay down the footprint of the robot
-    if(map_(cell_x, cell_y).occ_dist < safe_radius){
+    //we need to check if we have to lay down the footprint of the robot
+    if(ma.isInflatedObstacle(cell_x, cell_y)){
       //if we do compute the obstacle cost for each cell in the footprint
       double footprint_cost = footprintCost(ma, x, y, theta);
       if(footprint_cost < 0)
         return -1.0;
       occ_dist += footprint_cost;
     }
-    */
+
+    double cell_pdist = map_(cell_x, cell_y).path_dist;
+    double cell_gdist = map_(cell_x, cell_y).goal_dist;
+
+    //if we cannot follow the path let the global planner know it is impossible
+    if(impossible_cost <= cell_gdist || impossible_cost <= cell_pdist)
+      return -1.0;
+
+    path_dist = cell_pdist;
+    goal_dist = cell_gdist;
+
   }
   double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
   

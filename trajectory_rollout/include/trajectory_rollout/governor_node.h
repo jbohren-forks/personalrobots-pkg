@@ -67,10 +67,11 @@
 #define VEL_SAMPLES 25
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
-#define PDIST_SCALE .4
-#define GDIST_SCALE .1
-#define OCCDIST_SCALE .4
-#define DFAST_SCALE .1
+#define OUTER_RADIUS .248
+#define PDIST_SCALE .5
+#define GDIST_SCALE .2
+#define OCCDIST_SCALE 0
+#define DFAST_SCALE .3
 #define SAFE_DIST .005
 
 class GovernorNode: public ros::node

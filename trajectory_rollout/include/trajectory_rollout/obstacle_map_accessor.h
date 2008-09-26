@@ -52,7 +52,7 @@ class ObstacleMapAccessor{
 //So we can still use wavefront player we'll fake an obs accessor
 class WavefrontMapAccessor : public ObstacleMapAccessor {
   public:
-    WavefrontMapAccessor(MapGrid &map) : map_(map) {}
+    WavefrontMapAccessor(MapGrid &map, double outer_radius) : map_(map), outer_radius_(outer_radius) {}
   virtual ~WavefrontMapAccessor(){};
     virtual unsigned int getWidth() const {return  map_.size_x_;}
     virtual unsigned int getHeight() const {return map_.size_y_;}
@@ -65,7 +65,9 @@ class WavefrontMapAccessor : public ObstacleMapAccessor {
     }
 
     virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
-      return isObstacle(mx, my);
+      if(map_(mx, my).occ_dist < outer_radius_)
+        return true;
+      return false;
     }
 
     virtual void getOriginInWorldCoordinates(double& wx, double& wy) const {
@@ -75,6 +77,7 @@ class WavefrontMapAccessor : public ObstacleMapAccessor {
 
   private:
     MapGrid& map_;
+    double outer_radius_;
 
 };
 #endif

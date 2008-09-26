@@ -82,6 +82,7 @@ vector<Point2DFloat32> generatePlan(){
 }
 
 //make sure that we are getting the path distance map expected
+/*
 TEST(TrajectoryController, correctPathDistance){
   MapGrid mg(6, 6);
   mg.scale = 1.0;
@@ -120,7 +121,6 @@ TEST(TrajectoryController, correctPathDistance){
   EXPECT_FLOAT_EQ(tc.map_(5,5).path_dist, DBL_MAX);
 
   //print the results
-  /*
   cout.precision(2);
   for(int k = tc.map_.rows_ - 1 ; k >= 0; --k){
     for(unsigned int m = 0; m < tc.map_.cols_; ++m){
@@ -128,8 +128,8 @@ TEST(TrajectoryController, correctPathDistance){
     }
     cout << endl;
   }
-  */
 }
+*/
 
 /* 
 //convince ourselves that trajectories generate as expected

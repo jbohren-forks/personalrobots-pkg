@@ -87,7 +87,7 @@ class TrajectoryController {
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
-    void computePathDistance();
+    void computePathDistance(const ObstacleMapAccessor& ma);
     
     //given a trajectory in map space get the drive commands to send to the robot
     libTF::TFPose2D getDriveVelocities(int t_num);
@@ -137,7 +137,7 @@ class TrajectoryController {
 
     //compute the cost for a single trajectory
     double trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
-        double gdist_scale, double occdist_scale, double dfast_scale, double safe_raidus);
+        double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost);
 
     double footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
     double lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1);
@@ -154,9 +154,9 @@ class TrajectoryController {
     //transform client
     rosTFClient* tf_;
 
-    inline void updateCell(MapCell* current_cell, MapCell* check_cell){
-      double new_path_dist = check_cell->path_dist + 1;
-      double new_goal_dist = check_cell->goal_dist + 1;
+    inline void updateCell(MapCell* current_cell, MapCell* check_cell, double addition){
+      double new_path_dist = check_cell->path_dist + addition;
+      double new_goal_dist = check_cell->goal_dist + addition;
 
       if(new_path_dist < current_cell->path_dist)
         current_cell->path_dist = new_path_dist;
