@@ -176,7 +176,7 @@ namespace ros {
 	for(std::vector<unsigned int>::const_iterator it = insertions.begin(); it != insertions.end(); ++it){
 	  unsigned int id = *it;
 	  unsigned int x, y; // Cell coordinates
-	  cm.convertFromMapIndexToXY(id, x, y);
+	  cm.IND_MC(id, x, y);
 	  envNav2D_.UpdateCost(x, y, 1);
 	}
 
@@ -184,7 +184,7 @@ namespace ros {
 	for(std::vector<unsigned int>::const_iterator it = deletions.begin(); it != deletions.end(); ++it){
 	  unsigned int id = *it;
 	  unsigned int x, y; // Cell coordinates
-	  cm.convertFromMapIndexToXY(id, x, y);
+	  cm.IND_MC(id, x, y);
 	  envNav2D_.UpdateCost(x, y, 0);
 	}
       }
@@ -203,12 +203,12 @@ namespace ros {
       const CostMap2D& cm = getCostMap();
 
       // Set start state based on global pose.
-      cm.convertFromWorldCoordToIndexes(stateMsg.pos.x, stateMsg.pos.y, x, y);
+      cm.WC_MC(stateMsg.pos.x, stateMsg.pos.y, x, y);
       envNav2D_.SetStart(x, y);
       araPlanner_->set_start(envNav2D_.GetStateFromCoord(x, y));
 
       // Set goal state
-      cm.convertFromWorldCoordToIndexes(stateMsg.goal.x, stateMsg.goal.y, x, y);
+      cm.WC_MC(stateMsg.goal.x, stateMsg.goal.y, x, y);
       envNav2D_.SetGoal(x, y);
       araPlanner_->set_goal(envNav2D_.GetStateFromCoord(x, y));
 
@@ -224,7 +224,7 @@ namespace ros {
 	  envNav2D_.GetCoordFromState(state, mx, my);
 
 	  double wx, wy;
-	  cm.convertFromIndexesToWorldCoord(mx, my, wx, wy);
+	  cm.MC_WC(mx, my, wx, wy);
 	  std_msgs::Pose2DFloat32 waypoint;
 	  waypoint.x = wx;
 	  waypoint.y = wy;
@@ -249,10 +249,10 @@ namespace ros {
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
 #define MAX_OCC_DIST 1.0
-#define PDIST_SCALE .4
-#define GDIST_SCALE .1
-#define OCCDIST_SCALE .4
-#define DFAST_SCALE .1
+#define PDIST_SCALE .6
+#define GDIST_SCALE .2
+#define OCCDIST_SCALE 0
+#define DFAST_SCALE .2
 #define SAFE_DIST .005
 #define ACC_LIM_X 1.0
 #define ACC_LIM_Y 1.0

@@ -54,7 +54,7 @@ namespace ros {
 
 	// The origin locates this grid. Convert from world coordinates to cell co-ordinates
 	// to get the cell coordinates of the origin
-	costMap_.convertFromWorldCoordToIndexes(wx_0_, wy_0_, mx_0_, my_0_);
+	costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);
 
 	std::cout << "Constructed local planning window: origin = <" << wx_0_ << ", " << wy_0_ << "> for " << 
 	  costMap_.getResolution() * width << " X " << costMap_.getResolution() * height << std::endl;
@@ -77,12 +77,13 @@ namespace ros {
       }
 
       bool isObstacle(unsigned int mx, unsigned int my) const {
-	unsigned int costMapIndex = costMap_.getMapIndexFromCellCoords(mx_0_ + mx, my_0_ + my);
+	unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
 	return costMap_.isObstacle(costMapIndex);
       }
 
       bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
-	return isObstacle(mx, my);
+	unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
+	return costMap_.isInflatedObstacle(costMapIndex);
       }
 
       void getOriginInWorldCoordinates(double& wx, double& wy) const {
@@ -364,6 +365,7 @@ namespace ros {
       handleMapUpdates(insertions, deletions);
       unlock();
 
+      /*
       // Publish obstacle data for each obstacle cell
       std::vector<unsigned int> allObstacles;
       costMap_->getOccupiedCellDataIndexList(allObstacles);
@@ -377,12 +379,13 @@ namespace ros {
 
       for(unsigned int i=0;i<pointCount;i++){
 	double wx, wy;
-	costMap_->IND_WX(allObstacles[i], wx, wy);
+	costMap_->IND_WC(allObstacles[i], wx, wy);
 	pointCloudMsg.points[i].x = wx;
 	pointCloudMsg.points[i].y = wy;
       }
 
       publish("gui_laser",pointCloudMsg);
+      */
     }
 
     /**
@@ -500,8 +503,6 @@ namespace ros {
 	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
       }
       else {
-	const CostMap2D& cm = getCostMap();
-
 	std_msgs::BaseVel currentVel;
 
 	// Set current velocities from odometry
@@ -522,7 +523,53 @@ namespace ros {
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
       publish("cmd_vel", cmdVel);
+
       publishPath(false, localPlan);
+
+      // Compute origin and dimensions for the controller's local map. Must check for bounds to stay in the global map
+      const double mapDeltaX_ = 10;
+      const double mapDeltaY_ = 10;
+      double origin_x = std::max(0.0, global_pose_.x - 5);
+      origin_x = std::min(origin_x,  getCostMap().getWidth() * getCostMap().getResolution() - mapDeltaX_);
+
+      double origin_y = std::max(0.0, global_pose_.y - 5);
+      origin_y = std::min(origin_y, getCostMap().getHeight() * getCostMap().getResolution() - mapDeltaY_);
+
+      // Now we should have a valid origin to construct the local map as a window onto the global map
+      CostMapAccessor ma(getCostMap(), 
+			 static_cast<unsigned int>(mapDeltaX_/getCostMap().getResolution()),
+			 static_cast<unsigned int>(mapDeltaY_/getCostMap().getResolution()), 
+			 origin_x, origin_y);
+
+      // Publish obstacle data for each obstacle cell
+      std::vector< std::pair<double, double> > allObstacles;
+      for(unsigned int i = 0; i<ma.getWidth(); i++)
+	for(unsigned int j = 0; j<ma.getHeight();j++){
+	  if(ma.isObstacle(i, j) || ma.isInflatedObstacle(i, j) ){
+	      double wx, wy;
+	      wx = i * ma.getResolution() + origin_x;
+	      wy = j * ma.getResolution() + origin_y;
+	      std::pair<double, double> p(wx, wy);
+	      allObstacles.push_back(p);
+	    }
+	}
+
+
+      std_msgs::Polyline2D pointCloudMsg;
+      unsigned int pointCount = allObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 0.0;
+      pointCloudMsg.color.b = 1.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+	pointCloudMsg.points[i].x = allObstacles[i].first;
+	pointCloudMsg.points[i].y = allObstacles[i].second;
+      }
+
+      publish("gui_laser",pointCloudMsg);
+
       return planOk;
     }
 
