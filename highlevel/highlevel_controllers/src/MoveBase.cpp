@@ -139,10 +139,11 @@ namespace ros {
     }
 
     bool TrajectoryRolloutController::computeVelocityCommands(const CostMap2D& costMap, 
-							      const vector<std_msgs::Pose2DFloat32>& plan,
-							      const libTF::TFPose2D& pose, unsigned int currentWaypointIndex,
+							      const vector<std_msgs::Pose2DFloat32>& globalPlan,
+							      const libTF::TFPose2D& pose,
 							      const std_msgs::BaseVel& currentVel,
-							      std_msgs::BaseVel& cmdVel){
+							      std_msgs::BaseVel& cmdVel,
+							      vector<std_msgs::Pose2DFloat32>& localPlan){
       if(helmsman_ == NULL){
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
@@ -163,25 +164,8 @@ namespace ros {
 			 static_cast<unsigned int>(mapDeltaY_/costMap.getResolution()), 
 			 origin_x, origin_y);
 
-      // Formulate the path as beginning at the current active waypoint and ending when we find a waypoint that is not contained in the
-      // local map
-      vector<std_msgs::Point2DFloat32> localPlan;
-      for(unsigned int i = currentWaypointIndex; i < plan.size(); i++){
-	const std_msgs::Pose2DFloat32& waypoint = plan[i];
-	std::cout << "Evaluating waypoint [" << i << "]<" << waypoint.x << ", " << waypoint.y << "> for local planning\n";
-	if(!ma.contains(waypoint.x, waypoint.y)){
-	  std::cout << "waypoint [" << i << "]<" << waypoint.x << ", " << waypoint.y << "> is not in the local map\n";
-	  break;
-	}
-
-	std_msgs::Point2DFloat32 p;
-	p.x = waypoint.x;
-	p.y = waypoint.y;
-	localPlan.push_back(p);
-      }
-
       double vx, vy, vw;
-      bool result = helmsman_->computeVelocityCommands(ma, localPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw);
+      bool result = helmsman_->computeVelocityCommands(ma, globalPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw, localPlan);
       printf("Selected velocity vector: (%f, %f, %f)\n", vx, vy, vw);
       cmdVel.vx = vx;
       cmdVel.vy = vy;
@@ -269,8 +253,11 @@ namespace ros {
       // Advertize messages to publish path updates
       advertise<std_msgs::Polyline2D>("gui_laser", QUEUE_MAX());
 
-      // Advertize message to publish the plan
+      // Advertize message to publish the global plan
       advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
+
+      // Advertize message to publish local plan
+      advertise<std_msgs::Polyline2D>("local_path", QUEUE_MAX());
 
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
@@ -377,9 +364,11 @@ namespace ros {
       handleMapUpdates(insertions, deletions);
       unlock();
 
-      // Publish projected laser scan for rendering in map co-ordinates.
+      // Publish obstacle data for each obstacle cell
+      std::vector<unsigned int> allObstacles;
+      costMap_->getOccupiedCellDataIndexList(allObstacles);
       std_msgs::Polyline2D pointCloudMsg;
-      unsigned int pointCount = global_cloud.get_pts_size();
+      unsigned int pointCount = allObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
       pointCloudMsg.color.r = 0.0;
@@ -387,8 +376,10 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = global_cloud.pts[i].x;
-	pointCloudMsg.points[i].y = global_cloud.pts[i].y;
+	double wx, wy;
+	costMap_->IND_WX(allObstacles[i], wx, wy);
+	pointCloudMsg.points[i].x = wx;
+	pointCloudMsg.points[i].y = wy;
       }
 
       publish("gui_laser",pointCloudMsg);
@@ -434,31 +425,38 @@ namespace ros {
       plan_.clear();
       plan_ = newPlan;
       currentWaypointIndex_ = 0;
-      publishPlan();
     }
 
-    void MoveBase::publishPlan(){
+    void MoveBase::publishPath(bool isGlobal, const std::vector<std_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
-      guiPathMsg.set_points_size(plan_.size());
-      guiPathMsg.color.r = 0;
-      guiPathMsg.color.g = 1.0;
-      guiPathMsg.color.b = 0;
-      guiPathMsg.color.a = 0;
-
-      std::cout << "Path Found is:";
+      guiPathMsg.set_points_size(path.size());
  
-      for(unsigned int i = 0; i < plan_.size(); i++){
-	guiPathMsg.points[i].x = plan_[i].x;
-	guiPathMsg.points[i].y = plan_[i].y;
-	//std::cout << "[" << i << "]" << plan_[i].x << ", " << plan_[i].y << "->";
+      for(unsigned int i = 0; i < path.size(); i++){
+	guiPathMsg.points[i].x = path[i].x;
+	guiPathMsg.points[i].y = path[i].y;
       }
 
-      std::cout << std::endl;
+      if(isGlobal){
+	guiPathMsg.color.r = 0;
+	guiPathMsg.color.g = 1.0;
+	guiPathMsg.color.b = 0;
+	guiPathMsg.color.a = 0;
+	publish("gui_path", guiPathMsg);
+      }
+      else {
+	guiPathMsg.color.r = 1;
+	guiPathMsg.color.g = 0;
+	guiPathMsg.color.b = 0;
+	guiPathMsg.color.a = 0;
+	publish("local_path", guiPathMsg);
+      }
 
-      publish("gui_path", guiPathMsg);
     }
 
     bool MoveBase::goalReached(){
+      // Publish the global plan
+      publishPath(true, plan_);
+
       // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
       // and we have stopped the robot, then we are done
       if(plan_.empty() && 
@@ -491,6 +489,7 @@ namespace ros {
     bool MoveBase::dispatchCommands(){
       bool planOk = true; // Return value to trigger replanning or not
       std_msgs::BaseVel cmdVel; // Commanded velocities
+      std::vector<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -503,16 +502,6 @@ namespace ros {
       else {
 	const CostMap2D& cm = getCostMap();
 
-	// If the global plan is in collision then fail
-	for(unsigned int i = 0; i < plan_.size(); i++){
-	  const std_msgs::Pose2DFloat32& wp = plan_[i];
-	  unsigned int ind = cm.getMapIndexFromWorldCoords(wp.x, wp.y);
-	  if(cm.isObstacle(ind)){
-	    planOk = false;
-	    break;
-	  }
-	}
-      
 	std_msgs::BaseVel currentVel;
 
 	// Set current velocities from odometry
@@ -520,7 +509,7 @@ namespace ros {
 	currentVel.vy = base_odom_.vel.y;
 	currentVel.vw = base_odom_.vel.th;
 
-	planOk = planOk && controller_.computeVelocityCommands(getCostMap(), plan_, global_pose_, currentWaypointIndex_, currentVel, cmdVel);
+	planOk = planOk && controller_.computeVelocityCommands(getCostMap(), plan_, global_pose_, currentVel, cmdVel, localPlan);
 
 	if(!planOk){
 	  // Zero out the velocities
@@ -533,6 +522,7 @@ namespace ros {
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
       publish("cmd_vel", cmdVel);
+      publishPath(false, localPlan);
       return planOk;
     }
 

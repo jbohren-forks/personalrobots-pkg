@@ -76,11 +76,11 @@ namespace ros {
        * @brief Compute velocities for x, y and theta based on an obstacle map, and a current path
        */
       virtual bool computeVelocityCommands(const CostMap2D& costMap, 
-					   const vector<std_msgs::Pose2DFloat32>& plan,
-					   const libTF::TFPose2D& pose, 
-					   unsigned int currentWaypointIndex,
+					   const vector<std_msgs::Pose2DFloat32>& globalPlan,
+					   const libTF::TFPose2D& pose,
 					   const std_msgs::BaseVel& currentVel, 
-					   std_msgs::BaseVel& cmdVel) = 0;
+					   std_msgs::BaseVel& cmdVel,
+					   vector<std_msgs::Pose2DFloat32>& localPlan) = 0;
     };
 
     /** 
@@ -99,11 +99,11 @@ namespace ros {
       virtual void initialize(rosTFClient& tf);
 
       virtual bool computeVelocityCommands(const CostMap2D& costMap, 
-					   const vector<std_msgs::Pose2DFloat32>& plan, 
+					   const vector<std_msgs::Pose2DFloat32>& globalPlan, 
 					   const libTF::TFPose2D& pose, 
-					   unsigned int currentWaypointIndex,
 					   const std_msgs::BaseVel& currentVel, 
-					   std_msgs::BaseVel& cmdVel);
+					   std_msgs::BaseVel& cmdVel,
+					   vector<std_msgs::Pose2DFloat32>& localPlan);
 
     private:
       const double mapDeltaX_;
@@ -190,7 +190,7 @@ namespace ros {
 
       void updateGlobalPose();
 
-      void publishPlan();
+      void publishPath(bool isGlobal, const std::vector<std_msgs::Pose2DFloat32>& path);
 
       /**
        * @brief Utility for comparing 2 points to be within a required distance, which is specified as a
