@@ -43,6 +43,13 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
 
 MechanismControl::~MechanismControl()
 {
+  // Destroy all controllers
+  // for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  // {
+  //   if (controllers_[i] != NULL)
+  //     delete controllers_[i];
+  // }
+
   if (state_)
     delete state_;
 }
@@ -201,6 +208,8 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
 
   // Advertise topics
   node_->advertise<mechanism_control::MechanismState>(mechanism_state_topic_,10);
+  node_->advertise<rosTF::TransformArray>("TransformArray");
+  node_->advertise<rostools::Time>("time");
 }
 
 MechanismControlNode::~MechanismControlNode()
@@ -211,6 +220,8 @@ MechanismControlNode::~MechanismControlNode()
   node_->unadvertise_service("kill_controller");
 
   node_->unadvertise(mechanism_state_topic_);
+  node_->unadvertise("TransformArray");
+  node_->unadvertise("time");
   publisher_.stop();
 }
 
