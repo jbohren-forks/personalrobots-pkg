@@ -211,12 +211,17 @@ namespace planning_node_util
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {
-		fprintf(stderr, "Discarding pose: Transform reference lookup exception\n");
+	        fprintf(stderr, "Discarding pose: Transform reference lookup exception: %s\n", ex.what());
 		success = false;
 	    }
 	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	    {
 		fprintf(stderr, "Discarding pose: Extrapolation exception: %s\n", ex.what());
+		success = false;
+	    }
+	    catch(libTF::TransformReference::ConnectivityException& ex)
+	    {
+		fprintf(stderr, "Discarding pose: Connectivity exception: %s\n", ex.what());
 		success = false;
 	    }
 	    catch(...)
