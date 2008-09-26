@@ -70,12 +70,14 @@ void TrajectoryController::setPathCells(){
       local_goal_x = map_x;
       local_goal_y = map_y;
       started_path = true;
+      //printf("Valid Cell: (%.2f, %.2f) - (%d, %d), ", global_plan_[i].x, global_plan_[i].y, map_x, map_y);
     }
     else{
       if(started_path)
         break;
     }
   }
+  //printf("\n");
 
   if(local_goal_x >= 0 && local_goal_y >= 0){
     map_(local_goal_x, local_goal_y).goal_dist = 0.0;
@@ -260,7 +262,7 @@ void TrajectoryController::trajectoriesToWorld(){
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
   t_diff = end_t - start_t;
-  fprintf(stderr, "Matrix Time: %.3f\n", t_diff);
+  //fprintf(stderr, "Matrix Time: %.3f\n", t_diff);
 
 }
 

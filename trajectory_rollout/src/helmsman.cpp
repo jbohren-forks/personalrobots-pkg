@@ -47,8 +47,12 @@ Helmsman::Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_
 }
 
 //compute the drive commands to send to the robot
-bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vector<std_msgs::Point2DFloat32>& plan,
-    double vel_x, double vel_y, double vel_theta, double& d_x, double& d_y, double& d_theta){
+bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vector<std_msgs::Pose2DFloat32>& globalPlan,
+				       double vel_x, double vel_y, double vel_theta, 
+				       double& d_x, double& d_y, double& d_theta,
+				       vector<std_msgs::Pose2DFloat32>& localPlan){
+  localPlan.clear();
+
   libTF::TFPose2D drive_cmds;
 
   //pass pose and velocity information to the controller in robot space
@@ -73,7 +77,16 @@ bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vect
   map_.scale = 0.1;
   printf("Map scale: %.2f\n", map_.scale);
 
-  tc_.updatePlan(plan);
+  // Temporary Transformation till api below changes
+  std::vector<std_msgs::Point2DFloat32> copiedGlobalPlan;
+  for(unsigned int i = 0; i< globalPlan.size(); i++){
+    std_msgs::Point2DFloat32 p;
+    p.x = globalPlan[i].x;
+    p.y = globalPlan[i].y;
+    copiedGlobalPlan.push_back(p);
+  }
+
+  tc_.updatePlan(copiedGlobalPlan);
   
   //compute what trajectory to drive along
   int path_index = tc_.findBestPath(ma, robot_pose, robot_vel, drive_cmds);
@@ -87,7 +100,15 @@ bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vect
   if(path_index < 0)
     return false;
 
-  //otherwise just keep driving
+  // Fill out the local plan
+  for(int i = 0; i < tc_.num_steps_; ++i){
+    std_msgs::Pose2DFloat32 p;
+    p.x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
+    p.y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
+    p.th = tc_.trajectory_theta_(0, path_index * tc_.num_steps_ + i);
+    localPlan.push_back(p);
+  }
+
   return true;
 
 }
