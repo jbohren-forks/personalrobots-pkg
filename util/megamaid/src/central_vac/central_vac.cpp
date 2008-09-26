@@ -73,10 +73,7 @@ int main(int argc, char **argv)
   if (l.open(std::string(logdir) + std::string("/topics.bag"), start))
   {
     for (vector<std::string>::iterator i = topics.begin(); i != topics.end(); i++)
-    {
-      printf("vacuum up [%s]\n", i->c_str());
       l.addTopic<AnyMsg>(*i, 100);
-    }
 
     l.start();
   } else {

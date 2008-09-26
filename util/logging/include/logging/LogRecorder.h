@@ -136,6 +136,10 @@ class LogRecorder
               break;
             }
         }
+        
+        std::cout << "LogRecorder is saving topic: \"" << get_topic_name() << "\" with datatype: " << __get_datatype() << std::endl;
+
+        first_ = false;
       }
           
       uint8_t* sz = read_ptr + __serialized_length;
