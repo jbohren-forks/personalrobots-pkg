@@ -68,10 +68,10 @@
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
 #define OUTER_RADIUS .248
-#define PDIST_SCALE .6
-#define GDIST_SCALE .2
+#define PDIST_SCALE .4
+#define GDIST_SCALE .6
 #define OCCDIST_SCALE 0
-#define DFAST_SCALE .2
+#define DFAST_SCALE 0
 #define SAFE_DIST .005
 
 class GovernorNode: public ros::node

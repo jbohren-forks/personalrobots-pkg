@@ -407,8 +407,8 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
   //anything with a cost greater than the size of the map is impossible
   double impossible_cost = map_.map_.size();
 
-  //we know that everything except the last 2 sets of trajectories are in the forward direction
-  unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
+  //we know that everything except the last set of trajectories is in the forward or rotational direction
+  unsigned int forward_traj_end = trajectories_.size() - samples_per_dim_;
   for(unsigned int i = 0; i < forward_traj_end; ++i){
     double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
@@ -428,29 +428,9 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
     return best_index;
   }
 
-  //the second to last set of trajectories is rotation only
-  unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
-  for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
-
-    //so we can draw with cost info
-    trajectories_[i].cost_ = cost;
-
-    //find the minimum cost path
-    if(cost >= 0 && cost < min_cost){
-      best_index = i;
-      min_cost = cost;
-    }
-  }
-
-  //if we have a valid path... return
-  if(best_index >= 0){
-    drive_velocities = getDriveVelocities(best_index);
-    return best_index;
-  }
-
+  unsigned int fwd_traj_end = trajectories_.size() - samples_per_dim_;
   //the last set of trajectories is for moving backwards
-  for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
+  for(unsigned int i = fwd_traj_end; i < trajectories_.size(); ++i){
     double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
@@ -507,8 +487,8 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
     if(impossible_cost <= cell_gdist || impossible_cost <= cell_pdist)
       return -1.0;
 
-    path_dist += cell_pdist;
-    goal_dist += cell_gdist;
+    path_dist = cell_pdist;
+    goal_dist = cell_gdist;
 
   }
   double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
