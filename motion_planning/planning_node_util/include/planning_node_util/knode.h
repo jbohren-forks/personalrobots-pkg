@@ -207,7 +207,7 @@ namespace planning_node_util
 	    
 	    try
 	    {
-		pose = m_tf.transformPose2D("FRAMEID_MAP", pose);
+		pose = m_tf.transformPose2D("map", pose);
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {

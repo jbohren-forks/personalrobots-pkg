@@ -328,7 +328,7 @@ public:
     void sendDisplay(robot_msgs::KinematicState &start, robot_msgs::KinematicPath &path, const std::string &model)
     {
 	robot_msgs::DisplayKinematicPath dpath;
-	dpath.frame_id = "FRAMEID_MAP";
+	dpath.frame_id = "map";
 	dpath.model_name = model;
 	dpath.start_state = start;
 	dpath.path = path;
