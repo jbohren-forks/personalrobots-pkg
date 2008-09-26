@@ -235,6 +235,12 @@ unsigned int CostMap2D::getMapIndexFromWorldCoords(double wx, double wy) const {
   return getMapIndexFromCellCoords(mx, my);
 }
 
+void CostMap2D::IND_WX(unsigned int ind, double& wx, double& wy) const{
+  unsigned int mx, my;
+  convertFromMapIndexToXY(ind, mx, my);
+  convertFromIndexesToWorldCoord(mx, my, wx, wy);
+}
+
 void CostMap2D::convertFromWorldCoordToIndexes(double wx, double wy,
 					     unsigned int& mx, unsigned int& my) const {
   

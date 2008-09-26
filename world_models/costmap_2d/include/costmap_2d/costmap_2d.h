@@ -137,6 +137,14 @@ public:
   void getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const;
 
   /**
+   * @brief Obtain world co-ordinates for the given index
+   * @param ind index
+   * @param wx world x location of the cell
+   * @param wy world y location of the cell
+   */
+  void IND_WX(unsigned int ind, double& wx, double& wy) const;
+
+  /**
    * @brief Get index of given (x,y) point into data
    * 
    * @param x x-index of the cell
