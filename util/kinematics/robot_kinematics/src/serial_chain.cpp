@@ -47,21 +47,21 @@ SerialChain::SerialChain()
 
 void SerialChain::finalize()
 {
-  this->num_joints_ = this->chain.getNrOfJoints();
-  this->q_IK_guess  = new JntArray(this->num_joints_);
-  this->q_IK_result = new JntArray(this->num_joints_);
-  this->forwardKinematics      = new ChainFkSolverPos_recursive(this->chain);
+  this->num_joints_               = this->chain.getNrOfJoints();
+  this->q_IK_guess                = new JntArray(this->num_joints_);
+  this->q_IK_result               = new JntArray(this->num_joints_);
+  this->forwardKinematics         = new ChainFkSolverPos_recursive(this->chain);
   this->differentialKinematicsInv = new ChainIkSolverVel_pinv(this->chain);
-  this->differentialKinematics = new ChainFkSolverVel_recursive(this->chain);
-  this->inverseKinematics      = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematicsInv);
+  this->differentialKinematics    = new ChainFkSolverVel_recursive(this->chain);
+  this->inverseKinematics         = new ChainIkSolverPos_NR(this->chain, *this->forwardKinematics, *this->differentialKinematicsInv);
   
 #ifdef KDL_DYNAMICS
-  this->inverseDynamics = new ChainIdSolver_NE(this->chain);
+  this->inverseDynamics           = new ChainIdSolver_NE(this->chain);
 #endif  
   
   if(!this->link_kdl_frame_)
   {
-    this->link_kdl_frame_ = new KDL::Frame[this->num_joints_];
+    this->link_kdl_frame_         = new KDL::Frame[this->num_joints_];
   }
 /*
   if(!this->joints_)
@@ -138,6 +138,11 @@ int SerialChain::getID(std::string name)
 #ifdef KDL_DYNAMICS
 bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_dot, const JntArray &q_dotdot, Vector* torque)
 {
+
+   for(int i=0; i<q.rows(); i++)
+   {
+      fprintf(stderr,"%d:: %f, %f, %f, %f\n",i,q(i),q_dot(i),q_dotdot(i),torque[i][2]);
+   }
   if (this->inverseDynamics->InverseDynamics(q,q_dot,q_dotdot,torque) >= 0)
     return true;
   else

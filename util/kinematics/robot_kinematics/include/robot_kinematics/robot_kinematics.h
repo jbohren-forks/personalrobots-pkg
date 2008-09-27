@@ -212,6 +212,8 @@ namespace robot_kinematics
 
     int chain_counter_; /*< chain count */
 
+    KDL::Inertia getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector pos);
+
     protected:
 
     std::map<std::string, SerialChain*> serial_chain_map_; /*< map from pointers to the chains to string names for the chains */

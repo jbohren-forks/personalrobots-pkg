@@ -62,9 +62,9 @@ int main( int argc, char** argv )
 
   RobotKinematics pr2_kin;
   pr2_kin.loadString(pr2Content.c_str());  // parse the big pr2.xml string from ros
-  SerialChain *left_arm = pr2_kin.getSerialChain("leftArm");
+  SerialChain *left_arm = pr2_kin.getSerialChain("left_arm");
 
-  SerialChain *right_arm = pr2_kin.getSerialChain("rightArm");
+  SerialChain *right_arm = pr2_kin.getSerialChain("right_arm");
 
   assert(left_arm);
   assert(right_arm);

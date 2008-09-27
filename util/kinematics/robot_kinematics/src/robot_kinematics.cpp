@@ -112,6 +112,7 @@ void RobotKinematics::loadModel(const robot_desc::URDF &model)
       printf("Creating kinematic group:: %s \n", groups_[i]->name.c_str());
     }
   }
+  printf("Robot kinematics:: done creating all kinematic groups\n");
 } 
 
 void RobotKinematics::cross(const double p1[], const double p2[], double p3[])
@@ -143,6 +144,9 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
 {  
   KDL::Frame frame1;
   KDL::Frame frame2;
+
+  KDL::Inertia inertia;
+
   KDL::Frame ident = KDL::Frame::Identity();
   int link_count = 0;
 
@@ -184,8 +188,13 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
       frame1 = ident;
       frame2 = ident;
     }
+
+    KDL::Vector com;
+    /* Get inertia matrix and center of mass in KDL frame*/
+    inertia = getInertiaInKDLFrame(link_current, com);
+
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
-    this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2));
+    this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2,inertia,com));
     this->chains_[chain_counter_].joint_id_map_[link_current->name] = link_count + 1;
     link_current = link_next;
     link_count++;
@@ -211,6 +220,78 @@ robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::L
   }
   return NULL;
 }
+
+KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector pos)
+{
+  KDL::Inertia inertia;
+  NEWMAT::Matrix frame(4,4);
+  NEWMAT::Matrix I(4,4);
+  NEWMAT::Matrix It(4,4);
+  NEWMAT::Matrix com_pos(4,1);
+  NEWMAT::Matrix com_pos_t(4,1);
+
+  frame = getKDLJointInXMLFrame(link_current);
+
+  com_pos(1,1) = link_current->inertial->com[0];
+  com_pos(2,1) = link_current->inertial->com[1];
+  com_pos(3,1) = link_current->inertial->com[2];
+  com_pos(4,1) = 1;
+
+  com_pos_t = frame.i() * com_pos;
+
+  frame(1,4) = 0;
+  frame(2,4) = 0;
+  frame(3,4) = 0;
+
+  I(1,1) = link_current->inertial->inertia[0];
+  I(1,2) = link_current->inertial->inertia[1];
+  I(1,3) = link_current->inertial->inertia[2];
+
+  I(2,1) = link_current->inertial->inertia[1];
+  I(2,2) = link_current->inertial->inertia[3];
+  I(2,3) = link_current->inertial->inertia[4];
+
+  I(3,1) = link_current->inertial->inertia[2];
+  I(3,2) = link_current->inertial->inertia[4];
+  I(3,3) = link_current->inertial->inertia[5];
+
+  It = frame.t() * I * frame; // In general the similarity transform is f I f' but here we are doing f' I f since we are going in the inverse direction.
+
+  inertia.m = link_current->inertial->mass;
+
+  inertia.I.data[0] = It(1,1);
+  inertia.I.data[1] = It(1,2);
+  inertia.I.data[2] = It(1,3);
+
+  inertia.I.data[3] = It(2,1);
+  inertia.I.data[4] = It(2,2);
+  inertia.I.data[5] = It(2,3);
+
+  inertia.I.data[6] = It(3,1);
+  inertia.I.data[7] = It(3,2);
+  inertia.I.data[8] = It(3,3);
+
+  pos[0] = com_pos_t(1,1);
+  pos[1] = com_pos_t(2,1);
+  pos[2] = com_pos_t(3,1);
+
+  return inertia;
+/*
+  inertia.I.data[0] = link_current->inertial.inertia[0];
+  inertia.I.data[1] = link_current->inertial.inertia[1];
+  inertia.I.data[2] = link_current->inertial.inertia[2];
+
+  inertia.I.data[3] = link_current->inertial.inertia[1];
+  inertia.I.data[4] = link_current->inertial.inertia[3];
+  inertia.I.data[5] = link_current->inertial.inertia[4];
+
+  inertia.I.data[6] = link_current->inertial.inertia[2];
+  inertia.I.data[7] = link_current->inertial.inertia[4];
+  inertia.I.data[8] = link_current->inertial.inertia[5];
+*/
+}
+
+
 
 KDL::Frame RobotKinematics::getKDLNextJointFrame(robot_desc::URDF::Link *link, robot_desc::URDF::Link *link_plus_one)
 {
