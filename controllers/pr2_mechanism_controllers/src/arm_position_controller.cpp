@@ -235,9 +235,11 @@ ArmPositionControllerNode::~ArmPositionControllerNode()
   node_->unadvertise_service(service_prefix_ + "/get_command");
   node_->unadvertise_service(service_prefix_ + "/set_target");
 
-  std::cout << "unsub arm controller" << ros_cb_ << " " << topic_name_ << std::endl;
-  if(ros_cb_ && topic_name_)
+  if(ros_cb_ && topic_name_.c_str())
+  {
+    std::cout << "unsub arm controller" << topic_name_ << std::endl;
     node_->unsubscribe(topic_name_);
+  }
 
   delete c_;
 }
@@ -264,7 +266,7 @@ bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
     if(ros_cb_)
     {
       topic_name_=ros_cb_->Attribute("name");
-      if(!topic_name_)
+      if(!topic_name_.c_str())
       {
         std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
         return false;

@@ -167,8 +167,12 @@ JointPositionControllerNode::~JointPositionControllerNode()
 {
   node_->unadvertise_service(service_prefix_ + "/set_command");
   node_->unadvertise_service(service_prefix_ + "/get_actual");
-  if(ros_cb && topic_name_)
+
+  if(ros_cb_ && topic_name_.c_str())
+  {
+    std::cout << "unsub joint position controller" << topic_name_ << std::endl;
     node_->unsubscribe(topic_name_);
+  }
   delete c_;
 }
 
@@ -234,11 +238,11 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   node_->advertise_service(service_prefix_ + "/get_actual", &JointPositionControllerNode::getActual, this);
   guard_get_actual_.set(service_prefix_ + "/get_actual");
 
-  ros_cb = config->FirstChildElement("listen_topic");
-  if(ros_cb)
+  ros_cb_ = config->FirstChildElement("listen_topic");
+  if(ros_cb_)
   {
-    topic_name_=ros_cb->Attribute("name");
-    if(!topic_name_)
+    topic_name_=ros_cb_->Attribute("name");
+    if(!topic_name_.c_str())
     {
       std::cout<<" A listen _topic is present in the xml file but no name is specified\n";
       return false;

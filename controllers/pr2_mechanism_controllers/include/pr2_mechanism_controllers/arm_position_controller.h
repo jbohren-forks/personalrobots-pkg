@@ -289,7 +289,7 @@ class ArmPositionControllerNode : public Controller
     /*
      * \brief save topic name for unsubscribe later
      */
-    const char * topic_name_;
+    std::string topic_name_;
 
     /*!
      * \brief xml pointer to ros topic name

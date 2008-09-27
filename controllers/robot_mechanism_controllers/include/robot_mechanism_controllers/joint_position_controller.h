@@ -198,12 +198,12 @@ private:
   /*!
    * \brief publish topic name
    */
-  const char * topic_name_;
+  std::string topic_name_;
   
   /*!
    * \brief xml pointer to ros topic name
    */
-  TiXmlElement * ros_cb;
+  TiXmlElement * ros_cb_;
 
   /*!
    * \brief A pointer to ros node
