@@ -199,7 +199,7 @@ namespace ros {
       // Apply map updates that were buffered from the cost map
       applyMapUpdates();
 
-      size_t x, y;
+      unsigned int x, y;
       const CostMap2D& cm = getCostMap();
 
       // Set start state based on global pose.
