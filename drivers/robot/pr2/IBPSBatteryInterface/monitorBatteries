@@ -153,6 +153,7 @@ class robotPower:
         self.controllers = [powerController(),powerController(),powerController(),powerController()]
         self.pub = rospy.TopicPub("/diagnostics", DiagnosticMessage)
         self.battery_state_pub = rospy.TopicPub("battery_state", BatteryState)
+        self.full_charge_energy = 0
 
     def print_remaining(self):
         print "___________________________________"
@@ -261,7 +262,7 @@ class robotPower:
     ## Send out the state of the controller on a diagnostic message
     def send_battery_state(self):
         stat = []
-
+        full_energy = 0        
         energy = 0
         power = 0
         for c in self.controllers:
@@ -269,11 +270,16 @@ class robotPower:
                 if b.present < 0.5:
                     continue
                 energy = energy + b.design_voltage * b.remaining_capacity * 3.6 ## assuming mAh capacity
+                full_energy = full_energy + b.design_voltage * b.full_charge_capacity * 3.6 ## assuming mAh capacity
                 power = power + b.design_voltage * b.current ## assuming mAh capacity
+
+        if self.full_charge_energy != full_energy:
+            self.full_charge_energy = full_energy
+            rospy.set_param("full_charge_energy", full_energy)
 
         out = BatteryState(None, energy, power)
         print "Sent Energy: %.0f (J)  Power: %.2f (W)\n"%(energy, power)
-        self.pub.publish(out)
+        self.battery_state_pub.publish(out)
 
 
 
