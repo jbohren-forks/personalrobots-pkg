@@ -211,22 +211,22 @@ namespace planning_node_util
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {
-	        fprintf(stderr, "Discarding pose: Transform reference lookup exception: %s\n", ex.what());
+	        fprintf(stderr, "Discarding pose: from %s, Transform reference lookup exception: %s\n", pose.frame.c_str(), ex.what());
 		success = false;
 	    }
 	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	    {
-		fprintf(stderr, "Discarding pose: Extrapolation exception: %s\n", ex.what());
+		fprintf(stderr, "Discarding pose: from %s, Extrapolation exception: %s\n", pose.frame.c_str(), ex.what());
 		success = false;
 	    }
 	    catch(libTF::TransformReference::ConnectivityException& ex)
 	    {
-		fprintf(stderr, "Discarding pose: Connectivity exception: %s\n", ex.what());
+		fprintf(stderr, "Discarding pose: from %s, Connectivity exception: %s\n", pose.frame.c_str(), ex.what());
 		success = false;
 	    }
 	    catch(...)
 	    {
-		fprintf(stderr, "Discarding pose: Exception in pose computation\n");
+		fprintf(stderr, "Discarding pose: from %s, Exception in pose computation\n", pose.frame.c_str());
 		success = false;
 	    }
 	    
@@ -275,7 +275,7 @@ namespace planning_node_util
 		    planning_models::KinematicModel::PlanarJoint* pj = 
 			dynamic_cast<planning_models::KinematicModel::PlanarJoint*>(m_kmodel->getRobot(i)->chain);
 		    if (pj)
-			m_robotState->setParams(m_basePos, pj->name);
+		        m_robotState->setParams(m_basePos, pj->name);
 		}
 	    stateUpdate();
 	}
