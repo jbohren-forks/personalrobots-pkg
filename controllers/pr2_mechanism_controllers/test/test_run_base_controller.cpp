@@ -37,6 +37,7 @@
 #include <std_msgs/TransformWithRateStamped.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
+#include <std_msgs/Quaternion.h>
 
 static int done = 0;
 
@@ -44,6 +45,38 @@ void finalize(int donecare)
 {
   done = 1;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Return the rotation in Euler angles
+libTF::Vector GetAsEuler(std_msgs::Quaternion quat)
+{
+  libTF::Vector vec;
+
+  double squ;
+  double sqx;
+  double sqy;
+  double sqz;
+
+//  this->Normalize();
+
+  squ = quat.w * quat.w;
+  sqx = quat.x * quat.x;
+  sqy = quat.y * quat.y;
+  sqz = quat.z * quat.z;
+
+  // Roll
+  vec.x = atan2(2 * (quat.y*quat.z + quat.w*quat.x), squ - sqx - sqy + sqz);
+
+  // Pitch
+  vec.y = asin(-2 * (quat.x*quat.z - quat.w * quat.y));
+
+  // Yaw
+  vec.z = atan2(2 * (quat.x*quat.y + quat.w*quat.z), squ + sqx - sqy - sqz);
+
+  return vec;
+}
+
 
 class test_run_base
 {
@@ -99,24 +132,32 @@ int main( int argc, char** argv )
 
   /*********** Start moving the robot ************/
   std_msgs::BaseVel cmd;
-  cmd.vx = -1.0;
+  cmd.vx = 0;
   cmd.vy = 0;
   cmd.vw = 0;
+
+  if(argc >= 2)
+    cmd.vx = atof(argv[1]);
+
+  if(argc >= 3)
+    cmd.vy = atof(argv[2]);
+
+  if(argc == 4)
+    cmd.vw = atof(argv[3]);
 
   node->advertise<std_msgs::BaseVel>("cmd_vel",10);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);
 
+  libTF::Vector ang_rates;
 
   while(!done)
   {
-    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " " << tb.ground_truth.rate.translation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
-
+    //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
+    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
     cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
-
     node->publish("cmd_vel",cmd);
-
     sleep(1);
   }
 }

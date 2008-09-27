@@ -121,6 +121,10 @@ public:
 
   bool goalAchieved() const { return goal_achieved_; }
 
+  robot_kinematics::RobotKinematics pr2_kin_;
+
+  robot_kinematics::SerialChain *arm_chain_;
+
 private:
 
   std::vector<JointEffortController *> joint_effort_controllers_;
@@ -155,7 +159,6 @@ private:
 
   KDL::Vector *kdl_torque_;
 
-  robot_kinematics::SerialChain *arm_chain_;
 
   // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
   bool refresh_rt_vals_;
@@ -216,9 +219,6 @@ class ArmDynamicsControllerNode : public Controller
     pr2_mechanism_controllers::JointCmd msg_;   //The message used by the ROS callback
     ArmDynamicsController *c_;
 
-    robot_kinematics::RobotKinematics pr2_kin_;
-
-    robot_kinematics::SerialChain * arm_chain_;
 };
 
 }

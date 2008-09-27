@@ -72,6 +72,12 @@ bool ArmDynamicsController::initXml(mechanism::RobotState * robot, TiXmlElement 
   goals_.resize(joint_effort_controllers_.size());
   goals_rt_.resize(joint_effort_controllers_.size());
 
+  goals_dot_.resize(joint_effort_controllers_.size());
+  goals_rt_dot_.resize(joint_effort_controllers_.size());
+
+  goals_dot_dot_.resize(joint_effort_controllers_.size());
+  goals_rt_dot_dot_.resize(joint_effort_controllers_.size());
+
   kdl_torque_ = new KDL::Vector[joint_effort_controllers_.size()+1];
 
   return true;
@@ -157,7 +163,8 @@ void ArmDynamicsController::update(void)
 
     for(unsigned int i=0; i<goals_.size(); ++i)
     {
-       kdl_q(i) = joint_effort_controllers_[i]->joint_->position_;
+//       kdl_q(i) = joint_effort_controllers_[i]->joint_->position_;
+       kdl_q(i) = 0.0;
        kdl_q_dot(i) = 0.0;
        kdl_q_dot_dot(i) = 0.0;
     }
@@ -166,11 +173,15 @@ void ArmDynamicsController::update(void)
 
   for(unsigned int i=0;i<goals_rt_.size();++i)
   {
-     //   joint_effort_controllers_[i]->setCommand(kdl_torque_[i][2]);
-   joint_effort_controllers_[i]->setCommand(0.0);
-//     fprintf(stderr,"Effort: %d %f\n",i,kdl_torque_[i][2]);
+      joint_effort_controllers_[i]->setCommand(3.5*kdl_torque_[i][2]);
+      //  joint_effort_controllers_[i]->setCommand(0.0);
+      fprintf(stderr,"Effort: %d %f %f\n",i,kdl_torque_[i][2],joint_effort_controllers_[i]->joint_->commanded_effort_);
   }
   updateJointControllers();
+  for(unsigned int i=0;i<goals_rt_.size();++i)
+  {
+      fprintf(stderr,"Effort: %d %f %f\n",i,kdl_torque_[i][2],joint_effort_controllers_[i]->joint_->commanded_effort_);
+  }
 }
 
 void ArmDynamicsController::updateJointControllers(void)
@@ -233,19 +244,23 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
     j = j->NextSiblingElement("elem");
   }
 
-  // Parses kinematics description
-  std::string pr2Contents;
-  node->get_param("robotdesc/pr2", pr2Contents);
-  pr2_kin_.loadString(pr2Contents.c_str());
-  arm_chain_ = pr2_kin_.getSerialChain(kdl_chain_name.c_str());
-  fprintf(stderr,"Got arm chain %s\n",kdl_chain_name.c_str());
-  assert(arm_chain_);
-
+  
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
     node->advertise_service(prefix + "/set_command_array", &ArmDynamicsControllerNode::setJointSrv, this);
     node->advertise_service(prefix + "/get_command", &ArmDynamicsControllerNode::getJointCmd, this);
+
+
+// Parses kinematics description
+  std::string pr2Contents;
+  node->get_param("robotdesc/pr2", pr2Contents);
+  c_->pr2_kin_.loadString(pr2Contents.c_str());
+  c_->arm_chain_ = c_->pr2_kin_.getSerialChain(kdl_chain_name.c_str());
+  fprintf(stderr,"Got arm chain %s\n",kdl_chain_name.c_str());
+  assert(c_->arm_chain_);
+
+
     return true;
   }
   return false;

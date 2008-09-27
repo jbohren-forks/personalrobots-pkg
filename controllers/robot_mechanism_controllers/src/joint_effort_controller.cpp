@@ -66,7 +66,7 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
   joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
   if (!joint_)
   {
-    fprintf(stderr, "JointVelocityController could not find joint named \"%s\"\n", joint_name);
+    fprintf(stderr, "JointEffortController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
 
