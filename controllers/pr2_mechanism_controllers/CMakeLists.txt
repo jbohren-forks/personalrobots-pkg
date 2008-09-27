@@ -9,10 +9,14 @@ rospack_add_library( pr2_mechanism_controllers
   src/base_controller.cpp
   src/laser_scanner_controller.cpp
   src/arm_position_controller.cpp
-  src/arm_velocity_controller.cpp)
+  src/arm_velocity_controller.cpp
+  src/arm_dynamics_controller.cpp)
 
 rospack_add_executable(testBaseController test/test_base_controller.cpp)
 target_link_libraries(testBaseController pr2_mechanism_controllers)
 
 rospack_add_executable(testRunBaseController test/test_run_base_controller.cpp)
+target_link_libraries(testRunBaseController pr2_mechanism_controllers)
+
+rospack_add_executable(testArmDynamicsController test/test_arm_dynamics_controller.cpp)
 target_link_libraries(testRunBaseController pr2_mechanism_controllers)
