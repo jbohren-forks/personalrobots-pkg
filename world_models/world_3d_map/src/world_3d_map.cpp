@@ -41,7 +41,7 @@
 @htmlinclude ../manifest.html
 
 @b world_3d_map is a node capable of building 3D maps out of laser
-scan data.  The node will put together a pointcloud in the FRAMEID_MAP
+scan data.  The node will put together a pointcloud in the map
 frame and will publish the pointcloud with the data it retained. The
 node also downsamples the input data, to avoid a large number of
 obstacles, removes the points in the cloud that intersect with a given
@@ -197,7 +197,7 @@ private:
 	
 	bool success = false;
 	
-	if (m_inputCloud.header.frame_id == "FRAMEID_MAP")
+	if (m_inputCloud.header.frame_id == "map")
 	{
 	    m_toProcess = m_inputCloud;
 	    success = true;
@@ -206,20 +206,24 @@ private:
 	{
 	    try
 	    {
-		m_tf.transformPointCloud("FRAMEID_MAP", m_toProcess, m_inputCloud);
+		m_tf.transformPointCloud("map", m_toProcess, m_inputCloud);
 		success = true;
 	    }
 	    catch(libTF::TransformReference::LookupException& ex)
 	    {
-		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception\n");
+		fprintf(stderr, "Discarding pointcloud: Transform reference lookup exception: %s\n", ex.what());
 	    }
 	    catch(libTF::TransformReference::ExtrapolateException& ex)
 	    {
 		fprintf(stderr, "Discarding pointcloud: Extrapolation exception: %s\n", ex.what());
 	    }
+	    catch(libTF::TransformReference::ConnectivityException& ex)
+	    {
+		fprintf(stderr, "Discarding pointcloud: Connectivity exception: %s\n", ex.what());
+	    }
 	    catch(...)
 	    {
-		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation\n");
+		fprintf(stderr, "Discarding pointcloud: Exception in point cloud computation.\n");
 	    }
 	}
 	
@@ -240,16 +244,20 @@ private:
 	bool success = false;
 	try
 	{
-	    m_tf.transformLaserScanToPointCloud("FRAMEID_MAP", m_toProcess, m_inputScan);
+	    m_tf.transformLaserScanToPointCloud("map", m_toProcess, m_inputScan);
 	    success = true;
 	}
 	catch(libTF::TransformReference::LookupException& ex)
 	{
-	    fprintf(stderr, "Discarding laser scan: Transform reference lookup exception\n");
+            fprintf(stderr, "Discarding laser scan: Transform reference lookup exception: %s\n", ex.what());
 	}
 	catch(libTF::TransformReference::ExtrapolateException& ex)
 	{
 	    fprintf(stderr, "Discarding laser scan: Extrapolation exception: %s\n", ex.what());
+	}
+	catch(libTF::TransformReference::ConnectivityException& ex)
+	{
+	    fprintf(stderr, "Discarding laser scan: Connectivity exception: %s\n", ex.what());
 	}
 	catch(...)
 	{
@@ -418,7 +426,7 @@ private:
     
     /** Remove invalid floating point values and strip channel
      *  iformation.  Also keep a certain ratio of the cloud information
-     *  only. Works with pointclouds in FRAMEID_ROBOT or FRAMEID_MAP */
+     *  only. Works with pointclouds in robot or map frames */
     std_msgs::PointCloudFloat32* filter0(const std_msgs::PointCloudFloat32 &cloud, double frac = 1.0)
     {
 	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
@@ -439,7 +447,7 @@ private:
     }    
     
     /** Remove points from the cloud if the robot sees parts of
-	itself. Works for pointclouds in FRAMEID_ROBOT \todo make the
+	itself. Works for pointclouds in the robot frame \todo make the
 	comment true, separate function in 2*/
     std_msgs::PointCloudFloat32* filter1(const std_msgs::PointCloudFloat32 &cloud)
     {
