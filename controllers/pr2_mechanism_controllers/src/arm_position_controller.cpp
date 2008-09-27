@@ -230,7 +230,15 @@ ArmPositionControllerNode::ArmPositionControllerNode()
 
 ArmPositionControllerNode::~ArmPositionControllerNode()
 {
-  node_->unsubscribe(topic_name_);
+  node_->unadvertise_service(service_prefix_ + "/set_command");
+  node_->unadvertise_service(service_prefix_ + "/set_command_array");
+  node_->unadvertise_service(service_prefix_ + "/get_command");
+  node_->unadvertise_service(service_prefix_ + "/set_target");
+
+  std::cout << "unsub arm controller" << ros_cb_ << " " << topic_name_ << std::endl;
+  if(ros_cb_ && topic_name_)
+    node_->unsubscribe(topic_name_);
+
   delete c_;
 }
 
@@ -242,20 +250,20 @@ void ArmPositionControllerNode::update()
 bool ArmPositionControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING ARMCONTROLLERNODE"<<std::endl;
-  string prefix = config->Attribute("name");
-  std::cout<<"the prefix is "<<prefix<<std::endl;
+  service_prefix_ = config->Attribute("name");
+  std::cout<<"the service_prefix_ is "<<service_prefix_<<std::endl;
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node_->advertise_service(prefix + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
-    node_->advertise_service(prefix + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
-    node_->advertise_service(prefix + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
-    node_->advertise_service(prefix + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
+    node_->advertise_service(service_prefix_ + "/set_command", &ArmPositionControllerNode::setJointPosHeadless, this);
+    node_->advertise_service(service_prefix_ + "/set_command_array", &ArmPositionControllerNode::setJointPosSrv, this);
+    node_->advertise_service(service_prefix_ + "/get_command", &ArmPositionControllerNode::getJointPosCmd, this);
+    node_->advertise_service(service_prefix_ + "/set_target", &ArmPositionControllerNode::setJointPosTarget, this);
 
-    TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
-    if(ros_cb)
+    ros_cb_ = config->FirstChildElement("listen_topic");
+    if(ros_cb_)
     {
-      topic_name_=ros_cb->Attribute("name");
+      topic_name_=ros_cb_->Attribute("name");
       if(!topic_name_)
       {
         std::cout<<" A listen _topic is present in the xml file but no name is specified\n";

@@ -44,11 +44,11 @@ MechanismControl::MechanismControl(HardwareInterface *hw) :
 MechanismControl::~MechanismControl()
 {
   // Destroy all controllers
-  // for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
-  // {
-  //   if (controllers_[i] != NULL)
-  //     delete controllers_[i];
-  // }
+  for (int i = 0; i < MAX_NUM_CONTROLLERS; ++i)
+  {
+    if (controllers_[i] != NULL)
+      delete controllers_[i];
+  }
 
   if (state_)
     delete state_;

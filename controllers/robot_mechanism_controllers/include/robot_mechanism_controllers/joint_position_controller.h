@@ -201,6 +201,11 @@ private:
   const char * topic_name_;
   
   /*!
+   * \brief xml pointer to ros topic name
+   */
+  TiXmlElement * ros_cb;
+
+  /*!
    * \brief A pointer to ros node
    */
   ros::node *node_;

@@ -167,7 +167,8 @@ JointPositionControllerNode::~JointPositionControllerNode()
 {
   node_->unadvertise_service(service_prefix_ + "/set_command");
   node_->unadvertise_service(service_prefix_ + "/get_actual");
-  node_->unsubscribe(topic_name_);
+  if(ros_cb && topic_name_)
+    node_->unsubscribe(topic_name_);
   delete c_;
 }
 
@@ -233,7 +234,7 @@ bool JointPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlEle
   node_->advertise_service(service_prefix_ + "/get_actual", &JointPositionControllerNode::getActual, this);
   guard_get_actual_.set(service_prefix_ + "/get_actual");
 
-  TiXmlElement * ros_cb = config->FirstChildElement("listen_topic");
+  ros_cb = config->FirstChildElement("listen_topic");
   if(ros_cb)
   {
     topic_name_=ros_cb->Attribute("name");

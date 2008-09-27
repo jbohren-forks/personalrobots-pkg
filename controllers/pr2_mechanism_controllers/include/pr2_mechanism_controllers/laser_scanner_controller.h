@@ -234,6 +234,16 @@ public:
 
 private:
   LaserScannerController *c_;
+  /*!
+   * \brief service prefix
+   */
+  std::string service_prefix_;
+
+  /*!
+   * \brief A pointer to ros node
+   */
+  ros::node *node_;
+
 };
 }
 

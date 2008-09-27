@@ -392,7 +392,7 @@ void LaserScannerController::setDynamicSawtooth(double time_from_start)
 }
 
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
-LaserScannerControllerNode::LaserScannerControllerNode()
+LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::node::instance())
 {
   c_ = new LaserScannerController();
 }
@@ -400,6 +400,9 @@ LaserScannerControllerNode::LaserScannerControllerNode()
 
 LaserScannerControllerNode::~LaserScannerControllerNode()
 {
+  node_->unadvertise_service(service_prefix_ + "/set_command");
+  node_->unadvertise_service(service_prefix_ + "/get_command");
+  node_->unadvertise_service(service_prefix_ + "/set_profile");
   delete c_;
 }
 
@@ -458,14 +461,13 @@ bool LaserScannerControllerNode::setProfileCall(
 
 bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
-  string prefix = config->Attribute("name");
+  service_prefix_ = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(prefix + "/set_command", &LaserScannerControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &LaserScannerControllerNode::getCommand, this);
-  node->advertise_service(prefix + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
+  node_->advertise_service(service_prefix_ + "/set_command", &LaserScannerControllerNode::setCommand, this);
+  node_->advertise_service(service_prefix_ + "/get_command", &LaserScannerControllerNode::getCommand, this);
+  node_->advertise_service(service_prefix_ + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
   return true;
 }
 bool LaserScannerControllerNode::getActual(
