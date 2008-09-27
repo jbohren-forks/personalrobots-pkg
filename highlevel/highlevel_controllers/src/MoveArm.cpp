@@ -77,6 +77,7 @@
 #include <mechanism_control/MechanismState.h>
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
+#include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/KinematicPlanState.h>
 
 static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
@@ -147,6 +148,9 @@ MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, con
 
   // Advertise for messages to command the arm
   advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
+
+  // Advertise the display.
+  advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
 }
 
 MoveArm::~MoveArm(){}
@@ -230,6 +234,14 @@ bool MoveArm::makePlan(){
   } else {
     std::cout << "Service 'plan_kinematic_path_state' failed\n";
   }
+
+  robot_msgs::DisplayKinematicPath dpath;
+  dpath.frame_id = "robot";
+  dpath.model_name = req.params.model_id;
+  dpath.start_state = req.start_state;
+  dpath.path = plan.path;
+  publish("display_kinematic_path", dpath);
+
 
   return foundPlan;
 }
