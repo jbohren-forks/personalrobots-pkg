@@ -139,12 +139,14 @@ int SerialChain::getID(std::string name)
 bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_dot, const JntArray &q_dotdot, Vector* torque)
 {
 
+  if (this->inverseDynamics->InverseDynamics(q,q_dot,q_dotdot,torque) >= 0)
+  {
    for(int i=0; i<q.rows(); i++)
    {
-      fprintf(stderr,"%d:: %f, %f, %f, %f\n",i,q(i),q_dot(i),q_dotdot(i),torque[i][2]);
+     fprintf(stderr,"%d:: %f, %f, %f, t:: %f, %f, %f\n",i,q(i),q_dot(i),q_dotdot(i),torque[i][0],torque[i][1],torque[i][2]);
    }
-  if (this->inverseDynamics->InverseDynamics(q,q_dot,q_dotdot,torque) >= 0)
     return true;
+  }
   else
     return false;  
 }

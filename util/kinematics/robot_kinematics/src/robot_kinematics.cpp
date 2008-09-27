@@ -85,6 +85,7 @@ bool RobotKinematics::loadString(const char* model_string)
   robot_desc::URDF model;
   if(!model.loadString(model_string))
     return false; // urdf fails
+
   loadModel(model);
   return true;
 }
