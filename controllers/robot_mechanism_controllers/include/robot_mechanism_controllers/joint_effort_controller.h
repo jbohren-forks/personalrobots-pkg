@@ -108,8 +108,11 @@ public:
 
   virtual void update();
 
-private:
+  std::string getJointName();
+
   mechanism::JointState *joint_; /**< Joint we're controlling. */
+
+private:
   mechanism::RobotState *robot_; /**< Pointer to robot structure. */
   double command_;          /**< Last commanded position. */
 };

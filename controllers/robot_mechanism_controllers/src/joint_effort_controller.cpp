@@ -102,6 +102,12 @@ void JointEffortController::update()
   joint_->commanded_effort_ = command_;
 }
 
+std::string JointEffortController::getJointName()
+{
+  return joint_->joint_->name_;
+}
+
+
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
 JointEffortControllerNode::JointEffortControllerNode()
 {
