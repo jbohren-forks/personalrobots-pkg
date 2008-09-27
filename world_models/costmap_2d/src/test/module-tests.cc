@@ -318,7 +318,7 @@ TEST(costmap, test7){
   // Iterate over all id's and verify they are obstacles
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
     unsigned int ind = *it;
-    size_t x, y;
+    unsigned int x, y;
     map.IND_MC(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.MC_IND(x, y)), true);
     ASSERT_EQ(costData[ind] == THRESHOLD || costData[ind] == CostMap2D::INFLATED_OBSTACLE, true);
