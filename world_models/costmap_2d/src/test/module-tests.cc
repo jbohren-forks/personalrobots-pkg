@@ -264,18 +264,7 @@ TEST(costmap, test7){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
 
   const unsigned char* costData = map.getMap();
-  /*
-<<<<<<< .mine
-=======
-  for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
-    unsigned int ind = *it;
-    unsigned int x, y;
-    map.convertFromMapIndexToXY(ind, x, y);
-    ASSERT_EQ(find(occupiedCells, map.getMapIndexFromCellCoords(x, y)), true);
-    ASSERT_EQ(costData[ind], THRESHOLD);
-  }
->>>>>>> .r4710
-  */
+
   // Output the map for visual assitance
   for(unsigned int y=0; y< GRID_HEIGHT; y++){
     for(unsigned x =0; x<GRID_WIDTH; x++){
