@@ -50,10 +50,10 @@ class Helmsman{
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
         double acc_lim_x, double acc_lim_y, double acc_lim_th);
 
-    bool computeVelocityCommands(const ObstacleMapAccessor& ma, const vector<std_msgs::Pose2DFloat32>& globalPlan,
+    bool computeVelocityCommands(const ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				 double vel_x, double vel_y, double vel_theta, 
 				 double& d_x, double& d_y, double& d_theta,
-				 vector<std_msgs::Pose2DFloat32>& localPlan);
+				 std::list<std_msgs::Pose2DFloat32>& localPlan);
 
   private:
 

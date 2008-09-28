@@ -33,7 +33,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 #include <trajectory_rollout/helmsman.h>
-
+#include <list>
 //construct a helmsman
 Helmsman::Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_per_dim,
     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
@@ -47,10 +47,10 @@ Helmsman::Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_
 }
 
 //compute the drive commands to send to the robot
-bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vector<std_msgs::Pose2DFloat32>& globalPlan,
+bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				       double vel_x, double vel_y, double vel_theta, 
 				       double& d_x, double& d_y, double& d_theta,
-				       vector<std_msgs::Pose2DFloat32>& localPlan){
+				       std::list<std_msgs::Pose2DFloat32>& localPlan){
   localPlan.clear();
 
   libTF::TFPose2D drive_cmds;
@@ -79,10 +79,10 @@ bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const vect
 
   // Temporary Transformation till api below changes
   std::vector<std_msgs::Point2DFloat32> copiedGlobalPlan;
-  for(unsigned int i = 0; i< globalPlan.size(); i++){
+  for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = globalPlan.begin(); it != globalPlan.end(); ++it){
     std_msgs::Point2DFloat32 p;
-    p.x = globalPlan[i].x;
-    p.y = globalPlan[i].y;
+    p.x = it->x;
+    p.y = it->y;
     copiedGlobalPlan.push_back(p);
   }
 
