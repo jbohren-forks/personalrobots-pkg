@@ -61,10 +61,51 @@ namespace ros {
   namespace highlevel_controllers {
 
     /**
+     * Wrapper class that provides a local window onto a global cost map
+     */
+    class CostMapAccessor: public ObstacleMapAccessor {
+    public:
+      /**
+       * @brief Constructor
+       * @param costMap The underlying global cost map
+       * @param deltaX The width in meters
+       * @param deltaY The height in meters
+       * @param the current x position in global coords
+       * @param the current y position in global coords
+       */
+      CostMapAccessor(const CostMap2D& costMap, double deltaX, double deltaY, double pose_x, double pose_y);
+
+      unsigned int getWidth() const;
+
+      unsigned int getHeight() const;
+
+      double getResolution() const;
+
+      bool contains(double x, double y) const;
+
+      bool isObstacle(unsigned int mx, unsigned int my) const;
+
+      bool isInflatedObstacle(unsigned int mx, unsigned int my) const;
+
+      void getOriginInWorldCoordinates(double& wx, double& wy) const;
+
+    private:
+
+      const CostMap2D& costMap_;
+      const unsigned int width_;
+      const unsigned int height_;
+      double wx_0_;
+      double wy_0_;
+      unsigned int mx_0_;
+      unsigned int my_0_;
+    };
+
+    /**
      * @brief Encapsualtion point to allow different algorithms to be used to compute velocity commands in following a path
      */
     class VelocityController {
     public:
+
       virtual ~VelocityController(){}
 
       /**
@@ -81,6 +122,10 @@ namespace ros {
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
 					   vector<std_msgs::Pose2DFloat32>& localPlan) = 0;
+
+      virtual double getMapDeltaX() const = 0;
+
+      virtual double getMapDeltaY() const = 0;
     };
 
     /** 
@@ -105,6 +150,10 @@ namespace ros {
 					   std_msgs::BaseVel& cmdVel,
 					   vector<std_msgs::Pose2DFloat32>& localPlan);
 
+      double getMapDeltaX() const {return mapDeltaX_;}
+
+      double getMapDeltaY() const {return mapDeltaY_;}
+
     private:
       const double mapDeltaX_;
       const double mapDeltaY_;
@@ -121,8 +170,9 @@ namespace ros {
       const double acc_lim_x_; 
       const double acc_lim_y_; 
       const double acc_lim_th_;
-      Helmsman* helmsman_;
+      Helmsman* helmsman_; // Could put this directly into the controller and skip the helmsman
     };
+
 
     class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
 
@@ -191,6 +241,11 @@ namespace ros {
       void updateGlobalPose();
 
       void publishPath(bool isGlobal, const std::vector<std_msgs::Pose2DFloat32>& path);
+
+      /**
+       * Utility to publish the local cost map around the robot
+       */
+      void publishLocalCostMap();
 
       /**
        * @brief Utility for comparing 2 points to be within a required distance, which is specified as a

@@ -40,67 +40,63 @@
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
 #include <trajectory_rollout/obstacle_map_accessor.h>
+#include <set>
 
 namespace ros {
   namespace highlevel_controllers {
 
-    /**
-     * Wrapper class to integrate cost map width controller
-     */
-    class CostMapAccessor: public ObstacleMapAccessor {
-    public:
-      CostMapAccessor(const CostMap2D& costMap, unsigned int width, unsigned int height, double origin_x, double origin_y)
-	: costMap_(costMap), width_(width), height_(height), wx_0_(origin_x), wy_0_(origin_y){
+    CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double deltaX, double deltaY, double poseX, double poseY)
+      : costMap_(costMap),
+	width_(static_cast<unsigned int>(deltaX / costMap_.getResolution())),
+	height_(static_cast<unsigned int>(deltaY / costMap_.getResolution())){
 
-	// The origin locates this grid. Convert from world coordinates to cell co-ordinates
-	// to get the cell coordinates of the origin
-	costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);
+      // As far left as we can get without going over on the right or left
+      wx_0_ = std::max(0.0,  poseX - deltaX/2);
+      wx_0_ = std::min(wx_0_,  costMap_.getWidth() * costMap_.getResolution() - deltaX);
 
-	std::cout << "Constructed local planning window: origin = <" << wx_0_ << ", " << wy_0_ << "> for " << 
-	  costMap_.getResolution() * width << " X " << costMap_.getResolution() * height << std::endl;
-      }
+      // As far to the top as we can go and not over above or below
+      wy_0_ = std::max(0.0, poseY - deltaY/2 );
+      wy_0_ = std::min(wy_0_, costMap_.getHeight() * costMap_.getResolution() - deltaY);
+
+      // The origin locates this grid. Convert from world coordinates to cell co-ordinates
+      // to get the cell coordinates of the origin
+      costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);
+      /*
+      std::cout << "Constructed local planning window: origin = <" << wx_0_ << ", " << wy_0_ << "> for " << 
+	costMap_.getResolution() * width_ << " X " << costMap_.getResolution() * height_ << std::endl;
+      */
+    }
   
-      unsigned int getWidth() const {return width_;}
+    unsigned int CostMapAccessor::getWidth() const {return width_;}
 
-      unsigned int getHeight() const {return height_;}
+    unsigned int CostMapAccessor::getHeight() const {return height_;}
 
-      double getResolution() const {return costMap_.getResolution();}
+    double CostMapAccessor::getResolution() const {return costMap_.getResolution();}
 
-      bool contains(double x, double y) const {
-	if(x < wx_0_ || x >= (wx_0_ + getWidth() * costMap_.getResolution()))
-	  return false;
+    bool CostMapAccessor::contains(double x, double y) const {
+      if(x < wx_0_ || x >= (wx_0_ + getWidth() * costMap_.getResolution()))
+	return false;
 
-	if(y < wy_0_ || y >= (wy_0_ + getHeight() * costMap_.getResolution()))
-	  return false;
+      if(y < wy_0_ || y >= (wy_0_ + getHeight() * costMap_.getResolution()))
+	return false;
 
-	return true;
-      }
+      return true;
+    }
 
-      bool isObstacle(unsigned int mx, unsigned int my) const {
-	unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-	return costMap_.isObstacle(costMapIndex);
-      }
+    bool CostMapAccessor::isObstacle(unsigned int mx, unsigned int my) const {
+      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
+      return costMap_.isObstacle(costMapIndex);
+    }
 
-      bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
-	unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-	return costMap_.isInflatedObstacle(costMapIndex);
-      }
+    bool CostMapAccessor::isInflatedObstacle(unsigned int mx, unsigned int my) const {
+      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
+      return costMap_.isInflatedObstacle(costMapIndex);
+    }
 
-      void getOriginInWorldCoordinates(double& wx, double& wy) const {
-	wx = wx_0_;
-	wy = wy_0_;
-      }
-
-    private:
-
-      const CostMap2D& costMap_;
-      const unsigned int width_;
-      const unsigned int height_;
-      const double wx_0_;
-      const double wy_0_;
-      unsigned int mx_0_;
-      unsigned int my_0_;
-    };
+    void CostMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const {
+      wx = wx_0_;
+      wy = wy_0_;
+    }
 
     TrajectoryRolloutController::TrajectoryRolloutController(double mapDeltaX, double mapDeltaY,
 							     double sim_time, int sim_steps, int samples_per_dim,
@@ -152,18 +148,8 @@ namespace ros {
 	return false;
       }
 
-      // Compute origin and dimensions for the controller's local map. Must check for bounds to stay in the global map
-      double origin_x = std::max(0.0, pose.x - mapDeltaX_/2);
-      origin_x = std::min(origin_x,  costMap.getWidth() * costMap.getResolution() - mapDeltaX_);
-
-      double origin_y = std::max(0.0, pose.y - mapDeltaY_/2);
-      origin_y = std::min(origin_y, costMap.getHeight() * costMap.getResolution() - mapDeltaY_);
-
       // Now we should have a valid origin to construct the local map as a window onto the global map
-      CostMapAccessor ma(costMap, 
-			 static_cast<unsigned int>(mapDeltaX_/costMap.getResolution()),
-			 static_cast<unsigned int>(mapDeltaY_/costMap.getResolution()), 
-			 origin_x, origin_y);
+      CostMapAccessor ma(costMap, mapDeltaX_, mapDeltaY_, pose.x, pose.y);
 
       double vx, vy, vw;
       bool result = helmsman_->computeVelocityCommands(ma, globalPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw, localPlan);
@@ -228,12 +214,13 @@ namespace ros {
       mapdata = new unsigned char[numCells];
       for(unsigned int i=0;i<numCells;i++)
 	{
-	  if(resp.map.data[i] == noInformation){
-	    // Handle a translation for no information
-	    mapdata[i] = CostMap2D::NO_INFORMATION;
+	  // This is masking the case of no information since it does not seem to be
+	  // represented in the input and the users of the cost map do not exploit it
+	  if(resp.map.data[i] > lethalObstacleThreshold){
+	    mapdata[i] = lethalObstacleThreshold; //CostMap2D::NO_INFORMATION;
 	  }
 	  else{
-	    // Simply copy the actual cost value
+	    // Simply copy the actual cost value. It will get thresholded in the cost map
 	    mapdata[i] = resp.map.data[i];
 	  }
 	}
@@ -359,33 +346,12 @@ namespace ros {
       const double ts = laserScanMsg_.header.stamp.to_double();
       std::vector<unsigned int> insertions, deletions;
 
-      // Surround with a lock since it can interact with planning
+      // Surround with a lock since it can interact with main planning and execution thread
       lock();
       costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
       handleMapUpdates(insertions, deletions);
+      publishLocalCostMap();
       unlock();
-
-      /*
-      // Publish obstacle data for each obstacle cell
-      std::vector<unsigned int> allObstacles;
-      costMap_->getOccupiedCellDataIndexList(allObstacles);
-      std_msgs::Polyline2D pointCloudMsg;
-      unsigned int pointCount = allObstacles.size();
-      pointCloudMsg.set_points_size(pointCount);
-      pointCloudMsg.color.a = 0.0;
-      pointCloudMsg.color.r = 0.0;
-      pointCloudMsg.color.b = 1.0;
-      pointCloudMsg.color.g = 0.0;
-
-      for(unsigned int i=0;i<pointCount;i++){
-	double wx, wy;
-	costMap_->IND_WC(allObstacles[i], wx, wy);
-	pointCloudMsg.points[i].x = wx;
-	pointCloudMsg.points[i].y = wy;
-      }
-
-      publish("gui_laser",pointCloudMsg);
-      */
     }
 
     /**
@@ -522,27 +488,43 @@ namespace ros {
       }
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
+
       publish("cmd_vel", cmdVel);
 
+      // Publish Local Plan
       publishPath(false, localPlan);
 
-      // Compute origin and dimensions for the controller's local map. Must check for bounds to stay in the global map
-      const double mapDeltaX_ = 10;
-      const double mapDeltaY_ = 10;
-      double origin_x = std::max(0.0, global_pose_.x - 5);
-      origin_x = std::min(origin_x,  getCostMap().getWidth() * getCostMap().getResolution() - mapDeltaX_);
 
-      double origin_y = std::max(0.0, global_pose_.y - 5);
-      origin_y = std::min(origin_y, getCostMap().getHeight() * getCostMap().getResolution() - mapDeltaY_);
+      return planOk;
+    }
 
+    /**
+     * @todo Make based on loaded tolerances
+     */
+    bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
+      if(fabs(x1 - x2) < getCostMap().getResolution() &&
+	 fabs(y1 - y2) < getCostMap().getResolution() &&
+	 fabs(th1- th2)< 10)
+	return true;
+
+      return false;
+    }
+
+    /**
+     * @brief Utility to output local obstacles. Make the local cost map accessor. It is very cheap :-) Then
+     * render the obstacles.
+     */
+    void MoveBase::publishLocalCostMap() {
       // Now we should have a valid origin to construct the local map as a window onto the global map
       CostMapAccessor ma(getCostMap(), 
-			 static_cast<unsigned int>(mapDeltaX_/getCostMap().getResolution()),
-			 static_cast<unsigned int>(mapDeltaY_/getCostMap().getResolution()), 
-			 origin_x, origin_y);
+			 controller_.getMapDeltaX(),
+			 controller_.getMapDeltaY(), 
+			 global_pose_.x, global_pose_.y);
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > allObstacles;
+      double origin_x, origin_y;
+      ma.getOriginInWorldCoordinates(origin_x, origin_y);
       for(unsigned int i = 0; i<ma.getWidth(); i++)
 	for(unsigned int j = 0; j<ma.getHeight();j++){
 	  if(ma.isObstacle(i, j) || ma.isInflatedObstacle(i, j) ){
@@ -568,21 +550,7 @@ namespace ros {
 	pointCloudMsg.points[i].y = allObstacles[i].second;
       }
 
-      publish("gui_laser",pointCloudMsg);
-
-      return planOk;
-    }
-
-    /**
-     * @todo Make based on loaded tolerances
-     */
-    bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      if(fabs(x1 - x2) < getCostMap().getResolution() &&
-	 fabs(y1 - y2) < getCostMap().getResolution() &&
-	 fabs(th1- th2)< 10)
-	return true;
-
-      return false;
+      publish("gui_laser", pointCloudMsg);
     }
   }
 }

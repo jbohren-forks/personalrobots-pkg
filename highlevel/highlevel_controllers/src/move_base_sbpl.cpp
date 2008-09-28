@@ -284,7 +284,7 @@ int main(int argc, char** argv)
 								     ACC_LIM_Y,
 								     ACC_LIM_TH);
 
-  ros::highlevel_controllers::MoveBaseSBPL node(controller, 10, 1, 255, 2, 0.175);
+  ros::highlevel_controllers::MoveBaseSBPL node(controller, 1, 100, 0, 2, 0.248);
 
   node.run();
 
