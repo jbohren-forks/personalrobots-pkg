@@ -249,8 +249,8 @@ namespace ros {
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
 #define MAX_OCC_DIST 1.0
-#define PDIST_SCALE .6
-#define GDIST_SCALE .2
+#define PDIST_SCALE 0.6
+#define GDIST_SCALE 0.2
 #define OCCDIST_SCALE 0
 #define DFAST_SCALE .2
 #define SAFE_DIST .005
@@ -284,8 +284,8 @@ int main(int argc, char** argv)
 								     ACC_LIM_Y,
 								     ACC_LIM_TH);
 
-  ros::highlevel_controllers::MoveBaseSBPL node(controller, 1, 100, 0, 2, 0.248);
-
+  ros::highlevel_controllers::MoveBaseSBPL node(controller, 1, 100, 0, 2, std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS));
+  
   node.run();
 
   ros::fini();

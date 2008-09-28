@@ -197,9 +197,17 @@ private:
     if(state == INACTIVE && goalMsg.enable){
       activate();
     }
-    else if(state == ACTIVE && !goalMsg.enable){
+    else if(state == ACTIVE){
       deactivate();
+
+      // If we are active, and this is a goal, publish the state message and activate. This allows us
+      // to over-ride a new goal, but still forces the transition between active and inactive states
+      if(goalMsg.enable){
+	publish(stateTopic, stateMsg);
+	activate();
+      }
     }
+
     unlock();
 
     // Call to allow derived class to update goal member variables
