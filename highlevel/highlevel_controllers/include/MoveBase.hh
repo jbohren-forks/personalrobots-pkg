@@ -57,6 +57,8 @@
 #include <trajectory_rollout/obstacle_map_accessor.h>
 #include <trajectory_rollout/helmsman.h>
 
+#include <list>
+
 namespace ros {
   namespace highlevel_controllers {
 
@@ -116,12 +118,12 @@ namespace ros {
       /**
        * @brief Compute velocities for x, y and theta based on an obstacle map, and a current path
        */
-      virtual bool computeVelocityCommands(const CostMap2D& costMap, 
-					   const vector<std_msgs::Pose2DFloat32>& globalPlan,
+      virtual bool computeVelocityCommands(const CostMapAccessor& ma, 
+					   const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 					   const libTF::TFPose2D& pose,
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
-					   vector<std_msgs::Pose2DFloat32>& localPlan) = 0;
+					   std::list<std_msgs::Pose2DFloat32>& localPlan) = 0;
 
       virtual double getMapDeltaX() const = 0;
 
@@ -143,12 +145,12 @@ namespace ros {
 
       virtual void initialize(rosTFClient& tf);
 
-      virtual bool computeVelocityCommands(const CostMap2D& costMap, 
-					   const vector<std_msgs::Pose2DFloat32>& globalPlan, 
+      virtual bool computeVelocityCommands(const CostMapAccessor& ma, 
+					   const std::list<std_msgs::Pose2DFloat32>& globalPlan, 
 					   const libTF::TFPose2D& pose, 
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
-					   vector<std_msgs::Pose2DFloat32>& localPlan);
+					   std::list<std_msgs::Pose2DFloat32>& localPlan);
 
       double getMapDeltaX() const {return mapDeltaX_;}
 
@@ -204,7 +206,7 @@ namespace ros {
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
        * @see publishPlan
        */
-      void updatePlan(const std::vector<std_msgs::Pose2DFloat32>& newPlan);
+      void updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan);
 
     private:
       /**
@@ -240,7 +242,7 @@ namespace ros {
 
       void updateGlobalPose();
 
-      void publishPath(bool isGlobal, const std::vector<std_msgs::Pose2DFloat32>& path);
+      void publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path);
 
       /**
        * Utility to publish the local cost map around the robot
@@ -273,8 +275,7 @@ namespace ros {
       /** Parameters that will be passed on initialization soon */
       const double laserMaxRange_; /**< Used in laser scan projection */
 
-      std::vector<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
-      unsigned int currentWaypointIndex_; /**!< Position in the plan under execution. The current working waypoint */
+      std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
     };
   }
 }

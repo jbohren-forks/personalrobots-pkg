@@ -217,7 +217,7 @@ namespace ros {
 
       // Extract the solution, if available
       if(araPlanner_->replan(PLANNER_TIMEOUT, &solutionStateIDs)){
-	std::vector<std_msgs::Pose2DFloat32> plan;
+	std::list<std_msgs::Pose2DFloat32> plan;
 	for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
 	  int state = *it;
 	  int mx, my;

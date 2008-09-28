@@ -60,12 +60,7 @@ namespace ros {
 
       // The origin locates this grid. Convert from world coordinates to cell co-ordinates
       // to get the cell coordinates of the origin
-      costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);
-      /*
-      std::cout << "Constructed local planning window: origin = <" << wx_0_ << ", " << wy_0_ << "> for " << 
-	costMap_.getResolution() * width_ << " X " << costMap_.getResolution() * height_ << std::endl;
-      */
-    }
+      costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);    }
   
     unsigned int CostMapAccessor::getWidth() const {return width_;}
 
@@ -135,21 +130,18 @@ namespace ros {
 			       acc_lim_x_, acc_lim_y_, acc_lim_th_);
     }
 
-    bool TrajectoryRolloutController::computeVelocityCommands(const CostMap2D& costMap, 
-							      const vector<std_msgs::Pose2DFloat32>& globalPlan,
+    bool TrajectoryRolloutController::computeVelocityCommands(const CostMapAccessor& ma, 
+							      const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 							      const libTF::TFPose2D& pose,
 							      const std_msgs::BaseVel& currentVel,
 							      std_msgs::BaseVel& cmdVel,
-							      vector<std_msgs::Pose2DFloat32>& localPlan){
+							      std::list<std_msgs::Pose2DFloat32>& localPlan){
       if(helmsman_ == NULL){
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
 	cmdVel.vw = 0;
 	return false;
       }
-
-      // Now we should have a valid origin to construct the local map as a window onto the global map
-      CostMapAccessor ma(costMap, mapDeltaX_, mapDeltaY_, pose.x, pose.y);
 
       double vx, vy, vw;
       bool result = helmsman_->computeVelocityCommands(ma, globalPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw, localPlan);
@@ -166,8 +158,7 @@ namespace ros {
 	controller_(vc),
 	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
 	costMap_(NULL),
-	laserMaxRange_(4.0),
-	currentWaypointIndex_(0) {
+	laserMaxRange_(4.0) {
 
       // Initialize the velocity controller with the transform client
       controller_.initialize(tf_);
@@ -291,6 +282,8 @@ namespace ros {
       stateMsg.goal.y = goalMsg.goal.y;
       stateMsg.goal.th = goalMsg.goal.th;
       unlock();
+
+      printf("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
     }
 
     void MoveBase::updateStateMsg(){
@@ -390,19 +383,21 @@ namespace ros {
       unlock();
     }
 
-    void MoveBase::updatePlan(const std::vector<std_msgs::Pose2DFloat32>& newPlan){
+    void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
       plan_.clear();
       plan_ = newPlan;
-      currentWaypointIndex_ = 0;
     }
 
-    void MoveBase::publishPath(bool isGlobal, const std::vector<std_msgs::Pose2DFloat32>& path) {
+    void MoveBase::publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
  
-      for(unsigned int i = 0; i < path.size(); i++){
-	guiPathMsg.points[i].x = path[i].x;
-	guiPathMsg.points[i].y = path[i].y;
+      unsigned int i = 0;
+      for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = path.begin(); it != path.end(); ++it){
+	const std_msgs::Pose2DFloat32& w = *it;
+	guiPathMsg.points[i].x = w.x;
+	guiPathMsg.points[i].y = w.y;
+	i++;
       }
 
       if(isGlobal){
@@ -457,8 +452,7 @@ namespace ros {
 
     bool MoveBase::dispatchCommands(){
       bool planOk = true; // Return value to trigger replanning or not
-      std_msgs::BaseVel cmdVel; // Commanded velocities
-      std::vector<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+      std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
@@ -469,14 +463,28 @@ namespace ros {
 	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
       }
       else {
-	std_msgs::BaseVel currentVel;
+	// Prepare the local cost map, and refine the plan to reflect progress made. If no part of the plan is in the local cost window then
+	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us
+	CostMapAccessor ma(getCostMap(), controller_.getMapDeltaX(), controller_.getMapDeltaY(), global_pose_.x, global_pose_.y);
+	std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
+	while(it != plan_.end()){
+	  const std_msgs::Pose2DFloat32& w = *it;
+	  if(ma.contains(w.x, w.y))
+	    break;
+	  it = plan_.erase(it);
+	}
+
+	// The plan is bogus if it is empty
+	planOk = !plan_.empty();
 
 	// Set current velocities from odometry
+	std_msgs::BaseVel currentVel;
 	currentVel.vx = base_odom_.vel.x;
 	currentVel.vy = base_odom_.vel.y;
 	currentVel.vw = base_odom_.vel.th;
 
-	planOk = planOk && controller_.computeVelocityCommands(getCostMap(), plan_, global_pose_, currentVel, cmdVel, localPlan);
+	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+	planOk = planOk && controller_.computeVelocityCommands(ma, plan_, global_pose_, currentVel, cmdVel, localPlan);
 
 	if(!planOk){
 	  // Zero out the velocities
@@ -485,14 +493,14 @@ namespace ros {
 	  cmdVel.vw = 0;
 	  std::cout << "Local planning has failed :-(\n";
 	}
+
+	publishPath(false, localPlan);
+	publishPath(true, plan_);
       }
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
 
       publish("cmd_vel", cmdVel);
-
-      // Publish Local Plan
-      publishPath(false, localPlan);
 
 
       return planOk;
