@@ -87,8 +87,9 @@ namespace gazebo
 \{
 */
 
-/// \brief ros laser controller.
-/// This is a controller that simulates a ros laser
+/// \brief ROS laser block simulation.
+///        \li Starts a ROS node if none exists.
+///        \li This controller simulates a block of laser range detections.
 class Ros_Block_Laser : public Controller
 {
   /// \brief Constructor

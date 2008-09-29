@@ -69,8 +69,8 @@ namespace gazebo
 \{
 */
 
-/// \brief starts a ROS time node and broadcast simulator time
-/// This is a controller that starts a ros time
+/// \brief Starts a ROS node if none exists and broadcast simulator time
+///        over rostools::Time.
 class Ros_Time : public Controller
 {
   /// \brief Constructor

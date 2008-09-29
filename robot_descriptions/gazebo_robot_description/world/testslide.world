@@ -54,7 +54,7 @@
       <material>Gazebo/CloudySky</material>
     </sky>
     <gazeboPath>media</gazeboPath>
-    <grid>off</grid>
+    <grid>false</grid>
     <maxUpdateRate>100</maxUpdateRate>
   </rendering:ogre>
 
@@ -145,10 +145,10 @@
     <rpy>   0.0    0.0    0.00</rpy>
     <body:box name="slide1_legs_body">
       <geom:box name="slide_base_geom">
-        <kp>1000000000000000</kp>
+        <kp>10000000000000000</kp>
         <kd>1</kd>
-        <mu1>0.0</mu1>
-        <mu2>0.0</mu2>
+        <mu1>10000.0</mu1>
+        <mu2>10000.0</mu2>
         <xyz>   0.0    5.0    13</xyz>
 
         <rpy>  45.0    0.0    0.00</rpy>
@@ -156,7 +156,7 @@
         <mass> 1000.0</mass>
         <visual>
           <size>2.0   14.14   1.0</size>
-          <material>Gazebo/Rocky</material>
+          <material>Gazebo/Red</material>
           <mesh>unit_box</mesh>
         </visual>
       </geom:box>
@@ -225,8 +225,8 @@
       <geom:box name="support_1">
         <kp>10000000.0</kp>
         <kd>1</kd>
-        <mu1>0.0</mu1>
-        <mu2>0.0</mu2>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
         <xyz>1000.0 1000.0    1.00</xyz>
         <rpy>   0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -241,8 +241,8 @@
       <geom:box name="support_2">
         <kp>10000000.0</kp>
         <kd>1</kd>
-        <mu1>0.0</mu1>
-        <mu2>0.0</mu2>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
         <xyz>1000.0 -1000.0    1.00</xyz>
         <rpy>    0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -257,8 +257,8 @@
       <geom:box name="support_3">
         <kp>10000000.0</kp>
         <kd>1</kd>
-        <mu1>0.0</mu1>
-        <mu2>0.0</mu2>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
         <xyz>-1000.0 -1000.0    1.00</xyz>
         <rpy>     0.0    0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -273,8 +273,8 @@
       <geom:box name="support_4">
         <kp>10000000.0</kp>
         <kd>1</kd>
-        <mu1>0.0</mu1>
-        <mu2>0.0</mu2>
+        <mu1>1000.0</mu1>
+        <mu2>1000.0</mu2>
         <xyz>-1000.0  1000.0    1.00</xyz>
         <rpy>    0.0     0.0    0.00</rpy>
         <mesh>default</mesh>
@@ -334,7 +334,7 @@
       <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
     </controller:ros_time>
 
-    <xyz>0.0     8.0   50.0 </xyz>
+    <xyz>0.0     8.0   110.0 </xyz>
     <rpy>0.0     0.0   90.0 </rpy>
 
     <!-- base, torso and arms -->

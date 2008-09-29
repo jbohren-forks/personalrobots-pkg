@@ -42,7 +42,7 @@ namespace gazebo
 
   \brief Ros Camera Plugin Controller.
   
-  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interfaace as well as publish a ROS std_msgs::Image (under topicName). This controller should only be used as a child of a camera sensor 
+  This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS std_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
 
   \verbatim
   <model:physical name="camera_model">
@@ -63,8 +63,9 @@ namespace gazebo
 \{
 */
 
-/// \brief Ros_Camera Plugin Controller
-/// This is a controller that simulates a generic camera
+/// \brief Ros_Camera Controller.
+///        \li Starts a ros node if none exists. \n
+///        \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS. \n
 class Ros_Camera : public Controller
 {
   /// \brief Constructor

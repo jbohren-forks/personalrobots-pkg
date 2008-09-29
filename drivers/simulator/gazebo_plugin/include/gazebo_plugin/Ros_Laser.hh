@@ -45,7 +45,8 @@ namespace gazebo
 
   \brief ROS Laser Scanner Controller Plugin
   
-  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic and Iface.
+  This controller gathers range data from a simulated ray sensor, publishes range data through
+    std_msgs::LaserScan ROS topic and Gazebo Iface.
 
   \verbatim
     <model:physical name="ray_model">
@@ -77,8 +78,9 @@ namespace gazebo
 \{
 */
 
-/// \brief ros laser controller.
-/// This is a controller that simulates a ros laser
+/// \brief ROS laser scan controller.
+///        \li Starts a ROS node if none exists.
+///        \li Simulates a laser range sensor.
 class Ros_Laser : public Controller
 {
   /// \brief Constructor
