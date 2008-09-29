@@ -38,7 +38,7 @@
 /*! \class controller::MotorTest1
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */
@@ -81,7 +81,7 @@ public:
    * \brief Get latest time..
    */
   double getTime();
-  
+
   /*!
    * \brief Perform the test analysis
    */
@@ -107,15 +107,13 @@ private:
   double fixture_joint_end_pos_;                    /**< End pos of the fixture joint. */
   bool complete;
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  
 };
 
 /***************************************************/
 /*! \class controller::MotorTest1Node
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */

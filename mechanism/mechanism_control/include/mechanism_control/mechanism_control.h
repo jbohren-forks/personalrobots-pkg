@@ -123,15 +123,10 @@ private:
 
   static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
 
-  mechanism_control::MechanismState mechanism_state_;
   const char* const mechanism_state_topic_;
   misc_utils::RealtimePublisher<mechanism_control::MechanismState> publisher_;
 
-  rosTF::TransformArray transform_array_msg_;
-  misc_utils::RealtimePublisher<rosTF::TransformArray> transform_array_publisher_;
-
-  rostools::Time time_msg_;
-  misc_utils::RealtimePublisher<rostools::Time> time_publisher_;
+  misc_utils::RealtimePublisher<rosTF::TransformArray> transform_publisher_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

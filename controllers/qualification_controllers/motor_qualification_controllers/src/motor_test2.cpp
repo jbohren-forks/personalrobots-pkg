@@ -45,7 +45,7 @@ MotorTest2::MotorTest2():
   robot_ = NULL;
   actuator_ = NULL;
   joint_ = NULL;
-  
+
   count_=1;
   duration_=4;
   torque_=0;
@@ -53,8 +53,8 @@ MotorTest2::MotorTest2():
   resistance_=10;
   initial_time_=0;
   complete = false;
-  
-  
+
+
 }
 
 MotorTest2::~MotorTest2()
@@ -94,7 +94,7 @@ bool MotorTest2::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     fprintf(stderr, "MotorTest2 could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-  
+
   TiXmlElement *cd = j->FirstChildElement("controller_defaults");
   if (cd)
   {
@@ -123,11 +123,11 @@ void MotorTest2::update()
   double time = robot_->hw_->current_time_;
   static int first_time = 1;
   static double zero_offset = 0;
-  
-  
+
+
   if ((time-initial_time_)<duration_) {
-    test_baseline_(count_) = actuator_->state_.motor_voltage_; 
-    
+    test_baseline_(count_) = actuator_->state_.motor_voltage_;
+
     count_++;
   }
   else if((time-initial_time_)<2*duration_)
@@ -145,35 +145,38 @@ void MotorTest2::update()
   else if((time-initial_time_)<3*duration_)
   {
     joint_->commanded_effort_ = torque_;
-    test_voltage_(count_) =actuator_->state_.motor_voltage_- zero_offset;  
+    test_voltage_(count_) =actuator_->state_.motor_voltage_- zero_offset;
     test_current_(count_) = actuator_->state_.last_measured_current_;
     test_velocity_(count_) =joint_->velocity_;
     count_++;
   }
   else if (!complete)
   {
-    joint_->commanded_effort_ = 0.0; 
+    joint_->commanded_effort_ = 0.0;
     analysis();
     complete = true;
   }
-  else 
+  else
     return;
 }
 
 void MotorTest2::analysis()
 {
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
+  // Screw realtime
+  publisher_.lock();
+
+  publisher_.msg_.set_status_size(1);
+  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
   status->set_values_size(2);
   status->name = "MotorTest";
   NEWMAT::Matrix test_matrix =test_velocity_ | test_current_;
-  QRZ(test_matrix, U_); 
+  QRZ(test_matrix, U_);
   QRZ(test_matrix, test_voltage_, M_);
   NEWMAT::Matrix solution=U_.i()*M_;
 
   double speed_const_meas = fabs(1/solution(1,1));
   //ouble resistance_meas =fabs(solution(2,1)); this was all over the place no idea why??
-   
+
   if (fabs(speed_const_meas-speed_constant_)/speed_constant_ > 0.05)
   {
     //the motor isn't moving
@@ -194,8 +197,10 @@ void MotorTest2::analysis()
     status->values[0].value = speed_const_meas;
     status->values[1].label = "expected speed constant";
     status->values[1].value = speed_constant_;
-   }
-   publisher_.publish(diagnostic_message_);
+  }
+
+  publisher_.unlockAndPublish();
+
   return;
 }
 

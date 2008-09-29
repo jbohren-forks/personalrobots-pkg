@@ -44,14 +44,14 @@ MotorTest3::MotorTest3():
   robot_ = NULL;
 
   joint_ = NULL;
-  
-  
+
+
   duration_=20;
 
   amplitude_=0;
   initial_time_=0;
   complete = false;
-  
+
 }
 
 MotorTest3::~MotorTest3()
@@ -66,7 +66,7 @@ void MotorTest3::init( double amplitude, std::string fixture_name, double time, 
   duration_=20;
   sweep_controller_ = new SineSweepController();
   sweep_controller_->init(1.0, 40, duration_, amplitude,robot->hw_->current_time_ ,name,robot);
-  
+
   amplitude_=amplitude;
   initial_time_=time;
 
@@ -91,10 +91,10 @@ bool MotorTest3::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     fprintf(stderr, "MotorTest3 could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-  
+
   TiXmlElement *cd = j->FirstChildElement("controller_defaults");
   if (cd)
-  { 
+  {
     double amplitude = atof(cd->Attribute("amplitude"));
     std::string fixture_name = cd->Attribute("fixture_name");
     init(amplitude, fixture_name, robot->hw_->current_time_,j->Attribute("name"), robot);
@@ -111,34 +111,35 @@ bool MotorTest3::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 void MotorTest3::update()
 {
   double time = robot_->hw_->current_time_;
-  
-  
+
+
   if((time-initial_time_)<duration_)
   {
     sweep_controller_->update();
   }
   else if (!complete)
   {
-    
+
     analysis();
     complete = true;
   }
-  else 
+  else
     return;
 }
 
 void MotorTest3::analysis()
 {
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
+  publisher_.lock();  // Screw realtime
+  publisher_.msg_.set_status_size(1);
+  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
 
   status->name = "MotorTest";
-  
+
   //test passed
   status->level = 0;
   status->message = "OK: Passed.";
 
-  publisher_.publish(diagnostic_message_);
+  publisher_.unlockAndPublish();
   return;
 }
 

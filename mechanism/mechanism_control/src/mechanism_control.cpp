@@ -145,7 +145,7 @@ bool MechanismControl::spawnController(const std::string &type,
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
-  printf("Spawning %s: %08x\n", name.c_str(), &model_);
+  printf("Spawning %s: %08x\n", name.c_str(), (unsigned int)&model_);
 
 
   if (!c->initXml(state_, config) ||
@@ -189,7 +189,7 @@ bool MechanismControl::killController(const std::string &name)
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1),
-    transform_array_publisher_("TransformArray", 1), time_publisher_("time", 1)
+    transform_publisher_("TransformArray", 1)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
@@ -229,9 +229,9 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
 {
   if (!mc_->initXml(config))
     return false;
-  mechanism_state_.set_joint_states_size(mc_->model_.joints_.size());
-  mechanism_state_.set_actuator_states_size(mc_->hw_->actuators_.size());
-  transform_array_msg_.set_quaternions_size(mc_->model_.links_.size());
+  publisher_.msg_.set_joint_states_size(mc_->model_.joints_.size());
+  publisher_.msg_.set_actuator_states_size(mc_->hw_->actuators_.size());
+  transform_publisher_.msg_.set_quaternions_size(mc_->model_.links_.size());
   return true;
 }
 
@@ -242,76 +242,79 @@ void MechanismControlNode::update()
   static double last_publish_time = 0.0;
   if (mc_->hw_->current_time_ - last_publish_time > STATE_PUBLISHING_PERIOD)
   {
-    assert(mc_->model_.joints_.size() == mechanism_state_.get_joint_states_size());
-    for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+    if (publisher_.trylock())
     {
-      mechanism_control::JointState *out = &mechanism_state_.joint_states[i];
-      mechanism::JointState *in = &mc_->state_->joint_states_[i];
-      out->name = mc_->model_.joints_[i]->name_;
-      out->position = in->position_;
-      out->velocity = in->velocity_;
-      out->applied_effort = in->applied_effort_;
-      out->commanded_effort = in->commanded_effort_;
-    }
+      assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
+      for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
+      {
+        mechanism_control::JointState *out = publisher_.msg_.joint_states + i;
+        mechanism::JointState *in = &mc_->state_->joint_states_[i];
+        out->name = mc_->model_.joints_[i]->name_;
+        out->position = in->position_;
+        out->velocity = in->velocity_;
+        out->applied_effort = in->applied_effort_;
+        out->commanded_effort = in->commanded_effort_;
+      }
 
-    for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
-    {
-      mechanism_control::ActuatorState *out = &mechanism_state_.actuator_states[i];
-      ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
-      out->name = mc_->hw_->actuators_[i]->name_;
-      out->encoder_count = in->encoder_count_;
-      out->position = in->position_;
-      out->timestamp = in->timestamp_;
-      out->encoder_velocity = in->encoder_velocity_;
-      out->velocity = in->velocity_;
-      out->calibration_reading = in->calibration_reading_;
-      out->last_calibration_high_transition = in->last_calibration_high_transition_;
-      out->last_calibration_low_transition = in->last_calibration_low_transition_;
-      out->is_enabled = in->is_enabled_;
-      out->run_stop_hit = in->run_stop_hit_;
-      out->last_requested_current = in->last_requested_current_;
-      out->last_commanded_current = in->last_commanded_current_;
-      out->last_measured_current = in->last_measured_current_;
-      out->last_requested_effort = in->last_requested_effort_;
-      out->last_commanded_effort = in->last_commanded_effort_;
-      out->last_measured_effort = in->last_measured_effort_;
-      out->motor_voltage = in->motor_voltage_;
-      out->num_encoder_errors = in->num_encoder_errors_;
-    }
-    mechanism_state_.time = mc_->hw_->current_time_;
+      for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
+      {
+        mechanism_control::ActuatorState *out = publisher_.msg_.actuator_states + i;
+        ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
+        out->name = mc_->hw_->actuators_[i]->name_;
+        out->encoder_count = in->encoder_count_;
+        out->position = in->position_;
+        out->timestamp = in->timestamp_;
+        out->encoder_velocity = in->encoder_velocity_;
+        out->velocity = in->velocity_;
+        out->calibration_reading = in->calibration_reading_;
+        out->last_calibration_high_transition = in->last_calibration_high_transition_;
+        out->last_calibration_low_transition = in->last_calibration_low_transition_;
+        out->is_enabled = in->is_enabled_;
+        out->run_stop_hit = in->run_stop_hit_;
+        out->last_requested_current = in->last_requested_current_;
+        out->last_commanded_current = in->last_commanded_current_;
+        out->last_measured_current = in->last_measured_current_;
+        out->last_requested_effort = in->last_requested_effort_;
+        out->last_commanded_effort = in->last_commanded_effort_;
+        out->last_measured_effort = in->last_measured_effort_;
+        out->motor_voltage = in->motor_voltage_;
+        out->num_encoder_errors = in->num_encoder_errors_;
+      }
+      publisher_.msg_.time = mc_->hw_->current_time_;
 
-    publisher_.publish(mechanism_state_);
+      publisher_.unlockAndPublish();
+    }
 
 
     // Frame transforms
-    assert(mc_->model_.links_.size() == transform_array_msg_.get_quaternions_size());
-    for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
+    if (transform_publisher_.trylock())
     {
-      if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
-        continue;
+      assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
+      for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
+      {
+        if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
+          continue;
 
-      libTF::Position pos;
-      libTF::Quaternion quat;
-      mc_->state_->link_states_[i].rel_frame_.getPosition(pos);
-      mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
-      rosTF::TransformQuaternion &out = transform_array_msg_.quaternions[i];
+        libTF::Position pos;
+        libTF::Quaternion quat;
+        mc_->state_->link_states_[i].rel_frame_.getPosition(pos);
+        mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
+        rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[i];
 
-      out.header.stamp.from_double(mc_->hw_->current_time_);
-      out.header.frame_id = mc_->model_.links_[i]->name_;
-      out.parent = mc_->model_.links_[i]->parent_name_;
-      out.xt = pos.x;
-      out.yt = pos.y;
-      out.zt = pos.z;
-      out.w = quat.w;
-      out.xr = quat.x;
-      out.yr = quat.y;
-      out.zr = quat.z;
+        out.header.stamp.from_double(mc_->hw_->current_time_);
+        out.header.frame_id = mc_->model_.links_[i]->name_;
+        out.parent = mc_->model_.links_[i]->parent_name_;
+        out.xt = pos.x;
+        out.yt = pos.y;
+        out.zt = pos.z;
+        out.w = quat.w;
+        out.xr = quat.x;
+        out.yr = quat.y;
+        out.zr = quat.z;
+      }
+
+      transform_publisher_.unlockAndPublish();
     }
-    transform_array_publisher_.publish(transform_array_msg_);
-
-    // rostime
-    time_msg_.rostime.from_double(mc_->hw_->current_time_);
-    time_publisher_.publish(time_msg_);
 
     last_publish_time = mc_->hw_->current_time_;
   }

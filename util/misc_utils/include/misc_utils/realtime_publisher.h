@@ -50,7 +50,7 @@ class RealtimePublisher
 {
 public:
   RealtimePublisher(const std::string &topic, int queue_size)
-    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), thread_(NULL)
+    : topic_(topic), node_(NULL), is_running_(false), keep_running_(false), thread_(NULL), turn_(REALTIME)
   {
     if ((node_ = ros::node::instance()) == NULL)
     {
@@ -70,6 +70,7 @@ public:
 
   ~RealtimePublisher()
   {
+    node_->unadvertise(topic_);
   }
 
   void stop()
@@ -77,15 +78,41 @@ public:
     keep_running_ = false;
   }
 
-  void publish(const Msg &msg)
+  Msg msg_;
+
+  void lock()
+  {
+    pthread_mutex_lock(&msg_lock_);
+  }
+
+  bool trylock()
   {
     if (0 == pthread_mutex_trylock(&msg_lock_))
     {
-      msg_ = msg;
-      msg_updated_ = true;
-      pthread_mutex_unlock(&msg_lock_);
-      pthread_cond_signal(&updated_cond_);
+      if (turn_ == REALTIME)
+      {
+        return true;
+      }
+      else
+      {
+        pthread_mutex_unlock(&msg_lock_);
+        return false;
+      }
     }
+    else
+      return false;
+  }
+
+  void unlock()
+  {
+    pthread_mutex_unlock(&msg_lock_);
+  }
+
+  void unlockAndPublish()
+  {
+    turn_ = NON_REALTIME;
+    pthread_mutex_unlock(&msg_lock_);
+    pthread_cond_signal(&updated_cond_);
   }
 
   bool is_running() const { return is_running_; }
@@ -93,15 +120,15 @@ public:
   void publishingLoop()
   {
     is_running_ = true;
-    msg_updated_ = false;
+    turn_ = REALTIME;
     while (keep_running_)
     {
       // Locks msg_ and copies it
       pthread_mutex_lock(&msg_lock_);
-      while (!msg_updated_)
+      while (turn_ != NON_REALTIME)
         pthread_cond_wait(&updated_cond_, &msg_lock_);
       Msg outgoing(msg_);
-      msg_updated_ = false;
+      turn_ = REALTIME;
       pthread_mutex_unlock(&msg_lock_);
 
       // Sends the outgoing message
@@ -111,6 +138,7 @@ public:
   }
 
 private:
+
   std::string topic_;
   ros::node *node_;
   bool is_running_;
@@ -118,10 +146,11 @@ private:
 
   pthread_t *thread_;
 
-  Msg msg_;
-  bool msg_updated_;
   pthread_mutex_t msg_lock_;  // Protects msg_
   pthread_cond_t updated_cond_;
+
+  enum {REALTIME, NON_REALTIME};
+  int turn_;  // Who's turn is it to use msg_?
 };
 
 }

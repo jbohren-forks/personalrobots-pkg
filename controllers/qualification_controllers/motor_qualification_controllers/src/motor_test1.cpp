@@ -43,7 +43,7 @@ MotorTest1::MotorTest1():
 {
   robot_ = NULL;
   joint_ = NULL;
-  
+
   duration_=0;
   torque_=0;
   initial_time_=0;
@@ -52,7 +52,7 @@ MotorTest1::MotorTest1():
   fixture_joint_end_pos_= 0;
   test_joint_end_pos_= 0;
   complete = false;
-  
+
 }
 
 MotorTest1::~MotorTest1()
@@ -91,7 +91,7 @@ bool MotorTest1::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     fprintf(stderr, "MotorTest1 could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-  
+
   TiXmlElement *cd = j->FirstChildElement("controller_defaults");
   if (cd)
   {
@@ -116,7 +116,7 @@ double MotorTest1::getTime()
 void MotorTest1::update()
 {
   double time = robot_->hw_->current_time_;
-  
+
   if((time-initial_time_)<duration_)
   {
     joint_->commanded_effort_ = torque_;
@@ -132,7 +132,7 @@ void MotorTest1::update()
     analysis();
     complete = true;
   }
-  else 
+  else
     return;
 }
 
@@ -142,8 +142,12 @@ void MotorTest1::analysis()
   double t_delta = test_joint_end_pos_-test_joint_start_pos_;
   double error = fabs(fabs(f_delta)-fabs(t_delta))/((fabs(f_delta)+fabs(t_delta))/2);
   printf("f: %f , t: %f\n", f_delta, t_delta);
-  diagnostic_message_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
+
+  // Screw realtime
+  publisher_.lock();
+
+  publisher_.msg_.set_status_size(1);
+  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
   status->name = "MotorTest";
   printf("error: %f\n", error);
   if (f_delta==0 && t_delta==0)
@@ -157,7 +161,7 @@ void MotorTest1::analysis()
     //the motor doesn't have an encoder
     status->level = 2;
     status->message = "ERROR: The motor encoder is not attached or not powered.";
-    
+
   }
   else if(error<0.005)
   {
@@ -167,23 +171,24 @@ void MotorTest1::analysis()
   }
   else if(f_delta>0 && t_delta<0)
   {
-    //the encoder is reversed 
+    //the encoder is reversed
     status->level = 2;
     status->message = "ERROR: The motor encoder is reversed.";
   }
-  else if(f_delta<0 && t_delta<0) 
+  else if(f_delta<0 && t_delta<0)
   {
     //motor reversed
     status->level = 2;
     status->message = "ERROR: The motor wiring is reversed.";
-  }   
+  }
   else
   {
     //test passed
     status->level = 0;
     status->message = "OK: Passed.";
-   }
-   publisher_.publish(diagnostic_message_);
+  }
+
+  publisher_.unlockAndPublish();
   return;
 }
 

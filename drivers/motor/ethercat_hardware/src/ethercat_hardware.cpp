@@ -236,8 +236,11 @@ void EthercatHardware::publishDiagnostics()
   }
 
   // Publish status of each EtherCAT device
-  diagnostic_message_.set_status_vec(statuses);
-  publisher_.publish(diagnostic_message_);
+  if (publisher_.trylock())
+  {
+    publisher_.msg_.set_status_vec(statuses);
+    publisher_.unlockAndPublish();
+  }
 }
 
 void EthercatHardware::update()

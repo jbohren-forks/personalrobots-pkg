@@ -38,7 +38,7 @@
 /*! \class controller::MotorTest3
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */
@@ -79,7 +79,7 @@ public:
   void init(double amplitude, std::string fixture_name, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  
+
   /*!
    * \brief Perform the test analysis
    */
@@ -102,16 +102,13 @@ private:
   double initial_time_;                                 /**< Start time of the test. */
   bool complete;
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-   
-  
 };
 
 /***************************************************/
 /*! \class controller::MotorTest3Node
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */

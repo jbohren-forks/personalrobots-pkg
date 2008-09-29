@@ -196,7 +196,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   unsigned int minor = revision & 0xff;
 
   printf("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d\n", sh_->get_ring_position(),
-         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6, 
+         sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
          sh_->get_product_code(), major, minor,
          'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
 
@@ -323,14 +323,16 @@ void WG06::convertState(ActuatorState &state, unsigned char *current_buffer, uns
 
   if (p->timestamp_ != last_pressure_time_)
   {
-    ethercat_hardware::PressureState pressure_;
-    pressure_.set_data0_size(22);
-    pressure_.set_data1_size(22);
-    for (int i = 0; i < 22; ++i ) {
-      pressure_.data0[i] = ((p->data0_[i] >> 8) & 0xff) | ((p->data0_[i] << 8) & 0xff00);
-      pressure_.data1[i] = ((p->data1_[i] >> 8) & 0xff) | ((p->data1_[i] << 8) & 0xff00);
+    if (publisher_.trylock())
+    {
+      publisher_.msg_.set_data0_size(22);
+      publisher_.msg_.set_data1_size(22);
+      for (int i = 0; i < 22; ++i ) {
+        publisher_.msg_.data0[i] = ((p->data0_[i] >> 8) & 0xff) | ((p->data0_[i] << 8) & 0xff00);
+        publisher_.msg_.data1[i] = ((p->data1_[i] >> 8) & 0xff) | ((p->data1_[i] << 8) & 0xff00);
+      }
+      publisher_.unlockAndPublish();
     }
-    publisher_.publish(pressure_);
   }
 
   WG0X::convertState(state, current_buffer, last_buffer);

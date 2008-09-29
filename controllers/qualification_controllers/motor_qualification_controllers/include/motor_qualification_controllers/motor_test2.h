@@ -38,7 +38,7 @@
 /*! \class controller::MotorTest2
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */
@@ -85,7 +85,7 @@ public:
    * \brief Get latest time..
    */
   double getTime();
-  
+
   /*!
    * \brief Perform the test analysis
    */
@@ -111,24 +111,20 @@ private:
   double initial_time_;                             /**< Start time of the test. */
   bool complete;
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
-  
-  
+
   NEWMAT::ColumnVector test_voltage_;
-  NEWMAT::ColumnVector test_velocity_;  
+  NEWMAT::ColumnVector test_velocity_;
   NEWMAT::ColumnVector test_current_;
   NEWMAT::ColumnVector test_baseline_;
   NEWMAT::UpperTriangularMatrix U_;
   NEWMAT::ColumnVector M_;
-  
-  
 };
 
 /***************************************************/
 /*! \class controller::MotorTest2Node
     \brief Motor Test1 Controller
 
-    This tests the motor enocder assembly to check if 
+    This tests the motor enocder assembly to check if
     the two are assembled properly.
 
 */
