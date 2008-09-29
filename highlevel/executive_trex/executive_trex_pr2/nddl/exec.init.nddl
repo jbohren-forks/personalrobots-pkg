@@ -12,10 +12,9 @@ MoveBase moveBase = new MoveBase(External);
 ArmState rightArmState = new ArmState(External, false);
 MoveArm moveRightArm = new MoveArm(External, false);
 
-/**
+
 // Left Arm
 ArmState leftArmState = new ArmState(External, true);
 MoveArm moveLeftArm = new MoveArm(External, true);
-**/
 
 close();
