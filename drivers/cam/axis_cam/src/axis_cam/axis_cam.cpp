@@ -103,7 +103,7 @@ public:
     }
 
     images.images[0].set_data_size(jpeg_size);
-    memcpy(images.images[0].data, jpeg, jpeg_size);
+    memcpy(&images.images[0].data[0], jpeg, jpeg_size);
 
     images.images[0].compression = "jpeg";
 
@@ -159,7 +159,7 @@ public:
 
 
       images.images[0].set_data_size(jpeg_size);
-      memcpy(images.images[0].data, jpeg, jpeg_size);
+      memcpy(&images.images[0].data[0], jpeg, jpeg_size);
       images.images[0].compression = "jpeg";
 
       if (!codec->inflate_header())

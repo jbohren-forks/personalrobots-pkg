@@ -165,7 +165,7 @@ public:
 	    if (model->groupID >= 0)
 	    {
 		/* set the pose of the whole robot */
-		model->kmodel->computeTransforms(req.start_state.vals);
+		model->kmodel->computeTransforms(&req.start_state.vals[0]);
 		model->collisionSpace->updateRobotModel(model->collisionSpaceID);
 		
 		/* extract the components needed for the start state of the desired group */

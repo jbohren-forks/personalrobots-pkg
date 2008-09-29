@@ -86,7 +86,7 @@ SmartScan* ScanListenNode::getScan(const std_msgs::PointCloudFloat32 &cloud)
 	}
 
 	SmartScan *retScan = new SmartScan();
-	retScan->setPoints( cloud.get_pts_size(), cloud.pts);
+	retScan->setPoints( cloud.get_pts_size(), &cloud.pts[0]);
 
 	return retScan;
 }

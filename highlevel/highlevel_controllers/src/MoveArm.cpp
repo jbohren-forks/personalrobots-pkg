@@ -198,7 +198,7 @@ bool MoveArm::makePlan(){
   req.start_state.set_vals_size(45);
     
   //initializing full value state
-  for (unsigned int i = 0 ; i < req.start_state.vals_size ; ++i) {
+  for (unsigned int i = 0 ; i < req.start_state.get_vals_size() ; ++i) {
     req.start_state.vals[i] = 0.0;
   }
 

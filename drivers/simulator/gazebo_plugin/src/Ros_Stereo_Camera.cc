@@ -355,7 +355,9 @@ void Ros_Stereo_Camera::PutCameraData(CameraData *camera_data, unsigned int came
     uint32_t       buf_size = (width) * (height) * (depth);
 
     this->imageMsg[camera].set_data_size(buf_size);
-    this->imageMsg[camera].data        = (unsigned char*)rgb_src;
+    ///\todo FIXME checkme John
+    memcpy(&(this->imageMsg[camera].data[0]), rgb_src, buf_size);
+    //    this->imageMsg[camera].data        = (unsigned char*)rgb_src;
 
     // publish to ros
     if (camera==0)

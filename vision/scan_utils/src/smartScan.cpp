@@ -164,7 +164,7 @@ void SmartScan::setPoints(int numPoints, const float *points)
 void SmartScan::setFromRosCloud(const std_msgs::PointCloudFloat32 &cloud)
 {
 	//for the moment we ignore intensity values
-	setPoints( cloud.get_pts_size(), cloud.pts);
+	setPoints( cloud.get_pts_size(), &cloud.pts[0]);
 }
 
 /*!  Returns the SmartScan as a ROS PointCloudFloat32 message.

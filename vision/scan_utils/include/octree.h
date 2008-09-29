@@ -805,11 +805,11 @@ bool Octree<T>::setFromMsg(const OctreeMsg &msg)
 	if (msg.uses_timestamps) mUsesTimestamps = true;
 	else mUsesTimestamps = false;
 
-	memcpy((char*)&mEmptyValue, msg.empty_value, sizeof(mEmptyValue) );
+	memcpy((char*)&mEmptyValue, &msg.empty_value[0], sizeof(mEmptyValue) );
 
 	unsigned int size = msg.get_structure_data_size();
 	char *data  = new char[size];
-	memcpy(data, msg.structure_data, size);
+	memcpy(data, &msg.structure_data[0], size);
 	bool result = deserialize(data,size);
 	delete[] data;
 	if (!result) {
@@ -836,13 +836,13 @@ void Octree<T>::getAsMsg(OctreeMsg &msg) const
 	else msg.uses_timestamps = 0;
 
 	msg.set_empty_value_size(sizeof(mEmptyValue));
-	memcpy(msg.empty_value, (char*)&mEmptyValue, sizeof(mEmptyValue));
+	memcpy(&msg.empty_value[0], (char*)&mEmptyValue, sizeof(mEmptyValue));
 
 	unsigned int size;
 	char *data;
 	serialize(&data, &size);
 	msg.set_structure_data_size(size);
-	memcpy(msg.structure_data, data, size);
+	memcpy(&msg.structure_data[0], data, size);
 	delete [] data;
 }
 

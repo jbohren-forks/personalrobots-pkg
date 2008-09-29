@@ -83,7 +83,7 @@ void GovernorNode::planReceived(){
   //update the global plan from the message
   vector<std_msgs::Point2DFloat32> plan;
 
-  for(unsigned int i = 0; i < plan_msg_.plan.path_size; ++i){
+  for(unsigned int i = 0; i < plan_msg_.plan.get_path_size(); ++i){
     plan.push_back(plan_msg_.plan.path[i]);
   }
   tc_.updatePlan(plan);

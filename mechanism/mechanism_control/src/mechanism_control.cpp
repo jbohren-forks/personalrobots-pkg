@@ -247,7 +247,7 @@ void MechanismControlNode::update()
       assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
       for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
       {
-        mechanism_control::JointState *out = publisher_.msg_.joint_states + i;
+        mechanism_control::JointState *out = &publisher_.msg_.joint_states[i];
         mechanism::JointState *in = &mc_->state_->joint_states_[i];
         out->name = mc_->model_.joints_[i]->name_;
         out->position = in->position_;
@@ -258,7 +258,7 @@ void MechanismControlNode::update()
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
       {
-        mechanism_control::ActuatorState *out = publisher_.msg_.actuator_states + i;
+        mechanism_control::ActuatorState *out = &publisher_.msg_.actuator_states[i];
         ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
         out->name = mc_->hw_->actuators_[i]->name_;
         out->encoder_count = in->encoder_count_;

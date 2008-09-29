@@ -304,7 +304,7 @@ void ArmPositionControllerNode::setJointPosArray(const std::vector<double> & joi
 
 bool ArmPositionControllerNode::setJointPosSingle(const pr2_mechanism_controllers::JointPosCmd & cmd)
 {
-  for(unsigned int i=0;i<cmd.positions_size;++i)
+  for(unsigned int i=0;i<cmd.get_positions_size();++i)
     std::cout<<cmd.positions[i]<<' ';
   std::cout<<std::flush;
   c_->setJointPosCmd(cmd);
@@ -332,14 +332,14 @@ bool ArmPositionControllerNode::setJointPosSingleHeadless(pr2_mechanism_controll
 
   // msg
   std::cout<<"waypoint "<<std::flush;
-  for(unsigned int i=0;i<cmd.positions_size;++i)
+  for(unsigned int i=0;i<cmd.get_positions_size();++i)
     std::cout << cmd.names[i] << "==" << cmd.positions[i] <<' ';
   std::cout<<std::flush;
   std::cout<<" headless"<<std::endl;
 
   // Removes any error margin info so that the controller returns true on target reached and frees any blocking call
-  cmd.set_margins_size(cmd.positions_size);
-  for(unsigned int i=0;i<cmd.positions_size;++i)
+  cmd.set_margins_size(cmd.get_positions_size());
+  for(unsigned int i=0;i<cmd.get_positions_size();++i)
     cmd.margins[i]=-1;
 
   c_->setJointPosCmd(cmd);
