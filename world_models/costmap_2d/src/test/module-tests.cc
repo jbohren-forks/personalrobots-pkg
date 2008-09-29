@@ -342,6 +342,29 @@ TEST(costmap, test7){
   // Now verify that some of the initial batch go away but others remain
   map.removeStaleObstacles(WINDOW_LENGTH + 1, deletions);
   ASSERT_EQ(deletions.size(), 2);
+
+  // Add an obstacle at <1, 9>. This will inflate obstacles around it
+  std_msgs::PointCloudFloat32 c2;
+  c2.set_pts_size(1);
+  c2.pts[0].x = 1;
+  c2.pts[0].y = 9;
+  c2.pts[0].z = 0.0;
+  map.updateDynamicObstacles(WINDOW_LENGTH + 2, c2, insertions, deletions);
+  ASSERT_EQ(map.isObstacle(map.MC_IND(1, 9)), true);
+  ASSERT_EQ(map.isObstacle(map.MC_IND(0, 9)), false);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(0, 9)), true);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(2, 9)), true);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(2, 8)), true);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(0, 8)), true);
+
+  // Add an obstacle and verify that it over-writes its inflated status
+  std_msgs::PointCloudFloat32 c3;
+  c3.set_pts_size(1);
+  c3.pts[0].x = 0;
+  c3.pts[0].y = 9;
+  c3.pts[0].z = 0.0;
+  map.updateDynamicObstacles(WINDOW_LENGTH + 3, c3, insertions, deletions);
+  ASSERT_EQ(map.isObstacle(map.MC_IND(0, 9)), true);
 }
 
 int main(int argc, char** argv){

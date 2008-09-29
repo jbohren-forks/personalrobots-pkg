@@ -100,9 +100,14 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
     // permanent obstacles
     for(unsigned int i = 0; i<inflation.size(); i++){
       unsigned int cellId = inflation[i];
-      if(staticData_[cellId] != threshold_ && staticData_[cellId] != INFLATED_OBSTACLE){
-	staticData_[cellId] = INFLATED_OBSTACLE;
-	permanentlyOccupiedCells_.push_back(cellId);
+
+      // Must enforce set semantics and ensure that we correctly assign the inflated obstacle value
+      if(staticData_[cellId] != threshold_){
+	// Only mark it as a new obstacle if it is not currently in the map
+	if(staticData_[cellId] != INFLATED_OBSTACLE)
+	  permanentlyOccupiedCells_.push_back(cellId);
+
+	staticData_[cellId] = (cellId == ind ? threshold_ : INFLATED_OBSTACLE);
       }
     }
   }
@@ -144,22 +149,18 @@ void CostMap2D::updateDynamicObstacles(double ts,
     for(unsigned int i = 0; i<inflation.size(); i++){
       unsigned int cell = inflation[i];
 
-      // If the cell is not occupied, then we have a new obstacle to report
-      if(obsWatchDog_[cell] == 0 && staticData_[cell] < threshold_){
+      // Guard this to enforce set semantics
+      if(fullData_[cell] != threshold_){
 
-	// Guard this to enforce set semantics
-	if(fullData_[cell] != threshold_){
-
-	  // Only mark as a new object if it is not inflated - avoids duplication
-	  if(fullData_[cell] != INFLATED_OBSTACLE){
-	    newObstacles.push_back(cell);	  
-	    dynamicObstacles_.push_back(cell);
-	  }
-
-	  // Allows for the posibility that an actual obstacle will over-write
-	  // an inflated obstacle. The opposite should not occur.
-	  fullData_[cell] = (cell == ind ? threshold_ : INFLATED_OBSTACLE);
+	// Only mark as a new object if it is not inflated - avoids duplication
+	if(fullData_[cell] != INFLATED_OBSTACLE){
+	  newObstacles.push_back(cell);
+	  dynamicObstacles_.push_back(cell);
 	}
+
+	// Allows for the posibility that an actual obstacle will over-write
+	// an inflated obstacle. The opposite should not occur.
+	fullData_[cell] = (cell == ind ? threshold_ : INFLATED_OBSTACLE);
       }
 
       // Pet the watchdog

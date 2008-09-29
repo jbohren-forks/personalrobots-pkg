@@ -1,6 +1,6 @@
 <package>
 <description>2D cost map maintenance library</description>
-<author>Willow Garage</author>
+<author>Conor McGann, E. Gil Jones</author>
 <license>BSD</license>
 <depend package="roscpp" />
 <depend package="std_msgs" />
