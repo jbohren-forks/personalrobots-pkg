@@ -68,15 +68,17 @@
     </body:plane>
   </model:physical>
 
-  <model:physical name="walls">
-  <include embedded="false">
-    <xi:include href="tests/willow-walls.model" />
-  </include>
-  </model:physical>
 <!--
+  <model:physical name="walls">
+    <include embedded="false">
+      <xi:include href="tests/willow-walls.model" />
+    </include>
+  </model:physical>
+-->
  <model:physical name="willow_map">
   <xyz>-25.65 25.65 1.0</xyz>	
   <rpy>180 0 0</rpy>
+  <static>true</static>
   <body:map name="willow_map_body">
     <geom:map name="willow_map_geom">
       <image>willowMap.png</image>
@@ -89,7 +91,6 @@
     </geom:map>
   </body:map>
  </model:physical>
--->
 
 
   <model:physical name="robot_model1">
