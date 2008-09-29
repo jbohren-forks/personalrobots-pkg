@@ -26,7 +26,7 @@
 #endif
 
 
-Cv3DPoseEstimateDispSpaceRef::Cv3DPoseEstimateDispSpaceRef():
+Cv3DPoseEstimateDispSpaceRef_Deprecated::Cv3DPoseEstimateDispSpaceRef_Deprecated():
 	PoseParent(),
 	Parent()
 {
@@ -34,12 +34,12 @@ Cv3DPoseEstimateDispSpaceRef::Cv3DPoseEstimateDispSpaceRef():
 	mErrThreshold = 1.5;
 }
 
-Cv3DPoseEstimateDispSpaceRef::~Cv3DPoseEstimateDispSpaceRef()
+Cv3DPoseEstimateDispSpaceRef_Deprecated::~Cv3DPoseEstimateDispSpaceRef_Deprecated()
 {
 	// TODO: remove projection mat and reprojection mat
 }
 
-int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
+int Cv3DPoseEstimateDispSpaceRef_Deprecated::estimateMixedPointClouds(
 		CvMat *xyzs0, CvMat *uvds1,
 		int numRefGrps, int refPoints[],
 		CvMat *rot, CvMat *shift) {
@@ -74,7 +74,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimateMixedPointClouds(
 	return numInLiers;
 }
 
-int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
+int Cv3DPoseEstimateDispSpaceRef_Deprecated::estimate(CvMat *uvds0, CvMat *uvds1,
 		CvMat *rot, CvMat *shift) {
 	int numInLiers = 0;
 
@@ -99,7 +99,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *uvds0, CvMat *uvds1,
 	return numInLiers;
 }
 
-int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
+int Cv3DPoseEstimateDispSpaceRef_Deprecated::estimate(CvMat *xyzs0, CvMat *xyzs1,
 		CvMat *uvds0, CvMat *uvds1,
 		int numRefGrps, int refPoints[],
 		CvMat *rot, CvMat *shift) {
@@ -291,7 +291,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	return numInliers0;
 }
 
-bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(const CvMat *R, const CvMat *T,
+bool Cv3DPoseEstimateDispSpaceRef_Deprecated::constructDisparityHomography(const CvMat *R, const CvMat *T,
     CvMat *H){
 	if (R == NULL || T == NULL) {
 		return false;
@@ -299,7 +299,7 @@ bool Cv3DPoseEstimateDispSpaceRef::constructDisparityHomography(const CvMat *R, 
 	return this->constructHomography(*R, *T, mMatDispToCart, mMatCartToDisp, *H);
 }
 
-bool Cv3DPoseEstimateDispSpaceRef::constructHomography(const CvMat& R, const CvMat& T,
+bool Cv3DPoseEstimateDispSpaceRef_Deprecated::constructHomography(const CvMat& R, const CvMat& T,
 		const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H){
     bool status = true;
     // Transformation matrix RT:
@@ -325,7 +325,7 @@ bool Cv3DPoseEstimateDispSpaceRef::constructHomography(const CvMat& R, const CvM
 /*
  * A Convenient function to map z to d, at the optical center
  */
-double Cv3DPoseEstimateDispSpaceRef::getD(double z) const {
+double Cv3DPoseEstimateDispSpaceRef_Deprecated::getD(double z) const {
 	double _xyz[] = {0., 0., z};
 	double _uvd[3];
 	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
@@ -336,7 +336,7 @@ double Cv3DPoseEstimateDispSpaceRef::getD(double z) const {
 /*
  * A convenient function to map disparity d to Z, at the optical center
  */
-double Cv3DPoseEstimateDispSpaceRef::getZ(double d) const {
+double Cv3DPoseEstimateDispSpaceRef_Deprecated::getZ(double d) const {
 	double _uvd[] = {this->mClx, this->mCy, d};
 	double _xyz[3];
 	CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
