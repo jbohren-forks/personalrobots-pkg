@@ -203,7 +203,7 @@ void GazeboActuators::UpdateChild()
 
 void GazeboActuators::FiniChild()
 {
-  std::cout << "--------------- calling FiniChild in GazeboActuator --------------------" << std::endl;
+  std::cout << "--------------- calling FiniChild in GazeboActuators --------------------" << std::endl;
 
   hw_.~HardwareInterface();
   mc_.~MechanismControl();

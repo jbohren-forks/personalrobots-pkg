@@ -163,7 +163,7 @@ void Ros_Camera::PutCameraData()
   // TODO: can skip copy to Iface if Iface is not used
   if (src)
   {
-    memcpy(dst, src, data->image_size);
+    //memcpy(dst, src, data->image_size); // FIXME remove all Iface components
 
     this->lock.lock();
     // copy data into image
@@ -184,7 +184,7 @@ void Ros_Camera::PutCameraData()
     uint32_t       buf_size = (width) * (height) * (depth);
 
     this->imageMsg.set_data_size(buf_size);
-    this->imageMsg.data        = (unsigned char*)src;
+    memcpy(&(this->imageMsg.data[0]), src, data->image_size);
 
     // publish to ros
     rosnode->publish(this->topicName,this->imageMsg);

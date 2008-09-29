@@ -35,8 +35,9 @@
 #include <gazebo/Controller.hh>
 #include <gazebo/Entity.hh>
 #include <gazebo/Model.hh>
-#include "tinyxml/tinyxml.h"
-
+#include <robot_msgs/BatteryState.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <ros/node.h>
 
 namespace gazebo
 {
@@ -92,8 +93,26 @@ private:
 
   Model *parent_model_;
 
-  TiXmlDocument config_;
+  /// \brief ros message for battery state
+  robot_msgs::BatteryState battery_state_;
 
+  /// \brief ros message for diagnostic messages
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+
+  /// \brief pointer to ros node
+  private: ros::node *rosnode_;
+
+  /// \brief battery state topic name
+  private: std::string stateTopicName_;
+
+  /// \brief diag. msg. topic name
+  private: std::string diagnosticMessageTopicName_;
+
+  /// \brief A mutex to lock access to fields that are used in message callbacks
+  private: ros::thread::mutex lock_;
+
+  /// \brief stores current simulator time
+  private: double current_time_;
 };
 
 /** \} */
