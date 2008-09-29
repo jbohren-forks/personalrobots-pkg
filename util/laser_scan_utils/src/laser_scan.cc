@@ -35,13 +35,13 @@ namespace laser_scan{
   
   void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff, bool preservative)
   {
-    NEWMAT::Matrix ranges(2, scan_in.ranges_size);
+    NEWMAT::Matrix ranges(2, scan_in.get_ranges_size());
     double * matPointer = ranges.Store();
     // Fill the ranges matrix
-    for (unsigned int index = 0; index < scan_in.ranges_size; index++)
+    for (unsigned int index = 0; index < scan_in.get_ranges_size(); index++)
       {
         matPointer[index] = (double) scan_in.ranges[index];
-        matPointer[index+scan_in.ranges_size] = (double) scan_in.ranges[index];
+        matPointer[index+scan_in.get_ranges_size()] = (double) scan_in.ranges[index];
       }
     
 
@@ -51,12 +51,12 @@ namespace laser_scan{
 
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
-    cloud_out.set_pts_size(scan_in.ranges_size);
-    if (scan_in.intensities_size > 0)
+    cloud_out.set_pts_size(scan_in.get_ranges_size());
+    if (scan_in.get_intensities_size() > 0)
       {
         cloud_out.set_chan_size(1);
         cloud_out.chan[0].name ="intensities";
-        cloud_out.chan[0].set_vals_size(scan_in.intensities_size);
+        cloud_out.chan[0].set_vals_size(scan_in.get_intensities_size());
       }
 
     double* outputMat = output.Store();
@@ -67,25 +67,25 @@ namespace laser_scan{
       range_cutoff = std::min(range_cutoff, (double)scan_in.range_max); 
     
     unsigned int count = 0;
-    for (unsigned int index = 0; index< scan_in.ranges_size; index++)
+    for (unsigned int index = 0; index< scan_in.get_ranges_size(); index++)
     {
       if (!preservative){ //Default behaviour will throw out invalid data
         if ((matPointer[index] < range_cutoff) &&
             (matPointer[index] > scan_in.range_min)) //only valid
         {
           cloud_out.pts[count].x = outputMat[index];
-          cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+          cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
           cloud_out.pts[count].z = 0.0;
-          if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+          if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
             cloud_out.chan[0].vals[count] = scan_in.intensities[index];
           count++;
         }
       }
       else { //Keep all points
         cloud_out.pts[count].x = outputMat[index];
-        cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+        cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
         cloud_out.pts[count].z = 0.0;
-        if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+        if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
           cloud_out.chan[0].vals[count] = scan_in.intensities[index];
         count++;
       }
@@ -99,13 +99,13 @@ namespace laser_scan{
   };
     void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff, bool preservative)
   {
-    NEWMAT::Matrix ranges(2, scan_in.ranges_size);
+    NEWMAT::Matrix ranges(2, scan_in.get_ranges_size());
     double * matPointer = ranges.Store();
     // Fill the ranges matrix
-    for (unsigned int index = 0; index < scan_in.ranges_size; index++)
+    for (unsigned int index = 0; index < scan_in.get_ranges_size(); index++)
       {
         matPointer[index] = (double) scan_in.ranges[index];
-        matPointer[index+scan_in.ranges_size] = (double) scan_in.ranges[index];
+        matPointer[index+scan_in.get_ranges_size()] = (double) scan_in.ranges[index];
       }
     
 
@@ -115,12 +115,12 @@ namespace laser_scan{
 
     //Stuff the output cloud
     cloud_out.header = scan_in.header;
-    cloud_out.set_pts_size(scan_in.ranges_size);
-    if (scan_in.intensities_size > 0)
+    cloud_out.set_pts_size(scan_in.get_ranges_size());
+    if (scan_in.get_intensities_size() > 0)
       {
         cloud_out.set_chan_size(1);
         cloud_out.chan[0].name ="intensities";
-        cloud_out.chan[0].set_vals_size(scan_in.intensities_size);
+        cloud_out.chan[0].set_vals_size(scan_in.get_intensities_size());
       }
 
     double* outputMat = output.Store();
@@ -131,25 +131,25 @@ namespace laser_scan{
       range_cutoff = std::min(range_cutoff, (double)scan_in.range_max); 
     
     unsigned int count = 0;
-    for (unsigned int index = 0; index< scan_in.ranges_size; index++)
+    for (unsigned int index = 0; index< scan_in.get_ranges_size(); index++)
     {
       if (!preservative){ //Default behaviour will throw out invalid data
         if ((matPointer[index] < range_cutoff) &&
             (matPointer[index] > scan_in.range_min)) //only valid
         {
           cloud_out.pts[count].x = outputMat[index];
-          cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+          cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
           cloud_out.pts[count].z = 0.0;
-          if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+          if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
             cloud_out.chan[0].vals[count] = scan_in.intensities[index];
           count++;
         }
       }
       else { //Keep all points
         cloud_out.pts[count].x = outputMat[index];
-        cloud_out.pts[count].y = outputMat[index + scan_in.ranges_size];
+        cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
         cloud_out.pts[count].z = 0.0;
-        if (scan_in.intensities_size >= index) /// \todo optimize and catch length difference better
+        if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
           cloud_out.chan[0].vals[count] = scan_in.intensities[index];
         count++;
       }
@@ -213,7 +213,7 @@ namespace laser_scan{
     temp_scan_ = scan_in; //HACK to store all metadata 
 
     /** \todo check for length of intensities too */
-    unsigned int iterations = std::min(scan_in.ranges_size, num_ranges_);
+    unsigned int iterations = std::min(scan_in.get_ranges_size(), num_ranges_);
     for (unsigned int index = 0; index < iterations; index ++)
       {
         range_data_(current_packet_num_+1, index+1)= (double) scan_in.ranges[index];
@@ -238,7 +238,7 @@ namespace laser_scan{
     NEWMAT::ColumnVector iColumn;
 
 
-    unsigned int iterations = std::min(scan_result.ranges_size, num_ranges_);
+    unsigned int iterations = std::min(scan_result.get_ranges_size(), num_ranges_);
     /** \todo Resize output cloud/check length */
     for (unsigned int index = 0; index < iterations; index ++)
       {

@@ -101,12 +101,12 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
 {
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
-  cloudOut.set_pts_size(scanIn.ranges_size);
-    if (scanIn.intensities_size > 0)
+  cloudOut.set_pts_size(scanIn.get_ranges_size());
+    if (scanIn.get_intensities_size() > 0)
       {
         cloudOut.set_chan_size(1);
         cloudOut.chan[0].name ="intensities";
-        cloudOut.chan[0].set_vals_size(scanIn.intensities_size);
+        cloudOut.chan[0].set_vals_size(scanIn.get_intensities_size());
       }
 
   libTF::TFPoint pointIn;
@@ -119,7 +119,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
   projector_.projectLaser(scanIn, intermediate, -1.0, true);
   
   unsigned int count = 0;  
-  for (unsigned int i = 0; i < scanIn.ranges_size; i++)
+  for (unsigned int i = 0; i < scanIn.get_ranges_size(); i++)
   {
     if (scanIn.ranges[i] < scanIn.range_max 
         && scanIn.ranges[i] > scanIn.range_min) //only when valid
@@ -135,7 +135,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
       cloudOut.pts[count].y  = pointOut.y;
       cloudOut.pts[count].z  = pointOut.z;
       
-      if (scanIn.intensities_size >= i) /// \todo optimize and catch length difference better
+      if (scanIn.get_intensities_size() >= i) /// \todo optimize and catch length difference better
 	  cloudOut.chan[0].vals[count] = scanIn.intensities[i];
       count++;
     }
@@ -151,7 +151,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
 
 void rosTFClient::receiveArray()
 {
-  for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_eulers_size(); i++)
   {
     try{
       setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
@@ -163,7 +163,7 @@ void rosTFClient::receiveArray()
     };
   }
   //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
-  for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_dhparams_size(); i++)
   {
     try{
     setWithDH(tfArrayIn.dhparams[i].header.frame_id, tfArrayIn.dhparams[i].parent, tfArrayIn.dhparams[i].length, tfArrayIn.dhparams[i].twist, tfArrayIn.dhparams[i].offset, tfArrayIn.dhparams[i].angle, tfArrayIn.dhparams[i].header.stamp.sec * 1000000000ULL + tfArrayIn.dhparams[i].header.stamp.nsec);
@@ -176,7 +176,7 @@ void rosTFClient::receiveArray()
     //  std::cout << "recieved DH frame: " << tfArrayIn.dhparams[i].header.frame_id << " with parent:" << tfArrayIn.dhparams[i].parent << std::endl;
   }
   
-  for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_quaternions_size(); i++)
   {
     try{
     setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
@@ -188,18 +188,18 @@ void rosTFClient::receiveArray()
     };
     //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
   }
-  for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_matrices_size(); i++)
   {
       
     try{
-    if (tfArrayIn.matrices[i].matrix_size != 16)
+    if (tfArrayIn.matrices[i].get_matrix_size() != 16)
     {
-      std::cerr << "recieved matrix not of size 16, it was "<< tfArrayIn.matrices[i].matrix_size;
+      std::cerr << "recieved matrix not of size 16, it was "<< tfArrayIn.matrices[i].get_matrix_size();
       return;
     }
       
     NEWMAT::Matrix tempMatrix(4,4);
-    tempMatrix << tfArrayIn.matrices[i].matrix;
+    tempMatrix << (tfArrayIn.matrices[i].matrix[0]);
     
     setWithMatrix(tfArrayIn.matrices[i].header.frame_id, tfArrayIn.matrices[i].parent, tempMatrix, tfArrayIn.matrices[i].header.stamp.sec * 1000000000ULL + tfArrayIn.matrices[i].header.stamp.nsec);
     

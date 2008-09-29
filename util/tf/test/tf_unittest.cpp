@@ -166,6 +166,15 @@ TEST(tf, TransformTransformsCartesian)
     }
   }
   
+  Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
+  Stamped<btTransform> outpose;
+  outpose.data_.setIdentity(); //to make sure things are getting mutated
+  mTR.transformStamped("child",inpose, outpose);
+  EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
+  EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
+  EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
+  
+  
 }
 
 TEST(tf, TransformVector3Cartesian)

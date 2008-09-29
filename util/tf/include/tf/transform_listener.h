@@ -93,7 +93,7 @@ private:
   ///\todo Remove : for backwards compatability only
 void receiveArray()
 {
-  for (unsigned int i = 0; i < tfArrayIn.eulers_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_eulers_size(); i++)
   {
     try{
       //      setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
@@ -110,12 +110,12 @@ void receiveArray()
     };
   }
   //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
-  for (unsigned int i = 0; i < tfArrayIn.dhparams_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_dhparams_size(); i++)
   {
     std::cerr << "receiveArray: setWithDH failed No longer supported" << std::endl;
   }
   
-  for (unsigned int i = 0; i < tfArrayIn.quaternions_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_quaternions_size(); i++)
   {
     try{
       //    setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
@@ -132,7 +132,7 @@ void receiveArray()
     };
     //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
   }
-  for (unsigned int i = 0; i < tfArrayIn.matrices_size; i++)
+  for (unsigned int i = 0; i < tfArrayIn.get_matrices_size(); i++)
   {
     std::cerr << "receiveArray: setWithMatrix failed No longer supported" << std::endl;
   }
