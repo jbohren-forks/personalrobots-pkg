@@ -21,7 +21,8 @@ wxswig: $(VERSION)
 clean:
 	cd $(VERSION) && \
 		make clean && \
-		rm -f Makefile
+		rm -f Makefile && \
+		rm -f configure
 	rm -rf bin
 	rm -rf share
 
