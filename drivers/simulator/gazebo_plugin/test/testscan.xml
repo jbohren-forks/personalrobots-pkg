@@ -11,7 +11,7 @@
     <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_testpointclouds1" pkg="gazebo_plugin" type="testscan.py" />
-    <test test-name="gazebo_plugin_testpointclouds2" pkg="gazebo_plugin" type="testscan.py" />
+    <!--test test-name="gazebo_plugin_testpointclouds2" pkg="gazebo_plugin" type="testscan.py" />
     <test test-name="gazebo_plugin_testpointclouds3" pkg="gazebo_plugin" type="testscan.py" />
     <test test-name="gazebo_plugin_testpointclouds4" pkg="gazebo_plugin" type="testscan.py" />
     <test test-name="gazebo_plugin_testpointclouds5" pkg="gazebo_plugin" type="testscan.py" />
@@ -39,5 +39,5 @@
     <test test-name="gazebo_plugin_testpointclouds27" pkg="gazebo_plugin" type="testscan.py" />
     <test test-name="gazebo_plugin_testpointclouds28" pkg="gazebo_plugin" type="testscan.py" />
     <test test-name="gazebo_plugin_testpointclouds29" pkg="gazebo_plugin" type="testscan.py" />
-    <test test-name="gazebo_plugin_testpointclouds30" pkg="gazebo_plugin" type="testscan.py" />
+    <test test-name="gazebo_plugin_testpointclouds30" pkg="gazebo_plugin" type="testscan.py" /-->
 </launch>

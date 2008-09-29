@@ -41,7 +41,7 @@ namespace gazebo
 /// @{
 /** \defgroup F3D Applied Force Feedback Plugin XML Reference and Example
 
-  \brief Applied Force Feedback controller.
+  \brief FIXME: Applied Force Feedback controller.
   
   This is a controller that gathers applied force data from a Body and populates a libgazebo interfaace as well as publish a ROS std_msgs::Vector3Stamped message (under topicName). This controller should only be used as a child of a Model.  Below is an example of the usage of this plugin.
 

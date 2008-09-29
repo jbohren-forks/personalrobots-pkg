@@ -11,7 +11,7 @@
     <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_testslide1" pkg="gazebo_plugin" type="testslide.py" />
-    <test test-name="gazebo_plugin_testslide2" pkg="gazebo_plugin" type="testslide.py" />
+    <!--test test-name="gazebo_plugin_testslide2" pkg="gazebo_plugin" type="testslide.py" />
     <test test-name="gazebo_plugin_testslide3" pkg="gazebo_plugin" type="testslide.py" />
     <test test-name="gazebo_plugin_testslide4" pkg="gazebo_plugin" type="testslide.py" />
     <test test-name="gazebo_plugin_testslide5" pkg="gazebo_plugin" type="testslide.py" />
@@ -39,5 +39,5 @@
     <test test-name="gazebo_plugin_testslide27" pkg="gazebo_plugin" type="testslide.py" />
     <test test-name="gazebo_plugin_testslide28" pkg="gazebo_plugin" type="testslide.py" />
     <test test-name="gazebo_plugin_testslide29" pkg="gazebo_plugin" type="testslide.py" />
-    <test test-name="gazebo_plugin_testslide30" pkg="gazebo_plugin" type="testslide.py" />
+    <test test-name="gazebo_plugin_testslide30" pkg="gazebo_plugin" type="testslide.py" /-->
 </launch>

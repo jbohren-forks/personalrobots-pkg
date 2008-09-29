@@ -94,17 +94,27 @@ class TestCameras(unittest.TestCase):
         rospy.signal_shutdown('test done')
 
     def images_are_the_same(self,i0,i1):
+        error_count = 0
+        error_total = 0
+        pixel_tol = 0
+        total_tol = 5
         # assume len(i0)==len(i1)
         print "lengths ",len(i0), len(i1)
         for i in range(len(i0)):
           (r0,g0,b0) = i0[i-1]
           (r1,g1,b1) = i1[i-1]
-          if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
-            print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
-          tol = 10
-          if abs(r0-r1) > tol or abs(g0-g1) > tol or abs(b0-b1) > tol:
-            return False
-        return True
+          #if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
+          #  print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
+          if abs(r0-r1) > pixel_tol or abs(g0-g1) > pixel_tol or abs(b0-b1) > pixel_tol:
+            error_count = error_count + 1
+            error_total = error_total + abs(r0-r1) + abs(g0-g1) + abs(b0-b1)
+        error_avg = float(error_total)/float(len(i0))
+        print "total error count:",error_count
+        print "average error:    ",error_avg
+        if error_avg > total_tol:
+          return False
+        else:
+          return True
 
     def imageInput(self,image):
         print " got image from ROS, begin comparing images "
@@ -139,7 +149,7 @@ class TestCameras(unittest.TestCase):
         rospy.subscribe_topic("test_camera/image", Image, self.imageInput)
         rospy.ready(NAME, anonymous=True)
         #self.pollThread.start()
-        timeout_t = time.time() + 60 #60 seconds delay for processing comparison
+        timeout_t = time.time() + 10 #10 seconds delay for processing comparison
         while not rospy.is_shutdown() and not self.tested and time.time() < timeout_t:
             time.sleep(0.1)
         self.assert_(self.success)

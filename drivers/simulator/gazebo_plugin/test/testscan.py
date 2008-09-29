@@ -178,7 +178,7 @@ class PointCloudTest(unittest.TestCase):
         self.printPointCloud(cloud)
         while (i < len(cloud.ranges) and i < len(TARGET_RANGES)):
             d = cloud.ranges[i] - TARGET_RANGES[i]
-            if ((d < -0.001) or (d > 0.001)):
+            if ((d < -0.03) or (d > 0.03)):
                 return
             i = i + 1
         self.success = True
