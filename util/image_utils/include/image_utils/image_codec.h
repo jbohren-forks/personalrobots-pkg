@@ -163,14 +163,14 @@ protected:
     uint32_t sz = jpeg->compress_to_jpeg(raster, 
                            msg->width, msg->height, rt, compression_quality);
     msg->set_data_size(sz);
-    memcpy(msg->data, jpeg->get_compress_buf(), sz);
+    memcpy(&(msg->data[0]), jpeg->get_compress_buf(), sz);
     return true;
   }
 
   bool compress_raw()
   {
     msg->set_data_size(get_raster_size());
-    memcpy(msg->data, raster, get_raster_size());
+    memcpy(&(msg->data[0]), raster, get_raster_size());
     return true;
   }
 
@@ -179,7 +179,8 @@ protected:
     if (!jpeg)
       jpeg = new JpegWrapper();
     realloc_raster_if_needed();
-    if (!jpeg->decompress_jpeg_buf((char *)msg->data, msg->get_data_size()))
+    if (!jpeg->decompress_jpeg_buf((char *)&(msg->data[0]), 
+                                   msg->get_data_size()))
       return false;
     memcpy(raster, jpeg->get_raster(), jpeg->raster_size());
     return true;
@@ -189,7 +190,8 @@ protected:
   {
     if (!jpeg)
       jpeg = new JpegWrapper();
-    if (!jpeg->decompress_jpeg_header((char *)msg->data, msg->get_data_size()))
+    if (!jpeg->decompress_jpeg_header((char *)&(msg->data[0]), 
+                                      msg->get_data_size()))
       return false;
 
     msg->width = jpeg->width();
@@ -203,7 +205,7 @@ protected:
   bool decompress_raw()
   {
     realloc_raster_if_needed();
-    memcpy(raster, msg->data, msg->get_data_size());
+    memcpy(raster, &msg->data[0], msg->get_data_size());
     return true;
   }
 
