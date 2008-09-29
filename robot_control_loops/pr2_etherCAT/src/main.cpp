@@ -81,44 +81,46 @@ static struct
 
 static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
 {
-  robot_msgs::DiagnosticMessage message;
-  vector<robot_msgs::DiagnosticStatus> statuses;
-  vector<robot_msgs::DiagnosticValue> values;
-  vector<robot_msgs::DiagnosticString> strings;
-  robot_msgs::DiagnosticStatus status;
-  robot_msgs::DiagnosticValue v;
-  robot_msgs::DiagnosticString s;
-
-  status.level = 0;
-  status.name = "Realtime Control Loop";
-  status.message = "OK";
-
-  static double max_ec = 0, max_mc = 0;
-  double total_ec = 0, total_mc = 0;
-
-  for (int i = 0; i < 1000; ++i)
+  if (publisher.trylock())
   {
-    total_ec += diagnostics.ec[i];
-    max_ec = max(max_ec, diagnostics.ec[i]);
-    total_mc += diagnostics.mc[i];
-    max_mc = max(max_mc, diagnostics.mc[i]);
+    vector<robot_msgs::DiagnosticStatus> statuses;
+    vector<robot_msgs::DiagnosticValue> values;
+    vector<robot_msgs::DiagnosticString> strings;
+    robot_msgs::DiagnosticStatus status;
+    robot_msgs::DiagnosticValue v;
+    robot_msgs::DiagnosticString s;
+
+    status.level = 0;
+    status.name = "Realtime Control Loop";
+    status.message = "OK";
+
+    static double max_ec = 0, max_mc = 0;
+    double total_ec = 0, total_mc = 0;
+
+    for (int i = 0; i < 1000; ++i)
+    {
+      total_ec += diagnostics.ec[i];
+      max_ec = max(max_ec, diagnostics.ec[i]);
+      total_mc += diagnostics.mc[i];
+      max_mc = max(max_mc, diagnostics.mc[i]);
+    }
+
+#define ADD_VALUE(lab, val)                     \
+    v.label = (lab);                            \
+    v.value = (val);                            \
+    values.push_back(v)
+
+    ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
+    ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
+    ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
+    ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_mc*1e+6/1000);
+
+    status.set_values_vec(values);
+    status.set_strings_vec(strings);
+    statuses.push_back(status);
+    publisher.msg_.set_status_vec(statuses);
+    publisher.unlockAndPublish();
   }
-
-#define ADD_VALUE(lab, val) \
-  v.label = (lab); \
-  v.value = (val); \
-  values.push_back(v)
-
-  ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
-  ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
-  ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
-  ADD_VALUE("Avg Mechanism Control roundtrip (us)", total_mc*1e+6/1000);
-
-  status.set_values_vec(values);
-  status.set_strings_vec(strings);
-  statuses.push_back(status);
-  message.set_status_vec(statuses);
-  publisher.publish(message);
 }
 
 static inline double now()
