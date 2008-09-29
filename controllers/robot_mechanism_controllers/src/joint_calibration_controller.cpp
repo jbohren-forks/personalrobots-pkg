@@ -202,5 +202,7 @@ bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXml
   if (!c_->initXml(robot, config))
     return false;
   node->advertise_service(topic + "/calibrate", &JointCalibrationControllerNode::calibrateCommand, this);
+  guard_calibrate_.set(topic + "/calibrate");
+
   return true;
 }

@@ -150,7 +150,9 @@ public:
 
 private:
   JointCalibrationController *c_;
+  AdvertisedServiceGuard guard_calibrate_;
 };
+
 }
 
 

@@ -256,7 +256,7 @@ void RobotState::propagateState()
         break;
       }
 
-      rotation.setFromEuler(0,0,0, l.origin_rpy_[0], l.origin_rpy_[1], l.origin_rpy_[2]);
+      rotation.setFromEuler(0,0,0, l.origin_rpy_[2], l.origin_rpy_[1], l.origin_rpy_[0]);
 
       link_states_[i].rel_frame_.setIdentity();
       link_states_[i].rel_frame_.multiplyPose(offset);
