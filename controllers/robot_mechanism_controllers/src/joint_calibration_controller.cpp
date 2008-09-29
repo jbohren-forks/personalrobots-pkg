@@ -41,7 +41,7 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointCalibrationController)
 
 JointCalibrationController::JointCalibrationController()
-  : JointManualCalibrationController()
+: state_(INITIALIZED)
 {
 }
 
@@ -53,78 +53,110 @@ bool JointCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElem
 {
   assert(robot);
   assert(config);
-  robot_ = robot->model_;
-  bool base=JointManualCalibrationController::initXml(robot, config);
-  if(!base)
-    return false;
-  TiXmlElement *j = config->FirstChildElement("param");
-  if (!j)
+
+  TiXmlElement *cal = config->FirstChildElement("calibrate");
+  if (!cal)
   {
-    std::cerr<<"JointCalibrationController was not given parameters"<<std::endl;
+    std::cerr<<"JointCalibrationController was not given calibration parameters"<<std::endl;
     return false;
   }
 
-  if(j->QueryDoubleAttribute("velocity", &search_velocity_ ) != TIXML_SUCCESS)
+  if(cal->QueryDoubleAttribute("velocity", &search_velocity_) != TIXML_SUCCESS)
   {
     std::cerr<<"Velocity value was not specified\n";
     return false;
   }
 
-  if(search_velocity_ == 0)
+  const char *joint_name = cal->Attribute("joint");
+  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
+  if (!joint_)
   {
-    std::cerr<<"You gave zero velocity\n";
+    fprintf(stderr, "Error: JointCalibrationController could not find joint \"%s\"\n",
+            joint_name);
     return false;
   }
 
-  TiXmlElement *v = config->FirstChildElement("controller");
-  if(!v)
+  const char *actuator_name = cal->Attribute("actuator");
+  actuator_ = actuator_name ? robot->model_->getActuator(actuator_name) : NULL;
+  if (!actuator_)
   {
-    std::cerr<<"JointCalibrationController was not given a controller to move the joint."<<std::endl;
+    fprintf(stderr, "Error: JointCalibrationController could not find actuator \"%s\"\n",
+            actuator_name);
     return false;
   }
 
-  return vcontroller_.initXml(robot, v);
+  const char *transmission_name = cal->Attribute("transmission");
+  transmission_ = transmission_name ? robot->model_->getTransmission(transmission_name) : NULL;
+  if (!transmission_)
+  {
+    fprintf(stderr, "Error: JointCalibrationController could not find transmission \"%s\"\n",
+            transmission_name);
+    return false;
+  }
+
+  control_toolbox::Pid pid;
+  TiXmlElement *pid_el = config->FirstChildElement("pid");
+  if (!pid_el)
+  {
+    fprintf(stderr, "Error: JointCalibrationController was not given a pid element.\n");
+    return false;
+  }
+  if (!pid.initXml(pid_el))
+    return false;
+
+  if (!vc_.init(robot, joint_name, pid))
+    return false;
+
+  return true;
 }
 
 void JointCalibrationController::update()
 {
-  assert(joint_state_);
+  assert(joint_);
   assert(actuator_);
 
-  const double cur_reading = actuator_->state_.calibration_reading_;
-  if(state_ == Begin)
+  switch(state_)
   {
-    joint_state_->calibrated_ = false;
-    previous_reading_ = cur_reading;
-    velocity_cmd_ = cur_reading > 0.5 ? search_velocity_ : -search_velocity_;
-    state_ = Search;
+  case INITIALIZED:
+    vc_.setCommand(0.0);
+    break;
+  case BEGINNING:
+    original_switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
+    vc_.setCommand(original_switch_state_ ? search_velocity_ : -search_velocity_);
+    state_ = MOVING;
+    break;
+  case MOVING: {
+    bool switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
+    if (switch_state_ != original_switch_state_)
+    {
+      std::vector<Actuator*> fake_a;
+      std::vector<mechanism::JointState*> fake_j;
+      fake_a.push_back(new Actuator);
+      fake_j.push_back(new mechanism::JointState);
+
+      // Where was the joint when the optical switch triggered?
+      if (original_switch_state_ = true)
+        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_high_transition_;
+      else
+        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_low_transition_;
+      transmission_->propagatePosition(fake_a, fake_j);
+
+      // What is the actuator position at the joint's zero?
+      fake_j[0]->position_ = fake_j[0]->position_ - joint_->joint_->reference_position_;
+      transmission_->propagatePositionBackwards(fake_j, fake_a);
+
+      actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
+
+      state_ = STOPPED;
+    }
+    break;
+  }
+  case STOPPED:
+    vc_.setCommand(0.0);
+    break;
   }
 
-  if(std::abs(cur_reading-previous_reading_)>0.5 && state_==Search)
-  {
-    const double offset_ = offset(actuator_->state_.position_, joint_state_->joint_->reference_position_);
-    actuator_->state_.zero_offset_ = offset_;
-    state_ = Initialized;
-  }
-
-  if(state_ == Initialized)
-  {
-    joint_state_->calibrated_ = true;
-    velocity_cmd_ = 0;
-    state_ = Stop;
-    state_mutex_.unlock();
-  }
-
-  if(state_ == Stop)
-  {
-    velocity_cmd_ = 0;
-  }
-
-  if(state_!=Stop)
-  {
-    vcontroller_.setCommand(velocity_cmd_);
-    vcontroller_.update();
-  }
+  vc_.update();
 }
 
 
@@ -152,7 +184,7 @@ void JointCalibrationControllerNode::update()
   ros::Duration d=ros::Duration(0,1000000);
   while(!c_->calibrated())
     d.sleep();
-  c_->getOffset(resp.offset);
+  resp.offset = 0;
   return true;
 }
 

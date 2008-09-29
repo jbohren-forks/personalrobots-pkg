@@ -92,15 +92,33 @@ def calibrate_blindly(config):
     kill_controller(name)
     print "Calibrated"
 
-calibrate_optically(slurp('pr2_arm/calibration_shoulder_pan.xml'))
-calibrate_optically(slurp('pr2_arm/calibration_shoulder_lift.xml'))
+
+calibrate_optically('''
+<controller name="cal_shoulder_pan" topic="cal_shoulder_pan" type="JointCalibrationControllerNode">
+  <calibrate joint="shoulder_pan_right_joint"
+             actuator="shoulder_pan_right_act"
+             transmission="shoulder_pan_right_trans"
+             velocity="0.6" />
+  <pid p="7" i="0.5" d="0" iClamp="1.0" />
+</controller>
+''')
+
+calibrate_optically('''
+<controller name="cal_shoulder_pitch" topic="cal_shoulder_pitch" type="JointCalibrationControllerNode">
+  <calibrate joint="shoulder_pitch_right_joint"
+             actuator="shoulder_lift_right_act"
+             transmission="shoulder_lift_right_trans"
+             velocity="0.6" />
+  <pid p="7" i="0.5" d="0" iClamp="1.0" />
+</controller>
+''')
 
 calibrate_blindly('''
 <controller name="upperarm_calibration" topic="upperarm_calibration" type="JointBlindCalibrationControllerNode">
   <calibrate joint="upperarm_roll_right_joint"
              actuator="upperarm_roll_right_act"
              transmission="upperarm_roll_right_trans"
-             velocity="0.6" />
+             velocity="0.9" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
 </controller>
 
@@ -111,7 +129,7 @@ calibrate_blindly('''
   <calibrate joint="elbow_right_joint"
              actuator="elbow_right_act"
              transmission="elbow_right_trans"
-             velocity="0.6" />
+             velocity="0.8" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
 </controller>
 
