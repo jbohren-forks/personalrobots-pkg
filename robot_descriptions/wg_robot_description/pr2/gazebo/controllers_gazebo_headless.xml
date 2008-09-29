@@ -26,10 +26,24 @@
 <map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
   <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
+  <!-- battery controls -->
+  <controller:gazebo_battery name="gazebo_battery_controller" plugin="libgazebo_battery.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1.0</updateRate>
+    <timeout>5</timeout>
+    <diagnostic_rate>1.0</diagnostic_rate>
+    <battery_state_rate>1.0</battery_state_rate>
+    <full_charge_energy>1.0</full_charge_energy>
+    <diagnosticTopicName>diagnostic</diagnosticTopicName>
+    <stateTopicName>battery_state</stateTopicName>
+    <selfTestServiceName>self_test</selfTestServiceName>
+    <interface:audio name="battery_dummy_interface" />
+  </controller:gazebo_battery>
+
   <!-- ptz camera controls -->
   <controller:Ros_PTZ name="ptz_cam_left_controller" plugin="libRos_PTZ.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <updateRate>15.0</updateRate>
     <panJoint>ptz_pan_left_joint</panJoint>
     <tiltJoint>ptz_tilt_left_joint</tiltJoint>
     <commandTopicName>axis_left/ptz_cmd</commandTopicName>
@@ -39,7 +53,7 @@
 
   <controller:Ros_PTZ name="ptz_cam_right_controller" plugin="libRos_PTZ.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>15.0</updateRate> <!-- rate not implemented in gazebo yet-->
+    <updateRate>15.0</updateRate>
     <panJoint>ptz_pan_right_joint</panJoint>
     <tiltJoint>ptz_tilt_right_joint</tiltJoint>
     <commandTopicName>axis_right/ptz_cmd</commandTopicName>
