@@ -268,6 +268,21 @@ int main(int argc, char** argv)
   */
   ros::init(argc,argv);
 
+  /*
+  unsigned int lookAhead = 5;
+  double resolution = 0.1;
+  double sMax = 1.5;
+  double dsMax = 1.0;
+  double dThetaMax = 3.14;
+
+  ros::highlevel_controllers::LocalSearchVelocityController controller(lookAhead ,  resolution,  sMax,  dsMax,  dThetaMax);
+  */
+
+  //VelocityController& vc, double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius)
+  //  : MoveBase(vc, windowLength, lethalObstacleThreshold, noInformation, maxZ, inflationRadius
+
+
+ 
   ros::highlevel_controllers::TrajectoryRolloutController controller(MAP_WIDTH,
 								     MAP_HEIGHT,
 								     SIM_TIME,
@@ -283,8 +298,12 @@ int main(int argc, char** argv)
 								     ACC_LIM_X,
 								     ACC_LIM_Y,
 								     ACC_LIM_TH);
-
-  ros::highlevel_controllers::MoveBaseSBPL node(controller, 1, 100, 0, 2, std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS));
+  const double windowLength = 1;
+  const unsigned char lethalObstacleThreshold = 100;
+  const unsigned char noInformation = 0;
+  const double maxZ = 2.0;
+  const double inflationRadius = std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS);
+  ros::highlevel_controllers::MoveBaseSBPL node(controller, windowLength, lethalObstacleThreshold, noInformation, maxZ, inflationRadius);
   
   node.run();
 

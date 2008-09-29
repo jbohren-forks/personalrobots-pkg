@@ -39,119 +39,10 @@
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
-#include <trajectory_rollout/obstacle_map_accessor.h>
 #include <set>
 
 namespace ros {
   namespace highlevel_controllers {
-
-    CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double deltaX, double deltaY, double poseX, double poseY)
-      : costMap_(costMap),
-	width_(static_cast<unsigned int>(deltaX / costMap_.getResolution())),
-	height_(static_cast<unsigned int>(deltaY / costMap_.getResolution())){
-
-      // As far left as we can get without going over on the right or left
-      wx_0_ = std::max(0.0,  poseX - deltaX/2);
-      wx_0_ = std::min(wx_0_,  costMap_.getWidth() * costMap_.getResolution() - deltaX);
-
-      // As far to the top as we can go and not over above or below
-      wy_0_ = std::max(0.0, poseY - deltaY/2 );
-      wy_0_ = std::min(wy_0_, costMap_.getHeight() * costMap_.getResolution() - deltaY);
-
-      // The origin locates this grid. Convert from world coordinates to cell co-ordinates
-      // to get the cell coordinates of the origin
-      costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);    }
-  
-    unsigned int CostMapAccessor::getWidth() const {return width_;}
-
-    unsigned int CostMapAccessor::getHeight() const {return height_;}
-
-    double CostMapAccessor::getResolution() const {return costMap_.getResolution();}
-
-    bool CostMapAccessor::contains(double x, double y) const {
-      if(x < wx_0_ || x >= (wx_0_ + getWidth() * costMap_.getResolution()))
-	return false;
-
-      if(y < wy_0_ || y >= (wy_0_ + getHeight() * costMap_.getResolution()))
-	return false;
-
-      return true;
-    }
-
-    bool CostMapAccessor::isObstacle(unsigned int mx, unsigned int my) const {
-      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-      return costMap_.isObstacle(costMapIndex);
-    }
-
-    bool CostMapAccessor::isInflatedObstacle(unsigned int mx, unsigned int my) const {
-      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-      return costMap_.isInflatedObstacle(costMapIndex);
-    }
-
-    void CostMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const {
-      wx = wx_0_;
-      wy = wy_0_;
-    }
-
-    TrajectoryRolloutController::TrajectoryRolloutController(double mapDeltaX, double mapDeltaY,
-							     double sim_time, int sim_steps, int samples_per_dim,
-							     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
-							     double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-							     double acc_lim_x, double acc_lim_y, double acc_lim_th)
-      : mapDeltaX_(mapDeltaX),
-	mapDeltaY_(mapDeltaY),
-	sim_time_(sim_time),
-	sim_steps_(sim_steps),
-	samples_per_dim_(samples_per_dim),	  
-	robot_front_radius_(robot_front_radius), 
-	robot_side_radius_(robot_side_radius), 
-	max_occ_dist_(max_occ_dist), 	  
-	pdist_scale_(pdist_scale), 
-	gdist_scale_(gdist_scale), 
-	dfast_scale_(dfast_scale), 
-	occdist_scale_(occdist_scale), 	  
-	acc_lim_x_(acc_lim_x),
-	acc_lim_y_(acc_lim_y),
-	acc_lim_th_(acc_lim_th),
-	helmsman_(NULL){}
-
-    TrajectoryRolloutController::~TrajectoryRolloutController(){
-      if(helmsman_ != NULL)
-	delete helmsman_;
-    }
-
-    void TrajectoryRolloutController::initialize(rosTFClient& tf){
-      // Should just be called once
-      if(helmsman_ !=NULL)
-	return;
-
-      helmsman_ = new Helmsman(tf, sim_time_, sim_steps_, samples_per_dim_,robot_front_radius_, robot_side_radius_, max_occ_dist_, 
-			       pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_, 
-			       acc_lim_x_, acc_lim_y_, acc_lim_th_);
-    }
-
-    bool TrajectoryRolloutController::computeVelocityCommands(const CostMapAccessor& ma, 
-							      const std::list<std_msgs::Pose2DFloat32>& globalPlan,
-							      const libTF::TFPose2D& pose,
-							      const std_msgs::BaseVel& currentVel,
-							      std_msgs::BaseVel& cmdVel,
-							      std::list<std_msgs::Pose2DFloat32>& localPlan){
-      if(helmsman_ == NULL){
-	cmdVel.vx = 0;
-	cmdVel.vy = 0;
-	cmdVel.vw = 0;
-	return false;
-      }
-
-      double vx, vy, vw;
-      bool result = helmsman_->computeVelocityCommands(ma, globalPlan, currentVel.vx, currentVel.vy, currentVel.vw,  vx, vy, vw, localPlan);
-      printf("Selected velocity vector: (%f, %f, %f)\n", vx, vy, vw);
-      cmdVel.vx = vx;
-      cmdVel.vy = vy;
-      cmdVel.vw = vw;
-      return result;
-    }
-
 
     MoveBase::MoveBase(VelocityController& vc, double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius)
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
@@ -463,14 +354,18 @@ namespace ros {
 	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
       }
       else {
-	// Prepare the local cost map, and refine the plan to reflect progress made. If no part of the plan is in the local cost window then
-	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us
-	CostMapAccessor ma(getCostMap(), controller_.getMapDeltaX(), controller_.getMapDeltaY(), global_pose_.x, global_pose_.y);
+	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
+	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
+	// by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
+	// path
 	std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
 	while(it != plan_.end()){
 	  const std_msgs::Pose2DFloat32& w = *it;
-	  if(ma.contains(w.x, w.y))
+
+	  // The path following constraint is twice the map resolution. Could be an external parameter
+	  if(sqrt(pow(global_pose_.x - w.x, 2) + pow(global_pose_.y - w.y, 2)) <= (getCostMap().getResolution() * 2))
 	    break;
+
 	  it = plan_.erase(it);
 	}
 
@@ -483,6 +378,8 @@ namespace ros {
 	currentVel.vy = base_odom_.vel.y;
 	currentVel.vw = base_odom_.vel.th;
 
+	// Create a window onto the global cost map for the velocity controller
+	CostMapAccessor ma(getCostMap(), controller_.getMapDeltaX(), controller_.getMapDeltaY(), global_pose_.x, global_pose_.y);
 	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 	planOk = planOk && controller_.computeVelocityCommands(ma, plan_, global_pose_, currentVel, cmdVel, localPlan);
 
