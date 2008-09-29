@@ -102,7 +102,7 @@ public:
 protected:
 
   enum { INITIALIZED, BEGINNING, STARTING_UP, MOVING_UP,
-         STARTING_DOWN, MOVING_DOWN, DONE };
+         STARTING_DOWN, MOVING_DOWN, BACKING_OFF, DONE };
   int state_;
 
   double search_velocity_;

@@ -48,7 +48,7 @@ JointBlindCalibrationController::JointBlindCalibrationController()
 JointBlindCalibrationController::~JointBlindCalibrationController()
 {
 }
-#define GOTHERE printf("HERE %s %d\n", __FILE__, __LINE__);
+
 bool JointBlindCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
@@ -167,10 +167,17 @@ void JointBlindCalibrationController::update()
       fake_j[0]->position_ = joint_zero;
       transmission_->propagatePositionBackwards(fake_j, fake_a);
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
-      joint_->calibrated_ = true;
 
-      state_ = DONE;
+      state_ = BACKING_OFF;
       count = 0;
+    }
+    break;
+  case BACKING_OFF:
+    vc_.setCommand(search_velocity_);
+    if (++count > 1000)
+    {
+      joint_->calibrated_ = true;
+      state_ = DONE;
     }
     break;
   case DONE:

@@ -43,12 +43,10 @@ ROS_REGISTER_CONTROLLER(JointCalibrationController)
 JointCalibrationController::JointCalibrationController()
   : JointManualCalibrationController()
 {
-  std::cout<<"JointCalibration created\n";
 }
 
 JointCalibrationController::~JointCalibrationController()
 {
-  std::cout<<"JointCalibration destroyed\n";
 }
 
 bool JointCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -104,10 +102,8 @@ void JointCalibrationController::update()
 
   if(std::abs(cur_reading-previous_reading_)>0.5 && state_==Search)
   {
-    std::cout<<joint_state_->joint_->reference_position_<<std::endl;
     const double offset_ = offset(actuator_->state_.position_, joint_state_->joint_->reference_position_);
     actuator_->state_.zero_offset_ = offset_;
-    std::cout<<"Found offset at "<<offset_<<std::endl;
     state_ = Initialized;
   }
 
