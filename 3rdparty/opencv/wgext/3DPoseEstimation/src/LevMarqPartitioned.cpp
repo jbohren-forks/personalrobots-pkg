@@ -13,7 +13,6 @@ namespace willow {
 
 LevMarqPartitioned::LevMarqPartitioned() {
   // TODO Auto-generated constructor stub
-
 }
 
 LevMarqPartitioned::~LevMarqPartitioned() {

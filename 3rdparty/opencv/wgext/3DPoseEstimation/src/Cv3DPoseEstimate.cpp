@@ -297,7 +297,7 @@ int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat
 	// TODO: construct matrix with parameters from nonlinear optimization
     double _rot[9];
 
-    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::XYZ);
+    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::EulerXYZ);
     for (int i=0;i<3;i++)
         for (int j=0;j<3;j++) {
             cvmSet(rot, i, j, _rot[i*3+j]);

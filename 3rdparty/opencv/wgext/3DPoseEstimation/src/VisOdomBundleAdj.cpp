@@ -5,7 +5,7 @@
  *      Author: jdchen
  */
 
-#include "CvVisOdomBundleAdj.h"
+#include "VisOdomBundleAdj.h"
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
 
@@ -25,7 +25,8 @@ using namespace boost::accumulators;
 VisOdomBundleAdj::VisOdomBundleAdj(const CvSize& imageSize):
   PathRecon(imageSize),
   mSlideWindowSize(DefaultSlideWindowSize),
-  mNumFrozenWindows(DefaultNumFrozenWindows)
+  mNumFrozenWindows(1),
+  mNumIteration(DefaultNumIteration)
 {
   // TODO Auto-generated constructor stub
 
@@ -42,8 +43,10 @@ void VisOdomBundleAdj::updateSlideWindow() {
     delete frame;
   }
   // Since slide down the window, we shall purge the tracks as well
-  if (mVisualizer)
-    ((VisOdomBundleAdj::Visualizer*)mVisualizer)->slideWindowFront = mActiveKeyFrames.front()->mFrameIndex;
+  if (mVisualizer) {
+    ((VisOdomBundleAdj::Visualizer*)mVisualizer)->slideWindowFront =
+      mActiveKeyFrames.front()->mFrameIndex;
+  }
   // loop thru all tracks and get purge the old entries
   purgeTracks(mActiveKeyFrames.front()->mFrameIndex);
 #if DEBUG
@@ -72,7 +75,7 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
 
 #if DISPLAY
   // Optionally, set up the visualizer
-  mVisualizer = new VisOdomBundleAdj::Visualizer(mPoseEstimator, mTracks);
+  mVisualizer = new VisOdomBundleAdj::Visualizer(mPoseEstimator, mFramePoses, mTracks);
 #endif
 
   // current frame
@@ -96,9 +99,10 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
 
       updateStat2();
 
-      if (mVisualizer)
+      if (mVisualizer) {
         ((VisOdomBundleAdj::Visualizer*)mVisualizer)->drawTrack(
             *mActiveKeyFrames.back());
+      }
     }
     visualize();
   }
@@ -130,12 +134,14 @@ void VisOdomBundleAdj::Tracks::purge(int oldestFrameIndex) {
       //  remove the entire track, as it is totally outside of the window
       mTracks.erase(iTrack);
     } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
+#if 0 // Do not do this as those older frames are used as fixed frames
       // get rid of the entries that fall out of the slide window
       iTrack->purge(oldestFrameIndex);
       // remove the track if its length is reduced to 1 or less.
       if (iTrack->size() < 2) {
         mTracks.erase(iTrack);
       }
+#endif
     }
     index++;
   }
@@ -232,41 +238,81 @@ void VisOdomBundleAdj::Visualizer::drawTracking(
 }
 
 void VisOdomBundleAdj::Visualizer::drawTrack(const PoseEstFrameEntry& frame){
+  drawTrackTrajectories(frame);
+  drawTrackEstimatedLocations(frame);
+}
+
+void VisOdomBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
   BOOST_FOREACH( const Track& track, this->tracks.mTracks ){
-    const TrackObserv& trackObs = track.back();
-    CvScalar color;
-    if (trackObs.mFrameIndex != frame.mFrameIndex) {
-      // this track does not show up in this frame
-      // draw if in yellow
-      color = CvMatUtils::yellow;
+    const TrackObserv& lastObsv = track.back();
+    const CvScalar colorFixedFrame = CvMatUtils::green;
+    CvScalar colorFreeFrame;
+
+    // drawing it red if the last observation is over the current frame
+    // drawing it yellow otherwise.
+    if (lastObsv.mFrameIndex < frame.mFrameIndex) {
+      colorFreeFrame = CvMatUtils::yellow;
     } else {
-      // this track shows up in this frame. Draw it in red
-      color = CvMatUtils::red;
+      colorFreeFrame  = CvMatUtils::red;
     }
 
     int thickness = 1;
-    CvPoint pt0;
-    bool foundTrackHead = false;
     deque<TrackObserv>::const_iterator iObsv = track.begin();
-    for (; iObsv != track.end(); iObsv++) {
-      if (iObsv->mFrameIndex >= this->slideWindowFront) {
-        pt0 = CvMatUtils::disparityToLeftCam(iObsv->mDispCoord);
-        foundTrackHead = true;
-        break;
-      } else {
-        cout << "(part of) a track is outside the slidewindow: "
-        <<this->slideWindowFront
-        << ">" << iObsv->mFrameIndex << "," << iObsv->mKeypointIndex <<","
-        << track.size()
-        << endl;
-      }
+    CvPoint pt0 = CvMatUtils::disparityToLeftCam(iObsv->mDispCoord);
+    CvScalar color;
+    if (iObsv->mFrameIndex < slideWindowFront) {
+      color = colorFixedFrame;
+    } else {
+      color = colorFreeFrame;
     }
-
-    for (; iObsv != track.end(); iObsv++) {
+    for (iObsv++; iObsv != track.end(); iObsv++) {
       CvPoint pt1 = CvMatUtils::disparityToLeftCam(iObsv->mDispCoord);
       cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
+      if (iObsv->mFrameIndex < slideWindowFront) {
+        color = colorFixedFrame;
+      } else {
+        color = colorFreeFrame;
+      }
       pt0 = pt1;
+    }
+  }
+}
+
+void VisOdomBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
+  return;
+  // now draw all the observation of the same 3d points on to a copy of the
+  int imgWidth  = frame.mImage->Width();
+  int imgHeight = frame.mImage->Height();
+  // make sure the image buffers is allocated to the right sizes
+  canvasTracking.Allocate(imgWidth, imgHeight);
+
+  assert(frame.mImage);
+  cvCvtColor(frame.mImage->Ipl(), canvasTracking.Ipl(),  CV_GRAY2RGB);
+  // draw all the tracks on canvasTracking
+
+  // compute the transformation from the global frame (same as first frame)
+  // to this frame.
+  vector<FramePose>::const_reverse_iterator ifp = framePoses.rbegin();
+
+  while (ifp != framePoses.rend()) {
+    if (ifp->mIndex == frame.mFrameIndex) {
+      // found it
+      break;
+    }
+    ifp++;
+  }
+  assert(ifp != framePoses.rend());
+  const CvPoint3D64f& rodCurrentToGlobal   = ifp->mRod;
+  const CvPoint3D64f& shiftCurrentToGlobal = ifp->mShift;
+  CvPoint3D64f rodGlobalToCurrent =  cvPoint3D64f(-rodCurrentToGlobal.x,
+      -rodCurrentToGlobal.y, -rodCurrentToGlobal.z);
+  CvPoint3D64f shifGlobaltoCurrent = cvPoint3D64f(-shiftCurrentToGlobal.x,
+      -shiftCurrentToGlobal.y, -shiftCurrentToGlobal.z);
+
+  BOOST_FOREACH( const Track& track, this->tracks.mTracks ){
+    BOOST_FOREACH( const TrackObserv& obsv, track ) {
+
     }
   }
 }

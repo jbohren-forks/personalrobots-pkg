@@ -88,6 +88,15 @@ public:
     );
   }
 
+  /// Construct a transformation matrix (4x4 or 4x3), given
+  /// the rodrigues and translation vector
+  static void TransformationFromRodriguesAndShift(
+      /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
+      /// vector.
+      const CvMat& param,
+      /// Output. transformation matrix.
+      CvMat& Transform);
+
 	static const CvScalar red;
 	static const CvScalar green;
 	static const CvScalar yellow;

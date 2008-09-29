@@ -82,11 +82,12 @@ public:
 		ELEM3(Q, 2, 1) = DOTPROD2(A, 2, B, 1);
 		ELEM3(Q, 2, 2) = DOTPROD2(A, 2, B, 2);
 	};
-	/// conventions of Euler angles
+	/// conventions of angle representations.
 	typedef enum  {
-		XYZ,  //< The rotation is around X-axis first, then Y, then Z, i.e. Rx*Ry*Rz =>R
-		ZYX,  //< The rotation is around Z-axis first, then Y, then X, i.e. Rz*Ry*Rx =>R
-	} EulerAngleConvention;
+		EulerXYZ,  //< The rotation is around X-axis first, then Y, then Z, i.e. Rx*Ry*Rz =>R
+		EulerZYX,  //< The rotation is around Z-axis first, then Y, then X, i.e. Rz*Ry*Rx =>R
+		Rodrigues  //< Rodrigues representation
+	} AngleConvention;
 	/**
 	 * Construct the rotation matrix, given Euler angles
 	 */
@@ -100,7 +101,7 @@ public:
 	    /// (Output) constructed rotation matrix.
 	    DataT R[3*3],
 	    /// Convention of Euler angles
-	    EulerAngleConvention eulerAngleConvention=ZYX
+	    AngleConvention eulerAngleConvention=EulerZYX
 	){
 	  double cosz = cos(z);
 	  double sinz = sin(z);
@@ -130,12 +131,12 @@ public:
 	  cvInitMatHeader(&Rxyz, 3, 3, CV_64FC1, _Rxyz);
 	  // TODO: would it be more efficient to follow symbolic computation
 	  switch (eulerAngleConvention){
-	  case ZYX:
+	  case EulerZYX:
 	    // Rx*Ry*Rz =>R
 	    cvMatMul(&Rx, &Ry, &Rxy);
 	    cvMatMul(&Rxy, &Rz, &Rxyz);
 	    break;
-	  case XYZ:
+	  case EulerXYZ:
 	    // Rz*Ry*Rx =>R
 	    cvMatMul(&Ry, &Rx, &Rxy);
 	    cvMatMul(&Rz, &Rxy, &Rxyz);
@@ -165,7 +166,7 @@ public:
 	 * Construct transformation matrix given the euler angles
 	 * and translation vectors.
 	 */
-	static void transformMatrix(
+	inline static void transformMatrix(
 	    /// Euler angle for X-axis
 	    DataT x,
 	    /// Euler angle for Y-axis
@@ -183,7 +184,7 @@ public:
 	    /// number of columns in RT.
 	    int numCols,
 	    /// Euler angle convention.
-	    EulerAngleConvention eulerAngleConvention=ZYX
+	    AngleConvention eulerAngleConvention=EulerZYX
 	){
 	  DataT rot[3*3];
 	  rotMatrix(x, y, z, rot, eulerAngleConvention);
@@ -199,18 +200,9 @@ public:
 	static void transformMatrixSq(DataT x, DataT y, DataT z,
 	    DataT tx, DataT ty, DataT tz,
 	    DataT RT[], int numCols,
-	    EulerAngleConvention eulerAngleConvention=ZYX
+	    AngleConvention eulerAngleConvention=EulerZYX
 	){
-	  DataT rot[3*3];
-	  rotMatrix(x, y, z, rot, eulerAngleConvention);
-	  for (int i=0; i<3; i++){
-	    for (int j=0; j<3; j++) {
-	      RT[i*numCols + j] = rot[i*3+j];
-	    }
-	  }
-	  RT[0*numCols + 3] = tx;
-	  RT[1*numCols + 3] = ty;
-	  RT[2*numCols + 3] = tz;
+	  transformMatrix(x, y, z, tx, ty, tz, RT, numCols, eulerAngleConvention);
 	  // last row;
 	  RT[3*numCols + 0] = 0.0;
 	  RT[3*numCols + 1] = 0.0;

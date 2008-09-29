@@ -8,7 +8,7 @@
 #ifndef CVVISODOMBUNDLEADJ_H_
 #define CVVISODOMBUNDLEADJ_H_
 
-#include "CvPathRecon.h"
+#include "PathRecon.h"
 
 namespace cv {
 namespace willow {
@@ -120,23 +120,34 @@ public:
 
   /// Default size of the sliding window
   static const int DefaultSlideWindowSize  = 10;
-  /// Default max number of frozen windows,
-  static const int DefaultNumFrozenWindows = 3;
+  /// Default number of iteration
+  static const int DefaultNumIteration = 20;
 
   /// Visualizing the visual odometry process of bundle adjustment.
   class Visualizer: public PathRecon::Visualizer {
   public:
     typedef PathRecon::Visualizer Parent;
-    Visualizer(Cv3DPoseEstimateDisp& poseEstimator, Tracks& trcks):
-      Parent(poseEstimator), tracks(trcks){}
+    Visualizer(Cv3DPoseEstimateDisp& poseEstimator,
+        const vector<FramePose>& framePoses,
+        const Tracks& trcks):
+      Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
     virtual ~Visualizer(){}
     /// Draw keypoints, tracks and disparity map on canvases for visualization
     virtual void drawTracking(
         const PoseEstFrameEntry& lastFrame,
         const PoseEstFrameEntry& frame);
 
+    /// Draw the tracks. A track is drawn as a polyline connecting the observations
+    /// of the same point in a sequence of frames. A line is drawn in yellow
+    /// if one of the end point is outside of the slide window. Red otherwise.
     virtual void drawTrack(const PoseEstFrameEntry& frame);
+    virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
+    virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
 
+
+    /// a reference to the estimated pose of the frames
+    const vector<FramePose>& framePoses;
+    /// a reference to the tracks.
     const Tracks& tracks;
     int   slideWindowFront;
   };
@@ -175,8 +186,15 @@ protected:
   Tracks mTracks;
   /// size of the sliding window
   int mSlideWindowSize;
-  /// number of windows shall be fixed in bundle adjustment
+  /// number of frozen cameras in bundle adjustment.  Frozen (or fixed)
+  /// frame (cameras) are those fall out of the sliding window, but still share
+  /// tracks with frames(cameras) inside the sliding window.
+  /// At the beginning when there are not enough frames (cameras) for a full
+  /// slide window, we always keep the first frame frozen.
   int mNumFrozenWindows;
+
+  /// number of iteration for bundle adjustment.
+  int mNumIteration;
 
 };
 }

@@ -63,6 +63,8 @@ LevMarqTransform::~LevMarqTransform()
 }
 
 bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
+  constructRTMatrix(param, mRTData);
+#if 0
 	CvMyReal x  = cvmGet(param, 0, 0);
 	CvMyReal y  = cvmGet(param, 1, 0);
 	CvMyReal z  = cvmGet(param, 2, 0);
@@ -70,7 +72,8 @@ bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	CvMyReal ty = cvmGet(param, 4, 0);
 	CvMyReal tz = cvmGet(param, 5, 0);
 
-	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<CvMyReal>::XYZ);
+	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<CvMyReal>::EulerXYZ);
+#endif
 
 	CvMyReal _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_XF, _param1);
@@ -83,20 +86,20 @@ bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	return true;
 }
 
-bool LevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
+bool LevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]) const {
 	bool status = true;
 
 	switch(mAngleType) {
 	case Euler:
 	{
-        CvMyReal x  = cvmGet(param, 0, 0);
+	  CvMyReal x  = cvmGet(param, 0, 0);
 		CvMyReal y  = cvmGet(param, 1, 0);
 		CvMyReal z  = cvmGet(param, 2, 0);
 		CvMyReal tx = cvmGet(param, 3, 0);
 		CvMyReal ty = cvmGet(param, 4, 0);
 		CvMyReal tz = cvmGet(param, 5, 0);
 
-		CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<CvMyReal>::XYZ);
+		CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<CvMyReal>::EulerXYZ);
 		break;
 	}
 	case Rodrigues:
@@ -104,19 +107,28 @@ bool LevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]){
 #if 0
 		// Rodrigues
 		CvMat rod;
-		if (param->rows==1) {
-			cvGetCols(param, &rod, 0, 3);
-		} else {
-			cvGetRows(param, &rod, 0, 3);
-		}
-		cvRodgrigues2(&rod, rot);
-		break;
+		CvMat rot;
+    CvMat rt;
+		assert(param->rows==1 && param->cols==6);
+		cvGetRows(param, &rod, 0, 3);
+    cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
+		cvGetSubRect(&rt,  &rot, cvRect(0,0, 3, 3));
+		cvRodrigues2(&rod, &rot);
+		_RT[      3] = cvmGet(param, 3, 0);
+		_RT[4*1 + 3] = cvmGet(param, 4, 0);
+		_RT[4*2 + 3] = cvmGet(param, 5, 0);
+#else
+    CvMat rt;
+    cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
+		CvMatUtils::TransformationFromRodriguesAndShift(*param, rt);
 #endif
+		break;
 	}
 	default:
 		cout << "constructRTMatrix() Not Implemented Yet"<<endl;
 		exit(0);
 	}
+
 	return status;
 }
 
@@ -127,7 +139,7 @@ bool LevMarqTransform::constructRTMatrix(const CvMat* param){
 	double y = cvmGet(param, 1, 0);
 	double z = cvmGet(param, 2, 0);
 	double _R[9];
-	CvMat3X3<double>::rotMatrix(x, y, z, _R, CvMat3X3<double>::XYZ);
+	CvMat3X3<double>::rotMatrix(x, y, z, _R, CvMat3X3<double>::EulerXYZ);
 
 	cvSetReal2D(&mRT, 0, 0,  _R[0]);
 	cvSetReal2D(&mRT, 0, 1,  _R[1]);

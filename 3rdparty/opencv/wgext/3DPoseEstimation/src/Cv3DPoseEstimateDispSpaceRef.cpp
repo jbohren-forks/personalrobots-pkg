@@ -275,7 +275,7 @@ int Cv3DPoseEstimateDispSpaceRef::estimate(CvMat *xyzs0, CvMat *xyzs1,
 	double _rot[9];
 
 	CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
-	    CvMat3X3<double>::XYZ);
+	    CvMat3X3<double>::EulerXYZ);
 	for (int i=0;i<3;i++)
 	  for (int j=0;j<3;j++) {
 	    cvmSet(rot, i, j, _rot[i*3+j]);
@@ -321,69 +321,6 @@ bool Cv3DPoseEstimateDispSpaceRef::constructHomography(const CvMat& R, const CvM
     cvMatMul(&G, (CvMat *)&dispToCart, &H);
     return status;
 }
-
-#if 0 // TODO delete it - move the CvStereoCamModel already
-bool Cv3DPoseEstimateDispSpaceRef::setCameraParams(double Fx, double Fy,
-		double Tx, double Clx, double Crx, double Cy){
-	setParams(Fx, Fy, Tx, Clx, Crx, Cy);
-
-	// free up the old matrices if they are there
-	cvReleaseMat(&mDispToCart);
-	cvReleaseMat(&mCartToDisp);
-
-	// construct the matrix that maps from disparity coordinates to
-	// cartesian coordinates
-#if 0
-	double Q[] =
-	{
-		1,         0,          0,               -mClx,
-		0,   mFx/mFy,          0,        -mCy*mFx/mFy,
-		0,         0,          0,                 mFx,
-		0,         0,      1/mTx,     -(mClx-mCrx)/mTx
-	};
-#else
-	// the following form is more symmetrical, and goes along with
-	// mCartToDisp
-	double Q[] =
-	{
-		1./mFx,    0,          0,           -mClx/mFx,
-		0,   	1./mFy,        0,           -mCy/mFy,
-		0,         0,          0,                1,
-		0,         0,      1./(mTx*mFx),    -(mClx-mCrx)/(mFx*mTx)
-	};
-#endif
-
-	CvMat _Q = cvMat(4, 4, CV_64F, Q);
-
-	// construct the matrix that maps from Cartesian coordinates to
-	// disparity coordinates
-	double P[] =
-	{
-		mFx, 0., mClx, 0.,
-		0., mFy, mCy, 0.,
-		0., 0., mClx-mCrx, mFx*mTx,
-		0., 0., 1., 0.
-	};
-	CvMat _P = cvMat(4, 4, CV_64F, P);
-
-	this->mDispToCart = cvCloneMat(&_Q);
-	this->mCartToDisp = cvCloneMat(&_P);
-
-#if 0 // explicitely computed
-	this->mCartToDisp = cvCreateMat(4, 4, CV_64FC1);
-	cvInvert(mDispToCart, mCartToDisp);
-#endif
-#ifdef DEBUG
-	// just check if they are invertible of each other
-	cout << "Cv3DPoseEstimateDispSpaceRef::setCameraParams()"<<endl;
-	CvMat* identMat = cvCreateMat(4, 4, CV_64FC1);
-	cvMatMul(this->mCartToDisp, this->mDispToCart, identMat);
-	CvMatUtils::printMat(identMat);
-	cvReleaseMat(&identMat);
-#endif
-	return true;
-}
-#endif
 
 /*
  * A Convenient function to map z to d, at the optical center

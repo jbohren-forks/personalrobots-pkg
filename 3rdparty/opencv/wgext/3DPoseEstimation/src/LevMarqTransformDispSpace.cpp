@@ -315,12 +315,11 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
     				PERSTRANSFORMRESIDUE(_Homography, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
     				TIMEREND2(Residue);
 
-        			TIMERSTART(ErrNorm);
+    				TIMERSTART(ErrNorm);
     				*_errNorm += _r0x*_r0x + _r0y*_r0y + _r0z*_r0z;
-    	    		TIMEREND(ErrNorm);
+    				TIMEREND(ErrNorm);
 				}
 				TIMEREND(ErrNorm);
-				//    			CvTestTimer::getTimer().mErrNorm += cvGetTickCount() - tErrNorm;
 			}
 		}
 	}

@@ -12,7 +12,7 @@ using namespace std;
 // opencv
 #include <opencv/highgui.h>
 
-#include "CvPathRecon.h"
+#include "PathRecon.h"
 using namespace cv::willow;
 
 #include "../include/CvMatUtils.h"

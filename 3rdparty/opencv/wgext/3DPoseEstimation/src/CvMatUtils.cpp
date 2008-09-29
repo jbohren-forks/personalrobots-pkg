@@ -186,6 +186,21 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	return true;
 }
 
+void CvMatUtils::TransformationFromRodriguesAndShift(const CvMat& param, CvMat& Transform) {
+  CvMat rod;
+  CvMat rot;
+  CvMat shift;
+  CvMat shiftInParam;
+  CvMat rt;
+  assert(param.rows==1 && param.cols==6);
+  cvGetRows(&param, &rod, 0, 3);
+  cvGetSubRect(&rt,  &rot, cvRect(0,0, 3, 3));
+  cvRodrigues2(&rod, &rot);
+  cvGetCol(&rt, &shift, 3);
+  cvGetSubRect(&rt, &shiftInParam, cvRect(0, 3, 1, 3));
+  cvCopy(&shiftInParam, &shift);
+}
+
 CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
   CvPoint3D64f coord;
   coord.x = cvmGet(&mat, row, 0);

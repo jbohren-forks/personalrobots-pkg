@@ -131,7 +131,8 @@ public:
 protected:
 	bool constructRTMatrix(const CvMat* param);
 	bool constructRTMatrices(const CvMat* param, CvMyReal delta);
-	bool constructRTMatrix(const CvMat * param, CvMyReal _RT[]);
+	/// Given parameters, construct the transformation matrix.
+	bool constructRTMatrix(const CvMat * param, CvMyReal _RT[]) const;
 	bool computeForwardResidues(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *res);
 	virtual bool constructTransformationMatrix(const CvMat *param);
 	virtual bool constructTransformationMatrix(const CvMat *param, CvMyReal T[]);
