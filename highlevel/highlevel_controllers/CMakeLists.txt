@@ -14,3 +14,6 @@ rospack_add_executable(move_arm src/MoveArm.cpp)
 # MoveBase
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
 target_link_libraries(move_base_sbpl highlevel_controllers)
+
+# MoveArmEndEffector
+rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)

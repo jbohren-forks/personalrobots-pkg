@@ -30,7 +30,8 @@ set(TREX_FILES src/Executive.cc
 	       src/BaseStateAdapter.cc
 	       src/BaseControllerAdapter.cc
 	       src/ArmStateAdapter.cc
-	       src/ArmControllerAdapter.cc)
+	       src/ArmControllerAdapter.cc
+	       src/EndEffectorControllerAdapter.cc)
 
 rospack_add_executable(trex_debug ${TREX_FILES})
 target_link_libraries(trex_debug Utils_g TREX_g)

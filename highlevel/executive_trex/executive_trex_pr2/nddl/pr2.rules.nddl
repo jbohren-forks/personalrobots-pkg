@@ -100,3 +100,39 @@ MoveArm::Inactive{
     }
   }
 }
+
+MoveEndEffector::Inactive{
+  met_by(Active p);
+
+  if(des_shoulder_pan){
+    if(des_shoulder_pitch){
+      if(des_upperarm_roll){
+	if(des_elbow_flex){
+
+	  if(des_forearm_roll){
+	    if(des_wrist_flex){
+	      if(des_gripper_roll){
+		eq(p.shoulder_pan, des_shoulder_pan);
+		eq(p.shoulder_pitch, des_shoulder_pitch);
+		eq(p.upperarm_roll, des_upperarm_roll);
+		eq(p.elbow_flex, des_elbow_flex);
+		eq(p.forearm_roll, des_forearm_roll);
+		eq(p.wrist_flex, des_wrist_flex);
+		eq(p.gripper_roll, des_gripper_roll);
+
+		//checking desired values
+		addEq(shoulder_pan, [-.15, .15], des_shoulder_pan);
+		addEq(shoulder_pitch, [-.15, .15], des_shoulder_pitch);
+		addEq(upperarm_roll, [-.15, .15], des_upperarm_roll);
+		addEq(elbow_flex, [-.15, .15], des_elbow_flex);
+		addEq(forearm_roll, [-.15, .15], des_forearm_roll);
+		addEq(wrist_flex, [-.15, .15], des_wrist_flex);
+		addEq(gripper_roll, [-.15, .15], des_gripper_roll);
+	      }
+	    }
+	  }
+	}
+      }
+    }
+  }
+}

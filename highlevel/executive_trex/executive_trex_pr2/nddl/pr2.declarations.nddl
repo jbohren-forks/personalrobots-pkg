@@ -196,3 +196,46 @@ class MoveArm extends Behavior {
     isLeft = _isLeft;
   }
 };
+
+
+/**
+ * MoveEndEffector behavior will handle active control to move the end effector of the arm to a desired position
+ */
+class MoveEndEffector extends Behavior {
+
+  bool isLeft; // True if this is for the left arm, else false.
+  
+  predicate Inactive{
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+
+    float des_shoulder_pan;
+    float des_shoulder_pitch;
+    float des_upperarm_roll;
+    float des_elbow_flex;
+    float des_forearm_roll;
+    float des_wrist_flex;
+    float des_gripper_roll;
+  }
+
+  predicate Active {
+    float shoulder_pan;
+    float shoulder_pitch;
+    float upperarm_roll;
+    float elbow_flex;
+    float forearm_roll;
+    float wrist_flex;
+    float gripper_roll;
+
+  }
+  
+  MoveEndEffector(Mode _mode, bool _isLeft){
+    super(_mode, "Inactive");
+    isLeft = _isLeft;
+  }
+};
