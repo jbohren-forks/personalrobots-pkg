@@ -10,6 +10,7 @@
 <license>BSD</license>
 <url>http://www.scipy.org/</url>
 <depend package="numpy"/>
+<sysdepend os="osx" version="10.5.4" package="g95"/>
 <export>
 <!--
   <doxymaker external="http://numpy.scipy.org/#NumPy" />
