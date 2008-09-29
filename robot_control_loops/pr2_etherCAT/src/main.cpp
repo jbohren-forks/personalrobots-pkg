@@ -249,13 +249,25 @@ void warnOnSecondary(int sig)
   }
 }
 
+void xenomaiClockHack()
+{
+  struct timespec ts;
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  ts.tv_sec = tv.tv_sec;
+  ts.tv_nsec = tv.tv_usec * 1000;
+  clock_settime(CLOCK_REALTIME, &ts); 
+}
+
 static pthread_t rtThread;
 static pthread_attr_t rtThreadAttr;
-
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
+
+  // Hack to set the REALTIME clock to match the Linux system clock
+  xenomaiClockHack();
 
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
