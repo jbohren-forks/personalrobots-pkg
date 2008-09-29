@@ -110,6 +110,12 @@ namespace gazebo {
     /* publish diagnostic message                             */
     /*                                                        */
     /**********************************************************/
+    this->diagnostic_status_.level = 0;
+    this->diagnostic_status_.name = "battery diagnostic";
+    this->diagnostic_status_.message = "battery ok";
+    this->diagnostic_message_.header = this->battery_state_.header;
+    this->diagnostic_message_.set_status_size(1);
+    this->diagnostic_message_.status[0] = this->diagnostic_status_;
     this->lock_.lock();
     this->rosnode_->publish(this->diagnosticMessageTopicName_,diagnostic_message_);
     this->lock_.unlock();

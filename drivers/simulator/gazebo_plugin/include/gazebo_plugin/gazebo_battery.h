@@ -37,6 +37,7 @@
 #include <gazebo/Model.hh>
 #include <robot_msgs/BatteryState.h>
 #include <robot_msgs/DiagnosticMessage.h>
+#include <robot_msgs/DiagnosticStatus.h>
 #include <ros/node.h>
 
 namespace gazebo
@@ -98,6 +99,7 @@ private:
 
   /// \brief ros message for diagnostic messages
   robot_msgs::DiagnosticMessage diagnostic_message_;
+  robot_msgs::DiagnosticStatus diagnostic_status_;
 
   /// \brief pointer to ros node
   private: ros::node *rosnode_;
