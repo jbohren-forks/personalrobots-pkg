@@ -36,10 +36,10 @@
 #define NIMAGES 40
 
 //Horopter (sensor range)
-#define MAXDISP 100
-#define XOFFSET 50
+#define MAXDISP 80
+#define XOFFSET 30
 
-
+//#define DEMO_PR2
 
 struct calib_params{
 
@@ -188,7 +188,12 @@ class SpacetimeStereoNode : public ros::node
 	unsigned int nImages;
 	short int* disp;
 		
+	#ifdef DEMO_PR2
+	SpacetimeStereoNode() : ros::node("world_3d_map"), builtBridge(false), nImages(NIMAGES)
+	#else
 	SpacetimeStereoNode() : ros::node("spacetime_stereo_node"), builtBridge(false), nImages(NIMAGES)
+	#endif
+
 	{
 		IsCal = 0;
 
@@ -197,7 +202,13 @@ class SpacetimeStereoNode : public ros::node
 		
 		subscribe("videre/images", frame_msg, &SpacetimeStereoNode::processFrame, 1);
 		subscribe("videre/cal_params", cal_msg, &SpacetimeStereoNode::processCal, 1);
+		
+		#ifdef DEMO_PR2
+		advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
+		#else
 		advertise<std_msgs::PointCloudFloat32>("spacetime_stereo", 5);
+		#endif
+	
 	}
 	
 	~SpacetimeStereoNode()
@@ -217,7 +228,8 @@ class SpacetimeStereoNode : public ros::node
 	//Copies the image out of the frame_msg and into frame.
 	void processFrame() 
 	{
-		
+		//cvWaitKey(0);
+
 		if(!builtBridge) {
 			left_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[1], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
 			right_bridge_in = new CvBridge<std_msgs::Image>(&frame_msg.images[0], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
@@ -249,6 +261,7 @@ class SpacetimeStereoNode : public ros::node
 
 			int w = left_frames[0]->width;
 			int h = left_frames[0]->height;
+			printf("w: %d , h: %d \n", w, h);
 			disp = (short int *)malloc(w*h*sizeof(short int));
 			
 			spacetime_stereo(left_frames, right_frames, nImages, disp, cal_string);
@@ -404,7 +417,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	IplImage *Rightg = cvCreateImage(cvSize(w, h), 8, 1);
 		
 	#ifdef FILTERS
-	par.unique = 1;
+	par.unique = 0;
 	par.ratio_filter = 90;
 	par.peak_filter = 120;
 
@@ -547,14 +560,25 @@ ros_cloud.chan[0].set_vals_size(tot_points);
 
 for(j=0; j<h; j++)
 for(i=0; i<w; i++)
+//if( disp[j*w+i] > 0) {
+#ifdef DEMO_PR2
+if( disp[j*w+i] > 40*16 && disp[j*w+i] < 63*16) {
+#else
 if( disp[j*w+i] > 0) {
+#endif
 	zf = (abs(cpar.tx) * cpar.feq) / ( XOFFSET + ( (disp[j*w+i]*1.0) / SUBPIXEL) ) ;
 	xf = ((i - cpar.u0) * zf) / cpar.fx;
 	yf = ((j - cpar.v0) * zf) / cpar.fy;
 	
+	#ifdef DEMO_PR2
+	ros_cloud.pts[point_count].x = -1.42 +zf/300;//xf/1000; //from millimiters to decimiters
+	ros_cloud.pts[point_count].y = xf/300;//yf/1000; //Why does this need to be flipped?
+	ros_cloud.pts[point_count].z = .75-yf/300;//zf/1000; //Why does this need to be flipped?
+	#else
 	ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
 	ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
 	ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
+	#endif
 
 	ros_cloud.chan[0].vals[point_count] = 16*255;
 	point_count++;
@@ -562,8 +586,13 @@ if( disp[j*w+i] > 0) {
 
 //printf("DON");
 
+#ifdef DEMO_PR2
+ros_cloud.header.frame_id = "FRAMEID_MAP";
+publish("world_3d_map", ros_cloud);
+#else
 ros_cloud.header.frame_id = "FRAMEID_SMALLV";
 publish("spacetime_stereo", ros_cloud);
+#endif
 
 signal(SIGUSR1, toggle_wait);
 
@@ -618,7 +647,9 @@ cvNamedWindow("Disp Image", 1);
 //cvNamedWindow("Tar Image", 1);
 //#endif
 
+
 ros::init(argc, argv);
+
 SpacetimeStereoNode sts;
 sts.spin();
 

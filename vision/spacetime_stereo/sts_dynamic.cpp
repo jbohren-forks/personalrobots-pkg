@@ -24,17 +24,16 @@
 #define SUBPIXEL 16
 #define FILTERS
 
-#define DYNAMIC
-//#define STATIC
+#define SO
 
 #define RADIUS 2
-#define MAXDISP 100
-#define XOFFSET 50
-#define NIMAGES 40
+#define MAXDISP 90
+#define XOFFSET 30
+#define NIMAGES 1
 
 #define	PI1S  70
 #define	PI2S  15
-#define	PI1T  20
+#define	PI1T  40
 #define	PI2T  10
 
 
@@ -101,14 +100,6 @@ for(y=0; y<h; y++){
 for(x=0; x<w; x++){
 	B[y*w+x] = ((unsigned char *)(A->imageData))[y*A->widthStep +x];
 }}
-
-}
-
-
-
-void toggle_wait(int foo){
-//printf("Togglin'  \n");
-wait = !wait;
 
 }
 
@@ -240,7 +231,7 @@ class SpacetimeStereoNode : public ros::node
 		else {
 			while(!IsCal && ok()){printf("; ");}
 
-			system("killall -s USR1 lpg");
+			//system("killall -s USR1 lpg");
 			
 			string cal_string = cal_msg.data;
 
@@ -326,35 +317,24 @@ void stereo_SOst(stereo_params par){
 	
 	//FIRST ROW
 	//STAGE 1 - init acc
-	for(d=0; d<maxdisp; d++){
-		for(i=maxdisp; i<maxdisp+n; i++){
-			V[i][d]=0;
-			for(j=0; j<n; j++)
-				V[i][d] += abs( L[j*w+i] - R[j*w+i-d-xoffset] );
-			//acc[d] += V[i][d];			
-		}		
-	}
-	
-	//STAGE 2: other positions
-	for(x=maxdisp+r+1; x<w-r; x++){
+	for(x=maxdisp+xoffset; x<w-r; x++){
 		for(d=0; d<maxdisp; d++){
-			V[x+r][d]=0;
+			V[x][d]=0;
 			for(j=0; j<n; j++)
-				V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d-xoffset] );
-			//acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
-		}//d
-	}//x
+				V[x][d] += abs( L[j*w+x] - R[j*w+x-d-xoffset] );
+	}}
+	
 	unsigned char *lp, *rp, *lpp, *rpp;
-	int ind1 = r+r+maxdisp;
+	int ind1 = r+r+maxdisp+xoffset;
 	
 	for(y=r+1; y<h-r; y++){
 	
 		//first position
 		for(d=0; d<maxdisp; d++){
-			acc[maxdisp+r][d] = 0;
-			for(i=maxdisp; i<maxdisp+n; i++){
+			acc[maxdisp+xoffset+r][d] = 0;
+			for(i=maxdisp+xoffset; i<maxdisp+xoffset+n; i++){
 				V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d-xoffset] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d-xoffset] );
-				acc[maxdisp+r][d] += V[i][d];			
+				acc[maxdisp+xoffset+r][d] += V[i][d];			
 			}	
 		}
 			
@@ -364,7 +344,7 @@ void stereo_SOst(stereo_params par){
 		lpp = (unsigned char *) L + (y-r-1)*w + ind1;
 		rpp = (unsigned char *) R + (y-r-1)*w + ind1 -xoffset;
 			
-		for(x=maxdisp+r+1; x<w-r; x++){
+		for(x=maxdisp+xoffset+r+1; x<w-r; x++){
 				
 			lp++;
 			rp++;
@@ -386,9 +366,9 @@ void stereo_SOst(stereo_params par){
 		//BEGIN FORWARD
 		//BORDO
 		for(d=0; d<maxdisp; d++)
-			F[maxdisp+r][d] = acc[maxdisp+r][d];
+			F[maxdisp+xoffset+r][d] = acc[maxdisp+xoffset+r][d];
 	
-		for(x=maxdisp+r; x<w-r; x++){
+		for(x=maxdisp+xoffset+r; x<w-r; x++){
 	
 			costmin = F[x-1][0];
 			dbest = 0;
@@ -410,7 +390,7 @@ void stereo_SOst(stereo_params par){
 		for(d=0; d<maxdisp; d++)
 			B[w-1-r][d] = acc[w-1-r][d];
 		
-		for(x=w-2-r; x>=maxdisp+r; x--){
+		for(x=w-2-r; x>=maxdisp+xoffset+r; x--){
 
 			costmin = B[x+1][0];
 			dbest = 0;
@@ -436,6 +416,8 @@ void stereo_SOst(stereo_params par){
 				dbest = d;
 			}
 			
+			//for(d=0; d<maxdisp; d++)
+			//	tempc[d] = acc[x][d];
 			tempc[0] = F[x][0] + B[x][0] + min3(costmin+pit, C[y*w+x][d], C[y*w+x][d+1]+pi2t) - costmin;
 			for(d=1; d<maxdisp-1; d++)
 				tempc[d] = F[x][d] + B[x][d] + min4(costmin+pit, C[y*w+x][d], C[y*w+x][d-1]+pi2t, C[y*w+x][d+1]+pi2t) - costmin;
@@ -459,6 +441,324 @@ void stereo_SOst(stereo_params par){
 	free(acc);
 	free(tempc);
 }
+
+inline int compute_penalty(int temp, int* acc, int pi1, int pi2, int maxdisp){
+
+	int dbest=0;
+
+	if(temp>0)
+		acc[temp-1] -= pi2; 
+	acc[temp] -= pi1;
+	if(temp < maxdisp-1)
+		acc[temp+1] -= pi2; 
+
+	int sad_min = INT_MAX;
+	for(int d=0; d<maxdisp; d++){
+		if(acc[d]  < sad_min){
+			sad_min = acc[d];
+			dbest = d;
+		}
+	}
+	
+	if(temp>0)
+		acc[temp-1] += pi2; 
+	acc[temp] += pi1;
+	if(temp < maxdisp-1)
+		acc[temp+1] += pi2; 
+	
+	return dbest;
+}
+
+
+void spacetime_stereo_LS_localsmoothing(stereo_params par){
+
+
+	int maxdisp = par.maxdisp;
+	int xoffset = par.xoffset;
+	
+	int r = par.radius;
+	int w = par.w;
+	int h = par.h;
+
+	unsigned char *L = par.L;
+	unsigned char *R = par.R;
+
+	int x,y,i,j,d;
+	int n = 2*r+1;
+	int dbest=0;
+
+	int sqn = n*n;
+	int costmin;
+	int den, alfa;
+
+	unsigned char *bdv = (unsigned char *)calloc(w*h, sizeof(unsigned char));
+	unsigned char *bdh = (unsigned char *)calloc(w*h, sizeof(unsigned char));
+	unsigned char *bdu = (unsigned char *)calloc(w, sizeof(unsigned char));
+
+	int sad_min, dbestph=0, dbestpv=0, dbestn=0;
+	int sad_max = INT_MAX;
+	
+	int *acc = (int *)calloc(maxdisp, sizeof(int));
+	int **V = (int **)calloc(w, sizeof(int*));
+	for(d=0; d<w; d++){
+		V[d] = (int *)calloc(maxdisp, sizeof(int)); 
+		//acc[d] = (int *)calloc(maxdisp, sizeof(int)); 	
+	}
+	//int *tempc = (int *)calloc(maxdisp, sizeof(int));
+
+	//int **C = par.mins;
+	short int *disp = par.disp;
+
+	int pi = PI1S * sqn;
+	int pi2 = PI2S * sqn;
+
+	int pit = PI1T * sqn;
+	int pi2t = PI2T * sqn;
+	
+	//BEGIN SPATIAL 2-PASS DP
+	
+	//FIRST ROW
+	//STAGE 1 - init acc
+	for(d=0; d<maxdisp; d++){
+		for(i=maxdisp+xoffset; i<maxdisp+xoffset+n; i++){
+			V[i][d] = 0;
+			for(j=0; j<n; j++)
+				V[i][d] += abs( L[j*w+i] - R[j*w+i-d-xoffset] );
+			acc[d] += V[i][d];			
+		}		
+	}
+
+	//STAGE 2: other positions
+	for(x=maxdisp+xoffset+r+1; x<w-r; x++){
+		sad_min = sad_max;
+		for(d=0; d<maxdisp; d++){
+			V[x+r][d] = 0;
+			for(j=0; j<n; j++)
+				V[x+r][d] += abs( L[j*w + x+r] - R[ j*w + x+r-d-xoffset] );
+			acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
+			
+			if(acc[d]  < sad_min){
+				sad_min = acc[d];
+				dbestpv = d;
+			}
+		}//d
+		bdv[r*w+x] = dbestpv;
+	}//x
+
+	unsigned char *lp, *rp, *lpp, *rpp;
+	int ind1 = r+r+maxdisp+xoffset;
+	int temp;
+
+	//BEGIN 1st PASS - TOPLEFT 2 BOTTOMRIGHT
+	//OTHER ROWS
+	for(y=r+1; y<h-r; y++){
+		sad_min = sad_max;
+		//first position
+		for(d=0; d<maxdisp; d++){
+			acc[d] = 0;
+			for(i=maxdisp+xoffset; i<maxdisp+xoffset+n; i++){
+				V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d-xoffset] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d-xoffset] );
+				acc[d] += V[i][d];			
+			}	
+	
+			if(acc[d]  < sad_min){
+				sad_min = acc[d];
+				dbestph = d;
+			}
+		}
+		bdh[y*w +maxdisp+xoffset+r] = dbestph;
+	
+		//compute ACC for all other positions
+		lp = (unsigned char *) L + (y+r)*w + ind1;
+		rp =  (unsigned char *) R + (y+r)*w + ind1-xoffset;
+		lpp = (unsigned char *) L + (y-r-1)*w + ind1;
+		rpp = (unsigned char *) R + (y-r-1)*w + ind1-xoffset;
+		
+		for(x=maxdisp+r+1; x<w-r; x++){
+			
+			lp++;
+			rp++;
+			lpp++;
+			rpp++;
+				
+			for(d=0; d<maxdisp; d++){
+				V[x+r][d] = V[x+r][d] +  abs( *lp - *rp ) - abs( *lpp - *rpp ); 
+	
+				rp--;
+				rpp--;
+				
+				acc[d] = acc[d] + V[x+r][d] - V[x-r-1][d];
+			}//d
+			rp += maxdisp;
+			rpp += maxdisp;
+		
+			temp = bdh[y*w+x-1];
+			dbest = compute_penalty(temp, acc, pi, pi2, maxdisp);
+			bdh[y*w+x] = dbest;
+			
+			//-------------------
+			temp = bdv[(y-1)*w+x];
+			dbest = compute_penalty(temp, acc, pi, pi2, maxdisp);
+			bdv[y*w+x] = dbest;
+		
+		}//x to compute ACC
+	}
+	//END 1st PASS
+	
+	//BEGIN 2nd pass : bottomright 2 topleft
+	
+	//STAGE 2: other positions
+	for(x=w-r-2; x>=maxdisp+xoffset+r+1; x--){
+		sad_min = sad_max;
+		for(d=0; d<maxdisp; d++){
+			acc[d] = acc[d] + V[x-r][d] - V[x+r+1][d];
+			
+			if(acc[d]  < sad_min){
+				sad_min = acc[d];
+				dbestpv = d;
+			}
+		}//d
+		bdu[x] = dbestpv;
+	}//x
+	
+	for(y=h-r-2; y>=r; y--){
+	
+		sad_min = sad_max;
+		//first position at right side
+		for(d=0; d<maxdisp; d++){
+			acc[d] = 0;
+			for(i=w-1; i>=w-n; i--){
+				V[i][d] = V[i][d] + abs( L[ (y-r)*w+i] - R[ (y-r)*w+i-d-xoffset] ) - abs( L[ (y+r+1)*w+i] - R[ (y+r+1)*w+i-d-xoffset] );
+				acc[d] += V[i][d];			
+			}	
+	
+			if(acc[d]  < sad_min){
+				sad_min = acc[d];
+				dbestph = d;
+			}
+		}
+	
+		//compute ACC for all other positions
+		for(x=w-r-2; x>=maxdisp+xoffset+r+1; x--){
+			for(d=0; d<maxdisp; d++){
+				V[x-r][d] = V[x-r][d] + abs( L[(y-r)*w + x-r] - R[ (y-r)*w + x-r-d-xoffset] ) - abs( L[ (y+r+1)*w+ x-r] - R[ (y+r+1)*w+ x-r-d-xoffset] ); 
+				acc[d] = acc[d] + V[x-r][d] - V[x+r+1][d];
+			}//d
+	
+			//compute final disparity from 4 directions
+			
+			temp = bdu[x];
+			if(temp>0)
+				acc[temp-1] -= pi2;  
+			acc[temp] -= pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] -= pi2;  
+	
+			temp = dbestph;
+			if(temp>0)
+				acc[temp-1] -= pi2;  
+			acc[temp] -= pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] -= pi2;  
+	
+			temp = bdv[(y-1)*w+x];
+			if(temp>0)
+				acc[temp-1] -= pi2;  
+			acc[temp] -= pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] -= pi2;  
+		
+			temp = bdh[y*w+x-1];
+			if(temp>0)
+				acc[temp-1] -= pi2;  
+			acc[temp] -= pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] -= pi2;  
+			
+			//BEGIN COMPUTE FINAL COST, APPLY TEMPORAL SMOOTHNESS
+	
+			temp = (disp[y*w+x]+8)/SUBPIXEL;
+	
+			acc[temp] -= pit;
+			if(temp>0)
+				acc[temp-1] -= pi2t;
+			if(temp<maxdisp-1)	
+				acc[temp+1] -= pi2t;
+			
+			costmin	= acc[0];
+			dbestn = 0;
+			for(d=1; d<maxdisp; d++){
+			if(acc[d] < costmin){
+				costmin = acc[d];
+				dbestn = d;
+			}}//d
+					
+			alfa = 0;
+			if(dbestn > 0 && dbestn<maxdisp-1){
+				den = 2* (acc[dbestn+1]+acc[dbestn-1]-2*acc[dbestn]);
+				if(den!=0)
+					alfa = (SUBPIXEL*(acc[dbestn-1] - acc[dbestn+1])) / den;
+			}
+			disp[y*w+x] = SUBPIXEL*dbestn + alfa;
+	
+			acc[temp] += pit;
+			if(temp>0)
+				acc[temp-1] += pi2t;
+			if(temp<maxdisp-1)	
+				acc[temp+1] += pi2t;
+		
+			//END COMPUTE FINAL COST, APPLY TEMPORAL SMOOTHNESS
+			//disp[y*w+x] = dbest;
+	
+			temp = bdu[x];
+			if(temp>0)
+				acc[temp-1] += pi2;  
+			acc[temp] += pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] += pi2;  
+	
+			temp = dbestph;
+			if(temp>0)
+				acc[temp-1] += pi2;  
+			acc[temp] += pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] += pi2;  
+	
+			temp = bdv[(y-1)*w+x];
+			if(temp>0)
+				acc[temp-1] += pi2;  
+			acc[temp] += pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] += pi2;  
+			
+			temp = bdh[y*w+x-1];
+			if(temp>0)
+				acc[temp-1] += pi2;  
+			acc[temp] += pi;  
+			if(temp < maxdisp-1)
+				acc[temp+1] += pi2;  			
+			
+			//UPDATE bdu
+			temp = bdu[x];
+			dbest = compute_penalty(temp, acc, pi, pi2, maxdisp);
+			bdu[x] = dbest;
+	
+			temp = dbestph;
+			dbestph = compute_penalty(temp, acc, pi, pi2, maxdisp);
+		}
+	}
+		
+	free(bdv);
+	free(bdh);
+	free(bdu);
+
+	for(d=0; d<w;d++){
+		free(V[d]);
+	}
+	free(V);
+	free(acc);	
+}
+
 
 
 void stereo_standard_sad(stereo_params par){
@@ -486,7 +786,7 @@ int **mins = par.mins;
 //FIRST ROW
 //STAGE 1 - init acc
 for(d=0; d<maxdisp; d++){
-	for(i=maxdisp; i<maxdisp+n; i++){
+	for(i=maxdisp+xoffset; i<maxdisp+xoffset+n; i++){
 		V[i][d] = 0;
 		for(j=0; j<n; j++){
 			V[i][d] += abs( L[j*w+i] - R[j*w+i-d-xoffset] );
@@ -496,7 +796,7 @@ for(d=0; d<maxdisp; d++){
 }
 
 //STAGE 2: other positions
-for(x=maxdisp+r+1; x<w-r; x++){
+for(x=maxdisp+xoffset+r+1; x<w-r; x++){
 	for(d=0; d<maxdisp; d++){
 		V[x+r][d] = 0;
 		for(j=0; j<n; j++)
@@ -514,7 +814,7 @@ for(y=r+1; y<h-r; y++){
 	//first position
 	for(d=0; d<maxdisp; d++){
 		acc[d] = 0;
-		for(i=maxdisp; i<maxdisp+n; i++){
+		for(i=maxdisp+xoffset; i<maxdisp+xoffset+n; i++){
 			V[i][d] = V[i][d] + abs( L[ (y+r)*w+i] - R[ (y+r)*w+i-d-xoffset] ) - abs( L[ (y-r-1)*w+i] - R[ (y-r-1)*w+i-d-xoffset] );
 			acc[d] += V[i][d];			
 		}	
@@ -526,7 +826,7 @@ for(y=r+1; y<h-r; y++){
 	lpp = (unsigned char *) L + (y-r-1)*w + ind1;
 	rpp = (unsigned char *) R + (y-r-1)*w + ind1 - xoffset;
 
-	for(x=maxdisp+r+1; x<w-r; x++){
+	for(x=maxdisp+xoffset+r+1; x<w-r; x++){
 		
 		lp++;
 		rp++;
@@ -557,12 +857,6 @@ free(acc);
 }
 
 
-//void SpacetimeStereoNode::compute_point_cloud(calib_params cpar, short int* disp, int w, int h){
-
-
-//}
-
-
 
 void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp, string cal_string){
 
@@ -571,7 +865,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	par.xoffset = XOFFSET;	
 	
 	int maxdisp = par.maxdisp;
-	//int xoffset = par.xoffset;
+	int xoffset = par.xoffset;
 
 	int r = par.radius;
 	int w = left_frames[0]->width;
@@ -579,7 +873,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	par.w = w;
 	par.h = h;
 	
-	unsigned int framecount;
+	unsigned int framecount = 0;
 	int d,x,y;
 	int den, alfa;
 	int dbest=0;
@@ -593,20 +887,6 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	disp = (short int *)malloc(w*h*sizeof(short int));
 	par.disp = disp;
 	
-	//Needed for averaging the intensities of the several stereo reference image	
-	unsigned char *L = (unsigned char *)malloc(w*h*sizeof(unsigned char));
-	unsigned char *R = (unsigned char *)malloc(w*h*sizeof(unsigned char));
-	//unsigned char *L, *R;
-
-	
-	//par.Lf = Leftf;
-	//par.Rf = Rightf;
-	par.L = L;
-	par.R = R;
-	
-	IplImage *Leftg = cvCreateImage(cvSize(w, h), 8, 1);
-	IplImage *Rightg = cvCreateImage(cvSize(w, h), 8, 1);
-		
 	#ifdef FILTERS
 	par.unique = 1;
 	par.ratio_filter = 90;
@@ -621,216 +901,200 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	#endif
 
 	
-	printf("Channel n: %d %d\n", left_frames[0]->nChannels, right_frames[0]->nChannels);
-	printf("Processing frame ");
-
-	int key = 'a';
-	//for(framecount = 0; framecount < nImages; framecount ++){
-	while(1){
-
-// 		cvNamedWindow("L", 1);
-// 		cvNamedWindow("R", 1);
-// 		cvShowImage("L", left_frames[framecount]);
-// 		cvShowImage("R", right_frames[framecount]);
-// 		cvWaitKey(0);
-
-		printf("%d ", framecount);
-		fflush(stdout);
-
-		cvCvtColor(left_frames[framecount], Leftg, CV_BGR2GRAY);
-		cvCvtColor(right_frames[framecount], Rightg, CV_BGR2GRAY);
-		//cvShowImage("Reference Image", left_frames[framecount]);
-		//cvWaitKey(100);
-		cv2array(Leftg, L);
-		cv2array(Rightg, R);
-		
-		//stereo_standard_sad(par);
-		stereo_SOst(par);
-		
-	//} //framecount
-	//printf("\n");
-
-		for(y=r; y<h-r; y++){
-		for(x=maxdisp+r+1; x<w-r; x++){
-			
-			costmin	= mins[y*w+x][0];
-			dbest = 0;
-		
-			for(d=1; d<maxdisp; d++){
-			if(mins[y*w+x][d] < costmin){
-					costmin = mins[y*w+x][d];
-					dbest = d;
-			}}//d
-				
-			alfa = 0;
-			if(dbest > 0 & dbest<maxdisp-1){
-				den = 2* (mins[y*w+x][dbest+1] + mins[y*w+x][dbest-1]-2*mins[y*w+x][dbest]);
-				if(den!=0)
-					alfa = (SUBPIXEL*(mins[y*w+x][dbest-1] - mins[y*w+x][dbest+1])) / den;
-			}
-			disp[y*w+x] = SUBPIXEL*dbest + alfa;
-			
-			#ifdef FILTERS
-			//******* FILTERS ********
-			//1) rel filter	
-			//if(costmin > rel_filter)
-			//	disp[y*w + x] = -2;
 	
-			//( 2)needed for uniqueness constraint filter )
-			min_scores[x] = costmin;
+	IplImage *Leftg = cvCreateImage(cvSize(w, h), 8, 1);
+	IplImage *Rightg = cvCreateImage(cvSize(w, h), 8, 1);
+	cvCvtColor(left_frames[framecount], Leftg, CV_BGR2GRAY);
+	cvCvtColor(right_frames[framecount], Rightg, CV_BGR2GRAY);
+	//cvShowImage("Reference Image", left_frames[framecount]);
+	//cvWaitKey(100);
+
+	//printf("Images ready ..");	
+
+	//unsigned char *L = (unsigned char *)malloc(w*h*sizeof(unsigned char));
+	//unsigned char *R = (unsigned char *)malloc(w*h*sizeof(unsigned char));
+	//cv2array(Leftg, L);
+	//cv2array(Rightg, R);
+	//printf("YES\n");	
+	unsigned char *L = ((unsigned char *)(Leftg->imageData));
+	unsigned char *R = ((unsigned char *)(Rightg->imageData));
+	
+	par.L = L;
+	par.R = R;
+	
+	printf("\nStereo SO .. ");		
+	fflush(stdout);
+
+	//stereo_standard_sad(par);
+	
+	#ifdef SO
+	stereo_SOst(par);
+	#else
+	spacetime_stereo_LS_localsmoothing(par);
+	#endif
+	printf("Done!\n");
+
+	#ifdef SO
+	for(y=r; y<h-r; y++){
+	for(x=maxdisp+xoffset+r+1; x<w-r; x++){
+		
+		costmin	= mins[y*w+x][0];
+		dbest = 0;
+	
+		for(d=1; d<maxdisp; d++){
+		if(mins[y*w+x][d] < costmin){
+				costmin = mins[y*w+x][d];
+				dbest = d;
+		}}//d
 			
-			//3) uniqueness filter
-			
-			sad_second_min = INT_MAX;
-			for(d=0; d<dbest-2; d++){
-				if(mins[y*w+x][d]<sad_second_min){
-					sad_second_min = mins[y*w+x][d];
-				}
-			}
-			for(d=dbest+3; d<maxdisp; d++){
-				if(mins[y*w+x][d]<sad_second_min){
-					sad_second_min = mins[y*w+x][d];
-				}
-			}	
-			if( costmin*100  > par.ratio_filter*sad_second_min)
-				disp[y*w + x] = -1;
-			
-			//4) Peak Filter
-			da = (dbest>1) ? ( mins[y*w+x][dbest-2] - mins[y*w+x][dbest] ) : (mins[y*w+x][dbest+2] - mins[y*w+x][dbest]);
-			db =  (dbest<maxdisp-2) ? (mins[y*w+x][dbest+2] - mins[y*w+x][dbest]) : (mins[y*w+x][dbest-2] - mins[y*w+x][dbest]);		
-			if(da + db < par.peak_filter)
-				disp[y*w + x] = -4;
-			//******* FILTERS ********
-			#endif
-				//disp[y*w+x] = dbest;
-		}//x
+		alfa = 0;
+		if(dbest > 0 & dbest<maxdisp-1){
+			den = 2* (mins[y*w+x][dbest+1] + mins[y*w+x][dbest-1]-2*mins[y*w+x][dbest]);
+			if(den!=0)
+				alfa = (SUBPIXEL*(mins[y*w+x][dbest-1] - mins[y*w+x][dbest+1])) / den;
+		}
+		disp[y*w+x] = SUBPIXEL*dbest + alfa;
 		
 		#ifdef FILTERS
-		if(par.unique == 1)
-			uniqueness_constraint_reducedrange(par, min_scores, y);
+		//******* FILTERS ********
+		//1) rel filter	
+		//if(costmin > rel_filter)
+		//	disp[y*w + x] = -2;
+
+		//( 2)needed for uniqueness constraint filter )
+		min_scores[x] = costmin;
+		
+		//3) uniqueness filter
+		sad_second_min = INT_MAX;
+		for(d=0; d<dbest-2; d++){
+			if(mins[y*w+x][d]<sad_second_min){
+				sad_second_min = mins[y*w+x][d];
+			}
+		}
+		for(d=dbest+3; d<maxdisp; d++){
+			if(mins[y*w+x][d]<sad_second_min){
+				sad_second_min = mins[y*w+x][d];
+			}
+		}	
+		if( costmin*100  > par.ratio_filter*sad_second_min)
+			disp[y*w + x] = -1;
+		
+		//4) Peak Filter
+		da = (dbest>1) ? ( mins[y*w+x][dbest-2] - mins[y*w+x][dbest] ) : (mins[y*w+x][dbest+2] - mins[y*w+x][dbest]);
+		db =  (dbest<maxdisp-2) ? (mins[y*w+x][dbest+2] - mins[y*w+x][dbest]) : (mins[y*w+x][dbest-2] - mins[y*w+x][dbest]);		
+		if(da + db < par.peak_filter)
+			disp[y*w + x] = -4;
+		//******* FILTERS ********
 		#endif
-		}//y
+			//disp[y*w+x] = dbest;
+	}//x
+	
+	#ifdef FILTERS
+	if(par.unique == 1)
+		uniqueness_constraint_reducedrange(par, min_scores, y);
+	#endif
+	}//y
+	#endif //SO
+		
+	//BEGIN COMPUTING POINT CLOUD
+	printf("Computing Point Cloud; w: %d h:%d ...", w, h);
+	
+	calib_params cpar;
+	
+	int position = cal_string.find("Tx");
+	string substring = cal_string.substr(position, cal_string.find("Ty") - position);
+	sscanf(substring.c_str(), "%*s %f", &cpar.tx);
+	
+	position = cal_string.find("proj");
+	substring = cal_string.substr(position, cal_string.find("rect")-position);
+	sscanf(substring.c_str(), "%*s \n %f %*f %f %*f \n %*f %f %f", &cpar.fx, &cpar.u0, &cpar.fy, &cpar.v0);
+	
+	cpar.feq =  (cpar.fx+cpar.fy) / 2;
+	
+	//printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
+	std_msgs::PointCloudFloat32 ros_cloud;
+	
+	ros_cloud.set_chan_size(1);
+	ros_cloud.chan[0].name = "intensities";
+	
+	int i,j;
+	float xf,yf,zf;
+	
+	int point_count = 0, tot_points=0;
+	for(j=0; j<h; j++)
+	for(i=0; i<w; i++)
+	if( disp[j*w+i] > 0) 
+		tot_points ++;
+	
+	ros_cloud.set_pts_size(tot_points);
+	ros_cloud.chan[0].set_vals_size(tot_points);
+	int intens = 16*255;	
 
+	for(j=0; j<h; j++)
+	for(i=0; i<w; i++)
+	if( disp[j*w+i] > 0) {
+		zf = (abs(cpar.tx) * cpar.feq) / ( XOFFSET + ( (disp[j*w+i]*1.0) / SUBPIXEL) ) ;
+		xf = ((i - cpar.u0) * zf) / cpar.fx;
+		yf = ((j - cpar.v0) * zf) / cpar.fy;
 		
-		//BEGIN COMPUTING POINT CLOUD
-		printf("Computing Point Cloud; w: %d h:%d ...", w, h);
-		
-		calib_params cpar;
-		
-		int position = cal_string.find("Tx");
-		string substring = cal_string.substr(position, cal_string.find("Ty") - position);
-		sscanf(substring.c_str(), "%*s %f", &cpar.tx);
-		
-		position = cal_string.find("proj");
-		substring = cal_string.substr(position, cal_string.find("rect")-position);
-		sscanf(substring.c_str(), "%*s \n %f %*f %f %*f \n %*f %f %f", &cpar.fx, &cpar.u0, &cpar.fy, &cpar.v0);
-		
-		cpar.feq =  (cpar.fx+cpar.fy) / 2;
-		
-		printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
-		
-		std_msgs::PointCloudFloat32 ros_cloud;
-		
-		ros_cloud.set_chan_size(1);
-		ros_cloud.chan[0].name = "intensities";
-		
-		int i,j;
-		float xf,yf,zf;
-		
-		//int w = Left->width;
-		//int h = Left->height;
-		//int wsi = Left->widthStep;
-		//unsigned char *dL = ((unsigned char *)(Left->imageData));
-		
-		
-		int point_count = 0, tot_points=0;
-		for(j=0; j<h; j++)
-		for(i=0; i<w; i++)
-		if( disp[j*w+i] > 0) 
-			tot_points ++;
-		
-		ros_cloud.set_pts_size(tot_points);
-		ros_cloud.chan[0].set_vals_size(tot_points);
-		
-		for(j=0; j<h; j++)
-		for(i=0; i<w; i++)
-		if( disp[j*w+i] > 0) {
-			zf = (abs(cpar.tx) * cpar.feq) / ( XOFFSET + ( (disp[j*w+i]*1.0) / SUBPIXEL) ) ;
-			xf = ((i - cpar.u0) * zf) / cpar.fx;
-			yf = ((j - cpar.v0) * zf) / cpar.fy;
-			
-			ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
-			ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
-			ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
-		
-			ros_cloud.chan[0].vals[point_count] = 16*255;
-			point_count++;
-		}
-		
-		//printf("DON");
-		
-		ros_cloud.header.frame_id = "FRAMEID_SMALLV";
-		publish("spacetime_stereo", ros_cloud);
-		
-		signal(SIGUSR1, toggle_wait);
-
-		IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 3);
-		cvZero(idisp);
-		
-		for(int y=RADIUS; y<h-RADIUS; y++){
-		for(int x=MAXDISP+RADIUS+1; x<w-RADIUS; x++){
-			if(disp[y*w+x]-8 < 0){
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = 255;
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = 0;
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = 0;
-			}
-			else{
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = disp[y*w+x]/8;
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = disp[y*w+x]/8;
-				((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = disp[y*w+x]/8;
-			}
-		}}
-
-		printf("Done; press q to quit, space-key to continue.. \n");
-
-		cvShowImage("Disp Image", idisp);
-		cvShowImage("Ref Image", left_frames[0]);
-		cvShowImage("Tar Image", right_frames[0]);
-		cvReleaseImage(&idisp);
-
-		wait = 1;
-		int key = 'a';
-		while(wait){
-		key = cvWaitKey(10);
-		if(key == ' ')
-			wait = 0;
-		if (key=='q')
-			exit(1);
-		}
+		ros_cloud.pts[point_count].x = xf/1000; //from millimiters to decimiters
+		ros_cloud.pts[point_count].y = yf/1000; //Why does this need to be flipped?
+		ros_cloud.pts[point_count].z = zf/1000; //Why does this need to be flipped?
+	
+		ros_cloud.chan[0].vals[point_count] = intens;
+		point_count++;
 	}
+	
+	ros_cloud.header.frame_id = "FRAMEID_SMALLV";
+	publish("spacetime_stereo", ros_cloud);
+	
+	//signal(SIGUSR1, toggle_wait);
 
-for(d=0; d<w*h;d++)
+	IplImage *idisp = cvCreateImage(cvSize(w, h), 8, 3);
+	cvZero(idisp);
+	
+	int scale = 256 / (XOFFSET+MAXDISP);
+	int xscale = XOFFSET * scale;
+	int dscale = SUBPIXEL/scale;
+	for(int y=RADIUS; y<h-RADIUS; y++){
+	for(int x=MAXDISP+XOFFSET+RADIUS+1; x<w-RADIUS; x++){
+		if(disp[y*w+x]-8 < 0){
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = 255;
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = 0;
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = 0;
+		}
+		else{
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3] = xscale + disp[y*w+x]/dscale;
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+1] = xscale + disp[y*w+x]/dscale;
+			((unsigned char *)(idisp->imageData))[y*idisp->widthStep+x*3+2] = xscale + disp[y*w+x]/dscale;
+		}
+	}}
+
+	//printf("Done; press q to quit, space-key to continue.. \n");
+
+	cvShowImage("Disp Image", idisp);
+	cvShowImage("Ref Image", left_frames[0]);
+	cvShowImage("Tar Image", right_frames[0]);
+
+	int key = cvWaitKey(20);
+	if (key=='q')
+		exit(1);
+	
+	for(d=0; d<w*h;d++)
 		free(mins[d]);	
 	free(mins);
 
-	free(L);
-	free(R);
+	//free(L);
+	//free(R);
 	cvReleaseImage(&Leftg);
 	cvReleaseImage(&Rightg);
-	cvDestroyWindow("Reference Image");
+	cvReleaseImage(&idisp);
+
 	#ifdef FILTERS
 	free(min_scores);
 	#endif
-	printf("Finished computing stereo disparities \n");
 
-system("killall -s USR1 lpg");
-
-//printf("E!\n");
-//m_rosNode->publish("full_cloud",ros_cloud);
-		
-	
-
-
+	//system("killall -s USR1 lpg");
 }
 
 
@@ -838,33 +1102,18 @@ system("killall -s USR1 lpg");
 
 int main(int argc, char **argv){
 
-//#ifdef DISPLAY
+
 cvNamedWindow("Disp Image", 1);
 cvNamedWindow("Ref Image", 1);
 cvNamedWindow("Tar Image", 1);
 
-//#endif
+ros::init(argc, argv);
+SpacetimeStereoNode sts;
+sts.spin();
 
-	ros::init(argc, argv);
-	SpacetimeStereoNode sts;
-	sts.spin();
-
-
-	//ros::fini();
-// 	static uint32_t count = 0;
-// 	std::stringstream ss;
-// 	ss << "spacetime_stereo" << count++;
-// 	
-// 	m_rosNode->init(argc, argv);	
-// 	
-// 	m_rosNode = new ros::node( ss.str() );
-// 	m_rosNode->advertise<std_msgs::PointCloudFloat32>("full_cloud", 5);
-
-//#ifdef DISPLAY
 cvDestroyWindow("Disp Image");
 cvDestroyWindow("Ref Image");
 cvDestroyWindow("Tar Image");
-//#endif
 
 return 0;
 
