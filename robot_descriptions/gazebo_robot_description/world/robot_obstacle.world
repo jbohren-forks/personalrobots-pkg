@@ -42,13 +42,12 @@
     <frames>
       <row height="100%">
         <camera width="100%">
-          <xyz>0 0 20</xyz>
-          <rpy>0 90 90</rpy>
+          <xyz>0.6 -1.55 0.73</xyz>
+          <rpy>0 10 94</rpy>
         </camera>
       </row>
     </frames>
   </rendering:gui>
-
 
   <rendering:ogre>
     <ambient>1.0 1.0 1.0 1.0</ambient>
