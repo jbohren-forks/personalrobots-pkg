@@ -268,7 +268,7 @@
     <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Blue</elem>
+      <elem key="material">PR2/wheel_left</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
       <mesh filename="wheel_left" scale="1 1 1"/>
@@ -279,7 +279,7 @@
     <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Red</elem>
+      <elem key="material">PR2/wheel_right</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
       <mesh filename="wheel_right" />

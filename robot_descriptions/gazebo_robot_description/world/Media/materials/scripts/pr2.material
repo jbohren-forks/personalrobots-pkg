@@ -27,3 +27,31 @@ material PR2/wall_texture
     }
   }
 }
+
+material PR2/wheel_right
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_right.png
+      }
+    }
+  }
+}
+
+material PR2/wheel_left
+{
+  technique
+  {
+    pass
+    {
+      texture_unit
+      {
+        texture pr2_wheel_left.png
+      }
+    }
+  }
+}
