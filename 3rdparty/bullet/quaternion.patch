@@ -950,6 +950,65 @@ Index: src/LinearMath/btQuadWord.h
  		SIMD_FORCE_INLINE void	setMin(const btQuadWord& other)
  		{
  			btSetMin(m_x, other.m_x);
+Index: src/LinearMath/btMinMax.h
+===================================================================
+--- src/LinearMath/btMinMax.h	(revision 1343)
++++ src/LinearMath/btMinMax.h	(working copy)
+@@ -17,24 +17,32 @@
+ #ifndef GEN_MINMAX_H
+ #define GEN_MINMAX_H
+ 
++/**@brief Return the minimum of two values */
+ template <class T>
+ SIMD_FORCE_INLINE const T& btMin(const T& a, const T& b) 
+ {
+   return a < b ? a : b ;
+ }
+ 
+-template <class T>
++/**@brief Return the maximum of two values */template <class T>
+ SIMD_FORCE_INLINE const T& btMax(const T& a, const T& b) 
+ {
+   return  a > b ? a : b;
+ }
+ 
++/**@brief Return a clamped value
++ * @param a The value 
++ * @param lb The lower bound 
++ * @param ub The uppper bound */
+ template <class T>
+ SIMD_FORCE_INLINE const T& GEN_clamped(const T& a, const T& lb, const T& ub) 
+ {
+ 	return a < lb ? lb : (ub < a ? ub : a); 
+ }
+ 
++/**@brief Set a value to the min of itself and another 
++ * @param a The value to set
++ * @param b The other value  */
+ template <class T>
+ SIMD_FORCE_INLINE void btSetMin(T& a, const T& b) 
+ {
+@@ -44,6 +52,9 @@
+ 	}
+ }
+ 
++/**@brief Set a value to the max of itself and another 
++ * @param a The value to set
++ * @param b The other value  */
+ template <class T>
+ SIMD_FORCE_INLINE void btSetMax(T& a, const T& b) 
+ {
+@@ -53,6 +64,10 @@
+ 	}
+ }
+ 
++/**@brief Clamp a value 
++ * @param a The value to clamp 
++ * @param lb The lower bound 
++ * @param ub The upper bound */
+ template <class T>
+ SIMD_FORCE_INLINE void GEN_clamp(T& a, const T& lb, const T& ub) 
+ {
 Index: src/LinearMath/btMatrix3x3.h
 ===================================================================
 --- src/LinearMath/btMatrix3x3.h	(revision 1343)
