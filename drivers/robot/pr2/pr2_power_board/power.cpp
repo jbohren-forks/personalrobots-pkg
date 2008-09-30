@@ -644,10 +644,9 @@ int main(int argc, char** argv) {
   char last_command = '?';
 	while (!quit) {
 
-          //char *command = readline("> ");
           char command [200];
-          scanf("%s", command);
-          
+	  std::cin.getline(command, sizeof(command));
+
 
 #if 0
 		if (command == NULL) {
@@ -682,7 +681,6 @@ int main(int argc, char** argv) {
     if(command[0] != 0)
       last_command = command[0];
 
-    //free(command);		
 	}
 
 	CloseAllDevices();
