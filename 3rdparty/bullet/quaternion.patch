@@ -1,6 +1,6 @@
 Index: src/LinearMath/btTransform.h
 ===================================================================
---- src/LinearMath/btTransform.h	(revision 1318)
+--- src/LinearMath/btTransform.h	(revision 1342)
 +++ src/LinearMath/btTransform.h	(working copy)
 @@ -82,6 +82,10 @@
  		return (*this)(x);
@@ -15,18 +15,42 @@ Index: src/LinearMath/btTransform.h
  
 Index: src/LinearMath/btQuaternion.h
 ===================================================================
---- src/LinearMath/btQuaternion.h	(revision 1318)
+--- src/LinearMath/btQuaternion.h	(revision 1342)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -17,6 +17,7 @@
+@@ -17,30 +17,43 @@
  #ifndef SIMD__QUATERNION_H_
  #define SIMD__QUATERNION_H_
  
 +#include <algorithm>
  #include "btVector3.h"
  
- ///The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform.
-@@ -38,7 +39,11 @@
+-///The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform.
++/**@brief The btQuaternion implements quaternion to perform linear algebra rotations in combination with btMatrix3x3, btVector3 and btTransform. */
+ class btQuaternion : public btQuadWord {
+ public:
++  /**@brief No initialization constructor */
+ 	btQuaternion() {}
  
+ 	//		template <typename btScalar>
+ 	//		explicit Quaternion(const btScalar *v) : Tuple4<btScalar>(v) {}
+-
++  /**@brief Constructor from scalars */
+ 	btQuaternion(const btScalar& x, const btScalar& y, const btScalar& z, const btScalar& w) 
+ 		: btQuadWord(x, y, z, w) 
+ 	{}
+-
++  /**@brief Axis angle Constructor
++   * @param axis The axis which the rotation is around
++   * @param angle The magnitude of the rotation around the angle (Radians) */
+ 	btQuaternion(const btVector3& axis, const btScalar& angle) 
+ 	{ 
+ 		setRotation(axis, angle); 
+ 	}
+-
++  /**@brief Constructor from Euler angles
++   * @param yaw Angle around Y unless BT_EULER_DEFAULT_ZYX defined then Z
++   * @param pitch Angle around X unless BT_EULER_DEFAULT_ZYX defined then Y
++   * @param roll Angle around Z unless BT_EULER_DEFAULT_ZYX defined then X */
  	btQuaternion(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
  	{ 
 +#ifndef BT_EULER_DEFAULT_ZYX
@@ -35,12 +59,34 @@ Index: src/LinearMath/btQuaternion.h
 +		setEulerZYX(yaw, pitch, roll); 
 +#endif 
  	}
- 
+-
++  /**@brief Set the rotation using axis angle notation 
++   * @param axis The axis around which to rotate
++   * @param angle The magnitude of the rotation in Radians */
  	void setRotation(const btVector3& axis, const btScalar& angle)
-@@ -67,6 +72,22 @@
+ 	{
+ 		btScalar d = axis.length();
+@@ -49,7 +62,10 @@
+ 		setValue(axis.x() * s, axis.y() * s, axis.z() * s, 
+ 			btCos(angle * btScalar(0.5)));
+ 	}
+-
++  /**@brief Set the quaternion using Euler angles
++   * @param yaw Angle around Y
++   * @param pitch Angle around X
++   * @param roll Angle around Z */
+ 	void setEuler(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
+ 	{
+ 		btScalar halfYaw = btScalar(yaw) * btScalar(0.5);  
+@@ -66,26 +82,51 @@
+ 			sinRoll * cosPitch * cosYaw - cosRoll * sinPitch * sinYaw,
  			cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw);
  	}
- 
+-
++  /**@brief Set the quaternion using euler angles 
++   * @param yaw Angle around Z
++   * @param pitch Angle around Y
++   * @param roll Angle around X */
 +	void setEulerZYX(const btScalar& yaw, const btScalar& pitch, const btScalar& roll)
 +	{
 +		btScalar halfYaw = btScalar(yaw) * btScalar(0.5);  
@@ -57,38 +103,434 @@ Index: src/LinearMath/btQuaternion.h
 +                         cosRoll * cosPitch * sinYaw - sinRoll * sinPitch * cosYaw, //z
 +                         cosRoll * cosPitch * cosYaw + sinRoll * sinPitch * sinYaw); //formerly yzx
 +	}
++  /**@brief Add two quaternions
++   * @param q The quaternion to add to this one */
  	btQuaternion& operator+=(const btQuaternion& q)
  	{
  		m_x += q.x(); m_y += q.y(); m_z += q.z(); m_unusedW += q.m_unusedW;
-@@ -146,7 +167,7 @@
+ 		return *this;
+ 	}
+-
++  /**@brief Subtract out a quaternion
++   * @param q The quaternion to subtract from this one */
+ 	btQuaternion& operator-=(const btQuaternion& q) 
+ 	{
+ 		m_x -= q.x(); m_y -= q.y(); m_z -= q.z(); m_unusedW -= q.m_unusedW;
+ 		return *this;
+ 	}
+ 
++  /**@brief Scale this quaternion
++   * @param s The scalar to scale by */
+ 	btQuaternion& operator*=(const btScalar& s)
+ 	{
+ 		m_x *= s; m_y *= s; m_z *= s; m_unusedW *= s;
+ 		return *this;
+ 	}
+ 
+-
++  /**@brief Multiply this quaternion by q @todo left or right
++   * @param q The other quaternion  */
+ 	btQuaternion& operator*=(const btQuaternion& q)
+ 	{
+ 		setValue(m_unusedW * q.x() + m_x * q.m_unusedW + m_y * q.z() - m_z * q.y(),
+@@ -94,27 +135,34 @@
+ 			m_unusedW * q.m_unusedW - m_x * q.x() - m_y * q.y() - m_z * q.z());
+ 		return *this;
+ 	}
+-
++  /**@brief Return the dot product between this quaternion and another
++   * @param q The other quaternion */
+ 	btScalar dot(const btQuaternion& q) const
+ 	{
+ 		return m_x * q.x() + m_y * q.y() + m_z * q.z() + m_unusedW * q.m_unusedW;
+ 	}
+ 
++  /**@brief Return the length squared of the quaternion */
+ 	btScalar length2() const
+ 	{
+ 		return dot(*this);
+ 	}
+ 
++  /**@brief Return the length of the quaternion */
+ 	btScalar length() const
+ 	{
+ 		return btSqrt(length2());
+ 	}
+ 
++  /**@brief Normalize the quaternion 
++   * Such that x^2 + y^2 + z^2 +w^2 = 1 */
+ 	btQuaternion& normalize() 
+ 	{
+ 		return *this /= length();
+ 	}
+ 
++  /**@brief Return a scaled version of this quaternion
++   * @param s The scale factor */
+ 	SIMD_FORCE_INLINE btQuaternion
+ 	operator*(const btScalar& s) const
+ 	{
+@@ -122,33 +170,36 @@
+ 	}
+ 
+ 
+-
++  /**@brief Return an inversely scaled versionof this quaternion
++   * @param s The inverse scale factor */
+ 	btQuaternion operator/(const btScalar& s) const
+ 	{
+ 		assert(s != btScalar(0.0));
+ 		return *this * (btScalar(1.0) / s);
+ 	}
+ 
+-
++  /**@brief Inversely scale this quaternion
++   * @param s The scale factor */
+ 	btQuaternion& operator/=(const btScalar& s) 
+ 	{
+ 		assert(s != btScalar(0.0));
+ 		return *this *= btScalar(1.0) / s;
+ 	}
+ 
+-
++  /**@brief Return a normalized version of this quaternion */
+ 	btQuaternion normalized() const 
+ 	{
+ 		return *this / length();
+ 	} 
+-
++  /**@brief Return the angle between this quaternion and the other 
++   * @param q The other quaternion */
+ 	btScalar angle(const btQuaternion& q) const 
  	{
  		btScalar s = btSqrt(length2() * q.length2());
  		assert(s != btScalar(0.0));
 -		return btAcos(dot(q) / s);
 +		return btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
  	}
- 
+-
++  /**@brief Return the angle of rotation represented by this quaternion */
  	btScalar getAngle() const 
-Index: src/LinearMath/CMakeLists.txt
-===================================================================
---- src/LinearMath/CMakeLists.txt	(revision 1318)
-+++ src/LinearMath/CMakeLists.txt	(working copy)
-@@ -2,6 +2,7 @@
- INCLUDE_DIRECTORIES(
- ${BULLET_PHYSICS_SOURCE_DIR}/src }
- )
-+add_definitions(-DBT_EULER_DEFAULT_ZYX) 
+ 	{
+ 		btScalar s = btScalar(2.) * btAcos(m_unusedW);
+@@ -156,12 +207,14 @@
+ 	}
  
- ADD_LIBRARY(LibLinearMath
- 		btAlignedObjectArray.h
+ 
+-
++  /**@brief Return the inverse of this quaternion */
+ 	btQuaternion inverse() const
+ 	{
+ 		return btQuaternion(-m_x, -m_y, -m_z, m_unusedW);
+ 	}
+ 
++  /**@brief Return the sum of this quaternion and the other 
++   * @param q2 The other quaternion */
+ 	SIMD_FORCE_INLINE btQuaternion
+ 	operator+(const btQuaternion& q2) const
+ 	{
+@@ -169,6 +222,8 @@
+ 		return btQuaternion(q1.x() + q2.x(), q1.y() + q2.y(), q1.z() + q2.z(), q1.m_unusedW + q2.m_unusedW);
+ 	}
+ 
++  /**@brief Return the difference between this quaternion and the other 
++   * @param q2 The other quaternion */
+ 	SIMD_FORCE_INLINE btQuaternion
+ 	operator-(const btQuaternion& q2) const
+ 	{
+@@ -176,12 +231,14 @@
+ 		return btQuaternion(q1.x() - q2.x(), q1.y() - q2.y(), q1.z() - q2.z(), q1.m_unusedW - q2.m_unusedW);
+ 	}
+ 
++  /**@brief Return the negative of this quaternion 
++   * This simply negates each element */
+ 	SIMD_FORCE_INLINE btQuaternion operator-() const
+ 	{
+ 		const btQuaternion& q2 = *this;
+ 		return btQuaternion( - q2.x(), - q2.y(),  - q2.z(),  - q2.m_unusedW);
+ 	}
+-
++  /**@todo document this and it's use */
+ 	SIMD_FORCE_INLINE btQuaternion farthest( const btQuaternion& qd) const 
+ 	{
+ 		btQuaternion diff,sum;
+@@ -192,6 +249,10 @@
+ 		return (-qd);
+ 	}
+ 
++  /**@brief Return the quaternion which is the result of Spherical Linear Interpolation between this and the other quaternion
++   * @param q The other quaternion to interpolate with 
++   * @param t The ratio between this and q to interpolate.  If t = 0 the result is this, if t=1 the result is q.
++   * Slerp interpolates assuming constant velocity.  */
+ 	btQuaternion slerp(const btQuaternion& q, const btScalar& t) const
+ 	{
+ 		btScalar theta = angle(q);
+@@ -217,7 +278,7 @@
+ };
+ 
+ 
+-
++/**@brief Return the negative of a quaternion */
+ SIMD_FORCE_INLINE btQuaternion
+ operator-(const btQuaternion& q)
+ {
+@@ -226,7 +287,7 @@
+ 
+ 
+ 
+-
++/**@brief Return the product of two quaternions */
+ SIMD_FORCE_INLINE btQuaternion
+ operator*(const btQuaternion& q1, const btQuaternion& q2) {
+ 	return btQuaternion(q1.w() * q2.x() + q1.x() * q2.w() + q1.y() * q2.z() - q1.z() * q2.y(),
+@@ -253,6 +314,7 @@
+ 		-w.x() * q.x() - w.y() * q.y() - w.z() * q.z()); 
+ }
+ 
++/**@brief Calculate the dot product between two quaternions */
+ SIMD_FORCE_INLINE btScalar 
+ dot(const btQuaternion& q1, const btQuaternion& q2) 
+ { 
+@@ -260,25 +322,32 @@
+ }
+ 
+ 
++/**@brief Return the length of a quaternion */
+ SIMD_FORCE_INLINE btScalar
+ length(const btQuaternion& q) 
+ { 
+ 	return q.length(); 
+ }
+ 
++/**@brief Return the angle between two quaternions*/
+ SIMD_FORCE_INLINE btScalar
+ angle(const btQuaternion& q1, const btQuaternion& q2) 
+ { 
+ 	return q1.angle(q2); 
+ }
+ 
+-
++/**@brief Return the inverse of a quaternion*/
+ SIMD_FORCE_INLINE btQuaternion
+ inverse(const btQuaternion& q) 
+ {
+ 	return q.inverse();
+ }
+ 
++/**@brief Return the result of spherical linear interpolation betwen two quaternions 
++ * @param q1 The first quaternion
++ * @param q2 The second quaternion 
++ * @param t The ration between q1 and q2.  t = 0 return q1, t=1 returns q2 
++ * Slerp assumes constant velocity between positions. */
+ SIMD_FORCE_INLINE btQuaternion
+ slerp(const btQuaternion& q1, const btQuaternion& q2, const btScalar& t) 
+ {
 Index: src/LinearMath/btMatrix3x3.h
 ===================================================================
---- src/LinearMath/btMatrix3x3.h	(revision 1318)
+--- src/LinearMath/btMatrix3x3.h	(revision 1342)
 +++ src/LinearMath/btMatrix3x3.h	(working copy)
-@@ -251,7 +251,68 @@
+@@ -23,14 +23,16 @@
+ 
+ 
+ 
+-///The btMatrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with btQuaternion, btTransform and btVector3.
+-///Make sure to only include a pure orthogonal matrix without scaling.
++/**@brief The btMatrix3x3 class implements a 3x3 rotation matrix, to perform linear algebra in combination with btQuaternion, btTransform and btVector3.
++ * Make sure to only include a pure orthogonal matrix without scaling. */
+ class btMatrix3x3 {
+ 	public:
++  /** @brief No initializaion constructor */
+ 		btMatrix3x3 () {}
+ 		
+ //		explicit btMatrix3x3(const btScalar *m) { setFromOpenGLSubMatrix(m); }
+ 		
++  /**@brief Constructor from Quaternion */
+ 		explicit btMatrix3x3(const btQuaternion& q) { setRotation(q); }
+ 		/*
+ 		template <typename btScalar>
+@@ -39,6 +41,7 @@
+ 			setEulerYPR(yaw, pitch, roll);
+ 		}
+ 		*/
++  /** @brief Constructor with row major formatting */
+ 		btMatrix3x3(const btScalar& xx, const btScalar& xy, const btScalar& xz,
+ 				  const btScalar& yx, const btScalar& yy, const btScalar& yz,
+ 				  const btScalar& zx, const btScalar& zy, const btScalar& zz)
+@@ -47,14 +50,14 @@
+ 					 yx, yy, yz, 
+ 					 zx, zy, zz);
+ 		}
+-		
++  /** @brief Copy constructor */
+ 		SIMD_FORCE_INLINE btMatrix3x3 (const btMatrix3x3& other)
+ 		{
+ 			m_el[0] = other.m_el[0];
+ 			m_el[1] = other.m_el[1];
+ 			m_el[2] = other.m_el[2];
+ 		}
+-
++  /** @brief Assignment Operator */
+ 		SIMD_FORCE_INLINE btMatrix3x3& operator=(const btMatrix3x3& other)
+ 		{
+ 			m_el[0] = other.m_el[0];
+@@ -63,34 +66,44 @@
+ 			return *this;
+ 		}
+ 
++  /** @brief Get a column of the matrix as a vector 
++   *  @param i Column number 0 indexed */
+ 		SIMD_FORCE_INLINE btVector3 getColumn(int i) const
+ 		{
+ 			return btVector3(m_el[0][i],m_el[1][i],m_el[2][i]);
+ 		}
+ 		
+ 
+-
++  /** @brief Get a row of the matrix as a vector 
++   *  @param i Row number 0 indexed */
+ 		SIMD_FORCE_INLINE const btVector3& getRow(int i) const
+ 		{
++			btFullAssert(0 <= i && i < 3);
+ 			return m_el[i];
+ 		}
+ 
+-
++  /** @brief Get a mutable reference to a row of the matrix as a vector 
++   *  @param i Row number 0 indexed */
+ 		SIMD_FORCE_INLINE btVector3&  operator[](int i)
+ 		{ 
+ 			btFullAssert(0 <= i && i < 3);
+ 			return m_el[i]; 
+ 		}
+ 		
++  /** @brief Get a const reference to a row of the matrix as a vector 
++   *  @param i Row number 0 indexed */
+ 		SIMD_FORCE_INLINE const btVector3& operator[](int i) const
+ 		{
+ 			btFullAssert(0 <= i && i < 3);
+ 			return m_el[i]; 
+ 		}
+ 		
++  /** @brief Left multiply by the target matrix @todo check this is left 
++   *  @param m Rotation matrix to be applied */
+ 		btMatrix3x3& operator*=(const btMatrix3x3& m); 
+ 		
+-	
++  /** @brief Set from a carray of btScalars 
++   *  @param m A pointer to the beginning of an array of 9 btScalars */
+ 	void setFromOpenGLSubMatrix(const btScalar *m)
+ 		{
+ 			m_el[0].setValue(m[0],m[4],m[8]);
+@@ -98,7 +111,16 @@
+ 			m_el[2].setValue(m[2],m[6],m[10]);
+ 
+ 		}
+-
++  /** @brief Set the values of the matrix explicitly (row major)
++   *  @param xx Top left
++   *  @param xy Top Middle
++   *  @param xz Top Right
++   *  @param yx Middle Left
++   *  @param yy Middle Middle
++   *  @param yz Middle Right
++   *  @param zx Bottom Left
++   *  @param zy Bottom Middle
++   *  @param zz Bottom Right*/
+ 		void setValue(const btScalar& xx, const btScalar& xy, const btScalar& xz, 
+ 					  const btScalar& yx, const btScalar& yy, const btScalar& yz, 
+ 					  const btScalar& zx, const btScalar& zy, const btScalar& zz)
+@@ -107,7 +129,9 @@
+ 			m_el[1].setValue(yx,yy,yz);
+ 			m_el[2].setValue(zx,zy,zz);
+ 		}
+-  
++
++  /** @brief Set the matrix from a quaternion
++   *  @param q The Quaternion to match */  
+ 		void setRotation(const btQuaternion& q) 
+ 		{
+ 			btScalar d = q.length2();
+@@ -123,7 +147,11 @@
+ 		}
+ 		
+ 
+-
++  /** @brief Set the matrix from euler angles using YPR around YXZ respectively
++   *  @param yaw Yaw about Y axis
++   *  @param pitch Pitch about X axis
++   *  @param roll Roll about Z axis 
++   */
+ 		void setEulerYPR(const btScalar& yaw, const btScalar& pitch, const btScalar& roll) 
+ 		{
+ 
+@@ -143,14 +171,16 @@
+ 		
+ 		}
+ 
+-	/**
+-	 * setEulerZYX
+-	 * @param euler a const reference to a btVector3 of euler angles
++	/** @brief Set the matrix from euler angles YPR around ZYX axes
++	 * @param eulerX Roll about X axis
++         * @param eulerY Pitch around Y axis
++         * @param eulerZ Yaw aboud Z axis
++         * 
+ 	 * These angles are used to produce a rotation matrix. The euler
+ 	 * angles are applied in ZYX order. I.e a vector is first rotated 
+ 	 * about X then Y and then Z
+ 	 **/
+-	
++  ///@todo proposed to reverse this since it's labeled zyx but takes arguments xyz and it will match all other parts of the code
+ 	void setEulerZYX(btScalar eulerX,btScalar eulerY,btScalar eulerZ) {
+ 		btScalar ci ( btCos(eulerX)); 
+ 		btScalar cj ( btCos(eulerY)); 
+@@ -168,13 +198,15 @@
+ 	       			 -sj,      cj * si,      cj * ci);
+ 	}
+ 
++  /**@brief Set the matrix to the identity */
+ 		void setIdentity()
+ 		{ 
+ 			setValue(btScalar(1.0), btScalar(0.0), btScalar(0.0), 
+ 					 btScalar(0.0), btScalar(1.0), btScalar(0.0), 
+ 					 btScalar(0.0), btScalar(0.0), btScalar(1.0)); 
+ 		}
+-    
++  /**@brief Fill the values of the matrix into a 9 element array 
++   * @param m The array to be filled */
+ 		void getOpenGLSubMatrix(btScalar *m) const 
+ 		{
+ 			m[0]  = btScalar(m_el[0].x()); 
+@@ -191,6 +223,8 @@
+ 			m[11] = btScalar(0.0); 
+ 		}
+ 
++  /**@brief Get the matrix represented as a quaternion 
++   * @param q The quaternion which will be set */
+ 		void getRotation(btQuaternion& q) const
+ 		{
+ 			btScalar trace = m_el[0].x() + m_el[1].y() + m_el[2].z();
+@@ -224,7 +258,11 @@
+ 			}
+ 			q.setValue(temp[0],temp[1],temp[2],temp[3]);
+ 		}
+-	
++
++  /**@brief Get the matrix represented as euler angles around YXZ
++   * @param yaw Yaw around Y axis
++   * @param pitch Pitch around X axis
++   * @param roll around Z axis */	
+ 		void getEuler(btScalar& yaw, btScalar& pitch, btScalar& roll) const
+ 		{
+ 			
+@@ -251,8 +289,75 @@
  			}
  		}
  		
++  /**@brief Get the matrix represented as euler angles around ZYX
++   * @param yaw Yaw around X axis
++   * @param pitch Pitch around Y axis
++   * @param roll around X axis 
++   * @param solution_number Which solution of two possible solutions ( 1 or 2) are possible values*/	
 +  void getEulerZYX(btScalar& yaw, btScalar& pitch, btScalar& roll, unsigned int solution_number = 1) const
 +  {
 +    struct Euler{btScalar yaw, pitch, roll;};
@@ -146,11 +588,70 @@ Index: src/LinearMath/btMatrix3x3.h
 +    roll = euler_out2.roll;
 +    }
  
+-	
 +
 +    return;
 +
 +  }
 +
- 	
++  /**@brief Create a scaled copy of the matrix 
++   * @param s Scaling vector The elements of the vector will scale each column */
  		
  		btMatrix3x3 scaled(const btVector3& s) const
+ 		{
+@@ -261,10 +366,15 @@
+ 									 m_el[2].x() * s.x(), m_el[2].y() * s.y(), m_el[2].z() * s.z());
+ 		}
+ 
++  /**@brief Return the determinant of the matrix */
+ 		btScalar            determinant() const;
++  /**@brief Return the adjoint of the matrix */
+ 		btMatrix3x3 adjoint() const;
++  /**@brief Return the matrix with all values non negative */
+ 		btMatrix3x3 absolute() const;
++  /**@brief Return the transpose of the matrix */
+ 		btMatrix3x3 transpose() const;
++  /**@brief Return the inverse of the matrix */
+ 		btMatrix3x3 inverse() const; 
+ 		
+ 		btMatrix3x3 transposeTimes(const btMatrix3x3& m) const;
+@@ -284,12 +394,15 @@
+ 		}
+ 		
+ 
+-		///diagonalizes this matrix by the Jacobi method. rot stores the rotation
+-		///from the coordinate system in which the matrix is diagonal to the original
+-		///coordinate system, i.e., old_this = rot * new_this * rot^T. The iteration
+-		///stops when all off-diagonal elements are less than the threshold multiplied
+-		///by the sum of the absolute values of the diagonal, or when maxSteps have
+-		///been executed. Note that this matrix is assumed to be symmetric.
++  /**@brief diagonalizes this matrix by the Jacobi method.
++   * @param rot stores the rotation from the coordinate system in which the matrix is diagonal to the original
++   * coordinate system, i.e., old_this = rot * new_this * rot^T. 
++   * @param threshold See iteration
++   * @param iteration The iteration stops when all off-diagonal elements are less than the threshold multiplied 
++   * by the sum of the absolute values of the diagonal, or when maxSteps have been executed. 
++   * 
++   * Note that this matrix is assumed to be symmetric. 
++   */
+ 		void diagonalize(btMatrix3x3& rot, btScalar threshold, int maxSteps)
+ 		{
+ 		 rot.setIdentity();
+@@ -375,7 +488,7 @@
+ 		{
+ 			return m_el[r1][c1] * m_el[r2][c2] - m_el[r1][c2] * m_el[r2][c1];
+ 		}
+-
++  ///Data storage for the matrix, each vector is a row of the matrix
+ 		btVector3 m_el[3];
+ 	};
+ 	
+@@ -494,6 +607,8 @@
+ }
+ */
+ 
++/**@brief Equality operator between two matrices
++ * It will test all elements are equal.  */
+ SIMD_FORCE_INLINE bool operator==(const btMatrix3x3& m1, const btMatrix3x3& m2)
+ {
+    return ( m1[0][0] == m2[0][0] && m1[1][0] == m2[1][0] && m1[2][0] == m2[2][0] &&
