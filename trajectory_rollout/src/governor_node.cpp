@@ -159,6 +159,7 @@ void GovernorNode::processPlan(){
     for(unsigned int i = 0; i < footprint.size(); ++i){
       footprint_msg.points[i].x = footprint[i].x;
       footprint_msg.points[i].y = footprint[i].y;
+      //printf("(%.2f, %.2f)\n", footprint_msg.points[i].x, footprint_msg.points[i].y);
     }
     publish("robot_footprint", footprint_msg);
   }
@@ -168,6 +169,9 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vy = drive_cmds.y;
   cmd_vel_msg_.vw = drive_cmds.yaw;
 
+  
+  if(path_index < 0)
+    printf("Local Plan Failed :(\n");
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
   publish("cmd_vel", cmd_vel_msg_);
 }

@@ -548,47 +548,79 @@ double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int
 
 //calculate the cost of a ray-traced line
 double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1){
-  bool steep = abs(y1 - y0) > abs(x1 - x0);
-  if(steep){
-    swap(x0, y0);
-    swap(x1, y1);
-  }
-  if(x0 > x1){
-    swap(x0, x1);
-    swap(y0, y1);
-  }
+  //Bresenham Ray-Tracing
+  int deltax = abs(x1 - x0);        // The difference between the x's
+  int deltay = abs(y1 - y0);        // The difference between the y's
+  int x = x0;                       // Start x off at the first pixel
+  int y = y0;                       // Start y off at the first pixel
 
-  int delta_x = x1 - x0;
-  int delta_y = abs(y1 - y0);
-  int error = delta_x / 2;
-  int ystep;
-  int y = y0;
+  int xinc1, xinc2, yinc1, yinc2;
+  int den, num, numadd, numpixels;
 
   double line_cost = 0.0;
   double point_cost = -1.0;
 
-  if(y0 < y1)
-    ystep = 1;
-  else
-    ystep = -1;
+  if (x1 >= x0)                 // The x-values are increasing
+  {
+    xinc1 = 1;
+    xinc2 = 1;
+  }
+  else                          // The x-values are decreasing
+  {
+    xinc1 = -1;
+    xinc2 = -1;
+  }
 
-  for(int x = x0; x <= x1; ++x){
-    if(steep)
-      point_cost = pointCost(ma, y, x);
-    else
-      point_cost = pointCost(ma, x, y);
+  if (y1 >= y0)                 // The y-values are increasing
+  {
+    yinc1 = 1;
+    yinc2 = 1;
+  }
+  else                          // The y-values are decreasing
+  {
+    yinc1 = -1;
+    yinc2 = -1;
+  }
+
+  if (deltax >= deltay)         // There is at least one x-value for every y-value
+  {
+    xinc1 = 0;                  // Don't change the x when numerator >= denominator
+    yinc2 = 0;                  // Don't change the y for every iteration
+    den = deltax;
+    num = deltax / 2;
+    numadd = deltay;
+    numpixels = deltax;         // There are more x-values than y-values
+  }
+  else                          // There is at least one y-value for every x-value
+  {
+    xinc2 = 0;                  // Don't change the x for every iteration
+    yinc1 = 0;                  // Don't change the y when numerator >= denominator
+    den = deltay;
+    num = deltay / 2;
+    numadd = deltax;
+    numpixels = deltay;         // There are more y-values than x-values
+  }
+
+  for (int curpixel = 0; curpixel <= numpixels; curpixel++)
+  {
+    point_cost = pointCost(ma, x, y); //Score the current point
 
     if(point_cost < 0)
       return -1;
 
     line_cost += point_cost;
 
-    error = error - delta_y;
-    if(error < 0){
-      y += ystep;
-      error += delta_x;
+    num += numadd;              // Increase the numerator by the top of the fraction
+    if (num >= den)             // Check if numerator >= denominator
+    {
+      num -= den;               // Calculate the new numerator value
+      x += xinc1;               // Change the x as appropriate
+      y += yinc1;               // Change the y as appropriate
     }
+    x += xinc2;                 // Change the x as appropriate
+    y += yinc2;                 // Change the y as appropriate
   }
+
   return line_cost;
 }
 
@@ -674,6 +706,79 @@ double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double
 }
 
 void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_msgs::Point2DFloat32>& pts){
+  //Bresenham Ray-Tracing
+  int deltax = abs(x1 - x0);        // The difference between the x's
+  int deltay = abs(y1 - y0);        // The difference between the y's
+  int x = x0;                       // Start x off at the first pixel
+  int y = y0;                       // Start y off at the first pixel
+
+  int xinc1, xinc2, yinc1, yinc2;
+  int den, num, numadd, numpixels;
+
+  std_msgs::Point2DFloat32 pt;
+
+  if (x1 >= x0)                 // The x-values are increasing
+  {
+    xinc1 = 1;
+    xinc2 = 1;
+  }
+  else                          // The x-values are decreasing
+  {
+    xinc1 = -1;
+    xinc2 = -1;
+  }
+
+  if (y1 >= y0)                 // The y-values are increasing
+  {
+    yinc1 = 1;
+    yinc2 = 1;
+  }
+  else                          // The y-values are decreasing
+  {
+    yinc1 = -1;
+    yinc2 = -1;
+  }
+
+  if (deltax >= deltay)         // There is at least one x-value for every y-value
+  {
+    xinc1 = 0;                  // Don't change the x when numerator >= denominator
+    yinc2 = 0;                  // Don't change the y for every iteration
+    den = deltax;
+    num = deltax / 2;
+    numadd = deltay;
+    numpixels = deltax;         // There are more x-values than y-values
+  }
+  else                          // There is at least one y-value for every x-value
+  {
+    xinc2 = 0;                  // Don't change the x for every iteration
+    yinc1 = 0;                  // Don't change the y when numerator >= denominator
+    den = deltay;
+    num = deltay / 2;
+    numadd = deltax;
+    numpixels = deltay;         // There are more y-values than x-values
+  }
+
+  for (int curpixel = 0; curpixel <= numpixels; curpixel++)
+  {
+    pt.x = MX_WX(map_, x);      //Draw the current pixel
+    pt.y = MY_WY(map_, y);
+    pts.push_back(pt);
+
+    num += numadd;              // Increase the numerator by the top of the fraction
+    if (num >= den)             // Check if numerator >= denominator
+    {
+      num -= den;               // Calculate the new numerator value
+      x += xinc1;               // Change the x as appropriate
+      y += yinc1;               // Change the y as appropriate
+    }
+    x += xinc2;                 // Change the x as appropriate
+    y += yinc2;                 // Change the y as appropriate
+  }
+}
+
+
+/*
+void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_msgs::Point2DFloat32>& pts){
   bool steep = abs(y1 - y0) > abs(x1 - x0);
   if(steep){
     swap(x0, y0);
@@ -715,6 +820,7 @@ void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_m
     }
   }
 }
+*/
 
 //its nice to be able to draw a footprint for a particular point for debugging info
 vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i, double y_i, double theta_i){
@@ -726,23 +832,25 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   //upper right corner
   double old_x = 0.0 + robot_front_radius_;
   double old_y = 0.0 + robot_side_radius_;
-  double new_x = x_i + old_x * cos_th - old_y * sin_th;
-  double new_y = y_i + old_x * sin_th + old_y * cos_th;
+  double new_x = x_i + (old_x * cos_th - old_y * sin_th);
+  double new_y = y_i + (old_x * sin_th + old_y * cos_th);
 
   int x0 = WX_MX(map_, new_x);
   int y0 = WY_MY(map_, new_y);
   pt.x = MX_WX(map_, x0);
   pt.y = MY_WY(map_, y0);
+  //footprint_pts.push_back(pt);
 
   //lower right corner
   old_x = 0.0 + robot_front_radius_;
   old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  new_x = x_i + (old_x * cos_th - old_y * sin_th);
+  new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x1 = WX_MX(map_, new_x);
   int y1 = WY_MY(map_, new_y);
   pt.x = MX_WX(map_, x1);
   pt.y = MY_WY(map_, y1);
+  //footprint_pts.push_back(pt);
 
   //check the front line
   drawLine(x0, x1, y0, y1, footprint_pts);
@@ -750,12 +858,13 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   //lower left corner
   old_x = 0.0 - robot_front_radius_;
   old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  new_x = x_i + (old_x * cos_th - old_y * sin_th);
+  new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x2 = WX_MX(map_, new_x);
   int y2 = WY_MY(map_, new_y);
   pt.x = MX_WX(map_, x2);
   pt.y = MY_WY(map_, y2);
+  //footprint_pts.push_back(pt);
 
   //check the right side line
   drawLine(x1, x2, y1, y2, footprint_pts);
@@ -763,12 +872,13 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   //upper left corner
   old_x = 0.0 - robot_front_radius_;
   old_y = 0.0 + robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
+  new_x = x_i + (old_x * cos_th - old_y * sin_th);
+  new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x3 = WX_MX(map_, new_x);
   int y3 = WY_MY(map_, new_y);
   pt.x = MX_WX(map_, x3);
   pt.y = MY_WY(map_, y3);
+  //footprint_pts.push_back(pt);
 
   //check the back line
   drawLine(x2, x3, y2, y3, footprint_pts);
