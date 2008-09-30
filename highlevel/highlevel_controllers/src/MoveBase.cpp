@@ -94,16 +94,15 @@ namespace ros {
       unsigned char* mapdata;
       unsigned int numCells = resp.map.width*resp.map.height;
       mapdata = new unsigned char[numCells];
+
       for(unsigned int i=0;i<numCells;i++)
 	{
-	  // This is masking the case of no information since it does not seem to be
-	  // represented in the input and the users of the cost map do not exploit it
-	  if(resp.map.data[i] > lethalObstacleThreshold){
-	    mapdata[i] = lethalObstacleThreshold; //CostMap2D::NO_INFORMATION;
+	  if(resp.map.data[i] >= lethalObstacleThreshold){
+	    mapdata[i] = lethalObstacleThreshold;
 	  }
 	  else{
 	    // Simply copy the actual cost value. It will get thresholded in the cost map
-	    mapdata[i] = resp.map.data[i];
+	    mapdata[i] = 0;
 	  }
 	}
 
@@ -114,14 +113,9 @@ namespace ros {
       // Finish by deleting the mapdata
       delete mapdata;
 
-      // Subscribe to laser scan messages
-      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
-
-      // Subscribe to odometry messages
-      subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
-
-      // Advertize messages to publish path updates
-      advertise<std_msgs::Polyline2D>("gui_laser", QUEUE_MAX());
+      // Advertize messages to publish cost map updates
+      advertise<std_msgs::Polyline2D>("raw_obstacles", QUEUE_MAX());
+      advertise<std_msgs::Polyline2D>("inflated_obstacles", QUEUE_MAX());
 
       // Advertize message to publish the global plan
       advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
@@ -134,6 +128,12 @@ namespace ros {
 
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
+
+      // Subscribe to laser scan messages
+      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
+
+      // Subscribe to odometry messages
+      subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
 
       // Now initialize
       initialize();
@@ -371,6 +371,9 @@ namespace ros {
 	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
       }
       else {
+	// A local cost map is a window onto the global map to support local planning
+	CostMapAccessor ma(getCostMap(), controller_.getMapDeltaX(), controller_.getMapDeltaY(), global_pose_.x, global_pose_.y);
+
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
 	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
 	// by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
@@ -379,8 +382,7 @@ namespace ros {
 	while(it != plan_.end()){
 	  const std_msgs::Pose2DFloat32& w = *it;
 
-	  // The path following constraint is twice the map resolution. Could be an external parameter
-	  if(sqrt(pow(global_pose_.x - w.x, 2) + pow(global_pose_.y - w.y, 2)) <= (getCostMap().getResolution() * 5))
+	  if(ma.contains(w.x, w.y))
 	    break;
 
 	  it = plan_.erase(it);
@@ -396,7 +398,6 @@ namespace ros {
 	currentVel.vw = base_odom_.vel.th;
 
 	// Create a window onto the global cost map for the velocity controller
-	CostMapAccessor ma(getCostMap(), controller_.getMapDeltaX(), controller_.getMapDeltaY(), global_pose_.x, global_pose_.y);
 	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
 	planOk = planOk && controller_.computeVelocityCommands(ma, plan_, global_pose_, currentVel, cmdVel, localPlan);
 
@@ -410,8 +411,8 @@ namespace ros {
 
 	publishPath(false, localPlan);
 	publishPath(true, plan_);
-  std_msgs::Pose2DFloat32& pt = localPlan.front();
-  publishFootprint(pt.x, pt.y, pt.th);
+	std_msgs::Pose2DFloat32& pt = localPlan.front();
+	publishFootprint(pt.x, pt.y, pt.th);
       }
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
@@ -426,8 +427,8 @@ namespace ros {
      * @todo Make based on loaded tolerances
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      if(fabs(x1 - x2) < getCostMap().getResolution() &&
-	 fabs(y1 - y2) < getCostMap().getResolution() &&
+      if(fabs(x1 - x2) < 2 * getCostMap().getResolution() &&
+	 fabs(y1 - y2) < 2 * getCostMap().getResolution() &&
 	 fabs(th1- th2)< 10)
 	return true;
 
@@ -446,24 +447,41 @@ namespace ros {
 			 global_pose_.x, global_pose_.y);
 
       // Publish obstacle data for each obstacle cell
-      std::vector< std::pair<double, double> > allObstacles;
+      std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
       double origin_x, origin_y;
       ma.getOriginInWorldCoordinates(origin_x, origin_y);
       for(unsigned int i = 0; i<ma.getWidth(); i++)
 	for(unsigned int j = 0; j<ma.getHeight();j++){
-	  //if(ma.isObstacle(i, j) || ma.isInflatedObstacle(i, j) ){
-	  if(ma.isObstacle(i, j)){
-	      double wx, wy;
-	      wx = i * ma.getResolution() + origin_x;
-	      wy = j * ma.getResolution() + origin_y;
-	      std::pair<double, double> p(wx, wy);
-	      allObstacles.push_back(p);
-	    }
+	  double wx, wy;
+	  wx = i * ma.getResolution() + origin_x;
+	  wy = j * ma.getResolution() + origin_y;
+	  std::pair<double, double> p(wx, wy);
+
+	  if(ma.isObstacle(i, j))
+	    rawObstacles.push_back(p);
+	  else if(ma.isInflatedObstacle(i, j))
+	    inflatedObstacles.push_back(p);
 	}
 
 
+      // First publish raw obstacles in red
       std_msgs::Polyline2D pointCloudMsg;
-      unsigned int pointCount = allObstacles.size();
+      unsigned int pointCount = rawObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 1.0;
+      pointCloudMsg.color.b = 0.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+	pointCloudMsg.points[i].x = rawObstacles[i].first;
+	pointCloudMsg.points[i].y = rawObstacles[i].second;
+      }
+
+      publish("raw_obstacles", pointCloudMsg);
+
+      // Now do inflated obstacles in blue
+      pointCount = inflatedObstacles.size();
       pointCloudMsg.set_points_size(pointCount);
       pointCloudMsg.color.a = 0.0;
       pointCloudMsg.color.r = 0.0;
@@ -471,11 +489,11 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = allObstacles[i].first;
-	pointCloudMsg.points[i].y = allObstacles[i].second;
+	pointCloudMsg.points[i].x = inflatedObstacles[i].first;
+	pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
-      publish("gui_laser", pointCloudMsg);
+      publish("inflated_obstacles", pointCloudMsg);
     }
   }
 }

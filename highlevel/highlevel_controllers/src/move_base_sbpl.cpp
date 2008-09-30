@@ -241,6 +241,7 @@ namespace ros {
     }
   }
 }
+
 #define MAP_WIDTH 10
 #define MAP_HEIGHT 10
 #define SIM_TIME 3.0
@@ -302,7 +303,6 @@ int main(int argc, char** argv)
   const unsigned char lethalObstacleThreshold = 100;
   const unsigned char noInformation = 0;
   const double maxZ = 2.0;
-  //const double inflationRadius = std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS);
   const double inflationRadius = sqrt(ROBOT_FRONT_RADIUS * ROBOT_FRONT_RADIUS + ROBOT_SIDE_RADIUS * ROBOT_SIDE_RADIUS);
   ros::highlevel_controllers::MoveBaseSBPL node(controller, windowLength, lethalObstacleThreshold, noInformation, maxZ, inflationRadius);
   
