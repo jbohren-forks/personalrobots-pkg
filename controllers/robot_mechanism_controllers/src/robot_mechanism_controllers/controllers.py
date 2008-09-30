@@ -33,6 +33,12 @@ def get_controller(controller):
     resp = s.call(GetActualRequest())
     print str(resp.time) + ": " + str(resp.command)
 
+def get_controller_vector(controller):
+    rospy.wait_for_service(controller + '/get_actual')
+    s = rospy.ServiceProxy(controller + '/get_actual', GetVector)
+    resp = s()
+    print "(%f, %f, %f)" % (resp.v.x, resp.v.y, resp.v.z)
+
 def set_position(controller, command):
     rospy.wait_for_service(controller + '/set_position')
     s = rospy.ServiceProxy(controller + '/set_position', SetPosition)

@@ -37,3 +37,5 @@ if __name__ == '__main__':
         mechanism.kill_controller(sys.argv[2])
     elif sys.argv[1] == 'shutdown':
         mechanism.shutdown()
+    else:
+        print_usage(1)

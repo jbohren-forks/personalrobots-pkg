@@ -31,7 +31,7 @@
  * Example config:
 
  <controller type="CartesianEffortController" name="controller_name">
-   <chain root="root_link" tip="tip_link" />
+   <chain root="root_link" tip="tip_link" offset="0.3 0.1 0.2" />
  </controller>
 
  * The root is fixed, and all commands are specified in its coordinate
@@ -62,6 +62,7 @@ public:
 
   btVector3 command_;
 
+  btVector3 offset_;
   std::vector<mechanism::LinkState*> links_;  // root to tip
   std::vector<mechanism::JointState*> joints_;  // root to tip, 1 element smaller than links_
 };

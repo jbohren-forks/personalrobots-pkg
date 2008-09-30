@@ -33,6 +33,7 @@
 
 #include "robot_mechanism_controllers/cartesian_position_controller.h"
 #include <algorithm>
+#include "tf/transform_datatypes.h"
 
 namespace controller {
 
@@ -63,8 +64,10 @@ bool CartesianPositionController::initXml(mechanism::RobotState *robot, TiXmlEle
     fprintf(stderr, "Error: CartesianPositionController requires a pid element\n");
     return false;
   }
-  if (!pid_.initXml(pid_el))
+  if (!pid_x_.initXml(pid_el))
     return false;
+  pid_y_ = pid_x_;
+  pid_z_ = pid_x_;
 
   last_time_ = robot_->hw_->current_time_;
 
@@ -75,23 +78,28 @@ void CartesianPositionController::update()
 {
   if (reset_) {
     reset_ = false;
-    command_ = tip_->abs_position_;
+    command_ = tip_->abs_position_ + effort_.offset_;
   }
 
   assert(tip_);
   double time = robot_->hw_->current_time_;
 
+  btVector3 error = command_ - (tip_->abs_position_ + effort_.offset_);
+  effort_.command_[0] = -pid_x_.updatePid(error.x(), time - last_time_);
+  effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
+  effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
 
-  btVector3 v = command_ - tip_->abs_position_;
-  double error = v.length();
-  if (error > 0.0)
-    v.normalize();
-
-  effort_.command_ = v * -pid_.updatePid(error, time - last_time_);
+  printf("    %.4lf %.4lf %.4lf\n", effort_.command_[0],effort_.command_[1],effort_.command_[2]);
   effort_.update();
 
   last_time_ = time;
 }
+
+void CartesianPositionController::getTipPosition(btVector3 *p)
+{
+  *p = tip_->abs_position_ + effort_.offset_;
+}
+
 
 ROS_REGISTER_CONTROLLER(CartesianPositionControllerNode)
 
@@ -119,7 +127,10 @@ bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXm
 
   node->advertise_service(topic + "/set_command",
                           &CartesianPositionControllerNode::setCommand, this);
-  guard_set_actual_.set(topic + "/set_command");
+  guard_set_command_.set(topic + "/set_command");
+  node->advertise_service(topic + "/get_actual",
+                          &CartesianPositionControllerNode::getActual, this);
+  guard_get_actual_.set(topic + "/get_actual");
   return true;
 }
 
@@ -136,5 +147,14 @@ bool CartesianPositionControllerNode::setCommand(
   return true;
 }
 
+bool CartesianPositionControllerNode::getActual(
+  robot_mechanism_controllers::GetVector::request &req,
+  robot_mechanism_controllers::GetVector::response &resp)
+{
+  btVector3 v;
+  c_.getTipPosition(&v);
+  tf::Vector3TFToMsg(v, resp.v);
+  return true;
+}
 
 }

@@ -32,6 +32,7 @@
  */
 
 #include "robot_mechanism_controllers/cartesian_effort_controller.h"
+#include "urdf/parser.h"
 #include <algorithm>
 
 namespace controller {
@@ -40,6 +41,7 @@ ROS_REGISTER_CONTROLLER(CartesianEffortController)
 
 CartesianEffortController::CartesianEffortController()
 : command_(0,0,0),
+  offset_(0,0,0),
   links_(0,(mechanism::LinkState*)NULL),
   joints_(0,(mechanism::JointState*)NULL)
 {
@@ -111,6 +113,17 @@ bool CartesianEffortController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
   assert(joints_.size() == links_.size() - 1);
 
+  if (chain->Attribute("offset"))
+  {
+    std::vector<double> offset_pieces;
+    urdf::queryVectorAttribute(chain, "offset", &offset_pieces);
+    assert(offset_pieces.size() == 3);  // TODO
+
+    offset_[0] = offset_pieces[0];
+    offset_[1] = offset_pieces[1];
+    offset_[2] = offset_pieces[2];
+  }
+
   return true;
 }
 
@@ -129,8 +142,7 @@ void CartesianEffortController::update()
   F.setValue(tempF.x, tempF.y, tempF.z);
   // At this point, F is the desired force in the current link's frame
 
-  // TODO: actual tip offset, not a made-up offset
-  btVector3 r(0.1,0,0);  // position of the force in the current frame
+  btVector3 r(offset_);  // position of the force in the current frame
 
   for (int i = links_.size() - 2; i >= 0; --i)
   {

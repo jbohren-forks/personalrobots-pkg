@@ -47,6 +47,7 @@
 #include <vector>
 #include "ros/node.h"
 #include "robot_mechanism_controllers/SetVectorCommand.h"
+#include "robot_mechanism_controllers/GetVector.h"
 #include "robot_mechanism_controllers/cartesian_effort_controller.h"
 #include "control_toolbox/pid.h"
 #include "mechanism_model/controller.h"
@@ -65,12 +66,13 @@ public:
   void update();
 
   btVector3 command_;
+  void getTipPosition(btVector3 *p);
 
 private:
   mechanism::RobotState *robot_;
   mechanism::LinkState *tip_;
   CartesianEffortController effort_;
-  control_toolbox::Pid pid_;
+  control_toolbox::Pid pid_x_, pid_y_, pid_z_;
   double last_time_;
 
   bool reset_;
@@ -87,10 +89,12 @@ public:
 
   bool setCommand(robot_mechanism_controllers::SetVectorCommand::request &req,
                   robot_mechanism_controllers::SetVectorCommand::response &resp);
+  bool getActual(robot_mechanism_controllers::GetVector::request &req,
+                 robot_mechanism_controllers::GetVector::response &resp);
 
 private:
   CartesianPositionController c_;
-  AdvertisedServiceGuard guard_set_actual_;
+  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
 };
 
 }
