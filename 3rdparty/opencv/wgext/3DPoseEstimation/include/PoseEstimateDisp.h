@@ -75,6 +75,9 @@ public:
       /// estimation.
       bool smoothed);
 
+  void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
+      CvMat& rot, CvMat& trans);
+
   /**
    * The method that estimates transformation between two corresponding
    * point clouds, one in Cartesian coordinates, the other in

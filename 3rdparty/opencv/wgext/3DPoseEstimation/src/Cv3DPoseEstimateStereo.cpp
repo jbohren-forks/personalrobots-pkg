@@ -42,12 +42,14 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	mTextThresh(DefTextThresh),
 	mUniqueThresh(DefUniqueThresh),
 	mBufStereoPairs(NULL), mFeatureImgBufLeft(NULL), mFeatureImgBufRight(NULL),
-	mKeyPointDetector(Star),
+  mKeyPointDetector(Star),
 	mNumScales(DefNumScales),
 	mThreshold(DefThreshold),
 	mMaxNumKeyPoints(DefMaxNumKeyPoints),
 	mStarDetector(mSize, mNumScales, mThreshold),
-	mMatchMethod(CalonderDescriptor),
+  mEigImage(NULL),
+  mTempImage(NULL),
+  mMatchMethod(CalonderDescriptor),
 	mCalonderMatcher(NULL),
 	mTemplateMatchThreshold(DefTemplateMatchThreshold),
 	mDisparityUnitInPixels(DefDisparityUnitInPixels)
@@ -79,6 +81,8 @@ Cv3DPoseEstimateStereo::~Cv3DPoseEstimateStereo() {
 	delete [] mBufStereoPairs;
 	delete [] mFeatureImgBufLeft;
 	delete mCalonderMatcher;
+	if (mEigImage)  cvReleaseMat(&mEigImage);
+	if (mTempImage) cvReleaseMat(&mTempImage);
 }
 
 bool Cv3DPoseEstimateStereo::getDisparityMap(
@@ -111,6 +115,13 @@ bool Cv3DPoseEstimateStereo::getDisparityMap(
 	return status;
 }
 
+#if 0
+bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<CvPoint3D64f>& keypoints,
+    ){
+
+}
+#endif
+
 bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints){
   bool status = true;
 	KeyPointDetector keyPointDetector = getKeyPointDetector();
@@ -121,8 +132,14 @@ bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* ma
 		//
 		int maxKeypoints = 500;
 		CvPoint2D32f kps[maxKeypoints];
-		CvMat* eig_image  = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
-		CvMat* temp_image = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
+
+		if (mEigImage  == NULL)
+		  mEigImage  = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
+		if (mTempImage == NULL )
+		  mTempImage = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
+
+		CvMat* eig_image  = mEigImage;
+		CvMat* temp_image = mTempImage;
 		//cvConvert(rightimg, tmp);
 //		cvCornerHarris(tmp, harrisCorners, 21);
 		double quality_level =  0.01; // what should I use? [0., 1.0]
@@ -149,16 +166,14 @@ bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* ma
 		}
 
 		const int block_size=5;  // default is 3
-		const int use_harris=1;   // default is 0;
-		const double k=0.01; // default is 0.04;
+		const int use_harris=1;  // default is 0;
+		const double k=0.01;     // default is 0.04;
 		int numkeypoints = maxKeypoints;
 		cvGoodFeaturesToTrack(img.Ipl(), eig_image, temp_image,
 				kps, &numkeypoints,
 				quality_level, min_distance, mask1, block_size, use_harris, k);
-		cvReleaseMat(&eig_image);
-		cvReleaseMat(&temp_image);
 		for (int i=0; i<numkeypoints; i++) {
-			keypoints.push_back(Keypoint(kps[i].x, kps[i].y, 0., 0., 0));
+			keypoints.push_back(Keypoint((int)(kps[i].x+.5), (int)(kps[i].y+.5), 0., 0., 0));
 		}
 		return status;
 		break;
@@ -444,7 +459,13 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
 		double disp = getDisparity(dispMap0, fPtLastLeft);
-		assert( disp>=0);
+		if (disp<0) {
+		  // the key points should have disparity by now. But may get lost
+		  // during rounding (shift to a nearby pixel that does not)
+		  // TODO: we shall resolve this in GoodFeatureToTrack
+		  continue;
+		}
+		assert( disp>=0); // disparity shall be checked already.
 		CvPoint3D64f ptLast = cvPoint3D64f(featurePtLastLeft.x, featurePtLastLeft.y, disp);
 
 #ifdef DEBUG
@@ -477,13 +498,15 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		CvMat templ;
 		cvGetSubRect(image0.Ipl(), &templ, rectTempl);
 		CvMat templ2;
-		float _res[0];
+		float _res[1];
 		CvMat res = cvMat(1, 1, CV_32FC1, _res);
+		// just to get an idea what is the score for the best possible match
 		cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
 		double threshold = _res[0]*.75;
 		CvPoint bestloc = cvPoint(-1,-1);
 		double maxScore = threshold;
-		int iKeypoint1 = 0; //< index of the current key point in keypoints1
+		int     bestlocIndex = -1;
+		int iKeypoint1=0; //< index of the current key point in keypoints1
 		for (vector<Keypoint>::const_iterator jkp = keyPoints1.begin();
 		jkp!=keyPoints1.end();
 		jkp++, iKeypoint1++) {
@@ -494,7 +517,7 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 				goodFeaturePtInCurrentLeftImg = true;
 				featurePtsInNeighborhood.push_back(featurePtLeft);
 #ifdef DEBUG
-				cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
+        cout << "Good candidate at "<< featurePtLeft.x <<","<< featurePtLeft.y<<endl;
 #endif
 				CvRect rectTempl2 = cvRect(
 						(int)(.5 + featurePtLeft.x - templSize.x/2),
@@ -512,9 +535,11 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 				cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
 				cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
 				double score = _res[0];
+
 				if (score > maxScore) {
 					bestloc.x = featurePtLeft.x;
 					bestloc.y = featurePtLeft.y;
+					bestlocIndex = iKeypoint1;
 					maxScore = score;
 				}
 			}
@@ -524,23 +549,29 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		}
 
 		disp = getDisparity(dispMap1, bestloc);
-		if (disp<0) {
+		if (disp<0) { // skip this point as disparity is not available
 			mNumKeyPointsWithNoDisparity++;
 			continue;
 		}
 
 		if (trackablePairs) {
 		  CvPoint3D64f pt = cvPoint3D64f(bestloc.x, bestloc.y, disp);
-		  pair<CvPoint3D64f, CvPoint3D64f> p(ptLast, pt);
-		  trackablePairs->push_back(p);
+		  trackablePairs->push_back(make_pair(ptLast, pt));
+#ifdef DEBUG
+        cout << "trackable pair "<< ptLast.x <<","<< ptLast.y<<"  <==> "<< pt.x <<","<< pt.y<<endl;
+#endif
 		}
 		if (trackableIndexPairs) {
-		  trackableIndexPairs->push_back(make_pair(iKeypoint0, iKeypoint1));
+		  trackableIndexPairs->push_back(make_pair(iKeypoint0, bestlocIndex));
+#ifdef DEBUG
+        cout << "trackable pair "<< iKeypoint0 <<"  <==> "<< bestlocIndex <<endl;
+#endif
 		}
 		numTrackablePairs++;
 	}
-	assert(numTrackablePairs == (int)trackablePairs?trackablePairs->size():
-	  trackableIndexPairs?trackableIndexPairs->size():-1);
+  assert((trackablePairs?      numTrackablePairs == (int)trackablePairs->size()      : true));
+  assert((trackableIndexPairs? numTrackablePairs == (int)trackableIndexPairs->size() : true));
+
 	return status;
 }
 

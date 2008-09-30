@@ -56,6 +56,8 @@ public:
 	 */
 	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans, bool smoothed=true);
 
+	void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
+	    CvMat& rot, CvMat& trans);
 	/**
 	 *  Estimate the transformation matrices rot and trans by least squares
 	 *  over all points.

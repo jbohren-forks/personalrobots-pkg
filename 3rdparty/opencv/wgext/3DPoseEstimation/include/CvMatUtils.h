@@ -7,8 +7,44 @@
 #include "PoseEstimateDisp.h"
 using namespace cv;
 
-#include <star_detector/include/keypoint.h>
 #include <cmath>
+
+#ifdef USESTARDETECTOR
+#include <star_detector/include/keypoint.h>
+#else
+// temporarily include this data structure here (from keypoint.h in star detector)
+#include <vector>
+#include <string>
+
+/*!
+  A struct representing a keypoint. The scale and pixel coordinates are
+  assumed to be integers.
+ */
+struct Keypoint
+{
+    int x;
+    int y;
+    int s;
+    float scale;
+    float response;
+    // TODO: sign on dark or bright
+
+    Keypoint()
+        : x(0), y(0), s(0), scale(0), response(0)
+    {}
+
+    Keypoint(int x, int y, float scale, float response, int s = 0)
+        : x(x), y(y), s(s), scale(scale), response(response)
+    {};
+
+    //! Allow sorting a list of keypoints into descending order
+    //! of response magnitude using std::sort.
+    inline bool operator< (Keypoint const& other) const {
+        return fabs(response) > fabs(other.response);
+    }
+};
+#endif
+
 
 /**
  * Misc utilities

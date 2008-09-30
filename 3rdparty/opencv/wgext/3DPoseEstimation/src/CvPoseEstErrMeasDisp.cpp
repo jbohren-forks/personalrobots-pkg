@@ -15,6 +15,8 @@ using namespace std;
 #include "CvMatUtils.h"
 using namespace cv::willow;
 
+#undef DEBUG
+
 CvPoseEstErrMeasDisp::CvPoseEstErrMeasDisp():
 	mHomography(cvMat(4, 4, CV_64FC1, _mHomography)){
 }

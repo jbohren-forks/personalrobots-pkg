@@ -343,6 +343,8 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   cvCopy(&H, &mRTBestWithoutLevMarq);
 
   if (smoothed == true) {
+    estimateWithLevMarq(*uvds0Inlier, *uvds1Inlier, *rot, *shift);
+#if 0
     // get the euler angle from rot
     CvPoint3D64f eulerAngles;
     {
@@ -352,41 +354,7 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
       cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
       cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
 
-#ifdef DEBUG // all debugging stuff
-      double _Qx[9], _Qy[9], _Qz[9], _Qyz[9], _Q1T[9];
-      CvMat Qx, Qy, Qz, Qyz, Q1T;  // optional. For debugging.
-      double _Q1[9];
-      CvMat Q1;
-      cvInitMatHeader(&Qx, 3, 3, CV_64FC1, _Qx);
-      cvInitMatHeader(&Qy, 3, 3, CV_64FC1, _Qy);
-      cvInitMatHeader(&Qz, 3, 3, CV_64FC1, _Qz);
-      cvInitMatHeader(&Qyz, 3, 3, CV_64FC1, _Qyz);
-      cvInitMatHeader(&Q1T, 3, 3, CV_64FC1, _Q1T);
-      cvInitMatHeader(&Q1, 3, 3, CV_64FC1, _Q1);
-      pQx = &Qx;
-      pQy = &Qy;
-      pQz = &Qz;
-#endif
-
       cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
-
-#ifdef DEBUG
-      cout << "RQ decomposition rot => R, Q"<< endl;
-      CvMatUtils::printMat(rot);
-      CvMatUtils::printMat(&R);
-      CvMatUtils::printMat(&Q);
-      cout << "reconstruct rot matrices. Qx, Qy and Qz"<<endl;
-      CvMatUtils::printMat(&Qx);
-      CvMatUtils::printMat(&Qy);
-      CvMatUtils::printMat(&Qz);
-      cout <<"euler angles"<<endl;
-      cout << eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<endl;
-      cvGEMM(&Qy, &Qz, 1, NULL, 0, &Qyz);
-      cvGEMM(&Qx, &Qyz, 1, NULL, 0, &Q1T);
-      cvTranspose(&Q1T, &Q1);
-      cout <<"(Qx * Qy * Qz)^T => Q1: "<< endl;
-      CvMatUtils::printMat(&Q1);
-#endif
     }
 
     // nonlinear optimization by Levenberg-Marquardt
@@ -403,28 +371,9 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
     param[4] = cvmGet(shift, 1, 0);
     param[5] = cvmGet(shift, 2, 0);
 
-#ifdef DEBUG
-    printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-        param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-        param[3], param[4], param[5]);
-#endif
-
-#ifdef    DEBUG_DISTURB_PARAM
-    for (int i=0; i<6; i++) param[i] *= 1.01;
-    printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-        param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-        param[3], param[4], param[5]);
-#endif
-
     CvTestTimerStart(LevMarqDoit);
     levMarq.optimize(uvds0Inlier, uvds1Inlier, param);
     CvTestTimerEnd(LevMarqDoit);
-
-#ifdef DEBUG
-    printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-        param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-        param[3], param[4], param[5]);
-#endif
 
     // TODO: construct matrix with parameters from nonlinear optimization
     double _rot[9];
@@ -438,6 +387,7 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
     cvmSet(shift, 0, 0, param[3]);
     cvmSet(shift, 1, 0, param[4]);
     cvmSet(shift, 2, 0, param[5]);
+#endif
   }
 
   updateInlierInfo(uvds0Inlier, uvds1Inlier, inlierIndices);
@@ -445,6 +395,54 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   // construct the final transformation matrix
   this->constructDisparityHomography(rot, shift, &mT);
   return numInliers0;
+}
+
+void PoseEstimateDisp::estimateWithLevMarq(
+    const CvMat& uvds0Inlier, const CvMat& uvds1Inlier,
+    CvMat& rot, CvMat& shift) {
+  int numInliers = uvds0Inlier.rows;
+  // get the euler angle from rot
+  CvPoint3D64f eulerAngles;
+  {
+    double _R[9], _Q[9];
+    CvMat R, Q;
+    CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
+    cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
+    cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
+
+    cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
+  }
+
+  // nonlinear optimization by Levenberg-Marquardt
+  cv::willow::LevMarqTransformDispSpace
+  levMarq(&mMatDispToCart, &mMatCartToDisp, numInliers);
+
+  double param[6];
+
+  //initialize the parameters
+  param[0] = eulerAngles.x/180. * CV_PI;
+  param[1] = eulerAngles.y/180. * CV_PI;
+  param[2] = eulerAngles.z/180. * CV_PI;
+  param[3] = cvmGet(&shift, 0, 0);
+  param[4] = cvmGet(&shift, 1, 0);
+  param[5] = cvmGet(&shift, 2, 0);
+
+  CvTestTimerStart(LevMarqDoit);
+  levMarq.optimize(&uvds0Inlier, &uvds1Inlier, param);
+  CvTestTimerEnd(LevMarqDoit);
+
+  // TODO: construct matrix with parameters from nonlinear optimization
+  double _rot[9];
+
+  CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
+      CvMat3X3<double>::EulerXYZ);
+  for (int i=0;i<3;i++)
+    for (int j=0;j<3;j++) {
+      cvmSet(&rot, i, j, _rot[i*3+j]);
+    }
+  cvmSet(&shift, 0, 0, param[3]);
+  cvmSet(&shift, 1, 0, param[4]);
+  cvmSet(&shift, 2, 0, param[5]);
 }
 
 bool PoseEstimateDisp::constructDisparityHomography(const CvMat *R, const CvMat *T,

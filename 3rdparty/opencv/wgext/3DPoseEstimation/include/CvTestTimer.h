@@ -29,7 +29,7 @@ public:
 	};
 
 	void reset(){
-		mTotal   = 0;
+	  mTotal   = 0;
 		mCountTotal   = 0;
 		mErrNorm = 0;
 		mCountErrNorm = 0;
@@ -60,7 +60,8 @@ public:
     RESET(DisparityMap);
 		RESET(FeaturePoint);
 		RESET(TrackablePair);
-		RESET(PoseEstimate);
+		RESET(PoseEstimateRANSAC);
+		RESET(PoseEstimateLevMarq);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -98,7 +99,8 @@ public:
 	DECLARE(DisparityMap);
   DECLARE(FeaturePoint);
   DECLARE(TrackablePair);
-  DECLARE(PoseEstimate);
+  DECLARE(PoseEstimateRANSAC);
+  DECLARE(PoseEstimateLevMarq);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

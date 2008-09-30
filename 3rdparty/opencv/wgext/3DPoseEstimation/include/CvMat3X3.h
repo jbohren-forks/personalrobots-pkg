@@ -6,6 +6,8 @@ using namespace std;
 
 #include <opencv/cxcore.h>
 
+#undef DEBUG
+
 /** access of the (i,j)-th element of Mat, who has nCols columns */
 #define ELEM(Mat, nCols, i, j)  Mat[(nCols)*(i)+(j)]
 

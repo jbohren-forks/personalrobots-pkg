@@ -77,6 +77,8 @@ public:
 	} KeyPointDetector;
 	void setKeyPointDector(KeyPointDetector detector) {	mKeyPointDetector = detector;}
 	KeyPointDetector getKeyPointDetector() {return mKeyPointDetector;}
+	void setKeyPointMatcher(MatchMethod matcher) { mMatchMethod = matcher;}
+	MatchMethod getKeyPointMatcher() { return mMatchMethod;}
 
 	CvSize& getSize() {	return mSize; }
 
@@ -193,8 +195,12 @@ protected:
 	unsigned int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
 	StarDetector mStarDetector;
+	/// buffer use by Harris Corner
+  CvMat* mEigImage;
+  CvMat* mTempImage;
 
-	 MatchMethod mMatchMethod;
+
+	MatchMethod mMatchMethod;
 	CalonderMatcher* mCalonderMatcher;
 
 	double mTemplateMatchThreshold; // minimum threshold for template matching

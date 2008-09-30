@@ -23,10 +23,10 @@ using namespace cv::willow;
 
 #define DISPLAY 0
 
-//#undef DEBUG
 #ifndef DEBUG
 #define DEBUG  // to print debug message in release build
 #endif
+#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -86,8 +86,19 @@ void PathRecon::_init() {
 
 	cvSetIdentity(&mTransform);
 
-	delete mVisualizer;
+	// seting up the pose estimator to use harris corner for finding feature
+	// points and keypoint ncc to find matching pairs
+  mPoseEstimator.setInlierErrorThreshold(4.0);
+  mPoseEstimator.setKeyPointDector(Cv3DPoseEstimateStereo::HarrisCorner);
+  mPoseEstimator.setKeyPointMatcher(Cv3DPoseEstimateStereo::KeyPointCrossCorrelation);
+  mMinNumInliers = 25;
+  // end setting up for harris corner and keypoint ncc matcher
+
+  delete mVisualizer;
+#if DISPLAY
 	mVisualizer = new Visualizer(mPoseEstimator);
+#endif
+
 }
 
 PathRecon::KeyFramingDecision
@@ -455,11 +466,13 @@ bool PathRecon::reconOneFrame() {
   } else {
 
     //  pose estimation given the feature point pairs
-    TIMERSTART2(PoseEstimate);
+    //  note we do not do Levenberg-Marquardt here, as we are not sure if
+    //  this is key frame yet.
+    TIMERSTART2(PoseEstimateRANSAC);
     currFrame->mNumInliers =
       mPoseEstimator.estimate(trackablePairs,
-          currFrame->mRot, currFrame->mShift, reversed, true);
-    TIMEREND2(PoseEstimate);
+          currFrame->mRot, currFrame->mShift, reversed, false);
+    TIMEREND2(PoseEstimateRANSAC);
 
     mStat.mHistoInliers.push_back(currFrame->mNumInliers);
 
@@ -488,6 +501,10 @@ bool PathRecon::reconOneFrame() {
     case PathRecon::KeyFrameBackTrack:   {
       // go back to the last good frame
       backTrack();
+      TIMERSTART2(PoseEstimateLevMarq);
+      mPoseEstimator.estimateWithLevMarq(*(currFrame->mInliers1),
+          *(currFrame->mInliers0), currFrame->mRot, currFrame->mShift);
+      TIMEREND2(PoseEstimateLevMarq);
       updateTrajectory();
       insertNewKeyFrame = true;
       // next we are supposed to try nextFrame with currFrame
@@ -500,6 +517,8 @@ bool PathRecon::reconOneFrame() {
     }
     case PathRecon::KeyFrameUse:  {
       // use currFrame as key frame
+      mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
+          *currFrame->mInliers0, currFrame->mRot, currFrame->mShift);
       updateTrajectory();
       insertNewKeyFrame = true;
       break;

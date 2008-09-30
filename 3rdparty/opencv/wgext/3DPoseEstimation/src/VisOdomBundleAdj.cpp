@@ -20,7 +20,6 @@ using namespace cv::willow;
 using namespace boost::accumulators;
 
 #define DISPLAY 1
-#define DEBUG 1
 
 VisOdomBundleAdj::VisOdomBundleAdj(const CvSize& imageSize):
   PathRecon(imageSize),
