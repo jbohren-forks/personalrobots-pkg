@@ -76,17 +76,18 @@ Here are the gazebo plugins which are currently implemented:
 @section parameters Robot Descriptions
 \li PR2 Robot Description
   Robot descriptions are explained in the <a href="http://pr.willowgarage.com/wiki/RobotDescriptionFormat">Robot Description Format</a> page.
-  You can find the PR2 XML files in \b ros-pkg/robot_descriptions/wg_robot_description/pr2
-
-  To convert \b pr2.xml into Gazebo recognizable format (\b ros-pkg/robot_descriptions/gazebo_robot_description) run the following commands:
-  @verbatim
-  $ roscd gazebo_robot_description
-  $ rosmake
-  @endverbatim
-  Above generates \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2_xml.model, which is included by the world file: \b ros-pkg/robot_descriptions/gazebo_robot_description/world/robot.world.
+  You can find the complete PR2 description file in \b ros-pkg/robot_descriptions/wg_robot_description/pr2/pr2.xml.
+  - To convert \b pr2.xml into Gazebo recognizable format (\b ros-pkg/robot_descriptions/gazebo_robot_description) run the following commands:
+    @verbatim
+    $ roscd gazebo_robot_description
+    $ rosmake
+    @endverbatim
+    thus generating \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2_xml.model.  The \e .model-file
+    is included by the gazebo world file: \b ros-pkg/robot_descriptions/gazebo_robot_description/world/robot.world.
 
 \li Another Example: Simple Robot (Not really a robot, single link only)
-  Here is an example demonstrating a simple mechanism control / controller stack for a single DOF.
+  Here is an example demonstrating a simple mechanism control / controller stack for a single DOF
+  (You can find the equivalent version in \b ros-pkg/robot_descriptions/wg_robot_description/single_link_test).
   - \b pr2_single_link.xml
     @verbatim
       <?xml version="1.0"?>
