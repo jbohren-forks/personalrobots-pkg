@@ -62,6 +62,9 @@
 //we'll take in a path as a vector of points
 #include <std_msgs/Point2DFloat32.h>
 
+//for computing path distance
+#include <queue>
+
 #define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < ((int)(map).size_x_)) && ((y) >= 0) && ((y) < ((int)(map).size_y_)))
 
 //convert from map to world coords
@@ -87,7 +90,11 @@ class TrajectoryController {
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
-    void computePathDistance(const ObstacleMapAccessor& ma);
+    void computePathDistance(const ObstacleMapAccessor& ma, 
+        std::priority_queue<MapCell*, std::vector<MapCell*>, ComparePathDist>& dist_queue);
+
+    void computeGoalDistance(const ObstacleMapAccessor& ma, 
+        std::priority_queue<MapCell*, std::vector<MapCell*>, CompareGoalDist>& dist_queue);
     
     //given a trajectory in map space get the drive commands to send to the robot
     libTF::TFPose2D getDriveVelocities(int t_num);
@@ -129,7 +136,7 @@ class TrajectoryController {
 
   private:
     //update what map cells are considered path based on the global_plan
-    void setPathCells();
+    void setPathCells(const ObstacleMapAccessor& ma);
 
     //convert the trajectories computed in robot space to world space
     void trajectoriesToWorld();
@@ -154,15 +161,28 @@ class TrajectoryController {
     //transform client
     rosTFClient* tf_;
 
-    inline void updateCell(MapCell* current_cell, MapCell* check_cell, double addition){
-      double new_path_dist = check_cell->path_dist + addition;
-      double new_goal_dist = check_cell->goal_dist + addition;
+    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma){
+      //if the cell is an obstacle set the max path distance
+      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+        check_cell->path_dist = map_.map_.size();
+        return;
+      }
 
-      if(new_path_dist < current_cell->path_dist)
-        current_cell->path_dist = new_path_dist;
+      double new_path_dist = current_cell->path_dist + 1;
+      if(new_path_dist < check_cell->path_dist)
+        check_cell->path_dist = new_path_dist;
+    }
 
-      if(new_goal_dist < current_cell->goal_dist)
-        current_cell->goal_dist = new_goal_dist;
+    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma){
+      //if the cell is an obstacle set the max path distance
+      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+        check_cell->goal_dist = map_.map_.size();
+        return;
+      }
+
+      double new_goal_dist = current_cell->goal_dist + 1;
+      if(new_goal_dist < check_cell->goal_dist)
+        check_cell->goal_dist = new_goal_dist;
     }
 
     //compute position based on velocity

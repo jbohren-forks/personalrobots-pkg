@@ -55,6 +55,8 @@ class Helmsman{
 				 double& d_x, double& d_y, double& d_theta,
 				 std::list<std_msgs::Pose2DFloat32>& localPlan);
 
+    std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th);
+
   private:
 
     //a map

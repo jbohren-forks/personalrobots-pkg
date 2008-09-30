@@ -120,6 +120,8 @@ void MapGrid::resetPathDist(){
   for(unsigned int i = 0; i < map_.size(); ++i){
     map_[i].path_dist = DBL_MAX;
     map_[i].goal_dist = DBL_MAX;
+    map_[i].path_mark = false;
+    map_[i].goal_mark = false;
   }
 }
 

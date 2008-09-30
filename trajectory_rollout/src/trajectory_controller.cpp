@@ -57,16 +57,21 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 }
 
 //update what map cells are considered path based on the global_plan
-void TrajectoryController::setPathCells(){
+void TrajectoryController::setPathCells(const ObstacleMapAccessor& ma){
   map_.resetPathDist();
   int local_goal_x = -1;
   int local_goal_y = -1;
   bool started_path = false;
+  priority_queue<MapCell*, std::vector<MapCell*>, ComparePathDist> path_dist_queue;
+  priority_queue<MapCell*, std::vector<MapCell*>, CompareGoalDist> goal_dist_queue;
   for(unsigned int i = 0; i < global_plan_.size(); ++i){
     int map_x = WX_MX(map_, global_plan_[i].x);
     int map_y = WY_MY(map_, global_plan_[i].y);
     if(VALID_CELL(map_, map_x, map_y)){
-      map_(map_x, map_y).path_dist = 0.0;
+      MapCell& current = map_(map_x, map_y);
+      current.path_dist = 0.0;
+      current.path_mark = true;
+      path_dist_queue.push(&current);
       local_goal_x = map_x;
       local_goal_y = map_y;
       started_path = true;
@@ -80,97 +85,111 @@ void TrajectoryController::setPathCells(){
   //printf("\n");
 
   if(local_goal_x >= 0 && local_goal_y >= 0){
-    map_(local_goal_x, local_goal_y).goal_dist = 0.0;
+    MapCell& current = map_(local_goal_x, local_goal_y);
+    current.goal_dist = 0.0;
+    current.goal_mark = true;
+    goal_dist_queue.push(&current);
+  }
+  //compute our distances
+  computePathDistance(ma, path_dist_queue);
+  computeGoalDistance(ma, goal_dist_queue);
+}
+
+void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma,
+    priority_queue<MapCell*, vector<MapCell*>, ComparePathDist>& dist_queue){
+  MapCell* current_cell;
+  MapCell* check_cell;
+  unsigned int last_col = map_.size_x_ - 1;
+  unsigned int last_row = map_.size_y_ - 1;
+  while(!dist_queue.empty()){
+    current_cell = dist_queue.top();
+    check_cell = current_cell;
+    dist_queue.pop();
+
+    if(current_cell->cx > 0){
+      check_cell = current_cell - 1;
+      if(!check_cell->path_mark){
+        updatePathCell(current_cell, check_cell, ma);
+        check_cell->path_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cx < last_col){
+      check_cell = current_cell + 1;
+      if(!check_cell->path_mark){
+        updatePathCell(current_cell, check_cell, ma);
+        check_cell->path_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cy > 0){
+      check_cell = current_cell - map_.size_x_;
+      if(!check_cell->path_mark){
+        updatePathCell(current_cell, check_cell, ma);
+        check_cell->path_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cy < last_row){
+      check_cell = current_cell + map_.size_x_;
+      if(!check_cell->path_mark){
+        updatePathCell(current_cell, check_cell, ma);
+        check_cell->path_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
   }
 }
 
-//compute the distance from each cell in the map grid to the planned path
-void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma){
-  unsigned int map_size = map_.map_.size();
-  MapCell* current_cell, *check_cell;
-
+void TrajectoryController::computeGoalDistance(const ObstacleMapAccessor& ma,
+    priority_queue<MapCell*, vector<MapCell*>, CompareGoalDist>& dist_queue){
+  MapCell* current_cell;
+  MapCell* check_cell;
   unsigned int last_col = map_.size_x_ - 1;
-  for(unsigned int i = 0; i < map_size; ++i){
-    current_cell = &(map_.map_[i]);
-    check_cell = current_cell;
-
-    //if the current cell contains an obstacle... set distances to be max
-    if(ma.isObstacle(current_cell->cx, current_cell->cy)){
-      current_cell->path_dist = map_size;
-      current_cell->goal_dist = map_size;
-      continue;
-    }
-
-
-    //make sure we aren't in the first col
-    if(current_cell->cx > 0){
-      --check_cell;
-      updateCell(current_cell, check_cell, 1);
-    }
-
-    //if we are in the first row we want to continue
-    if(current_cell->cy == 0){
-      continue;
-    }
-
-    //make sure we are not in the first col
-    if(current_cell->cx > 0){
-      check_cell -= map_.size_x_;
-      updateCell(current_cell, check_cell, 1.41);
-      ++check_cell;
-    }
-    else
-      check_cell -= map_.size_x_;
-
-
-    updateCell(current_cell, check_cell, 1);
-
-    //only check cell to bottom right if we're not in last col
-    if(current_cell->cx < last_col){
-      ++check_cell;
-      updateCell(current_cell, check_cell, 1.41);
-    }
-  }
-
-  unsigned int end = map_size - 1;
   unsigned int last_row = map_.size_y_ - 1;
-  for(int i = end; i >= 0; --i){
-    current_cell = &(map_.map_[i]);
+  while(!dist_queue.empty()){
+    current_cell = dist_queue.top();
+    current_cell->goal_mark = true;
     check_cell = current_cell;
+    dist_queue.pop();
 
-    //if the current cell contains an obstacle... set distances to be max
-    if(ma.isObstacle(current_cell->cx, current_cell->cy)){
-      current_cell->path_dist = map_size;
-      current_cell->goal_dist = map_size;
-      continue;
-    }
-
-    //make sure we are not in the last col
-    if(current_cell->cx < last_col){
-      ++check_cell;
-      updateCell(current_cell, check_cell, 1);
-    }
-
-    //if we are in the last row we want to continue
-    if(current_cell->cy == last_row)
-      continue;
-
-    //make sure we are not in the last col
-    if(current_cell->cx < last_col){
-      check_cell += map_.size_x_;
-      updateCell(current_cell, check_cell, 1.41);
-      --check_cell;
-    }
-    else
-      check_cell += map_.size_x_;
-
-
-    updateCell(current_cell, check_cell, 1);
-
-    //only check cell to upper left if we're not in first col
     if(current_cell->cx > 0){
-      --check_cell;
-      updateCell(current_cell, check_cell, 1.41);
+      check_cell = current_cell - 1;
+      if(!check_cell->goal_mark){
+        updateGoalCell(current_cell, check_cell, ma);
+        check_cell->goal_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cx < last_col){
+      check_cell = current_cell + 1;
+      if(!check_cell->goal_mark){
+        updateGoalCell(current_cell, check_cell, ma);
+        check_cell->goal_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cy > 0){
+      check_cell = current_cell - map_.size_x_;
+      if(!check_cell->goal_mark){
+        updateGoalCell(current_cell, check_cell, ma);
+        check_cell->goal_mark = true;
+        dist_queue.push(check_cell);
+      }
+    }
+
+    if(current_cell->cy < last_row){
+      check_cell = current_cell + map_.size_x_;
+      if(!check_cell->goal_mark){
+        updateGoalCell(current_cell, check_cell, ma);
+        check_cell->goal_mark = true;
+        dist_queue.push(check_cell);
+      }
     }
   }
 }
@@ -367,10 +386,10 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
   //make sure that we update our path based on the global plan
-  setPathCells();
+  setPathCells(ma);
 
   //first compute the path distance for all cells in our map grid
-  computePathDistance(ma);
+  //computePathDistance(ma);
   printf("Path distance computed\n");
 
   /*
@@ -381,9 +400,12 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
   for(int j = map_.size_y_ - 1; j >= 0; --j){
     for(unsigned int i = 0; i < map_.size_x_; ++i){
       int g_dist = 255 - int(map_(i, j).goal_dist);
+      int p_dist = 255 - int(map_(i, j).path_dist);
       if(g_dist < 0)
         g_dist = 0;
-      printf("%d 0 0 ", g_dist);
+      if(p_dist < 0)
+        p_dist = 0;
+      printf("%d 0 %d ", g_dist, p_dist);
     }
     printf("\n");
   }

@@ -112,3 +112,7 @@ bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const std:
   return true;
 
 }
+
+vector<std_msgs::Point2DFloat32> Helmsman::drawFootprint(double x, double y, double th){
+  return tc_.drawFootprint(x, y, th);
+}
