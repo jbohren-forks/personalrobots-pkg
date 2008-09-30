@@ -53,6 +53,7 @@ t| (0, height-1) ... (width-1, height-1)
 #include "costmap_2d/costmap_2d.h"
 #include <algorithm>
 #include <set>
+#include <assert.h>
 
 const unsigned char CostMap2D::NO_INFORMATION(255);
 const unsigned char CostMap2D::INFLATED_OBSTACLE(254);
@@ -85,7 +86,7 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
 
       if(staticData_[ind] == threshold_){
 	obstacles.insert(ind);
-	permanentlyOccupiedCells_.push_back(ind);
+	staticObstacles_.push_back(ind);
       }
     }
   }
@@ -102,13 +103,8 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
       unsigned int cellId = inflation[i];
 
       // Must enforce set semantics and ensure that we correctly assign the inflated obstacle value
-      if(staticData_[cellId] != threshold_){
-	// Only mark it as a new obstacle if it is not currently in the map
-	if(staticData_[cellId] != INFLATED_OBSTACLE)
-	  permanentlyOccupiedCells_.push_back(cellId);
-
+      if(staticData_[cellId] != threshold_)
 	staticData_[cellId] = (cellId == ind ? threshold_ : INFLATED_OBSTACLE);
-      }
     }
   }
 
@@ -117,7 +113,7 @@ CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned cha
   memcpy(fullData_, staticData_, width_*height_);
   memset(obsWatchDog_, 0, width_*height_);
 
-  std::cout << "CostMap 2D created with " << permanentlyOccupiedCells_.size() << std::endl;
+  std::cout << "CostMap 2D created with " << staticObstacles_.size() << " static obstacles" << std::endl;
 }
 
 CostMap2D::~CostMap2D() {
@@ -141,35 +137,15 @@ void CostMap2D::updateDynamicObstacles(double ts,
       continue;
 
     unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
-    obsWatchDog_[ind] = WATCHDOG_LIMIT;
+
+    updateCell(ind, threshold_, newObstacles);
+
 
     // Compute inflation set
     std::vector<unsigned int> inflation;
     computeInflation(ind, inflation);
-    for(unsigned int i = 0; i<inflation.size(); i++){
-      unsigned int cell = inflation[i];
-
-      // Guard this to enforce set semantics
-      if(fullData_[cell] != threshold_){
-
-	// Only mark as a new object if it is not inflated - avoids duplication
-	if(fullData_[cell] != INFLATED_OBSTACLE){
-	  newObstacles.push_back(cell);
-	  dynamicObstacles_.push_back(cell);
-	}
-
-	// Allows for the possibility that an actual obstacle will over-write
-	// an inflated obstacle. The opposite should not occur
-	if(cell == ind){
-	  fullData_[cell] = threshold_;
-	}
-	else{
-	  fullData_[cell] = INFLATED_OBSTACLE;
-	  obsWatchDog_[cell] = WATCHDOG_LIMIT;
-	}
-      }
-    }
-
+    for(unsigned int i = 0; i<inflation.size(); i++)
+      updateCell(inflation[i], INFLATED_OBSTACLE, newObstacles);
   }
 
   // We always process deletions too
@@ -180,6 +156,26 @@ void CostMap2D::updateDynamicObstacles(double ts,
       deletedObstacles.size() << " deletions: " << 
       dynamicObstacles_.size() << " dynamic obstacles\n";
   }
+}
+
+void CostMap2D::updateCell(unsigned int cell, unsigned int cellState, std::vector<unsigned int>& newObstacles){
+  // If it is new, append
+  if(obsWatchDog_[cell] == 0 && staticData_[cell] != threshold_){
+    newObstacles.push_back(cell);
+    dynamicObstacles_.push_back(cell);
+  }
+
+  // If the new value is a raw obstacle, set it as such, no matter how current
+  if(cellState == threshold_)
+    fullData_[cell] = threshold_;
+
+  // Set to inflation if not a raw obstacle by other means: cannot over-write a statically inflated obstacle 
+  // and it cannot over-write a raw obstacle that is up to date
+  if(obsWatchDog_[cell] < WATCHDOG_LIMIT && staticData_[cell] != threshold_)
+      fullData_[cell] = cellState;
+  
+  // Always pet the watchdog
+  obsWatchDog_[cell] = WATCHDOG_LIMIT;
 }
 
 void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
@@ -210,7 +206,7 @@ void CostMap2D::removeStaleObstacles(double ts, std::vector<unsigned int>& delet
       continue;
     }
 
-    // Case 2: The watchdog has timed out. Here we remove the obstacle, zero the watchdog timer, and move on.
+    // Case 2: The watchdog has timed out. Here we remove the obstacle (if not static), zero the watchdog timer, and move on.
     if(timeLeft <= elapsedTime){
       it = dynamicObstacles_.erase(it);
       obsWatchDog_[ind] = 0;
@@ -230,10 +226,12 @@ const unsigned char* CostMap2D::getMap() const {
 }
 
 void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const {
-  results = permanentlyOccupiedCells_;
-
-  for(std::list<unsigned int>::const_iterator it = dynamicObstacles_.begin(); it != dynamicObstacles_.end(); ++it)
-    results.push_back(*it);
+  results.clear();
+  unsigned int maxCellCount = getWidth() * getHeight();
+  for(unsigned int i = 0; i < maxCellCount; i++){
+    if(staticData_[i] == threshold_ || staticData_[i] == INFLATED_OBSTACLE || obsWatchDog_[i] > 0)
+      results.push_back(i);
+  }
 }
 
 

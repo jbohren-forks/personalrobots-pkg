@@ -52,19 +52,13 @@ data to the 2D plane. Control parameters dictate the sliding window length, z th
 inflation radius.
 
 For examples of usage see the test harness.
-
-Note that in some cases a dynamic obstacle may be detected, and that same cell may be
-inflated already. In this case it will become a proper obstacle. However, if that dynamic obstacle
-is aged out, the cell value will not revert to the INFLATED_OBSTACLE state. Thus the robot will
-have a more constrained viewpoint, until the cell is aged out. It is unclear if this will be
-an issue in practice so we are not going to extend the complexity of the map to
-handle this case at this time.
 */
 
 //c++
 #include <list>
 #include <vector>
 #include <map>
+#include <set>
 
 // For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
@@ -128,6 +122,7 @@ public:
    * @see updateDynamicObstacles
    */
   void updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud);
+
   /**
    * @brief Updates the cost map, removing stale obstacles based on the new time stamp. This
    * method is linear in the number of dynamic obstacles.
@@ -246,6 +241,11 @@ private:
    */
   void computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const;
 
+  /**
+   * @brief Utility to encapsulate dynamic cell updates
+   */
+  void updateCell(unsigned int cell, unsigned int cellState, std::vector<unsigned int>& newObstacles);
+
   static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
   const unsigned int width_; /**< width of the map */
   const unsigned int height_; /**< height of the map */
@@ -263,6 +263,6 @@ private:
 
   std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
   
-  std::vector<unsigned int> permanentlyOccupiedCells_; /**< Vector of statically occupied cells */
+  std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
 };
 #endif
