@@ -241,8 +241,6 @@ void Ros_Block_Laser::PutLaserData()
         this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
       }
       this->cloudMsg.chan[n].vals[0] = v + this->GaussianKernel(0,this->gaussianNoise) ;
-      this->cloudMsg.chan[n].vals[0] = 4000; //v + this->GaussianKernel(0,this->gaussianNoise) ;
-      this->cloudMsg.chan[0].vals[0] = 0; //v + this->GaussianKernel(0,this->gaussianNoise) ;
     }
   }
 
