@@ -128,6 +128,9 @@ namespace ros {
 
       // Advertize message to publish local plan
       advertise<std_msgs::Polyline2D>("local_path", QUEUE_MAX());
+      
+      // Advertize message to publish robot footprint
+      advertise<std_msgs::Polyline2D>("robot_footprint", QUEUE_MAX());
 
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
@@ -252,9 +255,9 @@ namespace ros {
 	  v_in.time = 0; // Gets the latest
 	  v_in.frame = "odom";
 	  v_out = tf_.transformVector("base", v_in);
-	  base_odom_.vel.x = v_out.x;
-	  base_odom_.vel.y = v_out.y;
-	  base_odom_.vel.th = v_out.z;
+	  base_odom_.vel.x = v_in.x;
+	  base_odom_.vel.y = v_in.y;
+	  base_odom_.vel.th = v_in.z;
 	}
       catch(libTF::TransformReference::LookupException& ex)
 	{
@@ -279,6 +282,20 @@ namespace ros {
       plan_ = newPlan;
     }
 
+    void MoveBase::publishFootprint(double x, double y, double th){
+      std::vector<std_msgs::Point2DFloat32> footprint = controller_.drawFootprint(x, y, th);
+      std_msgs::Polyline2D footprint_msg;
+      footprint_msg.set_points_size(footprint.size());
+      footprint_msg.color.r = 1.0;
+      footprint_msg.color.g = 0;
+      footprint_msg.color.b = 0;
+      footprint_msg.color.a = 0;
+      for(unsigned int i = 0; i < footprint.size(); ++i){
+        footprint_msg.points[i].x = footprint[i].x;
+        footprint_msg.points[i].y = footprint[i].y;
+      }
+      publish("robot_footprint", footprint_msg);
+    }
     void MoveBase::publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
@@ -299,9 +316,9 @@ namespace ros {
 	publish("gui_path", guiPathMsg);
       }
       else {
-	guiPathMsg.color.r = 1;
+	guiPathMsg.color.r = 0;
 	guiPathMsg.color.g = 0;
-	guiPathMsg.color.b = 0;
+	guiPathMsg.color.b = 1.0;
 	guiPathMsg.color.a = 0;
 	publish("local_path", guiPathMsg);
       }
@@ -363,7 +380,7 @@ namespace ros {
 	  const std_msgs::Pose2DFloat32& w = *it;
 
 	  // The path following constraint is twice the map resolution. Could be an external parameter
-	  if(sqrt(pow(global_pose_.x - w.x, 2) + pow(global_pose_.y - w.y, 2)) <= (getCostMap().getResolution() * 2))
+	  if(sqrt(pow(global_pose_.x - w.x, 2) + pow(global_pose_.y - w.y, 2)) <= (getCostMap().getResolution() * 5))
 	    break;
 
 	  it = plan_.erase(it);
@@ -393,6 +410,8 @@ namespace ros {
 
 	publishPath(false, localPlan);
 	publishPath(true, plan_);
+  std_msgs::Pose2DFloat32& pt = localPlan.front();
+  publishFootprint(pt.x, pt.y, pt.th);
       }
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
@@ -432,7 +451,8 @@ namespace ros {
       ma.getOriginInWorldCoordinates(origin_x, origin_y);
       for(unsigned int i = 0; i<ma.getWidth(); i++)
 	for(unsigned int j = 0; j<ma.getHeight();j++){
-	  if(ma.isObstacle(i, j) || ma.isInflatedObstacle(i, j) ){
+	  //if(ma.isObstacle(i, j) || ma.isInflatedObstacle(i, j) ){
+	  if(ma.isObstacle(i, j)){
 	      double wx, wy;
 	      wx = i * ma.getResolution() + origin_x;
 	      wy = j * ma.getResolution() + origin_y;

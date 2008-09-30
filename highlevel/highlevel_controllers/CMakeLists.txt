@@ -4,7 +4,8 @@ add_definitions(-Wall)
 rospack(highlevel_controllers)
 
 # Library
-link_directories(/wg/stor1/mcgann/pr/trajectory_rollout/lib)
+#link_directories(/wg/stor1/mcgann/pr/trajectory_rollout/lib)
+link_directories(/wg/stor1/eitan/ros/ros-pkg/trajectory_rollout/lib)
 rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 

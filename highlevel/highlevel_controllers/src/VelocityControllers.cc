@@ -110,6 +110,15 @@ namespace ros {
       return result;
     }
 
+    std::vector<std_msgs::Point2DFloat32> TrajectoryRolloutController::drawFootprint(double x, double y, double th){
+      if(helmsman_)
+        return helmsman_->drawFootprint(x, y, th);
+      else{
+        std::vector<std_msgs::Point2DFloat32> empty;
+        return empty;
+      }
+    }
+
 
     LocalSearchVelocityController::LocalSearchVelocityController(unsigned int lookAhead, double resolution, double sMax, double dsMax, double dThetaMax)
       : lookAhead_(lookAhead), 

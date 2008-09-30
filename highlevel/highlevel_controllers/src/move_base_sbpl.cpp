@@ -249,12 +249,12 @@ namespace ros {
 #define ROBOT_FRONT_RADIUS .175
 #define ROBOT_SIDE_RADIUS .175
 #define MAX_OCC_DIST 1.0
-#define PDIST_SCALE 0.6
-#define GDIST_SCALE 0.2
+#define PDIST_SCALE 0.4
+#define GDIST_SCALE 0.6
 #define OCCDIST_SCALE 0
 #define DFAST_SCALE .2
 #define SAFE_DIST .005
-#define ACC_LIM_X 1.0
+#define ACC_LIM_X 0.15
 #define ACC_LIM_Y 1.0
 #define ACC_LIM_TH 1.0
 
@@ -302,7 +302,8 @@ int main(int argc, char** argv)
   const unsigned char lethalObstacleThreshold = 100;
   const unsigned char noInformation = 0;
   const double maxZ = 2.0;
-  const double inflationRadius = std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS);
+  //const double inflationRadius = std::min(ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS);
+  const double inflationRadius = sqrt(ROBOT_FRONT_RADIUS * ROBOT_FRONT_RADIUS + ROBOT_SIDE_RADIUS * ROBOT_SIDE_RADIUS);
   ros::highlevel_controllers::MoveBaseSBPL node(controller, windowLength, lethalObstacleThreshold, noInformation, maxZ, inflationRadius);
   
   node.run();

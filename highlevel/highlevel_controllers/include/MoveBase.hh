@@ -126,6 +126,7 @@ namespace ros {
       void updateGlobalPose();
 
       void publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path);
+      void publishFootprint(double x, double y, double th);
 
       /**
        * Utility to publish the local cost map around the robot

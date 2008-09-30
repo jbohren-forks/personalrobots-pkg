@@ -76,6 +76,9 @@ namespace ros {
 					   std_msgs::BaseVel& cmdVel,
 					   std::list<std_msgs::Pose2DFloat32>& localPlan) = 0;
 
+      virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th) = 0;
+
+
       virtual double getMapDeltaX() const = 0;
 
       virtual double getMapDeltaY() const = 0;
@@ -102,6 +105,8 @@ namespace ros {
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
 					   std::list<std_msgs::Pose2DFloat32>& localPlan);
+
+      virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th);
 
       double getMapDeltaX() const {return mapDeltaX_;}
 
@@ -139,6 +144,8 @@ namespace ros {
 					   const std_msgs::BaseVel& currentVel, 
 					   std_msgs::BaseVel& cmdVel,
 					   std::list<std_msgs::Pose2DFloat32>& localPlan);
+
+      virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th) { std::vector<std_msgs::Point2DFloat32> empty; return empty;}
 
       double getMapDeltaX() const {return mapDeltaX_;}
 
