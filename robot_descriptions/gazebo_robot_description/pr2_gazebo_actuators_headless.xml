@@ -1,4 +1,5 @@
 <launch>
+  <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/wg_robot_description/pr2 -->
   <group name="wg">
     <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
     <node pkg="gazebo" type="gazebo" args="-g -n $(find gazebo_robot_description)/world/robot_headless.world" respawn="false" output="screen">
