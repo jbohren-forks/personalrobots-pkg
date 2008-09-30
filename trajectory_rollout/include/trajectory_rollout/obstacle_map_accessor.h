@@ -47,13 +47,106 @@ class ObstacleMapAccessor{
     virtual bool isObstacle(unsigned int mx, unsigned int my) const = 0;
     virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const = 0;
     virtual void getOriginInWorldCoordinates(double& wx, double& wy) const = 0;
+	
+    /**
+     * @brief Obtain world co-ordinates for the given index
+     * @param ind index
+     * @param wx world x location of the cell
+     * @param wy world y location of the cell
+     */
+    virtual void IND_WC(unsigned int ind, double& wx, double& wy) const{
+      unsigned int mx, my;
+      IND_MC(ind, mx, my);
+      MC_WC(mx, my, wx, wy);
+    }
+
+    /**
+     * @brief Converts from 1D map index into x y map coords
+     * 
+     * @param ind 1d map index
+     * @param x 2d map return value
+     * @param y 2d map return value
+     */
+    virtual void IND_MC(unsigned int ind, unsigned int& mx, unsigned int& my) const{
+      my = ind/getWidth();
+      mx = ind-(my*getWidth());
+    }
+
+    /**
+     * @brief Get index of given (x,y) point into data
+     * 
+     * @param x x-index of the cell
+     * @param y y-index of the cell
+     */
+    virtual unsigned int MC_IND(unsigned int mx, unsigned int my) const {
+      return(mx+my*getWidth());
+    }
+
+    /**
+     * @brief Get world (x,y) point given map indexes
+     * 
+     * @param mx map x index location
+     * @param my map y index location
+     * @param wx world x return value
+     * @param wy world y return value
+     */
+    virtual void MC_WC(unsigned int mx, unsigned int my, double& wx, double& wy) const {
+      wx = (mx*1.0)*getResolution();
+      wy = (my*1.0)*getResolution();
+    }
+
+    /**
+     * @brief Get index of given (x,y) point into data
+     * 
+     * @param wx world x location of the cell
+     * @param wy world y location of the cell
+     */
+    virtual unsigned int WC_IND(double wx, double wy) const{
+      unsigned int mx, my;
+      WC_MC(wx, wy, mx, my);
+      return MC_IND(mx, my);
+    }
+
+    /**
+     * @brief Get index of given world (x,y) point in map indexes
+     * 
+     * @param wx world x location of the cell
+     * @param wy world y location of the cell
+     * @param mx map x index return value
+     * @param my map y index return value
+     */
+    virtual void WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const {
+
+      if(wx < 0 || wy < 0) {
+	mx = 0;
+	my = 0;
+	return;
+      }
+
+      //not much for now
+      mx = (int) (wx/getResolution());
+      my = (int) (wy/getResolution());
+
+      if(mx > getWidth()) {
+	if(my > getHeight()) {
+	  std::cout << "WC_MC converted y " << wy << " greater than height " << getHeight() << std::endl;
+	  mx = 0;
+	  return;
+	} 
+	if(my > getHeight()) {
+	  std::cout << "WC_MC converted y " << wy << " greater than height " << getHeight() << std::endl;
+	  my = 0;
+	  return;
+	}
+      }
+    }
 };
 
 //So we can still use wavefront player we'll fake an obs accessor
 class WavefrontMapAccessor : public ObstacleMapAccessor {
-  public:
-    WavefrontMapAccessor(MapGrid &map, double outer_radius) : map_(map), outer_radius_(outer_radius) {}
-  virtual ~WavefrontMapAccessor(){};
+ public:
+  WavefrontMapAccessor(MapGrid &map, double outer_radius) : map_(map), outer_radius_(outer_radius) {}
+    virtual ~WavefrontMapAccessor(){};
     virtual unsigned int getWidth() const {return  map_.size_x_;}
     virtual unsigned int getHeight() const {return map_.size_y_;}
     virtual double getResolution() const {return map_.scale;}
@@ -75,7 +168,7 @@ class WavefrontMapAccessor : public ObstacleMapAccessor {
       wy = map_.origin_y;
     }
 
-  private:
+ private:
     MapGrid& map_;
     double outer_radius_;
 
