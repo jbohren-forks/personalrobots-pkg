@@ -1,0 +1,15 @@
+<package>
+  <description brief="Spacenav driver and SDK">
+
+    Open source, unofficial driver for the 3d Connexion Space Navigator.
+
+  </description>
+  <author>John Tsiombikas</author>
+  <license>ZLib</license>
+  <url>http://spacenav.sourceforge.net/</url>
+  <export>
+    <cpp cflags="-I${prefix}/libspnav/include/"
+	 lflags="-L${prefix}/libspnav/lib/ -lspnav" />
+  </export>
+</package>
+
