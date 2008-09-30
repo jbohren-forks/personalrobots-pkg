@@ -41,7 +41,6 @@
 namespace gazebo
 {
   class HingeJoint;
-  class PTZIface;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
@@ -68,9 +67,12 @@ namespace gazebo
 \{
 */
 
-  /// \brief Ros ptz controller.
+  /// \brief ROS Pan/Tilt/Zoom Camera Controller
+  ///        \li Starts a ROS node if none exists.
+  ///        \li Simulates PTZ camera actuators.
+  ///             - publish state information (PT angles) to ROS topic: \e camera_name/ptz_state
+  ///             - subscribe to ROS topic: \e camera_name/ptz_cmd
   /// 
-  /// This is a controller for a ros PTZ
   class Ros_PTZ : public Controller
   {
     /// \brief Constructor
@@ -100,11 +102,8 @@ namespace gazebo
     /// \brief Reset the controller
     protected: virtual void ResetChild();
   
-    /// \brief Put camera data to the iface
+    /// \brief Put camera data to the ROS topic
     private: void PutPTZData();
-  
-    /// \brief The camera interface
-    private: PTZIface *ptzIface;
   
     /// \brief The parent sensor
     private: Model *myParent;

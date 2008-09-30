@@ -33,7 +33,6 @@
 
 namespace gazebo
 {
-  class CameraIface;
   class MonoCameraSensor;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
@@ -53,7 +52,6 @@ namespace gazebo
             <updateRate>15.0</updateRate>
             <topicName>camera_name/image</topicName>
             <frameName>camera_body_name</frameName>
-            <interface:camera name="ros_camera_iface" />
         </controller:ros_camera>
       </sensor:camera>
     </body:empty>
@@ -88,11 +86,8 @@ class Ros_Camera : public Controller
   /// \brief Finalize the controller, unadvertise topics
   protected: virtual void FiniChild();
 
-  /// \brief Put camera data to the iface
+  /// \brief Put camera data to the ROS topic
   private: void PutCameraData();
-
-  /// \brief The camera Iface
-  private: CameraIface *cameraIface;
 
   /// \brief A pointer to the parent camera sensor
   private: MonoCameraSensor *myParent;

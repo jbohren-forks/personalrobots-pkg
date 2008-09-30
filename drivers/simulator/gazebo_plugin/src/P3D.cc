@@ -77,7 +77,7 @@ void P3D::LoadChild(XMLConfigNode *node)
    this->myIface = dynamic_cast<PositionIface*>(this->ifaces[0]);
 
    if (!this->myIface)
-      gzthrow("P3D controller requires a Actarray Iface");
+      gzthrow("P3D controller requires a Actarray Iface, though not used.");
 
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
@@ -116,17 +116,8 @@ void P3D::UpdateChild()
   rpyTotal.z = this->rpyOffsets.z + rot.GetYaw();
   rot.SetFromEuler(rpyTotal);
 
-  this->myIface->Lock(1);
-  this->myIface->data->head.time = Simulator::Instance()->GetSimTime();
+  double cur_time = Simulator::Instance()->GetSimTime();
   
-  this->myIface->data->pose.pos.x = pos.x;
-  this->myIface->data->pose.pos.y = pos.y;
-  this->myIface->data->pose.pos.z = pos.z;
-
-  this->myIface->data->pose.roll  = rot.GetRoll();
-  this->myIface->data->pose.pitch = rot.GetPitch();
-  this->myIface->data->pose.yaw   = rot.GetYaw();
-
   // get Rates
   Vector3 vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
   Quatern vrot = this->myBody->GetRotationRate(); // get velocity in gazebo frame
@@ -135,8 +126,8 @@ void P3D::UpdateChild()
   this->lock.lock();
   // copy data into pose message
   this->transformMsg.header.frame_id = this->frameName;
-  this->transformMsg.header.stamp.sec = (unsigned long)floor(this->myIface->data->head.time);
-  this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->myIface->data->head.time - this->transformMsg.header.stamp.sec) );
+  this->transformMsg.header.stamp.sec = (unsigned long)floor(cur_time);
+  this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->transformMsg.header.stamp.sec) );
 
   this->transformMsg.transform.translation.x    = pos.x;
   this->transformMsg.transform.translation.y    = pos.y;
@@ -167,7 +158,6 @@ void P3D::UpdateChild()
   rosnode->publish(this->topicName,this->transformMsg);
   this->lock.unlock();
 
-  this->myIface->Unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

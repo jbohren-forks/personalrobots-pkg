@@ -66,7 +66,7 @@ namespace gazebo
 
    /// \brief P3D controller
    ///        \li Starts a ROS node if none exists.
-   ///        \li This controller simulates a 6 dof position and rate sensor.
+   ///        \li This controller simulates a 6 dof position and rate sensor, publishes std_msgs::TransformWithRateStamped.msg ROS topic.
    class P3D : public Controller
    {
       /// \brief Constructor

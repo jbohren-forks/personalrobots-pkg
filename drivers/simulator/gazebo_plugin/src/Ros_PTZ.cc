@@ -105,10 +105,6 @@ Ros_PTZ::~Ros_PTZ()
 // Load the controller
 void Ros_PTZ::LoadChild(XMLConfigNode *node)
 {
-  this->ptzIface = dynamic_cast<PTZIface*>(this->ifaces[0]);
-
-  if (!this->ptzIface)
-    gzthrow("Ros_PTZ controller requires a PTZIface");
 
   this->panJointNameP->Load(node);
   this->tiltJointNameP->Load(node);
@@ -178,15 +174,6 @@ void Ros_PTZ::ResetChild()
 // Update the controller
 void Ros_PTZ::UpdateChild()
 {
-  //this->ptzIface->Lock(1);
-
-  // pan tilt command set in void Ros_PTZ::PTZCommandReceived() rather than from Iface
-  //this->cmdPan = this->ptzIface->data->cmd_pan;
-  //this->cmdTilt = this->ptzIface->data->cmd_tilt;
-  //this->cmdZoom = this->hfov / this->ptzIface->data->cmd_zoom;
-
-  //this->ptzIface->Unlock();
-
   // Apply joint limits to commanded pan/tilt angles
   if (this->cmdTilt > M_PI*0.3)
     this->cmdTilt = M_PI*0.3;
@@ -233,21 +220,8 @@ void Ros_PTZ::FiniChild()
 // Put laser data to the interface
 void Ros_PTZ::PutPTZData()
 {
-  PTZData *data = this->ptzIface->data;
-
-  this->ptzIface->Lock(1);
-
-  // Data timestamp
-  data->head.time = Simulator::Instance()->GetSimTime();
-
-  data->pan = this->panJoint->GetAngle();
-  data->tilt = this->tiltJoint->GetAngle();
-  //data->zoom = this->camera->GetFOV();
-
-  this->ptzIface->Unlock();
-
-  // New data is available
-  this->ptzIface->Post();
+  // Data timestamp, not used
+  //double cur_time = Simulator::Instance()->GetSimTime();
 
   this->lock.lock();
   // also put data into ros message

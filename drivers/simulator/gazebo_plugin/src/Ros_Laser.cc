@@ -57,9 +57,6 @@ Ros_Laser::Ros_Laser(Entity *parent)
   // set parent sensor to active automatically
   this->myParent->SetActive(true);
 
-  this->laserIface = NULL;
-  this->fiducialIface = NULL;
-
   rosnode = ros::g_node; // comes from where?  common.h exports as global variable
   int argc = 0;
   char** argv = NULL;
@@ -82,18 +79,6 @@ Ros_Laser::~Ros_Laser()
 // Load the controller
 void Ros_Laser::LoadChild(XMLConfigNode *node)
 {
-  std::vector<Iface*>::iterator iter;
-
-  for (iter = this->ifaces.begin(); iter != this->ifaces.end(); iter++)
-  {
-    if ((*iter)->GetType() == "laser")
-      this->laserIface = dynamic_cast<LaserIface*>(*iter);
-    else if ((*iter)->GetType() == "fiducial")
-      this->fiducialIface = dynamic_cast<FiducialIface*>(*iter);
-  }
-
-  if (!this->laserIface) gzthrow("Ros_Laser controller requires a LaserIface");
-
   this->topicName = node->GetString("topicName","default_ros_laser",0); //read from xml file
   std::cout << "================= " << this->topicName <<  std::endl;
   rosnode->advertise<std_msgs::LaserScan>(this->topicName,10);
@@ -111,39 +96,6 @@ void Ros_Laser::InitChild()
 // Update the controller
 void Ros_Laser::UpdateChild()
 {
-#if 0
-  bool laserOpened = false;
-  bool fidOpened = false;
-
-  if (this->laserIface->Lock(1))
-  {
-    laserOpened = this->laserIface->GetOpenCount() > 0;
-    this->laserIface->Unlock();
-  }
-
-  if (this->fiducialIface && this->fiducialIface->Lock(1))
-  {
-    fidOpened = this->fiducialIface->GetOpenCount() > 0;
-    this->fiducialIface->Unlock();
-  }
-
-  if (laserOpened)
-  {
-    this->myParent->SetActive(true);
-    this->PutLaserData();
-  }
-
-  if (fidOpened)
-  {
-    this->myParent->SetActive(true);
-    this->PutFiducialData();
-  }
-
-  if (!laserOpened && !fidOpened)
-  {
-    this->myParent->SetActive(false);
-  }
-#endif
     this->PutLaserData();
 }
 
@@ -170,198 +122,69 @@ void Ros_Laser::PutLaserData()
   int rayCount = this->myParent->GetRayCount();
   int rangeCount = this->myParent->GetRangeCount();
 
-  if (this->laserIface->Lock(1))
+  /***************************************************************/
+  /*                                                             */
+  /*  point scan from laser                                      */
+  /*                                                             */
+  /***************************************************************/
+  this->lock.lock();
+  // Add Frame Name
+  this->laserMsg.header.frame_id = this->frameName;
+  this->laserMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+  this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->laserMsg.header.stamp.sec) );
+
+
+  double tmp_res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian())/((double)(rangeCount -1)); // for computing yaw
+  int    num_channels = 1;
+  this->laserMsg.angle_min = minAngle.GetAsRadian();
+  this->laserMsg.angle_max = maxAngle.GetAsRadian();
+  this->laserMsg.angle_increment = tmp_res_angle;
+  this->laserMsg.time_increment  = 0; // instantaneous simulator scan
+  this->laserMsg.scan_time       = 0; // FIXME: what's this?
+  this->laserMsg.range_min = minRange;
+  this->laserMsg.range_max = maxRange;
+  this->laserMsg.set_ranges_size(rangeCount);
+  this->laserMsg.set_intensities_size(rangeCount);
+
+  // Interpolate the range readings from the rays
+  for (i = 0; i<rangeCount; i++)
   {
-    // Add Frame Name
+    b = (double) i * (rayCount - 1) / (rangeCount - 1);
+    ja = (int) floor(b);
+    jb = std::min(ja + 1, rayCount - 1);
+    b = b - floor(b);
 
+    assert(ja >= 0 && ja < rayCount);
+    assert(jb >= 0 && jb < rayCount);
 
-    // Data timestamp
-    this->laserIface->data->head.time = Simulator::Instance()->GetSimTime();
+    ra = std::min(this->myParent->GetRange(ja) , maxRange);
+    rb = std::min(this->myParent->GetRange(jb) , maxRange);
 
-    // Read out the laser range data
-    this->laserIface->data->min_angle = minAngle.GetAsRadian();
-    this->laserIface->data->max_angle = maxAngle.GetAsRadian();
-    this->laserIface->data->res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian()) / (rangeCount - 1);
-    this->laserIface->data->res_range = 0.1;
-    this->laserIface->data->max_range = maxRange;
-    this->laserIface->data->range_count = rangeCount;
+    // Range is linear interpolation if values are close,
+    // and min if they are very different
+    //if (fabs(ra - rb) < 0.10)
+      r = (1 - b) * ra + b * rb;
+    //else r = std::min(ra, rb);
 
-    assert(this->laserIface->data->range_count < GZ_LASER_MAX_RANGES );
+    // Intensity is either-or
+    v = (int) this->myParent->GetRetro(ja) || (int) this->myParent->GetRetro(jb);
 
     /***************************************************************/
     /*                                                             */
     /*  point scan from laser                                      */
     /*                                                             */
     /***************************************************************/
-    this->lock.lock();
-    this->laserMsg.header.frame_id = this->frameName;
-    this->laserMsg.header.stamp.sec = (unsigned long)floor(this->laserIface->data->head.time);
-    this->laserMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->laserIface->data->head.time - this->laserMsg.header.stamp.sec) );
-
-
-    double tmp_res_angle = (maxAngle.GetAsRadian() - minAngle.GetAsRadian())/((double)(rangeCount -1)); // for computing yaw
-    int    num_channels = 1;
-    this->laserMsg.angle_min = minAngle.GetAsRadian();
-    this->laserMsg.angle_max = maxAngle.GetAsRadian();
-    this->laserMsg.angle_increment = tmp_res_angle;
-    this->laserMsg.time_increment  = 0; // instantaneous simulator scan
-    this->laserMsg.scan_time       = 0; // FIXME: what's this?
-    this->laserMsg.range_min = minRange;
-    this->laserMsg.range_max = maxRange;
-    this->laserMsg.set_ranges_size(rangeCount);
-    this->laserMsg.set_intensities_size(rangeCount);
-
-    // Interpolate the range readings from the rays
-    for (i = 0; i<rangeCount; i++)
-    {
-      b = (double) i * (rayCount - 1) / (rangeCount - 1);
-      ja = (int) floor(b);
-      jb = std::min(ja + 1, rayCount - 1);
-      b = b - floor(b);
-
-      assert(ja >= 0 && ja < rayCount);
-      assert(jb >= 0 && jb < rayCount);
-
-      ra = std::min(this->myParent->GetRange(ja) , maxRange);
-      rb = std::min(this->myParent->GetRange(jb) , maxRange);
-
-      // Range is linear interpolation if values are close,
-      // and min if they are very different
-      //if (fabs(ra - rb) < 0.10)
-        r = (1 - b) * ra + b * rb;
-      //else r = std::min(ra, rb);
-
-      // Intensity is either-or
-      v = (int) this->myParent->GetRetro(ja) || (int) this->myParent->GetRetro(jb);
-
-      this->laserIface->data->ranges[i] =  r + minRange;
-      this->laserIface->data->intensity[i] = v;
-
-      /***************************************************************/
-      /*                                                             */
-      /*  point scan from laser                                      */
-      /*                                                             */
-      /***************************************************************/
-      if (r == maxRange)
-        this->laserMsg.ranges[i]        = r + minRange; // no noise if at max range
-      else
-        this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
-      this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,this->gaussianNoise) ;
-    }
-
-    // iface writing can be skipped if iface is not used.
-    // send data out via ros message
-    rosnode->publish(this->topicName,this->laserMsg);
-    this->lock.unlock();
-
-    this->laserIface->Unlock();
-
-    // New data is available
-    this->laserIface->Post();
+    if (r == maxRange)
+      this->laserMsg.ranges[i]        = r + minRange; // no noise if at max range
+    else
+      this->laserMsg.ranges[i]        = r + minRange + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->laserMsg.intensities[i]   = v + this->GaussianKernel(0,this->gaussianNoise) ;
   }
 
+  // send data out via ros message
+  rosnode->publish(this->topicName,this->laserMsg);
+  this->lock.unlock();
 
-}
-
-//////////////////////////////////////////////////////////////////////////////
-// Update the data in the interface
-void Ros_Laser::PutFiducialData()
-{
-  int i, j, count;
-  FiducialFid *fid;
-  double r, b;
-  double ax, ay, bx, by, cx, cy;
-
-  Angle maxAngle = this->myParent->GetMaxAngle();
-  Angle minAngle = this->myParent->GetMinAngle();
-
-  double maxRange = this->myParent->GetMaxRange();
-  double minRange = this->myParent->GetMinRange();
-  int rayCount = this->myParent->GetRayCount();
-  int rangeCount = this->myParent->GetRangeCount();
-
-  if (this->fiducialIface->Lock(1))
-  {
-    // Data timestamp
-    this->fiducialIface->data->head.time = Simulator::Instance()->GetSimTime();
-    this->fiducialIface->data->count = 0;
-
-    // TODO: clean this up
-    count = 0;
-    for (i = 0; i < rayCount; i++)
-    {
-      if (this->myParent->GetFiducial(i) < 0)
-        continue;
-
-      // Find the end of the fiducial
-      for (j = i + 1; j < rayCount; j++)
-      {
-        if (this->myParent->GetFiducial(j) != this->myParent->GetFiducial(i))
-          break;
-      }
-      j--;
-
-      // Need at least three points to get orientation
-      if (j - i + 1 >= 3)
-      {
-        r = minRange + this->myParent->GetRange(i);
-        b = minAngle.GetAsRadian() + i * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
-        ax = r * cos(b);
-        ay = r * sin(b);
-
-        r = minRange + this->myParent->GetRange(j);
-        b = minAngle.GetAsRadian() + j * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
-        bx = r * cos(b);
-        by = r * sin(b);
-
-        cx = (ax + bx) / 2;
-        cy = (ay + by) / 2;
-
-        assert(count < GZ_FIDUCIAL_MAX_FIDS);
-        fid = this->fiducialIface->data->fids + count++;
-
-        fid->id = this->myParent->GetFiducial(j);
-        fid->pose.pos.x = cx;
-        fid->pose.pos.y = cy;
-        fid->pose.yaw = atan2(by - ay, bx - ax) + M_PI / 2;
-      }
-
-      // Fewer points get no orientation
-      else
-      {
-        r = minRange + this->myParent->GetRange(i);
-        b = minAngle.GetAsRadian() + i * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
-        ax = r * cos(b);
-        ay = r * sin(b);
-
-        r = minRange + this->myParent->GetRange(j);
-        b = minAngle.GetAsRadian() + j * ((maxAngle.GetAsRadian()-minAngle.GetAsRadian()) / (rayCount - 1));
-        bx = r * cos(b);
-        by = r * sin(b);
-
-        cx = (ax + bx) / 2;
-        cy = (ay + by) / 2;
-
-        assert(count < GZ_FIDUCIAL_MAX_FIDS);
-        fid = this->fiducialIface->data->fids + count++;
-
-        fid->id = this->myParent->GetFiducial(j);
-        fid->pose.pos.x = cx;
-        fid->pose.pos.y = cy;
-        fid->pose.yaw = atan2(cy, cx) + M_PI;
-      }
-
-      /*printf("fiducial %d i[%d] j[%d] %.2f %.2f %.2f\n",
-        fid->id, i,j,fid->pos[0], fid->pos[1], fid->rot[2]);
-        */
-      i = j;
-    }
-
-    this->fiducialIface->data->count = count;
-
-    this->fiducialIface->Unlock();
-    this->fiducialIface->Post();
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////////

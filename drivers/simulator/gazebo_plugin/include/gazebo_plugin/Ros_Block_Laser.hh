@@ -36,8 +36,6 @@
 
 namespace gazebo
 {
-  class LaserIface;
-  class FiducialIface;
   class RaySensor;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
@@ -46,7 +44,7 @@ namespace gazebo
 
   \brief ROS Block Laser Scanner Controller Plugin
   
-  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds and Iface.
+  This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds.
 
   \verbatim
     <model:physical name="ray_model">
@@ -90,6 +88,7 @@ namespace gazebo
 /// \brief ROS laser block simulation.
 ///        \li Starts a ROS node if none exists.
 ///        \li This controller simulates a block of laser range detections.
+///            Resulting point cloud (std_msgs::PointCloudFloat32.msg are published as a ROS topic.
 class Ros_Block_Laser : public Controller
 {
   /// \brief Constructor
@@ -112,16 +111,8 @@ class Ros_Block_Laser : public Controller
   /// \brief Finalize the controller
   protected: virtual void FiniChild();
 
-  /// \brief Put laser data to the iface
+  /// \brief Put laser data to the ROS topic
   private: void PutLaserData();
-
-  /// \brief Put fiducial data to the iface
-  private: void PutFiducialData();
-
-  /// \brief The laser interface
-  private: LaserIface *laserIface;
-
-  private: FiducialIface *fiducialIface;
 
   /// \brief The parent sensor
   private: RaySensor *myParent;

@@ -5,7 +5,7 @@
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" />
     <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" />
-    <node pkg="nav_view" type="nav_view" respawn="true" />
+    <node pkg="nav_view" type="nav_view" respawn="false" />
     <!--node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" /-->
   </group>
 </launch>

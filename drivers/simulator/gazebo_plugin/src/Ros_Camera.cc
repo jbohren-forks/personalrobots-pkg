@@ -25,7 +25,7 @@
    Date: 24 Sept 2008
    SVN info: $Id$
  @htmlinclude manifest.html
- @b Ros_Camera plugin broadcasts ROS Image messages as well as fills in Iface.
+ @b Ros_Camera plugin broadcasts ROS Image messages
  */
 
 #include <algorithm>
@@ -85,11 +85,6 @@ Ros_Camera::~Ros_Camera()
 // Load the controller
 void Ros_Camera::LoadChild(XMLConfigNode *node)
 {
-  this->cameraIface = dynamic_cast<CameraIface*>(this->ifaces[0]);
-
-  if (!this->cameraIface)
-    gzthrow("Ros_Camera controller requires a CameraIface");
-
   this->topicName = node->GetString("topicName","default_ros_camera",0); //read from xml file
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
@@ -125,51 +120,19 @@ void Ros_Camera::FiniChild()
 // Put laser data to the interface
 void Ros_Camera::PutCameraData()
 {
-  CameraData *data = this->cameraIface->data;
   const unsigned char *src;
-  unsigned char *dst;
-  Pose3d cameraPose;
 
-  this->cameraIface->Lock(1);
-
-  // Data timestamp
-  data->head.time = Simulator::Instance()->GetSimTime();
-
-  data->width = this->myParent->GetImageWidth();
-  data->height = this->myParent->GetImageHeight();
-  data->image_size = data->width * data->height * 3;
-
-  // GetFOV() returns radians
-  data->hfov = *(this->myParent->GetHFOV());
-  data->vfov = *(this->myParent->GetVFOV());
-
-  // Set the pose of the camera
-  cameraPose = this->myParent->GetWorldPose();
-  data->camera_pose.pos.x = cameraPose.pos.x;
-  data->camera_pose.pos.y = cameraPose.pos.y;
-  data->camera_pose.pos.z = cameraPose.pos.z;
-  data->camera_pose.roll = cameraPose.rot.GetRoll();
-  data->camera_pose.pitch = cameraPose.rot.GetPitch();
-  data->camera_pose.yaw = cameraPose.rot.GetYaw();
-
-  // Make sure there is room to store the image
-  assert (data->image_size <= sizeof(data->image));
-
-  // Copy the pixel data to the interface
+  // Get a pointer to image data
   src = this->myParent->GetImageData(0);
-  dst = data->image;
 
   //std::cout << " updating camera " << this->topicName << " " << data->image_size << std::endl;
-  // TODO: can skip copy to Iface if Iface is not used
   if (src)
   {
-    //memcpy(dst, src, data->image_size); // FIXME remove all Iface components
-
     this->lock.lock();
     // copy data into image
     this->imageMsg.header.frame_id = this->frameName;
-    this->imageMsg.header.stamp.sec = (unsigned long)floor(this->cameraIface->data->head.time);
-    this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  this->cameraIface->data->head.time - this->imageMsg.header.stamp.sec) );
+    this->imageMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
+    this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg.header.stamp.sec) );
 
     int    width            = this->myParent->GetImageWidth();
     int    height           = this->myParent->GetImageHeight();
@@ -180,21 +143,16 @@ void Ros_Camera::PutCameraData()
     this->imageMsg.compression = "raw";
     this->imageMsg.colorspace  = "rgb24";
 
-    // on first pass, the sensor does not update after cameraIface is opened.
+    // set buffer size
     uint32_t       buf_size = (width) * (height) * (depth);
 
     this->imageMsg.set_data_size(buf_size);
-    memcpy(&(this->imageMsg.data[0]), src, data->image_size);
+    memcpy(&(this->imageMsg.data[0]), src, buf_size);
 
     // publish to ros
     rosnode->publish(this->topicName,this->imageMsg);
     this->lock.unlock();
   }
-
-  this->cameraIface->Unlock();
-
-  // New data is available
-  this->cameraIface->Post();
 
 }
 
