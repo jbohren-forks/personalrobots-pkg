@@ -4,7 +4,7 @@
 #include <string>
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
-#include "Cv3DPoseEstimateDisp.h"
+#include "PoseEstimateDisp.h"
 #include <star_detector/include/keypoint.h>
 #include <cmath>
 #include <cvwimage.h>

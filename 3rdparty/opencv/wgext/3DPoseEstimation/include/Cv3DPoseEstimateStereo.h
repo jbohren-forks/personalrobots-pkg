@@ -11,7 +11,7 @@
 #include <vector>
 using namespace std;
 
-#include "Cv3DPoseEstimateDisp.h"
+#include "PoseEstimateDisp.h"
 #include <opencv/cvwimage.h>
 using namespace cv;
 

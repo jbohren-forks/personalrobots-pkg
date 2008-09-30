@@ -3,7 +3,7 @@
 
 #include "opencv/cxcore.h"
 #include "CvStereoCamModel.h"
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 using namespace cv::willow;
 /**
  * Reference implementation using OpenCV.

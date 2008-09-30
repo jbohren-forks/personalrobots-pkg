@@ -1,7 +1,7 @@
 #include <iostream.h>
 #include <opencv/cxtypes.h>
 #include <opencv/cv.h>
-#include "Cv3DPoseEstimateDispSpaceRef.h"
+#include "Cv3DPoseEstimateDispSpaceRef_Deprecated.h"
 #include "CvStereoCamModel.h"
 #include "LevMarqTransformDispSpace.h"
 #include "CvMat3X3.h"

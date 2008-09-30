@@ -16,7 +16,7 @@ using namespace std;
 using namespace cv::willow;
 
 #include "CvMatUtils.h"
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 
 // timing
 #include "CvTestTimer.h"

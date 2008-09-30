@@ -4,7 +4,7 @@ using namespace std;
 
 #include <opencv/cv.h>
 
-#include "Cv3DPoseEstimateDisp.h"
+#include "PoseEstimateDisp.h"
 
 #include "CvMat3X3.h"
 #include "LevMarqTransformDispSpace.h"

@@ -11,7 +11,7 @@ using namespace std;
 #include <opencv/cxcore.h>
 
 #include "CvPoseEstErrMeasDisp.h"
-#include "Cv3DPoseEstimateDisp.h"
+#include "PoseEstimateDisp.h"
 #include "CvMatUtils.h"
 using namespace cv::willow;
 

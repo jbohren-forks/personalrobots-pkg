@@ -2,7 +2,7 @@
 #define CV3DPOSEESTIMATEDISP_H_
 
 #include "CvStereoCamModel.h"
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 
 #include <cxtypes.h>
 #include <vector>

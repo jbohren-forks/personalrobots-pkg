@@ -1,7 +1,7 @@
 #ifndef WG3DPOSEESTIMATETIGHT_H_
 #define WG3DPOSEESTIMATETIGHT_H_
 
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 
 namespace cv { namespace willow {
 /**

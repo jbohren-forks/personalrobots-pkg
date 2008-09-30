@@ -1,7 +1,7 @@
 #ifndef CV3DPOSEESTIMATESSE_H_
 #define CV3DPOSEESTIMATESSE_H_
 
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 
 namespace cv { namespace willow {
 /**

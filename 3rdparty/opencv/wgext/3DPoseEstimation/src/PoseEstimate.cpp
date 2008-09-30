@@ -4,7 +4,7 @@
 
 #include "CvMat3X3.h"
 #include "LevMarqTransformDispSpace.h"
-#include "Cv3DPoseEstimateRef.h"
+#include "PoseEstimate.h"
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
 

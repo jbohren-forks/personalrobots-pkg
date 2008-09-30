@@ -1,7 +1,7 @@
 #include <opencv/cv.h>
 
 #include "CvMat3X3.h"
-#include "Cv3DPoseEstimate.h"
+#include "Cv3DPoseEstimate_Deprecated.h"
 #include "LevMarqTransform.h"
 using namespace cv::willow;
 
