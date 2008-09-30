@@ -143,14 +143,15 @@ MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, con
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(nodeName, stateTopic, goalTopic),
     armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0){
 
-  // Subscribe to arm configuration messages
-  subscribe(armPosTopic, mechanismState, &MoveArm::handleArmConfigurationCallback, QUEUE_MAX());
 
   // Advertise for messages to command the arm
   advertise<pr2_mechanism_controllers::JointPosCmd>(armCmdTopic, QUEUE_MAX());
 
   // Advertise the display.
   advertise<robot_msgs::DisplayKinematicPath>("display_kinematic_path", 1);
+
+  // Subscribe to arm configuration messages
+  subscribe(armPosTopic, mechanismState, &MoveArm::handleArmConfigurationCallback, QUEUE_MAX());
 }
 
 MoveArm::~MoveArm(){}
