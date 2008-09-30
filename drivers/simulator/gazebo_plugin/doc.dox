@@ -1,4 +1,4 @@
-/** 
+/**
 @mainpage
 @htmlinclude manifest.html
 
@@ -10,4 +10,311 @@ Here are the gazebo plugins which are currently implemented:
  \li \ref gazebo::Ros_Block_Laser "ROS Block Laser Scanner Plugin"
  \li \ref gazebo::Ros_PTZ "ROS PTZ Camera Plugin"
  \li \ref gazebo::P3D "ROS Ground Truth Broadcaster"
+
+@section usage Quick Start Guide
+\li If you have successfully \e rosmake \e 2dnav-gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
+  @verbatim
+  $ rosmake gazebo
+  $ rosmake gazebo_plugin
+  $ rosmake gazebo_robot_description
+  @endverbatim
+
+\li Here is a simple launch script that starts Gazebo:
+  @verbatim
+  <launch>
+    <master auto="start">
+    <group name="wg">
+      <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot.world" respawn="false" output="screen">
+        <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
+        <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+        <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+        <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      </node>
+    </group>
+  </launch>
+  @endverbatim
+  see <a href="http://pr.willowgarage.com/wiki/roslaunch">roslaunch</a> for more details.
+
+ - To start a mechanism::MechanismControlNode and spawn some controllers, you have to first send \b pr2.xml to the parameter server, then invoke \b mech.py with the controllers xml configuration file as the argument to spawn controllers:
+  @verbatim
+      <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
+      <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
+  @endverbatim
+
+ - The following \b control.py node sends a \e set_profile command of 46 to the \b tilt_laser_controller:
+  @verbatim
+      <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
+  @endverbatim
+
+\li Alternatively, one can start gazebo manually (e.g. in bash):
+  @verbatim
+  $ export GAZ_TOP=`rospack find gazebo`/gazebo
+  $ export OGRE_TOP=`rospack find ogre`/ogre
+  $ export CG_TOP=`rospack find Cg`/Cg
+  $ export SIM_PLUGIN=`rospack find gazebo_plugin`
+  $ export PR2MEDIA=`rospack find gazebo_robot_description`/world
+  $ export LD_LIBRARY_PATH=$SIM_PLUGIN/lib:$GAZ_TOP/lib:$CG_TOP/lib:$LD_LIBRARY_PATH
+  $ export PATH=$GAZ_TOP/bin:$PATH
+  $ export GAZEBO_RESOURCE_PATH=$PR2MEDIA
+  $ export OGRE_RESOURCE_PATH=$OGRE_TOP/lib/OGRE
+  $ export MC_RESOURCE_PATH=$PR2MEDIA
+  $ gazebo `rospack find gazebo_robot_description`/world/robot.world
+  @endverbatim
+
+@section parameters Robot Descriptions
+Robot descriptions are explained in the <a href="http://pr.willowgarage.com/wiki/RobotDescriptionFormat">Robot Description Format</a> page.
+You can find the PR2 XML files in \b ros-pkg/robot_descriptions/wg_robot_description/pr2
+
+To convert \b pr2.xml into Gazebo recognizable format (\b ros-pkg/robot_descriptions/gazebo_robot_description) run the following commands:
+@verbatim
+$ roscd gazebo_robot_description
+$ rosmake
+@endverbatim
+Above generates \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2_xml.model, which is included by the world file: \b ros-pkg/robot_descriptions/gazebo_robot_description/world/robot.world.
+
+
+@section topic ROS topics
+Various dynamically loaded plugins have been outfitted for PR2.
+Below are the ROS messages actively used by PR2 simulation as described by launch script \b roslaunch \b ros-pkg/robot_descriptions/gazebo_robot_description/pr2_gazebo_actuators.xml.
+
+ - ROS topics published by the simulator
+  - images:
+   - <table border="1">
+     <tr><th>  Topic Name        </th> <th> Message Type          </th>  <th> Plugin Name     </th>        </tr>
+     <tr><th>wrist_left/image    </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>wrist_right/image   </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>forearm_left/image  </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>forearm_right/image </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>axis_right/image    </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>axis_left/image     </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     <tr><th>stereo_left/image   </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
+     </table border>
+  - scans:
+   - \b base_scan
+   - \b tilt_scan
+  - point clouds:
+   - \b full_cloud
+  - battery:
+   - \b battery_state
+   - \b diagnostic
+  - ground truths:
+   - \b base_pose_ground_truth
+   - \b gripper_roll_right_pose_ground_truth
+   - \b gripper_roll_left_pose_ground_truth
+   - \b finger_tip_l_left_ground_truth
+   - \b finger_tip_r_left_ground_truth
+   - \b finger_tip_l_right_ground_truth
+   - \b finger_tip_R_right_ground_truth
+  - PTZ cameras:
+   - \b axis_right/ptz_state
+   - \b axis_left/ptz_state
+  - mechanism control:
+   - \b mechanism_state
+  - frame transforms:
+   - \b TransformArray
+  - misc:
+   - \b time
+   - \b state --
+
+ - ROS topics published by controllers
+  - base controller:
+   - \b odom
+ - ROS topics subscribed by controllers
+  - base controller:
+   - \e cmd_vel
+  - PTZ cameras:
+   - \e axis_right/ptz_cmd
+   - \e axis_left/ptz_cmd
+  - arm position controllers:
+   - \e left_arm_commands
+   - \e right_arm_commands
+  - joint position controllers:
+   - \e left_gripper_commands
+   - \e right_gripper_commands
+   - \e head_pan_commands
+   - \e head_tilt_commands
+ - ROS service published by the simulator
+  - battery:
+   - \b full_charge_energy
+ - ROS service subscribed by the simulator
+  - battery:
+   - \e timeout
+   - \e diagnostic_rate
+   - \e battery_state_rate
+ - ROS service publsihed by mechanism control
+  - mechanism control node:
+   - \b list_controllers
+   - \b list_controller_types
+   - \b spawn_controller
+   - \b kill_controller
+ - ROS service published by controllers
+  - base controller node:
+   - \b base_controller/set_command
+   - \b base_controller/get_actual
+  - joint position controller node:
+   - \b torso_controller/set_command
+   - \b torso_controller/get_actual
+   - \b gripper_left_controller/set_command
+   - \b gripper_left_controller/get_actual
+   - \b gripper_right_controller/set_command
+   - \b gripper_right_controller/get_actual
+   - \b head_pan_controller/set_command
+   - \b head_pan_controller/get_actual
+   - \b head_tilt_controller/set_command
+   - \b head_tilt_controller/get_actual
+  - laser scanner controller
+   - \b tilt_laser_controller/set_command
+   - \b tilt_laser_controller/get_actual
+   - \b tilt_laser_controller/set_profile
+  - arm position controller node:
+   - \b left_arm_controller/set_command
+   - \b left_arm_controller/set_command_array
+   - \b left_arm_controller/get_command
+   - \b left_arm_controller/set_target
+   - \b right_arm_controller/set_command
+   - \b right_arm_controller/set_command_array
+   - \b right_arm_controller/get_command
+   - \b right_arm_controller/set_target
+
+@section templates How To Construct Your Own ROS Gazebo Plugin
+Here is a sample code for making a very simple plugin in Gazebo:
+\li \b my_plugin.h:
+@verbatim
+#ifndef MY_PLUGIN_HH
+#define MY_PLUGIN_HH
+
+#include <gazebo/Controller.hh>
+#include <gazebo/Body.hh>
+#include <gazebo/World.hh>
+#include <ros/node.h>
+#include <rostools/Time.h>
+
+namespace gazebo
+{
+  class my_plugin : public Controller
+  {
+    /// \brief Constructor
+    /// \param parent The parent entity, must be a Model or a Sensor
+    public: my_plugin(Entity *parent);
+
+    /// \brief Destructor
+    public: virtual ~my_plugin();
+
+    /// \brief Load the controller
+    /// \param node XML config node
+    protected: virtual void LoadChild(XMLConfigNode *node);
+
+    /// \brief Init the controller
+    protected: virtual void InitChild();
+
+    /// \brief Update the controller
+    protected: virtual void UpdateChild();
+
+    /// \brief Finalize the controller
+    protected: virtual void FiniChild();
+
+    /// \brief A mutex to lock access to fields that are used in message callbacks
+    private: ros::thread::mutex lock_;
+    /// \brief pointer to ros node
+    ros::node *rosnode_;
+    rostools::Time my_message_;
+
+    /// \brief For loading XML parameters
+    private: ParamT<std::string> *my_topic_name_p_;
+
+    /// \brief ROS topic name
+    private:        std::string  *my_topic_name_;
+  };
+}
+#endif
+@endverbatim
+
+\li \b my_plugin.cpp:
+@verbatim
+#include <gazebo/Global.hh>
+#include <gazebo/XMLConfig.hh>
+#include <gazebo/Simulator.hh>
+#include <gazebo/gazebo.h>
+#include <gazebo/GazeboError.hh>
+#include <gazebo/ControllerFactory.hh>
+#include <gazebo_plugin/my_plugin.h>
+
+namespace gazebo {
+
+  GZ_REGISTER_DYNAMIC_CONTROLLER("my_plugin", MyPlugin);
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Constructor
+  MyPlugin::MyPlugin(Entity *parent)
+      : Controller(parent)
+  {
+
+    // start a ROS node if it has not been started already
+    rosnode_ = ros::g_node;
+    int argc = 0;
+    char** argv = NULL;
+    if (rosnode_ == NULL)
+    {
+      ros::init(argc,argv);
+      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+      printf("-------------------- starting node in MyPlugin \n");
+    }
+
+    // Setup parameter loading from XML
+    Param::Begin(&this->parameters);
+    this->my_topic_name_p_ = new ParamT<std::string>("my_topicname","default_topic_name",0);
+    Param::End();
+
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Destructor
+  MyPlugin::~MyPlugin()
+  {
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Load the controller
+  void MyPlugin::LoadChild(XMLConfigNode *node)
+  {
+    // Load parameters from XML node
+    this->my_topic_name_p_->Load(node);
+    this->my_topic_name_ = this->my_topic_name_p_->GetValue();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Initialize the controller
+  void MyPlugin::InitChild()
+  {
+    // Perform initializations
+    rosnode_->advertise<rostools::Time>(this->my_topic_name_,10);
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Update the controller
+  void MyPlugin::UpdateChild()
+  {
+    // get time from simulator
+    double current_time = Simulator::Instance()->GetSimTime();
+
+    // publish time to ROS message
+    this->lock_.lock();
+    my_message_.rostime.sec  = (unsigned long)floor(current_time);
+    my_message_.rostime.nsec = (unsigned long)floor(  1e9 * (  current_time - my_message_.rostime.sec) );
+    rosnode_->publish(this->my_topic_name_,my_message_);
+    this->lock_.unlock();
+  }
+
+  ////////////////////////////////////////////////////////////////////////////////
+  // Finalize the controller
+  void MyPlugin::FiniChild()
+  {
+    // unadvertise topic
+    rosnode_->unadvertise(this->my_topic_name_);
+  }
+}
+
+
+@endverbatim
+
 **/
