@@ -89,8 +89,8 @@ void PathRecon::_init() {
 	// seting up the pose estimator to use harris corner for finding feature
 	// points and keypoint ncc to find matching pairs
   mPoseEstimator.setInlierErrorThreshold(4.0);
-  mPoseEstimator.setKeyPointDector(Cv3DPoseEstimateStereo::HarrisCorner);
-  mPoseEstimator.setKeyPointMatcher(Cv3DPoseEstimateStereo::KeyPointCrossCorrelation);
+  mPoseEstimator.setKeyPointDector(PoseEstimateStereo::HarrisCorner);
+  mPoseEstimator.setKeyPointMatcher(PoseEstimateStereo::KeyPointCrossCorrelation);
   mMinNumInliers = 25;
   // end setting up for harris corner and keypoint ncc matcher
 
