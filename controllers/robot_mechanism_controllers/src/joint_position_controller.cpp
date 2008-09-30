@@ -37,6 +37,9 @@
 using namespace std;
 using namespace controller;
 
+
+
+
 ROS_REGISTER_CONTROLLER(JointPositionController)
 
 JointPositionController::JointPositionController()
@@ -140,8 +143,12 @@ void JointPositionController::update()
 
   assert(joint_state_->joint_);
 
-  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY ||
-     joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
+  if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
+  {
+    if(!math_utils::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error))
+       error = 0;
+  }
+  else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
   {
     error = math_utils::shortest_angular_distance(command_, joint_state_->position_);
   }
