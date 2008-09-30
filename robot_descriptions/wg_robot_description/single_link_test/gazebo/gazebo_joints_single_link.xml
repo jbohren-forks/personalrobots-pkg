@@ -1,8 +1,5 @@
 <robot name="pr2">
-      <!-- ========================================= -->
-      <!-- left arm array -->
-      <joint name="upperarm_roll_left_joint" >
-          <explicitDampingCoefficient>1</explicitDampingCoefficient>
-      </joint>
-
+  <joint name="single_link_joint" >
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+  </joint>
 </robot>

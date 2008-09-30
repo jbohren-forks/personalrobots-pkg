@@ -1,8 +1,7 @@
 <?xml version="1.0"?>
-
 <controllers>
-  <controller name="test_controller" topic="upperarm_roll_left_controller" type="JointPositionControllerNode">
-    <joint name="upperarm_roll_left_joint" >
+  <controller name="test_controller" topic="single_link_controller" type="JointPositionControllerNode">
+    <joint name="single_link_joint" >
       <pid p="2000" d="200" i="0.1" iClamp="1" />
     </joint>
   </controller>
