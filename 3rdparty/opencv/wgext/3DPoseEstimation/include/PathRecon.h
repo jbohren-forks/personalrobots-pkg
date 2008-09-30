@@ -223,7 +223,7 @@ public:
   static const double defMaxShift = 300.;
   static const int defMinNumTrackablePairs = 10;
 
-  Cv3DPoseEstimateStereo mPoseEstimator;
+  PoseEstimateStereo mPoseEstimator;
   /// global transformation matrix up to the last key frame
   CvMat mTransform;
   vector<FramePose> mFramePoses;

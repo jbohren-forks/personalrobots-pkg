@@ -8,7 +8,8 @@
 CvTestTimer CvTestTimer::_singleton;
 
 CvTestTimer::CvTestTimer():
-	mFrequency(cvGetTickFrequency())
+	mFrequency(cvGetTickFrequency()*1000)  // make it milli seconds. cvGetTickFrequency()
+	// returns the number of ticks in one micro second.
 {
 	reset();
 }
@@ -23,7 +24,7 @@ CvTestTimer::~CvTestTimer()
 #define PRINTSTAT2(title, name) do {printStat((title), m##name.mTime, m##name.mCount);} while(0)
 
 void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
-	fprintf(stdout, "total time spend in %s: %10.2f, %6.2f%%, %10.2f\n",
+	fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f\n",
 	    title,
 	    (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,
 	    (mTotal>0&&mNumIters>0)?    ((double)val/(double)mTotal*100.0)      :0.0,
@@ -31,14 +32,14 @@ void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
 }
 
 void CvTestTimer::printStat() {
-  cout << "Statistics of all counters (time in milli seconds)"<<endl;
-  cout <<    "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
+  cout << "Statistics of all counters (time in milliseconds, i.e .001 seconds)"<<endl;
 
 	cout << "num of iters: "<< mNumIters<<endl;
 	if (mNumIters==0) {
 	  cerr << "Please set mNumIters, the number of iterations"<<endl;
 	  return;
 	}
+  cout <<    "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
 	PRINTSTAT ("Total               ", Total);
 	PRINTSTAT2("SVD                 ", SVD);
 	PRINTSTAT ("CheckInliers        ", CheckInliers);

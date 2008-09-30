@@ -28,7 +28,7 @@ namespace cv { namespace willow {
 /**
  * Pose estimation based on two frames of stereo image pairs.
  */
-class Cv3DPoseEstimateStereo: public PoseEstimateDisp {
+class PoseEstimateStereo: public PoseEstimateDisp {
 public:
 	typedef PoseEstimateDisp Parent;
 	static const int DefWidth        = 640;
@@ -68,8 +68,8 @@ public:
 	// misc constants
 	static const double DefDisparityUnitInPixels = 16.;
 
-	Cv3DPoseEstimateStereo(int width=DefWidth, int height=DefHeight);
-	virtual ~Cv3DPoseEstimateStereo();
+	PoseEstimateStereo(int width=DefWidth, int height=DefHeight);
+	virtual ~PoseEstimateStereo();
 
 	typedef enum  {
 		Star,			// use star detector

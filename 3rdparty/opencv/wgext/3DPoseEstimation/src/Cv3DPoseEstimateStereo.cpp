@@ -27,13 +27,13 @@ using namespace std;
 
 // change from 61 to 101 to accommodate the sudden change around frame 0915 in
 // the indoor sequence "indoor1"
-const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
+const CvPoint PoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
 // increasing the neighborhood size does not help very much. In fact, I have been
 // degradation of performance.
 //const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(256, 48);
-const CvPoint Cv3DPoseEstimateStereo::DefTemplateSize     = cvPoint(16, 16);
+const CvPoint PoseEstimateStereo::DefTemplateSize     = cvPoint(16, 16);
 
-Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
+PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 	mNumKeyPointsWithNoDisparity(0),
 	mSize(cvSize(width, height)),
 	mFTZero(DefFTZero),
@@ -77,7 +77,7 @@ Cv3DPoseEstimateStereo::Cv3DPoseEstimateStereo(int width, int height):
 	}
 }
 
-Cv3DPoseEstimateStereo::~Cv3DPoseEstimateStereo() {
+PoseEstimateStereo::~PoseEstimateStereo() {
 	delete [] mBufStereoPairs;
 	delete [] mFeatureImgBufLeft;
 	delete mCalonderMatcher;
@@ -85,7 +85,7 @@ Cv3DPoseEstimateStereo::~Cv3DPoseEstimateStereo() {
 	if (mTempImage) cvReleaseMat(&mTempImage);
 }
 
-bool Cv3DPoseEstimateStereo::getDisparityMap(
+bool PoseEstimateStereo::getDisparityMap(
 		WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap) {
 	bool status = true;
 
@@ -116,13 +116,13 @@ bool Cv3DPoseEstimateStereo::getDisparityMap(
 }
 
 #if 0
-bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<CvPoint3D64f>& keypoints,
+bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<CvPoint3D64f>& keypoints,
     ){
 
 }
 #endif
 
-bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints){
+bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints){
   bool status = true;
 	KeyPointDetector keyPointDetector = getKeyPointDetector();
 	switch(keyPointDetector) {
@@ -223,7 +223,7 @@ bool Cv3DPoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* ma
 	return status;
 }
 
-bool Cv3DPoseEstimateStereo::makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect) {
+bool PoseEstimateStereo::makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect) {
 	rect = cvRect(
 			(int)(.5 + featurePt.x - rectSize.x/2),
 			(int)(.5 + featurePt.y - rectSize.y/2),
@@ -251,7 +251,7 @@ bool Cv3DPoseEstimateStereo::makePatchRect(const CvPoint& rectSize, const CvPoin
 }
 
 bool
-Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
+PoseEstimateStereo::getTrackablePairsByCalonder(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
@@ -324,7 +324,7 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCalonder(
 
 
 bool
-Cv3DPoseEstimateStereo::getTrackablePairsByCrossCorr(
+PoseEstimateStereo::getTrackablePairsByCrossCorr(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
@@ -437,7 +437,7 @@ Cv3DPoseEstimateStereo::getTrackablePairsByCrossCorr(
 }
 
 bool
-Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
+PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		WImage1_b& image0, WImage1_b& image1,
 		WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 		vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
@@ -575,7 +575,7 @@ Cv3DPoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 	return status;
 }
 
-bool Cv3DPoseEstimateStereo::getTrackablePairs(
+bool PoseEstimateStereo::getTrackablePairs(
 			WImage1_b& image0, WImage1_b& image1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoints1,
@@ -603,7 +603,7 @@ bool Cv3DPoseEstimateStereo::getTrackablePairs(
 	return status;
 }
 
-double Cv3DPoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res,
+double PoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res,
 		CvPoint& loc){
 	cvMatchTemplate(&neighborhood, &templ, &res, CV_TM_CCORR_NORMED );
 	double		minval, maxval;
@@ -611,7 +611,7 @@ double Cv3DPoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const Cv
 	return maxval;
 }
 
-Cv3DPoseEstimateStereo::CalonderMatcher::CalonderMatcher(string& modelfilename){
+PoseEstimateStereo::CalonderMatcher::CalonderMatcher(string& modelfilename){
 	  mClassifier.read(modelfilename.c_str());
 	  mClassifier.setThreshold(SIG_THRESHOLD);
 }

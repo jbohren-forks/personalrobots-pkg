@@ -1,4 +1,5 @@
 #include <opencv/cxtypes.h>
+#include <opencv/cxcore.h>
 #include <string>
 using namespace std;
 #ifndef CVTESTTIMER_H_
