@@ -182,7 +182,7 @@ int Cv3DPoseEstimateDispSpaceRef_Deprecated::estimate(CvMat *xyzs0, CvMat *xyzs1
 	int   *inlierIndices = new int[maxNumInLiers];
 	// construct homography matrix
 	constructDisparityHomography(rot, shift, &H);
-	int numInliers0 = getInLiers(uvds0, uvds1, &H, uvds0Inlier, uvds1Inlier, inlierIndices);
+	int numInliers0 = getInLiers(uvds0, uvds1, &H, maxNumInLiers, uvds0Inlier, uvds1Inlier, inlierIndices);
 
 	// make a copy of the best Transformation before nonlinear optimization
 	cvCopy(&H, &mRTBestWithoutLevMarq);

@@ -8,6 +8,7 @@
 #include <vector>
 using namespace std;
 
+namespace cv {namespace willow {
 /**
  *  Pose estimation between 2 corresponding point clouds in
  *  disparity coordinates.
@@ -18,10 +19,10 @@ using namespace std;
  *   - ui, vi, di
  *   - ...
  */
-class Cv3DPoseEstimateDisp : public Cv3DPoseEstimateRef, public CvStereoCamModel
+class Cv3DPoseEstimateDisp : public PoseEstimate, public CvStereoCamModel
 {
 public:
-  typedef Cv3DPoseEstimateRef PoseParent;
+  typedef PoseEstimate PoseParent;
   typedef CvStereoCamModel Parent;
 	Cv3DPoseEstimateDisp();
 	virtual ~Cv3DPoseEstimateDisp();
@@ -152,7 +153,8 @@ protected:
 	/// @return number of inliers
 	virtual int getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
 	    CvMat* points0Inlier, CvMat* points1Inlier,
-	    int *inlierIndices);
+	    int inlierIndices[]);
 };
-
+} // namespace willow
+} // namespace cv
 #endif /*CV3DPOSEESTIMATEDISP_H_*/

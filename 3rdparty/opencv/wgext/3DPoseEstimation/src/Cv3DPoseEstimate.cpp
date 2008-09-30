@@ -3,6 +3,7 @@
 #include "CvMat3X3.h"
 #include "Cv3DPoseEstimate.h"
 #include "LevMarqTransform.h"
+using namespace cv::willow;
 
 #include <iostream>
 #include "CvTestTimer.h"
@@ -24,15 +25,15 @@ using namespace std;
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
-Cv3DPoseEstimate::Cv3DPoseEstimate()
+Cv3DPoseEstimate_Deprecated::Cv3DPoseEstimate_Deprecated()
 {
 }
 
-Cv3DPoseEstimate::~Cv3DPoseEstimate()
+Cv3DPoseEstimate_Deprecated::~Cv3DPoseEstimate_Deprecated()
 {
 }
 
-int Cv3DPoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
+int Cv3DPoseEstimate_Deprecated::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -90,9 +91,9 @@ int Cv3DPoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transf
 	return numInLiers;
 }
 
-// almost the same as the function above
-int Cv3DPoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
+// almost the same as the function above, but stores the inliers for returning.
+int Cv3DPoseEstimate_Deprecated::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
+    CvMat* points0Inlier, CvMat* points1Inlier, int inlierIndices[]) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -154,7 +155,7 @@ int Cv3DPoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transfor
 	return numInLiers;
 }
 
-int Cv3DPoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
+int Cv3DPoseEstimate_Deprecated::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
 	int numInLiers = 0;
 
 	int numPoints = points0->rows;

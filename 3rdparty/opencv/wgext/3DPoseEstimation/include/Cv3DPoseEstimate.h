@@ -3,15 +3,16 @@
 
 #include "Cv3DPoseEstimateRef.h"
 
+namespace cv { namespace willow {
 /**
  * Estimation of pose transformations, given 2 list of corresponding
  * 3D points.
  */
-class Cv3DPoseEstimate : public Cv3DPoseEstimateRef
+class Cv3DPoseEstimate_Deprecated : public PoseEstimate
 {
 public:
-	Cv3DPoseEstimate();
-	virtual ~Cv3DPoseEstimate();
+	Cv3DPoseEstimate_Deprecated();
+	virtual ~Cv3DPoseEstimate_Deprecated();
 
 	// see overridden method in parent
 	int estimate(
@@ -25,8 +26,9 @@ public:
 protected:
 	virtual int checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation);
 	virtual int getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-	    CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices);
+	    CvMat* points0Inlier, CvMat* points1Inlier, int inlierIndices[]);
 //	int prodOwnTrans(double X[3*3], double XXt[3*3]);
 };
-
+} // namespace willow
+} // namespace cv
 #endif /*WG3DPOSEESTIMATETIGHT_H_*/

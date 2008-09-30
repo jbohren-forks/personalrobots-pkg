@@ -10,6 +10,7 @@ using namespace std;
 #include "LevMarqTransformDispSpace.h"
 
 #include "CvTestTimer.h"
+using namespace cv::willow;
 
 #undef DEBUG
 #define USE_LEVMARQ
@@ -341,7 +342,6 @@ int Cv3DPoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   // make a copy of the best Transformation before nonlinear optimization
   cvCopy(&H, &mRTBestWithoutLevMarq);
 
-
   // get the euler angle from rot
   CvPoint3D64f eulerAngles;
   {
@@ -388,7 +388,7 @@ int Cv3DPoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
 #endif
   }
 
-    // nonlinear optimization by Levenberg-Marquardt
+  // nonlinear optimization by Levenberg-Marquardt
   cv::willow::LevMarqTransformDispSpace
   levMarq(&mMatDispToCart, &mMatCartToDisp, numInliers0);
 

@@ -25,7 +25,7 @@ using namespace cv::willow;
 #define TIMEREND2(x) CvTestTimerEnd2(x)
 #endif
 
-Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
+PoseEstimate::PoseEstimate():
 	mNumRansacIter(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
 	mNumTriesForRandomTriple(100),
 	mErrMapping(NULL), mErrNormType(CV_C),	mErrThreshold(mDefErrThreshold),
@@ -44,17 +44,17 @@ Cv3DPoseEstimateRef::Cv3DPoseEstimateRef():
 	mRTBestWithoutLevMarq = cvMat(4, 4, CV_XF, mRTBestWithoutLevMarqData);
 }
 
-Cv3DPoseEstimateRef::~Cv3DPoseEstimateRef()
+PoseEstimate::~PoseEstimate()
 {
 }
 
-void Cv3DPoseEstimateRef::configureErrorMeasurement(CvMat *mapping, double threshold, int normType) {
+void PoseEstimate::configureErrorMeasurement(CvMat *mapping, double threshold, int normType) {
 	this->mErrMapping   = mapping;
 	this->mErrThreshold = threshold;
 	this->mErrNormType  = normType;
 }
 
-bool Cv3DPoseEstimateRef::estimateLeastSquare(CvMat *p0, CvMat *p1, CvMat *R, CvMat *T) {
+bool PoseEstimate::estimateLeastSquare(CvMat *p0, CvMat *p1, CvMat *R, CvMat *T) {
 	CvMat *P0 = cvCreateMat(p0->cols, p0->rows, CV_64FC1);
 	CvMat *P1 = cvCreateMat(p1->cols, p1->rows, CV_64FC1);
 	cvTranspose(p0, P0);
@@ -66,7 +66,7 @@ bool Cv3DPoseEstimateRef::estimateLeastSquare(CvMat *p0, CvMat *p1, CvMat *R, Cv
 	return status;
 }
 
-bool Cv3DPoseEstimateRef::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T) {
+bool PoseEstimate::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMat *T) {
 	bool status = true;
 	double _Q[9], _W[9], _Ut[9], _Vt[9], _C0[3], _C1[3];
 	CvMat Q  = cvMat(3, 3, CV_64F, _Q); // Q = P1 * transpose(P0)
@@ -124,138 +124,106 @@ bool Cv3DPoseEstimateRef::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *
 	return status;
 }
 
-// TODO: this function is now not consistency between RT and mT
-int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
-	int numInLiers = 0;
+int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
+  int numInLiers = 0;
 
-	int numPoints = points0->rows;
+  int numPoints = points0->rows;
 
-	if (numPoints != points1->rows) {
-		cerr << "number of points mismatched in input" << endl;
-		return 0;
-	}
+  if (numPoints != points1->rows) {
+    cerr << "number of points mismatched in input" << endl;
+    return 0;
+  }
 
-	double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _RT[4*4];
-	CvMat P0, P1;
-	cvInitMatHeader(&P0, 3, 3, CV_64FC1, _P0); // 3 random points from camera0, stored in columns
-	cvInitMatHeader(&P1, 3, 3, CV_64FC1, _P1); // 3 random points from caemra1, stored in columns
+  double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1];
+  double _RT[16];
+  CvMat P0, P1;
+  cvInitMatHeader(&P0, 3, 3, CV_64FC1, _P0); // 3 random points from camera0, stored in columns
+  cvInitMatHeader(&P1, 3, 3, CV_64FC1, _P1); // 3 random points from caemra1, stored in columns
 
-	CvMat R, T, RT;
-	cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);  // rotation matrix, R = V * transpose(U)
-	cvInitMatHeader(&T,  3, 1, CV_64FC1, _T);  // translation matrix
-	cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
+  CvMat R, T, RT;
+  cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);  // rotation matrix, R = V * tranpose(U)
+  cvInitMatHeader(&T,  3, 1, CV_64FC1, _T);  // translation matrix
+  cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
 
-	int maxNumInLiers=0;
-	mRandomTripletSetGenerator.reset(0, numPoints-1);
-	for (int i=0; i< mNumRansacIter; i++) {
+  int maxNumInLiers=0;
+  mRandomTripletSetGenerator.reset(0, numPoints-1);
+  for (int i=0; i< mNumRansacIter; i++) {
 #ifdef DEBUG
-		cout << "Iteration: "<< i << endl;
+    cout << "Iteration: "<< i << endl;
 #endif
-		// randomly pick 3 points. make sure they are not
-		// tooCloseToColinear
-		if (pick3RandomPoints(points0, points1, &P0, &P1)==false) {
-		  // no more random triplet available
-		  break;
-		}
+    // randomly pick 3 points. make sure they are not
+    // tooCloseToColinear
+    if (pick3RandomPoints(points0, points1, &P0, &P1)==false){
+      break;
+    }
 
-		TIMERSTART2(SVD);
-		this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
-		TIMEREND2(SVD);
+    TIMERSTART2(SVD);
+    this->estimateLeastSquareInCol(&P0, &P1, &R, &T);
+    TIMEREND2(SVD);
 
-//        this->constructRT(&R, &T, &RT);
-		this->constructRT(&R, &T, &mT);
+    this->constructRT(&R, &T, &RT);
 
-		CvTestTimerStart(CheckInliers)
-		// scoring against all points
-		numInLiers = checkInLiers(points0, points1, &RT);
-		CvTestTimerEnd(CheckInliers)
+    CvTestTimerStart(CheckInliers);
+    // scoring against all points
+    numInLiers = checkInLiers(points0, points1, &RT);
+    CvTestTimerEnd(CheckInliers);
 #ifdef DEBUG
-		cout << "R, T, and RT: "<<endl;
-		CvMatUtils::printMat(&R);
-		CvMatUtils::printMat(&T);
-		CvMatUtils::printMat(&RT);
+    cout << "R, T, and RT: "<<endl;
+    CvMatUtils::printMat(&R);
+    CvMatUtils::printMat(&T);
+    CvMatUtils::printMat(&RT);
 #endif
 
-		// keep the best R and T
-		if (maxNumInLiers < numInLiers) {
-			maxNumInLiers = numInLiers;
-			cvCopy(&R, rot);
-			cvCopy(&T, trans);
-		}
-	}
+    // keep the best R and T
+    if (maxNumInLiers < numInLiers) {
+      maxNumInLiers = numInLiers;
+      cvCopy(&R, rot);
+      cvCopy(&T, trans);
+    }
+  }
 
-	if (maxNumInLiers<6) {
-		cout << "Too few inliers: "<< maxNumInLiers << endl;
-		return maxNumInLiers;
-	}
+  if (maxNumInLiers<6) {
+    cout << "Too few inliers: "<< maxNumInLiers << endl;
+    return maxNumInLiers;
+  }
 
-	// get a copy of all the inliers, original and transformed
-	CvMat *points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-	CvMat *points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
-	int   *inlierIndices = new int[maxNumInLiers];
-	// construct homography matrix
-	constructRT(rot, trans, &RT);
-	int numInLiers0 = getInLiers(points0, points1, &RT,
-	    points0Inlier, points1Inlier, inlierIndices);
+  int numInLiers0;
+  CvMat *points0Inlier;
+  CvMat *points1Inlier;
+  int   *inlierIndices;
+  TIMERSTART(CopyInliers);
+  // get a copy of all the inliers, original and transformed
+  points0Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+  points1Inlier = cvCreateMat(maxNumInLiers, 3, CV_64FC1);
+  inlierIndices = new int[maxNumInLiers];
 
-	cout << "Number of Inliers: "<< numInLiers0 << endl;
-	if (numInLiers0<6) {
-	  cout << "Too few inliers: "<< numInLiers0 << endl;
-	  return numInLiers0;
-	}
+  // construct homography matrix
+  constructRT(rot, trans, &RT);
+
+  numInLiers0 = getInLiers(points0, points1, &RT, maxNumInLiers, points0Inlier, points1Inlier, inlierIndices);
+
+  TIMEREND(CopyInliers);
+
+  // make a copy of the best RT before nonlinear optimization
+  cvCopy(&RT, &mRTBestWithoutLevMarq);
 
 #ifdef USE_LEVMARQ
-
-	// get the euler angle from rot
-	CvPoint3D64f eulerAngles;
-	{
-		double _R[9], _Q[9];
+    TIMERSTART(LevMarq);
+  // get the euler angle from rot
+  CvPoint3D64f eulerAngles;
+  {
+    double _R[9], _Q[9];
         CvMat R, Q;
         CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
         cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
         cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
 
-#ifdef DEBUG // all debugging stuff
-//#if 1
-        double _Qx[9], _Qy[9], _Qz[9], _Qyz[9], _Q1T[9];
-        CvMat Qx, Qy, Qz, Qyz, Q1T;  // optional. For debugging.
-        double _Q1[9];
-        CvMat Q1;
-        cvInitMatHeader(&Qx, 3, 3, CV_64FC1, _Qx);
-        cvInitMatHeader(&Qy, 3, 3, CV_64FC1, _Qy);
-        cvInitMatHeader(&Qz, 3, 3, CV_64FC1, _Qz);
-        cvInitMatHeader(&Qyz, 3, 3, CV_64FC1, _Qyz);
-        cvInitMatHeader(&Q1T, 3, 3, CV_64FC1, _Q1T);
-        cvInitMatHeader(&Q1, 3, 3, CV_64FC1, _Q1);
-        pQx = &Qx;
-        pQy = &Qy;
-        pQz = &Qz;
-#endif
-
         cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
 
-#ifdef DEBUG
-//#if 1
-        cout << "RQ decomposition rot => R, Q"<< endl;
-        CvMatUtils::printMat(rot);
-        CvMatUtils::printMat(&R);
-        CvMatUtils::printMat(&Q);
-        cout << "reconstruct rot matrices. Qx, Qy and Qz"<<endl;
-        CvMatUtils::printMat(&Qx);
-        CvMatUtils::printMat(&Qy);
-        CvMatUtils::printMat(&Qz);
-        cout <<"euler angles"<<endl;
-        cout << eulerAngles.x<<","<<eulerAngles.y<<","<<eulerAngles.z<<endl;
-        cvGEMM(&Qy, &Qz, 1, NULL, 0, &Qyz);
-        cvGEMM(&Qx, &Qyz, 1, NULL, 0, &Q1T);
-        cvTranspose(&Q1T, &Q1);
-        cout <<"(Qx * Qy * Qz)^T => Q1: "<< endl;
-        CvMatUtils::printMat(&Q1);
-#endif
-	}
+  }
 
     // nonlinear optimization by Levenberg-Marquardt
-    LevMarqTransform levMarq(numInLiers0);
+    cv::willow::LevMarqTransform levMarq(numInLiers0);
 
     double param[6];
 
@@ -267,25 +235,36 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     param[4] = cvmGet(trans, 1, 0);
     param[5] = cvmGet(trans, 2, 0);
 
+#ifdef DEBUG
+//#if 1
     printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
-
-#if 0
-    for (int i=0; i<6; i++) param[i] *= 1.2;
-    printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
+        param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
+        param[2], param[2]/CV_PI*180.,
+        param[3], param[4], param[5]);
 #endif
+#ifdef DEBUG_DISTURB_PARAM
+    for (int i=0; i<6; i++) param[i] *= 1.1;
+#endif
+#ifdef DEBUG
+//#if 1
+    printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
+        param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
+        param[2], param[2]/CV_PI*180.,
+        param[3], param[4], param[5]);
+#endif
+    int64 tDoit = cvGetTickCount();
     levMarq.optimize(points0Inlier, points1Inlier, param);
+    CvTestTimer::getTimer().mLevMarqDoit += cvGetTickCount() - tDoit;
 
 #ifdef DEBUG
+//#if 1
     printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-    		param[0]/CV_PI*180., param[0], param[1]/CV_PI*180., param[1], param[2]/CV_PI*180., param[2],
-    		param[3], param[4], param[5]);
+        param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
+        param[2], param[2]/CV_PI*180.,
+        param[3], param[4], param[5]);
 #endif
 
-	// TODO: construct matrix with parameters from nonlinear optimization
+  // TODO: construct matrix with parameters from nonlinear optimization
     double _rot[9];
 
     CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::EulerXYZ);
@@ -297,17 +276,16 @@ int Cv3DPoseEstimateRef::estimate(CvMat *points0, CvMat *points1, CvMat *rot, Cv
     cvmSet(trans, 1, 0, param[4]);
     cvmSet(trans, 2, 0, param[5]);
 
+    TIMEREND(LevMarq);
 #endif
-    if (mInliers0) cvReleaseMat(&mInliers0);
-    if (mInliers1) cvReleaseMat(&mInliers1);
-    mInliers0 = points0Inlier;
-    mInliers1 = points1Inlier;
-    delete [] mInlierIndices;
-    mInlierIndices = inlierIndices;
-	return numInLiers0;
+
+    updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
+
+    this->constructRT(rot, trans, &mT);
+  return maxNumInLiers;
 }
 
-void Cv3DPoseEstimateRef::updateInlierInfo(CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
+void PoseEstimate::updateInlierInfo(CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
   if (mInliers0) cvReleaseMat(&mInliers0);
   if (mInliers1) cvReleaseMat(&mInliers1);
   mInliers0 = points0Inlier;
@@ -317,7 +295,7 @@ void Cv3DPoseEstimateRef::updateInlierInfo(CvMat* points0Inlier, CvMat* points1I
 }
 
 #if 0
-bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat* points){
+bool PoseEstimate::tooCloseToColinear(CvMat* points){
 	CvMat * temp = cvCloneMat(points);
 	cvSetReal2D(temp, 0, 0, 1);
 	cvSetReal2D(temp, 0, 1, 1);
@@ -344,7 +322,7 @@ bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat* points){
 	return true;
 }
 #else
-bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat *points)  {
+bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 	CvMat p0, p1, p2;
 	double _p01[3], _p02[3];
 	CvMat p01, p02;
@@ -369,7 +347,7 @@ bool Cv3DPoseEstimateRef::tooCloseToColinear(CvMat *points)  {
 }
 #endif
 
-bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1,
+bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1,
 		bool fInputPointsInRows){
 	bool status = false;
 
@@ -433,14 +411,14 @@ bool Cv3DPoseEstimateRef::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMa
 	return status;
 }
 
-bool Cv3DPoseEstimateRef::constructRT(CvMat *R, CvMat *T, CvMat *RT){
+bool PoseEstimate::constructRT(CvMat *R, CvMat *T, CvMat *RT){
 	if (R == NULL || T == NULL) {
 		return false;
 	}
 	return constructTransform(*R, *T, *RT);
 }
 
-bool Cv3DPoseEstimateRef::constructTransform(
+bool PoseEstimate::constructTransform(
 		const CvMat& rot, const CvMat& shift, CvMat& transform) {
 	bool status = true;
     // construct RT
@@ -459,15 +437,30 @@ bool Cv3DPoseEstimateRef::constructTransform(
 	return status;
 }
 
-int Cv3DPoseEstimateRef::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
-    return getInLiers(points0, points1, transformation, NULL, NULL, NULL);
+int PoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
+  // check if we can use a faster implementation
+  assert(points0 && points1 && transformation);
+
+  if (CV_MAT_TYPE(points0->type)        == CV_64FC1 &&
+      CV_MAT_TYPE(points1->type)        == CV_64FC1 &&
+      CV_MAT_TYPE(transformation->type) == CV_64FC1 &&
+      points0->step == 3*sizeof(double) &&
+      points1->step == 3*sizeof(double) &&
+      transformation->step == 4*sizeof(double) &&
+      transformation->rows == 4) {
+    return checkInliers(points0->rows, points0->data.db, points1->data.db,
+        transformation->data.db, mErrThreshold);
+  } else {
+#if DEBUG
+    cout << __PRETTY_FUNCTION__ << "falls back to the slower version"<<endl;
+#endif
+    return getInLiers(points0, points1, transformation, 0, NULL, NULL, NULL);
+  }
 }
 
-bool Cv3DPoseEstimateRef::isInLier(CvMat *points0, CvMat *points1, int i){
+bool PoseEstimate::isInLier(CvMat *points0, CvMat *points1, int i){
 	{
 		CvMyReal p0x, p0y, p0z;
-
-//		int64 t01 = cvGetTickCount();
 
 		p0x = cvmGet(points0, i, 0);
 		p0y = cvmGet(points0, i, 1);
@@ -477,8 +470,6 @@ bool Cv3DPoseEstimateRef::isInLier(CvMat *points0, CvMat *points1, int i){
 		CvMyReal w1 = mT_Data[ 4]*p0x + mT_Data[ 5]*p0y + mT_Data[ 6]*p0z + mT_Data[ 7];
 		CvMyReal w2 = mT_Data[ 8]*p0x + mT_Data[ 9]*p0y + mT_Data[10]*p0z + mT_Data[11];
 		CvMyReal w3 = mT_Data[12]*p0x + mT_Data[13]*p0y + mT_Data[14]*p0z + mT_Data[15];
-
-//		int64 t02 = cvGetTickCount();
 
 		CvMyReal scale;
 
@@ -497,41 +488,185 @@ bool Cv3DPoseEstimateRef::isInLier(CvMat *points0, CvMat *points1, int i){
 		error = cvNorm(&mResidue2, NULL, this->mErrNormType);
 	}
 
-#ifdef DEBUG
-	cout << "i: " << i << " error: " << error << endl;
-#endif
 	return error <= this->mErrThreshold;
 }
 
-int Cv3DPoseEstimateRef::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier, int inlierIndices[]) {
+int PoseEstimate::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
+    int maxNumInliersReturned, CvMat* points0Inlier, CvMat* points1Inlier, int inlierIndices[]) {
 
-	int numInLiers = 0;
-	int numPoints = points0->rows;
+  // check if we can use a faster but more specific implementation
+  if (CV_MAT_TYPE(points0->type)        == CV_64FC1 &&
+      CV_MAT_TYPE(points1->type)        == CV_64FC1 &&
+      CV_MAT_TYPE(transformation->type) == CV_64FC1 &&
+      points0->step == 3*sizeof(double) &&
+      points1->step == 3*sizeof(double) &&
+      transformation->step == 4*sizeof(double) &&
+      transformation->rows == 4 && (
+          (maxNumInliersReturned == 0) ||
+          (points0Inlier && CV_MAT_TYPE(points0Inlier->type) == CV_64FC1 && (points0Inlier->step == 3*sizeof(double))) ||
+          (points1Inlier && CV_MAT_TYPE(points1Inlier->type) == CV_64FC1 && (points1Inlier->step == 3*sizeof(double))) ||
+          (inlierIndices != NULL)
+      )
+  ) {
+    double* inliers0 = points0Inlier? points0Inlier->data.db : NULL;
+    double* inliers1 = points1Inlier? points1Inlier->data.db : NULL;
 
-	for (int i=0; i<numPoints; i++) {
-
-		if (isInLier(points0, points1, i) == true) {
-		  // store the inlier
-		  if (points0Inlier) {
-		    cvmSet(points0Inlier, numInLiers, 0, cvmGet(points0, i, 0));
-		    cvmSet(points0Inlier, numInLiers, 1, cvmGet(points0, i, 1));
-		    cvmSet(points0Inlier, numInLiers, 2, cvmGet(points0, i, 2));
-		  }
-		  if (points1Inlier) {
-		    cvmSet(points1Inlier, numInLiers, 0, cvmGet(points1, i, 0));
-		    cvmSet(points1Inlier, numInLiers, 1, cvmGet(points1, i, 1));
-		    cvmSet(points1Inlier, numInLiers, 2, cvmGet(points1, i, 2));
-		  }
-		  if (inlierIndices) {
-		    inlierIndices[numInLiers] = i;
-		  }
-			numInLiers++;
-		}
-	}
-#ifdef DEBUG
-	cout << "Num of Inliers: "<<numInLiers<<endl;
+    return getInliers(points0->rows, points0->data.db, points1->data.db,
+        transformation->data.db, mErrThreshold,
+        maxNumInliersReturned, inliers0, inliers1, inlierIndices);
+  } else {
+    // falls back to the slower but more general version
+#if DEBUG
+    cout << __PRETTY_FUNCTION__ << "falls back to the slower version"<<endl;
 #endif
-	return numInLiers;
+    int numInLiers = 0;
+    int numPoints = points0->rows;
+
+    for (int i=0; i<numPoints; i++) {
+
+      if (isInLier(points0, points1, i) == true) {
+        // store the inlier
+        if (points0Inlier) {
+          cvmSet(points0Inlier, numInLiers, 0, cvmGet(points0, i, 0));
+          cvmSet(points0Inlier, numInLiers, 1, cvmGet(points0, i, 1));
+          cvmSet(points0Inlier, numInLiers, 2, cvmGet(points0, i, 2));
+        }
+        if (points1Inlier) {
+          cvmSet(points1Inlier, numInLiers, 0, cvmGet(points1, i, 0));
+          cvmSet(points1Inlier, numInLiers, 1, cvmGet(points1, i, 1));
+          cvmSet(points1Inlier, numInLiers, 2, cvmGet(points1, i, 2));
+        }
+        if (inlierIndices) {
+          inlierIndices[numInLiers] = i;
+        }
+        numInLiers++;
+      }
+    }
+    return numInLiers;
+  }
 }
 
+int PoseEstimate::checkInliers(
+    int numPoints,
+    double *_P0,
+    double *_P1,
+    double *_T,
+    double threshold
+) {
+  int numInLiers = 0;
+
+  CvMyReal thresholdM =  threshold;
+  CvMyReal thresholdm = -threshold;
+  for (int i=0; i<numPoints; i++) {
+
+    CvMyReal p0x, p0y, p0z;
+
+#if 1
+    p0x = *_P0++;
+    p0y = *_P0++;
+    p0z = *_P0++;
+
+    CvMyReal w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
+#else
+    // not worth using the following code
+    // 1) not sure if it helps on speed.
+    // 2) not sure if the order of evaluation is preserved as left to right.
+    CvMyReal w3 =
+      _T[12]*(p0x=*_P0++) +
+      _T[13]*(p0y=*_P0++) +
+      _T[14]*(p0z=*_P0++) +
+      _T[15];
+#endif
+
+    CvMyReal scale = 1.0/w3;
+
+    CvMyReal rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
+    if (rx> thresholdM || rx< thresholdm) {
+      (++_P1)++;
+      continue;
+    }
+    CvMyReal ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
+    if (ry>thresholdM || ry< thresholdm) {
+      _P1++;
+      continue;
+    }
+
+    CvMyReal rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
+    if (rz>thresholdM || rz< thresholdm) {
+      continue;
+    }
+
+    numInLiers++;
+  }
+#ifdef DEBUG
+  cout << "Num of Inliers: "<<numInLiers<<endl;
+#endif
+  return numInLiers;
+}
+
+int PoseEstimate::getInliers(
+    int numPoints,
+    double *_P0,
+    double *_P1,
+    double *_T,
+    double threshold,
+    int maxNumInlierReturned,
+    double inliers0[],
+    double inliers1[],
+    int    inlierIndices[]
+) {
+  int numInLiers = 0;
+
+  double thresholdM =  threshold;
+  double thresholdm = -threshold;
+
+  for (int i=0; i<numPoints; i++) {
+
+    CvMyReal p0x, p0y, p0z;
+
+    p0x = *_P0++;
+    p0y = *_P0++;
+    p0z = *_P0++;
+
+    CvMyReal w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
+    CvMyReal scale = 1.0/w3;
+
+    CvMyReal rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
+    // Experiments have shown that checking rx, ry, rz separately and rejecting the current
+    // point as early as possible helps speeding up the computation
+    if (rx> thresholdM || rx< thresholdm) {
+      (++_P1)++;
+      continue;
+    }
+    CvMyReal ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
+    if (ry>thresholdM || ry< thresholdm) {
+      _P1++;
+      continue;
+    }
+
+    CvMyReal rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
+    if (rz>thresholdM || rz< thresholdm) {
+      continue;
+    }
+
+    // store the inlier
+    if (inliers0) {
+      *inliers0++ = p0x;
+      *inliers0++ = p0y;
+      *inliers0++ = p0z;
+    }
+    if (inliers1) {
+      *inliers1++ = *(_P1-3);
+      *inliers1++ = *(_P1-2);
+      *inliers1++ = *(_P1-1);
+    }
+    if (inlierIndices) {
+      *inlierIndices++ = i;
+    }
+    numInLiers++;
+  }
+#ifdef DEBUG
+  cout << "Num of Inliers: "<<numInLiers<<endl;
+#endif
+  return numInLiers;
+}

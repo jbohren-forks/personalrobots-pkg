@@ -15,8 +15,8 @@ using namespace std;
 #include "PathRecon.h"
 using namespace cv::willow;
 
-#include "../include/CvMatUtils.h"
-#include "../include/Cv3DPoseEstimate.h"
+#include "CvMatUtils.h"
+#include "Cv3DPoseEstimateRef.h"
 
 // timing
 #include "CvTestTimer.h"
@@ -152,7 +152,7 @@ PathRecon::keyFrameEval(
  * in transform as transform = transform * rt
  */
 bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
-	Cv3DPoseEstimate::constructTransform(rot, shift, mRT);
+	PoseEstimate::constructTransform(rot, shift, mRT);
 	cvCopy(&mTransform, &_mTempMat);
 	if (mReversed == true) {
 		cvMatMul(&_mTempMat, &mRT, &mTransform);

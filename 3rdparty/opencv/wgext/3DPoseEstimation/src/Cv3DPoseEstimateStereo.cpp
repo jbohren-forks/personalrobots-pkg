@@ -6,6 +6,7 @@
  */
 
 #include "Cv3DPoseEstimateStereo.h"
+using namespace cv::willow;
 #include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
 
 #include <iostream>

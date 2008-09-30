@@ -4,17 +4,17 @@
 #include "opencv/cxcore.h"
 #include "CvStereoCamModel.h"
 #include "Cv3DPoseEstimateRef.h"
-
+using namespace cv::willow;
 /**
  * Reference implementation using OpenCV.
  * This implementation is not optimized, but may be more readable
  *
  * This class is deprecated. The methods are moved to Cv3DPoseEstimateDisp.
  */
-class Cv3DPoseEstimateDispSpaceRef_Deprecated: public Cv3DPoseEstimateRef, public CvStereoCamModel
+class Cv3DPoseEstimateDispSpaceRef_Deprecated: public PoseEstimate, public CvStereoCamModel
 {
 public:
-	typedef Cv3DPoseEstimateRef PoseParent;
+	typedef PoseEstimate PoseParent;
 	typedef CvStereoCamModel Parent;
 	Cv3DPoseEstimateDispSpaceRef_Deprecated();
 	virtual ~Cv3DPoseEstimateDispSpaceRef_Deprecated();

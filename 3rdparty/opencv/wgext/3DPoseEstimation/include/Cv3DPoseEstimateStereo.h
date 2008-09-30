@@ -24,6 +24,7 @@ using namespace cv;
 #include <calonder_descriptor/include/rtree_classifier.h>
 using namespace features;
 
+namespace cv { namespace willow {
 /**
  * Pose estimation based on two frames of stereo image pairs.
  */
@@ -200,5 +201,6 @@ protected:
 
 	double mDisparityUnitInPixels;  // disparity unit in pixels
 };
-
+} // namespace willow
+} // namespace cv
 #endif /* CV3DPOSEESTIMATESTEREO_H_ */

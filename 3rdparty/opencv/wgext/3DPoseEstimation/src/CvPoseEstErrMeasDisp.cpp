@@ -5,13 +5,15 @@
  *      Author: jdchen
  */
 
-#include "CvPoseEstErrMeasDisp.h"
+#include <iostream>
+using namespace std;
+
 #include <opencv/cxcore.h>
 
-#include <iostream>
+#include "CvPoseEstErrMeasDisp.h"
 #include "Cv3DPoseEstimateDisp.h"
 #include "CvMatUtils.h"
-using namespace std;
+using namespace cv::willow;
 
 CvPoseEstErrMeasDisp::CvPoseEstErrMeasDisp():
 	mHomography(cvMat(4, 4, CV_64FC1, _mHomography)){

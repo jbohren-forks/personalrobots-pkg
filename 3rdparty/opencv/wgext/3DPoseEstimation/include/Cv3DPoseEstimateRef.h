@@ -10,17 +10,18 @@
 typedef double CvMyReal;
 #define CV_XF CV_64F
 
+namespace cv { namespace willow {
 /**
  * Estimate transformation between corresponding 3D point clouds.
  * This is a reference implementation is less efficient, but maybe more readable. Please
  * use its extended class Cv3DPoseEstimate for practical use.
  * @warning we may consolidate this class with Cv3DPoseEstimate.
  */
-class Cv3DPoseEstimateRef
+class PoseEstimate
 {
 public:
-	Cv3DPoseEstimateRef();
-	virtual ~Cv3DPoseEstimateRef();
+	PoseEstimate();
+	virtual ~PoseEstimate();
 
 	/**
 	 * set up the error measurement to decide whether a point is inlier
@@ -165,22 +166,63 @@ protected:
 	    CvMat *points1,
       /// the transformation matrix. 4x4  homography, or 4x3 for affine.
 	    CvMat* transformation);
+	/// a fast implementation of of inlier check, customized for specific
+	/// data structures (see specifications of arguments.)
+  static int checkInliers(
+      /// the number of input points
+      int numPoints,
+      /// pointer to point cloud 0 coordinates as x0,y0,z0,x1,y1,z1,..., in doubles
+      double *_P0,
+      /// pointer to point cloud 1 coordinates as x0,y0,z0,x1,y1,z1,..., in doubles
+      double *_P1,
+      /// transformation matrix stored as a double array of 16, row first.
+      double *_T,
+      /// the threshold use to check for inliers
+      double threshold
+  );
 	/// Check and return inliers.
 	/// @return The number of inliers
-	virtual int getInLiers(
+  virtual int getInLiers(
       /// point cloud before transformation
-	    CvMat *points0,
+      CvMat *points0,
       /// point cloud after transformation
-	    CvMat *points1,
+      CvMat *points1,
       /// the transformation matrix. 4x4  homography, or 4x3 for affine.
-	    CvMat* transformation,
-	    /// correspoding inliers in points0
-	    CvMat* points0Inlier,
-	    /// corresponding inliers in point1
-	    CvMat* points1Inlier,
-	    /// the indices of the inliers
-	    int    inlierIndices[]
-	);
+      CvMat* transformation,
+      /// max number of inliers need to be returned from the call.
+      /// Or, the size of the buffer(s) allocated for returning inliers.
+      int maxNumInliersReturned,
+      /// correspoding inliers in points0
+      CvMat* points0Inlier,
+      /// corresponding inliers in point1
+      CvMat* points1Inlier,
+      /// the indices of the inliers
+      int    inlierIndices[]
+  );
+  /// a fast implementation of of inlier  checking and getting, customized for specific
+  /// data structures (see specifications of arguments.)
+  static int getInliers(
+      /// the number of input points
+      int numPoints,
+      /// pointer to point cloud 0 coordinates as x0,y0,z0,x1,y1,z1,..., in doubles
+      double *_P0,
+      /// pointer to point cloud 1 coordinates as x0,y0,z0,x1,y1,z1,..., in doubles
+      double *_P1,
+      /// transformation matrix stored as a double array of 16, row first.
+      double *_T,
+      /// the threshold use to check for inliers
+      double threshold,
+      /// The maximum number of inlier returned in inliers0, inliers1, or inlierIndices.
+      /// Basically, the length of these arrays.
+      int maxNumInlierReturned,
+      /// An array to store the inlier list from point cloud 0. Null if not interested.
+      /// The inliers are stored as x0,y0,z0,x1,y1,z1,....
+      double inliers0[],
+      /// An array to store the inlier list from point cloud 1. Null if not interested.
+      double inliers1[],
+      /// An array to store the list of inlier pairs, indexed into the input lists.
+      int    inlierIndices[]
+  );
 	/// Check if the point is an inlier.
 	/// @return true if point pair i in the 2 corresponding list
 	/// is an inlier. False otherwise.
@@ -197,6 +239,7 @@ protected:
 	    CvMat* points0Inlier,
 	    CvMat* points1Inlier,
 	    int* inlierIndices);
+
 	int    mNumRansacIter; //< num of iteration in RANSAC
 	double mMinDet; //< to decide if 3 points are tooCloseToColinear
 	/// minimum angle to decide if 3 points are too close to being
@@ -241,5 +284,6 @@ protected:
 	/// indices of the inliers in the input lists.
 	int*    mInlierIndices;
 };
-
+}// namespace willow
+} // namespace cv
 #endif /*CV3DPOSEESTIMATEREF_H_*/

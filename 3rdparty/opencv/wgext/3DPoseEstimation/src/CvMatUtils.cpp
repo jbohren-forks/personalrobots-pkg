@@ -5,6 +5,8 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
+using namespace cv::willow;
+
 #undef DEBUG
 
 const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
@@ -117,7 +119,8 @@ bool CvMatUtils::drawPoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLas
 }
 
 bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
-		const CvMat& rot, const CvMat& shift, const Cv3DPoseEstimateDisp& pedisp, bool reversed) {
+		const CvMat& rot, const CvMat& shift,
+		const Cv3DPoseEstimateDisp& pedisp, bool reversed) {
 	int numInliers = pts0.rows;
 	if (pts1.rows != numInliers) {
 		cerr << __PRETTY_FUNCTION__ << "matching pairs do not match in length"<<endl;
