@@ -246,6 +246,95 @@ TEST(Bullet, Slerp)
 
 }
 
+TEST(Bullet, QuaternionMultiplication)
+{
+  btQuaternion q1 (btVector3(1,0,0), M_PI/2.0);
+  btQuaternion q2 (btVector3(0,0,1), M_PI/2.0);
+
+  btQuaternion q3 = q1*q2;
+  printf("(%f,%f,%f,%f)*(%f,%f,%f,%f)=(%f,%f,%f,%f)\n",q1.x(), q1.y(), q1.z(), q1.getAngle(), q2.x(), q2.y(), q2.z(), q2.getAngle(), q3.x(), q3.y(), q3.z(), q3.getAngle());
+
+  btMatrix3x3 m3(q3);
+
+  btVector3 xout = m3*btVector3(1,0,0);
+  btVector3 yout = m3*btVector3(0,1,0);
+  btVector3 zout = m3*btVector3(0,0,1);
+  printf("(%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n", 
+         xout.x(), xout.y(), xout.z() ,
+         yout.x(), yout.y(), yout.z() ,
+         zout.x(), zout.y(), zout.z());
+
+  q3 = q2*q1;
+  printf("(%f,%f,%f,%f)*(%f,%f,%f,%f)=(%f,%f,%f,%f)\n",q2.x(), q2.y(), q2.z(), q2.getAngle(), q1.x(), q1.y(), q1.z(), q1.getAngle(), q3.x(), q3.y(), q3.z(), q3.getAngle());
+
+  m3.setRotation(q3);
+
+  xout = m3*btVector3(1,0,0);
+  yout = m3*btVector3(0,1,0);
+  zout = m3*btVector3(0,0,1);
+  printf("(%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n", 
+         xout.x(), xout.y(), xout.z() ,
+         yout.x(), yout.y(), yout.z() ,
+         zout.x(), zout.y(), zout.z());
+}
+TEST(Bullet, QuaternionTimesEqual)
+{
+  btQuaternion q1 (btVector3(1,0,0), M_PI/2.0);
+  btQuaternion q2 (btVector3(0,0,1), M_PI/2.0);
+
+  btQuaternion q3 (q1);
+  q3*=q2;
+  printf("(%f,%f,%f,%f)*(%f,%f,%f,%f)=(%f,%f,%f,%f)\n",q1.x(), q1.y(), q1.z(), q1.getAngle(), q2.x(), q2.y(), q2.z(), q2.getAngle(), q3.x(), q3.y(), q3.z(), q3.getAngle());
+
+  btMatrix3x3 m3(q3);
+
+  btVector3 xout = m3*btVector3(1,0,0);
+  btVector3 yout = m3*btVector3(0,1,0);
+  btVector3 zout = m3*btVector3(0,0,1);
+  printf("(%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n", 
+         xout.x(), xout.y(), xout.z() ,
+         yout.x(), yout.y(), yout.z() ,
+         zout.x(), zout.y(), zout.z());
+  q3 = q1;
+  q3*=q1;
+  printf("(%f,%f,%f,%f)*(%f,%f,%f,%f)=(%f,%f,%f,%f)\n",q2.x(), q2.y(), q2.z(), q2.getAngle(), q1.x(), q1.y(), q1.z(), q1.getAngle(), q3.x(), q3.y(), q3.z(), q3.getAngle());
+
+  m3.setRotation(q3);
+
+  xout = m3*btVector3(1,0,0);
+  yout = m3*btVector3(0,1,0);
+  zout = m3*btVector3(0,0,1);
+  printf("(%f, %f, %f), (%f, %f, %f), (%f, %f, %f)\n", 
+         xout.x(), xout.y(), xout.z() ,
+         yout.x(), yout.y(), yout.z() ,
+         zout.x(), zout.y(), zout.z());
+}
+
+TEST (Bullet, downcast)
+{
+  btVector3 v (1,2,3);
+  btVector3 v2(v); 
+  
+}
+
+TEST(Bullet, TransformOrder )
+{
+  btTransform tf(btQuaternion(1,0,0));
+  btTransform tf2(btQuaternion(0,0,0),btVector3(100,0,0));
+
+  btTransform tf3 = tf * tf2;
+
+  tf*= tf2;
+  EXPECT_TRUE(tf3  == tf);
+
+  tf = btTransform(btQuaternion(1,0,0));
+  tf3 = tf;
+
+  EXPECT_TRUE(tf.inverse() * tf2 == tf.inverseTimes(tf2));
+
+  
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
