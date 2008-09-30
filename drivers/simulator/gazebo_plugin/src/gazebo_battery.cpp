@@ -77,7 +77,7 @@ namespace gazebo {
     this->stateTopicName_ = node->GetString("stateTopicName","battery_state",0);
     rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
     this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
-    rosnode_->advertise<robot_msgs::BatteryState>(this->diagnosticMessageTopicName_,10);
+    rosnode_->advertise<robot_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
   }
 
   void GazeboBattery::InitChild()

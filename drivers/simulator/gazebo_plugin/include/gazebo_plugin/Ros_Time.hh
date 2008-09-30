@@ -72,7 +72,7 @@ namespace gazebo
 /// \brief ROS Time Controller
 ///     \li Starts a ROS node if none exists
 ///     \li broadcast simulator time over rostools::Time.
-/// .
+/// 
 class Ros_Time : public Controller
 {
   /// \brief Constructor

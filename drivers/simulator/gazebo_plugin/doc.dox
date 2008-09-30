@@ -90,44 +90,40 @@ Various dynamically loaded plugins have been outfitted for PR2.
 Below are the ROS messages actively used by PR2 simulation as described by launch script \b roslaunch \b ros-pkg/robot_descriptions/gazebo_robot_description/pr2_gazebo_actuators.xml.
 
  - ROS topics published by the simulator
-  - images:
-   - <table border="1">
-     <tr><th>  Topic Name        </th> <th> Message Type          </th>  <th> Plugin Name     </th>        </tr>
-     <tr><th>wrist_left/image    </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>wrist_right/image   </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>forearm_left/image  </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>forearm_right/image </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>axis_right/image    </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>axis_left/image     </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     <tr><th>stereo_left/image   </th> <th>  std_msgs::Image.msg  </th>  <th>  Ros_Camera.hh  </th>        </tr>
-     </table border>
-  - scans:
-   - \b base_scan
-   - \b tilt_scan
-  - point clouds:
-   - \b full_cloud
-  - battery:
-   - \b battery_state
-   - \b diagnostic
-  - ground truths:
-   - \b base_pose_ground_truth
-   - \b gripper_roll_right_pose_ground_truth
-   - \b gripper_roll_left_pose_ground_truth
-   - \b finger_tip_l_left_ground_truth
-   - \b finger_tip_r_left_ground_truth
-   - \b finger_tip_l_right_ground_truth
-   - \b finger_tip_R_right_ground_truth
-  - PTZ cameras:
-   - \b axis_right/ptz_state
-   - \b axis_left/ptz_state
-  - mechanism control:
-   - \b mechanism_state
-  - frame transforms:
-   - \b TransformArray
-  - misc:
-   - \b time
-   - \b state --
+     <table border="1">
+     <tr><th>  Component    </th>  <th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> </tr>
+     <tr><th>  images       </th>  <th> wrist_left/image                     </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> wrist_right/image                    </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> forearm_left/image                   </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> forearm_right/image                  </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> axis_right/image                     </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> axis_left/image                      </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
+     <tr><th>  images       </th>  <th> stereo_left/image                    </th> <th>  std_msgs::Image.msg                 </th>  <th>  Ros_Camera.hh          </th> </tr>
 
+     <tr><th>  scans        </th>  <th> base_scan                            </th> <th>  std_msgs::LaserScan.msg             </th>  <th>  Ros_Laser.hh           </th> </tr>
+     <tr><th>  scans        </th>  <th> tilt_scan                            </th> <th>  std_msgs::LaserScan.msg             </th>  <th>  Ros_Laser.hh           </th> </tr>
+
+     <tr><th> point_clouds  </th>  <th> full_cloud                           </th> <th>  std_msgs::PointCloudFloat32.msg     </th>  <th>  Ros_Block_Laser.hh     </th> </tr>
+
+     <tr><th> battery       </th>  <th> battery_state                        </th> <th>  robot_msgs::BatteryStzte            </th>  <th>  gazebo_battery.h       </th> </tr>
+     <tr><th> battery       </th>  <th> diagnostic                           </th> <th>  robot_msgs::DiagnosticMessage       </th>  <th>  gazebo_battery.h       </th> </tr>
+
+     <tr><th> ground truths </th>  <th> base_pose_ground_truth               </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> gripper_roll_right_pose_ground_truth </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> gripper_roll_left_pose_ground_truth  </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> finger_tip_l_left_ground_truth       </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> finger_tip_r_left_ground_truth       </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> finger_tip_l_right_ground_truth      </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> ground truths </th>  <th> finger_tip_R_right_ground_truth      </th> <th>  std_msgs::TransformWithRateStamped  </th>  <th> P3D.hh                  </th> </tr>
+     <tr><th> PTZ cameras   </th>  <th> axis_right/ptz_state                 </th> <th>  std::string                         </th>  <th> Ros_PTZ.hh              </th> </tr>
+     <tr><th> PTZ cameras   </th>  <th> axis_left/ptz_state                  </th> <th>  std::string                         </th>  <th> Ros_PTZ.hh              </th> </tr>
+     <tr><th> time          </th>  <th> time                                 </th> <th>  rostools::Time                      </th>  <th> Ros_Time.hh             </th> </tr>
+     </table border><br>
+ - ROS topics published by mechanism control node
+  - mechanism state:
+   - \b mechanism_state, mechanism_control::MechanismState, mechanism_control.h
+  - frame transforms:
+   - \b TransformArray, rosTF::TransformArray, mechanism_control.h
  - ROS topics published by controllers
   - base controller:
    - \b odom
