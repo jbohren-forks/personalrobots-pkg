@@ -130,13 +130,13 @@ public:
 
 protected:
 	bool constructRTMatrix(const CvMat* param);
-	bool constructRTMatrices(const CvMat* param, CvMyReal delta);
+	bool constructRTMatrices(const CvMat* param, double delta);
 	/// Given parameters, construct the transformation matrix.
-	bool constructRTMatrix(const CvMat * param, CvMyReal _RT[]) const;
+	bool constructRTMatrix(const CvMat * param, double _RT[]) const;
 	bool computeForwardResidues(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *res);
 	virtual bool constructTransformationMatrix(const CvMat *param);
-	virtual bool constructTransformationMatrix(const CvMat *param, CvMyReal T[]);
-	virtual bool constructTransformationMatrices(const CvMat *param, CvMyReal delta);
+	virtual bool constructTransformationMatrix(const CvMat *param, double T[]);
+	virtual bool constructTransformationMatrices(const CvMat *param, double delta);
 	/**
 	 * compute the residue error \f$ R = T \cdot P0 - P1 \f$, where
 	 * \f$ T \f$ is LevMarqTransform::mRT3x4.
@@ -181,13 +181,13 @@ protected:
 
 	/*** A member object of Levenberg Marqardt in its general form */
 	LevMarq mLevMarq;
-	CvMyReal mRTData[16]; ///< Data part of LevMarqTransform::mRT
+	double mRTData[16]; ///< Data part of LevMarqTransform::mRT
 	CvMat mRT;  ///< A transient buffer for transformation matrix. @warning Do not assume it is updated.
 	CvMat mRT3x4; ///< A transient view for the upper 3x4 transformation matrix. @warning Do not assume it is updated.
 
 	/// Buffer for transformation matrix of current param plus a delta vector
 	/// use in Jacobian approximation
-	CvMyReal mFwdTData[numParams][16];
+	double mFwdTData[numParams][16];
 	/// Transformation matrices with respect to an delta change on each parameters.
 	/// Used for computation of partial differentials.
 	CvMat mFwdT[numParams];

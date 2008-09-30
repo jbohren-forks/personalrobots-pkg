@@ -7,9 +7,6 @@
 
 #include "CvRandomTripletSetGenerator.h"
 
-typedef double CvMyReal;
-#define CV_XF CV_64F
-
 namespace cv { namespace willow {
 /**
  * Estimate transformation between corresponding 3D point clouds.
@@ -264,7 +261,7 @@ protected:
 	CvMat   mResidue2;
 	double  mW1_Data[4];
 	CvMat   mW1;   // 4x1 matrix to hold a point in homogenous coordinates
-	CvMyReal mT_Data[4*4];
+	double mT_Data[4*4];
 	CvMat    mT;
 
 #if 0
@@ -274,7 +271,7 @@ protected:
 	CvRandomTripletSetGenerator mRandomTripletSetGenerator;
 
 	/// store the best candidate before levmarq
-	CvMyReal mRTBestWithoutLevMarqData[16];
+	double mRTBestWithoutLevMarqData[16];
 	CvMat   mRTBestWithoutLevMarq;
 
 	/// inliers0 from list 0 of input points

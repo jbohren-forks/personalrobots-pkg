@@ -45,7 +45,7 @@ bool LevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param){
 	return constructHomographyMatrix(param, _Homography);
 }
 
-bool LevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param, CvMyReal _H[]){
+bool LevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param, double _H[]){
     double _buf[16], _rt[16];
     CvMat buf, rt;
     CvMat H;
@@ -74,16 +74,16 @@ bool LevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * para
 	return constructHomographyMatrix(param);
 }
 
-bool LevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * param, CvMyReal T[]) {
+bool LevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * param, double T[]) {
 	return constructHomographyMatrix(param, T);
 }
 
-bool LevMarqTransformDispSpace::constructTransformationMatrices(const CvMat *param, CvMyReal delta) {
+bool LevMarqTransformDispSpace::constructTransformationMatrices(const CvMat *param, double delta) {
 
 	constructTransformationMatrix(param);
 
-	CvMyReal _param1[numParams];
-	CvMat param1 = cvMat(numParams, 1, CV_XF, _param1);
+	double _param1[numParams];
+	CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
 	// transformation matrices for each parameter
 	for (int k=0; k<numParams; k++) {
 		cvCopy(param, &param1);
@@ -163,12 +163,12 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 
 	double delta = CV_PI/(180.*100.);
 
-	CvMyReal _param1[numParams];
+	double _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
 
-	CvMyReal _r0[3];
+	double _r0[3];
 	CvMat r0 = cvMat(1, 3, CV_64FC1, _r0);
-	CvMyReal _r1[3*numParams];
+	double _r1[3*numParams];
 	CvMat r1 = cvMat(numParams, 3, CV_64FC1, _r1);
 
 	int iterUpdates;
@@ -195,7 +195,7 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 
 		if( _JtJ || _JtErr )
 		{
-			CvMyReal scale = 1./delta;
+			double scale = 1./delta;
 
 			// Not sure if this is illegal;
 			double* JtJData   = _JtJ->data.db;
@@ -211,19 +211,19 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 				CvMat point0, point1;
 				cvGetRow(xyzs0, &point0, j);
 				cvGetRow(xyzs1, &point1, j);
-				CvMyReal _r0x;
-				CvMyReal _r0y;
-				CvMyReal _r0z;
+				double _r0x;
+				double _r0y;
+				double _r0z;
 
 				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
 				//	        	how their data are organized
-				CvMyReal _p0x = cvmGet(xyzs0, j, 0);
-				CvMyReal _p0y = cvmGet(xyzs0, j, 1);
-				CvMyReal _p0z = cvmGet(xyzs0, j, 2);
+				double _p0x = cvmGet(xyzs0, j, 0);
+				double _p0y = cvmGet(xyzs0, j, 1);
+				double _p0z = cvmGet(xyzs0, j, 2);
 
-				CvMyReal _p1x = cvmGet(xyzs1, j, 0);
-				CvMyReal _p1y = cvmGet(xyzs1, j, 1);
-				CvMyReal _p1z = cvmGet(xyzs1, j, 2);
+				double _p1x = cvmGet(xyzs1, j, 0);
+				double _p1y = cvmGet(xyzs1, j, 1);
+				double _p1z = cvmGet(xyzs1, j, 2);
 				PERSTRANSFORMRESIDUE(_Homography, _p0x, _p0y, _p0z,
 						_p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
 
@@ -241,7 +241,7 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 
 				// compute the part of jacobian regarding this
 				// point
-				CvMyReal *_r1_k = _r1;
+				double *_r1_k = _r1;
 				for (int k=0; k<numParams; k++){
 					*_r1_k -= _r0x;
 					*_r1_k *= scale;
@@ -261,9 +261,9 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 #if 1 // this branch is 1.5x to 2x faster than this branch below
 		      // TODO: not quite sure about it. Would like to investigate more.
 				  // @see LevMarqTransform::optimizeAlt
-					CvMyReal _r1x = *(_r1_k++);
-					CvMyReal _r1y = *(_r1_k++);
-					CvMyReal _r1z = *(_r1_k++);
+					double _r1x = *(_r1_k++);
+					double _r1y = *(_r1_k++);
+					double _r1z = *(_r1_k++);
 					for (int l=k; l <numParams; l++) {
 						// update the  JtJ entries
 						JtJData[k*numParams + l] +=
@@ -272,7 +272,7 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 					JtErrData[k] += _r1x*_r0x+_r1y*_r0y+_r1z*_r0z;
 #else
 					for (int c=0; c<3; c++) {
-						CvMyReal j = (_r1[k*3 + c]);
+						double j = (_r1[k*3 + c]);
 						JtErrData[k] += j*_r0[c];
 						for (int l=k; l <numParams; l++) {
 							// update the JtJ entries
@@ -305,13 +305,13 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
     				TIMERSTART2(Residue);
     				//	        	xyzs0 and xyzs1's are inliers we copy. so we know
     				//	        	how their data are organized
-    				CvMyReal _p0x = *p0++;
-    				CvMyReal _p0y = *p0++;
-    				CvMyReal _p0z = *p0++;
+    				double _p0x = *p0++;
+    				double _p0y = *p0++;
+    				double _p0z = *p0++;
 
-    				CvMyReal _p1x = *p1++;
-    				CvMyReal _p1y = *p1++;
-    				CvMyReal _p1z = *p1++;
+    				double _p1x = *p1++;
+    				double _p1y = *p1++;
+    				double _p1z = *p1++;
     				PERSTRANSFORMRESIDUE(_Homography, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
     				TIMEREND2(Residue);
 

@@ -32,7 +32,7 @@ PoseEstimate::PoseEstimate():
 	mResidue1(cvMat(3, 1, CV_64F, mResidue1_Data)),
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
 	mW1(cvMat(4, 1, CV_64F, mW1_Data)),
-	mT(cvMat(4, 4, CV_XF, mT_Data)),
+	mT(cvMat(4, 4, CV_64F, mT_Data)),
 #if 0
 	mRng(SEED),
 #endif
@@ -41,7 +41,7 @@ PoseEstimate::PoseEstimate():
 	mInliers1(NULL),
 	mInlierIndices(NULL)
 {
-	mRTBestWithoutLevMarq = cvMat(4, 4, CV_XF, mRTBestWithoutLevMarqData);
+	mRTBestWithoutLevMarq = cvMat(4, 4, CV_64F, mRTBestWithoutLevMarqData);
 }
 
 PoseEstimate::~PoseEstimate()
@@ -460,18 +460,18 @@ int PoseEstimate::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transforma
 
 bool PoseEstimate::isInLier(CvMat *points0, CvMat *points1, int i){
 	{
-		CvMyReal p0x, p0y, p0z;
+		double p0x, p0y, p0z;
 
 		p0x = cvmGet(points0, i, 0);
 		p0y = cvmGet(points0, i, 1);
 		p0z = cvmGet(points0, i, 2);
 
-		CvMyReal w0 = mT_Data[ 0]*p0x + mT_Data[ 1]*p0y + mT_Data[ 2]*p0z + mT_Data[ 3];
-		CvMyReal w1 = mT_Data[ 4]*p0x + mT_Data[ 5]*p0y + mT_Data[ 6]*p0z + mT_Data[ 7];
-		CvMyReal w2 = mT_Data[ 8]*p0x + mT_Data[ 9]*p0y + mT_Data[10]*p0z + mT_Data[11];
-		CvMyReal w3 = mT_Data[12]*p0x + mT_Data[13]*p0y + mT_Data[14]*p0z + mT_Data[15];
+		double w0 = mT_Data[ 0]*p0x + mT_Data[ 1]*p0y + mT_Data[ 2]*p0z + mT_Data[ 3];
+		double w1 = mT_Data[ 4]*p0x + mT_Data[ 5]*p0y + mT_Data[ 6]*p0z + mT_Data[ 7];
+		double w2 = mT_Data[ 8]*p0x + mT_Data[ 9]*p0y + mT_Data[10]*p0z + mT_Data[11];
+		double w3 = mT_Data[12]*p0x + mT_Data[13]*p0y + mT_Data[14]*p0z + mT_Data[15];
 
-		CvMyReal scale;
+		double scale;
 
 		mResidue1_Data[0] = cvmGet(points1, i, 0)-w0*(scale=1./w3);
 		mResidue1_Data[1] = cvmGet(points1, i, 1)-w1*scale;
@@ -555,43 +555,43 @@ int PoseEstimate::checkInliers(
 ) {
   int numInLiers = 0;
 
-  CvMyReal thresholdM =  threshold;
-  CvMyReal thresholdm = -threshold;
+  double thresholdM =  threshold;
+  double thresholdm = -threshold;
   for (int i=0; i<numPoints; i++) {
 
-    CvMyReal p0x, p0y, p0z;
+    double p0x, p0y, p0z;
 
 #if 1
     p0x = *_P0++;
     p0y = *_P0++;
     p0z = *_P0++;
 
-    CvMyReal w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
+    double w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
 #else
     // not worth using the following code
     // 1) not sure if it helps on speed.
     // 2) not sure if the order of evaluation is preserved as left to right.
-    CvMyReal w3 =
+    double w3 =
       _T[12]*(p0x=*_P0++) +
       _T[13]*(p0y=*_P0++) +
       _T[14]*(p0z=*_P0++) +
       _T[15];
 #endif
 
-    CvMyReal scale = 1.0/w3;
+    double scale = 1.0/w3;
 
-    CvMyReal rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
+    double rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
     if (rx> thresholdM || rx< thresholdm) {
       (++_P1)++;
       continue;
     }
-    CvMyReal ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
+    double ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
     if (ry>thresholdM || ry< thresholdm) {
       _P1++;
       continue;
     }
 
-    CvMyReal rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
+    double rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
     if (rz>thresholdM || rz< thresholdm) {
       continue;
     }
@@ -622,29 +622,29 @@ int PoseEstimate::getInliers(
 
   for (int i=0; i<numPoints; i++) {
 
-    CvMyReal p0x, p0y, p0z;
+    double p0x, p0y, p0z;
 
     p0x = *_P0++;
     p0y = *_P0++;
     p0z = *_P0++;
 
-    CvMyReal w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
-    CvMyReal scale = 1.0/w3;
+    double w3 = _T[15] + _T[14]*p0z + _T[13]*p0y + _T[12]*p0x;
+    double scale = 1.0/w3;
 
-    CvMyReal rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
+    double rx = *_P1++ - (_T[3] + _T[2]*p0z + _T[1]*p0y + _T[0]*p0x)*scale;
     // Experiments have shown that checking rx, ry, rz separately and rejecting the current
     // point as early as possible helps speeding up the computation
     if (rx> thresholdM || rx< thresholdm) {
       (++_P1)++;
       continue;
     }
-    CvMyReal ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
+    double ry = *_P1++ - (_T[7] + _T[6]*p0z + _T[5]*p0y + _T[4]*p0x)*scale;
     if (ry>thresholdM || ry< thresholdm) {
       _P1++;
       continue;
     }
 
-    CvMyReal rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
+    double rz = *_P1++ - (_T[11] + _T[10]*p0z + _T[9]*p0y + _T[8]*p0x)*scale;
     if (rz>thresholdM || rz< thresholdm) {
       continue;
     }

@@ -37,13 +37,13 @@ using namespace cv::willow;
 LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter)
 {
 	this->mAngleType = Euler;
-	cvInitMatHeader(&mRT,         4, 4, CV_XF, mRTData);
+	cvInitMatHeader(&mRT,         4, 4, CV_64F, mRTData);
 	cvSetIdentity(&mRT);
 	// get a view of the 3x4 transformation matrix that combines rot matrix and shift (translation) vector
 	cvGetSubRect(&mRT, &mRT3x4, cvRect(0, 0, 4, 3));
 
 	for (int i=0; i<numParams; i++){
-		cvInitMatHeader(&(mFwdT[i]), 4, 4, CV_XF, mFwdTData[i]);
+		cvInitMatHeader(&(mFwdT[i]), 4, 4, CV_64F, mFwdTData[i]);
 		cvSetIdentity(&(mFwdT[i]));
 		// get a view of the 3x4 transformation matrix that combines rot matrix and shift (translation) vector
 		cvGetSubRect(&mFwdT[i], &mFwdT3x4[i], cvRect(0, 0, 4, 3));
@@ -62,21 +62,21 @@ LevMarqTransform::~LevMarqTransform()
 {
 }
 
-bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
+bool LevMarqTransform::constructRTMatrices(const CvMat *param, double delta) {
   constructRTMatrix(param, mRTData);
 #if 0
-	CvMyReal x  = cvmGet(param, 0, 0);
-	CvMyReal y  = cvmGet(param, 1, 0);
-	CvMyReal z  = cvmGet(param, 2, 0);
-	CvMyReal tx = cvmGet(param, 3, 0);
-	CvMyReal ty = cvmGet(param, 4, 0);
-	CvMyReal tz = cvmGet(param, 5, 0);
+	double x  = cvmGet(param, 0, 0);
+	double y  = cvmGet(param, 1, 0);
+	double z  = cvmGet(param, 2, 0);
+	double tx = cvmGet(param, 3, 0);
+	double ty = cvmGet(param, 4, 0);
+	double tz = cvmGet(param, 5, 0);
 
-	CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<CvMyReal>::EulerXYZ);
+	CvMat3X3<double>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<double>::EulerXYZ);
 #endif
 
-	CvMyReal _param1[numParams];
-	CvMat param1 = cvMat(numParams, 1, CV_XF, _param1);
+	double _param1[numParams];
+	CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
 	// transformation matrices for each parameter
 	for (int k=0; k<numParams; k++) {
 		cvCopy(param, &param1);
@@ -86,20 +86,20 @@ bool LevMarqTransform::constructRTMatrices(const CvMat *param, CvMyReal delta) {
 	return true;
 }
 
-bool LevMarqTransform::constructRTMatrix(const CvMat * param, CvMyReal _RT[]) const {
+bool LevMarqTransform::constructRTMatrix(const CvMat * param, double _RT[]) const {
 	bool status = true;
 
 	switch(mAngleType) {
 	case Euler:
 	{
-	  CvMyReal x  = cvmGet(param, 0, 0);
-		CvMyReal y  = cvmGet(param, 1, 0);
-		CvMyReal z  = cvmGet(param, 2, 0);
-		CvMyReal tx = cvmGet(param, 3, 0);
-		CvMyReal ty = cvmGet(param, 4, 0);
-		CvMyReal tz = cvmGet(param, 5, 0);
+	  double x  = cvmGet(param, 0, 0);
+		double y  = cvmGet(param, 1, 0);
+		double z  = cvmGet(param, 2, 0);
+		double tx = cvmGet(param, 3, 0);
+		double ty = cvmGet(param, 4, 0);
+		double tz = cvmGet(param, 5, 0);
 
-		CvMat3X3<CvMyReal>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<CvMyReal>::EulerXYZ);
+		CvMat3X3<double>::transformMatrix(x, y, z, tx, ty, tz, _RT, 4, CvMat3X3<double>::EulerXYZ);
 		break;
 	}
 	case Rodrigues:
@@ -198,11 +198,11 @@ bool LevMarqTransform::constructTransformationMatrix(const CvMat *param){
 	return constructRTMatrix(param);
 }
 
-bool LevMarqTransform::constructTransformationMatrix(const CvMat *param, CvMyReal T[]){
+bool LevMarqTransform::constructTransformationMatrix(const CvMat *param, double T[]){
 	return constructRTMatrix(param, T);
 }
 
-bool LevMarqTransform::constructTransformationMatrices(const CvMat *param, CvMyReal delta){
+bool LevMarqTransform::constructTransformationMatrices(const CvMat *param, double delta){
 	return constructRTMatrices(param, delta);
 }
 
@@ -272,11 +272,11 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 
 	double delta = CV_PI/(180.*10000.);
 
-	CvMyReal _param1[numParams];
+	double _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_64FC1, _param1);
 
 	// buffer for forward differences of the current point in x,y,z w.r.t all parameters
-	CvMyReal _r1[3*numParams];
+	double _r1[3*numParams];
 	CvMat r1 = cvMat(numParams, 3, CV_64FC1, _r1);
 
 	int iterUpdates;
@@ -306,7 +306,7 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    TIMERSTART2(LevMarq4);
 	    if( _JtJ || _JtErr )
 	    {
-	      CvMyReal scale = 1./delta;
+	      double scale = 1./delta;
 
 	      // Not sure if this is illegal;
 	      double* JtJData   = _JtJ->data.db;
@@ -325,20 +325,20 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    	// go thru each points and compute current error as
         	//  error = xyzs1^T  - Transformation * xyzs0^T
 	    	for (int j=0; j<numPoints; j++) {
-	        	CvMyReal _r0x;	// residue of the current point in x dim
-	        	CvMyReal _r0y;  // residue of the current point in y dim
-	        	CvMyReal _r0z;  // residue of the current point in z dim
+	        	double _r0x;	// residue of the current point in x dim
+	        	double _r0y;  // residue of the current point in y dim
+	        	double _r0z;  // residue of the current point in z dim
 	        	TIMERSTART2(Residue);
 	        	// no sure about the order evaluation in the macro. We store
 	        	// the value in a local variable.
 	        	// TODO: use reference instead?
-	        	CvMyReal _p0x = *p0++;	// xyzs0[j, 0]
-	        	CvMyReal _p0y = *p0++;	// xyzs0[j, 1]
-	        	CvMyReal _p0z = *p0++;	// xyzs0[j, 2]
+	        	double _p0x = *p0++;	// xyzs0[j, 0]
+	        	double _p0y = *p0++;	// xyzs0[j, 1]
+	        	double _p0z = *p0++;	// xyzs0[j, 2]
 
-	        	CvMyReal _p1x = *p1++;	// xyzs1[j, 0]
-	        	CvMyReal _p1y = *p1++;	// xyzs1[j, 1]
-	        	CvMyReal _p1z = *p1++;	// xyzs1[j, 2]
+	        	double _p1x = *p1++;	// xyzs1[j, 0]
+	        	double _p1y = *p1++;	// xyzs1[j, 1]
+	        	double _p1z = *p1++;	// xyzs1[j, 2]
 	        	TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
 	        	TIMEREND2(Residue);
 
@@ -369,7 +369,7 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 
 	    		// approximate the partial derivatives of the errors in x, y and z, w.r.t. the nonlinear
 	    		// parameters with forward differences.
-	    		CvMyReal *_r1_k = _r1;
+	    		double *_r1_k = _r1;
 	    		for (int k=0; k<numNonLinearParams; k++){
 	    			*_r1_k -= _r0x;
 	    			*_r1_k *= scale;
@@ -392,9 +392,9 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	    		_r1_k = _r1;
 	    		assert(numNonLinearParams == 3);
 	    		for (int k=0;	k<numNonLinearParams; k++) {
-	    			CvMyReal _r1x = *(_r1_k++);
-	    			CvMyReal _r1y = *(_r1_k++);
-	    			CvMyReal _r1z = *(_r1_k++);
+	    			double _r1x = *(_r1_k++);
+	    			double _r1y = *(_r1_k++);
+	    			double _r1z = *(_r1_k++);
 	    			for (int l=k; l <numNonLinearParams; l++) {
 	    				// update the  JtJ entries w.r.t nonlinear parameters
 	    				JtJData[k*numParams + l] +=
@@ -417,7 +417,7 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 #else
 	    		for (int k=0;	k<numParams; k++) {
 	    			for (int c=0; c<3; c++) {
-	    				CvMyReal j = (_r1[k*3 + c]);
+	    				double j = (_r1[k*3 + c]);
 	    				JtErrData[k] += j*_r0[c];
 	    				for (int l=k; l <numParams; l++) {
 	    					// update the JtJ entries
@@ -467,13 +467,13 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
     				// no sure about the order evaluation in the macro. We store
     				// the value in a local variable.
     				// TODO: use reference instead?
-    				CvMyReal _p0x = *p0++;  // cvmGet(xyzs0, j, 0);
-    				CvMyReal _p0y = *p0++;	// cvmGet(xyzs0, j, 1);
-    				CvMyReal _p0z = *p0++;	// cvmGet(xyzs0, j, 2);
+    				double _p0x = *p0++;  // cvmGet(xyzs0, j, 0);
+    				double _p0y = *p0++;	// cvmGet(xyzs0, j, 1);
+    				double _p0z = *p0++;	// cvmGet(xyzs0, j, 2);
 
-    				CvMyReal _p1x = *p1++;	// cvmGet(xyzs1, j, 0);
-    				CvMyReal _p1y = *p1++;	// cvmGet(xyzs1, j, 1);
-    				CvMyReal _p1z = *p1++;	// cvmGet(xyzs1, j, 2);
+    				double _p1x = *p1++;	// cvmGet(xyzs1, j, 0);
+    				double _p1y = *p1++;	// cvmGet(xyzs1, j, 1);
+    				double _p1z = *p1++;	// cvmGet(xyzs1, j, 2);
 
     				TRANSFORMRESIDUE(mRTData, _p0x, _p0y, _p0z, _p1x, _p1y, _p1z, _r0x, _r0y, _r0z);
     				TIMEREND2(Residue);
