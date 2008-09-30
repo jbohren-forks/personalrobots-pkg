@@ -517,8 +517,10 @@ bool PathRecon::reconOneFrame() {
     }
     case PathRecon::KeyFrameUse:  {
       // use currFrame as key frame
+      TIMERSTART2(PoseEstimateLevMarq);
       mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
           *currFrame->mInliers0, currFrame->mRot, currFrame->mShift);
+      TIMEREND2(PoseEstimateLevMarq);
       updateTrajectory();
       insertNewKeyFrame = true;
       break;
