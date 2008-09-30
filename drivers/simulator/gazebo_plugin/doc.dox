@@ -15,7 +15,7 @@ Here are the gazebo plugins which are currently implemented:
 
  @image html gazebo_mcn.jpg "Gazebo Mechanism Control Model"
 
-@section usage Quick Start Guide
+@section usage PR2 Simulation Quick Start Guide
 \li If you have successfully \e rosmake \e 2dnav-gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
   @verbatim
   $ rosmake gazebo
@@ -73,7 +73,7 @@ Here are the gazebo plugins which are currently implemented:
   $ gazebo `rospack find gazebo_robot_description`/world/robot.world
   @endverbatim
 
-@section parameters Robot Descriptions
+@section parameters PR2 Robot Descriptions
 Robot descriptions are explained in the <a href="http://pr.willowgarage.com/wiki/RobotDescriptionFormat">Robot Description Format</a> page.
 You can find the PR2 XML files in \b ros-pkg/robot_descriptions/wg_robot_description/pr2
 
@@ -85,7 +85,7 @@ $ rosmake
 Above generates \b ros-pkg/robot_descriptions/gazebo_robot_description/world/pr2_xml.model, which is included by the world file: \b ros-pkg/robot_descriptions/gazebo_robot_description/world/robot.world.
 
 
-@section topic ROS topics
+@section topic PR2 ROS topics
 Various dynamically loaded plugins have been outfitted for PR2.
 Below are the ROS messages actively used by PR2 simulation as described by launch script \b roslaunch \b ros-pkg/robot_descriptions/gazebo_robot_description/pr2_gazebo_actuators.xml.
 
@@ -185,7 +185,7 @@ Below are the ROS messages actively used by PR2 simulation as described by launc
    - \b right_arm_controller/set_target
 
 @section templates How To Construct Your Own ROS Gazebo Plugin
-Here is a sample code for making a very simple plugin in Gazebo:
+Here is a sample code for making a very simple plugin in Gazebo that publishes \c rostools::Time message over a ROS topic.
 \li \b my_plugin.h:
 @verbatim
 #ifndef MY_PLUGIN_HH
@@ -323,6 +323,15 @@ namespace gazebo {
 }
 
 
+@endverbatim
+
+\li The corresponding XML snippit required to setup the controller:
+@verbatim
+    <model:physical name="my_model">
+      <controller:my_plugin name="my_plugin_name" plugin="libmy_plugin.so">
+        <my_topicname>my_topic</my_topicname>
+      </controller:my_plugin>
+    </model:physical>
 @endverbatim
 
 **/
