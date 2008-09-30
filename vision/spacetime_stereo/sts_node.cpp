@@ -1,3 +1,51 @@
+/*
+ * Copyright (c) 2008, Willow Garage, Inc.
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Willow Garage, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/** 
+
+@mainpage
+
+@htmlinclude manifest.html
+
+This code computes stereo correspondence using the spacetime stereo technique. The input is given by the calibration parameters and a stream of stereo images that must be advertised under ROS (e.g. by means of the sensor_cart package). The output is a point cloud that can be visualized using, e.g.,  the ogre_visualizer package. 
+
+At the very beginning of the file there are the parameters of the algorithm that can be modified by the user. In particular, these are:
+
+ * FILTERS: if defined, three post-filters are used in order to discard wrong stereo correspondences.
+ * RADIUS: this is the radius of the spatial window used to compute spacetime stereo. 
+ * NIMAGES: this is the number of images of the processed stereo sequence. In other words, this is the temporal window used to compute spacetime stereo. 
+ * MAXDISP, XOFFSET: these two parameters define the disparity range. In particular, the disparity range is defined as: [XOFFSET, XOFFSET + MAXDISP]
+
+Advanced use: in some particular cases (e.g. smooth surfaces without big disparity jumps, such as faces) a better qualitative result can be achieved by switching off one of the three post-filters deployed. To do that, the parameter “par.unique” at line 420 can be set to 0. 
+
+**/
+
 
 //#############################################
 //####### SPACE-TIME STEREO code    ###########
