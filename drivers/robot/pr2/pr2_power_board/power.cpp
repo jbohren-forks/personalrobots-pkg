@@ -90,14 +90,14 @@ int quit = 0;
 
 // CloseAll
 void CloseAllInterfaces(void) {
-	for (int i=0; i<Interfaces.size(); ++i){
+	for (unsigned i=0; i<Interfaces.size(); ++i){
 		if (Interfaces[i] != NULL) {
 			delete Interfaces[i];
 		}
 	}
 }
 void CloseAllDevices(void) {
-	for (int i=0; i<Devices.size(); ++i){
+	for (unsigned i=0; i<Devices.size(); ++i){
 		if (Devices[i] != NULL) {
 			delete Devices[i];
 		}
@@ -286,11 +286,11 @@ int send_command(const char* input) {
 	}
 	
 	if (sscanf(input,"%i %i %8s",&selected_device, &circuit_breaker, command) != 3) {
-		printf("Need two values : device# & circuit breaker#, got '%s'\n");
+	  printf("Need two values : device# & circuit breaker#, got '%s'\n", input);
 		return -1;
 	}
 
-	if ((selected_device < 0) || (selected_device >= Devices.size())) {
+	if ((selected_device < 0) || (selected_device >= (int)Devices.size())) {
 		fprintf(stderr, "Device number must be between 0 and %u\n", Devices.size()-1);
 		return -1;
 	}
@@ -327,7 +327,7 @@ int send_command(const char* input) {
 		command_enum = NONE;
 	}
 	else {
-		fprintf(stderr, "invalid command '%s'\n");
+	  fprintf(stderr, "invalid command '%s'\n", command);
 		return -1;
 	}
 	//" -c : command to send to device : 'start', 'stop', 'reset', 'disable'\n"	
@@ -380,8 +380,8 @@ void Device::Print(unsigned index) {
 	assert(pmsg != NULL);
 	printf("[%u] %u : %.*s\n", index,
 		   pmsg->header.serial_num,
-		   pmsg->header.text,
-		   pmsg->header.text);	
+	       sizeof(pmsg->header.text),
+	       pmsg->header.text);	
 }
 
 int list_devices(void)
@@ -542,7 +542,7 @@ int collect_messages(void) {
 		fd_set read_set;
 		int max_sock = -1;
 		FD_ZERO(&read_set);
-		for (int i = 0; i<Interfaces.size(); ++i)
+		for (unsigned i = 0; i<Interfaces.size(); ++i)
 			Interfaces[i]->AddToReadSet(read_set,max_sock);
 		
 		int result = select(max_sock+1, &read_set, NULL, NULL, &timeout);
@@ -559,7 +559,7 @@ int collect_messages(void) {
 		}
 		else if (result >= 1) {
 			Interface *recvInterface = NULL;
-			for (int i = 0; i<Interfaces.size(); ++i) {
+			for (unsigned i = 0; i<Interfaces.size(); ++i) {
 				//figure out which interface we recieved on
 				if (Interfaces[i]->IsReadSet(read_set)) {
 					recvInterface = Interfaces[i];
@@ -682,7 +682,7 @@ int main(int argc, char** argv) {
     if(command[0] != 0)
       last_command = command[0];
 
-		free(command);		
+    //free(command);		
 	}
 
 	CloseAllDevices();

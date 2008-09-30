@@ -1,8 +1,13 @@
 
-FLAGS=-fPIC -ggdb -Wall 
+#CFLAGS=-fPIC -ggdb -Wall 
+CCFLAGS=-fPIC -ggdb -Wall 
+CPPFLAGS=-fPIC -ggdb -Wall 
 LIBS=#-lreadline
 
 all: power
 
 power: power.o power_comm.h	
-	g++ $(FLAGS) $(LINKINCLUDES) $(LIBS) -o $@ $^ 
+	g++ $(CCFLAGS) $(LINKINCLUDES) $(LIBS) -o $@ $^ 
+
+clean:
+	rm *.o power
