@@ -141,11 +141,11 @@ void CostMap2D::updateDynamicObstacles(double ts,
       continue;
 
     unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+    obsWatchDog_[ind] = WATCHDOG_LIMIT;
 
     // Compute inflation set
     std::vector<unsigned int> inflation;
     computeInflation(ind, inflation);
-
     for(unsigned int i = 0; i<inflation.size(); i++){
       unsigned int cell = inflation[i];
 
@@ -158,13 +158,16 @@ void CostMap2D::updateDynamicObstacles(double ts,
 	  dynamicObstacles_.push_back(cell);
 	}
 
-	// Allows for the posibility that an actual obstacle will over-write
-	// an inflated obstacle. The opposite should not occur.
-	fullData_[cell] = (cell == ind ? threshold_ : INFLATED_OBSTACLE);
+	// Allows for the possibility that an actual obstacle will over-write
+	// an inflated obstacle. The opposite should not occur
+	if(cell == ind){
+	  fullData_[cell] = threshold_;
+	}
+	else{
+	  fullData_[cell] = INFLATED_OBSTACLE;
+	  obsWatchDog_[cell] = WATCHDOG_LIMIT;
+	}
       }
-
-      // Pet the watchdog
-      obsWatchDog_[cell] = WATCHDOG_LIMIT;
     }
 
   }

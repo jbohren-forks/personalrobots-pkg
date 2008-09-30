@@ -258,7 +258,7 @@ TEST(costmap, test6){
 }
 
 /**
- * Test inflation for bot static and dynamic obstacles
+ * Test inflation for both static and dynamic obstacles
  */
 TEST(costmap, test7){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
@@ -367,6 +367,33 @@ TEST(costmap, test7){
   ASSERT_EQ(map.isObstacle(map.MC_IND(0, 9)), true);
 }
 
+/**
+ * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
+ */
+TEST(costmap, test8){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+
+  const unsigned char* costData = map.getMap();
+
+  std::vector<unsigned int> insertions, deletions;
+
+  // Creat a small L-Shape all at once
+  std_msgs::PointCloudFloat32 c0;
+  c0.set_pts_size(3);
+  c0.pts[0].x = 1;
+  c0.pts[0].y = 1;
+  c0.pts[0].z = 0;
+  c0.pts[1].x = 1;
+  c0.pts[1].y = 2;
+  c0.pts[1].z = 0;
+  c0.pts[2].x = 2;
+  c0.pts[2].y = 2;
+  c0.pts[2].z = 0;
+
+  map.updateDynamicObstacles(1, c0, insertions, deletions);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(3,2)), true);
+  ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(3,3)), true);
+}
 int main(int argc, char** argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
