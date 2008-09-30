@@ -33,15 +33,15 @@
  *********************************************************************/
 #include <algorithm>
 
-#include <pr2_mechanism_controllers/laser_scanner_controller.h>
+#include <pr2_mechanism_controllers/laser_scanner_velocity_controller.h>
 #include <math_utils/angles.h>
 #include <math_utils/velocity.h>
 using namespace std;
 using namespace controller;
 #define MIN_MOVING_SPEED 0.3
-ROS_REGISTER_CONTROLLER(LaserScannerController)
+ROS_REGISTER_CONTROLLER(LaserScannerVelocityController)
 
-LaserScannerController::LaserScannerController()
+LaserScannerVelocityController::LaserScannerVelocityController()
 {
   robot_ = NULL;
   joint_ = NULL;
@@ -59,12 +59,12 @@ LaserScannerController::LaserScannerController()
   lower_deceleration_buffer_ = 0.0;
 }
 
-LaserScannerController::~LaserScannerController()
+LaserScannerVelocityController::~LaserScannerVelocityController()
 {
 
 }
 
-void LaserScannerController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
+void LaserScannerVelocityController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
 {
   robot_ = robot;
   joint_ = robot->getJointState(name);
@@ -74,7 +74,7 @@ void LaserScannerController::init(double p_gain, double i_gain, double d_gain, d
   last_time_= time;
 }
 
-bool LaserScannerController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool LaserScannerVelocityController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
 
@@ -117,7 +117,7 @@ bool LaserScannerController::initXml(mechanism::RobotState *robot, TiXmlElement 
  }
 
 // Set the joint velocity command
-void LaserScannerController::setCommand(double command)
+void LaserScannerVelocityController::setCommand(double command)
 {
   command_ = command;
   if(current_mode_ == VELOCITY && automatic_turnaround_)
@@ -136,23 +136,23 @@ void LaserScannerController::setCommand(double command)
 }
 
 // Return the current position command
-double LaserScannerController::getCommand()
+double LaserScannerVelocityController::getCommand()
 {
   return command_;
 }
 
 // Return the measured joint position
-double LaserScannerController::getMeasuredPosition()
+double LaserScannerVelocityController::getMeasuredPosition()
 {
   return joint_->position_;
 }
 
-double LaserScannerController::getTime()
+double LaserScannerVelocityController::getTime()
 {
   return robot_->hw_->current_time_;
 }
 
-void LaserScannerController::update()
+void LaserScannerVelocityController::update()
 {
   double time = robot_->hw_->current_time_;
   double position = joint_->position_;
@@ -232,12 +232,12 @@ void LaserScannerController::update()
 
 }
 
-void LaserScannerController::setJointEffort(double effort)
+void LaserScannerVelocityController::setJointEffort(double effort)
 {
   joint_->commanded_effort_ = effort;
 }
 
-void LaserScannerController::setTurnaroundPoints(void)
+void LaserScannerVelocityController::setTurnaroundPoints(void)
 {
   upper_turnaround_location_ = joint_->joint_->joint_limit_max_ - upper_turnaround_offset_;
   upper_deceleration_zone_ = upper_turnaround_location_-upper_deceleration_buffer_;
@@ -246,42 +246,42 @@ void LaserScannerController::setTurnaroundPoints(void)
   lower_deceleration_zone_ = lower_turnaround_location_ + lower_deceleration_buffer_;
 }
 
-ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
-LaserScannerControllerNode::LaserScannerControllerNode()
+ROS_REGISTER_CONTROLLER(LaserScannerVelocityControllerNode)
+LaserScannerVelocityControllerNode::LaserScannerVelocityControllerNode()
 {
-  c_ = new LaserScannerController();
+  c_ = new LaserScannerVelocityController();
 }
 
 
-LaserScannerControllerNode::~LaserScannerControllerNode()
+LaserScannerVelocityControllerNode::~LaserScannerVelocityControllerNode()
 {
   delete c_;
 }
 
-void LaserScannerControllerNode::update()
+void LaserScannerVelocityControllerNode::update()
 {
   c_->update();
 }
 
 // Return the measured joint position
-double LaserScannerControllerNode::getMeasuredPosition()
+double LaserScannerVelocityControllerNode::getMeasuredPosition()
 {
   return c_->getMeasuredPosition();
 }
 
-bool LaserScannerControllerNode::setCommand(
+bool LaserScannerVelocityControllerNode::setCommand(
   robot_mechanism_controllers::SetCommand::request &req,
   robot_mechanism_controllers::SetCommand::response &resp)
 {
 
-  c_->current_mode_ = LaserScannerController::VELOCITY;
+  c_->current_mode_ = LaserScannerVelocityController::VELOCITY;
   c_->setCommand(req.command);
   resp.command = c_->getCommand();
 
    return true;
 }
 
-bool LaserScannerControllerNode::getCommand(
+bool LaserScannerVelocityControllerNode::getCommand(
   robot_mechanism_controllers::GetCommand::request &req,
   robot_mechanism_controllers::GetCommand::response &resp)
 {
@@ -290,54 +290,54 @@ bool LaserScannerControllerNode::getCommand(
   return true;
 }
 
-bool LaserScannerControllerNode::setPosition(
+bool LaserScannerVelocityControllerNode::setPosition(
   robot_mechanism_controllers::SetPosition::request &req,
   robot_mechanism_controllers::SetPosition::response &resp)
 {
 
-  c_->current_mode_ = LaserScannerController::POSITION;
+  c_->current_mode_ = LaserScannerVelocityController::POSITION;
   c_->setCommand(req.position);
   resp.command = c_->getCommand();
 
    return true;
 }
 
-bool LaserScannerControllerNode::getPosition(
+bool LaserScannerVelocityControllerNode::getPosition(
   robot_mechanism_controllers::GetPosition::request &req,
   robot_mechanism_controllers::GetPosition::response &resp)
 {
-  c_->current_mode_ =  LaserScannerController::POSITION;
+  c_->current_mode_ =  LaserScannerVelocityController::POSITION;
   resp.command = c_->getCommand();
 
   return true;
 }
 
 
-bool LaserScannerControllerNode::setProfile(
-  robot_mechanism_controllers::SetProfile::request &req,
-  robot_mechanism_controllers::SetProfile::response &resp)
+bool LaserScannerVelocityControllerNode::setProfile(
+  pr2_mechanism_controllers::SetProfile::request &req,
+  pr2_mechanism_controllers::SetProfile::response &resp)
 {
   setProfileCall(req.UpperTurnaround,req.LowerTurnaround, req.upperDecelBuffer, req.lowerDecelBuffer);
   resp.time = c_->getTime();
   return true;
 }
 
-bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool LaserScannerVelocityControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   ros::node *node = ros::node::instance();
   string prefix = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(prefix + "/set_command", &LaserScannerControllerNode::setCommand, this);
-  node->advertise_service(prefix + "/get_command", &LaserScannerControllerNode::getCommand, this);
-  node->advertise_service(prefix + "/set_profile", &LaserScannerControllerNode::setProfile, this);
-  node->advertise_service(prefix + "/set_position", &LaserScannerControllerNode::setPosition, this);
-  node->advertise_service(prefix + "/get_position", &LaserScannerControllerNode::getPosition, this);
+  node->advertise_service(prefix + "/set_command", &LaserScannerVelocityControllerNode::setCommand, this);
+  node->advertise_service(prefix + "/get_command", &LaserScannerVelocityControllerNode::getCommand, this);
+  node->advertise_service(prefix + "/set_profile", &LaserScannerVelocityControllerNode::setProfile, this);
+  node->advertise_service(prefix + "/set_position", &LaserScannerVelocityControllerNode::setPosition, this);
+  node->advertise_service(prefix + "/get_position", &LaserScannerVelocityControllerNode::getPosition, this);
   return true;
 }
 
-bool LaserScannerControllerNode::setProfileCall(double upper_turn_around, double lower_turn_around, double upper_decel_buffer, double lower_decel_buffer)
+bool LaserScannerVelocityControllerNode::setProfileCall(double upper_turn_around, double lower_turn_around, double upper_decel_buffer, double lower_decel_buffer)
 {
   c_->upper_turnaround_offset_ = upper_turn_around;
   c_->lower_turnaround_offset_ = lower_turn_around;
@@ -347,13 +347,13 @@ bool LaserScannerControllerNode::setProfileCall(double upper_turn_around, double
 
   if(upper_turn_around == 0 && lower_turn_around ==0) c_->automatic_turnaround_ = false;
   else c_->automatic_turnaround_ = true;
-  c_->current_mode_ = LaserScannerController::VELOCITY;
+  c_->current_mode_ = LaserScannerVelocityController::VELOCITY;
   c_->setCommand(0.0);
 
   return true;
 }
 
-bool LaserScannerControllerNode::getActual(
+bool LaserScannerVelocityControllerNode::getActual(
   robot_mechanism_controllers::GetActual::request &req,
   robot_mechanism_controllers::GetActual::response &resp)
 {
@@ -362,13 +362,13 @@ bool LaserScannerControllerNode::getActual(
   return true;
 }
 
-void LaserScannerControllerNode::setCommand(double command)
+void LaserScannerVelocityControllerNode::setCommand(double command)
 {
   c_->setCommand(command);
 }
 
 // Return the current position command
-double LaserScannerControllerNode::getCommand()
+double LaserScannerVelocityControllerNode::getCommand()
 {
   return c_->getCommand();
 }

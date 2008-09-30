@@ -43,13 +43,13 @@
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
 #include <robot_mechanism_controllers/GetCommand.h>
-#include <robot_mechanism_controllers/SetProfile.h>
+#include <pr2_mechanism_controllers/SetProfile.h>
 #include <robot_mechanism_controllers/SetPosition.h>
 #include <robot_mechanism_controllers/GetPosition.h>
 namespace controller
 {
 
-class LaserScannerController : public Controller
+class LaserScannerVelocityController : public Controller
 {
 
 public:
@@ -63,12 +63,12 @@ public:
    * \brief Default Constructor of the JointController class.
    *
    */
-  LaserScannerController();
+  LaserScannerVelocityController();
 
   /*!
    * \brief Destructor of the JointController class.
    */
-  ~LaserScannerController();
+  ~LaserScannerVelocityController();
 
   /*!
    * \brief Functional way to initialize limits and gains.
@@ -141,19 +141,19 @@ public:
 
  };
 
-class LaserScannerControllerNode : public Controller
+class LaserScannerVelocityControllerNode : public Controller
 {
 public:
   /*!
    * \brief Default Constructor
    *
    */
-  LaserScannerControllerNode();
+  LaserScannerVelocityControllerNode();
 
   /*!
    * \brief Destructor
    */
-  ~LaserScannerControllerNode();
+  ~LaserScannerVelocityControllerNode();
 
   double getMeasuredPosition();
 
@@ -179,25 +179,25 @@ public:
    */
 
   bool setPosition(robot_mechanism_controllers::SetPosition::request &req,
-                  robot_mechanism_controllers::SetPosition::response &resp);
+                   robot_mechanism_controllers::SetPosition::response &resp);
  /*!
    * \brief Send velocity command
    */
 
   bool getPosition(robot_mechanism_controllers::GetPosition::request &req,
-                  robot_mechanism_controllers::GetPosition::response &resp);
+                   robot_mechanism_controllers::GetPosition::response &resp);
  /*!
    * \brief Send velocity command
    */
 
   bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                  robot_mechanism_controllers::GetActual::response &resp);
+                 robot_mechanism_controllers::GetActual::response &resp);
   /*!
    * \brief Send velocity command
    */
 
-  bool setProfile(robot_mechanism_controllers::SetProfile::request &req,
-  robot_mechanism_controllers::SetProfile::response &resp);
+  bool setProfile(pr2_mechanism_controllers::SetProfile::request &req,
+                  pr2_mechanism_controllers::SetProfile::response &resp);
   /*!
    * \brief Send velocity command
    */
@@ -209,7 +209,7 @@ public:
   double getCommand();
 
 private:
-  LaserScannerController *c_;
+  LaserScannerVelocityController *c_;
 };
 }
 
