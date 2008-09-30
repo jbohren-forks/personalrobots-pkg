@@ -1,7 +1,5 @@
 <launch>
   <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/wg_robot_description/pr2 -->
-  <!-- start a new master if none active -->
-  <master auto="start">
   <!-- if needed, group tag allows pushing components into namespace via ns="namespace" -->
   <group name="wg">
     <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it
