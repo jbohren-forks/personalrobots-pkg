@@ -410,7 +410,7 @@ namespace gazebo
 
     /// \brief A mutex to lock access to fields that are used in message callbacks
     private: ros::thread::mutex lock_;
-    /// \brief pointer to ros node
+    /// \brief pointer to ROS node
     ros::node *rosnode_;
     rostools::Time my_message_;
 

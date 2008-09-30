@@ -1,0 +1,42 @@
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+Here are the gazebo plugins which are currently implemented:
+ \li Simple world, two desks and some simple geometric objects
+   -# \2dnav-gazebo-simple.xml
+   -# \2dnav-gazebo-simple-fake_localization.xml
+   -# \2dnav-gazebo-simple-headless-.xml
+   -# \2dnav-gazebo-simple-headless--fake_localization.xml
+ \li Complex world, Willow Garage Office Map
+   -# \2dnav-gazebo-wg.xml
+   -# \2dnav-gazebo-wg-fake_localization.xml
+   -# \2dnav-gazebo-wg-headless-.xml
+   -# \2dnav-gazebo-wg-headless--fake_localization.xml
+
+ \li Example launch script \b 2dnav-gazebo.xml:
+   -# @verbatim
+      <launch>
+        <master auto="start"/>
+        <group name="wg">
+          <!-- this is another script that starts up a simple world with PR2 in it -->
+          <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
+          <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
+          <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" output="screen" />
+          <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
+          <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
+          <!--node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" output="screen" /-->
+        </group>
+
+        <!-- Test for publication of 'tilt_scan' topic. -->
+        <test test-name="hztest_test_amcl1" pkg="rostest" type="hztest" name="amcl_test">
+          <param name="topic" value="localizedpose" />
+          <param name="hz" value="5.0" />
+          <param name="hzerror" value="3.0" />
+          <param name="test_duration" value="5.0" />
+          <param name="check_intervals" value="false" />
+        </test>
+      </launch>
+      @endverbatim
+**/

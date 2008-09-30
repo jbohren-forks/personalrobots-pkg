@@ -78,7 +78,7 @@ namespace gazebo
 
 /// \brief ROS laser scan controller.
 ///        \li Starts a ROS node if none exists.
-///        \li Simulates a laser range sensor and publish results over ROS on std_msgs::LaserScan.msg
+///        \li Simulates a laser range sensor and publish std_msgs::LaserScan.msg over ROS.
 class Ros_Laser : public Controller
 {
   /// \brief Constructor

@@ -62,7 +62,7 @@ namespace gazebo
 */
 
 /// \brief Ros_Camera Controller.
-///        \li Starts a ros node if none exists. \n
+///        \li Starts a ROS node if none exists. \n
 ///        \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS. \n
 class Ros_Camera : public Controller
 {

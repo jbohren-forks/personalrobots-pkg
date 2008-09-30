@@ -88,7 +88,7 @@ namespace gazebo
 /// \brief ROS laser block simulation.
 ///        \li Starts a ROS node if none exists.
 ///        \li This controller simulates a block of laser range detections.
-///            Resulting point cloud (std_msgs::PointCloudFloat32.msg are published as a ROS topic.
+///            Resulting point cloud (std_msgs::PointCloudFloat32.msg) is published as a ROS topic.
 class Ros_Block_Laser : public Controller
 {
   /// \brief Constructor

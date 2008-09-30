@@ -1,8 +1,8 @@
 <package>
-  <description>A demo of  2-D navigation using gazebo, simply replace rosstage with rosgazebo.</description>
+  <description>A clone of  2-D navigation stack \b rosstage using a 3D simulation environment.</description>
   <author>John Hsu</author>
   <license>BSD</license>
-  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+  <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="nav_view"/>
   <depend package="roslaunch"/>
   <depend package="gazebo_plugin"/>
