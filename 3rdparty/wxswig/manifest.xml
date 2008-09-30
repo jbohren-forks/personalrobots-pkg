@@ -13,5 +13,6 @@ http://wxpython.wxcommunity.com/tools/
   <cpp cflags="-DSWIG_TYPE_TABLE=_wxPython_table -DWXP_USE_THREAD=1 `python-config --includes`" lflags="`python-config --ldflags`" />
   <swig flags="-c++ -Wall -python -modern -new_repr -keyword -fastdispatch -fvirtual -fastinit -fastunpack `wx-config --cppflags` -DSWIG_TYPE_TABLE=_wxPython_table -DWXP_USE_THREAD=1"/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
 </package>
 
