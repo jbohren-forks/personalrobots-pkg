@@ -62,8 +62,8 @@ void TrajectoryController::setPathCells(const ObstacleMapAccessor& ma){
   int local_goal_x = -1;
   int local_goal_y = -1;
   bool started_path = false;
-  priority_queue<MapCell*, std::vector<MapCell*>, ComparePathDist> path_dist_queue;
-  priority_queue<MapCell*, std::vector<MapCell*>, CompareGoalDist> goal_dist_queue;
+  queue<MapCell*> path_dist_queue;
+  queue<MapCell*> goal_dist_queue;
   for(unsigned int i = 0; i < global_plan_.size(); ++i){
     int map_x = WX_MX(map_, global_plan_[i].x);
     int map_y = WY_MY(map_, global_plan_[i].y);
@@ -96,62 +96,54 @@ void TrajectoryController::setPathCells(const ObstacleMapAccessor& ma){
 }
 
 void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma,
-    priority_queue<MapCell*, vector<MapCell*>, ComparePathDist>& dist_queue){
+    queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
   unsigned int last_col = map_.size_x_ - 1;
   unsigned int last_row = map_.size_y_ - 1;
   while(!dist_queue.empty()){
-    current_cell = dist_queue.top();
+    current_cell = dist_queue.front();
     check_cell = current_cell;
     dist_queue.pop();
 
     if(current_cell->cx > 0){
       check_cell = current_cell - 1;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma);
-        check_cell->path_mark = true;
-        dist_queue.push(check_cell);
+        updatePathCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cx < last_col){
       check_cell = current_cell + 1;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma);
-        check_cell->path_mark = true;
-        dist_queue.push(check_cell);
+        updatePathCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cy > 0){
       check_cell = current_cell - map_.size_x_;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma);
-        check_cell->path_mark = true;
-        dist_queue.push(check_cell);
+        updatePathCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cy < last_row){
       check_cell = current_cell + map_.size_x_;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma);
-        check_cell->path_mark = true;
-        dist_queue.push(check_cell);
+        updatePathCell(current_cell, check_cell, ma, dist_queue);
       }
     }
   }
 }
 
 void TrajectoryController::computeGoalDistance(const ObstacleMapAccessor& ma,
-    priority_queue<MapCell*, vector<MapCell*>, CompareGoalDist>& dist_queue){
+    queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
   unsigned int last_col = map_.size_x_ - 1;
   unsigned int last_row = map_.size_y_ - 1;
   while(!dist_queue.empty()){
-    current_cell = dist_queue.top();
+    current_cell = dist_queue.front();
     current_cell->goal_mark = true;
     check_cell = current_cell;
     dist_queue.pop();
@@ -159,36 +151,28 @@ void TrajectoryController::computeGoalDistance(const ObstacleMapAccessor& ma,
     if(current_cell->cx > 0){
       check_cell = current_cell - 1;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma);
-        check_cell->goal_mark = true;
-        dist_queue.push(check_cell);
+        updateGoalCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cx < last_col){
       check_cell = current_cell + 1;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma);
-        check_cell->goal_mark = true;
-        dist_queue.push(check_cell);
+        updateGoalCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cy > 0){
       check_cell = current_cell - map_.size_x_;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma);
-        check_cell->goal_mark = true;
-        dist_queue.push(check_cell);
+        updateGoalCell(current_cell, check_cell, ma, dist_queue);
       }
     }
 
     if(current_cell->cy < last_row){
       check_cell = current_cell + map_.size_x_;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma);
-        check_cell->goal_mark = true;
-        dist_queue.push(check_cell);
+        updateGoalCell(current_cell, check_cell, ma, dist_queue);
       }
     }
   }
@@ -405,7 +389,7 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
         g_dist = 0;
       if(p_dist < 0)
         p_dist = 0;
-      printf("%d 0 %d ", g_dist, p_dist);
+      printf("%d 0 %d ", g_dist, 0);
     }
     printf("\n");
   }
@@ -505,14 +489,16 @@ double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t
     double cell_pdist = map_(cell_x, cell_y).path_dist;
     double cell_gdist = map_(cell_x, cell_y).goal_dist;
 
-    //if we cannot follow the path let the global planner know it is impossible
-    if(impossible_cost <= cell_gdist || impossible_cost <= cell_pdist)
-      return -1.0;
 
     path_dist = cell_pdist;
     goal_dist = cell_gdist;
 
   }
+
+  //if we cannot follow the path let the global planner know it is impossible
+  if(impossible_cost <= goal_dist || impossible_cost <= path_dist)
+    return -1.0;
+
   double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
   
   return cost;

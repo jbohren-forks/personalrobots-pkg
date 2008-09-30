@@ -91,10 +91,10 @@ class TrajectoryController {
 
     //compute the distance from each cell in the map grid to the planned path
     void computePathDistance(const ObstacleMapAccessor& ma, 
-        std::priority_queue<MapCell*, std::vector<MapCell*>, ComparePathDist>& dist_queue);
+        std::queue<MapCell*>& dist_queue);
 
     void computeGoalDistance(const ObstacleMapAccessor& ma, 
-        std::priority_queue<MapCell*, std::vector<MapCell*>, CompareGoalDist>& dist_queue);
+        std::queue<MapCell*>& dist_queue);
     
     //given a trajectory in map space get the drive commands to send to the robot
     libTF::TFPose2D getDriveVelocities(int t_num);
@@ -161,9 +161,13 @@ class TrajectoryController {
     //transform client
     rosTFClient* tf_;
 
-    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma){
+    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma, 
+        std::queue<MapCell*>& dist_queue){
+      //mark the cell as visisted
+      check_cell->path_mark = true;
+
       //if the cell is an obstacle set the max path distance
-      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+      if(ma.isInflatedObstacle(check_cell->cx, check_cell->cy)){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -171,11 +175,17 @@ class TrajectoryController {
       double new_path_dist = current_cell->path_dist + 1;
       if(new_path_dist < check_cell->path_dist)
         check_cell->path_dist = new_path_dist;
+
+      dist_queue.push(check_cell);
     }
 
-    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma){
+    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma, 
+        std::queue<MapCell*>& dist_queue){
+      ///mark the cell as visited
+      check_cell->goal_mark = true;
+
       //if the cell is an obstacle set the max path distance
-      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+      if(ma.isInflatedObstacle(check_cell->cx, check_cell->cy)){
         check_cell->goal_dist = map_.map_.size();
         return;
       }
@@ -183,6 +193,8 @@ class TrajectoryController {
       double new_goal_dist = current_cell->goal_dist + 1;
       if(new_goal_dist < check_cell->goal_dist)
         check_cell->goal_dist = new_goal_dist;
+
+      dist_queue.push(check_cell);
     }
 
     //compute position based on velocity
