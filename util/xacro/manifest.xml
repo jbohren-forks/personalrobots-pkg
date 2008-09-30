@@ -1,0 +1,9 @@
+<package>
+  <description brief="Xacro (XML Macros)">
+    Xacro is a macro language for XML, allowing large, complex documents
+    to be more readable and shorter.
+  </description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+</package>
+
