@@ -458,7 +458,7 @@ bool PathRecon::reconOneFrame() {
     TIMERSTART2(PoseEstimate);
     currFrame->mNumInliers =
       mPoseEstimator.estimate(trackablePairs,
-          currFrame->mRot, currFrame->mShift, reversed);
+          currFrame->mRot, currFrame->mShift, reversed, true);
     TIMEREND2(PoseEstimate);
 
     mStat.mHistoInliers.push_back(currFrame->mNumInliers);

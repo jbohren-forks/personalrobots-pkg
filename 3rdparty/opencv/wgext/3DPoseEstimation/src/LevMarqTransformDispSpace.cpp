@@ -46,12 +46,12 @@ bool LevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param){
 }
 
 bool LevMarqTransformDispSpace::constructHomographyMatrix(const CvMat* param, double _H[]){
-    double _buf[16], _rt[16];
-    CvMat buf, rt;
-    CvMat H;
-    cvInitMatHeader(&buf, 4, 4, CV_64FC1, _buf);
-    cvInitMatHeader(&rt, 4, 4, CV_64FC1, _rt);
-    cvInitMatHeader(&H, 4, 4, CV_64FC1, _H);
+  double _buf[16], _rt[16];
+  CvMat buf, rt;
+  CvMat H;
+  cvInitMatHeader(&buf, 4, 4, CV_64FC1, _buf);
+  cvInitMatHeader(&rt, 4, 4, CV_64FC1, _rt);
+  cvInitMatHeader(&H, 4, 4, CV_64FC1, _H);
 	bool status = true;
 	status = constructRTMatrix(param, _rt);
 	_rt[15] = 1.0;

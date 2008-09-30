@@ -5,10 +5,10 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include "PoseEstimateDisp.h"
+using namespace cv;
+
 #include <star_detector/include/keypoint.h>
 #include <cmath>
-#include <cvwimage.h>
-using namespace cv;
 
 /**
  * Misc utilities

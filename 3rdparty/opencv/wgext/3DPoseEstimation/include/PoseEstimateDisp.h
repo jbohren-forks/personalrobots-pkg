@@ -4,7 +4,7 @@
 #include "CvStereoCamModel.h"
 #include "PoseEstimate.h"
 
-#include <cxtypes.h>
+#include <opencv/cxtypes.h>
 #include <vector>
 using namespace std;
 
@@ -50,10 +50,13 @@ public:
 	 * @param rot:   (OUTPUT)rotation matrix
 	 * @param trans: (OUTPUT)translation matrix
 	 *
+	 * @param smoothed: if true, Levenberge-Marquardt is applied to all the
+	 * inliers for better estimation.
+	 *
 	 * @return number of inliers
 	 */
 	int estimate(CvMat *points0, CvMat *points1,
-	    CvMat *rot, CvMat *trans);
+	    CvMat *rot, CvMat *trans, bool smoothed);
 
   /// Method to estimate transformation based pairs of 3D points, in
   /// disparity coordinates
@@ -67,7 +70,10 @@ public:
       /// (Output) translation matrix.
       CvMat& shift,
       /// If true, the reverse transformation is estimated instead.
-      bool reversed=false);
+      bool reversed,
+      /// If true, Levenberg-Marquardt is used over inliers to get better
+      /// estimation.
+      bool smoothed);
 
   /**
    * The method that estimates transformation between two corresponding
@@ -94,7 +100,10 @@ public:
       /// (Output) estimated rotation matrix.
       CvMat *rot,
       /// (Output) estimated translation matrix.
-      CvMat *shift);
+      CvMat *shift,
+      /// if true, Levenberg-Marquardt is applied to the inliers for
+      /// better estimation.
+      bool smoothed);
 
   static bool constructHomography(const CvMat& R, const CvMat& T,
       const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H);
@@ -133,7 +142,10 @@ protected:
       /// (Output) estimated rotation matrix.
       CvMat *rot,
       /// (Output) estimated translation matrix.
-      CvMat *shift);
+      CvMat *shift,
+      /// if true, Levenberg-Marquardt is applied to the inliers for
+      /// better estimation.
+      bool smoothed);
   /// Construct disparity homography, given rotation matrix, translation
   /// vector and camera parameters.
   bool constructDisparityHomography(

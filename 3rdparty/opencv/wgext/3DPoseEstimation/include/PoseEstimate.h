@@ -49,10 +49,12 @@ public:
 	 *
 	 * @param rot:  (Output) rotation matrix
  	 * @param trans: (Output) translation matrix
+ 	 * @param smoothed: (Input) if true, Levenberg-Marquardt will be
+ 	 * applied over all the inliers to get a better estimation.
  	 *
  	 * @return number of inliers
 	 */
-	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans);
+	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans, bool smoothed=true);
 
 	/**
 	 *  Estimate the transformation matrices rot and trans by least squares

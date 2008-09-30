@@ -124,7 +124,7 @@ bool PoseEstimate::estimateLeastSquareInCol(CvMat *P0, CvMat *P1, CvMat *R, CvMa
 	return status;
 }
 
-int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans){
+int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans, bool smoothed){
   int numInLiers = 0;
 
   int numPoints = points0->rows;
@@ -207,20 +207,20 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
   // make a copy of the best RT before nonlinear optimization
   cvCopy(&RT, &mRTBestWithoutLevMarq);
 
-#ifdef USE_LEVMARQ
+  if (smoothed == true) {
     TIMERSTART(LevMarq);
-  // get the euler angle from rot
-  CvPoint3D64f eulerAngles;
-  {
-    double _R[9], _Q[9];
-        CvMat R, Q;
-        CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
-        cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
-        cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
+    // get the euler angle from rot
+    CvPoint3D64f eulerAngles;
+    {
+      double _R[9], _Q[9];
+      CvMat R, Q;
+      CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
+      cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
+      cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
 
-        cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
+      cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
 
-  }
+    }
 
     // nonlinear optimization by Levenberg-Marquardt
     cv::willow::LevMarqTransform levMarq(numInLiers0);
@@ -236,7 +236,7 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     param[5] = cvmGet(trans, 2, 0);
 
 #ifdef DEBUG
-//#if 1
+    //#if 1
     printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
         param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
         param[2], param[2]/CV_PI*180.,
@@ -246,7 +246,7 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     for (int i=0; i<6; i++) param[i] *= 1.1;
 #endif
 #ifdef DEBUG
-//#if 1
+    //#if 1
     printf("disturbed parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
         param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
         param[2], param[2]/CV_PI*180.,
@@ -257,31 +257,29 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     CvTestTimer::getTimer().mLevMarqDoit += cvGetTickCount() - tDoit;
 
 #ifdef DEBUG
-//#if 1
     printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
         param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
         param[2], param[2]/CV_PI*180.,
         param[3], param[4], param[5]);
 #endif
 
-  // TODO: construct matrix with parameters from nonlinear optimization
+    // TODO: construct matrix with parameters from nonlinear optimization
     double _rot[9];
 
     CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::EulerXYZ);
     for (int i=0;i<3;i++)
-        for (int j=0;j<3;j++) {
-            cvmSet(rot, i, j, _rot[i*3+j]);
-        }
+      for (int j=0;j<3;j++) {
+        cvmSet(rot, i, j, _rot[i*3+j]);
+      }
     cvmSet(trans, 0, 0, param[3]);
     cvmSet(trans, 1, 0, param[4]);
     cvmSet(trans, 2, 0, param[5]);
 
     TIMEREND(LevMarq);
-#endif
+  }
+  updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
 
-    updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
-
-    this->constructRT(rot, trans, &mT);
+  this->constructRT(rot, trans, &mT);
   return maxNumInLiers;
 }
 
