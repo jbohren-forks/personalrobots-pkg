@@ -1,4 +1,5 @@
 #include "math_utils/MathExpression.h"
+#include "math_utils/angles.h"
 #include "math_utils/math_utils.h"
 #include <gtest/gtest.h>
 
@@ -40,6 +41,27 @@ TEST(MathUtils, basicOperations){
   EXPECT_EQ(math_utils::clamp<int>(-10, 10, 20), 10);
   EXPECT_EQ(math_utils::clamp<int>(15, 10, 20), 15);
   EXPECT_EQ(math_utils::clamp<int>(25, 10, 20), 20);
+}
+
+TEST(MathUtils, shortestDistanceWithLimits){
+  double shortest_angle;
+  bool result = math_utils::shortest_angular_distance_with_limits(-0.5, 0.5,-0.25,0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+
+  result = math_utils::shortest_angular_distance_with_limits(-0.5, 0.5,0.25,0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+
+  result = math_utils::shortest_angular_distance_with_limits(-0.5, 0.5,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(result);
+  EXPECT_NEAR(shortest_angle, -2*M_PI+1.0,1e-6);
+
+  result = math_utils::shortest_angular_distance_with_limits(0.5, 0.5,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(result);
+  EXPECT_NEAR(shortest_angle, 0,1e-6);
+
+  result = math_utils::shortest_angular_distance_with_limits(0.5, 0,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+
 }
 
 int main(int argc, char **argv){
