@@ -124,6 +124,8 @@ public:
   std_msgs::Polyline2D robot_footprint;
   std_msgs::Polyline2D laserscan;
   std_msgs::Pose2DFloat32 initialpose;
+  std_msgs::Polyline2D inflatedObstacles;
+  std_msgs::Polyline2D rawObstacles;  
   pr2_msgs::OccDiff occ_diff_;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
@@ -153,6 +155,9 @@ public:
     subscribe("gui_path", pathline, &NavView::generic_cb);
     subscribe("local_path", local_path, &NavView::generic_cb);
     subscribe("robot_footprint", robot_footprint, &NavView::generic_cb);
+    subscribe("inflated_obstacles", inflatedObstacles, &NavView::generic_cb);
+    subscribe("raw_obstacles", rawObstacles, &NavView::generic_cb);
+
     if(n_val_ == 0) {
       subscribe("gui_laser", laserscan, &NavView::generic_cb);
     } else {
@@ -421,7 +426,25 @@ NavView::render()
   for(unsigned int i=0;i<robot_footprint.get_points_size();i++)
     glVertex2f(robot_footprint.points[i].x,robot_footprint.points[i].y);
   glEnd();
-  robot_footprint.unlock();
+  robot_footprint.unlock();  inflatedObstacles.lock();
+
+  // Rendering obstacle data from a map is done by first rendering the inflated obstacles and then over-writing them
+  // with the raw obstacles which should be on the interior
+  glColor3f(inflatedObstacles.color.r,inflatedObstacles.color.g,inflatedObstacles.color.b);
+  glBegin(GL_POINTS);
+  for(unsigned int i=0;i<inflatedObstacles.get_points_size();i++)
+    glVertex2f(inflatedObstacles.points[i].x,inflatedObstacles.points[i].y);
+  glEnd();
+  inflatedObstacles.unlock();
+
+
+  rawObstacles.lock();
+  glColor3f(rawObstacles.color.r,rawObstacles.color.g,rawObstacles.color.b);
+  glBegin(GL_POINTS);
+  for(unsigned int i=0;i<rawObstacles.get_points_size();i++)
+    glVertex2f(rawObstacles.points[i].x,rawObstacles.points[i].y);
+  glEnd();
+  rawObstacles.unlock();
 
 
   if(n_val_ == 0) {
