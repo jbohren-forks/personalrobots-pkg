@@ -109,7 +109,7 @@ class Ros_Stereo_Camera : public Controller
   protected: virtual void LoadChild(XMLConfigNode *node);
 
   /// \brief Save the controller.
-  /// \stream Output stream
+  ///        stream Output stream
   protected: void SaveChild(std::string &prefix, std::ostream &stream);
 
   /// \brief Init the controller
