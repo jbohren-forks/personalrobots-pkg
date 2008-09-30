@@ -124,7 +124,7 @@ Index: src/LinearMath/btTransform.h
  	SIMD_FORCE_INLINE void setOrigin(const btVector3& origin) 
  	{ 
  		m_origin = origin;
-@@ -118,26 +145,29 @@
+@@ -118,26 +145,28 @@
  	SIMD_FORCE_INLINE btVector3 invXform(const btVector3& inVec) const;
  
  
@@ -151,13 +151,12 @@ Index: src/LinearMath/btTransform.h
  	}
  
 -	
-+  /**@brief Multiply this Transform by another 
-+   * @param t The other transform 
-+   * @todo check order */
++  /**@brief Multiply this Transform by another(this = this * another) 
++   * @param t The other transform */
  	btTransform& operator*=(const btTransform& t) 
  	{
  		m_origin += m_basis * t.m_origin;
-@@ -145,16 +175,22 @@
+@@ -145,16 +174,22 @@
  		return *this;
  	}
  
@@ -168,9 +167,9 @@ Index: src/LinearMath/btTransform.h
  		return btTransform(inv, inv * -m_origin);
  	}
  
-+  /**@brief Return the inverse of this transform times the other 
-+   * @param The other transform 
-+   * @todo check which is inverted*/
++  /**@brief Return the inverse of this transform times the other transform
++   * @param t The other transform 
++   * return this.inverse() * the other */
  	btTransform inverseTimes(const btTransform& t) const;  
  
 +  /**@brief Return the product of this transform and the other */
@@ -180,7 +179,7 @@ Index: src/LinearMath/btTransform.h
  	static btTransform	getIdentity()
  	{
  		btTransform tr;
-@@ -163,8 +199,9 @@
+@@ -163,8 +198,9 @@
  	}
  	
  private:
@@ -191,7 +190,7 @@ Index: src/LinearMath/btTransform.h
  	btVector3   m_origin;
  };
  
-@@ -191,6 +228,7 @@
+@@ -191,6 +227,7 @@
  		(*this)(t.m_origin));
  }
  
@@ -815,7 +814,7 @@ Index: src/LinearMath/btQuadWord.h
 -///Some issues under PS3 Linux with IBM 2.1 SDK, gcc compiler prevent from using aligned quadword. todo: look into this
 -///ATTRIBUTE_ALIGNED16(class) btQuadWordStorage
 +/**@brief The btQuadWordStorage class is base class for btVector3 and btQuaternion. 
-+ * Some issues under PS3 Linux with IBM 2.1 SDK, gcc compiler prevent from using aligned quadword. todo: look into this
++ * Some issues under PS3 Linux with IBM 2.1 SDK, gcc compiler prevent from using aligned quadword. @todo look into this
 + * ATTRIBUTE_ALIGNED16(class) btQuadWordStorage */
  class btQuadWordStorage
  {
