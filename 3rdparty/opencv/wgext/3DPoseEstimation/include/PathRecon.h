@@ -287,7 +287,7 @@ public:
   /// pose estimation.
   class Visualizer {
   public:
-    Visualizer(Cv3DPoseEstimateDisp& poseEstimator);
+    Visualizer(PoseEstimateDisp& poseEstimator);
     virtual ~Visualizer(){};
     virtual void drawKeypoints(
         const PoseEstFrameEntry& lastFrame,
@@ -311,7 +311,7 @@ public:
     char poseEstFilename[PATH_MAX];
     char leftCamWithMarks[PATH_MAX];
     /// a reference to the pose estimator, for projection transformations
-    const Cv3DPoseEstimateDisp& poseEstimator;
+    const PoseEstimateDisp& poseEstimator;
 
     WImageBuffer3_b   canvasKeypoint;
     WImageBuffer3_b   canvasTracking;

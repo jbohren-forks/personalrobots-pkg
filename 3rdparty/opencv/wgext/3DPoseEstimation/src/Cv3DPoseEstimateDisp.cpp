@@ -29,18 +29,18 @@ using namespace cv::willow;
 #endif
 
 
-Cv3DPoseEstimateDisp::Cv3DPoseEstimateDisp():
+PoseEstimateDisp::PoseEstimateDisp():
   PoseParent(), Parent()
 {
   // overide parent default
   mErrThreshold = 1.5;
 }
 
-Cv3DPoseEstimateDisp::~Cv3DPoseEstimateDisp()
+PoseEstimateDisp::~PoseEstimateDisp()
 {
 }
 
-int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
+int PoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transformation){
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -99,7 +99,7 @@ int Cv3DPoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* tr
 }
 
 // almost the same as the function above
-int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
+int PoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
     CvMat* points0Inlier, CvMat* points1Inlier, int *inlierIndices) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
@@ -160,7 +160,7 @@ int Cv3DPoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* tran
 	return numInLiers;
 }
 
-int Cv3DPoseEstimateDisp::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
+int PoseEstimateDisp::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
     CvMat& rot, CvMat& shift, bool reversed) {
   int numTrackablePairs = trackablePairs.size();
   double _uvds0[3*numTrackablePairs];
@@ -194,7 +194,7 @@ int Cv3DPoseEstimateDisp::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& tr
   return numInliers;
 }
 
-int Cv3DPoseEstimateDisp::estimateMixedPointClouds(
+int PoseEstimateDisp::estimateMixedPointClouds(
     CvMat *xyzs0, CvMat *uvds1,
     int numRefGrps, int refPoints[],
     CvMat *rot, CvMat *shift) {
@@ -229,7 +229,7 @@ int Cv3DPoseEstimateDisp::estimateMixedPointClouds(
   return numInLiers;
 }
 
-int Cv3DPoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
+int PoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
     CvMat *rot, CvMat *shift) {
   int numInLiers = 0;
 
@@ -254,7 +254,7 @@ int Cv3DPoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
   return numInLiers;
 }
 
-int Cv3DPoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
+int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
     CvMat *uvds0, CvMat *uvds1,
     int numRefGrps, int refPoints[],
     CvMat *rot, CvMat *shift) {
@@ -445,7 +445,7 @@ int Cv3DPoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   return numInliers0;
 }
 
-bool Cv3DPoseEstimateDisp::constructDisparityHomography(const CvMat *R, const CvMat *T,
+bool PoseEstimateDisp::constructDisparityHomography(const CvMat *R, const CvMat *T,
     CvMat *H){
   if (R == NULL || T == NULL) {
     return false;
@@ -453,7 +453,7 @@ bool Cv3DPoseEstimateDisp::constructDisparityHomography(const CvMat *R, const Cv
   return this->constructHomography(*R, *T, mMatDispToCart, mMatCartToDisp, *H);
 }
 
-bool Cv3DPoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,
+bool PoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,
     const CvMat& dispToCart, const CvMat& cartToDisp, CvMat& H){
     bool status = true;
     // Transformation matrix RT:
@@ -479,7 +479,7 @@ bool Cv3DPoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,
 /*
  * A Convenient function to map z to d, at the optical center
  */
-double Cv3DPoseEstimateDisp::getD(double z) const {
+double PoseEstimateDisp::getD(double z) const {
   double _xyz[] = {0., 0., z};
   double _uvd[3];
   CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
@@ -490,7 +490,7 @@ double Cv3DPoseEstimateDisp::getD(double z) const {
 /*
  * A convenient function to map disparity d to Z, at the optical center
  */
-double Cv3DPoseEstimateDisp::getZ(double d) const {
+double PoseEstimateDisp::getZ(double d) const {
   double _uvd[] = {this->mClx, this->mCy, d};
   double _xyz[3];
   CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);

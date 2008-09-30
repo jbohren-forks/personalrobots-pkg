@@ -512,7 +512,7 @@ bool PathRecon::reconOneFrame() {
   return insertNewKeyFrame;
 }
 
-PathRecon::Visualizer::Visualizer(Cv3DPoseEstimateDisp& pe):
+PathRecon::Visualizer::Visualizer(PoseEstimateDisp& pe):
   poseEstWinName("Pose Estimated"),
   leftCamWinName("Left  Cam"),
   lastTrackedLeftCam(string("Last Tracked Left Cam")),
@@ -590,7 +590,7 @@ void PathRecon::Visualizer::drawTracking(
     assert(frame.mInliers1);
     CvMatUtils::drawMatchingPairs(*frame.mInliers0, *frame.mInliers1, canvasTracking,
         frame.mRot, frame.mShift,
-        (Cv3DPoseEstimateDisp&)poseEstimator, reversed);
+        (PoseEstimateDisp&)poseEstimator, reversed);
 
 
     CvPoint3D64f euler;

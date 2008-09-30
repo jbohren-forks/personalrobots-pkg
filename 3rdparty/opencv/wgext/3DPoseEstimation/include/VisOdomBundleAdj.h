@@ -127,7 +127,7 @@ public:
   class Visualizer: public PathRecon::Visualizer {
   public:
     typedef PathRecon::Visualizer Parent;
-    Visualizer(Cv3DPoseEstimateDisp& poseEstimator,
+    Visualizer(PoseEstimateDisp& poseEstimator,
         const vector<FramePose>& framePoses,
         const Tracks& trcks):
       Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}

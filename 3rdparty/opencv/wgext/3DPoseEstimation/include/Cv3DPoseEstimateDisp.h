@@ -19,13 +19,13 @@ namespace cv {namespace willow {
  *   - ui, vi, di
  *   - ...
  */
-class Cv3DPoseEstimateDisp : public PoseEstimate, public CvStereoCamModel
+class PoseEstimateDisp : public PoseEstimate, public CvStereoCamModel
 {
 public:
   typedef PoseEstimate PoseParent;
   typedef CvStereoCamModel Parent;
-	Cv3DPoseEstimateDisp();
-	virtual ~Cv3DPoseEstimateDisp();
+	PoseEstimateDisp();
+	virtual ~PoseEstimateDisp();
 
 	/**
 	 * The method that estimates transformation between two corresponding

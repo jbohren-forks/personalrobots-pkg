@@ -49,7 +49,7 @@ void CvPoseEstErrMeasDisp::measure(const CvMat& uvds0, const CvMat& uvds1) {
 	CvPoseEstErrMeas::compare(xyzs0, xyzs1);
 
 	// compare in Disparity Space
-	Cv3DPoseEstimateDisp::constructHomography(mRotation, mShift, mMatDispToCart, mMatCartToDisp,
+	PoseEstimateDisp::constructHomography(mRotation, mShift, mMatDispToCart, mMatCartToDisp,
 			mHomography);
 
 	double _uvds11[3*n];

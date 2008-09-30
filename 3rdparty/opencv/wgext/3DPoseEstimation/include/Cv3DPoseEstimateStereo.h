@@ -28,9 +28,9 @@ namespace cv { namespace willow {
 /**
  * Pose estimation based on two frames of stereo image pairs.
  */
-class Cv3DPoseEstimateStereo: public Cv3DPoseEstimateDisp {
+class Cv3DPoseEstimateStereo: public PoseEstimateDisp {
 public:
-	typedef Cv3DPoseEstimateDisp Parent;
+	typedef PoseEstimateDisp Parent;
 	static const int DefWidth        = 640;
 	static const int DefHeight       = 480;
 	// constants used in getDisparityMap

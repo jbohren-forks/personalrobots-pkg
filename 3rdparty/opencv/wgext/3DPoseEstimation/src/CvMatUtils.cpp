@@ -120,7 +120,7 @@ bool CvMatUtils::drawPoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLas
 
 bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 		const CvMat& rot, const CvMat& shift,
-		const Cv3DPoseEstimateDisp& pedisp, bool reversed) {
+		const PoseEstimateDisp& pedisp, bool reversed) {
 	int numInliers = pts0.rows;
 	if (pts1.rows != numInliers) {
 		cerr << __PRETTY_FUNCTION__ << "matching pairs do not match in length"<<endl;

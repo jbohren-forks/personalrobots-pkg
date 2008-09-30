@@ -53,7 +53,7 @@ public:
 	    vector<Keypoint>& keypoints1);
 	static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 	    const CvMat& rot, const CvMat& shift,
-	    const cv::willow::Cv3DPoseEstimateDisp& peDisp, bool reversed=true);
+	    const cv::willow::PoseEstimateDisp& peDisp, bool reversed=true);
   /// Draw a line between two points (in disparity space) of each pair onto canvas.
   /// The line is in red.
   static bool drawLines(
