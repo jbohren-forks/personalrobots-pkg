@@ -6,7 +6,7 @@
   <joint name="single_link_joint" type="revolute" >
     <axis xyz="1 0 0" />
     <anchor xyz="0 0 0" />
-    <limit min="-M_PI" max="M_PI" effort="100" velocity="5" />
+    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
   </joint>
   

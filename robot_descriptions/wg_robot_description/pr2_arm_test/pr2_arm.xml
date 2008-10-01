@@ -4,6 +4,7 @@
   
   <!-- Begin template definitions for ease of reuse -->
   
+  <const name="M_PI" value="3.14159" />   <!-- FIXME @todo needed to make M_PI interpreted correctly. -->
   <const name="shoulder_pan_size_x" value="0.347" />   <!-- for defining collision geometry -->
   <const name="shoulder_pan_size_y" value="0.254" />   <!-- for defining collision geometry -->
   <const name="shoulder_pan_size_z" value="0.646" />   <!-- for defining collision geometry -->
