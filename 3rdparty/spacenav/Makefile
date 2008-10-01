@@ -23,9 +23,9 @@ libspnav_configured: spacenav_svn
 	touch $@
 
 clean:
-	$(RM) -r libspnav spacenavd libspnav_configured spacenavd_configured
-	make -C $(SVN_DIR)/spacenavd clean
-	make -C $(SVN_DIR)/libspnav
+	-make -C $(SVN_DIR)/spacenavd clean
+	-make -C $(SVN_DIR)/libspnav clean
+	-$(RM) -r libspnav spacenavd libspnav_configured spacenavd_configured
 
 wipe: clean
-	rm -rf $(SVN_DIR)
+	-rm -rf $(SVN_DIR)

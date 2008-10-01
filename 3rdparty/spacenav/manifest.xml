@@ -9,7 +9,7 @@
   <url>http://spacenav.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/libspnav/include/"
-	 lflags="-L${prefix}/libspnav/lib/ -lspnav" />
+         lflags="-L${prefix}/libspnav/lib/ -lspnav -lX11" />
   </export>
 </package>
 
