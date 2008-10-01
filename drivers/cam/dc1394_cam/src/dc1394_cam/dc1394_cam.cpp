@@ -141,7 +141,7 @@ uint64_t dc1394_cam::getGuid(size_t i)
   dc1394camera_list_t * list;
   CHECK_ERR( dc1394_camera_enumerate(dc1394_cam::Cam::dcRef, &list), "Could not enumerate cameras" );
 
-  if (i > list->num)
+  if (i >= list->num)
     throw CamException("Tried to get Guid of non-existant camera");
 
   uint64_t guid = list->ids[i].guid;

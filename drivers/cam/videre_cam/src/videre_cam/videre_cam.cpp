@@ -296,7 +296,7 @@ void
 videre_cam::VidereCam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode)
 {
   CHECK_READY();
-  CHECK_ERR_CLEAN( dc1394_feature_set_mode(dcCam, feature, mode), "Could not set feature");
+  CHECK_ERR_CLEAN( dc1394_feature_set_mode_blind(dcCam, feature, mode), "Could not set feature");
 }
 
 

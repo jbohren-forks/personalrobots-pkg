@@ -153,6 +153,7 @@ public:
 
   void checkAllFeatures(CamData& cd)
   {
+    
       checkAndSetFeature(cd, "brightness", DC1394_FEATURE_BRIGHTNESS);
       checkAndSetFeature(cd, "exposure", DC1394_FEATURE_EXPOSURE);
       checkAndSetFeature(cd, "shutter", DC1394_FEATURE_SHUTTER);
