@@ -62,6 +62,17 @@ TEST(MathUtils, shortestDistanceWithLimits){
   result = math_utils::shortest_angular_distance_with_limits(0.5, 0,0.25,-0.25,shortest_angle);
   EXPECT_TRUE(!result);
 
+  result = math_utils::shortest_angular_distance_with_limits(-0.5, 0,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+  EXPECT_NEAR(shortest_angle, 0.5,1e-6);
+
+  result = math_utils::shortest_angular_distance_with_limits(-0.2,0.2,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+  EXPECT_NEAR(shortest_angle, 0.4,1e-6);
+
+  result = math_utils::shortest_angular_distance_with_limits(0.2,-0.2,0.25,-0.25,shortest_angle);
+  EXPECT_TRUE(!result);
+  EXPECT_NEAR(shortest_angle,-0.4,1e-6);
 }
 
 int main(int argc, char **argv){
