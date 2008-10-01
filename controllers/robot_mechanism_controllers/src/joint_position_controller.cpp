@@ -146,7 +146,12 @@ void JointPositionController::update()
   if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
   {
     if(!math_utils::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error))
-       error = 0;
+    {
+      // We were originally clearing the error term if the command or position were outside the joint bounds.  But, we probably
+      //   don't want to this, since it causes strange behavior when oscillating near the joint boundaries.
+      
+      //error = 0;
+    }
   }
   else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
   {
