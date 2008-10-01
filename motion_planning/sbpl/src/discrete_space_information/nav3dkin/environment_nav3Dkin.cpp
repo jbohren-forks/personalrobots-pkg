@@ -1039,7 +1039,7 @@ void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcel
 {
 	nav2dcell_t cell;
 
-	for(int i = 0; i < changedcellsV->size(); i++)
+	for(int i = 0; i < (int)changedcellsV->size(); i++)
 	{
 		cell = changedcellsV->at(i);
 		for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
