@@ -44,7 +44,6 @@
 namespace gazebo
 {
 class HingeJoint;
-class PositionIface;
 class XMLConfigNode;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
@@ -101,6 +100,8 @@ class XMLConfigNode;
  *   -# [loops around] \b Actuator-encoder-value is transmitted to \b joint-state via \e transmissions.xml
  *   -# Controller reads \b joint-state and issues a \b joint-torque-command
  * .
+ *
+ * @image html "http://pr.willowgarage.com/wiki/gazebo_plugin?action=AttachFile&do=get&target=gazebo_mcn.jpg" "Gazebo Mechanism Control Model"
  *
 **/
 

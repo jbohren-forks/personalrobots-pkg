@@ -13,8 +13,6 @@ Here are the gazebo plugins which are currently implemented:
  \li \ref gazebo::P3D "ROS Ground Truth Broadcaster"
 
 
- @image html gazebo_mcn.jpg "Gazebo Mechanism Control Model"
-
 @section usage PR2 Simulation Quick Start Guide
 \li If you have successfully \e rosmake \e 2dnav-gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
   @verbatim

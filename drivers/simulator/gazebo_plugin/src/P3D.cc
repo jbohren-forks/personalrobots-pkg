@@ -74,11 +74,6 @@ P3D::~P3D()
 // Load the controller
 void P3D::LoadChild(XMLConfigNode *node)
 {
-   this->myIface = dynamic_cast<PositionIface*>(this->ifaces[0]);
-
-   if (!this->myIface)
-      gzthrow("P3D controller requires a Actarray Iface, though not used.");
-
   std::string bodyName = node->GetString("bodyName", "", 1);
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));

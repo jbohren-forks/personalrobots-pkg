@@ -59,12 +59,6 @@ Ros_Bumper::~Ros_Bumper()
 // Load the controller
 void Ros_Bumper::LoadChild(XMLConfigNode *node)
 {
-  this->myIface = dynamic_cast<BumperIface*>(this->ifaces[0]);
-
-  if (!this->myIface) 
-  {
-    gzthrow("Ros_Bumper controller requires an BumperIface");
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -77,19 +71,6 @@ void Ros_Bumper::InitChild()
 // Update the controller
 void Ros_Bumper::UpdateChild()
 {
-  this->myIface->Lock(1);
-
-  this->myIface->data->bumper_count = this->myParent->GetContactCount();
-
-  for (unsigned int i=0; i < this->myParent->GetContactCount(); i++)
-  {
-    this->myIface->data->head.time = this->myParent->GetContactTime(i);
-    this->myIface->data->bumpers[i] = this->myParent->GetContactState(i); 
-  }
-
-  this->myParent->ResetContactStates();
-
-  this->myIface->Unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

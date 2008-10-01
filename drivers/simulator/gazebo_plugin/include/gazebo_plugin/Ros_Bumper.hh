@@ -87,8 +87,6 @@ namespace gazebo
     /// The parent Model
     private: ContactSensor *myParent;
   
-    /// The Iface. 
-    private: BumperIface *myIface;
   };
   
   /** \} */

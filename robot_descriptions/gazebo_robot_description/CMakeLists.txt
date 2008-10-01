@@ -51,4 +51,10 @@ add_custom_target(pr2_gazebo_model_single_link ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for Single Link Test")
 
+# dual_link_test
+add_custom_target(pr2_gazebo_model_dual_link ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/dual_link_test/gazebo/pr2_dual_link_gazebo_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_dual_link.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for Dual Link Test")
+
 

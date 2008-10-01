@@ -35,7 +35,6 @@
 
 namespace gazebo
 {
-   class PositionIface;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
@@ -84,9 +83,6 @@ class F3D : public Controller
 
   /// \brief Finalize the controller
   protected: virtual void FiniChild();
-
-  /// \brief The Position Iface
-  private: PositionIface *myIface;
 
   /// \brief A link to the parent Model
   private: Model *myParent;

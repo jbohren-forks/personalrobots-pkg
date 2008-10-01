@@ -66,6 +66,7 @@ GazeboActuators::~GazeboActuators()
 void GazeboActuators::LoadChild(XMLConfigNode *node)
 {
   // read pr2.xml (pr2_gazebo_actuators.xml)
+  // setup actuators, then setup mechanism control node
   ReadPr2Xml(node);
 
   // Initializes the fake state (for running the transmissions backwards).
@@ -254,6 +255,7 @@ void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
     hw_.actuators_.push_back(new Actuator(*it));
   }
 
+  // Setup mechanism control node
   mcn_.initXml(doc.RootElement());
 }
 

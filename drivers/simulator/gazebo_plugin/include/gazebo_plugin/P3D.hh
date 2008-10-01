@@ -36,15 +36,13 @@
 
 namespace gazebo
 {
-   class PositionIface;
-
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
    /** \defgroup P3D Groud Truth Position Pose and Rates Interface
 
    \brief P3D controller.
 
-   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::TransformWithRateStamped message as well as filling out a Gazebo::PositionIface.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
+   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::TransformWithRateStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
 
    \verbatim
      <model:physical name="some_fancy_model">
@@ -87,9 +85,6 @@ namespace gazebo
 
       /// \brief Finalize the controller
       protected: virtual void FiniChild();
-
-      /// \brief The actarray interface
-      private: PositionIface *myIface;
 
       /// \brief The parent Model
       private: Model *myParent;

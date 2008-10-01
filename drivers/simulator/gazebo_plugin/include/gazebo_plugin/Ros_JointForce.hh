@@ -85,8 +85,6 @@ class Ros_JointForce : public Controller
   /// \brief The parent Model
   private: Model *myParent;
 
-  /// \brief The Iface. The dJointFeedback structs are rather arbitrary, so we use an Opaque Interface
-  private: OpaqueIface *myIface;
   /// \brief The joint feedbacks
   private: dJointFeedback *jointfeedbacks[ROS_JOINTFORCE_CONTROLLER_MAX_FEEDBACKS];
   /// \brief The number of joints we are watching

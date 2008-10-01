@@ -73,6 +73,7 @@ class XMLConfigNode;
 /**
  * \brief Battery simulation
  *   \li starts a ROS node if none exists
+ *   \li return battery state and diagnostic message over ROS topic.
  * .
  *
 **/
