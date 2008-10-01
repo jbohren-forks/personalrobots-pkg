@@ -53,7 +53,7 @@
 
 #include "ros/node.h"
 #include "pr2_power_board/PowerBoardCommand.h"
-
+#include "rosthread/mutex.h"
 
 struct Interface {
   struct ifreq interface;
@@ -641,21 +641,83 @@ public:
     advertise_service("power_board_control", &PowerBoard::commandCallback);
   };
   
-  bool commandCallback(pr2_power_board::PowerBoardCommand::request &req,
-                       pr2_power_board::PowerBoardCommand::response &res)
+  bool commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
+                       pr2_power_board::PowerBoardCommand::response &res_)
   {
     std::stringstream ss;
-    ss << " 0 " << req.breaker_number<<" " << req.command;
-
-    res.retval = send_command(ss.str().c_str());
-
+    ss << " 0 " << req_.breaker_number<<" " << req_.command;
+    library_lock_.lock();
+    res_.retval = send_command(ss.str().c_str());
+    library_lock_.unlock();
+    return true;
   }
 
-
+  void collectMessages()
+  {
+    library_lock_.lock();
+    collect_messages();
+    library_lock_.unlock();
+  }
+  
+  void sendDiagnostic()
+  {
+    library_lock_.lock();
+    printf("I will send diagnostics here\n");
+    for (unsigned i = 0; i<Devices.size(); ++i) {
+      Device *device = Devices[i];
+      PowerMessage *pmsg = device->pmsg;		
+      
+      StatusStruct *status = &Devices[i]->pmsg->status;
+      
+      printf("\nDevice %u\n", i);
+      printf(" Serial       = %u\n", pmsg->header.serial_num);
+      
+      printf(" Current      = %f\n", status->input_current);
+      
+      printf(" Voltages:\n");
+      printf("  Input       = %f\n", status->input_voltage);
+      printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
+      printf("  DCDC 19     = %f\n", status->DCDC_12V_out_voltage);
+      printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
+      printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
+      printf("  CB1 (R-arm) = %f\n", status->CB1_voltage);
+      printf("  CB2 (L-arm) = %f\n", status->CB2_voltage);
+      
+      printf(" Board Temp   = %f\n", status->ambient_temp);
+      printf(" Fan Speeds:\n");
+      printf("  Fan 0       = %u\n", status->fan0_speed);
+      printf("  Fan 1       = %u\n", status->fan1_speed);
+      printf("  Fan 2       = %u\n", status->fan2_speed);
+      printf("  Fan 3       = %u\n", status->fan3_speed);
+      
+      printf(" State:\n");		
+      printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
+      printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
+      printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
+      printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
+      
+      printf(" Status:\n");		
+      printf("  CB0 (Base)  = %s\n", (status->CB0_status) ? "On" : "Off");
+      printf("  CB1 (R-arm) = %s\n", (status->CB1_status) ? "On" : "Off");
+      printf("  CB2 (L-arm) = %s\n", (status->CB2_status) ? "On" : "Off");
+      printf("  estop_button= %x\n", (status->estop_button_status));
+      printf("  estop_status= %x\n", (status->estop_status));
+      
+      printf(" Revisions:\n");
+      printf("         PCA = %c\n", status->pca_rev);
+      printf("         PCB = %c\n", status->pcb_rev);
+      printf("       Major = %c\n", status->major_rev);
+      printf("       Minor = %c\n", status->minor_rev);
+      
+    }
+    
+    library_lock_.unlock();
+  }
 
 private:
-  pr2_power_board::PowerBoardCommand::request req;
-  pr2_power_board::PowerBoardCommand::response res;
+  pr2_power_board::PowerBoardCommand::request req_;
+  pr2_power_board::PowerBoardCommand::response res_;
+  ros::thread::mutex library_lock_;
 
 };
 
@@ -673,12 +735,18 @@ int main(int argc, char** argv) {
 	
   char last_command = '?';
   while (!quit) {
+    
+    myBoard.sendDiagnostic();
+    sleep(1);
 
+#if 0
     char command [200];
     std::cin.getline(command, sizeof(command));
 		
     collect_messages();
-		
+	
+
+    
     switch((command[0] == 0) ? last_command : command[0]) {
     case 'l':
       list_devices();
@@ -702,6 +770,8 @@ int main(int argc, char** argv) {
 
     if(command[0] != 0)
       last_command = command[0];
+#endif //0
+
 
   }
 

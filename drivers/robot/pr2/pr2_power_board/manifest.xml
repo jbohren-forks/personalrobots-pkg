@@ -3,5 +3,7 @@
   <author>Tully Foote</author>
   <license>BSD</license>
   <depend package="roscpp" />
+  <depend package="rospy" />
+  <depend package="rosthread" />
   <depend package="robot_msgs" />
 </package>
