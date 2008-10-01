@@ -89,7 +89,7 @@ void CartesianPositionController::update()
   effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
   effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
 
-  printf("    %.4lf %.4lf %.4lf\n", effort_.command_[0],effort_.command_[1],effort_.command_[2]);
+  //printf("    %.4lf %.4lf %.4lf\n", effort_.command_[0],effort_.command_[1],effort_.command_[2]);
   effort_.update();
 
   last_time_ = time;
