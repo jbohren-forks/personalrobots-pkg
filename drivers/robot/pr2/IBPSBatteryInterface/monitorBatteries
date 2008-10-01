@@ -247,7 +247,12 @@ class robotPower:
                 if timeout < time.time() - self.controllers[c].batteries[b].last_time:
                     status_string = status_string + " Timeout %f > %f"%(self.controllers[c].batteries[b].last_time, timeout)
                     status_value = 2
+                if self.controllers[c].batteries[b].power_no_good == 1:
+                    status_string = status_string + " POWER NO GOOD Unplug all batteries from this controller to reset "
+                    status_value = 2
+
                     
+                
                 # Record ok if no errors above
                 if len(status_string) == 0:
                     status_string = "OK" 
@@ -389,7 +394,7 @@ def monitorBatteriesMain(argv, stdout, env):
                     myPow.controllers[port].batteries[i].present = mask[i]
                 #print 'batteries charging'
                 #print  readmask(splitmessage[4])
-                mask = readmask(splitmessage[2])
+                mask = readmask(splitmessage[4])
                 for i in range(0,8):
                     myPow.controllers[port].batteries[i].charging = mask[i]
                 #print 'batteries supplying power to system'
