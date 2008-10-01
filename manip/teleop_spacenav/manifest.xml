@@ -1,0 +1,13 @@
+<package>
+  <description brief="Teleop Spacenav">
+    Teleoperates the robot using the Space Navigator 3d mouse
+  </description>
+  <author>Stuart Glaser sglaser@willowgarage.com</author>
+  <license>BSD</license>
+  <depend package="rospy" />
+  <depend package="std_msgs" />
+  <depend package="robot_mechanism_controllers" />
+  <url>http://pr.willowgarage.com</url>
+  <export>
+  </export>
+</package>
