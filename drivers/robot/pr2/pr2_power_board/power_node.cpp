@@ -55,6 +55,8 @@
 #include "pr2_power_board/PowerBoardCommand.h"
 #include "rosthread/mutex.h"
 
+#include "robot_msgs/DiagnosticMessage.h"
+
 struct Interface {
   struct ifreq interface;
   int recv_sock;
@@ -639,6 +641,7 @@ public:
   PowerBoard(): ros::node ("pr2_power_board")
   {
     advertise_service("power_board_control", &PowerBoard::commandCallback);
+    advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
   };
   
   bool commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
@@ -661,56 +664,156 @@ public:
   
   void sendDiagnostic()
   {
+    
     library_lock_.lock();
-    printf("I will send diagnostics here\n");
+    robot_msgs::DiagnosticMessage msg_out;
+
     for (unsigned i = 0; i<Devices.size(); ++i) {
       Device *device = Devices[i];
       PowerMessage *pmsg = device->pmsg;		
-      
+    
+      robot_msgs::DiagnosticStatus stat;
+      std::stringstream ss;
+      ss << "Power board " << i;
+      stat.name = ss.str();
+      stat.level = 0;///@todo fixem
+      stat.message = "fixme";
       StatusStruct *status = &Devices[i]->pmsg->status;
       
       printf("\nDevice %u\n", i);
       printf(" Serial       = %u\n", pmsg->header.serial_num);
-      
+      robot_msgs::DiagnosticValue val;
+      val.value = pmsg->header.serial_num;
+      val.label = "Serial Number";
+      stat.values.push_back(val);
+
       printf(" Current      = %f\n", status->input_current);
-      
+        val.value = pmsg->header.serial_num;
+      val.label = "Serial Number";
+      stat.values.push_back(val);
+
       printf(" Voltages:\n");
       printf("  Input       = %f\n", status->input_voltage);
+      val.value = status->input_voltage;
+      val.label = "Input Voltage";
+      stat.values.push_back(val);
       printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
+      val.value = status->DCDC_12V_out_voltage;
+      val.label = "DCDC12";
+      stat.values.push_back(val);
       printf("  DCDC 19     = %f\n", status->DCDC_12V_out_voltage);
+      val.value = status->DCDC_12V_out_voltage;
+      val.label = "DCDC 19";
+      stat.values.push_back(val);
       printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
+      val.value = status->DCDC_12V_out_voltage;
+      val.label = "DCDC 12??";
+      stat.values.push_back(val);
       printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
+      val.value = status->CB0_voltage;
+      val.label = "Breaker 0 Voltage";
+      stat.values.push_back(val);
       printf("  CB1 (R-arm) = %f\n", status->CB1_voltage);
+      val.value = status->CB1_voltage;
+      val.label = "Breaker 1 Voltage";
+      stat.values.push_back(val);
       printf("  CB2 (L-arm) = %f\n", status->CB2_voltage);
+      val.value = status->CB2_voltage;
+      val.label = "Breaker 2 Voltage";
+      stat.values.push_back(val);
       
       printf(" Board Temp   = %f\n", status->ambient_temp);
+      val.value = status->ambient_temp;
+      val.label = "Board Temperature";
+      stat.values.push_back(val);
       printf(" Fan Speeds:\n");
       printf("  Fan 0       = %u\n", status->fan0_speed);
+      val.value = status->fan0_speed;
+      val.label = "Fan 0 Speed";
+      stat.values.push_back(val);
       printf("  Fan 1       = %u\n", status->fan1_speed);
+      val.value = status->fan1_speed;
+      val.label = "Fan 1 Speed";
+      stat.values.push_back(val);
       printf("  Fan 2       = %u\n", status->fan2_speed);
+      val.value = status->fan2_speed;
+      val.label = "Fan 2 Speed";
+      stat.values.push_back(val);
       printf("  Fan 3       = %u\n", status->fan3_speed);
+      val.value = status->fan3_speed;
+      val.label = "Fan 3 Speed";
+      stat.values.push_back(val);
       
+      robot_msgs::DiagnosticString strval;
       printf(" State:\n");		
       printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
+      strval.value = cb_state_to_str(status->CB0_state);
+      strval.label = "Breaker 0 state";
+      stat.strings.push_back(strval);
       printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
+      strval.value = cb_state_to_str(status->CB1_state);
+      strval.label = "Breaker 1 state";
+      stat.strings.push_back(strval);
       printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
+      strval.value = cb_state_to_str(status->CB2_state);
+      strval.label = "Breaker 2 state";
+      stat.strings.push_back(strval);
       printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
+      strval.value = cb_state_to_str(status->DCDC_state);
+      strval.label = "DCDC state";
+      stat.strings.push_back(strval);
       
       printf(" Status:\n");		
       printf("  CB0 (Base)  = %s\n", (status->CB0_status) ? "On" : "Off");
+      strval.value = (status->CB0_status) ? "On" : "Off";
+      strval.label = "Breaker 0 Status";
+      stat.strings.push_back(strval);      
       printf("  CB1 (R-arm) = %s\n", (status->CB1_status) ? "On" : "Off");
+      strval.value = (status->CB1_status) ? "On" : "Off";
+      strval.label = "Breaker 1 Status";
+      stat.strings.push_back(strval);
       printf("  CB2 (L-arm) = %s\n", (status->CB2_status) ? "On" : "Off");
+      strval.value = (status->CB2_status) ? "On" : "Off";
+      strval.label = "Breaker 2 Status";
+      stat.strings.push_back(strval);
       printf("  estop_button= %x\n", (status->estop_button_status));
+      val.value = status->estop_button_status;
+      val.label = "Estop Button Status";
+      stat.values.push_back(val);
       printf("  estop_status= %x\n", (status->estop_status));
+      val.value = status->estop_status;
+      val.label = "Estop Status";
+      stat.values.push_back(val);
       
       printf(" Revisions:\n");
       printf("         PCA = %c\n", status->pca_rev);
+      val.value = status->pca_rev;
+      val.label = "PCA";
+      stat.values.push_back(val);
       printf("         PCB = %c\n", status->pcb_rev);
+      val.value = status->pcb_rev;
+      val.label = "PCB";
+      stat.values.push_back(val);
       printf("       Major = %c\n", status->major_rev);
+      val.value = status->major_rev;
+      val.label = "Major Revision";
+      stat.values.push_back(val);
       printf("       Minor = %c\n", status->minor_rev);
-      
+      val.value = status->minor_rev;
+      val.label = "Minor Revision";
+      stat.values.push_back(val);
+
+      msg_out.status.push_back(stat);      
     }
-    
+    robot_msgs::DiagnosticStatus stat;
+    std::stringstream ss;
+    stat.name = "pr2_power_board";
+    stat.level = 0;
+    stat.message = "Running";
+    msg_out.status.push_back(stat);      
+
+    printf("Publishing \n");        
+    publish("/diagnostics", msg_out);    
     library_lock_.unlock();
   }
 
