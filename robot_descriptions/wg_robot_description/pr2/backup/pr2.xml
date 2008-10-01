@@ -4,6 +4,7 @@
   
   <!-- Begin template definitions for ease of reuse -->
   
+  <const name="M_PI" value="3.14159" />   <!-- FIXME @todo needed to make M_PI interpreted correctly. -->
   <const name="robot_inital_position_x" value=" 0.0 " />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
   <const name="robot_inital_position_y" value=" 0.0 " />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
   <const name="robot_inital_position_z" value=" 0.0*(wheel_radius-base_caster_offset_z/2)/2 " />   <!-- keep 0 for now, because of hardcoded sensor/gripper positions in controllers.cml -->
@@ -45,8 +46,8 @@
   <const name="shoulder_pan_center_box_center_offset_x" value=" .05" /> 
   <const name="shoulder_pan_center_box_center_offset_z" value="-.20" /> 
   
-  <const name="shoulder_pan_min_limit" value=" -M_PI/2 " />   <!-- FIXME -->
-  <const name="shoulder_pan_max_limit" value="  M_PI/2 " />   <!-- FIXME -->
+  <const name="shoulder_pan_min_limit" value="-M_PI/2 " />   <!-- FIXME -->
+  <const name="shoulder_pan_max_limit" value="M_PI/2 " />   <!-- FIXME -->
   
   <const name="torso_shoulder_pan_offset_y" value="0.188" />  <!-- mp 20080801 -->
   
@@ -268,7 +269,7 @@
     <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Blue</elem>
+      <elem key="material">PR2/wheel_left</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
       <mesh filename="wheel_left" scale="1 1 1"/>
@@ -279,7 +280,7 @@
     <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Red</elem>
+      <elem key="material">PR2/wheel_right</elem>
     </map>
     <geometry name="pr2_wheel_mesh_file"><!-- geometry specified using a simple geometric object -->
       <mesh filename="wheel_right" />
@@ -316,7 +317,7 @@
   <const_block name="pr2_shoulder_pan_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="100" velocity="5" />
+    <limit min="shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
