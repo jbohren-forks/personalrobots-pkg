@@ -1,12 +1,14 @@
-#include <iostream.h>
+
 #include "CvMatUtils.h"
+using namespace cv::willow;
+
+#include <iostream.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
-using namespace cv::willow;
-
+#include <boost/foreach.hpp>
 #undef DEBUG
 
 const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
@@ -103,17 +105,17 @@ void CvMatUtils::cvCross(CvArr* img, CvPoint pt, int halfLen, CvScalar color,
 	cvLine(img, pt1, pt2, color, thickness, line_type, shift);
 }
 
-bool CvMatUtils::drawPoints(cv::WImage3_b& image, vector<Keypoint>& keyPointsLast,
-    vector<Keypoint>& keyPointsCurr){
+bool CvMatUtils::drawPoints(cv::WImage3_b& image, const Keypoints& keyPointsLast,
+    const Keypoints& keyPointsCurr){
   // draw the key points
   IplImage* img = image.Ipl();
-  for (vector<Keypoint>::const_iterator ikp = keyPointsCurr.begin(); ikp != keyPointsCurr.end(); ikp++) {
-    cvCircle(img, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::green, 1, CV_AA, 0);
+  BOOST_FOREACH(const CvPoint3D64f& p, keyPointsCurr) {
+    cvCircle(img, cvPoint(p.x, p.y), 4, CvMatUtils::green, 1, CV_AA, 0);
   }
   // draw the key points from last key frame
-  for (vector<Keypoint>::const_iterator ikp = keyPointsLast.begin(); ikp != keyPointsLast.end(); ikp++) {
+  BOOST_FOREACH( const CvPoint3D64f& p, keyPointsLast ){
     // draw cross instead of circle
-    CvMatUtils::cvCross(img, cvPoint(ikp->x, ikp->y), 4, CvMatUtils::yellow, 1, CV_AA, 0);
+    CvMatUtils::cvCross(img, cvPoint(p.x, p.y), 4, CvMatUtils::yellow, 1, CV_AA, 0);
   }
   return true;
 }
@@ -228,8 +230,8 @@ bool CvMatUtils::drawLines(
 bool CvMatUtils::drawLines(
     WImage3_b& canvas,
     const vector<pair<int, int> >& indexPairs,
-    const vector<Keypoint>& keypoints0,
-    const vector<Keypoint>& keypoints1){
+    const Keypoints& keypoints0,
+    const Keypoints& keypoints1){
   for (vector<pair<int, int> >::const_iterator iter = indexPairs.begin();
   iter != indexPairs.end();
   iter++) {

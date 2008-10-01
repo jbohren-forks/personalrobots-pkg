@@ -105,7 +105,7 @@ PathRecon::KeyFramingDecision
 PathRecon::keyFrameEval(
 		int frameIndex,
 		vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
-		vector<Keypoint>& keyPoints,
+		Keypoints& keyPoints,
 		int numInliers,
 		const CvMat* inliers0, const CvMat* inliers1,
 		const CvMat& rot, const CvMat& shift
@@ -308,14 +308,14 @@ bool PathRecon::loadAndProcessStereoFrame(int frameIndex, PoseEstFrameEntry* & f
 
 bool PathRecon::loadAndProcessStereoFrame(int frameIndex,
     WImageBuffer1_b* & leftImage, WImageBuffer1_16s* & dispMap,
-    vector<Keypoint>* & keypoints)
+    Keypoints* & keypoints)
 {
   bool status = true;
   WImageBuffer1_b rightImage;
   leftImage = new WImageBuffer1_b();
   CvSize& imgSize = mPoseEstimator.getSize();
   dispMap = new WImageBuffer1_16s(imgSize.width, imgSize.height);
-  keypoints = new vector<Keypoint>();
+  keypoints = new Keypoints();
   // load stereo image pair
   TIMERSTART2(LoadImage);
   loadStereoImagePair(frameIndex, *leftImage, rightImage);
@@ -776,7 +776,7 @@ void PathRecon::Stat::print(){
 // See CvPathRecon.h for documentation
 PathRecon::PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
     WImageBuffer1_16s* dispMap,
-    vector<Keypoint>* keypoints, CvMat& rot, CvMat& shift,
+    Keypoints* keypoints, CvMat& rot, CvMat& shift,
     int numTrackablePair,
     int numInliers, int frameIndex,
     WImageBuffer3_b* imageC3a,

@@ -5,46 +5,12 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include "PoseEstimateDisp.h"
-using namespace cv;
 
 #include <cmath>
 
-#ifdef USESTARDETECTOR
-#include <star_detector/include/keypoint.h>
-#else
-// temporarily include this data structure here (from keypoint.h in star detector)
-#include <vector>
-#include <string>
+namespace cv {namespace willow {
 
-/*!
-  A struct representing a keypoint. The scale and pixel coordinates are
-  assumed to be integers.
- */
-struct Keypoint
-{
-    int x;
-    int y;
-    int s;
-    float scale;
-    float response;
-    // TODO: sign on dark or bright
-
-    Keypoint()
-        : x(0), y(0), s(0), scale(0), response(0)
-    {}
-
-    Keypoint(int x, int y, float scale, float response, int s = 0)
-        : x(x), y(y), s(s), scale(scale), response(response)
-    {};
-
-    //! Allow sorting a list of keypoints into descending order
-    //! of response magnitude using std::sort.
-    inline bool operator< (Keypoint const& other) const {
-        return fabs(response) > fabs(other.response);
-    }
-};
-#endif
-
+typedef vector<CvPoint3D64f> Keypoints;
 
 /**
  * Misc utilities
@@ -85,8 +51,8 @@ public:
 	    int thickness=1, int line_type=8, int shift=0);
 
 	/// draw two collection of points onto canvas. first one in red circle, second one yellow cross.
-	static bool drawPoints(cv::WImage3_b& image, vector<Keypoint>& keypoints0,
-	    vector<Keypoint>& keypoints1);
+	static bool drawPoints(cv::WImage3_b& image, const Keypoints& keypoints0,
+	    const Keypoints& keypoints1);
 	static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 	    const CvMat& rot, const CvMat& shift,
 	    const cv::willow::PoseEstimateDisp& peDisp, bool reversed=true);
@@ -102,10 +68,17 @@ public:
       /// index pairs of points, into keypoints0 and keypoints1, respectively
       const vector<pair<int,int> > & pointPairIndices,
       /// key point list 0 in disparity space
-      const vector<Keypoint>& keypoints0,
+      const Keypoints& keypoints0,
       /// key point list 1 in disparity space
-      const vector<Keypoint>& keypoints1
+      const Keypoints& keypoints1
   );
+  /// Given a disparity map and  location, returns the disparity value.
+  /// The caller needs to make sure the location coordinates are valid.
+  static inline double getDisparity(WImage1_16s& dispMap, CvPoint& pt,
+      double disparityUnitInPixels=DefDisparityUnitInPixels) {
+    // the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
+    return CV_IMAGE_ELEM(dispMap.Ipl(), int16_t, pt.y, pt.x)/disparityUnitInPixels;
+  }
   /// Convert disparity coordinate into pixel location in left cam CvPoint
   static inline CvPoint disparityToLeftCam(
       /// coordinate in disparity coordinates
@@ -137,6 +110,10 @@ public:
 	static const CvScalar red;
 	static const CvScalar green;
 	static const CvScalar yellow;
-};
 
+  /// Default value of disparity unit (in pixels) in disparity map
+  static const double DefDisparityUnitInPixels = 16.;
+};
+}
+}
 #endif /*CVMATUTILS_H_*/

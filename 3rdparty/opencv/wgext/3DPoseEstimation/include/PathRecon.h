@@ -14,9 +14,6 @@ using namespace std;
 
 #include <opencv/cxtypes.h>
 
-// star detector
-#include <star_detector/include/keypoint.h>
-
 #include <Cv3DPoseEstimateStereo.h>
 #include "CvPoseEstErrMeasDisp.h"
 
@@ -41,7 +38,7 @@ public:
         /// disparity map
         WImageBuffer1_16s * dispMap,
         /// key points
-        vector<Keypoint> * keypoints,
+        Keypoints * keypoints,
         /// rotation matrix
         CvMat & rot,
         /// translation matrix
@@ -79,7 +76,7 @@ public:
 
     WImageBuffer1_b* mImage;
     WImageBuffer1_16s* mDispMap;
-    vector<Keypoint>* mKeypoints;
+    Keypoints* mKeypoints;
     /// Estimated rotation matrix from this frame to last key frame
     CvMat mRot;
     /// Estimated translation matrix from this frame to last key frame.
@@ -143,7 +140,7 @@ public:
   void _init();
   typedef enum { KeyFrameSkip = 0x0, KeyFrameKeep = 0x1, KeyFrameUse = 0x2, KeyFrameBackTrack = 0x3} KeyFramingDecision;
   KeyFramingDecision keyFrameEval(int frameIndex, vector<pair<CvPoint3D64f,CvPoint3D64f> > & trackablePairs,
-      vector<Keypoint> & keyPoints, int numInliers, const CvMat *inliers0, const CvMat *inliers1, const CvMat & rot, const CvMat & shift);
+      Keypoints & keyPoints, int numInliers, const CvMat *inliers0, const CvMat *inliers1, const CvMat & rot, const CvMat & shift);
   bool appendTransform(const CvMat & rot, const CvMat & shift);
   /// Convert 3d points from local disparity coordinates to
   /// global coordinates, according to the estimated transformation of
@@ -190,7 +187,7 @@ public:
       WImageBuffer1_16s* & dispMap,
       /// (Output) Key points w.r.t left image. Old contents in keypoints
       /// will be cleared.
-      vector<Keypoint>*& keypoints);
+      Keypoints*& keypoints);
   bool loadAndProcessStereoFrame(
       /// The frame index
       int frameIndex,

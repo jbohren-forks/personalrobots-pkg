@@ -11,9 +11,10 @@
 #include <vector>
 using namespace std;
 
-#include "PoseEstimateDisp.h"
 #include <opencv/cvwimage.h>
 using namespace cv;
+#include "PoseEstimateDisp.h"
+#include "CvMatUtils.h"
 
 // star detector
 #include <star_detector/include/detector.h>
@@ -25,6 +26,7 @@ using namespace cv;
 using namespace features;
 
 namespace cv { namespace willow {
+
 /**
  * Pose estimation based on two frames of stereo image pairs.
  */
@@ -65,9 +67,6 @@ public:
 	} MatchMethod;
 	static const MatchMethod DefMatchMethod = CrossCorrelation;
 
-	// misc constants
-	static const double DefDisparityUnitInPixels = 16.;
-
 	PoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~PoseEstimateStereo();
 
@@ -92,7 +91,20 @@ public:
 	 * keypoints  -- Output. A vector of feature points that are believed to be
 	 *               good for tracking.
 	 */
-	bool goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, vector<Keypoint>& keypoints);
+//  bool goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMap, vector<Keypoint>& keypoints);
+  bool goodFeaturesToTrack(
+      WImage1_b& img,
+      WImage1_16s* dispMap,
+      Keypoints& keypoints);
+
+	static bool goodFeaturesToTrack(
+	    WImage1_b& img,
+	    WImage1_16s* dispMap,
+	    double disparityUnitInPixels,
+	    Keypoints& keypoints,
+	    CvMat* eigImg,
+	    CvMat* tempImg
+	);
 
 	/**
 	 *  Data structure for the Calonder matcher.
@@ -125,9 +137,9 @@ public:
 			/// disparity map of input image 1
 			WImage1_16s& dispMap1,
 			/// Detected key points in image 0
-			vector<Keypoint>& keyPoints0,
+			Keypoints& keyPoints0,
 			/// Detected Key points in image 1
-			vector<Keypoint>& keyPoints1,
+			Keypoints& keyPoints1,
 			/// (Output) pairs of corresponding 3d locations for possibly the same
 			/// 3d features. Used for pose estimation.
 			/// Set it to NULL if not interested.
@@ -138,7 +150,7 @@ public:
 			vector<pair<int, int> >* trackbleIndexPairs
 			);
 
-	bool makePatchRect(const CvPoint& rectSize, const CvPoint2D32f& featurePt, CvRect& rect);
+	bool makePatchRect(const CvPoint& rectSize, const CvPoint3D64f& featurePt, CvRect& rect);
 
 	int mNumKeyPointsWithNoDisparity;  // a convenient counter for analysis
 
@@ -151,27 +163,27 @@ protected:
 	bool getTrackablePairsByCalonder(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			Keypoints& keyPoints0, Keypoints& keyPoint1,
 			vector<pair<CvPoint3D64f, CvPoint3D64f> > * trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs = NULL
 	);
 	bool getTrackablePairsByCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			Keypoints& keyPoints0, Keypoints& keyPoint1,
 			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs
 	);
 	bool  getTrackablePairsByKeypointCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
-			vector<Keypoint>& keyPoints0, vector<Keypoint>& keyPoint1,
+			Keypoints& keyPoints0, Keypoints& keyPoint1,
 			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs
 	);
 	double 	getDisparity(WImage1_16s& dispMap, CvPoint& pt) {
 		// the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
-		return CV_IMAGE_ELEM(dispMap.Ipl(), int16_t, pt.y, pt.x)/mDisparityUnitInPixels;
+	  return CvMatUtils::getDisparity(dispMap, pt, mDisparityUnitInPixels);
 	}
 
 	CvSize mSize;
