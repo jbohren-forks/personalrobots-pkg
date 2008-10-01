@@ -1,0 +1,40 @@
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+PR2 Specific Controllers
+
+@section topic PR2 Controllers ROS Topics
+ - ROS topics published by controllers
+  - BaseControllerNode:
+   - \b odom
+ - ROS topics subscribed by controllers
+  - BaseControllerNode:
+   - \e cmd_vel
+  - arm position controllers:
+   - \e left_arm_commands
+   - \e right_arm_commands
+
+@section services PR2 Controllers ROS Services
+ - ROS service published by controllers
+  - BaseControllerNode:
+   - \b base_controller/set_command
+   - \b base_controller/get_actual
+  - LaserScannerControllerNode:
+   - \b tilt_laser_controller/set_command
+   - \b tilt_laser_controller/get_actual
+   - \b tilt_laser_controller/set_profile
+  - ArmPositionControllerNode:
+   - \b left_arm_controller/set_command
+   - \b left_arm_controller/set_command_array
+   - \b left_arm_controller/get_command
+   - \b left_arm_controller/set_target
+   - \b right_arm_controller/set_command
+   - \b right_arm_controller/set_command_array
+   - \b right_arm_controller/get_command
+   - \b right_arm_controller/set_target
+
+**/
+
+
