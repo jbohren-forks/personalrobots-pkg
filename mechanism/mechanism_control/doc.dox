@@ -1,0 +1,25 @@
+/**
+@mainpage
+
+@htmlinclude manifest.html
+
+Mechanism Controls.
+
+@section topic PR2 Mechanism Control Node ROS Topics
+ - ROS topics published by mechanism control node
+  - mechanism state:
+   - \b mechanism_state, mechanism_control::MechanismState, mechanism_control.h
+  - frame transforms:
+   - \b TransformArray, rosTF::TransformArray, mechanism_control.h
+
+
+@section services PR2 Mechanism Control Node ROS Services
+ - ROS service publsihed by mechanism control node
+  - mechanism control node:
+   - \b list_controllers
+   - \b list_controller_types
+   - \b spawn_controller
+   - \b kill_controller
+
+**/
+
