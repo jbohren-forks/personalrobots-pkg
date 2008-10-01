@@ -315,7 +315,7 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
 		for (int j = 0 ; j < 3 ; ++j)
 		{
 		    // undo Gazebo's shift of object anchor to geom xyz, stay in body cs
-		    tmpAnchor[j] = (link->joint->anchor)[j] - 0.0*(link->inertial->com)[j] - 0.5*(link->collision->xyz)[j]; /// @todo compensate for gazebo's error.  John is fixing this one
+		    tmpAnchor[j] = (link->joint->anchor)[j] - 0.0*(link->inertial->com)[j] - 0.0*(link->collision->xyz)[j]; /// @todo compensate for gazebo's error.  John is fixing this one
 		}
 		
 		addKeyValue(joint, "anchorOffset", values2str(3, tmpAnchor));
