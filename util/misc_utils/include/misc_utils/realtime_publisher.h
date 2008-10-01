@@ -62,7 +62,11 @@ public:
     node_->advertise<Msg>(topic_, queue_size);
 
     pthread_cond_init(&updated_cond_, NULL);
-    pthread_mutex_init(&msg_lock_, NULL);
+    if (0 != pthread_mutex_init(&msg_lock_, NULL))
+    {
+      perror("pthread_mutex_init");
+      abort();
+    }
     keep_running_ = true;
     thread_ = ros::thread::member_thread::startMemberFunctionThread<RealtimePublisher<Msg> >
       (this, &RealtimePublisher::publishingLoop);
@@ -80,9 +84,9 @@ public:
 
   Msg msg_;
 
-  void lock()
+  int lock()
   {
-    pthread_mutex_lock(&msg_lock_);
+    return pthread_mutex_lock(&msg_lock_);
   }
 
   bool trylock()
