@@ -4,7 +4,7 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
-  <depend package="sdl"/>
+  <!-- <depend package="sdl"/> -->
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lflea2 -ldc1394_control -lraw1394"/>
   </export>
