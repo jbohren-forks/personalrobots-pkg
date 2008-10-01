@@ -97,6 +97,10 @@ SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.cpp
 # End Source File
 # Begin Source File
@@ -159,6 +163,10 @@ SOURCE=..\..\src\discrete_space_information\environment.h
 # Begin Source File
 
 SOURCE=..\..\src\discrete_space_information\nav2d\environment_nav2D.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.h
 # End Source File
 # Begin Source File
 

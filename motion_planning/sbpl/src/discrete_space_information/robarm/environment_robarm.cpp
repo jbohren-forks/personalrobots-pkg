@@ -30,7 +30,6 @@
 
 #include <queue>
 
-#define PI_CONST 3.141592653
 
 #define COSTMULT 1000
 

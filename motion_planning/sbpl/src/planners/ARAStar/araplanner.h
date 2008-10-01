@@ -181,6 +181,9 @@ private:
 	//deallocates memory used by SearchStateSpace
 	void DeleteSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace);
 
+	//debugging 
+	void PrintSearchState(ARAState* state, FILE* fOut);
+
 
 	//reset properly search state space
 	//needs to be done before deleting states

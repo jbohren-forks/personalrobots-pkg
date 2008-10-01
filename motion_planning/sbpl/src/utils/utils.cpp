@@ -423,3 +423,51 @@ int get_next_point(bresenham_param_t *params)
   return 1;
 }
 
+
+
+//converts discretized version of angle into continuous (radians)
+//maps 0->0, 1->delta, 2->2*delta, ...
+double DiscTheta2Cont(int nTheta, int NUMOFANGLEVALS)
+{
+    double thetaBinSize = 2.0*PI_CONST/NUMOFANGLEVALS;
+    return nTheta*thetaBinSize;
+}
+
+
+
+//converts continuous (radians) version of angle into discrete
+//maps 0->0, [delta/2, 3/2*delta)->1, [3/2*delta, 5/2*delta)->2,...
+int ContTheta2Disc(double fTheta, int NUMOFANGLEVALS)
+{
+
+    double thetaBinSize = 2.0*PI_CONST/NUMOFANGLEVALS;
+    return (int)(normalizeAngle(fTheta+thetaBinSize/2.0)/(2.0*PI_CONST)*(NUMOFANGLEVALS));
+
+}
+
+
+
+
+//input angle should be in radians
+//counterclockwise is positive
+//output is an angle in the range of from 0 to 2*PI
+double normalizeAngle(double angle)
+{
+    double retangle = angle;
+
+    //get to the range from -2PI, 2PI
+    if(fabs(retangle) > 2*PI_CONST)
+        retangle = retangle - ((int)(retangle/(2*PI_CONST)))*2*PI_CONST; 
+
+    //get to the range 0, 2PI
+    if(retangle < 0)
+        retangle += 2*PI_CONST;
+
+    if(retangle < 0 || retangle > 2*PI_CONST)
+	{
+        printf("ERROR: after normalization of angle=%f we get angle=%f\n", angle, retangle);
+	}
+
+    return retangle;
+}
+

@@ -712,10 +712,17 @@ int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace)
 	CMDPSTATE* PredMDPstate;
 	ARAState *predstateinfo, *stateinfo;
 
+#if DEBUG
+	fprintf(fDeb, "reconstructing a path:\n");
+#endif
+
 	while(MDPstate != pSearchStateSpace->searchstartstate)
 	{
 		stateinfo = (ARAState*)MDPstate->PlannerSpecificData;
 
+#if DEBUG
+		PrintSearchState(stateinfo, fDeb);
+#endif
 		if(stateinfo->g == INFINITECOST)
 		{	
 			//printf("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
@@ -739,7 +746,8 @@ int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace)
 		//check the decrease of g-values along the path
 		if(predstateinfo->v >= stateinfo->g)
 		{
-			printf("ERROR in ReconstructPath: g-values are non-decreasing\n");
+			printf("ERROR in ReconstructPath: g-values are non-decreasing\n");			
+			PrintSearchState(predstateinfo, fDeb);
 			exit(1);
 		}
 
@@ -808,6 +816,16 @@ void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE*
 
 	}
 }
+
+void ARAPlanner::PrintSearchState(ARAState* state, FILE* fOut)
+{
+	fprintf(fOut, "state %d: h=%d g=%u v=%u iterc=%d callnuma=%d expands=%d \n",
+		state->MDPstate->StateID, state->h, state->g, state->v, 
+		state->iterationclosed, state->callnumberaccessed, state->numofexpands);
+	environment_->PrintState(state->MDPstate->StateID, true, fOut);
+
+}
+
 
 int ARAPlanner::getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int StateID)
 {
@@ -950,12 +968,13 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
         }
 
 		//print the solution cost and eps bound
-		printf("eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
+		printf("eps=%f expands=%d g(searchgoal)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
 							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
 
 #if DEBUG
-        fprintf(fDeb, "eps=%f expands=%d g(sstart)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
+        fprintf(fDeb, "eps=%f expands=%d g(searchgoal)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
 							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
+		PrintSearchState((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData, fDeb);
 #endif
 		prevexpands = searchexpands;
 

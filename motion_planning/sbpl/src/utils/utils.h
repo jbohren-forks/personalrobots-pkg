@@ -34,6 +34,14 @@
 #define __min(x,y) (x>y?y:x)
 #endif
 
+#define NORMALIZEDISCTHETA(THETA, THETADIRS) (((THETA>=0)?((THETA)%(THETADIRS)):(((THETA)%(THETADIRS)+THETADIRS)%THETADIRS)))
+
+#define CONTXY2DISC(X, CELLSIZE) (((X)>=0)?((int)((X)/(CELLSIZE))):((int)((X)/(CELLSIZE))-1))
+#define DISCXY2CONT(X, CELLSIZE) ((X)*(CELLSIZE) + (CELLSIZE)/2.0)
+
+
+#define PI_CONST 3.141592653
+
 #define UNKNOWN_COST 1000000
 
 typedef struct {
@@ -67,7 +75,17 @@ void get_bresenham_parameters(int p1x, int p1y, int p2x, int p2y, bresenham_para
 void get_current_point(bresenham_param_t *params, int *x, int *y);
 int get_next_point(bresenham_param_t *params);
 
+//converts discretized version of angle into continuous (radians)
+//maps 0->0, 1->delta, 2->2*delta, ...
+double DiscTheta2Cont(int nTheta, int NUMOFANGLEVALS);
+//converts continuous (radians) version of angle into discrete
+//maps 0->0, [delta/2, 3/2*delta)->1, [3/2*delta, 5/2*delta)->2,...
+int ContTheta2Disc(double fTheta, int NUMOFANGLEVALS);
 
+//input angle should be in radians
+//counterclockwise is positive
+//output is an angle in the range of from 0 to 2*PI
+double normalizeAngle(double angle);
 
 #if 0
 void CheckSearchMDP(CMDP* mdp, int ExcludeSuccStateID = -1);
