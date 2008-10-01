@@ -284,7 +284,7 @@ bool ArmPositionControllerNode::setJointPosSrv(pr2_mechanism_controllers::SetJoi
                                    pr2_mechanism_controllers::SetJointPosCmd::response &resp)
 {
   std::vector<double> pos;
-  req.set_positions_vec(pos);
+  req.get_positions_vec(pos);
   c_->setJointPosCmd(pos);
   return true;
 }
