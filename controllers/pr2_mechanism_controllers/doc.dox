@@ -7,33 +7,39 @@ PR2 Specific Controllers
 
 @section topic PR2 Controllers ROS Topics
  - ROS topics published by controllers
-  - BaseControllerNode:
-   - \b odom
+     <table border="1">
+     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
+     <tr><td> \b odom                              </td> <td>  std_msgs::RobotBase2DOdom           </td>  <td>  base_controller.h      </td> <td>   odometry information from base caster and wheels.        </td>  </tr>
+     </table><br>
+
  - ROS topics subscribed by controllers
-  - BaseControllerNode:
-   - \e cmd_vel
+     <table border="1">
+     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
+     <tr><td> \e cmd_vel                           </td> <td>  std_msgs::BaseVel                   </td>  <td>  base_controller.h      </td> <td>   velocity commands for the base (vx,vy,vw).               </td>  </tr>
+     </table><br>
   - arm position controllers:
-   - \e left_arm_commands
-   - \e right_arm_commands
+     <table border="1">
+     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
+     <tr><td> \e left_arm_commands                 </td> <td> pr2_mechanism_controllers::JointPosCmd </td><td>arm_position_controller.h</td> <td>   Arm configuration command for each joint.                </td>  </tr>
+     <tr><td> \e right_arm_commands                </td> <td> pr2_mechanism_controllers::JointPosCmd </td><td>arm_position_controller.h</td> <td>   Arm configuration command for each joint.                </td>  </tr>
+     </table><br>
 
 @section services PR2 Controllers ROS Services
  - ROS service published by controllers
-  - BaseControllerNode:
-   - \b base_controller/set_command
-   - \b base_controller/get_actual
-  - LaserScannerControllerNode:
-   - \b tilt_laser_controller/set_command
-   - \b tilt_laser_controller/get_actual
-   - \b tilt_laser_controller/set_profile
-  - ArmPositionControllerNode:
-   - \b left_arm_controller/set_command
-   - \b left_arm_controller/set_command_array
-   - \b left_arm_controller/get_command
-   - \b left_arm_controller/set_target
-   - \b right_arm_controller/set_command
-   - \b right_arm_controller/set_command_array
-   - \b right_arm_controller/get_command
-   - \b right_arm_controller/set_target
+     <table border="1">
+     <tr><th>  Topic Name                                </th> <th> Message Type                              </th>  <th> Plugin Name              </th> <th>  Description                                   </th>  </tr>
+     <tr><td> \b base_controller/set_command             </td> <td>pr2_mechanism_controllers::SetBaseCommand  </td>  <td>  base_controller.h       </td> <td>   set base command.                            </td>  </tr>
+     <tr><td> \b base_controller/get_actual              </td> <td>pr2_mechanism_controllers::GetBaseCommand  </td>  <td>  base_controller.h       </td> <td>   get base command.                            </td>  </tr>
+     <tr><td> \b tilt_laser_controller/set_command       </td> <td>robot_mechanism_controllers::SetCommand    </td>  <td>laser_scanner_controller.h</td> <td>   set controller command.                      </td>  </tr>
+     <tr><td> \b tilt_laser_controller/get_actual        </td> <td>robot_mechanism_controllers::GetCommand    </td>  <td>laser_scanner_controller.h</td> <td>   get controller command.                      </td>  </tr>
+     <tr><td> \b tilt_laser_controller/set_profile       </td> <td>pr2_mechanism_controllers::SetProfile      </td>  <td>laser_scanner_controller.h</td> <td>   set sweep profile.                           </td>  </tr>
+     <tr><td> \b left_arm_controller/set_command         </td> <td>pr2_mechanism_controllers::SetJointTarget  </td>  <td> arm_position_controller.h</td> <td>   set arm joint targets.                       </td>  </tr>
+     <tr><td> \b left_arm_controller/set_command_array   </td> <td>pr2_mechanism_controllers::SetJointPosCmd  </td>  <td> arm_position_controller.h</td> <td>   set arm joint positions.                     </td>  </tr>
+     <tr><td> \b left_arm_controller/get_command         </td> <td>pr2_mechanism_controllers::GetJointPosCmd  </td>  <td> arm_position_controller.h</td> <td>   get arm joint positions.                     </td>  </tr>
+     <tr><td> \b left_arm_controller/set_target          </td> <td>pr2_mechanism_controllers::SetJointTarget  </td>  <td> arm_position_controller.h</td> <td>   set arm joint targets.                       </td>  </tr>
+     </table><br>
+     @todo rename base_controller/get_actual to base_controller/get_command.
+           update documentation for arm position controller services.
 
 **/
 

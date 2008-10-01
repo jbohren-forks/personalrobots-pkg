@@ -279,7 +279,7 @@ Below are the ROS messages actively used by PR2 simulation as described by launc
  - ROS topics published directly by the simulator plugins
      <table border="1">
      <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \b wrist_left/image                     </td> <td>  std_msgs::Image.msg                 </td>  <td>  Ros_Camera.hh          </td> <td>  Images from left wrist camera.                            </th>  </tr>
+     <tr><td> \b wrist_left/image                     </td> <td>  std_msgs::Image.msg                 </td>  <td>  Ros_Camera.hh          </td> <td>  Images from left wrist camera.                            </td>  </tr>
      <tr><td> \b wrist_right/image                    </td> <td>  std_msgs::Image.msg                 </td>  <td>  Ros_Camera.hh          </td> <td>  Images from right wrist camera.                           </td>  </tr>
      <tr><td> \b forearm_left/image                   </td> <td>  std_msgs::Image.msg                 </td>  <td>  Ros_Camera.hh          </td> <td>  Images from left forearm camera.                          </td>  </tr>
      <tr><td> \b forearm_right/image                  </td> <td>  std_msgs::Image.msg                 </td>  <td>  Ros_Camera.hh          </td> <td>  Images from right forearm camera.                         </td>  </tr>
@@ -304,27 +304,27 @@ Below are the ROS messages actively used by PR2 simulation as described by launc
      <tr><td> \b finger_tip_R_right_ground_truth      </td> <td>  std_msgs::TransformWithRateStamped  </td>  <td> P3D.hh                  </td> <td> Ground truth from center of right finger tip on right arm. </td>  </tr>
      <tr><td> \b axis_right/ptz_state                 </td> <td>  axis_cam::PTZActuatorState          </td>  <td> Ros_PTZ.hh              </td> <td> PTZ cameras actuator positions.                            </td>  </tr>
      <tr><td> \b axis_left/ptz_state                  </td> <td>  axis_cam::PTZActuatorState          </td>  <td> Ros_PTZ.hh              </td> <td> PTZ cameras actuator positions.                            </td>  </tr>
-     <tr><td> \b time                                 </td> <td>  rostools::Time                      </td>  <td> Ros_Time.hh             </td> <td> Simulation time.                                           </th>  </tr>
+     <tr><td> \b time                                 </td> <td>  rostools::Time                      </td>  <td> Ros_Time.hh             </td> <td> Simulation time.                                           </td>  </tr>
      </table><br>
  - ROS topics subscribed by the simulator
      <table border="1">
      <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \e axis_left_ptz_cmd                 </td> <td>  axis_cam::PTZActuatorCmd            </td>  <td>  Ros_PTZ.hh             </td> <td>  Actuator commands for PTZ cameras.                        </th>  </tr>
-     <tr><td> \e axis_right_ptz_cmd                </td> <td>  axis_cam::PTZActuatorCmd            </td>  <td>  Ros_PTZ.hh             </td> <td>  Actuator commands for PTZ cameras.                        </th>  </tr>
+     <tr><td> \e axis_left_ptz_cmd                 </td> <td>  axis_cam::PTZActuatorCmd            </td>  <td>  Ros_PTZ.hh             </td> <td>  Actuator commands for PTZ cameras.                        </td>  </tr>
+     <tr><td> \e axis_right_ptz_cmd                </td> <td>  axis_cam::PTZActuatorCmd            </td>  <td>  Ros_PTZ.hh             </td> <td>  Actuator commands for PTZ cameras.                        </td>  </tr>
      </table><br>
 
 @section param PR2 ROS Parameters
  - ROS parameters published by the simulator
      <table border="1">
      <tr><th>  Parameter Name                      </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \b full_charge_energy                </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Battery state when fully charged in Joules.               </th>  </tr>
+     <tr><td> \b full_charge_energy                </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Battery state when fully charged in Joules.               </td>  </tr>
      </table><br>
  - ROS parameters subscribed by the simulator
      <table border="1">
      <tr><th>  Parameter Name                      </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \e timeout                           </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Timeout in seconds. (default=10.0sec)                     </th>  </tr>
-     <tr><td> \e diagnostic_rate                   </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Broadcast rate in Hz. (default=1.0 Hz)                    </th>  </tr>
-     <tr><td> \e battery_state_rate                </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Broadcast rate in Hz. (default=1.0 Hz)                    </th>  </tr>
+     <tr><td> \e timeout                           </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Timeout in seconds. (default=10.0sec)                     </td>  </tr>
+     <tr><td> \e diagnostic_rate                   </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Broadcast rate in Hz. (default=1.0 Hz)                    </td>  </tr>
+     <tr><td> \e battery_state_rate                </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Broadcast rate in Hz. (default=1.0 Hz)                    </td>  </tr>
      </table><br>
 
 @section templates How To Construct Your Own ROS Gazebo Plugin
