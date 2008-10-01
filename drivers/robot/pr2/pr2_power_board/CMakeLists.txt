@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(pr2_power_board)
 
-#genmsg()
+gensrv()
 
 rospack_add_executable(power power.cpp)
 rospack_add_executable(power_node power_node.cpp)

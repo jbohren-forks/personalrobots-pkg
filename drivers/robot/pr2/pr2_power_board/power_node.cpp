@@ -52,8 +52,8 @@
 #include "power_comm.h"
 
 #include "ros/node.h"
+#include "pr2_power_board/PowerBoardCommand.h"
 
-//#include "
 
 struct Interface {
   struct ifreq interface;
@@ -633,9 +633,36 @@ void catch_signal(int sig)
 }
 
 
-int main(int argc, char** argv) {
+class PowerBoard : public ros::node
+{
+public:
+  PowerBoard(): ros::node ("pr2_power_board")
+  {
+    advertise_service("power_board_control", &PowerBoard::commandCallback);
+  };
+  
+  bool commandCallback(pr2_power_board::PowerBoardCommand::request &req,
+                       pr2_power_board::PowerBoardCommand::response &res)
+  {
+    std::stringstream ss;
+    ss << " 0 " << req.breaker_number<<" " << req.command;
 
-  ros::node myNode("pr2_power_board");
+    res.retval = send_command(ss.str().c_str());
+
+  }
+
+
+
+private:
+  pr2_power_board::PowerBoardCommand::request req;
+  pr2_power_board::PowerBoardCommand::response res;
+
+};
+
+
+int main(int argc, char** argv) {
+  ros::init(argc, argv);
+  PowerBoard myBoard;
   CreateAllInterfaces();
 	
   signal(SIGTERM, catch_signal);
@@ -649,14 +676,6 @@ int main(int argc, char** argv) {
 
     char command [200];
     std::cin.getline(command, sizeof(command));
-
-
-#if 0
-    if (command == NULL) {
-      print_menu();
-      continue;
-    }				
-#endif
 		
     collect_messages();
 		
@@ -689,6 +708,7 @@ int main(int argc, char** argv) {
   CloseAllDevices();
   CloseAllInterfaces();
 		
+  ros::fini();
   return 0;
 	
 }
