@@ -201,8 +201,12 @@ class robotPower:
             sval.append(DiagnosticValue(self.controllers[c].total_current(), "Current (A)"))
             sval.append(DiagnosticValue(self.controllers[c].average_voltage(), "Voltage (V)"))
             sval.append(DiagnosticValue(time.time() - self.controllers[c].last_time, "Time since update (s)"))
-## if
-            stat.append(DiagnosticStatus(0, "IBPS %d"%c, "All good", sval, []))
+            controller_status_value = 0
+            controller_status_string = "All good"
+            if timeout < time.time() - self.controllers[c].last_time:
+                    controller_status_string = " Timeout %f > %f"%(self.controllers[c].last_time, timeout)
+                    controller_status_value = 2
+            stat.append(DiagnosticStatus(controller_status_value, "IBPS %d"%c, controller_status_string, sval, []))
             ## @todo make the status string represent errors etc
 
             for b in range(0,len(self.controllers[c].batteries)):
