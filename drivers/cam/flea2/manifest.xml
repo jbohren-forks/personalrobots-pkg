@@ -10,4 +10,5 @@
   </export>
   <sysdepend os="ubuntu" version="7.04-feisty" package="libdc1394-13-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libdc1394-13-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl1.2-dev"/>
 </package>
