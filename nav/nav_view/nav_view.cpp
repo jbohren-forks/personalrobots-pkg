@@ -422,7 +422,7 @@ NavView::render()
 
   robot_footprint.lock();
   glColor3f(robot_footprint.color.r,robot_footprint.color.g,robot_footprint.color.b);
-  glBegin(GL_POINTS);
+  glBegin(GL_LINE_LOOP);
   for(unsigned int i=0;i<robot_footprint.get_points_size();i++)
     glVertex2f(robot_footprint.points[i].x,robot_footprint.points[i].y);
   glEnd();
