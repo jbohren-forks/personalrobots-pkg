@@ -38,6 +38,7 @@
 #include <robot_msgs/BatteryState.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <robot_msgs/DiagnosticStatus.h>
+#include <gazebo_plugin/PlugCommand.h>
 #include <ros/node.h>
 
 namespace gazebo
@@ -115,6 +116,38 @@ private:
 
   /// \brief stores current simulator time
   private: double current_time_;
+
+  /// \brief stores last simulator time
+  private: double last_time_;
+
+  /// \brief rate to broadcast diagnostic message
+  private: double diagnostic_rate_;
+
+  /// \brief rate to broadcast battery states message
+  private: double battery_state_rate_;
+
+  /// \brief some internal variables for keeping track of simulated battery
+  ///           @todo make consumption rate vary with joint commands, motion, etc
+
+  /// \brief full capacity of battery
+  private: double full_capacity_;
+
+  /// \brief charge state;
+  private: double charge_;
+
+  /// \brief default charge rate when plugged in
+  private: double default_charge_rate_;
+
+  /// \brief power drain, if this is negative, we are charging the battery.
+  private: double consumption_rate_;
+
+  /// \brief listen to ROS to see if we are charging
+  private: void SetPlug();
+  private: gazebo_plugin::PlugCommand plug_msg_;
+
+/// @todo make DISCHAGE_RATE something else
+#define DISCHARGE_RATE 1.0
+
 };
 
 /** \} */
