@@ -1,11 +1,23 @@
 <robot name="pr2">
   <joint name="link1_joint" >
-      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+      <explicitDampingCoefficient>10</explicitDampingCoefficient>
   </joint>
   <joint name="link2_joint" >
-      <explicitDampingCoefficient>0</explicitDampingCoefficient>
+      <explicitDampingCoefficient>10</explicitDampingCoefficient>
   </joint>
   <joint name="link3_joint" >
-      <explicitDampingCoefficient>0</explicitDampingCoefficient>
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+  </joint>
+  <joint name="link4_joint" >
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+  </joint>
+  <joint name="link5_joint" >
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+  </joint>
+  <joint name="link6_joint" >
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+  </joint>
+  <joint name="link7_joint" >
+      <explicitDampingCoefficient>1</explicitDampingCoefficient>
   </joint>
 </robot>
