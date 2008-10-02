@@ -38,7 +38,7 @@ PyObject *detect(PyObject *self, PyObject *args)
     std::vector<Keypoint> kp;
     sd->psd.DetectPoints(sd->img, std::back_inserter(kp));
     PyObject *r = PyList_New(kp.size());
-    for (int i = 0; i < kp.size(); i++) {
+    for (size_t i = 0; i < kp.size(); i++) {
         PyObject *t = PyTuple_New(4);
         PyTuple_SetItem(t, 0, PyInt_FromLong(kp[i].x));
         PyTuple_SetItem(t, 1, PyInt_FromLong(kp[i].y));

@@ -15,6 +15,6 @@ include_directories(${PYTHON_INCLUDE_PATH})
 
 rospack_add_library(pystarfeature src/pydetector.cpp src/detector.cpp src/integral.cpp src/keypoint.cpp)
 set_target_properties(pystarfeature PROPERTIES OUTPUT_NAME starfeature PREFIX "")
-rospack_add_compile_flags(pystarfeature -save-temps -march=pentium3 -msse3)
+rospack_add_compile_flags(pystarfeature -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)
 
 rospack_add_pyunit(test/directed.py)
