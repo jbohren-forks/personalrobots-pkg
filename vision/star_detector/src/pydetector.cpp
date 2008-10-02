@@ -28,7 +28,13 @@ PyObject *detect(PyObject *self, PyObject *args)
     star_detector_t *sd = (star_detector_t*)self;
     char *imdata = PyString_AsString(PyTuple_GetItem(args,0));
 
-    memcpy(sd->img->imageData, imdata, sd->xsize * sd->ysize);
+    if (sd->img->widthStep == sd->xsize) {
+        memcpy(sd->img->imageData, imdata, sd->xsize * sd->ysize);
+    } else {
+        for (int y = 0; y < sd->ysize; y++) {
+            memcpy(&CV_IMAGE_ELEM(sd->img, char, y, 0), imdata + y * (sd->xsize), sd->xsize);
+        }
+    }
     std::vector<Keypoint> kp;
     sd->psd.DetectPoints(sd->img, std::back_inserter(kp));
     PyObject *r = PyList_New(kp.size());

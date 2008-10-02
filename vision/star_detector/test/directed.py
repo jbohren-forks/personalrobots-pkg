@@ -11,7 +11,6 @@ import random
 import time
 import unittest
 
-# Small target in middle of image invartiant wrt image size
 # A star detector object's results are invariant wrt image presentation order
 
 def simple(im, scales = 7, threshold = 30.0, line_threshold = 10.0):
@@ -156,11 +155,13 @@ class TestDirected(unittest.TestCase):
             im.paste(self.im64, (100, 100))
             return im
 
-        ref = simple(make_big(200, 200))
+        ref = simple(make_big(300, 300))
         self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
-        for sx in [200]:
-            for sy in [200]:
-                result = simple(make_big(sx, sy))
+        for sx in [300,301,316]:
+            for sy in [300,301,316]:
+                im = make_big(sx, sy)
+                im.save("out.pgm")
+                result = simple(im)
                 self.assertEqual(ref, result)
 
     def test_xy_symmetry(self):
@@ -168,7 +169,7 @@ class TestDirected(unittest.TestCase):
         Flipped,flopped,rotated images have the same number of keypoints
         """
 
-        for dim in [248]:
+        for dim in [247, 248, 256]:
             refim = self.im640.resize((dim,dim))
             ref = simple(refim, 7, 30.0, 999999.0)
             self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
@@ -176,7 +177,7 @@ class TestDirected(unittest.TestCase):
                 result = simple(refim.transpose(f), 7, 30.0, 999999.0)
                 self.assertEqual(len(ref), len(result))
 
-    def xtest_all_scales(self):
+    def test_all_scales(self):
         """ random circles all over screen - pass if all scales get hit """
 
         im = Image.new("L", (1000, 1000), (0))
@@ -185,6 +186,29 @@ class TestDirected(unittest.TestCase):
             circle(im, random.randrange(100, 900), random.randrange(100,900), 0.1 * t, 255)
         result = simple(im, 7)
         self.assertEqual(set([s for (x,y,s,r) in result]), set([2,3,4,5,6]))
+
+    def test_order_invariance(self):
+        """ Check that output is independent of presentation order """
+
+        def runone(sd, im):
+            kp = sd.detect(im.tostring())
+            return [ i[1] for i in sorted([ (abs(response), (x, y, s, response)) for (x, y, s, response) in kp])]
+
+        pool = [ self.im640.resize((256,256)) ]
+
+        pool += [ Image.new("L", (256,256), c) for c in [0,101,255] ]
+        pool += [Image.fromstring("L", (256,256), "".join([ chr(random.randrange(0, 256)) for i in range(256 * 256)])) for j in range(5)]
+
+        random.seed(0)
+        random.shuffle(pool)
+
+        ref = [ simple(im) for im in pool ]
+
+        sd = L.star_detector(256,256)
+
+        for order in [ pool, pool[::-1] ]:
+            result = [runone(sd, s) for s in pool]
+            self.assertEqual(sorted(ref), sorted(result))
 
     def test_L(self):
         """ Line of circles (varying L) across image """
@@ -201,7 +225,7 @@ class TestDirected(unittest.TestCase):
         xs = [i[0] for i in result]
         self.assert_(xs == sorted(xs))
 
-    def test_z_perf(self):
+    def xtest_z_perf(self):
         sd = L.star_detector(self.im640.size[0], self.im640.size[1])
         s = self.im640.tostring()
         niter = 100
@@ -219,7 +243,7 @@ class TestDirected(unittest.TestCase):
 if __name__ == '__main__':
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestSequenceFunctions('test_blank'))
+        suite.addTest(TestDirected('test_order_invariance'))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         import rostest
