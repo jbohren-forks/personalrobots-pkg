@@ -66,7 +66,7 @@ namespace ros {
       /**
        * @brief Constructor
        */
-      MoveBase(VelocityController& vc, double windowLength, unsigned char lethalObstacleThreshold, unsigned char noInformation, double maxZ, double inflationRadius);
+      MoveBase();
 
       virtual ~MoveBase();
 
@@ -139,9 +139,6 @@ namespace ros {
        */
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
-      /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
-      VelocityController& controller_;
-
       std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
 
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
@@ -149,6 +146,9 @@ namespace ros {
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
 
       rosTFClient tf_; /**< Used to do transforms */
+
+      /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
+      VelocityController* controller_;
 
       CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
 
