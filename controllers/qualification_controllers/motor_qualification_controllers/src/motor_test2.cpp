@@ -166,7 +166,7 @@ void MotorTest2::analysis()
   publisher_.lock();
 
   publisher_.msg_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
+  robot_msgs::DiagnosticStatus *status = &publisher_.msg_.status[0];
   status->set_values_size(2);
   status->name = "MotorTest";
   NEWMAT::Matrix test_matrix =test_velocity_ | test_current_;

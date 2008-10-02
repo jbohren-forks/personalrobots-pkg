@@ -131,7 +131,7 @@ void MotorTest3::analysis()
 {
   publisher_.lock();  // Screw realtime
   publisher_.msg_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
+  robot_msgs::DiagnosticStatus *status = &publisher_.msg_.status[0];
 
   status->name = "MotorTest";
 

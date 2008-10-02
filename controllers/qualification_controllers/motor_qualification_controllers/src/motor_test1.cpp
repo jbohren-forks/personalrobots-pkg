@@ -147,7 +147,7 @@ void MotorTest1::analysis()
   publisher_.lock();
 
   publisher_.msg_.set_status_size(1);
-  robot_msgs::DiagnosticStatus *status = publisher_.msg_.status;
+  robot_msgs::DiagnosticStatus *status = &publisher_.msg_.status[0];
   status->name = "MotorTest";
   printf("error: %f\n", error);
   if (f_delta==0 && t_delta==0)
