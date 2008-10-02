@@ -263,16 +263,16 @@ void RobotState::propagateState()
       link_states_[i].rel_frame_.multiplyPose(joint_transform);
       link_states_[i].rel_frame_.multiplyPose(rotation);
     }
+  }
 
-    // Computes the absolute pose of the links using the relative transforms
-    for (unsigned int i = 0; i < link_states_.size(); ++i)
+  // Computes the absolute pose of the links using the relative transforms
+  for (unsigned int i = 0; i < link_states_.size(); ++i)
+  {
+    if (!links_joint_[i]) // Root link, attached to the world
     {
-      if (!links_joint_[i]) // Root link, attached to the world
-      {
-        link_states_[i].abs_position_.setValue(0, 0, 0);
-        link_states_[i].abs_orientation_.setValue(0, 0, 0);
-        propagateAbsolutePose(i, libTF::Pose3D());
-      }
+      link_states_[i].abs_position_.setValue(0, 0, 0);
+      link_states_[i].abs_orientation_.setValue(0, 0, 0);
+      propagateAbsolutePose(i, libTF::Pose3D());
     }
   }
 }
