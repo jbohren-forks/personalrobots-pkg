@@ -37,19 +37,19 @@ endif
 # Add inputs and outputs from these tool invocations to the build variables 
 
 # All Target
-all: 3DPoseEstimationTest
+all: PoseEstimationTest
 
 # Tool invocations
-3DPoseEstimationTest: $(OBJS) $(USER_OBJS)
+PoseEstimationTest: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L"/wg/stor1/jdchen/workspace/ros-pkg/3rdparty/opencv/wgext/3DPoseEstimation/Release" -L/opt/opencv/lib -o"3DPoseEstimationTest" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"/wg/stor1/jdchen/workspace/ros-pkg/3rdparty/opencv/wgext/3DPoseEstimation/Release" -L/opt/star_detector/lib -L/opt/calonder_descriptor/lib -L/opt/opencv/lib -o"PoseEstimationTest" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) 3DPoseEstimationTest
+	-$(RM) $(OBJS)$(C++_DEPS)$(C_DEPS)$(CC_DEPS)$(CPP_DEPS)$(EXECUTABLES)$(CXX_DEPS)$(C_UPPER_DEPS) PoseEstimationTest
 	-@echo ' '
 
 .PHONY: all clean dependents

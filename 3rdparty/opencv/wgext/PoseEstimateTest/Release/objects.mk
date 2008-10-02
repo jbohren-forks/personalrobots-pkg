@@ -4,4 +4,4 @@
 
 USER_OBJS :=
 
-LIBS := -l3DPoseEstimation -lhighgui -lcvaux -lml -lcv -lcxcore
+LIBS := -l3DPoseEstimation -lwgdetect -lsignatures -lhighgui -lcvaux -lml -lcv -lcxcore -lvtkGraphics -lvtkRendering
