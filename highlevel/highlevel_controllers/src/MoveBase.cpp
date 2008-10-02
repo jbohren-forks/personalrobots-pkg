@@ -107,7 +107,7 @@ namespace ros {
 
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-                               &(inputData[0]) , resp.map.resolution, 
+                               inputData , resp.map.resolution, 
 			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
 
       // Allocate Velocity Controller

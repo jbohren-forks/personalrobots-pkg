@@ -5,9 +5,12 @@
 
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/Pose2DFloat32.h>
+#include <std_msgs/Point2DFloat32.h>
+#include <trajectory_rollout/map_grid.h>
+#include <trajectory_rollout/trajectory_controller.h>
 
-// For Controller components
-#include <trajectory_rollout/helmsman.h>
+// For transform support
+#include <rosTF/rosTF.h>
 
 using namespace costmap_2d;
 
