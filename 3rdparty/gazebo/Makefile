@@ -23,9 +23,9 @@ build: SVN_UP_REVERT_PATCH gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/worlds; mkdir -p gazebo/share/gazebo/Media; fi
 	cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons prefix=$(ROOT) 
+	scons mode=optimized prefix=$(ROOT) 
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons prefix=$(ROOT) install
+	scons mode=optimized prefix=$(ROOT) install
 	touch gazebo
 
 ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original
