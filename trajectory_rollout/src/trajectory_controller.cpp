@@ -74,6 +74,7 @@ void TrajectoryController::setPathCells(){
     double g_y = global_plan_[i].y;
     unsigned int map_x, map_y;
     if(ma_.WC_MC(g_x, g_y, map_x, map_y)){
+      printf("%f, %f => %d, %d\n", g_x, g_y, map_x, map_y);
       MapCell& current = map_(map_x, map_y);
       current.path_dist = 0.0;
       current.path_mark = true;

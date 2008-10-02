@@ -11,7 +11,7 @@ set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
 rospack_add_library(trajectory_rollout src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
-    src/trajectory.cpp src/governor_node.cpp src/helmsman.cpp)
+    src/trajectory.cpp src/governor_node.cpp)
 
 rospack_add_executable(governor_node src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp)
