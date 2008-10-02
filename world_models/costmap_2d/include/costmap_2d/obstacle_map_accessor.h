@@ -140,11 +140,11 @@ namespace costmap_2d {
      * @param resolution Width and hight of a cell in meters
      */
     ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution);
-    const double origin_x_;
-    const double origin_y_;
-    const unsigned int width_;
-    const unsigned int height_;
-    const double resolution_;
+    double origin_x_;
+    double origin_y_;
+    unsigned int width_;
+    unsigned int height_;
+    double resolution_;
   };
 }
 #endif
