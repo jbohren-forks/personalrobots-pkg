@@ -70,7 +70,7 @@ static double now()
   return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
 }
 
-void EthercatHardware::init(char *interface)
+void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 {
   ros::node *node = ros::node::instance();
 
@@ -137,7 +137,7 @@ void EthercatHardware::init(char *interface)
 
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
-    if (slaves_[slave]->initialize(hw_->actuators_[a]) < 0)
+    if (slaves_[slave]->initialize(hw_->actuators_[a], allow_unprogrammed) < 0)
     {
       node->log(ros::FATAL, "Unable to initialize slave #%d", slave);
     }

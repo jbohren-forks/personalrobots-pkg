@@ -53,6 +53,7 @@ static struct
   char *interface_;
   char *xml_;
   bool allow_override_;
+  bool allow_unprogrammed_;
   bool quiet_;
 } g_options;
 
@@ -136,7 +137,7 @@ void *controlLoop(void *)
 
   // Initialize the hardware interface
   EthercatHardware ec;
-  ec.init(g_options.interface_);
+  ec.init(g_options.interface_, g_options.allow_unprogrammed_);
 
   // Create mechanism control
   MechanismControl mc(ec.hw_);
@@ -281,6 +282,7 @@ int main(int argc, char *argv[])
     static struct option long_options[] = {
       {"help", no_argument, 0, 'h'},
       {"allow_override", no_argument, 0, 'a'},
+      {"allow_unprogrammed", no_argument, 0, 'u'},
       {"quiet", no_argument, 0, 'q'},
       {"interface", required_argument, 0, 'i'},
       {"xml", required_argument, 0, 'x'},
@@ -295,6 +297,9 @@ int main(int argc, char *argv[])
         break;
       case 'a':
         g_options.allow_override_ = 1;
+        break;
+      case 'u':
+        g_options.allow_unprogrammed_ = 1;
         break;
       case 'q':
         g_options.quiet_ = 1;
