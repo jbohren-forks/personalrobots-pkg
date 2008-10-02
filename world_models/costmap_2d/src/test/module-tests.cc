@@ -38,7 +38,7 @@
 
 using namespace costmap_2d;
 
-const unsigned char MAP_10_BY_10[] = {
+const unsigned char MAP_10_BY_10_CHAR[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 200, 200, 200,
@@ -51,6 +51,7 @@ const unsigned char MAP_10_BY_10[] = {
   0, 0, 0, 0, 0, 0, 0, 255, 255, 255
 };
 
+std::vector<unsigned char> MAP_10_BY_10;
 
 const unsigned int GRID_WIDTH(10);
 const unsigned int GRID_HEIGHT(10);
@@ -375,6 +376,9 @@ TEST(costmap, test8){
   ASSERT_EQ(map.isInflatedObstacle(map.MC_IND(3,3)), true);
 }
 int main(int argc, char** argv){
+  for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++)
+    MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);
+
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

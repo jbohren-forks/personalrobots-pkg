@@ -101,7 +101,7 @@ namespace costmap_2d {
      * @param threshold The cost threshold where a cell is considered an obstacle
      * @param maxZ gives the cut-off for points in 3D space
      */
-    CostMap2D(unsigned int width, unsigned int height, const unsigned char* data, 
+    CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, double window_length,  
 	      unsigned char threshold, double maxZ = 0, double inflationRadius = 0);
   

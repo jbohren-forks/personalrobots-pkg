@@ -61,7 +61,7 @@ namespace costmap_2d {
   const unsigned char CostMap2D::INFLATED_OBSTACLE(254);
   const unsigned char CostMap2D::LETHAL_OBSTACLE(250);
 
-  CostMap2D::CostMap2D(unsigned int width, unsigned int height, const unsigned char* data, 
+  CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
 		       double resolution, double window_length,  unsigned char threshold, 
 		       double maxZ, double inflationRadius)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
