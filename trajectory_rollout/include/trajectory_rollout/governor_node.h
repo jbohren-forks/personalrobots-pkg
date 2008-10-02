@@ -55,7 +55,8 @@
 #include <trajectory_rollout/trajectory_controller.h>
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
-#include <trajectory_rollout/obstacle_map_accessor.h>
+
+#include <costmap_2d/obstacle_map_accessor.h>
 
 #define MAP_SIZE_X 10
 #define MAP_SIZE_Y 10
@@ -73,6 +74,32 @@
 #define OCCDIST_SCALE 0
 #define DFAST_SCALE 0
 #define SAFE_DIST .005
+
+//So we can still use wavefront player we'll fake an obs accessor
+class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
+ public:
+  WavefrontMapAccessor(MapGrid &map, double outer_radius) 
+    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale),
+      map_(map), outer_radius_(outer_radius) {}
+
+    virtual ~WavefrontMapAccessor(){};
+
+    virtual bool isObstacle(unsigned int mx, unsigned int my) const {
+      if(map_(mx, my).occ_state == 1)
+        return true;
+      return false;
+    }
+
+    virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
+      if(map_(mx, my).occ_dist < outer_radius_)
+        return true;
+      return false;
+    }
+
+ private:
+    MapGrid& map_;
+    double outer_radius_;
+};
 
 class GovernorNode: public ros::node
 {

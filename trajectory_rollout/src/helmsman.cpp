@@ -47,7 +47,7 @@ Helmsman::Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_
 }
 
 //compute the drive commands to send to the robot
-bool Helmsman::computeVelocityCommands(const ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
+bool Helmsman::computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				       double vel_x, double vel_y, double vel_theta, 
 				       double& d_x, double& d_y, double& d_theta,
 				       std::list<std_msgs::Pose2DFloat32>& localPlan){

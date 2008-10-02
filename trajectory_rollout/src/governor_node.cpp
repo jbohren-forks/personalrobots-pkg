@@ -37,6 +37,7 @@
 using namespace std;
 using namespace trajectory_rollout;
 
+
 GovernorNode::GovernorNode() : 
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 

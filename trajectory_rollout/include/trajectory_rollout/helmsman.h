@@ -38,6 +38,7 @@
 #include <trajectory_rollout/trajectory_controller.h>
 #include <trajectory_rollout/map_grid.h>
 #include <rosTF/rosTF.h>
+#include <costmap_2d/obstacle_map_accessor.h>
 
 #define MAP_SIZE_X 100
 #define MAP_SIZE_Y 100
@@ -50,7 +51,7 @@ class Helmsman{
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
         double acc_lim_x, double acc_lim_y, double acc_lim_th);
 
-    bool computeVelocityCommands(const ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
+    bool computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				 double vel_x, double vel_y, double vel_theta, 
 				 double& d_x, double& d_y, double& d_theta,
 				 std::list<std_msgs::Pose2DFloat32>& localPlan);

@@ -61,7 +61,7 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 }
 
 //update what map cells are considered path based on the global_plan
-void TrajectoryController::setPathCells(const ObstacleMapAccessor& ma){
+void TrajectoryController::setPathCells(const costmap_2d::ObstacleMapAccessor& ma){
   map_.resetPathDist();
   int local_goal_x = -1;
   int local_goal_y = -1;
@@ -99,7 +99,7 @@ void TrajectoryController::setPathCells(const ObstacleMapAccessor& ma){
   computeGoalDistance(ma, goal_dist_queue);
 }
 
-void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma,
+void TrajectoryController::computePathDistance(const costmap_2d::ObstacleMapAccessor& ma,
     queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
@@ -140,7 +140,7 @@ void TrajectoryController::computePathDistance(const ObstacleMapAccessor& ma,
   }
 }
 
-void TrajectoryController::computeGoalDistance(const ObstacleMapAccessor& ma,
+void TrajectoryController::computeGoalDistance(const costmap_2d::ObstacleMapAccessor& ma,
     queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
@@ -372,7 +372,7 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 }
 
 //given the current state of the robot, find a good trajectory
-int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
+int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
   //make sure that we update our path based on the global plan
   setPathCells(ma);
@@ -511,7 +511,7 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale,
+double TrajectoryController::trajectoryCost(const costmap_2d::ObstacleMapAccessor& ma, int t_index, double pdist_scale,
     double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
@@ -589,7 +589,7 @@ void TrajectoryController::swap(int& a, int& b){
   b = temp;
 }
 
-double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int y){
+double TrajectoryController::pointCost(const costmap_2d::ObstacleMapAccessor& ma, int x, int y){
   //if the cell is in an obstacle the path is invalid
   if(ma.isObstacle(x, y) && !(map_(x, y).within_robot)){
     return -1;
@@ -603,7 +603,7 @@ double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int
 }
 
 //calculate the cost of a ray-traced line
-double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int x1, 
+double TrajectoryController::lineCost(const costmap_2d::ObstacleMapAccessor& ma, int x0, int x1, 
     int y0, int y1, vector<std_msgs::Position2DInt>& footprint_cells){
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
@@ -686,7 +686,7 @@ double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int
 }
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
-double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i){
+double TrajectoryController::footprintCost(const costmap_2d::ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i){
   //need to keep track of what cells are in the footprint
   vector<std_msgs::Position2DInt> footprint_cells;
 
@@ -773,7 +773,7 @@ double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double
 }
 
 //we need to fill in the footprint of the robot
-double TrajectoryController::fillCost(const ObstacleMapAccessor& ma, vector<std_msgs::Position2DInt>& footprint){
+double TrajectoryController::fillCost(const costmap_2d::ObstacleMapAccessor& ma, vector<std_msgs::Position2DInt>& footprint){
   //quick bubble sort to sort pts by x
   std_msgs::Position2DInt swap;
   unsigned int i = 0;

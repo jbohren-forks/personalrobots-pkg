@@ -57,7 +57,9 @@
 #include <trajectory_rollout/map_cell.h>
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
-#include <trajectory_rollout/obstacle_map_accessor.h>
+
+// For obstacle data access
+#include <costmap_2d/obstacle_map_accessor.h>
 
 //we'll take in a path as a vector of points
 #include <std_msgs/Point2DFloat32.h>
@@ -89,14 +91,14 @@ class TrajectoryController {
         double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf);
     
     //given the current state of the robot, find a good trajectory
-    int findBestPath(const ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
+    int findBestPath(const costmap_2d::ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
-    void computePathDistance(const ObstacleMapAccessor& ma, 
+    void computePathDistance(const costmap_2d::ObstacleMapAccessor& ma, 
         std::queue<MapCell*>& dist_queue);
 
-    void computeGoalDistance(const ObstacleMapAccessor& ma, 
+    void computeGoalDistance(const costmap_2d::ObstacleMapAccessor& ma, 
         std::queue<MapCell*>& dist_queue);
     
     //given a trajectory in map space get the drive commands to send to the robot
@@ -141,22 +143,22 @@ class TrajectoryController {
 
   private:
     //update what map cells are considered path based on the global_plan
-    void setPathCells(const ObstacleMapAccessor& ma);
+    void setPathCells(const costmap_2d::ObstacleMapAccessor& ma);
 
     //convert the trajectories computed in robot space to world space
     void trajectoriesToWorld();
     void transformTrajects(double x_i, double y_i, double th_i);
 
     //compute the cost for a single trajectory
-    double trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
+    double trajectoryCost(const costmap_2d::ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
         double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost);
 
     //for getting the cost of a given footprint
-    double footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
-    double lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1,
+    double footprintCost(const costmap_2d::ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
+    double lineCost(const costmap_2d::ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1,
         std::vector<std_msgs::Position2DInt>& footprint_cells);
-    double fillCost(const ObstacleMapAccessor& ma, std::vector<std_msgs::Position2DInt>& footprint);
-    double pointCost(const ObstacleMapAccessor& ma, int x, int y);
+    double fillCost(const costmap_2d::ObstacleMapAccessor& ma, std::vector<std_msgs::Position2DInt>& footprint);
+    double pointCost(const costmap_2d::ObstacleMapAccessor& ma, int x, int y);
 
     //for getting the cells for a given footprint
     std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
@@ -174,7 +176,7 @@ class TrajectoryController {
     //transform client
     rosTFClient* tf_;
 
-    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma, 
+    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const costmap_2d::ObstacleMapAccessor& ma, 
         std::queue<MapCell*>& dist_queue){
       //mark the cell as visisted
       check_cell->path_mark = true;
@@ -192,7 +194,7 @@ class TrajectoryController {
       dist_queue.push(check_cell);
     }
 
-    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const ObstacleMapAccessor& ma, 
+    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const costmap_2d::ObstacleMapAccessor& ma, 
         std::queue<MapCell*>& dist_queue){
       ///mark the cell as visited
       check_cell->goal_mark = true;
