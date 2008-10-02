@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
       {"xml", required_argument, 0, 'x'},
     };
     int option_index = 0;
-    int c = getopt_long(argc, argv, "ahi:qx:", long_options, &option_index);
+    int c = getopt_long(argc, argv, "ahi:qux:", long_options, &option_index);
     if (c == -1) break;
     switch (c)
     {
