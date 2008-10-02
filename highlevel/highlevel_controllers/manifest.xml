@@ -19,7 +19,4 @@
 <depend package="costmap_2d"/>
 <depend package="rosTF"/>
 <depend package="sbpl"/>
-
-<depend package="fake_localization"/>
-<depend package="nav_view"/>
 </package>

@@ -139,8 +139,13 @@ namespace ros {
 	resp.map.height << " map at " << 
 	resp.map.resolution << "m/pix" << std::endl;
 
+      std::vector<unsigned char> inputData;
+      unsigned int numCells = resp.map.width * resp.map.height;
+      for(unsigned int i = 0; i < numCells; i++)
+	inputData.push_back((unsigned char) resp.map.data[i]);
+
       // Now allocate the cost map
-      costMap_ = new CostMap2D(resp.map.width, resp.map.height,resp.map.data , resp.map.resolution, 
+      costMap_ = new CostMap2D(resp.map.width, resp.map.height, inputData , resp.map.resolution, 
 			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
 
       // Advertize messages to publish cost map updates
@@ -161,6 +166,9 @@ namespace ros {
 
       // Subscribe to laser scan messages
       subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
+
+      // Subscribe to point cloud messages
+      subscribe("cloud", pointCloudMsg_, &MoveBase::pointCloudCallback, QUEUE_MAX());
 
       // Subscribe to odometry messages
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
@@ -269,6 +277,23 @@ namespace ros {
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
       costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
+      handleMapUpdates(insertions, deletions);
+      publishLocalCostMap();
+      unlock();
+    }
+
+
+    /**
+     * Point clouds are produced in the map frame so no transform is required. We simply use point clouds if produced
+     */
+    void MoveBase::pointCloudCallback(){
+      // Update the cost map
+      const double ts = pointCloudMsg_.header.stamp.to_double();
+      std::vector<unsigned int> insertions, deletions;
+
+      // Surround with a lock since it can interact with main planning and execution thread
+      lock();
+      costMap_->updateDynamicObstacles(ts, pointCloudMsg_, insertions, deletions);
       handleMapUpdates(insertions, deletions);
       publishLocalCostMap();
       unlock();

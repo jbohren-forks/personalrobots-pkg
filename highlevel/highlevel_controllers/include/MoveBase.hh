@@ -111,12 +111,18 @@ namespace ros {
        * @brief Send velocity commands based on local plan. Should check for consistency of
        * local plan.
        */
-      virtual bool dispatchCommands();
+      virtual bool dispatchCommands();      
 
       /**
        * @brief Call back for handling new laser scans
        */
       void laserScanCallback();
+
+
+      /**
+       * @brief Call back for handling new point clouds
+       */
+      void pointCloudCallback();
 
       /**
        * @brief Robot odometry call back
@@ -140,6 +146,8 @@ namespace ros {
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
       std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
+
+      std_msgs::PointCloudFloat32 pointCloudMsg_; /**< Filled by subscriber with point clouds */
 
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
 
