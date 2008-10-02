@@ -137,8 +137,6 @@ namespace math_utils
   static bool find_min_max_delta(double from, double min_angle, double max_angle, double &result_min_delta, double &result_max_delta)
   {
     double delta[4];
-    double max_neg_angle = -2*M_PI;
-    double min_pos_angle = 2*M_PI;
 
     delta[0] = shortest_angular_distance(from,min_angle);
     delta[1] = shortest_angular_distance(from,max_angle);
@@ -193,7 +191,7 @@ namespace math_utils
    * \param right_limit - right limit of valid interval for angular position
    * \param shortest_angle - result of the shortest angle calculation
    */
-  static bool shortest_angular_distance_with_limits(double from, double to, double left_limit, double right_limit, double &shortest_angle)
+  static inline bool shortest_angular_distance_with_limits(double from, double to, double left_limit, double right_limit, double &shortest_angle)
   {
 
     double min_delta = -2*M_PI;
@@ -219,7 +217,7 @@ namespace math_utils
       }
       else //to position is outside the limits
       {
-        bool flag_to = find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
+        find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
           if(fabs(min_delta_to) < fabs(max_delta_to))
             shortest_angle = std::max<double>(delta,delta_mod_2pi);
           else if(fabs(min_delta_to) > fabs(max_delta_to))
@@ -236,7 +234,7 @@ namespace math_utils
     }
     else // from position is outside the limits
     {
-        bool flag_to = find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
+        find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
 
           if(fabs(min_delta) < fabs(max_delta))
             shortest_angle = std::min<double>(delta,delta_mod_2pi);
