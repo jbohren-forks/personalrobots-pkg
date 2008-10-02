@@ -4,7 +4,8 @@
 #include "star_detector/keypoint.h"
 #include "star_detector/integral.h"
 #include "star_detector/nonmax_suppress.h"
-#include <cv.h>
+#include "opencv/cv.h"
+#include "opencv/highgui.h"
 #include <vector>
 #include <cmath>
 
@@ -109,6 +110,21 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
     TiltedIntegral(source, m_tilted, m_flat);
 
     FilterResponses();
+#if 0
+    for (int i = 0; i < m_n; i++) {
+        IplImage *gray = cvCreateImage(cvSize(m_W, m_H), IPL_DEPTH_8U, 1);
+        for (int y = 0; y < m_H; y++) {
+            for (int x = 0; x < m_W; x++) {
+                float v = CV_IMAGE_ELEM(m_responses[i], float, y, x);
+                int b = (int)(255.0 * (0.5 + 0.5 * (v / 256.0)));
+                CV_IMAGE_ELEM(gray, unsigned char, y, x) = b;
+            }
+        }
+        char filename[10];
+        sprintf(filename, "out%d.pgm", i);
+        cvSaveImage(filename, gray);
+    }
+#endif
 
     return FindExtrema(inserter);
 }
