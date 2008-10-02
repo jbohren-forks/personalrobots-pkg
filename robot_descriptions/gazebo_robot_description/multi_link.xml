@@ -1,0 +1,14 @@
+<launch>
+  <group name="wg">
+    <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/multi_link_test/pr2_multi_link.xml&quot;" />
+    <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_multi_link.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+  </group>
+  <!--node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/multi_link_test/controllers_multi_link.xml" respawn="false" output="screen" /--> <!-- load default arm controller -->
+  <!--node pkg="robot_mechanism_controllers" type="control.py" args="set test_controller 0.5" respawn="false" output="screen" /--> <!-- open gripper .5 radians -->
+</launch>
+

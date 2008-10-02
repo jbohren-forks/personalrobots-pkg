@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<robot name="pr2"><!-- name of the robot-->
+
+
+
+<map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+
+  <!-- PR2_ACTARRAY -->
+  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+    <alwaysOn>true</alwaysOn>
+    <updateRate>1000.0</updateRate>
+
+    <robot filename="pr2_multi_link.xml" />
+
+    <gazebo_physics filename="gazebo_joints_multi_link.xml" /> <!-- for simulator/physics specific settigs -->
+
+    <interface:audio name="gazebo_actuators_dummy_iface" />
+  </controller:gazebo_actuators>
+
+  </verbatim>
+</map>
+
+
+
+<map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+
+  <!-- P3D for position groundtruth -->
+  <controller:P3D name="p3d_link3_controller" plugin="libP3D.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <bodyName>link3</bodyName>
+      <topicName>link3_pose</topicName>
+      <frameName>link3_frame</frameName>
+      <interface:position name="p3d_link3_position"/>
+  </controller:P3D>
+
+  </verbatim>
+</map>
+
+</robot>
+
