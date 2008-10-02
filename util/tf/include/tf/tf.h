@@ -29,8 +29,8 @@
 
 /** \author Tully Foote */
 
-#ifndef LIBTF_HH
-#define LIBTF_HH
+#ifndef NEW_LIBTF_HH
+#define NEW_LIBTF_HH
 
 #include <iostream>
 #include <iomanip>
