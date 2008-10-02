@@ -34,6 +34,7 @@
 #include <algorithm>
 
 #include <pr2_mechanism_controllers/laser_scanner_controller.h>
+
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -154,11 +155,11 @@ void LaserScannerController::update()
         time_of_last_point_ = time;
 
         //Advance time index
-    		 if(profile_index_ == (profile_length_-1))
-         {
-  			  profile_index_ = 0; //Restart profile
-  			  cycle_start_time_ = time;
-  			} else profile_index_++;
+        if(profile_index_ == (profile_length_-1))
+        {
+          profile_index_ = 0; //Restart profile
+          cycle_start_time_ = time;
+        } else profile_index_++;
       }
       break;
     case DYNAMIC_SAWTOOTH:
@@ -360,7 +361,10 @@ void LaserScannerController::setJointEffort(double effort)
 //Get sinewave based on current time
 void LaserScannerController::setDynamicSinewave(double time_from_start)
 {
-  double command = sin(2*M_PI*time_from_start/period_)*amplitude_+offset_;
+  //double command = sin(2*M_PI*time_from_start/period_)*amplitude_+offset_;
+
+  // Switched to cosine, so that the first half and second half are each a sweep (as opposed to 2/4+3/4 and 1/4+4/4 being sweeps)
+  double command = cos(2*M_PI*time_from_start/period_)*amplitude_+offset_;
   joint_position_controller_.setCommand(command);
 
 }
@@ -391,10 +395,47 @@ void LaserScannerController::setDynamicSawtooth(double time_from_start)
   joint_position_controller_.setCommand(command);
 }
 
+LaserScannerController::ProfileExecutionState LaserScannerController::getProfileExecutionState()
+{
+  switch (current_mode_)
+  {
+    case SINEWAVE :
+    case SAWTOOTH :
+    {
+      int halfway_point = profile_length_ / 2 ;             // We should be able to get away with doing integer math here.
+      if (profile_index_ <= halfway_point)
+        return FIRST_HALF ;
+      else
+        return SECOND_HALF ;
+    }
+      
+    case DYNAMIC_SINEWAVE :
+    case DYNAMIC_SAWTOOTH :
+    {
+      double time = robot_->hw_->current_time_ ;
+      double time_from_start = time - cycle_start_time_ ;
+      
+      if ( time_from_start < period_ / 2.0 )
+        return FIRST_HALF ;
+      else
+        return SECOND_HALF ;                                 // It is possible that (time_from_start > period). These should return as FIRST_HALF, but at this point, we don't care.
+    }
+
+    case MANUAL :
+    case AUTO_LEVEL :
+      return NOT_APPLICABLE ;
+    default:
+      return NOT_APPLICABLE ;
+  }
+}
+
 ROS_REGISTER_CONTROLLER(LaserScannerControllerNode)
 LaserScannerControllerNode::LaserScannerControllerNode(): node_(ros::node::instance())
 {
   c_ = new LaserScannerController();
+  prev_profile_exec_state_ = LaserScannerController::NOT_APPLICABLE ;
+  need_to_send_msg_ = false ;                                           // Haven't completed a sweep yet, so don't need to send a msg
+  publisher_ = NULL ;                                                   // We don't know our topic yet, so we can't build it
 }
 
 
@@ -403,12 +444,64 @@ LaserScannerControllerNode::~LaserScannerControllerNode()
   node_->unadvertise_service(service_prefix_ + "/set_command");
   node_->unadvertise_service(service_prefix_ + "/get_command");
   node_->unadvertise_service(service_prefix_ + "/set_profile");
+  //node_->unadvertise(service_prefix_ + "/laser_scanner_signal") ;
+
+  publisher_->stop() ;
+  delete publisher_ ;    // Probably should wait on publish_->is_running() before exiting. Need to 
+                         //   look into shutdown semantics for realtime_publisher
   delete c_;
 }
 
 void LaserScannerControllerNode::update()
 {
   c_->update();
+  
+  LaserScannerController::ProfileExecutionState cur_profile_exec_state ;
+  cur_profile_exec_state = c_->getProfileExecutionState() ;
+  switch (prev_profile_exec_state_)
+  {
+    case LaserScannerController::FIRST_HALF :
+      if (cur_profile_exec_state == LaserScannerController::SECOND_HALF)   // We just transitioned from 1st->2nd, so send msg saying half-scan is done
+      {
+        m_scanner_signal_.signal = 0 ;                                     // 0 -> Half profile complete
+
+        if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
+          printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
+
+        need_to_send_msg_ = true ;
+      }
+      break ;
+    case LaserScannerController::SECOND_HALF :                            // Send msg saying full scan is done
+      if (cur_profile_exec_state == LaserScannerController::FIRST_HALF)   // We just transitioned from 2nd->1st, so send msg saying full-scan is done
+      {
+        m_scanner_signal_.signal = 1 ;                                    // 1 -> Full profile complete
+
+        if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
+          printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
+
+        need_to_send_msg_ = true ;
+      }
+      break ;
+    case LaserScannerController::NOT_APPLICABLE :                         // Don't do anything
+      break ;
+    default :
+      break ;
+  }
+  prev_profile_exec_state_ = cur_profile_exec_state ;
+  
+  // Use the realtime_publisher to try to send the message.
+  //   If it fails sending, it's not a big deal, since we can just try again 1 ms later. No one will notice.
+  if (need_to_send_msg_)
+  {
+    if (publisher_->trylock())
+    {
+      publisher_->msg_.signal = m_scanner_signal_.signal ;
+      publisher_->unlockAndPublish() ;
+      need_to_send_msg_ = false ;
+    }
+    //printf("tilt_laser: Signal trigger (%u)\n", m_scanner_signal_.signal) ;
+    //std::cout << std::flush ;
+  }
 }
 
 // Return the measured joint position
@@ -438,6 +531,10 @@ bool LaserScannerControllerNode::setCommand(
   else if (req.command==-45)c_->setSinewaveProfile(1,0.5,0);
   else if (req.command==-46)c_->setSinewaveProfile(3,0.5,0);
   else if (req.command==-47)c_->setSinewaveProfile(20,0.7,0);
+  else if (req.command==-48)c_->setSinewaveProfile(15,1.2,0.25);
+  else if (req.command==-49)c_->setSinewaveProfile(10,1.2,0.25);
+  else if (req.command==-50)c_->setSinewaveProfile(8,1.2,0.25);
+  else if (req.command==-51)c_->setSinewaveProfile(5,1.2,0.25);
   return true;
 }
 
@@ -468,6 +565,12 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   node_->advertise_service(service_prefix_ + "/set_command", &LaserScannerControllerNode::setCommand, this);
   node_->advertise_service(service_prefix_ + "/get_command", &LaserScannerControllerNode::getCommand, this);
   node_->advertise_service(service_prefix_ + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
+  //node_->advertise<pr2_mechanism_controllers::LaserScannerSignal>(service_prefix_ + "/laser_scanner_signal", 1) ;
+
+  if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
+    delete publisher_ ;
+  publisher_ = new misc_utils::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
+  
   return true;
 }
 bool LaserScannerControllerNode::getActual(

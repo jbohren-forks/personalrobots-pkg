@@ -39,6 +39,11 @@
 #include <mechanism_model/controller.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
 
+#include <misc_utils/realtime_publisher.h>
+
+// Messages
+#include <pr2_mechanism_controllers/LaserScannerSignal.h>
+
 // Services
 #include <robot_mechanism_controllers/SetCommand.h>
 #include <robot_mechanism_controllers/GetCommand.h>
@@ -56,6 +61,14 @@ public:
     MANUAL,SAWTOOTH,SINEWAVE,DYNAMIC_SAWTOOTH,DYNAMIC_SINEWAVE,AUTO_LEVEL
   };
 
+  //! Used to specify which section of a profile we are currently in.
+  enum ProfileExecutionState
+  {
+    NOT_APPLICABLE = 0,  //!< Implies that ProfileExecutionState doesn't make sense in our current control mode
+    FIRST_HALF  = 1,     //!< Specifies that we're in the first half of our current profile
+    SECOND_HALF = 2      //!< Specifies that we're in the second half of our current profile
+  } ;
+  
   /*!
    * \brief Default Constructor of the JointController class.
    *
@@ -151,6 +164,13 @@ public:
    */
   bool checkAutoLevelResult();
 
+  /*!
+   * \brief Get which half of the current profile we're in.
+   * \return The current profileExecutionState. Will be either first or second half. \
+   *         Will return NotApplicable if we're not currently following a profile
+   */
+  ProfileExecutionState getProfileExecutionState() ;
+  
   double getTime();
 private:
   /*!
@@ -201,7 +221,7 @@ public:
    *
    */
   LaserScannerControllerNode();
-
+  
   /*!
    * \brief Destructor
    */
@@ -221,17 +241,17 @@ public:
                   robot_mechanism_controllers::GetCommand::response &resp);
 
   bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                  robot_mechanism_controllers::GetActual::response &resp);
+                 robot_mechanism_controllers::GetActual::response &resp);
 
   bool setProfileCall(pr2_mechanism_controllers::SetProfile::request &req,
-  pr2_mechanism_controllers::SetProfile::response &resp);
+                      pr2_mechanism_controllers::SetProfile::response &resp);
 
   void setCommand(double command);
 
   void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0);
 
   double getCommand();
-
+  
 private:
   LaserScannerController *c_;
   /*!
@@ -243,7 +263,11 @@ private:
    * \brief A pointer to ros node
    */
   ros::node *node_;
-
+  
+  LaserScannerController::ProfileExecutionState prev_profile_exec_state_ ;       //!< Store the previous profileExecutionState. Need this to compare to the current state to detect transitions
+  pr2_mechanism_controllers::LaserScannerSignal m_scanner_signal_ ;              //!< Stores the message that we want to send at the end of each sweep, and halfway through each sweep
+  bool need_to_send_msg_ ;                                                       //!< Tracks whether we still need to send out the m_scanner_signal_ message.
+  misc_utils::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
 };
 }
 
