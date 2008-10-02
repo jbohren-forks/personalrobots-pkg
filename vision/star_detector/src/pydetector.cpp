@@ -20,6 +20,7 @@ typedef struct {
 static void
 star_detector_dealloc(PyObject *self)
 {
+    cvReleaseImage(&((star_detector_t*)self)->img);
     PyObject_Del(self);
 }
 

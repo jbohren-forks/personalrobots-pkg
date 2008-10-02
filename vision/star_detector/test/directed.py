@@ -12,6 +12,7 @@ import ImageDraw
 import random
 import time
 import unittest
+import math
 
 
 # A star detector object's results are invariant wrt image presentation order
@@ -26,6 +27,11 @@ def circle(im, x, y, r, color):
     box = [ int(i) for i in [ x - r, y - r, x + r, y + r ]]
     draw.pieslice(box, 0, 360, fill = color)
 
+def noisify(im):
+    random.seed(0)
+    noise = Image.fromstring("L", im.size, "".join([ chr(random.randrange(0, 8)) for i in range(im.size[0] * im.size[1])]))
+    return ImageChops.add(im, noise)
+
 class TestDirected(unittest.TestCase):
 
     def setUp(self):
@@ -34,7 +40,7 @@ class TestDirected(unittest.TestCase):
 
     def test_a_golden(self):
 
-        """ Verify that points match a fixed 'expected' list """
+        """ Output of a known image matches a fixed 'expected' list """
 
         golden = [
             (220, 308, 2, -108.11),
@@ -85,7 +91,7 @@ class TestDirected(unittest.TestCase):
                     self.assertEqual(simple(Image.new("L", (xsize,ysize), (c)), 7, 0.1), [])
 
     def test_r(self):
-        """ Line of circles (varying r) across image """
+        """ Line of circles (varying r) across image each produces a strong response """
 
         im = Image.new("L", (1000, 200), (0))
         npoints = 18
@@ -116,14 +122,9 @@ class TestDirected(unittest.TestCase):
         ss = [s for (x,y,s,r) in result]
         self.assertEqual(ss, sorted(ss))
 
-        if 0:
-            print "GOT:", result
-            for (x,y,s,r) in result:
-                print (x,y,s,r)
-
     def test_L_symmetry(self):
         """
-        image and negated image should have same keypoints
+        image and negated image have the same keypoints
         """
         ref = simple(self.im640)
         self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
@@ -151,7 +152,7 @@ class TestDirected(unittest.TestCase):
                 self.assertEqual(ref, [(x-tx,y-ty,s,r) for (x,y,s,r) in result])
 
     def test_subimage(self):
-        """ Small target translated in center of image has the same keypoints """
+        """ Small target's keypoints are independent of overall image size """
 
         def make_big(x, y):
             im = Image.new("L", (x, y), (0))
@@ -196,9 +197,9 @@ class TestDirected(unittest.TestCase):
             kp = sd.detect(im.tostring())
             return [ i[1] for i in sorted([ (abs(response), (x, y, s, response)) for (x, y, s, response) in kp])]
 
-        pool = [ self.im640.resize((256,256)) ]
+        pool = [ self.im640.resize((256, 256)) ]
 
-        pool += [ Image.new("L", (256,256), c) for c in [0,101,255] ]
+        pool += [ Image.new("L", (256, 256), c) for c in [0, 101, 255] ]
         pool += [Image.fromstring("L", (256,256), "".join([ chr(random.randrange(0, 256)) for i in range(256 * 256)])) for j in range(5)]
 
         random.seed(0)
@@ -212,8 +213,24 @@ class TestDirected(unittest.TestCase):
             result = [runone(sd, s) for s in pool]
             self.assertEqual(sorted(ref), sorted(result))
 
+    def test_line_suppression(self):
+        """ Varying line supression threshold reduces the number of keypoints """
+
+        for t in range(10):
+            th = math.pi * t / 10.0
+            im = Image.new("L", (150, 150), (0))
+            draw = ImageDraw.Draw(im)
+            draw.line([(75 - 75 * math.cos(th), 75 - 75 * math.sin(th)),
+                       (75 + 75 * math.cos(th), 75 + 75 * math.sin(th))], fill = 248, width = 7)
+            actual = (75 + 25 * math.sin(th), 75 - 25 * math.cos(th))
+            actual_feature = circle(im, actual[0], actual[1], 3.5, 248)
+            im = noisify(im)
+            result = [len(simple(im, 7, 0.0, 3.0 + 0.2 * lt)) for lt in range(20)]
+            self.assert_(result == sorted(result))
+            self.assert_(result[0] < result[-1])
+
     def test_L(self):
-        """ Line of circles (varying L) across image """
+        """ Line of circles (varying L) across image, should vary response """
 
         im = Image.new("L", (1000, 200), (0))
         for t in range(15):
@@ -245,7 +262,7 @@ class TestDirected(unittest.TestCase):
 if __name__ == '__main__':
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_order_invariance'))
+        suite.addTest(TestDirected('test_line_suppression'))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         rostest.unitrun('star_detector', 'directed', TestDirected)
