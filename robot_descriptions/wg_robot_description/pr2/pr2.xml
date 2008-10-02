@@ -360,7 +360,7 @@
   </const_block> 
   
   <const_block name="pr2_shoulder_pitch_collision">
-    <origin xyz="shoulder_pitch_length/2 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <origin xyz="0 0 0" rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <geometry name="pr2_shoulder_pitch_collision_geom">
       <cylinder radius="shoulder_pitch_radius" length="shoulder_pitch_length" />
@@ -545,7 +545,7 @@
   <const_block name="pr2_finger_l_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit effort="1000" velocity="5" />
+    <limit effort="10" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -580,7 +580,7 @@
   <const_block name="pr2_finger_tip_l_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit effort="1000" velocity="5" />
+    <limit effort="10" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -615,7 +615,7 @@
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-    <limit effort="1000" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
   </const_block>
   
   <const_block name="pr2_finger_r_inertial">
@@ -649,7 +649,7 @@
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-    <limit effort="1000" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
   </const_block>
   
   <const_block name="pr2_finger_tip_r_inertial">
@@ -1206,7 +1206,7 @@
   <link name="shoulder_pitch_left">
     <parent name=" shoulder_pan_left" />
     <!-- rotation of a local coordinate frame attached to the link with respect to the parent's frame -->
-    <origin xyz=" shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
+    <origin xyz="shoulder_pan_shoulder_pitch_offset_x 0 0 " rpy=" 0 0 0 " /> <!-- position of a local coordinate frame attached to the link with respect to parent's frame-->
     
     <joint name="shoulder_pitch_left_joint" />
     <inertial >

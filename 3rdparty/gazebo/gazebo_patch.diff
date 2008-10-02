@@ -369,7 +369,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -123,6 +144,56 @@
+@@ -123,6 +144,63 @@
      this->massP->SetValue( 0.001 );
    }
  
@@ -400,15 +400,22 @@ Index: server/physics/Geom.cc
 +  this->mass.c[0] = this->cx;
 +  this->mass.c[1] = this->cy;
 +  this->mass.c[2] = this->cz;
++
 +  this->mass.I[0] = this->ixx;
 +  this->mass.I[1] = this->ixy;
 +  this->mass.I[2] = this->ixz;
++
 +  this->mass.I[3] = this->ixy;
 +  this->mass.I[4] = this->iyy;
 +  this->mass.I[5] = this->iyz;
++
 +  this->mass.I[6] = this->ixz;
 +  this->mass.I[7] = this->iyz;
 +  this->mass.I[8] = this->izz;
++
++  this->mass.I[9] = 1;
++  this->mass.I[10] = 1;
++  this->mass.I[11] = 1;
 +
 +  // std::cout << " c[0] " << this->mass.c[0] << std::endl;
 +  // std::cout << " c[1] " << this->mass.c[1] << std::endl;
@@ -426,7 +433,7 @@ Index: server/physics/Geom.cc
    this->contact->Load(node);
  
    this->LoadChild(node);
-@@ -396,23 +467,25 @@
+@@ -396,23 +474,24 @@
    Pose3d pose;
    dQuaternion q;
    dMatrix3 r;
@@ -446,7 +453,7 @@ Index: server/physics/Geom.cc
 -  dQtoR(q,r);
 +  dQtoR(q,r); // turn quaternion into rotation matrix
  
- 
+-
 +  // this->mass was init to zero at start,
 +  // read user specified mass into this->dblMass and dMassAdd in this->mass
    this->bodyMass = this->mass;
@@ -575,43 +582,59 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -505,8 +590,15 @@
- */
+@@ -506,7 +591,6 @@
  void Body::UpdateCoM()
  {
-+  // std::cout << " mass x   " << this->mass.c[0]
-+  //           << "      y   " << this->mass.c[1]
-+  //           << "      z   " << this->mass.c[2]
-+  //           << std::endl;
-+  // comPose.pos.x = this->mass.c[0];
-+  // comPose.pos.y = this->mass.c[1];
-+  // comPose.pos.z = this->mass.c[2];
-+
    const dMass *lmass;
 -  Pose3d oldPose, newPose, pose;
    std::map< std::string, Geom* >::iterator giter;
  
    if (!this->bodyId)
-@@ -523,8 +615,10 @@
-       dMassAdd( &this->mass, lmass );
+@@ -524,7 +608,13 @@
      }
    }
-+  return; // Stop pose update, we have full com xyz, I control
  
++  //return; // Stop pose update, we have full com xyz, I control
++
    // Old pose for the CoM
-+  Pose3d oldPose, newPose, pose;
++  Pose3d oldPose, newPose, tmpPose;
++
++  // oldPose is the last comPose
++  // newPose is mass CoM
    oldPose = this->comPose;
  
    if (std::isnan(this->mass.c[0]))
-@@ -565,7 +659,7 @@
+@@ -546,19 +636,25 @@
+   {
+     if (giter->second->IsPlaceable())
+     {
++      // FOR GEOMS:
++      // get pose with comPose set to oldPose
+       this->comPose = oldPose;
+-      pose = giter->second->GetPose();
++      tmpPose = giter->second->GetPose();
++
++      // get pose with comPose set to newPose
+       this->comPose = newPose;
+-      giter->second->SetPose(pose, false);
++      giter->second->SetPose(tmpPose, false);
+     }
+   }
+ 
+ 
+-  // Fixup the pose of the CoM (ODE body)
++  // FOR BODY: Fixup the pose of the CoM (ODE body)
++  // get pose with comPose set to oldPose
+   this->comPose = oldPose;
+-  pose = this->GetPose();
++  tmpPose = this->GetPose();
++  // get pose with comPose set to newPose
    this->comPose = newPose;
+-  this->SetPose(pose);
++  this->SetPose(tmpPose);
  
-   // My Cheap Hack, to put the center of mass at the origin
--  this->mass.c[0] = this->mass.c[1] = this->mass.c[2] = 0;
-+  //this->mass.c[0] = this->mass.c[1] = this->mass.c[2] = 0;
  
-   // Set the mass matrix
-   if (this->mass.mass > 0)
+   // Settle on the new CoM pose
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7049)
@@ -1195,6 +1218,18 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7049)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7049)
@@ -1266,18 +1301,6 @@ Index: server/Model.cc
    return this->UpdateChild();
  }
  
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7049)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7049)
