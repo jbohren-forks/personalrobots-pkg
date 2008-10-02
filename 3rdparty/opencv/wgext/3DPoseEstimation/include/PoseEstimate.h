@@ -8,13 +8,18 @@
 #include "CvRandomTripletSetGenerator.h"
 
 namespace cv { namespace willow {
+
+class PoseEstimator {
+
+};
+
 /**
  * Estimate transformation between corresponding 3D point clouds.
  * This is a reference implementation is less efficient, but maybe more readable. Please
  * use its extended class Cv3DPoseEstimate for practical use.
  * @warning we may consolidate this class with Cv3DPoseEstimate.
  */
-class PoseEstimate
+class PoseEstimate : public PoseEstimator
 {
 public:
 	PoseEstimate();

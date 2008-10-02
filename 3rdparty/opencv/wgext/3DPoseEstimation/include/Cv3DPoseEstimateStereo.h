@@ -57,14 +57,6 @@ public:
 	/// Default threshold for inliers checking in RANSAC
 	static const double DefInlierThreshold = 1.5;
 
-	/**
-	 * matching method to find a best match of a key point in a neighborhood
-	 */
-	typedef enum {
-		CrossCorrelation,   // best location by cross correlation
-		KeyPointCrossCorrelation, // best key point cross correlation
-		CalonderDescriptor  // best key point by Calonder descriptor
-	} MatchMethod;
 	static const MatchMethod DefMatchMethod = CrossCorrelation;
 
 	PoseEstimateStereo(int width=DefWidth, int height=DefHeight);
@@ -93,13 +85,13 @@ public:
 	 */
 //  bool goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMap, vector<Keypoint>& keypoints);
   bool goodFeaturesToTrack(
-      WImage1_b& img,
-      WImage1_16s* dispMap,
+      const WImage1_b& img,
+      const WImage1_16s* dispMap,
       Keypoints& keypoints);
 
 	static bool goodFeaturesToTrack(
-	    WImage1_b& img,
-	    WImage1_16s* dispMap,
+	    const WImage1_b& img,
+	    const WImage1_16s* dispMap,
 	    double disparityUnitInPixels,
 	    Keypoints& keypoints,
 	    CvMat* eigImg,
@@ -147,10 +139,42 @@ public:
 			/// (Output) pairs of indices, to the input keypoints, of the corresponding
 			/// 3d locations for possibly the same 3d features. Used for pose estimation.
 			/// Set it to NULL if not interested.
-			vector<pair<int, int> >* trackbleIndexPairs
+			vector<pair<int, int> >* trackableIndexPairs
 			);
 
-	bool makePatchRect(const CvPoint& rectSize, const CvPoint3D64f& featurePt, CvRect& rect);
+	 /**
+	   *  Match up two list of key points and output a list of trackable pairs.
+	   *  @return true if the status of execution is normal.
+	   */
+	  static bool getTrackablePairs(
+	      /// type of the key point matcher
+	      MatchMethod matcherType,
+	      /// input image 0
+	      WImage1_b& img0,
+	      /// input image 1
+	      WImage1_b& img1,
+	      /// disparity map of input image 0
+	      WImage1_16s& dispMap0,
+	      /// disparity map of input image 1
+	      WImage1_16s& dispMap1,
+	      /// Detected key points in image 0
+	      Keypoints& keyPoints0,
+	      /// Detected Key points in image 1
+	      Keypoints& keyPoints1,
+	      /// (Output) pairs of corresponding 3d locations for possibly the same
+	      /// 3d features. Used for pose estimation.
+	      /// Set it to NULL if not interested.
+	      vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+	      /// (Output) pairs of indices, to the input keypoints, of the corresponding
+	      /// 3d locations for possibly the same 3d features. Used for pose estimation.
+	      /// Set it to NULL if not interested.
+	      vector<pair<int, int> >* trackbleIndexPairs
+	      );
+
+	/// Make a CvRect of size rectSize around faturePt (at the center).
+	/// Check if rect is within the bounds of the image. Cut it back if necessary.
+	static bool makePatchRect(const CvPoint& rectSize, const CvPoint3D64f& featurePt,
+	    const CvSize& imgSize, CvRect& rect);
 
 	int mNumKeyPointsWithNoDisparity;  // a convenient counter for analysis
 
@@ -159,7 +183,8 @@ protected:
 	 * convenient function to call cvMatchTemplate with normalized cross correlation
 	 * for template matching over a neighborhood
 	 */
-	double matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res, CvPoint& loc);
+	static double matchTemplate(const CvMat& neighborhood, const CvMat& templ,
+	    CvMat& res, CvPoint& loc);
 	bool getTrackablePairsByCalonder(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
@@ -167,24 +192,20 @@ protected:
 			vector<pair<CvPoint3D64f, CvPoint3D64f> > * trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs = NULL
 	);
-	bool getTrackablePairsByCrossCorr(
+	static bool getTrackablePairsByCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			Keypoints& keyPoints0, Keypoints& keyPoint1,
 			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs
 	);
-	bool  getTrackablePairsByKeypointCrossCorr(
+	static bool  getTrackablePairsByKeypointCrossCorr(
 			WImage1_b& img0, WImage1_b& img1,
 			WImage1_16s& dispMap0, WImage1_16s& dispMap1,
 			Keypoints& keyPoints0, Keypoints& keyPoint1,
 			vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
 			vector<pair<int, int> >* trackbleIndexPairs
 	);
-	double 	getDisparity(WImage1_16s& dispMap, CvPoint& pt) {
-		// the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
-	  return CvMatUtils::getDisparity(dispMap, pt, mDisparityUnitInPixels);
-	}
 
 	CvSize mSize;
 
@@ -214,8 +235,6 @@ protected:
 
 	MatchMethod mMatchMethod;
 	CalonderMatcher* mCalonderMatcher;
-
-	double mTemplateMatchThreshold; // minimum threshold for template matching
 
 	double mDisparityUnitInPixels;  // disparity unit in pixels
 };

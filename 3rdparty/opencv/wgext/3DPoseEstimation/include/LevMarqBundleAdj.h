@@ -28,7 +28,7 @@ public:
   bool optimize(
       /// The window of frames. For a free frame, the transformation matrix
       /// is used as initial value in entry and output in exit.
-      deque<PathRecon::PoseEstFrameEntry *> windowOfFrames,
+      deque<PoseEstFrameEntry *> windowOfFrames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
       VisOdomBundleAdj::Tracks& traks

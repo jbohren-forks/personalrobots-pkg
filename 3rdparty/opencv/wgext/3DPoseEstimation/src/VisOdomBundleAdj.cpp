@@ -77,16 +77,12 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
   mVisualizer = new VisOdomBundleAdj::Visualizer(mPoseEstimator, mFramePoses, mTracks);
 #endif
 
+  mFrameSeq.reset();
   // current frame
-  PoseEstFrameEntry*& currFrame = mCurrentFrame;
-  delete currFrame;
-  currFrame = NULL;
-  // last good frame as candidate for next key frame
-  delete mLastGoodFrame;
-  mLastGoodFrame = NULL;
+  PoseEstFrameEntry*& currFrame = mFrameSeq.mCurrentFrame;
 
-  for (setStartFrame(); notDoneWithIteration(); setNextFrame()){
-    bool newKeyFrame = reconOneFrame();
+  for (mFrameSeq.setStartFrame(); mFrameSeq.notDoneWithIteration(); mFrameSeq.setNextFrame()){
+    bool newKeyFrame = reconOneFrame(mFrameSeq);
     if (newKeyFrame == true) {
 
       // update the sliding window
@@ -106,7 +102,7 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
     visualize();
   }
 
-  saveFramePoses(mOutputDir);
+  saveFramePoses(mOutputDir, mFramePoses);
 
   mStat.mNumKeyPointsWithNoDisparity = mPoseEstimator.mNumKeyPointsWithNoDisparity;
   mStat.mPathLength = mPathLength;
@@ -114,7 +110,7 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
   mStat2.print();
 
   CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters    = mNumFrames/mFrameStep;
+  timer.mNumIters    = mFrameSeq.mNumFrames/mFrameSeq.mFrameStep;
   timer.printStat();
 
   return status;

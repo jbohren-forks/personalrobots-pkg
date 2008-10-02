@@ -52,8 +52,7 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
   mTempImage(NULL),
   mMatchMethod(CalonderDescriptor),
 	mCalonderMatcher(NULL),
-	mTemplateMatchThreshold(DefTemplateMatchThreshold),
-	mDisparityUnitInPixels(CvMatUtils::DefDisparityUnitInPixels)
+	mDisparityUnitInPixels(DefDisparityUnitInPixels)
 {
 	mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
 	mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
@@ -116,7 +115,8 @@ bool PoseEstimateStereo::getDisparityMap(
 	return status;
 }
 
-bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMap,
+bool PoseEstimateStereo::goodFeaturesToTrack(
+    const WImage1_b& img, const WImage1_16s* dispMap,
     vector<CvPoint3D64f>& keypoints){
   bool status = true;
   switch(getKeyPointDetector()) {
@@ -133,7 +133,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
     //
     // Try Star Detector
     //
-    std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
+    std::vector<Keypoint> kps = mStarDetector.DetectPoints((IplImage*)img.Ipl());
 #ifdef DEBUG
     cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
 #endif
@@ -144,7 +144,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
 
     // filter out keypoints that do not have disparity value
     if (dispMap) {
-      int16_t* _mask = dispMap->ImageData();
+      const int16_t* _mask = dispMap->ImageData();
       BOOST_FOREACH( Keypoint &pt, kps ) {
         int16_t d = _mask[pt.y*mSize.width+pt.x];
         if (d>0) {
@@ -166,7 +166,9 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
   return status;
 }
 
-bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMap,
+bool PoseEstimateStereo::goodFeaturesToTrack(
+    const WImage1_b& img,
+    const WImage1_16s* dispMap,
     double disparityUnitInPixels,
     vector<CvPoint3D64f>& keypoints,
     CvMat* eigImg, CvMat* tempImg
@@ -180,8 +182,6 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
   int maxKeypoints = 500;
   CvPoint2D32f kps[maxKeypoints];
 
-  //cvConvert(rightimg, tmp);
-  //    cvCornerHarris(tmp, harrisCorners, 21);
   double quality_level =  0.01; // what should I use? [0., 1.0]
   double min_distance  = 10.0; // 10 pixels?
 
@@ -189,7 +189,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
   CvMat *mask1 = NULL;
   CvMat mask0;
   if (dispMap) {
-    int16_t *disp = dispMap->ImageData();
+    const int16_t *disp = dispMap->ImageData();
     int8_t _mask[sz.width*sz.height];
     for (int v=0; v<sz.height; v++) {
       for (int u=0; u<sz.width; u++) {
@@ -214,8 +214,17 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* dispMa
       quality_level, min_distance, mask1, block_size, use_harris, k);
   if (dispMap) {
     for (int i=0; i<numkeypoints; i++) {
-      int16_t *disp = dispMap->ImageData();
+      const int16_t *disp = dispMap->ImageData();
       double d = disp[(int)(kps[i].y+.5) * sz.width + (int)(kps[i].x+.5)];
+      if (d<0) {
+        d = disp[(int)(kps[i].y) * sz.width + (int)(kps[i].x)];
+        if (d<0) {
+#if DEBUG
+          cerr << "disp < 0! ==> "<<disp<<<endl;
+#endif
+          continue;
+        }
+      }
       d /= disparityUnitInPixels;
       keypoints.push_back(cvPoint3D64f(kps[i].x, kps[i].y, d));
     }
@@ -331,8 +340,11 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, 
 }
 #endif
 
-bool PoseEstimateStereo::makePatchRect(const CvPoint& rectSize,
-    const CvPoint3D64f& featurePt, CvRect& rect) {
+bool PoseEstimateStereo::makePatchRect(
+    const CvPoint& rectSize,
+    const CvPoint3D64f& featurePt,
+    const CvSize& imgSize,
+    CvRect& rect) {
 	rect = cvRect(
 			(int)(.5 + featurePt.x - rectSize.x/2),
 			(int)(.5 + featurePt.y - rectSize.y/2),
@@ -345,15 +357,15 @@ bool PoseEstimateStereo::makePatchRect(const CvPoint& rectSize,
 	if (rect.x < 0 ) {
 		rect.x = 0;
 		fOutOfBound = true;
-	} else if ( rect.x + rect.width  > mSize.width ) {
-		rect.width = mSize.width - rect.x;
+	} else if ( rect.x + rect.width  > imgSize.width ) {
+		rect.width = imgSize.width - rect.x;
 		fOutOfBound = true;
 	}
 	if (rect.y < 0 ) {
 		rect.y = 0;
 		fOutOfBound = true;
-	} else if ( rect.y + rect.height > mSize.height ) {
-		rect.height = mSize.height - rect.y;
+	} else if ( rect.y + rect.height > imgSize.height ) {
+		rect.height = imgSize.height - rect.y;
 		fOutOfBound = true;
 	}
 	return fOutOfBound;
@@ -393,7 +405,7 @@ PoseEstimateStereo::getTrackablePairsByCalonder(
 	BOOST_FOREACH( CvPoint3D64f& pt, keyPoints0 ) {
 	  CvRect rectNeighborhood;
 	  CvPoint2D64f pt2D64f = cvPoint2D64f(pt.x, pt.y);
-	  makePatchRect(neighborhoodSize, pt, rectNeighborhood);
+	  makePatchRect(neighborhoodSize, pt, mSize, rectNeighborhood);
 
 		cv::WImageView1_b view = extractPatch(image0.Ipl(), pt);
 		DenseSignature sig = mCalonderMatcher->mClassifier.getDenseSignature(view.Ipl());
@@ -406,13 +418,14 @@ PoseEstimateStereo::getTrackablePairsByCalonder(
 		  bestloc.x = kp.x;
 		  bestloc.y = kp.y;
 
-		  double disp = getDisparity(dispMap1, bestloc);
+		  // use the default value for unit in disparity map, 1/16 pixel
+		  double disp = CvMatUtils::getDisparity(dispMap1, bestloc);
 		  if (disp<0) {
 		    mNumKeyPointsWithNoDisparity++;
 		  } else {
 		    if (trackablePairs) {
 		      CvPoint pt0Int = cvPoint(pt.x, pt.y);
-		      double disp0 = getDisparity(dispMap0, pt0Int);
+		      double disp0 = CvMatUtils::getDisparity(dispMap0, pt0Int);
 		      CvPoint3D64f pt0 = cvPoint3D64f(pt0Int.x,  pt0Int.y,  disp0);
 		      CvPoint3D64f pt1 = cvPoint3D64f(bestloc.x, bestloc.y, disp);
 		      pair<CvPoint3D64f, CvPoint3D64f> p(pt0, pt1);
@@ -443,6 +456,8 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
 	CvPoint templSize        = DefTemplateSize;
+	CvSize imgSize = cvSize(image0.Width(), image0.Height());
+	// TODO: check if other image buffers are consistent.
 	// a buffer for neighborhood template matching
 	float _res[(neighborhoodSize.y-templSize.y+1)*(neighborhoodSize.x-templSize.x+1)];
 	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
@@ -467,13 +482,13 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 		/** make a template center around featurePtLastLeft; */
 		CvRect rectTempl;
 
-		bool fOutOfBound = makePatchRect(templSize, ptLast, rectTempl);
+		bool fOutOfBound = makePatchRect(templSize, ptLast, imgSize, rectTempl);
 		if (fOutOfBound == true) {
 			continue;
 		}
 		CvRect rectNeighborhood;
 
-		fOutOfBound = makePatchRect(neighborhoodSize, ptLast, rectNeighborhood);
+		fOutOfBound = makePatchRect(neighborhoodSize, ptLast, imgSize, rectNeighborhood);
 		if (fOutOfBound == true) {
 			// (partially) out of bound.
 			if (rectNeighborhood.width < rectTempl.width || rectNeighborhood.height < rectTempl.height) {
@@ -491,7 +506,7 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 				rectNeighborhood.width - rectTempl.width + 1, rectNeighborhood.height - rectTempl.height + 1);
 		cvGetSubRect(&res, &res0, rectRes);
 		double  matchingScore = matchTemplate(neighborhood, templ, res0, bestloc);
-		if (matchingScore < mTemplateMatchThreshold) {
+		if (matchingScore < DefTemplateMatchThreshold) {
 			// best matching is not good enough, skip this key point
 			continue;
 		}
@@ -499,10 +514,10 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 		bestloc.x += rectNeighborhood.x + rectTempl.width/2;
 		bestloc.y += rectNeighborhood.y + rectTempl.height/2;
 
-		double disp = getDisparity(dispMap1, bestloc);
+		// we assume the unit in disparity map is 1/16 of a pixel
+		double disp = CvMatUtils::getDisparity(dispMap1, bestloc);
 
 		if (disp<0) {
-			this->mNumKeyPointsWithNoDisparity++;
 			continue;
 		}
 		if (trackablePairs) {
@@ -533,6 +548,8 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
 	CvPoint templSize        = DefTemplateSize;
+	CvSize imgSize = cvSize(image0.Width(), image0.Height());
+	// TODO: check the sizes of other image buffers to see if they are the same.
 	// a buffer for neighborhood template matching
 	float _res[(neighborhoodSize.y-templSize.y+1)*(neighborhoodSize.x-templSize.x+1)];
 	CvMat res = cvMat(neighborhoodSize.y-templSize.y+1, neighborhoodSize.x-templSize.x+1, CV_32FC1, _res);
@@ -565,8 +582,8 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		);
 		// check if rectTempl is all within bound
 		if (rectTempl.x < 0 || rectTempl.y < 0 ||
-				rectTempl.x + rectTempl.width  > mSize.width ||
-				rectTempl.y + rectTempl.height > mSize.height ) {
+				rectTempl.x + rectTempl.width  > imgSize.width ||
+				rectTempl.y + rectTempl.height > imgSize.height ) {
 			// (partially) out of bound.
 			// skip this
 			continue;
@@ -600,8 +617,8 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 				);
 				// check if rectTempl is all within bound
 				if (rectTempl2.x < 0 || rectTempl2.y < 0 ||
-						rectTempl2.x + rectTempl2.width  > mSize.width ||
-						rectTempl2.y + rectTempl2.height > mSize.height ) {
+						rectTempl2.x + rectTempl2.width  > imgSize.width ||
+						rectTempl2.y + rectTempl2.height > imgSize.height ) {
 					// (partially) out of bound.
 					// skip this
 					continue;
@@ -670,8 +687,50 @@ bool PoseEstimateStereo::getTrackablePairs(
 	return status;
 }
 
+bool PoseEstimateStereo::getTrackablePairs(
+    /// type of the key point matcher
+    MatchMethod matcherType,
+    /// input image 0
+    WImage1_b& image0,
+    /// input image 1
+    WImage1_b& image1,
+    /// disparity map of input image 0
+    WImage1_16s& dispMap0,
+    /// disparity map of input image 1
+    WImage1_16s& dispMap1,
+    /// Detected key points in image 0
+    Keypoints& keyPoints0,
+    /// Detected Key points in image 1
+    Keypoints& keyPoints1,
+    /// (Output) pairs of corresponding 3d locations for possibly the same
+    /// 3d features. Used for pose estimation.
+    /// Set it to NULL if not interested.
+    vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+    /// (Output) pairs of indices, to the input keypoints, of the corresponding
+    /// 3d locations for possibly the same 3d features. Used for pose estimation.
+    /// Set it to NULL if not interested.
+    vector<pair<int, int> >* trackableIndexPairs
+) {
+  bool status = true;
+  switch(matcherType){
+  case CrossCorrelation:
+    status = getTrackablePairsByCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
+        trackablePairs, trackableIndexPairs);
+    break;
+  case KeyPointCrossCorrelation:
+    status = getTrackablePairsByKeypointCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
+        trackablePairs, trackableIndexPairs);
+    break;
+  default:
+    cerr << "Not implement yet for matcher: "<<matcherType<<endl;
+    status = false;
+    break;
+  }
+  return status;
+}
+
 double PoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat& templ, CvMat& res,
-		CvPoint& loc){
+		CvPoint& loc)  {
 	cvMatchTemplate(&neighborhood, &templ, &res, CV_TM_CCORR_NORMED );
 	double		minval, maxval;
 	cvMinMaxLoc( &res, &minval, &maxval, NULL, &loc, NULL);

@@ -24,7 +24,7 @@ LevMarqBundleAdj::~LevMarqBundleAdj() {
 }
 
 bool LevMarqBundleAdj::optimize(
-    deque<PathRecon::PoseEstFrameEntry *> windowOfFrames,
+    deque<PoseEstFrameEntry *> windowOfFrames,
     VisOdomBundleAdj::Tracks& tracks
 ) {
   /// Loop thru each track p

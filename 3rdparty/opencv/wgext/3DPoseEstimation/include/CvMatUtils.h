@@ -5,12 +5,11 @@
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include "PoseEstimateDisp.h"
+#include "VisOdom.h"
 
 #include <cmath>
 
 namespace cv {namespace willow {
-
-typedef vector<CvPoint3D64f> Keypoints;
 
 /**
  * Misc utilities
@@ -111,8 +110,6 @@ public:
 	static const CvScalar green;
 	static const CvScalar yellow;
 
-  /// Default value of disparity unit (in pixels) in disparity map
-  static const double DefDisparityUnitInPixels = 16.;
 };
 }
 }

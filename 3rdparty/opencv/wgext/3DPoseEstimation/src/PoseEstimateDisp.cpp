@@ -2,6 +2,8 @@
 #include <iostream>
 using namespace std;
 
+#include <boost/foreach.hpp>
+
 #include <opencv/cv.h>
 
 #include "PoseEstimateDisp.h"
@@ -99,8 +101,10 @@ int PoseEstimateDisp::checkInLiers(CvMat *points0, CvMat *points1, CvMat* transf
 }
 
 // almost the same as the function above
-int PoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
-    CvMat* points0Inlier, CvMat* points1Inlier, int *inlierIndices) {
+int PoseEstimateDisp::getInLiers(const CvMat *points0,
+    const CvMat *points1, const CvMat* transformation,
+    CvMat* points0Inlier, CvMat* points1Inlier,
+    int inlierIndices[]) {
 	int numInLiers = 0;
 	int numPoints = points0->rows;
 
@@ -160,8 +164,41 @@ int PoseEstimateDisp::getInLiers(CvMat *points0, CvMat *points1, CvMat* transfor
 	return numInLiers;
 }
 
+int PoseEstimateDisp::estimate(const Keypoints& keypoints0, const Keypoints& keypoints1,
+    const vector<pair<int, int> >& matchIndexPairs, CvMat& rot, CvMat& shift,
+    bool smoothed){
+  int numTrackablePairs = matchIndexPairs.size();
+  double _uvds0[3*numTrackablePairs];
+  double _uvds1[3*numTrackablePairs];
+  CvMat uvds0 = cvMat(numTrackablePairs, 3, CV_64FC1, _uvds0);
+  CvMat uvds1 = cvMat(numTrackablePairs, 3, CV_64FC1, _uvds1);
+
+  int iPt=0;
+  typedef const pair<int, int> intpair;
+  BOOST_FOREACH( intpair& p, matchIndexPairs ) {
+    const CvPoint3D64f& p0 = keypoints0[p.first];
+    const CvPoint3D64f& p1 = keypoints1[p.second];
+    _uvds0[iPt*3 + 0] = p0.x;
+    _uvds0[iPt*3 + 1] = p0.y;
+    _uvds0[iPt*3 + 2] = p0.z;
+
+    _uvds1[iPt*3 + 0] = p1.x;
+    _uvds1[iPt*3 + 1] = p1.y;
+    _uvds1[iPt*3 + 2] = p1.z;
+    iPt++;
+  }
+
+  // estimate the transform the observed points from current back to last position
+  // it should be equivalent to the transform of the camera frame from
+  // last position to current position
+  int numInliers;
+  numInliers = this->estimate(&uvds0, &uvds1, &rot, &shift, smoothed);
+
+  return numInliers;
+}
+
 int PoseEstimateDisp::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& trackablePairs,
-    CvMat& rot, CvMat& shift, bool reversed, bool smoothed) {
+    CvMat& rot, CvMat& shift, bool smoothed) {
   int numTrackablePairs = trackablePairs.size();
   double _uvds0[3*numTrackablePairs];
   double _uvds1[3*numTrackablePairs];
@@ -186,11 +223,8 @@ int PoseEstimateDisp::estimate(vector<pair<CvPoint3D64f, CvPoint3D64f> >& tracka
   // it should be equivalent to the transform of the camera frame from
   // last position to current position
   int numInliers;
-  if (reversed == true) {
-    numInliers = this->estimate(&uvds1, &uvds0, &rot, &shift, smoothed);
-  } else {
-    numInliers = this->estimate(&uvds0, &uvds1, &rot, &shift, smoothed);
-  }
+  numInliers = this->estimate(&uvds0, &uvds1, &rot, &shift, smoothed);
+
   return numInliers;
 }
 
@@ -281,7 +315,7 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
       // tooCloseToColinear
       if (pick3RandomPoints(xyzs0, xyzs1, &P0, &P1)== false) {
         cerr << "Cannot find points that are non colinear enough"<<endl;
-        break;
+        continue;
       }
 
       TIMERSTART2(SVD);
@@ -344,50 +378,6 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
 
   if (smoothed == true) {
     estimateWithLevMarq(*uvds0Inlier, *uvds1Inlier, *rot, *shift);
-#if 0
-    // get the euler angle from rot
-    CvPoint3D64f eulerAngles;
-    {
-      double _R[9], _Q[9];
-      CvMat R, Q;
-      CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
-      cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
-      cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
-
-      cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
-    }
-
-    // nonlinear optimization by Levenberg-Marquardt
-    cv::willow::LevMarqTransformDispSpace
-    levMarq(&mMatDispToCart, &mMatCartToDisp, numInliers0);
-
-    double param[6];
-
-    //initialize the parameters
-    param[0] = eulerAngles.x/180. * CV_PI;
-    param[1] = eulerAngles.y/180. * CV_PI;
-    param[2] = eulerAngles.z/180. * CV_PI;
-    param[3] = cvmGet(shift, 0, 0);
-    param[4] = cvmGet(shift, 1, 0);
-    param[5] = cvmGet(shift, 2, 0);
-
-    CvTestTimerStart(LevMarqDoit);
-    levMarq.optimize(uvds0Inlier, uvds1Inlier, param);
-    CvTestTimerEnd(LevMarqDoit);
-
-    // TODO: construct matrix with parameters from nonlinear optimization
-    double _rot[9];
-
-    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
-        CvMat3X3<double>::EulerXYZ);
-    for (int i=0;i<3;i++)
-      for (int j=0;j<3;j++) {
-        cvmSet(rot, i, j, _rot[i*3+j]);
-      }
-    cvmSet(shift, 0, 0, param[3]);
-    cvmSet(shift, 1, 0, param[4]);
-    cvmSet(shift, 2, 0, param[5]);
-#endif
   }
 
   updateInlierInfo(uvds0Inlier, uvds1Inlier, inlierIndices);
@@ -397,8 +387,15 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   return numInliers0;
 }
 
+void PoseEstimateDisp::estimateWithLevMarq(const CvMat& uvds0Inlier,
+    const CvMat& uvds1Inlier,
+    CvMat& rot, CvMat& shift) {
+  estimateWithLevMarq(uvds0Inlier, uvds1Inlier, mMatCartToDisp, mMatDispToCart, rot, shift);
+}
+
 void PoseEstimateDisp::estimateWithLevMarq(
     const CvMat& uvds0Inlier, const CvMat& uvds1Inlier,
+    const CvMat& CartToDisp,  const CvMat& DispToCart,
     CvMat& rot, CvMat& shift) {
   int numInliers = uvds0Inlier.rows;
   // get the euler angle from rot
@@ -415,7 +412,7 @@ void PoseEstimateDisp::estimateWithLevMarq(
 
   // nonlinear optimization by Levenberg-Marquardt
   cv::willow::LevMarqTransformDispSpace
-  levMarq(&mMatDispToCart, &mMatCartToDisp, numInliers);
+  levMarq(&DispToCart, &CartToDisp, numInliers);
 
   double param[6];
 

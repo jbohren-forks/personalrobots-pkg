@@ -8,6 +8,8 @@
 #include <vector>
 using namespace std;
 
+#include "VisOdom.h"
+
 namespace cv {namespace willow {
 /**
  *  Pose estimation between 2 corresponding point clouds in
@@ -69,13 +71,37 @@ public:
       CvMat& rot,
       /// (Output) translation matrix.
       CvMat& shift,
-      /// If true, the reverse transformation is estimated instead.
-      bool reversed,
+      /// If true, Levenberg-Marquardt is used over inliers to get better
+      /// estimation.
+      bool smoothed);
+
+  int estimate(
+      /// key point list 0
+      const Keypoints& keypoints0,
+      /// key point list 1
+      const Keypoints& keypoints1,
+      /// index pairs of the matching key points
+      const vector<pair<int, int> >& matchIndexPairs,
+      /// (Output) rotation matrix.
+      CvMat& rot,
+      /// (Output) translation matrix.
+      CvMat& shift,
       /// If true, Levenberg-Marquardt is used over inliers to get better
       /// estimation.
       bool smoothed);
 
   void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
+      CvMat& rot, CvMat& trans);
+
+  static void estimateWithLevMarq(
+      /// inlier list 0
+      const CvMat& points0inlier,
+      /// inlier list 1
+      const CvMat& points1inlier,
+      /// transformation matrix from Cartesian coordinates to disparity coordinates
+      const CvMat& CartToDisp,
+      /// transformation matrix from disparity coordinates to Cartesian coordinates.
+      const CvMat& DistpToCart,
       CvMat& rot, CvMat& trans);
 
   /**
@@ -166,7 +192,8 @@ protected:
 	/// Check and return inliers.
   /// Points are given in disparity coordinates (u, v, d).
 	/// @return number of inliers
-	virtual int getInLiers(CvMat *points0, CvMat *points1, CvMat* transformation,
+	virtual int getInLiers(const CvMat *points0, const CvMat *points1,
+	    const CvMat* transformation,
 	    CvMat* points0Inlier, CvMat* points1Inlier,
 	    int inlierIndices[]);
 };
