@@ -176,6 +176,12 @@ void Usage(string msg = "")
   fprintf(stderr, " -d, --device <d>       Select the device to program\n");
   fprintf(stderr, " -p, --program          Program a motor control board\n");
   fprintf(stderr, " -n, --name <n>         Set the name of the motor control board to <n>\n");
+  fprintf(stderr, "     Known actuator names:\n");
+  BOOST_FOREACH(ActuatorPair p, actuators)
+  {
+    string name = p.first;
+    printf("        %s\n", name.c_str());
+  }
   fprintf(stderr, " -m, --motor <m>        Set the configuration for motor <m>\n");
   fprintf(stderr, "     Legal motor values are:\n");
   BOOST_FOREACH(MotorPair p, motors)
