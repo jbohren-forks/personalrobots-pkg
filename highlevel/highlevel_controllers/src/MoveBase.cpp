@@ -145,7 +145,8 @@ namespace ros {
 	inputData.push_back((unsigned char) resp.map.data[i]);
 
       // Now allocate the cost map
-      costMap_ = new CostMap2D(resp.map.width, resp.map.height, inputData , resp.map.resolution, 
+      costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
+                               &(inputData[0]) , resp.map.resolution, 
 			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
 
       // Advertize messages to publish cost map updates
