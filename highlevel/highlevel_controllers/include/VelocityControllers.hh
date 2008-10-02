@@ -7,8 +7,9 @@
 #include <std_msgs/Pose2DFloat32.h>
 
 // For Controller components
-#include <trajectory_rollout/obstacle_map_accessor.h>
 #include <trajectory_rollout/helmsman.h>
+
+using namespace costmap_2d;
 
 namespace ros {
   namespace highlevel_controllers {
@@ -28,27 +29,13 @@ namespace ros {
        */
       CostMapAccessor(const CostMap2D& costMap, double deltaX, double deltaY, double pose_x, double pose_y);
 
-      unsigned int getWidth() const;
-
-      unsigned int getHeight() const;
-
-      double getResolution() const;
-
-      bool contains(double x, double y) const;
-
       bool isObstacle(unsigned int mx, unsigned int my) const;
 
       bool isInflatedObstacle(unsigned int mx, unsigned int my) const;
 
-      void getOriginInWorldCoordinates(double& wx, double& wy) const;
-
     private:
 
       const CostMap2D& costMap_;
-      const unsigned int width_;
-      const unsigned int height_;
-      double wx_0_;
-      double wy_0_;
       unsigned int mx_0_;
       unsigned int my_0_;
     };

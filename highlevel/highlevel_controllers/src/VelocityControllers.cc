@@ -4,36 +4,15 @@
 namespace ros {
   namespace highlevel_controllers {
     CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double deltaX, double deltaY, double poseX, double poseY)
-      : costMap_(costMap),
-	width_(static_cast<unsigned int>(deltaX / costMap_.getResolution())),
-	height_(static_cast<unsigned int>(deltaY / costMap_.getResolution())){
-
-      // As far left as we can get without going over on the right or left
-      wx_0_ = std::max(0.0,  poseX - deltaX/2);
-      wx_0_ = std::min(wx_0_,  costMap_.getWidth() * costMap_.getResolution() - deltaX);
-
-      // As far to the top as we can go and not over above or below
-      wy_0_ = std::max(0.0, poseY - deltaY/2 );
-      wy_0_ = std::min(wy_0_, costMap_.getHeight() * costMap_.getResolution() - deltaY);
+      : ObstacleMapAccessor(std::min(std::max(0.0,  poseX - deltaX/2), costMap.getWidth() * costMap.getResolution() - deltaX),
+			    std::min(std::max(0.0, poseY - deltaY/2 ), costMap.getHeight() * costMap.getResolution() - deltaY), 
+			    static_cast<unsigned int>(deltaX / costMap.getResolution()), 
+			    static_cast<unsigned int>(deltaY / costMap.getResolution()),
+			    costMap.getResolution()), costMap_(costMap){
 
       // The origin locates this grid. Convert from world coordinates to cell co-ordinates
       // to get the cell coordinates of the origin
-      costMap_.WC_MC(wx_0_, wy_0_, mx_0_, my_0_);    }
-  
-    unsigned int CostMapAccessor::getWidth() const {return width_;}
-
-    unsigned int CostMapAccessor::getHeight() const {return height_;}
-
-    double CostMapAccessor::getResolution() const {return costMap_.getResolution();}
-
-    bool CostMapAccessor::contains(double x, double y) const {
-      if(x < wx_0_ || x >= (wx_0_ + getWidth() * costMap_.getResolution()))
-	return false;
-
-      if(y < wy_0_ || y >= (wy_0_ + getHeight() * costMap_.getResolution()))
-	return false;
-
-      return true;
+      costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_);    
     }
 
     bool CostMapAccessor::isObstacle(unsigned int mx, unsigned int my) const {
@@ -44,11 +23,6 @@ namespace ros {
     bool CostMapAccessor::isInflatedObstacle(unsigned int mx, unsigned int my) const {
       unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
       return costMap_.isInflatedObstacle(costMapIndex);
-    }
-
-    void CostMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const {
-      wx = wx_0_;
-      wy = wy_0_;
     }
 
     TrajectoryRolloutController::TrajectoryRolloutController(double mapDeltaX, double mapDeltaY,
