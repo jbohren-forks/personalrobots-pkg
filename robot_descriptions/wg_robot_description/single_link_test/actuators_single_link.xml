@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <robot name="pr2"><!-- name of the robot-->
-  <actuator name="single_link_motor">
+  <actuator name="link1_motor">
     <motorboardID>12345</motorboardID>
     <maxCurrent>5</maxCurrent>
     <motor>MAXON</motor>

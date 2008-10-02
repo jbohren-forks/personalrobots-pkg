@@ -143,12 +143,12 @@
   
   <const_block name="pr2_shoulder_pitch_inertial">
     <mass value="2.41223" />
-    <com xyz=" -0.035895  0.014422 -0.0028263" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
+    <com xyz="-0.035895 -0.0028263 0.014422" /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame -->
     <inertia  ixx="0.016640333585" ixy="0.002696462583"  ixz="0.001337742275"  iyy="0.017232603914"  iyz="-0.003605106514"  izz="0.018723553425" />
   </const_block> 
   
   <const_block name="pr2_shoulder_pitch_collision">
-    <origin xyz="shoulder_pitch_length/2 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
+    <origin xyz="0 0 0 " rpy="M_PI/2 0.0 0.0 " /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <geometry name="pr2_shoulder_pitch_collision_geom">
       <cylinder radius="shoulder_pitch_radius" length="shoulder_pitch_length" />

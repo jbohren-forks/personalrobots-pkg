@@ -1,5 +1,5 @@
 <robot name="pr2">
-  <joint name="single_link_joint" >
+  <joint name="link1_joint" >
       <explicitDampingCoefficient>1</explicitDampingCoefficient>
   </joint>
 </robot>

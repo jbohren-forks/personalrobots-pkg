@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <robot name="pr2"><!-- name of the robot-->
-  <transmission type="SimpleTransmission" name="single_link_trans">
-    <actuator name="single_link_motor" />
-    <joint name="single_link_joint" />
+  <transmission type="SimpleTransmission" name="link1_trans">
+    <actuator name="link1_motor" />
+    <joint name="link1_joint" />
     <mechanicalReduction>1</mechanicalReduction>
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
