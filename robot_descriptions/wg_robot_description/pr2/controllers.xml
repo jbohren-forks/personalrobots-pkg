@@ -130,7 +130,7 @@
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
     <listen_topic name="left_gripper_commands" />
     <joint name="finger_l_left_joint">
-      <pid p="10" d="0" i="0" iClamp="0" />
+      <pid p="3" d="0.03" i="0" iClamp="0" />
       <gripper_defaults effortLimit="100" velocityLimit="10" />
     </joint>
   </controller>
@@ -184,7 +184,7 @@
   <controller name="gripper_right_controller" topic="gripper_right_controller" type="JointPositionControllerNode">
     <listen_topic name="right_gripper_commands" />
     <joint name="finger_l_right_joint">
-      <pid p="10" d="0" i="0" iClamp="0" />
+      <pid p="3" d="0.03" i="0" iClamp="0" />
       <gripper_defaults effortLimit="100" velocityLimit="10" />
     </joint>
   </controller>
