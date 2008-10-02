@@ -126,17 +126,17 @@ namespace costmap_2d {
     my = (int) ((wy - origin_y_)/resolution_);
 
     //printf("x: %.2f y: %.2f or_x: %.2f, or_y: %.2f, resolution: %.2f\n   ", wx, wy, origin_x_, origin_y_, resolution_);
-    if(mx > width_) {
-      //printf("WC_MC converted x %u greater than width %u", mx, width_);
+    if(mx >= width_) {
       mx = 0;
       return false;
     } 
 
-    if(my > height_) {
-      //printf("WC_MC converted  %u greater than height %u", my, height_);
+    if(my >= height_) {
+      printf("WC_MC converted  %d greater than height %d\n", my, height_);
       my = 0;
       return false;
     }
+
     return true;
   }
 }
