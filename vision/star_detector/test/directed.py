@@ -1,4 +1,6 @@
-import rostools; rostools.update_path('test_roslaunch')
+import rostools
+rostools.update_path('star_detector')
+import rostest
 
 import sys
 sys.path.append('lib')
@@ -10,6 +12,7 @@ import ImageDraw
 import random
 import time
 import unittest
+
 
 # A star detector object's results are invariant wrt image presentation order
 
@@ -245,5 +248,4 @@ if __name__ == '__main__':
         suite.addTest(TestDirected('test_order_invariance'))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
-        import rostest
         rostest.unitrun('star_detector', 'directed', TestDirected)
