@@ -100,10 +100,16 @@ namespace ros {
 	resp.map.height << " map at " << 
 	resp.map.resolution << "m/pix" << std::endl;
 
+      // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
+      // our planner and controller do not reason about the no obstacle case
       std::vector<unsigned char> inputData;
       unsigned int numCells = resp.map.width * resp.map.height;
-      for(unsigned int i = 0; i < numCells; i++)
-	inputData.push_back((unsigned char) resp.map.data[i]);
+      for(unsigned int i = 0; i < numCells; i++){
+	if(resp.map.data[i] == CostMap2D::NO_INFORMATION)
+	  inputData.push_back(CostMap2D::LETHAL_OBSTACLE);
+	else
+	  inputData.push_back((unsigned char) resp.map.data[i]);
+      }
 
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
