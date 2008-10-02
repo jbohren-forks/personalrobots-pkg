@@ -134,7 +134,7 @@ namespace math_utils
    * \param min_delta - minimum (delta) angle (in radians) that can be moved from "from" position before hitting the joint stop
    * \param max_delta - maximum (delta) angle (in radians) that can be movedd from "from" position before hitting the joint stop
    */
-  static bool find_min_max_delta(double from, double min_angle, double max_angle, double &min_delta, double &max_delta)
+  static bool find_min_max_delta(double from, double min_angle, double max_angle, double &result_min_delta, double &result_max_delta)
   {
     double delta[4];
     double max_neg_angle = -2*M_PI;
@@ -165,13 +165,13 @@ namespace math_utils
 
     if((delta_min <= delta_max_2pi) || (delta_max >= delta_min_2pi))
     {
-      min_delta = max_neg_angle;
-      max_delta = min_pos_angle;
+      result_min_delta = delta_max_2pi;
+      result_max_delta = delta_min_2pi;
       return false;
     }
 //      printf("%f %f %f %f\n",delta_min,delta_min_2pi,delta_max,delta_max_2pi);
-    min_delta = delta_min;
-    max_delta = delta_max;
+    result_min_delta = delta_min;
+    result_max_delta = delta_max;
     return true;
   }
 
@@ -198,9 +198,12 @@ namespace math_utils
 
     double min_delta = -2*M_PI;
     double max_delta = 2*M_PI;
+    double min_delta_to = -2*M_PI;
+    double max_delta_to = 2*M_PI;
     bool flag    = find_min_max_delta(from,left_limit,right_limit,min_delta,max_delta);
     double delta = shortest_angular_distance(from,to);
     double delta_mod_2pi  = add_mod_2Pi(delta);
+
 
     if(flag)//from position is within the limits
     {
@@ -216,13 +219,36 @@ namespace math_utils
       }
       else //to position is outside the limits
       {
-        shortest_angle = delta;
-        return false;
+        bool flag_to = find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
+          if(fabs(min_delta_to) < fabs(max_delta_to))
+            shortest_angle = std::max<double>(delta,delta_mod_2pi);
+          else if(fabs(min_delta_to) > fabs(max_delta_to))
+            shortest_angle =  std::min<double>(delta,delta_mod_2pi);
+          else
+          {
+            if (fabs(delta) < fabs(delta_mod_2pi))
+              shortest_angle = delta;
+            else
+              shortest_angle = delta_mod_2pi;
+          }
+          return false;
       }
     }
-    else
+    else // from position is outside the limits
     {
-      shortest_angle = delta;
+        bool flag_to = find_min_max_delta(to,left_limit,right_limit,min_delta_to,max_delta_to);
+
+          if(fabs(min_delta) < fabs(max_delta))
+            shortest_angle = std::min<double>(delta,delta_mod_2pi);
+          else if (fabs(min_delta) > fabs(max_delta))
+            shortest_angle =  std::max<double>(delta,delta_mod_2pi);
+          else
+          {
+            if (fabs(delta) < fabs(delta_mod_2pi))
+              shortest_angle = delta;
+            else
+              shortest_angle = delta_mod_2pi;
+          }
       return false;
     }
 
