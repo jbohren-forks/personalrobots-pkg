@@ -143,9 +143,9 @@ namespace costmap_2d {
 
     double origin_x_;
     double origin_y_;
-    const unsigned int width_;
-    const unsigned int height_;
-    const double resolution_;
+    unsigned int width_;
+    unsigned int height_;
+    double resolution_;
   };
 }
 #endif
