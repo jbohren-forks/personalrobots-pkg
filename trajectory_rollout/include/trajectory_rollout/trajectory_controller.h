@@ -71,8 +71,8 @@
 #define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < ((int)(map).size_x_)) && ((y) >= 0) && ((y) < ((int)(map).size_y_)))
 
 //convert from map to world coords
-#define MX_WX(map, i) ((map).origin_x + (i) * (map).scale)
-#define MY_WY(map, j) ((map).origin_y + (j) * (map).scale)
+#define MX_WX(map, i) ((map).origin_x + (i) * (map).scale);
+#define MY_WY(map, j) ((map).origin_y + (j) * (map).scale);
 
 
 //convert from world to map coords
@@ -88,18 +88,17 @@ class TrajectoryController {
     TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
         double robot_front_radius, double robot_side_radius, double max_occ_dist, 
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-        double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf);
+        double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
+        const costmap_2d::ObstacleMapAccessor& ma);
     
     //given the current state of the robot, find a good trajectory
-    int findBestPath(const costmap_2d::ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
+    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
-    void computePathDistance(const costmap_2d::ObstacleMapAccessor& ma, 
-        std::queue<MapCell*>& dist_queue);
+    void computePathDistance(std::queue<MapCell*>& dist_queue);
 
-    void computeGoalDistance(const costmap_2d::ObstacleMapAccessor& ma, 
-        std::queue<MapCell*>& dist_queue);
+    void computeGoalDistance(std::queue<MapCell*>& dist_queue);
     
     //given a trajectory in map space get the drive commands to send to the robot
     libTF::TFPose2D getDriveVelocities(int t_num);
@@ -143,22 +142,22 @@ class TrajectoryController {
 
   private:
     //update what map cells are considered path based on the global_plan
-    void setPathCells(const costmap_2d::ObstacleMapAccessor& ma);
+    void setPathCells();
 
     //convert the trajectories computed in robot space to world space
     void trajectoriesToWorld();
     void transformTrajects(double x_i, double y_i, double th_i);
 
     //compute the cost for a single trajectory
-    double trajectoryCost(const costmap_2d::ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
+    double trajectoryCost(int t_index, double pdist_scale, 
         double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost);
 
     //for getting the cost of a given footprint
-    double footprintCost(const costmap_2d::ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
-    double lineCost(const costmap_2d::ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1,
+    double footprintCost(double x_i, double y_i, double theta_i);
+    double lineCost(int x0, int x1, int y0, int y1,
         std::vector<std_msgs::Position2DInt>& footprint_cells);
-    double fillCost(const costmap_2d::ObstacleMapAccessor& ma, std::vector<std_msgs::Position2DInt>& footprint);
-    double pointCost(const costmap_2d::ObstacleMapAccessor& ma, int x, int y);
+    double fillCost(std::vector<std_msgs::Position2DInt>& footprint);
+    double pointCost(int x, int y);
 
     //for getting the cells for a given footprint
     std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
@@ -175,14 +174,17 @@ class TrajectoryController {
 
     //transform client
     rosTFClient* tf_;
+    
+    //so that we can access obstacle information
+    const costmap_2d::ObstacleMapAccessor& ma_;
 
-    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, const costmap_2d::ObstacleMapAccessor& ma, 
+    inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, 
         std::queue<MapCell*>& dist_queue){
       //mark the cell as visisted
       check_cell->path_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+      if(ma_.isObstacle(check_cell->cx, check_cell->cy)){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -194,13 +196,13 @@ class TrajectoryController {
       dist_queue.push(check_cell);
     }
 
-    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, const costmap_2d::ObstacleMapAccessor& ma, 
+    inline void updateGoalCell(MapCell* current_cell, MapCell* check_cell, 
         std::queue<MapCell*>& dist_queue){
       ///mark the cell as visited
       check_cell->goal_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
+      if(ma_.isObstacle(check_cell->cx, check_cell->cy)){
         check_cell->goal_dist = map_.map_.size();
         return;
       }

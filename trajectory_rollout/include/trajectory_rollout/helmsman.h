@@ -49,9 +49,9 @@ class Helmsman{
     Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_per_dim,
         double robot_front_radius, double robot_side_radius, double max_occ_dist, 
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-        double acc_lim_x, double acc_lim_y, double acc_lim_th);
+        double acc_lim_x, double acc_lim_y, double acc_lim_th, const costmap_2d::ObstacleMapAccessor& ma);
 
-    bool computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
+    bool computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				 double vel_x, double vel_y, double vel_theta, 
 				 double& d_x, double& d_y, double& d_theta,
 				 std::list<std_msgs::Pose2DFloat32>& localPlan);
@@ -65,6 +65,9 @@ class Helmsman{
 
     //transform client
     rosTFClient& tf_;
+
+    //obstacle map accessor
+    const costmap_2d::ObstacleMapAccessor& ma_;
 
     //trajectory controller
     TrajectoryController tc_;

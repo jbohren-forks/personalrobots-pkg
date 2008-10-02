@@ -38,16 +38,17 @@
 Helmsman::Helmsman(rosTFClient& tf, double sim_time, int sim_steps, int samples_per_dim,
     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
     double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-    double acc_lim_x, double acc_lim_y, double acc_lim_th):
+    double acc_lim_x, double acc_lim_y, double acc_lim_th, const costmap_2d::ObstacleMapAccessor& ma):
   map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(tf), 
+  ma_(ma),
   tc_(map_, sim_time, sim_steps, samples_per_dim, robot_front_radius, robot_side_radius, max_occ_dist, 
-      pdist_scale, gdist_scale, occdist_scale, dfast_scale, acc_lim_x, acc_lim_y, acc_lim_th, &tf_)
+      pdist_scale, gdist_scale, occdist_scale, dfast_scale, acc_lim_x, acc_lim_y, acc_lim_th, &tf_, ma_)
 {
 }
 
 //compute the drive commands to send to the robot
-bool Helmsman::computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma, const std::list<std_msgs::Pose2DFloat32>& globalPlan,
+bool Helmsman::computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& globalPlan,
 				       double vel_x, double vel_y, double vel_theta, 
 				       double& d_x, double& d_y, double& d_theta,
 				       std::list<std_msgs::Pose2DFloat32>& localPlan){
@@ -72,9 +73,9 @@ bool Helmsman::computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma
 
   //do we need to resize our map?
   double origin_x, origin_y;
-  ma.getOriginInWorldCoordinates(origin_x, origin_y);
-  map_.sizeCheck(ma.getWidth(), ma.getHeight(), origin_x, origin_y);
-  map_.scale = 0.1;
+  ma_.getOriginInWorldCoordinates(origin_x, origin_y);
+  map_.sizeCheck(ma_.getWidth(), ma_.getHeight(), origin_x, origin_y);
+  map_.scale = ma_.getResolution();
   printf("Map scale: %.2f\n", map_.scale);
 
   // Temporary Transformation till api below changes
@@ -89,7 +90,7 @@ bool Helmsman::computeVelocityCommands(const costmap_2d::ObstacleMapAccessor& ma
   tc_.updatePlan(copiedGlobalPlan);
   
   //compute what trajectory to drive along
-  int path_index = tc_.findBestPath(ma, robot_pose, robot_vel, drive_cmds);
+  int path_index = tc_.findBestPath(robot_pose, robot_vel, drive_cmds);
 
   //pass along drive commands
   d_x = drive_cmds.x;

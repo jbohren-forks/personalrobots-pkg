@@ -125,6 +125,9 @@ class GovernorNode: public ros::node
     //transform client
     rosTFClient tf_;
 
+    //map accessor
+    WavefrontMapAccessor ma_;
+
     //local controller
     TrajectoryController tc_;
 
@@ -147,8 +150,6 @@ class GovernorNode: public ros::node
 
     //how long for each cycle
     double cycle_time_;
-
-    WavefrontMapAccessor ma_;
 
     //for debugging output
     std_msgs::Polyline2D path_msg;

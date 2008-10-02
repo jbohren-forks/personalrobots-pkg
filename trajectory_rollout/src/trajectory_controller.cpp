@@ -39,11 +39,12 @@ using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
     double robot_front_radius, double robot_side_radius, double max_occ_dist, double pdist_scale, double gdist_scale,
-    double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf)
+    double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
+    const costmap_2d::ObstacleMapAccessor& ma)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
   robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
-  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf)
+  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma)
 {
   //regularly sample the forward velocity space... sample rotational vel space... sample backward vel space
   num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim + samples_per_dim + samples_per_dim;
@@ -61,7 +62,7 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 }
 
 //update what map cells are considered path based on the global_plan
-void TrajectoryController::setPathCells(const costmap_2d::ObstacleMapAccessor& ma){
+void TrajectoryController::setPathCells(){
   map_.resetPathDist();
   int local_goal_x = -1;
   int local_goal_y = -1;
@@ -69,9 +70,10 @@ void TrajectoryController::setPathCells(const costmap_2d::ObstacleMapAccessor& m
   queue<MapCell*> path_dist_queue;
   queue<MapCell*> goal_dist_queue;
   for(unsigned int i = 0; i < global_plan_.size(); ++i){
-    int map_x = WX_MX(map_, global_plan_[i].x);
-    int map_y = WY_MY(map_, global_plan_[i].y);
-    if(VALID_CELL(map_, map_x, map_y)){
+    double g_x = global_plan_[i].x;
+    double g_y = global_plan_[i].y;
+    unsigned int map_x, map_y;
+    if(ma_.WC_MC(g_x, g_y, map_x, map_y)){
       MapCell& current = map_(map_x, map_y);
       current.path_dist = 0.0;
       current.path_mark = true;
@@ -95,12 +97,11 @@ void TrajectoryController::setPathCells(const costmap_2d::ObstacleMapAccessor& m
     goal_dist_queue.push(&current);
   }
   //compute our distances
-  computePathDistance(ma, path_dist_queue);
-  computeGoalDistance(ma, goal_dist_queue);
+  computePathDistance(path_dist_queue);
+  computeGoalDistance(goal_dist_queue);
 }
 
-void TrajectoryController::computePathDistance(const costmap_2d::ObstacleMapAccessor& ma,
-    queue<MapCell*>& dist_queue){
+void TrajectoryController::computePathDistance(queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
   unsigned int last_col = map_.size_x_ - 1;
@@ -113,35 +114,34 @@ void TrajectoryController::computePathDistance(const costmap_2d::ObstacleMapAcce
     if(current_cell->cx > 0){
       check_cell = current_cell - 1;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma, dist_queue);
+        updatePathCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cx < last_col){
       check_cell = current_cell + 1;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma, dist_queue);
+        updatePathCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cy > 0){
       check_cell = current_cell - map_.size_x_;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma, dist_queue);
+        updatePathCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cy < last_row){
       check_cell = current_cell + map_.size_x_;
       if(!check_cell->path_mark){
-        updatePathCell(current_cell, check_cell, ma, dist_queue);
+        updatePathCell(current_cell, check_cell, dist_queue);
       }
     }
   }
 }
 
-void TrajectoryController::computeGoalDistance(const costmap_2d::ObstacleMapAccessor& ma,
-    queue<MapCell*>& dist_queue){
+void TrajectoryController::computeGoalDistance(queue<MapCell*>& dist_queue){
   MapCell* current_cell;
   MapCell* check_cell;
   unsigned int last_col = map_.size_x_ - 1;
@@ -155,28 +155,28 @@ void TrajectoryController::computeGoalDistance(const costmap_2d::ObstacleMapAcce
     if(current_cell->cx > 0){
       check_cell = current_cell - 1;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma, dist_queue);
+        updateGoalCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cx < last_col){
       check_cell = current_cell + 1;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma, dist_queue);
+        updateGoalCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cy > 0){
       check_cell = current_cell - map_.size_x_;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma, dist_queue);
+        updateGoalCell(current_cell, check_cell, dist_queue);
       }
     }
 
     if(current_cell->cy < last_row){
       check_cell = current_cell + map_.size_x_;
       if(!check_cell->goal_mark){
-        updateGoalCell(current_cell, check_cell, ma, dist_queue);
+        updateGoalCell(current_cell, check_cell, dist_queue);
       }
     }
   }
@@ -372,14 +372,11 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 }
 
 //given the current state of the robot, find a good trajectory
-int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma, libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
+int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
-  //make sure that we update our path based on the global plan
-  setPathCells(ma);
-
-  //first compute the path distance for all cells in our map grid
-  //computePathDistance(ma);
-  printf("Path distance computed\n");
+  //make sure that we update our path based on the global plan and compute costs
+  setPathCells();
+  printf("Path/Goal distance computed\n");
 
   /*
   //If we want to print a ppm file to draw goal dist
@@ -431,7 +428,7 @@ int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma
   //we know that everything except the last 2 sets of trajectories are forward
   unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
   for(unsigned int i = 0; i < forward_traj_end; ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -451,12 +448,12 @@ int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma
     double cost = -1;
 
     if(trajectories_[i].thetav_ < 0 && !stuck_right){
-      cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+      cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
       if(cost >= 0)
         legal_right = true;
     }
     else if(trajectories_[i].thetav_ > 0 && stuck_right && !stuck_left){
-      cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+      cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
     }
 
     //so we can draw with cost info
@@ -490,7 +487,7 @@ int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma
 
   //the last set of trajectories is for moving backwards
   for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
     trajectories_[i].cost_ = cost;
@@ -511,7 +508,7 @@ int TrajectoryController::findBestPath(const costmap_2d::ObstacleMapAccessor& ma
 }
 
 //compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(const costmap_2d::ObstacleMapAccessor& ma, int t_index, double pdist_scale,
+double TrajectoryController::trajectoryCost(int t_index, double pdist_scale,
     double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost){
   Trajectory t = trajectories_[t_index];
   double path_dist = 0.0;
@@ -525,18 +522,15 @@ double TrajectoryController::trajectoryCost(const costmap_2d::ObstacleMapAccesso
     double theta = trajectory_theta_(0, mat_index);
 
     //convert world to map coords
-    int cell_x = WX_MX(map_, x);
-    int cell_y = WY_MY(map_, y);
-
+    unsigned int cell_x, cell_y;
     //we don't want a path that goes off the known map
-    if(!VALID_CELL(map_, cell_x, cell_y)){
+    if(!ma_.WC_MC(x, y, cell_x, cell_y))
       return -1.0;
-    }
 
     //we need to check if we have to lay down the footprint of the robot
-    if(ma.isInflatedObstacle(cell_x, cell_y)){
+    if(ma_.isInflatedObstacle(cell_x, cell_y)){
       //if we do compute the obstacle cost for each cell in the footprint
-      double footprint_cost = footprintCost(ma, x, y, theta);
+      double footprint_cost = footprintCost(x, y, theta);
       if(footprint_cost < 0)
         return -1.0;
       occ_dist += footprint_cost;
@@ -589,9 +583,9 @@ void TrajectoryController::swap(int& a, int& b){
   b = temp;
 }
 
-double TrajectoryController::pointCost(const costmap_2d::ObstacleMapAccessor& ma, int x, int y){
+double TrajectoryController::pointCost(int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(ma.isObstacle(x, y) && !(map_(x, y).within_robot)){
+  if(ma_.isObstacle(x, y) && !(map_(x, y).within_robot)){
     return -1;
   }
 
@@ -603,7 +597,7 @@ double TrajectoryController::pointCost(const costmap_2d::ObstacleMapAccessor& ma
 }
 
 //calculate the cost of a ray-traced line
-double TrajectoryController::lineCost(const costmap_2d::ObstacleMapAccessor& ma, int x0, int x1, 
+double TrajectoryController::lineCost(int x0, int x1, 
     int y0, int y1, vector<std_msgs::Position2DInt>& footprint_cells){
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
@@ -660,7 +654,7 @@ double TrajectoryController::lineCost(const costmap_2d::ObstacleMapAccessor& ma,
 
   for (int curpixel = 0; curpixel <= numpixels; curpixel++)
   {
-    point_cost = pointCost(ma, x, y); //Score the current point
+    point_cost = pointCost(x, y); //Score the current point
 
     if(point_cost < 0)
       return -1;
@@ -686,7 +680,7 @@ double TrajectoryController::lineCost(const costmap_2d::ObstacleMapAccessor& ma,
 }
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
-double TrajectoryController::footprintCost(const costmap_2d::ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i){
+double TrajectoryController::footprintCost(double x_i, double y_i, double theta_i){
   //need to keep track of what cells are in the footprint
   vector<std_msgs::Position2DInt> footprint_cells;
 
@@ -702,22 +696,21 @@ double TrajectoryController::footprintCost(const costmap_2d::ObstacleMapAccessor
   double new_x = x_i + old_x * cos_th - old_y * sin_th;
   double new_y = y_i + old_x * sin_th + old_y * cos_th;
 
-  int x0 = WX_MX(map_, new_x);
-  int y0 = WY_MY(map_, new_y);
+  unsigned int x0, y0;
+  if(!ma_.WC_MC(new_x, new_y, x0, y0))
+    return -1.0;
 
   //lower right corner
   old_x = 0.0 + robot_front_radius_;
   old_y = 0.0 - robot_side_radius_;
   new_x = x_i + old_x * cos_th - old_y * sin_th;
   new_y = y_i + old_x * sin_th + old_y * cos_th;
-  int x1 = WX_MX(map_, new_x);
-  int y1 = WY_MY(map_, new_y);
-
-  if(!VALID_CELL(map_, x0, y0) || !VALID_CELL(map_, x1, y1))
+  unsigned int x1, y1;
+  if(!ma_.WC_MC(new_x, new_y, x1, y1))
     return -1.0;
 
   //check the front line
-  line_dist = lineCost(ma, x0, x1, y0, y1, footprint_cells);
+  line_dist = lineCost(x0, x1, y0, y1, footprint_cells);
   if(line_dist < 0)
     return -1;
 
@@ -728,14 +721,12 @@ double TrajectoryController::footprintCost(const costmap_2d::ObstacleMapAccessor
   old_y = 0.0 - robot_side_radius_;
   new_x = x_i + old_x * cos_th - old_y * sin_th;
   new_y = y_i + old_x * sin_th + old_y * cos_th;
-  int x2 = WX_MX(map_, new_x);
-  int y2 = WY_MY(map_, new_y);
-
-  if(!VALID_CELL(map_, x2, y2))
+  unsigned int x2, y2;
+  if(!ma_.WC_MC(new_x, new_y, x2, y2))
     return -1.0;
 
   //check the right side line
-  line_dist = lineCost(ma, x1, x2, y1, y2, footprint_cells);
+  line_dist = lineCost(x1, x2, y1, y2, footprint_cells);
   if(line_dist < 0)
     return -1;
 
@@ -746,34 +737,32 @@ double TrajectoryController::footprintCost(const costmap_2d::ObstacleMapAccessor
   old_y = 0.0 + robot_side_radius_;
   new_x = x_i + old_x * cos_th - old_y * sin_th;
   new_y = y_i + old_x * sin_th + old_y * cos_th;
-  int x3 = WX_MX(map_, new_x);
-  int y3 = WY_MY(map_, new_y);
-
-  if(!VALID_CELL(map_, x3, y3))
+  unsigned int x3, y3;
+  if(!ma_.WC_MC(new_x, new_y, x3, y3))
     return -1.0;
 
   //check the back line
-  line_dist = lineCost(ma, x2, x3, y2, y3, footprint_cells);
+  line_dist = lineCost(x2, x3, y2, y3, footprint_cells);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
   //check the left side line
-  line_dist = lineCost(ma, x3, x0, y3, y0, footprint_cells);
+  line_dist = lineCost(x3, x0, y3, y0, footprint_cells);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
   double fill_dist = -1;
-  fill_dist = fillCost(ma, footprint_cells);
+  fill_dist = fillCost(footprint_cells);
 
   return footprint_dist;
 }
 
 //we need to fill in the footprint of the robot
-double TrajectoryController::fillCost(const costmap_2d::ObstacleMapAccessor& ma, vector<std_msgs::Position2DInt>& footprint){
+double TrajectoryController::fillCost(vector<std_msgs::Position2DInt>& footprint){
   //quick bubble sort to sort pts by x
   std_msgs::Position2DInt swap;
   unsigned int i = 0;
@@ -821,7 +810,7 @@ double TrajectoryController::fillCost(const costmap_2d::ObstacleMapAccessor& ma,
 
     //loop though cells in the column
     for(unsigned int y = min_pt.y; y < max_pt.y; ++y){
-      point_cost = pointCost(ma, x, y);
+      point_cost = pointCost(x, y);
       if(point_cost < 0)
         return -1;
       fill_cost += point_cost;
@@ -908,8 +897,10 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   vector<std_msgs::Point2DFloat32> footprint_pts;
   Point2DFloat32 pt;
   for(unsigned int i = 0; i < footprint_cells.size(); ++i){
-    pt.x = MX_WX(map_, footprint_cells[i].x);
-    pt.y = MY_WY(map_, footprint_cells[i].y);
+    double pt_x, pt_y;
+    ma_.MC_WC(footprint_cells[i].x, footprint_cells[i].y, pt_x, pt_y);
+    pt.x = pt_x;
+    pt.y = pt_y;
     footprint_pts.push_back(pt);
   }
   return footprint_pts;
@@ -927,16 +918,17 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   double new_x = x_i + (old_x * cos_th - old_y * sin_th);
   double new_y = y_i + (old_x * sin_th + old_y * cos_th);
 
-  int x0 = WX_MX(map_, new_x);
-  int y0 = WY_MY(map_, new_y);
+  unsigned int x0 = 0, y0 = 0;
+  assert(ma_.WC_MC(new_x, new_y, x0, y0));
 
   //lower right corner
   old_x = 0.0 + robot_front_radius_;
   old_y = 0.0 - robot_side_radius_;
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
-  int x1 = WX_MX(map_, new_x);
-  int y1 = WY_MY(map_, new_y);
+
+  unsigned int x1 = 0, y1 = 0;
+  assert(ma_.WC_MC(new_x, new_y, x1, y1));
 
   //check the front line
   getLineCells(x0, x1, y0, y1, footprint_cells);
@@ -946,8 +938,9 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   old_y = 0.0 - robot_side_radius_;
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
-  int x2 = WX_MX(map_, new_x);
-  int y2 = WY_MY(map_, new_y);
+
+  unsigned int x2 = 0, y2 = 0;
+  assert(ma_.WC_MC(new_x, new_y, x2, y2));
 
   //check the right side line
   getLineCells(x1, x2, y1, y2, footprint_cells);
@@ -957,8 +950,9 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   old_y = 0.0 + robot_side_radius_;
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
-  int x3 = WX_MX(map_, new_x);
-  int y3 = WY_MY(map_, new_y);
+  
+  unsigned int x3 = 0, y3 = 0;
+  assert(ma_.WC_MC(new_x, new_y, x3, y3));
 
   //check the back line
   getLineCells(x2, x3, y2, y3, footprint_cells);
