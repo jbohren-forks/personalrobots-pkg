@@ -302,18 +302,6 @@ Index: server/physics/Body.hh
    };
    
    /// \}
-Index: server/physics/HingeJoint.hh
-===================================================================
---- server/physics/HingeJoint.hh	(revision 7049)
-+++ server/physics/HingeJoint.hh	(working copy)
-@@ -126,6 +126,7 @@
-     private: ParamT<Vector3> *axisP;
-     private: ParamT<Angle> *loStopP;
-     private: ParamT<Angle> *hiStopP; 
-+    private: ParamT<Vector3> *anchorOffsetP;
-   };
-   /// \}
-   
 Index: server/physics/CylinderGeom.cc
 ===================================================================
 --- server/physics/CylinderGeom.cc	(revision 7049)
@@ -381,7 +369,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -123,6 +144,30 @@
+@@ -123,6 +144,56 @@
      this->massP->SetValue( 0.001 );
    }
  
@@ -408,11 +396,42 @@ Index: server/physics/Geom.cc
 +  this->ixz = this->ixzP->GetValue();
 +  this->iyz = this->iyzP->GetValue();
 +
++  // setup this->mass as well
++  this->mass.c[0] = this->cx;
++  this->mass.c[1] = this->cy;
++  this->mass.c[2] = this->cz;
++  this->mass.I[0] = this->ixx;
++  this->mass.I[1] = this->ixy;
++  this->mass.I[2] = this->ixz;
++  this->mass.I[3] = this->ixy;
++  this->mass.I[4] = this->iyy;
++  this->mass.I[5] = this->iyz;
++  this->mass.I[6] = this->ixz;
++  this->mass.I[7] = this->iyz;
++  this->mass.I[8] = this->izz;
++
++  // std::cout << " c[0] " << this->mass.c[0] << std::endl;
++  // std::cout << " c[1] " << this->mass.c[1] << std::endl;
++  // std::cout << " c[2] " << this->mass.c[2] << std::endl;
++  // std::cout << " I[0] " << this->mass.I[0] << std::endl;
++  // std::cout << " I[1] " << this->mass.I[1] << std::endl;
++  // std::cout << " I[2] " << this->mass.I[2] << std::endl;
++  // std::cout << " I[3] " << this->mass.I[3] << std::endl;
++  // std::cout << " I[4] " << this->mass.I[4] << std::endl;
++  // std::cout << " I[5] " << this->mass.I[5] << std::endl;
++  // std::cout << " I[6] " << this->mass.I[6] << std::endl;
++  // std::cout << " I[7] " << this->mass.I[7] << std::endl;
++  // std::cout << " I[8] " << this->mass.I[8] << std::endl;
 +
    this->contact->Load(node);
  
    this->LoadChild(node);
-@@ -401,18 +446,21 @@
+@@ -396,23 +467,25 @@
+   Pose3d pose;
+   dQuaternion q;
+   dMatrix3 r;
+-  dMass bodyMass;
+ 
    if (!this->placeable)
      return NULL;
  
@@ -556,43 +575,43 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -505,6 +590,7 @@
+@@ -505,8 +590,15 @@
  */
  void Body::UpdateCoM()
  {
-+    return;
++  // std::cout << " mass x   " << this->mass.c[0]
++  //           << "      y   " << this->mass.c[1]
++  //           << "      z   " << this->mass.c[2]
++  //           << std::endl;
++  // comPose.pos.x = this->mass.c[0];
++  // comPose.pos.y = this->mass.c[1];
++  // comPose.pos.z = this->mass.c[2];
++
    const dMass *lmass;
-   Pose3d oldPose, newPose, pose;
+-  Pose3d oldPose, newPose, pose;
    std::map< std::string, Geom* >::iterator giter;
-Index: server/physics/HingeJoint.cc
-===================================================================
---- server/physics/HingeJoint.cc	(revision 7049)
-+++ server/physics/HingeJoint.cc	(working copy)
-@@ -44,6 +44,7 @@
-   this->axisP = new ParamT<Vector3>("axis",Vector3(0,1,0), 1);
-   this->loStopP = new ParamT<Angle>("lowStop",-M_PI,0);
-   this->hiStopP = new ParamT<Angle>("highStop",M_PI,0);
-+  this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0),0);
-   Param::End();
- }
  
-@@ -64,6 +65,7 @@
-   this->axisP->Load(node);
-   this->loStopP->Load(node);
-   this->hiStopP->Load(node);
-+  this->anchorOffsetP->Load(node);
+   if (!this->bodyId)
+@@ -523,8 +615,10 @@
+       dMassAdd( &this->mass, lmass );
+     }
+   }
++  return; // Stop pose update, we have full com xyz, I control
  
-   // Perform this three step ordering to ensure the parameters are set
-   // properly. This is taken from the ODE wiki.
-@@ -133,7 +135,7 @@
- // Set the anchor point
- void HingeJoint::SetAnchor( const Vector3 &anchor )
- {
--  dJointSetHingeAnchor( this->jointId, anchor.x, anchor.y, anchor.z );
-+  dJointSetHingeAnchor( this->jointId, anchor.x+anchorOffsetP->GetValue().x, anchor.y+anchorOffsetP->GetValue().y, anchor.z+anchorOffsetP->GetValue().z );
- }
+   // Old pose for the CoM
++  Pose3d oldPose, newPose, pose;
+   oldPose = this->comPose;
  
+   if (std::isnan(this->mass.c[0]))
+@@ -565,7 +659,7 @@
+   this->comPose = newPose;
  
+   // My Cheap Hack, to put the center of mass at the origin
+-  this->mass.c[0] = this->mass.c[1] = this->mass.c[2] = 0;
++  //this->mass.c[0] = this->mass.c[1] = this->mass.c[2] = 0;
+ 
+   // Set the mass matrix
+   if (this->mass.mass > 0)
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7049)

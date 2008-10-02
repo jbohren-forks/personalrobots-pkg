@@ -3,6 +3,6 @@
       <explicitDampingCoefficient>1</explicitDampingCoefficient>
   </joint>
   <joint name="link2_joint" >
-      <explicitDampingCoefficient>1</explicitDampingCoefficient>
+      <explicitDampingCoefficient>0</explicitDampingCoefficient>
   </joint>
 </robot>

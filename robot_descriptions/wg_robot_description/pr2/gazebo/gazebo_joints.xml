@@ -62,16 +62,16 @@
       </joint>
       <!-- Special gripper joint -->
       <joint name="finger_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_tip_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_tip_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <!-- ========================================= -->
       <!-- right arm array -->
@@ -98,16 +98,16 @@
       </joint>
       <!-- Special gripper joint -->
       <joint name="finger_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_tip_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <joint name="finger_tip_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
-          <explicitDampingCoefficient>0.1</explicitDampingCoefficient>
+          <explicitDampingCoefficient>10</explicitDampingCoefficient>
       </joint>
       <!-- head and above array -->
       <joint name="head_pan_joint" >

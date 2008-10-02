@@ -545,7 +545,7 @@
   <const_block name="pr2_finger_l_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit effort="10" velocity="5" />
+    <limit effort="1000" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -580,7 +580,7 @@
   <const_block name="pr2_finger_tip_l_joint">
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
-    <limit effort="10" velocity="5" />
+    <limit effort="1000" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
@@ -615,7 +615,7 @@
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <limit effort="1000" velocity="10" min="-100" max="100" /><!-- FIXME -->
   </const_block>
   
   <const_block name="pr2_finger_r_inertial">
@@ -649,7 +649,7 @@
     <axis xyz=" 0 0 1 " /> <!-- direction of the joint in a global coordinate frame -->
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
-    <limit effort="10" velocity="10" min="-100" max="100" /><!-- FIXME -->
+    <limit effort="1000" velocity="10" min="-100" max="100" /><!-- FIXME -->
   </const_block>
   
   <const_block name="pr2_finger_tip_r_inertial">
