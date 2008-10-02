@@ -30,7 +30,7 @@
         </geom:box>
     </body:box>
     <body:box name="link1">
-        <xyz>0 0 2.002</xyz>
+        <xyz>0 0 10.002</xyz>
         <rpy>0 -0 0</rpy>
         <geom:box name="link1_collision_geom">
             <xyz>0 0 -0.5</xyz>
@@ -67,7 +67,7 @@
         <highStop>180</highStop>
     </joint:hinge>
     <body:box name="link2">
-        <xyz>0 0 2.002</xyz>
+        <xyz>0 0 10.002</xyz>
         <rpy>0 -0 0</rpy>
         <geom:box name="link2_collision_geom">
             <xyz>0.5 0 0</xyz>
@@ -104,7 +104,7 @@
         <highStop>180</highStop>
     </joint:hinge>
     <body:box name="link3">
-        <xyz>1 0 2.002</xyz>
+        <xyz>1 0 10.002</xyz>
         <rpy>0 -0 0</rpy>
         <geom:box name="link3_collision_geom">
             <xyz>0.5 0 0</xyz>
@@ -135,6 +135,154 @@
         <body1>link3</body1>
         <body2>link2</body2>
         <anchor>link3</anchor>
+        <axis>0 1 0</axis>
+        <anchorOffset>-0.1 0 0</anchorOffset>
+        <lowStop>-180</lowStop>
+        <highStop>180</highStop>
+    </joint:hinge>
+    <body:box name="link4">
+        <xyz>2 0 10.002</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:box name="link4_collision_geom">
+            <xyz>0.5 0 0</xyz>
+            <rpy>0 0 0</rpy>
+            <massMatrix>true</massMatrix>
+            <mass>10</mass>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+            <cx>0.1</cx>
+            <cy>0</cy>
+            <cz>0</cz>
+            <size>1 0.1 0.1</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>1 0.1 0.1</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Green</material>
+            </visual>
+        </geom:box>
+        <turnGravityOff>false</turnGravityOff>
+    </body:box>
+    <joint:hinge name="link4_joint">
+        <body1>link4</body1>
+        <body2>link3</body2>
+        <anchor>link4</anchor>
+        <axis>0 1 0</axis>
+        <anchorOffset>-0.1 0 0</anchorOffset>
+        <lowStop>-180</lowStop>
+        <highStop>180</highStop>
+    </joint:hinge>
+    <body:box name="link5">
+        <xyz>3 0 10.002</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:box name="link5_collision_geom">
+            <xyz>0.5 0 0</xyz>
+            <rpy>0 0 0</rpy>
+            <massMatrix>true</massMatrix>
+            <mass>10</mass>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+            <cx>0.1</cx>
+            <cy>0</cy>
+            <cz>0</cz>
+            <size>1 0.1 0.1</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>1 0.1 0.1</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Green</material>
+            </visual>
+        </geom:box>
+        <turnGravityOff>false</turnGravityOff>
+    </body:box>
+    <joint:hinge name="link5_joint">
+        <body1>link5</body1>
+        <body2>link4</body2>
+        <anchor>link5</anchor>
+        <axis>0 1 0</axis>
+        <anchorOffset>-0.1 0 0</anchorOffset>
+        <lowStop>-180</lowStop>
+        <highStop>180</highStop>
+    </joint:hinge>
+    <body:box name="link6">
+        <xyz>4 0 10.002</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:box name="link6_collision_geom">
+            <xyz>0.5 0 0</xyz>
+            <rpy>0 0 0</rpy>
+            <massMatrix>true</massMatrix>
+            <mass>10</mass>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+            <cx>0.1</cx>
+            <cy>0</cy>
+            <cz>0</cz>
+            <size>1 0.1 0.1</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>1 0.1 0.1</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Green</material>
+            </visual>
+        </geom:box>
+        <turnGravityOff>false</turnGravityOff>
+    </body:box>
+    <joint:hinge name="link6_joint">
+        <body1>link6</body1>
+        <body2>link5</body2>
+        <anchor>link6</anchor>
+        <axis>0 1 0</axis>
+        <anchorOffset>-0.1 0 0</anchorOffset>
+        <lowStop>-180</lowStop>
+        <highStop>180</highStop>
+    </joint:hinge>
+    <body:box name="link7">
+        <xyz>5 0 10.002</xyz>
+        <rpy>0 -0 0</rpy>
+        <geom:box name="link7_collision_geom">
+            <xyz>0.5 0 0</xyz>
+            <rpy>0 0 0</rpy>
+            <massMatrix>true</massMatrix>
+            <mass>10</mass>
+            <ixx>0.1</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.1</iyy>
+            <iyz>0</iyz>
+            <izz>0.1</izz>
+            <cx>0.1</cx>
+            <cy>0</cy>
+            <cz>0</cz>
+            <size>1 0.1 0.1</size>
+            <visual>
+                <xyz>0 0 0</xyz>
+                <rpy>0 -0 0</rpy>
+                <scale>1 0.1 0.1</scale>
+                <mesh>unit_box</mesh>
+                <material>Gazebo/Green</material>
+            </visual>
+        </geom:box>
+        <turnGravityOff>false</turnGravityOff>
+    </body:box>
+    <joint:hinge name="link7_joint">
+        <body1>link7</body1>
+        <body2>link6</body2>
+        <anchor>link7</anchor>
         <axis>0 1 0</axis>
         <anchorOffset>-0.1 0 0</anchorOffset>
         <lowStop>-180</lowStop>

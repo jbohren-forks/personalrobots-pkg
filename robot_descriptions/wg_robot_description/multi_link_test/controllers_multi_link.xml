@@ -26,4 +26,25 @@
         <pid p="100" d="2" i="0.1" iClamp="20" />
       </joint>
     </controller>
+    <controller name="link4_controller" topic="link4_controller" type="JointEffortController">
+      <joint name="link4_joint" >
+        <pid p="100" d="2" i="0.1" iClamp="20" />
+      </joint>
+    </controller>
+    <controller name="link5_controller" topic="link5_controller" type="JointEffortController">
+      <joint name="link5_joint" >
+        <pid p="100" d="2" i="0.1" iClamp="20" />
+      </joint>
+    </controller>
+    <controller name="link6_controller" topic="link6_controller" type="JointEffortController">
+      <joint name="link6_joint" >
+        <pid p="100" d="2" i="0.1" iClamp="20" />
+      </joint>
+    </controller>
+    <controller name="link7_controller" topic="link7_controller" type="JointEffortController">
+      <joint name="link7_joint" >
+        <pid p="100" d="2" i="0.1" iClamp="20" />
+      </joint>
+    </controller>
+  </controller>
 </controllers>

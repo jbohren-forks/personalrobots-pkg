@@ -21,6 +21,34 @@
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>
+  <transmission type="SimpleTransmission" name="link4_trans">
+    <actuator name="link4_motor" />
+    <joint name="link4_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="link5_trans">
+    <actuator name="link5_motor" />
+    <joint name="link5_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="link6_trans">
+    <actuator name="link6_motor" />
+    <joint name="link6_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
+  <transmission type="SimpleTransmission" name="link7_trans">
+    <actuator name="link7_motor" />
+    <joint name="link7_joint" />
+    <mechanicalReduction>1</mechanicalReduction>
+    <motorTorqueConstant>1</motorTorqueConstant>
+    <pulsesPerRevolution>90000</pulsesPerRevolution>
+  </transmission>
 </robot>
 
 
