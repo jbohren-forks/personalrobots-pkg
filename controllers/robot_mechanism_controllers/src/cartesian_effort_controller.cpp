@@ -130,19 +130,15 @@ bool CartesianEffortController::initXml(mechanism::RobotState *robot, TiXmlEleme
 void CartesianEffortController::update()
 {
 
-  btVector3 F = command_;  // force vector, will be transformed to the current link's frame
+  tf::Vector3 F = command_;  // force vector, will be transformed to the current link's frame
 
-  libTF::Vector tempF(F.x(), F.y(), F.z());
   for (unsigned int i = 1; i < links_.size(); ++i)
   {
-    libTF::Pose3D transform(links_[i]->rel_frame_);
-    transform.invert();
-    transform.applyToVector(tempF);
+    F = links_[i]->rel_frame_.getBasis().transpose() * F;
   }
-  F.setValue(tempF.x, tempF.y, tempF.z);
   // At this point, F is the desired force in the current link's frame
 
-  btVector3 r(offset_);  // position of the force in the current frame
+  tf::Vector3 r(offset_);  // position of the force in the current frame
 
   for (int i = links_.size() - 2; i >= 0; --i)
   {
@@ -152,11 +148,8 @@ void CartesianEffortController::update()
     {
     case mechanism::JOINT_ROTARY:
     case mechanism::JOINT_CONTINUOUS: {
-      btVector3 torque = cross(r, F);
-      btVector3 axis(joints_[i]->joint_->axis_[0],
-                     joints_[i]->joint_->axis_[1],
-                     joints_[i]->joint_->axis_[2]);
-      joints_[i]->commanded_effort_ = torque.dot(axis);
+      tf::Vector3 torque = cross(r, F);
+      joints_[i]->commanded_effort_ = torque.dot(joints_[i]->joint_->axis_);
 
       // Propagate back to link i
       break;
@@ -168,18 +161,9 @@ void CartesianEffortController::update()
       abort();
     }
 
-    // Transforms the force to the previous link's coordinate frame
-    libTF::Pose3D transform(links_[i+1]->rel_frame_);
-
-    // Temporarily wraps r and F (until the new tf package is ready).
-    libTF::Position tempR(r.x(), r.y(), r.z());
-    libTF::Vector tempF(F.x(), F.y(), F.z());
-
-    transform.applyToPosition(tempR);
-    transform.applyToVector(tempF);
-
-    r.setValue(tempR.x, tempR.y, tempR.z);
-    F.setValue(tempF.x, tempF.y, tempF.z);
+    // Transforms the effort to the parent link's coordinate frame
+    r = links_[i+1]->rel_frame_(r);
+    F = links_[i+1]->rel_frame_.getBasis() * F;
   }
 }
 

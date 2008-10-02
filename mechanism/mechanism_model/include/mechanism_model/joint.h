@@ -38,6 +38,7 @@
 #define JOINT_H
 
 #include <tinyxml/tinyxml.h>
+#include "tf/tf.h"
 
 namespace mechanism {
 
@@ -78,7 +79,7 @@ public:
 
   // Axis of motion (x,y,z).  Axis of rotation for revolute/continuous
   // joints, axis of translation for prismatic joints.
-  double axis_[3];
+  tf::Vector3 axis_;
 };
 
 
@@ -96,6 +97,14 @@ public:
   double commanded_effort_;
 
   bool calibrated_;
+
+  tf::Vector3 getTranslation();
+  tf::Quaternion getRotation();
+  tf::Vector3 getTransVelocity();
+  tf::Vector3 getRotVelocity();
+
+  tf::Transform getTransform();
+
 
   JointState() : joint_(NULL), commanded_effort_(0), calibrated_(false) {}
   JointState(const JointState &s)

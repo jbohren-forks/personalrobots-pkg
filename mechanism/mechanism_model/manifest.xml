@@ -10,7 +10,7 @@
 <depend package="tinyxml" />
 <depend package="wg_robot_description_parser" />
 <depend package="kdl" />
-<depend package="libTF" />
+<depend package="tf" />
 <depend package="control_toolbox" />
 <depend package="bullet" />
 <url>http://pr.willowgarage.com</url>

@@ -209,7 +209,69 @@ bool Joint::initXml(TiXmlElement *elt)
     axis_[0] = axis_pieces[0];
     axis_[1] = axis_pieces[1];
     axis_[2] = axis_pieces[2];
+    axis_.normalize();
   }
   return true;
 }
 
+tf::Vector3 JointState::getTranslation()
+{
+  switch (joint_->type_)
+  {
+  case JOINT_PRISMATIC:
+    return position_ * joint_->axis_;
+  default:
+    return tf::Vector3(0, 0, 0);
+  }
+}
+
+tf::Quaternion JointState::getRotation()
+{
+  switch (joint_->type_)
+  {
+  case JOINT_CONTINUOUS:
+  case JOINT_ROTARY:
+    return tf::Quaternion(joint_->axis_, position_);
+  default:
+    return tf::Quaternion(0, 0, 0, 1);
+  }
+}
+
+tf::Vector3 JointState::getTransVelocity()
+{
+  switch (joint_->type_)
+  {
+  case JOINT_PRISMATIC:
+    return velocity_ * joint_->axis_;
+  default:
+    return tf::Vector3(0, 0, 0);
+  }
+}
+
+tf::Vector3 JointState::getRotVelocity()
+{
+  switch (joint_->type_)
+  {
+  case JOINT_CONTINUOUS:
+  case JOINT_ROTARY:
+    return velocity_ * joint_->axis_;
+  default:
+    return tf::Vector3(0, 0, 0);
+  }
+}
+
+tf::Transform JointState::getTransform()
+{
+  switch (joint_->type_)
+  {
+  case JOINT_CONTINUOUS:
+  case JOINT_ROTARY:
+    return tf::Transform(getRotation());
+  case JOINT_PRISMATIC:
+    return tf::Transform(tf::Quaternion(0,0,0,1), getTranslation());
+  default:
+    tf::Transform t;
+    t.setIdentity();
+    return t;
+  }
+}

@@ -134,8 +134,7 @@ public:
   void propagateEffortBackwards();
 
 private:
-  void propagateAbsolutePose(int index, const libTF::Pose3D&);
-
+  void propagateAbsolutePose(int index);
 };
 
 }

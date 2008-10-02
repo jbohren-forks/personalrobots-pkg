@@ -37,7 +37,7 @@
 #include "mechanism_model/joint.h"
 #include <vector>
 #include "libTF/Pose3D.h"
-#include "LinearMath/btVector3.h"
+#include "tf/transform_datatypes.h"
 
 
 namespace mechanism {
@@ -56,8 +56,8 @@ public:
   std::string parent_name_;
   std::string joint_name_;
 
-  double origin_xyz_[3];
-  double origin_rpy_[3];
+  tf::Vector3 origin_xyz_;
+  tf::Vector3 origin_rpy_;
 };
 
 class LinkState
@@ -65,9 +65,13 @@ class LinkState
 public:
   Link *link_;
 
-  libTF::Pose3D rel_frame_;  // Transformation relative to the parent's frame.
-  btVector3 abs_position_;  // Absolute position (in the robot frame)
-  btVector3 abs_orientation_;  // Absolute orientation (in the robot frame)
+  tf::Transform rel_frame_;  // Relative transform to the parent link's frame.
+  tf::Vector3 abs_position_;  // Absolute position (in the robot frame)
+  tf::Quaternion abs_orientation_;  // Absolute orientation (in the robot frame)
+  tf::Vector3 abs_velocity_;
+  tf::Vector3 abs_rot_velocity_;
+
+  void propagateFK(LinkState *parent, JointState *joint);
 
   LinkState() : link_(NULL) {}
   LinkState(const LinkState &s) : link_(s.link_), rel_frame_(s.rel_frame_) {}

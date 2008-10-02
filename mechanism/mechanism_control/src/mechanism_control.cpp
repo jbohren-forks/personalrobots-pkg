@@ -30,7 +30,6 @@
 
 #include "mechanism_control/mechanism_control.h"
 #include "rosthread/member_thread.h"
-#include "rosTF/rosTF.h"
 
 using namespace mechanism;
 
@@ -295,22 +294,20 @@ void MechanismControlNode::update()
         if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
           continue;
 
-        libTF::Position pos;
-        libTF::Quaternion quat;
-        mc_->state_->link_states_[i].rel_frame_.getPosition(pos);
-        mc_->state_->link_states_[i].rel_frame_.getQuaternion(quat);
+        tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
+        tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
         rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[i];
 
         out.header.stamp.from_double(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;
         out.parent = mc_->model_.links_[i]->parent_name_;
-        out.xt = pos.x;
-        out.yt = pos.y;
-        out.zt = pos.z;
-        out.w = quat.w;
-        out.xr = quat.x;
-        out.yr = quat.y;
-        out.zr = quat.z;
+        out.xt = pos.x();
+        out.yt = pos.y();
+        out.zt = pos.z();
+        out.w = quat.w();
+        out.xr = quat.x();
+        out.yr = quat.y();
+        out.zr = quat.z();
       }
 
       transform_publisher_.unlockAndPublish();

@@ -197,6 +197,11 @@ RobotState::RobotState(Robot *model, HardwareInterface *hw)
       links_parent_[i] = parent_index;
       links_children_[parent_index].push_back(i);
     }
+    else
+    {
+      links_joint_[i] = -1;
+      links_parent_[i] = -1;
+    }
   }
 }
 
@@ -221,58 +226,12 @@ void RobotState::propagateState()
                                                  transmissions_out_[i]);
   }
 
-  // Computes the frame transform for each link relative to its parent.
-  for (unsigned int i = 0; i < link_states_.size(); ++i)
-  {
-    if (!links_joint_[i]) // Root link, attached to the world
-    {
-      link_states_[i].rel_frame_.setIdentity();
-    }
-    else
-    {
-      JointState &j = joint_states_[links_joint_[i]];
-      Link &l = *link_states_[i].link_;
-
-      libTF::Pose3D offset;
-      libTF::Pose3D joint_transform;
-      libTF::Pose3D rotation;
-
-      offset.setPosition(l.origin_xyz_[0], l.origin_xyz_[1], l.origin_xyz_[2]);
-
-      switch (j.joint_->type_)
-      {
-      case JOINT_ROTARY:
-      case JOINT_CONTINUOUS:
-        joint_transform.setAxisAngle(j.joint_->axis_, j.position_);
-        break;
-      case JOINT_PRISMATIC:
-        joint_transform.setPosition(j.position_ * j.joint_->axis_[0],
-                                    j.position_ * j.joint_->axis_[1],
-                                    j.position_ * j.joint_->axis_[2]);
-        break;
-      case JOINT_FIXED:
-      case JOINT_PLANAR:
-        joint_transform.setIdentity();
-        break;
-      }
-
-      rotation.setFromEuler(0,0,0, l.origin_rpy_[2], l.origin_rpy_[1], l.origin_rpy_[0]);
-
-      link_states_[i].rel_frame_.setIdentity();
-      link_states_[i].rel_frame_.multiplyPose(offset);
-      link_states_[i].rel_frame_.multiplyPose(joint_transform);
-      link_states_[i].rel_frame_.multiplyPose(rotation);
-    }
-  }
-
   // Computes the absolute pose of the links using the relative transforms
   for (unsigned int i = 0; i < link_states_.size(); ++i)
   {
-    if (!links_joint_[i]) // Root link, attached to the world
+    if (links_joint_[i] < 0) // Root link, attached to the world
     {
-      link_states_[i].abs_position_.setValue(0, 0, 0);
-      link_states_[i].abs_orientation_.setValue(0, 0, 0);
-      propagateAbsolutePose(i, libTF::Pose3D());
+      propagateAbsolutePose(i);
     }
   }
 }
@@ -318,21 +277,14 @@ void RobotState::propagateEffortBackwards()
   }
 }
 
-void RobotState::propagateAbsolutePose(int index, const libTF::Pose3D &parent_transform)
+void RobotState::propagateAbsolutePose(int index)
 {
-  libTF::Pose3D my_transform(parent_transform);
-  my_transform.multiplyPose(link_states_[index].rel_frame_);
-
-  libTF::Position pos;
-  libTF::Euler orient;
-  my_transform.getPosition(pos);
-  my_transform.getEuler(orient);
-
-  link_states_[index].abs_position_.setValue(pos.x, pos.y, pos.z);
-  link_states_[index].abs_orientation_.setValue(orient.roll, orient.pitch, orient.yaw);
+  LinkState *p = links_parent_[index] >= 0 ? &link_states_[links_parent_[index]] : NULL;
+  JointState *j = links_joint_[index] >= 0 ? &joint_states_[links_joint_[index]] : NULL;
+  link_states_[index].propagateFK(p, j);
 
   for (unsigned int i = 0; i < links_children_[index].size(); ++i)
-    propagateAbsolutePose(links_children_[index][i], my_transform);
+    propagateAbsolutePose(links_children_[index][i]);
 }
 
 } // namespace mechanism
