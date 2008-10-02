@@ -49,65 +49,9 @@ namespace ros {
 	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
 	controller_(NULL),
 	costMap_(NULL),
+	ma_(NULL),
 	laserMaxRange_(4.0) {
       
-
-      // Set up transforms
-      double laser_x_offset(0.05);
-      //param("laser_x_offset", laser_x_offset, 0.05);
-      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
-
-      // VelocityController Parameters
-      double mapSize(10.0);
-      double pathDistanceBias(0.4);
-      double goalDistanceBias(0.6);
-      double accLimit_x(0.15);
-      double accLimit_y(1.0);
-      double accLimit_th(1.0);
-      const double SIM_TIME = 2.0;
-      const unsigned int SIM_STEPS = 30;
-      const unsigned int SAMPLES_PER_DIM = 25;
-      const double MAX_OCC_DIST = 1.0;
-      const double DFAST_SCALE = 0.2;
-      const double OCCDIST_SCALE = 0;
-      param("trajectory_rollout/map_size", mapSize, 10.0);
-      param("trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
-      param("trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
-      param("trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
-      param("trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
-      param("trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
-
-      // Costmap parameters
-      double windowLength(1.0);
-      unsigned char lethalObstacleThreshold(100);
-      unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double maxZ(2.0); 
-      double inflationRadius(0.325);
-      param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
-      param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
-      param("costmap_2d/no_information_value", noInformation, noInformation);
-      param("costmap_2d/z_threshold", maxZ, maxZ);
-      param("costmap_2d/inflation_radius", inflationRadius, inflationRadius);
-
-      // Allocate Velocity Controller
-      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(mapSize,
-										mapSize,
-										SIM_TIME,
-										SIM_STEPS,
-										SAMPLES_PER_DIM,
-										inflationRadius,
-										inflationRadius,
-										MAX_OCC_DIST,
-										goalDistanceBias,
-										pathDistanceBias,
-										DFAST_SCALE,
-										OCCDIST_SCALE,
-										accLimit_x,
-										accLimit_y,
-										accLimit_th);
-      // Initialize the velocity controller with the transform client
-      controller_->initialize(tf_);
-
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
@@ -124,6 +68,23 @@ namespace ros {
       stateMsg.waypoint.th = 0.0;
       stateMsg.set_waypoints_size(0);
       stateMsg.waypoint_idx = -1;
+
+      // Set up transforms
+      double laser_x_offset(0.05);
+      //param("laser_x_offset", laser_x_offset, 0.05);
+      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+
+      // Costmap parameters
+      double windowLength(1.0);
+      unsigned char lethalObstacleThreshold(100);
+      unsigned char noInformation(CostMap2D::NO_INFORMATION);
+      double maxZ(2.0); 
+      double inflationRadius(0.325);
+      param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
+      param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
+      param("costmap_2d/no_information_value", noInformation, noInformation);
+      param("costmap_2d/z_threshold", maxZ, maxZ);
+      param("costmap_2d/inflation_radius", inflationRadius, inflationRadius);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -144,10 +105,46 @@ namespace ros {
       for(unsigned int i = 0; i < numCells; i++)
 	inputData.push_back((unsigned char) resp.map.data[i]);
 
-      // Now allocate the cost map
+      // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                &(inputData[0]) , resp.map.resolution, 
 			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
+
+      // Allocate Velocity Controller
+      double mapSize(10.0);
+      double pathDistanceBias(0.4);
+      double goalDistanceBias(0.6);
+      double accLimit_x(0.15);
+      double accLimit_y(1.0);
+      double accLimit_th(1.0);
+      const double SIM_TIME = 2.0;
+      const unsigned int SIM_STEPS = 30;
+      const unsigned int SAMPLES_PER_DIM = 25;
+      const double MAX_OCC_DIST = 1.0;
+      const double DFAST_SCALE = 0.2;
+      const double OCCDIST_SCALE = 0;
+      param("trajectory_rollout/map_size", mapSize, 10.0);
+      param("trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
+      param("trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
+      param("trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
+      param("trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
+      param("trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
+
+      ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
+      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
+										SIM_TIME,
+										SIM_STEPS,
+										SAMPLES_PER_DIM,
+										sqrt(pow(inflationRadius, 2) * 2),
+										sqrt(pow(inflationRadius, 2) * 2),
+										MAX_OCC_DIST,
+										goalDistanceBias,
+										pathDistanceBias,
+										DFAST_SCALE,
+										OCCDIST_SCALE,
+										accLimit_x,
+										accLimit_y,
+										accLimit_th);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", QUEUE_MAX());
@@ -180,11 +177,14 @@ namespace ros {
 
     MoveBase::~MoveBase(){
 
-      if(costMap_ != NULL)
-	delete costMap_;
-
       if(controller_ != NULL)
 	delete controller_;
+
+      if(ma_ != NULL)
+	delete ma_;
+
+      if(costMap_ != NULL)
+	delete costMap_;
     }
 
     void MoveBase::updateGlobalPose(){
@@ -208,7 +208,8 @@ namespace ros {
 	std::cout << "Extrapolation Error\n";
       }
 
-      //std::cout << "Robot at (" << global_pose_.x << ", " << global_pose_.y << ", " << global_pose_.yaw << ")\n";
+      // Update the cost map window
+      ma_->updateForRobotPosition(global_pose_.x, global_pose_.y);
     }
 
 
@@ -355,6 +356,7 @@ namespace ros {
       }
       publish("robot_footprint", footprint_msg);
     }
+
     void MoveBase::publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path) {
       std_msgs::Polyline2D guiPathMsg;
       guiPathMsg.set_points_size(path.size());
@@ -430,9 +432,6 @@ namespace ros {
 	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
       }
       else {
-	// A local cost map is a window onto the global map to support local planning
-	CostMapAccessor ma(getCostMap(), controller_->getMapDeltaX(), controller_->getMapDeltaY(), global_pose_.x, global_pose_.y);
-
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
 	// the global plan has failed since we are nowhere near the plan. We also prune parts of the plan that are behind us as we go. We determine this
 	// by assuming that we start within a certain distance from the beginning of the plan and we can stay within a maximum error of the planned
@@ -459,7 +458,7 @@ namespace ros {
 
 	// Create a window onto the global cost map for the velocity controller
 	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-	planOk = planOk && controller_->computeVelocityCommands(ma, plan_, global_pose_, currentVel, cmdVel, localPlan);
+	planOk = planOk && controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan);
 
 	if(!planOk){
 	  // Zero out the velocities
@@ -500,26 +499,21 @@ namespace ros {
      * render the obstacles.
      */
     void MoveBase::publishLocalCostMap() {
-      // Now we should have a valid origin to construct the local map as a window onto the global map
-      CostMapAccessor ma(getCostMap(), 
-			 controller_->getMapDeltaX(),
-			 controller_->getMapDeltaY(), 
-			 global_pose_.x, global_pose_.y);
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
       double origin_x, origin_y;
-      ma.getOriginInWorldCoordinates(origin_x, origin_y);
-      for(unsigned int i = 0; i<ma.getWidth(); i++)
-	for(unsigned int j = 0; j<ma.getHeight();j++){
+      ma_->getOriginInWorldCoordinates(origin_x, origin_y);
+      for(unsigned int i = 0; i<ma_->getWidth(); i++)
+	for(unsigned int j = 0; j<ma_->getHeight();j++){
 	  double wx, wy;
-	  wx = i * ma.getResolution() + origin_x;
-	  wy = j * ma.getResolution() + origin_y;
+	  wx = i * ma_->getResolution() + origin_x;
+	  wy = j * ma_->getResolution() + origin_y;
 	  std::pair<double, double> p(wx, wy);
 
-	  if(ma.isObstacle(i, j))
+	  if(ma_->isObstacle(i, j))
 	    rawObstacles.push_back(p);
-	  else if(ma.isInflatedObstacle(i, j))
+	  else if(ma_->isInflatedObstacle(i, j))
 	    inflatedObstacles.push_back(p);
 	}
 

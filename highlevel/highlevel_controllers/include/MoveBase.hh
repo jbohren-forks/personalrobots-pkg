@@ -160,6 +160,8 @@ namespace ros {
 
       CostMap2D* costMap_; /**< The cost map mainatined incrementally from laser scans */
 
+      CostMapAccessor* ma_; /**< Sliding read-only window on the cost map */
+
       libTF::TFPose2D global_pose_; /**< The global pose in the map frame */
 
       std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
