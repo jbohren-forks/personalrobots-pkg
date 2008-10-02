@@ -20,3 +20,7 @@ so please make sure it exists
 Then the following command line will start the program
 
 Debug/PoseEstimationTest video > output.txt 2>&1
+
+Please see the following directory as reference
+~jdchen/workspace/PoseEstimationTest
+~jdchen/workspace/3DPoseEstimation
