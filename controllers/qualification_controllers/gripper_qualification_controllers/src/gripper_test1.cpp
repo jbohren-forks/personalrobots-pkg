@@ -185,7 +185,7 @@ void GripperTest1::analysis()
 {
   diagnostic_message_.set_status_size(1);
   
-  robot_msgs::DiagnosticStatus *status = diagnostic_message_.status;
+  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "GripperTest";
   
