@@ -26,7 +26,7 @@ def circle(im, x, y, r, color):
 class TestDirected(unittest.TestCase):
 
     def setUp(self):
-        self.im640 = Image.open("im640x480.pgm")
+        self.im640 = Image.open("test/im640x480.pgm")
         self.im64 = self.im640.crop((100,100,164,164))
 
     def test_a_golden(self):
@@ -160,7 +160,6 @@ class TestDirected(unittest.TestCase):
         for sx in [300,301,316]:
             for sy in [300,301,316]:
                 im = make_big(sx, sy)
-                im.save("out.pgm")
                 result = simple(im)
                 self.assertEqual(ref, result)
 
