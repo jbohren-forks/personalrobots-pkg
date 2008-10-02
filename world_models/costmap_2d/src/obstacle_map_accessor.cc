@@ -113,12 +113,12 @@ namespace costmap_2d {
    * @param mx map x index return value
    * @param my map y index return value
    */
-  void ObstacleMapAccessor::WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const {
+  bool ObstacleMapAccessor::WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const {
 
     if(wx < 0 || wy < 0) {
       mx = 0;
       my = 0;
-      return;
+      return false;
     }
 
     //not much for now
@@ -128,13 +128,14 @@ namespace costmap_2d {
     if(mx > width_) {
       printf("WC_MC converted x %d greater than width %d", mx, width_);
       mx = 0;
-      return;
+      return false;
     } 
 
     if(my > height_) {
       printf("WC_MC converted  %d greater than height %d", my, height_);
       my = 0;
-      return;
+      return false;
     }
+    return true;
   }
 }

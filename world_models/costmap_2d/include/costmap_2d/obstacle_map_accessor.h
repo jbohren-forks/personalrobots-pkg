@@ -125,7 +125,7 @@ namespace costmap_2d {
      * @param mx map x index return value
      * @param my map y index return value
      */
-    void WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const;
+    bool WC_MC(double wx, double wy, unsigned int& mx, unsigned int& my) const;
 
     virtual ~ObstacleMapAccessor(){}
 
