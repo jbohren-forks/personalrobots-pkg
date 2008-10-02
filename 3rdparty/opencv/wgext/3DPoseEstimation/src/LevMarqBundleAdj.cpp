@@ -8,6 +8,7 @@
 #include "LevMarqBundleAdj.h"
 #include "PathRecon.h"
 #include "VisOdomBundleAdj.h"
+#include "boost/foreach.hpp"
 
 namespace cv {
 namespace willow {

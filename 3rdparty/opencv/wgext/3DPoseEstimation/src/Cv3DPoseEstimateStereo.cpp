@@ -47,7 +47,9 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 	mNumScales(DefNumScales),
 	mThreshold(DefThreshold),
 	mMaxNumKeyPoints(DefMaxNumKeyPoints),
+#if STAR_DETECTOR
 	mStarDetector(mSize, mNumScales, mThreshold),
+#endif
   mEigImage(NULL),
   mTempImage(NULL),
   mMatchMethod(CalonderDescriptor),
@@ -130,6 +132,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
   }
   case Star:
   {
+#if STAR_DETECTOR
     //
     // Try Star Detector
     //
@@ -158,9 +161,12 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
         keypoints.push_back(cvPoint3D64f((double)pt.x, (double)pt.y, -1.));
       }
     }
+#else
+    cerr << __PRETTY_FUNCTION__ <<"() Star detector not include in this build"<<endl;
+#endif
   }
   default:
-    cerr << __PRETTY_FUNCTION__ <<"() Not implemented yet";
+    cerr << __PRETTY_FUNCTION__ <<"() Not implemented yet"<<endl;
     status = false;
   }
   return status;
@@ -379,6 +385,7 @@ PoseEstimateStereo::getTrackablePairsByCalonder(
 		vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
     vector<pair<int, int> >* trackableIndexPairs
 		) {
+#if CALONDER_DESCRIPTOR
 	assert(this->mCalonderMatcher!=NULL);
 	bool status = true;
 	CvPoint neighborhoodSize = DefNeighborhoodSize;
@@ -442,6 +449,10 @@ PoseEstimateStereo::getTrackablePairsByCalonder(
 	assert(numTrackablePairs == (int)(trackablePairs)?trackablePairs->size():
 	  (trackableIndexPairs?trackableIndexPairs->size():-1));
 	return status;
+#else
+	cerr << __PRETTY_FUNCTION__ <<"(): Calonder matcher (based on Calonder descriptor) is not included in this build. "<< endl;
+	return false;
+#endif
 }
 
 
@@ -738,7 +749,9 @@ double PoseEstimateStereo::matchTemplate(const CvMat& neighborhood, const CvMat&
 }
 
 PoseEstimateStereo::CalonderMatcher::CalonderMatcher(string& modelfilename){
+#if CALONDER_DESCRIPTOR
 	  mClassifier.read(modelfilename.c_str());
 	  mClassifier.setThreshold(SIG_THRESHOLD);
+#endif
 }
 

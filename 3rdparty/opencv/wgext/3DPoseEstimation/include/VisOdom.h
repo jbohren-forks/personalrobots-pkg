@@ -296,6 +296,7 @@ void matchKeypoints(
 /// Forward declaration of a class for pose estimation.
 class PoseEstimator;
 
+/// Construct a pose estimator.
 PoseEstimator* getPoseEstimator(
     /// The size of the image this pose estimator is expected to see
     CvSize& imgSize,

@@ -16,14 +16,18 @@ using namespace cv;
 #include "PoseEstimateDisp.h"
 #include "CvMatUtils.h"
 
+#if STAR_DETECTOR
 // star detector
 #include <star_detector/include/detector.h>
+#endif
 
+#if CALONDER_DESCRIPTOR
 // Calonder descriptor
 #include <calonder_descriptor/include/signature.h>
 #include <calonder_descriptor/include/matcher.h>
 #include <calonder_descriptor/include/rtree_classifier.h>
 using namespace features;
+#endif
 
 namespace cv { namespace willow {
 
@@ -107,7 +111,9 @@ public:
 		CalonderMatcher(string& modelfilename);
 		~CalonderMatcher(){}
 		// random forests classifier
+#if CALONDER_DESCRIPTOR
 		RTreeClassifier mClassifier;
+#endif
 	protected:
 		// A threshold of 0 is safest (but slowest), as the signatures are
 		// effectively dense vectors. Increasing the threshold makes the
@@ -227,7 +233,9 @@ protected:
 	int mThreshold;
 	unsigned int mMaxNumKeyPoints; // if greater than zero, get the top mMaxNumKeyPoints key points
 
+#if STAR_DETECTOR
 	StarDetector mStarDetector;
+#endif
 	/// buffer use by Harris Corner
   CvMat* mEigImage;
   CvMat* mTempImage;

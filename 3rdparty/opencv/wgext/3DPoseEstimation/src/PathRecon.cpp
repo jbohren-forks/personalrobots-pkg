@@ -10,7 +10,12 @@
 using namespace std;
 
 // opencv
+#include <opencv/cxcore.h>
+#include <opencv/cv.h>
 #include <opencv/highgui.h>
+
+// boost
+#include <boost/foreach.hpp>
 
 #include "PathRecon.h"
 using namespace cv::willow;

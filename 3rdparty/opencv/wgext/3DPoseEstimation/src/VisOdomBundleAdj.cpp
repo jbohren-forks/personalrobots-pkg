@@ -11,6 +11,8 @@
 
 using namespace cv::willow;
 
+// boost
+#include <boost/foreach.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/framework/features.hpp>
 #include <boost/accumulators/statistics/stats.hpp>
@@ -18,6 +20,9 @@ using namespace cv::willow;
 #include <boost/accumulators/statistics/min.hpp>
 #include <boost/accumulators/statistics/max.hpp>
 using namespace boost::accumulators;
+
+// opencv
+#include <cv.h>
 
 #define DISPLAY 1
 
