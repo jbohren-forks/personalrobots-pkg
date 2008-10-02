@@ -382,7 +382,8 @@ namespace ros {
 	while(it != plan_.end()){
 	  const std_msgs::Pose2DFloat32& w = *it;
 
-	  if(ma.contains(w.x, w.y))
+	  if(fabs(global_pose_.x - w.x) < 2 ||
+	     fabs(global_pose_.y - w.y) < 2)
 	    break;
 
 	  it = plan_.erase(it);
