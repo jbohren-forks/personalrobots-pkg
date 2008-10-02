@@ -3,8 +3,6 @@
 
 #include "CvStereoCamModel.h"
 #include <vector>
-// star detector
-#include <star_detector/include/keypoint.h>
 #include <opencv/cvwimage.h>
 using namespace cv;
 using namespace std;
@@ -24,6 +22,8 @@ public:
     	Disparity,
     	CartAndDisp,
     	Video,
+    	Video2,
+    	Video3,
     	/// bundle adjustment over a sequence of video images
     	VideoBundleAdj
     } TestType;
@@ -31,8 +31,9 @@ public:
     CvTest3DPoseEstimate();
     virtual ~CvTest3DPoseEstimate();
     bool testPointClouds();
-    bool testVideos1();
-    bool testVideos();
+    bool testVideo();
+    bool testVideo2();
+    bool testVideo3();
     bool testVideoBundleAdj();
     bool test();
     TestType mTestType;
@@ -44,8 +45,8 @@ protected:
     double randReal(double min, double max);
     void disturb(const CvMat *xyzs, CvMat *xyzsNoised);
     static void MyMouseCallback(int event, int x, int y, int flagsm, void *param);
-    bool showDisparityMap(WImageBuffer1_16s & dispMap, string & winname, string & outputDirname, int frameIndex, int maxDisp);
-    bool drawKeypoints(WImage3_b & image, vector<Keypoint> & keyPointsLast, vector<Keypoint> & keyPointsCurr);
+//    bool showDisparityMap(WImageBuffer1_16s & dispMap, string & winname, string & outputDirname, int frameIndex, int maxDisp);
+//    bool drawKeypoints(WImage3_b & image, vector<Keypoint> & keyPointsLast, vector<Keypoint> & keyPointsCurr);
     void loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
     CvPoint3D64f mEulerAngle;
     CvPoint3D64f mTranslation;
