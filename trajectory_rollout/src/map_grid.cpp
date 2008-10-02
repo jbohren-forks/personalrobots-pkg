@@ -122,6 +122,7 @@ void MapGrid::resetPathDist(){
     map_[i].goal_dist = DBL_MAX;
     map_[i].path_mark = false;
     map_[i].goal_mark = false;
+    map_[i].within_robot = false;
   }
 }
 

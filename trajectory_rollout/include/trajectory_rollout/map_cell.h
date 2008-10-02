@@ -59,21 +59,11 @@ class MapCell{
     //occupancy state (-1 = free, 0 = unknown, 1 = occupied)
     int occ_state;
 
+    //marks for computing path/goal distances
     bool path_mark, goal_mark;
 
-    //compares two cells based on path_dist so we can use stl priority queues
-    const bool operator< (const MapCell& mc) const;
+    //mark for cells within the robot footprint
+    bool within_robot;
 };
 
-struct ComparePathDist {
-  bool operator()(const MapCell* cell1, const MapCell* cell2) const {
-    return cell1->path_dist > cell2->path_dist;
-  }
-};
-
-struct CompareGoalDist {
-  bool operator()(const MapCell* cell1, const MapCell* cell2) const {
-    return cell1->goal_dist > cell2->goal_dist;
-  }
-};
 #endif

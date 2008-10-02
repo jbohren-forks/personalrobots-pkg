@@ -61,6 +61,7 @@
 
 //we'll take in a path as a vector of points
 #include <std_msgs/Point2DFloat32.h>
+#include <std_msgs/Position2DInt.h>
 
 //for computing path distance
 #include <queue>
@@ -73,8 +74,10 @@
 
 
 //convert from world to map coords
-#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
-#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale + 0.5))
+//#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
+//#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale + 0.5))
+#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale))
+#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale))
 
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
@@ -112,7 +115,6 @@ class TrajectoryController {
     void updatePlan(const std::vector<std_msgs::Point2DFloat32>& new_plan);
 
     std::vector<std_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
-    void drawLine(int x0, int x1, int y0, int y1, std::vector<std_msgs::Point2DFloat32>& pts);
 
     
     //possible trajectories for this run
@@ -134,6 +136,9 @@ class TrajectoryController {
     //the global plan for the robot to follow
     std::vector<std_msgs::Point2DFloat32> global_plan_;
 
+    //to help the robot know what to do with rotations
+    bool stuck_left, stuck_right;
+
   private:
     //update what map cells are considered path based on the global_plan
     void setPathCells(const ObstacleMapAccessor& ma);
@@ -146,9 +151,17 @@ class TrajectoryController {
     double trajectoryCost(const ObstacleMapAccessor& ma, int t_index, double pdist_scale, 
         double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost);
 
+    //for getting the cost of a given footprint
     double footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i);
-    double lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1);
+    double lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1,
+        std::vector<std_msgs::Position2DInt>& footprint_cells);
+    double fillCost(const ObstacleMapAccessor& ma, std::vector<std_msgs::Position2DInt>& footprint);
     double pointCost(const ObstacleMapAccessor& ma, int x, int y);
+
+    //for getting the cells for a given footprint
+    std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
+    void getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts);
+    void getFillCells(vector<std_msgs::Position2DInt>& footprint);
     void swap(int& a, int& b);
 
     //the simulation parameters for generating trajectories
@@ -167,7 +180,7 @@ class TrajectoryController {
       check_cell->path_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma.isInflatedObstacle(check_cell->cx, check_cell->cy)){
+      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -185,7 +198,7 @@ class TrajectoryController {
       check_cell->goal_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma.isInflatedObstacle(check_cell->cx, check_cell->cy)){
+      if(ma.isObstacle(check_cell->cx, check_cell->cy)){
         check_cell->goal_dist = map_.map_.size();
         return;
       }

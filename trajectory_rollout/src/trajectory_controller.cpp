@@ -54,6 +54,10 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 
   //storage for our theta values
   trajectory_theta_ = ublas::zero_matrix<double>(1, total_pts);
+
+  //the robot is not stuck to begin with
+  stuck_left = false;
+  stuck_right = false;
 }
 
 //update what map cells are considered path based on the global_plan
@@ -355,13 +359,14 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   }
 
   //and finally we want to generate trajectories that move backwards slowly
-  vtheta_samp = min_vel_theta;
+  //vtheta_samp = min_vel_theta;
+  vtheta_samp = 0.0;
   vx_samp = -0.05;
   vy_samp = 0.0;
   for(int i = 0; i < samples_per_dim_; ++i){
     trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
     ++t_num;
-    vtheta_samp += dvtheta;
+    //vtheta_samp += dvtheta;
   }
   
 }
@@ -413,8 +418,18 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
   //anything with a cost greater than the size of the map is impossible
   double impossible_cost = map_.map_.size();
 
-  //we know that everything except the last set of trajectories is in the forward or rotational direction
-  unsigned int forward_traj_end = trajectories_.size() - samples_per_dim_;
+  double x = trajectory_pts_(0, 0);
+  double y = trajectory_pts_(1, 0);
+  double theta = trajectory_theta_(0, 0);
+  vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(x, y, theta, true);
+
+  //mark cells within the initial footprint of the robot
+  for(unsigned int i = 0; i < footprint_list.size(); ++i){
+    map_(footprint_list[i].x, footprint_list[i].y).within_robot = true;
+  }
+
+  //we know that everything except the last 2 sets of trajectories are forward
+  unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
   for(unsigned int i = 0; i < forward_traj_end; ++i){
     double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
@@ -427,16 +442,54 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
       min_cost = cost;
     }
   }
+  
+  unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
+  //we want to explore rotational trajectories as well
+  bool legal_right = false;
+  double max_vel = 0;
+  for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
+    double cost = -1;
+
+    if(trajectories_[i].thetav_ < 0 && !stuck_right){
+      cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+      if(cost >= 0)
+        legal_right = true;
+    }
+    else if(trajectories_[i].thetav_ > 0 && stuck_right && !stuck_left){
+      cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
+    }
+
+    //so we can draw with cost info
+    trajectories_[i].cost_ = cost;
+
+    //find the minimum cost path
+    double abs_speed = abs(trajectories_[i].thetav_);
+    if(cost >= 0 && cost <= min_cost && abs_speed > max_vel){
+      best_index = i;
+      min_cost = cost;
+      max_vel = abs_speed;
+    }
+  }
+
+  if(stuck_right && best_index < 0)
+    stuck_left = true;
+
+  if(!legal_right)
+    stuck_right = true;
+
 
   //if we have a valid path... return
   if(best_index >= 0){
+    if(trajectories_[best_index].xv_ > 0){
+      stuck_left = false;
+      stuck_right = false;
+    }
     drive_velocities = getDriveVelocities(best_index);
     return best_index;
   }
 
-  unsigned int fwd_traj_end = trajectories_.size() - samples_per_dim_;
   //the last set of trajectories is for moving backwards
-  for(unsigned int i = fwd_traj_end; i < trajectories_.size(); ++i){
+  for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
     double cost = trajectoryCost(ma, i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
 
     //so we can draw with cost info
@@ -447,10 +500,13 @@ int TrajectoryController::findBestPath(const ObstacleMapAccessor& ma, libTF::TFP
       best_index = i;
       min_cost = cost;
     }
+    best_index = i;
   }
   //printf("Trajectories scored\n");
 
   drive_velocities = getDriveVelocities(best_index);
+  stuck_left = false;
+  stuck_right = false;
   return best_index;
 }
 
@@ -535,7 +591,7 @@ void TrajectoryController::swap(int& a, int& b){
 
 double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(ma.isObstacle(x, y)){
+  if(ma.isObstacle(x, y) && !(map_(x, y).within_robot)){
     return -1;
   }
 
@@ -547,7 +603,8 @@ double TrajectoryController::pointCost(const ObstacleMapAccessor& ma, int x, int
 }
 
 //calculate the cost of a ray-traced line
-double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int x1, int y0, int y1){
+double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int x1, 
+    int y0, int y1, vector<std_msgs::Position2DInt>& footprint_cells){
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
   int deltay = abs(y1 - y0);        // The difference between the y's
@@ -608,6 +665,10 @@ double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int
     if(point_cost < 0)
       return -1;
 
+    Position2DInt pt;
+    pt.x = x;
+    pt.y = y;
+    footprint_cells.push_back(pt);
     line_cost += point_cost;
 
     num += numadd;              // Increase the numerator by the top of the fraction
@@ -626,6 +687,9 @@ double TrajectoryController::lineCost(const ObstacleMapAccessor& ma, int x0, int
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
 double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double x_i, double y_i, double theta_i){
+  //need to keep track of what cells are in the footprint
+  vector<std_msgs::Position2DInt> footprint_cells;
+
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
 
@@ -653,7 +717,7 @@ double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double
     return -1.0;
 
   //check the front line
-  line_dist = lineCost(ma, x0, x1, y0, y1);
+  line_dist = lineCost(ma, x0, x1, y0, y1, footprint_cells);
   if(line_dist < 0)
     return -1;
 
@@ -671,7 +735,7 @@ double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double
     return -1.0;
 
   //check the right side line
-  line_dist = lineCost(ma, x1, x2, y1, y2);
+  line_dist = lineCost(ma, x1, x2, y1, y2, footprint_cells);
   if(line_dist < 0)
     return -1;
 
@@ -689,23 +753,85 @@ double TrajectoryController::footprintCost(const ObstacleMapAccessor& ma, double
     return -1.0;
 
   //check the back line
-  line_dist = lineCost(ma, x2, x3, y2, y3);
+  line_dist = lineCost(ma, x2, x3, y2, y3, footprint_cells);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
   //check the left side line
-  line_dist = lineCost(ma, x3, x0, y3, y0);
+  line_dist = lineCost(ma, x3, x0, y3, y0, footprint_cells);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
+  double fill_dist = -1;
+  fill_dist = fillCost(ma, footprint_cells);
+
   return footprint_dist;
 }
 
-void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_msgs::Point2DFloat32>& pts){
+//we need to fill in the footprint of the robot
+double TrajectoryController::fillCost(const ObstacleMapAccessor& ma, vector<std_msgs::Position2DInt>& footprint){
+  //quick bubble sort to sort pts by x
+  std_msgs::Position2DInt swap;
+  unsigned int i = 0;
+  while(i < footprint.size() - 1){
+    if(footprint[i].x > footprint[i + 1].x){
+      swap = footprint[i];
+      footprint[i] = footprint[i + 1];
+      footprint[i + 1] = swap;
+      if(i > 0)
+        --i;
+    }
+    else
+      ++i;
+  }
+
+  i = 0;
+  std_msgs::Position2DInt min_pt;
+  std_msgs::Position2DInt max_pt;
+  unsigned int min_x = footprint[0].x;
+  unsigned int max_x = footprint[footprint.size() -1].x;
+  double fill_cost = 0.0;
+  double point_cost = -1.0;
+  //walk through each column and mark cells inside the footprint
+  for(unsigned int x = min_x; x <= max_x; ++x){
+    if(i >= footprint.size() - 1)
+      break;
+
+    if(footprint[i].y < footprint[i + 1].y){
+      min_pt = footprint[i];
+      max_pt = footprint[i + 1];
+    }
+    else{
+      min_pt = footprint[i + 1];
+      max_pt = footprint[i];
+    }
+
+    i += 2;
+    while(i < footprint.size() && footprint[i].x == x){
+      if(footprint[i].y < min_pt.y)
+        min_pt = footprint[i];
+      else if(footprint[i].y > max_pt.y)
+        max_pt = footprint[i];
+      ++i;
+    }
+
+    //loop though cells in the column
+    for(unsigned int y = min_pt.y; y < max_pt.y; ++y){
+      point_cost = pointCost(ma, x, y);
+      if(point_cost < 0)
+        return -1;
+      fill_cost += point_cost;
+    }
+  }
+
+  return fill_cost;
+}
+
+void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts){
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
   int deltay = abs(y1 - y0);        // The difference between the y's
@@ -715,7 +841,7 @@ void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_m
   int xinc1, xinc2, yinc1, yinc2;
   int den, num, numadd, numpixels;
 
-  std_msgs::Point2DFloat32 pt;
+  std_msgs::Position2DInt pt;
 
   if (x1 >= x0)                 // The x-values are increasing
   {
@@ -760,8 +886,8 @@ void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_m
 
   for (int curpixel = 0; curpixel <= numpixels; curpixel++)
   {
-    pt.x = MX_WX(map_, x);      //Draw the current pixel
-    pt.y = MY_WY(map_, y);
+    pt.x = x;      //Draw the current pixel
+    pt.y = y;
     pts.push_back(pt);
 
     num += numadd;              // Increase the numerator by the top of the fraction
@@ -776,56 +902,22 @@ void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_m
   }
 }
 
-
-/*
-void TrajectoryController::drawLine(int x0, int x1, int y0, int y1, vector<std_msgs::Point2DFloat32>& pts){
-  bool steep = abs(y1 - y0) > abs(x1 - x0);
-  if(steep){
-    swap(x0, y0);
-    swap(x1, y1);
-  }
-  if(x0 > x1){
-    swap(x0, x1);
-    swap(y0, y1);
-  }
-
-  int delta_x = x1 - x0;
-  int delta_y = abs(y1 - y0);
-  int error = delta_x / 2;
-  int ystep;
-  int y = y0;
-
-  std_msgs::Point2DFloat32 pt;
-  if(y0 < y1)
-    ystep = 1;
-  else
-    ystep = -1;
-
-  for(int x = x0; x <= x1; ++x){
-    if(steep){
-      pt.x = MX_WX(map_, y);
-      pt.y = MY_WY(map_, x);
-      pts.push_back(pt);
-    }
-    else{
-      pt.x = MX_WX(map_, x);
-      pt.y = MY_WY(map_, y);
-      pts.push_back(pt);
-    }
-
-    error = error - delta_y;
-    if(error < 0){
-      y += ystep;
-      error += delta_x;
-    }
-  }
-}
-*/
-
 //its nice to be able to draw a footprint for a particular point for debugging info
 vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i, double y_i, double theta_i){
+  vector<std_msgs::Position2DInt> footprint_cells = getFootprintCells(x_i, y_i, theta_i, false);
   vector<std_msgs::Point2DFloat32> footprint_pts;
   Point2DFloat32 pt;
+  for(unsigned int i = 0; i < footprint_cells.size(); ++i){
+    pt.x = MX_WX(map_, footprint_cells[i].x);
+    pt.y = MY_WY(map_, footprint_cells[i].y);
+    footprint_pts.push_back(pt);
+  }
+  return footprint_pts;
+}
+
+//get the cellsof a footprint at a given position
+vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x_i, double y_i, double theta_i, bool fill){
+  vector<std_msgs::Position2DInt> footprint_cells;
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
 
@@ -837,9 +929,6 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
 
   int x0 = WX_MX(map_, new_x);
   int y0 = WY_MY(map_, new_y);
-  pt.x = MX_WX(map_, x0);
-  pt.y = MY_WY(map_, y0);
-  //footprint_pts.push_back(pt);
 
   //lower right corner
   old_x = 0.0 + robot_front_radius_;
@@ -848,12 +937,9 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x1 = WX_MX(map_, new_x);
   int y1 = WY_MY(map_, new_y);
-  pt.x = MX_WX(map_, x1);
-  pt.y = MY_WY(map_, y1);
-  //footprint_pts.push_back(pt);
 
   //check the front line
-  drawLine(x0, x1, y0, y1, footprint_pts);
+  getLineCells(x0, x1, y0, y1, footprint_cells);
 
   //lower left corner
   old_x = 0.0 - robot_front_radius_;
@@ -862,12 +948,9 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x2 = WX_MX(map_, new_x);
   int y2 = WY_MY(map_, new_y);
-  pt.x = MX_WX(map_, x2);
-  pt.y = MY_WY(map_, y2);
-  //footprint_pts.push_back(pt);
 
   //check the right side line
-  drawLine(x1, x2, y1, y2, footprint_pts);
+  getLineCells(x1, x2, y1, y2, footprint_cells);
   
   //upper left corner
   old_x = 0.0 - robot_front_radius_;
@@ -876,15 +959,68 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
   int x3 = WX_MX(map_, new_x);
   int y3 = WY_MY(map_, new_y);
-  pt.x = MX_WX(map_, x3);
-  pt.y = MY_WY(map_, y3);
-  //footprint_pts.push_back(pt);
 
   //check the back line
-  drawLine(x2, x3, y2, y3, footprint_pts);
+  getLineCells(x2, x3, y2, y3, footprint_cells);
 
   //check the left side line
-  drawLine(x3, x0, y3, y0, footprint_pts);
+  getLineCells(x3, x0, y3, y0, footprint_cells);
 
-  return footprint_pts;
+  if(fill)
+    getFillCells(footprint_cells);
+
+  return footprint_cells;
+}
+
+void TrajectoryController::getFillCells(vector<std_msgs::Position2DInt>& footprint){
+  //quick bubble sort to sort pts by x
+  std_msgs::Position2DInt swap, pt;
+  unsigned int i = 0;
+  while(i < footprint.size() - 1){
+    if(footprint[i].x > footprint[i + 1].x){
+      swap = footprint[i];
+      footprint[i] = footprint[i + 1];
+      footprint[i + 1] = swap;
+      if(i > 0)
+        --i;
+    }
+    else
+      ++i;
+  }
+
+  i = 0;
+  std_msgs::Position2DInt min_pt;
+  std_msgs::Position2DInt max_pt;
+  unsigned int min_x = footprint[0].x;
+  unsigned int max_x = footprint[footprint.size() -1].x;
+  //walk through each column and mark cells inside the footprint
+  for(unsigned int x = min_x; x <= max_x; ++x){
+    if(i >= footprint.size() - 1)
+      break;
+
+    if(footprint[i].y < footprint[i + 1].y){
+      min_pt = footprint[i];
+      max_pt = footprint[i + 1];
+    }
+    else{
+      min_pt = footprint[i + 1];
+      max_pt = footprint[i];
+    }
+
+    i += 2;
+    while(i < footprint.size() && footprint[i].x == x){
+      if(footprint[i].y < min_pt.y)
+        min_pt = footprint[i];
+      else if(footprint[i].y > max_pt.y)
+        max_pt = footprint[i];
+      ++i;
+    }
+
+    //loop though cells in the column
+    for(unsigned int y = min_pt.y; y < max_pt.y; ++y){
+      pt.x = x;
+      pt.y = y;
+      footprint.push_back(pt);
+    }
+  }
 }

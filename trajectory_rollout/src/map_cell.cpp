@@ -35,14 +35,11 @@
 #include "trajectory_rollout/map_cell.h"
 
 MapCell::MapCell()
-  : cx(0), cy(0), path_dist(DBL_MAX), goal_dist(DBL_MAX), occ_state(0), path_mark(false), goal_mark(false)
+  : cx(0), cy(0), path_dist(DBL_MAX), goal_dist(DBL_MAX), occ_state(0), path_mark(false), goal_mark(false), within_robot(false)
 {}
 
 MapCell::MapCell(const MapCell& mc)
   : cx(mc.cx), cy(mc.cy), path_dist(mc.path_dist), goal_dist(mc.goal_dist), 
-  occ_state(mc.occ_state), path_mark(mc.path_mark), goal_mark(mc.goal_mark)
+  occ_state(mc.occ_state), path_mark(mc.path_mark), goal_mark(mc.goal_mark),
+  within_robot(mc.within_robot)
 {}
-
-const bool MapCell::operator< (const MapCell& mc) const{
-  return path_dist < mc.path_dist;
-}
