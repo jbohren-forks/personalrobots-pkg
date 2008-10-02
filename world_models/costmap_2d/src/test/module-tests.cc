@@ -36,6 +36,8 @@
 #include <set>
 #include <gtest/gtest.h>
 
+using namespace costmap_2d;
+
 const unsigned char MAP_10_BY_10[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -116,6 +118,12 @@ TEST(costmap, test1){
   ASSERT_EQ(map.WC_IND(1.0, 0.99), 1);
   ASSERT_EQ(map.WC_IND(9.99, 9.99), 99);
   ASSERT_EQ(map.WC_IND(8.2, 3.4), 38);
+
+  // Ensure we hit the middle of the cell for world co-ordinates
+  double wx, wy;
+  map.IND_WC(99, wx, wy);
+  ASSERT_EQ(wx, 9.5);
+  ASSERT_EQ(wy, 9.5);
 }
 
 /**
@@ -214,8 +222,8 @@ TEST(costmap, test5){
 
   map.updateDynamicObstacles(1, c0, insertions, deletions);
   ASSERT_EQ(insertions.size(), 2);
-  ASSERT_EQ(map[map.WC_IND(0, 5)], THRESHOLD);
-  ASSERT_EQ(map[map.WC_IND(1, 5)], THRESHOLD);
+  ASSERT_EQ(map[map.WC_IND(0, 5)], CostMap2D::LETHAL_OBSTACLE);
+  ASSERT_EQ(map[map.WC_IND(1, 5)], CostMap2D::LETHAL_OBSTACLE);
 
   // Pet the watchdog with 1 point only
   std_msgs::PointCloudFloat32 c1;
@@ -229,8 +237,8 @@ TEST(costmap, test5){
   // Update map for later time point. SHould remove one of the dynamic obstacles, reverting to a value less than the threshold
   map.removeStaleObstacles(WINDOW_LENGTH + 1, deletions);
   ASSERT_EQ(deletions.size(), 1);
-  ASSERT_EQ(map[map.WC_IND(0, 5)], THRESHOLD);
-  ASSERT_EQ(map[map.WC_IND(1, 5)] < THRESHOLD, true);
+  ASSERT_EQ(map[map.WC_IND(0, 5)], CostMap2D::LETHAL_OBSTACLE);
+  ASSERT_EQ(map[map.WC_IND(1, 5)] < CostMap2D::LETHAL_OBSTACLE, true);
   ASSERT_EQ(map[map.WC_IND(1, 5)] > 0, true);
   ASSERT_EQ(map[map.WC_IND(1, 5)] == MAP_10_BY_10[map.WC_IND(1, 5)], true);
 }
@@ -263,34 +271,6 @@ TEST(costmap, test6){
 TEST(costmap, test7){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
 
-  const unsigned char* costData = map.getMap();
-
-  // Output the map for visual assitance
-  for(unsigned int y=0; y< GRID_HEIGHT; y++){
-    for(unsigned x =0; x<GRID_WIDTH; x++){
-      unsigned int ind = map.MC_IND(x, y);
-      if(MAP_10_BY_10[ind] < THRESHOLD && costData[ind] < THRESHOLD){
-	std::cout << "f";
-      }
-      else if(MAP_10_BY_10[ind] == CostMap2D::NO_INFORMATION){
-	ASSERT_EQ(costData[ind], CostMap2D::NO_INFORMATION);
-	std::cout << "?";
-      }
-      else if(MAP_10_BY_10[ind] < THRESHOLD && costData[ind] == THRESHOLD){
-	std::cout << "o";
-      }
-      else if(MAP_10_BY_10[ind] < THRESHOLD && costData[ind] == CostMap2D::INFLATED_OBSTACLE){
-	std::cout << "i";
-      }
-
-      else
-	std::cout << "x";
-
-      std::cout << ", ";
-    }
-    std::cout << std::endl;
-  }
-
 
   // Verify that obstacles correctly identified
   std::vector<unsigned int> occupiedCells;
@@ -304,13 +284,15 @@ TEST(costmap, test7){
   ASSERT_EQ(setOfCells.size(), occupiedCells.size());
   ASSERT_EQ(setOfCells.size(), 47);
 
+  const unsigned char* costData = map.getMap();
+
   // Iterate over all id's and verify they are obstacles
   for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
     unsigned int ind = *it;
     unsigned int x, y;
     map.IND_MC(ind, x, y);
     ASSERT_EQ(find(occupiedCells, map.MC_IND(x, y)), true);
-    ASSERT_EQ(costData[ind] == THRESHOLD || costData[ind] == CostMap2D::INFLATED_OBSTACLE, true);
+    ASSERT_EQ(costData[ind] == CostMap2D::LETHAL_OBSTACLE || costData[ind] == CostMap2D::INFLATED_OBSTACLE, true);
   }
 
   // Set an obstacle at the origin and observe insertions for it and its neighbors
@@ -372,8 +354,6 @@ TEST(costmap, test7){
  */
 TEST(costmap, test8){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
-
-  const unsigned char* costData = map.getMap();
 
   std::vector<unsigned int> insertions, deletions;
 
