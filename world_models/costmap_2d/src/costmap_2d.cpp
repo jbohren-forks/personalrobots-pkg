@@ -127,14 +127,29 @@ namespace costmap_2d {
 					 std::vector<unsigned int>& newObstacles, 
 					 std::vector<unsigned int>& deletedObstacles)
   {
+    double FAR_AWAY = getWidth() * getHeight() * getResolution();
+    updateDynamicObstacles(ts, FAR_AWAY, FAR_AWAY, cloud, newObstacles, deletedObstacles);
+  }
+
+  void CostMap2D::updateDynamicObstacles(double ts,
+					 double wx, double wy,
+					 const std_msgs::PointCloudFloat32& cloud,
+					 std::vector<unsigned int>& newObstacles, 
+					 std::vector<unsigned int>& deletedObstacles)
+  {
     //std::cout << "Updating for time: " << ts << std::endl;
 
     newObstacles.clear();
-
+    double FILTERING_RADIUS = inflationRadius_ * 10;
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-      //std::cout << "Evaluating point:" << i << std::endl;
+      // Filter out points too high
       if(cloud.pts[i].z > maxZ_)
 	continue;
+
+      // Filter points in our contact space
+      if(sqrt(pow(wx-cloud.pts[i].x, 2) + pow(wy-cloud.pts[i].y, 2)) < FILTERING_RADIUS){
+	continue;
+      }
 
       unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
 

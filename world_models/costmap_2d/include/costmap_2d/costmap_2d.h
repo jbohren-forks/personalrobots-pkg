@@ -125,6 +125,24 @@ namespace costmap_2d {
 				std::vector<unsigned int>& newObstacleCells, 
 				std::vector<unsigned int>& deletedObstacleCells);
 
+  
+    /**
+     * @brief Updates the const map accounting for the new value of time and a new set of obstacles. 
+     * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
+     * @param current time stamp
+     * @param wx The current x position
+     * @param wy The current y position
+     * @param cloud holds projected scan data
+     * @param newObstacleCells holds vector for returning newly occupied ids
+     * @param deletedObstacleCells holds vector for returning newly unoccupied ids
+     *
+     * @see removeStaleObstacles
+     */
+    void updateDynamicObstacles(double ts,
+				double wx, double wy,
+				const std_msgs::PointCloudFloat32& cloud,
+				std::vector<unsigned int>& newObstacles, 
+				std::vector<unsigned int>& deletedObstacles);
     /**
      * @brief A convenience method which will skip calculating the diffs
      * @param current time stamp
