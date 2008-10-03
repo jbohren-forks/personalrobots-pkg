@@ -29,8 +29,8 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_DATA_H
-#define TF_DATA_H
+#ifndef TF_TRANSFORM_DATATYPES_H
+#define TF_TRANSFORM_DATATYPES_H
 
 #include <iostream> //needed before newmat
 #include "newmat10/newmat.h"
@@ -156,4 +156,4 @@ static inline NEWMAT::Matrix transformAsMatrix(const Transform& bt)
 
 
 }
-#endif //TF_DATA_H
+#endif //TF_TRANSFORM_DATATYPES_H

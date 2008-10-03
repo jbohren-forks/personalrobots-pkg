@@ -29,8 +29,8 @@
 
 /** \author Tully Foote */
 
-#ifndef NEW_LIBTF_HH
-#define NEW_LIBTF_HH
+#ifndef TF_TF_H
+#define TF_TF_H
 
 #include <iostream>
 #include <iomanip>
@@ -247,4 +247,4 @@ void Transformer::transformStamped(const std::string& target_frame, const Stampe
 
 
 }
-#endif //LIBTF_HH
+#endif //TF_TF_H

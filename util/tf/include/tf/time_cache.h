@@ -29,8 +29,8 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_CACHE_H
-#define TF_CACHE_H
+#ifndef TF_TIME_CACHE_H
+#define TF_TIME_CACHE_H
 
 #include <list>
 #include "rosthread/mutex.h"
@@ -132,4 +132,4 @@ class TimeCache
 
 
 }
-#endif // TF_CACHE_H
+#endif // TF_TIME_CACHE_H
