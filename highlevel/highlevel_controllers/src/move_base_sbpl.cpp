@@ -171,8 +171,17 @@ namespace ros {
     void MoveBaseSBPL::applyMapUpdates(){
       lock();
       const CostMap2D& cm = getCostMap();
+
+      for(unsigned int i = 0; i < cm.getWidth(); i++)
+	for(unsigned int j = 0; j < cm.getHeight(); j++){
+	  if(cm.isObstacle(i, j) || cm.isInflatedObstacle(i, j))
+	    envNav2D_.UpdateCost(i, j, 1);
+	  else
+	    envNav2D_.UpdateCost(i, j, 0);
+	}
+      /*
       for(unsigned int i = 0; i < insertionsBuffer_.size(); i++){
-	const std::vector<unsigned int> insertions = insertionsBuffer_[i];
+	const std::vector<unsigned int>& insertions = insertionsBuffer_[i];
 	for(std::vector<unsigned int>::const_iterator it = insertions.begin(); it != insertions.end(); ++it){
 	  unsigned int id = *it;
 	  unsigned int x, y; // Cell coordinates
@@ -180,14 +189,15 @@ namespace ros {
 	  envNav2D_.UpdateCost(x, y, 1);
 	}
 
-	const std::vector<unsigned int> deletions = deletionsBuffer_[i];
+	const std::vector<unsigned int>& deletions = deletionsBuffer_[i];
 	for(std::vector<unsigned int>::const_iterator it = deletions.begin(); it != deletions.end(); ++it){
 	  unsigned int id = *it;
 	  unsigned int x, y; // Cell coordinates
 	  cm.IND_MC(id, x, y);
-	  envNav2D_.UpdateCost(x, y, 0);
+	  //envNav2D_.UpdateCost(x, y, 0);
 	}
       }
+      */
       insertionsBuffer_.clear();
       deletionsBuffer_.clear();
       unlock();

@@ -91,6 +91,11 @@ namespace ros {
        */
       void updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan);
 
+      /**
+       * @brief test the current plan for collisions with obstacles
+       */
+      bool inCollision() const;
+
     private:
       /**
        * @brief Will process a goal update message.

@@ -44,6 +44,7 @@ namespace ros {
 
       static double computeWX(const CostMap2D& costMap, double maxSize, double wx);
       static double computeWY(const CostMap2D& costMap, double maxSize, double wy);
+      static unsigned int computeSize(double maxSize, double resolution);
 
       const CostMap2D& costMap_;
       const double maxSize_;

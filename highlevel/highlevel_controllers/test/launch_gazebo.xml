@@ -15,21 +15,14 @@
     </node>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" />
-<!-- TODO: remove this remap after fake_localization is fixed to listen
-    to base_pose_ground_truth, and gazebo is fixed to publish on that topic -->
-    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
     <param name="max_publish_frequency" value="20.0"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
 
-    <param name="world_3d_map/max_publish_frequency" type="double" value="1.0" /> <!-- Hz -->
-    <param name="world_3d_map/retain_pointcloud_duration" type="double" value="1.0" /> <!-- seconds -->
-    <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.25" /> <!-- percentage (between 0 and 1) -->
-    <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
-    <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
-    <node pkg="world_3d_map" type="world_3d_map" args="robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" output="screen" respawn="false" /> 
 
-    <!-- Load parameters for moving the base -->
-    <param name="costmap_2d/inflation_radius" type="double" value="0.4" />
+    <!--include file="$(find highlevel_controllers)/test/launch_world_3d.xml"/-->
+
+    <!-- Load parameters for moving the base. -->
+    <param name="costmap_2d/inflation_radius" type="double" value="0.35" />
 
     <!-- use mech.py to spawn all controllers listed in controllers.xml -->
     <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />

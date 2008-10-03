@@ -6,8 +6,8 @@ namespace ros {
     CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
       : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX),
 			    computeWY(costMap, maxSize, poseY), 
-			    static_cast<unsigned int>(maxSize / costMap.getResolution()), 
-			    static_cast<unsigned int>(maxSize / costMap.getResolution()),
+			    computeSize(maxSize, costMap.getResolution()), 
+			    computeSize(maxSize, costMap.getResolution()), 
 			    costMap.getResolution()), costMap_(costMap),
 	maxSize_(maxSize){
 
@@ -43,6 +43,13 @@ namespace ros {
 
     double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wy){
       return std::min(std::max(0.0, wy - maxSize/2 ), costMap.getHeight() * costMap.getResolution() - maxSize);
+    }
+
+    unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
+      static const double EPSILON(0.01);
+      unsigned int cellWidth = (unsigned int) (maxSize/resolution + EPSILON);
+      printf("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
+      return cellWidth;
     }
 
     TrajectoryRolloutController::TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,

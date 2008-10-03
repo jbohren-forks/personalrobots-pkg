@@ -350,6 +350,19 @@ namespace ros {
       plan_.clear();
       plan_ = newPlan;
     }
+    
+    bool MoveBase::inCollision() const {
+      for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
+	const std_msgs::Pose2DFloat32& w = *it;
+	unsigned int ind = costMap_->WC_IND(w.x, w.y);
+	if((*costMap_)[ind] >= CostMap2D::LETHAL_OBSTACLE){
+	  printf("path in collision at <%f, %f>\n", w.x, w.y);
+	  return true;
+	}
+      }
+
+      return false;
+    }
 
     void MoveBase::publishFootprint(double x, double y, double th){
       std::vector<std_msgs::Point2DFloat32> footprint = controller_->drawFootprint(x, y, th);
@@ -429,7 +442,7 @@ namespace ros {
     }
 
     bool MoveBase::dispatchCommands(){
-      bool planOk = true; // Return value to trigger replanning or not
+      bool planOk = true; //!inCollision(); // Return value to trigger replanning or not
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
@@ -448,16 +461,17 @@ namespace ros {
 	std::list<std_msgs::Pose2DFloat32>::iterator it = plan_.begin();
 	while(it != plan_.end()){
 	  const std_msgs::Pose2DFloat32& w = *it;
-
-	  if(fabs(global_pose_.x - w.x) < 2 ||
-	     fabs(global_pose_.y - w.y) < 2)
+	  // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
+	  if(fabs(global_pose_.x - w.x) < 2 && fabs(global_pose_.y - w.y) < 2){
+	    printf("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.x, global_pose_.y, w.x, w.y);
 	    break;
+	  }
 
 	  it = plan_.erase(it);
 	}
 
 	// The plan is bogus if it is empty
-	planOk = !plan_.empty();
+	planOk = planOk && !plan_.empty();
 
 	// Set current velocities from odometry
 	std_msgs::BaseVel currentVel;
@@ -486,7 +500,6 @@ namespace ros {
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
 
       publish("cmd_vel", cmdVel);
-
 
       return planOk;
     }
