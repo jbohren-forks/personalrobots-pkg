@@ -43,7 +43,7 @@ namespace gazebo
   
   This is a controller that collects data from a Camera Sensor and populates a libgazebo camera interface as well as publish a ROS std_msgs::Image (under the field \b \<topicName\>). This controller should only be used as a child of a camera sensor (see example below.
 
-  \li Example Usage:
+  Example Usage:
   \verbatim
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
@@ -60,15 +60,15 @@ namespace gazebo
   \endverbatim
  
 \{
+*/
+
+/**
 
 
-/// \brief Ros_Camera Controller.
-///        \li Starts a ROS node if none exists. \n
-///        \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS.
-/// .
-
-
-  \li Example Usage:
+    \brief Ros_Camera Controller.
+           \li Starts a ROS node if none exists. \n
+           \li Simulates a generic camera and broadcast std_msgs::Image topic over ROS.
+           \li Example Usage:
   \verbatim
   <model:physical name="camera_model">
     <body:empty name="camera_body_name">
@@ -83,6 +83,7 @@ namespace gazebo
     </body:empty>
   </model:phyiscal>
   \endverbatim
+           .
  
 */
 

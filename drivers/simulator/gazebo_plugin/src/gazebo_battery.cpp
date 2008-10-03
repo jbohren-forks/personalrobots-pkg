@@ -76,8 +76,8 @@ namespace gazebo {
   {
     this->stateTopicName_ = node->GetString("stateTopicName","battery_state",0);
     rosnode_->advertise<robot_msgs::BatteryState>(this->stateTopicName_,10);
-    this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
-    rosnode_->advertise<robot_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
+    //this->diagnosticMessageTopicName_ = node->GetString("diagnosticMessageTopicName","diagnostic",0);
+    //rosnode_->advertise<robot_msgs::DiagnosticMessage>(this->diagnosticMessageTopicName_,10);
 
     /// faking the plug and unplug of robot
     rosnode_->subscribe("plugged_in",this->plug_msg_,&GazeboBattery::SetPlug,this,10);
@@ -86,7 +86,7 @@ namespace gazebo {
     this->default_charge_rate_ = node->GetDouble("default_charge_rate",-2.0,0);
 
     /// @todo make below useful
-    this->diagnostic_rate_     = node->GetDouble("diagnostic_rate",1.0,0);
+    //this->diagnostic_rate_     = node->GetDouble("diagnostic_rate",1.0,0);
     /// @todo make below useful
     this->battery_state_rate_  = node->GetDouble("dbattery_state_rate_",1.0,0);
   }
@@ -145,15 +145,16 @@ namespace gazebo {
     /* publish diagnostic message                             */
     /*                                                        */
     /**********************************************************/
-    this->diagnostic_status_.level = 0;
-    this->diagnostic_status_.name = "battery diagnostic";
-    this->diagnostic_status_.message = "battery ok";
-    this->diagnostic_message_.header = this->battery_state_.header;
-    this->diagnostic_message_.set_status_size(1);
-    this->diagnostic_message_.status[0] = this->diagnostic_status_;
-    this->lock_.lock();
-    this->rosnode_->publish(this->diagnosticMessageTopicName_,diagnostic_message_);
-    this->lock_.unlock();
+    //this->diagnostic_status_.level = 0;
+    //this->diagnostic_status_.name = "battery diagnostic";
+    //this->diagnostic_status_.message = "battery ok";
+    //this->diagnostic_message_.header = this->battery_state_.header;
+    //this->diagnostic_message_.set_status_size(1);
+    //this->diagnostic_message_.status[0] = this->diagnostic_status_;
+    //this->lock_.lock();
+    //this->rosnode_->publish(this->diagnosticMessageTopicName_,diagnostic_message_);
+    //this->lock_.unlock();
+
     this->last_time_    = this->current_time_;
   }
 
@@ -162,7 +163,7 @@ namespace gazebo {
     std::cout << "--------------- calling FiniChild in GazeboBattery --------------------" << std::endl;
 
     rosnode_->unadvertise(this->stateTopicName_);
-    rosnode_->unadvertise(this->diagnosticMessageTopicName_);
+    //rosnode_->unadvertise(this->diagnosticMessageTopicName_);
     rosnode_->unsubscribe("plugged_in");
 
   }

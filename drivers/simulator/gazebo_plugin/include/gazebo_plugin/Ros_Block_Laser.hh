@@ -46,7 +46,7 @@ namespace gazebo
   
   This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds.
 
-  \li Example Usage:
+  Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -84,13 +84,14 @@ namespace gazebo
   \endverbatim
  
 \{
+*/
 
-/// \brief ROS laser block simulation.
-///        \li Starts a ROS node if none exists.
-///        \li This controller simulates a block of laser range detections.
-///            Resulting point cloud (std_msgs::PointCloudFloat32.msg) is published as a ROS topic.
-/// .
-  \li Example Usage:
+/**
+ \brief ROS laser block simulation.
+        \li Starts a ROS node if none exists.
+        \li This controller simulates a block of laser range detections.
+            Resulting point cloud (std_msgs::PointCloudFloat32.msg) is published as a ROS topic.
+        \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -126,6 +127,7 @@ namespace gazebo
       </body:empty>
     </model:phyiscal>
   \endverbatim
+        .
 */
 
 class Ros_Block_Laser : public Controller

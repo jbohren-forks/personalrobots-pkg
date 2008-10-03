@@ -46,7 +46,7 @@ namespace gazebo
   This controller gathers range data from a simulated ray sensor, publishes range data through
     std_msgs::LaserScan ROS topic.
 
-  \li Example Usage:
+  Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -75,12 +75,13 @@ namespace gazebo
   \endverbatim
  
 \{
+*/
 
-/// \brief ROS laser scan controller.
-///        \li Starts a ROS node if none exists.
-///        \li Simulates a laser range sensor and publish std_msgs::LaserScan.msg over ROS.
-///        .
-  \li Example Usage:
+/**
+    \brief ROS laser scan controller.
+           \li Starts a ROS node if none exists.
+           \li Simulates a laser range sensor and publish std_msgs::LaserScan.msg over ROS.
+           \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -107,6 +108,7 @@ namespace gazebo
       </body:empty>
     </model:phyiscal>
   \endverbatim
+           .
 */
 
 class Ros_Laser : public Controller
