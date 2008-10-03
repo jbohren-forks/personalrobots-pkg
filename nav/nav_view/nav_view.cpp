@@ -2,10 +2,10 @@
  * nav_view
  * Copyright (c) 2008, Morgan Quigley
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of the <ORGANIZATION> nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,10 +29,6 @@
  */
 
 /**
-
-@mainpage
-
-@htmlinclude manifest.html
 
 @b nav_view is a GUI for 2-D navigation.  It can:
  - display a map
@@ -125,7 +121,7 @@ public:
   std_msgs::Polyline2D laserscan;
   std_msgs::Pose2DFloat32 initialpose;
   std_msgs::Polyline2D inflatedObstacles;
-  std_msgs::Polyline2D rawObstacles;  
+  std_msgs::Polyline2D rawObstacles;
   pr2_msgs::OccDiff occ_diff_;
   float view_scale, view_x, view_y;
   SDL_Surface* map_surface;
@@ -138,7 +134,7 @@ public:
   int n_val_;
   std::list<ObstaclePoint> nav_view_points_;
   bool full_transient_init_;
-  
+
   // Lock for access to class members in callbacks
   ros::thread::mutex lock;
 
@@ -177,7 +173,7 @@ public:
     if(map_surface)
       SDL_FreeSurface(map_surface);
   }
-  
+
   bool load_map();
   bool load_map_from_image(const char*, double);
   bool load_full_transient();
@@ -227,18 +223,18 @@ quit(int sig)
   exit(0);
 }
 
-int 
+int
 main(int argc, char **argv)
 {
   signal(SIGINT, quit);
   signal(SIGPIPE, SIG_IGN);
 
   ros::init(argc, argv);
-  
+
   int n_val = 0;
-  if(argc > 1) 
+  if(argc > 1)
   {
-    if(strcmp(argv[1],"transient") == 0) 
+    if(strcmp(argv[1],"transient") == 0)
     {
       n_val = 1;
     }
@@ -256,9 +252,9 @@ main(int argc, char **argv)
   return 0;
 }
 
-void 
-NavView::mouse_button(int x, int y, int button, bool is_down) 
-{ 
+void
+NavView::mouse_button(int x, int y, int button, bool is_down)
+{
   if((button == 2) && !is_down) // middle mouse button
   {
     // If this is the first click, we're setting the position, next click
@@ -296,7 +292,7 @@ NavView::mouse_button(int x, int y, int button, bool is_down)
         publish("initialpose", initialpose);
       }
       // No modifiers; set goal
-      else 
+      else
       {
         // Send out the goal
         goal.goal.x = gx;
@@ -327,7 +323,7 @@ NavView::render()
 
   if(map_texture)
   {
-    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_TEXTURE_2D);
     // Draw the map
     glColor3f(1.0,1.0,1.0);
     glBindTexture( GL_TEXTURE_2D, map_texture );
@@ -351,7 +347,7 @@ NavView::render()
     glEnd();
   }
   // don't texture-map the vector graphics
-  glDisable(GL_TEXTURE_2D); 
+  glDisable(GL_TEXTURE_2D);
 
   const float robot_rad = 0.3;
   try
@@ -385,7 +381,7 @@ NavView::render()
   catch(...)
   {
   }
-  
+
   cloud.lock();
   for(unsigned int i=0;i<cloud.get_particles_size();i++)
   {
@@ -460,7 +456,7 @@ NavView::render()
     glBegin(GL_POINTS);
     for(std::list<ObstaclePoint>::iterator it = nav_view_points_.begin();
         it != nav_view_points_.end();
-        it++) 
+        it++)
     {
       glVertex2f((*it).x, (*it).y);
     }
@@ -475,7 +471,7 @@ NavView::render()
 bool NavView::load_full_transient() {
   pr2_srvs::TransientObstacles::request req;
   pr2_srvs::TransientObstacles::response res;
-  
+
   puts("Calling full transient obstacle service");
   while(!ros::service::call("transient_obstacles_full", req, res)) {
     puts("request failed; trying again...");
@@ -483,31 +479,31 @@ bool NavView::load_full_transient() {
   }
   puts("Got full transient obstacles");
 
-  for(size_t i = 0; i < res.obs.get_points_size(); i++) 
+  for(size_t i = 0; i < res.obs.get_points_size(); i++)
   {
     ObstaclePoint nvp;
     nvp.x = res.obs.points[i].x;
     nvp.y = res.obs.points[i].y;
     nav_view_points_.push_back(nvp);
-  } 
+  }
   full_transient_init_ = true;
   return true;
 }
 
 void NavView::occDiffCallback() {
-  
+
   if(!full_transient_init_) {
     printf("No full transient init.\n");
     return;
   }
 
   //first take out points
-  for(size_t i = 0; i < occ_diff_.get_unocc_points_size(); i++) 
+  for(size_t i = 0; i < occ_diff_.get_unocc_points_size(); i++)
   {
     bool found = false;
     for(std::list<ObstaclePoint>::iterator it = nav_view_points_.begin();
         it != nav_view_points_.end();
-        it++) 
+        it++)
     {
       if((*it).x == occ_diff_.unocc_points[i].x &&
          (*it).y == occ_diff_.unocc_points[i].y)
@@ -530,7 +526,7 @@ void NavView::occDiffCallback() {
     nvp.x = occ_diff_.occ_points[i].x;
     nvp.y = occ_diff_.occ_points[i].y;
     nav_view_points_.push_back(nvp);
-  } 
+  }
 }
 
 bool
@@ -552,7 +548,7 @@ NavView::load_map()
 
   map_res = resp.map.resolution;
 
-  // Pad dimensions to power of 2 
+  // Pad dimensions to power of 2
   map_width = (int)pow(2,ceil(log2(resp.map.width)));
   map_height = (int)pow(2,ceil(log2(resp.map.height)));
 
@@ -581,7 +577,7 @@ NavView::load_map()
     }
   }
 
-  glEnable( GL_TEXTURE_2D ); 
+  glEnable( GL_TEXTURE_2D );
 
   // Have OpenGL generate a texture object handle for us
   glGenTextures(1, &map_texture);
@@ -608,7 +604,7 @@ bool
 NavView::load_map_from_image(const char* fname, double res)
 {
   map_res = res;
-  glEnable( GL_TEXTURE_2D ); 
+  glEnable( GL_TEXTURE_2D );
   // Load the image from file
   SDL_Surface* temp;
   if(!(temp = IMG_Load(fname)))
@@ -643,7 +639,7 @@ NavView::load_map_from_image(const char* fname, double res)
       texture_format = GL_RGBA;
     else
       texture_format = GL_BGRA;
-  } 
+  }
   else if(nOfColors == 3)     // no alpha channel
   {
     if(map_surface->format->Rmask == 0x000000ff)
@@ -680,12 +676,12 @@ NavView::load_map_from_image(const char* fname, double res)
 }
 
 
-SDL_Surface* 
+SDL_Surface*
 NavView::flip_vert(SDL_Surface* sfc)
 {
-  SDL_Surface* result = 
+  SDL_Surface* result =
           SDL_CreateRGBSurface(sfc->flags, sfc->w, sfc->h,
-                               sfc->format->BytesPerPixel * 8, 
+                               sfc->format->BytesPerPixel * 8,
                                sfc->format->Rmask, sfc->format->Gmask,
                                sfc->format->Bmask, sfc->format->Amask);
   assert(result);
@@ -693,7 +689,7 @@ NavView::flip_vert(SDL_Surface* sfc)
   unsigned char* rpixels = (unsigned char*)(result->pixels);
   unsigned int pitch = sfc->pitch;
 
-  for(int line = 0; line < sfc->h; ++line) 
+  for(int line = 0; line < sfc->h; ++line)
   {
     memcpy(rpixels+line*pitch,
            pixels+(sfc->h-line-1)*pitch,

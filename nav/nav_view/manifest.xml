@@ -1,6 +1,6 @@
 <package>
   <description>A graphical interface for 2-D navigation.</description>
-  <author>Morgan Quigley and Brian Gerkey</author>
+  <author>Morgan Quigley, Brian Gerkey and Josh Faust</author>
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="std_srvs"/>
@@ -10,4 +10,12 @@
   <depend package="rosTF"/>
   <!-- <depend package="sdl_image"/> -->
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
+  
+  <depend package="ogre"/>
+  <depend package="ogre_tools"/>
+  <depend package="wxswig"/>
+  <depend package="wxPython_swig_interface"/>
+  
+  <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib ${prefix}/lib/_nav_view.so"/>
+  <python path="${prefix}/lib/"/>
 </package>
