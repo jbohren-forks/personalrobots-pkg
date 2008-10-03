@@ -76,7 +76,8 @@ Publishes to (name / type):
 <hr>
 
 @section services
- - @b "~self_test"    :  <a href="../../std_msgs/html/classrobot__msgs_1_1SelfTest.html">SelfTest</a>
+ - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
+ - @b "~diagnostics"  :  DiagnosticMessage provided by DiagnosticUpdater helper class
 
 @section parameters ROS parameters
 
@@ -106,6 +107,7 @@ Reads the following parameters from the parameter server
 #include "std_msgs/LaserScan.h"
 
 #include "self_test/self_test.h"
+#include "diagnostic_updater/diagnostic_updater.h"
 
 #include "hokuyo.h"
 
@@ -120,11 +122,11 @@ private:
   hokuyo::LaserConfig cfg_;
 
   bool running_;
-  
-  int count_;
-  ros::Time next_time_;
 
+  int count_;
+  
   SelfTest<HokuyoNode> self_test_;
+  DiagnosticUpdater<HokuyoNode> diagnostic_;
 
 public:
   hokuyo::Laser laser_;
@@ -138,8 +140,10 @@ public:
   bool autostart_;
   bool calibrate_time_;
   string frameid_;
+  string device_id_;
+  string device_status_;
 
-  HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this)
+  HokuyoNode() : ros::node("hokuyo"), running_(false), count_(0), self_test_(this), diagnostic_(this)
   {
     advertise<std_msgs::LaserScan>("scan", 100);
 
@@ -168,6 +172,9 @@ public:
     self_test_.addTest( &HokuyoNode::disconnectTest );
     self_test_.addTest( &HokuyoNode::resumeTest );
 
+    diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
+    diagnostic_.addUpdater( &HokuyoNode::freqStatus );
+    //    diagnostic_.addUpdater( &HokuyoNode::timeDiagnostic );
   }
 
   ~HokuyoNode()
@@ -181,10 +188,14 @@ public:
 
     try
     {
+      device_id_ = std::string("unknown");
+      device_status_ = std::string("unknown");
+
       laser_.open(port_.c_str());
 
-      string id = laser_.getID();
-      log(ros::INFO, "Connected to device with ID: %s", id.c_str());
+      string device_id_ = laser_.getID();
+      string device_status_ = laser_.getStatus();
+      log(ros::INFO, "Connected to device with ID: %s", device_id_.c_str());
 
       laser_.laserOn();
 
@@ -204,8 +215,6 @@ public:
       log(ros::WARNING,"Exception thrown while starting urg.\n%s", e.what());
       return -1;
     }
-
-    next_time_ = ros::Time::now();
 
     return(0);
   }
@@ -267,12 +276,6 @@ public:
     publish("scan", scan_msg_);
 
     count_++;
-    ros::Time now_time = ros::Time::now();
-    if (now_time > next_time_) {
-      std::cout << count_ << " scans/sec at " << now_time << std::endl;
-      count_ = 0;
-      next_time_ = next_time_ + ros::Duration(1,0);
-    }
 
     return(0);
   }
@@ -288,10 +291,12 @@ public:
           if(publishScan() < 0)
             break;
           self_test_.checkTest();
+          diagnostic_.update();
         }
       } else {
         usleep(1000000);
         self_test_.checkTest();
+        diagnostic_.update();
       }
     }
 
@@ -301,6 +306,61 @@ public:
     return true;
   }
 
+  void connectionStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Connection Status";
+
+    if (!running_)
+    {
+      status.level = 2;
+      status.message = "Not connected";
+    }
+    else if (device_status_ != std::string("Sensor works well."))
+    {
+      status.level = 2;
+      status.message = "Sensor not operational";
+    } else {
+      status.level = 0;
+      status.message = "Sensor connected";
+    }    
+
+    status.set_strings_size(3);
+    status.strings[0].label = "Port";
+    status.strings[0].value = port_;
+    status.strings[1].label = "Device ID";
+    status.strings[1].value = device_id_;
+    status.strings[2].label = "Device Status";
+    status.strings[2].value = device_status_;
+  }
+
+  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frequency Status";
+
+    double desired_freq = 40.0 / ((double)(skip_) + 1.0);
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Scans in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    count_ = 0;
+  }
 
   void pretest()
   {
