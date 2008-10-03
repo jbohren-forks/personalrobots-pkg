@@ -47,6 +47,7 @@ public:
     {
         m_doc = new TiXmlDocument();
         m_paths.push_back("");
+        m_paths.push_back(std::string((getenv("MC_RESOURCE_PATH") ? getenv("MC_RESOURCE_PATH") : "."))+"/"); // add from environment variable
     }
     
     ~Merge(void)
@@ -106,11 +107,27 @@ private:
         return NULL;
     }
 
+    /// @todo copied over from parser.cpp, need to re organize
+    void replaceReference(TiXmlElement **to_replace, TiXmlNode *replacements)
+    {
+      TiXmlNode *inserted = *to_replace;
+      while (replacements)
+      {
+        inserted = inserted->Parent()->InsertAfterChild(inserted, *replacements);
+        assert(inserted);
+        replacements = replacements->NextSibling();
+      }
+
+      (*to_replace)->Parent()->RemoveChild(*to_replace);
+      *to_replace = NULL;
+    }
+
+
     bool fixIncludes(TiXmlElement *elem)
     {
 	if (elem->ValueStr() == "include" && elem->FirstChild() && elem->FirstChild()->Type() == TiXmlNode::TEXT)
         {
-            char* filename = findFile(elem->FirstChild()->Value());
+            char* filename = findFile(elem->FirstChild()->Value()); // check all paths in m_paths
 	    bool change = false;
 	    if (filename)
             {
@@ -121,7 +138,7 @@ private:
                     TiXmlNode *parent = elem->Parent();
                     if (parent)
 		    {
-			parent->ReplaceChild(dynamic_cast<TiXmlNode*>(elem), *doc->RootElement())->ToElement();
+                        replaceReference(&elem, doc->RootElement()->FirstChild());
 			change = true;
 		    }
 		}
