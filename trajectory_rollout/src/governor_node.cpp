@@ -44,7 +44,7 @@ GovernorNode::GovernorNode() :
   ma_(map_, OUTER_RADIUS),
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, 
       PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_),
-  cycle_time_(0.1)
+  cycle_time_(0.05)
 {
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;
@@ -94,12 +94,35 @@ void GovernorNode::planReceived(){
 }
 
 void GovernorNode::processPlan(){
-  libTF::TFPose2D robot_pose;
+  libTF::TFPose2D robot_pose, global_pose;
   robot_pose.x = 0.0;
   robot_pose.y = 0.0;
   robot_pose.yaw = 0.0;
   robot_pose.frame = "base";
   robot_pose.time = 0;
+
+  try
+  {
+    global_pose = tf_.transformPose2D("map", robot_pose);
+  }
+  catch(libTF::TransformReference::LookupException& ex)
+  {
+    puts("no global->local Tx yet");
+    printf("%s\n", ex.what());
+    return;
+  }
+  catch(libTF::TransformReference::ConnectivityException& ex)
+  {
+    puts("no global->local Tx yet");
+    printf("%s\n", ex.what());
+    return;
+  }
+  catch(libTF::TransformReference::ExtrapolateException& ex)
+  {
+    //      puts("extrapolation required");
+    //      printf("%s\n", ex.what());
+    return;
+  }
 
   libTF::TFPose2D robot_vel;
   //we need robot_vel_ to compute global_vel so we'll lock
@@ -119,7 +142,7 @@ void GovernorNode::processPlan(){
   ma_.updateSize(map_.size_x_, map_.size_y_);
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
   gettimeofday(&start,NULL);
-  int path_index = tc_.findBestPath(robot_pose, robot_vel, drive_cmds);
+  int path_index = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
   gettimeofday(&end,NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;

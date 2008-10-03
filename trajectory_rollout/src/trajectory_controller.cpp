@@ -361,7 +361,7 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
   vtheta_samp = 0.0;
-  vx_samp = -0.05;
+  vx_samp = 0.00;
   vy_samp = 0.0;
   for(int i = 0; i < samples_per_dim_; ++i){
     trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
@@ -403,7 +403,7 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   printf("Trajectories created\n");
 
   //we need to transform the trajectories to world space for scoring
-  trajectoriesToWorld();
+  //trajectoriesToWorld();
   printf("Trajectories converted\n");
 
   //now we want to score the trajectories that we've created and return the best one
