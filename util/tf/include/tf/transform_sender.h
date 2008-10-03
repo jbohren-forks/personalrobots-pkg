@@ -30,8 +30,8 @@
 
 /** \author Tully Foote */
 
-#ifndef TF_TRANSFORMSENDER_H
-#define TF_TRANSFORMSENDER_H
+#ifndef TF_TRANSFORMBROADCASTER_H
+#define TF_TRANSFORMBROADCASTER_H
 
 #include "ros/node.h"
 #include "tf/tf.h"
@@ -46,10 +46,10 @@ namespace tf
  * It will handle all the messaging and stuffing of messages.  And the function prototypes lay out all the 
  * necessary data needed for each message.  */
 
-class TransformSender{
+class TransformBroadcaster{
 public:
   /** \brief Constructor (needs a ros::node reference) */
-  TransformSender(ros::node& anode):
+  TransformBroadcaster(ros::node& anode):
     node_(anode)
   {
     node_.advertise<tfMessage>("/tf_message", 100);
@@ -122,4 +122,4 @@ private:
 
 }
 
-#endif //TF_TRANSFORMSENDER_H
+#endif //TF_TRANSFORMBROADCASTER_H

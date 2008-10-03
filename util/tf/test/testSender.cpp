@@ -1,15 +1,15 @@
 #include "tf/transform_sender.h"
 
-class testSender : public ros::node
+class testBroadcaster : public ros::node
 {
 public:
   //constructor
-  testSender() : ros::node("sender"),sender(*this),count(2){};
+  testBroadcaster() : ros::node("broadcaster"),broadcaster(*this),count(2){};
   //Clean up ros connections
-  ~testSender() { }
+  ~testBroadcaster() { }
 
   //A pointer to the rosTFServer class
-  tf::TransformSender sender;
+  tf::TransformBroadcaster broadcaster;
 
 
   // A function to call to send data periodically
@@ -20,7 +20,7 @@ public:
         << 0 << 0 << 1 << 3
         << 0 << 0 << 0 << 1;
 
-    sender.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), 1000000000ULL, "frame1", "frame2");
+    broadcaster.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), 1000000000ULL, "frame1", "frame2");
     /*    pTFServer->sendEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
     pTFServer->sendInverseEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
     pTFServer->sendDH("count","count++",1,1,1,1,ros::Time(100000,100000));
@@ -43,12 +43,12 @@ int main(int argc, char ** argv)
   ros::init(argc, argv);
 
   //Construct/initialize the server
-  testSender myTestSender;
+  testBroadcaster myTestBroadcaster;
   
-  while(myTestSender.ok())
+  while(myTestBroadcaster.ok())
   {
       //Send some data
-      myTestSender.test();
+      myTestBroadcaster.test();
       usleep(1000);
   }
   ros::fini();
