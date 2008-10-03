@@ -77,7 +77,8 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
   resp->map.width = img->w;
   resp->map.height = img->h;
   resp->map.resolution = res;
-  /// @todo Make the map's origin configurable
+  /// @todo Make the map's origin configurable, probably from within the
+  /// comment section of the image file.
   resp->map.origin.x = 0.0;
   resp->map.origin.y = 0.0;
   resp->map.origin.th = 0.0;
@@ -113,7 +114,8 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
       // map.  Note that we invert the graphics-ordering of the pixels to
       // produce a map with cell (0,0) in the lower-left corner.
       //
-      /// @todo Make the color thresholds configurable
+      /// @todo Make the color thresholds configurable, probably from
+      /// within the comments section of the image file.
       if(occ > 0.5)
         resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = +100;
       else if(occ < 0.1)

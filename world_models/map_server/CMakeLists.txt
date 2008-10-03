@@ -2,10 +2,10 @@ cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
 include(rosbuild)
 rospack(map_server)
 rospack_add_executable(map_server src/image_loader.cpp src/main.cpp)
-target_link_libraries(map_server SDL_image)
+target_link_libraries(map_server SDL SDL_image)
 
 rospack_add_gtest(utest test/utest.cpp test/test_constants.cpp src/image_loader.cpp)
-target_link_libraries(utest SDL_image)
+target_link_libraries(utest SDL SDL_image)
 set_target_properties(utest PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
 
