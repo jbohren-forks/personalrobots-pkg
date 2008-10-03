@@ -1,0 +1,8 @@
+<package>
+<description brief="Robot mechanism bringup></description>
+  <author>Stuart Glaser</author>
+  <license>BSD</license>
+  <depend package="robot_mechanism_controllers"/>
+  <depend package="pr2_mechanism_controllers"/>
+  <depend package="mechanism_control"/>
+</package>
