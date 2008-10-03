@@ -3,6 +3,9 @@
 <robot name="pr2"><!-- name of the robot-->
   
   <!-- joint blocks -->
+  <joint name="base_block_joint" type="planar" /> 
+
+  <!-- joint blocks -->
   <joint name="link1_joint" type="revolute" >
     <axis xyz="0 0 1" />
     <anchor xyz="0 0 0" />
@@ -56,9 +59,6 @@
     <anchor xyz="0.0 0 0" />
     <limit min="-3.14159" max="3.14159" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
-  </joint>
-
-  <joint name="base_block_joint" type="planar"> 
   </joint>
 
   <!-- link blocks -->

@@ -1,7 +1,11 @@
 <?xml version="1.0"?>
 
 <robot name="pr2"><!-- name of the robot-->
-  
+
+
+  <!-- joint blocks -->
+  <joint name="base_block_joint" type="planar" /> 
+
   <!-- joint blocks -->
   <joint name="link1_joint" type="revolute" >
     <axis xyz="0 0 1" />
@@ -18,8 +22,6 @@
     <calibration values="1.5 -1 " />
   </joint>
 
-  <joint name="base_block_joint" type="planar"> 
-  </joint>
 
   <!-- link blocks -->
   <link name="base_block">
