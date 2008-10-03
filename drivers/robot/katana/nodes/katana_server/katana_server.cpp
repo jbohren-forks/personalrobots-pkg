@@ -204,7 +204,7 @@ class KatanaServer : public ros::node
     {
       katana->allow_crash_limits(false);
       bool success = false;
-      for (size_t i=0; i<req.jointAngles.configs_size; i++) {
+      for (size_t i=0; i<req.jointAngles.get_configs_size(); i++) {
         success = katana->goto_joint_position_deg(req.jointAngles.configs[i].angles[0], 
           req.jointAngles.configs[i].angles[1], req.jointAngles.configs[i].angles[2],
           req.jointAngles.configs[i].angles[3], req.jointAngles.configs[i].angles[4]);
@@ -225,7 +225,7 @@ class KatanaServer : public ros::node
     {
       katana->allow_crash_limits(false);
       bool success = false;
-      for (size_t i=0; i<req.jointAngles.configs_size; i++) {
+      for (size_t i=0; i<req.jointAngles.get_configs_size(); i++) {
         cout << "Moving arm to: " << req.jointAngles.configs[i].angles[0] << " "
           << req.jointAngles.configs[i].angles[1] << " " 
           << req.jointAngles.configs[i].angles[2] << " "
