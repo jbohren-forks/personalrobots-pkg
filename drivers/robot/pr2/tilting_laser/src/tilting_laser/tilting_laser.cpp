@@ -284,7 +284,7 @@ public:
       full_cloud.header.stamp = ros::Time::now(); //HACK
       
       //Populate full_cloud from the cloud
-      for(unsigned int i = 0; i < cloud.pts_size; i ++)
+      for(unsigned int i = 0; i < cloud.get_pts_size(); i ++)
         {
           full_cloud.pts[full_cloud_cnt].x = cloud.pts[i].x;  
           full_cloud.pts[full_cloud_cnt].y = cloud.pts[i].y;  
@@ -294,7 +294,7 @@ public:
         }
 
       //Populate the laser_image from the scan
-      for (unsigned int i = 0; i < scans.intensities_size; i ++)
+      for (unsigned int i = 0; i < scans.get_intensities_size(); i ++)
         {
           *(unsigned short*)(&(image.intensity_img.data[ind * 2 * image.intensity_img.width + image.intensity_img.width * 2 - 2 - 2*i])) = scans.intensities[i];
           *(unsigned short*)(&(image.range_img.data[ind * 2 * image.range_img.width + image.range_img.width * 2 - 2 - 2*i])) = scans.ranges[i] * 1000.0;
