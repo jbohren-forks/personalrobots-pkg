@@ -229,7 +229,7 @@ namespace costmap_2d {
     results.clear();
     unsigned int maxCellCount = getWidth() * getHeight();
     for(unsigned int i = 0; i < maxCellCount; i++){
-      if(staticData_[i] == LETHAL_OBSTACLE || staticData_[i] == INFLATED_OBSTACLE || obsWatchDog_[i] > 0)
+      if(fullData_[i] == LETHAL_OBSTACLE || fullData_[i] == INFLATED_OBSTACLE)
 	results.push_back(i);
     }
   }
