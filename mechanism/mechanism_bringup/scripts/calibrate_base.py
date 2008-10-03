@@ -117,10 +117,10 @@ template = '''
 </controller>
 '''
 
-calibrate_optically(template.replace('SUFFIX', 'front_left')
-calibrate_optically(template.replace('SUFFIX', 'front_right')
-calibrate_optically(template.replace('SUFFIX', 'rear_left')
-calibrate_optically(template.replace('SUFFIX', 'rear_right')
+calibrate_optically(template.replace('SUFFIX', 'front_left'))
+calibrate_optically(template.replace('SUFFIX', 'front_right'))
+calibrate_optically(template.replace('SUFFIX', 'rear_left'))
+calibrate_optically(template.replace('SUFFIX', 'rear_right'))
 
 """
 I have left the following calls here in case the above lines don't actually work
