@@ -27,8 +27,8 @@ target_link_libraries(bullet_unittest tf)
 
 
 rospack_add_executable(btTest test/quaternion.cpp)
-rospack_add_executable(testClient test/testClient.cpp)
-target_link_libraries(testClient tf)
+rospack_add_executable(testListener test/testListener.cpp)
+target_link_libraries(testListener tf)
                                  
 rospack_add_executable(testBroadcaster test/testBroadcaster.cpp)
 target_link_libraries(testBroadcaster tf)
