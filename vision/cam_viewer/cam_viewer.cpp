@@ -24,7 +24,7 @@ public:
   void image_cb()
   {
     IplImage *cv_image = cvCreateImage( cvSize( image_msg.width, image_msg.height), IPL_DEPTH_8U, 3);
-    memcpy(cv_image->imageData, image_msg.data, cv_image->imageSize);
+    memcpy(cv_image->imageData, &(image_msg.data[0]), cv_image->imageSize);
     cvShowImage("cam_viewer", cv_image);
     key = cvWaitKey(10);
 		if (key==' ')
