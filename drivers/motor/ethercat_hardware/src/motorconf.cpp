@@ -120,6 +120,7 @@ void init(char *interface)
     }
     else
     {
+      printf("found a %08x at #%d\n", sh->get_product_code(), slave);
       devices.push_back(NULL);
     }
   }
