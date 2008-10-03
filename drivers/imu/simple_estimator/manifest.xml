@@ -5,6 +5,6 @@
   <author>Jeremy Leibs</author>
   <license>BSD</license>
   <depend package='roscpp'/>
-  <depend package='std_msgs'/>
+  <depend package='imu_node'/>
   <depend package='newmat10'/>
 </package>

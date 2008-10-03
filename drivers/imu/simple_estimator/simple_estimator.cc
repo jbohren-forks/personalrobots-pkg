@@ -29,7 +29,7 @@
 
 #include <ros/node.h>
 #include <math.h>
-#include <std_msgs/ImuData.h>
+#include <imu_node/ImuData.h>
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
 #include <iostream>
@@ -47,13 +47,13 @@ static NEWMAT::Matrix cross(double x, double y, double z) {
 class simple_estimator: public ros::node
 {
 public:
-  std_msgs::ImuData reading;
+  imu_node::ImuData reading;
 
   NEWMAT::Matrix orientation;
 
   simple_estimator() : ros::node("simple_estimator")
   {
-    subscribe<std_msgs::ImuData>("imu_data", reading, &simple_estimator::imu_callback);
+    subscribe<imu_node::ImuData>("imu_data", reading, &simple_estimator::imu_callback);
 
     orientation = NEWMAT::IdentityMatrix(3);
   }
