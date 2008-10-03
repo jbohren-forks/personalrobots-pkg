@@ -2,9 +2,7 @@
   <description>A node and utilities for connecting to firewire cameras</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
-  <depend package="newmat10"/>
   <depend package="libdc1394v2"/>
-  <!-- <depend package="sdl"/> -->
   <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldc1394cam"/>
