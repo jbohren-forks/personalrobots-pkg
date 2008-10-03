@@ -53,12 +53,11 @@ private:
   //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
   rosTF::TransformArray tfArrayIn;
 
-
 public:
   TransformListener(ros::node & rosnode, 
                   bool interpolating = true,
-                  unsigned long long max_cache_time = DEFAULT_CACHE_TIME,
-                  unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE):
+                  int64_t max_cache_time = DEFAULT_CACHE_TIME,
+                  int64_t max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE):
     Transformer(interpolating,
                 max_cache_time,
                 max_extrapolation_distance),
@@ -86,7 +85,8 @@ public:
 
 private:
   /// memory space for callback
-  tfMessage msg_in_;
+  tfMessage msg_in_; 
+  ///\todo Switch to std_msgs::Transform
   /// Callback function for ros message subscriptoin
   void subscription_callback();
 

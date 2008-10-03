@@ -33,13 +33,13 @@
 
 using namespace tf;
 
-int64_t TimeCache::getData(uint64_t time, TransformStorage & data_out) //returns distance in time to nearest value
+ros::Duration TimeCache::getData(ros::Time time, TransformStorage & data_out) //returns distance in time to nearest value
   //bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff)
 {
   TransformStorage p_temp_1, p_temp_2;
 
   int num_nodes;
-  int64_t time_diff;
+  ros::Duration time_diff;
   storage_lock_.lock();
   try
   {
@@ -75,7 +75,7 @@ int64_t TimeCache::getData(uint64_t time, TransformStorage & data_out) //returns
 };
 
 
-uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uint64_t target_time, int64_t &time_diff)
+uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff)
 {
   //No values stored
   if (storage_.empty())
@@ -87,7 +87,7 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
   if (target_time == 0)
   {
     one = storage_.front();
-    time_diff = storage_.front().stamp_; ///@todo what should this be?? difference from "now"?
+    time_diff = ros::Time::now() - storage_.front().stamp_; ///@todo what should this be?? difference from "now"?
     return 1;
   }
 
@@ -114,12 +114,12 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
     one = *storage_it;
     two = *(++storage_it);
     time_diff = target_time - storage_.begin()->stamp_;
-    if ((unsigned int) time_diff > max_extrapolation_time_) //Guarenteed in the future therefore positive
+    if (time_diff > max_extrapolation_time_) //Guarenteed in the future therefore positive
     {
       std::stringstream ss;
-      ss << "Extrapolation Too Far in the future: target_time = "<< (target_time)/1000000000.0 <<", closest data at "
-         << (one.stamp_)/1000000000.0 << " and " << (two.stamp_)/1000000000.0 <<" which are farther away than max_extrapolation_time "
-         << (max_extrapolation_time_)/1000000000.0 <<" at "<< (target_time - one.stamp_)/1000000000.0<< " and " << (target_time - two.stamp_)/1000000000.0 <<" respectively.";
+      ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).to_double() <<", closest data at "
+         << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively.";
       throw ExtrapolationException(ss.str());
     }
     return 2;
@@ -131,12 +131,12 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
     one = *(--storage_it);
     two = *(--storage_it);
     time_diff = target_time - one.stamp_;
-    if (time_diff < -(long long)max_extrapolation_time_) //Guarenteed in the past
+    if (time_diff < ros::Duration()-max_extrapolation_time_) //Guarenteed in the past ///\todo check negative sign
     {
       std::stringstream ss;
-      ss << "Extrapolation Too Far in the past: target_time = "<< (target_time)/1000000000.0 <<", closest data at "
-         << (one.stamp_)/1000000000.0 << " and " << (two.stamp_)/1000000000.0 <<" which are farther away than max_extrapolation_time "
-         << (max_extrapolation_time_)/1000000000.0 <<" at "<< (-target_time + one.stamp_)/1000000000.0<< " and " << (-target_time + two.stamp_)/1000000000.0 <<" respectively."; //sign flip since in the past
+      ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).to_double() <<", closest data at "
+         << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
+         << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively."; //sign flip since in the past
       throw ExtrapolationException(ss.str());
     }
     return 2;
@@ -145,7 +145,7 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
   //Finally the case were somewhere in the middle  Guarenteed no extrapolation :-)
   one = *(storage_it); //Older
   two = *(--storage_it); //Newer
-  if (fabs(target_time - one.stamp_) < fabs(target_time - two.stamp_))
+  if (target_time - one.stamp_ < two.stamp_ - target_time) ///\todo check logic for replacement of (fabs(target_time - one.stamp_) < fabs(target_time - two.stamp_))
     time_diff = target_time - one.stamp_;
   else
     time_diff = target_time - two.stamp_;
@@ -154,10 +154,10 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, uin
 
 };
 
-void TimeCache::interpolate(const TransformStorage& one, const TransformStorage& two, uint64_t time, TransformStorage& output)
+void TimeCache::interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output)
 { 
   //Calculate the ratio
-  btScalar ratio = ((double) ((int64_t)time - (int64_t)one.stamp_)) / ((double) ((int64_t)two.stamp_ - (int64_t)one.stamp_));
+  btScalar ratio = ((time - one.stamp_).to_double()) / ((two.stamp_ - one.stamp_).to_double());
   
   //Interpolate translation
   btVector3 v;

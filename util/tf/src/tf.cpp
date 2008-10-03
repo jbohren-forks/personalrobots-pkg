@@ -35,11 +35,11 @@
 using namespace tf;
 
 Transformer::Transformer(bool interpolating, 
-                                uint64_t cache_time,
-                                unsigned long long max_extrapolation_distance):
+                                ros::Duration cache_time,
+                                ros::Duration max_extrapolation_distance):
   cache_time(cache_time),
   interpolating (interpolating),
-  max_extrapolation_distance(max_extrapolation_distance)
+  max_extrapolation_distance_(max_extrapolation_distance)
 {
   frameIDs_["NO_PARENT"] = 0;
   frames_.push_back(NULL);// new TimeCache(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
@@ -79,7 +79,7 @@ void Transformer::setTransform(const Stamped<btTransform>& transform, const std:
   
 
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame, 
-                     uint64_t time, Stamped<btTransform>& transform)
+                     ros::Time time, Stamped<btTransform>& transform)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), time, 0);
 
@@ -89,8 +89,8 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 
 };
 
-void Transformer::lookupTransform(const std::string& target_frame, uint64_t target_time, const std::string& source_frame, 
-                     uint64_t source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
+void Transformer::lookupTransform(const std::string& target_frame, ros::Time target_time, const std::string& source_frame, 
+                     ros::Time source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( source_frame), source_time, lookupFrameNumber(fixed_frame));
 
@@ -103,7 +103,7 @@ void Transformer::lookupTransform(const std::string& target_frame, uint64_t targ
 
 
 
-TransformLists Transformer::lookupLists(unsigned int target_frame, uint64_t target_time, unsigned int source_frame, uint64_t source_time, unsigned int fixed_frame)
+TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time target_time, unsigned int source_frame, ros::Time source_time, unsigned int fixed_frame)
 {
   /*  timeval tempt;
   gettimeofday(&tempt,NULL);
@@ -295,7 +295,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
 }
 
 
-std::string Transformer::chainAsString(const std::string & target_frame, uint64_t target_time, const std::string & source_frame, uint64_t source_time, const std::string& fixed_frame)
+std::string Transformer::chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string& fixed_frame)
 {
   std::stringstream mstream;
   TransformLists lists = lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame), source_time, lookupFrameNumber(fixed_frame));

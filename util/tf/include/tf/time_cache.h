@@ -63,19 +63,19 @@ class TimeCache
  public:
   static const int MIN_INTERPOLATION_DISTANCE = 5; //!< Number of nano-seconds to not interpolate below.
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
-  static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
-  static const unsigned long long DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
+  static const long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
+  static const long long DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
   
 
-  TimeCache(bool interpolating = true, uint64_t max_storage_time = DEFAULT_MAX_STORAGE_TIME, 
-            uint64_t max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME):
+  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME), 
+            ros::Duration  max_extrapolation_time = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_TIME)):
     interpolating_(interpolating),
     max_storage_time_(max_storage_time),
     max_extrapolation_time_(max_extrapolation_time)
     {};
   
 
-  int64_t getData(uint64_t time, TransformStorage & data_out); //returns distance in time to nearest value
+  ros::Duration getData(ros::Time time, TransformStorage & data_out); //returns distance in time to nearest value
 
   void insertData(const TransformStorage& new_data)
     {
@@ -94,7 +94,7 @@ class TimeCache
     };
 
 
-  void interpolate(const TransformStorage& one, const TransformStorage& two, uint64_t time, TransformStorage& output);  //specific implementation for each T
+  void interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output);  //specific implementation for each T
 
 
   void clearList() { storage_lock_.lock(); storage_.clear(); storage_lock_.unlock();};
@@ -103,20 +103,20 @@ class TimeCache
   std::list<TransformStorage > storage_; 
 
   bool interpolating_;
-  uint64_t max_storage_time_;
-  uint64_t max_extrapolation_time_;
+  ros::Duration max_storage_time_;
+  ros::Duration max_extrapolation_time_;
   
   ros::thread::mutex storage_lock_;
 
   /// A helper function for getData 
   //Assumes storage is already locked for it
-  uint8_t findClosest(TransformStorage& one, TransformStorage& two, uint64_t target_time, int64_t &time_diff);
+  uint8_t findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff);
 
   void pruneList()
     {
 
       storage_lock_.lock();
-      uint64_t latest_time = storage_.begin()->stamp_;
+      ros::Time latest_time = storage_.begin()->stamp_;
       
       while(!storage_.empty() && storage_.back().stamp_ + max_storage_time_ < latest_time)
       {

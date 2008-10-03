@@ -78,8 +78,8 @@ class Transformer
 public:
   /************* Constants ***********************/
   static const unsigned int MAX_GRAPH_DEPTH = 100;   //!< The maximum number of time to recurse before assuming the tree has a loop.
-  static const uint64_t DEFAULT_CACHE_TIME = 10 * 1000000000ULL;  //!< The default amount of time to cache data
-  static const uint64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0; //!< The default amount of time to extrapolate
+  static const int64_t DEFAULT_CACHE_TIME = 10 * 1000000000ULL;  //!< The default amount of time to cache data
+  static const int64_t DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0; //!< The default amount of time to extrapolate
 
 
   /** Constructor 
@@ -88,8 +88,8 @@ public:
    * \param max_extrapolation_distance How far to extrapolate before throwing an exception
    */
   Transformer(bool interpolating = true, 
-              uint64_t cache_time_ = DEFAULT_CACHE_TIME,
-              unsigned long long max_extrapolation_distance_ = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
+              ros::Duration cache_time_ = ros::Duration(DEFAULT_CACHE_TIME),
+              ros::Duration max_extrapolation_distance_ = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_DISTANCE));
   virtual ~Transformer(void);
 
   /** \brief Clear all data */
@@ -109,10 +109,10 @@ public:
    * TransformReference::MaxDepthException
    */
   void lookupTransform(const std::string& target_frame, const std::string& source_frame, 
-                       uint64_t time, Stamped<btTransform>& transform);
+                       ros::Time time, Stamped<btTransform>& transform);
   //time traveling version
-  void lookupTransform(const std::string& target_frame, uint64_t target_time, 
-                       const std::string& source_frame, uint64_t _source_time, 
+  void lookupTransform(const std::string& target_frame, ros::Time target_time, 
+                       const std::string& source_frame, ros::Time _source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
 
   /** \brief Transform a Stamped data_in into data_out in traget frame */
@@ -124,14 +124,14 @@ public:
    * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 
    * \todo implement this. */
   template<typename T>
-  void transformStamped(const std::string& target_frame, const uint64_t& _target_time,const std::string& fixed_frame, 
+  void transformStamped(const std::string& target_frame, ros::Time _target_time,const std::string& fixed_frame, 
                         const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string chainAsString(const std::string & target_frame, uint64_t target_time, const std::string & source_frame, uint64_t source_time, const std::string & fixed_frame);
+  std::string chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string & fixed_frame);
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
@@ -168,13 +168,13 @@ protected:
   std::vector<std::string> frameIDs_reverse;
   
   /// How long to cache transform history
-  uint64_t cache_time;
+  ros::Duration cache_time;
 
   /// whether or not to interpolate or extrapolate
   bool interpolating;
   
   /// whether or not to allow extrapolation
-  unsigned long long max_extrapolation_distance;
+  ros::Duration max_extrapolation_distance_;
 
 
   /************************* Internal Functions ****************************/
@@ -196,7 +196,7 @@ protected:
     {
       retval = frames_.size();
       frameIDs_[frameid_str] = retval;
-      frames_.push_back( new TimeCache(interpolating, cache_time, max_extrapolation_distance));
+      frames_.push_back( new TimeCache(interpolating, cache_time, max_extrapolation_distance_));
       frameIDs_reverse.push_back(frameid_str);
     }
     else
@@ -221,14 +221,14 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookupLists(unsigned int target_frame, uint64_t target_time, unsigned int source_frame, uint64_t souce_time, unsigned int fixed_frame);
+  TransformLists  lookupLists(unsigned int target_frame, ros::Time target_time, unsigned int source_frame, ros::Time souce_time, unsigned int fixed_frame);
   
   /** Compute the transform based on the list of frames */
   btTransform computeTransformFromList(const TransformLists & list);
 
 };
 
-
+///\todo write out lots of these :-(
 
 template<typename T>
 void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
