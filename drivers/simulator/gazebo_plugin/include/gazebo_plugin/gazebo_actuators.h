@@ -147,6 +147,13 @@ private:
    * \brief read gazebo_joints.xml for joint damping and additional simulation parameters for joints
    */
   void ReadGazeboPhysics(XMLConfigNode *node);
+
+  /*
+   *  \brief pointer to ros node
+   */
+  ros::node *rosnode_;
+
+
 };
 
 /** \} */

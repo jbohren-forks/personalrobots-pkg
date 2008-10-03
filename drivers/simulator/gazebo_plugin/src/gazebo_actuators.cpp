@@ -57,6 +57,18 @@ GazeboActuators::GazeboActuators(Entity *parent)
 
   if (!this->parent_model_)
     gzthrow("GazeboActuators controller requires a Model as its parent");
+
+    rosnode_ = ros::g_node; // comes from where?
+    int argc = 0;
+    char** argv = NULL;
+    if (rosnode_ == NULL)
+    {
+      // this only works for a single camera.
+      ros::init(argc,argv);
+      rosnode_ = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+      printf("-------------------- starting node in Gazebo Mechanism Control \n");
+    }
+
 }
 
 GazeboActuators::~GazeboActuators()
@@ -216,24 +228,33 @@ void GazeboActuators::FiniChild()
 
 void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
 {
-  XMLConfigNode *robot = node->GetChild("robot");
-  if (!robot)
+
+  std::string tmp_param_string;
+  this->rosnode_->get_param("robotdesc/pr2",tmp_param_string);
+
+
+  // wait for robotdesc/pr2 on param server
+  while(tmp_param_string.c_str()==NULL)
   {
-    fprintf(stderr, "Error loading gazebo_actuators config: no robot element\n");
-    return;
+    std::cout << "WARNING: gazebo mechanism control plugin is waiting for robotdesc/pr2 in param server.  run merge/roslaunch send.xml or similar." << std::endl;
+    this->rosnode_->get_param("robotdesc/pr2",tmp_param_string);
+    usleep(100000);
   }
 
-  std::string filename = robot->GetFilename("filename", "", 1);
-  printf("Loading %s\n", filename.c_str());
+  std::cout << "gazebo mechanism control got pr2.xml from param server, parsing it..." << std::endl;
+  //std::cout << tmp_param_string << std::endl;
+  std::string* pr2_xml_content = new std::string(tmp_param_string.c_str());;
 
-  TiXmlDocument doc(filename);
-  if (!doc.LoadFile())
+  // initialize TiXmlDocument doc with a string
+  TiXmlDocument doc;
+  if (!doc.Parse(pr2_xml_content->c_str()))
   {
     fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file: %s\n",
-            filename.c_str());
+            pr2_xml_content->c_str());
     abort();
   }
   urdf::normalizeXml(doc.RootElement());
+  //std::cout << *(doc.RootElement()) << std::endl;
 
   // Pulls out the list of actuators used in the robot configuration.
   struct GetActuators : public TiXmlVisitor
@@ -252,6 +273,7 @@ void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
   std::set<std::string>::iterator it;
   for (it = get_actuators.actuators.begin(); it != get_actuators.actuators.end(); ++it)
   {
+    //std::cout << " adding actuator " << (*it) << std::endl;
     hw_.actuators_.push_back(new Actuator(*it));
   }
 
