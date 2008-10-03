@@ -24,9 +24,41 @@ static const double DefDisparityUnitInPixels = 16.;
 /// The minimum number needed to do tracking between two cams
 static const int defMinNumTrackablePairs = 10;
 
+class KeypointDescriptor {
+public:
+  virtual ~KeypointDescriptor(){}
+  virtual double compare(KeypointDescriptor& kpd);
+};
+
+/// Key point extracted from (stereo) images.
+/// - For one single 2D image, x, y are interpreted as u and v, the image location
+/// of the feature point.
+/// - For stereo pair, the class members x, y, z are interpreted as
+/// u, v, d, where u and v are the image coordinate on the left image and d
+/// is the disparity.
+/// - For spin image, or other representations that may want to specify a key point
+/// in space, x,y,z can be interpreted as the Cartesian coordinates.
+class Keypoint: public CvPoint3D64f
+{
+public:
+  Keypoint(double _x, double _y, double _z, double response, double scale, KeypointDescriptor* descriptor):
+    r(response), s(scale), desc(descriptor){
+    x = _x; y=_y; z=_z;
+  }
+  ~Keypoint() {
+    delete desc;
+  }
+  double r; //< the response of the keypoint
+  double s; //< scale of the keypoint
+  KeypointDescriptor* desc;
+};
+
+
 /// Disparity coordinates of the key points
 /// x, y, z in class CvPoint3D64f is used to represent x, y, d (or u, v, d)
 typedef vector<CvPoint3D64f> Keypoints;
+//typedef vector<Keypoint> Keypoints;
+
 
 /// Information of pose estimation for one frame.
 class PoseEstFrameEntry  {
@@ -242,6 +274,7 @@ bool goodFeaturesToTrack(
     /// (OUTPUT) key point detected
     Keypoints*& keypoints
 );
+
 
 /**
  * matching method to find a best match of a key point in a neighborhood
