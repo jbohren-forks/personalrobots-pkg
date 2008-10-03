@@ -70,7 +70,7 @@ public:
     img.compression = "raw";
     img.colorspace = "mono8";
     img.set_data_size(buf_size);
-    memcpy(img.data, buf, buf_size);
+    memcpy(&(img.data[0]), buf, buf_size);
 
     count++;
     ros::Time now_time = ros::Time::now();
@@ -95,7 +95,7 @@ public:
     img.compression = "jpeg";
     img.colorspace = "mono8";
     img.set_data_size(buf_size);
-    memcpy(img.data, buf, buf_size);
+    memcpy(&(img.data[0]), buf, buf_size);
 
 
     count++;
