@@ -273,6 +273,10 @@ Here are the gazebo plugins which are currently implemented:
 @section topic PR2 ROS topics
 Various dynamically loaded plugins have been outfitted for PR2.
 Below are the ROS messages actively used by PR2 simulation as described by launch script \b roslaunch \b ros-pkg/robot_descriptions/gazebo_robot_description/pr2_gazebo_actuators.xml.
+Additional ROS topics and services used by PR2 simulation can be found in packages
+ <a href="../../mechanism_control/html/index.html">             mechanism_control  </a>,
+ <a href="../../robot_mechanism_controllers/html/index.html">   robot_mechanism_controllers </a> and
+ <a href="../../pr2_mechanism_controllers/html/index.html">     pr2_mechanism_controllers </a>.
 
  - ROS topics published directly by the simulator plugins
      <table border="1">
