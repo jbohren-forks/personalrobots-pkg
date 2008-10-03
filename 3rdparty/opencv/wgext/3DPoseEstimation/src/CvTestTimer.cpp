@@ -8,7 +8,8 @@
 CvTestTimer CvTestTimer::_singleton;
 
 CvTestTimer::CvTestTimer():
-	mFrequency(cvGetTickFrequency()*1000)  // make it milli seconds. cvGetTickFrequency()
+  mFrequency(CLOCKS_PER_SEC/1000)  // make it milli seconds. Go with clock()
+//	mFrequency(cvGetTickFrequency()*1000)  // make it milli seconds. cvGetTickFrequency()
 	// returns the number of ticks in one micro second.
 {
 	reset();

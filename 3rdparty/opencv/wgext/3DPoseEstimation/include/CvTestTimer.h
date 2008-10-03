@@ -111,19 +111,22 @@ public:
 	static CvTestTimer _singleton;
 };
 
+//#define GETTICKCOUNT cvGetTickCount
+#define GETTICKCOUNT clock
+
 #define CvTestTimerStart(timerName) \
-	{ int64 _CvTestTimer_##timerName = cvGetTickCount(); \
+	{ int64 _CvTestTimer_##timerName = GETTICKCOUNT(); \
 	  CvTestTimer::getTimer().mCount##timerName++;
 
 #define CvTestTimerEnd(timerName) \
-	CvTestTimer::getTimer().m##timerName += cvGetTickCount() - _CvTestTimer_##timerName;}
+	CvTestTimer::getTimer().m##timerName += GETTICKCOUNT() - _CvTestTimer_##timerName;}
 
 #define CvTestTimerStart2(timerName) \
-	do { CvTestTimer::getTimer().m##timerName.mTimeStart = cvGetTickCount(); \
+	do { CvTestTimer::getTimer().m##timerName.mTimeStart = GETTICKCOUNT(); \
 	  CvTestTimer::getTimer().m##timerName.mCount++;} while(0)
 
 #define CvTestTimerEnd2(timerName) \
 	do { CvTestTimer::getTimer().m##timerName.mTime += \
-			cvGetTickCount() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
+	  GETTICKCOUNT() - CvTestTimer::getTimer().m##timerName.mTimeStart;} while (0)
 
 #endif /*CVTESTTIMER_H_*/
