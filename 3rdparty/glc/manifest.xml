@@ -1,0 +1,9 @@
+<package>
+  <description brief="glc: OpenGL Capture Utils">
+  An application + libraries for capturing opengl output
+  </description>
+  <author>Pyry Haulos</author>
+  <license url="http://nullkey.ath.cx/projects/glc/wiki/HowtoPackaging">zlib, GPL, CDDL</license>
+  <url>http://nullkey.ath.cx/projects/glc/</url>
+</package>
+
