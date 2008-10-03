@@ -3,4 +3,4 @@
 LD_LIBRARY_PATH="`rospack find glc`/lib":$LD_LIBRARY_PATH `rospack find glc`/bin/glc-play $*
 
 
-
+ 
