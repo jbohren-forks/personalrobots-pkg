@@ -114,6 +114,9 @@ void GovernorNode::processPlan(){
   double start_t, end_t, t_diff;
   //we need to lock the map while we process it
   map_lock.lock();
+  ma_.updateOrigin(map_.origin_x, map_.origin_y);
+  ma_.updateResolution(map_.scale);
+  ma_.updateSize(map_.size_x_, map_.size_y_);
   //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
   gettimeofday(&start,NULL);
   int path_index = tc_.findBestPath(robot_pose, robot_vel, drive_cmds);

@@ -74,7 +74,6 @@ void TrajectoryController::setPathCells(){
     double g_y = global_plan_[i].y;
     unsigned int map_x, map_y;
     if(ma_.WC_MC(g_x, g_y, map_x, map_y)){
-      printf("%f, %f => %d, %d\n", g_x, g_y, map_x, map_y);
       MapCell& current = map_(map_x, map_y);
       current.path_dist = 0.0;
       current.path_mark = true;
@@ -919,8 +918,8 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   double new_x = x_i + (old_x * cos_th - old_y * sin_th);
   double new_y = y_i + (old_x * sin_th + old_y * cos_th);
 
-  unsigned int x0 = 0, y0 = 0;
-  assert(ma_.WC_MC(new_x, new_y, x0, y0));
+  unsigned int x0, y0;
+  ma_.WC_MC(new_x, new_y, x0, y0);
 
   //lower right corner
   old_x = 0.0 + robot_front_radius_;
@@ -928,8 +927,8 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
 
-  unsigned int x1 = 0, y1 = 0;
-  assert(ma_.WC_MC(new_x, new_y, x1, y1));
+  unsigned int x1, y1;
+  ma_.WC_MC(new_x, new_y, x1, y1);
 
   //check the front line
   getLineCells(x0, x1, y0, y1, footprint_cells);
@@ -940,8 +939,8 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
 
-  unsigned int x2 = 0, y2 = 0;
-  assert(ma_.WC_MC(new_x, new_y, x2, y2));
+  unsigned int x2, y2;
+  ma_.WC_MC(new_x, new_y, x2, y2);
 
   //check the right side line
   getLineCells(x1, x2, y1, y2, footprint_cells);
@@ -952,8 +951,8 @@ vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x
   new_x = x_i + (old_x * cos_th - old_y * sin_th);
   new_y = y_i + (old_x * sin_th + old_y * cos_th);
   
-  unsigned int x3 = 0, y3 = 0;
-  assert(ma_.WC_MC(new_x, new_y, x3, y3));
+  unsigned int x3, y3;
+  ma_.WC_MC(new_x, new_y, x3, y3);
 
   //check the back line
   getLineCells(x2, x3, y2, y3, footprint_cells);

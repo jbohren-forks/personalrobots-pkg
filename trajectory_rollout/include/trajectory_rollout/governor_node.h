@@ -96,6 +96,20 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
       return false;
     }
 
+    void updateOrigin(double o_x, double o_y){
+      origin_x_ = o_x;
+      origin_y_ = o_y;
+    }
+
+    void updateResolution(double res){
+      resolution_ = res;
+    }
+
+    void updateSize(double width, double height){
+      width_ = width;
+      height_ = height;
+    }
+
  private:
     MapGrid& map_;
     double outer_radius_;
