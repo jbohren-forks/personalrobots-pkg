@@ -139,7 +139,7 @@ public:
   std::string allFramesAsString();
 
   /** \brief A way to get a std::vector of available frame ids */
-  std::vector<std::string> getFrameStrings();
+  void getFrameStrings(std::vector<std::string>& ids);
 
 
 protected:
