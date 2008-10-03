@@ -67,14 +67,6 @@ namespace ros {
 
       libTF::TFPose2D drive_cmds;
 
-      //pass pose and velocity information to the controller in robot space
-      libTF::TFPose2D robot_pose;
-      robot_pose.x = 0.0;
-      robot_pose.y = 0.0;
-      robot_pose.yaw = 0.0;
-      robot_pose.frame = "base";
-      robot_pose.time = 0;
-
       libTF::TFPose2D robot_vel;
       robot_vel.x = currentVel.vx;
       robot_vel.y = currentVel.vy;
@@ -99,7 +91,7 @@ namespace ros {
       tc_.updatePlan(copiedGlobalPlan);
   
       //compute what trajectory to drive along
-      int path_index = tc_.findBestPath(robot_pose, robot_vel, drive_cmds);
+      int path_index = tc_.findBestPath(pose, robot_vel, drive_cmds);
 
       //pass along drive commands
       cmdVel.vx = drive_cmds.x;

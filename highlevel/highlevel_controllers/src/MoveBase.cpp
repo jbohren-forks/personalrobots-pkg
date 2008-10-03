@@ -79,7 +79,10 @@ namespace ros {
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
       double maxZ(2.0); 
-      double inflationRadius(0.325);
+      //double inflationRadius(0.325);
+      double inflationRadius(0.46);
+      double robot_radius(.325);
+      //double inflationRadius(0.175);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("costmap_2d/no_information_value", noInformation, noInformation);
@@ -127,7 +130,7 @@ namespace ros {
       const unsigned int SIM_STEPS = 30;
       const unsigned int SAMPLES_PER_DIM = 25;
       const double MAX_OCC_DIST = 1.0;
-      const double DFAST_SCALE = 0.2;
+      const double DFAST_SCALE = 0;
       const double OCCDIST_SCALE = 0;
       param("trajectory_rollout/map_size", mapSize, 10.0);
       param("trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
@@ -141,11 +144,11 @@ namespace ros {
 										SIM_TIME,
 										SIM_STEPS,
 										SAMPLES_PER_DIM,
-										sqrt(pow(inflationRadius, 2) * 2),
-										sqrt(pow(inflationRadius, 2) * 2),
+										robot_radius,
+										robot_radius,
 										MAX_OCC_DIST,
-										goalDistanceBias,
 										pathDistanceBias,
+										goalDistanceBias,
 										DFAST_SCALE,
 										OCCDIST_SCALE,
 										accLimit_x,
