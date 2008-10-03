@@ -23,4 +23,19 @@ on ROS into the library.
 The tf::TransformSender class is the complement to the listener class.  The sender class provides a 
 simple API for broadcasting coordinate frame transforms.  
 
+@subsection datatypes Data Types used in tf
+- Quaternion
+- Vector3
+- Point
+- Transform
+- Pose
+
+-Stamped version of all of the above
+
+- Analogous ROS messages in std_msgs
+
+- One special message supported PointCloudFloat32 (Everything else defaults to 64 bit.)
+
+- Time represented by ros::Time and ros::Duration in ros/time.h in roscpp 
+
 */

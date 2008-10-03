@@ -36,20 +36,25 @@
 #include "newmat10/newmat.h"
 
 #include <string>
+#include "std_msgs/PointStamped.h"
 #include "std_msgs/Vector3Stamped.h"
 #include "std_msgs/QuaternionStamped.h"
 #include "std_msgs/TransformStamped.h"
+#include "std_msgs/PoseStamped.h"
 #include "LinearMath/btTransform.h"
 
 namespace tf
 {
-/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
+/** \brief A representation of a translation and rotation */
 typedef btTransform Transform;
-/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
-typedef btQuaternion Quaternion;
-/** \brief A way to use bullet while leaving the implementation theoretically bullet independant */
+/** \brief A representaton of orientation or rotation depending on context*/
+typedef btQuaternion Quaternion; ///\todo differentiate?
+/** \brief A representation of a translation */
 typedef btVector3 Vector3;
-
+/** \brief  The transform library representation of a point(Position)*/
+typedef btVector3 Point;
+/** \brief A representation of pose (A position and orientation)*/
+typedef btTransform Pose;
 
 /** \brief The data type which will be cross compatable with std_msgs
  * this will require the associated rosTF package to convert */
@@ -59,6 +64,7 @@ class Stamped{
   T data_;
   uint64_t stamp_;
   std::string frame_id_;
+  std::string source_frame; ///only used for transform
 
   Stamped() :stamp_ (0),frame_id_ ("NO_ID"){}; //Default constructor used only for preallocation
 
@@ -86,6 +92,19 @@ static inline void Vector3StampedTFToMsg(const Stamped<Vector3>& bt, std_msgs::V
 {Vector3TFToMsg(bt.data_, msg.vector); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
 
+/** \brief convert Point msg to Point */
+static inline void PointMsgToTF(const std_msgs::Point& msg_v, Point& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
+/** \brief convert Point to Point msg*/
+static inline void PointTFToMsg(const Point& bt_v, std_msgs::Point& msg_v) {msg_v.x = bt_v.x(); msg_v.y = bt_v.y(); msg_v.z = bt_v.z();};
+
+/** \brief convert PointStamped msg to Stamped<Point> */
+static inline void PointStampedMsgToTF(const std_msgs::PointStamped & msg, Stamped<Point>& bt) 
+{PointMsgToTF(msg.point, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Point> to PointStamped msg*/
+static inline void PointStampedTFToMsg(const Stamped<Point>& bt, std_msgs::PointStamped & msg)
+{PointTFToMsg(bt.data_, msg.point); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
+
+
 /** \brief convert Quaternion msg to Quaternion */
 static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) {bt = Quaternion(msg.x, msg.y, msg.z, msg.w);};
 /** \brief convert Quaternion to Quaternion msg*/
@@ -107,10 +126,24 @@ static inline void TransformTFToMsg(const Transform& bt, std_msgs::Transform& ms
 
 /** \brief convert TransformStamped msg to Stamped<Transform> */
 static inline void TransformStampedMsgToTF(const std_msgs::TransformStamped & msg, Stamped<Transform>& bt) 
-{TransformMsgToTF(msg.transform, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+{TransformMsgToTF(msg.transform, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id; bt.source_frame = msg.source_frame;}; 
 /** \brief convert Stamped<Transform> to TransformStamped msg*/
 static inline void TransformStampedTFToMsg(const Stamped<Transform>& bt, std_msgs::TransformStamped & msg)
-{TransformTFToMsg(bt.data_, msg.transform); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
+{TransformTFToMsg(bt.data_, msg.transform); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_; msg.source_frame = bt.source_frame;};
+
+/** \brief convert Pose msg to Pose */
+static inline void PoseMsgToTF(const std_msgs::Pose& msg, Pose& bt) 
+{bt = Transform(Quaternion(msg.orientation.x, msg.orientation.y, msg.orientation.z, msg.orientation.w), Vector3(msg.position.x, msg.position.y, msg.position.z));};
+/** \brief convert Pose to Pose msg*/
+static inline void PoseTFToMsg(const Pose& bt, std_msgs::Pose& msg) 
+{PointTFToMsg(bt.getOrigin(), msg.position);  QuaternionTFToMsg(bt.getRotation(), msg.orientation);};
+
+/** \brief convert PoseStamped msg to Stamped<Pose> */
+static inline void PoseStampedMsgToTF(const std_msgs::PoseStamped & msg, Stamped<Pose>& bt) 
+{PoseMsgToTF(msg.pose, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Pose> to PoseStamped msg*/
+static inline void PoseStampedTFToMsg(const Stamped<Pose>& bt, std_msgs::PoseStamped & msg)
+{PoseTFToMsg(bt.data_, msg.pose); msg.header.stamp = ros::Time(bt.stamp_); msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief Convert the transform to a Homogeneous matrix for large operations */
