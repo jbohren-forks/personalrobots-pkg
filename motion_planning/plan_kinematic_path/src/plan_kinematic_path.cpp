@@ -44,7 +44,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/ValidateKinematicPath.h>
 
-#include <pr2_controllers/SetJointTarget.h>
+#include <pr2_mechanism_controllers/SetJointTarget.h>
 
 #include <cassert>
 
@@ -84,7 +84,7 @@ public:
 
 
 	req.goal_state.set_vals_size(3);
-	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = m_basePos[i];
 	/*
 	req.goal_state.vals[0] += 7.5;
@@ -119,7 +119,7 @@ public:
 	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(7);
-	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
 	req.goal_state.vals[0] = 1.0;    
 
@@ -146,7 +146,7 @@ public:
 	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(4);
-	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
         req.goal_state.vals[0] = -1.5;    
 
@@ -173,7 +173,7 @@ public:
 	initialState(req.start_state);
 	
 	req.goal_state.set_vals_size(4);
-	for (unsigned int i = 0 ; i < req.goal_state.vals_size ; ++i)
+	for (unsigned int i = 0 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
 	req.start_state.vals[3] = -1.5;    
 
@@ -207,7 +207,7 @@ public:
 	req.goal_state.vals[0] += 2.0;
 	req.goal_state.vals[2] = M_PI + M_PI/4.0;
 
-	for (unsigned int i = 3 ; i < req.goal_state.vals_size ; ++i)
+	for (unsigned int i = 3 ; i < req.goal_state.get_vals_size(); ++i)
 	    req.goal_state.vals[i] = 0.0;
 	
 	req.allowed_time = 30.0;
@@ -343,7 +343,7 @@ public:
 	//	const double margin_fraction = 0.1;
 	
 	planning_models::KinematicModel::StateParams *state = m_kmodel->newStateParams();
-	pr2_controllers::SetJointTarget::request req;
+	pr2_mechanism_controllers::SetJointTarget::request req;
 	req.set_positions_size(path.get_states_size());
 	
 	
@@ -360,7 +360,7 @@ public:
 		return;
 	    }
 	    
-	    state->setParams(path.states[i].vals, groupID);
+	    state->setParams(&(path.states[i].vals[0]), groupID);
 	    
 	    req.positions[i].set_names_size(joints.size());
 	    req.positions[i].set_positions_size(joints.size());
@@ -383,7 +383,7 @@ public:
 	
 	// perform the service call 
 	
-	pr2_controllers::SetJointTarget::response res;
+	pr2_mechanism_controllers::SetJointTarget::response res;
 	
 	if (ros::service::call("/left_arm_controller/set_target", req, res))
 	{
