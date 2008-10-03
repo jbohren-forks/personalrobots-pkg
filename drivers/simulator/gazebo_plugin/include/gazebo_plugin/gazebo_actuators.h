@@ -128,10 +128,9 @@ private:
 
   TiXmlDocument config_;
 
-  /// @todo The fake model helps Gazebo run the transmissions backwards, so
+  /// @todo The fake state helps Gazebo run the transmissions backwards, so
   ///       that it can figure out what its joints should do based on the
   ///       actuator values.
-  /// TODO  mechanism::Robot fake_model_;
   mechanism::RobotState *fake_state_;
   std::vector<gazebo::Joint*>  joints_;
 

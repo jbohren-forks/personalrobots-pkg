@@ -312,12 +312,12 @@ Below are the ROS messages actively used by PR2 simulation as described by launc
      </table><br>
 
 @section param PR2 ROS Parameters
- - ROS parameters published by the simulator
+ - ROS parameters set by the simulator
      <table border="1">
      <tr><th>  Parameter Name                      </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
      <tr><td> \b full_charge_energy                </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Battery state when fully charged in Joules.               </td>  </tr>
      </table><br>
- - ROS parameters subscribed by the simulator
+ - ROS parameters read by the simulator
      <table border="1">
      <tr><th>  Parameter Name                      </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
      <tr><td> \e timeout                           </td> <td>  \e Float32                          </td>  <td>  gazebo_battery.h       </td> <td>  Timeout in seconds. (default=10.0sec)                     </td>  </tr>
