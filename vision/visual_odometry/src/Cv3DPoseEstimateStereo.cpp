@@ -21,8 +21,10 @@ using namespace std;
 #include <boost/foreach.hpp>
 #include <cassert>
 
+#if STAR_DETECTOR
 // star detector
 #include <star_detector/detector.h>
+#endif
 
 #undef DEBUG
 

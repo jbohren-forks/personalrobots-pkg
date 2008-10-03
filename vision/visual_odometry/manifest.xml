@@ -7,7 +7,7 @@
   <depend package="roscpp"/>
   <depend package="boost"/>
   <depend package="opencv_latest"/>
-  <depend package="star_detector"/>
+<!--  <depend package="star_detector"/> -->
 #  <export>
 #    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib "/>
 #  </export>
