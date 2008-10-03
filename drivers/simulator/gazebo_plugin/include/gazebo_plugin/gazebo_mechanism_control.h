@@ -27,8 +27,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef GAZEBO_ACTUATORS_H
-#define GAZEBO_ACTUATORS_H
+#ifndef GAZEBO_MECHANISM_CONTROL_H
+#define GAZEBO_MECHANISM_CONTROL_H
 
 #include <vector>
 #include <map>
@@ -48,23 +48,24 @@ class XMLConfigNode;
 
 /// @addtogroup gazebo_dynamic_plugins Gazebo ROS Dynamic Plugins
 /// @{
-/** \defgroup gazebo_actuators GazeboActuators class
+/** \defgroup gazebo_mechanism_control GazeboMechanismControl class
 
-  \brief GazeboActuators Plugin
+  \brief GazeboMechanismControl Plugin
   
   This is a controller that provides interface between simulator and the Robot Mechanism Control.
-  GazeboActuators requires model as its parent.
+  GazeboMechanismControl requires model as its parent.
 
+  \li Example Usage:
   \verbatim
   <model:physical name="ray_model">
-    <!-- GazeboActuators -->
-    <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+    <!-- GazeboMechanismControl -->
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <robot filename="pr2.xml" /> <!-- gazebo_actuators use this file to extract mechanism model -->
+      <robot filename="pr2.xml" /> <!-- gazebo_mechanism_control use this file to extract mechanism model -->
       <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs, currently just damping -->
-      <interface:audio name="gazebo_actuators_dummy_iface" />
-    </controller:gazebo_actuators>
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
   </model:phyiscal>
   \endverbatim
  
@@ -76,7 +77,7 @@ class XMLConfigNode;
 /**
  * Gazebo simulator provides joint level control for mechanisms.  In order to work with mechanisms in real life
  * at the level of actuators, a plugin is required.
- * As implemented here in GazeboActuators, this plugin abstracts the definitions of
+ * As implemented here in GazeboMechanismControl, this plugin abstracts the definitions of
  * actuators and transmissions.  It parses the \e robot.xml, \e actuators.xml
  * and \e transmissions.xml, then sets up an abstract layer of actuators.  The entire chain of command from
  * controllers to actuators to simulated mechanism joints and back are implemented in this plugin.
@@ -103,14 +104,27 @@ class XMLConfigNode;
  *
  * @image html "http://pr.willowgarage.com/wiki/gazebo_plugin?action=AttachFile&do=get&target=gazebo_mcn.jpg" "Gazebo Mechanism Control Model"
  *
+  \li Example Usage:
+  \verbatim
+  <model:physical name="ray_model">
+    <!-- GazeboMechanismControl -->
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <robot filename="pr2.xml" /> <!-- gazebo_mechanism_control use this file to extract mechanism model -->
+      <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs, currently just damping -->
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
+  </model:phyiscal>
+  \endverbatim
 **/
 
 
-class GazeboActuators : public gazebo::Controller
+class GazeboMechanismControl : public gazebo::Controller
 {
 public:
-  GazeboActuators(Entity *parent);
-  virtual ~GazeboActuators();
+  GazeboMechanismControl(Entity *parent);
+  virtual ~GazeboMechanismControl();
 
 protected:
   // Inherited from gazebo::Controller

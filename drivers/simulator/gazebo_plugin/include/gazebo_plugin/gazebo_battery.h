@@ -76,6 +76,16 @@ class XMLConfigNode;
  *   \li return battery state and diagnostic message over ROS topic.
  * .
  *
+  \verbatim
+  <model:physical name="ray_model">
+    <!-- GazeboBattery -->
+    <controller:gazebo_battery name="gazebo_battery" plugin="libgazebo_battery.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <interface:audio name="gazebo_battery_dummy_iface" />
+    </controller:gazebo_battery>
+  </model:phyiscal>
+  \endverbatim
 **/
 
 

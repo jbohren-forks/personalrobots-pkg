@@ -46,6 +46,7 @@ namespace gazebo
   This controller gathers range data from a simulated ray sensor, publishes range data through
     std_msgs::LaserScan ROS topic.
 
+  \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -74,11 +75,40 @@ namespace gazebo
   \endverbatim
  
 \{
-*/
 
 /// \brief ROS laser scan controller.
 ///        \li Starts a ROS node if none exists.
 ///        \li Simulates a laser range sensor and publish std_msgs::LaserScan.msg over ROS.
+///        .
+  \li Example Usage:
+  \verbatim
+    <model:physical name="ray_model">
+      <body:empty name="ray_body_name">
+        <sensor:ray name="ray_sensor">
+          <origin>0.0 0.0 0.0</origin>
+          <rayCount>683</rayCount>
+          <rangeCount>683</rangeCount>
+          <laserCount>1</laserCount>
+          <displayRays>false</displayRays>
+          <minAngle>-45</minAngle>
+          <maxAngle> 45</maxAngle>
+          <minRange>0.05</minRange>
+          <maxRange>10.0</maxRange>
+          <updateRate>10.0</updateRate>
+          <controller:ros_laser name="ros_ray_sensor_controller" plugin="libRos_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>ray_scan</topicName>
+            <frameName>ray_model</frameName>
+            <interface:laser name="ros_ray_sensor_iface" />
+          </controller:ros_laser>
+        </sensor:ray>
+      </body:empty>
+    </model:phyiscal>
+  \endverbatim
+*/
+
 class Ros_Laser : public Controller
 {
   /// \brief Constructor

@@ -4,7 +4,7 @@
 @htmlinclude manifest.html
 
 Here are the gazebo plugins which are currently implemented:
- \li \ref gazebo::GazeboActuators "ROS Mechanism Controls Plugin for Actuators"
+ \li \ref gazebo::GazeboMechanismControl "ROS Mechanism Controls Plugin for MechanismControl"
  \li \ref gazebo::Ros_Time "ROS Time Plugin"
  \li \ref gazebo::Ros_Camera "ROS Camera Plugin"
  \li \ref gazebo::Ros_Laser "ROS Laser Scanner Plugin"
@@ -164,7 +164,7 @@ Here are the gazebo plugins which are currently implemented:
         <include>actuators_single_link.xml</include> 
         <include>transmissions_single_link.xml</include> 
 
-        <!-- setup for GazeboActuators plugin -->
+        <!-- setup for GazeboMechanismControl plugin -->
         <map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
           <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
           <!-- PR2_ACTARRAY -->

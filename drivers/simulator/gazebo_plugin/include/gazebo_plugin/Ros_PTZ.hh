@@ -50,6 +50,7 @@ namespace gazebo
   
   This is a controller that controls a pan, tilt, zoom unit 
 
+  \li Example Usage:
   \verbatim
   <model:physical name="ptz_model">
     <controller:Ros_PTZ name="ptz_controller" plugin="libRos_PTZ.so">
@@ -65,7 +66,6 @@ namespace gazebo
   \endverbatim
  
 \{
-*/
 
   /// \brief ROS Pan/Tilt/Zoom Camera Controller
   ///        \li Starts a ROS node if none exists.
@@ -73,6 +73,21 @@ namespace gazebo
   ///             - publish state information (PT angles) to ROS topic: \e camera_name/ptz_state
   ///             - subscribe to ROS topic: \e camera_name/ptz_cmd
   /// 
+  \li Example Usage:
+  \verbatim
+  <model:physical name="ptz_model">
+    <controller:Ros_PTZ name="ptz_controller" plugin="libRos_PTZ.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>15.0</updateRate>
+      <panJoint>ptz_pan_joint_name</panJoint>
+      <tiltJoint>ptz_tilt_joint_name</tiltJoint>
+      <commandTopicName>camera_name/ptz_cmd</commandTopicName>
+      <stateTopicName>camera_name/ptz_state</stateTopicName>
+      <interface:ptz name="ptz_iface" />
+    </controller:Ros_PTZ>
+  </model:phyiscal>
+  \endverbatim
+*/
   class Ros_PTZ : public Controller
   {
     /// \brief Constructor

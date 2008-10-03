@@ -44,6 +44,7 @@ namespace gazebo
 
    This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::TransformWithRateStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
 
+   \li Example Usage:
    \verbatim
      <model:physical name="some_fancy_model">
        <controller:P3D name="p3d_controller" plugin="libP3D.so">
@@ -60,11 +61,28 @@ namespace gazebo
    \endverbatim
    
    \{
-   */
 
    /// \brief P3D controller
    ///        \li Starts a ROS node if none exists.
    ///        \li This controller simulates a 6 dof position and rate sensor, publishes std_msgs::TransformWithRateStamped.msg ROS topic.
+   ///        .
+   \li Example Usage:
+   \verbatim
+     <model:physical name="some_fancy_model">
+       <controller:P3D name="p3d_controller" plugin="libP3D.so">
+         <alwaysOn>true</alwaysOn>
+         <updateRate>1000.0</updateRate>
+         <bodyName>body_name</bodyName>
+         <topicName>body_pose_ground_truth</topicName>
+         <frameName>map</frameName>
+         <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
+         <rpyOffsets>0 0 0</rpyOffsets>
+         <interface:position name="p3d_position_iface"/>
+       </controller:P3D>
+     </model:phyiscal>
+   \endverbatim
+   */
+
    class P3D : public Controller
    {
       /// \brief Constructor

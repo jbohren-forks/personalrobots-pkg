@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <gazebo_plugin/gazebo_actuators.h>
+#include <gazebo_plugin/gazebo_mechanism_control.h>
 #include <fstream>
 #include <iostream>
 #include <math.h>
@@ -48,15 +48,15 @@
 
 namespace gazebo {
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_actuators", GazeboActuators);
+GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_mechanism_control", GazeboMechanismControl);
 
-GazeboActuators::GazeboActuators(Entity *parent)
+GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
   : Controller(parent), hw_(0), mc_(&hw_), mcn_(&mc_), fake_state_(NULL)
 {
   this->parent_model_ = dynamic_cast<Model*>(this->parent);
 
   if (!this->parent_model_)
-    gzthrow("GazeboActuators controller requires a Model as its parent");
+    gzthrow("GazeboMechanismControl controller requires a Model as its parent");
 
     rosnode_ = ros::g_node; // comes from where?
     int argc = 0;
@@ -71,13 +71,13 @@ GazeboActuators::GazeboActuators(Entity *parent)
 
 }
 
-GazeboActuators::~GazeboActuators()
+GazeboMechanismControl::~GazeboMechanismControl()
 {
 }
 
-void GazeboActuators::LoadChild(XMLConfigNode *node)
+void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
 {
-  // read pr2.xml (pr2_gazebo_actuators.xml)
+  // read pr2.xml (pr2_gazebo_mechanism_control.xml)
   // setup actuators, then setup mechanism control node
   ReadPr2Xml(node);
 
@@ -101,7 +101,7 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
     }
     else
     {
-      fprintf(stderr, "WARNING (gazebo_actuators): A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
+      fprintf(stderr, "WARNING (gazebo_mechanism_control): A joint named \"%s\" is not part of Mechanism Controlled joints.\n", joint_name.c_str());
       joints_.push_back(NULL);
     }
 
@@ -122,12 +122,12 @@ void GazeboActuators::LoadChild(XMLConfigNode *node)
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
 }
 
-void GazeboActuators::InitChild()
+void GazeboMechanismControl::InitChild()
 {
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
 }
 
-void GazeboActuators::UpdateChild()
+void GazeboMechanismControl::UpdateChild()
 {
 
   assert(joints_.size() == fake_state_->joint_states_.size());
@@ -214,9 +214,9 @@ void GazeboActuators::UpdateChild()
   }
 }
 
-void GazeboActuators::FiniChild()
+void GazeboMechanismControl::FiniChild()
 {
-  std::cout << "--------------- calling FiniChild in GazeboActuators --------------------" << std::endl;
+  std::cout << "--------------- calling FiniChild in GazeboMechanismControl --------------------" << std::endl;
 
   hw_.~HardwareInterface();
   mc_.~MechanismControl();
@@ -226,7 +226,7 @@ void GazeboActuators::FiniChild()
   delete fake_state_;
 }
 
-void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
+void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 {
 
   std::string tmp_param_string;
@@ -249,7 +249,7 @@ void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
   TiXmlDocument doc;
   if (!doc.Parse(pr2_xml_content->c_str()))
   {
-    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file: %s\n",
+    fprintf(stderr, "Error: Could not load the gazebo mechanism_control plugin's configuration file: %s\n",
             pr2_xml_content->c_str());
     abort();
   }
@@ -281,7 +281,7 @@ void GazeboActuators::ReadPr2Xml(XMLConfigNode *node)
   mcn_.initXml(doc.RootElement());
 }
 
-void GazeboActuators::ReadGazeboPhysics(XMLConfigNode *node)
+void GazeboMechanismControl::ReadGazeboPhysics(XMLConfigNode *node)
 {
   XMLConfigNode *robot = node->GetChild("gazebo_physics");
   if (!robot)
@@ -296,12 +296,12 @@ void GazeboActuators::ReadGazeboPhysics(XMLConfigNode *node)
   TiXmlDocument doc(filename);
   if (!doc.LoadFile())
   {
-    fprintf(stderr, "Error: Could not load the gazebo actuators plugin's configuration file for gazebo physics: %s\n",
+    fprintf(stderr, "Error: Could not load the gazebo mechanism_control plugin's configuration file for gazebo physics: %s\n",
             filename.c_str());
     abort();
   }
   // Pulls out the list of joints used in the gazebo physics configuration.
-  struct GetActuators : public TiXmlVisitor
+  struct GetJoints : public TiXmlVisitor
   {
     std::map<const char*,double> joints;
     virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)

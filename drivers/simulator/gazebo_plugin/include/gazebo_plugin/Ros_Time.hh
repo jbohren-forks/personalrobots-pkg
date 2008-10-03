@@ -46,6 +46,7 @@ namespace gazebo
   
   This is a controller that broadcasts simulator time over ros::time
 
+  \li Example Usage:
   \verbatim
     <model:physical name="robot_model1">
 
@@ -68,11 +69,33 @@ namespace gazebo
  
 \{
 */
+/**
+ *  \brief ROS Time Controller
+ *    \li Starts a ROS node if none exists
+ *    \li broadcast simulator time over rostools::Time.
+ *  .
+  \li Example Usage:
+  \verbatim
+    <model:physical name="robot_model1">
 
-/// \brief ROS Time Controller
-///     \li Starts a ROS node if none exists
-///     \li broadcast simulator time over rostools::Time.
-/// 
+      <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+      </controller:ros_time>
+
+      <xyz>0.0 0.0 0.02</xyz>
+      <rpy>0.0 0.0 0.0 </rpy>
+
+      <!-- base, torso and arms -->
+      <include embedded="true">
+        <xi:include href="pr2_xml.model" />
+      </include>
+
+    </model:physical>
+  \endverbatim
+
+**/
 class Ros_Time : public Controller
 {
   /// \brief Constructor

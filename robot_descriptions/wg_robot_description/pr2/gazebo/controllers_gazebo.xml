@@ -4,20 +4,20 @@
 
 
 
-<map name="transmissions_gazebo_actuators" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
-  <verbatim key="transmissions_gazebo_actuators" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+<map name="transmissions_gazebo_mechanism_control" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_mechanism_control" includes="true"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
 
   <!-- PR2_ACTARRAY -->
-  <controller:gazebo_actuators name="gazebo_actuators" plugin="libgazebo_actuators.so">
+  <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
     <alwaysOn>true</alwaysOn>
     <updateRate>100.0</updateRate>
 
-    <robot filename="pr2.xml" /> <!-- gazebo_actuators use this file to extract mechanism model -->
+    <robot filename="pr2.xml" /> <!-- gazebo_mechanism_control use this file to extract mechanism model -->
 
     <gazebo_physics filename="gazebo_joints.xml" /> <!-- for simulator/physics specific settigs -->
 
-    <interface:audio name="gazebo_actuators_dummy_iface" />
-  </controller:gazebo_actuators>
+    <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+  </controller:gazebo_mechanism_control>
 
   </verbatim>
 </map>

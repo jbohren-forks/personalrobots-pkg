@@ -46,6 +46,7 @@ namespace gazebo
   
   This is a controller that gathers range data from a ray sensor, and returns results via publishing ROS topic for point clouds.
 
+  \li Example Usage:
   \verbatim
     <model:physical name="ray_model">
       <body:empty name="ray_body_name">
@@ -83,12 +84,50 @@ namespace gazebo
   \endverbatim
  
 \{
-*/
 
 /// \brief ROS laser block simulation.
 ///        \li Starts a ROS node if none exists.
 ///        \li This controller simulates a block of laser range detections.
 ///            Resulting point cloud (std_msgs::PointCloudFloat32.msg) is published as a ROS topic.
+/// .
+  \li Example Usage:
+  \verbatim
+    <model:physical name="ray_model">
+      <body:empty name="ray_body_name">
+        <sensor:ray name="ray_sensor">
+          <rayCount>30</rayCount>
+          <rangeCount>30</rangeCount>
+          <laserCount>1</laserCount>
+          
+          <origin>0.0 0.0 0.05</origin>
+          <displayRays>false</displayRays>
+          
+          <minAngle>-15</minAngle>
+          <maxAngle> 15</maxAngle>
+          
+          <minRange>0.05</minRange>
+          <maxRange>100.0</maxRange>
+          <updateRate>10.0</updateRate>
+
+          <verticalRayCount>30</verticalRayCount>
+          <verticalRangeCount>30</verticalRangeCount>
+          <verticalMinAngle>-20</verticalMinAngle>
+          <verticalMaxAngle>  0</verticalMaxAngle>
+
+          <controller:ros_block_laser name="ray_block_controller" plugin="libRos_Block_Laser.so">
+            <gaussianNoise>0.005</gaussianNoise>
+            <alwaysOn>true</alwaysOn>
+            <updateRate>10.0</updateRate>
+            <topicName>full_cloud</topicName>
+            <frameName>ray_model</frameName>
+            <interface:laser name="ray_block_iface" />
+          </controller:ros_block_laser>
+        </sensor:ray>
+      </body:empty>
+    </model:phyiscal>
+  \endverbatim
+*/
+
 class Ros_Block_Laser : public Controller
 {
   /// \brief Constructor
