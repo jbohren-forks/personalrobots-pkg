@@ -74,6 +74,9 @@ public:
 
   ~RealtimePublisher()
   {
+    stop();
+    while (is_running())
+      usleep(100);
     node_->unadvertise(topic_);
   }
 
