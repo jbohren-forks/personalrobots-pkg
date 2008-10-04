@@ -119,7 +119,14 @@ class TestCameras(unittest.TestCase):
     def imageInput(self,image):
         print " got image from ROS, begin comparing images "
         print "  - load validation image from file testcamera.valid.ppm "
-        im0 = pili.open("testcamera.valid.ppm")
+        if os.path.isfile("testcamera.valid.ppm"):
+          im0 = pili.open("testcamera.valid.ppm")
+        elif os.path.isfile("test/testcamera.valid.ppm"):
+          im0 = pili.open("test/testcamera.valid.ppm")
+        else:
+          print "cannot find validation file: testcamera.valid.ppm"
+          self.success = False
+          return
         print "  - load image from ROS "
         size = image.width,image.height
         im1 = pili.new("RGBA",size)
