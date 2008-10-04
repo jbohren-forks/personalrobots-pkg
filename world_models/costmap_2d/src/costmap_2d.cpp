@@ -140,7 +140,8 @@ namespace costmap_2d {
     //std::cout << "Updating for time: " << ts << std::endl;
 
     newObstacles.clear();
-    double FILTERING_RADIUS = inflationRadius_ * 10;
+    // Small clearance for what is 'in contact' which is a centimeter
+    double FILTERING_RADIUS = inflationRadius_ + 0.01;
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
       // Filter out points too high
       if(cloud.pts[i].z > maxZ_)
