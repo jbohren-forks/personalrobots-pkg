@@ -20,6 +20,7 @@
   <depend package="gazebo" />
   <depend package="gazebo_plugin" />
   <depend package="world_3d_map" />
+  <depend package="fake_localization" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>
