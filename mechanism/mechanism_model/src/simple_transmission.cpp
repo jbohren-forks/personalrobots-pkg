@@ -58,11 +58,13 @@ bool SimpleTransmission::initXml(TiXmlElement *elt, Robot *robot)
 
   TiXmlElement *ael = elt->FirstChildElement("actuator");
   const char *actuator_name = ael ? ael->Attribute("name") : NULL;
-  if (!actuator_name || robot->getActuatorIndex(actuator_name) < 0)
+  Actuator *a;
+  if (!actuator_name || (a = robot->getActuator(actuator_name)) == NULL )
   {
     fprintf(stderr, "SimpleTransmission could not find actuator named \"%s\"\n", actuator_name);
     return false;
   }
+  a->command_.enable_ = true;
   actuator_names_.push_back(actuator_name);
 
   mechanical_reduction_ = atof(elt->FirstChildElement("mechanicalReduction")->GetText());
@@ -95,7 +97,6 @@ void SimpleTransmission::propagateEffort(
   assert(as.size() == 1);
   assert(js.size() == 1);
   as[0]->command_.effort_ = js[0]->commanded_effort_ / mechanical_reduction_;
-  as[0]->command_.enable_ = true;
 }
 
 void SimpleTransmission::propagateEffortBackwards(

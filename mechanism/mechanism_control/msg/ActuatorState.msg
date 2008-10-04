@@ -5,8 +5,8 @@ float64 timestamp
 float64 encoder_velocity
 float64 velocity
 byte calibration_reading
-int32 last_calibration_high_transition
-int32 last_calibration_low_transition
+float64 last_calibration_high_transition
+float64 last_calibration_low_transition
 byte is_enabled
 byte run_stop_hit
 float64 last_requested_current

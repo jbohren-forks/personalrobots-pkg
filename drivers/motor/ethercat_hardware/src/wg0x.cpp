@@ -222,6 +222,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
     node->log(ros::FATAL, "Unable to load configuration information");
     return -1;
   }
+  printf("Device #%02d: Serial #: %05d\n", sh_->get_ring_position(), config_info_.device_serial_number_);
 
   if (readEeprom(sh_) < 0)
   {
@@ -303,7 +304,7 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
   memset(c, 0, sizeof(WG0XCommand));
 
   c->programmed_current_ = int(command.current_ / config_info_.nominal_current_scale_);
-  c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT) : MODE_OFF;
+  c->mode_ = command.enable_ ? (MODE_ENABLE | MODE_CURRENT | MODE_SAFETY_RESET) : MODE_OFF;
   c->checksum_ = rotateRight8(computeChecksum(c, sizeof(WG0XCommand) - 1));
 }
 
@@ -353,8 +354,8 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
       / (this_status->timestamp_ - prev_status->timestamp_) * 1e+6;
   state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.calibration_reading_ = this_status->calibration_reading_ & LIMIT_SENSOR_0_STATE;
-  state.last_calibration_high_transition_ = double(this_status->last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_;
-  state.last_calibration_low_transition_ = double(this_status->last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_;
+  state.last_calibration_high_transition_ = double(this_status->last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
+  state.last_calibration_low_transition_ = double(this_status->last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.is_enabled_ = this_status->mode_ != MODE_OFF;
   state.run_stop_hit_ = (this_status->mode_ & MODE_UNDERVOLTAGE) != 0;
 
