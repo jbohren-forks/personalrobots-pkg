@@ -287,7 +287,7 @@ namespace ros {
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
-      costMap_->updateDynamicObstacles(ts, global_cloud, insertions, deletions);
+      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, global_cloud, insertions, deletions);
       handleMapUpdates(insertions, deletions);
       publishLocalCostMap();
       unlock();

@@ -2,7 +2,7 @@
 <launch>
   <group name="wg">    
     <param name="world_3d_map/max_publish_frequency" type="double" value="1.0" /> <!-- Hz -->
-    <param name="world_3d_map/retain_pointcloud_duration" type="double" value="60.0" /> <!-- seconds -->
+    <param name="world_3d_map/retain_pointcloud_duration" type="double" value="1.0" /> <!-- seconds -->
     <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.25" /> <!-- percentage (between 0 and 1) -->
     <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
     <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
