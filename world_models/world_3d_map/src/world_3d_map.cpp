@@ -111,6 +111,9 @@ Provides (name/type):
 #include <collision_space/util.h>
 #include <random_utils/random_utils.h>
 
+// Laser projection
+#include "laser_scan_utils/laser_scan.h"
+
 #include <deque>
 #include <cmath>
 
@@ -125,22 +128,28 @@ public:
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
-	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 60.0);
+	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 1.0);
 	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
 	
 	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
-	
+
 	m_active = true;
 	m_shouldPublish = false;
 	m_acceptScans = false;
 	random_utils::init(&m_rng);
+
+	/* Set up the transform client */
+	double laser_x_offset;
+	param("laser_x_offset", laser_x_offset, 0.05);
+	m_tf.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
 	/* create a thread that handles the publishing of the data */	
 	m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 
 	subscribe("scan",  m_inputScan,  &World3DMap::scanCallback, 1);
 	subscribe("cloud", m_inputCloud, &World3DMap::pointCloudCallback, 1);
+	subscribe("base_scan", m_baseScanMsg, &World3DMap::baseScanCallback, 1);
     }
     
     ~World3DMap(void)
@@ -234,8 +243,10 @@ private:
     void scanCallback(void)
     {
 	/* If we're not ready to accept scans yet, discard the data */
-	if (!m_acceptScans)
-	    return;
+      if (!m_acceptScans){
+	std::cout << "Bailing\n";
+	return;
+      }
 	
 	if (m_verbose) 
 	    fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
@@ -245,6 +256,47 @@ private:
 	try
 	{
 	    m_tf.transformLaserScanToPointCloud("map", m_toProcess, m_inputScan);
+	    success = true;
+	}
+	catch(libTF::TransformReference::LookupException& ex)
+	{
+            fprintf(stderr, "Discarding laser scan: Transform reference lookup exception: %s\n", ex.what());
+	}
+	catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	    fprintf(stderr, "Discarding laser scan: Extrapolation exception: %s\n", ex.what());
+	}
+	catch(libTF::TransformReference::ConnectivityException& ex)
+	{
+	    fprintf(stderr, "Discarding laser scan: Connectivity exception: %s\n", ex.what());
+	}
+	catch(...)
+	{
+	    fprintf(stderr, "Discarding laser scan: Exception in point cloud computation\n");
+	}  
+	if (success)
+	    processData();
+    }
+    
+    void baseScanCallback(void)
+    {
+      if (!m_acceptScans){
+	return;
+      }
+	
+      // Assemble a point cloud, in the laser's frame
+      std_msgs::PointCloudFloat32 local_cloud;
+      const double LASER_MAX_RANGE = 4.0;
+      m_projector.projectLaser(m_baseScanMsg, local_cloud, LASER_MAX_RANGE);
+
+	if (m_verbose) 
+	    fprintf(stdout, "Received laser scan with %d points in frame %s\n", local_cloud.get_pts_size(), local_cloud.header.frame_id.c_str());
+	
+	/* copy data to a place where incoming messages do not affect it */
+	bool success = false;
+	try
+	{
+	    m_tf.transformPointCloud("map", m_toProcess, local_cloud);
 	    success = true;
 	}
 	catch(libTF::TransformReference::LookupException& ex)
@@ -443,12 +495,13 @@ private:
 	
 	if (m_verbose)
 	    printf("Filter 0 discarded %d points (%d left) \n", n - j, j);
+
 	return copy;	
     }    
     
     /** Remove points from the cloud if the robot sees parts of
-	itself. Works for pointclouds in the robot frame \todo make the
-	comment true, separate function in 2*/
+	itself. Works for pointclouds in the robot frame. \todo make the
+	comment true, separate function in 2.*/
     std_msgs::PointCloudFloat32* filter1(const std_msgs::PointCloudFloat32 &cloud)
     {
 	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
@@ -496,12 +549,15 @@ private:
     
     std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
     std_msgs::PointCloudFloat32      m_inputCloud; //Buffer for recieving cloud
+    std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan
     std_msgs::PointCloudFloat32      m_toProcess; 
     
     pthread_t                       *m_publishingThread;
     ros::thread::mutex               m_worldDataMutex;
     bool                             m_active, m_shouldPublish, m_acceptScans;
     random_utils::rngState           m_rng;
+
+  laser_scan::LaserProjection m_projector; /**< Used to project laser scans */
 
 };
 
