@@ -3,6 +3,7 @@
   <author>Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="dc1394_cam"/>
+  <depend package="newmat10"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lviderecam"/>
   </export>
