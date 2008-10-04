@@ -1,7 +1,7 @@
 #include <signal.h>
 
 //external ros includes for messages
-#include <pr2_msgs/EndEffectorState.h>
+//#include <pr2_msgs/EndEffectorState.h>
 
 //NDDL includes
 #include "Nddl.hh"
