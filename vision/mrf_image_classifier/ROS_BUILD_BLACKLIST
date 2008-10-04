@@ -1,0 +1,40 @@
+cd build && `rospack find cmake`/cmake/bin/cmake -DCMAKE_TOOLCHAIN_FILE=`rospack find rosbuild`/rostoolchain.cmake ..
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /u/gerkey/code/personalrobots/vision/mrf_image_classifier/build
+cd build && make
+make[1]: Entering directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[2]: Entering directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[3]: Entering directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[3]: Leaving directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[3]: Entering directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+[  9%] Building CXX object CMakeFiles/mrf_image_classifier.dir/src/classifier/BinarySubmodularImageClassifier.cc.o
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/display/LabelingViewer.hh: In static member function ‘static void LabelingViewer::imagesc(const char*, const IplImage*)’:
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/display/LabelingViewer.hh:262: warning: converting to ‘unsigned char’ from ‘double’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/display/LabelingViewer.hh:263: warning: converting to ‘unsigned char’ from ‘double’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/display/LabelingViewer.hh:264: warning: converting to ‘unsigned char’ from ‘double’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/classifier/BinarySubmodularImageClassifier.cc: In member function ‘void BinarySubmodularImageClassifier::loadTrainingData(const std::vector<tUndirectedFeatureGraph*, std::allocator<tUndirectedFeatureGraph*> >&, const std::vector<std::vector<double, std::allocator<double> >, std::allocator<std::vector<double, std::allocator<double> > > >&, const std::vector<std::vector<int, std::allocator<int> >, std::allocator<std::vector<int, std::allocator<int> > > >&)’:
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/classifier/BinarySubmodularImageClassifier.cc:192: error: reference to ‘_1’ is ambiguous
+/u/gerkey/code/personalrobots/3rdparty/boost/boost_1_36_0/boost/lambda/core.hpp:69: error: candidates are: const boost::lambda::placeholder1_type& boost::lambda::<unnamed>::_1
+/u/gerkey/code/personalrobots/3rdparty/boost/boost_1_36_0/boost/bind/placeholders.hpp:54: error:                 boost::arg<1> <unnamed>::_1
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/classifier/BinarySubmodularImageClassifier.cc:192: error: reference to ‘_1’ is ambiguous
+/u/gerkey/code/personalrobots/3rdparty/boost/boost_1_36_0/boost/lambda/core.hpp:69: error: candidates are: const boost::lambda::placeholder1_type& boost::lambda::<unnamed>::_1
+/u/gerkey/code/personalrobots/3rdparty/boost/boost_1_36_0/boost/bind/placeholders.hpp:54: error:                 boost::arg<1> <unnamed>::_1
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc: In member function ‘void FeatureGraphExtractor<FM>::calcImGradientFeatures(const IplImage*, IplImage*, IplImage*) [with FM = DenseFeatureMatrix<double>]’:
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:331:   instantiated from ‘FM* FeatureGraphExtractor<FM>::getNodeFeaturesSeparateHist(SuperpixelBlobber&) [with FM = DenseFeatureMatrix<double>]’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:62:   instantiated from ‘UndirectedFeatureGraph<FM>* FeatureGraphExtractor<FM>::getFeatureGraph() [with FM = DenseFeatureMatrix<double>]’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/classifier/BinarySubmodularImageClassifier.cc:111:   instantiated from here
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:469: warning: converting to ‘unsigned char’ from ‘double’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:470: warning: converting to ‘unsigned char’ from ‘double’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/util/ImageHistogram.hh: In static member function ‘static void ImageHistogram<Tp>::histogram(const IplImage*, const std::pair<double, double>&, const coordList&, int, double*) [with Tp = unsigned char]’:
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:362:   instantiated from ‘FM* FeatureGraphExtractor<FM>::getNodeFeaturesSeparateHist(SuperpixelBlobber&) [with FM = DenseFeatureMatrix<double>]’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/features/FeatureGraphExtractor.tcc:62:   instantiated from ‘UndirectedFeatureGraph<FM>* FeatureGraphExtractor<FM>::getFeatureGraph() [with FM = DenseFeatureMatrix<double>]’
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/classifier/BinarySubmodularImageClassifier.cc:111:   instantiated from here
+/u/gerkey/code/personalrobots/vision/mrf_image_classifier/src/util/ImageHistogram.hh:52: warning: converting to ‘int’ from ‘double’
+make[3]: *** [CMakeFiles/mrf_image_classifier.dir/src/classifier/BinarySubmodularImageClassifier.cc.o] Error 1
+make[3]: Leaving directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[2]: *** [CMakeFiles/mrf_image_classifier.dir/all] Error 2
+make[2]: Leaving directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make[1]: *** [all] Error 2
+make[1]: Leaving directory `/wg/stor1/gerkey/code/personalrobots/vision/mrf_image_classifier/build'
+make: *** [all] Error 2
