@@ -290,8 +290,32 @@ public:
         req.allowed_time = reqn.allowed_time;
         req.threshold = reqn.threshold;
 
+
+
+        //Acutally run the service.
 	bool r = m_requestState.execute(m_models, req, res.path, res.distance);
-        resn.path = res.path;
+
+
+        //Copy the path.
+        resn.path.set_states_size(res.path.get_states_size());
+        
+        for (unsigned int j = 0; j < resn.path.get_states_size(); j++) {
+            nparam = 0;
+            resn.path.states[j].set_names_size(subspaceJointMap.size());
+            resn.path.states[j].set_joints_size(subspaceJointMap.size());
+            for (unsigned int i = 0; i < subspaceJointMap.size(); i++) {
+                resn.path.states[j].names[i] = subspaceJointMap[i]->name;
+                resn.path.states[j].joints[i].set_vals_size(subspaceJointMap[i]->usedParams);
+                for (unsigned int k = 0; k < subspaceJointMap[i]->usedParams; k++) {
+                    resn.path.states[j].joints[i].vals[k] = res.path.states[j].vals[nparam];
+                    nparam++;
+                }
+            }
+        }
+
+        
+
+        //Simply copy the other results.
         resn.distance = res.distance;
         return r;
     }

@@ -295,14 +295,15 @@ bool MoveArm::goalReached(){
 
 /**
  * @brief Iterate over all published joint values we match on
+ * @todo Does not handle joints with multiple axes.
  */
 bool MoveArm::withinBounds(unsigned waypointIndex){
   double sum_joint_diff = 0.0;
   mechanismState.lock();
-  for(unsigned int i=0; i<jointNames_.size(); i++){
+  for(unsigned int i=0; i<plan.path.states[waypointIndex].get_joints_size(); i++){
     double value;
-    if(readJointValue(mechanismState, jointNames_[i], value))
-       sum_joint_diff += fabs(value - plan.path.states[waypointIndex].vals[i]);
+    if(readJointValue(mechanismState, plan.path.states[waypointIndex].names[i], value))
+       sum_joint_diff += fabs(value - plan.path.states[waypointIndex].joints[i].vals[0]);
   }
   mechanismState.unlock();
 
@@ -325,21 +326,26 @@ bool MoveArm::dispatchCommands(){
 
   setCommandParameters(armCommand);
   
-  std::cout << "Dispatching state for waypoint [" << currentWaypoint << "]: " 
-	    << plan.path.states[currentWaypoint].vals[0] << " "
-	    << plan.path.states[currentWaypoint].vals[1] << " "
-	    << plan.path.states[currentWaypoint].vals[2] << " "
-	    << plan.path.states[currentWaypoint].vals[3] << " "
-	    << plan.path.states[currentWaypoint].vals[4] << " "
-	    << plan.path.states[currentWaypoint].vals[5] << " "
-	    << plan.path.states[currentWaypoint].vals[6] << std::endl;
+  std::cout << "Dispatching state for waypoint [" << currentWaypoint << "]: ";
+  
+  for(unsigned int i=0; i<plan.path.states[currentWaypoint].get_joints_size(); i++){
+    std::cout << plan.path.states[currentWaypoint].names[i] << " (";
+    for (unsigned int k=0; k<plan.path.states[currentWaypoint].joints[i].get_vals_size(); k++) {
+      std::cout << plan.path.states[currentWaypoint].joints[i].vals[k] << ",";
+    }
+    std::cout << ") ";
+  }
+
+  std::cout << std::endl;
 
   publish(armCmdTopic, armCommand);
 
   return true;
 }
 
-
+/**
+ * @todo Multi-axis joints.
+ */
 void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCommand){
     static const double TOLERANCE(0.25);
 
@@ -349,8 +355,8 @@ void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCo
     armCommand.set_margins_size(jointNames_.size());
 
     for(unsigned int i = 0; i < jointNames_.size(); i++){
-      armCommand.names[i] = jointNames_[i];
-      armCommand.positions[i] = plan.path.states[currentWaypoint].vals[i];
+      armCommand.names[i] = plan.path.states[currentWaypoint].names[i];
+      armCommand.positions[i] = plan.path.states[currentWaypoint].joints[i].vals[0];
       armCommand.margins[i] = TOLERANCE;
     }
 }
