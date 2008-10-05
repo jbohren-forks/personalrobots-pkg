@@ -18,3 +18,7 @@ target_link_libraries(move_base_sbpl highlevel_controllers)
 
 # MoveArmEndEffector
 rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
+
+#CLI
+rospack_add_executable(cli src/ControlCli.cpp)
+
