@@ -134,6 +134,8 @@ Provides (name/type):
 #include "RKPModel.h"
 #include "RKPBasicRequestState.h"
 #include "RKPBasicRequestLinkPosition.h"
+#include <robot_srvs/PlanNames.h>
+#include <robot_srvs/NamedKinematicPlanState.h>
 
 class KinematicPlanning : public ros::node,
 			  public planning_node_util::NodeCollisionModel
@@ -145,7 +147,9 @@ public:
 											       robot_model)
     {
 	advertise_service("plan_kinematic_path_state", &KinematicPlanning::planToState);
+	advertise_service("plan_kinematic_path_named", &KinematicPlanning::planToStateNamed);
 	advertise_service("plan_kinematic_path_position", &KinematicPlanning::planToPosition);
+	advertise_service("plan_joint_state_names", &KinematicPlanning::planJointNames);
 	advertise<std_msgs::String>("planning_statistics", 10);
     }
     
@@ -155,6 +159,151 @@ public:
 	for (std::map<std::string, RKPModel*>::iterator i = m_models.begin() ; i != m_models.end() ; i++)
 	    delete i->second;
     }
+
+    bool planToStateNamed(robot_srvs::NamedKinematicPlanState::request &reqn, robot_srvs::NamedKinematicPlanState::response &resn)
+    {
+        robot_srvs::KinematicPlanState::request req;
+        robot_srvs::KinematicPlanState::response res;
+
+
+
+
+        //Use name lookups to create the state vector.
+        //Find the number of parameters needed and print errors.
+        unsigned int nparam = 0;
+        for (unsigned int i = 0; i < reqn.start_state.get_joints_size(); i++) {
+            if (!m_kmodel->getJoint(reqn.start_state.names[i])) {
+                std::cerr << "Non-existant joint ignored: " << reqn.start_state.names[i] << std::endl;
+                continue;
+            }
+            nparam += m_kmodel->getJoint(reqn.start_state.names[i])->usedParams;
+            if (reqn.start_state.joints[i].get_vals_size() != m_kmodel->getJoint(reqn.start_state.names[i])->usedParams) {
+                std::cerr << "You do not have the right number of axes for a the joint: "
+                          << reqn.start_state.names[i] << " (" << reqn.start_state.joints[i].get_vals_size()
+                          << " != " << m_kmodel->getJoint(reqn.start_state.names[i])->usedParams << "). "
+                          << "Extra axes will be ignored, non-specified ones will be set to zero.\n";
+                  
+            }
+        }
+        //std::cout << "Name set up\nNeed " << nparam << " parameters.\n";
+        //Create the state vector and set it to zero.
+        req.start_state.set_vals_size(nparam);
+        for (unsigned int i = 0; i < req.start_state.get_vals_size(); i++) {
+            req.start_state.vals[i] = 0;
+        }
+        //Iterate over all the joints and populate the state vector.
+        for (unsigned int i = 0; i < reqn.start_state.get_joints_size(); i++) {
+            if (m_kmodel->parameterNames.find(reqn.start_state.names[i]) == m_kmodel->parameterNames.end()) {
+                continue;
+            }
+            unsigned int p = m_kmodel->parameterNames.find(reqn.start_state.names[i])->second;
+            
+            for (unsigned int k = 0; k < m_kmodel->getJoint(reqn.start_state.names[i])->usedParams; k++) {
+                req.start_state.vals[p + k] = reqn.start_state.joints[i].vals[k];
+            }
+
+            //std::cout << reqn.start_state.names[i] << " [" << p << "-" 
+            //          << p + m_kmodel->getJoint(reqn.start_state.names[i])->usedParams - 1 << "]\n";
+        }
+        
+
+        
+        //Use name lookups to populate the joint group.
+
+	std::vector<planning_models::KinematicModel::Joint*> jointList;
+
+        unsigned int group = m_kmodel->getGroupID(reqn.params.model_id);
+
+	std::vector<planning_models::KinematicModel::Joint*> joints = m_kmodel->groupChainStart[group];
+        
+        //std::cout << "Joints:\n";
+        nparam = 0;
+        for (unsigned int i = 0; i < joints.size(); i++) {
+            planning_models::KinematicModel::Joint* j = joints[i];
+            while(j) {
+                if (j->inGroup[group]) {
+                  //std::cout << j->name << std::endl;
+                  jointList.push_back(j);
+                  nparam += j->usedParams;
+                }
+                if (j->after) { //FIXME: hack, need full recurisve parsing.
+                    if (!j->after->after.empty()) {
+                        unsigned int k = 0;
+                        for (k = 0; k < j->after->after.size() - 1; k++) {
+                          joints.push_back(j->after->after[k]);
+                        }
+                        j = j->after->after[k];
+                    } else {
+                        j = NULL;
+                    }
+                } else {
+                    j = NULL;
+                }
+            }
+        }
+        //std::cout << "Need " << nparam << std::endl;
+        
+        req.goal_state.set_vals_size(nparam);
+
+        nparam = 0;
+        for (unsigned int i = 0; i < jointList.size(); i++) {
+            bool found = false;
+            for (unsigned int j = 0; j < jointList[i]->usedParams; j++) {
+                req.goal_state.vals[j + nparam] = 0.0;
+            }
+
+            for (unsigned int k = 0; k < reqn.goal_state.get_joints_size() && k < reqn.goal_state.get_names_size(); k++) {
+                if (reqn.goal_state.names[k] == jointList[i]->name) {
+                    found = true;
+                    if (jointList[i]->usedParams != reqn.goal_state.joints[k].get_vals_size()) {
+                        std::cerr << "You do not have the right number of axes for a the joint: "
+                                  << jointList[i]->name << " (" << jointList[i]->usedParams
+                                  << " != " << reqn.goal_state.joints[k].get_vals_size() << "). "
+                                  << "Extra axes will be ignored, non-specified ones will be set to zero.\n";
+                    }
+                    std::cout << nparam << " " << reqn.goal_state.names[k]  << std::endl;
+                    for (unsigned int j = 0; j < jointList[i]->usedParams && j < reqn.goal_state.joints[k].get_vals_size(); j++) {
+                        req.goal_state.vals[j + nparam] = reqn.goal_state.joints[k].vals[j];
+                    }
+                    break;
+                }
+            }
+            if (!found) {
+              std::cerr << "You did not specify the goal for the joint: " << jointList[i]->name << ", defaulting to zero.\n";
+            }
+            nparam += jointList[i]->usedParams;
+        }
+        
+
+        //req.goal_state = reqn.goal_state;
+
+
+        //Blind copy for the rest.
+        req.params = reqn.params;
+        req.constraints = reqn.constraints;
+        req.times = reqn.times;
+        req.interpolate = reqn.interpolate;
+        req.allowed_time = reqn.allowed_time;
+        req.threshold = reqn.threshold;
+
+	bool r = m_requestState.execute(m_models, req, res.path, res.distance);
+        resn.path = res.path;
+        resn.distance = res.distance;
+        return r;
+    }
+
+    bool planJointNames(robot_srvs::PlanNames::request &req, robot_srvs::PlanNames::response &res) {
+        std::vector<planning_models::KinematicModel::Joint*> joints;
+        m_kmodel->getJoints(joints);
+        res.set_names_size(joints.size());
+        res.set_num_values_size(joints.size());
+        for (unsigned int i = 0; i < joints.size(); i++) {
+            res.names[i] = joints[i]->name;
+            res.num_values[i] = joints[i]->usedParams;
+        }
+        return true;
+    }
+
     
     bool planToState(robot_srvs::KinematicPlanState::request &req, robot_srvs::KinematicPlanState::response &res)
     {
