@@ -81,7 +81,8 @@ class Dorylus {
   //! Pointers to weak classifiers, in the order that they were learned.
   vector<weak_classifier*> pwcs_; 
   //! nClasses x nTrEx.
-  NEWMAT::Matrix weights_; 
+  //NEWMAT::Matrix weights_; 
+  NEWMAT::Matrix log_weights_; 
   float objective_, objective_prev_, training_err_;
   DorylusDataset *dd_;
   string version_string_;
@@ -92,7 +93,8 @@ class Dorylus {
   void normalizeWeights();
   bool learnWC(int nCandidates, map<string, float> max_thetas, vector<string> *desc_ignore=NULL);
   map<string, float> computeMaxThetas(const DorylusDataset &dd);
-  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
+  //  float computeNewObjective(const weak_classifier& wc, const NEWMAT::Matrix& mmt, NEWMAT::Matrix** ppweights = NULL);
+  float computeUtility(const weak_classifier& wc, const NEWMAT::Matrix& mmt);
   float computeObjective();
   //void train(int nCandidates, int max_secs, int max_wcs);
   bool save(string filename, string *user_data_str=NULL);
@@ -124,7 +126,7 @@ class Function {
   float operator()(float x) const {
     float val = 0.0;
     for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
-      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x);
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x);
     }
     return val;
   }
@@ -146,7 +148,7 @@ class Gradient : public Function {
 /*       cout << d_->dd_->ymc_.Nrows() << endl; */
 /*       cout << mmt_.Nrows() << endl; */
 /*       cout << label_ << endl; */
-      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1));
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1));
     }
     return val;
   }
@@ -163,7 +165,7 @@ class Hessian : public Function {
   float operator()(float x) const {
     float val = 0.0;
     for(unsigned int m=0; m<d_->dd_->objs_.size(); m++) {
-      val += d_->weights_(label_+1, m+1) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (mmt_(1, m+1) * mmt_(1, m+1));
+      val += exp(d_->log_weights_(label_+1, m+1)) * exp(-d_->dd_->ymc_(label_+1, m+1) * mmt_(1, m+1) * x) * (mmt_(1, m+1) * mmt_(1, m+1));
     }
     return val;
   }

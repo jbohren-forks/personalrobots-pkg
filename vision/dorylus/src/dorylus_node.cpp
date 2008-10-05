@@ -90,18 +90,21 @@ public:
     spinL_fixed_HR_ = new SpinImage(string("FixedSpinLargeHighRes"), .20, 100, true);
     spinM_fixed_HR_ = new SpinImage(string("FixedSpinMediumHighRes"), .10, 200, true);
     spinS_fixed_HR_ = new SpinImage(string("FixedSpinSmallHighRes"), .05, 400, true);
+
+//     cal_land30_a_ = new Calonder("Calonder_Land30_1:200", "/u/mihelich/Public/land30.trees", 0, 200);
+//     cal_land30_b_ = new Calonder("Calonder_Land30_201:400", "/u/mihelich/Public/land30.trees", 200, 400);
+
+
 //     cal_land50_ = new Calonder("Calonder_Land50", "/u/mihelich/Public/land50.trees", 0, -1);
 //     cal_land30_ = new Calonder("Calonder_Land30", "/u/mihelich/Public/land30.trees", 0, -1);
 //    cal_land50_200_ = new Calonder("Calonder_Land50_0:200", "/u/mihelich/Public/land50.trees", 0, 200);
     //    cal_land30_200_ = new Calonder("Calonder_Land30_0:200", "/u/mihelich/Public/land30.trees", 0, 200);
-    cal_land30_a_ = new Calonder("Calonder_Land30_1:200", "/u/mihelich/Public/land30.trees", 0, 200);
-    cal_land30_b_ = new Calonder("Calonder_Land30_201:400", "/u/mihelich/Public/land30.trees", 200, 400);
 //     spinL_nat_ = new SpinImage(string("NatSpinLarge"), .20, 50, false);
 //     spinM_nat_ = new SpinImage(string("NatSpinMedium"), .10, 100, false);
 //     spinS_nat_ = new SpinImage(string("NatSpinSmall"), .05, 200, false);
 
-    descriptors_.push_back(cal_land30_a_);  
-    descriptors_.push_back(cal_land30_b_);  
+//     descriptors_.push_back(cal_land30_a_);  
+//     descriptors_.push_back(cal_land30_b_);  
     if(getenv("NOSPIN") == NULL) {
       descriptors_.push_back(spinL_fixed_);  
       descriptors_.push_back(spinM_fixed_);  
@@ -742,6 +745,8 @@ int main(int argc, char **argv) {
 	hours = atoi(getenv("HOURS"));
       if(getenv("NCANDIDATES") != NULL)
 	nCandidates = atoi(getenv("NCANDIDATES"));
+      if(getenv("NWCS") != NULL)
+	nwcs = atoi(getenv("NWCS"));
 
 
       cout << "Training for " << hours << " hours or " << nwcs << " weak classifiers, using " << nCandidates << " candidates." << endl;
