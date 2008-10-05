@@ -38,6 +38,7 @@
 #include <ros/node.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <mechanism_control/MechanismState.h>
+#include <robot_srvs/PlanNames.h>
 
 using namespace std;
 
@@ -76,14 +77,29 @@ private:
   }
 
   void runCLI() {
-    printf("Type:\nI\tInitialize States\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
+    printf("Type:\nI\tInitialize States\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
     char c = '\n';
 
     while (c == '\n' || c == '\r') {
       c = getchar();
     }
 
-    if (c == 'I') {
+
+    if (c == 'N') {
+      printf("Joint names (number of parameters):\n");
+      
+      robot_srvs::PlanNames::request namesReq;
+      robot_srvs::PlanNames::response names;
+      if (ros::service::call("plan_joint_state_names", namesReq, names)) {
+        for (unsigned int i = 0; i < names.get_names_size(); i++) {
+          printf("%s: %d\n", names.names[i].c_str(), names.num_values[i]);
+        }
+      } else {
+        printf("Error in service call.\n");
+      }
+
+      
+    } else if (c == 'I') {
       mechanism_control::MechanismState mechanismState;
       std::vector<std::string> names;
       
