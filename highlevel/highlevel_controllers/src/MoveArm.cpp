@@ -78,7 +78,8 @@
 #include <pr2_msgs/MoveArmState.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <robot_msgs/DisplayKinematicPath.h>
-#include <robot_srvs/KinematicPlanState.h>
+#include <robot_srvs/NamedKinematicPlanState.h>
+#include <robot_srvs/PlanNames.h>
 
 static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
 static const unsigned int LEFT_ARM_JOINTS_BASE_INDEX = 12;
@@ -110,13 +111,13 @@ private:
   bool dispatchCommands();
   bool withinBounds(unsigned waypointIndex);
 
-  void setStartState(robot_srvs::KinematicPlanState::request& req);
+  void setStartState(robot_srvs::NamedKinematicPlanState::request& req);
   void setCommandParameters(pr2_mechanism_controllers::JointPosCmd& cmd);
 
   const std::string armCmdTopic;
   const std::string kinematicModel;
   mechanism_control::MechanismState mechanismState;
-  robot_srvs::KinematicPlanState::response plan;
+  robot_srvs::NamedKinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
 
 protected:
@@ -189,18 +190,39 @@ void MoveArm::updateGoalMsg(){
 bool MoveArm::makePlan(){
   std::cout << "Invoking Kinematic Planner\n";
 
-  robot_srvs::KinematicPlanState::request req;
+
+  robot_srvs::PlanNames::request namesReq;
+  robot_srvs::PlanNames::response names;
+  ros::service::call("plan_joint_state_names", namesReq, names);
+
+  //unsigned int needparams = 0;
+  //for (unsigned int i = 0 ; i < names.get_names_size() && i < names.get_num_values_size() ; ++i) {
+  //std::cout << names.names[i] << " (" << names.num_values[i] << ")\n";
+  // needparams += names.num_values[i];
+  //}
+  //std::cout << "Need " << needparams << " Params\n";
+
+
+
+  robot_srvs::NamedKinematicPlanState::request req;
     
   req.params.model_id = kinematicModel;
   req.params.distance_metric = "L2Square";
   req.threshold = 10e-06;
   req.interpolate = 0;
   req.times = 1;
-  req.start_state.set_vals_size(45);
-    
+
+
   //initializing full value state
-  for (unsigned int i = 0 ; i < req.start_state.get_vals_size() ; ++i) {
-    req.start_state.vals[i] = 0.0;
+  req.start_state.set_names_size(names.get_names_size());
+  req.start_state.set_joints_size(names.get_names_size());
+  for (unsigned int i = 0 ; i < req.start_state.get_joints_size() ; ++i) {
+    req.start_state.names[i] = names.names[i];
+    //std::cout << req.start_state.names[i] << ": " << names.num_values[i] << std::endl;
+    req.start_state.joints[i].set_vals_size(names.num_values[i]);
+    for (int k = 0 ; k < names.num_values[i]; k++) {
+      req.start_state.joints[i].vals[k] = 0; //FIXME: should be the value from mechanism state.
+    }
   }
 
   // TODO: Adjust based on parameters for left vs right arms
@@ -212,9 +234,13 @@ bool MoveArm::makePlan(){
 
   // Filling out goal state from data in the goal message
   goalMsg.lock();
-  req.goal_state.set_vals_size(jointNames_.size());
-  for(unsigned int i = 0; i<jointNames_.size(); i++)
-    req.goal_state.vals[i] = goalMsg.configuration[i].position;
+  req.goal_state.set_names_size(goalMsg.get_configuration_size());
+  req.goal_state.set_joints_size(goalMsg.get_configuration_size());
+  for(unsigned int i = 0; i<goalMsg.get_configuration_size(); i++) {
+    req.goal_state.names[i] = goalMsg.configuration[i].name;
+    req.goal_state.joints[i].set_vals_size(1); //FIXME: multi-part joints?
+    req.goal_state.joints[i].vals[0] = goalMsg.configuration[i].position;
+  }
 
   goalMsg.unlock();
 
@@ -223,7 +249,7 @@ bool MoveArm::makePlan(){
   req.params.volumeMax.x = -1.0; req.params.volumeMax.y = -1.0; req.params.volumeMax.z = -1.0;
 
   // Invoke kinematic motion planner
-  ros::service::call("plan_kinematic_path_state", req, plan);
+  ros::service::call("plan_kinematic_path_named", req, plan);
   unsigned int nstates = plan.path.get_states_size();
 
   // If all well, then there will be at least 2 states
@@ -233,15 +259,15 @@ bool MoveArm::makePlan(){
     currentWaypoint = 0;
     std::cout << "Obtained solution path with " << nstates << " states\n";
   } else {
-    std::cout << "Service 'plan_kinematic_path_state' failed\n";
+    std::cout << "Service 'plan_kinematic_path_named' failed\n";
   }
 
-  robot_msgs::DisplayKinematicPath dpath;
+  /*robot_msgs::DisplayKinematicPath dpath;
   dpath.frame_id = "robot";
   dpath.model_name = req.params.model_id;
   dpath.start_state = req.start_state;
   dpath.path = plan.path;
-  publish("display_kinematic_path", dpath);
+  publish("display_kinematic_path", dpath);*/
 
 
   return foundPlan;
@@ -329,7 +355,7 @@ void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCo
     }
 }
 
-void MoveArm::setStartState(robot_srvs::KinematicPlanState::request& req){
+void MoveArm::setStartState(robot_srvs::NamedKinematicPlanState::request& req){
     /*
     req.start_state.vals[33] = mechanismState.joint_states[base + 12].position;
     req.start_state.vals[34] = mechanismState.joint_states[base + 10].position;
