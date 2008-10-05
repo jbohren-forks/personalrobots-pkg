@@ -212,73 +212,75 @@ public:
         
         //Use name lookups to populate the joint group.
 
-	std::vector<planning_models::KinematicModel::Joint*> jointList;
-
         unsigned int group = m_kmodel->getGroupID(reqn.params.model_id);
 
-	std::vector<planning_models::KinematicModel::Joint*> joints = m_kmodel->groupChainStart[group];
         
         //std::cout << "Joints:\n";
-        nparam = 0;
-        for (unsigned int i = 0; i < joints.size(); i++) {
-            planning_models::KinematicModel::Joint* j = joints[i];
-            while(j) {
-                if (j->inGroup[group]) {
-                  //std::cout << j->name << std::endl;
-                  jointList.push_back(j);
-                  nparam += j->usedParams;
-                }
-                if (j->after) { //FIXME: hack, need full recurisve parsing.
-                    if (!j->after->after.empty()) {
-                        unsigned int k = 0;
-                        for (k = 0; k < j->after->after.size() - 1; k++) {
-                          joints.push_back(j->after->after[k]);
-                        }
-                        j = j->after->after[k];
-                    } else {
-                        j = NULL;
-                    }
-                } else {
-                    j = NULL;
-                }
-            }
-        }
-        //std::cout << "Need " << nparam << std::endl;
         
-        req.goal_state.set_vals_size(nparam);
+        //Create a vector with the joint map for the planning subspace.
+        std::vector<planning_models::KinematicModel::Joint*> subspaceJointMapSparse;
+        std::vector<planning_models::KinematicModel::Joint*> subspaceJointMap;
 
+        //Fill it with nulls.
+        for (unsigned int i = 0; i < req.start_state.get_vals_size(); i++) {
+            subspaceJointMapSparse.push_back(NULL);
+        }
+
+        //Iterate over the joint parameter names table, and fill up the subspace joint
+        //map with the joints in the target group.
+        for (std::map<std::string, unsigned int>::iterator it = m_kmodel->parameterNames.begin();
+               it != m_kmodel->parameterNames.end(); it++) {
+          if (m_kmodel->getJoint(it->first)->inGroup[group]) {
+            subspaceJointMapSparse[it->second] = m_kmodel->getJoint(it->first);
+          }
+        }
+
+        //Create a non-sparse subspace joint map, and get nparam.
         nparam = 0;
-        for (unsigned int i = 0; i < jointList.size(); i++) {
-            bool found = false;
-            for (unsigned int j = 0; j < jointList[i]->usedParams; j++) {
-                req.goal_state.vals[j + nparam] = 0.0;
-            }
+        for (unsigned int i = 0; i < subspaceJointMapSparse.size(); i++) {
+          if (subspaceJointMapSparse[i]) {
+            subspaceJointMap.push_back(subspaceJointMapSparse[i]);
+            nparam += subspaceJointMapSparse[i]->usedParams;
+            std::cout << subspaceJointMapSparse[i]->name << std::endl;
+          }
+        }
 
-            for (unsigned int k = 0; k < reqn.goal_state.get_joints_size() && k < reqn.goal_state.get_names_size(); k++) {
-                if (reqn.goal_state.names[k] == jointList[i]->name) {
-                    found = true;
-                    if (jointList[i]->usedParams != reqn.goal_state.joints[k].get_vals_size()) {
+
+
+        //Copy the goal state.
+
+        //Zero the output messages.
+        req.goal_state.set_vals_size(nparam);
+        for (unsigned int i = 0; i < nparam; i++) {
+            req.goal_state.vals[i] = 0.0;
+        }
+
+        //Copy the input into the message using the jointmap.
+        nparam = 0;
+        for (unsigned int i = 0; i < subspaceJointMap.size(); i++) {
+            bool found = false;
+            for (unsigned int j = 0; j < reqn.goal_state.get_names_size() && j < reqn.goal_state.get_joints_size(); j++) {
+                if (reqn.goal_state.names[j] == subspaceJointMap[i]->name) {
+                    if (subspaceJointMap[i]->usedParams != reqn.goal_state.joints[j].get_vals_size()) {
                         std::cerr << "You do not have the right number of axes for a the joint: "
-                                  << jointList[i]->name << " (" << jointList[i]->usedParams
-                                  << " != " << reqn.goal_state.joints[k].get_vals_size() << "). "
+                                  << subspaceJointMap[i]->name << " (" << subspaceJointMap[i]->usedParams
+                                  << " != " << reqn.goal_state.joints[j].get_vals_size() << "). "
                                   << "Extra axes will be ignored, non-specified ones will be set to zero.\n";
                     }
-                    std::cout << nparam << " " << reqn.goal_state.names[k]  << std::endl;
-                    for (unsigned int j = 0; j < jointList[i]->usedParams && j < reqn.goal_state.joints[k].get_vals_size(); j++) {
-                        req.goal_state.vals[j + nparam] = reqn.goal_state.joints[k].vals[j];
+                    for (unsigned int k = 0; k < subspaceJointMap[i]->usedParams && k < reqn.goal_state.joints[j].get_vals_size(); k++) {
+                        std::cout << "Writing " << nparam << " for " << subspaceJointMap[i]->name << std::endl;
+                        req.goal_state.vals[nparam] = reqn.goal_state.joints[j].vals[k];
+                        nparam++;
                     }
+                    found = true;
                     break;
                 }
             }
             if (!found) {
-              std::cerr << "You did not specify the goal for the joint: " << jointList[i]->name << ", defaulting to zero.\n";
+                std::cerr << "You did not specify a goal value for the joint:" << subspaceJointMap[i]->name << std::endl;
             }
-            nparam += jointList[i]->usedParams;
         }
         
-
-        //req.goal_state = reqn.goal_state;
-
 
         //Blind copy for the rest.
         req.params = reqn.params;
