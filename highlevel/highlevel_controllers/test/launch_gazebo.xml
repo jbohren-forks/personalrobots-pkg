@@ -1,6 +1,6 @@
 
 <launch>
-  <!--master auto="start"/-->
+  <master auto="start"/>
   <group name="wg">
 
     <include file="$(find wg_robot_description)/send.xml"/>
@@ -20,7 +20,7 @@
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
 
 
-    <!--include file="$(find highlevel_controllers)/test/launch_world_3d.xml"/-->
+    <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
 
     <!-- Load parameters for moving the base. -->
     <param name="costmap_2d/inflation_radius" type="double" value="0.35" />
