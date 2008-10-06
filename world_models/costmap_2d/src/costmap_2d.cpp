@@ -147,7 +147,7 @@ namespace costmap_2d {
       if(cloud.pts[i].z > maxZ_)
 	continue;
 
-      // Filter points in our contact space
+      // Filter points in our contact space. Should be unnecessary if lasers working correctly
       if(sqrt(pow(wx-cloud.pts[i].x, 2) + pow(wy-cloud.pts[i].y, 2)) < FILTERING_RADIUS){
 	continue;
       }
@@ -227,7 +227,11 @@ namespace costmap_2d {
 	it = dynamicObstacles_.erase(it);
 	obsWatchDog_[ind] = 0;
 	fullData_[ind] = staticData_[ind];
-	deletedObstacles.push_back(ind);
+
+	// Remove the obstacle if not static, i.e. the static data value is less than the threshold
+	if(staticData_[ind] < LETHAL_OBSTACLE)
+	  deletedObstacles.push_back(ind);
+
 	continue;
       }
 
