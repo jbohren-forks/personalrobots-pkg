@@ -101,6 +101,7 @@ MoveArm::Inactive{
   }
 }
 
+
 MoveEndEffector::Inactive{
   met_by(Active p);
 

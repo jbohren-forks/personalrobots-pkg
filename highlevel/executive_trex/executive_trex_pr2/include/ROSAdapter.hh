@@ -23,7 +23,7 @@ namespace TREX {
 
     bool m_initialized; /*!< Hook to flag if expected ros initialization messages have arrived */
 
-    void handleRequest(const TokenId& goal);
+    bool handleRequest(const TokenId& goal);
 
     void handleRecall(const TokenId& goal);
 
@@ -36,7 +36,7 @@ namespace TREX {
     virtual void registerSubscribers() {}
     virtual void registerPublishers() {}
     virtual Observation* getObservation() = 0;
-    virtual void dispatchRequest(const TokenId& goal, bool enabled){}
+    virtual bool dispatchRequest(const TokenId& goal, bool enabled){return true;}
 
     const std::vector<std::string>& nddlNames() const {return nddlNames_;}
     const std::vector<std::string>& rosNames() const {return rosNames_;}

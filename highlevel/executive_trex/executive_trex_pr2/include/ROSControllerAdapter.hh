@@ -3,6 +3,7 @@
 
 #include "ROSAdapter.hh"
 #include "Token.hh"
+#include "TokenVariable.hh"
 
 namespace TREX {
 
@@ -91,15 +92,30 @@ namespace TREX {
       return obs;
     }
 
-    void dispatchRequest(const TokenId& goal, bool enabled){
+    /**
+     * The goal can be enabled or disabled.
+     * The predicate can be active or inactive
+     */
+    bool dispatchRequest(const TokenId& goal, bool enabled){
       debugMsg("ROS", "Received dispatch request for " << goal->toString());
-      if(goal->getPredicateName() == activePredicate){
-	G goalMsg;
-	fillRequestParameters(goalMsg, goal);
-	goalMsg.enable = enabled;
-	debugMsg("BaseControllerAdapter", "Dispatching " << goal->toString());
-	m_node->publishMsg<G>(goalTopic, goalMsg);
+
+      bool enableController = enabled;
+
+      // If the request to move into the inactive state, then evaluate the time bound and only process
+      // if it is a singleton
+      if(goal->getPredicateName() != activePredicate){
+	if(goal->start()->lastDomain().getUpperBound() > getCurrentTick())
+	  return false;
+
+	enableController = false;
       }
+
+      G goalMsg;
+      fillRequestParameters(goalMsg, goal);
+      goalMsg.enable = enableController;
+      debugMsg("BaseControllerAdapter", "Dispatching " << goal->toString());
+      m_node->publishMsg<G>(goalTopic, goalMsg);
+      return true;
     }
 
     virtual void fillActiveObservationParameters(ObservationByValue* obs) = 0;

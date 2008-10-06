@@ -76,10 +76,13 @@ namespace TREX {
     return m_initialized;
   }
 
-  void ROSAdapter::handleRequest(const TokenId& goal){
-    dispatchRequest(goal, true);
+  bool ROSAdapter::handleRequest(const TokenId& goal){
+    return dispatchRequest(goal, true);
   }
 
+  /**
+   * @brief Recalls will always be processed immediately
+   */
   void ROSAdapter::handleRecall(const TokenId& goal){
     dispatchRequest(goal, false);
   }
