@@ -34,7 +34,6 @@
 using namespace tf;
 
 ros::Duration TimeCache::getData(ros::Time time, TransformStorage & data_out) //returns distance in time to nearest value
-  //bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff)
 {
   TransformStorage p_temp_1, p_temp_2;
 
