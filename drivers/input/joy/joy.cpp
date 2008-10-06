@@ -31,7 +31,7 @@ public:
     param<int>("joy/deadzone", deadzone, 2000);
     printf("dev:%s\n", joy_dev.c_str());
     printf("deadzone:%d\n", deadzone);
-    advertise<joy::Joy>("joy");
+    advertise<joy::Joy>("joy",10);
   }
   void start()
   {
@@ -79,6 +79,7 @@ public:
           }
           joy_msg.axes[event.number] = (fabs(event.value) < deadzone) ? 0.0 : 
                   (-event.value / 32767.0);
+          cout << "axis: " << (int) event.number << ", value: " << joy_msg.axes[event.number] << endl;
           publish("joy", joy_msg);
           break;
       }
