@@ -93,20 +93,8 @@ public:
   /**
    * Given a sequence of stereo video, reconstruct the path of the
    * camera.
-   * dirname  - directory of where the video sequence is stored
-   * leftFileFmt  - format for generating the filename of an image from the
-   *                left camera. e.g. left-%04d.ppm, for filenames like
-   *                left-0500.ppm, etc.
-   * rightFileFmt - format for generating the filename of an image from the
-   *                right camera. Same convention as leftFileFmt.
-   * start        - index of the first frame to be processed
-   * end          - index of the first frame not to be process
-   *              - namely, process the frame at most to frame number end-1
-   * step         - step size of the increase of the index from one frame
-   *                to next one.
    */
-  bool recon(const string& dirname, const string& leftFileFmt,
-      const string& rightFileFmt, int start, int end, int step);
+  virtual bool track(queue<StereoFrame>& inputImageQueue);
 
   /// Slide down the end mark of the sliding window. Update the
   /// beginning end of applicable. Plus book keeping of the tracks

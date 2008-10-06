@@ -97,6 +97,8 @@ public:
     );
   }
 
+  static CvMat* dispMapToMask(const WImage1_16s& dispMap);
+
   /// Construct a transformation matrix (4x4 or 4x3), given
   /// the rodrigues and translation vector
   static void TransformationFromRodriguesAndShift(
@@ -106,11 +108,17 @@ public:
       /// Output. transformation matrix.
       CvMat& Transform);
 
-	static const CvScalar red;
+  static void loadStereoImagePair(string& dirname, string& leftimagefmt,
+      string& rightimagefmt, string& dispmapfmt, int & frameIndex,
+      WImageBuffer1_b* leftImage, WImageBuffer1_b* rightImage,
+      WImageBuffer1_16s* dispMap);
+
+  static const CvScalar red;
 	static const CvScalar green;
 	static const CvScalar yellow;
 
 };
+
 }
 }
 #endif /*CVMATUTILS_H_*/

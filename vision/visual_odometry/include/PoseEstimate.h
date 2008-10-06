@@ -6,12 +6,9 @@
 //#include "CvMatUtils.h"
 
 #include "CvRandomTripletSetGenerator.h"
+#include "VisOdom.h"
 
 namespace cv { namespace willow {
-
-class PoseEstimator {
-
-};
 
 /**
  * Estimate transformation between corresponding 3D point clouds.
@@ -60,6 +57,21 @@ public:
  	 * @return number of inliers
 	 */
 	int estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *trans, bool smoothed=true);
+
+	/// TODO not implemented yet
+  virtual int estimate(
+      /// key point list 0
+      const Keypoints& keypoints0,
+      /// key point list 1
+      const Keypoints& keypoints1,
+      /// index pairs of matching key points
+      const vector<pair<int, int> >& matchIndexPairs,
+      /// (Output) rotation matrix
+      CvMat& rot,
+      /// (Output) translation vector
+      CvMat& shift,
+      /// If true, Levenberg-Marquardt is used at the end for smoothing
+      bool smoothed){return 0;}
 
 	void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
 	    CvMat& rot, CvMat& trans);

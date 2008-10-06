@@ -75,7 +75,10 @@ public:
       /// estimation.
       bool smoothed);
 
-  int estimate(
+  /// Method to estimate transformation based pairs of 3D points, in
+  /// disparity coordinates
+  /// @return number of inliers
+  virtual int estimate(
       /// key point list 0
       const Keypoints& keypoints0,
       /// key point list 1

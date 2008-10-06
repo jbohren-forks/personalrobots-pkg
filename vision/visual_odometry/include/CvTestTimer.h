@@ -63,6 +63,7 @@ public:
 		RESET(TrackablePair);
 		RESET(PoseEstimateRANSAC);
 		RESET(PoseEstimateLevMarq);
+	  RESET(KeypointTemplMatch);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -102,6 +103,7 @@ public:
   DECLARE(TrackablePair);
   DECLARE(PoseEstimateRANSAC);
   DECLARE(PoseEstimateLevMarq);
+  DECLARE(KeypointTemplMatch);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

@@ -46,6 +46,14 @@ public:
 	static const int DefTextThresh   = 10;		//< texture threshold
 	static const int DefUniqueThresh = 15;		//< uniqueness threshold
 
+	// constants used in harris corner detector
+	static const double HarrisCornerQualityLevel = 0.01;  // what should I use? [0., 1.0]
+	static const double HarrisCornerMinDistance  = 10.0;  // 10 pixels?
+	static const int    HarrisCornerBlockSize    = 5;     // default is 3
+	static const int    HarrisCornerDetectorFlag = 1;     // default is 0;
+	static const double HarrisCornerFreeParam    = 0.01;  // default is 0.04;
+
+
 	// constants used in goodFeaturesToTrack/star_detector
 	static const int DefNumScales    = 7;
 	static const int DefThreshold    = 15;
@@ -77,7 +85,8 @@ public:
 
 	CvSize& getSize() {	return mSize; }
 
-	bool getDisparityMap(WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap);
+  virtual bool getDisparityMap(const WImage1_b& leftImage,
+      const WImage1_b& rightImage, WImage1_16s& dispMap);
 	/**
 	 * Compute a list of good feature point for tracking
 	 * img   -- input image
@@ -98,8 +107,36 @@ public:
 	    const WImage1_16s* dispMap,
 	    double disparityUnitInPixels,
 	    Keypoints& keypoints,
-	    CvMat* eigImg,
-	    CvMat* tempImg
+	    WImage1_f& eigImg,
+	    WImage1_f& tempImg
+	);
+
+	/// Use Harris corner to extract keypoints.
+	/// @return the number of feature points.
+	static int goodFeaturesToTrackHarrisCorner(
+	    /// input image
+	    const WImage1_b& image,
+	    /// Temporary floating-point 32-bit image of the same size as image.
+	    WImage1_f& eigImg,
+	    /// Another temporary image of the same size and same format as eig_image.
+	    WImage1_f& tempImg,
+	    /// (OUTPUT) key point detected
+	    Keypoints& keypoints,
+	    /// (on entry) max number of key points
+	    /// (on exit ) the number of key points returned in keypoints
+	    int numKeypoints,
+	    /// threshold value (between 0.0 and 1.0)
+	    double qualityThreshold = HarrisCornerQualityLevel,
+	    /// minimum distance between the key points
+	    double minDistance = HarrisCornerMinDistance,
+	    /// Region of interest. The function selects points either in the specified
+	    /// region or in the whole image if the mask is NULL.
+	    CvArr* mask = NULL,
+	    /// neighborhood size @see cvCornerHarris, @see CornerEigenValsAndVecs
+	    int blockSize = HarrisCornerBlockSize,
+	    /// the free parameter in Harris corner @see cvGoodFeaturesToTrack()
+	    /// @see cvCornerHarris()
+	    double k = HarrisCornerFreeParam
 	);
 
 	/**
@@ -237,8 +274,8 @@ protected:
 	StarDetector mStarDetector;
 #endif
 	/// buffer use by Harris Corner
-  CvMat* mEigImage;
-  CvMat* mTempImage;
+	WImage1_f* mEigImage;
+	WImage1_f* mTempImage;
 
 
 	MatchMethod mMatchMethod;

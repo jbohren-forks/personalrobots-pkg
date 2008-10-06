@@ -7,15 +7,16 @@
 
 #include "Cv3DPoseEstimateStereo.h"
 #include "CvMatUtils.h"
+#include "VisOdom.h"
 using namespace cv::willow;
-#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
+#include "stereolib.h" // from 3DPoseEstimation/include. The header file is there temporarily
 
 #include <iostream>
 using namespace std;
 
 //opencv
-#include <cv.h>
-#include <cvwimage.h>
+#include <opencv/cv.h>
+#include <opencv/cvwimage.h>
 
 // boost
 #include <boost/foreach.hpp>
@@ -27,6 +28,19 @@ using namespace std;
 #endif
 
 #undef DEBUG
+//#define DEBUG 1
+
+#if CHECKTIMING == 0
+#define TIMERSTART(x)
+#define TIMEREND(x)
+#define TIMERSTART2(x)
+#define TIMEREND2(x)
+#else
+#define TIMERSTART(x)  CvTestTimerStart(x)
+#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x)   CvTestTimerEnd2(x)
+#endif
 
 // change from 61 to 101 to accommodate the sudden change around frame 0915 in
 // the indoor sequence "indoor1"
@@ -85,12 +99,12 @@ PoseEstimateStereo::~PoseEstimateStereo() {
 	delete [] mBufStereoPairs;
 	delete [] mFeatureImgBufLeft;
 	delete mCalonderMatcher;
-	if (mEigImage)  cvReleaseMat(&mEigImage);
-	if (mTempImage) cvReleaseMat(&mTempImage);
+	if (mEigImage)  delete mEigImage;
+	if (mTempImage) delete mTempImage;
 }
 
 bool PoseEstimateStereo::getDisparityMap(
-		WImage1_b& leftImage, WImage1_b& rightImage, WImage1_16s& dispMap) {
+		const WImage1_b& leftImage, const WImage1_b& rightImage, WImage1_16s& dispMap) {
 	bool status = true;
 
 	if (leftImage.Width()  != mSize.width || leftImage.Height()  != mSize.height ||
@@ -102,15 +116,15 @@ bool PoseEstimateStereo::getDisparityMap(
 	//
 	// Try Kurt's dense stereo pair
 	//
-	uint8_t *lim = leftImage.ImageData();
-	uint8_t *rim = rightImage.ImageData();
+	const uint8_t *lim = leftImage.ImageData();
+	const uint8_t *rim = rightImage.ImageData();
 
 	int16_t* disp    = dispMap.ImageData();
 	int16_t* textImg = NULL;
 
 	// prefilter
-	do_prefilter(lim, mFeatureImgBufLeft, mSize.width, mSize.height, mFTZero, mBufStereoPairs);
-	do_prefilter(rim, mFeatureImgBufRight, mSize.width, mSize.height, mFTZero, mBufStereoPairs);
+	do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, mSize.width, mSize.height, mFTZero, mBufStereoPairs);
+	do_prefilter((uint8_t *)rim, mFeatureImgBufRight, mSize.width, mSize.height, mFTZero, mBufStereoPairs);
 
 	// stereo
 	do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, mSize.width, mSize.height,
@@ -121,16 +135,16 @@ bool PoseEstimateStereo::getDisparityMap(
 
 bool PoseEstimateStereo::goodFeaturesToTrack(
     const WImage1_b& img, const WImage1_16s* dispMap,
-    vector<CvPoint3D64f>& keypoints){
+    Keypoints& keypoints){
   bool status = true;
   switch(getKeyPointDetector()) {
   case HarrisCorner:
   {
     if (mEigImage  == NULL)
-      mEigImage  = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
+      mEigImage  = new WImageBuffer1_f(mSize.width, mSize.height);
     if (mTempImage == NULL )
-      mTempImage = cvCreateMat(mSize.height, mSize.width, CV_32FC1);
-    return goodFeaturesToTrack(img, dispMap, mDisparityUnitInPixels, keypoints, mEigImage, mTempImage);
+      mTempImage = new WImageBuffer1_f(mSize.width, mSize.height);
+    return goodFeaturesToTrack(img, dispMap, mDisparityUnitInPixels, keypoints, *mEigImage, *mTempImage);
   }
   case Star:
   {
@@ -178,8 +192,8 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
     const WImage1_b& img,
     const WImage1_16s* dispMap,
     double disparityUnitInPixels,
-    vector<CvPoint3D64f>& keypoints,
-    CvMat* eigImg, CvMat* tempImg
+    Keypoints& keypoints,
+    WImage1_f& eigImg, WImage1_f& tempImg
 ){
   bool status = true;
   CvSize sz = cvSize(img.Width(), img.Height());
@@ -188,61 +202,85 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
   //  Try cvGoodFeaturesToTrack
   //
   int maxKeypoints = 500;
-  CvPoint2D32f kps[maxKeypoints];
-
-  double quality_level =  0.01; // what should I use? [0., 1.0]
-  double min_distance  = 10.0; // 10 pixels?
 
   // misc params to cvGoodFeaturesToTrack
   CvMat *mask1 = NULL;
-  CvMat mask0;
   if (dispMap) {
-    const int16_t *disp = dispMap->ImageData();
-    int8_t _mask[sz.width*sz.height];
-    for (int v=0; v<sz.height; v++) {
-      for (int u=0; u<sz.width; u++) {
-        int16_t d = disp[v*sz.width+u];
-        if (d>0) {
-          _mask[v*sz.width+u] = 1;
-        } else {
-          _mask[v*sz.width+u] = 0;
-        }
-      }
-    }
-    mask0= cvMat(sz.height, sz.width, CV_8SC1, _mask);
-    mask1 = &mask0;
+    mask1 = CvMatUtils::dispMapToMask(*dispMap);
   }
 
-  const int block_size=5;  // default is 3
-  const int use_harris=1;  // default is 0;
-  const double k=0.01;     // default is 0.04;
-  int numkeypoints = maxKeypoints;
-  cvGoodFeaturesToTrack(img.Ipl(), eigImg, tempImg,
-      kps, &numkeypoints,
-      quality_level, min_distance, mask1, block_size, use_harris, k);
-  if (dispMap) {
-    for (int i=0; i<numkeypoints; i++) {
-      const int16_t *disp = dispMap->ImageData();
-      double d = disp[(int)(kps[i].y+.5) * sz.width + (int)(kps[i].x+.5)];
-      if (d<0) {
-        d = disp[(int)(kps[i].y) * sz.width + (int)(kps[i].x)];
-        if (d<0) {
+  int numkeypoints = goodFeaturesToTrackHarrisCorner(img, eigImg, tempImg, keypoints,
+      maxKeypoints, HarrisCornerQualityLevel, HarrisCornerMinDistance, (CvArr*)mask1,
+      HarrisCornerBlockSize, HarrisCornerFreeParam);
 #if DEBUG
-          cerr << "disp < 0! ==> "<<disp<<<endl;
+  int numKeypointWithNoDisp=0;
 #endif
-          continue;
-        }
+  if (dispMap) {
+    const int16_t *disp = dispMap->ImageData();
+    BOOST_FOREACH( Keypoint& kp, keypoints) {
+      double d = disp[(int)(kp.y+.5) * sz.width + (int)(kp.x+.5)];
+      if (d>=0) { // this could happen due to rounding
+        d /= disparityUnitInPixels;
+        kp.z = d;
+      } else {
+        // no disparity
+        // this could happen due to rounding
+#if DEBUG
+        numKeypointWithNoDisp++;
+#endif
       }
-      d /= disparityUnitInPixels;
-      keypoints.push_back(cvPoint3D64f(kps[i].x, kps[i].y, d));
     }
+#if DEBUG
+    printf("%d key points have not disp\n", numKeypointWithNoDisp);
+#endif
   } else {
-    // disparity map is not available, fill out -1 in place of displarity value.
-    for (int i=0; i<numkeypoints; i++) {
-      keypoints.push_back(cvPoint3D64f(kps[i].x, kps[i].y, -1.0));
-    }
+#if DEBUG
+    printf("no disp map\n");
+#endif
+    // disparity map is not available, do nothing
   }
   return status;
+}
+
+/// Use Harris corner to extrack keypoints.
+/// @return the number of detected feature points
+int PoseEstimateStereo::goodFeaturesToTrackHarrisCorner(
+    /// input image
+    const WImage1_b& image,
+    /// Temporary floating-point 32-bit image of the same size as image.
+    WImage1_f& eigImg,
+    /// Another temporary image of the same size and same format as eig_image.
+    WImage1_f& tempImg,
+    /// (OUTPUT) key point detected
+    Keypoints& keypoints,
+    /// (input) max number of key points
+    int maxNumKeypoints,
+    /// threshold value (between 0.0 and 1.0), -1 if don't care
+    double qualityThreshold,
+    /// mininum distance between the keypoints
+    double minDistance,
+    /// Region of interest. The function selects points either in the specified
+    /// region or in the whole image if the mask is NULL.
+    CvArr* mask,
+    /// neighborhood size @see cvCornerHarris, @see CornerEigenValsAndVecs
+    int blockSize,
+    /// the free parameter in Harris corner @see cvGoodFeaturesToTrack()
+    /// @see cvCornerHarris()
+    double k
+) {
+  int numkeypoints = maxNumKeypoints;
+  CvPoint2D32f kps[numkeypoints];
+  cvGoodFeaturesToTrack(image.Ipl(), eigImg.Ipl(), tempImg.Ipl(),
+      kps, &numkeypoints, qualityThreshold, minDistance, mask, blockSize,
+      HarrisCornerDetectorFlag, k);
+
+  // unfortunately, we do not have reponses from this interface to sort them
+  // create an array of Keypoint objects,
+  for (int i=0; i<numkeypoints; i++) {
+    keypoints.push_back(Keypoint(kps[i].x, kps[i].y, -1, 0, -1, NULL));
+  }
+
+  return numkeypoints;
 }
 
 #if 0
@@ -572,7 +610,9 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 	int iKeypoint0 = 0; //< the index of the current key point in keypoints0
 	for (Keypoints::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++, iKeypoint0++) {
 		const CvPoint3D64f& ptLast = *ikp;
-		assert(ptLast.z>=0);
+		if (ptLast.z<0) { // disparity value maybe still missing
+		  continue;
+		}
 
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
@@ -607,7 +647,9 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		float _res[1];
 		CvMat res = cvMat(1, 1, CV_32FC1, _res);
 		// just to get an idea what is the score for the best possible match
+    TIMERSTART2(KeypointTemplMatch);
 		cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
+    TIMEREND2(KeypointTemplMatch);
 		double threshold = _res[0]*.75;
 		double maxScore = threshold;
 		int     bestlocIndex = -1;
@@ -616,6 +658,9 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		jkp!=keyPoints1.end();
 		jkp++, iKeypoint1++) {
 		  CvPoint3D64f pt = *jkp;
+		  if (pt.z < 0) { // disparity value is missing
+		    continue;
+		  }
 			double dx = pt.x - ptLast.x;
 			double dy = pt.y - ptLast.y;
 			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
@@ -637,7 +682,9 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 					continue;
 				}
 				cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
+        TIMERSTART2(KeypointTemplMatch);
 				cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
+				TIMEREND2(KeypointTemplMatch);
 				double score = _res[0];
 
 				if (score > maxScore) {
@@ -655,7 +702,7 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
       assert(pt0.z>=0);
       trackablePairs->push_back(make_pair(ptLast, pt0));
 #ifdef DEBUG
-        cout << "trackable pair "<< ptLast.x <<","<< ptLast.y<<"  <==> "<< pt.x <<","<< pt.y<<endl;
+        cout << "trackable pair "<< ptLast.x <<","<< ptLast.y<<"  <==> "<< pt0.x <<","<< pt0.y<<endl;
 #endif
 		}
 		if (trackableIndexPairs) {

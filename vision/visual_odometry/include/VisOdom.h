@@ -10,6 +10,7 @@
 
 #include <string>
 #include <vector>
+#include <queue>
 #include <iostream>
 
 #include <opencv/cxcore.h>
@@ -24,6 +25,7 @@ static const double DefDisparityUnitInPixels = 16.;
 /// The minimum number needed to do tracking between two cams
 static const int defMinNumTrackablePairs = 10;
 
+/// An abstract class for keypoint descriptors;
 class KeypointDescriptor {
 public:
   virtual ~KeypointDescriptor(){}
@@ -41,27 +43,46 @@ public:
 class Keypoint: public CvPoint3D64f
 {
 public:
-  Keypoint(double _x, double _y, double _z, double response, double scale, KeypointDescriptor* descriptor):
+  Keypoint(double _x, double _y, double _z, double response, double scale,
+      KeypointDescriptor* descriptor):
     r(response), s(scale), desc(descriptor){
     x = _x; y=_y; z=_z;
   }
   ~Keypoint() {
     delete desc;
   }
-  double r; //< the response of the keypoint
-  double s; //< scale of the keypoint
+  /// the response of the keypoint
+  double r;
+  /// scale of the keypoint
+  double s;
+  /// the key point descriptor
   KeypointDescriptor* desc;
 };
 
 
 /// Disparity coordinates of the key points
 /// x, y, z in class CvPoint3D64f is used to represent x, y, d (or u, v, d)
-typedef vector<CvPoint3D64f> Keypoints;
-//typedef vector<Keypoint> Keypoints;
+//typedef vector<CvPoint3D64f> Keypoints;
+typedef vector<Keypoint> Keypoints;
 
+/// A struct to keep input images,
+class StereoFrame {
+public:
+  StereoFrame(int frameIndex):mFrameIndex(frameIndex),
+  mImage(NULL), mRightImage(NULL),mDispMap(NULL){}
+  StereoFrame():mFrameIndex(-1),mImage(NULL),mRightImage(NULL), mDispMap(NULL){}
+  /// index of this frame in the video sequence
+  int mFrameIndex;
+  /// left camera image
+  WImageBuffer1_b* mImage;
+  /// right camera image
+  WImageBuffer1_b* mRightImage;
+  /// disparity map
+  WImageBuffer1_16s * mDispMap;
+};
 
 /// Information of pose estimation for one frame.
-class PoseEstFrameEntry  {
+class PoseEstFrameEntry: public StereoFrame  {
 public:
   /**
    * The object takes ownership of the images, keypoints and inliers
@@ -94,13 +115,12 @@ public:
       /// inliers from this frame
       CvMat *inliers1);
   PoseEstFrameEntry(int frameIndex):
-    mImage(NULL), mDispMap(NULL), mKeypoints(NULL),
+    StereoFrame(frameIndex), mKeypoints(NULL),
     mRot(cvMat(3, 3, CV_64FC1, _mRot)),
     mShift(cvMat(3, 1, CV_64FC1, _mShift)),
     mGlobalTransform(cvMat(4, 4, CV_64FC1, _mTransform)),
     mNumTrackablePairs(0),
     mNumInliers(0),
-    mFrameIndex(frameIndex),
     mImageC3a(NULL),
     mTrackableIndexPairs(NULL),
     mInlierIndices(NULL),
@@ -108,8 +128,6 @@ public:
 
   ~PoseEstFrameEntry();
 
-  WImageBuffer1_b* mImage;
-  WImageBuffer1_16s* mDispMap;
   Keypoints* mKeypoints;
   /// Estimated rotation matrix from this frame to last key frame
   CvMat mRot;
@@ -122,8 +140,6 @@ public:
   int mNumTrackablePairs;
   /// Number of inliers
   int mNumInliers;
-  /// index of this frame in the video sequence
-  int mFrameIndex;
   /// Index of last key frame, with which the transformation is estimated
   /// Use mostly for sanity checking
   int mLastKeyFrameIndex;
@@ -172,109 +188,168 @@ public:
   CvPoint3D64f mShift;
 };
 
-class CamTracker;
+void saveFramePoses(const string& dirname, vector<FramePose>& framePoses);
 
 typedef enum {
   Pairwise,
   BundleAdjust
 } CamTrackerType;
 
-/// construct a camera tracker object
-CamTracker* getCamTracker(
-    /// type of the tracker
-    const CamTrackerType type,
-    /// size of the image the tracker expects to track on
-    CvSize& imgSize,
-    /// focal length in x
-    double Fx,
-    /// focal length in y
-    double Fy,
-    /// baseline
-    double Tx,
-    /// optical center of left cam, x coordinate
-    double Clx,
-    /// optical center of right cam, x coorindate
-    double Crx,
-    /// optical center, y cooridinate
-    double Cy);
+class FrameSeq;
+class PoseEstimator;
 
-/// Tracks a sequence of camera frames.
-bool trackCameras(
-    /// The tracker
-    const CamTracker* tracker,
-    /// The directory of the video files
-    const string & dirname,
-    /// Format of the filename of the left images, e.g. "left-%04d"
-    const string & leftFileFmt,
-    /// Format of the filename of the right images, e.g. "right-%04d"
-    const string & rightFileFmt,
-    /// Starting index of the image sequence
-    int start,
-    /// Ending index (exclusive) of the image sequence
-    int end,
-    /// increment to add from the index of one image pair to next one
-    int step,
-    vector<FramePose>*& framePoses);
+typedef enum {
+  /// This frame shall be skipped.
+  KeyFrameSkip      = 0x0,
+  /// This frame shall be kept. Maybe used as key frame later.
+  KeyFrameKeep      = 0x1,
+  /// Use this frame as key frame right now.
+  KeyFrameUse       = 0x2,
+  /// Backtrack to last kept frame and use it as key frame. This frame shall
+  /// still be used moving forward.
+  KeyFrameBackTrack = 0x3
+} KeyFramingDecision;
 
-/// set up the tracker for loading a sequence of stereo camera files for
-/// tracking.
-void setInputVideoParams(
-    /// The tracker
-    const CamTracker* tracker,
-    /// The directory of the video files
-    const string & dirname,
-    /// Format of the filename of the left images, e.g. "left-%04d"
-    const string & leftFileFmt,
-    /// Format of the filename of the right images, e.g. "right-%04d"
-    const string & rightFileFmt,
-    /// Starting index of the image sequence
-    int start,
-    /// Ending index (exclusive) of the image sequence
-    int end,
-    /// increment to add from the index of one image pair to next one
-    int step
-);
+/// A Camera tracker interface
+class CamTracker {
+public:
+  virtual ~CamTracker(){};
+  /// construct a camera tracker object
+  static CamTracker* getCamTracker(
+      /// type of the tracker
+      const CamTrackerType type,
+      /// size of the image the tracker expects to track on
+      CvSize& imgSize,
+      /// focal length in x
+      double Fx,
+      /// focal length in y
+      double Fy,
+      /// baseline
+      double Tx,
+      /// optical center of left cam, x coordinate
+      double Clx,
+      /// optical center of right cam, x coorindate
+      double Crx,
+      /// optical center, y cooridinate
+      double Cy);
+  /// Process all the stereo images in the queue.
+  virtual bool track(
+      /// queue of input stereo images
+      queue<StereoFrame>& inputImages
+  )=0;
+  /// Use the tracker to track one single frame.
+  /// process one frame, either from the queue, or backtracking to
+  /// a previously kept one.
+  /// @return true if this frame is used as a key frame.
+  virtual bool trackOneFrame(
+      /// input image queue
+      queue<StereoFrame>& inputImageQueue,
+      /// reference to a frame sequence management object
+      FrameSeq& frameSeq)=0;
+  /// Get a reference of  frame sequence management object
+  virtual FrameSeq& getFrameSeq()=0;
 
-/// Load a stereo image
-bool loadStereoFrame(
-    /// pointer to the tracker object
-    CamTracker* camTracker,
-    /// frame index to be loaded
-    int frameIndex,
-    /// (Output) the left image loaded
-    WImageBuffer1_b* & leftImage,
-    /// (Output) disparity map.
-    WImageBuffer1_16s* & dispMap);
+  /// detects 3D keypoints from a stereo image, given as an image and its disparity mag.
+  virtual bool goodFeaturesToTrack(
+      /// input image
+      const WImage1_b& img,
+      /// disparity map of the input image
+      const WImage1_16s* dispMap,
+      /// (OUTPUT) key point detected
+      Keypoints*& keypoints
+  ) = 0;
 
-/// print the stats of the last tracking
-void printStat(const CamTracker*tracker);
+  /// Find matching keypoints in between the current frame and the last key frame
+  /// of the tracker.
+  virtual void matchKeypoints(
+      /// (Output) coordinates of trackable pairs
+      vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
+      /// (Output and Optional) indices of the trackable pairs into
+      /// their corresponding key points.
+      vector<pair<int, int> >*  trackableIndexPairs = NULL)=0;
 
-bool goodFeaturesToTrack(
+  /// Evaluate the stat from the current frame and the tracker and decide
+  /// appropriate action to the frame.
+  /// @return recommended action for this frame.
+  virtual KeyFramingDecision keyFrameEval(
+      int frameIndex,
+      /// number of key points detected in this frame.
+      int numKeypoints,
+      /// number of inliers detected in this frame with respect to last key frame.
+      int numInliers,
+      /// estimated rotation matrix.
+      const CvMat & rot,
+      /// estimated translation matrix.
+      const CvMat & shift)=0;
+
+  /// perform the recommended action on the current frame
+  virtual bool keyFrameAction(
+      /// recommended key frame action
+      KeyFramingDecision kfd,
+      /// the frame sequence management module
+      FrameSeq& frameSeq) = 0;
+
+  /// set the keyFrame as the last key frame
+  virtual void setLastKeyFrame(
+      /// the frame to be set as last key frame
+      PoseEstFrameEntry* keyFrame) = 0;
+  /// get the pointer to the last key frame.
+  /// @return a pointer to the last key frame
+  virtual PoseEstFrameEntry* getLastKeyFrame()=0;
+
+  /// fetch the inliers of the current frame
+  virtual bool fetchInliers(
+      CvMat *& inliers0,
+      /// inlier list 1 from current key frame
+      CvMat *& inliers1)=0;
+  /// fetch the list of index of inlier, indexed into the matchIndexPairs
+  /// in cv::willow::poseEstimate
+  /// @return the index of the inlier pairs
+  virtual int *fetchInliers()=0;
+
+
+  /// get a pointer to the pose estimator used by this tracker
+  virtual PoseEstimator* getPoseEstimator()=0;
+
+  virtual vector<FramePose>* getFramePoses()=0;
+  /// Reduce the key frame window size to winSize.
+  virtual void reduceWindowSize(unsigned int winSize)=0;
+  /// print statistics of the last tracking run to std out.
+  virtual void printStat()=0;
+protected:
+  CamTracker(){}
+};
+
+/// Use Harris corner to extrack keypoints.
+/// @return the number of key points detected
+int goodFeaturesToTrackHarrisCorner(
     /// input image
-    const WImage1_b& img,
-    /// disparity map of the input image
-    const WImage1_16s* dispMap,
-    /// Interpretation of a unit value in dispMap, in pixels.
-    double disparityUnitInPixels,
+    const WImage1_b& image,
+    /// Temporary floating-point 32-bit image of the same size as image.
+    WImage1_f& eigImg,
+    /// Another temporary image of the same size and same format as eig_image.
+    WImage1_f& tempImg,
     /// (OUTPUT) key point detected
     Keypoints& keypoints,
-    /// Buffer needed for Harris corner detection
-    CvMat* eigImg,
-    /// Another buffer needed for Harris Corner detection.
-    CvMat* tempImg
+    /// (on entry) max number of key points
+    /// (on exit ) the number of key points returned in keypoints
+    int numKeypoints,
+    /// threshold value (between 0.0 and 1.0)
+    double qualityThreshold,
+    /// minimum distance between the key points
+    double minDistance,
+    /// Region of interest. The function selects points either in the specified
+    /// region or in the whole image if the mask is NULL.
+    CvArr* mask = NULL,
+    /// neighborhood size @see cvCornerHarris. @see CornerEigenValsAndVecs.
+    /// The default value was 3 in cvGoodFeatuesToTrack()
+    int blockSize = 5,
+    /// the free parameter in Harris corner @see cvGoodFeaturesToTrack()
+    /// @see cvCornerHarris(). The default value is .04 in cvGoodFeaturesToTrack()
+    double k = .01
 );
 
-/// detects 3D keypoints from a stereo image, given as an image and its disparity mag.
-bool goodFeaturesToTrack(
-    CamTracker* tracker,
-    /// input image
-    const WImage1_b& img,
-    /// disparity map of the input image
-    const WImage1_16s* dispMap,
-    /// (OUTPUT) key point detected
-    Keypoints*& keypoints
-);
-
+CvMat* dispMapToMask(const WImage1_16s& dispMap);
 
 /**
  * matching method to find a best match of a key point in a neighborhood
@@ -314,59 +389,48 @@ bool matchKeypoints(
     vector<pair<int, int> >* matchIndexPairs
 );
 
-/// Find matching keypoints in between the current frame and the last key frame
-/// of the tracker.
-void matchKeypoints(
-    /// pointer to the tracker
-    CamTracker* tracker,
-    /// (Output) coordinates of trackable pairs
-    vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
-    /// (Output and Optional) indices of the trackable pairs into
-    /// their corresponding key points.
-    vector<pair<int, int> >*  trackableIndexPairs = NULL);
-
-
 /// Forward declaration of a class for pose estimation.
-class PoseEstimator;
+class PoseEstimator {
+public:
+  virtual ~PoseEstimator(){};
+  /// Construct a pose estimator.
+  static PoseEstimator* getStereoPoseEstimator(
+      /// The size of the image this pose estimator is expected to see
+      CvSize& imgSize,
+      /// focal length in x
+      double Fx,
+      /// focal length in y
+      double Fy,
+      /// baseline length
+      double Tx,
+      /// x coordinate of the optical center of the left cam
+      double Clx,
+      /// x coordinate of the optical center of the right cam
+      double Crx,
+      /// y coordinate optical center
+      double Cy);
+  /// Method to estimate transformation based pairs of 3D points, in
+  /// disparity coordinates
+  /// @return number of inliers
+  virtual int estimate(
+      /// key point list 0
+      const Keypoints& keypoints0,
+      /// key point list 1
+      const Keypoints& keypoints1,
+      /// index pairs of matching key points
+      const vector<pair<int, int> >& matchIndexPairs,
+      /// (Output) rotation matrix
+      CvMat& rot,
+      /// (Output) translation vector
+      CvMat& shift,
+      /// If true, Levenberg-Marquardt is used at the end for smoothing
+      bool smoothed)=0;
 
-/// Construct a pose estimator.
-PoseEstimator* getPoseEstimator(
-    /// The size of the image this pose estimator is expected to see
-    CvSize& imgSize,
-    /// focal length in x
-    double Fx,
-    /// focal length in y
-    double Fy,
-    /// baseline length
-    double Tx,
-    /// x coordinate of the optical center of the left cam
-    double Clx,
-    /// x coordinate of the optical center of the right cam
-    double Crx,
-    /// y coordinate optical center
-    double Cy);
-
-/// get a pointer to the pose estimator used by this tracker
-PoseEstimator* getPoseEstimator(CamTracker* tracker);
-
-/// Method to estimate transformation based pairs of 3D points, in
-/// disparity coordinates
-/// @return number of inliers
-int poseEstimate(
-    /// pointer to pose estimation object
-    PoseEstimator* poseEstimator,
-    /// key point list 0
-    Keypoints& keypoints0,
-    /// key point list 1
-    Keypoints& keypoints1,
-    /// index pairs of matching key points
-    vector<pair<int, int> >& matchIndexPairs,
-    /// (Output) rotation matrix
-    CvMat& rot,
-    /// (Output) translation vector
-    CvMat& shift,
-    /// If true, Levenberg-Marquardt is used at the end for smoothing
-    bool smoothed);
+  virtual bool getDisparityMap(const WImage1_b& leftImage, const WImage1_b& rightImage,
+      WImage1_16s& dispMap) {return false;}
+protected:
+  PoseEstimator(){}
+};
 
 /// estimate the transformation with Levenberg-Marquardt.
 void estimateWithLevMarq(
@@ -382,32 +446,80 @@ void estimateWithLevMarq(
     const CvMat& DispToCart,
     CvMat& rot, CvMat& trans);
 
-/// a data structure for tracking image sequence
-class FrameSeq {
+/// a data structue for tracking the filenames
+class FileSeq {
 public:
-  FrameSeq():
+  FileSeq():
     mNumFrames(-1),
     mStartFrameIndex(0),
     mEndFrameIndex(0),
     mFrameStep(1),
     mStop(false),
-    mLastGoodFrame(NULL),
-    mCurrentFrame(NULL),
-    mNextFrame(NULL){}
+    mCurrentFrameIndex(0)
+    {}
 
   int mNumFrames;
   int mStartFrameIndex;
   int mEndFrameIndex;
   int mFrameStep;
   bool mStop;
+  int mCurrentFrameIndex;
+  queue<StereoFrame> mInputImageQueue;
 
+  /// input directory name
+  string mDirname;
+  /// Format of the filename of the left images, e.g. "left-%04d"
+  string mLeftImageFilenameFmt;
+  /// Format of the filename of the right images, e.g. "right-%04d"
+  string mRightImageFilenameFmt;
+  /// Format fo the filename of the disparity map, e.g. dispmap-%04d"
+  string mDisparityMapFilenameFmt;
+
+  void setInputVideoParams(
+      /// The directory of the video files
+      const string & dirname,
+      /// Format of the filename of the left images, e.g. "left-%04d.ppm"
+      const string & leftFileFmt,
+      /// Format of the filename of the right images, e.g. "right-%04d.ppm"
+      const string & rightFileFmt,
+      /// Format of the filename of the disparity maps, e.g. dispmap-%04d.ppm"
+      const string & dispFileFmt,
+      /// Starting index of the image sequence
+      int start,
+      /// Ending index (exclusive) of the image sequence
+      int end,
+      /// increment to add from the index of one image pair to next one
+      int step);
+  bool getStartFrame();
+  bool getNextFrame();
+private:
+  bool getCurrentFrame();
+};
+
+/// a data structure for tracking image sequence
+class FrameSeq {
+public:
+  FrameSeq():
+//    mNumFrames(-1),
+//    mStartFrameIndex(0),
+//    mEndFrameIndex(0),
+//    mFrameStep(1),
+//    mStop(false),
+    mNumFrames(0),
+    mStartFrameIndex(-1),
+    mLastGoodFrame(NULL),
+    mCurrentFrame(NULL),
+    mNextFrame(NULL){}
+
+  int mNumFrames;
+  int mStartFrameIndex;
   /// Last good frame
   PoseEstFrameEntry *mLastGoodFrame;
   /// Current frame
   PoseEstFrameEntry *mCurrentFrame;
   /// Next frame. Used in back tracking to hold the current frame
   auto_ptr<PoseEstFrameEntry> mNextFrame;
-  void backTrack();
+  bool backTrack();
   void keepCurrentAsGoodFrame(){
     assert(mCurrentFrame != NULL);
     releasePoseEstFrameEntry( &mLastGoodFrame);
@@ -418,87 +530,10 @@ public:
     releasePoseEstFrameEntry( &mCurrentFrame);
     releasePoseEstFrameEntry( &mLastGoodFrame);
   }
-  int mCurrentFrameIndex;
-  inline void setNextFrame() {
-    mCurrentFrameIndex += (mNextFrame.get()==NULL)?mFrameStep:0;
-  }
-  bool notDoneWithIteration() {
-    return mCurrentFrameIndex < mEndFrameIndex && mStop == false;
-  }
-  inline void setStartFrame() {mCurrentFrameIndex = mStartFrameIndex;}
   void releasePoseEstFrameEntry( PoseEstFrameEntry** frameEntry );
 };
 
-/// Get a reference of  frame sequence management object
-FrameSeq& getFrameSeq(const CamTracker* tracker);
 
-/// Use the tracker to track one single frame.
-/// @return true if this frame is used as a key frame.
-bool trackOneFrame(CamTracker* tracker, FrameSeq& frameSeq);
-
-typedef enum {
-  /// This frame shall be skipped.
-  KeyFrameSkip      = 0x0,
-  /// This frame shall be kept. Maybe used as key frame later.
-  KeyFrameKeep      = 0x1,
-  /// Use this frame as key frame right now.
-  KeyFrameUse       = 0x2,
-  /// Backtrack to last kept frame and use it as key frame. This frame shall
-  /// still be used moving forward.
-  KeyFrameBackTrack = 0x3
-} KeyFramingDecision;
-
-/// Evaluate the stat from the current frame and the tracker and decide
-/// appropriate action to the frame.
-/// @return recommended action for this frame.
-KeyFramingDecision keyFrameEval(
-    CamTracker* camTracker,
-    /// the index of this frame
-    int frameIndex,
-    /// number of key points detected in this frame.
-    int numKeypoints,
-    /// number of inliers detected in this frame with respect to last key frame.
-    int numInliers,
-    /// estimated rotation matrix.
-    const CvMat & rot,
-    /// estimated translation matrix.
-    const CvMat & shift);
-
-/// perform the recommended action on the current frame
-bool keyFrameAction(
-    /// Tracker
-    CamTracker* tracker,
-    /// recommended key frame action
-    KeyFramingDecision kfd,
-    /// the frame sequence management module
-    FrameSeq& frameSeq);
-
-/// set the keyFrame as the last key frame
-void setLastKeyFrame(
-    /// The tracker
-    CamTracker* tracker,
-    /// the frame to be set as last key frame
-    PoseEstFrameEntry* keyFrame);
-/// get the pointer to the last key frame.
-/// @return a pointer to the last key frame
-PoseEstFrameEntry* getLastKeyFrame(
-    /// tracker
-    CamTracker* tracker);
-
-/// fetch the inliers of the current frame
-bool fetchInliers(
-    CamTracker* tracker,
-    /// inlier list 0, from last key frame
-    CvMat *& inliers0,
-    /// inlier list 1 from current key frame
-    CvMat *& inliers1);
-/// fetch the list of index of inlier, indexed into the matchIndexPairs
-/// in cv::willow::poseEstimate
-/// @return the index of the inlier pairs
-int *fetchInliers(CamTracker* tracker);
-/// delete all key frame except the last from the sliding window.
-/// (the sliding window is a place holder for bundle adjustment)
-void deleteAllButLastKeyFrame(CamTracker* tracker);
 
 /// return a pointer to the list of frame poses
 vector<FramePose>* getFramePoses(CamTracker* tracker);

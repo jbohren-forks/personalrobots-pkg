@@ -21,97 +21,7 @@ using namespace std;
 
 namespace cv {
 namespace willow {
-#if 0
-/// Information of pose estimation for one frame.
-class PoseEstFrameEntry  {
-public:
-  /**
-   * The object takes ownership of the images, keypoints and inliers
-   */
-  PoseEstFrameEntry(
-      /// left camera image
-      WImageBuffer1_b* image,
-      /// disparity map
-      WImageBuffer1_16s * dispMap,
-      /// key points
-      Keypoints * keypoints,
-      /// rotation matrix
-      CvMat & rot,
-      /// translation matrix
-      CvMat & shift,
-      /// number of trackable pairs
-      int numTrackablePair,
-      /// number of inliers
-      int numInliers,
-      /// index of this frame in the video sequence
-      int frameIndex,
-      /// image buffer for visualization
-      WImageBuffer3_b *imageC3a,
-      /// indices of the inliers in the trackable pairs
-      int   *inlierIndices,
-      /// index pairs of the trackable pairs w.r.t the keypoint list
-      vector<pair<int, int> >* trackableIndexPairs,
-      /// inliers from previous key frame
-      CvMat *inliers0,
-      /// inliers from this frame
-      CvMat *inliers1);
-  PoseEstFrameEntry(int frameIndex):
-    mImage(NULL), mDispMap(NULL), mKeypoints(NULL),
-    mRot(cvMat(3, 3, CV_64FC1, _mRot)),
-    mShift(cvMat(3, 1, CV_64FC1, _mShift)),
-    mGlobalTransform(cvMat(4, 4, CV_64FC1, _mTransform)),
-    mNumTrackablePairs(0),
-    mNumInliers(0),
-    mFrameIndex(frameIndex),
-    mImageC3a(NULL),
-    mTrackableIndexPairs(NULL),
-    mInlierIndices(NULL),
-    mInliers0(NULL), mInliers1(NULL){}
 
-  ~PoseEstFrameEntry();
-
-  WImageBuffer1_b* mImage;
-  WImageBuffer1_16s* mDispMap;
-  Keypoints* mKeypoints;
-  /// Estimated rotation matrix from this frame to last key frame
-  CvMat mRot;
-  /// Estimated translation matrix from this frame to last key frame.
-  CvMat mShift;
-  /// Estimated global transformation matrix of this frame to the
-  /// reference frame (this first frame)
-  CvMat mGlobalTransform;
-  /// Number of trackable pairs
-  int mNumTrackablePairs;
-  /// Number of inliers
-  int mNumInliers;
-  /// index of this frame in the video sequence
-  int mFrameIndex;
-  /// Index of last key frame, with which the transformation is estimated
-  /// Use mostly for sanity checking
-  int mLastKeyFrameIndex;
-  WImageBuffer3_b *mImageC3a;
-  /// index pairs of the trackable pairs w.r.t the keypoint list
-  vector<pair<int, int> >* mTrackableIndexPairs;
-  /// indices of the inliers in the trackable pairs
-  int* mInlierIndices;
-  /// inliers from keypoint0
-  CvMat *mInliers0;
-  /// inliers from keypoint1
-  CvMat *mInliers1;
-protected:
-
-  void clear();
-  // buffers
-  double _mRot[9];
-  double _mShift[3];
-  double _mTransform[16];
-};
-#endif
-
-/// an interface shared by camera trackers
-class CamTracker {
-
-};
 /**
  * Visual Odometry by pose estimation of consecutive pairs of
  * key frames.
@@ -139,7 +49,6 @@ public:
   void dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& xyzs);
   bool saveKeyPoints(const CvMat & keypoints, const string & filename);
   bool storeTransform(const CvMat & rot, const CvMat & shift, int frameIndex);
-  static bool saveFramePoses(const string & dirname, const vector<FramePose>& framePoses);
   void measureErr(const CvMat *inliers0, const CvMat *inliers1);
   bool getInliers(CvMat *& inliers0, CvMat *& inliers1)
   {
@@ -156,40 +65,14 @@ public:
     return mPoseEstimator.fetchInliers();
   }
 
-  bool recon(
-      /// The directory of the video files
-      const string & dirname,
-      /// Format of the filename of the left images, e.g. "left-%04d"
-      const string & leftFileFmt,
-      /// Format of the filename of the right images, e.g. "right-%04d"
-      const string & rightFileFmt,
-      /// Starting index of the image sequence
-      int start,
-      /// Ending index (exclusive) of the image sequence
-      int end,
-      /// increment to add from the index of one image pair to next one
-      int step,
-      vector<FramePose>*& framePoses);
-  void loadStereoImagePair(
-      int & frameIndex,
-      WImageBuffer1_b & leftImage,
-      WImageBuffer1_b & rightImage);
-  static void loadStereoImagePair(
-      string & dirname,
-      string & leftimagefmt,
-      string & rightimagefmt,
-      int & frameIndex,
-      WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage);
-  bool loadStereoFrame(
-      /// frame index
-      int frameIndex,
-      /// (Output) the left image loaded
-      WImageBuffer1_b* & leftImage,
-      /// (Output) disparity map.
-      WImageBuffer1_16s* & dispMap);
+  /// Process all the stereo images in the queue.
+  virtual bool track(
+      /// queue of input stereo images
+      queue<StereoFrame>& inputImages
+  );
 
   /// compute the feature point to tracking
-  bool goodFeaturesToTrack(
+  virtual bool goodFeaturesToTrack(
       /// the left image
       const WImage1_b& leftImage,
       /// the disparity map
@@ -200,29 +83,12 @@ public:
       Keypoints*& keypoints
   );
 
-  /// Load a pair of stereo image, compute disparity map and extract key points.
-  bool loadAndProcessStereoFrame(
-      /// The frame index
-      int frameIndex,
-      /// (Output) a new frame with mImage, mDispMap and mKeypoints
-      /// populated
-      PoseEstFrameEntry* & frame);
-  void setInputVideoParams(
-      /// The directory of the video files
-      const string & dirname,
-      /// Format of the filename of the left images, e.g. "left-%04d"
-      const string & leftFileFmt,
-      /// Format of the filename of the right images, e.g. "right-%04d"
-      const string & rightFileFmt,
-      /// Starting index of the image sequence
-      int start,
-      /// Ending index (exclusive) of the image sequence
-      int end,
-      /// increment to add from the index of one image pair to next one
-      int step);
+  virtual vector<FramePose>* getFramePoses();
+
   /// A routine to visualize the keypoints, tracks, disparity images
   /// etc. By default, it shows on the screen and save to disk.
   virtual void visualize();
+  virtual void printStat();
   static const int defMaxDisparity = 15;
   static const int defMinNumInliersForGoodFrame = 10;
   static const int defMinNumInliers = 50;
@@ -236,68 +102,11 @@ public:
   /// global transformation matrix up to the last key frame
   CvMat mTransform;
   vector<FramePose> mFramePoses;
-#if 0
-  /// a data structure for tracking image sequence
-  class FrameSeq {
-  public:
-    FrameSeq():
-      mNumFrames(-1),
-      mStartFrameIndex(0),
-      mEndFrameIndex(0),
-      mFrameStep(1),
-      mStop(false),
-      mLastGoodFrame(NULL),
-      mCurrentFrame(NULL),
-      mNextFrame(NULL){}
 
-    int mNumFrames;
-    int mStartFrameIndex;
-    int mEndFrameIndex;
-    int mFrameStep;
-    bool mStop;
-
-    /// Last good frame
-    PoseEstFrameEntry *mLastGoodFrame;
-    /// Current frame
-    PoseEstFrameEntry *mCurrentFrame;
-    /// Next frame. Used in back tracking to hold the current frame
-    auto_ptr<PoseEstFrameEntry> mNextFrame;
-    void backTrack(){
-      assert(mNextFrame.get() == NULL);
-      assert(mLastGoodFrame != NULL);
-      assert(mCurrentFrame != NULL);
-  #ifdef DEBUG
-      cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
-      cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
-  #endif
-      mNextFrame.reset(mCurrentFrame);
-      mCurrentFrame  = mLastGoodFrame;
-      mLastGoodFrame = NULL;
-    }
-    void keepCurrentAsGoodFrame(){
-      assert(mCurrentFrame != NULL);
-      delete mLastGoodFrame;
-      mLastGoodFrame = mCurrentFrame;
-      mCurrentFrame = NULL;
-    }
-    void reset() {
-      delete mCurrentFrame;
-      mCurrentFrame = NULL;
-      delete mLastGoodFrame;
-      mLastGoodFrame = NULL;
-    }
-    int mCurrentFrameIndex;
-    inline void setNextFrame() {
-      mCurrentFrameIndex += (mNextFrame.get()==NULL)?mFrameStep:0;
-    }
-    bool notDoneWithIteration() {
-      return mCurrentFrameIndex < mEndFrameIndex && mStop == false;
-    }
-    inline void setStartFrame() {mCurrentFrameIndex = mStartFrameIndex;}
-  };
-#endif
   FrameSeq mFrameSeq;
-  bool reconOneFrame(FrameSeq& frameSeq);
+  virtual FrameSeq& getFrameSeq() {return mFrameSeq;}
+  virtual PoseEstimator* getPoseEstimator() {return &mPoseEstimator;}
+  virtual bool trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& frameSeq);
   /// the sliding window if you will.
   deque<PoseEstFrameEntry *> mActiveKeyFrames;
   PoseEstFrameEntry* getLastKeyFrame() {
@@ -313,8 +122,9 @@ public:
     // enter this key frame into the queue of active key frames
     mActiveKeyFrames.push_back(keyFrame);
   }
-  void deleteAllButLastFrame() {
-    while(mActiveKeyFrames.size()>1) {
+  /// Reduce the key frame window size to winSize.
+  virtual void reduceWindowSize(unsigned int winSize) {
+    while(mActiveKeyFrames.size()>winSize) {
       PoseEstFrameEntry* frame = mActiveKeyFrames.front();
       mActiveKeyFrames.pop_front();
       delete frame;
@@ -393,7 +203,7 @@ protected:
   };
   Visualizer* mVisualizer;
 
-  void getTrackablePairs(
+  void matchKeypoints(
       /// (Output) coordinates of trackable pairs
       vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
       /// (Output and Optional) indices of the trackable pairs into
@@ -404,12 +214,6 @@ protected:
   void updateTrajectory();
 
   // Input Output stuff
-  /// input directory name
-  string mDirname;
-  /// Format of the filename of the left images, e.g. "left-%04d"
-  string mLeftImageFilenameFmt;
-  /// Format of the filename of the right images, e.g. "right-%04d"
-  string mRightImageFilenameFmt;
   /// Output directory name
   string mOutputDir;
 
@@ -419,9 +223,6 @@ protected:
   CvMat mRT;
   double _tempMat[16];
   CvMat _mTempMat;
-#if 0 // TODO: delete them
-  double _rot[9], _shift[3];
-#endif
 
 };
 } // willow

@@ -244,3 +244,52 @@ bool CvMatUtils::drawLines(
   return true;
 }
 
+CvMat* CvMatUtils::dispMapToMask(const WImage1_16s& dispMap){
+  CvSize sz = cvSize(dispMap.Width(), dispMap.Height());
+  const int16_t *disp = dispMap.ImageData();
+  int8_t* _mask = new int8_t[sz.width*sz.height];
+  for (int v=0; v<sz.height; v++) {
+    for (int u=0; u<sz.width; u++) {
+      int16_t d = disp[v*sz.width+u];
+      if (d>0) {
+        _mask[v*sz.width+u] = 1;
+      } else {
+        _mask[v*sz.width+u] = 0;
+      }
+    }
+  }
+  CvMat* mat = new CvMat;
+  mat = cvInitMatHeader( mat, sz.height, sz.width, CV_8SC1, _mask);
+  return mat;
+}
+
+void CvMatUtils::loadStereoImagePair(string& dirname, string& leftimagefmt,
+    string& rightimagefmt, string& dispmapfmt, int & frameIndex,
+    WImageBuffer1_b* leftImage, WImageBuffer1_b* rightImage,
+    WImageBuffer1_16s* dispMap
+){
+  char leftfilename[PATH_MAX];
+  char rightfilename[PATH_MAX];
+  char dispmapfilename[PATH_MAX];
+#ifdef DEBUG
+  cout << "loading " << leftfilename << " and " << rightfilename << endl;
+#endif
+  if (leftImage) {
+    sprintf(leftfilename, leftimagefmt.c_str(),   frameIndex);
+    IplImage* leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
+    leftImage->SetIpl(leftimg);
+  }
+  if (rightImage) {
+    sprintf(rightfilename, rightimagefmt.c_str(), frameIndex);
+    IplImage* rightimg = cvLoadImage(rightfilename, CV_LOAD_IMAGE_GRAYSCALE);
+    rightImage->SetIpl(rightimg);
+  }
+  if (dispMap) {
+    sprintf(dispmapfilename, dispmapfmt.c_str(),  frameIndex);
+    IplImage* dispimg = cvLoadImage(dispmapfilename, CV_LOAD_IMAGE_GRAYSCALE);
+    dispMap->SetIpl(dispimg);
+  }
+}
+
+
+

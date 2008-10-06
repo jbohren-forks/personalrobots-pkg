@@ -42,9 +42,6 @@ void CvTestTimer::printStat() {
 	}
   cout <<    "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
 	PRINTSTAT ("Total               ", Total);
-	PRINTSTAT2("SVD                 ", SVD);
-	PRINTSTAT ("CheckInliers        ", CheckInliers);
-	PRINTSTAT ("CopyInliers         ", CopyInliers);
 	PRINTSTAT ("LevMarq::           ", LevMarqDoit);
 	PRINTSTAT2("LevMarq::DoitAlt2   ", LevMarq2);
 	PRINTSTAT2("LevMarq::DoitAlt3   ", LevMarq3);
@@ -60,7 +57,11 @@ void CvTestTimer::printStat() {
 	PRINTSTAT2("DisparityMap        ", DisparityMap);
 	PRINTSTAT2("FeaturePoint        ", FeaturePoint);
 	PRINTSTAT2("TrackablePair       ", TrackablePair);
+	PRINTSTAT2("  KeypointMatch     ", KeypointTemplMatch);
 	PRINTSTAT2("PoseEstimateRANSAC  ", PoseEstimateRANSAC);
+  PRINTSTAT2("  SVD               ", SVD);
+  PRINTSTAT ("  CheckInliers      ", CheckInliers);
+  PRINTSTAT ("  CopyInliers       ", CopyInliers);
 	PRINTSTAT2("PoseEstimateLevMarq ", PoseEstimateLevMarq);
 }
 

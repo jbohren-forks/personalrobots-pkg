@@ -68,7 +68,7 @@ void VisOdomBundleAdj::updateSlideWindow() {
 
 }
 
-bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt, const string & rightFileFmt, int start, int end, int step)
+bool VisOdomBundleAdj::track(const string & dirname, const string & leftFileFmt, const string & rightFileFmt, int start, int end, int step)
 {
   bool status = false;
   setInputVideoParams(dirname, leftFileFmt, rightFileFmt, start, end, step);
@@ -87,7 +87,7 @@ bool VisOdomBundleAdj::recon(const string & dirname, const string & leftFileFmt,
   PoseEstFrameEntry*& currFrame = mFrameSeq.mCurrentFrame;
 
   for (mFrameSeq.setStartFrame(); mFrameSeq.notDoneWithIteration(); mFrameSeq.setNextFrame()){
-    bool newKeyFrame = reconOneFrame(mFrameSeq);
+    bool newKeyFrame = trackOneFrame(mFrameSeq);
     if (newKeyFrame == true) {
 
       // update the sliding window

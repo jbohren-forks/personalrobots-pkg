@@ -16,7 +16,7 @@ using namespace cv::willow;
 using namespace std;
 
 namespace cv { namespace willow {
-CamTracker* getCamTracker(
+CamTracker* CamTracker::getCamTracker(
     const CamTrackerType type,
     CvSize& imgSize,
     double Fx,  double Fy,  double Tx,
@@ -35,41 +35,6 @@ CamTracker* getCamTracker(
 }
 
 
-bool trackCameras(
-    const CamTracker* tracker,
-    /// The directory of the video files
-    const string & dirname,
-    /// Format of the filename of the left images, e.g. "left-%04d"
-    const string & leftFileFmt,
-    /// Format of the filename of the right images, e.g. "right-%04d"
-    const string & rightFileFmt,
-    /// Starting index of the image sequence
-    int start,
-    /// Ending index (exclusive) of the image sequence
-    int end,
-    /// increment to add from the index of one image pair to next one
-    int step,
-    vector<FramePose>*& framePoses){
-  if (tracker==NULL) {
-    cerr << "no tracker"<<endl;
-    return false;
-  }
-  PathRecon* t = (PathRecon *)tracker;
-  return t->recon(dirname, leftFileFmt, rightFileFmt, start, end, step, framePoses);
-}
-
-bool goodFeaturesToTrack(
-    const WImage1_b& img,
-    const WImage1_16s* dispMap,
-    double disparityUnitInPixels,
-    Keypoints& keypoints,
-    CvMat* eigImg,
-    CvMat* tempImg
-) {
-  return PoseEstimateStereo::goodFeaturesToTrack(img, dispMap, disparityUnitInPixels, keypoints,
-      eigImg, tempImg);
-}
-
 bool goodFeaturesToTrack(
     CamTracker* tracker,
     /// input image
@@ -81,6 +46,38 @@ bool goodFeaturesToTrack(
 ) {
   PathRecon* t = (PathRecon*)tracker;
   return t->goodFeaturesToTrack(img, dispMap, keypoints);
+}
+
+/// Use Harris corner to extrack keypoints.
+/// @return the number of key points detected
+int goodFeaturesToTrackHarrisCorner(
+    /// input image
+    const WImage1_b& image,
+    /// Temporary floating-point 32-bit image of the same size as image.
+    WImage1_f& eigImg,
+    /// Another temporary image of the same size and same format as eig_image.
+    WImage1_f& tempImg,
+    /// (OUTPUT) key point detected
+    Keypoints& keypoints,
+    /// (on entry) max number of key points
+    /// (on exit ) the number of key points returned in keypoints
+    int numKeypoints,
+    /// threshold value (between 0.0 and 1.0)
+    double qualityThreshold,
+    /// minimum distance between the key points
+    double minDistance,
+    /// Region of interest. The function selects points either in the specified
+    /// region or in the whole image if the mask is NULL.
+    CvArr* mask,
+    /// neighborhood size @see cvCornerHarris. @see CornerEigenValsAndVecs.
+    /// The default value was 3 in cvGoodFeatuesToTrack()
+    int blockSize,
+    /// the free parameter in Harris corner @see cvGoodFeaturesToTrack()
+    /// @see cvCornerHarris(). The default value is .04 in cvGoodFeaturesToTrack()
+    double k
+) {
+  return PoseEstimateStereo::goodFeaturesToTrackHarrisCorner(image, eigImg, tempImg, keypoints,
+      numKeypoints, qualityThreshold, minDistance, mask, blockSize, k);
 }
 
 bool matchKeypoints(
@@ -184,23 +181,24 @@ KeyFramingDecision keyFrameEval(
   return t->keyFrameEval(frameIndex, numKeypoints, numInliers, rot, shift);
 }
 
-void printStat(const CamTracker*tracker){
-  assert(tracker);
-  PathRecon* pr = (PathRecon*)tracker;
-  pr->mStat.print();
-}
-
-void FrameSeq::backTrack(){
+bool FrameSeq::backTrack(){
+  bool status;
   assert(mNextFrame.get() == NULL);
-  assert(mLastGoodFrame != NULL);
   assert(mCurrentFrame != NULL);
 #ifdef DEBUG
   cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
   cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
 #endif
-  mNextFrame.reset(mCurrentFrame);
-  mCurrentFrame  = mLastGoodFrame;
-  mLastGoodFrame = NULL;
+  if (mLastGoodFrame == NULL) {
+    // nothing the backtrack to, may at the begining
+    status = false;
+  } else {
+    mNextFrame.reset(mCurrentFrame);
+    mCurrentFrame  = mLastGoodFrame;
+    mLastGoodFrame = NULL;
+    status = true;
+  }
+  return status;
 }
 void FrameSeq::releasePoseEstFrameEntry( PoseEstFrameEntry** frameEntry ) {
   if (*frameEntry)
@@ -227,20 +225,6 @@ void PoseEstFrameEntry::clear() {
 PoseEstFrameEntry::~PoseEstFrameEntry(){
   clear();
 }
-
-bool loadStereoFrame(
-    /// pointer to the tracker object
-    CamTracker* camTracker,
-    /// frame index
-    int frameIndex,
-    /// (Output) the left image loaded
-    WImageBuffer1_b* & leftImage,
-    /// (Output) disparity map.
-    WImageBuffer1_16s* & dispMap) {
-  assert(camTracker);
-  PathRecon* t = (PathRecon*)camTracker;
-  return t->loadStereoFrame(frameIndex, leftImage, dispMap);
-}
 void setLastKeyFrame(CamTracker* tracker, PoseEstFrameEntry* keyFrame){
   assert(tracker);
   PathRecon* t = (PathRecon*)tracker;
@@ -256,7 +240,7 @@ void matchKeypoints(
     vector<pair<int, int> >*  trackableIndexPairs){
   assert(tracker);
   PathRecon* t = (PathRecon*)tracker;
-  return t->getTrackablePairs(trackablePairs, trackableIndexPairs);
+  return t->matchKeypoints(trackablePairs, trackableIndexPairs);
 }
 PoseEstFrameEntry* getLastKeyFrame(CamTracker* tracker) {
   assert(tracker);
@@ -281,44 +265,92 @@ bool keyFrameAction(CamTracker* tracker, KeyFramingDecision kfd, FrameSeq& frame
   return t->keyFrameAction(kfd, frameSeq);
 }
 
-void setInputVideoParams(
-    /// The tracker
-    const CamTracker* tracker,
-    /// The directory of the video files
-    const string & dirname,
-    /// Format of the filename of the left images, e.g. "left-%04d"
-    const string & leftFileFmt,
-    /// Format of the filename of the right images, e.g. "right-%04d"
-    const string & rightFileFmt,
-    /// Starting index of the image sequence
-    int start,
-    /// Ending index (exclusive) of the image sequence
-    int end,
-    /// increment to add from the index of one image pair to next one
-    int step
-) {
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->setInputVideoParams(dirname, leftFileFmt, rightFileFmt, start, end, step);
-}
-
 FrameSeq& getFrameSeq(const CamTracker* tracker) {
   assert(tracker);
   PathRecon* t = (PathRecon*)tracker;
   return t->mFrameSeq;
 }
 
-void deleteAllButLastKeyFrame(CamTracker* tracker) {
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->deleteAllButLastFrame();
-}
-
 vector<FramePose>* getFramePoses(CamTracker* tracker){
   assert(tracker);
     PathRecon* t = (PathRecon*)tracker;
-    return &t->mFramePoses;
+    return t->getFramePoses();
 }
+
+void saveFramePoses(const string& dirname, vector<FramePose>& framePoses) {
+  // TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
+  double _poses[framePoses.size()*7];
+  CvMat  _framePoses = cvMat(framePoses.size(), 7, CV_64FC1, _poses);
+  int i=0;
+  for (vector<FramePose>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
+    _poses[i*7 + 0] = iter->mIndex;
+    _poses[i*7 + 1] = iter->mRod.x;
+    _poses[i*7 + 2] = iter->mRod.y;
+    _poses[i*7 + 3] = iter->mRod.z;
+    _poses[i*7 + 4] = iter->mShift.x;
+    _poses[i*7 + 5] = iter->mShift.y;
+    _poses[i*7 + 6] = iter->mShift.z;
+  }
+  if (i>0) {
+    string framePosesFilename("framePoses.xml");
+    cvSave((dirname+framePosesFilename).c_str(), &_framePoses, "index-rod3-shift3", "indices, rodrigues and shifts w.r.t. starting frame");
+  }
+}
+
+CvMat* dispMapToMask(const WImage1_16s& dispMap) {
+  return CvMatUtils::dispMapToMask(dispMap);
+}
+
+void FileSeq::setInputVideoParams(const string& dirname, const string& leftFileFmt,
+    const string& rightFileFmt, const string& dispmapFileFmt, int start, int end, int step)
+{
+    mDirname = dirname;
+    mLeftImageFilenameFmt = dirname;
+    mLeftImageFilenameFmt += leftFileFmt;
+    mRightImageFilenameFmt = dirname;
+    mRightImageFilenameFmt += rightFileFmt;
+    mDisparityMapFilenameFmt = dirname;
+    mDisparityMapFilenameFmt += dispmapFileFmt;
+    mStartFrameIndex = start;
+    mNumFrames = end - start;
+    mEndFrameIndex = end;
+    mFrameStep = step;
+}
+
+bool FileSeq::getCurrentFrame() {
+  bool status = true;
+  StereoFrame stereoFrame;
+  stereoFrame.mImage = new WImageBuffer1_b;
+  stereoFrame.mRightImage = new WImageBuffer1_b;
+  stereoFrame.mDispMap = NULL;
+  CvMatUtils::loadStereoImagePair(mDirname, mLeftImageFilenameFmt, mRightImageFilenameFmt,
+      mDisparityMapFilenameFmt, mCurrentFrameIndex, stereoFrame.mImage,
+      stereoFrame.mRightImage,
+      stereoFrame.mDispMap);
+  stereoFrame.mFrameIndex = mCurrentFrameIndex;
+  mInputImageQueue.push(stereoFrame);
+  return status;
+}
+bool FileSeq::getStartFrame() {
+  // load the first stereo pair and put them into the queue
+  mCurrentFrameIndex = mStartFrameIndex;
+  return getCurrentFrame();
+}
+
+bool FileSeq::getNextFrame() {
+  // load next frame only when the queue is empty
+  if (mInputImageQueue.size()==0) {
+    mCurrentFrameIndex += mFrameStep;
+
+    if (mCurrentFrameIndex < mEndFrameIndex ) {
+      return getCurrentFrame();
+    } else {
+      return false;
+    }
+  } else
+    return false;
+}
+
 
 }  // namespace willow
 }  // namespace cv
