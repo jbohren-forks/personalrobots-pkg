@@ -34,6 +34,7 @@
 
 #include <pr2_mechanism_controllers/base_controller.h>
 #include <math_utils/angles.h>
+#include <math_utils/math_utils.h>
 
 using namespace std;
 using namespace controller;
@@ -74,9 +75,10 @@ BaseController::~BaseController()
 void BaseController::setCommand(libTF::Vector cmd_vel)
 {
   pthread_mutex_lock(&base_controller_lock_);
-  cmd_vel_t_.x = cmd_vel.x;
-  cmd_vel_t_.y = cmd_vel.y;
-  cmd_vel_t_.z = cmd_vel.z;
+
+  cmd_vel_t_.x = clamp(cmd_vel.x,-max_x_dot_, max_x_dot_);
+  cmd_vel_t_.y = clamp(cmd_vel.y,-max_y_dot_, max_y_dot_);
+  cmd_vel_t_.z = clamp(cmd_vel.z,-max_yaw_dot_,max_yaw_dot_);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 //  std::cout << "command received : " << cmd_vel_t_ << std::endl;
   pthread_mutex_unlock(&base_controller_lock_);
@@ -235,6 +237,18 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
         if(elt_key->Attribute("key") == std::string("timeout"))
         {
            timeout_ = atof(elt_key->GetText());
+        }
+        if(elt_key->Attribute("key") == std::string("max_x_dot"))
+        {
+           max_x_dot_ = atof(elt_key->GetText());
+        }
+        if(elt_key->Attribute("key") == std::string("max_y_dot"))
+        {
+           max_y_dot_ = atof(elt_key->GetText());
+        }
+        if(elt_key->Attribute("key") == std::string("max_yaw_dot"))
+        {
+           max_yaw_dot_ = atof(elt_key->GetText());
         }
         elt_key = elt_key->NextSiblingElement("elem");
       }
@@ -515,7 +529,8 @@ void BaseControllerNode::update()
 
   c_->setOdomMessage(odom_msg_);
 
-  if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
+  if(0)
+//  if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
   {
     (ros::g_node)->publish("odom", odom_msg_);
     odom_publish_counter_ = 0;

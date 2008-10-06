@@ -38,6 +38,7 @@
 #include <rosthread/mutex.h>
 
 #include <mechanism_model/controller.h>
+#include <mechanism_model/joint.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
 #include <robot_mechanism_controllers/joint_velocity_controller.h>
 #include <robot_mechanism_controllers/joint_effort_controller.h>
@@ -51,6 +52,9 @@
 
 //Kinematics
 #include <robot_kinematics/robot_kinematics.h>
+
+// Math utils
+#include <math_utils/angles.h>
 
 // #include <libTF/Pose3D.h>
 // #include <urdf/URDF.h>
@@ -125,7 +129,13 @@ public:
 
   robot_kinematics::SerialChain *arm_chain_;
 
+  unsigned int num_joints_;
+
 private:
+
+  double last_time_;
+
+  std::vector<control_toolbox::Pid> pid_controllers_;
 
   std::vector<JointEffortController *> joint_effort_controllers_;
 
@@ -157,8 +167,11 @@ private:
 
   bool goal_achieved_;
 
-  KDL::Vector *kdl_torque_;
+  KDL::Vector *gravity_torque_;
 
+  std::vector<double> control_torque_;
+
+  void computeControlTorque(const double &time);
 
   // Indicates if goals_ and error_margins_ should be copied into goals_rt_ and error_margins_rt_
   bool refresh_rt_vals_;

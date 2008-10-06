@@ -324,6 +324,12 @@ namespace controller
     double cmd_received_timestamp_;
 
     double timeout_;
+
+    double max_x_dot_;
+
+    double max_y_dot_;
+
+    double max_yaw_dot_;
   };
 
   class BaseControllerNode : public Controller

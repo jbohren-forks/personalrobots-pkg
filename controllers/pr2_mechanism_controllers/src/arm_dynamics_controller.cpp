@@ -41,17 +41,18 @@ using namespace std;
 
 ROS_REGISTER_CONTROLLER(ArmDynamicsController);
 
-ArmDynamicsController::ArmDynamicsController()
+ArmDynamicsController::ArmDynamicsController():num_joints_(0),last_time_(0)
 {
 }
 
 ArmDynamicsController::~ArmDynamicsController()
 {
   // Assumes the joint controllers are owned by this class.
-  for(unsigned int i=0; i<joint_effort_controllers_.size();++i)
+  for(unsigned int i=0; i < num_joints_;++i)
+  {
     delete joint_effort_controllers_[i];
-
-  delete kdl_torque_;
+  }
+  delete gravity_torque_;
 }
 
 bool ArmDynamicsController::initXml(mechanism::RobotState * robot, TiXmlElement * config)
@@ -60,25 +61,45 @@ bool ArmDynamicsController::initXml(mechanism::RobotState * robot, TiXmlElement 
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
   {
-    JointEffortController * jpc = new JointEffortController();
+    JointEffortController * jec = new JointEffortController();
     std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
     assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointEffortController"));
-    joint_effort_controllers_.push_back(jpc);
-    if(!jpc->initXml(robot, elt))
+    joint_effort_controllers_.push_back(jec);
+    if(!jec->initXml(robot, elt))
       return false;
+
+    TiXmlElement *p = elt->FirstChildElement("joint")->FirstChildElement("pid");
+    if (p)
+    {
+      control_toolbox::Pid  pid_controller;
+      pid_controller.initPid(0, 0, 0, 0, 0);
+      pid_controller.initXml(p);
+      pid_controllers_.push_back(pid_controller);
+   }
+    else
+      fprintf(stderr, "JointEffortController's config did not specify the default pid parameters.\n");
 
     elt = elt->NextSiblingElement("controller");
   }
-  goals_.resize(joint_effort_controllers_.size());
-  goals_rt_.resize(joint_effort_controllers_.size());
 
-  goals_dot_.resize(joint_effort_controllers_.size());
-  goals_rt_dot_.resize(joint_effort_controllers_.size());
+  num_joints_ = joint_effort_controllers_.size();
 
-  goals_dot_dot_.resize(joint_effort_controllers_.size());
-  goals_rt_dot_dot_.resize(joint_effort_controllers_.size());
+  fprintf(stderr,"ArmDynamicsController:: num_joints_: %d\n",num_joints_);
 
-  kdl_torque_ = new KDL::Vector[joint_effort_controllers_.size()+1];
+  goals_.resize(num_joints_);
+  goals_rt_.resize(num_joints_);
+
+  goals_dot_.resize(num_joints_);
+  goals_rt_dot_.resize(num_joints_);
+
+  goals_dot_dot_.resize(num_joints_);
+  goals_rt_dot_dot_.resize(num_joints_);
+
+  control_torque_.resize(num_joints_);
+
+  gravity_torque_ = new KDL::Vector[num_joints_+1];
+
+  last_time_ = robot->hw_->current_time_;
 
   return true;
 }
@@ -118,7 +139,7 @@ void ArmDynamicsController::getJointCmd(pr2_mechanism_controllers::JointCmd & cm
 
 controller::JointEffortController* ArmDynamicsController::getJointEffortControllerByName(std::string name)
 {
-  for(int i=0; i< (int) joint_effort_controllers_.size(); i++)
+  for(int i=0; i< (int) num_joints_; i++)
   {
     if(joint_effort_controllers_[i]->getJointName() == name)
     {
@@ -131,7 +152,7 @@ controller::JointEffortController* ArmDynamicsController::getJointEffortControll
 
 int ArmDynamicsController::getJointControllerByName(std::string name)
 {
-  for(int i=0; i< (int) joint_effort_controllers_.size(); i++)
+  for(int i=0; i< (int) num_joints_; i++)
   {
     if(joint_effort_controllers_[i]->getJointName() == name)
     {
@@ -144,15 +165,12 @@ int ArmDynamicsController::getJointControllerByName(std::string name)
 
 void ArmDynamicsController::update(void)
 {
-   cout << "Updating dynamics controller " << std::endl;
-   KDL::JntArray kdl_q(goals_rt_.size());
-   KDL::JntArray kdl_q_dot(goals_rt_.size());
-   KDL::JntArray kdl_q_dot_dot(goals_rt_.size());
+//  cout << "Updating dynamics controller " << std::endl;
+  double time = robot_->hw_->current_time_;
 
   if(refresh_rt_vals_ && arm_controller_lock_.trylock())
   {
-    assert(goals_.size() == goals_rt_.size());
-    for(unsigned int i=0; i<goals_.size(); ++i)
+    for(unsigned int i=0; i < num_joints_; ++i)
     {
       goals_rt_[i] = goals_[i];
       goals_rt_dot_[i] = goals_dot_[i];
@@ -161,32 +179,65 @@ void ArmDynamicsController::update(void)
     arm_controller_lock_.unlock();
   }
 
-    for(unsigned int i=0; i<goals_.size(); ++i)
-    {
-//       kdl_q(i) = joint_effort_controllers_[i]->joint_->position_;
-       kdl_q(i) = 0.0;
-       kdl_q_dot(i) = 0.0;
-       kdl_q_dot_dot(i) = 0.0;
-    }
+  computeControlTorque(time);
 
-    arm_chain_->computeInverseDynamics(kdl_q,kdl_q_dot,kdl_q_dot_dot,kdl_torque_);
-
-  for(unsigned int i=0;i<goals_rt_.size();++i)
+  for(unsigned int i=0; i < num_joints_;++i)
   {
-      joint_effort_controllers_[i]->setCommand(3.5*kdl_torque_[i][2]);
-      //  joint_effort_controllers_[i]->setCommand(0.0);
-      fprintf(stderr,"Effort: %d %f %f\n",i,kdl_torque_[i][2],joint_effort_controllers_[i]->joint_->commanded_effort_);
+   joint_effort_controllers_[i]->setCommand(control_torque_[i]);
+//    joint_effort_controllers_[i]->setCommand(0.0);
   }
+
   updateJointControllers();
-  for(unsigned int i=0;i<goals_rt_.size();++i)
+
+  for(unsigned int i=0; i < num_joints_; ++i)
   {
-      fprintf(stderr,"Effort: %d %f %f\n",i,kdl_torque_[i][2],joint_effort_controllers_[i]->joint_->commanded_effort_);
+//    fprintf(stderr,"Effort: %d %f %f %f\n",i,control_torque_[i],gravity_torque_[i][2],joint_effort_controllers_[i]->joint_->commanded_effort_);
   }
 }
 
+void ArmDynamicsController::computeControlTorque(const double &time)
+{
+  KDL::JntArray kdl_q(num_joints_);
+  KDL::JntArray kdl_q_dot(num_joints_);
+  KDL::JntArray kdl_q_dot_dot(num_joints_);
+  double error(0),command(0),actual(0),pid_torque(0);
+  int j_type;
+
+  for(unsigned int i=0; i < num_joints_; ++i)
+  {
+    kdl_q(i) = joint_effort_controllers_[i]->joint_->position_;     
+  }  
+  arm_chain_->computeGravityTerms(kdl_q,gravity_torque_);
+
+  for(unsigned int i=0; i < num_joints_; ++i)
+  {
+    command = goals_rt_[i];
+    actual = joint_effort_controllers_[i]->joint_->position_;
+    j_type = joint_effort_controllers_[i]->joint_->joint_->type_;
+    if(j_type == mechanism::JOINT_ROTARY)
+    {
+      if(!math_utils::shortest_angular_distance_with_limits(command, actual, joint_effort_controllers_[i]->joint_->joint_->joint_limit_min_, joint_effort_controllers_[i]->joint_->joint_->joint_limit_max_,error))
+        error = 0;
+    }
+    else if(j_type == mechanism::JOINT_CONTINUOUS)
+    {
+      error = math_utils::shortest_angular_distance(command, actual);
+    }
+    else
+    {
+      error = actual - command;
+    }
+    pid_torque = pid_controllers_[i].updatePid(error, time - last_time_);
+    control_torque_[i] = gravity_torque_[i][2] + pid_torque;
+    fprintf(stderr,"%d:: %f, %f, %f, %f, %f, %f, %f\n",i,actual,command,error,pid_torque,gravity_torque_[i][2],control_torque_[i],time-last_time_);
+  }
+  last_time_ = time;
+}
+
+
 void ArmDynamicsController::updateJointControllers(void)
 {
-  for(unsigned int i=0;i<goals_rt_.size();++i)
+  for(unsigned int i=0;i<num_joints_;++i)
     joint_effort_controllers_[i]->update();
 }
 
