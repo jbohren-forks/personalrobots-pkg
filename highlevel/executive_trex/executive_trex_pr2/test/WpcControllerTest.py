@@ -34,7 +34,7 @@
 
 ## Waypoint hit test
 
-PKG = 'exec_trex'
+PKG = 'executive_trex_pr2'
 
 import rostools
 rostools.update_path(PKG)
