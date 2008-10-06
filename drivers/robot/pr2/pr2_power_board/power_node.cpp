@@ -705,7 +705,7 @@ public:
       val.label = "DCDC12";
       stat.values.push_back(val);
       printf("  DCDC 15     = %f\n", status->DCDC_19V_out_voltage);
-      val.value = status->DCDC_12V_out_voltage;
+      val.value = status->DCDC_19V_out_voltage;
       val.label = "DCDC 15";
       stat.values.push_back(val);
       printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
