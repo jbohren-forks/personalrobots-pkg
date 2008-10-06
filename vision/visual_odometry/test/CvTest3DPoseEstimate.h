@@ -2,7 +2,11 @@
 #define WGTEST3DPOSEESTIMATE_H_
 
 #include "CvStereoCamModel.h"
+#include "VisOdom.h"
+using namespace cv::willow;
+
 #include <vector>
+#include <queue>
 #include <opencv/cvwimage.h>
 using namespace cv;
 using namespace std;
@@ -34,9 +38,13 @@ public:
     bool testVideo();
     bool testVideo2();
     bool testVideo3();
+    bool testVideo4();
     bool testVideoBundleAdj();
     bool test();
     TestType mTestType;
+
+    bool testVideo4OneFrame(queue<StereoFrame> inputImageQueue,
+        FrameSeq& frameSeq, CamTracker& tracker);
 protected:
     void _init();
     void transform(CvMat *points0, CvMat *points1);

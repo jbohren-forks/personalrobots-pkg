@@ -43,6 +43,19 @@ using namespace std;
 
 #define DEBUG 1
 
+#if CHECKTIMING == 0
+#define TIMERSTART(x)
+#define TIMEREND(x)
+#define TIMERSTART2(x)
+#define TIMEREND2(x)
+#else
+#define TIMERSTART(x)  CvTestTimerStart(x)
+#define TIMEREND(x)    CvTestTimerEnd(x)
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x)   CvTestTimerEnd2(x)
+#endif
+
+
 CvTest3DPoseEstimate::CvTest3DPoseEstimate():
   Parent(),
   mRng(cvRNG(time(NULL))),
@@ -224,7 +237,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   int start = 0;
   int end   = 1509;
   int step  = 1;
-  pathRecon.recon(dirname, leftimgfmt, rightimgfmt, start, end, step);
+  pathRecon.track(dirname, leftimgfmt, rightimgfmt, start, end, step);
 
 #endif
   return status;
@@ -241,15 +254,35 @@ bool CvTest3DPoseEstimate::testVideo() {
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
+  string dispimgfmt(".dispmap-%04d.xml");
   int start = 0;
   int end   = 1509;
   int step  = 1;
-  vector<FramePose>* framePoses;
-  pathRecon.recon(dirname, leftimgfmt, rightimgfmt, start, end, step, framePoses);
 
-  PathRecon::saveFramePoses(string("Output/indoor1/"), *framePoses);
+  // set up a FileSeq
+  FileSeq fileSeq;
+  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+  // visualization
+#if DISPLAY
+  // Optionally, set up the visualizer
+  pathRecon.mVisualizer = new Visualizer(pathRecon.mPoseEstimator);
+#endif
 
-  pathRecon.mStat.print();
+  if (fileSeq.getStartFrame() == false) {
+    return false;
+  }
+  do {
+    pathRecon.track(fileSeq.mInputImageQueue);
+  } while(fileSeq.getNextFrame() == true);
+
+
+  vector<FramePose>* framePoses = pathRecon.getFramePoses();
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+
+  saveFramePoses(string("Output/indoor1/"), *framePoses);
+
+  pathRecon.printStat();
 
   CvTestTimer::getTimer().printStat();
   return status;
@@ -261,20 +294,40 @@ bool CvTest3DPoseEstimate::testVideo2() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  CamTracker* tracker = getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
+  string dispimgfmt("/dispmap-%04d.xml");
   int start = 0;
   int end   = 1509;
   int step  = 1;
-  vector<FramePose>* framePoses;
-  trackCameras(tracker, dirname, leftimgfmt, rightimgfmt, start, end, step, framePoses);
+  // set up a FileSeq
+  FileSeq fileSeq;
+  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
 
-  PathRecon::saveFramePoses(string("Output/indoor1/"), *framePoses);
+  if (fileSeq.getStartFrame() == false) {
+    return false;
+  }
+  do {
+    tracker->track(fileSeq.mInputImageQueue);
+  } while(fileSeq.getNextFrame() == true);
 
-  printStat(tracker);
+
+  vector<FramePose>* framePoses = tracker->getFramePoses();
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+
+  saveFramePoses(string("Output/indoor1/"), *framePoses);
+
+  tracker->printStat();
+#if 0
+  pathRecon.mStat.mNumKeyPointsWithNoDisparity = pathRecon.mPoseEstimator.mNumKeyPointsWithNoDisparity;
+  pathRecon.mStat.mPathLength = pathRecon.mPathLength;
+//  mStat.print();
+  pathRecon.mStat.print();
+#endif
 
   CvTestTimer::getTimer().printStat();
   return status;
@@ -286,44 +339,253 @@ bool CvTest3DPoseEstimate::testVideo3() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  CamTracker* tracker = getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
+  string dispmapfmt("/dispmap-%04d.xml");
   int start = 0;
   int end   = 1509;
   int step  = 1;
-  vector<FramePose>* framePoses;
 
-  PathRecon * t = (PathRecon*) tracker;
-  setInputVideoParams(tracker, dirname, leftimgfmt, rightimgfmt, start, end, step);
-  FrameSeq& fs = getFrameSeq(tracker);
-  fs.reset();
-  for (fs.setStartFrame(); fs.notDoneWithIteration(); fs.setNextFrame()){
-    bool newKeyFrame = trackOneFrame(tracker, fs);
+  // set up a FileSeq
+  FileSeq fileSeq;
+  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispmapfmt, start, end, step);
 
-    if (newKeyFrame == true) {
-      // only keep the last frame in the queue
-      deleteAllButLastKeyFrame(tracker);
-    }
-    t->visualize();
+  if (fileSeq.getStartFrame() == false) {
+    return false;
   }
+  do {
+//    tracker->track(fileSeq.mInputImageQueue);
+    while (fileSeq.mInputImageQueue.size()>0) {
+      bool newKeyFrame = tracker->trackOneFrame(fileSeq.mInputImageQueue,
+          tracker->getFrameSeq());
+      if (newKeyFrame == true) {
+        // only keep the last frame in the queue
+        tracker->reduceWindowSize(1);
+      }
+//      visualize();
+    }
 
-//  saveFramePoses(mOutputDir, mFramePoses);
+  } while(fileSeq.getNextFrame() == true);
+
+
+  vector<FramePose>* framePoses = tracker->getFramePoses();
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+
+
+
   framePoses = getFramePoses(tracker);
 
-#if 0
-  trackCameras(tracker, dirname, leftimgfmt, rightimgfmt, start, end, step, framePoses);
-#endif
+  saveFramePoses(string("Output/indoor1/"), *framePoses);
 
-  PathRecon::saveFramePoses(string("Output/indoor1/"), *framePoses);
-
-  printStat(tracker);
+  tracker->printStat();
 
   CvTestTimer::getTimer().printStat();
   return status;
 }
+
+bool CvTest3DPoseEstimate::testVideo4OneFrame(queue<StereoFrame> inputImageQueue,
+    FrameSeq& frameSeq, CamTracker& tracker)
+{
+  bool insertNewKeyFrame = false;
+  TIMERSTART(Total);
+
+  // currFrame is a reference to frameSeq.mCurrentFrame;
+  PoseEstFrameEntry*& currFrame = frameSeq.mCurrentFrame;
+  bool gotCurrFrame = false;
+  bool stop = false;
+
+  if (frameSeq.mNextFrame.get()){
+    // do not need to load new images nor compute the key points again
+    frameSeq.mCurrentFrame = frameSeq.mNextFrame.release();
+    gotCurrFrame = true;
+  } else {
+    int numWaits;
+    // wait at most for 30 seconds
+    const int maxNumWaits = 30*30;
+    for (numWaits=0; numWaits<maxNumWaits && inputImageQueue.size()==0; numWaits++){
+      // wait for 33 milliseconds
+      usleep(33000);
+    }
+    if (numWaits>=maxNumWaits) {
+      stop = true;
+    } else {
+      // process the next stereo pair of images.
+      StereoFrame stereoFrame = inputImageQueue.front();
+      if (stereoFrame.mFrameIndex == -1) {
+        // done
+        stop = true;
+        gotCurrFrame = false;
+      } else {
+        currFrame = new PoseEstFrameEntry(stereoFrame.mFrameIndex);
+        currFrame->mImage = stereoFrame.mImage;
+        currFrame->mRightImage = stereoFrame.mRightImage;
+        currFrame->mDispMap = stereoFrame.mDispMap;
+        // compute disparity map
+        TIMERSTART2(DisparityMap);
+        currFrame->mDispMap = new WImageBuffer1_16s(
+            currFrame->mImage->Width(), currFrame->mImage->Height());
+
+        tracker.getPoseEstimator()->getDisparityMap(*currFrame->mImage,
+            *currFrame->mRightImage, *currFrame->mDispMap);
+        TIMEREND2(DisparityMap);
+#if SAVEDISPMAP
+        {
+          char dispfilename[256];
+          char dispname[256];
+          sprintf(dispfilename, "Output/indoor1/dispmap-%04d.xml",
+              currFrame->mFrameIndex);
+          sprintf(dispname, "dispmap-%04d.xml", currFrame->mFrameIndex);
+          cvSave(dispfilename, currFrame->mDispMap, dispname, "disparity map 16s");
+        }
+#endif
+
+        // counting how many frames we have processed
+        frameSeq.mNumFrames++;
+
+        TIMERSTART2(FeaturePoint);
+        tracker.goodFeaturesToTrack(*currFrame->mImage, currFrame->mDispMap,
+            currFrame->mKeypoints);
+        TIMEREND2(FeaturePoint);
+//        if (mVisualizer) mVisualizer->drawDispMap(*currFrame);
+      }
+      inputImageQueue.pop();
+    }
+  }
+
+  KeyFramingDecision kfd = KeyFrameBackTrack;
+
+  if (stop == false) {
+    if (frameSeq.mNumFrames==1) {
+      // First frame ever, do not need to do anything more.
+      frameSeq.mStartFrameIndex = currFrame->mFrameIndex;
+      kfd = KeyFrameUse;
+    } else {
+      //
+      // match the good feature points between this iteration and last key frame
+      //
+      vector<pair<CvPoint3D64f, CvPoint3D64f> > trackablePairs;
+      if (currFrame->mTrackableIndexPairs == NULL) {
+        currFrame->mTrackableIndexPairs = new vector<pair<int, int> >();
+      } else {
+        currFrame->mTrackableIndexPairs->clear();
+      }
+      tracker.matchKeypoints(&trackablePairs, currFrame->mTrackableIndexPairs);
+      assert(currFrame->mTrackableIndexPairs->size() == trackablePairs.size());
+#ifdef DEBUG
+      cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() << endl;
+#endif
+
+      // if applicable, pass a reference of the current frame for visualization
+      //      if (mVisualizer)  mVisualizer->drawKeypoints(*getLastKeyFrame(), *currFrame, trackablePairs);
+
+      if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
+#ifdef DEBUG
+        cout << "Too few trackable pairs" <<endl;
+#endif
+        // shall backtrack
+        kfd = KeyFrameBackTrack;
+      } else {
+
+        //  pose estimation given the feature point pairs
+        //  note we do not do Levenberg-Marquardt here, as we are not sure if
+        //  this is key frame yet.
+        TIMERSTART2(PoseEstimateRANSAC);
+        currFrame->mNumInliers =
+          tracker.getPoseEstimator()->estimate(*currFrame->mKeypoints,
+              *tracker.getLastKeyFrame()->mKeypoints,
+              *currFrame->mTrackableIndexPairs,
+              currFrame->mRot, currFrame->mShift, false);
+        TIMEREND2(PoseEstimateRANSAC);
+
+        //        mStat.mHistoInliers.push_back(currFrame->mNumInliers);
+
+        currFrame->mInliers0 = NULL;
+        currFrame->mInliers1 = NULL;
+        tracker.fetchInliers(currFrame->mInliers1, currFrame->mInliers0);
+        currFrame->mInlierIndices = tracker.fetchInliers();
+        currFrame->mLastKeyFrameIndex = tracker.getLastKeyFrame()->mFrameIndex;
+#ifdef DEBUG
+        cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
+#endif
+        assert(tracker.getLastKeyFrame());
+        //        if (mVisualizer) mVisualizer->drawTracking(*getLastKeyFrame(), *currFrame);
+
+        // Decide if we need select a key frame by now
+        kfd =
+          tracker.keyFrameEval(currFrame->mFrameIndex, currFrame->mKeypoints->size(),
+              currFrame->mNumInliers,
+              currFrame->mRot, currFrame->mShift);
+
+        // key frame action
+        //        insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+      }
+    } // not first frame;
+  } // stop == false
+
+  insertNewKeyFrame = tracker.keyFrameAction(kfd, frameSeq);
+
+  TIMEREND(Total);
+  return insertNewKeyFrame;
+}
+
+bool CvTest3DPoseEstimate::testVideo4() {
+  bool status = false;
+  CvSize imgSize = cvSize(640, 480);
+  // The following parameters are from indoor1/proj.txt
+  // note that B (or Tx) is in mm
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+
+  string dirname("Data/indoor1");
+  string leftimgfmt("/left-%04d.ppm");
+  string rightimgfmt("/right-%04d.ppm");
+  string dispmapfmt("/dispmap-%04d.xml");
+  int start = 0;
+  int end   = 1509;
+  int step  = 1;
+
+  // set up a FileSeq
+  FileSeq fileSeq;
+  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispmapfmt, start, end, step);
+
+  if (fileSeq.getStartFrame() == false) {
+    return false;
+  }
+  do {
+//    tracker->track(fileSeq.mInputImageQueue);
+    while (fileSeq.mInputImageQueue.size()>0) {
+      bool newKeyFrame = tracker->trackOneFrame(fileSeq.mInputImageQueue,
+          tracker->getFrameSeq());
+      if (newKeyFrame == true) {
+        // only keep the last frame in the queue
+        tracker->reduceWindowSize(1);
+      }
+//      visualize();
+    }
+
+  } while(fileSeq.getNextFrame() == true);
+
+
+  vector<FramePose>* framePoses = tracker->getFramePoses();
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+
+
+
+  framePoses = getFramePoses(tracker);
+
+  saveFramePoses(string("Output/indoor1/"), *framePoses);
+
+  tracker->printStat();
+
+  CvTestTimer::getTimer().printStat();
+  return status;
+}
+
 
 bool CvTest3DPoseEstimate::testPointClouds(){
     bool status = true;
