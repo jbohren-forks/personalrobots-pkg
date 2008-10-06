@@ -123,13 +123,6 @@ class TrajectoryController {
     //possible trajectories for this run
     std::vector<Trajectory> trajectories_;
 
-    //needed to convert between map and robot space efficiently
-    boost::numeric::ublas::matrix<double> trajectory_pts_;
-    boost::numeric::ublas::matrix<double> trajectory_theta_;
-
-    //the number of trajectories we'll create
-    int num_trajectories_;
-
     //the map passed on from the planner
     MapGrid& map_;
     
@@ -147,14 +140,6 @@ class TrajectoryController {
     //update what map cells are considered path based on the global_plan
     void setPathCells();
 
-    //convert the trajectories computed in robot space to world space
-    void trajectoriesToWorld();
-    void transformTrajects(double x_i, double y_i, double th_i);
-
-    //compute the cost for a single trajectory
-    double trajectoryCost(int t_index, double pdist_scale, 
-        double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost);
-
     //for getting the cost of a given footprint
     double footprintCost(double x_i, double y_i, double theta_i);
     double lineCost(int x0, int x1, int y0, int y1);
@@ -164,7 +149,6 @@ class TrajectoryController {
     std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
     void getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts);
     void getFillCells(vector<std_msgs::Position2DInt>& footprint);
-    void swap(int& a, int& b);
 
     //the simulation parameters for generating trajectories
     double sim_time_;

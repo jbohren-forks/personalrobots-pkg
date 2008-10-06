@@ -47,16 +47,6 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma), traj_one(0, 0, 0, num_steps_),
   traj_two(0, 0, 0, num_steps)
 {
-  //regularly sample the forward velocity space... sample rotational vel space... sample backward vel space
-  num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim + samples_per_dim + samples_per_dim;
-  int total_pts = num_trajectories_ * num_steps_;
-
-  //even though we only have x,y we need to multiply by a 4x4 matrix
-  trajectory_pts_ = ublas::zero_matrix<double>(4, total_pts);
-
-  //storage for our theta values
-  trajectory_theta_ = ublas::zero_matrix<double>(1, total_pts);
-
   //the robot is not stuck to begin with
   stuck_left = false;
   stuck_right = false;
@@ -267,6 +257,12 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
   double heading_pdist = map_(cell_x, cell_y).path_dist;
   double heading_gdist = map_(cell_x, cell_y).goal_dist;
 
+  //we don't have occ dist yet... but this will help a little
+  if(ma_.isInflatedObstacle(cell_x, cell_y)){
+    heading_pdist *= 2;
+    heading_gdist *= 2;
+  }
+
   double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ *  (1 / ((occ_dist + .05) * (occ_dist + .05))) + heading_gdist;
 
   traj.cost_ = cost;
@@ -276,71 +272,6 @@ void TrajectoryController::updatePlan(const vector<Point2DFloat32>& new_plan){
   global_plan_.resize(new_plan.size());
   for(unsigned int i = 0; i < new_plan.size(); ++i){
     global_plan_[i] = new_plan[i];
-  }
-}
-
-void TrajectoryController::trajectoriesToWorld(){
-  libTF::TFPose2D robot_pose, global_pose;
-  robot_pose.x = 0;
-  robot_pose.y = 0;
-  robot_pose.yaw = 0;
-  robot_pose.frame = "base";
-  robot_pose.time = 0;
-
-  if(tf_){
-    try
-    {
-      global_pose = tf_->transformPose2D("map", robot_pose);
-    }
-    catch(libTF::TransformReference::LookupException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return;
-    }
-    catch(libTF::TransformReference::ConnectivityException& ex)
-    {
-      puts("no global->local Tx yet");
-      printf("%s\n", ex.what());
-      return;
-    }
-    catch(libTF::TransformReference::ExtrapolateException& ex)
-    {
-      //      puts("extrapolation required");
-      //      printf("%s\n", ex.what());
-      return;
-    }
-  }
-
-  struct timeval start;
-  struct timeval end;
-  double start_t, end_t, t_diff;
-  gettimeofday(&start,NULL);
-
-  transformTrajects(global_pose.x, global_pose.y, global_pose.yaw);
-
-  gettimeofday(&end,NULL);
-  start_t = start.tv_sec + double(start.tv_usec) / 1e6;
-  end_t = end.tv_sec + double(end.tv_usec) / 1e6;
-  t_diff = end_t - start_t;
-  //fprintf(stderr, "Matrix Time: %.3f\n", t_diff);
-
-}
-
-//transform trajectories from robot space to map space
-void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i){
-  double cos_th = cos(th_i);
-  double sin_th = sin(th_i);
-
-  double new_x, new_y, old_x, old_y;
-  for(unsigned int i = 0; i < trajectory_pts_.size2(); ++i){
-    old_x = trajectory_pts_(0, i);
-    old_y = trajectory_pts_(1, i);
-    new_x = x_i + old_x * cos_th - old_y * sin_th;
-    new_y = y_i + old_x * sin_th + old_y * cos_th;
-    trajectory_pts_(0, i) = new_x;
-    trajectory_pts_(1, i) = new_y;
-    trajectory_theta_(0, i) += th_i;
   }
 }
 
@@ -505,82 +436,6 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
   }
 
   return best;
-}
-
-//compute the cost for a single trajectory
-double TrajectoryController::trajectoryCost(int t_index, double pdist_scale,
-    double gdist_scale, double occdist_scale, double dfast_scale, double impossible_cost){
-  Trajectory t = trajectories_[t_index];
-  double path_dist = 0.0;
-  double goal_dist = 0.0;
-  double occ_dist = 0.0;
-  int start_index = t_index * num_steps_;
-  for(int i = 0; i < num_steps_; ++i){
-    int mat_index = start_index + i;
-    double x = trajectory_pts_(0, mat_index);
-    double y = trajectory_pts_(1, mat_index);
-    double theta = trajectory_theta_(0, mat_index);
-
-    //convert world to map coords
-    unsigned int cell_x, cell_y;
-    //we don't want a path that goes off the known map
-    if(!ma_.WC_MC(x, y, cell_x, cell_y))
-      return -1.0;
-
-    //we need to check if we have to lay down the footprint of the robot
-    if(ma_.isInflatedObstacle(cell_x, cell_y)){
-      //if we do compute the obstacle cost for each cell in the footprint
-      double footprint_cost = footprintCost(x, y, theta);
-      if(footprint_cost < 0)
-        return -1.0;
-      occ_dist += footprint_cost;
-    }
-
-    double cell_pdist = map_(cell_x, cell_y).path_dist;
-    double cell_gdist = map_(cell_x, cell_y).goal_dist;
-
-
-    path_dist = cell_pdist;
-    goal_dist = cell_gdist;
-
-  }
-
-  //if we cannot follow the path let the global planner know it is impossible
-  if(impossible_cost <= goal_dist || impossible_cost <= path_dist)
-    return -1.0;
-
-  double cost = pdist_scale * path_dist + gdist_scale * goal_dist + dfast_scale * (1.0 / ((.05 + t.xv_) * (.05 + t.xv_))) + occdist_scale *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
-  
-  return cost;
-}
-
-//given a trajectory in map space get the drive commands to send to the robot
-libTF::TFPose2D TrajectoryController::getDriveVelocities(int t_num){
-  libTF::TFPose2D tVel;
-  //if no legal trajectory was found... stop the robot
-  if(t_num < 0){
-    tVel.x = 0.0;
-    tVel.y = 0.0;
-    tVel.yaw = 0.0;
-    tVel.frame = "base";
-    tVel.time = 0;
-    return tVel;
-  }
-
-  //otherwise return the velocity cmds
-  const Trajectory& t = trajectories_[t_num];
-  tVel.x = t.xv_;
-  tVel.y = t.yv_;
-  tVel.yaw = t.thetav_;
-  tVel.frame = "base";
-  tVel.time = 0;
-  return tVel;
-}
-
-void TrajectoryController::swap(int& a, int& b){
-  int temp = a;
-  a = b;
-  b = temp;
 }
 
 double TrajectoryController::pointCost(int x, int y){
