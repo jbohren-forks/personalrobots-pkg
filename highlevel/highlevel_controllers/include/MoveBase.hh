@@ -136,6 +136,11 @@ namespace ros {
 
       void updateGlobalPose();
 
+      /**
+       * @brief Issue zero velocity commands
+       */
+      void stopRobot();
+
       void publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path);
       void publishFootprint(double x, double y, double th);
 

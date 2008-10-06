@@ -32,6 +32,9 @@
     <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
 
     <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
+
+    <!-- Now launch controller node required -->
+    <include file="$(find highlevel_controllers)/test/launch_move_base.xml"/>
   </group>
 </launch>
 

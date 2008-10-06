@@ -1,0 +1,6 @@
+<launch>
+  <group name="wg">  
+    <param name="costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="cloud:=world_3d_map" respawn="false"/>
+  </group>
+</launch>

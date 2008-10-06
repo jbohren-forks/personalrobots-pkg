@@ -79,10 +79,8 @@ namespace ros {
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
       double maxZ(2.0); 
-      //double inflationRadius(0.325);
       double inflationRadius(0.46);
       double robot_radius(.325);
-      //double inflationRadius(0.175);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("costmap_2d/no_information_value", noInformation, noInformation);
@@ -415,14 +413,14 @@ namespace ros {
       // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
       // and we have stopped the robot, then we are done
       if(plan_.empty() && 
-	 fabs(global_pose_.yaw - stateMsg.goal.th) < 10 &&
-	 fabs(base_odom_.vel.x - 0) < 0.001 &&
-	 fabs(base_odom_.vel.y - 0) < 0.001 &&
-	 fabs(base_odom_.vel.th - 0) < 0.001){
+	 fabs(global_pose_.yaw - stateMsg.goal.th) < 10){
 
 	printf("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
 	       global_pose_.x, global_pose_.y, global_pose_.yaw,
 	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+
+	// The last act will issue stop command
+	stopRobot();
 
 	return true;
       }
@@ -451,7 +449,7 @@ namespace ros {
 	std::cout << "Moving to desired goal orientation\n";
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
-	cmdVel.vw = stateMsg.goal.th - global_pose_.yaw;
+	cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
       }
       else {
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
@@ -510,7 +508,7 @@ namespace ros {
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
       if(fabs(x1 - x2) < 2 * getCostMap().getResolution() &&
 	 fabs(y1 - y2) < 2 * getCostMap().getResolution() &&
-	 fabs(th1- th2)< 10)
+	 fabs(th1- th2) < 10)
 	return true;
 
       return false;
@@ -570,6 +568,15 @@ namespace ros {
       }
 
       publish("inflated_obstacles", pointCloudMsg);
+    }
+
+    void MoveBase::stopRobot(){
+      std::cout << "Stopping the robot now!\n";
+      std_msgs::BaseVel cmdVel; // Commanded velocities
+      cmdVel.vx = 0.0;
+      cmdVel.vy = 0.0;
+      cmdVel.vw = 0.0;
+      publish("cmd_vel", cmdVel);
     }
   }
 }
