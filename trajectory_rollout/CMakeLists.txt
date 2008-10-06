@@ -5,8 +5,8 @@ rospack(trajectory_rollout)
 genmsg()
 
 #uncomment for profiling
-#set(ROS_COMPILE_FLAGS "-pg" ${ROS_COMPILE_FLAGS})
-#set(ROS_LINK_FLAGS "-pg" ${ROS_LINK_FLAGS})
+#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
 set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 

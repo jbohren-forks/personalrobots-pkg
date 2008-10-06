@@ -40,11 +40,21 @@
 class Trajectory {
   public:
     Trajectory();
-    Trajectory(double xv, double yv, double thetav);
+    Trajectory(double xv, double yv, double thetav, unsigned int num_pts);
 
     double xv_, yv_, thetav_;
 
     //how good is this path
     double cost_;
+
+    void getPoint(unsigned int index, double& x, double& y, double& th);
+    void setPoint(unsigned int index, double x, double y, double th);
+
+  private:
+    //the points in the path
+    std::vector<double> x_pts_;
+    std::vector<double> y_pts_;
+    std::vector<double> th_pts_;
+
 };
 #endif

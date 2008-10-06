@@ -38,7 +38,19 @@ Trajectory::Trajectory()
 {
 }
 
-Trajectory::Trajectory(double xv, double yv, double thetav)
-  : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0)
+Trajectory::Trajectory(double xv, double yv, double thetav, unsigned int num_pts)
+  : xv_(xv), yv_(yv), thetav_(thetav), cost_(0.0), x_pts_(num_pts), y_pts_(num_pts), th_pts_(num_pts)
 {
+}
+
+void Trajectory::getPoint(unsigned int index, double& x, double& y, double& th){
+  x = x_pts_[index];
+  y = y_pts_[index];
+  th = th_pts_[index];
+}
+
+void Trajectory::setPoint(unsigned int index, double x, double y, double th){
+  x_pts_[index] = x;
+  y_pts_[index] = y;
+  th_pts_[index] = th;
 }

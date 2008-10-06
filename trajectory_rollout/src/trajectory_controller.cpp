@@ -44,7 +44,8 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
   robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
-  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma)
+  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma), traj_one(0, 0, 0, num_steps_),
+  traj_two(0, 0, 0, num_steps)
 {
   //regularly sample the forward velocity space... sample rotational vel space... sample backward vel space
   num_trajectories_ = samples_per_dim * samples_per_dim * samples_per_dim + samples_per_dim + samples_per_dim;
@@ -182,9 +183,10 @@ void TrajectoryController::computeGoalDistance(queue<MapCell*>& dist_queue){
   }
 }
 
-//create a trajectory given the current pose of the robot and selected velocities
-Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double y, double theta, double vx, double vy, 
-    double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y, double acc_theta){
+//create and score a trajectory given the current pose of the robot and selected velocities
+void TrajectoryController::generateTrajectory(double x, double y, double theta, double vx, double vy, 
+    double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y, double acc_theta, double impossible_cost,
+    Trajectory& traj){
   double x_i = x;
   double y_i = y;
   double theta_i = theta;
@@ -193,23 +195,53 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
   double vtheta_i = vtheta;
   double dt = sim_time_ / num_steps_;
 
-  //get the index for this trajectory in the matricies
-  int mat_index = t_num * num_steps_;
+  //create a potential trajectory
+  traj.xv_ = vx_samp; 
+  traj.yv_ = vy_samp; 
+  traj.thetav_ = vtheta_samp;
 
-  Trajectory traj(vx_samp, vy_samp, vtheta_samp);
+  //initialize the costs for the trajectory
+  double path_dist = 0.0;
+  double goal_dist = 0.0;
+  double occ_dist = 0.0;
 
   for(int i = 0; i < num_steps_; ++i){
-    //add the point to the matrix
-    trajectory_pts_(0, mat_index) = x_i;
-    trajectory_pts_(1, mat_index) = y_i;
-    trajectory_pts_(2, mat_index) = 0;
-    trajectory_pts_(3, mat_index) = 1;
+    //get map coordinates of a point
+    unsigned int cell_x, cell_y;
 
-    //add theta to the matrix
-    trajectory_theta_(0, mat_index) = theta_i;
+    //we don't want a path that goes off the know map
+    if(!ma_.WC_MC(x_i, y_i, cell_x, cell_y)){
+      traj.cost_ = -1.0;
+      return;
+    }
 
-    ++mat_index;
+    //we need to check if we need to lay down the footprint of the robot
+    if(ma_.isInflatedObstacle(cell_x, cell_y)){
+      double footprint_cost = footprintCost(x_i, y_i, theta_i);
+      //if the footprint hits an obstacle this trajectory is invalid
+      if(footprint_cost < 0){
+        traj.cost_ = -1.0;
+        return;
+      }
+      occ_dist += footprint_cost;
+    }
 
+    double cell_pdist = map_(cell_x, cell_y).path_dist;
+    double cell_gdist = map_(cell_x, cell_y).goal_dist;
+
+    //update path and goal distances
+    path_dist = cell_pdist;
+    goal_dist = cell_gdist;
+    
+    //if a point on this trajectory has no clear path to goal it is invalid
+    if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
+      traj.cost_ = -1.0;
+      return;
+    }
+
+    //the point is legal... add it to the trajectory
+    traj.setPoint(i, x_i, y_i, theta_i);
+  
     //calculate velocities
     vx_i = computeNewVelocity(vx_samp, vx_i, acc_x, dt);
     vy_i = computeNewVelocity(vy_samp, vy_i, acc_y, dt);
@@ -221,8 +253,23 @@ Trajectory TrajectoryController::generateTrajectory(int t_num, double x, double 
     theta_i = computeNewThetaPosition(theta_i, vtheta_i, dt);
     
   }
-  
-  return traj;
+
+  //let's also generate a cost for the heading of the trajectory
+  x_i += HEADING_LOOKAHEAD;
+  unsigned int cell_x, cell_y;
+
+  //we don't want a path that goes off the know map
+  if(!ma_.WC_MC(x_i, y_i, cell_x, cell_y)){
+    traj.cost_ = -1.0;
+    return;
+  }
+
+  double heading_pdist = map_(cell_x, cell_y).path_dist;
+  double heading_gdist = map_(cell_x, cell_y).goal_dist;
+
+  double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ *  (1 / ((occ_dist + .05) * (occ_dist + .05))) + heading_gdist;
+
+  traj.cost_ = cost;
 }
 
 void TrajectoryController::updatePlan(const vector<Point2DFloat32>& new_plan){
@@ -298,7 +345,7 @@ void TrajectoryController::transformTrajects(double x_i, double y_i, double th_i
 }
 
 //create the trajectories we wish to score
-void TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta,
+Trajectory TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta,
     double acc_x, double acc_y, double acc_theta){
   //compute feasible velocity limits in robot space
   double max_vel_x, max_vel_y, max_vel_theta;
@@ -307,8 +354,8 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   max_vel_x = min(1.0, vx + acc_x * sim_time_);
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
-  max_vel_y = vy + acc_y * sim_time_;
-  min_vel_y = vy - acc_y * sim_time_;
+  max_vel_y = min(1.0, vy + acc_y * sim_time_);
+  min_vel_y = max(-1.0, vy - acc_y * sim_time_);
 
   //max_vel_theta = vtheta + acc_theta * sim_time_;
   //min_vel_theta = vtheta - acc_theta * sim_time_;
@@ -318,7 +365,7 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  //double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
   double dvtheta = (max_vel_theta - min_vel_theta) / samples_per_dim_;
 
   double vx_samp = min_vel_x;
@@ -329,8 +376,18 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   //make sure to reset the list of trajectories
   trajectories_.clear();
 
-  //keep track of which trajectory we're working on
-  int t_num = 0;
+  //keep track of the best trajectory seen so far
+  Trajectory* best_traj = &traj_one;
+  best_traj->cost_ = -1.0;
+
+  Trajectory* comp_traj = &traj_two;
+  comp_traj->cost_ = -1.0;
+
+  Trajectory* swap = NULL;
+  
+  //any cell with a cost greater than the size of the map is impossible
+  double impossible_cost = map_.map_.size();
+
 
   //generate trajectories for regularly sampled velocities
   for(int i = 0; i < samples_per_dim_; ++i){
@@ -339,8 +396,14 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
     for(int j = 0; j < samples_per_dim_; ++j){
       //vy_samp = min_vel_y;
       //for(int k = 0; k < samples_per_dim_; ++k){
-        trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
-        ++t_num;
+        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+        
+        //if the new trajectory is better... let's take it
+        if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+          swap = best_traj;
+          best_traj = comp_traj;
+          comp_traj = swap;
+        }
         //vy_samp += dvy;
       //}
       vtheta_samp += dvtheta;
@@ -353,30 +416,63 @@ void TrajectoryController::createTrajectories(double x, double y, double theta, 
   vx_samp = 0.0;
   vy_samp = 0.0;
   for(int i = 0; i < samples_per_dim_; ++i){
-    trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
-    ++t_num;
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+    //if the new trajectory is better... let's take it
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+      swap = best_traj;
+      best_traj = comp_traj;
+      comp_traj = swap;
+    }
+
     vtheta_samp += dvtheta;
   }
+
+  //if we still don't have a good trajectory... we'll explore going backwards
+  if(best_traj->cost_ >= 0)
+    return *best_traj;
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
   vtheta_samp = 0.0;
-  vx_samp = 0.00;
+  vx_samp = 0.0;
   vy_samp = 0.0;
   for(int i = 0; i < samples_per_dim_; ++i){
-    trajectories_.push_back(generateTrajectory(t_num, x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta));
-    ++t_num;
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+    //if the new trajectory is better... let's take it
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+      swap = best_traj;
+      best_traj = comp_traj;
+      comp_traj = swap;
+    }
     //vtheta_samp += dvtheta;
   }
+
+  return *best_traj;
   
 }
 
 //given the current state of the robot, find a good trajectory
-int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
+Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
+
   //make sure that we update our path based on the global plan and compute costs
   setPathCells();
   printf("Path/Goal distance computed\n");
+
+  //temporarily remove obstacles that are within the footprint of the robot
+  vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(global_pose.x, global_pose.y, global_pose.yaw, true);
+  
+  //mark cells within the initial footprint of the robot
+  for(unsigned int i = 0; i < footprint_list.size(); ++i){
+    map_(footprint_list[i].x, footprint_list[i].y).within_robot = true;
+  }
+  
+  //rollout trajectories and find the minimum cost one
+  Trajectory best = createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
+      acc_lim_x_, acc_lim_y_, acc_lim_theta_);
+  printf("Trajectories created\n");
 
   /*
   //If we want to print a ppm file to draw goal dist
@@ -397,114 +493,18 @@ int TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPos
   }
   */
 
-  //next create the trajectories we wish to explore
-  createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
-      acc_lim_x_, acc_lim_y_, acc_lim_theta_);
-  printf("Trajectories created\n");
-
-  //we need to transform the trajectories to world space for scoring
-  //trajectoriesToWorld();
-  printf("Trajectories converted\n");
-
-  //now we want to score the trajectories that we've created and return the best one
-  double min_cost = DBL_MAX;
-
-  //default to a trajectory that goes nowhere
-  int best_index = -1;
-
-  //anything with a cost greater than the size of the map is impossible
-  double impossible_cost = map_.map_.size();
-
-  double x = trajectory_pts_(0, 0);
-  double y = trajectory_pts_(1, 0);
-  double theta = trajectory_theta_(0, 0);
-  vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(x, y, theta, true);
-
-  //mark cells within the initial footprint of the robot
-  for(unsigned int i = 0; i < footprint_list.size(); ++i){
-    map_(footprint_list[i].x, footprint_list[i].y).within_robot = true;
+  if(best.cost_ < 0){
+    drive_velocities.x = 0;
+    drive_velocities.y = 0;
+    drive_velocities.yaw = 0;
+  }
+  else{
+    drive_velocities.x = best.xv_;
+    drive_velocities.y = best.yv_;
+    drive_velocities.yaw = best.thetav_;
   }
 
-  //we know that everything except the last 2 sets of trajectories are forward
-  unsigned int forward_traj_end = trajectories_.size() - 2 * samples_per_dim_;
-  for(unsigned int i = 0; i < forward_traj_end; ++i){
-    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
-
-    //so we can draw with cost info
-    trajectories_[i].cost_ = cost;
-
-    //find the minimum cost path
-    if(cost >= 0 && cost < min_cost){
-      best_index = i;
-      min_cost = cost;
-    }
-  }
-  
-  unsigned int rot_traj_end = trajectories_.size() - samples_per_dim_;
-  //we want to explore rotational trajectories as well
-  bool legal_right = false;
-  double max_vel = 0;
-  for(unsigned int i = forward_traj_end; i < rot_traj_end; ++i){
-    double cost = -1;
-
-    if(trajectories_[i].thetav_ < 0 && !stuck_right){
-      cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
-      if(cost >= 0)
-        legal_right = true;
-    }
-    else if(trajectories_[i].thetav_ > 0 && stuck_right && !stuck_left){
-      cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
-    }
-
-    //so we can draw with cost info
-    trajectories_[i].cost_ = cost;
-
-    //find the minimum cost path
-    double abs_speed = abs(trajectories_[i].thetav_);
-    if(cost >= 0 && cost <= min_cost && abs_speed > max_vel){
-      best_index = i;
-      min_cost = cost;
-      max_vel = abs_speed;
-    }
-  }
-
-  if(stuck_right && best_index < 0)
-    stuck_left = true;
-
-  if(!legal_right)
-    stuck_right = true;
-
-
-  //if we have a valid path... return
-  if(best_index >= 0){
-    if(trajectories_[best_index].xv_ > 0){
-      stuck_left = false;
-      stuck_right = false;
-    }
-    drive_velocities = getDriveVelocities(best_index);
-    return best_index;
-  }
-
-  //the last set of trajectories is for moving backwards
-  for(unsigned int i = rot_traj_end; i < trajectories_.size(); ++i){
-    double cost = trajectoryCost(i, pdist_scale_, gdist_scale_, occdist_scale_, dfast_scale_, impossible_cost);
-
-    //so we can draw with cost info
-    trajectories_[i].cost_ = cost;
-
-    //find the minimum cost path
-    if(cost >= 0 && cost < min_cost){
-      best_index = i;
-      min_cost = cost;
-    }
-    best_index = i;
-  }
-  //printf("Trajectories scored\n");
-
-  drive_velocities = getDriveVelocities(best_index);
-  stuck_left = false;
-  stuck_right = false;
-  return best_index;
+  return best;
 }
 
 //compute the cost for a single trajectory
@@ -598,7 +598,7 @@ double TrajectoryController::pointCost(int x, int y){
 
 //calculate the cost of a ray-traced line
 double TrajectoryController::lineCost(int x0, int x1, 
-    int y0, int y1, vector<std_msgs::Position2DInt>& footprint_cells){
+    int y0, int y1){
   //Bresenham Ray-Tracing
   int deltax = abs(x1 - x0);        // The difference between the x's
   int deltay = abs(y1 - y0);        // The difference between the y's
@@ -659,10 +659,6 @@ double TrajectoryController::lineCost(int x0, int x1,
     if(point_cost < 0)
       return -1;
 
-    Position2DInt pt;
-    pt.x = x;
-    pt.y = y;
-    footprint_cells.push_back(pt);
     line_cost += point_cost;
 
     num += numadd;              // Increase the numerator by the top of the fraction
@@ -710,7 +706,7 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the front line
-  line_dist = lineCost(x0, x1, y0, y1, footprint_cells);
+  line_dist = lineCost(x0, x1, y0, y1);
   if(line_dist < 0)
     return -1;
 
@@ -726,7 +722,7 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the right side line
-  line_dist = lineCost(x1, x2, y1, y2, footprint_cells);
+  line_dist = lineCost(x1, x2, y1, y2);
   if(line_dist < 0)
     return -1;
 
@@ -742,82 +738,20 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the back line
-  line_dist = lineCost(x2, x3, y2, y3, footprint_cells);
+  line_dist = lineCost(x2, x3, y2, y3);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
   //check the left side line
-  line_dist = lineCost(x3, x0, y3, y0, footprint_cells);
+  line_dist = lineCost(x3, x0, y3, y0);
   if(line_dist < 0)
     return -1;
 
   footprint_dist += line_dist;
 
-  double fill_dist = -1;
-  fill_dist = fillCost(footprint_cells);
-
   return footprint_dist;
-}
-
-//we need to fill in the footprint of the robot
-double TrajectoryController::fillCost(vector<std_msgs::Position2DInt>& footprint){
-  //quick bubble sort to sort pts by x
-  std_msgs::Position2DInt swap;
-  unsigned int i = 0;
-  while(i < footprint.size() - 1){
-    if(footprint[i].x > footprint[i + 1].x){
-      swap = footprint[i];
-      footprint[i] = footprint[i + 1];
-      footprint[i + 1] = swap;
-      if(i > 0)
-        --i;
-    }
-    else
-      ++i;
-  }
-
-  i = 0;
-  std_msgs::Position2DInt min_pt;
-  std_msgs::Position2DInt max_pt;
-  unsigned int min_x = footprint[0].x;
-  unsigned int max_x = footprint[footprint.size() -1].x;
-  double fill_cost = 0.0;
-  double point_cost = -1.0;
-  //walk through each column and mark cells inside the footprint
-  for(unsigned int x = min_x; x <= max_x; ++x){
-    if(i >= footprint.size() - 1)
-      break;
-
-    if(footprint[i].y < footprint[i + 1].y){
-      min_pt = footprint[i];
-      max_pt = footprint[i + 1];
-    }
-    else{
-      min_pt = footprint[i + 1];
-      max_pt = footprint[i];
-    }
-
-    i += 2;
-    while(i < footprint.size() && footprint[i].x == x){
-      if(footprint[i].y < min_pt.y)
-        min_pt = footprint[i];
-      else if(footprint[i].y > max_pt.y)
-        max_pt = footprint[i];
-      ++i;
-    }
-
-    //loop though cells in the column
-    for(unsigned int y = min_pt.y; y < max_pt.y; ++y){
-      point_cost = pointCost(x, y);
-      if(point_cost < 0)
-        return -1;
-      fill_cost += point_cost;
-    }
-  }
-
-  return fill_cost;
 }
 
 void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts){

@@ -74,6 +74,8 @@
 #define MX_WX(map, i) ((map).origin_x + (i) * (map).scale);
 #define MY_WY(map, j) ((map).origin_y + (j) * (map).scale);
 
+#define HEADING_LOOKAHEAD .2
+
 
 //convert from world to map coords
 //#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
@@ -92,7 +94,7 @@ class TrajectoryController {
         const costmap_2d::ObstacleMapAccessor& ma);
     
     //given the current state of the robot, find a good trajectory
-    int findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
+    Trajectory findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
         libTF::TFPose2D& drive_velocities);
 
     //compute the distance from each cell in the map grid to the planned path
@@ -104,13 +106,13 @@ class TrajectoryController {
     libTF::TFPose2D getDriveVelocities(int t_num);
 
     //create the trajectories we wish to score
-    void createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta, 
+    Trajectory createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta, 
         double acc_x, double acc_y, double acc_theta);
 
     //create a trajectory given the current pose of the robot and selected velocities
-    Trajectory generateTrajectory(int t_num, double x, double y, double theta, double vx, double vy, 
+    void generateTrajectory(double x, double y, double theta, double vx, double vy, 
         double vtheta, double vx_samp, double vy_samp, double vtheta_samp, double acc_x, double acc_y,
-        double acc_theta);
+        double acc_theta, double impossible_cost, Trajectory& traj);
 
     //pass a global plan to the controller
     void updatePlan(const std::vector<std_msgs::Point2DFloat32>& new_plan);
@@ -140,6 +142,7 @@ class TrajectoryController {
     //to help the robot know what to do with rotations
     bool stuck_left, stuck_right;
 
+
   private:
     //update what map cells are considered path based on the global_plan
     void setPathCells();
@@ -154,9 +157,7 @@ class TrajectoryController {
 
     //for getting the cost of a given footprint
     double footprintCost(double x_i, double y_i, double theta_i);
-    double lineCost(int x0, int x1, int y0, int y1,
-        std::vector<std_msgs::Position2DInt>& footprint_cells);
-    double fillCost(std::vector<std_msgs::Position2DInt>& footprint);
+    double lineCost(int x0, int x1, int y0, int y1);
     double pointCost(int x, int y);
 
     //for getting the cells for a given footprint
@@ -177,6 +178,9 @@ class TrajectoryController {
     
     //so that we can access obstacle information
     const costmap_2d::ObstacleMapAccessor& ma_;
+
+    //for scoring trajectories
+    Trajectory traj_one, traj_two;
 
     inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, 
         std::queue<MapCell*>& dist_queue){
@@ -216,12 +220,12 @@ class TrajectoryController {
 
     //compute position based on velocity
     inline double computeNewXPosition(double xi, double vx, double vy, double theta, double dt){
-      return xi + (vx * cos(theta) + vy * sin(theta)) * dt;
+      return xi + (vx * cos(theta) + vy * cos(M_PI_2 + theta)) * dt;
     }
 
     //compute position based on velocity
     inline double computeNewYPosition(double yi, double vx, double vy, double theta, double dt){
-      return yi + (vx * sin(theta) + vy * cos(theta)) * dt;
+      return yi + (vx * sin(theta) + vy * sin(M_PI_2 + theta)) * dt;
     }
 
     //compute position based on velocity

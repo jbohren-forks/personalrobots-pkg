@@ -44,7 +44,7 @@ GovernorNode::GovernorNode() :
   ma_(map_, OUTER_RADIUS),
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, 
       PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_),
-  cycle_time_(0.05)
+  cycle_time_(0.1)
 {
   robot_vel_.x = 0.0;
   robot_vel_.y = 0.0;
@@ -140,9 +140,8 @@ void GovernorNode::processPlan(){
   ma_.updateOrigin(map_.origin_x, map_.origin_y);
   ma_.updateResolution(map_.scale);
   ma_.updateSize(map_.size_x_, map_.size_y_);
-  //Trajectory path = tc_.findBestPath(global_pose, global_vel, global_acc);
   gettimeofday(&start,NULL);
-  int path_index = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
+  Trajectory path = tc_.findBestPath(global_pose, robot_vel, drive_cmds);
   gettimeofday(&end,NULL);
   start_t = start.tv_sec + double(start.tv_usec) / 1e6;
   end_t = end.tv_sec + double(end.tv_usec) / 1e6;
@@ -153,7 +152,7 @@ void GovernorNode::processPlan(){
 
   printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.x, robot_vel.y, robot_vel.yaw);
 
-  if(path_index >= 0){
+  if(path.cost_ >= 0){
     //let's print debug output to the screen
     path_msg.set_points_size(tc_.num_steps_);
     path_msg.color.r = 0;
@@ -164,14 +163,16 @@ void GovernorNode::processPlan(){
     double y = 0.0;
     double th = 0.0;
     for(int i = 0; i < tc_.num_steps_; ++i){
-      path_msg.points[i].x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
-      path_msg.points[i].y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
+      double pt_x, pt_y, pt_th;
+      path.getPoint(i, pt_x, pt_y, pt_th);
+      path_msg.points[i].x = pt_x; 
+      path_msg.points[i].y = pt_y;
 
       //so we can draw the footprint on the map
       if(i == 0){
-        x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
-        y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
-        th = tc_.trajectory_theta_(0, path_index * tc_.num_steps_ + i);
+        x = pt_x; 
+        y = pt_y;
+        th = pt_th;
       }
     }
     publish("local_path", path_msg);
@@ -198,7 +199,7 @@ void GovernorNode::processPlan(){
   cmd_vel_msg_.vw = drive_cmds.yaw;
 
   
-  if(path_index < 0)
+  if(path.cost_ < 0)
     printf("Local Plan Failed :(\n");
   printf("Vel CMD - vx: %.2f, vy: %.2f, vt: %.2f\n", cmd_vel_msg_.vx, cmd_vel_msg_.vy, cmd_vel_msg_.vw);
   publish("cmd_vel", cmd_vel_msg_);
