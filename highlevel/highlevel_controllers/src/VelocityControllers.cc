@@ -89,16 +89,16 @@ namespace ros {
       // Temporary Transformation till api below changes
       std::vector<std_msgs::Point2DFloat32> copiedGlobalPlan;
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = globalPlan.begin(); it != globalPlan.end(); ++it){
-	std_msgs::Point2DFloat32 p;
-	p.x = it->x;
-	p.y = it->y;
-	copiedGlobalPlan.push_back(p);
+        std_msgs::Point2DFloat32 p;
+        p.x = it->x;
+        p.y = it->y;
+        copiedGlobalPlan.push_back(p);
       }
 
       tc_.updatePlan(copiedGlobalPlan);
   
       //compute what trajectory to drive along
-      int path_index = tc_.findBestPath(pose, robot_vel, drive_cmds);
+      Trajectory path = tc_.findBestPath(pose, robot_vel, drive_cmds);
 
       //pass along drive commands
       cmdVel.vx = drive_cmds.x;
@@ -106,16 +106,19 @@ namespace ros {
       cmdVel.vw = drive_cmds.yaw;
 
       //if we cannot move... tell someone
-      if(path_index < 0)
-	return false;
+      if(path.cost_ < 0)
+        return false;
 
       // Fill out the local plan
       for(int i = 0; i < tc_.num_steps_; ++i){
-	std_msgs::Pose2DFloat32 p;
-	p.x = tc_.trajectory_pts_(0, path_index * tc_.num_steps_ + i); 
-	p.y = tc_.trajectory_pts_(1, path_index * tc_.num_steps_ + i);
-	p.th = tc_.trajectory_theta_(0, path_index * tc_.num_steps_ + i);
-	localPlan.push_back(p);
+        double p_x, p_y, p_th;
+        path.getPoint(i, p_x, p_y, p_th);
+
+        std_msgs::Pose2DFloat32 p;
+        p.x = p_x; 
+        p.y = p_y;
+        p.th = p_th;
+        localPlan.push_back(p);
       }
 
       return true;

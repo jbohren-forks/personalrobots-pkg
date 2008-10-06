@@ -7,6 +7,7 @@
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Point2DFloat32.h>
 #include <trajectory_rollout/map_grid.h>
+#include <trajectory_rollout/trajectory.h>
 #include <trajectory_rollout/trajectory_controller.h>
 
 // For transform support
