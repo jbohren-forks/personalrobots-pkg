@@ -212,7 +212,7 @@ namespace robot_kinematics
 
     int chain_counter_; /*< chain count */
 
-    KDL::Inertia getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector pos);
+    KDL::Inertia getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector &pos);
 
     protected:
 

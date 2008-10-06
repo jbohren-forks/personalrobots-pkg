@@ -143,6 +143,10 @@ double RobotKinematics::getAngleBetweenVectors(double p1[],double p2[])
 
 void RobotKinematics::createChain(robot_desc::URDF::Group* group)
 {  
+
+  ofstream myfile;
+  myfile.open("model.txt");
+
   KDL::Frame frame1;
   KDL::Frame frame2;
 
@@ -194,6 +198,14 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
     /* Get inertia matrix and center of mass in KDL frame*/
     inertia = getInertiaInKDLFrame(link_current, com);
 
+    myfile << link_current->name << endl;
+    myfile << "KDL Joint in XML Frame" << endl << frame1 << endl << endl;
+    myfile << "KDL next joint frame in current KDL joint frame" << endl << frame2 << endl << endl;
+    myfile << "Mass " << inertia.m << endl;
+    myfile << "Inertia" << endl << inertia.I << endl;
+    myfile << "COM " << com << endl << endl;
+
+
     this->chains_[chain_counter_].link_kdl_frame_[link_count] = frame1;
     this->chains_[chain_counter_].chain.addSegment(Segment(Joint(Joint::RotZ),frame2,inertia,com));
     this->chains_[chain_counter_].joint_id_map_[link_current->name] = link_count + 1;
@@ -202,6 +214,7 @@ void RobotKinematics::createChain(robot_desc::URDF::Group* group)
   }
   this->chains_[chain_counter_].finalize();
   chain_counter_++;
+  myfile.close();
 }
 
 robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::Link *link_current, robot_desc::URDF::Group* group)
@@ -222,7 +235,7 @@ robot_desc::URDF::Link* RobotKinematics::findNextLinkInGroup(robot_desc::URDF::L
   return NULL;
 }
 
-KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector pos)
+KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_current, KDL::Vector &pos)
 {
   KDL::Inertia inertia;
   NEWMAT::Matrix frame(4,4);
@@ -236,6 +249,12 @@ KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_
   com_pos(1,1) = link_current->inertial->com[0];
   com_pos(2,1) = link_current->inertial->com[1];
   com_pos(3,1) = link_current->inertial->com[2];
+
+
+  cout << "com_pos " << com_pos(1,1) << com_pos(2,1) << com_pos(3,1) << com_pos(4,1) << endl << endl;
+
+  cout << "frame " << endl << frame << endl << endl;
+ 
   com_pos(4,1) = 1;
 
   com_pos_t = frame.i() * com_pos;
@@ -275,6 +294,8 @@ KDL::Inertia RobotKinematics::getInertiaInKDLFrame(robot_desc::URDF::Link *link_
   pos[0] = com_pos_t(1,1);
   pos[1] = com_pos_t(2,1);
   pos[2] = com_pos_t(3,1);
+
+  cout << "new " << com_pos_t(1,1) << ", " << com_pos_t(2,1) << ", " << com_pos_t(3,1) << endl;
 
   return inertia;
 /*

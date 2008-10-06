@@ -170,6 +170,10 @@ namespace robot_kinematics
      */
     bool computeInverseDynamics(const KDL::JntArray &q, const KDL::JntArray &q_dot, const KDL::JntArray &q_dotdot, KDL::Vector* torque);
 
+    bool computeGravityTerms(const KDL::JntArray &q, KDL::Vector* torque);
+
+    void computeMassMatrix(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &mass);
+
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
 
     /*! \brief Finalize the chain after all the segments have been added. This must be done AFTER all links have been added using addLink 

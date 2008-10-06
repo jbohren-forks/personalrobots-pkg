@@ -150,6 +150,53 @@ bool SerialChain::computeInverseDynamics(const JntArray &q, const JntArray &q_do
   else
     return false;  
 }
+
+bool SerialChain::computeGravityTerms(const JntArray &q, Vector* torque)
+{
+
+  JntArray qdot(q.rows());
+  JntArray qdotdot(q.rows());
+
+  SetToZero(qdot);
+  SetToZero(qdotdot);
+
+  if (this->inverseDynamics->InverseDynamics(q,qdot,qdotdot,torque) >= 0)
+  {
+    return true;
+  }
+  else
+    return false;  
+}
+
+void SerialChain::computeMassMatrix(const JntArray &q, Vector* torque, NEWMAT::Matrix &mass)
+{
+
+  JntArray qdot(q.rows());
+  JntArray qdotdot(q.rows());
+  JntArray temp_1(q.rows()), temp_0(q.rows());
+
+  SetToZero(qdot);
+  SetToZero(qdotdot);
+
+  for(unsigned int i=0; i < q.rows(); i++)
+  {
+    qdotdot(i) = 1;
+
+    this->inverseDynamics->InverseDynamics(q,qdot,qdotdot,torque);
+    for(unsigned int j=0; j < q.rows(); j++)
+      temp_1(j) = torque[j][2];
+
+    qdotdot(i) = 0;
+
+    this->inverseDynamics->InverseDynamics(q,qdot,qdotdot,torque);
+    for(unsigned int j=0; j< q.rows(); j++)
+    {
+      temp_0(j) = torque[j][2];
+      mass(i+1,j+1) = temp_1(j)-temp_0(j);
+    }
+  }
+}
+
 #endif
 
 // returns a%b
