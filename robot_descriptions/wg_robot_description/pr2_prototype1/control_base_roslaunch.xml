@@ -1,0 +1,6 @@
+<launch>
+  <group name="wg">
+ <node pkg="mechanism_control" type="mech.py" args="sp base_controllers_lab.xml"/>
+  </group>
+</launch>
+

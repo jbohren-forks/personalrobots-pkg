@@ -1,0 +1,6 @@
+<launch>
+  <group name="wg">
+ <node pkg="mechanism_bringup" type="calibrate_base.py"/>
+  </group>
+</launch>
+
