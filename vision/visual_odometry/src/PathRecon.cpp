@@ -336,9 +336,9 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       TIMEREND2(FeaturePoint);
 
       // prepare the keypoint descriptors
+      TIMERSTART2(KeyPointDescriptor);
       mPoseEstimator.constructKeypointDescriptors(*currFrame->mImage, *currFrame->mKeypoints);
-
-      if (mVisualizer) mVisualizer->drawDispMap(*currFrame);
+      TIMEREND2(KeyPointDescriptor);
     }
     inputImageQueue.pop();
   }

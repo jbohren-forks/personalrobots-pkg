@@ -64,6 +64,7 @@ public:
 		RESET(PoseEstimateRANSAC);
 		RESET(PoseEstimateLevMarq);
 	  RESET(KeypointTemplMatch);
+	  RESET(KeyPointDescriptor);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -104,6 +105,7 @@ public:
   DECLARE(PoseEstimateRANSAC);
   DECLARE(PoseEstimateLevMarq);
   DECLARE(KeypointTemplMatch);
+  DECLARE(KeyPointDescriptor);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

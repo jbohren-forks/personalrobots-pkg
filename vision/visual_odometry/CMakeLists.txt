@@ -9,6 +9,7 @@ rospack_add_library(visual_odometry src/py.cpp src/Cv3DPoseEstimate_Deprecated.c
 
 # src/VisOdomBundleAdj.cpp 
 set_target_properties(visual_odometry PROPERTIES OUTPUT_NAME visual_odometry PREFIX "")
+#rospack_add_compile_flags(visual_odometry -Wno-missing-field-initializers -march=pentium3 -msse3)
 rospack_add_compile_flags(visual_odometry -Wno-missing-field-initializers )
 
 #rospack_add_gtest(utest test/CvTest3DPoseEstimate.cpp )
