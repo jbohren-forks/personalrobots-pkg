@@ -37,6 +37,9 @@
 #include <execinfo.h>
 #include <signal.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <mechanism_control/mechanism_control.h>
 #include <ethercat_hardware/ethercat_hardware.h>
@@ -144,8 +147,20 @@ void *controlLoop(void *)
   MechanismControlNode mcn(&mc);
 
   // Load robot description
-  TiXmlDocument xml(g_options.xml_);
-  xml.LoadFile();
+  TiXmlDocument xml;
+  struct stat st;
+  if (0 == stat(g_options.xml_, &st))
+  {
+    xml.LoadFile(g_options.xml_);
+  }
+  else
+  {
+    printf("Xml file not found, reading from parameter server\n");
+    assert(ros::node::instance());
+    std::string result;
+    if (ros::node::instance()->get_param(g_options.xml_, result))
+      xml.Parse(result.c_str());
+  }
   urdf::normalizeXml(xml.RootElement());
   TiXmlElement *root = xml.FirstChildElement("robot");
   if (!root)
@@ -259,7 +274,7 @@ void xenomaiClockHack()
   gettimeofday(&tv, NULL);
   ts.tv_sec = tv.tv_sec;
   ts.tv_nsec = tv.tv_usec * 1000;
-  clock_settime(CLOCK_REALTIME, &ts); 
+  clock_settime(CLOCK_REALTIME, &ts);
 }
 
 static pthread_t rtThread;
