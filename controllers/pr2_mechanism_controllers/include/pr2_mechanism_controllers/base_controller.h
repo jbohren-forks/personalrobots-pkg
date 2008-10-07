@@ -186,7 +186,9 @@ namespace controller
 
     void setCommands();
 
-    NEWMAT::Matrix iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter);
+    libTF::Vector interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT);
+
+   NEWMAT::Matrix iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter);
 
     NEWMAT::Matrix findWeightMatrix(NEWMAT::Matrix residual, std::string weight_type);
 
@@ -325,11 +327,16 @@ namespace controller
 
     double timeout_;
 
-    double max_x_dot_;
+    libTF::Vector max_vel_; 
 
-    double max_y_dot_;
+    libTF::Vector max_accel_;
 
-    double max_yaw_dot_;
+    double MAX_DT_;
+
+    std::map<std::string, double*> param_map_; /*< map from pointers to the params to string names */
+
+    void addParamToMap(std::string key, double *value);
+
   };
 
   class BaseControllerNode : public Controller

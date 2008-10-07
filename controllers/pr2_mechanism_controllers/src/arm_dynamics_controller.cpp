@@ -229,7 +229,7 @@ void ArmDynamicsController::computeControlTorque(const double &time)
     }
     pid_torque = pid_controllers_[i].updatePid(error, time - last_time_);
     control_torque_[i] = gravity_torque_[i][2] + pid_torque;
-    fprintf(stderr,"%d:: %f, %f, %f, %f, %f, %f, %f\n",i,actual,command,error,pid_torque,gravity_torque_[i][2],control_torque_[i],time-last_time_);
+//    fprintf(stderr,"%d:: %f, %f, %f, %f, %f, %f, %f\n",i,actual,command,error,pid_torque,gravity_torque_[i][2],control_torque_[i],time-last_time_);
   }
   last_time_ = time;
 }
