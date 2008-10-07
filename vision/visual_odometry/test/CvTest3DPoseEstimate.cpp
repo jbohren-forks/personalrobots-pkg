@@ -42,6 +42,7 @@ using namespace std;
 #define ShowTemplateMatching 0
 
 #define DEBUG 1
+#define DISPLAY 1
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)
@@ -258,6 +259,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   int start = 0;
   int end   = 1509;
   int step  = 1;
+  start = 25;
 
   // set up a FileSeq
   FileSeq fileSeq;
@@ -265,7 +267,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
-  pathRecon.mVisualizer = new Visualizer(pathRecon.mPoseEstimator);
+  pathRecon.mVisualizer = new PathRecon::Visualizer(pathRecon.mPoseEstimator);
 #endif
 
   if (fileSeq.getStartFrame() == false) {
@@ -377,7 +379,7 @@ bool CvTest3DPoseEstimate::testVideo3() {
 
 
 
-  framePoses = getFramePoses(tracker);
+  framePoses = tracker->getFramePoses();
 
   saveFramePoses(string("Output/indoor1/"), *framePoses);
 
@@ -576,7 +578,7 @@ bool CvTest3DPoseEstimate::testVideo4() {
 
 
 
-  framePoses = getFramePoses(tracker);
+  framePoses = tracker->getFramePoses();
 
   saveFramePoses(string("Output/indoor1/"), *framePoses);
 
@@ -958,3 +960,4 @@ int main(int argc, char **argv){
   cout << "Done testing wg3DPoseEstimate ..."<<endl;
   return 0;
 }
+

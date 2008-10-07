@@ -4,4 +4,4 @@
 
 USER_OBJS :=
 
-LIBS := -l3DPoseEstimation -lcxcore -lcv -lcvaux -lhighgui -lml
+LIBS := -lvisual_odometry -lcxcore -lcv -lcvaux -lhighgui -lml

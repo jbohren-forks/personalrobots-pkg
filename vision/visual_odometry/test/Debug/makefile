@@ -43,7 +43,7 @@ all: PoseEstimationTest
 PoseEstimationTest: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: GCC C++ Linker'
-	g++ -L/opt/star_detector/lib -L/opt/calonder_descriptor/lib -L/usr/lib/vtk-5.0 -L"/wg/stor1/jdchen/workspace/ros-pkg/3rdparty/opencv/wgext/3DPoseEstimation/Debug" -o"PoseEstimationTest" $(OBJS) $(USER_OBJS) $(LIBS)
+	g++ -L"../../lib" -o"PoseEstimationTest" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
