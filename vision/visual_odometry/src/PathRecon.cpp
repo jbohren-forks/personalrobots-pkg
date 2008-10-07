@@ -31,7 +31,7 @@ using namespace cv::willow;
 #ifndef DEBUG
 #define DEBUG  // to print debug message in release build
 #endif
-//#undef DEBUG
+#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well

@@ -28,7 +28,7 @@ using namespace std;
 #endif
 
 #undef DEBUG
-#define DEBUG 1
+//#define DEBUG 1
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)
