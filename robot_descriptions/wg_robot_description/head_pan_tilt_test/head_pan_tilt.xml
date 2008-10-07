@@ -1,0 +1,41 @@
+<robot name="head_pan_tilt_test">
+
+  <actuator name="head_pan_act">
+    <motorTorqueConstant>0.0583</motorTorqueConstant>
+    <pulsesPerRevolution>10000</pulsesPerRevolution>
+    <sign>-1</sign>
+    <maxCurrent>1.72</maxCurrent>
+  </actuator>
+  
+  <actuator name="head_tilt_act">
+    <motorTorqueConstant>0.0583</motorTorqueConstant>
+    <pulsesPerRevolution>10000</pulsesPerRevolution>
+    <sign>-1</sign>
+    <maxCurrent>1.72</maxCurrent>
+  </actuator>
+  
+  <joint name="head_pan_joint" type="revolute">
+    <axis xyz=" 0 0 1 " /> 
+    <limit min="-2.932" max="2.932"
+           effort="15.88" velocity="1256.64" />
+  </joint>
+
+  <joint name="head_tilt_joint" type="revolute">
+    <axis xyz=" 0 1 0 " /> 
+    <limit min="-0.5236" max="1.047"
+           effort="73.16" velocity="1256.64" />
+  </joint>
+
+  <transmission type="SimpleTransmission" name="head_pan_transmission">
+    <actuator name="head_pan_motor" />
+    <joint name="head_pan_joint" />
+    <mechanicalReduction>180.0</mechanicalReduction>
+  </transmission>
+
+  <transmission type="SimpleTransmission" name="head_tilt_transmission">
+    <actuator name="head_tilt_motor" />
+    <joint name="head_tilt_joint" />
+    <mechanicalReduction>829.44</mechanicalReduction>
+  </transmission>
+
+</robot>

@@ -1,0 +1,18 @@
+<controllers>
+<controller name="head_controller" type="HeadPanTiltControllerNode">
+    <listen_topic name="head_commands" />
+    
+    <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController">
+      <joint name="head_pan_joint" >
+        <pid p="10" d="0" i="0" iClamp="1" />
+      </joint>
+    </controller>
+    
+    <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
+      <joint name="head_tilt_joint" >
+        <pid p="10" d="0" i="0" iClamp="1" />
+      </joint>
+    </controller>
+    
+</controller>    
+</controllers>
