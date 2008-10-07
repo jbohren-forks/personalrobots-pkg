@@ -156,7 +156,7 @@ void HeadPanTiltController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
-  : Controller()
+  : Controller(), TF(*ros::node::instance())
 {
   std::cout<<"Controller node created"<<endl;
   c_ = new HeadPanTiltController();
@@ -184,6 +184,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   {
     node->advertise_service(prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointSrv, this);
     node->advertise_service(prefix + "/get_command", &HeadPanTiltControllerNode::getJointCmd, this);
+    node->advertise_service(prefix + "/track_point", &HeadPanTiltControllerNode::trackPoint, this);
 
     return true;
   }
@@ -211,3 +212,36 @@ bool HeadPanTiltControllerNode::getJointCmd(pr2_mechanism_controllers::GetJointC
   resp.command = cmd;
   return true;
 }
+
+bool HeadPanTiltControllerNode::trackPoint(pr2_mechanism_controllers::TrackPoint::request &req, pr2_mechanism_controllers::TrackPoint::response &resp)
+{
+  std::vector<double> pos;
+  std::vector<std::string> names;
+
+  libTF::TFPoint point;
+  point.x = req.target.point.x;
+  point.y = req.target.point.y;
+  point.z = req.target.point.z;
+  point.time = req.target.header.stamp.toNSec();
+  point.frame = req.target.header.frame_id;
+  
+  libTF::TFPoint pan_point = TF.transformPoint("head_pan",point);
+  double head_pan_angle= atan2(pan_point.y, pan_point.x); 
+  
+  names.push_back("head_pan_joint");
+  pos.push_back(head_pan_angle);
+  
+  libTF::TFPoint tilt_point = TF.transformPoint("head_tilt",point);
+  double head_tilt_angle= atan2(tilt_point.z, tilt_point.x);
+  
+  names.push_back("head_tilt_joint");
+  pos.push_back(head_tilt_angle);
+  
+     
+  c_->setJointCmd(pos,names);
+  resp.pan_angle = head_pan_angle;
+  resp.tilt_angle = head_tilt_angle;
+  return true;
+}
+
+

@@ -40,23 +40,20 @@
 #include <mechanism_model/controller.h>
 #include <mechanism_model/joint.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
-#include <robot_mechanism_controllers/joint_velocity_controller.h>
-#include <robot_mechanism_controllers/joint_effort_controller.h>
 
 // Services
 #include <pr2_mechanism_controllers/SetJointCmd.h>
 #include <pr2_mechanism_controllers/GetJointCmd.h>
+#include <pr2_mechanism_controllers/TrackPoint.h>
 
 #include <pr2_mechanism_controllers/SetJointGains.h>
 #include <pr2_mechanism_controllers/GetJointGains.h>
 
-//Kinematics
-#include <robot_kinematics/robot_kinematics.h>
 
 // Math utils
 #include <math_utils/angles.h>
 
-// #include <libTF/Pose3D.h>
+#include <rosTF/rosTF.h>
 // #include <urdf/URDF.h>
 
 namespace controller
@@ -133,7 +130,8 @@ private:
   void updateJointControllers(void);
 
   int getJointControllerByName(std::string name);
-
+  
+  
 
 };
 
@@ -185,10 +183,13 @@ class HeadPanTiltControllerNode : public Controller
      */
     bool getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
                         pr2_mechanism_controllers::GetJointCmd::response &resp);
-
+    
+    bool trackPoint(pr2_mechanism_controllers::TrackPoint::request &req,                                    
+                      pr2_mechanism_controllers::TrackPoint::response &resp);
   private:
     pr2_mechanism_controllers::JointCmd msg_;   //The message used by the ROS callback
     HeadPanTiltController *c_;
+    rosTFClient TF;
 
 };
 
