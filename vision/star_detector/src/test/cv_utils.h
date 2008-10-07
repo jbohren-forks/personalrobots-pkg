@@ -45,11 +45,11 @@ void on_mouse_find_keypts(int event, int x, int y, int flags, void* param)
                 if (fabs(i->x - x) + fabs(i->y - y) <= r) {
                     if (keypts_fl) {
                         KeypointFl &pt = (*keypts_fl)[i - keypts->begin()];
-                        printf("Keypoint: (%f, %f, %f), response = %f\n",
-                               pt.x, pt.y, pt.scale, pt.response);
+                        printf("Keypoint: (%f, %f, %f), response = %f, line response = %f\n",
+                               pt.x, pt.y, pt.scale, pt.response, pt.line_response);
                     } else {
-                        printf("Keypoint: (%d, %d, %f), response = %f\n",
-                               i->x, i->y, i->scale, i->response);
+                        printf("Keypoint: (%d, %d, %f), response = %f, line response = %f\n",
+                               i->x, i->y, i->scale, i->response, i->line_response);
                     }
                     break;
                 }

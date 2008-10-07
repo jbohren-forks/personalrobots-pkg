@@ -1,12 +1,13 @@
 #!/bin/bash
 
 #DETECTORS="willow willow9 sift surf"
-DETECTORS="willow willow9"
-#DETECTORS=willow9
+#DETECTORS="willow willow9"
+DETECTORS=willow_mod2
 SCALES=`seq 0.5 0.1 2.0`
 SOURCE=graf/img1.pgm
 OUT_DIR=scaled
-OPTIONS="-thres 0 -p 500"
+#OPTIONS="-thres 0 -p 500"
+OPTIONS="-thres 0 -line 8 -p 500"
 
 for d in ${DETECTORS}; do
     DETECT=./${d}_detect

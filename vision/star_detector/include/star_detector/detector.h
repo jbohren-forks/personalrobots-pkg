@@ -4,8 +4,8 @@
 #include "star_detector/keypoint.h"
 #include "star_detector/integral.h"
 #include "star_detector/nonmax_suppress.h"
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
+#include <cv.h>
+#include <highgui.h>
 #include <vector>
 #include <cmath>
 
@@ -48,8 +48,6 @@ public:
   //! Fill in scales based in indices and interpolation
   template< typename ForwardIterator >
   void InterpolateScales(ForwardIterator first, ForwardIterator last);
-    
-  // TODO: expose integral images for SURF-type descriptor?
 
 private:
   //! Scale/spatial dimensions
@@ -69,14 +67,11 @@ private:
   //! Filter size at each scale
   int* m_filter_sizes;
   //! Non-maximal suppression functor
-  NonmaxSuppress3x3xN<float, LineSuppress> m_nonmax;
-  //! Non-minimal suppression functor
-  NonmaxSuppress3x3xN<float, LineSuppress, std::less_equal<float> > m_nonmin;
+  NonmaxSuppressProject<float, LineSuppressCombined> m_nonmax;
   //! Border size for non-max suppression
   int m_border;
   //! Scale interpolation flag
   bool m_interpolate;
-  // TODO: Keep intermediate star sum images for reuse?
   
   static const float SCALE_RATIO = M_SQRT2;
   
@@ -92,8 +87,6 @@ private:
   
     //! Calculate the filter responses over the range of desired scales.
   void FilterResponses();
-  void FilterResponses2();
-  void FilterResponses3();
   
   //! Return extrema which satisfy the strength and line response thresholds
   template< typename OutputIterator >
@@ -112,17 +105,9 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
     FilterResponses();
 #if 0
     for (int i = 0; i < m_n; i++) {
-        IplImage *gray = cvCreateImage(cvSize(m_W, m_H), IPL_DEPTH_8U, 1);
-        for (int y = 0; y < m_H; y++) {
-            for (int x = 0; x < m_W; x++) {
-                float v = CV_IMAGE_ELEM(m_responses[i], float, y, x);
-                int b = (int)(255.0 * (0.5 + 0.5 * (v / 256.0)));
-                CV_IMAGE_ELEM(gray, unsigned char, y, x) = b;
-            }
-        }
         char filename[10];
         sprintf(filename, "out%d.pgm", i);
-        cvSaveImage(filename, gray);
+        SaveResponseImage(filename, m_responses[i]);
     }
 #endif
 
@@ -133,7 +118,7 @@ template< typename OutputIterator >
 int StarDetector::FindExtrema(OutputIterator inserter)
 {
     int num_points = m_nonmax(m_responses, m_n, inserter, m_border);
-    num_points += m_nonmin(m_responses, m_n, inserter, m_border);
+    //num_points += m_nonmin(m_responses, m_n, inserter, m_border);
 
     return num_points;
 }

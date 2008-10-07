@@ -87,11 +87,11 @@ int main( int argc, char** argv )
     }
     
     // Find keypoints in source image
-    StarDetector detector(cvSize(W, H), scales, thres, line_thres);
     std::vector<Keypoint> keypts;
     {
-        Timer t("Willow detector");
-        detector.DetectPoints(source, std::back_inserter(keypts));
+      StarDetector detector(cvSize(W, H), scales, thres, line_thres);
+      Timer t("Willow detector");
+      detector.DetectPoints(source, std::back_inserter(keypts));
     }
 
     if (scale_ub1 > 0)
@@ -112,12 +112,12 @@ int main( int argc, char** argv )
     
     if (warped_file) {
         // Find keypoints in warped image
-        StarDetector warp_detector(cvSize(warped->width, warped->height),
-                                   scales, thres, line_thres);
         std::vector<Keypoint> warp_keypts;
         {
-            Timer t("Willow detector (warped)");
-            warp_detector.DetectPoints(warped, std::back_inserter(warp_keypts));
+          StarDetector warp_detector(cvSize(warped->width, warped->height),
+                                     scales, thres, line_thres);
+          Timer t("Willow detector (warped)");
+          warp_detector.DetectPoints(warped, std::back_inserter(warp_keypts));
         }
         if (scale_ub2 > 0)
             warp_keypts.erase(std::remove_if(warp_keypts.begin(), warp_keypts.end(),

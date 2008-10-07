@@ -18,13 +18,15 @@ struct Keypoint
   float scale;
   // sign of response indicates dark/bright feature
   float response;
+  // TODO: re-remove this
+  float line_response;
 
   Keypoint()
-    : x(0), y(0), s(0), scale(0), response(0)
+    : x(0), y(0), s(0), scale(0), response(0), line_response(0)
   {}
 
-  Keypoint(int x, int y, float scale, float response, int s = 0)
-    : x(x), y(y), s(s), scale(scale), response(response)
+  Keypoint(int x, int y, float scale, float response, int s = 0, float line_response = 0)
+    : x(x), y(y), s(s), scale(scale), response(response), line_response(line_response)
   {};
 
   //! Allow sorting a list of keypoints into descending order

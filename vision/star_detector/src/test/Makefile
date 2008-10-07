@@ -1,6 +1,7 @@
 CC = g++
 CFLAGS = -c -g -Wall -I/usr/include -I../../include
 CFLAGS += -O3 -DNDEBUG
+#CFLAGS += -O0
 # OpenCV
 CV_LATEST = $(shell rospack find opencv_latest)/opencv
 CFLAGS += -I$(CV_LATEST)/include/opencv

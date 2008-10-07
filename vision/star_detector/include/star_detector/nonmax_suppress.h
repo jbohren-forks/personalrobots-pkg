@@ -7,6 +7,131 @@
 #include <vector>
 #include <iterator>
 #include <functional>
+#include <highgui.h> // DEBUG
+
+// TODO: remove obsolete implementations
+
+// DEBUG
+inline void SaveResponseImage(char* filename, IplImage* img)
+{
+  int W = img->width, H = img->height;
+  IplImage *gray = cvCreateImage(cvSize(W, H), IPL_DEPTH_8U, 1);
+  for (int y = 0; y < H; y++) {
+    for (int x = 0; x < W; x++) {
+      float v = CV_IMAGE_ELEM(img, float, y, x);
+      int b = (int)(255.0 * (0.5 + 0.5 * (v / 256.0)));
+      CV_IMAGE_ELEM(gray, unsigned char, y, x) = b;
+    }
+  }
+  cvSaveImage(filename, img);
+  cvReleaseImage(&gray);
+}
+
+template< typename T = float, typename PostThreshold = NullThreshold,
+          typename Compare = std::greater_equal<T> >
+struct NonmaxSuppressProject
+{
+  T m_response_thresh;
+  PostThreshold m_post_thresh;
+  Compare m_compare;
+  
+  //! Constructor taking the thresholds and comparison function to be used.
+  NonmaxSuppressProject(T response_thresh = T(), PostThreshold post_thresh = PostThreshold(),
+                        Compare compare = Compare())
+    : m_response_thresh(response_thresh), m_post_thresh(post_thresh),
+      m_compare(compare)
+  {}
+  
+  //! Appends all maxima found to pts and returns how many were found.
+  template< typename OutputIterator >
+  int operator() (IplImage** responses, int n, OutputIterator inserter, int border) {
+    int W = responses[0]->width, H = responses[0]->height;
+    int num_pts = 0;
+
+    // Project responses into single maximal image
+    IplImage *projected = cvCreateImage(cvSize(W,H), IPL_DEPTH_32F, 1);
+    IplImage *scales = cvCreateImage(cvSize(W,H), IPL_DEPTH_8U, 1);
+    for (int y = 0; y < H; ++y) {
+      for (int x = 0; x < W; ++x) {
+        uchar scale = 1;
+        T max_response = CV_IMAGE_ELEM(responses[0], T, y, x);
+        T abs_max_response = abs(max_response);
+        for (int s = 1; s < n; ++s) {
+          T response = CV_IMAGE_ELEM(responses[s], T, y, x);
+          T abs_response = abs(response);
+          if (m_compare(abs_response, abs_max_response)) {
+            max_response = response;
+            abs_max_response = abs_response;
+            scale = s + 1;
+          }
+        }
+        CV_IMAGE_ELEM(projected, T, y, x) = max_response;
+        CV_IMAGE_ELEM(scales, uchar, y, x) = scale;
+      }
+    }
+    
+    // NOTE: We use a constant, conservative border here, even though we may miss some
+    // small features near the edges of the image.
+    for (int y = border; y < H - border; ++y) {
+      for (int x = border; x < W - border; ++x) {
+        T response = CV_IMAGE_ELEM(projected, T, y, x);
+        uchar scale = CV_IMAGE_ELEM(scales, uchar, y, x);
+        // Discard if an end scale
+        if (scale == 1 || scale == n)
+          continue;
+        if (m_compare(response, T(0))) {
+          // Reject immediately if not strong enough
+          if (m_compare(m_response_thresh, response) ||
+              // Compare orthogonal points looking for quick rejection
+              m_compare(CV_IMAGE_ELEM(projected, T, y, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y-1, x), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y+1, x), response) ||
+              // Corners of 3x3 spatial neighborhood
+              m_compare(CV_IMAGE_ELEM(projected, T, y-1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y-1, x+1), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y+1, x-1), response) ||
+              m_compare(CV_IMAGE_ELEM(projected, T, y+1, x+1), response)
+            )
+            continue;
+        } else {
+          // Reject immediately if not strong enough
+          if (m_compare(response, -m_response_thresh) ||
+              // Compare orthogonal points looking for quick rejection
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y, x-1)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y, x+1)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y-1, x)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y+1, x)) ||
+              // Corners of 3x3 spatial neighborhood
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y-1, x-1)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y-1, x+1)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y+1, x-1)) ||
+              m_compare(response, CV_IMAGE_ELEM(projected, T, y+1, x+1))
+            )
+            continue;
+        }
+
+        // Final thresholding step (e.g. line suppression)
+        float line_response = 0;
+        //if ( m_post_thresh(x, y, scale, line_response) )
+        if ( m_post_thresh(x, y, scale, projected, scales, line_response) )
+          continue;
+
+        *inserter = Keypoint(x, y, (float)scale, response, scale, line_response);
+        ++num_pts;
+      }
+    }
+
+    // DEBUG
+    //cvSaveImage("scales.pgm", scales);
+    //SaveResponseImage("projected.pgm", projected);
+
+    cvReleaseImage(&projected);
+    cvReleaseImage(&scales);
+    
+    return num_pts;
+  }
+};
 
 // TODO: this is a simple implementation, may be optimizable
 //       see http://www.vision.ee.ethz.ch/~aneubeck/
@@ -52,9 +177,8 @@ struct NonmaxSuppress3x3xN
   {}
   
   //! Appends all maxima found to pts and returns how many were found.
-  template< typename Sequence >
-  int operator() (IplImage** responses, int n,
-                  std::back_insert_iterator<Sequence> inserter, int border) {
+  template< typename OutputIterator >
+  int operator() (IplImage** responses, int n, OutputIterator inserter, int border) {
     int W = responses[0]->width, H = responses[0]->height;
     int num_pts = 0;
     

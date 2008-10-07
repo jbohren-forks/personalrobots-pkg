@@ -38,7 +38,11 @@ int main( int argc, char** argv )
     cvSetMouseCallback(wndname, on_mouse_find_keypts, &mouse_data);
     cvShowImage(wndname, loaded_color);
 
-    cvWaitKey(0);
+    int c = cvWaitKey(0);
+    if ((char) c == 's') {
+      cvSaveImage("points.ppm", loaded_color);
+      std::cout << "Saved image to points.ppm" << std::endl;
+    }
 
     cvReleaseImage(&loaded);
     cvReleaseImage(&loaded_color);

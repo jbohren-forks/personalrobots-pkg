@@ -2,19 +2,17 @@
 
 StarDetector::StarDetector(CvSize size, int n, float threshold, float line_threshold)
     : m_n(n), m_W(size.width), m_H(size.height),
+      // Pre-allocate all the memory we need
+      m_upright( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
+      m_tilted( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
+      m_flat( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
       m_responses(new IplImage*[n]),
       m_threshold(threshold),
       m_line_threshold(line_threshold),
       m_filter_sizes(new int[n]),
-      m_nonmax(threshold, LineSuppress(m_responses, line_threshold, m_filter_sizes)),
-      m_nonmin(-threshold, LineSuppress(m_responses, line_threshold, m_filter_sizes)),
+      m_nonmax(threshold, LineSuppressCombined(line_threshold, m_filter_sizes)),
       m_interpolate(true)
 {
-    // Pre-allocate all the memory we need
-    m_upright = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
-    m_tilted  = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
-    m_flat    = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
-
     for (int i = 0; i < n; ++i) {
         m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
         cvZero(m_responses[i]);
@@ -87,117 +85,6 @@ void StarDetector::BilevelFilter(IplImage* dst, int scale)
             // TODO: next line is expensive
             CV_IMAGE_ELEM(dst, float, y, x) = (float)inner_area/inner_pix -
                 (float)outer_area/outer_pix;
-        }
-    }
-}
-
-// This version uses outer_r ~= 1.4*inner_r
-void StarDetector::FilterResponses3()
-{
-    int inner_r = m_filter_sizes[0];
-    int inner_offset = inner_r + inner_r / 2;
-    int inner_pix = StarPixels(inner_r, inner_offset);
-    
-    // Inner area for first scale
-    // TODO: could use outer offset
-    for (int y = inner_offset; y < m_H - inner_offset; ++y) {
-        for (int x = inner_offset; x < m_W - inner_offset; ++x) {
-            int inner_area = StarAreaSum(cvPoint(x, y), inner_r, inner_offset);
-            CV_IMAGE_ELEM(m_responses[0], float, y, x) = inner_area;
-        }
-    }
-    
-    // TODO: replace CV_IMAGE_ELEMs
-    int s;
-    for (s = 0; s < m_n - 1; ++s) {
-        int outer_r = m_filter_sizes[s + 1];
-        int outer_offset = outer_r + outer_r / 2;
-        int outer_pix = StarPixels(outer_r, outer_offset);
-        
-        for (int y = outer_offset; y < m_H - outer_offset; ++y) {
-            for (int x = outer_offset; x < m_W - outer_offset; ++x) {
-                int outer_area = StarAreaSum(cvPoint(x, y), outer_r, outer_offset);
-                
-                // Finish calculating response at current scale
-                float &response = CV_IMAGE_ELEM(m_responses[s], float, y, x);
-                response = response/inner_pix - (float)outer_area/outer_pix;
-                
-                // Save outer area as inner area for the next scale
-                CV_IMAGE_ELEM(m_responses[s + 1], float, y, x) = outer_area;
-            }
-        }
-        
-        inner_r = outer_r;
-        inner_pix = outer_pix;
-    }
-    
-    // Outer area for last scale
-    // TODO: can this all be compressed a little?
-    int outer_r = m_filter_sizes[s];
-    int outer_offset = outer_r + outer_r / 2;
-    int outer_pix = StarPixels(outer_r, outer_offset);
-    
-    for (int y = outer_offset; y < m_H - outer_offset; ++y) {
-        for (int x = outer_offset; x < m_W - outer_offset; ++x) {
-            int outer_area = StarAreaSum(cvPoint(x, y), outer_r, outer_offset);
-            float &response = CV_IMAGE_ELEM(m_responses[s], float, y, x);
-            response = response/inner_pix - (float)outer_area/outer_pix;
-        }
-    }
-}
-
-void StarDetector::FilterResponses2()
-{
-    for (int parity = 0; parity < 2; ++parity) {
-        int inner_r = m_filter_sizes[parity];
-        int inner_offset = inner_r + inner_r / 2;
-        int inner_pix = StarPixels(inner_r, inner_offset);
-
-        // Inner area for first scale
-        // TODO: could use outer offset
-        for (int y = inner_offset; y < m_H - inner_offset; ++y) {
-            for (int x = inner_offset; x < m_W - inner_offset; ++x) {
-                int inner_area = StarAreaSum(cvPoint(x, y), inner_r, inner_offset);
-                CV_IMAGE_ELEM(m_responses[parity], float, y, x) = inner_area;
-            }
-        }
-
-        // TODO: replace CV_IMAGE_ELEMs
-        int s;
-        for (s = parity; s < m_n - 2; s += 2) {
-            int outer_r = m_filter_sizes[s + 2];
-            int outer_offset = outer_r + outer_r / 2;
-            int outer_pix = StarPixels(outer_r, outer_offset);
-
-            for (int y = outer_offset; y < m_H - outer_offset; ++y) {
-                for (int x = outer_offset; x < m_W - outer_offset; ++x) {
-                    int outer_area = StarAreaSum(cvPoint(x, y), outer_r, outer_offset);
-                    
-                    // Finish calculating response at current scale
-                    float &response = CV_IMAGE_ELEM(m_responses[s], float, y, x);
-                    response = response/inner_pix - (float)outer_area/outer_pix;
-
-                    // Save outer area as inner area for the next scale
-                    CV_IMAGE_ELEM(m_responses[s + 2], float, y, x) = outer_area;
-                }
-            }
-
-            inner_r = outer_r;
-            inner_pix = outer_pix;
-        }
-
-        // Outer area for last scale
-        // TODO: can this all be compressed a little?
-        int outer_r = m_filter_sizes[s];
-        int outer_offset = outer_r + outer_r / 2;
-        int outer_pix = StarPixels(outer_r, outer_offset);
-
-        for (int y = outer_offset; y < m_H - outer_offset; ++y) {
-            for (int x = outer_offset; x < m_W - outer_offset; ++x) {
-                int outer_area = StarAreaSum(cvPoint(x, y), outer_r, outer_offset);
-                float &response = CV_IMAGE_ELEM(m_responses[s], float, y, x);
-                response = response/inner_pix - (float)outer_area/outer_pix;
-            }
         }
     }
 }

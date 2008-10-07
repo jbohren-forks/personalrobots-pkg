@@ -3,32 +3,35 @@
 
 void WriteKeypointsFl(std::string file_name, std::vector<KeypointFl> const& pts)
 {
-    FILE* file = fopen(file_name.c_str(), "w");
-    if (file) {
-        fprintf(file, "%d\n", pts.size());
-
-        typedef std::vector<KeypointFl>::const_iterator iter;
-        for (iter i = pts.begin(); i != pts.end(); ++i) {
-            fprintf(file, "%f %f %f %f\n", i->x, i->y, i->scale, i->response);
-        }
-        fclose(file);
+  FILE* file = fopen(file_name.c_str(), "w");
+  if (file) {
+    fprintf(file, "# %d points\n", pts.size());
+    
+    typedef std::vector<KeypointFl>::const_iterator iter;
+    for (iter i = pts.begin(); i != pts.end(); ++i) {
+      //fprintf(file, "%f %f %f %f\n", i->x, i->y, i->scale, i->response);
+      fprintf(file, "%f %f %f %f %f\n", i->x, i->y, i->scale, i->response, i->line_response);
     }
+    fclose(file);
+  }
 }
 
 std::vector<KeypointFl> ReadKeypointsFl(std::string file_name)
 {
-    std::vector<KeypointFl> pts;
-    FILE* file = fopen(file_name.c_str(), "r");
-    if (file) {
-        int num_pts;
-        fscanf(file, "%d\n", &num_pts);
-        pts.resize(num_pts);
-        for (int i = 0; i < num_pts; ++i) {
-            fscanf(file, "%f %f %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale, &pts[i].response);
-        }
+  std::vector<KeypointFl> pts;
+  FILE* file = fopen(file_name.c_str(), "r");
+  if (file) {
+    int num_pts;
+    fscanf(file, "# %d points\n", &num_pts);
+    pts.resize(num_pts);
+    for (int i = 0; i < num_pts; ++i) {
+      //fscanf(file, "%f %f %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale, &pts[i].response);
+      fscanf(file, "%f %f %f %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale,
+             &pts[i].response, &pts[i].line_response);
     }
-
-    return pts;
+  }
+  
+  return pts;
 }
 
 //! Find the overlap error between two circles of radii r1 and r2 with

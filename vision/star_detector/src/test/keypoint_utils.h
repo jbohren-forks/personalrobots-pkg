@@ -9,24 +9,25 @@
 //! other detectors (SIFT, SURF, etc.).
 struct KeypointFl
 {
-    float x;
-    float y;
-    float scale;
-    float response;
+  float x;
+  float y;
+  float scale;
+  float response;
+  float line_response;
 
-    KeypointFl()
-        : x(0), y(0), scale(0), response(0)
-    {}
+  KeypointFl()
+    : x(0), y(0), scale(0), response(0), line_response(0)
+  {}
 
-    KeypointFl(float x, float y, float scale, float response)
-        : x(x), y(y), scale(scale), response(response)
-    {};
+  KeypointFl(float x, float y, float scale, float response, float line_response)
+    : x(x), y(y), scale(scale), response(response), line_response(line_response)
+  {};
 
-    //! This allows sorting a list of keypoints into descending order
-    //! of response magnitude using std::sort.
-    inline bool operator< (KeypointFl const& other) const {
-        return fabs(response) > fabs(other.response);
-    }
+  //! This allows sorting a list of keypoints into descending order
+  //! of response magnitude using std::sort.
+  inline bool operator< (KeypointFl const& other) const {
+    return fabs(response) > fabs(other.response);
+  }
 };
 
 void WriteKeypointsFl(std::string file_name, std::vector<KeypointFl> const& pts);

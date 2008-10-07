@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 set(ROS_BUILD_TYPE Release)
 rospack(star_detector)
+#add_definitions(-DNDEBUG -O3)
 rospack_add_library(starfeature src/detector.cpp src/integral.cpp src/keypoint.cpp)
 rospack_add_compile_flags(starfeature -save-temps -march=pentium3 -msse3)
 

@@ -1,11 +1,11 @@
 #!/bin/bash
 
-DETECTORS="willow willow9 sift surf"
+#DETECTORS="willow willow9 sift surf"
 #DETECTORS="willow willow9"
+DETECTORS=willow_mod2
 #NUMPTS=800
 #INDICES=`seq 2 6`
 
-#DETECTORS="willow willow9"
 NUMPTS="`seq 10 10 50` `seq 100 50 500` `seq 600 100 800`"
 INDICES=2
 
@@ -20,7 +20,8 @@ for d in ${DETECTORS}; do
 	XFM=${SRC_DIR}/H1to${i}p
 	for p in ${NUMPTS}; do
 	    INFIX=${d}-${p}p
-	    OPTIONS="-thres 0 -p $p"
+	    #OPTIONS="-thres 0 -p $p"
+	    OPTIONS="-thres 0 -line 8 -p $p"
 	    KEY_1=${OUT_DIR}/img1-${i}.${INFIX}.key
 	    KEY_I=${OUT_DIR}/img${i}.${INFIX}.key
 	    REP=${OUT_DIR}/img1-${i}.${INFIX}.rep
