@@ -328,20 +328,40 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
   vy_samp = 0.0;
+
+  //let's try to rotate toward open space
+  double heading_dist = DBL_MAX;
+
   for(int i = 0; i < samples_per_dim_; ++i){
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
-    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-      if(vtheta_samp < 0 && !stuck_left){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
-      }
-      else if(vtheta_samp > 0 && !stuck_right){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0)){
+      double x_r, y_r, th_r;
+      comp_traj->getPoint(num_steps_ - 1, x_r, y_r, th_r);
+      x_r += HEADING_LOOKAHEAD * cos(th_r);
+      y_r += HEADING_LOOKAHEAD * sin(th_r);
+      unsigned int cell_x, cell_y;
+
+      //make sure that we'll be looking at a legal cell
+      if(ma_.WC_MC(x_r, y_r, cell_x, cell_y)){
+        double ahead_gdist = map_(cell_x, cell_y).goal_dist;
+        if(ahead_gdist < heading_dist){
+          //if we haven't already tried rotating left since we've moved forward
+          if(vtheta_samp < 0 && !stuck_left){
+            swap = best_traj;
+            best_traj = comp_traj;
+            comp_traj = swap;
+            heading_dist = ahead_gdist;
+          }
+          //if we haven't already tried rotating right since we've moved forward
+          else if(vtheta_samp > 0 && !stuck_right){
+            swap = best_traj;
+            best_traj = comp_traj;
+            comp_traj = swap;
+            heading_dist = ahead_gdist;
+          }
+        }
       }
     }
 

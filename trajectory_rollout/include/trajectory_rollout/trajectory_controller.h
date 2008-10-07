@@ -61,6 +61,8 @@
 //for computing path distance
 #include <queue>
 
+#define HEADING_LOOKAHEAD .2
+
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
   public:
