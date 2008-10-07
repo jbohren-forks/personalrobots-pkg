@@ -17,14 +17,6 @@ void CvRandomTripletSetGenerator::reset(
     const int upper,
     const int64 seed,
     const bool noDuplicate) {
-      if (lower>=upper) {
-        std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: lower no less than upper"<<std::endl;
-        throw std::exception();
-      }
-      if (noDuplicate == true && mRange > (int)std::pow(2.f,21)) {
-        std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: when noDuplicate is true, range shall be less than 2^21"<<std::endl;
-        throw std::exception();
-      }
 
       mRandomNumberGenerator = cvRNG(seed);
       mLower = lower;
@@ -33,6 +25,15 @@ void CvRandomTripletSetGenerator::reset(
       mMaxNumSets=((mRange)*(mRange-1)*(mRange-2)/6);
       mSetOfSets.clear();
       mInitialized = true;
+
+      if (lower>=upper) {
+        std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: lower no less than upper"<<std::endl;
+        throw std::exception();
+      }
+      if (noDuplicate == true && mRange > (int)std::pow(2.f,21)) {
+        std::cerr << __PRETTY_FUNCTION__ << "invalid parameters: when noDuplicate is true, range shall be less than 2^21"<<std::endl;
+        throw std::exception();
+      }
 }
 
 CvRandomTripletSetGenerator::~CvRandomTripletSetGenerator() {

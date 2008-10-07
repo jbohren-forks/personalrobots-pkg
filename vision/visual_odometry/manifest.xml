@@ -5,6 +5,8 @@
   <author>Jindong (JD) Chen</author>
   <license>BSD</license>
   <depend package="roscpp"/>
+  <depend package="rostest"/>
+  <depend package="rospy"/>
   <depend package="boost"/>
   <depend package="opencv_latest"/>
 <!--  <depend package="star_detector"/> -->

@@ -243,6 +243,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 #endif
   return status;
 }
+
 bool CvTest3DPoseEstimate::testVideo() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
@@ -273,6 +274,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   if (fileSeq.getStartFrame() == false) {
     return false;
   }
+
   do {
     pathRecon.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);

@@ -386,7 +386,7 @@ bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 	double norm_p01 = cvNorm(&p01);
 	double norm_p02 = cvNorm(&p02);
 	double cosAngle = cvDotProduct(&p01, &p02)/norm_p01/norm_p02;
-	if (cosAngle > cos(CV_PI/180.0*15.0)) {
+	if (cosAngle > cos(CV_PI/180.0*5.0)) {
 #ifdef DEBUG
 		cout << "Too close to colinear: angle = "<< acos(cosAngle)/CV_PI*180.0<<"(degree)"<<endl;
 #endif
