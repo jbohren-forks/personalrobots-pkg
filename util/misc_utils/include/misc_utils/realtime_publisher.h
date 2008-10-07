@@ -83,6 +83,7 @@ public:
   void stop()
   {
     keep_running_ = false;
+    pthread_cond_signal(&updated_cond_);  // So the publishing loop can exit
   }
 
   Msg msg_;
@@ -133,13 +134,19 @@ public:
       // Locks msg_ and copies it
       pthread_mutex_lock(&msg_lock_);
       while (turn_ != NON_REALTIME)
+      {
+        if (!keep_running_)
+          break;
         pthread_cond_wait(&updated_cond_, &msg_lock_);
+      }
+
       Msg outgoing(msg_);
       turn_ = REALTIME;
       pthread_mutex_unlock(&msg_lock_);
 
       // Sends the outgoing message
-      node_->publish(topic_, outgoing);
+      if (keep_running_)
+        node_->publish(topic_, outgoing);
     }
     is_running_ = false;
   }
