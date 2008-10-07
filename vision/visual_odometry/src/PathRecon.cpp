@@ -257,10 +257,12 @@ void PathRecon::updateTrajectory() {
     mStat.mHistoKeyFrameKeypoints.push_back(make_pair(frameIndex, mFrameSeq.mCurrentFrame->mKeypoints->size()));
     mStat.mHistoKeyFrameTrackablePairs.push_back(make_pair(frameIndex, mFrameSeq.mCurrentFrame->mNumTrackablePairs));
 
+#if 0
     // save the inliers into a file
     char inliersFilename[256];
     sprintf(inliersFilename, "%s/inliers1_%04d.xml", mOutputDir.c_str(), mFrameSeq.mCurrentFrame->mFrameIndex);
     saveKeyPoints(*mFrameSeq.mCurrentFrame->mInliers1, string(inliersFilename));
+#endif
 
     // stores rotation mat and shift vector in rods and shifts
     storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
