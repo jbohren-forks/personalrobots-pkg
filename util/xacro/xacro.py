@@ -34,6 +34,8 @@ from xml.dom.minidom import parse, parseString
 import xml.dom
 import re
 
+TAG_PREFIX = ''  # 'xacro:'
+
 def isnumber(x):
     return hasattr(x, '__int__')
 
@@ -159,7 +161,7 @@ def grab_macros(doc):
     previous = doc.documentElement
     elt = next_element(previous)
     while elt:
-        if elt.tagName == 'xacro:macro':
+        if elt.tagName == TAG_PREFIX + 'macro':
             name = elt.getAttribute('name')
 
             macros[name] = elt
@@ -179,7 +181,7 @@ def grab_properties(doc):
     previous = doc.documentElement
     elt = next_element(previous)
     while elt:
-        if elt.tagName == 'xacro:property':
+        if elt.tagName == TAG_PREFIX + 'property':
             name = elt.getAttribute('name')
             value = None
 
@@ -339,7 +341,7 @@ def eval_all(root, macros, symbols):
                 node.parentNode.removeChild(node)
 
                 node = None
-            elif node.tagName == 'xacro:insert_block':
+            elif node.tagName == TAG_PREFIX + 'insert_block':
                 name = node.getAttribute('name')
                 block = symbols['*' + name]
 
