@@ -158,6 +158,13 @@ public:
 		// in the recognition rate. Reasonable thresholds are in [0, 0.01].
 		static const float SIG_THRESHOLD = 0.0;
 	};
+	/// Construct descriptors for each key points. The descriptors are filled
+	/// into the keypoint objects.
+	bool constructKeypointDescriptors(
+	    /// left input image,
+	    const WImage1_b& leftImage,
+	    /// key point list
+	    Keypoints& keypoints);
 	/**
 	 *  Match up two list of key points and output a list of trackable pairs.
 	 *  @return true if the status of execution is normal.

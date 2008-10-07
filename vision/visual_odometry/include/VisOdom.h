@@ -15,6 +15,7 @@
 
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
+#include <opencv/cv.h>
 
 using namespace std;
 
@@ -25,11 +26,51 @@ static const double DefDisparityUnitInPixels = 16.;
 /// The minimum number needed to do tracking between two cams
 static const int defMinNumTrackablePairs = 10;
 
+class Keypoint;
+
+/// Disparity coordinates of the key points
+/// x, y, z in class CvPoint3D64f is used to represent x, y, d (or u, v, d)
+//typedef vector<CvPoint3D64f> Keypoints;
+typedef vector<Keypoint> Keypoints;
+
 /// An abstract class for keypoint descriptors;
 class KeypointDescriptor {
 public:
-  virtual ~KeypointDescriptor(){}
-  virtual double compare(KeypointDescriptor& kpd);
+  virtual ~KeypointDescriptor(){};
+#if 0
+  typedef enum {
+    UnNormalizedCost  = (unsigned char)0x0,
+    NormalizedCost    = (unsigned char)0x1,
+    UnNormalizedScore = (unsigned char)0x2,
+    NormalizedScore   = (unsigned char)0x3
+  } SimilarityType;
+  SimilarityType similarityType;
+#endif
+  /// @return the "distance" between the two
+  /// descriptors
+  virtual float compare(const KeypointDescriptor& kpd) const = 0 ;
+  static void constructTemplateDescriptors(
+      /// input image
+      const uint8_t* img,
+      int width,
+      int height,
+      /// The list of keypoints
+      Keypoints& keypoints,
+      /// match method, @see cvMatchTemplate()
+      int matchMethod = CV_TM_CCORR_NORMED
+  );
+  static void constructSADDescriptors(
+      /// input image
+      const uint8_t* img,
+      int width,
+      int height,
+      /// The list of keypoints
+      Keypoints& keypoints,
+      /// buffer used by this function. Same size as img
+      uint8_t* bufImg1,
+      /// buffer used by this function. Same size as img
+      uint8_t* bufImg2
+  );
 };
 
 /// Key point extracted from (stereo) images.
@@ -59,11 +100,6 @@ public:
   KeypointDescriptor* desc;
 };
 
-
-/// Disparity coordinates of the key points
-/// x, y, z in class CvPoint3D64f is used to represent x, y, d (or u, v, d)
-//typedef vector<CvPoint3D64f> Keypoints;
-typedef vector<Keypoint> Keypoints;
 
 /// A struct to keep input images,
 class StereoFrame {
@@ -355,9 +391,14 @@ CvMat* dispMapToMask(const WImage1_16s& dispMap);
  * matching method to find a best match of a key point in a neighborhood
  */
 typedef enum {
-  CrossCorrelation,   //< best location by cross correlation
-  KeyPointCrossCorrelation, //< best key point cross correlation
-  CalonderDescriptor  //< best key point by Calonder descriptor
+  /// best location by cross correlation
+  CrossCorrelation,
+  /// best key point cross correlation
+  KeyPointCrossCorrelation,
+  /// best match in terms of sum of absolute differences
+  KeyPointSumOfAbsDiff,
+  /// best key point by Calonder descriptor
+  CalonderDescriptor
 } MatchMethod;
 
 /**
@@ -434,8 +475,6 @@ protected:
 
 /// estimate the transformation with Levenberg-Marquardt.
 void estimateWithLevMarq(
-    /// pointer to the pose estimation object.
-    PoseEstimator* poseEstimator,
     /// inlier list 0
     const CvMat& points0inlier,
     /// inlier list 1
@@ -532,11 +571,6 @@ public:
   }
   void releasePoseEstFrameEntry( PoseEstFrameEntry** frameEntry );
 };
-
-
-
-/// return a pointer to the list of frame poses
-vector<FramePose>* getFramePoses(CamTracker* tracker);
 
 }
 }

@@ -28,7 +28,7 @@ using namespace std;
 #endif
 
 #undef DEBUG
-//#define DEBUG 1
+#define DEBUG 1
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)
@@ -59,7 +59,7 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 	mTextThresh(DefTextThresh),
 	mUniqueThresh(DefUniqueThresh),
 	mBufStereoPairs(NULL), mFeatureImgBufLeft(NULL), mFeatureImgBufRight(NULL),
-  mKeyPointDetector(Star),
+  mKeyPointDetector(HarrisCorner),
 	mNumScales(DefNumScales),
 	mThreshold(DefThreshold),
 	mMaxNumKeyPoints(DefMaxNumKeyPoints),
@@ -68,7 +68,7 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 #endif
   mEigImage(NULL),
   mTempImage(NULL),
-  mMatchMethod(CalonderDescriptor),
+  mMatchMethod(KeyPointCrossCorrelation),
 	mCalonderMatcher(NULL),
 	mDisparityUnitInPixels(DefDisparityUnitInPixels)
 {
@@ -91,6 +91,7 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 	case CrossCorrelation:
 		break;
 	case KeyPointCrossCorrelation:
+	case KeyPointSumOfAbsDiff:
 		break;
 	}
 }
@@ -131,6 +132,29 @@ bool PoseEstimateStereo::getDisparityMap(
 			mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
 
 	return status;
+}
+
+bool PoseEstimateStereo::constructKeypointDescriptors(
+    const WImage1_b& leftImage,
+    Keypoints& keypoints) {
+  bool status = false;
+  switch(mMatchMethod){
+  case CrossCorrelation:
+  case KeyPointCrossCorrelation:
+    KeypointDescriptor::constructTemplateDescriptors(leftImage.ImageData(),
+        leftImage.Width(), leftImage.Height(), keypoints);
+    break;
+  case KeyPointSumOfAbsDiff:
+    // share two buffers with getDisparityMap()
+    KeypointDescriptor::constructSADDescriptors(leftImage.ImageData(),
+        leftImage.Width(), leftImage.Height(), keypoints, mFeatureImgBufLeft, mBufStereoPairs);
+    break;
+  default:
+    cerr << "Not implement yet for matcher: "<<mMatchMethod<<endl;
+    status = false;
+    break;
+  }
+  return status;
 }
 
 bool PoseEstimateStereo::goodFeaturesToTrack(
@@ -609,7 +633,8 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 	// loop thru the keypoints of image0 and look for best match from image1
 	int iKeypoint0 = 0; //< the index of the current key point in keypoints0
 	for (Keypoints::const_iterator ikp = keyPoints0.begin(); ikp!=keyPoints0.end(); ikp++, iKeypoint0++) {
-		const CvPoint3D64f& ptLast = *ikp;
+//    const CvPoint3D64f& ptLast = *ikp;
+    const Keypoint& ptLast = *ikp;
 		if (ptLast.z<0) { // disparity value maybe still missing
 		  continue;
 		}
@@ -641,23 +666,41 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 			// skip this
 			continue;
 		}
+#if 0 // do not do thresholding, as we do not know about the descriptor
+		double threshold = 0.75;
+    // just to get an idea what is the score for the best possible match
+		// and derive a threshold to get rid of those best but not good
+		// enough match
+#if 0  // old code
 		CvMat templ;
 		cvGetSubRect(image0.Ipl(), &templ, rectTempl);
 		CvMat templ2;
 		float _res[1];
 		CvMat res = cvMat(1, 1, CV_32FC1, _res);
-		// just to get an idea what is the score for the best possible match
     TIMERSTART2(KeypointTemplMatch);
 		cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
     TIMEREND2(KeypointTemplMatch);
-		double threshold = _res[0]*.75;
-		double maxScore = threshold;
+		threshold = _res[0]*.75;
+#else
+		if (ptLast.desc) {
+		  threshold = ptLast.desc->compare(*ptLast.desc)*.75;
+		} else {
+		  // for some reason, no descriptor around. Skip this
+		  continue;
+		}
+#endif
+#endif
+
+		double minDist = DBL_MAX;
+
+    // loop thru keypoints1 and get the best match
 		int     bestlocIndex = -1;
 		int iKeypoint1=0; //< index of the current key point in keypoints1
 		for (Keypoints::const_iterator jkp = keyPoints1.begin();
 		jkp!=keyPoints1.end();
 		jkp++, iKeypoint1++) {
-		  CvPoint3D64f pt = *jkp;
+//      const CvPoint3D64f pt& = *jkp;
+      const Keypoint& pt = *jkp;
 		  if (pt.z < 0) { // disparity value is missing
 		    continue;
 		  }
@@ -681,26 +724,46 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 					// skip this
 					continue;
 				}
+#if 0 // old code
 				cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
         TIMERSTART2(KeypointTemplMatch);
 				cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
 				TIMEREND2(KeypointTemplMatch);
 				double score = _res[0];
+        if (score > maxScore) {
+          bestlocIndex = iKeypoint1;
+          maxScore = score;
+        }
+#else
+				double dist = ptLast.desc->compare(*pt.desc);
+        if (dist < minDist) {
+          bestlocIndex = iKeypoint1;
+          minDist = dist;
+        }
+#endif
 
-				if (score > maxScore) {
-					bestlocIndex = iKeypoint1;
-					maxScore = score;
-				}
 			}
 		}
+
+#if 0
 		if (maxScore <= threshold ) {
 			continue;
 		}
+#endif
+//		if (minDist <= .75) {
+//		  continue;
+//		}
 
+		if (bestlocIndex < 0) {
+		  continue;
+		}
+
+		// fill in the output buffer
     if (trackablePairs) {
       CvPoint3D64f& pt0 = keyPoints1[bestlocIndex];
+      CvPoint3D64f pt1 = cvPoint3D64f(ptLast.x, ptLast.y, ptLast.z);
       assert(pt0.z>=0);
-      trackablePairs->push_back(make_pair(ptLast, pt0));
+      trackablePairs->push_back(make_pair(pt1, pt0));
 #ifdef DEBUG
         cout << "trackable pair "<< ptLast.x <<","<< ptLast.y<<"  <==> "<< pt0.x <<","<< pt0.y<<endl;
 #endif
@@ -708,7 +771,7 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 		if (trackableIndexPairs) {
 		  trackableIndexPairs->push_back(make_pair(iKeypoint0, bestlocIndex));
 #ifdef DEBUG
-        cout << "trackable pair "<< iKeypoint0 <<"  <==> "<< bestlocIndex <<endl;
+        cout << "trackable pair indices "<< iKeypoint0 <<"  <==> "<< bestlocIndex <<endl;
 #endif
 		}
 		numTrackablePairs++;
@@ -733,6 +796,7 @@ bool PoseEstimateStereo::getTrackablePairs(
 				trackablePairs, trackableIndexPairs);
 		break;
 	case KeyPointCrossCorrelation:
+	case KeyPointSumOfAbsDiff:
 		status = getTrackablePairsByKeypointCrossCorr(image0, image1, dispMap0, dispMap1, keyPoints0, keyPoints1,
 				trackablePairs, trackableIndexPairs);
 		break;

@@ -7,6 +7,8 @@
 
 #include "VisOdom.h"
 
+#include "KeypointDescriptors.h"
+
 #include "PathRecon.h"
 #include "PoseEstimateDisp.h"
 
@@ -34,7 +36,7 @@ CamTracker* CamTracker::getCamTracker(
   return NULL;
 }
 
-
+#if 0 //TODO: remove it
 bool goodFeaturesToTrack(
     CamTracker* tracker,
     /// input image
@@ -47,6 +49,7 @@ bool goodFeaturesToTrack(
   PathRecon* t = (PathRecon*)tracker;
   return t->goodFeaturesToTrack(img, dispMap, keypoints);
 }
+#endif
 
 /// Use Harris corner to extrack keypoints.
 /// @return the number of key points detected
@@ -108,6 +111,7 @@ bool matchKeypoints(
       dispMap0, dispMap1, keyPoints0, keyPoints1, matchPairs, matchIndexPairs);
 }
 
+#if 0 // TODO: delete it
 PoseEstimator* getPoseEstimator(
     /// The size of the image this pose estimator is expected to see
     CvSize& imgSize,
@@ -131,12 +135,15 @@ PoseEstimator* getPoseEstimator(
 
   return pe;
 }
-
+#endif
+#if 0 //TODO: delete it
 PoseEstimator* getPoseEstimator(CamTracker* tracker) {
   PathRecon *t = (PathRecon *)tracker;
   return &(t->mPoseEstimator);
 }
+#endif
 
+#if 0 // TODO: delete it
 int poseEstimate(
     PoseEstimator* poseEstimator,
     Keypoints& keypoints0,
@@ -148,9 +155,9 @@ int poseEstimate(
   return ((PoseEstimateDisp*)poseEstimator)->estimate(keypoints0, keypoints1,
       matchIndexPairs,  rot, shift, smoothed);
 }
+#endif
 
 void estimateWithLevMarq(
-    PoseEstimator* poseEstimator,
     /// inlier list 0
     const CvMat& points0inlier,
     /// inlier list 1
@@ -163,7 +170,7 @@ void estimateWithLevMarq(
   PoseEstimateDisp::estimateWithLevMarq(points0inlier, points1inlier, CartToDisp,
       DispToCart, rot, trans);
 }
-
+#if 0 // TODO: remove it
 KeyFramingDecision keyFrameEval(
     CamTracker* camTracker,
     /// the index of this frame
@@ -180,6 +187,7 @@ KeyFramingDecision keyFrameEval(
   PathRecon* t = (PathRecon *)camTracker;
   return t->keyFrameEval(frameIndex, numKeypoints, numInliers, rot, shift);
 }
+#endif
 
 bool FrameSeq::backTrack(){
   bool status;
@@ -225,6 +233,7 @@ void PoseEstFrameEntry::clear() {
 PoseEstFrameEntry::~PoseEstFrameEntry(){
   clear();
 }
+#if 0 // TODO: delete them
 void setLastKeyFrame(CamTracker* tracker, PoseEstFrameEntry* keyFrame){
   assert(tracker);
   PathRecon* t = (PathRecon*)tracker;
@@ -276,6 +285,7 @@ vector<FramePose>* getFramePoses(CamTracker* tracker){
     PathRecon* t = (PathRecon*)tracker;
     return t->getFramePoses();
 }
+#endif
 
 void saveFramePoses(const string& dirname, vector<FramePose>& framePoses) {
   // TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
@@ -351,6 +361,52 @@ bool FileSeq::getNextFrame() {
     return false;
 }
 
+PoseEstimator* getStereoPoseEstimator(
+      /// The size of the image this pose estimator is expected to see
+      CvSize& imgSize,
+      /// focal length in x
+      double Fx,
+      /// focal length in y
+      double Fy,
+      /// baseline length
+      double Tx,
+      /// x coordinate of the optical center of the left cam
+      double Clx,
+      /// x coordinate of the optical center of the right cam
+      double Crx,
+      /// y coordinate optical center
+      double Cy) {
+  PoseEstimateStereo* pe = new PoseEstimateStereo(imgSize.width, imgSize.height);
+  pe->setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  return pe;
+}
+
+void KeypointDescriptor::constructTemplateDescriptors(
+    /// input image
+    const uint8_t* img,
+    int width,
+    int height,
+    /// The list of keypoints
+    Keypoints& keypoints,
+    int matchMethod
+){
+  KeypointTemplateDescriptor::constructDescriptors(img, width, height, keypoints);
+}
+
+void KeypointDescriptor::constructSADDescriptors(
+     /// input image
+     const uint8_t* img,
+     int width,
+     int height,
+     /// The list of keypoints
+     Keypoints& keypoints,
+     /// buffer used by this function. Same size as img
+     uint8_t* bufImg1,
+     /// buffer used by this function. Same size as img
+     uint8_t* bufImg2
+ ){
+  KeypointSADDescriptor::constructDescriptors(img, width, height, keypoints, bufImg1, bufImg2);
+}
 
 }  // namespace willow
 }  // namespace cv

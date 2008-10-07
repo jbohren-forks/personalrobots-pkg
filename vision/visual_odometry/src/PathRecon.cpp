@@ -84,8 +84,10 @@ void PathRecon::_init() {
 	// seting up the pose estimator to use harris corner for finding feature
 	// points and keypoint ncc to find matching pairs
   mPoseEstimator.setInlierErrorThreshold(4.0);
+//  mPoseEstimator.setKeyPointDector(PoseEstimateStereo::HarrisCorner);
+//  mPoseEstimator.setKeyPointMatcher(KeyPointCrossCorrelation);
   mPoseEstimator.setKeyPointDector(PoseEstimateStereo::HarrisCorner);
-  mPoseEstimator.setKeyPointMatcher(KeyPointCrossCorrelation);
+  mPoseEstimator.setKeyPointMatcher(KeyPointSumOfAbsDiff);
   mMinNumInliers = 25;
   // end setting up for harris corner and keypoint ncc matcher
 
@@ -224,67 +226,6 @@ void PathRecon::measureErr(const CvMat* inliers0, const CvMat* inliers1){
 	mStat.mErrMeas.measure(*inliers0, *inliers1);
 }
 
-#if 0 // TODO the class do not load file directory
-void PathRecon::loadStereoImagePair(int & frameIndex,
-    WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
-{
-  CvMatUtils::loadStereoImagePair(
-      mFileSeq.mDirname, mFileSeq.mLeftImageFilenameFmt,
-      mFileSeq.mRightImageFilenameFmt, mFileSeq.mDisparityMapFilenameFmt,
-      frameIndex, &leftImage, &rightImage,
-      NULL);
-}
-#endif
-
-#if 0 //TODO removed to CvMatUtils
-void PathRecon::loadStereoImagePair(string& dirname, string& leftimagefmt,
-    string& rightimagefmt, int & frameIndex,
-    WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
-{
-  char leftfilename[PATH_MAX];
-  char rightfilename[PATH_MAX];
-  sprintf(leftfilename, leftimagefmt.c_str(), frameIndex);
-  sprintf(rightfilename, rightimagefmt.c_str(), frameIndex);
-#ifdef DEBUG
-  cout << "loading " << leftfilename << " and " << rightfilename << endl;
-#endif
-  IplImage* leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
-  leftImage.SetIpl(leftimg);
-  IplImage* rightimg = cvLoadImage(rightfilename, CV_LOAD_IMAGE_GRAYSCALE);
-  rightImage.SetIpl(rightimg);
-}
-#endif
-#if 0
-bool PathRecon::loadAndProcessStereoFrame(int frameIndex, PoseEstFrameEntry* & frame){
-  frame = new PoseEstFrameEntry(frameIndex);
-  bool status = false;
-  status = loadStereoFrame(frameIndex, frame->mImage, frame->mDispMap);
-  if (status)
-  status = goodFeaturesToTrack(*frame->mImage, frame->mDispMap,
-      frame->mKeypoints);
-
-  return status;
-}
-
-bool PathRecon::loadStereoFrame(int frameIndex,WImageBuffer1_b* & leftImage,
-      WImageBuffer1_16s* & dispMap) {
-  bool status = true;
-  WImageBuffer1_b rightImage;
-  leftImage = new WImageBuffer1_b();
-  CvSize& imgSize = mPoseEstimator.getSize();
-  dispMap = new WImageBuffer1_16s(imgSize.width, imgSize.height);
-  // load stereo image pair
-  TIMERSTART2(LoadImage);
-  loadStereoImagePair(frameIndex, *leftImage, rightImage);
-  TIMEREND2(LoadImage);
-  // compute disparity map
-  TIMERSTART2(DisparityMap);
-  mPoseEstimator.getDisparityMap(*leftImage, rightImage, *dispMap);
-  TIMEREND2(DisparityMap);
-
-  return status;
-}
-#endif
 bool PathRecon::goodFeaturesToTrack(
     const WImage1_b& leftImage,
     const WImage1_16s* dispMap,
@@ -419,6 +360,10 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
         goodFeaturesToTrack(*currFrame->mImage, currFrame->mDispMap,
             currFrame->mKeypoints);
         TIMEREND2(FeaturePoint);
+
+        // prepare the keypoint descriptors
+        mPoseEstimator.constructKeypointDescriptors(*currFrame->mImage, *currFrame->mKeypoints);
+
         if (mVisualizer) mVisualizer->drawDispMap(*currFrame);
       }
       inputImageQueue.pop();
@@ -595,7 +540,7 @@ void PathRecon::Visualizer::drawKeypoints(
   CvMatUtils::drawPoints(canvasKeypoint, *lastFrame.mKeypoints,*currentFrame.mKeypoints);
   // The following two line shall draw the same lines between point pairs.
   //  CvMatUtils::drawLines(canvasKeypoint, pointPairsInDisp);
-  CvMatUtils::drawLines(canvasKeypoint, *currentFrame.mTrackableIndexPairs, *lastFrame.mKeypoints,*currentFrame.mKeypoints);
+  CvMatUtils::drawLines(canvasKeypoint, *currentFrame.mTrackableIndexPairs,*currentFrame.mKeypoints, *lastFrame.mKeypoints);
   sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(),
       currentFrame.mFrameIndex);
   canvasKeypointRedrawn = true;
