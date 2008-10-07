@@ -614,7 +614,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   node->advertise<std_msgs::RobotBase2DOdom>("odom",10);
 
   // receive messages from 2dnav stack
-  node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,10);
+  node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
   // for publishing odometry frame transforms odom
   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
