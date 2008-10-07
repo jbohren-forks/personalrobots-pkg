@@ -58,7 +58,7 @@ namespace libTF
  struct TFPoint 
 {
   double x,y,z;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
  };
 
@@ -72,7 +72,7 @@ namespace libTF
 struct TFPoint2D
 {
   double x,y;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -83,7 +83,7 @@ struct TFPoint2D
 struct TFVector
 {
   double x,y,z;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -94,7 +94,7 @@ struct TFVector
 struct TFVector2D
 {
   double x,y;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -105,7 +105,7 @@ struct TFVector2D
 struct TFEulerYPR
 {
   double yaw, pitch, roll;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -115,7 +115,7 @@ struct TFEulerYPR
 struct TFYaw
 {
   double yaw;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -125,7 +125,7 @@ struct TFYaw
 struct TFPose
 {
   double x,y,z,yaw,pitch,roll;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -135,7 +135,7 @@ struct TFPose
 struct TFPose2D
 {
   double x,y,yaw;
-  unsigned long long time;
+  uint64_t time;
   std::string frame;
 };
 
@@ -163,7 +163,7 @@ class TransformReference
 {
 public:
   /// All time within libTF is this format.
-  typedef unsigned long long ULLtime;
+  typedef uint64_t ULLtime;
   
   /************* Constants ***********************/
   //  static const unsigned int MAX_NUM_FRAMES = 10000; //!< The max value of frameID (due to preallocation of pointers)
@@ -179,7 +179,7 @@ public:
    */
   TransformReference(bool interpolating = true, 
                      ULLtime cache_time = DEFAULT_CACHE_TIME,
-                     unsigned long long max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
+                     uint64_t max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
   virtual ~TransformReference(void);
 
   /********** Mutators **************/
@@ -329,8 +329,8 @@ protected:
 
       /** Constructor */
       RefFrame(bool interpolating = true,  
-               unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
-               unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
+               uint64_t  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
+               uint64_t  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
       
       /** \brief Get the parent nodeID */
       inline unsigned int getParent(){return parent_;};
@@ -368,7 +368,7 @@ protected:
   bool interpolating;
   
   /// whether or not to allow extrapolation
-  unsigned long long max_extrapolation_distance;
+  uint64_t max_extrapolation_distance;
 
  public:
   /** \brief An internal representation of transform chains

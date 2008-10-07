@@ -46,14 +46,14 @@
 
 namespace tf
 {
-/** \brief A representation of a translation and rotation */
-typedef btTransform Transform;
 /** \brief A representaton of orientation or rotation depending on context*/
 typedef btQuaternion Quaternion; ///\todo differentiate?
 /** \brief A representation of a translation */
 typedef btVector3 Vector3;
 /** \brief  The transform library representation of a point(Position)*/
 typedef btVector3 Point;
+/** \brief A representation of a translation and rotation */
+typedef btTransform Transform;
 /** \brief A representation of pose (A position and orientation)*/
 typedef btTransform Pose;
 
@@ -65,20 +65,33 @@ class Stamped{
   T data_;
   ros::Time stamp_;
   std::string frame_id_;
-  std::string source_frame; ///only used for transform
+  std::string source_frame_; ///only used for transform
 
-  Stamped() :stamp_ (0),frame_id_ ("NO_ID"){}; //Default constructor used only for preallocation
+  Stamped() :stamp_ (0),frame_id_ ("NO_ID"), source_frame_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
 
-  Stamped(const T& input, const ros::Time& timestamp, const std::string & frame_id):
-    data_ (input), stamp_ ( timestamp ), frame_id_ (frame_id){ };
+  Stamped(const T& input, const ros::Time& timestamp, const std::string & frame_id, const std::string & source_frame = "NOT A TRANSFORM"):
+    data_ (input), stamp_ ( timestamp ), frame_id_ (frame_id), source_frame_(source_frame){ };
 
-  Stamped(const Stamped<T>& input):data_(input.data_), stamp_(input.stamp_), frame_id_(input.frame_id_){};
+  Stamped(const Stamped<T>& input):data_(input.data_), stamp_(input.stamp_), frame_id_(input.frame_id_), source_frame_(input.source_frame_){};
 
-  Stamped& operator=(const Stamped<T>& input){data_ = input.data_; stamp_ = input.stamp_; frame_id_ = input.frame_id_; return *this;};
+  Stamped& operator=(const Stamped<T>& input){data_ = input.data_; stamp_ = input.stamp_; frame_id_ = input.frame_id_; 
+  source_frame_ = input.source_frame_; return *this;};
 
   void stripStamp(T & output) { output = data_;};
 };
 
+
+/** \brief convert Quaternion msg to Quaternion */
+static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) {bt = Quaternion(msg.x, msg.y, msg.z, msg.w);};
+/** \brief convert Quaternion to Quaternion msg*/
+static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion& msg) {msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();};
+
+/** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
+static inline void QuaternionStampedMsgToTF(const std_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt) 
+{QuaternionMsgToTF(msg.quaternion, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
+/** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
+static inline void QuaternionStampedTFToMsg(const Stamped<Quaternion>& bt, std_msgs::QuaternionStamped & msg)
+{QuaternionTFToMsg(bt.data_, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 /** \brief convert Vector3 msg to Vector3 */
 static inline void Vector3MsgToTF(const std_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
@@ -105,18 +118,6 @@ static inline void PointStampedMsgToTF(const std_msgs::PointStamped & msg, Stamp
 static inline void PointStampedTFToMsg(const Stamped<Point>& bt, std_msgs::PointStamped & msg)
 {PointTFToMsg(bt.data_, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
-
-/** \brief convert Quaternion msg to Quaternion */
-static inline void QuaternionMsgToTF(const std_msgs::Quaternion& msg, Quaternion& bt) {bt = Quaternion(msg.x, msg.y, msg.z, msg.w);};
-/** \brief convert Quaternion to Quaternion msg*/
-static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion& msg) {msg.x = bt.x(); msg.y = bt.y(); msg.z = bt.z();  msg.w = bt.w();};
-
-/** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
-static inline void QuaternionStampedMsgToTF(const std_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt) 
-{QuaternionMsgToTF(msg.quaternion, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;}; 
-/** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
-static inline void QuaternionStampedTFToMsg(const Stamped<Quaternion>& bt, std_msgs::QuaternionStamped & msg)
-{QuaternionTFToMsg(bt.data_, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 /** \brief convert Transform msg to Transform */
 static inline void TransformMsgToTF(const std_msgs::Transform& msg, Transform& bt) 

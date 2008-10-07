@@ -34,8 +34,8 @@
 
 rosTFClient::rosTFClient(ros::node & rosnode, 
                          bool interpolating,
-			 unsigned long long max_cache_time,
-			 unsigned long long max_extrapolation_distance):
+			 uint64_t max_cache_time,
+			 uint64_t max_extrapolation_distance):
   TransformReference(interpolating,
                      max_cache_time,
                      max_extrapolation_distance),
@@ -124,7 +124,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
     if (scanIn.ranges[i] < scanIn.range_max 
         && scanIn.ranges[i] > scanIn.range_min) //only when valid
     {
-      pointIn.time = scanIn.header.stamp.to_ull() + (unsigned long long) (scanIn.time_increment * 1000000000);
+      pointIn.time = scanIn.header.stamp.to_ull() + (uint64_t) (scanIn.time_increment * 1000000000);
       pointIn.x = intermediate.pts[i].x;
       pointIn.y = intermediate.pts[i].y;
       pointIn.z = intermediate.pts[i].z;

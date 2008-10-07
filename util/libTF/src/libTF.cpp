@@ -36,8 +36,8 @@
 using namespace libTF;
 
 TransformReference::RefFrame::RefFrame(bool interpolating,
-                                       unsigned long long max_cache_time,
-                                       unsigned long long max_extrapolation_distance) :
+                                       uint64_t max_cache_time,
+                                       uint64_t max_extrapolation_distance) :
   Pose3DCache(interpolating, max_cache_time, max_extrapolation_distance),
   parent_(0)
 {
@@ -47,7 +47,7 @@ TransformReference::RefFrame::RefFrame(bool interpolating,
 
 TransformReference::TransformReference(bool interpolating,
                                        ULLtime cache_time,
-                                       unsigned long long max_extrapolation_distance):
+                                       uint64_t max_extrapolation_distance):
   cache_time(cache_time),
   interpolating (interpolating),
   max_extrapolation_distance(max_extrapolation_distance)

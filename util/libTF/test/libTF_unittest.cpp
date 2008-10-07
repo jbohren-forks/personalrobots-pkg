@@ -20,7 +20,7 @@ TEST(libTF, DataTypes)
   libTF::TransformReference mTR(true, 0);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+  uint64_t atime = temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
 
   libTF::TFPose2D mappose;
   libTF::TFPose2D odompose;
@@ -362,13 +362,13 @@ TEST(libTF, Interpolation)
   libTF::TransformReference mTR(true);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+  uint64_t atime = temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
 
   // Test different values
   for(int i=0;i<1000;i++)
   {
-    unsigned long long btime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
-    unsigned long long ctime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
+    uint64_t btime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
+    uint64_t ctime = atime + (int)(1000 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX) * 1000000LL;
     if ((long long) btime - (long long) ctime < 1000) ctime += 10000;
     double xval = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     double xval1 = ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;

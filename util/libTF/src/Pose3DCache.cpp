@@ -37,8 +37,8 @@
 using namespace libTF;
 
 Pose3DCache::Pose3DCache(bool interpolating,
-                           unsigned long long max_cache_time,
-                           unsigned long long _max_extrapolation_time):
+                           uint64_t max_cache_time,
+                           uint64_t _max_extrapolation_time):
   max_storage_time(max_cache_time),
   max_length_linked_list(MAX_LENGTH_LINKED_LIST),
   max_extrapolation_time(_max_extrapolation_time),
@@ -58,7 +58,7 @@ Pose3DCache::~Pose3DCache()
   clearList();
 };
 
-void Pose3DCache::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time)
+void Pose3DCache::addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, uint64_t time)
 {
  Pose3DStorage temp;
  temp.xt = _xt; temp.yt = _yt; temp.zt = _zt; temp.xr = _xr; temp.yr = _yr; temp.zr = _zr; temp.w = _w; temp.time = time;
@@ -68,7 +68,7 @@ void Pose3DCache::addFromQuaternion(double _xt, double _yt, double _zt, double _
 } ;
 
 
-void Pose3DCache::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time)
+void Pose3DCache::addFromMatrix(const NEWMAT::Matrix& matIn, uint64_t time)
 {
   Pose3DStorage temp;
   temp.setFromMatrix(matIn);
@@ -79,7 +79,7 @@ void Pose3DCache::addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long 
 };
 
 
-void Pose3DCache::addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time)
+void Pose3DCache::addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, uint64_t time)
 {
   Pose3DStorage temp;
   temp.setFromEuler(_x,_y,_z,_yaw,_pitch,_roll);
@@ -88,7 +88,7 @@ void Pose3DCache::addFromEuler(double _x, double _y, double _z, double _yaw, dou
   add_value(temp);
 };
 
-void Pose3DCache::addFromDH(double length, double alpha, double offset, double theta, unsigned long long time)
+void Pose3DCache::addFromDH(double length, double alpha, double offset, double theta, uint64_t time)
 {
   addFromMatrix(Pose3D::matrixFromDH(length, alpha, offset, theta),time);
 };
@@ -108,7 +108,7 @@ Pose3DCache::Pose3DStorage& Pose3DCache::Pose3DStorage::operator=(const Pose3DSt
 };
 
 
-Pose3DCache::Pose3DStorage Pose3DCache::getPoseStorage(unsigned long long time)
+Pose3DCache::Pose3DStorage Pose3DCache::getPoseStorage(uint64_t time)
 {
   Pose3DStorage temp;
   long long diff_time; //todo Find a way to use this offset. pass storage by reference and return diff_time??
@@ -117,7 +117,7 @@ Pose3DCache::Pose3DStorage Pose3DCache::getPoseStorage(unsigned long long time)
 };
 
 
-NEWMAT::Matrix Pose3DCache::getMatrix(unsigned long long time)
+NEWMAT::Matrix Pose3DCache::getMatrix(uint64_t time)
 {
   Pose3DStorage temp;
   long long diff_time;
@@ -129,13 +129,13 @@ NEWMAT::Matrix Pose3DCache::getMatrix(unsigned long long time)
   return temp.asMatrix();
 }
 
-NEWMAT::Matrix Pose3DCache::getInverseMatrix(unsigned long long time)
+NEWMAT::Matrix Pose3DCache::getInverseMatrix(uint64_t time)
 {
   return getMatrix(time).i();
 
 };
 
-void Pose3DCache::printMatrix(unsigned long long time)
+void Pose3DCache::printMatrix(uint64_t time)
 {
   std::cout << getMatrix(time);
 };
@@ -146,7 +146,7 @@ void Pose3DCache::printStorage(const Pose3DStorage& storage)
 };
 
 
-bool Pose3DCache::getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff)
+bool Pose3DCache::getValue(Pose3DStorage& buff, uint64_t time, long long  &time_diff)
 {
   Pose3DStorage p_temp_1;
   Pose3DStorage p_temp_2;
@@ -211,7 +211,7 @@ void Pose3DCache::insertNode(const Pose3DStorage & new_val)
 
 void Pose3DCache::pruneList()
 {
-  unsigned long long current_time = storage_.begin()->time;
+  uint64_t current_time = storage_.begin()->time;
 
   while(!storage_.empty() && storage_.back().time + max_storage_time < current_time)
   {
@@ -229,7 +229,7 @@ void Pose3DCache::clearList()
 };
 
 
-int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsigned long long target_time, long long &time_diff)
+int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const uint64_t target_time, long long &time_diff)
 {
 
   //No values stored
@@ -312,7 +312,7 @@ int Pose3DCache::findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsig
 };
 
 // Quaternion slerp algorithm from http://www.euclideanspace.com/maths/algebra/realNormedAlgebra/quaternions/slerp/index.htm
-void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two,unsigned long long target_time, Pose3DStorage& output)
+void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two,uint64_t target_time, Pose3DStorage& output)
 {
   output.time = target_time;
 
@@ -364,7 +364,7 @@ void Pose3DCache::interpolate(const Pose3DStorage &one, const Pose3DStorage &two
   return;
 };
 
-double Pose3DCache::interpolateDouble(const double first, const unsigned long long first_time, const double second, const unsigned long long second_time, const unsigned long long target_time)
+double Pose3DCache::interpolateDouble(const double first, const uint64_t first_time, const double second, const uint64_t second_time, const uint64_t target_time)
 {
   if ( first_time == second_time ) {
     return first;

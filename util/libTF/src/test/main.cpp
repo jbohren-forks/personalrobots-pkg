@@ -48,12 +48,12 @@ int main(void)
       dx = dy= dz = 0;
       dyaw = dp = dr = 0.1;
   
-      unsigned long long atime;
+      uint64_t atime;
 
 
       timeval temp_time_struct;
       gettimeofday(&temp_time_struct,NULL);
-      atime =  temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+      atime =  temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
 
       std::cout <<"Setting values" << std::endl;
   

@@ -69,14 +69,14 @@ namespace libTF{
   public:
     static const int MIN_INTERPOLATION_DISTANCE = 5; //!< Number of nano-seconds to not interpolate below.
     static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
-    static const unsigned long long DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
-    static const unsigned long long DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
+    static const uint64_t DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
+    static const uint64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
     // Storage class
     class Pose3DStorage : public Pose3D
       {
       public:
         Pose3DStorage & operator=(const Pose3DStorage & input);
-        unsigned long long time; //!<nanoseconds since 1970
+        uint64_t time; //!<nanoseconds since 1970
       };
 
     /** \brief An exception class to notify that the requested value would have required extrapolation, and extrapolation is not allowed.
@@ -94,35 +94,35 @@ namespace libTF{
      * \param max_extrapolation_time How far to extrapolate before throwing an exception
      */
     Pose3DCache(bool interpolating = true, 
-                unsigned long long  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
-                unsigned long long  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
+                uint64_t  max_cache_time = DEFAULT_MAX_STORAGE_TIME,
+                uint64_t  max_extrapolation_time = DEFAULT_MAX_EXTRAPOLATION_TIME); 
     /** \brief Destructor */
     virtual ~Pose3DCache();  
 
     /* Mutators */
     /** \brief Set the values with translation and quaternion notation */
-    void addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, unsigned long long time);
+    void addFromQuaternion(double _xt, double _yt, double _zt, double _xr, double _yr, double _zr, double _w, uint64_t time);
     /** \brief Set the values from a matrix */
-    void addFromMatrix(const NEWMAT::Matrix& matIn, unsigned long long time);
+    void addFromMatrix(const NEWMAT::Matrix& matIn, uint64_t time);
     /** \brief  Set the values using translation and Euler angles */
-    void addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, unsigned long long time);
+    void addFromEuler(double _x, double _y, double _z, double _yaw, double _pitch, double _roll, uint64_t time);
     /** \brief Set the values using DH Parameters */
-    void addFromDH(double length, double alpha, double offset, double theta, unsigned long long time);
+    void addFromDH(double length, double alpha, double offset, double theta, uint64_t time);
 
   
     /* Interpolated Accessors */
     /** \brief Return a Pose
      * \param time The desired time for the transformation */
-    Pose3DStorage getPoseStorage(unsigned long long time);
+    Pose3DStorage getPoseStorage(uint64_t time);
     /** \brief Return the transform as a Matrix  
      * \param time The desired time for the transformation */
-    NEWMAT::Matrix getMatrix(unsigned long long time);
+    NEWMAT::Matrix getMatrix(uint64_t time);
     /** \brief Return the inverse matrix 
      * \param time The desired time for the transformation */
-    NEWMAT::Matrix getInverseMatrix(unsigned long long time);
+    NEWMAT::Matrix getInverseMatrix(uint64_t time);
   
     /** \brief Print the stored value at a time as a matrix */
-    void printMatrix(unsigned long long time);  //Not a critical part either
+    void printMatrix(uint64_t time);  //Not a critical part either
     /** \brief Print the value of a specific storage unit */
     void printStorage(const Pose3DStorage &storage); //Do i need this now that i've got the ostream method??
 
@@ -138,7 +138,7 @@ namespace libTF{
     pthread_mutex_t linked_list_mutex;
 
     /** \brief The internal method for getting data out of the linked list */
-    bool getValue(Pose3DStorage& buff, unsigned long long time, long long  &time_diff);
+    bool getValue(Pose3DStorage& buff, uint64_t time, long long  &time_diff);
     /** \brief The internal method for adding to the linked list 
      * which is by all the specific add functions.  */
     void add_value(const Pose3DStorage&);
@@ -152,22 +152,22 @@ namespace libTF{
 
     /** \brief Find the closest two points in the list  
      *Return the distance to the closest one*/
-    int findClosest(Pose3DStorage& one, Pose3DStorage& two, const unsigned long long target_time, long long &time_diff);
+    int findClosest(Pose3DStorage& one, Pose3DStorage& two, const uint64_t target_time, long long &time_diff);
 
     /** \brief Interpolate between two nodes and return the interpolated value
      * This must always take two valid points!!!!!! */
-    void interpolate(const Pose3DStorage &one, const Pose3DStorage &two, const unsigned long long target_time, Pose3DStorage& output);
+    void interpolate(const Pose3DStorage &one, const Pose3DStorage &two, const uint64_t target_time, Pose3DStorage& output);
 
     /** Linearly interpolate two doubles 
      *Used by interpolate to interpolate between double values */
-    double interpolateDouble(const double, const unsigned long long, const double, const unsigned long long, const unsigned long long);
+    double interpolateDouble(const double, const uint64_t, const double, const uint64_t, const uint64_t);
 
     ///How long to cache incoming values
-    unsigned long long max_storage_time;
+    uint64_t max_storage_time;
     ///Max length of linked list
-    unsigned long long max_length_linked_list;
+    uint64_t max_length_linked_list;
     ///Whether to allow extrapolation
-    unsigned long long max_extrapolation_time;
+    uint64_t max_extrapolation_time;
 
     ///Whether or not to interpolate
     bool interpolating;

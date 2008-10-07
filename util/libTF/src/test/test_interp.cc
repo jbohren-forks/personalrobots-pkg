@@ -9,9 +9,9 @@ main(void)
   libTF::TransformReference mTR(true);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
-  unsigned long long btime = atime + 1 * 1000000000ULL;
-  unsigned long long ctime = btime + 1 * 1000000000ULL;
+  uint64_t atime = temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
+  uint64_t btime = atime + 1 * 1000000000ULL;
+  uint64_t ctime = btime + 1 * 1000000000ULL;
 
   for(int i=0;i<10;i++)
   {

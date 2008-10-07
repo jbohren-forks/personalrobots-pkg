@@ -14,7 +14,7 @@ main(void)
   libTF::TransformReference mTR(true, 0);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
+  uint64_t atime = temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
 
   libTF::TFPose2D mappose;
   libTF::TFPose2D odompose;
