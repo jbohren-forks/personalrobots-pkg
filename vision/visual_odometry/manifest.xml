@@ -2,7 +2,7 @@
   <description>
     Visual odometry.
   </description>
-  <author>J.D.</author>
+  <author>Jindong (JD) Chen</author>
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="boost"/>
