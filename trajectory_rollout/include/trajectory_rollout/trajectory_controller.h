@@ -74,9 +74,6 @@
 #define MX_WX(map, i) ((map).origin_x + (i) * (map).scale);
 #define MY_WY(map, j) ((map).origin_y + (j) * (map).scale);
 
-#define HEADING_LOOKAHEAD .2
-
-
 //convert from world to map coords
 //#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
 //#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale + 0.5))
@@ -134,6 +131,7 @@ class TrajectoryController {
 
     //to help the robot know what to do with rotations
     bool stuck_left, stuck_right;
+    bool rotating_left, rotating_right;
 
 
   private:

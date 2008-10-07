@@ -50,6 +50,8 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   //the robot is not stuck to begin with
   stuck_left = false;
   stuck_right = false;
+  rotating_left = false;
+  rotating_right = false;
 }
 
 //update what map cells are considered path based on the global_plan
@@ -244,26 +246,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
   }
 
-  //let's also generate a cost for the heading of the trajectory
-  x_i += HEADING_LOOKAHEAD;
-  unsigned int cell_x, cell_y;
-
-  //we don't want a path that goes off the know map
-  if(!ma_.WC_MC(x_i, y_i, cell_x, cell_y)){
-    traj.cost_ = -1.0;
-    return;
-  }
-
-  double heading_pdist = map_(cell_x, cell_y).path_dist;
-  double heading_gdist = map_(cell_x, cell_y).goal_dist;
-
-  //we don't have occ dist yet... but this will help a little
-  if(ma_.isInflatedObstacle(cell_x, cell_y)){
-    heading_pdist *= 2;
-    heading_gdist *= 2;
-  }
-
-  double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ *  (1 / ((occ_dist + .05) * (occ_dist + .05))) + heading_gdist;
+  double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
 
   traj.cost_ = cost;
 }
@@ -351,17 +334,43 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
     //if the new trajectory is better... let's take it
     if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-      swap = best_traj;
-      best_traj = comp_traj;
-      comp_traj = swap;
+      if(vtheta_samp < 0 && !stuck_left){
+        swap = best_traj;
+        best_traj = comp_traj;
+        comp_traj = swap;
+      }
+      else if(vtheta_samp > 0 && !stuck_right){
+        swap = best_traj;
+        best_traj = comp_traj;
+        comp_traj = swap;
+      }
     }
 
     vtheta_samp += dvtheta;
   }
 
-  //if we still don't have a good trajectory... we'll explore going backwards
-  if(best_traj->cost_ >= 0)
+  //do we have a legal trajectory
+  if(best_traj->cost_ >= 0){
+    if(best_traj->xv_ > 0){
+      rotating_left = false;
+      rotating_right = false;
+      stuck_left = false;
+      stuck_right = false;
+    }
+    else if(best_traj->thetav_ < 0){
+      if(rotating_right){
+        stuck_right = true;
+      }
+      rotating_left = true;
+    }
+    else if(best_traj->thetav_ > 0){
+      if(rotating_left){
+        stuck_right = true;
+      }
+      rotating_right = true;
+    }
     return *best_traj;
+  }
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
@@ -379,6 +388,11 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     //vtheta_samp += dvtheta;
   }
+
+  rotating_left = false;
+  rotating_right = false;
+  stuck_left = false;
+  stuck_right = false;
 
   return *best_traj;
   

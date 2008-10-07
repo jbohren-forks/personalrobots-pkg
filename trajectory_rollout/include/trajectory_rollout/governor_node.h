@@ -105,7 +105,7 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
       resolution_ = res;
     }
 
-    void updateSize(double width, double height){
+    void updateSize(unsigned int width, unsigned int height){
       width_ = width;
       height_ = height;
     }
