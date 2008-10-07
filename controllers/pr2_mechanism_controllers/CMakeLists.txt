@@ -12,7 +12,8 @@ rospack_add_library( pr2_mechanism_controllers
   src/arm_position_controller.cpp
   src/arm_velocity_controller.cpp
   src/arm_dynamics_controller.cpp
-  src/head_pan_tilt_controller.cpp)
+  src/head_pan_tilt_controller.cpp
+  src/caster_controller.cpp)
 
 rospack_add_executable(testBaseController test/test_base_controller.cpp)
 target_link_libraries(testBaseController pr2_mechanism_controllers)
