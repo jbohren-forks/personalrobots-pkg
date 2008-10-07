@@ -33,7 +33,6 @@
  *********************************************************************/
 #include <trajectory_rollout/trajectory_controller.h>
 
-namespace ublas = boost::numeric::ublas;
 using namespace std;
 using namespace std_msgs;
 

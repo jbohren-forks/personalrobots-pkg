@@ -44,13 +44,6 @@
 #include <ctime>
 #include <algorithm>
 
-//for matrix support
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/io.hpp>
-
 //For transform support
 #include <rosTF/rosTF.h>
 
@@ -67,18 +60,6 @@
 
 //for computing path distance
 #include <queue>
-
-#define VALID_CELL(map, x, y) (((x) >= 0) && ((x) < ((int)(map).size_x_)) && ((y) >= 0) && ((y) < ((int)(map).size_y_)))
-
-//convert from map to world coords
-#define MX_WX(map, i) ((map).origin_x + (i) * (map).scale);
-#define MY_WY(map, j) ((map).origin_y + (j) * (map).scale);
-
-//convert from world to map coords
-//#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale + 0.5))
-//#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale + 0.5))
-#define WX_MX(map, x) ((int)(((x) - (map).origin_x) / (map).scale))
-#define WY_MY(map, y) ((int)(((y) - (map).origin_y) / (map).scale))
 
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
@@ -115,8 +96,20 @@ class TrajectoryController {
     void updatePlan(const std::vector<std_msgs::Point2DFloat32>& new_plan);
 
     std::vector<std_msgs::Point2DFloat32> drawFootprint(double x_i, double y_i, double theta_i);
-
     
+    //for getting the cost of a given footprint
+    double footprintCost(double x_i, double y_i, double theta_i);
+    double lineCost(int x0, int x1, int y0, int y1);
+    double pointCost(int x, int y);
+
+    //for getting the cells for a given footprint
+    std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
+    void getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts);
+    void getFillCells(vector<std_msgs::Position2DInt>& footprint);
+    
+    //update what map cells are considered path based on the global_plan
+    void setPathCells();
+
     //possible trajectories for this run
     std::vector<Trajectory> trajectories_;
 
@@ -133,21 +126,7 @@ class TrajectoryController {
     bool stuck_left, stuck_right;
     bool rotating_left, rotating_right;
 
-
   private:
-    //update what map cells are considered path based on the global_plan
-    void setPathCells();
-
-    //for getting the cost of a given footprint
-    double footprintCost(double x_i, double y_i, double theta_i);
-    double lineCost(int x0, int x1, int y0, int y1);
-    double pointCost(int x, int y);
-
-    //for getting the cells for a given footprint
-    std::vector<std_msgs::Position2DInt> getFootprintCells(double x_i, double y_i, double theta_i, bool fill);
-    void getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts);
-    void getFillCells(vector<std_msgs::Position2DInt>& footprint);
-
     //the simulation parameters for generating trajectories
     double sim_time_;
     int samples_per_dim_;

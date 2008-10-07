@@ -39,132 +39,171 @@
 #include <trajectory_rollout/map_grid.h>
 #include <trajectory_rollout/trajectory.h>
 #include <trajectory_rollout/trajectory_controller.h>
+#include <costmap_2d/obstacle_map_accessor.h>
+#include <trajectory_rollout/governor_node.h>
 #include <math.h>
 
 #include <std_msgs/Point2DFloat32.h>
+#include <std_msgs/Position2DInt.h>
 
 
 using namespace std;
 using namespace std_msgs;
 
-vector<Point2DFloat32> generatePlan(){
-  //create a global plan
-  vector<Point2DFloat32> path;
-  Point2DFloat32 point;
-  point.x = 0; point.y = 2;
-  path.push_back(point);
-  point.x = 1; point.y = 2;
-  path.push_back(point);
-  point.x = 1; point.y = 3;
-  path.push_back(point);
-  point.x = 1; point.y = 4;
-  path.push_back(point);
-  point.x = 2; point.y = 4;
-  path.push_back(point);
-  point.x = 3; point.y = 4;
-  path.push_back(point);
-  point.x = 3; point.y = 3;
-  path.push_back(point);
-  point.x = 3; point.y = 2;
-  path.push_back(point);
-  point.x = 3; point.y = 1;
-  path.push_back(point);
-  point.x = 4; point.y = 1;
-  path.push_back(point);
-  point.x = 5; point.y = 1;
-  path.push_back(point);
-  point.x = 5; point.y = 2;
-  path.push_back(point);
-  point.x = 5; point.y = 3;
-  path.push_back(point);
+TrajectoryController* tc = NULL;
 
-  return path;
-}
 
-//make sure that we are getting the path distance map expected
-/*
-TEST(TrajectoryController, correctPathDistance){
-  MapGrid mg(6, 6);
-  mg.scale = 1.0;
-  //place some obstacles
-  mg(2, 3).occ_state = 1;
-  mg(3, 5).occ_state = 1;
-  mg(4, 2).occ_state = 1;
-  mg(5, 0).occ_state = 1;
+TEST(TrajectoryController, correctFootprint){
+  //just create a basic footprint
+  vector<std_msgs::Position2DInt> footprint = tc->getFootprintCells(4.5, 4.5, 0, false);
+
+  //we expect the front line to be first
+  EXPECT_EQ(footprint[0].x, 6); EXPECT_EQ(footprint[0].y, 6);
+  EXPECT_EQ(footprint[1].x, 6); EXPECT_EQ(footprint[1].y, 5);
+  EXPECT_EQ(footprint[2].x, 6); EXPECT_EQ(footprint[2].y, 4);
+  EXPECT_EQ(footprint[3].x, 6); EXPECT_EQ(footprint[3].y, 3);
+  EXPECT_EQ(footprint[4].x, 6); EXPECT_EQ(footprint[4].y, 2);
+
+  //next the right line
+  EXPECT_EQ(footprint[5].x, 6); EXPECT_EQ(footprint[5].y, 2);
+  EXPECT_EQ(footprint[6].x, 5); EXPECT_EQ(footprint[6].y, 2);
+  EXPECT_EQ(footprint[7].x, 4); EXPECT_EQ(footprint[7].y, 2);
+  EXPECT_EQ(footprint[8].x, 3); EXPECT_EQ(footprint[8].y, 2);
+  EXPECT_EQ(footprint[9].x, 2); EXPECT_EQ(footprint[9].y, 2);
+
+  //next the back line
+  EXPECT_EQ(footprint[10].x, 2); EXPECT_EQ(footprint[10].y, 2);
+  EXPECT_EQ(footprint[11].x, 2); EXPECT_EQ(footprint[11].y, 3);
+  EXPECT_EQ(footprint[12].x, 2); EXPECT_EQ(footprint[12].y, 4);
+  EXPECT_EQ(footprint[13].x, 2); EXPECT_EQ(footprint[13].y, 5);
+  EXPECT_EQ(footprint[14].x, 2); EXPECT_EQ(footprint[14].y, 6);
+
+  //finally the left line
+  EXPECT_EQ(footprint[15].x, 2); EXPECT_EQ(footprint[15].y, 6);
+  EXPECT_EQ(footprint[16].x, 3); EXPECT_EQ(footprint[16].y, 6);
+  EXPECT_EQ(footprint[17].x, 4); EXPECT_EQ(footprint[17].y, 6);
+  EXPECT_EQ(footprint[18].x, 5); EXPECT_EQ(footprint[18].y, 6);
+  EXPECT_EQ(footprint[19].x, 6); EXPECT_EQ(footprint[19].y, 6);
   
-  //create a trajectory_controller
-  TrajectoryController tc(mg, 2.0, 20, 20, 1, 1, .25, .25, .25, .25, .25, 1, 1, 1, NULL);
+  //check that rotation of the footprint works
+  footprint = tc->getFootprintCells(4.5, 4.5, M_PI_2, false);
 
-  vector<Point2DFloat32> path = generatePlan();
-  tc.updatePlan(path);
+  //first the left line
+  EXPECT_EQ(footprint[0].x, 2); EXPECT_EQ(footprint[0].y, 6);
+  EXPECT_EQ(footprint[1].x, 3); EXPECT_EQ(footprint[1].y, 6);
+  EXPECT_EQ(footprint[2].x, 4); EXPECT_EQ(footprint[2].y, 6);
+  EXPECT_EQ(footprint[3].x, 5); EXPECT_EQ(footprint[3].y, 6);
+  EXPECT_EQ(footprint[4].x, 6); EXPECT_EQ(footprint[4].y, 6);
 
-  tc.computePathDistance();
+  //next the front line
+  EXPECT_EQ(footprint[5].x, 6); EXPECT_EQ(footprint[5].y, 6);
+  EXPECT_EQ(footprint[6].x, 6); EXPECT_EQ(footprint[6].y, 5);
+  EXPECT_EQ(footprint[7].x, 6); EXPECT_EQ(footprint[7].y, 4);
+  EXPECT_EQ(footprint[8].x, 6); EXPECT_EQ(footprint[8].y, 3);
+  EXPECT_EQ(footprint[9].x, 6); EXPECT_EQ(footprint[9].y, 2);
 
-  //test enough of the 36 cell grid to be convinced
-  EXPECT_FLOAT_EQ(tc.map_(0, 0).path_dist, 2.0);
-  EXPECT_FLOAT_EQ(tc.map_(0, 1).path_dist, 1.0);
-  EXPECT_FLOAT_EQ(tc.map_(4, 2).path_dist, DBL_MAX);
-  EXPECT_FLOAT_EQ(tc.map_(0, 5).path_dist, sqrt(2));
-  EXPECT_FLOAT_EQ(tc.map_(4, 0).path_dist, 1.0);
-  EXPECT_FLOAT_EQ(tc.map_(3, 3).path_dist, 0.0);
-  EXPECT_FLOAT_EQ(tc.map_(1, 0).path_dist, 2.0);
-  EXPECT_FLOAT_EQ(tc.map_(5, 0).path_dist, DBL_MAX);
+  //next the right line
+  EXPECT_EQ(footprint[10].x, 6); EXPECT_EQ(footprint[10].y, 2);
+  EXPECT_EQ(footprint[11].x, 5); EXPECT_EQ(footprint[11].y, 2);
+  EXPECT_EQ(footprint[12].x, 4); EXPECT_EQ(footprint[12].y, 2);
+  EXPECT_EQ(footprint[13].x, 3); EXPECT_EQ(footprint[13].y, 2);
+  EXPECT_EQ(footprint[14].x, 2); EXPECT_EQ(footprint[14].y, 2);
 
-  //check for goal dist as well
-  EXPECT_FLOAT_EQ(tc.map_(5, 3).goal_dist, 0.0);
-  EXPECT_FLOAT_EQ(tc.map_(5, 2).goal_dist, 1.0);
-
-  mg(5,5).occ_state = 1;
-
-  tc.computePathDistance();
-
-  EXPECT_FLOAT_EQ(tc.map_(5,5).path_dist, DBL_MAX);
-
-  //print the results
-  cout.precision(2);
-  for(int k = tc.map_.rows_ - 1 ; k >= 0; --k){
-    for(unsigned int m = 0; m < tc.map_.cols_; ++m){
-      cout << tc.map_(k, m).path_dist << " | ";
-    }
-    cout << endl;
-  }
+  //next the back line
+  EXPECT_EQ(footprint[15].x, 2); EXPECT_EQ(footprint[15].y, 2);
+  EXPECT_EQ(footprint[16].x, 2); EXPECT_EQ(footprint[16].y, 3);
+  EXPECT_EQ(footprint[17].x, 2); EXPECT_EQ(footprint[17].y, 4);
+  EXPECT_EQ(footprint[18].x, 2); EXPECT_EQ(footprint[18].y, 5);
+  EXPECT_EQ(footprint[19].x, 2); EXPECT_EQ(footprint[19].y, 6);
 }
-*/
 
-/* 
-//convince ourselves that trajectories generate as expected
-TEST(TrajectoryController, properIntegration){
-  MapGrid mg(6, 6);
+//make sure that trajectories that intersect obstacles are invalidated
+TEST(TrajectoryController, footprintObstacles){
+  //place an obstacle
+  tc->map_(4, 6).occ_state = 1;
+  Trajectory traj(0, 0, 0, 30);
+  tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj);
+  //we expect this path to hit the obstacle
+  EXPECT_FLOAT_EQ(traj.cost_, -1.0);
 
-  //place some obstacles
-  mg(2, 3).occ_state = 1;
-  mg(3, 5).occ_state = 1;
-  mg(4, 2).occ_state = 1;
-  mg(5, 0).occ_state = 1;
+  //place a wall next to the footprint of the robot
+  tc->map_(7, 1).occ_state = 1;
+  tc->map_(7, 3).occ_state = 1;
+  tc->map_(7, 4).occ_state = 1;
+  tc->map_(7, 5).occ_state = 1;
+  tc->map_(7, 6).occ_state = 1;
+  tc->map_(7, 7).occ_state = 1;
 
-  //create a trajectory_controller
-  TrajectoryController tc(mg, 2.0, 20, 20, NULL);
+  //try to rotate into it
+  tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 0, 0, M_PI_2, 0, 0, M_PI_4, 100, traj);
+  //we expect this path to hit the obstacle
+  EXPECT_FLOAT_EQ(traj.cost_, -1.0);
+}
 
-  vector<Position2DInt> path = generatePlan();
-  tc.updatePlan(path);
+//make sure that goal distance is being computed as expected
+TEST(TrajectoryController, checkGoalDistance){
+  //let's box a cell in and make sure that its distance gets set to max
+  tc->map_(1, 2).occ_state = 1;
+  tc->map_(1, 1).occ_state = 1;
+  tc->map_(1, 0).occ_state = 1;
+  tc->map_(2, 0).occ_state = 1;
+  tc->map_(3, 0).occ_state = 1;
+  tc->map_(3, 1).occ_state = 1;
+  tc->map_(3, 2).occ_state = 1;
+  tc->map_(2, 2).occ_state = 1;
 
-  tc.computePathDistance();
+  //set a goal
+  tc->map_.resetPathDist();
+  queue<MapCell*> goal_dist_queue;
+  MapCell& current = tc->map_(4, 9);
+  current.goal_dist = 0.0;
+  current.goal_mark = true;
+  goal_dist_queue.push(&current);
+  tc->computeGoalDistance(goal_dist_queue);
 
-  Trajectory t1 = tc.generateTrajectory(0, 2, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1);
+  EXPECT_FLOAT_EQ(tc->map_(4, 8).goal_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 7).goal_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 6).goal_dist, 100.0); //there's an obstacle here placed above
+  EXPECT_FLOAT_EQ(tc->map_(4, 5).goal_dist, 6.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 4).goal_dist, 7.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 3).goal_dist, 8.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 2).goal_dist, 9.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 1).goal_dist, 10.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 0).goal_dist, 11.0);
+  EXPECT_FLOAT_EQ(tc->map_(5, 8).goal_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc->map_(9, 4).goal_dist, 10.0);
 
-  int mat_index = tc.num_steps_ - 1;
-
-  //check x integration fo position
-  EXPECT_FLOAT_EQ(tc.trajectory_pts_.element(0, mat_index), 3.45);
-
-  //check y integration fo position
-  EXPECT_FLOAT_EQ(tc.trajectory_pts_.element(1, mat_index), 2.45);
-
-  //check theta integration fo position and velocity
-  EXPECT_FLOAT_EQ(tc.trajectory_theta_.element(0, mat_index), 1.45);
+  //check the boxed in cell
+  EXPECT_FLOAT_EQ(tc->map_(2, 2).goal_dist, 100.0);
 
 }
-*/
+
+//make sure that path distance is being computed as expected
+TEST(TrajectoryController, checkPathDistance){
+  tc->map_.resetPathDist();
+  queue<MapCell*> path_dist_queue;
+  MapCell& current = tc->map_(4, 9);
+  current.path_dist = 0.0;
+  current.path_mark = true;
+  path_dist_queue.push(&current);
+  tc->computePathDistance(path_dist_queue);
+
+  EXPECT_FLOAT_EQ(tc->map_(4, 8).path_dist, 1.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 7).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 6).path_dist, 100.0); //there's an obstacle here placed above
+  EXPECT_FLOAT_EQ(tc->map_(4, 5).path_dist, 6.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 4).path_dist, 7.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 3).path_dist, 8.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 2).path_dist, 9.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 1).path_dist, 10.0);
+  EXPECT_FLOAT_EQ(tc->map_(4, 0).path_dist, 11.0);
+  EXPECT_FLOAT_EQ(tc->map_(5, 8).path_dist, 2.0);
+  EXPECT_FLOAT_EQ(tc->map_(9, 4).path_dist, 10.0);
+
+  //check the boxed in cell
+  EXPECT_FLOAT_EQ(tc->map_(2, 2).path_dist, 100.0);
+
+}
 
 //sanity check to make sure the grid functions correctly
 TEST(MapGrid, properGridConstruction){
@@ -190,6 +229,16 @@ TEST(MapGrid, properGridConstruction){
 
 //test some stuff
 int main(int argc, char** argv){
+
+  MapGrid mg(10, 10);
+  mg.scale = 1;
+  mg.origin_x = 0;
+  mg.origin_y = 0;
+
+  WavefrontMapAccessor wa(mg, .25);
+  const costmap_2d::ObstacleMapAccessor& ma = wa;
+  tc = new TrajectoryController(mg, 2, 30, 25, 2, 2, .25, .4, .6, 0, 0, 1, 1, 1, NULL, ma);
+
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
