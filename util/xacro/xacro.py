@@ -1,10 +1,10 @@
 #! /usr/bin/env python
 # Copyright (c) 2008, Willow Garage, Inc.
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
-# 
+#
 #     * Redistributions of source code must retain the above copyright
 #       notice, this list of conditions and the following disclaimer.
 #     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
 #     * Neither the name of the Willow Garage, Inc. nor the names of its
 #       contributors may be used to endorse or promote products derived from
 #       this software without specific prior written permission.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -159,7 +159,7 @@ def grab_macros(doc):
     previous = doc.documentElement
     elt = next_element(previous)
     while elt:
-        if elt.tagName == 'defmacro':
+        if elt.tagName == 'xacro:macro':
             name = elt.getAttribute('name')
 
             macros[name] = elt
@@ -172,14 +172,14 @@ def grab_macros(doc):
         elt = next_element(previous)
     return macros
 
-# Returns a Table of the consts.
-def grab_consts(doc):
+# Returns a Table of the properties
+def grab_properties(doc):
     table = Table()
 
     previous = doc.documentElement
     elt = next_element(previous)
     while elt:
-        if elt.tagName == 'defconst':
+        if elt.tagName == 'xacro:property':
             name = elt.getAttribute('name')
             value = None
 
@@ -229,7 +229,7 @@ def eval_factor(lex, symbols):
     if lex.peek()[1] == '-':
         lex.next()
         neg = -1
-    
+
     if lex.peek()[0] in [lex.NUMBER, lex.SYMBOL]:
         return neg * eval_lit(lex, symbols)
     if lex.peek()[0] == lex.LPAREN:
@@ -241,12 +241,12 @@ def eval_factor(lex, symbols):
             raise "Unmatched left paren"
         eat_ignore(lex)
         return neg * result
-    
+
     raise "Misplaced operator"
 
 def eval_term(lex, symbols):
     eat_ignore(lex)
-    
+
     result = 0
     if lex.peek()[0] in [lex.NUMBER, lex.SYMBOL, lex.LPAREN] \
             or lex.peek()[1] == '-':
@@ -308,7 +308,7 @@ def eval_text(text, symbols):
             results.append(eval_expr(lex, symbols))
     return ''.join(map(str, results))
 
-# Expands macros, replaces consts, and evaluates expressions
+# Expands macros, replaces properties, and evaluates expressions
 def eval_all(root, macros, symbols):
     previous = root
     node = next_node(previous)
@@ -339,7 +339,7 @@ def eval_all(root, macros, symbols):
                 node.parentNode.removeChild(node)
 
                 node = None
-            elif node.tagName == 'insert_block':
+            elif node.tagName == 'xacro:insert_block':
                 name = node.getAttribute('name')
                 block = symbols['*' + name]
 
@@ -362,17 +362,17 @@ def eval_all(root, macros, symbols):
 
         node = next_node(previous)
     return macros
-    
+
 
 if __name__ == '__main__':
     f = open(sys.argv[1])
     doc = parse(f)
     f.close()
 
-    
+
     process_includes(doc, os.path.dirname(sys.argv[1]))
     macros = grab_macros(doc)
-    symbols = grab_consts(doc)
+    symbols = grab_properties(doc)
 
     eval_all(doc.documentElement, macros, symbols)
 
