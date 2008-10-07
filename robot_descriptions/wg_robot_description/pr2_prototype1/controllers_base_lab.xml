@@ -5,7 +5,7 @@
   <controller name="base_controller" topic="base_controller" type="BaseControllerNode">
     <map name="velocity_control" flag="base_control">
       <elem key="kp_speed">100.0</elem>
-      <elem key="kp_caster_steer">0</elem>
+      <elem key="kp_caster_steer">1</elem>
       <elem key="timeout">3</elem>
       <elem key="max_x_dot">1.0</elem>
       <elem key="max_y_dot">1.0</elem>

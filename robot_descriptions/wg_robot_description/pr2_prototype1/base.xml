@@ -2451,7 +2451,7 @@
    <!-- new definitions for mechanism controls - JMH -->
   <include>base_transmissions.xml</include> 
   <!-- <include>base_controllers.xml</include> -->
-
+<!-- include>controllers_base_lab.xml</include -->
   <!-- Kinematic chains -->
   <chain root="torso" tip="gripper_roll_left" />
   <chain root="torso" tip="gripper_roll_right" />
