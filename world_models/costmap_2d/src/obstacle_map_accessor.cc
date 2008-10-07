@@ -132,7 +132,6 @@ namespace costmap_2d {
     } 
 
     if(my >= height_) {
-      printf("WC_MC converted  %d greater than height %d\n", my, height_);
       my = 0;
       return false;
     }
