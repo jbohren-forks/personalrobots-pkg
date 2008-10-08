@@ -38,6 +38,8 @@
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
+#include <iostream>
+#include <fstream>
 
 static int done = 0;
 
@@ -121,8 +123,6 @@ int main( int argc, char** argv )
 
   test_run_base tb;
 
-  node->subscribe("base_pose_ground_truth",tb.ground_truth,&test_run_base::odomMsgReceived,&tb,10);
-
   node->subscribe("odom",tb.odom,&test_run_base::groundTruthMsgReceived,&tb,10);
 
   signal(SIGINT,  finalize);
@@ -138,6 +138,7 @@ int main( int argc, char** argv )
 
   double run_time = 0;
   bool run_time_set = false;
+  int file_num = 0;
 
   if(argc >= 2)
     cmd.vx = atof(argv[1]);
@@ -148,11 +149,17 @@ int main( int argc, char** argv )
   if(argc >= 4)
     cmd.vw = atof(argv[3]);
 
-  if(argc ==5)
+  if(argc >=5)
   { 
      run_time = atof(argv[4]);
      run_time_set = true;
   }
+
+  if(argc ==6)
+  {
+     file_num = atoi(argv[5]);
+  }
+
   node->advertise<std_msgs::BaseVel>("cmd_vel",10);
   sleep(1);
   node->publish("cmd_vel",cmd);
@@ -161,6 +168,11 @@ int main( int argc, char** argv )
   libTF::Vector ang_rates;
   ros::Time start_time = ros::Time::now();
   ros::Duration sleep_time(0.01);
+
+  std::ofstream odom_log_file;
+  odom_log_file.open("odom_log.txt");
+
+
   while(!done)
   {
      ros::Duration delta_time = ros::Time::now() - start_time;
@@ -168,12 +180,20 @@ int main( int argc, char** argv )
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
+
+//     odom_log_file << 
+
 //    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
      //   cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
      cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
   }
+
+  node->unsubscribe("odom");
+  node->unadvertise("cmd_vel");
+
+  odom_log_file.close();
 
   ros::fini();
 }

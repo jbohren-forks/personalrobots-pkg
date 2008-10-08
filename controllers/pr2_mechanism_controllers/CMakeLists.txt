@@ -23,3 +23,6 @@ target_link_libraries(testRunBaseController pr2_mechanism_controllers)
 
 rospack_add_executable(testArmDynamicsController test/test_arm_dynamics_controller.cpp)
 target_link_libraries(testRunBaseController pr2_mechanism_controllers)
+
+rospack_add_executable(testOdom test/test_odom.cpp)
+target_link_libraries(testOdom pr2_mechanism_controllers)

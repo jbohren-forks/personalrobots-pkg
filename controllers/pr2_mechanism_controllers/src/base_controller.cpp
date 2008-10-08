@@ -35,7 +35,9 @@
 #include <pr2_mechanism_controllers/base_controller.h>
 #include <math_utils/angles.h>
 #include <math_utils/math_utils.h>
+#include "ros/node.h"
 
+using namespace ros;
 using namespace std;
 using namespace controller;
 using namespace control_toolbox;
@@ -269,8 +271,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
          while(elt_key)
          {
             *(param_map_[elt_key->Attribute("key")]) = atof(elt_key->GetText());
-            
-            if(elt_key->Attribute("key") == std::string("kp_speed"))
+                        
+/*            if(elt_key->Attribute("key") == std::string("kp_speed"))
             {
                kp_speed_ = atof(elt_key->GetText());
             }
@@ -307,7 +309,7 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
             {
                max_accel_.z = atof(elt_key->GetText());
             }
-
+*/
             elt_key = elt_key->NextSiblingElement("elem");
          }
       }
@@ -316,6 +318,15 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
       elt = config->NextSiblingElement("map");
    }
 
+   cout << "kp_speed  " << kp_speed_ << endl;
+   cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
+   cout << "timeout  " << timeout_ << endl;
+   cout << "max_x_dot  " << (max_vel_.x) << endl;
+   cout << "max_y_dot  " << (max_vel_.y) << endl;
+   cout << "max_yaw_dot  " << (max_vel_.z) << endl;
+   cout << "max_x_accel  " << (max_accel_.x) << endl;
+   cout << "max_y_accel  " << (max_accel_.y) << endl;
+   cout << "max_yaw_accel  " << (max_accel_.z) << endl;
 
    init(jcp_vec,robot_state);
    return true;
@@ -365,7 +376,7 @@ void BaseController::update()
    double dT = std::min<double>(current_time - last_time_,MAX_DT_);
    if(pthread_mutex_trylock(&base_controller_lock_)==0)
    {
-      if((robot_state_->hw_->current_time_ - cmd_received_timestamp_) > timeout_)
+      if((current_time - cmd_received_timestamp_) > timeout_)
       {
 //      cout << "BaseController:: timing out" << endl;
          cmd_vel_.x = 0;
@@ -573,14 +584,21 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
 {
    c_ = new BaseController();
    node = ros::node::instance();
+   last_time_message_sent_ = 0.0;
+   odom_publish_rate_ = 100.0;
+   odom_publish_delta_t_ = 1.0/odom_publish_rate_;
+   publisher_ = NULL;
 }
 
 BaseControllerNode::~BaseControllerNode()
 {
    node->unadvertise_service(service_prefix + "/set_command");
    node->unadvertise_service(service_prefix + "/get_actual");
-   node->unadvertise("odom");
+//   node->unadvertise("odom");
    node->unsubscribe("cmd_vel");
+
+   publisher_->stop();
+   delete publisher_;
 
    delete c_;
 }
@@ -592,9 +610,20 @@ void BaseControllerNode::setPublishCount(int publish_count)
 
 void BaseControllerNode::update()
 {
-   c_->update();
+   double time = c_->robot_state_->hw_->current_time_;
 
+   c_->update();
    c_->setOdomMessage(odom_msg_);
+
+  if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
+  {
+    if (publisher_->trylock())
+    {
+      c_->setOdomMessage(publisher_->msg_);
+      publisher_->unlockAndPublish() ;
+      last_time_message_sent_ = time;
+    }
+  }
 
    if(0)
 //  if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
@@ -678,13 +707,22 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
    node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
    node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
-   node->advertise<std_msgs::RobotBase2DOdom>("odom",10);
+//   node->advertise<std_msgs::RobotBase2DOdom>("odom",10);
 
   // receive messages from 2dnav stack
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
    // for publishing odometry frame transforms odom
-   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
+//   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
+
+  if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete publisher_ ;
+  publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
+
+  node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,1000);
+
+  if(odom_publish_rate_ > 1e-5)
+     odom_publish_delta_t_ = 1.0/odom_publish_rate_;
 
    return true;
 }

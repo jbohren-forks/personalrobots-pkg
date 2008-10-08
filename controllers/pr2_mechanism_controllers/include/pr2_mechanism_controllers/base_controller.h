@@ -55,6 +55,8 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
 
+#include <misc_utils/realtime_publisher.h>
+
 #include <rosTF/rosTF.h>
 
 #include <pthread.h>
@@ -196,6 +198,11 @@ namespace controller
 
     std::string ils_weight_type_;
 
+    /*!
+     * \brief Robot representation
+     */
+    mechanism::RobotState* robot_state_;
+
     private:
 
     /*!
@@ -213,13 +220,6 @@ namespace controller
      * \brief local gain used for speed control of the caster (to achieve resultant position control)
      */
     double kp_speed_;
-
-
-    /*!
-     * \brief Robot representation
-     */
-    mechanism::RobotState* robot_state_;
-
 
     /*!
      * \brief compute 2D velocity of a point on a rigid body given a 2D input velocity
@@ -402,6 +402,14 @@ namespace controller
      * defaults to 10.
      */
     int odom_publish_count_; //FIXME: use time rather than count
+
+    double last_time_message_sent_ ;
+
+    double odom_publish_delta_t_;
+
+    double odom_publish_rate_;
+           
+    misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
 
 
     int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */ //FIXME: use time rather than count
