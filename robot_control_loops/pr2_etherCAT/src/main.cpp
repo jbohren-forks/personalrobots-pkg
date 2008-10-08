@@ -130,8 +130,23 @@ static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::Diagnos
 static inline double now()
 {
   struct timespec n;
-  clock_gettime(CLOCK_REALTIME, &n);
+  clock_gettime(CLOCK_MONOTONIC, &n);
   return double(n.tv_nsec) / NSEC_PER_SEC + n.tv_sec;
+}
+
+static void *syncClocks(void *)
+{
+  while (!quit)
+  {
+    struct timespec ts;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    ts.tv_sec = tv.tv_sec;
+    ts.tv_nsec = tv.tv_usec * 1000;
+    clock_settime(CLOCK_REALTIME, &ts);
+    usleep(200000);
+  }
+  return 0;
 }
 
 void *controlLoop(void *)
@@ -189,7 +204,7 @@ void *controlLoop(void *)
 #endif
 
   struct timespec tick;
-  clock_gettime(CLOCK_REALTIME, &tick);
+  clock_gettime(CLOCK_MONOTONIC, &tick);
   int period = 1e+6; // 1 ms in nanoseconds
 
   static int count = 0;
@@ -216,7 +231,7 @@ void *controlLoop(void *)
       tick.tv_nsec -= NSEC_PER_SEC;
       tick.tv_sec++;
     }
-    clock_nanosleep(CLOCK_REALTIME, TIMER_ABSTIME, &tick, NULL);
+    clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &tick, NULL);
   }
 
   /* Shutdown all of the motors on exit */
@@ -267,25 +282,12 @@ void warnOnSecondary(int sig)
   }
 }
 
-void xenomaiClockHack()
-{
-  struct timespec ts;
-  struct timeval tv;
-  gettimeofday(&tv, NULL);
-  ts.tv_sec = tv.tv_sec;
-  ts.tv_nsec = tv.tv_usec * 1000;
-  clock_settime(CLOCK_REALTIME, &ts);
-}
-
-static pthread_t rtThread;
+static pthread_t rtThread, clockThread;
 static pthread_attr_t rtThreadAttr;
 int main(int argc, char *argv[])
 {
   // Keep the kernel from swapping us out
   mlockall(MCL_CURRENT | MCL_FUTURE);
-
-  // Hack to set the REALTIME clock to match the Linux system clock
-  xenomaiClockHack();
 
   // Initialize ROS and parse command-line arguments
   ros::init(argc, argv);
@@ -357,6 +359,11 @@ int main(int argc, char *argv[])
 
   //Start thread
   int rv;
+  if ((rv = pthread_create(&clockThread, NULL, syncClocks, 0)) != 0)
+  {
+    node->log(ros::FATAL, "Unable to create clock synchronization thread: rv = %d\n", rv);
+  }
+
   if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, 0)) != 0)
   {
     node->log(ros::FATAL, "Unable to create realtime thread: rv = %d\n", rv);
