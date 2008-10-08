@@ -279,7 +279,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
   //double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
-  double dvtheta = (max_vel_theta - min_vel_theta) / samples_per_dim_;
+  double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
   double vtheta_samp = min_vel_theta;
@@ -301,7 +301,36 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   //any cell with a cost greater than the size of the map is impossible
   double impossible_cost = map_.map_.size();
 
+  //loop through all x velocities
+  for(int i = 0; i < samples_per_dim_; ++i){
+    vtheta_samp = 0;
+    //first sample the straight trajectory
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
+    //if the new trajectory is better... let's take it
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+      swap = best_traj;
+      best_traj = comp_traj;
+      comp_traj = swap;
+    }
+
+    vtheta_samp = min_vel_theta;
+    //next sample all positive theta trajectories
+    for(int j = 0; j < samples_per_dim_ - 1; ++j){
+      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+      //if the new trajectory is better... let's take it
+      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+        swap = best_traj;
+        best_traj = comp_traj;
+        comp_traj = swap;
+      }
+      vtheta_samp += dvtheta;
+    }
+    vx_samp += dvx;
+  }
+
+  /*
   //generate trajectories for regularly sampled velocities
   for(int i = 0; i < samples_per_dim_; ++i){
     //vy_samp = min_vel_y;
@@ -323,6 +352,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     vx_samp += dvx;
   }
+  */
 
   //next we want to generate trajectories for rotating in place
   vtheta_samp = min_vel_theta;
