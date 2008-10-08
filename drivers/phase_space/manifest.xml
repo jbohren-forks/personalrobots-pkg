@@ -1,0 +1,8 @@
+<package>
+  <description>A basic client application to interface with the PhaseSpace ground truth system</description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="rospy" />
+</package>

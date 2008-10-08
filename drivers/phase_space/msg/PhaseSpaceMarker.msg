@@ -1,0 +1,3 @@
+int32 id
+std_msgs/Point3DFloat32 location
+float32 condition
