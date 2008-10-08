@@ -94,12 +94,16 @@ class TeleopBase : public node
                cmd.vy = req_vy;
                cmd.vw = req_vw;
             }
-         }
-         else
-            cmd.vx = cmd.vy = cmd.vw = 0;
-         joy.unlock();
          fprintf(stderr,"teleop_base:: %f, %f, %f\n",cmd.vx,cmd.vy,cmd.vw);
          publish("cmd_vel", cmd);
+         }
+         else
+	   {
+            cmd.vx = cmd.vy = cmd.vw = 0;
+	    fprintf(stderr,"teleop_base:: deadman off\n");
+	   }
+         joy.unlock();
+
       }
 };
 
