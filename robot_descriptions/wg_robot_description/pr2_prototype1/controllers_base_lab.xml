@@ -6,10 +6,15 @@
     <map name="velocity_control" flag="base_control">
       <elem key="kp_speed">100.0</elem>
       <elem key="kp_caster_steer">1</elem>
-      <elem key="timeout">3</elem>
-      <elem key="max_x_dot">1.0</elem>
-      <elem key="max_y_dot">1.0</elem>
-      <elem key="max_yaw_dot">1.0</elem>
+      <elem key="timeout">0.1</elem>
+
+      <elem key="max_x_dot">1</elem>
+      <elem key="max_y_dot">1</elem>
+      <elem key="max_yaw_dot">1</elem>
+
+      <elem key="max_x_accel">2.0</elem>
+      <elem key="max_y_accel">2.0</elem>
+      <elem key="max_yaw_accel">0.3</elem>
     </map>
     <controller name="wheel_front_left_l_controller" topic="wheel_front_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_l_joint" >

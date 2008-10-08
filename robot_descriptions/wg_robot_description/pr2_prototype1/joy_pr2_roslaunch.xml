@@ -7,7 +7,7 @@
 <param name="max_vx" value="0.6" />
 <param name="max_vy" value="0.6" />
 <param name="deadman_button" value="4" type="int"/>
-<node pkg="teleop_base" type="teleop_base" output="screen"/>
+<node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
 <node pkg="joy" type="joy" output="screen"/>
   </group>
 </launch>

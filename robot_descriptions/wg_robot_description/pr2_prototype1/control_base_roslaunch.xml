@@ -1,6 +1,6 @@
 <launch>
   <group name="wg">
- <node pkg="mechanism_control" type="mech.py" args="sp base_controllers_lab.xml"/>
+ <node pkg="mechanism_control" type="mech.py" args="sp controllers_base_lab.xml" output="screen"/>
   </group>
 </launch>
 
