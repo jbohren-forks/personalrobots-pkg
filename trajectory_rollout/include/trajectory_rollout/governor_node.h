@@ -84,16 +84,18 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
 
     virtual ~WavefrontMapAccessor(){};
 
-    virtual bool isObstacle(unsigned int mx, unsigned int my) const {
-      if(map_(mx, my).occ_state == 1)
-        return true;
-      return false;
+    virtual unsigned char operator[](unsigned int ind) const{
+      unsigned int mx, my;
+      IND_MC(ind, mx, my);
+      return getCost(mx, my);
     }
 
-    virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const {
-      if(map_(mx, my).occ_dist < outer_radius_)
-        return true;
-      return false;
+    virtual unsigned char getCost(unsigned int mx, unsigned int my) const {
+      if(map_(mx, my).occ_state == 1)
+	return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
+      else if(map_(mx, my).occ_dist < outer_radius_)
+	return costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE;
+      return 0;
     }
 
     void updateOrigin(double o_x, double o_y){

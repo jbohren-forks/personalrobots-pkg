@@ -47,8 +47,9 @@ MapGrid::MapGrid(unsigned int size_x, unsigned int size_y)
   //make each cell aware of its location in the grid
   for(unsigned int i = 0; i < size_y; ++i){
     for(unsigned int j = 0; j < size_x; ++j){
-      map_[size_x * i + j].cx = j;
-      map_[size_x * i + j].cy = i;
+      unsigned int id = size_x * i + j;
+      map_[id].cx = j;
+      map_[id].cy = i;
     }
   }
 }

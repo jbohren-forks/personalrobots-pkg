@@ -207,7 +207,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     }
 
     //we need to check if we need to lay down the footprint of the robot
-    if(ma_.isInflatedObstacle(cell_x, cell_y)){
+    if(ma_.getCost(cell_x, cell_y) == costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE){
       double footprint_cost = footprintCost(x_i, y_i, theta_i);
       //if the footprint hits an obstacle this trajectory is invalid
       if(footprint_cost < 0){
@@ -226,6 +226,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
     //if a point on this trajectory has no clear path to goal it is invalid
     if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
+      //printf("No path to goal with goal distance = %f, path_distance = %f and max cost = %f\n", goal_dist, path_dist, impossible_cost);
       traj.cost_ = -1.0;
       return;
     }
@@ -503,7 +504,8 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 
 double TrajectoryController::pointCost(int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(ma_.isObstacle(x, y) && !(map_(x, y).within_robot)){
+  if(ma_.getCost(x, y) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
+    //printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
 
