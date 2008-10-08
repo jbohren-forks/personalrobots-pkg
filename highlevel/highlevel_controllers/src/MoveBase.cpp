@@ -122,13 +122,13 @@ namespace ros {
 			       inflationRadius, circumscribedRadius, inscribedRadius);
 
       // Allocate Velocity Controller
-      double mapSize(10.0);
+      double mapSize(1.0);
       double pathDistanceBias(0.4);
       double goalDistanceBias(0.6);
       double accLimit_x(0.15);
       double accLimit_y(1.0);
       double accLimit_th(1.0);
-      const double SIM_TIME = 3.0;
+      const double SIM_TIME = 1.0;
       const unsigned int SIM_STEPS = 30;
       const unsigned int SAMPLES_PER_DIM = 25;
       const double MAX_OCC_DIST = 1.0;

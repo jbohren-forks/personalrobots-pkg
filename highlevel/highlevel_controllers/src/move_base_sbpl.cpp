@@ -117,7 +117,7 @@ namespace ros {
 
       lock();
       const CostMap2D& cm = getCostMap();
-      char* initialMapData = new char[cm.getWidth() * cm.getHeight()];
+      unsigned char* initialMapData = new unsigned char[cm.getWidth() * cm.getHeight()];
       // Set all to 0 (unoccupied) by default.
       memset(initialMapData, 0, cm.getWidth() * cm.getHeight());
 
@@ -148,7 +148,7 @@ namespace ros {
 	exit(1);
       }
 
-      araPlanner_ = new ARAPlanner(&envNav2D_);
+      araPlanner_ = new ARAPlanner(&envNav2D_, false);
     }
 
     MoveBaseSBPL::~MoveBaseSBPL(){
