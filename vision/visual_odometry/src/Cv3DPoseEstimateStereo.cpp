@@ -27,6 +27,11 @@ using namespace std;
 #include <star_detector/detector.h>
 #endif
 
+// sse intrinsic
+#include <emmintrin.h>
+
+#include <stdlib.h>
+
 #undef DEBUG
 //#define DEBUG 1
 
@@ -72,9 +77,14 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 	mCalonderMatcher(NULL),
 	mDisparityUnitInPixels(DefDisparityUnitInPixels)
 {
-	mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
-	mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
-	mFeatureImgBufRight = new uint8_t[mSize.width*mSize.height];
+  mBufStereoPairs     = new uint8_t[mSize.height*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
+  // allocate the following buffer aligned with 16 byte block
+  // so that they can be faster to access in sse
+  size_t bufsz = mSize.width*mSize.height;
+  posix_memalign((void **)&mFeatureImgBufLeft,  SSEAlignment, bufsz);
+  posix_memalign((void **)&mFeatureImgBufRight, SSEAlignment, bufsz);
+//  mFeatureImgBufLeft  = new uint8_t[mSize.width*mSize.height];
+//  mFeatureImgBufRight = new uint8_t[mSize.width*mSize.height];
 
 	setNumRansacIterations(DefNumRansacIter);
 	setInlierErrorThreshold(DefInlierThreshold);
@@ -97,9 +107,12 @@ PoseEstimateStereo::PoseEstimateStereo(int width, int height):
 }
 
 PoseEstimateStereo::~PoseEstimateStereo() {
-	delete [] mBufStereoPairs;
-	delete [] mFeatureImgBufLeft;
-	delete mCalonderMatcher;
+  delete [] mBufStereoPairs;
+  free(mFeatureImgBufLeft);
+  free(mFeatureImgBufRight);
+//  delete [] mBufStereoPairs;
+//  delete [] mFeatureImgBufLeft;
+  delete mCalonderMatcher;
 	if (mEigImage)  delete mEigImage;
 	if (mTempImage) delete mTempImage;
 }

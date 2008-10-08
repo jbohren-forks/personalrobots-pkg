@@ -646,6 +646,7 @@ vector<FramePose>* PathRecon::getFramePoses() {
 void PathRecon::printStat(){
   mStat.mNumKeyPointsWithNoDisparity = mPoseEstimator.mNumKeyPointsWithNoDisparity;
   mStat.mPathLength = mPathLength;
+  mStat.mFinalPose = mFramePoses.back();
   mStat.print();
 }
 
@@ -696,6 +697,9 @@ void PathRecon::Stat::print(){
   fprintf(stdout, "Total/Average keypoints:           %d,   %05.2f\n", numTotalKeyFrameKeypoints,      (double)(numTotalKeyFrameKeypoints) * kfScale);
   fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", numTotalKeyFrameTrackablePairs, (double)(numTotalKeyFrameTrackablePairs) * kfScale);
   fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", numTotalKeyFrameInliers,        (double)(numTotalKeyFrameInliers) *kfScale);
+  fprintf(stdout, "Last pose, rod = (%f, %f, %f), shift = (%f,%f, %f)\n",
+      mFinalPose.mRod.x, mFinalPose.mRod.y, mFinalPose.mRod.z,
+      mFinalPose.mShift.x, mFinalPose.mShift.y, mFinalPose.mShift.z);
 
 }
 

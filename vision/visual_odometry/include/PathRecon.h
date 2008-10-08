@@ -161,6 +161,7 @@ public:
     /// of the errors in transformation estimation. Used mostly
     /// for debugging / analysis purposes.
     CvPoseEstErrMeasDisp mErrMeas;
+    FramePose mFinalPose;
   };
   Stat   mStat; //< Statistics of the visual odometry process
 

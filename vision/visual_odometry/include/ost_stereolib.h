@@ -49,7 +49,17 @@ extern "C" {
 // prefilter
 
 #ifdef __SSE2__
-#define ost_do_prefilter ost_do_prefilter_fast
+  // img and featureImg need to be aligned to 16 byte block for sse
+#define ost_do_prefilter(im, ftim, xim, yim, ftzero, buf) \
+do { \
+  if (true||(uintptr_t)(img) & (uintptr_t)0xF || (uintptr_t)(ftim) & (uintptr_t)0xF ) { \
+    cerr<< "buf not aligned for gradient map"<<endl; \
+    ost_do_prefilter_fast_u((im), (ftim), (xim), (yim), (ftzero), (buf));\
+  } else { \
+  ost_do_prefilter_fast((im), (ftim), (xim), (yim), (ftzero), (buf));\
+  }\
+} while (0)
+
 #else
 #define ost_do_prefilter ost_do_prefilter_norm
 #endif
@@ -63,16 +73,25 @@ ost_do_prefilter_norm(const uint8_t *im,	// input image
 	  );
 
 void
-ost_do_prefilter_fast(const uint8_t *im,	// input image
-	  uint8_t *ftim,	// feature image output
-	  int xim, int yim,	// size of image
-	  uint8_t ftzero,	// feature offset from zero
-	  uint8_t *buf		// buffer storage
-	  )
+ost_do_prefilter_fast(const uint8_t *im,  // input image
+    uint8_t *ftim,  // feature image output
+    int xim, int yim, // size of image
+    uint8_t ftzero, // feature offset from zero
+    uint8_t *buf    // buffer storage
+    )
 #ifdef GCC
 //  __attribute__ ((force_align_arg_pointer)) // align to 16 bytes
 #endif
 ;
+
+// a version that does not require the buffer to aligned to 16 byte
+void
+ost_do_prefilter_fast_u(const uint8_t *im,  // input image
+    uint8_t *ftim,  // feature image output
+    int xim, int yim, // size of image
+    uint8_t ftzero, // feature offset from zero
+    uint8_t *buf    // buffer storage
+);
 
 
 #ifdef __cplusplus

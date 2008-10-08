@@ -42,7 +42,7 @@ using namespace std;
 #define ShowTemplateMatching 0
 
 #define DEBUG 1
-#define DISPLAY 1
+#define DISPLAY 0
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)
@@ -244,6 +244,48 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   return status;
 }
 
+static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightImage, WImageBuffer1_16s& dispMap) {
+  bool status = true;
+
+  int w = leftImage.Width();
+  int h = leftImage.Height();
+
+  if (w != rightImage.Width() || h != rightImage.Height()) {
+    cerr << __PRETTY_FUNCTION__ <<"(): size of images incompatible. "<< endl;
+    return false;
+  }
+
+  //
+  // Try Kurt's dense stereo pair
+  //
+  const uint8_t *lim = leftImage.ImageData();
+  const uint8_t *rim = rightImage.ImageData();
+
+  int16_t* disp    = dispMap.ImageData();
+  int16_t* textImg = NULL;
+
+  static const int mFTZero       = 31;    //< max 31 cutoff for prefilter value
+  static const int mDLen         = 64;    //< 64 disparities
+  static const int mCorr         = 15;    //< correlation window size
+  static const int mTextThresh   = 10;    //< texture threshold
+  static const int mUniqueThresh = 15;    //< uniqueness threshold
+
+  // scratch images
+  uint8_t *mBufStereoPairs     = new uint8_t[h*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
+  uint8_t *mFeatureImgBufLeft  = new uint8_t[w*h];
+  uint8_t *mFeatureImgBufRight = new uint8_t[w*h];
+
+  // prefilter
+  do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, w, h, mFTZero, mBufStereoPairs);
+  do_prefilter((uint8_t *)rim, mFeatureImgBufRight, w, h, mFTZero, mBufStereoPairs);
+
+  // stereo
+  do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, w, h,
+      mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
+
+  return status;
+}
+
 bool CvTest3DPoseEstimate::testVideo() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
@@ -260,7 +302,6 @@ bool CvTest3DPoseEstimate::testVideo() {
   int start = 0;
   int end   = 1509;
   int step  = 1;
-  start = 25;
 
   // set up a FileSeq
   FileSeq fileSeq;
@@ -276,6 +317,9 @@ bool CvTest3DPoseEstimate::testVideo() {
   }
 
   do {
+    StereoFrame& sf = fileSeq.mInputImageQueue.front();
+    sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
+    getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
     pathRecon.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 

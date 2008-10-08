@@ -71,6 +71,8 @@ public:
 
 	static const MatchMethod DefMatchMethod = CrossCorrelation;
 
+  static const size_t SSEAlignment = 16;
+
 	PoseEstimateStereo(int width=DefWidth, int height=DefHeight);
 	virtual ~PoseEstimateStereo();
 
