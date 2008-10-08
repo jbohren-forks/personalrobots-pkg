@@ -14,8 +14,9 @@ class TeleopBase : public node
       double req_vx, req_vy, req_vw, max_vx, max_vy, max_vw;
       int axis_vx, axis_vy, axis_vw;
       int deadman_button, passthrough_button;
+       bool deadman_no_publish_;
 
-      TeleopBase() : node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3)
+  TeleopBase(bool deadman_no_publish = false) : node("teleop_base"), max_vx(0.6), max_vy(0.6), max_vw(0.3), deadman_no_publish_(deadman_no_publish)
       {
          cmd.vx = cmd.vy = cmd.vw = 0;
          if (!has_param("max_vx") || !get_param("max_vx", max_vx))
@@ -100,8 +101,11 @@ class TeleopBase : public node
          else
          {
            cmd.vx = cmd.vy = cmd.vw = 0;
-           publish("cmd_vel", cmd);
-           fprintf(stderr,"teleop_base:: deadman off\n");
+           if (!deadman_no_publish_)
+           {
+             publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled
+             fprintf(stderr,"teleop_base:: deadman off\n");
+           }
          }
          joy.unlock();
       }
@@ -110,7 +114,15 @@ class TeleopBase : public node
 int main(int argc, char **argv)
 {
    ros::init(argc, argv);
-   TeleopBase teleop_base;
+   const char* opt_no_publish    = "--deadman-no-publish";
+
+   bool no_publish = false;
+   for(int i=1;i<argc;i++)
+   {
+     if(!strncmp(argv[i], opt_no_publish, strlen(opt_no_publish)))
+       no_publish = true;
+   }
+   TeleopBase teleop_base(no_publish);
    while (teleop_base.ok())
    {
       usleep(50000);
