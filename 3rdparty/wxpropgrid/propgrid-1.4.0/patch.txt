@@ -1,0 +1,146 @@
+Index: include/wx/propgrid/propgrid.h
+===================================================================
+--- include/wx/propgrid/propgrid.h	(revision 1084)
++++ include/wx/propgrid/propgrid.h	(revision 1085)
+@@ -950,7 +950,8 @@
+ {
+ wxPG_SETVAL_REFRESH_EDITOR      = 0x0001,
+ wxPG_SETVAL_AGGREGATED          = 0x0002,
+-wxPG_SETVAL_FROM_PARENT         = 0x0004
++wxPG_SETVAL_FROM_PARENT         = 0x0004,
++wxPG_SETVAL_BY_USER             = 0x0008  // Set if value changed by user
+ };
+ 
+ // -----------------------------------------------------------------------
+Index: CHANGES.txt
+===================================================================
+--- CHANGES.txt	(revision 1084)
++++ CHANGES.txt	(revision 1085)
+@@ -424,6 +424,9 @@
+     embedded wxTextCtrl editor. Now should work atleast on
+     Windows.
+ 
++  - Setting property value string did not update children of composed parent.
++
+   - Showing popup menu on wxPropertyGrid caused crash
+     (fix by Grégory Jaegy).
+ 
+Index: src/propgrid.cpp
+===================================================================
+--- src/propgrid.cpp	(revision 1084)
++++ src/propgrid.cpp	(revision 1085)
+@@ -1166,12 +1166,23 @@
+ 
+     if ( !value.IsNull() )
+     {
++        wxVariant tempListVariant;
++
+         SetCommonValue(-1);
++
+         // List variants are reserved a special purpose
+         // as intermediate containers for child values
+         // of properties with children.
+         if ( wxPGIsVariantType(value, list) )
+         {
++            //
++            // However, situation is different for composed string properties
++            if ( HasFlag(wxPG_PROP_COMPOSED_VALUE) )
++            {
++                tempListVariant = value;
++                pList = &tempListVariant;
++            }
++
+             wxVariant newValue;
+             AdaptListToValue(value, &newValue);
+             value = newValue;
+@@ -1216,15 +1227,13 @@
+                         }
+                     }
+                     else if ( !wxPG_VARIANT_EQ(child->GetValue(), childValue) )
+-                        // This flag is not normally set when setting value programmatically.
+-                        // However, this loop is usually only executed when called from
+-                        // DoPropertyChanged, which should set this flag.
+                     {
+                         // For aggregate properties, we will trust RefreshChildren()
+                         // to update child values.
+                         if ( !IsFlagSet(wxPG_PROP_AGGREGATE) )
+                             child->SetValue(childValue, NULL, flags|wxPG_SETVAL_FROM_PARENT);
+-                        child->SetFlag(wxPG_PROP_MODIFIED);
++                        if ( flags & wxPG_SETVAL_BY_USER )
++                            child->SetFlag(wxPG_PROP_MODIFIED);
+                     }
+                 }
+                 i++;
+@@ -1240,7 +1249,7 @@
+                 UpdateParentValues();
+         }
+ 
+-        if ( pList )
++        if ( flags & wxPG_SETVAL_BY_USER )
+             SetFlag(wxPG_PROP_MODIFIED);
+ 
+         if ( IsFlagSet(wxPG_PROP_AGGREGATE) )
+@@ -6025,7 +6034,7 @@
+         topPaintedProperty = topPaintedProperty->GetParent();
+     }
+ 
+-    changedProperty->SetValue(value, &m_chgInfo_valueList);
++    changedProperty->SetValue(value, &m_chgInfo_valueList, wxPG_SETVAL_BY_USER);
+ 
+     // Set as Modified (not if dragging just began)
+     if ( !(p->m_flags & wxPG_PROP_MODIFIED) )
+Index: samples/tests.cpp
+===================================================================
+--- samples/tests.cpp	(revision 1084)
++++ samples/tests.cpp	(revision 1085)
+@@ -835,6 +835,37 @@
+         pgman->SetPropertyValue(wxT("IntProperty"),wxLL(-80000000000));
+         if ( pgman->GetPropertyValueAsLongLong(wxT("IntProperty")) != wxLL(-80000000000) )
+             RT_FAILURE();
++
++        // Make sure children of composite parent get updated as well
++        // Original string value: "Lamborghini Diablo SV; [300; 3.9; 8.6]; 300000"
++
++        // This updates children as well
++        wxString nvs = wxT("Lamborghini Diablo XYZ; 5707; [100; 3.9; 8.6] 3000002");
++        pgman->SetPropertyValue(wxT("Car"), nvs);
++
++        if ( pgman->GetProperty(wxT("Car"))->GetDisplayedString() != nvs )
++        {
++            wxLogDebug(wxT("Did not match: Car=%s"), pgman->GetProperty(wxT("Car"))->GetDisplayedString().c_str());
++            RT_FAILURE();
++        }
++
++        if ( pgman->GetPropertyValueAsString(wxT("Car.Model")) != wxT("Lamborghini Diablo XYZ") )
++        {
++            wxLogDebug(wxT("Did not match: Car.Model=%s"), pgman->GetPropertyValueAsString(wxT("Car.Model")).c_str());
++            RT_FAILURE();
++        }
++
++        if ( pgman->GetPropertyValueAsInt(wxT("Car.Speeds.Max. Speed (mph)")) != 100 )
++        {
++            wxLogDebug(wxT("Did not match: Car.Speeds.Max. Speed (mph)=%s"), pgman->GetPropertyValueAsString(wxT("Car.Speeds.Max. Speed (mph)")).c_str());
++            RT_FAILURE();
++        }
++
++        if ( pgman->GetPropertyValueAsInt(wxT("Car.Price ($)")) != 3000002 )
++        {
++            wxLogDebug(wxT("Did not match: Car.Price ($)=%s"), pgman->GetPropertyValueAsString(wxT("Car.Price ($)")).c_str());
++            RT_FAILURE();
++        }
+     }
+ 
+     {
+Index: samples/propgridsample.cpp
+===================================================================
+--- samples/propgridsample.cpp	(revision 1084)
++++ samples/propgridsample.cpp	(revision 1085)
+@@ -1735,7 +1735,7 @@
+     pg->SetPropertyValue( wxT("Car.Speeds.Max. Speed (mph)"), 300 );
+ 
+     // Displayed value of "Car" property is now:
+-    // "Lamborghini Diablo SV; [300; 3.9; 8.6]; 300000"
++    // "Lamborghini Diablo SV; 5707; [300; 3.9; 8.6]; 300000"
+ 
+     //
+     // Test wxSampleMultiButtonEditor

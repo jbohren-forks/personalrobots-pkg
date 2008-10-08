@@ -1,1 +1,0 @@
-* (jfaust) Removed support wxpython support, since it conflicts with C++ applications linking against it which also have wxpython bindings
