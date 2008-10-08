@@ -122,7 +122,7 @@ namespace ros {
 			       inflationRadius, circumscribedRadius, inscribedRadius);
 
       // Allocate Velocity Controller
-      double mapSize(1.0);
+      double mapSize(2.0);
       double pathDistanceBias(0.4);
       double goalDistanceBias(0.6);
       double accLimit_x(0.15);
@@ -134,7 +134,7 @@ namespace ros {
       const double MAX_OCC_DIST = 1.0;
       const double DFAST_SCALE = 0;
       const double OCCDIST_SCALE = 0;
-      param("trajectory_rollout/map_size", mapSize, 10.0);
+      param("trajectory_rollout/map_size", mapSize, 2.0);
       param("trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
       param("trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
       param("trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
