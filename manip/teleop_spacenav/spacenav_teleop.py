@@ -34,7 +34,7 @@ from robot_mechanism_controllers.srv import GetVector, SetVectorCommand
 from std_msgs.msg import Vector3
 
 def print_usage(code = 0):
-    print sys.argv[0], '<cartesian position controller topic>'
+    print sys.argv[0], '<cartesian velocity controller topic>'
     sys.exit(code)
 
 
@@ -45,21 +45,26 @@ if __name__ == '__main__':
     topic = sys.argv[1]
     get_position = rospy.ServiceProxy(topic + '/get_actual', GetVector)
     set_command = rospy.ServiceProxy(topic + '/set_command', SetVectorCommand)
+    publisher = rospy.advertise_topic(topic + '/command', Vector3)
 
     pos = get_position().v
 
     i = 0
     def spacenav_updated(msg):
         global i
-        FACTOR = 0.00001
-        pos.x += FACTOR * msg.x
-        pos.y += FACTOR * msg.y
-        pos.z += FACTOR * msg.z
+        FACTOR = 0.001
+        #pos.x += FACTOR * msg.x
+        #pos.y += FACTOR * msg.y
+        #pos.z += FACTOR * msg.z
+        msg.x *= FACTOR
+        msg.y *= FACTOR
+        msg.z *= FACTOR
         i += 1
-        if i % 10 != 0:
+        if i % 1 != 0:
           return
-        print "Position: (%.2f, %.2f, %.2f)" % (pos.x, pos.y, pos.z)
-        set_command(pos.x, pos.y, pos.z)
+        print "Velocity: (%.3f, %.3f, %.3f)" % (msg.x, msg.y, msg.z)
+        #set_command(pos.x, pos.y, pos.z)
+        publisher.publish(msg)
 
     rospy.subscribe_topic("/spacenav/offset", Vector3, spacenav_updated)
     rospy.init_node('spacenav_teleop')

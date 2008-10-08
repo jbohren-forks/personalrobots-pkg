@@ -52,8 +52,22 @@ int main(int argc, char **argv)
   }
 
   spnav_event sev;
-  while (spnav_wait_event(&sev))
+  int ret;
+  int no_motion_count = 0;
+  while (true)
   {
+    ret = spnav_poll_event(&sev);
+    spnav_remove_events(SPNAV_EVENT_MOTION);
+
+    if (ret == 0)
+    {
+      if (++no_motion_count > 30)
+      {
+        std_msgs::Vector3 offset_msg;
+        offset_msg.x = offset_msg.y = offset_msg.z = 0;
+        node.publish("/spacenav/offset", offset_msg);
+      }
+    }
     if (sev.type == SPNAV_EVENT_MOTION)
     {
       std_msgs::Vector3 offset_msg;
@@ -61,6 +75,7 @@ int main(int argc, char **argv)
       offset_msg.y = -sev.motion.x;
       offset_msg.z = sev.motion.y;
       node.publish("/spacenav/offset", offset_msg);
+      no_motion_count = 0;
     }
     else if (sev.type == SPNAV_EVENT_BUTTON)
     {
