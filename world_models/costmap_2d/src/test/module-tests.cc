@@ -424,6 +424,42 @@ TEST(costmap, test9){
   ASSERT_EQ(updates.size(), 49);
 }
 
+/**
+ * Test for the cost map accessor
+ */
+TEST(costmap, test10){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+
+  // A window around a robot in the top left
+  CostMapAccessor ma(map, 5, 0, 0);
+  double wx, wy;
+
+  // Origin
+  ma.MC_WC(0, 0, wx, wy);
+  ASSERT_EQ(wx, 0.5);
+  ASSERT_EQ(wy, 0.5);
+
+
+  // Max in x and y
+  ma.updateForRobotPosition(9.5, 9.5);
+  ma.MC_WC(0, 0, wx, wy);
+  ASSERT_EQ(wx, 5.5);
+  ASSERT_EQ(wy, 5.5);
+
+  // Off the map in x - assume it ignores the change
+  ma.updateForRobotPosition(10.5, 9.5);
+  ma.MC_WC(0, 0, wx, wy);
+  ASSERT_EQ(wx, 5.5);
+  ASSERT_EQ(wy, 5.5);
+
+  // Off the map in y - assume it ignores the change
+  ma.updateForRobotPosition(9.5, 10.5);
+  ma.MC_WC(0, 0, wx, wy);
+  ASSERT_EQ(wx, 5.5);
+  ASSERT_EQ(wy, 5.5);
+
+
+}
 int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++)
     MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);

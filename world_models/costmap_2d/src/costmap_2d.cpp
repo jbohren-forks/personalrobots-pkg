@@ -338,4 +338,84 @@ namespace costmap_2d {
     }
     return ss.str();
   }
+
+  CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
+    : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
+			  computeWY(costMap, maxSize, poseX, poseY), 
+			  computeSize(maxSize, costMap.getResolution()), 
+			  computeSize(maxSize, costMap.getResolution()), 
+			  costMap.getResolution()), costMap_(costMap),
+      maxSize_(maxSize){
+
+    // The origin locates this grid. Convert from world coordinates to cell co-ordinates
+    // to get the cell coordinates of the origin
+    costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
+
+    printf("Creating Local %d X %d Map\n", getWidth(), getHeight());
+  }
+
+  unsigned char CostMapAccessor::operator[](unsigned int ind) const {
+    double wx, wy;
+    IND_WC(ind, wx, wy);
+    return costMap_[costMap_.WC_IND(wx, wy)];
+  }
+
+  unsigned char CostMapAccessor::getCost(unsigned int mx, unsigned int my) const {
+    double wx, wy;
+    MC_WC(mx, my, wx, wy);
+    return costMap_[costMap_.WC_IND(wx, wy)];
+  }
+
+  void CostMapAccessor::updateForRobotPosition(double wx, double wy){
+    if(wx < 0 || wx > costMap_.getResolution() * costMap_.getWidth())
+      return;
+
+    if(wy < 0 || wy > costMap_.getResolution() * costMap_.getHeight())
+      return;
+
+    origin_x_ = computeWX(costMap_, maxSize_, wx, wy);
+    origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
+    costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
+
+    //printf("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
+    //     origin_x_, origin_y_, maxSize_, wx, wy);
+  }
+
+  double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
+    unsigned int mx, my;
+    costMap.WC_MC(wx, wy, mx, my);
+
+    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+    unsigned int origin_mx(0);
+
+    if(mx > cellWidth/2)
+      origin_mx = mx - cellWidth/2;
+
+    if(origin_mx + cellWidth > costMap.getWidth())
+      origin_mx = costMap.getWidth() - cellWidth;
+
+    return origin_mx * costMap.getResolution();
+  }
+
+  double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy){
+    unsigned int mx, my;
+    costMap.WC_MC(wx, wy, mx, my);
+
+    unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+    unsigned int origin_my(0);
+
+    if(my > cellWidth/2)
+      origin_my = my - cellWidth/2;
+
+    if(origin_my + cellWidth > costMap.getHeight())
+      origin_my = costMap.getHeight() - cellWidth;
+
+    return origin_my * costMap.getResolution();
+  }
+
+  unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
+    unsigned int cellWidth = (unsigned int) ceil(maxSize/resolution);
+    printf("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
+    return cellWidth;
+  }
 }

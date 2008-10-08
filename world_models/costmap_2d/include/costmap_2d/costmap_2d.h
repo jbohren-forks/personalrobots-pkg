@@ -206,5 +206,40 @@ namespace costmap_2d {
   
     std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
   };
+
+  /**
+   * Wrapper class that provides a local window onto a global cost map
+   */
+  class CostMapAccessor: public ObstacleMapAccessor {
+  public:
+    /**
+     * @brief Constructor
+     * @param costMap The underlying global cost map
+     * @param maxSize The maximum width and height of the window in meters
+     * @param the current x position in global coords
+     * @param the current y position in global coords
+     */
+    CostMapAccessor(const CostMap2D& costMap, double maxSize, double pose_x, double pose_y);
+
+    /** Implementation for base class interface **/
+    virtual unsigned char operator[](unsigned int ind) const;
+    virtual unsigned char getCost(unsigned int mx, unsigned int my) const;
+
+    /**
+     * @brief Set the pose for the robot. Will adjust other parameters accordingly.
+     */
+    void updateForRobotPosition(double wx, double wy);
+
+  private:
+
+    static double computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy);
+    static double computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy);
+    static unsigned int computeSize(double maxSize, double resolution);
+
+    const CostMap2D& costMap_;
+    const double maxSize_;
+    unsigned int mx_0_;
+    unsigned int my_0_;
+  };
 }
 #endif
