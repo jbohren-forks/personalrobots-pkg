@@ -10,8 +10,8 @@
 
 #include <opencv/cxcore.h>
 
-//#include <boost/unordered_set.hpp>
-#include <set>
+#include <boost/unordered_set.hpp>
+//#include <set>
 
 /// a struct to hold the triplet set of integers
 class CvTripletSet {
@@ -86,7 +86,8 @@ protected:
   unsigned int    mMaxNumSets;
   /// Encode the triplet into a 64 bit long
   uint64 mEncodeSetInLong(CvTripletSet const & triplet);
-  std::set<int64> mSetOfSets;
+//  std::set<int64> mSetOfSets;
+  boost::unordered_set<int64> mSetOfSets;
   /// return a new set, maybe a duplicate of a previously generated one.
   void nextSetWithDuplicate(CvTripletSet& triplet);
   /// sort the triplet into increasing order
