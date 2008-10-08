@@ -1,15 +1,13 @@
 all: ogre
 
-ogre-v1-4-9.tar.bz2: 
-	wget http://downloads.sourceforge.net/ogre/ogre-v1-4-9.tar.bz2
-
 OGRE_VERSION = ogre-v1-4-9
-
-download: ogre-v1-4-9.tar.bz2
-
-$(OGRE_VERSION): $(OGRE_VERSION).tar.bz2
-	tar xf $(OGRE_VERSION).tar.bz2
-	mv ogre $(OGRE_VERSION)
+TARBALL = $(OGRE_VERSION).tar.bz2
+TARBALL_URL = http://downloads.sourceforge.net/ogre/$(TARBALL)
+SOURCE_DIR = $(OGRE_VERSION)
+UNPACK_CMD = tar xf
+TARBALL_PATCH = warnings.patch
+INITIAL_DIR = ogre
+include $(shell rospack find mk)/download_unpack.mk
 
 ROOT = $(shell rospack find ogre)
 OGREROOT = $(shell rospack find ogre)/ogre
@@ -48,7 +46,7 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 .PHONY: ogre
 ogre: ogre/lib/pkgconfig/OGRE.pc
 
-ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile 
+ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 	# building OGRE
 	if test `uname` = Darwin ; then \
 	  cd $(ROOT)/$(OGRE_VERSION)/Mac/Ogre && \

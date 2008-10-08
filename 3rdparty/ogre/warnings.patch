@@ -1,0 +1,98 @@
+*** OgreMain/include/OgreUTFString.h	2007-03-08 22:11:57.000000000 -0800
+--- OgreMain/include/OgreUTFString_patched.h	2008-10-08 12:59:12.828243011 -0700
+***************
+*** 30,36 ****
+  
+  #include "OgrePrerequisites.h"
+  
+! #if OGRE_UNICODE_SUPPORT 
+  
+  // these are explained later
+  #include <iterator>
+--- 30,36 ----
+  
+  #include "OgrePrerequisites.h"
+  
+! #if OGRE_UNICODE_SUPPORT
+  
+  // these are explained later
+  #include <iterator>
+***************
+*** 287,293 ****
+  			friend class _const_fwd_iterator;
+  		public:
+  			_fwd_iterator() {}
+! 			_fwd_iterator( const _fwd_iterator& i ) {
+  				_become( i );
+  			}
+  
+--- 287,293 ----
+  			friend class _const_fwd_iterator;
+  		public:
+  			_fwd_iterator() {}
+! 			_fwd_iterator( const _fwd_iterator& i ) : _base_iterator() {
+  				_become( i );
+  			}
+  
+***************
+*** 418,424 ****
+  	class _const_fwd_iterator: public _base_iterator { /* i don't know why the beautifier is freaking out on this line */
+  		public:
+  			_const_fwd_iterator() {}
+! 			_const_fwd_iterator( const _const_fwd_iterator& i ) {
+  				_become( i );
+  			}
+  			_const_fwd_iterator( const _fwd_iterator& i ) {
+--- 418,424 ----
+  	class _const_fwd_iterator: public _base_iterator { /* i don't know why the beautifier is freaking out on this line */
+  		public:
+  			_const_fwd_iterator() {}
+! 			_const_fwd_iterator( const _const_fwd_iterator& i ) : _base_iterator() {
+  				_become( i );
+  			}
+  			_const_fwd_iterator( const _fwd_iterator& i ) {
+***************
+*** 566,572 ****
+  			friend class _const_rev_iterator;
+  		public:
+  			_rev_iterator() {}
+! 			_rev_iterator( const _rev_iterator& i ) {
+  				_become( i );
+  			}
+  
+--- 566,572 ----
+  			friend class _const_rev_iterator;
+  		public:
+  			_rev_iterator() {}
+! 			_rev_iterator( const _rev_iterator& i ) : _base_iterator() {
+  				_become( i );
+  			}
+  
+***************
+*** 675,681 ****
+  	class _const_rev_iterator: public _base_iterator { /* i don't know why the beautifier is freaking out on this line */
+  		public:
+  			_const_rev_iterator() {}
+! 			_const_rev_iterator( const _const_rev_iterator& i ) {
+  				_become( i );
+  			}
+  			_const_rev_iterator( const _rev_iterator& i ) {
+--- 675,681 ----
+  	class _const_rev_iterator: public _base_iterator { /* i don't know why the beautifier is freaking out on this line */
+  		public:
+  			_const_rev_iterator() {}
+! 			_const_rev_iterator( const _const_rev_iterator& i ) : _base_iterator() {
+  				_become( i );
+  			}
+  			_const_rev_iterator( const _rev_iterator& i ) {
+***************
+*** 2403,2406 ****
+  
+  #endif // OGRE_UNICODE_SUPPORT
+  
+! #endif 
+--- 2403,2406 ----
+  
+  #endif // OGRE_UNICODE_SUPPORT
+  
+! #endif
