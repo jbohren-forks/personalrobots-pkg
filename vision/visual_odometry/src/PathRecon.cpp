@@ -366,6 +366,7 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
         currFrame->mTrackableIndexPairs->clear();
       }
       matchKeypoints(&trackablePairs, currFrame->mTrackableIndexPairs);
+
       assert(currFrame->mTrackableIndexPairs->size() == trackablePairs.size());
 #ifdef DEBUG
       cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() << endl;
@@ -493,12 +494,12 @@ PathRecon::Visualizer::Visualizer(PoseEstimateDisp& pe):
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
   cvNamedWindow(leftCamWinName.c_str(), CV_WINDOW_AUTOSIZE);
-  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+//  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
 //  cvNamedWindow(lastTrackedLeftCam.c_str(), CV_WINDOW_AUTOSIZE);
 
   cvMoveWindow(poseEstWinName.c_str(), 0, 0);
   cvMoveWindow(leftCamWinName.c_str(), 650, 0);
-  cvMoveWindow(dispWindowName.c_str(), 650, 530);
+//  cvMoveWindow(dispWindowName.c_str(), 650, 530);
 //  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
 void PathRecon::Visualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
@@ -582,8 +583,10 @@ void PathRecon::Visualizer::show() {
     cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
   if (canvasTrackingRedrawn && canvasTracking.Ipl())
     cvShowImage(poseEstWinName.c_str(), canvasTracking.Ipl());
+#if 0 // do not draw disparity map
   if (canvasDispMapRedrawn && canvasDispMap.Ipl())
     cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
+#endif
 
   // wait for a while for opencv to draw stuff on screen
   cvWaitKey(25);  //  milliseconds

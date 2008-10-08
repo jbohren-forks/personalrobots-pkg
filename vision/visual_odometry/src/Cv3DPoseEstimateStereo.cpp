@@ -666,30 +666,6 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 			// skip this
 			continue;
 		}
-#if 0 // do not do thresholding, as we do not know about the descriptor
-		double threshold = 0.75;
-    // just to get an idea what is the score for the best possible match
-		// and derive a threshold to get rid of those best but not good
-		// enough match
-#if 0  // old code
-		CvMat templ;
-		cvGetSubRect(image0.Ipl(), &templ, rectTempl);
-		CvMat templ2;
-		float _res[1];
-		CvMat res = cvMat(1, 1, CV_32FC1, _res);
-    TIMERSTART2(KeypointTemplMatch);
-		cvMatchTemplate(&templ, &templ, &res, CV_TM_CCORR_NORMED );
-    TIMEREND2(KeypointTemplMatch);
-		threshold = _res[0]*.75;
-#else
-		if (ptLast.desc) {
-		  threshold = ptLast.desc->compare(*ptLast.desc)*.75;
-		} else {
-		  // for some reason, no descriptor around. Skip this
-		  continue;
-		}
-#endif
-#endif
 
 		double minDist = DBL_MAX;
 
@@ -724,35 +700,14 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 					// skip this
 					continue;
 				}
-#if 0 // old code
-				cvGetSubRect(image1.Ipl(), &templ2, rectTempl2);
-        TIMERSTART2(KeypointTemplMatch);
-				cvMatchTemplate(&templ2, &templ, &res, CV_TM_CCORR_NORMED );
-				TIMEREND2(KeypointTemplMatch);
-				double score = _res[0];
-        if (score > maxScore) {
-          bestlocIndex = iKeypoint1;
-          maxScore = score;
-        }
-#else
+
 				double dist = ptLast.desc->compare(*pt.desc);
         if (dist < minDist) {
           bestlocIndex = iKeypoint1;
           minDist = dist;
         }
-#endif
-
 			}
 		}
-
-#if 0
-		if (maxScore <= threshold ) {
-			continue;
-		}
-#endif
-//		if (minDist <= .75) {
-//		  continue;
-//		}
 
 		if (bestlocIndex < 0) {
 		  continue;
