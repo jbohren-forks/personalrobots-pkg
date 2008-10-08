@@ -282,7 +282,7 @@ void PathRecon::matchKeypoints(
     vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
     vector<pair<int, int> >* trackableIndexPairs
 ) {
-  TIMERSTART2(TrackablePair);
+  TIMERSTART2(KeyPointMatch);
   PoseEstFrameEntry* lastKeyFrame = getLastKeyFrame();
   assert(lastKeyFrame != NULL);
   mPoseEstimator.getTrackablePairs(
@@ -300,7 +300,7 @@ void PathRecon::matchKeypoints(
     mStat.mHistoTrackablePairs.push_back(trackableIndexPairs->size());
     mFrameSeq.mCurrentFrame->mNumTrackablePairs = trackableIndexPairs->size();
   }
-  TIMEREND2(TrackablePair);
+  TIMEREND2(KeyPointMatch);
 }
 
 /// reconstruction w.r.t one additional frame

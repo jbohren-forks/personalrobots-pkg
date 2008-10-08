@@ -56,9 +56,8 @@ void CvTestTimer::printStat() {
 	PRINTSTAT2("LoadImage           ", LoadImage);
 	PRINTSTAT2("DisparityMap        ", DisparityMap);
 	PRINTSTAT2("FeaturePoint        ", FeaturePoint);
-	PRINTSTAT2("TrackablePair       ", TrackablePair);
-	PRINTSTAT2("  KeypointDescriptor", KeyPointDescriptor);
-	PRINTSTAT2("  KeypointMatch     ", KeypointTemplMatch);
+	PRINTSTAT2("KeypointDescriptor  ", KeyPointDescriptor);
+	PRINTSTAT2("KeypointMatch       ", KeyPointMatch);
 	PRINTSTAT2("PoseEstimateRANSAC  ", PoseEstimateRANSAC);
   PRINTSTAT2("  SVD               ", SVD);
   PRINTSTAT ("  CheckInliers      ", CheckInliers);

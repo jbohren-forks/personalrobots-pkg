@@ -60,10 +60,9 @@ public:
     RESET(LoadImage);
     RESET(DisparityMap);
 		RESET(FeaturePoint);
-		RESET(TrackablePair);
 		RESET(PoseEstimateRANSAC);
 		RESET(PoseEstimateLevMarq);
-	  RESET(KeypointTemplMatch);
+	  RESET(KeyPointMatch);
 	  RESET(KeyPointDescriptor);
 	}
 	int64 mNumIters;
@@ -101,10 +100,9 @@ public:
 	DECLARE(LoadImage);
 	DECLARE(DisparityMap);
   DECLARE(FeaturePoint);
-  DECLARE(TrackablePair);
   DECLARE(PoseEstimateRANSAC);
   DECLARE(PoseEstimateLevMarq);
-  DECLARE(KeypointTemplMatch);
+  DECLARE(KeyPointMatch);
   DECLARE(KeyPointDescriptor);
 
 	void printStat();
