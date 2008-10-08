@@ -52,7 +52,7 @@ extern "C" {
   // img and featureImg need to be aligned to 16 byte block for sse
 #define ost_do_prefilter(im, ftim, xim, yim, ftzero, buf) \
 do { \
-  if (true||(uintptr_t)(img) & (uintptr_t)0xF || (uintptr_t)(ftim) & (uintptr_t)0xF ) { \
+  if ((uintptr_t)(img) & (uintptr_t)0xF || (uintptr_t)(ftim) & (uintptr_t)0xF ) { \
     cerr<< "buf not aligned for gradient map"<<endl; \
     ost_do_prefilter_fast_u((im), (ftim), (xim), (yim), (ftzero), (buf));\
   } else { \
