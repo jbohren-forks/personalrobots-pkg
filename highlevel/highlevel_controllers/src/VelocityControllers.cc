@@ -3,9 +3,10 @@
 
 namespace ros {
   namespace highlevel_controllers {
+
     CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
-      : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX),
-			    computeWY(costMap, maxSize, poseY), 
+      : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
+			    computeWY(costMap, maxSize, poseX, poseY), 
 			    computeSize(maxSize, costMap.getResolution()), 
 			    computeSize(maxSize, costMap.getResolution()), 
 			    costMap.getResolution()), costMap_(costMap),
@@ -18,31 +19,45 @@ namespace ros {
       printf("Creating Local %d X %d Map\n", getWidth(), getHeight());
     }
 
-    bool CostMapAccessor::isObstacle(unsigned int mx, unsigned int my) const {
-      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-      return costMap_.isObstacle(costMapIndex);
+    unsigned char CostMapAccessor::operator[](unsigned int ind) const {
+      double wx, wy;
+      IND_WC(ind, wx, wy);
+      return costMap_[costMap_.WC_IND(wx, wy)];
     }
 
-    bool CostMapAccessor::isInflatedObstacle(unsigned int mx, unsigned int my) const {
-      unsigned int costMapIndex = costMap_.MC_IND(mx_0_ + mx, my_0_ + my);
-      return costMap_.isInflatedObstacle(costMapIndex);
+    unsigned char CostMapAccessor::getCost(unsigned int mx, unsigned int my) const {
+      double wx, wy;
+      MC_WC(mx, my, wx, wy);
+      return costMap_[costMap_.WC_IND(wx, wy)];
     }
 
     void CostMapAccessor::updateForRobotPosition(double wx, double wy){
-      origin_x_ = computeWX(costMap_, maxSize_, wx);
-      origin_y_ = computeWX(costMap_, maxSize_, wy);
+      origin_x_ = computeWX(costMap_, maxSize_, wx, wy);
+      origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
       costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
       //printf("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
-      //origin_x_, origin_y_, maxSize_, wx, wy);
+      //     origin_x_, origin_y_, maxSize_, wx, wy);
     }
 
-    double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx){
-      return std::min(std::max(0.0,  wx - maxSize/2), costMap.getWidth() * costMap.getResolution() - maxSize);
+    double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
+      unsigned int mx, my;
+      costMap.WC_MC(wx, wy, mx, my);
+
+      unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+      unsigned int origin_mx = std::max((unsigned int) 0,  mx - cellWidth/2); // Not too far left
+      origin_mx = std::min(origin_mx, costMap.getWidth() - cellWidth);
+      return origin_mx * costMap.getResolution();
     }
 
-    double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wy){
-      return std::min(std::max(0.0, wy - maxSize/2 ), costMap.getHeight() * costMap.getResolution() - maxSize);
+    double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy){
+      unsigned int mx, my;
+      costMap.WC_MC(wx, wy, mx, my);
+
+      unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
+      unsigned int origin_my = std::max((unsigned int) 0,  my - cellWidth/2); // Not too far up
+      origin_my = std::min(origin_my, costMap.getHeight() - cellWidth);
+      return origin_my * costMap.getResolution();
     }
 
     unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){

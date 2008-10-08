@@ -32,9 +32,9 @@ namespace ros {
        */
       CostMapAccessor(const CostMap2D& costMap, double maxSize, double pose_x, double pose_y);
 
-      bool isObstacle(unsigned int mx, unsigned int my) const;
-
-      bool isInflatedObstacle(unsigned int mx, unsigned int my) const;
+      /** Implementation for base class interface **/
+      virtual unsigned char operator[](unsigned int ind) const;
+      virtual unsigned char getCost(unsigned int mx, unsigned int my) const;
 
       /**
        * @brief Set the pose for the robot. Will adjust other parameters accordingly.
@@ -43,8 +43,8 @@ namespace ros {
 
     private:
 
-      static double computeWX(const CostMap2D& costMap, double maxSize, double wx);
-      static double computeWY(const CostMap2D& costMap, double maxSize, double wy);
+      static double computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy);
+      static double computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy);
       static unsigned int computeSize(double maxSize, double resolution);
 
       const CostMap2D& costMap_;

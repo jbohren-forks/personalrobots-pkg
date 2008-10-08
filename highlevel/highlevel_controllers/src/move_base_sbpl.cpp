@@ -90,7 +90,7 @@ namespace ros {
        * @brief Called during update of cost map. Will just buffer and handle in batch.
        * @see applyMapUpdates
        */
-      virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions);
+      virtual void handleMapUpdates(const std::set<unsigned int>& updates);
 
       /**
        * @brief Builds a plan from current state to goal state
@@ -101,14 +101,15 @@ namespace ros {
 
       static const double PLANNER_TIMEOUT = 10.0; /**< Temporary constant */
 
+      bool isValid();
+
       void applyMapUpdates();
 
       MDPConfig mdpCfg_;
       EnvironmentNAV2D envNav2D_;
       ARAPlanner* araPlanner_;
 
-      std::vector< std::vector<unsigned int> > insertionsBuffer_; /*!< Buffers insertions generated on the cost map */
-      std::vector< std::vector<unsigned int> > deletionsBuffer_; /*!< Buffers insertions generated on the cost map */
+      std::set<unsigned int> updates_; /**< Buffer for updates */
     };
 
     MoveBaseSBPL::MoveBaseSBPL()
@@ -138,6 +139,8 @@ namespace ros {
   
       bool success = envNav2D_.InitializeMDPCfg(&mdpCfg_);
 
+      isValid();
+
       unlock();
 
       if(!success){
@@ -154,53 +157,53 @@ namespace ros {
     }
 
     /**
-     * @brief This is called during a cost map update.
+     * @brief This is called during a cost map update. Will insert new updates, possibly overwriting prior values
      */
-    void MoveBaseSBPL::handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){
-      // Just buffer insertions and deletions. Environment can be updated in a batch prior to planning since planner is
-      // not thread safe
-      insertionsBuffer_.push_back(insertions);
-      deletionsBuffer_.push_back(deletions);
+    void MoveBaseSBPL::handleMapUpdates(const std::set<unsigned int>& updates){
+      updates_.insert(updates.begin(), updates.end());
     }
 
-    /**
-     * Apply insert &deletion operations pairwise to replicate transaction order and preserve correct data. This will do a batch update
-     * to the environment and should be called prior to planning. Note that we buffer so that the minimum locking is required between
-     * the planner and the cost map update routines.
-     */
     void MoveBaseSBPL::applyMapUpdates(){
       lock();
+      
       const CostMap2D& cm = getCostMap();
+      for(std::set<unsigned int>::const_iterator it = updates_.begin(); it != updates_.end(); ++it){
+	unsigned int x, y; // Cell coordinates
+	cm.IND_MC(*it, x, y);
+	unsigned char cost = cm.getCost(x, y);
 
-      for(unsigned int i = 0; i < cm.getWidth(); i++)
-	for(unsigned int j = 0; j < cm.getHeight(); j++){
-	  if(cm.isObstacle(i, j) || cm.isInflatedObstacle(i, j))
-	    envNav2D_.UpdateCost(i, j, 1);
-	  else
-	    envNav2D_.UpdateCost(i, j, 0);
-	}
-      /*
-      for(unsigned int i = 0; i < insertionsBuffer_.size(); i++){
-	const std::vector<unsigned int>& insertions = insertionsBuffer_[i];
-	for(std::vector<unsigned int>::const_iterator it = insertions.begin(); it != insertions.end(); ++it){
-	  unsigned int id = *it;
-	  unsigned int x, y; // Cell coordinates
-	  cm.IND_MC(id, x, y);
+	// For now, map to boolean - obstacle or free. Circumscribed inflated obstacles are considered free space
+	if(cost < CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
+	  envNav2D_.UpdateCost(x, y, 0);
+	else
 	  envNav2D_.UpdateCost(x, y, 1);
-	}
+      }
+      
+      isValid();
 
-	const std::vector<unsigned int>& deletions = deletionsBuffer_[i];
-	for(std::vector<unsigned int>::const_iterator it = deletions.begin(); it != deletions.end(); ++it){
-	  unsigned int id = *it;
-	  unsigned int x, y; // Cell coordinates
-	  cm.IND_MC(id, x, y);
-	  //envNav2D_.UpdateCost(x, y, 0);
+      updates_.clear();
+
+      unlock();
+    }
+
+    bool MoveBaseSBPL::isValid() {
+      
+      const CostMap2D& cm = getCostMap();
+      
+      for(unsigned int i = 0; i<cm.getWidth(); i++){
+	for(unsigned int j = 0; j < cm.getHeight(); j++){
+	  if(envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) < CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
+	    printf("Extra obstacle at <%d, %d>", i, j);
+	    throw "Extra obstacle in sbpl";
+	  }
+	  if(!envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
+	    printf("Missing obstacle at <%d, %d>", i, j);
+	    throw "Missing obstacle in sbpl";
+	  }
 	}
       }
-      */
-      insertionsBuffer_.clear();
-      deletionsBuffer_.clear();
-      unlock();
+
+      return true;
     }
 
     bool MoveBaseSBPL::makePlan(){
@@ -277,11 +280,17 @@ int main(int argc, char** argv)
     return -1;
     }
   */
+
   ros::init(argc,argv);
 
   ros::highlevel_controllers::MoveBaseSBPL node;
-  
-  node.run();
+
+  try {
+    node.run();
+  }
+  catch(char const* e){
+    std::cout << e << std::endl;
+  }
 
   ros::fini();
 

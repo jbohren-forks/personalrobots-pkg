@@ -80,12 +80,15 @@ namespace ros {
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
       double maxZ(2.0); 
       double inflationRadius(0.46);
-      double robot_radius(.325);
+      double circumscribedRadius(0.46);
+      double inscribedRadius(0.325);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("costmap_2d/no_information_value", noInformation, noInformation);
       param("costmap_2d/z_threshold", maxZ, maxZ);
       param("costmap_2d/inflation_radius", inflationRadius, inflationRadius);
+      param("costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
+      param("costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -115,7 +118,8 @@ namespace ros {
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                inputData , resp.map.resolution, 
-			       windowLength, lethalObstacleThreshold, maxZ, inflationRadius);
+			       windowLength, lethalObstacleThreshold, maxZ, 
+			       inflationRadius, circumscribedRadius, inscribedRadius);
 
       // Allocate Velocity Controller
       double mapSize(10.0);
@@ -142,8 +146,8 @@ namespace ros {
 										SIM_TIME,
 										SIM_STEPS,
 										SAMPLES_PER_DIM,
-										robot_radius,
-										robot_radius,
+										inscribedRadius,
+										inscribedRadius,
 										MAX_OCC_DIST,
 										pathDistanceBias,
 										goalDistanceBias,
@@ -281,12 +285,12 @@ namespace ros {
 
       // Update the cost map
       const double ts = laserScanMsg_.header.stamp.to_double();
-      std::vector<unsigned int> insertions, deletions;
+      std::set<unsigned int> updates;
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, global_cloud, insertions, deletions);
-      handleMapUpdates(insertions, deletions);
+      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, global_cloud, updates);
+      handleMapUpdates(updates);
       publishLocalCostMap();
       unlock();
     }
@@ -298,12 +302,12 @@ namespace ros {
     void MoveBase::pointCloudCallback(){
       // Update the cost map
       const double ts = pointCloudMsg_.header.stamp.to_double();
-      std::vector<unsigned int> insertions, deletions;
+      std::set<unsigned int> updates;
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
-      costMap_->updateDynamicObstacles(ts, pointCloudMsg_, insertions, deletions);
-      handleMapUpdates(insertions, deletions);
+      costMap_->updateDynamicObstacles(ts, pointCloudMsg_, updates);
+      handleMapUpdates(updates);
       publishLocalCostMap();
       unlock();
     }
@@ -347,13 +351,18 @@ namespace ros {
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
       plan_.clear();
       plan_ = newPlan;
+
+      publishPath(true, plan_);
+
+      //if(inCollision())
+      //throw "Path in collision immediately after planning.";
     }
     
     bool MoveBase::inCollision() const {
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
 	const std_msgs::Pose2DFloat32& w = *it;
 	unsigned int ind = costMap_->WC_IND(w.x, w.y);
-	if((*costMap_)[ind] >= CostMap2D::LETHAL_OBSTACLE){
+	if((*costMap_)[ind] > CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE){
 	  printf("path in collision at <%f, %f>\n", w.x, w.y);
 	  return true;
 	}
@@ -488,16 +497,15 @@ namespace ros {
 	  cmdVel.vw = 0;
 	  std::cout << "Local planning has failed :-(\n";
 	}
-
-	publishPath(false, localPlan);
-	publishPath(true, plan_);
-	std_msgs::Pose2DFloat32& pt = localPlan.front();
-	publishFootprint(pt.x, pt.y, pt.th);
+	else {
+	  publishPath(false, localPlan);
+	}
       }
 
       printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
 
       publish("cmd_vel", cmdVel);
+      publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
 
       return planOk;
     }
@@ -524,19 +532,19 @@ namespace ros {
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
       double origin_x, origin_y;
       ma_->getOriginInWorldCoordinates(origin_x, origin_y);
-      for(unsigned int i = 0; i<ma_->getWidth(); i++)
+      for(unsigned int i = 0; i<ma_->getWidth(); i++){
 	for(unsigned int j = 0; j<ma_->getHeight();j++){
 	  double wx, wy;
 	  wx = i * ma_->getResolution() + origin_x;
 	  wy = j * ma_->getResolution() + origin_y;
 	  std::pair<double, double> p(wx, wy);
 
-	  if(ma_->isObstacle(i, j))
+	  if(ma_->getCost(i, j) == CostMap2D::LETHAL_OBSTACLE)
 	    rawObstacles.push_back(p);
-	  else if(ma_->isInflatedObstacle(i, j))
+	  else if(ma_->getCost(i, j) == CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
 	    inflatedObstacles.push_back(p);
 	}
-
+      }
 
       // First publish raw obstacles in red
       std_msgs::Polyline2D pointCloudMsg;

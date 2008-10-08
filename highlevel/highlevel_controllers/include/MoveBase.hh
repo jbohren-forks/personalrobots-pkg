@@ -83,7 +83,7 @@ namespace ros {
        * cost map. This is called on a map update, which means it will be on a separate thread to the main
        * node control loop
        */
-      virtual void handleMapUpdates(const std::vector<unsigned int>& insertions, std::vector<unsigned int>& deletions){}
+      virtual void handleMapUpdates(const std::set<unsigned int>& updates){}
 
       /**
        * @brief Overwrites the current plan with a new one. Will handle suitable publication

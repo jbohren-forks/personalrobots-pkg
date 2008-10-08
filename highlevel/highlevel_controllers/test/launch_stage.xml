@@ -10,6 +10,8 @@
     <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
     <param name="max_publish_frequency" value="20.0"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
+    <!--node pkg="amcl_player" type="amcl_player" respawn="false" output="screen"/-->
+
     <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
   </group>
 </launch>
