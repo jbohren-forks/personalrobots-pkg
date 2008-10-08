@@ -47,6 +47,8 @@
 
 #include <ros/node.h>
 #include <newmat10/newmat.h>
+#include <newmat10/newmatio.h>
+#include <newmat10/newmatap.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
 #include <misc_utils/realtime_publisher.h>
@@ -107,13 +109,20 @@ private:
   double torque_;                                   /**< Torque applied during the test. */
   double initial_time_;                             /**< Start time of the test. */
   bool complete;
+  double start_pos_;
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   
-  NEWMAT::ColumnVector test_effort_;
-  NEWMAT::ColumnVector test_velocity_;
-    
- 
+  NEWMAT::ColumnVector test_effort1_;
+  NEWMAT::ColumnVector test_position1_;
+  NEWMAT::ColumnVector test_offset1_;
+  NEWMAT::ColumnVector test_effort2_;
+  NEWMAT::ColumnVector test_position2_;
+  NEWMAT::ColumnVector test_offset2_;  
+  NEWMAT::UpperTriangularMatrix U1_;
+  NEWMAT::ColumnVector M1_;
+  NEWMAT::UpperTriangularMatrix U2_;
+  NEWMAT::ColumnVector M2_;
   
   
 };

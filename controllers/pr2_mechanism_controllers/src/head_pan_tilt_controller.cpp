@@ -87,6 +87,7 @@ void HeadPanTiltController::setJointCmd(const std::vector<double> &j_values, con
   {
     const std::string & name = j_names[i];
     const int id = getJointControllerByName(name);
+    assert(id>=0);
     if(id >= 0)
     {
       set_pts_[id] = j_values[i];
@@ -196,11 +197,15 @@ bool HeadPanTiltControllerNode::setJointSrv(pr2_mechanism_controllers::SetJointC
 {
   std::vector<double> pos;
   std::vector<std::string> names;
-
-  req.set_positions_vec(pos);
-  req.set_names_vec(names);
+  pr2_mechanism_controllers::JointCmd cmds;
+  req.get_positions_vec(pos);
+  req.get_names_vec(names);
 
   c_->setJointCmd(pos,names);
+  c_->getJointCmd(cmds);
+resp.set_positions_vec(pos);
+resp.set_names_vec(cmds.names);
+  
   return true;
 }
 

@@ -45,6 +45,7 @@ SineSweepController::SineSweepController()
 {
   robot_ = NULL;
   joint_state_ = NULL;
+  sweep_=NULL;
   duration_ =0.0;
   initial_time_=0;
 }
@@ -57,6 +58,7 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
 {
   robot_ = robot;
   joint_state_ = robot->getJointState(name);
+  sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
   
   duration_ = duration;     //in seconds

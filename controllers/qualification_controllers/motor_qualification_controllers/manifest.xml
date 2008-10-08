@@ -11,6 +11,7 @@
   <depend package="misc_utils" />
   <depend package="robot_msgs" />
   <depend package="robot_mechanism_controllers" />
+  <depend package="xenomai" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

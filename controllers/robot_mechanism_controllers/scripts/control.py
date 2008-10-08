@@ -16,7 +16,7 @@ def print_usage(exit_code = 0):
     set <controller> <command> - Set the controller's commanded value
     setv <controller> <x> <y> <z>  - Set the controller's command as a vector
     get <controller>           - Get the controller's commanded value
-    getv <controller>          - Get the controller's vector value
+    getv <controller>          - Get the controller's vector value 
     profile <controller> <upper turnaround offset> <lower turnaround offset> <upper decel buffer> <lower decel bufer>
                                - Define how far away from joint limit to turn around. Buffers indicate how far from that point to start decelerating. Set to 0 to disable'''
     sys.exit(exit_code)

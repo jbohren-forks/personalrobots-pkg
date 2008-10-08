@@ -115,12 +115,13 @@ public:
   controller::JointPositionController* getJointPositionControllerByName(std::string name);
 
   unsigned int num_joints_;
+  std::vector<JointPositionController *> joint_position_controllers_;  
 
 private:
 
   double last_time_;
 
-  std::vector<JointPositionController *> joint_position_controllers_;
+  
 
   // Goal of the joints
   std::vector<double> set_pts_;
