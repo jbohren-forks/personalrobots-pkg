@@ -1,5 +1,6 @@
 <launch>
 
-  <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
+  <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_arm/pr2d2.xml&quot;" />
   
+<!--<param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />-->
 </launch>

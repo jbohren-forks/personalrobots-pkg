@@ -356,7 +356,7 @@
     <axis xyz=" 0 1 0 " /> <!-- direction of the joint in a local coordinate frame -->
     <anchor xyz="0 0 0" /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min= "-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
-    <calibration reference_position="0" />
+    <calibration reference_position="-.28" />
   </joint>
   
   <joint name="tilt_laser_joint" type="fixed"> 
