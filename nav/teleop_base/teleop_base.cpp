@@ -19,7 +19,7 @@ class TeleopBase : public node
       {
          cmd.vx = cmd.vy = cmd.vw = 0;
          if (!has_param("max_vx") || !get_param("max_vx", max_vx))
-            lfile:///usr/share/ubuntu-artwork/home/index.htmlog(WARNING, "maximum linear velocity (max_vx) not set. Assuming 0.6");
+            log(WARNING, "maximum linear velocity (max_vx) not set. Assuming 0.6");
          if (!has_param("max_vy") || !get_param("max_vy", max_vy))
             log(WARNING, "maximum linear velocity (max_vy) not set. Assuming 0.6");
          if (!has_param("max_vw") || !get_param("max_vw", max_vw))
@@ -98,12 +98,12 @@ class TeleopBase : public node
          publish("cmd_vel", cmd);
          }
          else
-	   {
-            cmd.vx = cmd.vy = cmd.vw = 0;
-	    fprintf(stderr,"teleop_base:: deadman off\n");
-	   }
+         {
+           cmd.vx = cmd.vy = cmd.vw = 0;
+           publish("cmd_vel", cmd);
+           fprintf(stderr,"teleop_base:: deadman off\n");
+         }
          joy.unlock();
-
       }
 };
 
