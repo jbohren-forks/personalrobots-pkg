@@ -194,7 +194,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
   //initialize the costs for the trajectory
   double path_dist = 0.0;
   double goal_dist = 0.0;
-  double occ_dist = 0.0;
+  double occ_cost = 0.0;
 
   for(int i = 0; i < num_steps_; ++i){
     //get map coordinates of a point
@@ -207,14 +207,17 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     }
 
     //we need to check if we need to lay down the footprint of the robot
-    if(ma_.getCost(cell_x, cell_y) == costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE){
+    if(ma_.getCost(cell_x, cell_y) >= costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE){
       double footprint_cost = footprintCost(x_i, y_i, theta_i);
       //if the footprint hits an obstacle this trajectory is invalid
       if(footprint_cost < 0){
         traj.cost_ = -1.0;
         return;
       }
-      occ_dist += footprint_cost;
+      occ_cost += footprint_cost;
+    }
+    else{
+      occ_cost += double(ma_.getCost(cell_x, cell_y));
     }
 
     double cell_pdist = map_(cell_x, cell_y).path_dist;
@@ -246,7 +249,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
   }
 
-  double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ *  (1 / ((occ_dist + .05) * (occ_dist + .05)));
+  double cost = pdist_scale_ * path_dist + gdist_scale_ * goal_dist + dfast_scale_ * (1.0 / ((.05 + traj.xv_) * (.05 + traj.xv_))) + occdist_scale_ * occ_cost;
 
   traj.cost_ = cost;
 }
@@ -503,17 +506,14 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 }
 
 double TrajectoryController::pointCost(int x, int y){
+  unsigned char cost = ma_.getCost(x, y);
   //if the cell is in an obstacle the path is invalid
-  if(ma_.getCost(x, y) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
+  if(cost == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
     //printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
 
-  //check if we need to add an obstacle distance
-  if(map_(x, y).occ_dist < max_occ_dist_)
-    return map_(x, y).occ_dist;
-
-  return 0.0;
+  return double(cost);
 }
 
 //calculate the cost of a ray-traced line
@@ -579,7 +579,8 @@ double TrajectoryController::lineCost(int x0, int x1,
     if(point_cost < 0)
       return -1;
 
-    line_cost += point_cost;
+    if(point_cost < line_cost)
+      line_cost = point_cost;
 
     num += numadd;              // Increase the numerator by the top of the fraction
     if (num >= den)             // Check if numerator >= denominator
@@ -603,8 +604,8 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
 
-  double footprint_dist = 0.0;
-  double line_dist = -1.0;
+  double footprint_cost = 0.0;
+  double line_cost = -1.0;
 
   //upper right corner
   double old_x = 0.0 + robot_front_radius_;
@@ -626,11 +627,12 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the front line
-  line_dist = lineCost(x0, x1, y0, y1);
-  if(line_dist < 0)
+  line_cost = lineCost(x0, x1, y0, y1);
+  if(line_cost < 0)
     return -1;
 
-  footprint_dist += line_dist;
+  if(footprint_cost < line_cost)
+    footprint_cost = line_cost;
 
   //lower left corner
   old_x = 0.0 - robot_front_radius_;
@@ -642,11 +644,12 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the right side line
-  line_dist = lineCost(x1, x2, y1, y2);
-  if(line_dist < 0)
+  line_cost = lineCost(x1, x2, y1, y2);
+  if(line_cost < 0)
     return -1;
 
-  footprint_dist += line_dist;
+  if(footprint_cost < line_cost)
+    footprint_cost = line_cost;
   
   //upper left corner
   old_x = 0.0 - robot_front_radius_;
@@ -658,20 +661,22 @@ double TrajectoryController::footprintCost(double x_i, double y_i, double theta_
     return -1.0;
 
   //check the back line
-  line_dist = lineCost(x2, x3, y2, y3);
-  if(line_dist < 0)
+  line_cost = lineCost(x2, x3, y2, y3);
+  if(line_cost < 0)
     return -1;
 
-  footprint_dist += line_dist;
+  if(footprint_cost < line_cost)
+    footprint_cost = line_cost;
 
   //check the left side line
-  line_dist = lineCost(x3, x0, y3, y0);
-  if(line_dist < 0)
+  line_cost = lineCost(x3, x0, y3, y0);
+  if(line_cost < 0)
     return -1;
 
-  footprint_dist += line_dist;
+  if(footprint_cost < line_cost)
+    footprint_cost = line_cost;
 
-  return footprint_dist;
+  return footprint_cost;
 }
 
 void TrajectoryController::getLineCells(int x0, int x1, int y0, int y1, vector<std_msgs::Position2DInt>& pts){
