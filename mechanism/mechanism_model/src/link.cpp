@@ -45,6 +45,7 @@
 namespace mechanism {
 
 Link::Link()
+  : origin_xyz_(0,0,0), origin_rpy_(0,0,0)
 {
 }
 
@@ -116,6 +117,7 @@ bool Link::initXml(TiXmlElement *config, Robot *robot)
   return true;
 }
 
+// j[oint] connects this and p[arent]
 void LinkState::propagateFK(LinkState *p, JointState *j)
 {
   if (p == NULL && j == NULL)
@@ -133,7 +135,7 @@ void LinkState::propagateFK(LinkState *p, JointState *j)
     abs_position_ =
       p->abs_position_
       + quatRotate(p->abs_orientation_, link_->origin_xyz_)
-      + j->getTranslation();
+      + quatRotate(p->abs_orientation_, j->getTranslation());
 
     tf::Quaternion rel_or(link_->origin_rpy_[2], link_->origin_rpy_[1], link_->origin_rpy_[0]);
     abs_orientation_ = p->abs_orientation_ * j->getRotation() * rel_or;
@@ -141,8 +143,8 @@ void LinkState::propagateFK(LinkState *p, JointState *j)
 
     abs_velocity_ =
       p->abs_velocity_
-      + cross(p->abs_rot_velocity_, link_->origin_xyz_)
-      + j->getTransVelocity();
+      + cross(p->abs_rot_velocity_, abs_position_)
+      + quatRotate(abs_orientation_, j->getTransVelocity());
 
     abs_rot_velocity_ = p->abs_rot_velocity_ + quatRotate(abs_orientation_, j->getRotVelocity());
 
