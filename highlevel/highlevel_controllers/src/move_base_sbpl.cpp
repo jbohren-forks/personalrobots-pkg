@@ -118,21 +118,13 @@ namespace ros {
       lock();
       const CostMap2D& cm = getCostMap();
       unsigned char* initialMapData = new unsigned char[cm.getWidth() * cm.getHeight()];
-      // Set all to 0 (unoccupied) by default.
-      memset(initialMapData, 0, cm.getWidth() * cm.getHeight());
+      // Fill with cost map data
+      memcpy(initialMapData, cm.getMap(), cm.getWidth() * cm.getHeight());
 
-      // Now get all the obstacle cells, static and dyanmic, and assign values accordingly
-      std::vector<unsigned int> occupiedCells;
-      cm.getOccupiedCellDataIndexList(occupiedCells);
-
-      for(std::vector<unsigned int>::const_iterator it = occupiedCells.begin(); it != occupiedCells.end(); ++it){
-	unsigned int id = *it;
-	initialMapData[id] = 1;
-      }
-
-      // Initial Configuration is set with
-      envNav2D_.SetConfiguration(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0);
-      envNav2D_.InitGeneral();
+      // Initial Configuration is set with the threshold for obstacles set to the inscribed obstacle threshold. These, lethal obstacles, and cells with
+      // no information will thus be regarded as obstacles
+      envNav2D_.InitializeEnv(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+      //envNav2D_.InitGeneral();
 
       // Cleanup
       delete initialMapData;
@@ -170,13 +162,7 @@ namespace ros {
       for(std::set<unsigned int>::const_iterator it = updates_.begin(); it != updates_.end(); ++it){
 	unsigned int x, y; // Cell coordinates
 	cm.IND_MC(*it, x, y);
-	unsigned char cost = cm.getCost(x, y);
-
-	// For now, map to boolean - obstacle or free. Circumscribed inflated obstacles are considered free space
-	if(cost < CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
-	  envNav2D_.UpdateCost(x, y, 0);
-	else
-	  envNav2D_.UpdateCost(x, y, 1);
+	envNav2D_.UpdateCost(x, y, cm.getCost(x, y));
       }
       
       isValid();
