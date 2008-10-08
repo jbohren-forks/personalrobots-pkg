@@ -45,14 +45,36 @@ namespace costmap_2d {
   public:
 
     /**
-     * @brief Test if a cell is an obstacle. Encapsualtes threshold interpretations
+     * @brief Defines the cell value to indicate that no information is available
      */
-    virtual bool isObstacle(unsigned int mx, unsigned int my) const = 0;
+    static const unsigned char NO_INFORMATION;
 
     /**
-     * @brief Test if a cell is an inflated obstacle, based on the given inflation radius
+     * @brief Defines the cell value to indicate a lethal obstacles. Cell values less than this value are
+     * traversable at a given cost
      */
-    virtual bool isInflatedObstacle(unsigned int mx, unsigned int my) const = 0;
+    static const unsigned char LETHAL_OBSTACLE;
+
+    /**
+     * @brief Defines the cell value to indicate an inflated obstacle within the inscribed circle of the robot
+     */
+    static const unsigned char INSCRIBED_INFLATED_OBSTACLE;
+
+    /**
+     * @brief Defines the cell value to indicate an inflated obstacle within the circumscribed circle of the robot
+     */
+    static const unsigned char CIRCUMSCRIBED_INFLATED_OBSTACLE;
+
+    /**
+     * @brief Access the cost value of the cell at the given index
+     * @see MC_IND
+     */
+    virtual unsigned char operator[](unsigned int ind) const = 0;
+
+    /**
+     * @brief Get the cost for the cell given in map coordinates
+     */
+    virtual unsigned char getCost(unsigned int mx, unsigned int my) const = 0;
 
     /**
      * @brief Get the origin

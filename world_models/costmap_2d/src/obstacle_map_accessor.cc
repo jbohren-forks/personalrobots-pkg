@@ -38,6 +38,12 @@
 
 namespace costmap_2d {
 	
+
+  const unsigned char ObstacleMapAccessor::NO_INFORMATION(255);
+  const unsigned char ObstacleMapAccessor::LETHAL_OBSTACLE(254);
+  const unsigned char ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE(253);
+  const unsigned char ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE(252);
+
   ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution)
     : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution){}
 
@@ -132,6 +138,7 @@ namespace costmap_2d {
     } 
 
     if(my >= height_) {
+      //printf("WC_MC converted  %d greater than height %d\n", my, height_);
       my = 0;
       return false;
     }

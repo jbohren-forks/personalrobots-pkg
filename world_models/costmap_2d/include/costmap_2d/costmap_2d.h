@@ -62,6 +62,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <string>
 
 // For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
@@ -75,22 +76,6 @@ namespace costmap_2d {
   public:
 
     /**
-     * @brief Defines the cell value to indicate that no information is available
-     */
-    static const unsigned char NO_INFORMATION;
-
-    /**
-     * @brief Defines the cell value to indicate an inflated obstacle
-     */
-    static const unsigned char INFLATED_OBSTACLE;
-
-    /**
-     * @brief Defines the cell value to indicate a lethal obstacles. Cell values less than this value are
-     * traversable at a given cost
-     */
-    static const unsigned char LETHAL_OBSTACLE;
-
-    /**
      * @brief Constructor.
      *
      * @param width width of map [cells]
@@ -100,10 +85,14 @@ namespace costmap_2d {
      * @param window_length how long to hold onto obstacle data [sec]
      * @param threshold The cost threshold where a cell is considered an obstacle
      * @param maxZ gives the cut-off for points in 3D space
+     * @param inflationRadius the radius used to bound inflation - limit of cost propagation
+     * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
+     * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
-	      double resolution, double window_length,  
-	      unsigned char threshold, double maxZ = 0, double inflationRadius = 0);
+	      double resolution, double window_length,
+	      unsigned char threshold, double maxZ = 0, double inflationRadius = 0,
+	      double circumscribedRadius = 0, double inscribedRadius = 0);
   
     /**
      * @brief Destructor.
@@ -111,38 +100,33 @@ namespace costmap_2d {
     virtual ~CostMap2D();
   
     /**
-     * @brief Updates the const map accounting for the new value of time and a new set of obstacles. 
+     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
      * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
      * @param current time stamp
      * @param cloud holds projected scan data
-     * @param newObstacleCells holds vector for returning newly occupied ids
-     * @param deletedObstacleCells holds vector for returning newly unoccupied ids
+     * @param updates holds the updated cell ids and values
      *
      * @see removeStaleObstacles
      */
     void updateDynamicObstacles(double ts,
 				const std_msgs::PointCloudFloat32& cloud,
-				std::vector<unsigned int>& newObstacleCells, 
-				std::vector<unsigned int>& deletedObstacleCells);
+				std::set<unsigned int>& updates);
 
-  
     /**
-     * @brief Updates the const map accounting for the new value of time and a new set of obstacles. 
+     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
      * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
      * @param current time stamp
      * @param wx The current x position
      * @param wy The current y position
      * @param cloud holds projected scan data
-     * @param newObstacleCells holds vector for returning newly occupied ids
-     * @param deletedObstacleCells holds vector for returning newly unoccupied ids
+     * @param updates holds the updated cell ids and values
      *
      * @see removeStaleObstacles
      */
     void updateDynamicObstacles(double ts,
 				double wx, double wy,
 				const std_msgs::PointCloudFloat32& cloud,
-				std::vector<unsigned int>& newObstacles, 
-				std::vector<unsigned int>& deletedObstacles);
+				std::set<unsigned int>& updates);
     /**
      * @brief A convenience method which will skip calculating the diffs
      * @param current time stamp
@@ -159,7 +143,7 @@ namespace costmap_2d {
      * @param current time stamp
      * @param deletedObstacleCells holds vector for returning newly unoccupied ids
      */
-    void removeStaleObstacles(double ts, std::vector<unsigned int>& deletedObstacleCells);
+    void removeStaleObstacles(double ts, std::set<unsigned int>& updates);
 
     /**
      * @brief Get pointer into the obstacle map (which contains both static
@@ -178,25 +162,14 @@ namespace costmap_2d {
     unsigned char operator [](unsigned int ind) const;
 
     /**
-     * @brief Test if a cell is an obstacle. Encapsualtes threshold interpretations
+     * @brief Accessor by map coordinates
      */
-    bool isObstacle(unsigned int mx, unsigned int my) const;
+    unsigned char getCost(unsigned int mx, unsigned int my) const;
 
     /**
-     * @brief Test if a cell is an inflated obstacle, based on the given inflation radius
+     * @brief Utility for debugging
      */
-    bool isInflatedObstacle(unsigned int mx, unsigned int my) const;
-
-    /**
-     * @brief Test if a cell is an obstacle. Encapsualtes threshold interpretations
-     */
-    bool isObstacle(unsigned int ind) const;
-
-    /**
-     * @brief Test if a cell is an inflated obstacle, based on the given inflation radius
-     */
-    bool isInflatedObstacle(unsigned int ind) const;
-
+    std::string toString() const;
 
   private:
     /**
@@ -210,19 +183,20 @@ namespace costmap_2d {
     /**
      * @brief Helper method to compute the inflated cells around an obstacle based on resolution and inflation radius
      */
-    void computeInflation(unsigned int ind, std::vector<unsigned int>& inflation) const;
+    void computeInflation(unsigned int ind, std::vector< std::pair<unsigned int, unsigned char> >& inflation) const;
 
     /**
      * @brief Utility to encapsulate dynamic cell updates
+     * @return true if the cell value is updated, otherwise false
      */
-    void updateCell(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& newObstacles);
+    bool updateCell(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates);
 
     static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
     const double maxZ_; /**< Points above this will be excluded from consideration */
-    const double inflationRadius_; /**< The radius in meters to inflate obstacles. 
-				      If greater then a single cell half width it will cause  obstacles to grow */
-
+    const double inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
+    const double circumscribedRadius_;
+    const double inscribedRadius_;
     unsigned char* staticData_; /**< data loaded from the static map */
     unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
     TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
