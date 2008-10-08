@@ -229,7 +229,20 @@ protected:
 };
 
 ///\todo write out lots of these :-(
-
+/*
+template<>
+void Transformer::transformStamped<Vector3>(const std::string& target_frame, const Stamped<Vector3>& stamped_in, Stamped<Vector3>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+  btQuaternion quat = btQuaternion(stamped_in.data_.x(), stamped_in.data_.y(), stamped_in.data_.z()).normalized();
+  quat = transform * quat;
+  stamped_out.data_ = btVector3(quat.x(), quat.y(), quat.z());
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
+*/
 template<typename T>
 void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
 {

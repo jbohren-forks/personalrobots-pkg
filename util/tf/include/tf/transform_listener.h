@@ -71,6 +71,14 @@ public:
 
   };
   
+  ~TransformListener()
+  {
+    node_.unsubscribe("/tf_message");
+    /// \todo remove backward compatability only
+    node_.unsubscribe("/TransformArray");
+  };
+  
+  
     //Use Transformer interface for Stamped data types
   /** \brief Transform a std_msgs::Vector natively */
     void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped & vin, std_msgs::Vector3Stamped & vout);  //output to msg or Stamped< >??
