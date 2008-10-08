@@ -40,8 +40,8 @@ class Segway : public node
 		bool odom_init;
     int op_mode_req;
     enum { RUNNING, SHUTDOWN_REQ, SHUTDOWN } pkt_mode;
-    bool req_timeout;
     rosTFServer tf;
+    bool req_timeout;
 };
 
 const float MAX_X_VEL = 1.2;
@@ -65,9 +65,9 @@ Segway::Segway() :
   req_timeout(false)
 {
   odom.header.frame_id = "FRAMEID_ODOM";
-  advertise("odom", odom);
-  subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb);
-  subscribe("operating_mode", op_mode, &Segway::op_mode_cb);
+  advertise<std_msgs::RobotBase2DOdom>("odom", 1);
+  subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb, 1);
+  subscribe("operating_mode", op_mode, &Segway::op_mode_cb, 1);
 }
 
 Segway::~Segway()
@@ -224,7 +224,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
-	can = dgc_usbcan_initialize("/dev/ttyUSB3"); // pull from a port someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a port someday...
 
 	if (!can)
 		log(FATAL, "ahh couldn't open the can controller\n");
@@ -291,7 +291,7 @@ void Segway::main_loop()
 					odom_yaw = odom_yaw + delta_ang;
 					
 					static int odom_count = 0;
-					if (odom_count++ % 10 == 0) // send it at 5 hz or so
+					if (odom_count++ % 3 == 0) // send it at 5 hz or so
 					{
 //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
             odom.pos.x  = odom_x;
