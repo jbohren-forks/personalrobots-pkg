@@ -1,0 +1,12 @@
+XACRO = `rospack find xacro`/xacro.py
+URDF2GAZEBO = `rospack find gazebo_robot_description`/urdf2gazebo
+
+ROBOT = one_armed_bandit
+
+$(ROBOT).model: $(ROBOT).xml
+	$(XACRO) $^ > $^.expanded
+	$(URDF2GAZEBO) $^.expanded $@
+	$(RM) $^.expanded
+
+clean:
+	$(RM) $(ROBOT).model

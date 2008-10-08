@@ -1,0 +1,361 @@
+<?xml version="1.0"?>
+<robot>
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <property name="shoulder_pitch_length" value="0.10" />
+  <property name="shoulder_pitch_radius" value="0.12" />
+  
+
+  <macro name="pr2_finger" params="suffix parent reflect">
+
+    <!-- Finger proximal digit -->
+
+    <joint name="finger_${suffix}_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <limit effort="10" velocity="5" />
+      <calibration values="1.5 -1 " />
+      <limit effort="10" velocity="10" min="-100" max="100" />
+    </joint>
+
+    <link name="finger_${suffix}">
+      <parent name="${parent}" />
+      <origin xyz="0.07751 ${reflect*0.01} 0" rpy="0 0 0" />
+
+      <joint name="finger_${suffix}_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
+                  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Shell</elem>
+        </map>
+        <geometry name="pr2_finger_l_mesh_file">
+          <mesh filename="finger-l" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="pr2_finger_l_collision_geom">
+          <box size="0.131 0.056 0.049" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+      <map name="finger_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+
+    <!-- Finger tip -->
+
+    <joint name="finger_tip_${suffix}_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <limit effort="10" velocity="10" min="-100" max="100" />
+    </joint>
+
+    <link name="finger_tip_${suffix}">
+      <parent name="finger_${suffix}" />
+      <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
+
+      <joint name="finger_tip_${suffix}_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz=" 0 0 0 " />
+        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
+                  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0 " rpy="0 0 0 " />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_finger_tip_l_mesh_file">
+          <mesh filename="finger-tip-l" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="pr2_finger_tip_l_collision_geom">
+          <box size="0.053 0.04 0.023" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+      <map name="finger_tip_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+  </macro>
+
+
+
+  <macro name="pr2_gripper" params="suffix parent reflect">
+    <joint name="gripper_roll_${suffix}_joint" type="revolute">
+      <axis xyz="1 0 0" />
+      <anchor xyz="0 0 0" />
+      <limit effort="10" velocity="5" />
+      <calibration values="1.5 -1" />
+    </joint>
+
+    <link name="gripper_roll_${suffix}">
+      <parent name="${parent}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="gripper_roll_${suffix}_joint"/>
+
+      <inertial>
+        <mass value="1.0" />
+        <com xyz=" 0.179474 -0.000058  0.013779  " /><!-- FIXME John switched x and z for now-->
+        <inertia  ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
+                  iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_gripper_roll_mesh_file">
+          <mesh filename="wr_roll" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0.05 0 0" rpy="0 0 0" />
+        <geometry name="pr2_gripper_roll_collision_geom">
+          <box size="0.11 0.10 0.05" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+
+      <map name="pr2_gripper_roll_left_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <pr2_finger suffix="l_${suffix}" parent="gripper_roll_${suffix}" reflect="1" />
+    <pr2_finger suffix="r_${suffix}" parent="gripper_roll_${suffix}" reflect="-1" />
+
+    <transmission type="GripperTransmission" name="gripper_${suffix}_trans">
+      <actuator name="gripper_${suffix}_motor" />
+      <joint name="finger_r_${suffix}_joint" reduction="-1.0" />
+      <joint name="finger_tip_r_${suffix}_joint" reduction="1.0" />
+      <joint name="finger_l_${suffix}_joint" reduction="1.0" />
+      <joint name="finger_tip_l_${suffix}_joint" reduction="-1.0" />
+      <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
+    </transmission>
+  </macro>
+
+
+
+
+  <macro name="pr2_upperarm" params="suffix parent reflect">
+
+    <!-- Shoulder pan -->
+
+    <joint name="shoulder_pan_${suffix}_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <limit min="-2" max="0.9" effort="30" velocity="5" />
+      <calibration reference_position="-0.7" values="1.5 -1" />
+      <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+    </joint>
+
+    <link name="shoulder_pan_${suffix}">
+      <parent name="${parent}" />
+      <origin xyz="0 ${reflect*0.188} 0" rpy="0 0 0" />
+      <joint name="shoulder_pan_${suffix}_joint" />
+      <inertial>
+        <mass value="16.29553" />
+        <com xyz="-0.005215 -0.030552 0.0" />
+        <inertia ixx="0.793291393007"  ixy="0.003412032973"  ixz="0.0096614481"
+                 iyy="0.818419457224"  iyz="-0.033999499551" izz="0.13915007406" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="pr2_sholder_pan_mesh_file">
+          <mesh filename="shoulder_yaw" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.05 0 -0.2" rpy="0 0 0 " />
+        <geometry name="pr2_shoulder_pan_collision_box_geom">
+          <box size="0.347 0.254 0.646" />
+        </geometry>
+      </collision>
+      <map name="pr2_shoulder_pan_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="shoulder_pan_${suffix}_trans">
+      <actuator name="shoulder_pan_${suffix}_motor" />
+      <joint name="shoulder_pan_${suffix}_joint" />
+      <mechanicalReduction>63.16</mechanicalReduction>
+    </transmission>
+
+    <!-- Shoulder pitch -->
+
+    <joint name="shoulder_pitch_${suffix}_joint" type="revolute">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+      <limit min="-0.4" max="1.5" effort="30" velocity="5" />
+      <calibration reference_position="0.9" values="1.5 -1 " />
+      <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+    </joint>
+
+    <link name="shoulder_pitch_${suffix}">
+      <parent name="shoulder_pan_${suffix}" />
+      <origin xyz="0.1 0 0" rpy="0 0 0" />
+      <joint name="shoulder_pitch_${suffix}_joint" />
+      <inertial>
+        <mass value="2.41223" />
+        <com xyz="-0.035895  0.014422 -0.0028263" />
+        <inertia ixx="0.016640333585" ixy="0.002696462583"  ixz="0.001337742275"
+                 iyy="0.017232603914" iyz="-0.003605106514" izz="0.018723553425" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Grey</elem>
+        </map>
+        <geometry name="pr2_sholder_pitch_mesh_file">
+          <mesh filename="shoulder_pitch" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="${shoulder_pitch_length/2} 0 0 " rpy="${M_PI/2} 0 0" />
+        <geometry name="pr2_shoulder_pitch_collision_geom">
+          <cylinder radius="${shoulder_pitch_radius}" length="${shoulder_pitch_length}" />
+        </geometry>
+      </collision>
+    </link>
+
+    <transmission type="SimpleTransmission" name="shoulder_pitch_${suffix}_trans">
+      <actuator name="shoulder_pitch_${suffix}_act" />
+      <joint name="shoulder_pitch_${suffix}_joint" />
+      <mechanicalReduction>57.36</mechanicalReduction>
+    </transmission>
+
+    <!-- Upperarm roll -->
+
+    <joint name="upperarm_roll_${suffix}_joint" type="revolute">
+      <axis xyz="1 0 0" />
+      <anchor xyz="0 0 0" />
+      <limit min="-2.5" max="2.5" effort="30" velocity="5" />
+      <calibration reference_position="0" values="1.5 -1 " />
+      <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+    </joint>
+
+    <link name="upperarm_roll_${suffix}">
+      <parent name="shoulder_pitch_${suffix}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="upperarm_roll_${suffix}_joint" />
+
+      <inertial>
+        <mass value="4.9481" />
+        <com xyz=" 0.21227 0.001205 -0.016293  " />
+        <inertia  ixx="10.0" ixy="0.000547745916"  ixz="0.000119476885"
+                  iyy="1.0"  iyz="0.001544932307"  izz="1.0" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_shoulder_roll_mesh_file">
+          <mesh filename="upperarm_roll" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0.3 0 0" rpy="0 0 0" />
+        <geometry name="pr2_upperarm_roll_collision_geom">
+          <box size="0.362 0.144 0.157" />
+        </geometry>
+      </collision>
+
+      <map name="pr2_upperarm_roll_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="upperarm_roll_${suffix}_trans">
+      <actuator name="upperarm_roll_${suffix}_motor" />
+      <joint name="upperarm_roll_${suffix}_joint" />
+      <mechanicalReduction>32.65</mechanicalReduction>
+    </transmission>
+
+    <!-- Elbow flex -->
+
+    <joint name="elbow_flex_${suffix}_joint" type="revolute">
+      <axis xyz="0 ${reflect} 0" />
+      <anchor xyz="0 0 0" />
+      <limit min="0" max="2.3" effort="30" velocity="5" />
+      <calibration reference_position="0" values="1.5 -1" />
+      <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+    </joint>
+
+    <link name="elbow_flex_${suffix}">
+      <parent name="upperarm_roll_${suffix}" />
+      <origin xyz="0.4 0 0" rpy="0 0 0" />
+      <joint name="elbow_flex_${suffix}_joint" />
+
+      <inertial>
+        <mass value="1.689246" />
+        <com xyz="-0.011638  0.013173 0.001228 " />
+        <inertia  ixx="10.0" ixy="0.000292046674"  ixz="-0.000077359282"
+                  iyy="1.0"  iyz="-0.000001162155" izz="1.0" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Grey</elem>
+        </map>
+        <geometry name="pr2_elbow_flex_mesh_file">
+          <mesh filename="elbow_pitch" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <geometry name="elbow_flex_collision_geom">
+          <cylinder radius="0.1" length="0.08" />
+        </geometry>
+      </collision>
+      <map name="pr2_elbow_flex_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="elbow_flex_${suffix}_trans">
+      <actuator name="elbow_flex_${suffix}_motor" />
+      <joint name="elbow_flex_${suffix}_joint" />
+      <mechanicalReduction>36.17</mechanicalReduction>
+    </transmission>
+  </macro>
+
+
+  <macro name="pr2_forearm" params="suffix parent reflect">
+  </macro>
+
+
+  <macro name="pr2_arm" params="suffix parent reflect">
+    <pr2_upperarm suffix="${suffix}" reflect="${reflect}" parent="${parent}" />
+    <pr2_forearm suffix="${suffix}" reflect="${reflect}" parent="elbow_flex_${suffix}" />
+  </macro>
+
+
+</robot>

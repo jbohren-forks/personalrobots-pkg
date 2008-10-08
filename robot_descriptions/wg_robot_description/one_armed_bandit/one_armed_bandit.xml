@@ -1,0 +1,74 @@
+<?xml version="1.0"?>
+<robot name="pr2"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+
+  <include filename="../pr2/arm_defs.xml" />
+  <include filename="../pr2/head_defs.xml" />
+
+  <joint name="base_joint" type="planar" />
+
+  <link name="torso">
+    <parent name="world" />
+    <origin xyz="0 0 0.05" rpy="0 0 0" />
+    <joint name="base_joint" />
+
+    <inertial>
+      <mass value="1000" />
+      <com xyz="0 0 0" />
+      <inertia ixx="10000"  ixy="0"  ixz="0" iyy="10000" iyz="0" izz="10000" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
+      <geometry name="pr2_base_mesh_file">
+        <mesh scale="1 1 0.01" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry name="base_collision_geom">
+        <box size="1 1 0.01" />
+      </geometry>
+    </collision>
+  </link>
+
+  <pr2_upperarm suffix="right" reflect="-1" parent="torso" />
+  <tilting_hokuyo name="tilt_laser" parent="torso">
+    <origin xyz="0.1 0.1 1.15" rpy="0 0 0" />
+  </tilting_hokuyo>
+
+
+
+
+
+
+<!-- TODO: Make this much simpler -->
+<map name="transmissions_gazebo_mechanism_control" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
+  <verbatim key="transmissions_gazebo_mechanism_control" includes="true">
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <robot filename="pr2.xml" />
+      <gazebo_physics filename="gazebo_joints.xml" />
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
+  </verbatim>
+</map>
+
+
+</robot>

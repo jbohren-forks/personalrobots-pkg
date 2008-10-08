@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <macro name="tilting_hokuyo" params="name parent *origin">
+
+    <joint name="${name}_mount_joint" type="revolute">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+      <limit min="-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
+      <calibration reference_position="-0.35" values="0 0" />
+    </joint>
+
+    <link name="${name}_mount"> 
+      <parent name="${parent}" />
+      <insert_block name="origin" />
+      <joint name="${name}_mount_joint" /> 
+      <inertial>
+        <mass value="1.0" />
+        <com xyz="0 0 0" />
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+      </inertial> 
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/PioneerBody</elem>
+        </map>
+        <geometry name="pr2_tilt_laser_mount_mesh_file">
+          <mesh filename="hok_tilt" />
+        </geometry>
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="tilt_laser_mount_collision_geom" >
+          <box size=".001 .001 .001" /> 
+        </geometry>
+      </collision>
+    </link>
+
+    <transmission type="SimpleTransmission" name="${name}_mount_trans">
+      <actuator name="${name}_motor" />
+      <joint name="${name}_mount_joint" />
+      <mechanicalReduction>6</mechanicalReduction>
+    </transmission>
+
+    <joint name="${name}_joint" type="fixed">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+    </joint>
+
+    <sensor name="${name}" type="laser">
+      <parent name="${name}_mount" />
+      <origin xyz="0 0 0.03" rpy="0 0 0" />      
+      <joint name="${name}_joint" /> 
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+      </inertial> 
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="pr2_tilt_laser_visual_geom">
+          <mesh scale="0.001 0.001 0.001" />
+        </geometry>
+      </visual>
+      
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="tilt_laser_collision_geom" >
+          <box size=".001 .001 .001" /> 
+        </geometry>
+      </collision>
+      
+      <map name="sensor" flag="gazebo">
+        <verbatim key="sensor_ray">
+          <sensor:ray name="${name}">
+            <rayCount>683</rayCount>
+            <rangeCount>683</rangeCount>
+            <laserCount>1</laserCount>
+            
+            <origin>0.0 0.0 0.0</origin>
+            <displayRays>false</displayRays>
+            
+            <minAngle>-45</minAngle>
+            <maxAngle> 45</maxAngle>
+            
+            <minRange>0.05</minRange>
+            <maxRange>10.0</maxRange>
+            <updateRate>10.0</updateRate>
+            <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+              <gaussianNoise>0.005</gaussianNoise>
+              <alwaysOn>true</alwaysOn>
+              <updateRate>15.0</updateRate>
+              <!-- <topicName>tilt_scan</topicName> -->
+              <topicName>scan</topicName>
+              <frameName>tilt_laser</frameName>
+              <interface:laser name="ros_tilt_laser_iface" />
+            </controller:ros_laser>
+          </sensor:ray>
+        </verbatim>
+      </map>
+
+    </sensor>
+
+  </macro>
+
+</robot>
