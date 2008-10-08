@@ -4,69 +4,6 @@
 namespace ros {
   namespace highlevel_controllers {
 
-    CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
-      : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
-			    computeWY(costMap, maxSize, poseX, poseY), 
-			    computeSize(maxSize, costMap.getResolution()), 
-			    computeSize(maxSize, costMap.getResolution()), 
-			    costMap.getResolution()), costMap_(costMap),
-	maxSize_(maxSize){
-
-      // The origin locates this grid. Convert from world coordinates to cell co-ordinates
-      // to get the cell coordinates of the origin
-      costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
-
-      printf("Creating Local %d X %d Map\n", getWidth(), getHeight());
-    }
-
-    unsigned char CostMapAccessor::operator[](unsigned int ind) const {
-      double wx, wy;
-      IND_WC(ind, wx, wy);
-      return costMap_[costMap_.WC_IND(wx, wy)];
-    }
-
-    unsigned char CostMapAccessor::getCost(unsigned int mx, unsigned int my) const {
-      double wx, wy;
-      MC_WC(mx, my, wx, wy);
-      return costMap_[costMap_.WC_IND(wx, wy)];
-    }
-
-    void CostMapAccessor::updateForRobotPosition(double wx, double wy){
-      origin_x_ = computeWX(costMap_, maxSize_, wx, wy);
-      origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
-      costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
-
-      //printf("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
-      //     origin_x_, origin_y_, maxSize_, wx, wy);
-    }
-
-    double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
-      unsigned int mx, my;
-      costMap.WC_MC(wx, wy, mx, my);
-
-      unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
-      unsigned int origin_mx = std::max((unsigned int) 0,  mx - cellWidth/2); // Not too far left
-      origin_mx = std::min(origin_mx, costMap.getWidth() - cellWidth);
-      return origin_mx * costMap.getResolution();
-    }
-
-    double CostMapAccessor::computeWY(const CostMap2D& costMap, double maxSize, double wx, double wy){
-      unsigned int mx, my;
-      costMap.WC_MC(wx, wy, mx, my);
-
-      unsigned int cellWidth = (unsigned int) (maxSize/costMap.getResolution());
-      unsigned int origin_my = std::max((unsigned int) 0,  my - cellWidth/2); // Not too far up
-      origin_my = std::min(origin_my, costMap.getHeight() - cellWidth);
-      return origin_my * costMap.getResolution();
-    }
-
-    unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
-      static const double EPSILON(0.01);
-      unsigned int cellWidth = (unsigned int) (maxSize/resolution + EPSILON);
-      printf("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
-      return cellWidth;
-    }
-
     TrajectoryRolloutController::TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,
 							     double sim_time, int sim_steps, int samples_per_dim,
 							     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
