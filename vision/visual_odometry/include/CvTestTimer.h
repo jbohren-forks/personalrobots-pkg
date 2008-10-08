@@ -64,6 +64,8 @@ public:
 		RESET(PoseEstimateLevMarq);
 	  RESET(KeyPointMatch);
 	  RESET(KeyPointDescriptor);
+	  RESET(PointPicking);
+	  RESET(ColinearCheck);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -104,6 +106,8 @@ public:
   DECLARE(PoseEstimateLevMarq);
   DECLARE(KeyPointMatch);
   DECLARE(KeyPointDescriptor);
+  DECLARE(PointPicking);
+  DECLARE(ColinearCheck);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

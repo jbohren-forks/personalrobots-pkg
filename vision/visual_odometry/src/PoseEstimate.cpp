@@ -399,6 +399,8 @@ bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 
 bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1,
 		bool fInputPointsInRows){
+  TIMERSTART2(PointPicking);
+
 	bool status = false;
 
 	for (int i=0; i<mNumTriesForRandomTriple; i++){
@@ -452,12 +454,16 @@ bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, 
 		CvMatUtils::printMat(P1);
 #endif
 
+		TIMERSTART2(ColinearCheck);
 		// TODO: check if they are tooCloseToColinear
-		if (tooCloseToColinear(P0) == false && tooCloseToColinear(P1) == false) {
-			status = true;
+		status = tooCloseToColinear(P0) == false && tooCloseToColinear(P1) == false;
+		TIMEREND2(ColinearCheck);
+
+		if (status == true) {
 			break;
 		}
 	}
+	TIMEREND2(PointPicking);
 	return status;
 }
 

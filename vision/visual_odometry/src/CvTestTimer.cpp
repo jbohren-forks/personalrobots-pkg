@@ -61,6 +61,8 @@ void CvTestTimer::printStat() {
 	PRINTSTAT2("KeypointDescriptor  ", KeyPointDescriptor);
 	PRINTSTAT2("KeypointMatch       ", KeyPointMatch);
 	PRINTSTAT2("PoseEstimateRANSAC  ", PoseEstimateRANSAC);
+	PRINTSTAT2("  PointPicking      ", PointPicking);
+	PRINTSTAT2("    ColinearCheck   ", ColinearCheck);
   PRINTSTAT2("  SVD               ", SVD);
   PRINTSTAT ("  CheckInliers      ", CheckInliers);
   PRINTSTAT ("  CopyInliers       ", CopyInliers);
