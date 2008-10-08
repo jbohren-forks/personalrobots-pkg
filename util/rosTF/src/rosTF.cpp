@@ -45,6 +45,11 @@ rosTFClient::rosTFClient(ros::node & rosnode,
   myNode.subscribe("TransformArray", tfArrayIn, &rosTFClient::receiveArray, this,100);
 };
 
+rosTFClient::~rosTFClient()
+{
+  myNode.unsubscribe("TransformArray");
+
+};
 
 void rosTFClient::transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
 {
