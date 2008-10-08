@@ -7,9 +7,9 @@
 //! A noop post-threshold functor which rejects no keypoints.
 struct NullThreshold
 {
-    inline bool operator() (int x, int y, int s) {
-        return false;
-    }
+  inline bool operator() (int x, int y, int s) {
+    return false;
+  }
 };
 
 /*!
@@ -22,14 +22,14 @@ struct NullThreshold
 struct LineSuppress
 {
   IplImage** m_responses;
-  float m_threshold;
   int* m_scale_sizes;
+  float m_threshold;
   
-  LineSuppress(IplImage** responses, float threshold, int* sizes)
-    : m_responses(responses), m_threshold(threshold), m_scale_sizes(sizes)
+  LineSuppress(IplImage** responses, int* sizes, float threshold)
+    : m_responses(responses), m_scale_sizes(sizes), m_threshold(threshold)
   {}
   
-  bool operator() (int pt_x, int pt_y, int pt_s, float &line_response) {
+  bool operator() (int pt_x, int pt_y, int pt_s) {
     IplImage* L = m_responses[pt_s - 1];
     int offset = 2*m_scale_sizes[pt_s - 1]; // use the outer box as the window
     float sum_Lx_2 = 0;
@@ -52,26 +52,27 @@ struct LineSuppress
     float trace = sum_Lx_2 + sum_Ly_2;
     float det = sum_Lx_2*sum_Ly_2 - sum_LxLy*sum_LxLy;
     
-    //return trace*trace/det >= m_threshold;
-    line_response = trace*trace/det;
-    return line_response >= m_threshold;
+    return trace*trace/det >= m_threshold;
   }
 };
 
+// Same as LineSuppress, but only samples 81 gradients regardless of scale.
 struct LineSuppressSubsample
 {
   IplImage** m_responses;
-  float m_threshold;
   int* m_scale_sizes;
+  float m_threshold;
   
-  LineSuppressSubsample(IplImage** responses, float threshold, int* sizes)
-    : m_responses(responses), m_threshold(threshold), m_scale_sizes(sizes)
+  LineSuppressSubsample(IplImage** responses, int* sizes, float threshold)
+    : m_responses(responses), m_scale_sizes(sizes), m_threshold(threshold)
   {}
   
-  bool operator() (int pt_x, int pt_y, int pt_s, float &line_response) {
+  bool operator() (int pt_x, int pt_y, int pt_s) {
+    // Use 81 samples from a 9x9 grid over a window approximately the size of the
+    // outer box. For scale 2 this is dense sampling; larger scales are subsampled.
     IplImage* L = m_responses[pt_s - 1];
-    int offset = 2*m_scale_sizes[pt_s - 1]; // use the outer box as the window
-    int step = pt_s;
+    int step = m_scale_sizes[pt_s - 1] / 2;
+    int offset = 4 * step;
     float sum_Lx_2 = 0;
     float sum_Ly_2 = 0;
     float sum_LxLy = 0;
@@ -92,22 +93,23 @@ struct LineSuppressSubsample
     float trace = sum_Lx_2 + sum_Ly_2;
     float det = sum_Lx_2*sum_Ly_2 - sum_LxLy*sum_LxLy;
     
-    //return trace*trace/det >= m_threshold;
-    line_response = trace*trace/det;
-    return line_response >= m_threshold;
+    return trace*trace/det >= m_threshold;
   }
 };
 
+// Same as LineSuppressSubsample, but uses the projected response image rather
+// than the actual response image at the appropriate scale.
 struct LineSuppressProjected
 {
-  float m_threshold;
+  IplImage* m_projected;
   int* m_scale_sizes;
+  float m_threshold;
   
-  LineSuppressProjected(float threshold, int* sizes)
-    : m_threshold(threshold), m_scale_sizes(sizes)
+  LineSuppressProjected(IplImage* projected, int* sizes, float threshold)
+    : m_projected(projected), m_scale_sizes(sizes), m_threshold(threshold)
   {}
 
-  bool operator() (int pt_x, int pt_y, int pt_s, IplImage* projected, float &line_response) {
+  bool operator() (int pt_x, int pt_y, int pt_s) {
     // Use 81 samples from a 9x9 grid over a window approximately the size of the
     // outer box. For scale 2 this is dense sampling; larger scales are subsampled.
     int step = m_scale_sizes[pt_s - 1] / 2;
@@ -120,8 +122,8 @@ struct LineSuppressProjected
     for (int y = pt_y - offset; y <= pt_y + offset; y += step) {
       for (int x = pt_x - offset; x <= pt_x + offset; x += step) {
         // Compute derivatives by the central finite difference.
-        float Lx = CV_IMAGE_ELEM(projected, float, y, x-1) - CV_IMAGE_ELEM(projected, float, y, x+1);
-        float Ly = CV_IMAGE_ELEM(projected, float, y-1, x) - CV_IMAGE_ELEM(projected, float, y+1, x);
+        float Lx = CV_IMAGE_ELEM(m_projected, float, y, x-1) - CV_IMAGE_ELEM(m_projected, float, y, x+1);
+        float Ly = CV_IMAGE_ELEM(m_projected, float, y-1, x) - CV_IMAGE_ELEM(m_projected, float, y+1, x);
         
         sum_Lx_2 += Lx*Lx;
         sum_Ly_2 += Ly*Ly;
@@ -132,22 +134,26 @@ struct LineSuppressProjected
     float trace = sum_Lx_2 + sum_Ly_2;
     float det = sum_Lx_2*sum_Ly_2 - sum_LxLy*sum_LxLy;
     
-    //return trace*trace/det >= m_threshold;
-    line_response = trace*trace/det;
-    return line_response >= m_threshold;
+    return trace*trace/det >= m_threshold;
   }
 };
 
+// Performs (subsampled) line suppression on a binarized patch from the
+// image of projected scale values. Each pixel is given value 1 if
+// its scale matches that of the keypoint, 0 otherwise. This cleans up
+// some poorly localized points that slip through LineSuppressProjected
+// due to variations in projected scale around the point.
 struct LineSuppressBinarized
 {
-  float m_threshold;
+  IplImage* m_scales;
   int* m_scale_sizes;
+  float m_threshold;
   
-  LineSuppressBinarized(float threshold, int* sizes)
-    : m_threshold(threshold), m_scale_sizes(sizes)
+  LineSuppressBinarized(IplImage* scales, int* sizes, float threshold)
+    : m_scales(scales), m_scale_sizes(sizes), m_threshold(threshold)
   {}
 
-  bool operator() (int pt_x, int pt_y, int pt_s, IplImage* scales, float &line_response) {
+  bool operator() (int pt_x, int pt_y, int pt_s) {
     // Subsample as in LineSuppressProjected
     int step = m_scale_sizes[pt_s - 1] / 2;
     int offset = 4 * step;
@@ -159,10 +165,10 @@ struct LineSuppressBinarized
     for (int y = pt_y - offset; y <= pt_y + offset; y += step) {
       for (int x = pt_x - offset; x <= pt_x + offset; x += step) {
         // Compute derivatives by the central finite difference.
-        int Lx = (CV_IMAGE_ELEM(scales, uchar, y, x-1) == pt_s) -
-          (CV_IMAGE_ELEM(scales, uchar, y, x+1) == pt_s);
-        int Ly = (CV_IMAGE_ELEM(scales, uchar, y-1, x) == pt_s) -
-          (CV_IMAGE_ELEM(scales, uchar, y+1, x) == pt_s);
+        int Lx = (CV_IMAGE_ELEM(m_scales, uchar, y, x-1) == pt_s) -
+          (CV_IMAGE_ELEM(m_scales, uchar, y, x+1) == pt_s);
+        int Ly = (CV_IMAGE_ELEM(m_scales, uchar, y-1, x) == pt_s) -
+          (CV_IMAGE_ELEM(m_scales, uchar, y+1, x) == pt_s);
 
         // use abs instead for first two sums? Lx = -1, 0 or 1.
         sum_Lx_2 += Lx*Lx;
@@ -174,26 +180,26 @@ struct LineSuppressBinarized
     float trace = sum_Lx_2 + sum_Ly_2;
     float det = sum_Lx_2*sum_Ly_2 - sum_LxLy*sum_LxLy;
     
-    //return trace*trace/det >= m_threshold;
-    line_response = trace*trace/det;
-    return line_response >= m_threshold;
+    return trace*trace/det >= m_threshold;
   }
 };
 
-struct LineSuppressCombined
+// Applies both LineSuppressProjected and LineSuppressBinarized.
+// TODO: Possibly should merge the implementations for only one pass. Or
+// if kept separate, do the faster one first.
+struct LineSuppressHybrid
 {
   LineSuppressProjected m_lsp;
   LineSuppressBinarized m_lsb;
 
-  LineSuppressCombined(float projected_threshold, float binarized_threshold, int* sizes)
-    : m_lsp(projected_threshold, sizes), m_lsb(binarized_threshold, sizes)
+  LineSuppressHybrid(IplImage* projected, IplImage* scales, int* sizes,
+                     float projected_threshold, float binarized_threshold)
+    : m_lsp(projected, sizes, projected_threshold),
+      m_lsb(scales, sizes, binarized_threshold)
   {}
 
-  bool operator() (int pt_x, int pt_y, int pt_s, IplImage* projected, IplImage* scales,
-                   float &line_response) {
-    bool lsp_result = m_lsp(pt_x, pt_y, pt_s, projected, line_response);
-    bool lsb_result = m_lsb(pt_x, pt_y, pt_s, scales, line_response);
-    return lsp_result || lsb_result;
+  inline bool operator() (int pt_x, int pt_y, int pt_s) {
+    return m_lsp(pt_x, pt_y, pt_s) || m_lsb(pt_x, pt_y, pt_s);
   }
 };
 

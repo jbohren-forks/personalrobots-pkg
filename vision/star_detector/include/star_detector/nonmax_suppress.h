@@ -27,6 +27,7 @@ inline void SaveResponseImage(char* filename, IplImage* img)
   cvReleaseImage(&gray);
 }
 
+// Uses the projected response image
 template< typename T = float, typename PostThreshold = NullThreshold,
           typename Compare = std::greater_equal<T> >
 struct NonmaxSuppressProject
@@ -44,41 +45,23 @@ struct NonmaxSuppressProject
   
   //! Appends all maxima found to pts and returns how many were found.
   template< typename OutputIterator >
-  int operator() (IplImage** responses, int n, OutputIterator inserter, int border) {
-    int W = responses[0]->width, H = responses[0]->height;
+  int operator() (IplImage* projected, IplImage* scales, int n,
+                  OutputIterator inserter, int border) {
+    int W = projected->width, H = projected->height;
     int num_pts = 0;
 
-    // Project responses into single maximal image
-    IplImage *projected = cvCreateImage(cvSize(W,H), IPL_DEPTH_32F, 1);
-    IplImage *scales = cvCreateImage(cvSize(W,H), IPL_DEPTH_8U, 1);
-    for (int y = 0; y < H; ++y) {
-      for (int x = 0; x < W; ++x) {
-        uchar scale = 1;
-        T max_response = CV_IMAGE_ELEM(responses[0], T, y, x);
-        T abs_max_response = abs(max_response);
-        for (int s = 1; s < n; ++s) {
-          T response = CV_IMAGE_ELEM(responses[s], T, y, x);
-          T abs_response = abs(response);
-          if (m_compare(abs_response, abs_max_response)) {
-            max_response = response;
-            abs_max_response = abs_response;
-            scale = s + 1;
-          }
-        }
-        CV_IMAGE_ELEM(projected, T, y, x) = max_response;
-        CV_IMAGE_ELEM(scales, uchar, y, x) = scale;
-      }
-    }
-    
     // NOTE: We use a constant, conservative border here, even though we may miss some
     // small features near the edges of the image.
     for (int y = border; y < H - border; ++y) {
       for (int x = border; x < W - border; ++x) {
         T response = CV_IMAGE_ELEM(projected, T, y, x);
         uchar scale = CV_IMAGE_ELEM(scales, uchar, y, x);
+
         // Discard if an end scale
         if (scale == 1 || scale == n)
           continue;
+
+        // Check if a maximum/minimum depending on the sign of the response
         if (m_compare(response, T(0))) {
           // Reject immediately if not strong enough
           if (m_compare(m_response_thresh, response) ||
@@ -112,22 +95,13 @@ struct NonmaxSuppressProject
         }
 
         // Final thresholding step (e.g. line suppression)
-        float line_response = 0;
-        //if ( m_post_thresh(x, y, scale, line_response) )
-        if ( m_post_thresh(x, y, scale, projected, scales, line_response) )
+        if ( m_post_thresh(x, y, scale) )
           continue;
 
-        *inserter = Keypoint(x, y, (float)scale, response, scale, line_response);
+        *inserter = Keypoint(x, y, (float)scale, response, scale);
         ++num_pts;
       }
     }
-
-    // DEBUG
-    //cvSaveImage("scales.pgm", scales);
-    //SaveResponseImage("projected.pgm", projected);
-
-    cvReleaseImage(&projected);
-    cvReleaseImage(&scales);
     
     return num_pts;
   }

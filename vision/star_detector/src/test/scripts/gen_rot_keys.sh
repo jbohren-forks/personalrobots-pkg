@@ -6,8 +6,8 @@ DETECTORS=willow_mod2
 ANGLES=`seq 15 15 180`
 SOURCE=graf/img1.pgm
 ROT_DIR=rotated
-#OPTIONS="-thres 0 -p 500"
-OPTIONS="-thres 0 -line 8 -p 500"
+OPTIONS="-thres 0 -p 500"
+#OPTIONS="-thres 0 -line 8 -p 500"
 
 for d in ${DETECTORS}; do
     DETECT=./${d}_detect

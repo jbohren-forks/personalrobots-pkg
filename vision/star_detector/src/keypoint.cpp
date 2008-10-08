@@ -9,8 +9,7 @@ void WriteKeypoints(std::string file_name, std::vector<Keypoint> const& pts)
     
     typedef std::vector<Keypoint>::const_iterator iter;
     for (iter i = pts.begin(); i != pts.end(); ++i) {
-      //fprintf(file, "%d %d %f %f\n", i->x, i->y, i->scale, i->response);
-      fprintf(file, "%d %d %f %f %f\n", i->x, i->y, i->scale, i->response, i->line_response);
+      fprintf(file, "%d %d %f %f\n", i->x, i->y, i->scale, i->response);
     }
     fclose(file);
   }
@@ -25,9 +24,7 @@ std::vector<Keypoint> ReadKeypoints(std::string file_name)
     fscanf(file, "# %d points\n", &num_pts);
     pts.resize(num_pts);
     for (int i = 0; i < num_pts; ++i) {
-      //fscanf(file, "%d %d %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale, &pts[i].response);
-      fscanf(file, "%d %d %f %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale,
-             &pts[i].response, &pts[i].line_response);
+      fscanf(file, "%d %d %f %f\n", &pts[i].x, &pts[i].y, &pts[i].scale, &pts[i].response);
     }
   }
   

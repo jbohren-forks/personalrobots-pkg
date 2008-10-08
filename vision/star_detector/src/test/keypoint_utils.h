@@ -13,14 +13,13 @@ struct KeypointFl
   float y;
   float scale;
   float response;
-  float line_response;
 
   KeypointFl()
-    : x(0), y(0), scale(0), response(0), line_response(0)
+    : x(0), y(0), scale(0), response(0)
   {}
 
-  KeypointFl(float x, float y, float scale, float response, float line_response)
-    : x(x), y(y), scale(scale), response(response), line_response(line_response)
+  KeypointFl(float x, float y, float scale, float response)
+    : x(x), y(y), scale(scale), response(response)
   {};
 
   //! This allows sorting a list of keypoints into descending order

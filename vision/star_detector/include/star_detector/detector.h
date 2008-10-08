@@ -31,13 +31,17 @@
 class StarDetector
 {
 public:
-  static const float DEFAULT_THRESHOLD = 30;
-  static const float DEFAULT_LINE_THRESHOLD = 10;
+  static const int DEFAULT_SCALES = 7;
+  static const float DEFAULT_RESPONSE_THRESHOLD = 30;
+  static const float DEFAULT_LINE_THRESHOLD_PROJECTED = 10;
+  static const float DEFAULT_LINE_THRESHOLD_BINARIZED = 8;
   
   //! Constructor. The dimensions of the source images that will be used
   //! with the detector are required to pre-allocate memory.
-  StarDetector(CvSize dims, int n = 7, float threshold = DEFAULT_THRESHOLD,
-               float line_threshold = DEFAULT_LINE_THRESHOLD);
+  StarDetector(CvSize dims, int n = DEFAULT_SCALES,
+               float response_threshold = DEFAULT_RESPONSE_THRESHOLD,
+               float line_threshold_projected = DEFAULT_LINE_THRESHOLD_PROJECTED,
+               float line_threshold_binarized = DEFAULT_LINE_THRESHOLD_BINARIZED);
 
   ~StarDetector();
   
@@ -45,7 +49,7 @@ public:
   template< typename OutputIterator >
   int DetectPoints(IplImage* source, OutputIterator inserter);
 
-  //! Fill in scales based in indices and interpolation
+  //! Fill in scales based on indices and interpolation
   template< typename ForwardIterator >
   void InterpolateScales(ForwardIterator first, ForwardIterator last);
 
@@ -59,18 +63,19 @@ private:
   //! Tilted integral image with a rounded two-pixel corner
   IplImage* m_flat;
   //! Array of filter response images over different scales
+  // TODO: remove once FilterResponses is replaced
   IplImage** m_responses;
-  //! Response magnitude threshold
-  float m_threshold;
-  //! Line response threshold
-  float m_line_threshold;
+  //! Projected response image
+  IplImage* m_projected;
+  //! Scales of points in projected response image
+  IplImage* m_scales;
   //! Filter size at each scale
   int* m_filter_sizes;
   //! Non-maximal suppression functor
-  NonmaxSuppressProject<float, LineSuppressCombined> m_nonmax;
+  NonmaxSuppressProject<float, LineSuppressHybrid> m_nonmax;
   //! Border size for non-max suppression
   int m_border;
-  //! Scale interpolation flag
+  //! Scale interpolation flag (TODO: currently useless)
   bool m_interpolate;
   
   static const float SCALE_RATIO = M_SQRT2;
@@ -97,32 +102,33 @@ private:
 template< typename OutputIterator >
 int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
 {
-    assert(source && source->depth == (int)IPL_DEPTH_8U);
+  assert(source && source->depth == (int)IPL_DEPTH_8U);
 
-    cvIntegral(source, m_upright, NULL, NULL);
-    TiltedIntegral(source, m_tilted, m_flat);
+  cvIntegral(source, m_upright, NULL, NULL);
+  TiltedIntegral(source, m_tilted, m_flat);
 
-    FilterResponses();
+  FilterResponses();
 #if 0
-    for (int i = 0; i < m_n; i++) {
-        char filename[10];
-        sprintf(filename, "out%d.pgm", i);
-        SaveResponseImage(filename, m_responses[i]);
-    }
+  // DEBUG
+  for (int i = 0; i < m_n; i++) {
+    char filename[10];
+    sprintf(filename, "out%d.pgm", i);
+    SaveResponseImage(filename, m_responses[i]);
+  }
 #endif
 
-    return FindExtrema(inserter);
+  return FindExtrema(inserter);
 }
 
 template< typename OutputIterator >
-int StarDetector::FindExtrema(OutputIterator inserter)
+inline int StarDetector::FindExtrema(OutputIterator inserter)
 {
-    int num_points = m_nonmax(m_responses, m_n, inserter, m_border);
-    //num_points += m_nonmin(m_responses, m_n, inserter, m_border);
-
-    return num_points;
+  //return m_nonmax(m_responses, m_n, inserter, m_border);
+  return m_nonmax(m_projected, m_scales, m_n, inserter, m_border);
 }
 
+// TODO: this is useless when we discard the full set of response images, but we
+//       could do the interpolation when creating the projected image.
 template< typename ForwardIterator >
 void StarDetector::InterpolateScales(ForwardIterator first, ForwardIterator last)
 {

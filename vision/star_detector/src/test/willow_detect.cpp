@@ -17,8 +17,9 @@ int main( int argc, char** argv )
                   << "[-t warp.xfm -i2 warped.pgm -o2 warped.key] [options]\n"
                   << "  number of points to take: -p 800\n"
                   << "  number of scales:         -s 7\n"
-                  << "  strength threshold:       -thres 30\n"
+                  << "  response threshold:       -thres 30\n"
                   << "  line threshold:           -line 10\n"
+                  << "  line threshold 2:         -line2 8\n"
                   << "  scale upper bound 1:      -ub1 6\n"
                   << "  scale lower bound 1:      -lb1 2\n"
                   << "  scale upper bound 2:      -ub2 9\n"
@@ -30,8 +31,9 @@ int main( int argc, char** argv )
     int num_points = 800;
     std::string key_file = "source.key", warped_key_file = "warped.key";
     int scales = 7;
-    float thres = StarDetector::DEFAULT_THRESHOLD;
-    float line_thres = StarDetector::DEFAULT_LINE_THRESHOLD;
+    float thres = StarDetector::DEFAULT_RESPONSE_THRESHOLD;
+    float line_thres = StarDetector::DEFAULT_LINE_THRESHOLD_PROJECTED;
+    float line_thres2 = StarDetector::DEFAULT_LINE_THRESHOLD_BINARIZED;
     float scale_ub1 = -1, scale_lb1 = -1, scale_ub2 = -1, scale_lb2 = -1;
     
     int arg = 0;
@@ -54,6 +56,8 @@ int main( int argc, char** argv )
             thres = atof(argv[++arg]);
         if (! strcmp(argv[arg], "-line"))
             line_thres = atof(argv[++arg]);
+        if (! strcmp(argv[arg], "-line2"))
+            line_thres2 = atof(argv[++arg]);
         if (! strcmp(argv[arg], "-ub1"))
             scale_ub1 = atof(argv[++arg]);
         if (! strcmp(argv[arg], "-lb1"))
@@ -89,7 +93,7 @@ int main( int argc, char** argv )
     // Find keypoints in source image
     std::vector<Keypoint> keypts;
     {
-      StarDetector detector(cvSize(W, H), scales, thres, line_thres);
+      StarDetector detector(cvSize(W, H), scales, thres, line_thres, line_thres2);
       Timer t("Willow detector");
       detector.DetectPoints(source, std::back_inserter(keypts));
     }
@@ -115,7 +119,7 @@ int main( int argc, char** argv )
         std::vector<Keypoint> warp_keypts;
         {
           StarDetector warp_detector(cvSize(warped->width, warped->height),
-                                     scales, thres, line_thres);
+                                     scales, thres, line_thres, line_thres2);
           Timer t("Willow detector (warped)");
           warp_detector.DetectPoints(warped, std::back_inserter(warp_keypts));
         }
