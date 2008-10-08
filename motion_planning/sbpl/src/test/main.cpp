@@ -63,7 +63,8 @@ int plan2d(int argc, char *argv[])
 
 	//plan a path
 	vector<int> solution_stateIDs_V;
-	ARAPlanner planner(&environment_nav2D);
+	bool bforwardsearch = false;
+	ARAPlanner planner(&environment_nav2D, bforwardsearch);
 
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
@@ -161,6 +162,7 @@ int planandnavigate2d(int argc, char *argv[])
 	vector<nav2dcell_t> changedcellsV;
 	nav2dcell_t nav2dcell;
 	int i;
+	const unsigned char obsthresh = 1;
 	//srand(0);
 
     //initialize true map and robot map
@@ -170,7 +172,7 @@ int planandnavigate2d(int argc, char *argv[])
 		exit(1);
 	}
 	trueenvironment_nav2D.GetEnvParms(&size_x, &size_y, &startx, &starty, &goalx, &goaly);
-    char* map = (char*)calloc(size_x*size_y, sizeof(char));
+    unsigned char* map = (unsigned char*)calloc(size_x*size_y, sizeof(unsigned char));
 
 	//print the map
 	if(bPrint) printf("true map:\n");
@@ -183,7 +185,7 @@ int planandnavigate2d(int argc, char *argv[])
 	if(bPrint) system("pause");
 
 	//Initialize Environment (should be called before initializing anything else)
-    if(!environment_nav2D.InitializeEnv(size_x, size_y, map, startx, starty, goalx, goaly)){
+    if(!environment_nav2D.InitializeEnv(size_x, size_y, map, startx, starty, goalx, goaly, obsthresh)){
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
 	}
@@ -198,8 +200,9 @@ int planandnavigate2d(int argc, char *argv[])
 
 	//create a planner
 	vector<int> solution_stateIDs_V;
-    //ARAPlanner planner(&environment_nav2D);
-	ADPlanner planner(&environment_nav2D);
+	bool bforwardsearch = true;
+    ARAPlanner planner(&environment_nav2D, bforwardsearch);
+	//ADPlanner planner(&environment_nav2D, bforwardsearch);
 
 
 
@@ -229,8 +232,9 @@ int planandnavigate2d(int argc, char *argv[])
             if(x < 0 || x >= size_x || y < 0 || y >= size_y)
                 continue;
             int index = x + y*size_x;
-            if(map[index] != 1 && trueenvironment_nav2D.IsObstacle(x,y)){
-                map[index] = 1;
+			unsigned char truecost = trueenvironment_nav2D.GetMapCost(x,y);
+            if(map[index] != truecost){
+                map[index] = truecost;
                 environment_nav2D.UpdateCost(x,y,map[index]);
                 printf("setting cost[%d][%d] to %d\n", x,y,map[index]);
                 bChanges = true;
@@ -242,12 +246,12 @@ int planandnavigate2d(int argc, char *argv[])
         }
 		
         if(bChanges){
-            //planner.costs_changed(); //use by ARA* planner (non-incremental)
+            planner.costs_changed(); //use by ARA* planner (non-incremental)
 
 			//get the affected states
-			environment_nav2D.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
+			//environment_nav2D.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
 			//let know the incremental planner about them
-			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
+			//planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
         }
 
 
@@ -285,13 +289,15 @@ int planandnavigate2d(int argc, char *argv[])
 				}
 
 				if (index != startindex && index != goalindex && !bOnthePath)
-					printf("%d ", map[index]);
+					printf("%3d ", map[index]);
 				else if(index == startindex)
-					printf("X ");
+					printf("  R ");
+				else if(index == goalindex)
+					printf("  G ");
 				else if (bOnthePath)
-					printf("* ");
+					printf("  * ");
 				else
-					printf("? ");
+					printf("  ? ");
 			}
 			printf("\n");
 		}
@@ -304,7 +310,7 @@ int planandnavigate2d(int argc, char *argv[])
             int newx, newy;
             environment_nav2D.GetCoordFromState(solution_stateIDs_V[1], newx, newy);
 
-			if(trueenvironment_nav2D.IsObstacle(newx,newy))
+			if(trueenvironment_nav2D.GetMapCost(newx,newy) >= obsthresh)
 			{
 				printf("ERROR: robot is commanded to move into an obstacle\n");
 				exit(1);
@@ -399,7 +405,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 	//create a planner
 	vector<int> solution_stateIDs_V;
-    ARAPlanner planner(&environment_nav3Dkin);
+	bool bforwardsearch = false;
+    ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
 	//ADPlanner planner(&environment_nav3Dkin);
 
 
@@ -570,7 +577,8 @@ int planrobarm(int argc, char *argv[])
 
 	//plan a path
 	vector<int> solution_stateIDs_V;
-	ARAPlanner planner(&environment_robarm);
+	bool bforwardsearch = false;
+	ARAPlanner planner(&environment_robarm, bforwardsearch);
 
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
@@ -626,10 +634,10 @@ int main(int argc, char *argv[])
 	}
 
     //2D planning
-    //planandnavigate2d(argc, argv);
+    planandnavigate2d(argc, argv);
 
     //3D planning
-    planandnavigate3dkin(argc, argv);
+    //planandnavigate3dkin(argc, argv);
 
 
     //robotarm planning

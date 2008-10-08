@@ -31,7 +31,7 @@
 
 
 //---configuration----
-#define AD_SEARCH_FORWARD 0
+#define AD_SEARCH_FORWARD 0 //TODO - get rid of
 
 
 //control of EPS
@@ -123,7 +123,7 @@ public:
 
 
 	//constructors & destructors
-    ADPlanner(DiscreteSpaceInformation* environment);
+    ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch);
     ~ADPlanner();
 
 
@@ -133,6 +133,8 @@ private:
 	//member variables
 	double finitial_eps;
 	MDPConfig* MDPCfg_;
+
+	bool bforwardsearch;
 
     ADSearchStateSpace_t* pSearchStateSpace_;
 

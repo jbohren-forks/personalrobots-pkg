@@ -31,8 +31,6 @@
 
 
 //---configuration----
-#define ARA_SEARCH_FORWARD 0 //TODO - make it a parameter
-
 
 //control of EPS
 #define ARA_DEFAULT_INITIAL_EPS	    5.0
@@ -65,10 +63,8 @@ public:
 	short unsigned int iterationclosed;
 	short unsigned int callnumberaccessed;
 	short unsigned int numofexpands;
-#if ARA_SEARCH_FORWARD == 1
 	//best predecessor and the action from it, used only in forward searches
 	CMDPSTATE *bestpredstate;
-#endif
 	//the next state if executing best action
 	CMDPSTATE  *bestnextstate;
 	unsigned int costtobestnextstate;
@@ -117,7 +113,7 @@ public:
 
 
 	//constructors & destructors
-    ARAPlanner(DiscreteSpaceInformation* environment);
+    ARAPlanner(DiscreteSpaceInformation* environment, bool bforwardsearch);
     ~ARAPlanner();
 
 
@@ -127,6 +123,9 @@ private:
 	//member variables
 	double finitial_eps;
 	MDPConfig* MDPCfg_;
+
+	bool bforwardsearch; //if true, then search proceeds forward, otherwise backward
+
 
     ARASearchStateSpace_t* pSearchStateSpace_;
 
@@ -153,17 +152,12 @@ private:
 
 	void DeleteSearchStateData(ARAState* state);
 
-
-#if !ARA_SEARCH_FORWARD
 	//used for backward search
 	void UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStateSpace);
-#endif
 
 
-#if ARA_SEARCH_FORWARD
 	//used for forward search
 	void UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStateSpace);
-#endif
 
 	int GetGVal(int StateID, ARASearchStateSpace_t* pSearchStateSpace);
 

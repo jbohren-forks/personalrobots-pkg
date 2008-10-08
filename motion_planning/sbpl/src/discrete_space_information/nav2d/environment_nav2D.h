@@ -30,14 +30,13 @@
 #define __ENVIRONMENT_NAV2D_H_
 
 
-#define COSTMULT 1000
-
-
-#define NAV2D_MAXACTIONSWIDTH 9		
+#define ENVNAV2D_COSTMULT 1000
 
 
 //-1, 0, 1 per each dX and dY
-#define ACTIONSWIDTH 8
+#define ENVNAV2D_ACTIONSWIDTH 8
+
+#define ENVNAV2D_DEFAULTOBSTHRESH 1	//see explanation of the value below
 
 //configuration parameters
 typedef struct ENV_NAV2D_CONFIG
@@ -48,9 +47,12 @@ typedef struct ENV_NAV2D_CONFIG
 	int StartY_c;
 	int EndX_c;
 	int EndY_c;
-	char** Grid2D;
+	unsigned char** Grid2D;
+	//the value at which and above which cells are obstacles in the maps sent from outside
+	//the default is defined above
+	unsigned char obsthresh; 
 
-	int dXY[ACTIONSWIDTH][2];
+	int dXY[ENVNAV2D_ACTIONSWIDTH][2];
 
 
 } EnvNAV2DConfig_t;
@@ -111,16 +113,16 @@ public:
 	void PrintEnv_Config(FILE* fOut);
     
     bool InitializeEnv(int width, int height,
-                       char* mapdata,
+                       unsigned char* mapdata,
                        int startx, int starty,
-                       int goalx, int goaly);
+                       int goalx, int goaly, unsigned char obsthresh);
     int SetStart(int x, int y);
     int SetGoal(int x, int y);
-    bool UpdateCost(int x, int y, int new_status);
+    bool UpdateCost(int x, int y, unsigned char newcost);
 	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
-			      char* mapdata,
+			      unsigned char* mapdata,
 			      int startx, int starty,
 			      int goalx, int goaly);
 	
@@ -131,11 +133,12 @@ public:
 	int GetStateFromCoord(int x, int y);
 
 	bool IsObstacle(int x, int y);
+	unsigned char GetMapCost(int x, int y);
 	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 
-
+	EnvironmentNAV2D();
     ~EnvironmentNAV2D(){};
 
     void PrintTimeStat(FILE* fOut);

@@ -33,8 +33,10 @@
 
 //-----------------------------------------------------------------------------------------------------
 
-ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment)
+ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment, bool bSearchForward)
 {
+	bforwardsearch = bSearchForward;
+
     environment_ = environment;
     
     finitial_eps = ARA_DEFAULT_INITIAL_EPS;
@@ -143,27 +145,30 @@ CMDPSTATE* ARAPlanner::GetState(int stateID, ARASearchStateSpace_t* pSearchState
 int ARAPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ARASearchStateSpace_t* pSearchStateSpace)
 {
 	//compute heuristic for search
-#if ARA_SEARCH_FORWARD == 1
+
+	if(bforwardsearch)
+	{
 
 #if MEM_CHECK == 1
-	//int WasEn = DisableMemCheck();
+		//int WasEn = DisableMemCheck();
 #endif
 
-    //forward search: heur = distance from state to searchgoal which is Goal ARAState
-	int retv =  environment_->GetFromToHeuristic(MDPstate->StateID, pSearchStateSpace->searchgoalstate->StateID);
+		//forward search: heur = distance from state to searchgoal which is Goal ARAState
+		int retv =  environment_->GetFromToHeuristic(MDPstate->StateID, pSearchStateSpace->searchgoalstate->StateID);
 
 #if MEM_CHECK == 1
-	//if (WasEn)
-	//	EnableMemCheck();
+		//if (WasEn)
+		//	EnableMemCheck();
 #endif
 
-	return retv;
+		return retv;
 
-#else
-	//backward search: heur = distance from searchgoal to state
-	return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
-#endif
-
+	}
+	else
+	{
+		//backward search: heur = distance from searchgoal to state
+		return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
+	}
 }
 
 
@@ -180,9 +185,7 @@ void ARAPlanner::InitializeSearchStateInfo(ARAState* state, ARASearchStateSpace_
 	state->listelem[ARA_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
-#if ARA_SEARCH_FORWARD == 1
 	state->bestpredstate = NULL;
-#endif
 
 	//compute heuristics
 #if USE_HEUR
@@ -212,20 +215,14 @@ void ARAPlanner::ReInitializeSearchStateInfo(ARAState* state, ARASearchStateSpac
 	state->listelem[ARA_INCONS_LIST_ID] = 0;
 	state->numofexpands = 0;
 
-#if ARA_SEARCH_FORWARD == 1
 	state->bestpredstate = NULL;
-#endif
 
 	//compute heuristics
 #if USE_HEUR
 
 	if(pSearchStateSpace->searchgoalstate != NULL)
 	{
-
-#if ARA_SEARCH_FORWARD == 0
 		state->h = ComputeHeuristic(state->MDPstate, pSearchStateSpace); 
-#endif
-
 	}
 	else 
 		state->h = 0;
@@ -250,7 +247,6 @@ void ARAPlanner::DeleteSearchStateData(ARAState* state)
 
 
 
-#if !ARA_SEARCH_FORWARD
 //used for backward search
 void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStateSpace)
 {
@@ -295,9 +291,7 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 	} //for predecessors
 
 }
-#endif
 
-#if ARA_SEARCH_FORWARD
 //used for forward search
 void ARAPlanner::UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStateSpace)
 {
@@ -347,7 +341,6 @@ void ARAPlanner::UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStat
 
 	} //for actions
 }
-#endif
 
 
 int ARAPlanner::GetGVal(int StateID, ARASearchStateSpace_t* pSearchStateSpace)
@@ -426,11 +419,10 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 		state->numofexpands++;
 
 
-#if ARA_SEARCH_FORWARD == 0
-		UpdatePreds(state, pSearchStateSpace);
-#else
-		UpdateSuccs(state, pSearchStateSpace);
-#endif
+		if(bforwardsearch == false)
+			UpdatePreds(state, pSearchStateSpace);
+		else
+			UpdateSuccs(state, pSearchStateSpace);
 		
 		//recompute minkey
 		minkey = pSearchStateSpace->heap->getminkeyheap();
@@ -706,55 +698,58 @@ int ARAPlanner::SetSearchStartState(int SearchStartStateID, ARASearchStateSpace_
 int ARAPlanner::ReconstructPath(ARASearchStateSpace_t* pSearchStateSpace)
 {	
 
-#if ARA_SEARCH_FORWARD == 1 //nothing to do, if search is backward
 
-	CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
-	CMDPSTATE* PredMDPstate;
-	ARAState *predstateinfo, *stateinfo;
-
-#if DEBUG
-	fprintf(fDeb, "reconstructing a path:\n");
-#endif
-
-	while(MDPstate != pSearchStateSpace->searchstartstate)
+	if(bforwardsearch) //nothing to do, if search is backward
 	{
-		stateinfo = (ARAState*)MDPstate->PlannerSpecificData;
+		CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
+		CMDPSTATE* PredMDPstate;
+		ARAState *predstateinfo, *stateinfo;
+
+
 
 #if DEBUG
-		PrintSearchState(stateinfo, fDeb);
+		fprintf(fDeb, "reconstructing a path:\n");
 #endif
-		if(stateinfo->g == INFINITECOST)
-		{	
-			//printf("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
-			//exit(1);
-			return -1;
-		}
 
-		if(stateinfo->bestpredstate == NULL)
+		while(MDPstate != pSearchStateSpace->searchstartstate)
 		{
-			printf("ERROR in ReconstructPath: bestpred is NULL\n");
-			exit(1);
+			stateinfo = (ARAState*)MDPstate->PlannerSpecificData;
+
+#if DEBUG
+			PrintSearchState(stateinfo, fDeb);
+#endif
+			if(stateinfo->g == INFINITECOST)
+			{	
+				//printf("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
+				//exit(1);
+				return -1;
+			}
+
+			if(stateinfo->bestpredstate == NULL)
+			{
+				printf("ERROR in ReconstructPath: bestpred is NULL\n");
+				exit(1);
+			}
+
+			//get the parent state
+			PredMDPstate = stateinfo->bestpredstate;
+			predstateinfo = (ARAState*)PredMDPstate->PlannerSpecificData;
+
+			//set its best next info
+			predstateinfo->bestnextstate = MDPstate;
+
+			//check the decrease of g-values along the path
+			if(predstateinfo->v >= stateinfo->g)
+			{
+				printf("ERROR in ReconstructPath: g-values are non-decreasing\n");			
+				PrintSearchState(predstateinfo, fDeb);
+				exit(1);
+			}
+
+			//transition back
+			MDPstate = PredMDPstate;
 		}
-
-		//get the parent state
-		PredMDPstate = stateinfo->bestpredstate;
-		predstateinfo = (ARAState*)PredMDPstate->PlannerSpecificData;
-
-		//set its best next info
-		predstateinfo->bestnextstate = MDPstate;
-
-		//check the decrease of g-values along the path
-		if(predstateinfo->v >= stateinfo->g)
-		{
-			printf("ERROR in ReconstructPath: g-values are non-decreasing\n");			
-			PrintSearchState(predstateinfo, fDeb);
-			exit(1);
-		}
-
-		//transition back
-		MDPstate = PredMDPstate;
 	}
-#endif
 
 	return 1;
 }
@@ -845,17 +840,19 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
 	CMDPSTATE* goalstate = NULL;
 	CMDPSTATE* startstate=NULL;
 
-#if ARA_SEARCH_FORWARD == 1
-	startstate = pSearchStateSpace->searchstartstate;
-	goalstate = pSearchStateSpace->searchgoalstate;
+	if(bforwardsearch)
+	{	
+		startstate = pSearchStateSpace->searchstartstate;
+		goalstate = pSearchStateSpace->searchgoalstate;
 
-	//reconstruct the path by setting bestnextstate pointers appropriately
-	ReconstructPath(pSearchStateSpace);
-#else
-	startstate = pSearchStateSpace->searchgoalstate;
-	goalstate = pSearchStateSpace->searchstartstate;
-
-#endif
+		//reconstruct the path by setting bestnextstate pointers appropriately
+		ReconstructPath(pSearchStateSpace);
+	}
+	else
+	{
+		startstate = pSearchStateSpace->searchgoalstate;
+		goalstate = pSearchStateSpace->searchstartstate;
+	}
 
 
 	state = startstate;
@@ -1050,21 +1047,22 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
 int ARAPlanner::set_goal(int goal_stateID)
 {
 
-#if ARA_SEARCH_FORWARD == 1
-
-    if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
-        {
-            printf("ERROR: failed to set search goal state\n");
-            return 0;
-        }
-#else
-
-    if(SetSearchStartState(goal_stateID, pSearchStateSpace_) != 1)
+	if(bforwardsearch)
+	{	
+		if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
+			{
+				printf("ERROR: failed to set search goal state\n");
+				return 0;
+			}
+	}
+	else
+	{
+	    if(SetSearchStartState(goal_stateID, pSearchStateSpace_) != 1)
         {
             printf("ERROR: failed to set search start state\n");
             return 0;
         }
-#endif
+	}
 
     return 1;
 }
@@ -1073,21 +1071,23 @@ int ARAPlanner::set_goal(int goal_stateID)
 int ARAPlanner::set_start(int start_stateID)
 {
 
-#if ARA_SEARCH_FORWARD == 1
+	if(bforwardsearch)
+	{	
 
-    if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
+	    if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
         {
             printf("ERROR: failed to set search start state\n");
             return 0;
         }
-#else
-
-    if(SetSearchGoalState(start_stateID, pSearchStateSpace_) != 1)
+	}
+	else
+	{
+	    if(SetSearchGoalState(start_stateID, pSearchStateSpace_) != 1)
         {
             printf("ERROR: failed to set search goal state\n");
             return 0;
         }
-#endif
+	}
 
     return 1;
 

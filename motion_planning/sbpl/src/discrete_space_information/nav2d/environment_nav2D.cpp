@@ -38,6 +38,14 @@ static clock_t time_getsuccs = 0;
 #endif
 
 
+//-------------------constructor--------------------------------------------
+EnvironmentNAV2D::EnvironmentNAV2D()
+{
+	EnvNAV2DCfg.obsthresh = ENVNAV2D_DEFAULTOBSTHRESH;
+	
+};
+
+
 
 //-------------------problem specific and local functions---------------------
 
@@ -92,7 +100,7 @@ void EnvironmentNAV2D::PrintHashTableHist()
 }
 
 void EnvironmentNAV2D::SetConfiguration(int width, int height,
-					char* mapdata,
+					unsigned char* mapdata,
 					int startx, int starty,
 					int goalx, int goaly) {
   EnvNAV2DCfg.EnvWidth_c = width;
@@ -113,20 +121,16 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
   EnvNAV2DCfg.EndY_c = goaly;
 
   //allocate the 2D environment
-  EnvNAV2DCfg.Grid2D = new char* [EnvNAV2DCfg.EnvWidth_c];
+  EnvNAV2DCfg.Grid2D = new unsigned char* [EnvNAV2DCfg.EnvWidth_c];
   for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
-    EnvNAV2DCfg.Grid2D[x] = new char [EnvNAV2DCfg.EnvHeight_c];
+    EnvNAV2DCfg.Grid2D[x] = new unsigned char [EnvNAV2DCfg.EnvHeight_c];
   }
   
   //environment:
   for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
     for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
-      char cval = mapdata[x+y*width];
-      if(cval == 1) {
-	EnvNAV2DCfg.Grid2D[x][y] = 1;
-      } else {
-	EnvNAV2DCfg.Grid2D[x][y] = 0;
-      }
+      unsigned char cval = mapdata[x+y*width];
+	   EnvNAV2DCfg.Grid2D[x][y] = cval;
     }
   }
 }
@@ -183,10 +187,10 @@ void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 
 
 	//allocate the 2D environment
-	EnvNAV2DCfg.Grid2D = new char* [EnvNAV2DCfg.EnvWidth_c];
+	EnvNAV2DCfg.Grid2D = new unsigned char* [EnvNAV2DCfg.EnvWidth_c];
 	for (x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++)
 	{
-		EnvNAV2DCfg.Grid2D[x] = new char [EnvNAV2DCfg.EnvHeight_c];
+		EnvNAV2DCfg.Grid2D[x] = new unsigned char [EnvNAV2DCfg.EnvHeight_c];
 	}
 
 	//environment:
@@ -322,7 +326,7 @@ bool EnvironmentNAV2D::IsValidCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAV2DCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAV2DCfg.EnvHeight_c && 
-		EnvNAV2DCfg.Grid2D[X][Y] == 0);
+		EnvNAV2DCfg.Grid2D[X][Y] < EnvNAV2DCfg.obsthresh);
 }
 
 bool EnvironmentNAV2D::IsWithinMapCell(int X, int Y)
@@ -358,7 +362,7 @@ static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
 {
     int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
     double dist = sqrt((double)sqdist);
-    return (int)(COSTMULT*dist);
+    return (int)(ENVNAV2D_COSTMULT*dist);
 
 }
 
@@ -397,11 +401,12 @@ bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 
 
 bool EnvironmentNAV2D::InitializeEnv(int width, int height,
-					char* mapdata,
+					unsigned char* mapdata,
 					int startx, int starty,
-					int goalx, int goaly)
+					int goalx, int goaly, unsigned char obsthresh)
 {
 
+	EnvNAV2DCfg.obsthresh = obsthresh;
 
 	SetConfiguration(width, height,
 					mapdata,
@@ -543,7 +548,7 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
     if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
        HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
         bTestBounds = true;
-	for (int aind = 0; aind < ACTIONSWIDTH; aind++)
+	for (int aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
 	{
         int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
         int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
@@ -553,16 +558,25 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
             if(!IsValidCell(newX, newY))
                 continue;
         }
-       else if(EnvNAV2DCfg.Grid2D[newX][newY] != 0)
-            continue;
 
-		//skip invalid diagonal move
+
+		int costmult = EnvNAV2DCfg.Grid2D[newX][newY];
+
+		//for diagonal move, take max over adjacent cells
         if(newX != HashEntry->X && newY != HashEntry->Y)
 		{
-			if(EnvNAV2DCfg.Grid2D[HashEntry->X][newY] != 0 || EnvNAV2DCfg.Grid2D[newX][HashEntry->Y] != 0)
-				continue;
+			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][newY]);
+			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[newX][HashEntry->Y]);
 		}
+		//check that it is valid
+		if(costmult >= EnvNAV2DCfg.obsthresh)
+			continue;
 
+		//otherwise compute the actual cost
+		cost = (costmult+1)*ENVNAV2D_COSTMULT;
+        //diagonal moves are costlier
+        if(newX != HashEntry->X && newY != HashEntry->Y)
+            cost = (int)(sqrt(2)*cost);
 
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
@@ -571,10 +585,6 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		clock_t currenttime = clock();
 #endif
         
-        cost = COSTMULT;
-        //diagonal moves are costlier
-        if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost);
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY)) == NULL)
@@ -613,8 +623,8 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
     //clear the successor array
     SuccIDV->clear();
     CostV->clear();
-    SuccIDV->reserve(ACTIONSWIDTH);
-    CostV->reserve(ACTIONSWIDTH);
+    SuccIDV->reserve(ENVNAV2D_ACTIONSWIDTH);
+    CostV->reserve(ENVNAV2D_ACTIONSWIDTH);
 
 	//goal state should be absorbing
 	if(SourceStateID == EnvNAV2D.goalstateid)
@@ -628,7 +638,7 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
     if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
        HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
         bTestBounds = true;
-	for (aind = 0; aind < ACTIONSWIDTH; aind++)
+	for (aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
 	{
         int newX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
         int newY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
@@ -638,16 +648,25 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
             if(!IsValidCell(newX, newY))
                 continue;
         }
-        else if(EnvNAV2DCfg.Grid2D[newX][newY] != 0)
-            continue;
 
-		//skip invalid diagonal move
+		int costmult = EnvNAV2DCfg.Grid2D[newX][newY];
+
+		//for diagonal move, take max over adjacent cells
         if(newX != HashEntry->X && newY != HashEntry->Y)
 		{
-			if(EnvNAV2DCfg.Grid2D[HashEntry->X][newY] != 0 || EnvNAV2DCfg.Grid2D[newX][HashEntry->Y] != 0)
-				continue;
-        }
+			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][newY]);
+			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[newX][HashEntry->Y]);
+		}
+		//check that it is valid
+		if(costmult >= EnvNAV2DCfg.obsthresh)
+			continue;
 
+		//otherwise compute the actual cost
+		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
+        //diagonal moves are costlier
+        if(newX != HashEntry->X && newY != HashEntry->Y)
+            cost = (int)(sqrt(2)*cost);
+		 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY)) == NULL)
@@ -655,13 +674,6 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 			//have to create a new entry
 			OutHashEntry = CreateNewHashEntry(newX, newY);
 		}
-
-        //compute clow
-        int cost = COSTMULT;
-        //diagonal moves are costlier
-        if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost); 
-
 
         SuccIDV->push_back(OutHashEntry->stateID);
         CostV->push_back(cost);
@@ -685,22 +697,24 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
     //clear the successor array
     PredIDV->clear();
     CostV->clear();
-    PredIDV->reserve(ACTIONSWIDTH);
-    CostV->reserve(ACTIONSWIDTH);
+    PredIDV->reserve(ENVNAV2D_ACTIONSWIDTH);
+    CostV->reserve(ENVNAV2D_ACTIONSWIDTH);
 
 	//get X, Y for the state
 	EnvNAV2DHashEntry_t* HashEntry = EnvNAV2D.StateID2CoordTable[TargetStateID];
-	
+
 	//no predecessors if obstacle
-	if(EnvNAV2DCfg.Grid2D[HashEntry->X][HashEntry->Y] != 0)
+	if(EnvNAV2DCfg.Grid2D[HashEntry->X][HashEntry->Y] >= EnvNAV2DCfg.obsthresh)
 		return;
+
+	int targetcostmult = EnvNAV2DCfg.Grid2D[HashEntry->X][HashEntry->Y];
 
 	//iterate through actions
     bool bTestBounds = false;
     if(HashEntry->X == 0 || HashEntry->X == EnvNAV2DCfg.EnvWidth_c-1 || 
        HashEntry->Y == 0 || HashEntry->Y == EnvNAV2DCfg.EnvHeight_c-1)
         bTestBounds = true;
-	for (aind = 0; aind < ACTIONSWIDTH; aind++)
+	for (aind = 0; aind < ENVNAV2D_ACTIONSWIDTH; aind++)
 	{
         int predX = HashEntry->X + EnvNAV2DCfg.dXY[aind][0];
         int predY = HashEntry->Y + EnvNAV2DCfg.dXY[aind][1];
@@ -711,13 +725,23 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
                 continue;
         }
 
-		//skip invalid diagonal move
+		//compute costmult
+		 int costmult = targetcostmult;
+		//for diagonal move, take max over adjacent cells
         if(predX != HashEntry->X && predY != HashEntry->Y)
 		{
-			if(EnvNAV2DCfg.Grid2D[HashEntry->X][predY] != 0 || EnvNAV2DCfg.Grid2D[predX][HashEntry->Y] != 0)
-				continue;
-        }
+			costmult = __max(costmult, 	EnvNAV2DCfg.Grid2D[HashEntry->X][predY]);
+			costmult = __max(costmult, EnvNAV2DCfg.Grid2D[predX][HashEntry->Y]);
+		}
+		//check that it is valid
+		if(costmult >= EnvNAV2DCfg.obsthresh)
+			continue;
 
+		//otherwise compute the actual cost
+		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
+        //diagonal moves are costlier
+        if(predX != HashEntry->X && predY != HashEntry->Y)
+            cost = (int)(sqrt(2)*cost);
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY)) == NULL)
@@ -725,12 +749,6 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 			//have to create a new entry
 			OutHashEntry = CreateNewHashEntry(predX, predY);
 		}
-
-        //compute clow
-        int cost = COSTMULT;
-        //diagonal moves are costlier
-        if(predX != HashEntry->X && predY != HashEntry->Y)
-            cost = (int)(sqrt(2)*cost); 
 
 
         PredIDV->push_back(OutHashEntry->stateID);
@@ -834,10 +852,10 @@ int EnvironmentNAV2D::SetStart(int x, int y){
 
 }
 
-bool EnvironmentNAV2D::UpdateCost(int x, int y, int new_status)
+bool EnvironmentNAV2D::UpdateCost(int x, int y, unsigned char newcost)
 {
 
-    EnvNAV2DCfg.Grid2D[x][y] = new_status;
+    EnvNAV2DCfg.Grid2D[x][y] = newcost;
 
     return true;
 }
@@ -886,9 +904,16 @@ void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV
 bool EnvironmentNAV2D::IsObstacle(int x, int y)
 {
 
-	return (EnvNAV2DCfg.Grid2D[x][y] != 0);
+	return (EnvNAV2DCfg.Grid2D[x][y] >= EnvNAV2DCfg.obsthresh);
 
 }
+
+unsigned char EnvironmentNAV2D::GetMapCost(int x, int y)
+{
+	return EnvNAV2DCfg.Grid2D[x][y];
+}
+
+
 
 void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly)
 {
