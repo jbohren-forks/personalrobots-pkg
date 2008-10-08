@@ -87,9 +87,9 @@ static PyTypeObject stereo_frame_Type = {
     0,
     0,
     0,
-    
+
     0,
-    
+
     Py_TPFLAGS_CHECKTYPES,
 
     0,
@@ -177,6 +177,7 @@ PyObject *visual_odometry(PyObject *self, PyObject *args)
     input.push(s);
   }
 
+  int numFrames = input.size();
   CvSize imgSize = cvSize(640, 480);
   PathRecon pathRecon(imgSize);
   // The following parameters are from indoor1/proj.txt
@@ -216,6 +217,9 @@ PyObject *visual_odometry(PyObject *self, PyObject *args)
   }
 
   pathRecon.printStat();
+
+  CvTestTimer::getTimer().mNumIters = numFrames;
+  CvTestTimer::getTimer().printStat();
 
   return r;
 }

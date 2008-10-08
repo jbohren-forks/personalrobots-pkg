@@ -12,8 +12,10 @@
 // We may want to consolidate the multiple similar version of this header file
 // jdchen
 
-
 #include "ost_stereolib.h"
+
+#include <iostream>
+
 #define inline			// use this for Intel Compiler Debug mode
 
 // algorithm requires larger buffers to be passed in
@@ -155,7 +157,8 @@ memclr_si128(__m128i *buf, int n)
 #define PYKERN 7
 
 void
-do_prefilter_fast(uint8_t *im,	// input image
+ost_do_prefilter_fast(
+    const uint8_t *im,	// input image
 	  uint8_t *ftim,	// feature image output
 	  int xim, int yim,	// size of image
 	  uint8_t ftzero,	// feature offset from zero
@@ -168,7 +171,8 @@ do_prefilter_fast(uint8_t *im,	// input image
   uintptr_t bufp = (uintptr_t)buf;
   int16_t *accbuf, *accp;
   int16_t *intbuf, *intp;
-  uint8_t *imp, *impp, *ftimp;
+  const uint8_t *imp, *impp;
+  uint8_t *ftimp;
   __m128i acc, accs, acc1, acct, pxs, opxs, zeros;
   __m128i const_ftzero, const_ftzero_x48, const_ftzero_x2;
 
@@ -234,7 +238,6 @@ do_prefilter_fast(uint8_t *im,	// input image
 	      acct = _mm_slli_si128(accs, 8); // shift left four words
 	      acc  = _mm_add_epi16(accs, acct); // add it in, done
 	      _mm_store_si128((__m128i *)(intp+8),acc); // stored
-
 	      // update acc buffer, first 8 vals
 	      acct = _mm_loadu_si128((__m128i *)(intp-7)); // previous int buffer values
 	      acc1 = _mm_sub_epi16(acc1,acct);
@@ -247,7 +250,6 @@ do_prefilter_fast(uint8_t *im,	// input image
 	      accs = _mm_load_si128((__m128i *)(accp+8)); // acc value
 	      acc1 = _mm_add_epi16(acc1,accs);
 	      _mm_store_si128((__m128i *)(accp+8),acc1); // stored
-
 	    }
 	}
 
@@ -367,7 +369,12 @@ do_prefilter_fast(uint8_t *im,	// input image
 
 	      // pack both results
 	      accs = _mm_packs_epi16(accs,acc1);
+        printf("before99 %d, %d, 0x%x, %d, 0x%lld\n", j, i, ftimp, sizeof(__m128i), accs);
+        printf("before99 %d, %d, %lld, %lld\n",
+            j, i, *(__m128i *)ftimp, accs);
+        *(__m128i *)ftimp = accs;
 	      _mm_store_si128((__m128i *)ftimp,accs);
+        printf("after99 %d, %d, 0x%x, 0x%x\n", j, i, ftimp, accs);
 
 	    }
 	  ftim += xim;		// increment destination ptr to next line
