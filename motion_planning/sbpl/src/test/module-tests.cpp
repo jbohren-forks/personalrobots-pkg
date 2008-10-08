@@ -67,7 +67,7 @@ void runARAPlannerTest(const std::string& problem){
 
       // plan a path
       vector<int> solution_stateIDs_V;
-      ARAPlanner ara_planner(&environment_nav2D);
+      ARAPlanner ara_planner(&environment_nav2D, false);
       ASSERT_EQ(ara_planner.set_start(MDPCfg.startstateid), true);
       ASSERT_EQ(ara_planner.set_goal(MDPCfg.goalstateid), true);
       ASSERT_EQ(ara_planner.replan(allocated_time_secs, &solution_stateIDs_V), true);

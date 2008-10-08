@@ -886,7 +886,7 @@ void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV
 {
 	nav2dcell_t cell;
 
-	for(int i = 0; i < changedcellsV->size(); i++)
+	for(int i = 0; i < (int)changedcellsV->size(); i++)
 	{
 		cell = changedcellsV->at(i);
 		preds_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y));
