@@ -74,7 +74,7 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
    ils_weight_type_ = "Gaussian";
    ils_max_iterations_ = 3;
    caster_steer_vel_gain_ = 0;
-   timeout_ = 3;
+   timeout_ = 0.1;
 
    pthread_mutex_init(&base_controller_lock_,NULL);
 }
@@ -102,6 +102,15 @@ libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vec
    result.x = start.x + clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
    result.y = start.y + clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
    result.z = start.z + clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
+
+   //   cout << "Interpolate command start: " << start << endl << endl;
+
+   //   cout << "Interpolate command end: " << end << endl << endl;
+
+   //   cout << "Interpolate command result: " << result << endl << endl;
+
+   //   cout << "dT: " << dT << endl; 
+
    return result;
 }
 
@@ -353,7 +362,7 @@ void BaseController::computeWheelPositions()
 void BaseController::update()
 {
    double current_time = robot_state_->hw_->current_time_;
-   double dT = std::max<double>(current_time - last_time_,MAX_DT_);
+   double dT = std::min<double>(current_time - last_time_,MAX_DT_);
    if(pthread_mutex_trylock(&base_controller_lock_)==0)
    {
       if((robot_state_->hw_->current_time_ - cmd_received_timestamp_) > timeout_)
