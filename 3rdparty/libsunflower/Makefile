@@ -19,7 +19,7 @@ all: tarball-all
 VERSION=     r910
 
 TARBALL=     libsunflower-$(VERSION).tar.gz
-TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
+TARBALL_URL= http://pr.willowgarage.com/downloads/$(TARBALL)
 SOURCE_DIR=  $(PWD)/libsunflower-$(VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build

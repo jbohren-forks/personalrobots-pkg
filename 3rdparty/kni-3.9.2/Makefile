@@ -1,7 +1,7 @@
 all: KNI_3.9.2/lib/linux/libKNIBase.a
 
 KNI_3.9.2.tar.gz:
-	wget http://www.neuronics.ch/cms_de/mediabase/KNI_3.9.2.tar.gz
+	wget http://pr.willowgarage.com/downloads/KNI_3.9.2.tar.gz
 
 download: KNI_3.9.2.tar.gz
 

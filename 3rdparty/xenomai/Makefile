@@ -48,7 +48,7 @@ install_kernel: xenomai
 	cd /boot && sudo update-initramfs -c -k 2.6.24.3 && sudo update-grub
 
 $(LINUX_ARCHIVE): 
-	wget http://www.us.kernel.org/pub/linux/kernel/$(MAJOR_VERSION)/$(LINUX_ARCHIVE)
+	wget http://pr.willowgarage.com/downloads/$(LINUX_ARCHIVE)
 
 linux: $(LINUX_ARCHIVE)
 	tar xjf $(LINUX_ARCHIVE)

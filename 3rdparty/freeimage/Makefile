@@ -1,7 +1,7 @@
 all: freeimage
 
 FreeImage3100.zip: 
-	wget http://downloads.sourceforge.net/freeimage/FreeImage3100.zip
+	wget http://pr.willowgarage.com/downloads/FreeImage3100.zip
 
 freeimage-3.10.0: FreeImage3100.zip
 	unzip $^

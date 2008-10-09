@@ -18,7 +18,7 @@ all: tarball-all
 VERSION=     r267
 
 TARBALL=     estar-$(VERSION).tar.gz
-TARBALL_URL= http://downloads.sourceforge.net/estar/$(TARBALL)
+TARBALL_URL= http://pr.willowgarage.com/downloads/$(TARBALL)
 SOURCE_DIR=  $(PWD)/estar-$(VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build

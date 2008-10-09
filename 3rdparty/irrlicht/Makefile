@@ -2,7 +2,7 @@ all: irrlicht
 
 
 TARBALL = irrlicht-1.4.zip
-TARBALL_URL = http://downloads.sourceforge.net/irrlicht/irrlicht-1.4.zip
+TARBALL_URL = http://pr.willowgarage.com/downloads/irrlicht-1.4.zip
 SOURCE_DIR = irrlicht-1.4
 MD5SUM_FILE = irrlicht-1.4.zip.md5sum
 UNPACK_CMD = unzip

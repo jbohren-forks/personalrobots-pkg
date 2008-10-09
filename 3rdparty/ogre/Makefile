@@ -2,7 +2,7 @@ all: ogre
 
 OGRE_VERSION = ogre-v1-4-9
 TARBALL = $(OGRE_VERSION).tar.bz2
-TARBALL_URL = http://downloads.sourceforge.net/ogre/$(TARBALL)
+TARBALL_URL = http://pr.willowgarage.com/downloads/$(TARBALL)
 SOURCE_DIR = $(OGRE_VERSION)
 UNPACK_CMD = tar xf
 TARBALL_PATCH = warnings.patch

@@ -12,7 +12,7 @@ rtnet: rtnet-src
 	make install
 
 $(RTNET_ARCHIVE): 
-	wget http://www.rts.uni-hannover.de/rtnet/download/$(RTNET_ARCHIVE)
+	wget http://pr.willowgarage.com/downloads/$(RTNET_ARCHIVE)
 
 rtnet-src: $(RTNET_ARCHIVE)
 	tar xjf $(RTNET_ARCHIVE)

@@ -1,7 +1,7 @@
 all: velodyne-driver
 
 download: 
-	wget -nc -nv http://downloads.sourceforge.net/velodyne-driver/velodyne-driver-1.0.tar.gz
+	wget -nc -nv http://pr.willowgarage.com/downloads/velodyne-driver-1.0.tar.gz
 
 velodyne-driver-1.0: download
 	tar -xzf velodyne-driver-1.0.tar.gz

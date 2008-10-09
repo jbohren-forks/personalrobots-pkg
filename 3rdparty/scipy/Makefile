@@ -1,7 +1,7 @@
 all: scipy
 
 TARBALL = scipy-0.6.0.tar.gz
-TARBALL_URL = http://downloads.sourceforge.net/scipy/scipy-0.6.0.tar.gz?use_mirror=internap
+TARBALL_URL = http://pr.willowgarage.com/downloads/scipy-0.6.0.tar.gz
 SOURCE_DIR = scipy-0.6.0
 MD5SUM_FILE =  scipy-0.6.0.tar.gz.md5sum
 UNPACK_CMD = tar xzf

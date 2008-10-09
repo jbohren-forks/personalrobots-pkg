@@ -1,7 +1,7 @@
 all: wxmpl
 
 TARBALL = wxmpl-1.2.9.tar.gz
-TARBALL_URL = http://agni.phys.iit.edu/~kmcivor/wxmpl/downloads/wxmpl-1.2.9.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/wxmpl-1.2.9.tar.gz
 SOURCE_DIR = wxmpl-1.2.9
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk

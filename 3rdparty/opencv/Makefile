@@ -1,7 +1,7 @@
 all: opencv
 
 TARBALL = opencv-1.0.0.tar.gz
-TARBALL_URL = http://internap.dl.sourceforge.net/sourceforge/opencvlibrary/opencv-1.0.0.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/opencv-1.0.0.tar.gz
 SOURCE_DIR = opencv-1.0.0
 MD5SUM_FILE = opencv-1.0.0.tar.gz.md5sum
 UNPACK_CMD = tar xzf

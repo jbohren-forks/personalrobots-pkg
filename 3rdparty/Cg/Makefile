@@ -1,7 +1,7 @@
 all: Cg
 
-CG_SOURCE_I686   = http://developer.download.nvidia.com/cg/Cg_2.0/2.0.0015/Cg-2.0_May2008_x86.tgz
-CG_SOURCE_X86_64 = http://developer.download.nvidia.com/cg/Cg_2.0/2.0.0015/Cg-2.0_May2008_x86_64.tgz
+CG_SOURCE_I686   = http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86.tgz
+CG_SOURCE_X86_64 = http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86_64.tgz
 CG_TAR_I686   = Cg-2.0_May2008_x86.tgz
 CG_TAR_X86_64 = Cg-2.0_May2008_x86_64.tgz
 

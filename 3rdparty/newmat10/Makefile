@@ -2,7 +2,7 @@ all: newmat/newmat10
 
 newmat/newmat_1.10.4/newmat10.tar.gz:
 	mkdir -p newmat/newmat_1.10.4
-	cd newmat/newmat_1.10.4 && wget http://www.robertnz.net/ftp/newmat10.tar.gz
+	cd newmat/newmat_1.10.4 && wget http://pr.willowgarage.com/downloads/newmat10.tar.gz
 
 download: newmat/newmat_1.10.4/newmat10.tar.gz
 
