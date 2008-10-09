@@ -1,7 +1,7 @@
 all: elfhacks
 
 TARBALL = elfhacks-0.4.1.tar.gz
-TARBALL_URL = http://nullkey.ath.cx/elfhacks/archive/elfhacks-0.4.1.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/elfhacks-0.4.1.tar.gz
 SOURCE_DIR = elfhacks-0.4.1
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk

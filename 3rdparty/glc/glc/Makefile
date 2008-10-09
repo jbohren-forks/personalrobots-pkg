@@ -1,7 +1,7 @@
 all: glc
 
 TARBALL = glc-0.5.7.tar.gz
-TARBALL_URL = http://nullkey.ath.cx/glc/archive/glc-0.5.7.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/glc-0.5.7.tar.gz
 SOURCE_DIR = glc-0.5.7
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk
