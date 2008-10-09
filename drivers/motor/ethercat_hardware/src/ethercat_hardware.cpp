@@ -144,14 +144,10 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     a += slaves_[slave]->has_actuator_;
   }
   // Initialize diagnostic data structures
-  diagnostic_message_.set_status_size(1 + num_slaves_);
-  diagnostic_message_.status[0].set_values_size(3);
-  diagnostic_message_.status[0].set_strings_size(1);
-  for (unsigned int slave = 0; slave < num_slaves_; ++slave)
-  {
-    diagnostic_message_.status[1 + slave].set_values_size(1);
-    diagnostic_message_.status[1 + slave].set_strings_size(1);
-  }
+  publisher_.msg_.status.reserve(num_slaves_ + 1);
+  statuses_.reserve(num_slaves_ + 1);
+  strings_.reserve(5);
+  values_.reserve(5);
 }
 
 void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
@@ -185,13 +181,7 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
 
 void EthercatHardware::publishDiagnostics()
 {
-  vector<robot_msgs::DiagnosticStatus> status_vec;
-
   // Publish status of EtherCAT master
-  vector<robot_msgs::DiagnosticStatus> statuses;
-  vector<robot_msgs::DiagnosticValue> values;
-  vector<robot_msgs::DiagnosticString> strings;
-
   robot_msgs::DiagnosticStatus status;
   robot_msgs::DiagnosticValue v;
   robot_msgs::DiagnosticString s;
@@ -203,12 +193,12 @@ void EthercatHardware::publishDiagnostics()
   // Num devices
   v.value = num_slaves_;
   v.label = "EtherCAT devices";
-  values.push_back(v);
+  values_.push_back(v);
 
   // Interface
   s.value = interface_;
   s.label = "Interface";
-  strings.push_back(s);
+  strings_.push_back(s);
 
   // Roundtrip
   double total = 0;
@@ -219,26 +209,26 @@ void EthercatHardware::publishDiagnostics()
   }
   v.value = total / 1000.0;
   v.label = "Average roundtrip time";
-  values.push_back(v);
+  values_.push_back(v);
 
   v.value = diagnostics_.max_roundtrip_;
   v.label = "Maximum roundtrip time";
-  values.push_back(v);
+  values_.push_back(v);
 
-  status.set_values_vec(values);
-  status.set_strings_vec(strings);
-  statuses.push_back(status);
+  status.set_values_vec(values_);
+  status.set_strings_vec(strings_);
+  statuses_.push_back(status);
 
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
     slaves_[slave]->diagnostics(status);
-    statuses.push_back(status);
+    statuses_.push_back(status);
   }
 
   // Publish status of each EtherCAT device
   if (publisher_.trylock())
   {
-    publisher_.msg_.set_status_vec(statuses);
+    publisher_.msg_.set_status_vec(statuses_);
     publisher_.unlockAndPublish();
   }
 }

@@ -710,15 +710,13 @@ int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
 #define ADD_STRING(lab, val) \
   s.label = (lab); \
   s.value = (val); \
-  strings.push_back(s)
+  strings_.push_back(s)
 #define ADD_VALUE(lab, val) \
   v.label = (lab); \
   v.value = (val); \
-  values.push_back(v)
+  values_.push_back(v)
 void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
 {
-  vector<robot_msgs::DiagnosticString> strings;
-  vector<robot_msgs::DiagnosticValue> values;
   robot_msgs::DiagnosticValue v;
   robot_msgs::DiagnosticString s;
 
@@ -749,6 +747,6 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
   ADD_VALUE("Pulses Per Revolution", actuator_info_.pulses_per_revolution_);
   ADD_VALUE("Sign", actuator_info_.sign_);
 
-  d.set_strings_vec(strings);
-  d.set_values_vec(values);
+  d.set_strings_vec(strings_);
+  d.set_values_vec(values_);
 }

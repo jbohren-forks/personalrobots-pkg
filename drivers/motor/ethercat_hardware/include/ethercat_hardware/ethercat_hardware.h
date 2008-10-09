@@ -106,7 +106,11 @@ private:
     } iteration_[1000];
     double max_roundtrip_;
   } diagnostics_;
-  robot_msgs::DiagnosticMessage diagnostic_message_;
+  
+  vector<robot_msgs::DiagnosticStatus> statuses_;
+  vector<robot_msgs::DiagnosticValue> values_;
+  vector<robot_msgs::DiagnosticString> strings_;
+
 };
 
 #endif /* ETHERCAT_HARDWARE_H */

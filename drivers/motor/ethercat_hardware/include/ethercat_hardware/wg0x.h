@@ -199,7 +199,11 @@ struct WG0XCommand
 class WG0X : public EthercatDevice
 {
 public:
-  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size) {voltage_offset_=0;}
+  WG0X(bool has_actuator = true, int command_size = sizeof(WG0XCommand), int status_size = sizeof(WG0XStatus)) : EthercatDevice(has_actuator, command_size, status_size)
+  {
+    strings_.reserve(10);
+    values_.reserve(10);
+  }
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
   int initialize(Actuator *, bool);
@@ -250,7 +254,10 @@ private:
   WG0XConfigInfo config_info_;
   WG0XActuatorInfo actuator_info_;
   static const int ACTUATOR_INFO_PAGE = 4095;
-  double voltage_offset_;
+
+  // Diagnostic message values
+  vector<robot_msgs::DiagnosticString> strings_;
+  vector<robot_msgs::DiagnosticValue> values_;
 };
 
 class WG05 : public WG0X
