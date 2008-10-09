@@ -67,6 +67,7 @@ public:
 	  RESET(PointPicking);
 	  RESET(ColinearCheck);
     RESET(RandTripletGenerator);
+    RESET(SparseStereo);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -110,6 +111,7 @@ public:
   DECLARE(PointPicking);
   DECLARE(ColinearCheck);
   DECLARE(RandTripletGenerator);
+  DECLARE(SparseStereo);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

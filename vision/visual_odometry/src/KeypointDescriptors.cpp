@@ -6,6 +6,7 @@
  */
 //#include "VisOdom.h"
 #include "KeypointDescriptors.h"
+#include "Cv3DPoseEstimateStereo.h"
 using namespace cv::willow;
 
 #include <opencv/cv.h>
@@ -81,16 +82,13 @@ float KeypointSADDescriptor::compare(const KeypointDescriptor& kpd) const {
   return compare(*_kpd);
 }
 
+// see header file for documentation
 void KeypointSADDescriptor::constructDescriptors(
-    /// input image
     const uint8_t* img,
     int width,
     int height,
-    /// The list of keypoints
     Keypoints& keypoints,
-    /// buffer used by this function. Same size as img
     uint8_t* bufImg1,
-    /// buffer used by this function. Same size as img
     uint8_t* bufImg2
 ) {
   const int FTZero = 31;
@@ -194,6 +192,44 @@ void KeypointTemplateDescriptor::constructDescriptors(
         pDescRow     += dWidth;
         pImgPatchRow += width;
       }
+    }
+  }
+}
+
+void KeypointSADDescriptor::computeDisparity(
+    const uint8_t* rightImg,
+    int width,
+    int height,
+    Keypoints& keypoints,
+    uint8_t* bufImg1,
+    uint8_t* bufImg2
+) {
+  const int& FTZero = PoseEstimateStereo::DefFTZero;
+  const int& DLen   = PoseEstimateStereo::DefDLen;
+  const int& tfilter_thresh = PoseEstimateStereo::DefTextThresh;
+  const int& ufilter_thresh = PoseEstimateStereo::DefUniqueThresh;
+  const CvSize descriptorSize = cvSize(16,16);
+  uint8_t* featureImg = bufImg1;
+  // compute the gradient image of the right image
+  ost_do_prefilter(rightImg, featureImg, width, height, FTZero, bufImg2);
+
+  // loop thru each keypoint and compute the disparity
+  BOOST_FOREACH(Keypoint& kp, keypoints) {
+    if (kp.desc==NULL) {
+      continue;
+    }
+    int kpx = (int)(kp.x + .5);
+    int kpy = (int)(kp.y + .5);
+
+    KeypointSADDescriptor* desc = (KeypointSADDescriptor*)kp.desc;
+    int disp = ost_do_stereo_sparse(desc->mData, featureImg, kpx, kpy,
+        width, height, FTZero, DLen,
+        tfilter_thresh, ufilter_thresh);
+    if (disp != -1) {
+#if DEBUG==1
+      printf("(%5.1f, %5.1f), disp %5.2f <=> %5.2f\n", kp.x, kp.y, kp.z, (double)disp/16.0);
+#endif
+      kp.z = (double)disp/16.0;
     }
   }
 }

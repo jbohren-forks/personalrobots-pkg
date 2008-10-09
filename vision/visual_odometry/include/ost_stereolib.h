@@ -52,7 +52,7 @@ extern "C" {
   // img and featureImg need to be aligned to 16 byte block for sse
 #define ost_do_prefilter(im, ftim, xim, yim, ftzero, buf) \
 do { \
-  if ((uintptr_t)(img) & (uintptr_t)0xF || (uintptr_t)(ftim) & (uintptr_t)0xF ) { \
+  if ((uintptr_t)(im) & (uintptr_t)0xF || (uintptr_t)(ftim) & (uintptr_t)0xF ) { \
     cerr<< "buf not aligned for gradient map"<<endl; \
     ost_do_prefilter_fast_u((im), (ftim), (xim), (yim), (ftzero), (buf));\
   } else { \
@@ -91,6 +91,26 @@ ost_do_prefilter_fast_u(const uint8_t *im,  // input image
     int xim, int yim, // size of image
     uint8_t ftzero, // feature offset from zero
     uint8_t *buf    // buffer storage
+);
+
+//
+// sparse stereo
+// returns disparity value in 1/16 pixel, -1 on failure
+// refpat is a 16x16 patch around the feature pixel
+//   feature pixel is at coordinate 7,7 within the patch
+// rim is the right gradient image
+// x,y is the feature pixel coordinate
+// other parameters as in do_stereo
+//
+
+int
+ost_do_stereo_sparse(uint8_t *refpat, uint8_t *rim, // input feature images
+    int x, int y,         // position of feature pixel
+    int xim, int yim, // size of images
+    uint8_t ftzero, // feature offset from zero
+    int dlen,   // size of disparity search, multiple of 8
+    int tfilter_thresh, // texture filter threshold
+    int ufilter_thresh  // uniqueness filter threshold, percent
 );
 
 

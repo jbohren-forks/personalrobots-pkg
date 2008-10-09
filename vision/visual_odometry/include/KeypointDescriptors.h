@@ -51,15 +51,37 @@ public:
   float compare(const KeypointSADDescriptor& kpd) const;
   virtual float compare(const KeypointDescriptor& kpd) const;
   static void constructDescriptors(
-      /// input image
+      /// input image.
+      /// If compiled with -sse2 (and up) options, it would speed up
+      /// computation to have this buffer aligned to 16 byte block.
       const uint8_t* img,
       int width,
       int height,
       /// The list of keypoints
       Keypoints& keypoints,
-      /// buffer used by this function. Same size as img
+      /// buffer used by this function. Same size as img.
+      /// If compiled with -sse2 (and up) options, it would speed up
+      /// computation to have this buffer aligned to 16 byte block.
       uint8_t* bufImg1,
-      /// buffer used by this function. Same size as img
+      /// buffer used by this function, of size (width+64)*4 or larger.
+      /// No alignment requirement.
+      uint8_t* bufImg2
+  );
+  static void computeDisparity(
+      /// input image.
+      /// If compiled with -sse2 (and up) options, it would speed up
+      /// computation to have this buffer aligned to 16 byte block.
+      const uint8_t* rightImg,
+      int width,
+      int height,
+      /// The list of keypoints
+      Keypoints& keypoints,
+      /// buffer used by this function. Same size as img.
+      /// If compiled with -sse2 (and up) options, it would speed up
+      /// computation to have this buffer aligned to 16 byte block.
+      uint8_t* bufImg1,
+      /// buffer used by this function, of size (width+64)*4 or larger.
+      /// No alignment requirement.
       uint8_t* bufImg2
   );
   static const int DefWidth  = 16;

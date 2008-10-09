@@ -36,21 +36,6 @@ CamTracker* CamTracker::getCamTracker(
   return NULL;
 }
 
-#if 0 //TODO: remove it
-bool goodFeaturesToTrack(
-    CamTracker* tracker,
-    /// input image
-    const WImage1_b& img,
-    /// disparity map of the input image
-    const WImage1_16s* dispMap,
-    /// (OUTPUT) key point detected
-    Keypoints*& keypoints
-) {
-  PathRecon* t = (PathRecon*)tracker;
-  return t->goodFeaturesToTrack(img, dispMap, keypoints);
-}
-#endif
-
 /// Use Harris corner to extrack keypoints.
 /// @return the number of key points detected
 int goodFeaturesToTrackHarrisCorner(
@@ -111,52 +96,6 @@ bool matchKeypoints(
       dispMap0, dispMap1, keyPoints0, keyPoints1, matchPairs, matchIndexPairs);
 }
 
-#if 0 // TODO: delete it
-PoseEstimator* getPoseEstimator(
-    /// The size of the image this pose estimator is expected to see
-    CvSize& imgSize,
-    /// focal length in x
-    double Fx,
-    /// focal length in y
-    double Fy,
-    /// baseline length
-    double Tx,
-    /// x coordinate of the optical center of the left cam
-    double Clx,
-    /// x coordinate of the optical center of the right cam
-    double Crx,
-    /// y coordinate optical center
-    double Cy){
-  PoseEstimateDisp* pe = new PoseEstimateDisp();
-  pe->setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
-  // when we use harris corner detector, we need to
-  // set the threshold larger so that we can pick up enough key point match.
-  pe->setInlierErrorThreshold(4.0);
-
-  return pe;
-}
-#endif
-#if 0 //TODO: delete it
-PoseEstimator* getPoseEstimator(CamTracker* tracker) {
-  PathRecon *t = (PathRecon *)tracker;
-  return &(t->mPoseEstimator);
-}
-#endif
-
-#if 0 // TODO: delete it
-int poseEstimate(
-    PoseEstimator* poseEstimator,
-    Keypoints& keypoints0,
-    Keypoints& keypoints1,
-    vector<pair<int, int> >& matchIndexPairs,
-    CvMat& rot,
-    CvMat& shift,
-    bool smoothed) {
-  return ((PoseEstimateDisp*)poseEstimator)->estimate(keypoints0, keypoints1,
-      matchIndexPairs,  rot, shift, smoothed);
-}
-#endif
-
 void estimateWithLevMarq(
     /// inlier list 0
     const CvMat& points0inlier,
@@ -170,24 +109,6 @@ void estimateWithLevMarq(
   PoseEstimateDisp::estimateWithLevMarq(points0inlier, points1inlier, CartToDisp,
       DispToCart, rot, trans);
 }
-#if 0 // TODO: remove it
-KeyFramingDecision keyFrameEval(
-    CamTracker* camTracker,
-    /// the index of this frame
-    int frameIndex,
-    /// number of key points detected in this frame.
-    int numKeypoints,
-    /// number of inliers detected in this frame with respect to last key frame.
-    int numInliers,
-    /// estimated rotation matrix.
-    const CvMat & rot,
-    /// estimated translation matrix.
-    const CvMat & shift){
-  assert(camTracker);
-  PathRecon* t = (PathRecon *)camTracker;
-  return t->keyFrameEval(frameIndex, numKeypoints, numInliers, rot, shift);
-}
-#endif
 
 bool FrameSeq::backTrack(){
   bool status;
@@ -233,59 +154,6 @@ void PoseEstFrameEntry::clear() {
 PoseEstFrameEntry::~PoseEstFrameEntry(){
   clear();
 }
-#if 0 // TODO: delete them
-void setLastKeyFrame(CamTracker* tracker, PoseEstFrameEntry* keyFrame){
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->setLastKeyFrame(keyFrame);
-}
-void matchKeypoints(
-    /// pointer to the tracker
-    CamTracker* tracker,
-    /// (Output) coordinates of trackable pairs
-    vector<pair<CvPoint3D64f, CvPoint3D64f> >* trackablePairs,
-    /// (Output and Optional) indices of the trackable pairs into
-    /// their corresponding key points.
-    vector<pair<int, int> >*  trackableIndexPairs){
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->matchKeypoints(trackablePairs, trackableIndexPairs);
-}
-PoseEstFrameEntry* getLastKeyFrame(CamTracker* tracker) {
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  if (t->mActiveKeyFrames.size() == 0)
-    return NULL;
-  return t->mActiveKeyFrames.back();
-}
-bool fetchInliers(CamTracker* tracker, CvMat *& inliers0, CvMat *& inliers1){
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->fetchInliers(inliers0, inliers1);
-}
-int *fetchInliers(CamTracker* tracker) {
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->fetchInliers();
-}
-bool keyFrameAction(CamTracker* tracker, KeyFramingDecision kfd, FrameSeq& frameSeq){
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->keyFrameAction(kfd, frameSeq);
-}
-
-FrameSeq& getFrameSeq(const CamTracker* tracker) {
-  assert(tracker);
-  PathRecon* t = (PathRecon*)tracker;
-  return t->mFrameSeq;
-}
-
-vector<FramePose>* getFramePoses(CamTracker* tracker){
-  assert(tracker);
-    PathRecon* t = (PathRecon*)tracker;
-    return t->getFramePoses();
-}
-#endif
 
 void saveFramePoses(const string& dirname, vector<FramePose>& framePoses) {
   // TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])

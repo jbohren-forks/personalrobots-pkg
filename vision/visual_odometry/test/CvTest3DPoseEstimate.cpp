@@ -318,8 +318,10 @@ bool CvTest3DPoseEstimate::testVideo() {
 
   do {
     StereoFrame& sf = fileSeq.mInputImageQueue.front();
+#if 1
     sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
     getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
+#endif
     pathRecon.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 

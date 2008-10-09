@@ -8,6 +8,7 @@
 #include "Cv3DPoseEstimateStereo.h"
 #include "CvMatUtils.h"
 #include "VisOdom.h"
+#include "KeypointDescriptors.h"
 using namespace cv::willow;
 #include "stereolib.h" // from 3DPoseEstimation/include. The header file is there temporarily
 
@@ -163,6 +164,30 @@ bool PoseEstimateStereo::constructKeypointDescriptors(
     // share two buffers with getDisparityMap()
     KeypointDescriptor::constructSADDescriptors(leftImage.ImageData(),
         leftImage.Width(), leftImage.Height(), keypoints, mFeatureImgBufLeft, mBufStereoPairs);
+    break;
+  default:
+    cerr << "Not implement yet for matcher: "<<mMatchMethod<<endl;
+    status = false;
+    break;
+  }
+  return status;
+}
+
+bool PoseEstimateStereo::computeKeypointDisparity(
+    const WImage1_b& rightImage,
+    Keypoints& keypoints) {
+  bool status = false;
+  switch(mMatchMethod){
+  case CrossCorrelation:
+  case KeyPointCrossCorrelation:
+    cerr << "Not implement yet for matcher: "<<mMatchMethod<<endl;
+    status = false;
+    break;
+  case KeyPointSumOfAbsDiff:
+    // share two buffers with getDisparityMap()
+    KeypointSADDescriptor::computeDisparity(rightImage.ImageData(),
+        rightImage.Width(), rightImage.Height(), keypoints, mFeatureImgBufLeft,
+        mBufStereoPairs);
     break;
   default:
     cerr << "Not implement yet for matcher: "<<mMatchMethod<<endl;

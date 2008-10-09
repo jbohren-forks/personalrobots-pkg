@@ -167,6 +167,13 @@ public:
 	    const WImage1_b& leftImage,
 	    /// key point list
 	    Keypoints& keypoints);
+	/// compute the disparity of each keypoint.
+	/// the descriptor of each keypoint must be available.
+	bool computeKeypointDisparity(
+	    /// the right input image
+	    const WImage1_b& rightImage,
+	    /// the keypoints
+	    Keypoints& keypoints);
 	/**
 	 *  Match up two list of key points and output a list of trackable pairs.
 	 *  @return true if the status of execution is normal.

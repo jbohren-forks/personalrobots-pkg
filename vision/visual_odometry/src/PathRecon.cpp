@@ -29,9 +29,9 @@ using namespace cv::willow;
 #define DISPLAY 0
 
 #ifndef DEBUG
-#define DEBUG  // to print debug message in release build
+#define DEBUG  1 // to print debug message in release build
 #endif
-#undef DEBUG
+//#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -322,6 +322,9 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       // done
       stop = true;
     } else {
+#if DEBUG==1
+      cout << "Processing frame "<<stereoFrame.mFrameIndex<<endl;
+#endif
       currFrame = new PoseEstFrameEntry(stereoFrame.mFrameIndex);
       currFrame->mImage = stereoFrame.mImage;
       currFrame->mRightImage = stereoFrame.mRightImage;
@@ -339,6 +342,10 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       TIMERSTART2(KeyPointDescriptor);
       mPoseEstimator.constructKeypointDescriptors(*currFrame->mImage, *currFrame->mKeypoints);
       TIMEREND2(KeyPointDescriptor);
+
+      TIMERSTART2(SparseStereo);
+      mPoseEstimator.computeKeypointDisparity(*currFrame->mRightImage, *currFrame->mKeypoints);
+      TIMEREND2(SparseStereo);
     }
     inputImageQueue.pop();
   }

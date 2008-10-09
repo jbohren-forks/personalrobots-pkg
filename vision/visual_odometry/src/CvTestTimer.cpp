@@ -59,7 +59,8 @@ void CvTestTimer::printStat() {
 #endif
 	PRINTSTAT2("FeaturePoint        ", FeaturePoint);
 	PRINTSTAT2("KeypointDescriptor  ", KeyPointDescriptor);
-	PRINTSTAT2("KeypointMatch       ", KeyPointMatch);
+  PRINTSTAT2("KeypointMatch       ", KeyPointMatch);
+  PRINTSTAT2("SparseStereo        ", SparseStereo);
 	PRINTSTAT2("PoseEstimateRANSAC  ", PoseEstimateRANSAC);
 	PRINTSTAT2("  PointPicking      ", PointPicking);
 	PRINTSTAT2("    RandTripletGen  ", RandTripletGenerator);
