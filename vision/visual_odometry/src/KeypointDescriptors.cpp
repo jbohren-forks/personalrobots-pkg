@@ -102,14 +102,20 @@ void KeypointSADDescriptor::constructDescriptors(
   int dWidth  = descriptorSize.width;
   int dHeight = descriptorSize.height;
 
-  // TODO: check if XKERN is half size or full size of the kernel
-  int xmargin = std::max(dWidth/2,  XKERN/2);
-  int ymargin = std::max(dHeight/2, YKERN/2);
-    // extract the descriptor patches
+  // offset of the (0, 0) corner to the key point. For a 16x16 patch
+  // the key point shall be at (7, 7)
+  int offset_x = dWidth /2 - 1;
+  int offset_y = dHeight/2 - 1;
+
+  // XKERN, YKERN  is full size of the kernel and presumably odd numbers.
+  int xmargin = offset_x + XKERN/2;
+  int ymargin = offset_y + YKERN/2;
+  // extract the descriptor patches.
+  // The key point shall be at (7,7) of the patch, for a 16x16 patch
   BOOST_FOREACH(Keypoint& kp, keypoints) {
     int kpx = (int)(kp.x + .5);
     int kpy = (int)(kp.y + .5);
-    if (kpx < xmargin || kpy < ymargin || kpx > width-xmargin-1 || kpy > height-ymargin-1){
+    if (kpx < xmargin || kpy < ymargin || kpx > width-xmargin-2 || kpy > height-ymargin-2){
       // kernel out of bound, skip this keypoint
       delete kp.desc;
       kp.desc=NULL;
@@ -121,8 +127,8 @@ void KeypointSADDescriptor::constructDescriptors(
       delete kp.desc;
       kp.desc = desc;
 
-      int x0 = kpx - dWidth/2;
-      int y0 = kpy - dHeight/2;
+      int x0 = kpx - offset_x;
+      int y0 = kpy - offset_y;
       uint8_t* pDescRow = desc->mData;
       const uint8_t* pImgPatchRow = &(featureImg[y0*width+x0]);
 
@@ -130,7 +136,8 @@ void KeypointSADDescriptor::constructDescriptors(
       for (int i=0; i<dHeight; i++) {
         // copy a row
         memcpy(pDescRow, pImgPatchRow, sizeof(uint8_t)*dWidth);
-        pDescRow += dWidth;
+        // update the points for next row
+        pDescRow     += dWidth;
         pImgPatchRow += width;
       }
     }
@@ -150,14 +157,19 @@ void KeypointTemplateDescriptor::constructDescriptors(
   int dWidth  = descriptorSize.width;
   int dHeight = descriptorSize.height;
 
+  // offset of the (0, 0) corner to the key point. For a 16x16 patch
+  // the key point shall be at (7, 7)
+  int offset_x = dWidth /2 - 1;
+  int offset_y = dHeight/2 - 1;
+
   // TODO: check if XKERN is half size or full size of the kernel
-  int xmargin = dWidth/2;
-  int ymargin = dHeight/2;
+  int xmargin = offset_x;
+  int ymargin = offset_y;
     // extract the descriptor patches
   BOOST_FOREACH(Keypoint& kp, keypoints) {
     int kpx = (int)(kp.x + .5);
     int kpy = (int)(kp.y + .5);
-    if (kpx < xmargin || kpy < ymargin || kpx > width-xmargin-1 || kpy > height-ymargin-1){
+    if (kpx < xmargin || kpy < ymargin || kpx > width-xmargin-2 || kpy > height-ymargin-2){
       // kernel out of bound, skip this keypoint
       delete kp.desc;
       kp.desc=NULL;
@@ -169,8 +181,8 @@ void KeypointTemplateDescriptor::constructDescriptors(
       delete kp.desc;
       kp.desc = desc;
 
-      int x0 = kpx - dWidth/2;
-      int y0 = kpy - dHeight/2;
+      int x0 = kpx - offset_x;
+      int y0 = kpy - offset_y;
       uint8_t* pDescRow = desc->mData;
       const uint8_t* pImgPatchRow = &(img[y0*width+x0]);
 
@@ -178,7 +190,8 @@ void KeypointTemplateDescriptor::constructDescriptors(
       for (int i=0; i<dHeight; i++) {
         // copy a row
         memcpy(pDescRow, pImgPatchRow, sizeof(uint8_t)*dWidth);
-        pDescRow += dWidth;
+        // update the pointers for next row
+        pDescRow     += dWidth;
         pImgPatchRow += width;
       }
     }
