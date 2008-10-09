@@ -26,8 +26,8 @@ using namespace cv::willow;
 #endif
 
 PoseEstimate::PoseEstimate():
-	mNumRansacIter(50), mMinDet(0.1), mMinAngleForRansacTriple(10.),
-	mNumTriesForRandomTriple(100),
+	mNumRansacIter(400), mMinDet(0.1), mMinAngleForRansacTriple(10.),
+	mNumTriesForRandomTriple(1000),
 	mErrMapping(NULL), mErrNormType(CV_C),	mErrThreshold(mDefErrThreshold),
 	mResidue1(cvMat(3, 1, CV_64F, mResidue1_Data)),
 	mResidue2(cvMat(3, 1, CV_64F, mResidue2_Data)),
@@ -154,6 +154,8 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     // randomly pick 3 points. make sure they are not
     // tooCloseToColinear
     if (pick3RandomPoints(points0, points1, &P0, &P1)==false){
+      // we have exhausted all possible combinations of triplet sets
+      // get out of the loop
       break;
     }
 
@@ -386,7 +388,7 @@ bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 	double norm_p01 = cvNorm(&p01);
 	double norm_p02 = cvNorm(&p02);
 	double cosAngle = cvDotProduct(&p01, &p02)/norm_p01/norm_p02;
-	if (cosAngle > cos(CV_PI/180.0*5.0)) {
+	if (cosAngle > cos(CV_PI/180.0*mDefMinAngleForNonColinearity)) {
 #ifdef DEBUG
 		cout << "Too close to colinear: angle = "<< acos(cosAngle)/CV_PI*180.0<<"(degree)"<<endl;
 #endif
@@ -397,8 +399,7 @@ bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 }
 #endif
 
-bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1,
-		bool fInputPointsInRows){
+bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1){
   TIMERSTART2(PointPicking);
 
 	bool status = false;
@@ -406,9 +407,11 @@ bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, 
 	for (int i=0; i<mNumTriesForRandomTriple; i++){
 
 	  CvTripletSet triplet;
-	  if (mRandomTripletSetGenerator.nextSet(triplet)==false) {
+    TIMERSTART2(RandTripletGenerator);
+	  status = mRandomTripletSetGenerator.nextSet(triplet);
+    TIMEREND2(RandTripletGenerator);
+	  if (status==false) {
 	    // no more random triplet set available
-	    status = false;
 	    break;
 	  }
 	  int pa = triplet[0];
@@ -416,35 +419,30 @@ bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, 
 	  int pc = triplet[2];
 
 		// points in P0, and P1 are stored in columns
-		if (fInputPointsInRows == true ) {
-			cvSetReal2D(P0, 0, 0, cvmGet(points0, pa, 0));
-			cvSetReal2D(P0, 1, 0, cvmGet(points0, pa, 1));
-			cvSetReal2D(P0, 2, 0, cvmGet(points0, pa, 2));
+	  cvSetReal2D(P0, 0, 0, cvmGet(points0, pa, 0));
+	  cvSetReal2D(P0, 1, 0, cvmGet(points0, pa, 1));
+	  cvSetReal2D(P0, 2, 0, cvmGet(points0, pa, 2));
 
-			cvSetReal2D(P1, 0, 0, cvmGet(points1, pa, 0));
-			cvSetReal2D(P1, 1, 0, cvmGet(points1, pa, 1));
-			cvSetReal2D(P1, 2, 0, cvmGet(points1, pa, 2));
+	  cvSetReal2D(P1, 0, 0, cvmGet(points1, pa, 0));
+	  cvSetReal2D(P1, 1, 0, cvmGet(points1, pa, 1));
+	  cvSetReal2D(P1, 2, 0, cvmGet(points1, pa, 2));
 
-			cvSetReal2D(P0, 0, 1, cvmGet(points0, pb, 0));
-			cvSetReal2D(P0, 1, 1, cvmGet(points0, pb, 1));
-			cvSetReal2D(P0, 2, 1, cvmGet(points0, pb, 2));
+	  cvSetReal2D(P0, 0, 1, cvmGet(points0, pb, 0));
+	  cvSetReal2D(P0, 1, 1, cvmGet(points0, pb, 1));
+	  cvSetReal2D(P0, 2, 1, cvmGet(points0, pb, 2));
 
-			cvSetReal2D(P1, 0, 1, cvmGet(points1, pb, 0));
-			cvSetReal2D(P1, 1, 1, cvmGet(points1, pb, 1));
-			cvSetReal2D(P1, 2, 1, cvmGet(points1, pb, 2));
+	  cvSetReal2D(P1, 0, 1, cvmGet(points1, pb, 0));
+	  cvSetReal2D(P1, 1, 1, cvmGet(points1, pb, 1));
+	  cvSetReal2D(P1, 2, 1, cvmGet(points1, pb, 2));
 
-			cvSetReal2D(P0, 0, 2, cvmGet(points0, pc, 0));
-			cvSetReal2D(P0, 1, 2, cvmGet(points0, pc, 1));
-			cvSetReal2D(P0, 2, 2, cvmGet(points0, pc, 2));
+	  cvSetReal2D(P0, 0, 2, cvmGet(points0, pc, 0));
+	  cvSetReal2D(P0, 1, 2, cvmGet(points0, pc, 1));
+	  cvSetReal2D(P0, 2, 2, cvmGet(points0, pc, 2));
 
-			cvSetReal2D(P1, 0, 2, cvmGet(points1, pc, 0));
-			cvSetReal2D(P1, 1, 2, cvmGet(points1, pc, 1));
-			cvSetReal2D(P1, 2, 2, cvmGet(points1, pc, 2));
-		} else {
-			cerr << "Not Implemented Yet"<<endl;
-			status = false;
-			return status;
-		}
+	  cvSetReal2D(P1, 0, 2, cvmGet(points1, pc, 0));
+	  cvSetReal2D(P1, 1, 2, cvmGet(points1, pc, 1));
+	  cvSetReal2D(P1, 2, 2, cvmGet(points1, pc, 2));
+
 
 #ifdef DEBUG
 		printf("random points: %d, %d, %d\n", pa, pb, pc);

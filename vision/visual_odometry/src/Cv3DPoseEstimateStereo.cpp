@@ -49,10 +49,12 @@ using namespace std;
 
 // change from 61 to 101 to accommodate the sudden change around frame 0915 in
 // the indoor sequence "indoor1"
-const CvPoint PoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
+/// matching key points must not be further than these two values, in respective
+/// directions.
+//const CvPoint PoseEstimateStereo::DefNeighborhoodSize = cvPoint(128, 48);
+const CvPoint PoseEstimateStereo::DefNeighborhoodSize = cvPoint(64, 32);
 // increasing the neighborhood size does not help very much. In fact, I have been
 // degradation of performance.
-//const CvPoint Cv3DPoseEstimateStereo::DefNeighborhoodSize = cvPoint(256, 48);
 const CvPoint PoseEstimateStereo::DefTemplateSize     = cvPoint(16, 16);
 
 PoseEstimateStereo::PoseEstimateStereo(int width, int height):

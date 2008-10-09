@@ -314,8 +314,9 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
       // randomly pick 3 points. make sure they are not
       // tooCloseToColinear
       if (pick3RandomPoints(xyzs0, xyzs1, &P0, &P1)== false) {
-        cerr << "Cannot find points that are non colinear enough"<<endl;
-        continue;
+        // we have exhausted all possible combinations of triplet sets
+        // get out of the loop
+        break;
       }
 
       TIMERSTART2(SVD);

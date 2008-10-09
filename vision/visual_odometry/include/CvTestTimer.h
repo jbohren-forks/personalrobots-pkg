@@ -66,6 +66,7 @@ public:
 	  RESET(KeyPointDescriptor);
 	  RESET(PointPicking);
 	  RESET(ColinearCheck);
+    RESET(RandTripletGenerator);
 	}
 	int64 mNumIters;
 	int64 mFrequency;
@@ -108,6 +109,7 @@ public:
   DECLARE(KeyPointDescriptor);
   DECLARE(PointPicking);
   DECLARE(ColinearCheck);
+  DECLARE(RandTripletGenerator);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

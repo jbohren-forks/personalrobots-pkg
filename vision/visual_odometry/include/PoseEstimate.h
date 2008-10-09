@@ -92,6 +92,9 @@ public:
 	/** Default error threshold used in RANSAC */
 	static const double mDefErrThreshold  = 2.0;
 
+	/// Default angle threshold for check for co-linearity among 3 points.
+	static const double mDefMinAngleForNonColinearity = 15.0;
+
 	/**
 	 *  @return a reference to the 4x4 transformation matrix estimated.
 	 */
@@ -170,7 +173,19 @@ protected:
 	/// Pick 3 random non-colinear pairs from the two corresponding lists.
 	/// The 3 points in each list needs to be far away enough from being
 	/// co-linear.
-	bool pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1, bool fInputPointsInRows=true);
+	/// This object is keeping track of the triplet sets that have been picked,
+	/// to avoid duplicates.
+	/// @return false if all possible triplet sets have been picked.
+	bool pick3RandomPoints(
+	    /// list 0 of input points, stored in rows, i.e. nx3
+	    CvMat* points0,
+	    /// list 1 of input points, stored in rows, i.e. nx3
+	    CvMat* points1,
+	    /// picked points from list 0, stored in column
+	    CvMat* P0,
+	    /// picked points from list 1, stored in column
+	    CvMat* P1
+	);
 	/// An internal interfacing method that construct the 4x4 homography matrix from
 	/// rotation matrix R and translation matrix T
 	static bool constructRT(CvMat *R, CvMat *T, CvMat *RT);
