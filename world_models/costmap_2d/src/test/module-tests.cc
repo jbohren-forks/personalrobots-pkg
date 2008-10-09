@@ -75,9 +75,6 @@ TEST(costmap, test1){
   ASSERT_EQ(map.getWidth(), 10);
   ASSERT_EQ(map.getHeight(), 10);
 
-
-  std::cout << map.toString();
-
   // Verify that obstacles correctly identified from the static map.
   std::vector<unsigned int> occupiedCells;
   map.getOccupiedCellDataIndexList(occupiedCells);
@@ -225,6 +222,7 @@ TEST(costmap, test5){
   c0.pts[1].y = 5;
 
   map.updateDynamicObstacles(1, c0, updates);
+
   ASSERT_EQ(updates.size(), 2);
   ASSERT_EQ(map[map.WC_IND(0, 5)], CostMap2D::LETHAL_OBSTACLE);
   ASSERT_EQ(map[map.WC_IND(1, 5)], CostMap2D::LETHAL_OBSTACLE);

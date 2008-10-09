@@ -63,11 +63,13 @@
 #include <map>
 #include <set>
 #include <string>
+#include <map>
 
 // For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
 
 typedef unsigned char TICK;
+typedef std::multimap<unsigned int, unsigned int> PRIORITY_QUEUE;
 
 namespace costmap_2d {
 
@@ -191,12 +193,29 @@ namespace costmap_2d {
      */
     bool updateCell(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates);
 
+    /**
+     * @brief Utility to propagate costs
+     * @param A priority queue to seed propagation
+     * @param A collection to retrieve all updated cells
+     */
+    void propagate(PRIORITY_QUEUE& queue, std::set<unsigned int>& updates);
+
+    /**
+     * @brief A cost function for getting costs from distance
+     */
+    unsigned char computeCost(unsigned int ind, unsigned int distance) const;
+
+    /**
+     * @brief Simple test for a cell having been marked during current propaagtion
+     */
+    bool marked(unsigned int ind) const;
+
     static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
     const double maxZ_; /**< Points above this will be excluded from consideration */
-    const double inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
-    const double circumscribedRadius_;
-    const double inscribedRadius_;
+    const unsigned int inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
+    const unsigned int circumscribedRadius_;
+    const unsigned int inscribedRadius_;
     unsigned char* staticData_; /**< data loaded from the static map */
     unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
     TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */

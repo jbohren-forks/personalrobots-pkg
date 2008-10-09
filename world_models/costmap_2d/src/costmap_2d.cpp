@@ -58,6 +58,14 @@
 
 namespace costmap_2d {
 
+  unsigned int toCellDistance(double d, unsigned int minD, double resolution){
+    double a = ceil(d / resolution);
+    if(a > minD)
+      return (unsigned int) a;
+    
+    return (unsigned int) a;
+  }
+
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
 		       double resolution, double window_length,  unsigned char threshold, 
 		       double maxZ, double inflationRadius,
@@ -65,15 +73,19 @@ namespace costmap_2d {
     : ObstacleMapAccessor(0, 0, width, height, resolution),
       tickLength_(window_length/WATCHDOG_LIMIT),
       maxZ_(maxZ),
-      inflationRadius_(std::max(inflationRadius, 0.0)),
-      circumscribedRadius_(std::max(std::min(circumscribedRadius, inflationRadius), 0.0)),
-      inscribedRadius_(std::max(std::min(inscribedRadius, circumscribedRadius), 0.0)),
+      inflationRadius_(toCellDistance(inflationRadius, 0, resolution)),
+      circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
+      inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
       staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
   {
     staticData_ = new unsigned char[width_*height_];
+    fullData_ = new unsigned char[width_*height_];
+    obsWatchDog_ = new TICK[width_*height_];
+    memset(fullData_, 0, width_*height_);
+    memset(obsWatchDog_, 0, width_*height_);
 
     // For the first pass, just clean up the data and get the set of original obstacles.
-    std::set<unsigned int> obstacles;
+    PRIORITY_QUEUE queue; // Priority queue for propagating costs
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
 	unsigned int ind = MC_IND(i, j);
@@ -85,31 +97,23 @@ namespace costmap_2d {
 	  staticData_[ind] = LETHAL_OBSTACLE;
 
 	if(staticData_[ind] == LETHAL_OBSTACLE){
-	  obstacles.insert(ind);
+	  queue.insert(std::make_pair(0, ind));
 	  staticObstacles_.push_back(ind);
 	}
       }
     }
 
+    // Now propagate the queue. The updates must be reapplied to the static map, which will ensure they are
+    // not staled out
+    std::set<unsigned int> updates;
+    propagate(queue, updates);
+
+
     // Now for every original obstacle, go back and fill in the inflated obstacles
-    for(std::set<unsigned int>::const_iterator it = obstacles.begin(); it != obstacles.end(); ++it){
+    for(std::set<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
       unsigned int ind = *it;
-      std::vector< std::pair<unsigned int, unsigned char> > inflation;
-      computeInflation(ind, inflation);
-
-      // All cells in the inflation which have not been marked yet, should be marked, and inserted as
-      // permanent obstacles
-      for(unsigned int i = 0; i<inflation.size(); i++){
-	unsigned int cellId = inflation[i].first;
-	unsigned char inflatedValue = inflation[i].second;
-	staticData_[cellId] = std::max(staticData_[cellId], inflatedValue);
-      }
+      staticData_[ind] = fullData_[ind];
     }
-
-    fullData_ = new unsigned char[width_*height_];
-    obsWatchDog_ = new TICK[width_*height_];
-    memcpy(fullData_, staticData_, width_*height_);
-    memset(obsWatchDog_, 0, width_*height_);
 
     std::cout << "CostMap 2D created with " << staticObstacles_.size() << " static obstacles" << std::endl;
   }
@@ -135,26 +139,20 @@ namespace costmap_2d {
   {
     updates.clear();
 
+    PRIORITY_QUEUE queue;
+
     // Small clearance for what is 'in contact' which is a centimeter
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
       // Filter out points too high
       if(cloud.pts[i].z > maxZ_)
 	continue;
 
-      // Filter points in our contact space. Should be unnecessary if lasers working correctly
-      if(sqrt(pow(wx-cloud.pts[i].x, 2) + pow(wy-cloud.pts[i].y, 2)) < inscribedRadius_)
-	continue;
-
       unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
-
-      updateCell(ind, LETHAL_OBSTACLE, updates);
-
-      // Compute inflation set
-      std::vector< std::pair<unsigned int, unsigned char> > inflation;
-      computeInflation(ind, inflation);
-      for(unsigned int i = 0; i<inflation.size(); i++)
-	updateCell(inflation[i].first, inflation[i].second, updates);
+      queue.insert(std::make_pair(0, ind));
     }
+
+    // Propagate costs
+    propagate(queue, updates);
 
     // We always process deletions too
     removeStaleObstacles(ts, updates);
@@ -170,19 +168,13 @@ namespace costmap_2d {
     if(obsWatchDog_[cell] == 0)
       dynamicObstacles_.push_back(cell);
 
-    // If it has already been updated in this propagation cycle, we can only increase its value
-    if(obsWatchDog_[cell] == WATCHDOG_LIMIT){
-      fullData_[cell] = std::max(fullData_[cell], cellState);
-    }
-    else {
-      // Now we know that it has not been updated, in which case the higher of the static value and the new value.
-      // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
-      // and we should address what to do there once we have use cases to implement that exploit this unknown state
-      fullData_[cell] = std::min(std::max(cellState, staticData_[cell]), LETHAL_OBSTACLE);
+    // Will take the higher of the static value and the new value.
+    // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
+    // and we should address what to do there once we have use cases to implement that exploit this unknown state
+    fullData_[cell] = std::min(std::max(cellState, staticData_[cell]), LETHAL_OBSTACLE);
   
-      // Always pet the watchdog
-      obsWatchDog_[cell] = WATCHDOG_LIMIT;
-    }
+    // Always pet the watchdog
+    obsWatchDog_[cell] = WATCHDOG_LIMIT;
 
     if(fullData_[cell] != oldValue){
       //printf("Switching %d from %d to %d\n", cell, oldValue, fullData_[cell]);
@@ -339,6 +331,59 @@ namespace costmap_2d {
     return ss.str();
   }
 
+  void CostMap2D::propagate(PRIORITY_QUEUE& queue, std::set<unsigned int>& updates){
+    updates.clear();
+    while(!queue.empty()){
+      PRIORITY_QUEUE::iterator it = queue.begin();
+      unsigned int distance = it->first;
+      unsigned int ind = it->second;
+      unsigned char cost = computeCost(ind, distance);
+      queue.erase(it);
+      
+      if(!marked(ind)){
+	updateCell(ind, cost, updates);
+	unsigned int mx, my;
+	IND_MC(ind, mx, my);
+
+	// If distance reached the inflation radius then skip further expansion
+	if(distance >= inflationRadius_)
+	  continue;
+
+	// Otherwise we expand further
+	std::vector<unsigned int> neighbors;
+	unsigned int xMin = (mx > 0 ? mx - 1 : 0);
+	unsigned int xMax = (mx < getWidth() - 1 ? mx + 1 : mx);
+	unsigned int yMin = (my > 0 ? my - 1 : 0);
+	unsigned int yMax = (my < getHeight() - 1 ? my + 1 : my);
+
+	for(unsigned int i = xMin; i <= xMax; i++){
+	  for(unsigned int j = yMin; j <= yMax; j++){
+	    unsigned int cellId = MC_IND(i, j);
+	    // If the cell is not marked, insert into queue
+	    if(!marked(cellId))
+	      queue.insert(std::make_pair(distance + 1, cellId));
+	  }
+	}
+      }
+    }
+  }
+
+  bool CostMap2D::marked(unsigned int ind) const { return obsWatchDog_[ind] == WATCHDOG_LIMIT;}
+
+  unsigned char CostMap2D::computeCost(unsigned int ind, unsigned int distance) const{
+    unsigned char cost = 0;
+    if(distance == 0)
+      cost = LETHAL_OBSTACLE;
+    else if(distance <= inscribedRadius_)
+      cost = INSCRIBED_INFLATED_OBSTACLE;
+    else if (distance <= circumscribedRadius_)
+      cost = CIRCUMSCRIBED_INFLATED_OBSTACLE;
+    else
+      cost = (unsigned char) (CIRCUMSCRIBED_INFLATED_OBSTACLE / pow(2, distance));
+
+    return cost;
+  }
+
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
     : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
 			  computeWY(costMap, maxSize, poseX, poseY), 
@@ -418,4 +463,5 @@ namespace costmap_2d {
     printf("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
     return cellWidth;
   }
+
 }
