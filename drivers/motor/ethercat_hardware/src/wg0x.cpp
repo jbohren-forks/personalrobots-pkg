@@ -720,6 +720,9 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
   robot_msgs::DiagnosticValue v;
   robot_msgs::DiagnosticString s;
 
+  strings_.clear();
+  values_.clear();
+
   stringstream str;
   str << "EtherCAT Device #" << sh_->get_ring_position();
   d.name = str.str();

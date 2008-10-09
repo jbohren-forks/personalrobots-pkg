@@ -186,6 +186,10 @@ void EthercatHardware::publishDiagnostics()
   robot_msgs::DiagnosticValue v;
   robot_msgs::DiagnosticString s;
 
+  strings_.clear();
+  values_.clear();
+  statuses_.clear();
+
   status.level = 0;
   status.name = "EtherCAT Master";
   status.message = "OK";
