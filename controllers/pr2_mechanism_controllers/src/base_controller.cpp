@@ -78,6 +78,8 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
    caster_steer_vel_gain_ = 0;
    timeout_ = 0.1;
 
+   new_cmd_available_ = false;
+
    pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
@@ -95,6 +97,7 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
    cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
    cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 //  std::cout << "command received : " << cmd_vel_t_ << std::endl;
+   new_cmd_available_ = true;
    pthread_mutex_unlock(&base_controller_lock_);
 }
 
@@ -374,28 +377,23 @@ void BaseController::update()
 {
    double current_time = robot_state_->hw_->current_time_;
    double dT = std::min<double>(current_time - last_time_,MAX_DT_);
-   if(pthread_mutex_trylock(&base_controller_lock_)==0)
+
+   if(new_cmd_available_)
    {
-      if((current_time - cmd_received_timestamp_) > timeout_)
+      if(pthread_mutex_trylock(&base_controller_lock_)==0)
       {
-//      cout << "BaseController:: timing out" << endl;
-         cmd_vel_.x = 0;
-         cmd_vel_.y = 0;
-         cmd_vel_.z = 0;
-      }
-      else
-      {
-//      cout << "BaseController:: running" << endl;
-
          cmd_vel_ = interpolateCommand(cmd_vel_,cmd_vel_t_,max_accel_,dT);
-
-//    cmd_vel_.x = cmd_vel_t_.x;
-//    cmd_vel_.y = cmd_vel_t_.y;
-//    cmd_vel_.z = cmd_vel_t_.z;
+         new_cmd_available_ = false;
+         pthread_mutex_unlock(&base_controller_lock_);
       }
-      pthread_mutex_unlock(&base_controller_lock_);
-   }
 //  std::cout << "command received in update : " << cmd_vel_ << std::endl;
+   }
+   if((current_time - cmd_received_timestamp_) > timeout_)
+   {
+      cmd_vel_.x = 0;
+      cmd_vel_.y = 0;
+      cmd_vel_.z = 0;
+   }
 
    getJointValues();
 

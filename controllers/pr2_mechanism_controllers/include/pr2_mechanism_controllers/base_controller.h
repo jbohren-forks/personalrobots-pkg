@@ -205,6 +205,8 @@ namespace controller
 
     private:
 
+    bool new_cmd_available_;
+
     /*!
      * \brief number of wheels
      */
@@ -410,7 +412,6 @@ namespace controller
     double odom_publish_rate_;
            
     misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
-
 
     int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */ //FIXME: use time rather than count
   };
