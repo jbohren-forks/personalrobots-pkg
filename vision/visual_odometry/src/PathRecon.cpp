@@ -28,10 +28,7 @@ using namespace cv::willow;
 
 #define DISPLAY 0
 
-#ifndef DEBUG
-#define DEBUG  1 // to print debug message in release build
-#endif
-//#undef DEBUG
+#define DEBUG 0
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -238,7 +235,7 @@ bool PathRecon::goodFeaturesToTrack(
     keypoints->clear();
   status = mPoseEstimator.goodFeaturesToTrack(leftImage, dispMap, *keypoints);
   mStat.mHistoKeypoints.push_back(keypoints->size());
-#ifdef DEBUG
+#if DEBUG==1
   cout << "Found " << keypoints->size() << " good features in left  image" << endl;
   for (size_t i = 0; i < keypoints->size(); i++) {
     printf("(%f,%f,%f)\n", (*keypoints)[i].x, (*keypoints)[i].y, (*keypoints)[i].z);
@@ -268,7 +265,7 @@ void PathRecon::updateTrajectory() {
     storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
         mFrameSeq.mCurrentFrame->mFrameIndex - mFrameSeq.mStartFrameIndex);
 
-#ifdef DEBUG
+#if DEBUG==1
     // measure the errors
     measureErr(mFrameSeq.mCurrentFrame->mInliers1, mFrameSeq.mCurrentFrame->mInliers0);
 #endif
@@ -321,6 +318,9 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
     if (stereoFrame.mFrameIndex == -1) {
       // done
       stop = true;
+#if DEBUG==1
+      cout << "End of the sequence "<< endl;
+#endif
     } else {
 #if DEBUG==1
       cout << "Processing frame "<<stereoFrame.mFrameIndex<<endl;
@@ -375,7 +375,7 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       matchKeypoints(&trackablePairs, currFrame->mTrackableIndexPairs);
 
       assert(currFrame->mTrackableIndexPairs->size() == trackablePairs.size());
-#ifdef DEBUG
+#if DEBUG==1
       cout << "Num of trackable pairs for pose estimate: "<<trackablePairs.size() << endl;
       for (size_t i = 0; i < trackablePairs.size(); i++) {
         printf("(%f,%f,%f), (%f,%f,%f)\n",
@@ -394,7 +394,7 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       }
 
       if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
-#ifdef DEBUG
+#if DEBUG==1
         cout << "Too few trackable pairs" <<endl;
 #endif
         // shall backtrack
@@ -418,7 +418,7 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
         fetchInliers(currFrame->mInliers1, currFrame->mInliers0);
         currFrame->mInlierIndices = fetchInliers();
         currFrame->mLastKeyFrameIndex = getLastKeyFrame()->mFrameIndex;
-#ifdef DEBUG
+#if DEBUG==1
         cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
 #endif
         assert(getLastKeyFrame());

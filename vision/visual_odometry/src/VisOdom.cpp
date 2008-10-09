@@ -223,10 +223,20 @@ bool FileSeq::getNextFrame() {
     if (mCurrentFrameIndex < mEndFrameIndex ) {
       return getCurrentFrame();
     } else {
-      return false;
+      if (mCurrentFrameIndex < mEndFrameIndex + mFrameStep) {
+        // signaling the end of the seq
+        StereoFrame stereoFrame;
+        stereoFrame.mFrameIndex = -1;
+        mInputImageQueue.push(stereoFrame);
+        return true;
+      } else {
+        // last time we signal the end of the sequence.
+        // now no more frame
+        return false;
+      }
     }
   } else
-    return false;
+    return true;
 }
 
 PoseEstimator* getStereoPoseEstimator(

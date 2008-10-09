@@ -33,8 +33,7 @@ using namespace std;
 
 #include <stdlib.h>
 
-#undef DEBUG
-//#define DEBUG 1
+#define DEBUG 0
 
 #if CHECKTIMING == 0
 #define TIMERSTART(x)
@@ -217,7 +216,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
     // Try Star Detector
     //
     std::vector<Keypoint> kps = mStarDetector.DetectPoints((IplImage*)img.Ipl());
-#ifdef DEBUG
+#if DEBUG == 1
     cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
 #endif
     if (kps.size() > mMaxNumKeyPoints) {
@@ -409,7 +408,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, 
 		// Try Star Detector
 		//
 		std::vector<Keypoint> kps = mStarDetector.DetectPoints(img.Ipl());
-#ifdef DEBUG
+#if DEBUG == 1
     cout << "Found "<< kps.size() << " good keypoints by Star Detector"<<endl;
 #endif
 		if (kps.size() > mMaxNumKeyPoints) {
@@ -429,7 +428,7 @@ bool PoseEstimateStereo::goodFeaturesToTrack(WImage1_b& img, WImage1_16s* mask, 
 					numKeyPointsHasNoDisp++;
 				}
 			}
-#ifdef DEBUG
+#if DEBUG == 1
 			cout << "Num of keypoints have no disparity: "<< numKeyPointsHasNoDisp <<endl;
 #endif
 			mNumKeyPointsWithNoDisparity += numKeyPointsHasNoDisp;
@@ -583,7 +582,7 @@ PoseEstimateStereo::getTrackablePairsByCrossCorr(
 		const CvPoint3D64f& ptLast = *ikp;
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
-#ifdef DEBUG
+#if DEBUG == 1
 		cout << "Feature at "<< ptLast.x<<","<<ptLast.y<<","<<ptLast.z<<endl;
 #endif
 		// find the closest (in distance and appearance) feature
@@ -681,7 +680,7 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 
 		CvPoint fPtLastLeft = cvPoint(ikp->x, ikp->y);
 
-#ifdef DEBUG
+#if DEBUG == 1
 		cout << "Feature at "<< ptLast.x<<","<<ptLast.y<<","<<ptLast.z<<endl;
 #endif
 		// find the closest (in distance and appearance) feature
@@ -724,7 +723,7 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
 			double dy = pt.y - ptLast.y;
 			if (fabs(dx)<neighborhoodSize.x && fabs(dy)<neighborhoodSize.y) {
 				goodFeaturePtInCurrentLeftImg = true;
-#ifdef DEBUG
+#if DEBUG == 1
         cout << "Good candidate at "<< pt.x <<","<< pt.y<<endl;
 #endif
 				CvRect rectTempl2 = cvRect(
@@ -759,13 +758,13 @@ PoseEstimateStereo::getTrackablePairsByKeypointCrossCorr(
       CvPoint3D64f pt1 = cvPoint3D64f(ptLast.x, ptLast.y, ptLast.z);
       assert(pt0.z>=0);
       trackablePairs->push_back(make_pair(pt1, pt0));
-#ifdef DEBUG
+#if DEBUG == 1
         cout << "trackable pair "<< ptLast.x <<","<< ptLast.y<<"  <==> "<< pt0.x <<","<< pt0.y<<endl;
 #endif
 		}
 		if (trackableIndexPairs) {
 		  trackableIndexPairs->push_back(make_pair(iKeypoint0, bestlocIndex));
-#ifdef DEBUG
+#if DEBUG == 1
         cout << "trackable pair indices "<< iKeypoint0 <<"  <==> "<< bestlocIndex <<endl;
 #endif
 		}
