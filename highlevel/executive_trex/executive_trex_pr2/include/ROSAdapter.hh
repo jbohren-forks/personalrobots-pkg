@@ -1,8 +1,8 @@
 #ifndef H_ROSAdapter
 #define H_ROSAdapter
 
-#include "Adapter.hh"
 #include "ROSNode.hh"
+#include "Adapter.hh"
 
 namespace TREX {
 

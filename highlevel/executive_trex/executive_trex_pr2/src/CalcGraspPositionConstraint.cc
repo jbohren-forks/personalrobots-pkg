@@ -6,7 +6,6 @@
 
 //for transform
 #include <rosTF/rosTF.h>
-#include "ROSNode.hh"
 
 using namespace KDL;
 using namespace PR2;

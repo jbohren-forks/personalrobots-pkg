@@ -1,6 +1,7 @@
 #ifndef _CALCARMINVERSEKINEMATICSCONSTRAINT_H_
 #define _CALCARMINVERSEKINEMATICSCONSTRAINT_H_
 
+#include "ROSNode.hh"
 #include "ConstraintEngineDefs.hh"
 #include "Variable.hh"
 #include "ConstrainedVariable.hh"
@@ -11,7 +12,6 @@
 #include "IntervalIntDomain.hh"
 #include "BoolDomain.hh"
 #include "Logger.hh"
-#include "ROSNode.hh"
 
 using namespace EUROPA;
 namespace TREX {

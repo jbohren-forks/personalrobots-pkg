@@ -2,7 +2,6 @@
 #define H_ROSStateAdapter
 
 #include "ROSAdapter.hh"
-#include "ROSNode.hh"
 
 namespace TREX {
 

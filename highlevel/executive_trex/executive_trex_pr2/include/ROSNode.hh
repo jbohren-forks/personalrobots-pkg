@@ -1,10 +1,11 @@
 #ifndef H_ROSNode
 #define H_ROSNode
 
-#include "Observer.hh"
-
 // roscpp
 #include <ros/node.h>
+
+#include "Observer.hh"
+
 
 
 namespace TREX{

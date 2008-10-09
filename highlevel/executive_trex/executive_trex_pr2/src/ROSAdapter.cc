@@ -4,7 +4,6 @@
 #include "Object.hh"
 #include "Debug.hh"
 #include "Observer.hh"
-#include "ROSNode.hh"
 #include "Logger.hh"
 
 namespace TREX { 				     
@@ -44,7 +43,7 @@ namespace TREX {
       sleep(1);
     }
 
-    std::cout << "Connection established for " << timelineName;
+    std::cout << "Connection established for " << timelineName << std::endl;
   }
 
   ROSAdapter::~ROSAdapter() {

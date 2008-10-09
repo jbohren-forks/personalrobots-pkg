@@ -1,7 +1,6 @@
 #include <signal.h>
 
-//external ros includes for messages
-//#include <pr2_msgs/EndEffectorState.h>
+#include "ROSNode.hh"
 
 //NDDL includes
 #include "Nddl.hh"
@@ -13,7 +12,6 @@
 #include "Agent.hh"
 #include "Debug.hh"
 
-#include "ROSNode.hh"
 #include "LogManager.hh"
 
 namespace TREX {
