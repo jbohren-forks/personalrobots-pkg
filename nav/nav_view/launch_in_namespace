@@ -1,9 +1,0 @@
-#!/bin/bash
-export ROS_NAMESPACE=$ROS_NAMESPACE/nav
-ODOM=`rosmap odom $*`
-echo $ODOM
-if [ "$ODOM" = "" ]; then
-  echo "woah! i need an odometry map"
-  exit
-fi
-xterm -e `rospack find nav_view`/nav_view odom:=$ODOM &

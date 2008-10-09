@@ -1,4 +1,0 @@
-#!/bin/bash
-xterm -e `rospack find nav_view`/nav_view odom:=/robot/odom &
-export ROS_NAMESPACE=$ROS_NAMESPACE/robot
-xterm -e `rospack find flatland`/flatland &
