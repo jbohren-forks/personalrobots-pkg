@@ -162,26 +162,28 @@ CKey ADPlanner::ComputeKey(ADState* state)
 int ADPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ADSearchStateSpace_t* pSearchStateSpace)
 {
 	//compute heuristic for search
-#if AD_SEARCH_FORWARD == 1
+	if(bforwardsearch)
+	{
 
 #if MEM_CHECK == 1
-	//int WasEn = DisableMemCheck();
+		//int WasEn = DisableMemCheck();
 #endif
 
-    //forward search: heur = distance from state to searchgoal which is Goal ADState
-	int retv =  environment_->GetFromToHeuristic(MDPstate->StateID, pSearchStateSpace->searchgoalstate->StateID);
+		//forward search: heur = distance from state to searchgoal which is Goal ADState
+		int retv =  environment_->GetFromToHeuristic(MDPstate->StateID, pSearchStateSpace->searchgoalstate->StateID);
 
 #if MEM_CHECK == 1
-	//if (WasEn)
-	//	EnableMemCheck();
+		//if (WasEn)
+		//	EnableMemCheck();
 #endif
 
-	return retv;
-
-#else
-	//backward search: heur = distance from searchgoal to state
-	return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
-#endif
+		return retv;
+	}
+	else
+	{	
+		//backward search: heur = distance from searchgoal to state
+		return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
+	}
 
 }
 
@@ -198,10 +200,7 @@ void ADPlanner::InitializeSearchStateInfo(ADState* state, ADSearchStateSpace_t* 
 	state->heapindex = 0;
 	state->listelem[AD_INCONS_LIST_ID] = NULL;
 	state->numofexpands = 0;
-
-#if AD_SEARCH_FORWARD == 1
 	state->bestpredstate = NULL;
-#endif
 
 	//compute heuristics
 #if USE_HEUR
@@ -230,21 +229,14 @@ void ADPlanner::ReInitializeSearchStateInfo(ADState* state, ADSearchStateSpace_t
 	state->heapindex = 0;
 	state->listelem[AD_INCONS_LIST_ID] = NULL;
 	state->numofexpands = 0;
-
-#if AD_SEARCH_FORWARD == 1
 	state->bestpredstate = NULL;
-#endif
 
 	//compute heuristics
 #if USE_HEUR
 
 	if(pSearchStateSpace->searchgoalstate != NULL)
 	{
-
-#if AD_SEARCH_FORWARD == 0
 		state->h = ComputeHeuristic(state->MDPstate, pSearchStateSpace); 
-#endif
-
 	}
 	else 
 		state->h = 0;
@@ -304,12 +296,10 @@ void ADPlanner::Recomputegval(ADState* state)
 	CKey key;
 	ADState *searchpredstate;
 
-#if AD_SEARCH_FORWARD
-    environment_->GetPreds(state->MDPstate->StateID, &searchpredsIDV, &costV);
-#else
-    environment_->GetSuccs(state->MDPstate->StateID, &searchpredsIDV, &costV);
-#endif
-
+	if(bforwardsearch)
+	    environment_->GetPreds(state->MDPstate->StateID, &searchpredsIDV, &costV);
+	else
+		environment_->GetSuccs(state->MDPstate->StateID, &searchpredsIDV, &costV);
 
 	//iterate through predecessors of s and pick the best
 	state->g = INFINITECOST;
@@ -322,22 +312,23 @@ void ADPlanner::Recomputegval(ADState* state)
 		//see if it can be used to improve
 		if(searchpredstate->callnumberaccessed == pSearchStateSpace_->callnumber && state->g > searchpredstate->v + cost)
 		{
-
-#if AD_SEARCH_FORWARD
-			state->g = searchpredstate->v + cost;
-			state->bestpredstate = searchpredstate;
-#else
-			state->g = searchpredstate->v + cost;
-			state->bestnextstate = predMDPState;
-			state->costtobestnextstate = cost;
-#endif
+			if(bforwardsearch)
+			{
+				state->g = searchpredstate->v + cost;
+				state->bestpredstate = predMDPState;
+			}
+			else
+			{
+				state->g = searchpredstate->v + cost;
+				state->bestnextstate = predMDPState;
+				state->costtobestnextstate = cost;
+			}
 		}		
 	} //over preds
 }
 
 
 
-#if !AD_SEARCH_FORWARD
 //used for backward search
 void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
@@ -376,9 +367,7 @@ void ADPlanner::UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t*
 	} //for predecessors
 
 }
-#endif
 
-#if AD_SEARCH_FORWARD
 //used for forward search
 void ADPlanner::UpdateSuccsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
@@ -413,11 +402,9 @@ void ADPlanner::UpdateSuccsofOverconsState(ADState* state, ADSearchStateSpace_t*
 
 	} //for actions
 }
-#endif
 
 
 
-#if !AD_SEARCH_FORWARD
 //used for backward search
 void ADPlanner::UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
@@ -452,9 +439,9 @@ void ADPlanner::UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t
 	} //for predecessors
 
 }
-#endif
 
-#if AD_SEARCH_FORWARD
+
+
 //used for forward search
 void ADPlanner::UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace)
 {
@@ -477,13 +464,12 @@ void ADPlanner::UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t
 
 		if(succstate->bestpredstate == state->MDPstate)
         {				  
-			Recomputegval(predstate);
-			UpdateSetMembership(predstate);
+			Recomputegval(succstate);
+			UpdateSetMembership(succstate);
 		}		
 
 	} //for actions
 }
-#endif
 
 
 
@@ -565,12 +551,14 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 			state->v = state->g;
 			state->iterationclosed = pSearchStateSpace->iteration;
 
-
-#if AD_SEARCH_FORWARD == 0
-			UpdatePredsofOverconsState(state, pSearchStateSpace);
-#else
-			UpdateSuccsofOverconsState(state, pSearchStateSpace);
-#endif
+			if(!bforwardsearch)
+			{
+				UpdatePredsofOverconsState(state, pSearchStateSpace);
+			}
+			else
+			{
+				UpdateSuccsofOverconsState(state, pSearchStateSpace);
+			}
 		}
 		else
 		{
@@ -584,11 +572,12 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 			UpdateSetMembership(state);
 
 
-#if AD_SEARCH_FORWARD == 0
-			UpdatePredsofUnderconsState(state, pSearchStateSpace);
-#else
-			UpdateSuccsofUnderconsState(state, pSearchStateSpace);
-#endif
+			if(!bforwardsearch)
+			{
+				UpdatePredsofUnderconsState(state, pSearchStateSpace);
+			}
+			else
+				UpdateSuccsofUnderconsState(state, pSearchStateSpace);
 
 		}
       
@@ -879,57 +868,58 @@ int ADPlanner::SetSearchStartState(int SearchStartStateID, ADSearchStateSpace_t*
 int ADPlanner::ReconstructPath(ADSearchStateSpace_t* pSearchStateSpace)
 {	
 
-#if AD_SEARCH_FORWARD == 1 //nothing to do, if search is backward
-
-	CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
-	CMDPSTATE* PredMDPstate;
-	ADState *predstateinfo, *stateinfo;
-		
-	int steps = 0;
-	const int max_steps = 10000;
-	while(MDPstate != pSearchStateSpace->searchstartstate && steps < max_steps)
+	//nothing to do, if search is backward
+	if(bforwardsearch)
 	{
-		steps++;
 
-		stateinfo = (ADState*)MDPstate->PlannerSpecificData;
-
-		if(stateinfo->g == INFINITECOST)
-		{	
-			//printf("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
-			//exit(1);
-			return -1;
-		}
-
-		if(stateinfo->bestpredstate == NULL)
+		CMDPSTATE* MDPstate = pSearchStateSpace->searchgoalstate;
+		CMDPSTATE* PredMDPstate;
+		ADState *predstateinfo, *stateinfo;
+			
+		int steps = 0;
+		const int max_steps = 10000;
+		while(MDPstate != pSearchStateSpace->searchstartstate && steps < max_steps)
 		{
-			printf("ERROR in ReconstructPath: bestpred is NULL\n");
-			exit(1);
+			steps++;
+
+			stateinfo = (ADState*)MDPstate->PlannerSpecificData;
+
+			if(stateinfo->g == INFINITECOST)
+			{	
+				//printf("ERROR in ReconstructPath: g of the state on the path is INFINITE\n");
+				//exit(1);
+				return -1;
+			}
+
+			if(stateinfo->bestpredstate == NULL)
+			{
+				printf("ERROR in ReconstructPath: bestpred is NULL\n");
+				exit(1);
+			}
+
+			//get the parent state
+			PredMDPstate = stateinfo->bestpredstate;
+			predstateinfo = (ADState*)PredMDPstate->PlannerSpecificData;
+
+			//set its best next info
+			predstateinfo->bestnextstate = MDPstate;
+
+			//check the decrease of g-values along the path
+			if(predstateinfo->v >= stateinfo->g)
+			{
+				printf("ERROR in ReconstructPath: g-values are non-decreasing\n");
+				exit(1);
+			}
+
+			//transition back
+			MDPstate = PredMDPstate;
 		}
 
-		//get the parent state
-		PredMDPstate = stateinfo->bestpredstate;
-		predstateinfo = (ADState*)PredMDPstate->PlannerSpecificData;
-
-		//set its best next info
-		predstateinfo->bestnextstate = MDPstate;
-
-		//check the decrease of g-values along the path
-		if(predstateinfo->v >= stateinfo->g)
-		{
-			printf("ERROR in ReconstructPath: g-values are non-decreasing\n");
-			exit(1);
+		if(MDPstate != pSearchStateSpace->searchstartstate){
+			printf("ERROR: Failed to reconstruct path (compute bestnextstate pointers): steps processed=%d\n", steps);
+			return 0;
 		}
-
-		//transition back
-		MDPstate = PredMDPstate;
 	}
-
-	if(MDPstate != pSearchStateSpace->searchstartstate){
-		printf("ERROR: Failed to reconstruct path (compute bestnextstate pointers): steps processed=%d\n", steps);
-		return 0;
-	}
-
-#endif
 
 	return 1;
 }
@@ -979,11 +969,10 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 
 		searchstateinfo = (ADState*)state->PlannerSpecificData;
 
-#if AD_SEARCH_FORWARD == 1
-		nextstate = searchstateinfo->bestpredstate;
-#else
-		nextstate = searchstateinfo->bestnextstate;
-#endif
+		if(bforwardsearch)
+			nextstate = searchstateinfo->bestpredstate;
+		else
+			nextstate = searchstateinfo->bestnextstate;
 
 		if(nextstate == NULL)
 		{
@@ -997,9 +986,11 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 		}
 
 		int costToGoal = PathCost - costFromStart;
-#if AD_SEARCH_FORWARD == 0 //otherwise this cost is not even set
-		costFromStart += searchstateinfo->costtobestnextstate;
-#endif
+		if(!bforwardsearch)
+		{
+			//otherwise this cost is not even set
+			costFromStart += searchstateinfo->costtobestnextstate;
+		}
 
 
 #if DEBUG
@@ -1007,12 +998,13 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 			fprintf(fOut, "ERROR: underconsistent state %d is encountered\n", state->StateID);
 		}
 
-#if AD_SEARCH_FORWARD == 0 //otherwise this cost is not even set
-		if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
+		if(!bforwardsearch) //otherwise this cost is not even set
 		{
-			fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
+			if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
+			{
+				fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
+			}
 		}
-#endif
 #endif
 
 		PrintSearchState(searchstateinfo, fDeb);	
@@ -1050,20 +1042,22 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 	CMDPSTATE* goalstate = NULL;
 	CMDPSTATE* startstate=NULL;
 
-#if AD_SEARCH_FORWARD == 1
-	startstate = pSearchStateSpace->searchstartstate;
-	goalstate = pSearchStateSpace->searchgoalstate;
+	if(bforwardsearch)
+	{
+		startstate = pSearchStateSpace->searchstartstate;
+		goalstate = pSearchStateSpace->searchgoalstate;
 
-	//reconstruct the path by setting bestnextstate pointers appropriately
-	if(ReconstructPath(pSearchStateSpace) != 1){
-		solcost = INFINITECOST;
-		return wholePathIds;
+		//reconstruct the path by setting bestnextstate pointers appropriately
+		if(ReconstructPath(pSearchStateSpace) != 1){
+			solcost = INFINITECOST;
+			return wholePathIds;
+		}
 	}
-#else
-	startstate = pSearchStateSpace->searchgoalstate;
-	goalstate = pSearchStateSpace->searchstartstate;
-
-#endif
+	else
+	{
+		startstate = pSearchStateSpace->searchgoalstate;
+		goalstate = pSearchStateSpace->searchstartstate;
+	}
 
 
 #if DEBUG
@@ -1319,21 +1313,22 @@ int ADPlanner::set_goal(int goal_stateID)
 	//it will be a new search iteration
 	pSearchStateSpace_->iteration++;
 
-#if AD_SEARCH_FORWARD == 1
-
-    if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
-        {
-            printf("ERROR: failed to set search goal state\n");
-            return 0;
-        }
-#else
-
-    if(SetSearchStartState(goal_stateID, pSearchStateSpace_) != 1)
-        {
-            printf("ERROR: failed to set search start state\n");
-            return 0;
-        }
-#endif
+	if(bforwardsearch)
+	{
+		if(SetSearchGoalState(goal_stateID, pSearchStateSpace_) != 1)
+			{
+				printf("ERROR: failed to set search goal state\n");
+				return 0;
+			}
+	}
+	else
+	{
+		if(SetSearchStartState(goal_stateID, pSearchStateSpace_) != 1)
+			{
+				printf("ERROR: failed to set search start state\n");
+				return 0;
+			}
+	}
 
     return 1;
 }
@@ -1346,38 +1341,36 @@ int ADPlanner::set_start(int start_stateID)
 	pSearchStateSpace_->iteration++;
 
 
-#if AD_SEARCH_FORWARD == 1
-
-    if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
-        {
-            printf("ERROR: failed to set search start state\n");
-            return 0;
-        }
-#else
-
-    if(SetSearchGoalState(start_stateID, pSearchStateSpace_) != 1)
-        {
-            printf("ERROR: failed to set search goal state\n");
-            return 0;
-        }
-#endif
+	if(bforwardsearch)
+	{
+		if(SetSearchStartState(start_stateID, pSearchStateSpace_) != 1)
+			{
+				printf("ERROR: failed to set search start state\n");
+				return 0;
+			}
+	}
+	else
+	{
+		if(SetSearchGoalState(start_stateID, pSearchStateSpace_) != 1)
+			{
+				printf("ERROR: failed to set search goal state\n");
+				return 0;
+			}
+	}
 
     return 1;
 
 }
 
 
-#if AD_SEARCH_FORWARD == 1
 void ADPlanner::update_succs_of_changededges(vector<int>* succstatesIDV)
 {
 	Update_SearchSuccs_of_ChangedEdges(succstatesIDV);
 }
-#else
 void ADPlanner::update_preds_of_changededges(vector<int>* predstatesIDV)
 {
 	Update_SearchSuccs_of_ChangedEdges(predstatesIDV);
 }
-#endif
 
 
 int ADPlanner::force_planning_from_scratch()

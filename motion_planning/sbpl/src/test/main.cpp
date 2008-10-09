@@ -200,9 +200,9 @@ int planandnavigate2d(int argc, char *argv[])
 
 	//create a planner
 	vector<int> solution_stateIDs_V;
-	bool bforwardsearch = true;
-    ARAPlanner planner(&environment_nav2D, bforwardsearch);
-	//ADPlanner planner(&environment_nav2D, bforwardsearch);
+	bool bforwardsearch = false;
+    //ARAPlanner planner(&environment_nav2D, bforwardsearch);
+	ADPlanner planner(&environment_nav2D, bforwardsearch);
 
 
 
@@ -246,12 +246,12 @@ int planandnavigate2d(int argc, char *argv[])
         }
 		
         if(bChanges){
-            planner.costs_changed(); //use by ARA* planner (non-incremental)
+            //planner.costs_changed(); //use by ARA* planner (non-incremental)
 
 			//get the affected states
-			//environment_nav2D.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
+			environment_nav2D.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
 			//let know the incremental planner about them
-			//planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
+			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
         }
 
 

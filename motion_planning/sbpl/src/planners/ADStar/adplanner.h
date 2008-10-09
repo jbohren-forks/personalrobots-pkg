@@ -31,8 +31,6 @@
 
 
 //---configuration----
-#define AD_SEARCH_FORWARD 0 //TODO - get rid of
-
 
 //control of EPS
 #define AD_DEFAULT_INITIAL_EPS	    10.0
@@ -65,10 +63,9 @@ public:
 	short unsigned int iterationclosed;
 	short unsigned int callnumberaccessed;
 	short unsigned int numofexpands;
-#if AD_SEARCH_FORWARD == 1
 	//best predecessor and the action from it, used only in forward searches
 	CMDPSTATE *bestpredstate;
-#endif
+
 	//the next state if executing best action
 	CMDPSTATE  *bestnextstate;
 	unsigned int costtobestnextstate;
@@ -114,11 +111,8 @@ public:
     int set_start(int start_stateID);
     int force_planning_from_scratch(); 
 
-#if AD_SEARCH_FORWARD == 1
 	void update_succs_of_changededges(vector<int>* succsIDV);
-#else
 	void update_preds_of_changededges(vector<int>* predsIDV);
-#endif
 
 
 
@@ -162,18 +156,13 @@ private:
 	void DeleteSearchStateData(ADState* state);
 
 
-#if !AD_SEARCH_FORWARD
 	//used for backward search
 	void UpdatePredsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
 	void UpdatePredsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
-#endif
 
-#if AD_SEARCH_FORWARD
 	//used for forward search
 	void UpdateSuccsofOverconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
 	void UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t* pSearchStateSpace);
-#endif
-
 	
 	void UpdateSetMembership(ADState* state);
 	void Recomputegval(ADState* state);
