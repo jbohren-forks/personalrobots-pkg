@@ -157,14 +157,19 @@ void HeadPanTiltController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
-  : Controller(), TF(*ros::node::instance())
+  : Controller(), TF(*ros::node::instance(),false)
 {
-  std::cout<<"Controller node created"<<endl;
   c_ = new HeadPanTiltController();
+  node = ros::node::instance();  
+  std::cout<<"Controller node created"<<endl;
+  
 }
 
 HeadPanTiltControllerNode::~HeadPanTiltControllerNode()
 {
+  node->unadvertise_service(service_prefix + "/set_command_array");
+  node->unadvertise_service(service_prefix + "/get_command");
+
   delete c_;
 }
 
@@ -176,16 +181,15 @@ void HeadPanTiltControllerNode::update()
 bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
   std::cout<<"LOADING HEAD PAN TILT CONTROLLER NODE"<<std::endl;
-  ros::node * const node = ros::node::instance();
-  string prefix = config->Attribute("name");
-  std::cout<<"the prefix is "<<prefix<<std::endl;
+  service_prefix = config->Attribute("name");
+  std::cout<<"the prefix is "<<service_prefix<<std::endl;
   
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointSrv, this);
-    node->advertise_service(prefix + "/get_command", &HeadPanTiltControllerNode::getJointCmd, this);
-    node->advertise_service(prefix + "/track_point", &HeadPanTiltControllerNode::trackPoint, this);
+    node->advertise_service(service_prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointSrv, this);
+    node->advertise_service(service_prefix + "/get_command", &HeadPanTiltControllerNode::getJointCmd, this);
+    node->advertise_service(service_prefix + "/track_point", &HeadPanTiltControllerNode::trackPoint, this);
 
     return true;
   }
@@ -203,8 +207,8 @@ bool HeadPanTiltControllerNode::setJointSrv(pr2_mechanism_controllers::SetJointC
 
   c_->setJointCmd(pos,names);
   c_->getJointCmd(cmds);
-resp.set_positions_vec(pos);
-resp.set_names_vec(cmds.names);
+  resp.set_positions_vec(pos);
+  resp.set_names_vec(cmds.names);
   
   return true;
 }
@@ -231,22 +235,29 @@ bool HeadPanTiltControllerNode::trackPoint(pr2_mechanism_controllers::TrackPoint
   point.frame = req.target.header.frame_id;
   
   libTF::TFPoint pan_point = TF.transformPoint("head_pan",point);
-  double head_pan_angle= atan2(pan_point.y, pan_point.x); 
+  int id = c_->getJointControllerByName("head_pan_joint");
+  assert(id>=0);
+  double mes_pan_angle = c_->joint_position_controllers_[id]->getMeasuredPosition();
+  double head_pan_angle= mes_pan_angle + atan2(pan_point.y, pan_point.x); 
   
   names.push_back("head_pan_joint");
   pos.push_back(head_pan_angle);
   
   libTF::TFPoint tilt_point = TF.transformPoint("head_tilt",point);
-  double head_tilt_angle= atan2(tilt_point.z, tilt_point.x);
+  id = c_->getJointControllerByName("head_tilt_joint");
+  assert(id>=0);
+  double mes_tilt_angle= c_->joint_position_controllers_[id]->getMeasuredPosition();
+  double head_tilt_angle= mes_tilt_angle + atan2(-tilt_point.z, tilt_point.x);
   
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);
   
      
   c_->setJointCmd(pos,names);
-  resp.pan_angle = head_pan_angle;
-  resp.tilt_angle = head_tilt_angle;
+  resp.pan_angle = mes_pan_angle;//head_pan_angle;
+  resp.tilt_angle = mes_tilt_angle;//head_tilt_angle;
   return true;
 }
+
 
 

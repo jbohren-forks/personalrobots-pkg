@@ -116,6 +116,7 @@ public:
 
   unsigned int num_joints_;
   std::vector<JointPositionController *> joint_position_controllers_;  
+  int getJointControllerByName(std::string name);
 
 private:
 
@@ -130,7 +131,7 @@ private:
 
   void updateJointControllers(void);
 
-  int getJointControllerByName(std::string name);
+  
   
   
 
@@ -186,10 +187,15 @@ class HeadPanTiltControllerNode : public Controller
                         pr2_mechanism_controllers::GetJointCmd::response &resp);
     
     bool trackPoint(pr2_mechanism_controllers::TrackPoint::request &req,                                    
-                      pr2_mechanism_controllers::TrackPoint::response &resp);
+                     pr2_mechanism_controllers::TrackPoint::response &resp);
   private:
     pr2_mechanism_controllers::JointCmd msg_;   //The message used by the ROS callback
     HeadPanTiltController *c_;
+    std::string service_prefix;
+    /*
+     * \brief pointer to ros node
+     */
+    ros::node *node;
     rosTFClient TF;
 
 };
