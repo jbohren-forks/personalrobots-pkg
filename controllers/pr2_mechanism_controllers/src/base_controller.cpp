@@ -59,6 +59,10 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
    cmd_vel_.y = 0;
    cmd_vel_.z = 0;
 
+   desired_vel_.x = 0;
+   desired_vel_.y = 0;
+   desired_vel_.z = 0;
+
    cmd_vel_t_.x = 0;
    cmd_vel_t_.y = 0;
    cmd_vel_t_.z = 0;
@@ -123,9 +127,9 @@ libTF::Vector BaseController::getCommand()// Return the current position command
 {
    libTF::Vector cmd_vel;
    pthread_mutex_lock(&base_controller_lock_);
-   cmd_vel.x = cmd_vel_t_.x;
-   cmd_vel.y = cmd_vel_t_.y;
-   cmd_vel.z = cmd_vel_t_.z;
+   cmd_vel.x = cmd_vel_.x;
+   cmd_vel.y = cmd_vel_.y;
+   cmd_vel.z = cmd_vel_.z;
    pthread_mutex_unlock(&base_controller_lock_);
    return cmd_vel;
 }
@@ -382,18 +386,24 @@ void BaseController::update()
    {
       if(pthread_mutex_trylock(&base_controller_lock_)==0)
       {
-         cmd_vel_ = interpolateCommand(cmd_vel_,cmd_vel_t_,max_accel_,dT);
+         desired_vel_.x = cmd_vel_t_.x;
+         desired_vel_.y = cmd_vel_t_.y;
+         desired_vel_.z = cmd_vel_t_.z;
          new_cmd_available_ = false;
          pthread_mutex_unlock(&base_controller_lock_);
       }
 //  std::cout << "command received in update : " << cmd_vel_ << std::endl;
    }
+
    if((current_time - cmd_received_timestamp_) > timeout_)
    {
       cmd_vel_.x = 0;
       cmd_vel_.y = 0;
       cmd_vel_.z = 0;
    }
+   else
+      cmd_vel_ = interpolateCommand(cmd_vel_,desired_vel_,max_accel_,dT);
+
 
    getJointValues();
 

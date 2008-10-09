@@ -160,7 +160,7 @@ int main( int argc, char** argv )
 
   libTF::Vector ang_rates;
   ros::Time start_time = ros::Time::now();
-  ros::Duration sleep_time(0.01);
+  ros::Duration sleep_time(0.1);
   while(!done)
   {
      ros::Duration delta_time = ros::Time::now() - start_time;
@@ -168,9 +168,9 @@ int main( int argc, char** argv )
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
-//    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
-     //   cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
-     cout << delta_time.toSec() << "  " << run_time << endl;
+    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
+    cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
+    //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
   }

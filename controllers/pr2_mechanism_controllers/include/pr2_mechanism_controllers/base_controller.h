@@ -248,6 +248,7 @@ namespace controller
      */
     libTF::Vector cmd_vel_t_;
 
+    libTF::Vector desired_vel_;
 
     /*!
      * \brief Position of the robot computed by odometry.
