@@ -17,11 +17,39 @@
   <include filename="../pr2/head_defs.xml" />
 
   <joint name="base_joint" type="planar" />
-
-  <link name="torso">
+  <link name="base">
     <parent name="world" />
-    <origin xyz="0 0 0.05" rpy="0 0 0" />
     <joint name="base_joint" />
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <inertial>
+      <mass value="1000" />
+      <com xyz=" 0 0 0 " />
+      <inertia ixx="10000"  ixy="0"  ixz="0" iyy="10000" iyz="0" izz="10000" />
+    </inertial>
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0 " />
+      <map name="gazebo_material" flag="gazebo">
+        <elem key="material">Gazebo/Red</elem>
+      </map>
+      <geometry name="pr2_base_mesh_file">
+        <mesh scale="1 1 0.01" />
+      </geometry>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
+      <geometry name="base_collision_geom">
+        <box size="1 1 0.01" />
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="torso_joint" type="fixed" />
+  <link name="torso">
+    <parent name="base" />
+    <origin xyz="0 0 0.5" rpy="0 0 0" />
+    <joint name="torso_joint" />
 
     <inertial>
       <mass value="1000" />

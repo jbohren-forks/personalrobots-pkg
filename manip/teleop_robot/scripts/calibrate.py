@@ -36,6 +36,7 @@
 
 import rostools
 import copy
+import threading
 
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
@@ -93,10 +94,19 @@ def calibrate_blindly(config):
     print "Calibrated"
 
 
+class FunThread(threading.Thread):
+    def __init__(self, fun, *args):
+        self.fun = fun
+        self.start()
+
+    def run():
+        self.fun(*args)
+
+
 calibrate_optically('''
 <controller name="cal_shoulder_pan" topic="cal_shoulder_pan" type="JointCalibrationControllerNode">
   <calibrate joint="shoulder_pan_right_joint"
-             actuator="shoulder_pan_right_act"
+             actuator="shoulder_pan_right_motor"
              transmission="shoulder_pan_right_trans"
              velocity="0.6" />
   <pid p="7" i="0.5" d="0" iClamp="1.0" />
@@ -106,8 +116,8 @@ calibrate_optically('''
 calibrate_optically('''
 <controller name="cal_shoulder_pitch" topic="cal_shoulder_pitch" type="JointCalibrationControllerNode">
   <calibrate joint="shoulder_pitch_right_joint"
-             actuator="shoulder_lift_right_act"
-             transmission="shoulder_lift_right_trans"
+             actuator="shoulder_pitch_right_motor"
+             transmission="shoulder_pitch_right_trans"
              velocity="0.6" />
   <pid p="7" i="0.5" d="0" iClamp="1.0" />
 </controller>
@@ -116,7 +126,7 @@ calibrate_optically('''
 calibrate_blindly('''
 <controller name="upperarm_calibration" topic="upperarm_calibration" type="JointBlindCalibrationControllerNode">
   <calibrate joint="upperarm_roll_right_joint"
-             actuator="upperarm_roll_right_act"
+             actuator="upperarm_roll_right_motor"
              transmission="upperarm_roll_right_trans"
              velocity="0.9" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
@@ -126,9 +136,9 @@ calibrate_blindly('''
 
 calibrate_blindly('''
 <controller name="cal_elbow" topic="cal_elbow" type="JointBlindCalibrationControllerNode">
-  <calibrate joint="elbow_right_joint"
-             actuator="elbow_right_act"
-             transmission="elbow_right_trans"
+  <calibrate joint="elbow_flex_right_joint"
+             actuator="elbow_flex_right_motor"
+             transmission="elbow_flex_right_trans"
              velocity="0.8" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
 </controller>

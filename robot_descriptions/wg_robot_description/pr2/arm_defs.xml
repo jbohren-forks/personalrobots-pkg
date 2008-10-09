@@ -242,7 +242,7 @@
     </link>
 
     <transmission type="SimpleTransmission" name="shoulder_pitch_${suffix}_trans">
-      <actuator name="shoulder_pitch_${suffix}_act" />
+      <actuator name="shoulder_pitch_${suffix}_motor" />
       <joint name="shoulder_pitch_${suffix}_joint" />
       <mechanicalReduction>57.36</mechanicalReduction>
     </transmission>
