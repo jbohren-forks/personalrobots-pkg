@@ -456,9 +456,8 @@ void ADPlanner::UpdateSuccsofUnderconsState(ADState* state, ADSearchStateSpace_t
 	for(int sind = 0; sind < (int)SuccIDV.size(); sind++)
 	{
 		CMDPSTATE* SuccMDPState = GetState(SuccIDV[sind], pSearchStateSpace);
-		int cost = CostV[sind];
-
 		succstate = (ADState*)(SuccMDPState->PlannerSpecificData);
+
 		if(succstate->callnumberaccessed != pSearchStateSpace->callnumber)
 			ReInitializeSearchStateInfo(succstate, pSearchStateSpace);
 
