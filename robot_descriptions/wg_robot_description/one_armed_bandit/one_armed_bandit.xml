@@ -48,7 +48,7 @@
   <joint name="torso_joint" type="fixed" />
   <link name="torso">
     <parent name="base" />
-    <origin xyz="0 0 0.5" rpy="0 0 0" />
+    <origin xyz="0 0 1.0414" rpy="0 0 0" />
     <joint name="torso_joint" />
 
     <inertial>
@@ -63,7 +63,7 @@
         <elem key="material">Gazebo/Red</elem>
       </map>
       <geometry name="pr2_base_mesh_file">
-        <mesh scale="1 1 0.01" />
+        <mesh filename="torso" />
       </geometry>
     </visual>
 
@@ -75,9 +75,11 @@
     </collision>
   </link>
 
-  <pr2_upperarm suffix="right" reflect="-1" parent="torso" />
+  <pr2_upperarm suffix="right" reflect="-1" parent="torso">
+    <origin xyz="0 -0.188 0" rpy="0 0 0" />
+  </pr2_upperarm>
   <tilting_hokuyo name="tilt_laser" parent="torso">
-    <origin xyz="0.1 0.1 1.15" rpy="0 0 0" />
+    <origin xyz="0.0635 0.01905 0.2413" rpy="0 0 0" />
   </tilting_hokuyo>
 
 

@@ -9,7 +9,7 @@
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
-      <calibration reference_position="-0.35" values="0 0" />
+      <calibration reference_position="-0.28" values="0 0" />
     </joint>
 
     <link name="${name}_mount"> 

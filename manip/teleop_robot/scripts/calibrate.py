@@ -144,3 +144,13 @@ calibrate_blindly('''
 </controller>
 
 ''')
+
+calibrate_optically('''
+<controller name="cal_laser_tilt" topic="cal_laser_tilt" type="JointCalibrationControllerNode">
+  <calibrate joint="tilt_laser_mount_joint"
+             actuator="tilt_laser_motor"
+             transmission="tilt_laser_mount_trans"
+             velocity="-0.6" />
+  <pid p=".25" i="0.1" d="0" iClamp="1.0" />
+</controller>
+''')

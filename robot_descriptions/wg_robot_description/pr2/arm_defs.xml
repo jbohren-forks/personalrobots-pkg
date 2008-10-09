@@ -154,7 +154,7 @@
 
 
 
-  <macro name="pr2_upperarm" params="suffix parent reflect">
+  <macro name="pr2_upperarm" params="suffix parent reflect *origin">
 
     <!-- Shoulder pan -->
 
@@ -169,7 +169,7 @@
 
     <link name="shoulder_pan_${suffix}">
       <parent name="${parent}" />
-      <origin xyz="0 ${reflect*0.188} 0" rpy="0 0 0" />
+      <insert_block name="origin" />
       <joint name="shoulder_pan_${suffix}_joint" />
       <inertial>
         <mass value="16.29553" />
@@ -352,8 +352,10 @@
   </macro>
 
 
-  <macro name="pr2_arm" params="suffix parent reflect">
-    <pr2_upperarm suffix="${suffix}" reflect="${reflect}" parent="${parent}" />
+  <macro name="pr2_arm" params="suffix parent reflect *origin">
+    <pr2_upperarm suffix="${suffix}" reflect="${reflect}" parent="${parent}">
+      <insert_block name="origin" />
+    </pr2_upperarm>
     <pr2_forearm suffix="${suffix}" reflect="${reflect}" parent="elbow_flex_${suffix}" />
   </macro>
 
