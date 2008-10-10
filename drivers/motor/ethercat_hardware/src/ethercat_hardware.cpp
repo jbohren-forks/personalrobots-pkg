@@ -81,6 +81,11 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     node->log(ros::FATAL, "Unable to initialize interface: %s", interface);
   }
 
+  if (set_socket_timeout(ni_, 1000*500))
+  {
+    node->log(ros::FATAL, "Unable to change socket timeout");
+  } 
+
   // Initialize Application Layer (AL)
   EtherCAT_DataLinkLayer::instance()->attach(ni_);
   if ((al_ = EtherCAT_AL::instance()) == NULL)
@@ -93,6 +98,11 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   {
     node->log(ros::FATAL, "Unable to locate any slaves");
   }
+
+  if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 50)))
+  {
+    node->log(ros::FATAL, "Unable to change socket timeout");
+  } 
 
   // Initialize Master
   if ((em_ = EtherCAT_Master::instance()) == NULL)
