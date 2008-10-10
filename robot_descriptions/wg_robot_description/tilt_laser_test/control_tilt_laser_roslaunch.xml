@@ -1,0 +1,3 @@
+<launch> 
+    <node pkg="mechanism_control" type="mech.py" args="sp tilt_laser_controller.xml" />
+</launch>
