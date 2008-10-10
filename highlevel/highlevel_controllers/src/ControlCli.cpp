@@ -38,7 +38,11 @@
 #include <ros/node.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <mechanism_control/MechanismState.h>
+#include <highlevel_controllers/PlugInGoal.h>
+#include <highlevel_controllers/PlugInState.h>
 #include <robot_srvs/PlanNames.h>
+#include <robot_msgs/BatteryState.h>
+
 
 using namespace std;
 
@@ -48,6 +52,9 @@ public:
     dead = false;
     advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+    advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
+    advertise<highlevel_controllers::PlugInGoal>("plugin_goal", 1);
+    advertise<robot_msgs::BatteryState>("battery_state", 1);
     advertise<mechanism_control::MechanismState>("mechanism_state", 1);
     runCLI();
   }
@@ -76,16 +83,43 @@ private:
     names.push_back("gripper_roll_right_joint");
   }
 
+  float enterValue(float min, float max) {
+    char buff[256];
+    while(1) {
+      memset(buff, 0, 256);
+      float value = min - 1;
+      fgets(buff, 256, stdin);
+      if (buff[0] != '\n') {
+	if (sscanf(buff, "%f", &value) && value < min || value > max) {
+	  printf("Please enter a value in the range [%f, %f]\n", min, max);
+	} else {
+	  return value;
+	}
+      }
+    }
+    return 0;
+  }
+
   void runCLI() {
-    printf("Type:\nI\tInitialize States\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
+    printf("Type:\nI\tInitialize States\nP\tPlugin or Unplug.\nB\tSet Battery State\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
     char c = '\n';
 
     while (c == '\n' || c == '\r') {
       c = getchar();
     }
 
-
-    if (c == 'N') {
+    if (c == 'B') {
+      printf("Enter Watts:\n");
+      robot_msgs::BatteryState battery;
+      battery.power_consumption = enterValue(-10000, 10000);
+      publish<robot_msgs::BatteryState>("battery_state", battery);
+    } else if (c == 'P') {
+      printf("Enter 0 to unplug, 1 to plug.\n");
+      highlevel_controllers::PlugInGoal goal;
+      goal.goal = (int)enterValue(0, 1);
+      goal.enable = 1;
+      publish<highlevel_controllers::PlugInGoal>("plugin_goal", goal);
+    } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");
       
       robot_srvs::PlanNames::request namesReq;
@@ -157,20 +191,8 @@ private:
       for (unsigned int i = 0; i < names.size(); i++) {
         printf("Enter the angle for joint %s in radians:\n",
                names[i].c_str());
-        float value = -1000000;
-        char buff[256];
-      RETRY:
-        memset(buff, 0, 256);
-        value = -1000000;
-        fgets(buff, 256, stdin);
-        if (buff[0] == '\n') { goto RETRY; }
-        sscanf(buff, "%f", &value);
-        if (value < -M_PI * 2 || value > M_PI * 2) {
-          printf("Please enter a value in the range [-2PI, 2PI]\n");
-          goto RETRY;
-        }
 	goalMsg.configuration[i].name = names[i];
-	goalMsg.configuration[i].position = value;
+	goalMsg.configuration[i].position = enterValue(-2 * M_PI, 2 * M_PI);
         
       }
       printf("Publishing:");

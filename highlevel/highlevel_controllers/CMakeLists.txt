@@ -3,6 +3,8 @@ include(rosbuild)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
 
+genmsg()
+
 # Library
 #link_directories(/wg/stor1/mcgann/pr/trajectory_rollout/lib)
 #link_directories(/wg/stor1/eitan/ros/ros-pkg/trajectory_rollout/lib)
@@ -22,6 +24,9 @@ rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
 # IndefiniteNav
 rospack_add_executable(indefinite_nav src/indefinite_nav.cpp)
 
+# PlugIn
+rospack_add_executable(plug_in src/PlugInController.cpp)
+
 #CLI
-#rospack_add_executable(cli src/ControlCli.cpp)
+rospack_add_executable(cli src/ControlCli.cpp)
 
