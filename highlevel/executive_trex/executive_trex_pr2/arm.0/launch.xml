@@ -1,5 +1,5 @@
 <launch>
-  <!--master auto="start"/-->
+  <master auto="start"/>
   <group name="wg">
 
     <!-- Sends robot description data to the param server -->
