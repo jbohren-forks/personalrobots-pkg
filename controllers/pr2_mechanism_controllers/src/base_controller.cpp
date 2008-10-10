@@ -575,6 +575,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
    odom_publish_rate_ = 100.0;
    odom_publish_delta_t_ = 1.0/odom_publish_rate_;
    publisher_ = NULL;
+   transform_publisher_ = NULL;
 }
 
 BaseControllerNode::~BaseControllerNode()
@@ -586,7 +587,7 @@ BaseControllerNode::~BaseControllerNode()
 
    publisher_->stop();
    delete publisher_;
-
+   delete transform_publisher_;
    delete c_;
 }
 
@@ -611,6 +612,23 @@ void BaseControllerNode::update()
       publisher_->unlockAndPublish() ;
       last_time_message_sent_ = time;
     }
+
+    if (transform_publisher_->trylock())
+      {
+      double x=0,y=0,yaw=0,vx,vy,vyaw;
+      this->getOdometry(x,y,yaw,vx,vy,vyaw);
+      rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
+        out.header.stamp.from_double(time);
+        out.header.frame_id = "odom";
+        out.parent = "base";
+        out.x = x;
+        out.y = y;
+        out.z = 0;
+        out.roll = 0;
+	out.pitch = 0;
+	out.yaw = yaw;
+      transform_publisher_->unlockAndPublish() ;
+      }
   }
 
    if(0)
@@ -708,7 +726,14 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     delete publisher_ ;
   publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
 
-  node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,1000);
+
+  if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete transform_publisher_ ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 1) ;
+
+  node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
+
+  transform_publisher_->msg_.set_quaternions_size(1);
 
   if(odom_publish_rate_ > 1e-5)
      odom_publish_delta_t_ = 1.0/odom_publish_rate_;
