@@ -11,5 +11,6 @@
     <cpp cflags="-I${prefix}/libspnav/include/"
          lflags="-L${prefix}/libspnav/lib/ -lspnav -lX11" />
   </export>
+  <versioncontrol type="svn" url="https://spacenav.svn.sourceforge.net/svnroot/spacenav/trunk" />
 </package>
 
