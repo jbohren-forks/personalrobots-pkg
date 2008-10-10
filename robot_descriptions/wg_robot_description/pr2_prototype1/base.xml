@@ -15,7 +15,7 @@
   <const name="base_size_z" value="0.26" />   <!-- for defining collision geometry -->
   
   <const name="wheel_length" value="0.03" />  <!-- FIXME -->
-  <const name="wheel_radius" value="0.079" />   <!-- mp 20080801 -->
+  <const name="wheel_radius" value="0.075" />   <!-- mp 20080801 -->
   
   <const name="base_caster_offset_x" value="0.2225" />   <!-- mp 20080801 -->
   <const name="base_caster_offset_y" value="0.2225" />   <!-- mp 20080801 -->
