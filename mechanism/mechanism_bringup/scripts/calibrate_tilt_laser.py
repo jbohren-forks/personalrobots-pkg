@@ -32,10 +32,11 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Written by Timothy Hunter <tjhunter@willowgarage.com> 2008
+# Author: Stuart Glaser
 
 import rostools
 import copy
+import threading
 
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
@@ -89,22 +90,21 @@ def calibrate_blindly(config):
         print "FAIL"
         return
     name = resp.name[0]
-    do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
-    do_calibration()
-    kill_controller(name)
+    try:
+        do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
+        do_calibration()
+    finally:
+        kill_controller(name)
     print "Calibrated"
 
-#calibrate_optically('''
-#<controller name="laser_tilt_calibration" topic="laser_tilt_calibration" type="JointCalibrationControllerNode">
-#  <param joint_name="tilt_laser_mount_joint" actuator_name="tilt_laser_motor" transmission_name="tilt_laser_mount_trans" velocity="0.2"/>
-#  <controller name="laser_controller" topic="laser_controller" type="JointVelocityController">
-#    <filter smoothing_factor="0.1" />
-#    <joint name="tilt_laser_mount_joint">
-#      <pid p="1" i="0" d="0.00" iClamp="1" />
-#    </joint>
-#  </controller>
-#</controller>
-#''')
+
+class FunThread(threading.Thread):
+    def __init__(self, fun, *args):
+        self.fun = fun
+        self.start()
+
+    def run():
+        self.fun(*args)
 
 calibrate_optically('''
 <controller name="cal_laser_tilt" topic="cal_laser_tilt" type="JointCalibrationControllerNode">
