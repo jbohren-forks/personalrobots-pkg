@@ -91,26 +91,24 @@ BaseController::~BaseController()
 {
 }
 
-// Set the joint position command
+// Set the base velocity command
 void BaseController::setCommand(libTF::Vector cmd_vel)
 {
 
-   pthread_mutex_lock(&base_controller_lock_);
-   cmd_vel_t_.x = clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
-   cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
-   cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
-   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
-         std::cout << "BaseController:: command received: " << cmd_vel_t_;
-      std::cout << "BaseController:: command current: " << cmd_vel_;
-
-      for(int i=0; i < (int) num_wheels_; i++)
-    {
-     std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
-      }
-   cout << "Base Odometry: Velocity " << base_odom_velocity_;
-//   cout << "Base Odometry: Position " << base_odom_position_;
-   new_cmd_available_ = true;
-   pthread_mutex_unlock(&base_controller_lock_);
+  pthread_mutex_lock(&base_controller_lock_);
+  cmd_vel_t_.x = clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
+  cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
+  cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
+  cmd_received_timestamp_ = robot_state_->hw_->current_time_;
+  std::cout << "BaseController:: command received: " << cmd_vel_t_;
+  std::cout << "BaseController:: command current: " << cmd_vel_;
+  std::cout << "Base Odometry: Velocity " << base_odom_velocity_;
+  for(int i=0; i < (int) num_wheels_; i++)
+  {
+    std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
+  }
+  new_cmd_available_ = true;
+  pthread_mutex_unlock(&base_controller_lock_);
 }
 
 libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT)
@@ -119,15 +117,6 @@ libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vec
    result.x = start.x + clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
    result.y = start.y + clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
    result.z = start.z + clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
-
-   //   cout << "Interpolate command start: " << start << endl << endl;
-
-   //   cout << "Interpolate command end: " << end << endl << endl;
-
-   //   cout << "Interpolate command result: " << result << endl << endl;
-
-   //   cout << "dT: " << dT << endl; 
-
    return result;
 }
 
@@ -178,18 +167,18 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 
       if(joint_name.find("caster") != string::npos)
       {
-         std::cout << " assigning casters " << joint_name << std::endl;
+//         std::cout << " assigning casters " << joint_name << std::endl;
          base_object.local_id_ = num_casters_;
          base_casters_.push_back(base_object);
          steer_angle_actual_.push_back(0);
          steer_velocity_desired_.push_back(0);
          num_casters_++;
-         cout << "base_casters" << "::  " << base_object;
+//         cout << "base_casters" << "::  " << base_object;
       }
 
       if(joint_name.find("wheel") != string::npos)
       {
-         std::cout << " assigning wheels " << joint_name << std::endl;
+//         std::cout << " assigning wheels " << joint_name << std::endl;
          base_object.local_id_ = num_wheels_;
          if(joint_name.find("_r_") != string::npos)
             base_object.direction_multiplier_ = 1;
@@ -243,14 +232,10 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
 
    std::cout << " base controller name: " << config->Attribute("name") << std::endl;
    TiXmlElement *elt = config->FirstChildElement("controller");
-//  std::cout << " child " << std::endl << *elt << std::endl;
    std::vector<JointControlParam> jcp_vec;
    JointControlParam jcp;
    while (elt){
       TiXmlElement *jnt = elt->FirstChildElement("joint");
-      //std::cout << "joint snippit" << std::endl << *jnt << std::endl;
-
-      // TODO: error check if xml attributes/elements are missing
       jcp.p_gain = atof(jnt->FirstChildElement("pid")->Attribute("p"));
       jcp.i_gain = atof(jnt->FirstChildElement("pid")->Attribute("i"));
       jcp.d_gain = atof(jnt->FirstChildElement("pid")->Attribute("d"));
@@ -261,7 +246,7 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
 
       std::cout << "name:" << jcp.joint_name << std::endl;
       std::cout << "controller type:" << jcp.control_type << std::endl;
-      std::cout << " sub controller : " << elt->Attribute("name") << std::endl;
+      std::cout << "sub controller: " << elt->Attribute("name") << std::endl;
 
       elt = elt->NextSiblingElement("controller");
    }
@@ -290,19 +275,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
          }
       }
       std::cout << "*************************************" << std::endl;
-//    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
       elt = config->NextSiblingElement("map");
    }
-
-   cout << "kp_speed  " << kp_speed_ << endl;
-   cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
-   cout << "timeout  " << timeout_ << endl;
-   cout << "max_x_dot  " << (max_vel_.x) << endl;
-   cout << "max_y_dot  " << (max_vel_.y) << endl;
-   cout << "max_yaw_dot  " << (max_vel_.z) << endl;
-   cout << "max_x_accel  " << (max_accel_.x) << endl;
-   cout << "max_y_accel  " << (max_accel_.y) << endl;
-   cout << "max_yaw_accel  " << (max_accel_.z) << endl;
 
    cout << "kp_speed  " << kp_speed_ << endl;
    cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
@@ -330,11 +304,6 @@ void BaseController::getJointValues()
 
    for(int i=0; i < num_wheels_; i++)
       wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
-
-//   for(int i=0; i < num_casters_; i++)
-//     std::cout << " caster angles " << i << " : " << steer_angle_actual_[i] << std::endl;
-//   for(int i=0; i < num_wheels_; i++)
-//     std::cout << " wheel rates " << i << " : " << wheel_speed_actual_[i] << std::endl;
 }
 
 void BaseController::computeWheelPositions()
@@ -344,16 +313,10 @@ void BaseController::computeWheelPositions()
    for(int i=0; i < num_wheels_; i++)
    {
       steer_angle = base_wheels_[i].parent_->joint_state_->position_;
-//    res1 = rotate2D(base_wheels_[i].pos_,steer_angle);
-//    cout << "init position" << base_wheels_[i].pos_.x << " " << base_wheels_[i].pos_.y << " " << base_wheels_[i].pos_.z << endl;
       res1 = base_wheels_[i].pos_.rot2D(steer_angle);
-//    cout << "rotated position" << res1;
       res1 += base_wheels_[i].parent_->pos_;
-//    cout << "added position" << res1;
       base_wheels_position_[i] = res1;
-      //cout << "base_wheels_position_(" << i << ")" << base_wheels_position_[i];
    }
-//  exit(-1);
 }
 
 void BaseController::update()
@@ -371,7 +334,6 @@ void BaseController::update()
          new_cmd_available_ = false;
          pthread_mutex_unlock(&base_controller_lock_);
       }
-   //  std::cout << "BaseController::update current command: " << cmd_vel_ << std::endl;
    }
 
    if((current_time - cmd_received_timestamp_) > timeout_)
@@ -386,16 +348,10 @@ void BaseController::update()
 
    getJointValues();
 
-   computeCommands();
+   computeJointCommands();
 
-   setCommands();
+   setJointCommands();
 
-/*  computeWheelPositions();
-
-computeAndSetCasterSteer();
-
-computeAndSetWheelSpeeds();
-*/
    computeOdometry(current_time);
 
    updateJointControllers();
@@ -404,23 +360,23 @@ computeAndSetWheelSpeeds();
 }
 
 
-void BaseController::computeCommands()
+void BaseController::computeJointCommands()
 {
    computeWheelPositions();
 
-   computeCasterSteer();
+   computeDesiredCasterSteer();
 
-   computeWheelSpeeds();  
+   computeDesiredWheelSpeeds();  
 }
 
-void BaseController::setCommands()
+void BaseController::setJointCommands()
 {
-   setCasterSteer();
+   setDesiredCasterSteer();
 
-   setWheelSpeeds();
+   setDesiredWheelSpeeds();
 }
 
-void BaseController::computeCasterSteer()
+void BaseController::computeDesiredCasterSteer()
 {
    libTF::Vector result;
 
@@ -433,7 +389,6 @@ void BaseController::computeCasterSteer()
 
       steer_angle_desired = atan2(result.y,result.x);
       steer_angle_desired_m_pi = normalize_angle(steer_angle_desired+M_PI);
-//    printf("Steering cmd choices: %d, %f, %f\n",i,steer_angle_desired,steer_angle_desired_m_pi);
 
       error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
       error_steer_m_pi = shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
@@ -444,18 +399,16 @@ void BaseController::computeCasterSteer()
          steer_angle_desired = steer_angle_desired_m_pi;
       }
       steer_velocity_desired_[i] =  -kp_speed_*error_steer;
-
-      //  printf("Steering cmd: %d, %f, %f, %f\n",i,steer_angle_desired,steer_angle_actual_[i],error_steer);
    }
 }
 
-void BaseController::setCasterSteer()
+void BaseController::setDesiredCasterSteer()
 {
    for(int i=0; i < num_casters_; i++)
       base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
 }
 
-void BaseController::computeWheelSpeeds()
+void BaseController::computeDesiredWheelSpeeds()
 {
    libTF::Vector wheel_point_velocity;
    libTF::Vector wheel_point_velocity_projected;
@@ -472,19 +425,14 @@ void BaseController::computeWheelSpeeds()
       caster_2d_velocity.z = caster_steer_vel_gain_*steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
       steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
       wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
-//    cout << "gain " << caster_steer_vel_gain_ << endl;
-//    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
 
       wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-//    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
       wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
       wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-
-//    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd_[i] << ", actual wheel speed" << wheel_speed_actual_[i] << ", caster: " << wheel_caster_steer_component.x/wheel_radius_ << ", caster_steer " << caster_2d_velocity.z << std::endl;
    }
 }
 
-void BaseController::setWheelSpeeds()
+void BaseController::setDesiredWheelSpeeds()
 {
    for(int i=0; i < (int) num_wheels_; i++)
    {
@@ -492,53 +440,6 @@ void BaseController::setWheelSpeeds()
    }
 }
 
-void BaseController::computeAndSetCasterSteer()
-{
-   libTF::Vector result;
-   double steer_angle_desired;
-   double error_steer;
-   for(int i=0; i < num_casters_; i++)
-   {
-      result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
-      steer_angle_desired = atan2(result.y,result.x);
-      //     steer_angle_desired =  modNPiBy2(steer_angle_desired);//Clean steer Angle
-
-      error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
-      steer_velocity_desired_[i] = -kp_speed_*error_steer;
-      //    std::cout << "setting steering velocity " << i << " : " << steer_velocity_desired_[i] << " kp: " << kp_speed_ << "error_steer" << error_steer << std::endl;
-      base_casters_[i].controller_.setCommand(steer_velocity_desired_[i]);
-   }
-}
-
-void BaseController::computeAndSetWheelSpeeds()
-{
-   libTF::Vector wheel_point_velocity;
-   libTF::Vector wheel_point_velocity_projected;
-   libTF::Vector wheel_caster_steer_component;
-   libTF::Vector caster_2d_velocity;
-
-   caster_2d_velocity.x = 0;
-   caster_2d_velocity.y = 0;
-   caster_2d_velocity.z = 0;
-
-   double wheel_speed_cmd = 0;
-   double steer_angle_actual = 0;
-   for(int i=0; i < (int) num_wheels_; i++)
-   {
-
-      caster_2d_velocity.z = steer_velocity_desired_[base_wheels_[i].parent_->local_id_];
-      steer_angle_actual = base_wheels_[i].parent_->joint_state_->position_;
-      wheel_point_velocity = computePointVelocity2D(base_wheels_position_[i],cmd_vel_);
-      //    cout << "wheel_point_velocity" << wheel_point_velocity << ",pos::" << base_wheels_position_[i] << ",cmd::" << cmd_vel_ << endl;
-      wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-      //    wheel_point_velocity_projected = rotate2D(wheel_point_velocity,-steer_angle_actual);
-      wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
-      wheel_speed_cmd = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
-      //    std::cout << "setting wheel speed " << i << " : " << wheel_speed_cmd << " r:" << wheel_radius_ << std::endl;
-      base_wheels_[i].controller_.setCommand(base_wheels_[i].direction_multiplier_*wheel_speed_cmd);
-   }
-
-}
 
 void BaseController::updateJointControllers()
 {
@@ -561,197 +462,8 @@ void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
    odom_msg_.vel.x  = base_odom_velocity_.x;
    odom_msg_.vel.y  = base_odom_velocity_.y;
    odom_msg_.vel.th = base_odom_velocity_.z;
-
-//   cout << "Base Odometry: Velocity " << base_odom_velocity_;
-//   cout << "Base Odometry: Position " << base_odom_position_;
 }
 
-ROS_REGISTER_CONTROLLER(BaseControllerNode)
-   BaseControllerNode::BaseControllerNode() : odom_publish_count_(10), odom_publish_counter_(0)
-{
-   c_ = new BaseController();
-   node = ros::node::instance();
-   last_time_message_sent_ = 0.0;
-   odom_publish_rate_ = 100.0;
-   odom_publish_delta_t_ = 1.0/odom_publish_rate_;
-   publisher_ = NULL;
-   transform_publisher_ = NULL;
-}
-
-BaseControllerNode::~BaseControllerNode()
-{
-   node->unadvertise_service(service_prefix + "/set_command");
-   node->unadvertise_service(service_prefix + "/get_actual");
-//   node->unadvertise("odom");
-   node->unsubscribe("cmd_vel");
-
-   publisher_->stop();
-   delete publisher_;
-   delete transform_publisher_;
-   delete c_;
-}
-
-void BaseControllerNode::setPublishCount(int publish_count)
-{
-   odom_publish_count_ = publish_count;
-};
-
-void BaseControllerNode::update()
-{
-   double time = c_->robot_state_->hw_->current_time_;
-
-   c_->update();
-   c_->setOdomMessage(odom_msg_);
-
-   //if(0)
-	  if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
-  {
-    if (publisher_->trylock())
-    {
-      c_->setOdomMessage(publisher_->msg_);
-      publisher_->unlockAndPublish() ;
-      last_time_message_sent_ = time;
-    }
-
-    if (transform_publisher_->trylock())
-      {
-      double x=0,y=0,yaw=0,vx,vy,vyaw;
-      this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
-        out.header.stamp.from_double(time);
-        out.header.frame_id = "odom";
-        out.parent = "base";
-        out.x = x;
-        out.y = y;
-        out.z = 0;
-        out.roll = 0;
-	out.pitch = 0;
-	out.yaw = yaw;
-      transform_publisher_->unlockAndPublish() ;
-      }
-  }
-
-   if(0)
-//  if(odom_publish_counter_ > odom_publish_count_) // FIXME: switch to time based rate limiting
-   {
-      (ros::g_node)->publish("odom", odom_msg_);
-      odom_publish_counter_ = 0;
-
-      // FIXME: should this be in here?
-      /***************************************************************/
-      /*                                                             */
-      /*  frame transforms                                           */
-      /*                                                             */
-      /*  TODO: should we send z, roll, pitch, yaw? seems to confuse */
-      /*        localization                                         */
-      /*                                                             */
-      /***************************************************************/
-      double x=0,y=0,yaw=0,vx,vy,vyaw;
-      this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      this->tfs->sendInverseEuler("odom",
-                                  "base",
-                                  x, y, 0,
-                                  yaw, 0, 0,
-                                  odom_msg_.header.stamp);
-
-   }
-
-   odom_publish_counter_++;
-
-}
-
-bool BaseControllerNode::setCommand(
-   pr2_mechanism_controllers::SetBaseCommand::request &req,
-   pr2_mechanism_controllers::SetBaseCommand::response &resp)
-{
-   libTF::Vector command;
-   command.x = req.x_vel;
-   command.y = req.y_vel;
-   command.z = req.theta_vel;
-   c_->setCommand(command);
-   command = c_->getCommand();
-   resp.x_vel = command.x;
-   resp.y_vel = command.y;
-   resp.theta_vel = command.z;
-      std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
-   return true;
-}
-
-void BaseControllerNode::setCommand(double vx, double vy, double vw)
-{
-   libTF::Vector command;
-   command.x = vx;
-   command.y = vy;
-   command.z = vw;
-   c_->setCommand(command);
-      std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
-   //std::cout << "command received : " << vx << "," << vy << "," << vw << std::endl;
-}
-
-
-bool BaseControllerNode::getCommand(
-   pr2_mechanism_controllers::GetBaseCommand::request &req,
-   pr2_mechanism_controllers::GetBaseCommand::response &resp)
-{
-   libTF::Vector command;
-   command = c_->getCommand();
-   resp.x_vel = command.x;
-   resp.y_vel = command.y;
-   resp.theta_vel = command.z;
-
-   return true;
-}
-
-bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
-{
-   service_prefix = config->Attribute("name");
-
-   assert(robot_state); //this happens, see pr ticket 351,but not sure why yet
-
-   if(!c_->initXml(robot_state, config))
-      return false;
-
-   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
-   node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
-
-//   node->advertise<std_msgs::RobotBase2DOdom>("odom",10);
-
-  // receive messages from 2dnav stack
-  node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
-
-   // for publishing odometry frame transforms odom
-//   this->tfs = new rosTFServer(*node); //, true, 1 * 1000000000ULL, 0ULL);
-
-  if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete publisher_ ;
-  publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
-
-
-  if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
-    delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 1) ;
-
-  node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
-
-  transform_publisher_->msg_.set_quaternions_size(1);
-
-  if(odom_publish_rate_ > 1e-5)
-     odom_publish_delta_t_ = 1.0/odom_publish_rate_;
-
-   return true;
-}
-
-void BaseControllerNode::CmdBaseVelReceived()
-{
-   this->ros_lock_.lock();
-   this->setCommand(baseVelMsg.vx,baseVelMsg.vy,baseVelMsg.vw);
-   this->ros_lock_.unlock();
-}
-
-void BaseControllerNode::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)
-{
-   c_->getOdometry(x,y,w,vx,vy,vw);
-}
 
 void BaseController::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)
 {
@@ -779,7 +491,6 @@ Vector BaseController::computePointVelocity2D(const Vector& pos, const Vector& v
 void BaseController::computeOdometry(double time)
 {
    double dt = time-last_time_;
-//   libTF::Vector base_odom_delta = rotate2D(base_odom_velocity_*dt,base_odom_position_.z);
 
    computeBaseVelocity();
 
@@ -825,8 +536,6 @@ void BaseController::computeBaseVelocity()
    base_odom_velocity_.x = (double)D.element(0,0);
    base_odom_velocity_.y = (double)D.element(1,0);
    base_odom_velocity_.z = (double)D.element(2,0);
-
-//  cout << "Base odom velocity " << base_odom_velocity_ << endl;
 }
 
 Matrix BaseController::pseudoInverse(const Matrix M)
@@ -860,16 +569,12 @@ NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::M
 
    weight_matrix = ident_matrix;
 
-//  cout << "num_wheels: " << num_wheels_ << endl;
    for(int i=0; i < max_iter; i++)
    {
       a_fit = weight_matrix * A;
       b_fit = weight_matrix * b;
       x_fit = pseudoInverse(a_fit)*b_fit;
       residual = b - A * x_fit;
-
-//    cout << "Residual::" << residual << endl;
-
 
       for(int j=1; j <= num_wheels_; j++)
       {
@@ -886,15 +591,7 @@ NEWMAT::Matrix BaseController::iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::M
             residual(sw,1) = residual(fw,1);
          }
       }
-
-//    cout << "afit::" << a_fit << endl << endl;
-//    cout << "bfit::" << b_fit << endl << endl;
-//    cout << "xfit::" << endl << x_fit << endl;
-//    cout << "Residual::" << residual << endl;
-
       weight_matrix = findWeightMatrix(residual,weight_type);
-
-//    cout << "weight_matrix" << endl << weight_matrix  << endl << endl;
    }
    return x_fit;
 };
@@ -951,3 +648,151 @@ NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::st
 };
 
 
+
+
+
+ROS_REGISTER_CONTROLLER(BaseControllerNode)
+
+BaseControllerNode::BaseControllerNode()
+{
+   c_ = new BaseController();
+   node = ros::node::instance();
+   last_time_message_sent_ = 0.0;
+   odom_publish_rate_ = 100.0;
+   odom_publish_delta_t_ = 1.0/odom_publish_rate_;
+   publisher_ = NULL;
+   transform_publisher_ = NULL;
+}
+
+BaseControllerNode::~BaseControllerNode()
+{
+   node->unadvertise_service(service_prefix + "/set_command");
+   node->unadvertise_service(service_prefix + "/get_actual");
+   node->unsubscribe("cmd_vel");
+
+   publisher_->stop();
+   transform_publisher_->stop();
+   delete publisher_;
+   delete transform_publisher_;
+   delete c_;
+}
+
+void BaseControllerNode::update()
+{
+  double time = c_->robot_state_->hw_->current_time_;
+
+  c_->update();
+  c_->setOdomMessage(odom_msg_);
+
+  if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
+  {
+    if (publisher_->trylock())
+    {
+      c_->setOdomMessage(publisher_->msg_);
+      publisher_->unlockAndPublish() ;
+      last_time_message_sent_ = time;
+    }
+
+    if (transform_publisher_->trylock())
+    {
+      double x=0,y=0,yaw=0,vx,vy,vyaw;
+      this->getOdometry(x,y,yaw,vx,vy,vyaw);
+      rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
+      out.header.stamp.from_double(time);
+      out.header.frame_id = "odom";
+      out.parent = "base";
+      out.x = x;
+      out.y = y;
+      out.z = 0;
+      out.roll = 0;
+      out.pitch = 0;
+      out.yaw = yaw;
+      transform_publisher_->unlockAndPublish() ;
+    }
+  }
+}
+
+bool BaseControllerNode::setCommand(
+   pr2_mechanism_controllers::SetBaseCommand::request &req,
+   pr2_mechanism_controllers::SetBaseCommand::response &resp)
+{
+   libTF::Vector command;
+   command.x = req.x_vel;
+   command.y = req.y_vel;
+   command.z = req.theta_vel;
+   c_->setCommand(command);
+   command = c_->getCommand();
+   resp.x_vel = command.x;
+   resp.y_vel = command.y;
+   resp.theta_vel = command.z;
+   return true;
+}
+
+void BaseControllerNode::setCommand(double vx, double vy, double vw)
+{
+   libTF::Vector command;
+   command.x = vx;
+   command.y = vy;
+   command.z = vw;
+   c_->setCommand(command);
+   std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
+}
+
+
+bool BaseControllerNode::getCommand(
+   pr2_mechanism_controllers::GetBaseCommand::request &req,
+   pr2_mechanism_controllers::GetBaseCommand::response &resp)
+{
+   libTF::Vector command;
+   command = c_->getCommand();
+   resp.x_vel = command.x;
+   resp.y_vel = command.y;
+   resp.theta_vel = command.z;
+
+   return true;
+}
+
+bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
+{
+   service_prefix = config->Attribute("name");
+
+   assert(robot_state); //this happens, see pr ticket 351,but not sure why yet
+
+   if(!c_->initXml(robot_state, config))
+      return false;
+
+   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
+   node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
+
+ 
+  if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete publisher_ ;
+  publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
+
+
+  if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete transform_publisher_ ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArrayBase", 1) ;
+
+  node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
+
+  transform_publisher_->msg_.set_eulers_size(1);
+
+  if(odom_publish_rate_ > 1e-5)
+     odom_publish_delta_t_ = 1.0/odom_publish_rate_;
+
+   return true;
+}
+
+void BaseControllerNode::CmdBaseVelReceived()
+{
+   this->ros_lock_.lock();
+   this->setCommand(baseVelMsg.vx,baseVelMsg.vy,baseVelMsg.vw);
+   this->ros_lock_.unlock();
+}
+
+void BaseControllerNode::getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw)
+{
+   c_->getOdometry(x,y,w,vx,vy,vw);
+}

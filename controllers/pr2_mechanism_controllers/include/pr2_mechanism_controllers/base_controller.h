@@ -122,24 +122,23 @@ namespace controller
 
 
     /*!
-     * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
+     * \brief Specify the commanded velocity for the controller using a libTF::Vector data structure
      *
-     * \param double pos Position command to issue
+     * \param libTF::Vector cmd_vel with cmd_vel.x and cmd_vel.y specifying the forward and sideways speeds respectively while cmd_vel.z specifies the rotational speed.
      */
     void setCommand(libTF::Vector cmd_vel);
 
 
     /*!
-     * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
+     * \brief Get the current command. This is the command that is currently being executed by the controller and may differ from the actual command issued because of the imposition of acceleration constraints.
      */
     libTF::Vector getCommand();
 
 
     /*!
      * \brief (a) Updates commands to caster and wheels.
-     *        (b) Computes odometry
-     *        (c) Publishes odometry
-     *  Should be called at regular intervals
+     *         
+     *  Called every timestep in realtime
      */
     virtual void update();
 
@@ -169,35 +168,80 @@ namespace controller
 
     /*!
      * \brief returns odometry data
+     * \param x position estimate from odometry (origin is at the starting point when controller was started)
+     * \param y position estimate from odometry (origin is at the starting point when controller was started)
+     * \param w position estimate from odometry (origin is at the starting point when controller was started)
+     * \param vx velocity estimate from odometry (in the coordinate frame of the base)
+     * \param vy velocity estimate from odometry (in the coordinate frame of the base)
+     * \param vz velocity estimate from odometry (in the coordinate frame of the base)
      */
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     /*!
-     * \brief set odometry message
+     * \brief Fill a structure of the form std_msgs::RobotBase2DOdom with odometry data
      */
     void setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_);
 
-    void computeWheelSpeeds();
+    /*!
+     * \brief compute the desired wheel speeds
+     */
+    void computeDesiredWheelSpeeds();
 
-    void setWheelSpeeds();
+    /*!
+     * \brief set the desired wheel speeds in the joint speed controllers
+     */
+    void setDesiredWheelSpeeds();
 
-    void computeCasterSteer();
+    /*!
+     * \brief compute the desired caster steer
+     */
+    void computeDesiredCasterSteer();
 
-    void setCasterSteer();
+    /*!
+     * \brief set the desired caster steer
+     */
+    void setDesiredCasterSteer();
 
-    void computeCommands();
+    /*!
+     * \brief compute the joint commands 
+     */
+    void computeJointCommands();
 
-    void setCommands();
+    /*!
+     * \brief set the joint commands
+     */
+    void setJointCommands();
 
+    /*!
+     * \brief figure out the command for the next time step by interpolating from start to end while staying within rate limits
+     * specified by max_rate
+     * \param start - libTF::Vector specifying the current command
+     * \param end - libTF::Vector specifying the desired command
+     * \param max_rate - libTF::Vector specifying maximum rate of change allowed
+     * \param dT - timestep
+     */
     libTF::Vector interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT);
 
-   NEWMAT::Matrix iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter);
+    /*!
+     * \brief iterative least squares implementation to compute odometry. This implementation computes and returns x where A*x = b
+     * \param A - newmat matrix of size m x n
+     * \param b - newmat matrix of size m x 1
+     * \param weight_type - type of weighting used in the iterations, possible choices include BubeLagan, L1norm, fair, Cauchy, Gaussian
+     * \param max_iter - maximum number of iterations
+     * \return x - the n x 1 result as a NEWMAT matrix
+     */
+    NEWMAT::Matrix iterativeLeastSquares(NEWMAT::Matrix A, NEWMAT::Matrix b, std::string weight_type, int max_iter);
 
+    /*!
+     * \brief returns the weight matrix given the weight type and residual
+     * \param residual (a m x 1 NEWMAT matrix)
+     * \param weight_type - std::string specification of weight type
+     */
     NEWMAT::Matrix findWeightMatrix(NEWMAT::Matrix residual, std::string weight_type);
 
-    int ils_max_iterations_;
+    int ils_max_iterations_; /** maximum number of iterations for Iterative Least Squares */
 
-    std::string ils_weight_type_;
+    std::string ils_weight_type_; /** std::string specification of weight type used for IRLS*/
 
     /*!
      * \brief Robot representation
@@ -206,7 +250,7 @@ namespace controller
 
     private:
 
-    bool new_cmd_available_;
+    bool new_cmd_available_; /** true when new command received by node */
 
     /*!
      * \brief number of wheels
@@ -239,16 +283,20 @@ namespace controller
 
 
     /*!
-     * \brief speed command vector used internally
+     * \brief speed command vector used internally to represent the current commanded speed
      */
     libTF::Vector cmd_vel_;
 
 
     /*!
-     * \brief Input speed command vector.
+     * \brief Input speed command vector represents the desired speed requested by the node. Note that this may differ from the 
+     * current commanded speed due to acceleration limits imposed by the controller. This 
      */
     libTF::Vector cmd_vel_t_;
 
+    /*!
+     * \brief Input speed command vector represents the desired speed requested by the node. 
+     */
     libTF::Vector desired_vel_;
 
     /*!
@@ -263,31 +311,16 @@ namespace controller
     libTF::Vector base_odom_velocity_;
 
 
-    /*!
-     * \brief Computed the desired steer angle for the caster.
-     */
-    void computeAndSetCasterSteer();
-
-
-    /*!
-     * \brief Computed the desired wheel speeds.
-     */
-    void computeAndSetWheelSpeeds();
-
-
     double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
-
 
     std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
 
     std::vector<double> wheel_speed_cmd_; /** vector of desired wheel speeds */
 
-
     /*!
      * \brief compute the speed of the base for odometry calculations
      */
     void computeBaseVelocity();
-
 
     /*!
      * \brief compute the odometry
@@ -315,6 +348,10 @@ namespace controller
      */
     void getJointValues();
 
+    /*!
+     * \brief function to add parameter to map so it can be initialized easily from the xml file
+     */
+    void addParamToMap(std::string key, double *value); 
 
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
@@ -322,24 +359,19 @@ namespace controller
 
     double last_time_; /** time corresponding to when update was last called */
 
+    double caster_steer_vel_gain_; /** gain specifying the amount of help given by the wheels to the caster steer degree of freedom */
 
-    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odometry message will be published on ROS */
+    double cmd_received_timestamp_; /** timestamp corresponding to when the command received by the node */
 
-    double caster_steer_vel_gain_;
+    double timeout_; /** timeout specifying time that the controller waits before setting the current velocity command to zero */
 
-    double cmd_received_timestamp_;
+    libTF::Vector max_vel_; /** velocity limits specified externally */
 
-    double timeout_;
+    libTF::Vector max_accel_; /** acceleration limits specified externally */
 
-    libTF::Vector max_vel_; 
-
-    libTF::Vector max_accel_;
-
-    double MAX_DT_;
+    double MAX_DT_; /** maximum dT used in computation of interpolated velocity command */
 
     std::map<std::string, double*> param_map_; /*< map from pointers to the params to string names */
-
-    void addParamToMap(std::string key, double *value);
 
   };
 
@@ -357,9 +389,25 @@ namespace controller
      */
     ~BaseControllerNode();
 
+    /*!
+     * realtime safe update call
+     */
     void update();
 
+    /*!
+     * \brief initialize the node from a xml config specification
+     */
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+
+    /*!
+     * \brief get back the odometry values from the controller itself
+     * \param x position computed by odometry 
+     * \param y position computed by odometry
+     * \param theta (yaw) computed by odometry
+     * \param x velocity computed by odometry (in local frame)
+     * \param y velocity computed by odometry (in local frame)
+     * \param theta velocity computed by odometry (in local frame)
+     */
     void getOdometry(double &x, double &y, double &w, double &vx, double &vy, double &vw);
 
     // Services
@@ -369,6 +417,9 @@ namespace controller
     bool getCommand(pr2_mechanism_controllers::GetBaseCommand::request &req,
                     pr2_mechanism_controllers::GetBaseCommand::response &resp);
 
+    /*
+     * \brief callback function for setting the desired velocity using a topic 
+     */
     void setCommand(double vx, double vy, double vw);
 
     BaseController *c_;
@@ -387,37 +438,20 @@ namespace controller
     ros::thread::mutex ros_lock_;
 
     /*!
-     * \brief frame transform server for publishing base odometry frame
-     */
-    private: rosTFServer *tfs;
-
-    /*!
-     * \brief Set the publish count (number of update ticks between odometry message publishing).
-     */
-    void setPublishCount(int publish_count); //FIXME: use time rather than count
-
-    /*!
      * \brief std_msgs representation of an odometry message
      */
     std_msgs::RobotBase2DOdom odom_msg_;
 
-    /*!
-     * \brief number of update ticks to wait before publishing ROS odom message
-     * defaults to 10.
-     */
-    int odom_publish_count_; //FIXME: use time rather than count
+    double last_time_message_sent_ ;/** last time odometry message was published */
 
-    double last_time_message_sent_ ;
+    double odom_publish_delta_t_; /** time after which odometry message will be published */
 
-    double odom_publish_delta_t_;
-
-    double odom_publish_rate_;
+    double odom_publish_rate_; /** rate at which odometry message will be published ( = 1/odom_publish_delta_t_)*/
            
-    misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
+    misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
-    misc_utils::RealtimePublisher <rosTF::TransformArray>* transform_publisher_ ;  //!< Publishes the m_scanner_signal msg from the update() realtime loop
+    misc_utils::RealtimePublisher <rosTF::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
-    int odom_publish_counter_; /** counter - when this exceeds odom_publish_count_, the odomeetry message will be published on ROS */ //FIXME: use time rather than count
   };
 
     /** \brief A namespace ostream overload for displaying parameters */
