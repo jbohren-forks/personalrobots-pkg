@@ -12,7 +12,7 @@ rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControlle
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm
-#rospack_add_executable(move_arm src/MoveArm.cpp)
+rospack_add_executable(move_arm src/MoveArm.cpp)
 
 # MoveBase
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
