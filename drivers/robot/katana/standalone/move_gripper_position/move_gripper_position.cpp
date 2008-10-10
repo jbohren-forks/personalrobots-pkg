@@ -27,73 +27,24 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-/* Inputs:
-* 		argv[1] = name of file containing sequence of joint angles (in radians)
-*			argv[2] = desired time for movement between each joint angle position (in seconds)
-*  Note: joint angles file should contain each joint angle configuration on a single line 
-* 			(tab delimited).
-*/
-
 #include <cstdio>
-#include <cstdlib>
-#include <vector>
 #include "katana/katana.h"
-using std::vector;
+#include "ros/common.h"
 
-int main(int argc, const char *argv[])
+int main(int argc, char **argv)
 {
-  if (argc < 2)
+  if ( (argc != 2) || (atof(argv[1]) < 0) || (atof(argv[1]) > 1) )
   {
-    printf("usage: ./move_sequence jointAnglesFilename pause_length (optional)\n");
-    return 1;
+    printf("usage: move_gripper fraction_open\n");
+    printf("  where fraction_open is a number between 0 and 1 \n");
+    return 0;
   }
-
-
   Katana *k = new Katana();
-	vector<vector<double> > jointAngles;
-	unsigned int numberOfMotors = k->get_number_of_motors();
+  printf("moving gripper\n");
+  k->move_gripper(atof(argv[1]));
 
-	// Read in joint angle sequence from file.
-	const char *jointsFilename = argv[1];
-	FILE* f = fopen(jointsFilename, "r");
-  if(f == NULL) {
-		printf("Couldn't read joint angles file.\n");
-		return 1;
-	}
-	char buf[512];
-	char* p = NULL;
-	char delim[] = "\t\n ";
-	while (fgets(buf, 512, f) != NULL) {
-		vector<double> joints;
-		p = strtok(buf, delim);  
-		joints.push_back(atof(p)*(180./3.14159));
-//		joints.push_back(atof(p)*(3.14159/180.));
-		for (unsigned int i=1; i<numberOfMotors; i++) {
-			p = strtok(NULL,delim);
-		  joints.push_back(atof(p)*(180./3.14159));
-			//joints.push_back(atof(p)*(3.14159/180.));
-		}
-    jointAngles.push_back(joints);
-	}
-
-	for (unsigned int i=0; i<jointAngles.size(); i++) {
-		printf("joints: %f %f %f %f %f\n",jointAngles[i][0],jointAngles[i][1],
-					jointAngles[i][2],jointAngles[i][3],jointAngles[i][4]);
-	}
-
-  // length in seconds to pause between joint positions.
-  int pause_len = 0;
-  if (argc == 3) pause_len = atoi(argv[2]);
-	
-  // Send motor commands to katana.
-  for (int i=0; i<jointAngles.size(); i++) {
-    k->goto_joint_position_deg(jointAngles[i][0], jointAngles[i][1], 
-      jointAngles[i][2], jointAngles[i][3], jointAngles[i][4]); 
-    sleep(pause_len);
-  }
-
+  printf("done.\n");
   delete k;
-
   return 0;
 }
 

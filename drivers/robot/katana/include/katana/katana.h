@@ -29,6 +29,7 @@ public:
                                double j4, double j5);
   bool goto_joint_position_rad(int motor_idx, double motor_position);
   bool gripper_fullstop(bool open_gripper); // for binary gripper control
+  bool move_gripper(double fraction_open); // for opening gripper to specified value
   bool goto_upright();
   bool move_for_camera();
   bool move_back_to_upright();

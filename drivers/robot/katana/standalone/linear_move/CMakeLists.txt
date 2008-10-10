@@ -1,0 +1,2 @@
+rospack_add_executable(linear_move linear_move.cpp)
+target_link_libraries(linear_move katana)

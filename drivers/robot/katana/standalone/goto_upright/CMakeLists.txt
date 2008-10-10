@@ -1,0 +1,2 @@
+rospack_add_executable(goto_upright goto_upright.cpp)
+target_link_libraries(goto_upright katana)

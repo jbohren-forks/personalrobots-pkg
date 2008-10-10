@@ -1,0 +1,2 @@
+rospack_add_executable(move_sequence move_sequence.cpp)
+target_link_libraries(move_sequence katana)

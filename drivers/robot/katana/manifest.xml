@@ -9,5 +9,8 @@
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="kni-3.9.2"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/libkatana -lkatana"/>
+  </export>
 </package>
 

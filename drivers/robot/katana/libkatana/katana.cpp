@@ -134,6 +134,25 @@ bool Katana::gripper_fullstop(bool open_gripper)
   }
 }
 
+bool Katana::move_gripper(double fraction_open)
+{
+  try
+  {
+    kni_lm->moveGripper(true, 10000, fraction_open);
+    return true;
+  }
+  catch(MotorTimeoutException &e)
+  {
+    cout << "Motor timeout." << endl;
+    return true;
+  }
+  catch(MotorCrashException &e)
+  {
+    cout << "Motor crashed." << endl;
+    return false;
+  }
+}
+
 vector<double> Katana::get_joint_positions()
 {
   return kni_lm->getJointAngles();
@@ -255,6 +274,12 @@ bool Katana::ik_joint_solution(double x, double y, double z, double theta_init, 
 	
 	for (theta = theta_init; theta<=(theta_init+max_theta_dev); theta+=angle_inc) 
 	{
+    /*if (theta > PI) {
+      theta = 2*PI - theta;
+    }*/
+    if (theta > PI) {
+      break;
+    }
 		cout << "theta = " << theta*180/PI << endl;
   	success = ik_calculate(x,y,z,phi,theta,psi,solution);
 		if (success) {

@@ -11,6 +11,7 @@
 #include "std_srvs/ArmCSpaceString.h"
 #include "std_srvs/ArmCSpaceSeqString.h"
 #include "std_srvs/UInt32String.h"
+#include "std_srvs/Float32String.h"
 #include "std_srvs/KatanaIK.h"
 #include "std_srvs/KatanaPose.h"
 
@@ -33,6 +34,7 @@ class KatanaServer : public ros::node
       advertise_service("katana_move_joint_sequence_rad_service", &KatanaServer::moveJointsSeqRad);
       advertise_service("katana_move_joint_sequence_deg_service", &KatanaServer::moveJointsSeqDeg);
       advertise_service("katana_gripper_cmd_service", &KatanaServer::gripperCmd);
+      advertise_service("katana_gripper_position_service", &KatanaServer::gripperPositionCmd);
       advertise_service("katana_ik_calculate_service", &KatanaServer::ik_calculate_srv);
       advertise_service("katana_get_pose_service", &KatanaServer::get_current_pose);
       advertise_service("katana_move_linear_service", &KatanaServer::move_robot_linear);
@@ -198,6 +200,21 @@ class KatanaServer : public ros::node
 			}
       return (success);
     }
+
+    bool gripperPositionCmd(std_srvs::Float32String::request &req,
+                       std_srvs::Float32String::response &res)
+    {
+      bool success = katana->move_gripper(req.value);
+      if (success) {
+        res.str = "Done";
+        cout << "Done!" << endl;
+      } else {
+        res.str = "Error";
+        cout << "Error!" << endl;
+      }
+      return (success);
+    }
+
     
     bool moveJointsSeqDeg(std_srvs::ArmCSpaceSeqString::request &req,
                    std_srvs::ArmCSpaceSeqString::response &res)

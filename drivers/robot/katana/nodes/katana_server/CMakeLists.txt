@@ -1,0 +1,2 @@
+rospack_add_executable(katana_server katana_server.cpp)
+target_link_libraries(katana_server katana)

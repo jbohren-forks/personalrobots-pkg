@@ -1,0 +1,2 @@
+rospack_add_executable(move_joint_deg move_joint_deg.cpp)
+target_link_libraries(move_joint_deg katana)
