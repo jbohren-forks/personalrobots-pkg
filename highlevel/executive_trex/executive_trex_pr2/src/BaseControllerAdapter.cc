@@ -34,11 +34,9 @@ namespace TREX {
       const IntervalDomain& y = goalToken->getVariable("y")->lastDomain();
       const IntervalDomain& th = goalToken->getVariable("th")->lastDomain();
 
-      assertTrue(x.isSingleton() && y.isSingleton() && th.isSingleton(), "Values for dispatch are not bound");
-
-      goalMsg.goal.x = x.getSingletonValue();
-      goalMsg.goal.y = y.getSingletonValue();
-      goalMsg.goal.th= th.getSingletonValue();
+      goalMsg.goal.x = (x.isSingleton()  ? x.getSingletonValue() : (x.getLowerBound() + x.getUpperBound()) / 2);
+      goalMsg.goal.y = (y.isSingleton()  ? y.getSingletonValue() : (y.getLowerBound() + y.getUpperBound()) / 2);
+      goalMsg.goal.th = (th.isSingleton()  ? th.getSingletonValue() : (th.getLowerBound() + th.getUpperBound()) / 2);
     }
 
   };

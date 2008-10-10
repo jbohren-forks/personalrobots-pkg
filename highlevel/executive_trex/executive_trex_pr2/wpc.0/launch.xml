@@ -1,7 +1,0 @@
-<launch>
-  <master auto="start"/>
-  <group name="wg">
-    <include file="$(find executive_trex_pr2)/cfg/launch_stage.xml"/>
-    <node pkg="executive_trex_pr2" type="trex_fast" args="$(find executive_trex_pr2)/cfg/nav.cfg" respawn="false" />
-  </group>
-</launch>

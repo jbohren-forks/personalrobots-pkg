@@ -62,7 +62,7 @@ class WpcControllerTest:
         start.x = self.start[0]
         start.y = self.start[1]
         start.th = self.start[2]
-        self.pub.publish(start)
+        #self.pub.publish(start)
     
     def success(self):
         return self.allTargetsFound(self.targets_passed)

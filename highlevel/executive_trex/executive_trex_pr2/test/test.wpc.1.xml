@@ -1,14 +1,8 @@
 
 <launch>
   <master auto="start"/>
-  <include file="$(find wg_robot_description)/send.xml"/>
-  <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/mod-erratic.world" respawn="true" />
-  <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.png 0.1" respawn="true" />
-  <node pkg="wavefront_player" type="wavefront_player" respawn="true" />
-  <node pkg="amcl_player" type="amcl_player" respawn="true" />
+  <include file="$(find highlevel_controllers)/test/stage.xml" />
   <node pkg="executive_trex_pr2" type="groundtruthtransform" args="" respawn="true" />
   <node pkg="executive_trex_pr2" type="runtesttrex.sh" args="$(find executive_trex_pr2)/test/wpc.1.output $(find executive_trex_pr2)/wpc.1" respawn="false" />
-  <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
   <test test-name="executive_trex_wpc_1" pkg="executive_trex_pr2" type="test.wpc.1.py" />
 </launch>
-

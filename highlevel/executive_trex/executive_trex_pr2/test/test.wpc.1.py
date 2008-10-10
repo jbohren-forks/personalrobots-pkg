@@ -46,11 +46,10 @@ import rospy, rostest
 from std_msgs.msg import *
 
 ERROR_TOL = [1.0, 1.0]
-TARGETS = [[24.4, 18.8], [21.1, 14.5], [22.9, 11.3]]
-START_X = 23.266
-START_Y = 12.277
+TARGETS = [[20.0, 20.0], [23.0, 15.0], [21.5, 11.5]]
+START_X = 22.0
+START_Y = 12.0
 START_TH = 0
-
 
 import WpcControllerTest
         

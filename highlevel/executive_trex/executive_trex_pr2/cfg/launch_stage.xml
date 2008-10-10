@@ -1,17 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <param name="robot_y_start" value="11.277" />
-    <param name="robot_x_start" value="23.266" />
-    <param name="robot_th_start" value="1.57" />
-
-
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav-stage)/willow-erratic.world" respawn="false" />
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full.pgm 0.1" respawn="false" />
-    <node pkg="amcl_player" type="amcl_player" respawn="false" />
-    <node pkg="wavefront_player" type="wavefront_player" respawn="false" />
-    <node pkg="nav_view" type="nav_view" respawn="true"/>
-
+    <include file="$(find highlevel_controllers)/test/stage.xml" />
   </group>
 </launch>
 

@@ -2,7 +2,6 @@
   <description>A ROS node to encapsulate the TeleoReactive Executive for task level planning and control.</description>
   <author>Conor McGann</author>
   <license>BSD</license>
-  <depend package="player" />
   <depend package="std_msgs" />
   <depend package="std_srvs" />
   <depend package="pr2_msgs" />
@@ -16,7 +15,6 @@
   <depend package="nav_view" />
   <depend package="map_server" />
   <depend package="highlevel_controllers" />
-  <depend package="wavefront_player" />
   <depend package="gazebo" />
   <depend package="gazebo_plugin" />
   <depend package="world_3d_map" />

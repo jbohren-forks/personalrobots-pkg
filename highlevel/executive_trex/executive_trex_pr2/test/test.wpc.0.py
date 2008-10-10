@@ -46,9 +46,9 @@ import rospy, rostest
 from std_msgs.msg import *
 
 ERROR_TOL = [2.5, 2.5]
-TARGETS = [[24.4, 18.8],]
-START_X = 23.266
-START_Y = 12.277
+TARGETS = [[21.5, 20.0],]
+START_X = 22.0
+START_Y = 12.0
 START_TH = 0
 
 

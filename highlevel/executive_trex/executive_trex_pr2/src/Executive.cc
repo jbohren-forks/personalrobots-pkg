@@ -162,10 +162,11 @@ int main(int argc, char **argv)
   catch(const char * str){
     std::cout << str << std::endl;
   }
+  /*
   catch(...){
     std::cout << "Caught unexpected exception." << std::endl;
   }
-
+  */
   return 0;
 }
 

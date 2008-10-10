@@ -44,22 +44,22 @@ namespace TREX {
       if(stateMsg.active && state != ACTIVE){
 	state = ACTIVE;
 	lastUpdated = getCurrentTick();
-	debugMsg("ROS", "Received transition to INACTIVE");
+	debugMsg("ROS:", "Received transition to INACTIVE");
       }
       else if(!stateMsg.active && state != INACTIVE){
 	state = INACTIVE;
 	lastUpdated = getCurrentTick();
-	debugMsg("ROS", "Received transition to INACTIVE");
+	debugMsg("ROS:", "Received transition to INACTIVE");
       }
     }
 
     void registerSubscribers() {
-      debugMsg("ROS", "Registering subscriber for " << timelineName << " on topic:" << stateTopic);
+      debugMsg("ROS:", "Registering subscriber for " << timelineName << " on topic:" << stateTopic);
       m_node->registerSubscriber(stateTopic, stateMsg, &TREX::ROSControllerAdapter<S, G>::handleCallback, this, QUEUE_MAX());
     }
 
     void registerPublishers(){
-      debugMsg("ROS", "Registering publisher for " << timelineName << " on topic:" << goalTopic);
+      debugMsg("ROS:", "Registering publisher for " << timelineName << " on topic:" << goalTopic);
       m_node->registerPublisher<G>(goalTopic, QUEUE_MAX());
     }
 
@@ -97,14 +97,14 @@ namespace TREX {
      * The predicate can be active or inactive
      */
     bool dispatchRequest(const TokenId& goal, bool enabled){
-      debugMsg("ROS", "Received dispatch request for " << goal->toString());
+      debugMsg("ROS:", "Received dispatch request for " << goal->toString());
 
       bool enableController = enabled;
 
       // If the request to move into the inactive state, then evaluate the time bound and only process
       // if it is a singleton
       if(goal->getPredicateName() != activePredicate){
-	if(goal->start()->lastDomain().getUpperBound() > getCurrentTick())
+	if(goal->start()->lastDomain().getUpperBound() > (getCurrentTick() + 1))
 	  return false;
 
 	enableController = false;
@@ -113,7 +113,7 @@ namespace TREX {
       G goalMsg;
       fillRequestParameters(goalMsg, goal);
       goalMsg.enable = enableController;
-      debugMsg("BaseControllerAdapter", "Dispatching " << goal->toString());
+      debugMsg("ROS:", "Dispatching " << goal->toString());
       m_node->publishMsg<G>(goalTopic, goalMsg);
       return true;
     }

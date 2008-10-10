@@ -37,9 +37,8 @@ namespace TREX {
       goalMsg.set_configuration_size(nddlNames().size());
       for(unsigned int i = 0; i<nddlNames().size(); i++){
 	const IntervalDomain& dom = goalToken->getVariable(nddlNames()[i])->lastDomain();
-	assertTrue(dom.isSingleton(), "Values for dispatch are not bound");
 	goalMsg.configuration[i].name = rosNames()[i];
-	goalMsg.configuration[i].position = dom.getSingletonValue();
+	goalMsg.configuration[i].position = (dom.isSingleton() ? dom.getSingletonValue() : (dom.getUpperBound() + dom.getLowerBound()) / 2);
       }
     }
   };  
