@@ -371,55 +371,65 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   state.motor_voltage_ = this_status->motor_voltage_ * config_info_.nominal_voltage_scale_;
 }
 
-void WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
+bool WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
 {
-#if 0
-  if (voltage_offset_ == 0)
-  {
-    voltage_offset_ = state.motor_voltage_;
-    printf("setting voltage_offset to %f\n", voltage_offset_);
-  }
+  bool rv = true;
+
   WG0XStatus *status = (WG0XStatus *)buffer;
-  double volt_est = 30.6 * double(status->programmed_pwm_value_) / 0x4000;
-  double volt_est2 = status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(status->programmed_pwm_value_) / 0x4000;
+  double voltage_estimate = status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(status->programmed_pwm_value_) / 0x4000;
   double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
   double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
-  double error = fabs(expected_voltage - (state.motor_voltage_ - voltage_offset_));
-  double error2 = fabs(expected_voltage - volt_est2);
 
-  printf("%20s: est: %f, est2: %f, supply: %f, err: %f\n", actuator_info_.name_, volt_est, volt_est2,  status->supply_voltage_ * config_info_.nominal_voltage_scale_, error2);
-  printf("%20s: exp: %10f, real: %10f, err: %10f, d: %f\n", actuator_info_.name_, expected_voltage, state.motor_voltage_ - voltage_offset_, error, fabs(error2-error));
-
-  WG0XStatus status;
-
-  memcpy(&status, buffer, sizeof(status));
+  voltage_error_ = fabs(expected_voltage - voltage_estimate);
+  max_voltage_error_ = max(voltage_error_, max_voltage_error_);
 
   // Check board shutdown status
   // Report temperature shutdown, UV lockout, etc.
   // Report lots of diagnostics information
 
   // Check back-EMF consistency
-  expected_voltage = status.measured_current_ * resistance + motor_velocity * backemf_constant_;
-  voltage_error = fabs(expected_voltage - status.motor_voltage_); //Scaled to volts
-  if(voltage_error> 5)
-  { //Arbitary threshold
+  if(voltage_error_ > 5)
+  {
     //Something is wrong with the encoder, the motor, or the motor board
+    
     //Disable motors
+    rv = false;
+
+    double epsilon = 0.001;
     //Try to diagnose further
     //motor_velocity == 0 -> encoder failure likely
+    if (fabs(state.velocity_) < epsilon)
+    {
+      reason_ = "Encoder failure likely";
+    }
     //measured_current_ ~= 0 -> motor open-circuit likely
+    else if (fabs(state.last_measured_current_) < epsilon)
+    {
+      reason_ = "Motor open-circuit likely";
+    }
     //motor_voltage_ ~= 0 -> motor short-circuit likely
+    else if (fabs(voltage_estimate) < epsilon)
+    {
+      reason_ = "Motor short-circuit likely";
+    }
     //else -> current-sense failure likely
-    //Print error messages
+    else
+    {
+      reason_ = "Current-sense failure likely";
+    }
   }
 
   //Check current-loop performance
-  double current_error = status.measured_current_ - status.last_commanded_current;
-  if(current_error> threshold);
-  //complain and shut down
+  current_error_ = state.last_measured_current_ - state.last_commanded_current_;
+  max_current_error_ = max(current_error_, max_current_error_);
+  if (current_error_ > 2) {
+    //complain and shut down
+    reason_ = "Current loop error too large";
+  }
 
   //TODO: filter errors so that one-frame spikes don't shut down the system.
-#endif
+
+  return rv;
 }
 
 int WG0X::readData(EtherCAT_SlaveHandler *sh, EC_UINT address, void* buffer, EC_UINT length)
@@ -731,7 +741,7 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   stringstream str;
   str << "EtherCAT Device #" << sh_->get_ring_position();
   d.name = str.str();
-  d.message = "OK";
+  d.message = reason_;
   d.level = 0;
 
   ADD_STRING("Configuration", string(60, '-'));
@@ -800,6 +810,11 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Supply voltage", "%f", status->supply_voltage_ * config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("Motor voltage", "%f", status->motor_voltage_ * config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("Packet count", "%d", status->packet_count_);
+
+  ADD_STRING_FMT("Voltage Error", "%f", voltage_error_);
+  ADD_STRING_FMT("Max Voltage Error", "%f", max_voltage_error_);
+  ADD_STRING_FMT("Current Error", "%f", current_error_);
+  ADD_STRING_FMT("Max Current Error", "%f", max_current_error_);
 
   d.set_strings_vec(strings_);
   d.set_values_vec(values_);

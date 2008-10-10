@@ -102,6 +102,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 
   slaves_ = new EthercatDevice*[num_slaves_];
 
+  // Configure slaves
   unsigned int num_actuators = 0;
   for (unsigned int slave = 0; slave < num_slaves_; ++slave)
   {
@@ -127,14 +128,20 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     }
   }
 
+  // Allocate buffers to send and receive commands
   buffers_ = new unsigned char[2 * buffer_size_];
   current_buffer_ = buffers_;
   last_buffer_ = buffers_ + buffer_size_;
+
+  // Make sure motors are disabled
+  memset(current_buffer_, 0, buffer_size_);
+  em_->txandrx_PD(buffer_size_, current_buffer_);
 
   // Create HardwareInterface
   hw_ = new HardwareInterface(num_actuators);
   hw_->current_time_ = now();
 
+  // Initialize slaves
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
     if (slaves_[slave]->initialize(hw_->actuators_[a], allow_unprogrammed) < 0)
@@ -143,6 +150,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     }
     a += slaves_[slave]->has_actuator_;
   }
+
   // Initialize diagnostic data structures
   publisher_.msg_.status.reserve(num_slaves_ + 1);
   statuses_.reserve(num_slaves_ + 1);

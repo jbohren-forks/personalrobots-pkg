@@ -47,7 +47,7 @@ public:
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer) {}
   void computeCurrent(ActuatorCommand &command) {}
   void truncateCurrent(ActuatorCommand &command) {}
-  void verifyState(ActuatorState &, unsigned char *buffer) {}
+  bool verifyState(ActuatorState &, unsigned char *buffer) {return true;}
   void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *);
 
   enum {PRODUCT_CODE = 0x4622c52};

@@ -203,6 +203,9 @@ public:
   {
     strings_.reserve(10);
     values_.reserve(10);
+    max_current_error_ = 0;
+    max_voltage_error_= 0;
+    reason_ = "OK";
   }
 
   EthercatDevice *configure(int &start_address, EtherCAT_SlaveHandler *sh);
@@ -214,7 +217,7 @@ public:
 
   void computeCurrent(ActuatorCommand &command);
   void truncateCurrent(ActuatorCommand &command);
-  void verifyState(ActuatorState &state, unsigned char *buffer);
+  bool verifyState(ActuatorState &state, unsigned char *buffer);
 
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
@@ -263,6 +266,9 @@ private:
   // Diagnostic message values
   vector<robot_msgs::DiagnosticString> strings_;
   vector<robot_msgs::DiagnosticValue> values_;
+  string reason_;
+  double voltage_error_, max_voltage_error_;
+  double current_error_, max_current_error_;
 };
 
 class WG05 : public WG0X

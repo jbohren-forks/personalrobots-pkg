@@ -66,7 +66,7 @@ public:
 
   virtual void computeCurrent(ActuatorCommand &command) = 0;
   virtual void truncateCurrent(ActuatorCommand &command) = 0;
-  virtual void verifyState(ActuatorState &state, unsigned char *buffer) = 0;
+  virtual bool verifyState(ActuatorState &state, unsigned char *buffer) = 0;
 
   virtual void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *) = 0;
 
