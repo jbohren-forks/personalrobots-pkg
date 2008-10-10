@@ -59,7 +59,12 @@ PhaseSpaceNode::PhaseSpaceNode() : ros::node("phase_space")
 {
   advertise<PhaseSpaceSnapshot>("phase_space_snapshot", 48) ;
 }
-  
+
+PhaseSpaceNode::~PhaseSpaceNode()
+{
+  unadvertise("phase_space_snapshot") ;
+}
+
 void PhaseSpaceNode::startOwlClient()
 {
   int result ;
@@ -234,7 +239,7 @@ void PhaseSpaceNode::dispSnapshot(const PhaseSpaceSnapshot& s)
     printf("    %02u) (% 10.4f, % 10.4f, % 10.4f)\n", s.markers[i].id, s.markers[i].location.x, s.markers[i].location.y, s.markers[i].location.z) ;
   }
 
-  for (i; i<10; i++)
+  for (; i<10; i++)
     printf("\n") ;
   
   
@@ -251,7 +256,7 @@ void PhaseSpaceNode::dispSnapshot(const PhaseSpaceSnapshot& s)
                                                                      s.bodies[i].pose.rotation.w) ;
   }
   
-  for (i; i<2; i++)
+  for (; i<2; i++)
     printf("\n\n") ;
   
   printf("\n") ;
