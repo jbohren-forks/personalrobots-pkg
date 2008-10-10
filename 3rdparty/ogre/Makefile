@@ -15,7 +15,8 @@ OGREROOT = $(shell rospack find ogre)/ogre
 FIROOT = $(shell rospack find freeimage)/freeimage
 CGROOT = $(shell rospack find Cg)/Cg
 
-CFLAGS = $(shell rospack --lang=cpp --attrib=cflags export freeimage) \
+CFLAGS = -g \
+	 $(shell rospack --lang=cpp --attrib=cflags export freeimage) \
          $(shell rospack --lang=cpp --attrib=cflags export player) \
          $(shell rospack --lang=cpp --attrib=cflags export opende) \
          $(shell rospack --lang=cpp --attrib=cflags export Cg)
@@ -25,7 +26,7 @@ LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
          $(shell rospack --lang=cpp --attrib=lflags export opende) \
          $(shell rospack --lang=cpp --attrib=lflags export Cg)
 
-CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-O3 -I$(FIROOT)/include -I$(CGROOT)/include' LDFLAGS='-Wl,-rpath,$(FIROOT)/lib,-rpath,$(CGROOT)/lib -L$(FIROOT)/lib -L$(CGROOT)/lib' CFLAGS='-O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
+CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-g -O3 -I$(FIROOT)/include -I$(CGROOT)/include' LDFLAGS='-Wl,-rpath,$(FIROOT)/lib,-rpath,$(CGROOT)/lib -L$(FIROOT)/lib -L$(CGROOT)/lib' CFLAGS='-g -O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
 $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	if test `uname` = Darwin ; then \

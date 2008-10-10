@@ -7,8 +7,8 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
 <author> Steve 'sinbad' Streeting, Justin Walsh, Brian Johnstone and more.</author>
 <license>LGPL</license>
 <url>http://ogre3d.org</url>
-<depend package="freeimage"/>
-<depend package="Cg"/>
+
+
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/ogre/lib -L${prefix}/ogre/lib/OGRE `PKG_CONFIG_PATH=${prefix}/ogre/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs OGRE`" cflags="`PKG_CONFIG_PATH=${prefix}/ogre/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags OGRE`"/>
         <doxymaker external="http://ogre3d.org"/>
