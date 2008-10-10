@@ -30,8 +30,6 @@ Publishes to (name / type):
   - @b "timeout": Seconds, the number of seconds to timeout after lost communications to the device if unset assumes 10.0 
   - @b "diagnostic_rate": Hz, How often to broadcast diagnostic information, if unset assumes 1.0 Hz
   - @b "battery_state_rate": Hz, How often to broadcast diagnostic information, if unset assumes 1.0 Hz
- - Write: 
-  - @b "full_charge_energy": Joules of energy stored in the battery system when fully charged.  
 
 
 Notes when setting up:
