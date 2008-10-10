@@ -218,11 +218,11 @@ bool MoveArm::makePlan(){
 
   //Get the pose of the robot:
   libTF::TFPose2D robotPose, globalPose;
-  robotPose.x = 0;
-  robotPose.y = 0;
-  robotPose.yaw = 0;
+  globalPose.x = robotPose.x = 0;
+  globalPose.y = robotPose.y = 0;
+  globalPose.yaw = robotPose.yaw = 0;
   robotPose.frame = "base";
-  robotPose.time = 0;
+  globalPose.time = robotPose.time = 0;
   try{
     globalPose = this->tf_.transformPose2D("map", robotPose);
   }
@@ -253,7 +253,7 @@ bool MoveArm::makePlan(){
       req.start_state.joints[i].vals[2] = globalPose.yaw;
     } else {
       for (int k = 0 ; k < names.num_values[i]; k++) {
-	req.start_state.joints[i].vals[k] = 0; //FIXME: should be the value from mechanism state.
+	req.start_state.joints[i].vals[k] = 0;
       }
     }
   }
@@ -261,9 +261,9 @@ bool MoveArm::makePlan(){
   // TODO: Adjust based on parameters for left vs right arms
 
   // Fill out the start state from current arm configuration
-  //mechanismState.lock();
-  //setStartState(req);
-  //mechanismState.unlock();
+  mechanismState.lock();
+  setStartState(req);
+  mechanismState.unlock();
 
   // Filling out goal state from data in the goal message
   goalMsg.lock();
@@ -383,11 +383,11 @@ void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCo
     static const double TOLERANCE(0.25);
 
     // Set up message size
-    armCommand.set_names_size(jointNames_.size());
-    armCommand.set_positions_size(jointNames_.size());
-    armCommand.set_margins_size(jointNames_.size());
+    armCommand.set_names_size(plan.path.states[currentWaypoint].get_names_size());
+    armCommand.set_positions_size(plan.path.states[currentWaypoint].get_names_size());
+    armCommand.set_margins_size(plan.path.states[currentWaypoint].get_names_size());
 
-    for(unsigned int i = 0; i < jointNames_.size(); i++){
+    for(unsigned int i = 0; i < plan.path.states[currentWaypoint].get_names_size(); i++){
       armCommand.names[i] = plan.path.states[currentWaypoint].names[i];
       armCommand.positions[i] = plan.path.states[currentWaypoint].joints[i].vals[0];
       armCommand.margins[i] = TOLERANCE;
@@ -395,15 +395,15 @@ void MoveArm::setCommandParameters(pr2_mechanism_controllers::JointPosCmd& armCo
 }
 
 void MoveArm::setStartState(robot_srvs::NamedKinematicPlanState::request& req){
-    /*
-    req.start_state.vals[33] = mechanismState.joint_states[base + 12].position;
-    req.start_state.vals[34] = mechanismState.joint_states[base + 10].position;
-    req.start_state.vals[35] = mechanismState.joint_states[base + 8].position;
-    req.start_state.vals[36] = mechanismState.joint_states[base + 6].position;
-    req.start_state.vals[37] = mechanismState.joint_states[base + 4].position;
-    req.start_state.vals[38] = mechanismState.joint_states[base + 2].position;
-    req.start_state.vals[39] = mechanismState.joint_states[base + 0].position;
-    */
+  for (unsigned int i = 0; i < req.start_state.get_names_size(); i++) {
+    for (unsigned int k = 0; k < mechanismState.get_joint_states_size(); k++) {
+      if (req.start_state.names[i] == mechanismState.joint_states[k].name && req.start_state.names[i] != "base_joint"
+	  && req.start_state.joints[i].get_vals_size() > 0) {
+	//std::cout << req.start_state.names[i] << " (" << i << ") " << mechanismState.joint_states[k].position << std::endl;
+	req.start_state.joints[i].vals[0] = mechanismState.joint_states[k].position;
+      }
+    }
+  }
 }
 
 class MoveRightArm: public MoveArm {
