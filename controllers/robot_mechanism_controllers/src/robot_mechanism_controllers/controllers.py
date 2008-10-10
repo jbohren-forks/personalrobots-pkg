@@ -3,12 +3,10 @@
 import rostools
 rostools.update_path('mechanism_control')
 rostools.update_path('robot_mechanism_controllers')
-rostools.update_path('pr2_mechanism_controllers')
 
 import rospy, sys
 from mechanism_control.srv import *
 from robot_mechanism_controllers.srv import *
-from pr2_mechanism_controllers.srv import *
 
 def list_controllers():
     rospy.wait_for_service('list_controllers')
@@ -52,15 +50,4 @@ def get_position(controller):
     resp = s.call(GetPositionRequest())
     print str(resp.time) + ": " + str(resp.command)
 
-def set_profile(controller, upper_turnaround, lower_turnaround, upper_decel_buffer, lower_decel_buffer):
-    rospy.wait_for_service(controller + '/set_profile')
-    s = rospy.ServiceProxy(controller + '/set_profile', SetProfile)
-    resp = s.call(SetProfileRequest(upper_turnaround, lower_turnaround, upper_decel_buffer, lower_decel_buffer, 0, 0, 0, 0))
-    print str(resp.time)
-
-def set_sine(controller, period, amplitude, offset):
-    rospy.wait_for_service(controller + '/set_profile')
-    s = rospy.ServiceProxy(controller + '/set_profile', SetProfile)
-    resp = s.call(SetProfileRequest(0, 0, 0, 0, 4, period, amplitude, offset))
-    print str(resp.time)
 
