@@ -100,7 +100,15 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
    cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
    cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
    cmd_received_timestamp_ = robot_state_->hw_->current_time_;
-//  std::cout << "command received : " << cmd_vel_t_ << std::endl;
+         std::cout << "BaseController:: command received: " << cmd_vel_t_;
+      std::cout << "BaseController:: command current: " << cmd_vel_;
+
+      for(int i=0; i < (int) num_wheels_; i++)
+    {
+     std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
+      }
+   cout << "Base Odometry: Velocity " << base_odom_velocity_;
+//   cout << "Base Odometry: Position " << base_odom_position_;
    new_cmd_available_ = true;
    pthread_mutex_unlock(&base_controller_lock_);
 }
@@ -278,45 +286,6 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
          while(elt_key)
          {
             *(param_map_[elt_key->Attribute("key")]) = atof(elt_key->GetText());
-                        
-/*            if(elt_key->Attribute("key") == std::string("kp_speed"))
-            {
-               kp_speed_ = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("kp_caster_steer"))
-            {
-               caster_steer_vel_gain_ = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("timeout"))
-            {
-               timeout_ = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("max_x_dot"))
-            {
-               max_vel_.x = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("max_y_dot"))
-            {
-               max_vel_.y = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("max_yaw_dot"))
-            {
-               max_vel_.z = atof(elt_key->GetText());
-            }
-
-            if(elt_key->Attribute("key") == std::string("max_x_accel"))
-            {
-               max_accel_.x = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("max_y_accel"))
-            {
-               max_accel_.y = atof(elt_key->GetText());
-            }
-            if(elt_key->Attribute("key") == std::string("max_yaw_accel"))
-            {
-               max_accel_.z = atof(elt_key->GetText());
-            }
-*/
             elt_key = elt_key->NextSiblingElement("elem");
          }
       }
@@ -324,6 +293,16 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
 //    std::cout << " sub map : " << elt->Attribute("name") << std::endl;
       elt = config->NextSiblingElement("map");
    }
+
+   cout << "kp_speed  " << kp_speed_ << endl;
+   cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
+   cout << "timeout  " << timeout_ << endl;
+   cout << "max_x_dot  " << (max_vel_.x) << endl;
+   cout << "max_y_dot  " << (max_vel_.y) << endl;
+   cout << "max_yaw_dot  " << (max_vel_.z) << endl;
+   cout << "max_x_accel  " << (max_accel_.x) << endl;
+   cout << "max_y_accel  " << (max_accel_.y) << endl;
+   cout << "max_yaw_accel  " << (max_accel_.z) << endl;
 
    cout << "kp_speed  " << kp_speed_ << endl;
    cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
@@ -392,7 +371,7 @@ void BaseController::update()
          new_cmd_available_ = false;
          pthread_mutex_unlock(&base_controller_lock_);
       }
-//  std::cout << "command received in update : " << cmd_vel_ << std::endl;
+   //  std::cout << "BaseController::update current command: " << cmd_vel_ << std::endl;
    }
 
    if((current_time - cmd_received_timestamp_) > timeout_)
@@ -623,7 +602,8 @@ void BaseControllerNode::update()
    c_->update();
    c_->setOdomMessage(odom_msg_);
 
-  if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
+   //if(0)
+	  if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
   {
     if (publisher_->trylock())
     {
@@ -675,7 +655,7 @@ bool BaseControllerNode::setCommand(
    resp.x_vel = command.x;
    resp.y_vel = command.y;
    resp.theta_vel = command.z;
-
+      std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
    return true;
 }
 
@@ -686,6 +666,7 @@ void BaseControllerNode::setCommand(double vx, double vy, double vw)
    command.y = vy;
    command.z = vw;
    c_->setCommand(command);
+      std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
    //std::cout << "command received : " << vx << "," << vy << "," << vw << std::endl;
 }
 
