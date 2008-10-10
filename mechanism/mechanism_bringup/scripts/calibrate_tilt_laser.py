@@ -32,11 +32,10 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-# Author: Stuart Glaser
+# Written by Timothy Hunter <tjhunter@willowgarage.com> 2008
 
 import rostools
 import copy
-import threading
 
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
@@ -90,41 +89,29 @@ def calibrate_blindly(config):
         print "FAIL"
         return
     name = resp.name[0]
-    try:
-        do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
-        do_calibration()
-    finally:
-        kill_controller(name)
+    do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
+    do_calibration()
+    kill_controller(name)
     print "Calibrated"
 
+#calibrate_optically('''
+#<controller name="laser_tilt_calibration" topic="laser_tilt_calibration" type="JointCalibrationControllerNode">
+#  <param joint_name="tilt_laser_mount_joint" actuator_name="tilt_laser_motor" transmission_name="tilt_laser_mount_trans" velocity="0.2"/>
+#  <controller name="laser_controller" topic="laser_controller" type="JointVelocityController">
+#    <filter smoothing_factor="0.1" />
+#    <joint name="tilt_laser_mount_joint">
+#      <pid p="1" i="0" d="0.00" iClamp="1" />
+#    </joint>
+#  </controller>
+#</controller>
+#''')
 
-class FunThread(threading.Thread):
-    def __init__(self, fun, *args):
-        self.fun = fun
-        self.start()
-
-    def run():
-        self.fun(*args)
-
-
-calibrate_blindly('''
-<controller name="cal_head_pan" topic="cal_head_pan" type="JointBlindCalibrationControllerNode">
-  <calibrate joint="head_pan_joint"
-             actuator="head_pan_motor"
-             transmission="head_pan_trans"
-             velocity="1.5" />
-  <pid p="0.4" i="0.0" d="0" iClamp="1.0" />
+calibrate_optically('''
+<controller name="cal_laser_tilt" topic="cal_laser_tilt" type="JointCalibrationControllerNode">
+  <calibrate joint="tilt_laser_mount_joint"
+             actuator="tilt_laser_motor"
+             transmission="tilt_laser_mount_trans"
+             velocity="-0.6" />
+  <pid p=".25" i="0.1" d="0" iClamp="1.0" />
 </controller>
 ''')
-
-
-calibrate_blindly('''
-<controller name="cal_head_tilt" topic="cal_head_tilt" type="JointBlindCalibrationControllerNode">
-  <calibrate joint="head_tilt_joint"
-             actuator="head_tilt_motor"
-             transmission="head_tilt_trans"
-             velocity="0.7" />
-  <pid p="0.3" i="0.0" d="0" iClamp="5.0" />
-</controller>
-''')
-
