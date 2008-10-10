@@ -1,0 +1,180 @@
+#include "pr2.declarations.nddl"
+#include "pr2.rules.nddl"
+
+float XY_ERROR = 0.25;
+float THETA_ERROR = 0.1;
+
+/**
+ * Monitors battery state information
+ * @see BatteryState.msg
+ */
+class BatteryState extends AgentTimeline {
+  float rechargeThreshold;
+
+  predicate Holds {
+    float energy_remaining; // Remaining energy in Joules
+    float energy_capacity; // Total energy capacity
+    float power_consumption; // Power load in Watts
+  }
+
+  BatteryState(Mode _mode, float threshold){
+    super(_mode, "Holds");
+    rechargeThreshold = threshold;
+  }
+};
+
+class WorkingStatus extends AgentTimeline {
+
+  predicate Holds{bool recharging;}
+
+  WorkingStatus(){
+    super(Internal, "Holds");
+  }
+};
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+  bool mustRecharge;
+  testLEQ(mustRecharge, energy_remaining, object.rechargeThreshold);
+
+  // If below the threshold, activate
+  if(mustRecharge){
+    contained_by(WorkingStatus.Holds ws);
+    if(ws.recharging == false){
+      meets(WorkingStatus.Holds ws_next);
+      eq(ws_next.recharging, true);
+    }
+  }
+}
+
+WorkingStatus::Holds{
+  // By default we are not recharging
+  defaultOnCommit(recharging, false);
+
+  // Do the recharging if appropriate
+  if(recharging == true){
+    // TODO
+  }
+}
+
+/**
+ * A waypoint to go to
+ */
+class Location {
+  float x;
+  float y;
+  float th;
+
+  Location(float x_, float y_, float th_){
+    x = x_;
+    y = y_;
+    th = th_;
+  }
+};
+
+/**
+ * The x, y, and theta values for a charging station. These describe the
+ * target base pose for the robot when recharging.
+ */
+class ChargingStation extends Location {
+  ChargingStation(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+class Waypoint extends Location {
+  Waypoint(float x, float y, float th){
+    super(x, y, th);
+  }
+};
+
+/**
+ * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller. This pattern will allow
+ * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
+ */
+class Navigator extends Behavior {
+
+  predicate Active{
+    Waypoint w;
+  }
+
+};
+
+class Actions extends AgentActions {
+  /**
+   * Action to drive the MoveBase controller
+   */
+  predicate Goto{
+    Waypoint w;
+  }
+
+  /**
+   * Just an event action
+   */
+  predicate StartEvent{}
+
+  Actions(){
+    super();
+  }
+};
+
+/**
+ * Should be plugged in throughout.
+ */
+class RechargeController extends Behavior {
+
+  predicate Active {}
+
+};
+
+/**
+ * Encapsulates the task of unplugging the robot.
+ */
+class PlugController extends Behavior {
+  predicate Active {bool plugIn;}
+};
+
+Navigator::Active{
+  contains(Actions.Goto goto);
+  eq(goto.w, w);
+  concurrent(goto.end, end);
+
+  // We should be working while going to the target
+  any(WorkingStatus.Holds ws);
+  eq(ws.recharging, false);
+
+  // Long hand for contains relation
+  precedes(ws.start, goto.start);
+  precedes(goto.end, ws.end);
+  leq(goto.duration, ws.duration);
+}
+
+Actions::Goto{
+  ends(MoveBase.Active move);
+  eq(move.x, w.x);
+  eq(move.y, w.y);
+  eq(move.th, w.th);
+
+  // Check end conditions
+  if(end){
+    ends(BaseState.Holds s);
+    float distance;
+    calcDistance(distance, s.x, s.y, w.x, w.y);
+    leq(distance, XY_ERROR);
+  }}
+
+RechargeController::Active{
+  starts(Actions.StartEvent se);
+
+  // Bind to base pose to select nearest charging station
+  ChargingStation cs;
+  if(start){
+    starts(BaseState.Holds baseState);
+    selectChargingStation(baseState.x, baseState.y, cs);
+  }
+
+  /* TODO - FINISH THIS */
+}
+

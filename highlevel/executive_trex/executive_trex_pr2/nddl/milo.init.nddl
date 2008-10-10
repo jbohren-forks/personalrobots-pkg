@@ -1,0 +1,27 @@
+#include "pr2.milo.nddl"
+
+/* Internal Timelines */
+Navigator navigator = new Navigator(Internal);
+PlugController plugController = new PlugController(Internal);
+RechargeController rechargeController = new RechargeController(Internal);
+Actions actions = new Actions();
+WorkingStatus workingStatus = new WorkingStatus();
+/* External Timelines */
+
+// Base
+BaseState baseState = new BaseState(External);
+MoveBase moveBase = new MoveBase(External);
+BatteryState batteryState = new BatteryState(Internal, 1.0);
+
+/* Waypoints */
+Waypoint w1 = new Waypoint(33.0, 7.0, 0.0);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(22.0, 11.8, 0.0);
+
+close();
+
+/* Initialize internal timelines */
+fact(navigator.Inactive);
+fact(plugController.Inactive);
+fact(rechargeController.Inactive);
