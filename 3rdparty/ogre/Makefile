@@ -44,7 +44,26 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	fi
 
 .PHONY: ogre
-ogre: ogre/lib/pkgconfig/OGRE.pc
+# This target tries to be smart about checking for a system install of OGRE
+# at a particular version.  If it finds the right version, it creates a
+# local symlink into /usr/lib/OGRE, on the assumption that the OGRE plugin
+# .so's are in there.  If it's not found, then we build OGRE from source
+# here.
+#
+#ogre: ogre/lib/pkgconfig/OGRE.pc
+ogre:
+	if ! pkg-config --exact-version 1.4.9 OGRE; then \
+	  echo "You don't have OGRE.  I'm going to build it."; \
+	  if [ -h ogre/lib/OGRE ]; then \
+	    rm ogre/lib/OGRE; \
+	  fi; \
+	  make ogre/lib/pkgconfig/OGRE.pc; \
+	else \
+	  echo "You have OGRE 1.4.9. Watch this!"; \
+	  rm -rf ogre; \
+	  mkdir -p ogre/lib; \
+	  ln -sf /usr/lib/OGRE ogre/lib/OGRE; \
+	fi
 
 ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 	# building OGRE
