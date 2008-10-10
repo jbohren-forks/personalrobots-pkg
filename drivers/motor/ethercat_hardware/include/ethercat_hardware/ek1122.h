@@ -48,7 +48,7 @@ public:
   void computeCurrent(ActuatorCommand &command) {}
   void truncateCurrent(ActuatorCommand &command) {}
   void verifyState(ActuatorState &, unsigned char *buffer) {}
-  void diagnostics(robot_msgs::DiagnosticStatus &d);
+  void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *);
 
   enum {PRODUCT_CODE = 0x4622c52};
 

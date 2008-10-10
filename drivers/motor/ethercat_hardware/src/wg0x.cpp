@@ -707,18 +707,23 @@ int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
   return 0;
 }
 
+#define ADD_STRING_FMT(lab, fmt, ...) \
+  s.label = (lab); \
+  { char buf[1024]; \
+    snprintf(buf, sizeof(buf), fmt, ##__VA_ARGS__); \
+    s.value = buf; \
+  } \
+  strings_.push_back(s)
 #define ADD_STRING(lab, val) \
   s.label = (lab); \
   s.value = (val); \
   strings_.push_back(s)
-#define ADD_VALUE(lab, val) \
-  v.label = (lab); \
-  v.value = (val); \
-  values_.push_back(v)
-void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
+void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
 {
   robot_msgs::DiagnosticValue v;
   robot_msgs::DiagnosticString s;
+  //WG0XCommand *cmd = (WG0XCommand *)(buffer + sizeof(WG0XStatus));
+  WG0XStatus *status = (WG0XStatus *)buffer;
 
   strings_.clear();
   values_.clear();
@@ -729,26 +734,72 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d)
   d.message = "OK";
   d.level = 0;
 
-  str.str("");
-  str << (sh_->get_product_code() == WG05::PRODUCT_CODE ? "WG05 (" : "WG06 (") << sh_->get_product_code() << ")";
-  ADD_STRING("Product code", str.str());
+  ADD_STRING("Configuration", string(60, '-'));
   ADD_STRING("Name", actuator_info_.name_);
-  ADD_STRING("Robot", actuator_info_.robot_name_);
-  str.str("");
-  str << actuator_info_.motor_make_ << " " << actuator_info_.motor_model_;
-  ADD_STRING("Motor", str.str());
+  ADD_STRING_FMT("Product code", "%s (%d)", sh_->get_product_code() == WG05::PRODUCT_CODE ? "WG05" : "WG06", sh_->get_product_code());
 
-  str.str("");
-  str << setfill('0') << config_info_.product_id_ / 100000 << "-" << setw(5) << config_info_.product_id_ % 100000 << "-" << setw(5) << config_info_.device_serial_number_;
-  ADD_STRING("Serial Number", str.str());
-  ADD_VALUE("Nominal Current Scale", config_info_.nominal_current_scale_);
-  ADD_VALUE("Nominal Voltage Scale", config_info_.nominal_voltage_scale_);
-  ADD_VALUE("Max Current", actuator_info_.max_current_);
-  ADD_VALUE("Speed Constant", actuator_info_.speed_constant_);
-  ADD_VALUE("Resistance", actuator_info_.resistance_);
-  ADD_VALUE("Motor Torque Constant", actuator_info_.motor_torque_constant_);
-  ADD_VALUE("Pulses Per Revolution", actuator_info_.pulses_per_revolution_);
-  ADD_VALUE("Sign", actuator_info_.sign_);
+  ADD_STRING_FMT("Serial Number", "%d-%05d-%05d", config_info_.product_id_ / 100000 , config_info_.product_id_ % 100000, config_info_.device_serial_number_);
+  ADD_STRING_FMT("Nominal Current Scale", "%f",  config_info_.nominal_current_scale_);
+  ADD_STRING_FMT("Nominal Voltage Scale",  "%f", config_info_.nominal_voltage_scale_);
+  ADD_STRING_FMT("HW Max Current", "%f", config_info_.absolute_current_limit_ * config_info_.nominal_current_scale_);
+
+  ADD_STRING("Robot", actuator_info_.robot_name_);
+  ADD_STRING_FMT("Motor", "%s %s", actuator_info_.motor_make_, actuator_info_.motor_model_);
+  ADD_STRING_FMT("SW Max Current", "%f", actuator_info_.max_current_);
+  ADD_STRING_FMT("Speed Constant", "%f", actuator_info_.speed_constant_);
+  ADD_STRING_FMT("Resistance", "%f", actuator_info_.resistance_);
+  ADD_STRING_FMT("Motor Torque Constant", "%f", actuator_info_.motor_torque_constant_);
+  ADD_STRING_FMT("Pulses Per Revolution", "%d", actuator_info_.pulses_per_revolution_);
+  ADD_STRING_FMT("Sign", "%d", actuator_info_.sign_);
+
+  ADD_STRING("Status", string(60, '-'));
+  string mode, prefix;
+  if (status->mode_) {
+    if (status->mode_ & MODE_ENABLE) {
+      mode += prefix + "ENABLE";
+      prefix = ", ";
+    }
+    if (status->mode_ & MODE_CURRENT) {
+      mode += prefix + "CURRENT";
+      prefix = ", ";
+    }
+    if (status->mode_ & MODE_UNDERVOLTAGE) {
+      mode += prefix + "UNDERVOLTAGE";
+      prefix = ", ";
+    }
+    if (status->mode_ & MODE_SAFETY_RESET) {
+      mode += prefix + "SAFETY_RESET";
+      prefix = ", ";
+    }
+    if (status->mode_ & MODE_SAFETY_LOCKOUT) {
+      mode += prefix + "SAFETY_LOCKOUT";
+      prefix = ", ";
+    }
+    if (status->mode_ & MODE_RESET) {
+      mode += prefix + "RESET";
+      prefix = ", ";
+    }
+  } else {
+    mode = "OFF";
+  }
+  ADD_STRING("Mode", mode);
+  ADD_STRING_FMT("Digital out", "%d", status->digital_out_);
+  ADD_STRING_FMT("Programmed pwm value", "%d", status->programmed_pwm_value_);
+  ADD_STRING_FMT("Programmed current", "%f", status->programmed_current_ * config_info_.nominal_current_scale_);
+  ADD_STRING_FMT("Measured current", "%f", status->measured_current_ * config_info_.nominal_current_scale_);
+  ADD_STRING_FMT("Timestamp", "%d", status->timestamp_);
+  ADD_STRING_FMT("Encoder count", "%d", status->encoder_count_);
+  ADD_STRING_FMT("Encoder index pos", "%d", status->encoder_index_pos_);
+  ADD_STRING_FMT("Num encoder_errors", "%d", status->num_encoder_errors_);
+  ADD_STRING_FMT("Encoder status", "%d", status->encoder_status_);
+  ADD_STRING_FMT("Calibration reading", "%d", status->calibration_reading_);
+  ADD_STRING_FMT("Last calibration high transition", "%d", status->last_calibration_high_transition_);
+  ADD_STRING_FMT("Last calibration low transition", "%d", status->last_calibration_low_transition_);
+  ADD_STRING_FMT("Board temperature", "%f", 0.0078125 * status->board_temperature_);
+  ADD_STRING_FMT("Bridge temperature", "%f", 0.0078125 * status->bridge_temperature_);
+  ADD_STRING_FMT("Supply voltage", "%f", status->supply_voltage_ * config_info_.nominal_voltage_scale_);
+  ADD_STRING_FMT("Motor voltage", "%f", status->motor_voltage_ * config_info_.nominal_voltage_scale_);
+  ADD_STRING_FMT("Packet count", "%d", status->packet_count_);
 
   d.set_strings_vec(strings_);
   d.set_values_vec(values_);

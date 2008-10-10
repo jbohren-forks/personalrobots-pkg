@@ -219,7 +219,7 @@ public:
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
 
-  void diagnostics(robot_msgs::DiagnosticStatus &d);
+  void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *);
 
 private:
   int readEeprom(EtherCAT_SlaveHandler *sh);
@@ -240,8 +240,13 @@ private:
 
   enum
   {
-    MODE_OFF = 0x00, MODE_CURRENT = 0x01, MODE_ENABLE = 0x02,
-    MODE_UNDERVOLTAGE = 0x04, MODE_SAFETY_RESET = 0x10, MODE_RESET = 0x80
+    MODE_OFF = 0x00,
+    MODE_ENABLE = (1 << 0),
+    MODE_CURRENT = (1 << 1),
+    MODE_SAFETY_RESET = (1 << 4),
+    MODE_SAFETY_LOCKOUT = (1 << 5),
+    MODE_UNDERVOLTAGE = (1 << 6),
+    MODE_RESET = (1 << 7)
   };
 
   enum

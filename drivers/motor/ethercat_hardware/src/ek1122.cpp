@@ -45,7 +45,7 @@ EthercatDevice *EK1122::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
   return this;
 }
 
-void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d)
+void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
 {
   vector<robot_msgs::DiagnosticString> strings;
   vector<robot_msgs::DiagnosticValue> values;

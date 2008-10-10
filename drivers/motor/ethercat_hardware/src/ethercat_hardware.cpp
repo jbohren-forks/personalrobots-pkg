@@ -223,10 +223,12 @@ void EthercatHardware::publishDiagnostics()
   status.set_strings_vec(strings_);
   statuses_.push_back(status);
 
-  for (unsigned int slave = 0; slave < num_slaves_; ++slave)
+  unsigned char *current = current_buffer_;
+  for (unsigned int s = 0; s < num_slaves_; ++s)
   {
-    slaves_[slave]->diagnostics(status);
+    slaves_[s]->diagnostics(status, current);
     statuses_.push_back(status);
+    current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
   }
 
   // Publish status of each EtherCAT device

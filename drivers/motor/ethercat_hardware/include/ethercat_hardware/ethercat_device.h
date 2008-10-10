@@ -68,7 +68,7 @@ public:
   virtual void truncateCurrent(ActuatorCommand &command) = 0;
   virtual void verifyState(ActuatorState &state, unsigned char *buffer) = 0;
 
-  virtual void diagnostics(robot_msgs::DiagnosticStatus &d) = 0;
+  virtual void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *) = 0;
 
   bool has_actuator_;
   unsigned int command_size_;
