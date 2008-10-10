@@ -3,7 +3,7 @@
   <license>BSD</license>
   <!-- <depend package="sdl"/> -->
   <export>
-    <cpp cflags="`sdl-config --cflags sdl` -I${prefix}/include" lflags="`sdl-config --libs sdl` -Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsdlgl -lGL -lGLU"/>
+    <cpp cflags="`sdl-config --cflags` -I${prefix}/include" lflags="`sdl-config --libs` -Wl,-rpath,${prefix}/lib -L${prefix}/lib -lsdlgl -lGL -lGLU"/>
     <!-- The usage of -dylib_file is a workaround for a bug in Apple's
     installation of libGL.dylib, as explained here:
       http://developer.apple.com/qa/qa2007/qa1567.html
