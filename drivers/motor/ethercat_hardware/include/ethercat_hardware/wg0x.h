@@ -217,7 +217,7 @@ public:
 
   void computeCurrent(ActuatorCommand &command);
   void truncateCurrent(ActuatorCommand &command);
-  bool verifyState(ActuatorState &state, unsigned char *buffer);
+  bool verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer);
 
   void program(WG0XActuatorInfo *);
   bool isProgrammed() { return actuator_info_.crc32_ != 0;}
@@ -269,6 +269,7 @@ private:
   string reason_;
   double voltage_error_, max_voltage_error_;
   double current_error_, max_current_error_;
+  double voltage_estimate_;
 };
 
 class WG05 : public WG0X

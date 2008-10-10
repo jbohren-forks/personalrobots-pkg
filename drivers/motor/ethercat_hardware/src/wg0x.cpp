@@ -371,16 +371,24 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   state.motor_voltage_ = this_status->motor_voltage_ * config_info_.nominal_voltage_scale_;
 }
 
-bool WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
+bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer)
 {
   bool rv = true;
 
-  WG0XStatus *status = (WG0XStatus *)buffer;
-  double voltage_estimate = status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(status->programmed_pwm_value_) / 0x4000;
+  if (!(state.is_enabled_)) {
+    return true;
+  }
+
+  WG0XStatus *this_status, *prev_status;
+
+  this_status = (WG0XStatus *)this_buffer;
+  prev_status = (WG0XStatus *)prev_buffer;
+
+  voltage_estimate_ = this_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(this_status->programmed_pwm_value_) / 0x4000;
   double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
   double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
 
-  voltage_error_ = fabs(expected_voltage - voltage_estimate);
+  voltage_error_ = fabs(expected_voltage - voltage_estimate_);
   max_voltage_error_ = max(voltage_error_, max_voltage_error_);
 
   // Check board shutdown status
@@ -408,7 +416,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
       reason_ = "Motor open-circuit likely";
     }
     //motor_voltage_ ~= 0 -> motor short-circuit likely
-    else if (fabs(voltage_estimate) < epsilon)
+    else if (fabs(voltage_estimate_) < epsilon)
     {
       reason_ = "Motor short-circuit likely";
     }
@@ -420,7 +428,8 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *buffer)
   }
 
   //Check current-loop performance
-  current_error_ = state.last_measured_current_ - state.last_commanded_current_;
+  double last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
+  current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
   max_current_error_ = max(current_error_, max_current_error_);
   if (current_error_ > 2) {
     //complain and shut down
@@ -809,6 +818,7 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Bridge temperature", "%f", 0.0078125 * status->bridge_temperature_);
   ADD_STRING_FMT("Supply voltage", "%f", status->supply_voltage_ * config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("Motor voltage", "%f", status->motor_voltage_ * config_info_.nominal_voltage_scale_);
+  ADD_STRING_FMT("Motor voltage estimate", "%f", voltage_estimate_);
   ADD_STRING_FMT("Packet count", "%d", status->packet_count_);
 
   ADD_STRING_FMT("Voltage Error", "%f", voltage_error_);
