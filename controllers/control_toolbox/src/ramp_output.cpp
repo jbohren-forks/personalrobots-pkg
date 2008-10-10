@@ -31,6 +31,9 @@
  *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
+
+// Original version: Melonee Wise <mwise@willowgarage.com>
+
 #include <math.h>
 #include <control_toolbox/ramp_output.h>
 
