@@ -58,3 +58,9 @@ def set_profile(controller, upper_turnaround, lower_turnaround, upper_decel_buff
     resp = s.call(SetProfileRequest(upper_turnaround, lower_turnaround, upper_decel_buffer, lower_decel_buffer, 0, 0, 0, 0))
     print str(resp.time)
 
+def set_sine(controller, period, amplitude, offset):
+    rospy.wait_for_service(controller + '/set_profile')
+    s = rospy.ServiceProxy(controller + '/set_profile', SetProfile)
+    resp = s.call(SetProfileRequest(0, 0, 0, 0, 4, period, amplitude, offset))
+    print str(resp.time)
+
