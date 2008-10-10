@@ -458,8 +458,8 @@ int print_status(void)
 		printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
 		printf("  DCDC 19     = %f\n", status->DCDC_12V_out_voltage);
 		printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
-		printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
-		printf("  CB1 (R-arm) = %f\n", status->CB1_voltage);
+		printf("  CB0 (R-arm)  = %f\n", status->CB0_voltage);
+		printf("  CB1 (Base) = %f\n", status->CB1_voltage);
 		printf("  CB2 (L-arm) = %f\n", status->CB2_voltage);
 
 		printf(" Board Temp   = %f\n", status->ambient_temp);
@@ -470,14 +470,14 @@ int print_status(void)
 		printf("  Fan 3       = %u\n", status->fan3_speed);
 
 		printf(" State:\n");		
-		printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
-		printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
+		printf("  CB0 (R-arm)  = %s\n", cb_state_to_str(status->CB0_state));
+		printf("  CB1 (Base) = %s\n", cb_state_to_str(status->CB1_state));
 		printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
 		printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
 		
 		printf(" Status:\n");		
-		printf("  CB0 (Base)  = %s\n", (status->CB0_status) ? "On" : "Off");
-		printf("  CB1 (R-arm) = %s\n", (status->CB1_status) ? "On" : "Off");
+		printf("  CB0 (R-arm)  = %s\n", (status->CB0_status) ? "On" : "Off");
+		printf("  CB1 (Base) = %s\n", (status->CB1_status) ? "On" : "Off");
 		printf("  CB2 (L-arm) = %s\n", (status->CB2_status) ? "On" : "Off");
 		printf("  estop_button= %x\n", (status->estop_button_status));
 		printf("  estop_status= %x\n", (status->estop_status));
@@ -611,7 +611,7 @@ void print_menu(void) {
 		"    1st : Device Num : must be integer from 0 to #devices-1\n"
 		"        Use (l)ist, to print list of detected devices\n"
 		"    2nd : Circuit Breaker Num : must be integer 0-2\n"
-		"        (0=Base, 1=RightArm, 2=LeftArm)\n"
+		"        (0=RightArm, 1=Base, 2=LeftArm)\n"
 		"    3rd : Command to secnd :\n"
 		"        (start, stop, reset, disable, none)\n"
 		"q - quit\n\n"
