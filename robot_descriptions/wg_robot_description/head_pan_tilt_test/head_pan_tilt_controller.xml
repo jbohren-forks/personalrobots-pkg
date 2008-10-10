@@ -4,13 +4,13 @@
     
     <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController">
       <joint name="head_pan_joint" >
-        <pid p="1.5" d="0.1" i="0.3" iClamp="1.5" />
+        <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" />
       </joint>
     </controller>
     
     <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
       <joint name="head_tilt_joint" >
-        <pid p="0.8" d="0.05" i="0.4" iClamp="1.2" />
+        <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" />
       </joint>
     </controller>
     
