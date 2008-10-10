@@ -64,7 +64,7 @@ Segway::Segway() :
   tf(*this),
   req_timeout(false)
 {
-  odom.header.frame_id = "FRAMEID_ODOM";
+  odom.header.frame_id = "odom";
   advertise<std_msgs::RobotBase2DOdom>("odom", 1);
   subscribe("cmd_vel", cmd_vel, &Segway::cmd_vel_cb, 1);
   subscribe("operating_mode", op_mode, &Segway::op_mode_cb, 1);
@@ -224,7 +224,7 @@ int rmp_diff(uint32_t from, uint32_t to)
 
 void Segway::main_loop()
 {
-	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a port someday...
+	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a param someday...
 
 	if (!can)
 		log(FATAL, "ahh couldn't open the can controller\n");
@@ -239,7 +239,7 @@ void Segway::main_loop()
     if (ros::Time::now().to_double() - last_send_time > 0.01)
     {
       double time_since_last_cmd = ros::Time::now().to_double() - req_time;
-      if (time_since_last_cmd > 0.5)
+      if (time_since_last_cmd > 0.15)
         req_timeout = true;
       else
         req_timeout = false;
@@ -299,8 +299,8 @@ void Segway::main_loop()
             odom.pos.th = odom_yaw;
             publish("odom", odom);
 
-            tf.sendInverseEuler("FRAMEID_ODOM",
-                                "FRAMEID_ROBOT",
+            tf.sendInverseEuler("odom",
+                                "base",
                                 odom.pos.x,
                                 odom.pos.y,
                                 0.0,
