@@ -80,6 +80,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
 #include <robot_srvs/PlanNames.h>
+#include <rosTF/rosTF.h>
 
 static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
 static const unsigned int LEFT_ARM_JOINTS_BASE_INDEX = 12;
@@ -119,6 +120,7 @@ private:
   mechanism_control::MechanismState mechanismState;
   robot_srvs::NamedKinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
+  rosTFClient tf_; /**< Used to do transforms */
 
 protected:
   std::vector<std::string> jointNames_; /*< The collection of joint names of interest. Instantiate in the  derived class.*/
@@ -142,7 +144,7 @@ static const double L1_JOINT_DIFF_MAX = .05;
 MoveArm::MoveArm(const std::string& nodeName, const std::string& stateTopic, const std::string& goalTopic,
 		 const std::string& armPosTopic, const std::string& _armCmdTopic, const std::string& _kinematicModel)
   : HighlevelController<pr2_msgs::MoveArmState, pr2_msgs::MoveArmGoal>(nodeName, stateTopic, goalTopic),
-    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0){
+    armCmdTopic(_armCmdTopic), kinematicModel(_kinematicModel), currentWaypoint(0), tf_(*this, true, 10000000000ULL) {
 
 
   // Advertise for messages to command the arm
@@ -213,6 +215,30 @@ bool MoveArm::makePlan(){
   req.times = 1;
 
 
+
+  //Get the pose of the robot:
+  libTF::TFPose2D robotPose, globalPose;
+  robotPose.x = 0;
+  robotPose.y = 0;
+  robotPose.yaw = 0;
+  robotPose.frame = "base";
+  robotPose.time = 0;
+  try{
+    globalPose = this->tf_.transformPose2D("map", robotPose);
+  }
+  catch(libTF::TransformReference::LookupException& ex){
+    std::cout << "No Transform available Error\n";
+  }
+  catch(libTF::TransformReference::ConnectivityException& ex){
+    std::cout << "Connectivity Error\n";
+  }
+  catch(libTF::TransformReference::ExtrapolateException& ex){
+    std::cout << "Extrapolation Error\n";
+  }
+  
+
+
+
   //initializing full value state
   req.start_state.set_names_size(names.get_names_size());
   req.start_state.set_joints_size(names.get_names_size());
@@ -220,8 +246,15 @@ bool MoveArm::makePlan(){
     req.start_state.names[i] = names.names[i];
     //std::cout << req.start_state.names[i] << ": " << names.num_values[i] << std::endl;
     req.start_state.joints[i].set_vals_size(names.num_values[i]);
-    for (int k = 0 ; k < names.num_values[i]; k++) {
-      req.start_state.joints[i].vals[k] = 0; //FIXME: should be the value from mechanism state.
+    if (names.names[i] == "base_joint") {
+      std::cout << "Base: " << i << ", " << globalPose.x << ", " << globalPose.y << ", " << globalPose.yaw << std::endl;
+      req.start_state.joints[i].vals[0] = globalPose.x;
+      req.start_state.joints[i].vals[1] = globalPose.y;
+      req.start_state.joints[i].vals[2] = globalPose.yaw;
+    } else {
+      for (int k = 0 ; k < names.num_values[i]; k++) {
+	req.start_state.joints[i].vals[k] = 0; //FIXME: should be the value from mechanism state.
+      }
     }
   }
 

@@ -188,6 +188,7 @@ private:
   
     void stateUpdate(void)
     {
+      //m_robotState->print();
 	planning_node_util::NodeRobotModel::stateUpdate();
 	if (m_kmodel)
 	    m_kmodel->computeTransforms(m_robotState->getParams());

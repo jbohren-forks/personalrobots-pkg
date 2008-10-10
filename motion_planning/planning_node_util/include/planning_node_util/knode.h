@@ -251,7 +251,14 @@ namespace planning_node_util
 		for (unsigned int i = 0 ; i < n ; ++i)
 		{
 		    double pos = m_mechanismState.joint_states[i].position;
-		    m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+		    //printf("%d: %s\n", i, m_mechanismState.joint_states[i].name.c_str());
+		    if (m_mechanismState.joint_states[i].name == "base_joint" && m_haveBasePos) {
+        	        m_robotState->setParams(m_basePos, m_mechanismState.joint_states[i].name);
+		    } 
+		    else 
+		    {
+		        m_robotState->setParams(&pos, m_mechanismState.joint_states[i].name);
+		    }
 		}
 	    }	 
 	    if (m_robotStateSimple)
