@@ -1,35 +1,35 @@
 /*
- * LevMarqBundleAdj.cpp
+ * LevMarqSparseBundleAdj.cpp
  *
  *  Created on: Sep 24, 2008
  *      Author: jdchen
  */
 
-#include "LevMarqBundleAdj.h"
+#include "LevMarqSparseBundleAdj.h"
 #include "PathRecon.h"
-#include "VisOdomBundleAdj.h"
+#include "VOSparseBundleAdj.h"
 #include "boost/foreach.hpp"
 
 namespace cv {
 namespace willow {
 
-LevMarqBundleAdj::LevMarqBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity,
-    int numErrors, int numMaxIter) :
-      Parent(disparityTo3D, threeDToDisparity, numErrors, numMaxIter)
+LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity,
+    int numMaxIter) :
+      Parent(disparityTo3D, threeDToDisparity, numMaxIter)
       {
   // TODO: set up partitioned LevMarq
   /// - set up the partitioned Levenberg-Marquardt
 }
 
-LevMarqBundleAdj::~LevMarqBundleAdj() {
+LevMarqSparseBundleAdj::~LevMarqSparseBundleAdj() {
 }
 
-bool LevMarqBundleAdj::optimize(
+bool LevMarqSparseBundleAdj::optimize(
     deque<PoseEstFrameEntry *> windowOfFrames,
-    VisOdomBundleAdj::Tracks& tracks
+    VOSparseBundleAdj::Tracks& tracks
 ) {
   /// Loop thru each track p
-  BOOST_FOREACH( VisOdomBundleAdj::Track& p, tracks.mTracks) {
+  BOOST_FOREACH( VOSparseBundleAdj::Track& p, tracks.mTracks) {
     /// - Compute the part of JtJ w.r.t to p
     double Hpp[Dim*Dim]; // the part of JtJ w.r.t. track p (or point p)
     double bp[Dim];      // the part of bP  w.r.t. track p

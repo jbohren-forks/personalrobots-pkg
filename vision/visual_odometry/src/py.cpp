@@ -24,7 +24,7 @@
 #include "CvMat3X3.h"
 #include "CvTestTimer.h"
 #include <PathRecon.h>
-#include <VisOdomBundleAdj.h>
+#include <VOSparseBundleAdj.h>
 
 #include <VisOdom.h>
 

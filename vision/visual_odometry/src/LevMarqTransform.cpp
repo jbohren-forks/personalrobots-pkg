@@ -34,9 +34,8 @@ using namespace cv::willow;
 #endif
 
 
-LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter):
-  mAngleType(Rodrigues)
-//  mAngleType(Euler)
+LevMarqTransform::LevMarqTransform(int numMaxIter, AngleType angleType):
+  mAngleType(angleType)
 {
 	cvInitMatHeader(&mRT,         4, 4, CV_64F, mRTData);
 	cvSetIdentity(&mRT);
@@ -52,7 +51,7 @@ LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter):
 	}
 
 	mLevMarq.init( numParams /* the number of parameters to optimize */,
-	    0  /* dimensionality of the error vector, not needed if updateAlt is used */,
+	    0  /* dimensionality of the error vector, not needed as updateAlt is used */,
 	    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,numMaxIter, DBL_EPSILON)
 	    /* optional termination criteria (i.e. it stops when the number of iterations exceeds the specified limit or
 				   when the change in the vector of parameters gets small enough */

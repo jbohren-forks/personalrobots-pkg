@@ -14,8 +14,16 @@ namespace willow {
 class LevMarqTransformDispSpace : public LevMarqTransform
 {
 public:
-	LevMarqTransformDispSpace(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
-        int numMaxInter = defNumMaxIter);
+	LevMarqTransformDispSpace(
+	    /// transformation from disparity space to cartesian space
+	    const CvMat *disparityTo3D,
+	    /// transformaton from cartesian to disparity space
+	    const CvMat *threeDToDisparity,
+	    /// max number of RANSAC iterations
+	    int numMaxInter = defNumMaxIter,
+	    /// use rodrigues parameter or euler angles as optimization variables
+	    /// regarding rotation.
+	    AngleType angleType=Rodrigues);
 	virtual ~LevMarqTransformDispSpace();
   /**  A routine that performs optimization.
    *  @param P0  - Nx3 matrix stores data point list P0, one point (x, y, z) each row

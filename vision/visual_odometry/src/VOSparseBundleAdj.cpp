@@ -1,11 +1,11 @@
 /*
- * CvVisOdemBundleAdj.cpp
+ * VOSparseBundleAdj.cpp
  *
  *  Created on: Sep 17, 2008
  *      Author: jdchen
  */
 
-#include "VisOdomBundleAdj.h"
+#include "VOSparseBundleAdj.h"
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
 
@@ -22,11 +22,13 @@ using namespace cv::willow;
 using namespace boost::accumulators;
 
 // opencv
-#include <cv.h>
+#include <opencv/cv.h>
+
+#include <queue>
 
 #define DISPLAY 1
 
-VisOdomBundleAdj::VisOdomBundleAdj(const CvSize& imageSize):
+VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize):
   PathRecon(imageSize),
   mSlideWindowSize(DefaultSlideWindowSize),
   mNumFrozenWindows(1),
@@ -36,11 +38,11 @@ VisOdomBundleAdj::VisOdomBundleAdj(const CvSize& imageSize):
 
 }
 
-VisOdomBundleAdj::~VisOdomBundleAdj() {
+VOSparseBundleAdj::~VOSparseBundleAdj() {
   // TODO Auto-generated destructor stub
 }
 
-void VisOdomBundleAdj::updateSlideWindow() {
+void VOSparseBundleAdj::updateSlideWindow() {
   while(mActiveKeyFrames.size() > (unsigned int)this->mSlideWindowSize) {
     PoseEstFrameEntry* frame = mActiveKeyFrames.front();
     mActiveKeyFrames.pop_front();
@@ -48,7 +50,7 @@ void VisOdomBundleAdj::updateSlideWindow() {
   }
   // Since slide down the window, we shall purge the tracks as well
   if (mVisualizer) {
-    ((VisOdomBundleAdj::Visualizer*)mVisualizer)->slideWindowFront =
+    ((VOSparseBundleAdj::Visualizer*)mVisualizer)->slideWindowFront =
       mActiveKeyFrames.front()->mFrameIndex;
   }
   // loop thru all tracks and get purge the old entries
@@ -68,28 +70,12 @@ void VisOdomBundleAdj::updateSlideWindow() {
 
 }
 
-bool VisOdomBundleAdj::track(const string & dirname, const string & leftFileFmt, const string & rightFileFmt, int start, int end, int step)
-{
+bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
   bool status = false;
-  setInputVideoParams(dirname, leftFileFmt, rightFileFmt, start, end, step);
 
-  int maxDisp = (int)(mPoseEstimator.getD(400));// the closest point we care is at least 1000 mm away
-  cout << "Max disparity is: " << maxDisp << endl;
-  mStat.mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
-
-#if DISPLAY
-  // Optionally, set up the visualizer
-  mVisualizer = new VisOdomBundleAdj::Visualizer(mPoseEstimator, mFramePoses, mTracks);
-#endif
-
-  mFrameSeq.reset();
-  // current frame
-  PoseEstFrameEntry*& currFrame = mFrameSeq.mCurrentFrame;
-
-  for (mFrameSeq.setStartFrame(); mFrameSeq.notDoneWithIteration(); mFrameSeq.setNextFrame()){
-    bool newKeyFrame = trackOneFrame(mFrameSeq);
+  while (inputImageQueue.size()>0) {
+    bool newKeyFrame = trackOneFrame(inputImageQueue, mFrameSeq);
     if (newKeyFrame == true) {
-
       // update the sliding window
       // slide the window by getting rid of old windows
       updateSlideWindow();
@@ -100,32 +86,21 @@ bool VisOdomBundleAdj::track(const string & dirname, const string & leftFileFmt,
       updateStat2();
 
       if (mVisualizer) {
-        ((VisOdomBundleAdj::Visualizer*)mVisualizer)->drawTrack(
+        ((VOSparseBundleAdj::Visualizer*)mVisualizer)->drawTrack(
             *mActiveKeyFrames.back());
       }
     }
     visualize();
+
   }
-
-  saveFramePoses(mOutputDir, mFramePoses);
-
-  mStat.mNumKeyPointsWithNoDisparity = mPoseEstimator.mNumKeyPointsWithNoDisparity;
-  mStat.mPathLength = mPathLength;
-  mStat.print();
-  mStat2.print();
-
-  CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters    = mFrameSeq.mNumFrames/mFrameSeq.mFrameStep;
-  timer.printStat();
-
   return status;
 }
 
-void VisOdomBundleAdj::purgeTracks(int oldtestFrameIndex){
+void VOSparseBundleAdj::purgeTracks(int oldtestFrameIndex){
   mTracks.purge(oldtestFrameIndex);
 }
 
-void VisOdomBundleAdj::Tracks::purge(int oldestFrameIndex) {
+void VOSparseBundleAdj::Tracks::purge(int oldestFrameIndex) {
   int index = 0;
   for (deque<Track>::iterator iTrack = mTracks.begin();
     iTrack != mTracks.end();
@@ -147,7 +122,7 @@ void VisOdomBundleAdj::Tracks::purge(int oldestFrameIndex) {
   }
 }
 
-bool VisOdomBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
+bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
     Tracks & tracks)
 {
   bool status = true;
@@ -183,7 +158,7 @@ bool VisOdomBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
   return status;
 }
 
-bool VisOdomBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+bool VOSparseBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
     int inlierIndex){
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
@@ -207,7 +182,7 @@ bool VisOdomBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   }
   return status;
 }
-bool VisOdomBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+bool VOSparseBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
     int inlierIndex){
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
@@ -228,7 +203,7 @@ bool VisOdomBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   return status;
 }
 
-void VisOdomBundleAdj::Visualizer::drawTracking(
+void VOSparseBundleAdj::Visualizer::drawTracking(
     const PoseEstFrameEntry& lastFrame,
     const PoseEstFrameEntry& frame
 ){
@@ -237,12 +212,12 @@ void VisOdomBundleAdj::Visualizer::drawTracking(
   drawTrack(frame);
 }
 
-void VisOdomBundleAdj::Visualizer::drawTrack(const PoseEstFrameEntry& frame){
+void VOSparseBundleAdj::Visualizer::drawTrack(const PoseEstFrameEntry& frame){
   drawTrackTrajectories(frame);
   drawTrackEstimatedLocations(frame);
 }
 
-void VisOdomBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
+void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
   BOOST_FOREACH( const Track& track, this->tracks.mTracks ){
     const TrackObserv& lastObsv = track.back();
@@ -279,7 +254,7 @@ void VisOdomBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntry
   }
 }
 
-void VisOdomBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
+void VOSparseBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
   return;
   // now draw all the observation of the same 3d points on to a copy of the
   int imgWidth  = frame.mImage->Width();
@@ -317,7 +292,7 @@ void VisOdomBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFram
   }
 }
 
-void VisOdomBundleAdj::Track::print() const {
+void VOSparseBundleAdj::Track::print() const {
   printf("track of size %d: ", size());
   BOOST_FOREACH( const TrackObserv& obsv, *this) {
     printf("(%d, %d), ", obsv.mFrameIndex, obsv.mKeypointIndex);
@@ -325,7 +300,7 @@ void VisOdomBundleAdj::Track::print() const {
   printf("\n");
 }
 
-void VisOdomBundleAdj::Tracks::print() const {
+void VOSparseBundleAdj::Tracks::print() const {
   // print the stats
   int numTracks, maxLen, minLen;
   double avgLen;
@@ -346,7 +321,7 @@ void VisOdomBundleAdj::Tracks::print() const {
   }
 }
 
-void VisOdomBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
+void VOSparseBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
     vector<int>* lenHisto) const {
   // note, we consider tracks that have at least two observations (detected in two frames)
   int nTracks = 0;
@@ -377,7 +352,7 @@ void VisOdomBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, d
   }
 }
 
-void VisOdomBundleAdj::Stat2::print() {
+void VOSparseBundleAdj::Stat2::print() {
   // The accumulator set which will calculate the properties for us:
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc;
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc2;
@@ -416,7 +391,7 @@ void VisOdomBundleAdj::Stat2::print() {
   }
 }
 
-void VisOdomBundleAdj::updateStat2() {
+void VOSparseBundleAdj::updateStat2() {
   int numTracks, maxLen, minLen;
   double avgLen;
   vector<int> lenHisto;

@@ -73,7 +73,7 @@ public:
       /// If true, Levenberg-Marquardt is used at the end for smoothing
       bool smoothed){return 0;}
 
-	void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
+	bool estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
 	    CvMat& rot, CvMat& trans);
 	/**
 	 *  Estimate the transformation matrices rot and trans by least squares

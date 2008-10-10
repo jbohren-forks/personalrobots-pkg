@@ -1,5 +1,5 @@
 /*
- * LevMarqBundleAdj.h
+ * LevMarqSparseBundleAdj.h
  *
  *  Created on: Sep 24, 2008
  *      Author: jdchen
@@ -12,17 +12,17 @@
 #include "LevMarqPartitioned.h"
 
 #include "PathRecon.h"
-#include "VisOdomBundleAdj.h"
+#include "VOSparseBundleAdj.h"
 
 namespace cv { namespace willow {
 
 /// A special Levenberg-Marquardt for bundle adjustment in visual odometry
-class LevMarqBundleAdj: public LevMarqTransformDispSpace {
+class LevMarqSparseBundleAdj: public LevMarqTransformDispSpace {
 public:
   typedef LevMarqTransformDispSpace Parent;
-  LevMarqBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity, int numErrors,
+  LevMarqSparseBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity,
       int numMaxInter = defNumMaxIter);
-  virtual ~LevMarqBundleAdj();
+  virtual ~LevMarqSparseBundleAdj();
   /// Bundle-adjustment of a set of frames and tracks of points.
   /// The parameters are used as input as well as output.
   bool optimize(
@@ -31,7 +31,7 @@ public:
       deque<PoseEstFrameEntry *> windowOfFrames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
-      VisOdomBundleAdj::Tracks& traks
+      VOSparseBundleAdj::Tracks& traks
   );
 protected:
   static const unsigned int Dim = 3;

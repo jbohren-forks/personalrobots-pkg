@@ -293,6 +293,11 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
     int numRefGrps, int refPoints[],
     CvMat *rot, CvMat *shift, bool smoothed) {
   int numPoints = xyzs0->rows;
+
+  if (numPoints < 3) {
+    cerr << __PRETTY_FUNCTION__ <<"too few points to do RANSAC: "<<numPoints<<endl;
+    return 0;
+  }
   int numInLiers = 0;
   double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _H[4*4];
   CvMat P0, P1;
@@ -388,17 +393,23 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   return numInliers0;
 }
 
-void PoseEstimateDisp::estimateWithLevMarq(const CvMat& uvds0Inlier,
+bool PoseEstimateDisp::estimateWithLevMarq(const CvMat& uvds0Inlier,
     const CvMat& uvds1Inlier,
     CvMat& rot, CvMat& shift) {
-  estimateWithLevMarq(uvds0Inlier, uvds1Inlier, mMatCartToDisp, mMatDispToCart, rot, shift);
+  return estimateWithLevMarq(uvds0Inlier, uvds1Inlier, mMatCartToDisp, mMatDispToCart, rot, shift);
 }
 
-void PoseEstimateDisp::estimateWithLevMarq(
+bool PoseEstimateDisp::estimateWithLevMarq(
     const CvMat& uvds0Inlier, const CvMat& uvds1Inlier,
     const CvMat& CartToDisp,  const CvMat& DispToCart,
     CvMat& rot, CvMat& shift) {
+
   int numInliers = uvds0Inlier.rows;
+
+  if (numInliers<6) {
+    cerr << "WARNING: Too few inliers: "<< numInliers << endl;
+    return false;
+  }
 
   // nonlinear optimization by Levenberg-Marquardt
   cv::willow::LevMarqTransformDispSpace
@@ -416,6 +427,7 @@ void PoseEstimateDisp::estimateWithLevMarq(
 
   // TODO: construct matrix with parameters from nonlinear optimization
   levMarq.paramsToRotAndShiftMats(param, rot, shift);
+  return true;
 }
 
 bool PoseEstimateDisp::constructDisparityHomography(const CvMat *R, const CvMat *T,

@@ -27,10 +27,10 @@ using namespace std;
 
 LevMarqTransformDispSpace::LevMarqTransformDispSpace(
             const CvMat* disparityTo3D, const CvMat *threeDToDisparity,
-            int numErrors, int numMaxIter):
+            int numMaxIter, AngleType angleType):
 	LevMarqTransform(
-			numErrors /* dimensionality of the error vector */,
-			numMaxIter
+			numMaxIter,
+			angleType
 	), m3DToDisparity(threeDToDisparity), mDisparityTo3D(disparityTo3D)
 {
 //  mAngleType = Euler;

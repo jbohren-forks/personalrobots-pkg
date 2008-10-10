@@ -1,12 +1,12 @@
 /*
- * CvVisOdemBundleAdj.h
+ * VOSparseBundleAdj.h
  *
  *  Created on: Sep 17, 2008
  *      Author: jdchen
  */
 
-#ifndef CVVISODOMBUNDLEADJ_H_
-#define CVVISODOMBUNDLEADJ_H_
+#ifndef VOSPARSEBUNDLEADJ_H_
+#define VOSPARSEBUNDLEADJ_H_
 
 #include "PathRecon.h"
 
@@ -16,7 +16,7 @@ namespace willow {
  * (Under construction) Visual Odometry by sliding window bundle adjustment.
  * The input are a sequence of stereo video images.
  */
-class VisOdomBundleAdj: public PathRecon {
+class VOSparseBundleAdj: public PathRecon {
 public:
   /// Record the observation of a tracked point w.r.t.  a frame
   class TrackObserv {
@@ -85,10 +85,10 @@ public:
     /// constructed against.
     int mCurrentFrameIndex;
   };
-  VisOdomBundleAdj(
+  VOSparseBundleAdj(
       /// Image size. Use for buffer allocation.
       const CvSize& imageSize);
-  virtual ~VisOdomBundleAdj();
+  virtual ~VOSparseBundleAdj();
 
   /**
    * Given a sequence of stereo video, reconstruct the path of the

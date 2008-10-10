@@ -86,14 +86,18 @@ namespace willow {
 class LevMarqTransform
 {
 public:
+  /// Types of representations of 3D rotations.
+  typedef enum {
+    Euler,      ///< use Euler angles to represent 3D rotation
+    Rodrigues   ///< use Rodrigues parameters to represent 3D rotation
+  } AngleType;
 	/**
-	 * @param numErrors - num of errors to minimize over. Used for buffer allocation if the Jacobian matrix is
-	 * use directly (CvLevMarq.update() is used for optimization instead of JtJ and JtErr.
-	 * If 0 is set, JtJ and JtErr are used CvLevMarq.updateAlt() is used instead of CvLevMarq.update().
-	 * For now please set it to zero, the other option is not fully test/implemented yet.
 	 * @param numMaxIter - maximum number of iterations in LevMar optimization
+	 * @param angleType  - use euler angles or rodrigues parameters as optimization
+	 * variables regarding rotation.
 	 */
-	LevMarqTransform(int numErrors=0, int numMaxIter = defNumMaxIter);
+	LevMarqTransform(int numMaxIter = defNumMaxIter,
+	    AngleType angleType=Rodrigues);
 	virtual ~LevMarqTransform();
 	const static int numNonLinearParams = 3;   ///< the num of nonlinear parameters, namely rotation related
 	const static int numParams = 6;	      ///< Total num of parameters
@@ -139,12 +143,7 @@ public:
 	    /// translation matrix
 	    CvMat& trans) const;
 
-	/// Types of representations of 3D rotations.
-	typedef enum {
-		Euler,      ///< use Euler angles to represent 3D rotation
-		Rodrigues   ///< use Rodrigues parameters to represent 3D rotation
-	} AngleType;
-	AngleType mAngleType;   /// The 3D rotation representation used in optimization.
+	const AngleType mAngleType;   /// The 3D rotation representation used in optimization.
 
 protected:
 	bool constructRTMatrix(const CvMat* param);

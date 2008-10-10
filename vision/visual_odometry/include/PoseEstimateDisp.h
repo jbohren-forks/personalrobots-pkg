@@ -93,10 +93,12 @@ public:
       /// estimation.
       bool smoothed);
 
-  void estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
+  bool estimateWithLevMarq(const CvMat& points0inlier, const CvMat& points1inlier,
       CvMat& rot, CvMat& trans);
 
-  static void estimateWithLevMarq(
+  /// use Levenberge-Marquart to do optimization over the input lists
+  /// @return false if the number of points for estimation is less than 6
+  static bool estimateWithLevMarq(
       /// inlier list 0
       const CvMat& points0inlier,
       /// inlier list 1

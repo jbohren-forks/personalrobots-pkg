@@ -134,6 +134,11 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     return 0;
   }
 
+  if (numPoints < 3) {
+    cerr << __PRETTY_FUNCTION__ <<"too few points to do RANSAC: "<<numPoints<<endl;
+    return 0;
+  }
+
   double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1];
   double _RT[16];
   CvMat P0, P1;
@@ -184,10 +189,12 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
     }
   }
 
+#if 0  // this check here is not necessary here
   if (maxNumInLiers<6) {
-    cout << "Too few inliers: "<< maxNumInLiers << endl;
+    cout << "WARNING: Too few inliers: "<< maxNumInLiers << endl;
     return maxNumInLiers;
   }
+#endif
 
   int numInLiers0;
   CvMat *points0Inlier;
@@ -218,10 +225,15 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
   return maxNumInLiers;
 }
 
-void PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& points1Inlier,
+bool PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& points1Inlier,
     CvMat& rot, CvMat& trans) {
   TIMERSTART(LevMarq);
   int numInLiers = points0Inlier.rows;
+
+  if (numInLiers<6) {
+    cerr << "WARNING: Too few inliers to do optimization: "<< numInLiers << endl;
+    return false;
+  }
 
   // nonlinear optimization by Levenberg-Marquardt
   cv::willow::LevMarqTransform levMarq(numInLiers);
@@ -246,6 +258,7 @@ void PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& 
   levMarq.paramsToRotAndShiftMats(param, rot, trans);
 
   TIMEREND(LevMarq);
+  return true;
 }
 
 void PoseEstimate::updateInlierInfo(CvMat* points0Inlier, CvMat* points1Inlier, int* inlierIndices) {
