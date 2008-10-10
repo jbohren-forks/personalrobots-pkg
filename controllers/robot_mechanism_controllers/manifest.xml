@@ -5,7 +5,7 @@
   <license>BSD</license>
   <depend package="mechanism_model" />
   <depend package="control_toolbox" />
-  <depend package="pr2_mechanism_controllers" />
+  <!--depend package="pr2_mechanism_controllers" /-->
   <depend package="tinyxml" />
   <depend package="stl_utils" />
   <depend package="misc_utils" />
