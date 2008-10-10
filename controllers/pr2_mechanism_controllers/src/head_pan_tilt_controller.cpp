@@ -64,6 +64,7 @@ bool HeadPanTiltController::initXml(mechanism::RobotState * robot, TiXmlElement 
     std::cout<<elt->Attribute("type")<<elt->Attribute("name")<<std::endl;
     assert(static_cast<std::string>(elt->Attribute("type")) == std::string("JointPositionController"));
     joint_position_controllers_.push_back(jpc);
+
     if(!jpc->initXml(robot, elt))
       return false;
 
@@ -132,7 +133,6 @@ int HeadPanTiltController::getJointControllerByName(std::string name)
   return -1;
 }
 
-
 void HeadPanTiltController::update(void)
 {
   for(unsigned int i=0; i < num_joints_;++i)
@@ -143,14 +143,11 @@ void HeadPanTiltController::update(void)
   updateJointControllers();
 }
 
-
-
 void HeadPanTiltController::updateJointControllers(void)
 {
   for(unsigned int i=0;i<num_joints_;++i)
     joint_position_controllers_[i]->update();
 }
-
 
 //------ Head controller node --------
 
@@ -254,8 +251,8 @@ bool HeadPanTiltControllerNode::trackPoint(pr2_mechanism_controllers::TrackPoint
   
      
   c_->setJointCmd(pos,names);
-  resp.pan_angle = mes_pan_angle;//head_pan_angle;
-  resp.tilt_angle = mes_tilt_angle;//head_tilt_angle;
+  resp.pan_angle = head_pan_angle;
+  resp.tilt_angle =head_tilt_angle;
   return true;
 }
 

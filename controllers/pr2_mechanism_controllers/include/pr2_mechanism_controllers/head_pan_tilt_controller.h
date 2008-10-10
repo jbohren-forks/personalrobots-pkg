@@ -32,11 +32,15 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+// Original version: Melonee Wise <mwise@willowgarage.com>
+
 #pragma once
 
+// ROS stuff
 #include <ros/node.h>
 #include <rosthread/mutex.h>
 
+// Controllers
 #include <mechanism_model/controller.h>
 #include <mechanism_model/joint.h>
 #include <robot_mechanism_controllers/joint_position_controller.h>
@@ -46,160 +50,168 @@
 #include <pr2_mechanism_controllers/GetJointCmd.h>
 #include <pr2_mechanism_controllers/TrackPoint.h>
 
-#include <pr2_mechanism_controllers/SetJointGains.h>
-#include <pr2_mechanism_controllers/GetJointGains.h>
-
-
 // Math utils
 #include <math_utils/angles.h>
-
 #include <rosTF/rosTF.h>
-// #include <urdf/URDF.h>
 
 namespace controller
 {
-
-// The maximum number of joints expected in an arm.
+// The maximum number of joints expected in a head.
 static const int MAX_HEAD_JOINTS = 2;
+
+/***************************************************/
+/*! \class controller::HeadPanTiltController
+    \brief Head Pan Tilt Controller
+
+    This class closes the loop around the joint angles.
+
+    Example config:
+
+    <controller name="head_controller" type="HeadPanTiltControllerNode">
+      <listen_topic name="head_commands" />
+    
+      <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController">
+        <joint name="head_pan_joint" >
+          <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" />
+        </joint>
+      </controller>
+      
+      <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
+        <joint name="head_tilt_joint" >
+          <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" />
+        </joint>
+      </controller>
+    </controller>  
+*/
+/***************************************************/
 
 class HeadPanTiltController : public Controller
 {
 public:
 
   /*!
-   * \brief Default Constructor of the JointController class.
+   * \brief Default Constructor of the HeadPanTiltController class.
    *
    */
   HeadPanTiltController();
 
   /*!
-   * \brief Destructor of the JointController class.
+   * \brief Destructor of the HeadPanTiltController class.
    */
   virtual ~HeadPanTiltController();
 
   /*!
    * \brief Functional way to initialize limits and gains.
    *
-  */
+   */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-
   /*!
-   * \brief Sets a goal for some joint, specified as a pair of (joint values, joint names)
+   * \brief Sets goals for some joint, specified as a pair of (joint values, joint names).
    *
-   * \param j_values the positions of the joints
-   * \param j_names the names of the joints
-  */
+   * \param j_values the positions of the joints.
+   * \param j_names the names of the joints.
+   */
   void setJointCmd(const std::vector<double> &j_values, const std::vector<std::string> & j_names);
 
-//  /**
-//   * @brief Overloaded method for convenience
-//   * @param req
-//   */
-//  void setJointCmd(pr2_mechanism_controllers::SetJointPosCmd::request &req);
-
+  /*!
+   * \brief Returns the commanded joint poisitions, specified as a pair of (joint values, joint names).
+   *
+   * \param cmd names and positions.
+   */
   void getJointCmd(pr2_mechanism_controllers::JointCmd & cmd) const;
 
   /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-  */
-//  void getJointPosCmd(pr2_mechanism_controllers::GetJointPosCmd::response &resp);
-
-//  void getCurrentConfiguration(std::vector<double> &);
+   * \brief Returns the position of the controller in the vector.
+   *
+   * \param name the name of the joint being controlled by the controller (i.e. head_pan_joint).
+   */
+  int getJointControllerByName(std::string name);
 
   /*!
-     * \brief Issues commands to the joint. Should be called at regular intervals
-  */
+   * \brief Issues commands to the joint.
+   */
   virtual void update(void); // Real time safe.
+  
+  unsigned int num_joints_; /**< Number of joints. */
+  controller::JointPositionController* getJointPositionControllerByName(std::string name); /**< Joints we're controlling. */
+  std::vector<JointPositionController *> joint_position_controllers_; /**< Vector of the joint controllers. */ 
 
-  controller::JointPositionController* getJointPositionControllerByName(std::string name);
-
-  unsigned int num_joints_;
-  std::vector<JointPositionController *> joint_position_controllers_;  
-  int getJointControllerByName(std::string name);
 
 private:
 
-  double last_time_;
+  double last_time_;            /**< The last time. */
+  std::vector<double> set_pts_; /**< The vector of joint set_pts. */
+  mechanism::Robot* robot_;     /**< The robot we're controlling. */
 
-  
-
-  // Goal of the joints
-  std::vector<double> set_pts_;
-
-  mechanism::Robot* robot_;
-
-  void updateJointControllers(void);
-
-  
-  
-  
+  /*!
+   * \brief Issues commands to the joint.
+   */
+  void updateJointControllers(void); 
 
 };
 
-/** @class HeadPanTiltControllerNode
- *  @brief ROS interface for the head controller.
- *
- *  This class provides a ROS interface for controlling the arm by setting position configurations. If offers several ways to control the head:
- *  - through listening to ROS messages: this is specified in the XML configuration file by the following parameters:
- *      <listen_topic name="the name of my message" />
- *      (only one topic can be specified)
- *  - through a non blocking service call: this service call can specify a single configuration as a target (and maybe multiple configuration in the future)
- *  - through a blocking service call: this service can receive a list of position commands that will be followed one after the other
- *
- */
+/***************************************************/
+/*! \class controller::HeadPanTiltControllerNode
+    \brief Head Pan Tilt Controller Node
+
+    This class sets the joint angles given a point or
+    joint angles.
+
+*/
+/***************************************************/
+
 class HeadPanTiltControllerNode : public Controller
 {
   public:
+    
     /*!
-    * \brief Default Constructor
-    *
-    */
+     * \brief Default Constructor
+     */
     HeadPanTiltControllerNode();
 
     /*!
-    * \brief Destructor
-    */
+     * \brief Destructor
+     */
     ~HeadPanTiltControllerNode();
 
     void update();
 
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-    /** @brief sets a command for all the joints managed by the controller at once
-     * This is a lightweight version of setJointPosHeadless when the caller knows the order of the joints.
-     * @note this service should not be used. use setJointPosHeadless instead
-     * This service returns immediately
-     * @param req an array of position
-     * @param resp The response is empty
-     * @return
+    /*!
+     * \brief Sets a command for all the joints managed by the controller at once.
+     * 
+     * \param req (names, positions)
+     * \param resp (names, positions)
      */
     bool setJointSrv(pr2_mechanism_controllers::SetJointCmd::request &req,
                     pr2_mechanism_controllers::SetJointCmd::response &resp);
 
-    /** @brief service that returns the goal of the controller
-     * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm
-     * @param req
-     * @param resp the response, contains a JointPosCmd message with the goal of the controller
-     * @return
+    /*!
+     * \brief Gets the commands for all the joints managed by the controller at once.
+     * 
+     * \param req 
+     * \param resp (positions)
      */
     bool getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
                         pr2_mechanism_controllers::GetJointCmd::response &resp);
-    
+    /*!
+     * \brief Tracks a point in a specified frame.
+     * 
+     * \param req  trackpoint (header, point)
+     * \param resp (pan_angle, tilt_angle)
+     */
     bool trackPoint(pr2_mechanism_controllers::TrackPoint::request &req,                                    
                      pr2_mechanism_controllers::TrackPoint::response &resp);
   private:
-    pr2_mechanism_controllers::JointCmd msg_;   //The message used by the ROS callback
-    HeadPanTiltController *c_;
-    std::string service_prefix;
-    /*
-     * \brief pointer to ros node
-     */
-    ros::node *node;
-    rosTFClient TF;
+
+    HeadPanTiltController *c_;      /**< The controller. */
+    std::string service_prefix;     /**< The service name. */
+    ros::node *node;                /**< The node. */
+    rosTFClient TF;                 /**< The transform for converting from point to head and tilt frames. */
 
 };
-
 }
 
 

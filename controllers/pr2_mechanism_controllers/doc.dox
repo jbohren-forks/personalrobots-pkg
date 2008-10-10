@@ -5,6 +5,15 @@
 
 PR2 Specific Controllers
 
+Here are the controllers which are currently implemented:
+ \li \ref controller::ArmPositionController "Arm Position Controller"
+ \li \ref controller::ArmVelocityController "Arm Velocity Controller"
+ \li \ref controller::ArmDynamicsController "Arm Dynamics Controller"
+ \li \ref controller::HeadPanTiltController "Head Pan Tilt Controller"
+ \li \ref controller::LaserScannerController "Laser Scanner Controller"
+ \li \ref controller::BaseController "Base Controller"
+
+
 @section topic PR2 Controllers ROS Topics
  - ROS topics published by controllers
      <table border="1">
