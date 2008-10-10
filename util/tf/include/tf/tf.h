@@ -95,7 +95,7 @@ public:
   /** \brief Clear all data */
   void clear();
 
-  void setTransform(const Stamped<btTransform>& transform, const std::string& parent_id);
+  void setTransform(const Stamped<btTransform>& transform);
 
 
   /*********** Accessors *************/
@@ -119,6 +119,9 @@ public:
   template<typename T>
   void transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
 
+  template<typename T>
+  void transformMessage(const std::string& target_frame, const T& msg_in, T& msg_out);
+
   /** \brief Transform a Stamped data_in into data_out in traget frame at target time, using the given fixed frame
    * This is a bit complicated.  The net effect is that the data will be transformed to the fixed frame
    * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 
@@ -126,6 +129,7 @@ public:
   template<typename T>
   void transformStamped(const std::string& target_frame, ros::Time _target_time,const std::string& fixed_frame, 
                         const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
+
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
@@ -229,20 +233,23 @@ protected:
 };
 
 ///\todo write out lots of these :-(
-/*
+
 template<>
-void Transformer::transformStamped<Vector3>(const std::string& target_frame, const Stamped<Vector3>& stamped_in, Stamped<Vector3>& stamped_out)
+inline void Transformer::transformStamped<tf::Vector3>(const std::string& target_frame, 
+                                                       const Stamped<tf::Vector3>& stamped_in, 
+                                                       Stamped<tf::Vector3>& stamped_out)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
   
   btTransform transform = computeTransformFromList(t_list);
   btQuaternion quat = btQuaternion(stamped_in.data_.x(), stamped_in.data_.y(), stamped_in.data_.z()).normalized();
+  double magnitude = sqrt(stamped_in.data_.x() * stamped_in.data_.x() + stamped_in.data_.y() * stamped_in.data_.y() + stamped_in.data_.z() * stamped_in.data_.z());
   quat = transform * quat;
-  stamped_out.data_ = btVector3(quat.x(), quat.y(), quat.z());
+  stamped_out.data_ = btVector3(quat.x() * magnitude, quat.y() * magnitude, quat.z() * magnitude);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
-*/
+
 template<typename T>
 void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
 {
@@ -253,9 +260,29 @@ void Transformer::transformStamped(const std::string& target_frame, const Stampe
   stamped_out.data_ = transform * stamped_in.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
+  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
 
+
+
+template<>
+inline void Transformer::transformMessage<std_msgs::Vector3Stamped>(const std::string& target_frame, 
+                                                             const std_msgs::Vector3Stamped& msg_in, 
+                                                             std_msgs::Vector3Stamped& msg_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), msg_in.header.stamp, lookupFrameNumber( msg_in.header.frame_id), msg_in.header.stamp, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+  btQuaternion quat = btQuaternion(msg_in.vector.x, msg_in.vector.y, msg_in.vector.z).normalized();
+  double magnitude = sqrt(msg_in.vector.x * msg_in.vector.x + msg_in.vector.y * msg_in.vector.y + msg_in.vector.z * msg_in.vector.z);
+  quat = transform * quat;
+  msg_out.vector.x = quat.x() * magnitude;
+  msg_out.vector.y = quat.y() * magnitude;
+  msg_out.vector.z = quat.z() * magnitude;
+  msg_out.header.stamp = msg_in.header.stamp;
+  msg_out.header.frame_id = target_frame;
+};
 
 
 

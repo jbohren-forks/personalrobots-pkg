@@ -71,9 +71,9 @@ void Transformer::clear()
   frame_mutex_.unlock();
 }
 
-void Transformer::setTransform(const Stamped<btTransform>& transform, const std::string& parent_id)
+void Transformer::setTransform(const Stamped<btTransform>& transform)
 {
-  getFrame(lookupFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupFrameNumber(parent_id)));
+  getFrame(lookupFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupFrameNumber(transform.parent_id_)));
   //  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
 };
   
