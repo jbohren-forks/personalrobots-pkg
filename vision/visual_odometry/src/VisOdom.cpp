@@ -113,9 +113,12 @@ void estimateWithLevMarq(
 bool FrameSeq::backTrack(){
   bool status;
   assert(mNextFrame.get() == NULL);
-  assert(mCurrentFrame != NULL);
 #ifdef DEBUG
-  cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
+  if (mCurrentFrame) {
+    cerr << "Going back to last good frame  from frame "<<mCurrentFrame->mFrameIndex<<endl;
+  } else {
+    cerr << "Going back to last good frame  from off the end"<<endl;
+  }
   cerr << "Last good frame is "<<mLastGoodFrame->mFrameIndex << endl;
 #endif
   if (mLastGoodFrame == NULL) {

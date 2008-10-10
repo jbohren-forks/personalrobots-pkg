@@ -204,10 +204,10 @@ void KeypointSADDescriptor::computeDisparity(
     uint8_t* bufImg1,
     uint8_t* bufImg2
 ) {
-  const int& FTZero = PoseEstimateStereo::DefFTZero;
-  const int& DLen   = PoseEstimateStereo::DefDLen;
-  const int& tfilter_thresh = PoseEstimateStereo::DefTextThresh;
-  const int& ufilter_thresh = PoseEstimateStereo::DefUniqueThresh;
+  const int FTZero = PoseEstimateStereo::DefFTZero;
+  const int DLen   = PoseEstimateStereo::DefDLen;
+  const int tfilter_thresh = PoseEstimateStereo::DefTextThresh;
+  const int ufilter_thresh = PoseEstimateStereo::DefUniqueThresh;
   const CvSize descriptorSize = cvSize(16,16);
   uint8_t* featureImg = bufImg1;
   // compute the gradient image of the right image

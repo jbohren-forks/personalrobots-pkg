@@ -191,18 +191,20 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	return true;
 }
 
-void CvMatUtils::TransformationFromRodriguesAndShift(const CvMat& param, CvMat& Transform) {
+void CvMatUtils::TransformationFromRodriguesAndShift(const CvMat& param, CvMat& transform) {
   CvMat rod;
   CvMat rot;
   CvMat shift;
   CvMat shiftInParam;
-  CvMat rt;
-  assert(param.rows==1 && param.cols==6);
+  assert(param.rows==6 && param.cols==1);
   cvGetRows(&param, &rod, 0, 3);
-  cvGetSubRect(&rt,  &rot, cvRect(0,0, 3, 3));
+  cvGetRows(&param, &shiftInParam, 3, 6);
+  // get a view to the 3x3 sub matrix for rotation
+  cvGetSubRect(&transform,  &rot, cvRect(0,0, 3, 3));
+  // rodrigues to rotation matrix
   cvRodrigues2(&rod, &rot);
-  cvGetCol(&rt, &shift, 3);
-  cvGetSubRect(&rt, &shiftInParam, cvRect(0, 3, 1, 3));
+  // get a view to the 3x1 submatrix for translation
+  cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
   cvCopy(&shiftInParam, &shift);
 }
 

@@ -121,6 +121,24 @@ public:
 	 */
 	bool optimize(const CvMat* P0, const CvMat* P1, CvMat *rot, CvMat* trans);
 
+	/// a convenient routine to convert rotation matrix and translation matrix
+	/// into optimization parameters.
+	void rotAndShiftMatsToParams(
+	    /// rotation matrix
+	    const CvMat& rot,
+	    /// translation matrix
+	    const CvMat& trans,
+	    double params[6]) const;
+	/// a convenient routine to convert from optimization parameters to
+	/// rotatiom matrix and translation matrix
+	void paramsToRotAndShiftMats(
+	    /// optimization parameters
+	    const double params[6],
+	    /// rotation matrix
+	    CvMat& rot,
+	    /// translation matrix
+	    CvMat& trans) const;
+
 	/// Types of representations of 3D rotations.
 	typedef enum {
 		Euler,      ///< use Euler angles to represent 3D rotation

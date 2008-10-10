@@ -211,64 +211,6 @@ int PoseEstimate::estimate(CvMat *points0, CvMat *points1, CvMat *rot, CvMat *tr
 
   if (smoothed == true) {
     estimateWithLevMarq(*points0Inlier, *points1Inlier, *rot, *trans);
-#if 0
-    TIMERSTART(LevMarq);
-    // get the euler angle from rot
-    CvPoint3D64f eulerAngles;
-    {
-      double _R[9], _Q[9];
-      CvMat R, Q;
-      CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
-      cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
-      cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
-
-      cvRQDecomp3x3((const CvMat*)rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
-
-    }
-
-    // nonlinear optimization by Levenberg-Marquardt
-    cv::willow::LevMarqTransform levMarq(numInLiers0);
-
-    double param[6];
-
-    //initialize the parameters
-    param[0] = eulerAngles.x/180. * CV_PI;
-    param[1] = eulerAngles.y/180. * CV_PI;
-    param[2] = eulerAngles.z/180. * CV_PI;
-    param[3] = cvmGet(trans, 0, 0);
-    param[4] = cvmGet(trans, 1, 0);
-    param[5] = cvmGet(trans, 2, 0);
-
-#ifdef DEBUG
-    printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-        param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
-        param[2], param[2]/CV_PI*180.,
-        param[3], param[4], param[5]);
-#endif
-    int64 tDoit = cvGetTickCount();
-    levMarq.optimize(points0Inlier, points1Inlier, param);
-    CvTestTimer::getTimer().mLevMarqDoit += cvGetTickCount() - tDoit;
-
-#ifdef DEBUG
-    printf("optimized parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-        param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
-        param[2], param[2]/CV_PI*180.,
-        param[3], param[4], param[5]);
-#endif
-
-    // TODO: construct matrix with parameters from nonlinear optimization
-    double _rot[9];
-
-    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::EulerXYZ);
-    for (int i=0;i<3;i++)
-      for (int j=0;j<3;j++) {
-        cvmSet(rot, i, j, _rot[i*3+j]);
-      }
-    cvmSet(trans, 0, 0, param[3]);
-    cvmSet(trans, 1, 0, param[4]);
-    cvmSet(trans, 2, 0, param[5]);
-    TIMEREND(LevMarq);
-#endif
   }
   updateInlierInfo(points0Inlier, points1Inlier, inlierIndices);
 
@@ -280,17 +222,6 @@ void PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& 
     CvMat& rot, CvMat& trans) {
   TIMERSTART(LevMarq);
   int numInLiers = points0Inlier.rows;
-  // get the euler angle from rot
-  CvPoint3D64f eulerAngles;
-  {
-    double _R[9], _Q[9];
-    CvMat R, Q;
-    CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
-    cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
-    cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
-
-    cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
-  }
 
   // nonlinear optimization by Levenberg-Marquardt
   cv::willow::LevMarqTransform levMarq(numInLiers);
@@ -298,19 +229,8 @@ void PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& 
   double param[6];
 
   //initialize the parameters
-  param[0] = eulerAngles.x/180. * CV_PI;
-  param[1] = eulerAngles.y/180. * CV_PI;
-  param[2] = eulerAngles.z/180. * CV_PI;
-  param[3] = cvmGet(&trans, 0, 0);
-  param[4] = cvmGet(&trans, 1, 0);
-  param[5] = cvmGet(&trans, 2, 0);
+  levMarq.rotAndShiftMatsToParams(rot, trans, param);
 
-#ifdef DEBUG
-  printf("initial parameters: %f(%f), %f(%f), %f(%f), %f, %f, %f\n",
-      param[0], param[0]/CV_PI*180., param[1], param[1]/CV_PI*180.,
-      param[2], param[2]/CV_PI*180.,
-      param[3], param[4], param[5]);
-#endif
   int64 tDoit = cvGetTickCount();
   levMarq.optimize(&points0Inlier, &points1Inlier, param);
   CvTestTimer::getTimer().mLevMarqDoit += cvGetTickCount() - tDoit;
@@ -322,17 +242,8 @@ void PoseEstimate::estimateWithLevMarq(const CvMat& points0Inlier, const CvMat& 
       param[3], param[4], param[5]);
 #endif
 
-  // TODO: construct matrix with parameters from nonlinear optimization
-  double _rot[9];
-
-  CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot, CvMat3X3<double>::EulerXYZ);
-  for (int i=0;i<3;i++)
-    for (int j=0;j<3;j++) {
-      cvmSet(&rot, i, j, _rot[i*3+j]);
-    }
-  cvmSet(&trans, 0, 0, param[3]);
-  cvmSet(&trans, 1, 0, param[4]);
-  cvmSet(&trans, 2, 0, param[5]);
+  // construct matrix with parameters from nonlinear optimization
+  levMarq.paramsToRotAndShiftMats(param, rot, trans);
 
   TIMEREND(LevMarq);
 }
@@ -346,34 +257,6 @@ void PoseEstimate::updateInlierInfo(CvMat* points0Inlier, CvMat* points1Inlier, 
   mInlierIndices = inlierIndices;
 }
 
-#if 0
-bool PoseEstimate::tooCloseToColinear(CvMat* points){
-	CvMat * temp = cvCloneMat(points);
-	cvSetReal2D(temp, 0, 0, 1);
-	cvSetReal2D(temp, 0, 1, 1);
-	cvSetReal2D(temp, 0, 2, 1);
-	if (cvDet(temp)>this->mMinDet){
-		return false;
-	}
-	cvCopy(points, temp);
-	cvSetReal2D(temp, 1, 0, 1);
-	cvSetReal2D(temp, 1, 1, 1);
-	cvSetReal2D(temp, 1, 2, 1);
-	if (cvDet(temp)>this->mMinDet){
-		return false;
-	}
-	cvCopy(points, temp);
-	cvSetReal2D(temp, 2, 0, 1);
-	cvSetReal2D(temp, 2, 1, 1);
-	cvSetReal2D(temp, 2, 2, 1);
-	if (cvDet(temp)>this->mMinDet){
-		return false;
-	}
-	// TODO: release temp
-	cvReleaseMat(&temp);
-	return true;
-}
-#else
 bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 	CvMat p0, p1, p2;
 	double _p01[3], _p02[3];
@@ -397,7 +280,6 @@ bool PoseEstimate::tooCloseToColinear(CvMat *points)  {
 		return false;
 	}
 }
-#endif
 
 bool PoseEstimate::pick3RandomPoints(CvMat* points0, CvMat* points1, CvMat* P0, CvMat* P1){
   TIMERSTART2(PointPicking);

@@ -34,9 +34,10 @@ using namespace cv::willow;
 #endif
 
 
-LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter)
+LevMarqTransform::LevMarqTransform(int numErrors, int numMaxIter):
+  mAngleType(Rodrigues)
+//  mAngleType(Euler)
 {
-	this->mAngleType = Euler;
 	cvInitMatHeader(&mRT,         4, 4, CV_64F, mRTData);
 	cvSetIdentity(&mRT);
 	// get a view of the 3x4 transformation matrix that combines rot matrix and shift (translation) vector
@@ -64,16 +65,6 @@ LevMarqTransform::~LevMarqTransform()
 
 bool LevMarqTransform::constructRTMatrices(const CvMat *param, double delta) {
   constructRTMatrix(param, mRTData);
-#if 0
-	double x  = cvmGet(param, 0, 0);
-	double y  = cvmGet(param, 1, 0);
-	double z  = cvmGet(param, 2, 0);
-	double tx = cvmGet(param, 3, 0);
-	double ty = cvmGet(param, 4, 0);
-	double tz = cvmGet(param, 5, 0);
-
-	CvMat3X3<double>::transformMatrix(x, y, z, tx, ty, tz, mRTData, 4, CvMat3X3<double>::EulerXYZ);
-#endif
 
 	double _param1[numParams];
 	CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
@@ -104,24 +95,9 @@ bool LevMarqTransform::constructRTMatrix(const CvMat * param, double _RT[]) cons
 	}
 	case Rodrigues:
 	{
-#if 0
-		// Rodrigues
-		CvMat rod;
-		CvMat rot;
-    CvMat rt;
-		assert(param->rows==1 && param->cols==6);
-		cvGetRows(param, &rod, 0, 3);
-    cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
-		cvGetSubRect(&rt,  &rot, cvRect(0,0, 3, 3));
-		cvRodrigues2(&rod, &rot);
-		_RT[      3] = cvmGet(param, 3, 0);
-		_RT[4*1 + 3] = cvmGet(param, 4, 0);
-		_RT[4*2 + 3] = cvmGet(param, 5, 0);
-#else
     CvMat rt;
     cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
 		CvMatUtils::TransformationFromRodriguesAndShift(*param, rt);
-#endif
 		break;
 	}
 	default:
@@ -133,38 +109,7 @@ bool LevMarqTransform::constructRTMatrix(const CvMat * param, double _RT[]) cons
 }
 
 bool LevMarqTransform::constructRTMatrix(const CvMat* param){
-	bool status = true;
-
-	double x = cvmGet(param, 0, 0);
-	double y = cvmGet(param, 1, 0);
-	double z = cvmGet(param, 2, 0);
-	double _R[9];
-	CvMat3X3<double>::rotMatrix(x, y, z, _R, CvMat3X3<double>::EulerXYZ);
-
-	cvSetReal2D(&mRT, 0, 0,  _R[0]);
-	cvSetReal2D(&mRT, 0, 1,  _R[1]);
-	cvSetReal2D(&mRT, 0, 2,  _R[2]);
-
-	cvSetReal2D(&mRT, 1, 0,  _R[3]);
-	cvSetReal2D(&mRT, 1, 1,  _R[4]);
-	cvSetReal2D(&mRT, 1, 2,  _R[5]);
-
-	cvSetReal2D(&mRT, 2, 0,  _R[6]);
-	cvSetReal2D(&mRT, 2, 1,  _R[7]);
-	cvSetReal2D(&mRT, 2, 2,  _R[8]);
-
-	// translation vector
-	cvSetReal2D(&mRT, 0, 3, cvmGet(param, 3, 0));
-	cvSetReal2D(&mRT, 1, 3, cvmGet(param, 4, 0));
-	cvSetReal2D(&mRT, 2, 3, cvmGet(param, 5, 0));
-
-	// last row
-	cvSetReal2D(&mRT, 3, 0, 0.);
-	cvSetReal2D(&mRT, 3, 1, 0.);
-	cvSetReal2D(&mRT, 3, 2, 0.);
-	cvSetReal2D(&mRT, 3, 3, 1.);
-
-	return status;
+  return constructRTMatrix(param, mRTData);
 }
 
 bool LevMarqTransform::computeResidue(const CvMat* xyzs0, const CvMat *xyzs1, CvMat* res){
@@ -210,10 +155,11 @@ bool LevMarqTransform::optimize(const CvMat *xyzs0, const CvMat *xyzs1, CvMat *r
 	bool status = true;
 	double _param[6];
 	CvMat rod;
+	// the first 3 entries in param are the rodrigues rotation params
 	cvInitMatHeader(&rod, 1, 3, CV_64F, _param);
 	// compute rodrigues
 	cvRodrigues2(rot, &rod);
-	this->mAngleType = Rodrigues;
+//	this->mAngleType = Rodrigues;
 	status = optimize(xyzs0, xyzs1, _param);
 	return status;
 }
@@ -454,9 +400,9 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 
 	    		TIMERSTART(ConstructMatrices);
     			constructTransformationMatrix(param0);
-        		TIMEREND(ConstructMatrices);
-				// xyzs0 and xyzs1's are inliers we copy. so we know
-				// how their data are organized
+    			TIMEREND(ConstructMatrices);
+    			// xyzs0 and xyzs1's are inliers we copy. so we know
+    			// how their data are organized
     			double *p0 = xyzs0->data.db;
     			double *p1 = xyzs1->data.db;
     			double errNorm=0.0;
@@ -507,4 +453,70 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
   }
 	TIMEREND2(LevMarq2);
 	return status;
+}
+
+void LevMarqTransform::rotAndShiftMatsToParams(const CvMat& rot, const CvMat& trans,
+    double param[6]) const {
+  switch(mAngleType) {
+  case LevMarqTransform::Euler: {
+    // get the euler angle from rot
+    CvPoint3D64f eulerAngles;
+    {
+      double _R[9], _Q[9];
+      CvMat R, Q;
+      CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
+      cvInitMatHeader(&R,  3, 3, CV_64FC1, _R);
+      cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
+
+      cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
+    }
+    param[0] = eulerAngles.x/180. * CV_PI;
+    param[1] = eulerAngles.y/180. * CV_PI;
+    param[2] = eulerAngles.z/180. * CV_PI;
+    param[3] = cvmGet(&trans, 0, 0);
+    param[4] = cvmGet(&trans, 1, 0);
+    param[5] = cvmGet(&trans, 2, 0);
+    break;
+  }
+  case LevMarqTransform::Rodrigues: {
+    CvMat rod = cvMat(1, 3, CV_64FC1, param);
+    cvRodrigues2(&rot, &rod);
+    param[3] = cvmGet(&trans, 0, 0);
+    param[4] = cvmGet(&trans, 1, 0);
+    param[5] = cvmGet(&trans, 2, 0);
+    break;
+  }
+  default:
+    cerr << "unknow angle type"<<endl;
+  }
+}
+
+void LevMarqTransform::paramsToRotAndShiftMats(const double param[6],
+    CvMat& rot, CvMat& trans) const {
+  switch(mAngleType) {
+  case LevMarqTransform::Euler: {
+    double _rot[9];
+    CvMat rot0 = cvMat(3, 3, CV_64FC1, _rot);
+    CvMat3X3<double>::rotMatrix(param[0], param[1], param[2], _rot,
+        CvMat3X3<double>::EulerXYZ);
+    cvCopy(&rot0, &rot);
+
+    cvmSet(&trans, 0, 0, param[3]);
+    cvmSet(&trans, 1, 0, param[4]);
+    cvmSet(&trans, 2, 0, param[5]);
+
+    break;
+  }
+  case LevMarqTransform::Rodrigues: {
+    CvMat rod = cvMat(1, 3, CV_64FC1, (void *)param);
+    cvRodrigues2(&rod, &rot);
+
+    cvmSet(&trans, 0, 0, param[3]);
+    cvmSet(&trans, 1, 0, param[4]);
+    cvmSet(&trans, 2, 0, param[5]);
+    break;
+  }
+  default:
+    cerr << "unknow angle type"<<endl;
+  }
 }

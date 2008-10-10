@@ -33,6 +33,7 @@ LevMarqTransformDispSpace::LevMarqTransformDispSpace(
 			numMaxIter
 	), m3DToDisparity(threeDToDisparity), mDisparityTo3D(disparityTo3D)
 {
+//  mAngleType = Euler;
 	cvInitMatHeader(&mHomography, 4, 4, CV_64FC1, _Homography);
 }
 
