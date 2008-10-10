@@ -39,16 +39,14 @@
  * www.PhaseSpace.com
  */
 
-#include "ros/node.h"
+#include "phase_space_node.h"
 
+using namespace phase_space ;
 
-// PhaseSpace API
-#include "owl.h"
+static const int MAX_NUM_MARKERS = 64 ;
+static const int MAX_NUM_BODIES = 64 ;
 
-// Messages
-#include "phase_space/PhaseSpaceSnapshot.h"
-#include "phase_space/PhaseSpaceMarker.h"
-
+static const bool DEBUG_ON = true ;
 
 #define negativeCheck(result, msg) \
   if (result < 0) \
@@ -57,196 +55,240 @@
     assert(result < 0) ; \
   }
 
-
-
-static const int NUM_MARKERS = 64 ;
-
-
-namespace phase_space
+PhaseSpaceNode::PhaseSpaceNode() : ros::node("phase_space")
 {
-
-class PhaseSpaceNode : public ros::node
+  advertise<PhaseSpaceSnapshot>("phase_space_snapshot", 48) ;
+}
+  
+void PhaseSpaceNode::startOwlClient()
 {
-public:
-  
-  PhaseSpaceNode() : ros::node("phase_space")
-  {
-    advertise<PhaseSpaceSnapshot>("phase_space_snapshot", 48) ;
-    
-  }
-  
-  void startOwlClient()
-  {
-    int result ;
-    
-    result = owlInit("10.0.0.24", 0) ;                                          // Flag term is 0, since we currently have no modifiers for startup
-    negativeCheck(result, "Error initializing owl connection, owlInit()") ;
-    
-  }
-  
-  void addDefaultMarkers()
-  {
-    owlTrackeri(0, OWL_CREATE, OWL_POINT_TRACKER) ;
-
-    if(!owlGetStatus())
-    {
-      owl_print_error("A) error in point tracker setup", owlGetError()) ;
-      return ;
-    }
-  
-    // Simply add the first NUM_MARKERS led-IDs to list of markers to track
-    for (int i=0; i<NUM_MARKERS; i++)
-    {
-      owlMarkeri(MARKER(0, i), OWL_SET_LED, i) ;
-    }
-    
-    if(!owlGetStatus())
-    {
-      owl_print_error("B) error in point tracker setup", owlGetError()) ;
-      return ;
-    }
-
-    owlTracker(0, OWL_ENABLE);
-
-    // flush requests and check for errors
-    if(!owlGetStatus())
-    {
-      owl_print_error("C) error in point tracker setup", owlGetError()) ;
-      return ;
-    }
-  }
-  
-  void startStreaming()
-  {
-    // set to the max frequency
-    owlSetFloat(OWL_FREQUENCY, OWL_MAX_FREQUENCY);
-
-    // start streaming
-    owlSetInteger(OWL_STREAMING, OWL_ENABLE);
-    
-    // Turn on timestamps
-    owlSetInteger(OWL_TIMESTAMP, OWL_ENABLE);
-  }
-  
-  bool spin()
-  {
-    OWLMarker markers[NUM_MARKERS] ;
-    
-    while (ok())             // While the node has not been shutdown
-    {
-      usleep(1) ;
-      int n = owlGetMarkers(markers, NUM_MARKERS) ;
-
-      int timeVal[3] ;
-      timeVal[0] = 0 ;
-      timeVal[1] = 0 ;
-      timeVal[2] = 0 ;
-      int ntime = owlGetIntegerv(OWL_TIMESTAMP, timeVal) ;
-      
-      if (ntime < 0)
-        printf("ERROR: ntime=%i\n", ntime) ;
-
-      int err ;
-      if((err = owlGetError()) != OWL_NO_ERROR)
-      {
-        owl_print_error("error", err);
-        break;
-      }
-
-      if(n > 0)
-      {
-        int marker_count = 0 ;
-        
-        PhaseSpaceSnapshot snapshot ;
-        snapshot.set_markers_size(NUM_MARKERS) ;
-        snapshot.frameNum = markers[0].frame ;
-        
-        for(int i=0; i < n; i++)
-        {
-          if(markers[i].cond > 0)
-          {
-            copyMarkerToMessage(markers[i], snapshot.markers[marker_count]) ;
-            marker_count++ ;
-          }
-        }
-        
-        snapshot.set_markers_size(marker_count) ;
-        
-        //printf("%d marker(s):\n", n);
-        //for(int i = 0; i < n; i++)
-        // {
-        //  if(markers[i].cond > 0)
-        //    printf("%d) FRAME=%i (%f %f %f)\n", i, markers[i].frame, markers[i].x, markers[i].y, markers[i].z) ;
-        //}
-        //printf("\n") ;
-        
-        
-        publish("phase_space_snapshot", snapshot) ;
-        
-      }
-    }
-
-    return true;
-  }
-  
-  void shutdownOwlClient()
-  {
-    owlDone() ;             // OWL API-call to perform system cleanup before client termination
-  }
-  
-private:
-  
-  void copyMarkerToMessage(const OWLMarker& owl_marker, PhaseSpaceMarker& msg_marker)
-  {
-    msg_marker.id         = owl_marker.id ;
-
-    // Don't forget that owl markers are in millimeters, whereas all ROS data types are in meters!
-    msg_marker.location.x = owl_marker.x / 1000.0 ;
-    msg_marker.location.y = owl_marker.y / 1000.0 ;
-    msg_marker.location.z = owl_marker.z / 1000.0 ;
-    msg_marker.condition  = owl_marker.cond ;
-  }
-  
-  void owl_print_error(const char *s, int n)
-  {
-    if(n < 0) printf("%s: %d\n", s, n);
-    else if(n == OWL_NO_ERROR) printf("%s: No Error\n", s);
-    else if(n == OWL_INVALID_VALUE) printf("%s: Invalid Value\n", s);
-    else if(n == OWL_INVALID_ENUM) printf("%s: Invalid Enum\n", s);
-    else if(n == OWL_INVALID_OPERATION) printf("%s: Invalid Operation\n", s);
-    else printf("%s: 0x%x\n", s, n);
-  }
-} ;
-
+  int result ;
+  result = owlInit("10.0.0.24", OWL_SLAVE) ;
+  negativeCheck(result, "Error initializing owl connection, owlInit()") ;
 }
 
-using namespace phase_space ;
+void PhaseSpaceNode::startStreaming()
+{
+  // start streaming
+  owlSetInteger(OWL_STREAMING, OWL_ENABLE);
+}
+
+bool PhaseSpaceNode::spin()
+{ 
+  while (ok())             // While the node has not been shutdown
+  {
+    usleep(1) ;
+    PhaseSpaceSnapshot snapshot ;
+
+    snapshot.header.frame_id = "phase_space" ;
+    
+    int n_markers, n_bodies ;
+    n_markers = grabMarkers(snapshot) ;
+    n_bodies =  grabBodies(snapshot) ;
+    
+    if (n_markers > 0 || n_bodies > 0)
+    {
+      grabTime(snapshot) ;
+      publish("phase_space_snapshot", snapshot) ;
+      
+      if (snapshot.frameNum % 240 == 0)
+        dispSnapshot(snapshot) ;
+    }
+  }  
+  return true ;
+}
+
+int PhaseSpaceNode::grabMarkers(PhaseSpaceSnapshot& snapshot)
+{
+  OWLMarker markers[MAX_NUM_MARKERS] ;
+
+  int n = owlGetMarkers(markers, MAX_NUM_MARKERS) ;
+
+  int timeVal[3] ;
+  timeVal[0] = 0 ;
+  timeVal[1] = 0 ;
+  timeVal[2] = 0 ;
+  int ntime = owlGetIntegerv(OWL_TIMESTAMP, timeVal) ;
+
+  if (ntime < 0)
+    printf("ERROR: ntime=%i\n", ntime) ;
+
+  int err ;
+  if((err = owlGetError()) != OWL_NO_ERROR)
+  {
+    owlPrintError("error", err) ;
+    return 0 ;
+  }
+
+  if(n > 0)
+  {
+    int marker_count = 0 ;
+
+    snapshot.set_markers_size(MAX_NUM_MARKERS) ;        // Make vector as large a possibl, and shrink once we know how many elements we actually have
+    snapshot.frameNum = markers[0].frame ;              // //! \todo Need to do better frame num management
+
+    for(int i=0; i < n; i++)
+    {
+      if(markers[i].cond > 0)                           // Check that server did not mess up in computing pose
+      {
+        copyMarkerToMessage(markers[i], snapshot.markers[marker_count]) ;
+        marker_count++ ;
+      }
+    }
+
+    snapshot.set_markers_size(marker_count) ;
+    
+  }
+  return n ;
+}
+
+int PhaseSpaceNode::grabBodies(PhaseSpaceSnapshot& snapshot)
+{
+  OWLRigid bodies[MAX_NUM_BODIES] ;
+  int n = owlGetRigids(bodies, MAX_NUM_BODIES) ;
+  
+  if (n > 0)
+  {
+    int body_count = 0 ;
+    
+    snapshot.set_bodies_size(MAX_NUM_MARKERS) ;
+    snapshot.frameNum = bodies[0].frame ;               //! \todo Need to do better frame num management
+    
+    for (int i=0; i < n; i++)
+    {
+      if(bodies[i].cond > 0)                            // Check that server did not mess up in computing pose
+      {
+        copyBodyToMessage(bodies[i], snapshot.bodies[body_count]) ;
+        body_count++ ;
+      }
+    }
+    snapshot.set_bodies_size(body_count) ;
+  }
+  
+  return n ;
+}
+
+void PhaseSpaceNode::grabTime(PhaseSpaceSnapshot& snapshot)
+{
+  
+  
+}
+
+
+void PhaseSpaceNode::shutdownOwlClient()
+{
+  owlDone() ;             // OWL API-call to perform system cleanup before client termination
+}
+  
+void PhaseSpaceNode::copyMarkerToMessage(const OWLMarker& owl_marker, PhaseSpaceMarker& msg_marker)
+{
+  msg_marker.id         = owl_marker.id ;
+
+  // Don't forget that owl markers are in millimeters, whereas all ROS data types are in meters!
+  msg_marker.location.x = owl_marker.x / 1000.0 ;
+  msg_marker.location.y = owl_marker.y / 1000.0 ;
+  msg_marker.location.z = owl_marker.z / 1000.0 ;
+  msg_marker.condition  = owl_marker.cond ;
+}
+
+void PhaseSpaceNode::copyBodyToMessage(const OWLRigid& owl_body, PhaseSpaceBody& msg_body)
+{
+  msg_body.id = owl_body.id ;
+  
+  msg_body.pose.translation.x = owl_body.pose[0] ;
+  msg_body.pose.translation.y = owl_body.pose[1] ;
+  msg_body.pose.translation.z = owl_body.pose[2] ;
+  
+  msg_body.pose.rotation.w    = owl_body.pose[3] ;
+  msg_body.pose.rotation.x    = owl_body.pose[4] ;
+  msg_body.pose.rotation.y    = owl_body.pose[5] ;
+  msg_body.pose.rotation.z    = owl_body.pose[6] ;
+  
+  msg_body.condition = owl_body.cond ;
+}
+  
+void PhaseSpaceNode::owlPrintError(const char *s, int n)
+{
+  if(n < 0)
+    printf("%s: %d\n", s, n);
+  else if(n == OWL_NO_ERROR)
+    printf("%s: No Error\n", s);
+  else if(n == OWL_INVALID_VALUE)
+    printf("%s: Invalid Value\n", s);
+  else if(n == OWL_INVALID_ENUM)
+    printf("%s: Invalid Enum\n", s);
+  else if(n == OWL_INVALID_OPERATION)
+    printf("%s: Invalid Operation\n", s);
+  else
+    printf("%s: 0x%x\n", s, n);
+}
+
+void PhaseSpaceNode::dispSnapshot(const PhaseSpaceSnapshot& s)
+{
+  printf("rosTF_frame: %s   Frame #%u\n", s.header.frame_id.c_str(), s.frameNum) ;
+  printf("  Markers: %u\n", s.get_markers_size()) ;
+  
+  unsigned int i = 0 ;
+  for (i=0; i < s.get_markers_size(); i++)
+  {
+    printf("    %02u) (% 10.4f, % 10.4f, % 10.4f)\n", s.markers[i].id, s.markers[i].location.x, s.markers[i].location.y, s.markers[i].location.z) ;
+  }
+
+  for (i; i<10; i++)
+    printf("\n") ;
+  
+  
+  printf("  Bodies: %u\n", s.get_bodies_size()) ;
+  for (i=0; i < s.get_bodies_size(); i++)
+  {
+    printf("    %02u) Loc (% 10.4f, % 10.4f, % 10.4f)\n", s.bodies[i].id,
+                                                          s.bodies[i].pose.translation.x,
+                                                          s.bodies[i].pose.translation.y,
+                                                          s.bodies[i].pose.translation.z) ;
+    printf("        Rot (x=% 2.2f, y=% 2.2f, z=% 2.2f, w=% 2.2f)\n", s.bodies[i].pose.rotation.x,
+                                                                     s.bodies[i].pose.rotation.y,
+                                                                     s.bodies[i].pose.rotation.z,
+                                                                     s.bodies[i].pose.rotation.w) ;
+  }
+  
+  for (i; i<2; i++)
+    printf("\n\n") ;
+  
+  printf("\n") ;
+}
 
 int main(int argc, char** argv)
 {
+
+  printf("Initializing Ros...") ;
   ros::init(argc, argv);
+  printf("Done\n") ;
 
+  printf("Constructing phase_space_node...") ;
   PhaseSpaceNode phase_space_node ;
+  printf("Done\n") ;
 
+  printf("Trying to connect to OWL server...\n") ;  
   phase_space_node.startOwlClient() ;
+  printf("Done\n") ;
   
-  phase_space_node.addDefaultMarkers() ;
-  
+  printf("Starting streaming...\n") ;
   phase_space_node.startStreaming() ;
+  printf("Done\n") ;
+  
+  printf("Streaming started\n") ;
   
   printf("Phase Space Client Running...\n") ;
   printf("(Press Crtl-C to quit)\n") ;
   
   phase_space_node.spin() ;
 
+  printf("Shutting Down OWL Client\n") ;
   phase_space_node.shutdownOwlClient() ;
 
   ros::fini() ;
   
- 
-
-//  int result ;
-//  result = owlInit("10.0.0.24", OWL_SLAVE | OWL_POSTPROCESS) ;
+  printf("**** Exiting ****\n") ;
   
   return 0 ;
 }
