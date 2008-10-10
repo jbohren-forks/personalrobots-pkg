@@ -158,7 +158,8 @@ namespace laser_scan{
 
     //downsize if necessary
     cloud_out.set_pts_size(count);
-    cloud_out.chan[0].set_vals_size(count);
+    if (scan_in.intensities_size > 0)
+     cloud_out.chan[0].set_vals_size(count);
  
   };
   
