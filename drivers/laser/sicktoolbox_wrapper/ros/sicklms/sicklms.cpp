@@ -52,7 +52,7 @@ public:
   double last_print_time;
   SickNode() : ros::node("sicklms"), scan_count(0), last_print_time(0)
   {
-    scan_msg.header.frame_id = "FRAMEID_LASER";
+    scan_msg.header.frame_id = "base_laser";
     advertise<std_msgs::LaserScan>("scan");
     param("sicklms/port", port, string("/dev/ttyUSB0"));
     param("sicklms/baud", baud, 500000);
