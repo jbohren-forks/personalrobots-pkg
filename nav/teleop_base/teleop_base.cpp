@@ -101,7 +101,7 @@ class TeleopBase : public node
          else
          {
            cmd.vx = cmd.vy = cmd.vw = 0;
-           if (!deadman_no_publish_)
+            if (!deadman_no_publish_)
            {
              publish("cmd_vel", cmd);//Only publish if deadman_no_publish is enabled
              fprintf(stderr,"teleop_base:: deadman off\n");
@@ -114,7 +114,7 @@ class TeleopBase : public node
 int main(int argc, char **argv)
 {
    ros::init(argc, argv);
-   const char* opt_no_publish    = "--deadman-no-publish";
+   const char* opt_no_publish    = "--deadman_no_publish";
 
    bool no_publish = false;
    for(int i=1;i<argc;i++)
