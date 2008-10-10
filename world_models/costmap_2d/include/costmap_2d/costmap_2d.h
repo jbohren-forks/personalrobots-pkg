@@ -64,12 +64,13 @@
 #include <set>
 #include <string>
 #include <map>
+#include <queue>
 
 // For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
 
 typedef unsigned char TICK;
-typedef std::multimap<unsigned int, unsigned int> PRIORITY_QUEUE;
+typedef std::queue< std::pair<unsigned int, unsigned int> > QUEUE;
 
 namespace costmap_2d {
 
@@ -198,7 +199,7 @@ namespace costmap_2d {
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagate(PRIORITY_QUEUE& queue, std::set<unsigned int>& updates);
+    void propagate(QUEUE& queue, std::set<unsigned int>& updates);
 
     /**
      * @brief A cost function for getting costs from distance

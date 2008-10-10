@@ -85,7 +85,7 @@ namespace costmap_2d {
     memset(obsWatchDog_, 0, width_*height_);
 
     // For the first pass, just clean up the data and get the set of original obstacles.
-    PRIORITY_QUEUE queue; // Priority queue for propagating costs
+    QUEUE queue; // queue for propagating costs
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
 	unsigned int ind = MC_IND(i, j);
@@ -97,7 +97,7 @@ namespace costmap_2d {
 	  staticData_[ind] = LETHAL_OBSTACLE;
 
 	if(staticData_[ind] == LETHAL_OBSTACLE){
-	  queue.insert(std::make_pair(0, ind));
+	  queue.push(std::make_pair(0, ind));
 	  staticObstacles_.push_back(ind);
 	}
       }
@@ -139,7 +139,7 @@ namespace costmap_2d {
   {
     updates.clear();
 
-    PRIORITY_QUEUE queue;
+    QUEUE queue;
 
     // Small clearance for what is 'in contact' which is a centimeter
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
@@ -148,7 +148,7 @@ namespace costmap_2d {
 	continue;
 
       unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
-      queue.insert(std::make_pair(0, ind));
+      queue.push(std::make_pair(0, ind));
     }
 
     // Propagate costs
@@ -331,14 +331,13 @@ namespace costmap_2d {
     return ss.str();
   }
 
-  void CostMap2D::propagate(PRIORITY_QUEUE& queue, std::set<unsigned int>& updates){
+  void CostMap2D::propagate(QUEUE& queue, std::set<unsigned int>& updates){
     updates.clear();
     while(!queue.empty()){
-      PRIORITY_QUEUE::iterator it = queue.begin();
-      unsigned int distance = it->first;
-      unsigned int ind = it->second;
+      unsigned int distance = queue.front().first;
+      unsigned int ind = queue.front().second;
       unsigned char cost = computeCost(ind, distance);
-      queue.erase(it);
+      queue.pop();
       
       if(!marked(ind)){
 	updateCell(ind, cost, updates);
@@ -361,7 +360,7 @@ namespace costmap_2d {
 	    unsigned int cellId = MC_IND(i, j);
 	    // If the cell is not marked, insert into queue
 	    if(!marked(cellId))
-	      queue.insert(std::make_pair(distance + 1, cellId));
+	      queue.push(std::make_pair(distance + 1, cellId));
 	  }
 	}
       }
