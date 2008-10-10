@@ -178,6 +178,16 @@ protected:
   virtual bool dispatchCommands() = 0;
 
   /**
+   * @brief A Hook to catch a deactivation event
+   */
+  virtual void handleDeactivation() {}
+
+  /**
+   * @brief A Hook to catch an activation event
+   */
+  virtual void handleActivation(){}
+
+  /**
    * @brief Aquire node level lock
    */
   void lock(){lock_.lock();}
@@ -224,6 +234,8 @@ private:
     this->stateMsg.active = 1;
     this->stateMsg.valid = 0;
     this->stateMsg.done = 0;
+
+    handleActivation();
   }
 
   /**
@@ -234,6 +246,8 @@ private:
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
+
+    handleDeactivation();
   }
 
   /**

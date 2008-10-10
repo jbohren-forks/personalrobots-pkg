@@ -119,6 +119,11 @@ namespace ros {
       virtual bool dispatchCommands();      
 
       /**
+       * @brief On deactivation we should stop the robot
+       */
+      virtual void handleDeactivation();
+
+      /**
        * @brief Call back for handling new laser scans
        */
       void laserScanCallback();

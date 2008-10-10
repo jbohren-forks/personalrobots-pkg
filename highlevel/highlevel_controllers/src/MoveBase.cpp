@@ -527,21 +527,22 @@ namespace ros {
      * render the obstacles.
      */
     void MoveBase::publishLocalCostMap() {
+      CostMapAccessor cm(*costMap_, 10.0, global_pose_.x, global_pose_.y);
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
       double origin_x, origin_y;
-      ma_->getOriginInWorldCoordinates(origin_x, origin_y);
-      for(unsigned int i = 0; i<ma_->getWidth(); i++){
-	for(unsigned int j = 0; j<ma_->getHeight();j++){
+      cm.getOriginInWorldCoordinates(origin_x, origin_y);
+      for(unsigned int i = 0; i<cm.getWidth(); i++){
+	for(unsigned int j = 0; j<cm.getHeight();j++){
 	  double wx, wy;
-	  wx = i * ma_->getResolution() + origin_x;
-	  wy = j * ma_->getResolution() + origin_y;
+	  wx = i * cm.getResolution() + origin_x;
+	  wy = j * cm.getResolution() + origin_y;
 	  std::pair<double, double> p(wx, wy);
 
-	  if(ma_->getCost(i, j) == CostMap2D::LETHAL_OBSTACLE)
+	  if(cm.getCost(i, j) == CostMap2D::LETHAL_OBSTACLE)
 	    rawObstacles.push_back(p);
-	  else if(ma_->getCost(i, j) == CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
+	  else if(cm.getCost(i, j) == CostMap2D::INSCRIBED_INFLATED_OBSTACLE)
 	    inflatedObstacles.push_back(p);
 	}
       }
@@ -585,6 +586,10 @@ namespace ros {
       cmdVel.vy = 0.0;
       cmdVel.vw = 0.0;
       publish("cmd_vel", cmdVel);
+    }
+
+    void MoveBase::handleDeactivation(){
+      stopRobot();
     }
   }
 }

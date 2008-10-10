@@ -124,7 +124,6 @@ namespace ros {
       // Initial Configuration is set with the threshold for obstacles set to the inscribed obstacle threshold. These, lethal obstacles, and cells with
       // no information will thus be regarded as obstacles
       envNav2D_.InitializeEnv(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-      //envNav2D_.InitGeneral();
 
       // Cleanup
       delete initialMapData;
