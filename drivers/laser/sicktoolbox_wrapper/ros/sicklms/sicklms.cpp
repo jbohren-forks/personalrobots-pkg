@@ -72,7 +72,7 @@ public:
     scan_msg.angle_min = M_PI/2;
     scan_msg.angle_max = -M_PI/2;
     scan_msg.angle_increment = (scan_msg.angle_max - scan_msg.angle_min) / 
-                               (double)num_values;
+                               (double)(num_values-1);
     scan_msg.time_increment = 0; // fix this
     scan_msg.range_min = 0;
     if (scale == 0.01)
