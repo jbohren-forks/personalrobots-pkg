@@ -282,12 +282,13 @@ class robotPower:
                 full_energy = full_energy + b.design_voltage * b.full_charge_capacity * 3.6 ## assuming mAh capacity
                 power = power + b.design_voltage * b.current ## assuming mAh capacity
 
+## \todo remove now redundent
         if self.full_charge_energy != full_energy:
             self.full_charge_energy = full_energy
             rospy.set_param("full_charge_energy", full_energy)
 
-        out = BatteryState(None, energy, power)
-        print "Sent Energy: %.0f (J)  Power: %.2f (W)\n"%(energy, power)
+        out = BatteryState(None, energy, full_energy, power)
+        print "Sent Energy: %.0f (J)  of %.0f (J) Power: %.2f (W)\n"%(energy, full_energy, power)
         self.battery_state_pub.publish(out)
 
 
