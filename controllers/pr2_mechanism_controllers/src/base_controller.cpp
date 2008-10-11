@@ -699,14 +699,14 @@ void BaseControllerNode::update()
       this->getOdometry(x,y,yaw,vx,vy,vyaw);
       rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
       out.header.stamp.from_double(time);
-      out.header.frame_id = "base";
-      out.parent = "odom";
-      out.x = x;
-      out.y = y;
+      out.header.frame_id = "odom";
+      out.parent = "base";
+      out.x = -x*cos(yaw) - y*sin(yaw);
+      out.y = +x*sin(yaw) - y*cos(yaw);
       out.z = 0;
       out.roll = 0;
       out.pitch = 0;
-      out.yaw = yaw;
+      out.yaw = -yaw;
       transform_publisher_->unlockAndPublish() ;
     }
   }
