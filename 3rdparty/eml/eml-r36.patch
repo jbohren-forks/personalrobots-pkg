@@ -592,8 +592,8 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
 +#include <string.h>
  #include <errno.h>
  #include <signal.h>
- #include <pthread.h> 
-@@ -151,12 +151,12 @@
+ #include <pthread.h>	
+@@ -151,12 +152,12 @@
  		// The actual send
  		int len_send = send(sock,(unsigned char *)&msg_to_send,msg_len  ,0);
  		if(len_send < 0)
@@ -608,12 +608,45 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
  		// Release the message buffer again
  	}
  
-@@ -173,12 +173,12 @@
- 	int len_recv = recv(sock,buffer_receive,sizeof(buffer_receive),0);
- 	if(len_recv < 0) {
- 		//perror("low_level_input: Cannot receive msg: ");
+@@ -170,15 +171,42 @@
+ 	struct eth_msg *msg_received = (struct eth_msg *)buffer_receive;
+ 	//Receive message from socket
+ 	int sock = netif->socket_private;
+-	int len_recv = recv(sock,buffer_receive,sizeof(buffer_receive),0);
+-	if(len_recv < 0) {
+-		//perror("low_level_input: Cannot receive msg: ");
 -		//log(EC_LOG_ERROR, "low_level_input: Cannot receive msg: %d\n",len_recv);
-+		//ec_log(EC_LOG_ERROR, "low_level_input: Cannot receive msg: %d\n",len_recv);
++
++  int len_recv;
++  int tries=0;
++  static const int MAX_TRIES=3; // Maximum number of tries for recieving packets
++
++  do {
++      ++tries;
++      len_recv = recv(sock,buffer_receive,sizeof(buffer_receive),0);
++      if(len_recv < 0) {
++          //perror("low_level_input: Cannot receive msg: ");
++          ec_log(EC_LOG_ERROR, "low_level_input: Cannot receive msg: %d\n",len_recv);
++          return false;
++      }
++             
++      if (len_recv <= sizeof(ETH_ALEN + ETH_ALEN + 2)) {
++          ec_log(EC_LOG_ERROR, "low_level_input: recieved runt packet: %d\n",len_recv);
++          continue;
++      }
++         
++      if ( (msg_received->ether_shost[4] != netif->hwaddr[4]) ) {
++          ec_log(EC_LOG_ERROR, "low_level_input: got incorrect sequence number: %d, expected %d\n",
++                 msg_received->ether_shost[4], netif->hwaddr[4]);
++          continue;
++      }
++      else {
++          break;
++      }       
++  } while(tries < MAX_TRIES);
++
++  if (tries >= MAX_TRIES) {
++      ec_log(EC_LOG_ERROR, "low_level_input: recieved too many bad packets: %d\n",len_recv);
  		return false;
  	}
  
@@ -623,7 +656,7 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
  		return false;
  	}
  
-@@ -186,7 +186,7 @@
+@@ -186,7 +214,7 @@
  	int succes = framebuild(frame,msg_received->data);
  	if (succes != 0){
  		// FIXME decent error handling here
@@ -632,7 +665,14 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
  		return false;
  	}
    
-@@ -206,24 +206,24 @@
+@@ -200,30 +228,31 @@
+ 	int tries = 0;
+ 	while (tries < MAX_TRIES_TX) {
+ 		pthread_mutex_lock (&txandrx_mut);
++    netif->hwaddr[4]++;
+ 		if (low_level_output(frame,netif)){
+ 			if (low_level_input(frame,netif)){
+ 				pthread_mutex_unlock(&txandrx_mut);
  				return true;
  			}
  			else{
@@ -660,17 +700,17 @@ Index: src/arch/RTnet/ethercat_xenomai_drv.c
 +		ec_log(EC_LOG_FATAL,"Socket initialisation failed\n");
  		return 0;
  	}
-
+ 	struct netif* ni = (struct netif*)malloc(sizeof(struct netif));
 Index: src/CMakeLists.txt
 ===================================================================
---- src/CMakeLists.txt       (revision 36)
-+++ src/CMakeLists.txt       (working copy)
+--- src/CMakeLists.txt	(revision 36)
++++ src/CMakeLists.txt	(working copy)
 @@ -47,7 +47,7 @@
-
+ 
    # arch specific headers
    FILE( GLOB ARCH_RTNET_INCLS ${EML_SOURCE_DIR}/include/ethercat/arch-RTnet/ethercat/[^.]*.h )
 -  INSTALL_FILES( /include/ethercat/arch-RTnet/ FILES ${ARCH_RTNET_INCLS})
 +  INSTALL_FILES( /include/ethercat/ FILES ${ARCH_RTNET_INCLS})
-
+ 
  ENDIF(BUILD_FOR_RTNET)
-
+ 
