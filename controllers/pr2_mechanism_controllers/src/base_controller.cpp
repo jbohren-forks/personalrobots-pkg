@@ -103,6 +103,7 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
   std::cout << "BaseController:: command received: " << cmd_vel_t_;
   std::cout << "BaseController:: command current: " << cmd_vel_;
   std::cout << "Base Odometry: Velocity " << base_odom_velocity_;
+  std::cout << "Base Odometry: Position " << base_odom_position_;
   for(int i=0; i < (int) num_wheels_; i++)
   {
     std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
