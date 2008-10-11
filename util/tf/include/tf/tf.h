@@ -116,8 +116,15 @@ public:
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
 
   /** \brief Transform a Stamped data_in into data_out in traget frame */
-  template<typename T>
-  void transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
+  void transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out);
+  void transformVector(const std::string& target_frame, const Stamped<Vector3>& stamped_in, Stamped<Vector3>& stamped_out);
+  void transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out);
+  void transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out);
+
+  void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped& stamped_in, std_msgs::QuaternionStamped& stamped_out);
+  void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped& stamped_in, std_msgs::Vector3Stamped& stamped_out);
+  void transformPoint(const std::string& target_frame, const std_msgs::PointStamped& stamped_in, std_msgs::PointStamped& stamped_out);
+  void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
 
   template<typename T>
   void transformMessage(const std::string& target_frame, const T& msg_in, T& msg_out);
@@ -233,37 +240,6 @@ protected:
 };
 
 ///\todo write out lots of these :-(
-
-template<>
-inline void Transformer::transformStamped<tf::Vector3>(const std::string& target_frame, 
-                                                       const Stamped<tf::Vector3>& stamped_in, 
-                                                       Stamped<tf::Vector3>& stamped_out)
-{
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
-  
-  btTransform transform = computeTransformFromList(t_list);
-  btQuaternion quat = btQuaternion(stamped_in.data_.x(), stamped_in.data_.y(), stamped_in.data_.z()).normalized();
-  double magnitude = sqrt(stamped_in.data_.x() * stamped_in.data_.x() + stamped_in.data_.y() * stamped_in.data_.y() + stamped_in.data_.z() * stamped_in.data_.z());
-  quat = transform * quat;
-  stamped_out.data_ = btVector3(quat.x() * magnitude, quat.y() * magnitude, quat.z() * magnitude);
-  stamped_out.stamp_ = stamped_in.stamp_;
-  stamped_out.frame_id_ = target_frame;
-};
-
-template<typename T>
-void Transformer::transformStamped(const std::string& target_frame, const Stamped<T>& stamped_in, Stamped<T>& stamped_out)
-{
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
-  
-  btTransform transform = computeTransformFromList(t_list);
-  
-  stamped_out.data_ = transform * stamped_in.data_;
-  stamped_out.stamp_ = stamped_in.stamp_;
-  stamped_out.frame_id_ = target_frame;
-  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
-};
-
-
 
 
 template<>

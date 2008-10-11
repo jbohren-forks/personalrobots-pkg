@@ -56,9 +56,9 @@ TEST(tf, ListOneForward)
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
 
     try{
-    Stamped<btTransform> outpose;
+    Stamped<Pose> outpose;
     outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformStamped("my_parent",inpose, outpose);
+    mTR.transformPose("my_parent",inpose, outpose);
     EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
@@ -103,7 +103,7 @@ TEST(tf, ListOneInverse)
     try{
     Stamped<btTransform> outpose;
     outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformStamped("child",inpose, outpose);
+    mTR.transformPose("child",inpose, outpose);
     EXPECT_NEAR(outpose.data_.getOrigin().x(), -xvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().y(), -yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), -zvalues[i], epsilon);
@@ -151,9 +151,10 @@ TEST(tf, TransformTransformsCartesian)
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
 
     try{
-    Stamped<btTransform> outpose;
+    Stamped<Pose
+> outpose;
     outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformStamped("my_parent",inpose, outpose);
+    mTR.transformPose("my_parent",inpose, outpose);
     EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
@@ -166,10 +167,10 @@ TEST(tf, TransformTransformsCartesian)
     }
   }
   
-  Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
-  Stamped<btTransform> outpose;
+  Stamped<Pose> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
+  Stamped<Pose> outpose;
   outpose.data_.setIdentity(); //to make sure things are getting mutated
-  mTR.transformStamped("child",inpose, outpose);
+  mTR.transformPose("child",inpose, outpose);
   EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
   EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
   EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
@@ -177,7 +178,7 @@ TEST(tf, TransformTransformsCartesian)
   
 }
 
-TEST(tf, TransformVector3Cartesian)
+TEST(tf, TransformPointCartesian)
 {
   unsigned int runs = 400;
   double epsilon = 1e-6;
@@ -205,15 +206,69 @@ TEST(tf, TransformVector3Cartesian)
   for ( unsigned int i = 0; i < runs ; i++ )
 
   {
-    Stamped<btVector3> invec (btVector3(0,0,0), 10 + i, "child");
+    double x =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    double y =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    double z =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    Stamped<Point> invec (btVector3(x,y,z), 10 + i, "child");
 
     try{
-    Stamped<btVector3> outvec(btVector3(0,0,0), 10 + i, "child");
+    Stamped<Point> outvec(btVector3(0,0,0), 10 + i, "child");
     //    outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformStamped("my_parent",invec, outvec);
-    EXPECT_NEAR(outvec.data_.x(), xvalues[i], epsilon);
-    EXPECT_NEAR(outvec.data_.y(), yvalues[i], epsilon);
-    EXPECT_NEAR(outvec.data_.z(), zvalues[i], epsilon);
+    mTR.transformPoint("my_parent",invec, outvec);
+    EXPECT_NEAR(outvec.data_.x(), xvalues[i]+x, epsilon);
+    EXPECT_NEAR(outvec.data_.y(), yvalues[i]+y, epsilon);
+    EXPECT_NEAR(outvec.data_.z(), zvalues[i]+z, epsilon);
+    }
+    catch (tf::TransformException & ex)
+    {
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
+TEST(tf, TransformVectorCartesian)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
+    mTR.setTransform(tranStamped);
+
+    /// \todo remove fix for graphing problem
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
+    mTR.setTransform(tranStamped2);
+  }
+
+  //  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    double x =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    double y =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    double z =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    Stamped<Point> invec (btVector3(x,y,z), 10 + i, "child");
+
+    try{
+    Stamped<Vector3> outvec(btVector3(0,0,0), 10 + i, "child");
+    //    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformVector("my_parent",invec, outvec);
+    EXPECT_NEAR(outvec.data_.x(), x, epsilon);
+    EXPECT_NEAR(outvec.data_.y(), y, epsilon);
+    EXPECT_NEAR(outvec.data_.z(), z, epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -260,7 +315,7 @@ TEST(tf, TransformQuaternionCartesian)
     try{
     Stamped<btQuaternion> outvec(btQuaternion(xvalues[i],yvalues[i],zvalues[i]), 10 + i, "child");
 
-    mTR.transformStamped("my_parent",invec, outvec);
+    mTR.transformQuaternion("my_parent",invec, outvec);
     EXPECT_NEAR(outvec.data_.angle(invec.data_) , 0, epsilon);
     }
     catch (tf::TransformException & ex)
@@ -428,55 +483,6 @@ TEST(data, TransformStampedConversions)
   } 
 }
 
-
-TEST(transforms, tfStampedVector)
-{
-  tf::Transformer mTR(true);
-  timeval temp_time_struct;
-  gettimeofday(&temp_time_struct,NULL);
-  unsigned long long atime = temp_time_struct.tv_sec * 1000000000ULL + (unsigned long long)temp_time_struct.tv_usec * 1000ULL;
-
-  Stamped<Transform> temp_transform;
-  temp_transform.parent_id_ = "one";
-  temp_transform.frame_id_ = "two";
-  temp_transform.stamp_ = ros::Time(atime);
-  temp_transform.data_ = btTransform(btQuaternion(M_PI/2, 0, 0), btVector3(1,0,0));
-  mTR.setTransform(temp_transform);
-  temp_transform.parent_id_ = "two";
-  temp_transform.frame_id_ = "three";
-  mTR.setTransform(temp_transform);
-
-  Stamped<Vector3> sp(Vector3(1,-1,0), ros::Time::now(), "three");
-  Stamped<Vector3> spout;
-  mTR.transformStamped("two", sp, spout);
-
-  EXPECT_NEAR(sp.data_.x(), 1, 0.01);
-  EXPECT_NEAR(spout.data_.x(), 1, 0.01);
-  
-}
-TEST(transforms, tfStampedPoint)
-{
-  tf::Transformer mTR(true);
-  ros::Time atime = ros::Time::now();
-
-  Stamped<Transform> temp_transform;
-  temp_transform.parent_id_ = "one";
-  temp_transform.frame_id_ = "two";
-  temp_transform.stamp_ = atime;
-  temp_transform.data_ = btTransform(btQuaternion(0, 0, 0), btVector3(0,0,0));
-  mTR.setTransform(temp_transform);
-  temp_transform.parent_id_ = "two";
-  temp_transform.frame_id_ = "three";
-  mTR.setTransform(temp_transform);
-
-  Stamped<Point> sp(Vector3(1,0,0), atime, "three");
-  Stamped<Point> spout;
-  mTR.transformStamped<Point>("two", sp, spout);
-
-  EXPECT_NEAR(sp.data_.x(), 1, 0.01);
-  EXPECT_NEAR(spout.data_.x(), 1, 0.01);
-  
-}
 
 /** @todo Make this actually Assert something */
 

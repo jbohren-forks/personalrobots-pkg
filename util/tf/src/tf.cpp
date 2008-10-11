@@ -375,5 +375,109 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 };
 
 
+void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+  
+  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
 
 
+void Transformer::transformVector(const std::string& target_frame, 
+                                  const Stamped<tf::Vector3>& stamped_in, 
+                                  Stamped<tf::Vector3>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  btTransform transform = computeTransformFromList(t_list);
+
+  /** \todo may not be most efficient */
+  btVector3 end = stamped_in.data_;
+  btVector3 origin = btVector3(0,0,0);
+  btVector3 output = (transform * end) - (transform * origin);
+  stamped_out.data_ = output;
+
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
+
+
+void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+  
+  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
+};
+
+void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out)
+{
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  
+  btTransform transform = computeTransformFromList(t_list);
+  
+  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+  //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
+};
+
+void Transformer::transformQuaternion(const std::string& target_frame, 
+                                  const std_msgs::QuaternionStamped& msg_in, 
+                                  std_msgs::QuaternionStamped& msg_out)
+{
+  Stamped<Quaternion> pin, pout;
+  QuaternionStampedMsgToTF(msg_in, pin);
+  transformQuaternion(target_frame, pin, pout);
+  QuaternionStampedTFToMsg(pout, msg_out);
+}
+
+void Transformer::transformVector(const std::string& target_frame, 
+                                  const std_msgs::Vector3Stamped& msg_in, 
+                                  std_msgs::Vector3Stamped& msg_out)
+{
+  Stamped<Vector3> pin, pout;
+  Vector3StampedMsgToTF(msg_in, pin);
+  transformVector(target_frame, pin, pout);
+  Vector3StampedTFToMsg(pout, msg_out);
+}
+
+void Transformer::transformPoint(const std::string& target_frame, 
+                                  const std_msgs::PointStamped& msg_in, 
+                                  std_msgs::PointStamped& msg_out)
+{
+  Stamped<Point> pin, pout;
+  PointStampedMsgToTF(msg_in, pin);
+  transformPoint(target_frame, pin, pout);
+  PointStampedTFToMsg(pout, msg_out);
+}
+
+void Transformer::transformPose(const std::string& target_frame, 
+                                  const std_msgs::PoseStamped& msg_in, 
+                                  std_msgs::PoseStamped& msg_out)
+{
+  Stamped<Pose> pin, pout;
+  PoseStampedMsgToTF(msg_in, pin);
+  transformPose(target_frame, pin, pout);
+  PoseStampedTFToMsg(pout, msg_out);
+}
+
+/*
+void Transformer::transformTransform(const std::string& target_frame, 
+                                  const std_msgs::TransformStamped& msg_in, 
+                                  std_msgs::TransformStamped& msg_out)
+{
+  Stamped<Transform> pin, pout;
+  TransformStampedMsgToTF(msg_in, pin);
+  transformTransform(target_frame, pin, pout);
+  TransformStampedTFToMsg(pout, msg_out);
+}
+
+*/
