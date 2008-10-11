@@ -748,7 +748,7 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   values_.clear();
 
   stringstream str;
-  str << "EtherCAT Device #" << sh_->get_ring_position();
+  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position();
   d.name = str.str();
   d.message = reason_;
   d.level = 0;
