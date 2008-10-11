@@ -114,29 +114,34 @@ public:
   void lookupTransform(const std::string& target_frame, ros::Time target_time, 
                        const std::string& source_frame, ros::Time _source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
+  
+  /** \brief Transform a Stamped Quaternion into the target frame */
+  void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out);
+  /** \brief Transform a Stamped Vector3 into the target frame */
+  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out);
+  /** \brief Transform a Stamped Point into the target frame */
+  void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out);
+  /** \brief Transform a Stamped Pose into the target frame */
+  void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out);
 
-  /** \brief Transform a Stamped data_in into data_out in traget frame */
-  void transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out);
-  void transformVector(const std::string& target_frame, const Stamped<Vector3>& stamped_in, Stamped<Vector3>& stamped_out);
-  void transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out);
-  void transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out);
-
+  /** \brief Transform a Stamped Quaternion Message into the target frame */
   void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped& stamped_in, std_msgs::QuaternionStamped& stamped_out);
+  /** \brief Transform a Stamped Vector Message into the target frame */
   void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped& stamped_in, std_msgs::Vector3Stamped& stamped_out);
+  /** \brief Transform a Stamped Point Message into the target frame */
   void transformPoint(const std::string& target_frame, const std_msgs::PointStamped& stamped_in, std_msgs::PointStamped& stamped_out);
+  /** \brief Transform a Stamped Pose Message into the target frame */
   void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
 
-  template<typename T>
-  void transformMessage(const std::string& target_frame, const T& msg_in, T& msg_out);
 
   /** \brief Transform a Stamped data_in into data_out in traget frame at target time, using the given fixed frame
    * This is a bit complicated.  The net effect is that the data will be transformed to the fixed frame
    * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 
    * \todo implement this. */
-  template<typename T>
+  /*  template<typename T>
   void transformStamped(const std::string& target_frame, ros::Time _target_time,const std::string& fixed_frame, 
                         const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
-
+  */
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
@@ -199,7 +204,8 @@ protected:
   TimeCache* getFrame(unsigned int frame_number);
 
   /// String to number for frame lookup with dynamic allocation of new frames
-  unsigned int lookupFrameNumber(const std::string& frameid_str){
+  unsigned int lookupFrameNumber(const std::string& frameid_str)
+  {
     unsigned int retval = 0;
     frame_mutex_.lock();
     std::map<std::string, unsigned int>::iterator map_it = frameIDs_.find(frameid_str);
@@ -238,28 +244,6 @@ protected:
   btTransform computeTransformFromList(const TransformLists & list);
 
 };
-
-///\todo write out lots of these :-(
-
-
-template<>
-inline void Transformer::transformMessage<std_msgs::Vector3Stamped>(const std::string& target_frame, 
-                                                             const std_msgs::Vector3Stamped& msg_in, 
-                                                             std_msgs::Vector3Stamped& msg_out)
-{
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), msg_in.header.stamp, lookupFrameNumber( msg_in.header.frame_id), msg_in.header.stamp, 0);
-  
-  btTransform transform = computeTransformFromList(t_list);
-  btQuaternion quat = btQuaternion(msg_in.vector.x, msg_in.vector.y, msg_in.vector.z).normalized();
-  double magnitude = sqrt(msg_in.vector.x * msg_in.vector.x + msg_in.vector.y * msg_in.vector.y + msg_in.vector.z * msg_in.vector.z);
-  quat = transform * quat;
-  msg_out.vector.x = quat.x() * magnitude;
-  msg_out.vector.y = quat.y() * magnitude;
-  msg_out.vector.z = quat.z() * magnitude;
-  msg_out.header.stamp = msg_in.header.stamp;
-  msg_out.header.frame_id = target_frame;
-};
-
 
 
 }
