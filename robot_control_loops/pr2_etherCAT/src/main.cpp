@@ -74,7 +74,8 @@ void Usage(string msg = "")
   }
 }
 
-static int quit = 0;
+static int g_quit = 0;
+static bool g_reset_motors = false;
 static const int NSEC_PER_SEC = 1e+9;
 
 static struct
@@ -136,7 +137,7 @@ static inline double now()
 
 static void *syncClocks(void *)
 {
-  while (!quit)
+  while (!g_quit)
   {
     struct timespec ts;
     struct timeval tv;
@@ -208,10 +209,18 @@ void *controlLoop(void *)
   int period = 1e+6; // 1 ms in nanoseconds
 
   static int count = 0;
-  while (!quit)
+  while (!g_quit)
   {
     double start = now();
-    ec.update();
+    if (g_reset_motors)
+    {
+      ec.update(true);
+      g_reset_motors = false;
+    }
+    else
+    {
+      ec.update(false);
+    }
     double after_ec = now();
     mcn.update();
     double after_mc = now();
@@ -240,7 +249,7 @@ void *controlLoop(void *)
     ec.hw_->actuators_[i]->command_.enable_ = false;
     ec.hw_->actuators_[i]->command_.effort_ = 0;
   }
-  ec.update();
+  ec.update(false);
 
   publisher.stop();
 
@@ -254,7 +263,7 @@ void *controlLoop(void *)
 
 void quitRequested(int sig)
 {
-  quit = 1;
+  g_quit = 1;
 }
 
 class Shutdown {
@@ -262,6 +271,15 @@ public:
   bool shutdownService(std_srvs::Empty::request &req, std_srvs::Empty::response &resp)
   {
     quitRequested(0);
+    return true;
+  }
+};
+
+class Reset {
+public:
+  bool resetMotorsService(std_srvs::Empty::request &req, std_srvs::Empty::response &resp)
+  {
+    g_reset_motors = true;
     return true;
   }
 };
@@ -356,6 +374,7 @@ int main(int argc, char *argv[])
   pthread_attr_setschedpolicy(&rtThreadAttr, SCHED_FIFO);
 
   node->advertise_service("shutdown", &Shutdown::shutdownService);
+  node->advertise_service("reset_motors", &Reset::resetMotorsService);
 
   //Start thread
   int rv;

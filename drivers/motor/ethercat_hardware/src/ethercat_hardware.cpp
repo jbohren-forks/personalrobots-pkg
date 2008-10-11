@@ -257,7 +257,7 @@ void EthercatHardware::publishDiagnostics()
   }
 }
 
-void EthercatHardware::update()
+void EthercatHardware::update(bool reset)
 {
   unsigned char *current, *last;
 
@@ -273,7 +273,14 @@ void EthercatHardware::update()
       hw_->actuators_[a]->state_.last_requested_effort_ = hw_->actuators_[a]->command_.effort_;
       hw_->actuators_[a]->state_.last_requested_current_ = hw_->actuators_[a]->command_.current_;
       slaves_[s]->truncateCurrent(hw_->actuators_[a]->command_);
-      slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
+      if (reset) {
+        bool tmp = hw_->actuators_[a]->command_.enable_;
+        hw_->actuators_[a]->command_.enable_ = false;
+        slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
+        hw_->actuators_[a]->command_.enable_ = tmp;
+      } else {
+        slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
+      }
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       ++a;
     }
