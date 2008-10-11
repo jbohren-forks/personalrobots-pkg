@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include <ethercat_hardware/ek1122.h>
+#include <iomanip>
 
 static bool reg = DeviceFactory::Instance().Register(EK1122::PRODUCT_CODE, deviceCreator<EK1122>);
 
@@ -53,7 +54,7 @@ void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
   robot_msgs::DiagnosticString s;
 
   stringstream str;
-  str << "EtherCAT Device #" << sh_->get_ring_position();
+  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position();
   d.name = str.str();
   d.message = "OK";
   d.level = 0;
