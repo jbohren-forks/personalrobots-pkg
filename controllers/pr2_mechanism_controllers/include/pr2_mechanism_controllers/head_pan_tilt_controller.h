@@ -185,7 +185,7 @@ class HeadPanTiltControllerNode : public Controller
      * \param req (names, positions)
      * \param resp (names, positions)
      */
-    bool setJointSrv(pr2_mechanism_controllers::SetJointCmd::request &req,
+    bool setJointCmd(pr2_mechanism_controllers::SetJointCmd::request &req,
                     pr2_mechanism_controllers::SetJointCmd::response &resp);
 
     /*!

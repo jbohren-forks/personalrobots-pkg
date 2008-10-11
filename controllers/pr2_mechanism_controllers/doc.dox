@@ -6,49 +6,104 @@
 PR2 Specific Controllers
 
 Here are the controllers which are currently implemented:
+ \li \ref controller::ArmDynamicsController "Arm Dynamics Controller"
  \li \ref controller::ArmPositionController "Arm Position Controller"
  \li \ref controller::ArmVelocityController "Arm Velocity Controller"
- \li \ref controller::ArmDynamicsController "Arm Dynamics Controller"
+ \li \ref controller::BaseController "Base Controller"
  \li \ref controller::HeadPanTiltController "Head Pan Tilt Controller"
  \li \ref controller::LaserScannerController "Laser Scanner Controller"
- \li \ref controller::BaseController "Base Controller"
 
+
+<hr>
 
 @section topic PR2 Controllers ROS Topics
  - ROS topics published by controllers
-     <table border="1">
-     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \b odom                              </td> <td>  std_msgs::RobotBase2DOdom           </td>  <td>  base_controller.h      </td> <td>   odometry information from base caster and wheels.        </td>  </tr>
-     </table><br>
+   - Base Controller
+    <table border="1">
+    <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+    <tr><td>\ref controller::BaseController::setOdomMessage "odom"</td>
+        <td><a href="http://pr.willowgarage.com/pr-docs/ros-packages/std_msgs/html/classstd__msgs_1_1RobotBase2DOdom.html">RobotBase2DOdom </a> </td>
+        <td>Odometry information from base caster and wheels. </td></tr>
+    </table><br>
 
  - ROS topics subscribed by controllers
-     <table border="1">
-     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \e cmd_vel                           </td> <td>  std_msgs::BaseVel                   </td>  <td>  base_controller.h      </td> <td>   velocity commands for the base (vx,vy,vw).               </td>  </tr>
-     </table><br>
-  - arm position controllers:
-     <table border="1">
-     <tr><th>  Topic Name                          </th> <th> Message Type                         </th>  <th> Plugin Name             </th> <th>  Description                                               </th>  </tr>
-     <tr><td> \e left_arm_commands                 </td> <td> pr2_mechanism_controllers::JointPosCmd </td><td>arm_position_controller.h</td> <td>   Arm configuration command for each joint.                </td>  </tr>
-     <tr><td> \e right_arm_commands                </td> <td> pr2_mechanism_controllers::JointPosCmd </td><td>arm_position_controller.h</td> <td>   Arm configuration command for each joint.                </td>  </tr>
-     </table><br>
+  - Arm Position Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::ArmPositionControllerNode::setJointPosSingleHeadless_cb "(left/right)_arm_commands"</td>
+      <td>\ref pr2_mechanism_controllers::msg::_JointPosCmd::JointPosCmd "JointPosCmd"</td>
+      <td>Arm configuration command for each joint.</td></tr>
+  </table><br>
+  - Base Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::BaseControllerNode::CmdBaseVelReceived "cmd_vel"</td>
+      <td><a href="http://pr.willowgarage.com/pr-docs/ros-packages/std_msgs/html/classstd__msgs_1_1BaseVel.html">BaseVel </a> </td>
+      <td>Velocity commands for the base (v_x,v_y,v_theta).</td></tr>
+  </table><br>
 
+<hr>
 @section services PR2 Controllers ROS Services
- - ROS service published by controllers
-     <table border="1">
-     <tr><th>  Topic Name                                </th> <th> Message Type                              </th>  <th> Plugin Name              </th> <th>  Description                                   </th>  </tr>
-     <tr><td> \b base_controller/set_command             </td> <td>pr2_mechanism_controllers::SetBaseCommand  </td>  <td>  base_controller.h       </td> <td>   set base command.                            </td>  </tr>
-     <tr><td> \b base_controller/get_actual              </td> <td>pr2_mechanism_controllers::GetBaseCommand  </td>  <td>  base_controller.h       </td> <td>   get base command.                            </td>  </tr>
-     <tr><td> \b tilt_laser_controller/set_command       </td> <td>robot_mechanism_controllers::SetCommand    </td>  <td>laser_scanner_controller.h</td> <td>   set controller command.                      </td>  </tr>
-     <tr><td> \b tilt_laser_controller/get_actual        </td> <td>robot_mechanism_controllers::GetCommand    </td>  <td>laser_scanner_controller.h</td> <td>   get controller command.                      </td>  </tr>
-     <tr><td> \b tilt_laser_controller/set_profile       </td> <td>pr2_mechanism_controllers::SetProfile      </td>  <td>laser_scanner_controller.h</td> <td>   set sweep profile.                           </td>  </tr>
-     <tr><td> \b left_arm_controller/set_command         </td> <td>pr2_mechanism_controllers::SetJointTarget  </td>  <td> arm_position_controller.h</td> <td>   set arm joint targets.                       </td>  </tr>
-     <tr><td> \b left_arm_controller/set_command_array   </td> <td>pr2_mechanism_controllers::SetJointPosCmd  </td>  <td> arm_position_controller.h</td> <td>   set arm joint positions.                     </td>  </tr>
-     <tr><td> \b left_arm_controller/get_command         </td> <td>pr2_mechanism_controllers::GetJointPosCmd  </td>  <td> arm_position_controller.h</td> <td>   get arm joint positions.                     </td>  </tr>
-     <tr><td> \b left_arm_controller/set_target          </td> <td>pr2_mechanism_controllers::SetJointTarget  </td>  <td> arm_position_controller.h</td> <td>   set arm joint targets.                       </td>  </tr>
-     </table><br>
-     @todo rename base_controller/get_actual to base_controller/get_command.
-           update documentation for arm position controller services.
+
+  - Arm Position Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::ArmPositionControllerNode::setJointPosHeadless "(left/right)_arm_controller/set_command"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetJointTarget::SetJointTarget "SetJointTarget"</td>
+      <td>Set arm joint targets.</td></tr>
+  <tr><td>\ref controller::ArmPositionControllerNode::setJointPosSrv "(left/right)_arm_controller/set_command_array"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetJointCmd::SetJointCmd "SetJointCmd"</td>
+      <td>Set arm joint positions.</td></tr>
+  <tr><td>\ref controller::ArmPositionControllerNode::getJointPosCmd "(left/right)_arm_controller/get_command"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_GetJointPosCmd::GetJointPosCmd "GetJointPosCmd"</td>
+      <td>Get arm joint positions. </td></tr>
+  <tr><td>\ref controller::ArmPositionControllerNode::setJointPosTarget "(left/right)_arm_controller/set_target"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetJointTarget::SetJointTarget "SetJointTarget"</td>
+      <td>Set arm joint targets. </td></tr>
+  </table><br>
+  
+  - Base Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::BaseControllerNode::setCommand "base_controller/set_command"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetBaseCommand::SetBaseCommand "SetBaseCommand"</td>
+      <td>Sets the base command v_x, v_y, v_theta. </td></tr>
+  <tr><td>\ref controller::BaseControllerNode::getCommand "base_controller/get_command"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_GetBaseCommand::GetBaseCommand "GetBaseCommand"</td>
+      <td>Gets the base command v_x, v_y, v_theta. </td></tr>
+  </table><br>
+  
+  - Head Pan Tilt Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::HeadPanTiltControllerNode::setJointCmd "head_controller/set_command_array"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetJointCmd::SetJointCmd "SetJointCmd"</td>
+      <td>Sets the commanded joint positions as (name, angle) pairs.</td></tr>
+  <tr><td>\ref controller::HeadPanTiltControllerNode::getJointCmd "head_controller/get_command_array"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_GetJointCmd::GetJointCmd "GetJointCmd"</td>
+      <td>Gets the commanded joint positions as (name, angle) pairs. </td></tr>
+  <tr><td>\ref controller::HeadPanTiltControllerNode::trackPoint "head_controller/track_point"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_TrackPoint::TrackPoint "TrackPoint"</td>
+      <td>Sets the command position given (x, y, z, frame). </td></tr>
+  </table><br>
+  
+  - Laser Scanner Controller
+  <table border="1">
+  <tr><th> Topic Name </th> <th> Message Type </th><th> Description </th></tr>
+  <tr><td>\ref controller::LaserScannerControllerNode::setCommand "tilt_laser_controller/set_command"</td>
+      <td>Double</td>
+      <td>Sets the commanded joint position. </td></tr>
+  <tr><td>\ref controller::LaserScannerControllerNode::getCommand "tilt_laser_controller/get_command"</td>
+      <td>Double</td>
+      <td>Gets the commanded joint position. </td></tr>
+  <tr><td>\ref controller::LaserScannerControllerNode::setProfile "tilt_laser_controller/track_point"</td>
+      <td>\ref pr2_mechanism_controllers::srv::_SetProfile::SetProfile "SetProfile"</td>
+      <td>Sets the sweep profile given (profile, period, amplitude, offset). </td></tr>
+  </table><br>
+     
+ 
+@todo rename base_controller/get_actual to base_controller/get_command.
+     update documentation for arm position controller services.
 
 **/
 

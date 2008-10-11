@@ -165,7 +165,7 @@ HeadPanTiltControllerNode::HeadPanTiltControllerNode()
 HeadPanTiltControllerNode::~HeadPanTiltControllerNode()
 {
   node->unadvertise_service(service_prefix + "/set_command_array");
-  node->unadvertise_service(service_prefix + "/get_command");
+  node->unadvertise_service(service_prefix + "/get_command_array");
 
   delete c_;
 }
@@ -184,8 +184,8 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(service_prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointSrv, this);
-    node->advertise_service(service_prefix + "/get_command", &HeadPanTiltControllerNode::getJointCmd, this);
+    node->advertise_service(service_prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointCmd, this);
+    node->advertise_service(service_prefix + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
     node->advertise_service(service_prefix + "/track_point", &HeadPanTiltControllerNode::trackPoint, this);
 
     return true;
@@ -193,7 +193,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool HeadPanTiltControllerNode::setJointSrv(pr2_mechanism_controllers::SetJointCmd::request &req,
+bool HeadPanTiltControllerNode::setJointCmd(pr2_mechanism_controllers::SetJointCmd::request &req,
                                    pr2_mechanism_controllers::SetJointCmd::response &resp)
 {
   std::vector<double> pos;
