@@ -4,8 +4,8 @@
 #include "star_detector/keypoint.h"
 #include "star_detector/integral.h"
 #include "star_detector/nonmax_suppress.h"
+//#include "star_detector/timer.h" // DEBUG
 #include <cv.h>
-#include <highgui.h>
 #include <vector>
 #include <cmath>
 
@@ -72,7 +72,7 @@ private:
   //! Filter size at each scale
   int* m_filter_sizes;
   //! Non-maximal suppression functor
-  NonmaxSuppressProject<float, LineSuppressHybrid> m_nonmax;
+  NonmaxSuppressWxH<5, 5, float, LineSuppressHybrid> m_nonmax;
   //! Border size for non-max suppression
   int m_border;
   //! Scale interpolation flag (TODO: currently useless)
@@ -123,7 +123,7 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
 template< typename OutputIterator >
 inline int StarDetector::FindExtrema(OutputIterator inserter)
 {
-  //return m_nonmax(m_responses, m_n, inserter, m_border);
+  //Timer t("Nonmax suppression");
   return m_nonmax(m_projected, m_scales, m_n, inserter, m_border);
 }
 
