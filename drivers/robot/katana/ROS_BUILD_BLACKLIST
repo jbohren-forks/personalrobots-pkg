@@ -1,0 +1,31 @@
+make[3]: Entering directory
+`/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/build'
+[  5%] Building CXX object libkatana/CMakeFiles/katana.dir/katana.cpp.o
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:
+In member function Ôool Katana::move_gripper(double)Õ
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:141:
+error: Ôlass CLMBaseÕhas no member named
+ÔoveGripperÕ/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:
+In member function Ôool
+Katana::move_along_trajectory(std::vector<std::vector<double,
+std::allocator<double> >, std::allocator<std::vector<double,
+std::allocator<double> > > >&, double)Õ
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:471:
+warning: comparison between signed and unsigned integer expressions
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:493:
+warning: comparison between signed and unsigned integer expressions
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:499:
+warning: comparison between signed and unsigned integer expressions
+/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/libkatana/katana.cpp:566:
+warning: comparison between signed and unsigned integer expressions
+make[3]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/build'
+make[2]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/build'
+make[1]: Leaving directory
+`/home/rosbuild/.hudson/jobs/personalrobots-clean/workspace/personalrobots/drivers/robot/katana/build'
+make[3]: *** [libkatana/CMakeFiles/katana.dir/katana.cpp.o] Error 1
+make[2]: *** [libkatana/CMakeFiles/katana.dir/all] Error 2
+make[1]: *** [all] Error 2
+make: *** [all] Error 2
+
