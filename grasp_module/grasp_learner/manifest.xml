@@ -12,4 +12,6 @@
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags=""/>
 </export>
+<sysdepend os="ubuntu" version="8.04-hardy" package="refblas3-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="lapack3-dev"/>
 </package>
