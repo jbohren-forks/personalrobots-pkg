@@ -532,8 +532,8 @@ void BaseController::computeBaseVelocity()
       C.element(i*2+1, 1) = 1;
       C.element(i*2+1, 2) =  base_wheels_position_[i].x;
    }
-   D = pseudoInverse(C)*A;
-//  D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
+   //   D = pseudoInverse(C)*A;
+  D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
    base_odom_velocity_.x = (double)D.element(0,0);
    base_odom_velocity_.y = (double)D.element(1,0);
    base_odom_velocity_.z = (double)D.element(2,0);
