@@ -8,7 +8,13 @@ from mechanism_control.msg import MechanismState
 
 NAME = 'joint_listener'
 
+count = 0
 def callback(data):
+    global count
+    count += 1
+    if count % 10 != 0:
+      return
+
     print rospy.get_caller_id(), "I heard [%s], %d"%(data.time, len(data.joint_states))
     for j in data.joint_states:
       print "  joint: %s" % j.name
