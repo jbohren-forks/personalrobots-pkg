@@ -418,7 +418,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     else if(best_traj->thetav_ > 0){
       if(rotating_left){
-        stuck_right = true;
+        stuck_left = true;
       }
       rotating_right = true;
     }

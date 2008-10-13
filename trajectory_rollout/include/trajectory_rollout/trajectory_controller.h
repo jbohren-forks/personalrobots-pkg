@@ -151,7 +151,7 @@ class TrajectoryController {
       check_cell->path_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(ma_.getCost(check_cell->cx, check_cell->cy) > costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -169,7 +169,7 @@ class TrajectoryController {
       check_cell->goal_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(ma_.getCost(check_cell->cx, check_cell->cy) > costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
         check_cell->goal_dist = map_.map_.size();
         return;
       }
