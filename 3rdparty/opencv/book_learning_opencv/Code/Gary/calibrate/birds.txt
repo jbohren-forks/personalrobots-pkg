@@ -1,7 +1,0 @@
-../Data/birdseye/IMG_0214.jpg
-../Data/birdseye/IMG_0215.jpg
-../Data/birdseye/IMG_0216.jpg
-../Data/birdseye/IMG_0217.jpg
-../Data/birdseye/IMG_0218.jpg
-../Data/birdseye/IMG_0219.jpg
-../Data/birdseye/IMG_0220.jpg
