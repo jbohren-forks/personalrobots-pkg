@@ -45,14 +45,14 @@ if __name__ == '__main__':
     topic = sys.argv[1]
     get_position = rospy.ServiceProxy(topic + '/get_actual', GetVector)
     set_command = rospy.ServiceProxy(topic + '/set_command', SetVectorCommand)
-    publisher = rospy.advertise_topic(topic + '/command', Vector3)
+    publisher = rospy.Publisher(topic + '/command', Vector3)
 
     pos = get_position().v
 
     i = 0
     def spacenav_updated(msg):
         global i
-        FACTOR = 0.001
+        FACTOR = 0.005
         #pos.x += FACTOR * msg.x
         #pos.y += FACTOR * msg.y
         #pos.z += FACTOR * msg.z
@@ -66,7 +66,7 @@ if __name__ == '__main__':
         #set_command(pos.x, pos.y, pos.z)
         publisher.publish(msg)
 
-    rospy.subscribe_topic("/spacenav/offset", Vector3, spacenav_updated)
+    rospy.Subscriber("/spacenav/offset", Vector3, spacenav_updated)
     rospy.init_node('spacenav_teleop')
     rospy.spin()
 
