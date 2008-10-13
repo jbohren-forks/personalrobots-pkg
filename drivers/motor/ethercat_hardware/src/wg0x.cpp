@@ -235,19 +235,6 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   if (actuator_info_.crc32_ == crc32.checksum())
   {
     actuator->name_ = actuator_info_.name_;
-
-    printf("read eeprom:\n");
-    printf("  revision: %d.%d\n", actuator_info_.major_, actuator_info_.minor_);
-    printf("  id: %08x\n", actuator_info_.id_);
-    printf("  name: %s\n", actuator_info_.name_);
-    printf("  motor make: %s\n", actuator_info_.motor_make_);
-    printf("  motor model: %s\n", actuator_info_.motor_model_);
-    printf("  max current: %f\n", actuator_info_.max_current_);
-    printf("  speed constant: %f\n", actuator_info_.speed_constant_);
-    printf("  motor torque: %f\n", actuator_info_.motor_torque_constant_);
-    printf("  pulses per revolution: %d\n", actuator_info_.pulses_per_revolution_);
-    printf("  sign: %d\n", actuator_info_.sign_);
-    printf("  crc32: %08x\n", actuator_info_.crc32_);
   }
   else if (allow_unprogrammed)
   {
