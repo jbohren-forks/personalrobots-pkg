@@ -11,7 +11,7 @@ in a way that can be managed by the ROS dependency system.
 <license>BSD</license>
 <url>http://opencvlibrary.sourceforge.net</url>
 <export>
-  <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Xlinker -rpath -Xlinker ${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
+  <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Wl,-rpath,${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
   <doxymaker external="http://opencvlibrary.sourceforge.net/" />
 </export>
 </package>
