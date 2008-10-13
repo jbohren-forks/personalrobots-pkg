@@ -55,7 +55,6 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
 
 //update what map cells are considered path based on the global_plan
 void TrajectoryController::setPathCells(){
-  map_.resetPathDist();
   int local_goal_x = -1;
   int local_goal_y = -1;
   bool started_path = false;
@@ -370,7 +369,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
-    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0)){
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0) && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
       double x_r, y_r, th_r;
       comp_traj->getPoint(num_steps_ - 1, x_r, y_r, th_r);
       x_r += HEADING_LOOKAHEAD * cos(th_r);
@@ -454,10 +453,8 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 //given the current state of the robot, find a good trajectory
 Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
     libTF::TFPose2D& drive_velocities){
-
-  //make sure that we update our path based on the global plan and compute costs
-  setPathCells();
-  printf("Path/Goal distance computed\n");
+  //reset the map for new operations
+  map_.resetPathDist();
 
   //temporarily remove obstacles that are within the footprint of the robot
   vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(global_pose.x, global_pose.y, global_pose.yaw, true);
@@ -466,6 +463,11 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
   for(unsigned int i = 0; i < footprint_list.size(); ++i){
     map_(footprint_list[i].x, footprint_list[i].y).within_robot = true;
   }
+  
+  //make sure that we update our path based on the global plan and compute costs
+  setPathCells();
+  printf("Path/Goal distance computed\n");
+
   
   //rollout trajectories and find the minimum cost one
   Trajectory best = createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
@@ -508,7 +510,7 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 double TrajectoryController::pointCost(int x, int y){
   unsigned char cost = ma_.getCost(x, y);
   //if the cell is in an obstacle the path is invalid
-  if(cost == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
+  if(cost == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE && !map_(x, y).within_robot){
     //printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
