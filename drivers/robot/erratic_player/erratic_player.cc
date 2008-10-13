@@ -123,7 +123,8 @@ class ErraticNode: public ros::node
       // is interface:index.  The interface must match what the driver is
       // expecting to provide.  The value of the index doesn't really matter, 
       // but 0 is most common.
-      const char* player_addr = "position2d:0";
+      const char* player_addr_pos = "position2d:0";
+      const char* player_addr_power = "power:0";
 
       // Create a ConfigFile object, into which we'll stuff parameters.
       // Drivers assume that this object will persist throughout execution
@@ -133,7 +134,8 @@ class ErraticNode: public ros::node
 
       // Insert (name,value) pairs into the ConfigFile object.  These would
       // presumably come from the param server
-      this->cf->InsertFieldValue(0,"provides",player_addr);
+      this->cf->InsertFieldValue(0,"provides",player_addr_pos);
+      this->cf->InsertFieldValue(1,"provides",player_addr_power);
       this->cf->InsertFieldValue(0,"port","/dev/ttyUSB0");
 
       // Create an instance of the driver, passing it the ConfigFile object.
@@ -147,7 +149,8 @@ class ErraticNode: public ros::node
 
       // Grab from the global deviceTable a pointer to the Device that was 
       // created as part of the driver's initialization.
-      assert((this->device = deviceTable->GetDevice(player_addr,false)));
+      assert((this->pos_device = deviceTable->GetDevice(player_addr_pos,false)));
+      assert((this->power_device = deviceTable->GetDevice(player_addr_power,false)));
 
       // Create a message queue
       this->q = QueuePointer(false,PLAYER_QUEUE_LEN);
@@ -162,7 +165,8 @@ class ErraticNode: public ros::node
     int start()
     {
       // Subscribe to device, which causes it to startup
-      if(this->device->Subscribe(this->q) != 0)
+      if((this->pos_device->Subscribe(this->q) != 0) || 
+         (this->power_device->Subscribe(this->q) != 0))
       {
         puts("Failed to subscribe the driver");
         return(-1);
@@ -176,19 +180,23 @@ class ErraticNode: public ros::node
 
     int stop()
     {
+      int ret=0;
       // Unsubscribe from the device, which causes it to shutdown
-      if(this->device->Unsubscribe(this->q) != 0)
+      if(this->pos_device->Unsubscribe(this->q) != 0)
       {
-        puts("Failed to start the driver");
-        return(-1);
+        puts("Failed to stop the driver");
+        ret=-1;
       }
-      else
+      if(this->power_device->Unsubscribe(this->q) != 0)
       {
-        // Give the driver a chance to shutdown.  Wish there were a way to
-        // detect when that happened.
-        usleep(1000000);
-        return(0);
+        puts("Failed to stop the driver");
+        ret=-1;
       }
+
+      // Give the driver a chance to shutdown.  Wish there were a way to
+      // detect when that happened.
+      usleep(1000000);
+      return(ret);
     }
 
     int setMotorState(uint8_t state)
@@ -197,11 +205,11 @@ class ErraticNode: public ros::node
       // Enable the motors
       player_position2d_power_config_t motorconfig;
       motorconfig.state = state;
-      if(!(msg = this->device->Request(this->q,
-                                       PLAYER_MSGTYPE_REQ,
-                                       PLAYER_POSITION2D_REQ_MOTOR_POWER,
-                                       (void*)&motorconfig,
-                                       sizeof(motorconfig), NULL, false)))
+      if(!(msg = this->pos_device->Request(this->q,
+                                           PLAYER_MSGTYPE_REQ,
+                                           PLAYER_POSITION2D_REQ_MOTOR_POWER,
+                                           (void*)&motorconfig,
+                                           sizeof(motorconfig), NULL, false)))
       {
         return(-1);
       }
@@ -233,15 +241,16 @@ class ErraticNode: public ros::node
       cmd.state = 1;
 
 
-      this->device->PutMsg(this->q,
-                           PLAYER_MSGTYPE_CMD,
-                           PLAYER_POSITION2D_CMD_VEL,
-                           (void*)&cmd,sizeof(cmd),NULL);
+      this->pos_device->PutMsg(this->q,
+                               PLAYER_MSGTYPE_CMD,
+                               PLAYER_POSITION2D_CMD_VEL,
+                               (void*)&cmd,sizeof(cmd),NULL);
     }
 
   private:
     Driver* driver;
-    Device* device;
+    Device* pos_device;
+    Device* power_device;
     ConfigFile* cf;
 };
 
