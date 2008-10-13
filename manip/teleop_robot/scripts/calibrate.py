@@ -128,7 +128,7 @@ calibrate_blindly('''
   <calibrate joint="upperarm_roll_right_joint"
              actuator="upperarm_roll_right_motor"
              transmission="upperarm_roll_right_trans"
-             velocity="0.9" />
+             velocity="1.3" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
 </controller>
 
@@ -139,7 +139,7 @@ calibrate_blindly('''
   <calibrate joint="elbow_flex_right_joint"
              actuator="elbow_flex_right_motor"
              transmission="elbow_flex_right_trans"
-             velocity="0.8" />
+             velocity="1.0" />
   <pid p="5" i="0.5" d="0" iClamp="1.0" />
 </controller>
 
