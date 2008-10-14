@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 # Software License Agreement (BSD License)
 #
@@ -102,30 +103,35 @@ class PowerBoardPanel(wx.Panel):
 
         for message in self._messages:
             for status in message.status:
-                if (status.name == "Power board"):
+                if (status.name == "Power board0"):
                     for value in status.values:
                         if (value.label == "Breaker 0 Voltage"):
-                            self.voltage[0] = value.value
+                            self.voltages[0] = value.value
                         if (value.label == "Breaker 1 Voltage"):
-                            self.voltage[1] = value.value
+                            self.voltages[1] = value.value
                         if (value.label == "Breaker 2 Voltage"):
-                            self.voltage[2] = value.value
+                            self.voltages[2] = value.value
                     for strvals in status.strings:
                         if (strvals.label == "Breaker 0 State"):
-                            self.breaker_state[0] = value.value
+                            self.breaker_state[0] = strvals.value
                         if (strvals.label == "Breaker 1 State"):
-                            self.breaker_state[1] = value.value
+                            self.breaker_state[1] = strvals.value
                         if (strvals.label == "Breaker 2 State"):
-                            self.breaker_state[2] = value.value
+                            self.breaker_state[2] = strvals.value
 
-        self.textboxes[0].value = "hi"
-        
+
+                    print "Voltages: %.1f %.1f %.1f"%(self.voltages[0],self.voltages[1], self.voltages[2])
+                    print "States: %s %s %s"%(self.breaker_state[0], self.breaker_state[1], self.breaker_state[2])
+
+##        self.textboxes[0].value = "hi"       
         self._messages = []
         
         self._mutex.release()
         
         self.Refresh()
         
+
+
     def EnableCB0(self, event):
         try:
             self.power_control(0, "start")
@@ -182,3 +188,4 @@ class PowerBoardPanel(wx.Panel):
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
         print "Reset CB2"
+
