@@ -1,29 +1,19 @@
 all: Cg
 
-CG_SOURCE_I686   = http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86.tgz
-CG_SOURCE_X86_64 = http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86_64.tgz
-CG_TAR_I686   = Cg-2.0_May2008_x86.tgz
-CG_TAR_X86_64 = Cg-2.0_May2008_x86_64.tgz
+CG_SOURCE = $(shell (if [ `uname -m` = "x86_64" ]; then echo http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86_64.tgz; else echo http://pr.willowgarage.com/downloads/Cg-2.0_May2008_x86.tgz; fi))
+CG_TARBALL = $(shell (if [ `uname -m` = "x86_64" ]; then echo Cg-2.0_May2008_x86_64.tgz; else echo Cg-2.0_May2008_x86.tgz; fi))
 
 MTYPE = $(shell (if [ `uname -m` = "x86_64" ]; then echo x86_64; else echo x86; fi))
 BITS = $(shell (if [ `uname -m` = "x86_64" ]; then echo 64; fi))
 ROOT = $(shell rospack find Cg)/Cg
 
-Cg-checkout:
-	if [ `uname -m` = x86_64 ]; then \
-	  wget -nc $(CG_SOURCE_X86_64); \
-	else \
-	  wget -nc $(CG_SOURCE_I686); \
-	fi
+$(CG_TARBALL):
+	wget $(CG_SOURCE)
 
-Cg: Cg-checkout
+Cg: $(CG_TARBALL)
 	@echo "making dir"
 	@if [ ! -d Cg ]; then mkdir Cg; fi
-	if [ `uname -m` = x86_64 ]; then \
-	  tar xvf $(CG_TAR_X86_64) -C$(ROOT); \
-	else \
-	  tar xvf $(CG_TAR_I686) -C$(ROOT); \
-	fi
+	tar xf $(CG_TARBALL) -C$(ROOT);
 	touch $(ROOT)/usr/lib$(BITS)/libCg.so
 	@if [ ! -d $(ROOT)/lib ]; then mkdir $(ROOT)/lib; fi
 	@if [ ! -d $(ROOT)/include ]; then mkdir $(ROOT)/include; fi
@@ -32,8 +22,8 @@ Cg: Cg-checkout
 
 clean:
 	rm -rf Cg
-wipe:
-	rm -rf Cg
+wipe: clean
+	rm -rf $(CG_TARBALL)
 
-download: Cg-checkout
+download: $(CG_TARBALL)
 
