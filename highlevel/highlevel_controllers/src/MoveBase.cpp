@@ -70,7 +70,7 @@ namespace ros {
       stateMsg.waypoint_idx = -1;
 
       // Set up transforms
-      double laser_x_offset(0.05);
+      double laser_x_offset(0.275);
       //param("laser_x_offset", laser_x_offset, 0.05);
       tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
