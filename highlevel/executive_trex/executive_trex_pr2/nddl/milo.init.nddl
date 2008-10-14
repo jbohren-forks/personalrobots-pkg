@@ -10,7 +10,7 @@ BaseState baseState = new BaseState(External);
 MoveBase moveBase = new MoveBase(External);
 
 // Battery and Plug In Control
-RechargeController rechargeController = new RechargeController(Internal);
+RechargeController rechargeController = new RechargeController(External);
 BatteryState batteryState = new BatteryState(Internal, 1.0);
 
 /* Waypoints */

@@ -422,7 +422,7 @@ namespace ros {
       // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
       // and we have stopped the robot, then we are done
       if(plan_.empty() && 
-	 fabs(global_pose_.yaw - stateMsg.goal.th) < 10){
+	 fabs(global_pose_.yaw - stateMsg.goal.th) < 0.1){
 
 	printf("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
 	       global_pose_.x, global_pose_.y, global_pose_.yaw,

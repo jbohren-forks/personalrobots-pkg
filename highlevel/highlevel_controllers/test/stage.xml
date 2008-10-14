@@ -13,5 +13,7 @@
 
   <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
+  <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
+
   <node pkg="nav_view" type="nav_view" respawn="true"/>
 </launch>

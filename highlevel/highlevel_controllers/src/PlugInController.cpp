@@ -39,6 +39,7 @@
 #include <robot_msgs/BatteryState.h>
 
 namespace highlevel_controllers {
+
   class PlugIn : public HighlevelController<PlugInState, PlugInGoal> {
     
   private:
@@ -70,7 +71,6 @@ namespace highlevel_controllers {
 
       subscribe("battery_state", batteryStateMsg, &PlugIn::batteryStateCallback, QUEUE_MAX());
       
-
       if (m_addresses == "") {
 	printf("There are no email addresses.\n");
 	FILE* email = fopen("email_file.txt", "r");

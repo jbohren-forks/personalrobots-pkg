@@ -321,13 +321,6 @@ private:
     unlock();
   }
 
-  /**
-   * @brief Will evaluate if we have received an update on the goal state and will transition the controller state
-   * accordingly. An update is where the logged state is not the same as the desired state.
-   */
-  void updateStateForGoal(){
-  }
-
   bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */

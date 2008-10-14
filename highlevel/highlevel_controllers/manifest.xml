@@ -1,22 +1,25 @@
 <package>
-<description brief='Contains high-level controllers which receive goals and generate state updates on goal achievement. These controllers
+ <description brief='Contains high-level controllers which receive goals and generate state updates on goal achievement. These controllers
 		    represent an encapsulated task that leverages underlying system components, including real-time controllers, to achieve
 		    a given goal. All such controllers can be tasked with a goal, will report state periodically, can have a goal recalled,
 		    and operate with general semantics of being active or inactive.'>
-</description>
-<author>Conor McGann</author>
-<license>BSD</license>
-<url>http://pr.willowgarage.com</url>
-<depend package="roscpp"/>
-<depend package="std_msgs"/>
-<depend package="robot_msgs"/>
-<depend package="robot_srvs"/>
-<depend package="pr2_mechanism_controllers"/>
-<depend package="pr2_msgs"/>
-<depend package="kinematic_planning"/>
-<depend package="trajectory_rollout"/>
-<depend package="laser_scan_utils" />
-<depend package="costmap_2d"/>
-<depend package="rosTF"/>
-<depend package="sbpl"/>
+ </description>
+ <author>Conor McGann</author>
+ <license>BSD</license>
+ <url>http://pr.willowgarage.com</url>
+ <depend package="roscpp"/>
+ <depend package="std_msgs"/>
+ <depend package="robot_msgs"/>
+ <depend package="robot_srvs"/>
+ <depend package="pr2_mechanism_controllers"/>
+ <depend package="pr2_msgs"/>
+ <depend package="kinematic_planning"/>
+ <depend package="trajectory_rollout"/>
+ <depend package="laser_scan_utils" />
+ <depend package="costmap_2d"/>
+ <depend package="rosTF"/>
+ <depend package="sbpl"/>
+ <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+ </export>
 </package>

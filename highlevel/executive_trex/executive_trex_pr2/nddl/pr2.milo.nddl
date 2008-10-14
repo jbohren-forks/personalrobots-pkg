@@ -108,7 +108,7 @@ class RechargeController extends Behavior {
     float x;
     float y;
     float th;
-    bool des_plugIn;
+    bool desPlugIn; // If true, the robot is plugged in, otherwise not
     float desX;
     float desY;
     float desTh;
@@ -172,10 +172,10 @@ WorkingStatus::Holds{
     // Actual charging station should be selected by the planner in principle
     ChargingStation cs;
     meets(RechargeController.Inactive rc);
-    eq(rc.des_plugIn, false);
-    eq(rc.desX, cs.x);
-    eq(rc.desY, cs.y);
-    eq(rc.desTh, cs.th);
+    eq(rc.plugIn, false);
+    eq(rc.x, cs.x);
+    eq(rc.y, cs.y);
+    eq(rc.th, cs.th);
     temporalDistance(rc.start, [1 +inf], missionEnd);
   }
 }
@@ -196,16 +196,21 @@ RechargeController::Inactive{
 
   // Preceded by an effort to get to a desired pose
   met_by(Active p);
-  eq(p.plugIn, des_plugIn);
-  eq(p.x, desX);
-  eq(p.y, desY);
-  eq(p.th, desTh);
+  eq(p.plugIn, desPlugIn);
+  eq(p.x, x);
+  eq(p.y, y);
+  eq(p.th, th);
+
+  // Require actual and desired values to be within some tolerance
+  addEq(x, [-0.25, 0.25], desX);
+  addEq(y, [-0.25, 0.25], desY);
+  addEq(th, [-0.25, 0.25], desTh);
 }
 
 RechargeController::Active{
   // Successor desired values should match up
   meets(Inactive s);
-  eq(s.des_plugIn, plugIn);
+  eq(s.desPlugIn, plugIn);
   eq(s.desX, x);
   eq(s.desY, y);
   eq(s.desTh, th);
@@ -218,9 +223,11 @@ RechargeController::Active{
 
   // If we are trying to unplug, then the predecessor's desired values should
   // be the same for position as these
-  eq(p.desX, x);
-  eq(p.desY, y);
-  eq(p.desTh, th);
+  if(plugIn == false){
+    eq(p.desX, x);
+    eq(p.desY, y);
+    eq(p.desTh, th);
+  }
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station
@@ -228,9 +235,6 @@ RechargeController::Active{
   eq(mb.desX, x);
   eq(mb.desY, y);
   eq(mb.desTh, th);
-
-  // HACK
-  eq(duration, 3);
 }
 
 Navigator::Active{
