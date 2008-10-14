@@ -1,1 +1,0 @@
-CCACHE_RECACHE=1 CFLAGS=-g CXXFLAGS=-g configure --prefix=/opt/swig
