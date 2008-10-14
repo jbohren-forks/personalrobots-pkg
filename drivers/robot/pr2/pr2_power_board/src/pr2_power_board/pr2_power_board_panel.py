@@ -62,15 +62,15 @@ class PowerBoardPanel(wx.Panel):
         self.SetSizer(sizer)
 
         self._real_panel.Bind(wx.EVT_BUTTON, self.EnableCB0, id=xrc.XRCID('m_button1'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.EnableCB1, id=xrc.XRCID('m_button2'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.EnableCB2, id=xrc.XRCID('m_button3'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.EnableCB1, id=xrc.XRCID('m_button11'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.EnableCB2, id=xrc.XRCID('m_button12'))
 
-        self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB0, id=xrc.XRCID('m_button11'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB0, id=xrc.XRCID('m_button2'))
         self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB1, id=xrc.XRCID('m_button21'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB2, id=xrc.XRCID('m_button31'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB2, id=xrc.XRCID('m_button22'))
 
-        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB0, id=xrc.XRCID('m_button12'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB1, id=xrc.XRCID('m_button22'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB0, id=xrc.XRCID('m_button3'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB1, id=xrc.XRCID('m_button31'))
         self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB2, id=xrc.XRCID('m_button32'))
 
         rospy.Subscriber("/diagnostics", DiagnosticMessage, self.diagnostics_callback)
@@ -169,16 +169,16 @@ class PowerBoardPanel(wx.Panel):
             self.power_control(0, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB0"
+        print "Reset CB0"
     def DisableCB1(self, event):
         try:
             self.power_control(1, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB1"
+        print "Reset CB1"
     def DisableCB2(self, event):
         try:
             self.power_control(2, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB2"
+        print "Reset CB2"

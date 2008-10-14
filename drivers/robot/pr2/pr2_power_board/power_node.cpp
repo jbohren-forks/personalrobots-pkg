@@ -37,7 +37,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <vector>
-//#include <readline/readline.h>
 #include <iostream>
 
 // Internet/Socket stuff
@@ -198,11 +197,11 @@ int Interface::Init(void)
     perror("Couldn't create send socket");		
     return -1;
   }
-		
+  /*		
   // Use specific interface for recv/send traffic 	
   if (setsockopt(recv_sock, SOL_SOCKET, SO_BINDTODEVICE, 
                  (char *)&interface.ifr_name, sizeof(interface.ifr_name))  < 0) {
-    fprintf(stderr, "Error binding send sock to interface '%s' : %s\n",
+    fprintf(stderr, "Error binding send sock to interface '%s' : %s --case1\n",
             interface.ifr_name, strerror(errno));
     Close();
     return -1;
@@ -214,9 +213,9 @@ int Interface::Init(void)
     Close();
     return -1;
   }
-
+  */
 		
-  // Allow reuse of recieve port
+ // Allow reuse of recieve port
   int opt = 1;
   if (setsockopt(recv_sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
     perror("Couldn't set reuse addr on recv socket\n");
