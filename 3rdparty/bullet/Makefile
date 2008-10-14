@@ -8,7 +8,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 .PHONY: build
 
 
-build: SVN_UP_REVERT_PATCH bullet
+build: SVN_UP_REVERT_PATCH
 	cd $(SVN_DIR) && cmake .
 	make -C $(SVN_DIR) LibLinearMath
 	touch bullet
