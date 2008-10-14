@@ -91,16 +91,6 @@ bool CasterCalibrationController::initXml(mechanism::RobotState *robot, TiXmlEle
     return false;
   }
 
-  control_toolbox::Pid pid;
-  TiXmlElement *pid_el = config->FirstChildElement("pid");
-  if (!pid_el)
-  {
-    fprintf(stderr, "Error: CasterCalibrationController was not given a pid element.\n");
-    return false;
-  }
-  if (!pid.initXml(pid_el))
-    return false;
-
   if (!cc_.initXml(robot, config))
     return false;
 
