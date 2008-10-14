@@ -108,60 +108,22 @@ class FunThread(threading.Thread):
 
 
 template = '''
-<controller name="cal_caster_SUFFIX" topic="cal_caster_SUFFIX" type="JointCalibrationControllerNode">
-  <calibrate joint="caster_SUFFIX_joint"
-             actuator="caster_SUFFIX_motor"
-             transmission="caster_SUFFIX_trans"
-             velocity="1.0" />
-  <pid p="30" i="2.0" d="0" iClamp="5.0" />
-</controller>
+<controllers>
+  <controller type="CasterCalibrationControllerNode" name="cal_caster_SUFFIX" topic="cal_caster_SUFFIX">
+    <calibrate joint="caster_SUFFIX_joint"
+               actuator="caster_SUFFIX_motor"
+               transmission="caster_SUFFIX_trans"
+               velocity="1.0" />
+    <joints caster="caster_SUFFIX_joint"
+            wheel_l="wheel_SUFFIX_l_joint"
+            wheel_r="wheel_SUFFIX_r_joint" />
+    <caster_pid p="6" i="0" d="0" iClamp="0" />
+    <wheel_pid p="4" i="0" d="0" iClamp="0" />
+  </controller>
+</controllers>
 '''
 
 calibrate_optically(template.replace('SUFFIX', 'front_left'))
 calibrate_optically(template.replace('SUFFIX', 'front_right'))
 calibrate_optically(template.replace('SUFFIX', 'rear_left'))
 calibrate_optically(template.replace('SUFFIX', 'rear_right'))
-
-"""
-I have left the following calls here in case the above lines don't actually work
-
-calibrate_optically('''
-<controller name="cal_caster_front_left" topic="cal_caster_front_left" type="JointCalibrationControllerNode">
-  <calibrate joint="caster_front_left_joint"
-             actuator="caster_front_left_motor"
-             transmission="caster_front_left_trans"
-             velocity="1.0" />
-  <pid p="14" i="0.5" d="0" iClamp="1.0" />
-</controller>
-''')
-
-calibrate_optically('''
-<controller name="cal_caster_front_right" topic="cal_caster_front_right" type="JointCalibrationControllerNode">
-  <calibrate joint="caster_front_right_joint"
-             actuator="caster_front_right_motor"
-             transmission="caster_front_right_trans"
-             velocity="1.0" />
-  <pid p="14" i="0.5" d="0" iClamp="1.0" />
-</controller>
-''')
-
-calibrate_optically('''
-<controller name="cal_caster_rear_right" topic="cal_caster_rear_right" type="JointCalibrationControllerNode">
-  <calibrate joint="caster_rear_right_joint"
-             actuator="caster_rear_right_motor"
-             transmission="caster_rear_right_trans"
-             velocity="1.0" />
-  <pid p="100" i="2.0" d="0" iClamp="5.0" />
-</controller>
-''')
-
-calibrate_optically('''
-<controller name="cal_caster_rear_left" topic="cal_caster_rear_left" type="JointCalibrationControllerNode">
-  <calibrate joint="caster_rear_left_joint"
-             actuator="caster_rear_left_motor"
-             transmission="caster_rear_left_trans"
-             velocity="1.0" />
-  <pid p="200" i="2.0" d="0" iClamp="20.0" />
-</controller>
-''')
-"""
