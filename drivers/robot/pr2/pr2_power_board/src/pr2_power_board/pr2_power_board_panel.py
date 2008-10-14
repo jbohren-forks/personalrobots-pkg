@@ -70,10 +70,13 @@ class PowerBoardPanel(wx.Panel):
         self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB1, id=xrc.XRCID('m_button21'))
         self._real_panel.Bind(wx.EVT_BUTTON, self.StandbyCB2, id=xrc.XRCID('m_button22'))
 
-        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB0, id=xrc.XRCID('m_button3'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB1, id=xrc.XRCID('m_button31'))
-        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB2, id=xrc.XRCID('m_button32'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.ResetCB0, id=xrc.XRCID('m_button3'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.ResetCB1, id=xrc.XRCID('m_button31'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.ResetCB2, id=xrc.XRCID('m_button32'))
 
+        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB0, id=xrc.XRCID('cb0_disable'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB1, id=xrc.XRCID('cb1_disable'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB2, id=xrc.XRCID('cb2_disable'))
         rospy.Subscriber("/diagnostics", DiagnosticMessage, self.diagnostics_callback)
         
         self.power_control = rospy.ServiceProxy('power_board_control', PowerBoardCommand)
@@ -88,6 +91,7 @@ class PowerBoardPanel(wx.Panel):
         self.breaker1_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl11')
         self.breaker2_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl12')
 
+
         self.estop_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl9')
 
         self.breaker0_status.SetEditable(False)
@@ -95,6 +99,10 @@ class PowerBoardPanel(wx.Panel):
         self.breaker2_status.SetEditable(False)
         self.estop_status.SetEditable(False)
 
+        self.breaker0_status.SetEditable(False)
+        self.breaker1_status.SetEditable(False)
+        self.breaker2_status.SetEditable(False)
+        self.estop_status.SetEditable(False)
 
 #fixme        self.textboxes = [xrc.XRCCTRL(self._xrc, 'm_textCtrl1'), 0, 0]
 #        self.textboxes[0].value = "hi"
@@ -233,22 +241,41 @@ class PowerBoardPanel(wx.Panel):
             print "Service Call Failed: %s"%e
         print "Standby CB2"
 
-    def DisableCB0(self, event):
+    def ResetCB0(self, event):
         try:
             self.power_control(0, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
         print "Reset CB0"
-    def DisableCB1(self, event):
+    def ResetCB1(self, event):
         try:
             self.power_control(1, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
         print "Reset CB1"
-    def DisableCB2(self, event):
+    def ResetCB2(self, event):
         try:
             self.power_control(2, "reset")
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
         print "Reset CB2"
+
+    def DisableCB0(self, event):
+        try:
+            self.power_control(0, "disable")
+        except rospy.ServiceException, e:
+            print "Service Call Failed: %s"%e
+        print "Disable CB0"
+    def DisableCB1(self, event):
+        try:
+            self.power_control(1, "disable")
+        except rospy.ServiceException, e:
+            print "Service Call Failed: %s"%e
+        print "Disable CB1"
+    def DisableCB2(self, event):
+        try:
+            self.power_control(2, "disable")
+        except rospy.ServiceException, e:
+            print "Service Call Failed: %s"%e
+        print "Disable CB2"
 
