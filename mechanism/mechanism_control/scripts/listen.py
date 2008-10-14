@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+PKG = 'mechanism_control'
+
+
 import rostools
-rostools.update_path('rospy')
-rostools.update_path('robot_msgs')
+rostools.update_path(PKG)
 
 import sys, traceback, logging, rospy
 from robot_msgs.msg import MechanismState
