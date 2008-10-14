@@ -185,8 +185,8 @@ class PointCloudTest(unittest.TestCase):
     
     def test_pointcloud(self):
         print "LNK\n"
-        rospy.TopicSub("base_scan", LaserScan, self.pointInput)
-        rospy.ready(NAME, anonymous=True)
+        rospy.Subscriber("base_scan", LaserScan, self.pointInput)
+        rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 5.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)

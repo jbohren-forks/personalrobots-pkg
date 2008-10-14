@@ -154,7 +154,7 @@ class TestCameras(unittest.TestCase):
         time.sleep(3)
         print " subscribe image from ROS "
         rospy.TopicSub("test_camera/image", Image, self.imageInput)
-        rospy.ready(NAME, anonymous=True)
+        rospy.init_node(NAME, anonymous=True)
         #self.pollThread.start()
         timeout_t = time.time() + 10 #10 seconds delay for processing comparison
         while not rospy.is_shutdown() and not self.tested and time.time() < timeout_t:

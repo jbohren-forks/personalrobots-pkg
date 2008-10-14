@@ -94,9 +94,9 @@ class TestSlide(unittest.TestCase):
     
     def testslide(self):
         print "LINK\n"
-        #rospy.TopicSub("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.TopicSub("base_pose_ground_truth", TransformWithRateStamped, self.positionInput)
-        rospy.ready(NAME, anonymous=True)
+        #rospy.Subscriber("Odom", RobotBase2DOdom, self.positionInput)
+        rospy.Subscriber("base_pose_ground_truth", TransformWithRateStamped, self.positionInput)
+        rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
             time.sleep(0.1)
