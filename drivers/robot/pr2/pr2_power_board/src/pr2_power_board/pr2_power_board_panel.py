@@ -130,8 +130,8 @@ class PowerBoardPanel(wx.Panel):
                     
 
 
-                    print "Voltages: %.1f %.1f %.1f"%(self.voltages[0],self.voltages[1], self.voltages[2])
-                    print "States: %s %s %s"%(self.breaker_state[0], self.breaker_state[1], self.breaker_state[2])
+##                    print "Voltages: %.1f %.1f %.1f"%(self.voltages[0],self.voltages[1], self.voltages[2])
+##                    print "States: %s %s %s"%(self.breaker_state[0], self.breaker_state[1], self.breaker_state[2])
 
                     self.breaker0_status.SetValue("%s @ %.1f"%(self.breaker_state[0], self.voltages[0]))
                     self.breaker1_status.SetValue("%s @ %.1f"%(self.breaker_state[1], self.voltages[1]))
