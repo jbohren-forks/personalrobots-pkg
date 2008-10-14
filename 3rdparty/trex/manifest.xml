@@ -18,7 +18,7 @@ system.
 </export>
 <versioncontrol type="svn" url="https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk"/>
 <versioncontrol type="svn" url="https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk"/>
-<versioncontrol type="svn" url="https://prdev.willowgarage.com/svn/scratch/TREX"/>
+<versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="sun-java6-jdk"/>
 </package>
