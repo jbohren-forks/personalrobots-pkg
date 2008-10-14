@@ -92,12 +92,16 @@ TEST(URDF, ComplexFile)
     EXPECT_TRUE(result == 0);
 }
 
+// A great test, but I'm commenting it out, to avoid adding an installation
+// dependency on valgrind. - BPG
+/*
 TEST(URDF, Valgrind)
 {
     int result = runExternalProcess("./run_valgrind.py", "./parse test/data/test3.xml");
 
     EXPECT_TRUE(result == 0);
 }
+*/
 
 //------------------------------------------------------------------------------
 //  Normalization
