@@ -32,32 +32,6 @@ class WorkingStatus extends AgentTimeline {
   }
 };
 
-/**
- * Each update is monitored and can trigger a transition to recharging
- */
-BatteryState::Holds {
-  bool mustRecharge;
-  testLEQ(mustRecharge, energy_remaining, object.rechargeThreshold);
-
-  // If below the threshold, activate
-  if(mustRecharge){
-    contained_by(WorkingStatus.Holds ws);
-    if(ws.recharging == false){
-      meets(WorkingStatus.Holds ws_next);
-      eq(ws_next.recharging, true);
-    }
-  }
-}
-
-WorkingStatus::Holds{
-  // By default we are not recharging
-  defaultOnCommit(recharging, false);
-
-  // Do the recharging if appropriate
-  if(recharging == true){
-    // TODO
-  }
-}
 
 /**
  * A waypoint to go to
@@ -91,18 +65,10 @@ class Waypoint extends Location {
 };
 
 /**
- * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller. This pattern will allow
- * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
+ * Actions used to drive execution
  */
-class Navigator extends Behavior {
-
-  predicate Active{
-    Waypoint w;
-  }
-
-};
-
 class Actions extends AgentActions {
+
   /**
    * Action to drive the MoveBase controller
    */
@@ -121,20 +87,151 @@ class Actions extends AgentActions {
 };
 
 /**
- * Should be plugged in throughout.
+ * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller. This pattern will allow
+ * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
  */
-class RechargeController extends Behavior {
+class Navigator extends Behavior {
 
-  predicate Active {}
+  predicate Active{
+    Waypoint w;
+  }
 
 };
 
 /**
  * Encapsulates the task of unplugging the robot.
  */
-class PlugController extends Behavior {
-  predicate Active {bool plugIn;}
+class RechargeController extends Behavior {
+
+  predicate Inactive{
+    bool plugIn; // If true, the robot is plugged in, otherwise not
+    float x;
+    float y;
+    float th;
+    bool des_plugIn;
+    float desX;
+    float desY;
+    float desTh;
+  }
+
+  /**
+   * Will have different modes based on the goal. If trying to plug in
+   * then the plugIn parameter will be true and the controller will position
+   * the robot and ensure it gets plugged in. If the goal is to unplug, it will
+   * first enforce a wait while it achives a full charge, and then it will
+   * execute commands to unplug.
+   */
+  predicate Active {
+    bool plugIn;
+    float x;
+    float y;
+    float th;
+  }
 };
+
+/**
+ * Each update is monitored and can trigger a transition to recharging
+ */
+BatteryState::Holds {
+
+  bool mustRecharge;
+  testLEQ(mustRecharge, energy_remaining, object.rechargeThreshold);
+
+  // If below the threshold, transition working status to recharge
+  if(mustRecharge == true){
+    // at end: workingStatus.Holds.recharging == true
+    any(WorkingStatus.Holds ws);
+    precedes(ws.start, end);
+    precedes(end, ws.end);
+    eq(ws.recharging, true);
+  }
+
+  if(object.mode == Internal){
+    eq(duration, 1);
+    if(start == 5){
+      eq(energy_remaining, 0.0);
+    }
+  }
+}
+
+WorkingStatus::Holds{
+  meets(Holds s);
+  neq(s.recharging, recharging);
+
+  // By default we are not recharging
+  defaultOnCommit(recharging, false);
+
+  // Do the recharging if appropriate
+  if(recharging == true){
+    // Should ensure that at the start we deactivate any base motion
+    // at start: movebase.inactive
+    any(MoveBase.Inactive mb);
+    precedes(mb.start, start);
+    precedes(start, mb.end);
+
+    // Actual charging station should be selected by the planner in principle
+    ChargingStation cs;
+    meets(RechargeController.Inactive rc);
+    eq(rc.des_plugIn, false);
+    eq(rc.desX, cs.x);
+    eq(rc.desY, cs.y);
+    eq(rc.desTh, cs.th);
+    temporalDistance(rc.start, [1 +inf], missionEnd);
+  }
+}
+
+/**
+ * Constrain so that the recharge controller switches between plugging on and unplugging
+ */
+RechargeController::Inactive{
+  // By default, we are not plugged in. It may be safer to assume we are! In reality, we should
+  // be able to sense this.
+  defaultOnCommit(plugIn, false);
+
+  // Bind actual values based on base state.
+  starts(BaseState.Holds bs);
+  defaultOnCommit(x, bs.x);
+  defaultOnCommit(y, bs.y);
+  defaultOnCommit(th, bs.th);
+
+  // Preceded by an effort to get to a desired pose
+  met_by(Active p);
+  eq(p.plugIn, des_plugIn);
+  eq(p.x, desX);
+  eq(p.y, desY);
+  eq(p.th, desTh);
+}
+
+RechargeController::Active{
+  // Successor desired values should match up
+  meets(Inactive s);
+  eq(s.des_plugIn, plugIn);
+  eq(s.desX, x);
+  eq(s.desY, y);
+  eq(s.desTh, th);
+
+  // Predecessor desired values must match up. The actual plug in value
+  // of the predecessor should differ from the commanded plug in value
+  // in this state
+  met_by(Inactive p);
+  neq(p.plugIn, plugIn);
+
+  // If we are trying to unplug, then the predecessor's desired values should
+  // be the same for position as these
+  eq(p.desX, x);
+  eq(p.desY, y);
+  eq(p.desTh, th);
+
+  // When busy pluging in or unplugging, we require that we are located, and stationary, at the
+  // correct charging station
+  contained_by(MoveBase.Inactive mb);
+  eq(mb.desX, x);
+  eq(mb.desY, y);
+  eq(mb.desTh, th);
+
+  // HACK
+  eq(duration, 3);
+}
 
 Navigator::Active{
   contains(Actions.Goto goto);
@@ -152,10 +249,11 @@ Navigator::Active{
 }
 
 Actions::Goto{
-  ends(MoveBase.Active move);
+  contains(MoveBase.Active move);
   eq(move.x, w.x);
   eq(move.y, w.y);
   eq(move.th, w.th);
+  concurrent(end, move.end);
 
   // Check end conditions
   if(end){
@@ -163,17 +261,10 @@ Actions::Goto{
     float distance;
     calcDistance(distance, s.x, s.y, w.x, w.y);
     leq(distance, XY_ERROR);
-  }}
+  }
+}
 
 RechargeController::Active{
-  starts(Actions.StartEvent se);
-
-  // Bind to base pose to select nearest charging station
-  ChargingStation cs;
-  if(start){
-    starts(BaseState.Holds baseState);
-    selectChargingStation(baseState.x, baseState.y, cs);
-  }
 
   /* TODO - FINISH THIS */
 }

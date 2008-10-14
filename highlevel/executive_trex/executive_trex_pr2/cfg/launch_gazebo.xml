@@ -14,9 +14,7 @@
 
     <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2"/>
 
-    <node pkg="wavefront_player" type="wavefront_player" args="" respawn="false" />
-
-    <!--node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" /-->
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="" respawn="false" />
 
     <node pkg="highlevel_controllers" type="move_arm" args="right" respawn="false"/>
 
@@ -24,7 +22,7 @@
 
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
 
-
     <node pkg="nav_view" type="nav_view" respawn="true" />
+
   </group>
 </launch>
