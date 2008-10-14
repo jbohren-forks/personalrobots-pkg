@@ -6,7 +6,7 @@
 
   <macro name="pr2_torso" params="name parent *origin">
 
-    <joint name="${name}_joint" type="prismatic"> 
+    <joint name="${name}_joint" type="prismatic">
       <limit min="0.0" max="0.396" effort="10" velocity="5" />
       <axis xyz="0 0 1" />
     </joint>
@@ -21,13 +21,14 @@
       <parent name=" ${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
-      
+
       <inertial>
         <mass value="36.248046" />
         <com xyz="0 0 0" />
-        <inertia ixx="2.771653750257" ixy="0.004284522609" ixz="-0.160418504506" iyy="2.510019507959" iyz="0.029664468704" izz="0.526432355569" />
+        <inertia ixx="2.771653750257" ixy="0.004284522609" ixz="-0.160418504506"
+                 iyy="2.510019507959" iyz="0.029664468704" izz="0.526432355569" />
       </inertial>
-      
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="foo" flag="gazebo">
@@ -36,14 +37,14 @@
         <geometry name="pr2_${name}_mesh_file">
           <mesh filename="torso" />
         </geometry>
-      </visual> 
-      
+      </visual>
+
       <collision>
-        <origin xyz="-0.10 0 -0.50/2+ -0.50" rpy="0 0 0" />
+        <origin xyz="-0.1 0 -0.0885" rpy="0 0 0" />
         <geometry name="${name}_collision_geom">
           <box size="0.432 0.620 0.823" />
         </geometry>
-      </collision> 
+      </collision>
     </link>
   </macro>
 </robot>

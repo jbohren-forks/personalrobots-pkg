@@ -6,14 +6,14 @@
   <property name="caster_wheel_offset_y" value="0.049" /> <!-- from function spreadsheet -->
   <property name="wheel_length" value="0.03" />  <!-- FIXME -->
   <property name="wheel_radius" value="0.079" />   <!-- mp 20080801 -->
-  
+
 
   <macro name="pr2_wheel" params="suffix parent reflect">
     <joint name="wheel_${suffix}_joint" type="revolute">
       <axis xyz=" 0 1 0 " />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="5" />
-      <calibration values="1.5 -1" /> 
+      <calibration values="1.5 -1" />
     </joint>
 
     <link name="wheel_${suffix}">
@@ -40,7 +40,7 @@
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
         <geometry name="pr2_wheel_collision_geom">
-          <cylinder radius="wheel_radius" length="wheel_length" /> 
+          <cylinder radius="${wheel_radius}" length="${wheel_length}" />
         </geometry>
         <map name="friction_coefficients" flag="gazebo">
           <elem key="mu1" value="50.0" />
@@ -87,10 +87,10 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 caster_collision_center_box_center_offset_z"
+        <origin xyz="0 0 0"
                 rpy="0.0 0.0 0.0 " />
         <geometry name="caster_collision_geom">
-          <box size="caster_size_x caster_size_y caster_size_z" /> 
+          <box size="0.192 0.164 0.013" />
         </geometry>
       </collision>
     </link>
@@ -115,23 +115,23 @@
   <property name="base_size_y" value="0.65" />
   <property name="base_size_z" value="0.26" />
 
-  
+
   <macro name="pr2_base" params="name">
 
     <joint name="${name}_joint" type="planar" />
-    
+
     <link name="${name}">
       <parent name="world" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${name}_joint" />
-      
+
       <inertial>
         <mass value="70.750964" />
         <com xyz="0 0 0" />
         <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
                  iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
-      </inertial> 
-      
+      </inertial>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
@@ -140,8 +140,8 @@
         <geometry name="pr2_base_mesh_file">
           <mesh filename="base" />
         </geometry>
-      </visual> 
-      
+      </visual>
+
       <collision>
         <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
         <geometry name="base_collision_geom">
@@ -161,9 +161,9 @@
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
     <pr2_caster suffix="rear_right" parent="${name}">
-      <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
+      <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    
+
   </macro>
 
 
