@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import rostools
+rostools.update_path('rospy')
 rostools.update_path('robot_msgs')
 
 import sys, traceback, logging, rospy

@@ -2,6 +2,7 @@
 
 import curses
 import rostools
+rostools.update_path('rospy')
 rostools.update_path('robot_msgs')
 
 import sys, traceback, logging, rospy
