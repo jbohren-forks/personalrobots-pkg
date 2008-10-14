@@ -746,15 +746,15 @@ public:
       printf(" State:\n");		
       printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
       strval.value = cb_state_to_str(status->CB0_state);
-      strval.label = "Breaker 0 state";
+      strval.label = "Breaker 0 State";
       stat.strings.push_back(strval);
       printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
       strval.value = cb_state_to_str(status->CB1_state);
-      strval.label = "Breaker 1 state";
+      strval.label = "Breaker 1 State";
       stat.strings.push_back(strval);
       printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
       strval.value = cb_state_to_str(status->CB2_state);
-      strval.label = "Breaker 2 state";
+      strval.label = "Breaker 2 State";
       stat.strings.push_back(strval);
       printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
       strval.value = master_state_to_str(status->DCDC_state);
