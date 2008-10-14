@@ -1,0 +1,170 @@
+<?xml version="1.0"?>
+<robot name="pr2">
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <property name="caster_wheel_offset_y" value="0.049" /> <!-- from function spreadsheet -->
+  <property name="wheel_length" value="0.03" />  <!-- FIXME -->
+  <property name="wheel_radius" value="0.079" />   <!-- mp 20080801 -->
+  
+
+  <macro name="pr2_wheel" params="suffix parent reflect">
+    <joint name="wheel_${suffix}_joint" type="revolute">
+      <axis xyz=" 0 1 0 " />
+      <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="5" />
+      <calibration values="1.5 -1" /> 
+    </joint>
+
+    <link name="wheel_${suffix}">
+      <parent name="${parent}" />
+      <joint name="wheel_${suffix}_joint" />
+      <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
+      <inertial>
+        <mass value="0.44036" />
+        <com xyz=" 0 0 0 " />
+        <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
+                  iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right" />
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder radius="wheel_radius" length="wheel_length" /> 
+        </geometry>
+        <map name="friction_coefficients" flag="gazebo">
+          <elem key="mu1" value="50.0" />
+          <elem key="mu2" value="50.0" />
+        </map>
+      </collision>
+    </link>
+
+    <transmission type="SimpleTransmission" name="wheel_${suffix}_trans">
+      <actuator name="wheel_${suffix}_motor" />
+      <joint name="wheel_${suffix}_joint" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+  </macro>
+
+  <macro name="pr2_caster" params="suffix parent *origin">
+    <joint name="caster_${suffix}_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <calibration values="1.5 -1" />
+      <limit  effort="100" velocity="5" />
+    </joint>
+
+    <link name="caster_${suffix}">
+      <parent name="${parent}" />
+      <insert_block name="origin" />
+      <joint name="caster_${suffix}_joint" />
+
+      <inertial>
+        <mass value="3.473082" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983"
+                  iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0 " />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_caster_mesh_file">
+          <mesh filename="caster" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 caster_collision_center_box_center_offset_z"
+                rpy="0.0 0.0 0.0 " />
+        <geometry name="caster_collision_geom">
+          <box size="caster_size_x caster_size_y caster_size_z" /> 
+        </geometry>
+      </collision>
+    </link>
+
+    <transmission type="SimpleTransmission" name="caster_${suffix}_trans">
+      <actuator name="caster_${suffix}_motor" />
+      <joint name="caster_${suffix}_joint" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+
+    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_l" reflect="1" />
+    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_r" reflect="-1" />
+  </macro>
+
+
+
+  <property name="caster_offset_x" value="0.2225" />
+  <property name="caster_offset_y" value="0.2225" />
+  <property name="caster_offset_z" value="0.0282" />
+
+  <property name="base_size_x" value="0.65" />
+  <property name="base_size_y" value="0.65" />
+  <property name="base_size_z" value="0.26" />
+
+  
+  <macro name="pr2_base" params="name">
+
+    <joint name="${name}_joint" type="planar" />
+    
+    <link name="${name}">
+      <parent name="world" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="${name}_joint" />
+      
+      <inertial>
+        <mass value="70.750964" />
+        <com xyz="0 0 0" />
+        <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423"
+                 iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726" />
+      </inertial> 
+      
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_base_mesh_file">
+          <mesh filename="base" />
+        </geometry>
+      </visual> 
+      
+      <collision>
+        <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
+        <geometry name="base_collision_geom">
+          <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
+        </geometry>
+      </collision>
+
+    </link>
+
+    <pr2_caster suffix="front_left" parent="${name}">
+      <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
+    </pr2_caster>
+    <pr2_caster suffix="front_right" parent="${name}">
+      <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
+    </pr2_caster>
+    <pr2_caster suffix="rear_left" parent="${name}">
+      <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
+    </pr2_caster>
+    <pr2_caster suffix="rear_right" parent="${name}">
+      <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
+    </pr2_caster>
+    
+  </macro>
+
+
+</robot>

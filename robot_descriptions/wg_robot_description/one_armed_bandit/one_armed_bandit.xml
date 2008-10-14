@@ -13,8 +13,8 @@
        xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
        xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
 
-  <include filename="../pr2/arm_defs.xml" />
-  <include filename="../pr2/head_defs.xml" />
+  <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/head_defs.xml" />
 
   <joint name="base_joint" type="planar" />
   <link name="base">
@@ -78,9 +78,9 @@
   <pr2_upperarm suffix="right" reflect="-1" parent="torso">
     <origin xyz="0 -0.188 0" rpy="0 0 0" />
   </pr2_upperarm>
-  <tilting_hokuyo name="tilt_laser" parent="torso">
+  <pr2_tilting_laser name="tilt_laser" parent="torso">
     <origin xyz="0.0635 0.01905 0.2413" rpy="0 0 0" />
-  </tilting_hokuyo>
+  </pr2_tilting_laser>
 
 
 
