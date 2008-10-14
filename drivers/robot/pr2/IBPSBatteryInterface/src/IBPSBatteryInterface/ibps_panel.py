@@ -68,6 +68,10 @@ class BatteryPanel(wx.Panel):
         self.energy_text = xrc.XRCCTRL(self._real_panel, 'm_EnergyField')
         self.status_text = xrc.XRCCTRL(self._real_panel, 'm_statusField')
 
+        self.power_text.SetEditable(False)
+        self.energy_text.SetEditable(False)
+        self.status_text.SetEditable(False)
+
         self._messages = []
         
     def message_callback(self, message):
@@ -84,12 +88,12 @@ class BatteryPanel(wx.Panel):
 
         self._mutex.acquire()
         for message in self._messages:
+            ratio = message.energy_remaining / max(message.energy_capacity, 0.0001)
             self.power_text.SetValue('%.2f Watts'%message.power_consumption)
-            self.energy_text.SetValue('%.2f of %.2f Joules'%(message.energy_remaining, message.energy_capacity ))
-            ratio = message.energy_remaining / message.energy_capacity
+            self.energy_text.SetValue('%.2f of %.2f Joules    %.1f Percent'%(message.energy_remaining, message.energy_capacity, ratio*100.0 ))
             if ratio > 0.7:
                 self.energy_text.SetBackgroundColour("Light Green")
-            elif ration > 0.3:
+            elif ratio > 0.3:
                 self.energy_text.SetBackgroundColour("Orange")
             else:
                 self.energy_text.SetBackgroundColour("Red")
