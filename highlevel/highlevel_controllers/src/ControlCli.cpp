@@ -37,7 +37,7 @@
 
 #include <ros/node.h>
 #include <pr2_msgs/MoveArmGoal.h>
-#include <mechanism_control/MechanismState.h>
+#include <robot_msgs/MechanismState.h>
 #include <highlevel_controllers/PlugInGoal.h>
 #include <highlevel_controllers/PlugInState.h>
 #include <robot_srvs/PlanNames.h>
@@ -55,7 +55,7 @@ public:
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     advertise<highlevel_controllers::PlugInGoal>("plugin_goal", 1);
     advertise<robot_msgs::BatteryState>("battery_state", 1);
-    advertise<mechanism_control::MechanismState>("mechanism_state", 1);
+    advertise<robot_msgs::MechanismState>("mechanism_state", 1);
     runCLI();
   }
   bool alive() { return !dead; }
@@ -134,7 +134,7 @@ private:
 
       
     } else if (c == 'I') {
-      mechanism_control::MechanismState mechanismState;
+      robot_msgs::MechanismState mechanismState;
       std::vector<std::string> names;
       
       fillNamesLeftArm(names);
@@ -146,7 +146,7 @@ private:
         mechanismState.joint_states[i].name = names[i];
       }
       printf("Publishing states.\n");
-      publish<mechanism_control::MechanismState>("mechanism_state", mechanismState);
+      publish<robot_msgs::MechanismState>("mechanism_state", mechanismState);
       
     } else if (c == 'S') {
       std::vector<std::string> names;

@@ -54,7 +54,7 @@ void finalize(int donecare)
 
       ~test_run_arm(){};
 
-      mechanism_control::MechanismState state;
+      robot_msgs::MechanismState state;
 
       void jointMsgReceived()
       {

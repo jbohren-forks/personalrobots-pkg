@@ -2,11 +2,11 @@
 # Wrappers around the services provided by MechanismControlNode
 
 import rostools
-rostools.update_path('mechanism_control')
+rostools.update_path('robot_srvs')
 rostools.update_path('std_srvs')
 
 import rospy, sys
-from mechanism_control.srv import *
+from robot_srvs.srv import *
 import std_srvs.srv
 
 def list_controller_types():

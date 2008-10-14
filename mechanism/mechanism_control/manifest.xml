@@ -12,8 +12,10 @@
 <depend package="misc_utils" />
 <depend package="rospy" />
 <depend package="tf" />
+<depend package="robot_msgs" />
+<depend package="robot_srvs" />
 <export>
-    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp'
+    <cpp cflags='-I${prefix}/include'
 	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>
 </export>
 </package>

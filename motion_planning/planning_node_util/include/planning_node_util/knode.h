@@ -51,7 +51,7 @@
 #include <rosTF/rosTF.h>
 #include <cmath>
 
-#include <mechanism_control/MechanismState.h>
+#include <robot_msgs/MechanismState.h>
 
 /** Main namespace */
 namespace planning_node_util
@@ -297,7 +297,7 @@ namespace planning_node_util
 	std_msgs::RobotBase2DOdom                     m_localizedPose;
 	bool                                          m_haveBasePos;	
 	
-	mechanism_control::MechanismState             m_mechanismState; // this message should be moved to robot_msgs
+	robot_msgs::MechanismState             m_mechanismState; // this message should be moved to robot_msgs
 	bool                                          m_haveMechanismState;
 	
 	robot_desc::URDF                             *m_urdf;

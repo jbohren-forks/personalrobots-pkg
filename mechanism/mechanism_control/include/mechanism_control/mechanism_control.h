@@ -45,11 +45,11 @@
 #include <mechanism_model/controller.h>
 #include <misc_utils/realtime_publisher.h>
 
-#include "mechanism_control/ListControllerTypes.h"
-#include "mechanism_control/ListControllers.h"
-#include "mechanism_control/SpawnController.h"
-#include "mechanism_control/KillController.h"
-#include "mechanism_control/MechanismState.h"
+#include <robot_srvs/ListControllerTypes.h>
+#include <robot_srvs/ListControllers.h>
+#include <robot_srvs/SpawnController.h>
+#include <robot_srvs/KillController.h>
+#include <robot_msgs/MechanismState.h>
 #include "rosTF/TransformArray.h"
 
 
@@ -106,25 +106,25 @@ public:
 
   void update();  // Must be realtime safe
 
-  bool listControllerTypes(mechanism_control::ListControllerTypes::request &req,
-                           mechanism_control::ListControllerTypes::response &resp);
-  bool listControllers(mechanism_control::ListControllers::request &req,
-                       mechanism_control::ListControllers::response &resp);
-  bool spawnController(mechanism_control::SpawnController::request &req,
-                       mechanism_control::SpawnController::response &resp);
+  bool listControllerTypes(robot_srvs::ListControllerTypes::request &req,
+                           robot_srvs::ListControllerTypes::response &resp);
+  bool listControllers(robot_srvs::ListControllers::request &req,
+                       robot_srvs::ListControllers::response &resp);
+  bool spawnController(robot_srvs::SpawnController::request &req,
+                       robot_srvs::SpawnController::response &resp);
 
 private:
   ros::node *node_;
 
-  bool killController(mechanism_control::KillController::request &req,
-                      mechanism_control::KillController::response &resp);
+  bool killController(robot_srvs::KillController::request &req,
+                      robot_srvs::KillController::response &resp);
 
   MechanismControl *mc_;
 
   static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
 
   const char* const mechanism_state_topic_;
-  misc_utils::RealtimePublisher<mechanism_control::MechanismState> publisher_;
+  misc_utils::RealtimePublisher<robot_msgs::MechanismState> publisher_;
 
   misc_utils::RealtimePublisher<rosTF::TransformArray> transform_publisher_;
 };

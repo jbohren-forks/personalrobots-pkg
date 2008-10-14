@@ -57,7 +57,7 @@
  * @section topic ROS topics
  *
  * Subscribes to (name/type):
- * - @b "mechanism_state"/mechanism_control::MechanismState : The state of the robot joints and actuators
+ * - @b "mechanism_state"/robot_msgs::MechanismState : The state of the robot joints and actuators
  * - @b "left/right_end_effector_goal"/pr2_msgs::MoveEndEffectorGoal: Where to move end effector
  *
  * Publishes to (name / type):
@@ -72,7 +72,7 @@
 
 #include <HighlevelController.hh>
 #include <pr2_mechanism_controllers/JointPosCmd.h>
-#include <mechanism_control/MechanismState.h>
+#include <robot_msgs/MechanismState.h>
 #include <pr2_msgs/MoveEndEffectorState.h>
 #include <pr2_msgs/MoveEndEffectorGoal.h>
 #include <robot_srvs/KinematicPlanState.h>
@@ -98,7 +98,7 @@ private:
    * @brief Helper Method to obtain the joint value by name
    * @return true if the joint is present, otherwise false
    */
-  bool readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value);
+  bool readJointValue(const robot_msgs::MechanismState& mechanismStateMsg, const std::string& name, double& value);
 
   void handleArmConfigurationCallback();
   void updateGoalMsg();
@@ -112,7 +112,7 @@ private:
 
   const std::string armCmdTopic;
   const std::string kinematicModel;
-  mechanism_control::MechanismState mechanismState;
+  robot_msgs::MechanismState mechanismState;
   robot_srvs::KinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
 
@@ -121,7 +121,7 @@ protected:
 };
 
 
-bool MoveEndEffector::readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value){
+bool MoveEndEffector::readJointValue(const robot_msgs::MechanismState& mechanismStateMsg, const std::string& name, double& value){
   for(unsigned int i = 0; i < mechanismStateMsg.get_joint_states_size(); i++){
     const std::string& jointName = mechanismStateMsg.joint_states[i].name;
     if(name == jointName){

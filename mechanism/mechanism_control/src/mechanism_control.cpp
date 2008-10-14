@@ -206,7 +206,7 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
 
   // Advertise topics
-  node_->advertise<mechanism_control::MechanismState>(mechanism_state_topic_,10);
+  node_->advertise<robot_msgs::MechanismState>(mechanism_state_topic_,10);
   node_->advertise<rosTF::TransformArray>("TransformArray");
   node_->advertise<rostools::Time>("time");
 }
@@ -246,7 +246,7 @@ void MechanismControlNode::update()
       assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
       for (unsigned int i = 0; i < mc_->model_.joints_.size(); ++i)
       {
-        mechanism_control::JointState *out = &publisher_.msg_.joint_states[i];
+        robot_msgs::JointState *out = &publisher_.msg_.joint_states[i];
         mechanism::JointState *in = &mc_->state_->joint_states_[i];
         out->name = mc_->model_.joints_[i]->name_;
         out->position = in->position_;
@@ -257,7 +257,7 @@ void MechanismControlNode::update()
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
       {
-        mechanism_control::ActuatorState *out = &publisher_.msg_.actuator_states[i];
+        robot_msgs::ActuatorState *out = &publisher_.msg_.actuator_states[i];
         ActuatorState *in = &mc_->hw_->actuators_[i]->state_;
         out->name = mc_->hw_->actuators_[i]->name_;
         out->encoder_count = in->encoder_count_;
@@ -318,8 +318,8 @@ void MechanismControlNode::update()
 }
 
 bool MechanismControlNode::listControllerTypes(
-  mechanism_control::ListControllerTypes::request &req,
-  mechanism_control::ListControllerTypes::response &resp)
+  robot_srvs::ListControllerTypes::request &req,
+  robot_srvs::ListControllerTypes::response &resp)
 {
   std::vector<std::string> types;
 
@@ -330,8 +330,8 @@ bool MechanismControlNode::listControllerTypes(
 }
 
 bool MechanismControlNode::spawnController(
-  mechanism_control::SpawnController::request &req,
-  mechanism_control::SpawnController::response &resp)
+  robot_srvs::SpawnController::request &req,
+  robot_srvs::SpawnController::response &resp)
 {
   TiXmlDocument doc;
   doc.Parse(req.xml_config.c_str());
@@ -375,8 +375,8 @@ bool MechanismControlNode::spawnController(
 }
 
 bool MechanismControlNode::listControllers(
-  mechanism_control::ListControllers::request &req,
-  mechanism_control::ListControllers::response &resp)
+  robot_srvs::ListControllers::request &req,
+  robot_srvs::ListControllers::response &resp)
 {
   std::vector<std::string> controllers;
 
@@ -387,8 +387,8 @@ bool MechanismControlNode::listControllers(
 }
 
 bool MechanismControlNode::killController(
-  mechanism_control::KillController::request &req,
-  mechanism_control::KillController::response &resp)
+  robot_srvs::KillController::request &req,
+  robot_srvs::KillController::response &resp)
 {
   resp.ok = mc_->killController(req.name);
   return true;

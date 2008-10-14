@@ -6,6 +6,6 @@ byte valid
 #Did we actually successfully arrive at the goal?
 byte done
 #Current arm configuration
-mechanism_control/JointState[] configuration
+robot_msgs/JointState[] configuration
 #Goal arm configuration
-mechanism_control/JointState[] goal
+robot_msgs/JointState[] goal

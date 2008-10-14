@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import rostools
-rostools.update_path('mechanism_control')
+rostools.update_path('robot_msgs')
 
 import sys, traceback, logging, rospy
-from mechanism_control.msg import MechanismState
+from robot_msgs.msg import MechanismState
 
 print "File name is: %s" %sys.argv[1]
 filehandle = open(sys.argv[1],'w')

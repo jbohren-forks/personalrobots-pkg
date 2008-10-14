@@ -2,10 +2,10 @@
 
 import curses
 import rostools
-rostools.update_path('mechanism_control')
+rostools.update_path('robot_msgs')
 
 import sys, traceback, logging, rospy
-from mechanism_control.msg import MechanismState
+from robot_msgs.msg import MechanismState
 
 NAME = 'joint_listener'
 

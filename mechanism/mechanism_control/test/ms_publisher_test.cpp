@@ -26,13 +26,13 @@
 //////////////////////////////////////////////////////////////////////////////
 
 #include "ros/node.h"
-#include "mechanism_control/MechanismState.h"
-#include "mechanism_control/ActuatorState.h"
-#include "mechanism_control/JointState.h"
+#include "robot_msgs/MechanismState.h"
+#include "robot_msgs/ActuatorState.h"
+#include "robot_msgs/JointState.h"
 
 void publish(ros::node *node)
 {
-  mechanism_control::MechanismState mechanism_state;
+  robot_msgs::MechanismState mechanism_state;
 
   mechanism_state.set_joint_states_size(250);
   mechanism_state.set_actuator_states_size(260);
@@ -41,7 +41,7 @@ void publish(ros::node *node)
   {
     for (unsigned int i = 0; i < mechanism_state.get_joint_states_size(); ++i)
     {
-      mechanism_control::JointState *out = mechanism_state.joint_states + i;
+      robot_msgs::JointState *out = mechanism_state.joint_states + i;
       out->name = "jointstate";
       out->position = 1.0;
       out->velocity = 1.0;
@@ -51,7 +51,7 @@ void publish(ros::node *node)
 
     for (unsigned int i = 0; i < mechanism_state.get_actuator_states_size(); ++i)
     {
-      mechanism_control::ActuatorState *out = mechanism_state.actuator_states + i;
+      robot_msgs::ActuatorState *out = mechanism_state.actuator_states + i;
       out->name = "actuatorstate";
       out->encoder_count = i;
       out->position = 1.0;
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
   ros::init(argc, argv);
   ros::node *node = new ros::node("mechanism_control");
   
-  node->advertise<mechanism_control::MechanismState>("mechanism_state");
+  node->advertise<robot_msgs::MechanismState>("mechanism_state");
   while (1) { 
     std::cout << "publish" << std::endl;
     publish(node);
