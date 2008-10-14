@@ -40,6 +40,9 @@ import threading
 
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
+rostools.update_path('robot_srvs')
+rostools.update_path('mechanism_control')
+
 import rospy
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
