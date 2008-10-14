@@ -21,15 +21,17 @@ includes: trex PlanWorks
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; fi
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5111 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; \
+                             else cd PLASMA &&  $(SVN_CMDLINE) up -r 5111; fi
 
 # GET PlanWorks
 PlanWorks:
-	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; fi
+	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; \
+                                else cd PlanWorks && $(SVN_CMDLINE) up -r 4919; fi
 
 # Get TREX
 trex: PLASMA
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 7 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 21 http://trex-autonomy.googlecode.com/svn/trunk TREX; else cd TREX && $(SVN_CMDLINE) up -r 21; fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
