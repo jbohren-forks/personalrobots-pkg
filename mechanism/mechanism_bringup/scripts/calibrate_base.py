@@ -46,6 +46,10 @@ rostools.update_path('mechanism_control')
 import rospy
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
+from std_srvs.srv import *
+from robot_srvs.srv import *
+from robot_mechanism_controllers.srv import *
+from mechanism_control.srv import *
 
 def slurp(filename):
     f = open(filename)
