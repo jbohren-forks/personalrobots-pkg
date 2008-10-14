@@ -411,10 +411,22 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
-    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-      swap = best_traj;
-      best_traj = comp_traj;
-      comp_traj = swap;
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0)){
+      double x_r, y_r, th_r;
+      comp_traj->getPoint(num_steps_ - 1, x_r, y_r, th_r);
+      x_r += HEADING_LOOKAHEAD * cos(th_r);
+      y_r += HEADING_LOOKAHEAD * sin(th_r);
+      unsigned int cell_x, cell_y;
+
+      //make sure that we'll be looking at a legal cell
+      if(ma_.WC_MC(x_r, y_r, cell_x, cell_y)){
+        double ahead_gdist = map_(cell_x, cell_y).goal_dist;
+        if(ahead_gdist < heading_dist){
+          swap = best_traj;
+          best_traj = comp_traj;
+          comp_traj = swap;
+        }
+      }
     }
 
     vtheta_samp = min_vel_theta;
