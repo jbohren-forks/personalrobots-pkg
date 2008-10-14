@@ -2,6 +2,8 @@
 <description>Data processing and manipulation for learning grasp points from scanned clouds</description>
 <author>Matei Ciocarlie</author>
 <license>BSD</license>
+<depend package="std_msgs" />
+<depend package="rosTF" />
 <depend package="libTF" />
 <depend package="grasp_module" />
 <depend package="grasp_planner" />
