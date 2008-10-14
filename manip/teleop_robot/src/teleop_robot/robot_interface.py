@@ -39,8 +39,8 @@ from xml.dom.minidom import parseString
 import rostools
 import sys
 import rospy
-rostools.update_path('mechanism_control')
-from mechanism_control.srv import *
+rostools.update_path('robot_srvs')
+from robot_srvs.srv import *
 
 #TODO: add a controller factory mechanism
 

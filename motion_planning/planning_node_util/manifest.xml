@@ -14,7 +14,6 @@
   <depend package="planning_models"/>
   <depend package="collision_space"/>
 
-  <depend package="mechanism_control"/>
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags=""/>

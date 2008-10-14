@@ -40,7 +40,7 @@ import copy
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
 import rospy
-from mechanism_control.srv import *
+from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
 
 def slurp(filename):
