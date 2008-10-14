@@ -1,21 +1,21 @@
 #include "ROSStateAdapter.hh"
 #include "IntervalDomain.hh"
-#include <mechanism_control/MechanismState.h>
+#include <robot_msgs/MechanismState.h>
 #include <vector>
 
 namespace TREX {
 
-  class ArmStateAdapter: public ROSStateAdapter<mechanism_control::MechanismState> {
+  class ArmStateAdapter: public ROSStateAdapter<robot_msgs::MechanismState> {
   public:
     ArmStateAdapter(const LabelStr& agentName, const TiXmlElement& configData)
-      : ROSStateAdapter<mechanism_control::MechanismState> ( agentName, configData) {
+      : ROSStateAdapter<robot_msgs::MechanismState> ( agentName, configData) {
     }
 
     virtual ~ArmStateAdapter(){}
 
   private:
 
-    bool readJointValue(const mechanism_control::MechanismState& mechanismStateMsg, const std::string& name, double& value){
+    bool readJointValue(const robot_msgs::MechanismState& mechanismStateMsg, const std::string& name, double& value){
       for(unsigned int i = 0; i < mechanismStateMsg.get_joint_states_size(); i++){
 	const std::string& jointName = mechanismStateMsg.joint_states[i].name;
 	if(name == jointName){

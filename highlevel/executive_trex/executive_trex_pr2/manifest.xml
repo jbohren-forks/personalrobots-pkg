@@ -5,6 +5,7 @@
   <depend package="std_msgs" />
   <depend package="std_srvs" />
   <depend package="pr2_msgs" />
+  <depend package="robot_msgs" />
   <depend package="mechanism_control" />
   <depend package="trex" />
   <depend package="rosTF" />
