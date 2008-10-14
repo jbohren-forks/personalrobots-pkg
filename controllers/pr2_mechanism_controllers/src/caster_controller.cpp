@@ -123,10 +123,10 @@ void CasterController::update()
 {
   caster_vel_.setCommand(steer_velocity_);
 
-  double wd = drive_velocity_ * WHEEL_RADIUS;  // Angular velocity due to driving
+  double wd = drive_velocity_ / WHEEL_RADIUS;  // Angular velocity due to driving
   double ws = (WHEEL_RADIUS / WHEEL_OFFSET) * steer_velocity_;  // Angular velocity due to steering
   wheel_r_vel_.setCommand(wd + ws);
-  wheel_l_vel_.setCommand(-wd + ws);
+  wheel_l_vel_.setCommand(wd - ws);
 
   caster_vel_.update();
   wheel_l_vel_.update();
