@@ -10,6 +10,6 @@
 <sysdepend os="ubuntu" version="8.04-hardy" package="libvtk5-dev"/>
 <!-- TODO: get the link flags some other way, preferably from VTK itself -->
 <export>
-  <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -llistennode -Wl,-rpath,${prefix}/lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkftgl -lvtkHybrid -lvtkFiltering -lvtkGraphics -lGL -lXt -lSM -lICE -lSM -lICE -lX11 -lXext -lX11"/>
+  <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/include" lflags=" -L${prefix}/lib -lscanutils -llistennode -Wl,-rpath,${prefix}/lib -lvtkRendering -lvtkGraphics -lvtkImaging -lvtkIO -lvtkFiltering -lvtkCommon -lvtksys -lpthread -ldl -lm -lvtkDICOMParser -lvtkftgl -lvtkHybrid -lvtkFiltering -lvtkGraphics"/>
 </export>
 </package>
