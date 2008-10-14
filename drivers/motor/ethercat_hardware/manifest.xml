@@ -9,7 +9,7 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='eml'/>
 <depend package='tinyxml'/>
 <depend package='roscpp' />
-<depend package='mechanism_control' />
+<depend package='mechanism_control_rt' />
 <depend package='loki' />
 <depend package='misc_utils' />
 <depend package='robot_msgs' />

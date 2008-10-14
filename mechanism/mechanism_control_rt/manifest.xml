@@ -16,7 +16,7 @@
 <depend package="robot_srvs" />
 <depend package="xenomai" />
 <export>
-    <cpp cflags='-I${prefix}/include'
+    <cpp cflags='-I${prefix}/../mechanism_control/include'
 	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control_rt'/>
 </export>
 </package>
