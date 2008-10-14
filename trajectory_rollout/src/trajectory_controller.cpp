@@ -271,7 +271,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
   max_vel_y = min(0.2, vy + acc_y * sim_time_);
-  min_vel_y = max(0.2, vy - acc_y * sim_time_);
+  min_vel_y = max(-0.2, vy - acc_y * sim_time_);
 
   //max_vel_theta = vtheta + acc_theta * sim_time_;
   //min_vel_theta = vtheta - acc_theta * sim_time_;
