@@ -270,8 +270,8 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   max_vel_x = min(1.0, vx + acc_x * sim_time_);
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
-  max_vel_y = min(1.0, vy + acc_y * sim_time_);
-  min_vel_y = max(-1.0, vy - acc_y * sim_time_);
+  max_vel_y = min(0.2, vy + acc_y * sim_time_);
+  min_vel_y = max(0.2, vy - acc_y * sim_time_);
 
   //max_vel_theta = vtheta + acc_theta * sim_time_;
   //min_vel_theta = vtheta - acc_theta * sim_time_;
@@ -281,12 +281,11 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  //double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
   double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
   double vtheta_samp = min_vel_theta;
-  //double vy_samp = min_vel_y;
   double vy_samp = 0.0;
 
   //make sure to reset the list of trajectories
@@ -318,7 +317,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
 
     vtheta_samp = min_vel_theta;
-    //next sample all positive theta trajectories
+    //next sample all theta trajectories
     for(int j = 0; j < samples_per_dim_ - 1; ++j){
       generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
@@ -332,30 +331,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     vx_samp += dvx;
   }
-
-  /*
-  //generate trajectories for regularly sampled velocities
-  for(int i = 0; i < samples_per_dim_; ++i){
-    //vy_samp = min_vel_y;
-    vtheta_samp = min_vel_theta;
-    for(int j = 0; j < samples_per_dim_; ++j){
-      //vy_samp = min_vel_y;
-      //for(int k = 0; k < samples_per_dim_; ++k){
-        generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
-        
-        //if the new trajectory is better... let's take it
-        if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-          swap = best_traj;
-          best_traj = comp_traj;
-          comp_traj = swap;
-        }
-        //vy_samp += dvy;
-      //}
-      vtheta_samp += dvtheta;
-    }
-    vx_samp += dvx;
-  }
-  */
 
   //next we want to generate trajectories for rotating in place
   vtheta_samp = min_vel_theta;
@@ -423,6 +398,46 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     return *best_traj;
   }
+
+  //if we can't rotate in place or move forward... maybe we can move sideways and rotate
+  vtheta_samp = min_vel_theta;
+  vx_samp = 0.0;
+  vy_samp = min_vel_y;
+
+  //loop through all y velocities
+  for(int i = 0; i < samples_per_dim_; ++i){
+    vtheta_samp = 0;
+    //first sample the completely horizontal trajectory
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+    //if the new trajectory is better... let's take it
+    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+      swap = best_traj;
+      best_traj = comp_traj;
+      comp_traj = swap;
+    }
+
+    vtheta_samp = min_vel_theta;
+    //next sample all theta trajectories
+    for(int j = 0; j < samples_per_dim_ - 1; ++j){
+      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+
+      //if the new trajectory is better... let's take it
+      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+        swap = best_traj;
+        best_traj = comp_traj;
+        comp_traj = swap;
+      }
+      vtheta_samp += dvtheta;
+    }
+    vy_samp += dvy;
+  }
+
+  //if we find a legal horizontal/rotational trajectory... then take it
+  if(best_traj->cost_ >= 0){
+    return *best_traj;
+  }
+
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
