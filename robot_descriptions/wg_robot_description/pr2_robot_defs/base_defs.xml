@@ -52,7 +52,7 @@
     <transmission type="SimpleTransmission" name="wheel_${suffix}_trans">
       <actuator name="wheel_${suffix}_motor" />
       <joint name="wheel_${suffix}_joint" />
-      <mechanicalReduction>1</mechanicalReduction>
+      <mechanicalReduction>${reflect*75.05}</mechanicalReduction>
     </transmission>
   </macro>
 
@@ -98,7 +98,7 @@
     <transmission type="SimpleTransmission" name="caster_${suffix}_trans">
       <actuator name="caster_${suffix}_motor" />
       <joint name="caster_${suffix}_joint" />
-      <mechanicalReduction>1</mechanicalReduction>
+      <mechanicalReduction>-75.05</mechanicalReduction>
     </transmission>
 
     <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_l" reflect="1" />
