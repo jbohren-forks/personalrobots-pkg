@@ -411,13 +411,13 @@ const char* cb_state_to_str(char state)
   case STATE_NOPOWER:
     return "no-power";
   case STATE_STANDBY:
-    return "stand-by";
+    return "Standby";
   case STATE_PUMPING:
     return "pumping";
   case STATE_ON:
-    return "on";
+    return "On";
   case STATE_DISABLED:
-    return "disabled";
+    return "Disabled";
   }
   return "???";			
 }

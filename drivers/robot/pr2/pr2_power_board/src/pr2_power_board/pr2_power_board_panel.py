@@ -81,6 +81,8 @@ class PowerBoardPanel(wx.Panel):
 
         self.voltages = [0,0,0]
         self.breaker_state = ["", "", ""]
+        self.estop_wireless_status = "uninitialized"
+        self.estop_button_status = "uninitialized"
 
         self.breaker0_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl1')
         self.breaker1_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl11')
@@ -88,6 +90,10 @@ class PowerBoardPanel(wx.Panel):
 
         self.estop_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl9')
 
+        self.breaker0_status.SetEditable(False)
+        self.breaker1_status.SetEditable(False)
+        self.breaker2_status.SetEditable(False)
+        self.estop_status.SetEditable(False)
 
 
 #fixme        self.textboxes = [xrc.XRCCTRL(self._xrc, 'm_textCtrl1'), 0, 0]
@@ -120,6 +126,18 @@ class PowerBoardPanel(wx.Panel):
                             self.voltages[1] = value.value
                         if (value.label == "Breaker 2 Voltage"):
                             self.voltages[2] = value.value
+                        if (value.label == "Estop Status"):
+                            if value.value > 0.5:
+                                self.estop_wireless_status = "Run"
+                            else:
+                                self.estop_wireless_status = "Stop"
+                        if (value.label == "Estop Button Status"):
+                            if value.value > 0.5:
+                                self.estop_button_status = "Run"
+                            else:
+                                self.estop_button_status = "Stop"
+
+
                     for strvals in status.strings:
                         if (strvals.label == "Breaker 0 State"):
                             self.breaker_state[0] = strvals.value
@@ -133,10 +151,38 @@ class PowerBoardPanel(wx.Panel):
 ##                    print "Voltages: %.1f %.1f %.1f"%(self.voltages[0],self.voltages[1], self.voltages[2])
 ##                    print "States: %s %s %s"%(self.breaker_state[0], self.breaker_state[1], self.breaker_state[2])
 
-                    self.breaker0_status.SetValue("%s @ %.1f"%(self.breaker_state[0], self.voltages[0]))
-                    self.breaker1_status.SetValue("%s @ %.1f"%(self.breaker_state[1], self.voltages[1]))
-                    self.breaker2_status.SetValue("%s @ %.1f"%(self.breaker_state[2], self.voltages[2]))
-                    self.estop_status.SetValue("TODO add estop here")
+                    self.breaker0_status.SetValue("%s @ %.2fV"%(self.breaker_state[0], self.voltages[0]))
+                    self.breaker1_status.SetValue("%s @ %.2fV"%(self.breaker_state[1], self.voltages[1]))
+                    self.breaker2_status.SetValue("%s @ %.2fV"%(self.breaker_state[2], self.voltages[2]))
+                    if self.breaker_state[0] == "Standby":
+                        self.breaker0_status.SetBackgroundColour("Orange")
+                    elif self.breaker_state[0] == "On":
+                        self.breaker0_status.SetBackgroundColour("Light Green")
+                    else:
+                        self.breaker0_status.SetBackgroundColour("Red")
+
+                    if self.breaker_state[1] == "Standby":
+                        self.breaker1_status.SetBackgroundColour("Orange")
+                    elif self.breaker_state[1] == "On":
+                        self.breaker1_status.SetBackgroundColour("Light Green")
+                    else:
+                        self.breaker1_status.SetBackgroundColour("Red")
+
+                    if self.breaker_state[2] == "Standby":
+                        self.breaker2_status.SetBackgroundColour("Orange")
+                    elif self.breaker_state[2] == "On":
+                        self.breaker2_status.SetBackgroundColour("Light Green")
+                    else:
+                        self.breaker2_status.SetBackgroundColour("Red")
+
+                    if self.estop_button_status == "Stop" or  self.estop_wireless_status == "Stop":
+                        estop_status_temp = "Stop"
+                        self.estop_status.SetBackgroundColour("Red")
+                    else:
+                        estop_status_temp = "Run"
+                        self.estop_status.SetBackgroundColour("Light Green")
+
+                    self.estop_status.SetValue("Estop Status: %s      Button(%s) Wireless(%s)"%(estop_status_temp, self.estop_button_status, self.estop_wireless_status))
 
         
 
