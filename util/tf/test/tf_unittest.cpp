@@ -29,6 +29,8 @@ void generate_rand_vectors(double scale, unsigned int runs, std::vector<double>&
 using namespace tf;
 
 
+// Moved to tf_unittest_future.cpp
+/*
 TEST(tf, ListOneForward)
 {
   unsigned int runs = 400;
@@ -117,6 +119,7 @@ TEST(tf, ListOneInverse)
   }
   
 }
+*/
 
 
 
