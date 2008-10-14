@@ -328,7 +328,9 @@ def eval_all(root, macros, symbols):
                     params.remove(name)
                     scoped[name] = eval_text(value, symbols)
                 if len(params) == 1 and params[0][0] == '*':
-                    scoped[params[0]] = node.cloneNode(deep = True)
+                    block = node.cloneNode(deep = True)
+                    eval_all(block, macros, symbols)
+                    scoped[params[0]] = block
                     params = []
                 if params:
                     raise "Some parameters were not set for macro %s" % \
