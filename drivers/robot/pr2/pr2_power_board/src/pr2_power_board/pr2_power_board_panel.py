@@ -81,6 +81,15 @@ class PowerBoardPanel(wx.Panel):
 
         self.voltages = [0,0,0]
         self.breaker_state = ["", "", ""]
+
+        self.breaker0_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl1')
+        self.breaker1_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl11')
+        self.breaker2_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl12')
+
+        self.estop_status = xrc.XRCCTRL(self._real_panel, 'm_textCtrl9')
+
+
+
 #fixme        self.textboxes = [xrc.XRCCTRL(self._xrc, 'm_textCtrl1'), 0, 0]
 #        self.textboxes[0].value = "hi"
 
@@ -118,10 +127,18 @@ class PowerBoardPanel(wx.Panel):
                             self.breaker_state[1] = strvals.value
                         if (strvals.label == "Breaker 2 State"):
                             self.breaker_state[2] = strvals.value
+                    
 
 
                     print "Voltages: %.1f %.1f %.1f"%(self.voltages[0],self.voltages[1], self.voltages[2])
                     print "States: %s %s %s"%(self.breaker_state[0], self.breaker_state[1], self.breaker_state[2])
+
+                    self.breaker0_status.SetValue("%s @ %.1f"%(self.breaker_state[0], self.voltages[0]))
+                    self.breaker1_status.SetValue("%s @ %.1f"%(self.breaker_state[1], self.voltages[1]))
+                    self.breaker2_status.SetValue("%s @ %.1f"%(self.breaker_state[2], self.voltages[2]))
+                    self.estop_status.SetValue("TODO add estop here")
+
+        
 
 ##        self.textboxes[0].value = "hi"       
         self._messages = []
