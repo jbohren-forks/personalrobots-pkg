@@ -66,7 +66,20 @@ TEST_F(MapClientTest, retrieve_valid_bmp)
   {
     std_srvs::StaticMap::request  req;
     std_srvs::StaticMap::response resp;
-    bool call_result = ros::service::call("static_map", req, resp);
+    // Try a few times, because the server may not be up yet.
+    int i=10;
+    bool call_result;
+    while(i > 0)
+    {
+      call_result = ros::service::call("static_map", req, resp);
+      if(call_result)
+        break;
+      else
+      {
+        ros::Duration d(0.25);
+        d.sleep();
+      }
+    }
     ASSERT_TRUE(call_result);
     ASSERT_FLOAT_EQ(resp.map.resolution, g_valid_image_res);
     ASSERT_EQ(resp.map.width, g_valid_image_width);
