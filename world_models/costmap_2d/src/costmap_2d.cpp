@@ -117,8 +117,6 @@ namespace costmap_2d {
       unsigned int ind = *it;
       staticData_[ind] = fullData_[ind];
     }
-
-    ROS_DEBUG_STREAM("CostMap 2D created with " << staticObstacles_.size() << " static obstacles" << std::endl);
   }
 
   CostMap2D::~CostMap2D() {
@@ -165,7 +163,7 @@ namespace costmap_2d {
     // We always process deletions too
     removeStaleObstaclesInternal(ts, updates);
 
-    ROS_DEBUG_COND(!updates.empty(),"%d cells updated.\n", updates.size());
+    ROS_DEBUG_COND_NAMED(!updates.empty(), "costmap_2d", "%d cells updated.\n", updates.size());
   }
 
   void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates){
@@ -271,7 +269,6 @@ namespace costmap_2d {
   }
 
   TICK CostMap2D::getElapsedTime(double ts) {
-    //ROS_ASSERT(ts >= lastTimeStamp_);
 
     double count = (ts - lastTimeStamp_) / tickLength_;
 
@@ -283,7 +280,6 @@ namespace costmap_2d {
   }
 
   unsigned char CostMap2D::operator [](unsigned int ind) const{
-    // ROS_ASSERT on index
     return fullData_[ind];
   }
 
@@ -501,7 +497,7 @@ namespace costmap_2d {
     // to get the cell coordinates of the origin
     costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
-    ROS_DEBUG("Creating Local %d X %d Map\n", getWidth(), getHeight());
+    ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
   }
 
   unsigned char CostMapAccessor::operator[](unsigned int ind) const {
@@ -527,8 +523,9 @@ namespace costmap_2d {
     origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
     costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
-    ROS_DEBUG("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
-	      origin_x_, origin_y_, maxSize_, wx, wy);
+    ROS_DEBUG_NAMED("costmap_2d", 
+		    "Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
+		    origin_x_, origin_y_, maxSize_, wx, wy);
   }
 
   double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
@@ -565,7 +562,7 @@ namespace costmap_2d {
 
   unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
     unsigned int cellWidth = (unsigned int) ceil(maxSize/resolution);
-    ROS_DEBUG("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
+    ROS_DEBUG_NAMED("costmap_2d", "Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
     return cellWidth;
   }
 }
