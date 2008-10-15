@@ -281,7 +281,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  //double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
   double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
@@ -399,6 +399,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     return *best_traj;
   }
 
+  /* This code needs to be looked at before its fully checked in
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
@@ -449,6 +450,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   if(best_traj->cost_ >= 0){
     return *best_traj;
   }
+  */
 
 
   //and finally we want to generate trajectories that move backwards slowly
