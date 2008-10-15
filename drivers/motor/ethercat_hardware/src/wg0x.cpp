@@ -740,25 +740,32 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   d.message = reason_;
   d.level = 0;
 
-  ADD_STRING("Configuration", string(60, '-'));
+  ADD_STRING("Configuration", "");
   ADD_STRING("Name", actuator_info_.name_);
-  ADD_STRING_FMT("Product code", "%s (%d)", sh_->get_product_code() == WG05::PRODUCT_CODE ? "WG05" : "WG06", sh_->get_product_code());
+  unsigned int revision = sh_->get_revision();
+  unsigned int major = (revision >> 8) & 0xff;
+  unsigned int minor = revision & 0xff;
+  ADD_STRING_FMT("Product code",
+        "WG0%d (%d) Firmware Revision %d.%02d, PCB Revision %c.%02d",
+        sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
+        sh_->get_product_code(), major, minor,
+        'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
 
+  ADD_STRING("Robot", actuator_info_.robot_name_);
+  ADD_STRING_FMT("Motor", "%s %s", actuator_info_.motor_make_, actuator_info_.motor_model_);
   ADD_STRING_FMT("Serial Number", "%d-%05d-%05d", config_info_.product_id_ / 100000 , config_info_.product_id_ % 100000, config_info_.device_serial_number_);
   ADD_STRING_FMT("Nominal Current Scale", "%f",  config_info_.nominal_current_scale_);
   ADD_STRING_FMT("Nominal Voltage Scale",  "%f", config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("HW Max Current", "%f", config_info_.absolute_current_limit_ * config_info_.nominal_current_scale_);
 
-  ADD_STRING("Robot", actuator_info_.robot_name_);
-  ADD_STRING_FMT("Motor", "%s %s", actuator_info_.motor_make_, actuator_info_.motor_model_);
   ADD_STRING_FMT("SW Max Current", "%f", actuator_info_.max_current_);
   ADD_STRING_FMT("Speed Constant", "%f", actuator_info_.speed_constant_);
   ADD_STRING_FMT("Resistance", "%f", actuator_info_.resistance_);
   ADD_STRING_FMT("Motor Torque Constant", "%f", actuator_info_.motor_torque_constant_);
   ADD_STRING_FMT("Pulses Per Revolution", "%d", actuator_info_.pulses_per_revolution_);
-  ADD_STRING_FMT("Sign", "%d", actuator_info_.sign_);
+  ADD_STRING_FMT("Sign", "%d\n", actuator_info_.sign_);
 
-  ADD_STRING("Status", string(60, '-'));
+  ADD_STRING("Status", "");
   string mode, prefix;
   if (status->mode_) {
     if (status->mode_ & MODE_ENABLE) {
