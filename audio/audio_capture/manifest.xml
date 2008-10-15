@@ -6,4 +6,5 @@
   <depend package="robot_msgs"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="portaudio19-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsndfile-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libsndfile1-dev"/>
 </package>
