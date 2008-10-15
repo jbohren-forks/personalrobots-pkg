@@ -8,7 +8,9 @@
       <param name="max_ang" type="double" value="80.0" />
     </node>
     <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full-0.05.pgm 0.05" respawn="false" />
-    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen" args="scan:=base_scan"/>
+    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen" args="scan:=base_scan">
+      <param name="laser_x_offset" type="double" value=".275" />
+    </node>
 
     <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
 
