@@ -108,8 +108,8 @@ class TestMechanismState(unittest.TestCase):
                 self.assertEquals(1.0, f.motor_voltage)
                 self.assertEquals(i, f.encoder_count)
                 self.assertEquals(0, f.calibration_reading)        
-                self.assertEquals(i+1, f.last_calibration_low_transition)
-                self.assertEquals(i+2, f.last_calibration_high_transition)
+                self.assertEquals(i+1, f.last_calibration_falling_edge)
+                self.assertEquals(i+2, f.last_calibration_rising_edge)
                 self.assertEquals(0, f.num_encoder_errors)
         
 if __name__ == '__main__':

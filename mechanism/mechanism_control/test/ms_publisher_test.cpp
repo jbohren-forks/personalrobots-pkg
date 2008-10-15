@@ -59,8 +59,8 @@ void publish(ros::node *node)
       out->encoder_velocity = 1.0;
       out->velocity = 1.0;
       out->calibration_reading = 0;
-      out->last_calibration_high_transition = i+2;
-      out->last_calibration_low_transition = i+1;
+      out->last_calibration_rising_edge = i+2;
+      out->last_calibration_falling_edge = i+1;
       out->is_enabled = 1;
       out->run_stop_hit = 1;
       out->last_requested_effort = 1.0;

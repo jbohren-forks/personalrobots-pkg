@@ -132,12 +132,12 @@ class TestMechanismState(unittest.TestCase):
 
         self.assertEquals(0, self.callback_data.actuator_states[0].encoder_count)
         self.assertEquals(0, self.callback_data.actuator_states[0].calibration_reading)        
-        self.assertEquals(0, self.callback_data.actuator_states[0].last_calibration_high_transition)
+        self.assertEquals(0, self.callback_data.actuator_states[0].last_calibration_rising_edge)
         self.assertEquals(0, self.callback_data.actuator_states[0].num_encoder_errors)
         
         self.assertEquals(1, self.callback_data.actuator_states[1].encoder_count)
         self.assertEquals(1, self.callback_data.actuator_states[1].calibration_reading)        
-        self.assertEquals(1, self.callback_data.actuator_states[1].last_calibration_high_transition)
+        self.assertEquals(1, self.callback_data.actuator_states[1].last_calibration_rising_edge)
         self.assertEquals(1, self.callback_data.actuator_states[1].num_encoder_errors)        
         
 if __name__ == '__main__':
