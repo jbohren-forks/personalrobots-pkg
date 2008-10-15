@@ -631,23 +631,23 @@ AmclNode::laserReceived()
   pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);
-  /*
+  
   for(unsigned int i=0;i<pdata.ranges_count;i++)
     pdata.ranges[i] = this->laserMsg.ranges[i];
-    */
-  memcpy(pdata.ranges,&this->laserMsg.ranges,sizeof(float)*pdata.ranges_count);
+    
+  ///\todo Optimize from above (not working at right)  memcpy(pdata.ranges,&this->laserMsg.ranges[0],sizeof(float)*pdata.ranges_count);
   pdata.intensity_count = this->laserMsg.get_intensities_size();
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
-  /*
+  
   for(unsigned int i=0;i<pdata.intensity_count;i++)
   {
     // AMCL doesn't care about intensity data
     //pdata.intensity[i] = this->laserMsg.intensities[i];
     pdata.intensity[i] = 0;
   }
-  */
-  memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
+  
+  ///\todo Optimize from above (not working at right) memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
   pdata.id = this->laserMsg.header.seq;
 
   double timestamp = this->laserMsg.header.stamp.to_double();
