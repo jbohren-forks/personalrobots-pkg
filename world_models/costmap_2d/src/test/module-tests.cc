@@ -132,7 +132,7 @@ TEST(costmap, test1){
  */
 TEST(costmap, test2){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   map.removeStaleObstacles(1000, updates);
   ASSERT_EQ(updates.size(), 0);
 
@@ -158,7 +158,7 @@ TEST(costmap, test3){
   cloud.pts[2].x = 0;
   cloud.pts[2].y = 0;
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   std::vector<unsigned int> ids;
   map.updateDynamicObstacles(1, cloud, updates);
 
@@ -197,7 +197,7 @@ TEST(costmap, test4){
   cloud.pts[0].x = 7;
   cloud.pts[0].y = 2;
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   std::vector<unsigned int> ids;
   map.updateDynamicObstacles(1, cloud, updates);
   ASSERT_EQ(updates.empty(), true);
@@ -211,7 +211,7 @@ TEST(costmap, test4){
 TEST(costmap, test5){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
   std_msgs::PointCloudFloat32 c0;
@@ -260,7 +260,7 @@ TEST(costmap, test6){
   c0.pts[1].y = 5;
   c0.pts[1].z = 1.2;
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
   ASSERT_EQ(updates.size(), 1);
 }
@@ -297,7 +297,7 @@ TEST(costmap, test7){
   }
 
   // Set an obstacle at the origin and observe insertions for it and its neighbors
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   std_msgs::PointCloudFloat32 c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 0;
@@ -318,7 +318,8 @@ TEST(costmap, test7){
 
   // Now we expect insertions for it, and 3 more neighbors, but not all 5. Also, if we propagate the
   // free space horizontally, we will clear <0, 0> and vertically we will clear the inlfated cell at <2, 7>
-  ASSERT_EQ(updates.size(), 6);
+  // There will be some duplication
+  ASSERT_EQ(updates.size(), 7);
 
   // Staling out the first update will only result in 1 cell clearing, since other
   // values were cleared by free space or will be retained by inflation of a neighbor
@@ -356,7 +357,7 @@ TEST(costmap, test8){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
 
   // Creat a small L-Shape all at once
   std_msgs::PointCloudFloat32 c0;
@@ -402,7 +403,7 @@ TEST(costmap, test9){
   c0.pts[0].y = 5;
   c0.pts[0].z = 0;
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
 
   // A cell radius of 3 gives a 7*7 inflation grid
@@ -467,16 +468,16 @@ TEST(costmap, test11){
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free. This is despite the fact that some of these cells are not zero cost in the
-  // static map
+  // static map. There will be a duplicate update from free space
   std_msgs::PointCloudFloat32 c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
   c0.pts[0].y = 9.5;
   c0.pts[0].z = 0;
 
-  std::set<unsigned int> updates;
+  std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
-  ASSERT_EQ(updates.size(), 8);
+  ASSERT_EQ(updates.size(), 9);
 
   // 4 updates to handle the new obstacle data and its cost implications
   ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
@@ -489,8 +490,10 @@ TEST(costmap, test11){
     ASSERT_EQ(map.getCost(i, i), 0);
 
   // If we update for beyond the window length, the original costs updated should revert back to NO_INFORMATION
+  updates.clear();
+
   map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 8);;
+  ASSERT_EQ(updates.size(), 8);
   ASSERT_EQ(map.getCost(9,9), CostMap2D::NO_INFORMATION);
   ASSERT_EQ(map.getCost(9,8), CostMap2D::NO_INFORMATION);
   ASSERT_EQ(map.getCost(8,9), CostMap2D::NO_INFORMATION);
@@ -498,8 +501,9 @@ TEST(costmap, test11){
 
   // Now we can switch our position and try again. This time we move to the top left
   // for the point at the top right. Expect updates for the obstacle (4) and one extra one
-  // setting NO_INFORMATIOn to free space
-  map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  ASSERT_EQ(updates.size(), 5);
+  // setting NO_INFORMATION to free space. Minor redundant cell update
+  map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  
+  ASSERT_EQ(updates.size(), 6);
 }
 
 int main(int argc, char** argv){

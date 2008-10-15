@@ -112,7 +112,7 @@ namespace costmap_2d {
      */
     void updateDynamicObstacles(double ts,
 				const std_msgs::PointCloudFloat32& cloud,
-				std::set<unsigned int>& updates);
+				std::vector<unsigned int>& updates);
 
     /**
      * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
@@ -127,7 +127,7 @@ namespace costmap_2d {
     void updateDynamicObstacles(double ts,
 				double wx, double wy,
 				const std_msgs::PointCloudFloat32& cloud,
-				std::set<unsigned int>& updates);
+				std::vector<unsigned int>& updates);
     /**
      * @brief A convenience method which will skip calculating the diffs
      * @param current time stamp
@@ -138,13 +138,11 @@ namespace costmap_2d {
     void updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud);
 
     /**
-     * @brief Updates the cost map, removing stale obstacles based on the new time stamp. This
-     * method is linear in the number of dynamic obstacles.
-     * 
+     * @brief Updates the cost map, removing stale obstacles based on the new time stamp.
      * @param current time stamp
      * @param deletedObstacleCells holds vector for returning newly unoccupied ids
      */
-    void removeStaleObstacles(double ts, std::set<unsigned int>& updates);
+    void removeStaleObstacles(double ts, std::vector<unsigned int>& updates);
 
     /**
      * @brief Get pointer into the obstacle map (which contains both static
@@ -174,6 +172,11 @@ namespace costmap_2d {
 
   private:
     /**
+     * @brief Internal method that does not clear the updates first
+     */
+    void removeStaleObstaclesInternal(double ts, std::vector<unsigned int>& updates);
+
+    /**
      * @brief Compute the number of ticks that have elapsed between the given timestamp ts and the last time stamp.
      * Will update the last time stamp value
      *
@@ -190,26 +193,26 @@ namespace costmap_2d {
      * @brief Utility to encapsulate dynamic cell updates
      * @return true if the cell value is updated, otherwise false
      */
-    void updateCellCost(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates);
+    void updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates);
 
     /**
      * @brief Utility to encapsulate marking cells free.
      */
-    void markFreeSpace(unsigned int cell, std::set<unsigned int>& updates);
+    void markFreeSpace(unsigned int cell, std::vector<unsigned int>& updates);
 
     /**
      * @brief Utility to propagate costs
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagateCosts(QUEUE& queue, std::set<unsigned int>& updates);
+    void propagateCosts(QUEUE& queue, std::vector<unsigned int>& updates);
 
     /**
      * @brief Utility to push free space inferred from a laser point hit via ray-tracing
      * @param ind the cell index of the obstacle detected
      * @param updates the buffer for updated cells as a result
      */ 
-    void updateFreeSpace(unsigned int ind, std::set<unsigned int>& updates);
+    void updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates);
 
     /**
      * @brief A cost function for getting costs from distance

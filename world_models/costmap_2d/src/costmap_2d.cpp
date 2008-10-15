@@ -87,7 +87,7 @@ namespace costmap_2d {
 
     // For the first pass, just clean up the data and get the set of original obstacles.
     QUEUE queue; // queue for propagating costs
-    std::set<unsigned int> updates;
+    std::vector<unsigned int> updates;
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
 	unsigned int ind = MC_IND(i, j);
@@ -113,7 +113,7 @@ namespace costmap_2d {
 
 
     // Now for every original obstacle, go back and fill in the inflated obstacles
-    for(std::set<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
+    for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
       unsigned int ind = *it;
       staticData_[ind] = fullData_[ind];
     }
@@ -129,7 +129,7 @@ namespace costmap_2d {
 
   void CostMap2D::updateDynamicObstacles(double ts,
 					 const std_msgs::PointCloudFloat32& cloud,
-					 std::set<unsigned int>& updates)
+					 std::vector<unsigned int>& updates)
   {
     updateDynamicObstacles(ts, 0, 0, cloud, updates);
   }
@@ -137,7 +137,7 @@ namespace costmap_2d {
   void CostMap2D::updateDynamicObstacles(double ts,
 					 double wx, double wy,
 					 const std_msgs::PointCloudFloat32& cloud,
-					 std::set<unsigned int>& updates)
+					 std::vector<unsigned int>& updates)
   {
     // Update current grid position
     WC_MC(wx, wy, mx_, my_);
@@ -163,12 +163,12 @@ namespace costmap_2d {
     propagateCosts(queue, updates);
 
     // We always process deletions too
-    removeStaleObstacles(ts, updates);
+    removeStaleObstaclesInternal(ts, updates);
 
     ROS_DEBUG_COND(!updates.empty(),"%d cells updated.\n", updates.size());
   }
 
-  void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates){
+  void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates){
     // Will take the higher of the static value and the new value.
     // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
     // and we should address what to do there once we have use cases to implement that exploit this unknown state
@@ -177,7 +177,7 @@ namespace costmap_2d {
     fullData_[cell] = std::min(std::max(cellState, staticValue), LETHAL_OBSTACLE);
 
     if(fullData_[cell] != oldValue)
-      updates.insert(cell);
+      updates.push_back(cell);
   
     // If it is a new dynamic obstacle, record it
     if(obsWatchDog_[cell] == 0)
@@ -188,10 +188,10 @@ namespace costmap_2d {
   }
 
 
-  void CostMap2D::markFreeSpace(unsigned int cell, std::set<unsigned int>& updates){
+  void CostMap2D::markFreeSpace(unsigned int cell, std::vector<unsigned int>& updates){
     // If not currently free space then buffer as an update
     if(fullData_[cell] != 0)
-      updates.insert(cell);
+      updates.push_back(cell);
 
     // Assign to free space
     fullData_[cell] = 0;
@@ -207,15 +207,19 @@ namespace costmap_2d {
   }
 
   void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
-    std::set<unsigned int> updates;
+    std::vector<unsigned int> updates;
     updateDynamicObstacles(ts, cloud, updates);
   }
 
   /**
    * This algorithm uses the concept of a watchdog timer to decide when an obstacle can be removed.
    */
-  void CostMap2D::removeStaleObstacles(double ts, std::set<unsigned int>& updates){
+  void CostMap2D::removeStaleObstacles(double ts, std::vector<unsigned int>& updates){
+    updates.clear();
+    removeStaleObstaclesInternal(ts, updates);
+  }
 
+  void CostMap2D::removeStaleObstaclesInternal(double ts, std::vector<unsigned int>& updates){
     // Calculate elapsed time in terms of ticks
     TICK elapsedTime = getElapsedTime(ts);
 
@@ -242,7 +246,7 @@ namespace costmap_2d {
 
 	// If the new value differs from the old value then insert it
 	if(fullData_[ind] != oldValue)
-	  updates.insert(ind);
+	  updates.push_back(ind);
 
 	continue;
       }
@@ -352,7 +356,7 @@ namespace costmap_2d {
     return ss.str();
   }
 
-  void CostMap2D::propagateCosts(QUEUE& queue, std::set<unsigned int>& updates){
+  void CostMap2D::propagateCosts(QUEUE& queue, std::vector<unsigned int>& updates){
     while(!queue.empty()){
       unsigned int distance = queue.front().first;
       unsigned int ind = queue.front().second;
@@ -408,7 +412,7 @@ namespace costmap_2d {
    * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
    * current position (mx_, my_).
    */
-  void CostMap2D::updateFreeSpace(unsigned int ind, std::set<unsigned int>& updates){
+  void CostMap2D::updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates){
     // Since ray tracing will be relatively costly, we do not want to repeat it unnecessarily. There are likely many more points
     // in a point cloud than cells in a grid
     if(obsWatchDog_[ind] == WATCHDOG_LIMIT - 1)
