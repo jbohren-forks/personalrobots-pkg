@@ -139,6 +139,10 @@ public:
 	m_acceptScans = false;
 	random_utils::init(&m_rng);
 
+        /// @todo Find a way to make this work for pr2, with mechanism control,
+        /// but not break for STAIR.  Somebody needs to be periodically
+        /// publishing the base->base_laser Tx.  Or else we need a more standard
+        /// way of retrieving such Txs;
 	/* Set up the transform client */
 	double laser_x_offset;
 	param("laser_x_offset", laser_x_offset, 0.05);
