@@ -6,7 +6,7 @@
     <map name="velocity_control" flag="base_control">
       <elem key="kp_speed">10.0</elem>
       <elem key="kp_caster_steer">1</elem>
-      <elem key="timeout">0.1</elem>
+      <elem key="timeout">0.2</elem>
 
       <elem key="max_x_dot">1</elem>
       <elem key="max_y_dot">1</elem>
