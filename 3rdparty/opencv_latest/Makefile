@@ -1,16 +1,17 @@
 CVS_DIR = opencv-cvs
 INSTALL_DIR = opencv
+CVS_DATE = "10/12/2008 00:00"
 
 all: $(INSTALL_DIR)
 
 
 .PHONY: $(CVS_DIR)
 $(CVS_DIR):
-	cvs -d:pserver:anonymous:@opencvlibrary.cvs.sourceforge.net:/cvsroot/opencvlibrary login 
+	-cvs -d:pserver:anonymous:@opencvlibrary.cvs.sourceforge.net:/cvsroot/opencvlibrary login; \
 	if [ ! -d $(CVS_DIR) ]; then \
-	  cvs -z3 -d:pserver:anonymous@opencvlibrary.cvs.sourceforge.net:/cvsroot/opencvlibrary co -P -d $(CVS_DIR) opencv; \
+	  cvs -D $(CVS_DATE) -z3 -d:pserver:anonymous@opencvlibrary.cvs.sourceforge.net:/cvsroot/opencvlibrary co -P -d $(CVS_DIR) opencv; \
 	else \
-	  cd $(CVS_DIR) && cvs up; \
+	  cd $(CVS_DIR) && cvs up -D $(CVS_DATE); \
 	fi
 
 configured: $(CVS_DIR) Makefile
