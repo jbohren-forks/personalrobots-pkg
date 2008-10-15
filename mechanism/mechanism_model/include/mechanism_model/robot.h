@@ -36,18 +36,9 @@
  * The robot model tracks the state of the robot.
  *
  * State path:
- *               +---------------+                +--------+
- * Actuators --> | Transmissions | --> Joints --> | Chains | --> Links
- *               +---------------+                +--------+
- *
- * The actuators, joints, and links, hold the state information.  The
- * actuators hold the encoder info, the joints hold the joint angles
- * and velocities, and the links hold the frame transforms of the body
- * segments.
- *
- * The transmissions and chains are for propagating the state through
- * the model, and they themselves do not hold any information on the
- * robot's current state.
+ *               +---------------+                
+ * Actuators --> | Transmissions | --> Joints --> Links
+ *               +---------------+                
  *
  * Author: Stuart Glaser
  */

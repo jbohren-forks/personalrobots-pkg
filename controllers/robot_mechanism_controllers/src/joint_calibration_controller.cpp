@@ -38,7 +38,7 @@
 using namespace std;
 using namespace controller;
 
-ROS_REGISTER_CONTROLLER(JointCalibrationController)
+//ROS_REGISTER_CONTROLLER(JointCalibrationController)
 
 JointCalibrationController::JointCalibrationController()
 : state_(INITIALIZED)
@@ -119,6 +119,7 @@ void JointCalibrationController::update()
   {
   case INITIALIZED:
     vc_.setCommand(0.0);
+    state_ = BEGINNING;
     break;
   case BEGINNING:
     original_switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
@@ -147,42 +148,55 @@ void JointCalibrationController::update()
 
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
 
-      state_ = STOPPED;
+      state_ = CALIBRATED;
+      vc_.setCommand(0.0);
     }
     break;
   }
-  case STOPPED:
-    vc_.setCommand(0.0);
+  case CALIBRATED:
     break;
   }
 
-  vc_.update();
+  if (state_ != CALIBRATED)
+    vc_.update();
 }
 
 
 ROS_REGISTER_CONTROLLER(JointCalibrationControllerNode)
 
 JointCalibrationControllerNode::JointCalibrationControllerNode()
+: robot_(NULL), last_publish_time_(0), pub_calibrated_(NULL)
 {
-  c_ = new JointCalibrationController();
 }
 
 JointCalibrationControllerNode::~JointCalibrationControllerNode()
 {
-  delete c_;
 }
 
 void JointCalibrationControllerNode::update()
 {
-  c_->update();
+  c_.update();
+
+  if (c_.calibrated())
+  {
+    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+    {
+      assert(pub_calibrated_);
+      if (pub_calibrated_->trylock())
+      {
+        last_publish_time_ = robot_->hw_->current_time_;
+        pub_calibrated_->unlockAndPublish();
+      }
+    }
+  }
 }
 
 
   bool JointCalibrationControllerNode::calibrateCommand(robot_mechanism_controllers::CalibrateJoint::request &req, robot_mechanism_controllers::CalibrateJoint::response &resp)
 {
-  c_->beginCalibration();
+  c_.beginCalibration();
   ros::Duration d=ros::Duration(0,1000000);
-  while(!c_->calibrated())
+  while(!c_.calibrated())
     d.sleep();
   resp.offset = 0;
   return true;
@@ -190,6 +204,8 @@ void JointCalibrationControllerNode::update()
 
 bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  assert(robot);
+  robot_ = robot;
   ros::node *node = ros::node::instance();
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
@@ -199,10 +215,12 @@ bool JointCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXml
     return false;
   }
 
-  if (!c_->initXml(robot, config))
+  if (!c_.initXml(robot, config))
     return false;
   node->advertise_service(topic + "/calibrate", &JointCalibrationControllerNode::calibrateCommand, this);
   guard_calibrate_.set(topic + "/calibrate");
+
+  pub_calibrated_ = new misc_utils::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
 
   return true;
 }

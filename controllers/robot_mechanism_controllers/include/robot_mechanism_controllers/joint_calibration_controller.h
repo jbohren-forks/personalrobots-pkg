@@ -59,7 +59,8 @@
 
 
 #include "joint_manual_calibration_controller.h"
-
+#include "misc_utils/realtime_publisher.h"
+#include "std_msgs/Empty.h"
 // Services
 #include <robot_mechanism_controllers/CalibrateJoint.h>
 
@@ -70,30 +71,14 @@ namespace controller
 class JointCalibrationController : public controller::Controller
 {
 public:
-  /*!
-   * \brief Default Constructor.
-   *
-   */
   JointCalibrationController();
-
-  /*!
-   * \brief Destructor.
-   */
   virtual ~JointCalibrationController();
 
-  /*!
-   * \brief Functional way to initialize limits and gains.
-   *
-   */
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-
-  /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
-   */
   virtual void update();
 
-  bool calibrated() { return state_ == STOPPED; }
+  bool calibrated() { return state_ == CALIBRATED; }
   void beginCalibration()
   {
     if (state_ == INITIALIZED)
@@ -102,7 +87,7 @@ public:
 
 protected:
 
-  enum { INITIALIZED, BEGINNING, MOVING, STOPPED };
+  enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
   int state_;
 
   double search_velocity_;
@@ -116,29 +101,19 @@ protected:
 };
 
 
-/** @class controller::JointControllerCalibrationNode
- *  @\brief ROS interface for a joint calibration controller
- *  This class is a wrapper around the calibrateCmd service call and it should be its only use
- */
 class JointCalibrationControllerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
   JointCalibrationControllerNode();
-
-  /*!
-   * \brief Destructor
-   */
   ~JointCalibrationControllerNode();
 
   void update();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  /** \brief initializes the calibration procedure (blocking service)
+  /**      DEPRECATED.  Listen to /topic/calibrated instead
+   *
+   * \brief initializes the calibration procedure (blocking service)
    * This service starts the calibration sequence of the joint and waits to return until the calibration sequence is finished.
    *
    * @param req
@@ -149,8 +124,12 @@ public:
                         robot_mechanism_controllers::CalibrateJoint::response &resp);
 
 private:
-  JointCalibrationController *c_;
+  mechanism::RobotState* robot_;
+  JointCalibrationController c_;
   AdvertisedServiceGuard guard_calibrate_;
+
+  double last_publish_time_;
+  misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 
 }
