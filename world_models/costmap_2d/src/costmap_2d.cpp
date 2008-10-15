@@ -51,6 +51,7 @@
 */
 
 #include "costmap_2d/costmap_2d.h"
+#include "rosconsole/rosconsole.h"
 #include <algorithm>
 #include <set>
 #include <sstream>
@@ -58,10 +59,10 @@
 
 namespace costmap_2d {
 
-  unsigned int toCellDistance(double d, unsigned int minD, double resolution){
-    double a = ceil(d / resolution);
-    if(a > minD)
-      return (unsigned int) a;
+  unsigned int toCellDistance(double d, unsigned int maxD, double resolution){
+    double a = std::max(0.0, ceil(d / resolution));
+    if(a > maxD)
+      return maxD;
     
     return (unsigned int) a;
   }
@@ -73,10 +74,10 @@ namespace costmap_2d {
     : ObstacleMapAccessor(0, 0, width, height, resolution),
       tickLength_(window_length/WATCHDOG_LIMIT),
       maxZ_(maxZ),
-      inflationRadius_(toCellDistance(inflationRadius, 0, resolution)),
+      inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
       circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
       inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-      staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0)
+      staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0), mx_(0), my_(0)
   {
     staticData_ = new unsigned char[width_*height_];
     fullData_ = new unsigned char[width_*height_];
@@ -86,27 +87,29 @@ namespace costmap_2d {
 
     // For the first pass, just clean up the data and get the set of original obstacles.
     QUEUE queue; // queue for propagating costs
+    std::set<unsigned int> updates;
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
 	unsigned int ind = MC_IND(i, j);
 	staticData_[ind] = data[ind];
 
 	// If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
-	// then set it to the threshold
-	if(staticData_[ind] >= threshold  && staticData_[ind] != NO_INFORMATION)
+	// then set it to the threshold. 
+	if (staticData_[ind] != NO_INFORMATION && staticData_[ind] >= threshold)
 	  staticData_[ind] = LETHAL_OBSTACLE;
 
 	if(staticData_[ind] == LETHAL_OBSTACLE){
 	  queue.push(std::make_pair(0, ind));
 	  staticObstacles_.push_back(ind);
 	}
+	else
+	  fullData_[ind] = staticData_[ind];
       }
     }
 
     // Now propagate the queue. The updates must be reapplied to the static map, which will ensure they are
     // not staled out
-    std::set<unsigned int> updates;
-    propagate(queue, updates);
+    propagateCosts(queue, updates);
 
 
     // Now for every original obstacle, go back and fill in the inflated obstacles
@@ -115,7 +118,7 @@ namespace costmap_2d {
       staticData_[ind] = fullData_[ind];
     }
 
-    std::cout << "CostMap 2D created with " << staticObstacles_.size() << " static obstacles" << std::endl;
+    ROS_DEBUG_STREAM("CostMap 2D created with " << staticObstacles_.size() << " static obstacles" << std::endl);
   }
 
   CostMap2D::~CostMap2D() {
@@ -128,8 +131,7 @@ namespace costmap_2d {
 					 const std_msgs::PointCloudFloat32& cloud,
 					 std::set<unsigned int>& updates)
   {
-    double FAR_AWAY = getWidth() * getHeight() * getResolution();
-    updateDynamicObstacles(ts, FAR_AWAY, FAR_AWAY, cloud, updates);
+    updateDynamicObstacles(ts, 0, 0, cloud, updates);
   }
 
   void CostMap2D::updateDynamicObstacles(double ts,
@@ -137,52 +139,71 @@ namespace costmap_2d {
 					 const std_msgs::PointCloudFloat32& cloud,
 					 std::set<unsigned int>& updates)
   {
+    // Update current grid position
+    WC_MC(wx, wy, mx_, my_);
+
     updates.clear();
 
     QUEUE queue;
 
-    // Small clearance for what is 'in contact' which is a centimeter
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
       // Filter out points too high
       if(cloud.pts[i].z > maxZ_)
 	continue;
 
+      // Queue cell for cost propagation
       unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
       queue.push(std::make_pair(0, ind));
+
+      // Immediately update free space, which is dominated by propagated costs so they are applied afterwards
+      updateFreeSpace(ind, updates);
     }
 
     // Propagate costs
-    propagate(queue, updates);
+    propagateCosts(queue, updates);
 
     // We always process deletions too
     removeStaleObstacles(ts, updates);
 
-    if(!updates.empty())
-      std::cout << updates.size() << " cells updated.\n";
+    ROS_DEBUG_COND(!updates.empty(),"%d cells updated.\n", updates.size());
   }
 
-  bool CostMap2D::updateCell(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates){
+  void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates){
+    // Will take the higher of the static value and the new value.
+    // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
+    // and we should address what to do there once we have use cases to implement that exploit this unknown state
     unsigned char oldValue = fullData_[cell];
+    unsigned char staticValue = (staticData_[cell] == NO_INFORMATION ? 0 : staticData_[cell]);
+    fullData_[cell] = std::min(std::max(cellState, staticValue), LETHAL_OBSTACLE);
 
+    if(fullData_[cell] != oldValue)
+      updates.insert(cell);
+  
     // If it is a new dynamic obstacle, record it
     if(obsWatchDog_[cell] == 0)
       dynamicObstacles_.push_back(cell);
 
-    // Will take the higher of the static value and the new value.
-    // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
-    // and we should address what to do there once we have use cases to implement that exploit this unknown state
-    fullData_[cell] = std::min(std::max(cellState, staticData_[cell]), LETHAL_OBSTACLE);
-  
     // Always pet the watchdog
     obsWatchDog_[cell] = WATCHDOG_LIMIT;
+  }
 
-    if(fullData_[cell] != oldValue){
-      //printf("Switching %d from %d to %d\n", cell, oldValue, fullData_[cell]);
+
+  void CostMap2D::markFreeSpace(unsigned int cell, std::set<unsigned int>& updates){
+    // If not currently free space then buffer as an update
+    if(fullData_[cell] != 0)
       updates.insert(cell);
-      return true;
-    }
 
-    return false;
+    // Assign to free space
+    fullData_[cell] = 0;
+
+    // If it is a new dynamic obstacle, record it
+    if(obsWatchDog_[cell] == 0)
+      dynamicObstacles_.push_back(cell);
+  
+    // Always pet the watchdog to just below the watchdog limit allowing obstacles (raw or inflated) to over-rule
+    // this value. This is necessary because inflated obstacles could be interpreted as free space
+    // but shouldn't be
+    obsWatchDog_[cell] = WATCHDOG_LIMIT - 1;
   }
 
   void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
@@ -331,8 +352,7 @@ namespace costmap_2d {
     return ss.str();
   }
 
-  void CostMap2D::propagate(QUEUE& queue, std::set<unsigned int>& updates){
-    updates.clear();
+  void CostMap2D::propagateCosts(QUEUE& queue, std::set<unsigned int>& updates){
     while(!queue.empty()){
       unsigned int distance = queue.front().first;
       unsigned int ind = queue.front().second;
@@ -340,7 +360,7 @@ namespace costmap_2d {
       queue.pop();
       
       if(!marked(ind)){
-	updateCell(ind, cost, updates);
+	updateCellCost(ind, cost, updates);
 	unsigned int mx, my;
 	IND_MC(ind, mx, my);
 
@@ -383,6 +403,88 @@ namespace costmap_2d {
     return cost;
   }
 
+
+  /**
+   * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
+   * current position (mx_, my_).
+   */
+  void CostMap2D::updateFreeSpace(unsigned int ind, std::set<unsigned int>& updates){
+    // Since ray tracing will be relatively costly, we do not want to repeat it unnecessarily. There are likely many more points
+    // in a point cloud than cells in a grid
+    if(obsWatchDog_[ind] == WATCHDOG_LIMIT - 1)
+      return;
+
+    unsigned int x1, y1;
+    IND_MC(ind, x1, y1);
+
+    unsigned int deltax = abs(x1 - mx_);        // The difference between the x's
+    unsigned int deltay = abs(y1 - my_);        // The difference between the y's
+    unsigned int x = mx_;                       // Start x off at the first pixel
+    unsigned int y = my_;                       // Start y off at the first pixel
+
+    unsigned int xinc1, xinc2, yinc1, yinc2;
+    unsigned int den, num, numadd, numpixels;
+
+    if (x1 >= mx_)                 // The x-values are increasing
+      {
+	xinc1 = 1;
+	xinc2 = 1;
+      }
+    else                          // The x-values are decreasing
+      {
+	xinc1 = -1;
+	xinc2 = -1;
+      }
+
+    if (y1 >= my_)                 // The y-values are increasing
+      {
+	yinc1 = 1;
+	yinc2 = 1;
+      }
+    else                          // The y-values are decreasing
+      {
+	yinc1 = -1;
+	yinc2 = -1;
+      }
+
+    if (deltax >= deltay)         // There is at least one x-value for every y-value
+      {
+	xinc1 = 0;                  // Don't change the x when numerator >= denominator
+	yinc2 = 0;                  // Don't change the y for every iteration
+	den = deltax;
+	num = deltax / 2;
+	numadd = deltay;
+	numpixels = deltax;         // There are more x-values than y-values
+      }
+    else {
+	xinc2 = 0;                  // Don't change the x for every iteration
+	yinc1 = 0;                  // Don't change the y when numerator >= denominator
+	den = deltay;
+	num = deltay / 2;
+	numadd = deltax;
+	numpixels = deltay;         // There are more y-values than x-values
+    }
+
+    for (unsigned int curpixel = 0; curpixel <= numpixels; curpixel++){
+      // Update the cell as long as it is not the original target
+      if(x != x1 || y != y1){
+	unsigned int ind = MC_IND(x, y);
+
+	markFreeSpace(ind, updates);
+      }
+
+      num += numadd;              // Increase the numerator by the top of the fraction
+      if (num >= den)             // Check if numerator >= denominator
+	{
+	  num -= den;               // Calculate the new numerator value
+	  x += xinc1;               // Change the x as appropriate
+	  y += yinc1;               // Change the y as appropriate
+	}
+      x += xinc2;                 // Change the x as appropriate
+      y += yinc2;                 // Change the y as appropriate
+    }
+  }
+
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
     : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
 			  computeWY(costMap, maxSize, poseX, poseY), 
@@ -395,7 +497,7 @@ namespace costmap_2d {
     // to get the cell coordinates of the origin
     costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
-    printf("Creating Local %d X %d Map\n", getWidth(), getHeight());
+    ROS_DEBUG("Creating Local %d X %d Map\n", getWidth(), getHeight());
   }
 
   unsigned char CostMapAccessor::operator[](unsigned int ind) const {
@@ -421,8 +523,8 @@ namespace costmap_2d {
     origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
     costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
-    //printf("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
-    //     origin_x_, origin_y_, maxSize_, wx, wy);
+    ROS_DEBUG("Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
+	      origin_x_, origin_y_, maxSize_, wx, wy);
   }
 
   double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){
@@ -459,8 +561,7 @@ namespace costmap_2d {
 
   unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
     unsigned int cellWidth = (unsigned int) ceil(maxSize/resolution);
-    printf("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
+    ROS_DEBUG("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
     return cellWidth;
   }
-
 }

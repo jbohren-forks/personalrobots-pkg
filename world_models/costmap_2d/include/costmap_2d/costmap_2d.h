@@ -104,7 +104,6 @@ namespace costmap_2d {
   
     /**
      * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
      * @param current time stamp
      * @param cloud holds projected scan data
      * @param updates holds the updated cell ids and values
@@ -117,7 +116,6 @@ namespace costmap_2d {
 
     /**
      * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * This method is linear in the number of points in the point cloud + the number of dynamic obstacles.
      * @param current time stamp
      * @param wx The current x position
      * @param wy The current y position
@@ -192,14 +190,26 @@ namespace costmap_2d {
      * @brief Utility to encapsulate dynamic cell updates
      * @return true if the cell value is updated, otherwise false
      */
-    bool updateCell(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates);
+    void updateCellCost(unsigned int cell, unsigned char cellState, std::set<unsigned int>& updates);
+
+    /**
+     * @brief Utility to encapsulate marking cells free.
+     */
+    void markFreeSpace(unsigned int cell, std::set<unsigned int>& updates);
 
     /**
      * @brief Utility to propagate costs
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagate(QUEUE& queue, std::set<unsigned int>& updates);
+    void propagateCosts(QUEUE& queue, std::set<unsigned int>& updates);
+
+    /**
+     * @brief Utility to push free space inferred from a laser point hit via ray-tracing
+     * @param ind the cell index of the obstacle detected
+     * @param updates the buffer for updated cells as a result
+     */ 
+    void updateFreeSpace(unsigned int ind, std::set<unsigned int>& updates);
 
     /**
      * @brief A cost function for getting costs from distance
@@ -221,6 +231,8 @@ namespace costmap_2d {
     unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
     TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
     double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
+    unsigned int mx_; /** < The x position of the robot in the grid */
+    unsigned int my_; /** < The y position of the robot in the grid */
 
     std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
   

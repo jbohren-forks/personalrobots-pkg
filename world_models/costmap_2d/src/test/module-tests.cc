@@ -277,8 +277,6 @@ TEST(costmap, test7){
   std::vector<unsigned int> occupiedCells;
   map.getOccupiedCellDataIndexList(occupiedCells);
 
-  std::cout << map.toString();
-
   // There should be no duplicates
   std::set<unsigned int> setOfCells;
   for(unsigned int i=0;i<occupiedCells.size(); i++)
@@ -318,13 +316,15 @@ TEST(costmap, test7){
   c1.pts[0].z = 0.0;
   map.updateDynamicObstacles(WINDOW_LENGTH - 1, c1, updates);
 
-  // Now we expect insertions for it, and 3 more neighbors, but not all 5
-  ASSERT_EQ(updates.size(), 4);
+  // Now we expect insertions for it, and 3 more neighbors, but not all 5. Also, if we propagate the
+  // free space horizontally, we will clear <0, 0> and vertically we will clear the inlfated cell at <2, 7>
+  ASSERT_EQ(updates.size(), 6);
 
-  // Now verify that some of the initial batch go away but others remain
+  // Staling out the first update will only result in 1 cell clearing, since other
+  // values were cleared by free space or will be retained by inflation of a neighbor
   updates.clear();
   map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 2);
+  ASSERT_EQ(updates.size(), 1);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   std_msgs::PointCloudFloat32 c2;
@@ -458,6 +458,50 @@ TEST(costmap, test10){
 
 
 }
+
+/**
+ * Test for ray tracing free space
+ */
+TEST(costmap, test11){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+
+  // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
+  // <0, 0> thru <7, 7> to be free. This is despite the fact that some of these cells are not zero cost in the
+  // static map
+  std_msgs::PointCloudFloat32 c0;
+  c0.set_pts_size(1);
+  c0.pts[0].x = 9.5;
+  c0.pts[0].y = 9.5;
+  c0.pts[0].z = 0;
+
+  std::set<unsigned int> updates;
+  map.updateDynamicObstacles(1, c0, updates);
+  ASSERT_EQ(updates.size(), 8);
+
+  // 4 updates to handle the new obstacle data and its cost implications
+  ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
+  ASSERT_EQ(map.getCost(9,8), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
+  ASSERT_EQ(map.getCost(8,9), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
+  ASSERT_EQ(map.getCost(8,8), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
+
+  // In addition, 4 cells will have been switched to free space along the diagonal
+  for(unsigned int i=0; i < 8; i++)
+    ASSERT_EQ(map.getCost(i, i), 0);
+
+  // If we update for beyond the window length, the original costs updated should revert back to NO_INFORMATION
+  map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
+  ASSERT_EQ(updates.size(), 8);;
+  ASSERT_EQ(map.getCost(9,9), CostMap2D::NO_INFORMATION);
+  ASSERT_EQ(map.getCost(9,8), CostMap2D::NO_INFORMATION);
+  ASSERT_EQ(map.getCost(8,9), CostMap2D::NO_INFORMATION);
+  ASSERT_EQ(map.getCost(8,8), CostMap2D::NO_INFORMATION);
+
+  // Now we can switch our position and try again. This time we move to the top left
+  // for the point at the top right. Expect updates for the obstacle (4) and one extra one
+  // setting NO_INFORMATIOn to free space
+  map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  ASSERT_EQ(updates.size(), 5);
+}
+
 int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++)
     MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);
