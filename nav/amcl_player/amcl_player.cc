@@ -239,6 +239,11 @@ AmclNode::AmclNode() :
       this->mapdata[i] = 0;
   }
 
+  /// @todo Find a way to make this work for pr2, with mechanism control,
+  /// but not break for STAIR.  Somebody needs to be periodically
+  /// publishing the base->base_laser Tx.  Or else we need a more standard
+  /// way of retrieving such Txs;
+  //
   // retrieve static laser transform, if it's available
   param("laser_x_offset", laser_x_offset, 0.05);
   
@@ -375,6 +380,8 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     
     // publish new transform robot->map
+    ros::Time t;
+    t.fromSec(hdr->timestamp);
     this->tf->sendEuler("base",
                         "map",
                         pdata->pos.px,
@@ -383,8 +390,9 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                         pdata->pos.pa,
                         0.0,
                         0.0,
-			ros::Time((long long unsigned int)floor(hdr->timestamp),
-                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
+			t);
+			//ros::Time((long long unsigned int)floor(hdr->timestamp),
+                        //(long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -399,17 +407,20 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.x = pdata->pos.px;
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
-    localizedOdomMsg.header.stamp.from_double(hdr->timestamp);
+    localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
     try
     {
 	localizedOdomMsg.header.frame_id = "map";
     }
     catch(...)
     {
+      // WTF is this?
         printf("Somehow could not set frame_id to map\n");
     }
     publish("localizedpose", localizedOdomMsg);
 
+    /// @todo Choke back the rate of this request and publication
+    //
     // Also request and publish the particle cloud
     Message* msg;
     if((msg = this->ldevice->Request(this->Driver::InQueue,
@@ -620,17 +631,23 @@ AmclNode::laserReceived()
   pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);
+  /*
   for(unsigned int i=0;i<pdata.ranges_count;i++)
     pdata.ranges[i] = this->laserMsg.ranges[i];
+    */
+  memcpy(pdata.ranges,&this->laserMsg.ranges,sizeof(float)*pdata.ranges_count);
   pdata.intensity_count = this->laserMsg.get_intensities_size();
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
+  /*
   for(unsigned int i=0;i<pdata.intensity_count;i++)
   {
     // AMCL doesn't care about intensity data
     //pdata.intensity[i] = this->laserMsg.intensities[i];
     pdata.intensity[i] = 0;
   }
+  */
+  memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
   pdata.id = this->laserMsg.header.seq;
 
   double timestamp = this->laserMsg.header.stamp.to_double();
