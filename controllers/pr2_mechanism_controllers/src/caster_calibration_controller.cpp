@@ -127,9 +127,9 @@ void CasterCalibrationController::update()
 
       // Where was the joint when the optical switch triggered?
       if (original_switch_state_ == true)
-        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_high_transition_;
+        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_rising_edge_;
       else
-        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_low_transition_;
+        fake_a[0]->state_.position_ = actuator_->state_.last_calibration_falling_edge_;
       transmission_->propagatePosition(fake_a, fake_j);
 
       // What is the actuator position at the joint's zero?

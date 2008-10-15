@@ -266,8 +266,8 @@ void MechanismControlNode::update()
         out->encoder_velocity = in->encoder_velocity_;
         out->velocity = in->velocity_;
         out->calibration_reading = in->calibration_reading_;
-        out->last_calibration_high_transition = in->last_calibration_high_transition_;
-        out->last_calibration_low_transition = in->last_calibration_low_transition_;
+        out->last_calibration_rising_edge = in->last_calibration_rising_edge_;
+        out->last_calibration_falling_edge = in->last_calibration_falling_edge_;
         out->is_enabled = in->is_enabled_;
         out->run_stop_hit = in->run_stop_hit_;
         out->last_requested_current = in->last_requested_current_;

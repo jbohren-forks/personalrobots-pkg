@@ -175,8 +175,8 @@ struct WG0XStatus
   uint16_t num_encoder_errors_;
   uint8_t encoder_status_;
   uint8_t calibration_reading_;
-  int32_t last_calibration_high_transition_;
-  int32_t last_calibration_low_transition_;
+  int32_t last_calibration_rising_edge_;
+  int32_t last_calibration_falling_edge_;
   uint16_t board_temperature_;
   uint16_t bridge_temperature_;
   uint16_t supply_voltage_;

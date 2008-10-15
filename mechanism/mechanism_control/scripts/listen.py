@@ -33,8 +33,8 @@ def callback(data):
       print "    encoder_velocity: %.4f" % a.encoder_velocity
       print "    velocity: %.4f" % a.velocity
       print "    calibration_reading: %d" % a.calibration_reading
-      print "    last_calibration_high_transition: %d" % a.last_calibration_high_transition
-      print "    last_calibration_low_transition: %d" % a.last_calibration_low_transition
+      print "    last_calibration_rising_edge: %d" % a.last_calibration_rising_edge
+      print "    last_calibration_falling_edge: %d" % a.last_calibration_falling_edge
       print "    is_enabled: %d" % a.is_enabled
       print "    run_stop_hit: %d" % a.run_stop_hit
       print "    last_requested_current: %.4f" % a.last_requested_current

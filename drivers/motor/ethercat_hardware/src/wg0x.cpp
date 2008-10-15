@@ -341,8 +341,8 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
       / (this_status->timestamp_ - prev_status->timestamp_) * 1e+6;
   state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.calibration_reading_ = this_status->calibration_reading_ & LIMIT_SENSOR_0_STATE;
-  state.last_calibration_high_transition_ = double(this_status->last_calibration_high_transition_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
-  state.last_calibration_low_transition_ = double(this_status->last_calibration_low_transition_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
+  state.last_calibration_rising_edge_ = double(this_status->last_calibration_rising_edge_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
+  state.last_calibration_falling_edge_ = double(this_status->last_calibration_falling_edge_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.is_enabled_ = this_status->mode_ != MODE_OFF;
   state.run_stop_hit_ = (this_status->mode_ & MODE_UNDERVOLTAGE) != 0;
 
@@ -806,8 +806,8 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Num encoder_errors", "%d", status->num_encoder_errors_);
   ADD_STRING_FMT("Encoder status", "%d", status->encoder_status_);
   ADD_STRING_FMT("Calibration reading", "%d", status->calibration_reading_);
-  ADD_STRING_FMT("Last calibration high transition", "%d", status->last_calibration_high_transition_);
-  ADD_STRING_FMT("Last calibration low transition", "%d", status->last_calibration_low_transition_);
+  ADD_STRING_FMT("Last calibration rising edge", "%d", status->last_calibration_rising_edge_);
+  ADD_STRING_FMT("Last calibration falling edge", "%d", status->last_calibration_falling_edge_);
   ADD_STRING_FMT("Board temperature", "%f", 0.0078125 * status->board_temperature_);
   ADD_STRING_FMT("Bridge temperature", "%f", 0.0078125 * status->bridge_temperature_);
   ADD_STRING_FMT("Supply voltage", "%f", status->supply_voltage_ * config_info_.nominal_voltage_scale_);

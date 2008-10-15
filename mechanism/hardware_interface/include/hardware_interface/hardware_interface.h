@@ -42,8 +42,8 @@
 class ActuatorState{
 public:
   ActuatorState() :
-      last_calibration_high_transition_(0),
-      last_calibration_low_transition_(0),
+      last_calibration_rising_edge_(0),
+      last_calibration_falling_edge_(0),
       is_enabled_(0),
       run_stop_hit_(0),
       last_requested_current_(0),
@@ -63,8 +63,8 @@ public:
   double velocity_;
 
   bool calibration_reading_;
-  double last_calibration_high_transition_;  // Last transition from high to low.
-  double last_calibration_low_transition_;
+  double last_calibration_rising_edge_;
+  double last_calibration_falling_edge_;
 
   bool is_enabled_;
   bool run_stop_hit_;
