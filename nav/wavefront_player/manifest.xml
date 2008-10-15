@@ -6,7 +6,7 @@
   <depend package="player" />
   <depend package="laser_scan_utils" />
   <depend package="std_srvs" />
-  <depend package="rosTF" />
+  <depend package="tf"/>
   <export>
     <cpp cflags="-I${prefix}/srv/cpp"/>
   </export>

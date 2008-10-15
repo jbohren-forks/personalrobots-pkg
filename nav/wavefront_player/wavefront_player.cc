@@ -116,7 +116,7 @@ robot.
 #include <std_msgs/Planner2DState.h>
 #include <std_msgs/Planner2DGoal.h>
 #include <std_msgs/BaseVel.h>
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_srvs/StaticMap.h>
@@ -125,7 +125,7 @@ robot.
 #include <std_msgs/Polyline2D.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 //Laser projection
 #include "laser_scan_utils/laser_scan.h"
@@ -161,7 +161,7 @@ class WavefrontNode: public ros::node
       REACHED_GOAL
     } planner_state;
 
-  libTF::TFPose2D global_pose;
+  tf::Stamped<btTransform> global_pose;
 
     // If we can't reach the goal, note when it happened and keep trying a bit
     //ros::Time stuck_time;
@@ -224,8 +224,8 @@ class WavefrontNode: public ros::node
   
     laser_scan::LaserProjection projector_;
   public:
-    // Transform client
-    rosTFClient tf;
+    // Transform listener
+    tf::TransformListener tf;
 
     WavefrontNode();
     virtual ~WavefrontNode();
@@ -293,9 +293,7 @@ WavefrontNode::WavefrontNode() :
         //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
 {
   // Initialize global pose. Will be set in control loop based on actual data.
-  global_pose.x = 0;
-  global_pose.y = 0;
-  global_pose.yaw = 0;
+  ///\todo does this need to be initialized?  global_pose.setIdentity();
 
   // set a few parameters. leave defaults just as in the ctor initializer list
   param("dist_eps", dist_eps, 1.0);
@@ -373,9 +371,14 @@ WavefrontNode::WavefrontNode() :
   // Static robot->laser transform
   double laser_x_offset;
   param("laser_x_offset", laser_x_offset, 0.05);
-  this->tf.setWithEulers("base_laser",
+  ///\todo broadcast this instead of setting it locally
+  //convert!
+  /*  this->tf.setWithEulers("base_laser",
                          "base",
-                         laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+                         laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);*/
+  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), 0, "base_laser", "base"));
+  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), 0, "map", "other"));///\todo fixme hack to get around short list edge case
+
 
   advertise<std_msgs::Planner2DState>("state");
   advertise<std_msgs::Polyline2D>("gui_path");
@@ -422,10 +425,14 @@ WavefrontNode::goalReceived()
     this->pstate.active = 0;
   }
 
+  double yaw,pitch,roll;
+  btMatrix3x3 mat =  global_pose.data_.getBasis();
+  mat.getEulerZYX(yaw, pitch, roll);
+
   // Fill out and publish response
-  this->pstate.pos.x = global_pose.x;
-  this->pstate.pos.y = global_pose.y;
-  this->pstate.pos.th = global_pose.yaw;
+  this->pstate.pos.x = global_pose.data_.getOrigin().x();
+  this->pstate.pos.y = global_pose.data_.getOrigin().y();
+  this->pstate.pos.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
   this->pstate.goal.th = this->goal[2];
@@ -460,29 +467,29 @@ WavefrontNode::laserReceived()
 
 
     // Assemble a point cloud, in the laser's frame
-    std_msgs::PointCloudFloat32 local_cloud;
+    std_msgs::PointCloud local_cloud;
     projector_.projectLaser(*it, local_cloud, laser_maxrange);
     
     // Convert to a point cloud in the map frame
-    std_msgs::PointCloudFloat32 global_cloud;
+    std_msgs::PointCloud global_cloud;
 
     try
     {
-      global_cloud = this->tf.transformPointCloud("map", local_cloud);
+      this->tf.transformPointCloud("map", local_cloud, global_cloud);
     }
-    catch(libTF::TransformReference::LookupException& ex)
+    catch(tf::LookupException& ex)
     {
       puts("no global->local Tx yet (point cloud)");
       printf("%s\n", ex.what());
       return;
     }
-    catch(libTF::TransformReference::ConnectivityException& ex)
+    catch(tf::ConnectivityException& ex)
     {
       puts("no global->local Tx yet (point cloud)");
       printf("%s\n", ex.what());
       return;
     }
-    catch(libTF::TransformReference::ExtrapolateException& ex)
+    catch(tf::ExtrapolationException& ex)
     {
       //      puts("extrapolation required");
       //      printf("%s\n", ex.what());
@@ -599,32 +606,32 @@ void
 WavefrontNode::doOneCycle()
 {
   // Get the current robot pose in the map frame
-  libTF::TFPose2D robotPose;
-  robotPose.x = 0;
-  robotPose.y = 0;
-  robotPose.yaw = 0;
-  robotPose.frame = "base";
-  robotPose.time = 0; // request most recent pose
+  //convert!
+  
+  tf::Stamped<tf::Pose> robotPose;
+  robotPose.data_.setIdentity();
+  robotPose.frame_id_ = "base";
+  robotPose.stamp_ = 0; // request most recent pose
   //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
-    global_pose = this->tf.transformPose2D("map", robotPose);
+    this->tf.transformPose("map", robotPose, global_pose);
   }
-  catch(libTF::TransformReference::LookupException& ex)
+  catch(tf::LookupException& ex)
   {
     puts("no global->local Tx yet");
     this->stopRobot();
     return;
   }
-  catch(libTF::TransformReference::ConnectivityException& ex)
+  catch(tf::ConnectivityException& ex)
     {
       puts("no global->local Tx yet");
       printf("%s\n", ex.what());
       this->stopRobot();
       return;
     }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
+  catch(tf::ExtrapolationException& ex)
   {
     // this should never happen
     puts("WARNING: extrapolation failed!");
@@ -654,9 +661,14 @@ WavefrontNode::doOneCycle()
     case PURSUING_GOAL:
     //case STUCK:
       {
+        
+        double yaw,pitch,roll; //fixme make cleaner namespace
+        btMatrix3x3 mat =  global_pose.data_.getBasis();
+        mat.getEulerZYX(yaw, pitch, roll);
+        
         // Are we done?
         if(plan_check_done(this->plan,
-                           global_pose.x, global_pose.y, global_pose.yaw,
+                           global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(), yaw,
                            this->goal[0], this->goal[1], this->goal[2],
                            this->dist_eps, this->ang_eps))
         {
@@ -676,11 +688,11 @@ WavefrontNode::doOneCycle()
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
-           (plan_do_local(this->plan, global_pose.x, global_pose.y,
+           (plan_do_local(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
                          this->plan_halfwidth) < 0))
         {
           // Fallback on global plan
-          if(plan_do_global(this->plan, global_pose.x, global_pose.y,
+          if(plan_do_global(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
                             this->goal[0], this->goal[1]) < 0)
           {
             // no global plan
@@ -710,7 +722,7 @@ WavefrontNode::doOneCycle()
           {
             // global plan succeeded; now try the local plan again
             this->printed_warning = false;
-            if(plan_do_local(this->plan, global_pose.x, global_pose.y, 
+            if(plan_do_local(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(), 
                              this->plan_halfwidth) < 0)
             {
               // no local plan; better luck next time through
@@ -728,10 +740,16 @@ WavefrontNode::doOneCycle()
 
         // We have a valid local plan.  Now compute controls
         double vx, va;
+        
+        //    double yaw,pitch,roll; //used temporarily earlier fixme make cleaner
+        //btMatrix3x3 
+        mat =  global_pose.data_.getBasis();
+        mat.getEulerZYX(yaw, pitch, roll);
+
         if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
                                        &this->rotate_dir,
-                                       global_pose.x, global_pose.y,
-                                       global_pose.yaw,
+                                       global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
+                                       yaw,
                                        this->goal[0], this->goal[1],
                                        this->goal[2],
                                        this->dist_eps, this->ang_eps,
@@ -770,14 +788,17 @@ WavefrontNode::doOneCycle()
     default:
       assert(0);
   }
+  double yaw,pitch,roll;
+  btMatrix3x3 mat =  global_pose.data_.getBasis();
+  mat.getEuler(yaw, pitch, roll);
 
   this->pstate.active = (this->enable &&
 			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
   this->pstate.valid = (this->plan->path_count > 0) ? 1 : 0;
   this->pstate.done = (this->planner_state == REACHED_GOAL) ? 1 : 0;
-  this->pstate.pos.x = global_pose.x;
-  this->pstate.pos.y = global_pose.y;
-  this->pstate.pos.th = global_pose.yaw;
+  this->pstate.pos.x = global_pose.data_.getOrigin().x();
+  this->pstate.pos.y = global_pose.data_.getOrigin().y();
+  this->pstate.pos.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
   this->pstate.goal.th = this->goal[2];
