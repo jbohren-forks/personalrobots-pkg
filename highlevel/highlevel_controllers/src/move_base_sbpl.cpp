@@ -90,7 +90,7 @@ namespace ros {
        * @brief Called during update of cost map. Will just buffer and handle in batch.
        * @see applyMapUpdates
        */
-      virtual void handleMapUpdates(const std::set<unsigned int>& updates);
+      virtual void handleMapUpdates(const std::vector<unsigned int>& updates);
 
       /**
        * @brief Builds a plan from current state to goal state
@@ -103,13 +103,9 @@ namespace ros {
 
       bool isValid();
 
-      void applyMapUpdates();
-
       MDPConfig mdpCfg_;
       EnvironmentNAV2D envNav2D_;
       ARAPlanner* araPlanner_;
-
-      std::set<unsigned int> updates_; /**< Buffer for updates */
     };
 
     MoveBaseSBPL::MoveBaseSBPL()
@@ -150,29 +146,18 @@ namespace ros {
     /**
      * @brief This is called during a cost map update. Will insert new updates, possibly overwriting prior values
      */
-    void MoveBaseSBPL::handleMapUpdates(const std::set<unsigned int>& updates){
-      updates_.insert(updates.begin(), updates.end());
-    }
-
-    void MoveBaseSBPL::applyMapUpdates(){
-      lock();
+    void MoveBaseSBPL::handleMapUpdates(const std::vector<unsigned int>& updates){
       
       const CostMap2D& cm = getCostMap();
-      for(std::set<unsigned int>::const_iterator it = updates_.begin(); it != updates_.end(); ++it){
+
+      for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
 	unsigned int x, y; // Cell coordinates
 	cm.IND_MC(*it, x, y);
 	envNav2D_.UpdateCost(x, y, cm.getCost(x, y));
       }
-      
-      isValid();
-
-      updates_.clear();
-
-      unlock();
     }
 
     bool MoveBaseSBPL::isValid() {
-      
       const CostMap2D& cm = getCostMap();
       
       for(unsigned int i = 0; i<cm.getWidth(); i++){
@@ -193,9 +178,6 @@ namespace ros {
 
     bool MoveBaseSBPL::makePlan(){
       std::cout << "Planning for new goal...\n";
-
-      // Apply map updates that were buffered from the cost map
-      applyMapUpdates();
 
       unsigned int x, y;
       const CostMap2D& cm = getCostMap();

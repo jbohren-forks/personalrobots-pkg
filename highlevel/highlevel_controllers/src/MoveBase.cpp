@@ -285,7 +285,7 @@ namespace ros {
 
       // Update the cost map
       const double ts = laserScanMsg_.header.stamp.to_double();
-      std::set<unsigned int> updates;
+      std::vector<unsigned int> updates;
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
@@ -302,7 +302,7 @@ namespace ros {
     void MoveBase::pointCloudCallback(){
       // Update the cost map
       const double ts = pointCloudMsg_.header.stamp.to_double();
-      std::set<unsigned int> updates;
+      std::vector<unsigned int> updates;
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
