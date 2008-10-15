@@ -99,7 +99,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     node->log(ros::FATAL, "Unable to locate any slaves");
   }
 
-  if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 50)))
+  if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 100)))
   {
     node->log(ros::FATAL, "Unable to change socket timeout");
   } 
