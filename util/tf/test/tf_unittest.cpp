@@ -29,99 +29,6 @@ void generate_rand_vectors(double scale, unsigned int runs, std::vector<double>&
 using namespace tf;
 
 
-// Moved to tf_unittest_future.cpp
-/*
-TEST(tf, ListOneForward)
-{
-  unsigned int runs = 400;
-  double epsilon = 1e-6;
-  seed_rand();
-  
-  tf::Transformer mTR(true);
-  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
-  {
-    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child",  "my_parent");
-    mTR.setTransform(tranStamped);
-  }
-
-  std::cout << mTR.allFramesAsString() << std::endl;
-  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
-
-  for ( unsigned int i = 0; i < runs ; i++ )
-
-  {
-    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
-
-    try{
-    Stamped<Pose> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformPose("my_parent",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
-    }
-    catch (tf::TransformException & ex)
-    {
-      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
-      bool exception_improperly_thrown = true;
-      EXPECT_FALSE(exception_improperly_thrown);
-    }
-  }
-  
-}
-
-
-TEST(tf, ListOneInverse)
-{
-  unsigned int runs = 400;
-  double epsilon = 1e-6;
-  seed_rand();
-  
-  tf::Transformer mTR(true);
-  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
-  {
-    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
-
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child",  "my_parent");
-    mTR.setTransform(tranStamped);
-  }
-
-  std::cout << mTR.allFramesAsString() << std::endl;
-  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
-
-  for ( unsigned int i = 0; i < runs ; i++ )
-
-  {
-    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
-
-    try{
-    Stamped<btTransform> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
-    mTR.transformPose("child",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), -xvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), -yvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), -zvalues[i], epsilon);
-    }
-    catch (tf::TransformException & ex)
-    {
-      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
-      bool exception_improperly_thrown = true;
-      EXPECT_FALSE(exception_improperly_thrown);
-    }
-  }
-  
-}
-*/
-
-
 
 TEST(tf, TransformTransformsCartesian)
 {
@@ -161,6 +68,67 @@ TEST(tf, TransformTransformsCartesian)
     EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
     EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
+    }
+    catch (tf::TransformException & ex)
+    {
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+  Stamped<Pose> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
+  Stamped<Pose> outpose;
+  outpose.data_.setIdentity(); //to make sure things are getting mutated
+  mTR.transformPose("child",inpose, outpose);
+  EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
+  EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
+  EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
+  
+  
+}
+
+TEST(tf, TransformTransformToOwnFrame)
+{
+  unsigned int runs = 400;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs), yawvalues(runs),  pitchvalues(runs),  rollvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yawvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    pitchvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    rollvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(yawvalues[i],pitchvalues[i],rollvalues[i]), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
+    mTR.setTransform(tranStamped);
+
+    /// \todo remove fix for graphing problem
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
+    mTR.setTransform(tranStamped2);
+  }
+
+  //std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
+
+    try{
+    Stamped<Pose> outpose;
+    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    mTR.transformPose("child",inpose, outpose);
+    EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
+    EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
+    EXPECT_NEAR(outpose.data_.getRotation().w(), 1, epsilon); //Identity is 0,0,0,1
     }
     catch (tf::TransformException & ex)
     {
