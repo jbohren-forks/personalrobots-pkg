@@ -93,16 +93,15 @@ namespace ros {
       // get map via RPC
       std_srvs::StaticMap::request  req;
       std_srvs::StaticMap::response resp;
-      std::cout << "Requesting the map..." << std::endl;
+      ROS_INFO("Requesting the map...\n");
       while(!ros::service::call("static_map", req, resp))
 	{
-	  std::cout << "Request failed; trying again..." << std::endl;
+	  ROS_INFO("Request failed; trying again...\n");
 	  usleep(1000000);
 	}
 
-      std::cout << "Received a " << resp.map.width << " X " << 
-	resp.map.height << " map at " << 
-	resp.map.resolution << "m/pix" << std::endl;
+      ROS_INFO("Received a %f X %f map at %f m/pix\n",
+	       resp.map.width, resp.map.height, resp.map.resolution);
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
       // our planner and controller do not reason about the no obstacle case
@@ -210,13 +209,13 @@ namespace ros {
 	global_pose_ = this->tf_.transformPose2D("map", robotPose);
       }
       catch(libTF::TransformReference::LookupException& ex){
-	std::cout << "No Transform available Error\n";
+	ROS_INFO("No Transform available Error\n");
       }
       catch(libTF::TransformReference::ConnectivityException& ex){
-	std::cout << "Connectivity Error\n";
+	ROS_INFO("Connectivity Error\n");
       }
       catch(libTF::TransformReference::ExtrapolateException& ex){
-	std::cout << "Extrapolation Error\n";
+	ROS_INFO("Extrapolation Error\n");
       }
 
       // Update the cost map window
@@ -231,7 +230,7 @@ namespace ros {
       stateMsg.goal.th = goalMsg.goal.th;
       unlock();
 
-      printf("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
+      ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
     }
 
     void MoveBase::updateStateMsg(){
@@ -263,25 +262,19 @@ namespace ros {
       catch(libTF::TransformReference::LookupException& ex)
 	{
 	  puts("no global->local Tx yet");
-	  printf("%s\n", ex.what());
+	  ROS_DEBUG("%s\n", ex.what());
 	  return;
 	}
       catch(libTF::TransformReference::ConnectivityException& ex)
 	{
 	  puts("no global->local Tx yet");
-	  printf("%s\n", ex.what());
+	  ROS_DEBUG("%s\n", ex.what());
 	  return;
 	}
       catch(libTF::TransformReference::ExtrapolateException& ex)
 	{
 	  puts("Extrapolation exception");
 	}
-
-      /*
-	std::cout << "Laser scan received (Laser Scan:" << laserScanMsg_.get_ranges_size() << 
-	", localCloud:" << local_cloud.get_pts_size() << 
-	", globalCloud:" << global_cloud.get_pts_size() << ")\n";
-      */
 
       // Update the cost map
       const double ts = laserScanMsg_.header.stamp.to_double();
@@ -333,12 +326,12 @@ namespace ros {
       catch(libTF::TransformReference::LookupException& ex)
 	{
 	  puts("no odom->base Tx yet");
-	  printf("%s\n", ex.what());
+	  ROS_DEBUG("%s\n", ex.what());
 	}
       catch(libTF::TransformReference::ConnectivityException& ex)
 	{
 	  puts("no odom->base Tx yet");
-	  printf("%s\n", ex.what());
+	  ROS_DEBUG("%s\n", ex.what());
 	}
       catch(libTF::TransformReference::ExtrapolateException& ex)
 	{
@@ -353,9 +346,6 @@ namespace ros {
       plan_ = newPlan;
 
       publishPath(true, plan_);
-
-      //if(inCollision())
-      //throw "Path in collision immediately after planning.";
     }
     
     bool MoveBase::inCollision() const {
@@ -363,7 +353,7 @@ namespace ros {
 	const std_msgs::Pose2DFloat32& w = *it;
 	unsigned int ind = costMap_->WC_IND(w.x, w.y);
 	if((*costMap_)[ind] > CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE){
-	  printf("path in collision at <%f, %f>\n", w.x, w.y);
+	  ROS_DEBUG("path in collision at <%f, %f>\n", w.x, w.y);
 	  return true;
 	}
       }
@@ -424,7 +414,7 @@ namespace ros {
       if(plan_.empty() && 
 	 fabs(global_pose_.yaw - stateMsg.goal.th) < 0.1){
 
-	printf("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+	ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
 	       global_pose_.x, global_pose_.y, global_pose_.yaw,
 	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
@@ -438,7 +428,7 @@ namespace ros {
       if(!plan_.empty() &&
 	 withinDistance(global_pose_.x, global_pose_.y, global_pose_.yaw,
 			stateMsg.goal.x, stateMsg.goal.y, global_pose_.yaw)){
-	printf("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
+	ROS_DEBUG("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
 	       global_pose_.x, global_pose_.y, global_pose_.yaw,
 	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
@@ -448,14 +438,21 @@ namespace ros {
       return false;
     }
 
+    /**
+     * Note that we have tried doing collision checks on the plan, and replanning in that case at the global level. With ARA*
+     * at least, this leads to poor performance since planning ks slow (seconds) and thus the robot stops alot. If we leave the
+     * velocity controller flexibility to work around the path in collision then that seems to work better. Note that this is still
+     * sensitive to the goal (exit point of the path in the window) being in collision which would require an alternate metric
+     * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint. 
+     */
     bool MoveBase::dispatchCommands(){
-      bool planOk = true; //!inCollision(); // Return value to trigger replanning or not
+      bool planOk = true; // Return value to trigger replanning or not
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
       if(plan_.empty()){
-	std::cout << "Moving to desired goal orientation\n";
+	ROS_DEBUG("Moving to desired goal orientation\n");
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
 	cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
@@ -470,7 +467,7 @@ namespace ros {
 	  const std_msgs::Pose2DFloat32& w = *it;
 	  // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
 	  if(fabs(global_pose_.x - w.x) < 2 && fabs(global_pose_.y - w.y) < 2){
-	    printf("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.x, global_pose_.y, w.x, w.y);
+	    ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.x, global_pose_.y, w.x, w.y);
 	    break;
 	  }
 
@@ -478,7 +475,11 @@ namespace ros {
 	}
 
 	// The plan is bogus if it is empty
-	planOk = planOk && !plan_.empty();
+	if(planOk && plan_.empty()){
+	  planOk = false;
+	  ROS_ASSERT(inCollision());
+	  ROS_DEBUG("No path points in local window.\n");
+	}
 
 	// Set current velocities from odometry
 	std_msgs::BaseVel currentVel;
@@ -488,21 +489,23 @@ namespace ros {
 
 	// Create a window onto the global cost map for the velocity controller
 	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
-	planOk = planOk && controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan);
+	if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
+	  ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
+	  planOk = false;
+	}
 
 	if(!planOk){
 	  // Zero out the velocities
 	  cmdVel.vx = 0;
 	  cmdVel.vy = 0;
 	  cmdVel.vw = 0;
-	  std::cout << "Local planning has failed :-(\n";
 	}
 	else {
 	  publishPath(false, localPlan);
 	}
       }
 
-      printf("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
+      ROS_INFO("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
 
       publish("cmd_vel", cmdVel);
       publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
@@ -580,7 +583,7 @@ namespace ros {
     }
 
     void MoveBase::stopRobot(){
-      std::cout << "Stopping the robot now!\n";
+      ROS_INFO("Stopping the robot now!\n");
       std_msgs::BaseVel cmdVel; // Commanded velocities
       cmdVel.vx = 0.0;
       cmdVel.vy = 0.0;
