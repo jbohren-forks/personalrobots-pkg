@@ -135,7 +135,7 @@ void JointCalibrationController::update()
       fake_j.push_back(new mechanism::JointState);
 
       // Where was the joint when the optical switch triggered?
-      if (original_switch_state_ = true)
+      if (original_switch_state_ == true)
         fake_a[0]->state_.position_ = actuator_->state_.last_calibration_high_transition_;
       else
         fake_a[0]->state_.position_ = actuator_->state_.last_calibration_low_transition_;
