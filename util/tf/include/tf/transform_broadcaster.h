@@ -63,7 +63,7 @@ public:
     message.header.frame_id = transform.frame_id_;
     message.parent = parent_id;
     TransformTFToMsg(transform.data_, message.transform);
-    node_.publish("/tf_message", message);
+    ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
     rosTF::TransformArray tfArray;
@@ -93,7 +93,7 @@ public:
     message.header.frame_id = frame_id;
     message.parent = parent_id;
     TransformTFToMsg(transform, message.transform);
-    node_.publish("/tf_message", message);
+    ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
     rosTF::TransformArray tfArray;
