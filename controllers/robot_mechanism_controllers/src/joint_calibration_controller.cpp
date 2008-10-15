@@ -130,10 +130,12 @@ void JointCalibrationController::update()
     bool switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
     if (switch_state_ != original_switch_state_)
     {
+      Actuator a;
+      mechanism::JointState j;
       std::vector<Actuator*> fake_a;
       std::vector<mechanism::JointState*> fake_j;
-      fake_a.push_back(new Actuator);
-      fake_j.push_back(new mechanism::JointState);
+      fake_a.push_back(&a);
+      fake_j.push_back(&j);
 
       // Where was the joint when the optical switch triggered?
       if (original_switch_state_ == true)
@@ -171,6 +173,8 @@ JointCalibrationControllerNode::JointCalibrationControllerNode()
 
 JointCalibrationControllerNode::~JointCalibrationControllerNode()
 {
+  if (pub_calibrated_)
+    delete pub_calibrated_;
 }
 
 void JointCalibrationControllerNode::update()

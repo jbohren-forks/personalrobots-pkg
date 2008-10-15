@@ -37,6 +37,7 @@
 import rostools
 import copy
 import threading
+from time import sleep
 
 # Loads interface with the robot.
 rostools.update_path('teleop_robot')
@@ -44,9 +45,7 @@ rostools.update_path('robot_srvs')
 rostools.update_path('mechanism_control')
 
 import rospy
-from robot_srvs.srv import *
-from robot_mechanism_controllers.srv import *
-from std_srvs.srv import *
+from std_msgs.msg import Empty
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
 from mechanism_control.srv import *
@@ -61,34 +60,6 @@ rospy.wait_for_service('spawn_controller')
 spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
-
-def calibrate_optically(config):
-    resp = spawn_controller(config)
-    if len(resp.ok) != 1 or not resp.ok[0]:
-        print "FAIL"
-        return
-    name = resp.name[0]
-    try:
-        do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
-        do_calibration()
-    finally:
-        kill_controller(name)
-    print "Calibrated"
-
-def calibrate_manually(config):
-    resp = spawn_controller(config)
-    if len(resp.ok) != 1 or not resp.ok[0]:
-        print "FAIL"
-        return
-    name = resp.name[0]
-    begin = rospy.ServiceProxy("/%s/begin_manual_calibration" % name, CalibrateJoint)
-    end = rospy.ServiceProxy("/%s/end_manual_calibration" % name, CalibrateJoint)
-    begin()
-    print "Move the joint to the limits, and then hit enter"
-    raw_input()
-    end()
-    kill_controller(name)
-    print "Calibrated manually"
 
 # Hits the joint stops
 def calibrate_blindly(config):
@@ -105,17 +76,42 @@ def calibrate_blindly(config):
     print "Calibrated"
 
 
-class FunThread(threading.Thread):
-    def __init__(self, fun, *args):
-        self.fun = fun
-        self.start()
 
-    def run():
-        self.fun(*args)
+def calibrate(config):
+    # Spawns the controllers
+    resp = spawn_controller(config)
+
+    # Accumulates the list of spawned controllers
+    launched = []
+    try:
+        for i in range(len(resp.ok)):
+            if not resp.ok[i]:
+                print "Failed: %s" % resp.name[i]
+            else:
+                launched.append(resp.name[i])
+                print "Launched: %s" % ', '.join(launched)
+
+        # Sets up callbacks for calibration completion
+        waiting_for = launched[:]
+        def calibrated(msg, name):  # Somewhat not thread-safe
+            if name in waiting_for:
+                waiting_for.remove(name)
+        for name in waiting_for:
+            rospy.Subscriber("/%s/calibrated" % name, Empty, calibrated, name)
+
+        # Waits until all the controllers have calibrated
+        while waiting_for:
+            print "Waiting for: %s" % ', '.join(waiting_for)
+            sleep(0.5)
+    finally:
+        [kill_controller(name) for name in launched]
+
+
+rospy.init_node('calibration', anonymous=True)
+
 
 
 template = '''
-<controllers>
   <controller type="CasterCalibrationControllerNode" name="cal_caster_SUFFIX" topic="cal_caster_SUFFIX">
     <calibrate joint="caster_SUFFIX_joint"
                actuator="caster_SUFFIX_motor"
@@ -127,10 +123,19 @@ template = '''
     <caster_pid p="6" i="0" d="0" iClamp="0" />
     <wheel_pid p="4" i="0" d="0" iClamp="0" />
   </controller>
-</controllers>
 '''
 
-calibrate_optically(template.replace('SUFFIX', 'front_left'))
-calibrate_optically(template.replace('SUFFIX', 'front_right'))
-calibrate_optically(template.replace('SUFFIX', 'rear_left'))
-calibrate_optically(template.replace('SUFFIX', 'rear_right'))
+
+calibrate(
+'''
+<controllers>
+'''
++ template.replace('SUFFIX', 'front_left')
++ template.replace('SUFFIX', 'front_right')
++ template.replace('SUFFIX', 'rear_left')
++ template.replace('SUFFIX', 'rear_right')
++ '''
+</controllers>
+''')
+
+print "Calibrated"

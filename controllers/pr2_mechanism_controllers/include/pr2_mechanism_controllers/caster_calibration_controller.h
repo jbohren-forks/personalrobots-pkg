@@ -35,6 +35,8 @@
 #define CASTER_CALIBRATION_CONTROLLER_H
 
 #include "pr2_mechanism_controllers/caster_controller.h"
+#include "misc_utils/realtime_publisher.h"
+#include "std_msgs/Empty.h"
 #include <robot_mechanism_controllers/CalibrateJoint.h>
 
 namespace controller {
@@ -53,7 +55,7 @@ public:
    */
   virtual void update();
 
-  bool calibrated() { return state_ == STOPPED; }
+  bool calibrated() { return state_ == CALIBRATED; }
   void beginCalibration()
   {
     if (state_ == INITIALIZED)
@@ -62,7 +64,7 @@ public:
 
 protected:
 
-  enum { INITIALIZED, BEGINNING, MOVING, STOPPED };
+  enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
   int state_;
 
   double search_velocity_;
@@ -90,8 +92,12 @@ public:
                         robot_mechanism_controllers::CalibrateJoint::response &resp);
 
 private:
+  mechanism::RobotState *robot_;
   CasterCalibrationController c_;
   AdvertisedServiceGuard guard_calibrate_;
+
+  double last_publish_time_;
+  misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;
 };
 
 }

@@ -107,6 +107,7 @@ void CasterCalibrationController::update()
   case INITIALIZED:
     cc_.steer_velocity_ = 0.0;
     cc_.drive_velocity_ = 0.0;
+    state_ = BEGINNING;
     break;
   case BEGINNING:
     original_switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
@@ -117,10 +118,12 @@ void CasterCalibrationController::update()
     bool switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
     if (switch_state_ != original_switch_state_)
     {
+      Actuator a;
+      mechanism::JointState j;
       std::vector<Actuator*> fake_a;
       std::vector<mechanism::JointState*> fake_j;
-      fake_a.push_back(new Actuator);
-      fake_j.push_back(new mechanism::JointState);
+      fake_a.push_back(&a);
+      fake_j.push_back(&j);
 
       // Where was the joint when the optical switch triggered?
       if (original_switch_state_ == true)
@@ -135,32 +138,49 @@ void CasterCalibrationController::update()
 
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
 
-      state_ = STOPPED;
+      state_ = CALIBRATED;
     }
     break;
   }
-  case STOPPED:
+  case CALIBRATED:
     cc_.steer_velocity_ = 0.0;
     break;
   }
 
-  cc_.update();
+  if (state_ != CALIBRATED)
+    cc_.update();
 }
 
 
 ROS_REGISTER_CONTROLLER(CasterCalibrationControllerNode)
 
 CasterCalibrationControllerNode::CasterCalibrationControllerNode()
+: last_publish_time_(0), pub_calibrated_(NULL)
 {
 }
 
 CasterCalibrationControllerNode::~CasterCalibrationControllerNode()
 {
+  if (pub_calibrated_)
+    delete pub_calibrated_;
 }
 
 void CasterCalibrationControllerNode::update()
 {
   c_.update();
+
+  if (c_.calibrated())
+  {
+    if (last_publish_time_ + 0.5 < robot_->hw_->current_time_)
+    {
+      assert(pub_calibrated_);
+      if (pub_calibrated_->trylock())
+      {
+        last_publish_time_ = robot_->hw_->current_time_;
+        pub_calibrated_->unlockAndPublish();
+      }
+    }
+  }
 }
 
 
@@ -176,6 +196,8 @@ void CasterCalibrationControllerNode::update()
 
 bool CasterCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  assert(robot);
+  robot_ = robot;
   ros::node *node = ros::node::instance();
 
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
@@ -189,6 +211,8 @@ bool CasterCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXm
     return false;
   node->advertise_service(topic + "/calibrate", &CasterCalibrationControllerNode::calibrateCommand, this);
   guard_calibrate_.set(topic + "/calibrate");
+
+  pub_calibrated_ = new misc_utils::RealtimePublisher<std_msgs::Empty>(topic + "/calibrated", 1);
 
   return true;
 }
