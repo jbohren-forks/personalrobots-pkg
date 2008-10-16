@@ -6,5 +6,6 @@
   <license>BSD</license>
   <export>
   </export>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="nasm"/>
 </package>
 
