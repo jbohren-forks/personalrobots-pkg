@@ -55,14 +55,13 @@ public:
     node_.advertise<tfMessage>("/tf_message", 100);
   };
   /** \brief Send a Stamped<Transform> with parent parent_id 
-   * The stamped data structure includes frame_id, and time already.  */
-  void sendTransform(const Stamped<Transform> & transform, const std::string& parent_id)
+   * The stamped data structure includes frame_id, and time, and parent_id already.  */
+  void sendTransform(const Stamped<Transform> & transform)
   {
     tfMessage message;
-    message.header.stamp = ros::Time(transform.stamp_);
-    message.header.frame_id = transform.frame_id_;
-    message.parent = parent_id;
-    TransformTFToMsg(transform.data_, message.transform);
+    std_msgs::TransformStamped msgtf;
+    TransformStampedTFToMsg(transform, msgtf);
+    message.transforms.push_back(msgtf);
     ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
@@ -70,7 +69,7 @@ public:
     tfArray.set_quaternions_size(1);
 
     tfArray.quaternions[0].header.frame_id = transform.frame_id_;
-    tfArray.quaternions[0].parent = parent_id;
+    tfArray.quaternions[0].parent = transform.parent_id_;
     Quaternion q = transform.data_.getRotation();
     tfArray.quaternions[0].xt = transform.data_.getOrigin().x();
     tfArray.quaternions[0].yt = transform.data_.getOrigin().y();
@@ -89,10 +88,12 @@ public:
   void sendTransform(const Transform & transform, const ros::Time& time, const std::string& frame_id, const std::string& parent_id)
   {
     tfMessage message;
-    message.header.stamp = time;
-    message.header.frame_id = frame_id;
-    message.parent = parent_id;
-    TransformTFToMsg(transform, message.transform);
+    std_msgs::TransformStamped msgtf;
+    msgtf.header.stamp = time;
+    msgtf.header.frame_id = frame_id;
+    msgtf.parent_id = parent_id;
+    TransformTFToMsg(transform, msgtf.transform);
+    message.transforms.push_back(msgtf);
     ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!

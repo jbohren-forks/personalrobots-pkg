@@ -81,17 +81,21 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
 
 void TransformListener::subscription_callback()
 {
-  try 
+  for (uint i = 0; i < msg_in_.transforms.size(); i++)
   {
-    Transform temp;
-    TransformMsgToTF(msg_in_.transform, temp);
-    setTransform(Stamped<Transform>(temp, msg_in_.header.stamp.to_ull(), msg_in_.header.frame_id, msg_in_.parent) );
-  }
-  catch (TransformException& ex)
-  {
-    ///\todo Use error reporting
-    std::string temp = ex.what();
-    printf("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.header.frame_id.c_str(), msg_in_.parent.c_str(), temp.c_str());
+    Stamped<Transform> trans;
+    TransformStampedMsgToTF(msg_in_.transforms[i], trans);
+    try 
+    {
+      setTransform(trans);
+    }
+    
+    catch (TransformException& ex)
+    {
+      ///\todo Use error reporting
+      std::string temp = ex.what();
+      printf("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.transforms[i].header.frame_id.c_str(), msg_in_.transforms[i].parent_id.c_str(), temp.c_str());
+    }
   }
 
 
