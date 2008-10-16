@@ -96,7 +96,7 @@ bool PhaseSpaceNode::spin()
       grabTime(snapshot) ;
       publish("phase_space_snapshot", snapshot) ;
       
-      if (snapshot.frameNum % 240 == 0)
+      if (snapshot.frameNum % 48 == 0)
         dispSnapshot(snapshot) ;
     }
   }  
@@ -200,9 +200,9 @@ void PhaseSpaceNode::copyBodyToMessage(const OWLRigid& owl_body, PhaseSpaceBody&
 {
   msg_body.id = owl_body.id ;
   
-  msg_body.pose.translation.x = owl_body.pose[0] ;
-  msg_body.pose.translation.y = owl_body.pose[1] ;
-  msg_body.pose.translation.z = owl_body.pose[2] ;
+  msg_body.pose.translation.x = owl_body.pose[0] / 1000.0 ;
+  msg_body.pose.translation.y = owl_body.pose[1] / 1000.0 ;
+  msg_body.pose.translation.z = owl_body.pose[2] / 1000.0 ;
   
   msg_body.pose.rotation.w    = owl_body.pose[3] ;
   msg_body.pose.rotation.x    = owl_body.pose[4] ;
@@ -250,7 +250,7 @@ void PhaseSpaceNode::dispSnapshot(const PhaseSpaceSnapshot& s)
                                                           s.bodies[i].pose.translation.x,
                                                           s.bodies[i].pose.translation.y,
                                                           s.bodies[i].pose.translation.z) ;
-    printf("        Rot (x=% 2.2f, y=% 2.2f, z=% 2.2f, w=% 2.2f)\n", s.bodies[i].pose.rotation.x,
+    printf("        Rot (x=% 1.4f, y=% 1.4f, z=% 1.4f, w=% 1.4f)\n", s.bodies[i].pose.rotation.x,
                                                                      s.bodies[i].pose.rotation.y,
                                                                      s.bodies[i].pose.rotation.z,
                                                                      s.bodies[i].pose.rotation.w) ;
