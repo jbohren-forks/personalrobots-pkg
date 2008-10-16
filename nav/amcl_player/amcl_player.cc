@@ -69,6 +69,15 @@ Publishes to (name / type):
 - @b "robot_x_start" (double) : The starting X position of the robot, default: 0.
 - @b "robot_y_start" (double) : The starting Y position of the robot, default: 0.
 - @b "robot_th_start" (double) : The starting TH position of the robot, default: 0.
+- @b pf_laser_max_beams (int) : The number of laser beams to use when localizing, default: 20.
+- @b pf_min_samples (int) : The minimum number of particles used when localizing, default: 500
+- @b pf_max_samples (int) : The maximum number of particles used when localizing, default: 10000
+- @b pf_odom_drift_xx (double) : Element 0,0 of the covariance matrix used in estimating odometric error, default: 0.2
+- @b pf_odom_drift_yy (double) : Element 1,1 of the covariance matrix used in estimating odometric error, default: 0.2
+- @b pf_odom_drift_aa (double) : Element 2,2 of the covariance matrix used in estimating odometric error, default: 0.2
+- @b pf_odom_drift_xa (double) : Element 2,0 of the covariance matrix used in estimating odometric error, default: 0.2
+- @b pf_min_d (double) : Minimum translational change (meters) required to trigger filter update, default: 0.2
+- @b pf_min_a (double) : Minimum rotational change (radians) required to trigger filter update, default: pi/6.0
 
 @todo Expose the various amcl parameters via ROS.
 
@@ -98,7 +107,7 @@ Publishes to (name / type):
 // check that given coords are valid (i.e., on the map)
 #define MAP_VALID(mf, i, j) ((i >= 0) && (i < mf->sx) && (j >= 0) && (j < mf->sy))
 
-#define PLAYER_QUEUE_LEN 32
+const int PLAYER_QUEUE_LEN = 32;
 
 // Must prototype this function here.  It's implemented inside
 // libplayerdrivers.
@@ -160,6 +169,9 @@ class AmclNode: public ros::node, public Driver
     double resolution;
     // static laser transform (todo: make this cleaner)
     double laser_x_offset;
+
+    ros::Duration cloud_pub_interval;
+    ros::Time last_cloud_pub_time;
 };
 
 #define USAGE "USAGE: amcl_player"
@@ -201,14 +213,11 @@ AmclNode::AmclNode() :
   // TODO: remove XDR dependency
   playerxdr_ftable_init();
 
-  puts("advertising");
-  advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-  advertise<std_msgs::ParticleCloud2D>("particlecloud");
-  puts("subscribing");
-  subscribe("odom", odomMsg, &AmclNode::odomReceived);
-  subscribe("scan", laserMsg, &AmclNode::laserReceived);
-  subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived);
-  puts("done");
+  advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
+  advertise<std_msgs::ParticleCloud2D>("particlecloud",2);
+  subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
+  subscribe("scan", laserMsg, &AmclNode::laserReceived,2);
+  subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived,2);
 
   // get map via RPC
   std_srvs::StaticMap::request  req;
@@ -322,6 +331,58 @@ AmclNode::AmclNode() :
   this->cf->InsertFieldValue(1,"requires",laser_saddr);
   this->cf->InsertFieldValue(2,"requires",map_saddr);
 
+  // Turn this on for serious AMCL debugging, but you must have built
+  // player with ENABLE_RTKGUI=ON.
+  //this->cf->InsertFieldValue(0,"enable_gui","1");
+
+  // Grab params off the param server
+  int max_beams, min_samples, max_samples;
+  double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
+  double d_thresh, a_thresh;
+  param("pf_laser_max_beams", max_beams, 20);
+  param("pf_min_samples", min_samples, 500);
+  param("pf_max_samples", max_samples, 10000);
+  param("pf_odom_drift_xx", odom_drift_xx, 0.2);
+  param("pf_odom_drift_yy", odom_drift_yy, 0.2);
+  param("pf_odom_drift_aa", odom_drift_aa, 0.2);
+  param("pf_odom_drift_xa", odom_drift_xa, 0.2);
+  param("pf_min_d", d_thresh, 0.2);
+  param("pf_min_a", a_thresh, M_PI/6.0);
+  // Annoyingly, we have to convert them back to strings for insertion into
+  // Player's config file object
+  char valbuf[1024];
+  snprintf(valbuf,sizeof(valbuf),"%d",max_beams);
+  this->cf->InsertFieldValue(0,"laser_max_beams",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%d",min_samples);
+  this->cf->InsertFieldValue(0,"pf_min_samples",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%d",max_samples);
+  this->cf->InsertFieldValue(0,"pf_max_samples",valbuf);
+
+  snprintf(valbuf,sizeof(valbuf),"%.3f",d_thresh);
+  this->cf->InsertFieldValue(0,"update_thresh",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",a_thresh);
+  this->cf->InsertFieldValue(1,"update_thresh",valbuf);
+
+  snprintf(valbuf,sizeof(valbuf),"%.3f",odom_drift_xx);
+  this->cf->InsertFieldValue(0,"odom_drift[0]",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",0.0);
+  this->cf->InsertFieldValue(1,"odom_drift[0]",valbuf);
+  this->cf->InsertFieldValue(2,"odom_drift[0]",valbuf);
+
+  snprintf(valbuf,sizeof(valbuf),"%.3f",0.0);
+  this->cf->InsertFieldValue(0,"odom_drift[1]",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",odom_drift_yy);
+  this->cf->InsertFieldValue(1,"odom_drift[1]",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",0.0);
+  this->cf->InsertFieldValue(2,"odom_drift[1]",valbuf);
+
+  snprintf(valbuf,sizeof(valbuf),"%.3f",odom_drift_xa);
+  this->cf->InsertFieldValue(0,"odom_drift[2]",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",0.0);
+  this->cf->InsertFieldValue(1,"odom_drift[2]",valbuf);
+  snprintf(valbuf,sizeof(valbuf),"%.3f",odom_drift_aa);
+  this->cf->InsertFieldValue(2,"odom_drift[2]",valbuf);
+
   // Options
   //this->cf->InsertFieldValue(0,"enable_gui","1");
   //this->cf->InsertFieldValue(0,"odom_drift[0]","0.001");
@@ -353,7 +414,7 @@ AmclNode::AmclNode() :
   param("robot_th_start", startTH, 0.0);
   this->setPose(startX, startY, startTH);
 
-
+  cloud_pub_interval.fromSec(1.0);
 }
 
 AmclNode::~AmclNode()
@@ -415,34 +476,36 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     catch(...)
     {
       // WTF is this?
-        printf("Somehow could not set frame_id to map\n");
+      printf("Somehow could not set frame_id to map\n");
     }
     publish("localizedpose", localizedOdomMsg);
 
-    /// @todo Choke back the rate of this request and publication
-    //
-    // Also request and publish the particle cloud
-    Message* msg;
-    if((msg = this->ldevice->Request(this->Driver::InQueue,
-                                     PLAYER_MSGTYPE_REQ,
-                                     PLAYER_LOCALIZE_REQ_GET_PARTICLES,
-                                     NULL, 0, NULL, true)))
+    if((ros::Time::now() - this->last_cloud_pub_time) >= cloud_pub_interval)
     {
-      player_localize_get_particles_t* resp =
-              (player_localize_get_particles_t*)(msg->GetPayload());
-      particleCloudMsg.set_particles_size(resp->particles_count);
-      for(unsigned int i=0;i<resp->particles_count;i++)
+      last_cloud_pub_time = ros::Time::now();
+      // Also request and publish the particle cloud
+      Message* msg;
+      if((msg = this->ldevice->Request(this->Driver::InQueue,
+                                       PLAYER_MSGTYPE_REQ,
+                                       PLAYER_LOCALIZE_REQ_GET_PARTICLES,
+                                       NULL, 0, NULL, true)))
       {
-        particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
-        particleCloudMsg.particles[i].y = resp->particles[i].pose.py;
-        particleCloudMsg.particles[i].th = resp->particles[i].pose.pa;
+        player_localize_get_particles_t* resp =
+                (player_localize_get_particles_t*)(msg->GetPayload());
+        particleCloudMsg.set_particles_size(resp->particles_count);
+        for(unsigned int i=0;i<resp->particles_count;i++)
+        {
+          particleCloudMsg.particles[i].x = resp->particles[i].pose.px;
+          particleCloudMsg.particles[i].y = resp->particles[i].pose.py;
+          particleCloudMsg.particles[i].th = resp->particles[i].pose.pa;
+        }
+        publish("particlecloud", particleCloudMsg);
+        delete msg;
       }
-      publish("particlecloud", particleCloudMsg);
-      delete msg;
-    }
-    else
-    {
-      puts("Warning: failed to get particle cloud from amcl");
+      else
+      {
+        puts("Warning: failed to get particle cloud from amcl");
+      }
     }
 
     return(0);
@@ -631,23 +694,25 @@ AmclNode::laserReceived()
   pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);
-  
+  /*
   for(unsigned int i=0;i<pdata.ranges_count;i++)
     pdata.ranges[i] = this->laserMsg.ranges[i];
-    
-  ///\todo Optimize from above (not working at right)  memcpy(pdata.ranges,&this->laserMsg.ranges[0],sizeof(float)*pdata.ranges_count);
+    */
+  ///\todo Optimize from above (not working at right)  
+  memcpy(pdata.ranges,&this->laserMsg.ranges[0],sizeof(float)*pdata.ranges_count);
   pdata.intensity_count = this->laserMsg.get_intensities_size();
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
-  
+  /*
   for(unsigned int i=0;i<pdata.intensity_count;i++)
   {
     // AMCL doesn't care about intensity data
     //pdata.intensity[i] = this->laserMsg.intensities[i];
     pdata.intensity[i] = 0;
   }
-  
-  ///\todo Optimize from above (not working at right) memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
+  */
+  ///\todo Optimize from above (not working at right) 
+  memset(pdata.intensity,0,sizeof(uint8_t)*pdata.intensity_count);
   pdata.id = this->laserMsg.header.seq;
 
   double timestamp = this->laserMsg.header.stamp.to_double();
