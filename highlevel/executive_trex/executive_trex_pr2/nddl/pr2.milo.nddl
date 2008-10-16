@@ -74,7 +74,42 @@ class Navigator extends Behavior {
     Waypoint w;
   }
 
+  Navigator(){
+    super(Internal, "Inactive");
+  }
 };
+
+/**
+ * A top level timeline that will drive navigation goals until a target iteration count is reached
+ */
+class VenusDeMiles extends AgentTimeline {
+  predicate Holds{
+    int iterationCount;
+    int iterationLimit;
+    Waypoint w;
+  }
+
+  VenusDeMiles(){
+    super(Internal, "Holds");
+  }
+};
+
+VenusDeMiles::Holds{
+  defaultOnCommit(iterationCount, 0);
+  defaultOnCommit(iterationLimit, 0);
+
+  bool busy;
+  testLT(busy, iterationCount, iterationLimit);
+  if(busy == true){
+    randomSelect(w);
+    ends(Navigator.Active n);
+    eq(n.w, w);
+
+    meets(Holds s);
+    addEq(iterationCount, 1, s.iterationCount);
+    eq(iterationLimit, s.iterationLimit);
+  }
+}
 
 /**
  * Encapsulates the task of unplugging the robot.
@@ -116,6 +151,7 @@ BatteryState::Holds {
   testLEQ(mustRecharge, energy_remaining, object.rechargeThreshold);
 
   // If below the threshold, transition working status to recharge
+  // if(energy_remaining < object.rechargeThreshold){
   if(mustRecharge == true){
     // at end: workingStatus.Holds.recharging == true
     any(WorkingStatus.Holds ws);

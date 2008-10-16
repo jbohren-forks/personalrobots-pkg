@@ -34,6 +34,47 @@ namespace TREX{
     exit(0);
   }
 
+
+  class FloorFunction: public Constraint{
+  public:
+    FloorFunction(const LabelStr& name,
+		  const LabelStr& propagatorName,
+		  const ConstraintEngineId& constraintEngine,
+		  const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    void handleExecute();
+    AbstractDomain& m_target;
+    const AbstractDomain& m_source;
+  };
+
+
+  class NearestLocation: public Constraint{
+  public:
+    NearestLocation(const LabelStr& name,
+		    const LabelStr& propagatorName,
+		    const ConstraintEngineId& constraintEngine,
+		    const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    void handleExecute();
+    const AbstractDomain& m_x;
+    const AbstractDomain& m_y;
+    ObjectDomain& m_location;
+  };
+
+  class RandomSelection: public Constraint{
+  public:
+    RandomSelection(const LabelStr& name,
+		    const LabelStr& propagatorName,
+		    const ConstraintEngineId& constraintEngine,
+		    const std::vector<ConstrainedVariableId>& variables);
+
+  private:
+    void handleExecute();
+    AbstractDomain& m_target;
+  };
+
   class ROSSchema: public Assembly::Schema {
   public:
     ROSSchema(bool playback):m_playback(playback){}
@@ -47,6 +88,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::RandomSelection, "randomSelect", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
 
       /*
@@ -137,5 +179,47 @@ namespace TREX{
     }
 
     debugMsg("NearestLocation:handleExecute", "After " << iterations << " iterations, found a charging station within " << minDistance << " meters.");
+  }
+
+
+  RandomSelection::RandomSelection(const LabelStr& name,
+				   const LabelStr& propagatorName,
+				   const ConstraintEngineId& constraintEngine,
+				   const std::vector<ConstrainedVariableId>& variables)
+    : Constraint(name, propagatorName, constraintEngine, variables),
+      m_target(getCurrentDomain(variables[0])){
+    static bool initialized(false);
+    checkError(variables.size() == 1, "Invalid Arg Count: " << variables.size());
+
+    // Initialize random seed
+    if(!initialized){
+      srand(0);
+      initialized = true;
+    }
+  }
+  
+  /**
+   * Randomly choose a value from the propagated domain
+   */
+  void RandomSelection::handleExecute() {
+    if(m_target.isEnumerated()){
+      std::list<double> values;
+      m_target.getValues(values);
+      int selectionId = rand() % values.size();
+      std::list<double>::const_iterator it = values.begin();
+      while(selectionId > 0 && it != values.end()){
+	selectionId--;
+	++it;
+      }
+      m_target.set(*it);
+    }
+    else if(m_target.isFinite()){
+      unsigned int delta = (unsigned int) (m_target.getUpperBound() - m_target.getLowerBound());
+      int selectionId = rand() % delta;
+      m_target.set(selectionId + m_target.getLowerBound());
+    }
+    else {// Do something
+      m_target.set(m_target.getLowerBound());
+    }
   }
 }
