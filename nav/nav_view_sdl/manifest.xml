@@ -11,6 +11,8 @@
   <!-- <depend package="sdl_image"/> -->
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
   
+  <export>
   <cpp cflags="-I${prefix}/src/" lflags="-Wl,-rpath,${prefix}/lib ${prefix}/lib/_nav_view.so"/>
   <python path="${prefix}/lib/"/>
+  </export>
 </package>
