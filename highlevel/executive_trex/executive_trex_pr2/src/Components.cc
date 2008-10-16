@@ -107,28 +107,35 @@ namespace TREX{
    * Should wait till inputs are bound, then iterate over the locations and select the nearest one.
    */
   void NearestLocation::handleExecute() {
-    static const LabelStr X("x");
-    static const LabelStr Y("y");
+    unsigned int iterations = 0;
+    double minDistance = PLUS_INFINITY;
+
     if(m_x.isSingleton() && m_y.isSingleton()){
-      std::list<ObjectId> locations = m_location.makeObjectList();
-      double minDistance = PLUS_INFINITY;
+      std::list<ObjectId> locations = m_location.makeObjectList();      
       ObjectId nearestLocation = locations.front();
       for(std::list<ObjectId>::const_iterator it = locations.begin(); it != locations.end(); ++it){
+	iterations++;
 	ObjectId location = *it;
-	ConstrainedVariableId x = location->getVariable(X);
-	ConstrainedVariableId y = location->getVariable(Y);
-	if(x.isId() && y.isId() && x->lastDomain().isSingleton() && y->lastDomain().isSingleton()){
-	  double dx = m_x.getSingletonValue() - x->lastDomain().getSingletonValue();
-	  double dy = m_y.getSingletonValue() - y->lastDomain().getSingletonValue();
-	  double distance = sqrt(pow(dx, 2) + pow(dy, 2));
-	  if(distance < minDistance){
-	    nearestLocation = location;
-	    minDistance = distance;
-	  }
+	ConstrainedVariableId x = location->getVariables()[0];
+	ConstrainedVariableId y = location->getVariables()[1];
+	checkError(x.isId(), "No variable for x");
+	checkError(y.isId(), "No variable for y");
+	checkError(x->lastDomain().isSingleton(), "Object variable for x should be bound but is not. " << x->toString());
+	checkError(y->lastDomain().isSingleton(), "Object variable for y should be bound but is not. " << y->toString());
+	double dx = m_x.getSingletonValue() - x->lastDomain().getSingletonValue();
+	double dy = m_y.getSingletonValue() - y->lastDomain().getSingletonValue();
+	double distance = sqrt(pow(dx, 2) + pow(dy, 2));
+
+	// Should we promote?
+	if(distance < minDistance){
+	  nearestLocation = location;
+	  minDistance = distance;
 	}
       }
 
       m_location.set(nearestLocation);
     }
+
+    debugMsg("NearestLocation:handleExecute", "After " << iterations << " iterations, found a charging station within " << minDistance << " meters.");
   }
 }
