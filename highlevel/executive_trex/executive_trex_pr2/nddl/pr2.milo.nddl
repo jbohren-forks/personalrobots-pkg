@@ -124,6 +124,7 @@ BatteryState::Holds {
     eq(ws.recharging, true);
   }
 
+  // Ignore this - it is a hack for testing
   if(object.mode == Internal){
     eq(duration, 1);
     if(start == 5){
@@ -134,6 +135,7 @@ BatteryState::Holds {
 
 WorkingStatus::Holds{
   // We should toggle between recharging and not recharging
+  // meets: Holds(!recharging); 
   meets(Holds s);
   neq(s.recharging, recharging);
 
@@ -142,27 +144,25 @@ WorkingStatus::Holds{
 
   // Do the recharging if appropriate
   if(recharging == true){
-    // at start: movebase == Inactive
-    any(MoveBase.Inactive mb);
-    precedes(mb.start, start);
-    precedes(start, mb.end);
+    // Reactive structure, only evaluate when started
+    if(start){
+      // Actual charging station should be selected by the planner in principle, if we were using some optimization
+      // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
+      // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
+      // bs = baseState[start];
+      ChargingStation cs;
+      starts(BaseState.Holds bs);
+      nearestReachableLocation(bs.x, bs.y, cs);
 
-    // Actual charging station should be selected by the planner in principle, if we were using some optimization
-    // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
-    // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
-    ChargingStation cs;
-    nearestReachableLocation(mb.x, mb.y, cs);
-
-    // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
-    meets(RechargeController.Inactive rc);
-    eq(rc.plugIn, false);
-    eq(rc.x, cs.x);
-    eq(rc.y, cs.y);
-    eq(rc.th, cs.th);
-
-    // This constraint on time is a hack to ensure the rc token falls within the planning horizon since
-    // I do not have a principled mechanism for including it.
-    temporalDistance(rc.start, [1 +inf], missionEnd);
+      // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
+      any(RechargeController.Inactive rc);
+      eq(rc.plugIn, false);
+      eq(rc.x, cs.x);
+      eq(rc.y, cs.y);
+      eq(rc.th, cs.th);
+      precedes(rc.start, end);
+      precedes(end, rc.end);
+    }
   }
 }
 
@@ -200,12 +200,6 @@ RechargeController::Inactive{
 }
 
 RechargeController::Active{
-  // Successor desired values should match up
-  meets(Inactive s);
-  eq(s.desPlugIn, plugIn);
-  eq(s.desX, x);
-  eq(s.desY, y);
-  eq(s.desTh, th);
 
   // Predecessor desired values must match up. The actual plug in value
   // of the predecessor should differ from the commanded plug in value
