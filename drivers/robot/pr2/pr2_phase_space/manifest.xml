@@ -6,4 +6,5 @@
   <depend package="std_msgs" />
   <depend package="phase_space" />
   <depend package="tf" />
+  <depend package="pr2_mechanism_controllers" />
 </package>
