@@ -42,7 +42,7 @@ bool g_at_once;
 
 void doPublish(string name, ros::msg* m, ros::Time t, void* n)
 {
-  if (((ros::node*)(n))->advertise<AnyMsg>(name, 0))
+  if (((ros::node*)(n))->advertise(name, *m, 0))
     usleep(200000);
 
   if(!g_at_once) {
