@@ -4,6 +4,7 @@
   <author>John Hsu, David Li, Melonee Wise, Stuart Glaser</author>
   <license>BSD</license>
   <depend package="mechanism_model" />
+  <depend package="robot_srvs" />
   <depend package="control_toolbox" />
   <!--depend package="pr2_mechanism_controllers" /-->
   <depend package="tinyxml" />

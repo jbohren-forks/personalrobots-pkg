@@ -4,6 +4,8 @@ import rostools
 rostools.update_path('robot_mechanism_controllers')
 
 import rospy, sys
+from robot_mechanism_controllers.srv import *
+from robot_srvs.srv import *
 
 def list_controllers():
     rospy.wait_for_service('list_controllers')
