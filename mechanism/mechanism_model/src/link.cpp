@@ -143,10 +143,11 @@ void LinkState::propagateFK(LinkState *p, JointState *j)
 
     abs_velocity_ =
       p->abs_velocity_
-      + cross(p->abs_rot_velocity_, abs_position_)
-      + quatRotate(abs_orientation_, j->getTransVelocity());
+      + cross(p->abs_rot_velocity_, quatRotate(p->abs_orientation_,
+                                               link_->origin_xyz_))
+      + quatRotate(p->abs_orientation_, j->getTransVelocity());
 
-    abs_rot_velocity_ = p->abs_rot_velocity_ + quatRotate(abs_orientation_, j->getRotVelocity());
+    abs_rot_velocity_ = p->abs_rot_velocity_ + quatRotate(p->abs_orientation_, j->getRotVelocity());
 
 
     // Computes the relative frame transform

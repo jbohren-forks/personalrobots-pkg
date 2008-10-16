@@ -86,17 +86,15 @@ void CartesianVelocityController::update()
   effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
   effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
 
-  //effort_.update();
+  effort_.update();
 
   last_time_ = time;
 }
 
 void CartesianVelocityController::getTipVelocity(tf::Vector3 *v)
 {
-  tf::Vector3 abs_position =
-    tip_->abs_position_ + quatRotate(tip_->abs_orientation_, effort_.offset_);
-
-  *v = tip_->abs_velocity_ + cross(tip_->abs_rot_velocity_, abs_position);
+  *v = tip_->abs_velocity_ + cross(tip_->abs_rot_velocity_,
+                                   quatRotate(tip_->abs_orientation_, effort_.offset_));
 }
 
 
