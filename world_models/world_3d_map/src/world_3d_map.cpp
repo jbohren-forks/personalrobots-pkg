@@ -249,12 +249,11 @@ private:
     {
 	/* If we're not ready to accept scans yet, discard the data */
       if (!m_acceptScans){
-	std::cout << "Bailing\n";
+	ROS_DEBUG("Bailing\n");
 	return;
       }
 	
-	if (m_verbose) 
-	    fprintf(stdout, "Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
+	ROS_DEBUG("Received laser scan with %d points in frame %s\n", m_inputScan.get_ranges_size(), m_inputScan.header.frame_id.c_str());
 	
 	/* copy data to a place where incoming messages do not affect it */
 	bool success = false;
@@ -498,8 +497,7 @@ private:
 		    copy->pts[j++] = cloud.pts[k];
 	copy->set_pts_size(j);
 	
-	if (m_verbose)
-	    printf("Filter 0 discarded %d points (%d left) \n", n - j, j);
+	ROS_DEBUG("Filter 0 discarded %d points (%d left) \n", n - j, j);
 
 	return copy;	
     }    
@@ -534,8 +532,8 @@ private:
 		    copy->pts[j++] = cloud.pts[k];
 	    }
 	}
-	if (m_verbose)
-	    printf("Filter 1 discarded %d points (%d left) \n", n - j, j);
+
+	ROS_DEBUG("Filter 1 discarded %d points (%d left) \n", n - j, j);
 	
 	copy->set_pts_size(j);
 
