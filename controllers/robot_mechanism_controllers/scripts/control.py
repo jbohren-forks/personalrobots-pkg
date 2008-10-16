@@ -1,11 +1,9 @@
 #! /usr/bin/env python
 
 import rostools
-rostools.update_path('mechanism_control')
 rostools.update_path('robot_mechanism_controllers')
 
 import rospy, sys
-from mechanism_control.srv import *
 from robot_mechanism_controllers.srv import *
 from robot_mechanism_controllers import controllers
 

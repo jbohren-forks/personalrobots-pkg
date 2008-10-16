@@ -10,6 +10,7 @@
   <depend package="stl_utils" />
   <depend package="misc_utils" />
   <depend package="roscpp" />
+  <depend package="rospy" />
   <depend package="bullet" />
   <depend package="std_msgs" />
   <depend package="tf" />
