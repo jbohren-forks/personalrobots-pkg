@@ -1,0 +1,12 @@
+<package>
+<description brief="Filters out low intensity (or high intensity) range readings">
+
+This is a package to strip out range readings from a laser scan based on intensity. Readings are
+"removed" by overwriting their range reading as being >max_range
+
+</description>
+<author>Vijay Pradeep</author>
+<license>BSD</license>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+</package>
