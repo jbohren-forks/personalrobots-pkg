@@ -8,7 +8,7 @@
     installation of libGL.dylib, as explained here:
       http://developer.apple.com/qa/qa2007/qa1567.html
     -->
-    <cpp os="osx" lflags="`sdl-config --libs sdl` -Wl,-rpath,${prefix}/lib -L${prefix}/lib -framework OpenGL -L/usr/X11R6/lib -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib -lsdlgl -lGL -lGLU" cflags="`sdl-config --cflags sdl` -I/usr/X11R6/include -I${prefix}/include"/>
+    <cpp os="osx" lflags="`sdl-config --libs` -Wl,-rpath,${prefix}/lib -L${prefix}/lib -framework OpenGL -L/usr/X11R6/lib -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib -lsdlgl -lGL -lGLU" cflags="`sdl-config --cflags` -I/usr/X11R6/include -I${prefix}/include"/>
   </export>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl1.2-dev"/>
 </package>
