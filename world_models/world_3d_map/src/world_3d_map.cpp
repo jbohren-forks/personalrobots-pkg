@@ -127,7 +127,7 @@ public:
     {
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
 
-	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 0.5);
+	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 20.0);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 1.0);
 	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
 	
@@ -145,7 +145,7 @@ public:
         /// way of retrieving such Txs;
 	/* Set up the transform client */
 	double laser_x_offset;
-	param("laser_x_offset", laser_x_offset, 0.05);
+	param("laser_x_offset", laser_x_offset, 0.275);
 	m_tf.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
 	/* create a thread that handles the publishing of the data */	
