@@ -1,0 +1,23 @@
+<launch>
+  <group name="wg">
+    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full-0.05.pgm 0.05" respawn="false" />
+    <!-- SET AMCL PARAMETERS -->
+    <param name="laser_x_offset" type="double" value=".275" />
+    <param name="pf_laser_max_beams" value="20"/>
+    <param name="pf_min_samples" value="500"/>
+    <param name="pf_max_samples" value="10000"/>
+    <param name="pf_odom_drift_xx" value="0.2"/>
+    <param name="pf_odom_drift_yy" value="0.2"/>
+    <param name="pf_odom_drift_aa" value="0.2"/>
+    <param name="pf_odom_drift_xa" value="0.2"/>
+    <param name="robot_x_start" value="17.576" />
+    <param name="robot_y_start" value="16.119" />
+    <param name="robot_th_start" value="0.000" />
+    <param name="pf_min_d" value="0.25"/>
+    <param name="pf_min_a" value="0.524"/>
+    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" output="screen" args="scan:=base_scan" />
+    <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
+    <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
+  </group>
+</launch>
