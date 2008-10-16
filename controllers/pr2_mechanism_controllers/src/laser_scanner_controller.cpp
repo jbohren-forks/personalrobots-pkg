@@ -551,7 +551,9 @@ bool LaserScannerControllerNode::setProfileCall(
   pr2_mechanism_controllers::SetProfile::request &req,
   pr2_mechanism_controllers::SetProfile::response &resp)
 {
-  setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,req.offset);
+  const double num_elem = -1.0 ;     // We should only be using the dynamicProfiles, so we don't need num_elem
+  
+  setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,num_elem,req.offset);
   resp.time = c_->getTime();
   return true;
 }
