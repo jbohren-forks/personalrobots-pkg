@@ -153,23 +153,23 @@ int main( int argc, char** argv )
      run_time = atof(argv[4]);
      run_time_set = true;
   }
-  node->advertise<std_msgs::BaseVel>("cmd_vel",10);
+  node->advertise<std_msgs::BaseVel>("cmd_vel",1);
   sleep(1);
   node->publish("cmd_vel",cmd);
   sleep(1);
 
   libTF::Vector ang_rates;
   ros::Time start_time = ros::Time::now();
-  ros::Duration sleep_time(0.1);
+  ros::Duration sleep_time(0.01);
   while(!done)
   {
      ros::Duration delta_time = ros::Time::now() - start_time;
-
+     cout << "Sending out command " << cmd.vx << " " << cmd.vy << " " << cmd.vw  << endl;
      if(run_time_set && delta_time.toSec() > run_time)
         break;
     //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
-    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
-    cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
+     cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " << tb.ground_truth.transform.translation.x << " " << tb.ground_truth.transform.translation.y <<  " " << tb.ground_truth.transform.translation.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
+    cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.pos.x <<  " " << tb.odom.pos.y << " " << tb.odom.pos.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
     //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
