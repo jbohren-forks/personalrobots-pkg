@@ -108,7 +108,7 @@ def calibrate(config):
                 print "Failed: %s" % resp.name[i]
             else:
                 launched.append(resp.name[i])
-                print "Launched: %s" % ', '.join(launched)
+        print "Launched: %s" % ', '.join(launched)
 
         # Sets up callbacks for calibration completion
         waiting_for = launched[:]
