@@ -181,6 +181,8 @@ namespace ros {
 
       std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
 
+      bool usingPointClouds_; /**< Configuration parameter to select point cloud call backs and block out laser scans */
+
       /** Parameters that will be passed on initialization soon */
       const double laserMaxRange_; /**< Used in laser scan projection */
 

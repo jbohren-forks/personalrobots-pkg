@@ -50,6 +50,7 @@ namespace ros {
 	controller_(NULL),
 	costMap_(NULL),
 	ma_(NULL),
+	usingPointClouds_(false),
 	laserMaxRange_(4.0) {
       
       // Initialize global pose. Will be set in control loop based on actual data.
@@ -69,9 +70,10 @@ namespace ros {
       stateMsg.set_waypoints_size(0);
       stateMsg.waypoint_idx = -1;
 
-      // Set up transforms
+      // This should become a static transform. For now we will simply allow it to be provided
+      // as a parameter until we hear how static transforms are to be handled.
       double laser_x_offset(0.275);
-      //param("laser_x_offset", laser_x_offset, 0.05);
+      param("laser_x_offset", laser_x_offset, laser_x_offset);
       tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
       // Costmap parameters
@@ -172,13 +174,13 @@ namespace ros {
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
 
-      // Subscribe to laser scan messages
+      // The cost map is populated with either laser scans in the case that we are unable to use a
+      // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
+      // point clouds
       subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
-
-      // Subscribe to point cloud messages
       subscribe("cloud", pointCloudMsg_, &MoveBase::pointCloudCallback, QUEUE_MAX());
 
-      // Subscribe to odometry messages
+      // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
 
       // Now initialize
@@ -247,6 +249,14 @@ namespace ros {
      * The laserScanMsg_ member will have been updated. It is locked already too.
      */
     void MoveBase::laserScanCallback(){
+      if(usingPointClouds_){
+	return;
+
+	/*
+	ROS_INFO("Unsubscribing from laser scan messages - using published point clouds instead.");
+	unsubscribe(laserScanMsg_);
+	*/
+      }
 
       // Assemble a point cloud, in the laser's frame
       std_msgs::PointCloudFloat32 local_cloud;
@@ -299,7 +309,14 @@ namespace ros {
 
       // Surround with a lock since it can interact with main planning and execution thread
       lock();
-      costMap_->updateDynamicObstacles(ts, pointCloudMsg_, updates);
+
+      // Ensure laser scans are disabled
+      if(usingPointClouds_ == false){
+	ROS_INFO("Disabling laser scan processing\n");
+	usingPointClouds_ = true; // Block out scan messages
+      }
+
+      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, pointCloudMsg_, updates);
       handleMapUpdates(updates);
       publishLocalCostMap();
       unlock();

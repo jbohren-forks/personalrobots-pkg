@@ -222,22 +222,6 @@ namespace ros {
   }
 }
 
-#define MAP_WIDTH 10
-#define MAP_HEIGHT 10
-#define SIM_TIME 3.0
-#define SIM_STEPS 30
-#define SAMPLES_PER_DIM 25
-#define ROBOT_FRONT_RADIUS .175
-#define ROBOT_SIDE_RADIUS .175
-#define MAX_OCC_DIST 1.0
-#define PDIST_SCALE 0.4
-#define GDIST_SCALE 0.6
-#define OCCDIST_SCALE 0
-#define DFAST_SCALE .2
-#define SAFE_DIST .005
-#define ACC_LIM_X 0.15
-#define ACC_LIM_Y 1.0
-#define ACC_LIM_TH 1.0
 
 int main(int argc, char** argv)
 {
