@@ -40,15 +40,12 @@ import threading
 from time import sleep
 
 # Loads interface with the robot.
-rostools.update_path('teleop_robot')
-rostools.update_path('robot_srvs')
-rostools.update_path('mechanism_control')
+rostools.update_path('mechanism_bringup')
 
 import rospy
 from std_msgs.msg import Empty
 from robot_srvs.srv import *
 from robot_mechanism_controllers.srv import *
-from mechanism_control.srv import *
 
 def slurp(filename):
     f = open(filename)
