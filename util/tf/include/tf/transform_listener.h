@@ -79,11 +79,6 @@ public:
   };
   
   
-    //Use Transformer interface for Stamped data types
-  /** \brief Transform a std_msgs::Vector natively */
-    void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped & vin, std_msgs::Vector3Stamped & vout);  //output to msg or Stamped< >??
-  /** \brief Transform a std_msgs::Quaternion natively */
-    void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped & qin, std_msgs::QuaternionStamped & oout);
   /** \brief Transform a std_msgs::PointCloud natively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
     ///\todo Duplicate for time transforming (add target_time and fixed_frame)
