@@ -1,0 +1,10 @@
+<package>
+  <description brief="vop">
+      a fast vector module for Python
+  </description>
+  <author>James Bowman</author>
+  <license>BSD</license>
+  <export>
+  </export>
+</package>
+
