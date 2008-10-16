@@ -2,7 +2,6 @@
 
 /* Internal Timelines */
 Navigator navigator = new Navigator(Internal);
-Actions actions = new Actions();
 WorkingStatus workingStatus = new WorkingStatus();
 
 // Base
@@ -18,11 +17,12 @@ Waypoint w1 = new Waypoint(36.0, 10.5, 0.0);
 
 /* Charging Stations */
 ChargingStation c1 = new ChargingStation(33.0, 20.0, 0.0);
+ChargingStation c2 = new ChargingStation(20.0, 20.0, 0.0);
+ChargingStation c3 = new ChargingStation(32.5, 35.0, 0.0);
 
 close();
 
 /* Initialize internal timelines */
 fact(navigator.Inactive);
-fact(rechargeController.Inactive);
 fact(workingStatus.Holds f);
 f.recharging = false;

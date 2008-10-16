@@ -65,28 +65,6 @@ class Waypoint extends Location {
 };
 
 /**
- * Actions used to drive execution
- */
-class Actions extends AgentActions {
-
-  /**
-   * Action to drive the MoveBase controller
-   */
-  predicate Goto{
-    Waypoint w;
-  }
-
-  /**
-   * Just an event action
-   */
-  predicate StartEvent{}
-
-  Actions(){
-    super();
-  }
-};
-
-/**
  * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller. This pattern will allow
  * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
  */
@@ -155,6 +133,7 @@ BatteryState::Holds {
 }
 
 WorkingStatus::Holds{
+  // We should toggle between recharging and not recharging
   meets(Holds s);
   neq(s.recharging, recharging);
 
@@ -163,19 +142,26 @@ WorkingStatus::Holds{
 
   // Do the recharging if appropriate
   if(recharging == true){
-    // Should ensure that at the start we deactivate any base motion
-    // at start: movebase.inactive
+    // at start: movebase == Inactive
     any(MoveBase.Inactive mb);
     precedes(mb.start, start);
     precedes(start, mb.end);
 
-    // Actual charging station should be selected by the planner in principle
+    // Actual charging station should be selected by the planner in principle, if we were using some optimization
+    // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
+    // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
     ChargingStation cs;
+    nearestReachableLocation(mb.x, mb.y, cs);
+
+    // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
     meets(RechargeController.Inactive rc);
     eq(rc.plugIn, false);
     eq(rc.x, cs.x);
     eq(rc.y, cs.y);
     eq(rc.th, cs.th);
+
+    // This constraint on time is a hack to ensure the rc token falls within the planning horizon since
+    // I do not have a principled mechanism for including it.
     temporalDistance(rc.start, [1 +inf], missionEnd);
   }
 }
@@ -188,15 +174,21 @@ RechargeController::Inactive{
   // be able to sense this.
   defaultOnCommit(plugIn, false);
 
-  // Bind actual values based on base state.
-  starts(BaseState.Holds bs);
-  defaultOnCommit(x, bs.x);
-  defaultOnCommit(y, bs.y);
-  defaultOnCommit(th, bs.th);
+  // Bind actual values based on base state. We are only reading these values. This is an important idiom
+  // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
+  // syntax in the language to make it more explicit what is going on. All we are really doing here
+  // is binding default values from execution
+  // s == baseState[start]
+  if(start){
+    starts(BaseState.Holds bs);
+    defaultOnCommit(x, bs.x);
+    defaultOnCommit(y, bs.y);
+    defaultOnCommit(th, bs.th);
+  }
 
-  // Preceded by an effort to get to a desired pose
+  // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
   met_by(Active p);
-  eq(p.plugIn, desPlugIn);
+  eq(p.plugIn, plugIn);
   eq(p.x, x);
   eq(p.y, y);
   eq(p.th, th);
@@ -222,7 +214,7 @@ RechargeController::Active{
   neq(p.plugIn, plugIn);
 
   // If we are trying to unplug, then the predecessor's desired values should
-  // be the same for position as these
+  // be the same for position as these.
   if(plugIn == false){
     eq(p.desX, x);
     eq(p.desY, y);
@@ -238,28 +230,23 @@ RechargeController::Active{
 }
 
 Navigator::Active{
-  contains(Actions.Goto goto);
-  eq(goto.w, w);
-  concurrent(goto.end, end);
-
-  // We should be working while going to the target
-  any(WorkingStatus.Holds ws);
-  eq(ws.recharging, false);
-
-  // Long hand for contains relation
-  precedes(ws.start, goto.start);
-  precedes(goto.end, ws.end);
-  leq(goto.duration, ws.duration);
-}
-
-Actions::Goto{
-  contains(MoveBase.Active move);
+  // ends: moveBase == Active(w.x, w.y, w.th);
+  ends(MoveBase.Active move);
   eq(move.x, w.x);
   eq(move.y, w.y);
   eq(move.th, w.th);
-  concurrent(end, move.end);
 
-  // Check end conditions
+  // contained_by: ws == Holds(false);
+  any(WorkingStatus.Holds ws);
+  eq(ws.recharging, false);
+  precedes(ws.start, move.start);
+  precedes(move.end, ws.end);
+  leq(move.duration, ws.duration);
+
+  // Check end conditions. Note that this formulation should always be resolved in implementation
+  // by binding to an existing token.
+  // s == baseState(end);
+  // distance(s.x, s.y, w.x, w.y) <= XY_ERROR
   if(end){
     ends(BaseState.Holds s);
     float distance;
@@ -267,9 +254,3 @@ Actions::Goto{
     leq(distance, XY_ERROR);
   }
 }
-
-RechargeController::Active{
-
-  /* TODO - FINISH THIS */
-}
-

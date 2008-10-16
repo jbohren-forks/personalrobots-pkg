@@ -46,6 +46,7 @@ namespace TREX{
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::SubsetOfConstraint, "in", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::CalcDistanceConstraint, "calcDistance", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), FloorFunction, "calcFloor", "Default");
+      REGISTER_CONSTRAINT(constraintEngine->getCESchema(), TREX::NearestLocation, "nearestReachableLocation", "Default");
       REGISTER_CONSTRAINT(constraintEngine->getCESchema(), CalcAngleDiffConstraint, "calcAngleDiff", "Default");
 
       /*
@@ -91,5 +92,43 @@ namespace TREX{
     }
   }
 
+  NearestLocation::NearestLocation(const LabelStr& name,
+				   const LabelStr& propagatorName,
+				   const ConstraintEngineId& constraintEngine,
+				   const std::vector<ConstrainedVariableId>& variables)
+    : Constraint(name, propagatorName, constraintEngine, variables),
+      m_x(getCurrentDomain(variables[0])),
+      m_y(getCurrentDomain(variables[1])),
+      m_location(static_cast<ObjectDomain&>(getCurrentDomain(variables[2]))){
+    checkError(variables.size() == 3, "Invalid Arg Count: " << variables.size());
+  }
+  
+  /**
+   * Should wait till inputs are bound, then iterate over the locations and select the nearest one.
+   */
+  void NearestLocation::handleExecute() {
+    static const LabelStr X("x");
+    static const LabelStr Y("y");
+    if(m_x.isSingleton() && m_y.isSingleton()){
+      std::list<ObjectId> locations = m_location.makeObjectList();
+      double minDistance = PLUS_INFINITY;
+      ObjectId nearestLocation = locations.front();
+      for(std::list<ObjectId>::const_iterator it = locations.begin(); it != locations.end(); ++it){
+	ObjectId location = *it;
+	ConstrainedVariableId x = location->getVariable(X);
+	ConstrainedVariableId y = location->getVariable(Y);
+	if(x.isId() && y.isId() && x->lastDomain().isSingleton() && y->lastDomain().isSingleton()){
+	  double dx = m_x.getSingletonValue() - x->lastDomain().getSingletonValue();
+	  double dy = m_y.getSingletonValue() - y->lastDomain().getSingletonValue();
+	  double distance = sqrt(pow(dx, 2) + pow(dy, 2));
+	  if(distance < minDistance){
+	    nearestLocation = location;
+	    minDistance = distance;
+	  }
+	}
+      }
 
+      m_location.set(nearestLocation);
+    }
+  }
 }
