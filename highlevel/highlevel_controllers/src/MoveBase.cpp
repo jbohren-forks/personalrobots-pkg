@@ -80,7 +80,8 @@ namespace ros {
       double windowLength(1.0);
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double maxZ(2.0); 
+      double maxZ(2.0);
+      double freeSpaceProjectionHeight(0.5);
       double inflationRadius(0.46);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
@@ -88,6 +89,7 @@ namespace ros {
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("costmap_2d/no_information_value", noInformation, noInformation);
       param("costmap_2d/z_threshold", maxZ, maxZ);
+      param("costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       param("costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       param("costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
@@ -119,7 +121,7 @@ namespace ros {
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                inputData , resp.map.resolution, 
-			       windowLength, lethalObstacleThreshold, maxZ, 
+			       windowLength, lethalObstacleThreshold, maxZ, freeSpaceProjectionHeight,
 			       inflationRadius, circumscribedRadius, inscribedRadius);
 
       // Allocate Velocity Controller

@@ -69,11 +69,12 @@ namespace costmap_2d {
 
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
 		       double resolution, double window_length,  unsigned char threshold, 
-		       double maxZ, double inflationRadius,
-		       double circumscribedRadius, double inscribedRadius)
+		       double maxZ, double freeSpaceProjectionHeight,
+		       double inflationRadius,	double circumscribedRadius, double inscribedRadius)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
       tickLength_(window_length/WATCHDOG_LIMIT),
       maxZ_(maxZ),
+      freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
       inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
       circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
       inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
@@ -153,8 +154,11 @@ namespace costmap_2d {
       unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
       queue.push(std::make_pair(0, ind));
 
-      // Immediately update free space, which is dominated by propagated costs so they are applied afterwards
-      updateFreeSpace(ind, updates);
+      // Immediately update free space, which is dominated by propagated costs so they are applied afterwards.
+      // This only applies for points with the projection height limit
+
+      if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
+	updateFreeSpace(ind, updates);
     }
 
     // Propagate costs

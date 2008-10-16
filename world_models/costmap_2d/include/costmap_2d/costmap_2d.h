@@ -88,14 +88,16 @@ namespace costmap_2d {
      * @param window_length how long to hold onto obstacle data [sec]
      * @param threshold The cost threshold where a cell is considered an obstacle
      * @param maxZ gives the cut-off for points in 3D space
+     * @param freeSpaceProjectionHeight gives the upper bound for evaluating points in z for projecting free space
      * @param inflationRadius the radius used to bound inflation - limit of cost propagation
      * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, double window_length,
-	      unsigned char threshold, double maxZ = 0, double inflationRadius = 0,
-	      double circumscribedRadius = 0, double inscribedRadius = 0);
+	      unsigned char threshold, 
+	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0);
   
     /**
      * @brief Destructor.
@@ -227,6 +229,7 @@ namespace costmap_2d {
     static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
     const double maxZ_; /**< Points above this will be excluded from consideration */
+    const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
     const unsigned int inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
     const unsigned int circumscribedRadius_;
     const unsigned int inscribedRadius_;

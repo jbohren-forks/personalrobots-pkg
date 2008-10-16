@@ -269,7 +269,7 @@ TEST(costmap, test6){
  * Test inflation for both static and dynamic obstacles
  */
 TEST(costmap, test7){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
 
@@ -354,7 +354,7 @@ TEST(costmap, test7){
  * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
  */
 TEST(costmap, test8){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
   std::vector<unsigned int> updates;
@@ -388,7 +388,7 @@ TEST(costmap, test9){
     }
   }
 
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
   // There should be no occupied cells
@@ -427,7 +427,7 @@ TEST(costmap, test9){
  * Test for the cost map accessor
  */
 TEST(costmap, test10){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, ROBOT_RADIUS);
 
   // A window around a robot in the top left
   CostMapAccessor ma(map, 5, 0, 0);
@@ -464,7 +464,7 @@ TEST(costmap, test10){
  * Test for ray tracing free space
  */
 TEST(costmap, test11){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free. This is despite the fact that some of these cells are not zero cost in the
@@ -473,7 +473,7 @@ TEST(costmap, test11){
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
   c0.pts[0].y = 9.5;
-  c0.pts[0].z = 0;
+  c0.pts[0].z = MAX_Z;
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
@@ -504,6 +504,17 @@ TEST(costmap, test11){
   // setting NO_INFORMATION to free space. Minor redundant cell update
   map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  
   ASSERT_EQ(updates.size(), 6);
+
+  // Stale out all dynamic obstacles - then try again with point that is beyond free space projection
+  map.removeStaleObstacles(WINDOW_LENGTH * 3, updates);
+  std_msgs::PointCloudFloat32 c1;
+  c1.set_pts_size(1);
+  c1.pts[0].x = 9.5;
+  c1.pts[0].y = 9.5;
+  c1.pts[0].z = MAX_Z + 1;
+  map.updateDynamicObstacles(1, c1, updates);
+  ASSERT_EQ(updates.size(), 4); // Just obstacle cost propagation - no free space impact
+
 }
 
 int main(int argc, char** argv){
