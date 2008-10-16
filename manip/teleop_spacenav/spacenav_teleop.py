@@ -29,13 +29,19 @@
 # Author: Stuart Glaser
 
 import rostools; rostools.update_path('teleop_spacenav')
-import rospy, sys
+import rospy, sys, math
 from robot_mechanism_controllers.srv import GetVector, SetVectorCommand
 from std_msgs.msg import Vector3
 
 def print_usage(code = 0):
     print sys.argv[0], '<cartesian velocity controller topic>'
     sys.exit(code)
+
+
+def sign(x):
+    if x < 0:
+        return -1
+    return 1
 
 
 if __name__ == '__main__':
@@ -52,18 +58,12 @@ if __name__ == '__main__':
     i = 0
     def spacenav_updated(msg):
         global i
-        FACTOR = 0.005
-        #pos.x += FACTOR * msg.x
-        #pos.y += FACTOR * msg.y
-        #pos.z += FACTOR * msg.z
-        msg.x *= FACTOR
-        msg.y *= FACTOR
-        msg.z *= FACTOR
-        i += 1
-        if i % 1 != 0:
-          return
-        print "Velocity: (%.3f, %.3f, %.3f)" % (msg.x, msg.y, msg.z)
-        #set_command(pos.x, pos.y, pos.z)
+        def t(x):
+            #return x * 0.005
+            return sign(x) * abs(x * 0.005) ** 1.5
+        msg.x = t(msg.x)
+        msg.y = t(msg.y)
+        msg.z = t(msg.z)
         publisher.publish(msg)
 
     rospy.Subscriber("/spacenav/offset", Vector3, spacenav_updated)
