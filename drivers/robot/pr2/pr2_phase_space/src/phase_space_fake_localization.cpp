@@ -62,7 +62,6 @@ namespace pr2_phase_space
       PhaseSpaceLocalization() : ros::node("phase_space_localization")
       {
 	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-        advertise<rosTF::TransformArray>("TransformArray");
 
         m_tfServer = new tf::TransformBroadcaster(*this);
 
@@ -74,7 +73,6 @@ namespace pr2_phase_space
       {
         unsubscribe("phase_space_snapshot") ;
         unadvertise("localizedpose") ;
-	unadvertise("TransformArray");
 	if (m_tfServer)
 	    delete m_tfServer; 
       }
