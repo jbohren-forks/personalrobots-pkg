@@ -99,6 +99,9 @@ private:
   unsigned char *buffers_;
   unsigned int buffer_size_;
 
+  bool halt_motors_;
+  unsigned int reset_state_;
+
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   struct {
     struct {

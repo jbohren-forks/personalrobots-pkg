@@ -75,7 +75,7 @@ void Usage(string msg = "")
 }
 
 static int g_quit = 0;
-static bool g_reset_motors = false;
+static bool g_reset_motors = true;
 static const int NSEC_PER_SEC = 1e+9;
 
 static struct

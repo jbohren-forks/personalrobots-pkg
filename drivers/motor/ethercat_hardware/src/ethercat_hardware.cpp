@@ -40,7 +40,7 @@
 #include <ros/node.h>
 
 EthercatHardware::EthercatHardware() :
-  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), publisher_("/diagnostics", 1)
+  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), reset_state_(0), publisher_("/diagnostics", 1)
 {
 }
 
@@ -265,26 +265,39 @@ void EthercatHardware::update(bool reset)
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
+  memset(current, 0, buffer_size_);
+
+  if (reset)
+  {
+    reset_state_ = num_slaves_;
+  }
+
   for (unsigned int s = 0, a = 0; s < num_slaves_; ++s)
   {
     if (slaves_[s]->has_actuator_)
     {
-      slaves_[s]->computeCurrent(hw_->actuators_[a]->command_);
-      hw_->actuators_[a]->state_.last_requested_effort_ = hw_->actuators_[a]->command_.effort_;
-      hw_->actuators_[a]->state_.last_requested_current_ = hw_->actuators_[a]->command_.current_;
-      slaves_[s]->truncateCurrent(hw_->actuators_[a]->command_);
-      if (reset) {
-        bool tmp = hw_->actuators_[a]->command_.enable_;
-        hw_->actuators_[a]->command_.enable_ = false;
-        slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
-        hw_->actuators_[a]->command_.enable_ = tmp;
+      Actuator *act = hw_->actuators_[a];
+      slaves_[s]->computeCurrent(act->command_);
+      act->state_.last_requested_effort_ = act->command_.effort_;
+      act->state_.last_requested_current_ = act->command_.current_;
+      slaves_[s]->truncateCurrent(act->command_);
+      if (reset_state_ && s < reset_state_)
+      {
+        bool tmp = act->command_.enable_;
+        act->command_.enable_ = false;
+        act->command_.current_ = 0;
+        slaves_[s]->convertCommand(act->command_, current);
+        act->command_.enable_ = tmp;
       } else {
-        slaves_[s]->convertCommand(hw_->actuators_[a]->command_, current);
+        slaves_[s]->convertCommand(act->command_, current);
       }
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       ++a;
     }
   }
+
+  if (reset_state_)
+    --reset_state_;
 
   // Transmit process data
   double start = now();
@@ -298,8 +311,9 @@ void EthercatHardware::update(bool reset)
   {
     if (slaves_[s]->has_actuator_)
     {
-      slaves_[s]->convertState(hw_->actuators_[a]->state_, current, last);
-      slaves_[s]->verifyState(hw_->actuators_[a]->state_, current, last);
+      Actuator *act = hw_->actuators_[a];
+      slaves_[s]->convertState(act->state_, current, last);
+      slaves_[s]->verifyState(act->state_, current, last);
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       last += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       ++a;
