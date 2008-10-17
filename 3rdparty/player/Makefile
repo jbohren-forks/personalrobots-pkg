@@ -2,13 +2,14 @@ all: build
 
 SVN_DIR = player-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk
-SVN_REVISION = -r 7101
+SVN_REVISION = -r 7108
 include $(shell rospack find mk)/svn_checkout.mk
 
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D CMAKE_INSTALL_PREFIX=$(PWD)/player \
+	     -D INCLUDE_RTKGUI=ON \
 	     -D BUILD_PLAYERCC_BOOST=OFF \
 	     -D BUILD_UTILS_PMAP=OFF \
 	     -D ENABLE_DRIVER_CAMERA1394=OFF
