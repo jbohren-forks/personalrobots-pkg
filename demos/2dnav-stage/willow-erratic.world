@@ -66,5 +66,5 @@ floorplan
 )
 
 # throw in a robot
-erratic( pose [-11.277 23.266 180.000] name "era" color "blue")
+erratic( pose [-12.0 22.0 180.000] name "era" color "blue")
 block( pose [-13.924 25.020 180.000] color "red")
