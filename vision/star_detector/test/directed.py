@@ -236,6 +236,7 @@ class TestDirected(unittest.TestCase):
         for t in range(15):
             circle(im, 100 + 50 * t, 100, 3.5, t * 16)
         result = simple(im, 7, 1.0)
+        result = [ (x,y,s,r) for (x,y,s,r) in result if (r > 0.0) ]
 
         # Should be 14 responses
         self.assertEqual(len(result), 14)
@@ -262,7 +263,7 @@ class TestDirected(unittest.TestCase):
 if __name__ == '__main__':
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_line_suppression'))
+        suite.addTest(TestDirected('test_L'))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         rostest.unitrun('star_detector', 'directed', TestDirected)
