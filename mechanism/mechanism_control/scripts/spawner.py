@@ -50,6 +50,7 @@ kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print_usage()
+    rospy.init_node('spawner', anonymous=True)
 
     f = open(sys.argv[1])
     xml = f.read()
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     print "Spawned controllers: %s" % ', '.join(spawned)
 
     try:
-        while True:
-            time.sleep(10000000)
+        while not rospy.is_shutdown():
+            rospy.spin()
     finally:
         [kill_controller(name) for name in spawned]

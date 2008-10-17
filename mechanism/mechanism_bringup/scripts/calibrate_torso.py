@@ -97,7 +97,7 @@ def calibrate(config):
             rospy.Subscriber("/%s/calibrated" % name, Empty, calibrated, name)
 
         # Waits until all the controllers have calibrated
-        while waiting_for:
+        while waiting_for and not rospy.is_shutdown():
             print "Waiting for: %s" % ', '.join(waiting_for)
             sleep(0.5)
     finally:
