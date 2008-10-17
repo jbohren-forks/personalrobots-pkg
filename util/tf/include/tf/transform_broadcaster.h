@@ -54,7 +54,7 @@ public:
   {
     node_.advertise<tfMessage>("/tf_message", 100);
     ///\todo remove when no longer backwards compatable
-    node_.advertise<tfMessage>("TransformArray", 100);
+      node_.advertise<rosTF::TransformArray>("TransformArray", 100);
   };
   /** \brief Send a Stamped<Transform> with parent parent_id 
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
