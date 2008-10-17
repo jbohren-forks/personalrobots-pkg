@@ -1,0 +1,9 @@
+<launch>
+  <group name="wg">
+    <node pkg="mechanism_bringup" type="calibrate_base.py"/>
+    <node pkg="mechanism_bringup" type="calibrate_head.py"/>
+    <node pkg="mechanism_bringup" type="calibrate_tilt_laser.py"/>
+  </group>
+</launch>
+<!--ADD IN AFTER COMPUTERS GO INSIDE ROBOT 
+<node pkg="mechanism_bringup" type="calibrate_torso.py"/>-->
