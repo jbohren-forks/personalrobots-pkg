@@ -26,4 +26,6 @@ x to the right, y downward and z forward, the unit is meter.
 run the following command to verify 3d points are being published
 bin/stereo_blob_tracker_listener points:=videre/tracked_points
 
+NOTE: because of the white balancing issue, please use a bluish or cyan object to track.
+
 
