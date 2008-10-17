@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -43,13 +43,13 @@
 
 namespace tf
 {
-  
+
 /** \brief Storage for transforms and their parent */
 class  TransformStorage : public Stamped<btTransform>
 {
 public:
   TransformStorage(){};
-  TransformStorage(const Stamped<btTransform>& data, unsigned int parent_id): Stamped<btTransform>(data), parent_frame_id(parent_id){}; 
+  TransformStorage(const Stamped<btTransform>& data, unsigned int parent_id): Stamped<btTransform>(data), parent_frame_id(parent_id){};
   unsigned int parent_frame_id;
 };
 
@@ -65,15 +65,15 @@ class TimeCache
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
   static const int64_t DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
   static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
-  
 
-  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME), 
+
+  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME),
             ros::Duration  max_extrapolation_time = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_TIME)):
     interpolating_(interpolating),
     max_storage_time_(max_storage_time),
     max_extrapolation_time_(max_extrapolation_time)
     {};
-  
+
 
   ros::Duration getData(ros::Time time, TransformStorage & data_out); //returns distance in time to nearest value
 
@@ -89,7 +89,7 @@ class TimeCache
       }
       storage_.insert(storage_it, new_data);
       storage_lock_.unlock();
-      
+
       pruneList();
     };
 
@@ -100,15 +100,15 @@ class TimeCache
   void clearList() { storage_lock_.lock(); storage_.clear(); storage_lock_.unlock();};
 
  private:
-  std::list<TransformStorage > storage_; 
+  std::list<TransformStorage > storage_;
 
   bool interpolating_;
   ros::Duration max_storage_time_;
   ros::Duration max_extrapolation_time_;
-  
+
   ros::thread::mutex storage_lock_;
 
-  /// A helper function for getData 
+  /// A helper function for getData
   //Assumes storage is already locked for it
   uint8_t findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff);
 
@@ -117,7 +117,7 @@ class TimeCache
 
       storage_lock_.lock();
       ros::Time latest_time = storage_.begin()->stamp_;
-      
+
       while(!storage_.empty() && storage_.back().stamp_ + max_storage_time_ < latest_time)
       {
         storage_.pop_back();
@@ -126,7 +126,7 @@ class TimeCache
       storage_lock_.unlock();
     };
 
-  
+
 
 };
 

@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,7 +34,7 @@
 #include <sys/time.h>
 using namespace tf;
 
-Transformer::Transformer(bool interpolating, 
+Transformer::Transformer(bool interpolating,
                                 ros::Duration cache_time,
                                 ros::Duration max_extrapolation_distance):
   cache_time(cache_time),
@@ -57,7 +57,7 @@ Transformer::~Transformer()
     delete (*cache_it);
   }
   frame_mutex_.unlock();
-  
+
 };
 
 
@@ -76,9 +76,9 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
   getFrame(lookupFrameNumber(transform.frame_id_))->insertData(TransformStorage(transform, lookupFrameNumber(transform.parent_id_)));
   //  printf("adding data to %d \n", lookupFrameNumber(transform.frame_id_));
 };
-  
 
-void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame, 
+
+void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
                      ros::Time time, Stamped<btTransform>& transform)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), time, 0);
@@ -89,7 +89,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 
 };
 
-void Transformer::lookupTransform(const std::string& target_frame, ros::Time target_time, const std::string& source_frame, 
+void Transformer::lookupTransform(const std::string& target_frame, ros::Time target_time, const std::string& source_frame,
                      ros::Time source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( source_frame), source_time, lookupFrameNumber(fixed_frame));
@@ -115,7 +115,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
   TransformLists mTfLs;
 
   TransformStorage temp;
-  
+
   unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
   if (getFrame(frame) == NULL) //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
@@ -143,7 +143,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
-        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl
           << allFramesAsString() << std::endl;
         throw(LookupException(ss.str()));
       }
@@ -168,7 +168,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
       }
       catch (tf::LookupException & ex)
       {
-        //        std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
+                //std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
         // this is thrown when there is no data for the link
         break;
       }
@@ -180,7 +180,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
       /* Check if we've gone too deep.  A loop in the tree would cause this*/
       if (counter++ > MAX_GRAPH_DEPTH){
         std::stringstream ss;
-        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl 
+        ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl
           << allFramesAsString() << std::endl;
         throw(LookupException(ss.str()));
       }
@@ -202,14 +202,14 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
     if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != target_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentC forward.back ="<< mTfLs.forwardTransforms.back().frame_id_ << " but source frame =" 
+      ss<< "No Common ParentC forward.back ="<< mTfLs.forwardTransforms.back().frame_id_ << " but source frame ="
         << frameIDs_reverse[source_frame]
         << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     else return mTfLs;
   }
-  
+
   if (mTfLs.forwardTransforms.size() == 0)
   {
     if (mTfLs.inverseTransforms.size() == 0)
@@ -218,15 +218,16 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
       ss<< "No Common ParentB" << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
-    if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != source_frame)
+
+    if (lookupFrameNumber(mTfLs.inverseTransforms.back().parent_id_) != target_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentA" << std::endl << allFramesAsString() << std::endl;
+      ss<< "No Common ParentA" << std::endl << allFramesAsString() << std::endl << mTfLs.inverseTransforms.back().parent_id_ << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     else return mTfLs;
   }
-  
+
 
   /* Make sure the end of the search shares a parent. */
   if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_)) /// \todo rethink since the map is actually doing a string comparison inside
@@ -242,14 +243,14 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
   gettimeofday(&tempt2,NULL);
   std::cerr << "Base Cases done" <<tempt.tv_sec * 1000000LL + tempt.tv_usec- tempt2.tv_sec * 1000000LL - tempt2.tv_usec << std::endl;
   */
-  
+
   while (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) == lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_))
   {
       mTfLs.inverseTransforms.pop_back();
       mTfLs.forwardTransforms.pop_back();
 
-      // Make sure we don't go beyond the beginning of the list.  
-      // (The while statement above doesn't fail if you hit the beginning of the list, 
+      // Make sure we don't go beyond the beginning of the list.
+      // (The while statement above doesn't fail if you hit the beginning of the list,
       // which happens in the zero distance case.)
       if (mTfLs.inverseTransforms.size() == 0 || mTfLs.forwardTransforms.size() == 0)
 	break;
@@ -279,16 +280,15 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
         throw ExtrapolationException(ss.str());
       }
     }
-  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
+  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
       try {
-        ///\todo check whether r4608 applies here too
-        retTrans *= (lists.forwardTransforms[i]).data_.inverse(); //Do this list backwards(from backwards) for it was generated traveling the wrong way
+        retTrans = (lists.forwardTransforms[lists.forwardTransforms.size() -1 - i]).data_.inverse() * retTrans; //Do this list backwards(from backwards) for it was generated traveling the wrong way
       }
       catch (tf::ExtrapolationException &ex)
       {
         std::stringstream ss;
-        ss << "Frame "<< lists.forwardTransforms[i].frame_id_ << " is out of date. " << ex.what();
+        ss << "Frame "<< lists.forwardTransforms[lists.forwardTransforms.size() -1 - i].frame_id_ << " is out of date. " << ex.what();
         throw ExtrapolationException(ss.str());
       }
     }
@@ -310,7 +310,7 @@ std::string Transformer::chainAsString(const std::string & target_frame, ros::Ti
   mstream << std::endl;
 
   mstream << "Forward Transforms: "<<std::endl ;
-  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++) 
+  for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
       mstream << lists.forwardTransforms[i].frame_id_<<", ";
     }
@@ -325,7 +325,7 @@ std::string Transformer::allFramesAsString()
 
   TransformStorage temp;
 
-  
+
 
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
@@ -348,7 +348,7 @@ std::string Transformer::allFramesAsString()
 void Transformer::getFrameStrings(std::vector<std::string> & vec)
 {
   vec.clear();
-  
+
   frame_mutex_.lock();
 
   TransformStorage temp;
@@ -368,11 +368,11 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
   return;
 }
 
-tf::TimeCache* Transformer::getFrame(unsigned int frame_id) 
+tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 {
   if (frame_id == 0) /// @todo check larger values too
     return NULL;
-  else 
+  else
     return frames_[frame_id];
 };
 
@@ -380,17 +380,17 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
-  
+
   btTransform transform = computeTransformFromList(t_list);
-  
+
   stamped_out.data_ = transform * stamped_in.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
 
-void Transformer::transformVector(const std::string& target_frame, 
-                                  const Stamped<tf::Vector3>& stamped_in, 
+void Transformer::transformVector(const std::string& target_frame,
+                                  const Stamped<tf::Vector3>& stamped_in,
                                   Stamped<tf::Vector3>& stamped_out)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
@@ -410,9 +410,9 @@ void Transformer::transformVector(const std::string& target_frame,
 void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
-  
+
   btTransform transform = computeTransformFromList(t_list);
-  
+
   stamped_out.data_ = transform * stamped_in.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
@@ -422,17 +422,17 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
 void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
-  
+
   btTransform transform = computeTransformFromList(t_list);
-  
+
   stamped_out.data_ = transform * stamped_in.data_;
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-void Transformer::transformQuaternion(const std::string& target_frame, 
-                                  const std_msgs::QuaternionStamped& msg_in, 
+void Transformer::transformQuaternion(const std::string& target_frame,
+                                  const std_msgs::QuaternionStamped& msg_in,
                                   std_msgs::QuaternionStamped& msg_out)
 {
   Stamped<Quaternion> pin, pout;
@@ -441,8 +441,8 @@ void Transformer::transformQuaternion(const std::string& target_frame,
   QuaternionStampedTFToMsg(pout, msg_out);
 }
 
-void Transformer::transformVector(const std::string& target_frame, 
-                                  const std_msgs::Vector3Stamped& msg_in, 
+void Transformer::transformVector(const std::string& target_frame,
+                                  const std_msgs::Vector3Stamped& msg_in,
                                   std_msgs::Vector3Stamped& msg_out)
 {
   Stamped<Vector3> pin, pout;
@@ -451,8 +451,8 @@ void Transformer::transformVector(const std::string& target_frame,
   Vector3StampedTFToMsg(pout, msg_out);
 }
 
-void Transformer::transformPoint(const std::string& target_frame, 
-                                  const std_msgs::PointStamped& msg_in, 
+void Transformer::transformPoint(const std::string& target_frame,
+                                  const std_msgs::PointStamped& msg_in,
                                   std_msgs::PointStamped& msg_out)
 {
   Stamped<Point> pin, pout;
@@ -461,8 +461,8 @@ void Transformer::transformPoint(const std::string& target_frame,
   PointStampedTFToMsg(pout, msg_out);
 }
 
-void Transformer::transformPose(const std::string& target_frame, 
-                                  const std_msgs::PoseStamped& msg_in, 
+void Transformer::transformPose(const std::string& target_frame,
+                                  const std_msgs::PoseStamped& msg_in,
                                   std_msgs::PoseStamped& msg_out)
 {
   Stamped<Pose> pin, pout;
@@ -472,8 +472,8 @@ void Transformer::transformPose(const std::string& target_frame,
 }
 
 /*
-void Transformer::transformTransform(const std::string& target_frame, 
-                                  const std_msgs::TransformStamped& msg_in, 
+void Transformer::transformTransform(const std::string& target_frame,
+                                  const std_msgs::TransformStamped& msg_in,
                                   std_msgs::TransformStamped& msg_out)
 {
   Stamped<Transform> pin, pout;
