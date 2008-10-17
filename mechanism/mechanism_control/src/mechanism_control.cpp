@@ -199,16 +199,16 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
     node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
 
+  // Advertise topics
+  node_->advertise<robot_msgs::MechanismState>(mechanism_state_topic_,10);
+  node_->advertise<rosTF::TransformArray>("TransformArray");
+  node_->advertise<rostools::Time>("time");
+
   // Advertise services
   node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
   node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
   node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
   node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
-
-  // Advertise topics
-  node_->advertise<robot_msgs::MechanismState>(mechanism_state_topic_,10);
-  node_->advertise<rosTF::TransformArray>("TransformArray");
-  node_->advertise<rostools::Time>("time");
 }
 
 MechanismControlNode::~MechanismControlNode()
