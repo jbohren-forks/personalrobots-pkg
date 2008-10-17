@@ -148,7 +148,7 @@ TEST(costmap, test2){
 TEST(costmap, test3){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
 
-  // Add a point cloud and verify its insertion. There should be only one new if and now deletions
+  // Add a point cloud and verify its insertion. There should be only one new one
   std_msgs::PointCloudFloat32 cloud;
   cloud.set_pts_size(3);
   cloud.pts[0].x = 0;
@@ -316,16 +316,15 @@ TEST(costmap, test7){
   c1.pts[0].z = 0.0;
   map.updateDynamicObstacles(WINDOW_LENGTH - 1, c1, updates);
 
-  // Now we expect insertions for it, and 3 more neighbors, but not all 5. Also, if we propagate the
-  // free space horizontally, we will clear <0, 0> and vertically we will clear the inlfated cell at <2, 7>
-  // There will be some duplication
-  ASSERT_EQ(updates.size(), 7);
+  // Now we expect insertions for it, and 3 more neighbors, but not all 5. Free space will propagate from
+  // the origin to the target, clearing the point at <0, 0>, but not over-writing the inflation of the obstacle
+  // at <0, 1>
+  ASSERT_EQ(updates.size(), 5);
 
-  // Staling out the first update will only result in 1 cell clearing, since other
+  // Staling out the first update will only result in 1 cell clearing <0, 1>, since other
   // values were cleared by free space or will be retained by inflation of a neighbor
   updates.clear();
   map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 1);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   std_msgs::PointCloudFloat32 c2;
@@ -467,8 +466,7 @@ TEST(costmap, test11){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
-  // <0, 0> thru <7, 7> to be free. This is despite the fact that some of these cells are not zero cost in the
-  // static map. There will be a duplicate update from free space
+  // <0, 0> thru <7, 7> to be free. The updates will reflect 4 new free space cells and 4 new obstacle cells
   std_msgs::PointCloudFloat32 c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
@@ -477,7 +475,7 @@ TEST(costmap, test11){
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
-  ASSERT_EQ(updates.size(), 9);
+  ASSERT_EQ(updates.size(), 8);
 
   // 4 updates to handle the new obstacle data and its cost implications
   ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
@@ -501,9 +499,9 @@ TEST(costmap, test11){
 
   // Now we can switch our position and try again. This time we move to the top left
   // for the point at the top right. Expect updates for the obstacle (4) and one extra one
-  // setting NO_INFORMATION to free space. Minor redundant cell update
+  // setting NO_INFORMATION to free space.
   map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  
-  ASSERT_EQ(updates.size(), 6);
+  ASSERT_EQ(updates.size(), 5);
 
   // Stale out all dynamic obstacles - then try again with point that is beyond free space projection
   map.removeStaleObstacles(WINDOW_LENGTH * 3, updates);

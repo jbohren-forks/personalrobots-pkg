@@ -226,7 +226,22 @@ namespace costmap_2d {
      */
     bool marked(unsigned int ind) const;
 
-    static const TICK WATCHDOG_LIMIT = 255; /**< The value for a reset watchdog time for observing dynamic obstacles */
+    /**
+     * @brief Encapsulate calls to peth the watchdog, which impacts the set of dynamic obstacles
+     */
+    void petWatchDog(unsigned int cell, unsigned char value);
+
+    /**
+     * Added to provide a single update location. Only need to add the update if we have not visitied the cell
+     * with an update already. This case is checked because of the watchdog value. This prevents multiply updating cells
+     * for free space and cost propagation.
+     */
+    inline void addUpdate(unsigned int cell, std::vector<unsigned int>& updates){
+      updates.push_back(cell);
+    }
+
+    static const TICK MARKED_FOR_COST = 255; /**< The value used to denote a cell has been marked in the current iteration of cost propagation */
+    static const TICK WATCHDOG_LIMIT = 254; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
     const double maxZ_; /**< Points above this will be excluded from consideration */
     const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
