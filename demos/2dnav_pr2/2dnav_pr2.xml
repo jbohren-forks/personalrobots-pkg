@@ -21,5 +21,6 @@
     <param name="pf_min_a" value="0.524"/>
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" output="screen" args="scan:=base_scan" />
     <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
+    <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
   </group>
 </launch>
