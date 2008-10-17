@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="mechanism_bringup" type="calibrate.py"
+        args="$(find wg_robot_description)/pr2_robot_defs/cal_tilt_laser.xml
+              $(find wg_robot_description)/pr2_robot_defs/cal_base.xml
+              $(find wg_robot_description)/pr2_robot_defs/cal_head.xml
+              $(find wg_robot_description)/pr2_robot_defs/cal_torso.xml" />
+</launch>
