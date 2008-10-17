@@ -9,12 +9,12 @@ start botherder or master
 run the following command to start the camera server, who sends out images
 and calibaration parameters
 
-roscd bread_board
+
 roslaunch videre.xml
 
 run the following command to start the tracker:
 
-bin/stereo_blob_tracker images:=videre/images calparams:=videre/cal_params points:=videre/tracked_points
+./bin/stereo_blob_tracker images:=videre/images calparams:=videre/cal_params points:=videre/tracked_points
 
 from the tracker window, select the object you want to track by draging
 a rectangle area with the mouse. Be sure that

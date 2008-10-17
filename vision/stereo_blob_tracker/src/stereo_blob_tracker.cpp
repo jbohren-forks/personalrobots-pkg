@@ -19,6 +19,7 @@
 using namespace std;
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/String.h"
+typedef signed char schar;
 
 #include "CvStereoCamModel.h"
 #include "CvMatUtils.h"
