@@ -16,10 +16,14 @@ run the following command to start the tracker:
 
 bin/stereo_blob_tracker images:=videre/images calparams:=videre/cal_params points:=videre/tracked_points
 
-from the tracker window, select the object you want to track. Be sure that
+from the tracker window, select the object you want to track by draging
+a rectangle area with the mouse. Be sure that
 your selection area (rectangle) is completely within the blob.
 
+The 3D points are publish in camera frame, right hand system
+x to the right, y downward and z forward, the unit is meter.
+
 run the following command to verify 3d points are being published
-bin/stereo_blob_listener points:=videre/tracked_points
+bin/stereo_blob_tracker_listener points:=videre/tracked_points
 
 
