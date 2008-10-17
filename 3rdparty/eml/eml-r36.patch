@@ -28,13 +28,13 @@ Index: include/ethercat/arch-RTnet/ethercat/ethercat_log.h
 ===================================================================
 --- include/ethercat/arch-RTnet/ethercat/ethercat_log.h	(revision 36)
 +++ include/ethercat/arch-RTnet/ethercat/ethercat_log.h	(working copy)
-@@ -42,7 +42,7 @@
+@@ -42,7 +42,6 @@
  #define EC_LOG_FATAL     0
  
  // Redefine this function if not using eCos...
 -#define log(level, args...) \
-+#define ec_log(level, args...) \
- printf(args)
+-printf(args)
++#define ec_log(level, args...) 
  
  #endif // __ethercat_log_h__
 Index: include/dll/ethercat_slave_memory.h
