@@ -1,0 +1,17 @@
+<controllers>
+  <controller name="cal_shoulder_pan" topic="cal_shoulder_pan" type="JointCalibrationControllerNode">
+    <calibrate joint="shoulder_pan_right_joint"
+               actuator="shoulder_pan_right_motor"
+               transmission="shoulder_pan_right_trans"
+               velocity="0.6" />
+    <pid p="7" i="0.5" d="0" iClamp="1.0" />
+  </controller>
+
+    <controller name="cal_shoulder_pitch" topic="cal_shoulder_pitch" type="JointCalibrationControllerNode">
+    <calibrate joint="shoulder_pitch_right_joint"
+               actuator="shoulder_pitch_right_motor"
+               transmission="shoulder_pitch_right_trans"
+               velocity="0.6" />
+    <pid p="7" i="0.5" d="0" iClamp="1.0" />
+  </controller>
+</controllers>

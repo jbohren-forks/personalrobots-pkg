@@ -1,8 +1,8 @@
 <launch>
   <include file="$(find wg_robot_description)/one_armed_bandit/send_description.xml" />
+  <include file="$(find wg_robot_description)/one_armed_bandit/calibrate.launch" />
   <group name="wg">
     <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-irteth0 -x/robotdesc/pr2"
           output="screen" />
-    <node pkg="wg_robot_description" type="calibrate.py" output="screen" />
   </group>
 </launch>

@@ -58,32 +58,6 @@ spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
 kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
 
-def calibrate_optically(config):
-    resp = spawn_controller(config)
-    if len(resp.ok) != 1 or not resp.ok[0]:
-        print "FAIL"
-        return
-    name = resp.name[0]
-    do_calibration = rospy.ServiceProxy("/%s/calibrate" % name, CalibrateJoint)
-    do_calibration()
-    kill_controller(name)
-    print "Calibrated"
-
-def calibrate_manually(config):
-    resp = spawn_controller(config)
-    if len(resp.ok) != 1 or not resp.ok[0]:
-        print "FAIL"
-        return
-    name = resp.name[0]
-    begin = rospy.ServiceProxy("/%s/begin_manual_calibration" % name, CalibrateJoint)
-    end = rospy.ServiceProxy("/%s/end_manual_calibration" % name, CalibrateJoint)
-    begin()
-    print "Move the joint to the limits, and then hit enter"
-    raw_input()
-    end()
-    kill_controller(name)
-    print "Calibrated manually"
-
 # Hits the joint stops
 def calibrate_blindly(config):
     resp = spawn_controller(config)
@@ -96,69 +70,7 @@ def calibrate_blindly(config):
     kill_controller(name)
     print "Calibrated"
 
-def calibrate(config):
-    # Spawns the controllers
-    resp = spawn_controller(config)
-
-    # Accumulates the list of spawned controllers
-    launched = []
-    try:
-        for i in range(len(resp.ok)):
-            if not resp.ok[i]:
-                print "Failed: %s" % resp.name[i]
-            else:
-                launched.append(resp.name[i])
-        print "Launched: %s" % ', '.join(launched)
-
-        # Sets up callbacks for calibration completion
-        waiting_for = launched[:]
-        def calibrated(msg, name):  # Somewhat not thread-safe
-            if name in waiting_for:
-                waiting_for.remove(name)
-        for name in waiting_for:
-            rospy.Subscriber("/%s/calibrated" % name, Empty, calibrated, name)
-
-        # Waits until all the controllers have calibrated
-        while waiting_for and not rospy.is_shutdown():
-            print "Waiting for: %s" % ', '.join(waiting_for)
-            sleep(0.5)
-    finally:
-        [kill_controller(name) for name in launched]
-
-
 rospy.init_node('calibration', anonymous=True)
-
-
-calibrate('''
-<controllers>
-
-  <controller name="cal_shoulder_pan" topic="cal_shoulder_pan" type="JointCalibrationControllerNode">
-    <calibrate joint="shoulder_pan_right_joint"
-               actuator="shoulder_pan_right_motor"
-               transmission="shoulder_pan_right_trans"
-               velocity="0.6" />
-    <pid p="7" i="0.5" d="0" iClamp="1.0" />
-  </controller>
-
-  <controller name="cal_shoulder_pitch" topic="cal_shoulder_pitch" type="JointCalibrationControllerNode">
-    <calibrate joint="shoulder_pitch_right_joint"
-               actuator="shoulder_pitch_right_motor"
-               transmission="shoulder_pitch_right_trans"
-               velocity="0.6" />
-    <pid p="7" i="0.5" d="0" iClamp="1.0" />
-  </controller>
-
-  <controller name="cal_laser_tilt" topic="cal_laser_tilt" type="JointCalibrationControllerNode">
-    <calibrate joint="tilt_laser_mount_joint"
-               actuator="tilt_laser_motor"
-               transmission="tilt_laser_mount_trans"
-               velocity="-0.6" />
-    <pid p=".25" i="0.1" d="0" iClamp="1.0" />
-  </controller>
-
-</controllers>
-''')
-
 
 calibrate_blindly('''
 <controller name="upperarm_calibration" topic="upperarm_calibration" type="JointBlindCalibrationControllerNode">
