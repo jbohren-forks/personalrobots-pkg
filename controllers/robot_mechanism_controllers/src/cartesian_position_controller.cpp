@@ -89,7 +89,6 @@ void CartesianPositionController::update()
   effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
   effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
 
-  //printf("    %.4lf %.4lf %.4lf\n", effort_.command_[0],effort_.command_[1],effort_.command_[2]);
   effort_.update();
 
   last_time_ = time;
@@ -97,18 +96,21 @@ void CartesianPositionController::update()
 
 void CartesianPositionController::getTipPosition(btVector3 *p)
 {
-  *p = tip_->abs_position_ + effort_.offset_;
+  *p = tip_->abs_position_ + quatRotate(tip_->abs_orientation_, effort_.offset_);
 }
 
 
 ROS_REGISTER_CONTROLLER(CartesianPositionControllerNode)
 
 CartesianPositionControllerNode::CartesianPositionControllerNode()
+: pos_publisher_(NULL), loop_count_(0)
 {
 }
 
 CartesianPositionControllerNode::~CartesianPositionControllerNode()
 {
+  if (pos_publisher_)
+    delete pos_publisher_;
 }
 
 bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
@@ -131,11 +133,32 @@ bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXm
   node->advertise_service(topic + "/get_actual",
                           &CartesianPositionControllerNode::getActual, this);
   guard_get_actual_.set(topic + "/get_actual");
+
+  node->subscribe(topic + "/command", command_msg_,
+                  &CartesianPositionControllerNode::command, this, 0);
+  guard_command_.set(topic + "/command");
+
+  pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::Vector3>(topic + "/position", 0);
+
   return true;
 }
 
 void CartesianPositionControllerNode::update()
 {
+  if (++loop_count_ % 10 == 0)
+  {
+    if (pos_publisher_)
+    {
+      if (pos_publisher_->trylock())
+      {
+        tf::Vector3 p;
+        c_.getTipPosition(&p);
+        tf::Vector3TFToMsg(p, pos_publisher_->msg_);
+        pos_publisher_->unlockAndPublish();
+      }
+    }
+  }
+
   c_.update();
 }
 
@@ -155,6 +178,11 @@ bool CartesianPositionControllerNode::getActual(
   c_.getTipPosition(&v);
   tf::Vector3TFToMsg(v, resp.v);
   return true;
+}
+
+void CartesianPositionControllerNode::command()
+{
+  tf::Vector3MsgToTF(command_msg_, c_.command_);
 }
 
 }

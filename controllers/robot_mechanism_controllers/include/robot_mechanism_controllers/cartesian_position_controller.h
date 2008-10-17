@@ -52,7 +52,9 @@
 #include "control_toolbox/pid.h"
 #include "mechanism_model/controller.h"
 #include "LinearMath/btVector3.h"
+#include "misc_utils/realtime_publisher.h"
 #include "misc_utils/advertised_service_guard.h"
+#include "misc_utils/subscription_guard.h"
 
 namespace controller {
 
@@ -91,10 +93,17 @@ public:
                   robot_mechanism_controllers::SetVectorCommand::response &resp);
   bool getActual(robot_mechanism_controllers::GetVector::request &req,
                  robot_mechanism_controllers::GetVector::response &resp);
+  void command();
 
 private:
   CartesianPositionController c_;
   AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
+  SubscriptionGuard guard_command_;
+
+  std_msgs::Vector3 command_msg_;
+
+  misc_utils::RealtimePublisher<std_msgs::Vector3> *pos_publisher_;
+  int loop_count_;
 };
 
 }
