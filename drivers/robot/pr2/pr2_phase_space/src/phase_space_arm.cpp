@@ -32,94 +32,81 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Sachin Chitta
+//! \author Vijay Pradeep
 
 /****
- * This node takes the PhaseSpaceSnapshot packet and repackages into a form that can be used with the odometry
+ * This node takes the PhaseSpaceSnapshot packet and repackages to work with the pan_tilt tracker
  */
 
+#include <string>
+
 #include "ros/node.h"
+
+// Services
+#include "pr2_mechanism_controllers/TrackPoint.h"
 
 // Messages
 #include "phase_space/PhaseSpaceSnapshot.h"
 #include "phase_space/PhaseSpaceMarker.h"
 #include "phase_space/PhaseSpaceBody.h"
 
-#include "std_msgs/Transform.h"
-#include "std_msgs/TransformWithRateStamped.h"
-#include "std_msgs/RobotBase2DOdom.h"
+#include "std_msgs/Vector3.h"
 
-#include <tf/tf.h>
-#include <tf/transform_broadcaster.h>
-
+using namespace std ;
 
 namespace pr2_phase_space
 {
-  class PhaseSpaceLocalization : public ros::node
+class PhaseSpaceArm : public ros::node
+{
+public :
+  
+  PhaseSpaceArm() : ros::node("phase_space_arm")
   {
-    public :
+    subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceArm::snapshotCallback, 10) ;
+    advertise<std_msgs::Vector3>("command") ;
+    publish_count_ = 0 ;
+  }
   
-      PhaseSpaceLocalization() : ros::node("phase_space_fake_localization")
-      {
-	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-
-        m_tfServer = new tf::TransformBroadcaster(*this);
-
-        subscribe("phase_space_snapshot", snapshot_, &PhaseSpaceLocalization::snapshotCallback, 10) ;
-        publish_count_ = 0 ;
-      }
+  ~PhaseSpaceArm()
+  {
+    unsubscribe("phase_space_snapshot") ;
+  }
   
-      ~PhaseSpaceLocalization()
-      {
-        unsubscribe("phase_space_snapshot") ;
-        unadvertise("localizedpose") ;
-	if (m_tfServer)
-	    delete m_tfServer; 
-      }
-  
-      void snapshotCallback()
-      {
-        if (snapshot_.get_bodies_size() > 0)                        // Only execute if we have at least 1 body in the scene
-        {
-          m_currentPos.header = snapshot_.header;
-          m_currentPos.header.frame_id = "map";
-
-          m_currentPos.pos.x = snapshot_.bodies[0].pose.translation.x;
-          m_currentPos.pos.y = snapshot_.bodies[0].pose.translation.y;
-
-          double yaw,pitch,roll;
-
-          tf::Transform mytf;
-
-          tf::TransformMsgToTF(snapshot_.bodies[0].pose,mytf);
-
-          mytf.getBasis().getEulerZYX(yaw,pitch,roll);
- 
-          m_currentPos.pos.th = yaw;
-
-          publish("localizedpose", m_currentPos) ;
-
-          m_tfServer->sendTransform(mytf,m_currentPos.header.stamp,"base","map");
+  void snapshotCallback()
+  {
+    if (snapshot_.get_markers_size() > 0)                        // Only execute if we have at least 1 marker in the scene
+    {
+      if (snapshot_.frameNum % 16 != 0)
+        return ;
       
-          if (publish_count_% 480 == 0)
-            printf("Published %u messages\n", publish_count_) ;
+      string topic = "head_controller/track_point" ;
       
-          publish_count_++ ;  
-        }
-      }
+      const phase_space::PhaseSpaceMarker& cur_marker = snapshot_.markers[0] ;
+
+      std_msgs::Vector3 cur_cmd ;
+      cur_cmd.x = cur_marker.location.x ;
+      cur_cmd.y = cur_marker.location.y ;
+      cur_cmd.z = cur_marker.location.z ;
+
+      publish("command", cur_cmd) ;
+      
+      return ;
+    }
+  }
   
-    private:
+private :
   
-      phase_space::PhaseSpaceSnapshot snapshot_;
-      std_msgs::RobotBase2DOdom m_currentPos;
-      tf::TransformBroadcaster *m_tfServer;
-      int publish_count_ ;
+  phase_space::PhaseSpaceSnapshot snapshot_ ;
   
-  } ;
+  int publish_count_ ;
+  
+} ;
 
 }
 
+
 using namespace pr2_phase_space ;
+
 
 int main(int argc, char** argv)
 {
@@ -128,9 +115,9 @@ int main(int argc, char** argv)
   ros::init(argc, argv);
   printf("Done\n") ;
 
-  PhaseSpaceLocalization phase_space_loc;
+  PhaseSpaceArm phase_space_arm ;
 
-  phase_space_loc.spin() ;
+  phase_space_arm.spin() ;
 
   ros::fini() ;
 
