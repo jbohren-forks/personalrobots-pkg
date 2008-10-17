@@ -115,6 +115,7 @@ PathRecon::keyFrameEval(
 	//
 	if (numInliers < defMinNumInliersForGoodFrame) {
 		// Too few inliers to ensure good tracking
+	  // This one overides mMinNumInliers as the absolute minimum guard.
 		keyFrameNeeded = true;
 	} else if (cvNorm(&shift) > mMaxShift) {
 		// the shift is large enough that a key frame is needed
