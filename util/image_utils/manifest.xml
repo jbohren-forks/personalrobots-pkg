@@ -12,7 +12,7 @@
   <depend package="ijg_libjpeg"/>
   <depend package="std_msgs"/>
   <depend package="roscpp"/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -limage_utils"/>
   </export>
