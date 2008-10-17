@@ -37,15 +37,7 @@ typedef vector<Keypoint> Keypoints;
 class KeypointDescriptor {
 public:
   virtual ~KeypointDescriptor(){};
-#if 0
-  typedef enum {
-    UnNormalizedCost  = (unsigned char)0x0,
-    NormalizedCost    = (unsigned char)0x1,
-    UnNormalizedScore = (unsigned char)0x2,
-    NormalizedScore   = (unsigned char)0x3
-  } SimilarityType;
-  SimilarityType similarityType;
-#endif
+
   /// @return the "distance" between the two
   /// descriptors
   virtual float compare(const KeypointDescriptor& kpd) const = 0 ;

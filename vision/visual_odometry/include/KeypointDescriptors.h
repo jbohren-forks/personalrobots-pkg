@@ -91,28 +91,6 @@ protected:
   uint8_t* mData;
 };
 
-template<typename KD>
-class KeypointT: public CvPoint3D64f
-{
-public:
-  KeypointT(double _x, double _y, double _z, double response, double scale,
-      KD* descriptor):
-    r(response), s(scale), desc(descriptor){
-    x = _x; y=_y; z=_z;
-  }
-  ~KeypointT() {
-    delete desc;
-  }
-  /// the response of the keypoint
-  double r;
-  /// scale of the keypoint
-  double s;
-  /// the key point descriptor
-  KD* desc;
-};
-
-typedef  KeypointT<KeypointTemplateDescriptor> KeypointRaw;
-
 }
 }
 

@@ -95,7 +95,7 @@ public:
   static const int defMaxDisparity = 15;
   static const int defMinNumInliersForGoodFrame = 10;
   static const int defMinNumInliers = 50;
-  static const double defMinInlierRatio = .3;
+  static const double defMinInlierRatio = .0;
   static const double defMaxAngleAlpha = 15.;
   static const double defMaxAngleBeta = 15.;
   static const double defMaxAngleGamma = 15.;
