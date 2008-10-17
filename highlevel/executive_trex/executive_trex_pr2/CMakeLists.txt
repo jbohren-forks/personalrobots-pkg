@@ -14,9 +14,11 @@ if(__rospack_err_ignore)
 endif(__rospack_err_ignore)
 
 
-add_custom_target(jam_g ALL
-                  COMMAND PLASMA_HOME=${trex_dir}/PLASMA/ jam -q exec_inputs
-                  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+execute_process(
+    COMMAND ${PROJECT_SOURCE_DIR}/run-jam
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
 
 
 set(TREX_FILES src/Executive.cc 
