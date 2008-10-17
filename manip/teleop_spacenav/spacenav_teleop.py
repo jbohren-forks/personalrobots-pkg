@@ -49,6 +49,7 @@ if __name__ == '__main__':
         print_usage(1)
 
     topic = sys.argv[1]
+    rospy.wait_for_service(topic + '/get_actual')
     get_position = rospy.ServiceProxy(topic + '/get_actual', GetVector)
     set_command = rospy.ServiceProxy(topic + '/set_command', SetVectorCommand)
     publisher = rospy.Publisher(topic + '/command', Vector3)
