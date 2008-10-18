@@ -1,4 +1,6 @@
 #include "milo.init.nddl";
 
-rejectable(navigator.Active g0);
-eq(g0.w, w1);
+
+rejectable(venusDeMiles.Holds g);
+g.iterationCount = 0;
+g.iterationLimit = 10;
