@@ -13,6 +13,7 @@ if ! $(executive_trex_pr2_READY) {
 		[ FDirName $(EXEC_HOME) arm.2 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.0 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) miles.1 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) miles.2 pr2.exec.nddl ]
 	;
 
 	local file ;

@@ -117,14 +117,14 @@ VenusDeMiles::Holds{
 class RechargeController extends Behavior {
 
   predicate Inactive{
-    bool plugIn; // If true, the robot is plugged in, otherwise not
-    float x;
-    float y;
-    float th;
-    bool desPlugIn; // If true, the robot is plugged in, otherwise not
-    float desX;
-    float desY;
-    float desTh;
+    //bool plugIn; // If true, the robot is plugged in, otherwise not
+    //float x;
+    //float y;
+    //float th;
+    //bool desPlugIn; // If true, the robot is plugged in, otherwise not
+    //float desX;
+    //float desY;
+    //float desTh;
   }
 
   /**
@@ -135,7 +135,7 @@ class RechargeController extends Behavior {
    * execute commands to unplug.
    */
   predicate Active {
-    bool plugIn;
+    //bool plugIn;
     float x;
     float y;
     float th;
@@ -161,12 +161,12 @@ BatteryState::Holds {
   }
 
   // Ignore this - it is a hack for testing
-  if(object.mode == Internal){
+  /*if(object.mode == Internal){
     eq(duration, 1);
     if(start == 5){
       eq(energy_remaining, 0.0);
     }
-  }
+  }*/
 }
 
 WorkingStatus::Holds{
@@ -191,8 +191,8 @@ WorkingStatus::Holds{
       nearestReachableLocation(bs.x, bs.y, cs);
 
       // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
-      any(RechargeController.Inactive rc);
-      eq(rc.plugIn, false);
+      any(RechargeController.Active rc);
+      //eq(rc.plugIn, false);
       eq(rc.x, cs.x);
       eq(rc.y, cs.y);
       eq(rc.th, cs.th);
@@ -208,31 +208,31 @@ WorkingStatus::Holds{
 RechargeController::Inactive{
   // By default, we are not plugged in. It may be safer to assume we are! In reality, we should
   // be able to sense this.
-  defaultOnCommit(plugIn, false);
+  //defaultOnCommit(plugIn, false);
 
   // Bind actual values based on base state. We are only reading these values. This is an important idiom
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
   // syntax in the language to make it more explicit what is going on. All we are really doing here
   // is binding default values from execution
   // s == baseState[start]
-  if(start){
-    starts(BaseState.Holds bs);
-    defaultOnCommit(x, bs.x);
-    defaultOnCommit(y, bs.y);
-    defaultOnCommit(th, bs.th);
-  }
+  //if(start){
+  //  starts(BaseState.Holds bs);
+  //  defaultOnCommit(x, bs.x);
+  //  defaultOnCommit(y, bs.y);
+  //  defaultOnCommit(th, bs.th);
+  //}
 
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  met_by(Active p);
-  eq(p.plugIn, plugIn);
-  eq(p.x, x);
-  eq(p.y, y);
-  eq(p.th, th);
+  //met_by(Active p);
+  //eq(p.plugIn, plugIn);
+  //eq(p.x, x);
+  //eq(p.y, y);
+  //eq(p.th, th);
 
   // Require actual and desired values to be within some tolerance
-  addEq(x, [-0.25, 0.25], desX);
-  addEq(y, [-0.25, 0.25], desY);
-  addEq(th, [-0.25, 0.25], desTh);
+  //addEq(x, [-0.25, 0.25], desX);
+  //addEq(y, [-0.25, 0.25], desY);
+  //addEq(th, [-0.25, 0.25], desTh);
 }
 
 RechargeController::Active{
@@ -241,7 +241,7 @@ RechargeController::Active{
   // of the predecessor should differ from the commanded plug in value
   // in this state
   met_by(Inactive p);
-  neq(p.plugIn, plugIn);
+  /*neq(p.plugIn, plugIn);
 
   // If we are trying to unplug, then the predecessor's desired values should
   // be the same for position as these.
@@ -249,7 +249,7 @@ RechargeController::Active{
     eq(p.desX, x);
     eq(p.desY, y);
     eq(p.desTh, th);
-  }
+  }*/
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station

@@ -1,4 +1,15 @@
 #include "milo.init.nddl";
 
-rejectable(navigator.Active g0);
-eq(g0.w, w1);
+//rejectable(navigator.Active g0);
+//eq(g0.w, w1);
+
+
+rejectable(RechargeController.Active plug);
+
+plug.x = 18.8;
+plug.y = 16.4;
+plug.th = 0.0;
+
+
+
+

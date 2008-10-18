@@ -1,6 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
+    <node pkg="executive_trex_pr2" type="fake_battery_controller.py" args=""/>
     <include file="$(find highlevel_controllers)/test/launch_stage_5cm.xml" />
   </group>
 </launch>
