@@ -38,8 +38,7 @@
 #include <ros/node.h>
 #include <pr2_msgs/MoveArmGoal.h>
 #include <robot_msgs/MechanismState.h>
-#include <highlevel_controllers/PlugInGoal.h>
-#include <highlevel_controllers/PlugInState.h>
+#include <highlevel_controllers/RechargeGoal.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_msgs/BatteryState.h>
 
@@ -53,7 +52,7 @@ public:
     advertise<pr2_msgs::MoveArmGoal>("left_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
-    advertise<highlevel_controllers::PlugInGoal>("plugin_goal", 1);
+    advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
     advertise<robot_msgs::BatteryState>("battery_state", 1);
     advertise<robot_msgs::MechanismState>("mechanism_state", 1);
     runCLI();
@@ -101,7 +100,7 @@ private:
   }
 
   void runCLI() {
-    printf("Type:\nI\tInitialize States\nP\tPlugin or Unplug.\nB\tSet Battery State\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
+    printf("Type:\nI\tInitialize States\nP\tActivate Recharge.\nB\tSet Battery State\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
     char c = '\n';
 
     while (c == '\n' || c == '\r') {
@@ -109,16 +108,18 @@ private:
     }
 
     if (c == 'B') {
-      printf("Enter Watts:\n");
+      printf("Enter Consumption:\n");
       robot_msgs::BatteryState battery;
       battery.power_consumption = enterValue(-10000, 10000);
+      printf("Enter Current:\n");
+      battery.energy_remaining = enterValue(-10000, 10000);
+      battery.energy_capacity = 100;
       publish<robot_msgs::BatteryState>("battery_state", battery);
     } else if (c == 'P') {
-      printf("Enter 0 to unplug, 1 to plug.\n");
-      highlevel_controllers::PlugInGoal goal;
-      goal.goal = (int)enterValue(0, 1);
+      printf("Sending plugin goal.\n");
+      highlevel_controllers::RechargeGoal goal;
       goal.enable = 1;
-      publish<highlevel_controllers::PlugInGoal>("plugin_goal", goal);
+      publish<highlevel_controllers::RechargeGoal>("recharge_goal", goal);
     } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");
       

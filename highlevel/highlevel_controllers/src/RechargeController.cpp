@@ -67,6 +67,7 @@
 #include <HighlevelController.hh>
 #include <highlevel_controllers/RechargeGoal.h>
 #include <highlevel_controllers/RechargeState.h>
+#include <robot_msgs/BatteryState.h>
 
 namespace highlevel_controllers {
 
@@ -81,40 +82,136 @@ namespace highlevel_controllers {
 
     virtual ~RechargeController();
 
+
   private:
+    enum MailType {UNPLUG, PLUG};
+
+
     virtual void updateStateMsg();
     virtual void updateGoalMsg();
     virtual bool makePlan();
     virtual bool goalReached();
     virtual bool dispatchCommands();
+    void batteryStateCallback();
+    void sendMail(MailType type);
+
+    bool m_quitCharging, m_startCharging;
+    double m_chargedPrecent, m_chargingThreshold;
+
+    std::string m_addresses, m_pluginSubject, m_unplugSubject, m_pluginBody, m_unplugBody, m_mailClient;
+    
+
+    robot_msgs::BatteryState batteryStateMsg;
   };
 
   RechargeController::RechargeController(const std::string& stateTopic, const std::string& goalTopic)
-    : HighlevelController<RechargeState, RechargeGoal>("recharge_controller", stateTopic, goalTopic){
+    : HighlevelController<RechargeState, RechargeGoal>("recharge_controller", stateTopic, goalTopic),
+      m_quitCharging(false), m_startCharging(false), m_chargedPrecent(0.9), m_chargingThreshold(0),
+      m_addresses(""), m_pluginSubject("Robot Needs to Be Plugged In"), 
+      m_unplugSubject("Robot Needs to Be Unplugged"), m_pluginBody("Hello, could you please plug me in?\nThanks, PR2"),
+      m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s") {
     initialize();
 
+    subscribe("battery_state", batteryStateMsg, &RechargeController::batteryStateCallback, QUEUE_MAX());
+
+
+    param("recharge/email_addresses", m_addresses, m_addresses);
+    param("recharge/subject_plugin", m_pluginSubject, m_pluginSubject);
+    param("recharge/subject_unplug", m_unplugSubject, m_unplugSubject);
+    param("recharge/body_plugin", m_pluginBody, m_pluginBody);
+    param("recharge/body_unplug", m_unplugBody, m_unplugBody);
+    param("recharge/mail_client", m_mailClient,  m_mailClient);
+
+
+
+    param("recharge/body_unplug", m_unplugBody, m_unplugBody);
+    param("recharge/mail_client", m_mailClient,  m_mailClient);
+
+
+
+    if (m_addresses == "") {
+      printf("There are no email addresses in the param server. Opening the text file.\n");
+      FILE* email = fopen("email_file.txt", "r");
+      if (email) {
+	char buff[1024];
+	fgets(buff, 1020, email);
+	for (int i = 0; i < 1024; i++) {
+	  if (buff[i] == '\r' || buff[i] == '\n') { 
+	    buff[i] = 0; 
+	    break;
+	  }
+	}
+	m_addresses = buff;
+	fclose(email);
+      } else {
+	printf("Could not open email alert file: email_file.txt\n");
+      }
+    }
+    printf("Emails: %s\n", m_addresses.c_str());
+
+
+
+
     lock();
-    stateMsg.plugIn = false;
-    stateMsg.desPlugIn = false;
+    stateMsg.charged = false;
+    stateMsg.active = false;
+    stateMsg.done = false;
     unlock();
   }
 
   RechargeController::~RechargeController(){}
 
-  void RechargeController::updateStateMsg(){
+
+  void RechargeController::batteryStateCallback(){
     lock();
-    // HACK
-    if(goalReached())
-      stateMsg.plugIn = goalMsg.plugIn;
+    bool charged = (batteryStateMsg.energy_remaining / batteryStateMsg.energy_capacity) > m_chargedPrecent;
+    bool plugged = batteryStateMsg.power_consumption > m_chargingThreshold;
+    if (stateMsg.active && charged && !stateMsg.charged) {
+      m_quitCharging = true;
+    }
+    if (stateMsg.active && charged && !plugged) {
+      stateMsg.done = true;
+      std::cout << "Unplugged!\n";
+    }
+
+    stateMsg.charged = charged;
 
     unlock();
   }
 
+  void RechargeController::sendMail(MailType type) {
+    std::string subject = "Error: bad mail.", body = "Bad, bug in recharge controller.";
+    if (type == UNPLUG) {
+      subject = m_unplugSubject;
+      body = m_unplugBody;
+    } else if (type == PLUG) {
+      subject = m_pluginSubject;
+      body = m_pluginBody;
+    }
+    
+    std::cout << "Sending mail...\n";
+    std::string command = "echo \"";
+    command += body + "\" | " + m_mailClient + " \"";
+    command += subject + "\" \"";
+    for (unsigned int i = 0; i <  m_addresses.length(); i++) {
+      if (m_addresses[i] == ' ') {
+	command += "\" \"";
+      } else {
+	command += m_addresses[i];
+      }
+    }
+    command += "\"";
+    std::cout << "Mail command: " << command << std::endl;
+    system(command.c_str());
+  }
+  
+
+  void RechargeController::updateStateMsg(){
+  }
+
   void RechargeController::updateGoalMsg(){
-    lock();
-    stateMsg.desPlugIn = goalMsg.plugIn;
-    stateMsg.goal = goalMsg.goal;
-    unlock();
+    m_startCharging = true;
+    stateMsg.done = false;
   }
 
   bool RechargeController::makePlan(){
@@ -125,13 +222,21 @@ namespace highlevel_controllers {
    * @brief
    */
   bool RechargeController::goalReached(){
-    return true;
+    return stateMsg.done;
   }
 
   /**
    * @brief 
    */
   bool RechargeController::dispatchCommands(){
+    if (m_startCharging) {
+      sendMail(PLUG);
+      m_startCharging = false;
+    }
+    if (m_quitCharging) {
+      sendMail(UNPLUG);
+      m_quitCharging = false;
+    }
     return true;
   }
 
@@ -141,10 +246,6 @@ int
 main(int argc, char** argv)
 {
 
-  if(argc != 2){
-    ROS_INFO("Invalid arg count of %d. Usage: ./recharge_controller", argc);
-    return -1;
-  }
 
   ros::init(argc,argv);
   try{

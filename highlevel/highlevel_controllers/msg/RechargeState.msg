@@ -9,11 +9,9 @@ byte valid
 # Have we arrived at the goal?
 byte done
 
-# If true, the robot is plugged in
-byte plugIn
+# If true, the robot is charged.
+byte charged
 
-# The desired plug in state
-byte desPlugIn
 
 # The goal pose for accessing the plug
 std_msgs/Pose2DFloat32 goal
