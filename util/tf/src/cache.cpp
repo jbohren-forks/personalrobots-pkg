@@ -169,6 +169,7 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
   two.data_.getBasis().getRotation(q2);
   output.data_.setRotation(slerp( q1, q2 , ratio));
   output.frame_id_ = one.frame_id_;
+  output.parent_id_ = one.parent_id_;
   output.parent_frame_id = one.parent_frame_id;
 };
 
