@@ -56,17 +56,9 @@ To use this node, the tilting stage and laser have to be started. A convenient m
 Subscribes to (name/type):
 - @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">LaserScan</a> : laser scan data
 
-Publishes to (name / type):
-- @b "cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
-- @b "full_cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : A full point cloud containing all of the points between the last two shutters
-
 <hr>
 
 @section parameters ROS parameters
-
-Reads the following parameters from the parameter server
-
-- @b "tilting_laser/num_scans" : @b [int] the number of scans to take between the min and max angles (Default: 400)
 
  **/
 
@@ -75,14 +67,24 @@ Reads the following parameters from the parameter server
 #include "rosTF/rosTF.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloudFloat32.h"
-#include "pr2_mechanism_controllers/LaserScannerSignal.h"
+ 
+#include <deque>
 
-//Laser projection
+
+// Service
+#include "point_cloud_assembler/BuildCloud.h"
+
+// Laser projection
 #include "laser_scan_utils/laser_scan.h"
 
 #include "math.h"
 
 using namespace std_msgs;
+
+using namespace std ;
+
+namespace point_cloud_assembler
+{
 
 class PointCloudAssembler : public ros::node
 {
@@ -91,147 +93,105 @@ public:
   rosTFClient tf_;
   laser_scan::LaserProjection projector_;
 
-  PointCloudFloat32 cur_scan_cloud_;
+  LaserScan scan_;
 
-  LaserScan scans_;
-  pr2_mechanism_controllers::LaserScannerSignal scanner_signal_;
+  unsigned int max_scans_;
 
-  PointCloudFloat32 full_cloud_;
-  int full_cloud_cnt_;
-
-  int num_scans_;
-
-  /* Reinstate to let user control the angles.
-  double min_ang;
-  double max_ang; */
-
-  //ros::Time last_motor_time;
-  int count_; // This just counts the number of scans per second for output. It's unnecessary.
-  ros::Time next_time_;
-
-  bool start_scan_;
-  bool stop_scan_;
-  bool scanning_;
-
-  PointCloudAssembler() : ros::node("point_cloud_assembler"), tf_(*this), full_cloud_cnt_(0), count_(0), start_scan_(false), stop_scan_(false), scanning_(false)
+  deque<LaserScan> scan_hist_ ;            //!< Stores history of scans. We want them in time-ordered, which is (in most situations) the same as time-of-receipt-ordered
+  unsigned int total_pts_ ;                //!< Stores the total number of range points in the entire stored history of scans. Useful for estimating points/scan
+  
+  
+  PointCloudAssembler() : ros::node("point_cloud_assembler"), tf_(*this)
   {
-    
-    advertise<PointCloudFloat32>("cloud", 1);
-    advertise<PointCloudFloat32>("full_cloud", 1);
+    advertise_service("build_cloud", &PointCloudAssembler::buildCloud, this, 0) ;      // Don't spawn threads so that we can avoid dealing with mutexing [for now]
+    subscribe("scan", scan_, &PointCloudAssembler::scans_callback, 40) ;
 
-    subscribe("scan", scans_, &PointCloudAssembler::scans_callback, 40);
-    subscribe("laser_scanner_signal", scanner_signal_, &PointCloudAssembler::scanner_signal_callback, 40);
+    param("point_cloud_assembler/max_scans", max_scans_, (unsigned int) 400) ;
 
-    param("point_cloud_assembler/num_scans", num_scans_, 400);
-
-    //last_motor_time = ros::Time::now();
-    next_time_ = ros::Time::now();
-
+    total_pts_ = 0 ;                                                                   // We're always going to start with no points in our history
   }
 
   virtual ~PointCloudAssembler()
   { 
-    unadvertise("cloud") ;
-    unadvertise("full_cloud") ;
-    //unsubscribe("scan") ;
-    //unsubscribe("laser_scanner_signal") ;
+    unadvertise_service("build_cloud") ;
+    unsubscribe("scan") ;
   }
 
   void scans_callback()
   {
-    //printf("start %d stop %d scan %d\n", start_scan_, stop_scan_, scanning_);
-
-    count_++;
-    ros::Time now_time = ros::Time::now();
-    if (now_time > next_time_)
+    if (scan_hist_.size() == max_scans_)                                                // Is our deque full?
     {
-      //std::cout << count_ << " scans/sec at " << now_time << std::endl;
-      count_ = 0;
-      next_time_ = next_time_ + ros::Duration(1,0);
+      total_pts_ -= scan_hist_.front().get_ranges_size() ;                              // We're removing an elem, so this reduces our total point count
+      scan_hist_.pop_front() ;                                                          // The front of the deque has the oldest elem, so we can get rid of it
     }
-
-    // If told to stop scanning and you have some points in your full cloud, publish the cloud.
-    if (stop_scan_)
-    {
-      if (scanning_)
-      {
-	// What happens if the point_cloud_cnt is 0? Should I still publish?
-	full_cloud_.set_pts_size(full_cloud_cnt_);
-	full_cloud_.chan[0].set_vals_size(full_cloud_cnt_);
-	publish("full_cloud",full_cloud_);
-	printf("PointCloudAssembler::Publishing scan of size %d.\n", full_cloud_cnt_);
-      }
-      full_cloud_cnt_ = 0;
-      scanning_ = false;
-      stop_scan_ = false;
-    }
-
-
-    // If you need to start scanning, allocate the cloud size.
-    if (start_scan_)
-    {
-      full_cloud_.set_pts_size(scans_.get_ranges_size()*num_scans_);
-      full_cloud_.set_chan_size(1);
-      full_cloud_.chan[0].name = "intensities";
-      full_cloud_.chan[0].set_vals_size(scans_.get_ranges_size()*num_scans_);
-      full_cloud_cnt_ = 0;
-      scanning_ = true;
-      start_scan_=false;
-    }
-
-    // Mid-scan
-    if (scanning_) 
-    {
-      // CRP: Clouds are now stl vectors.
-      // This will be the cloud storing points from the current single scan.
-      cur_scan_cloud_.set_pts_size(scans_.get_ranges_size());
-      cur_scan_cloud_.set_chan_size(1);
-      cur_scan_cloud_.chan[0].name = "intensities";
-      cur_scan_cloud_.chan[0].set_vals_size(scans_.get_ranges_size());
-
-      //printf("size(cur_scan_cloud_) =  %d\n", cur_scan_cloud_.pts.size()) ;
-
-      
-      // Define cloud to store the current single scan after being projected into the laser frame by the projector
-      std_msgs::PointCloudFloat32 projector_cloud ;
-      // CRP: Will be a transform in TF that takes scan time into account. High-precision, recalc for every point, from scan to point cloud. More expensive. Wait for new library to do this.
-      projector_.projectLaser(scans_, projector_cloud); // CRP: This takes care of converting the scan msg to the right format, so you don't really need to know what the format is. 
-
-      //printf("size(projector_cloud_) = %d\n", projector_cloud.pts.size()) ;	
-
-      cur_scan_cloud_ = tf_.transformPointCloud("base", projector_cloud); // CRP: We'll make people do this themselves for one scan line, we'll just tansform and publish aggregate clouds.
-
-      //printf("size(cur_scan_cloud_ %d\n", cur_scan_cloud_.pts.size());
-
-      publish("cloud", cur_scan_cloud_);
-
-      full_cloud_.header = cur_scan_cloud_.header; //find a better place to do this/way to do this
-      full_cloud_.header.stamp = ros::Time::now(); //HACK
-
-      // CRP: Might make this more efficient by using stl vector functions instead.
-      // CRP: Try this with full_cloud.pts.push_back(cloud.pts[i]);, and use an iterator to go through the elements. Actually, that's inefficient, you should index them. But perhaps I can just copy them wholesale?
-      //Populate full_cloud from the cloud
-      for(unsigned int i = 0; i < cur_scan_cloud_.get_pts_size(); i ++)
-      {
-        full_cloud_.pts[full_cloud_cnt_].x = cur_scan_cloud_.pts[i].x;  
-        full_cloud_.pts[full_cloud_cnt_].y = cur_scan_cloud_.pts[i].y;  
-        full_cloud_.pts[full_cloud_cnt_].z = cur_scan_cloud_.pts[i].z;  
-        full_cloud_.chan[0].vals[full_cloud_cnt_] = cur_scan_cloud_.chan[0].vals[i];
-        full_cloud_cnt_++;
-      }
-    }
+    
+    scan_hist_.push_back(scan_) ;                                                       // Add the newest scan to the back of the deque
+    total_pts_ += scan_.get_ranges_size() ;                                             // Add the new scan to the running total of points
+    
+    printf("Got Scan: TotalPoints=%u\n", total_pts_) ;
   }
 
-  // Msg callback for top/bottom msg.
-  void scanner_signal_callback() 
+  bool buildCloud(BuildCloud::request& req, BuildCloud::response& resp)
   {
-    // If the scanner signal is 0, the scanner is at the bottom of it's sine wave, and at the top for 1. 
-    // I'm going to listen to both and produce one scan on the way down and one on the way up, so I don't actually care what the signal's value is.
-    stop_scan_ = true;
-    start_scan_ = true;
-  }
+    // Allocate space for the cloud
+    resp.cloud.set_pts_size( total_pts_ ) ;                                             // There's no way to have a point cloud bigger than our entire history of scans.    
+    resp.cloud.set_chan_size(1) ;
+    resp.cloud.chan[0].name = "intensities" ;
+    resp.cloud.chan[0].set_vals_size( total_pts_ ) ;
+    
+    unsigned int cloud_count = 0 ;                                                      // Store the number of points in the current cloud
 
+    PointCloudFloat32 projector_cloud ;                                                 // Stores the current scan after being projected into the laser frame
+    PointCloudFloat32 target_frame_cloud ;                                              // Stores the current scan in the target frame
+    
+    unsigned int i = 0 ;
+    
+    // Find the beginning of the request. Probably should be a search
+    while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
+            scan_hist_[i].header.stamp < req.begin )                                    // Keep stepping until we've exceeded the start time
+    {
+      i++ ;
+    }
+    printf(" Start i=%u\n", i) ;
+
+    // Populate the cloud
+    while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
+            scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
+    {
+      const LaserScan& cur_scan = scan_hist_[i] ;
+      
+      projector_.projectLaser(cur_scan, projector_cloud) ;                              // CRP: This takes care of converting the scan msg to the right format, so you don't really need to know what the format is.
+                                                                                        // CRP: Will be a transform in TF that takes scan time into account. High-precision, recalc for every point, from scan to point cloud. More expensive. Wait for new library to do this.
+      target_frame_cloud=tf_.transformPointCloud(req.target_frame_id, projector_cloud) ;// CRP: We'll make people do this themselves for one scan line, we'll just tansform and publish aggregate clouds.
+      
+      resp.cloud.header = target_frame_cloud.header ;                                   // Find a better place to do this/way to do this
+      // full_cloud_.header.stamp = ros::Time::now(); //HACK
+      
+      for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud
+      {
+        resp.cloud.pts[cloud_count].x        = target_frame_cloud.pts[j].x;  
+        resp.cloud.pts[cloud_count].y        = target_frame_cloud.pts[j].y;  
+        resp.cloud.pts[cloud_count].z        = target_frame_cloud.pts[j].z;  
+        resp.cloud.chan[0].vals[cloud_count] = target_frame_cloud.chan[0].vals[j];
+        cloud_count++ ;
+      }
+
+      i++ ;                                                                             // Check the next scan in the scan history
+    }
+    
+    printf(" End i=%u\n", i) ;
+    
+    resp.cloud.set_pts_size( cloud_count ) ;                                            // Resize the output accordingly
+    resp.cloud.chan[0].set_vals_size( cloud_count ) ;
+    
+
+    return true ;
+  }
 };
+
+}
+
+using namespace point_cloud_assembler ;
 
 int main(int argc, char **argv)
 {
@@ -241,4 +201,3 @@ int main(int argc, char **argv)
   ros::fini();
   return 0;
 }
-
