@@ -133,6 +133,7 @@ class AmclNode: public ros::node, public Driver
     int setPose(double x, double y, double a);
 
   private:
+    //rosTFClient tfClient;
     rosTFServer* tf;
     ConfigFile* cf;
 
@@ -205,6 +206,7 @@ main(int argc, char** argv)
 AmclNode::AmclNode() :
         ros::node("amcl_player"), 
         Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
+        //tfClient(*this)
 {
   // libplayercore boiler plate
   player_globals_init();
@@ -333,7 +335,7 @@ AmclNode::AmclNode() :
 
   // Turn this on for serious AMCL debugging, but you must have built
   // player with ENABLE_RTKGUI=ON.
-  //this->cf->InsertFieldValue(0,"enable_gui","1");
+  this->cf->InsertFieldValue(0,"enable_gui","1");
 
   // Grab params off the param server
   int max_beams, min_samples, max_samples;
@@ -681,6 +683,29 @@ AmclNode::setPose(double x, double y, double a)
 void
 AmclNode::laserReceived()
 {
+  // Where was the robot when this scan was taken?
+  /*
+  libTF::TFPose2D robotPose;
+  robotPose.x = robotPose.y = robotPose.yaw = 0.0;
+  robotPose.frame = "base";
+  robotPose.time = laserMsg.header.stamp.toNSec();
+  libTF::TFPose2D odomPose;
+  try
+  {
+    odomPose = this->tfClient.transformPose2D("odom", robotPose);
+  }
+  catch(...)
+  {
+    puts("exception");
+  }
+
+  printf("pose: %.3f %.3f %.3f\n",
+         odomPose.x,
+         odomPose.y,
+         odomPose.yaw);
+         */
+
+
   // Got new scan; reformat and pass it on
   player_laser_data_t pdata;
   pdata.min_angle = this->laserMsg.angle_min;
@@ -694,12 +719,17 @@ AmclNode::laserReceived()
   pdata.ranges_count = this->laserMsg.get_ranges_size();
   pdata.ranges = new float[pdata.ranges_count];
   assert(pdata.ranges);
-  /*
+  // We have to iterate over, rather than block copy, the ranges, because
+  // we have to filter out short readings.
   for(unsigned int i=0;i<pdata.ranges_count;i++)
-    pdata.ranges[i] = this->laserMsg.ranges[i];
-    */
-  ///\todo Optimize from above (not working at right)  
-  memcpy(pdata.ranges,&this->laserMsg.ranges[0],sizeof(float)*pdata.ranges_count);
+  {
+    // Player doesn't have a concept of min range.  So we'll map short
+    // readings to max range.
+    if(this->laserMsg.ranges[i] <= this->laserMsg.range_min)
+      pdata.ranges[i] = this->laserMsg.range_max;
+    else
+      pdata.ranges[i] = this->laserMsg.ranges[i];
+  }
   pdata.intensity_count = this->laserMsg.get_intensities_size();
   pdata.intensity = new uint8_t[pdata.intensity_count];
   assert(pdata.intensity);
