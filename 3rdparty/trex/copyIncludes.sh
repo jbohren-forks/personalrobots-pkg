@@ -15,8 +15,10 @@ function scanDirectory {
     
 }
 
+cd `rospack find trex`
+
 rm -r include 2> /dev/null
-mkdir include
+mkdir -p include
 INCLUDE_DIR="`pwd`/include"
 echo "Warning, this is not the real include directory. It will be deleted and recreated by make every run. Includes should be next to .cc files." > $INCLUDE_DIR/WARNING.txt
 scanDirectory `pwd`
