@@ -63,6 +63,7 @@ class SlamGMapping
     bool got_map_;
     std_srvs::StaticMap::response map_;
 
+    void updateMap();
     bool getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t);
     bool initMapper(const std_msgs::LaserScan& scan);
     bool addScan(const std_msgs::LaserScan& scan);

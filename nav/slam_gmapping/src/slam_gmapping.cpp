@@ -174,7 +174,6 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   double linearUpdate = 1.0;
   double angularUpdate = 0.5;
   double resampleThreshold = 0.5;
-  /// @todo Check the default on generateMap
   bool generateMap = false;
   int particles = 30;
   double xmin = -100.0;
@@ -182,7 +181,8 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   double xmax = 100.0;
   double ymax = 100.0;
   // delta is the grid resolution, m/pix
-  double delta = 0.05;
+  //double delta = 0.05;
+  double delta = 0.1;
   double llsamplerange = 0.01;
   double llsamplestep = 0.01;
   double lasamplerange = 0.005;
@@ -190,8 +190,6 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 
   GMapping::OrientedPoint initialPose;
   if(!getOdomPose(initialPose, scan.header.stamp))
-     return false;
-  else
     initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
 
   gsp_->setMatchingParameters(maxUrange, maxrange, sigma, 
@@ -229,7 +227,13 @@ SlamGMapping::addScan(const std_msgs::LaserScan& scan)
   // GMapping wants an array of doubles...
   double* ranges_double = new double[scan.ranges.size()];
   for(unsigned int i=0; i < scan.ranges.size(); i++)
-    ranges_double[i] = (double)scan.ranges[i];
+  {
+    // Must filter out short readings, because the mapper won't
+    if(scan.ranges[i] < scan.range_min)
+      ranges_double[i] = (double)scan.range_max;
+    else
+      ranges_double[i] = (double)scan.ranges[i];
+  }
 
   GMapping::RangeReading reading(scan.ranges.size(),
                                  ranges_double,
@@ -271,40 +275,91 @@ SlamGMapping::laser_cb()
     ROS_DEBUG("new best pose: %.3f %.3f %.3f", 
               mpose.x, mpose.y, mpose.theta);
 
-    const GMapping::ScanMatcherMap* map = &(gsp_->getParticles()[gsp_->getBestParticleIndex()].map);
-
-    GMapping::Point wmin(-30.0, -30.0);
-    GMapping::Point wmax(30.0, 30.0);
-    GMapping::IntPoint imin = map->world2map(wmin);
-    GMapping::IntPoint imax = map->world2map(wmax);
-
-    map_.map.width = imax.x - imin.x;
-    map_.map.height = imax.y - imin.y;
-    // Same as delta
-    map_.map.resolution = 0.05;
-    //map_.map.origin.x = wmin.x;
-    //map_.map.origin.y = wmin.y;
-    map_.map.origin.x = 0.0;
-    map_.map.origin.y = 0.0;
-    map_.map.origin.th = 0.0;
-    map_.map.data.resize(map_.map.width * map_.map.height);
-
-    for(int x=0; x < (imax.x - imin.x); x++)
-    {
-      for(int y=0; y < (imax.y - imin.y); y++)
-      {
-        GMapping::IntPoint p(imin.x + x, imin.y + y);
-        double occ=map->cell(p);
-        if(occ < 0)
-          map_.map.data[MAP_IDX(map_.map.width, x, y)] = -1;
-        else
-          map_.map.data[MAP_IDX(map_.map.width, x, y)] = (int)round(occ*100.0);
-      }
-    }
-    puts("");
-
-    got_map_ = true;
+    updateMap();
   }
+}
+
+void
+SlamGMapping::updateMap()
+{
+  GMapping::ScanMatcher matcher;
+  double* laser_angles = new double[scan_.ranges.size()];
+  double theta = scan_.angle_min;
+  for(unsigned int i=0; i<scan_.ranges.size(); i++)
+  {
+    laser_angles[i]=theta;
+    theta += scan_.angle_increment;
+  }
+  /// @todo Check the pose that's being passed here
+  matcher.setLaserParameters(scan_.ranges.size(), laser_angles, 
+                             GMapping::OrientedPoint(0,0,0));
+  delete[] laser_angles;
+  matcher.setlaserMaxRange(scan_.range_max);
+  /// @todo Fix this constant (same as maxUrange)
+  matcher.setusableRange(6.0);
+  matcher.setgenerateMap(true);
+
+  GMapping::GridSlamProcessor::Particle best = 
+          gsp_->getParticles()[gsp_->getBestParticleIndex()];
+
+  /// @todo Dynamically determine bounding box for map
+  GMapping::Point wmin(-30.0, -30.0);
+  GMapping::Point wmax(30.0, 30.0);
+  /// @todo Fix this constant (same as delta)
+  map_.map.resolution = 0.1;
+  map_.map.origin.x = wmin.x;
+  map_.map.origin.y = wmin.y;
+  map_.map.origin.th = 0.0;
+
+  GMapping::Point center;
+  center.x=(wmin.x + wmax.x) / 2.0;
+  center.y=(wmin.y + wmax.y) / 2.0;
+
+  GMapping::ScanMatcherMap smap(center, wmin.x, wmin.y, wmax.x, wmax.y, 
+                                map_.map.resolution);
+
+  GMapping::IntPoint imin = smap.world2map(wmin);
+  GMapping::IntPoint imax = smap.world2map(wmax);
+  map_.map.width = imax.x - imin.x;
+  map_.map.height = imax.y - imin.y;
+  map_.map.data.resize(map_.map.width * map_.map.height);
+
+  ROS_DEBUG("Trajectory tree:");
+  for(GMapping::GridSlamProcessor::TNode* n = best.node;
+      n;
+      n = n->parent)
+  {
+    ROS_DEBUG("  %.3f %.3f %.3f", 
+              n->pose.x,
+              n->pose.y,
+              n->pose.theta);
+    if(!n->reading)
+    {
+      ROS_DEBUG("Reading is NULL");
+      continue;
+    }
+    matcher.invalidateActiveArea();
+    matcher.computeActiveArea(smap, n->pose, &((*n->reading)[0]));
+    matcher.registerScan(smap, n->pose, &((*n->reading)[0]));
+  }
+
+  for(int x=0; x < smap.getMapSizeX(); x++)
+  {
+    for(int y=0; y < smap.getMapSizeY(); y++)
+    {
+      /// @todo Sort out the unknown vs. free vs. obstacle thresholding
+      GMapping::IntPoint p(imin.x + x, imin.y + y);
+      double occ=smap.cell(p);
+      assert(occ <= 1.0);
+      if(occ < 0)
+        map_.map.data[MAP_IDX(map_.map.width, x, y)] = -1;
+      else if(occ > 0.1)
+        map_.map.data[MAP_IDX(map_.map.width, x, y)] = (int)round(occ*100.0);
+      else
+        map_.map.data[MAP_IDX(map_.map.width, x, y)] = 0;
+    }
+  }
+  got_map_ = true;
 }
 
 bool 
