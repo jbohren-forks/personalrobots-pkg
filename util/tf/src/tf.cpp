@@ -81,7 +81,7 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
                      ros::Time time, Stamped<btTransform>& transform)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), time, 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame));
 
   transform.data_ = computeTransformFromList(t_list);
   transform.stamp_ = time;
@@ -92,9 +92,16 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 void Transformer::lookupTransform(const std::string& target_frame, ros::Time target_time, const std::string& source_frame,
                      ros::Time source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( source_frame), source_time, lookupFrameNumber(fixed_frame));
-
+  //calculate first leg
+  TransformLists t_list = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame));
   transform.data_ = computeTransformFromList(t_list);
+  
+
+  TransformLists t_list2 = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame));
+  
+  btTransform temp = computeTransformFromList(t_list2);
+
+  transform.data_*= temp; ///\todo check order here
   transform.stamp_ = target_time;
   transform.frame_id_ = target_frame;
 
@@ -103,7 +110,7 @@ void Transformer::lookupTransform(const std::string& target_frame, ros::Time tar
 
 
 
-TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time target_time, unsigned int source_frame, ros::Time source_time, unsigned int fixed_frame)
+TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame)
 {
   /*  timeval tempt;
   gettimeofday(&tempt,NULL);
@@ -128,7 +135,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
       if (pointer == NULL) break;
 
       try{
-        pointer->getData(source_time, temp);
+        pointer->getData(time, temp);
       }
       catch (tf::LookupException & ex)
       {
@@ -164,7 +171,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tar
 
 
       try{
-        pointer->getData(target_time, temp);
+        pointer->getData(time, temp);
       }
       catch (tf::LookupException & ex)
       {
@@ -300,7 +307,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
 std::string Transformer::chainAsString(const std::string & target_frame, ros::Time target_time, const std::string & source_frame, ros::Time source_time, const std::string& fixed_frame)
 {
   std::stringstream mstream;
-  TransformLists lists = lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame), source_time, lookupFrameNumber(fixed_frame));
+  TransformLists lists = lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame));
 
   mstream << "Inverse Transforms:" <<std::endl;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
@@ -379,7 +386,7 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 
 void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
 
   btTransform transform = computeTransformFromList(t_list);
 
@@ -393,7 +400,7 @@ void Transformer::transformVector(const std::string& target_frame,
                                   const Stamped<tf::Vector3>& stamped_in,
                                   Stamped<tf::Vector3>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
   btTransform transform = computeTransformFromList(t_list);
 
   /** \todo may not be most efficient */
@@ -409,7 +416,7 @@ void Transformer::transformVector(const std::string& target_frame,
 
 void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
 
   btTransform transform = computeTransformFromList(t_list);
 
@@ -421,7 +428,7 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
 
 void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_), stamped_in.stamp_, 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
 
   btTransform transform = computeTransformFromList(t_list);
 

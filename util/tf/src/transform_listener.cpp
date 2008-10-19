@@ -35,7 +35,7 @@ using namespace tf;
 
 void TransformListener::transformPointCloud(const std::string & target_frame, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), cloudIn.header.stamp.to_ull(), lookupFrameNumber( cloudIn.header.frame_id), cloudIn.header.stamp.to_ull(), 0);
+  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), cloudIn.header.stamp, lookupFrameNumber( cloudIn.header.frame_id));
   
   Transform bttransform = computeTransformFromList(t_list);
   

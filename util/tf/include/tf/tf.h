@@ -238,7 +238,7 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookupLists(unsigned int target_frame, ros::Time target_time, unsigned int source_frame, ros::Time souce_time, unsigned int fixed_frame);
+  TransformLists  lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame);
   
   /** Compute the transform based on the list of frames */
   btTransform computeTransformFromList(const TransformLists & list);
