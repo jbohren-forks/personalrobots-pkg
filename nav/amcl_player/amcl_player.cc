@@ -335,7 +335,7 @@ AmclNode::AmclNode() :
 
   // Turn this on for serious AMCL debugging, but you must have built
   // player with ENABLE_RTKGUI=ON.
-  this->cf->InsertFieldValue(0,"enable_gui","1");
+  //this->cf->InsertFieldValue(0,"enable_gui","1");
 
   // Grab params off the param server
   int max_beams, min_samples, max_samples;
