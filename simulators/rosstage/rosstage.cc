@@ -62,7 +62,7 @@ position model.
 
 Publishes to (name / type):
 - @b "odom"/RobotBase2DOdom : odometry data from the position model.
-- @b "scan"/LaserScan : scans from the laser model.
+- @b "base_scan"/LaserScan : scans from the laser model.
 
 
 <hr>
@@ -205,7 +205,7 @@ StageNode::SubscribeModels()
     return(-1);
   }
 
-  advertise<std_msgs::LaserScan>("scan",10);
+  advertise<std_msgs::LaserScan>("base_scan",10);
   advertise<std_msgs::RobotBase2DOdom>("odom",10);
   advertise<std_msgs::TransformWithRateStamped>("base_pose_ground_truth",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
@@ -226,6 +226,9 @@ StageNode::Update()
   // Let the simulator update (it will sleep if there's time)
   this->world->Update();
 
+  ros::Time sim_time;
+  sim_time.fromSec(world->SimTimeNow() / 1e6);
+
   // Get latest laser data
   Stg::stg_laser_sample_t* samples = this->lasermodel->GetSamples();
   if(samples)
@@ -235,25 +238,33 @@ StageNode::Update()
     this->laserMsg.angle_min = -cfg.fov/2.0;
     this->laserMsg.angle_max = +cfg.fov/2.0;
     this->laserMsg.angle_increment = cfg.fov / (double)(cfg.sample_count-1);
+    this->laserMsg.range_min = 0.0;
     this->laserMsg.range_max = cfg.range_bounds.max;
-    this->laserMsg.set_ranges_size(cfg.sample_count);
-    this->laserMsg.set_intensities_size(cfg.sample_count);
+    this->laserMsg.ranges.resize(cfg.sample_count);
+    this->laserMsg.intensities.resize(cfg.sample_count);
     for(unsigned int i=0;i<cfg.sample_count;i++)
     {
       this->laserMsg.ranges[i] = samples[i].range;
       this->laserMsg.intensities[i] = (uint8_t)samples[i].reflectance;
     }
 
-    // TODO: get the frame ID from somewhere
     this->laserMsg.header.frame_id = "base_laser";
-    this->laserMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
-    //this->laserMsg.header.stamp.sec = 
-            //(unsigned long)floor(world->SimTimeNow() / 1e6);
-    //this->laserMsg.header.stamp.nsec = 
-            //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                       //this->laserMsg.header.stamp.sec * 1e6));
-    publish("scan",this->laserMsg);
+    this->laserMsg.header.stamp = sim_time;
+    publish("base_scan",this->laserMsg);
   }
+  
+  // Also publish the base->base_laser Tx.  This could eventually move
+  // into being retrieved from the param server as a static Tx.
+  Stg::stg_pose_t lp = this->lasermodel->GetPose();
+  tf.sendEuler("base_laser",
+               "base",
+               lp.x,
+               lp.y,
+               0.0,
+               lp.a,
+               0.0,
+               0.0,
+               sim_time);
 
   // Get latest odometry data
   // Translate into ROS message format and publish
@@ -265,18 +276,9 @@ StageNode::Update()
   this->odomMsg.vel.y = v.y;
   this->odomMsg.vel.th = v.a;
   this->odomMsg.stall = this->positionmodel->Stall();
-  // TODO: get the frame ID from somewhere
   this->odomMsg.header.frame_id = "odom";
-
-  this->odomMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
-  //this->odomMsg.header.stamp.sec = 
-          //(unsigned long)floor(world->SimTimeNow() / 1e6);
-  //this->odomMsg.header.stamp.nsec = 
-          //(unsigned long)rint(1e3 * (world->SimTimeNow() - 
-                                     //this->odomMsg.header.stamp.sec * 1e6));
-  //  printf("%u \n",world->SimTimeNow());
-  //printf("time: %u, %u \n",odomMsg.header.stamp.sec, odomMsg.header.stamp.nsec);
-
+  this->odomMsg.header.stamp = sim_time;
+  publish("odom",this->odomMsg);
   tf.sendInverseEuler("odom",
                       "base",
                       odomMsg.pos.x,
@@ -285,9 +287,7 @@ StageNode::Update()
                       odomMsg.pos.th,
                       0.0,
                       0.0,
-                      odomMsg.header.stamp);
-
-  publish("odom",this->odomMsg);
+                      sim_time);
 
   // Also publish the ground truth pose
   Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
@@ -308,7 +308,7 @@ StageNode::Update()
   this->groundTruthMsg.transform.rotation.w    = tmpPose3D.orientation.w;
 
   this->groundTruthMsg.header.frame_id = "odom";
-  this->groundTruthMsg.header.stamp.from_double(world->SimTimeNow() / 1e6);
+  this->groundTruthMsg.header.stamp = sim_time;
 
   publish("base_pose_ground_truth", this->groundTruthMsg);
 
