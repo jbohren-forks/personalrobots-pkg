@@ -79,6 +79,34 @@ SlamGMapping::~SlamGMapping()
 }
 
 bool
+SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t)
+{
+  // Get the robot's pose 
+  tf::Stamped<tf::Pose> ident;
+  tf::Stamped<btTransform> odom_pose;
+  ident.data_.setIdentity();
+  ident.frame_id_ = "base";
+  ident.stamp_ = t;
+  try
+  {
+    this->tf_->transformPose("odom", ident, odom_pose);
+  }
+  catch(tf::TransformException e)
+  {
+    ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
+    return false;
+  }
+  double yaw,pitch,roll;
+  btMatrix3x3 mat =  odom_pose.data_.getBasis();
+  mat.getEulerZYX(yaw, pitch, roll);
+
+  gmap_pose = GMapping::OrientedPoint(odom_pose.data_.getOrigin().x(),
+                                      odom_pose.data_.getOrigin().y(),
+                                      yaw);
+  return true;
+}
+
+bool
 SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 {
   // @todo Get the laser's pose, relative to base.
@@ -153,12 +181,18 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   double ymin = -100.0;
   double xmax = 100.0;
   double ymax = 100.0;
+  // delta is the grid resolution, m/pix
   double delta = 0.05;
-  GMapping::OrientedPoint initialPose(0.0, 0.0, 0.0);
   double llsamplerange = 0.01;
   double llsamplestep = 0.01;
   double lasamplerange = 0.005;
   double lasamplestep = 0.005;
+
+  GMapping::OrientedPoint initialPose;
+  if(!getOdomPose(initialPose, scan.header.stamp))
+     return false;
+  else
+    initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
 
   gsp_->setMatchingParameters(maxUrange, maxrange, sigma, 
                               kernelSize, lstep, astep, iterations, 
@@ -188,40 +222,23 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 bool
 SlamGMapping::addScan(const std_msgs::LaserScan& scan)
 {
+  GMapping::OrientedPoint gmap_pose;
+  if(!getOdomPose(gmap_pose, scan.header.stamp))
+     return false;
+
   // GMapping wants an array of doubles...
   double* ranges_double = new double[scan.ranges.size()];
-  for(unsigned int i; i < scan.ranges.size(); i++)
+  for(unsigned int i=0; i < scan.ranges.size(); i++)
     ranges_double[i] = (double)scan.ranges[i];
 
   GMapping::RangeReading reading(scan.ranges.size(),
                                  ranges_double,
                                  gsp_laser_, 
                                  scan.header.stamp.toSec());
+
   // ...but it deep copies them, so we don't need to keep our array around.
   delete[] ranges_double;
 
-  // Get the robot's pose 
-  tf::Stamped<tf::Pose> ident;
-  tf::Stamped<btTransform> odom_pose;
-  ident.data_.setIdentity();
-  ident.frame_id_ = "base";
-  ident.stamp_ = scan.header.stamp;
-  try
-  {
-    this->tf_->transformPose("odom", ident, odom_pose);
-  }
-  catch(tf::TransformException e)
-  {
-    ROS_WARN("Failed to compute odom pose, skipping scan (%s)", e.what());
-    return false;
-  }
-  double yaw,pitch,roll;
-  btMatrix3x3 mat =  odom_pose.data_.getBasis();
-  mat.getEulerZYX(yaw, pitch, roll);
-
-  GMapping::OrientedPoint gmap_pose(odom_pose.data_.getOrigin().x(),
-                                    odom_pose.data_.getOrigin().y(),
-                                    yaw);
   reading.setPose(gmap_pose);
 
   /*
@@ -253,11 +270,11 @@ SlamGMapping::laser_cb()
     GMapping::OrientedPoint mpose = gsp_->getParticles()[gsp_->getBestParticleIndex()].pose;
     ROS_DEBUG("new best pose: %.3f %.3f %.3f", 
               mpose.x, mpose.y, mpose.theta);
-    /*
+
     const GMapping::ScanMatcherMap* map = &(gsp_->getParticles()[gsp_->getBestParticleIndex()].map);
 
-    GMapping::Point wmin(-5.0, -5.0);
-    GMapping::Point wmax(5.0, 5.0);
+    GMapping::Point wmin(-30.0, -30.0);
+    GMapping::Point wmax(30.0, 30.0);
     GMapping::IntPoint imin = map->world2map(wmin);
     GMapping::IntPoint imax = map->world2map(wmax);
 
@@ -265,8 +282,10 @@ SlamGMapping::laser_cb()
     map_.map.height = imax.y - imin.y;
     // Same as delta
     map_.map.resolution = 0.05;
-    map_.map.origin.x = wmin.x;
-    map_.map.origin.y = wmin.y;
+    //map_.map.origin.x = wmin.x;
+    //map_.map.origin.y = wmin.y;
+    map_.map.origin.x = 0.0;
+    map_.map.origin.y = 0.0;
     map_.map.origin.th = 0.0;
     map_.map.data.resize(map_.map.width * map_.map.height);
 
@@ -275,25 +294,16 @@ SlamGMapping::laser_cb()
       for(int y=0; y < (imax.y - imin.y); y++)
       {
         GMapping::IntPoint p(imin.x + x, imin.y + y);
-        double v=map->cell(p);
-        printf("%.3f ", v);
-        if(v >= 0)
-        {
-          double occ = (255.0 * v);
-
-          if(occ > 0.5)
-            map_.map.data[MAP_IDX(map_.map.width, x, y)] = 100;
-          else if(occ < 0.1)
-            map_.map.data[MAP_IDX(map_.map.width, x, y)] = 0;
-          else
-            map_.map.data[MAP_IDX(map_.map.width, x, y)] = -1;
-        }
+        double occ=map->cell(p);
+        if(occ < 0)
+          map_.map.data[MAP_IDX(map_.map.width, x, y)] = -1;
+        else
+          map_.map.data[MAP_IDX(map_.map.width, x, y)] = (int)round(occ*100.0);
       }
     }
     puts("");
 
     got_map_ = true;
-    */
   }
 }
 
