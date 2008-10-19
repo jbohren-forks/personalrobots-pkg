@@ -380,12 +380,12 @@ WavefrontNode::WavefrontNode() :
   this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), 0, "map", "other"));///\todo fixme hack to get around short list edge case
 
 
-  advertise<std_msgs::Planner2DState>("state");
-  advertise<std_msgs::Polyline2D>("gui_path");
-  advertise<std_msgs::Polyline2D>("gui_laser");
-  advertise<std_msgs::BaseVel>("cmd_vel");
-  subscribe("goal", goalMsg, &WavefrontNode::goalReceived);
-  subscribe("scan", laserMsg, &WavefrontNode::laserReceived);
+  advertise<std_msgs::Planner2DState>("state",1);
+  advertise<std_msgs::Polyline2D>("gui_path",1);
+  advertise<std_msgs::Polyline2D>("gui_laser",1);
+  advertise<std_msgs::BaseVel>("cmd_vel",1);
+  subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
+  subscribe("scan", laserMsg, &WavefrontNode::laserReceived,1);
 }
 
 WavefrontNode::~WavefrontNode()
