@@ -1,0 +1,106 @@
+Index: gridfastslam/gridslamprocessor.cpp
+===================================================================
+--- gridfastslam/gridslamprocessor.cpp	(revision 39)
++++ gridfastslam/gridslamprocessor.cpp	(working copy)
+@@ -402,6 +402,13 @@
+ 	plainReading[i]=reading[i];
+       }
+       m_infoStream << "m_count " << m_count << endl;
++
++      RangeReading* reading_copy = 
++              new RangeReading(reading.size(),
++                               &(reading[0]),
++                               static_cast<const RangeSensor*>(reading.getSensor()),
++                               reading.getTime());
++
+       if (m_count>0){
+ 	scanMatch(plainReading);
+ 	if (m_outputStream.is_open()){
+@@ -432,7 +439,7 @@
+ 	  m_outputStream << setiosflags(ios::fixed) << setprecision(6);
+ 	  m_outputStream << "NEFF " << m_neff << endl;
+ 	}
+-	resample(plainReading, adaptParticles);
++	resample(plainReading, adaptParticles, reading_copy);
+ 	
+       } else {
+ 	m_infoStream << "Registering First Scan"<< endl;
+@@ -443,9 +450,9 @@
+ 	  
+ 	  // cyr: not needed anymore, particles refer to the root in the beginning!
+ 	  TNode* node=new	TNode(it->pose, 0., it->node,  0);
+-	  node->reading=0;
++	  //node->reading=0;
++          node->reading = reading_copy;
+ 	  it->node=node;
+-	  
+ 	}
+       }
+       //		cerr  << "Tree: normalizing, resetting and propagating weights at the end..." ;
+Index: gridfastslam/gridslamprocessor.hxx
+===================================================================
+--- gridfastslam/gridslamprocessor.hxx	(revision 39)
++++ gridfastslam/gridslamprocessor.hxx	(working copy)
+@@ -67,7 +67,7 @@
+   
+ }
+ 
+-inline bool GridSlamProcessor::resample(const double* plainReading, int adaptSize, const RangeReading* ){
++inline bool GridSlamProcessor::resample(const double* plainReading, int adaptSize, const RangeReading* reading){
+   
+   bool hasResampled = false;
+   
+@@ -112,7 +112,7 @@
+       TNode* oldNode=oldGeneration[m_indexes[i]];
+       //			cerr << i << "->" << m_indexes[i] << "B("<<oldNode->childs <<") ";
+       node=new	TNode(p.pose, 0, oldNode, 0);
+-      node->reading=0;
++      node->reading=reading;
+       //			cerr << "A("<<node->parent->childs <<") " <<endl;
+       
+       temp.push_back(p);
+@@ -155,7 +155,8 @@
+       TNode* node=0;
+       node=new TNode(it->pose, 0.0, *node_it, 0);
+       
+-      node->reading=0;
++      //node->reading=0;
++      node->reading=reading;
+       it->node=node;
+ 
+       //END: BUILDING TREE
+Index: scanmatcher/scanmatcher.h
+===================================================================
+--- scanmatcher/scanmatcher.h	(revision 39)
++++ scanmatcher/scanmatcher.h	(working copy)
+@@ -7,7 +7,7 @@
+ #include <utils/stat.h>
+ #include <iostream>
+ #include <utils/gvalues.h>
+-#define LASER_MAXBEAMS 1024
++#define LASER_MAXBEAMS 2048
+ 
+ namespace GMapping {
+ 
+Index: particlefilter/particlefilter.h
+===================================================================
+--- particlefilter/particlefilter.h	(revision 39)
++++ particlefilter/particlefilter.h	(working copy)
+@@ -1,6 +1,7 @@
+ #ifndef PARTICLEFILTER_H
+ #define PARTICLEFILTER_H
+ #include <stdlib.h>
++#include <float.h>
+ #include <sys/types.h>
+ #include<vector>
+ #include<utility>
+@@ -23,7 +24,8 @@
+ template <class OutputIterator, class Iterator>
+ double toNormalForm(OutputIterator& out, const Iterator & begin, const Iterator & end){
+ 	//determine the maximum
+-	double lmax=-MAXDOUBLE;
++	//double lmax=-MAXDOUBLE;
++	double lmax=-DBL_MAX;
+ 	for (Iterator it=begin; it!=end; it++){
+ 		lmax=lmax>((double)(*it))? lmax: (double)(*it);
+ 	}

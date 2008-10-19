@@ -2,8 +2,8 @@ all: build
 
 SVN_DIR = gmapping-svn
 SVN_URL = https://svn.openslam.org/data/svn/gmapping/trunk 
-SVN_REVISION = -r 35
-SVN_PATCH = gmapping-r35.patch
+SVN_REVISION = -r 39
+SVN_PATCH = gmapping-r39.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP gmapping

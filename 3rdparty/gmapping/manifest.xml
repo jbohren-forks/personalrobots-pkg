@@ -10,7 +10,7 @@ the SVN version of GMapping, and also removes its GSL dependency.
 <license>CreativeCommons-by-nc-sa-2.0</license>
 <url>http://openslam.org/</url>
 <export>
-  <cpp lflags="-Xlinker -rpath ${prefix}/gmapping-svn/lib -L${prefix}/gmapping-svn/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils" cflags="-I${prefix}/gmapping-svn/"/>
+  <cpp lflags="-Xlinker -rpath ${prefix}/gmapping-svn/lib -L${prefix}/gmapping-svn/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/gmapping-svn/"/>
   <doxymaker external="http://openslam.org"/>
 </export>
 
