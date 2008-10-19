@@ -145,17 +145,17 @@ public:
                        tf(*this,false)
   {
     param("max_frame_rate", max_frame_rate, 5.0);
-    advertise<std_msgs::Planner2DGoal>("goal");
-    advertise<std_msgs::Pose2DFloat32>("initialpose");
-    subscribe("particlecloud", cloud, &NavView::generic_cb);
-    subscribe("gui_path", pathline, &NavView::generic_cb);
-    subscribe("local_path", local_path, &NavView::generic_cb);
-    subscribe("robot_footprint", robot_footprint, &NavView::generic_cb);
-    subscribe("inflated_obstacles", inflatedObstacles, &NavView::generic_cb);
-    subscribe("raw_obstacles", rawObstacles, &NavView::generic_cb);
+    advertise<std_msgs::Planner2DGoal>("goal",1);
+    advertise<std_msgs::Pose2DFloat32>("initialpose",1);
+    subscribe("particlecloud", cloud, &NavView::generic_cb,1);
+    subscribe("gui_path", pathline, &NavView::generic_cb,1);
+    subscribe("local_path", local_path, &NavView::generic_cb,1);
+    subscribe("robot_footprint", robot_footprint, &NavView::generic_cb,1);
+    subscribe("inflated_obstacles", inflatedObstacles, &NavView::generic_cb,1);
+    subscribe("raw_obstacles", rawObstacles, &NavView::generic_cb,1);
 
     if(n_val_ == 0) {
-      subscribe("gui_laser", laserscan, &NavView::generic_cb);
+      subscribe("gui_laser", laserscan, &NavView::generic_cb,1);
     } else {
       subscribe("transient_obstacles_diff", occ_diff_, &NavView::occDiffCallback);
     }
