@@ -265,7 +265,6 @@ void EthercatHardware::update(bool reset)
 
   // Convert HW Interface commands to MCB-specific buffers
   current = current_buffer_;
-  memset(current, 0, buffer_size_);
 
   if (reset)
   {
@@ -301,7 +300,9 @@ void EthercatHardware::update(bool reset)
 
   // Transmit process data
   double start = now();
-  em_->txandrx_PD(buffer_size_, current_buffer_);
+  if (!em_->txandrx_PD(buffer_size_, current_buffer_)) {
+    printf("Doh!\n");
+  }
   diagnostics_.iteration_[count].roundtrip_ = now() - start;
 
   // Convert status back to HW Interface
