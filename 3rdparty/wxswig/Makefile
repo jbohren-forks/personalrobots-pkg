@@ -12,6 +12,7 @@ $(VERSION)/Makefile: $(VERSION)/Makefile.in $(VERSION)/configure $(VERSION)/conf
 
 wxswig: $(SOURCE_DIR)
 	cd $(SOURCE_DIR) && ./configure --prefix=$(shell rospack find wxswig) && make && make install
+	touch wxswig
 	
 clean:
 	rm -rf bin share $(SOURCE_DIR)
