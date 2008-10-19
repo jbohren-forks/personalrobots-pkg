@@ -110,7 +110,7 @@ class TBK_Node : public ros::node
   public:
     TBK_Node() : ros::node("tbk")
     {
-      advertise<std_msgs::BaseVel>("cmd_vel");
+      advertise<std_msgs::BaseVel>("cmd_vel",1);
     }
     ~TBK_Node() { }
     void keyboardLoop();
