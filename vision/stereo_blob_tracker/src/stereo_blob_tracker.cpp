@@ -561,10 +561,8 @@ public:
 	      for (int y = centerBox.y; y < centerBox.y+centerBox.height; y++) {
 		double disp = cvGetReal2D(dispImg, y, x);
 		if (disp>0) {
-		  // TODO: not sure about the unit in the disparity. I thought is 1/16 of a pixel
-		  // however, 1/4 seems to be correct in this setting. Check the projection matrix
-		  // as well.
-		  // disp /= 16.;
+		  // The disparity map we get from the camera is in raw form.
+		  // In raw form, the unit in the disparity is 1/4 of a pixel.
 		  disp /=4.0;
 		  _uvds[numGoodPoints*3    ] = x;
 		  _uvds[numGoodPoints*3 + 1] = y;
