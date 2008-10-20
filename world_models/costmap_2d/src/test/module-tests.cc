@@ -283,7 +283,7 @@ TEST(costmap, test7){
     setOfCells.insert(i);
 
   ASSERT_EQ(setOfCells.size(), occupiedCells.size());
-  ASSERT_EQ(setOfCells.size(), 47);
+  ASSERT_EQ(setOfCells.size(), 37);
 
   const unsigned char* costData = map.getMap();
 
@@ -305,8 +305,8 @@ TEST(costmap, test7){
   c0.pts[0].z = 0.4;
   map.updateDynamicObstacles(1, c0, updates);
 
-  // It and its 3 neighbors makes 4 obstacles
-  ASSERT_EQ(updates.size(), 4);
+  // It and its 2 neighbors makes 3 obstacles
+  ASSERT_EQ(updates.size(), 3);
 
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
   std_msgs::PointCloudFloat32 c1;
@@ -316,10 +316,10 @@ TEST(costmap, test7){
   c1.pts[0].z = 0.0;
   map.updateDynamicObstacles(WINDOW_LENGTH - 1, c1, updates);
 
-  // Now we expect insertions for it, and 3 more neighbors, but not all 5. Free space will propagate from
+  // Now we expect insertions for it, and 2 more neighbors, but not all 5. Free space will propagate from
   // the origin to the target, clearing the point at <0, 0>, but not over-writing the inflation of the obstacle
   // at <0, 1>
-  ASSERT_EQ(updates.size(), 5);
+  ASSERT_EQ(updates.size(), 4);
 
   // Staling out the first update will only result in 1 cell clearing <0, 1>, since other
   // values were cleared by free space or will be retained by inflation of a neighbor
@@ -336,8 +336,6 @@ TEST(costmap, test7){
   ASSERT_EQ(map.getCost(1, 9), CostMap2D::LETHAL_OBSTACLE);
   ASSERT_EQ(map.getCost(0, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-  ASSERT_EQ(map.getCost(2, 8), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-  ASSERT_EQ(map.getCost(0, 8), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
   std_msgs::PointCloudFloat32 c3;
@@ -405,12 +403,12 @@ TEST(costmap, test9){
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
 
-  // A cell radius of 3 gives a 7*7 inflation grid
-  ASSERT_EQ(updates.size(), 49);
+  // A cell radius of 3 gives a 5*5 inflation grid
+  ASSERT_EQ(updates.size(), 25);
 
   // The occupied cells are the obstacles and the inscribed inflated obstacles which is given by a 3 * 3 grid
   map.getOccupiedCellDataIndexList(ids);
-  ASSERT_EQ(ids.size(), 9);
+  ASSERT_EQ(ids.size(), 5);
 
   // Update again - should see no change
   map.updateDynamicObstacles(2, c0, updates);
@@ -419,7 +417,7 @@ TEST(costmap, test9){
   // All the obstacles should go away when we remove stale obstacles
   updates.clear();
   map.removeStaleObstacles(WINDOW_LENGTH + 2, updates);
-  ASSERT_EQ(updates.size(), 49);
+  ASSERT_EQ(updates.size(), 25);
 }
 
 /**
@@ -466,7 +464,7 @@ TEST(costmap, test11){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
-  // <0, 0> thru <7, 7> to be free. The updates will reflect 4 new free space cells and 4 new obstacle cells
+  // <0, 0> thru <7, 7> to be free.
   std_msgs::PointCloudFloat32 c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
@@ -475,15 +473,14 @@ TEST(costmap, test11){
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
-  ASSERT_EQ(updates.size(), 8);
+  ASSERT_EQ(updates.size(), 6);
 
   // 4 updates to handle the new obstacle data and its cost implications
   ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
   ASSERT_EQ(map.getCost(9,8), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
   ASSERT_EQ(map.getCost(8,9), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
-  ASSERT_EQ(map.getCost(8,8), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
 
-  // In addition, 4 cells will have been switched to free space along the diagonal
+  // In addition, all cells will have been switched to free space along the diagonal
   for(unsigned int i=0; i < 8; i++)
     ASSERT_EQ(map.getCost(i, i), 0);
 
@@ -491,17 +488,16 @@ TEST(costmap, test11){
   updates.clear();
 
   map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 8);
+  ASSERT_EQ(updates.size(), 6);
   ASSERT_EQ(map.getCost(9,9), CostMap2D::NO_INFORMATION);
   ASSERT_EQ(map.getCost(9,8), CostMap2D::NO_INFORMATION);
   ASSERT_EQ(map.getCost(8,9), CostMap2D::NO_INFORMATION);
-  ASSERT_EQ(map.getCost(8,8), CostMap2D::NO_INFORMATION);
 
   // Now we can switch our position and try again. This time we move to the top left
-  // for the point at the top right. Expect updates for the obstacle (4) and one extra one
+  // for the point at the top right. Expect updates for the obstacle (3) and one extra one
   // setting NO_INFORMATION to free space.
   map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  
-  ASSERT_EQ(updates.size(), 5);
+  ASSERT_EQ(updates.size(), 4);
 
   // Stale out all dynamic obstacles - then try again with point that is beyond free space projection
   map.removeStaleObstacles(WINDOW_LENGTH * 3, updates);
@@ -511,7 +507,7 @@ TEST(costmap, test11){
   c1.pts[0].y = 9.5;
   c1.pts[0].z = MAX_Z + 1;
   map.updateDynamicObstacles(1, c1, updates);
-  ASSERT_EQ(updates.size(), 4); // Just obstacle cost propagation - no free space impact
+  ASSERT_EQ(updates.size(), 3); // Just obstacle cost propagation - no free space impact
 
 }
 

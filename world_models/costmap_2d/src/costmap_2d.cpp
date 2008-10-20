@@ -341,23 +341,22 @@ namespace costmap_2d {
       if(distance >= inflationRadius_)
 	continue;
 
-      // Otherwise we expand further
+      // Otherwise we expand further, using Manhattan Distance
       std::vector<unsigned int> neighbors;
-      unsigned int xMin = (mx > 0 ? mx - 1 : 0);
-      unsigned int xMax = (mx < getWidth() - 1 ? mx + 1 : mx);
-      unsigned int yMin = (my > 0 ? my - 1 : 0);
-      unsigned int yMax = (my < getHeight() - 1 ? my + 1 : my);
+      distance++;
+      if(mx > 0) enqueue(mx-1, my, queue, distance);
+      if(my > 0) enqueue(mx, my - 1, queue, distance);
+      if(mx < (getWidth() - 1)) enqueue(mx + 1, my, queue, distance);
+      if(my < (getHeight() - 1)) enqueue(mx, my + 1, queue, distance);
+    }
+  }
 
-      for(unsigned int i = xMin; i <= xMax; i++){
-	for(unsigned int j = yMin; j <= yMax; j++){
-	  unsigned int cellId = MC_IND(i, j);
-	  // If the cell is not marked for cost propagation
-	  if(obsWatchDog_[cellId] != MARKED_FOR_COST){
-	    queue.push(std::make_pair(distance + 1, cellId));
-	    petWatchDog(cellId, MARKED_FOR_COST);
-	  }
-	}
-      }
+  void CostMap2D::enqueue(unsigned int mx, unsigned int my, QUEUE& queue, unsigned int distance){
+    unsigned int cellId = MC_IND(mx, my);
+    // If the cell is not marked for cost propagation
+    if(obsWatchDog_[cellId] != MARKED_FOR_COST){
+      queue.push(std::make_pair(distance, cellId));
+      petWatchDog(cellId, MARKED_FOR_COST);
     }
   }
 

@@ -240,6 +240,11 @@ namespace costmap_2d {
       updates.push_back(cell);
     }
 
+    /**
+     * @brief Utility to place a cell in the queue and handle watchdog update.
+     */
+    void enqueue(unsigned int mx, unsigned int my, QUEUE& queue, unsigned int distance);
+
     static const TICK MARKED_FOR_COST = 255; /**< The value used to denote a cell has been marked in the current iteration of cost propagation */
     static const TICK WATCHDOG_LIMIT = 254; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
