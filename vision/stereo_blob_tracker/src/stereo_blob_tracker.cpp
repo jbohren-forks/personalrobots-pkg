@@ -31,7 +31,8 @@ using namespace cv::willow;
 
 #define USE_AXIS_CAM 0
 #define DISPLAY true
-#define BLOBNEARCENTER true
+#define DISPLAYFREQ 1
+#define BLOBNEARCENTER false
 
 
 /*****************************************
@@ -387,6 +388,7 @@ public:
 
   bool display_;
   bool blobNearCenter_;
+  int  numFrames_;
 
   VidereBlobTracker(/// if true, the blob is always near the center
 		    /// of the image
@@ -402,7 +404,8 @@ public:
     cv_backproject_image_cpy_(NULL), 
     cv_mask_image_cpy_(NULL),
     quit(false),
-    blobNearCenter_(blobNearCenter)
+    blobNearCenter_(blobNearCenter),
+    numFrames_(0)
   { 
     btracker_ = new BTracker();    
 
@@ -613,7 +616,11 @@ public:
 
       // Copy all of the images you might want to display.
       // This is necessary because OpenCV doesn't like multiple threads.
+      // and we only do display every so often (30 frames)
+      if ((numFrames_++) % DISPLAYFREQ == 0) 
       {
+	numFrames_ %= DISPLAYFREQ;
+
 	cv_mutex_.lock();
 
 	if (cv_image_cpy_ == NULL) {
