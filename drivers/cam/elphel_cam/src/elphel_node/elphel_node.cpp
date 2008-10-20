@@ -109,7 +109,7 @@ public:
     if(e->next_jpeg(&jpeg, &jpeg_size)) {
       assert(jpeg != NULL);
       image_msg.set_data_size(jpeg_size);
-      memcpy(image_msg.data, jpeg, jpeg_size);
+      memcpy(&image_msg.data[0], jpeg, jpeg_size);
       image_msg.compression = "jpeg";
       image_msg.colorspace = "rgb24";
       codec.inflate_header();
