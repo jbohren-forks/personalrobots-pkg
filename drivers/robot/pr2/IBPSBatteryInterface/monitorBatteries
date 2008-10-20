@@ -437,120 +437,123 @@ def monitorBatteriesMain(argv, stdout, env):
                     value = splitmessage[i*2+2]
                     #                print 'key %s , value %s'%(splitmessage[i*2+1],splitmessage[i*2+2])
                     #                print 'key %s , value dec %s'%(splitmessage[i*2+1],hex2dec(splitmessage[i*2+2]))
+                    try:
 
-                    if key == '03':
-                        mask = readmask(value)
-                        if mask[7] == 0:
-                            myPow.controllers[port].batteries[battery_number].conditioning_needed = 0
-                        else:
-                            myPow.controllers[port].batteries[battery_number].conditioning_needed = 1
+                        if key == '03':
+                            mask = readmask(value)
+                            if mask[7] == 0:
+                                myPow.controllers[port].batteries[battery_number].conditioning_needed = 0
+                            else:
+                                myPow.controllers[port].batteries[battery_number].conditioning_needed = 1
                             
 
-                    # Temperature Degrees Kelvin
-                    if key == '08':
-                        #print "temp is %f"%(float(hex2dec(value))/10.0)
-                        myPow.controllers[port].batteries[battery_number].temperature = float(hex2dec(value))/10.0
+                        # Temperature Degrees Kelvin
+                        if key == '08':
+                            #print "temp is %f"%(float(hex2dec(value))/10.0)
+                            myPow.controllers[port].batteries[battery_number].temperature = float(hex2dec(value))/10.0
 
 
-                    # Voltage
-                    if key == '09':
-                        #print 'voltage is %f'%(float(hex2dec(value))/1000.0)
-                        myPow.controllers[port].batteries[battery_number].voltage = float(hex2dec(value))/1000.0 
+                        # Voltage
+                        if key == '09':
+                            #print 'voltage is %f'%(float(hex2dec(value))/1000.0)
+                            myPow.controllers[port].batteries[battery_number].voltage = float(hex2dec(value))/1000.0 
 
-                    # Current
-                    if key == '0A':
-                        intval = float(hex2dec(value))
-                        if intval < 32767:
-                            val = intval
-                        else:
-                            val = (intval - 65636.0)
-                        #print 'current is %f'%(val/1000.0)
-                        myPow.controllers[port].batteries[battery_number].current = val/1000.0
+                        # Current
+                        if key == '0A':
+                            intval = float(hex2dec(value))
+                            if intval < 32767:
+                                val = intval
+                            else:
+                                val = (intval - 65636.0)
+                            #print 'current is %f'%(val/1000.0)
+                            myPow.controllers[port].batteries[battery_number].current = val/1000.0
 
-                    #  1 minute average current
-                    if key == '0B':
-                        intval = float(hex2dec(value))
-                        if intval < 32767:
-                            val = intval
-                        else:
-                            val = (intval - 65636.0)
-                        #print 'current is %f'%(val/1000.0)
-                        myPow.controllers[port].batteries[battery_number].average_current = val/1000.0
+                        #  1 minute average current
+                        if key == '0B':
+                            intval = float(hex2dec(value))
+                            if intval < 32767:
+                                val = intval
+                            else:
+                                val = (intval - 65636.0)
+                            #print 'current is %f'%(val/1000.0)
+                            myPow.controllers[port].batteries[battery_number].average_current = val/1000.0
 
-                    # max error in relative state of charge measurement
-                    if key == '0C':
-                        myPow.controllers[port].batteries[battery_number].max_relative_charge_error = float(hex2dec(value))
+                        # max error in relative state of charge measurement
+                        if key == '0C':
+                            myPow.controllers[port].batteries[battery_number].max_relative_charge_error = float(hex2dec(value))
+
+                        # relative state of charge (percentage of full charge capacity)
+                        if key == '0D':
+                            myPow.controllers[port].batteries[battery_number].relative_charge = float(hex2dec(value))
+
+                        # absolute state of charge (percentage of original charge capacity)
+                        if key == '0E':
+                            myPow.controllers[port].batteries[battery_number].absolute_charge = float(hex2dec(value))
+
+
+                        if key == '0F':
+                            ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
+                            myPow.controllers[port].batteries[battery_number].remaining_capacity = float(hex2dec(value))
+                        if key == '10':
+                            ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
+                            myPow.controllers[port].batteries[battery_number].full_charge_capacity = float(hex2dec(value))
+
+                        if key == '11':
+                            myPow.controllers[port].batteries[battery_number].run_time_to_empty = float(hex2dec(value))
+
+                        if key == '12':
+                            myPow.controllers[port].batteries[battery_number].average_time_to_empty = float(hex2dec(value))
+
+                        if key == '13':
+                            myPow.controllers[port].batteries[battery_number].average_time_to_full = float(hex2dec(value))
+
+                            # 14 and 15 undocumented
+
+    ## @todo 0x16 battery status a large bit field with lots of parsing
+                        if key == '16':
+                            myPow.controllers[port].batteries[battery_number].battery_status = ""
+                            mask = readmask(value)
+                            if mask[15] == 1:
+                                myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_CHARGED_ALARM "
+                            if mask[14] == 1:
+                                myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_CHARGE_ALARM "
+                            if mask[12] == 1:
+                                myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_TEMP_ALARM "
+                            if mask[11] == 1:
+                                myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_DISCHARGE_ALARM "
+                            if mask[7] == 0:
+                                myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "INITIALZED FALSE "
+    ##A test of actually capturing errors
+                                #myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TESTING ERROR FALSE "
+
+
+
+                        if key == '17':
+                            myPow.controllers[port].batteries[battery_number].cycle_count = float(hex2dec(value))
+
+                        if key == '18':
+                            ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
+                            myPow.controllers[port].batteries[battery_number].design_capacity = float(hex2dec(value))
+
+
+                        if key == '19':
+                            #print 'voltage is %f'%(float(hex2dec(value))/1000.0)
+                            myPow.controllers[port].batteries[battery_number].design_voltage = float(hex2dec(value))/1000.0 
+
+
+    ## @todo 0x1A specification info bit field parsing
+    ## @todo 0x1B manufacture date bit field parsing
+
+                        if key == '1C':
+                            #print "Serial: %d"%hex2dec(value)
+                            myPow.controllers[port].batteries[battery_number].serial_number = str(hex2dec(value))
+
+
+##                    if key == '22':
+##                        myPow.controllers[port].batteries[battery_number].chemistry = hex2desc(value)
+                    except ValueError:
+                        print "Bad parsed value"
                         
-                    # relative state of charge (percentage of full charge capacity)
-                    if key == '0D':
-                        myPow.controllers[port].batteries[battery_number].relative_charge = float(hex2dec(value))
-
-                    # absolute state of charge (percentage of original charge capacity)
-                    if key == '0E':
-                        myPow.controllers[port].batteries[battery_number].absolute_charge = float(hex2dec(value))
-
-
-                    if key == '0F':
-                        ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
-                        myPow.controllers[port].batteries[battery_number].remaining_capacity = float(hex2dec(value))
-                    if key == '10':
-                        ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
-                        myPow.controllers[port].batteries[battery_number].full_charge_capacity = float(hex2dec(value))
-                        
-                    if key == '11':
-                        myPow.controllers[port].batteries[battery_number].run_time_to_empty = float(hex2dec(value))
-                        
-                    if key == '12':
-                        myPow.controllers[port].batteries[battery_number].average_time_to_empty = float(hex2dec(value))
-                        
-                    if key == '13':
-                        myPow.controllers[port].batteries[battery_number].average_time_to_full = float(hex2dec(value))
-                        
-                        # 14 and 15 undocumented
-                        
-## @todo 0x16 battery status a large bit field with lots of parsing
-                    if key == '16':
-                        myPow.controllers[port].batteries[battery_number].battery_status = ""
-                        mask = readmask(value)
-                        if mask[15] == 1:
-                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_CHARGED_ALARM "
-                        if mask[14] == 1:
-                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_CHARGE_ALARM "
-                        if mask[12] == 1:
-                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "OVER_TEMP_ALARM "
-                        if mask[11] == 1:
-                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TERMINATE_DISCHARGE_ALARM "
-                        if mask[7] == 0:
-                            myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "INITIALZED FALSE "
-##A test of actually capturing errors
-                            #myPow.controllers[port].batteries[battery_number].battery_status = myPow.controllers[port].batteries[battery_number].battery_status + "TESTING ERROR FALSE "
-                        
-
-
-                    if key == '17':
-                        myPow.controllers[port].batteries[battery_number].cycle_count = float(hex2dec(value))
-                        
-                    if key == '18':
-                        ## @todo need to check/compare w/ CAPACITY_MODE bit to determine units
-                        myPow.controllers[port].batteries[battery_number].design_capacity = float(hex2dec(value))
-                        
-
-                    if key == '19':
-                        #print 'voltage is %f'%(float(hex2dec(value))/1000.0)
-                        myPow.controllers[port].batteries[battery_number].design_voltage = float(hex2dec(value))/1000.0 
-
-
-## @todo 0x1A specification info bit field parsing
-## @todo 0x1B manufacture date bit field parsing
-
-                    if key == '1C':
-                        #print "Serial: %d"%hex2dec(value)
-                        myPow.controllers[port].batteries[battery_number].serial_number = str(hex2dec(value))
-
-
-#                    if key == '22':
-#                        myPow.controllers[port].batteries[battery_number].chemistry = hex2desc(value)
-
                         
 
             #case System Data Parsing
@@ -560,24 +563,26 @@ def monitorBatteriesMain(argv, stdout, env):
                 for i in range(0,(len(splitmessage)-1)/2):
                     key = splitmessage[i*2+1]
                     value = splitmessage[i*2+2]
-#            print 'key %s , value %s'%(key,value)
-#            print 'key %s , value dec %s'%(key,hex2dec(value))
+##            print 'key %s , value %s'%(key,value)
+##            print 'key %s , value dec %s'%(key,hex2dec(value))
+                    try:
+                        if key == '01':
+                            #print 'time until exhaustion = %s minutes'%hex2dec(value)
+                            myPow.controllers[port].time_remaining = int(hex2dec(value))
+                        if key == '02':
+                            #reserved
+                            pass
 
-                    if key == '01':
-                        #print 'time until exhaustion = %s minutes'%hex2dec(value)
-                        myPow.controllers[port].time_remaining = int(hex2dec(value))
-                    if key == '02':
-                        #reserved
-                        pass
+                        if key == '03':
+                            #print 'text message to the system %s'%value
+                            myPow.controllers[port].new_system_message(value)
 
-                    if key == '03':
-                        #print 'text message to the system %s'%value
-                        myPow.controllers[port].new_system_message(value)
-
-                    if key == '04':
-                        #print 'average charge percent %d'% hex2dec(value)
-                        myPow.controllers[port].average_charge = int(hex2dec(value))
-
+                        if key == '04':
+                            #print 'average charge percent %d'% hex2dec(value)
+                            myPow.controllers[port].average_charge = int(hex2dec(value))
+                    except ValueError:
+                        print "bad string parsing"
+                        
         #print time.time()
         try:
             increment = rospy.get_param("diagnostic_rate")
