@@ -1,6 +1,0 @@
-<launch>
-  <group name="wg">
-    <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_prototype1/base.xml&quot;" />
-  </group>
-</launch>
-
