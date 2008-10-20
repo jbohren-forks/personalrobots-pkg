@@ -30,6 +30,7 @@
 
 #include "mechanism_control/mechanism_control.h"
 #include "rosthread/member_thread.h"
+#include "misc_utils/mutex_guard.h"
 
 using namespace mechanism;
 
@@ -112,28 +113,22 @@ void MechanismControl::getControllerNames(std::vector<std::string> &controllers)
 
 bool MechanismControl::addController(controller::Controller *c, const std::string &name)
 {
-  //Add controller to list of controllers in realtime-safe manner;
-  controllers_lock_.lock(); //This lock is only to prevent us from other non-realtime threads.  The realtime thread may be spinning through the list of controllers while we are in here, so we need to keep that list always in a valid state.  This is why we fully allocate and set up the controller before adding it into the list of active controllers.
+  misc_utils::MutexGuard guard(&controllers_lock_);
 
-  bool spot_found = false;
+  if (getControllerByName(name))
+    return false;
+
   for (int i = 0; i < MAX_NUM_CONTROLLERS; i++)
   {
     if (controllers_[i] == NULL)
     {
-      spot_found = true;
       controllers_[i] = c;
       controller_names_[i] = name;
-      break;
+      return true;
     }
   }
-  controllers_lock_.unlock();
 
-  if (!spot_found)
-  {
-    return false;
-  }
-
-  return true;
+  return false;
 }
 
 
