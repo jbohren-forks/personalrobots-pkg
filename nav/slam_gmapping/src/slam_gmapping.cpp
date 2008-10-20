@@ -62,7 +62,7 @@ SlamGMapping::SlamGMapping()
 
   got_first_scan_ = false;
 
-  node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, 1);
+  node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
   node_->advertise_service("dynamic_map", &SlamGMapping::map_cb, this);
 }
 
@@ -259,6 +259,10 @@ SlamGMapping::addScan(const std_msgs::LaserScan& scan)
 void
 SlamGMapping::laser_cb()
 {
+  static ros::Time last_map_update(0,0);
+  /// @todo Expose this timer
+  static ros::Duration map_udpate_interval(5,0);
+
   // We can't initialize the mapper until we've got the first scan
   if(!got_first_scan_)
   {
@@ -275,7 +279,13 @@ SlamGMapping::laser_cb()
     ROS_DEBUG("new best pose: %.3f %.3f %.3f", 
               mpose.x, mpose.y, mpose.theta);
 
-    updateMap();
+    ros::Time curr = ros::Time::now();
+    if((curr - last_map_update) > map_udpate_interval)
+    {
+      updateMap();
+      last_map_update = curr;
+      ROS_DEBUG("Updated the map");
+    }
   }
 }
 
@@ -303,8 +313,8 @@ SlamGMapping::updateMap()
           gsp_->getParticles()[gsp_->getBestParticleIndex()];
 
   /// @todo Dynamically determine bounding box for map
-  GMapping::Point wmin(-30.0, -30.0);
-  GMapping::Point wmax(30.0, 30.0);
+  GMapping::Point wmin(-100.0, -100.0);
+  GMapping::Point wmax(100.0, 100.0);
   /// @todo Fix this constant (same as delta)
   map_.map.resolution = 0.1;
   map_.map.origin.x = wmin.x;
