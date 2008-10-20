@@ -137,6 +137,7 @@ void CasterCalibrationController::update()
       transmission_->propagatePositionBackwards(fake_j, fake_a);
 
       actuator_->state_.zero_offset_ = fake_a[0]->state_.position_;
+      joint_->calibrated_ = true;
 
       state_ = CALIBRATED;
     }

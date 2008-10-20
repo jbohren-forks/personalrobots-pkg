@@ -188,7 +188,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       wheel_speed_actual_.push_back(0);
       libTF::Vector *v=new libTF::Vector();
       base_wheels_position_.push_back(*v);
-      wheel_speed_cmd_.push_back(0);      
+      wheel_speed_cmd_.push_back(0);
       num_wheels_++;
     }
   }
@@ -322,6 +322,12 @@ void BaseController::computeWheelPositions()
 
 void BaseController::update()
 {
+  for (unsigned int i = 0; i < base_casters_.size(); ++i)
+  {
+    if (!base_casters_[i].joint_state_->calibrated_)
+      return;  // Casters are not calibrated
+  }
+
   double current_time = robot_state_->hw_->current_time_;
   double dT = std::min<double>(current_time - last_time_,MAX_DT_);
 
@@ -367,7 +373,7 @@ void BaseController::computeJointCommands()
 
   computeDesiredCasterSteer();
 
-  computeDesiredWheelSpeeds();  
+  computeDesiredWheelSpeeds();
 }
 
 void BaseController::setJointCommands()
@@ -517,7 +523,7 @@ void BaseController::computeBaseVelocity()
   for(int i = 0; i < num_wheels_; i++) {
     caster_2d_velocity.z = base_wheels_[i].parent_->joint_state_->velocity_;
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/wheel_radius_; 
+    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/wheel_radius_;
 
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
@@ -766,7 +772,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
- 
+
   if (publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
   publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
