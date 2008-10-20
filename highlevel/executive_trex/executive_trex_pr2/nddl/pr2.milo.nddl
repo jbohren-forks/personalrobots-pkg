@@ -23,6 +23,12 @@ class BatteryState extends AgentTimeline {
   }
 };
 
+/**
+ * This is an abstract state variable internal to the executive which reflects if we are 
+ * able to do useful work or if we should focus on recharging. Tripping this stae variable
+ * into a recharging state will lock out other activities from execution until we are able to
+ * finish recharging.
+ */
 class WorkingStatus extends AgentTimeline {
 
   predicate Holds{bool recharging;}
@@ -31,7 +37,6 @@ class WorkingStatus extends AgentTimeline {
     super(Internal, "Holds");
   }
 };
-
 
 /**
  * A waypoint to go to
@@ -65,11 +70,14 @@ class Waypoint extends Location {
 };
 
 /**
- * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller. This pattern will allow
+ * A Navigator can navigate towards the given waypoint by repeatedly calling a lower level base controller (MoveBase). This pattern will allow
  * suspension and resumption of progress towards a goal if pre-empted by the need to recharge.
  */
 class Navigator extends Behavior {
 
+  /**
+   * When active, we are pursuing a waypoint, although we may be pre-empted
+   */
   predicate Active{
     Waypoint w;
   }
@@ -80,13 +88,14 @@ class Navigator extends Behavior {
 };
 
 /**
- * A top level timeline that will drive navigation goals until a target iteration count is reached
+ * A top level timeline that will drive navigation goals until a target iteration count is reached.
  */
 class VenusDeMiles extends AgentTimeline {
+
   predicate Holds{
-    int iterationCount;
-    int iterationLimit;
-    Waypoint w;
+    int iterationCount; // Current iteration count
+    int iterationLimit; // Iteration Limit (when done)
+    Waypoint w; // Way point to achieve
   }
 
   VenusDeMiles(){
@@ -94,6 +103,9 @@ class VenusDeMiles extends AgentTimeline {
   }
 };
 
+/**
+ * A simple iterator pattern - drives subgoaling on the Navigator Timeline
+ */
 VenusDeMiles::Holds{
   defaultOnCommit(iterationCount, 0);
   defaultOnCommit(iterationLimit, 0);
@@ -116,30 +128,25 @@ VenusDeMiles::Holds{
  */
 class RechargeController extends Behavior {
 
+  /**
+   * The recharge controller has an expected pose when in an inactive state
+   */
   predicate Inactive{
-    //bool plugIn; // If true, the robot is plugged in, otherwise not
-    //float x;
-    //float y;
-    //float th;
-    //bool desPlugIn; // If true, the robot is plugged in, otherwise not
-    //float desX;
-    //float desY;
-    //float desTh;
+    float desX;
+    float desY;
+    float desTh;
   }
 
   /**
-   * Will have different modes based on the goal. If trying to plug in
-   * then the plugIn parameter will be true and the controller will position
-   * the robot and ensure it gets plugged in. If the goal is to unplug, it will
-   * first enforce a wait while it achives a full charge, and then it will
-   * execute commands to unplug.
+   * When active, the recharge controller takes care of any local positioning, emailingm waiting etc.,
+   * until such time as the battery has been full recharged
    */
   predicate Active {
-    //bool plugIn;
     float x;
     float y;
     float th;
   }
+
 };
 
 /**
@@ -191,11 +198,10 @@ WorkingStatus::Holds{
       nearestReachableLocation(bs.x, bs.y, cs);
 
       // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
-      any(RechargeController.Active rc);
-      //eq(rc.plugIn, false);
-      eq(rc.x, cs.x);
-      eq(rc.y, cs.y);
-      eq(rc.th, cs.th);
+      any(RechargeController.Inactive rc);
+      eq(rc.desX, cs.x);
+      eq(rc.desY, cs.y);
+      eq(rc.desTh, cs.th);
       precedes(rc.start, end);
       precedes(end, rc.end);
     }
@@ -206,57 +212,36 @@ WorkingStatus::Holds{
  * Constrain so that the recharge controller switches between plugging on and unplugging
  */
 RechargeController::Inactive{
-  // By default, we are not plugged in. It may be safer to assume we are! In reality, we should
-  // be able to sense this.
-  //defaultOnCommit(plugIn, false);
+  // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
+  // this[start-1] == (desX, desY, desTh)
+  met_by(Active p);
+  eq(p.x, desX);
+  eq(p.y, desY);
+  eq(p.th, desTh);
 
-  // Bind actual values based on base state. We are only reading these values. This is an important idiom
+  // Compare values based on base state. We are only reading these values. This is an important idiom
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
   // syntax in the language to make it more explicit what is going on. All we are really doing here
   // is binding default values from execution
-  // s == baseState[start]
-  //if(start){
-  //  starts(BaseState.Holds bs);
-  //  defaultOnCommit(x, bs.x);
-  //  defaultOnCommit(y, bs.y);
-  //  defaultOnCommit(th, bs.th);
-  //}
-
-  // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  //met_by(Active p);
-  //eq(p.plugIn, plugIn);
-  //eq(p.x, x);
-  //eq(p.y, y);
-  //eq(p.th, th);
-
-  // Require actual and desired values to be within some tolerance
-  //addEq(x, [-0.25, 0.25], desX);
-  //addEq(y, [-0.25, 0.25], desY);
-  //addEq(th, [-0.25, 0.25], desTh);
+  // baseState[start] == Holds( desX + [-0.25, 0.25], desY + [-0.25, 0.25], desTh + [-0.25, 0.25])
+  if(start){
+    starts(BaseState.Holds bs);
+    addEq(bs.x, [-0.25, 0.25], desX);
+    addEq(bs.y, [-0.25, 0.25], desY);
+    addEq(bs.th, [-0.25, 0.25], desTh);
+  }
 }
 
 RechargeController::Active{
-
-  // Predecessor desired values must match up. The actual plug in value
-  // of the predecessor should differ from the commanded plug in value
-  // in this state
-  met_by(Inactive p);
-  /*neq(p.plugIn, plugIn);
-
-  // If we are trying to unplug, then the predecessor's desired values should
-  // be the same for position as these.
-  if(plugIn == false){
-    eq(p.desX, x);
-    eq(p.desY, y);
-    eq(p.desTh, th);
-  }*/
-
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
-  // correct charging station
-  contained_by(MoveBase.Inactive mb);
+  // correct charging station. This is derived by the given parameters
+
+  // contained_by: moveBase == Inactive(*, *, *, x, y, th);
+  any(MoveBase.Inactive mb);
   eq(mb.desX, x);
   eq(mb.desY, y);
   eq(mb.desTh, th);
+  leq(duration, mb.duration);
 }
 
 Navigator::Active{
@@ -275,7 +260,7 @@ Navigator::Active{
 
   // Check end conditions. Note that this formulation should always be resolved in implementation
   // by binding to an existing token.
-  // s == baseState(end);
+  // s = baseState[end];
   // distance(s.x, s.y, w.x, w.y) <= XY_ERROR
   if(end){
     ends(BaseState.Holds s);
