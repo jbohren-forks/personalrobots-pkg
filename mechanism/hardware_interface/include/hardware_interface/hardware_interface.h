@@ -42,6 +42,14 @@
 class ActuatorState{
 public:
   ActuatorState() :
+      timestamp_(0),
+      encoder_count_(0),
+      position_(0),
+      encoder_velocity_(0),
+      velocity_(0),
+      calibration_reading_(0),
+      calibration_rising_edge_valid_(0),
+      calibration_falling_edge_valid_(0),
       last_calibration_rising_edge_(0),
       last_calibration_falling_edge_(0),
       is_enabled_(0),
@@ -52,6 +60,7 @@ public:
       last_requested_effort_(0),
       last_commanded_effort_(0),
       last_measured_effort_(0),
+      motor_voltage_(0),
       num_encoder_errors_(0),
       zero_offset_(0)
   {}
@@ -63,6 +72,8 @@ public:
   double velocity_;
 
   bool calibration_reading_;
+  bool calibration_rising_edge_valid_;
+  bool calibration_falling_edge_valid_;
   double last_calibration_rising_edge_;
   double last_calibration_falling_edge_;
 

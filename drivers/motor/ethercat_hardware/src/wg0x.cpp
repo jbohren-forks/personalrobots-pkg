@@ -341,6 +341,8 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
       / (this_status->timestamp_ - prev_status->timestamp_) * 1e+6;
   state.velocity_ = state.encoder_velocity_ / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.calibration_reading_ = this_status->calibration_reading_ & LIMIT_SENSOR_0_STATE;
+  state.calibration_rising_edge_valid_ = this_status->calibration_reading_ &  LIMIT_OFF_TO_ON;
+  state.calibration_falling_edge_valid_ = this_status->calibration_reading_ &  LIMIT_ON_TO_OFF;
   state.last_calibration_rising_edge_ = double(this_status->last_calibration_rising_edge_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.last_calibration_falling_edge_ = double(this_status->last_calibration_falling_edge_) / actuator_info_.pulses_per_revolution_ * 2 * M_PI;
   state.is_enabled_ = this_status->mode_ != MODE_OFF;

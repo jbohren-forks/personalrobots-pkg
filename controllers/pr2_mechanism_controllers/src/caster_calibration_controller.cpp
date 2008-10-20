@@ -110,12 +110,12 @@ void CasterCalibrationController::update()
     state_ = BEGINNING;
     break;
   case BEGINNING:
-    original_switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
+    original_switch_state_ = actuator_->state_.calibration_reading_;
     cc_.steer_velocity_ = (original_switch_state_ ? search_velocity_ : -search_velocity_);
     state_ = MOVING;
     break;
   case MOVING: {
-    bool switch_state_ = actuator_->state_.calibration_reading_ > 0.5;
+    bool switch_state_ = actuator_->state_.calibration_reading_;
     if (switch_state_ != original_switch_state_)
     {
       Actuator a;
@@ -126,7 +126,7 @@ void CasterCalibrationController::update()
       fake_j.push_back(&j);
 
       // Where was the joint when the optical switch triggered?
-      if (original_switch_state_ == true)
+      if (switch_state_ == true)
         fake_a[0]->state_.position_ = actuator_->state_.last_calibration_rising_edge_;
       else
         fake_a[0]->state_.position_ = actuator_->state_.last_calibration_falling_edge_;

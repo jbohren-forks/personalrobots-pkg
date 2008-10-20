@@ -5,6 +5,8 @@ float64 timestamp
 float64 encoder_velocity
 float64 velocity
 byte calibration_reading
+byte calibration_rising_edge_valid
+byte calibration_falling_edge_valid
 float64 last_calibration_rising_edge
 float64 last_calibration_falling_edge
 byte is_enabled
