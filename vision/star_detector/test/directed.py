@@ -17,8 +17,8 @@ import math
 
 # A star detector object's results are invariant wrt image presentation order
 
-def simple(im, scales = 7, threshold = 30.0, line_threshold = 10.0):
-    sd = L.star_detector(im.size[0], im.size[1], scales, threshold, line_threshold)
+def simple(im, scales = 7, threshold = 30.0, line_threshold = 10.0, line_threshold_bin = 8.0):
+    sd = L.star_detector(im.size[0], im.size[1], scales, threshold, line_threshold, line_threshold_bin)
     kp = sd.detect(im.tostring())
     return [ i[1] for i in sorted([ (abs(response), (x, y, s, response)) for (x, y, s, response) in kp])]
 
@@ -42,11 +42,15 @@ class TestDirected(unittest.TestCase):
 
         """ Output of a known image matches a fixed 'expected' list """
 
+        # NB: This list is for 5x5 nonmax suppression. For 3x3, comment out
+        # the first two results and restore the two commented out below.
         golden = [
+            (305, 357, 6, 107.60),
+            (468, 262, 2, 107.77),
             (220, 308, 2, -108.11),
             (260, 83, 4, 108.23),
             (59, 303, 3, -108.35),
-            (77, 337, 2, 108.62),
+            #(77, 337, 2, 108.62),
             (243, 173, 4, -108.66),
             (444, 397, 2, 108.75),
             (278, 315, 2, 108.92),
@@ -60,7 +64,7 @@ class TestDirected(unittest.TestCase):
             (422, 364, 6, 114.35),
             (283, 251, 2, 114.42),
             (62, 373, 2, 114.71),
-            (329, 186, 6, -117.83),
+            #(329, 186, 6, -117.83),
             (260, 112, 4, -118.80),
             (338, 398, 3, 119.23),
             (440, 283, 4, 119.94),
@@ -76,6 +80,8 @@ class TestDirected(unittest.TestCase):
         ]
 
         result = simple(self.im640)[-30:]
+        for pt in result:
+            print pt
         for a,e in zip(result, golden):
             self.assertEqual(a[0], e[0])
             self.assertEqual(a[1], e[1])
@@ -109,7 +115,7 @@ class TestDirected(unittest.TestCase):
         noise = Image.fromstring("L", (1000,200), "".join([ chr(random.randrange(0, 8)) for i in range(1000 * 200)]))
         im = ImageChops.add(im, noise)
 
-        result = sorted([(x,y,s,response) for (x,y,s,response) in simple(im, 7, 1.0, 999999.0)][-npoints:])
+        result = sorted([(x,y,s,response) for (x,y,s,response) in simple(im, 7, 1.0, 999999.0, 999999.0)][-npoints:])
 
         # Must have npoints
         self.assertEqual(len(result), npoints)
@@ -174,10 +180,10 @@ class TestDirected(unittest.TestCase):
 
         for dim in [247, 248, 256]:
             refim = self.im640.resize((dim,dim))
-            ref = simple(refim, 7, 30.0, 999999.0)
+            ref = simple(refim, 7, 30.0, 999999.0, 999999.0)
             self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
             for f in [Image.FLIP_LEFT_RIGHT, Image.FLIP_TOP_BOTTOM, Image.ROTATE_90, Image.ROTATE_180, Image.ROTATE_270]:
-                result = simple(refim.transpose(f), 7, 30.0, 999999.0)
+                result = simple(refim.transpose(f), 7, 30.0, 999999.0, 999999.0)
                 self.assertEqual(len(ref), len(result))
 
     def test_all_scales(self):
@@ -225,7 +231,7 @@ class TestDirected(unittest.TestCase):
             actual = (75 + 25 * math.sin(th), 75 - 25 * math.cos(th))
             actual_feature = circle(im, actual[0], actual[1], 3.5, 248)
             im = noisify(im)
-            result = [len(simple(im, 7, 0.0, 3.0 + 0.2 * lt)) for lt in range(20)]
+            result = [len(simple(im, 7, 0.0, 3.0 + 0.2 * lt, 999999.0)) for lt in range(20)]
             self.assert_(result == sorted(result))
             self.assert_(result[0] < result[-1])
 
@@ -237,6 +243,9 @@ class TestDirected(unittest.TestCase):
             circle(im, 100 + 50 * t, 100, 3.5, t * 16)
         result = simple(im, 7, 1.0)
         result = [ (x,y,s,r) for (x,y,s,r) in result if (r > 0.0) ]
+
+        # Reject spurious negative responses...
+        result = [(x,y,s,r) for (x,y,s,r) in result if r >= 0]
 
         # Should be 14 responses
         self.assertEqual(len(result), 14)
@@ -263,7 +272,7 @@ class TestDirected(unittest.TestCase):
 if __name__ == '__main__':
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_L'))
+        suite.addTest(TestDirected('test_a_golden'))
         unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         rostest.unitrun('star_detector', 'directed', TestDirected)

@@ -104,13 +104,17 @@ PyObject *star_detector(PyObject *self, PyObject *args)
     int scales = 7;
     float threshold = 30.0;
     float line_threshold = 10.0;
+    float line_threshold_bin = 8.0;
     if (PyTuple_Size(args) > 2)
         scales = PyLong_AsLong(PyTuple_GetItem(args, 2));
     if (PyTuple_Size(args) > 3)
         threshold = PyFloat_AsDouble(PyTuple_GetItem(args,3));
     if (PyTuple_Size(args) > 4)
         line_threshold = PyFloat_AsDouble(PyTuple_GetItem(args,4));
-    new(&object->psd) StarDetector( cvSize(object->xsize, object->ysize), scales, threshold, line_threshold );
+    if (PyTuple_Size(args) > 5)
+        line_threshold_bin = PyFloat_AsDouble(PyTuple_GetItem(args,5));
+    new(&object->psd) StarDetector( cvSize(object->xsize, object->ysize), scales,
+                                    threshold, line_threshold, line_threshold_bin );
     object->img = cvCreateImage(cvSize(object->xsize, object->ysize), IPL_DEPTH_8U, 1);
     return (PyObject*)object;
 }

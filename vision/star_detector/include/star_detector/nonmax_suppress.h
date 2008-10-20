@@ -81,13 +81,17 @@ struct NonmaxSuppressWxH
 
     // NOTE: We use a constant, conservative border here, even though we may miss some
     // small features near the edges of the image.
-    for (int y = border; y < projected->height - border; y += Y_OFFSET + 1) {
-      for (int x = border; x < projected->width - border; x += X_OFFSET + 1) {
+    int end_y = projected->height - border - 1;
+    int end_x = projected->width - border - 1;
+    for (int y = border; y <= end_y; y += Y_OFFSET + 1) {
+      for (int x = border; x <= end_x; x += X_OFFSET + 1) {
         T max_response = 0, min_response = 0;
 
         // Find candidate maximum and minimum in current (W/2)x(H/2) tile
-        for (int next_y = y; next_y <= y + Y_OFFSET; ++next_y) {
-          for (int next_x = x; next_x <= x + X_OFFSET; ++next_x) {
+        int tile_end_y = std::min(y + Y_OFFSET, end_y);
+        int tile_end_x = std::min(x + X_OFFSET, end_x);
+        for (int next_y = y; next_y <= tile_end_y; ++next_y) {
+          for (int next_x = x; next_x <= tile_end_x; ++next_x) {
             T response = CV_IMAGE_ELEM(projected, T, next_y, next_x);
             if (m_compare(max_response, response)) {
               max_x = next_x;
