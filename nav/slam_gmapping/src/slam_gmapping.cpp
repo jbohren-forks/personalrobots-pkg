@@ -84,7 +84,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
   // Get the robot's pose 
   tf::Stamped<tf::Pose> ident;
   tf::Stamped<btTransform> odom_pose;
-  ident.data_.setIdentity();
+  ident.setIdentity();
   ident.frame_id_ = "base";
   ident.stamp_ = t;
   try
@@ -97,11 +97,11 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
     return false;
   }
   double yaw,pitch,roll;
-  btMatrix3x3 mat =  odom_pose.data_.getBasis();
+  btMatrix3x3 mat =  odom_pose.getBasis();
   mat.getEulerZYX(yaw, pitch, roll);
 
-  gmap_pose = GMapping::OrientedPoint(odom_pose.data_.getOrigin().x(),
-                                      odom_pose.data_.getOrigin().y(),
+  gmap_pose = GMapping::OrientedPoint(odom_pose.getOrigin().x(),
+                                      odom_pose.getOrigin().y(),
                                       yaw);
   return true;
 }
@@ -112,7 +112,7 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   // @todo Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
   tf::Stamped<btTransform> laser_pose;
-  ident.data_.setIdentity();
+  ident.setIdentity();
   ident.frame_id_ = "base_laser";
   ident.stamp_ = scan.header.stamp;
   try
@@ -126,15 +126,15 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
     return false;
   }
   double yaw,pitch,roll;
-  btMatrix3x3 mat =  laser_pose.data_.getBasis();
+  btMatrix3x3 mat =  laser_pose.getBasis();
   mat.getEulerZYX(yaw, pitch, roll);
 
-  GMapping::OrientedPoint gmap_pose(laser_pose.data_.getOrigin().x(),
-                                    laser_pose.data_.getOrigin().y(),
+  GMapping::OrientedPoint gmap_pose(laser_pose.getOrigin().x(),
+                                    laser_pose.getOrigin().y(),
                                     yaw);
   ROS_DEBUG("laser's pose wrt base: %.3f %.3f %.3f",
-            laser_pose.data_.getOrigin().x(),
-            laser_pose.data_.getOrigin().y(),
+            laser_pose.getOrigin().x(),
+            laser_pose.getOrigin().y(),
             yaw);
 
   // The laser must be called "FLASER"
@@ -248,8 +248,8 @@ SlamGMapping::addScan(const std_msgs::LaserScan& scan)
   /*
   ROS_DEBUG("scan pose (%.3f): %.3f %.3f %.3f",
             scan.header.stamp.toSec(),
-            odom_pose.data_.getOrigin().x(),
-            odom_pose.data_.getOrigin().y(),
+            odom_pose.getOrigin().x(),
+            odom_pose.getOrigin().y(),
             yaw);
             */
 

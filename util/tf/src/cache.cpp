@@ -160,14 +160,14 @@ void TimeCache::interpolate(const TransformStorage& one, const TransformStorage&
   
   //Interpolate translation
   btVector3 v;
-  v.setInterpolate3(one.data_.getOrigin(), two.data_.getOrigin(), ratio);
-  output.data_.setOrigin(v);
+  v.setInterpolate3(one.getOrigin(), two.getOrigin(), ratio);
+  output.setOrigin(v);
   
   //Interpolate rotation
   btQuaternion q1,q2;
-  one.data_.getBasis().getRotation(q1);
-  two.data_.getBasis().getRotation(q2);
-  output.data_.setRotation(slerp( q1, q2 , ratio));
+  one.getBasis().getRotation(q1);
+  two.getBasis().getRotation(q2);
+  output.setRotation(slerp( q1, q2 , ratio));
   output.frame_id_ = one.frame_id_;
   output.parent_id_ = one.parent_id_;
   output.parent_frame_id = one.parent_frame_id;

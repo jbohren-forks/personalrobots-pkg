@@ -55,7 +55,7 @@ TEST(TimeCache, Repeatability)
   std::vector<double> values(runs);
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( unsigned int i = 1; i < runs ; i++ )
   {
@@ -92,7 +92,7 @@ TEST(TimeCache, RepeatabilityReverseInsertOrder)
   std::vector<double> values(runs);
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( int i = runs -1; i >= 0 ; i-- )
   {
@@ -129,7 +129,7 @@ TEST(TimeCache, RepeatabilityRandomInsertOrder)
   unsigned int runs = values.size();
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   for ( unsigned int i = 0; i <runs ; i++ )
   {
     values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -164,7 +164,7 @@ TEST(TimeCache, ZeroAtFront)
   std::vector<double> values(runs);
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( unsigned int i = 1; i < runs ; i++ )
   {
@@ -229,7 +229,7 @@ TEST(TimeCache, CartesianInterpolation)
   unsigned int offset = 200;
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( unsigned int i = 1; i < runs ; i++ )
   {
@@ -240,7 +240,7 @@ TEST(TimeCache, CartesianInterpolation)
       yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       zvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     
-      stor.data_.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
+      stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 2;
       stor.stamp_ = step * 100 + offset;
@@ -250,9 +250,9 @@ TEST(TimeCache, CartesianInterpolation)
     for (int pos = 0; pos < 100 ; pos ++)
     {
       cache.getData(offset + pos, stor);
-      double x_out = stor.data_.getOrigin().x();
-      double y_out = stor.data_.getOrigin().y();
-      double z_out = stor.data_.getOrigin().z();
+      double x_out = stor.getOrigin().x();
+      double y_out = stor.getOrigin().y();
+      double z_out = stor.getOrigin().z();
       EXPECT_NEAR(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0, x_out, epsilon);
       EXPECT_NEAR(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0, y_out, epsilon);
       EXPECT_NEAR(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0, z_out, epsilon);
@@ -277,7 +277,7 @@ TEST(TimeCache, ReparentingInterpolationProtection)
   std::vector<double> zvalues(2);
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
 
   for (unsigned int step = 0; step < 2 ; step++)
   {
@@ -285,7 +285,7 @@ TEST(TimeCache, ReparentingInterpolationProtection)
     yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     zvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     
-    stor.data_.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
+    stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
     stor.frame_id_ = "NO_NEED";
     stor.parent_frame_id = step + 4;
     stor.stamp_ = step * 100 + offset;
@@ -295,9 +295,9 @@ TEST(TimeCache, ReparentingInterpolationProtection)
   for (int pos = 0; pos < 100 ; pos ++)
   {
     cache.getData(offset + pos, stor);
-    double x_out = stor.data_.getOrigin().x();
-    double y_out = stor.data_.getOrigin().y();
-    double z_out = stor.data_.getOrigin().z();
+    double x_out = stor.getOrigin().x();
+    double y_out = stor.getOrigin().y();
+    double z_out = stor.getOrigin().z();
     EXPECT_NEAR(xvalues[0], x_out, epsilon);
     EXPECT_NEAR(yvalues[0], y_out, epsilon);
     EXPECT_NEAR(zvalues[0], z_out, epsilon);
@@ -306,9 +306,9 @@ TEST(TimeCache, ReparentingInterpolationProtection)
   for (int pos = 100; pos < 120 ; pos ++)
   {
     cache.getData(offset + pos, stor);
-    double x_out = stor.data_.getOrigin().x();
-    double y_out = stor.data_.getOrigin().y();
-    double z_out = stor.data_.getOrigin().z();
+    double x_out = stor.getOrigin().x();
+    double y_out = stor.getOrigin().y();
+    double z_out = stor.getOrigin().z();
     EXPECT_NEAR(xvalues[1], x_out, epsilon);
     EXPECT_NEAR(yvalues[1], y_out, epsilon);
     EXPECT_NEAR(zvalues[1], z_out, epsilon);
@@ -331,7 +331,7 @@ TEST(TimeCache, CartesianExtrapolation)
   unsigned int offset = 555;
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( unsigned int i = 1; i < runs ; i++ )
   {
@@ -342,7 +342,7 @@ TEST(TimeCache, CartesianExtrapolation)
       yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       zvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     
-      stor.data_.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
+      stor.setOrigin(btVector3(xvalues[step], yvalues[step], zvalues[step]));
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 2;
       stor.stamp_ = step * 100 + offset;
@@ -352,9 +352,9 @@ TEST(TimeCache, CartesianExtrapolation)
     for (int pos = -200; pos < 300 ; pos ++)
     {
       cache.getData(offset + pos, stor);
-      double x_out = stor.data_.getOrigin().x();
-      double y_out = stor.data_.getOrigin().y();
-      double z_out = stor.data_.getOrigin().z();
+      double x_out = stor.getOrigin().x();
+      double y_out = stor.getOrigin().y();
+      double z_out = stor.getOrigin().z();
       EXPECT_NEAR(xvalues[0] + (xvalues[1] - xvalues[0]) * (double)pos/100.0, x_out, epsilon);
       EXPECT_NEAR(yvalues[0] + (yvalues[1] - yvalues[0]) * (double)pos/100.0, y_out, epsilon);
       EXPECT_NEAR(zvalues[0] + (zvalues[1] - zvalues[0]) * (double)pos/100.0, z_out, epsilon);
@@ -406,7 +406,7 @@ TEST(TimeCache, AngularInterpolation)
   std::vector<btQuaternion> quats(2);
 
   TransformStorage stor;
-  stor.data_.setIdentity();
+  stor.setIdentity();
   
   for ( unsigned int i = 1; i < runs ; i++ )
   {
@@ -417,7 +417,7 @@ TEST(TimeCache, AngularInterpolation)
       pitchvalues[step] = 0;//10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       rollvalues[step] = 0;//10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       quats[step] = btQuaternion(yawvalues[step], pitchvalues[step], rollvalues[step]);
-      stor.data_.setRotation(quats[step]);
+      stor.setRotation(quats[step]);
       stor.frame_id_ = "NO_NEED";
       stor.parent_frame_id = 3;
       stor.stamp_ = offset + (step * 100); //step = 0 or 1
@@ -427,7 +427,7 @@ TEST(TimeCache, AngularInterpolation)
     for (int pos = -100; pos < 200 ; pos ++)
     {
       cache.getData(offset + pos, stor); //get the transform for the position
-      btQuaternion quat = stor.data_.getRotation(); //get the quaternion out of the transform
+      btQuaternion quat = stor.getRotation(); //get the quaternion out of the transform
 
       //Generate a ground truth quaternion directly calling slerp
       btQuaternion ground_truth = quats[0].slerp(quats[1], pos/100.0);

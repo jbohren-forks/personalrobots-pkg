@@ -83,7 +83,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame));
 
-  transform.data_ = computeTransformFromList(t_list);
+  transform.setData( computeTransformFromList(t_list));
   transform.stamp_ = time;
   transform.frame_id_ = target_frame;
 
@@ -94,14 +94,14 @@ void Transformer::lookupTransform(const std::string& target_frame, ros::Time tar
 {
   //calculate first leg
   TransformLists t_list = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame));
-  transform.data_ = computeTransformFromList(t_list);
+  btTransform temp1 = computeTransformFromList(t_list);
   
 
   TransformLists t_list2 = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame));
   
   btTransform temp = computeTransformFromList(t_list2);
 
-  transform.data_*= temp; ///\todo check order here
+  transform.setData( temp1 * temp); ///\todo check order here
   transform.stamp_ = target_time;
   transform.frame_id_ = target_frame;
 
@@ -278,7 +278,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
       try {
-        retTrans *= (lists.inverseTransforms[lists.inverseTransforms.size() -1 - i]).data_; //Reverse to get left multiply
+        retTrans *= (lists.inverseTransforms[lists.inverseTransforms.size() -1 - i]); //Reverse to get left multiply
       }
       catch (tf::ExtrapolationException &ex)
       {
@@ -290,7 +290,7 @@ btTransform Transformer::computeTransformFromList(const TransformLists & lists)
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
       try {
-        retTrans = (lists.forwardTransforms[lists.forwardTransforms.size() -1 - i]).data_.inverse() * retTrans; //Do this list backwards(from backwards) for it was generated traveling the wrong way
+        retTrans = (lists.forwardTransforms[lists.forwardTransforms.size() -1 - i]).inverse() * retTrans; //Do this list backwards(from backwards) for it was generated traveling the wrong way
       }
       catch (tf::ExtrapolationException &ex)
       {
@@ -390,7 +390,7 @@ void Transformer::transformQuaternion(const std::string& target_frame, const Sta
 
   btTransform transform = computeTransformFromList(t_list);
 
-  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.setData( transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
@@ -404,10 +404,10 @@ void Transformer::transformVector(const std::string& target_frame,
   btTransform transform = computeTransformFromList(t_list);
 
   /** \todo may not be most efficient */
-  btVector3 end = stamped_in.data_;
+  btVector3 end = stamped_in;
   btVector3 origin = btVector3(0,0,0);
   btVector3 output = (transform * end) - (transform * origin);
-  stamped_out.data_ = output;
+  stamped_out.setData( output);
 
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
@@ -420,7 +420,7 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
 
   btTransform transform = computeTransformFromList(t_list);
 
-  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.setData(transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
   stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
@@ -432,7 +432,7 @@ void Transformer::transformPose(const std::string& target_frame, const Stamped<P
 
   btTransform transform = computeTransformFromList(t_list);
 
-  stamped_out.data_ = transform * stamped_in.data_;
+  stamped_out.setData(transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms

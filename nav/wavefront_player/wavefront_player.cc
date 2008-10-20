@@ -426,12 +426,12 @@ WavefrontNode::goalReceived()
   }
 
   double yaw,pitch,roll;
-  btMatrix3x3 mat =  global_pose.data_.getBasis();
+  btMatrix3x3 mat =  global_pose.getBasis();
   mat.getEulerZYX(yaw, pitch, roll);
 
   // Fill out and publish response
-  this->pstate.pos.x = global_pose.data_.getOrigin().x();
-  this->pstate.pos.y = global_pose.data_.getOrigin().y();
+  this->pstate.pos.x = global_pose.getOrigin().x();
+  this->pstate.pos.y = global_pose.getOrigin().y();
   this->pstate.pos.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];
@@ -609,7 +609,7 @@ WavefrontNode::doOneCycle()
   //convert!
   
   tf::Stamped<tf::Pose> robotPose;
-  robotPose.data_.setIdentity();
+  robotPose.setIdentity();
   robotPose.frame_id_ = "base";
   robotPose.stamp_ = 0; // request most recent pose
   //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
@@ -663,12 +663,12 @@ WavefrontNode::doOneCycle()
       {
         
         double yaw,pitch,roll; //fixme make cleaner namespace
-        btMatrix3x3 mat =  global_pose.data_.getBasis();
+        btMatrix3x3 mat =  global_pose.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
         
         // Are we done?
         if(plan_check_done(this->plan,
-                           global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(), yaw,
+                           global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw,
                            this->goal[0], this->goal[1], this->goal[2],
                            this->dist_eps, this->ang_eps))
         {
@@ -688,11 +688,11 @@ WavefrontNode::doOneCycle()
 
         // Try a local plan
         if((this->planner_state == NEW_GOAL) ||
-           (plan_do_local(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
+           (plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
                          this->plan_halfwidth) < 0))
         {
           // Fallback on global plan
-          if(plan_do_global(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
+          if(plan_do_global(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
                             this->goal[0], this->goal[1]) < 0)
           {
             // no global plan
@@ -722,7 +722,7 @@ WavefrontNode::doOneCycle()
           {
             // global plan succeeded; now try the local plan again
             this->printed_warning = false;
-            if(plan_do_local(this->plan, global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(), 
+            if(plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(), 
                              this->plan_halfwidth) < 0)
             {
               // no local plan; better luck next time through
@@ -743,12 +743,12 @@ WavefrontNode::doOneCycle()
         
         //    double yaw,pitch,roll; //used temporarily earlier fixme make cleaner
         //btMatrix3x3 
-        mat =  global_pose.data_.getBasis();
+        mat =  global_pose.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
 
         if(plan_compute_diffdrive_cmds(this->plan, &vx, &va,
                                        &this->rotate_dir,
-                                       global_pose.data_.getOrigin().x(), global_pose.data_.getOrigin().y(),
+                                       global_pose.getOrigin().x(), global_pose.getOrigin().y(),
                                        yaw,
                                        this->goal[0], this->goal[1],
                                        this->goal[2],
@@ -789,15 +789,15 @@ WavefrontNode::doOneCycle()
       assert(0);
   }
   double yaw,pitch,roll;
-  btMatrix3x3 mat =  global_pose.data_.getBasis();
+  btMatrix3x3 mat =  global_pose.getBasis();
   mat.getEuler(yaw, pitch, roll);
 
   this->pstate.active = (this->enable &&
 			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
   this->pstate.valid = (this->plan->path_count > 0) ? 1 : 0;
   this->pstate.done = (this->planner_state == REACHED_GOAL) ? 1 : 0;
-  this->pstate.pos.x = global_pose.data_.getOrigin().x();
-  this->pstate.pos.y = global_pose.data_.getOrigin().y();
+  this->pstate.pos.x = global_pose.getOrigin().x();
+  this->pstate.pos.y = global_pose.getOrigin().y();
   this->pstate.pos.th = yaw;
   this->pstate.goal.x = this->goal[0];
   this->pstate.goal.y = this->goal[1];

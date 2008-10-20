@@ -60,9 +60,8 @@ typedef btTransform Pose;
 /** \brief The data type which will be cross compatable with std_msgs
  * this will require the associated rosTF package to convert */
 template <typename T>
-class Stamped{
+class Stamped : public T{
  public:
-  T data_;
   ros::Time stamp_;
   std::string frame_id_;
   std::string parent_id_; ///only used for transform
@@ -70,14 +69,15 @@ class Stamped{
   Stamped() :stamp_ (0),frame_id_ ("NO_ID"), parent_id_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
 
   Stamped(const T& input, const ros::Time& timestamp, const std::string & frame_id, const std::string & parent_id = "NOT A TRANSFORM"):
-    data_ (input), stamp_ ( timestamp ), frame_id_ (frame_id), parent_id_(parent_id){ };
+    T (input), stamp_ ( timestamp ), frame_id_ (frame_id), parent_id_(parent_id){ };
 
 //Stamped(const Stamped<T>& input):data_(input.data_), stamp_(input.stamp_), frame_id_(input.frame_id_), parent_id_(input.parent_id_){};
 
 //Stamped& operator=(const Stamped<T>& input){data_ = input.data_; stamp_ = input.stamp_; frame_id_ = input.frame_id_;
 //  parent_id_ = input.parent_id_; return *this;};
 
-  void stripStamp(T & output) { output = data_;};
+  void setData(const T& input){*static_cast<T*>(this) = input;};
+  //  void stripStamp(T & output) { output = data_;}; //just down cast it
 };
 
 
@@ -88,10 +88,10 @@ static inline void QuaternionTFToMsg(const Quaternion& bt, std_msgs::Quaternion&
 
 /** \brief convert QuaternionStamped msg to Stamped<Quaternion> */
 static inline void QuaternionStampedMsgToTF(const std_msgs::QuaternionStamped & msg, Stamped<Quaternion>& bt)
-{QuaternionMsgToTF(msg.quaternion, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
+{QuaternionMsgToTF(msg.quaternion, bt); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Quaternion> to QuaternionStamped msg*/
 static inline void QuaternionStampedTFToMsg(const Stamped<Quaternion>& bt, std_msgs::QuaternionStamped & msg)
-{QuaternionTFToMsg(bt.data_, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{QuaternionTFToMsg(bt, msg.quaternion); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 /** \brief convert Vector3 msg to Vector3 */
 static inline void Vector3MsgToTF(const std_msgs::Vector3& msg_v, Vector3& bt_v) {bt_v = Vector3(msg_v.x, msg_v.y, msg_v.z);};
@@ -100,10 +100,10 @@ static inline void Vector3TFToMsg(const Vector3& bt_v, std_msgs::Vector3& msg_v)
 
 /** \brief convert Vector3Stamped msg to Stamped<Vector3> */
 static inline void Vector3StampedMsgToTF(const std_msgs::Vector3Stamped & msg, Stamped<Vector3>& bt)
-{Vector3MsgToTF(msg.vector, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
+{Vector3MsgToTF(msg.vector, bt); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Vector3> to Vector3Stamped msg*/
 static inline void Vector3StampedTFToMsg(const Stamped<Vector3>& bt, std_msgs::Vector3Stamped & msg)
-{Vector3TFToMsg(bt.data_, msg.vector); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{Vector3TFToMsg(bt, msg.vector); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Point msg to Point */
@@ -113,10 +113,10 @@ static inline void PointTFToMsg(const Point& bt_v, std_msgs::Point& msg_v) {msg_
 
 /** \brief convert PointStamped msg to Stamped<Point> */
 static inline void PointStampedMsgToTF(const std_msgs::PointStamped & msg, Stamped<Point>& bt)
-{PointMsgToTF(msg.point, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
+{PointMsgToTF(msg.point, bt); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Point> to PointStamped msg*/
 static inline void PointStampedTFToMsg(const Stamped<Point>& bt, std_msgs::PointStamped & msg)
-{PointTFToMsg(bt.data_, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{PointTFToMsg(bt, msg.point); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief convert Transform msg to Transform */
@@ -128,10 +128,10 @@ static inline void TransformTFToMsg(const Transform& bt, std_msgs::Transform& ms
 
 /** \brief convert TransformStamped msg to Stamped<Transform> */
 static inline void TransformStampedMsgToTF(const std_msgs::TransformStamped & msg, Stamped<Transform>& bt)
-{TransformMsgToTF(msg.transform, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id; bt.parent_id_ = msg.parent_id;};
+{TransformMsgToTF(msg.transform, bt); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id; bt.parent_id_ = msg.parent_id;};
 /** \brief convert Stamped<Transform> to TransformStamped msg*/
 static inline void TransformStampedTFToMsg(const Stamped<Transform>& bt, std_msgs::TransformStamped & msg)
-{TransformTFToMsg(bt.data_, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_; msg.parent_id = bt.parent_id_;};
+{TransformTFToMsg(bt, msg.transform); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_; msg.parent_id = bt.parent_id_;};
 
 /** \brief convert Pose msg to Pose */
 static inline void PoseMsgToTF(const std_msgs::Pose& msg, Pose& bt)
@@ -142,10 +142,10 @@ static inline void PoseTFToMsg(const Pose& bt, std_msgs::Pose& msg)
 
 /** \brief convert PoseStamped msg to Stamped<Pose> */
 static inline void PoseStampedMsgToTF(const std_msgs::PoseStamped & msg, Stamped<Pose>& bt)
-{PoseMsgToTF(msg.pose, bt.data_); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
+{PoseMsgToTF(msg.pose, bt); bt.stamp_ = msg.header.stamp.to_ull(); bt.frame_id_ = msg.header.frame_id;};
 /** \brief convert Stamped<Pose> to PoseStamped msg*/
 static inline void PoseStampedTFToMsg(const Stamped<Pose>& bt, std_msgs::PoseStamped & msg)
-{PoseTFToMsg(bt.data_, msg.pose); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
+{PoseTFToMsg(bt, msg.pose); msg.header.stamp = bt.stamp_; msg.header.frame_id = bt.frame_id_;};
 
 
 /** \brief Convert the transform to a Homogeneous matrix for large operations */

@@ -72,10 +72,10 @@ public:
 
     tfArray.quaternions[0].header.frame_id = transform.frame_id_;
     tfArray.quaternions[0].parent = transform.parent_id_;
-    Quaternion q = transform.data_.getRotation();
-    tfArray.quaternions[0].xt = transform.data_.getOrigin().x();
-    tfArray.quaternions[0].yt = transform.data_.getOrigin().y();
-    tfArray.quaternions[0].zt = transform.data_.getOrigin().z();
+    Quaternion q = transform.getRotation();
+    tfArray.quaternions[0].xt = transform.getOrigin().x();
+    tfArray.quaternions[0].yt = transform.getOrigin().y();
+    tfArray.quaternions[0].zt = transform.getOrigin().z();
     tfArray.quaternions[0].xr = q.x();
     tfArray.quaternions[0].yr = q.y();
     tfArray.quaternions[0].zr = q.z();

@@ -61,13 +61,12 @@ TEST(tf, TransformTransformsCartesian)
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
 
     try{
-    Stamped<Pose
-> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    Stamped<Pose> outpose;
+    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPose("my_parent",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().x(), xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), zvalues[i], epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -79,11 +78,11 @@ TEST(tf, TransformTransformsCartesian)
   
   Stamped<Pose> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
   Stamped<Pose> outpose;
-  outpose.data_.setIdentity(); //to make sure things are getting mutated
+  outpose.setIdentity(); //to make sure things are getting mutated
   mTR.transformPose("child",inpose, outpose);
-  EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
-  EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
-  EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().x(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
   
   
 }
@@ -123,12 +122,12 @@ TEST(tf, TransformTransformToOwnFrame)
 
     try{
     Stamped<Pose> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPose("child",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
-    EXPECT_NEAR(outpose.data_.getRotation().w(), 1, epsilon); //Identity is 0,0,0,1
+    EXPECT_NEAR(outpose.getOrigin().x(), 0, epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
+    EXPECT_NEAR(outpose.getRotation().w(), 1, epsilon); //Identity is 0,0,0,1
     }
     catch (tf::TransformException & ex)
     {
@@ -140,11 +139,11 @@ TEST(tf, TransformTransformToOwnFrame)
   
   Stamped<Pose> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), runs, "child");
   Stamped<Pose> outpose;
-  outpose.data_.setIdentity(); //to make sure things are getting mutated
+  outpose.setIdentity(); //to make sure things are getting mutated
   mTR.transformPose("child",inpose, outpose);
-  EXPECT_NEAR(outpose.data_.getOrigin().x(), 0, epsilon);
-  EXPECT_NEAR(outpose.data_.getOrigin().y(), 0, epsilon);
-  EXPECT_NEAR(outpose.data_.getOrigin().z(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().x(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
+  EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
   
   
 }
@@ -184,11 +183,11 @@ TEST(tf, TransformPointCartesian)
 
     try{
     Stamped<Point> outvec(btVector3(0,0,0), 10 + i, "child");
-    //    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    //    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPoint("my_parent",invec, outvec);
-    EXPECT_NEAR(outvec.data_.x(), xvalues[i]+x, epsilon);
-    EXPECT_NEAR(outvec.data_.y(), yvalues[i]+y, epsilon);
-    EXPECT_NEAR(outvec.data_.z(), zvalues[i]+z, epsilon);
+    EXPECT_NEAR(outvec.x(), xvalues[i]+x, epsilon);
+    EXPECT_NEAR(outvec.y(), yvalues[i]+y, epsilon);
+    EXPECT_NEAR(outvec.z(), zvalues[i]+z, epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -235,11 +234,11 @@ TEST(tf, TransformVectorCartesian)
 
     try{
     Stamped<Vector3> outvec(btVector3(0,0,0), 10 + i, "child");
-    //    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    //    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformVector("my_parent",invec, outvec);
-    EXPECT_NEAR(outvec.data_.x(), x, epsilon);
-    EXPECT_NEAR(outvec.data_.y(), y, epsilon);
-    EXPECT_NEAR(outvec.data_.z(), z, epsilon);
+    EXPECT_NEAR(outvec.x(), x, epsilon);
+    EXPECT_NEAR(outvec.y(), y, epsilon);
+    EXPECT_NEAR(outvec.z(), z, epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -287,7 +286,7 @@ TEST(tf, TransformQuaternionCartesian)
     Stamped<btQuaternion> outvec(btQuaternion(xvalues[i],yvalues[i],zvalues[i]), 10 + i, "child");
 
     mTR.transformQuaternion("my_parent",invec, outvec);
-    EXPECT_NEAR(outvec.data_.angle(invec.data_) , 0, epsilon);
+    EXPECT_NEAR(outvec.angle(invec) , 0, epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -338,9 +337,9 @@ TEST(data, Vector3StampedConversions)
     std_msgs::Vector3Stamped msgv;
     Vector3StampedTFToMsg(btv, msgv);
     Vector3StampedMsgToTF(msgv, btv_out);
-    EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
-    EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
-    EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
+    EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
+    EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
+    EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
     EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
     EXPECT_EQ(btv.stamp_, btv_out.stamp_);
   } 
@@ -386,10 +385,10 @@ TEST(data, QuaternionStampedConversions)
     std_msgs::QuaternionStamped msgv;
     QuaternionStampedTFToMsg(btv, msgv);
     QuaternionStampedMsgToTF(msgv, btv_out);
-    EXPECT_NEAR(btv.data_.x(), btv_out.data_.x(), epsilon);
-    EXPECT_NEAR(btv.data_.y(), btv_out.data_.y(), epsilon);
-    EXPECT_NEAR(btv.data_.z(), btv_out.data_.z(), epsilon);
-    EXPECT_NEAR(btv.data_.w(), btv_out.data_.w(), epsilon);
+    EXPECT_NEAR(btv.x(), btv_out.x(), epsilon);
+    EXPECT_NEAR(btv.y(), btv_out.y(), epsilon);
+    EXPECT_NEAR(btv.z(), btv_out.z(), epsilon);
+    EXPECT_NEAR(btv.w(), btv_out.w(), epsilon);
     EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
     EXPECT_EQ(btv.stamp_, btv_out.stamp_);
   } 
@@ -442,13 +441,13 @@ TEST(data, TransformStampedConversions)
     std_msgs::TransformStamped msgv;
     TransformStampedTFToMsg(btv, msgv);
     TransformStampedMsgToTF(msgv, btv_out);
-    EXPECT_NEAR(btv.data_.getOrigin().x(), btv_out.data_.getOrigin().x(), epsilon);
-    EXPECT_NEAR(btv.data_.getOrigin().y(), btv_out.data_.getOrigin().y(), epsilon);
-    EXPECT_NEAR(btv.data_.getOrigin().z(), btv_out.data_.getOrigin().z(), epsilon);
-    EXPECT_NEAR(btv.data_.getRotation().x(), btv_out.data_.getRotation().x(), epsilon);
-    EXPECT_NEAR(btv.data_.getRotation().y(), btv_out.data_.getRotation().y(), epsilon);
-    EXPECT_NEAR(btv.data_.getRotation().z(), btv_out.data_.getRotation().z(), epsilon);
-    EXPECT_NEAR(btv.data_.getRotation().w(), btv_out.data_.getRotation().w(), epsilon);
+    EXPECT_NEAR(btv.getOrigin().x(), btv_out.getOrigin().x(), epsilon);
+    EXPECT_NEAR(btv.getOrigin().y(), btv_out.getOrigin().y(), epsilon);
+    EXPECT_NEAR(btv.getOrigin().z(), btv_out.getOrigin().z(), epsilon);
+    EXPECT_NEAR(btv.getRotation().x(), btv_out.getRotation().x(), epsilon);
+    EXPECT_NEAR(btv.getRotation().y(), btv_out.getRotation().y(), epsilon);
+    EXPECT_NEAR(btv.getRotation().z(), btv_out.getRotation().z(), epsilon);
+    EXPECT_NEAR(btv.getRotation().w(), btv_out.getRotation().w(), epsilon);
     EXPECT_STREQ(btv.frame_id_.c_str(), btv_out.frame_id_.c_str());
     EXPECT_EQ(btv.stamp_, btv_out.stamp_);
   } 
@@ -482,11 +481,11 @@ TEST(tf, ListOneForward)
 
     try{
     Stamped<Pose> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPose("my_parent",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), xvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), yvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), zvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().x(), xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), zvalues[i], epsilon);
     }
     catch (tf::TransformException & ex)
     {
@@ -527,11 +526,11 @@ TEST(tf, ListOneInverse)
 
     try{
     Stamped<btTransform> outpose;
-    outpose.data_.setIdentity(); //to make sure things are getting mutated
+    outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPose("child",inpose, outpose);
-    EXPECT_NEAR(outpose.data_.getOrigin().x(), -xvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().y(), -yvalues[i], epsilon);
-    EXPECT_NEAR(outpose.data_.getOrigin().z(), -zvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().x(), -xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), -yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), -zvalues[i], epsilon);
     }
     catch (tf::TransformException & ex)
     {
