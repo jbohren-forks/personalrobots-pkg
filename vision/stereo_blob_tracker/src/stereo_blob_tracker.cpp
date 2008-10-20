@@ -31,7 +31,7 @@ using namespace cv::willow;
 
 #define USE_AXIS_CAM 0
 #define DISPLAY true
-#define DISPLAYFREQ 1
+#define DISPLAYFREQ 30
 #define BLOBNEARCENTER false
 
 
