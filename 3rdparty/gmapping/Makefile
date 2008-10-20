@@ -6,11 +6,15 @@ SVN_REVISION = -r 39
 SVN_PATCH = gmapping-r39.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
-build: SVN_UP gmapping
+build: wiped SVN_UP gmapping
 
 configured: $(SVN_DIR) Makefile
 	cd $(SVN_DIR) && ./configure
 	touch configured
+
+wiped: Makefile
+	make wipe
+	touch wiped
 
 .PHONY: gmapping
 gmapping: configured
