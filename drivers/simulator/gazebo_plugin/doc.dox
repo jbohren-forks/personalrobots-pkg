@@ -14,7 +14,7 @@ Here are the gazebo plugins which are currently implemented:
 
 
 @section usage PR2 Simulation Quick Start Guide
-\li If you have successfully \e rosmake \e 2dnav-gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
+\li If you have successfully \e rosmake \e 2dnav_gazebo, you have EVERYTHING needed to run all simulator+PR2 demos. Otherwise, to compile a minimum set of packages for running Gazebo:
   @verbatim
   $ rosmake gazebo
   $ rosmake gazebo_plugin
