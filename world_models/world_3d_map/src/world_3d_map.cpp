@@ -192,6 +192,11 @@ private:
   
     void stateUpdate(void)
     {
+	if(!m_robotState)
+        {
+	  ROS_WARN("Ignoring state update because I haven't yet received the robot description");
+          return;
+        }
       //m_robotState->print();
 	planning_node_util::NodeRobotModel::stateUpdate();
 	if (m_kmodel)
@@ -249,7 +254,7 @@ private:
     {
 	/* If we're not ready to accept scans yet, discard the data */
       if (!m_acceptScans){
-	ROS_DEBUG("Bailing\n");
+	ROS_DEBUG("Bailing");
 	return;
       }
 	
