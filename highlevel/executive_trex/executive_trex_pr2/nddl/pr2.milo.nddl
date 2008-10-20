@@ -160,7 +160,7 @@ BatteryState::Holds {
   // If below the threshold, transition working status to recharge
   // if(energy_remaining < object.rechargeThreshold){
   if(mustRecharge == true){
-    // at end: workingStatus.Holds.recharging == true
+    // workingStatus[end] == Holds(true)
     any(WorkingStatus.Holds ws);
     precedes(ws.start, end);
     precedes(end, ws.end);
@@ -178,7 +178,7 @@ BatteryState::Holds {
 
 WorkingStatus::Holds{
   // We should toggle between recharging and not recharging
-  // meets: Holds(!recharging); 
+  // this[end] == Holds(!recharging); 
   meets(Holds s);
   neq(s.recharging, recharging);
 
@@ -197,7 +197,7 @@ WorkingStatus::Holds{
       starts(BaseState.Holds bs);
       nearestReachableLocation(bs.x, bs.y, cs);
 
-      // at end: rechargeController == Inactive(false, cs.x, cs.y, cs.th)
+      // rechargeController[end] == Inactive(false, cs.x, cs.y, cs.th)
       any(RechargeController.Inactive rc);
       eq(rc.desX, cs.x);
       eq(rc.desY, cs.y);
@@ -213,7 +213,7 @@ WorkingStatus::Holds{
  */
 RechargeController::Inactive{
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  // this[start-1] == (desX, desY, desTh)
+  // this[start-1] == Active(desX, desY, desTh)
   met_by(Active p);
   eq(p.x, desX);
   eq(p.y, desY);
