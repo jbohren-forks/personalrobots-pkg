@@ -7,6 +7,7 @@
 <depend package="newmat10" />
 <depend package="libTF" />
 <!-- <depend package="VTK" /> -->
+<sysdepend os="ubuntu" version="7.04-feisty" package="libvtk5-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libvtk5-dev"/>
 <!-- TODO: get the link flags some other way, preferably from VTK itself -->
 <export>
