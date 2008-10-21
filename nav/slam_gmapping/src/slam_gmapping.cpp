@@ -240,20 +240,21 @@ SlamGMapping::addScan(const std_msgs::LaserScan& scan)
                                  gsp_laser_, 
                                  scan.header.stamp.toSec());
 
-  // ...but it deep copies them, so we don't need to keep our array around.
+  // ...but it deep copies them in RangeReading constructor, so we don't 
+  // need to keep our array around.
   delete[] ranges_double;
 
   reading.setPose(gmap_pose);
 
-  /*
-  ROS_DEBUG("scan pose (%.3f): %.3f %.3f %.3f",
+  printf("scanpose (%.3f): %.3f %.3f %.3f\n",
             scan.header.stamp.toSec(),
-            odom_pose.getOrigin().x(),
-            odom_pose.getOrigin().y(),
-            yaw);
-            */
+            gmap_pose.x,
+            gmap_pose.y,
+            gmap_pose.theta);
+  fflush(NULL);
 
-  return gsp_->processScan(reading);
+  //return gsp_->processScan(reading);
+  return false;
 }
 
 void
