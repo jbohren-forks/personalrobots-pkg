@@ -15,7 +15,7 @@
       <actuator name="${name}_motor" />
       <joint name="${name}_joint" />
       <!-- <mechanicalReduction>19.26</mechanicalReduction> -->
-      <mechanicalReduction>48.34</mechanicalReduction><!-- measured by Stu and Keenan -->
+      <mechanicalReduction>-48.34</mechanicalReduction><!-- measured by Stu and Keenan -->
       <calibration reference_position="0.0" values="0 0" />
     </transmission>
 
