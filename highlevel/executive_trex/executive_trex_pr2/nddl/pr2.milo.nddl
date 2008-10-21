@@ -113,9 +113,12 @@ VenusDeMiles::Holds{
   bool busy;
   testLT(busy, iterationCount, iterationLimit);
   if(busy == true){
+    // Alternatives:
+    // navigator[start + [0, inf], end] = Active(randomSelect(w))
     randomSelect(w);
     ends(Navigator.Active n);
     eq(n.w, w);
+    precedes(start, n.start);
 
     meets(Holds s);
     addEq(iterationCount, 1, s.iterationCount);
@@ -236,7 +239,7 @@ RechargeController::Active{
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station. This is derived by the given parameters
 
-  // contained_by: moveBase == Inactive(*, *, *, x, y, th);
+  // moveBase[start, end] == Inactive(*, *, *, x, y, th);
   any(MoveBase.Inactive mb);
   eq(mb.desX, x);
   eq(mb.desY, y);
@@ -247,18 +250,24 @@ RechargeController::Active{
 }
 
 Navigator::Active{
-  // ends: moveBase == Active(w.x, w.y, w.th);
-  ends(MoveBase.Active move);
-  eq(move.x, w.x);
-  eq(move.y, w.y);
-  eq(move.th, w.th);
+  // An assignment statement? We mean to transition the state
+  // label mb: moveBase[*, end] = Active(w.x, w.y, w.th);
+  any(MoveBase.Active mb);
+  eq(mb.x, w.x);
+  eq(mb.y, w.y);
+  eq(mb.th, w.th);
+  concurrent(mb.end, end);
 
-  // contained_by: ws == Holds(false);
+  // We further constrain mb so that it begins within this interval
+  // start <= mb.start
+  precedes(start, mb.start);
+
+  // ws[mb.start, mb.end] == Holds(false);
   any(WorkingStatus.Holds ws);
   eq(ws.recharging, false);
-  precedes(ws.start, move.start);
-  precedes(move.end, ws.end);
-  leq(move.duration, ws.duration);
+  precedes(ws.start, mb.start);
+  precedes(mb.end, ws.end);
+  leq(mb.duration, ws.duration);
 
   // Check end conditions. Note that this formulation should always be resolved in implementation
   // by binding to an existing token.

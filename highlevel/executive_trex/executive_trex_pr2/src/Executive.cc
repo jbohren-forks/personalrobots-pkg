@@ -122,7 +122,7 @@ int main(int argc, char **argv)
   bool playback = false;
 
   if (argc != 2) {
-    std::cerr << "Invalid argument list: Usage: exec_trex_o_rt configfile" << std::endl;
+    std::cerr << "Invalid argument list: Usage: trex_fast configfile" << std::endl;
     return -1;
   }
   atexit(&cleanup);

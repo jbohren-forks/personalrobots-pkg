@@ -14,14 +14,14 @@ RechargeController rechargeController = new RechargeController(External);
 BatteryState batteryState = new BatteryState(External, 1.0);
 
 /* Waypoints */
-Waypoint w1 = new Waypoint(36.0, 10.5, 0.0);
-Waypoint w2 = new Waypoint(20.0, 20.0, 3.14);
-Waypoint w3 = new Waypoint(23.0, 15.0, 0.0);
-Waypoint w4 = new Waypoint(21.5, 11.5, 1.0);
+Waypoint w1 = new Waypoint(28.0, 38.0, 0.0);
+Waypoint w2 = new Waypoint(34.0, 7.0, 3.14);
+Waypoint w3 = new Waypoint(19.8, 9.0, 0.0);
+Waypoint w4 = new Waypoint(22.7, 15.5, 1.0);
 
 /* Charging Stations */
-ChargingStation c1 = new ChargingStation(33.0, 20.0, 0.0);
-ChargingStation c2 = new ChargingStation(20.0, 20.0, 0.0);
-ChargingStation c3 = new ChargingStation(32.5, 35.0, 0.0);
+ChargingStation c1 = new ChargingStation(18.4, 13.75, 0.0);
+ChargingStation c2 = new ChargingStation(31.36, 16.2, 0.0);
+ChargingStation c3 = new ChargingStation(39.0, 42.0, 0.0);
 
 close();

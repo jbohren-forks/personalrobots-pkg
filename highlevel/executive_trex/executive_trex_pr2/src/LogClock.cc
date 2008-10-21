@@ -16,7 +16,7 @@ namespace TREX {
       m_gets(0), m_tick(0),
       m_secondsPerTick(secondsPerTick) {
     pthread_mutex_init(&m_lock, NULL);
-    m_file = fopen("clock.log", "w");
+    m_file = fopen("./latest/clock.log", "w");
   }
 
   void LogClock::start(){

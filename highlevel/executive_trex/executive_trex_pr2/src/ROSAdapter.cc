@@ -8,8 +8,12 @@
 
 namespace TREX { 				     
 
+  /**
+   * ROS Adapters will always log, to support playback. This is achieved by setting parameters in the
+   * base class constructor
+   */
   ROSAdapter::ROSAdapter(const LabelStr& agentName, const TiXmlElement& configData, TICK lookAhead)
-    : Adapter(agentName, configData, lookAhead, 0), m_initialized(false),
+    : Adapter(agentName, configData, lookAhead, 0, 1), m_initialized(false),
       timelineName(extractData(configData, "timelineName").toString()),
       timelineType(extractData(configData, "timelineType").toString()), 
       stateTopic(extractData(configData, "stateTopic").toString()){
