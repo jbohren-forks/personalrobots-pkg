@@ -7,7 +7,7 @@
   <macro name="pr2_torso" params="name parent *origin">
 
     <joint name="${name}_joint" type="prismatic">
-      <limit min="0.0" max="0.396" effort="10" velocity="5" />
+      <limit min="0.0" max="0.396" effort="10000" velocity="5" />
       <axis xyz="0 0 1" />
     </joint>
 
@@ -15,7 +15,7 @@
       <actuator name="${name}_motor" />
       <joint name="${name}_joint" />
       <!-- <mechanicalReduction>19.26</mechanicalReduction> -->
-      <mechanicalReduction>-48.34</mechanicalReduction><!-- measured by Stu and Keenan -->
+      <mechanicalReduction>-${52143.33}</mechanicalReduction><!-- measured by Stu and Keenan -->
       <calibration reference_position="0.0" values="0 0" />
     </transmission>
 
