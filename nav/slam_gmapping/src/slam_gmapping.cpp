@@ -157,7 +157,8 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   //double maxUrange = 80.0;
   double maxUrange = 16.0;
   //double maxrange = 80.0;
-  double maxrange = 30.0;
+  //double maxrange = 30.0;
+  double maxrange = scan.range_max;
   double sigma = 0.05;
   int kernelSize = 1;
   double lstep = 0.05;
@@ -166,11 +167,11 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   double lsigma = 0.075;
   double ogain = 3.0;
   //unsigned int lskip = 0;
-  unsigned int lskip = 10;
+  unsigned int lskip = 4;
   double srr = 0.1;
-  double srt = 0.1;
+  double srt = 0.2;
   double str = 0.1;
-  double stt = 0.1;
+  double stt = 0.2;
   double linearUpdate = 1.0;
   double angularUpdate = 0.5;
   double resampleThreshold = 0.5;
