@@ -3,6 +3,7 @@
 
 float XY_ERROR = 0.25;
 float THETA_ERROR = 0.1;
+float MIN_RECHARGE = 500.0;
 
 /**
  * Monitors battery state information
@@ -163,9 +164,9 @@ BatteryState::Holds {
   // If below the threshold, transition working status to recharge
   // if(energy_remaining < object.rechargeThreshold){
   if(mustRecharge == true){
-    // workingStatus[end] == Holds(true)
+    // workingStatus[start+1, end] == Holds(true)
     any(WorkingStatus.Holds ws);
-    precedes(ws.start, end);
+    temporalDistance(start, [-inf, 1], ws.start); 
     precedes(end, ws.end);
     eq(ws.recharging, true);
   }
@@ -200,13 +201,23 @@ WorkingStatus::Holds{
       starts(BaseState.Holds bs);
       nearestReachableLocation(bs.x, bs.y, cs);
 
-      // rechargeController[end] == Inactive(false, cs.x, cs.y, cs.th)
-      any(RechargeController.Inactive rc);
-      eq(rc.desX, cs.x);
-      eq(rc.desY, cs.y);
-      eq(rc.desTh, cs.th);
-      precedes(rc.start, end);
-      precedes(end, rc.end);
+      // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
+      any(RechargeController.Active rc);
+      eq(rc.x, cs.x);
+      eq(rc.y, cs.y);
+      eq(rc.th, cs.th);
+      concurrent(rc.end, end);
+
+      // check expected end conditions. Notation assumes a single predicate, otherwise it would be
+      // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. Ar run
+      // time this can resolve to a token that cannot be inserted. At compile time, it must resolve unabiguously
+      // to a token
+      // batteryState[level].energy_remaining >= MIN_RECHARGE;
+      if(end){
+	any(BatteryState.Holds bs_e);
+	concurrent(bs_e.end, end);
+	leq(MIN_RECHARGE, bs_e.energy_remaining);
+      }
     }
   }
 }
