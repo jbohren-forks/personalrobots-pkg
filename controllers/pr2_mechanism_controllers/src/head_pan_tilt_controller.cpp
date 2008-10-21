@@ -145,8 +145,14 @@ void HeadPanTiltController::update(void)
 
 void HeadPanTiltController::updateJointControllers(void)
 {
+
   for(unsigned int i=0;i<num_joints_;++i)
-    joint_position_controllers_[i]->update();
+  { 
+    if (!joint_position_controllers_[i]->joint_state_->calibrated_)
+      return;  // joints are not calibrated
+      
+    joint_position_controllers_[i]->update(); 
+  }
 }
 
 //------ Head controller node --------
