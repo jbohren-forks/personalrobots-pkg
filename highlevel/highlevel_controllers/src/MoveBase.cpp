@@ -85,6 +85,7 @@ namespace ros {
       double inflationRadius(0.46);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
+      param("costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("costmap_2d/no_information_value", noInformation, noInformation);
