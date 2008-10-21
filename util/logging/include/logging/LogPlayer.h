@@ -360,6 +360,8 @@ protected:
   
   bool readNextMsg()
   {
+    static ros::Duration first_duration(0,0);
+
     if (!log_file_.good())
     {
       done_ = true;
@@ -401,8 +403,11 @@ protected:
     log_file_.read((char*)&next_msg_dur.sec, 4);
     log_file_.read((char*)&next_msg_dur.nsec, 4);
     log_file_.read((char*)&next_msg_size_, 4);
+
+    if(first_duration == ros::Duration(0,0))
+      first_duration = next_msg_dur;
       
-    next_msg_time_ = start_time_ + next_msg_dur;
+    next_msg_time_ = start_time_ + (next_msg_dur - first_duration);
       
     if (log_file_.eof())
     {
