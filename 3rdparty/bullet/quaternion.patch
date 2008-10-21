@@ -1,6 +1,6 @@
 Index: src/LinearMath/btTransform.h
 ===================================================================
---- src/LinearMath/btTransform.h	(revision 1343)
+--- src/LinearMath/btTransform.h	(revision 1390)
 +++ src/LinearMath/btTransform.h	(working copy)
 @@ -21,34 +21,39 @@
  #include "btMatrix3x3.h"
@@ -200,7 +200,7 @@ Index: src/LinearMath/btTransform.h
     return ( t1.getBasis()  == t2.getBasis() &&
 Index: src/LinearMath/btQuaternion.h
 ===================================================================
---- src/LinearMath/btQuaternion.h	(revision 1343)
+--- src/LinearMath/btQuaternion.h	(revision 1390)
 +++ src/LinearMath/btQuaternion.h	(working copy)
 @@ -17,30 +17,43 @@
  #ifndef SIMD__QUATERNION_H_
@@ -355,7 +355,7 @@ Index: src/LinearMath/btQuaternion.h
  	SIMD_FORCE_INLINE btQuaternion
  	operator*(const btScalar& s) const
  	{
-@@ -122,33 +171,36 @@
+@@ -122,33 +171,41 @@
  	}
  
  
@@ -391,14 +391,19 @@ Index: src/LinearMath/btQuaternion.h
  		btScalar s = btSqrt(length2() * q.length2());
  		assert(s != btScalar(0.0));
 -		return btAcos(dot(q) / s);
-+		return btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
++                btScalar retval;
++                if (dot(q) < 0) // Take care of long angle case see http://en.wikipedia.org/wiki/Slerp
++                  retval = btAcos(std::min(dot(-q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
++                else 
++                  retval = btAcos(std::min(dot(q), (btScalar)1.0) / s); //Added min to prevent nan result when floating point errors made dot > 1
++		return retval;
  	}
 -
 +  /**@brief Return the angle of rotation represented by this quaternion */
  	btScalar getAngle() const 
  	{
  		btScalar s = btScalar(2.) * btAcos(m_unusedW);
-@@ -156,12 +208,14 @@
+@@ -156,12 +213,14 @@
  	}
  
  
@@ -414,7 +419,7 @@ Index: src/LinearMath/btQuaternion.h
  	SIMD_FORCE_INLINE btQuaternion
  	operator+(const btQuaternion& q2) const
  	{
-@@ -169,6 +223,8 @@
+@@ -169,6 +228,8 @@
  		return btQuaternion(q1.x() + q2.x(), q1.y() + q2.y(), q1.z() + q2.z(), q1.m_unusedW + q2.m_unusedW);
  	}
  
@@ -423,7 +428,7 @@ Index: src/LinearMath/btQuaternion.h
  	SIMD_FORCE_INLINE btQuaternion
  	operator-(const btQuaternion& q2) const
  	{
-@@ -176,12 +232,14 @@
+@@ -176,12 +237,14 @@
  		return btQuaternion(q1.x() - q2.x(), q1.y() - q2.y(), q1.z() - q2.z(), q1.m_unusedW - q2.m_unusedW);
  	}
  
@@ -439,7 +444,7 @@ Index: src/LinearMath/btQuaternion.h
  	SIMD_FORCE_INLINE btQuaternion farthest( const btQuaternion& qd) const 
  	{
  		btQuaternion diff,sum;
-@@ -192,6 +250,10 @@
+@@ -192,6 +255,10 @@
  		return (-qd);
  	}
  
@@ -450,7 +455,7 @@ Index: src/LinearMath/btQuaternion.h
  	btQuaternion slerp(const btQuaternion& q, const btScalar& t) const
  	{
  		btScalar theta = angle(q);
-@@ -217,7 +279,7 @@
+@@ -217,7 +284,7 @@
  };
  
  
@@ -459,7 +464,7 @@ Index: src/LinearMath/btQuaternion.h
  SIMD_FORCE_INLINE btQuaternion
  operator-(const btQuaternion& q)
  {
-@@ -226,7 +288,7 @@
+@@ -226,7 +293,7 @@
  
  
  
@@ -468,7 +473,7 @@ Index: src/LinearMath/btQuaternion.h
  SIMD_FORCE_INLINE btQuaternion
  operator*(const btQuaternion& q1, const btQuaternion& q2) {
  	return btQuaternion(q1.w() * q2.x() + q1.x() * q2.w() + q1.y() * q2.z() - q1.z() * q2.y(),
-@@ -253,6 +315,7 @@
+@@ -253,6 +320,7 @@
  		-w.x() * q.x() - w.y() * q.y() - w.z() * q.z()); 
  }
  
@@ -476,7 +481,7 @@ Index: src/LinearMath/btQuaternion.h
  SIMD_FORCE_INLINE btScalar 
  dot(const btQuaternion& q1, const btQuaternion& q2) 
  { 
-@@ -260,25 +323,32 @@
+@@ -260,25 +328,32 @@
  }
  
  
@@ -512,7 +517,7 @@ Index: src/LinearMath/btQuaternion.h
  {
 Index: src/LinearMath/btVector3.h
 ===================================================================
---- src/LinearMath/btVector3.h	(revision 1343)
+--- src/LinearMath/btVector3.h	(revision 1390)
 +++ src/LinearMath/btVector3.h	(working copy)
 @@ -19,20 +19,28 @@
  
@@ -804,7 +809,7 @@ Index: src/LinearMath/btVector3.h
  	return p1.x() == p2.x() && p1.y() == p2.y() && p1.z() == p2.z();
 Index: src/LinearMath/btQuadWord.h
 ===================================================================
---- src/LinearMath/btQuadWord.h	(revision 1343)
+--- src/LinearMath/btQuadWord.h	(revision 1390)
 +++ src/LinearMath/btQuadWord.h	(working copy)
 @@ -22,9 +22,9 @@
  
@@ -951,7 +956,7 @@ Index: src/LinearMath/btQuadWord.h
  			btSetMin(m_x, other.m_x);
 Index: src/LinearMath/btMinMax.h
 ===================================================================
---- src/LinearMath/btMinMax.h	(revision 1343)
+--- src/LinearMath/btMinMax.h	(revision 1390)
 +++ src/LinearMath/btMinMax.h	(working copy)
 @@ -17,24 +17,32 @@
  #ifndef GEN_MINMAX_H
@@ -1010,7 +1015,7 @@ Index: src/LinearMath/btMinMax.h
  {
 Index: src/LinearMath/btMatrix3x3.h
 ===================================================================
---- src/LinearMath/btMatrix3x3.h	(revision 1343)
+--- src/LinearMath/btMatrix3x3.h	(revision 1390)
 +++ src/LinearMath/btMatrix3x3.h	(working copy)
 @@ -23,14 +23,16 @@
  
