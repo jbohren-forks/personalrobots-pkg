@@ -12,7 +12,7 @@ newmat/newmat10: newmat/newmat_1.10.4/newmat10.tar.gz newmat_1.10.4-2build1.diff
 	cd newmat/newmat_1.10.4 && patch -p1 <../../fPIC.diff
 	cd newmat/newmat_1.10.4 && patch -p0 <../../warnings.diff
 	cd newmat/newmat_1.10.4 && touch config.h
-	cd newmat/newmat_1.10.4 && make -f nm_gnu.mak
+	cd newmat/newmat_1.10.4 && make $(PR2_JOBS) -f nm_gnu.mak
 	cp -r newmat/newmat_1.10.4 newmat/newmat10
 
 clean: 

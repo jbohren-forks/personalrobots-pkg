@@ -25,7 +25,7 @@ wiped: Makefile
 
 .PHONY: kdl
 kdl:	configured
-	cd $(SVN_DIR)/build && make && make python && make install
+	cd $(SVN_DIR)/build && make $(PR2_JOBS) && make python && make install
 
 clean:
 	rm -rf $(SVN_DIR)/build

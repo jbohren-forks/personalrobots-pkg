@@ -10,7 +10,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP_REVERT_PATCH
 	cd $(SVN_DIR) && cmake .
-	make -C $(SVN_DIR) LibLinearMath
+	make $(PR2_JOBS) -C $(SVN_DIR) LibLinearMath
 	touch bullet
 
 clean:

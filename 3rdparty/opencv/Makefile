@@ -22,7 +22,7 @@ configured: $(SOURCE_DIR) Makefile
 .PHONY: opencv
 opencv: configured
 	@echo "making it"
-	export LD_RUN_PATH=${LD_RUN_PATH}:${FFMPEG}/ffmpeg/lib && export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FFMPEG}/ffmpeg/lib && cd $(SOURCE_DIR) && make && make install
+	export LD_RUN_PATH=${LD_RUN_PATH}:${FFMPEG}/ffmpeg/lib && export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${FFMPEG}/ffmpeg/lib && cd $(SOURCE_DIR) && make $(PR2_JOBS) && make install
 
 clean:
 	-rm -rf opencv $(SOURCE_DIR) configured

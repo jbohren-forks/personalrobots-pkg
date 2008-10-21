@@ -9,7 +9,7 @@ build: SVN_UP loki
 
 .PHONY: loki
 loki:
-	cd $(SVN_DIR) && make
+	cd $(SVN_DIR) && make $(PR2_JOBS)
 
 clean:
 	-cd $(SVN_DIR) && make clean
