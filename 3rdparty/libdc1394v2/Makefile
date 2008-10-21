@@ -10,7 +10,7 @@ build: SVN_UP libdc1394v2
 
 configured: $(SVN_DIR) Makefile
 	cd $(SVN_DIR) && autoreconf -i -s
-	cd $(SVN_DIR) && ./configure --prefix=$(PWD)/libdc1394v2 --enable-shared=no
+	cd $(SVN_DIR) && CFLAGS="-g -O2 -fPIC" ./configure --prefix=$(PWD)/libdc1394v2 --enable-shared=no
 	touch configured
 
 .PHONY: libdc1394v2
