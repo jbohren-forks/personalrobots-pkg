@@ -1,0 +1,6 @@
+ifdown eth0
+rmmod e1000
+insmod /usr/local/rtnet/modules/rtnet.ko
+insmod /usr/local/rtnet/modules/rtpacket.ko
+insmod /usr/local/rtnet/modules/rt_e1000.ko
+/usr/local/rtnet/sbin/rtifconfig rteth0 up
