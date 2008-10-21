@@ -9,10 +9,7 @@ rtnet: rtnet-src
 	cd rtnet-src && \
 	cp ../rtnet_config .rtnet_config && \
     make oldconfig && \
-	make
-
-rtnet_install: rtnet
-	make -C rtnet-src install
+	make install
 
 $(RTNET_ARCHIVE): 
 	wget http://pr.willowgarage.com/downloads/$(RTNET_ARCHIVE)

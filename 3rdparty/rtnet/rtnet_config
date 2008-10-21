@@ -15,7 +15,7 @@ CONFIG_RTNET_LINUX_DIR="`rospack find xenomai`/linux"
 #
 # RTnet Parameters
 #
-CONFIG_RTNET_INSTALLDIR="/usr/local/rtnet"
+CONFIG_RTNET_INSTALLDIR="`rospack find rtnet`/rtnet"
 # CONFIG_RTNET_CHECKED is not set
 
 #
