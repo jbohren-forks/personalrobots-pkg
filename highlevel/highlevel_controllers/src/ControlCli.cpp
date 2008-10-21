@@ -53,8 +53,15 @@ public:
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     advertise<pr2_msgs::MoveArmGoal>("right_arm_goal", 1);
     advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
-    advertise<robot_msgs::BatteryState>("battery_state", 1);
+    advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
     advertise<robot_msgs::MechanismState>("mechanism_state", 1);
+    subscribe<robot_msgs::BatteryState>("battery_state", batteryMsg_, &ControlCLI::batteryCallback, 1);
+
+    // Set default values
+    batteryState_.power_consumption = -800;
+    batteryState_.energy_remaining = 1000;
+    batteryState_.energy_capacity = 100;
+
     runCLI();
   }
   bool alive() { return !dead; }
@@ -99,6 +106,15 @@ private:
     return 0;
   }
 
+  /**
+   * Callback will ignore the inbound message and send the desired data
+   */
+  void batteryCallback(){
+      batteryState_.lock();
+      publish<robot_msgs::BatteryState>("bogus_battery_state", batteryState_);
+      batteryState_.unlock();
+  }
+
   void runCLI() {
     printf("Type:\nI\tInitialize States\nP\tActivate Recharge.\nB\tSet Battery State\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
     char c = '\n';
@@ -108,13 +124,17 @@ private:
     }
 
     if (c == 'B') {
+      double consumption(0.0), remaining(0.0);
       printf("Enter Consumption:\n");
-      robot_msgs::BatteryState battery;
-      battery.power_consumption = enterValue(-10000, 10000);
-      printf("Enter Current:\n");
-      battery.energy_remaining = enterValue(-10000, 10000);
-      battery.energy_capacity = 100;
-      publish<robot_msgs::BatteryState>("battery_state", battery);
+      consumption = enterValue(-10000, 10000);
+      printf("Enter Remaining Energy:\n");
+      remaining = enterValue(-10000, 10000);
+      printf("Sending battery state update:<%f, %f>.\n", consumption, remaining);
+      batteryState_.lock();
+      batteryState_.power_consumption = consumption;
+      batteryState_.energy_remaining = remaining;
+      batteryState_.energy_capacity = 100;
+      batteryState_.unlock();
     } else if (c == 'P') {
       printf("Sending plugin goal.\n");
       highlevel_controllers::RechargeGoal goal;
@@ -212,6 +232,9 @@ private:
     }
     runCLI();
   }
+
+  robot_msgs::BatteryState batteryState_;
+  robot_msgs::BatteryState batteryMsg_;;
 };
 
 
