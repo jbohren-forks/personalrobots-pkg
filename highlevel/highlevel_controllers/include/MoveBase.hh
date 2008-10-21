@@ -142,11 +142,17 @@ namespace ros {
       void updateGlobalPose();
 
       /**
+       * @brief Helper method to update the costmap and conduct other book-keeping
+       */
+      void updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud);
+
+      /**
        * @brief Issue zero velocity commands
        */
       void stopRobot();
 
       void publishPath(bool isGlobal, const std::list<std_msgs::Pose2DFloat32>& path);
+
       void publishFootprint(double x, double y, double th);
 
       /**
@@ -159,6 +165,13 @@ namespace ros {
        * configuration parameter of the object.
        */
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
+
+      /**
+       * @brief Watchdog Handling
+       */
+      void petTheWatchDog();
+      bool checkWatchDog() const;
+      struct timeval lastUpdated_;
 
       std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
 

@@ -52,7 +52,6 @@ namespace ros {
 	ma_(NULL),
 	usingPointClouds_(false),
 	laserMaxRange_(4.0) {
-      
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
@@ -289,40 +288,21 @@ namespace ros {
 	  puts("Extrapolation exception");
 	}
 
-      // Update the cost map
-      const double ts = laserScanMsg_.header.stamp.to_double();
-      std::vector<unsigned int> updates;
-
       // Surround with a lock since it can interact with main planning and execution thread
-      lock();
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, global_cloud, updates);
-      handleMapUpdates(updates);
-      publishLocalCostMap();
-      unlock();
+      updateDynamicObstacles(laserScanMsg_.header.stamp.to_double(), global_cloud);
     }
-
 
     /**
      * Point clouds are produced in the map frame so no transform is required. We simply use point clouds if produced
      */
     void MoveBase::pointCloudCallback(){
-      // Update the cost map
-      const double ts = pointCloudMsg_.header.stamp.to_double();
-      std::vector<unsigned int> updates;
-
-      // Surround with a lock since it can interact with main planning and execution thread
-      lock();
-
       // Ensure laser scans are disabled
       if(usingPointClouds_ == false){
 	ROS_INFO("Disabling laser scan processing\n");
 	usingPointClouds_ = true; // Block out scan messages
       }
 
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, pointCloudMsg_, updates);
-      handleMapUpdates(updates);
-      publishLocalCostMap();
-      unlock();
+      updateDynamicObstacles(pointCloudMsg_.header.stamp.to_double(), pointCloudMsg_);
     }
 
     /**
@@ -458,6 +438,21 @@ namespace ros {
       return false;
     }
 
+    void MoveBase::petTheWatchDog(){
+      gettimeofday(&lastUpdated_, NULL);
+    }
+
+    /**
+     * At most one second between updates
+     */
+    bool MoveBase::checkWatchDog() const {
+      struct timeval curr;
+      gettimeofday(&curr,NULL);
+      bool ok = (curr.tv_sec - lastUpdated_.tv_sec) < 1;
+      if(!ok) printf("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+      return ok;
+    }
+
     /**
      * Note that we have tried doing collision checks on the plan, and replanning in that case at the global level. With ARA*
      * at least, this leads to poor performance since planning ks slow (seconds) and thus the robot stops alot. If we leave the
@@ -466,7 +461,7 @@ namespace ros {
      * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint. 
      */
     bool MoveBase::dispatchCommands(){
-      bool planOk = true; // Return value to trigger replanning or not
+      bool planOk = checkWatchDog();
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
@@ -613,6 +608,16 @@ namespace ros {
 
     void MoveBase::handleDeactivation(){
       stopRobot();
+    }
+
+    void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
+      std::vector<unsigned int> updates;
+      lock();
+      petTheWatchDog();
+      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);
+      handleMapUpdates(updates);
+      publishLocalCostMap();
+      unlock();
     }
   }
 }
