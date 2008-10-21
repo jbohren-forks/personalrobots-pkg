@@ -53,7 +53,9 @@ SlamGMapping::SlamGMapping()
   node_ = new ros::node("gmapping");
   ROS_ASSERT(gsp_);
 
-  /// @todo Disable extrapolation, and implement scan-buffering
+  /// @todo Disable extrapolation, and implement scan-buffering.  This is
+  /// not urgent for a robot like the PR2, where odometry is being
+  /// published several times faster than laser scans.
   tf_ = new tf::TransformListener(*node_, true, 10000000000ULL, 200000000ULL);
   ROS_ASSERT(tf_);
 
@@ -64,6 +66,39 @@ SlamGMapping::SlamGMapping()
 
   node_->subscribe("base_scan", scan_, &SlamGMapping::laser_cb, this, -1);
   node_->advertise_service("dynamic_map", &SlamGMapping::map_cb, this);
+  
+  // Parameters used by our GMapping wrapper
+  double tmp;
+  node_->param("map_udpate_interval", tmp, 5.0);
+  map_update_interval_.fromSec(tmp);
+  
+  // Parameters used by GMapping itself
+  node_->param("maxUrange", maxUrange_, 80.0);
+  node_->param("sigma", sigma_, 0.05);
+  node_->param("kernelSize", kernelSize_, 1);
+  node_->param("lstep", lstep_, 0.05);
+  node_->param("astep", astep_, 0.05);
+  node_->param("iterations", iterations_, 5);
+  node_->param("lsigma", lsigma_, 0.075);
+  node_->param("ogain", ogain_, 3.0);
+  node_->param("lskip", lskip_, 0);
+  node_->param("srr", srr_, 0.1);
+  node_->param("srt", srt_, 0.2);
+  node_->param("str", str_, 0.1);
+  node_->param("stt", stt_, 0.2);
+  node_->param("linearUpdate", linearUpdate_, 1.0);
+  node_->param("angularUpdate", angularUpdate_, 0.5);
+  node_->param("resampleThreshold", resampleThreshold_, 0.5);
+  node_->param("particles", particles_, 30);
+  node_->param("xmin", xmin_, -100.0);
+  node_->param("ymin", ymin_, -100.0);
+  node_->param("xmax", xmax_, 100.0);
+  node_->param("ymax", ymax_, 100.0);
+  node_->param("delta", delta_, 0.05);
+  node_->param("llsamplerange", llsamplerange_, 0.01);
+  node_->param("llsamplestep", llsamplestep_, 0.01);
+  node_->param("lasamplerange", lasamplerange_, 0.005);
+  node_->param("lasamplestep", lasamplestep_, 0.005);
 }
 
 SlamGMapping::~SlamGMapping()
@@ -109,7 +144,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
 bool
 SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 {
-  // @todo Get the laser's pose, relative to base.
+  // Get the laser's pose, relative to base.
   tf::Stamped<tf::Pose> ident;
   tf::Stamped<btTransform> laser_pose;
   ident.setIdentity();
@@ -153,62 +188,29 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   gsp_odom_ = new GMapping::OdometrySensor("odom");
   ROS_ASSERT(gsp_odom_);
 
-  /// @todo Expose the mapper's params
-  //double maxUrange = 80.0;
-  double maxUrange = 16.0;
-  //double maxrange = 80.0;
-  //double maxrange = 30.0;
   double maxrange = scan.range_max;
-  double sigma = 0.05;
-  int kernelSize = 1;
-  double lstep = 0.05;
-  double astep = 0.05;
-  int iterations = 5;
-  double lsigma = 0.075;
-  double ogain = 3.0;
-  //unsigned int lskip = 0;
-  unsigned int lskip = 4;
-  double srr = 0.1;
-  double srt = 0.2;
-  double str = 0.1;
-  double stt = 0.2;
-  double linearUpdate = 1.0;
-  double angularUpdate = 0.5;
-  double resampleThreshold = 0.5;
-  bool generateMap = false;
-  int particles = 30;
-  double xmin = -100.0;
-  double ymin = -100.0;
-  double xmax = 100.0;
-  double ymax = 100.0;
-  // delta is the grid resolution, m/pix
-  //double delta = 0.05;
-  double delta = 0.1;
-  double llsamplerange = 0.01;
-  double llsamplestep = 0.01;
-  double lasamplerange = 0.005;
-  double lasamplestep = 0.005;
 
+  /// @todo Expose setting an intial pose
   GMapping::OrientedPoint initialPose;
   if(!getOdomPose(initialPose, scan.header.stamp))
     initialPose = GMapping::OrientedPoint(0.0, 0.0, 0.0);
 
-  gsp_->setMatchingParameters(maxUrange, maxrange, sigma, 
-                              kernelSize, lstep, astep, iterations, 
-                              lsigma, ogain, lskip);
+  gsp_->setMatchingParameters(maxUrange_, maxrange, sigma_, 
+                              kernelSize_, lstep_, astep_, iterations_, 
+                              lsigma_, ogain_, lskip_);
 
-  gsp_->setMotionModelParameters(srr, srt, str, stt);
-  gsp_->setUpdateDistances(linearUpdate, angularUpdate, resampleThreshold);
-  gsp_->setgenerateMap(generateMap);
-  gsp_->GridSlamProcessor::init(particles, xmin, ymin, xmax, ymax, 
-                                delta, initialPose);
-  gsp_->setllsamplerange(llsamplerange);
-  gsp_->setllsamplestep(llsamplestep);
+  gsp_->setMotionModelParameters(srr_, srt_, str_, stt_);
+  gsp_->setUpdateDistances(linearUpdate_, angularUpdate_, resampleThreshold_);
+  gsp_->setgenerateMap(false);
+  gsp_->GridSlamProcessor::init(particles_, xmin_, ymin_, xmax_, ymax_, 
+                                delta_, initialPose);
+  gsp_->setllsamplerange(llsamplerange_);
+  gsp_->setllsamplestep(llsamplestep_);
   /// @todo Check these calls; in the gmapping gui, they use
   /// llsamplestep and llsamplerange intead of lasamplestep and
   /// lasamplerange.  It was probably a typo, but who knows.
-  gsp_->setlasamplerange(lasamplerange);
-  gsp_->setlasamplestep(lasamplestep);
+  gsp_->setlasamplerange(lasamplerange_);
+  gsp_->setlasamplestep(lasamplestep_);
 
   // Call the sampling function once to set the seed.
   GMapping::sampleGaussian(1,time(NULL));
@@ -270,8 +272,6 @@ void
 SlamGMapping::laser_cb()
 {
   static ros::Time last_map_update(0,0);
-  /// @todo Expose this timer
-  static ros::Duration map_udpate_interval(5,0);
 
   // We can't initialize the mapper until we've got the first scan
   if(!got_first_scan_)
@@ -290,7 +290,7 @@ SlamGMapping::laser_cb()
               mpose.x, mpose.y, mpose.theta);
 
     ros::Time curr = ros::Time::now();
-    if((curr - last_map_update) > map_udpate_interval)
+    if((curr - last_map_update) > map_update_interval_)
     {
       updateMap();
       last_map_update = curr;
@@ -315,8 +315,7 @@ SlamGMapping::updateMap()
                              GMapping::OrientedPoint(0,0,0));
   delete[] laser_angles;
   matcher.setlaserMaxRange(scan_.range_max);
-  /// @todo Fix this constant (same as maxUrange)
-  matcher.setusableRange(6.0);
+  matcher.setusableRange(maxUrange_);
   matcher.setgenerateMap(true);
 
   GMapping::GridSlamProcessor::Particle best = 
@@ -325,8 +324,7 @@ SlamGMapping::updateMap()
   /// @todo Dynamically determine bounding box for map
   GMapping::Point wmin(-100.0, -100.0);
   GMapping::Point wmax(100.0, 100.0);
-  /// @todo Fix this constant (same as delta)
-  map_.map.resolution = 0.1;
+  map_.map.resolution = delta_;
   map_.map.origin.x = wmin.x;
   map_.map.origin.y = wmin.y;
   map_.map.origin.th = 0.0;

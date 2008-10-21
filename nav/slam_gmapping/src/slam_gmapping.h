@@ -63,8 +63,39 @@ class SlamGMapping
     bool got_map_;
     std_srvs::StaticMap::response map_;
 
+    ros::Duration map_update_interval_;
+
     void updateMap();
     bool getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t);
     bool initMapper(const std_msgs::LaserScan& scan);
     bool addScan(const std_msgs::LaserScan& scan);
+    
+    // Parameters used by GMapping
+    double maxUrange_;
+    double maxrange_;
+    double sigma_;
+    int kernelSize_;
+    double lstep_;
+    double astep_;
+    int iterations_;
+    double lsigma_;
+    double ogain_;
+    int lskip_;
+    double srr_;
+    double srt_;
+    double str_;
+    double stt_;
+    double linearUpdate_;
+    double angularUpdate_;
+    double resampleThreshold_;
+    int particles_;
+    double xmin_;
+    double ymin_;
+    double xmax_;
+    double ymax_;
+    double delta_;
+    double llsamplerange_;
+    double llsamplestep_;
+    double lasamplerange_;
+    double lasamplestep_;
 };
