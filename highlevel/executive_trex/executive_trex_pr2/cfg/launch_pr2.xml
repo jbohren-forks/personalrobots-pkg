@@ -1,0 +1,7 @@
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <node pkg="executive_trex_pr2" type="fake_battery_controller.py" args=""/>
+    <include file="$(find 2dnav_pr2)/2dnav_pr2.xml" />
+  </group>
+</launch>
