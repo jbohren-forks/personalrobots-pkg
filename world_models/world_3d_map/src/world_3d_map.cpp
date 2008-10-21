@@ -128,10 +128,10 @@ public:
 	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 20.0);
-	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 1.0);
+	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 0.5);
 	param("world_3d_map/retain_pointcloud_fraction", m_retainPointcloudFraction, 0.25);
 	
-	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.01);
+	param("world_3d_map/retain_above_ground_threshold", m_retainAboveGroundThreshold, 0.03);
 	param("world_3d_map/verbosity_level", m_verbose, 1);
 
 	m_active = true;

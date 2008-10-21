@@ -6,6 +6,6 @@
   <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
   <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
   
-  <node pkg="world_3d_map" type="world_3d_map" args="robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" output="screen" respawn="false" />  
+  <node pkg="world_3d_map" type="world_3d_map" args="/robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" output="screen" respawn="false" />  
 
 </launch>
