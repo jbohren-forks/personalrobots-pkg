@@ -242,6 +242,8 @@ RechargeController::Active{
   eq(mb.desY, y);
   eq(mb.desTh, th);
   leq(duration, mb.duration);
+  precedes(mb.start, start);
+  precedes(end, mb.end);
 }
 
 Navigator::Active{

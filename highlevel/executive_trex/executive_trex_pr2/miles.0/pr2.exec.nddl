@@ -1,14 +1,12 @@
+// Base case test that we can drive navigation based on the recharge 
+// controller state
 #include "milo.init.nddl";
 
-//rejectable(navigator.Active g0);
-//eq(g0.w, w1);
+rejectable(RechargeController.Inactive plug);
 
-
-rejectable(RechargeController.Active plug);
-
-plug.x = 18.8;
-plug.y = 16.4;
-plug.th = 0.0;
+plug.desX = 18.8;
+plug.desY = 16.4;
+plug.desTh = 0.0;
 
 
 

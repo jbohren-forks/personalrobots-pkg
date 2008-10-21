@@ -1,5 +1,6 @@
 
 <launch>
+  <master auto="start"/>
   <group name="wg">    
     <param name="world_3d_map/max_publish_frequency" type="double" value="20.0" /> <!-- Hz -->
     <param name="world_3d_map/retain_pointcloud_duration" type="double" value="0.5" /> <!-- seconds -->
