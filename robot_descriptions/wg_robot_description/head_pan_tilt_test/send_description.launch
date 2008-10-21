@@ -1,0 +1,5 @@
+<launch>
+
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/head_pan_tilt_test/head_pan_tilt.xml'" />
+
+</launch>
