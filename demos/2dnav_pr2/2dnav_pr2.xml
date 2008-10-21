@@ -1,14 +1,20 @@
 <launch>
   <group name="wg">
-    <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" output="screen" args="scan:=base_scan">
-      <remap from="hokuyuo_node" to="base_hokuyo_node" />
-      <param name="port" type="string" value="/dev/ttyACM1" />
+    <machine name="base_laser_machine" address="prf2" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf2" />
+    <machine name="tilt_laser_machine" address="prf3" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf3" default="true" />
+    <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" output="screen" args="scan:=base_scan" machine="base_laser_machine">
+      <param name="port" type="string" value="/dev/ttyACM0" />
       <param name="frameid" type="string" value="base_laser" />
+      <param name="min_ang" type="double" value="-100.0" />
+      <param name="max_ang" type="double" value="100.0" />
+    </node>
+    <node pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" output="screen" args="scan:=tilt_scan" machine="tilt_laser_machine">
+      <param name="port" type="string" value="/dev/ttyACM0" />
+      <param name="frameid" type="string" value="tilt_laser" />
       <param name="min_ang" type="double" value="-80.0" />
       <param name="max_ang" type="double" value="80.0" />
     </node>
-    <node pkg="map_server" type="map_server" args="$(find 2dnav-stage)/willow-full-0.05.pgm 0.05" respawn="false" />
-    <!-- SET AMCL PARAMETERS -->
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
