@@ -220,6 +220,14 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 bool
 SlamGMapping::addScan(const std_msgs::LaserScan& scan)
 {
+  // HACK OF ALL HACKS
+  if((scan_.header.stamp == ros::Time(1224204607,855484003)) ||
+     (scan_.header.stamp == ros::Time(1224204610,402324003)))
+  {
+    ROS_WARN("Skipping known bad timestamp");
+    return false;
+  }
+
   GMapping::OrientedPoint gmap_pose;
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
@@ -246,15 +254,15 @@ SlamGMapping::addScan(const std_msgs::LaserScan& scan)
 
   reading.setPose(gmap_pose);
 
-  printf("scanpose (%.3f): %.3f %.3f %.3f\n",
+  /*
+  ROS_DEBUG("scanpose (%.3f): %.3f %.3f %.3f\n",
             scan.header.stamp.toSec(),
             gmap_pose.x,
             gmap_pose.y,
             gmap_pose.theta);
-  fflush(NULL);
+            */
 
-  //return gsp_->processScan(reading);
-  return false;
+  return gsp_->processScan(reading);
 }
 
 void
