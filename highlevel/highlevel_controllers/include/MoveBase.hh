@@ -184,7 +184,7 @@ namespace ros {
       bool usingPointClouds_; /**< Configuration parameter to select point cloud call backs and block out laser scans */
 
       /** Parameters that will be passed on initialization soon */
-      const double laserMaxRange_; /**< Used in laser scan projection */
+      double laserMaxRange_; /**< Used in laser scan projection */
 
       std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
     };
