@@ -1,7 +1,7 @@
-<robot name="head_pan_tilt_test">
+<robot name="head_pan_tilt">
 
-  <include filename="../pr2_robot_defs/head_defs.xml" />
-  <include filename="../pr2_robot_defs/body_defs.xml" />
+  <include filename="$(find wg_robot_description)/pr2_robot_defs/head_defs.xml" />
+  <include filename="$(find wg_robot_description)/pr2_robot_defs/body_defs.xml" />
 
   <pr2_torso name="torso" parent="world">
     <origin xyz="0 0 0" rpy="0 0 0" />
