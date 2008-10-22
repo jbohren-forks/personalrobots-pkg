@@ -122,7 +122,7 @@ namespace ros {
       envNav2D_.InitializeEnv(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
       // Cleanup
-      delete initialMapData;
+      delete[] initialMapData;
   
       bool success = envNav2D_.InitializeMDPCfg(&mdpCfg_);
 

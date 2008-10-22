@@ -81,9 +81,9 @@ namespace ros {
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
       double maxZ(2.0);
       double freeSpaceProjectionHeight(0.5);
-      double inflationRadius(0.46);
+      double inflationRadius(0.50);
       double robotRadius(0.325);
-      double circumscribedRadius(0.46);
+      double circumscribedRadius(0.50);
       double inscribedRadius(0.250);
       param("costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
@@ -105,7 +105,7 @@ namespace ros {
 	  usleep(1000000);
 	}
 
-      ROS_INFO("Received a %f X %f map at %f m/pix\n",
+      ROS_INFO("Received a %d X %d map at %f m/pix\n",
 	       resp.map.width, resp.map.height, resp.map.resolution);
 
       // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
