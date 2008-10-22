@@ -204,7 +204,8 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   {
     if (major != 1 || minor < 6)
     {
-      node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_BREAK();
       return -1;
     }
   }
@@ -212,21 +213,24 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   {
     if (major != 0 || minor < 4)
     {
-      node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
+      ROS_BREAK();
       return -1;
     }
   }
 
   if (readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
   {
-    node->log(ros::FATAL, "Unable to load configuration information");
+    ROS_FATAL("Unable to load configuration information");
+    ROS_BREAK();
     return -1;
   }
   printf("Device #%02d: Serial #: %05d\n", sh_->get_ring_position(), config_info_.device_serial_number_);
 
   if (readEeprom(sh_) < 0)
   {
-    node->log(ros::FATAL, "Unable to read actuator info from EEPROM\n");
+    ROS_FATAL("Unable to read actuator info from EEPROM\n");
+    ROS_BREAK();
     return -1;
   }
 
@@ -243,7 +247,8 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   }
   else
   {
-    node->log(ros::FATAL, "Device #%02d: Invalid CRC32 in actuator_info_", sh_->get_ring_position());
+    ROS_FATAL("Device #%02d: Invalid CRC32 in actuator_info_", sh_->get_ring_position());
+    ROS_BREAK();
     return -1;
   }
 
@@ -257,7 +262,8 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   if (!attr) { \
     c = elt->FirstChildElement((a)); \
     if (!c || !(attr = c->GetText())) { \
-      node->log(ros::FATAL, "Actuator is missing the attribute "#a"\n"); \
+      ROS_FATAL("Actuator is missing the attribute "#a"\n"); \
+      ROS_BREAK(); \
     } \
   } \
 }
@@ -399,7 +405,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     if(voltage_error_ > 5)
     {
       //Something is wrong with the encoder, the motor, or the motor board
-      
+
       //Disable motors
       //rv = false;
       //printf("Disable motors because voltage_error = %f\n", voltage_error_);

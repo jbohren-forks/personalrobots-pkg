@@ -4,27 +4,27 @@
 //
 // Copyright (C) 2008, Jimmy Sastra
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//   * Redistributions of source code must retain the above copyright notice, 
+//   * Redistributions of source code must retain the above copyright notice,
 //     this list of conditions and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above copyright 
-//     notice, this list of conditions and the following disclaimer in the 
+//   * Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
+//   * Neither the name of Stanford University nor the names of its
+//     contributors may be used to endorse or promote products derived from
 //     this software without specific prior written permission.
-//   
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
@@ -106,21 +106,21 @@ class EtherDrive_Node : public ros::node
       for (int i = 0; i < 6; i++)
       {
         // setting gains on controls on ethercard drive
-        edLeft->set_gain(i,'P',0); 
+        edLeft->set_gain(i,'P',0);
         edLeft->set_gain(i,'I',10);
-        edLeft->set_gain(i,'D',0); 
-        edLeft->set_gain(i,'W',100); 
+        edLeft->set_gain(i,'D',0);
+        edLeft->set_gain(i,'W',100);
         edLeft->set_gain(i,'M',1004);
-        edLeft->set_gain(i,'Z',1);   
-        edRight->set_gain(i,'P',0); 
+        edLeft->set_gain(i,'Z',1);
+        edRight->set_gain(i,'P',0);
         edRight->set_gain(i,'I',10);
-        edRight->set_gain(i,'D',0); 
-        edRight->set_gain(i,'W',100); 
+        edRight->set_gain(i,'D',0);
+        edRight->set_gain(i,'W',100);
         edRight->set_gain(i,'M',1004);
-        edRight->set_gain(i,'Z',1);   
+        edRight->set_gain(i,'Z',1);
       }
-   
-      
+
+
       edLeft->set_control_mode(1); // 0=voltage, 1=current control
       edRight->set_control_mode(1); // 0=voltage, 1=current control
 
@@ -133,17 +133,17 @@ class EtherDrive_Node : public ros::node
     }
 
     void mot_callback()
-    { 
+    {
       //printf("received motor 3 command %f\n", mot_cmd[3].val);
     }
 
     virtual ~EtherDrive_Node()
-    { 
+    {
       if (edRight)
-      { 
+      {
         printf("deleting edRight\n");
-        delete edRight; 
-      } 
+        delete edRight;
+      }
       if (edLeft)
       {
         printf("deleting edLeft\n");
@@ -187,7 +187,7 @@ class EtherDrive_Node : public ros::node
         { // turret motors, position control
           desPos[i] = float(mot_cmd[i].cmd)/360*90000;
           if(i < 6) posError[i] =   desPos[i] - float(edLeft->get_enc(i));
-          else posError[i] = desPos[i] - float(edRight->get_enc(i-6)); 
+          else posError[i] = desPos[i] - float(edRight->get_enc(i-6));
   if(i==11) printf("posError: %f, despos: %f, enc: %i\n", posError[i], desPos[i], edRight->get_enc(i-6));
 
           tmp_mot_cmd[i] = int(k_p[i]*posError[i]) + int(k_d[i]*(posError[i]-lastPosError[i])/0.001) + int(k_i[i]*intPosError[i]);
@@ -196,16 +196,16 @@ class EtherDrive_Node : public ros::node
           intPosError[i] += posError[i];
         }
         else
-        { // wheels, velocity control      
-          
+        { // wheels, velocity control
+
           if(i<6) currEncPos[i] = edLeft->get_enc(i);
           else currEncPos[i] = edRight->get_enc(i-6);
           curVel =  float(currEncPos[i] - lastEncPos[i])/9000*0.48;
           desVel = mot_cmd[i].cmd; // enc units/msec.  should be (wheel rev/s)
           if(i == 0| i ==1) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[2]);
-          else if(i == 3| i ==4) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[5]);         
-          else if(i == 6| i ==7) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[8]);         
-          else if(i == 9| i ==10) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[11]);         
+          else if(i == 3| i ==4) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[5]);
+          else if(i == 6| i ==7) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[8]);
+          else if(i == 9| i ==10) tmp_mot_cmd[i] = int(k_p[i]*(desVel - curVel) + k_cross[i]*tmp_mot_cmd[11]);
           lastEncPos[i] = currEncPos[i];
         }
 
@@ -221,7 +221,7 @@ class EtherDrive_Node : public ros::node
           tmp_mot_cmd[i] = -3000;
           // printf("Max -ve current motor %i \n", i);
         }
-        
+
       }
 
       // edLeft->drive(6,tmp_mot_cmd);
@@ -229,7 +229,7 @@ class EtherDrive_Node : public ros::node
       {
         tmp_mot_cmd_left[i] = tmp_mot_cmd[i];
         tmp_mot_cmd_right[i] = tmp_mot_cmd[i+6];
-      }  
+      }
       edLeft->drive(6,tmp_mot_cmd_left);
       edRight->drive(6,tmp_mot_cmd_right);
       // int footmp[6]  = {500,500,0,500,500,0};
@@ -247,7 +247,7 @@ class EtherDrive_Node : public ros::node
         return false;
       }
 
-    
+
       for (int i = 0; i < 6; i++)
       {
         mot[i].pos_valid = true;
@@ -272,7 +272,7 @@ printf("start\n");
     usleep(1000);
     if (!a.do_tick())
     {
-      a.log(ros::ERROR,"Etherdrive tick failed.");
+      ROS_ERROR("Etherdrive tick failed.");
       break;
     }
   }

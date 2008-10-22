@@ -37,7 +37,10 @@ public:
   {
     joy_fd = open(joy_dev.c_str(), O_RDONLY);
     if (joy_fd <= 0)
-      log(FATAL, "couldn't open joystick %s.", joy_dev.c_str());
+    {
+      ROS_FATAL("couldn't open joystick %s.", joy_dev.c_str());
+      ROS_BREAK();
+    }
     pthread_create(&joy_thread, NULL, s_joy_func, this);
   }
   void stop()
@@ -77,7 +80,7 @@ public:
             for(unsigned int i=0;i<joy_msg.get_axes_size();i++)
               joy_msg.axes[i] = 0.0;
           }
-          joy_msg.axes[event.number] = (fabs(event.value) < deadzone) ? 0.0 : 
+          joy_msg.axes[event.number] = (fabs(event.value) < deadzone) ? 0.0 :
                   (-event.value / 32767.0);
           cout << "axis: " << (int) event.number << ", value: " << joy_msg.axes[event.number] << endl;
           publish("joy", joy_msg);

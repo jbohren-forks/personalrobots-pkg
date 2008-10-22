@@ -20,11 +20,11 @@ class TeleopBase : public node
       {
          cmd.vx = cmd.vy = cmd.vw = 0;
          if (!has_param("max_vx") || !get_param("max_vx", max_vx))
-            log(WARNING, "maximum linear velocity (max_vx) not set. Assuming 0.6");
+            ROS_WARN("maximum linear velocity (max_vx) not set. Assuming 0.6");
          if (!has_param("max_vy") || !get_param("max_vy", max_vy))
-            log(WARNING, "maximum linear velocity (max_vy) not set. Assuming 0.6");
+            ROS_WARN("maximum linear velocity (max_vy) not set. Assuming 0.6");
          if (!has_param("max_vw") || !get_param("max_vw", max_vw))
-            log(WARNING, "maximum angular velocity (max_vw) not set. Assuming 0.3");
+            ROS_WARN("maximum angular velocity (max_vw) not set. Assuming 0.3");
          param<int>("axis_vx", axis_vx, 1);
          param<int>("axis_vw", axis_vw, 0);
          param<int>("axis_vy", axis_vy, 2);
@@ -75,11 +75,11 @@ class TeleopBase : public node
       void send_cmd_vel()
       {
          joy.lock();
-         if((deadman_button < 0) || 
+         if((deadman_button < 0) ||
             ((((unsigned int)deadman_button) < joy.get_buttons_size()) &&
              joy.buttons[deadman_button]))
          {
-            if (passthrough_button >= 0 && 
+            if (passthrough_button >= 0 &&
                 passthrough_button < (int)joy.get_buttons_size() &&
                 joy.buttons[passthrough_button])
             {

@@ -78,36 +78,42 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   interface_ = interface;
   if ((ni_ = init_ec(interface)) == NULL)
   {
-    node->log(ros::FATAL, "Unable to initialize interface: %s", interface);
+    ROS_FATAL("Unable to initialize interface: %s", interface);
+    ROS_BREAK();
   }
 
   if (set_socket_timeout(ni_, 1000*500))
   {
-    node->log(ros::FATAL, "Unable to change socket timeout");
-  } 
+    ROS_FATAL("Unable to change socket timeout");
+    ROS_BREAK();
+  }
 
   // Initialize Application Layer (AL)
   EtherCAT_DataLinkLayer::instance()->attach(ni_);
   if ((al_ = EtherCAT_AL::instance()) == NULL)
   {
-    node->log(ros::FATAL, "Unable to initialize Application Layer (AL): %08x", al_);
+    ROS_FATAL("Unable to initialize Application Layer (AL): %08x", al_);
+    ROS_BREAK();
   }
 
   num_slaves_ = al_->get_num_slaves();
   if (num_slaves_ == 0)
   {
-    node->log(ros::FATAL, "Unable to locate any slaves");
+    ROS_FATAL("Unable to locate any slaves");
+    ROS_BREAK();
   }
 
   if (set_socket_timeout(ni_, 1000*(num_slaves_*10 + 100)))
   {
-    node->log(ros::FATAL, "Unable to change socket timeout");
-  } 
+    ROS_FATAL("Unable to change socket timeout");
+    ROS_BREAK();
+  }
 
   // Initialize Master
   if ((em_ = EtherCAT_Master::instance()) == NULL)
   {
-    node->log(ros::FATAL, "Unable to initialize EtherCAT_Master: %08x", em_);
+    ROS_FATAL("Unable to initialize EtherCAT_Master: %08x", em_);
+    ROS_BREAK();
   }
 
   slaves_ = new EthercatDevice*[num_slaves_];
@@ -120,21 +126,24 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     EtherCAT_SlaveHandler *sh = em_->get_slave_handler(fsa);
     if (sh == NULL)
     {
-      node->log(ros::FATAL, "Unable to get slave handler #%d", slave);
+      ROS_FATAL("Unable to get slave handler #%d", slave);
+      ROS_BREAK();
     }
 
     if ((slaves_[slave] = configSlave(sh)) != NULL)
     {
       if (!sh->to_state(EC_OP_STATE))
       {
-        node->log(ros::FATAL, "Unable to initialize slave #%d, product code: %d", slave, sh->get_product_code());
+        ROS_FATAL("Unable to initialize slave #%d, product code: %d", slave, sh->get_product_code());
+        ROS_BREAK();
       }
       num_actuators += slaves_[slave]->has_actuator_;
       buffer_size_ += slaves_[slave]->command_size_ + slaves_[slave]->status_size_;
     }
     else
     {
-      node->log(ros::FATAL, "Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
+      ROS_FATAL("Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
+      ROS_BREAK();
     }
   }
 
@@ -156,7 +165,8 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   {
     if (slaves_[slave]->initialize(hw_->actuators_[a], allow_unprogrammed) < 0)
     {
-      node->log(ros::FATAL, "Unable to initialize slave #%d", slave);
+      ROS_FATAL("Unable to initialize slave #%d", slave);
+      ROS_BREAK();
     }
     a += slaves_[slave]->has_actuator_;
   }
@@ -178,7 +188,10 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
     while (s < num_slaves_ && !slaves_[s]->has_actuator_)
       ++s;
     if (s == num_slaves_)
-      node->log(ros::FATAL, "Too many actuators defined in XML file");
+    {
+      ROS_FATAL("Too many actuators defined in XML file");
+      ROS_BREAK();
+    }
 
     if (allow_override)
     {
@@ -190,7 +203,8 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
     {
       if (hw_->actuators_[a]->name_ != elt->Attribute("name"))
       {
-        node->log(ros::FATAL, "Name programmed into board ('%s') does not equal actuator name in XML file ('%s')\n", hw_->actuators_[a]->name_.c_str(), elt->Attribute("name"));
+        ROS_FATAL("Name programmed into board ('%s') does not equal actuator name in XML file ('%s')\n", hw_->actuators_[a]->name_.c_str(), elt->Attribute("name"));
+        ROS_BREAK();
       }
     }
     ++a;

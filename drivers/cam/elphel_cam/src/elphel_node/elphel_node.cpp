@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Jimmy Sastra
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -60,11 +60,11 @@ public:
 
   uint8_t* jpeg;
   uint32_t jpeg_size;
-  
+
 
   Elphel_Cam *e; //("10.12.0.103");
   IplImage* img;
-  
+
   Elphel_Node() : ros::node("elphel"), cv_bridge(&image_msg), codec(&image_msg)
   {
       advertise<std_msgs::Image>("elphel_bus");
@@ -76,12 +76,12 @@ public:
 
 
   bool getFrame() {
-    static int i = 0;    
-    i++;     
+    static int i = 0;
+    i++;
 
     if (!e->next_jpeg(&jpeg, &jpeg_size))
     {
-      log(ros::ERROR, "Elphel_Cam::next_jpeg returned an error");
+      ROS_ERROR("Elphel_Cam::next_jpeg returned an error");
       return false;
     }
 
@@ -98,7 +98,7 @@ public:
       }
       if (!e->next_jpeg(&jpeg, &jpeg_size))
       {
-	      log(ros::ERROR, "Elphel_Cam::next_jpeg returned an error");
+	      ROS_ERROR("Elphel_Cam::next_jpeg returned an error");
 	      return false;
       }
     }
@@ -122,21 +122,21 @@ public:
   virtual ~Elphel_Node() {
     if(e) {
       e->stop();
-    } 
+    }
   }
 };
 
-int main(int argc, char **argv) 
+int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   Elphel_Node n;
   while(n.ok()) {
-    if(!n.getFrame()) 
+    if(!n.getFrame())
     {
       printf("Elphel camera failed.\n");
-      n.log(ros::ERROR,"Elphel camera failed.");
+      ROS_ERROR("Elphel camera failed.");
       break;
-    }       
+    }
   }
 
   ros::fini();

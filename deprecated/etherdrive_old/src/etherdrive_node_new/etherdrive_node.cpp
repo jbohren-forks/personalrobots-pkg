@@ -4,27 +4,27 @@
 //
 // Copyright (C) 2008, Morgan Quigley
 //
-// Redistribution and use in source and binary forms, with or without 
+// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-//   * Redistributions of source code must retain the above copyright notice, 
+//   * Redistributions of source code must retain the above copyright notice,
 //     this list of conditions and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above copyright 
-//     notice, this list of conditions and the following disclaimer in the 
+//   * Redistributions in binary form must reproduce the above copyright
+//     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its 
-//     contributors may be used to endorse or promote products derived from 
+//   * Neither the name of Stanford University nor the names of its
+//     contributors may be used to endorse or promote products derived from
 //     this software without specific prior written permission.
-//   
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" 
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE 
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE 
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR 
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF 
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS 
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN 
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include "ros/node.h"
@@ -94,38 +94,38 @@ public:
       mot_cmd[i].rel = 0;
       mot_cmd[i].cmd = 0;
 
-      ed->set_gain(i,'P',0); 
+      ed->set_gain(i,'P',0);
       ed->set_gain(i,'I',10);
-      ed->set_gain(i,'D',0); 
-      ed->set_gain(i,'W',100); 
+      ed->set_gain(i,'D',0);
+      ed->set_gain(i,'W',100);
       ed->set_gain(i,'M',1004);
-      ed->set_gain(i,'Z',1);   
+      ed->set_gain(i,'Z',1);
 
     }
- 
-    ed->set_control_mode(1); // 0=voltage, 1=current control
-    
 
-  
+    ed->set_control_mode(1); // 0=voltage, 1=current control
+
+
+
     firstTimeVelCtrl = true;
     fooCounter = 0;
     ed->motors_on();
     counter = 0;
   }
 
-  void mot_callback() { 
+  void mot_callback() {
     //printf("received motor 3 command %f\n", mot_cmd[3].val);
   }
 
   virtual ~EtherDrive_Node()
-  { 
-    if (ed) 
-      delete ed; 
+  {
+    if (ed)
+      delete ed;
   }
 
   bool do_tick()
   {
-//printf("%i: enc: %i \n", fooCounter, ed->get_enc(5)); 
+//printf("%i: enc: %i \n", fooCounter, ed->get_enc(5));
     int tmp_mot_cmd[6];
     int currEncPos[6];
 
@@ -165,7 +165,7 @@ public:
     pos_k_p[2] = -3;
     pos_k_p[3] = 1.2;
     pos_k_p[4] = 1.2;
-    pos_k_p[5] = -1.2; // 
+    pos_k_p[5] = -1.2; //
 
     pos_k_i[0] = 0;
     pos_k_i[1] = 0;
@@ -179,7 +179,7 @@ public:
     pos_k_d[2] = -3;
     pos_k_d[3] = 0.075; //1;
     pos_k_d[4] = 0.075; //-0.075; //1;
-    pos_k_d[5] = -0.075;//-0.075; // 
+    pos_k_d[5] = -0.075;//-0.075; //
     /*
     voltage control settings:
     pos_k_p[3] = -1;
@@ -193,7 +193,7 @@ public:
       {
 
         case 0: // direct
-          tmp_mot_cmd[i] = (int)mot_cmd[i].cmd; //last_mot_val[i]; //JS  
+          tmp_mot_cmd[i] = (int)mot_cmd[i].cmd; //last_mot_val[i]; //JS
           break;
         case 1: // position control on computer
           desPos[i] = float(mot_cmd[i].cmd)/360*90000; //desPos[i]=ed->get_enc(i) + mot[i].val;
@@ -204,26 +204,26 @@ public:
           lastPosError[i] = posError[i];
           intPosError[i] += posError[i];
         break;
-        case 2: // velocity control    
+        case 2: // velocity control
          if(fooCounter < 10) { // first couple of encoder readings are messed up for some reason. JS
             lastEncPos[i] = ed->get_enc(i);
             last_mot_cmd[i] = 0;
           }
           fooCounter++;
-          
+
           currEncPos[i] = ed->get_enc(i);
           curVel =  float(currEncPos[i] - lastEncPos[i])/9000*0.48;   //encoder (units/msec) need to calibrate this
           desVel = mot_cmd[i].cmd; // enc units/msec.  should be (wheel rev/s)
-          if((desVel-float(curVel))>0) tmp_mot_cmd[i] = int(last_mot_cmd[i] + 10*k_p[i]); 
+          if((desVel-float(curVel))>0) tmp_mot_cmd[i] = int(last_mot_cmd[i] + 10*k_p[i]);
           if((desVel-float(curVel))<0) tmp_mot_cmd[i] = int(last_mot_cmd[i] - 10*k_p[i]);
-          if(desVel <= 0.0001 && desVel >=-0.0001) tmp_mot_cmd[i] = 0; 
+          if(desVel <= 0.0001 && desVel >=-0.0001) tmp_mot_cmd[i] = 0;
           //tmp_mot_cmd[i] = int(last_mot_cmd[i] + k_p[i]*(desVel-float(curVel)));
 
- 
+
           lastEncPos[i] = currEncPos[i];
           last_mot_cmd[i] = last_mot_cmd[i] + k_p[i]*(desVel-curVel);
         break;
-        case 3:  // On board position control? 
+        case 3:  // On board position control?
           if (mot_cmd[i].valid) {
 	          if (mot_cmd[i].rel) {
 	            last_mot_val[i] = mot[i].pos + mot_cmd[i].cmd;
@@ -237,7 +237,7 @@ public:
           // do nothing
           tmp_mot_cmd[i] = 0;
           break;
-        
+
       }
       mot_cmd[i].valid = false;  // set to invalid so we don't re-use
       mot_cmd[i].unlock();
@@ -249,14 +249,14 @@ public:
         tmp_mot_cmd[i] = -3000;
         printf("Max current\n");
       }
-    }  
+    }
 
     ed->drive(6,tmp_mot_cmd);
     int val[6];
     if (!ed->tick(6,val)) {
       return false;
     }
-  
+
     for (int i = 0; i < 6; i++) {
       mot[i].pos = val[i] / pulse_per_rad[i];
       mot[i].pos_valid = true;
@@ -278,7 +278,7 @@ int main(int argc, char **argv)
     usleep(1000);
     if (!a.do_tick())
     {
-      a.log(ros::ERROR,"Etherdrive tick failed.");
+      ROS_ERROR("Etherdrive tick failed.");
       break;
     }
   }

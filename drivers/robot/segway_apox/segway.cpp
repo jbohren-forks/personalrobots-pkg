@@ -126,12 +126,12 @@ void Segway::build_vel_pkt(float x_vel, float yaw_rate)
 		x_vel = MAX_X_VEL;
 	else if (x_vel < -MAX_X_VEL)
 		x_vel = -MAX_X_VEL;
-			
+
 	if (yaw_rate > MAX_YAW_RATE)
 		yaw_rate = MAX_YAW_RATE;
 	else if (yaw_rate < -MAX_YAW_RATE)
 		yaw_rate = -MAX_YAW_RATE;
-			
+
 	int16_t raw_x_vel = (int16_t)rint(x_vel*(float)RMP_COUNT_PER_M_PER_S);
 	int16_t raw_yaw_rate = (int16_t)rint(yaw_rate*(float)415.9);//1.9); // rad/sec to RMP magic units
 
@@ -200,7 +200,10 @@ void Segway::build_vel_pkt(float x_vel, float yaw_rate)
 double normalize_angle(double a)
 {
   if (fabs(a) > 1e8)
-    g_node->log(FATAL, "woah! stupidly large angle.\n");
+  {
+    ROS_FATAL("woah! stupidly large angle.\n");
+    ROS_BREAK();
+  }
   while (a < -M_PI)
     a += 2 * M_PI;
   while (a > M_PI)
@@ -227,13 +230,16 @@ void Segway::main_loop()
 	can = dgc_usbcan_initialize("/dev/ttyUSB2"); // pull from a param someday...
 
 	if (!can)
-		log(FATAL, "ahh couldn't open the can controller\n");
+	{
+		ROS_FATAL("ahh couldn't open the can controller\n");
+		ROS_BREAK();
+	}
 
 	unsigned char message[100];
 	int message_length;
 	unsigned can_id;
   double last_send_time = ros::Time::now().to_double();
-	
+
 	while(ok())
 	{
     if (ros::Time::now().to_double() - last_send_time > 0.01)
@@ -275,7 +281,7 @@ void Segway::main_loop()
   			if (c++ % 100 == 0)
 					printf("%d %d\n", rmp.foreaft, rmp.yaw);
         */
-					
+
 				if (!odom_init)
 					odom_init = true;
 				else
@@ -289,7 +295,7 @@ void Segway::main_loop()
 					odom_y += delta_lin * sin(odom_yaw);
 					//odom_yaw = normalize_angle(odom_yaw + delta_ang);
 					odom_yaw = odom_yaw + delta_ang;
-					
+
 					static int odom_count = 0;
 					if (odom_count++ % 3 == 0) // send it at 5 hz or so
 					{

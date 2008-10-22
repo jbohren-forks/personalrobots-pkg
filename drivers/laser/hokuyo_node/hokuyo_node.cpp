@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -39,7 +39,7 @@
 @htmlinclude manifest.html
 
 @b hokuyo_node is a driver for SCIP2.0 compliant Hokuyo laser range-finders.
-This driver has been designed, primarliy with the Hokuyo UTM-30LX in mind, also 
+This driver has been designed, primarliy with the Hokuyo UTM-30LX in mind, also
 known as the Hokuyo Top-URG.
 
 <hr>
@@ -124,7 +124,7 @@ private:
   bool running_;
 
   int count_;
-  
+
   SelfTest<HokuyoNode> self_test_;
   DiagnosticUpdater<HokuyoNode> diagnostic_;
 
@@ -195,24 +195,24 @@ public:
 
       string device_id_ = laser_.getID();
       string device_status_ = laser_.getStatus();
-      log(ros::INFO, "Connected to device with ID: %s", device_id_.c_str());
+      ROS_INFO("Connected to device with ID: %s", device_id_.c_str());
 
       laser_.laserOn();
 
       if (calibrate_time_)
         laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
-        
+
       int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
       if (status != 0) {
-        log(ros::WARNING,"Failed to request scans from device.  Status: %d.", status);
+        ROS_WARN("Failed to request scans from device.  Status: %d.", status);
         return -1;
       }
 
       running_ = true;
 
     } catch (hokuyo::Exception& e) {
-      log(ros::WARNING,"Exception thrown while starting urg.\n%s", e.what());
+      ROS_WARN("Exception thrown while starting urg.\n%s", e.what());
       return -1;
     }
 
@@ -227,7 +227,7 @@ public:
       {
         laser_.close();
       } catch (hokuyo::Exception& e) {
-        log(ros::WARNING,"Exception thrown while trying to close:\n%s",e.what());
+        ROS_WARN("Exception thrown while trying to close:\n%s",e.what());
       }
       running_ = false;
     }
@@ -240,21 +240,21 @@ public:
     try
     {
       int status = laser_.serviceScan(&scan_);
-      
+
       if(status != 0)
       {
-        log(ros::WARNING,"Error getting scan: %d", status);
+        ROS_WARN("Error getting scan: %d", status);
         return 0;
       }
     } catch (hokuyo::CorruptedDataException &e) {
-      log(ros::WARNING,"Skipping corrupted data");
+      ROS_WARN("Skipping corrupted data");
       return 0;
     } catch (hokuyo::Exception& e) {
-      log(ros::WARNING,"Exception thrown while trying to get scan.\n%s", e.what());
+      ROS_WARN("Exception thrown while trying to get scan.\n%s", e.what());
       running_ = false; //If we're here, we are no longer running
       return -1;
     }
-    
+
     scan_msg_.angle_min = scan_.config.min_angle;
     scan_msg_.angle_max = scan_.config.max_angle;
     scan_msg_.angle_increment = scan_.config.ang_increment;
@@ -266,7 +266,7 @@ public:
     scan_msg_.set_intensities_size(scan_.num_readings);
     scan_msg_.header.stamp = ros::Time(scan_.system_time_stamp);
     scan_msg_.header.frame_id = frameid_;
-      
+
     for(int i = 0; i < scan_.num_readings; ++i)
     {
       scan_msg_.ranges[i]  = scan_.ranges[i];
@@ -322,7 +322,7 @@ public:
     } else {
       status.level = 0;
       status.message = "Sensor connected";
-    }    
+    }
 
     status.set_strings_size(3);
     status.strings[0].label = "Port";
@@ -579,7 +579,7 @@ public:
     }
 
     status.level = 0;
-    status.message = "Previous operation resumed successfully.";    
+    status.message = "Previous operation resumed successfully.";
   }
 
 };

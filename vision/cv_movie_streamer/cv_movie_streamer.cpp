@@ -18,10 +18,10 @@ public:
   string movie_fname;
   int delay, loop, qual;
 
-  CvMovieStreamer(const string &_movie_fname, int _delay, int _loop, int _qual) 
+  CvMovieStreamer(const string &_movie_fname, int _delay, int _loop, int _qual)
   : node("cv_movie_streamer"), cv_bridge(&image_msg),
     movie_fname(_movie_fname), delay(_delay), loop(_loop), qual(_qual)
-  { 
+  {
     advertise<std_msgs::Image>("image");
   }
   void stream_movie()
@@ -34,8 +34,12 @@ public:
     {
       CvCapture *capture = cvCaptureFromAVI(movie_fname.c_str());
       if (!capture)
-        log(FATAL, "woah! couldn't open video file [%s]",
+      {
+        ROS_FATAL("woah! couldn't open video file [%s]",
             movie_fname.c_str());
+        ROS_BREAK();
+      }
+
       while ((img = cvQueryFrame(capture)))
       {
         frames++;

@@ -23,9 +23,9 @@ class TeleopHead : public node
       {
         //     cmd.vx = cmd.vy = cmd.vw = 0;
          if (!has_param("max_pan") || !get_param("max_pan", max_pan))
-            log(WARNING, "maximum pan not set. Assuming 0.6");
+            ROS_WARN("maximum pan not set. Assuming 0.6");
          if (!has_param("max_tilt") || !get_param("max_tilt", max_tilt))
-            log(WARNING, "maximum tilt not set. Assuming 0.4");
+            ROS_WARN("maximum tilt not set. Assuming 0.4");
 
          param<int>("axis_pan", axis_pan, 4);
          param<int>("axis_tilt", axis_tilt, 5);
@@ -64,13 +64,13 @@ class TeleopHead : public node
            req_pan += joy.axes[axis_pan] * pan_step;
            req_pan = std::max(std::min(req_pan, max_pan), -max_pan);
          }
-         
+
          if ((axis_tilt >= 0) && (((unsigned int)axis_tilt) < joy.get_axes_size()))
          {
            req_tilt += joy.axes[axis_tilt] * tilt_step;
            req_tilt = std::max(std::min(req_tilt, max_tilt), -max_tilt);
          }
-         
+
          pr2_mechanism_controllers::SetJointCmd::request req;
          pr2_mechanism_controllers::SetJointCmd::response res;
          req.positions.push_back(req_pan);
@@ -82,7 +82,7 @@ class TeleopHead : public node
          req.names.push_back("head_pan_joint");
          req.names.push_back("head_tilt_joint");
          ros::service::call("head_controller/set_command_array", req, res);
-         
+
       }
 };
 

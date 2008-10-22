@@ -380,12 +380,14 @@ int main(int argc, char *argv[])
   int rv;
   if ((rv = pthread_create(&clockThread, NULL, syncClocks, 0)) != 0)
   {
-    node->log(ros::FATAL, "Unable to create clock synchronization thread: rv = %d\n", rv);
+    ROS_FATAL("Unable to create clock synchronization thread: rv = %d\n", rv);
+    ROS_BREAK();
   }
 
   if ((rv = pthread_create(&rtThread, &rtThreadAttr, controlLoop, 0)) != 0)
   {
-    node->log(ros::FATAL, "Unable to create realtime thread: rv = %d\n", rv);
+    ROS_FATAL("Unable to create realtime thread: rv = %d\n", rv);
+    ROS_BREAK();
   }
 
   pthread_join(rtThread, 0);
