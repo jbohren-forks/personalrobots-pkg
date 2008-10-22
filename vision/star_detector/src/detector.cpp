@@ -5,8 +5,6 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_binarized)
   : m_n(n), m_W(size.width), m_H(size.height),
     // Pre-allocate all the memory we need
-    m_tilted( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
-    m_flat( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
     m_responses(new IplImage*[n]),
     m_projected( cvCreateImage(size, IPL_DEPTH_32F, 1) ),
     m_scales( cvCreateImage(size, IPL_DEPTH_8U, 1) ),

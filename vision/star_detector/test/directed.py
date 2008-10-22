@@ -272,7 +272,7 @@ class TestDirected(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
-    if 0:
+    if 1:
       suite = unittest.TestSuite()
       suite.addTest(TestDirected('perftest'))
       unittest.TextTestRunner(verbosity=2).run(suite)
