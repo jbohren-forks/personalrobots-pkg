@@ -48,7 +48,7 @@
 // Services
 #include <pr2_mechanism_controllers/SetJointCmd.h>
 #include <pr2_mechanism_controllers/GetJointCmd.h>
-#include <pr2_mechanism_controllers/TrackPoint.h>
+#include <std_msgs/PointStamped.h>
 
 // Math utils
 #include <math_utils/angles.h>
@@ -202,10 +202,9 @@ class HeadPanTiltControllerNode : public Controller
      * \param req  trackpoint (header, point)
      * \param resp (pan_angle, tilt_angle)
      */
-    bool trackPoint(pr2_mechanism_controllers::TrackPoint::request &req,                                    
-                     pr2_mechanism_controllers::TrackPoint::response &resp);
+    void trackPoint();
   private:
-
+    std_msgs::PointStamped track_point_; /**< The point from the subscription. */
     HeadPanTiltController *c_;      /**< The controller. */
     std::string service_prefix;     /**< The service name. */
     ros::node *node;                /**< The node. */
