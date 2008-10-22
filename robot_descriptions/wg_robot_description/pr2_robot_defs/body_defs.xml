@@ -16,7 +16,7 @@
       <joint name="${name}_joint" />
       <!-- <mechanicalReduction>19.26</mechanicalReduction> -->
       <mechanicalReduction>-${52143.33}</mechanicalReduction><!-- measured by Stu and Keenan -->
-      <calibration reference_position="0.0" values="0 0" />
+      <calibration reference_position="0.00536" values="0 0" />
     </transmission>
 
     <link name="${name}">
