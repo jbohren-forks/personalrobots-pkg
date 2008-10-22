@@ -29,6 +29,7 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
     cvZero(m_responses[i]);
   }
   cvSet(m_scales, cvScalar(1));
+  cvZero(m_projected);
 
   // Filter sizes increase geometrically, rounded to nearest integer
   m_filter_sizes[0] = 1;
