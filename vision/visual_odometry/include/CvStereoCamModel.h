@@ -53,6 +53,15 @@ public:
 	    const CvMat& uvds,
       /// (Output) 3D points stored in rows, in Cartesian coordinates.
 	    CvMat& XYZs) const;
+
+	// OR ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
+	bool dispToCart(
+	/// Id has to be 16SC1
+            const IplImage *Id, 
+        /// Ixyz has to be 32F
+            IplImage *Ixyz) const;
+
+
   /// Convert 3D points from disparity coordinates to Cartesian coordinates.
 	bool cartToDisp(
       /// (Input) 3D points stored in rows, in Cartesian coordinates.
