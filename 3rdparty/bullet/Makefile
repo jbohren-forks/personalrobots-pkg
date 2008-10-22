@@ -14,7 +14,7 @@ build: SVN_UP_REVERT_PATCH
 	touch bullet
 
 clean:
-	make -C $(SVN_DIR) clean
+	-make -C $(SVN_DIR) clean
 
 wipe: clean
 	rm -rf $(SVN_DIR)
