@@ -129,6 +129,11 @@ bool CartesianEffortController::initXml(mechanism::RobotState *robot, TiXmlEleme
 
 void CartesianEffortController::update()
 {
+  for (unsigned int i = 0; i < joints_.size(); ++i)
+  {
+    if (!joints_[i]->calibrated_)
+      return;
+  }
 
   tf::Vector3 F = command_;  // force vector, will be transformed to the current link's frame
 

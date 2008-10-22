@@ -76,6 +76,12 @@ bool CartesianVelocityController::initXml(mechanism::RobotState *robot, TiXmlEle
 
 void CartesianVelocityController::update()
 {
+  for (unsigned int i = 0; i < effort_.joints_.size(); ++i)
+  {
+    if (!effort_.joints_[i]->calibrated_)
+      return;
+  }
+
   tf::Vector3 &command = command_.next();
   assert(tip_);
   double time = robot_->hw_->current_time_;

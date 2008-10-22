@@ -137,6 +137,9 @@ double JointPositionController::getTime()
 
 void JointPositionController::update()
 {
+  if (!joint_state_->calibrated_)
+    return;
+
   assert(robot_ != NULL);
   double error(0);
   double time = robot_->hw_->current_time_;
@@ -149,7 +152,7 @@ void JointPositionController::update()
     {
       // We were originally clearing the error term if the command or position were outside the joint bounds.  But, we probably
       //   don't want to this, since it causes strange behavior when oscillating near the joint boundaries.
-      
+
       //error = 0;
     }
   }

@@ -76,9 +76,15 @@ bool CartesianPositionController::initXml(mechanism::RobotState *robot, TiXmlEle
 
 void CartesianPositionController::update()
 {
+  for (unsigned int i = 0; i < effort_.joints_.size(); ++i)
+  {
+    if (!effort_.joints_[i]->calibrated_)
+      return;
+  }
+
   if (reset_) {
     reset_ = false;
-    command_ = tip_->abs_position_ + effort_.offset_;
+    getTipPosition(&command_);
   }
 
   assert(tip_);

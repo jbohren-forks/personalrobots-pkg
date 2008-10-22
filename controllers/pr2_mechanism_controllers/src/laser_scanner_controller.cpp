@@ -135,6 +135,9 @@ double LaserScannerController::getTime()
 
 void LaserScannerController::update()
 {
+  if (!joint_->calibrated_)
+    return;
+
   double time = robot_->hw_->current_time_;
 
   switch(current_mode_)
@@ -408,13 +411,13 @@ LaserScannerController::ProfileExecutionState LaserScannerController::getProfile
       else
         return SECOND_HALF ;
     }
-      
+
     case DYNAMIC_SINEWAVE :
     case DYNAMIC_SAWTOOTH :
     {
       double time = robot_->hw_->current_time_ ;
       double time_from_start = time - cycle_start_time_ ;
-      
+
       if ( time_from_start < period_ / 2.0 )
         return FIRST_HALF ;
       else
@@ -447,7 +450,7 @@ LaserScannerControllerNode::~LaserScannerControllerNode()
   //node_->unadvertise(service_prefix_ + "/laser_scanner_signal") ;
 
   publisher_->stop() ;
-  delete publisher_ ;    // Probably should wait on publish_->is_running() before exiting. Need to 
+  delete publisher_ ;    // Probably should wait on publish_->is_running() before exiting. Need to
                          //   look into shutdown semantics for realtime_publisher
   delete c_;
 }
@@ -455,7 +458,7 @@ LaserScannerControllerNode::~LaserScannerControllerNode()
 void LaserScannerControllerNode::update()
 {
   c_->update();
-  
+
   LaserScannerController::ProfileExecutionState cur_profile_exec_state ;
   cur_profile_exec_state = c_->getProfileExecutionState() ;
   switch (prev_profile_exec_state_)
@@ -488,7 +491,7 @@ void LaserScannerControllerNode::update()
       break ;
   }
   prev_profile_exec_state_ = cur_profile_exec_state ;
-  
+
   // Use the realtime_publisher to try to send the message.
   //   If it fails sending, it's not a big deal, since we can just try again 1 ms later. No one will notice.
   if (need_to_send_msg_)
@@ -552,7 +555,7 @@ bool LaserScannerControllerNode::setProfileCall(
   pr2_mechanism_controllers::SetProfile::response &resp)
 {
   const double num_elem = -1.0 ;     // We should only be using the dynamicProfiles, so we don't need num_elem
-  
+
   setProfile(LaserScannerController::LaserControllerMode(req.profile),req.period,req.amplitude,num_elem,req.offset);
   resp.time = c_->getTime();
   return true;
@@ -572,7 +575,7 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
   publisher_ = new misc_utils::RealtimePublisher <pr2_mechanism_controllers::LaserScannerSignal> (service_prefix_ + "/laser_scanner_signal", 1) ;
-  
+
   return true;
 }
 bool LaserScannerControllerNode::getActual(
