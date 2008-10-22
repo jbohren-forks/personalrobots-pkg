@@ -79,6 +79,56 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
     };
 }
 
+
+void TransformListener::transformLaserScanToPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn)
+{
+  cloudOut.header = scanIn.header;
+  cloudOut.header.frame_id = target_frame;
+  cloudOut.set_pts_size(scanIn.get_ranges_size());
+    if (scanIn.get_intensities_size() > 0)
+      {
+        cloudOut.set_chan_size(1);
+        cloudOut.chan[0].name ="intensities";
+        cloudOut.chan[0].set_vals_size(scanIn.get_intensities_size());
+      }
+
+  tf::Stamped<tf::Point> pointIn;
+  tf::Stamped<tf::Point> pointOut;
+
+  pointIn.frame_id_ = scanIn.header.frame_id;
+  
+  ///\todo this can be optimized
+  std_msgs::PointCloud intermediate; //optimize out
+  projector_.projectLaser(scanIn, intermediate, -1.0, true);
+  
+  unsigned int count = 0;  
+  for (unsigned int i = 0; i < scanIn.get_ranges_size(); i++)
+  {
+    if (scanIn.ranges[i] < scanIn.range_max 
+        && scanIn.ranges[i] > scanIn.range_min) //only when valid
+    {
+      pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z), 
+                                       ros::Time(scanIn.header.stamp.to_ull() + (uint64_t) (scanIn.time_increment * 1000000000)),
+                                       pointIn.frame_id_ = scanIn.header.frame_id);///\todo optimize to no copy
+      transformPoint(target_frame, pointIn, pointOut);
+      
+      cloudOut.pts[count].x  = pointOut.x();
+      cloudOut.pts[count].y  = pointOut.y();
+      cloudOut.pts[count].z  = pointOut.z();
+      
+      if (scanIn.get_intensities_size() >= i) /// \todo optimize and catch length difference better
+	  cloudOut.chan[0].vals[count] = scanIn.intensities[i];
+      count++;
+    }
+    
+  }
+  //downsize if necessary
+  cloudOut.set_pts_size(count);
+  cloudOut.chan[0].set_vals_size(count);
+    
+}
+
+
 void TransformListener::subscription_callback()
 {
   for (uint i = 0; i < msg_in_.transforms.size(); i++)

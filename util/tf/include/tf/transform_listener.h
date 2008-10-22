@@ -33,6 +33,7 @@
 #define TF_TRANSFORMLISTENER_H
 
 #include "std_msgs/PointCloud.h"
+#include "laser_scan_utils/laser_scan.h"
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
 #include "ros/node.h"
@@ -83,6 +84,10 @@ public:
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
     ///\todo Duplicate for time transforming (add target_time and fixed_frame)
 
+  /** \brief Transform a std_msgs::LaserScan into a PointCloud in target frame */
+  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn);
+
+
     ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout); 
 
 
@@ -92,6 +97,10 @@ private:
   ///\todo Switch to std_msgs::Transform
   /// Callback function for ros message subscriptoin
   void subscription_callback();
+
+
+  /** @brief A helper class for projecting laser scans */
+  laser_scan::LaserProjection projector_;
 
   ///\todo Remove : for backwards compatability only
 void receiveArray()

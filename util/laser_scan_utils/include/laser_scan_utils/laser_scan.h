@@ -69,7 +69,7 @@ namespace laser_scan{
        */
       void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
       ///\todo depricated remove soon
-      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0, bool preservative = false);
+      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0, bool preservative = false)__attribute__((deprecated));
 
       
       /** \brief Return the unit vectors for this configuration
