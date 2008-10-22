@@ -9,7 +9,7 @@
   <param name="videre/colorize" type="bool" value="true"/>
   <param name="videre/rectify" type="bool" value="true"/>
   <param name="videre/frameid_cloud" type="str" value="stereo_block"/>
-  <param name="videre/exposure" type="int" value="529"/>
+  <param name="videre/exposure" type="str" value="auto"/>
 <!--  <param name="videre/brightness" type="int" value="200"/>-->
   <param name="videre/gain" type="int" value="10"/>
   <param name="videre/gamma" type="int" value="1"/>
