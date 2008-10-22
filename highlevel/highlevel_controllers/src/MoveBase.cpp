@@ -82,8 +82,9 @@ namespace ros {
       double maxZ(2.0);
       double freeSpaceProjectionHeight(0.5);
       double inflationRadius(0.46);
+      double robotRadius(0.325);
       double circumscribedRadius(0.46);
-      double inscribedRadius(0.325);
+      double inscribedRadius(0.250);
       param("costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
@@ -149,8 +150,8 @@ namespace ros {
 										SIM_TIME,
 										SIM_STEPS,
 										SAMPLES_PER_DIM,
-										inscribedRadius,
-										inscribedRadius,
+										robotRadius,
+										robotRadius,
 										MAX_OCC_DIST,
 										pathDistanceBias,
 										goalDistanceBias,
@@ -448,7 +449,11 @@ namespace ros {
     bool MoveBase::checkWatchDog() const {
       struct timeval curr;
       gettimeofday(&curr,NULL);
-      bool ok = (curr.tv_sec - lastUpdated_.tv_sec) < 1;
+      double curr_t, last_t, t_diff;
+      last_t = lastUpdated_.tv_sec + lastUpdated_.tv_usec / 1e6;
+      curr_t = curr.tv_sec + curr.tv_usec / 1e6;
+      t_diff = curr_t - last_t;
+      bool ok = t_diff < 1.0;
       if(!ok) printf("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
       return ok;
     }
