@@ -1,5 +1,6 @@
 #include "CvStereoCamModel.h"
 
+#include <float.h>
 #include <iostream>
 using namespace std;
 
@@ -164,5 +165,36 @@ bool CvStereoCamModel::cartToDisp(const CvMat& XYZs, CvMat& uvds) const {
 	cvReshape(&uvds, &uvds0, 3, 0);
 	cvPerspectiveTransform(&xyzs0, &uvds0, &mMatCartToDisp);
 	return status;
+}
+
+double  CvStereoCamModel::getDeltaU(double deltaX, double Z) {
+  if (Z == 0) {
+    return DBL_MAX;
+  }
+
+  return mFx*deltaX/Z;
+}
+
+double  CvStereoCamModel::getDeltaX(double deltaU, double d) {
+  double dn = (d - (mClx -mCrx));
+  if (dn==0) {
+    return -1.;
+  }
+  return deltaU * mTx/dn;
+}
+double  CvStereoCamModel::getDeltaV(double deltaY, double Z) {
+  if (Z == 0) {
+    return DBL_MAX;
+  }
+
+  return mFy*deltaY/Z;
+}
+
+double  CvStereoCamModel::getDeltaY(double deltaV, double d) {
+  double dn = (d - (mClx -mCrx))*mFy;
+  if (dn==0) {
+    return -1.;
+  }
+  return deltaV * mTx *mFx /dn;
 }
 

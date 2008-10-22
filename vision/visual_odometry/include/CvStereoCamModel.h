@@ -76,6 +76,11 @@ public:
 	  dispToCart = mMatDispToCart;
 	}
 
+	double getDeltaU(double deltaX, double Z);
+	double getDeltaX(double deltaU, double d);
+	double getDeltaV(double deltaY, double Z);
+	double getDeltaY(double deltaV, double d);
+
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
     		CvMat& mat);
