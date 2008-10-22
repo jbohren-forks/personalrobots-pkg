@@ -73,9 +73,9 @@ public:
   
   ~TransformListener()
   {
-    node_.unsubscribe("/tf_message");
+    node_.unadvertise("/tf_message");
     /// \todo remove backward compatability only
-    node_.unsubscribe("/TransformArray");
+    node_.unadvertise("/TransformArray");
   };
   
   
