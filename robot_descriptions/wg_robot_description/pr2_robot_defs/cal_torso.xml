@@ -4,7 +4,7 @@
     <calibrate joint="torso_joint"
                actuator="torso_motor"
                transmission="torso_trans"
-               velocity="-1.0" />
-    <pid p="3000.0" i="0" d="0" iClamp="2" />
+               velocity="-2.0" />
+    <pid p="6000.0" i="10" d="0" iClamp="1000" />
   </controller>
 </controllers>
