@@ -29,40 +29,28 @@
 
 #include "tf/transform_broadcaster.h"
 
-class testBroadcaster : public ros::node
+class TransformSender : public ros::node
 {
 public:
   //constructor
-  testBroadcaster() : ros::node("broadcaster"),broadcaster(*this),count(2){};
+  TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) : 
+    ros::node("sender"),broadcaster(*this), ///\todo make this anonymous
+    transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
-  ~testBroadcaster() { }
+  ~TransformSender() { }
 
   //A pointer to the rosTFServer class
   tf::TransformBroadcaster broadcaster;
 
+  
 
   // A function to call to send data periodically
-  void test () {
-    NEWMAT::Matrix mat(4,4);
-    mat << 1 << 0 << 0 << 1
-        << 0 << 1 << 0 << 2
-        << 0 << 0 << 1 << 3
-        << 0 << 0 << 0 << 1;
-
-    broadcaster.sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), 1000000000ULL, "frame1", "frame2");
-    /*    pTFServer->sendEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
-    pTFServer->sendInverseEuler("count","count++",1,1,1,1,1,1,ros::Time(100000,100000));
-    pTFServer->sendDH("count","count++",1,1,1,1,ros::Time(100000,100000));
-    pTFServer->sendQuaternion("count","count++",1,1,1,1,1,1,1,ros::Time(100000,100000));
-    pTFServer->sendMatrix("count","count++",mat, ros::Time::now());
-*/
-    if (count > 9000)
-      count = 0;
-    std::cerr<<count<<std::endl;
+  void send () {
+    broadcaster.sendTransform(transform_);
   };
 
 private:
-  int count;
+  tf::Stamped<tf::Transform> transform_;
 
 };
 
@@ -71,14 +59,21 @@ int main(int argc, char ** argv)
   //Initialize ROS
   ros::init(argc, argv);
 
-  //Construct/initialize the server
-  testBroadcaster myTestBroadcaster;
+  ROS_ASSERT(argc == 10);
   
-  while(myTestBroadcaster.ok())
+
+  TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
+                            atof(argv[4]), atof(argv[5]), atof(argv[6]),
+                            ros::Time::now(), 
+                            argv[7], argv[8]);
+
+
+
+  while(tf_sender.ok())
   {
+    tf_sender.send();
       //Send some data
-      myTestBroadcaster.test();
-      usleep(1000);
+    usleep(atoi(argv[9]));
   }
   ros::fini();
 
