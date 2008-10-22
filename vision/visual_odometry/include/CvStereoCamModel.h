@@ -56,10 +56,10 @@ public:
 
 	// OR ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
 	bool dispToCart(
-	/// Id has to be 16SC1
-            const IplImage *Id, 
-        /// Ixyz has to be 32F
-            IplImage *Ixyz) const;
+    /// Id has to be 16SC1
+    const IplImage *Id, 
+    /// Ixyz has to be 32F
+		IplImage *Ixyz) const;
 
 
   /// Convert 3D points from disparity coordinates to Cartesian coordinates.
@@ -76,10 +76,14 @@ public:
 	  dispToCart = mMatDispToCart;
 	}
 
-	double getDeltaU(double deltaX, double Z);
-	double getDeltaX(double deltaU, double d);
-	double getDeltaV(double deltaY, double Z);
-	double getDeltaY(double deltaV, double d);
+	/// compute delta u, given Z and delta X in Cartesian space
+	double getDeltaU(double deltaX, double Z) const;
+	/// compute delta X, given disparity and delta u in disparity space
+	double getDeltaX(double deltaU, double d) const;
+	/// compute delta v, given Z and delta Y in Cartesian space
+	double getDeltaV(double deltaY, double Z) const;
+	/// compute delta Y, given disparity and delta v in disparity space
+	double getDeltaY(double deltaV, double d) const;
 
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,

@@ -167,7 +167,7 @@ bool CvStereoCamModel::cartToDisp(const CvMat& XYZs, CvMat& uvds) const {
 	return status;
 }
 
-double  CvStereoCamModel::getDeltaU(double deltaX, double Z) {
+double  CvStereoCamModel::getDeltaU(double deltaX, double Z) const {
   if (Z == 0) {
     return DBL_MAX;
   }
@@ -175,14 +175,14 @@ double  CvStereoCamModel::getDeltaU(double deltaX, double Z) {
   return mFx*deltaX/Z;
 }
 
-double  CvStereoCamModel::getDeltaX(double deltaU, double d) {
+double  CvStereoCamModel::getDeltaX(double deltaU, double d) const {
   double dn = (d - (mClx -mCrx));
   if (dn==0) {
     return -1.;
   }
   return deltaU * mTx/dn;
 }
-double  CvStereoCamModel::getDeltaV(double deltaY, double Z) {
+double  CvStereoCamModel::getDeltaV(double deltaY, double Z) const {
   if (Z == 0) {
     return DBL_MAX;
   }
@@ -190,7 +190,7 @@ double  CvStereoCamModel::getDeltaV(double deltaY, double Z) {
   return mFy*deltaY/Z;
 }
 
-double  CvStereoCamModel::getDeltaY(double deltaV, double d) {
+double  CvStereoCamModel::getDeltaY(double deltaV, double d) const {
   double dn = (d - (mClx -mCrx))*mFy;
   if (dn==0) {
     return -1.;
