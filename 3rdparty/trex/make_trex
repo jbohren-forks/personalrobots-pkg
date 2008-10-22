@@ -5,6 +5,14 @@ source devConfig
 
 cd TREX
 
+# Build the nddl jar file used to parse input files
+jam -q nddl.jar
+
+if [ $? -ne 0 ] ; then
+    echo "Jam of nddl.jar failed."
+    exit 1
+fi
+
 # Build the debug version
 jam -q libTREX_g.so
 
