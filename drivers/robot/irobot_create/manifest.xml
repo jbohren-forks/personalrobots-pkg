@@ -1,0 +1,11 @@
+<package>
+  <description>A library, utility standalone executables, and ROS node for the iRobot Create</description>
+  <author>Xuwen Cao and Morgan Quigley</author>
+  <license>BSD</license>
+  <depend package="serial_port"/>
+  <depend package="roscpp"/>
+  <export>
+    <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib -lirobot_create"/>
+  </export>
+  <url></url>
+</package>

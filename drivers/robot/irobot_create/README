@@ -1,0 +1,16 @@
+To control the robot, the irobot_create library needs to know how to talk to it. The port /dev/ttyUSB0 is hardcoded into the library's constructor. You can override this through the IROBOT_CREATE_PORT environment variable:
+
+from bash:
+
+IROBOT_CREATE_PORT=/dev/ttyS0 ./print_encoders
+
+or you can set it permanently for your session:
+
+export IROBOT_CREATE_PORT=/dev/ttyS0
+./print_encoders
+./drive_in_circle
+
+or you can put that "export" line in your ~/.bashrc (~/.bash_profile or something similar on OS X) so it is automatically set when your shell starts.
+
+
+
