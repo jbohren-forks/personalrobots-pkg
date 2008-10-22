@@ -97,7 +97,7 @@ P_0 \\
 =
 \left(\begin{array}{ccc}
 _0R_1 & _0T_1 \\
-1 & 1
+0 & 1
 \end{array}
 \right)\left(
 \begin{array}{ccc}
