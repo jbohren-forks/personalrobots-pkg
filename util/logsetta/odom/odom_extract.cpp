@@ -54,9 +54,9 @@ void odom_callback(std::string name, std_msgs::RobotBase2DOdom* odom, ros::Time 
 
 int main(int argc, char **argv)
 {
-  if (argc != 2)
+  if (argc != 3)
   {
-    printf("usage: imu_extract LOG\n");
+    printf("usage: odom_extract LOG MESSAGE_NAME\n");
     return 1;
   }
 
@@ -66,9 +66,9 @@ int main(int argc, char **argv)
 
   int count;
 
-  FILE* file = fopen("odom.txt", "w");
+  FILE* file = fopen((std::string(argv[2])+".txt").c_str() , "w");
 
-  player.addHandler<std_msgs::RobotBase2DOdom>(std::string("*"), &odom_callback, file);
+  player.addHandler<std_msgs::RobotBase2DOdom>(std::string(argv[2]), &odom_callback, file);
 
   while(player.nextMsg())  {}
 
