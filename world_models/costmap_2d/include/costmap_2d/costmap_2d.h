@@ -69,10 +69,28 @@
 // For point clouds <Could Make it a template>
 #include "std_msgs/PointCloudFloat32.h"
 
-typedef unsigned char TICK;
-typedef std::queue< std::pair<unsigned int, unsigned int> > QUEUE;
-
 namespace costmap_2d {
+
+  typedef unsigned char TICK;
+
+  class CostMap2D;
+
+  class QueueElement {
+  public:
+  QueueElement(double d, unsigned int s, unsigned int i): distance(d), source(s), ind(i) {}
+
+  QueueElement(const QueueElement& org): distance(org.distance), source(org.source), ind(org.ind){}
+
+    bool compare(const QueueElement& a, const QueueElement& b){
+      return a.distance <= b.distance;
+    }
+
+    double distance;
+    unsigned int source;
+    unsigned int ind;
+  };
+
+  typedef std::queue< QueueElement > QUEUE;
 
   class CostMap2D: public ObstacleMapAccessor 
   {
@@ -207,7 +225,7 @@ namespace costmap_2d {
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagateCosts(QUEUE& queue, std::vector<unsigned int>& updates);
+    void propagateCosts(std::vector<unsigned int>& updates);
 
     /**
      * @brief Utility to push free space inferred from a laser point hit via ray-tracing
@@ -215,11 +233,6 @@ namespace costmap_2d {
      * @param updates the buffer for updated cells as a result
      */ 
     void updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief A cost function for getting costs from distance
-     */
-    unsigned char computeCost(unsigned int ind, unsigned int distance) const;
 
     /**
      * @brief Simple test for a cell having been marked during current propaagtion
@@ -239,12 +252,18 @@ namespace costmap_2d {
     inline void addUpdate(unsigned int cell, std::vector<unsigned int>& updates){
       updates.push_back(cell);
     }
-
+    
     /**
-     * @brief Utility to place a cell in the queue and handle watchdog update.
+     * Utilities for cost propagation
      */
-    void enqueue(unsigned int mx, unsigned int my, QUEUE& queue, unsigned int distance);
+    void enqueueNeighbors(unsigned int source, unsigned int ind);
 
+    void enqueue(unsigned int source, unsigned int mx, unsigned int mx);
+
+    double computeDistance(unsigned int a, unsigned int b) const;
+
+    unsigned char computeCost(double distance) const;
+			   
     static const TICK MARKED_FOR_COST = 255; /**< The value used to denote a cell has been marked in the current iteration of cost propagation */
     static const TICK WATCHDOG_LIMIT = 254; /**< The value for a reset watchdog time for observing dynamic obstacles */
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
@@ -259,10 +278,10 @@ namespace costmap_2d {
     double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
     unsigned int mx_; /** < The x position of the robot in the grid */
     unsigned int my_; /** < The y position of the robot in the grid */
-
+			   
     std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
-  
     std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
+    QUEUE queue_; /**< Used for cost propagation */
   };
 
   /**

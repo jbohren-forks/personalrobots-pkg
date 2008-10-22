@@ -70,6 +70,21 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
   return false;
 }
 
+TEST(costmap, test0){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
+  // Add a point cloud and verify its insertion. There should be only one new one
+  std_msgs::PointCloudFloat32 cloud;
+  cloud.set_pts_size(1);
+  cloud.pts[0].x = 0;
+  cloud.pts[0].y = 0;
+
+  std::vector<unsigned int> updates;
+  map.updateDynamicObstacles(1, cloud, updates);
+
+  ASSERT_EQ(updates.size(), 3);
+}
+
 TEST(costmap, test1){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
   ASSERT_EQ(map.getWidth(), 10);
@@ -282,6 +297,8 @@ TEST(costmap, test7){
   for(unsigned int i=0;i<occupiedCells.size(); i++)
     setOfCells.insert(i);
 
+  std::cout << map.toString();
+
   ASSERT_EQ(setOfCells.size(), occupiedCells.size());
   ASSERT_EQ(setOfCells.size(), 37);
 
@@ -403,10 +420,8 @@ TEST(costmap, test9){
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(1, c0, updates);
 
-  // A cell radius of 3 gives a 5*5 inflation grid
-  ASSERT_EQ(updates.size(), 25);
+  ASSERT_EQ(updates.size(), 45);
 
-  // The occupied cells are the obstacles and the inscribed inflated obstacles which is given by a 3 * 3 grid
   map.getOccupiedCellDataIndexList(ids);
   ASSERT_EQ(ids.size(), 5);
 
@@ -417,7 +432,7 @@ TEST(costmap, test9){
   // All the obstacles should go away when we remove stale obstacles
   updates.clear();
   map.removeStaleObstacles(WINDOW_LENGTH + 2, updates);
-  ASSERT_EQ(updates.size(), 25);
+  ASSERT_EQ(updates.size(), 45);
 }
 
 /**

@@ -52,6 +52,7 @@
 
 #include "costmap_2d/costmap_2d.h"
 #include "rosconsole/rosconsole.h"
+#include "ros/common.h"
 #include <algorithm>
 #include <set>
 #include <sstream>
@@ -87,7 +88,6 @@ namespace costmap_2d {
     memset(obsWatchDog_, 0, width_*height_);
 
     // For the first pass, just clean up the data and get the set of original obstacles.
-    QUEUE queue; // queue for propagating costs
     std::vector<unsigned int> updates;
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
@@ -102,7 +102,7 @@ namespace costmap_2d {
 	// Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
 	// as dynamic obstacles, and will be faded out as such, but
 	if(staticData_[ind] == LETHAL_OBSTACLE){
-	  queue.push(std::make_pair(0, ind));
+	  queue_.push(QueueElement(0, ind, ind));
 	  petWatchDog(ind, MARKED_FOR_COST);
 	  staticObstacles_.push_back(ind);
 	}
@@ -113,7 +113,7 @@ namespace costmap_2d {
 
     // Now propagate the queue. The updates must be reapplied to the static map, which will ensure they are
     // not staled out
-    propagateCosts(queue, updates);
+    propagateCosts(updates);
 
     // Now for every original obstacle, go back and fill in the inflated obstacles
     for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
@@ -145,8 +145,7 @@ namespace costmap_2d {
     WC_MC(wx, wy, mx_, my_);
 
     updates.clear();
-
-    QUEUE queue;
+    ROS_ASSERT(queue_.empty());
     std::vector<unsigned int> cellHits;
 
     for(size_t i = 0; i < cloud.get_pts_size(); i++) {
@@ -162,7 +161,7 @@ namespace costmap_2d {
 	continue;
 
       // Buffer for cost propagation
-      queue.push(std::make_pair(0, ind));
+      queue_.push(QueueElement(0, ind, ind));
       petWatchDog(ind, MARKED_FOR_COST);
 
       // Immediately update free space, which is dominated by propagated costs so they are applied afterwards.
@@ -172,7 +171,7 @@ namespace costmap_2d {
     }
 
     // Propagate costs
-    propagateCosts(queue, updates);
+    propagateCosts(updates);
 
     // Propagate free space
     for(std::vector<unsigned int>::const_iterator it = cellHits.begin(); it != cellHits.end(); ++it)
@@ -326,41 +325,57 @@ namespace costmap_2d {
     return ss.str();
   }
 
-  void CostMap2D::propagateCosts(QUEUE& queue, std::vector<unsigned int>& updates){
-    while(!queue.empty()){
-      unsigned int distance = queue.front().first;
-      unsigned int ind = queue.front().second;
-      unsigned char cost = computeCost(ind, distance);
-      queue.pop();
-      
-      updateCellCost(ind, cost, updates);
-      unsigned int mx, my;
-      IND_MC(ind, mx, my);
+  void CostMap2D::propagateCosts(std::vector<unsigned int>& updates){
+    while(!queue_.empty()){
+      QueueElement c = queue_.front();
+      queue_.pop();
+      unsigned char cost = computeCost(c.distance);      
+      updateCellCost(c.ind, cost, updates);
 
       // If distance reached the inflation radius then skip further expansion
-      if(distance >= inflationRadius_)
-	continue;
-
-      // Otherwise we expand further, using Manhattan Distance
-      std::vector<unsigned int> neighbors;
-      distance++;
-      if(mx > 0) enqueue(mx-1, my, queue, distance);
-      if(my > 0) enqueue(mx, my - 1, queue, distance);
-      if(mx < (getWidth() - 1)) enqueue(mx + 1, my, queue, distance);
-      if(my < (getHeight() - 1)) enqueue(mx, my + 1, queue, distance);
+      if(c.distance < inflationRadius_)
+	enqueueNeighbors(c.source, c.ind);
     }
   }
 
-  void CostMap2D::enqueue(unsigned int mx, unsigned int my, QUEUE& queue, unsigned int distance){
-    unsigned int cellId = MC_IND(mx, my);
+  void CostMap2D::enqueueNeighbors(unsigned int source, unsigned int ind){
+    unsigned int mx, my;
+    IND_MC(ind, mx, my);
+
+    if(mx > 0) 
+      enqueue(source, mx - 1, my);
+    if(my > 0) 
+      enqueue(source, mx, my - 1);
+    if(mx < (getWidth() - 1)) 
+      enqueue(source, mx + 1, my);
+    if(my < (getHeight() - 1)) 
+      enqueue(source, mx, my + 1);
+  }
+
+  void CostMap2D::enqueue(unsigned int source, unsigned int mx, unsigned int my){
     // If the cell is not marked for cost propagation
-    if(obsWatchDog_[cellId] != MARKED_FOR_COST){
-      queue.push(std::make_pair(distance, cellId));
-      petWatchDog(cellId, MARKED_FOR_COST);
+    unsigned int ind = MC_IND(mx, my);
+    if(obsWatchDog_[ind] != MARKED_FOR_COST){
+      QueueElement c(computeDistance(source, ind), source, ind);
+      queue_.push(c);
+      petWatchDog(ind, MARKED_FOR_COST);
     }
   }
 
-  unsigned char CostMap2D::computeCost(unsigned int ind, unsigned int distance) const{
+  /**
+   * Euclidean distance
+   */
+  double CostMap2D::computeDistance(unsigned int a, unsigned int b) const{
+    unsigned int mx_a, my_a, mx_b, my_b;
+    IND_MC(a, mx_a, my_a);
+    IND_MC(b, mx_b, my_b);
+    double dx = (int)(mx_a) - (int) mx_b;
+    double dy = (int)(my_a) - (int) my_b;
+    double distance = sqrt(pow(dx, 2) + pow(dy, 2));
+    return distance;
+  }
+
+  unsigned char CostMap2D::computeCost(double distance) const{
     unsigned char cost = 0;
     if(distance == 0)
       cost = LETHAL_OBSTACLE;

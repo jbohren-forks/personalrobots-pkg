@@ -1,11 +1,16 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+set(ROS_BUILD_TYPE Release)
 rospack(costmap_2d)
-rospack_add_library(costmap_2d src/costmap_2d.cpp src/obstacle_map_accessor.cc)
+genmsg()
 
-# Not implementing the node for now
-#rospack_add_executable(bin/costmap_2d_ros src/costmap_2d_ros.cpp)
-#target_link_libraries(bin/costmap_2d_ros costmap_2d)
+#uncomment for profiling
+#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
+set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
+set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
+
+rospack_add_library(costmap_2d src/costmap_2d.cpp src/obstacle_map_accessor.cc)
 
 # Test target for module tests to be included in gtest regression test harness
 rospack_add_gtest(utest src/test/module-tests.cc)
