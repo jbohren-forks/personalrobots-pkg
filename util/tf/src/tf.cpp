@@ -203,14 +203,14 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     if (mTfLs.forwardTransforms.size() == 0)
     {
       std::stringstream ss;
-      ss<< "No Common ParentD" << std::endl << allFramesAsString() << std::endl;
+      ss<< "No Common ParentD betwee "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
+        << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != target_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentC forward.back ="<< mTfLs.forwardTransforms.back().frame_id_ << " but source frame ="
-        << frameIDs_reverse[source_frame]
+      ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
         << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" << std::endl;
       throw(ConnectivityException(ss.str()));
     }
@@ -222,14 +222,14 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     if (mTfLs.inverseTransforms.size() == 0)
     {
       std::stringstream ss;
-      ss<< "No Common ParentB" << std::endl << allFramesAsString() << std::endl;
+      ss<< "No Common ParentB between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
 
     if (lookupFrameNumber(mTfLs.inverseTransforms.back().parent_id_) != target_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentA" << std::endl << allFramesAsString() << std::endl << mTfLs.inverseTransforms.back().parent_id_ << std::endl;
+      ss<< "No Common ParentA between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl << mTfLs.inverseTransforms.back().parent_id_ << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     else return mTfLs;
@@ -240,7 +240,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
   if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_)) /// \todo rethink since the map is actually doing a string comparison inside
   {
     std::stringstream ss;
-    ss<< "No Common Parent, at top of search inverse:"<<mTfLs.inverseTransforms.back().frame_id_ << " vs forward:" << mTfLs.forwardTransforms.back().frame_id_ << std::endl << allFramesAsString() << std::endl;
+    ss<< "No Common Parent, at top of search between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl;
     throw(ConnectivityException(ss.str()));
   }
   /* Make sure that we don't have a no parent at the top */
