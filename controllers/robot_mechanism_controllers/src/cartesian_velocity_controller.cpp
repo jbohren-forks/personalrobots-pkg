@@ -40,7 +40,7 @@ namespace controller {
 //ROS_REGISTER_CONTROLLER(CartesianVelocityController)
 
 CartesianVelocityController::CartesianVelocityController()
-  : command_(0,0,0), robot_(NULL), last_time_(0)
+  : command_(tf::Vector3(0,0,0)), robot_(NULL), last_time_(0)
 {
 }
 
@@ -76,12 +76,13 @@ bool CartesianVelocityController::initXml(mechanism::RobotState *robot, TiXmlEle
 
 void CartesianVelocityController::update()
 {
+  tf::Vector3 &command = command_.next();
   assert(tip_);
   double time = robot_->hw_->current_time_;
 
   tf::Vector3 tv;
   getTipVelocity(&tv);
-  tf::Vector3 error = command_ - tv;
+  tf::Vector3 error = command - tv;
   effort_.command_[0] = -pid_x_.updatePid(error.x(), time - last_time_);
   effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
   effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
@@ -163,7 +164,7 @@ bool CartesianVelocityControllerNode::setCommand(
   robot_mechanism_controllers::SetVectorCommand::request &req,
   robot_mechanism_controllers::SetVectorCommand::response &resp)
 {
-  c_.command_.setValue(req.x, req.y, req.z);
+  c_.command_.set(tf::Vector3(req.x, req.y, req.z));
   return true;
 }
 
@@ -179,7 +180,9 @@ bool CartesianVelocityControllerNode::getActual(
 
 void CartesianVelocityControllerNode::command()
 {
-  tf::Vector3MsgToTF(command_msg_, c_.command_);
+  tf::Vector3 command;
+  tf::Vector3MsgToTF(command_msg_, command);
+  c_.command_.set(command);
 }
 
 }

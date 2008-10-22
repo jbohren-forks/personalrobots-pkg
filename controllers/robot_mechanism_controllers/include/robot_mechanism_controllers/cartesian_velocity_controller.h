@@ -55,6 +55,7 @@
 #include "misc_utils/advertised_service_guard.h"
 #include "misc_utils/subscription_guard.h"
 #include "misc_utils/realtime_publisher.h"
+#include "misc_utils/realtime_infuser.h"
 
 namespace controller {
 
@@ -67,7 +68,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  tf::Vector3 command_;
+  //tf::Vector3 command_;
+  misc_utils::RealtimeInfuser<tf::Vector3> command_;
   void getTipVelocity(tf::Vector3 *v);
 
 private:
