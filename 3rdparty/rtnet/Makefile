@@ -20,7 +20,7 @@ rtnet-src: $(RTNET_ARCHIVE)
 	touch $@
 
 clean:
-	cd rtnet-src && make clean
+	-make -C rtnet-src clean
 	
 wipe:
 	rm -rf rtnet rtnet-src $(RTNET_ARCHIVE)
