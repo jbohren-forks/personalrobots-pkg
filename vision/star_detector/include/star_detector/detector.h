@@ -54,6 +54,7 @@ public:
   void InterpolateScales(ForwardIterator first, ForwardIterator last);
 
 private:
+  float m_response_threshold;
   //! Scale/spatial dimensions
   int m_n, m_W, m_H;
   //! Normal integral image
@@ -92,6 +93,16 @@ private:
   
     //! Calculate the filter responses over the range of desired scales.
   void FilterResponses();
+  void FilterResponsesGen3();
+  void FilterResponsesGen4();
+  void FilterResponsesGen5();
+  void FilterResponsesGen6();
+  void FilterResponsesGen7();
+  void FilterResponsesGen8();
+  void FilterResponsesGen9();
+  void FilterResponsesGen10();
+  void FilterResponsesGen11();
+  void FilterResponsesGen12();
   
   //! Return extrema which satisfy the strength and line response thresholds
   template< typename OutputIterator >
@@ -104,10 +115,39 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
 {
   assert(source && source->depth == (int)IPL_DEPTH_8U);
 
-  cvIntegral(source, m_upright, NULL, NULL);
+  // cvIntegral needs a destination 1 pixel larger than source,
+  // while we use a larger width for all summed areas.
+  // So run the function then paste the scratch into m_upright.
+
+  IplImage *scratch = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
+  cvIntegral(source, scratch, NULL, NULL);
+  cvSetImageROI(scratch, cvRect(0, 0, m_W+1,m_H+1));
+  cvSetImageROI(m_upright, cvRect(0, 0, m_W+1,m_H+1));
+  cvCopy(scratch, m_upright);
+  cvReleaseImage(&scratch);
+  cvResetImageROI(m_upright);
+
   TiltedIntegral(source, m_tilted, m_flat);
 
-  FilterResponses();
+  // If possible, run one of the optimized versions
+
+  if ((3 <= m_n) && (m_n <= 12)) {
+    switch (m_n) {
+      case 3: FilterResponsesGen3(); break;
+      case 4: FilterResponsesGen4(); break;
+      case 5: FilterResponsesGen5(); break;
+      case 6: FilterResponsesGen6(); break;
+      case 7: FilterResponsesGen7(); break;
+      case 8: FilterResponsesGen7(); break;
+      case 9: FilterResponsesGen9(); break;
+      case 10: FilterResponsesGen10(); break;
+      case 11: FilterResponsesGen11(); break;
+      case 12: FilterResponsesGen12(); break;
+    }
+  } else {
+    FilterResponses();
+  }
+
 #if 0
   // DEBUG
   for (int i = 0; i < m_n; i++) {

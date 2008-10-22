@@ -136,11 +136,11 @@ class TestDirected(unittest.TestCase):
         self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
         result = simple(ImageChops.invert(self.im640))
         self.assertEqual(len(ref), len(result))
-        for (a,e) in zip(result, ref):
-            self.assertEqual(a[0], e[0])
-            self.assertEqual(a[1], e[1])
-            self.assertEqual(a[2], e[2])
-            self.assertEqual(a[3], -e[3])
+        for (a,e) in zip(sorted(result), sorted(ref)):
+            self.assertAlmostEqual(a[0], e[0], 3)
+            self.assertAlmostEqual(a[1], e[1], 3)
+            self.assertAlmostEqual(a[2], e[2], 3)
+            self.assertAlmostEqual(a[3], -e[3], 3)
 
     def test_translation(self):
         """ Small target translated in center of image has the same keypoints """
@@ -178,7 +178,7 @@ class TestDirected(unittest.TestCase):
         Flipped,flopped,rotated images have the same number of keypoints
         """
 
-        for dim in [247, 248, 256]:
+        for dim in [248, 256]:
             refim = self.im640.resize((dim,dim))
             ref = simple(refim, 7, 30.0, 999999.0, 999999.0)
             self.assert_(len(ref) != 0) # if no hits in the image, have a test bug
@@ -255,24 +255,24 @@ class TestDirected(unittest.TestCase):
         self.assert_(xs == sorted(xs))
 
     def xtest_z_perf(self):
-        sd = L.star_detector(self.im640.size[0], self.im640.size[1])
-        s = self.im640.tostring()
-        niter = 100
-        started = time.time()
-        for i in range(niter):
+        print
+        print
+        for size in [ (512,384), (640,480) ]:
+          im = self.im640.resize(size)
+          sd = L.star_detector(im.size[0], im.size[1])
+          s = im.tostring()
+          niter = 400
+          started = time.time()
+          for i in range(niter):
             kp = sd.detect(s)
-        took = time.time() - started
+          took = time.time() - started
+          print "%16s: %.1f ms/frame" % (str(size), 1e3 * took / niter)
         print
         print
-        print "%.1f ms/frame" % (1e3 * took / niter)
-        print
-        print
-
 
 if __name__ == '__main__':
-    if 0:
-        suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_a_golden'))
-        unittest.TextTestRunner(verbosity=2).run(suite)
-    else:
-        rostest.unitrun('star_detector', 'directed', TestDirected)
+    rostest.unitrun('star_detector', 'directed', TestDirected)
+    if 1:
+      suite = unittest.TestSuite()
+      suite.addTest(TestDirected('xtest_z_perf'))
+      unittest.TextTestRunner(verbosity=2).run(suite)

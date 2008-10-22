@@ -5,7 +5,6 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_binarized)
   : m_n(n), m_W(size.width), m_H(size.height),
     // Pre-allocate all the memory we need
-    m_upright( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
     m_tilted( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
     m_flat( cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1) ),
     m_responses(new IplImage*[n]),
@@ -18,11 +17,19 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                                 line_threshold_binarized)),
     m_interpolate(true)
 {
+  int sumwidth = 1777;
+  m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+
+  m_response_threshold = response_threshold;
+
   for (int i = 0; i < n; ++i) {
     m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
     cvZero(m_responses[i]);
   }
-  
+  cvSet(m_scales, cvScalar(1));
+
   // Filter sizes increase geometrically, rounded to nearest integer
   m_filter_sizes[0] = 1;
   float cur_size = 1;
@@ -34,7 +41,7 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
       continue;
     m_filter_sizes[scale++] = rounded_size;
   }
-  
+
   // Set border to size of maximum offset
   m_border = m_filter_sizes[m_n - 1] * 3;
 }
@@ -46,7 +53,7 @@ StarDetector::~StarDetector()
   cvReleaseImage(&m_flat);
   cvReleaseImage(&m_projected);
   cvReleaseImage(&m_scales);
-  
+
   for (int i = 0; i < m_n; ++i) {
     cvReleaseImage(&m_responses[i]);
   }
@@ -126,3 +133,5 @@ void StarDetector::BilevelFilter(IplImage* dst, int scale)
   //cvSaveImage("scales.pgm", scales);
   //SaveResponseImage("projected.pgm", projected);
 }
+
+#include "generated.i"

@@ -12,7 +12,7 @@
 
 typedef struct {
     PyObject_HEAD
-    StarDetector psd;
+    StarDetector *psd;
     int xsize, ysize;
     IplImage *img;
 } star_detector_t;
@@ -20,7 +20,9 @@ typedef struct {
 static void
 star_detector_dealloc(PyObject *self)
 {
-    cvReleaseImage(&((star_detector_t*)self)->img);
+    star_detector_t *psdt = (star_detector_t*)self;
+    cvReleaseImage(&(psdt->img));
+    delete psdt->psd;
     PyObject_Del(self);
 }
 
@@ -37,7 +39,7 @@ PyObject *detect(PyObject *self, PyObject *args)
         }
     }
     std::vector<Keypoint> kp;
-    sd->psd.DetectPoints(sd->img, std::back_inserter(kp));
+    sd->psd->DetectPoints(sd->img, std::back_inserter(kp));
     PyObject *r = PyList_New(kp.size());
     for (size_t i = 0; i < kp.size(); i++) {
         PyObject *t = PyTuple_New(4);
@@ -113,8 +115,7 @@ PyObject *star_detector(PyObject *self, PyObject *args)
         line_threshold = PyFloat_AsDouble(PyTuple_GetItem(args,4));
     if (PyTuple_Size(args) > 5)
         line_threshold_bin = PyFloat_AsDouble(PyTuple_GetItem(args,5));
-    new(&object->psd) StarDetector( cvSize(object->xsize, object->ysize), scales,
-                                    threshold, line_threshold, line_threshold_bin );
+    object->psd = new StarDetector( cvSize(object->xsize, object->ysize), scales, threshold, line_threshold, line_threshold_bin );
     object->img = cvCreateImage(cvSize(object->xsize, object->ysize), IPL_DEPTH_8U, 1);
     return (PyObject*)object;
 }
