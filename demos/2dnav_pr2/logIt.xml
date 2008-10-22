@@ -1,0 +1,7 @@
+<launch>
+  <group name="wg">
+    <node pkg="megamaid" type="central_vac" name="central_vac" respawn="false" output="screen" 
+    args="local_path gui_path inflated_obstacles TransformArray tilt_scan base_scan particlecloud gui_laser localizedpose initialpose odom 
+    raw_obstacles word_3d_map robot_footprint" />
+  </group>
+</launch>
