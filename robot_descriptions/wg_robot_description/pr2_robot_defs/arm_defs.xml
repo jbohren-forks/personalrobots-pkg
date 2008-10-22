@@ -5,7 +5,7 @@
 
   <property name="shoulder_pitch_length" value="0.10" />
   <property name="shoulder_pitch_radius" value="0.12" />
-  
+
 
   <macro name="pr2_finger" params="suffix parent reflect">
 
@@ -150,7 +150,6 @@
       <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
     </transmission>
   </macro>
-
 
 
 
@@ -348,8 +347,148 @@
   </macro>
 
 
+
   <macro name="pr2_forearm" params="suffix parent reflect">
+
+    <!-- Forearm roll -->
+
+    <joint name="forearm_roll_${suffix}_joint" type="revolute">
+      <axis xyz="1 0 0" />
+      <anchor xyz="0 0 0" />
+      <limit  effort="100" velocity="5" />
+      <calibration reference_position="0" values="1.5 -1" />
+    </joint>
+
+    <link name="forearm_roll_${suffix}">
+      <parent name="${parent}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="forearm_roll_${suffix}_joint" />
+      <inertial>
+        <mass value="1.804155" />
+        <com xyz="0.179474 -0.000058 0.013779" />
+        <inertia ixx="10.0" ixy="-0.000003671102" ixz="0.000029379389"
+                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="pr2_forearm_roll_mesh_file">
+          <mesh filename="forearm_roll" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.22 0 0" rpy="0 0 0" />
+        <geometry name="pr2_forearm_roll_collision_geom">
+          <box size="0.27 0.12 0.08" />
+        </geometry>
+      </collision>
+      <map name="pr2_forearm_roll_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="forearm_roll_${suffix}_trans">
+      <actuator name="forearm_roll_${suffix}_motor" />
+      <joint name="forearm_roll_${suffix}_joint" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+
+    <!-- Wrist flex -->
+
+    <joint name="wrist_flex_${suffix}_joint" type="revolute">
+      <axis xyz="0 1 0" />
+      <anchor xyz="0 0 0" />
+      <limit min="-1" max="1" effort="200" velocity="5" />
+      <calibration reference_position="0" values="1.5 -1" />
+    </joint>
+
+    <link name="wrist_flex_${suffix}">
+      <parent name="forearm_roll_${suffix}" />
+      <origin xyz="0.32025 0 0" rpy="0 0 0" />
+      <joint name="wrist_flex_${suffix}_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
+                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Grey</elem>
+        </map>
+        <geometry name="pr2_wrist_flex_mesh_file">
+          <mesh filename="wrist_pitch" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
+        <geometry name="pr2_wrist_flex_collision_geom">
+          <cylinder radius="0.033" length="0.103" />
+        </geometry>
+      </collision>
+      <map name="pr2_wrist_flex_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="wrist_flex_${suffix}_trans">
+      <actuator name="wrist_flex_${suffix}_motor" />
+      <joint name="wrist_flex_${suffix}_joint" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+
+    <!-- Wrist roll -->
+
+    <joint name="wrist_roll_${suffix}_joint" type="revolute">
+      <axis xyz="1 0 0" />
+      <anchor xyz="0 0 0" />
+      <limit effort="10" velocity="5" />
+      <calibration reference_positio="0" values="1.5 -1" />
+    </joint>
+
+
+    <link name="wrist_roll_${suffix}">
+      <parent name="wrist_flex_${suffix}" />
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <joint name="wrist_roll_${suffix}_joint" />
+      <inertial>
+        <mass value="1.0" />
+        <com xyz="0.179474 -0.000058  0.013779" />
+        <inertia ixx="1.0" ixy="-0.000003671102" ixz="0.000029379389"
+                 iyy="1.0" iyz="-0.000427679042" izz="1.0" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wrist_roll_mesh_file">
+          <mesh filename="wr_roll" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0.05 0 0" rpy="0 0 0" />
+        <geometry name="pr2_wrist_roll_collision_geom">
+          <box size="0.11 0.10 0.05" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+      <map name="pr2_wrist_roll_${suffix}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <transmission type="SimpleTransmission" name="wrist_roll_${suffix}_trans">
+      <actuator name="wrist_roll_${suffix}_motor" />
+      <joint name="wrist_roll_${suffix}_joint" />
+      <mechanicalReduction>1</mechanicalReduction>
+    </transmission>
+
   </macro>
+
 
 
   <macro name="pr2_arm" params="suffix parent reflect *origin">
