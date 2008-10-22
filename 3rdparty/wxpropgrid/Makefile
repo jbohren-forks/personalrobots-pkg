@@ -5,8 +5,8 @@ WXPROPGRID_ROOT = $(shell rospack find wxpropgrid)
 
 $(VERSION)/Makefile: $(VERSION)/Makefile.in $(VERSION)/wg_changelist.txt $(VERSION)/configure
 	cd $(VERSION) && \
-		export CFLAGS='-D__NOTWXPYTHON__' && \
-		export CXXFLAGS='-D__NOTWXPYTHON__' && \
+		export CFLAGS='-g -D__NOTWXPYTHON__ -g' && \
+		export CXXFLAGS='-g -D__NOTWXPYTHON__ -g' && \
 		./configure --prefix=$(WXPROPGRID_ROOT)/propgrid_install
 
 $(VERSION): $(VERSION)/Makefile
