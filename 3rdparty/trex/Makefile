@@ -21,13 +21,13 @@ includes: trex PlanWorks
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5111 https://babelfish.arc.nasa.gov/svn/europa/PLASMA/trunk PLASMA; \
-                             else cd PLASMA &&  $(SVN_CMDLINE) up -r 5111; fi
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; \
+                             else cd PLASMA &&  $(SVN_CMDLINE) up -r 5117 ; fi
 
 # GET PlanWorks
 PlanWorks:
-	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 4919 https://babelfish.arc.nasa.gov/svn/europa/PlanWorks/trunk PlanWorks; \
-                                else cd PlanWorks && $(SVN_CMDLINE) up -r 4919; fi
+	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; \
+                                else cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ; fi
 
 # Get TREX
 trex: PLASMA
