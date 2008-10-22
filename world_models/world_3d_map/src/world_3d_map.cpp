@@ -585,7 +585,9 @@ int main(int argc, char **argv)
     {
 	World3DMap *map = new World3DMap(argv[1]);
 	map->loadRobotDescription();
+        ROS_DEBUG("Waiting until I have mechanism state and a localized pose message");
 	map->waitForState();
+        ROS_DEBUG("Got state and a localized pose message");
 	map->setAcceptScans(true);
 	map->spin();
 	map->shutdown();
