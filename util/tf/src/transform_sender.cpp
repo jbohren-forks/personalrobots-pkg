@@ -34,7 +34,7 @@ class TransformSender : public ros::node
 public:
   //constructor
   TransformSender(double x, double y, double z, double yaw, double pitch, double roll, ros::Time time, const std::string& frame_id, const std::string& parent_id) : 
-    ros::node("sender"),broadcaster(*this), ///\todo make this anonymous
+    ros::node("transform_sender", ros::node::ANONYMOUS_NAME),broadcaster(*this), 
     transform_(btTransform(btQuaternion(yaw,pitch,roll), btVector3(x,y,z)), time, frame_id , parent_id){};
   //Clean up ros connections
   ~TransformSender() { }
@@ -59,8 +59,14 @@ int main(int argc, char ** argv)
   //Initialize ROS
   ros::init(argc, argv);
 
-  ROS_ASSERT(argc == 10);
-  
+  if(argc != 10)
+    {
+      printf("A command line utility for manually sending a transform.\n");
+      printf("It will periodicaly republish the given transform. \n");
+      printf("Usage: transform_sender x y z yaw pitch roll frame_id parent_id  period(miliseconds) \n");
+      ROS_ERROR("transform_sender exited due to not having the right number of arguments");
+      return -1;
+    }
 
   TransformSender tf_sender(atof(argv[1]), atof(argv[2]), atof(argv[3]),
                             atof(argv[4]), atof(argv[5]), atof(argv[6]),
@@ -72,8 +78,8 @@ int main(int argc, char ** argv)
   while(tf_sender.ok())
   {
     tf_sender.send();
-      //Send some data
-    usleep(atoi(argv[9]));
+    ROS_INFO("Sending transform from %s with parent %s\n", argv[7], argv[8]);
+    usleep(atoi(argv[9])*1000);
   }
   ros::fini();
 
