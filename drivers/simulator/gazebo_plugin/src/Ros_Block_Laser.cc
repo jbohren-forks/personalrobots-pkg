@@ -96,9 +96,8 @@ void Ros_Block_Laser::LoadChild(XMLConfigNode *node)
 
   int r_size = rangeCount * verticalRangeCount;
   this->cloudMsg.set_pts_size(r_size);
-  this->cloudMsg.set_chan_size(r_size);
-  for (int i=0; i< r_size; i++)
-    this->cloudMsg.chan[i].set_vals_size(1);
+  this->cloudMsg.set_chan_size(1);
+  this->cloudMsg.chan[0].set_vals_size(r_size);
 
 }
 
@@ -154,9 +153,8 @@ void Ros_Block_Laser::PutLaserData()
   // set size of cloud message everytime!
   int r_size = rangeCount * verticalRangeCount;
   this->cloudMsg.set_pts_size(r_size);
-  this->cloudMsg.set_chan_size(r_size);
-  for (int i=0; i< r_size; i++)
-    this->cloudMsg.chan[i].set_vals_size(1);
+  this->cloudMsg.set_chan_size(1);
+  this->cloudMsg.chan[0].set_vals_size(r_size);
 
   /***************************************************************/
   /*                                                             */
@@ -240,7 +238,7 @@ void Ros_Block_Laser::PutLaserData()
         this->cloudMsg.pts[n].y      = (r+minRange) *             sin(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
         this->cloudMsg.pts[n].z      = (r+minRange) * sin(pAngle)*cos(yAngle) + this->GaussianKernel(0,this->gaussianNoise) ;
       }
-      this->cloudMsg.chan[n].vals[0] = v + this->GaussianKernel(0,this->gaussianNoise) ;
+      this->cloudMsg.chan[0].vals[n] = v + this->GaussianKernel(0,this->gaussianNoise) ;
     }
   }
 
