@@ -137,8 +137,9 @@ struct WG0XConfigInfo
   uint8_t pad_[8];
   uint8_t configuration_status_;
   uint8_t safety_disable_status_;
-  uint8_t safety_disable_countdown_;
+  uint8_t safety_disable_status_hold_;
   uint8_t safety_disable_count_;
+  uint16_t watchdog_limit_;
 
   static const unsigned CONFIG_INFO_BASE_ADDR = 0x0080;
 }__attribute__ ((__packed__));
@@ -225,6 +226,7 @@ public:
   void diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *);
 
 private:
+  string safetyDisableString(uint8_t status);
   int readEeprom(EtherCAT_SlaveHandler *sh);
   int writeEeprom(EtherCAT_SlaveHandler *sh);
   int sendSpiCommand(EtherCAT_SlaveHandler *sh, WG0XSpiEepromCmd const * cmd);
@@ -256,6 +258,17 @@ private:
   {
     LIMIT_SENSOR_0_STATE = 1, LIMIT_SENSOR_1_STATE = 2,
     LIMIT_OFF_TO_ON = 4, LIMIT_ON_TO_OFF = 8
+  };
+
+  enum
+  {
+    SAFETY_DISABLED = (1 << 0),
+    SAFETY_UNDERVOLTAGE = (1 << 1),
+    SAFETY_OVER_CURRENT = (1 << 2),
+    SAFETY_BOARD_OVER_TEMP = (1 << 3),
+    SAFETY_HBRIDGE_OVER_TEMP = (1 << 4),
+    SAFETY_OPERATIONAL = (1 << 5),
+    SAFETY_WATCHDOG = (1 << 6)
   };
 
   // Board configuration parameters

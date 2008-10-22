@@ -202,7 +202,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 
   if (sh_->get_product_code() == WG05::PRODUCT_CODE)
   {
-    if (major != 1 || minor < 2)
+    if (major != 1 || minor < 6)
     {
       node->log(ros::FATAL, "Unsupported firmware revision %d.%02d\n", major, minor);
       return -1;
@@ -373,59 +373,74 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   this_status = (WG0XStatus *)this_buffer;
   prev_status = (WG0XStatus *)prev_buffer;
 
-  voltage_estimate_ = this_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(this_status->programmed_pwm_value_) / 0x4000;
-  double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
-  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
-
-  voltage_error_ = fabs(expected_voltage - voltage_estimate_);
-  max_voltage_error_ = max(voltage_error_, max_voltage_error_);
-
-  // Check board shutdown status
-  // Report temperature shutdown, UV lockout, etc.
-  // Report lots of diagnostics information
-
-  // Check back-EMF consistency
-  if(voltage_error_ > 5)
-  {
-    //Something is wrong with the encoder, the motor, or the motor board
-    
-    //Disable motors
-    rv = false;
-
-    double epsilon = 0.001;
-    //Try to diagnose further
-    //motor_velocity == 0 -> encoder failure likely
-    if (fabs(state.velocity_) < epsilon)
-    {
-      reason_ = "Encoder failure likely";
-    }
-    //measured_current_ ~= 0 -> motor open-circuit likely
-    else if (fabs(state.last_measured_current_) < epsilon)
-    {
-      reason_ = "Motor open-circuit likely";
-    }
-    //motor_voltage_ ~= 0 -> motor short-circuit likely
-    else if (fabs(voltage_estimate_) < epsilon)
-    {
-      reason_ = "Motor short-circuit likely";
-    }
-    //else -> current-sense failure likely
-    else
-    {
-      reason_ = "Current-sense failure likely";
-    }
+  if (this_status->packet_count_ - prev_status->packet_count_ != 1) {
+    //printf("dropped packet on device #%02d: %d %d %d?\n", sh_->get_ring_position(), this_status->packet_count_ , prev_status->packet_count_, this_status->packet_count_ - prev_status->packet_count_);
   }
 
-  //Check current-loop performance
-  double last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
-  current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
-  max_current_error_ = max(current_error_, max_current_error_);
-  if (current_error_ > 2) {
-    //complain and shut down
-    reason_ = "Current loop error too large";
+  if (this_status->mode_ & MODE_SAFETY_LOCKOUT)
+  {
+    rv = false;
+    reason_ = "Safety Lockout";
+    if (readMailbox(sh_, WG0XConfigInfo::CONFIG_INFO_BASE_ADDR, &config_info_, sizeof(config_info_)) != 0)
+    {
+      reason_ += ": unable to read mailbox too";
+    }
+  }
+  else
+  {
+    voltage_estimate_ = this_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(this_status->programmed_pwm_value_) / 0x4000;
+    double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
+    double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
+
+    voltage_error_ = fabs(expected_voltage - voltage_estimate_);
+    max_voltage_error_ = max(voltage_error_, max_voltage_error_);
+
+    // Check back-EMF consistency
+    if(voltage_error_ > 5)
+    {
+      //Something is wrong with the encoder, the motor, or the motor board
+      
+      //Disable motors
+      //rv = false;
+      //printf("Disable motors because voltage_error = %f\n", voltage_error_);
+
+      const double epsilon = 0.001;
+      //Try to diagnose further
+      //motor_velocity == 0 -> encoder failure likely
+      if (fabs(state.velocity_) < epsilon)
+      {
+        reason_ = "Encoder failure likely";
+      }
+      //measured_current_ ~= 0 -> motor open-circuit likely
+      else if (fabs(state.last_measured_current_) < epsilon)
+      {
+        reason_ = "Motor open-circuit likely";
+      }
+      //motor_voltage_ ~= 0 -> motor short-circuit likely
+      else if (fabs(voltage_estimate_) < epsilon)
+      {
+        reason_ = "Motor short-circuit likely";
+      }
+      //else -> current-sense failure likely
+      else
+      {
+        reason_ = "Current-sense failure likely";
+      }
+    }
+
+    //Check current-loop performance
+    double last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
+    current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
+    max_current_error_ = max(current_error_, max_current_error_);
+    if (current_error_ > 2) {
+      //complain and shut down
+      reason_ = "Current loop error too large";
+    }
   }
 
   //TODO: filter errors so that one-frame spikes don't shut down the system.
+
+  if (rv) reason_ = "OK";
 
   return rv;
 }
@@ -715,6 +730,32 @@ int WG0X::writeMailbox(EtherCAT_SlaveHandler *sh, int address, void const *data,
   return 0;
 }
 
+#define CHECK_SAFETY_BIT(bit) \
+  do { if (status & SAFETY_##bit) { \
+    str += prefix + #bit; \
+    prefix = ", "; \
+  } } while(0)
+
+string WG0X::safetyDisableString(uint8_t status)
+{
+  string str, prefix;
+
+  if (status & SAFETY_DISABLED)
+  {
+    CHECK_SAFETY_BIT(DISABLED);
+    CHECK_SAFETY_BIT(UNDERVOLTAGE);
+    CHECK_SAFETY_BIT(OVER_CURRENT);
+    CHECK_SAFETY_BIT(BOARD_OVER_TEMP);
+    CHECK_SAFETY_BIT(HBRIDGE_OVER_TEMP);
+    CHECK_SAFETY_BIT(OPERATIONAL);
+    CHECK_SAFETY_BIT(WATCHDOG);
+  }
+  else
+    str = "ENABLED";
+
+  return str;
+}
+
 #define ADD_STRING_FMT(lab, fmt, ...) \
   s.label = (lab); \
   { char buf[1024]; \
@@ -737,12 +778,12 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   values_.clear();
 
   stringstream str;
-  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position();
+  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (" << actuator_info_.name_ << ")";
   d.name = str.str();
   d.message = reason_;
-  d.level = 0;
+  d.level = reason_ == "OK" ? 0 : 2;
 
-  ADD_STRING("Configuration", "");
+  ADD_STRING("Configuration", config_info_.configuration_status_ ? "good" : "error loading configuration");
   ADD_STRING("Name", actuator_info_.name_);
   unsigned int revision = sh_->get_revision();
   unsigned int major = (revision >> 8) & 0xff;
@@ -767,7 +808,11 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Pulses Per Revolution", "%d", actuator_info_.pulses_per_revolution_);
   ADD_STRING_FMT("Sign", "%d\n", actuator_info_.sign_);
 
-  ADD_STRING("Status", "");
+  ADD_STRING_FMT("Safety Disable Status", "%s (%02x)", safetyDisableString(config_info_.safety_disable_status_).c_str(), config_info_.safety_disable_status_);
+  ADD_STRING_FMT("Safety Disable Status Hold", "%s (%02x)", safetyDisableString(config_info_.safety_disable_status_hold_).c_str(), config_info_.safety_disable_status_hold_);
+  ADD_STRING_FMT("Safety Disable Count", "%d", config_info_.safety_disable_count_);
+  ADD_STRING_FMT("Watchdog Limit", "%dms\n", config_info_.watchdog_limit_);
+
   string mode, prefix;
   if (status->mode_) {
     if (status->mode_ & MODE_ENABLE) {

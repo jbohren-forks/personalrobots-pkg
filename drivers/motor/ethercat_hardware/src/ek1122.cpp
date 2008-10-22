@@ -58,7 +58,7 @@ void EK1122::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *)
   robot_msgs::DiagnosticString s;
 
   stringstream str;
-  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position();
+  str << "EtherCAT Device #" << setw(2) << setfill('0') << sh_->get_ring_position() << " (EK1122)";
   d.name = str.str();
   d.message = "OK";
   d.level = 0;

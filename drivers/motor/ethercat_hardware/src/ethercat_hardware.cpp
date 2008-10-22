@@ -40,7 +40,7 @@
 #include <ros/node.h>
 
 EthercatHardware::EthercatHardware() :
-  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), reset_state_(0), publisher_("/diagnostics", 1)
+  hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
 }
 
@@ -208,9 +208,20 @@ void EthercatHardware::publishDiagnostics()
   values_.clear();
   statuses_.clear();
 
-  status.level = 0;
   status.name = "EtherCAT Master";
-  status.message = "OK";
+  if (halt_motors_)
+  {
+    status.level = 2;
+    status.message = "Motors halted";
+  } else {
+    status.level = 0;
+    status.message = "OK";
+  }
+
+  // Motors halted?
+  s.value = halt_motors_ ? "true" : "false";
+  s.label = "Motors halted";
+  strings_.push_back(s);
 
   // Num devices
   v.value = num_slaves_;
@@ -221,6 +232,11 @@ void EthercatHardware::publishDiagnostics()
   s.value = interface_;
   s.label = "Interface";
   strings_.push_back(s);
+
+  // Interface
+  v.value = reset_state_;
+  v.label = "Reset state";
+  values_.push_back(v);
 
   // Roundtrip
   double total = 0;
@@ -268,7 +284,8 @@ void EthercatHardware::update(bool reset)
 
   if (reset)
   {
-    reset_state_ = num_slaves_;
+    reset_state_ = num_slaves_ + 10;
+    halt_motors_ = false;
   }
 
   for (unsigned int s = 0, a = 0; s < num_slaves_; ++s)
@@ -280,7 +297,8 @@ void EthercatHardware::update(bool reset)
       act->state_.last_requested_effort_ = act->command_.effort_;
       act->state_.last_requested_current_ = act->command_.current_;
       slaves_[s]->truncateCurrent(act->command_);
-      if (reset_state_ && s < reset_state_)
+      // Bringup motor boards, one per tick
+      if (halt_motors_ || (reset_state_ && ((s + 9) < reset_state_)))
       {
         bool tmp = act->command_.enable_;
         act->command_.enable_ = false;
@@ -294,9 +312,6 @@ void EthercatHardware::update(bool reset)
       ++a;
     }
   }
-
-  if (reset_state_)
-    --reset_state_;
 
   // Transmit process data
   double start = now();
@@ -314,12 +329,17 @@ void EthercatHardware::update(bool reset)
     {
       Actuator *act = hw_->actuators_[a];
       slaves_[s]->convertState(act->state_, current, last);
-      slaves_[s]->verifyState(act->state_, current, last);
+      // Don't halt motors during a reset
+      if (!slaves_[s]->verifyState(act->state_, current, last) && !reset_state_)
+        halt_motors_ = true;
       current += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       last += slaves_[s]->command_size_ + slaves_[s]->status_size_;
       ++a;
     }
   }
+
+  if (reset_state_)
+    --reset_state_;
 
   // Update current time
   hw_->current_time_ = now();
