@@ -16,6 +16,7 @@ Stereo Blob tracking by camshift.
 <depend package="axis_cam"/>
 <depend package="string_utils"/>
 <depend package="image_utils"/>
+<depend package="pr2_mechanism_controllers"/>
 <depend package="visual_odometry"/>
 </package>
 

@@ -7,7 +7,7 @@
 #include "axis_cam/PTZActuatorCmd.h"
 #include "axis_cam/PTZActuatorState.h"
 #include "image_utils/cv_bridge.h"
-
+#include "pr2_mechanism_controllers/TrackPoint.h"
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -425,7 +425,7 @@ public:
 
     // Ros: advertise a topic
     advertise<std_msgs::PointStamped>("points", 1000);
-
+    advertise<std_msgs::PointStamped>("head_controller/track_point", 1000);
     // OpenCV: pop up other windows for features, etc.
     display_ = display;
     if (display_) {
@@ -592,6 +592,25 @@ public:
 	      point_stamped_.point.z = centroid.val[2]/1000.;
 	      // publish the centroid of the tracked object
 	      publish("points", point_stamped_);
+	      
+	      string topic = "head_controller/track_point" ;
+      
+        std_msgs::PointStamped target;
+
+        target.point.x = point_stamped_.point.z ;
+        target.point.y = -point_stamped_.point.x ;
+        target.point.z = -point_stamped_.point.y;
+        
+        target.header.frame_id = "stereo_block" ;
+        
+        cout << "Requesting to move to: " << point_stamped_.point.x << ","
+                                        << point_stamped_.point.y << ","
+                                        << point_stamped_.point.z << endl ;
+        
+        static int count = 0;
+        if (++count % 1 == 0)
+          publish(topic, target);
+	      
 	    }
 	  }
 	  
