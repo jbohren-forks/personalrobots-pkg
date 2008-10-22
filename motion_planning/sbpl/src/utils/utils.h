@@ -57,6 +57,18 @@ typedef struct {
 } bresenham_param_t;
 
 
+typedef struct {
+	int x;
+	int y;
+} sbpl_2Dcell_t;
+
+
+typedef struct {
+	double x;
+	double y;
+} sbpl_2Dpt_t;
+
+
 
 
 //function prototypes
@@ -86,6 +98,9 @@ int ContTheta2Disc(double fTheta, int NUMOFANGLEVALS);
 //counterclockwise is positive
 //output is an angle in the range of from 0 to 2*PI
 double normalizeAngle(double angle);
+
+//returns true if 2D point is within the specified polygon given by ordered sequence of 2D points (last point is automatically connected to the first)
+bool IsInsideFootprint(sbpl_2Dpt_t pt, vector<sbpl_2Dpt_t>* bounding_polygon);
 
 #if 0
 void CheckSearchMDP(CMDP* mdp, int ExcludeSuccStateID = -1);

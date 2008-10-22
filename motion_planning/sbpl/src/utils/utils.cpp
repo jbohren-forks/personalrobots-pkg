@@ -471,3 +471,47 @@ double normalizeAngle(double angle)
     return retangle;
 }
 
+
+
+/*
+ * point - the point to test
+ *
+ * Function derived from http://ozviz.wasp.uwa.edu.au/~pbourke/geometry/insidepoly/
+ */
+bool IsInsideFootprint(sbpl_2Dpt_t pt, vector<sbpl_2Dpt_t>* bounding_polygon){
+  
+  int counter = 0;
+  int i;
+  double xinters;
+  sbpl_2Dpt_t p1;
+  sbpl_2Dpt_t p2;
+  int N = bounding_polygon->size();
+
+  p1 = bounding_polygon->at(0);
+  for (i=1;i<=N;i++) {
+    p2 = bounding_polygon->at(i % N);
+    if (pt.y > __min(p1.y,p2.y)) {
+      if (pt.y <= __max(p1.y,p2.y)) {
+        if (pt.x <= __max(p1.x,p2.x)) {
+          if (p1.y != p2.y) {
+            xinters = (pt.y-p1.y)*(p2.x-p1.x)/(p2.y-p1.y)+p1.x;
+            if (p1.x == p2.x || pt.x <= xinters)
+              counter++;
+          }
+        }
+      }
+    }
+    p1 = p2;
+  }
+
+  if (counter % 2 == 0)
+    return false;
+  else
+    return true;
+#if DEBUG
+  //printf("Returning from inside footprint: %d\n", c);
+#endif
+  //  return c;
+
+}
+

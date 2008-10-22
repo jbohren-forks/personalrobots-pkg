@@ -94,7 +94,7 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
 					char* mapdata,
 					int startx, int starty, int starttheta,
 					int goalx, int goaly, int goaltheta,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs) {
+					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV) {
   EnvNAV3DKINCfg.EnvWidth_c = width;
   EnvNAV3DKINCfg.EnvHeight_c = height;
   EnvNAV3DKINCfg.StartX_c = startx;
@@ -131,10 +131,11 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
     exit(1);
   }
 
+  EnvNAV3DKINCfg.FootprintPolygon = robot_perimeterV;
+
   EnvNAV3DKINCfg.nominalvel_mpersecs = nominalvel_mpersecs;
   EnvNAV3DKINCfg.cellsize_m = cellsize_m;
   EnvNAV3DKINCfg.timetoturn45degsinplace_secs = timetoturn45degsinplace_secs;
-
 
 
   //allocate the 2D environment
@@ -308,8 +309,10 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 	EnvNAV3DKINCfg.dXY[7][1] = 1;
 
 
+
 	//construct list of actions
 	EnvNAV3DKINCfg.ActionsV = new EnvNAV3DKINAction_t* [NAV3DKIN_THETADIRS];
+	vector<sbpl_2Dcell_t> footprint;
 	//iterate over source angles
 	for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
 	{
@@ -325,6 +328,14 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.cellsize_m/EnvNAV3DKINCfg.nominalvel_mpersecs*sqrt(EnvNAV3DKINCfg.ActionsV[tind][aind].dX*EnvNAV3DKINCfg.ActionsV[tind][aind].dX + 
 					EnvNAV3DKINCfg.ActionsV[tind][aind].dY*EnvNAV3DKINCfg.ActionsV[tind][aind].dY));
 
+			//compute intersecting cells
+			EnvNAV3DKIN3Dpt_t pose;
+			pose.x = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.cellsize_m);
+			pose.y = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dY, EnvNAV3DKINCfg.cellsize_m);
+			pose.theta = angle;
+			EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
+			CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+
 #if DEBUG
 			printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
 				tind, aind, EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, angle, EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.ActionsV[tind][aind].dY,
@@ -337,6 +348,15 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
+
+		//compute intersecting cells
+		EnvNAV3DKIN3Dpt_t pose;
+		pose.x = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.cellsize_m);
+		pose.y = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dY, EnvNAV3DKINCfg.cellsize_m);
+		pose.theta = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
+		EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
+		CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+
 #if DEBUG
 		printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
 			tind, aind, EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS),
@@ -349,6 +369,15 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
+
+		//compute intersecting cells
+		pose.x = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.cellsize_m);
+		pose.y = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dY, EnvNAV3DKINCfg.cellsize_m);
+		pose.theta = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
+		EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
+		CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+
+
 #if DEBUG
 		printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
 			tind, aind, EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS),
@@ -464,6 +493,25 @@ bool EnvironmentNAV3DKIN::IsWithinMapCell(int X, int Y)
 }
 
 
+int EnvironmentNAV3DKIN::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action)
+{
+	sbpl_2Dcell_t cell;
+
+	for(int i = 0; i < action->intersectingcellsV.size(); i++)
+	{
+		//get the cell in the map
+		cell = action->intersectingcellsV.at(i);
+		cell.x = cell.x + SourceX;
+		cell.y = cell.y + SourceY;
+		
+		//check validity
+		if(!IsValidCell(cell.x, cell.y))
+			return INFINITECOST;
+	}
+
+	return action->cost;
+}
+
 
 
 void EnvironmentNAV3DKIN::InitializeEnvironment()
@@ -493,6 +541,117 @@ static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
     return (int)(NAV3DKIN_COSTMULT*dist);
 
 }
+
+
+void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
+{  
+
+#if DEBUG
+  printf("---Calculating Footprint for Pose: %f %f %f---\n",
+	 pose.x, pose.y, pose.theta);
+#endif
+
+  //handle special case where footprint is just a point
+  if(EnvNAV3DKINCfg.FootprintPolygon.size() <= 1){
+    sbpl_2Dcell_t cell;
+    cell.x = CONTXY2DISC(pose.x, EnvNAV3DKINCfg.cellsize_m);
+    cell.y = CONTXY2DISC(pose.y, EnvNAV3DKINCfg.cellsize_m);
+    footprint->push_back(cell);
+    return;
+  }
+
+  vector<sbpl_2Dpt_t> bounding_polygon;
+  unsigned int find;
+  double max_x, min_x, max_y, min_y;
+  sbpl_2Dpt_t pt;
+  for(find = 0; find < EnvNAV3DKINCfg.FootprintPolygon.size(); find++){
+    
+    //rotate and translate the corner of the robot
+    pt = EnvNAV3DKINCfg.FootprintPolygon[find];
+    
+    //rotate and translate the point
+    sbpl_2Dpt_t corner;
+    corner.x = cos(pose.theta)*pt.x - sin(pose.theta)*pt.y + pose.x;
+    corner.y = sin(pose.theta)*pt.x + cos(pose.theta)*pt.y + pose.y;
+    bounding_polygon.push_back(corner);
+#if DEBUG
+    printf("Pt: %f %f, Corner: %f %f\n", pt.x, pt.y, corner.x, corner.y);
+#endif
+    if(corner.x < min_x || find==0){
+      min_x = corner.x;
+    }
+    if(corner.x > max_x || find==0){
+      max_x = corner.x;
+    }
+    if(corner.y < min_y || find==0){
+      min_y = corner.y;
+    }
+    if(corner.y > max_y || find==0){
+      max_y = corner.y;
+    }
+    
+  }
+
+#if DEBUG
+  printf("Footprint bounding box: %f %f %f %f\n", min_x, max_x, min_y, max_y);
+#endif
+  //initialize previous values to something that will fail the if condition during the first iteration in the for loop
+  int prev_discrete_x = CONTXY2DISC(pt.x, EnvNAV3DKINCfg.cellsize_m) + 1; 
+  int prev_discrete_y = CONTXY2DISC(pt.y, EnvNAV3DKINCfg.cellsize_m) + 1;
+  int prev_inside = 0;
+  int discrete_x;
+  int discrete_y;
+
+  for(double x=min_x; x<=max_x; x+=EnvNAV3DKINCfg.cellsize_m/3){
+    for(double y=min_y; y<=max_y; y+=EnvNAV3DKINCfg.cellsize_m/3){
+      pt.x = x;
+      pt.y = y;
+      discrete_x = CONTXY2DISC(pt.x, EnvNAV3DKINCfg.cellsize_m);
+      discrete_y = CONTXY2DISC(pt.y, EnvNAV3DKINCfg.cellsize_m);
+      
+      //see if we just tested this point
+      if(discrete_x != prev_discrete_x || discrete_y != prev_discrete_y || prev_inside==0){
+
+#if DEBUG
+		printf("Testing point: %f %f Discrete: %d %d\n", pt.x, pt.y, discrete_x, discrete_y);
+#endif
+	
+		if(IsInsideFootprint(pt, &bounding_polygon)){
+		//convert to a grid point
+
+#if DEBUG
+			printf("Pt Inside %f %f\n", pt.x, pt.y);
+#endif
+
+			sbpl_2Dcell_t cell;
+			cell.x = discrete_x;
+			cell.y = discrete_y;
+			footprint->push_back(cell);
+			prev_inside = 1;
+
+#if DEBUG
+			printf("Added pt to footprint: %f %f\n", pt.x, pt.y);
+#endif
+		}
+		else{
+			prev_inside = 0;
+		}
+
+      }
+	  else
+	  {
+#if DEBUG
+		//rintf("Skipping pt: %f %f\n", pt.x, pt.y);
+#endif
+      }
+      
+      prev_discrete_x = discrete_x;
+      prev_discrete_y = discrete_y;
+
+    }//over x_min...x_max
+  }
+}
+
 
 //------------------------------------------------------------------------------
 
@@ -531,6 +690,8 @@ bool EnvironmentNAV3DKIN::CheckQuant(FILE* fOut)
   return true;
 }
 
+
+
 //-----------------------------------------------------------------------------
 
 //-----------interface with outside functions-----------------------------------
@@ -558,7 +719,7 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					double startx, double starty, double starttheta,
 					double goalx, double goaly, double goaltheta,
 				    double goaltol_x, double goaltol_y, double goaltol_theta,
-					vector<EnvNAV3DKIN2Dpt_t> perimeterptsV,
+					vector<sbpl_2Dpt_t> perimeterptsV,
 					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs)
 {
 	//TODO - need to set the tolerance as well
@@ -567,7 +728,7 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					mapdata,
 					CONTXY2DISC(startx, cellsize_m), CONTXY2DISC(starty, cellsize_m), ContTheta2Disc(starttheta, NAV3DKIN_THETADIRS),
 					CONTXY2DISC(goalx, cellsize_m), CONTXY2DISC(goaly, cellsize_m), ContTheta2Disc(goaltheta, NAV3DKIN_THETADIRS),
-					cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs);
+					cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, perimeterptsV);
 
 	InitGeneral();
 
@@ -716,7 +877,8 @@ void EnvironmentNAV3DKIN::SetAllActionsandAllOutcomes(CMDPSTATE* state)
             if(!IsValidCell(newX, newY))
                 continue;
         }
-       else if(EnvNAV3DKINCfg.Grid2D[newX][newY] != 0) //TODO - need to modify to take robot perimeter into account
+
+       if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST)
             continue;
 
 		//skip invalid diagonal move
@@ -802,7 +964,8 @@ void EnvironmentNAV3DKIN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
             if(!IsValidCell(newX, newY)) 
                 continue;
         }
-        else if(EnvNAV3DKINCfg.Grid2D[newX][newY] != 0) //TODO - need to modify to take robot perimeter into account
+
+        if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST)
             continue;
 
 		//skip invalid diagonal move
@@ -878,11 +1041,9 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
         }
 
 		//skip invalid diagonal move
-        if(predX != HashEntry->X && predY != HashEntry->Y) //TODO - need to modify to take robot perimeter into account
-		{
-			if(EnvNAV3DKINCfg.Grid2D[HashEntry->X][predY] != 0 || EnvNAV3DKINCfg.Grid2D[predX][HashEntry->Y] != 0)
-				continue;
-        }
+	    if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST) //TODO -change after I have explicit backward actions
+			continue;
+        
 
 
     	EnvNAV3DKINHashEntry_t* OutHashEntry;

@@ -353,14 +353,14 @@ int planandnavigate3dkin(int argc, char *argv[])
     FILE* fSol = fopen("sol.txt", "w");
     int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = true;
+	bool bPrint = true, bPrintMap = true;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
 	nav2dcell_t nav2dcell;
 	int i;
 	double cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs;
-	vector<EnvNAV3DKIN2Dpt_t> perimeterptsV;
+	vector<sbpl_2Dpt_t> perimeterptsV;
 
 
 	//srand(0);
@@ -376,8 +376,8 @@ int planandnavigate3dkin(int argc, char *argv[])
     char* map = (char*)calloc(size_x*size_y, sizeof(char));
 
 	//print the map
-	if(bPrint) printf("true map:\n");
-	for(y = 0; bPrint && y < size_y; y++){
+	if(bPrintMap) printf("true map:\n");
+	for(y = 0; bPrintMap && y < size_y; y++){
 		for(x = 0; x < size_x; x++){
 			printf("%d ", (int)trueenvironment_nav3Dkin.IsObstacle(x,y));
 		}
@@ -386,6 +386,22 @@ int planandnavigate3dkin(int argc, char *argv[])
 	if(bPrint) system("pause");
 
 	printf("start: %f %f %f, goal: %f %f %f\n", startx, starty, starttheta, goalx, goaly, goaltheta);
+
+	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
+	sbpl_2Dpt_t pt_m;
+	double side = 0.1;
+	pt_m.x = -side;
+	pt_m.y = -side;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = side;
+	pt_m.y = -side;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = side;
+	pt_m.y = side;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = -side;
+	pt_m.y = side;
+	perimeterptsV.push_back(pt_m);
 
 	//Initialize Environment (should be called before initializing anything else)
     if(!environment_nav3Dkin.InitializeEnv(size_x, size_y, map, startx, starty, starttheta, goalx, goaly, goaltheta, 
@@ -485,7 +501,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 		//print the map
 		int startindex = startx_c + starty_c*size_x;
 		int goalindex = goalx_c + goaly_c*size_x;
-		for(y = 0; bPrint && y < size_y; y++){
+		for(y = 0; bPrintMap && y < size_y; y++){
 			for(x = 0; x < size_x; x++){
 				int index = x + y*size_x;
 
@@ -634,10 +650,10 @@ int main(int argc, char *argv[])
 	}
 
     //2D planning
-    planandnavigate2d(argc, argv);
+    //planandnavigate2d(argc, argv);
 
     //3D planning
-    //planandnavigate3dkin(argc, argv);
+    planandnavigate3dkin(argc, argv);
 
 
     //robotarm planning

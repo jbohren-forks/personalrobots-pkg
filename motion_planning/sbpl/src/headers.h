@@ -54,6 +54,7 @@ using namespace std;
 #include "utils/key.h"
 #include "utils/mdpconfig.h"
 #include "utils/mdp.h"
+#include "utils/utils.h"
 #include "planners/planner.h"
 #include "discrete_space_information/environment.h"
 #include "discrete_space_information/template/environment_XXX.h"
@@ -65,7 +66,6 @@ using namespace std;
 #include "planners/VI/viplanner.h"
 #include "planners/ARAStar/araplanner.h"
 #include "planners/ADStar/adplanner.h"
-#include "utils/utils.h"
 
 
 #endif

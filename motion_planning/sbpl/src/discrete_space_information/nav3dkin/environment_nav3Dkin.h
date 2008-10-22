@@ -50,6 +50,11 @@ typedef struct{
 	double y;
 } EnvNAV3DKIN2Dpt_t;
 
+typedef struct{
+	double x;
+	double y;
+	double theta;
+} EnvNAV3DKIN3Dpt_t;
 
 
 typedef struct
@@ -58,6 +63,7 @@ typedef struct
 	char dY;
 	char dTheta;
 	unsigned int cost; 
+	vector<sbpl_2Dcell_t> intersectingcellsV;
 } EnvNAV3DKINAction_t;
 
 
@@ -82,6 +88,8 @@ typedef struct ENV_NAV3DKIN_CONFIG
 
 	EnvNAV3DKINAction_t** ActionsV; //array of actions, ActionsV[i][j] - jth action for sourcetheta = i
 
+
+	vector<sbpl_2Dpt_t> FootprintPolygon;
 } EnvNAV3DKINConfig_t;
 
 typedef struct 
@@ -141,7 +149,7 @@ public:
                        double startx, double starty, double starttheta,
                        double goalx, double goaly, double goaltheta,
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
-					   vector<EnvNAV3DKIN2Dpt_t> perimeterptsV,
+					   vector<sbpl_2Dpt_t> perimeterptsV,
 					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
@@ -185,7 +193,7 @@ public:
 			      char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
-				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
+				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV);
 	
 	bool InitGeneral();
 
@@ -205,6 +213,10 @@ public:
 	bool IsValidCell(int X, int Y);
 
 	bool IsWithinMapCell(int X, int Y);
+
+	void CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint);
+
+	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
 
 
 };
