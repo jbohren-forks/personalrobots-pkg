@@ -254,7 +254,7 @@ class TestDirected(unittest.TestCase):
         xs = [i[0] for i in result]
         self.assert_(xs == sorted(xs))
 
-    def xtest_z_perf(self):
+    def perftest(self):
         print
         print
         for size in [ (512,384), (640,480) ]:
@@ -272,7 +272,7 @@ class TestDirected(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
-    if 1:
+    if 0:
       suite = unittest.TestSuite()
-      suite.addTest(TestDirected('xtest_z_perf'))
+      suite.addTest(TestDirected('perftest'))
       unittest.TextTestRunner(verbosity=2).run(suite)
