@@ -2,13 +2,13 @@
   <group name="wg">
     <machine name="base_laser_machine" address="prf2" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf2" />
     <machine name="tilt_laser_machine" address="prf3" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf3" default="true" />
-    <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" output="screen" args="scan:=base_scan" machine="base_laser_machine">
+    <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan" machine="base_laser_machine">
       <param name="port" type="string" value="/dev/ttyACM0" />
       <param name="frameid" type="string" value="base_laser" />
       <param name="min_ang" type="double" value="-100.0" />
       <param name="max_ang" type="double" value="100.0" />
     </node>
-    <node pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" output="screen" args="scan:=tilt_scan" machine="tilt_laser_machine">
+    <node pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan" machine="tilt_laser_machine">
       <param name="port" type="string" value="/dev/ttyACM0" />
       <param name="frameid" type="string" value="tilt_laser" />
       <param name="min_ang" type="double" value="-80.0" />
@@ -25,7 +25,7 @@
     <param name="pf_odom_drift_xa" value="0.2"/>
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
-    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" output="screen" args="scan:=base_scan" />
+    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
     <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
     <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
   </group>
