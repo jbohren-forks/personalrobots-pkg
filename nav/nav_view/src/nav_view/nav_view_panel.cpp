@@ -33,7 +33,7 @@
 
 #include "ros/common.h"
 #include "ros/node.h"
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
 
 #include <Ogre.h>
 
@@ -98,7 +98,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
   }
   ROS_ASSERT( ros_node_ );
 
-  tf_client_ = new rosTFClient( *ros_node_ );
+  tf_client_ = new tf::TransformListener( *ros_node_ );
 
   scene_manager_ = ogre_root_->createSceneManager( Ogre::ST_GENERIC );
   root_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
@@ -414,20 +414,18 @@ void NavViewPanel::updateRadiusPosition()
 {
   try
   {
-    libTF::TFPose2D robot_pose;
-    robot_pose.x = 0;
-    robot_pose.y = 0;
-    robot_pose.yaw = 0;
-    robot_pose.frame = "base";
-    robot_pose.time = 0;
+    tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(0), "base");
+    tf::Stamped<tf::Pose> map_pose;
 
-    libTF::TFPose2D map_pose = tf_client_->transformPose2D("map", robot_pose);
+    tf_client_->transformPose("map", robot_pose, map_pose);
+    double yaw, pitch, roll;
+    map_pose.getBasis().getEulerZYX(yaw, pitch, roll);
 
     Ogre::SceneNode* node = radius_object_->getParentSceneNode();
-    node->setPosition( Ogre::Vector3(map_pose.x, map_pose.y, RADIUS_DEPTH) );
-    node->setOrientation( Ogre::Quaternion( Ogre::Radian( map_pose.yaw ), Ogre::Vector3::UNIT_Z ) );
+    node->setPosition( Ogre::Vector3(map_pose.getOrigin().x(), map_pose.getOrigin().y(), RADIUS_DEPTH) );
+    node->setOrientation( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );
   }
-  catch ( libTF::Exception& e )
+  catch ( tf::TransformException& e )
   {
   }
 }

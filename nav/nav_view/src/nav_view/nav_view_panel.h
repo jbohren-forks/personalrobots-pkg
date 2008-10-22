@@ -124,7 +124,10 @@ class Camera;
 class ManualObject;
 }
 
-class rosTFClient;
+namespace tf
+{
+class TransformListener;
+}
 
 class wxTimer;
 class wxTimerEvent;
@@ -194,7 +197,7 @@ protected:
   ogre_tools::wxOgreRenderWindow* render_panel_;
 
   ros::node* ros_node_;
-  rosTFClient* tf_client_;
+  tf::TransformListener* tf_client_;
 
   float map_resolution_;
   int map_width_;

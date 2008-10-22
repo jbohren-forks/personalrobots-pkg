@@ -6,7 +6,7 @@
   <depend package="std_srvs"/>
   <depend package="pr2_msgs"/>
   <depend package="pr2_srvs"/>
-  <depend package="rosTF"/>
+  <depend package="tf"/>
   <depend package="ogre"/>
   <depend package="ogre_tools"/>
   <depend package="wxswig"/>
