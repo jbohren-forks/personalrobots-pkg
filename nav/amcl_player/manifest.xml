@@ -4,6 +4,6 @@
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="player" />
-  <depend package="rosTF" />
+  <depend package="tf" />
   <depend package="std_srvs" />
 </package>

@@ -100,7 +100,7 @@ Publishes to (name / type):
 #include <std_srvs/StaticMap.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include <tf/transform_broadcaster.h>
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
@@ -133,8 +133,7 @@ class AmclNode: public ros::node, public Driver
     int setPose(double x, double y, double a);
 
   private:
-    //rosTFClient tfClient;
-    rosTFServer* tf;
+  tf::TransformBroadcaster* tf;
     ConfigFile* cf;
 
     // incoming messages
@@ -408,7 +407,7 @@ AmclNode::AmclNode() :
   assert((this->pdevice = deviceTable->GetDevice(oposition2d_saddr,false)));
   assert((this->ldevice = deviceTable->GetDevice(olocalize_addr,false)));
 
-  this->tf = new rosTFServer(*this);
+  this->tf = new tf::TransformBroadcaster(*this);
 
   double startX, startY, startTH;
   param("robot_x_start", startX, 0.0);
@@ -445,17 +444,9 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     // publish new transform robot->map
     ros::Time t;
     t.fromSec(hdr->timestamp);
-    this->tf->sendEuler("base",
-                        "map",
-                        pdata->pos.px,
-                        pdata->pos.py,
-                        0.0,
-                        pdata->pos.pa,
-                        0.0,
-                        0.0,
-			t);
-			//ros::Time((long long unsigned int)floor(hdr->timestamp),
-                        //(long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
+    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
+                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
+                                                    t, "base","map"));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
