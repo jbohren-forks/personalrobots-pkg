@@ -199,22 +199,22 @@ public:
    * 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithEulers(const std::string & frameid, const std::string & parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time);
+  void setWithEulers(const std::string & frameid, const std::string & parentid, double x, double y, double z, double yaw, double pitch, double roll, ULLtime time) __attribute__((deprecated));
 
   /** \brief Set a transform using DH Parameters 
    * Conventions from http://en.wikipedia.org/wiki/Robotics_conventions 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithDH(const std::string & frameid, const std::string & parentid, double length, double alpha, double offset, double theta, ULLtime time);
+  void setWithDH(const std::string & frameid, const std::string & parentid, double length, double alpha, double offset, double theta, ULLtime time) __attribute__((deprecated));
 
   /** \brief Set the transform using a matrix 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithMatrix(const std::string & frameid, const std::string & parentid, const NEWMAT::Matrix & matrix_in, ULLtime time);
+  void setWithMatrix(const std::string & frameid, const std::string & parentid, const NEWMAT::Matrix & matrix_in, ULLtime time) __attribute__((deprecated));
   /** \brief Set the transform using quaternions natively 
    *  Possible exceptions are: TransformReference::LookupException
    */
-  void setWithQuaternion(const std::string & frameid, const std::string & parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time);
+  void setWithQuaternion(const std::string & frameid, const std::string & parentid, double xt, double yt, double zt, double xr, double yr, double zr, double w, ULLtime time) __attribute__((deprecated));
   
   /** \brief Clear all data */
   void clear();
@@ -230,36 +230,36 @@ public:
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  NEWMAT::Matrix getMatrix(const std::string & target_frame, const std::string & source_frame, ULLtime time);
+  NEWMAT::Matrix getMatrix(const std::string & target_frame, const std::string & source_frame, ULLtime time) __attribute__((deprecated));
 
 
   /** \brief Transform a point to a different frame */
-  TFPoint transformPoint(const std::string & target_frame, const TFPoint & point_in);
+  TFPoint transformPoint(const std::string & target_frame, const TFPoint & point_in) __attribute__((deprecated));
   /** \brief Transform a 2D point to a different frame */
-  TFPoint2D transformPoint2D(const std::string & target_frame, const TFPoint2D & point_in);
+  TFPoint2D transformPoint2D(const std::string & target_frame, const TFPoint2D & point_in) __attribute__((deprecated));
   /** \brief Transform a vector to a different frame */
-  TFVector transformVector(const std::string & target_frame, const TFVector & vector_in);
+  TFVector transformVector(const std::string & target_frame, const TFVector & vector_in) __attribute__((deprecated));
   /** \brief Transform a 2D vector to a different frame */
-  TFVector2D transformVector2D(const std::string & target_frame, const TFVector2D & vector_in);
+  TFVector2D transformVector2D(const std::string & target_frame, const TFVector2D & vector_in) __attribute__((deprecated));
   /** \brief Transform Euler angles between frames */
-  TFEulerYPR transformEulerYPR(const std::string & target_frame, const TFEulerYPR & euler_in);
+  TFEulerYPR transformEulerYPR(const std::string & target_frame, const TFEulerYPR & euler_in) __attribute__((deprecated));
   /** \brief Transform Yaw between frames. Useful for 2D navigation */
-  TFYaw transformYaw(const std::string & target_frame, const TFYaw & euler_in);
+  TFYaw transformYaw(const std::string & target_frame, const TFYaw & euler_in) __attribute__((deprecated));
   /** \brief Transform a 6DOF pose.  (x, y, z, yaw, pitch, roll). */
-  TFPose transformPose(const std::string & target_frame, const TFPose & pose_in);
+  TFPose transformPose(const std::string & target_frame, const TFPose & pose_in) __attribute__((deprecated));
   /** \brief Transform a planar pose, x,y,yaw */
-  TFPose2D transformPose2D(const std::string & target_frame, const TFPose2D & pose_in);
+  TFPose2D transformPose2D(const std::string & target_frame, const TFPose2D & pose_in) __attribute__((deprecated));
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  std::string viewChain(const std::string & target_frame, const std::string & source_frame);
+  std::string viewChain(const std::string & target_frame, const std::string & source_frame) __attribute__((deprecated));
 
   /** \brief A way to see what frames have been cached 
    * Useful for debugging 
    */
-  std::string viewFrames();
+  std::string viewFrames() __attribute__((deprecated));
 
 
   /************ Possible Exceptions ****************************/

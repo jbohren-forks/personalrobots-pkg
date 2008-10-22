@@ -64,11 +64,11 @@ class rosTFClient : public libTF::TransformReference
   //  PointCloudFloat32 transformPointCloud(unsigned int target_frame, const PointCloudFloat32 & cloudIn); // todo switch after ticket:232
   std_msgs::PointCloudFloat32 transformPointCloud(const std::string& target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
   std_msgs::PointCloudFloat32 transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
-  void transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
-  void transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn);
+  void transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn) __attribute__((deprecated));
+  void transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn) __attribute__((deprecated));
 
-  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
-  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn);
+  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
+  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
 
   /** @brief Call back function for receiving on ROS */
   void receiveArray();
@@ -86,7 +86,7 @@ class rosTFClient : public libTF::TransformReference
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 
    * TransformReference::MaxDepthException
    */
-  NEWMAT::Matrix getMatrix(const std::string & target_frame, const std::string & source_frame, ros::Time time);
+  NEWMAT::Matrix getMatrix(const std::string & target_frame, const std::string & source_frame, ros::Time time) __attribute__((deprecated));
 
 
  private:
@@ -113,40 +113,40 @@ class rosTFServer
   //Constructor
   rosTFServer(ros::node & rosnode);
   /** \brief Send a Transform with Euler Angles */
-  void sendEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  void sendEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime) __attribute__((deprecated));
   /** \brief Send a Transform with Euler Angles using libTF syntax */
-  void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
+  void sendEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs) __attribute__((deprecated));
 
   /** \brief Send a transform from parent to frame when frame to parent is known */
-  void sendInverseEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime);
+  void sendInverseEuler(const std::string & frame, const std::string & parent, double x, double y, double z, double yaw, double pitch, double roll, ros::Time rostime) __attribute__((deprecated));
   /** \brief Send a transform from parent to frame when frame to parent is known using libTF syntax */
-  void sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs);
+  void sendInverseEuler(unsigned int frame, unsigned int parent, double x, double y, double z, double yaw, double pitch, double roll, unsigned int secs, unsigned int nsecs) __attribute__((deprecated));
 
   /** \brief Send a transform using TFPose syntax */
-  void sendPose(libTF::TFPose pose, const std::string & parent);
+  void sendPose(libTF::TFPose pose, const std::string & parent) __attribute__((deprecated));
   /** \brief Send a transform using TFPose and libTF syntax */
-  void sendPose(libTF::TFPose pose, unsigned int parent);
+  void sendPose(libTF::TFPose pose, unsigned int parent) __attribute__((deprecated));
 
   /** \brief Send a transform using TFPose when frame to parent is known*/
-  void sendInversePose(libTF::TFPose pose, const std::string & parent);
+  void sendInversePose(libTF::TFPose pose, const std::string & parent) __attribute__((deprecated));
   /** \brief Send a transform using TFPose and libTF syntax when frame to parent is known*/
-  void sendInversePose(libTF::TFPose pose, unsigned int parent);
+  void sendInversePose(libTF::TFPose pose, unsigned int parent) __attribute__((deprecated));
 
   /** \brief Send a transform using DH Parameters */
-  void sendDH(const std::string & frame, const std::string & parent, double length, double twist, double offset, double angle, ros::Time rostime);
+  void sendDH(const std::string & frame, const std::string & parent, double length, double twist, double offset, double angle, ros::Time rostime) __attribute__((deprecated));
   /** \brief Send a transform using DH Parameters and libTF syntax*/
-  void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs);
+  void sendDH(unsigned int frame, unsigned int parent, double length, double twist, double offset, double angle, unsigned int secs, unsigned int nsecs) __attribute__((deprecated));
 
   /** \brief Send a transform using Quaternion notation */
-  void sendQuaternion(const std::string & frame, const std::string & parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime);
+  void sendQuaternion(const std::string & frame, const std::string & parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, ros::Time rostime) __attribute__((deprecated));
   /** \brief Send a transform using Quaternion notation and libTF syntax*/
-  void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs);
+  void sendQuaternion(unsigned int frame, unsigned int parent, double xt, double yt, double zt, double xr, double yr, double zr, double w, unsigned int secs, unsigned int nsecs) __attribute__((deprecated));
 
 
   /** \brief Send a Transform with 4x4 Matrix */
-  void sendMatrix(const std::string & frame, const std::string & parent, NEWMAT::Matrix matrix, ros::Time rostime);
+  void sendMatrix(const std::string & frame, const std::string & parent, NEWMAT::Matrix matrix, ros::Time rostime) __attribute__((deprecated));
   /** \brief Send a Transform with 4x4 Matrix */
-  void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime);
+  void sendMatrix(unsigned int frame, unsigned int parent, NEWMAT::Matrix matrix, ros::Time rostime) __attribute__((deprecated));
 
  private:
   //ros::node reference to allow setting callbacks
