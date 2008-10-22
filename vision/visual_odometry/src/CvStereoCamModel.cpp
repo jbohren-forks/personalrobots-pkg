@@ -141,6 +141,14 @@ bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) const {
 	return status;
 }
 
+//Id has to be  16SC1, Ixyz has to be 32F
+bool CvStereoCamModel::dispToCart(const IplImage *Id, IplImage *Ixyz) const {
+	bool status = true;
+	cvReprojectImageTo3D(Id, Ixyz,&mMatDispToCart);
+	return status;
+}
+
+
 bool CvStereoCamModel::projection(const CvMat *XYZs, CvMat *uvds) const {
 	if (uvds == NULL || XYZs == NULL) {
 		return false;
