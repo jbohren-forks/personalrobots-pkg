@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-#set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE Release)
 rospack(costmap_2d)
 genmsg()
 
 #uncomment for profiling
-set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
-set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
+#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
 #set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
