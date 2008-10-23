@@ -71,7 +71,7 @@ void GripperTest1::init( double velocity, double max_effort, double time, std::s
 {
   robot_ = robot;
   joint_ = robot->getJointState(name);
-  actuator_ = robot->model_->getActuator("gripper");
+  actuator_ = robot->model_->getActuator("gripper_left_motor");
   
   //printf("velocity: %f\n",velocity);
   velocity_=velocity;
