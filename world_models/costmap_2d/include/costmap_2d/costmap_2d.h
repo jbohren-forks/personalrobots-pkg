@@ -81,16 +81,22 @@ namespace costmap_2d {
 
   QueueElement(const QueueElement& org): distance(org.distance), source(org.source), ind(org.ind){}
 
-    bool compare(const QueueElement& a, const QueueElement& b){
-      return a.distance <= b.distance;
-    }
-
     double distance;
     unsigned int source;
     unsigned int ind;
   };
 
-  typedef std::queue< QueueElement > QUEUE;
+  class QueueElementComparator {
+  public:
+    /**
+     * Weak ordering property respected
+     */
+    inline bool operator()(const QueueElement* lhs, const QueueElement* rhs){
+      return lhs->distance > rhs->distance;
+    }
+  };
+
+  typedef std::priority_queue< QueueElement*, std::vector<QueueElement*>, QueueElementComparator > QUEUE;
 
   class CostMap2D: public ObstacleMapAccessor 
   {

@@ -52,6 +52,7 @@ const unsigned char MAP_10_BY_10_CHAR[] = {
 };
 
 std::vector<unsigned char> MAP_10_BY_10;
+std::vector<unsigned char> EMPTY_10_BY_10;
 
 const unsigned int GRID_WIDTH(10);
 const unsigned int GRID_HEIGHT(10);
@@ -70,6 +71,57 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
   return false;
 }
 
+// Test Priority queue handling
+TEST(costmap, test13){
+  QUEUE q;
+  q.push(new QueueElement(1, 1, 1));
+  q.push(new QueueElement(2.3, 1, 1));
+  q.push(new QueueElement(2.1, 1, 1));
+  q.push(new QueueElement(3.9, 1, 1));
+  q.push(new QueueElement(1.07, 1, 1));
+
+  double prior = 0.0;
+  while (!q.empty()){
+    QueueElement * c = q.top();
+    q.pop();
+    ASSERT_EQ(c->distance >= prior, true);
+    prior = c->distance;
+    delete c;
+  }
+}
+
+/**
+ * Test for wave interference
+ */
+TEST(costmap, test12){
+  // Start with an empty map
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, 
+		ROBOT_RADIUS*3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
+
+
+  // Lay out 3 obstacles in a line - along the diagonal, separated by a cell.
+  std_msgs::PointCloudFloat32 cloud;
+  cloud.set_pts_size(3);
+  cloud.pts[0].x = 3;
+  cloud.pts[0].y = 3;
+  cloud.pts[0].z = 0;
+  cloud.pts[1].x = 5;
+  cloud.pts[1].y = 5;
+  cloud.pts[1].z = 0;
+  cloud.pts[2].x = 7;
+  cloud.pts[2].y = 7;
+  cloud.pts[2].z = 0;
+
+  std::vector<unsigned int> updates;
+  map.updateDynamicObstacles(1, cloud, updates);
+
+  // Expect to see a union of obstacles
+  ASSERT_EQ(updates.size(), 79);
+}
+
+/**
+ * Test for ray tracing free space
+ */
 TEST(costmap, test0){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
@@ -523,12 +575,13 @@ TEST(costmap, test11){
   c1.pts[0].z = MAX_Z + 1;
   map.updateDynamicObstacles(1, c1, updates);
   ASSERT_EQ(updates.size(), 3); // Just obstacle cost propagation - no free space impact
-
 }
 
 int main(int argc, char** argv){
-  for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++)
+  for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++){
+    EMPTY_10_BY_10.push_back(0);
     MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);
+  }
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

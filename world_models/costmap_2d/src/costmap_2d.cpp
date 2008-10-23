@@ -102,8 +102,7 @@ namespace costmap_2d {
 	// Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
 	// as dynamic obstacles, and will be faded out as such, but
 	if(staticData_[ind] == LETHAL_OBSTACLE){
-	  queue_.push(QueueElement(0, ind, ind));
-	  petWatchDog(ind, MARKED_FOR_COST);
+	  enqueue(ind, i, j);
 	  staticObstacles_.push_back(ind);
 	}
 	else
@@ -161,8 +160,9 @@ namespace costmap_2d {
 	continue;
 
       // Buffer for cost propagation
-      queue_.push(QueueElement(0, ind, ind));
-      petWatchDog(ind, MARKED_FOR_COST);
+      unsigned int mx, my;
+      IND_MC(ind, mx, my);
+      enqueue(ind, mx, my);
 
       // Immediately update free space, which is dominated by propagated costs so they are applied afterwards.
       // This only applies for points with the projection height limit
@@ -179,8 +179,6 @@ namespace costmap_2d {
 
     // We always process deletions too
     removeStaleObstaclesInternal(ts, updates);
-
-    ROS_DEBUG_COND_NAMED(!updates.empty(), "costmap_2d", "%d cells updated.\n", updates.size());
   }
 
   void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates){
@@ -327,14 +325,16 @@ namespace costmap_2d {
 
   void CostMap2D::propagateCosts(std::vector<unsigned int>& updates){
     while(!queue_.empty()){
-      QueueElement c = queue_.front();
+      QueueElement* c = queue_.top();
       queue_.pop();
-      unsigned char cost = computeCost(c.distance);      
-      updateCellCost(c.ind, cost, updates);
+      unsigned char cost = computeCost(c->distance);      
+      updateCellCost(c->ind, cost, updates);
 
       // If distance reached the inflation radius then skip further expansion
-      if(c.distance < inflationRadius_)
-	enqueueNeighbors(c.source, c.ind);
+      if(c->distance < inflationRadius_)
+	enqueueNeighbors(c->source, c->ind);
+
+      delete c;
     }
   }
 
@@ -356,7 +356,7 @@ namespace costmap_2d {
     // If the cell is not marked for cost propagation
     unsigned int ind = MC_IND(mx, my);
     if(obsWatchDog_[ind] != MARKED_FOR_COST){
-      QueueElement c(computeDistance(source, ind), source, ind);
+      QueueElement* c = new QueueElement(computeDistance(source, ind), source, ind);
       queue_.push(c);
       petWatchDog(ind, MARKED_FOR_COST);
     }
