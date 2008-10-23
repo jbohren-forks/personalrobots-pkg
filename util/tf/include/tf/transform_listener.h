@@ -74,9 +74,9 @@ public:
   
   ~TransformListener()
   {
-    node_.unsubscribe("/tf_message");
+    node_.unsubscribe("/tf_message", &TransformListener::subscription_callback, this);
     /// \todo remove backward compatability only
-    node_.unsubscribe("/TransformArray");
+    node_.unsubscribe("/TransformArray", &TransformListener::receiveArray, this);
   };
   
   
