@@ -302,11 +302,20 @@ void BaseController::addParamToMap(std::string key, double *value)
 
 void BaseController::getJointValues()
 {
+
+  bool speeds_are_valid = true;
+
   for(int i=0; i < num_casters_; i++)
     steer_angle_actual_[i] = base_casters_[i].joint_state_->position_;
 
   for(int i=0; i < num_wheels_; i++)
     wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
+
+  for(int i=0; i < num_wheels_; i++)
+    speeds_are_valid = speeds_are_valid && !isinf(wheel_speed_actual_[i]) && !isnan(wheel_speed_actual_[i]);
+
+  if(!speeds_are_valid)
+    fprintf(stderr,"BaseController:: input speed values are inf or nan\n");
 }
 
 void BaseController::computeWheelPositions()
