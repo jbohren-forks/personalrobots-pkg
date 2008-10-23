@@ -8,5 +8,5 @@ rospack_add_executable(stepback src/stepback/stepback.cpp)
 rospack_add_executable(vacuum src/vacuum/vacuum.cpp)
 rospack_add_executable(dustbuster src/dustbuster/dustbuster.cpp)
 rospack_add_executable(central_vac src/central_vac/central_vac.cpp)
-rospack_add_executable(verify_bag_integrity tools/verify_bag_integrity/verify_bag_integrity.cpp)
+
 
