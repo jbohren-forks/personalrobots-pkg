@@ -205,6 +205,12 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
       return;
     }
 
+    //we want to check if this cell definitely contains an obstacle
+    if(ma_.getCost(cell_x, cell_y) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      traj.cost_ = -1.0;
+      return;
+    }
+
     //we need to check if we need to lay down the footprint of the robot
     if(ma_.getCost(cell_x, cell_y) >= costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE){
       double footprint_cost = footprintCost(x_i, y_i, theta_i);
