@@ -107,6 +107,18 @@ void Transformer::lookupTransform(const std::string& target_frame, ros::Time tar
 
 };
 
+bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent)
+{
+  
+  tf::TimeCache* cache = getFrame(lookupFrameNumber(frame_id));  
+  TransformStorage temp;
+  cache->getData(time, temp);
+  parent = temp.parent_id_;
+  if (parent == "NO_PARENT")
+    return false;
+  return true;
+
+};
 
 
 

@@ -157,6 +157,11 @@ public:
   /** \brief A way to get a std::vector of available frame ids */
   void getFrameStrings(std::vector<std::string>& ids);
 
+  /**@brief Fill the parent of a frame.  
+   * @param frame_id The frame id of the frame in question
+   * @param parent The reference to the string to fill the parent
+   * Returns true unless "NO_PARENT" */
+  bool getParent(const std::string& frame_id, ros::Time time, std::string& parent);
 
 protected:
 
