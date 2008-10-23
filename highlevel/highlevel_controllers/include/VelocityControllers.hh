@@ -45,9 +45,8 @@ namespace ros {
     public:
       TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,
 				  double sim_time, int sim_steps, int samples_per_dim,
-				  double robot_front_radius, double robot_side_radius, double max_occ_dist, 
 				  double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-				  double acc_lim_x, double acc_lim_y, double acc_lim_th);
+				  double acc_lim_x, double acc_lim_y, double acc_lim_th, std::vector<std_msgs::Point2DFloat32> footprint_spec);
 
       virtual ~TrajectoryRolloutController(){}
 

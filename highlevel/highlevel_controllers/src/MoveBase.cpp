@@ -83,8 +83,8 @@ namespace ros {
       double freeSpaceProjectionHeight(0.5);
       double inflationRadius(0.50);
       double robotRadius(0.325);
-      double circumscribedRadius(0.50);
-      double inscribedRadius(0.250);
+      double circumscribedRadius(0.46);
+      double inscribedRadius(0.325);
       param("costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
       param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
@@ -146,20 +146,40 @@ namespace ros {
       param("trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
 
       ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
+      
+      std::vector<std_msgs::Point2DFloat32> footprint_spec;
+      std_msgs::Point2DFloat32 pt;
+      //create a square footprint
+      pt.x = robotRadius;
+      pt.y = -1 * robotRadius;
+      footprint_spec.push_back(pt);
+      pt.x = -1 * robotRadius;
+      pt.y = -1 * robotRadius;
+      footprint_spec.push_back(pt);
+      pt.x = -1 * robotRadius;
+      pt.y = robotRadius;
+      footprint_spec.push_back(pt);
+      pt.x = robotRadius;
+      pt.y = robotRadius;
+      footprint_spec.push_back(pt);
+
+      //give the robot a nose
+      pt.x = circumscribedRadius;
+      pt.y = 0;
+      footprint_spec.push_back(pt);
+
       controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
 										SIM_TIME,
 										SIM_STEPS,
 										SAMPLES_PER_DIM,
-										robotRadius,
-										robotRadius,
-										MAX_OCC_DIST,
 										pathDistanceBias,
 										goalDistanceBias,
 										DFAST_SCALE,
 										OCCDIST_SCALE,
 										accLimit_x,
 										accLimit_y,
-										accLimit_th);
+										accLimit_th, 
+                    footprint_spec);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", QUEUE_MAX());

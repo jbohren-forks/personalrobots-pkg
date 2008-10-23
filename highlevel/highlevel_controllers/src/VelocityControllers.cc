@@ -6,13 +6,12 @@ namespace ros {
 
     TrajectoryRolloutController::TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,
 							     double sim_time, int sim_steps, int samples_per_dim,
-							     double robot_front_radius, double robot_side_radius, double max_occ_dist, 
 							     double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
-							     double acc_lim_x, double acc_lim_y, double acc_lim_th)
+							     double acc_lim_x, double acc_lim_y, double acc_lim_th, std::vector<std_msgs::Point2DFloat32> footprint_spec)
       : tf_(tf), ma_(ma), map_(ma.getWidth(), ma.getHeight()),
-	tc_(map_, sim_time, sim_steps, samples_per_dim,robot_front_radius, robot_side_radius, max_occ_dist, 
+	tc_(map_, sim_time, sim_steps, samples_per_dim,
 	    pdist_scale, gdist_scale, dfast_scale, occdist_scale, 
-	    acc_lim_x, acc_lim_y, acc_lim_th, tf_, ma_){
+	    acc_lim_x, acc_lim_y, acc_lim_th, tf_, ma_, footprint_spec){
       map_.scale = ma_.getResolution();
       printf("Map Scale is: %f\n", map_.scale);
     }
