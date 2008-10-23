@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+set(ROS_BUILD_TYPE Release)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
 
 genmsg()
 
+
+#uncomment for profiling
+#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
+#set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
+#set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
+
 # Library
-#link_directories(/wg/stor1/mcgann/pr/trajectory_rollout/lib)
-#link_directories(/wg/stor1/eitan/ros/ros-pkg/trajectory_rollout/lib)
 rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 

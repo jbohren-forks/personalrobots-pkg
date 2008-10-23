@@ -65,10 +65,16 @@ public:
    * @param nodeName The name for the node, which will appear in botherder
    * @param stateTopic The ROS topic on which controller state update messages are published
    * @param goalTopic The ROS topic on which controller goals are received
-   * @param cycleTime Determines the control loop frequency in Hz (frequency = 1/cycleTime)
    */
-  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic, double _cycleTime = 0.1): 
-    ros::node(nodeName), initialized(false), stateTopic(_stateTopic), goalTopic(_goalTopic), cycleTime(_cycleTime){
+  HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
+    ros::node(nodeName), initialized(false), stateTopic(_stateTopic), goalTopic(_goalTopic), cycleTime_(0.1){
+
+    // Obtain the contrrol frequency for this node
+    double frequency(10);
+    param(nodeName + "/frequency", frequency, frequency);
+    ROS_INFO_STREAM("Starting " << nodeName << " at " << frequency << " Hz");
+    ROS_ASSERT(frequency > 0);
+    cycleTime_ = 1/frequency;
 
     // Advertize controller state updates
     advertise<S>(stateTopic, QUEUE_MAX());
@@ -259,9 +265,9 @@ private:
     double currt,tdiff;
     gettimeofday(&curr,NULL);
     currt = curr.tv_sec + curr.tv_usec/1e6;
-    tdiff = this->cycleTime - (currt-loopstart);
+    tdiff = this->cycleTime_ - (currt-loopstart);
     if(tdiff <= 0.0)
-      std::cout << "Missed deadline and not sleeping; check machine load\n";
+      ROS_DEBUG("Missed deadline and not sleeping; check machine load(%f)\n", currt-loopstart);
     else
       usleep((unsigned int)rint(tdiff*1e6));
   }
@@ -325,7 +331,7 @@ private:
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
   State state; /*!< Tracks the overall state of the controller */
-  const double cycleTime; /*!< The duration for each control cycle */
+  double cycleTime_; /*!< The duration for each control cycle */
   ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
 };
 

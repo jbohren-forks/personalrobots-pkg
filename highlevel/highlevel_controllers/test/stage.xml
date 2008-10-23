@@ -11,6 +11,8 @@
   <param name="max_publish_frequency" value="20.0"/>
   <node pkg="fake_localization" type="fake_localization" respawn="false" />
 
+  <param name="move_base/frequency" value="20.0"/>
+  <param name="move_base/plannerTimeLimit" value="1.0"/>
   <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
   <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />

@@ -99,17 +99,17 @@ namespace ros {
 
     private:
 
-      static const double PLANNER_TIMEOUT = 10.0; /**< Temporary constant */
-
-      bool isValid();
+      bool isMapDataOK();
 
       MDPConfig mdpCfg_;
       EnvironmentNAV2D envNav2D_;
       ARAPlanner* araPlanner_;
+      double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
     };
 
     MoveBaseSBPL::MoveBaseSBPL()
       : MoveBase(){
+      param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
 
       lock();
       const CostMap2D& cm = getCostMap();
@@ -126,12 +126,12 @@ namespace ros {
   
       bool success = envNav2D_.InitializeMDPCfg(&mdpCfg_);
 
-      isValid();
+      isMapDataOK();
 
       unlock();
 
       if(!success){
-	printf("ERROR: InitializeMDPCfg failed\n");
+	ROS_INFO("ERROR: InitializeMDPCfg failed\n");
 	exit(1);
       }
 
@@ -157,17 +157,17 @@ namespace ros {
       }
     }
 
-    bool MoveBaseSBPL::isValid() {
+    bool MoveBaseSBPL::isMapDataOK() {
       const CostMap2D& cm = getCostMap();
       
       for(unsigned int i = 0; i<cm.getWidth(); i++){
 	for(unsigned int j = 0; j < cm.getHeight(); j++){
 	  if(envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) < CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
-	    printf("Extra obstacle at <%d, %d>", i, j);
+	    ROS_DEBUG("Extra obstacle at <%d, %d>", i, j);
 	    throw "Extra obstacle in sbpl";
 	  }
 	  if(!envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
-	    printf("Missing obstacle at <%d, %d>", i, j);
+	    ROS_DEBUG("Missing obstacle at <%d, %d>", i, j);
 	    throw "Missing obstacle in sbpl";
 	  }
 	}
@@ -177,7 +177,7 @@ namespace ros {
     }
 
     bool MoveBaseSBPL::makePlan(){
-      std::cout << "Planning for new goal...\n";
+      ROS_DEBUG("Planning for new goal...\n");
 
       unsigned int x, y;
       const CostMap2D& cm = getCostMap();
@@ -196,7 +196,7 @@ namespace ros {
       std::vector<int> solutionStateIDs;
 
       // Extract the solution, if available
-      if(araPlanner_->replan(PLANNER_TIMEOUT, &solutionStateIDs)){
+      if(araPlanner_->replan(plannerTimeLimit_, &solutionStateIDs)){
 	std::list<std_msgs::Pose2DFloat32> plan;
 	for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
 	  int state = *it;
@@ -215,7 +215,7 @@ namespace ros {
 	return true;
       }
       else{
-	std::cout << "No plan found\n";
+	ROS_DEBUG("No plan found\n");
 	return false;
       }
     }
@@ -225,14 +225,7 @@ namespace ros {
 
 int main(int argc, char** argv)
 {
-  /*
-    if(argc != 2){
-    std::cout << "Usage: ./";
-    return -1;
-    }
-  */
-
-  ros::init(argc,argv);
+  ros::init(argc,argv); 
 
   ros::highlevel_controllers::MoveBaseSBPL node;
 

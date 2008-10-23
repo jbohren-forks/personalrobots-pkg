@@ -41,6 +41,7 @@
 #include <std_srvs/StaticMap.h>
 #include <set>
 
+
 namespace ros {
   namespace highlevel_controllers {
 
@@ -135,7 +136,6 @@ namespace ros {
       const double SIM_TIME = 1.0;
       const unsigned int SIM_STEPS = 30;
       const unsigned int SAMPLES_PER_DIM = 25;
-      const double MAX_OCC_DIST = 1.0;
       const double DFAST_SCALE = 0;
       const double OCCDIST_SCALE = 0;
       param("trajectory_rollout/map_size", mapSize, 2.0);
@@ -182,29 +182,29 @@ namespace ros {
                     footprint_spec);
 
       // Advertize messages to publish cost map updates
-      advertise<std_msgs::Polyline2D>("raw_obstacles", QUEUE_MAX());
-      advertise<std_msgs::Polyline2D>("inflated_obstacles", QUEUE_MAX());
+      advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
+      advertise<std_msgs::Polyline2D>("inflated_obstacles", 1);
 
       // Advertize message to publish the global plan
-      advertise<std_msgs::Polyline2D>("gui_path", QUEUE_MAX());
+      advertise<std_msgs::Polyline2D>("gui_path", 1);
 
       // Advertize message to publish local plan
-      advertise<std_msgs::Polyline2D>("local_path", QUEUE_MAX());
+      advertise<std_msgs::Polyline2D>("local_path", 1);
       
       // Advertize message to publish robot footprint
-      advertise<std_msgs::Polyline2D>("robot_footprint", QUEUE_MAX());
+      advertise<std_msgs::Polyline2D>("robot_footprint", 1);
 
       // Advertize message to publish velocity cmds
-      advertise<std_msgs::BaseVel>("cmd_vel", QUEUE_MAX());
+      advertise<std_msgs::BaseVel>("cmd_vel", 1);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, QUEUE_MAX());
-      subscribe("cloud", pointCloudMsg_, &MoveBase::pointCloudCallback, QUEUE_MAX());
+      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, 1);
+      subscribe("cloud", pointCloudMsg_, &MoveBase::pointCloudCallback, 1);
 
       // Subscribe to odometry messages to get global pose
-      subscribe("odom", odomMsg_, &MoveBase::odomCallback, QUEUE_MAX());
+      subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
 
       // Now initialize
       initialize();
@@ -309,7 +309,6 @@ namespace ros {
 	  puts("Extrapolation exception");
 	}
 
-      // Surround with a lock since it can interact with main planning and execution thread
       updateDynamicObstacles(laserScanMsg_.header.stamp.to_double(), global_cloud);
     }
 
@@ -527,12 +526,21 @@ namespace ros {
 	currentVel.vy = base_odom_.vel.y;
 	currentVel.vw = base_odom_.vel.th;
 
+	struct timeval start;
+	struct timeval end;
+	double start_t, end_t, t_diff;
 	// Create a window onto the global cost map for the velocity controller
 	std::list<std_msgs::Pose2DFloat32> localPlan; // Capture local plan for display
+	gettimeofday(&start,NULL);
 	if(planOk && !controller_->computeVelocityCommands(plan_, global_pose_, currentVel, cmdVel, localPlan)){
 	  ROS_DEBUG("Velocity Controller could not find a valid trajectory.\n");
 	  planOk = false;
 	}
+	gettimeofday(&end,NULL);
+	start_t = start.tv_sec + double(start.tv_usec) / 1e6;
+	end_t = end.tv_sec + double(end.tv_usec) / 1e6;
+	t_diff = end_t - start_t;
+	//ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
 
 	if(!planOk){
 	  // Zero out the velocities
@@ -636,7 +644,7 @@ namespace ros {
     }
 
     void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
-      std::vector<unsigned int> updates;
+      std::vector<unsigned int> updates; 
       lock();
       petTheWatchDog();
       costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);
