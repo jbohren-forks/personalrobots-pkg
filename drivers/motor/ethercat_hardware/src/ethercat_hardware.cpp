@@ -37,8 +37,6 @@
 #include <ethercat/ethercat_xenomai_drv.h>
 #include <dll/ethercat_dll.h>
 
-#include <ros/node.h>
-
 EthercatHardware::EthercatHardware() :
   hw_(0), ni_(0), current_buffer_(0), last_buffer_(0), buffer_size_(0), halt_motors_(true), reset_state_(0), publisher_("/diagnostics", 1)
 {
@@ -72,8 +70,6 @@ static double now()
 
 void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 {
-  ros::node *node = ros::node::instance();
-
   // Initialize network interface
   interface_ = interface;
   if ((ni_ = init_ec(interface)) == NULL)
@@ -180,7 +176,6 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
 
 void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
 {
-  ros::node *node = ros::node::instance();
   unsigned int a = 0, s = 0;
 
   for (TiXmlElement *elt = config->FirstChildElement("actuator"); elt; elt = elt->NextSiblingElement("actuator"))

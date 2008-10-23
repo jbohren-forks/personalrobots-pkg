@@ -40,6 +40,7 @@
 
 #include <pthread.h>
 #include <string>
+#include <ros/node.h>
 #include <rosthread/mutex.h>
 #include <rosthread/member_thread.h>
 

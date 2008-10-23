@@ -37,7 +37,6 @@
 
 #include <tinyxml/tinyxml.h>
 
-#include <mechanism_control/mechanism_control.h>
 #include <hardware_interface/hardware_interface.h>
 
 #include <al/ethercat_AL.h>

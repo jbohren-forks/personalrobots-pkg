@@ -36,7 +36,6 @@
 
 #include <math.h>
 
-#include <ros/node.h>
 
 #include <ethercat_hardware/wg0x.h>
 
@@ -189,8 +188,6 @@ EthercatDevice *WG0X::configure(int &startAddress, EtherCAT_SlaveHandler *sh)
 
 int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 {
-  ros::node *node = ros::node::instance();
-
   unsigned int revision = sh_->get_revision();
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
@@ -270,7 +267,6 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 
 void WG0X::initXml(TiXmlElement *elt)
 {
-  ros::node *node = ros::node::instance();
   printf("Overriding actuator: %s\n", actuator_info_.name_);
 
   const char *attr;
