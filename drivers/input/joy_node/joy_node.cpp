@@ -83,10 +83,10 @@ class JoyNode : public node
                if(find_iter_ != cmd_map_.end())
                {
                   joy_string.data = find_iter_->second;
-                  cout << "Found match" << endl;
+                  cout << "Found string message match" << endl;
                }
             }
-            cout << "Message sent: " << cur_string.str() << endl;
+            cout << "Message sent: " << joy_string.data << endl;
             publish("joy_button",joy_string);
             cur_string.str("");
          }
