@@ -1,0 +1,9 @@
+/**
+
+\mainpage
+
+@htmlinclude manifest.html
+
+@b point_cloud_utils is a set of classes/utilities to help with processing point cloud data. Currently this consists of only of blob finder
+
+*/
