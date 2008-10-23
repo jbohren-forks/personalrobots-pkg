@@ -9,6 +9,7 @@
   <depend package="std_msgs" />  
   <depend package="std_srvs" />  
   <depend package="rostest" />  
-  <depend package="pil" />  
   <depend package="pyyaml" />  
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
 </package>

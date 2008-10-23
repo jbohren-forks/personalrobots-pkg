@@ -9,7 +9,6 @@
   <depend package="rospy"/>
   <depend package="boost"/>
   <depend package="opencv_latest"/>
-  <depend package="pil"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lstarfeature"/>
   </export>
