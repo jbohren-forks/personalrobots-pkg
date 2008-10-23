@@ -132,6 +132,8 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
   ///\todo add fixed frame support
 
   TransformLists mTfLs;
+  if (target_frame == source_frame) 
+    return mTfLs;  //Don't do anythign if we're not going anywhere 
 
   TransformStorage temp;
 
@@ -212,10 +214,10 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
   /* Check the zero length cases*/
   if (mTfLs.inverseTransforms.size() == 0)
   {
-    if (mTfLs.forwardTransforms.size() == 0)
+    if (mTfLs.forwardTransforms.size() == 0) //If it's going to itself it's already been caught
     {
       std::stringstream ss;
-      ss<< "No Common ParentD betwee "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
+      ss<< "No Common ParentD between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
         << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
@@ -231,7 +233,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
 
   if (mTfLs.forwardTransforms.size() == 0)
   {
-    if (mTfLs.inverseTransforms.size() == 0)
+    if (mTfLs.inverseTransforms.size() == 0)  //If it's going to itself it's already been caught
     {
       std::stringstream ss;
       ss<< "No Common ParentB between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) << std::endl << allFramesAsString() << std::endl;

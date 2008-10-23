@@ -113,6 +113,8 @@ TEST(tf, TransformTransformsCartesian)
   
 }
 
+/** Make sure that the edge cases of transform the top of the tree to the top of the tree and 
+ * the leaf of the tree can transform to the leaf of the tree without a lookup exception and accurately */
 TEST(tf, TransformTransformToOwnFrame)
 {
   unsigned int runs = 400;
@@ -142,11 +144,20 @@ TEST(tf, TransformTransformToOwnFrame)
 
   {
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
+    Stamped<btTransform> inpose2 (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "parent");
 
     try{
     Stamped<Pose> outpose;
     outpose.setIdentity(); //to make sure things are getting mutated
     mTR.transformPose("child",inpose, outpose);
+    EXPECT_NEAR(outpose.getOrigin().x(), 0, epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
+    EXPECT_NEAR(outpose.getRotation().w(), 1, epsilon); //Identity is 0,0,0,1
+
+
+    outpose.setIdentity(); //to make sure things are getting mutated
+    mTR.transformPose("parent",inpose2, outpose);
     EXPECT_NEAR(outpose.getOrigin().x(), 0, epsilon);
     EXPECT_NEAR(outpose.getOrigin().y(), 0, epsilon);
     EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
