@@ -76,9 +76,6 @@ TEST(tf, TransformTransformsCartesian)
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
     mTR.setTransform(tranStamped);
 
-    /// \todo remove fix for graphing problem
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
-    mTR.setTransform(tranStamped2);
   }
 
   //std::cout << mTR.allFramesAsString() << std::endl;
@@ -136,9 +133,6 @@ TEST(tf, TransformTransformToOwnFrame)
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(yawvalues[i],pitchvalues[i],rollvalues[i]), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
     mTR.setTransform(tranStamped);
 
-    /// \todo remove fix for graphing problem
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
-    mTR.setTransform(tranStamped2);
   }
 
   //std::cout << mTR.allFramesAsString() << std::endl;
@@ -194,9 +188,6 @@ TEST(tf, TransformPointCartesian)
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
     mTR.setTransform(tranStamped);
 
-    /// \todo remove fix for graphing problem
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
-    mTR.setTransform(tranStamped2);
   }
 
   //  std::cout << mTR.allFramesAsString() << std::endl;
@@ -245,9 +236,6 @@ TEST(tf, TransformVectorCartesian)
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
     mTR.setTransform(tranStamped);
 
-    /// \todo remove fix for graphing problem
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
-    mTR.setTransform(tranStamped2);
   }
 
   //  std::cout << mTR.allFramesAsString() << std::endl;
@@ -297,9 +285,6 @@ TEST(tf, TransformQuaternionCartesian)
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child", "my_parent");
     mTR.setTransform(tranStamped);
 
-    /// \todo remove fix for graphing problem
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent", "my_parent2");
-    mTR.setTransform(tranStamped2);
   }
 
   //  std::cout << mTR.allFramesAsString() << std::endl;
