@@ -18,8 +18,8 @@
     <node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen">
       <remap from="scan" to="base_scan" />
     </node>
-    <!-- <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/> -->
-    <node pkg="nav_view_sdl" type="nav_view" respawn="false" output="screen"/> -->
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
+    <!--node pkg="nav_view_sdl" type="nav_view" respawn="false" output="screen"/> -->
   </group>
 </launch>
 
