@@ -1,0 +1,7 @@
+<package>
+  <author>Sachin Chitta</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_msgs"/>
+  <depend package="joy"/>
+</package>
