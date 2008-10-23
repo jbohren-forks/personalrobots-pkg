@@ -100,6 +100,7 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
   cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
   cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
+#if 0
   std::cout << "BaseController:: command received: " << cmd_vel;
   std::cout << "BaseController:: command current: " << cmd_vel_;
   std::cout << "Base Odometry: Velocity " << base_odom_velocity_;
@@ -108,6 +109,7 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
   {
     std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
   }
+#endif
   new_cmd_available_ = true;
   pthread_mutex_unlock(&base_controller_lock_);
 }
@@ -742,7 +744,7 @@ void BaseControllerNode::setCommand(double vx, double vy, double vw)
   command.y = vy;
   command.z = vw;
   c_->setCommand(command);
-  std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
+  //std::cout << "BaseController:: odom_publish_rate: " << odom_publish_rate_ << endl;
 }
 
 
