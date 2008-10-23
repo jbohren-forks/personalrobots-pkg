@@ -1,0 +1,124 @@
+<robot name="pr2">
+        <joint name="caster_front_left_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_front_left_l_joint" >
+        </joint>
+        <joint name="wheel_front_left_r_joint" >
+        </joint>
+        <joint name="caster_front_right_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_front_right_l_joint" >
+        </joint>
+        <joint name="wheel_front_right_r_joint" >
+        </joint>
+        <joint name="caster_rear_left_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_rear_left_l_joint" >
+        </joint>
+        <joint name="wheel_rear_left_r_joint" >
+        </joint>
+        <joint name="caster_rear_right_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_rear_right_l_joint" >
+        </joint>
+        <joint name="wheel_rear_right_r_joint" >
+        </joint>
+
+      <!-- ========================================= -->
+      <!-- torso array -->
+      <joint name="torso_joint">
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <!-- ========================================= -->
+      <!-- left arm array -->
+      <joint name="shoulder_pan_left_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="shoulder_pitch_left_joint" >
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="upperarm_roll_left_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="elbow_flex_left_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="forearm_roll_left_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="wrist_flex_left_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="gripper_roll_left_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <!-- Special gripper joint -->
+      <joint name="finger_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.05</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.05</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_l_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_r_left_joint" gripper_controller="gripper_left_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <!-- ========================================= -->
+      <!-- right arm array -->
+      <joint name="shoulder_pan_right_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="shoulder_pitch_right_joint" >
+          <explicitDampingCoefficient>100.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="upperarm_roll_right_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="elbow_flex_right_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="forearm_roll_right_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="wrist_flex_right_joint" >
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="gripper_roll_right_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <!-- Special gripper joint -->
+      <joint name="finger_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.05</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.05</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_l_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <joint name="finger_tip_r_right_joint" gripper_controller="gripper_right_controller" abstract="gripper" effortLimit="1000" velocityLimit="100">
+          <explicitDampingCoefficient>0.01</explicitDampingCoefficient>
+      </joint>
+      <!-- head and above array -->
+      <joint name="head_pan_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="head_tilt_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="tilt_laser_mount_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+
+
+</robot>
