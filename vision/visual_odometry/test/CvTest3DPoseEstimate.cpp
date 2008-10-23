@@ -1053,14 +1053,28 @@ void testDeltaStereo() {
     printf("delta v1 %d = %f\n", i, uvds[i*3+1] - uvds[(i-1)*3+1]);
   }
 
+  for (int i=0; i<10; i++) {
+    xyzs[i*3] = 1500.;
+    xyzs[i*3+1]   = 110*i+4;
+    xyzs[i*3+2] = 150*i+3;
+
+    double d = camModel.getDisparity(xyzs[i*3+2]);
+    printf("disparity 1 %d = %f\n", i, d);
+  }
+
+  camModel.cartToDisp(xyzs_, uvds_);
+
+  for (int i=0; i<10; i++) {
+    printf("disparity 2 %d = %f\n", i, uvds[i*3+2]);
+  }
 
 }
 
-int main1() {
+int main() {
   testDeltaStereo();
 }
 
-int main(int argc, char **argv){
+int main2(int argc, char **argv){
   CvTest3DPoseEstimate test3DPoseEstimate;
 
   if (argc >= 2) {

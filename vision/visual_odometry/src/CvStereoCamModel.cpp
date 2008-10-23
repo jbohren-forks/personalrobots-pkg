@@ -178,7 +178,7 @@ double  CvStereoCamModel::getDeltaU(double deltaX, double Z) const {
 double  CvStereoCamModel::getDeltaX(double deltaU, double d) const {
   double dn = (d - (mClx -mCrx));
   if (dn==0) {
-    return -1.;
+    return 0.;
   }
   return deltaU * mTx/dn;
 }
@@ -193,8 +193,25 @@ double  CvStereoCamModel::getDeltaV(double deltaY, double Z) const {
 double  CvStereoCamModel::getDeltaY(double deltaV, double d) const {
   double dn = (d - (mClx -mCrx))*mFy;
   if (dn==0) {
-    return -1.;
+    return 0.;
   }
   return deltaV * mTx *mFx /dn;
+}
+
+double CvStereoCamModel::getZ(double d) const {
+  double dn = (d - (mClx - mCrx));
+  if (dn == 0) {
+    return DBL_MAX;
+  }
+
+  return mFx*mTx/dn;
+}
+
+double CvStereoCamModel::getDisparity(double Z) const {
+  if (Z==0) {
+    return  DBL_MAX;
+  }
+  
+  return (mClx-mCrx) + mFx*mTx/Z;
 }
 

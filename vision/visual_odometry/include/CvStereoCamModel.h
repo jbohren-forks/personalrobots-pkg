@@ -77,13 +77,23 @@ public:
 	}
 
 	/// compute delta u, given Z and delta X in Cartesian space
+	/// returns DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
 	/// compute delta X, given disparity and delta u in disparity space
+	/// returns 0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
 	/// compute delta v, given Z and delta Y in Cartesian space
+	/// returns DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
 	/// compute delta Y, given disparity and delta v in disparity space
+	/// returns 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
+	/// compute Z given disparity
+	/// returns DBL_MAX if d-(Clx-Crx) == 0
+	double getZ(double d) const;
+	/// compute disparity given Z
+	/// returns DBL_MAX if Z is zero
+	double getDisparity(double Z) const;
 
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
