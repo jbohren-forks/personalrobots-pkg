@@ -468,8 +468,8 @@ void LaserScannerControllerNode::update()
       {
         m_scanner_signal_.signal = 0 ;                                     // 0 -> Half profile complete
 
-        if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
-          printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
+        //if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
+        //  printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
 
         need_to_send_msg_ = true ;
       }
@@ -479,8 +479,8 @@ void LaserScannerControllerNode::update()
       {
         m_scanner_signal_.signal = 1 ;                                    // 1 -> Full profile complete
 
-        if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
-          printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
+        //if (need_to_send_msg_)                                             // Is there a message we were supposed to send, but never got to?
+        //  printf("LaserScannerController:: Missed sending a msg\n") ;      // Is there a better way to output this error msg?
 
         need_to_send_msg_ = true ;
       }
