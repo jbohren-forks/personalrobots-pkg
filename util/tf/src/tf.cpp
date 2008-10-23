@@ -112,7 +112,15 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
   
   tf::TimeCache* cache = getFrame(lookupFrameNumber(frame_id));  
   TransformStorage temp;
-  cache->getData(time, temp);
+  try 
+    {
+      cache->getData(time, temp);
+    }
+  catch (tf::LookupException & ex) //No parent exists or frame doesn't exist
+    {
+      return false;
+    }
+  
   parent = temp.parent_id_;
   if (parent == "NO_PARENT")
     return false;

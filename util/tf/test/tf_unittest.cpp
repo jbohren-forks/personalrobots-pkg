@@ -568,6 +568,54 @@ TEST(tf, ListOneInverse)
 }
 
 
+TEST(tf, getParent)
+{
+  
+  std::vector<std::string> children;
+  std::vector<std::string> parents;
+
+  children.push_back("a");
+  parents.push_back("c");
+
+  children.push_back("b");
+  parents.push_back("c");
+
+  children.push_back("c");
+  parents.push_back("e");
+
+  children.push_back("d");
+  parents.push_back("e");
+
+  children.push_back("e");
+  parents.push_back("f");
+
+  children.push_back("f");
+  parents.push_back("j");
+
+  tf::Transformer mTR(true);
+
+  for (unsigned int i = 0; i <  children.size(); i++)
+    {
+      Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 , children[i],  parents[i]);
+      mTR.setTransform(tranStamped);
+    }
+
+  //std::cout << mTR.allFramesAsString() << std::endl;
+
+  std::string output;
+  for  (unsigned int i = 0; i <  children.size(); i++)
+    {
+      EXPECT_TRUE(mTR.getParent(children[i], 10, output));
+      EXPECT_STREQ(parents[i].c_str(), output.c_str());
+    }
+  
+  EXPECT_FALSE(mTR.getParent("j", 10, output));
+
+  EXPECT_FALSE(mTR.getParent("no_value", 10, output));
+  
+}
+
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
