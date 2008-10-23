@@ -280,8 +280,8 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
   // Setup mechanism control node
   mcn_.initXml(doc.RootElement());
 
-  for (int i = 0; i < mc_.state_->joint_states_.size(); ++i)
-    mc_.state_->joint_states_[i]->calibrated_ = true;
+  for (unsigned int i = 0; i < mc_.state_->joint_states_.size(); ++i)
+    mc_.state_->joint_states_[i].calibrated_ = true;
 }
 
 void GazeboMechanismControl::ReadGazeboPhysics(XMLConfigNode *node)
