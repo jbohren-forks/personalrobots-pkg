@@ -37,14 +37,13 @@ using namespace std;
 using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
-    double robot_front_radius, double robot_side_radius, double max_occ_dist, double pdist_scale, double gdist_scale,
+    double pdist_scale, double gdist_scale,
     double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
-    const costmap_2d::ObstacleMapAccessor& ma)
-  : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim), robot_front_radius_(robot_front_radius),
-  robot_side_radius_(robot_side_radius), max_occ_dist_(max_occ_dist), 
+    const costmap_2d::ObstacleMapAccessor& ma, vector<std_msgs::Point2DFloat32> footprint_spec)
+  : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim),
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
   acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma), traj_one(0, 0, 0, num_steps_),
-  traj_two(0, 0, 0, num_steps)
+  traj_two(0, 0, 0, num_steps), footprint_spec_(footprint_spec)
 {
   //the robot is not stuck to begin with
   stuck_left = false;
@@ -287,7 +286,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  //double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
   double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
@@ -405,7 +404,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     return *best_traj;
   }
 
-  /* This code needs to be looked at before its fully checked in
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
@@ -456,7 +454,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   if(best_traj->cost_ >= 0){
     return *best_traj;
   }
-  */
 
 
   //and finally we want to generate trajectories that move backwards slowly
@@ -635,78 +632,60 @@ double TrajectoryController::lineCost(int x0, int x1,
 
 //we need to take the footprint of the robot into account when we calculate cost to obstacles
 double TrajectoryController::footprintCost(double x_i, double y_i, double theta_i){
-  //need to keep track of what cells are in the footprint
-  vector<std_msgs::Position2DInt> footprint_cells;
+  //if we have no footprint... do nothing
+  if(footprint_spec_.size() <= 1)
+    return -1.0;
 
+  //pre-compute cos and sin values
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
 
   double footprint_cost = 0.0;
   double line_cost = -1.0;
 
-  //upper right corner
-  double old_x = 0.0 + robot_front_radius_;
-  double old_y = 0.0 + robot_side_radius_;
-  double new_x = x_i + old_x * cos_th - old_y * sin_th;
-  double new_y = y_i + old_x * sin_th + old_y * cos_th;
+  double new_x, new_y;
+  unsigned int x0, y0, x1, y1;
 
-  unsigned int x0, y0;
-  if(!ma_.WC_MC(new_x, new_y, x0, y0))
-    return -1.0;
+  unsigned int last_index = footprint_spec_.size() - 1;
+  for(unsigned int i = 0; i < last_index; ++i){
+    //find the cell coordinates of the first segment point
+    new_x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+    new_y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
 
-  //lower right corner
-  old_x = 0.0 + robot_front_radius_;
-  old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
-  unsigned int x1, y1;
-  if(!ma_.WC_MC(new_x, new_y, x1, y1))
-    return -1.0;
+    //make sure that we aren't off the map
+    if(!ma_.WC_MC(new_x, new_y, x0, y0))
+      return -1.0;
 
-  //check the front line
+    //find the cell coordinates of the second segment point
+    new_x = x_i + (footprint_spec_[i + 1].x * cos_th - footprint_spec_[i + 1].y * sin_th);
+    new_y = y_i + (footprint_spec_[i + 1].x * sin_th + footprint_spec_[i + 1].y * cos_th);
+
+    //make sure that we aren't off the map
+    if(!ma_.WC_MC(new_x, new_y, x1, y1))
+      return -1.0;
+
+    line_cost = lineCost(x0, x1, y0, y1);
+
+    //check to see if the line intersects an obstacle
+    if(line_cost < 0)
+      return -1;
+
+    if(footprint_cost < line_cost)
+      footprint_cost = line_cost;
+  }
+
+  //we need to close the loop, so we also have to raytrace from the last pt to first pt
+  new_x = x_i + (footprint_spec_[last_index].x * cos_th - footprint_spec_[last_index].y * sin_th);
+  new_y = y_i + (footprint_spec_[last_index].x * sin_th + footprint_spec_[last_index].y * cos_th);
+  ma_.WC_MC(new_x, new_y, x0, y0);
+
+  new_x = x_i + (footprint_spec_[0].x * cos_th - footprint_spec_[0].y * sin_th);
+  new_y = y_i + (footprint_spec_[0].x * sin_th + footprint_spec_[0].y * cos_th);
+  ma_.WC_MC(new_x, new_y, x1, y1);
+
   line_cost = lineCost(x0, x1, y0, y1);
-  if(line_cost < 0)
-    return -1;
 
-  if(footprint_cost < line_cost)
-    footprint_cost = line_cost;
-
-  //lower left corner
-  old_x = 0.0 - robot_front_radius_;
-  old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
-  unsigned int x2, y2;
-  if(!ma_.WC_MC(new_x, new_y, x2, y2))
-    return -1.0;
-
-  //check the right side line
-  line_cost = lineCost(x1, x2, y1, y2);
-  if(line_cost < 0)
-    return -1;
-
-  if(footprint_cost < line_cost)
-    footprint_cost = line_cost;
-  
-  //upper left corner
-  old_x = 0.0 - robot_front_radius_;
-  old_y = 0.0 + robot_side_radius_;
-  new_x = x_i + old_x * cos_th - old_y * sin_th;
-  new_y = y_i + old_x * sin_th + old_y * cos_th;
-  unsigned int x3, y3;
-  if(!ma_.WC_MC(new_x, new_y, x3, y3))
-    return -1.0;
-
-  //check the back line
-  line_cost = lineCost(x2, x3, y2, y3);
-  if(line_cost < 0)
-    return -1;
-
-  if(footprint_cost < line_cost)
-    footprint_cost = line_cost;
-
-  //check the left side line
-  line_cost = lineCost(x3, x0, y3, y0);
+  //check to see if the line intersects an obstacle
   if(line_cost < 0)
     return -1;
 
@@ -805,56 +784,42 @@ vector<std_msgs::Point2DFloat32> TrajectoryController::drawFootprint(double x_i,
 //get the cellsof a footprint at a given position
 vector<std_msgs::Position2DInt> TrajectoryController::getFootprintCells(double x_i, double y_i, double theta_i, bool fill){
   vector<std_msgs::Position2DInt> footprint_cells;
+
+  //if we have no footprint... do nothing
+  if(footprint_spec_.size() <= 1)
+    return footprint_cells;
+
+  //pre-compute cos and sin values
   double cos_th = cos(theta_i);
   double sin_th = sin(theta_i);
+  double new_x, new_y;
+  unsigned int x0, y0, x1, y1;
+  unsigned int last_index = footprint_spec_.size() - 1;
 
-  //upper right corner
-  double old_x = 0.0 + robot_front_radius_;
-  double old_y = 0.0 + robot_side_radius_;
-  double new_x = x_i + (old_x * cos_th - old_y * sin_th);
-  double new_y = y_i + (old_x * sin_th + old_y * cos_th);
+  for(unsigned int i = 0; i < last_index; ++i){
+    //find the cell coordinates of the first segment point
+    new_x = x_i + (footprint_spec_[i].x * cos_th - footprint_spec_[i].y * sin_th);
+    new_y = y_i + (footprint_spec_[i].x * sin_th + footprint_spec_[i].y * cos_th);
+    ma_.WC_MC(new_x, new_y, x0, y0);
 
-  unsigned int x0, y0;
+    //find the cell coordinates of the second segment point
+    new_x = x_i + (footprint_spec_[i + 1].x * cos_th - footprint_spec_[i + 1].y * sin_th);
+    new_y = y_i + (footprint_spec_[i + 1].x * sin_th + footprint_spec_[i + 1].y * cos_th);
+    ma_.WC_MC(new_x, new_y, x1, y1);
+
+    getLineCells(x0, x1, y0, y1, footprint_cells);
+  }
+
+  //we need to close the loop, so we also have to raytrace from the last pt to first pt
+  new_x = x_i + (footprint_spec_[last_index].x * cos_th - footprint_spec_[last_index].y * sin_th);
+  new_y = y_i + (footprint_spec_[last_index].x * sin_th + footprint_spec_[last_index].y * cos_th);
   ma_.WC_MC(new_x, new_y, x0, y0);
 
-  //lower right corner
-  old_x = 0.0 + robot_front_radius_;
-  old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + (old_x * cos_th - old_y * sin_th);
-  new_y = y_i + (old_x * sin_th + old_y * cos_th);
-
-  unsigned int x1, y1;
+  new_x = x_i + (footprint_spec_[0].x * cos_th - footprint_spec_[0].y * sin_th);
+  new_y = y_i + (footprint_spec_[0].x * sin_th + footprint_spec_[0].y * cos_th);
   ma_.WC_MC(new_x, new_y, x1, y1);
 
-  //check the front line
   getLineCells(x0, x1, y0, y1, footprint_cells);
-
-  //lower left corner
-  old_x = 0.0 - robot_front_radius_;
-  old_y = 0.0 - robot_side_radius_;
-  new_x = x_i + (old_x * cos_th - old_y * sin_th);
-  new_y = y_i + (old_x * sin_th + old_y * cos_th);
-
-  unsigned int x2, y2;
-  ma_.WC_MC(new_x, new_y, x2, y2);
-
-  //check the right side line
-  getLineCells(x1, x2, y1, y2, footprint_cells);
-  
-  //upper left corner
-  old_x = 0.0 - robot_front_radius_;
-  old_y = 0.0 + robot_side_radius_;
-  new_x = x_i + (old_x * cos_th - old_y * sin_th);
-  new_y = y_i + (old_x * sin_th + old_y * cos_th);
-  
-  unsigned int x3, y3;
-  ma_.WC_MC(new_x, new_y, x3, y3);
-
-  //check the back line
-  getLineCells(x2, x3, y2, y3, footprint_cells);
-
-  //check the left side line
-  getLineCells(x3, x0, y3, y0, footprint_cells);
 
   if(fill)
     getFillCells(footprint_cells);

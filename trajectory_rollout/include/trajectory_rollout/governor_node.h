@@ -36,6 +36,8 @@
 #define GOVERNOR_NODE_H_
 #include <ros/node.h>
 
+#include <vector>
+
 //The messages that we'll use
 #include <std_msgs/BaseVel.h>
 #include <trajectory_rollout/ScoreMap2D.h>
@@ -44,6 +46,7 @@
 
 //for GUI debugging
 #include <std_msgs/Polyline2D.h>
+#include <std_msgs/Point2DFloat32.h>
 
 //for time support
 #include <sys/time.h>
@@ -120,7 +123,7 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
 class GovernorNode: public ros::node
 {
   public:
-    GovernorNode();
+    GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec);
 
     //callback for when the planned passes a new map
     void planReceived();

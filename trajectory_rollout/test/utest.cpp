@@ -237,7 +237,23 @@ int main(int argc, char** argv){
 
   WavefrontMapAccessor wa(mg, .25);
   const costmap_2d::ObstacleMapAccessor& ma = wa;
-  tc = new TrajectoryController(mg, 2, 30, 25, 2, 2, .25, .4, .6, 0, 0, 1, 1, 1, NULL, ma);
+  std::vector<std_msgs::Point2DFloat32> footprint_spec;
+  std_msgs::Point2DFloat32 pt;
+  //create a square footprint
+  pt.x = 2;
+  pt.y = 2;
+  footprint_spec.push_back(pt);
+  pt.x = 2;
+  pt.y = -2;
+  footprint_spec.push_back(pt);
+  pt.x = -2;
+  pt.y = -2;
+  footprint_spec.push_back(pt);
+  pt.x = -2;
+  pt.y = 2;
+  footprint_spec.push_back(pt);
+
+  tc = new TrajectoryController(mg, 2, 30, 25, .4, .6, 0, 0, 1, 1, 1, NULL, ma, footprint_spec);
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -68,10 +68,9 @@ class TrajectoryController {
   public:
     //create a controller given a map and a path
     TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
-        double robot_front_radius, double robot_side_radius, double max_occ_dist, 
         double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
         double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
-        const costmap_2d::ObstacleMapAccessor& ma);
+        const costmap_2d::ObstacleMapAccessor& ma, std::vector<std_msgs::Point2DFloat32> footprint_spec);
     
     //given the current state of the robot, find a good trajectory
     Trajectory findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel,
@@ -132,7 +131,6 @@ class TrajectoryController {
     //the simulation parameters for generating trajectories
     double sim_time_;
     int samples_per_dim_;
-    double robot_front_radius_, robot_side_radius_, max_occ_dist_;
     double pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_;
     double acc_lim_x_, acc_lim_y_, acc_lim_theta_;
 
@@ -144,6 +142,9 @@ class TrajectoryController {
 
     //for scoring trajectories
     Trajectory traj_one, traj_two;
+
+    //for laying down the footprint of the robot
+    std::vector<std_msgs::Point2DFloat32> footprint_spec_;
 
     inline void updatePathCell(MapCell* current_cell, MapCell* check_cell, 
         std::queue<MapCell*>& dist_queue){

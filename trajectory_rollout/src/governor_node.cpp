@@ -38,12 +38,12 @@ using namespace std;
 using namespace trajectory_rollout;
 
 
-GovernorNode::GovernorNode() : 
+GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
   tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
   ma_(map_, OUTER_RADIUS),
-  tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, ROBOT_FRONT_RADIUS, ROBOT_SIDE_RADIUS, SAFE_DIST, 
-      PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_),
+  tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, 
+      PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_, footprint_spec),
   cycle_time_(0.1)
 {
   robot_vel_.x = 0.0;
@@ -220,7 +220,24 @@ void GovernorNode::sleep(double loopstart){
 
 int main(int argc, char** argv){
   ros::init(argc, argv);
-  GovernorNode gn;
+
+  std::vector<std_msgs::Point2DFloat32> footprint_spec;
+  std_msgs::Point2DFloat32 pt;
+  //create a square footprint
+  pt.x = ROBOT_FRONT_RADIUS;
+  pt.y = ROBOT_SIDE_RADIUS;
+  footprint_spec.push_back(pt);
+  pt.x = ROBOT_FRONT_RADIUS;
+  pt.y = -1 * ROBOT_SIDE_RADIUS;
+  footprint_spec.push_back(pt);
+  pt.x = -1 * ROBOT_FRONT_RADIUS;
+  pt.y = -1 * ROBOT_SIDE_RADIUS;
+  footprint_spec.push_back(pt);
+  pt.x = -1 * ROBOT_FRONT_RADIUS;
+  pt.y = ROBOT_SIDE_RADIUS;
+  footprint_spec.push_back(pt);
+  
+  GovernorNode gn(footprint_spec);
 
   struct timeval start;
   //struct timeval end;
