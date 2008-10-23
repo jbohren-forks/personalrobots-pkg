@@ -92,7 +92,7 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
   for (unsigned int i = 0; i < mc_.model_.joints_.size(); ++i)
   {
     std::string joint_name = mc_.model_.joints_[i]->name_;
-      
+
     // fill in gazebo joints pointer
     gazebo::Joint *joint = parent_model_->GetJoint(joint_name);
     if (joint)
@@ -234,7 +234,7 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 
 
   // wait for robotdesc/pr2 on param server
-  while(tmp_param_string.c_str()==NULL)
+  while(tmp_param_string.empty())
   {
     std::cout << "WARNING: gazebo mechanism control plugin is waiting for robotdesc/pr2 in param server.  run merge/roslaunch send.xml or similar." << std::endl;
     this->rosnode_->get_param("robotdesc/pr2",tmp_param_string);
@@ -279,6 +279,9 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 
   // Setup mechanism control node
   mcn_.initXml(doc.RootElement());
+
+  for (int i = 0; i < mc_.state_->joint_states_.size(); ++i)
+    mc_.state_->joint_states_[i]->calibrated_ = true;
 }
 
 void GazeboMechanismControl::ReadGazeboPhysics(XMLConfigNode *node)
