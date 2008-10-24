@@ -401,7 +401,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     if(voltage_error_ > 5)
     {
       ++consecutive_voltage_errors_;
-      if (consecutive_voltage_errors_ > 20)
+      if (consecutive_voltage_errors_ > 40) ///\todo fixme magic number (how long the motor model is allowed to be out of range in milliseconds)
       {
         //Something is wrong with the encoder, the motor, or the motor board
 
