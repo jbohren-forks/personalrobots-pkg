@@ -485,6 +485,19 @@ private:
 	return cloudF;
     }
     
+  /*
+  bool notInGroundPlane(const Point3DFloat32& point){
+
+  }
+
+  bool notInRobot(const Point3DFloat32& point){
+
+  }
+
+  bool inWorkArea(const Point3DFloat32& point){
+
+  }
+  */
     /** Remove invalid floating point values and strip channel
      *  iformation.  Also keep a certain ratio of the cloud information
      *  only. Works with pointclouds in robot or map frames */
