@@ -390,7 +390,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   }
   else
   {
-    voltage_estimate_ = this_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(this_status->programmed_pwm_value_) / 0x4000;
+    voltage_estimate_ = prev_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(prev_status->programmed_pwm_value_) / 0x4000;
     double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
     double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
 
@@ -400,47 +400,69 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     // Check back-EMF consistency
     if(voltage_error_ > 5)
     {
-      //Something is wrong with the encoder, the motor, or the motor board
+      ++consecutive_voltage_errors_;
+      if (consecutive_voltage_errors_ > 20)
+      {
+        //Something is wrong with the encoder, the motor, or the motor board
 
-      //Disable motors
-      //rv = false;
-      //printf("Disable motors because voltage_error = %f\n", voltage_error_);
+        //Disable motors
+        rv = false;
 
-      const double epsilon = 0.001;
-      //Try to diagnose further
-      //motor_velocity == 0 -> encoder failure likely
-      if (fabs(state.velocity_) < epsilon)
-      {
-        reason_ = "Encoder failure likely";
+        const double epsilon = 0.001;
+        //Try to diagnose further
+        //motor_velocity == 0 -> encoder failure likely
+        if (fabs(state.velocity_) < epsilon)
+        {
+          reason_ = "Encoder failure likely";
+        }
+        //measured_current_ ~= 0 -> motor open-circuit likely
+        else if (fabs(state.last_measured_current_) < epsilon)
+        {
+          reason_ = "Motor open-circuit likely";
+        }
+        //motor_voltage_ ~= 0 -> motor short-circuit likely
+        else if (fabs(voltage_estimate_) < epsilon)
+        {
+          reason_ = "Motor short-circuit likely";
+        }
+        //else -> current-sense failure likely
+        else
+        {
+          reason_ = "Current-sense failure likely";
+        }
       }
-      //measured_current_ ~= 0 -> motor open-circuit likely
-      else if (fabs(state.last_measured_current_) < epsilon)
-      {
-        reason_ = "Motor open-circuit likely";
-      }
-      //motor_voltage_ ~= 0 -> motor short-circuit likely
-      else if (fabs(voltage_estimate_) < epsilon)
-      {
-        reason_ = "Motor short-circuit likely";
-      }
-      //else -> current-sense failure likely
-      else
-      {
-        reason_ = "Current-sense failure likely";
-      }
+    }
+    else
+    {
+      consecutive_voltage_errors_ = 0;
     }
 
     //Check current-loop performance
     double last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
     current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
-    max_current_error_ = max(current_error_, max_current_error_);
-    if (current_error_ > 2) {
-      //complain and shut down
-      reason_ = "Current loop error too large";
-    }
-  }
 
-  //TODO: filter errors so that one-frame spikes don't shut down the system.
+    max_current_error_ = max(current_error_, max_current_error_);
+#if 0
+    if (current_error_ > 0.1 &&
+        (last_commanded_current > 0 ?
+             prev_status->programmed_pwm_value_ < 8400 :
+             prev_status->programmed_pwm_value_ > -8400)) 
+    {
+printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
+      ++consecutive_current_errors_;
+      if (consecutive_current_errors_ > 1000)
+      {
+        //complain and shut down
+        rv = false;
+        reason_ = "Current loop error too large";
+      }
+    }
+    else
+    {
+      consecutive_current_errors_ = 0;
+    }
+#endif
+  }
 
   if (rv) reason_ = "OK";
 
@@ -861,6 +883,9 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Bridge temperature", "%f", 0.0078125 * status->bridge_temperature_);
   ADD_STRING_FMT("Supply voltage", "%f", status->supply_voltage_ * config_info_.nominal_voltage_scale_);
   ADD_STRING_FMT("Motor voltage", "%f", status->motor_voltage_ * config_info_.nominal_voltage_scale_);
+  ADD_STRING_FMT("Current Loop Kp", "%d", config_info_.current_loop_kp_);
+  ADD_STRING_FMT("Current Loop Ki", "%d", config_info_.current_loop_ki_);
+
   ADD_STRING_FMT("Motor voltage estimate", "%f", voltage_estimate_);
   ADD_STRING_FMT("Packet count", "%d", status->packet_count_);
 

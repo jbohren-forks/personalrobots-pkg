@@ -205,7 +205,9 @@ public:
     strings_.reserve(10);
     values_.reserve(10);
     max_current_error_ = 0;
-    max_voltage_error_= 0;
+    max_voltage_error_ = 0;
+    consecutive_current_errors_ = 0;
+    consecutive_voltage_errors_ = 0;
     reason_ = "OK";
   }
 
@@ -283,6 +285,8 @@ private:
   double voltage_error_, max_voltage_error_;
   double current_error_, max_current_error_;
   double voltage_estimate_;
+  int consecutive_voltage_errors_;
+  int consecutive_current_errors_;
 };
 
 class WG05 : public WG0X
