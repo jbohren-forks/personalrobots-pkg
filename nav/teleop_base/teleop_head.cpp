@@ -3,7 +3,7 @@
 #include "ros/node.h"
 #include "joy/Joy.h"
 
-#include "pr2_mechanism_controllers/SetJointCmd.h"
+#include "robot_srvs/SetJointCmd.h"
 
 using namespace ros;
 
@@ -71,8 +71,8 @@ class TeleopHead : public node
            req_tilt = std::max(std::min(req_tilt, max_tilt), -max_tilt);
          }
 
-         pr2_mechanism_controllers::SetJointCmd::request req;
-         pr2_mechanism_controllers::SetJointCmd::response res;
+         robot_srvs::SetJointCmd::request req;
+         robot_srvs::SetJointCmd::response res;
          req.positions.push_back(req_pan);
          req.positions.push_back(req_tilt);
          req.velocity.push_back(0.0);

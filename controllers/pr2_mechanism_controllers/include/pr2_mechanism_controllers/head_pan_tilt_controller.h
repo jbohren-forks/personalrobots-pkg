@@ -46,8 +46,8 @@
 #include <robot_mechanism_controllers/joint_position_controller.h>
 
 // Services
-#include <pr2_mechanism_controllers/SetJointCmd.h>
-#include <pr2_mechanism_controllers/GetJointCmd.h>
+#include <robot_srvs/SetJointCmd.h>
+#include <robot_srvs/GetJointCmd.h>
 #include <std_msgs/PointStamped.h>
 
 // Math utils
@@ -119,7 +119,7 @@ public:
    *
    * \param cmd names and positions.
    */
-  void getJointCmd(pr2_mechanism_controllers::JointCmd & cmd) const;
+  void getJointCmd(robot_msgs::JointCmd & cmd) const;
 
   /*!
    * \brief Returns the position of the controller in the vector.
@@ -185,8 +185,8 @@ class HeadPanTiltControllerNode : public Controller
      * \param req (names, positions)
      * \param resp (names, positions)
      */
-    bool setJointCmd(pr2_mechanism_controllers::SetJointCmd::request &req,
-                    pr2_mechanism_controllers::SetJointCmd::response &resp);
+    bool setJointCmd(robot_srvs::SetJointCmd::request &req,
+                     robot_srvs::SetJointCmd::response &resp);
 
     /*!
      * \brief Gets the commands for all the joints managed by the controller at once.
@@ -194,8 +194,8 @@ class HeadPanTiltControllerNode : public Controller
      * \param req 
      * \param resp (positions)
      */
-    bool getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
-                        pr2_mechanism_controllers::GetJointCmd::response &resp);
+    bool getJointCmd(robot_srvs::GetJointCmd::request &req,
+                     robot_srvs::GetJointCmd::response &resp);
     /*!
      * \brief Tracks a point in a specified frame.
      * 

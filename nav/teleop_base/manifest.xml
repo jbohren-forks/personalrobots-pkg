@@ -3,5 +3,5 @@
   <license>BSD</license>
   <depend package="joy"/>
   <depend package="std_msgs"/>
-  <depend package="pr2_mechanism_controllers"/>
+  <depend package="robot_srvs"/>
 </package>

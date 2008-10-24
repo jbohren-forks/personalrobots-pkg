@@ -34,7 +34,7 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <pr2_mechanism_controllers/SetJointCmd.h>
+#include <robot_srvs/SetJointCmd.h>
 #include <std_msgs/TransformWithRateStamped.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
@@ -75,8 +75,8 @@ int main( int argc, char** argv )
   signal(SIGTERM, finalize);
 
   /*********** Start moving the arm ************/
-  pr2_mechanism_controllers::SetJointCmd::request  req;
-  pr2_mechanism_controllers::SetJointCmd::response resp;
+  robot_srvs::SetJointCmd::request  req;
+  robot_srvs::SetJointCmd::response resp;
 
   int num_joints = 7;
 

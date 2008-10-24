@@ -16,6 +16,7 @@
   <depend package="std_msgs" />
   <depend package="math_utils" />
   <depend package="robot_kinematics" />
+  <depend package="xenomai" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

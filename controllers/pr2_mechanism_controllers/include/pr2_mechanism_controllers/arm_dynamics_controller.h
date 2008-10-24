@@ -44,8 +44,8 @@
 #include <robot_mechanism_controllers/joint_effort_controller.h>
 
 // Services
-#include <pr2_mechanism_controllers/SetJointCmd.h>
-#include <pr2_mechanism_controllers/GetJointCmd.h>
+#include <robot_srvs/SetJointCmd.h>
+#include <robot_srvs/GetJointCmd.h>
 
 #include <pr2_mechanism_controllers/SetJointGains.h>
 #include <pr2_mechanism_controllers/GetJointGains.h>
@@ -99,9 +99,9 @@ public:
 //   * @brief Overloaded method for convenience
 //   * @param req
 //   */
-//  void setJointCmd(pr2_mechanism_controllers::SetJointPosCmd::request &req);
+//  void setJointCmd(robot_msgs::SetJointPosCmd::request &req);
 
-  void getJointCmd(pr2_mechanism_controllers::JointCmd & cmd) const;
+  void getJointCmd(robot_msgs::JointCmd & cmd) const;
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
@@ -216,8 +216,8 @@ class ArmDynamicsControllerNode : public Controller
      * @param resp The response is empty
      * @return
      */
-    bool setJointSrv(pr2_mechanism_controllers::SetJointCmd::request &req,
-                    pr2_mechanism_controllers::SetJointCmd::response &resp);
+    bool setJointSrv(robot_srvs::SetJointCmd::request &req,
+                     robot_srvs::SetJointCmd::response &resp);
 
     /** @brief service that returns the goal of the controller
      * @note if you know the goal has been reached and you do not want to subscribe to the /mechanism_state topic, you can use it as a hack to get the position of the arm
@@ -225,11 +225,11 @@ class ArmDynamicsControllerNode : public Controller
      * @param resp the response, contains a JointPosCmd message with the goal of the controller
      * @return
      */
-    bool getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
-                        pr2_mechanism_controllers::GetJointCmd::response &resp);
+    bool getJointCmd(robot_srvs::GetJointCmd::request &req,
+                     robot_srvs::GetJointCmd::response &resp);
 
   private:
-    pr2_mechanism_controllers::JointCmd msg_;   //The message used by the ROS callback
+    robot_msgs::JointCmd msg_;   //The message used by the ROS callback
     ArmDynamicsController *c_;
 
 };

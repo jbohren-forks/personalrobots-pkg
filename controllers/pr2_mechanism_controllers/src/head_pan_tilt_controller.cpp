@@ -97,7 +97,7 @@ void HeadPanTiltController::setJointCmd(const std::vector<double> &j_values, con
 }
 
 
-void HeadPanTiltController::getJointCmd(pr2_mechanism_controllers::JointCmd & cmd) const
+void HeadPanTiltController::getJointCmd(robot_msgs::JointCmd & cmd) const
 {
   const unsigned int n = joint_position_controllers_.size();
   cmd.set_names_size(n);
@@ -201,12 +201,12 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool HeadPanTiltControllerNode::setJointCmd(pr2_mechanism_controllers::SetJointCmd::request &req,
-                                   pr2_mechanism_controllers::SetJointCmd::response &resp)
+bool HeadPanTiltControllerNode::setJointCmd(robot_srvs::SetJointCmd::request &req,
+                                   robot_srvs::SetJointCmd::response &resp)
 {
   std::vector<double> pos;
   std::vector<std::string> names;
-  pr2_mechanism_controllers::JointCmd cmds;
+  robot_msgs::JointCmd cmds;
   req.get_positions_vec(pos);
   req.get_names_vec(names);
 
@@ -218,10 +218,10 @@ bool HeadPanTiltControllerNode::setJointCmd(pr2_mechanism_controllers::SetJointC
   return true;
 }
 
-bool HeadPanTiltControllerNode::getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
-                    pr2_mechanism_controllers::GetJointCmd::response &resp)
+bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
+                    robot_srvs::GetJointCmd::response &resp)
 {
-  pr2_mechanism_controllers::JointCmd cmd;
+  robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);
   resp.command = cmd;
   return true;

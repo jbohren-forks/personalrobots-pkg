@@ -126,7 +126,7 @@ void ArmDynamicsController::setJointCmd(const std::vector<double> &j_values, con
 }
 
 
-void ArmDynamicsController::getJointCmd(pr2_mechanism_controllers::JointCmd & cmd) const
+void ArmDynamicsController::getJointCmd(robot_msgs::JointCmd & cmd) const
 {
   const unsigned int n = joint_effort_controllers_.size();
   cmd.set_names_size(n);
@@ -317,8 +317,8 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool ArmDynamicsControllerNode::setJointSrv(pr2_mechanism_controllers::SetJointCmd::request &req,
-                                   pr2_mechanism_controllers::SetJointCmd::response &resp)
+bool ArmDynamicsControllerNode::setJointSrv(robot_srvs::SetJointCmd::request &req,
+                                   robot_srvs::SetJointCmd::response &resp)
 {
   std::vector<double> pos;
   std::vector<double> vel;
@@ -334,10 +334,10 @@ bool ArmDynamicsControllerNode::setJointSrv(pr2_mechanism_controllers::SetJointC
   return true;
 }
 
-bool ArmDynamicsControllerNode::getJointCmd(pr2_mechanism_controllers::GetJointCmd::request &req,
-                    pr2_mechanism_controllers::GetJointCmd::response &resp)
+bool ArmDynamicsControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
+                    robot_srvs::GetJointCmd::response &resp)
 {
-  pr2_mechanism_controllers::JointCmd cmd;
+  robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);
   resp.command = cmd;
   return true;
