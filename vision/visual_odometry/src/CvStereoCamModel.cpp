@@ -7,6 +7,7 @@ using namespace std;
 #include <opencv/cxtypes.h>
 #include <opencv/cxcore.h>
 #include "CvMatUtils.h"
+#include <vector>     //Gary added for collecting valid x,y,d points
 
 
 CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
@@ -146,6 +147,78 @@ bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) const {
 bool CvStereoCamModel::dispToCart(const IplImage *Id, IplImage *Ixyz) const {
 	bool status = true;
 	cvReprojectImageTo3D(Id, Ixyz,&mMatDispToCart);
+	return status;
+}
+
+//Id accepts ROI which then applies to the other images
+bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const {
+	bool status = true;
+	//CHECK AND SET UP
+	if((!Id)||(!Iz)) return false; //Call with allocated images
+	int w = Id->width, h = Id->height;
+	if((w != Iz->width)||(h != Iz->height)) return false;        //Image dimensions have to match oi vey, haven't checked Ix, Iy
+	if((Id->nChannels != 1)||(Iz->nChannels != 1)) return false; //All one channel
+	if(ZnearMM < 0.0) ZnearMM = 0.0; //Adjusting for illegal values of depth to search in MM
+	if(ZfarMM < ZnearMM) ZfarMM = ZnearMM; 
+	double dNear_dFar[6];
+	CvMat dn_f;
+	dNear_dFar[0] = w/2; dNear_dFar[1] = h/2; dNear_dFar[2] = ZnearMM;
+	dNear_dFar[3] = w/2; dNear_dFar[4] = h/2; dNear_dFar[5] = ZfarMM;
+	cvInitMatHeader(&dn_f, 2, 1, CV_64FC3, dNear_dFar); //Turn our points into a 1 row by 3 channel array
+	cvPerspectiveTransform(&dn_f, &dn_f, &mMatCartToDisp); //Convert depth to disparity thresholds
+	int dNear = (int)(dNear_dFar[2]+0.5);
+	int dFar = (int)(dNear_dFar[5] + 0.5);
+//	printf("dNear=%d, dFar=%d\n",dNear,dFar);
+	CvRect roi = cvGetImageROI(Id);
+	int ws = Id->widthStep;
+	int Id_jumpby = ws - roi.width;                           //This is to step the pointer over possible ragged withSteps
+	unsigned char *Idptr = (unsigned char *)(Id->imageData + roi.y*ws + roi.x);
+	unsigned char disp8U; 
+	int goodpoints = 0;
+
+	//FILL POINTS
+	vector<double> pts;  //Collect good points here
+	vector<int> xy;      //Collect original x,y's here
+	pts.reserve(roi.width*roi.height*3); //Allocate all the space we'll need in one shot
+	xy.reserve(roi.width*roi.height*3);
+	int x,y,i;
+	for(y=0; y<roi.height; ++y) {
+		for(x=0; x<roi.width; ++x) {
+			disp8U = *Idptr++;
+			if((dNear > disp8U) && (disp8U > dFar)) { //NOTE: Zero is just not allowed. Don't go there, Greek chaos.
+				pts.push_back((double)x);
+				pts.push_back((double)y);
+				pts.push_back((double)(((double)disp8U)/4.0));
+				xy.push_back(x);
+				xy.push_back(y);
+				++goodpoints;
+			}
+		}
+		Idptr += Id_jumpby;                                    //Step over unused widthStep if any (mostly this is zero)
+	}
+	cvSetZero(Iz); //Start with a clean image
+	if(!goodpoints) return status;
+	//SET UP FOR PERSPECTIVE TRANSFORM
+	CvMat d2c; //Disparity to Cart header holder
+	cvInitMatHeader(&d2c, goodpoints, 1, CV_64FC3, &pts[0]); //We now have a CvMat "view" into vector pts
+
+	//DO PERSPECTIVE TRANSFORM
+	cvPerspectiveTransform(&d2c, &d2c, &mMatCartToDisp);  //Note that cvPerspectiveTransform can be done in place!
+
+	//PUT THE POINTS OUT IN THE X,Y & Z IMAGES
+	float *Izptr = (float *)Iz->imageData, *Ixptr = (float *)Ix->imageData, *Iyptr = (float *)Iy->imageData; //pt to image data
+	vector<double>::iterator ptspos; ptspos = pts.begin(); //Set up iterators to our data
+	vector<int>::iterator xypos; xypos = xy.begin();
+	int offset;
+	for(i = 0; i< goodpoints; ++i) {
+		x = *xypos; ++xypos;  //x in grid
+		y = *xypos; ++xypos;  //y in grid
+		offset = y*w + x;     //pointer offset
+		*(Ixptr + offset) = (float)*ptspos; ++ptspos; //X in camera cords
+		*(Iyptr + offset) = (float)*ptspos; ++ptspos; //Y in camera cords
+		*(Izptr + offset) = (float)*ptspos; ++ptspos; //Z in camera cords
+	}
+	//Done	
 	return status;
 }
 

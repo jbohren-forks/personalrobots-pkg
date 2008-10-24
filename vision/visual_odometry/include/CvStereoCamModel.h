@@ -61,6 +61,12 @@ public:
     /// Ixyz has to be 32F
 		IplImage *Ixyz) const;
 
+  /// MUCH FASTER CONVERSION OF POINTS AND PUTTING THEM INTO X, Y, and Z images
+	//Id is single channel 8U disparity (it accepts an ROI and if so will use that on all the images
+	//ZnearMM, ZfarMM -- Near and far thresholds for depth to convert
+	//Ix, Iy, Iz are single channel 32F images which will contain the results  All images must be same size
+	bool disp8UToCart32F(const IplImage *Id, float ZnearMM, float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const;
+
 
   /// Convert 3D points from disparity coordinates to Cartesian coordinates.
 	bool cartToDisp(
@@ -110,6 +116,7 @@ protected:
     CvMat  mMatCartToScreenRight; //< projection matrix from Cartesian coordinate to the screen image of the right camera
     CvMat  mMatCartToDisp;  //< projection matrix from Cartesian coordinate to the disparity space
     CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
+    double disparity_conversion_factor;
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/
