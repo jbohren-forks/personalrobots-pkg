@@ -139,7 +139,7 @@ bool MechanismControl::spawnController(const std::string &type,
   controller::Controller *c = controller::ControllerFactory::instance().create(type);
   if (c == NULL)
     return false;
-  printf("Spawning %s: %08x\n", name.c_str(), (unsigned int)&model_);
+  printf("Spawning %s: %p\n", name.c_str(), &model_);
 
 
   if (!c->initXml(state_, config) ||
