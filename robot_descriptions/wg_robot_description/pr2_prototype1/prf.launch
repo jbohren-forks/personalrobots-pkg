@@ -1,0 +1,28 @@
+<launch>
+  <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
+
+  <!--machine name="prf1root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" /-->   
+  <machine name="prf1root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="prf1" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="prf2" address="prf2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
+  <machine name="prf3" address="prf3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="prf4"  address="prf4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+
+
+<!-- pr2_etherCAT -->
+  <node machine="prf1root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2" output="screen"/>
+
+<!-- PR2 Calibration -->
+  <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
+
+<!-- Joystick -->
+  <node machine="prf4" pkg="joy" type="joy"  restart="true"/>
+
+<!-- Power Board Control Node -->
+  <node pkg="pr2_power_board" type="power_node"  restart="true"/>
+
+<!-- Battery Monitor -->
+  <node machine="prf2" pkg="IBPSBatteryInterface" type="monitorBatteries" restart="true"/>
+
+</launch>
+
