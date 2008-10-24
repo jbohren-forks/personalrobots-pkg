@@ -225,7 +225,15 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
     return false;
   publisher_.msg_.set_joint_states_size(mc_->model_.joints_.size());
   publisher_.msg_.set_actuator_states_size(mc_->hw_->actuators_.size());
-  transform_publisher_.msg_.set_quaternions_size(mc_->model_.links_.size());
+
+  // Counts the number of transforms
+  int num_transforms = 0;
+  for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
+  {
+    if (mc_->model_.links_[i]->parent_name_ != std::string("world"))
+      ++num_transforms;
+  }
+  transform_publisher_.msg_.set_quaternions_size(num_transforms);
   return true;
 }
 
@@ -285,7 +293,8 @@ void MechanismControlNode::update()
     // Frame transforms
     if (transform_publisher_.trylock())
     {
-      assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
+      //assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
+      int ti = 0;
       for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
       {
         if (mc_->model_.links_[i]->parent_name_ == std::string("world"))
@@ -293,7 +302,7 @@ void MechanismControlNode::update()
 
         tf::Vector3 pos = mc_->state_->link_states_[i].rel_frame_.getOrigin();
         tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
-        rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[i];
+        rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[ti++];
 
         out.header.stamp.from_double(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;
