@@ -107,6 +107,7 @@ private:
       double roundtrip_;
     } iteration_[1000];
     double max_roundtrip_;
+    int txandrx_errors_;
   } diagnostics_;
   
   vector<robot_msgs::DiagnosticStatus> statuses_;

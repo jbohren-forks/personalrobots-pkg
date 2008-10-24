@@ -204,6 +204,7 @@ void EthercatHardware::initXml(TiXmlElement *config, bool allow_override)
     }
     ++a;
   }
+  publishDiagnostics();
 }
 
 void EthercatHardware::publishDiagnostics()
@@ -260,6 +261,10 @@ void EthercatHardware::publishDiagnostics()
 
   v.value = diagnostics_.max_roundtrip_;
   v.label = "Maximum roundtrip time";
+  values_.push_back(v);
+
+  v.value = diagnostics_.txandrx_errors_;
+  v.label = "EtherCAT txandrx errors";
   values_.push_back(v);
 
   status.set_values_vec(values_);
@@ -325,7 +330,7 @@ void EthercatHardware::update(bool reset)
   // Transmit process data
   double start = now();
   if (!em_->txandrx_PD(buffer_size_, current_buffer_)) {
-    printf("Doh!\n");
+    ++diagnostics_.txandrx_errors_;
   }
   diagnostics_.iteration_[count].roundtrip_ = now() - start;
 
