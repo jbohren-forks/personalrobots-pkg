@@ -16,7 +16,6 @@ import ImageFilter as ImageFilter
 import random
 import unittest
 import math
-import opencv as klak
 
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose
@@ -24,7 +23,6 @@ import fast
 from math import *
 
 import camera
-import transform
 
 import numpy
 import numpy.linalg
