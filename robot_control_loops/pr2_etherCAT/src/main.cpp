@@ -82,6 +82,7 @@ static struct
 {
   double ec[1000];
   double mc[1000];
+  int secondary;
 } diagnostics;
 
 static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> &publisher)
@@ -115,6 +116,7 @@ static void publishDiagnostics(misc_utils::RealtimePublisher<robot_msgs::Diagnos
     v.value = (val);                            \
     values.push_back(v)
 
+    ADD_VALUE("Secondary mode switches", diagnostics.secondary);
     ADD_VALUE("Max EtherCAT roundtrip (us)", max_ec*1e+6);
     ADD_VALUE("Avg EtherCAT roundtrip (us)", total_ec*1e+6/1000);
     ADD_VALUE("Max Mechanism Control roundtrip (us)", max_mc*1e+6);
@@ -153,6 +155,9 @@ static void *syncClocks(void *)
 void *controlLoop(void *)
 {
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher("/diagnostics", 2);
+
+  // Publish one-time before entering real-time to pre-allocate message vectors
+  publishDiagnostics(publisher);
 
   // Initialize the hardware interface
   EthercatHardware ec;
@@ -288,6 +293,9 @@ void warnOnSecondary(int sig)
 {
   void *bt[32];
   int nentries;
+
+  // Increment diagnostic count of secondary mode switches
+  ++diagnostics.secondary;
 
   // Dump a backtrace of the frame which caused the switch to
   // secondary mode
