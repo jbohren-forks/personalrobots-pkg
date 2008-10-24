@@ -1,0 +1,21 @@
+<package>
+
+  <description brief="The scripts to run the PR2 Alpha base">
+    
+    This package contains XML descriptions of robots in the format
+    defined at Willow Garage.
+    
+  </description>
+  <author>Tully Foote</author>
+  <license>BSD</license>
+  
+  <depend package="wg_robot_description" />
+  <depend package="teleop_base"/>
+  <depend package="pr2_etherCAT"/>
+  <depend package="pr2_power_board"/>
+  <depend package="IBPSBatteryInterface"/>
+  <depend package="joy"/>
+
+
+
+</package>
