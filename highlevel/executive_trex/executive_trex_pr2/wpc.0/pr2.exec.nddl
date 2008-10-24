@@ -1,5 +1,5 @@
 #include "nav.init.nddl"
 
 rejectable(moveBase.Active g0);
-g0.x = 21.5;
-g0.y = 20.0;
+g0.x = 18.26;
+g0.y = 16.57;
