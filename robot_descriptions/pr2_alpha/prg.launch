@@ -1,9 +1,9 @@
 <launch>
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
-  <!--machine name="prg1root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" /-->   
-  <machine name="prg1root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
-  <machine name="prg1" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <!--machine name="prg1root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" /-->   
+  <machine name="prg1root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
+  <machine name="prg1" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
   <machine name="prg2" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
   <machine name="prg3" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
   <machine name="prg4"  address="prg4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
@@ -15,6 +15,13 @@
 <!-- PR2 Calibration -->
   <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
 
+<!-- Base Controller -->
+    <param name="base_controller/odom_publish_rate" value="30.0"/>
+    <node pkg="mechanism_control" type="mech.py" args="sp controllers_base_lab.xml" output="screen" machine="prg1"/>
+
+<!-- Tilt Laser Controller -->
+    <node pkg="mechanism_control" type="mech.py" args="sp laser_controller_config.xml" output="screen" machine="prg1"/>
+
 <!-- Joystick -->
   <node machine="prg4" pkg="joy" type="joy"  respawn="true"/>
 
@@ -23,6 +30,22 @@
 
 <!-- Battery Monitor -->
   <node machine="prg2" pkg="IBPSBatteryInterface" type="monitorBatteries" respawn="true"/>
+
+<!-- Base Laser -->
+  <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan" machine="prg2">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="base_laser" />
+    <param name="min_ang" type="double" value="-100.0" />
+    <param name="max_ang" type="double" value="100.0" />
+  </node>
+
+<!-- Tilt Laser -->
+  <node pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan" machine="prg3">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="tilt_laser" />
+    <param name="min_ang" type="double" value="-80.0" />
+    <param name="max_ang" type="double" value="80.0" />
+  </node>
 
 </launch>
 
