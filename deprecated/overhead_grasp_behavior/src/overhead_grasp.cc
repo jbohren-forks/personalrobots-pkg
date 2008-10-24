@@ -48,7 +48,7 @@
   @section topic ROS topics
 
   Subscribes to (name/type):
-  - @b "object_position" / @b std_msgs::Point3DFloat32 : 3d Pose of the object. This is the cheat laser pointer interface.
+  - @b "object_position" / @b std_msgs::Point32 : 3d Pose of the object. This is the cheat laser pointer interface.
   - @b "rightarm_tooltip_cartesian" / @b pr2_msgs::EndEffectorState : current cartesian pose of the end effector.
 
   Publishes to (name/type):
@@ -91,7 +91,7 @@
 
 #include <pr2_kinematic_controllers/Float64Int32.h>
 
-#include <std_msgs/Point3DFloat32.h>
+#include <std_msgs/Point32.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/PR2Arm.h>
 #include <unistd.h>
@@ -109,7 +109,7 @@ class OverheadGrasper : public ros::node
   public:
     // coordinates of arm's origin in gazebo/arm coordinate frame (the axes of both frames are parallel)
     Vector gazebo_to_arm_vector;
-    std_msgs::Point3DFloat32 objectPosMsg;
+    std_msgs::Point32 objectPosMsg;
     pr2_msgs::EndEffectorState rightEndEffectorMsg;
     Frame right_tooltip_frame;
     Vector objectPosition;

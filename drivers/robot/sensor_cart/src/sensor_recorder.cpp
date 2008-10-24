@@ -5,7 +5,7 @@
 #include "opencv/highgui.h"
 #include "ros/node.h"
 #include "std_msgs/LaserImage.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "image_utils/cv_bridge.h"
 
 #include <sys/stat.h>
@@ -19,11 +19,11 @@ class SensorRecorder : public ros::node
 public:
   LaserImage laser_img;
   Image cam_img;
-  PointCloudFloat32 cloud;
+  PointCloud cloud;
 
   LaserImage laser_img_sv;
   Image cam_img_sv;
-  PointCloudFloat32 cloud_sv;
+  PointCloud cloud_sv;
 
   CvBridge<Image> cam_bridge;
   CvBridge<Image> laser_int_bridge;

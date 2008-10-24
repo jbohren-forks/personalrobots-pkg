@@ -292,7 +292,7 @@ Additional ROS topics and services used by PR2 simulation can be found in packag
      <tr><td> \b base_scan                            </td> <td>  std_msgs::LaserScan.msg             </td>  <td>  Ros_Laser.hh           </td> <td>  Laser scans from Hokuyo at the base.                      </td>  </tr>
      <tr><td> \b tilt_scan                            </td> <td>  std_msgs::LaserScan.msg             </td>  <td>  Ros_Laser.hh           </td> <td>  Laser scans from tilting Hokuyo.                          </td>  </tr>
 
-     <tr><td> \b full_cloud                           </td> <td>  std_msgs::PointCloudFloat32.msg     </td>  <td>  Ros_Block_Laser.hh     </td> <td>  Simulated point clouds data from stereo camera.           </td>  </tr>
+     <tr><td> \b full_cloud                           </td> <td>  std_msgs::PointCloud.msg     </td>  <td>  Ros_Block_Laser.hh     </td> <td>  Simulated point clouds data from stereo camera.           </td>  </tr>
 
      <tr><td> \b battery_state                        </td> <td>  robot_msgs::BatteryStzte            </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery state.                                   </td>  </tr>
      <tr><td> \b diagnostic                           </td> <td>  robot_msgs::DiagnosticMessage       </td>  <td>  gazebo_battery.h       </td> <td> Simulated battery diagnostic messages.                     </td>  </tr>

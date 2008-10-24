@@ -95,7 +95,7 @@ std::vector<Object*> *ObjectDetector::getObjects(SmartScan *scan)
 	if (mRemThresh != 0) {
 		//find table
 		fprintf(stderr,"Finding table...");
-		std_msgs::Point3DFloat32 planePoint, planeNormal;
+		std_msgs::Point32 planePoint, planeNormal;
 		float fitValue = scan->ransacPlane(planePoint, planeNormal);
 		fprintf(stderr," done.\n");
 

@@ -40,7 +40,7 @@
 // For transform support
 #include <rosTF/rosTF.h>
 
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/Planner2DGoal.h>
 #include <pr2_msgs/OccDiff.h>
 #include <std_srvs/StaticMap.h>

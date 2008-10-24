@@ -97,72 +97,7 @@ namespace laser_scan{
     cloud_out.chan[0].set_vals_size(count);
  
   };
-    void LaserProjection::projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff, bool preservative)
-  {
-    NEWMAT::Matrix ranges(2, scan_in.get_ranges_size());
-    double * matPointer = ranges.Store();
-    // Fill the ranges matrix
-    for (unsigned int index = 0; index < scan_in.get_ranges_size(); index++)
-      {
-        matPointer[index] = (double) scan_in.ranges[index];
-        matPointer[index+scan_in.get_ranges_size()] = (double) scan_in.ranges[index];
-      }
-    
 
-    //Do the projection
-    NEWMAT::Matrix output = NEWMAT::SP(ranges, getUnitVectors(scan_in.angle_min, scan_in.angle_max, scan_in.angle_increment));
-    
-
-    //Stuff the output cloud
-    cloud_out.header = scan_in.header;
-    cloud_out.set_pts_size(scan_in.get_ranges_size());
-    if (scan_in.get_intensities_size() > 0)
-      {
-        cloud_out.set_chan_size(1);
-        cloud_out.chan[0].name ="intensities";
-        cloud_out.chan[0].set_vals_size(scan_in.get_intensities_size());
-      }
-
-    double* outputMat = output.Store();
-
-    if (range_cutoff < 0)
-      range_cutoff = scan_in.range_max;
-    else
-      range_cutoff = std::min(range_cutoff, (double)scan_in.range_max); 
-    
-    unsigned int count = 0;
-    for (unsigned int index = 0; index< scan_in.get_ranges_size(); index++)
-    {
-      if (!preservative){ //Default behaviour will throw out invalid data
-        if ((matPointer[index] < range_cutoff) &&
-            (matPointer[index] > scan_in.range_min)) //only valid
-        {
-          cloud_out.pts[count].x = outputMat[index];
-          cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
-          cloud_out.pts[count].z = 0.0;
-          if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
-            cloud_out.chan[0].vals[count] = scan_in.intensities[index];
-          count++;
-        }
-      }
-      else { //Keep all points
-        cloud_out.pts[count].x = outputMat[index];
-        cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
-        cloud_out.pts[count].z = 0.0;
-        if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
-          cloud_out.chan[0].vals[count] = scan_in.intensities[index];
-        count++;
-      }
-        
-    }
-
-    //downsize if necessary
-    cloud_out.set_pts_size(count);
-    if (scan_in.intensities.size() > 0)
-     cloud_out.chan[0].set_vals_size(count);
- 
-  };
-  
   NEWMAT::Matrix& LaserProjection::getUnitVectors(float angle_min, float angle_max, float angle_increment)
   {
     //construct string for lookup in the map

@@ -44,7 +44,7 @@
 #include "ros/node.h"
 #include "rosTF/TransformArray.h"
 #include "libTF/libTF.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "laser_scan_utils/laser_scan.h"
 
 
@@ -61,14 +61,14 @@ class rosTFClient : public libTF::TransformReference
   //Destructor
   ~rosTFClient();
 
-  //  PointCloudFloat32 transformPointCloud(unsigned int target_frame, const PointCloudFloat32 & cloudIn); // todo switch after ticket:232
-  std_msgs::PointCloudFloat32 transformPointCloud(const std::string& target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
-  std_msgs::PointCloudFloat32 transformPointCloud(unsigned int target_frame, const std_msgs::PointCloudFloat32 & cloudIn);
-  void transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn) __attribute__((deprecated));
-  void transformPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn) __attribute__((deprecated));
+  //  PointCloud transformPointCloud(unsigned int target_frame, const PointCloud & cloudIn); // todo switch after ticket:232
+  std_msgs::PointCloud transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud & cloudIn);
+  std_msgs::PointCloud transformPointCloud(unsigned int target_frame, const std_msgs::PointCloud & cloudIn);
+  void transformPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::PointCloud & cloudIn) __attribute__((deprecated));
+  void transformPointCloud(unsigned int target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::PointCloud & cloudIn) __attribute__((deprecated));
 
-  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
-  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
+  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
+  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
 
   /** @brief Call back function for receiving on ROS */
   void receiveArray();

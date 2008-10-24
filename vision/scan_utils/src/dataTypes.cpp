@@ -33,29 +33,29 @@
 
 namespace scan_utils {
 
-float norm(const std_msgs::Point3DFloat32 &f)
+float norm(const std_msgs::Point32 &f)
 {
 	return sqrt( f.x*f.x + f.y*f.y + f.z*f.z);
 }
 
-std_msgs::Point3DFloat32 normalize(const std_msgs::Point3DFloat32 &f)
+std_msgs::Point32 normalize(const std_msgs::Point32 &f)
 {
 	float n = scan_utils::norm(f);
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	p.x = f.x / n;
 	p.y = f.y / n;
 	p.z = f.z / n;
 	return p;
 }
 
-float dot(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2)
+float dot(const std_msgs::Point32 &f1, const std_msgs::Point32 &f2)
 {
 	return f1.x*f2.x + f1.y*f2.y + f1.z*f2.z;
 }
 
-std_msgs::Point3DFloat32 cross(const std_msgs::Point3DFloat32 &f1, const std_msgs::Point3DFloat32 &f2)
+std_msgs::Point32 cross(const std_msgs::Point32 &f1, const std_msgs::Point32 &f2)
 {
-	std_msgs::Point3DFloat32 c;
+	std_msgs::Point32 c;
 	c.x = f1.y * f2.z - f1.z * f2.y;
 	c.y = f1.z * f2.x - f1.x * f2.z;
 	c.z = f1.x * f2.y - f1.y * f2.x;

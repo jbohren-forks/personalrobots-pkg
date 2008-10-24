@@ -64,7 +64,7 @@ class ArmTrajectoryNode : public ros::node
     void SendTrajectory();
 
     // for the point cloud data
-    ringBuffer<std_msgs::Point3DFloat32> *trajectory_p;
+    ringBuffer<std_msgs::Point32> *trajectory_p;
     ringBuffer<std_msgs::Float32>        *trajectory_v;
 
     // keep count for full cloud
@@ -85,7 +85,7 @@ ArmTrajectoryNode::ArmTrajectoryNode(int argc, char** argv, const char* fname) :
   srand(time(NULL));
 
   // Initialize ring buffer for point cloud data
-  this->trajectory_p = new ringBuffer<std_msgs::Point3DFloat32>();
+  this->trajectory_p = new ringBuffer<std_msgs::Point32>();
   this->trajectory_v = new ringBuffer<std_msgs::Float32       >();
 
   // FIXME:  move this to Advertise/Subscribe Models
@@ -156,7 +156,7 @@ ArmTrajectoryNode::SendTrajectory()
 {
   this->lock.lock();
 
-  std_msgs::Point3DFloat32 tmp_trajectory_p;
+  std_msgs::Point32 tmp_trajectory_p;
   std_msgs::Float32        tmp_trajectory_v;
 
   /***************************************************************/
@@ -173,7 +173,7 @@ ArmTrajectoryNode::SendTrajectory()
     tmp_trajectory_v.data             = 1.0;
 
     // push pcd point into structure
-    this->trajectory_p->add((std_msgs::Point3DFloat32)tmp_trajectory_p);
+    this->trajectory_p->add((std_msgs::Point32)tmp_trajectory_p);
     this->trajectory_v->add(                          tmp_trajectory_v);
   }
 

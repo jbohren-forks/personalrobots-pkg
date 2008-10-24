@@ -1,4 +1,4 @@
-std_msgs/PointCloudFloat32 cloud
+std_msgs/PointCloud cloud
 float32 connectedThreshold
 int32 minComponentSize
 float32 grazingThreshold

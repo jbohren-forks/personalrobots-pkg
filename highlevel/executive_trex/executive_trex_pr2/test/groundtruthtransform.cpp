@@ -1,6 +1,6 @@
 
 #include "ros/node.h"
-#include "std_msgs/Point3DFloat32.h"
+#include "std_msgs/Point32.h"
 #include <rosTF/rosTF.h>
 
 using std::string;
@@ -10,11 +10,11 @@ using std::string;
  */
 class GroundTruthTransform : public ros::node {
 public:
-  std_msgs::Point3DFloat32 msg;
+  std_msgs::Point32 msg;
   rosTFClient tf;
 
   GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, false) {
-    advertise<std_msgs::Point3DFloat32>("groundtruthposition");
+    advertise<std_msgs::Point32>("groundtruthposition");
   }
 
   void speak() {

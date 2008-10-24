@@ -31,8 +31,8 @@
 // roscpp - laser
 #include <std_msgs/LaserScan.h>
 // roscpp - laser image (point cloud)
-#include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/Point3DFloat32.h>
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/Point32.h>
 #include <std_msgs/ChannelFloat32.h>
 // roscpp - used for shutter message right now
 #include <std_msgs/Empty.h>

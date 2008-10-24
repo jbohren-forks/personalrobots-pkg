@@ -70,7 +70,7 @@ Advanced use: in some particular cases (e.g. smooth surfaces without big dispari
 #include <opencv/highgui.h>
 #include <opencv/cxcore.h>
 #include "ros/node.h"
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/ImageArray.h>
 #include <std_msgs/Image.h>
 #include "limits.h"
@@ -245,7 +245,7 @@ class SpacetimeStereoNode : public ros::node
 		
 		subscribe("videre/images", frame_msg, &SpacetimeStereoNode::processFrame, 1);
 		subscribe("videre/cal_params", cal_msg, &SpacetimeStereoNode::processCal, 1);
-		advertise<std_msgs::PointCloudFloat32>("spacetime_stereo", 5);
+		advertise<std_msgs::PointCloud>("spacetime_stereo", 5);
 	}
 	
 	~SpacetimeStereoNode()
@@ -1072,7 +1072,7 @@ void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector
 	cpar.feq =  (cpar.fx+cpar.fy) / 2;
 	
 	//printf("\nReading Parameters: tx: %f, u0: %f, v0: %f, fx:%f, fy:%f\n", cpar.tx, cpar.u0, cpar.v0, cpar.fx, cpar.fy);
-	std_msgs::PointCloudFloat32 ros_cloud;
+	std_msgs::PointCloud ros_cloud;
 	
 	ros_cloud.set_chan_size(1);
 	ros_cloud.chan[0].name = "intensities";

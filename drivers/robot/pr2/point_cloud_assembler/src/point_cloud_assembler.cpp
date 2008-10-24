@@ -66,7 +66,7 @@ Subscribes to (name/type):
 #include "ros/node.h"
 #include "rosTF/rosTF.h"
 #include "std_msgs/LaserScan.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
  
 #include <deque>
 
@@ -141,8 +141,8 @@ public:
     
     unsigned int cloud_count = 0 ;                                                      // Store the number of points in the current cloud
 
-    PointCloudFloat32 projector_cloud ;                                                 // Stores the current scan after being projected into the laser frame
-    PointCloudFloat32 target_frame_cloud ;                                              // Stores the current scan in the target frame
+    PointCloud projector_cloud ;                                                 // Stores the current scan after being projected into the laser frame
+    PointCloud target_frame_cloud ;                                              // Stores the current scan in the target frame
     
     unsigned int i = 0 ;
     

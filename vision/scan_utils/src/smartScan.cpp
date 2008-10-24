@@ -128,14 +128,14 @@ void SmartScan::getScanner(float &px, float &py, float &pz,
 	ux = mScannerUp.x; uy = mScannerUp.y; uz = mScannerUp.z;
 }
 
-void SmartScan::setPoints(int numPoints, const std_msgs::Point3DFloat32 *points)
+void SmartScan::setPoints(int numPoints, const std_msgs::Point32 *points)
 {
 	// for now we are making explicit copies, but later this will be changed to not
 	// copy the data but just store it
 	clearData();
 	mNumPoints = numPoints;
 	assert(mNumPoints >= 0);
-	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
+	mNativePoints = new std_msgs::Point32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = points[i];
 	}
@@ -150,7 +150,7 @@ void SmartScan::setPoints(int numPoints, const float *points)
 	clearData();
 	mNumPoints = numPoints;
 	assert(mNumPoints >= 0);
-	mNativePoints = new std_msgs::Point3DFloat32[mNumPoints];
+	mNativePoints = new std_msgs::Point32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i].x = points[3*i+0];
 		mNativePoints[i].y = points[3*i+1];
@@ -158,26 +158,26 @@ void SmartScan::setPoints(int numPoints, const float *points)
 	}
 }
 
-/*! Set the data from a ROS PointCloudFloat32 message. For the moment,
+/*! Set the data from a ROS PointCloud message. For the moment,
     it ingores all channels except the points themselves.
 */
-void SmartScan::setFromRosCloud(const std_msgs::PointCloudFloat32 &cloud)
+void SmartScan::setFromRosCloud(const std_msgs::PointCloud &cloud)
 {
 	//for the moment we ignore intensity values
 	setPoints( cloud.get_pts_size(), &cloud.pts[0]);
 }
 
-/*!  Returns the SmartScan as a ROS PointCloudFloat32 message.
+/*!  Returns the SmartScan as a ROS PointCloud message.
   Currently, this sets the intensity channel to all zeros.  
 */
-std_msgs::PointCloudFloat32 SmartScan::getPointCloud() const{
-	std_msgs::PointCloudFloat32 cloud;
+std_msgs::PointCloud SmartScan::getPointCloud() const{
+	std_msgs::PointCloud cloud;
 	cloud.set_pts_size(mNumPoints);
 	cloud.set_chan_size(1);
 	cloud.chan[0].name = "intensities";
 	cloud.chan[0].set_vals_size(mNumPoints);
 	for(int i=0; i<mNumPoints; i++) {
-		std_msgs::Point3DFloat32 pt = getPoint(i);
+		std_msgs::Point32 pt = getPoint(i);
 		cloud.pts[i].x = pt.x;
 		cloud.pts[i].y = pt.y;
 		cloud.pts[i].z = pt.z;
@@ -186,7 +186,7 @@ std_msgs::PointCloudFloat32 SmartScan::getPointCloud() const{
 	return cloud;
 }
 
-std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat32 &p_in,
+std_msgs::Point32 SmartScan::transformPoint(const std_msgs::Point32 &p_in,
 						   libTF::TransformReference &tr) const
 {
 
@@ -195,7 +195,7 @@ std_msgs::Point3DFloat32 SmartScan::transformPoint(const std_msgs::Point3DFloat3
 	p.frame = SU_TFMF;	p.time = 0;
 	p = tr.transformPoint(SU_TFRT, p);
 
-	std_msgs::Point3DFloat32 p_out;
+	std_msgs::Point32 p_out;
 	p_out.x = p.x; p_out.y = p.y; p_out.z = p.z;
 	//fprintf(stderr,"Transformed: %f %f %f\n",p.x, p.y, p.z);
 	return p_out;
@@ -262,7 +262,7 @@ void SmartScan::writeToFile(std::iostream &output)
  */
 void SmartScan::writeToFileAsVrml(std::iostream &output)
 {
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	output << "#VRML V2.0 utf8" << std::endl;
 	output << "Shape" << std::endl << "{" << std::endl;
 	output << "geometry PointSet" << std::endl << "{" << std::endl;
@@ -296,7 +296,7 @@ bool SmartScan::readFromFile(std::iostream &input)
 	}
 	//read point data
 	mNumPoints = n;
-	mNativePoints =  new std_msgs::Point3DFloat32[mNumPoints];
+	mNativePoints =  new std_msgs::Point32[mNumPoints];
 
 	int i;
 	for (i=0; i<mNumPoints; i++) {
@@ -376,7 +376,7 @@ vtkPointLocator* SmartScan::getVtkLocator()
 
 libTF::TFPoint SmartScan::centroid() const
 {
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	libTF::TFPoint c;
 	c.time = 0; c.frame = SU_TFMF;
 	c.x = c.y = c.z = 0;
@@ -407,7 +407,7 @@ libTF::TFPoint SmartScan::centroid() const
 void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 			      libTF::TFVector &a3)
 {
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	libTF::TFPoint c = centroid();
 
 	//asemble normalized NEWMAT matrix
@@ -419,9 +419,9 @@ void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 		M.element(i,2) = p.z - c.z;
 	}
 
-	//for now we use a mixture of Point3DFloat32 and libTF::TFVector
+	//for now we use a mixture of Point32 and libTF::TFVector
 	//this is just a hack, I need to clean this up in the future
-	std_msgs::Point3DFloat32 pa1, pa2, pa3;
+	std_msgs::Point32 pa1, pa2, pa3;
 
 	//do SVD decomposition
 	singularVectors(&M,size(),pa1,pa2,pa3);
@@ -450,7 +450,7 @@ void SmartScan::principalAxes(libTF::TFVector &a1, libTF::TFVector &a2,
 void SmartScan::boundingBox(libTF::TFPoint &bb1, libTF::TFPoint &bb2) const
 {
 	if (size() < 0) return;
-	std_msgs::Point3DFloat32 p = getPoint(0);
+	std_msgs::Point32 p = getPoint(0);
 	bb1.x = bb2.x = p.x;
 	bb1.y = bb2.y = p.y;
 	bb1.z = bb2.z = p.z;
@@ -475,7 +475,7 @@ void SmartScan::addScan(const SmartScan *target)
 {
 	if ( !target->size() ) return;
 
-	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints + target->size()];
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints + target->size()];
 
 	int i;
 	for (i=0; i<mNumPoints; i++) {
@@ -614,7 +614,7 @@ std::vector<Triangle> *SmartScan::delaunayTriangulation3D(double tolerance, doub
 */
 void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 {
-	std_msgs::Point3DFloat32 *newPoints,p;
+	std_msgs::Point32 *newPoints,p;
 	int numNewPoints = 0;
 	
 	//we are passed the overall size of the crop box; let's get the halves
@@ -635,7 +635,7 @@ void SmartScan::crop(float x, float y, float z, float dx, float dy, float dz)
 		if (p.z < z - dz) continue;
 		numNewPoints++;
 	}
-	newPoints = new std_msgs::Point3DFloat32[numNewPoints];
+	newPoints = new std_msgs::Point32[numNewPoints];
 	int j=0;
 	for (int i=0; i<mNumPoints; i++) {
 		p = getPoint(i);
@@ -714,12 +714,12 @@ float* SmartScan::ICPTo(SmartScan* target)
 void SmartScan::removeOutliers(float radius, int nbrs)
 {
 	if ( size() == 0) return;
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	if (! hasVtkData() ) createVtkData();
 	vtkIdList *result = vtkIdList::New();
 
 	// allocate memory as if we will keep all points, but later we'll do a copy and a delete
-	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints];
 	int numNewPoints = 0;
 	for (int i=0; i<mNumPoints; i++) {
 		result->Reset();
@@ -768,26 +768,26 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
 {
 	if ( size() == 0) return;
 	// allocate memory as if we will keep all points, but later we'll do a copy and a delete
-	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints];
 	int numNewPoints = 0;
 
 	//we get the threshold in degrees
 	threshold = fabs( threshold * M_PI / 180.0 );
 	threshold = fabs( cos(M_PI / 2 - threshold) );
 
-	std_msgs::Point3DFloat32 scanner;
+	std_msgs::Point32 scanner;
 	scanner.x = mScannerPos.x; 
 	scanner.y = mScannerPos.y; 
 	scanner.z = mScannerPos.z;
 
 	for (int i=0; i<mNumPoints; i++) {
-		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
+		std_msgs::Point32 normal = computePointNormal(i,radius,nbrs);
 		//check for outliers
 		if ( norm(normal) < 0.5 && removeOutliers) continue;
 	
 		//compute direction to scanner
-		std_msgs::Point3DFloat32 scannerDirection;
-		std_msgs::Point3DFloat32 p = getPoint(i);
+		std_msgs::Point32 scannerDirection;
+		std_msgs::Point32 p = getPoint(i);
 		scannerDirection.x = p.x - scanner.x;
 		scannerDirection.y = p.y - scanner.y;
 		scannerDirection.z = p.z - scanner.z;
@@ -835,10 +835,10 @@ void SmartScan::removeGrazingPoints(float threshold, bool removeOutliers, float 
   generally be somewhere between 0 and 2, with higher values
   indicating that more points in the cloud lie close to the plane.
 */
-float SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+float SmartScan::normalHistogramPlane(std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal,
 				     float radius, int nbrs)
 {
-	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
+	std_msgs::Point32 zero; zero.x = zero.y = zero.z = 0.0;
 	if ( size() == 0) {
 		planeNormal = zero; planePoint = zero; return 0;
 	}
@@ -861,7 +861,7 @@ float SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_
 
 	//histogram normals
 	for (int i=0; i<mNumPoints; i++) {
-		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
+		std_msgs::Point32 normal = computePointNormal(i,radius,nbrs);
 		if ( norm(normal) < 0.5 ) continue;
 		//we only care about a halfspace. This should also ensure theta <= M_PI/2
 		if(normal.z < 0) {
@@ -896,7 +896,7 @@ float SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_
 
 	//histogram distances
 	for(int i=0; i<mNumPoints; i++) {
-		std_msgs::Point3DFloat32 normal = computePointNormal(i,radius,nbrs);
+		std_msgs::Point32 normal = computePointNormal(i,radius,nbrs);
 		if ( norm(normal) < 0.5 ) continue;
 		double d = fabs( dot(normal, planeNormal) );
 		if ( d < 0.986 ) continue; //10 degrees as threshold 
@@ -943,10 +943,10 @@ float SmartScan::normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_
   as a measure of how dominant the plane is in the scan.
 
  */
-float SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+float SmartScan::ransacPlane(std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal,
 			    int iterations, float distThresh)
 {
-	std_msgs::Point3DFloat32 foo,zero; zero.x = zero.y = zero.z = 0.0;
+	std_msgs::Point32 foo,zero; zero.x = zero.y = zero.z = 0.0;
 
 	if ( size() == 0) {
 		planeNormal = zero; planePoint = zero; return 0;
@@ -962,8 +962,8 @@ float SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poi
 	float dist;
 
 	NEWMAT::Matrix M(selPoints,3);
-	std_msgs::Point3DFloat32 mean, consMean, normal, dif, p;
-	std::list<std_msgs::Point3DFloat32> consList;
+	std_msgs::Point32 mean, consMean, normal, dif, p;
+	std::list<std_msgs::Point32> consList;
 
 	//seed random generator
 	srand( (unsigned)time(NULL) );
@@ -1028,7 +1028,7 @@ float SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poi
 			maxConsensus = consensus;
 			if (refitToConsensus) {
 				NEWMAT::Matrix *CM = new NEWMAT::Matrix(consensus, 3);
-				std::list<std_msgs::Point3DFloat32>::iterator it;
+				std::list<std_msgs::Point32>::iterator it;
 				for (k=0, it = consList.begin(); it!=consList.end(); it++, k++) {
 					CM->element(k,0) = (*it).x - consMean.x;
 					CM->element(k,1) = (*it).y - consMean.y;
@@ -1054,12 +1054,12 @@ float SmartScan::ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Poi
 /*!  Removes all points that are closer than \a thresh to the plane
   defined by \a planePoint and \a planeNormal
  */
-void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint, 
-			    const std_msgs::Point3DFloat32 &planeNormal, float thresh)
+void SmartScan::removePlane(const std_msgs::Point32 &planePoint, 
+			    const std_msgs::Point32 &planeNormal, float thresh)
 {
 	//remove points that are close to plane
-	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[mNumPoints];
-	std_msgs::Point3DFloat32 dif, p;
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[mNumPoints];
+	std_msgs::Point32 dif, p;
 	int numNewPoints = 0;
 	float dist;
 	for(int i=0; i<mNumPoints; i++) {
@@ -1082,12 +1082,12 @@ void SmartScan::removePlane(const std_msgs::Point3DFloat32 &planePoint,
 
 /*!  Returns all the points in this cloud that are within \a radius of
   the 3D point at( \a x \a y \a z ). Result is returned as a \a
-  std::vector<Point3DFloat32>* - it is the responsability of the
+  std::vector<Point32>* - it is the responsability of the
   caller to free this memory.
 */
-std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x, float y, float z, float radius)
+std::vector<std_msgs::Point32>* SmartScan::getPointsWithinRadius(float x, float y, float z, float radius)
 {
-	std::vector<std_msgs::Point3DFloat32> *resPts = new std::vector<std_msgs::Point3DFloat32>;
+	std::vector<std_msgs::Point32> *resPts = new std::vector<std_msgs::Point32>;
 	vtkIdList *result = vtkIdList::New();
 
 	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
@@ -1102,10 +1102,10 @@ std::vector<std_msgs::Point3DFloat32>* SmartScan::getPointsWithinRadius(float x,
 	return resPts;
 }
 
-std_msgs::PointCloudFloat32* SmartScan::getPointsWithinRadiusPointCloud(float x, float y, float z, float radius)
+std_msgs::PointCloud* SmartScan::getPointsWithinRadiusPointCloud(float x, float y, float z, float radius)
 {
 
-	std_msgs::PointCloudFloat32 *resPts = new std_msgs::PointCloudFloat32;
+	std_msgs::PointCloud *resPts = new std_msgs::PointCloud;
 	vtkIdList *result = vtkIdList::New();
 
 	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
@@ -1117,7 +1117,7 @@ std_msgs::PointCloudFloat32* SmartScan::getPointsWithinRadiusPointCloud(float x,
 	resPts->chan[0].set_vals_size(n);
 	for (int i=0; i<n; i++){
 		int nbrId = result->GetId(i);
-		std_msgs::Point3DFloat32 p = getPoint(nbrId);
+		std_msgs::Point32 p = getPoint(nbrId);
 		resPts->pts[i].x = p.x;
 		resPts->pts[i].y = p.y;
 		resPts->pts[i].z = p.z;
@@ -1135,10 +1135,10 @@ std_msgs::PointCloudFloat32* SmartScan::getPointsWithinRadiusPointCloud(float x,
    returns (0,0,0)
 
  */
-std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int nbrs)
+std_msgs::Point32 SmartScan::computePointNormal(int id, float radius, int nbrs)
 {
         assert(id >=0 && id < mNumPoints);
-	std_msgs::Point3DFloat32 p = getPoint(id);
+	std_msgs::Point32 p = getPoint(id);
 	return computePointNormal(p.x, p.y, p.z, radius, nbrs);
 }
 
@@ -1150,13 +1150,13 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(int id, float radius, int
    returns (0,0,0)
 
  */
-std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z, float radius, int nbrs)
+std_msgs::Point32 SmartScan::computePointNormal(float x, float y, float z, float radius, int nbrs)
 {
 	// radius - how large is the radius in which we look for nbrs for computing normal
 	// nbrs - min number of nbrs we use for normal computation
 	int nbrId;
 	vtkIdList *result = vtkIdList::New();
-	std_msgs::Point3DFloat32 zero; zero.x = zero.y = zero.z = 0.0;
+	std_msgs::Point32 zero; zero.x = zero.y = zero.z = 0.0;
 
 	getVtkLocator()->FindPointsWithinRadius( radius, x, y, z, result );
 	//we don't have enough nbrs for a reliable normal
@@ -1167,11 +1167,11 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z
 	}
 
 	//find the mean point for normalization
-	std_msgs::Point3DFloat32 mean = zero;
+	std_msgs::Point32 mean = zero;
 	for (int i=0; i<n; i++) {
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
-		std_msgs::Point3DFloat32 p = getPoint(nbrId);
+		std_msgs::Point32 p = getPoint(nbrId);
 
 		mean.x += p.x;
 		mean.y += p.y;
@@ -1186,7 +1186,7 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z
 		nbrId = result->GetId(i);
 		assert(nbrId >= 0 && nbrId < mNumPoints);
 
-		std_msgs::Point3DFloat32 p = getPoint(nbrId);
+		std_msgs::Point32 p = getPoint(nbrId);
 
 		M.element(i,0) = p.x - mean.x;
 		M.element(i,1) = p.y - mean.y;
@@ -1194,7 +1194,7 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z
 	}
 	result->Delete();
 
-	std_msgs::Point3DFloat32 foo, normal;
+	std_msgs::Point32 foo, normal;
 	singularVectors(&M, n, foo, foo, normal);
 	return normal;
 }
@@ -1207,8 +1207,8 @@ std_msgs::Point3DFloat32 SmartScan::computePointNormal(float x, float y, float z
   corresponds to the direction of the normal of a plane fit to those
   points. Vertices should be normalized first (of mean 0).
 */
-void SmartScan::singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point3DFloat32 &sv1, 
-				std_msgs::Point3DFloat32 &sv2, std_msgs::Point3DFloat32 &sv3)
+void SmartScan::singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point32 &sv1, 
+				std_msgs::Point32 &sv2, std_msgs::Point32 &sv3)
 
 {
 	NEWMAT::Matrix U(n,3);
@@ -1323,7 +1323,7 @@ std::vector<scan_utils::Triangle>* SmartScan::createMesh(float resolution)
 std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, int minPts)
 {
 	std::vector<SmartScan*> *result = new std::vector<SmartScan*>;
-	std::list<std_msgs::Point3DFloat32> currentList;
+	std::list<std_msgs::Point32> currentList;
 
 	if (!hasVtkData()) createVtkData();
 
@@ -1335,7 +1335,7 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, int minPts
 		indices[i] = 0;
 	}
 
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	int nbr;
 	vtkIdList *points = vtkIdList::New();
 
@@ -1381,7 +1381,7 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, int minPts
 	fprintf(stderr,"Found %d connected components. Copying...\n",maxId);
 
 	int nPoints, totalPoints = 0;
-	std_msgs::Point3DFloat32 *scanPoints = NULL;
+	std_msgs::Point32 *scanPoints = NULL;
 	//we do multiple passes because we don't really care about performance right now
 	for (id = 1; id <= maxId; id++) {
 		//first we count how many points there are in this component
@@ -1395,7 +1395,7 @@ std::vector<SmartScan*> *SmartScan::connectedComponents(float thresh, int minPts
 		}
 
 		//then we allocate memory
-		scanPoints = new std_msgs::Point3DFloat32[nPoints];
+		scanPoints = new std_msgs::Point32[nPoints];
 		//then we copy the points
 		int count = 0;
 		for (int i=0; i<size(); i++) {
@@ -1442,7 +1442,7 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	for (int i=0; i<target->size(); i++) {
 	  
 	  //a point from the target
-	  std_msgs::Point3DFloat32 p = target->getPoint(i);
+	  std_msgs::Point32 p = target->getPoint(i);
 	  //find all neighbors in this scan
 	  points->Reset();
 	  getVtkLocator()->FindPointsWithinRadius( thresh, p.x, p.y, p.z, points );
@@ -1457,7 +1457,7 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 	fprintf(stderr,"Keeping %d points\n",keptPoints);
 	assert(keptPoints>=0);
 
-	std_msgs::Point3DFloat32 *newPoints = new std_msgs::Point3DFloat32[keptPoints];
+	std_msgs::Point32 *newPoints = new std_msgs::Point32[keptPoints];
 	int count = 0;
 	for (int i=0; i<size(); i++) {
 		if (indices[i]==1) {
@@ -1506,7 +1506,7 @@ bool SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, f
 	assert(height==hsi && width==wsi);
 
 	// -- Get a first cut at points close enough to care about.
-	std::vector<std_msgs::Point3DFloat32> *point;
+	std::vector<std_msgs::Point32> *point;
 	point = getPointsWithinRadius(x, y, z, support*sqrt(2));
 	if(point->size() == 0) {
    	        cerr << "Not enough points at "  << x << " " << y << " " << z  << endl;
@@ -1519,7 +1519,7 @@ bool SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, f
 	float beta;
 	float alpha;
 	for (unsigned int i=0; i<point->size(); i++) {
-	  	std_msgs::Point3DFloat32 &pt = (*point)[i];
+	  	std_msgs::Point32 &pt = (*point)[i];
 		if(z_up) {
 		        beta = -(pt.z - z - support);
 		}
@@ -1566,7 +1566,7 @@ bool SmartScan::computeSpinImageFixedOrientation(Grid2D &si, float x, float y, f
 bool SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y, float z, float support, float pixelsPerMeter, float radius, int nbrs) {
 
         // -- Get the surface normal.
-        std_msgs::Point3DFloat32 normal = computePointNormal(x, y, z, radius, nbrs);
+        std_msgs::Point32 normal = computePointNormal(x, y, z, radius, nbrs);
 	if(normal.x == 0 && normal.y == 0 && normal.z == 0) {
 	        return false;
 	}
@@ -1599,7 +1599,7 @@ bool SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 
 	// -- Transform the nearby points.
 	//ss.applyTransform(tr.getMatrix("FRAMEID_SPIN_ORIG", "FRAMEID_SPIN_STAGE2", 0));  Why doesn't this work? -- ss was a smartscan of cld.
-	std_msgs::PointCloudFloat32* cld = getPointsWithinRadiusPointCloud(x, y, z, support*sqrt(2));
+	std_msgs::PointCloud* cld = getPointsWithinRadiusPointCloud(x, y, z, support*sqrt(2));
 	libTF::TFPoint ptf, ptf2;
 	for (unsigned int j=0; j<cld->get_pts_size(); j++) {
 	        ptf.frame = "FRAMEID_SPIN_ORIG";
@@ -1623,7 +1623,7 @@ bool SmartScan::computeSpinImageNatural(scan_utils::Grid2D &si, float x, float y
 template <typename T>
 void SmartScan::insertInOctree(Octree<T> *o, T value)
 {
-	std_msgs::Point3DFloat32 p;
+	std_msgs::Point32 p;
 	for(int i=0; i<size(); i++) {
 		p = getPoint(i);
 		o->insert(p.x, p.y, p.z, value);

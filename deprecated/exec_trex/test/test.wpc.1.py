@@ -68,7 +68,7 @@ class TestWpc(unittest.TestCase):
             self.success = True
     
     def test_wpc(self):
-        rospy.TopicSub("groundtruthposition", Point3DFloat32, self.positionInput)
+        rospy.TopicSub("groundtruthposition", Point32, self.positionInput)
         self.test.advertiseInitalPose2d(NAME)
         rospy.ready(NAME, anonymous=True)
         time.sleep(2.0)

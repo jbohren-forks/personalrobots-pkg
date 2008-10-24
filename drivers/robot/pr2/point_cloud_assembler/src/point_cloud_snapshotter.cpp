@@ -38,7 +38,7 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "pr2_mechanism_controllers/LaserScannerSignal.h"
 
 using namespace std_msgs ;
@@ -62,7 +62,7 @@ public:
   {
     prev_signal_.header.stamp.fromNSec(0) ;
     
-    advertise<PointCloudFloat32> ("full_cloud", 1) ;
+    advertise<PointCloud> ("full_cloud", 1) ;
     subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
   }
   

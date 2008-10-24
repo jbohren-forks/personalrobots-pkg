@@ -105,7 +105,7 @@ Subscribes to (name/type):
 
 Additional subscriptions due to inheritance from NodeCollisionModel:
 - @b localizedpose/RobotBase2DOdom : localized position of the robot base
-- @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+- @b world_3d_map/PointCloud : point cloud with data describing the 3D environment
 
 Publishes to (name/type):
 - @b planning_statistics/String : a messsage with statistics about computed motion plans

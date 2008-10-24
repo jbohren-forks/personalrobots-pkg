@@ -32,7 +32,7 @@
 #include <ros/node.h>
 #include "rosthread/mutex.h"
 
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 
 #include <octree.h>
 #include <scan_utils/OctreeMsg.h>
@@ -55,7 +55,7 @@ namespace scan_utils{
 	{
 	private:
 		Octree<char> *mOctree;
-		std_msgs::PointCloudFloat32 mNewCloud;
+		std_msgs::PointCloud mNewCloud;
 		void fullCloudCallback();
 	public:
 		CloudToOctree(float cellSize);

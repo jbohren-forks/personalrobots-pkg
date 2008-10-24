@@ -144,7 +144,7 @@ namespace ros {
       /**
        * @brief Helper method to update the costmap and conduct other book-keeping
        */
-      void updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud);
+      void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
 
       /**
        * @brief Issue zero velocity commands
@@ -175,7 +175,7 @@ namespace ros {
 
       std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
 
-      std_msgs::PointCloudFloat32 pointCloudMsg_; /**< Filled by subscriber with point clouds */
+      std_msgs::PointCloud pointCloudMsg_; /**< Filled by subscriber with point clouds */
 
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
 

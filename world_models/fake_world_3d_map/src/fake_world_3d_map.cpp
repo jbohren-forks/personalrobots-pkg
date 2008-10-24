@@ -69,7 +69,7 @@ Subscribes to (name/type):
 - None
 
 Publishes to (name/type):
-- @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
+- @b "world_3d_map"/PointCloud : point cloud describing the 3D environment
 
 <hr>
 
@@ -83,7 +83,7 @@ Provides (name/type):
 
 #include <ros/node.h> 
 #include <ros/time.h> 
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <random_utils/random_utils.h>
 #include <cstdio>
 
@@ -93,7 +93,7 @@ public:
     
     FakeWorld3DMap(void) : ros::node("world_3d_map")
     {
-	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
+	advertise<std_msgs::PointCloud>("world_3d_map", 1);
 	random_utils::init(&m_rng);
     }
     
@@ -166,7 +166,7 @@ private:
 	//	    for (int j = 0 ; j < 20 ;
     }
     
-    std_msgs::PointCloudFloat32 m_toPublish; 
+    std_msgs::PointCloud m_toPublish; 
     random_utils::rngState      m_rng;
 
 };

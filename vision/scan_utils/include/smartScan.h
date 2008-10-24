@@ -32,8 +32,8 @@
 #ifndef _smartscan_h_
 #define _smartscan_h_
 
-#include <std_msgs/Point3DFloat32.h> //ROS native format for a point cloud
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/Point32.h> //ROS native format for a point cloud
+#include <std_msgs/PointCloud.h>
 #include <dataTypes.h> //my own data types defined in this library; probably just placeholder
 //until ROS gets similar types
 
@@ -98,8 +98,8 @@ namespace scan_utils {
  */
 class SmartScan {
  private:
-	//! "Native" data: an array of 3D vertices stored as ROS Point3DFloat32
-	std_msgs::Point3DFloat32 *mNativePoints;
+	//! "Native" data: an array of 3D vertices stored as ROS Point32
+	std_msgs::Point32 *mNativePoints;
 	//! The number of vertices in the cloud
 	int mNumPoints;
 	//! The location of the scanner itself. Defaults to (0,0,0).
@@ -126,11 +126,11 @@ class SmartScan {
 	void clearData();
 
 	//! Apply the inner transform to a point
-	std_msgs::Point3DFloat32 transformPoint(const std_msgs::Point3DFloat32 &p,
+	std_msgs::Point32 transformPoint(const std_msgs::Point32 &p,
 						libTF::TransformReference &tr) const;
 	//! Return the singular vectors of a Newmat matrix sorted in decreasing order of singular values
-	void singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point3DFloat32 &sv1, 
-			     std_msgs::Point3DFloat32 &sv2, std_msgs::Point3DFloat32 &sv3);
+	void singularVectors(NEWMAT::Matrix *M, int n, std_msgs::Point32 &sv1, 
+			     std_msgs::Point32 &sv2, std_msgs::Point32 &sv3);
  public:
 	//! Empty constructor for a new point cloud that does not hold any data
 	SmartScan();
@@ -138,7 +138,7 @@ class SmartScan {
 	~SmartScan();
 
 	//! Set the native data of the point cloud
-	void setPoints(int numPoints, const std_msgs::Point3DFloat32 *points);
+	void setPoints(int numPoints, const std_msgs::Point32 *points);
 	//! Set the native data as an array of floats; no ROS data type needed
 	void setPoints(int numPoints, const float *points);
 	//! Set scanner position and orientation
@@ -148,10 +148,10 @@ class SmartScan {
 	void getScanner(float &px, float &py, float &pz, float &dx, float &dy, float &dz,
 			float &ux, float &uy, float &uz);
 
-	//! Set the data from a ROS PointCloudFloat32 message.
-	void setFromRosCloud(const std_msgs::PointCloudFloat32 &cloud);
-	//! Returns a PointCloudFloat32 ros msg.
-	std_msgs::PointCloudFloat32 getPointCloud() const;
+	//! Set the data from a ROS PointCloud message.
+	void setFromRosCloud(const std_msgs::PointCloud &cloud);
+	//! Returns a PointCloud ros msg.
+	std_msgs::PointCloud getPointCloud() const;
 
 	//! Clears all the data inside this scan
 	void clear();
@@ -164,7 +164,7 @@ class SmartScan {
 	//! Returns the number of points in the cloud
 	inline int size() const {return mNumPoints;}
 	//! Returns the i-th point in the cloud.
-	inline std_msgs::Point3DFloat32 getPoint(int i) const{
+	inline std_msgs::Point32 getPoint(int i) const{
 		assert( i>=0 && i<mNumPoints);
 		return mNativePoints[i];
 	}
@@ -193,9 +193,9 @@ class SmartScan {
 	//! Crops the point cloud to a 3D bounding box
 	void crop(float x, float y, float z, float dx, float dy, float dz);
 	//! Returns all the points in the scan that are within a given sphere
-	std::vector<std_msgs::Point3DFloat32> *getPointsWithinRadius(float x, float y, float z, float radius);
+	std::vector<std_msgs::Point32> *getPointsWithinRadius(float x, float y, float z, float radius);
 	//! Returns all the points in the scan that are within a given sphere in ros pointcloud format.
-	std_msgs::PointCloudFloat32 *getPointsWithinRadiusPointCloud(float x, float y, float z, float radius);
+	std_msgs::PointCloud *getPointsWithinRadiusPointCloud(float x, float y, float z, float radius);
 	//! Removes outliers - points that have few neighbors
 	void removeOutliers(float radius, int nbrs);
 	//! Removes points whose normals are perpendicular to the direction of the scanner
@@ -203,19 +203,19 @@ class SmartScan {
 	//! Returns the transform that registers this point cloud (computed using ICP).
 	float* ICPTo(SmartScan *target);
 	//! Finds the dominant plane in the point cloud by histograming point normals
-	float normalHistogramPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+	float normalHistogramPlane(std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal,
 				  float radius = 0.01, int nbrs = 5);
 	//! Finds the dominant plane in the point cloud using RANSAC
-	float ransacPlane(std_msgs::Point3DFloat32 &planePoint, std_msgs::Point3DFloat32 &planeNormal,
+	float ransacPlane(std_msgs::Point32 &planePoint, std_msgs::Point32 &planeNormal,
 			 int iterations = 500, float distThresh = 0.02);
 	//! Removes all points that are close to a given plane
-	void removePlane(const std_msgs::Point3DFloat32 &planePoint, 
-			 const std_msgs::Point3DFloat32 &planeNormal, float thresh = 0.02);
+	void removePlane(const std_msgs::Point32 &planePoint, 
+			 const std_msgs::Point32 &planeNormal, float thresh = 0.02);
 	//! Computes the normal of a point by looking at its neighbors
-	std_msgs::Point3DFloat32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
+	std_msgs::Point32 computePointNormal(int id, float radius = 0.01, int nbrs = 5);
 
 	//! Computes the normal of a point by looking at its neighbors
-	std_msgs::Point3DFloat32 computePointNormal(float x, float y, float z, float radius = 0.01, int nbrs = 5);
+	std_msgs::Point32 computePointNormal(float x, float y, float z, float radius = 0.01, int nbrs = 5);
 
 	//! Returns the connected components in this scan, each in its own SmartScan
 	std::vector<SmartScan*> *connectedComponents(float thresh, int minPts = 0);

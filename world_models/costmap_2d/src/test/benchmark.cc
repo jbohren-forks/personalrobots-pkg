@@ -56,7 +56,7 @@ int main(int argc, char** argv){
 		    ROBOT_RADIUS*3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
   for(unsigned int i = 0; i < 100; i++){
-    std_msgs::PointCloudFloat32 cloud;
+    std_msgs::PointCloud cloud;
     cloud.set_pts_size(1000);
     for(unsigned int j = 0; j < 1000; j++){
       unsigned int mx = 100 + (rand() % 100);

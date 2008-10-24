@@ -34,7 +34,7 @@
 
 // our ros messages
 #include <std_msgs/LaserScan.h>
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <pr2_msgs/OccDiff.h>
 #include <std_srvs/StaticMap.h>
 #include <pr2_srvs/TransientObstacles.h>
@@ -199,11 +199,11 @@ void CostMap2DRos::laserReceived() {
       it++)
   {
 
-    std_msgs::PointCloudFloat32 local_cloud;
+    std_msgs::PointCloud local_cloud;
     projector_.projectLaser((*it), local_cloud, LASER_MAX_RANGE);
     
     // Convert to a point cloud in the map frame
-    std_msgs::PointCloudFloat32 global_cloud;
+    std_msgs::PointCloud global_cloud;
     
     try
     {

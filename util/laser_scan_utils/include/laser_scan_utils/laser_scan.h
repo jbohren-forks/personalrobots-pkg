@@ -39,7 +39,7 @@
 #include <newmat10/newmatap.h>
 
 #include "std_msgs/LaserScan.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "std_msgs/PointCloud.h"
 
 /* \mainpage 
@@ -68,8 +68,6 @@ namespace laser_scan{
        * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
       void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
-      ///\todo depricated remove soon
-      void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloudFloat32 & cloud_out, double range_cutoff=-1.0, bool preservative = false)__attribute__((deprecated));
 
       
       /** \brief Return the unit vectors for this configuration

@@ -60,8 +60,8 @@ void ScanListenNode::fullCloudCallback()
 void ScanListenNode::cloudCallback()
 {
 	mMutex.lock();
-	std::vector<std_msgs::Point3DFloat32> line;
-	std::vector<std_msgs::Point3DFloat32> cloud;
+	std::vector<std_msgs::Point32> line;
+	std::vector<std_msgs::Point32> cloud;
 
 	mNewLine.get_pts_vec(line);
 	mCurrentCloud.get_pts_vec(cloud);
@@ -74,12 +74,12 @@ void ScanListenNode::cloudCallback()
 void ScanListenNode::shutterCallback()
 {
 	mMutex.lock();
-	std_msgs::PointCloudFloat32 empty;
+	std_msgs::PointCloud empty;
 	mCurrentCloud = empty;
 	mMutex.unlock();
 }
 
-SmartScan* ScanListenNode::getScan(const std_msgs::PointCloudFloat32 &cloud)
+SmartScan* ScanListenNode::getScan(const std_msgs::PointCloud &cloud)
 {
 	if ( cloud.get_pts_size() == 0 ) {
 		return NULL;

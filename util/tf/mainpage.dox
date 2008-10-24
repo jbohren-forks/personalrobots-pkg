@@ -34,7 +34,7 @@ simple API for broadcasting coordinate frame transforms.
 
 - Analogous ROS messages in std_msgs
 
-- One special message supported PointCloudFloat32 (Everything else defaults to 64 bit.)
+- One special message supported PointCloud (Everything else defaults to 64 bit.)
 
 - Time represented by ros::Time and ros::Duration in ros/time.h in roscpp 
 

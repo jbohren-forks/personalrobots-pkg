@@ -75,13 +75,13 @@ specify '-' for the robot_model argument.
 
 Subscribes to (name/type):
 - @b scan/LaserScan : scan data received from a laser
-- @b cloud/PointCloudFloat32 : cloud data 
+- @b cloud/PointCloud : cloud data 
 
 Additional subscriptions due to inheritance from NodeRobotModel:
 - @b localizedpose/RobotBase2DOdom : localized position of the robot base
 
 Publishes to (name/type):
-- @b "world_3d_map"/PointCloudFloat32 : point cloud describing the 3D environment
+- @b "world_3d_map"/PointCloud : point cloud describing the 3D environment
 
 <hr>
 
@@ -105,7 +105,7 @@ Provides (name/type):
 #include <rosthread/member_thread.h>
 #include <rosthread/mutex.h>
 
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
 
 #include <collision_space/util.h>
@@ -125,7 +125,7 @@ public:
     World3DMap(const std::string &robot_model) : ros::node("world_3d_map"),
 						 planning_node_util::NodeRobotModel(dynamic_cast<ros::node*>(this), robot_model)
     {
-	advertise<std_msgs::PointCloudFloat32>("world_3d_map", 1);
+	advertise<std_msgs::PointCloud>("world_3d_map", 1);
 
 	param("world_3d_map/max_publish_frequency", m_maxPublishFrequency, 20.0);
 	param("world_3d_map/retain_pointcloud_duration", m_retainPointcloudDuration, 0.5);
@@ -294,7 +294,7 @@ private:
       }
 	
       // Assemble a point cloud, in the laser's frame
-      std_msgs::PointCloudFloat32 local_cloud;
+      std_msgs::PointCloud local_cloud;
       const double LASER_MAX_RANGE = 4.0;
       m_projector.projectLaser(m_baseScanMsg, local_cloud, LASER_MAX_RANGE);
 
@@ -344,7 +344,7 @@ private:
 		m_worldDataMutex.lock();
 		if (m_active && m_currentWorld.size() > 0)
 		{
-		    std_msgs::PointCloudFloat32 toPublish;
+		    std_msgs::PointCloud toPublish;
 		    toPublish.header = m_currentWorld.back()->header;
 		    
 		    unsigned int      npts  = 0;
@@ -444,13 +444,13 @@ private:
 
 	while (!m_currentWorld.empty() && (time - m_currentWorld.front()->header.stamp).to_double() > m_retainPointcloudDuration)
 	{
-	    std_msgs::PointCloudFloat32* old = m_currentWorld.front();
+	    std_msgs::PointCloud* old = m_currentWorld.front();
 	    m_currentWorld.pop_front();
 	    delete old;
 	}
 
 	/* add new data */
-	std_msgs::PointCloudFloat32 *newData = runFilters(m_toProcess);
+	std_msgs::PointCloud *newData = runFilters(m_toProcess);
 	if (newData)
 	{
 	    if (newData->get_pts_size() == 0)
@@ -471,13 +471,13 @@ private:
 	m_worldDataMutex.unlock();
     }
     
-    std_msgs::PointCloudFloat32* runFilters(const std_msgs::PointCloudFloat32 &cloud)
+    std_msgs::PointCloud* runFilters(const std_msgs::PointCloud &cloud)
     {
-	std_msgs::PointCloudFloat32 *cloudF = filter0(cloud, m_retainPointcloudFraction);
+	std_msgs::PointCloud *cloudF = filter0(cloud, m_retainPointcloudFraction);
 	
 	if (cloudF)
 	{
-	    std_msgs::PointCloudFloat32 *temp = filter1(*cloudF);
+	    std_msgs::PointCloud *temp = filter1(*cloudF);
 	    delete cloudF;
 	    cloudF = temp;
 	}
@@ -486,24 +486,24 @@ private:
     }
     
   /*
-  bool notInGroundPlane(const Point3DFloat32& point){
+  bool notInGroundPlane(const Point32& point){
 
   }
 
-  bool notInRobot(const Point3DFloat32& point){
+  bool notInRobot(const Point32& point){
 
   }
 
-  bool inWorkArea(const Point3DFloat32& point){
+  bool inWorkArea(const Point32& point){
 
   }
   */
     /** Remove invalid floating point values and strip channel
      *  iformation.  Also keep a certain ratio of the cloud information
      *  only. Works with pointclouds in robot or map frames */
-    std_msgs::PointCloudFloat32* filter0(const std_msgs::PointCloudFloat32 &cloud, double frac = 1.0)
+    std_msgs::PointCloud* filter0(const std_msgs::PointCloud &cloud, double frac = 1.0)
     {
-	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
+	std_msgs::PointCloud *copy = new std_msgs::PointCloud();
 	copy->header = cloud.header;
 
 	unsigned int n = cloud.get_pts_size();
@@ -523,9 +523,9 @@ private:
     /** Remove points from the cloud if the robot sees parts of
 	itself. Works for pointclouds in the robot frame. \todo make the
 	comment true, separate function in 2.*/
-    std_msgs::PointCloudFloat32* filter1(const std_msgs::PointCloudFloat32 &cloud)
+    std_msgs::PointCloud* filter1(const std_msgs::PointCloud &cloud)
     {
-	std_msgs::PointCloudFloat32 *copy = new std_msgs::PointCloudFloat32();
+	std_msgs::PointCloud *copy = new std_msgs::PointCloud();
 	copy->header = cloud.header;
 	
 	for (int i = m_selfSeeParts.size() - 1 ; i >= 0 ; --i)
@@ -559,7 +559,7 @@ private:
     }
     
     std::vector<RobotPart>                   m_selfSeeParts;
-    std::deque<std_msgs::PointCloudFloat32*> m_currentWorld;// Pointers to saved clouds
+    std::deque<std_msgs::PointCloud*> m_currentWorld;// Pointers to saved clouds
 
     
     double                           m_maxPublishFrequency;
@@ -569,9 +569,9 @@ private:
     int                              m_verbose;
     
     std_msgs::LaserScan              m_inputScan;  //Buffer for recieving scan
-    std_msgs::PointCloudFloat32      m_inputCloud; //Buffer for recieving cloud
+    std_msgs::PointCloud      m_inputCloud; //Buffer for recieving cloud
     std_msgs::LaserScan              m_baseScanMsg;  //Buffer for recieving base scan
-    std_msgs::PointCloudFloat32      m_toProcess; 
+    std_msgs::PointCloud      m_toProcess; 
     
     pthread_t                       *m_publishingThread;
     ros::thread::mutex               m_worldDataMutex;

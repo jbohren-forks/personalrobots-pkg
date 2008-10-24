@@ -35,7 +35,7 @@
 
 #include <MoveBase.hh>
 #include <std_msgs/BaseVel.h>
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
@@ -281,11 +281,11 @@ namespace ros {
       }
 
       // Assemble a point cloud, in the laser's frame
-      std_msgs::PointCloudFloat32 local_cloud;
+      std_msgs::PointCloud local_cloud;
       projector_.projectLaser(laserScanMsg_, local_cloud, laserMaxRange_);
     
       // Convert to a point cloud in the map frame
-      std_msgs::PointCloudFloat32 global_cloud;
+      std_msgs::PointCloud global_cloud;
 
       try
 	{
@@ -642,7 +642,7 @@ namespace ros {
       stopRobot();
     }
 
-    void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
+    void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud){
       //Avoids laser race conditions.
       if (!isInitialized()) {
 	return;

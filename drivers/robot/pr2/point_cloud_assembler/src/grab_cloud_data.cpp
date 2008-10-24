@@ -40,7 +40,7 @@
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Messages
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 
 
 using namespace std_msgs ;
@@ -59,7 +59,7 @@ public:
 
   GrabCloudData() : ros::node("grab_cloud_data")
   {
-    advertise<PointCloudFloat32> ("full_cloud", 1) ;
+    advertise<PointCloud> ("full_cloud", 1) ;
   }
   
   ~GrabCloudData()

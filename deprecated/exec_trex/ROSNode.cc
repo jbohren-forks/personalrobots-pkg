@@ -872,11 +872,11 @@ void ROSNode::leftMoveArmStateReceived()
 
 
     // Assemble a point cloud, in the laser's frame
-    std_msgs::PointCloudFloat32 local_cloud;
+    std_msgs::PointCloud local_cloud;
     projector_.projectLaser(*it, local_cloud, laser_maxrange);
     
     // Convert to a point cloud in the map frame
-    std_msgs::PointCloudFloat32 global_cloud;
+    std_msgs::PointCloud global_cloud;
 
     try
     {

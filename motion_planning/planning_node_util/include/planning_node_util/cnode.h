@@ -35,7 +35,7 @@
 /** \author Ioan Sucan */
 
 #include <planning_node_util/knode.h>
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <collision_space/environmentODE.h>
 
 /** Main namespace */
@@ -52,7 +52,7 @@ namespace planning_node_util
        @section topic ROS topics
        
        Subscribes to (name/type):
-       - @b world_3d_map/PointCloudFloat32 : point cloud with data describing the 3D environment
+       - @b world_3d_map/PointCloud : point cloud with data describing the 3D environment
        
        Additional subscriptions due to inheritance from NodeRobotModel:
        - @b localizedpose/RobotBase2DOdom : localized position of the robot base
@@ -139,7 +139,7 @@ namespace planning_node_util
 	
     protected:
 	
-	std_msgs::PointCloudFloat32           m_worldCloud;
+	std_msgs::PointCloud           m_worldCloud;
 	collision_space::EnvironmentModel    *m_collisionSpace;
 	double                                m_sphereSize;
 	

@@ -100,7 +100,7 @@ TEST(costmap, test12){
 
 
   // Lay out 3 obstacles in a line - along the diagonal, separated by a cell.
-  std_msgs::PointCloudFloat32 cloud;
+  std_msgs::PointCloud cloud;
   cloud.set_pts_size(3);
   cloud.pts[0].x = 3;
   cloud.pts[0].y = 3;
@@ -126,7 +126,7 @@ TEST(costmap, test0){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
   // Add a point cloud and verify its insertion. There should be only one new one
-  std_msgs::PointCloudFloat32 cloud;
+  std_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 0;
   cloud.pts[0].y = 0;
@@ -216,7 +216,7 @@ TEST(costmap, test3){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
 
   // Add a point cloud and verify its insertion. There should be only one new one
-  std_msgs::PointCloudFloat32 cloud;
+  std_msgs::PointCloud cloud;
   cloud.set_pts_size(3);
   cloud.pts[0].x = 0;
   cloud.pts[0].y = 0;
@@ -259,7 +259,7 @@ TEST(costmap, test4){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
 
   // A point cloud with one point that falls within an existing obstacle
-  std_msgs::PointCloudFloat32 cloud;
+  std_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 7;
   cloud.pts[0].y = 2;
@@ -281,7 +281,7 @@ TEST(costmap, test5){
   std::vector<unsigned int> updates;
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(2);
   c0.pts[0].x = 0;
   c0.pts[0].y = 5;
@@ -295,7 +295,7 @@ TEST(costmap, test5){
   ASSERT_EQ(map[map.WC_IND(1, 5)], CostMap2D::LETHAL_OBSTACLE);
 
   // Pet the watchdog with 1 point only
-  std_msgs::PointCloudFloat32 c1;
+  std_msgs::PointCloud c1;
   c1.set_pts_size(1);
   c1.pts[0].x = 0;
   c1.pts[0].y = 5;
@@ -318,7 +318,7 @@ TEST(costmap, test6){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z);
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(2);
   c0.pts[0].x = 0;
   c0.pts[0].y = 5;
@@ -367,7 +367,7 @@ TEST(costmap, test7){
 
   // Set an obstacle at the origin and observe insertions for it and its neighbors
   std::vector<unsigned int> updates;
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 0;
   c0.pts[0].y = 0;
@@ -378,7 +378,7 @@ TEST(costmap, test7){
   ASSERT_EQ(updates.size(), 3);
 
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
-  std_msgs::PointCloudFloat32 c1;
+  std_msgs::PointCloud c1;
   c1.set_pts_size(1);
   c1.pts[0].x = 2;
   c1.pts[0].y = 0;
@@ -396,7 +396,7 @@ TEST(costmap, test7){
   map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
-  std_msgs::PointCloudFloat32 c2;
+  std_msgs::PointCloud c2;
   c2.set_pts_size(1);
   c2.pts[0].x = 1;
   c2.pts[0].y = 9;
@@ -407,7 +407,7 @@ TEST(costmap, test7){
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
-  std_msgs::PointCloudFloat32 c3;
+  std_msgs::PointCloud c3;
   c3.set_pts_size(1);
   c3.pts[0].x = 0;
   c3.pts[0].y = 9;
@@ -426,7 +426,7 @@ TEST(costmap, test8){
   std::vector<unsigned int> updates;
 
   // Creat a small L-Shape all at once
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(3);
   c0.pts[0].x = 1;
   c0.pts[0].y = 1;
@@ -463,7 +463,7 @@ TEST(costmap, test9){
   ASSERT_EQ(ids.size(), 0);
 
   // Add an obstacle at 5,5
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 5;
   c0.pts[0].y = 5;
@@ -532,7 +532,7 @@ TEST(costmap, test11){
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free.
-  std_msgs::PointCloudFloat32 c0;
+  std_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
   c0.pts[0].y = 9.5;
@@ -568,7 +568,7 @@ TEST(costmap, test11){
 
   // Stale out all dynamic obstacles - then try again with point that is beyond free space projection
   map.removeStaleObstacles(WINDOW_LENGTH * 3, updates);
-  std_msgs::PointCloudFloat32 c1;
+  std_msgs::PointCloud c1;
   c1.set_pts_size(1);
   c1.pts[0].x = 9.5;
   c1.pts[0].y = 9.5;

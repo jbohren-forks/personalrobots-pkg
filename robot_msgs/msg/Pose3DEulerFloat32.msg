@@ -1,3 +1,3 @@
 Header header
-std_msgs/Point3DFloat32 position
+std_msgs/Point32 position
 std_msgs/EulerAnglesFloat32 orientation

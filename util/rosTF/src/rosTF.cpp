@@ -51,7 +51,7 @@ rosTFClient::~rosTFClient()
 
 };
 
-void rosTFClient::transformPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::PointCloudFloat32 & cloudIn)
+void rosTFClient::transformPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::PointCloud & cloudIn)
 {
   NEWMAT::Matrix transform = TransformReference::getMatrix(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp.sec * 1000000000ULL + cloudIn.header.stamp.nsec);
 
@@ -93,16 +93,16 @@ void rosTFClient::transformPointCloud(const std::string & target_frame, std_msgs
     };
 }
 
-std_msgs::PointCloudFloat32 rosTFClient::transformPointCloud(const std::string & target_frame,  const std_msgs::PointCloudFloat32 & cloudIn)
+std_msgs::PointCloud rosTFClient::transformPointCloud(const std::string & target_frame,  const std_msgs::PointCloud & cloudIn)
 {
-    std_msgs::PointCloudFloat32 cloudOut;
+    std_msgs::PointCloud cloudOut;
     transformPointCloud(target_frame, cloudOut, cloudIn);
     return cloudOut;    
 };
 
 
 
-void rosTFClient::transformLaserScanToPointCloud(const std::string & target_frame, std_msgs::PointCloudFloat32 & cloudOut, const std_msgs::LaserScan & scanIn)
+void rosTFClient::transformLaserScanToPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn)
 {
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
@@ -120,7 +120,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
   pointIn.frame = scanIn.header.frame_id;
   
   ///\todo this can be optimized
-  std_msgs::PointCloudFloat32 intermediate; //optimize out
+  std_msgs::PointCloud intermediate; //optimize out
   projector_.projectLaser(scanIn, intermediate, -1.0, true);
   
   unsigned int count = 0;  

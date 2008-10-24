@@ -78,9 +78,9 @@ Subscribes to (name/type):
 - @b "mot"/<a href="../../std_msgs/html/classstd__msgs_1_1Actuator.html">Actuator</a> : encoder data from the tilting stage
 
 Publishes to (name / type):
-- @b "cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
+- @b "cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloud.html">PointCloud</a> : Incremental cloud data.  Each scan from the laser is converted into a PointCloud.
 - @b "shutter"/<a href="../../std_msgs/html/classstd__msgs_1_1Empty.html">Empty</a> : An empty message is sent to indicate a full sweep has occured
-- @b "full_cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloudFloat32.html">PointCloudFloat32</a> : A full point cloud containing all of the points between the last two shutters
+- @b "full_cloud"/<a href="../../std_msgs/html/classstd__msgs_1_1PointCloud.html">PointCloud</a> : A full point cloud containing all of the points between the last two shutters
 - @b "laser_image"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserImage.html">LaserImage</a> : A representation of the full point cloud as a pair of pseudo-images
 - @b "image"/<a href="../../std_msgs/html/classstd__msgs_1_1Image.html">Image</a> : The intensity image from the LaserImage
 - @b "mot_cmd"/<a href="../../std_msgs/html/classstd__msgs_1_1Actuator.html">Actuator</a> : The commanded position of the tilting stage
@@ -102,7 +102,7 @@ Reads the following parameters from the parameter server
 #include "rosTF/rosTF.h"
 #include "std_msgs/Empty.h"
 #include "std_msgs/LaserScan.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "std_msgs/LaserImage.h"
 #include "std_msgs/Actuator.h"
 
@@ -120,7 +120,7 @@ public:
   rosTFClient tf;
   laser_scan::LaserProjection projector;
 
-  PointCloudFloat32 cloud;
+  PointCloud cloud;
   Empty shutter;
   Actuator cmd;
 
@@ -128,7 +128,7 @@ public:
   Actuator encoder;
   LaserImage image;
 
-  PointCloudFloat32 full_cloud;
+  PointCloud full_cloud;
   int full_cloud_cnt;
 
   int num_scans;
@@ -155,9 +155,9 @@ public:
   Tilting_Laser() : ros::node("tilting_laser"), tf(*this), full_cloud_cnt(0), sizes_ready(false), img_ind(-1), img_dir(1),last_ang(1000000), rate_err_down(0.0), rate_err_up(0.0), accum_angle(0.0), scan_received(false), count(0)
   {
     
-    advertise<PointCloudFloat32>("cloud", 1);
+    advertise<PointCloud>("cloud", 1);
     advertise<Empty>("shutter", 1);
-    advertise<PointCloudFloat32>("full_cloud", 1);
+    advertise<PointCloud>("full_cloud", 1);
     advertise<LaserImage>("laser_image", 1);
     advertise<Image>("image", 1);
     advertise<Actuator>("mot_cmd", 100);
@@ -276,7 +276,7 @@ public:
 
       int cnt = 0;
 
-      std_msgs::PointCloudFloat32 temp_cloud;
+      std_msgs::PointCloud temp_cloud;
       projector.projectLaser(scans, temp_cloud);
       cloud = tf.transformPointCloud("FRAMEID_TILT_BASE", temp_cloud);
       

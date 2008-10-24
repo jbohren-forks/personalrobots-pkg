@@ -37,7 +37,7 @@
 #include "ros/node.h"
 #include "std_msgs/Image.h"
 #include "std_msgs/ImageArray.h"
-#include "std_msgs/PointCloudFloat32.h"
+#include "std_msgs/PointCloud.h"
 #include "std_msgs/Empty.h"
 #include "std_msgs/String.h"
 
@@ -78,7 +78,7 @@ class Dc1394CamServer : public ros::node
 public:
 
   std_msgs::ImageArray img_;
-  std_msgs::PointCloudFloat32 cloud_;
+  std_msgs::PointCloud cloud_;
 
   ros::Time next_time_;
 
@@ -386,7 +386,7 @@ public:
       {
         advertise<std_msgs::String>(cd.name + string("/cal_params"), 1);
         advertise<std_msgs::ImageArray>(cd.name + string("/images"), 1);
-        advertise<std_msgs::PointCloudFloat32>(cd.name + string("/cloud"), 1);
+        advertise<std_msgs::PointCloud>(cd.name + string("/cloud"), 1);
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"), 1);
         advertise<std_msgs::Image>(cd.name + string("/images"), 1);

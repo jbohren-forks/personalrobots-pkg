@@ -32,7 +32,7 @@ public:
   Dorylus d_;
 
   std_msgs::String cal_params_msg_;
-  std_msgs::PointCloudFloat32 ptcld_msg_;
+  std_msgs::PointCloud ptcld_msg_;
   SmartScan ss_;
   std_msgs::ImageArray images_msg_;
   IplImage *img_, *vis_;
@@ -174,7 +174,7 @@ public:
     if(randId==-1)
       randId = rand() % ss_.size();
 
-    std_msgs::Point3DFloat32 pt = ss_.getPoint(randId);
+    std_msgs::Point32 pt = ss_.getPoint(randId);
     float x = pt.x;
     float y = pt.y;
     float z = pt.z;

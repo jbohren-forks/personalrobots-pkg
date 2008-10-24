@@ -1,5 +1,5 @@
-#include <std_msgs/PointCloudFloat32.h>
-#include <std_msgs/Point3DFloat32.h>
+#include <std_msgs/PointCloud.h>
+#include <std_msgs/Point32.h>
 #include <std_msgs/VisualizationMarker.h>
 #include <ros/node.h>
 #include <iostream>

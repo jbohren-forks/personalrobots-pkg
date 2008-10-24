@@ -6,7 +6,7 @@
 
 #include "grasp_learner_types.h"
 #include "grasp_learner/OctreeLearningMsg.h"
-#include "std_msgs/Point3DFloat32.h"
+#include "std_msgs/Point32.h"
 
 #include <fstream>
 #include <vector>

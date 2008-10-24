@@ -35,7 +35,7 @@
 #include <ros/node.h>
 #include "rosthread/mutex.h"
 
-#include <std_msgs/PointCloudFloat32.h>
+#include <std_msgs/PointCloud.h>
 #include <std_msgs/Empty.h>
 
 /*! \file
@@ -55,8 +55,8 @@ class SmartScan;
 class ScanListenNode : public ros::node
 {
  private:
-	std_msgs::PointCloudFloat32 mNewCloud,mLastCloud;
-	std_msgs::PointCloudFloat32 mNewLine,mCurrentCloud;
+	std_msgs::PointCloud mNewCloud,mLastCloud;
+	std_msgs::PointCloud mNewLine,mCurrentCloud;
 	std_msgs::Empty mEmptyMsg;
 
 	ros::thread::mutex mMutex;
@@ -65,7 +65,7 @@ class ScanListenNode : public ros::node
 	void cloudCallback();
 	void shutterCallback();
 
-	SmartScan* getScan(const std_msgs::PointCloudFloat32 &cloud);
+	SmartScan* getScan(const std_msgs::PointCloud &cloud);
 
  public:
 	ScanListenNode();
