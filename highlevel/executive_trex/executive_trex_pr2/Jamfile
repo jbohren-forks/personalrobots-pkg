@@ -1,5 +1,7 @@
 SubDir executive_trex_pr2 ;
 
+SEARCH_SOURCE = ./nddl ../../../3rdparty/trex/TREX/agent/base ../../../3rdparty/trex/PLASMA/src/PLASMA/NDDL/base ;
+
 if ! $(executive_trex_pr2_READY) {
 
  # Input files
