@@ -1,6 +1,7 @@
 ifdown eth0
 rmmod e1000
-insmod `rospack find rtnet`/rtnet/modules/rtnet.ko
-insmod `rospack find rtnet`/rtnet/modules/rtpacket.ko
-insmod `rospack find rtnet`/rtnet/modules/rt_e1000.ko
-`rospack find rtnet`/rtnet/sbin/rtifconfig rteth0 up
+insmod /usr/local/rtnet/modules/rtnet.ko
+insmod /usr/local/rtnet/modules/rtpacket.ko
+insmod /usr/local/rtnet/modules/rt_e1000.ko
+/usr/local/rtnet/sbin/rtifconfig rteth0 up
+/usr/local/rtnet/sbin/rtifconfig rteth0 
