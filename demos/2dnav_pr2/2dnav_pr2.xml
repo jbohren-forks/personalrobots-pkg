@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
-    <machine name="base_laser_machine" address="prf2" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf2" />
-    <machine name="tilt_laser_machine" address="prf3" ros-root="/robot/eitan/ros/ros" ros-pkg-path="/robot/eitan/ros/ros-pkg" ros-ip="prf3" default="true" />
+    <machine name="base_laser_machine" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" ros-ip="prg2" />
+    <machine name="tilt_laser_machine" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" ros-ip="prg3" default="true" />
     <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan" machine="base_laser_machine">
       <param name="port" type="string" value="/dev/ttyACM0" />
       <param name="frameid" type="string" value="base_laser" />
