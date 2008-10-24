@@ -45,7 +45,7 @@ rospack_add_executable(trex_fast ${TREX_FILES})
 target_link_libraries(trex_fast Utils_o TREX_o)
 rospack_add_compile_flags(trex_fast "-O3 -DEUROPA_FAST")
 
-rospack_add_rostest(test/test.wpc.0.xml) 
+rospack_add_rostest_future(test/test.wpc.0.xml) 
 #rospack_add_rostest(test/test.wpc.1.xml) 
 #rospack_add_rostest(test/test.arm.0.xml) 
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)
