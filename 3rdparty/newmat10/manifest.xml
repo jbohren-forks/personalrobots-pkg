@@ -15,5 +15,7 @@ This ROS package also supplies a small patch which enables namespaces and stream
   <cpp cflags="-I${prefix}/newmat" lflags="-L${prefix}/newmat/newmat10 -lnewmat" />
         <doxymaker external="http://www.robertnz.net/nm_intro.htm"/>
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 

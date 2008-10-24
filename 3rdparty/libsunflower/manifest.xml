@@ -16,4 +16,6 @@
   </export>
   <depend package="estar"/>
 <versioncontrol type="svn" url="https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/sunflower"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

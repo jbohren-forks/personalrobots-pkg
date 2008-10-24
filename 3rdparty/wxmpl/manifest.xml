@@ -14,5 +14,7 @@ many of matplotlib's figures and features as possible.
 <export>
   <doxymaker external="http://agni.phys.iit.edu/~kmcivor/wxmpl/documentation/reference/" />
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 

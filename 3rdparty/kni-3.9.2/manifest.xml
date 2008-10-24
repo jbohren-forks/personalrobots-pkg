@@ -8,4 +8,6 @@
     <cpp cflags="-I${prefix}/KNI_3.9.2/include" lflags="-L${prefix}/KNI_3.9.2/lib/linux -lKNI_LM -lKNI_InvKin -lKNIBase"/>
         <doxymaker external="http://www.neuronics.ch"/>
   </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

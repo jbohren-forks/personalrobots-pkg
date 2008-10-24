@@ -12,6 +12,8 @@ This package contains Cg, for Nvidia Cg.
   <cpp lflags="-Wl,-rpath,${prefix}/Cg/lib -L${prefix}/Cg/lib -lCg" cflags="-I${prefix}/Cg/include/Cg"/>
   <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 
 

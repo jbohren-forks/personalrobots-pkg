@@ -18,5 +18,7 @@ I have patched the 1.0.0 release of OpenCV a tiny bit so it will happily compile
   <doxymaker external="http://opencvlibrary.sourceforge.net/" />
   <python path="${prefix}/opencv/lib/python2.5/site-packages/" />
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 

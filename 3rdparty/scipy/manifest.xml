@@ -16,5 +16,7 @@
   <doxymaker external="http://numpy.scipy.org/#NumPy" />
 -->
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 

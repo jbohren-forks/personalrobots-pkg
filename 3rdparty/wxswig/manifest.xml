@@ -14,5 +14,7 @@ http://wxpython.wxcommunity.com/tools/
   <swig flags="-c++ -Wall -python -modern -new_repr -keyword -fastdispatch -fvirtual -fastinit -fastunpack `wx-config --cppflags` -DSWIG_TYPE_TABLE=_wxPython_table -DWXP_USE_THREAD=1"/>
 </export>
 <sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 

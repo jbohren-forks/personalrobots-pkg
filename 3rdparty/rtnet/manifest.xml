@@ -11,6 +11,8 @@ This package contains the RTnet real-time networking stack.
 <export>
   <doxymaker external="http://www.rts.uni-hannover.de/rtnet/doc.html" />
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 
 

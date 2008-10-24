@@ -17,4 +17,6 @@
   <depend package="boost"/>
 <!--   <depend package="std_msgs"/> -->
 <!--   <depend package="std_srvs"/> -->
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

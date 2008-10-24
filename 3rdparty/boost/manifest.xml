@@ -11,4 +11,6 @@
     <cpp cflags="-I${prefix}/boost_1_36_0"/>
     <doxymaker external="http://www.boost.org/doc/libs/1_36_0"/>
   </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>

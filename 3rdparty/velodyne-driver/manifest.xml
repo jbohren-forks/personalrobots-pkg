@@ -9,5 +9,7 @@ A C++ driver to provide an interface to the Velodyne HD-64E Lidar
   <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/velodyne-driver/lib -lvelodyne-driver" cflags="-I${prefix}/velodyne-driver/include"/>
   <doxymaker external="http://velodyne-driver.sourceforge.net"/>
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
 </package>
 
