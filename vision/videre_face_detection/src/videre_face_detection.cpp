@@ -1,3 +1,41 @@
+/*********************************************************************
+* A ros node to run face detection and other people-related functions with images from the videre cameras.
+*
+**********************************************************************
+*
+* Software License Agreement (BSD License)
+* 
+*  Copyright (c) 2008, Caroline Pantofaru
+*  All rights reserved.
+* 
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+* 
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+* 
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
 #include <stdio.h>
 #include <iostream>
 
@@ -13,11 +51,9 @@
 
 #include "people.h"
 
-//typedef signed char schar;
 using namespace std;
-//using namespace cv::willow;
 
-// VidereFaceDetector - Face detection in the videre cams. A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
+// VidereFaceDetector - Face detection using the videre cams. A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
 
 class VidereFaceDetector: public ros::node {
 public:
@@ -86,10 +122,6 @@ public:
     cvReleaseImage(&cv_image_disp_);
     cvReleaseImage(&cv_image_left_cpy_);
     cvReleaseImage(&cv_image_disp_cpy_);
-    //    cvReleaseImage(&cv_image_gray_);
-    
-    //  cvReleaseMemStorage( &storage_ );
-    //cvReleaseHaarClassifierCascade(&cascade_);
 
     cvDestroyWindow("Face Detection");
 
@@ -238,10 +270,7 @@ int main(int argc, char **argv)
   //char haar_filename[] = "./cascades/haarcascade_profileface.xml";
   //char haar_filename[] = "./cascades/haarcascade_upperbody.xml";
   VidereFaceDetector fd(haar_filename, use_depth);
-  //if (!fd.cascade_) {
-  //  ros::fini();
-  //  return 1;
-  //}
+ 
   fd.spin();
 
 
