@@ -27,9 +27,6 @@ int RandomizedTree::getIndex(IplImage* patch) const
     index = 2*index + 1 + child_offset;
   }
   return index - nodes_.size();
-  //int result = index - nodes_.size();
-  //printf("%i ", result);
-  //return result;
 }
 
 inline float* RandomizedTree::getPosteriorByIndex(int index)

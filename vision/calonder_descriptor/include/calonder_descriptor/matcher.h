@@ -5,6 +5,7 @@
 #include <cv.h>
 #include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>
+#include <limits>
 #include <vector>
 #include <utility>
 
@@ -12,26 +13,13 @@ namespace ublas = boost::numeric::ublas;
 
 namespace features {
 
-// TODO: when writing more sophisticated matcher(s), figure out what
-//       common interface should really look like
 template < typename Signature, typename Data >
 class BruteForceMatcher
 {
 public:
-  // TODO: change to some reasonable value, or should we have this at all?
-  static const float DEFAULT_THRESHOLD = 100.0f;
-  
-  explicit BruteForceMatcher(float threshold = DEFAULT_THRESHOLD);
-  /*
-  explicit BruteForceMatcher(std::vector< Signature > const& signatures,
-                             std::vector< Data > const& data,
-                             float threshold = DEFAULT_THRESHOLD);
-  */
-
-  //void assignSignatures(std::vector< Signature > &signatures);
+  BruteForceMatcher();
   
   void addSignature(Signature const& signature, Data const& data);
-  //void addSignatures(std::vector< Signature > const& signatures);
 
   Signature& getSignature(int index);
   const Signature& getSignature(int index) const;
@@ -47,6 +35,8 @@ public:
   int findMatches(Signature const& signature, float *d1, int *second,
                   float *d2) const;
 
+  // TODO: restore threshold functionality if useful. May depend on #trees.
+  
   // FIXME: for testing/debugging only
   const std::vector<Signature>& signatures() { return signatures_; }
 
@@ -58,24 +48,9 @@ private:
 
 template < typename Signature, typename Data >
 inline
-BruteForceMatcher<Signature, Data>::BruteForceMatcher(float threshold)
-  : threshold_(threshold)
+BruteForceMatcher<Signature, Data>::BruteForceMatcher()
+  : threshold_(std::numeric_limits<float>::max())
 {}
-
-/*
-template < typename Data >
-inline
-BruteForceMatcher::BruteForceMatcher(std::vector< Signature > const& signatures,
-                                     float threshold)
-  : signatures_(signatures), threshold_(threshold)
-{}
-
-inline
-void BruteForceMatcher::assignSignatures(std::vector< Signature > &signatures)
-{
-  signatures_.swap(signatures);
-}
-*/
 
 template < typename Signature, typename Data >
 inline
@@ -85,14 +60,6 @@ void BruteForceMatcher<Signature, Data>::addSignature(Signature const& signature
   signatures_.push_back(signature);
   data_.push_back(data);
 }
-
-/*
-inline
-void BruteForceMatcher::addSignatures(std::vector< Signature > const& new_sigs)
-{
-  signatures_.insert(signatures_.end(), new_sigs.begin(), new_sigs.end());
-}
-*/
 
 template < typename Signature, typename Data >
 inline

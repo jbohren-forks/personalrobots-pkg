@@ -99,7 +99,6 @@ cv::WImageView3_b extractPatch3(cv::WImageView3_b const& image, PointT pt)
                       RandomizedTree::PATCH_SIZE, RandomizedTree::PATCH_SIZE);
 }
 
-// TODO: could trim off a byte or two if needed
 // TODO: use single offset to pixel value? (need to know widthstep)
 struct RTreeNode
 {

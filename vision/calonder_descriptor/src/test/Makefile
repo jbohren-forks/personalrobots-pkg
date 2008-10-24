@@ -17,6 +17,9 @@ LDFLAGS += -L$(CALONDER)/lib -lcalonder
 STAR_DIR = $(shell rospack find star_detector)
 CFLAGS += -I/usr/include -I$(STAR_DIR)/include -I$(STAR_DIR)/src/test
 LDFLAGS += -L$(STAR_DIR)/lib -lstarfeature
+# Google CPU profiler
+CFLAGS += -I/usr/local/include
+LDFLAGS += -L/usr/local/lib -lprofiler
 # GSL
 #CFLAGS += -DHAVE_GSL
 #LDFLAGS += -L/usr/lib -lgsl -lgslcblas
@@ -24,19 +27,22 @@ LDFLAGS += -L$(STAR_DIR)/lib -lstarfeature
 CFLAGS += -I$(SIFT_ROOT)
 LDFLAGS += -L$(SIFT_ROOT)/lib -lsift
 # Optimization settings
-CFLAGS += -O3 -DNDEBUG
+CFLAGS += -DNDEBUG
+#CFLAGS += -O0
+#CFLAGS += -O1
+CFLAGS += -O2
+#CFLAGS += -O3
 #CFLAGS += -march=native
 #CFLAGS += -mfpmath=sse
 #CFLAGS += -ffast-math
 #CFLAGS += -fomit-frame-pointer
 #CFLAGS += -fno-rtti
-#CFLAGS += -O0
 
 SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAMS = baseset_test recognition_test show_base_set patch_test
 PROGRAMS += match_benchmark
-#PROGRAMS += matcher_test rtree_test classifier_test write_posteriors
+#PROGRAMS += matcher_test sig_profile rtree_test classifier_test write_posteriors
 
 all: $(PROGRAMS)
 

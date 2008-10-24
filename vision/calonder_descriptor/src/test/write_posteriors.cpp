@@ -1,5 +1,6 @@
 #include "calonder_descriptor/rtree_classifier.h"
 #include <fstream>
+#include <cstdio>
 #include <cmath>
 #include <boost/foreach.hpp>
 
@@ -13,6 +14,7 @@ int main( int argc, char** argv )
   
   RTreeClassifier classifier;
   classifier.read(argv[1]);
+  float max_probability = 0;
   
   BOOST_FOREACH( RandomizedTree &tree, classifier.trees_ ) {
     BOOST_FOREACH( float p, tree.posteriors_ ) {
@@ -24,6 +26,8 @@ int main( int argc, char** argv )
           bin = LAST_BIN;
         bin_counts[bin]++;
       }
+
+      if (p > max_probability) max_probability = p;
     }
   }
 
@@ -32,6 +36,8 @@ int main( int argc, char** argv )
     file << i << ' ' << bin_counts[i] << std::endl;
   }
   file.close();
+
+  printf("Max probability: %f\n", max_probability);
   
   return 0;
 }

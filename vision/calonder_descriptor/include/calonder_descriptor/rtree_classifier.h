@@ -27,7 +27,7 @@ public:
              int depth = RandomizedTree::DEFAULT_DEPTH,
              int views = RandomizedTree::DEFAULT_VIEWS);
 
-  // TODO: think about reducing memory allocations (return-by-reference versions)
+  // TODO: figure out whether to use C++ image wrapper
   //DenseSignature getDenseSignature(cv::WImageView1_b const& patch) const;
   //SparseSignature getSparseSignature(cv::WImageView1_b const& patch) const;
   DenseSignature getDenseSignature(IplImage* patch) const;
@@ -37,6 +37,9 @@ public:
 
   float threshold() { return threshold_; }
   void setThreshold(float thres) { threshold_ = thres; }
+  // TODO: make threshold arg independent of the number of classes and trees.
+  //float threshold();
+  //void setThreshold(float thres);
   
   void read(const char* file_name);
   void read(std::istream &is);
@@ -46,8 +49,22 @@ public:
 private:
   int classes_;
   float threshold_;
+  //float element_threshold_;
   std::vector<RandomizedTree> trees_;
 };
+
+/*
+inline float RTreeClassifier::threshold()
+{
+  return threshold_;
+}
+
+inline void RTreeClassifier::setThreshold(float thres)
+{
+  threshold_ = thres;
+  element_threshold_ = (thres / classes_) * trees_.size();
+}
+*/
 
 } // namespace features
 
