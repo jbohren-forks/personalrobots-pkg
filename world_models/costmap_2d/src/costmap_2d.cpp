@@ -81,11 +81,22 @@ namespace costmap_2d {
       inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
       staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0), mx_(0), my_(0)
   {
+    unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
     fullData_ = new unsigned char[width_*height_];
     obsWatchDog_ = new TICK[width_*height_];
     memset(fullData_, 0, width_*height_);
     memset(obsWatchDog_, 0, width_*height_);
+    for (i=0; i<32; i++) {
+      for (j=0; j<=i; j++) {
+	cachedDistances[i][j] = sqrt (pow(i,2) + pow(j,2));
+      }
+    }
+    for (i=0; i<32; i++) {
+      for (j=0; j<i; j++) {
+	cachedDistances[j][i] = cachedDistances[i][j];
+      }
+    }
 
     // For the first pass, just clean up the data and get the set of original obstacles.
     std::vector<unsigned int> updates;
@@ -369,9 +380,16 @@ namespace costmap_2d {
     unsigned int mx_a, my_a, mx_b, my_b;
     IND_MC(a, mx_a, my_a);
     IND_MC(b, mx_b, my_b);
-    double dx = (int)(mx_a) - (int) mx_b;
-    double dy = (int)(my_a) - (int) my_b;
-    double distance = sqrt(pow(dx, 2) + pow(dy, 2));
+    unsigned int dx = abs((int)(mx_a) - (int) mx_b);
+    unsigned int dy = abs((int)(my_a) - (int) my_b);
+    double distance;
+    if ((dx < 32) && (dy<32)) {
+      distance = cachedDistances[dx][dy];
+    }
+    else {
+      distance = sqrt(pow(dx, 2) + pow(dy, 2));
+    }
+
     return distance;
   }
 
@@ -550,4 +568,8 @@ namespace costmap_2d {
     ROS_DEBUG_NAMED("costmap_2d", "Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
     return cellWidth;
   }
+
+
+
+
 }

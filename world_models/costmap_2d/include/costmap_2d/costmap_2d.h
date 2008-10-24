@@ -288,6 +288,9 @@ namespace costmap_2d {
     std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
     std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
     QUEUE queue_; /**< Used for cost propagation */
+
+    double cachedDistances[32][32]; /**< Cached distances indexed by dx, dy */
+    
   };
 
   /**
