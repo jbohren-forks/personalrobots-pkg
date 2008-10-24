@@ -13,7 +13,7 @@ set_target_properties(visual_odometry_py PROPERTIES OUTPUT_NAME visual_odometry 
 #rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
 #rospack_add_compile_flags(visual_odometry -g -O0 -Wno-missing-field-initializers -march=pentium3 -msse3)
 #rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers )
-rospack_add_compile_flags(visual_odometry_py -g -O0 -DDEBUG=1 -Wno-missing-field-initializers )
+rospack_add_compile_flags(visual_odometry_py -g -O0 -DDEBUG=1 -Wno-missing-field-initializers -march=pentium3 -msse3)
 
 #rospack_add_gtest(utest test/CvTest3DPoseEstimate.cpp )
 #set_target_properties(utest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
