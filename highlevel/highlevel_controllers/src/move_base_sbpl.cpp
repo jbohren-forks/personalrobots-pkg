@@ -161,6 +161,9 @@ namespace ros {
 	errx(EXIT_FAILURE, "ERROR in MoveBaseSBPL ctor: pMgr_->select(\"ARAPlanner\") failed");
       }
       pStat_.pushBack("ARAPlanner");
+
+      //Now initialize
+      initialize();
     }
     
     MoveBaseSBPL::~MoveBaseSBPL(){

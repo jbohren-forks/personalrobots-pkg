@@ -206,8 +206,7 @@ namespace ros {
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
 
-      // Now initialize
-      initialize();
+      // Note: derived classes must initialize.
     }
 
     MoveBase::~MoveBase(){
@@ -644,6 +643,10 @@ namespace ros {
     }
 
     void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloudFloat32& cloud){
+      //Avoids laser race conditions.
+      if (!isInitialized()) {
+	return;
+      }
       std::vector<unsigned int> updates; 
       lock();
       petTheWatchDog();
