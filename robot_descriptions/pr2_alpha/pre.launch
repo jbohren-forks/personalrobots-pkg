@@ -1,28 +1,51 @@
 <launch>
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
-  <!--machine name="pre1root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" /-->   
-  <machine name="pre1root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
-  <machine name="pre1" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
-  <machine name="pre2" address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
-  <machine name="pre3" address="pre3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
-  <machine name="pre4"  address="pre4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="xenomai_root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
+  <machine name="xenomai" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
+  <machine name="two" address="pre2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
+  <machine name="three" address="pre3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="four"  address="pre4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
 
 
 <!-- pr2_etherCAT -->
-  <node machine="pre1root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2" output="screen"/>
+  <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
   <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
 
+<!-- Base Controller -->
+    <param name="base_controller/odom_publish_rate" value="30.0"/>
+    <node machine="xenomai" pkg="mechanism_control" type="mech.py" args="sp controllers_base_lab.xml" output="screen"/>
+
 <!-- Joystick -->
-  <node machine="pre4" pkg="joy" type="joy"  respawn="true"/>
+  <node machine="four" pkg="joy" type="joy"  respawn="true"/>
 
 <!-- Power Board Control Node -->
   <node pkg="pr2_power_board" type="power_node"  respawn="true"/>
 
 <!-- Battery Monitor -->
-  <node machine="pre2" pkg="IBPSBatteryInterface" type="monitorBatteries" respawn="true"/>
+  <node machine="two" pkg="IBPSBatteryInterface" type="monitorBatteries" respawn="true"/>
+
+<!-- Base Laser -->
+  <node  machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="base_laser" />
+    <param name="min_ang" type="double" value="-100.0" />
+    <param name="max_ang" type="double" value="100.0" />
+  </node>
+
+
+<!-- Tilt Laser Controller -->
+    <node machine="xenomai" pkg="mechanism_control" type="mech.py" args="sp laser_controller_config.xml" output="screen"/>
+
+<!-- Tilt Laser -->
+  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
+    <param name="frameid" type="string" value="tilt_laser" />
+    <param name="min_ang" type="double" value="-80.0" />
+    <param name="max_ang" type="double" value="80.0" />
+  </node>
 
 </launch>
 
