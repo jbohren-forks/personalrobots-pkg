@@ -14,5 +14,7 @@ in a way that can be managed by the ROS dependency system.
   <cpp cflags="-I${prefix}/opencv/include -I${prefix}/opencv/include/opencv" lflags="-L${prefix}/opencv/lib -Wl,-rpath,${prefix}/opencv/lib -lcvaux -lcv -lcxcore -lhighgui -lml"/>
   <doxymaker external="http://opencvlibrary.sourceforge.net/" />
 </export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="cvs"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="cvs"/>
 </package>
 
