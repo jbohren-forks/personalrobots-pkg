@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
+
+SET (CMAKE_VERBOSE_MAKEFILE ON)
+
 include(rosbuild)
 set(ROS_BUILD_TYPE Release)
 add_definitions(-Wall)
@@ -14,7 +17,7 @@ genmsg()
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
 # Library
-rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
+rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc src/sbpl_util.cpp)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm

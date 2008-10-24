@@ -64,9 +64,28 @@
  **/
 
 #include <MoveBase.hh>
+#include <sbpl_util.hh>
 
 //sbpl headers file
 #include <headers.h>
+#include <err.h>
+
+
+namespace {
+  
+  /** Set an angle to the range -pi < angle <= +pi */
+  double mod2pi(double x)
+  {
+    x = fmod(x, 2 * M_PI);
+    if (x > M_PI)
+      x -= 2 * M_PI;
+    else if (x <= - M_PI)
+      x += 2 * M_PI;
+    return x;
+  }
+  
+}
+
 
 /**
  * @todo Resolve issue with blocking ino locking
@@ -96,14 +115,15 @@ namespace ros {
        * @brief Builds a plan from current state to goal state
        */
       virtual bool makePlan();
-
+      
     private:
 
       bool isMapDataOK();
 
       MDPConfig mdpCfg_;
       EnvironmentNAV2D envNav2D_;
-      ARAPlanner* araPlanner_;
+      SBPLPlannerManager * pMgr_;
+      SBPLPlannerStatistics pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
     };
 
@@ -134,13 +154,17 @@ namespace ros {
 	ROS_INFO("ERROR: InitializeMDPCfg failed\n");
 	exit(1);
       }
-
-      araPlanner_ = new ARAPlanner(&envNav2D_, false);
+      
+      pMgr_ = new SBPLPlannerManager(&envNav2D_, false, &mdpCfg_);
+      if ( ! pMgr_->select("ARAPlanner", false)) {
+	delete pMgr_;
+	errx(EXIT_FAILURE, "ERROR in MoveBaseSBPL ctor: pMgr_->select(\"ARAPlanner\") failed");
+      }
+      pStat_.pushBack("ARAPlanner");
     }
-
+    
     MoveBaseSBPL::~MoveBaseSBPL(){
-      if(araPlanner_ != NULL)
-	delete araPlanner_;
+      delete pMgr_;
     }
 
     /**
@@ -178,47 +202,103 @@ namespace ros {
 
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
+      
+#warning "don't we have to lock() and unlock() here?"
 
-      unsigned int x, y;
-      const CostMap2D& cm = getCostMap();
-
-      // Set start state based on global pose.
-      cm.WC_MC(stateMsg.pos.x, stateMsg.pos.y, x, y);
-      envNav2D_.SetStart(x, y);
-      araPlanner_->set_start(envNav2D_.GetStateFromCoord(x, y));
-
-      // Set goal state
-      cm.WC_MC(stateMsg.goal.x, stateMsg.goal.y, x, y);
-      envNav2D_.SetGoal(x, y);
-      araPlanner_->set_goal(envNav2D_.GetStateFromCoord(x, y));
-
-      // Invoke the planner
-      std::vector<int> solutionStateIDs;
-
-      // Extract the solution, if available
-      if(araPlanner_->replan(plannerTimeLimit_, &solutionStateIDs)){
-	std::list<std_msgs::Pose2DFloat32> plan;
-	for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
-	  int state = *it;
-	  int mx, my;
-	  envNav2D_.GetCoordFromState(state, mx, my);
-
-	  double wx, wy;
-	  cm.MC_WC(mx, my, wx, wy);
-	  std_msgs::Pose2DFloat32 waypoint;
-	  waypoint.x = wx;
-	  waypoint.y = wy;
-	  plan.push_back(waypoint);
+      try {
+	SBPLPlannerStatistics::entry & se(pStat_.top());
+	const CostMap2D& cm = getCostMap();
+	
+	// Set start state based on global pose, updating statistics in the process.
+	se.start = stateMsg.pos;
+	cm.WC_MC(stateMsg.pos.x, stateMsg.pos.y, se.startIx, se.startIy);
+	envNav2D_.SetStart(se.startIx, se.startIy);
+	se.startState = envNav2D_.GetStateFromCoord(se.startIx, se.startIy);
+	int status(pMgr_->set_start(se.startState));
+	if (1 != status) {
+	  ROS_ERROR("failed to set start state ID %d from (%ud, %ud): pMgr_->set_start() returned %d\n",
+		    se.startState, se.startIx, se.startIy, status);
+	  return false;
 	}
-
-	updatePlan(plan);
-	return true;
+	
+	// Set goal state, updating statistics in the process.
+	se.goal = stateMsg.goal;
+	cm.WC_MC(stateMsg.goal.x, stateMsg.goal.y, se.goalIx, se.goalIy);
+	envNav2D_.SetGoal(se.goalIx, se.goalIy);
+	se.goalState = envNav2D_.GetStateFromCoord(se.goalIx, se.goalIy);
+	status = pMgr_->set_goal(se.goalState);
+	if (1 != status) {
+	  ROS_ERROR("failed to set goal state ID %d from (%ud, %ud): pMgr_->set_goal() returned %d\n",
+		    se.goalState, se.goalIx, se.goalIy, status);
+	  return false;
+	}
+	
+	// Invoke the planner, updating the statistics in the process.
+	std::vector<int> solutionStateIDs;
+	se.allocated_time_sec = plannerTimeLimit_;
+	se.status = pMgr_->replan(se.allocated_time_sec, &se.actual_time_sec, &solutionStateIDs);
+	
+	// Extract the solution, if available, and update statistics (as usual).
+	se.plan_length_m = 0;
+	se.plan_angle_change_rad = 0;
+	if (1 == se.status) {
+	  std::list<std_msgs::Pose2DFloat32> plan;
+	  double prevx, prevy, prevth;
+	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
+	  for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
+	    int state = *it;
+	    int mx, my;
+	    envNav2D_.GetCoordFromState(state, mx, my);
+	    
+	    double wx, wy;
+	    cm.MC_WC(mx, my, wx, wy);
+	    std_msgs::Pose2DFloat32 waypoint;
+	    waypoint.x = wx;
+	    waypoint.y = wy;
+	    
+	    // update stats:
+	    // - first round, nothing to do
+	    // - second round, update path length only
+	    // - third round, update path length and angular change
+	    if (plan.empty()) {
+	      prevx = wx;
+	      prevy = wy;
+	    }
+	    else {
+	      double const dx(wx - prevx);
+	      double const dy(wy - prevy);
+	      se.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
+	      double const th(atan2(dy, dx));
+	      if (42 > prevth) // see 42.17 above
+		se.plan_angle_change_rad += fabs(mod2pi(th - prevth));
+	      prevx = wx;
+	      prevy = wy;
+	      prevth = th;
+	    }
+	    
+	    plan.push_back(waypoint);
+	  }
+	  // probably we should add the delta from the last theta to
+	  // the goal theta onto se.plan_angle_change_rad here, but
+	  // that depends on whether our planner handles theta for us,
+	  // and needs special handling if we have no plan...
+	  
+	  se.logInfo("move_base_sbpl: ");
+	  se.logFile("/tmp/move_base_sbpl.log");
+	  pStat_.pushBack(pMgr_->getName());
+	  
+	  updatePlan(plan);
+	  return true;
+	}
       }
-      else{
-	ROS_DEBUG("No plan found\n");
+      catch (std::runtime_error const & ee) {
+	ROS_ERROR("runtime_error in makePlan(): %s\n", ee.what());
 	return false;
       }
+      ROS_ERROR("No plan found\n");
+      return false;
     }
+    
   }
 }
 
