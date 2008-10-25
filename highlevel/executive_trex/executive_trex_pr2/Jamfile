@@ -4,6 +4,8 @@ SEARCH_SOURCE = ./nddl ../../../3rdparty/trex/TREX/agent/base ../../../3rdparty/
 
 if ! $(executive_trex_pr2_READY) {
 
+ Echo "PLASMA_HOME = " $(PLASMA_HOME) ;
+
  # Input files
  local TestInputs = 
 		[ FDirName $(EXEC_HOME) wpc.0 pr2.exec.nddl ]

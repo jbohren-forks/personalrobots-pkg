@@ -22,7 +22,7 @@
 
     <node pkg="highlevel_controllers" type="move_end_effector" args="right" respawn="false"/>
 
-    <node pkg="nav_view" type="nav_view" respawn="true" />
+    <node pkg="nav_view" type="nav_view" respawn="false" />
 
   </group>
 </launch>

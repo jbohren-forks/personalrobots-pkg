@@ -37,13 +37,13 @@ set(TREX_FILES src/Executive.cc
 	       src/RechargeControllerAdapter.cc
 	       src/BatteryStateAdapter.cc)
 
-rospack_add_executable(trex_debug ${TREX_FILES})
-target_link_libraries(trex_debug Utils_g TREX_g)
+rospack_add_executable(bin/trexdebug ${TREX_FILES})
+target_link_libraries(bin/trexdebug Utils_g TREX_g)
 
 
-rospack_add_executable(trex_fast ${TREX_FILES})
-target_link_libraries(trex_fast Utils_o TREX_o)
-rospack_add_compile_flags(trex_fast "-O3 -DEUROPA_FAST")
+rospack_add_executable(bin/trexfast ${TREX_FILES})
+target_link_libraries(bin/trexfast Utils_o TREX_o)
+rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 
 rospack_add_rostest_future(test/test.wpc.0.xml) 
 #rospack_add_rostest(test/test.wpc.1.xml) 

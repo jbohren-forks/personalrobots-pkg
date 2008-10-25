@@ -15,7 +15,7 @@ namespace TREX {
   private:
     void fillObservationParameters(ObservationByValue* obs){
       obs->push_back("energy_capacity", new IntervalDomain(stateMsg.energy_capacity));
-      obs->push_back("energy_remaining", new IntervalDomain(stateMsg.energy_remaining));
+      obs->push_back("energy_remaining", new IntervalDomain(std::min(stateMsg.energy_remaining, stateMsg.energy_capacity)));
       obs->push_back("power_consumption",new IntervalDomain(stateMsg.power_consumption));
     }
   };

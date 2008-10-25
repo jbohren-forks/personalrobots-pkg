@@ -4,23 +4,34 @@
 float XY_ERROR = 0.25;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
+typedef float [0.0 1.0] UNIT_FLOAT;
 
 /**
  * Monitors battery state information
  * @see BatteryState.msg
  */
 class BatteryState extends AgentTimeline {
-  float rechargeThreshold;
+  UNIT_FLOAT discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
+  UNIT_FLOAT recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
 
   predicate Holds {
     float energy_remaining; // Remaining energy in Joules
     float energy_capacity; // Total energy capacity
     float power_consumption; // Power load in Watts
+    UNIT_FLOAT percentage_remaining; // Derived value - energy_remaining/ energy_capacity
+    mulEq(energy_capacity, percentage_remaining, energy_remaining);
   }
 
-  BatteryState(Mode _mode, float threshold){
+  BatteryState(Mode _mode, float ds, float rc){
     super(_mode, "Holds");
-    rechargeThreshold = threshold;
+    discharge_limit = ds;
+    recharge_level = rc;
+  }
+
+  BatteryState(Mode _mode){
+    super(_mode, "Holds");
+    discharge_limit = 0.1;
+    recharge_level = 0.9;
   }
 };
 
@@ -157,27 +168,17 @@ class RechargeController extends Behavior {
  * Each update is monitored and can trigger a transition to recharging
  */
 BatteryState::Holds {
-
-  bool mustRecharge;
-  testLEQ(mustRecharge, energy_remaining, object.rechargeThreshold);
-
   // If below the threshold, transition working status to recharge
-  // if(energy_remaining < object.rechargeThreshold){
+  // if(discharge_limit > (energy_remaining / energy_capacity))
+  //  workingStatus[start+1, end] == Holds(true);
+  bool mustRecharge;
+  testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
   if(mustRecharge == true){
-    // workingStatus[start+1, end] == Holds(true)
     any(WorkingStatus.Holds ws);
     temporalDistance(start, [-inf, 1], ws.start); 
     precedes(end, ws.end);
     eq(ws.recharging, true);
   }
-
-  // Ignore this - it is a hack for testing
-  /*if(object.mode == Internal){
-    eq(duration, 1);
-    if(start == 5){
-      eq(energy_remaining, 0.0);
-    }
-  }*/
 }
 
 WorkingStatus::Holds{
@@ -191,33 +192,32 @@ WorkingStatus::Holds{
 
   // Do the recharging if appropriate
   if(recharging == true){
-    // Reactive structure, only evaluate when started
-    if(start){
-      // Actual charging station should be selected by the planner in principle, if we were using some optimization
-      // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
-      // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
-      // bs = baseState[start];
-      ChargingStation cs;
-      starts(BaseState.Holds bs);
-      nearestReachableLocation(bs.x, bs.y, cs);
+    // Note: this is a good example of where the semantics of waiting until a start event are important. If we simply constrain
+    // the token where start is a singleton then we end up with a plan that will not bind to grounded execution values.
 
-      // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
-      any(RechargeController.Active rc);
-      eq(rc.x, cs.x);
-      eq(rc.y, cs.y);
-      eq(rc.th, cs.th);
-      concurrent(rc.end, end);
+    // Actual charging station should be selected by the planner in principle, if we were using some optimization
+    // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
+    // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
+    ChargingStation cs;
+    met_by(BaseState.Holds bs);
+    nearestReachableLocation(bs.x, bs.y, cs);
 
-      // check expected end conditions. Notation assumes a single predicate, otherwise it would be
-      // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. Ar run
-      // time this can resolve to a token that cannot be inserted. At compile time, it must resolve unabiguously
-      // to a token
-      // batteryState[level].energy_remaining >= MIN_RECHARGE;
-      if(end){
-	any(BatteryState.Holds bs_e);
-	concurrent(bs_e.end, end);
-	leq(MIN_RECHARGE, bs_e.energy_remaining);
-      }
+    // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
+    any(RechargeController.Active rc);
+    eq(rc.x, cs.x);
+    eq(rc.y, cs.y);
+    eq(rc.th, cs.th);
+    concurrent(rc.end, end);
+
+    // check expected end conditions. Notation assumes a single predicate, otherwise it would be
+    // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. At run
+    // time this can resolve to a token that cannot be inserted. At compile time, it must resolve unabiguously
+    // to a token
+    // where w = batteryState[level] : (w.energy_remaining/w.energy_capacity) >= recharge_level;
+    if(end){
+      any(BatteryState.Holds bs_e);
+      concurrent(bs_e.end, end);
+      leq(bs_e.object.recharge_level, bs_e.percentage_remaining);
     }
   }
 }
