@@ -197,6 +197,43 @@ void SerialChain::computeMassMatrix(const JntArray &q, Vector* torque, NEWMAT::M
   }
 }
 
+void SerialChain::computeChristoffelSymbols(const JntArray &q, Vector* torque, NEWMAT::Matrix &christoffel)
+{
+  double scale = 1.0;
+  int row_start = 0;
+  JntArray qdot(q.rows());
+  JntArray qdotdot(q.rows());
+  JntArray temp_1(q.rows()), temp_0(q.rows());
+
+  SetToZero(qdot);
+  SetToZero(qdotdot);
+
+  this->inverseDynamics->InverseDynamics(q,qdot,qdotdot,torque);
+
+  for(unsigned int i=0; i < q.rows(); i++)
+    temp_1(i) = torque[i][2];
+
+  for(unsigned int j=0; j < q.rows(); j++)
+  {
+    for(unsigned int k=0; k < q.rows(); k++)
+    {
+      SetToZero(qdot);
+      qdot(j) = 1;
+      qdot(k) = 1;
+      this->inverseDynamics->InverseDynamics(q,qdot,qdotdot,torque);
+      for(unsigned int i=0; i < q.rows(); i++)
+      {
+        row_start = i*q.rows();
+        if(j == k)
+          scale = 1.0;
+        else
+          scale = 0.5;
+        christoffel(row_start+j,k) =  scale*(temp_1(i) - torque[i][2]);
+      }
+    }
+  }
+}
+
 #endif
 
 // returns a%b

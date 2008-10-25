@@ -174,6 +174,8 @@ namespace robot_kinematics
 
     void computeMassMatrix(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &mass);
 
+    void computeChristoffelSymbols(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &christoffel);
+
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
 
     /*! \brief Finalize the chain after all the segments have been added. This must be done AFTER all links have been added using addLink 
