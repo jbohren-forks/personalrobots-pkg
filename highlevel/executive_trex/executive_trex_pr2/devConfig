@@ -1,0 +1,1 @@
+export PATH=`rospack find executive_trex_pr2`/bin:$PATH
