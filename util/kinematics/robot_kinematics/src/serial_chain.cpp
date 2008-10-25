@@ -228,7 +228,7 @@ void SerialChain::computeChristoffelSymbols(const JntArray &q, Vector* torque, N
           scale = 1.0;
         else
           scale = 0.5;
-        christoffel(row_start+j,k) =  scale*(temp_1(i) - torque[i][2]);
+        christoffel(row_start+j+1,k+1) =  scale*(temp_1(i) - torque[i][2]);
       }
     }
   }
