@@ -375,6 +375,19 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   this_status = (WG0XStatus *)this_buffer;
   prev_status = (WG0XStatus *)prev_buffer;
 
+  int delta = this_status->timestamp_ - prev_status->timestamp_;
+  if (this_status->timestamp_ == last_timestamp_ ||
+      this_status->timestamp_ == last_last_timestamp_) {
+    //printf("delta = %d\n", delta);
+    ++drops_;
+    ++consecutive_drops_;
+    max_consecutive_drops_ = max(max_consecutive_drops_, consecutive_drops_);
+  } else {
+    consecutive_drops_ = 0;
+  }
+  last_last_timestamp_ = last_timestamp_;
+  last_timestamp_ = this_status->timestamp_;
+
   if (this_status->packet_count_ - prev_status->packet_count_ != 1) {
     //printf("dropped packet on device #%02d: %d %d %d?\n", sh_->get_ring_position(), this_status->packet_count_ , prev_status->packet_count_, this_status->packet_count_ - prev_status->packet_count_);
   }
@@ -893,6 +906,10 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Max Voltage Error", "%f", max_voltage_error_);
   ADD_STRING_FMT("Current Error", "%f", current_error_);
   ADD_STRING_FMT("Max Current Error", "%f", max_current_error_);
+
+  ADD_STRING_FMT("Drops", "%d", drops_);
+  ADD_STRING_FMT("Consecutive Drops", "%d", consecutive_drops_);
+  ADD_STRING_FMT("Max Consecutive Drops", "%d", max_consecutive_drops_);
 
   d.set_strings_vec(strings_);
   d.set_values_vec(values_);

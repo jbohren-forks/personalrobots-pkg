@@ -135,12 +135,6 @@ void init(char *interface)
     }
     device->initialize(&a, true);
   }
-
-  BOOST_FOREACH(WG0X *device, devices)
-  {
-    if (!device) continue;
-    printf("isProgrammed = %d\n", device->isProgrammed());
-  }
 }
 
 void programDevice(int device, WG0XActuatorInfo &config, char *name)

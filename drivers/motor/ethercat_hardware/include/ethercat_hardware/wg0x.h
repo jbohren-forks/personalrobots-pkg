@@ -287,6 +287,11 @@ private:
   double voltage_estimate_;
   int consecutive_voltage_errors_;
   int consecutive_current_errors_;
+  int last_timestamp_;
+  int last_last_timestamp_;
+  int drops_;
+  int consecutive_drops_;
+  int max_consecutive_drops_;
 };
 
 class WG05 : public WG0X
