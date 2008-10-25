@@ -776,9 +776,18 @@ public:
       }
   }
 
-  void computeDepthMask(IplImage* dispImg, IplImage* depthMask, 
+  /// compute a depth mask according to the minZ and maxZ
+  void computeDepthMask(/// disparity image
+			const IplImage* dispImg, 
+			/// pre-allocate image buffer for the depth mask
+			IplImage* depthMask, 
+			/// scaling factor of the disparity map value
+			/// AKA, disparity unit value. Normally .25 for raw disparity
 			double dispUnitScale,
-			double minZ, double maxZ){
+			/// mininum z in mask
+			double minZ,
+			/// max z in mask
+			double maxZ){
     double maxDisp = camModel_->getDisparity(minZ);
     double minDisp = camModel_->getDisparity(maxZ);
 
