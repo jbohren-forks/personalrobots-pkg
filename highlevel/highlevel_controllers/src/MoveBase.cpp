@@ -249,9 +249,35 @@ namespace ros {
 
     void MoveBase::updateGoalMsg(){
       lock();
-      stateMsg.goal.x = goalMsg.goal.x;
-      stateMsg.goal.y = goalMsg.goal.y;
-      stateMsg.goal.th = goalMsg.goal.th;
+
+      libTF::TFPose2D goalPose, transformedGoalPose;
+      goalPose.x = goalMsg.goal.x;
+      goalPose.y = goalMsg.goal.y;
+      goalPose.yaw = goalMsg.goal.th;
+      goalPose.frame = goalMsg.header.frame_id;
+      goalPose.time = 0;
+
+	  
+     try{
+       transformedGoalPose = this->tf_.transformPose2D("map", goalPose);
+      }
+      catch(libTF::TransformReference::LookupException& ex){
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      }
+      catch(libTF::TransformReference::ConnectivityException& ex){
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      }
+      catch(libTF::TransformReference::ExtrapolateException& ex){
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
+      }
+
+      stateMsg.goal.x = goalPose.x;
+      stateMsg.goal.y = goalPose.y;
+      stateMsg.goal.th = goalPose.yaw;
+
       unlock();
 
       ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
