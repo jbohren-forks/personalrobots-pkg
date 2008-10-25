@@ -47,7 +47,8 @@
 #define SMIN 10 //30
 #define SMAX 256 //256
 
-#define CHI2MAX 1000 // The threshold above which tracking is declared lost.
+//#define CHI2MAX 1000 // The threshold above which tracking is declared lost.
+#define CHI2MAX 750 // The threshold above which tracking is declared lost.
 #define BADFRAMESMAX 30 // The number of frames of bad window similarity above which tracking is declared lost.
 
 #define DEBUG 0
@@ -62,8 +63,8 @@ float *hranges_ptr = hranges;
 BTracker::BTracker()
 {
  
-  feat_image_ptr_=NULL;
-  hsv_image_ptr_=NULL;
+  feat_image_ptr_= NULL;
+  hsv_image_ptr_ = NULL;
   mask_ptr_=NULL;
   backproject_ptr_=NULL;
 
@@ -97,7 +98,7 @@ BTracker::~BTracker()
 /* !
  * \brief Process one frame. Either allows for blob creation or tracks the blobs in the new frame.
  */
-bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect old_window, CvRect* new_window) 
+bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect old_window, CvRect* new_window, const IplImage* priorProbMap) 
 {
 
   new_window->x = old_window.x;
@@ -110,8 +111,8 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
 
   // Allocate the images
   if (hsv_image_ptr_==NULL) {
-    hsv_image_ptr_ = cvCreateImage(l_s, IPL_DEPTH_8U, 3);
-    feat_image_ptr_ = cvCreateImage(l_s,IPL_DEPTH_8U,1);
+    hsv_image_ptr_  = cvCreateImage(l_s, IPL_DEPTH_8U, 3);
+    feat_image_ptr_ = cvCreateImage(l_s, IPL_DEPTH_8U, 1);
     mask_ptr_ = cvCreateImage(l_s,IPL_DEPTH_8U,1);
     backproject_ptr_ = cvCreateImage(l_s,IPL_DEPTH_8U,1);
   }
@@ -161,7 +162,11 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
 
   // The actual tracking using CamShift.
   cvCalcBackProject( &feat_image_ptr_, backproject_ptr_, blob_.hist );
+  //cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, priorProbMap);
   cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, 0);
+  if (priorProbMap)
+    cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
+
   cvCamShift( backproject_ptr_, blob_.window, 
 	      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
 	      &blob_.comp, &blob_.box );

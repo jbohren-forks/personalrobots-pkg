@@ -93,8 +93,13 @@ class BTracker
 
   /*!
    * \brief Track the blob in a new frame
+   * @return the status of the tracking process
    */
-  bool processFrame(IplImage*, bool, CvRect, CvRect*);
+  bool processFrame(IplImage*, bool, CvRect, CvRect*, 
+		      /// probability map of where the blob is 
+		      /// by a separate pre-step. e.g. depth-image.
+		      /// Currently it is a map of 8u image of 0 and 255
+		      const IplImage* priorProbMap=NULL);
 
  private:
 

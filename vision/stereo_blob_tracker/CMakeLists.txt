@@ -7,6 +7,7 @@ rospack(stereo_blob_tracker)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(stereo_blob_tracker src/stereo_blob_tracker.cpp src/blob_tracker.cpp)
+rospack_add_executable(axis_blob_tracker src/axis_blob_tracker.cpp src/blob_tracker.cpp)
 rospack_add_executable(stereo_blob_tracker_listener src/listener.cpp)
 
 
