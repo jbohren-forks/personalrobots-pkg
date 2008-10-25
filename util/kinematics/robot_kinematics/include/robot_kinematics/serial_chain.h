@@ -178,7 +178,7 @@ namespace robot_kinematics
      * \param q - input joint array (n x 1) 
      * \param torque - preallocated vector of torques of type KDL::Vector and size (n x 1) (must be preallocated and passed in as a pointer)
      * \param christoffel - matrix of Christoffel symbols, must be predefined and passed in as a reference of type NEWMAT::Matrix and size (n^2 x n). The Christoffel symbol corresponding to C_{ijk} is given by indexing the NEWMAT matrix christoffel((i-1)*n+j,k) where i,j,k go from 1 to n and n is the total number of joints. 
-     * \return True if ok, False if error.
+     * \return True if ok, False if error. */
     void computeChristoffelSymbols(const KDL::JntArray &q, KDL::Vector* torque, NEWMAT::Matrix &christoffel);
 
     KDL::JntArray *q_IK_result; //< KDL::JntArray that stores result of IK
