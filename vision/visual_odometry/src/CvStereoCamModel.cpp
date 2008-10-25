@@ -15,7 +15,8 @@ CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx, double Clx, 
     mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
     mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
     mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart))
+    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
+    Iz8U(NULL)
 {
     this->constructProjectionMatrices();
 }
@@ -25,7 +26,8 @@ CvStereoCamModel::CvStereoCamModel(CvStereoCamParams camParams):
     mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
     mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
     mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart))
+    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
+    Iz8U(NULL)
 {
 	constructProjectionMatrices();
 }
@@ -36,7 +38,8 @@ CvStereoCamModel::CvStereoCamModel():
     mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
     mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
     mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart))
+    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
+    Iz8U(NULL)
 {
 	constructProjectionMatrices();
 }
@@ -44,6 +47,11 @@ CvStereoCamModel::CvStereoCamModel():
 
 CvStereoCamModel::~CvStereoCamModel()
 {
+	if(Iz8U) {
+		cvReleaseImage(&Iz8U);
+		cvDestroyWindow("Depth");
+	}
+
 }
 
 void CvStereoCamModel::constructMat3DToScreen(double Fx, double Fy, double Tx,
@@ -57,6 +65,7 @@ void CvStereoCamModel::constructMat3DToScreen(double Fx, double Fy, double Tx,
     CvMat _P = cvMat(3, 4, CV_64FC1, data);
 
     cvCopy(&_P, &mat);
+
 }
 
 bool CvStereoCamModel::constructProjectionMatrices(){
@@ -170,20 +179,20 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 	int dFar = (int)(dNear_dFar[5] + 0.5);
 //	printf("dNear=%d, dFar=%d\n",dNear,dFar);
 	CvRect roi = cvGetImageROI(Id);
-	int ws = Id->widthStep;
-	int Id_jumpby = ws - roi.width;                           //This is to step the pointer over possible ragged withSteps
-	unsigned char *Idptr = (unsigned char *)(Id->imageData + roi.y*ws + roi.x);
+	int ws = Id->widthStep, roiw = roi.width, roih = roi.height, roix = roi.x, roiy = roi.y;
+	int Id_jumpby = ws - roiw;                      //This is to step the pointer over possible ragged withSteps
+	unsigned char *Idptr = (unsigned char *)(Id->imageData + roiy*ws + roix);
 	unsigned char disp8U; 
 	int goodpoints = 0;
 
 	//FILL POINTS
 	vector<double> pts;  //Collect good points here
 	vector<int> xy;      //Collect original x,y's here
-	pts.reserve(roi.width*roi.height*3); //Allocate all the space we'll need in one shot
-	xy.reserve(roi.width*roi.height*3);
+	pts.reserve(roiw*roih*3); //Allocate all the space we'll need in one shot
+	xy.reserve(roiw*roih*3);
 	int x,y,i;
-	for(y=0; y<roi.height; ++y) {
-		for(x=0; x<roi.width; ++x) {
+	for(y=roiy; y<roih+roiy; ++y) {
+		for(x=roix; x<roiw+roix; ++x) {
 			disp8U = *Idptr++;
 			if((dNear > disp8U) && (disp8U > dFar)) { //NOTE: Zero is just not allowed. Don't go there, Greek chaos.
 				pts.push_back((double)x);
@@ -288,3 +297,64 @@ double CvStereoCamModel::getDisparity(double Z) const {
   return (mClx-mCrx) + mFx*mTx/Z;
 }
 
+//Iz is single channel 32F.  Zero values are not displayed. Passing a null image turns this off		
+void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
+{
+	assert(Iz->nChannels == 1);
+	//SHUT DOWN WINDOW IF Iz is NULL
+	if(!Iz) {
+		if(Iz8U) {  
+			cvDestroyWindow("Depth");
+			cvReleaseImage(&Iz8U);
+		}		
+		return;
+	}
+	//CHECK IF WE NEED TO INIT
+	if((!Iz8U) || (Iz8U->width != Iz->width) || (Iz8U->height != Iz->height)) {
+		if(Iz8U) {
+			cvReleaseImage(&Iz8U);
+			cvDestroyWindow("Depth");
+		}
+		Iz8U = cvCreateImage(cvSize(Iz->width,Iz->height),IPL_DEPTH_8U,1);
+		cvNamedWindow("Depth",0);
+	}
+	//SET UP PARAMETERS
+	int w = Iz->width, h = Iz->height, ws = Iz8U->widthStep;
+	int jumpby = ws - w;
+	Zmin *= 1000.0; Zmax *= 1000.0; //depth is in meters, depth map is in milimeters
+	bool mZ = false, MZ = false;    // if Zmin or Zmax == 0, then compute their values from min and max on depth map
+	if(Zmin == 0.0) { mZ =  true; Zmin = 99999999.0;}
+	if(Zmax == 0.0) MZ = true; 
+	float *fptr = (float *)(Iz->imageData),fv;
+	if(mZ || MZ){
+		for(int i = 0; i<w*h; ++i) {
+			fv = *fptr++;
+			if(fv <= 0) continue;
+			if((mZ) && (Zmin > fv)) Zmin = fv;
+			if((MZ) && (Zmax < fv)) Zmax = fv;
+		}
+	}
+    if(Zmax <= Zmin) Zmax += 1.0; //Avoid max <= min
+    double scaleit = 255.0 / (Zmax - Zmin);
+	unsigned char *cptr = (unsigned char *)(Iz8U->imageData);
+	fptr = (float *)(Iz->imageData);
+	
+	//LOOP
+	for(int y=0; y<h; ++y){
+		for(int x=0; x<w; ++x) {
+			fv = *fptr++;
+			if((fv <= 0.0)||(fv > Zmax)){
+				*cptr++ = 0;
+			}
+			else if(fv < Zmin) {
+				*cptr++ = 255;
+			}
+			else {
+				*cptr++ = (unsigned char)((double)255.0 - scaleit*((double)fv - Zmin));	  //Invert so that closer objects are brighter
+			}
+		}
+		cptr += jumpby;
+	}
+	//SHOW THE PRETTY DEPTH IMAGE
+	cvShowImage("Depth",Iz8U);
+}

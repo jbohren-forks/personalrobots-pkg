@@ -3,7 +3,11 @@
 
 #include "CvStereoCamParams.h"
 #include <opencv/cxtypes.h>
-
+//#include "opencv/cvaux.h"
+//#include "opencv/cxmisc.h"
+#include "opencv/cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/highgui.h"
 /**
  * Stereo camera model, including parameters and transformation derived from them.
  */
@@ -100,6 +104,12 @@ public:
 	/// compute disparity given Z
 	/// returns DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
+	
+	// This routine is used to display a singe channel floating point depth image
+	// It inverts the depth so that brightest points are closest.
+	// Iz  Depth image (in mm).  If NULL, shut off display: dspl_depth_image();
+	// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image, 
+	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
 protected:
     static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
@@ -117,6 +127,7 @@ protected:
     CvMat  mMatCartToDisp;  //< projection matrix from Cartesian coordinate to the disparity space
     CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
     double disparity_conversion_factor;
+    IplImage  *Iz8U;  //Holds depth image to display for debug purposes
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/
