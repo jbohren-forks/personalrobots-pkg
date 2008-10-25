@@ -107,7 +107,8 @@ public:
 	
 	// This routine is used to display a singe channel floating point depth image
 	// It inverts the depth so that brightest points are closest.
-	// Iz  Depth image (in mm).  If NULL, shut off display: dspl_depth_image();
+    // Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
+    //            Just call the function with an image to display it.  Size of the image can change each frame.
 	// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image, 
 	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
