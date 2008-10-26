@@ -91,7 +91,7 @@ void EnvironmentNAV3DKIN::PrintHashTableHist()
 }
 
 void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
-					char* mapdata,
+					const unsigned char* mapdata,
 					int startx, int starty, int starttheta,
 					int goalx, int goaly, int goaltheta,
 					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV) {
@@ -715,7 +715,7 @@ bool EnvironmentNAV3DKIN::InitializeEnv(const char* sEnvFile)
 
 
 bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
-					char* mapdata,
+					const unsigned char* mapdata,
 					double startx, double starty, double starttheta,
 					double goalx, double goaly, double goaltheta,
 				    double goaltol_x, double goaltol_y, double goaltol_theta,

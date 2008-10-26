@@ -100,7 +100,7 @@ void EnvironmentNAV2D::PrintHashTableHist()
 }
 
 void EnvironmentNAV2D::SetConfiguration(int width, int height,
-					unsigned char* mapdata,
+					const unsigned char* mapdata,
 					int startx, int starty,
 					int goalx, int goaly) {
   EnvNAV2DCfg.EnvWidth_c = width;
@@ -401,7 +401,7 @@ bool EnvironmentNAV2D::InitializeEnv(const char* sEnvFile)
 
 
 bool EnvironmentNAV2D::InitializeEnv(int width, int height,
-					unsigned char* mapdata,
+					const unsigned char* mapdata,
 					int startx, int starty,
 					int goalx, int goaly, unsigned char obsthresh)
 {

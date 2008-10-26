@@ -113,7 +113,7 @@ public:
 	void PrintEnv_Config(FILE* fOut);
     
     bool InitializeEnv(int width, int height,
-                       unsigned char* mapdata,
+                       const unsigned char* mapdata,
                        int startx, int starty,
                        int goalx, int goaly, unsigned char obsthresh);
     int SetStart(int x, int y);
@@ -122,7 +122,7 @@ public:
 	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
-			      unsigned char* mapdata,
+			      const unsigned char* mapdata,
 			      int startx, int starty,
 			      int goalx, int goaly);
 	

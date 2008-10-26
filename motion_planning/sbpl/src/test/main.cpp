@@ -373,7 +373,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 	}
 	trueenvironment_nav3Dkin.GetEnvParms(&size_x, &size_y, &startx, &starty, &starttheta, &goalx, &goaly, &goaltheta, &cellsize_m, &nominalvel_mpersecs, &timetoturn45degsinplace_secs);
 
-    char* map = (char*)calloc(size_x*size_y, sizeof(char));
+    unsigned char* map = (unsigned char*)calloc(size_x*size_y, sizeof(unsigned char));
 
 	//print the map
 	if(bPrintMap) printf("true map:\n");

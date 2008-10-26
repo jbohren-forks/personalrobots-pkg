@@ -145,7 +145,7 @@ public:
 
     //TODO - add perimeter, goal with tols
     bool InitializeEnv(int width, int height,
-                       char* mapdata,
+                       const unsigned char* mapdata,
                        double startx, double starty, double starttheta,
                        double goalx, double goaly, double goaltheta,
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
@@ -190,7 +190,7 @@ public:
 	bool CheckQuant(FILE* fOut);
 
 	void SetConfiguration(int width, int height,
-			      char* mapdata,
+			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
 				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV);
