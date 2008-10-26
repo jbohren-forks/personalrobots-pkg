@@ -19,6 +19,9 @@ system.
 <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PLASMA/trunk"/>
 <versioncontrol type="svn" url="http://europa-pso.googlecode.com/svn/PlanWorks/trunk"/>
 <versioncontrol type="svn" url="http://trex-autonomy.googlecode.com/svn/trunk"/>
+<sysdepend os="ubuntu" version="7.04-fiesty" package="jam"/>
+<sysdepend os="ubuntu" version="7.04-fiesty" package="sun-java6-jdk"/>
+<sysdepend os="ubuntu" version="7.04-fiesty" package="ant"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="sun-java6-jdk"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="ant"/>
