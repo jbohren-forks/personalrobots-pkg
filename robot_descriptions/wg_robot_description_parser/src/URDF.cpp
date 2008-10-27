@@ -37,6 +37,7 @@
 #include <urdf/URDF.h>
 #include <math_utils/MathExpression.h>
 #include <string_utils/string_utils.h>
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <sstream>
