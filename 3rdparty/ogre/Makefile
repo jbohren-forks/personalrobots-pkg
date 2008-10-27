@@ -92,9 +92,10 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 
 clean: 
 	-cd $(ROOT)/$(OGRE_VERSION) && make clean
+	-rm -rf ogre
 
 wipe: 
 	-rm -rf $(OGRE_VERSION)
 	-rm -rf $(OGRE_VERSION).tar.bz2
-	-rm -rf ogre
+
 
