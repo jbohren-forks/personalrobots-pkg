@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth"/Pose3DEulerFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth"/std_msgs::TransformWithRateStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -77,7 +77,6 @@ Publishes to (name / type):
 #include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
-#include <robot_msgs/Pose3DEulerFloat32.h>
 
 #include <math_utils/angles.h>
 #include <rosTF/rosTF.h>
