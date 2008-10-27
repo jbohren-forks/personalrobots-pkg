@@ -1,7 +1,7 @@
 <package>
 <description brief="Logging headers">
 </description>
-<author>Jeremy Leibs berger@willowgarage.com, Morgan Quigley mquigley@willowgarage.com</author>
+<author>Jeremy Leibs berger@willowgarage.com, Morgan Quigley mquigley@cs.stanford.edu</author>
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
