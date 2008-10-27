@@ -32,9 +32,10 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \Author Ioan Sucan */
+/** \author Ioan Sucan */
 
 #include "math_utils/MathExpression.h"
+#include <cstdlib>
 #include <cstring>
 #include <cmath>
 #include <deque>
