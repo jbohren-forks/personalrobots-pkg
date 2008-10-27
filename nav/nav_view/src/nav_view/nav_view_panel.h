@@ -162,10 +162,11 @@ protected:
   void onRender( wxCommandEvent& event );
   void onUpdate( wxTimerEvent& event );
   virtual void onToolClicked( wxCommandEvent& event );
+  virtual void onReloadMap( wxCommandEvent& event );
   virtual void onChar( wxKeyEvent& event );
 
   void loadMap();
-  void loadTransient();
+  void clearMap();
   void incomingParticleCloud();
   void incomingGuiPath();
   void incomingLocalPath();

@@ -250,6 +250,8 @@ void NavViewPanel::loadMap()
                                                                    pixel_stream, map_width_, map_height_, Ogre::PF_BYTE_RGB, Ogre::TEX_TYPE_2D,
                                                                    0);
 
+  delete [] pixels;
+
   Ogre::SceneNode* map_node = NULL;
   if ( !map_object_ )
   {
@@ -327,6 +329,19 @@ void NavViewPanel::loadMap()
 
   root_node_->setPosition(Ogre::Vector3(-map_width_*map_resolution_/2, -map_height_*map_resolution_/2, 0.0f));
   map_node->setPosition(Ogre::Vector3(0.0f, 0.0f, MAP_DEPTH));
+}
+
+void NavViewPanel::clearMap()
+{
+  if ( map_object_ )
+  {
+    scene_manager_->destroyManualObject( map_object_ );
+    map_object_ = NULL;
+
+    std::string tex_name = map_texture_->getName();
+    map_texture_.setNull();
+    Ogre::TextureManager::getSingleton().unload( tex_name );
+  }
 }
 
 void NavViewPanel::onUpdate( wxTimerEvent& event )
@@ -694,6 +709,12 @@ void NavViewPanel::onToolClicked( wxCommandEvent& event )
   }
 
   ROS_ASSERT( current_tool_ );
+}
+
+void NavViewPanel::onReloadMap( wxCommandEvent& event )
+{
+  clearMap();
+  loadMap();
 }
 
 } // namespace nav_view

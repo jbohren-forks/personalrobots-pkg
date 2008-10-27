@@ -41,6 +41,7 @@ namespace nav_view
 			
 			// Virtual event handlers, overide them in your derived class
 			virtual void onToolClicked( wxCommandEvent& event ){ event.Skip(); }
+			virtual void onReloadMap( wxCommandEvent& event ){ event.Skip(); }
 			
 		
 		public:
