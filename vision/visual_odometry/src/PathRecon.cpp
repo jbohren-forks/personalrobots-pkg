@@ -93,7 +93,7 @@ void PathRecon::_init() {
 	mVisualizer = new Visualizer(mPoseEstimator);
 #endif
 
-  int maxDisp = (int)(mPoseEstimator.getD(400));// the closest point we care is at least 1000 mm away
+  int maxDisp = (int)(mPoseEstimator.getDisparity(400));// the closest point we care is at least 400 mm away
   cout << "Max disparity is: " << maxDisp << endl;
   mStat.mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
 
@@ -190,7 +190,7 @@ void PathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& x
   double _xyz[3*uvds.rows];
   CvMat localxyz = cvMat(uvds.rows, 3, CV_64FC1, _xyz);
   // Convert from disparity coordinates to Cartesian coordinates
-  mPoseEstimator.reprojection(&uvds, &localxyz);
+  mPoseEstimator.dispToCart(uvds, localxyz);
   double _inliers1t[3*uvds.rows];
   CvMat inliers1t = cvMat(uvds.rows, 1, CV_64FC3, _inliers1t);
   CvMat localxyzC3;
@@ -511,7 +511,7 @@ PathRecon::Visualizer::Visualizer(PoseEstimateDisp& pe):
 //  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
 void PathRecon::Visualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
-  double maxDisp = (int)poseEstimator.getD(400); // the closest point we care is at least 1000 mm away
+  double maxDisp = (int)poseEstimator.getDisparity(400); // the closest point we care is at least 400 mm away
   CvMatUtils::getVisualizableDisparityMap(dispMap, canvasDispMap, maxDisp);
 }
 

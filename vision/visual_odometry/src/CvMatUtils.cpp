@@ -138,8 +138,8 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 	CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
 	CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
 
-	pedisp.reprojection(&pts0, &xyzs0);
-	pedisp.reprojection(&pts1, &xyzs1);
+	pedisp.dispToCart(pts0, xyzs0);
+	pedisp.dispToCart(pts1, xyzs1);
 
 	if (reversed == true) {
 		// compute the inverse transformation
@@ -162,7 +162,7 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 		cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &rot, &shift);
 	}
 
-	pedisp.projection(&xyzs0To1, &uvds0To1);
+	pedisp.cartToDisp(xyzs0To1, uvds0To1);
 	IplImage* img = canvas.Ipl();
 
 	// draw uvds0To1 on leftimgeC3a

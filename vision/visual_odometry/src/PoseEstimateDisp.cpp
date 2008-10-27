@@ -240,8 +240,8 @@ int PoseEstimateDisp::estimateMixedPointClouds(
   CvMat* uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
   CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
 
-  reprojection(uvds1, xyzs1);
-  projection(xyzs0, uvds0);
+  dispToCart(*uvds1, *xyzs1);
+  cartToDisp(*xyzs0, *uvds0);
 #ifdef DEBUG
   cout << "Cv3DPoseEstimateDisp::estimateMixedPointClouds()"<<endl;
   cout << "xyzs0:"<<endl;
@@ -278,8 +278,8 @@ int PoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
   CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
 
   // project from disparity space back to XYZ
-  reprojection(uvds0, xyzs0);
-  reprojection(uvds1, xyzs1);
+  dispToCart(*uvds0, *xyzs0);
+  dispToCart(*uvds1, *xyzs1);
 
   numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 0, NULL, rot, shift, smoothed);
 
@@ -461,28 +461,7 @@ bool PoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,
     return status;
 }
 
-/*
- * A Convenient function to map z to d, at the optical center
- */
-double PoseEstimateDisp::getD(double z) const {
-  double _xyz[] = {0., 0., z};
-  double _uvd[3];
-  CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
-  CvMat uvd = cvMat(1, 3, CV_64FC1, _uvd);
-  projection(&xyz, &uvd);
-  return _uvd[2];
-}
-/*
- * A convenient function to map disparity d to Z, at the optical center
- */
-double PoseEstimateDisp::getZ(double d) const {
-  double _uvd[] = {this->mClx, this->mCy, d};
-  double _xyz[3];
-  CvMat xyz = cvMat(1, 3, CV_64FC1, _xyz);
-  CvMat uvd = cvMat(1, 3, CV_64FC1, _uvd);
-  reprojection(&uvd, &xyz);
-  return _xyz[2];
-}
+
 
 
 
