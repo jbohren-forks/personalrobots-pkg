@@ -38,6 +38,7 @@
 
 #include <ros/node.h>
 #include <sys/time.h>
+#include <rosthread/member_thread.h>
 #include <time.h>
 #include <math.h>
 #include <iostream>
@@ -67,14 +68,20 @@ public:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    ros::node(nodeName), initialized(false), stateTopic(_stateTopic), goalTopic(_goalTopic), cycleTime_(0.1){
+    ros::node(nodeName), initialized(false), stateTopic(_stateTopic), goalTopic(_goalTopic), 
+    controllerCycleTime_(0.1), plannerCycleTime_(0.0){
 
-    // Obtain the contrrol frequency for this node
-    double frequency(10);
-    param(nodeName + "/frequency", frequency, frequency);
-    ROS_INFO_STREAM("Starting " << nodeName << " at " << frequency << " Hz");
-    ROS_ASSERT(frequency > 0);
-    cycleTime_ = 1/frequency;
+    // Obtain the control frequency for this node
+    double controller_frequency(10);
+    param(nodeName + "/controller_frequency", controller_frequency, controller_frequency);
+    ROS_ASSERT(controller_frequency > 0);
+    controllerCycleTime_ = 1/controller_frequency;
+
+    // Obtain the planner frequency for this node
+    double planner_frequency(0.0);
+    param(nodeName + "/planner_frequency", planner_frequency, planner_frequency);
+    if(planner_frequency  > 0.0)
+      plannerCycleTime_ = 1/planner_frequency;
 
     // Advertize controller state updates
     advertise<S>(stateTopic, QUEUE_MAX());
@@ -84,9 +91,13 @@ public:
 
     // Initially inactive
     deactivate();
-  }
 
-  virtual ~HighlevelController(){}  
+    // Start planner loop on a separate thread
+    ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  }
+
+  virtual ~HighlevelController(){
+    pthread_exit(&plannerThread_);
+  }
 
   /**
    * @brief Test if the node has received required inputs allowing it to commence business as usual.
@@ -103,44 +114,58 @@ public:
    * @brief The main run loop of the controller
    */
   void run(){
-    while(ok())
-      {
-	struct timeval curr;
-	gettimeofday(&curr,NULL);
+    while(ok()) {
+      struct timeval curr;
+      gettimeofday(&curr,NULL);
 	
-	// Guard with initialization check to prevent sending bogus state messages.
-	if(isInitialized()){
-	  doOneCycle();
-	  publish(stateTopic, this->stateMsg);
-	}
-	else {
-	}
- 
-	sleep(curr.tv_sec+curr.tv_usec/1e6);
+      // Guard with initialization check to prevent sending bogus state messages.
+      if(isInitialized()){
+	doOneCycle();
+
+	publish(stateTopic, this->stateMsg);
       }
+ 
+      sleep(curr.tv_sec+curr.tv_usec/1e6, controllerCycleTime_);
+    }
   }
 
-protected:
+  /**
+   * @brief Runs the planning loop. If the node is not initialized or if inactive, then it will do nothing. Otherwise
+   * it will call the planner with the given timeout.
+   */
+  void plannerLoop(){
+    while(ok()){
+      struct timeval curr;
+      gettimeofday(&curr,NULL);
+
+      if(isInitialized() && isActive()){
+
+	// If the plannerCycleTime is 0 then we only call the planner when we need to, and we sleep for the duration of the controller
+	if(plannerCycleTime_ > 0 || !isValid())
+	  setValid(makePlan());
+      }
+
+      sleep(curr.tv_sec+curr.tv_usec/1e6, std::max(plannerCycleTime_, controllerCycleTime_));
+    }
+  }
+
+private:
 
   /**
    * @brief Accessor for state of the controller
    */
   bool isActive() {
-    lock();
-    bool result = this->state == ACTIVE;
-    unlock();
-    return result;
+    return this->state == ACTIVE;
   }
 
   /**
    * @brief Access for valid status of the controller
    */
   bool isValid() {
-    lock();
-    bool result =  this->stateMsg.valid;
-    unlock();
-    return result;
+    return this->stateMsg.valid;
   }
+
+protected:
 
   /**
    * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
@@ -179,7 +204,8 @@ protected:
 
   /**
    * @brief Subclass will implement this method to generate command messages in order to accomplish its goal
-   * @brief return true if plan is still valid, otherwise return false.
+   * The base class encapsulates with a lock/unlock.
+   * @return true if plan is still valid, otherwise return false.
    */
   virtual bool dispatchCommands() = 0;
 
@@ -192,6 +218,7 @@ protected:
    * @brief A Hook to catch an activation event
    */
   virtual void handleActivation(){}
+
 
   /**
    * @brief Aquire node level lock
@@ -210,6 +237,7 @@ private:
 
   void goalCallback(){
     lock();
+
     if(state == INACTIVE && goalMsg.enable){
       activate();
     }
@@ -224,10 +252,10 @@ private:
       }
     }
 
-    unlock();
-
     // Call to allow derived class to update goal member variables
     updateGoalMsg();
+
+    unlock();
   }
 
   /**
@@ -235,7 +263,8 @@ private:
    * goal has not yet been accomplished and that no plan has been constructed yet.
    */
   void activate(){
-    std::cout << "Activating controller\n";
+    ROS_INFO("Activating controller\n");
+
     this->state = ACTIVE;
     this->stateMsg.active = 1;
     this->stateMsg.valid = 0;
@@ -248,7 +277,8 @@ private:
    * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
    */
   void deactivate(){
-    std::cout << "Deactivating controller\n";
+    ROS_INFO("Deactivating controller\n");
+
     this->state = INACTIVE;
     this->stateMsg.active = 0;
     this->stateMsg.valid = 0;
@@ -259,15 +289,16 @@ private:
   /**
    * @brief Sleep for remaining time of the cycle
    */
-  void sleep(double loopstart)
+  void sleep(double loopstart, double loopDuration)
   {
     struct timeval curr;
     double currt,tdiff;
     gettimeofday(&curr,NULL);
     currt = curr.tv_sec + curr.tv_usec/1e6;
-    tdiff = this->cycleTime_ - (currt-loopstart);
-    if(tdiff <= 0.0)
+    tdiff = loopDuration - (currt-loopstart);
+    if(tdiff <= 0.0){
       ROS_DEBUG("Missed deadline and not sleeping; check machine load(%f)\n", currt-loopstart);
+    }
     else
       usleep((unsigned int)rint(tdiff*1e6));
   }
@@ -276,6 +307,7 @@ private:
    * @brief The main control loop. Locking happens before and after
    */
   void doOneCycle(){
+    lock();
 
     // Update the state message with suitable data from inputs
     updateStateMsg();
@@ -285,18 +317,9 @@ private:
     // is active, even if it transitions in the first cycle to an inactive state
     publish(stateTopic, this->stateMsg);
 
-    // If not enabled, then nothing further to do
-    if(!isActive())
-      return;
-
-    // If we have a new goal, we must make a plan
-    if(!isValid()){
-      setValid(makePlan());
-    }
-
     // If we are pursuing a goal, and thus we have a plan, we should check for
     // the goal being reached, in which case we update the state
-    if(isValid()){
+    if(isActive() && isValid()){
       if(goalReached()){
 	setDone(true);
 	deactivate();
@@ -307,32 +330,32 @@ private:
 	setValid(dispatchCommands());
       }
     }
+
+    unlock();
   }
 
   /**
    * @brief Setter for state msg done flag
    */
   void setDone(bool isDone){
-    lock();
     this->stateMsg.done = isDone;
-    unlock();
   }
 
   /**
    * @brief Setter for state msg valid flag
    */
   void setValid(bool isValid){
-    lock();
     this->stateMsg.valid = isValid;
-    unlock();
   }
 
   bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
   State state; /*!< Tracks the overall state of the controller */
-  double cycleTime_; /*!< The duration for each control cycle */
+  double controllerCycleTime_; /*!< The duration for each control cycle */
+  double plannerCycleTime_; /*!< The duration for each planner cycle */
   ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
+  pthread_t plannerThread_; /*!< Thread running the planner loop */
 };
 
 #endif

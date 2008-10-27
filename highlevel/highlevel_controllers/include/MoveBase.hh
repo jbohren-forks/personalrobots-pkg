@@ -81,7 +81,8 @@ namespace ros {
       /**
        * @brief A handler to be over-ridden in the derived class to handle a diff stream from the
        * cost map. This is called on a map update, which means it will be on a separate thread to the main
-       * node control loop
+       * node control loop. The client will obtain the lock, so derived class implementations
+       * can assume excusinve access
        */
       virtual void handleMapUpdates(const std::vector<unsigned int>& updates){}
 

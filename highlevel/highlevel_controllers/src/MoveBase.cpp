@@ -52,7 +52,7 @@ namespace ros {
 	costMap_(NULL),
 	ma_(NULL),
 	usingPointClouds_(false),
-	laserMaxRange_(4.0) {
+	laserMaxRange_(6.0) {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
@@ -145,6 +145,9 @@ namespace ros {
       param("trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
       param("trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
 
+      ROS_ASSERT(mapSize <= costMap_->getWidth());
+      ROS_ASSERT(mapSize <= costMap_->getHeight());
+
       ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
       
       std::vector<std_msgs::Point2DFloat32> footprint_spec;
@@ -179,7 +182,7 @@ namespace ros {
 										accLimit_x,
 										accLimit_y,
 										accLimit_th, 
-                    footprint_spec);
+										footprint_spec);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
@@ -248,37 +251,32 @@ namespace ros {
 
 
     void MoveBase::updateGoalMsg(){
-      lock();
-
       libTF::TFPose2D goalPose, transformedGoalPose;
       goalPose.x = goalMsg.goal.x;
       goalPose.y = goalMsg.goal.y;
       goalPose.yaw = goalMsg.goal.th;
       goalPose.frame = goalMsg.header.frame_id;
       goalPose.time = 0;
-
 	  
-     try{
-       transformedGoalPose = this->tf_.transformPose2D("map", goalPose);
+      try{
+	transformedGoalPose = this->tf_.transformPose2D("map", goalPose);
       }
       catch(libTF::TransformReference::LookupException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
 	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
       catch(libTF::TransformReference::ConnectivityException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
 	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
       catch(libTF::TransformReference::ExtrapolateException& ex){
-	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id);
+	ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
 	ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
 
       stateMsg.goal.x = goalPose.x;
       stateMsg.goal.y = goalPose.y;
       stateMsg.goal.th = goalPose.yaw;
-
-      unlock();
 
       ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
     }
@@ -354,7 +352,8 @@ namespace ros {
      * The odomMsg_ will be updates and we will do the transform to update the odom in the base frame
      */
     void MoveBase::odomCallback(){
-      lock();
+      base_odom_.lock();
+
       try
 	{
 	  libTF::TFVector v_in, v_out;
@@ -383,16 +382,21 @@ namespace ros {
 	  puts("Extrapolation exception");
 	}
 
-      unlock();
+      base_odom_.unlock();
     }
 
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
+      lock();
       plan_.clear();
       plan_ = newPlan;
-
       publishPath(true, plan_);
+      unlock();
     }
     
+    /**
+     * This is used as a validation check and is only called from within dispatchCommands where the lock has already been
+     * applied to protect access to the plan.
+     */
     bool MoveBase::inCollision() const {
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
 	const std_msgs::Pose2DFloat32& w = *it;
@@ -460,8 +464,8 @@ namespace ros {
 	 fabs(global_pose_.yaw - stateMsg.goal.th) < 0.1){
 
 	ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-	       global_pose_.x, global_pose_.y, global_pose_.yaw,
-	       stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+		  global_pose_.x, global_pose_.y, global_pose_.yaw,
+		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
 	// The last act will issue stop command
 	stopRobot();
@@ -498,7 +502,8 @@ namespace ros {
       curr_t = curr.tv_sec + curr.tv_usec / 1e6;
       t_diff = curr_t - last_t;
       bool ok = t_diff < 1.0;
-      if(!ok) printf("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+      if(!ok) 
+	ROS_DEBUG("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
       return ok;
     }
 
@@ -565,7 +570,7 @@ namespace ros {
 	start_t = start.tv_sec + double(start.tv_usec) / 1e6;
 	end_t = end.tv_sec + double(end.tv_usec) / 1e6;
 	t_diff = end_t - start_t;
-	//ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
+	ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
 
 	if(!planOk){
 	  // Zero out the velocities
@@ -582,7 +587,6 @@ namespace ros {
 
       publish("cmd_vel", cmdVel);
       publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
-
       return planOk;
     }
 
@@ -603,7 +607,8 @@ namespace ros {
      * render the obstacles.
      */
     void MoveBase::publishLocalCostMap() {
-      CostMapAccessor cm(*costMap_, 10.0, global_pose_.x, global_pose_.y);
+      double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.x, global_pose_.y);
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
@@ -673,7 +678,8 @@ namespace ros {
       if (!isInitialized()) {
 	return;
       }
-      std::vector<unsigned int> updates; 
+
+      std::vector<unsigned int> updates;
       lock();
       petTheWatchDog();
       costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);

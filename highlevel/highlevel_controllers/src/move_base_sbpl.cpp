@@ -205,16 +205,22 @@ namespace ros {
 
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
-      
-#warning "don't we have to lock() and unlock() here?"
 
       try {
 	SBPLPlannerStatistics::entry & se(pStat_.top());
 	const CostMap2D& cm = getCostMap();
 	
-	// Set start state based on global pose, updating statistics in the process.
+	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
+	// planner and controller were running on the same thread and the only contention was for cost map updates on call
+	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
+	// to lock protect those.
+	stateMsg.lock();
 	se.start = stateMsg.pos;
-	cm.WC_MC(stateMsg.pos.x, stateMsg.pos.y, se.startIx, se.startIy);
+	se.goal = stateMsg.goal;
+	stateMsg.unlock();
+
+	// Set start state based on global pose, updating statistics in the process.
+	cm.WC_MC(se.start.x, se.start.y, se.startIx, se.startIy);
 	envNav2D_.SetStart(se.startIx, se.startIy);
 	se.startState = envNav2D_.GetStateFromCoord(se.startIx, se.startIy);
 	int status(pMgr_->set_start(se.startState));
@@ -225,8 +231,7 @@ namespace ros {
 	}
 	
 	// Set goal state, updating statistics in the process.
-	se.goal = stateMsg.goal;
-	cm.WC_MC(stateMsg.goal.x, stateMsg.goal.y, se.goalIx, se.goalIy);
+	cm.WC_MC(se.goal.x, se.goal.y, se.goalIx, se.goalIy);
 	envNav2D_.SetGoal(se.goalIx, se.goalIy);
 	se.goalState = envNav2D_.GetStateFromCoord(se.goalIx, se.goalIy);
 	status = pMgr_->set_goal(se.goalState);
@@ -285,7 +290,6 @@ namespace ros {
 	  // the goal theta onto se.plan_angle_change_rad here, but
 	  // that depends on whether our planner handles theta for us,
 	  // and needs special handling if we have no plan...
-	  
 	  se.logInfo("move_base_sbpl: ");
 	  se.logFile("/tmp/move_base_sbpl.log");
 	  pStat_.pushBack(pMgr_->getName());
@@ -298,6 +302,7 @@ namespace ros {
 	ROS_ERROR("runtime_error in makePlan(): %s\n", ee.what());
 	return false;
       }
+
       ROS_ERROR("No plan found\n");
       return false;
     }

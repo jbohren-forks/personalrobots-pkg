@@ -11,7 +11,8 @@
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false"/>
 
-    <param name="move_base/frequency" value="20.0"/>
+    <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/planner_frequency" value="0.0"/>
     <param name="move_base/plannerTimeLimit" value="10.0"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
