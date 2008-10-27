@@ -124,16 +124,6 @@ public:
   /** \brief Transform a Stamped Pose into the target frame */
   void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out);
 
-  /** \brief Transform a Stamped Quaternion Message into the target frame */
-  void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped& stamped_in, std_msgs::QuaternionStamped& stamped_out);
-  /** \brief Transform a Stamped Vector Message into the target frame */
-  void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped& stamped_in, std_msgs::Vector3Stamped& stamped_out);
-  /** \brief Transform a Stamped Point Message into the target frame */
-  void transformPoint(const std::string& target_frame, const std_msgs::PointStamped& stamped_in, std_msgs::PointStamped& stamped_out);
-  /** \brief Transform a Stamped Pose Message into the target frame */
-  void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
-
-
   /** \brief Transform a Stamped data_in into data_out in traget frame at target time, using the given fixed frame
    * This is a bit complicated.  The net effect is that the data will be transformed to the fixed frame
    * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 

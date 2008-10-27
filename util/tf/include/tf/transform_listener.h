@@ -78,7 +78,23 @@ public:
     /// \todo remove backward compatability only
     node_.unsubscribe("/TransformArray", &TransformListener::receiveArray, this);
   };
+
+  /* Methods from transformer unhiding them here */
+  void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out){Transformer::transformQuaternion( target_frame, stamped_in, stamped_out);};
+  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out){Transformer::transformVector( target_frame, stamped_in, stamped_out);};
+  void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out){Transformer::transformPoint( target_frame, stamped_in, stamped_out);};
+  void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out){Transformer::transformPose( target_frame, stamped_in, stamped_out);};
+
   
+  /** \brief Transform a Stamped Quaternion Message into the target frame */
+  void transformQuaternion(const std::string& target_frame, const std_msgs::QuaternionStamped& stamped_in, std_msgs::QuaternionStamped& stamped_out);
+  /** \brief Transform a Stamped Vector Message into the target frame */
+  void transformVector(const std::string& target_frame, const std_msgs::Vector3Stamped& stamped_in, std_msgs::Vector3Stamped& stamped_out);
+  /** \brief Transform a Stamped Point Message into the target frame */
+  void transformPoint(const std::string& target_frame, const std_msgs::PointStamped& stamped_in, std_msgs::PointStamped& stamped_out);
+  /** \brief Transform a Stamped Pose Message into the target frame */
+  void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
+
   
   /** \brief Transform a std_msgs::PointCloud natively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);

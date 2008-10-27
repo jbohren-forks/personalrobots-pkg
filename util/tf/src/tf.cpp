@@ -460,46 +460,6 @@ void Transformer::transformPose(const std::string& target_frame, const Stamped<P
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-void Transformer::transformQuaternion(const std::string& target_frame,
-                                  const std_msgs::QuaternionStamped& msg_in,
-                                  std_msgs::QuaternionStamped& msg_out)
-{
-  Stamped<Quaternion> pin, pout;
-  QuaternionStampedMsgToTF(msg_in, pin);
-  transformQuaternion(target_frame, pin, pout);
-  QuaternionStampedTFToMsg(pout, msg_out);
-}
-
-void Transformer::transformVector(const std::string& target_frame,
-                                  const std_msgs::Vector3Stamped& msg_in,
-                                  std_msgs::Vector3Stamped& msg_out)
-{
-  Stamped<Vector3> pin, pout;
-  Vector3StampedMsgToTF(msg_in, pin);
-  transformVector(target_frame, pin, pout);
-  Vector3StampedTFToMsg(pout, msg_out);
-}
-
-void Transformer::transformPoint(const std::string& target_frame,
-                                  const std_msgs::PointStamped& msg_in,
-                                  std_msgs::PointStamped& msg_out)
-{
-  Stamped<Point> pin, pout;
-  PointStampedMsgToTF(msg_in, pin);
-  transformPoint(target_frame, pin, pout);
-  PointStampedTFToMsg(pout, msg_out);
-}
-
-void Transformer::transformPose(const std::string& target_frame,
-                                  const std_msgs::PoseStamped& msg_in,
-                                  std_msgs::PoseStamped& msg_out)
-{
-  Stamped<Pose> pin, pout;
-  PoseStampedMsgToTF(msg_in, pin);
-  transformPose(target_frame, pin, pout);
-  PoseStampedTFToMsg(pout, msg_out);
-}
-
 /*
 void Transformer::transformTransform(const std::string& target_frame,
                                   const std_msgs::TransformStamped& msg_in,

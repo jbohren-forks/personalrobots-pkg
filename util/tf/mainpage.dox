@@ -1,11 +1,68 @@
+
 /** \mainpage
 
 @htmlinclude manifest.html
 
-@b tf is a library for keeping track of coordinate frames within ROS.  
+@b tf is a library for keeping track of coordinate frames.  
+
+@section summary Summary
+The tf library has a core library which keeps track of coordinate frames independent 
+of ROS integration.  The library 
+utilizes the Linear Math libraires from the Bullet Physics engine.  And there are 
+classes which provide simple interfaces to ROS.  
+
+The major interface to the tf library is through the tf::Transformer class.  This class
+provides all the necessary external interfaces.  
+
+However for the common use cases in a distributed ROS environment the Transformer class
+is subclassed to provide automated messaging to keep up to date on transforms.  
+The tf::TransformListener class will automatically listen for transform messages sent over ROS and 
+insert them into the libraries storage.  There is a similar helper class the tf::TransformBroadcaster
+which provides a simple interface for broadcasting transforms onto the ROS network.  
 
 @section library Library
 There is a ROS messaging independant library encompased in the tf::Transformer class.  
+
+@subsection storage Storage
+Transforms are 
+expressed as a combination of a translation and rotation in 3D space, in the form of a tf::Vector3 and a 
+tf::Quaternion.  Each transform has an associated frame id, parent id, and time stamp.  Each transform added
+to the library is pushed into a list sorted by time for each frame id.  
+
+@subsection lookup Transform Composition
+To generate a transform between two arbitrary frames the structure of the relationship between the frames is
+assumed to be a tree.  To find the spanning set between any two frames the library will start by recursively finding
+the parent of both the target frame and the source frame.  These will both end at the root of the tree.  
+Then the library will step back down the tree removing all but the closest common parent.  
+
+@subsection timetransform Transforms in Time
+The above transform often provides adaquate functionality to perform transforms between any two frames at the 
+time the data was collected.  However often it is useful to know where an object is in relation to something 
+at a different time.  However this requires knowldege of which frame the object was stationary compared to during
+the time interval.  A very common example is an object observed as a vehicle is driving.  Two seconds later as the 
+vehicle approaches the obstacle where the object is in relation to the vehicle is good to know.  The map or odometery 
+frame use for navigation would be a good fixed frame.  However if say the vehicle had a robotic hand which grabbed the 
+object.  Two seconds later the object would be in the same position with relation to the hand, and and not the vehicle, 
+so the fixed frame would be hand.  And the lookup would show the position of the object in the body frame the same short 
+distance from the hand as observed when picked up, but the position of the hand may have changed relative to the body in 
+the two seconds, to which this would be robust.  
+
+@subsection exceptions Exceptions
+Exceptions are thrown for bad lookup requiests and malformed trees.  The exceptions all derive from tf::TransformException
+which is a derivative of std::RuntimeError and have the method what() defined for debugging.  
+The specific exception classes are tf::LookupException tf::MaxDepthException and tf::ConnectivityException.  
+
+Due to the importance of timing there is also an tf::ExtrapolationException which is thrown in the case that 
+the time requested is too far from data currently stored in the library.  There are two common cases when this would 
+happen.  If requests are made of the transform library faster than new transforms are added it will complain.  And the 
+other case if is the requested time is too far in the past to be in the list of transforms stored.  The amount of extrapolation
+and how long to keep data can be set in the tf::Transformer constructor.  
+
+@subsection computation Computation
+The library does not have any built in processing.  The lists are maintained by the inserting funciton call. 
+The maintenance simply prunes expired transforms from the end of the list.  All transforms are generated 
+when requested.  All interfaces use the std::string form of the frame id, however when storing the transforms 
+the string is mapped to a number to allow internal computations to avoid strings.  
 
 @section usage Common Usage
 For most use cases the basic library will not be used directly.  
@@ -22,6 +79,9 @@ on ROS into the library.
 @subsection broadcaster TransformBroadcaster
 The tf::TransformBroadcaster class is the complement to the listener class.  The broadcaster class provides a 
 simple API for broadcasting coordinate frame transforms.  
+
+@subsectoin send_transform
+
 
 @subsection datatypes Data Types used in tf
 - Quaternion
