@@ -236,7 +236,7 @@ struct Euler
       Pose3D(Position &pos, Quaternion &quat);
       /** \brief Translation and Quaturnion constructor */
       Pose3D(double xt, double yt, double zt, 
-             double xr, double yt, double zt, double w);
+             double xr, double yr, double zr, double w);
       
       /** \brief Destructor */
       virtual ~Pose3D(void)
