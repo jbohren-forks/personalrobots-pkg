@@ -15,6 +15,7 @@ class CvStereoCamModel : public CvStereoCamParams
 {
 public:
   typedef CvStereoCamParams Parent;
+	/// Constructor.
   /**
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
    *  @param Fy  - focal length in y direction of the rectified image in pixels.
@@ -58,14 +59,14 @@ public:
       /// (Output) 3D points stored in rows, in Cartesian coordinates.
 	    CvMat& XYZs) const;
 
-	// OR ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
+	/// ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
 	bool dispToCart(
     /// Id has to be 16SC1
     const IplImage *Id, 
     /// Ixyz has to be 32F
 		IplImage *Ixyz) const;
 
-  /// MUCH FASTER CONVERSION OF POINTS AND PUTTING THEM INTO X, Y, and Z images
+  /// MUCH FASTER CONVERSION OF POINTS AND PUTTING THEM INTO X, Y, and Z images.
 	//Id is single channel 8U disparity (it accepts an ROI and if so will use that on all the images
 	//ZnearMM, ZfarMM -- Near and far thresholds for depth to convert
 	//Ix, Iy, Iz are single channel 32F images which will contain the results  All images must be same size
@@ -86,30 +87,30 @@ public:
 	  dispToCart = mMatDispToCart;
 	}
 
-	/// compute delta u, given Z and delta X in Cartesian space
+	/// Compute delta u, given Z and delta X in Cartesian space.
 	/// returns DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
-	/// compute delta X, given disparity and delta u in disparity space
+	/// Compute delta X, given disparity and delta u in disparity space.
 	/// returns 0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
-	/// compute delta v, given Z and delta Y in Cartesian space
+	/// compute delta v, given Z and delta Y in Cartesian space.
 	/// returns DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
-	/// compute delta Y, given disparity and delta v in disparity space
+	/// compute delta Y, given disparity and delta v in disparity space.
 	/// returns 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
-	/// compute Z given disparity
+	/// compute Z given disparity.
 	/// returns DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
-	/// compute disparity given Z
+	/// compute disparity given Z.
 	/// returns DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 	
-	// This routine is used to display a singe channel floating point depth image
-	// It inverts the depth so that brightest points are closest.
-    // Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
-    //            Just call the function with an image to display it.  Size of the image can change each frame.
-	// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image, 
+	/// This routine is used to display a singe channel floating point depth image.
+	/// It inverts the depth so that brightest points are closest.
+	/// Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
+	///            Just call the function with an image to display it.  Size of the image can change each frame.
+	/// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image, 
 	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
 protected:
