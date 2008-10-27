@@ -20,9 +20,17 @@ kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1],
 print len(kp), "keypoints"
 
 cl = calonder.classifier()
-cl.setThreshold(0.2)
+cl.setThreshold(0.0)
 
 cl.train(im.tostring(), im.size[0], im.size[1], kp)
+
+if 0:
+  patch = im.crop((100,100,132,132))
+  for x in range(10):
+    sig = cl.getDenseSignature(patch.tostring(), patch.size[0], patch.size[1])
+    print sig.dump(), sum(sig.dump())
+  sys.exit(0)
+
 # cl.write('foo.tree')
 cl.setThreshold(0.000)
 
@@ -31,16 +39,16 @@ ma = calonder.BruteForceMatcher()
 sigs = []
 for (x,y) in kp:
   patch = im.crop((x,y,x+32,y+32))
-  sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-  print [ "%.3f" % x for x in sig.dump()]
+  sig = cl.getDenseSignature(patch.tostring(), patch.size[0], patch.size[1])
+  print [ "%.3f" % x for x in sig.dump()], sum(sig.dump())
   sigs.append(sig)
   ma.addSignature(sig, x)
 
 print sigs
 
-for (x,y) in kp:
+for (x,y) in kp[-1:] * 10:
   patch = im.crop((x,y,x+32,y+32))
-  sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-  print "sig", [ "%.3f" % x for x in sig.dump()], 
+  sig = cl.getDenseSignature(patch.tostring(), patch.size[0], patch.size[1])
+  print "sig", [ "%.3f" % x for x in sig.dump()], sum(sig.dump())
   print 
   print ma.findMatch(sig)

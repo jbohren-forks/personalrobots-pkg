@@ -1,7 +1,7 @@
 
 typedef struct {
     PyObject_HEAD
-    BruteForceMatcher <SparseSignature, PyObject *>
+    BruteForceMatcher <DenseSignature, PyObject *>
 #if 1
     *
 #endif
@@ -72,7 +72,7 @@ PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
 {
     wrapped_BruteForceMatcher_t *object = PyObject_NEW(wrapped_BruteForceMatcher_t, &wrapped_BruteForceMatcher_Type);
 #if 1
-    object->c = new BruteForceMatcher <SparseSignature, PyObject *>;
+    object->c = new BruteForceMatcher <DenseSignature, PyObject *>;
 #endif
     return (PyObject*)object;
 }
@@ -80,46 +80,46 @@ PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
 
 typedef struct {
     PyObject_HEAD
-    SparseSignature 
+    DenseSignature 
 #if 0
     *
 #endif
     c; 
-} wrapped_SparseSignature_t;
+} wrapped_DenseSignature_t;
 
 static void
-wrapped_SparseSignature_dealloc(PyObject *self)
+wrapped_DenseSignature_dealloc(PyObject *self)
 {
 #if 0
-  wrapped_SparseSignature_t *pc = (wrapped_SparseSignature_t*)self;
+  wrapped_DenseSignature_t *pc = (wrapped_DenseSignature_t*)self;
   delete pc->c;
 #endif
   PyObject_Del(self);
 }
 
-PyObject *wrapped_SparseSignature_dump(PyObject *self, PyObject *args);
+PyObject *wrapped_DenseSignature_dump(PyObject *self, PyObject *args);
 
 /* Method table */
-static PyMethodDef wrapped_SparseSignature_methods[] = {
-{"dump", wrapped_SparseSignature_dump, METH_VARARGS},
+static PyMethodDef wrapped_DenseSignature_methods[] = {
+{"dump", wrapped_DenseSignature_dump, METH_VARARGS},
 {NULL, NULL}
 };
 
 static PyObject *
-wrapped_SparseSignature_GetAttr(PyObject *self, char *attrname)
+wrapped_DenseSignature_GetAttr(PyObject *self, char *attrname)
 {
-    return Py_FindMethod(wrapped_SparseSignature_methods, self, attrname);
+    return Py_FindMethod(wrapped_DenseSignature_methods, self, attrname);
 }
 
-static PyTypeObject wrapped_SparseSignature_Type = {
+static PyTypeObject wrapped_DenseSignature_Type = {
     PyObject_HEAD_INIT(&PyType_Type)
     0,
-    "SparseSignature",
-    sizeof(wrapped_SparseSignature_t),
+    "DenseSignature",
+    sizeof(wrapped_DenseSignature_t),
     0,
-    (destructor)wrapped_SparseSignature_dealloc,
+    (destructor)wrapped_DenseSignature_dealloc,
     0,
-    (getattrfunc)wrapped_SparseSignature_GetAttr,
+    (getattrfunc)wrapped_DenseSignature_GetAttr,
     0,
     0,
     0, // repr
@@ -145,11 +145,11 @@ static PyTypeObject wrapped_SparseSignature_Type = {
     /* the rest are NULLs */
 };
 
-PyObject *make_wrapped_SparseSignature(PyObject *self, PyObject *args)
+PyObject *make_wrapped_DenseSignature(PyObject *self, PyObject *args)
 {
-    wrapped_SparseSignature_t *object = PyObject_NEW(wrapped_SparseSignature_t, &wrapped_SparseSignature_Type);
+    wrapped_DenseSignature_t *object = PyObject_NEW(wrapped_DenseSignature_t, &wrapped_DenseSignature_Type);
 #if 0
-    object->c = new SparseSignature ;
+    object->c = new DenseSignature ;
 #endif
     return (PyObject*)object;
 }

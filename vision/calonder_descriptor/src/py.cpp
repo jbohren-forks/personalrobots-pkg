@@ -60,7 +60,7 @@ PyObject *train(PyObject *self, PyObject *args)
     base_set.push_back( BaseKeypoint(x, y, input) );
   }
 
-  Rng rng( std::time(NULL) );
+  Rng rng( 0 );
   pc->classifier->train(base_set, rng, 25, 10, 20);
 
   Py_RETURN_NONE;
@@ -85,7 +85,7 @@ PyObject *Cread(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-PyObject *getSparseSignature(PyObject *self, PyObject *args)
+PyObject *getDenseSignature(PyObject *self, PyObject *args)
 {
   IplImage *input;
   {
@@ -97,9 +97,9 @@ PyObject *getSparseSignature(PyObject *self, PyObject *args)
     cvSetData(input, imgdata, x);
   }
   classifier_t *pc = (classifier_t*)self;
-  wrapped_SparseSignature_t *object = PyObject_NEW(wrapped_SparseSignature_t, &wrapped_SparseSignature_Type);
-  new(&object->c) SparseSignature();
-  object->c = pc->classifier->getSparseSignature(input);
+  wrapped_DenseSignature_t *object = PyObject_NEW(wrapped_DenseSignature_t, &wrapped_DenseSignature_Type);
+  new(&object->c) DenseSignature();
+  object->c = pc->classifier->getDenseSignature(input);
   return (PyObject*)object;
 }
 
@@ -109,7 +109,7 @@ static PyMethodDef classifier_methods[] = {
   {"train", train, METH_VARARGS},
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},
-  {"getSparseSignature", getSparseSignature, METH_VARARGS},
+  {"getDenseSignature", getDenseSignature, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -129,7 +129,7 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
 
   Py_INCREF(tag);
 
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
+  wrapped_DenseSignature_t *ps = (wrapped_DenseSignature_t*)sig;
   pm->c->addSignature(ps->c, tag);
   Py_RETURN_NONE;
 }
@@ -141,7 +141,7 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
   PyObject *sig;
   if (!PyArg_ParseTuple(args, "O", &sig))
     return NULL;
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
+  wrapped_DenseSignature_t *ps = (wrapped_DenseSignature_t*)sig;
 
   float distance;
   int index = pm->c->findMatch(ps->c, &distance);
@@ -151,9 +151,9 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
   return r;
 }
 
-PyObject *wrapped_SparseSignature_dump(PyObject *self, PyObject *args)
+PyObject *wrapped_DenseSignature_dump(PyObject *self, PyObject *args)
 {
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)self;
+  wrapped_DenseSignature_t *ps = (wrapped_DenseSignature_t*)self;
 
   PyObject *r = PyTuple_New(ps->c.size());
   for (size_t i = 0; i < ps->c.size(); i++)
