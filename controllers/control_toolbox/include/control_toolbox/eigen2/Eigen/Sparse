@@ -1,0 +1,58 @@
+#ifndef EIGEN_SPARSE_MODULE_H
+#define EIGEN_SPARSE_MODULE_H
+
+#include "Core"
+#include <vector>
+#include <map>
+#include <cstdlib>
+#include <cstring>
+#include <algorithm>
+
+#ifdef EIGEN_CHOLMOD_SUPPORT
+  extern "C" {
+    #include "cholmod.h"
+  }
+#endif
+
+#ifdef EIGEN_TAUCS_SUPPORT
+
+  extern "C" {
+    #include "taucs.h"
+  }
+
+  #ifdef min
+    #undef min
+  #endif
+  #ifdef max
+    #undef max
+  #endif
+
+#endif
+
+namespace Eigen {
+
+#include "src/Sparse/SparseUtil.h"
+#include "src/Sparse/SparseMatrixBase.h"
+#include "src/Sparse/SparseArray.h"
+#include "src/Sparse/AmbiVector.h"
+#include "src/Sparse/SparseBlock.h"
+#include "src/Sparse/SparseMatrix.h"
+#include "src/Sparse/HashMatrix.h"
+#include "src/Sparse/LinkedVectorMatrix.h"
+#include "src/Sparse/CoreIterators.h"
+#include "src/Sparse/SparseSetter.h"
+#include "src/Sparse/SparseProduct.h"
+#include "src/Sparse/TriangularSolver.h"
+#include "src/Sparse/SparseCholesky.h"
+
+#ifdef EIGEN_CHOLMOD_SUPPORT
+# include "src/Sparse/CholmodSupport.h"
+#endif
+
+#ifdef EIGEN_TAUCS_SUPPORT
+# include "src/Sparse/TaucsSupport.h"
+#endif
+
+} // namespace Eigen
+
+#endif // EIGEN_SPARSE_MODULE_H
