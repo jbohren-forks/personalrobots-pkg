@@ -3,9 +3,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/Image.h"
-#include "std_msgs/PointStamped.h"
-#include "axis_cam/PTZActuatorCmd.h"
-#include "axis_cam/PTZActuatorState.h"
+
 #include "image_utils/cv_bridge.h"
 #include "pr2_mechanism_controllers/TrackPoint.h"
 #include "opencv/cxcore.h"
@@ -13,26 +11,36 @@
 #include "opencv/highgui.h"
 
 
-// added for the videre tracker
 #include <vector>
 #include <map>
 using namespace std;
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/String.h"
+
+#include "stereo_blob_tracker/Rect2DStamped.h"
+using namespace stereo_blob_tracker;
+
+
 typedef signed char schar;
 
 #include "CvStereoCamModel.h"
 #include "CvMatUtils.h"
 using namespace cv::willow;
-// end added for the videre tracker
 
 
 #include "blob_tracker.h"
 
 #define DISPLAY true
 #define DISPLAYFREQ 30
-#define BLOBNEARCENTER false
+// set the following to be a number between 0.0 and 1.0
+// to specify how fast the head moves to track the blob.
+// 0.0 for no movemont; 1.0 for putting the blob at the center 
+// in next frame.
+#define BLOBNEARCENTER .0
 #define GIVEUPONFAILURE false
+// set the following to be true, if you would like
+// to run the gui in a separate process
+#define REMOTE_GUI true
 
 
 //Just some convienience macros
@@ -162,12 +170,24 @@ struct imgData
 // this class is originally copied from CvView in cv_view_array.cpp in vision/cv_view package.
 class VidereBlobTracker: public ros::node {
 public:
+  // configuration consts
+  /// true if need to display debugging windows
+  const bool display_;
+  /// true if the gui is running remotely (not in the process)
+  const bool remote_gui_;
+
+
   // for subscription
+  const string imagesTopic_; // ("images");
   std_msgs::ImageArray image_msg_;
+  const string calParamTopic_; // "calparam"
   std_msgs::String cal_params_;
+  const string selectionBoxTopic_; // selectionbox
+  Rect2DStamped selection_box_;
 
   // for publishing
   std_msgs::PointStamped point_stamped_;
+  const string trackedBoxTopic_; // trackedbox
 
   /// camara model
   CvStereoCamModel *camModel_;
@@ -206,17 +226,26 @@ public:
 
   map<string, imgData> images;
 
-  bool display_;
-  bool blobNearCenter_;
+  /// weight of next position towards to center
+  float blobNearCenter_;
   int  numFrames_;
 
   VidereBlobTracker(/// if true, the blob is always near the center
 		    /// of the image
-		    bool blobNearCenter,
+		    float blobNearCenter,
 		    /// if true, display several images of intermediate
 		    /// steps. e.g. feature map, back projection. etc..
-		    bool display) : 
+		    bool display,
+		    /// if true, remote gui is used to selection windows and
+		    /// display tracking results
+		    bool remote_gui) : 
     node("videre_blob_tracker", ros::node::ANONYMOUS_NAME),
+    display_(display),
+    remote_gui_(remote_gui),
+    imagesTopic_("images"),
+    calParamTopic_("calparams"),
+    selectionBoxTopic_("selectionbox"),
+    trackedBoxTopic_("trackedbox"),
     camModel_(NULL),
     cv_image_cpy_(NULL), 
     cv_dispImg_cpy_(NULL),
@@ -235,7 +264,7 @@ public:
     mem_storage_(NULL),
     blobPts_(NULL),
     quit(false),
-    blobNearCenter_(blobNearCenter),
+    blobNearCenter_(min(1.0f, max(0.f, blobNearCenter))),
     numFrames_(0)
   { 
     btracker_ = new BTracker();    
@@ -244,21 +273,30 @@ public:
 
     resetGlobals();
 
-    // OpenCV: pop up an OpenCV highgui window and put in a mouse call back 
-    cvNamedWindow("Tracker", CV_WINDOW_AUTOSIZE);
-    cvSetMouseCallback("Tracker", on_mouse, 0);
+    if (remote_gui_ == false ) {
+      // OpenCV: pop up an OpenCV highgui window and put in a mouse call back 
+      cvNamedWindow("Tracker", CV_WINDOW_AUTOSIZE);
+      cvSetMouseCallback("Tracker", on_mouse, 0);
+    }
 
     // Ros: subscribe to image, with a call back
-    subscribe("images", image_msg_, &VidereBlobTracker::image_cb, 1);
+    subscribe(imagesTopic_, image_msg_, &VidereBlobTracker::image_cb, 1);
 
     // Ros: subscribe to calibration parameters
-    subscribe("calparams", cal_params_, &VidereBlobTracker::cal_params_cb, 1000);
+    subscribe(calParamTopic_, cal_params_, &VidereBlobTracker::cal_params_cb, 1000);
+
+    if (remote_gui_) {
+      // Ros: subscribe to gui selection
+      subscribe(selectionBoxTopic_, selection_box_, &VidereBlobTracker::selection_box_cb, 1000);
+    }
 
     // Ros: advertise a topic
     advertise<std_msgs::PointStamped>("points", 1000);
     advertise<std_msgs::PointStamped>("head_controller/track_point", 1000);
+    // tracked box
+    advertise<Rect2DStamped>(trackedBoxTopic_, 1000);
+
     // OpenCV: pop up other windows for features, etc.
-    display_ = display;
     if (display_) {
       cvNamedWindow("Features", 0);
       cvNamedWindow("Backprojection",0);
@@ -360,16 +398,19 @@ public:
       // Track and draw the new window.
       if (g_start_track) {
 
-	if (blobNearCenter_ == true) {
+	if (blobNearCenter_> 0.0) {
 #if 0
 	  printf("old window %d, %d, %d, %d\n", 
 		 g_selection.x, g_selection.y, g_selection.width,
 		 g_selection.height);
 #endif
-	  // move the last window to the center regardless.
-	  // we may need to make the box larger than this
-	  g_selection.x = im_size.width/2  - g_selection.width /2;
-	  g_selection.y = im_size.height/2 - g_selection.height/2; 
+	  // move the last window position to be somewhere between the last
+	  // tracked position and the center of the window, weighted by 
+	  // blobNearCenter
+	  double center_x = im_size.width/2  - g_selection.width /2;
+	  double center_y = im_size.height/2 - g_selection.height/2; 
+	  g_selection.x +=  (center_x - g_selection.x) * blobNearCenter_;
+	  g_selection.y +=  (center_y - g_selection.y) * blobNearCenter_;
 #if 0
 	  printf("center window %d, %d, %d, %d\n", 
 		 g_selection.x, g_selection.y, g_selection.width,
@@ -511,22 +552,34 @@ public:
 	      static int count = 0;
 	      if (++count % 1 == 0)
 		publish(topic, target);
+
+	      if (remote_gui_) {
+		// publish tracked box
+		Rect2DStamped box;
+		box.rect.x = g_selection.x;
+		box.rect.y = g_selection.y;
+		box.rect.w = g_selection.width;
+		box.rect.h = g_selection.height;
+		publish(trackedBoxTopic_, box);
+	      }
 	      
 	    }
 	  }
 	  
-	  // draw it
-	  cvRectangle(leftImg,
-		      cvPoint(g_selection.x,g_selection.y),
-		      cvPoint(g_selection.x+g_selection.width,
-			      g_selection.y+g_selection.height),
-		      cvScalar(0,0,255), 4);
+	  if (remote_gui_ == false) {
+	    // draw it
+	    cvRectangle(leftImg,
+			cvPoint(g_selection.x,g_selection.y),
+			cvPoint(g_selection.x+g_selection.width,
+				g_selection.y+g_selection.height),
+			cvScalar(0,0,255), 4);
+	  }
 	}
 
       }
 
       // Draw a rectangle which is still being defined.
-      if (g_get_rect) {
+      if (remote_gui_ == false && g_get_rect) {
      
 	cvRectangle(leftImg,
 		    cvPoint(g_pt_lx, g_pt_ty),
@@ -593,7 +646,7 @@ public:
 
 	// Display all of the images.
 	cv_mutex_.lock();
-	if (cv_image_cpy_)
+	if (remote_gui_ == false && cv_image_cpy_)
 	  cvShowImage("Tracker",cv_image_cpy_);
 
 	if (display_) {
@@ -669,6 +722,23 @@ public:
       double Tx  = - matdata[3]/Fx;
       std::cout << "base length "<< Tx << std::endl;
       camModel_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy);
+    }
+  }
+
+  void selection_box_cb(){
+    g_selection.x      = selection_box_.rect.x;
+    g_selection.y      = selection_box_.rect.y;
+    g_selection.width  = selection_box_.rect.w;
+    g_selection.height = selection_box_.rect.h;
+
+    if (g_selection.width < 3 || g_selection.height < 3) {
+      printf("Selection has either width or height of <3 pixels. Try again.\n");
+      //     g_selection = cvRect(-1,-1,-1,-1);
+      //g_start_track = false;
+      resetGlobals();
+    } else {
+      g_start_track = true;
+      g_is_new_blob = true;
     }
   }
 
@@ -826,13 +896,12 @@ public:
     
 };
 
-
 // Main
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  VidereBlobTracker v(BLOBNEARCENTER, DISPLAY);
+  VidereBlobTracker v(BLOBNEARCENTER, DISPLAY, REMOTE_GUI);
   v.spin();
 
   ros::fini();

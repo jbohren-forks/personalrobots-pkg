@@ -1,0 +1,16 @@
+<launch>
+  <master auto="start"/>
+
+  <param name="axis_cam/host" type="str" value="axis-00408c7dfe2b.local"/>
+  <param name="axis_ptz/host" type="str" value="axis-00408c7dfe2b.local"/>
+
+  <node pkg="axis_cam" type="axis_cam" respawn="false"/>
+  <node pkg="axis_cam" type="axis_ptz" respawn="false"/>
+  <node pkg="stereo_blob_tracker" type="axis_blob_tracker" respawn="false"  output="screen"/>
+</launch>
+
+
+
+
+
+

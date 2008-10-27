@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="stereo_blob_tracker" 
+	type="stereo_blob_tracker_listener" 
+	args="selectionbox:=blobtracker/selectionbox 
+	      trackedbox:=blobtracker/trackedbox	
+	      points:=blobtracker/tracked_points" 
+	respawn="false"  
+	output="screen"/>
+</launch>

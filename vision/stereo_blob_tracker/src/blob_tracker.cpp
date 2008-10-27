@@ -63,6 +63,10 @@ float *hranges_ptr = hranges;
 BTracker::BTracker()
 {
  
+#if 0
+  hmin_ = hranges[0];
+  hmax_ = hranges[1];
+#endif
   feat_image_ptr_= NULL;
   hsv_image_ptr_ = NULL;
   mask_ptr_=NULL;
@@ -147,7 +151,18 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
   }
 
   // If this is a new blob, recompute the histogram.
-  if (is_new_blob) {  
+#if 0
+  if (is_new_blob) {
+    cvMinMaxLoc(feat_image_ptr_, &hmin_, &hmax_);
+  }
+  // scale hue channel
+  double scale = 180./(hmax_-hmin_);
+  double shift = 180.*hmin_/(hmax_-hmin_);
+  printf("cvtscale hue: %f, %f, %f, %f\n", hmin_, hmax_, scale, shift);
+  cvConvertScale(feat_image_ptr_, feat_image_ptr_, scale, shift);
+#endif
+
+  if (is_new_blob) {
     cvSetImageROI( feat_image_ptr_, old_window );
     cvSetImageROI( mask_ptr_, old_window );
     cvCalcHist( &feat_image_ptr_, blob_.hist, 0, mask_ptr_);
@@ -162,10 +177,10 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
 
   // The actual tracking using CamShift.
   cvCalcBackProject( &feat_image_ptr_, backproject_ptr_, blob_.hist );
-  //cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, priorProbMap);
-  cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, 0);
-  if (priorProbMap)
-    cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
+  cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, priorProbMap);
+  //cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, 0);
+  //if (priorProbMap)
+  //  cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
 
   cvCamShift( backproject_ptr_, blob_.window, 
 	      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),

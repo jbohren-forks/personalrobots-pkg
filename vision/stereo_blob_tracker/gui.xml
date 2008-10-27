@@ -1,0 +1,8 @@
+<launch>
+  <node pkg="stereo_blob_tracker" 
+	type="blob_tracker_gui" 
+	args="images:=videre/images 
+	      selectionbox:=blobtracker/selectionbox
+	      trackedbox:=blobtracker/trackedbox" 
+	respawn="false"  output="screen"/>
+</launch>

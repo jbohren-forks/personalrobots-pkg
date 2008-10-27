@@ -101,7 +101,7 @@ class BTracker
 		      /// Currently it is a map of 8u image of 0 and 255
 		      const IplImage* priorProbMap=NULL);
 
- private:
+ protected:
 
   // Blob to track
   Blob blob_;
@@ -113,6 +113,12 @@ class BTracker
   // If this is larger than a threshold, the tracker should declare itself lost.
   int num_bad_frames_;
 
+#if 0
+  /// min hue
+  double hmin_;
+  /// max hue
+  double hmax_;
+#endif
 
   /*!
    * Initialize a blob.

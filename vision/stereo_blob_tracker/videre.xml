@@ -1,0 +1,16 @@
+<launch>
+  <param name="images" type="str" value="videre/images" />
+  <param name="calparams" type="str" value="videre/cal_params"/>
+  <param name="points" type="str" value="videre/tracked_points" />
+  <node pkg="stereo_blob_tracker" 
+	type="stereo_blob_tracker" 
+	args="images:=videre/images 
+	      calparams:=videre/cal_params 
+	      selectionbox:=blobtracker/selectionbox 
+	      trackedbox:=blobtracker/trackedbox
+	      points:=videre/tracked_points" 
+	respawn="false"  output="screen"/>
+<!--
+  <node pkg="stereo_blob_tracker" type="stereo_blob_tracker" respawn="false"  output="screen"/>
+-->
+</launch>

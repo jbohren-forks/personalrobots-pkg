@@ -30,18 +30,34 @@
 #include "ros/node.h"
 #include "std_msgs/String.h"
 #include "std_msgs/PointStamped.h"
+#include "stereo_blob_tracker/Rect2DStamped.h"
+using namespace stereo_blob_tracker;
 
 class Listener : public ros::node
 {
 public:
   std_msgs::PointStamped msg;
+  Rect2DStamped sbox_msg;
+  Rect2DStamped tbox_msg;
   Listener() : ros::node("listener")
   { 
-    subscribe("points", msg, &Listener::chatter_cb, 1000);
+    subscribe("points",       msg,      &Listener::point_cb,        1000); 
+    subscribe("selectionbox", sbox_msg, &Listener::selectionbox_cb, 1000);
+    subscribe("trackedbox",   tbox_msg, &Listener::trackedbox_cb,   1000);
   }
-  void chatter_cb()
+  void point_cb()
   {
     printf("I heard: [%f, %f, %f]\n", msg.point.x, msg.point.y, msg.point.z);
+  }
+  void selectionbox_cb() {
+    printf("I heard selection box [%f, %f, %f, %f]\n", 
+	   sbox_msg.rect.x, sbox_msg.rect.y,
+	   sbox_msg.rect.w, sbox_msg.rect.h);
+  }
+  void trackedbox_cb() {
+    printf("I heard tracked box [%f, %f, %f, %f]\n", 
+	   tbox_msg.rect.x, tbox_msg.rect.y,
+	   tbox_msg.rect.w, tbox_msg.rect.h);
   }
 };
 

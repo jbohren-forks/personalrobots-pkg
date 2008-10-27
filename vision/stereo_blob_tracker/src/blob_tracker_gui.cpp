@@ -2,10 +2,6 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/Image.h"
-#include "std_msgs/Polyline2D.h"
-#include "axis_cam/PTZActuatorCmd.h"
-#include "axis_cam/PTZActuatorState.h"
 #include "image_utils/cv_bridge.h"
 
 #include "opencv/cxcore.h"
@@ -13,27 +9,20 @@
 #include "opencv/highgui.h"
 
 
-// added for the videre tracker
 #include <vector>
 #include <map>
 using namespace std;
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/String.h"
-typedef signed char schar;
 
-#include "CvStereoCamModel.h"
-#include "CvMatUtils.h"
-using namespace cv::willow;
-// end added for the videre tracker
-
+#include "stereo_blob_tracker/Rect2DStamped.h"
+using namespace stereo_blob_tracker;
 
 #include "blob_tracker.h"
 
 #define USE_AXIS_CAM 0
 #define DISPLAY true
 #define DISPLAYFREQ 30
-#define BLOBNEARCENTER false
-
 
 /*****************************************
  * Globals. Mainly for the mouse callback.
@@ -135,6 +124,7 @@ void on_mouse(int event, int x, int y, int flags, void *params)
     // Everything is ok, go ahead and track.
     g_start_track = true;
     g_is_new_blob = true;
+
     break;
 
   default:
@@ -155,15 +145,16 @@ struct imgData
 /// the tracker).
 class BlobTrackerGUI: public ros::node {
 public:
+  bool display_;
   // for subscription
   // images from the tracker
   std_msgs::ImageArray image_msg_;
+  std_msgs::ImageArray aux_image_msg_;
+  Rect2DStamped trackedBox_msg_;
 
   // for publishing. diagonal line of the rectangular selected area.
-  std_msgs::Polyline2D rectDiag_;
-
-  /// camara model
-  CvStereoCamModel *camModel_;
+  static string selectionBoxTopic;
+  
 
   /// a copy of the current image for display
   IplImage *cv_image_cpy_;
@@ -173,37 +164,29 @@ public:
   IplImage *cv_feat_image_cpy_;
   IplImage *cv_backproject_image_cpy_;
   IplImage *cv_mask_image_cpy_;
+  IplImage *cv_depthmask_image_cpy_;
+
 
   bool quit;
 
   ros::thread::mutex cv_mutex_;
 
-  BTracker *btracker_;
-
   map<string, imgData> images;
 
-  bool display_;
-  bool blobNearCenter_;
   int  numFrames_;
 
-  BlobTrackerGUI(/// if true, the blob is always near the center
-		    /// of the image
-		    bool blobNearCenter,
-		    /// if true, display several images of intermediate
-		    /// steps. e.g. feature map, back projection. etc..
-		    bool display) : 
+  BlobTrackerGUI(bool display):
     node("blob_tracker_gui", ros::node::ANONYMOUS_NAME),
-    camModel_(NULL),
+    display_(display),
     cv_image_cpy_(NULL), 
     cv_dispImg_cpy_(NULL),
     cv_feat_image_cpy_(NULL), 
     cv_backproject_image_cpy_(NULL), 
     cv_mask_image_cpy_(NULL),
+    cv_depthmask_image_cpy_(NULL),
     quit(false),
-    blobNearCenter_(blobNearCenter),
     numFrames_(0)
   { 
-    btracker_ = new BTracker();    
 
     g_iframe = 0;
 
@@ -213,21 +196,24 @@ public:
     cvNamedWindow("Tracker", CV_WINDOW_AUTOSIZE);
     cvSetMouseCallback("Tracker", on_mouse, 0);
 
-    // Ros: subscribe to image, with a call back
-    subscribe("images", image_msg_, &VidereBlobTracker::image_cb, 1);
+    // Ros: subscribe to images, with a call back
+    subscribe("images",     image_msg_, &BlobTrackerGUI::image_cb, 1);
 
-    // Ros: subscribe to calibration parameters
-    subscribe("calparams", cal_params_, &VidereBlobTracker::cal_params_cb, 1000);
+    // Ros: subscribe to aux images, with a callback
+    subscribe("auximages",  aux_image_msg_, &BlobTrackerGUI::aux_image_cb, 1);
 
-    // Ros: advertise a topic
-    advertise<std_msgs::PointStamped>("points", 1000);
+    // Ros: subscribe to bounding box of the tracked object
+    subscribe("trackedbox", trackedBox_msg_, &BlobTrackerGUI::trackedBox_cb, 1);
+
+    // Ros: advertise a topic.
+    advertise<Rect2DStamped>(selectionBoxTopic, 1000);
 
     // OpenCV: pop up other windows for features, etc.
-    display_ = display;
     if (display_) {
       cvNamedWindow("Features", 0);
       cvNamedWindow("Backprojection",0);
       cvNamedWindow("Mask",0);
+      cvNamedWindow("DepthMask", 0);
       cvNamedWindow("left_disparity", 0);
     }
 
@@ -240,8 +226,7 @@ public:
       if (i->second.cv_image)
         cvReleaseImage(&i->second.cv_image);
     }
-    // TODO: lots of other things needs to be release here
-    delete camModel_;
+    // TODO: lots of image copies need to be deleted here
   }
 
   void check_keys() 
@@ -253,12 +238,15 @@ public:
     cv_mutex_.unlock();
   }
 
+  void aux_image_cb() {
+    printf("got aux images\n");
+  }
+
   /// The image callback. For each new image, copy it, find the new blob 
   /// window, report the 3D location, and draw the new window.
   void image_cb()
   {
 
-    bool oktrack;
     CvSize im_size;
 
     g_iframe++;
@@ -300,104 +288,22 @@ public:
       // Track and draw the new window.
       if (g_start_track) {
 
-	if (blobNearCenter_ == true) {
-#if 0
-	  printf("old window %d, %d, %d, %d\n", 
-		 g_selection.x, g_selection.y, g_selection.width,
-		 g_selection.height);
-#endif
-	  // move the last window to the center regardless.
-	  // we may need to make the box larger than this
-	  g_selection.x = im_size.width/2  - g_selection.width /2;
-	  g_selection.y = im_size.height/2 - g_selection.height/2; 
-#if 0
-	  printf("center window %d, %d, %d, %d\n", 
-		 g_selection.x, g_selection.y, g_selection.width,
-		 g_selection.height);
-#endif
+
+	if (g_is_new_blob) {
+	  // publish it
+	  publishSelection(g_selection);
+
+	  g_is_new_blob = false;
 	}
 
-	oktrack = btracker_->processFrame(leftImg, g_is_new_blob, g_selection, 
-					  &g_new_selection);
-
-	g_is_new_blob = false;
-	if (!oktrack) {
-	  // Lost track, reset everything.
-	  resetGlobals();
-	  printf("Track failed, waiting for new window.\n");
-	  return;
-	}
-	else {
-	  //
-	  // Tracking succeeded, copy the new window, compute 3D point
-	  // and draw it.
-	  //
 	  
-	  // copy the new window
-	  g_selection = g_new_selection;
-
-	  // compute the 3D point
-	  if (camModel_) {
-	    // get a smaller rectangle from the current window
-	    CvRect centerBox = cvRect(g_selection.x+g_selection.width/4,
-				      g_selection.y+g_selection.height/4,
-				      g_selection.width/2,
-				      g_selection.height/2);
-	    // check the boundary just to make sure.
-	    if (centerBox.x + centerBox.width > im_size.width) {
-	      centerBox.width = im_size.width - centerBox.x;
-	    }
-	    if (centerBox.y + centerBox.height > im_size.height) {
-	      centerBox.height = im_size.height - centerBox.y;
-	    }
-	    // get all the non zero disparity inside this box
-	    // construct a list uvd points, in disparity space.
-	    // convert each of them into cartesian space, and 
-	    // compute the centroid of them.
-	    double _uvds[3*centerBox.width*centerBox.height];
-	    int numGoodPoints=0;
-	    for (int x = centerBox.x; x < centerBox.x+centerBox.width; x++) {
-	      for (int y = centerBox.y; y < centerBox.y+centerBox.height; y++) {
-		double disp = cvGetReal2D(dispImg, y, x);
-		if (disp>0) {
-		  // The disparity map we get from the camera is in raw form.
-		  // In raw form, the unit in the disparity is 1/4 of a pixel.
-		  disp /=4.0;
-		  _uvds[numGoodPoints*3    ] = x;
-		  _uvds[numGoodPoints*3 + 1] = y;
-		  _uvds[numGoodPoints*3 + 2] = disp;
-		  numGoodPoints++;
-		}
-	      }
-	    }
-	    if (numGoodPoints>0) {
-	      CvMat uvds = cvMat( numGoodPoints, 3, CV_64FC1, _uvds );
-	      double _xyzs[numGoodPoints*3];
-	      CvMat xyzs = cvMat( numGoodPoints, 3, CV_64FC1, _xyzs );
-	      camModel_->dispToCart(uvds, xyzs);
-	      CvMat xyzsC3;
-	      cvReshape( &xyzs, &xyzsC3, 3, 0);
-	      CvScalar centroid = cvAvg( &xyzsC3 );
-#if 0
-	      printf("centroid %f, %f, %f\n", 
-		     centroid.val[0], centroid.val[1], centroid.val[2]);
-#endif
-	      // convert the centroid into meters
-	      point_stamped_.point.x = centroid.val[0]/1000.;
-	      point_stamped_.point.y = centroid.val[1]/1000.;
-	      point_stamped_.point.z = centroid.val[2]/1000.;
-	      // publish the centroid of the tracked object
-	      publish("points", point_stamped_);
-	    }
-	  }
-	  
-	  // draw it
-	  cvRectangle(leftImg,
-		      cvPoint(g_selection.x,g_selection.y),
-		      cvPoint(g_selection.x+g_selection.width,
-			      g_selection.y+g_selection.height),
-		      cvScalar(0,0,255), 4);
-	}
+	// draw it
+	cvRectangle(leftImg,
+		    cvPoint(g_selection.x,g_selection.y),
+		    cvPoint(g_selection.x+g_selection.width,
+			    g_selection.y+g_selection.height),
+		    cvScalar(0,0,255), 4);
+	
 
       }
 
@@ -422,30 +328,6 @@ public:
 	}
 	cvCopy(leftImg, cv_image_cpy_);
       
-
-	if (display_ && g_start_track) {
-
-	  if (cv_dispImg_cpy_ == NULL) {
-	    cv_dispImg_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-	  }
-	  cvCopy(dispImg, cv_dispImg_cpy_);
-
-	  if (cv_feat_image_cpy_ == NULL) {
-	    cv_feat_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-	  }
-	  cvCopy(btracker_->feat_image_ptr_, cv_feat_image_cpy_);
-
-	  if (cv_backproject_image_cpy_ == NULL) {
-	    cv_backproject_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-	  }
-	  cvCopy(btracker_->backproject_ptr_, cv_backproject_image_cpy_);
-
-	  if (cv_mask_image_cpy_ == NULL) {
-	    cv_mask_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-	  }
-	  cvCopy(btracker_->mask_ptr_, cv_mask_image_cpy_);
-
-	}
 
 	cv_mutex_.unlock();
       }
@@ -478,7 +360,10 @@ public:
 
 	  if (cv_mask_image_cpy_)
 	    cvShowImage("Mask",cv_mask_image_cpy_);
+	  if (cv_depthmask_image_cpy_)
+	    cvShowImage("DepthMask",cv_depthmask_image_cpy_);
 	}
+
 	cv_mutex_.unlock();
 
 	// Get user input and allow OpenCV to refresh windows.
@@ -496,23 +381,47 @@ public:
     return true;
   }
 
-  void cal_params_cb() {
-    // printf("Calibration Parameter from Videre:\n");
-    //printf("%s\n", cal_params_.data.c_str());
-    parseCaliParams(cal_params_.data);
+  void trackedBox_cb() {
+
+    printf("received a tracked box\n");
+
+    g_selection.x = trackedBox_msg_.rect.x;
+    g_selection.y = trackedBox_msg_.rect.y;
+    g_selection.width  = trackedBox_msg_.rect.w;
+    g_selection.height = trackedBox_msg_.rect.h;
+
   }
+
+  void publishSelection(const CvRect& selectedBox) {
+    Rect2DStamped selectedBox_msg;
+    selectedBox_msg.rect.x = selectedBox.x;
+    selectedBox_msg.rect.y = selectedBox.y;
+    selectedBox_msg.rect.w = selectedBox.width;
+    selectedBox_msg.rect.h = selectedBox.height;
+    printf("publishing selection box [%f, %f, %f, %f]\n",
+	   selectedBox_msg.rect.x,
+	   selectedBox_msg.rect.y,
+	   selectedBox_msg.rect.w,
+	   selectedBox_msg.rect.h);
+
+    publish(selectionBoxTopic, selectedBox_msg);
+  }
+
 };
 
+string BlobTrackerGUI::selectionBoxTopic("selectionbox");
 
 // Main
 int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  BlobTrackerGUI g(BLOBNEARCENTER, DISPLAY);
-  g.spin();
+  BlobTrackerGUI gui(true);
+
+  gui.spin();
 
 
   ros::fini();
+
   return 0;
 }
