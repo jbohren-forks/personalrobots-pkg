@@ -5,6 +5,6 @@ includedir=${prefix}/include
 
 Name: FreeImage
 Description: Image manipulation tool
-Version: 3.10.0
+Version: 3.11.0
 Libs: -Wl,-rpath,${libdir} -L${libdir} -lfreeimage
 Cflags: -I${includedir}
