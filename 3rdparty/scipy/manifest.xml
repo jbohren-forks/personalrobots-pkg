@@ -18,5 +18,7 @@
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="atlas3-sse2-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="atlas3-sse2-dev"/>
 </package>
 
