@@ -20,7 +20,7 @@ p = videre_face_detection.people()
 print p
 for (i, f) in enumerate(range(200,240)):
   im = Image.open("/u/jamesb/Desktop/wheelchair640l/%06d.png" % f).convert("L")
-  cascade_file = "haarcascade_frontalface_alt.xml"
+  cascade_file = "cascades/haarcascade_frontalface_alt.xml"
   assert os.access(cascade_file, os.R_OK)
   faces = p.detectAllFaces(im.tostring(), im.size[0], im.size[1], cascade_file, 1.0, None, None, True)
 
