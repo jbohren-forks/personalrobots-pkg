@@ -1,6 +1,6 @@
 CVS_DIR = opencv-cvs
 INSTALL_DIR = opencv
-CVS_DATE = "10/26/2008 00:00"
+CVS_DATE = "10/12/2008 00:00"
 
 all: $(INSTALL_DIR)
 
