@@ -80,21 +80,26 @@ on ROS into the library.
 The tf::TransformBroadcaster class is the complement to the listener class.  The broadcaster class provides a 
 simple API for broadcasting coordinate frame transforms.  
 
-@subsectoin send_transform
+@subsection send_transform send_transform
+When fixed offsets are built into the system the simplest way to add the 
+transform to the system is to use the command send_transform.  It's a one
+line command which will repeatedly publish the transform over ROS messages.  
+
 
 
 @subsection datatypes Data Types used in tf
-- Quaternion
-- Vector3
-- Point
-- Transform
-- Pose
+- Quaternion typedef of btQuaternion
+- Vector3  typedef of btVector3
+- Point  typedef of btVector3
+- Transform  typedef of btTransform
+- Pose  typedef of btTransform
 
--Stamped version of all of the above
+-Stamped version of all of the above inherits from the data type and also has:
+ - ros::Time stamp_
+ - std::string frame_id_
+ - std::string parent_frame_id_  (only used for Stamped<Transform> )
 
-- Analogous ROS messages in std_msgs
-
-- One special message supported PointCloud (Everything else defaults to 64 bit.)
+- There are analogous ROS messages in std_msgs to the Stamped data types.  
 
 - Time represented by ros::Time and ros::Duration in ros/time.h in roscpp 
 
