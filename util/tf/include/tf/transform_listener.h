@@ -80,10 +80,10 @@ public:
   };
 
   /* Methods from transformer unhiding them here */
-  void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out){Transformer::transformQuaternion( target_frame, stamped_in, stamped_out);};
-  void transformVector(const std::string& target_frame, const Stamped<tf::Vector3>& stamped_in, Stamped<tf::Vector3>& stamped_out){Transformer::transformVector( target_frame, stamped_in, stamped_out);};
-  void transformPoint(const std::string& target_frame, const Stamped<tf::Point>& stamped_in, Stamped<tf::Point>& stamped_out){Transformer::transformPoint( target_frame, stamped_in, stamped_out);};
-  void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out){Transformer::transformPose( target_frame, stamped_in, stamped_out);};
+  using Transformer::transformQuaternion;
+  using Transformer::transformVector;
+  using Transformer::transformPoint;
+  using Transformer::transformPose;
 
   
   /** \brief Transform a Stamped Quaternion Message into the target frame */
