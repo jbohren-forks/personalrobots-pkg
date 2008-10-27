@@ -13,5 +13,6 @@
 <depend package="string_utils"/>
 <depend package="image_utils"/>
 <depend package="visual_odometry"/>
+<depend package="pyrob"/>
 </package>
 
