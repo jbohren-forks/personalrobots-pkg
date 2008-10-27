@@ -5,6 +5,7 @@
 <license>BSD</license>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
+<depend package="rostest"/>
 <depend package="std_msgs"/>
 <export>
   <cpp cflags="-I${prefix}/include"/>
