@@ -1,10 +1,9 @@
 SubDir executive_trex_pr2 ;
 
+# Enables header scanning of NDDL files
 SEARCH_SOURCE = ./nddl ../../../3rdparty/trex/TREX/agent/base ../../../3rdparty/trex/PLASMA/src/PLASMA/NDDL/base ;
 
 if ! $(executive_trex_pr2_READY) {
-
- Echo "PLASMA_HOME = " $(PLASMA_HOME) ;
 
  # Input files
  local TestInputs = 
