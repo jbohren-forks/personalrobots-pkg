@@ -1,0 +1,15 @@
+# Main message passed to the LQR controller
+# The target configuration
+# Note: in the default LQR controller, the accelerations are not used (onky the positions and velocities)
+robot_msgs/JointCmd target
+# The weight of the inputs. It converted to a positive, semi-definite matrix R by the controller.
+# Let m be the number of inputs.
+# If input_weights is of length 0, the controller reuses the previous matrix provided.
+# If input_weights is of length m, it is assumed only the diagonal of R is specified, all the other coefficients being 0.
+# If input_weights is of length m(m-1)/2, the controller considers it is the upper-diagonal part of R (in a row major scheme).
+# If input_weights is of length m*m, the controller considers it is R (in a row major scheme).
+float64[] input_cost
+# The weight of the state. See the explanations for input_weights to see how to specify Q.
+float64[] state_cost
+---
+# Returns true if the controller could be updated.
