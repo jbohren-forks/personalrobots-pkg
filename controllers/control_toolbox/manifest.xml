@@ -7,8 +7,11 @@
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <depend package="tinyxml" />
+  <depend package="robot_kinematics" />
+  <depend package="newmat10" />
+  <depend package="rosconsole" />
   <export>
-    <cpp cflags="-I${prefix}/include "
+    <cpp cflags="-I${prefix}/include -I${prefix}/include/control_toolbox/eigen2"
 	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcontrol_toolbox" />
   </export>
 
