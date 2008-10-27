@@ -54,7 +54,7 @@ int main(int argc, char **argv)
   spnav_event sev;
   int ret;
   int no_motion_count = 0;
-  while (true)
+  while (node.ok())
   {
     ret = spnav_poll_event(&sev);
     spnav_remove_events(SPNAV_EVENT_MOTION);
@@ -82,6 +82,8 @@ int main(int argc, char **argv)
     }
     usleep(1000);
   }
+
+  node.unadvertise("/spacenav/offset");
 
   ros::fini();
 
