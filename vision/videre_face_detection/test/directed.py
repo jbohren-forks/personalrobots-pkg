@@ -9,7 +9,7 @@ import visual_odometry as VO
 
 from logplayer import LogPlayer
 
-filename = "/u/jamesb/2008-10-27-10-02-13-topic.bag"
+filename = "/wg/stor2/prdata/videre-bags/face1.bag"
 
 
 import sys
