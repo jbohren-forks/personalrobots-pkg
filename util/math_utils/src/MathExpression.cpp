@@ -39,6 +39,7 @@
 #include <cstring>
 #include <cmath>
 #include <deque>
+#include <cstdlib>
 
 bool meval::ContainsOperators(const char *expression)
 {
