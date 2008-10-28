@@ -11,7 +11,7 @@ $(VERSION)/Makefile: $(VERSION)/Makefile.in $(VERSION)/wg_changelist.txt $(VERSI
 
 $(VERSION): $(VERSION)/Makefile
 	cd $(VERSION) && \
-		make && \
+		make $(PARALLEL_JOBS) && \
 		make install
 
 propgrid: $(VERSION) 
