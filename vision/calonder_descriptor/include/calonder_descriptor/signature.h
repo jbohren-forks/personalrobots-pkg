@@ -165,6 +165,7 @@ int bestMatch(ublas::vector_container<C1> const& query_sig,
       best_distance = next_distance;
       match = index;
     }
+    ++index;
   }
 
   *distance = best_distance;
