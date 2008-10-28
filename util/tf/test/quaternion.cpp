@@ -29,6 +29,7 @@
 
 #include <vector>
 #include <sys/time.h>
+#include <cstdio>
 
 #include "LinearMath/btTransform.h"
 
