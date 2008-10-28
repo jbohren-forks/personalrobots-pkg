@@ -21,7 +21,7 @@ configured: $(CVS_DIR) Makefile
 
 .PHONY: $(INSTALL_DIR)
 $(INSTALL_DIR): configured
-	cd $(CVS_DIR) && make && make install
+	cd $(CVS_DIR) && make $(PARALLEL_JOBS) && make install
 
 clean:
 	-rm -rf $(INSTALL_DIR) configured
