@@ -102,7 +102,7 @@ BTracker::~BTracker()
 /* !
  * \brief Process one frame. Either allows for blob creation or tracks the blobs in the new frame.
  */
-bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect old_window, CvRect* new_window, const IplImage* priorProbMap) 
+bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect old_window, CvRect* new_window, const IplImage* priorProbMap, bool useCamShift) 
 {
 
   new_window->x = old_window.x;
@@ -177,18 +177,21 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
 
   // The actual tracking using CamShift.
   cvCalcBackProject( &feat_image_ptr_, backproject_ptr_, blob_.hist );
-  cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, priorProbMap);
-  //cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, 0);
-  //if (priorProbMap)
-  //  cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
+  // the mask in cvAnd does not seem to work
+  //cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, priorProbMap);
+  cvAnd( backproject_ptr_, mask_ptr_, backproject_ptr_, 0);
+  if (priorProbMap)
+    cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
 
-  //  cvCamShift( backproject_ptr_, blob_.window, 
-  //      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
-  //      &blob_.comp, &blob_.box );
-  
-  cvMeanShift( backproject_ptr_, blob_.window, 
-	      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
-	      &blob_.comp );
+  if (useCamShift) {
+    cvCamShift( backproject_ptr_, blob_.window, 
+		cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
+		&blob_.comp, &blob_.box );
+  } else {
+    cvMeanShift( backproject_ptr_, blob_.window, 
+		 cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
+		 &blob_.comp );
+  }
   
 
   // Check if tracking was actually lost because the new window is too different from the old window.

@@ -416,7 +416,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  BlobTrackerGUI gui(true);
+  BlobTrackerGUI gui(DISPLAY);
 
   gui.spin();
 

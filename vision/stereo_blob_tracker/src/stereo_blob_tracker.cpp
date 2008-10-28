@@ -55,7 +55,6 @@ using namespace cv::willow;
 
 int g_pt_lx, g_pt_ty, g_pt_rx, g_pt_by;
 CvRect g_selection;
-CvRect g_new_selection;
 bool g_start_track;
 bool g_get_rect;
 bool g_is_new_blob;
@@ -118,8 +117,6 @@ void resetGlobals() {
 
   g_get_rect = false;
 
-  g_new_selection = cvRect(-1,-1,-1,-1);
-
   g_pt_lx = 0;
   g_pt_ty = 0;
   g_pt_rx = 0;
@@ -176,7 +173,6 @@ void on_mouse(int event, int x, int y, int flags, void *params)
 
     // Compute the width and height and enforce they're at least 3 pixels each
     CvRect selection = cvRect(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
-    //    setSelection(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
 
     // Done getting the rectangle.
     g_get_rect = false;
@@ -258,7 +254,12 @@ public:
   /// how many iterations of erosion and/or dilation
   static const int CVCLOSE_ITR = 1; 
 
+  /// the 3d blob
   CvMat    *blobPts_;
+  /// statistics of the current blob
+  CvScalar blobCentroid_;
+  double minZ_;
+  double maxZ_;
 
   bool quit;
 
@@ -271,6 +272,8 @@ public:
   /// weight of next position towards to center
   float blobNearCenter_;
   int  numFrames_;
+
+  bool waitForReEntry_;
 
   VidereBlobTracker(/// if true, the blob is always near the center
 		    /// of the image
@@ -303,7 +306,8 @@ public:
     blobPts_(NULL),
     quit(false),
     blobNearCenter_(min(1.0f, max(0.f, blobNearCenter))),
-    numFrames_(0)
+    numFrames_(0),
+    waitForReEntry_(false)
   { 
     btracker_ = new BTracker();    
 
@@ -386,7 +390,7 @@ public:
   {
 
     bool oktrack;
-    CvSize im_size;
+    CvRect new_selection = cvRect(-1, -1, -1, -1);
 
     g_iframe++;
 
@@ -423,7 +427,7 @@ public:
       IplImage *leftImg = images[labelLeft].cv_image;
       IplImage *dispImg = images[labelDisp].cv_image;
 
-      im_size = cvGetSize(leftImg);
+      CvSize im_size = cvGetSize(leftImg);
 
       if (depthmask_ == NULL) {
 	depthmask_ =  cvCreateImage(im_size,IPL_DEPTH_8U,1);
@@ -447,22 +451,33 @@ public:
 	  selection.x +=  (center_x - selection.x) * blobNearCenter_;
 	  selection.y +=  (center_y - selection.y) * blobNearCenter_;
 
-	  setSelection(selection, isNewBlob);
 	}
 
 	IplImage *mask = NULL;
-	if (blobPts_ != NULL) {
-	  // compute the min and max if the blob points in 3D
-	  CvMat blobPtsZ;
-	  cvGetCol(blobPts_, &blobPtsZ, 2);
-	  double minZ, maxZ;
-	  cvMinMaxLoc(&blobPtsZ, &minZ, &maxZ);
 
-	  // enlarge the range by .5 meter, or 500mm
-	  minZ -= 500;
+	if (isNewBlob == true || blobPts_ == NULL) {
+	  compute3dBlob(dispImg, selection);
+	}
+
+	if (blobPts_ != NULL) {
+	  int margin;
+	  if (waitForReEntry_) {
+	    // enlarge the range by 1. meter
+	    margin = 1000;
+	  } else {
+	    // enlarge the range by .5 meter, or 500mm
+	    margin = 500;
+	  }
+
+	  double minZ, maxZ;
+	  minZ = minZ_ - margin;
+	  maxZ = maxZ_ + margin;
 	  // make sure minZ is at least 100 mm away
 	  if (minZ < 100) minZ = 100;
-	  maxZ += 500;
+
+	  // set it down to a hard range
+	  //minZ = 500;
+	  //maxZ = 2000;
 
 	  // the unit of the raw disparity image is 1/4 pixel
 	  double dispUnitScale = .25;
@@ -471,7 +486,7 @@ public:
 	}
 
 	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection, 
-					  &g_new_selection, mask);
+					  &new_selection, mask, false);
 
 	if (!oktrack) {
 	  if (GIVEUPONFAILURE == true) {
@@ -484,136 +499,55 @@ public:
 	    
 	    printf("Track failed, waiting for new window or blob to come back.\n");
 	    // remove the depth mask and the last blotpts, 
-	    // as the blob may enter in a very different
-	    // depth
-	    if (depthmask_) cvReleaseImage(&depthmask_);
-	    if (blobPts_  ) cvReleaseMat(&blobPts_);
+	    // as the blob may enter in a very different depth
+	    //if (depthmask_) cvReleaseImage(&depthmask_);
+	    //if (blobPts_  ) cvReleaseMat(&blobPts_);
 	    // set the selection blob to be centered of the screen with a
 	    // reasonable size (quarter of the window dimensions)
-	    int width = im_size.width/4;
+	    int width  = im_size.width/4;
 	    int height = im_size.height/4;
-	    g_new_selection = cvRect(im_size.width/2  - width/2, 
-				     im_size.height/2 - height/2,
-				     width, height);
+	    new_selection = cvRect(im_size.width/2  - width/2, 
+				   im_size.height/2 - height/2,
+				   width, height);
+	    waitForReEntry_ = true;
 	  }
+	} else {
+	  waitForReEntry_ = false;
 	}
-	{
-	  //
-	  // Tracking succeeded, copy the new window, compute 3D point
-	  // and draw it.
-	  //
+	//
+	// Tracking succeeded, copy the new window, compute 3D point
+	// and draw it.
+	//
 	  
-	  // copy the new window
-	  if (setSelection(g_new_selection, isNewBlob) == false ) {
-	    // this iteration is out of sync with the new selection from gui
-	    // discard the result
-	    printf(" discarding out of sync result\n");
-	    return;
-	  }
-
-	  // compute the 3D point
-	  if (camModel_) {
-	    // get a smaller rectangle from the current window
-	    CvRect selection = getSelection();
-	    CvRect centerBox = cvRect(selection.x + selection.width/4,
-				      selection.y + selection.height/4,
-				      selection.width/2,
-				      selection.height/2);
-	    // check the boundary just to make sure.
-	    if (centerBox.x + centerBox.width > im_size.width) {
-	      centerBox.width = im_size.width - centerBox.x;
-	    }
-	    if (centerBox.y + centerBox.height > im_size.height) {
-	      centerBox.height = im_size.height - centerBox.y;
-	    }
-	    // get all the non zero disparity inside this box
-	    // construct a list uvd points, in disparity space.
-	    // convert each of them into cartesian space, and 
-	    // compute the centroid of them.
-	    double _uvds[3*centerBox.width*centerBox.height];
-	    int numGoodPoints=0;
-	    for (int x = centerBox.x; x < centerBox.x+centerBox.width; x++) {
-	      for (int y = centerBox.y; y < centerBox.y+centerBox.height; y++) {
-		double disp = cvGetReal2D(dispImg, y, x);
-		if (disp>0) {
-		  // The disparity map we get from the camera is in raw form.
-		  // In raw form, the unit in the disparity is 1/4 of a pixel.
-		  disp /=4.0;
-		  _uvds[numGoodPoints*3    ] = x;
-		  _uvds[numGoodPoints*3 + 1] = y;
-		  _uvds[numGoodPoints*3 + 2] = disp;
-		  numGoodPoints++;
-		}
-	      }
-	    }
-	    if (numGoodPoints>0) {
-	      CvMat uvds = cvMat( numGoodPoints, 3, CV_64FC1, _uvds );
-	      if (blobPts_) {
-		cvReleaseMat(&blobPts_);
-	      }
-	      blobPts_ = cvCreateMat(numGoodPoints, 3, CV_64FC1);
-	      //double _xyzs[numGoodPoints*3];
-	      //CvMat xyzs = cvMat( numGoodPoints, 3, CV_64FC1, _xyzs );
-	      camModel_->dispToCart(uvds, *blobPts_);
-	      CvMat xyzsC3;
-	      cvReshape( blobPts_, &xyzsC3, 3, 0);
-	      CvScalar centroid = cvAvg( &xyzsC3 );
-#if 0
-	      printf("centroid %f, %f, %f\n", 
-		     centroid.val[0], centroid.val[1], centroid.val[2]);
-#endif
-	      // convert the centroid into meters
-	      point_stamped_.point.x = centroid.val[0]/1000.;
-	      point_stamped_.point.y = centroid.val[1]/1000.;
-	      point_stamped_.point.z = centroid.val[2]/1000.;
-	      // publish the centroid of the tracked object
-	      publish("points", point_stamped_);
-	      
-	      string topic = "head_controller/track_point" ;
-      
-	      std_msgs::PointStamped target;
-
-	      target.point.x = point_stamped_.point.z ;
-	      target.point.y = -point_stamped_.point.x ;
-	      target.point.z = -point_stamped_.point.y;
-        
-	      target.header.frame_id = "stereo_block" ;
-        
-#if 0
-	      cout << "Requesting to move to: " << point_stamped_.point.x << ","
-                                        << point_stamped_.point.y << ","
-                                        << point_stamped_.point.z << endl ;
-#endif
-        
-	      static int count = 0;
-	      if (++count % 1 == 0)
-		publish(topic, target);
-
-	      if (remote_gui_) {
-		// publish tracked box
-		Rect2DStamped box;
-		CvRect selection = getSelection();
-		box.rect.x = selection.x;
-		box.rect.y = selection.y;
-		box.rect.w = selection.width;
-		box.rect.h = selection.height;
-		publish(trackedBoxTopic_, box);
-	      }
-	      
-	    }
-	  }
-	  
-	  if (remote_gui_ == false) {
-	    // draw it
-	    CvRect selection = getSelection();
-	    cvRectangle(leftImg,
-			cvPoint(selection.x,selection.y),
-			cvPoint(selection.x+selection.width,
-				selection.y+selection.height),
-			cvScalar(0,0,255), 4);
-	  }
+	// copy the new window
+	if (setSelection(new_selection, isNewBlob) == false ) {
+	  // this iteration is out of sync with the new selection from gui
+	  // discard the result
+	  printf(" discarding out of sync result\n");
+	  return;
 	}
 
+	// compute the 3D point
+	compute3dBlob(dispImg, new_selection);
+
+	publish3dBlobCentroid();
+
+	if (remote_gui_) {
+	  // publish tracked box
+	  Rect2DStamped box;
+	  box.rect.x = new_selection.x;
+	  box.rect.y = new_selection.y;
+	  box.rect.w = new_selection.width;
+	  box.rect.h = new_selection.height;
+	  publish(trackedBoxTopic_, box);
+	} else {
+	  // draw it
+	  cvRectangle(leftImg,
+		      cvPoint(new_selection.x,new_selection.y),
+		      cvPoint(new_selection.x+new_selection.width,
+			      new_selection.y+new_selection.height),
+		      cvScalar(0,0,255), 4);
+	}
       }
 
       // Draw a rectangle which is still being defined.
@@ -679,6 +613,108 @@ public:
       }
       
     }
+  }
+
+  void compute3dBlob(IplImage *dispImg, CvRect& selection) {
+    if (camModel_ == NULL ) {
+      return;
+    }
+    // compute the 3D point
+    CvSize im_size = cvGetSize(dispImg);
+    // get a smaller rectangle from the current window
+    CvRect centerBox = cvRect(selection.x + selection.width/4,
+			      selection.y + selection.height/4,
+			      selection.width/2,
+			      selection.height/2);
+    // check the boundary just to make sure.
+    if (centerBox.x + centerBox.width  > im_size.width) {
+      centerBox.width = im_size.width - centerBox.x;
+    }
+    if (centerBox.y + centerBox.height > im_size.height) {
+      centerBox.height = im_size.height - centerBox.y;
+    }
+    // get all the non zero disparity inside this box
+    // construct a list uvd points, in disparity space.
+    // convert each of them into cartesian space, and 
+    // compute the centroid of them.
+    double _uvds[3*centerBox.width*centerBox.height];
+    int numGoodPoints=0;
+    for (int x = centerBox.x; x < centerBox.x+centerBox.width; x++) {
+      for (int y = centerBox.y; y < centerBox.y+centerBox.height; y++) {
+	double disp = cvGetReal2D(dispImg, y, x);
+	if (disp>0) {
+	  // The disparity map we get from the camera is in raw form.
+	  // In raw form, the unit in the disparity is 1/4 of a pixel.
+	  disp /=4.0;
+	  _uvds[numGoodPoints*3    ] = x;
+	  _uvds[numGoodPoints*3 + 1] = y;
+	  _uvds[numGoodPoints*3 + 2] = disp;
+	  numGoodPoints++;
+	}
+      }
+    }
+    if (blobPts_) {
+      cvReleaseMat(&blobPts_);
+    }
+    if (numGoodPoints>0) {
+      CvMat uvds = cvMat( numGoodPoints, 3, CV_64FC1, _uvds );
+      blobPts_ = cvCreateMat(numGoodPoints, 3, CV_64FC1);
+      //double _xyzs[numGoodPoints*3];
+      //CvMat xyzs = cvMat( numGoodPoints, 3, CV_64FC1, _xyzs );
+      camModel_->dispToCart(uvds, *blobPts_);
+
+      CvMat xyzsC3;
+      cvReshape( blobPts_, &xyzsC3, 3, 0);
+      blobCentroid_ = cvAvg( &xyzsC3 );
+
+#if 0
+      printf("centroid %f, %f, %f\n", 
+	     blobCentroid.val[0], blobCentroid.val[1], blobCentroid.val[2]);
+#endif
+
+      // compute the min and max if the blob points in 3D
+      CvMat blobPtsZ;
+      cvGetCol(blobPts_, &blobPtsZ, 2);
+
+      cvMinMaxLoc(&blobPtsZ, &minZ_, &maxZ_);
+
+      
+    }
+
+  }
+
+  void publish3dBlobCentroid() {
+    if (blobPts_ == NULL) {
+      return;
+    }
+
+    // convert the centroid into meters
+    point_stamped_.point.x = blobCentroid_.val[0]/1000.;
+    point_stamped_.point.y = blobCentroid_.val[1]/1000.;
+    point_stamped_.point.z = blobCentroid_.val[2]/1000.;
+    // publish the centroid of the tracked object
+    publish("points", point_stamped_);
+	      
+    string topic = "head_controller/track_point" ;
+      
+    std_msgs::PointStamped target;
+
+    target.point.x =  point_stamped_.point.z ;
+    target.point.y = -point_stamped_.point.x ;
+    target.point.z = -point_stamped_.point.y;
+        
+    target.header.frame_id = "stereo_block" ;
+        
+#if 0
+    cout << "Requesting to move to: " << point_stamped_.point.x << ","
+	 << point_stamped_.point.y << ","
+	 << point_stamped_.point.z << endl ;
+#endif
+        
+    static int count = 0;
+    if (++count % 1 == 0)
+      publish(topic, target);
+
   }
 
 

@@ -96,10 +96,12 @@ class BTracker
    * @return the status of the tracking process
    */
   bool processFrame(IplImage*, bool, CvRect, CvRect*, 
-		      /// probability map of where the blob is 
-		      /// by a separate pre-step. e.g. depth-image.
-		      /// Currently it is a map of 8u image of 0 and 255
-		      const IplImage* priorProbMap=NULL);
+		    /// probability map of where the blob is 
+		    /// by a separate pre-step. e.g. depth-image.
+		    /// Currently it is a map of 8u image of 0 and 255
+		    const IplImage* priorProbMap=NULL,
+		    /// if true, use CamShift, otherwise use MeanShift
+		    bool useCamShift=true);
 
  protected:
 
