@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <stdlib.h>
 #include "ros/node.h"
 #include "std_msgs/Planner2DState.h"
 #include "std_msgs/Planner2DGoal.h"
