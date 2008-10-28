@@ -84,6 +84,9 @@ class BTracker
   IplImage *hsv_image_ptr_; // The HSV image.
   IplImage *mask_ptr_; // A mask of the image marking all pixels within a reasonable range (in some feature space, for now S&V).
   IplImage *backproject_ptr_; // The backprojection. The probability of each pixel's hue given the histogram.
+  /// histogram. For debugging/visualizatio only
+  IplImage *hist_img_;
+  
 
   // Constructor
   BTracker();
@@ -102,6 +105,10 @@ class BTracker
 		    const IplImage* priorProbMap=NULL,
 		    /// if true, use CamShift, otherwise use MeanShift
 		    bool useCamShift=true);
+
+  /// a utility function to draw a histogram and return a pointer to the image
+  /// if param image is not NULL, the histogram will be drawn over it
+  IplImage* drawHistogram(IplImage* image);
 
  protected:
 

@@ -53,10 +53,53 @@
 
 #define DEBUG 0
 
-static int hbins = 16; // Number of histogram bins for the hue channel.
+static int hbins = 36; // Number of histogram bins for the hue channel.
 static float hranges[] = {0,180}; // Range of values for the hue channel.
 float *hranges_ptr = hranges;
  
+
+void drawHistogram1D(const CvHistogram* hist, IplImage** hist_img, int histHeight, int barWidth) {
+   float max_value;
+   static IplImage* hsv2rgb  = NULL;
+   static IplImage* hsv2rgb2 = NULL;
+   cvGetMinMaxHistValue( hist, 0, &max_value, 0, 0);
+   // TODO: the following code is not based on API  but the underneath implementation.
+   // so it may be dangerous and break in the future
+   int numBins = 36;
+   if (CV_IS_MATND_HDR(hist->bins) == true) {
+     numBins = ((CvMatND *)hist->bins)->dim[0].size;
+   } else {
+     printf("Don't know how to get the size of the histogram\n");
+   }
+   if (*hist_img == 0) {
+     *hist_img = cvCreateImage( cvSize(numBins*barWidth, histHeight), 8, 3 );
+   } else {
+     // clear it with white
+     cvSet(*hist_img, cvScalar(255,255,255), 0);
+   }
+
+   if (hsv2rgb == NULL) {
+     // this code shall executed once and only once.
+     hsv2rgb   = cvCreateImage( cvSize(numBins, 1), 8, 3);
+     hsv2rgb2  = cvCreateImage( cvSize(numBins, 1), 8, 3);
+     for (int i=0; i< numBins; i++) {
+       cvSet1D(hsv2rgb, i, cvScalar((float)i*180./36.0, 255, 255));
+     }
+     cvCvtColor(hsv2rgb, hsv2rgb2, CV_HSV2BGR);
+      
+   }
+
+   for ( int h=0; h<numBins; h++) {
+     float bin_val = cvQueryHistValue_1D( hist, h);
+     int barHeight = cvRound(bin_val*histHeight/max_value);
+     CvScalar color = cvGet1D(hsv2rgb2, h);
+     cvRectangle(*hist_img, cvPoint( h*barWidth, histHeight), cvPoint( (h+1)*barWidth, histHeight-barHeight), 
+		 color, CV_FILLED);
+   }
+}
+
+
+
 /* !
  * /brief Constructor.
  */
@@ -77,6 +120,7 @@ BTracker::BTracker()
   // Initialize the current blob.
   blob_.hist = NULL;
   temp_hist_ = NULL;
+  hist_img_  = NULL;
 
   instructions(); // Display the instructions at the prompt.
 
@@ -119,8 +163,8 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
     feat_image_ptr_ = cvCreateImage(l_s, IPL_DEPTH_8U, 1);
     mask_ptr_ = cvCreateImage(l_s,IPL_DEPTH_8U,1);
     backproject_ptr_ = cvCreateImage(l_s,IPL_DEPTH_8U,1);
-  }
 
+  }
 
   // Create the feature image and the mask of pixels within a reasonable range.
   cvCvtColor( rec_cv_image_ptr, hsv_image_ptr_, CV_BGR2HSV );
@@ -151,17 +195,6 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
   }
 
   // If this is a new blob, recompute the histogram.
-#if 0
-  if (is_new_blob) {
-    cvMinMaxLoc(feat_image_ptr_, &hmin_, &hmax_);
-  }
-  // scale hue channel
-  double scale = 180./(hmax_-hmin_);
-  double shift = 180.*hmin_/(hmax_-hmin_);
-  printf("cvtscale hue: %f, %f, %f, %f\n", hmin_, hmax_, scale, shift);
-  cvConvertScale(feat_image_ptr_, feat_image_ptr_, scale, shift);
-#endif
-
   if (is_new_blob) {
     cvSetImageROI( feat_image_ptr_, old_window );
     cvSetImageROI( mask_ptr_, old_window );
@@ -232,11 +265,22 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
 
   new_window->x = blob_.window.x;
   new_window->y = blob_.window.y;
-  new_window->width = blob_.window.width;
+  new_window->width  = blob_.window.width;
   new_window->height = blob_.window.height;
 
   return true;
+}
 
+IplImage* BTracker::drawHistogram(IplImage* buffer) {
+  IplImage** hist_img;
+  if (buffer)
+    hist_img = &buffer;
+  else 
+    hist_img = &hist_img_;
+  int barWidth = 10;
+  float histHeight = 100;
+  drawHistogram1D(blob_.hist, hist_img, histHeight, barWidth);
+  return *hist_img;
 }
 
 /* !

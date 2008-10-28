@@ -242,10 +242,9 @@ public:
   IplImage *cv_backproject_image_cpy_;
   IplImage *cv_mask_image_cpy_;
   IplImage *cv_depthmask_image_cpy_;
+  IplImage *cv_histogram_image_cpy_;
 
   IplImage *depthmask_;
-  IplImage *dispImgGT_;
-  IplImage *dispImgLT_;
   IplImage *temp_;
 
   CvMemStorage*	mem_storage_;
@@ -298,9 +297,8 @@ public:
     cv_backproject_image_cpy_(NULL), 
     cv_mask_image_cpy_(NULL),
     cv_depthmask_image_cpy_(NULL),
+    cv_histogram_image_cpy_(NULL),
     depthmask_(NULL),
-    dispImgGT_(NULL),
-    dispImgLT_(NULL),
     temp_(NULL),
     mem_storage_(NULL),
     blobPts_(NULL),
@@ -345,6 +343,7 @@ public:
       cvNamedWindow("Mask",0);
       cvNamedWindow("DepthMask", 0);
       cvNamedWindow("left_disparity", 0);
+      cvNamedWindow("Histogram", 0);
     }
 
   }
@@ -358,8 +357,6 @@ public:
     }
     // TODO: lots of other things needs to be release here
     if (depthmask_)   cvReleaseImage(&depthmask_);
-    if (dispImgGT_)   cvReleaseImage(&dispImgGT_);
-    if (dispImgLT_)   cvReleaseImage(&dispImgLT_);
     if (temp_)        cvReleaseImage(&temp_);
     if (blobPts_)     cvReleaseMat(&blobPts_);
     delete camModel_;
@@ -368,6 +365,7 @@ public:
     if (cv_backproject_image_cpy_) cvReleaseImage(&cv_backproject_image_cpy_);
     if (cv_mask_image_cpy_)        cvReleaseImage(&cv_mask_image_cpy_);
     if (cv_depthmask_image_cpy_)   cvReleaseImage(&cv_depthmask_image_cpy_);
+    if (cv_histogram_image_cpy_)   cvReleaseImage(&cv_histogram_image_cpy_);
 
     if (mem_storage_) cvReleaseMemStorage(&mem_storage_);
 
@@ -485,8 +483,11 @@ public:
 	  mask = depthmask_;
 	}
 
+	// attemp some poor man's white balancing
+	balanceColor(leftImg);
+
 	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection, 
-					  &new_selection, mask, false);
+					  &new_selection, mask, true);
 
 	if (!oktrack) {
 	  if (GIVEUPONFAILURE == true) {
@@ -607,12 +608,31 @@ public:
 	    cvCopy(depthmask_, cv_depthmask_image_cpy_);
 	  }
 
+	  btracker_->drawHistogram(NULL);
+	  if (btracker_->hist_img_) {
+	    if (cv_histogram_image_cpy_ == NULL ) {
+	      cv_histogram_image_cpy_ = cvCloneImage(btracker_->hist_img_);
+	    } else {
+	      cvCopy(btracker_->hist_img_, cv_histogram_image_cpy_);
+	    }
+	  }
+
 	}
 
 	cv_mutex_.unlock();
       }
       
     }
+  }
+
+  /// a temporary fixed for color balancing
+  void balanceColor(IplImage* img) {
+  // try some adjustment on blue channel
+    double _colorTransform[] = {1.5, 0., 0.,
+				0.,  1., 0.,
+				0.,  0., 1.};
+    CvMat colorTransform = cvMat(3, 3, CV_64FC1, _colorTransform);
+    cvTransform(img, img, &colorTransform);
   }
 
   void compute3dBlob(IplImage *dispImg, CvRect& selection) {
@@ -744,6 +764,9 @@ public:
 	    cvShowImage("Mask",cv_mask_image_cpy_);
 	  if (cv_depthmask_image_cpy_)
 	    cvShowImage("DepthMask",cv_depthmask_image_cpy_);
+	  if (cv_histogram_image_cpy_) {
+	    cvShowImage("Histogram", cv_histogram_image_cpy_);
+	  }
 	}
 	cv_mutex_.unlock();
 
