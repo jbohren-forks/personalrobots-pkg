@@ -387,9 +387,14 @@ namespace ros {
 
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
       lock();
-      plan_.clear();
-      plan_ = newPlan;
-      publishPath(true, plan_);
+
+      // If we have a valid plan then only swap in the new plan if it is shorter.
+      if(!isValid() || plan_.size() > newPlan.size()){
+	plan_.clear();
+	plan_ = newPlan;
+	publishPath(true, plan_);
+      }
+
       unlock();
     }
     

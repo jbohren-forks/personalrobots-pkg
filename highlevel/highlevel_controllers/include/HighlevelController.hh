@@ -164,14 +164,14 @@ private:
     return this->state == ACTIVE;
   }
 
+protected:
+
   /**
    * @brief Access for valid status of the controller
    */
   bool isValid() {
     return this->stateMsg.valid;
   }
-
-protected:
 
   /**
    * @brief Marks the node as initialized. Shoud be called by subclass when expected inbound messages
