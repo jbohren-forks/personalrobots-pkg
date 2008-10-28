@@ -248,6 +248,8 @@ namespace controller
      */
     mechanism::RobotState* robot_state_;
 
+    double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
+
     private:
 
     bool new_cmd_available_; /** true when new command received by node */
@@ -311,7 +313,6 @@ namespace controller
     libTF::Vector base_odom_velocity_;
 
 
-    double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
 
     std::vector<double> steer_velocity_desired_; /** vector of desired caster steer speeds */
 
