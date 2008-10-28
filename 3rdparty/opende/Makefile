@@ -31,7 +31,7 @@ configured: $(SVN_DIR) Makefile
 
 .PHONY: opende
 opende: configured
-	cd $(SVN_DIR) && make $(PR2_JOBS)
+	cd $(SVN_DIR) && make $(PARALLEL_JOBS)
 	cd $(SVN_DIR) && make install
 	@echo "patch ode-config to pass -Wl,-rpath,-L{exec_prefix}/lib"
 	sed 's/echo  -L$${exec_prefix}\/lib -lode/echo  -Wl,-rpath,$${exec_prefix}\/lib -L$${exec_prefix}\/lib -lode/g' opende-svn/ode-config > opende/bin/ode-config
