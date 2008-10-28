@@ -42,6 +42,7 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
+#include <algorithm>
 
 namespace robot_desc {
     
