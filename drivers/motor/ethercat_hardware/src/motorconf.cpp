@@ -43,7 +43,7 @@
 #include <al/ethercat_master.h>
 #include <al/ethercat_slave_handler.h>
 
-#define WG0X_STANDALONE
+//#define WG0X_STANDALONE
 #include <ethercat_hardware/wg0x.h>
 
 #include <boost/crc.hpp>
@@ -106,21 +106,18 @@ void init(char *interface)
 
     if (sh->get_product_code() == WG05::PRODUCT_CODE)
     {
-      printf("found a WG05 at #%d\n", slave);
       WG05 *dev = new WG05();
       dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
     else if (sh->get_product_code() == WG06::PRODUCT_CODE)
     {
-      printf("found a WG06 at #%d\n", slave);
       WG06 *dev = new WG06();
       dev->configure(startAddress, sh);
       devices.push_back(dev);
     }
     else
     {
-      printf("found a %08x at #%d\n", sh->get_product_code(), slave);
       devices.push_back(NULL);
     }
   }
@@ -141,7 +138,7 @@ void programDevice(int device, WG0XActuatorInfo &config, char *name)
 {
   if (devices[device])
   {
-    printf("Programming device %d, to be named: %s\n", device, name);
+    ROS_INFO("Programming device %d, to be named: %s\n", device, name);
     strcpy(config.name_, name);
     boost::crc_32_type crc32;
     crc32.process_bytes(&config, sizeof(config)-sizeof(config.crc32_));
@@ -150,7 +147,7 @@ void programDevice(int device, WG0XActuatorInfo &config, char *name)
   }
   else
   {
-    printf("There is no device at position #%d\n", device);
+    ROS_FATAL("There is no device at position #%d", device);
   }
 }
 
@@ -175,7 +172,7 @@ void Usage(string msg = "")
   BOOST_FOREACH(ActuatorPair p, actuators)
   {
     string name = p.first;
-    printf("        %s\n", name.c_str());
+    fprintf(stderr, "        %s\n", name.c_str());
   }
   fprintf(stderr, " -m, --motor <m>        Set the configuration for motor <m>\n");
   fprintf(stderr, "     Legal motor values are:\n");
@@ -183,7 +180,7 @@ void Usage(string msg = "")
   {
     string name = p.first;
     WG0XActuatorInfo info = p.second;
-    printf("        %s - %s %s\n", name.c_str(), info.motor_make_, info.motor_model_);
+    fprintf(stderr, "        %s - %s %s\n", name.c_str(), info.motor_make_, info.motor_model_);
   }
   fprintf(stderr, " -h, --help    Print this message and exit\n");
   if (msg != "")

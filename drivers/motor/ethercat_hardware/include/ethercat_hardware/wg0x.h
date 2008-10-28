@@ -37,10 +37,8 @@
 
 #include <ethercat_hardware/ethercat_device.h>
 
-#ifndef WG0X_STANDALONE
 #include <misc_utils/realtime_publisher.h>
 #include <ethercat_hardware/PressureState.h>
-#endif
 
 struct WG0XMbxHdr
 {
@@ -276,6 +274,7 @@ private:
   // Board configuration parameters
   WG0XConfigInfo config_info_;
   WG0XActuatorInfo actuator_info_;
+  double backemf_constant_;
   static const int ACTUATOR_INFO_PAGE = 4095;
 
   // Diagnostic message values
@@ -287,8 +286,8 @@ private:
   double voltage_estimate_;
   int consecutive_voltage_errors_;
   int consecutive_current_errors_;
-  int last_timestamp_;
-  int last_last_timestamp_;
+  uint32_t last_timestamp_;
+  uint32_t last_last_timestamp_;
   int drops_;
   int consecutive_drops_;
   int max_consecutive_drops_;
@@ -315,11 +314,7 @@ struct WG06Pressure
 class WG06 : public WG0X
 {
 public:
-  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure))
-#ifndef WG0X_STANDALONE
-    , publisher_("pressure", 1)
-#endif
-    {}
+  WG06() : WG0X(true, sizeof(WG0XCommand), sizeof(WG0XStatus)+sizeof(WG06Pressure)), publisher_("pressure", 1) {}
   void convertState(ActuatorState &state, unsigned char *current_buffer, unsigned char *last_buffer);
   enum
   {
@@ -327,9 +322,7 @@ public:
   };
 private:
   uint32_t last_pressure_time_;
-#ifndef WG0X_STANDALONE
   misc_utils::RealtimePublisher<ethercat_hardware::PressureState> publisher_;
-#endif
 };
 
 #endif /* WG0X_H */

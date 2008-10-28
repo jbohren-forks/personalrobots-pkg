@@ -192,7 +192,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   unsigned int major = (revision >> 8) & 0xff;
   unsigned int minor = revision & 0xff;
 
-  printf("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d\n", sh_->get_ring_position(),
+  ROS_INFO("Device #%02d: WG0%d (%#08x) Firmware Revision %d.%02d, PCB Revision %c.%02d", sh_->get_ring_position(),
          sh_->get_product_code() == WG05::PRODUCT_CODE ? 5 : 6,
          sh_->get_product_code(), major, minor,
          'A' + ((revision >> 24) & 0xff) - 1, (revision >> 16) & 0xff);
@@ -222,7 +222,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
     ROS_BREAK();
     return -1;
   }
-  printf("Device #%02d: Serial #: %05d\n", sh_->get_ring_position(), config_info_.device_serial_number_);
+  ROS_INFO("            Serial #: %05d", config_info_.device_serial_number_);
 
   if (readEeprom(sh_) < 0)
   {
@@ -236,10 +236,12 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   if (actuator_info_.crc32_ == crc32.checksum())
   {
     actuator->name_ = actuator_info_.name_;
+    backemf_constant_ = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
+    ROS_INFO("            Name: %s", actuator_info_.name_);
   }
   else if (allow_unprogrammed)
   {
-    printf("WARNING: Device #%02d is not programmed\n", sh_->get_ring_position());
+    ROS_WARN("WARNING: Device #%02d is not programmed", sh_->get_ring_position());
     actuator_info_.crc32_ = 0;
   }
   else
@@ -259,7 +261,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
   if (!attr) { \
     c = elt->FirstChildElement((a)); \
     if (!c || !(attr = c->GetText())) { \
-      ROS_FATAL("Actuator is missing the attribute "#a"\n"); \
+      ROS_FATAL("Actuator is missing the attribute "#a); \
       ROS_BREAK(); \
     } \
   } \
@@ -267,7 +269,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 
 void WG0X::initXml(TiXmlElement *elt)
 {
-  printf("Overriding actuator: %s\n", actuator_info_.name_);
+  ROS_WARN("Overriding actuator: %s", actuator_info_.name_);
 
   const char *attr;
   GET_ATTR("name");
@@ -365,9 +367,10 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
 bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer)
 {
   bool rv = true;
+  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf_constant_;
 
   if (!(state.is_enabled_)) {
-    return true;
+    goto end;
   }
 
   WG0XStatus *this_status, *prev_status;
@@ -375,10 +378,8 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   this_status = (WG0XStatus *)this_buffer;
   prev_status = (WG0XStatus *)prev_buffer;
 
-  int delta = this_status->timestamp_ - prev_status->timestamp_;
   if (this_status->timestamp_ == last_timestamp_ ||
       this_status->timestamp_ == last_last_timestamp_) {
-    //printf("delta = %d\n", delta);
     ++drops_;
     ++consecutive_drops_;
     max_consecutive_drops_ = max(max_consecutive_drops_, consecutive_drops_);
@@ -388,8 +389,11 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   last_last_timestamp_ = last_timestamp_;
   last_timestamp_ = this_status->timestamp_;
 
-  if (this_status->packet_count_ - prev_status->packet_count_ != 1) {
-    //printf("dropped packet on device #%02d: %d %d %d?\n", sh_->get_ring_position(), this_status->packet_count_ , prev_status->packet_count_, this_status->packet_count_ - prev_status->packet_count_);
+  if (consecutive_drops_ > 10)
+  {
+    rv = false;
+    reason_ = "Too many dropped packets";
+    goto end;
   }
 
   if (this_status->mode_ & MODE_SAFETY_LOCKOUT)
@@ -400,85 +404,84 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
     {
       reason_ += ": unable to read mailbox too";
     }
+    goto end;
+  }
+
+  voltage_estimate_ = prev_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(prev_status->programmed_pwm_value_) / 0x4000;
+
+  voltage_error_ = fabs(expected_voltage - voltage_estimate_);
+  max_voltage_error_ = max(voltage_error_, max_voltage_error_);
+
+  // Check back-EMF consistency
+  if(voltage_error_ > 5)
+  {
+    ++consecutive_voltage_errors_;
+    if (consecutive_voltage_errors_ > 40) ///\todo fixme magic number (how long the motor model is allowed to be out of range in milliseconds)
+    {
+      //Something is wrong with the encoder, the motor, or the motor board
+
+      //Disable motors
+      rv = false;
+
+      const double epsilon = 0.001;
+      //Try to diagnose further
+      //motor_velocity == 0 -> encoder failure likely
+      if (fabs(state.velocity_) < epsilon)
+      {
+        reason_ = "Encoder failure likely";
+      }
+      //measured_current_ ~= 0 -> motor open-circuit likely
+      else if (fabs(state.last_measured_current_) < epsilon)
+      {
+        reason_ = "Motor open-circuit likely";
+      }
+      //motor_voltage_ ~= 0 -> motor short-circuit likely
+      else if (fabs(voltage_estimate_) < epsilon)
+      {
+        reason_ = "Motor short-circuit likely";
+      }
+      //else -> current-sense failure likely
+      else
+      {
+        reason_ = "Current-sense failure likely";
+      }
+    }
   }
   else
   {
-    voltage_estimate_ = prev_status->supply_voltage_ * config_info_.nominal_voltage_scale_ * double(prev_status->programmed_pwm_value_) / 0x4000;
-    double backemf = 1.0 / (actuator_info_.speed_constant_ * 2 * M_PI * 1.0/60);
-    double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf;
-
-    voltage_error_ = fabs(expected_voltage - voltage_estimate_);
-    max_voltage_error_ = max(voltage_error_, max_voltage_error_);
-
-    // Check back-EMF consistency
-    if(voltage_error_ > 5)
-    {
-      ++consecutive_voltage_errors_;
-      if (consecutive_voltage_errors_ > 40) ///\todo fixme magic number (how long the motor model is allowed to be out of range in milliseconds)
-      {
-        //Something is wrong with the encoder, the motor, or the motor board
-
-        //Disable motors
-        rv = false;
-
-        const double epsilon = 0.001;
-        //Try to diagnose further
-        //motor_velocity == 0 -> encoder failure likely
-        if (fabs(state.velocity_) < epsilon)
-        {
-          reason_ = "Encoder failure likely";
-        }
-        //measured_current_ ~= 0 -> motor open-circuit likely
-        else if (fabs(state.last_measured_current_) < epsilon)
-        {
-          reason_ = "Motor open-circuit likely";
-        }
-        //motor_voltage_ ~= 0 -> motor short-circuit likely
-        else if (fabs(voltage_estimate_) < epsilon)
-        {
-          reason_ = "Motor short-circuit likely";
-        }
-        //else -> current-sense failure likely
-        else
-        {
-          reason_ = "Current-sense failure likely";
-        }
-      }
-    }
-    else
-    {
-      consecutive_voltage_errors_ = 0;
-    }
-
-    //Check current-loop performance
-    double last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
-    current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
-
-    max_current_error_ = max(current_error_, max_current_error_);
-#if 0
-    if (current_error_ > 0.1 &&
-        (last_commanded_current > 0 ?
-             prev_status->programmed_pwm_value_ < 8400 :
-             prev_status->programmed_pwm_value_ > -8400)) 
-    {
-printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
-      ++consecutive_current_errors_;
-      if (consecutive_current_errors_ > 1000)
-      {
-        //complain and shut down
-        rv = false;
-        reason_ = "Current loop error too large";
-      }
-    }
-    else
-    {
-      consecutive_current_errors_ = 0;
-    }
-#endif
+    consecutive_voltage_errors_ = 0;
   }
+
+  //Check current-loop performance
+  double last_commanded_current;
+  last_commanded_current =  prev_status->programmed_current_ * config_info_.nominal_current_scale_;
+  current_error_ = fabs(state.last_measured_current_ - last_commanded_current);
+
+  max_current_error_ = max(current_error_, max_current_error_);
+#if 0
+  if (current_error_ > 0.1 &&
+      (last_commanded_current > 0 ?
+           prev_status->programmed_pwm_value_ < 8400 :
+           prev_status->programmed_pwm_value_ > -8400)) 
+  {
+printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
+    ++consecutive_current_errors_;
+    if (consecutive_current_errors_ > 1000)
+    {
+      //complain and shut down
+      rv = false;
+      reason_ = "Current loop error too large";
+    }
+  }
+  else
+  {
+    consecutive_current_errors_ = 0;
+  }
+#endif
 
   if (rv) reason_ = "OK";
 
+end:
   return rv;
 }
 
@@ -636,7 +639,7 @@ void WG0X::program(WG0XActuatorInfo *info)
     WG0XSpiEepromCmd cmd;
     cmd.build_arbitrary(sizeof(data));
     if (sendSpiCommand(sh_, &cmd)) {
-      printf("reading eeprom status failed");
+      fprintf(stderr, "reading eeprom status failed");
     }
   }
 
@@ -644,7 +647,6 @@ void WG0X::program(WG0XActuatorInfo *info)
   if (readMailbox(sh_, WG0XSpiEepromCmd::SPI_BUFFER_ADDR, data, sizeof(data))) {
     fprintf(stderr, "ERROR READING EEPROM COMMAND BUFFER\n");
   }
-  printf("data[1] = %08x\n", data[1]);
 }
 
 int WG0X::readMailbox(EtherCAT_SlaveHandler *sh, int address, void *data, EC_UINT length)
