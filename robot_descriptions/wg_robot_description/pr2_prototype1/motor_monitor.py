@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import rostools
-rostools.update_path('wg_robot_description')
+rostools.update_path('2dnav_pr2')
 
 import sys, traceback, logging, rospy, os
 from robot_msgs.msg import DiagnosticMessage
@@ -16,7 +16,7 @@ def callback(data):
         log_msg = "Resetting motors at time: %d.%d\n" % (data.header.stamp.secs, data.header.stamp.nsecs)
         file.write(log_msg)
         file.close()
-        os.system('rosrun pr2_etherCAT resetMotors.py')
+        os.system('rosrun pr2_etherCAT reset_motors.py')
         print "Resetting motors"
 
 def listener_with_user_data():
