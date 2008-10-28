@@ -32,8 +32,8 @@
 #include "ros/node.h"
 #include "ros/time.h"
 #include <string>
-
-#include <stdio.h>
+#include <cstdio>
+#include <limits>
 
 #include "logging/LogPlayer.h"
 
