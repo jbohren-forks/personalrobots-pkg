@@ -141,7 +141,7 @@ class VisualOdometer:
       predY = (abs(Ys - ki[1]) < 32)
       hits = vop.where(predX & predY, 1, 0).tostring()
       best = VO.sad_search(di, af1.descriptors, hits)
-      if best:
+      if best != None:
         pairs.append((i, best))
     self.timer['temporal_match'].stop()
     return pairs
