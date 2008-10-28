@@ -68,6 +68,7 @@
 #include <highlevel_controllers/RechargeGoal.h>
 #include <highlevel_controllers/RechargeState.h>
 #include <robot_msgs/BatteryState.h>
+#include <cstdlib>
 
 namespace highlevel_controllers {
 

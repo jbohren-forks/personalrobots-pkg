@@ -38,6 +38,8 @@
 #include <highlevel_controllers/PlugInGoal.h>
 #include <robot_msgs/BatteryState.h>
 
+#include <cstdlib>
+
 namespace highlevel_controllers {
 
   class PlugIn : public HighlevelController<PlugInState, PlugInGoal> {
