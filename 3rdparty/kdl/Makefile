@@ -1,6 +1,6 @@
 .PHONY: kdl
 
-all: kdl
+all: build
 
 TARBALL = kdl_29562.tar.gz
 TARBALL_URL = http://pr.willowgarage.com/downloads/kdl_29562.tar.gz
@@ -20,7 +20,7 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DPYTHON_BINDINGS=ON \
 		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/
 
-build: kdl
+build: wiped kdl
 
 configured: $(SOURCE_DIR) Makefile
 	cd $(SOURCE_DIR) && patch -p0 <../$(PATCH)
@@ -28,9 +28,9 @@ configured: $(SOURCE_DIR) Makefile
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured
 
-#wiped: Makefile
-#	make wipe
-#	touch wiped
+wiped: Makefile
+	make wipe
+	touch wiped
 
 kdl:	configured
 	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) && make python && make install
