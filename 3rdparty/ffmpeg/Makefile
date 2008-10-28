@@ -13,7 +13,7 @@ configured: $(SVN_DIR) Makefile
 
 .PHONY: ffmpeg
 ffmpeg: configured
-	cd $(SVN_DIR) && make $(PR2_JOBS) && make install
+	cd $(SVN_DIR) && make $(PARALLEL_JOBS) && make install
 	mkdir -p ffmpeg/include/ffmpeg
 	cd ffmpeg/include/ffmpeg && ln -sf ../libavcodec/avcodec.h avcodec.h
 	cd ffmpeg/include/ffmpeg && ln -sf ../libavformat/avformat.h avformat.h

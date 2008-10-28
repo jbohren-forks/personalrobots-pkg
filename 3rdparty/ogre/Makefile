@@ -79,7 +79,7 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 	  xcodebuild ARCHS=i386 -target "OctreeSceneManager Plugin" && \
 	  xcodebuild ARCHS=i386 -target "Bundle Resources"; \
 	else \
-	  cd $(ROOT)/$(OGRE_VERSION) && make $(JOBC) $(PR2_JOBS); \
+	  cd $(ROOT)/$(OGRE_VERSION) && make $(JOBC) $(PARALLEL_JOBS); \
 	  cd $(ROOT)/$(OGRE_VERSION) && make install; \
 	fi
 	@echo "patch OGRE.pc to pass -Wl,-rpath,-L{libdir}"

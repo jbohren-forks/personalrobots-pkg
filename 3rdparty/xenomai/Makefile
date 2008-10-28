@@ -21,7 +21,7 @@ configured: $(SVN_DIR) linux Makefile
 
 .PHONY: xenomai
 xenomai: configured
-	cd $(SVN_DIR)/build && make $(PR2_JOBS) SUDO=false install
+	cd $(SVN_DIR)/build && make $(PARALLEL_JOBS) SUDO=false install
 
 clean:
 	-cd $(SVN_DIR)/build && make clean
@@ -40,11 +40,11 @@ LINUX_ARCHIVE = linux-$(LINUX_VERSION).tar.bz2
 download_kernel: $(LINUX_ARCHIVE)
 
 kernel: configured
-	make  $(PR2_JOBS) -C linux
+	make  $(PARALLEL_JOBS) -C linux
 
 install_kernel: xenomai
-	sudo make  $(PR2_JOBS) -C $(SVN_DIR)/build devices
-	sudo make  $(PR2_JOBS) -C linux install modules_install
+	sudo make  $(PARALLEL_JOBS) -C $(SVN_DIR)/build devices
+	sudo make  $(PARALLEL_JOBS) -C linux install modules_install
 	cd /boot && sudo update-initramfs -c -k 2.6.24.3 && sudo update-grub
 
 $(LINUX_ARCHIVE): 

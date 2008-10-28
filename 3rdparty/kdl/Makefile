@@ -33,7 +33,7 @@ configured: $(SOURCE_DIR) Makefile
 #	touch wiped
 
 kdl:	configured
-	cd $(SOURCE_DIR)/build && make $(PR2_JOBS) && make python && make install
+	cd $(SOURCE_DIR)/build && make $(PARALLEL_JOBS) && make python && make install
 
 clean:
 	rm -rf $(SOURCE_DIR)
