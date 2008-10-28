@@ -20,9 +20,7 @@ using namespace stereo_blob_tracker;
 
 #include "blob_tracker.h"
 
-#define USE_AXIS_CAM 0
-#define DISPLAY true
-#define DISPLAYFREQ 30
+#define DISPLAY false
 
 /*****************************************
  * Globals. Mainly for the mouse callback.
@@ -34,6 +32,8 @@ CvRect g_new_selection;
 bool g_start_track;
 bool g_get_rect;
 bool g_is_new_blob;
+
+ros::thread::mutex g_selection_mutex;
 
 int g_iframe;
 
@@ -93,7 +93,7 @@ void on_mouse(int event, int x, int y, int flags, void *params)
     }
     break;
 
-  case CV_EVENT_LBUTTONUP:
+  case CV_EVENT_LBUTTONUP:{
 
       // Get the other corner.
       g_pt_rx = x;
@@ -108,25 +108,26 @@ void on_mouse(int event, int x, int y, int flags, void *params)
     }
 
     // Compute the width and height and enforce they're at least 3 pixels each
-    g_selection = cvRect(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
+    CvRect selection = cvRect(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
 
     // Done getting the rectangle.
     g_get_rect = false;
 
-    if (g_selection.width < 3 || g_selection.height < 3) {
+    if (selection.width < 3 || selection.height < 3) {
       printf("Selection has either width or height of <3 pixels. Try again.\n");
-      //     g_selection = cvRect(-1,-1,-1,-1);
-      //g_start_track = false;
       resetGlobals();
       break;
     }
 
+    g_selection_mutex.lock();
     // Everything is ok, go ahead and track.
+    g_selection = selection;
     g_start_track = true;
     g_is_new_blob = true;
+    g_selection_mutex.unlock();
 
     break;
-
+  }
   default:
     break;
   }    
@@ -319,7 +320,6 @@ public:
       // Copy all of the images you might want to display.
       // This is necessary because OpenCV doesn't like multiple threads.
       // and we only do display every so often (30 frames)
-      if ((numFrames_) % DISPLAYFREQ == 0) 
       {
 	cv_mutex_.lock();
 
@@ -339,7 +339,7 @@ public:
   // Wait for completion, wait for user input, display images.
   bool spin()
   {
-    while (ok() && (numFrames_ % DISPLAYFREQ == 0) && !quit)
+    while (ok()  && !quit)
       {
 
 	// Display all of the images.
@@ -376,19 +376,19 @@ public:
       }
 
     numFrames_++;
-    numFrames_ %= DISPLAYFREQ;
 
     return true;
   }
 
   void trackedBox_cb() {
-
-    printf("received a tracked box\n");
-
-    g_selection.x = trackedBox_msg_.rect.x;
-    g_selection.y = trackedBox_msg_.rect.y;
-    g_selection.width  = trackedBox_msg_.rect.w;
-    g_selection.height = trackedBox_msg_.rect.h;
+    g_selection_mutex.lock();
+    if (g_is_new_blob == false) {
+      g_selection.x = trackedBox_msg_.rect.x;
+      g_selection.y = trackedBox_msg_.rect.y;
+      g_selection.width  = trackedBox_msg_.rect.w;
+      g_selection.height = trackedBox_msg_.rect.h;
+    }
+    g_selection_mutex.unlock();
 
   }
 

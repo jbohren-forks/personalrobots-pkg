@@ -182,9 +182,13 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
   //if (priorProbMap)
   //  cvAnd( backproject_ptr_, priorProbMap, backproject_ptr_, 0);
 
-  cvCamShift( backproject_ptr_, blob_.window, 
+  //  cvCamShift( backproject_ptr_, blob_.window, 
+  //      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
+  //      &blob_.comp, &blob_.box );
+  
+  cvMeanShift( backproject_ptr_, blob_.window, 
 	      cvTermCriteria( CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 10, 1),
-	      &blob_.comp, &blob_.box );
+	      &blob_.comp );
   
 
   // Check if tracking was actually lost because the new window is too different from the old window.

@@ -60,22 +60,65 @@ bool g_start_track;
 bool g_get_rect;
 bool g_is_new_blob;
 
+ros::thread::mutex g_selection_mutex;
+
 int g_iframe;
 
 /*****************************************
  * Helper functions and mouse callback.
  *****************************************/
 
+bool setSelection(CvRect& box, bool newBlob) {
+  bool status;
+  g_selection_mutex.lock();
+  if ((newBlob == true && g_is_new_blob == true) || g_is_new_blob == false) {
+    g_selection = box;
+    g_is_new_blob = false;
+    status = true;
+  } else {
+    status = false;
+  }
+  g_selection_mutex.unlock();
+  return status;
+}
+
+void setSelection(CvRect& box) {
+  g_selection_mutex.lock();
+  g_selection = box;
+  g_start_track = true;
+  g_is_new_blob = true;
+  g_selection_mutex.unlock();
+}
+
+void setSelection(int x, int y, int w, int h, bool newBlob) {
+  CvRect box = cvRect(x, y, w, h);
+  setSelection(box, newBlob);
+}
+
+void resetSelection() {
+  g_selection_mutex.lock();
+  g_selection = cvRect(-1, -1, -1, -1);
+  g_start_track = false;
+  g_is_new_blob = false;
+  g_selection_mutex.unlock();
+}
+
+
+CvRect getSelection() {
+  return g_selection;
+}
+  
+
 /*!
  * \brief Resets all of the global variables.
  */
 void resetGlobals() {
 
-  g_start_track = false;
+  resetSelection();
+
   g_get_rect = false;
-  g_selection = cvRect(-1,-1,-1,-1);
+
   g_new_selection = cvRect(-1,-1,-1,-1);
-  g_is_new_blob = false;
 
   g_pt_lx = 0;
   g_pt_ty = 0;
@@ -118,11 +161,10 @@ void on_mouse(int event, int x, int y, int flags, void *params)
     }
     break;
 
-  case CV_EVENT_LBUTTONUP:
-
-      // Get the other corner.
-      g_pt_rx = x;
-      g_pt_by = y;
+  case CV_EVENT_LBUTTONUP:    {
+    // Get the other corner.
+    g_pt_rx = x;
+    g_pt_by = y;
 
     // Get the other corner. Make sure the corners are in the right order.
     if (g_pt_lx > g_pt_rx) {
@@ -133,29 +175,32 @@ void on_mouse(int event, int x, int y, int flags, void *params)
     }
 
     // Compute the width and height and enforce they're at least 3 pixels each
-    g_selection = cvRect(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
+    CvRect selection = cvRect(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
+    //    setSelection(g_pt_lx, g_pt_ty, g_pt_rx - g_pt_lx + 1, g_pt_by - g_pt_ty + 1);
 
     // Done getting the rectangle.
     g_get_rect = false;
 
-    if (g_selection.width < 3 || g_selection.height < 3) {
+    if (selection.width < 3 || selection.height < 3) {
       printf("Selection has either width or height of <3 pixels. Try again.\n");
-      //     g_selection = cvRect(-1,-1,-1,-1);
-      //g_start_track = false;
       resetGlobals();
       break;
     }
 
     // Everything is ok, go ahead and track.
-    g_start_track = true;
-    g_is_new_blob = true;
+    setSelection(selection);
     break;
+  }
 
   default:
     break;
   }    
 
-} 
+}
+
+static IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
+static IplConvKernel* OpenKernel   = cvCreateStructuringElementEx(3, 3, 1, 1,   CV_SHAPE_RECT);
+static IplConvKernel* CloseKernel  = cvCreateStructuringElementEx(7, 7, 3, 3,   CV_SHAPE_RECT); 
 
 /// VidereBlobTracker - blob tracking stereo images (left and disparity) from 
 /// a videre
@@ -206,9 +251,6 @@ public:
   IplImage *dispImgGT_;
   IplImage *dispImgLT_;
   IplImage *temp_;
-  IplConvKernel* dilateKernel_;
-  IplConvKernel* openKernel_;
-  IplConvKernel* closeKernel_;
 
   CvMemStorage*	mem_storage_;
   /// approx threshold - the bigger it is, the simpler is the boundary
@@ -257,10 +299,6 @@ public:
     dispImgGT_(NULL),
     dispImgLT_(NULL),
     temp_(NULL),
-    dilateKernel_(cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT)),
-    //    structElem2_(cvCreateStructuringElementEx(5, 5, 2, 2, CV_SHAPE_RECT)),
-    openKernel_(cvCreateStructuringElementEx(3, 3, 1, 1, CV_SHAPE_RECT)),
-    closeKernel_(cvCreateStructuringElementEx(7, 7, 3, 3, CV_SHAPE_RECT)),
     mem_storage_(NULL),
     blobPts_(NULL),
     quit(false),
@@ -331,9 +369,6 @@ public:
 
     //TODO: how do I release contours_
 
-    cvReleaseStructuringElement(&dilateKernel_);
-    cvReleaseStructuringElement(&openKernel_);
-    cvReleaseStructuringElement(&closeKernel_);
   }
 
   void check_keys() 
@@ -398,24 +433,21 @@ public:
       // Track and draw the new window.
       if (g_start_track) {
 
+	g_selection_mutex.lock();
+	CvRect selection = getSelection();
+	bool isNewBlob   = g_is_new_blob;
+	g_selection_mutex.unlock();
+
 	if (blobNearCenter_> 0.0) {
-#if 0
-	  printf("old window %d, %d, %d, %d\n", 
-		 g_selection.x, g_selection.y, g_selection.width,
-		 g_selection.height);
-#endif
 	  // move the last window position to be somewhere between the last
 	  // tracked position and the center of the window, weighted by 
 	  // blobNearCenter
-	  double center_x = im_size.width/2  - g_selection.width /2;
-	  double center_y = im_size.height/2 - g_selection.height/2; 
-	  g_selection.x +=  (center_x - g_selection.x) * blobNearCenter_;
-	  g_selection.y +=  (center_y - g_selection.y) * blobNearCenter_;
-#if 0
-	  printf("center window %d, %d, %d, %d\n", 
-		 g_selection.x, g_selection.y, g_selection.width,
-		 g_selection.height);
-#endif
+	  double center_x = im_size.width/2  - selection.width /2;
+	  double center_y = im_size.height/2 - selection.height/2; 
+	  selection.x +=  (center_x - selection.x) * blobNearCenter_;
+	  selection.y +=  (center_y - selection.y) * blobNearCenter_;
+
+	  setSelection(selection, isNewBlob);
 	}
 
 	IplImage *mask = NULL;
@@ -438,11 +470,9 @@ public:
 	  mask = depthmask_;
 	}
 
-
-	oktrack = btracker_->processFrame(leftImg, g_is_new_blob, g_selection, 
+	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection, 
 					  &g_new_selection, mask);
 
-	g_is_new_blob = false;
 	if (!oktrack) {
 	  if (GIVEUPONFAILURE == true) {
 	    // Lost track, reset everything.
@@ -474,15 +504,21 @@ public:
 	  //
 	  
 	  // copy the new window
-	  g_selection = g_new_selection;
+	  if (setSelection(g_new_selection, isNewBlob) == false ) {
+	    // this iteration is out of sync with the new selection from gui
+	    // discard the result
+	    printf(" discarding out of sync result\n");
+	    return;
+	  }
 
 	  // compute the 3D point
 	  if (camModel_) {
 	    // get a smaller rectangle from the current window
-	    CvRect centerBox = cvRect(g_selection.x+g_selection.width/4,
-				      g_selection.y+g_selection.height/4,
-				      g_selection.width/2,
-				      g_selection.height/2);
+	    CvRect selection = getSelection();
+	    CvRect centerBox = cvRect(selection.x + selection.width/4,
+				      selection.y + selection.height/4,
+				      selection.width/2,
+				      selection.height/2);
 	    // check the boundary just to make sure.
 	    if (centerBox.x + centerBox.width > im_size.width) {
 	      centerBox.width = im_size.width - centerBox.x;
@@ -556,10 +592,11 @@ public:
 	      if (remote_gui_) {
 		// publish tracked box
 		Rect2DStamped box;
-		box.rect.x = g_selection.x;
-		box.rect.y = g_selection.y;
-		box.rect.w = g_selection.width;
-		box.rect.h = g_selection.height;
+		CvRect selection = getSelection();
+		box.rect.x = selection.x;
+		box.rect.y = selection.y;
+		box.rect.w = selection.width;
+		box.rect.h = selection.height;
 		publish(trackedBoxTopic_, box);
 	      }
 	      
@@ -568,10 +605,11 @@ public:
 	  
 	  if (remote_gui_ == false) {
 	    // draw it
+	    CvRect selection = getSelection();
 	    cvRectangle(leftImg,
-			cvPoint(g_selection.x,g_selection.y),
-			cvPoint(g_selection.x+g_selection.width,
-				g_selection.y+g_selection.height),
+			cvPoint(selection.x,selection.y),
+			cvPoint(selection.x+selection.width,
+				selection.y+selection.height),
 			cvScalar(0,0,255), 4);
 	  }
 	}
@@ -607,20 +645,26 @@ public:
 	  }
 	  cvCopy(dispImg, cv_dispImg_cpy_);
 
-	  if (cv_feat_image_cpy_ == NULL) {
-	    cv_feat_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	  if (btracker_->feat_image_ptr_) {
+	    if (cv_feat_image_cpy_ == NULL) {
+	      cv_feat_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	    }
+	    cvCopy(btracker_->feat_image_ptr_, cv_feat_image_cpy_);
 	  }
-	  cvCopy(btracker_->feat_image_ptr_, cv_feat_image_cpy_);
 
-	  if (cv_backproject_image_cpy_ == NULL) {
-	    cv_backproject_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	  if (btracker_->backproject_ptr_) {
+	    if (cv_backproject_image_cpy_ == NULL) {
+	      cv_backproject_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	    }
+	    cvCopy(btracker_->backproject_ptr_, cv_backproject_image_cpy_);
 	  }
-	  cvCopy(btracker_->backproject_ptr_, cv_backproject_image_cpy_);
 
-	  if (cv_mask_image_cpy_ == NULL) {
-	    cv_mask_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	  if (btracker_->mask_ptr_) {
+	    if (cv_mask_image_cpy_ == NULL) {
+	      cv_mask_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	    }
+	    cvCopy(btracker_->mask_ptr_, cv_mask_image_cpy_);
 	  }
-	  cvCopy(btracker_->mask_ptr_, cv_mask_image_cpy_);
 
 	  if (depthmask_) {
 	    if (cv_depthmask_image_cpy_ == NULL) {
@@ -726,19 +770,21 @@ public:
   }
 
   void selection_box_cb(){
-    g_selection.x      = selection_box_.rect.x;
-    g_selection.y      = selection_box_.rect.y;
-    g_selection.width  = selection_box_.rect.w;
-    g_selection.height = selection_box_.rect.h;
+    CvRect selection;
+    selection.x      = selection_box_.rect.x;
+    selection.y      = selection_box_.rect.y;
+    selection.width  = selection_box_.rect.w;
+    selection.height = selection_box_.rect.h;
 
-    if (g_selection.width < 3 || g_selection.height < 3) {
+    printf("receiving a selection box from gui [%d, %d, %d, %d]\n", 
+	   selection.x, selection.y,
+	   selection.width, selection.height);
+
+    if (selection.width < 3 || selection.height < 3) {
       printf("Selection has either width or height of <3 pixels. Try again.\n");
-      //     g_selection = cvRect(-1,-1,-1,-1);
-      //g_start_track = false;
       resetGlobals();
     } else {
-      g_start_track = true;
-      g_is_new_blob = true;
+      setSelection(selection);
     }
   }
 
@@ -872,9 +918,9 @@ public:
 #if 1 
     // two simple morphology operation seem to be good enough. But
     // but connected component analysis provides blob with better shape
-    cvMorphologyEx(depthMask, depthMask, NULL, openKernel_, CV_MOP_OPEN, 1);
-    //cvMorphologyEx(depthMask, depthMask, NULL, dilateKernel_, CV_MOP_CLOSE, 1);
-    cvDilate(depthMask, depthMask, dilateKernel_, 1);
+    cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
+    //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
+    cvDilate(depthMask, depthMask, DilateKernel, 1);
 #else
 
     const float perimScale = 16;
@@ -882,15 +928,15 @@ public:
     CvRect bboxes[maxNumBBoxes];
     int numCComp = maxNumBBoxes;
     connectedComponents(depthMask, 0, 
-			openKernel_,
-			closeKernel_,
+			OpenKernel,
+			CloseKernel,
 			perimScale, &numCComp, 
 			(CvRect *)NULL, // bboxes, 
 			(CvPoint *)NULL);
 
     //printf("found %d blobs\n", numCComp);
 
-    cvDilate(depthMask, depthMask, dilateKernel_, 1);
+    cvDilate(depthMask, depthMask, DilateKernel, 1);
 #endif
   }
     
