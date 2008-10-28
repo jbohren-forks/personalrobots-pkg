@@ -26,7 +26,7 @@ freeimage: freeimage-3.11.0
 	#
 	# TODO: Replace this sed madness with a proper patch
 	cd freeimage-3.11.0 ; mv Makefile.osx Makefile.osx-orig ; cat Makefile.osx-orig | sed -e 's%/usr/lib%$(ROOT)/lib%g' | sed -e  's%/usr/include%$(ROOT)/include%g' | sed -e 's/-o root -g wheel//' | sed -e 's%/usr/local%$(ROOT)%g'| sed -e 's%FreeImage: $$(STATICLIB) $$(SHAREDLIB)%FreeImage: $$(STATICLIB)%' | sed -e 's%$$(STATICLIB): $$(STATICLIB)-ppc%$$(STATICLIB):%' | sed -e 's%$$(LIPO) -create $$(STATICLIB)-ppc%$$(LIPO) -create%' | sed -e 's%install -m 644  $$(SHAREDLIB)%install -m 644 %' | sed -e 's%ln -sf%#ln -sf%' | sed -e 's%all: dist%all: FreeImage%' | grep -v ldconfig > Makefile.osx
-	cd freeimage-3.11.0 ; make ; make install
+	cd freeimage-3.11.0 ; make $(PARALLEL_JOBS); make install
 	mkdir -p freeimage/lib/pkgconfig
 	sed 's%FREEIMAGE_PATH%$(shell rospack find freeimage)%g' freeimage.pc > freeimage/lib/pkgconfig/freeimage.pc
 
