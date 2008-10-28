@@ -33,6 +33,7 @@
  */
 
 #include <costmap_2d/costmap_2d.h>
+#include <cstdlib>
 
 const unsigned int GRID_WIDTH(1000);
 const unsigned int GRID_HEIGHT(1000);

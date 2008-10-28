@@ -264,7 +264,7 @@ namespace costmap_2d {
      */
     void enqueueNeighbors(unsigned int source, unsigned int ind);
 
-    void enqueue(unsigned int source, unsigned int mx, unsigned int mx);
+    void enqueue(unsigned int source, unsigned int mx, unsigned int my);
 
     double computeDistance(unsigned int a, unsigned int b) const;
 
