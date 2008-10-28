@@ -36,7 +36,7 @@ using namespace cv::willow;
 // to specify how fast the head moves to track the blob.
 // 0.0 for no movemont; 1.0 for putting the blob at the center 
 // in next frame.
-#define BLOBNEARCENTER .0
+#define BLOBNEARCENTER .01
 #define GIVEUPONFAILURE false
 // set the following to be true, if you would like
 // to run the gui in a separate process
