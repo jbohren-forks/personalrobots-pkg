@@ -37,6 +37,8 @@
 #include <math_utils/math_utils.h>
 #include "ros/node.h"
 
+#define NUM_TRANSFORMS 2
+
 using namespace ros;
 using namespace std;
 using namespace controller;
@@ -46,6 +48,8 @@ using namespace NEWMAT;
 using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
+
+
 
 BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
@@ -718,13 +722,26 @@ void BaseControllerNode::update()
       rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
       out.header.stamp.from_double(time);
       out.header.frame_id = "odom";
-      out.parent = "base";
+      out.parent = "base_footprint";
       out.x = -x*cos(yaw) - y*sin(yaw);
       out.y = +x*sin(yaw) - y*cos(yaw);
       out.z = 0;
       out.roll = 0;
       out.pitch = 0;
-      out.yaw = -math_utils::normalize_angle(yaw);
+      out.yaw = math_utils::normalize_angle(-yaw);
+
+
+      rosTF::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
+      out2.header.stamp.from_double(time);
+      out2.header.frame_id = "base_footprint";
+      out2.parent = "base";
+      out2.x = 0;
+      out2.y = 0;
+      out2.z = -c_->wheel_radius_;
+      out2.roll = 0;
+      out2.pitch = 0;
+      out2.yaw = 0;
+
       transform_publisher_->unlockAndPublish() ;
     }
   }
@@ -795,7 +812,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 
-  transform_publisher_->msg_.set_eulers_size(1);
+  transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
 
   if(odom_publish_rate_ > 1e-5)
     odom_publish_delta_t_ = 1.0/odom_publish_rate_;
