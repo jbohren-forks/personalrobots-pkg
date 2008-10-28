@@ -27,6 +27,7 @@ namespace nav_view
 	#define ID_MOVE_TOOL 1000
 	#define ID_GOAL_TOOL 1001
 	#define ID_POSE_TOOL 1002
+	#define ID_RELOAD_MAP 1003
 	
 	///////////////////////////////////////////////////////////////////////////////
 	/// Class NavViewPanelGenerated
