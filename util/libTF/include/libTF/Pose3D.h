@@ -232,9 +232,9 @@ struct Euler
       Pose3D(double xt, double yt, double zt); 
       /** \brief  Quaternion only constructor */
       Pose3D(double xr, double yt, double zt, double w);
-      /** \brief Translation and Quaturnion constructor */
+      /** \brief Translation and Quaternion constructor */
       Pose3D(Position &pos, Quaternion &quat);
-      /** \brief Translation and Quaturnion constructor */
+      /** \brief Translation and Quaternion constructor */
       Pose3D(double xt, double yt, double zt, 
              double xr, double yr, double zr, double w);
       
