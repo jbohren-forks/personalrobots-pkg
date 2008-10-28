@@ -2,6 +2,15 @@ import rostools
 rostools.update_path('videre_face_detection')
 import rostest
 import videre_face_detection
+import visualodometer
+import camera
+import std_msgs.msg
+import visual_odometry as VO
+
+from logplayer import LogPlayer
+
+filename = "/u/jamesb/2008-10-27-10-02-13-topic.bag"
+
 
 import sys
 sys.path.append('lib')
@@ -16,18 +25,77 @@ import math
 
 import os
 
-p = videre_face_detection.people()
-print p
-for (i, f) in enumerate(range(200,240)):
-  im = Image.open("/u/jamesb/Desktop/wheelchair640l/%06d.png" % f).convert("L")
-  cascade_file = "cascades/haarcascade_frontalface_alt.xml"
-  assert os.access(cascade_file, os.R_OK)
-  faces = p.detectAllFaces(im.tostring(), im.size[0], im.size[1], cascade_file, 1.0, None, None, True)
+class imgAdapted:
+  def __init__(self, i):
+    self.i = i
+    self.size = i.size
+    self.rawdata = i.tostring()
 
-  draw = ImageDraw.Draw(im)
-  for (x,y,w,h) in faces:
-    draw.line((x,y,x+w,y), fill=255)
-    draw.line((x,y+h,x+w,y+h), fill=255)
-    draw.line((x,y,x,y+h), fill=255)
-    draw.line((x+w,y,x+w,y+h), fill=255)
-  im.save("out%06d.tiff" % i)
+class PeopleTracker:
+  def __init__(self):
+    self.keyframe = []
+    self.current_keyframe = -1
+    self.p = videre_face_detection.people()
+    self.cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
+    self.vo = visualodometer.VisualOdometer(self.cam)
+    self.feature_detector = visualodometer.FeatureDetectorStar()
+    self.feature_detector.thresh = 5
+    self.cascade_file = "cascades/haarcascade_frontalface_alt.xml"
+    assert os.access(self.cascade_file, os.R_OK)
+    self.faces = None
+    self.seq = 0
+    self.keyframe_maxlength = 1
+    self.sad_thresh = 500
+
+  def frame(self, imarray):
+    im = imarray.images[1]
+    im_py = Image.fromstring("L", (im.width, im.height), im.data)
+
+    if self.current_keyframe == -1 :
+      self.faces = self.p.detectAllFaces(im.data, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
+      print self.faces
+      self.faces = [ (x-16,y-16,w+32,h+32) for ( x,y,w,h ) in self.faces ]
+
+    for (x, y, w, h) in self.faces:
+      subim = im_py.crop((x, y, x+w, y+h))
+      ia = imgAdapted(subim)
+      ia.kp2d = self.feature_detector.get_features(ia, 20)
+      ia.kp2d = [(x1,y1) for (x1,y1) in ia.kp2d if (16<x1) and (16<y1) and (x1<(w-32)) and (y1<(h-32))] 
+      #print ia.kp2d
+      ia.kp = ia.kp2d
+      self.vo.collect_descriptors(ia)
+      if self.current_keyframe > -1 :
+        matches = self.vo.temporal_match(self.keyframe[self.current_keyframe],ia)
+        print matches
+        print [VO.sad(self.keyframe[self.current_keyframe].descriptors[a], ia.descriptors[b]) for (a,b) in matches] 
+        print len(matches)
+        #if len(matches) < len(self.keyframe[self.current_keyframe].kp)/2 :
+        #  self.keyframe[self.current_keyframe] = ia
+        #  print "New keyframe"
+      else :
+        self.current_keyframe = 0
+        self.keyframe.append(ia)
+      
+    draw = ImageDraw.Draw(im_py)
+    for (x,y,w,h) in self.faces:
+      draw.line((x,y,x+w,y), fill=255)
+      draw.line((x,y+h,x+w,y+h), fill=255)
+      draw.line((x,y,x,y+h), fill=255)
+      draw.line((x+w,y,x+w,y+h), fill=255)
+      
+      for (x1, y1) in ia.kp :
+        draw.line((x+x1-1,y+y1-1,x+x1+1,y+y1+1), fill=255)
+        draw.line((x+x1-1,y+y1+1,x+x1+1,y+y1-1), fill=255)
+
+    im_py.save("feats%06d.tiff" % self.seq)
+  
+    self.seq += 1
+
+
+player = LogPlayer()
+player.open(filename)
+people_tracker = PeopleTracker()
+player.addHandler('/videre/images', std_msgs.msg.ImageArray, people_tracker.frame)
+for i in range(0,500,5) :
+  player.nextMsg()
+
