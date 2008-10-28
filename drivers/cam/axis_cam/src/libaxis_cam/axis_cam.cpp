@@ -32,6 +32,8 @@
 #include <iostream>
 #include "axis_cam/axis_cam.h"
 #include "string_utils/string_utils.h"
+#include <cstring>
+#include <cstdlib>
 
 
 #define RETURN_CURL_ERR(code) \
@@ -131,7 +133,7 @@ int AxisCam::get_jpeg(uint8_t ** const fetch_jpeg_buf, uint32_t *fetch_buf_size)
 
   if (i == jpeg_file_size - 1)
   {
-    fprintf(stderr, "[libaxis] Searched through all %d bytes.  Not a jpeg (image probably corrupt!)\n", i);
+    fprintf(stderr, "[libaxis] Searched through all %zu bytes.  Not a jpeg (image probably corrupt!)\n", i);
     return 100;
   }
 
