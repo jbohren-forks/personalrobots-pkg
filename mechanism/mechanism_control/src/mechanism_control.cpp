@@ -170,7 +170,7 @@ bool MechanismControl::killController(const std::string &name)
   if (found)
   {
     while (removed_ == NULL)
-      sleep(0.01); //FIXME: compile warning: mechanism/mechanism_control/src/mechanism_control.cpp:172: warning: passing ‘double’ for argument 1 to ‘unsigned int sleep(unsigned int)’
+      usleep(10000);
 
     delete removed_;
     removed_ = NULL;
