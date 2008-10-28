@@ -7,11 +7,6 @@ import camera
 import std_msgs.msg
 import visual_odometry as VO
 
-from logplayer import LogPlayer
-
-filename = "/wg/stor2/prdata/videre-bags/face1.bag"
-
-
 import sys
 sys.path.append('lib')
 
@@ -92,10 +87,14 @@ class PeopleTracker:
     self.seq += 1
 
 
-player = LogPlayer()
-player.open(filename)
 people_tracker = PeopleTracker()
-player.addHandler('/videre/images', std_msgs.msg.ImageArray, people_tracker.frame)
-for i in range(0,500,5) :
-  player.nextMsg()
+
+import rosrecord
+
+filename = "/wg/stor2/prdata/videre-bags/face1.bag"
+
+for topic, msg in rosrecord.logplayer(filename):
+  print topic, msg
+  if topic == '/videre/images':
+    people_tracker.frame(msg)
 

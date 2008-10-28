@@ -14,6 +14,6 @@
 <depend package="image_utils"/>
 <depend package="visual_odometry"/>
 <depend package="pyrob"/>
-<depend package="logging"/>
+<depend package="rosrecord"/>
 </package>
 
