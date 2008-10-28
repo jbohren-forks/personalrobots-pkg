@@ -63,6 +63,12 @@ static struct
 void Usage(string msg = "")
 {
   fprintf(stderr, "Usage: %s [options]\n", g_options.program_);
+  fprintf(stderr, "  Available options\n");
+  fprintf(stderr, "    -i, --interface <interface> Connect to EtherCAT devices on this interface\n");
+  fprintf(stderr, "    -x, --xml <file|param>      Load the robot description from this file or parameter name\n");
+  fprintf(stderr, "    -u, --allow_unprogrammed    Allow control loop to run with unprogrammed devices\n");
+  fprintf(stderr, "    -q, --quiet                 Don't print warning messages when switching to secondary mode\n");
+  fprintf(stderr, "    -h, --help     Print this message and exit\n");
   if (msg != "")
   {
     fprintf(stderr, "Error: %s\n", msg.c_str());
