@@ -68,6 +68,7 @@ Publishes to (name / type):
 #include <termios.h>
 #include <signal.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include <ros/node.h>
 #include <std_msgs/BaseVel.h>
