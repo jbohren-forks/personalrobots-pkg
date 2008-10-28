@@ -3,6 +3,8 @@ all: build
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
 SVN_PATCH = quaternion.patch
+SVN_REVISION=-r1419
+
 include $(shell rospack find mk)/svn_checkout.mk
 
 .PHONY: build
