@@ -38,7 +38,7 @@
 
 using namespace point_cloud_utils ;
 
-int RigidTransformFinder::FindTransform(const std_msgs::PointCloud& A, const std_msgs::PointCloud& B, std_msgs::Transform& transform)
+int RigidTransformFinder::findTransform(const std_msgs::PointCloud& A, const std_msgs::PointCloud& B, std_msgs::Transform& transform)
 {
   if (A.get_pts_size() != B.get_pts_size())
     return -1 ;

@@ -27,44 +27,56 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef POINT_CLOUD_UTIL_FIND_TRANSFORM_H_
-#define POINT_CLOUD_UTIL_FIND_TRANSFORM_H_
+#ifndef POINT_CLOUD_UTILS_TIMED_SCAN_ASSEMBLER_H_
+#define POINT_CLOUD_UTILS_TIMED_SCAN_ASSEMBLER_H_
 
-// Messages
+#include "ros/node.h"
+#include "rosthread/condition.h"
+
 #include "std_msgs/PointCloud.h"
-#include "std_msgs/Transform.h"
+#include "std_msgs/LaserScan.h"
+
+#include "point_cloud_utils/scan_assembler.h"
 
 namespace point_cloud_utils
 {
 
-/**
- * \brief Finds rigid transform between 2 point clouds (whose correspondences are known)
- * Wrapper around cv::willow_garage::visual_odometry::PoseEstimate::estimate to work more seamlessly in the ros framework
- */
-class RigidTransformFinder
+class TimedScanAssembler
 {
 public:
-  RigidTransformFinder() { }
-  ~RigidTransformFinder() { }
+  TimedScanAssembler(ros::node& rosnode) ;
+  ~TimedScanAssembler() ;
   
   /**
-   * \brief Executes the rigid transform search
-   * 
-   * Note that we must know the correspondence between both clouds for this optimization to work.
-   * That is, A.pts[i] <=> B.pts[i]
-   * This also implies that A.pts and B.pts must be of the same size. Also, the headers of both clouds are completely ignored
-   * \param A (input) The first set of points
-   * \param B (input) The second set of points
-   * \param transform (output) Calculated transform. Stores a Rotation R and translation T, such that R*A + T = B
-   * \return The number of points used to actually compute the transform (ie. # of inliers). \
-   * Returns negative when there's an error
+   * \brief Accumulates scans while blocking
+   * Accumulates scans for the specified duration. Note that this method NEVER checks the system-clock. It scans until difference in
+   * timestamps between the first and last accumulated scans exceeds the specified duration.
+   * \param topic The ros topic that should be subscribed to on which laser scans should be processed
+   * \param duration Minimum time between the first and last scans accumulated
+   * \param target_frame the libTF frame that the laser data should be transformed into
+   * \param cloud_out (Output) Stores the assembled point cloud
    */
-  static int findTransform(const std_msgs::PointCloud& A, const std_msgs::PointCloud& B, std_msgs::Transform& transform) ;
+  void getScansBlocking(const std::string topic, const ros::Duration duration, const string target_frame, std_msgs::PointCloud& cloud_out) ;
   
 private:
+  void scansCallback() ;
+  
+  std_msgs::LaserScan scan_ ;
+  
+  bool got_first_scan_ ;
+  bool done_getting_scans_ ;
+  
+  ros::Duration duration_ ;
+  ros::Time exit_time_ ;
+  
+  ros::node& rosnode_ ;
 
+  ros::thread::condition done_condition_ ;
+  ros::thread::mutex done_lock_ ;
+  
+  ScanAssembler scan_assembler_ ;
 } ;
 
 }
 
-#endif // POINT_CLOUD_UTIL_FIND_TRANSFORM_H_
+#endif // POINT_CLOUD_UTILS_TIMED_SCAN_ASSEMBLER_H_
