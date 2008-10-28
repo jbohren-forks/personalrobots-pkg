@@ -256,7 +256,7 @@ int AxisCam::set_iris(int iris, bool relative, bool blocking)
         << (relative ? "r" : "") << string("iris=") << iris;
 
   int ret = send_params(oss.str());
-  if (ret != 0);
+  if (ret != 0)
     return ret;
   if (!blocking || iris == 0)
     return 0;
