@@ -11,8 +11,8 @@ typedef float [0.0 1.0] UNIT_FLOAT;
  * @see BatteryState.msg
  */
 class BatteryState extends AgentTimeline {
-  UNIT_FLOAT discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
-  UNIT_FLOAT recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
+  float discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
+  float recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
 
   predicate Holds {
     float energy_remaining; // Remaining energy in Joules
