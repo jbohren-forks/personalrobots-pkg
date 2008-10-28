@@ -26,7 +26,7 @@ import camera
 
 import numpy
 import numpy.linalg
-import pylab
+#import pylab
 
 import cairo
 import array
@@ -43,6 +43,24 @@ def circle(im, x, y, r, color):
     draw.pieslice(box, 0, 360, fill = color)
 
 class TestDirected(unittest.TestCase):
+
+  def test_sad(self):
+    dir = "/u/konolige/vslam/data/indoor1/"
+    cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
+    vo = VisualOdometer(cam)
+
+    class adapter:
+      def __init__(self, im):
+        self.rawdata = im.tostring()
+        self.size = im.size
+
+    im = adapter(Image.open("%s/left-%04d.ppm" % (dir,1000)))
+    vo.feature_detector.thresh *= 15
+    vo.find_keypoints(im)
+    im.kp = im.kp2d
+    vo.collect_descriptors(im)
+    print len(im.kp)
+    print vo.temporal_match(im, im)
 
   def xtest_smoke(self):
     cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
@@ -267,5 +285,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('xtest_smoke'))
+        suite.addTest(TestDirected('test_sad'))
         unittest.TextTestRunner(verbosity=2).run(suite)
