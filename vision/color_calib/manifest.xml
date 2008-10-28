@@ -1,0 +1,16 @@
+<package>
+<description brief="Generate color calibration matrix">
+Generate color calibration matrix from macbeth chart.
+</description>
+<author> Jeremy Leibs
+</author>
+<license>BSD</license>
+<url>http://www.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="std_msgs"/>
+<depend package="std_srvs"/>
+<depend package="rosthread"/>
+<depend package="image_utils"/>
+<depend package="opencv_latest"/>
+</package>
+
