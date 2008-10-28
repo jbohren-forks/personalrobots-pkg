@@ -108,8 +108,9 @@ void RandomizedTree::finalize()
   for (int index = 0; index < num_leaves_; ++index) {
     int count = leaf_counts_[index];
     if (count != 0) {
+      float normalizer = 1.0f / count;
       for (int c = 0; c < classes_; ++c) {
-        *posterior /= count;
+        *posterior *= normalizer;
         ++posterior;
       }
     } else {

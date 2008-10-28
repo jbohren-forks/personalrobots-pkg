@@ -1,3 +1,4 @@
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 #include <fstream>
@@ -46,7 +47,7 @@ DenseSignature RTreeClassifier::getDenseSignature(IplImage* patch) const
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
     const float* post_array = tree_it->getPosterior(patch);
     // Cram float* into uBLAS-friendly type without copying
-    typedef const ublas::array_adaptor<float> PostStorage;
+    typedef const ublas::shallow_array_adaptor<float> PostStorage;
     typedef const ublas::vector<float, PostStorage> PostVec;
     PostVec post(classes_, PostStorage(classes_, const_cast<float*>(post_array)) );
     sig += post;
@@ -54,7 +55,6 @@ DenseSignature RTreeClassifier::getDenseSignature(IplImage* patch) const
 
   // TODO: get rid of this multiply
   sig *= (1.0 / trees_.size());
-  //sig /= trees_.size();
 
   return sig;
 }
