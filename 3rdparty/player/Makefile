@@ -24,7 +24,7 @@ configured: $(SVN_DIR) Makefile
 
 .PHONY: player
 player: configured
-	cd $(SVN_DIR)/build && make install
+	cd $(SVN_DIR)/build && make $(PARALLEL_JOBS) install
 
 clean:
 	rm -rf $(SVN_DIR)/build
