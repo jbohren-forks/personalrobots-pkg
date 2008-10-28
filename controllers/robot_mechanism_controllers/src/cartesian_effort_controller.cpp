@@ -208,10 +208,10 @@ void CartesianEffortControllerNode::update()
 }
 
 bool CartesianEffortControllerNode::setCommand(
-  robot_mechanism_controllers::SetVectorCommand::request &req,
-  robot_mechanism_controllers::SetVectorCommand::response &resp)
+  robot_srvs::SetVector::request &req,
+  robot_srvs::SetVector::response &resp)
 {
-  c_.command_ = btVector3(req.x, req.y, req.z);
+  tf::Vector3MsgToTF(req.v, c_.command_);
   return true;
 }
 

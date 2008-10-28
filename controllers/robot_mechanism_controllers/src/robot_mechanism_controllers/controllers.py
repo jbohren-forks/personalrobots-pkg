@@ -22,7 +22,7 @@ def set_controller(controller, command):
 
 def set_controller_vector(controller, command):
     rospy.wait_for_service(controller + '/set_command')
-    s = rospy.ServiceProxy(controller + '/set_command', SetVectorCommand)
+    s = rospy.ServiceProxy(controller + '/set_command', SetVector)
     resp = s(*command)
 
 def get_controller(controller):

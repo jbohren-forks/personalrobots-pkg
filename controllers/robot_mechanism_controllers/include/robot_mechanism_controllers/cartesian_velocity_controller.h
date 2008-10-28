@@ -46,8 +46,8 @@
 
 #include <vector>
 #include "ros/node.h"
-#include "robot_mechanism_controllers/SetVectorCommand.h"
-#include "robot_mechanism_controllers/GetVector.h"
+#include "robot_srvs/SetVector.h"
+#include "robot_srvs/GetVector.h"
 #include "robot_mechanism_controllers/cartesian_effort_controller.h"
 #include "control_toolbox/pid.h"
 #include "mechanism_model/controller.h"
@@ -89,10 +89,10 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_mechanism_controllers::SetVectorCommand::request &req,
-                  robot_mechanism_controllers::SetVectorCommand::response &resp);
-  bool getActual(robot_mechanism_controllers::GetVector::request &req,
-                 robot_mechanism_controllers::GetVector::response &resp);
+  bool setCommand(robot_srvs::SetVector::request &req,
+                  robot_srvs::SetVector::response &resp);
+  bool getActual(robot_srvs::GetVector::request &req,
+                 robot_srvs::GetVector::response &resp);
   void command();
 
 private:

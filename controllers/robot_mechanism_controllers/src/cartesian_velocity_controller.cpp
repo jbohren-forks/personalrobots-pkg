@@ -167,16 +167,18 @@ void CartesianVelocityControllerNode::update()
 }
 
 bool CartesianVelocityControllerNode::setCommand(
-  robot_mechanism_controllers::SetVectorCommand::request &req,
-  robot_mechanism_controllers::SetVectorCommand::response &resp)
+  robot_srvs::SetVector::request &req,
+  robot_srvs::SetVector::response &resp)
 {
-  c_.command_.set(tf::Vector3(req.x, req.y, req.z));
+  tf::Vector3 command;
+  tf::Vector3MsgToTF(req.v, command);
+  c_.command_.set(command);
   return true;
 }
 
 bool CartesianVelocityControllerNode::getActual(
-  robot_mechanism_controllers::GetVector::request &req,
-  robot_mechanism_controllers::GetVector::response &resp)
+  robot_srvs::GetVector::request &req,
+  robot_srvs::GetVector::response &resp)
 {
   btVector3 v;
   c_.getTipVelocity(&v);

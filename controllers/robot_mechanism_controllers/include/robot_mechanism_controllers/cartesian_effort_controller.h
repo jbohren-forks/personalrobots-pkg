@@ -44,7 +44,7 @@
 
 #include <vector>
 #include "ros/node.h"
-#include "robot_mechanism_controllers/SetVectorCommand.h"
+#include "robot_srvs/SetVector.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
@@ -76,8 +76,8 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_mechanism_controllers::SetVectorCommand::request &req,
-                  robot_mechanism_controllers::SetVectorCommand::response &resp);
+  bool setCommand(robot_srvs::SetVector::request &req,
+                  robot_srvs::SetVector::response &resp);
 
 private:
   CartesianEffortController c_;

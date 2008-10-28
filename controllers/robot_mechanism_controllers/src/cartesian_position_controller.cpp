@@ -169,16 +169,16 @@ void CartesianPositionControllerNode::update()
 }
 
 bool CartesianPositionControllerNode::setCommand(
-  robot_mechanism_controllers::SetVectorCommand::request &req,
-  robot_mechanism_controllers::SetVectorCommand::response &resp)
+  robot_srvs::SetVector::request &req,
+  robot_srvs::SetVector::response &resp)
 {
-  c_.command_ = btVector3(req.x, req.y, req.z);
+  tf::Vector3MsgToTF(req.v, c_.command_);
   return true;
 }
 
 bool CartesianPositionControllerNode::getActual(
-  robot_mechanism_controllers::GetVector::request &req,
-  robot_mechanism_controllers::GetVector::response &resp)
+  robot_srvs::GetVector::request &req,
+  robot_srvs::GetVector::response &resp)
 {
   btVector3 v;
   c_.getTipPosition(&v);
