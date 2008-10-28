@@ -45,6 +45,8 @@ rospack_add_executable(bin/trexfast ${TREX_FILES})
 target_link_libraries(bin/trexfast Utils_o TREX_o)
 rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 
+rospack_add_executable(bin/trex_watchdog src/trex_watchdog.cc)
+
 rospack_add_rostest_future(test/test.wpc.0.xml) 
 #rospack_add_rostest(test/test.wpc.1.xml) 
 #rospack_add_rostest(test/test.arm.0.xml) 

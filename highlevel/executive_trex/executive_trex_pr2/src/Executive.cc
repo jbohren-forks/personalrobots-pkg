@@ -77,7 +77,6 @@ Publishes to (name/type):
 - None
 
  **/
-
 #include "Nddl.hh"
 #include "Components.hh"
 #include "Logger.hh"
@@ -96,7 +95,7 @@ TREX::LoggerId logger;
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  std::cout << "Shutting down at tick: "  << TREX::Agent::instance()->getCurrentTick() << std::endl;
+  printf("Shutting down at tick(%d)\n", TREX::Agent::instance()->getCurrentTick());
 
   // Terminate the agent
   TREX::Agent::terminate();
@@ -110,6 +109,8 @@ void cleanup(){
     if (file) { fprintf(file, "\n</log>\n"); }
     logger->release();
   }
+
+  exit(0);
 }
 
 int main(int argc, char **argv)
@@ -125,6 +126,7 @@ int main(int argc, char **argv)
     std::cerr << "Invalid argument list: Usage: trex_fast configfile" << std::endl;
     return -1;
   }
+
   atexit(&cleanup);
 
   TREX::LogManager::instance();

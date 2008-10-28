@@ -42,6 +42,7 @@
 #include <time.h>
 #include <math.h>
 #include <iostream>
+#include <highlevel_controllers/Ping.h>
 
 /**
  * @brief Abstract base class for a high level controller node which is parameterized by the state update
@@ -83,17 +84,22 @@ public:
     if(planner_frequency  > 0.0)
       plannerCycleTime_ = 1/planner_frequency;
 
-    // Advertize controller state updates
+
+    // Advertize controller state updates - do not want to miss a state transition
     advertise<S>(stateTopic, QUEUE_MAX());
 
     // Subscribe to controller goal requests
     subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback, QUEUE_MAX());
 
+    // Subscribe to executive shutdown signal
+    subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, 1);
+
     // Initially inactive
     deactivate();
 
     // Start planner loop on a separate thread
-    ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  }
+    ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  
+  }
 
   virtual ~HighlevelController(){
     pthread_exit(&plannerThread_);
@@ -258,6 +264,13 @@ private:
     unlock();
   }
 
+  void shutdownCallback(){
+    lock();
+    ROS_INFO("Shutdown received from executive.\n");
+    deactivate();
+    unlock();
+  }
+
   /**
    * @brief Activation of the controller will set the state, the stateMsg but indicate that the
    * goal has not yet been accomplished and that no plan has been constructed yet.
@@ -320,15 +333,15 @@ private:
     // If we are pursuing a goal, and thus we have a plan, we should check for
     // the goal being reached, in which case we update the state
     if(isActive() && isValid()){
-      if(goalReached()){
-	setDone(true);
-	deactivate();
-      }
-      else {
-	// Dispatch plans to accomplish goal, according to the plan. If there is a failure in 
-	// dispatching, it should return false, which will force re-planning
-	setValid(dispatchCommands());
-      }
+	if(goalReached()){
+	  setDone(true);
+	  deactivate();
+	}
+	else {
+	  // Dispatch plans to accomplish goal, according to the plan. If there is a failure in 
+	  // dispatching, it should return false, which will force re-planning
+	  setValid(dispatchCommands());
+	}
     }
 
     unlock();
@@ -356,6 +369,7 @@ private:
   double plannerCycleTime_; /*!< The duration for each planner cycle */
   ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
   pthread_t plannerThread_; /*!< Thread running the planner loop */
+  highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
 };
 
 #endif

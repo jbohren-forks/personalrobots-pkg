@@ -57,9 +57,15 @@ namespace TREX{
      */
     bool decRef();
 
+    /**
+     * A watchdog loop to keep pump ping messages to a watchdog
+     */
+    void watchDogLoop();
+
     static ROSNodeId s_id;
     ROSNodeId m_id;
     unsigned int m_refCount;
+    double watchDogCycleTime_; /*!< Duration of sleep interval between pings */
   };
 }
 
