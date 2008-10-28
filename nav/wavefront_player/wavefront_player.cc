@@ -790,7 +790,7 @@ WavefrontNode::doOneCycle()
   }
   double yaw,pitch,roll;
   btMatrix3x3 mat =  global_pose.getBasis();
-  mat.getEuler(yaw, pitch, roll);
+  mat.getEulerZYX(yaw, pitch, roll);
 
   this->pstate.active = (this->enable &&
 			 (this->planner_state == PURSUING_GOAL)) ? 1 : 0;
