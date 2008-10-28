@@ -98,7 +98,11 @@ public:
   
   /** \brief Transform a std_msgs::PointCloud natively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
-    ///\todo Duplicate for time transforming (add target_time and fixed_frame)
+
+  /** @brief Transform a std_msgs::PointCloud in space and time */
+  void transformPointCloud(const std::string& target_frame, const ros::Time& target_time, 
+                           const std_msgs::PointCloud& pcin, 
+                           const std::string& fixed_frame, std_msgs::PointCloud& pcout);
 
   /** \brief Transform a std_msgs::LaserScan into a PointCloud in target frame */
   void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn);
@@ -113,6 +117,9 @@ private:
   ///\todo Switch to std_msgs::Transform
   /// Callback function for ros message subscriptoin
   void subscription_callback();
+
+  /** @brief a helper function to be used for both transfrom pointCloud methods */
+  void transformPointCloud(const std::string & target_frame, const Transform& transform, const ros::Time& target_time, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
 
 
   /** @brief A helper class for projecting laser scans */

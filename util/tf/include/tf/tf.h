@@ -109,10 +109,10 @@ public:
    * TransformReference::MaxDepthException
    */
   void lookupTransform(const std::string& target_frame, const std::string& source_frame, 
-                       ros::Time time, Stamped<btTransform>& transform);
+                       const ros::Time& time, Stamped<btTransform>& transform);
   //time traveling version
-  void lookupTransform(const std::string& target_frame, ros::Time target_time, 
-                       const std::string& source_frame, ros::Time _source_time, 
+  void lookupTransform(const std::string& target_frame, const ros::Time& target_time, 
+                       const std::string& source_frame, const ros::Time& source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
   
   /** \brief Transform a Stamped Quaternion into the target frame */
@@ -124,14 +124,28 @@ public:
   /** \brief Transform a Stamped Pose into the target frame */
   void transformPose(const std::string& target_frame, const Stamped<tf::Pose>& stamped_in, Stamped<tf::Pose>& stamped_out);
 
-  /** \brief Transform a Stamped data_in into data_out in traget frame at target time, using the given fixed frame
-   * This is a bit complicated.  The net effect is that the data will be transformed to the fixed frame
-   * at the time it is stamped with, and then transformed from the fixed frame to the target frame at the target time. 
-   * \todo implement this. */
-  /*  template<typename T>
-  void transformStamped(const std::string& target_frame, ros::Time _target_time,const std::string& fixed_frame, 
-                        const Stamped<T>& stamped_in, Stamped<T>& stamped_out);
-  */
+  /** \brief Transform a Stamped Quaternion into the target frame */
+  void transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
+                           const Stamped<tf::Quaternion>& stamped_in, 
+                           const std::string& fixed_frame, 
+                           Stamped<tf::Quaternion>& stamped_out);
+  /** \brief Transform a Stamped Vector3 into the target frame */
+  void transformVector(const std::string& target_frame, const ros::Time& target_time, 
+                       const Stamped<tf::Vector3>& stamped_in, 
+                       const std::string& fixed_frame, 
+                       Stamped<tf::Vector3>& stamped_out);
+  /** \brief Transform a Stamped Point into the target frame 
+   * \todo document*/
+  void transformPoint(const std::string& target_frame, const ros::Time& target_time, 
+                      const Stamped<tf::Point>& stamped_in, 
+                      const std::string& fixed_frame, 
+                      Stamped<tf::Point>& stamped_out);
+  /** \brief Transform a Stamped Pose into the target frame 
+   * \todo document*/
+  void transformPose(const std::string& target_frame, const ros::Time& target_time, 
+                     const Stamped<tf::Pose>& stamped_in, 
+                     const std::string& fixed_frame,
+                     Stamped<tf::Pose>& stamped_out);
 
   /** \brief Debugging function that will print the spanning chain of transforms.
    * Possible exceptions TransformReference::LookupException, TransformReference::ConnectivityException, 

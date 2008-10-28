@@ -79,7 +79,7 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 
 
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
-                     ros::Time time, Stamped<btTransform>& transform)
+                     const ros::Time& time, Stamped<btTransform>& transform)
 {
   TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame));
 
@@ -89,8 +89,8 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 
 };
 
-void Transformer::lookupTransform(const std::string& target_frame, ros::Time target_time, const std::string& source_frame,
-                     ros::Time source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
+void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
+                     const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
   //calculate first leg
   TransformLists t_list = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame));
@@ -408,9 +408,8 @@ tf::TimeCache* Transformer::getFrame(unsigned int frame_id)
 
 void Transformer::transformQuaternion(const std::string& target_frame, const Stamped<Quaternion>& stamped_in, Stamped<Quaternion>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
-
-  btTransform transform = computeTransformFromList(t_list);
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData( transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
@@ -422,8 +421,8 @@ void Transformer::transformVector(const std::string& target_frame,
                                   const Stamped<tf::Vector3>& stamped_in,
                                   Stamped<tf::Vector3>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
-  btTransform transform = computeTransformFromList(t_list);
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   /** \todo may not be most efficient */
   btVector3 end = stamped_in;
@@ -438,9 +437,8 @@ void Transformer::transformVector(const std::string& target_frame,
 
 void Transformer::transformPoint(const std::string& target_frame, const Stamped<Point>& stamped_in, Stamped<Point>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
-
-  btTransform transform = computeTransformFromList(t_list);
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData(transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
@@ -450,15 +448,86 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
 
 void Transformer::transformPose(const std::string& target_frame, const Stamped<Pose>& stamped_in, Stamped<Pose>& stamped_out)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), stamped_in.stamp_, lookupFrameNumber( stamped_in.frame_id_));
-
-  btTransform transform = computeTransformFromList(t_list);
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData(transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
+
+
+void Transformer::transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
+                                      const Stamped<Quaternion>& stamped_in, 
+                                      const std::string& fixed_frame, 
+                                      Stamped<Quaternion>& stamped_out)
+{
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, target_time, 
+                  stamped_in.frame_id_,stamped_in.stamp_, 
+                  fixed_frame, transform);
+  
+  stamped_out.setData( transform * stamped_in);
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
+
+
+void Transformer::transformVector(const std::string& target_frame, const ros::Time& target_time, 
+                                  const Stamped<Vector3>& stamped_in, 
+                                  const std::string& fixed_frame, 
+                                  Stamped<Vector3>& stamped_out)
+{
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, target_time, 
+                  stamped_in.frame_id_,stamped_in.stamp_, 
+                  fixed_frame, transform);
+  
+  /** \todo may not be most efficient */
+  btVector3 end = stamped_in;
+  btVector3 origin = btVector3(0,0,0);
+  btVector3 output = (transform * end) - (transform * origin);
+  stamped_out.setData( output);
+
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+};
+
+
+void Transformer::transformPoint(const std::string& target_frame, const ros::Time& target_time, 
+                                 const Stamped<Point>& stamped_in, 
+                                 const std::string& fixed_frame, 
+                                 Stamped<Point>& stamped_out)
+{
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, target_time, 
+                  stamped_in.frame_id_,stamped_in.stamp_, 
+                  fixed_frame, transform);
+
+  stamped_out.setData(transform * stamped_in);
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
+};
+
+void Transformer::transformPose(const std::string& target_frame, const ros::Time& target_time, 
+                                const Stamped<Pose>& stamped_in, 
+                                const std::string& fixed_frame, 
+                                Stamped<Pose>& stamped_out)
+{
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, target_time, 
+                  stamped_in.frame_id_,stamped_in.stamp_, 
+                  fixed_frame, transform);
+
+  stamped_out.setData(transform * stamped_in);
+  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.frame_id_ = target_frame;
+  //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
+};
+
+
 
 /*
 void Transformer::transformTransform(const std::string& target_frame,

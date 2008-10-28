@@ -75,11 +75,30 @@ void TransformListener::transformPose(const std::string& target_frame,
 
 void TransformListener::transformPointCloud(const std::string & target_frame, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
 {
-  TransformLists t_list = lookupLists(lookupFrameNumber( target_frame), cloudIn.header.stamp, lookupFrameNumber( cloudIn.header.frame_id));
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, cloudIn.header.frame_id, cloudIn.header.stamp, transform);
+
+  transformPointCloud(target_frame, transform, cloudIn.header.stamp, cloudIn, cloudOut);
+}
+void TransformListener::transformPointCloud(const std::string& target_frame, const ros::Time& target_time, 
+                                            const std_msgs::PointCloud& cloudIn, 
+                                            const std::string& fixed_frame, std_msgs::PointCloud& cloudOut)
+{
+  Stamped<Transform> transform;
+  lookupTransform(target_frame, target_time, 
+                  cloudIn.header.frame_id, cloudIn.header.stamp,
+                  fixed_frame, 
+                  transform);
+
+  transformPointCloud(target_frame, transform, target_time, cloudIn, cloudOut);
   
-  Transform bttransform = computeTransformFromList(t_list);
-  
-  NEWMAT::Matrix transform = transformAsMatrix(bttransform);
+
+}
+
+
+void TransformListener::transformPointCloud(const std::string & target_frame, const Transform& net_transform, const ros::Time& target_time, const std_msgs::PointCloud & cloudIn, std_msgs::PointCloud & cloudOut)
+{
+  NEWMAT::Matrix transform = transformAsMatrix(net_transform);
 
   unsigned int length = cloudIn.get_pts_size();
 
@@ -110,6 +129,7 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   matrixPtr = matOut.Store();
   
   //Override the positions
+  cloudOut.header.stamp = target_time;
   cloudOut.header.frame_id = target_frame;
   for (unsigned int i = 0; i < length ; i++) 
     { 
