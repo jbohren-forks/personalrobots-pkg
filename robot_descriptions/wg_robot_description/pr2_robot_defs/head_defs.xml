@@ -154,7 +154,8 @@
       <map name="sensor" flag="gazebo">
 	<verbatim key="${name}_camera">
           <sensor:camera name="${name}_left_sensor">
-            <imageSize>640 480</imageSize>
+            <imageWidth>640</imageWidth>
+            <imageHeight>480</imageHeight>
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>

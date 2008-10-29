@@ -1919,7 +1919,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="forearm_cam_left_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -1977,7 +1978,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="forearm_cam_right_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -2065,7 +2067,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="ptz_cam_left_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -2154,7 +2157,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="ptz_cam_right_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -2217,7 +2221,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:stereocamera name="stereo_camera_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>
@@ -2247,7 +2252,8 @@
     <map name="sensor" flag="gazebo">
       <verbatim key="sensor_camera">
         <sensor:camera name="stereo_left_sensor">
-          <imageSize>640 480</imageSize>
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
           <hfov>60</hfov>
           <nearClip>0.1</nearClip>
           <farClip>100</farClip>

@@ -689,7 +689,8 @@
       <map flag="gazebo" name="sensor">
 	<verbatim key="stereo_camera">
           <sensor:camera name="stereo_left_sensor">
-            <imageSize>640 480</imageSize>
+            <imageWidth>640</imageWidth>
+            <imageHeight>480</imageHeight>
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
