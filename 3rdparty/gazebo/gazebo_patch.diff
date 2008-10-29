@@ -466,7 +466,18 @@ Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7049)
 +++ server/physics/Body.cc	(working copy)
-@@ -70,6 +70,7 @@
+@@ -45,6 +45,10 @@
+ #include "Geom.hh"
+ #include "Body.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -70,6 +74,7 @@
  
    this->rpyP = new ParamT<Quatern>("rpy", Quatern(), 0);
    this->rpyP->Callback( &Body::SetRotation, this );
@@ -474,7 +485,7 @@ Index: server/physics/Body.cc
    Param::End();
  }
  
-@@ -107,6 +108,7 @@
+@@ -107,6 +112,7 @@
    this->nameP->Load(node);
    this->xyzP->Load(node);
    this->rpyP->Load(node);
@@ -482,7 +493,7 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -134,8 +136,9 @@
+@@ -134,8 +140,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
@@ -493,7 +504,59 @@ Index: server/physics/Body.cc
      this->SetGravityMode(false);
    }
  
-@@ -404,6 +407,88 @@
+@@ -218,25 +225,51 @@
+   std::vector< Sensor* >::iterator sensorIter;
+   std::map< std::string, Geom* >::iterator geomIter;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   this->UpdatePose();
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "           body Name (" << this->nameP->GetValue() << ")" << std::endl;
++  std::cout << "           UpdatePose dt (" << tmpT2-tmpT1 << ")" << std::endl;
++#endif
++
+   if (!this->IsStatic())
+   {
+     // Set the pose of the scene node
+     this->visualNode->SetPose(this->pose);
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << "           Static SetPose dt (" << tmpT3-tmpT2 << ")" << std::endl;
++#endif
++
+   for (geomIter=this->geoms.begin();
+        geomIter!=this->geoms.end(); geomIter++)
+   {
+     geomIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << "           Geom Update dt (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
+   for (sensorIter=this->sensors.begin();
+        sensorIter!=this->sensors.end(); sensorIter++)
+   {
+     (*sensorIter)->Update();
+   }
++
++#ifdef TIMING
++  double tmpT5 = Simulator::Instance()->GetWallTime();
++  std::cout << "           sensors Update dt (" << tmpT5-tmpT4 << ")" << std::endl;
++#endif
++
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -404,6 +437,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -582,7 +645,7 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -506,7 +591,6 @@
+@@ -506,7 +621,6 @@
  void Body::UpdateCoM()
  {
    const dMass *lmass;
@@ -590,7 +653,7 @@ Index: server/physics/Body.cc
    std::map< std::string, Geom* >::iterator giter;
  
    if (!this->bodyId)
-@@ -524,7 +608,13 @@
+@@ -524,7 +638,13 @@
      }
    }
  
@@ -604,7 +667,7 @@ Index: server/physics/Body.cc
    oldPose = this->comPose;
  
    if (std::isnan(this->mass.c[0]))
-@@ -546,19 +636,25 @@
+@@ -546,19 +666,25 @@
    {
      if (giter->second->IsPlaceable())
      {
@@ -1142,6 +1205,21 @@ Index: server/XMLConfig.cc
    }
  }
  
+Index: server/rendering/OgreCamera.cc
+===================================================================
+--- server/rendering/OgreCamera.cc	(revision 7049)
++++ server/rendering/OgreCamera.cc	(working copy)
+@@ -66,8 +66,8 @@
+   this->farClipP = new ParamT<double>("farClip",100,0);
+   this->saveFramesP = new ParamT<bool>("saveFrames",false,0);
+   this->savePathnameP = new ParamT<std::string>("saveFramePath","",0);
+-  this->imageWidthP = new ParamT<unsigned int>("imageSize",640,0);
+-  this->imageHeightP = new ParamT<unsigned int>("imageSize",480,0);
++  this->imageWidthP = new ParamT<unsigned int>("imageWidth",640,0);
++  this->imageHeightP = new ParamT<unsigned int>("imageHeight",480,0);
+   this->visMaskP = new ParamT<std::string>("mask","none",0);
+   this->hfovP = new ParamT<Angle>("hfov", Angle(DTOR(60)),0);
+   Param::End();
 Index: server/GazeboConfig.cc
 ===================================================================
 --- server/GazeboConfig.cc	(revision 7049)
