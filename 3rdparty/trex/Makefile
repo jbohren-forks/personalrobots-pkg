@@ -31,7 +31,7 @@ PlanWorks:
 
 # Get TREX
 trex: PLASMA
-	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 25 http://trex-autonomy.googlecode.com/svn/trunk TREX; else cd TREX && $(SVN_CMDLINE) up -r 25; fi
+	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 28 http://trex-autonomy.googlecode.com/svn/trunk TREX; else cd TREX && $(SVN_CMDLINE) up -r 28; fi
 	@if [ ! -d logs ]; then mkdir logs; fi
 	@if [ -z `which jam` ]; then echo "You don't appear to have jam installed.\nPlease install it (e.g., sudo apt-get install jam)"; else ./make_trex; fi
 
