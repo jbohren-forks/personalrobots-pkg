@@ -206,13 +206,14 @@ public:
       return false;
     }
 
+    char logtypename[100];
     int version_major = 0;
     int version_minor = 0;
 
     std::string version_line;
     getline(log_file_, version_line);
 
-    sscanf(version_line.c_str(), "#ROSLOG V%d.%d", &version_major, &version_minor);
+    sscanf(version_line.c_str(), "#ROS%s V%d.%d", logtypename, &version_major, &version_minor);
 
     if (version_major == 0 && version_line[0] == '#')
     {
