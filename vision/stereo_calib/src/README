@@ -1,0 +1,45 @@
+Graphics interface for stereo calibration
+=========================================
+
+imwin.cpp/h
+
+Defines imWindow class.
+Display window code for a single image.
+Scales image to window, keeping aspect ratio.
+Can display color, grayscale, and disparity images.
+Can do overlays with callback.
+
+
+calwin.cpp/h
+
+Subclasses imWindow with calImageWindow.
+Draws cross overlays for 2D points.
+
+
+stereogui.cpp/h
+
+GUI code generated from stereogui.fl.
+Defines calibration GUI for stereo cameras.
+
+
+stereocal.cpp/h
+
+Main code for running the stereo calibration.
+
+stereolrfgui.cpp/h
+
+GUI code modified from stereogui.cpp/h
+Defines calibration GUI for stereo cameras vs laser range
+
+stlrf.cpp/h
+
+Main code for running the stereo/lrf calibration.
+
+cloud_transform.cpp/h
+
+Convert 3D point cloud from lrf to 2d image of intensity. Originally from Hai's
+scratch project "cloud_transform".
+
+
+
+

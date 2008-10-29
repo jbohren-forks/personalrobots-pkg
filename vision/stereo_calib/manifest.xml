@@ -1,0 +1,16 @@
+<package>
+<description brief="Calibaration tools for stereo camera, and between sterero cam and laser range finder">
+
+Calibration tools for sterero cam. And between stereo cam and laser range finder
+
+
+</description>
+<author> JD Chen, Kurt Konolige
+</author>
+<license>BSD</license>
+<url>http://www.willowgarage.com</url>
+<depend package="roscpp"/>
+<depend package="visual_odometry"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libfltk-dev"/>
+</package>
+
