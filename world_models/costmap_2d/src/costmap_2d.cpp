@@ -87,13 +87,12 @@ namespace costmap_2d {
     obsWatchDog_ = new TICK[width_*height_];
     memset(fullData_, 0, width_*height_);
     memset(obsWatchDog_, 0, width_*height_);
-    for (i=0; i<32; i++) {
+
+    cachedDistances = new double*[inflationRadius_+1];
+    for (i=0; i<=inflationRadius_; i++) {
+      cachedDistances[i] = new double[inflationRadius_+1];
       for (j=0; j<=i; j++) {
 	cachedDistances[i][j] = sqrt (pow(i,2) + pow(j,2));
-      }
-    }
-    for (i=0; i<32; i++) {
-      for (j=0; j<i; j++) {
 	cachedDistances[j][i] = cachedDistances[i][j];
       }
     }
@@ -382,13 +381,9 @@ namespace costmap_2d {
     IND_MC(b, mx_b, my_b);
     unsigned int dx = abs((int)(mx_a) - (int) mx_b);
     unsigned int dy = abs((int)(my_a) - (int) my_b);
-    double distance;
-    if ((dx < 32) && (dy<32)) {
-      distance = cachedDistances[dx][dy];
-    }
-    else {
-      distance = sqrt(pow(dx, 2) + pow(dy, 2));
-    }
+
+    ROS_ASSERT((dx <= inflationRadius_) && (dy <= inflationRadius_));
+    double distance = cachedDistances[dx][dy];
 
     return distance;
   }
