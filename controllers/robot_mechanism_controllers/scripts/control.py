@@ -2,6 +2,7 @@
 
 import rostools
 rostools.update_path('robot_mechanism_controllers')
+rostools.update_path('rospy')
 
 import rospy, sys
 from robot_mechanism_controllers.srv import *
