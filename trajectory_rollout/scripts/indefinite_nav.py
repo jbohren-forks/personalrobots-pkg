@@ -9,7 +9,7 @@ from std_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 
-goals = [[15.585, 14.186, .418], [14.136, 13.455, -2.070], [14.752, 14.573, 1.893]]
+goals = [[1.437, 2.141, -2.356], [3.104, 2.084, -.0588], [1.906, 2.935, 1.460]]
 first = True
 
 def indefinite_nav():
