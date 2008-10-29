@@ -10,19 +10,15 @@ CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I$(shell rospack find op
 CFLAGS = -DGCC -msse2 -mpreferred-stack-boundary=4 -Wall -Iinclude -I/usr/local/include
 GCC = g++
 #LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk
-LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk -L$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find libdc1394v2)/libdc1394v2/lib
+LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk -Wl,-rpath,$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find libdc1394v2)/libdc1394v2/lib -Wl,-rpath,$(shell rospack find libdc1394v2)/libdc1394v2/lib -Wl,-rpath,$(shell rospack find dcam)/bin
 
 SHAREDFLAGS = -shared -Wl,-soname,
 
-OBJECTS = ost.o imageio.o
 STOBJECTS = stereocal stereogui imwin calwin stereolib
 DCAMOBJECTS = dcam stereocam image stereolib
 
 
 all:	bin/libdcam.so bin/stereocal bin/acquire bin/stacquire
-
-ost.a:	$(OBJECTS) 
-	ar -r ost.a $(OBJECTS)
 
 bin/stereocal: $(STOBJECTS:%=obj/%.o) 
 	$(LD) $(LDFLAGS) -o $@ $(STOBJECTS:%=obj/%.o)
@@ -59,7 +55,6 @@ test:	$(OBJECTS) test.o
 clean:
 	- rm *.o
 	- rm obj/*.o
-	- rm ost.a
 	- rm bin/stereocal
 
 dist:
