@@ -6,8 +6,8 @@ CC = g++
 CXX = g++
 LD = g++
 CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I/usr/local/include/opencv
-#CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I$(shell rospack find opencv_latest)/opencv/include/opencv -I$(shell rospack find libdc1394v2)/libdc1394v2/include
-CFLAGS = -DGCC -msse2 -mpreferred-stack-boundary=4 -O3 -Wall -Iinclude -I/usr/local/include
+#CPPFLAGS = -Wall -g -O3 -Iinclude -I/usr/local/include -I$(shell rospack find opencv_latest)/opencv/include/opencv -I$(shell rospack find opencv_latest)/opencv/include/ -I$(shell rospack find libdc1394v2)/libdc1394v2/include
+CFLAGS = -DGCC -msse2 -mpreferred-stack-boundary=4 -Wall -Iinclude -I/usr/local/include
 GCC = g++
 LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk
 #LDFLAGS = -Lbin -ldcam -ldc1394 -lcv -lhighgui -lfltk -L$(shell rospack find opencv_latest)/opencv/lib -L$(shell rospack find libdc1394v2)/libdc1394v2/lib
