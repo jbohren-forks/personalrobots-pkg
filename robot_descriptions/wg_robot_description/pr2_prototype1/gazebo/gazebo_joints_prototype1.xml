@@ -1,0 +1,53 @@
+<robot name="pr2">
+        <joint name="caster_front_left_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_front_left_l_joint" >
+        </joint>
+        <joint name="wheel_front_left_r_joint" >
+        </joint>
+        <joint name="caster_front_right_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_front_right_l_joint" >
+        </joint>
+        <joint name="wheel_front_right_r_joint" >
+        </joint>
+        <joint name="caster_rear_left_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_rear_left_l_joint" >
+        </joint>
+        <joint name="wheel_rear_left_r_joint" >
+        </joint>
+        <joint name="caster_rear_right_joint" >
+            <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+            <kp_speed>1.0</kp_speed>
+        </joint>
+        <joint name="wheel_rear_right_l_joint" >
+        </joint>
+        <joint name="wheel_rear_right_r_joint" >
+        </joint>
+
+      <!-- ========================================= -->
+      <!-- torso array -->
+      <joint name="torso_joint">
+          <explicitDampingCoefficient>10.0</explicitDampingCoefficient>
+      </joint>
+      <!-- ========================================= -->
+      <!-- head and above array -->
+      <joint name="head_pan_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="head_tilt_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+      <joint name="tilt_laser_mount_joint" >
+          <explicitDampingCoefficient>1.0</explicitDampingCoefficient>
+      </joint>
+
+
+</robot>

@@ -63,4 +63,10 @@ add_custom_target(pr2_gazebo_model_multi_link ALL
 		  DEPENDS urdf2gazebo
 		  COMMENT "Building Gazebo model for Multi Link Test")
 
+# pr2_prototype1
+add_custom_target(pr2_prototype1 ALL
+		  COMMAND ${urdf2gazebo_exe} ${wg_robot_description_PACKAGE_PATH}/pr2_prototype1/gazebo/pr2_prototype1_gazebo_actuators.xml ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_prototype1.model
+		  DEPENDS urdf2gazebo
+		  COMMENT "Building Gazebo model for PR2 Prototype1 Test")
+
 
