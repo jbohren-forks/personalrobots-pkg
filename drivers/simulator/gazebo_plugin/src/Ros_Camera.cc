@@ -89,7 +89,7 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
   this->frameName = node->GetString("frameName","default_ros_camera",0); //read from xml file
 
   std::cout << "================= " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::Image>(this->topicName,10);
+  rosnode->advertise<std_msgs::Image>(this->topicName,1);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -128,6 +128,8 @@ void Ros_Camera::PutCameraData()
   //std::cout << " updating camera " << this->topicName << " " << data->image_size << std::endl;
   if (src)
   {
+    //double tmpT0 = Simulator::Instance()->GetWallTime();
+
     this->lock.lock();
     // copy data into image
     this->imageMsg.header.frame_id = this->frameName;
@@ -146,11 +148,19 @@ void Ros_Camera::PutCameraData()
     // set buffer size
     uint32_t       buf_size = (width) * (height) * (depth);
 
+    //double tmpT1 = Simulator::Instance()->GetWallTime();
+
     this->imageMsg.set_data_size(buf_size);
     memcpy(&(this->imageMsg.data[0]), src, buf_size);
 
+    //double tmpT2 = Simulator::Instance()->GetWallTime();
+
     // publish to ros
     rosnode->publish(this->topicName,this->imageMsg);
+
+    //double tmpT3 = Simulator::Instance()->GetWallTime();
+    //std::cout << "buf_size: " << buf_size << " - " << tmpT1 - tmpT0 << " : " << tmpT2 - tmpT1 << " : " << tmpT3 - tmpT2 << std::endl;
+
     this->lock.unlock();
   }
 

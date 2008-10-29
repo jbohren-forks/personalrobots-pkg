@@ -243,14 +243,13 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
 
   std::cout << "gazebo mechanism control got pr2.xml from param server, parsing it..." << std::endl;
   //std::cout << tmp_param_string << std::endl;
-  std::string* pr2_xml_content = new std::string(tmp_param_string.c_str());;
 
   // initialize TiXmlDocument doc with a string
   TiXmlDocument doc;
-  if (!doc.Parse(pr2_xml_content->c_str()))
+  if (!doc.Parse(tmp_param_string.c_str()))
   {
     fprintf(stderr, "Error: Could not load the gazebo mechanism_control plugin's configuration file: %s\n",
-            pr2_xml_content->c_str());
+            tmp_param_string.c_str());
     abort();
   }
   urdf::normalizeXml(doc.RootElement());
