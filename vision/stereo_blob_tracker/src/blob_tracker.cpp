@@ -65,7 +65,7 @@ void drawHistogram1D(const CvHistogram* hist, IplImage** hist_img, int histHeigh
    cvGetMinMaxHistValue( hist, 0, &max_value, 0, 0);
 
    // the bins is a CvMatND. The first dim is the bins
-   numBins = cvGetDimSize(hist->bins, 0);
+   int numBins = cvGetDimSize(hist->bins, 0);
    if (*hist_img == 0) {
      *hist_img = cvCreateImage( cvSize(numBins*barWidth, histHeight), 8, 3 );
    } else {
