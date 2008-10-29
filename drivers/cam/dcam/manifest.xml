@@ -1,0 +1,7 @@
+<package>
+  <description>A dc1394 camera library with proper support for stereo and image processing.</description>
+  <author>Kurt Konolige, Jeremy Leibs</author>
+  <license>BSD</license>
+  <sysdepend os="ubuntu" package="libfltk-dev"/>
+  <url></url>
+</package>
