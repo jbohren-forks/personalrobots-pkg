@@ -111,7 +111,6 @@ struct RTreeNode
   {}
 
   //! Left child on 0, right child on 1
-  // TODO: make sure this is branch-free
   /*
   inline bool operator() (cv::WImageView1_b const& patch) const
   {

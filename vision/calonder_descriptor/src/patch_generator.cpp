@@ -1,5 +1,6 @@
 #include "calonder_descriptor/patch_generator.h"
 #include <cassert>
+#include <cstring>
 
 namespace features {
 
@@ -68,8 +69,7 @@ void PatchGenerator::operator() (CvPoint pt, IplImage* patch)
       }
     }
   } else {
-    // TODO: fill to 128 instead?
-    cvZero(patch);
+    cvSet(patch, cvScalarAll(128));
   }
 
   // Suppress CV_WARP_FILL_OUTLIERS flag which is set by default.

@@ -26,12 +26,16 @@ LDFLAGS += -L/usr/local/lib -lprofiler
 # SIFT (get rid of this?)
 CFLAGS += -I$(SIFT_ROOT)
 LDFLAGS += -L$(SIFT_ROOT)/lib -lsift
+# FAST
+FAST_DIR = $(shell rospack find fast_detector)
+CFLAGS += -I$(FAST_DIR)/src
+LDFLAGS += -L$(FAST_DIR)/lib -lfast_detector
 # Optimization settings
 CFLAGS += -DNDEBUG
-#CFLAGS += -O0
+#CFLAGS += -O0 -g
 #CFLAGS += -O1
-CFLAGS += -O2
-#CFLAGS += -O3
+#CFLAGS += -O2
+CFLAGS += -O3
 #CFLAGS += -march=native
 #CFLAGS += -mfpmath=sse
 #CFLAGS += -ffast-math
@@ -41,7 +45,7 @@ CFLAGS += -O2
 SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAMS = baseset_test recognition_test show_base_set patch_test
-PROGRAMS += match_benchmark
+PROGRAMS += match_benchmark directed_test
 #PROGRAMS += matcher_test sig_profile rtree_test classifier_test write_posteriors
 
 all: $(PROGRAMS)

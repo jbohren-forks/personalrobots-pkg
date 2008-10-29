@@ -1,6 +1,8 @@
 #include "calonder_descriptor/randomized_tree.h"
 #include "calonder_descriptor/rng.h"
 #include <fstream>
+#include <cassert> // DEBUG
+#include <cstdio> // DEBUG
 
 namespace features {
 

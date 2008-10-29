@@ -113,7 +113,7 @@ inline Rng::int_type Rng::operator()()
 
 inline Rng::int_type Rng::operator()(int_type N)
 {
-  return boost::uniform_int<int_type>(0, N)(engine_);
+  return boost::uniform_int<int_type>(0, N-1)(engine_);
 }
 
 inline double Rng::uniform(double a, double b)
