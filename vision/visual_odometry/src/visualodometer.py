@@ -49,6 +49,10 @@ class FeatureDetector:
 
   def detect(self, frame, target_points):
     features = self.get_features(frame, target_points)
+#    if len(features) > (target_points * 2.0):
+#        print "TOO MANY KP"
+#        self.thresh *= 1.2
+#        return self.detect(frame, target_points)
     if len(features) > (target_points * 1.1):
         self.thresh *= 1.05
     if len(features) < (target_points * 0.9):
@@ -188,10 +192,11 @@ class VisualOdometer:
     self.pose = frame.pose
     self.prev_frame = frame
     
-    diff = self.pose.compare(self.keyframe.pose)
-    if 0 and (max(diff[1:]) > self.angle_keypoint_thresh):
-      self.keyframe = frame
-      print "KEYFRAME", frame.id
+    if 0:
+      diff = self.pose.compare(self.keyframe.pose)
+      if (max(diff[1:]) > self.angle_keypoint_thresh):
+        self.keyframe = frame
+        print "KEYFRAME", frame.id
 
     self.num_frames += 1
 

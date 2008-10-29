@@ -6,6 +6,11 @@ import ImageDraw as ImageDraw
 
 # Fx, Fy, Tx, Clx, Crx, Cy
 class Camera:
+  """ See http://www.videredesign.com/docs/calibrate_4.4d.pdf
+      But note that the reprojection matrix Q ought to have (1/Tx),
+      according to Kurt.
+  """
+   
   def __init__(self, params):
     self.params = params
     (Fx, Fy, Tx, Clx, Crx, Cy) = params
@@ -19,13 +24,26 @@ class Camera:
 
     # Right Projection matrix
     self.Pr = numpy.array([
-      [ Fx, 0,  Crx, -Fx*Tx ],
+      [ Fx, 0,  Crx, Fx*-Tx ],
       [ 0,  Fy, Cy,  0      ],
       [ 0,  0,  1,   0      ]
     ])
 
+    self.Q = numpy.array([
+      [ 1, 0,  0, -Crx ],
+      [ 0, 1,  0, -Cy ],
+      [ 0, 0,  0,  Fx ],
+      [ 0, 0, 1 / Tx, 0 ]
+    ])
+
+  def pix2cam(self, u, v, d):
+    """ takes pixel space u,v,d and returns camera space X,Y,Z """
+    res = numpy.dot(self.Q, numpy.array( [ [u], [v], [d], [1] ])).transpose()[0]
+    (x, y, z, w) = res
+    return (x / w, y / w, z / w)
+
   def cam2pixLR(self, X, Y, Z):
-    """ takes camera space (X,Y,Z) and returns the pixel space (x,y,d) """
+    """ takes camera space (X,Y,Z) and returns the pixel space (u,v) for both cameras """
     def xform(P, pt):
       (x,y,w) = numpy.dot(P, pt).transpose()[0]
       return (x/w, y/w)
@@ -36,15 +54,9 @@ class Camera:
     return ((xl,yl), (xr,yr))
 
   def cam2pix(self, X, Y, Z):
-    """ takes camera space (X,Y,Z) and returns the pixel space (x,y,d) """
-    def xform(P, pt):
-      (x,y,w) = numpy.dot(P, pt).transpose()[0]
-      return (x/w, y/w)
-    campt = numpy.array([ [X], [Y], [Z], [1] ])
-    (xl,yl) = xform(self.Pl, campt)
-    (xr,yr) = xform(self.Pr, campt)
-    assert yl == yr
-    return (xl, yl, ((xl - xr)*1.))
+    """ takes camera space (X,Y,Z) and returns the pixel space (x,y,d) for left camera"""
+    ((xl,yl), (xr,yr)) = self.cam2pixLR(X, Y, Z)
+    return (xl, yl, xl - xr)
     
 class VidereCamera(Camera):
   def __init__(self, config_str):

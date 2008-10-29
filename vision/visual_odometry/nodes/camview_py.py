@@ -41,11 +41,10 @@ from math import *
 
 from std_msgs.msg import Image, ImageArray, String
 import rospy
-import pyrob.util as ut
-import opencv.highgui as hg
 import visual_odometry as VO
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer
+import camera
 
 import PIL.Image
 import PIL.ImageDraw
@@ -89,44 +88,29 @@ class VODemo:
       Cy = matrix[1][2]
       Tx = -matrix[0][3] / Fx
       self.params = (Fx, Fy, Tx, Cx, Cx, Cy)
-      self.vo = VisualOdometer(self.params)
-      self.prev_af = None
-      self.started = time.time()
+      cam = camera.Camera(self.params)
+      self.vo = VisualOdometer(cam)
+      self.started = None
 
   def display_array(self, iar):
     diag = ""
     af = None
     if self.vo:
+      if not self.started:
+        self.started = time.time()
       if 0:
         time.sleep(0.028)
       else:
         imgR = imgAdapted(iar.images[0])
         imgL = imgAdapted(iar.images[1])
         af = SparseStereoFrame(imgL, imgR)
-        self.vo.find_keypoints(af)
-        self.vo.find_disparities(af)
-        self.vo.collect_descriptors(af)
-        if 0:
-          iL = PIL.Image.fromstring("L", imgL.size, imgL.tostring())
-          #for (x,y) in af.kp2d:
-          #  circle(iL, x, y, 2, 255)
-          iL.save("out%04d.tiff" % self.frame)
-        if self.prev_af:
-          pairs = self.vo.temporal_match(self.prev_af, af)
-          pose = self.vo.solve(self.prev_af.kp, af.kp, pairs)
-          if pose and (pose[0] > 10):
-            (inliers, rot, shift) = pose
-            diag = "%d inliers, moved %.1f" % (inliers, sqrt(shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]))
-          else:
-            diag = "FAILED TO FIND"
+        if 1:
+          pose = self.vo.handle_frame(af)
+          diag = "%d inliers, moved %.1f" % (self.vo.inl, pose.distance())
       if (self.frame % 1) == 0:
-        print "[%f fps]" % (self.frame / (time.time() - self.started)), diag
-      if af:
-        self.prev_af = af
+        took = time.time() - self.started
+        print "%4d: %5.1f [%f fps]" % (self.frame, took, self.frame / took), diag
       self.frame += 1
-      if self.frame == 1000:
-        self.vo.summarize_timers(self.frame)
-        sys.exit(1)
 
     #print "got message", len(iar.images)
     #print iar.images[0].width
@@ -154,5 +138,4 @@ def main():
     rospy.spin()
 
 if __name__ == '__main__':
-    import cProfile
-    cProfile.run('main()', 'mainprof')
+    main()

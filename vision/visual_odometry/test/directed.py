@@ -1,6 +1,7 @@
 import rostools
 rostools.update_path('visual_odometry')
 import rostest
+import rospy
 
 import vop
 
@@ -73,6 +74,7 @@ class TestDirected(unittest.TestCase):
 
     schedule = [(f+1000) for f in (range(0,100) + range(100,0,-1) + [0]*10)]
     schedule = range(1507)
+    schedule = range(30)
     for f in schedule:
       lf = Image.open("%s/left-%04d.ppm" % (dir,f))
       rf = Image.open("%s/right-%04d.ppm" % (dir,f))
@@ -83,6 +85,63 @@ class TestDirected(unittest.TestCase):
       vo.handle_frame(af)
       print f, vo.inl
       trail.append(numpy.array(vo.pose.M[0:3,3].T)[0])
+    def d(a,b):
+      d = a - b
+      return sqrt(numpy.dot(d,d.conj()))
+    print "covered   ", sum([d(a,b) for (a,b) in zip(trail, trail[1:])])
+    print "from start", d(trail[0], trail[-1]), trail[0] - trail[-1]
+
+    vo.summarize_timers()
+    print vo.log_keyframes
+
+  def xtest_smoke_bag(self):
+    import rosrecord
+    import visualize
+
+    class imgAdapted:
+      def __init__(self, i):
+        self.i = i
+        self.size = (i.width, i.height)
+      def tostring(self):
+        return self.i.data
+
+    cam = None
+    for topic, msg in rosrecord.logplayer("/wg/stor2/prdata/videre-bags/vo1.bag"):
+      if rospy.is_shutdown():
+        break
+      #print topic,msg
+      if topic == "/videre/cal_params" and not cam:
+        cam = camera.VidereCamera(msg.data)
+        vo = VisualOdometer(cam)
+      if cam and topic == "/videre/images":
+        imgR = imgAdapted(msg.images[0])
+        imgL = imgAdapted(msg.images[1])
+        af = SparseStereoFrame(imgL, imgR)
+        pose = vo.handle_frame(af)
+        visualize.viz(vo, af)
+    vo.summarize_timers()
+    sys.exit(1)
+    cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
+    vo.reset_timers()
+    dir = "/u/konolige/vslam/data/indoor1/"
+
+    trail = []
+    prev_scale = None
+
+    schedule = [(f+1000) for f in (range(0,100) + range(100,0,-1) + [0]*10)]
+    schedule = range(1507)
+    schedule = range(30)
+    for f in schedule:
+      lf = Image.open("%s/left-%04d.ppm" % (dir,f))
+      rf = Image.open("%s/right-%04d.ppm" % (dir,f))
+      lf.load()
+      rf.load()
+      af = SparseStereoFrame(lf, rf)
+
+      vo.handle_frame(af)
+      print f, vo.inl
+      trail.append(numpy.array(vo.pose.M[0:3,3].T)[0])
+
     def d(a,b):
       d = a - b
       return sqrt(numpy.dot(d,d.conj()))
@@ -239,6 +298,10 @@ class TestDirected(unittest.TestCase):
           pt_camera = (numpy.dot(pt_model, R) + numpy.array([0, 0, radius])).transpose()
           (cx, cy, cz) = [ float(i) for i in pt_camera ]
           (x,y,d) = cam.cam2pix(cx, cy, cz)
+          reversed = cam.pix2cam(x, y, d)
+          self.assertAlmostEqual(cx, reversed[0], 3)
+          self.assertAlmostEqual(cy, reversed[1], 3)
+          self.assertAlmostEqual(cz, reversed[2], 3)
           kp.append((x,y,d))
           circle(im, x, y, 2, 255)
       kps.append(kp)
@@ -285,5 +348,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_sad'))
+        suite.addTest(TestDirected('test_solve_rotation'))
         unittest.TextTestRunner(verbosity=2).run(suite)
