@@ -23,12 +23,14 @@ import math
 
 import os
 
+################# CLASS IMGADAPTED ##################
 class imgAdapted:
   def __init__(self, i):
     self.i = i
     self.size = i.size
     self.rawdata = i.tostring()
 
+################## CLASS TRACKER CHILD OF CLASS VISUALODOMETER ################
 class Tracker(visualodometer.VisualOdometer) :
 
   def collect_descriptors(self, frame):
@@ -37,7 +39,7 @@ class Tracker(visualodometer.VisualOdometer) :
     self.timer['descriptor_collection'].stop()
 
 
-
+################## CLASS PEOPLETRACKER #############
 class PeopleTracker:
   def __init__(self):
     self.keyframe = []
@@ -58,7 +60,12 @@ class PeopleTracker:
     self.num_scales = 5
     self.feats_to_center = []
     self.good_points_thresh = 1/2
+    self.recent_good_frame = []
+    self.recent_good_rect = []
+    self.same_key_rgf = False
 
+
+################### GET_FEATURES ##############################
   def get_features(self, frame, target_points, rect):
     full = Image.fromstring("L",frame.size,frame.rawdata)
     (x,y,w,h) = rect
@@ -69,6 +76,7 @@ class PeopleTracker:
     results = [ (x1,y1) for (x1,y1,s1,r1) in sd.detect(subim.tostring()) ]
     return [(x-incr+x1,y-incr+y1) for (x1,y1) in results if (incr<x1) and (incr<y1) and (x1<w+incr) and (y1<h+incr)]
 
+################### MAKE_FACE_MODEL ###########################
   def make_face_model(self, window, feat_list) :
     feats_to_center = []
     (wx,wy,ww,wh) = window
@@ -77,6 +85,8 @@ class PeopleTracker:
       feats_to_center.append((wincenter[0]-x,wincenter[1]-y))
     return feats_to_center
 
+
+#################### MEAN SHIFT ###############################
   def mean_shift_sparse(self, start_point, window_size, sparse_pred_list, max_iter, eps) :
     dpoint = [0,0]
     total_weight = 0
@@ -109,11 +119,13 @@ class PeopleTracker:
     return (new_point[0]-half_width,new_point[1]-half_height,window_size[0],window_size[1])
 
 
+
+################### IMAGE CALLBACK ############################
   def frame(self, imarray):
 
-    if self.seq>100 :
-      self.seq += 1
-      return
+    #if self.seq>100 :
+    #  self.seq += 1
+    #  return
 
     im = imarray.images[1]
     im_py = Image.fromstring("L", (im.width, im.height), im.data)
@@ -126,63 +138,91 @@ class PeopleTracker:
       #self.faces = [ (x-16,y-16,w+32,h+32) for ( x,y,w,h ) in self.faces ]
 
     sparse_pred_list = []
+    ia = SparseStereoFrame(im_py,im_r_py)
     for iface in range(0,len(self.faces)):
       (x,y,w,h) = self.faces[iface]
-      #subim = im_py.crop((x, y, x+w, y+h))
-      #ia = imgAdapted(subim)
-      ia = SparseStereoFrame(im_py,im_r_py)  #imgAdapted(im_py)
       ia.kp2d = self.get_features(ia, self.num_feats, (x, y, w, h))
 
-      
-      #ia.kp2d = [(x1,y1) for (x1,y1) in ia.kp2d if (16<x1) and (16<y1) and (x1<(w-32)) and (y1<(h-32))] 
-      #ia.kp = ia.kp2d
       self.vo.find_disparities(ia)
-      print ia.kp
       self.vo.collect_descriptors(ia)
-      if self.current_keyframe > -1 :
-        matches = self.vo.temporal_match(self.keyframe[self.current_keyframe],ia)
-        print matches
-        sadscores = [(VO.sad(self.keyframe[self.current_keyframe].descriptors[a], ia.descriptors[b])) for (a,b) in matches]
-        print sadscores
-        print len(matches)
 
-        good_matches = [m for m in sadscores if m < self.sad_thresh]
-
-        if len(self.keyframe[self.current_keyframe].kp)<2 or len(good_matches) < len(self.keyframe[self.current_keyframe].kp)/2 :
-          self.keyframe[self.current_keyframe] = ia
-          print "New keyframe"
-          matches = []
-          self.feats_to_center = self.make_face_model( (x,y,w,h), ia.kp2d )
-        else:
-          sparse_pred_list = []
-          for imatch in range(0,len(matches)) :
-            if sadscores[imatch] < self.sad_thresh :
-              (match1,match2) = matches[imatch]
-              sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_center[match1][0], ia.kp2d[match2][1]+self.feats_to_center[match1][1], 1) )  
-
-          print("Sparse pred list")
-          print sparse_pred_list
-
-          new_window = self.mean_shift_sparse( (x+(w-1)/2,y+(h-1)/2), (w,h), sparse_pred_list, 10, 1)
-          print("new window")
-          print new_window
-          print ("im size")
-          print (im.width, im.height)
-          (nx,ny,nw,nh) = new_window
-#          # Force the window back into the image.
-          dx = max(0,0-nx) + min(0, im.width - nx+nw)
-          dy = max(0,0-ny) + min(0, im.height - ny+nh)
-          nx += dx
-          ny += dy
-          print "New window adj"
-          print (nx,ny,nw,nh)
-
-          self.faces[iface] = [nx, ny, nw, nh]
-      else :
+      # First frame:
+      if self.current_keyframe == -1 :
         self.current_keyframe = 0
         self.keyframe.append(ia)
         self.feats_to_center = self.make_face_model( (x,y,w,h), ia.kp2d )
+        self.recent_good_frame = ia
+        self.recent_good_rect = [x,y,w,h]
+        self.same_key_rgf = True
+
+      # Later frames
+      else :
+        # Try matching to the keyframe
+        keyframe = self.keyframe[self.current_keyframe]
+        matches = self.vo.temporal_match(keyframe,ia)
+        print matches
+        sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
+        print sadscores
+
+        good_matches = [m for m in sadscores if m < self.sad_thresh]
+
+        # Not enough matches, get a new keyframe
+        if len(keyframe.kp)<2 or len(good_matches) < len(keyframe.kp)/2 :
+
+          #self.keyframe[self.current_keyframe] = ia
+          print "New keyframe"
+          #matches = []
+          # Make a new face model, either from a recent good frame, or from the current image
+          if not self.same_key_rgf :
+            self.feats_to_center = self.make_face_model( self.recent_good_rect, self.recent_good_frame.kp2d )
+            self.keyframe[self.current_keyframe] = self.recent_good_frame
+            
+            self.same_key_rgf = True
+
+          else :
+            self.keyframe[self.current_keyframe] = ia
+            self.feats_to_center = self.make_face_model( (x,y,w,h), ia.kp2d )
+            matches = []
+            self.same_key_rgf = True
+
+          # Try matching to the NEW keyframe
+          keyframe = self.keyframe[self.current_keyframe]
+          matches = self.vo.temporal_match(keyframe,ia)
+          print matches
+          sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
+          print sadscores
+
+          good_matches = [m for m in sadscores if m < self.sad_thresh]
+
+
+        # Good matches, mark this frame as good
+        else:
+          self.recent_good_frame = ia
+          self.same_key_rgf = False
+
+        # Track
+        sparse_pred_list = []
+        for imatch in range(0,len(matches)) :
+          if sadscores[imatch] < self.sad_thresh :
+            (match1,match2) = matches[imatch]
+            sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_center[match1][0], ia.kp2d[match2][1]+self.feats_to_center[match1][1], 1) )  
+
+        print("Sparse pred list")
+        print sparse_pred_list
+
+        new_window = self.mean_shift_sparse( (x+(w-1)/2,y+(h-1)/2), (w,h), sparse_pred_list, 10, 1)
+        (nx,ny,nw,nh) = new_window
+        # Force the window back into the image.
+        dx = max(0,0-nx) + min(0, im.width - nx+nw)
+        dy = max(0,0-ny) + min(0, im.height - ny+nh)
+        nx += dx
+        ny += dy
+
+        self.faces[iface] = [nx, ny, nw, nh]
+        self.recent_good_rect = [nx,ny,nw,nh]
       
+############ DRAWING ################
+
     key_im = self.keyframe[self.current_keyframe]
     keyim_py = Image.fromstring("L", key_im.size, key_im.rawdata)
     bigim_py = Image.new("RGB",(im_py.size[0]+key_im.size[0], im_py.size[1]))
@@ -223,14 +263,19 @@ class PeopleTracker:
     self.seq += 1
 
 
+############# MAIN #############
+
 people_tracker = PeopleTracker()
 
 import rosrecord
 
 filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
+num_frames = 0
 for topic, msg in rosrecord.logplayer(filename):
-  print topic, msg
-  if topic == '/videre/images':
-    people_tracker.frame(msg)
+  num_frames += 1
+  if num_frames < 100 :
+    print topic, msg
+    if topic == '/videre/images':
+      people_tracker.frame(msg)
 
