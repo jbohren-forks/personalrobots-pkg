@@ -346,7 +346,10 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   double heading_dist = DBL_MAX;
 
   for(int i = 0; i < samples_per_dim_; ++i){
-    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+    //enforce a minimum rotational velocity because the base can't handle small in-place rotations
+    double vtheta_samp_limited = vtheta_samp > 0 ? max(vtheta_samp, .4) : min(vtheta_samp, -.4);
+
+    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp_limited, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
     if(comp_traj->cost_ >= 0 && (comp_traj->cost_ <= best_traj->cost_ || best_traj->cost_ < 0) && (vtheta_samp > dvtheta || vtheta_samp < -1 * dvtheta)){
