@@ -121,7 +121,7 @@ namespace ros {
       bool isMapDataOK();
 
       MDPConfig mdpCfg_;
-      EnvironmentNAV2D envNav2D_;
+      EnvironmentWrapper * env_;
       SBPLPlannerManager * pMgr_;
       SBPLPlannerStatistics pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
@@ -132,31 +132,23 @@ namespace ros {
       param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
 
       lock();
-      const CostMap2D& cm = getCostMap();
-      unsigned char* initialMapData = new unsigned char[cm.getWidth() * cm.getHeight()];
-      // Fill with cost map data
-      memcpy(initialMapData, cm.getMap(), cm.getWidth() * cm.getHeight());
-
-      // Initial Configuration is set with the threshold for obstacles set to the inscribed obstacle threshold. These, lethal obstacles, and cells with
-      // no information will thus be regarded as obstacles
-      envNav2D_.InitializeEnv(cm.getWidth(), cm.getHeight(), initialMapData, 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-
-      // Cleanup
-      delete[] initialMapData;
-  
-      bool success = envNav2D_.InitializeMDPCfg(&mdpCfg_);
-
+      // Initial Configuration is set with the threshold for
+      // obstacles set to the inscribed obstacle threshold. These,
+      // lethal obstacles, and cells with no information will thus
+      // be regarded as obstacles
+      env_ = new EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+      bool success = env_->InitializeMDPCfg(&mdpCfg_);
       isMapDataOK();
-
       unlock();
-
+      
       if(!success){
 	ROS_INFO("ERROR: InitializeMDPCfg failed\n");
 	exit(1);
       }
       
-      pMgr_ = new SBPLPlannerManager(&envNav2D_, false, &mdpCfg_);
+      pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
       if ( ! pMgr_->select("ARAPlanner", false)) {
+	delete env_;
 	delete pMgr_;
 	errx(EXIT_FAILURE, "ERROR in MoveBaseSBPL ctor: pMgr_->select(\"ARAPlanner\") failed");
       }
@@ -167,6 +159,7 @@ namespace ros {
     }
     
     MoveBaseSBPL::~MoveBaseSBPL(){
+      delete env_;
       delete pMgr_;
     }
 
@@ -180,7 +173,7 @@ namespace ros {
       for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
 	unsigned int x, y; // Cell coordinates
 	cm.IND_MC(*it, x, y);
-	envNav2D_.UpdateCost(x, y, cm.getCost(x, y));
+	env_->UpdateCost(x, y, cm.getCost(x, y));
       }
     }
 
@@ -189,11 +182,11 @@ namespace ros {
       
       for(unsigned int i = 0; i<cm.getWidth(); i++){
 	for(unsigned int j = 0; j < cm.getHeight(); j++){
-	  if(envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) < CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
+	  if(env_->IsObstacle(i, j) && cm.getCost(i, j) < CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
 	    ROS_DEBUG("Extra obstacle at <%d, %d>", i, j);
 	    throw "Extra obstacle in sbpl";
 	  }
-	  if(!envNav2D_.IsObstacle(i, j) && cm.getCost(i, j) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
+	  if(!env_->IsObstacle(i, j) && cm.getCost(i, j) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
 	    ROS_DEBUG("Missing obstacle at <%d, %d>", i, j);
 	    throw "Missing obstacle in sbpl";
 	  }
@@ -221,8 +214,13 @@ namespace ros {
 
 	// Set start state based on global pose, updating statistics in the process.
 	cm.WC_MC(se.start.x, se.start.y, se.startIx, se.startIy);
-	envNav2D_.SetStart(se.startIx, se.startIy);
-	se.startState = envNav2D_.GetStateFromCoord(se.startIx, se.startIy);
+ 	env_->SetStart(se.start);
+ 	se.startState = env_->GetStateFromPose(se.start);
+	if (0 > se.startState) {
+	  ROS_ERROR("invalid start state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
+		    se.startState, se.start.x, se.start.y);
+	  return false;
+	}
 	int status(pMgr_->set_start(se.startState));
 	if (1 != status) {
 	  ROS_ERROR("failed to set start state ID %d from (%ud, %ud): pMgr_->set_start() returned %d\n",
@@ -232,8 +230,13 @@ namespace ros {
 	
 	// Set goal state, updating statistics in the process.
 	cm.WC_MC(se.goal.x, se.goal.y, se.goalIx, se.goalIy);
-	envNav2D_.SetGoal(se.goalIx, se.goalIy);
-	se.goalState = envNav2D_.GetStateFromCoord(se.goalIx, se.goalIy);
+ 	env_->SetGoal(se.goal);
+ 	se.goalState = env_->GetStateFromPose(se.goal);
+	if (0 > se.goalState) {
+	  ROS_ERROR("invalid goal state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
+		    se.goalState, se.goal.x, se.goal.y);
+	  return false;
+	}
 	status = pMgr_->set_goal(se.goalState);
 	if (1 != status) {
 	  ROS_ERROR("failed to set goal state ID %d from (%ud, %ud): pMgr_->set_goal() returned %d\n",
@@ -254,34 +257,27 @@ namespace ros {
 	  double prevx, prevy, prevth;
 	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
 	  for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
-	    int state = *it;
-	    int mx, my;
-	    envNav2D_.GetCoordFromState(state, mx, my);
-	    
-	    double wx, wy;
-	    cm.MC_WC(mx, my, wx, wy);
-	    std_msgs::Pose2DFloat32 waypoint;
-	    waypoint.x = wx;
-	    waypoint.y = wy;
+	    std_msgs::Pose2DFloat32 const waypoint(env_->GetPoseFromState(*it));
 	    
 	    // update stats:
 	    // - first round, nothing to do
 	    // - second round, update path length only
 	    // - third round, update path length and angular change
 	    if (plan.empty()) {
-	      prevx = wx;
-	      prevy = wy;
+	      prevx = waypoint.x;
+	      prevy = waypoint.y;
 	    }
 	    else {
-	      double const dx(wx - prevx);
-	      double const dy(wy - prevy);
+	      double const dx(waypoint.x - prevx);
+	      double const dy(waypoint.y - prevy);
 	      se.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
 	      double const th(atan2(dy, dx));
 	      if (42 > prevth) // see 42.17 above
 		se.plan_angle_change_rad += fabs(mod2pi(th - prevth));
-	      prevx = wx;
-	      prevy = wy;
+	      prevx = waypoint.x;
+	      prevy = waypoint.y;
 	      prevth = th;
+#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
 	    }
 	    
 	    plan.push_back(waypoint);

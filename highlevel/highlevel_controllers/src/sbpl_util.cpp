@@ -36,10 +36,22 @@
 
 #include <sbpl_util.hh>
 #include <rosconsole/rosconsole.h>
+#include <costmap_2d/costmap_2d.h>
 #include <headers.h>
 #include <sys/time.h>
 #include <time.h>
 #include <err.h>
+#include <sstream>
+
+namespace {
+  
+  std::string mk_invalid_state_str(std::string const & method, int state) {
+    std::ostringstream os;
+    os << "EnvironmentWrapper::invalid_state in method " << method << ": state = " << state;
+    return os.str();
+  }
+  
+}
 
 namespace ros {
 namespace highlevel_controllers {
@@ -62,6 +74,13 @@ namespace highlevel_controllers {
 #endif // UNDEFINED
 
     return 0;    
+  }
+  
+  
+  SBPLPlannerManager::no_planner_selected::
+  no_planner_selected()
+    : std::runtime_error("SBPLPlannerManager: no planner selected")
+  {
   }
   
   
@@ -232,6 +251,243 @@ namespace highlevel_controllers {
 	    prefix, plan_angle_change_rad);
     if (0 != fclose(ff))
       warn("SBPLPlannerStatistics::entry::logFile(): fclose() on %s", filename);
+  }
+  
+  
+  ////   EnvironmentWrapper::invalid_pose::
+  ////   invalid_pose(std::string const & method, std_msgs::Pose2DFloat32 const & pose)
+  ////     : std::runtime_error(mk_invalid_pose_str(method, pose))
+  ////   {
+  ////   }
+  
+  
+  EnvironmentWrapper::invalid_state::
+  invalid_state(std::string const & method, int state)
+    : std::runtime_error(mk_invalid_state_str(method, state))
+  {
+  }
+  
+  
+  EnvironmentWrapper2D::
+  EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
+		       int startx, int starty,
+		       int goalx, int goaly,
+		       unsigned char obsthresh)
+    : EnvironmentWrapper(costmap),
+      env_(new EnvironmentNAV2D())
+  {
+#warning 'Would be nice to get (at least) start as a pose from current data'
+    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
+		       startx, starty, goalx, goaly, obsthresh);
+  }
+  
+  
+  EnvironmentWrapper2D::
+  ~EnvironmentWrapper2D()
+  {
+    delete env_;
+  }
+  
+  
+  DiscreteSpaceInformation * EnvironmentWrapper2D::
+  getDSI()
+  {
+    return env_;
+  }
+  
+  
+  bool EnvironmentWrapper2D::
+  InitializeMDPCfg(MDPConfig *MDPCfg)
+  {
+    return env_->InitializeMDPCfg(MDPCfg);
+  }
+  
+  
+  bool EnvironmentWrapper2D::
+  UpdateCost(int ix, int iy, unsigned char newcost)
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
+      return false;
+    return env_->UpdateCost(ix, iy, newcost);
+  }
+  
+  
+  bool EnvironmentWrapper2D::
+  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy))
+      return outside_map_is_obstacle;
+    return env_->IsObstacle(ix, iy);
+  }
+  
+  
+  int EnvironmentWrapper2D::
+  SetStart(std_msgs::Pose2DFloat32 const & start)
+  {
+    unsigned int ix, iy;
+    costmap_.WC_MC(start.x, start.y, ix, iy);
+    return env_->SetStart(ix, iy);
+  }
+  
+  
+  int EnvironmentWrapper2D::
+  SetGoal(std_msgs::Pose2DFloat32 const & goal)
+  {
+    unsigned int ix, iy;
+    costmap_.WC_MC(goal.x, goal.y, ix, iy);
+    return env_->SetGoal(ix, iy);
+  }
+  
+  
+  /** \note Always sets pose.th == -42 so people can detect that it is
+      undefined. */
+  std_msgs::Pose2DFloat32 EnvironmentWrapper2D::
+  GetPoseFromState(int stateID) const
+    throw(invalid_state)
+  {
+    if (0 > stateID)
+      throw invalid_state("EnvironmentWrapper2D::GetPoseFromState()", stateID);
+    int ix, iy;
+    env_->GetCoordFromState(stateID, ix, iy);
+    // by construction (ix,iy) is always inside the map (otherwise we
+    // wouldn't have a stateID)
+    double px, py;
+    costmap_.MC_WC(ix, iy, px, py);
+    std_msgs::Pose2DFloat32 pose;
+    pose.x = px;
+    pose.y = py;
+    pose.th = -42;
+    return pose;
+  }
+  
+  
+  int EnvironmentWrapper2D::
+  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
+  {
+    unsigned int ix, iy;
+    costmap_.WC_MC(pose.x, pose.y, ix, iy);
+    if ( ! env_->IsWithinMapCell(ix, iy))
+      return -1;
+    return env_->GetStateFromCoord(ix, iy);
+  }
+  
+  
+  EnvironmentWrapper3DKIN::
+  EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
+			  double startx, double starty, double starttheta,
+			  double goalx, double goaly, double goaltheta,
+			  double goaltol_x, double goaltol_y, double goaltol_theta,
+			  footprint_t const & footprint,
+			  double cellsize_m, double nominalvel_mpersecs,
+			  double timetoturn45degsinplace_secs)
+    : EnvironmentWrapper(costmap),
+      env_(new EnvironmentNAV3DKIN())
+  {
+    // Aarghh at least we only do this once at init time.
+    vector<sbpl_2Dpt_t> perimeterptsV;
+    perimeterptsV.reserve(footprint.size());
+    for (size_t ii(0); ii < footprint.size(); ++ii) {
+      sbpl_2Dpt_t pt;
+      pt.x = footprint[ii].x;
+      pt.y = footprint[ii].y;
+      perimeterptsV.push_back(pt);
+    }
+    
+#warning 'Would be nice to get (at least) start as a pose from current data'
+    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
+			startx, starty, starttheta,
+			goalx, goaly, goaltheta,
+			goaltol_x, goaltol_y, goaltol_theta,
+			perimeterptsV, cellsize_m, nominalvel_mpersecs,
+			timetoturn45degsinplace_secs);
+  }
+  
+  
+  EnvironmentWrapper3DKIN::
+  ~EnvironmentWrapper3DKIN()
+  {
+    delete env_;
+  }
+  
+  
+  DiscreteSpaceInformation * EnvironmentWrapper3DKIN::
+  getDSI()
+  {
+    return env_;
+  }
+  
+  
+  bool EnvironmentWrapper3DKIN::
+  InitializeMDPCfg(MDPConfig *MDPCfg)
+  {
+    return env_->InitializeMDPCfg(MDPCfg);
+  }
+  
+  
+  bool EnvironmentWrapper3DKIN::
+  UpdateCost(int ix, int iy, unsigned char newcost)
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
+      return false;
+#warning 'currently purely on/off obstacle info when we have theta'
+    if (costmap_2d::CostMap2D::LETHAL_OBSTACLE == newcost)
+      return env_->UpdateCost(ix, iy, 1);
+    return env_->UpdateCost(ix, iy, 0);
+  }
+  
+  
+  bool EnvironmentWrapper3DKIN::
+  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy))
+      return outside_map_is_obstacle;
+    return env_->IsObstacle(ix, iy);
+  }
+  
+  
+  int EnvironmentWrapper3DKIN::
+  SetStart(std_msgs::Pose2DFloat32 const & start)
+  {
+#warning 'transform global to map frame? or is that the same?'
+    return env_->SetStart(start.x, start.y, start.th);
+  }
+  
+  
+  int EnvironmentWrapper3DKIN::
+  SetGoal(std_msgs::Pose2DFloat32 const & goal)
+  {
+#warning 'transform global to map frame? or is that the same?'
+    return env_->SetGoal(goal.x, goal.y, goal.th);
+  }
+  
+  
+  std_msgs::Pose2DFloat32 EnvironmentWrapper3DKIN::
+  GetPoseFromState(int stateID) const
+    throw(invalid_state)
+  {
+    if (0 > stateID)
+      throw invalid_state("EnvironmentWrapper3D::GetPoseFromState()", stateID);
+    int ix, iy, ith;
+    env_->GetCoordFromState(stateID, ix, iy, ith);
+    // we know stateID is valid, thus we can ignore the
+    // PoseDiscToCont() retval
+    double px, py, pth;
+    env_->PoseDiscToCont(ix, iy, ith, px, py, pth);
+    std_msgs::Pose2DFloat32 pose;
+    pose.x = px;
+    pose.y = py;
+    pose.th = pth;
+    return pose;
+  }
+  
+  
+  int EnvironmentWrapper3DKIN::
+  GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
+  {
+    int ix, iy, ith;
+    if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
+      return -1;
+    return env_->GetStateFromCoord(ix, iy, ith);
   }
   
 }

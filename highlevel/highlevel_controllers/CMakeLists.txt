@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.6)
 
-SET (CMAKE_VERBOSE_MAKEFILE ON)
+### If you're trying to debug include directives or so, this here
+### might help:
+#SET (CMAKE_VERBOSE_MAKEFILE ON)
 
 include(rosbuild)
 set(ROS_BUILD_TYPE Release)
