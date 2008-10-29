@@ -36,19 +36,19 @@
   
    example xml:
     <robot name="wrist_trans">
-      <joint name="wrist_right_flex_joint" type="revolute"> 
+      <joint name="right_wrist_flex_joint" type="revolute"> 
         <limit min="-0.157" max="2.409" effort="5" velocity="5" />
         <axis xyz="0 0 1" />
       </joint>
 
-      <joint name="wrist_right_roll_joint" type="continuous"> 
+      <joint name="right_wrist_roll_joint" type="continuous"> 
         <limit min="0.0" max="0.0" effort="5" velocity="5" />
         <axis xyz="0 0 1" />
       </joint>
 
       <transmission type="WristTransmission" name="wrist_trans">
-        <rightActuator name="wrist_right_r_motor"/>
-        <leftActuator name="wrist_right_l_motor"/>
+        <rightActuator name="right_wrist_r_motor"/>
+        <leftActuator name="right_wrist_l_motor"/>
         <flexJoint name="wrist_right_flex_joint" mechanicalReduction="60.17"/>
         <rollJoint name="wrist_right_roll_joint" mechanicalReduction="60.17"/>
       </transmission>
