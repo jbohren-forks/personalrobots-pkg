@@ -41,7 +41,7 @@ import sys, os
 from time import sleep
 
 # Loads interface with the robot.
-rostools.update_path('teleop_robot')
+rostools.update_path('mechanism_bringup')
 import rospy
 from std_msgs.msg import *
 from robot_srvs.srv import *
