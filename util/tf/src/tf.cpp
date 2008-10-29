@@ -64,9 +64,12 @@ Transformer::~Transformer()
 void Transformer::clear()
 {
   frame_mutex_.lock();
-  for (std::vector< TimeCache*>::iterator  cache_it = frames_.begin(); cache_it != frames_.end(); ++cache_it)
+  if ( frames_.size() > 1 )
   {
-    (*cache_it)->clearList();
+    for (std::vector< TimeCache*>::iterator  cache_it = frames_.begin() + 1; cache_it != frames_.end(); ++cache_it)
+    {
+      (*cache_it)->clearList();
+    }
   }
   frame_mutex_.unlock();
 }
@@ -95,10 +98,10 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   //calculate first leg
   TransformLists t_list = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame));
   btTransform temp1 = computeTransformFromList(t_list);
-  
+
 
   TransformLists t_list2 = lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame));
-  
+
   btTransform temp = computeTransformFromList(t_list2);
 
   transform.setData( temp1 * temp); ///\todo check order here
@@ -109,10 +112,10 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
 bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent)
 {
-  
-  tf::TimeCache* cache = getFrame(lookupFrameNumber(frame_id));  
+
+  tf::TimeCache* cache = getFrame(lookupFrameNumber(frame_id));
   TransformStorage temp;
-  try 
+  try
     {
       cache->getData(time, temp);
     }
@@ -120,7 +123,7 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
     {
       return false;
     }
-  
+
   parent = temp.parent_id_;
   if (parent == "NO_PARENT")
     return false;
@@ -140,8 +143,8 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
   ///\todo add fixed frame support
 
   TransformLists mTfLs;
-  if (target_frame == source_frame) 
-    return mTfLs;  //Don't do anythign if we're not going anywhere 
+  if (target_frame == source_frame)
+    return mTfLs;  //Don't do anythign if we're not going anywhere
 
   TransformStorage temp;
 
@@ -225,14 +228,14 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     if (mTfLs.forwardTransforms.size() == 0) //If it's going to itself it's already been caught
     {
       std::stringstream ss;
-      ss<< "No Common ParentD between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
+      ss<< "No Common ParentD between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
         << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != target_frame)
     {
       std::stringstream ss;
-      ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) 
+      ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
         << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" << std::endl;
       throw(ConnectivityException(ss.str()));
     }
@@ -458,32 +461,32 @@ void Transformer::transformPose(const std::string& target_frame, const Stamped<P
 };
 
 
-void Transformer::transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
-                                      const Stamped<Quaternion>& stamped_in, 
-                                      const std::string& fixed_frame, 
+void Transformer::transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
+                                      const Stamped<Quaternion>& stamped_in,
+                                      const std::string& fixed_frame,
                                       Stamped<Quaternion>& stamped_out)
 {
   Stamped<Transform> transform;
-  lookupTransform(target_frame, target_time, 
-                  stamped_in.frame_id_,stamped_in.stamp_, 
+  lookupTransform(target_frame, target_time,
+                  stamped_in.frame_id_,stamped_in.stamp_,
                   fixed_frame, transform);
-  
+
   stamped_out.setData( transform * stamped_in);
   stamped_out.stamp_ = stamped_in.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
 
-void Transformer::transformVector(const std::string& target_frame, const ros::Time& target_time, 
-                                  const Stamped<Vector3>& stamped_in, 
-                                  const std::string& fixed_frame, 
+void Transformer::transformVector(const std::string& target_frame, const ros::Time& target_time,
+                                  const Stamped<Vector3>& stamped_in,
+                                  const std::string& fixed_frame,
                                   Stamped<Vector3>& stamped_out)
 {
   Stamped<Transform> transform;
-  lookupTransform(target_frame, target_time, 
-                  stamped_in.frame_id_,stamped_in.stamp_, 
+  lookupTransform(target_frame, target_time,
+                  stamped_in.frame_id_,stamped_in.stamp_,
                   fixed_frame, transform);
-  
+
   /** \todo may not be most efficient */
   btVector3 end = stamped_in;
   btVector3 origin = btVector3(0,0,0);
@@ -495,14 +498,14 @@ void Transformer::transformVector(const std::string& target_frame, const ros::Ti
 };
 
 
-void Transformer::transformPoint(const std::string& target_frame, const ros::Time& target_time, 
-                                 const Stamped<Point>& stamped_in, 
-                                 const std::string& fixed_frame, 
+void Transformer::transformPoint(const std::string& target_frame, const ros::Time& target_time,
+                                 const Stamped<Point>& stamped_in,
+                                 const std::string& fixed_frame,
                                  Stamped<Point>& stamped_out)
 {
   Stamped<Transform> transform;
-  lookupTransform(target_frame, target_time, 
-                  stamped_in.frame_id_,stamped_in.stamp_, 
+  lookupTransform(target_frame, target_time,
+                  stamped_in.frame_id_,stamped_in.stamp_,
                   fixed_frame, transform);
 
   stamped_out.setData(transform * stamped_in);
@@ -511,14 +514,14 @@ void Transformer::transformPoint(const std::string& target_frame, const ros::Tim
   stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
 
-void Transformer::transformPose(const std::string& target_frame, const ros::Time& target_time, 
-                                const Stamped<Pose>& stamped_in, 
-                                const std::string& fixed_frame, 
+void Transformer::transformPose(const std::string& target_frame, const ros::Time& target_time,
+                                const Stamped<Pose>& stamped_in,
+                                const std::string& fixed_frame,
                                 Stamped<Pose>& stamped_out)
 {
   Stamped<Transform> transform;
-  lookupTransform(target_frame, target_time, 
-                  stamped_in.frame_id_,stamped_in.stamp_, 
+  lookupTransform(target_frame, target_time,
+                  stamped_in.frame_id_,stamped_in.stamp_,
                   fixed_frame, transform);
 
   stamped_out.setData(transform * stamped_in);
