@@ -478,8 +478,9 @@ public:
 	  //maxZ = 2000;
 
 	  // the unit of the raw disparity image is 1/4 pixel
-	  double dispUnitScale = .25;
-	  computeDepthMask(dispImg, depthmask_, dispUnitScale, minZ, maxZ);
+	  //double dispUnitScale = .25;
+	  //computeDepthMask(dispImg, depthmask_, dispUnitScale, minZ, maxZ);
+	  camModel_->getDepthMask(dispImg, depthmask_, minZ, maxZ);
 	  mask = depthmask_;
 	}
 
@@ -665,7 +666,7 @@ public:
 	if (disp>0) {
 	  // The disparity map we get from the camera is in raw form.
 	  // In raw form, the unit in the disparity is 1/4 of a pixel.
-	  disp /=4.0;
+	  // disp /=4.0;
 	  _uvds[numGoodPoints*3    ] = x;
 	  _uvds[numGoodPoints*3 + 1] = y;
 	  _uvds[numGoodPoints*3 + 2] = disp;
@@ -824,7 +825,10 @@ public:
       double Clx = Crx; // the same
       double Tx  = - matdata[3]/Fx;
       std::cout << "base length "<< Tx << std::endl;
-      camModel_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy);
+      // The disparity value unit scale is set to .25. Namely, a unit is
+      // a quarter of a pixel, which is the current convention for
+      // raw disparity map from the videre stereo head
+      camModel_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy, .25);
     }
   }
 
@@ -969,7 +973,7 @@ public:
     maxDisp /= dispUnitScale;
     minDisp /= dispUnitScale;
 
-    // printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
+    //printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
 
     // fill in the mask according to disparity or depth
     cvInRangeS(dispImg, cvScalar(minDisp), cvScalar(maxDisp), depthMask);

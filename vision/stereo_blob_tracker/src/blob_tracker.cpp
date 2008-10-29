@@ -63,14 +63,9 @@ void drawHistogram1D(const CvHistogram* hist, IplImage** hist_img, int histHeigh
    static IplImage* hsv2rgb  = NULL;
    static IplImage* hsv2rgb2 = NULL;
    cvGetMinMaxHistValue( hist, 0, &max_value, 0, 0);
-   // TODO: the following code is not based on API  but the underneath implementation.
-   // so it may be dangerous and break in the future
-   int numBins = 36;
-   if (CV_IS_MATND_HDR(hist->bins) == true) {
-     numBins = ((CvMatND *)hist->bins)->dim[0].size;
-   } else {
-     printf("Don't know how to get the size of the histogram\n");
-   }
+
+   // the bins is a CvMatND. The first dim is the bins
+   numBins = cvGetDimSize(hist->bins, 0);
    if (*hist_img == 0) {
      *hist_img = cvCreateImage( cvSize(numBins*barWidth, histHeight), 8, 3 );
    } else {
