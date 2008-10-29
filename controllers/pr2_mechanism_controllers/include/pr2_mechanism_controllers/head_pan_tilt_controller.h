@@ -65,23 +65,23 @@ static const int MAX_HEAD_JOINTS = 2;
 
     This class closes the loop around the joint angles.
 
-    Example config:
+    Example config:<br>
 
-    <controller name="head_controller" type="HeadPanTiltControllerNode">
-      <listen_topic name="head_commands" />
+    <controller name="head_controller" type="HeadPanTiltControllerNode"><br>
+      <listen_topic name="head_commands" /><br>
     
-      <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController">
-        <joint name="head_pan_joint" >
-          <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" />
-        </joint>
-      </controller>
+      <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController"><br>
+        <joint name="head_pan_joint" ><br>
+          <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" /><br>
+        </joint><br>
+      </controller><br>
       
-      <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
-        <joint name="head_tilt_joint" >
-          <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" />
-        </joint>
-      </controller>
-    </controller>  
+      <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController"><br>
+        <joint name="head_tilt_joint" ><br>
+          <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" /><br>
+        </joint><br>
+      </controller><br>
+    </controller> <br> 
 */
 /***************************************************/
 
