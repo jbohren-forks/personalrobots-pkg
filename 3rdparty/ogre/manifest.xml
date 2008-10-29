@@ -21,6 +21,7 @@ OGRE (Object-Oriented Graphics Rendering Engine) is a scene-oriented, flexible 3
 <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread1.34.1"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgl1-mesa-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libglu1-mesa-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libgtk2.0-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libxxf86vm-dev"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
