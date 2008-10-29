@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators_wg_headless.xml"/>
+    <include file="$(find pr2_gazebo)/pr2_wg_headless.launch"/>
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />

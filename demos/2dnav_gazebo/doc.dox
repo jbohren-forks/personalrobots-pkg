@@ -8,12 +8,12 @@ Here are the gazebo plugins which are currently implemented:
    -# \2dnav-gazebo-simple.xml
    -# \2dnav-gazebo-simple-fake_localization.xml
    -# \2dnav-gazebo-simple-headless-.xml
-   -# \2dnav-gazebo-simple-headless--fake_localization.xml
+   -# \2dnav-gazebo-simple-headless-fake_localization.xml
  \li Complex world, Willow Garage Office Map
    -# \2dnav-gazebo-wg.xml
    -# \2dnav-gazebo-wg-fake_localization.xml
    -# \2dnav-gazebo-wg-headless-.xml
-   -# \2dnav-gazebo-wg-headless--fake_localization.xml
+   -# \2dnav-gazebo-wg-headless-fake_localization.xml
 
  \li Example launch script \b 2dnav-gazebo.xml:
    -# @verbatim
@@ -21,7 +21,7 @@ Here are the gazebo plugins which are currently implemented:
         <master auto="start"/>
         <group name="wg">
           <!-- this is another script that starts up a simple world with PR2 in it -->
-          <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
+          <include file="$(find pr2_gazebo)/pr2.launch"/>
           <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
           <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" output="screen" />
           <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
