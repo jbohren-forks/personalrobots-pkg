@@ -96,6 +96,24 @@ public:
   void transformPose(const std::string& target_frame, const std_msgs::PoseStamped& stamped_in, std_msgs::PoseStamped& stamped_out);
 
   
+  /** \brief Transform a Stamped Quaternion Message into the target frame*/
+  void transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
+                           const std_msgs::QuaternionStamped& qin, 
+                           const std::string& fixed_frame, std_msgs::QuaternionStamped& qout);
+  /** \brief Transform a Stamped Vector Message into the target frame and time */
+  void transformVector(const std::string& target_frame, const ros::Time& target_time, 
+                       const std_msgs::Vector3Stamped& vin, 
+                           const std::string& fixed_frame, std_msgs::Vector3Stamped& vout);
+  /** \brief Transform a Stamped Point Message into the target frame and time  */
+  void transformPoint(const std::string& target_frame, const ros::Time& target_time, 
+                           const std_msgs::PointStamped& pin, 
+                           const std::string& fixed_frame, std_msgs::PointStamped& pout);
+  /** \brief Transform a Stamped Pose Message into the target frame and time  */
+  void transformPose(const std::string& target_frame, const ros::Time& target_time, 
+                     const std_msgs::PoseStamped& pin, 
+                     const std::string& fixed_frame, std_msgs::PoseStamped& pout);
+
+  
   /** \brief Transform a std_msgs::PointCloud natively */
     void transformPointCloud(const std::string& target_frame, const std_msgs::PointCloud& pcin, std_msgs::PointCloud& pcout);
 
