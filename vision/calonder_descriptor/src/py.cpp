@@ -149,7 +149,6 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
 
   float distance;
   int index = pm->c->findMatch(ps->c, &distance);
-  printf("[index=%d distance=%f]", index, distance);
   return PyInt_FromLong(index);
   PyObject *r = pm->c->getData(index);
   return r;

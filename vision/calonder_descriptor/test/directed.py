@@ -9,37 +9,58 @@ import Image
 import ImageChops
 import ImageDraw
 
+import unittest
 import random
 import time
 import math
 
 import fast
 
-im = Image.open("/u/konolige/vslam/data/indoor1/left-%04d.ppm" % 1000)
-kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1], 150, 40)]
-print len(kp), "keypoints"
+class TestDirected(unittest.TestCase):
 
-cl = calonder.classifier()
-cl.setThreshold(0.0)
+    def setUp(self):
+      pass
 
-cl.train(im.tostring(), im.size[0], im.size[1], kp)
-#cl.write('python.tree')
+    def test_identity(self):
+      im = Image.open("/u/konolige/vslam/data/indoor1/left-%04d.ppm" % 1000)
+      kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1], 150, 40)]
 
-ma = calonder.BruteForceMatcher()
+      cl1 = calonder.classifier()
+      cl1.setThreshold(0.0)
 
-sigs = []
-for (x,y) in kp:
-  patch = im.crop((x,y,x+32,y+32))
-  sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-  print [ "%.3f" % x for x in sig.dump()], sum(sig.dump())
-  sigs.append(sig)
-  ma.addSignature(sig, x)
+      cl1.train(im.tostring(), im.size[0], im.size[1], kp)
+      cl1.write('unittest.tree')
 
-print sigs
+      def testclassifier(kp, im, cl):
+        ma = calonder.BruteForceMatcher()
 
-for (x,y) in kp:
-  patch = im.crop((x,y,x+32,y+32))
-  sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-  print "sig", [ "%.3f" % x for x in sig.dump()], sum(sig.dump())
-  print ma.findMatch(sig)
-  print 
+        sigs = []
+        for (x,y) in kp:
+          patch = im.crop((x,y,x+32,y+32))
+          sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
+          sigs.append(sig)
+          ma.addSignature(sig, x)
+
+        for (i,(x,y)) in enumerate(kp):
+          patch = im.crop((x,y,x+32,y+32))
+          sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
+          self.assert_(i == ma.findMatch(sig))
+
+      testclassifier(kp, im, cl1)
+      del cl1
+
+      # Now make another classifier, and read it from the file above
+
+      cl2 = calonder.classifier()
+      cl2.setThreshold(0.0)
+      cl2.read('unittest.tree')
+
+      testclassifier(kp, im, cl2)
+
+
+if __name__ == '__main__':
+    #rostest.unitrun('calonder_descriptor', 'directed', TestDirected)
+    if 1:
+      suite = unittest.TestSuite()
+      suite.addTest(TestDirected('test_identity'))
+      unittest.TextTestRunner(verbosity=2).run(suite)
