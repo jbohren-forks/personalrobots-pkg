@@ -149,7 +149,7 @@ public:
                        double startx, double starty, double starttheta,
                        double goalx, double goaly, double goaltheta,
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
-					   vector<sbpl_2Dpt_t> perimeterptsV,
+					   const vector<sbpl_2Dpt_t> & perimeterptsV,
 					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
@@ -193,7 +193,7 @@ public:
 			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
-				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV);
+				  double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV);
 	
 	bool InitGeneral();
 

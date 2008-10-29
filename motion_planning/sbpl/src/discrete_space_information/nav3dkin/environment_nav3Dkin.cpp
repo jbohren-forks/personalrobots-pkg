@@ -94,7 +94,7 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
 					const unsigned char* mapdata,
 					int startx, int starty, int starttheta,
 					int goalx, int goaly, int goaltheta,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, vector<sbpl_2Dpt_t> robot_perimeterV) {
+					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV) {
   EnvNAV3DKINCfg.EnvWidth_c = width;
   EnvNAV3DKINCfg.EnvHeight_c = height;
   EnvNAV3DKINCfg.StartX_c = startx;
@@ -719,7 +719,7 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					double startx, double starty, double starttheta,
 					double goalx, double goaly, double goaltheta,
 				    double goaltol_x, double goaltol_y, double goaltol_theta,
-					vector<sbpl_2Dpt_t> perimeterptsV,
+					const vector<sbpl_2Dpt_t> & perimeterptsV,
 					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs)
 {
 	//TODO - need to set the tolerance as well
