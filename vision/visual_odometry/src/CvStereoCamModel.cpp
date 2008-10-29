@@ -9,24 +9,42 @@ using namespace std;
 #include "CvMatUtils.h"
 #include <vector>     //Gary added for collecting valid x,y,d points
 
+static IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
+static IplConvKernel* OpenKernel   = cvCreateStructuringElementEx(3, 3, 1, 1,   CV_SHAPE_RECT);
+static IplConvKernel* CloseKernel  = cvCreateStructuringElementEx(7, 7, 3, 3,   CV_SHAPE_RECT);
 
-CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
-    Parent(Fx, Fy, Tx, Clx, Crx, Cy),
-    mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
-    mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
-    mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
-    Iz8U(NULL)
+CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx,
+      double Clx, double Crx, double Cy, double dispUnitScale):
+        mFx(Fx), mFy(Fy), mTx(Tx), mClx(Clx), mCrx(Crx), mCy(Cy),
+        mDu(dispUnitScale),
+        mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
+        mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
+        mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
+        mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
+        Iz8U(NULL)
 {
     this->constructProjectionMatrices();
 }
 
-CvStereoCamModel::CvStereoCamModel(CvStereoCamParams camParams):
+CvStereoCamModel::CvStereoCamModel(const CvStereoCamModel& camModel):
+  mFx(camModel.mFx), mFy(camModel.mFy), mTx(camModel.mTx),
+  mClx(camModel.mClx), mCrx(camModel.mCrx), mCy(camModel.mCy),
+  mDu(camModel.mDu),
+  mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
+  mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
+  mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
+  mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
+  Iz8U(NULL) {
+  this->constructProjectionMatrices();
+}
+
+#if 0
+CvStereoCamModel::CvStereoCamModel(CvStereoCamParams_Deprecated camParams):
     Parent(camParams),
     mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
     mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
     mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
+    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
     Iz8U(NULL)
 {
 	constructProjectionMatrices();
@@ -38,12 +56,12 @@ CvStereoCamModel::CvStereoCamModel():
     mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
     mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
     mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)), 
+    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
     Iz8U(NULL)
 {
 	constructProjectionMatrices();
 }
-
+#endif
 
 CvStereoCamModel::~CvStereoCamModel()
 {
@@ -77,10 +95,10 @@ bool CvStereoCamModel::constructProjectionMatrices(){
     // construct the matrix that maps from Cartesian coordinates to
     // disparity coordinates
     double data [] = {
-        mFx,   0,    mClx,        0,
-        0,     mFy,  mCy,         0,
-        0,     0,    mClx-mCrx,   mFx*mTx,
-        0,     0,    1,           0
+        mFx,   0,    mClx,              0,
+        0,     mFy,  mCy,               0,
+        0,     0,    (mClx-mCrx)/mDu,   mFx*mTx/mDu,
+        0,     0,    1,                 0
     };
     CvMat _P = cvMat(4, 4, CV_64FC1, data);
     cvCopy(&_P, &mMatCartToDisp);
@@ -94,7 +112,7 @@ bool CvStereoCamModel::constructProjectionMatrices(){
 		1,         0,          0,               -mClx,
 		0,   mFx/mFy,          0,        -mCy*mFx/mFy,
 		0,         0,          0,                 mFx,
-		0,         0,      1/mTx,     -(mClx-mCrx)/mTx
+		0,         0,      mDu/mTx,     -(mClx-mCrx)/mTx
 	};
 #else
 	// the following form is more symmetrical, and goes along with
@@ -114,7 +132,8 @@ bool CvStereoCamModel::constructProjectionMatrices(){
 	return status;
 }
 
-bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy){
+bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx,
+    double Clx, double Crx, double Cy, double dispUnitScale){
     bool status = true;
 
     mFx  = Fx;
@@ -123,16 +142,27 @@ bool CvStereoCamModel::setCameraParams(double Fx, double Fy, double Tx, double C
     mCrx = Crx;
     mCy  = Cy;
     mTx  = Tx;
+    mDu  = dispUnitScale;
 
     status = this->constructProjectionMatrices();
     return status;
 }
 
-bool CvStereoCamModel::setCameraParams(const CvStereoCamParams& params) {
-  double Fx, Fy, Tx, Clx, Crx, Cy;
-  params.getParams(Fx, Fy, Tx, Clx, Crx, Cy);
-  return setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+bool CvStereoCamModel::setCameraParams(const CvStereoCamModel& cm) {
+  return setCameraParams(cm.mFx, cm.mFy, cm.mTx, cm.mClx, cm.mCrx, cm.mCy, cm.mDu);
 }
+
+void CvStereoCamModel::getParams(double& Fx, double &Fy, double& Tx, double& Clx, double& Crx,
+    double& Cy, double& dispUnitScale) const {
+  Fx  = mFx;
+  Fy  = mFy;
+  Tx  = mTx;
+  Clx = mClx;
+  Crx = mCrx;
+  Cy  = mCy;
+  dispUnitScale = mDu;
+}
+
 
 bool CvStereoCamModel::dispToCart(const CvMat& uvds, CvMat & XYZs) const {
 	bool status = true;
@@ -161,7 +191,8 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 	if((w != Iz->width)||(h != Iz->height)) return false;        //Image dimensions have to match oi vey, haven't checked Ix, Iy
 	if((Id->nChannels != 1)||(Iz->nChannels != 1)) return false; //All one channel
 	if(ZnearMM < 0.0) ZnearMM = 0.0; //Adjusting for illegal values of depth to search in MM
-	if(ZfarMM < ZnearMM) ZfarMM = ZnearMM; 
+	if(ZfarMM < ZnearMM) ZfarMM = ZnearMM;
+#if 0
 	double dNear_dFar[6];
 	CvMat dn_f;
 	dNear_dFar[0] = w/2; dNear_dFar[1] = h/2; dNear_dFar[2] = ZnearMM;
@@ -170,12 +201,16 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 	cvPerspectiveTransform(&dn_f, &dn_f, &mMatCartToDisp); //Convert depth to disparity thresholds
 	int dNear = (int)(dNear_dFar[2]+0.5);
 	int dFar = (int)(dNear_dFar[5] + 0.5);
+#else
+	int dNear = (int)(getDisparity(ZfarMM)  + .5);
+	int dFar  = (int)(getDisparity(ZnearMM) + .5);
+#endif
 //	printf("dNear=%d, dFar=%d\n",dNear,dFar);
 	CvRect roi = cvGetImageROI(Id);
 	int ws = Id->widthStep, roiw = roi.width, roih = roi.height, roix = roi.x, roiy = roi.y;
 	int Id_jumpby = ws - roiw;                      //This is to step the pointer over possible ragged withSteps
 	unsigned char *Idptr = (unsigned char *)(Id->imageData + roiy*ws + roix);
-	unsigned char disp8U; 
+	unsigned char disp8U;
 	int goodpoints = 0;
 
 	//FILL POINTS
@@ -190,7 +225,7 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 			if((dNear > disp8U) && (disp8U > dFar)) { //NOTE: Zero is just not allowed. Don't go there, Greek chaos.
 				pts.push_back((double)x);
 				pts.push_back((double)y);
-				pts.push_back((double)(((double)disp8U)/4.0));
+				pts.push_back((double)disp8U);
 				xy.push_back(x);
 				xy.push_back(y);
 				++goodpoints;
@@ -220,7 +255,7 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 		*(Iyptr + offset) = (float)*ptspos; ++ptspos; //Y in camera cords
 		*(Izptr + offset) = (float)*ptspos; ++ptspos; //Z in camera cords
 	}
-	//Done	
+	//Done
 	return status;
 }
 
@@ -243,7 +278,7 @@ double  CvStereoCamModel::getDeltaU(double deltaX, double Z) const {
 }
 
 double  CvStereoCamModel::getDeltaX(double deltaU, double d) const {
-  double dn = (d - (mClx -mCrx));
+  double dn = (d*mDu - (mClx -mCrx));
   if (dn==0) {
     return 0.;
   }
@@ -258,7 +293,7 @@ double  CvStereoCamModel::getDeltaV(double deltaY, double Z) const {
 }
 
 double  CvStereoCamModel::getDeltaY(double deltaV, double d) const {
-  double dn = (d - (mClx -mCrx))*mFy;
+  double dn = (d*mDu - (mClx -mCrx))*mFy;
   if (dn==0) {
     return 0.;
   }
@@ -266,7 +301,7 @@ double  CvStereoCamModel::getDeltaY(double deltaV, double d) const {
 }
 
 double CvStereoCamModel::getZ(double d) const {
-  double dn = (d - (mClx - mCrx));
+  double dn = (d*mDu - (mClx - mCrx));
   if (dn == 0) {
     return DBL_MAX;
   }
@@ -278,20 +313,20 @@ double CvStereoCamModel::getDisparity(double Z) const {
   if (Z==0) {
     return  DBL_MAX;
   }
-  
-  return (mClx-mCrx) + mFx*mTx/Z;
+
+  return ((mClx-mCrx) + mFx*mTx/Z)/mDu;
 }
 
-//Iz is single channel 32F.  Zero values are not displayed. Passing a null image turns this off		
+//Iz is single channel 32F.  Zero values are not displayed. Passing a null image turns this off
 void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
 {
 	assert(Iz->nChannels == 1);
 	//SHUT DOWN WINDOW IF Iz is NULL
 	if(!Iz) {
-		if(Iz8U) {  
+		if(Iz8U) {
 			cvDestroyWindow("Depth");
 			cvReleaseImage(&Iz8U);
-		}		
+		}
 		return;
 	}
 	//CHECK IF WE NEED TO INIT
@@ -309,7 +344,7 @@ void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
 	Zmin *= 1000.0; Zmax *= 1000.0; //depth is in meters, depth map is in milimeters
 	bool mZ = false, MZ = false;    // if Zmin or Zmax == 0, then compute their values from min and max on depth map
 	if(Zmin == 0.0) { mZ =  true; Zmin = 99999999.0;}
-	if(Zmax == 0.0) MZ = true; 
+	if(Zmax == 0.0) MZ = true;
 	float *fptr = (float *)(Iz->imageData),fv;
 	if(mZ || MZ){
 		for(int i = 0; i<w*h; ++i) {
@@ -323,7 +358,7 @@ void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
     double scaleit = 255.0 / (Zmax - Zmin);
 	unsigned char *cptr = (unsigned char *)(Iz8U->imageData);
 	fptr = (float *)(Iz->imageData);
-	
+
 	//LOOP
 	for(int y=0; y<h; ++y){
 		for(int x=0; x<w; ++x) {
@@ -343,3 +378,46 @@ void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
 	//SHOW THE PRETTY DEPTH IMAGE
 	cvShowImage("Depth",Iz8U);
 }
+
+
+/// compute a depth mask according to the minZ and maxZ
+void CvStereoCamModel::getDepthMask(/// disparity image
+				    const IplImage* dispImg,
+				    /// pre-allocate image buffer for the depth mask
+				    IplImage* depthMask,
+				    /// mininum z in mask
+				    double minZ,
+				    /// max z in mask
+				    double maxZ){
+    double maxDisp = getDisparity(minZ);
+    double minDisp = getDisparity(maxZ);
+
+    printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
+
+    // fill in the mask according to disparity or depth
+    cvInRangeS(dispImg, cvScalar(minDisp), cvScalar(maxDisp), depthMask);
+
+#if 1
+    // two simple morphology operation seem to be good enough. But
+    // but connected component analysis provides blob with better shape
+    cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
+    //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
+    cvDilate(depthMask, depthMask, DilateKernel, 1);
+#else
+
+    const float perimScale = 16;
+    const int maxNumBBoxes = 25;
+    CvRect bboxes[maxNumBBoxes];
+    int numCComp = maxNumBBoxes;
+    connectedComponents(depthMask, 0,
+			OpenKernel,
+			CloseKernel,
+			perimScale, &numCComp,
+			(CvRect *)NULL, // bboxes,
+			(CvPoint *)NULL);
+
+    //printf("found %d blobs\n", numCComp);
+
+    cvDilate(depthMask, depthMask, DilateKernel, 1);
+#endif
+  }

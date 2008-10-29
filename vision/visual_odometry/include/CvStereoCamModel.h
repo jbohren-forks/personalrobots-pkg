@@ -1,20 +1,16 @@
 #ifndef WGSTEREOCAMMODEL_H_
 #define WGSTEREOCAMMODEL_H_
 
-#include "CvStereoCamParams.h"
 #include <opencv/cxtypes.h>
-//#include "opencv/cvaux.h"
-//#include "opencv/cxmisc.h"
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 /**
  * Stereo camera model, including parameters and transformation derived from them.
  */
-class CvStereoCamModel : public CvStereoCamParams
+class CvStereoCamModel
 {
 public:
-  typedef CvStereoCamParams Parent;
 	/// Constructor.
   /**
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
@@ -23,11 +19,25 @@ public:
    *  @param Clx - x coordinate of the optical center of the left  camera
    *  @param Crx - x coordinate of the optical center of the right camera
    *  @param Cy  - y coordinate of the optical center of both left and right camera
+   *  @param dispUnitScale - the unit of the value in a disparity map. e.g. 1/4 of a pixel.
    */
-  CvStereoCamModel(double Fx, double Fy, double Tx, double Clx=0.0, double Crx=0.0, double Cy=0.0);
-  CvStereoCamModel(CvStereoCamParams camParams);
+  CvStereoCamModel(
+      double Fx  = DefaultFx,
+      double Fy  = DefaultFy,
+      double Tx  = DefaultTx,
+      double Clx = DefaultClx,
+      double Crx = DefaultCrx,
+      double Cy  = DefaultCy,
+      double dispUnitScale = DefaultDispUnitScale);
+
+  CvStereoCamModel(const CvStereoCamModel& camModel);
+
+#if 0
+  CvStereoCamModel(CvStereoCamParams_Deprecated camParams);
   CvStereoCamModel();
+#endif
   virtual ~CvStereoCamModel();
+
   /**
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
    *  @param Fy  - focal length in y direction of the rectified image in pixels.
@@ -35,9 +45,11 @@ public:
    *  @param Clx - x coordinate of the optical center of the left  camera
    *  @param Crx - x coordinate of the optical center of the right camera
    *  @param Cy  - y coordinate of the optical center of both left and right camera
+   *  @param dispUnitScale - the unit of the value in a disparity map. e.g. 1/4 of a pixel.
    */
-  bool setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy);
-  bool setCameraParams(const CvStereoCamParams& params);
+  bool setCameraParams(double Fx, double Fy, double Tx, double Clx, double Crx,
+      double Cy, double dispUnitScale = DefaultDispUnitScale);
+  bool setCameraParams(const CvStereoCamModel& params);
 
   /// Convert 3D points from Cartesian coordinates to disparity coordinates.
 	bool dispToCart(
@@ -49,7 +61,7 @@ public:
 	/// ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
 	bool dispToCart(
     /// Id has to be 16SC1
-    const IplImage *Id, 
+    const IplImage *Id,
     /// Ixyz has to be 32F
 		IplImage *Ixyz) const;
 
@@ -92,31 +104,61 @@ public:
 	/// compute disparity given Z.
 	/// returns DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
-	
+
 	/// This routine is used to display a singe channel floating point depth image.
 	/// It inverts the depth so that brightest points are closest.
 	/// Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
 	///            Just call the function with an image to display it.  Size of the image can change each frame.
-	/// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image, 
+	/// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image,
 	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
+	/// compute a depth mask according to the minZ and maxZ
+	void getDepthMask(/// disparity image
+					const IplImage* dispImg,
+					/// pre-allocate image buffer for the depth mask
+					IplImage* depthMask,
+					/// mininum z (in mm) in mask
+					double minZ,
+					/// max z (in mm) in mask
+					double maxZ);
+
+	void getParams(double& Fx, double &Fy, double& Tx, double& Clx, double& Crx,
+	    double& Cy, double& dispUnitScale) const;
+
+
+	static const double DefaultFx  =   7.290000e+02;
+	static const double DefaultFy  =   7.290000e+02;
+	static const double DefaultTx  =   4.381214e+004/7.290000e+02;
+
+	static const double DefaultClx = 3.239809e+002;
+	static const double DefaultCrx = 3.239809e+002;
+	static const double DefaultCy  = 2.478744e+002;
+	static const double DefaultDispUnitScale=1.0;
+
 protected:
-    static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
+	double mFx, mFy;   //< focal lengths of the rectified image (in pixels)
+	double mTx;        //< translation of right camera relative to left camera
+	double mClx, mCrx, mCy;  //< the optical centers in pixels left: (mClx, mCy) right: (mCrx, mCy)
+	/// the unit of the value in a disparity map. e.g. 1/4 of a pixel.
+	double mDu;
+
+protected:
+  static void constructMat3DToScreen(double Fx, double Fy, double Tx, double Cx, double Cy,
     		CvMat& mat);
-    bool constructProjectionMatrices();
+	bool constructProjectionMatrices();
 
-    // a set of "default parameters" copied from an example file
+	// a set of "default parameters" copied from an example file
 
-    double _mMatCartToScreenLeft[3*4];
-    double _mMatCartToScreenRight[3*4];
-    double _mMatCartToDisp[4*4];
-    double _mMatDispToCart[4*4];
-    CvMat  mMatCartToScreenLeft;  //< projection matrix from Cartesian coordinate to the screen image of the left  camera
-    CvMat  mMatCartToScreenRight; //< projection matrix from Cartesian coordinate to the screen image of the right camera
-    CvMat  mMatCartToDisp;  //< projection matrix from Cartesian coordinate to the disparity space
-    CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
-    double disparity_conversion_factor;
-    IplImage  *Iz8U;  //Holds depth image to display for debug purposes
+	double _mMatCartToScreenLeft[3*4];
+	double _mMatCartToScreenRight[3*4];
+	double _mMatCartToDisp[4*4];
+	double _mMatDispToCart[4*4];
+	CvMat  mMatCartToScreenLeft;  //< projection matrix from Cartesian coordinate to the screen image of the left  camera
+	CvMat  mMatCartToScreenRight; //< projection matrix from Cartesian coordinate to the screen image of the right camera
+	CvMat  mMatCartToDisp;  //< projection matrix from Cartesian coordinate to the disparity space
+	CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
+	double disparity_conversion_factor;
+  IplImage  *Iz8U;  //Holds depth image to display for debug purposes
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/

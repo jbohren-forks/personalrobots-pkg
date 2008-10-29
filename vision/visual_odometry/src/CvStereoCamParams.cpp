@@ -1,6 +1,6 @@
 #include "CvStereoCamParams.h"
 
-CvStereoCamParams::CvStereoCamParams(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
+CvStereoCamParams_Deprecated::CvStereoCamParams_Deprecated(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
     mFx(Fx),
     mFy(Fy),
     mTx(Tx),
@@ -10,6 +10,6 @@ CvStereoCamParams::CvStereoCamParams(double Fx, double Fy, double Tx, double Clx
 {
 }
 
-CvStereoCamParams::~CvStereoCamParams()
+CvStereoCamParams_Deprecated::~CvStereoCamParams_Deprecated()
 {
 }

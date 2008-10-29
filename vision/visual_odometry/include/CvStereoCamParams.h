@@ -4,7 +4,7 @@
 /**
  *  Stereo camera parameters
  */
-class CvStereoCamParams
+class CvStereoCamParams_Deprecated
 {
 public:
   /**
@@ -15,7 +15,7 @@ public:
    *  @param Crx - x coordinate of the optical center of the right camera
    *  @param Cy  - y coordinate of the optical center of both left and right cameras (they have to be the same)
    */
-  CvStereoCamParams(double Fx=DefaultFx, double Fy=DefaultFy, double Tx=DefaultTx, double Clx=DefaultClx, double Crx=DefaultCrx, double Cy=DefaultCy);
+  CvStereoCamParams_Deprecated(double Fx=DefaultFx, double Fy=DefaultFy, double Tx=DefaultTx, double Clx=DefaultClx, double Crx=DefaultCrx, double Cy=DefaultCy);
 
   /**
    * Set camera parameters
@@ -43,7 +43,7 @@ public:
     Cy  = mCy;
   }
 
-	virtual ~CvStereoCamParams();
+	virtual ~CvStereoCamParams_Deprecated();
     static const double DefaultFx  =   7.290000e+02;
     static const double DefaultFy  =   7.290000e+02;
     static const double DefaultTx  =   4.381214e+004/7.290000e+02;

@@ -95,7 +95,7 @@ void PathRecon::_init() {
 
   int maxDisp = (int)(mPoseEstimator.getDisparity(400));// the closest point we care is at least 400 mm away
   cout << "Max disparity is: " << maxDisp << endl;
-  mStat.mErrMeas.setCameraParams((const CvStereoCamParams& )(mPoseEstimator));
+  mStat.mErrMeas.setCameraParams((const CvStereoCamModel& )(mPoseEstimator));
 
   mFrameSeq.reset();
 }

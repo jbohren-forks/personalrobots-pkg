@@ -742,7 +742,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     cout << "Testing in disparity space"<<endl;
     uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
-    this->projection(points0, uvds0);
+    this->cartToDisp(*points0, *uvds0);
     cvAvgSdv(uvds0, &mean, &std);
     cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
 
@@ -828,7 +828,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       TransformAfterLevMarq      = peCart.getFinalTransformation();
     } else if (mTestType == Disparity){
       // convert both set of points into disparity color space
-      this->projection(points1, points1d);
+      this->cartToDisp(*points1, *points1d);
       disturb(points1d, uvds1);
 
       int64 t = cvGetTickCount();
@@ -840,7 +840,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       TransformAfterLevMarq      = peDisp.getFinalTransformation();
     } else if (mTestType == CartAndDisp) {
       // convert both set of points into disparity color space
-      this->projection(points1, points1d);
+      this->cartToDisp(*points1, *points1d);
       disturb(points1d, uvds1);
 
       int64 t = cvGetTickCount();
