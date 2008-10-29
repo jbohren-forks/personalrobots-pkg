@@ -193,8 +193,8 @@ public:
 
       laser_.open(port_.c_str());
 
-      string device_id_ = laser_.getID();
-      string device_status_ = laser_.getStatus();
+      device_id_ = laser_.getID();
+      device_status_ = laser_.getStatus();
       ROS_INFO("Connected to device with ID: %s", device_id_.c_str());
 
       laser_.laserOn();
