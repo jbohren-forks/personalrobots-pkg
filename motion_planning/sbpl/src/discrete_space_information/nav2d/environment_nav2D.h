@@ -142,8 +142,10 @@ public:
     ~EnvironmentNAV2D(){};
 
     void PrintTimeStat(FILE* fOut);
-	
- private:
+	 
+	bool IsWithinMapCell(int X, int Y);
+
+private:
 
 	//member data
 	EnvNAV2DConfig_t EnvNAV2DCfg;
@@ -172,8 +174,6 @@ public:
 	void ComputeHeuristicValues();
 
 	bool IsValidCell(int X, int Y);
-
-	bool IsWithinMapCell(int X, int Y);
 
 
 };

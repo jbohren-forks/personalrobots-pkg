@@ -171,7 +171,37 @@ public:
     ~EnvironmentNAV3DKIN(){};
 
     void PrintTimeStat(FILE* fOut);
-	
+  
+  
+  bool IsWithinMapCell(int X, int Y);
+  
+  /** Transform a pose into discretized form. The angle 'pth' is
+      considered to be valid if it lies between -2pi and 2pi (some
+      people will prefer 0<=pth<2pi, others -pi<pth<=pi, so this
+      compromise should suit everyone).
+      
+      \note Even if this method returns false, you can still use the
+      computed indices, for example to figure out how big your map
+      should have been.
+      
+      \return true if the resulting indices lie within the grid bounds
+      and the angle was valid.
+  */
+  bool PoseContToDisc(double px, double py, double pth,
+		      int &ix, int &iy, int &ith) const;
+  
+  /** Transform grid indices into a continuous pose. The computed
+      angle lies within 0<=pth<2pi.
+      
+      \note Even if this method returns false, you can still use the
+      computed indices, for example to figure out poses that lie
+      outside of your current map.
+      
+      \return true if all the indices are within grid bounds.
+  */
+  bool PoseDiscToCont(int ix, int iy, int ith,
+		      double &px, double &py, double &pth) const;
+  
  private:
 
 	//member data
@@ -211,8 +241,6 @@ public:
 	void ComputeHeuristicValues();
 
 	bool IsValidCell(int X, int Y);
-
-	bool IsWithinMapCell(int X, int Y);
 
 	void CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint);
 

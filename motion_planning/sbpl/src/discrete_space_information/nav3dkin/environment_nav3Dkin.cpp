@@ -1243,5 +1243,27 @@ void EnvironmentNAV3DKIN::GetEnvParms(int *size_x, int *size_y, double* startx, 
 }
 
 
+bool EnvironmentNAV3DKIN::PoseContToDisc(double px, double py, double pth,
+					 int &ix, int &iy, int &ith) const
+{
+  ix = CONTXY2DISC(px, EnvNAV3DKINCfg.cellsize_m);
+  iy = CONTXY2DISC(py, EnvNAV3DKINCfg.cellsize_m);
+  ith = ContTheta2Disc(pth, NAV3DKIN_THETADIRS); // ContTheta2Disc() normalizes the angle
+  return (pth >= -2*M_PI) && (pth <= 2*M_PI)
+    && (ix >= 0) && (ix < EnvNAV3DKINCfg.EnvWidth_c)
+    && (iy >= 0) && (iy < EnvNAV3DKINCfg.EnvHeight_c);
+}
+
+
+bool EnvironmentNAV3DKIN::PoseDiscToCont(int ix, int iy, int ith,
+					 double &px, double &py, double &pth) const
+{
+  px = DISCXY2CONT(ix, EnvNAV3DKINCfg.cellsize_m);
+  py = DISCXY2CONT(iy, EnvNAV3DKINCfg.cellsize_m);
+  pth = normalizeAngle(DiscTheta2Cont(ith, NAV3DKIN_THETADIRS));
+  return (ith >= 0) && (ith < NAV3DKIN_THETADIRS)
+    && (ix >= 0) && (ix < EnvNAV3DKINCfg.EnvWidth_c)
+    && (iy >= 0) && (iy < EnvNAV3DKINCfg.EnvHeight_c);
+}
 
 //------------------------------------------------------------------------------
