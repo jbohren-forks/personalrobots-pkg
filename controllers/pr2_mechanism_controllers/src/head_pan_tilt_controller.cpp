@@ -39,6 +39,7 @@
 using namespace controller;
 using namespace std;
 
+
 ROS_REGISTER_CONTROLLER(HeadPanTiltController);
 
 HeadPanTiltController::HeadPanTiltController():num_joints_(0),last_time_(0)
@@ -170,7 +171,7 @@ HeadPanTiltControllerNode::HeadPanTiltControllerNode()
 
 HeadPanTiltControllerNode::~HeadPanTiltControllerNode()
 {
-  node->unadvertise_service(service_prefix + "/set_command_array");
+  node->unsubscribe(service_prefix + "/set_command_array");
   node->unadvertise_service(service_prefix + "/get_command_array");
   node->unsubscribe(service_prefix + "/track_point");
 
@@ -191,7 +192,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {
-    node->advertise_service(service_prefix + "/set_command_array", &HeadPanTiltControllerNode::setJointCmd, this);
+    node->subscribe(service_prefix + "/set_command_array", joint_cmds_, &HeadPanTiltControllerNode::setJointCmd, this,2);
     node->advertise_service(service_prefix + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
     node->subscribe(service_prefix + "/track_point", track_point_,
                   &HeadPanTiltControllerNode::trackPoint, this, 2);
@@ -201,21 +202,9 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   return false;
 }
 
-bool HeadPanTiltControllerNode::setJointCmd(robot_srvs::SetJointCmd::request &req,
-                                   robot_srvs::SetJointCmd::response &resp)
+void HeadPanTiltControllerNode::setJointCmd()
 {
-  std::vector<double> pos;
-  std::vector<std::string> names;
-  robot_msgs::JointCmd cmds;
-  req.get_positions_vec(pos);
-  req.get_names_vec(names);
-
-  c_->setJointCmd(pos,names);
-  c_->getJointCmd(cmds);
-  resp.set_positions_vec(pos);
-  resp.set_names_vec(cmds.names);
-  
-  return true;
+  c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names); 
 }
 
 bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
@@ -232,29 +221,31 @@ void HeadPanTiltControllerNode::trackPoint()
   std::vector<double> pos;
   std::vector<std::string> names;
 
-  libTF::TFPoint point;
-  point.x = track_point_.point.x;
-  point.y = track_point_.point.y;
-  point.z = track_point_.point.z;
-  point.time = track_point_.header.stamp.toNSec();
-  point.frame = track_point_.header.frame_id;
+  tf::Stamped<tf::Point> point;
+  point.setX(track_point_.point.x);
+  point.setY(track_point_.point.y);
+  point.setZ(track_point_.point.z);
+  point.stamp_ = track_point_.header.stamp;
+  point.frame_id_ = track_point_.header.frame_id;
   
 
   
-  libTF::TFPoint pan_point = TF.transformPoint("head_pan",point);
+  tf::Stamped<tf::Point> pan_point;
+  TF.transformPoint("head_pan",point, pan_point);
   int id = c_->getJointControllerByName("head_pan_joint");
   assert(id>=0);
   double meas_pan_angle = c_->joint_position_controllers_[id]->getMeasuredPosition();
-  double head_pan_angle= meas_pan_angle + atan2(pan_point.y, pan_point.x); 
+  double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x()); 
   
   names.push_back("head_pan_joint");
   pos.push_back(head_pan_angle);
   
-  libTF::TFPoint tilt_point = TF.transformPoint("head_tilt",point);
+  tf::Stamped<tf::Point> tilt_point;
+  TF.transformPoint("head_tilt",point,tilt_point);
   id = c_->getJointControllerByName("head_tilt_joint");
   assert(id>=0);
   double meas_tilt_angle= c_->joint_position_controllers_[id]->getMeasuredPosition();
-  double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z, tilt_point.x);
+  double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z(), tilt_point.x());
   
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);

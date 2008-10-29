@@ -46,13 +46,13 @@
 #include <robot_mechanism_controllers/joint_position_controller.h>
 
 // Services
-#include <robot_srvs/SetJointCmd.h>
+#include <robot_msgs/JointCmd.h>
 #include <robot_srvs/GetJointCmd.h>
 #include <std_msgs/PointStamped.h>
 
 // Math utils
 #include <math_utils/angles.h>
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
 
 namespace controller
 {
@@ -182,11 +182,9 @@ class HeadPanTiltControllerNode : public Controller
     /*!
      * \brief Sets a command for all the joints managed by the controller at once.
      * 
-     * \param req (names, positions)
-     * \param resp (names, positions)
+     * \param joint_cmds_ (names, positions)
      */
-    bool setJointCmd(robot_srvs::SetJointCmd::request &req,
-                     robot_srvs::SetJointCmd::response &resp);
+    void setJointCmd();
 
     /*!
      * \brief Gets the commands for all the joints managed by the controller at once.
@@ -199,16 +197,16 @@ class HeadPanTiltControllerNode : public Controller
     /*!
      * \brief Tracks a point in a specified frame.
      * 
-     * \param req  trackpoint (header, point)
-     * \param resp (pan_angle, tilt_angle)
+     * \param track_point_ (header, point)
      */
     void trackPoint();
   private:
     std_msgs::PointStamped track_point_; /**< The point from the subscription. */
-    HeadPanTiltController *c_;      /**< The controller. */
-    std::string service_prefix;     /**< The service name. */
-    ros::node *node;                /**< The node. */
-    rosTFClient TF;                 /**< The transform for converting from point to head and tilt frames. */
+    robot_msgs::JointCmd joint_cmds_;    /**< The joint commands from the subscription.*/
+    HeadPanTiltController *c_;           /**< The controller. */
+    std::string service_prefix;          /**< The service name. */
+    ros::node *node;                     /**< The node. */
+    tf::TransformListener TF;            /**< The transform for converting from point to head and tilt frames. */
 
 };
 }

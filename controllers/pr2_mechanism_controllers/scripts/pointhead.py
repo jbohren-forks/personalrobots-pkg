@@ -40,32 +40,14 @@ from time import sleep
 
 import rospy
 from std_msgs.msg import PointStamped, Point
-from pr2_mechanism_controllers.srv import SetJointCmd, SetJointCmdRequest
+from robot_msgs.msg import JointCmd
 
 def point_head_client(pan, tilt):
-    
-      # NOTE: you don't have to call rospy.init_node() to make calls against
-    # a service. This is because service clients do not have to be
-    # nodes.
 
-    # block until the add_two_ints service is available
-    print "waiting for service"
-    rospy.wait_for_service('head_controller/set_command_array')
-    
-    try:
-        # create a handle to the add_two_ints service
-        send_cmd= rospy.ServiceProxy('head_controller/set_command_array', SetJointCmd)
-        
-        print "Requesting %f,%f"%(pan, tilt)
-        
-        # simplified style
-        resp2 = send_cmd.call(SetJointCmdRequest([pan, tilt],[0.0, 0.0],[0.0, 0.0],['head_pan_joint', 'head_tilt_joint']))
-        print resp2.positions, resp2.names
-        return resp2
-    except rospy.ServiceException, e:
-        print "Service call failed: %s"%e
-
-       
+    head_angles = rospy.Publisher('head_controller/set_command_array', JointCmd)
+    rospy.init_node('head_commander', anonymous=True)
+    sleep(1)
+    head_angles.publish(JointCmd([pan, tilt],[0.0, 0.0],[0.0, 0.0],['head_pan_joint', 'head_tilt_joint']))
 
 def point_head_cart_client(x,y,z,frame):
 
