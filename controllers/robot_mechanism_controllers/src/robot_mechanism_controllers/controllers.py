@@ -6,6 +6,7 @@ rostools.update_path('robot_mechanism_controllers')
 import rospy, sys
 from robot_mechanism_controllers.srv import *
 from robot_srvs.srv import *
+from std_msgs.msg import *
 
 def list_controllers():
     rospy.wait_for_service('list_controllers')
@@ -23,7 +24,7 @@ def set_controller(controller, command):
 def set_controller_vector(controller, command):
     rospy.wait_for_service(controller + '/set_command')
     s = rospy.ServiceProxy(controller + '/set_command', SetVector)
-    resp = s(*command)
+    resp = s(Vector3(*command))
 
 def get_controller(controller):
     rospy.wait_for_service(controller + '/get_actual')
