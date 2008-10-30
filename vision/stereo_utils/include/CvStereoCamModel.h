@@ -32,10 +32,6 @@ public:
 
   CvStereoCamModel(const CvStereoCamModel& camModel);
 
-#if 0
-  CvStereoCamModel(CvStereoCamParams_Deprecated camParams);
-  CvStereoCamModel();
-#endif
   virtual ~CvStereoCamModel();
 
   /**
@@ -159,6 +155,19 @@ protected:
 	CvMat  mMatDispToCart;  //< projection matrix from disparity space to Cartesian space
 	double disparity_conversion_factor;
   IplImage  *Iz8U;  //Holds depth image to display for debug purposes
+
+  /// temporary function, shall be replace by one from cvaux when opencv_latest get updated
+  void connectedComponents(IplImage *mask, int poly1_hull0, 
+			   IplConvKernel* openKernel,
+			   IplConvKernel* closeKernel,
+			   float perimScale, int *num, CvRect *bbs, CvPoint *centers);
+  CvMemStorage*	mem_storage_;
+  /// approx threshold - the bigger it is, the simpler is the boundary
+  static const int CVCONTOUR_APPROX_LEVEL = 2;
+  /// how many iterations of erosion and/or dilation
+  static const int CVCLOSE_ITR = 1; 
+
+  
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/

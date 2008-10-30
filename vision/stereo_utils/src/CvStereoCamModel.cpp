@@ -21,7 +21,8 @@ CvStereoCamModel::CvStereoCamModel(double Fx, double Fy, double Tx,
         mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
         mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
         mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
-        Iz8U(NULL)
+        Iz8U(NULL),
+	mem_storage_(NULL)
 {
     this->constructProjectionMatrices();
 }
@@ -34,34 +35,11 @@ CvStereoCamModel::CvStereoCamModel(const CvStereoCamModel& camModel):
   mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
   mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
   mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
-  Iz8U(NULL) {
+  Iz8U(NULL),
+  mem_storage_(NULL)
+{
   this->constructProjectionMatrices();
 }
-
-#if 0
-CvStereoCamModel::CvStereoCamModel(CvStereoCamParams_Deprecated camParams):
-    Parent(camParams),
-    mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
-    mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
-    mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
-    Iz8U(NULL)
-{
-	constructProjectionMatrices();
-}
-
-
-CvStereoCamModel::CvStereoCamModel():
-    Parent(),
-    mMatCartToScreenLeft(cvMat(3, 4, CV_64FC1, _mMatCartToScreenLeft)),
-    mMatCartToScreenRight(cvMat(3, 4, CV_64FC1, _mMatCartToScreenRight)),
-    mMatCartToDisp(cvMat(4, 4, CV_64FC1, _mMatCartToDisp)),
-    mMatDispToCart(cvMat(4, 4, CV_64FC1, _mMatDispToCart)),
-    Iz8U(NULL)
-{
-	constructProjectionMatrices();
-}
-#endif
 
 CvStereoCamModel::~CvStereoCamModel()
 {
@@ -192,19 +170,10 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 	if((Id->nChannels != 1)||(Iz->nChannels != 1)) return false; //All one channel
 	if(ZnearMM < 0.0) ZnearMM = 0.0; //Adjusting for illegal values of depth to search in MM
 	if(ZfarMM < ZnearMM) ZfarMM = ZnearMM;
-#if 0
-	double dNear_dFar[6];
-	CvMat dn_f;
-	dNear_dFar[0] = w/2; dNear_dFar[1] = h/2; dNear_dFar[2] = ZnearMM;
-	dNear_dFar[3] = w/2; dNear_dFar[4] = h/2; dNear_dFar[5] = ZfarMM;
-	cvInitMatHeader(&dn_f, 2, 1, CV_64FC3, dNear_dFar); //Turn our points into a 1 row by 3 channel array
-	cvPerspectiveTransform(&dn_f, &dn_f, &mMatCartToDisp); //Convert depth to disparity thresholds
-	int dNear = (int)(dNear_dFar[2]+0.5);
-	int dFar = (int)(dNear_dFar[5] + 0.5);
-#else
+
 	int dFar  = (int)(getDisparity(ZfarMM)  + .5);
 	int dNear = (int)(getDisparity(ZnearMM) + .5);
-#endif
+
 //	printf("dNear=%d, dFar=%d\n",dNear,dFar);
 	CvRect roi = cvGetImageROI(Id);
 	int ws = Id->widthStep, roiw = roi.width, roih = roi.height, roix = roi.x, roiy = roi.y;
@@ -430,4 +399,113 @@ void CvStereoCamModel::getDepthMask(/// disparity image
 
     cvDilate(depthMask, depthMask, DilateKernel, 1);
 #endif
-  }
+}
+
+//Just some convienience macros
+#define CV_CVX_WHITE	CV_RGB(0xff,0xff,0xff)
+#define CV_CVX_BLACK	CV_RGB(0x00,0x00,0x00)
+
+
+
+/// The following function is modified based on Gary Bradsky's function cvconnectedComponents in cv_yuv_codebook.cpp
+///////////////////////////////////////////////////////////////////////////////////////////
+//void cvconnectedComponents(IplImage *mask, int poly1_hull0, float perimScale, int *num, CvRect *bbs, CvPoint *centers)
+// This cleans up the forground segmentation mask derived from calls to cvbackgroundDiff
+//
+// mask			Is a grayscale (8 bit depth) "raw" mask image which will be cleaned up
+//
+// OPTIONAL PARAMETERS:
+// @param poly1_hull0	If set, approximate connected component by (DEFAULT) polygon, or else convex hull (0)
+// @param perimScale 	Len = image (width+height)/perimScale.  If contour len < this, delete that contour (DEFAULT: 4)
+// @param openKernel   the kernel used to remove noise in raw mask. If NULL, 3x3 rectangle is used
+// @param closeKernel  the kernel used to merge blobs in raw mask. If NULL, 3x3 rectangle is used
+// @param num			Maximum number of rectangles and/or centers to return, on return, will contain number filled (DEFAULT: NULL)
+// @param bbs			Pointer to bounding box rectangle vector of length num.  (DEFAULT SETTING: NULL)
+// @param centers		Pointer to contour centers vectors of length num (DEFAULT: NULL)
+//
+void CvStereoCamModel::connectedComponents(IplImage *mask, int poly1_hull0, 
+			   IplConvKernel* openKernel,
+			   IplConvKernel* closeKernel,
+			   float perimScale, int *num, CvRect *bbs, CvPoint *centers)
+{
+  //CLEAN UP RAW MASK
+  // open followed by a close
+  cvMorphologyEx( mask, mask, NULL, openKernel,  CV_MOP_OPEN,  CVCLOSE_ITR );
+  cvMorphologyEx( mask, mask, NULL, closeKernel, CV_MOP_CLOSE, CVCLOSE_ITR );
+
+  //FIND CONTOURS AROUND ONLY BIGGER REGIONS
+  if( mem_storage_==NULL ) mem_storage_ = cvCreateMemStorage(0);
+  else cvClearMemStorage(mem_storage_);
+
+  CvContourScanner scanner = cvStartFindContours(mask,mem_storage_,sizeof(CvContour),CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
+  CvSeq* c;
+  int numCont = 0;
+  while( (c = cvFindNextContour( scanner )) != NULL )
+    {
+      double len = cvContourPerimeter( c );
+      double q = (mask->height + mask->width) /perimScale;   //calculate perimeter len threshold
+      if( len < q ) //Get rid of blob if it's perimeter is too small
+	{
+	  cvSubstituteContour( scanner, NULL );
+	}
+      else //Smooth it's edges if it's large enough
+	{
+	  CvSeq* c_new;
+	  if(poly1_hull0) //Polygonal approximation of the segmentation
+	    c_new = cvApproxPoly(c,sizeof(CvContour),mem_storage_,CV_POLY_APPROX_DP, CVCONTOUR_APPROX_LEVEL,0);
+	  else //Convex Hull of the segmentation
+	    c_new = cvConvexHull2(c,mem_storage_,CV_CLOCKWISE,1);
+	  cvSubstituteContour( scanner, c_new );
+	  numCont++;
+	}
+    }
+  CvSeq* contours = cvEndFindContours( &scanner );
+
+  // PAINT THE FOUND REGIONS BACK INTO THE IMAGE
+  cvZero( mask );
+  IplImage *maskTemp;
+  //CALC CENTER OF MASS AND OR BOUNDING RECTANGLES
+  if(num != NULL)
+    {
+      int N = *num, numFilled = 0, i=0;
+      CvMoments moments;
+      double M00, M01, M10;
+      maskTemp = cvCloneImage(mask);
+      for(i=0, c=contours; c != NULL; c = c->h_next,i++ )
+	{
+	  if(i < N) //Only process up to *num of them
+	    {
+	      cvDrawContours(maskTemp,c,CV_CVX_WHITE, CV_CVX_WHITE,-1,CV_FILLED,8);
+	      //Find the center of each contour
+	      if(centers != NULL)
+		{
+		  cvMoments(maskTemp,&moments,1);
+		  M00 = cvGetSpatialMoment(&moments,0,0);
+		  M10 = cvGetSpatialMoment(&moments,1,0);
+		  M01 = cvGetSpatialMoment(&moments,0,1);
+		  centers[i].x = (int)(M10/M00);
+		  centers[i].y = (int)(M01/M00);
+		}
+	      //Bounding rectangles around blobs
+	      if(bbs != NULL)
+		{
+		  bbs[i] = cvBoundingRect(c);
+		}
+	      cvZero(maskTemp);
+	      numFilled++;
+	    }
+	  //Draw filled contours into mask
+	  cvDrawContours(mask,c,CV_CVX_WHITE,CV_CVX_WHITE,-1,CV_FILLED,8); //draw to central mask
+	} //end looping over contours
+      *num = numFilled;
+      cvReleaseImage( &maskTemp);
+    }
+  //ELSE JUST DRAW PROCESSED CONTOURS INTO THE MASK
+  else
+    {
+      for( c=contours; c != NULL; c = c->h_next )
+	{
+	  cvDrawContours(mask,c,CV_CVX_WHITE, CV_CVX_BLACK,-1,CV_FILLED,8);
+	}
+    }
+}
