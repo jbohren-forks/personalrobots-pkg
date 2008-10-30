@@ -108,13 +108,16 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
   cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 #if 0
-  std::cout << "BaseController:: command received: " << cmd_vel;
-  std::cout << "BaseController:: command current: " << cmd_vel_;
-  std::cout << "Base Odometry: Velocity " << base_odom_velocity_;
-  std::cout << "Base Odometry: Position " << base_odom_position_;
+
+  ROS_INFO("BaseController:: command received: %f %f %f",cmd_vel.x,cmd_vel.y,cmd_vel.z);
+  ROS_INFO("BaseController:: command current: %f %f %f", cmd_vel_.x,cmd_vel_.y,cmd_vel_.z);
+
+  ROS_INFO("Base Odometry: Velocity ", base_odom_velocity_.x,base_odom_velocity_.y,base_odom_velocity_.z);
+  ROS_INFO("Base Odometry: Position ", base_odom_position_.x,base_odom_position_.y,base_odom_position_.z);
+
   for(int i=0; i < (int) num_wheels_; i++)
   {
-    std:: cout << "wheel speed cmd:: " << i << "  " << (base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]) << endl;
+    ROS_INFO("BaseController:: wheel speed cmd:: %d %f",i,(base_wheels_[i].direction_multiplier_*wheel_speed_cmd_[i]));
   }
 #endif
   new_cmd_available_ = true;
@@ -194,7 +197,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   // wait for robotdesc/pr2 on param server
   while(!urdf_model_.loadString(xml_content.c_str()))
   {
-    std::cout << "WARNING: base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar." << std::endl;
+    ROS_INFO("WARNING: base controller is waiting for robotdesc/pr2 in param server.  run roslaunch send.xml or similar.");
     (ros::g_node)->get_param("robotdesc/pr2",xml_content);
     usleep(100000);
   }
@@ -212,7 +215,9 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     base_object.parent_ = NULL;
     base_object.joint_state_ = robot_state->getJointState(joint_name);
     if (base_object.joint_state_==NULL)
-      std::cout << " unsuccessful getting joint state for " << joint_name << std::endl;
+    {
+      ROS_WARN(" Unsuccessful getting joint state for %s",joint_name.c_str());
+    }
 
     base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
@@ -224,7 +229,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       steer_angle_actual_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
-      cout << "base_casters" << "::  " << base_object;
+//      cout << "base_casters" << "::  " << base_object;
     }
 
     if(joint_name.find("wheel") != string::npos)
@@ -281,7 +286,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
 
-  std::cout << " base controller name: " << config->Attribute("name") << std::endl;
+  ROS_INFO("BaseController:: name: %s",config->Attribute("name")); 
   TiXmlElement *elt = config->FirstChildElement("controller");
   std::vector<JointControlParam> jcp_vec;
   JointControlParam jcp;
@@ -295,12 +300,12 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     jcp.joint_name = jnt->Attribute("name");
     jcp_vec.push_back(jcp);
 
-    std::cout << "name:" << jcp.joint_name << std::endl;
-    std::cout << "controller type:" << jcp.control_type << std::endl;
-    std::cout << "sub controller: " << elt->Attribute("name") << std::endl;
+    ROS_INFO("BaseController:: joint name: %s",jcp.joint_name.c_str()); 
+    ROS_INFO("BaseController:: controller type: %s\n",jcp.control_type.c_str()); 
 
     elt = elt->NextSiblingElement("controller");
   }
+
 
   addParamToMap("kp_speed",&kp_speed_);
   addParamToMap("kp_caster_steer",&caster_steer_vel_gain_);
@@ -325,21 +330,24 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
         elt_key = elt_key->NextSiblingElement("elem");
       }
     }
-    std::cout << "*************************************" << std::endl;
+//    std::cout << "*************************************" << std::endl;
     elt = config->NextSiblingElement("map");
   }
 
-  cout << "kp_speed  " << kp_speed_ << endl;
-  cout << "kp_caster_steer  " << caster_steer_vel_gain_ << endl;
-  cout << "timeout  " << timeout_ << endl;
-  cout << "max_x_dot  " << (max_vel_.x) << endl;
-  cout << "max_y_dot  " << (max_vel_.y) << endl;
-  cout << "max_yaw_dot  " << (max_vel_.z) << endl;
-  cout << "max_x_accel  " << (max_accel_.x) << endl;
-  cout << "max_y_accel  " << (max_accel_.y) << endl;
-  cout << "max_yaw_accel  " << (max_accel_.z) << endl;
+
+  ROS_INFO("BaseController:: kp_speed %f",kp_speed_);
+  ROS_INFO("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
+  ROS_INFO("BaseController:: timeout %f",timeout_);
+  ROS_INFO("BaseController:: max_x_dot %f",(max_vel_.x));
+  ROS_INFO("BaseController:: max_y_dot %f",(max_vel_.y));
+  ROS_INFO("BaseController:: max_yaw_dot %f",(max_vel_.z));
+  ROS_INFO("BaseController:: max_x_accel %f",(max_accel_.x));
+  ROS_INFO("BaseController:: max_y_accel %f",(max_accel_.y));
+  ROS_INFO("BaseController:: max_yaw_accel %f",(max_accel_.z));
 
   init(jcp_vec,robot_state);
+
+  ROS_INFO("BaseController:: Initialized");
   return true;
 }
 
@@ -363,7 +371,7 @@ void BaseController::getJointValues()
     speeds_are_valid = speeds_are_valid && !isinf(wheel_speed_actual_[i]) && !isnan(wheel_speed_actual_[i]);
 
   if(!speeds_are_valid)
-    fprintf(stderr,"BaseController:: input speed values are inf or nan\n");
+    ROS_WARN("BaseController:: input speed values are inf or nan");
 }
 
 void BaseController::computeWheelPositions()
@@ -688,7 +696,6 @@ NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::st
     if(weight_type == std::string("L1norm"))
     {
       w_fit(i,i) = 1.0/(1 + sqrt(fabs(residual(i,1))));
-      cout << residual(i,1) << endl;
     }
     else if(weight_type == std::string("fair"))
     {
@@ -701,7 +708,6 @@ NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::st
     else if(weight_type == std::string("BubeLangan"))
     {
       w_fit(i,i) = 1.0/pow((1 + pow((residual(i,1)/epsilon),2)),0.25);
-      cout << residual(i,1) << endl;
     }
     else if(weight_type == std::string("Gaussian"))
     {
@@ -709,7 +715,6 @@ NEWMAT::Matrix BaseController::findWeightMatrix(NEWMAT::Matrix residual, std::st
     }
     else // default to fair
     {
-      cout << "Default" << endl;
       w_fit(i,i) = 1.0/(0.1 + sqrt(fabs(residual(i,1))));
     }
   }
@@ -854,7 +859,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     return false;
 
   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
-  node->advertise_service(service_prefix + "/get_actual", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+  node->advertise_service(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
 
