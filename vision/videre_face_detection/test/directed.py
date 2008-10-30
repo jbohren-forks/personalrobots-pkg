@@ -20,6 +20,7 @@ import ImageDraw
 import random
 import time
 import math
+import numpy
 
 import os
 
@@ -42,11 +43,13 @@ class Tracker(visualodometer.VisualOdometer) :
 ################## CLASS PEOPLETRACKER #############
 class PeopleTracker:
   def __init__(self):
+    self.usebag = False
     self.keyframe = []
     self.current_keyframe = -1
     self.p = videre_face_detection.people()
-    self.cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
-    self.vo = Tracker(self.cam)
+    self.cam = None
+    self.camparams = None
+    self.vo = None
     self.feature_detector = visualodometer.FeatureDetectorStar()
     self.feature_detector.thresh = 3
     self.cascade_file = "cascades/haarcascade_frontalface_alt.xml"
@@ -63,6 +66,7 @@ class PeopleTracker:
     self.recent_good_frame = []
     self.recent_good_rect = []
     self.same_key_rgf = False
+    self.pub = None
 
 
 ################### GET_FEATURES ##############################
@@ -119,13 +123,20 @@ class PeopleTracker:
     return (new_point[0]-half_width,new_point[1]-half_height,window_size[0],window_size[1])
 
 
+################### PARAMETER CALLBACK ########################
+  def params(self, pmsg):
+
+    if not self.vo:
+      self.cam = camera.VidereCamera(pmsg.data)
+      self.vo = Tracker(self.cam)
+        
+
 
 ################### IMAGE CALLBACK ############################
   def frame(self, imarray):
 
-    #if self.seq>100 :
-    #  self.seq += 1
-    #  return
+    if not self.vo:
+      return
 
     im = imarray.images[1]
     im_py = Image.fromstring("L", (im.width, im.height), im.data)
@@ -135,7 +146,6 @@ class PeopleTracker:
     if self.current_keyframe == -1 :
       self.faces = self.p.detectAllFaces(im.data, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
       print self.faces
-      #self.faces = [ (x-16,y-16,w+32,h+32) for ( x,y,w,h ) in self.faces ]
 
     sparse_pred_list = []
     ia = SparseStereoFrame(im_py,im_r_py)
@@ -160,9 +170,9 @@ class PeopleTracker:
         # Try matching to the keyframe
         keyframe = self.keyframe[self.current_keyframe]
         matches = self.vo.temporal_match(keyframe,ia)
-        print matches
+   #     print matches
         sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
-        print sadscores
+   #     print sadscores
 
         good_matches = [m for m in sadscores if m < self.sad_thresh]
 
@@ -188,9 +198,9 @@ class PeopleTracker:
           # Try matching to the NEW keyframe
           keyframe = self.keyframe[self.current_keyframe]
           matches = self.vo.temporal_match(keyframe,ia)
-          print matches
+     #     print matches
           sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
-          print sadscores
+     #     print sadscores
 
           good_matches = [m for m in sadscores if m < self.sad_thresh]
 
@@ -207,8 +217,8 @@ class PeopleTracker:
             (match1,match2) = matches[imatch]
             sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_center[match1][0], ia.kp2d[match2][1]+self.feats_to_center[match1][1], 1) )  
 
-        print("Sparse pred list")
-        print sparse_pred_list
+    #    print("Sparse pred list")
+    #    print sparse_pred_list
 
         new_window = self.mean_shift_sparse( (x+(w-1)/2,y+(h-1)/2), (w,h), sparse_pred_list, 10, 1)
         (nx,ny,nw,nh) = new_window
@@ -220,6 +230,28 @@ class PeopleTracker:
 
         self.faces[iface] = [nx, ny, nw, nh]
         self.recent_good_rect = [nx,ny,nw,nh]
+
+    
+        # Output the location of this face center in the 3D camera frame (of the left camera), and rotate 
+        # the coordinates to match the robot's idea of the 3D camera frame.
+        center_uvd = [nx + (nw-1)/2, ny + (nh-1)/2, (numpy.average(ia.kp,0))[2] ]
+        center_camXYZ = self.cam.pix2cam(center_uvd[0], center_uvd[1], center_uvd[2])
+        center_robXYZ = (center_camXYZ[2], -center_camXYZ[0], -center_camXYZ[1])
+        print "center_uvd"
+        print center_uvd
+        print "center_camXYZ"
+        print center_camXYZ
+        print "center_robXYZ"
+        print center_robXYZ
+
+        if not self.usebag:
+          #PointStamped stamped_point
+          stamped_point.point.x = center_robXYZ[0]
+          stamped_point.point.y = center_robXYZ[1]
+          stamped_point.point.z = center_robYXZ[2]
+          stamped_point.header.frame_id = "stereo_block"
+          self.pub.publish(PointStamped(stamped_point))
+    
       
 ############ DRAWING ################
 
@@ -258,24 +290,43 @@ class PeopleTracker:
           color = (0,255,0)
         draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
 
-    bigim_py.save("feats%06d.tiff" % self.seq)
+    bigim_py.save("tiff/feats%06d.tiff" % self.seq)
   
     self.seq += 1
 
 
 ############# MAIN #############
+def main(argv) :
+    
+  people_tracker = PeopleTracker()
 
-people_tracker = PeopleTracker()
+  if len(argv)>0 and argv[0]=="-bag":
+    people_tracker.usebag = True
 
-import rosrecord
+  # Use a bag file
+  if people_tracker.usebag :
+  
+    import rosrecord
+    filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
-filename = "/wg/stor2/prdata/videre-bags/face2.bag"
+    num_frames = 0
+    for topic, msg in rosrecord.logplayer(filename):
+      if num_frames < 200 :
+        print topic, msg
+        if topic == '/videre/cal_params':
+          people_tracker.params(msg)
+        elif topic == '/videre/images':
+          people_tracker.frame(msg)
+          num_frames += 1
 
-num_frames = 0
-for topic, msg in rosrecord.logplayer(filename):
-  num_frames += 1
-  if num_frames < 100 :
-    print topic, msg
-    if topic == '/videre/images':
-      people_tracker.frame(msg)
+  # Use new ROS messages, and output the 3D position of the face in the camera frame.
+  else :
+    rospy.init_node('videre_face_tracker', anonymous=True)
+    rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
+    rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
+    people_tracker.pub = rospy.advertise_topic('head_controller/track_point',PointStamped)
+    rospy.spin()
 
+
+if __name__ == '__main__' :
+  main(sys.argv[1:])
