@@ -157,16 +157,18 @@ class RechargeController extends Behavior {
     float desX;
     float desY;
     float desTh;
+    UNIT_FLOAT goal_recharge_level;
   }
 
   /**
    * When active, the recharge controller takes care of any local positioning, emailingm waiting etc.,
-   * until such time as the battery has been full recharged
+   * until such time as the battery has been recharged to the required level
    */
   predicate Active {
     float x;
     float y;
     float th;
+    UNIT_FLOAT recharge_level;
   }
 
 };
@@ -224,7 +226,7 @@ WorkingStatus::Holds{
     if(end){
       any(BatteryState.Holds bs_e);
       concurrent(bs_e.end, end);
-      leq(bs_e.object.recharge_level, bs_e.percentage_remaining);
+      leq(rc.recharge_level, bs_e.percentage_remaining);
     }
   }
 }
@@ -234,11 +236,12 @@ WorkingStatus::Holds{
  */
 RechargeController::Inactive{
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  // this[start-1] == Active(desX, desY, desTh)
+  // this[start-1] == Active(desX, desY, desTh, goal_recharge_level)
   met_by(Active p);
   eq(p.x, desX);
   eq(p.y, desY);
   eq(p.th, desTh);
+  eq(p.recharge_level, goal_recharge_level);
 
   // Compare values based on base state. We are only reading these values. This is an important idiom
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
@@ -254,6 +257,9 @@ RechargeController::Inactive{
 }
 
 RechargeController::Active{
+  BatteryState bs;
+  eq(recharge_level, bs.recharge_level);
+
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station. This is derived by the given parameters
 

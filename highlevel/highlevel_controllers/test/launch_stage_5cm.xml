@@ -11,16 +11,16 @@
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false"/>
 
+    <!--param name="costmap_2d/dynamic_obstacle_window" value="255.0"/-->
     <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
-    <param name="move_base/plannerType" value="ADPlanner"/>
+    <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
-
     <param name="move_base/controller_frequency" value="20.0"/>
     <param name="move_base/planner_frequency" value="0.5"/>
     <param name="move_base/plannerTimeLimit" value="1.5"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
-    <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
+    <node pkg="highlevel_controllers" type="recharge_controller" args="battery_state:=bogus_battery_state" respawn="false" />
   </group>
 </launch>

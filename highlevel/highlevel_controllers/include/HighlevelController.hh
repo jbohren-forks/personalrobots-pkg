@@ -84,12 +84,11 @@ public:
     if(planner_frequency  > 0.0)
       plannerCycleTime_ = 1/planner_frequency;
 
-
-    // Advertize controller state updates - do not want to miss a state transition
+    // Advertize controller state updates - do not want to miss a state transition.
     advertise<S>(stateTopic, QUEUE_MAX());
 
-    // Subscribe to controller goal requests
-    subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback, QUEUE_MAX());
+    // Subscribe to controller goal requests. Last request winds. We drop others
+    subscribe(goalTopic, goalMsg, &HighlevelController<S, G>::goalCallback, 1);
 
     // Subscribe to executive shutdown signal
     subscribe("highlevel_controllers/shutdown", shutdownMsg_, &HighlevelController<S, G>::shutdownCallback, 1);
@@ -266,6 +265,10 @@ protected:
 private:
 
   void goalCallback(){
+    // Do nothing if not initialized
+    if(!isInitialized())
+      return;
+
     lock();
 
     if(state == INACTIVE && goalMsg.enable){

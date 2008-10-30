@@ -77,6 +77,7 @@ Publishes to (name/type):
 - None
 
  **/
+#include <rosconsole/rosconsole.h>
 #include "Nddl.hh"
 #include "Components.hh"
 #include "Logger.hh"
@@ -129,7 +130,8 @@ int main(int argc, char **argv)
 
   atexit(&cleanup);
 
-  TREX::LogManager::instance();
+  TREX::LogManager& logManager = TREX::LogManager::instance();
+  std::cout << "Logging execution data to " << logManager.get_log_path().c_str() << std::endl;
 
   char * configFile = argv[1];
   root = TREX::LogManager::initXml( configFile );

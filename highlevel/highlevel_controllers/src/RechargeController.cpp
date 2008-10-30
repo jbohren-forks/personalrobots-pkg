@@ -87,34 +87,37 @@ namespace highlevel_controllers {
   private:
     enum MailType {UNPLUG, PLUG};
 
+    enum State {INACTIVE, CONNECT, CHARGE, DISCONNECT};
 
-    virtual void updateStateMsg();
+    /**
+     * HighlevelController interface
+     */
     virtual void updateGoalMsg();
+    virtual void updateStateMsg();
     virtual bool makePlan();
     virtual bool goalReached();
     virtual bool dispatchCommands();
+
     void batteryStateCallback();
+
     void sendMail(MailType type);
+    bool charged() const;
+    bool connected() const;
 
-    bool m_quitCharging, m_startCharging;
-    double m_chargedPrecent, m_chargingThreshold;
-
+    // Mail parameters
     std::string m_addresses, m_pluginSubject, m_unplugSubject, m_pluginBody, m_unplugBody, m_mailClient;
     
 
-    robot_msgs::BatteryState batteryStateMsg;
+    State controlState_; // The state of the controller
+    robot_msgs::BatteryState batteryStateMsg_;
   };
 
   RechargeController::RechargeController(const std::string& stateTopic, const std::string& goalTopic)
     : HighlevelController<RechargeState, RechargeGoal>("recharge_controller", stateTopic, goalTopic),
-      m_quitCharging(false), m_startCharging(false), m_chargedPrecent(0.9), m_chargingThreshold(0),
       m_addresses(""), m_pluginSubject("Robot Needs to Be Plugged In"), 
       m_unplugSubject("Robot Needs to Be Unplugged"), m_pluginBody("Hello, could you please plug me in?\nThanks, PR2"),
-      m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s") {
-    initialize();
-
-    subscribe("battery_state", batteryStateMsg, &RechargeController::batteryStateCallback, QUEUE_MAX());
-
+      m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s"),
+      controlState_(INACTIVE){
 
     param("recharge/email_addresses", m_addresses, m_addresses);
     param("recharge/subject_plugin", m_pluginSubject, m_pluginSubject);
@@ -122,16 +125,12 @@ namespace highlevel_controllers {
     param("recharge/body_plugin", m_pluginBody, m_pluginBody);
     param("recharge/body_unplug", m_unplugBody, m_unplugBody);
     param("recharge/mail_client", m_mailClient,  m_mailClient);
-
-
-
     param("recharge/body_unplug", m_unplugBody, m_unplugBody);
     param("recharge/mail_client", m_mailClient,  m_mailClient);
 
 
-
     if (m_addresses == "") {
-      printf("There are no email addresses in the param server. Opening the text file.\n");
+      ROS_INFO("There are no email addresses in the param server. Opening the text file.\n");
       FILE* email = fopen("email_file.txt", "r");
       if (email) {
 	char buff[1024];
@@ -145,39 +144,27 @@ namespace highlevel_controllers {
 	m_addresses = buff;
 	fclose(email);
       } else {
-	printf("Could not open email alert file: email_file.txt\n");
+	ROS_INFO("Could not open email alert file: email_file.txt\n");
       }
     }
-    printf("Emails: %s\n", m_addresses.c_str());
+
+    ROS_INFO("Emails: %s\n", m_addresses.c_str());
 
 
-
+    // We will listen to battery state messages to monitor for transitions. We only care about the latest one
+    subscribe("battery_state", batteryStateMsg_, &RechargeController::batteryStateCallback, 1);
 
     lock();
-    stateMsg.charged = false;
-    stateMsg.active = false;
-    stateMsg.done = false;
+    stateMsg.recharge_level = 0.0;
+    stateMsg.goal_recharge_level = 0.0;
     unlock();
   }
 
   RechargeController::~RechargeController(){}
 
-
   void RechargeController::batteryStateCallback(){
-    lock();
-    bool charged = (batteryStateMsg.energy_remaining / batteryStateMsg.energy_capacity) > m_chargedPrecent;
-    bool plugged = batteryStateMsg.power_consumption > m_chargingThreshold;
-    if (stateMsg.active && charged && !stateMsg.charged) {
-      m_quitCharging = true;
-    }
-    if (stateMsg.active && charged && !plugged) {
-      stateMsg.done = true;
-      std::cout << "Unplugged!\n";
-    }
-
-    stateMsg.charged = charged;
-
-    unlock();
+    // Set to initalized (benign if already true)
+    initialize();
   }
 
   void RechargeController::sendMail(MailType type) {
@@ -190,7 +177,7 @@ namespace highlevel_controllers {
       body = m_pluginBody;
     }
     
-    std::cout << "Sending mail...\n";
+    ROS_INFO("Sending mail...\n");
     std::string command = "echo \"";
     command += body + "\" | " + m_mailClient + " \"";
     command += subject + "\" \"";
@@ -202,52 +189,79 @@ namespace highlevel_controllers {
       }
     }
     command += "\"";
-    std::cout << "Mail command: " << command << std::endl;
     system(command.c_str());
+    ROS_INFO("Mail command sent: %s\n", command.c_str());
   }
   
-
-  void RechargeController::updateStateMsg(){
+  void RechargeController::updateGoalMsg(){
+    stateMsg.lock();
+    stateMsg.goal_recharge_level = goalMsg.recharge_level;
+    stateMsg.unlock();
   }
 
-  void RechargeController::updateGoalMsg(){
-    m_startCharging = true;
-    stateMsg.done = false;
+  void RechargeController::updateStateMsg(){
+    batteryStateMsg_.lock();
+    stateMsg.recharge_level = (batteryStateMsg_.energy_remaining / batteryStateMsg_.energy_capacity);
+    batteryStateMsg_.unlock();
   }
 
   bool RechargeController::makePlan(){
+    if(!isValid())
+      controlState_ = CONNECT;
+
     return true;
   }
 
   /**
-   * @brief
+   * @brief When the state machine has transitioned back into an inactive state, we think we are done
    */
-  bool RechargeController::goalReached(){
-    return stateMsg.done;
-  }
+  bool RechargeController::goalReached(){return controlState_ == INACTIVE;}
 
   /**
-   * @brief 
+   * @brief Commands involve sending mail to plug and unplug, as well as waiting to charge. This state machine is strictly linear.
    */
   bool RechargeController::dispatchCommands(){
-    if (m_startCharging) {
-      sendMail(PLUG);
-      m_startCharging = false;
+    switch(controlState_){
+    case CONNECT:
+      ROS_DEBUG("Transitioning to charge\n");
+      if(!connected())
+	sendMail(PLUG);
+      controlState_ = CHARGE;
+      break;
+    case CHARGE:
+      if(charged()){
+	sendMail(UNPLUG);
+	ROS_DEBUG("Transitioning to disconnect\n");
+	controlState_ = DISCONNECT;
+      }
+      break;
+    case DISCONNECT:
+      if(!connected()){
+	ROS_DEBUG("Transitioning to inactive\n");
+	controlState_ = INACTIVE;
+      }
+    default:
+      ROS_ASSERT(0); // Should never get here. Should be benign though. If we do the logic is incorrect somewhere
     }
-    if (m_quitCharging) {
-      sendMail(UNPLUG);
-      m_quitCharging = false;
-    }
+
     return true;
   }
 
+  bool RechargeController::charged() const{
+    return stateMsg.recharge_level >= stateMsg.goal_recharge_level;
+  }
+
+  /**
+   * If power consumption is negative, then we must be connected to a power source
+   */
+  bool RechargeController::connected() const {
+    return batteryStateMsg_.power_consumption <= 0;
+  }
 }
 
 int
 main(int argc, char** argv)
 {
-
-
   ros::init(argc,argv);
   try{
     highlevel_controllers::RechargeController node("recharge_state", "recharge_goal");

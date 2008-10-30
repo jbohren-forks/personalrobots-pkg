@@ -29,10 +29,12 @@ namespace TREX {
       const IntervalDomain& x = goalToken->getVariable("x")->lastDomain();
       const IntervalDomain& y = goalToken->getVariable("y")->lastDomain();
       const IntervalDomain& th = goalToken->getVariable("th")->lastDomain();
+      const IntervalDomain& recharge_level = goalToken->getVariable("recharge_level")->lastDomain();
 
-      goalMsg.goal.x = (x.isSingleton()  ? x.getSingletonValue() : (x.getLowerBound() + x.getUpperBound()) / 2);
-      goalMsg.goal.y = (y.isSingleton()  ? y.getSingletonValue() : (y.getLowerBound() + y.getUpperBound()) / 2);
-      goalMsg.goal.th = (th.isSingleton()  ? th.getSingletonValue() : (th.getLowerBound() + th.getUpperBound()) / 2);
+      goalMsg.pose.x = (x.isSingleton()  ? x.getSingletonValue() : (x.getLowerBound() + x.getUpperBound()) / 2);
+      goalMsg.pose.y = (y.isSingleton()  ? y.getSingletonValue() : (y.getLowerBound() + y.getUpperBound()) / 2);
+      goalMsg.pose.th = (th.isSingleton()  ? th.getSingletonValue() : (th.getLowerBound() + th.getUpperBound()) / 2);
+      goalMsg.recharge_level = (recharge_level.isSingleton()  ? recharge_level.getSingletonValue() : (recharge_level.getLowerBound() + recharge_level.getUpperBound()) / 2);
     }
   };  
 

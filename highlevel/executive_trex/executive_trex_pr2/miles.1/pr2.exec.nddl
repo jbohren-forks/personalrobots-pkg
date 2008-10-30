@@ -1,5 +1,18 @@
+/**
+ * Test case to run forever in the office by the green room on a scaled down map
+ */
+
 #include "milo.init.nddl";
 
+/* Waypoints */
+Waypoint w1 = new Waypoint(1.253, 2.260, 0.695);
+Waypoint w2 = new Waypoint(2.060, 1.155, 1.249);
+Waypoint w3 = new Waypoint(3.037, 2.019, 2.820);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(2.598, 3.294, -2.356);
+
+close();
 
 rejectable(venusDeMiles.Holds g);
 g.iterationCount = 0;

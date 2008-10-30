@@ -41,6 +41,7 @@
 #include <highlevel_controllers/RechargeGoal.h>
 #include <robot_srvs/PlanNames.h>
 #include <robot_msgs/BatteryState.h>
+#include <rosthread/member_thread.h>
 
 
 using namespace std;
@@ -55,19 +56,28 @@ public:
     advertise<highlevel_controllers::RechargeGoal>("recharge_goal", 1);
     advertise<robot_msgs::BatteryState>("bogus_battery_state", 1);
     advertise<robot_msgs::MechanismState>("mechanism_state", 1);
-    subscribe<robot_msgs::BatteryState>("battery_state", batteryMsg_, &ControlCLI::batteryCallback, 1);
 
-    // Set default values
+    // Set default values such that the robot is connected and fully charged
     batteryState_.power_consumption = -800;
     batteryState_.energy_remaining = 1000;
-    batteryState_.energy_capacity = 100;
+    batteryState_.energy_capacity = 1000;
 
+    // Start a thread to publish batteryState at 10 Hz
+    ros::thread::member_thread::startMemberFunctionThread(this, &ControlCLI::publishingLoop);  
+
+    // Start the console
     runCLI();
   }
   bool alive() { return !dead; }
 private:
   bool dead;
 
+  void publishingLoop(){
+    while (true) {
+      publish<robot_msgs::BatteryState>("bogus_battery_state", batteryState_);
+      usleep(100000);
+    }
+  }
 
   void fillNamesLeftArm(std::vector<std::string> &names) {
     names.push_back("shoulder_pan_left_joint");
@@ -106,15 +116,6 @@ private:
     return 0;
   }
 
-  /**
-   * Callback will ignore the inbound message and send the desired data
-   */
-  void batteryCallback(){
-      batteryState_.lock();
-      publish<robot_msgs::BatteryState>("bogus_battery_state", batteryState_);
-      batteryState_.unlock();
-  }
-
   void runCLI() {
     printf("Type:\nI\tInitialize States\nP\tActivate Recharge.\nB\tSet Battery State\nN\tPrint Joint Names\nQ\tQuit\nS\tHand Wave\nL\tLeft Arm\nR\tRight Arm\n");
     char c = '\n';
@@ -124,21 +125,28 @@ private:
     }
 
     if (c == 'B') {
-      double consumption(0.0), remaining(0.0);
-      printf("Enter Consumption:\n");
+      double consumption(0.0), remaining(0.0), capacity(0.0);
+      printf("Enter Power Consumption:\n");
       consumption = enterValue(-10000, 10000);
       printf("Enter Remaining Energy:\n");
       remaining = enterValue(-10000, 10000);
-      printf("Sending battery state update:<%f, %f>.\n", consumption, remaining);
+      printf("Enter Capacity:\n");
+      capacity = enterValue(0, 10000);
+      printf("Setting battery state to:<%f, %f, %f>.\n", consumption, remaining, capacity);
       batteryState_.lock();
       batteryState_.power_consumption = consumption;
       batteryState_.energy_remaining = remaining;
-      batteryState_.energy_capacity = 100;
+      batteryState_.energy_capacity = capacity;
       batteryState_.unlock();
     } else if (c == 'P') {
-      printf("Sending plugin goal.\n");
+      double recharge_level(0.0);
+      printf("Enter recharge level as a percentage of maximum capacity:\n");
+      recharge_level = enterValue(0, 1);
+      recharge_level = std::max(0.0, std::min(recharge_level, 1.0));
+      printf("Sending recharge goal:%f\n", recharge_level);
       highlevel_controllers::RechargeGoal goal;
       goal.enable = 1;
+      goal.recharge_level = recharge_level;
       publish<highlevel_controllers::RechargeGoal>("recharge_goal", goal);
     } else if (c == 'N') {
       printf("Joint names (number of parameters):\n");

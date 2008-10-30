@@ -2,6 +2,8 @@
 // controller state
 #include "milo.init.nddl";
 
+close();
+
 rejectable(RechargeController.Inactive plug);
 
 plug.desX = 18.8;

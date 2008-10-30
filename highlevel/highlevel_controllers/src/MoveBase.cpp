@@ -700,10 +700,18 @@ namespace ros {
       std::vector<unsigned int> updates;
       lock();
       petTheWatchDog();
+      struct timeval curr;
+      gettimeofday(&curr,NULL);
+      double curr_t, last_t, t_diff;
+      curr_t = curr.tv_sec + curr.tv_usec / 1e6;
       costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);
+      gettimeofday(&curr,NULL);
+      last_t = curr.tv_sec + curr.tv_usec / 1e6;
+      t_diff = last_t - curr_t;
       handleMapUpdates(updates);
       publishLocalCostMap();
       unlock();
+      ROS_INFO("Updated map in %f seconds/n", t_diff);
     }
     
     MoveBase::footprint_t const & MoveBase::getFootprint() const{
