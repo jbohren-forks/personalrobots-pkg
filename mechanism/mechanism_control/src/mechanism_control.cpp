@@ -182,7 +182,8 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), mechanism_state_topic_("mechanism_state"), publisher_(mechanism_state_topic_, 1),
+  : mc_(mc), mechanism_state_topic_("mechanism_state"),
+    publisher_(mechanism_state_topic_, 1),
     transform_publisher_("TransformArray", 1)
 {
   assert(mc != NULL);
@@ -193,11 +194,6 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
     ros::init(argc, argv);
     node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
-
-  // Advertise topics
-  node_->advertise<robot_msgs::MechanismState>(mechanism_state_topic_,10);
-  node_->advertise<rosTF::TransformArray>("TransformArray");
-  node_->advertise<rostools::Time>("time");
 
   // Advertise services
   node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
@@ -212,11 +208,6 @@ MechanismControlNode::~MechanismControlNode()
   node_->unadvertise_service("list_controller_types");
   node_->unadvertise_service("spawn_controller");
   node_->unadvertise_service("kill_controller");
-
-  node_->unadvertise(mechanism_state_topic_);
-  node_->unadvertise("TransformArray");
-  node_->unadvertise("time");
-  publisher_.stop();
 }
 
 bool MechanismControlNode::initXml(TiXmlElement *config)
