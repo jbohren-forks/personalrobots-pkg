@@ -96,6 +96,9 @@ namespace controller
     int direction_multiplier_;
   };
 
+  /*! \class
+    \brief This class inherits from Controller and implements the actual controls.
+  */
   class BaseController : public Controller
   {
     public:
@@ -376,6 +379,9 @@ namespace controller
 
   };
 
+  /*! \class
+    \brief This class inherits from Controller and is the ROS Node corresponding to the controller. This is the class that should be instantiated whenever the user wants to spawn a new base controller. 
+  */
   class BaseControllerNode : public Controller
   {
     public:
