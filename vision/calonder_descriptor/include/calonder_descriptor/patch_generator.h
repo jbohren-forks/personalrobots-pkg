@@ -7,7 +7,6 @@
 
 namespace features {
 
-// TODO: stick with IplImage* or use wrappers?
 class PatchGenerator
 {
 public:

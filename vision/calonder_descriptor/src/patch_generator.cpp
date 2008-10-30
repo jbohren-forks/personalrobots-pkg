@@ -1,6 +1,5 @@
 #include "calonder_descriptor/patch_generator.h"
 #include <cassert>
-#include <cstring>
 
 namespace features {
 

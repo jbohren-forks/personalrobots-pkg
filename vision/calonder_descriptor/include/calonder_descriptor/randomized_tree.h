@@ -26,7 +26,6 @@ struct BaseKeypoint
   {}
 };
 
-// TODO: more generic use of cvwimage wrappers
 class RandomizedTree
 {
 public:
@@ -45,8 +44,6 @@ public:
              int views = RandomizedTree::DEFAULT_VIEWS);
   
   // TODO: uBLASify?
-  //float* getPosterior(cv::WImageView1_b const& patch);
-  //const float* getPosterior(cv::WImageView1_b const& patch) const;
   float* getPosterior(IplImage* patch);
   const float* getPosterior(IplImage* patch) const;
 
@@ -68,10 +65,8 @@ private:
 
   void createNodes(int num_nodes, Rng &rng);
   void init(int classes, int depth, Rng &rng);
-  //void addExample(int class_id, cv::WImageView1_b const& patch);
   void addExample(int class_id, IplImage* patch);
   void finalize();
-  //int getIndex(cv::WImageView1_b const& patch) const;
   int getIndex(IplImage* patch) const;
   float* getPosteriorByIndex(int index);
   const float* getPosteriorByIndex(int index) const;
@@ -111,12 +106,6 @@ struct RTreeNode
   {}
 
   //! Left child on 0, right child on 1
-  /*
-  inline bool operator() (cv::WImageView1_b const& patch) const
-  {
-    return patch(x1, y1) > patch(x2, y2);
-  }
-  */
   inline bool operator() (IplImage* patch) const
   {
     return CV_IMAGE_ELEM(patch, uchar, y1, x1) > CV_IMAGE_ELEM(patch, uchar, y2, x2);

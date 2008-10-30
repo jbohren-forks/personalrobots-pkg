@@ -1,8 +1,6 @@
 #include "calonder_descriptor/randomized_tree.h"
 #include "calonder_descriptor/rng.h"
 #include <fstream>
-#include <cassert> // DEBUG
-#include <cstdio> // DEBUG
 
 namespace features {
 
@@ -20,7 +18,6 @@ void RandomizedTree::createNodes(int num_nodes, Rng &rng)
   }
 }
 
-//int RandomizedTree::getIndex(cv::WImageView1_b const& patch) const
 int RandomizedTree::getIndex(IplImage* patch) const
 {
   int index = 0;
@@ -53,10 +50,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
                            int depth, int views)
 {
   init(base_set.size(), depth, rng);
-  /*
-  cv::WImageBuffer1_b patch(RandomizedTree::PATCH_SIZE,
-                            RandomizedTree::PATCH_SIZE);
-  */
+
   IplImage* patch = cvCreateImage(cvSize(PATCH_SIZE, PATCH_SIZE),
                                   IPL_DEPTH_8U, 1);
 
@@ -68,8 +62,6 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
     make_patch.setSource(keypt_it->image);
     
     for (int i = 0; i < views; ++i) {
-      //make_patch(cvPoint(keypt_it->x, keypt_it->y), patch.Ipl());
-      //addExample(class_id, patch.Ipl()); // Ipl() to avoid copying header
       make_patch(cvPoint(keypt_it->x, keypt_it->y), patch);
       addExample(class_id, patch);
     }
@@ -94,7 +86,6 @@ void RandomizedTree::init(int classes, int depth, Rng &rng)
   createNodes(num_nodes, rng);
 }
 
-//void RandomizedTree::addExample(int class_id, cv::WImageView1_b const& patch)
 void RandomizedTree::addExample(int class_id, IplImage* patch)
 {
   int index = getIndex(patch);
@@ -123,19 +114,16 @@ void RandomizedTree::finalize()
   leaf_counts_.clear();
 }
 
-//float* RandomizedTree::getPosterior(cv::WImageView1_b const& patch)
 float* RandomizedTree::getPosterior(IplImage* patch)
 {
   return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch));
 }
 
-//const float* RandomizedTree::getPosterior(cv::WImageView1_b const& patch) const
 const float* RandomizedTree::getPosterior(IplImage* patch) const
 {
   return getPosteriorByIndex( getIndex(patch) );
 }
 
-// TODO: error-checking
 void RandomizedTree::read(const char* file_name)
 {
   std::ifstream file(file_name, std::ifstream::binary);

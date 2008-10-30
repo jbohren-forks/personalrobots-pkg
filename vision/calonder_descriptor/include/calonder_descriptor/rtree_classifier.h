@@ -27,9 +27,6 @@ public:
              int depth = RandomizedTree::DEFAULT_DEPTH,
              int views = RandomizedTree::DEFAULT_VIEWS);
 
-  // TODO: figure out whether to use C++ image wrapper
-  //DenseSignature getDenseSignature(cv::WImageView1_b const& patch) const;
-  //SparseSignature getSparseSignature(cv::WImageView1_b const& patch) const;
   DenseSignature getDenseSignature(IplImage* patch) const;
   SparseSignature getSparseSignature(IplImage* patch) const;
 

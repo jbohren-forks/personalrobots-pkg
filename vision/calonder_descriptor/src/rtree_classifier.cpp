@@ -38,7 +38,6 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 }
 
 // TODO: trivially vectorizable
-//DenseSignature RTreeClassifier::getDenseSignature(cv::WImageView1_b const& patch) const
 DenseSignature RTreeClassifier::getDenseSignature(IplImage* patch) const
 {
   DenseSignature sig = ublas::zero_vector<float>(classes_);
@@ -59,7 +58,6 @@ DenseSignature RTreeClassifier::getDenseSignature(IplImage* patch) const
   return sig;
 }
 
-//SparseSignature RTreeClassifier::getSparseSignature(cv::WImageView1_b const& patch) const
 SparseSignature RTreeClassifier::getSparseSignature(IplImage* patch) const
 {
   DenseSignature dense_sig = getDenseSignature(patch);
