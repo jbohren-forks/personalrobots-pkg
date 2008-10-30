@@ -110,7 +110,7 @@ class TimeCache
 
   /// A helper function for getData
   //Assumes storage is already locked for it
-  uint8_t findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff);
+  std::string findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff, uint8_t& num_solutions);
 
   void pruneList()
     {
