@@ -254,6 +254,22 @@ class TestDirected(unittest.TestCase):
         xs = [i[0] for i in result]
         self.assert_(xs == sorted(xs))
 
+    def test_face(self):
+        im = Image.open("face1.png").convert("L")
+        # (114, 114, 5, 3, 10.0)
+        sd = L.star_detector(im.size[0], im.size[1], 5, 3.0, 999.0)
+        kp = sd.detect(im.tostring())
+        for (x,y,s,r) in kp:
+            if r < 0:
+                color = 0
+            else:
+                color = 255
+            circle(im, x, y, s, color)
+        comp = Image.new("L", (im.size[0] * 2, im.size[1]))
+        comp.paste(Image.open("face1.png").convert("L"), (0,0))
+        comp.paste(im, (im.size[0], 0))
+        comp.save("out.png")
+
     def perftest(self):
         print
         print
@@ -272,7 +288,7 @@ class TestDirected(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
-    if 0:
+    if 1:
       suite = unittest.TestSuite()
-      suite.addTest(TestDirected('perftest'))
+      suite.addTest(TestDirected('test_face'))
       unittest.TextTestRunner(verbosity=2).run(suite)
