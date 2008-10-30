@@ -35,12 +35,12 @@ $(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
 	  cd $(OGRE_VERSION) && \
 	  export LIB="$(LFLAGS)" && \
 	  export CFLAGS="$(CFLAGS)" && \
-	  ./configure --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS); \
-	  touch $(ROOT)/$(OGRE_VERSION)/Makefile; \
-	  mkdir -p $(ROOT)/ogre; \
-	  mkdir -p $(ROOT)/ogre/lib; \
-	  mkdir -p $(ROOT)/ogre/include; \
-	  mkdir -p $(ROOT)/ogre/share; \
+	  ./configure --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS) && \
+	  touch $(ROOT)/$(OGRE_VERSION)/Makefile && \
+	  mkdir -p $(ROOT)/ogre && \
+	  mkdir -p $(ROOT)/ogre/lib && \
+	  mkdir -p $(ROOT)/ogre/include && \
+	  mkdir -p $(ROOT)/ogre/share && \
 	  mkdir -p $(ROOT)/ogre/bin; \
 	fi
 
