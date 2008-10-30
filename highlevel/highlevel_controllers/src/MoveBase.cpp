@@ -39,8 +39,8 @@
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
+#include <std_msgs/PointStamped.h>
 #include <set>
-
 
 namespace ros {
   namespace highlevel_controllers {
@@ -198,6 +198,9 @@ namespace ros {
 
       // Advertize message to publish velocity cmds
       advertise<std_msgs::BaseVel>("cmd_vel", 1);
+      
+      //Advertize message to publis local goal for head to track
+      advertise<std_msgs::PointStamped>("head_controller/track_point", 1);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
@@ -591,6 +594,17 @@ namespace ros {
 
       publish("cmd_vel", cmdVel);
       publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
+
+      //publish a point that the head can track
+      double ptx, pty;
+      controller_->getLocalGoal(ptx, pty);
+      std_msgs::PointStamped target_point;
+      target_point.point.x = ptx;
+      target_point.point.y = pty;
+      target_point.point.z = 1.5;
+      target_point.header.stamp = ros::Time::now();
+      target_point.header.frame_id = "map";
+      publish("head_controller/track_point", target_point);
       return planOk;
     }
 

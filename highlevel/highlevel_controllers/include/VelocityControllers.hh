@@ -36,6 +36,7 @@ namespace ros {
 					   std::list<std_msgs::Pose2DFloat32>& localPlan) = 0;
 
       virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th) = 0;
+      virtual void getLocalGoal(double& x, double& y) = 0;
     };
 
     /** 
@@ -57,6 +58,7 @@ namespace ros {
 					   std::list<std_msgs::Pose2DFloat32>& localPlan);
 
       virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th);
+      virtual void getLocalGoal(double& x, double& y);
 
     private:
 
@@ -89,6 +91,7 @@ namespace ros {
 					   std::list<std_msgs::Pose2DFloat32>& localPlan);
 
       virtual std::vector<std_msgs::Point2DFloat32> drawFootprint(double x, double y, double th) { std::vector<std_msgs::Point2DFloat32> empty; return empty;}
+      virtual void getLocalGoal(double& x, double& y){x = 0.0; y = 0.0;}
 
       double getMapDeltaX() const {return mapDeltaX_;}
 

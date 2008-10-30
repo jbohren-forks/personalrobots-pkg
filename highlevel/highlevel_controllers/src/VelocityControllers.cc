@@ -79,6 +79,11 @@ namespace ros {
       return tc_.drawFootprint(x, y, th);
     }
 
+    void TrajectoryRolloutController::getLocalGoal(double& x, double& y){
+      x = tc_.goal_x_;
+      y = tc_.goal_y_;
+    }
+
     /*
     LocalSearchVelocityController::LocalSearchVelocityController(unsigned int lookAhead, double resolution, double sMax, double dsMax, double dThetaMax)
       : lookAhead_(lookAhead), 
