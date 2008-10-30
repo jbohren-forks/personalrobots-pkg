@@ -11,6 +11,12 @@
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false"/>
 
+    <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ADPlanner"/>
+    <param name="move_base/environmentType" value="2D"/>
+
     <param name="move_base/controller_frequency" value="20.0"/>
     <param name="move_base/planner_frequency" value="0.5"/>
     <param name="move_base/plannerTimeLimit" value="1.5"/>
