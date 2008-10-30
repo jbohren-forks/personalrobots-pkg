@@ -44,6 +44,7 @@
 #include <rosthread/mutex.h>
 #include <mechanism_model/controller.h>
 #include <misc_utils/realtime_publisher.h>
+#include <misc_utils/advertised_service_guard.h>
 
 #include <robot_srvs/ListControllerTypes.h>
 #include <robot_srvs/ListControllers.h>
@@ -127,6 +128,9 @@ private:
   misc_utils::RealtimePublisher<robot_msgs::MechanismState> publisher_;
 
   misc_utils::RealtimePublisher<rosTF::TransformArray> transform_publisher_;
+
+  AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
+    spawn_controller_guard_, kill_controller_guard_;
 };
 
 #endif /* MECHANISM_CONTROL_H */

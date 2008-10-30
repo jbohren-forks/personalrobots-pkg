@@ -194,20 +194,10 @@ MechanismControlNode::MechanismControlNode(MechanismControl *mc)
     ros::init(argc, argv);
     node_ = new ros::node("mechanism_control", ros::node::DONT_HANDLE_SIGINT);
   }
-
-  // Advertise services
-  node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
-  node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
-  node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
-  node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
 }
 
 MechanismControlNode::~MechanismControlNode()
 {
-  node_->unadvertise_service("list_controllers");
-  node_->unadvertise_service("list_controller_types");
-  node_->unadvertise_service("spawn_controller");
-  node_->unadvertise_service("kill_controller");
 }
 
 bool MechanismControlNode::initXml(TiXmlElement *config)
@@ -225,6 +215,18 @@ bool MechanismControlNode::initXml(TiXmlElement *config)
       ++num_transforms;
   }
   transform_publisher_.msg_.set_quaternions_size(num_transforms);
+
+
+  // Advertise services
+  node_->advertise_service("list_controllers", &MechanismControlNode::listControllers, this);
+  list_controllers_guard_.set("list_controllers");
+  node_->advertise_service("list_controller_types", &MechanismControlNode::listControllerTypes, this);
+  list_controller_types_guard_.set("list_controller_types");
+  node_->advertise_service("spawn_controller", &MechanismControlNode::spawnController, this);
+  spawn_controller_guard_.set("spawn_controller");
+  node_->advertise_service("kill_controller", &MechanismControlNode::killController, this);
+  kill_controller_guard_.set("kill_controller");
+
   return true;
 }
 
