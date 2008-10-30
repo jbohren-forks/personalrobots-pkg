@@ -402,7 +402,7 @@ void CvStereoCamModel::getDepthMask(/// disparity image
     double maxDisp = getDisparity(minZ);
     double minDisp = getDisparity(maxZ);
 
-    printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
+    // printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
 
     // fill in the mask according to disparity or depth
     cvInRangeS(dispImg, cvScalar(minDisp), cvScalar(maxDisp), depthMask);
