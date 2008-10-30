@@ -150,26 +150,25 @@ namespace ros {
 
       ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
       
-      std::vector<std_msgs::Point2DFloat32> footprint_spec;
       std_msgs::Point2DFloat32 pt;
       //create a square footprint
       pt.x = robotRadius;
       pt.y = -1 * robotRadius;
-      footprint_spec.push_back(pt);
+      footprint_.push_back(pt);
       pt.x = -1 * robotRadius;
       pt.y = -1 * robotRadius;
-      footprint_spec.push_back(pt);
+      footprint_.push_back(pt);
       pt.x = -1 * robotRadius;
       pt.y = robotRadius;
-      footprint_spec.push_back(pt);
+      footprint_.push_back(pt);
       pt.x = robotRadius;
       pt.y = robotRadius;
-      footprint_spec.push_back(pt);
+      footprint_.push_back(pt);
 
       //give the robot a nose
       pt.x = circumscribedRadius;
       pt.y = 0;
-      footprint_spec.push_back(pt);
+      footprint_.push_back(pt);
 
       controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
 										SIM_TIME,
@@ -182,7 +181,7 @@ namespace ros {
 										accLimit_x,
 										accLimit_y,
 										accLimit_th, 
-										footprint_spec);
+										footprint_);
 
       // Advertize messages to publish cost map updates
       advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
@@ -692,5 +691,10 @@ namespace ros {
       publishLocalCostMap();
       unlock();
     }
+    
+    MoveBase::footprint_t const & MoveBase::getFootprint() const{
+      return footprint_;
+    }
+
   }
 }

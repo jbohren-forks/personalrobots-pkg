@@ -230,12 +230,36 @@ protected:
    * @brief Aquire node level lock
    */
   void lock(){lock_.lock();}
-
+  
   /**
    * @brief Release node level lock
    */
   void unlock(){lock_.unlock();}
-
+  
+  /**
+   * @brief Lock/unlock sentry for HighlevelController and its subclasses.
+   * Useful for locking across multiple points of return like this:
+   * @code
+   * int some_func(HighlevelController * hlc) {
+   *   HighlevelController::sentry guard(hlc); // calls hlc->lock()
+   *   if (op1())
+   *     return 42; // ~sentry calls hlc->unlock()
+   *   if (op2()) {
+   *     op3();
+   *     return 17; // ~sentry calls hlc->unlock()
+   *   }
+   *   return -1; // ~sentry calls hlc->unlock()
+   * }
+   * @endcode
+   */
+  struct sentry {
+    sentry(HighlevelController * hlc): hlc_(hlc) { hlc->lock(); }
+    ~sentry() { hlc_->unlock(); }
+  protected:
+    HighlevelController * hlc_;
+  };
+  
+  
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */
 

@@ -62,14 +62,18 @@ namespace ros {
     class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
 
     public:
-
+      
+      typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
+      
       /**
        * @brief Constructor
        */
       MoveBase();
 
       virtual ~MoveBase();
-
+      
+      footprint_t const & getFootprint() const;
+      
     protected:
 
       /**
@@ -96,7 +100,12 @@ namespace ros {
        * @brief test the current plan for collisions with obstacles
        */
       bool inCollision() const;
-
+      
+      /**
+       * @brief projection of the robot outline onto the ground plane.
+       */
+      footprint_t footprint_;
+      
     private:
       /**
        * @brief Will process a goal update message.

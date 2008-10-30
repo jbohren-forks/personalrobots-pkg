@@ -126,34 +126,93 @@ namespace ros {
       SBPLPlannerStatistics pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
     };
-
+    
+    
     MoveBaseSBPL::MoveBaseSBPL()
-      : MoveBase(){
-      param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
-
-      lock();
-      // Initial Configuration is set with the threshold for
-      // obstacles set to the inscribed obstacle threshold. These,
-      // lethal obstacles, and cells with no information will thus
-      // be regarded as obstacles
-      env_ = new EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0, CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-      bool success = env_->InitializeMDPCfg(&mdpCfg_);
-      isMapDataOK();
-      unlock();
-      
-      if(!success){
-	ROS_INFO("ERROR: InitializeMDPCfg failed\n");
-	exit(1);
+      : MoveBase(),
+	env_(0),
+	pMgr_(0)
+    {
+      try {
+	// We're throwing int exit values if something goes wrong, and
+	// clean up any new instances in the catch clause. The sentry
+	// gets destructed when we go out of scope, so unlock() gets
+	// called no matter what.
+	sentry guard(this);
+	
+	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
+	string environmentType;
+	param(get_name() + "/environmentType", environmentType, string("2D"));
+	
+	if ("2D" == environmentType) {
+	  // Initial Configuration is set with the threshold for
+	  // obstacles set to the inscribed obstacle threshold. These,
+	  // lethal obstacles, and cells with no information will thus
+	  // be regarded as obstacles
+	  env_ = new EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0,
+					  CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+	}
+	else if ("3DKIN" == environmentType) {
+	  string const prefix(get_name() + "/env3d/");
+	  double goaltol_x, goaltol_y, goaltol_theta, cellsize_m,
+	    nominalvel_mpersecs, timetoturn45degsinplace_secs;
+	  param(prefix + "goaltol_x", goaltol_x, 0.3);
+	  param(prefix + "goaltol_y", goaltol_y, 0.3);
+	  param(prefix + "goaltol_theta", goaltol_theta, 30.0);
+	  param(prefix + "cellsize_m", cellsize_m, -1.0);
+	  param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
+	  param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
+	  if (0 > cellsize_m) {
+	    // Would be better to read the size from the map!
+	    ROS_ERROR("invalid env3d_cellsize_m %g, must correspond to the costmap", cellsize_m);
+	    throw int(1);
+	  }
+	  // Could also sanity check the other parameters...
+	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), 0, 0, 0, 0, 0, 0,
+					     goaltol_x, goaltol_y, goaltol_theta,
+					     getFootprint(),
+					     cellsize_m, nominalvel_mpersecs,
+					     timetoturn45degsinplace_secs);
+	}
+	else {
+	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
+		    environmentType);
+	  throw int(2);
+	}
+	
+	// This (weird?) order of inits is historical, could maybe be
+	// cleaned up...
+	bool const success(env_->InitializeMDPCfg(&mdpCfg_));
+// 	try {
+// 	  // This one throws a string if something goes awry... and
+// 	  // always returns true. So no use cecking its
+// 	  // retval. Another candidate for cleanup.
+// 	  isMapDataOK();
+// 	}
+// 	catch (char const * ee) {
+// 	  ROS_ERROR("in MoveBaseSBPL ctor: isMapDataOK() said %s", ee);
+// 	  throw int(3);
+// 	}
+	if ( ! success) {
+	  ROS_ERROR("in MoveBaseSBPL ctor: env_->InitializeMDPCfg() failed");
+	  throw int(4);
+	}
+	
+	string plannerType;
+	param(get_name() + "/plannerType", plannerType, string("ARAPlanner"));
+	pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
+	if ( ! pMgr_->select(plannerType, false)) {
+	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType);
+	  throw int(5);
+	}
+	pStat_.pushBack(plannerType);
       }
-      
-      pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
-      if ( ! pMgr_->select("ARAPlanner", false)) {
+      catch (int ii) {
 	delete env_;
 	delete pMgr_;
-	errx(EXIT_FAILURE, "ERROR in MoveBaseSBPL ctor: pMgr_->select(\"ARAPlanner\") failed");
+	exit(ii);
       }
-      pStat_.pushBack("ARAPlanner");
-
+      
       //Now initialize
       initialize();
     }
