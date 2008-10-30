@@ -354,7 +354,7 @@ void BaseController::getJointValues()
     steer_angle_actual_[i] = base_casters_[i].joint_state_->position_;
 
   for(int i=0; i < num_wheels_; i++)
-    wheel_speed_actual_[i] = base_wheels_[i].controller_.getMeasuredVelocity();
+    wheel_speed_actual_[i] = base_wheels_[i].joint_state_->velocity_;
 
   for(int i=0; i < num_wheels_; i++)
     speeds_are_valid = speeds_are_valid && !isinf(wheel_speed_actual_[i]) && !isnan(wheel_speed_actual_[i]);
