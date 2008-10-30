@@ -3,7 +3,7 @@
     <calibrate joint="tilt_laser_mount_joint"
                actuator="tilt_laser_motor"
                transmission="tilt_laser_mount_trans"
-               velocity="-1.0" />
-    <pid p="1" i="0.1" d="0" iClamp="1.0" />
+               velocity="-1.5" />
+    <pid p=".3" i="0.1" d="0" iClamp="1.0" />
   </controller>
 </controllers>
