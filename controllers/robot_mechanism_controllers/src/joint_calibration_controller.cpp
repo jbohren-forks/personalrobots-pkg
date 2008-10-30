@@ -123,7 +123,7 @@ void JointCalibrationController::update()
     break;
   case BEGINNING:
     original_switch_state_ = actuator_->state_.calibration_reading_;
-    vc_.setCommand(original_switch_state_ ? search_velocity_ : -search_velocity_);
+    vc_.setCommand(original_switch_state_ ? -search_velocity_ : search_velocity_);
     state_ = MOVING;
     break;
   case MOVING: {

@@ -111,7 +111,7 @@ void CasterCalibrationController::update()
     break;
   case BEGINNING:
     original_switch_state_ = actuator_->state_.calibration_reading_;
-    cc_.steer_velocity_ = (original_switch_state_ ? search_velocity_ : -search_velocity_);
+    cc_.steer_velocity_ = (original_switch_state_ ? -search_velocity_ : search_velocity_);
     state_ = MOVING;
     break;
   case MOVING: {
