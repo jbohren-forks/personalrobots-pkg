@@ -1,7 +1,7 @@
-float64 x_vel
-float64 y_vel
-float64 theta_vel
+float64 vx
+float64 vy
+float64 vw
 ---
-float64 x_vel
-float64 y_vel
-float64 theta_vel
+float64 vx
+float64 vy
+float64 vw

@@ -814,14 +814,14 @@ bool BaseControllerNode::setCommand(
   pr2_mechanism_controllers::SetBaseCommand::response &resp)
 {
   libTF::Vector command;
-  command.x = req.x_vel;
-  command.y = req.y_vel;
-  command.z = req.theta_vel;
+  command.x = req.vx;
+  command.y = req.vy;
+  command.z = req.vw;
   c_->setCommand(command);
   command = c_->getCommand();
-  resp.x_vel = command.x;
-  resp.y_vel = command.y;
-  resp.theta_vel = command.z;
+  resp.vx = command.x;
+  resp.vy = command.y;
+  resp.vw = command.z;
   return true;
 }
 
@@ -842,9 +842,9 @@ bool BaseControllerNode::getCommand(
 {
   libTF::Vector command;
   command = c_->getCommand();
-  resp.x_vel = command.x;
-  resp.y_vel = command.y;
-  resp.theta_vel = command.z;
+  resp.vx = command.x;
+  resp.vy = command.y;
+  resp.vw = command.z;
 
   return true;
 }
