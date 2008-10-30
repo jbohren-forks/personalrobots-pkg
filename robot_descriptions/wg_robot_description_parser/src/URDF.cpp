@@ -42,7 +42,6 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
-#include <algorithm>
 
 namespace robot_desc {
     
@@ -2203,8 +2202,6 @@ namespace robot_desc {
 		else
 		    errorMessage("Visual " + links[i]->visual->name + " does not have its <geometry> set");  
 	    }
-	    else
-		errorMessage("Link " + links[i]->name + " does not have its <visual> set");	
 	    
 	    if (!links[i]->isSet["inertial"])
 		errorMessage("Link " + links[i]->name + " does not have its <inertial> set");	
