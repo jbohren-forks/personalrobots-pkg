@@ -2,11 +2,8 @@
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
   <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
-  <machine name="xenomai" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
-  <machine name="two" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
-  <machine name="three" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
-  <machine name="four"  address="prg4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
 
+  <include file="prg.machine" />
 
 <!-- pr2_etherCAT -->
   <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
