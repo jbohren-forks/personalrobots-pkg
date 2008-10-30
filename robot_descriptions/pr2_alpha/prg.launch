@@ -31,10 +31,6 @@
     <param name="max_ang" type="double" value="100.0" />
   </node>
 
-
-<!-- Tilt Laser Controller -->
-    <node machine="xenomai" pkg="mechanism_control" type="mech.py" args="sp laser_controller_config.xml" output="screen"/>
-
 <!-- Tilt Laser -->
   <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
