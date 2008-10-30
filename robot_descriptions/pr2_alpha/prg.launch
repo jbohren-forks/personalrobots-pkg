@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
-  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
+  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
   <machine name="xenomai" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" />   
   <machine name="two" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
   <machine name="three" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
@@ -24,7 +24,7 @@
   <node machine="two" pkg="IBPSBatteryInterface" type="monitorBatteries" respawn="true"/>
 
 <!-- Base Laser -->
-  <node  machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+  <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="base_laser" />
     <param name="min_ang" type="double" value="-100.0" />
@@ -36,7 +36,7 @@
     <node machine="xenomai" pkg="mechanism_control" type="mech.py" args="sp laser_controller_config.xml" output="screen"/>
 
 <!-- Tilt Laser -->
-  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+  <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="tilt_laser" />
     <param name="min_ang" type="double" value="-80.0" />
