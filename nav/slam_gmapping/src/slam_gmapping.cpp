@@ -69,36 +69,36 @@ SlamGMapping::SlamGMapping()
   
   // Parameters used by our GMapping wrapper
   double tmp;
-  node_->param("map_udpate_interval", tmp, 5.0);
+  node_->param("~/map_udpate_interval", tmp, 5.0);
   map_update_interval_.fromSec(tmp);
   
   // Parameters used by GMapping itself
-  node_->param("maxUrange", maxUrange_, 80.0);
-  node_->param("sigma", sigma_, 0.05);
-  node_->param("kernelSize", kernelSize_, 1);
-  node_->param("lstep", lstep_, 0.05);
-  node_->param("astep", astep_, 0.05);
-  node_->param("iterations", iterations_, 5);
-  node_->param("lsigma", lsigma_, 0.075);
-  node_->param("ogain", ogain_, 3.0);
-  node_->param("lskip", lskip_, 0);
-  node_->param("srr", srr_, 0.1);
-  node_->param("srt", srt_, 0.2);
-  node_->param("str", str_, 0.1);
-  node_->param("stt", stt_, 0.2);
-  node_->param("linearUpdate", linearUpdate_, 1.0);
-  node_->param("angularUpdate", angularUpdate_, 0.5);
-  node_->param("resampleThreshold", resampleThreshold_, 0.5);
-  node_->param("particles", particles_, 30);
-  node_->param("xmin", xmin_, -100.0);
-  node_->param("ymin", ymin_, -100.0);
-  node_->param("xmax", xmax_, 100.0);
-  node_->param("ymax", ymax_, 100.0);
-  node_->param("delta", delta_, 0.05);
-  node_->param("llsamplerange", llsamplerange_, 0.01);
-  node_->param("llsamplestep", llsamplestep_, 0.01);
-  node_->param("lasamplerange", lasamplerange_, 0.005);
-  node_->param("lasamplestep", lasamplestep_, 0.005);
+  node_->param("~/maxUrange", maxUrange_, 80.0);
+  node_->param("~/sigma", sigma_, 0.05);
+  node_->param("~/kernelSize", kernelSize_, 1);
+  node_->param("~/lstep", lstep_, 0.05);
+  node_->param("~/astep", astep_, 0.05);
+  node_->param("~/iterations", iterations_, 5);
+  node_->param("~/lsigma", lsigma_, 0.075);
+  node_->param("~/ogain", ogain_, 3.0);
+  node_->param("~/lskip", lskip_, 0);
+  node_->param("~/srr", srr_, 0.1);
+  node_->param("~/srt", srt_, 0.2);
+  node_->param("~/str", str_, 0.1);
+  node_->param("~/stt", stt_, 0.2);
+  node_->param("~/linearUpdate", linearUpdate_, 1.0);
+  node_->param("~/angularUpdate", angularUpdate_, 0.5);
+  node_->param("~/resampleThreshold", resampleThreshold_, 0.5);
+  node_->param("~/particles", particles_, 30);
+  node_->param("~/xmin", xmin_, -100.0);
+  node_->param("~/ymin", ymin_, -100.0);
+  node_->param("~/xmax", xmax_, 100.0);
+  node_->param("~/ymax", ymax_, 100.0);
+  node_->param("~/delta", delta_, 0.05);
+  node_->param("~/llsamplerange", llsamplerange_, 0.01);
+  node_->param("~/llsamplestep", llsamplestep_, 0.01);
+  node_->param("~/lasamplerange", lasamplerange_, 0.005);
+  node_->param("~/lasamplestep", lasamplestep_, 0.005);
 }
 
 SlamGMapping::~SlamGMapping()
@@ -117,11 +117,9 @@ bool
 SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t)
 {
   // Get the robot's pose 
-  tf::Stamped<tf::Pose> ident;
+  tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
+                                           btVector3(0,0,0)), t, "base");
   tf::Stamped<btTransform> odom_pose;
-  ident.setIdentity();
-  ident.frame_id_ = "base";
-  ident.stamp_ = t;
   try
   {
     this->tf_->transformPose("odom", ident, odom_pose);
@@ -132,8 +130,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
     return false;
   }
   double yaw,pitch,roll;
-  btMatrix3x3 mat =  odom_pose.getBasis();
-  mat.getEulerZYX(yaw, pitch, roll);
+  odom_pose.getBasis().getEulerZYX(yaw, pitch, roll);
 
   gmap_pose = GMapping::OrientedPoint(odom_pose.getOrigin().x(),
                                       odom_pose.getOrigin().y(),
@@ -223,14 +220,6 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
 bool
 SlamGMapping::addScan(const std_msgs::LaserScan& scan)
 {
-  // HACK OF ALL HACKS
-  if((scan_.header.stamp == ros::Time(1224204607,855484003)) ||
-     (scan_.header.stamp == ros::Time(1224204610,402324003)))
-  {
-    ROS_WARN("Skipping known bad timestamp");
-    return false;
-  }
-
   GMapping::OrientedPoint gmap_pose;
   if(!getOdomPose(gmap_pose, scan.header.stamp))
      return false;
