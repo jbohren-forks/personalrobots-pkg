@@ -421,7 +421,9 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
       //Something is wrong with the encoder, the motor, or the motor board
 
       //Disable motors
-      rv = false;
+      // TODO: don't disable motors for voltage error until all motor 
+      // parameters are properly configured
+      //rv = false;
 
       const double epsilon = 0.001;
       //Try to diagnose further

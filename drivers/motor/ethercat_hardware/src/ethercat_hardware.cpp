@@ -88,7 +88,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   EtherCAT_DataLinkLayer::instance()->attach(ni_);
   if ((al_ = EtherCAT_AL::instance()) == NULL)
   {
-    ROS_FATAL("Unable to initialize Application Layer (AL): %08x", al_);
+    ROS_FATAL("Unable to initialize Application Layer (AL): %p", al_);
     ROS_BREAK();
   }
 
@@ -108,7 +108,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   // Initialize Master
   if ((em_ = EtherCAT_Master::instance()) == NULL)
   {
-    ROS_FATAL("Unable to initialize EtherCAT_Master: %08x", em_);
+    ROS_FATAL("Unable to initialize EtherCAT_Master: %p", em_);
     ROS_BREAK();
   }
 
