@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,8 +45,8 @@ is less than 0.5*255 (i.e., sort of black).  Anything in between is
 considered unknown (occupancy value -1).
 
 @todo Establish a standard for storing maps, with metadata (origin,
-resolution, color thresholds, etc.) in the same file.  Perhaps we can use 
-PNGs with comments for this purpose. Then rewrite this node to use said 
+resolution, color thresholds, etc.) in the same file.  Perhaps we can use
+PNGs with comments for this purpose. Then rewrite this node to use said
 standard.
 
 <hr>
@@ -141,6 +141,7 @@ int main(int argc, char **argv)
            ms.map_resp_.map.height,
            ms.map_resp_.map.resolution);
     ms.advertise_service("static_map", &MapServer::mapCallback);
+    ms.set_param("map_resolution", res);
     ms.spin();
   }
   catch(std::runtime_error& e)
