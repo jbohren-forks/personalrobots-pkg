@@ -71,6 +71,15 @@ Ros_Camera::Ros_Camera(Entity *parent)
     rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node in camera \n");
   }
+
+  // set buffer size
+  int    width            = this->myParent->GetImageWidth();
+  int    height           = this->myParent->GetImageHeight();
+  int    depth            = 3;
+  buf_size = (width) * (height) * (depth);
+  this->lock.lock();
+  this->imageMsg.set_data_size(buf_size);
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -96,6 +105,8 @@ void Ros_Camera::LoadChild(XMLConfigNode *node)
 // Initialize the controller
 void Ros_Camera::InitChild()
 {
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -145,18 +156,19 @@ void Ros_Camera::PutCameraData()
     this->imageMsg.compression = "raw";
     this->imageMsg.colorspace  = "rgb24";
 
-    // set buffer size
-    uint32_t       buf_size = (width) * (height) * (depth);
-
     //double tmpT1 = Simulator::Instance()->GetWallTime();
+    //double tmpT2;
 
-    this->imageMsg.set_data_size(buf_size);
-    memcpy(&(this->imageMsg.data[0]), src, buf_size);
+    /// @todo: don't bother if there are no subscribers
+    if (this->rosnode->num_subscribers(this->topicName) > 0)
+    {
+      memcpy(&(this->imageMsg.data[0]), src, buf_size);
 
-    //double tmpT2 = Simulator::Instance()->GetWallTime();
+      //tmpT2 = Simulator::Instance()->GetWallTime();
 
     // publish to ros
-    rosnode->publish(this->topicName,this->imageMsg);
+      rosnode->publish(this->topicName,this->imageMsg);
+    }
 
     //double tmpT3 = Simulator::Instance()->GetWallTime();
     //std::cout << "buf_size: " << buf_size << " - " << tmpT1 - tmpT0 << " : " << tmpT2 - tmpT1 << " : " << tmpT3 - tmpT2 << std::endl;

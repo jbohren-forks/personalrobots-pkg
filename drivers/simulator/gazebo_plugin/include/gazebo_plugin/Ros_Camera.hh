@@ -131,6 +131,8 @@ class Ros_Camera : public Controller
   /// \brief A mutex to lock access to fields that are used in ROS message callbacks
   private: ros::thread::mutex lock;
 
+  /// \brief size of image buffer
+  private: uint32_t buf_size;
 };
 
 /** \} */
