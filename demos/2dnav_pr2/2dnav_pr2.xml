@@ -1,19 +1,19 @@
 <launch>
   <group name="wg">
-    <machine name="base_laser_machine" address="prg2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" ros-ip="prg2" />
-    <machine name="tilt_laser_machine" address="prg3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" ros-ip="prg3" default="true" />
-    <node pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan" machine="base_laser_machine">
-      <param name="port" type="string" value="/dev/ttyACM0" />
-      <param name="frameid" type="string" value="base_laser" />
-      <param name="min_ang" type="double" value="-100.0" />
-      <param name="max_ang" type="double" value="100.0" />
-    </node>
-    <node pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan" machine="tilt_laser_machine">
-      <param name="port" type="string" value="/dev/ttyACM0" />
-      <param name="frameid" type="string" value="tilt_laser" />
-      <param name="min_ang" type="double" value="-80.0" />
-      <param name="max_ang" type="double" value="80.0" />
-    </node>
+    <node pkg="mechanism_control" type="spawner.py" args="controllers_base_lab.xml" output="screen"/>
+    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 1 .45 .40" />
+
+    <param name="axis_vx" value="3" type="int"/>
+    <param name="axis_vy" value="2" type="int"/>
+    <param name="axis_vw" value="0" type="int"/>
+    <param name="pan" value="4" type="int"/>
+    <param name="tilt" value="5" type="int"/>
+    <param name="max_vw" value="1.0" />
+    <param name="max_vx" value="0.6" />
+    <param name="max_vy" value="0.6" />
+    <param name="deadman_button" value="4" type="int"/>
+    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
