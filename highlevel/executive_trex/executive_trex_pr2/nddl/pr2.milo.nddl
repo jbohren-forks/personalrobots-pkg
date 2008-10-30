@@ -1,7 +1,7 @@
 #include "pr2.declarations.nddl"
 #include "pr2.rules.nddl"
 
-float XY_ERROR = 0.25;
+float XY_ERROR = 1.0;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
 typedef float [0.0 1.0] UNIT_FLOAT;
@@ -107,6 +107,7 @@ class VenusDeMiles extends AgentTimeline {
   predicate Holds{
     int iterationCount; // Current iteration count
     int iterationLimit; // Iteration Limit (when done)
+    bool alwaysBusy; // When true, keep going
     Waypoint w; // Way point to achieve
   }
 
@@ -121,9 +122,14 @@ class VenusDeMiles extends AgentTimeline {
 VenusDeMiles::Holds{
   defaultOnCommit(iterationCount, 0);
   defaultOnCommit(iterationLimit, 0);
+  defaultOnCommit(alwaysBusy, false);
+
+  if(alwaysBusy == true){
+    eq(iterationLimit, 1);
+  }
 
   bool busy;
-  testLT(busy, iterationCount, iterationLimit);
+  testLT(busy, 0, iterationLimit);
   if(busy == true){
     // Alternatives:
     // navigator[start + [0, inf], end] = Active(randomSelect(w))
@@ -135,6 +141,7 @@ VenusDeMiles::Holds{
     meets(Holds s);
     addEq(iterationCount, 1, s.iterationCount);
     eq(iterationLimit, s.iterationLimit);
+    eq(alwaysBusy, s.alwaysBusy);
   }
 }
 
