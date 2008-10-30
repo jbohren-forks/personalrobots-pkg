@@ -149,13 +149,21 @@ class PeopleTracker:
       print self.faces
 
     sparse_pred_list = []
+    matches = []
+    sadscores = []
     ia = SparseStereoFrame(im_py,im_r_py)
     # Track each face
     for iface in range(0,len(self.faces)):
       (x,y,w,h) = self.faces[iface]
       ia.kp2d = self.get_features(ia, self.num_feats, (x, y, w, h))
 
+      if not ia.kp2d:
+        continue
+
       self.vo.find_disparities(ia)
+      if not ia.kp:
+        continue
+
       self.vo.collect_descriptors(ia)
 
       # First frame:
@@ -309,20 +317,26 @@ def main(argv) :
   if people_tracker.usebag :
   
     import rosrecord
-    filename = "/wg/stor2/prdata/videre-bags/2008-10-29-15-43-15-topic.bag"
+    filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
     #filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
+    try:
+      os.mkdir("tiff/")
+    except:
+      pass
+
     num_frames = 0
+    start_frame = 1800
+    end_frame = 2300
     for topic, msg in rosrecord.logplayer(filename):
-      if num_frames < 500 :
-        print topic, msg
-        if topic == '/videre/cal_params':
-          people_tracker.params(msg)
-        elif topic == '/videre/images':
+      if topic == '/videre/cal_params':
+        people_tracker.params(msg)
+      elif topic == '/videre/images':
+        if num_frames >= start_frame and num_frames < end_frame:
           people_tracker.frame(msg)
-          num_frames += 1
-        else :
-          pass
+        num_frames += 1
+      else :
+        pass
 
   # Use new ROS messages, and output the 3D position of the face in the camera frame.
   else :
