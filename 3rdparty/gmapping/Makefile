@@ -1,15 +1,17 @@
 all: build
 
-SVN_DIR = gmapping-svn
-SVN_URL = https://svn.openslam.org/data/svn/gmapping/trunk 
-SVN_REVISION = -r 39
-SVN_PATCH = gmapping-r39.patch
-include $(shell rospack find mk)/svn_checkout.mk
+TARBALL = gmapping_r39.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/gmapping_r39.tar.gz
+SOURCE_DIR = gmapping_export
+UNPACK_CMD = tar xzf
+include $(shell rospack find mk)/download_unpack.mk
 
-build: wiped SVN_UP gmapping
+PATCH = gmapping-r39.patch
 
-configured: $(SVN_DIR) Makefile
-	cd $(SVN_DIR) && ./configure
+build: wiped gmapping
+
+configured: $(SOURCE_DIR) Makefile
+	cd $(SOURCE_DIR) && patch -p0 < ../$(PATCH) && ./configure
 	touch configured
 
 wiped: Makefile
@@ -18,11 +20,11 @@ wiped: Makefile
 
 .PHONY: gmapping
 gmapping: configured
-	cd $(SVN_DIR) && make
+	cd $(SOURCE_DIR) && make
 
 clean:
-	-cd $(SVN_DIR) && make clean
+	-cd $(SOURCE_DIR) && make clean
 	rm -rf gmapping configured
 wipe: clean
-	rm -rf gmapping-svn
+	rm -rf $(SOURCE_DIR)
 
