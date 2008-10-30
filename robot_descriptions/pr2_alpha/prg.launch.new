@@ -1,9 +1,9 @@
 <launch>
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
-  <machine name="xenomai_root" user="root" address="pre1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
+  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
 
-  <include file="pre.machine">
+  <include file="prg.machine" />
 
 <!-- pr2_etherCAT -->
   <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
@@ -37,7 +37,7 @@
   </node>
 
 <!-- Runtime Diagnostics Logging -->
-<node pkg="rosrecord" type="rosrecord" args="-f /u/tfoote/runtime_logs/pre_runtime.bag /diagnostics" />
+<node pkg="rosrecord" type="rosrecord" args="-f /u/tfoote/runtime_logs/prg_runtime.bag /diagnostics" />
 
 
 </launch>
