@@ -12,6 +12,7 @@
   <depend package="fast_detector"/>
   <depend package="star_detector"/>
   <depend package="opencv_latest"/>
+  <depend package="stereo_utils"/>
   <depend package="vop"/>
   <depend package="rosrecord"/>
   <export>
