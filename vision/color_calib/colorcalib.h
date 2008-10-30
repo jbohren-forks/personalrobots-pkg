@@ -32,45 +32,11 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/node.h"
+#ifndef COLORCALIB_HH
+#define COLORCALIB_HH
 
 #include "opencv/cxcore.h"
-#include "opencv/cv.h"
-#include "opencv/highgui.h"
 
-#include "colorcalib.h"
+bool find_calib(IplImage* img,  CvMat* m);
 
-int main(int argc, char** argv)
-{
-  IplImage* img = cvLoadImage(argv[1]);
-
-  // Load image
-  if (img)
-  { 
-    CvMat* color_cal = cvCreateMat( 3, 3, CV_32FC1);
-    IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-
-    find_calib(img, color_cal);
-
-     printf("Color calibration:\n");
-     for (int i = 0; i < 3; i ++)
-     {
-       for (int j = 0; j < 3; j++)
-       {
-         printf("%f ", cvmGet(color_cal, i, j));
-       }
-       printf("\n");
-     }
-
-     cvTransform(img, corrected_img, color_cal);
-
-     cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
-     cvShowImage("color_rect", corrected_img);
-
-     while (cvWaitKey(3) != 10)
-     { }
-
-  } else {
-    printf("Could not load image: %s\n", argv[1]);
-  }
-}
+#endif
