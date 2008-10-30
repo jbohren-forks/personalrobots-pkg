@@ -82,6 +82,7 @@ void TrajectoryController::setPathCells(){
 
   if(local_goal_x >= 0 && local_goal_y >= 0){
     MapCell& current = map_(local_goal_x, local_goal_y);
+    ma_.MC_WC(local_goal_x, local_goal_y, goal_x_, goal_y_);
     current.goal_dist = 0.0;
     current.goal_mark = true;
     goal_dist_queue.push(&current);

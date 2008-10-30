@@ -127,6 +127,8 @@ class TrajectoryController {
     bool stuck_left, stuck_right;
     bool rotating_left, rotating_right;
 
+    double goal_x_,goal_y_;
+
   private:
     //the simulation parameters for generating trajectories
     double sim_time_;
