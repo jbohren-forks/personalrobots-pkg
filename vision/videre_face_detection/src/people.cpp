@@ -108,6 +108,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
   // Find the faces using OpenCV's haar cascade object detector.
   CvSeq* face_seq = cvHaarDetectObjects(cv_image_gray_, cascade_, storage_, 1.2, 2, CV_HAAR_DO_CANNY_PRUNING);
  
+
   // Filter the faces using depth information, if available. Currently checks that the actual face size is within the given limits.
   CvScalar color = cvScalar(0,255,0);
   CvRect one_face;
@@ -133,7 +134,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
 	  }
 	}
       }
-      avg_disp /= (4.0*good_pix); // Disparity is in 1/4 pixel units. Take the average.
+      avg_disp /= (double)good_pix; // Take the average.
 
       // If the disparity exists but the size is out of bounds, mark it red on the image and don't add it to the output vector.
       if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_MM) {
