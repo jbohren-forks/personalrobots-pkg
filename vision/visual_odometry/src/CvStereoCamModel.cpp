@@ -6,7 +6,7 @@ using namespace std;
 
 #include <opencv/cxtypes.h>
 #include <opencv/cxcore.h>
-#include "CvMatUtils.h"
+// #include "CvMatUtils.h"
 #include <vector>     //Gary added for collecting valid x,y,d points
 
 static IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
@@ -87,21 +87,21 @@ void CvStereoCamModel::constructMat3DToScreen(double Fx, double Fy, double Tx,
 }
 
 bool CvStereoCamModel::constructProjectionMatrices(){
-    bool status = true;
-    constructMat3DToScreen(mFx, mFy, mClx, mCy, mTx, mMatCartToScreenLeft);
-    constructMat3DToScreen(mFx, mFy, mCrx, mCy, mTx, mMatCartToScreenRight);
+  bool status = true;
+  constructMat3DToScreen(mFx, mFy, mClx, mCy, mTx, mMatCartToScreenLeft);
+  constructMat3DToScreen(mFx, mFy, mCrx, mCy, mTx, mMatCartToScreenRight);
 
 
-    // construct the matrix that maps from Cartesian coordinates to
-    // disparity coordinates
-    double data [] = {
-        mFx,   0,    mClx,              0,
-        0,     mFy,  mCy,               0,
-        0,     0,    (mClx-mCrx)/mDu,   mFx*mTx/mDu,
-        0,     0,    1,                 0
-    };
-    CvMat _P = cvMat(4, 4, CV_64FC1, data);
-    cvCopy(&_P, &mMatCartToDisp);
+  // construct the matrix that maps from Cartesian coordinates to
+  // disparity coordinates
+  double data [] = {
+      mFx,   0,    mClx,              0,
+      0,     mFy,  mCy,               0,
+      0,     0,    (mClx-mCrx)/mDu,   mFx*mTx/mDu,
+      0,     0,    1,                 0
+  };
+  CvMat _P = cvMat(4, 4, CV_64FC1, data);
+  cvCopy(&_P, &mMatCartToDisp);
 
  	// construct the matrix that maps from disparity coordinates to
 	// Cartesian coordinates
@@ -202,8 +202,8 @@ bool CvStereoCamModel::disp8UToCart32F(const IplImage *Id, float ZnearMM, float 
 	int dNear = (int)(dNear_dFar[2]+0.5);
 	int dFar = (int)(dNear_dFar[5] + 0.5);
 #else
-	int dNear = (int)(getDisparity(ZfarMM)  + .5);
-	int dFar  = (int)(getDisparity(ZnearMM) + .5);
+	int dFar  = (int)(getDisparity(ZfarMM)  + .5);
+	int dNear = (int)(getDisparity(ZnearMM) + .5);
 #endif
 //	printf("dNear=%d, dFar=%d\n",dNear,dFar);
 	CvRect roi = cvGetImageROI(Id);
@@ -301,12 +301,17 @@ double  CvStereoCamModel::getDeltaY(double deltaV, double d) const {
 }
 
 double CvStereoCamModel::getZ(double d) const {
-  double dn = (d*mDu - (mClx - mCrx));
+  // symbolically
+  // mFx*mTx/(d*mDu - (mClx - mCrx))
+  double m32 = _mMatDispToCart[3*4 + 2];
+  double m33 = _mMatDispToCart[3*4 + 3];
+  double m23 = _mMatDispToCart[2*4 + 3];
+  double dn = m32 * d - m33;
   if (dn == 0) {
     return DBL_MAX;
   }
 
-  return mFx*mTx/dn;
+  return m23/dn;
 }
 
 double CvStereoCamModel::getDisparity(double Z) const {
@@ -314,7 +319,12 @@ double CvStereoCamModel::getDisparity(double Z) const {
     return  DBL_MAX;
   }
 
-  return ((mClx-mCrx) + mFx*mTx/Z)/mDu;
+  /// symbolically ((mClx-mCrx) + mFx*mTx/Z)/mDu
+
+  double m22 = _mMatCartToDisp[2*4 + 2];
+  double m23 = _mMatCartToDisp[2*4 + 3];
+
+  return m22 + m23/Z;
 }
 
 //Iz is single channel 32F.  Zero values are not displayed. Passing a null image turns this off
