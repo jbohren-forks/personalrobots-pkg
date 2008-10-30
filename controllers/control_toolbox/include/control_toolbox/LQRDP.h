@@ -25,9 +25,18 @@
 #include <vector>
 #include <boost/mpl/assert.hpp>
 
+/** @author Timothy Hunter tjhunter@willowgarage.com
+  * @brief LQR algorithmic solver for steady state control in discrete times
+*/
 namespace LQR
 {
 
+/** @brief templated structure around the lqr algorithm
+  * @param AType Type of the state matrix
+  * @param BType Type of the input matrix
+  * @param QType
+  * @param RType 
+  */
 template<typename AType, typename BType, typename QType, typename RType>
 struct LQRDP
 {
@@ -37,11 +46,19 @@ struct LQRDP
     NumCommands = BType::ColsAtCompileTime
   };
   
+  // The scalar type used (double, float, complex, int if you really want)
   typedef typename AType::Scalar Scalar;
   
+  // The type of the gains matrix
   typedef Eigen::Matrix<Scalar, NumCommands,NumStates> KType;
-  typedef std::vector<KType> KVector;
-  
+/*  // A return vector for the finite horizon
+  typedef std::vector<KType> KVector;*/
+
+  //NOTE: this code is still not very mature and can be optimized:
+  //FIXME: move computation of K out of the loop
+  //FIXME: use a better inverter (Cholesky decomposition)
+  //FIXME: factorize inversion and various pieces that get transposed around
+  //FIXME: documentation
   static void run(const AType & A,
     const BType & B,
     const QType & Q,
@@ -66,15 +83,34 @@ struct LQRDP
       
       
       // --- debug ---
-      Eigen::EigenSolver<AType> es(A+B*K);
-      std::cout<<"\nSTEP "<<steps<<"\nEV\n"<<es.eigenvalues().real();
-      if(steps%10==1)
-        std::cout<<"\nERROR="<<error;
+      //FIXME: find the non-buggy version of the ES - it used to be working
+//       Eigen::EigenSolver<AType> es(A+B*K);
+//       std::cout<<"\nSTEP "<<steps<<"\nEigenValues(real part):\n"<<es.eigenvalues().real();
+//       if(steps%10==1)
+//         std::cout<<"\nERROR="<<error;
 
     }
-    std::cout<<"Done in "<<steps<<" steps\n";
+//     std::cout<<"\nDone in "<<steps<<" steps\n";
   }
   
+  // Continuous version
+  static void runContinuous(const AType & A,
+    const BType & B,
+    const QType & Q,
+    const QType & Qf,
+    const RType & R,
+    Scalar precision,
+    Scalar h,
+    KType & K)
+  {
+    const int n=A.rows();
+    const AType & A_=AType::Identity(n,n)+h*A;
+    const BType & B_=h*B;
+    const QType & Q_=h*Q;
+    const RType & R_=h*R;
+    run(A_,B_,Q_,Qf,R_,precision,K);
+  }
+
 };
 
 }

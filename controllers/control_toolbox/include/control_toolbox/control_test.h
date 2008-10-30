@@ -35,6 +35,7 @@
 #ifndef CONTROL_TEST_H
 #define CONTROL_TEST_H
 #include <Eigen/Core>
+#include <Eigen/LU>
 #include <Eigen/QR>
 
 template<typename AType, typename BType, typename CType>
@@ -55,14 +56,14 @@ struct SystemTest
   {
     typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> ComMatrixType;
     
-    ComMatrixType comMat(A.rows(), A.rows()*B.cols());
+    ComMatrixType comMat(A.rows(), A.cols()*B.rows());
     
     comMat.block(0,0,A.rows(),B.cols())=A;
     for(int i=1;i<A.rows();++i)
       comMat.block(0,i*B.cols(),A.rows(),B.cols())=comMat.block(0,(i-1)*B.cols(),A.rows(),B.cols())*B;
 //     QR decomposition of the commandability matrix
-    Eigen::QR<ComMatrixType> qr(comMat);
-    return qr.isFullRank();
+    Eigen::LU<ComMatrixType> lu(comMat);
+    return lu.rank()==A.rows();
   }
   
   static bool isObservable(const AType & A, const CType & C)
@@ -70,16 +71,58 @@ struct SystemTest
     return isCommandable(A.transpose(),C.transpose());
   }
   
-  static bool isConverging(const AType & A, Scalar epsi=Scalar(1e-3))
+  static bool isConverging(const AType & A, Scalar epsi=Scalar(1e-4))
   {
     Eigen::EigenSolver<AType> es(A);
     return es.eigenvalues().real().maxCoeff() < -epsi;
   }
   
-  static bool isConverging(const AType & A, const BType & B, const KType & K, Scalar epsi=1e-3)
+  static bool isConverging(const AType & A, const BType & B, const KType & K, Scalar epsi=1e-4)
   {
     return isConverging(A-B*K, epsi);
   }
+};
+
+namespace LQR
+{
+
+template<typename Derived1, typename Derived2>
+static bool isCommandable(const Eigen::MatrixBase<Derived1> & A, const Eigen::MatrixBase<Derived2> & B)
+{
+  assert(A.cols()==A.rows());
+  assert(A.cols()==B.rows());
+  
+  const int n=A.rows();
+  const int m=B.cols();
+  
+  typedef Eigen::Matrix<typename Derived1::Scalar, Eigen::Dynamic, Eigen::Dynamic> ComMatrixType;
+  
+  ComMatrixType comMat(n, n*m);
+  
+  comMat.block(0,0,n,m)=B;
+  for(int i=1;i<n;++i)
+    comMat.block(0,i*m,n,m)=A*comMat.block(0,(i-1)*m,n,m);
+//     LU decomposition of the commandability matrix
+  Eigen::LU<ComMatrixType> lu(comMat);
+  return lu.rank()==n;
+}
+
+template<typename Derived>
+static bool isConverging(const Eigen::MatrixBase<Derived> & A, double epsi=1e-4)
+{
+  Eigen::EigenSolver<Derived> es(A);
+//   std::cout<<es.eigenvalues().real()<<std::endl;
+  return es.eigenvalues().real().maxCoeff() < static_cast<typename Derived::Scalar>(-epsi);
+}
+
+template<typename DerivedA, typename DerivedB, typename DerivedG>
+static bool isConverging(const Eigen::MatrixBase<DerivedA> & A, const Eigen::MatrixBase<DerivedB> & B, const Eigen::MatrixBase<DerivedG> & K, double epsi=1e-4)
+{
+  //Need to create a temporary here:
+  const DerivedA & A1=A-B*K;
+  return isConverging(A1, epsi);
+}
+
 };
 
 #endif

@@ -82,7 +82,7 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
   ROS_DEBUG("3");
   //Compute M
   Eigen::MatrixXd M(n,n);
-  NEWMAT::Matrix mass;
+  NEWMAT::Matrix mass(n,n);
   chain_->computeMassMatrix(kdl_q,kdl_torque_,mass);
   for(int i=0;i<n;i++)
     for(int j=0;j<n;j++)
@@ -91,12 +91,13 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
   //Compute Q
   Eigen::MatrixXd Q(n,n);
   Q.setZero();
-  NEWMAT::Matrix christoffel;
+  NEWMAT::Matrix christoffel(n*n,n);
   chain_->computeChristoffelSymbols(kdl_q,kdl_torque_,christoffel);
+  ROS_DEBUG("5-");
   for(int i=0;i<n;i++)
     for(int j=0;j<n;j++)
       for(int k=0;k<n;k++)
-        Q(i,j)+=christoffel(i*n+j,k)*kdl_q_dot(j);
+        Q(i,j)+=christoffel(i*n+j+1,k+1)*kdl_q_dot(j);
   ROS_DEBUG("5");
   //Compute G
   Eigen::VectorXd G(n,1);
@@ -118,12 +119,16 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
   ROS_DEBUG("7");
   // Final assembling
   Eigen::MatrixXd Minvminus=-M.inverse(); //Computing M's inverse once
-  
+  ROS_DEBUG_STREAM(A.rows());
+  assert(A.rows()==n*2);
+  assert(A.cols()==n*2);
   A.block(0,0,n,n).setZero();
   A.block(0,n,n,n)=Eigen::MatrixXd::Identity(n,n);
   A.block(n,0,n,n)=Minvminus*gG;
   A.block(n,n,n,n)=Minvminus*Q;
   
+  assert(B.rows()==n*2);
+  assert(B.cols()==n);
   B.block(0,0,n,n).setZero();
   B.block(n,0,n,n)=Minvminus;
   ROS_DEBUG("8");
