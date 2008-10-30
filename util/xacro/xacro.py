@@ -324,7 +324,8 @@ def eval_all(root, macros, symbols):
                 scoped = Table(symbols)
                 for name,value in node.attributes.items():
                     if not name in params:
-                        raise "Invalid parameter: %s" % str(name)
+                        raise "Invalid parameter \"%s\" while expanding macro \"%s\"" % \
+                            (str(name), str(node.tagName))
                     params.remove(name)
                     scoped[name] = eval_text(value, symbols)
                 if len(params) == 1 and params[0][0] == '*':
