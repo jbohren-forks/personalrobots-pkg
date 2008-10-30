@@ -44,28 +44,28 @@ class Tracker(visualodometer.VisualOdometer) :
 class PeopleTracker:
   def __init__(self):
     self.usebag = False
-    self.keyframe = []
-    self.current_keyframe = -1
+    self.keyframes = None
+    self.current_keyframes = None
     self.p = videre_face_detection.people()
     self.cam = None
     self.camparams = None
     self.vo = None
     self.feature_detector = visualodometer.FeatureDetectorStar()
-    self.feature_detector.thresh = 3
+    self.feature_detector.thresh = 3.0
     self.cascade_file = "cascades/haarcascade_frontalface_alt.xml"
     assert os.access(self.cascade_file, os.R_OK)
-    self.faces = []
+    self.faces = None
     self.seq = 0
     self.keyframe_maxlength = 1
-    self.sad_thresh = 2000
+    self.sad_thresh = 2000.0
     self.num_feats = 40
     self.line_thresh = 10.0
     self.num_scales = 5
-    self.feats_to_center = []
-    self.good_points_thresh = 1/2
-    self.recent_good_frame = []
-    self.recent_good_rect = []
-    self.same_key_rgf = False
+    self.feats_to_centers = None
+    self.good_points_thresh = 0.5
+    self.recent_good_frames = None
+    self.recent_good_rects = None
+    self.same_key_rgfs = None
     self.pub = None
 
 
@@ -94,8 +94,8 @@ class PeopleTracker:
   def mean_shift_sparse(self, start_point, window_size, sparse_pred_list, max_iter, eps) :
     dpoint = [0,0]
     total_weight = 0
-    half_width = (window_size[0]-1)/2
-    half_height = (window_size[1]-1)/2
+    half_width = (window_size[0]-1)/2.0
+    half_height = (window_size[1]-1)/2.0
     new_point = start_point
     # For each iteration
     for iter in range(0,max_iter) :
@@ -143,12 +143,14 @@ class PeopleTracker:
     im_r = imarray.images[0]
     im_r_py = Image.fromstring("L", (im_r.width, im_r.height), im_r.data)
 
-    if self.current_keyframe == -1 :
+    # Detect faces on the first frame
+    if not self.current_keyframes :
       self.faces = self.p.detectAllFaces(im.data, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
       print self.faces
 
     sparse_pred_list = []
     ia = SparseStereoFrame(im_py,im_r_py)
+    # Track each face
     for iface in range(0,len(self.faces)):
       (x,y,w,h) = self.faces[iface]
       ia.kp2d = self.get_features(ia, self.num_feats, (x, y, w, h))
@@ -157,18 +159,18 @@ class PeopleTracker:
       self.vo.collect_descriptors(ia)
 
       # First frame:
-      if self.current_keyframe == -1 :
-        self.current_keyframe = 0
-        self.keyframe.append(ia)
-        self.feats_to_center = self.make_face_model( (x,y,w,h), ia.kp2d )
-        self.recent_good_frame = ia
-        self.recent_good_rect = [x,y,w,h]
-        self.same_key_rgf = True
+      if not self.current_keyframes :
+        self.current_keyframes = [0]
+        self.keyframes = [ia]
+        self.feats_to_centers = [self.make_face_model( (x,y,w,h), ia.kp2d )]
+        self.recent_good_frames = [ia]
+        self.recent_good_rects = [[x,y,w,h]]
+        self.same_key_rgfs = [True]
 
       # Later frames
       else :
         # Try matching to the keyframe
-        keyframe = self.keyframe[self.current_keyframe]
+        keyframe = self.keyframes[self.current_keyframes[iface]]
         matches = self.vo.temporal_match(keyframe,ia)
    #     print matches
         sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
@@ -177,26 +179,26 @@ class PeopleTracker:
         good_matches = [m for m in sadscores if m < self.sad_thresh]
 
         # Not enough matches, get a new keyframe
-        if len(keyframe.kp)<2 or len(good_matches) < len(keyframe.kp)/2 :
+        if len(keyframe.kp)<2 or len(good_matches) < len(keyframe.kp)/2.0 :
 
           #self.keyframe[self.current_keyframe] = ia
           print "New keyframe"
-          #matches = []
+
           # Make a new face model, either from a recent good frame, or from the current image
-          if not self.same_key_rgf :
-            self.feats_to_center = self.make_face_model( self.recent_good_rect, self.recent_good_frame.kp2d )
-            self.keyframe[self.current_keyframe] = self.recent_good_frame
+          if not self.same_key_rgfs[iface] :
+            self.feats_to_centers[iface] = self.make_face_model( self.recent_good_rects[iface], self.recent_good_frames[iface].kp2d )
+            self.keyframes[self.current_keyframes[iface]] = self.recent_good_frames[iface]
             
-            self.same_key_rgf = True
+            self.same_key_rgfs[iface] = True
 
           else :
-            self.keyframe[self.current_keyframe] = ia
-            self.feats_to_center = self.make_face_model( (x,y,w,h), ia.kp2d )
+            self.keyframes[self.current_keyframes[iface]] = ia
+            self.feats_to_centers[iface] = self.make_face_model( (x,y,w,h), ia.kp2d )
             matches = []
-            self.same_key_rgf = True
+            self.same_key_rgfs[iface] = True
 
           # Try matching to the NEW keyframe
-          keyframe = self.keyframe[self.current_keyframe]
+          keyframe = self.keyframes[self.current_keyframes[iface]]
           matches = self.vo.temporal_match(keyframe,ia)
      #     print matches
           sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
@@ -207,20 +209,19 @@ class PeopleTracker:
 
         # Good matches, mark this frame as good
         else:
-          self.recent_good_frame = ia
-          self.same_key_rgf = False
+          self.recent_good_frames[iface] = ia
+          self.same_key_rgfs[iface] = False
 
         # Track
         sparse_pred_list = []
         for imatch in range(0,len(matches)) :
           if sadscores[imatch] < self.sad_thresh :
             (match1,match2) = matches[imatch]
-            sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_center[match1][0], ia.kp2d[match2][1]+self.feats_to_center[match1][1], 1) )  
+            sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_centers[iface][match1][0], ia.kp2d[match2][1]+self.feats_to_centers[iface][match1][1], 1) )  
 
-    #    print("Sparse pred list")
-    #    print sparse_pred_list
+    #    print("Sparse pred list", sparse_pred_list)
 
-        new_window = self.mean_shift_sparse( (x+(w-1)/2,y+(h-1)/2), (w,h), sparse_pred_list, 10, 1)
+        new_window = self.mean_shift_sparse( (x+(w-1)/2.0,y+(h-1)/2.0), (w,h), sparse_pred_list, 10, 1.0)
         (nx,ny,nw,nh) = new_window
         # Force the window back into the image.
         dx = max(0,0-nx) + min(0, im.width - nx+nw)
@@ -229,20 +230,17 @@ class PeopleTracker:
         ny += dy
 
         self.faces[iface] = [nx, ny, nw, nh]
-        self.recent_good_rect = [nx,ny,nw,nh]
+        self.recent_good_rects[iface] = [nx,ny,nw,nh]
 
     
         # Output the location of this face center in the 3D camera frame (of the left camera), and rotate 
         # the coordinates to match the robot's idea of the 3D camera frame.
-        center_uvd = [nx + (nw-1)/2, ny + (nh-1)/2, (numpy.average(ia.kp,0))[2] ]
+        center_uvd = (nx + (nw-1)/2.0, ny + (nh-1)/2.0, (numpy.average(ia.kp,0))[2] )
         center_camXYZ = self.cam.pix2cam(center_uvd[0], center_uvd[1], center_uvd[2])
         center_robXYZ = (center_camXYZ[2], -center_camXYZ[0], -center_camXYZ[1])
-        print "center_uvd"
-        print center_uvd
-        print "center_camXYZ"
-        print center_camXYZ
-        print "center_robXYZ"
-        print center_robXYZ
+        print ("center_uvd", center_uvd)
+        print ("center_camXYZ", center_camXYZ)
+        print ("center_robXYZ", center_robXYZ)
 
         if not self.usebag:
           #PointStamped stamped_point
@@ -255,40 +253,44 @@ class PeopleTracker:
       
 ############ DRAWING ################
 
-    key_im = self.keyframe[self.current_keyframe]
-    keyim_py = Image.fromstring("L", key_im.size, key_im.rawdata)
-    bigim_py = Image.new("RGB",(im_py.size[0]+key_im.size[0], im_py.size[1]))
-    bigim_py.paste(keyim_py.convert("RGB"),(0,0))
-    bigim_py.paste(im_py,(key_im.size[0]+1,0))
-    draw = ImageDraw.Draw(bigim_py)
+    if not self.keyframes :
+      bigim_py = im_py
+      draw = ImageDraw.Draw(bigim_py)
+    else :
+      key_im = self.keyframes[self.current_keyframes[0]]
+      keyim_py = Image.fromstring("L", key_im.size, key_im.rawdata)
+      bigim_py = Image.new("RGB",(im_py.size[0]+key_im.size[0], im_py.size[1]))
+      bigim_py.paste(keyim_py.convert("RGB"),(0,0))
+      bigim_py.paste(im_py,(key_im.size[0]+1,0))
+      draw = ImageDraw.Draw(bigim_py)
 
-    for (x,y,w,h) in self.faces:
-      draw.rectangle((x,y,x+w,y+h),outline=(255,0,0))
-      draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,0,0))
+      for (x,y,w,h) in self.faces:
+        draw.rectangle((x,y,x+w,y+h),outline=(255,0,0))
+        draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,0,0))
 
-    for (x,y) in ia.kp2d:
-      draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(255,0,0))
-      draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(255,0,0))
+      for (x,y) in ia.kp2d:
+        draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(255,0,0))
+        draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(255,0,0))
 
-    for (x,y) in key_im.kp2d :
-      draw.line((x-1, y-1, x+1, y+1), fill=(255,0,0))
-      draw.line((x+1, y-1, x-1, y+1), fill=(255,0,0))
+      for (x,y) in key_im.kp2d :
+        draw.line((x-1, y-1, x+1, y+1), fill=(255,0,0))
+        draw.line((x+1, y-1, x-1, y+1), fill=(255,0,0))
 
-    if self.seq > 0 :
+      if self.seq > 0 :
 
-      for (x,y,w) in sparse_pred_list :
-        draw.line((x-1, y-1, x+1, y+1), fill=(0,0,255))
-        draw.line((x+1, y-1, x-1, y+1), fill=(0,0,255))
-        draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(0,0,255))
-        draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(0,0,255))
+        for (x,y,w) in sparse_pred_list :
+          draw.line((x-1, y-1, x+1, y+1), fill=(0,0,255))
+          draw.line((x+1, y-1, x-1, y+1), fill=(0,0,255))
+          draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(0,0,255))
+          draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(0,0,255))
 
 
-      for ((m1,m2), score) in zip(matches,sadscores) :
-        if score > self.sad_thresh :
-          color = (255,0,0)
-        else :
-          color = (0,255,0)
-        draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
+        for ((m1,m2), score) in zip(matches,sadscores) :
+          if score > self.sad_thresh :
+            color = (255,0,0)
+          else :
+            color = (0,255,0)
+          draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
 
     bigim_py.save("tiff/feats%06d.tiff" % self.seq)
   
@@ -307,17 +309,20 @@ def main(argv) :
   if people_tracker.usebag :
   
     import rosrecord
-    filename = "/wg/stor2/prdata/videre-bags/face2.bag"
+    filename = "/wg/stor2/prdata/videre-bags/2008-10-29-15-43-15-topic.bag"
+    #filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
     num_frames = 0
     for topic, msg in rosrecord.logplayer(filename):
-      if num_frames < 200 :
+      if num_frames < 500 :
         print topic, msg
         if topic == '/videre/cal_params':
           people_tracker.params(msg)
         elif topic == '/videre/images':
           people_tracker.frame(msg)
           num_frames += 1
+        else :
+          pass
 
   # Use new ROS messages, and output the 3D position of the face in the camera frame.
   else :
