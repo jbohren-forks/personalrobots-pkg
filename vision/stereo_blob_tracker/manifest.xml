@@ -1,7 +1,7 @@
 <package>
 <description brief="Blob tracking by camshift">
 
-Stereo Blob tracking by camshift.
+Stereo Blob tracking by camshift/meanshift.
 
 
 </description>
@@ -17,6 +17,6 @@ Stereo Blob tracking by camshift.
 <depend package="string_utils"/>
 <depend package="image_utils"/>
 <depend package="pr2_mechanism_controllers"/>
-<depend package="visual_odometry"/>
+<depend package="stereo_utils"/>
 </package>
 

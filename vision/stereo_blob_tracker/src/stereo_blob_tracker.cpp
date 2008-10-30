@@ -24,9 +24,6 @@ using namespace stereo_blob_tracker;
 typedef signed char schar;
 
 #include "CvStereoCamModel.h"
-#include "CvMatUtils.h"
-using namespace cv::willow;
-
 
 #include "blob_tracker.h"
 

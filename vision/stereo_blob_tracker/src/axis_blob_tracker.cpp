@@ -22,8 +22,8 @@ using namespace std;
 typedef signed char schar;
 
 #include "CvStereoCamModel.h"
-#include "CvMatUtils.h"
-using namespace cv::willow;
+//#include "CvMatUtils.h"
+//using namespace cv::willow;
 // end added for the videre tracker
 
 
