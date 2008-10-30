@@ -14,7 +14,7 @@
 
       <elem key="max_x_accel">2.0</elem>
       <elem key="max_y_accel">2.0</elem>
-      <elem key="max_yaw_accel">1.0</elem>
+      <elem key="max_yaw_accel">2.0</elem>
     </map>
     <controller name="wheel_front_left_l_controller" topic="wheel_front_left_l_controller" type="JointVelocityControllerNode">
         <joint name="wheel_front_left_l_joint" >
