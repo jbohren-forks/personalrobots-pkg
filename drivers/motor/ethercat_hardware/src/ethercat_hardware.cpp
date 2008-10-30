@@ -298,7 +298,7 @@ void EthercatHardware::update(bool reset)
 
   if (reset)
   {
-    reset_state_ = num_slaves_ + 10;
+    reset_state_ = 2 * num_slaves_;
     halt_motors_ = false;
   }
 
@@ -312,10 +312,10 @@ void EthercatHardware::update(bool reset)
       act->state_.last_requested_current_ = act->command_.current_;
       slaves_[s]->truncateCurrent(act->command_);
       // Bringup motor boards, one per tick
-      if (halt_motors_ || (reset_state_ && ((s + 9) < reset_state_)))
+      if (halt_motors_ || (reset_state_ && (s < reset_state_)))
       {
         bool tmp = act->command_.enable_;
-        act->command_.enable_ = false;
+        act->command_.enable_ = (s == (reset_state_/2)) ? true : false;
         act->command_.current_ = 0;
         slaves_[s]->convertCommand(act->command_, current);
         act->command_.enable_ = tmp;
