@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators.xml"/>
+  <include file="$(find pr2_gazebo)/pr2.launch"/>
 
   <!-- Run hztest -->
   <!-- Test for publication of 'base_scan' topic -->

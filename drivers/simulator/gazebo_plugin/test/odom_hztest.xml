@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find gazebo_robot_description)/pr2_gazebo_actuators_headless.xml"/>
+  <include file="$(find pr2_gazebo)/pr2_headless.launch"/>
 
   <!-- Test for publication of 'odom' topic. -->
   <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test">
