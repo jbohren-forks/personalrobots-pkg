@@ -20,6 +20,6 @@ for topic,msg in f:
   if topic == "/videre/images":
     for im in msg.images:
       assert im.compression == "raw"
-      pim = Image.fromstring({'mono8' : 'L'}[im.colorspace], (im.width, im.height), im.data)
+      pim = Image.fromstring({'mono8' : 'L', 'rgb24' : 'RGB'}[im.colorspace], (im.width, im.height), im.data)
       pim.save("im.%06d.%s.tiff" % (seq, im.label))
     seq += 1
