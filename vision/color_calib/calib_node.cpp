@@ -44,14 +44,9 @@
 
 #include <sys/stat.h>
 
-using namespace std;
+#include "colorcalib.h"
 
-struct imgData
-{
-  string label;
-  IplImage *cv_image;
-  CvBridge<std_msgs::Image> *bridge;
-};
+using namespace std;
 
 class ColorCalib : public ros::node
 {
@@ -60,25 +55,17 @@ public:
 
   ros::thread::mutex cv_mutex;
 
-  char dir_name[256];
-  int img_cnt;
-  bool made_dir;
+  CvMat* color_cal;
 
-  map<string, imgData> images;
-
-  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), 
-             img_cnt(0), made_dir(false)
+  ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME)
   { 
     subscribe("images", image_msg, &ColorCalib::image_cb, 1);
+    color_cal = cvCreateMat( 3, 3, CV_32FC1);
   }
 
   ~ColorCalib()
   {
-    for (map<string, imgData>::iterator i = images.begin(); i != images.end(); i++)
-    {
-      if (i->second.cv_image)
-        cvReleaseImage(&i->second.cv_image);
-    }
+    cvReleaseMat(&color_cal);
   }
 
   void image_cb()
@@ -90,25 +77,35 @@ public:
     for (uint32_t i = 0; i < image_msg.get_images_size(); i++)
     {
       string l = image_msg.images[i].label;
-      map<string, imgData>::iterator j = images.find(l);
 
-      if (j == images.end())
+      CvBridge<std_msgs::Image>* cv_bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
+
+      if (image_msg.images[i].colorspace == std::string("rgb24"))
       {
-        images[l].label = image_msg.images[i].label;
-        images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-        cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
-        images[l].cv_image = 0;
-      } else {
+        IplImage* img;
 
-        if (j->second.cv_image)
-          cvReleaseImage(&j->second.cv_image);
-
-        if (j->second.bridge->to_cv(&j->second.cv_image))
+        if (cv_bridge->to_cv(&img))
         {
-          cvShowImage(j->second.label.c_str(), j->second.cv_image);
+          find_calib(img, color_cal);
+          
+          printf("Color calibration:\n");
+          for (int i = 0; i < 3; i ++)
+          {
+            for (int j = 0; j < 3; j++)
+            {
+              printf("%f ", cvmGet(color_cal, i, j));
+            }
+            printf("\n");
+          }
+
+          IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
+
+          cvTransform(img, corrected_img, color_cal);
+
+          cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
+          cvShowImage("color_rect", corrected_img);
         }
       }
-      
     }
 
     cv_mutex.unlock();
@@ -119,28 +116,10 @@ public:
     cv_mutex.lock();
     if (cvWaitKey(3) == 10)
     { }
-      //      save_image();
+
     cv_mutex.unlock();
   }
 
-  /*
-  void save_image() 
-  {
-    if (!made_dir) 
-    {
-      if (mkdir(dir_name, 0755)) 
-      {
-        printf("Failed to make directory: %s\n", dir_name);
-        return;
-      } 
-      else 
-        made_dir = true;
-    }
-    std::ostringstream oss;
-    oss << dir_name << "/Img" << img_cnt++ << ".png";
-    cvSaveImage(oss.str().c_str(), cv_image);
-  }
-  */
 };
 
 int main(int argc, char **argv)
