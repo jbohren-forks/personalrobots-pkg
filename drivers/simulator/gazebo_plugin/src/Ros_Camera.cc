@@ -76,6 +76,10 @@ Ros_Camera::Ros_Camera(Entity *parent)
   int    width            = this->myParent->GetImageWidth();
   int    height           = this->myParent->GetImageHeight();
   int    depth            = 3;
+  this->imageMsg.width       = width;
+  this->imageMsg.height      = height;
+  this->imageMsg.compression = "raw";
+  this->imageMsg.colorspace  = "rgb24";
   buf_size = (width) * (height) * (depth);
   this->lock.lock();
   this->imageMsg.set_data_size(buf_size);
@@ -147,26 +151,18 @@ void Ros_Camera::PutCameraData()
     this->imageMsg.header.stamp.sec = (unsigned long)floor(Simulator::Instance()->GetSimTime());
     this->imageMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  Simulator::Instance()->GetSimTime() - this->imageMsg.header.stamp.sec) );
 
-    int    width            = this->myParent->GetImageWidth();
-    int    height           = this->myParent->GetImageHeight();
-    int    depth            = 3;
-
-    this->imageMsg.width       = width;
-    this->imageMsg.height      = height;
-    this->imageMsg.compression = "raw";
-    this->imageMsg.colorspace  = "rgb24";
-
     //double tmpT1 = Simulator::Instance()->GetWallTime();
     //double tmpT2;
 
     /// @todo: don't bother if there are no subscribers
     if (this->rosnode->num_subscribers(this->topicName) > 0)
     {
+      // copy from src to imageMsg
       memcpy(&(this->imageMsg.data[0]), src, buf_size);
 
       //tmpT2 = Simulator::Instance()->GetWallTime();
 
-    // publish to ros
+      // publish to ros
       rosnode->publish(this->topicName,this->imageMsg);
     }
 
