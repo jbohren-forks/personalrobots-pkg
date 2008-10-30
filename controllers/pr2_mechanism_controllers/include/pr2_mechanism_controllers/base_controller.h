@@ -54,6 +54,7 @@
 
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
+#include <pr2_msgs/Odometer.h>
 
 #include <misc_utils/realtime_publisher.h>
 
@@ -377,6 +378,11 @@ namespace controller
 
     std::map<std::string, double*> param_map_; /*< map from pointers to the params to string names */
 
+    double odometer_distance_;
+
+    double odometer_angle_;
+
+    friend class BaseControllerNode;
   };
 
   /*! \class
@@ -458,6 +464,8 @@ namespace controller
     misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
     misc_utils::RealtimePublisher <rosTF::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+
+    misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
   };
 

@@ -86,6 +86,9 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
    caster_steer_vel_gain_ = 0;
    timeout_ = 0.1;
 
+   odometer_distance_ = 0;
+   odometer_angle_ = 0;
+
    new_cmd_available_ = false;
 
    pthread_mutex_init(&base_controller_lock_,NULL);
@@ -561,6 +564,9 @@ void BaseController::computeOdometry(double time)
 
   base_odom_delta.z = base_odom_velocity_.z * dt;
   base_odom_position_ += base_odom_delta;
+
+  odometer_distance_ += sqrt(base_odom_delta.x*base_odom_delta.x + base_odom_delta.y*base_odom_delta.y);
+  odometer_angle_ += base_odom_delta.z;
 }
 
 void BaseController::computeBaseVelocity()
@@ -725,6 +731,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerNode)
   odom_publish_delta_t_ = 1.0/odom_publish_rate_;
   publisher_ = NULL;
   transform_publisher_ = NULL;
+  odometer_publisher_ = NULL;
 }
 
 BaseControllerNode::~BaseControllerNode()
@@ -737,6 +744,7 @@ BaseControllerNode::~BaseControllerNode()
   transform_publisher_->stop();
   delete publisher_;
   delete transform_publisher_;
+  delete odometer_publisher_;
   delete c_;
 }
 
@@ -749,6 +757,14 @@ void BaseControllerNode::update()
 
   if (time-last_time_message_sent_ >= odom_publish_delta_t_) // send odom message
   {
+
+    if (odometer_publisher_->trylock())
+    {
+      odometer_publisher_->msg_.distance = c_->odometer_distance_; 
+      odometer_publisher_->msg_.angle = c_->odometer_angle_; 
+      odometer_publisher_->unlockAndPublish();      
+    }
+
     if (publisher_->trylock())
     {
       c_->setOdomMessage(publisher_->msg_);
@@ -846,6 +862,9 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     delete publisher_ ;
   publisher_ = new misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom> ("odom", 1) ;
 
+  if (odometer_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete odometer_publisher_ ;
+  odometer_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Odometer> (service_prefix + "/odometer", 1) ;
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
