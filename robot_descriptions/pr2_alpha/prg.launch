@@ -43,5 +43,9 @@
     <param name="max_ang" type="double" value="80.0" />
   </node>
 
+<!-- Runtime Diagnostics Logging -->
+<node pkg="rosrecord" type="rosrecord" args="-f /u/tfoote/runtime_logs/prg_runtime.bag /diagnostics" />
+
+
 </launch>
 
