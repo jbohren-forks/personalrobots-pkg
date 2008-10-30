@@ -24,7 +24,8 @@ rospack_add_library(gazebo_battery src/gazebo_battery.cpp)
 #rospack_add_executable(player_pr2 src/player/Pr2_Player.cc)
 #target_link_libraries(player_pr2 playerc++)
 
-rospack_add_rostest_future(test/testslide.xml)
-rospack_add_rostest_future(test/testcameras.xml)
-rospack_add_rostest_future(test/testscan.xml)
+rospack_add_rostest(test/testslide.xml)
+rospack_add_rostest(test/testcameras.xml)
+rospack_add_rostest(test/testscan.xml)
+rospack_add_rostest(test/testbase.xml)
 
