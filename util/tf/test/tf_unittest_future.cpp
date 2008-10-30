@@ -17,7 +17,7 @@ void seed_rand()
 
 TEST(tf, NoExtrapolationExceptionFromParent)
 {
-  tf::Transformer mTR(true, ros::Duration(1000.0), ros::Duration(0.0));
+  tf::Transformer mTR(true, ros::Duration(1000000000000LL), ros::Duration(0LL));
   
 
 
@@ -32,13 +32,13 @@ TEST(tf, NoExtrapolationExceptionFromParent)
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1.0), "parent's parent",  "parent's parent's parent"));
 
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10.0), "parent",  "parent's parent"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::time(10.0), "parent's parent",  "parent's parent's parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10.0), "parent's parent",  "parent's parent's parent"));
 
   Stamped<Point> output;
 
   try
   {
-    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(20.0), "a"), output);
+    mTR.transformPoint( "b", Stamped<Point>(Point(1,1,1), ros::Time(20.0), "a"), output);
   }
   catch (ExtrapolationException &ex)
   {
@@ -54,7 +54,7 @@ TEST(tf, NoExtrapolationExceptionFromParent)
 
 TEST(tf, ExtrapolationFromOneValue)
 {
-  tf::Transformer mTR(true, ros::Duration(1000.0), ros::Duration(0.0));
+  tf::Transformer mTR(true, ros::Duration(1000000000000LL), ros::Duration(0LL));
   
 
 

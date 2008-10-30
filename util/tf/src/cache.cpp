@@ -86,7 +86,7 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
   }
 
   //If time == 0 return the latest
-  if (target_time == 0)
+  if (target_time == 0ULL)
   {
     one = storage_.front();
     time_diff = ros::Time::now() - storage_.front().stamp_; ///@todo what should this be?? difference from "now"?

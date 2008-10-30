@@ -63,8 +63,8 @@ class TimeCache
  public:
   static const int MIN_INTERPOLATION_DISTANCE = 5; //!< Number of nano-seconds to not interpolate below.
   static const unsigned int MAX_LENGTH_LINKED_LIST = 1000000; //!< Maximum length of linked list, to make sure not to be able to use unlimited memory.
-  static const int64_t DEFAULT_MAX_STORAGE_TIME = 10ULL * 1000000000ULL; //!< default value of 10 seconds storage
-  static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000ULL; //!< default max extrapolation of 10 seconds
+  static const int64_t DEFAULT_MAX_STORAGE_TIME = 1ULL * 1000000000LL; //!< default value of 10 seconds storage
+  static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 10000000000LL; //!< default max extrapolation of 10 seconds
 
 
   TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME),
