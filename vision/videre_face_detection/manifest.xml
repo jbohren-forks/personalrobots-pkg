@@ -15,5 +15,8 @@
 <depend package="visual_odometry"/>
 <depend package="pyrob"/>
 <depend package="rosrecord"/>
+<depend package="rospy"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
 </package>
 
