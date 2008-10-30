@@ -224,7 +224,7 @@ public:
       double Clx = Crx; // the same
       double Tx  = - matdata[3]/Fx;
       std::cout << "base length "<< Tx << std::endl;
-      cam_model_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy);
+      cam_model_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy, 0.25);
     }
   }
 
