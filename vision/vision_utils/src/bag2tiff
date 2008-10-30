@@ -1,0 +1,25 @@
+#!/usr/bin/python
+PKG='vision_utils'
+import rostools; rostools.update_path(PKG)
+
+import sys
+
+import rosrecord
+import rospy
+import Image
+
+if len(sys.argv) != 2:
+  print "Usage: bag2tiff <bagfile>"
+  sys.exit(1)
+
+f = rosrecord.logplayer(sys.argv[1])
+seq = 0
+for topic,msg in f:
+  if rospy.is_shutdown():
+    break
+  if topic == "/videre/images":
+    for im in msg.images:
+      assert im.compression == "raw"
+      pim = Image.fromstring({'mono8' : 'L'}[im.colorspace], (im.width, im.height), im.data)
+      pim.save("im.%06d.%s.tiff" % (seq, im.label))
+    seq += 1

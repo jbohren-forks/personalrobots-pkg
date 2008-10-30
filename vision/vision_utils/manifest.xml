@@ -1,0 +1,21 @@
+<package>
+  <description>
+    Vision utilities
+  </description>
+  <author>James Bowman</author>
+  <license>BSD</license>
+  <depend package="rostest"/>
+  <depend package="rospy"/>
+  <depend package="std_msgs"/>
+  <depend package="fast_detector"/>
+  <depend package="star_detector"/>
+  <depend package="opencv_latest"/>
+  <depend package="vop"/>
+  <depend package="rosrecord"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
+</package>
