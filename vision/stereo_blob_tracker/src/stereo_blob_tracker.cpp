@@ -40,12 +40,6 @@ typedef signed char schar;
 #define REMOTE_GUI true
 
 
-//Just some convienience macros
-#define CV_CVX_WHITE	CV_RGB(0xff,0xff,0xff)
-#define CV_CVX_BLACK	CV_RGB(0x00,0x00,0x00)
-
-
-
 /*****************************************
  * Globals. Mainly for the mouse callback.
  *****************************************/
@@ -191,10 +185,6 @@ void on_mouse(int event, int x, int y, int flags, void *params)
 
 }
 
-static IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
-static IplConvKernel* OpenKernel   = cvCreateStructuringElementEx(3, 3, 1, 1,   CV_SHAPE_RECT);
-static IplConvKernel* CloseKernel  = cvCreateStructuringElementEx(7, 7, 3, 3,   CV_SHAPE_RECT); 
-
 /// VidereBlobTracker - blob tracking stereo images (left and disparity) from 
 /// a videre
 
@@ -244,12 +234,6 @@ public:
   IplImage *depthmask_;
   IplImage *temp_;
 
-  CvMemStorage*	mem_storage_;
-  /// approx threshold - the bigger it is, the simpler is the boundary
-  static const int CVCONTOUR_APPROX_LEVEL = 2;
-  /// how many iterations of erosion and/or dilation
-  static const int CVCLOSE_ITR = 1; 
-
   /// the 3d blob
   CvMat    *blobPts_;
   /// statistics of the current blob
@@ -297,7 +281,6 @@ public:
     cv_histogram_image_cpy_(NULL),
     depthmask_(NULL),
     temp_(NULL),
-    mem_storage_(NULL),
     blobPts_(NULL),
     quit(false),
     blobNearCenter_(min(1.0f, max(0.f, blobNearCenter))),
@@ -363,10 +346,6 @@ public:
     if (cv_mask_image_cpy_)        cvReleaseImage(&cv_mask_image_cpy_);
     if (cv_depthmask_image_cpy_)   cvReleaseImage(&cv_depthmask_image_cpy_);
     if (cv_histogram_image_cpy_)   cvReleaseImage(&cv_histogram_image_cpy_);
-
-    if (mem_storage_) cvReleaseMemStorage(&mem_storage_);
-
-    //TODO: how do I release contours_
 
   }
 
@@ -847,159 +826,6 @@ public:
       setSelection(selection);
     }
   }
-
-
-  /// The following function is modified based on Gary Bradsky's function cvconnectedComponents in cv_yuv_codebook.cpp
-  ///////////////////////////////////////////////////////////////////////////////////////////
-  //void cvconnectedComponents(IplImage *mask, int poly1_hull0, float perimScale, int *num, CvRect *bbs, CvPoint *centers)
-  // This cleans up the forground segmentation mask derived from calls to cvbackgroundDiff
-  //
-  // mask			Is a grayscale (8 bit depth) "raw" mask image which will be cleaned up
-  //
-  // OPTIONAL PARAMETERS:
-  // @param poly1_hull0	If set, approximate connected component by (DEFAULT) polygon, or else convex hull (0)
-  // @param perimScale 	Len = image (width+height)/perimScale.  If contour len < this, delete that contour (DEFAULT: 4)
-  // @param openKernel   the kernel used to remove noise in raw mask. If NULL, 3x3 rectangle is used
-  // @param closeKernel  the kernel used to merge blobs in raw mask. If NULL, 3x3 rectangle is used
-  // @param num			Maximum number of rectangles and/or centers to return, on return, will contain number filled (DEFAULT: NULL)
-  // @param bbs			Pointer to bounding box rectangle vector of length num.  (DEFAULT SETTING: NULL)
-  // @param centers		Pointer to contour centers vectors of length num (DEFAULT: NULL)
-  //
-  void connectedComponents(IplImage *mask, int poly1_hull0, 
-			   IplConvKernel* openKernel,
-			   IplConvKernel* closeKernel,
-			   float perimScale, int *num, CvRect *bbs, CvPoint *centers)
-  {
-    //CLEAN UP RAW MASK
-    // open followed by a close
-    cvMorphologyEx( mask, mask, NULL, openKernel,  CV_MOP_OPEN,  CVCLOSE_ITR );
-    cvMorphologyEx( mask, mask, NULL, closeKernel, CV_MOP_CLOSE, CVCLOSE_ITR );
-
-    //FIND CONTOURS AROUND ONLY BIGGER REGIONS
-    if( mem_storage_==NULL ) mem_storage_ = cvCreateMemStorage(0);
-    else cvClearMemStorage(mem_storage_);
-
-    CvContourScanner scanner = cvStartFindContours(mask,mem_storage_,sizeof(CvContour),CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
-    CvSeq* c;
-    int numCont = 0;
-    while( (c = cvFindNextContour( scanner )) != NULL )
-      {
-	double len = cvContourPerimeter( c );
-	double q = (mask->height + mask->width) /perimScale;   //calculate perimeter len threshold
-	if( len < q ) //Get rid of blob if it's perimeter is too small
-	  {
-	    cvSubstituteContour( scanner, NULL );
-	  }
-	else //Smooth it's edges if it's large enough
-	  {
-	    CvSeq* c_new;
-	    if(poly1_hull0) //Polygonal approximation of the segmentation
-	      c_new = cvApproxPoly(c,sizeof(CvContour),mem_storage_,CV_POLY_APPROX_DP, CVCONTOUR_APPROX_LEVEL,0);
-	    else //Convex Hull of the segmentation
-	      c_new = cvConvexHull2(c,mem_storage_,CV_CLOCKWISE,1);
-            cvSubstituteContour( scanner, c_new );
-	    numCont++;
-	  }
-      }
-    CvSeq* contours = cvEndFindContours( &scanner );
-
-    // PAINT THE FOUND REGIONS BACK INTO THE IMAGE
-    cvZero( mask );
-    IplImage *maskTemp;
-    //CALC CENTER OF MASS AND OR BOUNDING RECTANGLES
-    if(num != NULL)
-      {
-	int N = *num, numFilled = 0, i=0;
-	CvMoments moments;
-	double M00, M01, M10;
-	maskTemp = cvCloneImage(mask);
-	for(i=0, c=contours; c != NULL; c = c->h_next,i++ )
-	  {
-	    if(i < N) //Only process up to *num of them
-	      {
-		cvDrawContours(maskTemp,c,CV_CVX_WHITE, CV_CVX_WHITE,-1,CV_FILLED,8);
-		//Find the center of each contour
-		if(centers != NULL)
-		  {
-		    cvMoments(maskTemp,&moments,1);
-		    M00 = cvGetSpatialMoment(&moments,0,0);
-		    M10 = cvGetSpatialMoment(&moments,1,0);
-		    M01 = cvGetSpatialMoment(&moments,0,1);
-		    centers[i].x = (int)(M10/M00);
-		    centers[i].y = (int)(M01/M00);
-		  }
-		//Bounding rectangles around blobs
-		if(bbs != NULL)
-		  {
-		    bbs[i] = cvBoundingRect(c);
-		  }
-		cvZero(maskTemp);
-		numFilled++;
-	      }
-	    //Draw filled contours into mask
-	    cvDrawContours(mask,c,CV_CVX_WHITE,CV_CVX_WHITE,-1,CV_FILLED,8); //draw to central mask
-	  } //end looping over contours
-	*num = numFilled;
-	cvReleaseImage( &maskTemp);
-      }
-    //ELSE JUST DRAW PROCESSED CONTOURS INTO THE MASK
-    else
-      {
-	for( c=contours; c != NULL; c = c->h_next )
-	  {
-	    cvDrawContours(mask,c,CV_CVX_WHITE, CV_CVX_BLACK,-1,CV_FILLED,8);
-	  }
-      }
-  }
-
-  /// compute a depth mask according to the minZ and maxZ
-  void computeDepthMask(/// disparity image
-			const IplImage* dispImg, 
-			/// pre-allocate image buffer for the depth mask
-			IplImage* depthMask, 
-			/// scaling factor of the disparity map value
-			/// AKA, disparity unit value. Normally .25 for raw disparity
-			double dispUnitScale,
-			/// mininum z in mask
-			double minZ,
-			/// max z in mask
-			double maxZ){
-    double maxDisp = camModel_->getDisparity(minZ);
-    double minDisp = camModel_->getDisparity(maxZ);
-
-    maxDisp /= dispUnitScale;
-    minDisp /= dispUnitScale;
-
-    //printf("range mask [%f, %f] => [%f, %f]\n", minZ, maxZ, minDisp, maxDisp);
-
-    // fill in the mask according to disparity or depth
-    cvInRangeS(dispImg, cvScalar(minDisp), cvScalar(maxDisp), depthMask);
-
-#if 1 
-    // two simple morphology operation seem to be good enough. But
-    // but connected component analysis provides blob with better shape
-    cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
-    //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
-    cvDilate(depthMask, depthMask, DilateKernel, 1);
-#else
-
-    const float perimScale = 16;
-    const int maxNumBBoxes = 25;
-    CvRect bboxes[maxNumBBoxes];
-    int numCComp = maxNumBBoxes;
-    connectedComponents(depthMask, 0, 
-			OpenKernel,
-			CloseKernel,
-			perimScale, &numCComp, 
-			(CvRect *)NULL, // bboxes, 
-			(CvPoint *)NULL);
-
-    //printf("found %d blobs\n", numCComp);
-
-    cvDilate(depthMask, depthMask, DilateKernel, 1);
-#endif
-  }
-    
 };
 
 // Main
