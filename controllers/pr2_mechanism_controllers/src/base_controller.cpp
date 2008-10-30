@@ -38,7 +38,7 @@
 #include "ros/node.h"
 
 #define NUM_TRANSFORMS 2
-
+#define EPS 1e-5
 using namespace ros;
 using namespace std;
 using namespace controller;
@@ -118,12 +118,53 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
   pthread_mutex_unlock(&base_controller_lock_);
 }
 
+/*
 libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT)
 {
   libTF::Vector result;
   result.x = start.x + clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
   result.y = start.y + clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
   result.z = start.z + clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
+  return result;
+}
+*/
+
+libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT)
+{
+  libTF::Vector result;
+  libTF::Vector alpha;
+  double delta(0), max_delta(0);
+
+  delta = end.x - start.x;
+  max_delta = max_rate.x * dT;
+  if(fabs(delta) <= max_delta || max_delta < EPS)
+    alpha.x = 1;
+  else
+    alpha.x = max_delta/fabs(delta);
+
+  delta = end.y - start.y;
+  max_delta = max_rate.y * dT;
+  if(fabs(delta) <= max_delta || max_delta < EPS)
+    alpha.y = 1;
+  else
+    alpha.y = max_delta/fabs(delta);
+
+  delta = end.z - start.z;
+  max_delta = max_rate.z * dT;
+  if(fabs(delta) <= max_delta || max_delta < EPS)
+    alpha.z = 1;
+  else
+    alpha.z = max_delta/fabs(delta);
+
+  double alpha_min = alpha.x;
+  if(alpha.y < alpha_min)
+    alpha_min = alpha.y;
+  if(alpha.z < alpha_min)
+    alpha_min = alpha.z;
+
+  result.x = start.x + alpha_min*(end.x - start.x);
+  result.y = start.y + alpha_min*(end.y - start.y);
+  result.z = start.z + alpha_min*(end.z - start.z);
   return result;
 }
 

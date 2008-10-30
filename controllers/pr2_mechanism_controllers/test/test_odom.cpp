@@ -34,7 +34,6 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <std_msgs/TransformWithRateStamped.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
@@ -84,30 +83,16 @@ class test_run_base
 {
   public:
 
-    test_run_base():subscriber_connected(0){}; 
+    test_run_base(){}; 
 
     ~test_run_base() {}
 
-    std_msgs::TransformWithRateStamped ground_truth;
-
     std_msgs::RobotBase2DOdom odom;
-
-    int subscriber_connected;
-
-    void subscriber_connect()
-    {
-      subscriber_connected = 1;
-    }
 
     void odomMsgReceived()
     {
-//       cout << "Odom:: (" << ground_truth.transform.translation.x << "), (" <<  ground_truth.transform.rotation.x << ")" << std::endl;  
     };
 
-    void groundTruthMsgReceived()
-    {
-//       cout << "Odom:: (" << ground_truth.transform.translation.x << "), (" <<  ground_truth.transform.rotation.x << ")" << std::endl;  
-    };
 };
 
 int main( int argc, char** argv )
@@ -117,13 +102,9 @@ int main( int argc, char** argv )
   ros::init(argc,argv);
   ros::node *node = new ros::node("test_run_base_controller"); 
 
-
-  // receive messages from 2dnav stack
-  std_msgs::TransformWithRateStamped ground_truth;
-
   test_run_base tb;
 
-  node->subscribe("odom",tb.odom,&test_run_base::groundTruthMsgReceived,&tb,10);
+  node->subscribe("odom",tb.odom,&test_run_base::odomMsgReceived,&tb,10);
 
   signal(SIGINT,  finalize);
   signal(SIGQUIT, finalize);
@@ -179,16 +160,10 @@ int main( int argc, char** argv )
 
      if(run_time_set && delta_time.toSec() > run_time)
         break;
-    //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
-
-//     odom_log_file << 
-
-//    cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " <<   tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
 
      odom_log_file << tb.odom.pos.x <<  " " << tb.odom.pos.y << " " << tb.odom.pos.th << " " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
 
-     //   cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
-     cout << delta_time.toSec() << "  " << run_time << endl;
+     cout << endl << "odometry:: " << endl << "velocity:" << endl << " x:" << tb.odom.vel.x <<  endl << " y:" << tb.odom.vel.y << endl << " omega:" << tb.odom.vel.th << std::endl;
     node->publish("cmd_vel",cmd);
     sleep_time.sleep();
   }
