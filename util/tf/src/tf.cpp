@@ -158,7 +158,8 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       //      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
 
       TimeCache* pointer = getFrame(frame);
-      if (pointer == NULL) break;
+      ROS_ASSERT(pointer);
+      //      if (pointer == NULL) break;
 
       try{
         pointer->getData(time, temp);
@@ -195,7 +196,8 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     {
 
       TimeCache* pointer = getFrame(frame);
-      if (pointer == NULL) break;
+      ROS_ASSERT(pointer);
+      //      if (pointer == NULL) break;
 
 
       try{
