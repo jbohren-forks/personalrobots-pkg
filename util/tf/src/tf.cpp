@@ -364,7 +364,7 @@ std::string Transformer::allFramesAsString()
   {
     unsigned int parent_id;
     try{
-      getFrame(counter)->getData(0ULL, temp);
+      getFrame(counter)->getData(0, temp);
       parent_id = temp.parent_frame_id;
     }
     catch (tf::LookupException& ex)
@@ -389,7 +389,7 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
     try{
-      getFrame(counter)->getData(0ULL, temp);
+      getFrame(counter)->getData(0, temp);
     }
     catch (tf::LookupException& ex)
     {

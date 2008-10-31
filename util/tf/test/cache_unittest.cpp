@@ -57,7 +57,7 @@ TEST(TimeCache, Repeatability)
   TransformStorage stor;
   stor.setIdentity();
   
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
   {
     values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     std::stringstream ss;
@@ -68,7 +68,7 @@ TEST(TimeCache, Repeatability)
     
     cache.insertData(stor);
   }
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
 
   {
     cache.getData(i, stor);
@@ -101,11 +101,11 @@ TEST(TimeCache, RepeatabilityReverseInsertOrder)
     ss << values[i];
     stor.frame_id_ = ss.str();
     stor.parent_frame_id = i;
-    stor.stamp_ = (uint64_t)i;
+    stor.stamp_ = i;
     
     cache.insertData(stor);
   }
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
 
   {
     cache.getData(i, stor);
@@ -130,7 +130,7 @@ TEST(TimeCache, RepeatabilityRandomInsertOrder)
 
   TransformStorage stor;
   stor.setIdentity();
-  for ( uint64_t i = 0; i <runs ; i++ )
+  for ( unsigned int i = 0; i <runs ; i++ )
   {
     values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     std::stringstream ss;
@@ -141,7 +141,7 @@ TEST(TimeCache, RepeatabilityRandomInsertOrder)
     
     cache.insertData(stor);
   }
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
 
   {
     cache.getData(i, stor);
@@ -156,7 +156,7 @@ TEST(TimeCache, RepeatabilityRandomInsertOrder)
 
 TEST(TimeCache, ZeroAtFront)
 {
-  uint64_t runs = 100;
+  unsigned int runs = 100;
 
   seed_rand();
   
@@ -166,7 +166,7 @@ TEST(TimeCache, ZeroAtFront)
   TransformStorage stor;
   stor.setIdentity();
   
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
   {
     values[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     std::stringstream ss;
@@ -185,7 +185,7 @@ TEST(TimeCache, ZeroAtFront)
   
 
 
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
 
   {
     cache.getData(i, stor);
@@ -196,7 +196,7 @@ TEST(TimeCache, ZeroAtFront)
     EXPECT_EQ(stor.frame_id_, ss.str());
   }
 
-  cache.getData(0ULL, stor);
+  cache.getData(0, stor);
   EXPECT_EQ(stor.parent_frame_id, runs);
   EXPECT_EQ(stor.stamp_, runs);
   EXPECT_EQ(stor.frame_id_, std::string("HEAD"));
@@ -208,7 +208,7 @@ TEST(TimeCache, ZeroAtFront)
 
 
   //Make sure we get a different value now that a new values is added at the front
-  cache.getData(0ULL, stor);
+  cache.getData(0, stor);
   EXPECT_EQ(stor.parent_frame_id, runs);
   EXPECT_EQ(stor.stamp_, runs+1);
   EXPECT_NE(stor.frame_id_, std::string("HEAD"));
@@ -217,7 +217,7 @@ TEST(TimeCache, ZeroAtFront)
 
 TEST(TimeCache, CartesianInterpolation)
 {
-  uint64_t runs = 100;
+  unsigned int runs = 100;
   double epsilon = 1e-6;
   seed_rand();
   
@@ -226,15 +226,15 @@ TEST(TimeCache, CartesianInterpolation)
   std::vector<double> yvalues(2);
   std::vector<double> zvalues(2);
 
-  uint64_t offset = 200;
+  unsigned int offset = 200;
 
   TransformStorage stor;
   stor.setIdentity();
   
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
   {
 
-    for (uint64_t step = 0; step < 2 ; step++)
+    for (unsigned int step = 0; step < 2 ; step++)
     {
       xvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -269,7 +269,7 @@ TEST(TimeCache, CartesianInterpolation)
 TEST(TimeCache, ReparentingInterpolationProtection)
 {
   double epsilon = 1e-6;
-  uint64_t offset = 555;
+  unsigned int offset = 555;
 
   tf::TimeCache cache;
   std::vector<double> xvalues(2);
@@ -279,7 +279,7 @@ TEST(TimeCache, ReparentingInterpolationProtection)
   TransformStorage stor;
   stor.setIdentity();
 
-  for (uint64_t step = 0; step < 2 ; step++)
+  for (unsigned int step = 0; step < 2 ; step++)
   {
     xvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -319,7 +319,7 @@ TEST(TimeCache, ReparentingInterpolationProtection)
 
 TEST(TimeCache, CartesianExtrapolation)
 {
-  uint64_t runs = 100;
+  unsigned int runs = 100;
   double epsilon = 1e-5;
   seed_rand();
   
@@ -328,15 +328,15 @@ TEST(TimeCache, CartesianExtrapolation)
   std::vector<double> yvalues(2);
   std::vector<double> zvalues(2);
 
-  uint64_t offset = 555;
+  unsigned int offset = 555;
 
   TransformStorage stor;
   stor.setIdentity();
   
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
   {
 
-    for (uint64_t step = 0; step < 2 ; step++)
+    for (unsigned int step = 0; step < 2 ; step++)
     {
       xvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
       yvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -370,13 +370,13 @@ TEST(TimeCache, CartesianExtrapolation)
 TEST(Bullet, Slerp)
 {
 
-  uint64_t runs = 100;
+  unsigned int runs = 100;
   seed_rand();
 
   btQuaternion q1, q2;
   q1.setEuler(0,0,0);
   
-  for (uint64_t i = 0 ; i < runs ; i++)
+  for (unsigned int i = 0 ; i < runs ; i++)
   {
     q2.setEuler(1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX,
                 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX,
@@ -393,7 +393,7 @@ TEST(Bullet, Slerp)
 
 TEST(TimeCache, AngularInterpolation)
 {
-  uint64_t runs = 100;
+  unsigned int runs = 100;
   double epsilon = 1e-6;
   seed_rand();
   
@@ -401,17 +401,17 @@ TEST(TimeCache, AngularInterpolation)
   std::vector<double> yawvalues(2);
   std::vector<double> pitchvalues(2);
   std::vector<double> rollvalues(2);
-  uint64_t offset = 200;
+  unsigned int offset = 200;
 
   std::vector<btQuaternion> quats(2);
 
   TransformStorage stor;
   stor.setIdentity();
   
-  for ( uint64_t i = 1; i < runs ; i++ )
+  for ( unsigned int i = 1; i < runs ; i++ )
   {
 
-    for (uint64_t step = 0; step < 2 ; step++)
+    for (unsigned int step = 0; step < 2 ; step++)
     {
       yawvalues[step] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX / 100.0;
       pitchvalues[step] = 0;//10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;

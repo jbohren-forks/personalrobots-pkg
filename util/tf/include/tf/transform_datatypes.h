@@ -66,7 +66,7 @@ class Stamped : public T{
   std::string frame_id_;
   std::string parent_id_; ///only used for transform
 
-  Stamped() :stamp_ (0ULL),frame_id_ ("NO_ID"), parent_id_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
+  Stamped() :stamp_ (0),frame_id_ ("NO_ID"), parent_id_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
 
   Stamped(const T& input, const ros::Time& timestamp, const std::string & frame_id, const std::string & parent_id = "NOT A TRANSFORM"):
     T (input), stamp_ ( timestamp ), frame_id_ (frame_id), parent_id_(parent_id){ };
