@@ -30,6 +30,7 @@
 
 #include <csignal>
 #include <cstdio>
+#include <cstdlib>
 #include "ipdcmot/ipdcmot.h"
 
 IPDCMOT *mot = NULL;

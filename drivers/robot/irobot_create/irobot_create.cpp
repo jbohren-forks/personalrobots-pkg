@@ -1,5 +1,6 @@
 #include "rosconsole/rosconsole.h"
 #include "irobot_create/irobot_create.h"
+#include <cstdlib>
 
 IRobotCreate::IRobotCreate()
 {

@@ -29,6 +29,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <cstdio>
+#include <cstdlib>
 #include "ipdcmot/ipdcmot.h"
 
 int main(int argc, char **argv)

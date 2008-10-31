@@ -31,6 +31,8 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <csignal>
+#include <cstdint>
+#include <cstdio>
 #include <sicklms-1.0/SickLMS.hh>
 using namespace SickToolbox;
 using namespace std;

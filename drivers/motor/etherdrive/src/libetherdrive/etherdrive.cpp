@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include "etherdrive/etherdrive.h"
+#include <cstring>
 
 EtherDrive::EtherDrive()
 {

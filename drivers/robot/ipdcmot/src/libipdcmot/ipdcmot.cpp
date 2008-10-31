@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <ipdcmot/ipdcmot.h>
 #include <cstdio>
+#include <cstdlib>
 #include <pthread.h>
 #include <errno.h>
 #include <math.h>
