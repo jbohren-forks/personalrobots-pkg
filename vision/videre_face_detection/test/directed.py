@@ -73,6 +73,12 @@ class PeopleTracker:
     self.pub = None
 
 
+################### RECT_TO_CENTER_DIFF #######################
+  def rect_to_center_diff(self, rect):
+    diff = (rect[2]-1)/2.0, (rect[3]-1)/2.0)
+    center = (rect[0]+diff[0], rect[1]+diff[1])
+    return center, diff
+
 ################### GET_FEATURES ##############################
   def get_features(self, frame, target_points, rect):
     full = Image.fromstring("L",frame.size,frame.rawdata)
@@ -85,13 +91,11 @@ class PeopleTracker:
     return [(x-incr+x1,y-incr+y1) for (x1,y1) in results if (incr<x1) and (incr<y1) and (x1<w+incr) and (y1<h+incr)]
 
 ################### MAKE_FACE_MODEL ###########################
-  def make_face_model(self, window, feat_list) :
-    feats_to_center = []
-    (wx,wy,ww,wh) = window
-    wincenter = (wx+(ww-1)/2,wy+(wh-1)/2)
-    for (x,y) in feat_list :
-      feats_to_center.append((wincenter[0]-x,wincenter[1]-y))
-    return feats_to_center
+  def make_face_model(self, wincenter, feat_list) :
+    wc = numpy.array(wincenter)
+    fl = numpy.array(feat_list)
+    feats_to_center = wc-fl
+    return feats_to_center.tolist()
 
 
 #################### MEAN SHIFT ###############################
@@ -212,7 +216,8 @@ class PeopleTracker:
       if not self.current_keyframes :
         self.current_keyframes = [0]
         self.keyframes = [ia]
-        self.feats_to_centers = [self.make_face_model( (x,y,w,h), ia.kp2d )]
+        (cen,diff) = self.rect_to_center_diff((x,y,w,h))
+        self.feats_to_centers = [self.make_face_model( cen, ia.kp2d )]
         self.recent_good_frames = [ia]
         self.recent_good_rects = [[x,y,w,h]]
         self.same_key_rgfs = [True]
@@ -234,14 +239,16 @@ class PeopleTracker:
 
           # Make a new face model, either from a recent good frame, or from the current image
           if not self.same_key_rgfs[iface] :
-            self.feats_to_centers[iface] = self.make_face_model( self.recent_good_rects[iface], self.recent_good_frames[iface].kp2d )
+            (cen, diff) = self.rect_to_center_diff(self.recent_good_rects[iface])
+            self.feats_to_centers[iface] = self.make_face_model( cen, self.recent_good_frames[iface].kp2d )
             self.keyframes[self.current_keyframes[iface]] = self.recent_good_frames[iface]
             
             self.same_key_rgfs[iface] = True
 
           else :
             self.keyframes[self.current_keyframes[iface]] = ia
-            self.feats_to_centers[iface] = self.make_face_model( (x,y,w,h), ia.kp2d )
+            (cen,diff) = self.rect_to_center_diff((x,y,w,h))
+            self.feats_to_centers[iface] = self.make_face_model( cen, ia.kp2d )
             matches = []
             self.same_key_rgfs[iface] = True
 
