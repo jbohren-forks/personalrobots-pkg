@@ -659,6 +659,52 @@ TEST(tf, ListTwoForward)
   
 }
 
+TEST(tf, TransformThrougRoot)
+{
+  unsigned int runs = 4;
+  double epsilon = 1e-6;
+  seed_rand();
+  
+  tf::Transformer mTR(true);
+  std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
+  for ( unsigned int i = 0; i < runs ; i++ )
+  {
+    xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+    zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
+
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "childA",  "my_parent");
+    mTR.setTransform(tranStamped);
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "childB",  "my_parent");
+    mTR.setTransform(tranStamped2);
+  }
+
+  //  std::cout << mTR.allFramesAsString() << std::endl;
+  //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
+
+  for ( unsigned int i = 0; i < runs ; i++ )
+
+  {
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "childA");
+
+    try{
+    Stamped<btTransform> outpose;
+    outpose.setIdentity(); //to make sure things are getting mutated
+    mTR.transformPose("childB",inpose, outpose);
+    EXPECT_NEAR(outpose.getOrigin().x(), 0*xvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().y(), 0*yvalues[i], epsilon);
+    EXPECT_NEAR(outpose.getOrigin().z(), 0*zvalues[i], epsilon);
+    }
+    catch (tf::TransformException & ex)
+    {
+      std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
+      bool exception_improperly_thrown = true;
+      EXPECT_FALSE(exception_improperly_thrown);
+    }
+  }
+  
+}
+
 
 TEST(tf, getParent)
 {

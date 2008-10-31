@@ -150,6 +150,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
 
   unsigned int frame = source_frame;
   unsigned int counter = 0;  //A counter to keep track of how deep we've descended
+  unsigned int last_inverse;
   if (getFrame(frame) == NULL) //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
     throw LookupException("Frame didn't exist");
   while (true)
@@ -164,6 +165,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       }
       catch (tf::LookupException & ex)
       {
+        last_inverse = frame;
         // this is thrown when there is no data
         break;
       }
@@ -266,7 +268,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
 
 
   /* Make sure the end of the search shares a parent. */
-  if (lookupFrameNumber(mTfLs.inverseTransforms.back().frame_id_) != lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_)) /// \todo rethink since the map is actually doing a string comparison inside
+  if (last_forward != last_inverse)
   {
     std::stringstream ss;
     ss<< "No Common Parent, at top of search between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl;
