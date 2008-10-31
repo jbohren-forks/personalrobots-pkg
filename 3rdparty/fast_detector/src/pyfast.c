@@ -3,20 +3,17 @@
 
 PyObject *fast(PyObject *self, PyObject *args)
 {
-    unsigned char *imdata = (unsigned char*)PyString_AsString(PyTuple_GetItem(args,0));
-    int xsize = PyInt_AsLong(PyTuple_GetItem(args, 1));
-    int ysize = PyInt_AsLong(PyTuple_GetItem(args, 2));
-    int threshold = PyInt_AsLong(PyTuple_GetItem(args, 3));
-    int barrier = PyInt_AsLong(PyTuple_GetItem(args, 4));
-    int numcorners, num_nonmax;
+    int imdata_size;
+    char *imdata;
+    int xsize, ysize, threshold, barrier;
+    if (!PyArg_ParseTuple(args, "s#iiii", &imdata, &imdata_size, &xsize, &ysize, &threshold, &barrier))
+        return NULL;
+
+    int numcorners = 0, num_nonmax = 0;
     xy *corners = fast_corner_detect_9(imdata, xsize, ysize, threshold, &numcorners);
 
-#if 1
+
     xy *nm = fast_nonmax(imdata, xsize, ysize, corners, numcorners, barrier, &num_nonmax);
-#else
-    xy *nm = corners;
-    num_nonmax = numcorners;
-#endif
     PyObject *r = PyList_New(num_nonmax);
     int i;
 
@@ -28,10 +25,8 @@ PyObject *fast(PyObject *self, PyObject *args)
     }
     if (corners)
         free(corners);
-#if 0
     if (nm)
         free(nm);
-#endif
 
     return r;
 }
