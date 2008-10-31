@@ -6,8 +6,8 @@
     <param name="robot_x_start" value="0" />
     <param name="robot_y_start" value="0" />
     <param name="robot_th_start" value="0" />
-    <param name="robot_radius" value="0.65" />
-    <param name="dist_penalty" value="0.5" />
+    <param name="robot_radius" value="0.5" />
+    <param name="dist_penalty" value="2.0" />
 
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
