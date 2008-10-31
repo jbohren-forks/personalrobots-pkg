@@ -181,7 +181,7 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
   service_prefix_ = config->Attribute("name");
   
   // Parses subcontroller configuration
-  if(c_->initXml(robot, config))
+  if(!c_->initXml(robot, config))
     return false;
   //suscriptions
   node_->subscribe(service_prefix_ + "/set_command_array", joint_cmds_, &HeadPanTiltControllerNode::setJointCmd, this,1);
@@ -202,7 +202,7 @@ void HeadPanTiltControllerNode::setJointCmd()
 }
 
 bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
-                    robot_srvs::GetJointCmd::response &resp)
+					    robot_srvs::GetJointCmd::response &resp)
 {
   robot_msgs::JointCmd cmd;
   c_->getJointCmd(cmd);
