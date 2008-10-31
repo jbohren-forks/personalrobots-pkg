@@ -6,7 +6,7 @@
          (Mechanism Control, BaseControllerNode, etc...) -->
     <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_prototype1/gazebo/pr2_prototype1.xml&quot;" />
     <!-- assign environment variables for gazebo and startup gazebo with argument containing the world file.  -->
-    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_prototype1.world" respawn="false" output="screen">
+    <node pkg="gazebo" type="gazebo" args="-g -n $(find gazebo_robot_description)/world/robot_prototype1_headless.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
