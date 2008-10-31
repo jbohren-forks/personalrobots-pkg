@@ -60,7 +60,7 @@
 
 // Services
 #include <std_msgs/Float64.h>
-#include <robot_srvs/GetJointCmd.h>
+#include <robot_srvs/GetValue.h>
 
 namespace controller
 {
@@ -86,12 +86,12 @@ public:
    *
    * \param command
    */
-  void setCommand(double command);
+  void setCommand(double cmd);
 
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-   void getCommand(robot_msgs::JointCmd & cmd);
+   void getCommand(double & cmd);
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -135,8 +135,8 @@ public:
   // Topics
   void setCommand();
   //Sevices
-  bool getCommand(robot_srvs::GetJointCmd::request &req,
-		  robot_srvs::GetJointCmd::response &resp);
+  bool getCommand(robot_srvs::GetValue::request &req,
+		  robot_srvs::GetValue::response &resp);
 
 
 private:

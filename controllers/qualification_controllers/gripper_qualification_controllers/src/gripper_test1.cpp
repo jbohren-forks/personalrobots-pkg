@@ -53,7 +53,8 @@ GripperTest1::GripperTest1():
   test_cmd_.name="cmd";
   test_position_.name="position";
   test_time_.name="time";
-
+  state = STOPPED;
+  starting_count = 0;
   velocity_=0;
   initial_time_=0;
   max_effort_=0;
@@ -72,7 +73,7 @@ void GripperTest1::init( double velocity, double max_effort, double time, std::s
   robot_ = robot;
   joint_ = robot->getJointState(name);
   actuator_ = robot->model_->getActuator("gripper_left_motor");
-  
+
   //printf("velocity: %f\n",velocity);
   velocity_=velocity;
   max_effort_=max_effort;
@@ -82,7 +83,7 @@ void GripperTest1::init( double velocity, double max_effort, double time, std::s
 
 bool GripperTest1::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  
+
   assert(robot);
   robot_ = robot;
 
@@ -100,14 +101,14 @@ bool GripperTest1::initXml(mechanism::RobotState *robot, TiXmlElement *config)
     fprintf(stderr, "GripperTest1 could not find joint named \"%s\"\n", joint_name);
     return false;
   }
- 
+
 
   velocity_controller_ = new JointVelocityController();
   velocity_controller_->initXml(robot, config);
-   
+
   TiXmlElement *cd = j->FirstChildElement("controller_defaults");
   if (cd)
-  { 
+  {
     double velocity = atof(cd->Attribute("velocity"));
     double max_effort = atof(cd->Attribute("max_effort"));
     init(velocity, max_effort, robot->hw_->current_time_,j->Attribute("name"), robot);
@@ -125,25 +126,26 @@ bool GripperTest1::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 void GripperTest1::update()
 {
   double time = robot_->hw_->current_time_;
-  
+
   velocity_controller_->update();
-  
-  
+
+
   //fprintf(stderr,"joint_cmd: %f, effort: %f, velocity: %f\n",velocity_controller_->getCommand(),actuator_->state_.last_measured_effort_,joint_->velocity_);
-  
-  enum { STOPPED, STARTING, MOVING, ANALYZING, DONE};
+
   static int state = STOPPED;
   static int starting_count = 0;
   if (state == STOPPED || state == STARTING || state == MOVING)
   {
-    test_effort_.vals[count_] = actuator_->state_.last_measured_effort_;   
+    test_effort_.vals[count_] = actuator_->state_.last_measured_effort_;
     test_velocity_.vals[count_] =joint_->velocity_;
     test_position_.vals[count_] =joint_->position_;
     test_time_.vals[count_] = time;
-    test_cmd_.vals[count_]= velocity_controller_->getCommand();
+    double temp;
+    velocity_controller_->getCommand(temp);
+    test_cmd_.vals[count_] = temp;
     count_++;
-  }  
-  
+  }
+
   switch (state)
   {
   case STOPPED:
@@ -177,24 +179,24 @@ void GripperTest1::update()
     velocity_controller_->setCommand(0.0);
     break;
   }
-  
+
 
 }
 
 void GripperTest1::analysis()
 {
   diagnostic_message_.set_status_size(1);
-  
+
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "GripperTest";
-  
+
   //test passed
   status->level = 0;
   status->message = "OK: Passed.";
-  
+
   ros::node* node;
-  
+
   if ((node = ros::node::instance()) != NULL)
   {
     node->publish("/gripper_test_data", test_effort_);

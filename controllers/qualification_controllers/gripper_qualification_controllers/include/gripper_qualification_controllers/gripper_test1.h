@@ -59,6 +59,7 @@ class GripperTest1 : public Controller
 {
 
 public:
+  enum { STOPPED, STARTING, MOVING, ANALYZING, DONE};
   /*!
    * \brief Default Constructor of the GripperTest1 class.
    *
@@ -79,7 +80,7 @@ public:
   void init( double velocity, double max_effort, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  
+
   /*!
    * \brief Perform the test analysis
    */
@@ -108,14 +109,16 @@ private:
   misc_utils::RealtimePublisher<std_msgs::ChannelFloat32> data_publisher_;
 
   robot_msgs::DiagnosticMessage diagnostic_message_;
-   
+
   std_msgs::ChannelFloat32 test_effort_;
   std_msgs::ChannelFloat32 test_velocity_;
   std_msgs::ChannelFloat32 test_cmd_;
   std_msgs::ChannelFloat32 test_position_;
   std_msgs::ChannelFloat32 test_time_;
-  
-  
+
+  int state;
+  int starting_count;
+
 };
 
 /***************************************************/

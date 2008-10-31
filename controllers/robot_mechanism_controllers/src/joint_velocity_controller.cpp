@@ -108,16 +108,15 @@ std::string JointVelocityController::getJointName()
 }
 
 // Set the joint velocity command
-void JointVelocityController::setCommand(double command)
+void JointVelocityController::setCommand(double cmd)
 {
-  command_ = command;
+  command_ = cmd;
 }
 
 // Return the current velocity command
-void JointVelocityController::getCommand(robot_msgs::JointCmd & cmd)
+void JointVelocityController::getCommand(double  & cmd)
 {
-  cmd.names[0]= joint_state_->joint_->name_;
-  cmd.positions[0] = command_;
+  cmd = command_;
 }
 
 void JointVelocityController::update()
@@ -172,11 +171,11 @@ void JointVelocityControllerNode::setCommand()
   c_->setCommand(cmd_.data);
 }
 
-bool JointVelocityControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
-                                             robot_srvs::GetJointCmd::response &resp)
+bool JointVelocityControllerNode::getCommand(robot_srvs::GetValue::request &req,
+                                             robot_srvs::GetValue::response &resp)
 {
-  robot_msgs::JointCmd cmd;
+  double cmd;
   c_->getCommand(cmd);
-  resp.command = cmd;
+  resp.v = cmd;
   return true;
 }

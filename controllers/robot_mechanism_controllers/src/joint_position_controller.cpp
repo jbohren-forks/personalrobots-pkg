@@ -110,16 +110,15 @@ std::string JointPositionController::getJointName()
 }
 
 // Set the joint position command
-void JointPositionController::setCommand(double command)
+void JointPositionController::setCommand(double cmd)
 {
-  command_ = command;
+  command_ = cmd;
 }
 
 // Return the current position command
-void JointPositionController::getCommand(robot_msgs::JointCmd & cmd)
+void JointPositionController::getCommand(double & cmd)
 {
-  cmd.names[0]= joint_state_->joint_->name_;
-  cmd.positions[0] = command_;
+  cmd = command_;
 }
 
 void JointPositionController::update()
@@ -192,12 +191,12 @@ void JointPositionControllerNode::setCommand()
   c_->setCommand(cmd_.data);
 }
 
-bool JointPositionControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
-                                             robot_srvs::GetJointCmd::response &resp)
+bool JointPositionControllerNode::getCommand(robot_srvs::GetValue::request &req,
+                                             robot_srvs::GetValue::response &resp)
 {
-  robot_msgs::JointCmd cmd;
+  double cmd;
   c_->getCommand(cmd);
-  resp.command = cmd;
+  resp.v = cmd;
   return true;
 }
 

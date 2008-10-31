@@ -86,16 +86,15 @@ std::string JointEffortController::getJointName()
 }
 
 // Set the joint position command
-void JointEffortController::setCommand(double command)
+void JointEffortController::setCommand(double cmd)
 {
-  command_ = command;
+  command_ = cmd;
 }
 
 // Return the current position command
-void JointEffortController::getCommand(robot_msgs::JointCmd & cmd)
+void JointEffortController::getCommand(double & cmd)
 {
-  cmd.names[0]= joint_state_->joint_->name_;
-  cmd.efforts[0] = command_;
+  cmd = command_;
 }
 
 void JointEffortController::update()
@@ -146,12 +145,12 @@ void JointEffortControllerNode::setCommand()
   c_->setCommand(cmd_.data);
 }
 
-bool JointEffortControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
-                                           robot_srvs::GetJointCmd::response &resp)
+bool JointEffortControllerNode::getCommand(robot_srvs::GetValue::request &req,
+                                           robot_srvs::GetValue::response &resp)
 {
-  robot_msgs::JointCmd cmd;
+  double cmd;
   c_->getCommand(cmd);
-  resp.command = cmd;
+  resp.v = cmd;
   return true;
 }
 
