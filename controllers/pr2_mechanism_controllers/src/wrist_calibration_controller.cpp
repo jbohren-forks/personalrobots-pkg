@@ -117,9 +117,14 @@ bool WristCalibrationController::initXml(mechanism::RobotState *robot, TiXmlElem
     return false;
   }
 
-  return
-    vc_flex_.init(robot, flex_joint_name, pid) &&
-    vc_roll_.init(robot, roll_joint_name, pid);
+  if (!vc_flex_.init(robot, flex_joint_name, pid))
+    return false;
+  if (!vc_roll_.init(robot, roll_joint_name, pid))
+    return false;
+
+  fprintf(stderr, "WristCalibrationController initialized!\n");
+
+  return true;
 }
 
 void WristCalibrationController::update()
@@ -130,6 +135,8 @@ void WristCalibrationController::update()
   switch(state_)
   {
   case INITIALIZED:
+    actuator_l_->state_.zero_offset_ = 0;
+    actuator_r_->state_.zero_offset_ = 0;
     vc_flex_.setCommand(0);
     vc_roll_.setCommand(0);
     state_ = BEGINNING;
@@ -172,16 +179,16 @@ void WristCalibrationController::update()
     if (switch_state_ != original_switch_state_)
     {
       if (switch_state_ == true)
-        flex_switch_r_ = actuator_r_->state_.last_calibration_rising_edge_;
+        roll_switch_r_ = actuator_r_->state_.last_calibration_rising_edge_;
       else
-        flex_switch_r_ = actuator_r_->state_.last_calibration_falling_edge_;
+        roll_switch_r_ = actuator_r_->state_.last_calibration_falling_edge_;
 
       // See corresponding comment above.
       double dl = actuator_l_->state_.position_ - prev_actuator_l_position_;
       double dr = actuator_r_->state_.position_ - prev_actuator_r_position_;
-      double k = (flex_switch_r_ - prev_actuator_r_position_) / dr;
+      double k = (roll_switch_r_ - prev_actuator_r_position_) / dr;
       assert(0 <= k && k <= 1);
-      flex_switch_l_ =  k * dl + prev_actuator_l_position_;
+      roll_switch_l_ =  k * dl + prev_actuator_l_position_;
 
 
       //----------------------------------------------------------------------
