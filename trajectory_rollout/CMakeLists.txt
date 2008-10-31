@@ -12,6 +12,7 @@ genmsg()
 
 rospack_add_library(trajectory_rollout src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp)
+target_link_libraries(trajectory_rollout costmap_2d)
 
 rospack_add_executable(governor_node src/map_cell.cpp src/map_grid.cpp src/trajectory_controller.cpp 
     src/trajectory.cpp src/governor_node.cpp)

@@ -6,11 +6,11 @@
   </description>
   <author>Eitan Marder-Eppstein</author>
   <license>BSD</license>
-  <depend package="stl_utils" />
+  <!-- <depend package="stl_utils" /> -->
   <depend package="std_msgs" />
-  <depend package="newmat10" />
-  <depend package="boost" />
-  <depend package="xmlparam" />
+  <!-- <depend package="newmat10" /> -->
+  <!-- <depend package="boost" /> -->
+  <!-- <depend package="xmlparam" /> -->
   <depend package="rosTF" />
   <depend package="rospy" />
   <depend package="costmap_2d" />
