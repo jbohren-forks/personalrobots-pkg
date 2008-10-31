@@ -47,7 +47,7 @@ def point_head_client(pan, tilt):
     head_angles = rospy.Publisher('head_controller/set_command_array', JointCmd)
     rospy.init_node('head_commander', anonymous=True)
     sleep(1)
-    head_angles.publish(JointCmd([pan, tilt],[0.0, 0.0],[0.0, 0.0],['head_pan_joint', 'head_tilt_joint']))
+    head_angles.publish(JointCmd(['head_pan_joint', 'head_tilt_joint'],[0.0,0.0],[pan, tilt],[0.0, 0.0],[0.0, 0.0]))
 
 def point_head_cart_client(x,y,z,frame):
 
