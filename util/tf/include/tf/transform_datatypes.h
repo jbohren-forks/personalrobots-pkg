@@ -66,7 +66,7 @@ class Stamped : public T{
   std::string frame_id_;
   std::string parent_id_; ///only used for transform
 
-  Stamped() :stamp_ (0),frame_id_ ("NO_ID"), parent_id_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
+  Stamped() :stamp_ (0ULL),frame_id_ ("NO_ID"), parent_id_("NOT A TRANSFORM"){}; //Default constructor used only for preallocation
 
   Stamped(const T& input, const ros::Time& timestamp, const std::string & frame_id, const std::string & parent_id = "NOT A TRANSFORM"):
     T (input), stamp_ ( timestamp ), frame_id_ (frame_id), parent_id_(parent_id){ };
@@ -155,9 +155,28 @@ static inline NEWMAT::Matrix transformAsMatrix(const Transform& bt)
 
   double * mat = outMat.Store();
 
-  Quaternion  rotation = bt.getRotation();
+  double mv[12];
+  bt.getBasis().getOpenGLSubMatrix(mv);
+
   Vector3 origin = bt.getOrigin();
 
+  mat[0]  = mv[0];
+  mat[1]  = mv[4];
+  mat[2]  = mv[8];
+  mat[4]  = mv[1];
+  mat[5]  = mv[5];
+  mat[6]  = mv[9];
+  mat[8]  = mv[2];
+  mat[9]  = mv[6];
+  mat[10] = mv[10];
+
+  mat[12]  = mat[13] = mat[14] = 0;
+  mat[3] = origin.x();
+  mat[7] = origin.y();
+  mat[11] = origin.z();
+  mat[15] = 1;
+
+  /*
   // math derived from http://www.j3d.org/matrix_faq/matrfaq_latest.html
   double xx      = rotation.x() * rotation.x();
   double xy      = rotation.x() * rotation.y();
@@ -182,7 +201,7 @@ static inline NEWMAT::Matrix transformAsMatrix(const Transform& bt)
   mat[7] = origin.y();
   mat[11] = origin.z();
   mat[15] = 1;
-
+  */
 
   return outMat;
 };
