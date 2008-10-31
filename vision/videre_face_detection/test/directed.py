@@ -24,6 +24,8 @@ import numpy
 
 import os
 
+DEBUG = True
+
 ################# CLASS IMGADAPTED ##################
 class imgAdapted:
   def __init__(self, i):
@@ -62,9 +64,11 @@ class PeopleTracker:
     self.line_thresh = 10.0
     self.num_scales = 5
     self.feats_to_centers = None
+    self.feats_to_centers_3d = None
     self.good_points_thresh = 0.5
     self.recent_good_frames = None
     self.recent_good_rects = None
+    self.recent_good_rects_3d = None
     self.same_key_rgfs = None
     self.pub = None
 
@@ -91,7 +95,7 @@ class PeopleTracker:
 
 
 #################### MEAN SHIFT ###############################
-  def mean_shift_sparse(self, start_point, window_size, sparse_pred_list, max_iter, eps) :
+  def mean_shift_sparse_old(self, start_point, window_size, sparse_pred_list, max_iter, eps) :
     dpoint = [0,0]
     total_weight = 0
     half_width = (window_size[0]-1)/2.0
@@ -108,7 +112,7 @@ class PeopleTracker:
           dpoint[1] += weight*diffxy[1]
       # If there weren't any predictions in the kernel, return the old point.
       if total_weight == 0 :
-        return (new_point[0]-half_width,new_point[1]-half_height,window_size[0],window_size[1])
+        return new_point
       # Otherwise, move the point
       else :
         dpoint[0] /= total_weight
@@ -117,10 +121,48 @@ class PeopleTracker:
         
       # If the displacement was small, return the point
       if dpoint[0]*dpoint[0]+dpoint[1]*dpoint[1] <= eps*eps :
-        return (new_point[0]-half_width,new_point[1]-half_height,window_size[0],window_size[1])
+        return new_point
 
     # Reached the maximum number of iterations, return
-    return (new_point[0]-half_width,new_point[1]-half_height,window_size[0],window_size[1])
+    return new_point
+
+
+#################### MEAN SHIFT ###############################
+# start_point = Point from which to start tracking.
+# sparse_pred_list = List of non-zero probabilities/predictions. 
+#                    Each prob has the form: [x,y,...] 
+# probs = A weight for each prediction
+# bandwidths = The size of the (square) window around each prediction
+# max_iter = The maximum number of iterations
+# eps = The minimum movement in mm
+  def mean_shift_sparse(self, start_point, sparse_pred_list, probs, bandwidths, max_iter, eps) :
+    total_weight = 0.0
+    new_point = numpy.array(start_point)
+    pred_list = numpy.array(sparse_pred_list)
+    dpoint = numpy.array(0.0*pred_list[0])
+    # For each iteration
+    for iter in range(0,max_iter) :
+      # Add each prediction in the kernel to the displacement
+      for ipred in range(len(pred_list)) :
+        diff = pred_list[ipred]-new_point
+        dist = numpy.dot(diff,diff)
+        if dist < bandwidths[ipred]*bandwidths[ipred]:
+          total_weight += probs[ipred]
+          dpoint += probs[ipred]*diff
+      # If there weren't any predictions in the kernel, return the old point.
+      if total_weight == 0 :
+        return new_point.tolist()
+      # Otherwise, move the point
+      else :
+        dpoint /= total_weight
+        new_point = new_point + dpoint
+        
+      # If the displacement was small, return the point
+      if numpy.dot(dpoint,dpoint) <= eps*eps :
+        return new_point.tolist()
+
+    # Reached the maximum number of iterations, return
+    return new_point.tolist()
 
 
 ################### PARAMETER CALLBACK ########################
@@ -180,9 +222,7 @@ class PeopleTracker:
         # Try matching to the keyframe
         keyframe = self.keyframes[self.current_keyframes[iface]]
         matches = self.vo.temporal_match(keyframe,ia)
-   #     print matches
         sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
-   #     print sadscores
 
         good_matches = [m for m in sadscores if m < self.sad_thresh]
 
@@ -208,9 +248,8 @@ class PeopleTracker:
           # Try matching to the NEW keyframe
           keyframe = self.keyframes[self.current_keyframes[iface]]
           matches = self.vo.temporal_match(keyframe,ia)
-     #     print matches
           sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in matches]
-     #     print sadscores
+
 
           good_matches = [m for m in sadscores if m < self.sad_thresh]
 
@@ -222,15 +261,17 @@ class PeopleTracker:
 
         # Track
         sparse_pred_list = []
+        probs = []
+        bandwidths = []
         for imatch in range(0,len(matches)) :
           if sadscores[imatch] < self.sad_thresh :
             (match1,match2) = matches[imatch]
-            sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_centers[iface][match1][0], ia.kp2d[match2][1]+self.feats_to_centers[iface][match1][1], 1) )  
+            sparse_pred_list.append( (ia.kp2d[match2][0]+self.feats_to_centers[iface][match1][0], ia.kp2d[match2][1]+self.feats_to_centers[iface][match1][1]) ) 
+            probs.append(1.0)
+            bandwidths.append(w)
 
-    #    print("Sparse pred list", sparse_pred_list)
-
-        new_window = self.mean_shift_sparse( (x+(w-1)/2.0,y+(h-1)/2.0), (w,h), sparse_pred_list, 10, 1.0)
-        (nx,ny,nw,nh) = new_window
+        new_window = self.mean_shift_sparse( (x+(w-1)/2.0, y+(h-1)/2.0), sparse_pred_list, probs, bandwidths, 10, 1.0)
+        (nx,ny,nw,nh) = (new_window[0]-(w-1)/2.0, new_window[1]-(h-1)/2.0, w, h)
         # Force the window back into the image.
         dx = max(0,0-nx) + min(0, im.width - nx+nw)
         dy = max(0,0-ny) + min(0, im.height - ny+nh)
@@ -286,7 +327,7 @@ class PeopleTracker:
 
       if self.seq > 0 :
 
-        for (x,y,w) in sparse_pred_list :
+        for (x,y) in sparse_pred_list :
           draw.line((x-1, y-1, x+1, y+1), fill=(0,0,255))
           draw.line((x+1, y-1, x-1, y+1), fill=(0,0,255))
           draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(0,0,255))
@@ -327,7 +368,7 @@ def main(argv) :
 
     num_frames = 0
     start_frame = 1800
-    end_frame = 2300
+    end_frame = 1820
     for topic, msg in rosrecord.logplayer(filename):
       if topic == '/videre/cal_params':
         people_tracker.params(msg)
