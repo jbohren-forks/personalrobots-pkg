@@ -75,7 +75,10 @@ void PhaseSpaceNode::startOwlClient()
 void PhaseSpaceNode::startStreaming()
 {
   // start streaming
-  owlSetInteger(OWL_STREAMING, OWL_ENABLE);
+  owlSetInteger(OWL_STREAMING, OWL_ENABLE) ;
+
+  // Enable Timestamps
+  owlSetInteger(OWL_TIMESTAMP, OWL_ENABLE) ;
 }
 
 bool PhaseSpaceNode::spin()
@@ -86,7 +89,7 @@ bool PhaseSpaceNode::spin()
     PhaseSpaceSnapshot snapshot ;
 
     snapshot.header.frame_id = "phase_space" ;
-    
+
     int n_markers, n_bodies ;
     n_markers = grabMarkers(snapshot) ;
     n_bodies =  grabBodies(snapshot) ;
@@ -108,15 +111,6 @@ int PhaseSpaceNode::grabMarkers(PhaseSpaceSnapshot& snapshot)
   OWLMarker markers[MAX_NUM_MARKERS] ;
 
   int n = owlGetMarkers(markers, MAX_NUM_MARKERS) ;
-
-  int timeVal[3] ;
-  timeVal[0] = 0 ;
-  timeVal[1] = 0 ;
-  timeVal[2] = 0 ;
-  int ntime = owlGetIntegerv(OWL_TIMESTAMP, timeVal) ;
-
-  if (ntime < 0)
-    printf("ERROR: ntime=%i\n", ntime) ;
 
   int err ;
   if((err = owlGetError()) != OWL_NO_ERROR)
@@ -175,8 +169,16 @@ int PhaseSpaceNode::grabBodies(PhaseSpaceSnapshot& snapshot)
 
 void PhaseSpaceNode::grabTime(PhaseSpaceSnapshot& snapshot)
 {
+  int timeVal[3] ;
+  timeVal[0] = 0 ;
+  timeVal[1] = 0 ;
+  timeVal[2] = 0 ;
+  int ntime = owlGetIntegerv(OWL_TIMESTAMP, timeVal) ;
+
+  if (ntime < 0)
+    printf("ERROR: ntime=%i\n", ntime) ;
   
-  
+  snapshot.header.stamp = ros::Time((unsigned int) timeVal[1], (unsigned int) timeVal[2]*1000 ) ;
 }
 
 
@@ -231,6 +233,7 @@ void PhaseSpaceNode::owlPrintError(const char *s, int n)
 void PhaseSpaceNode::dispSnapshot(const PhaseSpaceSnapshot& s)
 {
   printf("rosTF_frame: %s   Frame #%u\n", s.header.frame_id.c_str(), s.frameNum) ;
+  printf("  Time: %lf\n", s.header.stamp.to_double()) ;
   printf("  Markers: %u\n", s.get_markers_size()) ;
   
   unsigned int i = 0 ;
