@@ -78,15 +78,18 @@ public:
     {
       string l = image_msg.images[i].label;
 
-      CvBridge<std_msgs::Image>* cv_bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-
       if (image_msg.images[i].colorspace == std::string("rgb24"))
       {
+        CvBridge<std_msgs::Image>* cv_bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
         IplImage* img;
 
         if (cv_bridge->to_cv(&img))
         {
-          find_calib(img, color_cal);
+          IplImage* img2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
+
+          decompand(img, img2);
+
+          find_calib(img2, color_cal, COLOR_CAL_BGR);
           
           printf("Color calibration:\n");
           for (int i = 0; i < 3; i ++)
@@ -98,16 +101,16 @@ public:
             printf("\n");
           }
 
-          IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
-
-          cvTransform(img, corrected_img, color_cal);
+          IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
+          cvTransform(img2, corrected_img, color_cal);
 
           cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
           cvShowImage("color_rect", corrected_img);
         }
+
+        delete cv_bridge;
       }
     }
-
     cv_mutex.unlock();
   }
 
@@ -134,4 +137,3 @@ int main(int argc, char **argv)
   ros::fini();
   return 0;
 }
-

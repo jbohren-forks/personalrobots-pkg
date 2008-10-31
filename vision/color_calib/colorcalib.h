@@ -37,6 +37,12 @@
 
 #include "opencv/cxcore.h"
 
-bool find_calib(IplImage* img,  CvMat* m);
+static const uint32_t COLOR_CAL_BGR = 1;
+static const uint32_t COLOR_CAL_FLOAT = 1;
+
+float srgb2lrgb(float x);
+float lrgb2srgb(float x);
+void decompand(IplImage* src, IplImage* dst);
+bool find_calib(IplImage* img,  CvMat* m, int flags=0);
 
 #endif
