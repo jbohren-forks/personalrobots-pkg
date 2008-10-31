@@ -539,6 +539,8 @@ TEST(tf, ListOneInverse)
 
     Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "child",  "my_parent");
     mTR.setTransform(tranStamped);
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), 10 + i, "grandchild",  "child");
+    mTR.setTransform(tranStamped2);
   }
 
   //  std::cout << mTR.allFramesAsString() << std::endl;
@@ -552,7 +554,7 @@ TEST(tf, ListOneInverse)
     try{
     Stamped<btTransform> outpose;
     outpose.setIdentity(); //to make sure things are getting mutated
-    mTR.transformPose("child",inpose, outpose);
+    mTR.transformPose("grandchild",inpose, outpose);
     EXPECT_NEAR(outpose.getOrigin().x(), -xvalues[i], epsilon);
     EXPECT_NEAR(outpose.getOrigin().y(), -yvalues[i], epsilon);
     EXPECT_NEAR(outpose.getOrigin().z(), -zvalues[i], epsilon);
