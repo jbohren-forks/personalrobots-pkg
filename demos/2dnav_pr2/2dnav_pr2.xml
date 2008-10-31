@@ -28,7 +28,18 @@
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
-    <include file="$(find highlevel_controllers)/test/launch_world_3d_map.xml"/>
-    <include file="$(find highlevel_controllers)/test/launch_move_base.xml" />
+
+    <param name="world_3d_map/max_publish_frequency" type="double" value="20" /> <!-- Hz -->
+    <param name="world_3d_map/base_laser_range" type="double" value="10.0" /> <!-- Meters -->
+    <param name="world_3d_map/tilt_laser_range" type="double" value="4.0" /> <!-- Meters -->
+    <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.25" /> <!-- percentage (between 0 and 1) -->
+    <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
+    <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
+    <param name="world_3d_map/laser_x_offset" type="double" value=".275" />
+    <node pkg="world_3d_map" type="world_3d_map" args="/robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" respawn="false" /> 
+
+    <param name="costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
+    <param name="move_base_sbpl/controller_frequency" value="20.0" />
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="cloud:=world_3d_map" respawn="false"/>
   </group>
 </launch>
