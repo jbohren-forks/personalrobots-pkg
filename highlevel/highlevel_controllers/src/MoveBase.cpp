@@ -52,7 +52,7 @@ namespace ros {
 	costMap_(NULL),
 	ma_(NULL),
 	usingPointClouds_(false),
-	laserMaxRange_(6.0) {
+	laserMaxRange_(10.0) {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
