@@ -39,6 +39,7 @@
 
 #include "stereolib.h"
 #define inline			// use this for Intel Compiler Debug mode
+#include <stdio.h>
 
 // algorithm requires larger buffers to be passed in
 // using lib fns like "memset" can cause problems (?? not sure -
@@ -850,8 +851,8 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 				  0x08, 0x0, 0x08, 0x0, 0x08, 0x0, 0x08, 0x0};
   const __m128i val_epi16_1    = {0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
 				  0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00};
-  const __m128i val_epi16_2    = {0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
-				  0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+  //  const __m128i val_epi16_2    = {0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
+  //				  0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
 #else
   const __m128i p0xfffffff0 = {0xffffffffffff0000LL, 0xffffffffffffffffLL};
   const __m128i p0x0000000f = {0xffffLL, 0x0LL};
@@ -859,7 +860,7 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
   const __m128i val_epi16_7fff = {0x7fff7fff7fff7fffLL, 0x7fff7fff7fff7fffLL};
   const __m128i val_epi16_8    = {0x0008000800080008LL, 0x0008000800080008LL};
   const __m128i val_epi16_1    = {0x0001000100010001LL, 0x0001000100010001LL};
-  const __m128i val_epi16_2    = {0x0002000200020002LL, 0x0002000200020002LL};
+  //  const __m128i val_epi16_2    = {0x0002000200020002LL, 0x0002000200020002LL};
 #endif
 
   // set up buffers, first align to 16 bytes
@@ -1078,9 +1079,6 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 	      //		  continue;
 	      //		}
 
-	      intv = _mm_xor_si128(intv,intv); // zero - put here because it crashes gcc-4.1 when below
-//	      intv = zeros;
-
 	      // 8 rows at a time
 	      for (k=0; k<8; k++, textpp++) // do 8 values at a time
 		{
@@ -1174,7 +1172,7 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 	      numv = _mm_add_epi16(numv,numv);	
 	      // second bit
 	      temv = _mm_cmpgt_epi16(numv,denv); // 0xffff if n>d
-	      intv = _mm_sub_epi16(intv,temv); // add 1 where n>d
+	      intv = _mm_srli_epi16(temv,15); // add 1 where n>d; use shift because subtraction kills gcc 4.1.x
 	      intv = _mm_slli_epi16(intv,1); // shift left
 	      numv = _mm_subs_epu16(numv,_mm_and_si128(temv,denv)); // sub out denominator
 	      numv = _mm_slli_epi16(numv,1); // shift left (x2)

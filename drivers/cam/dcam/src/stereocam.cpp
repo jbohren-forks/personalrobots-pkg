@@ -54,6 +54,9 @@ using namespace cam;
 StereoCam::StereoCam()
 {
   stIm = new StereoData();
+  buf = NULL;
+  flim = NULL;
+  frim = NULL;
 }
 
 StereoCam::~StereoCam()

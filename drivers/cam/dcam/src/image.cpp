@@ -198,10 +198,8 @@ ImageData::doRectify()
       // set up images 
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 1);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 1);
-      srcIm->imageData = (char*)im;
-      srcIm->imageSize = imWidth*imHeight;
-      dstIm->imageData = (char*)imRect;
-      srcIm->imageSize = imWidth*imHeight;
+      cvSetData(srcIm, im, imWidth);
+      cvSetData(dstIm, imRect, imWidth);
       
       //      printf("rect ptrs: %08x %08x\n", im, imRect);
       //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
@@ -222,12 +220,11 @@ ImageData::doRectify()
       // set up images 
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 3);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 3);
-      srcIm->imageData = (char*)im;
-      srcIm->imageSize = imWidth*imHeight*3;
-      dstIm->imageData = (char*)imRect;
-      srcIm->imageSize = imWidth*imHeight*3;
+      cvSetData(srcIm, imColor, imWidth);
+      cvSetData(dstIm, imRectColor, imWidth);
       
       cvRemap(srcIm,dstIm,mx,my);
+      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
     }
   return true;
 }
