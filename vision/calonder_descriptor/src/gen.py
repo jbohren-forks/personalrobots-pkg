@@ -11,9 +11,11 @@ typedef struct {
 static void
 wrapped_XXX_dealloc(PyObject *self)
 {
-#if %PTR%
   wrapped_XXX_t *pc = (wrapped_XXX_t*)self;
+#if %PTR%
   delete pc->c;
+#else
+  pc->c.~XXX();
 #endif
   PyObject_Del(self);
 }
@@ -78,7 +80,7 @@ PyObject *make_wrapped_XXX(PyObject *self, PyObject *args)
 
 o = {
    'SparseSignature' : { 'meths' : [ 'dump' ] },
-   'BruteForceMatcher' : { 'init' : '<SparseSignature, PyObject *>', 'meths' : ['addSignature', 'findMatch'] }
+   'BruteForceMatcher' : { 'init' : '<SparseSignature, int>', 'meths' : ['addSignature', 'findMatch'] }
 }
 
 import re

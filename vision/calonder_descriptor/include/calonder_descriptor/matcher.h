@@ -30,6 +30,7 @@ public:
 
   int findMatchInWindow(Signature const& signature, CvRect window,
                         float *distance) const;
+  int findMatchPredicated(Signature const& signature, char *predicates, float *distance) const;
 
   // Returns top two matches, useful for ratio test
   int findMatches(Signature const& signature, float *d1, int *second,
@@ -124,6 +125,28 @@ int BruteForceMatcher<Signature, Data>::findMatchInWindow(Signature const& signa
   return match;
 }
 
+template < typename Signature, typename Data >
+inline
+int BruteForceMatcher<Signature, Data>::findMatchPredicated(Signature const& signature,
+                                                            char *predicates,
+                                                            float *distance) const
+{
+  int match = -1;
+  float best_distance = threshold_;
+
+  for (int i = 0; i < (int)signatures_.size(); ++i) {
+    if (predicates[i]) {
+      float next_distance = squaredDistance(signature, signatures_[i]);
+      if (next_distance < best_distance) {
+        best_distance = next_distance;
+        match = i;
+      }
+    }
+  }
+
+  *distance = best_distance;
+  return match;
+}
 template < typename Signature, typename Data >
 inline
 int BruteForceMatcher<Signature, Data>::findMatches(Signature const& signature,

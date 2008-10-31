@@ -1,7 +1,7 @@
 
 typedef struct {
     PyObject_HEAD
-    BruteForceMatcher <SparseSignature, PyObject *>
+    BruteForceMatcher <SparseSignature, int>
 #if 1
     *
 #endif
@@ -11,9 +11,11 @@ typedef struct {
 static void
 wrapped_BruteForceMatcher_dealloc(PyObject *self)
 {
-#if 1
   wrapped_BruteForceMatcher_t *pc = (wrapped_BruteForceMatcher_t*)self;
+#if 1
   delete pc->c;
+#else
+  pc->c.~BruteForceMatcher();
 #endif
   PyObject_Del(self);
 }
@@ -72,7 +74,7 @@ PyObject *make_wrapped_BruteForceMatcher(PyObject *self, PyObject *args)
 {
     wrapped_BruteForceMatcher_t *object = PyObject_NEW(wrapped_BruteForceMatcher_t, &wrapped_BruteForceMatcher_Type);
 #if 1
-    object->c = new BruteForceMatcher <SparseSignature, PyObject *>;
+    object->c = new BruteForceMatcher <SparseSignature, int>;
 #endif
     return (PyObject*)object;
 }
@@ -90,9 +92,11 @@ typedef struct {
 static void
 wrapped_SparseSignature_dealloc(PyObject *self)
 {
-#if 0
   wrapped_SparseSignature_t *pc = (wrapped_SparseSignature_t*)self;
+#if 0
   delete pc->c;
+#else
+  pc->c.~SparseSignature();
 #endif
   PyObject_Del(self);
 }

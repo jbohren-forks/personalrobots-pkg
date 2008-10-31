@@ -39,12 +39,13 @@ class TestDirected(unittest.TestCase):
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
           sigs.append(sig)
-          ma.addSignature(sig, x)
+          ma.addSignature(sig)
 
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
-          self.assert_(i == ma.findMatch(sig))
+          (index, distance) = ma.findMatch(sig)
+          self.assert_(i == index)
 
       testclassifier(kp, im, cl1)
       del cl1

@@ -127,14 +127,14 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
 {
   wrapped_BruteForceMatcher_t *pm = (wrapped_BruteForceMatcher_t*)self;
 
-  PyObject *sig, *tag;
-  if (!PyArg_ParseTuple(args, "OO", &sig, &tag))
+  PyObject *sig;
+  if (!PyArg_ParseTuple(args, "O", &sig))
     return NULL;
 
-  Py_INCREF(tag);
+  // Py_INCREF(tag);
 
   wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
-  pm->c->addSignature(ps->c, tag);
+  pm->c->addSignature(ps->c, 0);
   Py_RETURN_NONE;
 }
 
@@ -143,15 +143,24 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
   wrapped_BruteForceMatcher_t *pm = (wrapped_BruteForceMatcher_t*)self;
 
   PyObject *sig;
-  if (!PyArg_ParseTuple(args, "O", &sig))
+  int predicates_size;
+  char *predicates = NULL;
+
+  if (!PyArg_ParseTuple(args, "O|s#", &sig, &predicates, &predicates_size))
     return NULL;
   wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
 
   float distance;
-  int index = pm->c->findMatch(ps->c, &distance);
-  return PyInt_FromLong(index);
-  PyObject *r = pm->c->getData(index);
-  return r;
+  int index;
+  if (predicates == NULL)
+    index = pm->c->findMatch(ps->c, &distance);
+  else {
+    index = pm->c->findMatchPredicated(ps->c, predicates, &distance);
+  }
+  if (index == -1)
+    Py_RETURN_NONE;
+  else
+    return Py_BuildValue("id", index, distance);
 }
 
 PyObject *wrapped_SparseSignature_dump(PyObject *self, PyObject *args)
