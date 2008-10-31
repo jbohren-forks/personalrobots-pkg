@@ -192,12 +192,12 @@ bool fill_missing_pixel(int x, int y, IplImage *original_d16_c1, IplImage *occup
             vector<float> weights;
             double sum_intensity    = 0;
             double sum_weights      = 0;
-            float size              = pow(.5, 2);
+            float size              = std::pow(.5f, 2);
 
             for (unsigned int i = 0; i < neighbors.size(); i++)
             {
                 CvPoint p = neighbors[i];
-                float weight = exp(-(pow(p.x-x, 2) + pow(p.y-y, 2)) / size);
+                float weight = exp(-(std::pow((float)(p.x-x), 2) + pow((float)(p.y-y), 2)) / size);
                 weight = max((float).01, weight);
                 sum_intensity += weight * ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*p.y))[p.x];
                 sum_weights   += weight;
@@ -356,7 +356,7 @@ unsigned char double2uchar(double n, double maxx, double minn)
 
 double magnitude(CvPoint3D32f p)
 {
-    return pow(pow(p.x, 2.0) + pow(p.y, 2.0) + pow(p.z, 2.0), 0.5);
+  return std::pow(std::pow((double)p.x, 2.0) + std::pow((double)p.y, 2.0) + std::pow((double)p.z, 2.0), 0.5);
 }
 
 synthetic_image image_from_point_cloud(laser_scan &ls, int image_width, int image_height)
