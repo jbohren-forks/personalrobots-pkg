@@ -161,7 +161,7 @@ void HeadPanTiltController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
-  : Controller(), TF(*ros::node::instance(),false, 10000000000ULL, 100000000ULL)
+  : Controller(), TF(*ros::node::instance(),false, 10000000000ULL, 1000000000ULL)
 {
   c_ = new HeadPanTiltController();
   node = ros::node::instance();  
@@ -235,7 +235,8 @@ void HeadPanTiltControllerNode::trackPoint()
   try{
     TF.transformPoint("head_pan",point, pan_point);
   }
-  catch(tf::TransformException){
+  catch(tf::TransformException& ex){
+    ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
   int id = c_->getJointControllerByName("head_pan_joint");
@@ -250,7 +251,8 @@ void HeadPanTiltControllerNode::trackPoint()
   try{
     TF.transformPoint("head_tilt",point,tilt_point);
   }
-  catch(tf::TransformException){
+  catch(tf::TransformException& ex){
+    ROS_WARN("Transform Exception %s", ex.what());
     return;
   }
 
