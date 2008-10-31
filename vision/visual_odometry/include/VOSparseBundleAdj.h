@@ -19,6 +19,7 @@ namespace willow {
 class VOSparseBundleAdj: public PathRecon {
 public:
   /// Record the observation of a tracked point w.r.t.  a frame
+  typedef PathRecon Parent;
   class TrackObserv {
   public:
     TrackObserv(const int fi, const CvPoint3D64f& coord, const int keypointIndex):
@@ -36,8 +37,8 @@ public:
   public:
     typedef deque<TrackObserv> Parent;
     Track(const TrackObserv& obsv0, const TrackObserv& obsv1,
-            const CvPoint3D64f& coord, int frameIndex):
-          mCoordinates(coord)
+            const CvPoint3D64f& coord, int frameIndex, int trackId):
+          mCoordinates(coord), mId(trackId)
         {
           push_back(obsv0);
           push_back(obsv1);
@@ -62,6 +63,8 @@ public:
 
     /// estimated 3D Cartesian coordinates.
     CvPoint3D64f     mCoordinates;
+    /// for debugging analysis
+    int              mId;
   protected:
   };
   /// Book keeping of the tracks.
@@ -152,6 +155,11 @@ public:
   Stat2 mStat2;
   void updateStat2();
 
+  /// returns a reference to the tracks. No ownership passed.
+  const Tracks& getTracks() const {
+    return mTracks;
+  }
+
 protected:
   /// If matched, extend an existing old track.
   /// @return true if a track is matched and extended. False otherwise.
@@ -183,6 +191,9 @@ protected:
 
   /// number of iteration for bundle adjustment.
   int mNumIteration;
+
+  /// unique id of the tracks
+  int mTrackId;
 
 };
 }

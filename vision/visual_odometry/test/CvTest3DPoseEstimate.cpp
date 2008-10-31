@@ -80,6 +80,7 @@ CvTest3DPoseEstimate::CvTest3DPoseEstimate(double Fx, double Fy, double Tx, doub
 
 CvTest3DPoseEstimate::~CvTest3DPoseEstimate()
 {
+  if (mem_storage_) cvReleaseMemStorage(&mem_storage_);
 }
 
 void CvTest3DPoseEstimate::_init(){
@@ -196,19 +197,6 @@ bool CvTest3DPoseEstimate::test() {
   return false;
 }
 
-void CvTest3DPoseEstimate::MyMouseCallback(int event, int x, int y, int flagsm, void* param){
-  CvTest3DPoseEstimate *pe = (CvTest3DPoseEstimate *)param;
-  switch(event) {
-  case CV_EVENT_LBUTTONDBLCLK:
-    if (flagsm & CV_EVENT_FLAG_CTRLKEY) {
-      pe->mStop = true;
-    }
-    break;
-  default:
-    ;
-  }
-}
-
 void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameIndex, WImageBuffer1_b & leftImage, WImageBuffer1_b & rightImage)
 {
     char leftfilename[PATH_MAX];
@@ -225,11 +213,12 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj pathRecon(imgSize);
+  VOSparseBundleAdj sba(imgSize);
+  // PathRecon pathRecon(imgSize);
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  pathRecon.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+  sba.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -237,7 +226,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   string dispimgfmt(".dispmap-%04d.xml");
   int start = 25;
   int end   = 1509;
-  int step  = 99;
+  int step  = 1;
 
   // set up a FileSeq
   FileSeq fileSeq;
@@ -245,7 +234,10 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
-  pathRecon.mVisualizer = new PathRecon::Visualizer(pathRecon.mPoseEstimator);
+  vector<FramePose>* fp = sba.getFramePoses();
+  const VOSparseBundleAdj::Tracks& tracks = sba.getTracks();
+
+  sba.mVisualizer = new VOSparseBundleAdj::Visualizer(sba.mPoseEstimator, *fp, tracks);
 #endif
 
   if (fileSeq.getStartFrame() == false) {
@@ -258,17 +250,17 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
     sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
     getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
 #endif
-    pathRecon.track(fileSeq.mInputImageQueue);
+    sba.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = pathRecon.getFramePoses();
+  vector<FramePose>* framePoses = sba.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
   saveFramePoses(string("Output/indoor1/"), *framePoses);
 
-  pathRecon.printStat();
+  sba.printStat();
 
   CvTestTimer::getTimer().printStat();
   return status;
@@ -329,7 +321,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
   string dispimgfmt(".dispmap-%04d.xml");
-  int start = 0;
+  int start = 25;
   int end   = 1509;
   int step  = 1;
 
@@ -1003,78 +995,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     return status;
 }
 
-void testDeltaStereo() {
-
-  CvStereoCamModel camModel;
-  double du = 3;
-  double disp = 5;
-  double z = 1500;
-
-  double dx = camModel.getDeltaX(du, disp);
-
-  double du0 = camModel.getDeltaU(dx, z);
-
-  double xyzs[30];
-  double uvds[30];
-  CvMat xyzs_ = cvMat(10, 3, CV_64FC1, xyzs);
-  CvMat uvds_ = cvMat(10, 3, CV_64FC1, uvds);
-
-  for (int i=0; i<10; i++) {
-    xyzs[i*3]   = 110*i+4;
-    xyzs[i*3+1] = 1500.;
-    xyzs[i*3+2] = z;
-
-    if (i>0) {
-      double du0 = camModel.getDeltaU(xyzs[i*3] - xyzs[(i-1)*3], z);
-      printf( "delta u0 %d = %f\n", i, du0);
-    }
-  }
-
-  camModel.cartToDisp(xyzs_, uvds_);
-
-  for (int i=1; i<10; i++) {
-    printf("delta u1 %d = %f\n", i, uvds[i*3] - uvds[(i-1)*3]);
-  }
-
-  for (int i=0; i<10; i++) {
-    xyzs[i*3] = 1500.;
-    xyzs[i*3+1]   = 110*i+4;
-    xyzs[i*3+2] = z;
-
-    if (i>0) {
-      double dv0 = camModel.getDeltaV(xyzs[i*3+1] - xyzs[(i-1)*3+1], z);
-      printf( "delta v0 %d = %f\n", i, dv0);
-    }
-  }
-
-  camModel.cartToDisp(xyzs_, uvds_);
-
-  for (int i=1; i<10; i++) {
-    printf("delta v1 %d = %f\n", i, uvds[i*3+1] - uvds[(i-1)*3+1]);
-  }
-
-  for (int i=0; i<10; i++) {
-    xyzs[i*3] = 1500.;
-    xyzs[i*3+1]   = 110*i+4;
-    xyzs[i*3+2] = 150*i+3;
-
-    double d = camModel.getDisparity(xyzs[i*3+2]);
-    printf("disparity 1 %d = %f\n", i, d);
-  }
-
-  camModel.cartToDisp(xyzs_, uvds_);
-
-  for (int i=0; i<10; i++) {
-    printf("disparity 2 %d = %f\n", i, uvds[i*3+2]);
-  }
-
-}
-
-int main() {
-  testDeltaStereo();
-}
-
-int main2(int argc, char **argv){
+int main(int argc, char **argv){
   CvTest3DPoseEstimate test3DPoseEstimate;
 
   if (argc >= 2) {

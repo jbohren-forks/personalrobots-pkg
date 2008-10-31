@@ -222,8 +222,8 @@ bool CvMatUtils::drawLines(
   for (vector<pair<CvPoint3D64f, CvPoint3D64f> >::const_iterator iter = pointPairsInDisp.begin();
   iter != pointPairsInDisp.end(); iter++) {
     const pair<CvPoint3D64f, CvPoint3D64f>& p = *iter;
-    CvPoint p0 = CvMatUtils::disparityToLeftCam(p.first);
-    CvPoint p1 = CvMatUtils::disparityToLeftCam(p.second);
+    CvPoint p0 = CvStereoCamModel::dispToLeftCam(p.first);
+    CvPoint p1 = CvStereoCamModel::dispToLeftCam(p.second);
     int thickness =1;
     cvLine(canvas.Ipl(), p0, p1, CvMatUtils::red, thickness, CV_AA);
   }

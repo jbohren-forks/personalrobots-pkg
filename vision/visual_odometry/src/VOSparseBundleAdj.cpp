@@ -32,9 +32,9 @@ VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize):
   PathRecon(imageSize),
   mSlideWindowSize(DefaultSlideWindowSize),
   mNumFrozenWindows(1),
-  mNumIteration(DefaultNumIteration)
+  mNumIteration(DefaultNumIteration),
+  mTrackId(0)
 {
-  // TODO Auto-generated constructor stub
 
 }
 
@@ -83,11 +83,17 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
+      cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
 
+      cout << mActiveKeyFrames.back()->mFrameIndex << endl;
+
       if (mVisualizer) {
-        ((VOSparseBundleAdj::Visualizer*)mVisualizer)->drawTrack(
-            *mActiveKeyFrames.back());
+        PoseEstFrameEntry* pee = mActiveKeyFrames.back();
+        PoseEstFrameEntry& peef = *pee;
+        cout << pee->mFrameIndex << endl;
+        VOSparseBundleAdj::Visualizer* vis = (VOSparseBundleAdj::Visualizer*)mVisualizer;
+        vis->drawTrack(peef);
       }
     }
     visualize();
@@ -101,12 +107,12 @@ void VOSparseBundleAdj::purgeTracks(int oldtestFrameIndex){
 }
 
 void VOSparseBundleAdj::Tracks::purge(int oldestFrameIndex) {
-  int index = 0;
   for (deque<Track>::iterator iTrack = mTracks.begin();
     iTrack != mTracks.end();
     iTrack++) {
     if (iTrack->lastFrameIndex() < oldestFrameIndex) {
       //  remove the entire track, as it is totally outside of the window
+      printf("erase track %d, len=%d\n", iTrack->mId, iTrack->size());
       mTracks.erase(iTrack);
     } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
 #if 0 // Do not do this as those older frames are used as fixed frames
@@ -118,7 +124,6 @@ void VOSparseBundleAdj::Tracks::purge(int oldestFrameIndex) {
       }
 #endif
     }
-    index++;
   }
 }
 
@@ -169,13 +174,20 @@ bool VOSparseBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
         track.lastFrameIndex() == frame.mLastKeyFrameIndex ) {
       TrackObserv& observ = track.back();
       if (// keypoint index needs to match skip to next track
-          observ.mKeypointIndex == p.first) {
+          observ.mKeypointIndex == p.second) {
         // found a matching track. Extend it.
-        CvPoint3D64f coord = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
-        TrackObserv obsv(frame.mFrameIndex, coord, p.second);
+        CvPoint3D64f coord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
+        CvPoint3D64f coord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
+        TrackObserv obsv(frame.mFrameIndex, coord1, p.first);
 
         track.extend(obsv);
         status = true;
+        printf("extend track %3d => f=%3d, pi=%3d:[%3d, %3d]->f=%3d, pi=%3d:[%3d, %3d]\n",
+            track.mId,
+            frame.mLastKeyFrameIndex, p.second,
+            (int)(coord0.x+.5), (int)(coord0.y+.5),
+            frame.mFrameIndex,        p.first,
+            (int)(coord1.x+.5), (int)(coord1.y+.5));
         break;
       }
     }
@@ -189,16 +201,23 @@ bool VOSparseBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
   CvPoint3D64f dispCoord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
   CvPoint3D64f dispCoord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
-  TrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.first);
-  TrackObserv obsv1(frame.mFrameIndex, dispCoord1, p.second);
+  TrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.second);
+  TrackObserv obsv1(frame.mFrameIndex,        dispCoord1, p.first);
   // initial estimate of the position of the 3d point in Cartesian coord.
   CvMat disp1;
   cvGetRow(frame.mInliers1, &disp1, inlierIndex);
   CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
   CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
   dispToGlobal(disp1, frame.mGlobalTransform, _cartCoord1);
-  Track newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex);
+  Track newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
   tracks.mTracks.push_back(newtrack);
+
+  int trackId = mTrackId-1;
+  printf("add new track %3d => %3d, %3d:[%8.2f, %8.2f, %8.2f]\n", trackId, inlierIndex, inlier,
+      cartCoord1.x, cartCoord1.y, cartCoord1.z);
+  printf("f=%3d, pi=%3d: [%3d, %3d], f=%3d, pi=%3d: [%3d, %3d]\n",
+      frame.mLastKeyFrameIndex, p.second,  (int)(dispCoord0.x+.5), (int)(dispCoord0.y+.5),
+      frame.mFrameIndex,        p.first,   (int)(dispCoord1.x+.5), (int)(dispCoord1.y+.5));
 
   return status;
 }
@@ -233,8 +252,11 @@ void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntr
     }
 
     int thickness = 1;
+    int i=0;
     deque<TrackObserv>::const_iterator iObsv = track.begin();
-    CvPoint pt0 = CvMatUtils::disparityToLeftCam(iObsv->mDispCoord);
+    CvPoint pt0 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
+    printf("track %3d, len=%3d\n", track.mId, track.size());
+    printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
     CvScalar color;
     if (iObsv->mFrameIndex < slideWindowFront) {
       color = colorFixedFrame;
@@ -242,7 +264,7 @@ void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntr
       color = colorFreeFrame;
     }
     for (iObsv++; iObsv != track.end(); iObsv++) {
-      CvPoint pt1 = CvMatUtils::disparityToLeftCam(iObsv->mDispCoord);
+      CvPoint pt1 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
       cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
       if (iObsv->mFrameIndex < slideWindowFront) {
         color = colorFixedFrame;
@@ -250,6 +272,7 @@ void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntr
         color = colorFreeFrame;
       }
       pt0 = pt1;
+      printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
     }
   }
 }

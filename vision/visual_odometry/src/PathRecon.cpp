@@ -88,9 +88,11 @@ void PathRecon::_init() {
   mMinNumInliers = 25;
   // end setting up for harris corner and keypoint ncc matcher
 
+#if 0 // delete this. must initialize from outside
   delete mVisualizer;
 #if DISPLAY
 	mVisualizer = new Visualizer(mPoseEstimator);
+#endif
 #endif
 
   int maxDisp = (int)(mPoseEstimator.getDisparity(400));// the closest point we care is at least 400 mm away

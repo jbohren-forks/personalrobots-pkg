@@ -78,24 +78,6 @@ public:
     // the unit of disp is 1/16 of a pixel - mDisparityUnitInPixels
     return CV_IMAGE_ELEM(dispMap.Ipl(), int16_t, pt.y, pt.x)/disparityUnitInPixels;
   }
-  /// Convert disparity coordinate into pixel location in left cam CvPoint
-  static inline CvPoint disparityToLeftCam(
-      /// coordinate in disparity coordinates
-      const CvPoint3D64f& dispCoord) {
-    return cvPoint(
-        (int)std::floor(dispCoord.x + .5),
-        (int)std::floor(dispCoord.y + .5)
-    );
-  }
-  /// Convert disparity coordinate into pixel location in left cam CvPoint
-  static inline CvPoint disparityToRightCam(
-      /// coordinate in disparity coordinates
-      const CvPoint3D64f& dispCoord) {
-    return cvPoint(
-        (int)std::floor(dispCoord.x + .5),
-        (int)std::floor(dispCoord.y - dispCoord.z + .5)
-    );
-  }
 
   static CvMat* dispMapToMask(const WImage1_16s& dispMap);
 
