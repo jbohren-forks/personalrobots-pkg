@@ -37,7 +37,7 @@
 #include <ros/node.h>
 
 #include <mechanism_model/controller.h>
-#include <robot_mechanism_controllers/joint_position_controller.h>
+#include <robot_mechanism_controllers/joint_position_smoothing_controller.h>
 
 #include <misc_utils/realtime_publisher.h>
 
@@ -192,7 +192,7 @@ private:
 
 
   mechanism::JointState* joint_; /*!< Joint we're controlling>*/
-  JointPositionController joint_position_controller_; /*!< Internal PID controller>*/
+  JointPositionSmoothController joint_position_controller_; /*!< Internal PID controller>*/
   double last_time_; /*!< Last time stamp of update> */
   double command_; /*!< Last commanded position> */
   mechanism::RobotState *robot_; /*!< Pointer to robot structure>*/
