@@ -1,0 +1,6 @@
+<launch>
+  <machine name="xenomai" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="two" address="prf2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
+  <machine name="three" address="prf3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="four"  address="prf4" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+</launch>
