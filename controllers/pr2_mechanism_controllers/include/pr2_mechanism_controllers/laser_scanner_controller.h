@@ -227,8 +227,6 @@ public:
    */
   ~LaserScannerControllerNode();
 
-  double getMeasuredPosition();
-
   void update();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
@@ -237,21 +235,13 @@ public:
   bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
                   robot_mechanism_controllers::SetCommand::response &resp);
 
-  bool getCommand(robot_mechanism_controllers::GetCommand::request &req,
-                  robot_mechanism_controllers::GetCommand::response &resp);
-
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                 robot_mechanism_controllers::GetActual::response &resp);
 
   bool setProfileCall(pr2_mechanism_controllers::SetProfile::request &req,
                       pr2_mechanism_controllers::SetProfile::response &resp);
 
-  void setCommand(double command);
 
   void setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements=0, double offset=0.0);
 
-  double getCommand();
-  
 private:
   LaserScannerController *c_;
   /*!

@@ -41,14 +41,13 @@
     This class closes the loop around positon using
     a pid loop.
 
-    Example config:
+    Example config:<br>
 
-    <controller type="JointPositionController" name="controller_name" topic="a_topic">
-      <joint name="head_tilt_joint">
-        <pid p="1.0" i="0.0" d="3.0" iClamp="0.0" />
-      </joint>
-    </controller>
-
+    <controller type="JointPositionController" name="controller_name" topic="a_topic"><br>
+      <joint name="head_tilt_joint"><br>
+        <pid p="1.0" i="0.0" d="3.0" iClamp="0.0" /><br>
+      </joint><br>
+    </controller><br>
 */
 /***************************************************/
 
@@ -57,12 +56,11 @@
 #include <mechanism_model/controller.h>
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
+#include "misc_utils/subscription_guard.h"
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetActual.h>
-
-#include <robot_mechanism_controllers/SingleJointPosCmd.h>
+#include <std_msgs/Float64.h>
+#include <robot_srvs/GetJointCmd.h>
 
 namespace controller
 {
@@ -70,27 +68,18 @@ namespace controller
 class JointPositionController : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor of the JointPositionController class.
-   *
-   */
-  JointPositionController();
 
-  /*!
-   * \brief Destructor of the JointPositionController class.
-   */
+  JointPositionController();
   ~JointPositionController();
 
-  /*!
+ /*!
    * \brief Functional way to initialize limits and gains.
-   * \param p_gain Proportional gain.
-   * \param i_gain Integral gain.
-   * \param d_gain Derivative gain.
-   * \param windup Intergral limit.
-   * \param time The current hardware time.
-   * \param *joint The joint that is being controlled.
+   * \param pid Pid gain values.
+   * \param joint_name Name of joint we want to control.
+   * \param *robot The robot.
    */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const std::string &joint_name,const control_toolbox::Pid &pid);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -102,18 +91,7 @@ public:
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-  double getCommand();
-
-  /*!
-   * \brief Read the torque of the motor
-   */
-  double getMeasuredPosition();
-
-  /*!
-   * \brief Get latest time..
-   */
-  double getTime();
-
+   void getCommand(robot_msgs::JointCmd & cmd);
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -121,20 +99,17 @@ public:
   virtual void update();
 
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
-
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
   std::string getJointName();
-  mechanism::JointState *joint_state_;  /**< Joint we're controlling. */
-private:
-  
-  mechanism::RobotState *robot_;  /**< Pointer to robot structure. */
-  control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
-  double last_time_;         /**< Last time stamp of update. */
-  double command_;           /**< Last commanded position. */
+  mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
 
-  double smoothed_error_; /** */
-  double smoothing_factor_;
+private:
+
+  mechanism::RobotState *robot_;              /**< Pointer to robot structure. */
+  control_toolbox::Pid pid_controller_;       /**< Internal PID controller. */
+  double last_time_;                          /**< Last time stamp of update. */
+  double command_;                            /**< Last commanded position. */
 
 };
 
@@ -144,71 +119,40 @@ private:
 
     This class closes the loop around positon using
     a pid loop.
-
-
 */
 /***************************************************/
 
 class JointPositionControllerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
-  JointPositionControllerNode();
 
-  /*!
-   * \brief Destructor
-   */
+  JointPositionControllerNode();
   ~JointPositionControllerNode();
 
   void update();
-
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
-  void setCommand(double command);
+  // Topics
+  void setCommand();
+  //Sevices
+  bool getCommand(robot_srvs::GetJointCmd::request &req,
+		  robot_srvs::GetJointCmd::response &resp);
 
-  double getCommand();
-
-  double getMeasuredPosition();
-
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                 robot_mechanism_controllers::GetActual::response &resp);
-
-  /*!
-   * \brief ROS topic callback
-   */
-  void setJointPosSingle();
 
 private:
-  robot_mechanism_controllers::SingleJointPosCmd msg_;   //The message used by the ROS callback
-  JointPositionController *c_;
 
-  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
-  
-  /*!
-   * \brief service prefix
-   */
-  std::string service_prefix_;
-
-  /*!
-   * \brief publish topic name
-   */
-  std::string topic_name_;
-  
-  /*!
-   * \brief xml pointer to ros topic name
-   */
-  TiXmlElement * ros_cb_;
-
-  /*!
-   * \brief A pointer to ros node
-   */
+  //node stuff
+  std::string service_prefix_;                 /**< The name of the controller. */
   ros::node *node_;
+  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
+  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
+
+  //msgs
+  std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
+
+  //controller
+  JointPositionController *c_;                 /**< The controller. */
+
 };
 }
 

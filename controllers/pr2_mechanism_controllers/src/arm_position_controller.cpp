@@ -213,7 +213,7 @@ void ArmPositionController::checkForGoalAchieved_(void)
 {
   goal_achieved_ = true;
   for(unsigned int i=0;i<goals_rt_.size();++i)
-    goal_achieved_=goal_achieved_&&(error_margins_[i]<=0||std::abs(joint_position_controllers_[i]->getMeasuredPosition()-goals_rt_[i])<error_margins_[i]);
+    goal_achieved_=goal_achieved_&&(error_margins_[i]<=0||std::abs(joint_position_controllers_[i]->joint_state_->position_-goals_rt_[i])<error_margins_[i]);
 }
 
 

@@ -41,21 +41,24 @@
     This class basically passes the commanded effort
     down through the transmissions and safety code.
 
-    <controller type="JointEffortController" name="controller_name">
-      <joint name="joint_to_control" />
-    </controller>
+    Example config:<br>
+
+    <controller type="JointEffortController" name="controller_name"><br>
+      <joint name="joint_to_control" /><br>
+    </controller><br>
 
 */
 /***************************************************/
 
-
 #include <ros/node.h>
 #include <mechanism_model/controller.h>
 #include "misc_utils/advertised_service_guard.h"
+#include "misc_utils/subscription_guard.h"
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetActual.h>
+#include <std_msgs/Float64.h>
+#include <robot_srvs/GetJointCmd.h>
+
 
 namespace controller
 {
@@ -63,23 +66,17 @@ namespace controller
 class JointEffortController : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor of the JointEffortController class.
-   *
-   */
+
   JointEffortController();
-
-  /*!
-   * \brief Destructor of the JointEffortController class.
-   */
   ~JointEffortController();
-
   /*!
    * \brief Functional way to initialize limits and gains.
-   *
+   * \param pid Pid gain values.
+   * \param joint_name Name of joint we want to control.
+   * \param *robot The robot.
    */
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
-
+  bool init(mechanism::RobotState *robot, const std::string &joint_name);
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
    *
@@ -90,17 +87,7 @@ public:
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-  double getCommand();
-
-  /*!
-   * \brief Read the effort of the joint
-   */
-  double getMeasuredEffort();
-
-  /*!
-   * \brief Get latest time..
-   */
-  double getTime();
+  void getCommand(robot_msgs::JointCmd & cmd);
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -109,12 +96,11 @@ public:
   virtual void update();
 
   std::string getJointName();
-
-  mechanism::JointState *joint_; /**< Joint we're controlling. */
+  mechanism::JointState *joint_state_;     /**< Joint we're controlling. */
 
 private:
-  mechanism::RobotState *robot_; /**< Pointer to robot structure. */
-  double command_;          /**< Last commanded position. */
+  mechanism::RobotState *robot_;           /**< Pointer to robot structure. */
+  double command_;                         /**< Last commanded effort. */
 };
 
 /***************************************************/
@@ -130,31 +116,32 @@ private:
 class JointEffortControllerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
-  JointEffortControllerNode();
 
-  /*!
-   * \brief Destructor
-   */
+  JointEffortControllerNode();
   ~JointEffortControllerNode();
 
   void update();
-
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
+  // Topics
+  void setCommand();
   // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
-
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                  robot_mechanism_controllers::GetActual::response &resp);
+  bool getCommand(robot_srvs::GetJointCmd::request &req,
+		  robot_srvs::GetJointCmd::response &resp);
 
 private:
-  JointEffortController *c_;
-  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
+ //node stuff
+  std::string service_prefix_;                 /**< The name of the controller. */
+  ros::node *node_;
+  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
+  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
+
+  //msgs
+  std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
+
+  //controller
+  JointEffortController *c_;                 /**< The controller. */
+
 };
 }
 

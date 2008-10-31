@@ -165,18 +165,10 @@ class HeadPanTiltControllerNode : public Controller
 {
   public:
     
-    /*!
-     * \brief Default Constructor
-     */
     HeadPanTiltControllerNode();
-
-    /*!
-     * \brief Destructor
-     */
     ~HeadPanTiltControllerNode();
 
     void update();
-
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
     /*!
@@ -200,13 +192,24 @@ class HeadPanTiltControllerNode : public Controller
      * \param track_point_ (header, point)
      */
     void trackPoint();
+
   private:
-    std_msgs::PointStamped track_point_; /**< The point from the subscription. */
-    robot_msgs::JointCmd joint_cmds_;    /**< The joint commands from the subscription.*/
-    HeadPanTiltController *c_;           /**< The controller. */
-    std::string service_prefix;          /**< The service name. */
-    ros::node *node;                     /**< The node. */
-    tf::TransformListener TF;            /**< The transform for converting from point to head and tilt frames. */
+
+    //node stuff
+    std::string service_prefix_;                  /**< The service name. */
+    ros::node *node_;                             /**< The node. */
+    AdvertisedServiceGuard guard_get_command_array_;   /**< Makes sure the advertise goes down neatly. */
+    SubscriptionGuard guard_set_command_array_ , guard_track_point_;        /**< Makes sure the subscription goes down neatly. */
+
+    //msgs 
+    std_msgs::PointStamped track_point_;         /**< The point from the subscription. */
+    robot_msgs::JointCmd joint_cmds_;            /**< The joint commands from the subscription.*/
+
+    //controller
+    HeadPanTiltController *c_;                   /**< The controller. */
+
+    //tf
+    tf::TransformListener TF;                    /**< The transform for converting from point to head and tilt frames. */
 
 };
 }

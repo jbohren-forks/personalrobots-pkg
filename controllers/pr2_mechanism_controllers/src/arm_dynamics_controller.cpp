@@ -205,18 +205,18 @@ void ArmDynamicsController::computeControlTorque(const double &time)
 
   for(unsigned int i=0; i < num_joints_; ++i)
   {
-    kdl_q(i) = joint_effort_controllers_[i]->joint_->position_;     
-  }  
+    kdl_q(i) = joint_effort_controllers_[i]->joint_state_->position_;
+  }
   arm_chain_->computeGravityTerms(kdl_q,gravity_torque_);
 
   for(unsigned int i=0; i < num_joints_; ++i)
   {
     command = goals_rt_[i];
-    actual = joint_effort_controllers_[i]->joint_->position_;
-    j_type = joint_effort_controllers_[i]->joint_->joint_->type_;
+    actual = joint_effort_controllers_[i]->joint_state_->position_;
+    j_type = joint_effort_controllers_[i]->joint_state_->joint_->type_;
     if(j_type == mechanism::JOINT_ROTARY)
     {
-      if(!math_utils::shortest_angular_distance_with_limits(command, actual, joint_effort_controllers_[i]->joint_->joint_->joint_limit_min_, joint_effort_controllers_[i]->joint_->joint_->joint_limit_max_,error))
+      if(!math_utils::shortest_angular_distance_with_limits(command, actual, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_max_,error))
         error = 0;
     }
     else if(j_type == mechanism::JOINT_CONTINUOUS)
@@ -295,7 +295,7 @@ bool ArmDynamicsControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
     j = j->NextSiblingElement("elem");
   }
 
-  
+
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
   {

@@ -32,9 +32,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 #include <algorithm>
-
 #include <pr2_mechanism_controllers/laser_scanner_controller.h>
-
 #include <math_utils/angles.h>
 
 using namespace std;
@@ -507,11 +505,6 @@ void LaserScannerControllerNode::update()
   }
 }
 
-// Return the measured joint position
-double LaserScannerControllerNode::getMeasuredPosition()
-{
-  return c_->getMeasuredPosition();
-}
 
 bool LaserScannerControllerNode::setCommand(
   robot_mechanism_controllers::SetCommand::request &req,
@@ -541,14 +534,6 @@ bool LaserScannerControllerNode::setCommand(
   return true;
 }
 
-bool LaserScannerControllerNode::getCommand(
-  robot_mechanism_controllers::GetCommand::request &req,
-  robot_mechanism_controllers::GetCommand::response &resp)
-{
-  resp.command = c_->getCommand();
-
-  return true;
-}
 
 bool LaserScannerControllerNode::setProfileCall(
   pr2_mechanism_controllers::SetProfile::request &req,
@@ -568,9 +553,8 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
   if (!c_->initXml(robot, config))
     return false;
   node_->advertise_service(service_prefix_ + "/set_command", &LaserScannerControllerNode::setCommand, this);
-  node_->advertise_service(service_prefix_ + "/get_command", &LaserScannerControllerNode::getCommand, this);
   node_->advertise_service(service_prefix_ + "/set_profile", &LaserScannerControllerNode::setProfileCall, this);
-  //node_->advertise<pr2_mechanism_controllers::LaserScannerSignal>(service_prefix_ + "/laser_scanner_signal", 1) ;
+
 
   if (publisher_ != NULL)               // Make sure that we don't memory leak if initXml gets called twice
     delete publisher_ ;
@@ -578,19 +562,7 @@ bool LaserScannerControllerNode::initXml(mechanism::RobotState *robot, TiXmlElem
 
   return true;
 }
-bool LaserScannerControllerNode::getActual(
-  robot_mechanism_controllers::GetActual::request &req,
-  robot_mechanism_controllers::GetActual::response &resp)
-{
-  resp.command = c_->getMeasuredPosition();
-  resp.time = c_->getTime();
-  return true;
-}
 
-void LaserScannerControllerNode::setCommand(double command)
-{
-  c_->setCommand(command);
-}
 
 void LaserScannerControllerNode::setProfile(LaserScannerController::LaserControllerMode profile, double period, double amplitude, int num_elements, double offset)
 {
@@ -615,11 +587,6 @@ void LaserScannerControllerNode::setProfile(LaserScannerController::LaserControl
   }
 }
 
-// Return the current position command
-double LaserScannerControllerNode::getCommand()
-{
-  return c_->getCommand();
-}
 
 
 

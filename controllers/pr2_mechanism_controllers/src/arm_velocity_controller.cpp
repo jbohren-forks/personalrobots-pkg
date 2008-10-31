@@ -138,7 +138,7 @@ void ArmVelocityController::getCurrentConfiguration(std::vector<double> &vec)
   assert(vec.size() == joint_velocity_controllers_.size());
   for(unsigned int i=0; i<joint_velocity_controllers_.size(); ++i)
   {
-    vec[i] = joint_velocity_controllers_[i]->getMeasuredVelocity();
+    vec[i] = joint_velocity_controllers_[i]->joint_state_->velocity_;
   }
   arm_controller_lock_.unlock();
 }

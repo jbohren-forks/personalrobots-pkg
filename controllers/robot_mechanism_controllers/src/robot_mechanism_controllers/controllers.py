@@ -27,10 +27,10 @@ def set_controller_vector(controller, command):
     resp = s(Vector3(*command))
 
 def get_controller(controller):
-    rospy.wait_for_service(controller + '/get_actual')
-    s = rospy.ServiceProxy(controller + '/get_actual', GetActual)
-    resp = s.call(GetActualRequest())
-    print str(resp.time) + ": " + str(resp.command)
+    rospy.wait_for_service(controller + '/get_command')
+    s = rospy.ServiceProxy(controller + '/get_command', JointCmd)
+    resp = s.call(JointCmdRequest())
+    print str(resp.name) + ": " + str(resp.positions)+ ": " + str(resp.velocity)
 
 def get_controller_vector(controller):
     rospy.wait_for_service(controller + '/get_actual')

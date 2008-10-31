@@ -353,14 +353,6 @@ bool LaserScannerVelocityControllerNode::setProfileCall(double upper_turn_around
   return true;
 }
 
-bool LaserScannerVelocityControllerNode::getActual(
-  robot_mechanism_controllers::GetActual::request &req,
-  robot_mechanism_controllers::GetActual::response &resp)
-{
-  resp.command = c_->getMeasuredPosition();
-  resp.time = c_->getTime();
-  return true;
-}
 
 void LaserScannerVelocityControllerNode::setCommand(double command)
 {

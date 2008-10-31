@@ -186,12 +186,7 @@ public:
 
   bool getPosition(robot_mechanism_controllers::GetPosition::request &req,
                    robot_mechanism_controllers::GetPosition::response &resp);
- /*!
-   * \brief Send velocity command
-   */
-
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                 robot_mechanism_controllers::GetActual::response &resp);
+ 
   /*!
    * \brief Send velocity command
    */

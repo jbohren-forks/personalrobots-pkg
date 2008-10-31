@@ -39,38 +39,50 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointEffortController)
 
 JointEffortController::JointEffortController()
+: joint_state_(NULL), robot_(NULL), command_(0)
 {
-  robot_ = NULL;
-  joint_ = NULL;
-
-  command_ = 0;
 }
 
 JointEffortController::~JointEffortController()
 {
 }
-
-bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool JointEffortController::init(mechanism::RobotState *robot, const std::string &joint_name)
 {
   assert(robot);
   robot_ = robot;
 
-  TiXmlElement *j = config->FirstChildElement("joint");
-  if (!j)
+  joint_state_ = robot_->getJointState(joint_name);
+  if (!joint_state_)
   {
-    fprintf(stderr, "JointEffortController was not given a joint\n");
-    return false;
-  }
-
-  const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
-  if (!joint_)
-  {
-    fprintf(stderr, "JointEffortController could not find joint named \"%s\"\n", joint_name);
+    fprintf(stderr, "JointEffortController could not find joint named \"%s\"\n",
+            joint_name.c_str());
     return false;
   }
 
   return true;
+}
+
+bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+{
+  assert(robot);
+
+  TiXmlElement *j = config->FirstChildElement("joint");
+  if (!j)
+  {
+    fprintf(stderr, "JointPositionController was not given a joint\n");
+    return false;
+  }
+
+  const char *jn = j->Attribute("name");
+  std::string joint_name = jn ? jn : "";
+
+  return init(robot, joint_name);
+
+}
+
+std::string JointEffortController::getJointName()
+{
+  return joint_state_->joint_->name_;
 }
 
 // Set the joint position command
@@ -80,36 +92,23 @@ void JointEffortController::setCommand(double command)
 }
 
 // Return the current position command
-double JointEffortController::getCommand()
+void JointEffortController::getCommand(robot_msgs::JointCmd & cmd)
 {
-  return command_;
-}
-
-// Return the measured joint position
-double JointEffortController::getMeasuredEffort()
-{
-  return joint_->applied_effort_;
-}
-
-double JointEffortController::getTime()
-{
-  return robot_->hw_->current_time_;
+  cmd.names[0]= joint_state_->joint_->name_;
+  cmd.efforts[0] = command_;
 }
 
 void JointEffortController::update()
 {
 
-  joint_->commanded_effort_ = command_;
-}
-
-std::string JointEffortController::getJointName()
-{
-  return joint_->joint_->name_;
+  joint_state_->commanded_effort_ = command_;
 }
 
 
+//------ Joint Effort controller node --------
 ROS_REGISTER_CONTROLLER(JointEffortControllerNode)
-JointEffortControllerNode::JointEffortControllerNode()
+
+JointEffortControllerNode::JointEffortControllerNode(): node_(ros::node::instance())
 {
   c_ = new JointEffortController();
 }
@@ -124,42 +123,35 @@ void JointEffortControllerNode::update()
   c_->update();
 }
 
-bool JointEffortControllerNode::setCommand(
-  robot_mechanism_controllers::SetCommand::request &req,
-  robot_mechanism_controllers::SetCommand::response &resp)
-{
-  c_->setCommand(req.command);
-  resp.command = c_->getCommand();
-
-  return true;
-}
-
-bool JointEffortControllerNode::getActual(
-  robot_mechanism_controllers::GetActual::request &req,
-  robot_mechanism_controllers::GetActual::response &resp)
-{
-  resp.command = c_->getMeasuredEffort();
-  resp.time = c_->getTime();
-  return true;
-}
-
 bool JointEffortControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
+  assert(node_);
+  service_prefix_ = config->Attribute("name");
 
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "")
-  {
-    fprintf(stderr, "No topic given to JointEffortControllerNode\n");
-    return false;
-  }
-
+  // Parses subcontroller configuration
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(topic + "/set_command", &JointEffortControllerNode::setCommand, this);
-  guard_set_command_.set(topic + "/set_command");
-  node->advertise_service(topic + "/get_actual", &JointEffortControllerNode::getActual, this);
-  guard_get_actual_.set(topic + "/get_actual");
+  //subscriptions
+  node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointEffortControllerNode::setCommand, this, 1);
+  guard_set_command_.set(service_prefix_ + "/set_command");
+  //services
+  node_->advertise_service(service_prefix_ + "/get_command", &JointEffortControllerNode::getCommand, this);
+  guard_get_command_.set(service_prefix_ + "/get_command");
+
+  return true;
+}
+
+void JointEffortControllerNode::setCommand()
+{
+  c_->setCommand(cmd_.data);
+}
+
+bool JointEffortControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
+                                           robot_srvs::GetJointCmd::response &resp)
+{
+  robot_msgs::JointCmd cmd;
+  c_->getCommand(cmd);
+  resp.command = cmd;
   return true;
 }
 

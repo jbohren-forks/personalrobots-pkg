@@ -97,7 +97,6 @@ void HeadPanTiltController::setJointCmd(const std::vector<double> &j_values, con
   }
 }
 
-
 void HeadPanTiltController::getJointCmd(robot_msgs::JointCmd & cmd) const
 {
   const unsigned int n = joint_position_controllers_.size();
@@ -161,20 +160,13 @@ void HeadPanTiltController::updateJointControllers(void)
 ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
-  : Controller(), TF(*ros::node::instance(),false, 10000000000ULL, 1000000000ULL)
+: Controller(), node_(ros::node::instance()), TF(*ros::node::instance(),false, 10000000000ULL, 1000000000ULL)
 {
-  c_ = new HeadPanTiltController();
-  node = ros::node::instance();  
-  std::cout<<"Controller node created"<<endl;
-  
+  c_ = new HeadPanTiltController();  
 }
 
 HeadPanTiltControllerNode::~HeadPanTiltControllerNode()
 {
-  node->unsubscribe(service_prefix + "/set_command_array");
-  node->unadvertise_service(service_prefix + "/get_command_array");
-  node->unsubscribe(service_prefix + "/track_point");
-
   delete c_;
 }
 
@@ -185,21 +177,23 @@ void HeadPanTiltControllerNode::update()
 
 bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElement * config)
 {
-  std::cout<<"LOADING HEAD PAN TILT CONTROLLER NODE"<<std::endl;
-  service_prefix = config->Attribute("name");
-  std::cout<<"the prefix is "<<service_prefix<<std::endl;
+  assert(node_);
+  service_prefix_ = config->Attribute("name");
   
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
-  {
-    node->subscribe(service_prefix + "/set_command_array", joint_cmds_, &HeadPanTiltControllerNode::setJointCmd, this,2);
-    node->advertise_service(service_prefix + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
-    node->subscribe(service_prefix + "/track_point", track_point_,
-                  &HeadPanTiltControllerNode::trackPoint, this, 2);
+    return false;
+  //suscriptions
+  node_->subscribe(service_prefix_ + "/set_command_array", joint_cmds_, &HeadPanTiltControllerNode::setJointCmd, this,1);
+  guard_set_command_array_.set(service_prefix_ + "/set_command_array");
+  node_->subscribe(service_prefix_ + "/track_point", track_point_, &HeadPanTiltControllerNode::trackPoint, this, 1);
+  guard_track_point_.set(service_prefix_ + "/track_point");
+  //services
+  node_->advertise_service(service_prefix_ + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
+  guard_get_command_array_.set(service_prefix_ + "/get_command_array");
 
-    return true;
-  }
-  return false;
+  return true;
+ 
 }
 
 void HeadPanTiltControllerNode::setJointCmd()
@@ -241,7 +235,7 @@ void HeadPanTiltControllerNode::trackPoint()
   }
   int id = c_->getJointControllerByName("head_pan_joint");
   assert(id>=0);
-  double meas_pan_angle = c_->joint_position_controllers_[id]->getMeasuredPosition();
+  double meas_pan_angle = c_->joint_position_controllers_[id]->joint_state_->position_;
   double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x()); 
   
   names.push_back("head_pan_joint");
@@ -258,7 +252,7 @@ void HeadPanTiltControllerNode::trackPoint()
 
   id = c_->getJointControllerByName("head_tilt_joint");
   assert(id>=0);
-  double meas_tilt_angle= c_->joint_position_controllers_[id]->getMeasuredPosition();
+  double meas_tilt_angle= c_->joint_position_controllers_[id]->joint_state_->position_;
   double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z(), tilt_point.x());
   
   names.push_back("head_tilt_joint");

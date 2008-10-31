@@ -41,13 +41,13 @@
     This class closes the loop around velocity using
     a pid loop.
 
-    Example config:
+    Example config:<br>
 
-    <controller type="JointVelocityController" name="controller_name">
-      <joint name="joint_to_control">
-        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
-      </joint>
-    </controller>
+    <controller type="JointVelocityController" name="controller_name"><br>
+      <joint name="joint_to_control"><br>
+        <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" /><br>
+      </joint><br>
+    </controller><br>
 */
 /***************************************************/
 
@@ -56,31 +56,30 @@
 #include <mechanism_model/controller.h>
 #include <control_toolbox/pid.h>
 #include "misc_utils/advertised_service_guard.h"
+#include "misc_utils/subscription_guard.h"
 
 // Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetActual.h>
+#include <std_msgs/Float64.h>
+#include <robot_srvs/GetJointCmd.h>
 
 namespace controller
 {
 
-//TODO: dpcument smoothing
 class JointVelocityController : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor of the JointController class.
-   *
-   */
-  JointVelocityController();
 
-  /*!
-   * \brief Destructor of the JointController class.
-   */
+  JointVelocityController();
   ~JointVelocityController();
 
-  bool init(mechanism::RobotState *robot_state, const std::string &joint_name, const control_toolbox::Pid &pid);
-  bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
+  /*!
+   * \brief Functional way to initialize limits and gains.
+   * \param pid Pid gain values.
+   * \param joint_name Name of joint we want to control.
+   * \param *robot The robot.
+   */
+  bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+  bool init(mechanism::RobotState *robot, const std::string &joint_name, const control_toolbox::Pid &pid);
 
   /*!
    * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
@@ -92,17 +91,7 @@ public:
   /*!
    * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
    */
-  double getCommand();
-
-  /*!
-   * \brief Get latest time..
-   */
-  double getTime();
-
-  /*!
-   * \brief Read the torque of the motor
-   */
-  double getMeasuredVelocity();
+  void getCommand(robot_msgs::JointCmd & cmd);
 
   /*!
    * \brief Issues commands to the joint. Should be called at regular intervals
@@ -111,20 +100,16 @@ public:
   virtual void update();
 
   void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
-
   void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
   std::string getJointName();
+  mechanism::JointState *joint_state_;           /**< Joint we're controlling. */
 
 private:
-  mechanism::JointState *joint_state_;
-  mechanism::RobotState *robot_state_; /**< Pointer to robot structure. */
-  control_toolbox::Pid pid_;
-  double last_time_;        /**< Last time stamp of update. */
-  double command_;          /**< Last commanded position. */
-
-  double smoothed_velocity_; /** */
-  double smoothing_factor_;
+  mechanism::RobotState *robot_;                  /**< Pointer to robot structure. */
+  control_toolbox::Pid pid_controller_;           /**< Internal PID controller. */
+  double last_time_;                              /**< Last time stamp of update. */
+  double command_;                                /**< Last commanded position. */
 
 };
 
@@ -134,42 +119,39 @@ private:
 
     This class closes the loop around velocity using
     a pid loop.
-
-    The xml config is the same as for JointVelocityController except
-    the addition of a "topic" attribute, which determines the
-    namespace over which messages are published and services are
-    offered.
 */
 /***************************************************/
 
 class JointVelocityControllerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
-  JointVelocityControllerNode();
 
-  /*!
-   * \brief Destructor
-   */
+  JointVelocityControllerNode();
   ~JointVelocityControllerNode();
 
   void update();
-
   bool initXml(mechanism::RobotState *robot_state, TiXmlElement *config);
 
-  // Services
-  bool setCommand(robot_mechanism_controllers::SetCommand::request &req,
-                  robot_mechanism_controllers::SetCommand::response &resp);
-
-  bool getActual(robot_mechanism_controllers::GetActual::request &req,
-                  robot_mechanism_controllers::GetActual::response &resp);
+  // Topics
+  void setCommand();
+  //Services
+  bool getCommand(robot_srvs::GetJointCmd::request &req,
+		  robot_srvs::GetJointCmd::response &resp);
 
 private:
-  JointVelocityController *c_;
-  AdvertisedServiceGuard guard_set_command_, guard_get_actual_;
+
+  //node stuff
+  std::string service_prefix_;                 /**< The name of the controller. */
+  ros::node *node_;
+  AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
+  SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
+
+  //msgs
+  std_msgs::Float64 cmd_;                      /**< The command from the subscription. */
+
+  //controller
+  JointVelocityController *c_;                 /**< The controller. */
+
 };
 }
 

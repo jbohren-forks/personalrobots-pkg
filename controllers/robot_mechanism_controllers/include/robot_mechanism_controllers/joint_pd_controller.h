@@ -41,11 +41,11 @@
   This class closes the loop around velocity using
   a pid loop.
 
-  Example config:
+  Example config:<br>
 
-  <controller type="JointPDController" name="controller_name">
-    <joint name="joint_to_control">
-      <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" />
+  <controller type="JointPDController" name="controller_name"><br>
+    <joint name="joint_to_control"><br>
+      <pid p="1.0" i="2.0" d="3.0" iClamp="4.0" /><br>
     </joint>
   </controller>
 */
@@ -55,11 +55,15 @@
 
 #include <mechanism_model/controller.h>
 #include <control_toolbox/pid.h>
+#include "misc_utils/advertised_service_guard.h"
+#include "misc_utils/subscription_guard.h"
 
 // Services
 #include <robot_mechanism_controllers/SetPDCommand.h>
 #include <robot_mechanism_controllers/GetPDActual.h>
 #include <robot_mechanism_controllers/GetPDCommand.h>
+#include <robot_msgs/JointCmd.h>
+#include <robot_srvs/GetJointCmd.h>
 
 namespace controller
 {
@@ -67,56 +71,31 @@ namespace controller
   class JointPDController : public Controller
   {
     public:
-    /*!
-     * \brief Default Constructor of the JointController class.
-     *
-     */
-    JointPDController();
 
-    /*!
-     * \brief Destructor of the JointController class.
-     */
+    JointPDController();
     ~JointPDController();
 
     /*!
      * \brief Functional way to initialize limits and gains.
-     * \param p_gain Proportional gain.
-     * \param i_gain Integral gain.
-     * \param d_gain Derivative gain.
-     * \param windup Intergral limit.
-     * \param time The current hardware time.
-     * \param *joint The joint that is being controlled.
+     * \param pid Pid gain values.
+     * \param joint_name Name of joint we want to control.
+     * \param *robot The robot.
      */
-
-    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot);
-    bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
+     bool init(mechanism::RobotState *robot, const std::string &joint_name,const control_toolbox::Pid &pid);
 
     /*!
      * \brief Give set position of the joint for next update: revolute (angle) and prismatic (position)
      *
      * \param double pos Velocity command to issue
      */
-    void setPDCommand(double command, double command_dot);
+    void setCommand(double command, double command_dot);
 
     /*!
      * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
      */
-    void getPDCommand(double &command, double &command_dot);
+    void getCommand(robot_msgs::JointCmd & cmd);
 
-    /*!
-     * \brief Get latest time..
-     */
-    double getTime();
-
-    /*!
-     * \brief Read the torque of the motor
-     */
-    double getMeasuredVelocity();
-
-    /*!
-     * \brief Read the torque of the motor
-     */
-    double getMeasuredPosition();
 
     /*!
      * \brief Issues commands to the joint. Should be called at regular intervals
@@ -124,21 +103,19 @@ namespace controller
     virtual void update();
 
     void getGains(double &p, double &i, double &d, double &i_max, double &i_min);
-
     void setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min);
 
-
     std::string getJointName();
+    mechanism::JointState *joint_state_;        /**< Joint we're controlling. */
 
   private:
 
-    mechanism::JointState* joint_; /**< Joint we're controlling. */
-    mechanism::RobotState *robot_; /**< Pointer to robot structure. */
+    mechanism::RobotState *robot_;             /**< Pointer to robot structure. */
     control_toolbox::Pid pid_controller_;      /**< Internal PID controller. */
-    double last_time_;        /**< Last time stamp of update. */
-    double command_;          /**< Last commanded position. */
+    double last_time_;                         /**< Last time stamp of update. */
+    double command_;                           /**< Last commanded position. */
     double command_dot_;
-    double command_t_;          /**< Last commanded position. */
+    double command_t_;                         /**< Last commanded position. */
     double command_dot_t_;
 
     /*!
@@ -150,49 +127,44 @@ namespace controller
 
 /***************************************************/
 /*! \class controller::JointPDControllerNode
-  \brief Joint Velocity Controller ROS Node
+  \brief Joint PD Controller ROS Node
 
   This class closes the loop around velocity using
   a pid loop.
 
-  The xml config is the same as for JointPDController except
-  the addition of a "topic" attribute, which determines the
-  namespace over which messages are published and services are
-  offered.
 */
 /***************************************************/
 
   class JointPDControllerNode : public Controller
   {
     public:
-    /*!
-     * \brief Default Constructor
-     *
-     */
-    JointPDControllerNode();
 
-    /*!
-     * \brief Destructor
-     */
+    JointPDControllerNode();
     ~JointPDControllerNode();
 
     void update();
-
-    void init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot);
     bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-    // Services
-    bool setPDCommand(robot_mechanism_controllers::SetPDCommand::request &req,
-                    robot_mechanism_controllers::SetPDCommand::response &resp);
+    // Topics
+    void setCommand();
+    //Sevices
+    bool getCommand(robot_srvs::GetJointCmd::request &req,
+		    robot_srvs::GetJointCmd::response &resp);
 
-    // Services
-    bool getPDCommand(robot_mechanism_controllers::GetPDCommand::request &req,
-                    robot_mechanism_controllers::GetPDCommand::response &resp);
-
-    bool getPDActual(robot_mechanism_controllers::GetPDActual::request &req,
-                   robot_mechanism_controllers::GetPDActual::response &resp);
 
     private:
-    JointPDController *c_;
+
+    //node stuff
+    std::string service_prefix_;                 /**< The name of the controller. */
+    ros::node *node_;
+    AdvertisedServiceGuard guard_get_command_;   /**< Makes sure the advertise goes down neatly. */
+    SubscriptionGuard guard_set_command_;        /**< Makes sure the subscription goes down neatly. */
+
+    //msgs
+    robot_msgs::JointCmd cmd_;                      /**< The command from the subscription. */
+
+    //controller
+    JointPDController *c_;                       /**< The controller. */
+
   };
 }

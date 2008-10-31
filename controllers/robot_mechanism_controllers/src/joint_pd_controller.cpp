@@ -41,14 +41,8 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(JointPDController)
 
 JointPDController::JointPDController()
+: joint_state_(NULL), robot_(NULL), last_time_(0), command_(0), command_dot_(0)
 {
-  robot_=NULL;
-  joint_=NULL;
-
-  // Initialize PID class
-  command_ = 0;
-  command_dot_ = 0;
-  last_time_=0;
   pthread_mutex_init(&joint_pd_controller_lock_,NULL);
 }
 
@@ -56,24 +50,33 @@ JointPDController::~JointPDController()
 {
 }
 
-void JointPDController::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
+bool JointPDController::init(mechanism::RobotState *robot, const std::string &joint_name,
+				   const control_toolbox::Pid &pid)
 
 {
+  assert(robot);
   robot_ = robot;
-  joint_ = robot->getJointState(name);
+  last_time_ = robot->hw_->current_time_;
 
-  pid_controller_.initPid(p_gain, i_gain, d_gain, windup, -windup);
+  joint_state_ = robot_->getJointState(joint_name);
+  if (!joint_state_)
+  {
+    fprintf(stderr, "JointPDController could not find joint named \"%s\"\n",
+            joint_name.c_str());
+    return false;
+  }
+
+  pid_controller_ = pid;
+
+  return true;
+
   command_= 0;
   command_dot_ = 0;
-  last_time_= time;
-
 }
 
 bool JointPDController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
-  robot_ = robot;
-  last_time_ = robot->hw_->current_time_;
 
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
@@ -82,25 +85,36 @@ bool JointPDController::initXml(mechanism::RobotState *robot, TiXmlElement *conf
     return false;
   }
 
-  const char *joint_name = j->Attribute("name");
-  joint_ = joint_name ? robot->getJointState(joint_name) : NULL;
-  if (!joint_)
-  {
-    fprintf(stderr, "JointPDController could not find joint named \"%s\"\n", joint_name);
-    return false;
-  }
+  const char *jn = j->Attribute("name");
+  std::string joint_name = jn ? jn : "";
 
   TiXmlElement *p = j->FirstChildElement("pid");
+  control_toolbox::Pid pid;
   if (p)
-    pid_controller_.initXml(p);
+    pid.initXml(p);
   else
     fprintf(stderr, "JointPDController's config did not specify the default pid parameters.\n");
 
-  return true;
+  return init(robot, joint_name, pid);
+}
+
+void JointPDController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
+{
+  pid_controller_.setGains(p,i,d,i_max,i_min);
+}
+
+void JointPDController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
+{
+  pid_controller_.getGains(p,i,d,i_max,i_min);
+}
+
+std::string JointPDController::getJointName()
+{
+  return(joint_state_->joint_->name_);
 }
 
 // Set the joint velocity command
-void JointPDController::setPDCommand(double command, double command_dot)
+void JointPDController::setCommand(double command, double command_dot)
 {
   pthread_mutex_lock(&joint_pd_controller_lock_);
   command_t_ = command;
@@ -108,36 +122,14 @@ void JointPDController::setPDCommand(double command, double command_dot)
   pthread_mutex_unlock(&joint_pd_controller_lock_);
 }
 
-// Return the current velocity command
-void JointPDController::getPDCommand(double &command, double &command_dot)
+// Return the current  command
+void JointPDController::getCommand(robot_msgs::JointCmd & cmd)
 {
   pthread_mutex_lock(&joint_pd_controller_lock_);
-  command = command_t_;
-  command_dot = command_dot_t_;
+  cmd.names[0]= joint_state_->joint_->name_;
+  cmd.positions[0] = command_t_;
+  cmd.velocity[0] = command_dot_t_;
   pthread_mutex_lock(&joint_pd_controller_lock_);
-}
-
-double JointPDController::getTime()
-{
-  return robot_->hw_->current_time_;
-}
-
-// Return the measured joint velocity
-double JointPDController::getMeasuredVelocity()
-{
-  return joint_->velocity_;
-}
-
-// Return the measured joint velocity
-double JointPDController::getMeasuredPosition()
-{
-  return joint_->position_;
-}
-
-
-std::string JointPDController::getJointName()
-{
-  return(joint_->joint_->name_);
 }
 
 void JointPDController::update()
@@ -152,24 +144,17 @@ void JointPDController::update()
     pthread_mutex_unlock(&joint_pd_controller_lock_);
   }
 
-  error_dot = joint_->velocity_ - command_dot_;
-  error = joint_->position_ - command_;
-  joint_->commanded_effort_ = pid_controller_.updatePid(error, error_dot, time - last_time_);
+  error_dot = joint_state_->velocity_ - command_dot_;
+  error = joint_state_->position_ - command_;
+  joint_state_->commanded_effort_ = pid_controller_.updatePid(error, error_dot, time - last_time_);
   last_time_ = time;
 }
 
-void JointPDController::setGains(const double &p, const double &i, const double &d, const double &i_max, const double &i_min)
-{
-  pid_controller_.setGains(p,i,d,i_max,i_min);
-}
 
-void JointPDController::getGains(double &p, double &i, double &d, double &i_max, double &i_min)
-{
-  pid_controller_.getGains(p,i,d,i_max,i_min);
-}
-
+//------ Joint PD controller node --------
 ROS_REGISTER_CONTROLLER(JointPDControllerNode)
-JointPDControllerNode::JointPDControllerNode()
+
+JointPDControllerNode::JointPDControllerNode(): node_(ros::node::instance())
 {
   c_ = new JointPDController();
 }
@@ -184,65 +169,36 @@ void JointPDControllerNode::update()
   c_->update();
 }
 
-bool JointPDControllerNode::setPDCommand(
-  robot_mechanism_controllers::SetPDCommand::request &req,
-  robot_mechanism_controllers::SetPDCommand::response &resp)
-{
-  c_->setPDCommand(req.command,req.command_dot);
-  c_->getPDCommand(resp.command,resp.command_dot);
-
-  return true;
-}
-
-bool JointPDControllerNode::getPDActual(
-  robot_mechanism_controllers::GetPDActual::request &req,
-  robot_mechanism_controllers::GetPDActual::response &resp)
-{
-  resp.state_dot = c_->getMeasuredVelocity();
-  resp.state = c_->getMeasuredPosition();
-  resp.time = c_->getTime();
-
-  return true;
-}
-bool JointPDControllerNode::getPDCommand(
-  robot_mechanism_controllers::GetPDCommand::request &req,
-  robot_mechanism_controllers::GetPDCommand::response &resp)
-{
-  double command, command_dot;
-  c_->getPDCommand(command, command_dot);
-  resp.command_dot = command_dot;
-  resp.command     = command;
-  resp.time = c_->getTime();
-
-  return true;
-}
-
-
-void JointPDControllerNode::init(double p_gain, double i_gain, double d_gain, double windup, double time, std::string name, mechanism::RobotState *robot)
-{
-  ros::node *node = ros::node::instance();
-  string prefix = name;
-
-  c_->init(p_gain, i_gain, d_gain, windup, time,name, robot);
-  node->advertise_service(prefix + "/set_command", &JointPDControllerNode::setPDCommand, this);
-  node->advertise_service(prefix + "/get_actual", &JointPDControllerNode::getPDActual, this);
-}
-
 bool JointPDControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  ros::node *node = ros::node::instance();
-
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "")
-  {
-    fprintf(stderr, "No topic given to JointPDControllerNode\n");
-    return false;
-  }
+  assert(node_);
+  service_prefix_ = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
     return false;
-  node->advertise_service(topic + "/set_pd_command", &JointPDControllerNode::setPDCommand, this);
-  node->advertise_service(topic + "/get_pd_command", &JointPDControllerNode::getPDCommand, this);
-  node->advertise_service(topic + "/get_pd_actual", &JointPDControllerNode::getPDActual, this);
+  //subscriptions
+  node_->subscribe(service_prefix_ + "/set_command", cmd_, &JointPDControllerNode::setCommand, this, 1);
+  guard_set_command_.set(service_prefix_ + "/set_command");
+  //services
+  node_->advertise_service(service_prefix_ + "/get_command", &JointPDControllerNode::getCommand, this);
+  guard_get_command_.set(service_prefix_ + "/get_command");
+
   return true;
 }
+
+void JointPDControllerNode::setCommand()
+{
+  c_->setCommand(cmd_.positions[0],cmd_.velocity[0]);
+}
+
+bool JointPDControllerNode::getCommand(robot_srvs::GetJointCmd::request &req,
+                                             robot_srvs::GetJointCmd::response &resp)
+{
+  robot_msgs::JointCmd cmd;
+  c_->getCommand(cmd);
+  resp.command = cmd;
+  return true;
+}
+
+
+
