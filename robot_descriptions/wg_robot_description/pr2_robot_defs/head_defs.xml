@@ -214,6 +214,8 @@
       <limit min="-2.932" max="2.932"
              effort="0.529" velocity="1256.64" />
       <calibration reference_position="-2.862" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
@@ -262,6 +264,8 @@
       <limit min="-0.55" max="1.047"
              effort="0.529" velocity="1256.64" />
       <calibration reference_position="-0.195" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
