@@ -1,10 +1,13 @@
 #ifndef WGSTEREOCAMMODEL_H_
 #define WGSTEREOCAMMODEL_H_
 
+#include <cmath>
+
 #include <opencv/cxtypes.h>
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
+
 /**
  * Stereo camera model, including parameters and transformation derived from them.
  */
@@ -101,6 +104,26 @@ public:
 	/// returns DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 
+  /// Convert disparity coordinate into pixel location in left camera image
+  static inline CvPoint dispToLeftCam(
+      /// coordinate in disparity coordinates
+      const CvPoint3D64f& dispCoord) {
+    return cvPoint(
+        (int)std::floor(dispCoord.x + .5),
+        (int)std::floor(dispCoord.y + .5)
+    );
+  }
+  /// Convert disparity coordinate into pixel location in left camera image
+  static inline CvPoint dispToRightCam(
+      /// coordinate in disparity coordinates
+      const CvPoint3D64f& dispCoord) {
+    return cvPoint(
+        (int)std::floor(dispCoord.x + .5),
+        (int)std::floor(dispCoord.y - dispCoord.z + .5)
+    );
+  }
+
+
 	/// This routine is used to display a singe channel floating point depth image.
 	/// It inverts the depth so that brightest points are closest.
 	/// Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
@@ -157,7 +180,7 @@ protected:
   IplImage  *Iz8U;  //Holds depth image to display for debug purposes
 
   /// temporary function, shall be replace by one from cvaux when opencv_latest get updated
-  void connectedComponents(IplImage *mask, int poly1_hull0, 
+  void connectedComponents(IplImage *mask, int poly1_hull0,
 			   IplConvKernel* openKernel,
 			   IplConvKernel* closeKernel,
 			   float perimScale, int *num, CvRect *bbs, CvPoint *centers);
@@ -165,9 +188,9 @@ protected:
   /// approx threshold - the bigger it is, the simpler is the boundary
   static const int CVCONTOUR_APPROX_LEVEL = 2;
   /// how many iterations of erosion and/or dilation
-  static const int CVCLOSE_ITR = 1; 
+  static const int CVCLOSE_ITR = 1;
 
-  
+
 };
 
 #endif /*WGSTEREOCAMMODEL_H_*/
