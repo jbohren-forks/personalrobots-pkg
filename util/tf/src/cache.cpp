@@ -37,18 +37,16 @@ ros::Duration TimeCache::getData(ros::Time time, TransformStorage & data_out) //
 {
   TransformStorage p_temp_1, p_temp_2;
 
-  uint8_t num_nodes;
+  int num_nodes;
   ros::Duration time_diff;
   storage_lock_.lock();
   try
   {
-    std::string error_info = findClosest(p_temp_1,p_temp_2, time, time_diff, num_nodes);
+    num_nodes = findClosest(p_temp_1,p_temp_2, time, time_diff);
     if (num_nodes == 0)
     {
       throw LookupException("No Data for this link");
     }
-    else if (error_info.length() != 0)
-      throw ExtrapolationException(error_info);
     else if (num_nodes == 1)
     {
       data_out = p_temp_1;
@@ -76,13 +74,12 @@ ros::Duration TimeCache::getData(ros::Time time, TransformStorage & data_out) //
 };
 
 
-std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff, uint8_t& num_solutions)
+uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros::Time target_time, ros::Duration &time_diff)
 {
   //No values stored
   if (storage_.empty())
   {
-    num_solutions = 0;
-    return std::string("");
+    return 0;
   }
 
   //If time == 0 return the latest
@@ -90,8 +87,7 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
   {
     one = storage_.front();
     time_diff = ros::Time::now() - storage_.front().stamp_; ///@todo what should this be?? difference from "now"?
-    num_solutions = 1;
-    return std::string("");
+    return 1;
   }
 
   // One value stored
@@ -99,8 +95,7 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
   {
     one = *(storage_.begin());
     time_diff = target_time - storage_.begin()->stamp_;
-    num_solutions = 1;
-    return std::string("");
+    return 1;
   }
 
   //At least 2 values stored
@@ -118,18 +113,15 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
     one = *storage_it;
     two = *(++storage_it);
     time_diff = target_time - storage_.begin()->stamp_;
-    std::stringstream ss;
-    
     if (time_diff > max_extrapolation_time_) //Guarenteed in the future therefore positive
     {
+      std::stringstream ss;
       ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).to_double() <<", closest data at "
          << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
          << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively.";
-      //  throw ExtrapolationException(ss.str());
+      throw ExtrapolationException(ss.str());
     }
-    num_solutions = 2;
-    return ss.str();
-
+    return 2;
   }
 
   //Catch the case where it's in the past
@@ -138,17 +130,15 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
     one = *(--storage_it);
     two = *(--storage_it);
     time_diff = target_time - one.stamp_;
-      std::stringstream ss;
     if (time_diff < ros::Duration()-max_extrapolation_time_) //Guarenteed in the past ///\todo check negative sign
     {
+      std::stringstream ss;
       ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).to_double() <<", closest data at "
          << (one.stamp_).to_double() << " and " << (two.stamp_).to_double() <<" which are farther away than max_extrapolation_time "
          << (max_extrapolation_time_).to_double() <<" at "<< (target_time - one.stamp_).to_double()<< " and " << (target_time - two.stamp_).to_double() <<" respectively."; //sign flip since in the past
-      //      throw ExtrapolationException(ss.str());
+      throw ExtrapolationException(ss.str());
     }
-    num_solutions = 2;
-    return ss.str();
-
+    return 2;
   }
 
   //Finally the case were somewhere in the middle  Guarenteed no extrapolation :-)
@@ -158,8 +148,7 @@ std::string TimeCache::findClosest(TransformStorage& one, TransformStorage& two,
     time_diff = target_time - one.stamp_;
   else
     time_diff = target_time - two.stamp_;
-    num_solutions = 2;
-    return std::string("");
+  return 2;
 
 
 };
