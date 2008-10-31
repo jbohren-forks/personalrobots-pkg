@@ -353,7 +353,7 @@
   <const_block name="pr2_finger_l_inertial">
     <mass value="0.1" />
     <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.01755089866" />
   </const_block> 
   
   <const_block name="pr2_finger_l_collision">
@@ -388,7 +388,7 @@
   <const_block name="pr2_finger_tip_l_inertial">
     <mass value="0.1" />
     <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.01755089866" />
   </const_block> 
   
   <const_block name="pr2_finger_tip_l_collision">
@@ -422,7 +422,7 @@
   <const_block name="pr2_finger_r_inertial">
     <mass value="0.1" />
     <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.01755089866" />
   </const_block> 
   
   <const_block name="pr2_finger_r_collision">
@@ -456,7 +456,7 @@
   <const_block name="pr2_finger_tip_r_inertial">
     <mass value="0.1" />
     <com xyz=" 0 0 0 " /> <!-- position of the center of mass with respect to the link's own anchor in a local coordinate frame --><!-- FIXME John switched x and z for now-->
-    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+    <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"  iyy="0.013567548848" iyz="-0.000427679042" izz="0.01755089866" />
   </const_block> 
   
   <const_block name="pr2_finger_tip_r_collision">
