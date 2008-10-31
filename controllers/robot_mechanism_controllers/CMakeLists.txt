@@ -6,6 +6,7 @@ gensrv()
 rospack_add_library(robot_mechanism_controllers
  src/joint_effort_controller.cpp
  src/joint_position_controller.cpp
+ src/joint_position_smoothing_controller.cpp
  src/joint_velocity_controller.cpp
  src/cartesian_effort_controller.cpp
  src/cartesian_velocity_controller.cpp
