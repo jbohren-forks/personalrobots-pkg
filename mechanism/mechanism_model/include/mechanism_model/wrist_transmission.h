@@ -33,15 +33,15 @@
  *********************************************************************/
 /*
  * Author: Melonee Wise
-  
+
    example xml:
     <robot name="wrist_trans">
-      <joint name="right_wrist_flex_joint" type="revolute"> 
+      <joint name="right_wrist_flex_joint" type="revolute">
         <limit min="-0.157" max="2.409" effort="5" velocity="5" />
         <axis xyz="0 0 1" />
       </joint>
 
-      <joint name="right_wrist_roll_joint" type="continuous"> 
+      <joint name="right_wrist_roll_joint" type="continuous">
         <limit min="0.0" max="0.0" effort="5" velocity="5" />
         <axis xyz="0 0 1" />
       </joint>
@@ -73,6 +73,11 @@ public:
   bool initXml(TiXmlElement *config, Robot *robot);
 
   std::vector<double> mechanical_reduction_;
+
+  // Describes the order of the actuators and the joints in the arrays
+  // of names and of those passed to propagate*
+  enum { RIGHT_MOTOR, LEFT_MOTOR };
+  enum { FLEX_JOINT, ROLL_JOINT };
 
   void propagatePosition(std::vector<Actuator*>&, std::vector<JointState*>&);
   void propagatePositionBackwards(std::vector<JointState*>&, std::vector<Actuator*>&);
