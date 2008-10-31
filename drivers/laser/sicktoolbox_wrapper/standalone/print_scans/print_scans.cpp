@@ -31,7 +31,10 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 #include <csignal>
-#include <cstdint>
+extern "C" {
+// not everyone has <cstdint>
+#include <stdint.h>
+}
 #include <cstdio>
 #include <sicklms-1.0/SickLMS.hh>
 using namespace SickToolbox;
