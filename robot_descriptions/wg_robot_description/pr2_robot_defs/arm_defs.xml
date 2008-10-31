@@ -401,7 +401,7 @@
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-1" max="1" effort="200" velocity="5" />
-      <calibration reference_position="0" values="1.5 -1" />
+      <calibration reference_position="0.4" values="1.5 -1" />
     </joint>
 
     <link name="wrist_flex_${suffix}">
@@ -446,7 +446,7 @@
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="5" />
-      <calibration reference_positio="0" values="1.5 -1" />
+      <calibration reference_position="-0.3" values="1.5 -1" />
     </joint>
 
 
