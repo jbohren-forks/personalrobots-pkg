@@ -12,11 +12,8 @@
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
-    <!-- use mech.py to spawn all controllers listed in controllers.xml -->
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2/controllers.xml" respawn="false" output="screen" />
-    <!-- start tilting Hokuyo laser by sending it a preset code of 46, this means sawtooth profile sweep.
-         for details of the profile, rates, see controller::LaserScannerControllerNode. -->
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
+    <!-- use mech.py to spawn all controllers and use control.py to set laser scanner scanning. -->
+    <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
   </group>
 </launch>
 

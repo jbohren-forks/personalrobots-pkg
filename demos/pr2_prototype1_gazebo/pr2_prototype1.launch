@@ -5,6 +5,7 @@
     <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it
          (Mechanism Control, BaseControllerNode, etc...) -->
     <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_prototype1/gazebo/pr2_prototype1.xml&quot;" />
+
     <!-- assign environment variables for gazebo and startup gazebo with argument containing the world file.  -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_prototype1.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
@@ -13,11 +14,7 @@
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
     <!-- use mech.py to spawn all controllers listed in controllers.xml -->
-    <param name="base_controller/odom_publish_rate" value="30.0"/>
-    <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2_prototype1/controllers_base_lab.xml" output="screen"/>
-    <!-- start tilting Hokuyo laser by sending it a preset code of 46, this means sawtooth profile sweep.
-         for details of the profile, rates, see controller::LaserScannerControllerNode. -->
-    <node pkg="robot_mechanism_controllers" type="control.py" args="set tilt_laser_controller 46" respawn="false" output="screen" />
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_controllers.launch" />
   </group>
 </launch>
 

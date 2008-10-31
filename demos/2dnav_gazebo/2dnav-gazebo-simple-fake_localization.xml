@@ -2,6 +2,7 @@
   <master auto="start"/>
   <group name="wg">
     <include file="$(find pr2_gazebo)/pr2.launch"/>
+    <include file="$(find 2dnav_gazebo)/2dnav-params.xml"/>
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
     <node pkg="fake_localization" type="fake_localization" respawn="false" output="screen" />
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
