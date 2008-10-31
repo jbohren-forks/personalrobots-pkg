@@ -89,7 +89,7 @@ Publishes to (name / type):
 #include <std_msgs/Pose3D.h>
 #include <std_msgs/BaseVel.h>
 
-#include "rosTF/rosTF.h"
+#include "tf/transform_broadcaster.h"
 
 #define USAGE "rosstage <worldfile>"
 
@@ -114,7 +114,7 @@ class StageNode : public ros::node
     // to search for models of interest.
     static void ghfunc(gpointer key, Stg::StgModel* mod, StageNode* node);
 
-  rosTFServer tf;
+    tf::TransformBroadcaster tf;
 
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
@@ -256,6 +256,7 @@ StageNode::Update()
   // Also publish the base->base_laser Tx.  This could eventually move
   // into being retrieved from the param server as a static Tx.
   Stg::stg_pose_t lp = this->lasermodel->GetPose();
+  /*
   tf.sendEuler("base_laser",
                "base",
                lp.x,
@@ -265,6 +266,10 @@ StageNode::Update()
                0.0,
                0.0,
                sim_time);
+               */
+  tf.sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
+                                                                    tf::Point(lp.x, lp.y, 0.0)),
+                                                      sim_time, "base_laser", "base"));
 
   // Get latest odometry data
   // Translate into ROS message format and publish
@@ -278,7 +283,15 @@ StageNode::Update()
   this->odomMsg.stall = this->positionmodel->Stall();
   this->odomMsg.header.frame_id = "odom";
   this->odomMsg.header.stamp = sim_time;
+  /*
+  printf("L: %.6f %.3f %.3f %.3f\n",
+         sim_time.to_double(),
+         this->odomMsg.pos.x, 
+         this->odomMsg.pos.y, 
+         this->odomMsg.pos.th);
+         */
   publish("odom",this->odomMsg);
+  /*
   tf.sendInverseEuler("odom",
                       "base",
                       odomMsg.pos.x,
@@ -288,24 +301,26 @@ StageNode::Update()
                       0.0,
                       0.0,
                       sim_time);
+                      */
+  this->tf.sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
+                                                                    tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
+                                                      sim_time, "odom", "base"));
 
   // Also publish the ground truth pose
   Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
-  // Use libTF to construct our outgoing message
-  libTF::Pose3D pose;
   // Note that we correct for Stage's screwed-up coord system.
-  pose.setFromEuler(gpose.y, -gpose.x, 0.0, 
-                    Stg::normalize(gpose.a-M_PI/2.0), 0.0, 0.0);
+  //pose.setFromEuler(gpose.y, -gpose.x, 0.0, 
+                    //Stg::normalize(gpose.a-M_PI/2.0), 0.0, 0.0);
+  tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
+                   tf::Point(gpose.y, -gpose.x, 0.0));
 
-  // FIXME: temp work around during libtf upgrade transition
-  std_msgs::Pose3D tmpPose3D = pose.getMessage();
-  this->groundTruthMsg.transform.translation.x = tmpPose3D.position.x;
-  this->groundTruthMsg.transform.translation.y = tmpPose3D.position.y;
-  this->groundTruthMsg.transform.translation.z = tmpPose3D.position.z;
-  this->groundTruthMsg.transform.rotation.x    = tmpPose3D.orientation.x;
-  this->groundTruthMsg.transform.rotation.y    = tmpPose3D.orientation.y;
-  this->groundTruthMsg.transform.rotation.z    = tmpPose3D.orientation.z;
-  this->groundTruthMsg.transform.rotation.w    = tmpPose3D.orientation.w;
+  this->groundTruthMsg.transform.translation.x = gt.getOrigin().x();
+  this->groundTruthMsg.transform.translation.y = gt.getOrigin().y();
+  this->groundTruthMsg.transform.translation.z = gt.getOrigin().z();
+  this->groundTruthMsg.transform.rotation.x    = gt.getRotation().x();
+  this->groundTruthMsg.transform.rotation.y    = gt.getRotation().y();
+  this->groundTruthMsg.transform.rotation.z    = gt.getRotation().z();
+  this->groundTruthMsg.transform.rotation.w    = gt.getRotation().w();
 
   this->groundTruthMsg.header.frame_id = "odom";
   this->groundTruthMsg.header.stamp = sim_time;

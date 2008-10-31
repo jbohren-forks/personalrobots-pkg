@@ -6,5 +6,5 @@
   <depend package="rosthread" />
   <depend package="stage" />
   <depend package="std_msgs" />
-  <depend package="rosTF" />
+  <depend package="tf" />
 </package>
