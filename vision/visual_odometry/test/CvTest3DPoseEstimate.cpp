@@ -237,7 +237,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   vector<FramePose>* fp = sba.getFramePoses();
   const VOSparseBundleAdj::Tracks& tracks = sba.getTracks();
 
-  sba.mVisualizer = new VOSparseBundleAdj::Visualizer(sba.mPoseEstimator, *fp, tracks);
+  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks);
 #endif
 
   if (fileSeq.getStartFrame() == false) {
@@ -331,7 +331,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
-  pathRecon.mVisualizer = new PathRecon::Visualizer(pathRecon.mPoseEstimator);
+  pathRecon.mVisualizer = new F2FVisualizer(pathRecon.mPoseEstimator);
 #endif
 
   if (fileSeq.getStartFrame() == false) {

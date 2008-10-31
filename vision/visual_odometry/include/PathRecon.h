@@ -22,6 +22,67 @@ using namespace std;
 namespace cv {
 namespace willow {
 
+class VOVisualizer {
+public:
+  virtual ~VOVisualizer(){}
+  virtual void drawKeypoints(
+    const PoseEstFrameEntry& lastFrame,
+    const PoseEstFrameEntry& currentFrame,
+    const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
+  ) = 0;
+  virtual void drawDispMap(const PoseEstFrameEntry& frame) = 0;
+  virtual void drawTrackingCanvas(
+      const PoseEstFrameEntry& lastFrame,
+      const PoseEstFrameEntry& frame
+  ) = 0;
+
+  void show();
+  void save();
+  void reset();
+
+  string poseEstWinName;
+  string leftCamWinName;
+  string lastTrackedLeftCam;
+  string dispWindowName;
+  string outputDirname;
+  char dispMapFilename[PATH_MAX];
+  char poseEstFilename[PATH_MAX];
+  char leftCamWithMarks[PATH_MAX];
+  /// a reference to the pose estimator, for projection transformations
+  const PoseEstimateDisp& poseEstimator;
+
+  WImageBuffer3_b   canvasKeypoint;
+  WImageBuffer3_b   canvasTracking;
+  WImageBuffer3_b   canvasDispMap;
+
+protected:
+  VOVisualizer(PoseEstimateDisp& poseEstimator);
+
+  void drawDisparityMap(WImageBuffer1_16s& dispMap);
+  bool canvasKeypointRedrawn;
+  bool canvasTrackingRedrawn;
+  bool canvasDispMapRedrawn;
+
+};
+
+/// Visualizing the process of visual odometry process with frame to frame
+/// pose estimation.
+class F2FVisualizer: public VOVisualizer {
+  public:
+    F2FVisualizer(PoseEstimateDisp& poseEstimator);
+    virtual ~F2FVisualizer(){};
+    virtual void drawKeypoints(
+        const PoseEstFrameEntry& lastFrame,
+        const PoseEstFrameEntry& currentFrame,
+        const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
+    );
+    virtual void drawDispMap(const PoseEstFrameEntry& frame);
+    virtual void drawTrackingCanvas(
+        const PoseEstFrameEntry& lastFrame,
+        const PoseEstFrameEntry& frame
+    );
+};
+
 /**
  * Visual Odometry by pose estimation of consecutive pairs of
  * key frames.
@@ -165,47 +226,7 @@ public:
   };
   Stat   mStat; //< Statistics of the visual odometry process
 
-  /// Visualizing the process of visual odometry process with frame to frame
-  /// pose estimation.
-  class Visualizer {
-  public:
-    Visualizer(PoseEstimateDisp& poseEstimator);
-    virtual ~Visualizer(){};
-    virtual void drawKeypoints(
-        const PoseEstFrameEntry& lastFrame,
-        const PoseEstFrameEntry& currentFrame,
-        const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
-    );
-    virtual void drawDispMap(const PoseEstFrameEntry& frame);
-    virtual void drawTracking(
-        const PoseEstFrameEntry& lastFrame,
-        const PoseEstFrameEntry& frame
-    );
-    void show();
-    void save();
-    void reset();
-    string poseEstWinName;
-    string leftCamWinName;
-    string lastTrackedLeftCam;
-    string dispWindowName;
-    string outputDirname;
-    char dispMapFilename[PATH_MAX];
-    char poseEstFilename[PATH_MAX];
-    char leftCamWithMarks[PATH_MAX];
-    /// a reference to the pose estimator, for projection transformations
-    const PoseEstimateDisp& poseEstimator;
-
-    WImageBuffer3_b   canvasKeypoint;
-    WImageBuffer3_b   canvasTracking;
-    WImageBuffer3_b   canvasDispMap;
-
-protected:
-    void drawDisparityMap(WImageBuffer1_16s& dispMap);
-    bool canvasKeypointRedrawn;
-    bool canvasTrackingRedrawn;
-    bool canvasDispMapRedrawn;
-  };
-  Visualizer* mVisualizer;
+  VOVisualizer* mVisualizer;
 
   void matchKeypoints(
       /// (Output) coordinates of trackable pairs

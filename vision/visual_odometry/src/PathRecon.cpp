@@ -91,7 +91,7 @@ void PathRecon::_init() {
 #if 0 // delete this. must initialize from outside
   delete mVisualizer;
 #if DISPLAY
-	mVisualizer = new Visualizer(mPoseEstimator);
+	mVisualizer = new SBAVisualizer(mPoseEstimator);
 #endif
 #endif
 
@@ -425,7 +425,7 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
         cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
 #endif
         assert(getLastKeyFrame());
-        if (mVisualizer) mVisualizer->drawTracking(*getLastKeyFrame(), *currFrame);
+        if (mVisualizer) mVisualizer->drawTrackingCanvas(*getLastKeyFrame(), *currFrame);
 
         // Decide if we need select a key frame by now
         kfd =
@@ -490,16 +490,20 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
   return insertNewKeyFrame;
 }
 
-PathRecon::Visualizer::Visualizer(PoseEstimateDisp& pe):
+VOVisualizer::VOVisualizer(PoseEstimateDisp& pe):
   poseEstWinName("Pose Estimated"),
   leftCamWinName("Left  Cam"),
-  lastTrackedLeftCam(string("Last Tracked Left Cam")),
-  dispWindowName(string("Disparity Map")),
+  lastTrackedLeftCam("Last Tracked Left Cam"),
+  dispWindowName("Disparity Map"),
   outputDirname("Output/indoor1/"),
   poseEstimator(pe),
   canvasKeypointRedrawn(false),
   canvasTrackingRedrawn(false),
   canvasDispMapRedrawn(false)
+  {}
+
+F2FVisualizer::F2FVisualizer(PoseEstimateDisp& pe):
+  VOVisualizer(pe)
   {
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
@@ -512,12 +516,13 @@ PathRecon::Visualizer::Visualizer(PoseEstimateDisp& pe):
 //  cvMoveWindow(dispWindowName.c_str(), 650, 530);
 //  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
-void PathRecon::Visualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
+
+void VOVisualizer::drawDisparityMap(WImageBuffer1_16s& dispMap) {
   double maxDisp = (int)poseEstimator.getDisparity(400); // the closest point we care is at least 400 mm away
   CvMatUtils::getVisualizableDisparityMap(dispMap, canvasDispMap, maxDisp);
 }
 
-void PathRecon::Visualizer::drawKeypoints(
+void F2FVisualizer::drawKeypoints(
     const PoseEstFrameEntry& lastFrame,
     const PoseEstFrameEntry& currentFrame,
     const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp
@@ -539,7 +544,7 @@ void PathRecon::Visualizer::drawKeypoints(
   canvasKeypointRedrawn = true;
 }
 
-void PathRecon::Visualizer::drawDispMap(const PoseEstFrameEntry& frame) {
+void F2FVisualizer::drawDispMap(const PoseEstFrameEntry& frame) {
   int imgWidth  = frame.mImage->Width();
   int imgHeight = frame.mImage->Height();
   // make sure the image buffers is allocated to the right sizes
@@ -551,7 +556,7 @@ void PathRecon::Visualizer::drawDispMap(const PoseEstFrameEntry& frame) {
   canvasDispMapRedrawn = true;
 }
 
-void PathRecon::Visualizer::drawTracking(
+void F2FVisualizer::drawTrackingCanvas(
     const PoseEstFrameEntry& lastFrame,
     const PoseEstFrameEntry& frame
 ) {
@@ -588,7 +593,7 @@ void PathRecon::Visualizer::drawTracking(
   }
 }
 
-void PathRecon::Visualizer::show() {
+void VOVisualizer::show() {
   if (canvasKeypointRedrawn && canvasKeypoint.Ipl())
     cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
   if (canvasTrackingRedrawn && canvasTracking.Ipl())
@@ -603,7 +608,7 @@ void PathRecon::Visualizer::show() {
   //    cvWaitKey(0);  //  wait indefinitely
 }
 
-void PathRecon::Visualizer::save() {
+void VOVisualizer::save() {
 
   // save the marked images
   if (canvasKeypointRedrawn && canvasKeypoint.Ipl()) {
@@ -617,7 +622,7 @@ void PathRecon::Visualizer::save() {
   }
 }
 
-void PathRecon::Visualizer::reset() {
+void VOVisualizer::reset() {
   // reset all the redrawn flags
   canvasDispMapRedrawn = false;
   canvasKeypointRedrawn = false;

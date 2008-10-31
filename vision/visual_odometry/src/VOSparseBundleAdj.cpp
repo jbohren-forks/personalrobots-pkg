@@ -50,7 +50,7 @@ void VOSparseBundleAdj::updateSlideWindow() {
   }
   // Since slide down the window, we shall purge the tracks as well
   if (mVisualizer) {
-    ((VOSparseBundleAdj::Visualizer*)mVisualizer)->slideWindowFront =
+    ((SBAVisualizer*)mVisualizer)->slideWindowFront =
       mActiveKeyFrames.front()->mFrameIndex;
   }
   // loop thru all tracks and get purge the old entries
@@ -92,7 +92,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
         PoseEstFrameEntry* pee = mActiveKeyFrames.back();
         PoseEstFrameEntry& peef = *pee;
         cout << pee->mFrameIndex << endl;
-        VOSparseBundleAdj::Visualizer* vis = (VOSparseBundleAdj::Visualizer*)mVisualizer;
+        SBAVisualizer* vis = (SBAVisualizer*)mVisualizer;
         vis->drawTrack(peef);
       }
     }
@@ -222,24 +222,24 @@ bool VOSparseBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   return status;
 }
 
-void VOSparseBundleAdj::Visualizer::drawTracking(
+void SBAVisualizer::drawTrackingCanvas(
     const PoseEstFrameEntry& lastFrame,
     const PoseEstFrameEntry& frame
 ){
-  Parent::drawTracking(lastFrame, frame);
+  Parent::drawTrackingCanvas(lastFrame, frame);
 
   drawTrack(frame);
 }
 
-void VOSparseBundleAdj::Visualizer::drawTrack(const PoseEstFrameEntry& frame){
+void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
   drawTrackTrajectories(frame);
   drawTrackEstimatedLocations(frame);
 }
 
-void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
+void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
-  BOOST_FOREACH( const Track& track, this->tracks.mTracks ){
-    const TrackObserv& lastObsv = track.back();
+  BOOST_FOREACH( const VOSparseBundleAdj::Track& track, this->tracks.mTracks ){
+    const VOSparseBundleAdj::TrackObserv& lastObsv = track.back();
     const CvScalar colorFixedFrame = CvMatUtils::green;
     CvScalar colorFreeFrame;
 
@@ -253,7 +253,7 @@ void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntr
 
     int thickness = 1;
     int i=0;
-    deque<TrackObserv>::const_iterator iObsv = track.begin();
+    deque<VOSparseBundleAdj::TrackObserv>::const_iterator iObsv = track.begin();
     CvPoint pt0 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
     printf("track %3d, len=%3d\n", track.mId, track.size());
     printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
@@ -277,7 +277,7 @@ void VOSparseBundleAdj::Visualizer::drawTrackTrajectories(const PoseEstFrameEntr
   }
 }
 
-void VOSparseBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
+void SBAVisualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
   return;
   // now draw all the observation of the same 3d points on to a copy of the
   int imgWidth  = frame.mImage->Width();
@@ -308,8 +308,8 @@ void VOSparseBundleAdj::Visualizer::drawTrackEstimatedLocations(const PoseEstFra
   CvPoint3D64f shifGlobaltoCurrent = cvPoint3D64f(-shiftCurrentToGlobal.x,
       -shiftCurrentToGlobal.y, -shiftCurrentToGlobal.z);
 
-  BOOST_FOREACH( const Track& track, this->tracks.mTracks ){
-    BOOST_FOREACH( const TrackObserv& obsv, track ) {
+  BOOST_FOREACH( const VOSparseBundleAdj::Track& track, this->tracks.mTracks ){
+    BOOST_FOREACH( const VOSparseBundleAdj::TrackObserv& obsv, track ) {
 
     }
   }

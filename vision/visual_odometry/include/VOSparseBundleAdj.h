@@ -12,6 +12,8 @@
 
 namespace cv {
 namespace willow {
+
+
 /**
  * (Under construction) Visual Odometry by sliding window bundle adjustment.
  * The input are a sequence of stereo video images.
@@ -114,35 +116,7 @@ public:
   /// Default number of iteration
   static const int DefaultNumIteration = 20;
 
-  /// Visualizing the visual odometry process of bundle adjustment.
-  class Visualizer: public PathRecon::Visualizer {
-  public:
-    typedef PathRecon::Visualizer Parent;
-    Visualizer(PoseEstimateDisp& poseEstimator,
-        const vector<FramePose>& framePoses,
-        const Tracks& trcks):
-      Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
-    virtual ~Visualizer(){}
-    /// Draw keypoints, tracks and disparity map on canvases for visualization
-    virtual void drawTracking(
-        const PoseEstFrameEntry& lastFrame,
-        const PoseEstFrameEntry& frame);
-
-    /// Draw the tracks. A track is drawn as a polyline connecting the observations
-    /// of the same point in a sequence of frames. A line is drawn in yellow
-    /// if one of the end point is outside of the slide window. Red otherwise.
-    virtual void drawTrack(const PoseEstFrameEntry& frame);
-    virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
-    virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
-
-
-    /// a reference to the estimated pose of the frames
-    const vector<FramePose>& framePoses;
-    /// a reference to the tracks.
-    const Tracks& tracks;
-    int   slideWindowFront;
-  };
-  /// Statistics for bundle adjustment
+    /// Statistics for bundle adjustment
   class Stat2 {
   public:
     void print();
@@ -196,6 +170,37 @@ protected:
   int mTrackId;
 
 };
+
+/// Visualizing the visual odometry process of bundle adjustment.
+class SBAVisualizer: public F2FVisualizer {
+  public:
+    typedef F2FVisualizer Parent;
+    SBAVisualizer(PoseEstimateDisp& poseEstimator,
+        const vector<FramePose>& framePoses,
+        const VOSparseBundleAdj::Tracks& trcks):
+      Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
+    virtual ~SBAVisualizer(){}
+    /// Draw keypoints, tracks and disparity map on canvases for visualization
+    virtual void drawTrackingCanvas(
+        const PoseEstFrameEntry& lastFrame,
+        const PoseEstFrameEntry& frame);
+
+    /// Draw the tracks. A track is drawn as a polyline connecting the observations
+    /// of the same point in a sequence of frames. A line is drawn in yellow
+    /// if one of the end point is outside of the slide window. Red otherwise.
+    virtual void drawTrack(const PoseEstFrameEntry& frame);
+    virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
+    virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
+
+
+    /// a reference to the estimated pose of the frames
+    const vector<FramePose>& framePoses;
+    /// a reference to the tracks.
+    const VOSparseBundleAdj::Tracks& tracks;
+    int   slideWindowFront;
+};
+
+
 }
 }
 #endif /* CVVISODOMBUNDLEADJ_H_ */
