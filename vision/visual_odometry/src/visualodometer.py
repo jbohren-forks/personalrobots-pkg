@@ -2,8 +2,11 @@ import vop
 import visual_odometry as VO
 from timer import Timer
 
+import Image
 from math import *
 import numpy
+
+scratch = " " * (640 * 480)
 
 class Pose:
   def __init__(self, R=None, S=None):
@@ -49,10 +52,10 @@ class FeatureDetector:
 
   def detect(self, frame, target_points):
     features = self.get_features(frame, target_points)
-#    if len(features) > (target_points * 2.0):
-#        print "TOO MANY KP"
-#        self.thresh *= 1.2
-#        return self.detect(frame, target_points)
+    if len(features) > (target_points * 2.0):
+        print "TOO MANY KP"
+        self.thresh *= 1.2
+        return self.detect(frame, target_points)
     if len(features) > (target_points * 1.1):
         self.thresh *= 1.05
     if len(features) < (target_points * 0.9):
@@ -84,7 +87,88 @@ class FeatureDetectorStar(FeatureDetector):
     sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, self.thresh, self.line_thresh)
     return [ (x,y) for (x,y,s,r) in sd.detect(frame.rawdata) ]
 
-scratch = " " * (640 * 480)
+class DescriptorScheme:
+  pass
+
+class DescriptorSchemeEverything(DescriptorScheme):
+
+  def collect(self, frame):
+    pass
+
+  def match(self, af0, af1):
+    Xs = vop.array([k[0] for k in af1.kp])
+    Ys = vop.array([k[1] for k in af1.kp])
+    pairs = []
+    for (i,ki) in enumerate(af0.kp):
+      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
+      predX = (abs(Xs - ki[0]) < 64)
+      predY = (abs(Ys - ki[1]) < 32)
+      hits = vop.where(predX & predY, 1, 0).tostring()
+      for (j,c) in enumerate(hits):
+        if ord(c) != 0:
+          pairs.append((i, j))
+    return pairs
+
+class DescriptorSchemeSAD(DescriptorScheme):
+
+  def collect(self, frame):
+    lgrad = " " * (frame.size[0] * frame.size[1])
+    VO.ost_do_prefilter_norm(frame.rawdata, lgrad, frame.size[0], frame.size[1], 31, scratch)
+    frame.descriptors = [ VO.grab_16x16(lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
+    if 1:
+      frame.debug_patches = []
+      im = Image.fromstring("L", frame.size, frame.rawdata)
+      frame.debug_patches = [im.crop((p[0]-7, p[1]-7, p[0]+9, p[1]+9)) for p in frame.kp]
+
+  def match(self, af0, af1):
+    Xs = vop.array([k[0] for k in af1.kp])
+    Ys = vop.array([k[1] for k in af1.kp])
+    pairs = []
+    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
+      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
+      predX = (abs(Xs - ki[0]) < 64)
+      predY = (abs(Ys - ki[1]) < 32)
+      hits = vop.where(predX & predY, 1, 0).tostring()
+      best = VO.sad_search(di, af1.descriptors, hits)
+      if best != None:
+        pairs.append((i, best, 0))
+    return pairs
+
+import calonder
+
+class DescriptorSchemeCalonder(DescriptorScheme):
+  def __init__(self):
+    self.cl = calonder.classifier()
+    #self.cl.setThreshold(0.0)
+    self.cl.read('/u/prdata/calonder_trees/land50.trees')
+    self.ma = calonder.BruteForceMatcher()
+
+  def collect(self, frame):
+    frame.debug_patches = []
+    frame.descriptors = []
+    im = Image.fromstring("L", frame.size, frame.rawdata)
+    frame.matcher = calonder.BruteForceMatcher()
+    for (x,y,d) in frame.kp:
+      patch = im.crop((x-16,y-16,x+16,y+16))
+      sig = self.cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
+      frame.descriptors.append(sig)
+      frame.matcher.addSignature(sig)
+      frame.debug_patches.append(patch)
+
+  def match(self, af0, af1):
+    Xs = vop.array([k[0] for k in af1.kp])
+    Ys = vop.array([k[1] for k in af1.kp])
+    pairs = []
+    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
+      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
+      predX = (abs(Xs - ki[0]) < 64)
+      predY = (abs(Ys - ki[1]) < 32)
+      hits = vop.where(predX & predY, 1, 0).tostring()
+      match = af1.matcher.findMatch(di, hits)
+      if match != None:
+        (best, distance) = match
+        pairs.append((i, best, distance))
+    return pairs
 
 class VisualOdometer:
 
@@ -97,23 +181,30 @@ class VisualOdometer:
     self.prev_frame = None
     self.pose = Pose()
     self.inl = 0
+    self.outl = 0
     self.num_frames = 0
     self.keyframe = None
     self.log_keyframes = []
+    self.pairs = []
 
     self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast)()
+    self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD)()
 
   def reset_timers(self):
     for n,t in self.timer.items():
       t.reset();
 
+  def average_time_per_frame(self):
+    niter = self.num_frames
+    return 1e3 * sum([t.sum for t in self.timer.values()]) / niter
+
   def summarize_timers(self):
     niter = self.num_frames
     for n,t in self.timer.items():
       print "%-20s %fms" % (n, 1e3 * t.sum / niter)
-    print "%-20s %fms" % ("TOTAL", 1e3 * sum([t.sum for t in self.timer.values()]) / niter)
+    print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
   targetkp = 400
   def find_keypoints(self, frame):
@@ -130,23 +221,15 @@ class VisualOdometer:
   lgrad = " " * (640 * 480)
   def collect_descriptors(self, frame):
     self.timer['descriptor_collection'].start()
-    VO.ost_do_prefilter_norm(frame.rawdata, self.lgrad, frame.size[0], frame.size[1], 31, scratch)
-    frame.descriptors = [ VO.grab_16x16(self.lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
+    self.descriptor_scheme.collect(frame)
     self.timer['descriptor_collection'].stop()
 
-  def temporal_match(self, af0, af1):
+  def temporal_match(self, af0, af1, want_distances = False):
+    """ Match features between two frames.  Returns a list of pairs of indices into the features in the two frames, and optionally a distance value for each pair, if want_distances in True.  """
     self.timer['temporal_match'].start()
-    Xs = vop.array([k[0] for k in af1.kp])
-    Ys = vop.array([k[1] for k in af1.kp])
-    pairs = []
-    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
-      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
-      predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
-      hits = vop.where(predX & predY, 1, 0).tostring()
-      best = VO.sad_search(di, af1.descriptors, hits)
-      if best != None:
-        pairs.append((i, best))
+    pairs = self.descriptor_scheme.match(af0, af1)
+    if not want_distances:
+      pairs = [(a,b) for (a,b,d) in pairs]
     self.timer['temporal_match'].stop()
     return pairs
 
@@ -175,13 +258,13 @@ class VisualOdometer:
       solution = self.solve(ref.kp, frame.kp, self.pairs)
       (inl, rot, shift) = solution
       self.inl = inl
+      self.outl = len(self.pairs) - inl
       r33 = numpy.mat(numpy.array(rot).reshape(3,3))
       diff_pose = Pose(r33, numpy.array(shift))
       is_far = inl < self.inlier_thresh
       if (self.keyframe != self.prev_frame) and is_far:
         self.keyframe = self.prev_frame
         self.log_keyframes.append(self.keyframe.id)
-        #print "new key", self.keyframe.id
         return self.handle_frame(frame)
       frame.pose = ref.pose.concatenate(diff_pose)
     else:

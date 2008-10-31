@@ -106,7 +106,11 @@ class TestDirected(unittest.TestCase):
         return self.i.data
 
     cam = None
-    for topic, msg in rosrecord.logplayer("/wg/stor2/prdata/videre-bags/vo1.bag"):
+    filename = "/u/prdata/videre-bags/loop1-mono.bag"
+    filename = "/u/prdata/videre-bags/vo1.bag"
+    framecounter = 0
+    for topic, msg in rosrecord.logplayer(filename):
+      print framecounter
       if rospy.is_shutdown():
         break
       #print topic,msg
@@ -114,42 +118,15 @@ class TestDirected(unittest.TestCase):
         cam = camera.VidereCamera(msg.data)
         vo = VisualOdometer(cam)
       if cam and topic == "/videre/images":
-        imgR = imgAdapted(msg.images[0])
-        imgL = imgAdapted(msg.images[1])
-        af = SparseStereoFrame(imgL, imgR)
-        pose = vo.handle_frame(af)
-        visualize.viz(vo, af)
+        if -1 <= framecounter and framecounter < 360:
+          imgR = imgAdapted(msg.images[0])
+          imgL = imgAdapted(msg.images[1])
+          af = SparseStereoFrame(imgL, imgR)
+          pose = vo.handle_frame(af)
+          visualize.viz(vo, af)
+        framecounter += 1
+    print "distance from start:", vo.pose.distance()
     vo.summarize_timers()
-    sys.exit(1)
-    cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
-    vo.reset_timers()
-    dir = "/u/konolige/vslam/data/indoor1/"
-
-    trail = []
-    prev_scale = None
-
-    schedule = [(f+1000) for f in (range(0,100) + range(100,0,-1) + [0]*10)]
-    schedule = range(1507)
-    schedule = range(30)
-    for f in schedule:
-      lf = Image.open("%s/left-%04d.ppm" % (dir,f))
-      rf = Image.open("%s/right-%04d.ppm" % (dir,f))
-      lf.load()
-      rf.load()
-      af = SparseStereoFrame(lf, rf)
-
-      vo.handle_frame(af)
-      print f, vo.inl
-      trail.append(numpy.array(vo.pose.M[0:3,3].T)[0])
-
-    def d(a,b):
-      d = a - b
-      return sqrt(numpy.dot(d,d.conj()))
-    print "covered   ", sum([d(a,b) for (a,b) in zip(trail, trail[1:])])
-    print "from start", d(trail[0], trail[-1]), trail[0] - trail[-1]
-
-    vo.summarize_timers()
-    print vo.log_keyframes
 
   def test_sparse_stereo(self):
     left = Image.new("L", (640,480))
@@ -271,10 +248,10 @@ class TestDirected(unittest.TestCase):
         vo = VisualOdometer(cam, inlier_thresh = thresh)
         for (e,af) in zip(expected, afs)[::1]:
           vo.handle_frame(af)
-        error.append(e.compare(vo.pose)[0])
-      print threshes, error
-      pylab.scatter(threshes, error)
-    pylab.show()
+        #error.append(e.compare(vo.pose)[0])
+      #print threshes, error
+      #pylab.scatter(threshes, error)
+    #pylab.show()
 
   def test_solve_rotation(self):
 
@@ -348,5 +325,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('test_solve_rotation'))
+        suite.addTest(TestDirected('xtest_smoke_bag'))
         unittest.TextTestRunner(verbosity=2).run(suite)
