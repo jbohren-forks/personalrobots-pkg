@@ -75,7 +75,7 @@ class PeopleTracker:
 
 ################### RECT_TO_CENTER_DIFF #######################
   def rect_to_center_diff(self, rect):
-    diff = (rect[2]-1)/2.0, (rect[3]-1)/2.0)
+    diff = ((rect[2]-1)/2.0, (rect[3]-1)/2.0)
     center = (rect[0]+diff[0], rect[1]+diff[1])
     return center, diff
 
