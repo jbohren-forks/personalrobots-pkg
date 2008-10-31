@@ -187,6 +187,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
   */
   frame = target_frame;
   counter = 0;
+  unsigned int last_forward;
   if (getFrame(frame) == NULL) throw LookupException("fixme");; //Test if source frame exists this will throw a lookup error if it does not (inside the loop it will be caught)
   while (true)
     {
@@ -200,7 +201,8 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       }
       catch (tf::LookupException & ex)
       {
-                //std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
+        last_forward = frame;
+        //std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
         // this is thrown when there is no data for the link
         break;
       }
@@ -232,11 +234,13 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
         << std::endl << allFramesAsString() << std::endl;
       throw(ConnectivityException(ss.str()));
     }
-    if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != target_frame)
+    //    if (lookupFrameNumber(mTfLs.forwardTransforms.back().frame_id_) != target_frame)
+    if (last_forward != source_frame)
     {
       std::stringstream ss;
       ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
-        << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" << std::endl;
+        << std::endl << allFramesAsString() << std::endl << mTfLs.forwardTransforms.size() << " forward length" 
+        << " with " << lookupFrameString(last_forward) << std::endl;
       throw(ConnectivityException(ss.str()));
     }
     else return mTfLs;
