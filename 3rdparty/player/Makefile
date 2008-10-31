@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = player-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk
-SVN_REVISION = -r 7108
+SVN_REVISION = -r 7123
 include $(shell rospack find mk)/svn_checkout.mk
 
 
