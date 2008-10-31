@@ -601,7 +601,7 @@ namespace ros {
       std_msgs::PointStamped target_point;
       target_point.point.x = ptx;
       target_point.point.y = pty;
-      target_point.point.z = 1.5;
+      target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
       target_point.header.frame_id = "map";
       publish("head_controller/track_point", target_point);
