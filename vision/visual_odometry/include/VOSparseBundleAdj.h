@@ -189,6 +189,11 @@ class SBAVisualizer: public F2FVisualizer {
     /// of the same point in a sequence of frames. A line is drawn in yellow
     /// if one of the end point is outside of the slide window. Red otherwise.
     virtual void drawTrack(const PoseEstFrameEntry& frame);
+    /// Draw on the tracking canvas trajectories of the points of key frames.
+    /// The part of a trajectory that is on the fixed frames are drawn in blue.
+    /// For the part that is in the free frames,
+    /// a trajectory, or track, is green if the last observation of the track is
+    /// on the current frame. Yellow otherwise.
     virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
     virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
 

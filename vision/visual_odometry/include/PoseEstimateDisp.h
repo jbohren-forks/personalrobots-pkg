@@ -44,6 +44,8 @@ public:
 	 *
 	 *       -ui, vi, di
 	 *
+	 * NOTE: please make sure disparity (di's) is greater than zero!
+	 *
 	 * We estimate the "best" of rot and trans for the following tranformation
 	 * T * points0 => points1.
 	 * T is the transformation constructed from rot, trans and the projection
