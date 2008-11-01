@@ -196,8 +196,8 @@ main(int argc, char** argv)
   AmclNode an;
 
   // Start up the robot
-  if(an.start() != 0)
-    exit(-1);
+  //if(an.start() != 0)
+    //exit(-1);
 
   /////////////////////////////////////////////////////////////////
   // Main loop; grab messages off our queue and republish them via ROS
@@ -225,18 +225,6 @@ AmclNode::AmclNode() :
 
   // TODO: remove XDR dependency
   playerxdr_ftable_init();
-
-  this->tf = new tf::TransformBroadcaster(*this);
-  this->tfL = new tf::TransformListener(*this, true, 
-                                        10000000000ULL,
-                                          200000000ULL);
-                                         
-
-  advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
-  advertise<std_msgs::ParticleCloud2D>("particlecloud",2);
-  //subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
-  subscribe("scan", laserMsg, &AmclNode::laserReceived,2);
-  subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived,2);
 
   // get map via RPC
   std_srvs::StaticMap::request  req;
@@ -432,6 +420,24 @@ AmclNode::AmclNode() :
   this->setPose(startX, startY, startTH);
 
   cloud_pub_interval.fromSec(1.0);
+
+  start();
+
+  // Give Player a chance to start up, under heavy load conditions.
+  // TODO: remove this.
+  usleep(5000000);
+
+  this->tf = new tf::TransformBroadcaster(*this);
+  this->tfL = new tf::TransformListener(*this, true, 
+                                        10000000000ULL,
+                                          200000000ULL);
+                                         
+
+  advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
+  advertise<std_msgs::ParticleCloud2D>("particlecloud",2);
+  //subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
+  subscribe("scan", laserMsg, &AmclNode::laserReceived,2);
+  subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived,2);
 }
 
 AmclNode::~AmclNode()
