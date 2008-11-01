@@ -242,17 +242,6 @@ int PoseEstimateDisp::estimateMixedPointClouds(
 
   dispToCart(*uvds1, *xyzs1);
   cartToDisp(*xyzs0, *uvds0);
-#ifdef DEBUG
-  cout << "Cv3DPoseEstimateDisp::estimateMixedPointClouds()"<<endl;
-  cout << "xyzs0:"<<endl;
-  CvMatUtils::printMat(xyzs0);
-  cout << "uvds0"<<endl;
-  CvMatUtils::printMat(uvds0);
-  cout << "xyzs1"<<endl;
-  CvMatUtils::printMat(xyzs1);
-  cout << "uvds1"<<endl;
-  CvMatUtils::printMat(uvds1);
-#endif
 
   int numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1,
       numRefGrps, refPoints,
@@ -268,11 +257,6 @@ int PoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
   int numInLiers = 0;
 
   int numPoints = uvds0->rows;
-
-  if (numPoints != uvds1->rows) {
-    cerr << "number of points mismatched in input" << endl;
-    return 0;
-  }
 
   CvMat* xyzs0 = cvCreateMat(numPoints, 3, CV_64FC1);
   CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
@@ -294,10 +278,37 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
     CvMat *rot, CvMat *shift, bool smoothed) {
   int numPoints = xyzs0->rows;
 
+  // Sanity checks
   if (numPoints < 3) {
     cerr << __PRETTY_FUNCTION__ <<"too few points to do RANSAC: "<<numPoints<<endl;
     return 0;
   }
+
+  if (numPoints != uvds1->rows ||
+      numPoints != xyzs1->rows ||
+      numPoints != uvds0->rows ) {
+    cerr << "number of points mismatched in input" << endl;
+    return 0;
+  }
+
+  // make sure if the disparity values in uvds0 and uvds1 are greater than
+  // zero. Column 2 is the disparity col
+  double min_val, max_val;
+  CvMat dispCol;
+  cvGetCol(uvds0, &dispCol, 2);
+  cvMinMaxLoc(&dispCol, &min_val, &max_val, NULL, NULL, NULL);
+  if (min_val<=0) {
+    cerr << "please make sure disparity values are greater than zero\n";
+    return 0;
+  }
+  cvGetCol(uvds1, &dispCol, 2);
+  cvMinMaxLoc(&dispCol, &min_val, &max_val, NULL, NULL, NULL);
+  if (min_val<=0) {
+    cerr << "please make sure disparity values are greater than zero\n";
+    return 0;
+  }
+  // done with sanity checks
+
   int numInLiers = 0;
   double _P0[3*3], _P1[3*3], _R[3*3], _T[3*1], _H[4*4];
   CvMat P0, P1;
