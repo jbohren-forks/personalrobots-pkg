@@ -225,7 +225,8 @@ void KeypointSADDescriptor::computeDisparity(
     int disp = ost_do_stereo_sparse(desc->mData, featureImg, kpx, kpy,
         width, height, FTZero, DLen,
         tfilter_thresh, ufilter_thresh);
-    if (disp != -1) {
+    // neither disp == -1 nor disp == 0 is good
+    if (disp > 0) {
 #if DEBUG==1
       printf("(%5.1f, %5.1f), disp %5.2f <=> %5.2f\n", kp.x, kp.y, kp.z, (double)disp/16.0);
 #endif
