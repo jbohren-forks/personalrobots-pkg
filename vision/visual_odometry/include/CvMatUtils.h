@@ -54,12 +54,13 @@ public:
 	    const Keypoints& keypoints1);
 	static bool drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 	    const CvMat& rot, const CvMat& shift,
-	    const cv::willow::PoseEstimateDisp& peDisp, bool reversed=true);
+	    const CvStereoCamModel& stCamModel, bool reversed);
   /// Draw a line between two points (in disparity space) of each pair onto canvas.
   /// The line is in red.
   static bool drawLines(
       /// pairs of points in disparity space
-      WImage3_b & canvas, const vector<pair<CvPoint3D64f,CvPoint3D64f> > & pointPairsInDisp);
+      WImage3_b & canvas, const vector<pair<CvPoint3D64f,CvPoint3D64f> > & pointPairsInDisp,
+      const CvScalar color = CvMatUtils::red);
   /// Draw a line between two points (in disparity space) of each pair onto canvas.
   /// The line is in red.
   static bool drawLines(
@@ -69,7 +70,8 @@ public:
       /// key point list 0 in disparity space
       const Keypoints& keypoints0,
       /// key point list 1 in disparity space
-      const Keypoints& keypoints1
+      const Keypoints& keypoints1,
+      const CvScalar color = CvMatUtils::red
   );
   /// Given a disparity map and  location, returns the disparity value.
   /// The caller needs to make sure the location coordinates are valid.
@@ -98,6 +100,7 @@ public:
   static const CvScalar red;
 	static const CvScalar green;
 	static const CvScalar yellow;
+	static const CvScalar blue;
 
 };
 

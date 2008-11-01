@@ -14,6 +14,7 @@ using namespace cv::willow;
 const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
 const CvScalar CvMatUtils::green  = CV_RGB(0, 255, 0);
 const CvScalar CvMatUtils::yellow = CV_RGB(255, 255, 0);
+const CvScalar CvMatUtils::blue   = CV_RGB(0, 0, 255);
 
 CvMatUtils::CvMatUtils()
 {
@@ -24,13 +25,14 @@ CvMatUtils::~CvMatUtils()
 }
 
 void CvMatUtils::printMat(const CvMat *mat, const char * format){
-	cout << "A Matrix of "<<mat->rows<<" by "<< mat->cols <<endl;
-	for (int i=0; i<mat->rows; i++) {
-		for (int j=0; j<mat->cols; j++) {
-			printf(format, cvmGet(mat, i, j));
-		}
-		cout << endl;
-	}
+  if (format == NULL) format = "%12.5f";
+  cout << "A Matrix of "<<mat->rows<<" by "<< mat->cols <<endl;
+  for (int i=0; i<mat->rows; i++) {
+    for (int j=0; j<mat->cols; j++) {
+      printf(format, cvmGet(mat, i, j));
+    }
+    cout << endl;
+  }
 }
 
 // the unit of the dispMap is 1/16 of a pixel
@@ -122,7 +124,7 @@ bool CvMatUtils::drawPoints(cv::WImage3_b& image, const Keypoints& keyPointsLast
 
 bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canvas,
 		const CvMat& rot, const CvMat& shift,
-		const PoseEstimateDisp& pedisp, bool reversed) {
+		const CvStereoCamModel& stCamModel, bool reversed) {
 	int numInliers = pts0.rows;
 	if (pts1.rows != numInliers) {
 		cerr << __PRETTY_FUNCTION__ << "matching pairs do not match in length"<<endl;
@@ -138,31 +140,31 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 	CvMat uvds0To1 = cvMat(numInliers, 3, CV_64FC1, _uvds0To1);
 	CvMat xyzs1    = cvMat(numInliers, 3, CV_64FC1, _xyzs1);
 
-	pedisp.dispToCart(pts0, xyzs0);
-	pedisp.dispToCart(pts1, xyzs1);
+	stCamModel.dispToCart(pts0, xyzs0);
+	stCamModel.dispToCart(pts1, xyzs1);
 
 	if (reversed == true) {
-		// compute the inverse transformation
-		double _invRot[9], _invShift[3];
-		CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
-		CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
+	  // compute the inverse transformation
+	  double _invRot[9], _invShift[3];
+	  CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
+	  CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
 
-		cvInvert(&rot, &invRot);
-		cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
-		CvMat xyzs0Reshaped;
-		CvMat xyzs0To1Reshaped;
-		cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
-		cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
-		cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
+	  cvInvert(&rot, &invRot);
+	  cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
+	  CvMat xyzs0Reshaped;
+	  CvMat xyzs0To1Reshaped;
+	  cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
+	  cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+	  cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &invRot, &invShift);
 	} else {
-		CvMat xyzs0Reshaped;
-		CvMat xyzs0To1Reshaped;
-		cvReshape(&xyzs0,    &xyzs0Reshaped, 3, 0);
-		cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
-		cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &rot, &shift);
+	  CvMat xyzs0Reshaped;
+	  CvMat xyzs0To1Reshaped;
+	  cvReshape(&xyzs0,    &xyzs0Reshaped,    3, 0);
+	  cvReshape(&xyzs0To1, &xyzs0To1Reshaped, 3, 0);
+	  cvTransform(&xyzs0Reshaped, &xyzs0To1Reshaped, &rot, &shift);
 	}
 
-	pedisp.cartToDisp(xyzs0To1, uvds0To1);
+	stCamModel.cartToDisp(xyzs0To1, uvds0To1);
 	IplImage* img = canvas.Ipl();
 
 	// draw uvds0To1 on leftimgeC3a
@@ -218,14 +220,15 @@ CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
 
 bool CvMatUtils::drawLines(
     WImage3_b& canvas,
-    const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp){
+    const vector<pair<CvPoint3D64f, CvPoint3D64f> >& pointPairsInDisp,
+    const CvScalar color){
   for (vector<pair<CvPoint3D64f, CvPoint3D64f> >::const_iterator iter = pointPairsInDisp.begin();
   iter != pointPairsInDisp.end(); iter++) {
     const pair<CvPoint3D64f, CvPoint3D64f>& p = *iter;
     CvPoint p0 = CvStereoCamModel::dispToLeftCam(p.first);
     CvPoint p1 = CvStereoCamModel::dispToLeftCam(p.second);
     int thickness =1;
-    cvLine(canvas.Ipl(), p0, p1, CvMatUtils::red, thickness, CV_AA);
+    cvLine(canvas.Ipl(), p0, p1, color, thickness, CV_AA);
   }
   return true;
 }
@@ -233,7 +236,8 @@ bool CvMatUtils::drawLines(
     WImage3_b& canvas,
     const vector<pair<int, int> >& indexPairs,
     const Keypoints& keypoints0,
-    const Keypoints& keypoints1){
+    const Keypoints& keypoints1,
+    const CvScalar color){
   for (vector<pair<int, int> >::const_iterator iter = indexPairs.begin();
   iter != indexPairs.end();
   iter++) {
@@ -241,7 +245,7 @@ bool CvMatUtils::drawLines(
     CvPoint p0 = cvPoint(keypoints0[p.first].x, keypoints0[p.first].y);
     CvPoint p1 = cvPoint(keypoints1[p.second].x, keypoints1[p.second].y);
     int thickness =1;
-    cvLine(canvas.Ipl(), p0, p1, CvMatUtils::red, thickness, CV_AA);
+    cvLine(canvas.Ipl(), p0, p1, color, thickness, CV_AA);
   }
   return true;
 }
