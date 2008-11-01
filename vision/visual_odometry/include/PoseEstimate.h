@@ -151,6 +151,8 @@ public:
       return true;
     }
   }
+  /// Returns the list of the indices of the pairs of inliers.
+  /// Caller to this function is given the ownership of the list.
   int* fetchInliers() {
     int * inliers = mInlierIndices;
     mInlierIndices = NULL;
