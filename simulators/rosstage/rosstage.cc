@@ -283,28 +283,28 @@ StageNode::Update()
   this->odomMsg.stall = this->positionmodel->Stall();
   this->odomMsg.header.frame_id = "odom";
   this->odomMsg.header.stamp = sim_time;
-  /*
-  printf("L: %.6f %.3f %.3f %.3f\n",
-         sim_time.to_double(),
-         this->odomMsg.pos.x, 
-         this->odomMsg.pos.y, 
-         this->odomMsg.pos.th);
-         */
   publish("odom",this->odomMsg);
+  tf::Stamped<tf::Transform> 
+          tx(tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
+                           tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
+             sim_time, "odom", "base");
   /*
-  tf.sendInverseEuler("odom",
-                      "base",
-                      odomMsg.pos.x,
-                      odomMsg.pos.y,
-                      0.0,
-                      odomMsg.pos.th,
-                      0.0,
-                      0.0,
-                      sim_time);
-                      */
-  this->tf.sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
-                                                                    tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
-                                                      sim_time, "odom", "base"));
+  printf("S: %.6f %.3f %.3f %.3f %.3f %.3f %.3f\n",
+         sim_time.to_double(),
+         tx.getOrigin().x(),
+         tx.getOrigin().y(),
+         tx.getRotation().x(),
+         tx.getRotation().y(),
+         tx.getRotation().z(),
+         tx.getRotation().w());
+         */
+
+  this->tf.sendTransform(tx);
+  /*
+  printf("S: %.6f %.3f %.3f %.3f\n",
+         sim_time.to_double(),
+         odomMsg.pos.x, odomMsg.pos.y, odomMsg.pos.th);
+         */
 
   // Also publish the ground truth pose
   Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
