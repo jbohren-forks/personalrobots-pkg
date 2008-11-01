@@ -1,0 +1,15 @@
+<package>
+<description brief='Trajectory Library'>
+
+General purpose trajectory library.
+
+</description>
+<author>Sachin Chitta</author>
+<license>BSD</license>
+<url>http://pr.willowgarage.com</url>
+<depend package="rosout"/>
+<depend package="roscpp"/>
+<export>
+<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltrajectory"/>
+</export>
+</package>
