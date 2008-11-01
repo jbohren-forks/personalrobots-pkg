@@ -115,7 +115,9 @@ PathRecon::keyFrameEval(
 	//
 	// check if the frame is good enough for checking
 	//
-	if (numInliers < defMinNumInliersForGoodFrame) {
+	if (numInliers < 3) {
+	  kfd = KeyFrameSkip;
+	} else if (numInliers < defMinNumInliersForGoodFrame) {
 		// Too few inliers to ensure good tracking
 	  // This one overides mMinNumInliers as the absolute minimum guard.
 		keyFrameNeeded = true;
@@ -144,7 +146,7 @@ PathRecon::keyFrameEval(
 		} else {
 			kfd = KeyFrameBackTrack;
 		}
-	} else {
+	} else if (kfd != KeyFrameSkip) {
 		kfd = KeyFrameKeep;
 	}
 
@@ -414,19 +416,22 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
               currFrame->mRot, currFrame->mShift, false);
         TIMEREND2(PoseEstimateRANSAC);
 
-        mStat.mHistoInliers.push_back(currFrame->mNumInliers);
-
         currFrame->mInliers0 = NULL;
         currFrame->mInliers1 = NULL;
-        fetchInliers(currFrame->mInliers1, currFrame->mInliers0);
-        currFrame->mInlierIndices = fetchInliers();
-        currFrame->mLastKeyFrameIndex = getLastKeyFrame()->mFrameIndex;
-#if DEBUG==1
-        cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
-#endif
-        assert(getLastKeyFrame());
-        if (mVisualizer) mVisualizer->drawTrackingCanvas(*getLastKeyFrame(), *currFrame);
+        if ( currFrame->mNumInliers > 3 ) {
+          mStat.mHistoInliers.push_back(currFrame->mNumInliers);
 
+          // get the inliers, in matching groups
+          fetchInliers(currFrame->mInliers1, currFrame->mInliers0);
+          // get the index list of the inlier pairs
+          currFrame->mInlierIndices = fetchInliers();
+          currFrame->mLastKeyFrameIndex = getLastKeyFrame()->mFrameIndex;
+#if DEBUG==1
+          cout << "num of inliers: "<< currFrame->mNumInliers <<endl;
+#endif
+          assert(getLastKeyFrame());
+          if (mVisualizer) mVisualizer->drawTrackingCanvas(*getLastKeyFrame(), *currFrame);
+        }
         // Decide if we need select a key frame by now
         kfd =
           keyFrameEval(currFrame->mFrameIndex, currFrame->mKeypoints->size(),
@@ -538,7 +543,8 @@ void F2FVisualizer::drawKeypoints(
   CvMatUtils::drawPoints(canvasKeypoint, *lastFrame.mKeypoints,*currentFrame.mKeypoints);
   // The following two line shall draw the same lines between point pairs.
   //  CvMatUtils::drawLines(canvasKeypoint, pointPairsInDisp);
-  CvMatUtils::drawLines(canvasKeypoint, *currentFrame.mTrackableIndexPairs,*currentFrame.mKeypoints, *lastFrame.mKeypoints);
+  CvMatUtils::drawLines(canvasKeypoint, *currentFrame.mTrackableIndexPairs,
+      *currentFrame.mKeypoints, *lastFrame.mKeypoints);
   sprintf(leftCamWithMarks, "%s/leftCamWithMarks-%04d.png", outputDirname.c_str(),
       currentFrame.mFrameIndex);
   canvasKeypointRedrawn = true;
@@ -568,12 +574,14 @@ void F2FVisualizer::drawTrackingCanvas(
   assert(frame.mImage);
   cvCvtColor(frame.mImage->Ipl(), canvasTracking.Ipl(),  CV_GRAY2RGB);
 
-  bool reversed = true;
   if (frame.mInliers0) {
     assert(frame.mInliers1);
+
+    // note that the transformation was estimated from inliers1 to inliers0
+    bool reversed = true;
     CvMatUtils::drawMatchingPairs(*frame.mInliers0, *frame.mInliers1, canvasTracking,
         frame.mRot, frame.mShift,
-        (PoseEstimateDisp&)poseEstimator, reversed);
+        (CvStereoCamModel&)poseEstimator, reversed);
 
 
     CvPoint3D64f euler;

@@ -55,7 +55,7 @@ void VOSparseBundleAdj::updateSlideWindow() {
   }
   // loop thru all tracks and get purge the old entries
   purgeTracks(mActiveKeyFrames.front()->mFrameIndex);
-#if DEBUG
+#if DEBUG==1
   cout << "Current slice window: ["<<mActiveKeyFrames.front()->mFrameIndex<<","
   <<mActiveKeyFrames.back()->mFrameIndex << "]"<<endl;
 #endif
@@ -64,7 +64,7 @@ void VOSparseBundleAdj::updateSlideWindow() {
   assert(numWinSize<=this->mSlideWindowSize);
   int numFixedFrames = std::min(this->mNumFrozenWindows, numWinSize-mNumFrozenWindows);
   numFixedFrames = std::max(1, numFixedFrames);
-#if DEBUG
+#if DEBUG==1
   cout << "window size: "<< numWinSize << " # fixed: " << numFixedFrames << endl;
 #endif
 
@@ -112,7 +112,9 @@ void VOSparseBundleAdj::Tracks::purge(int oldestFrameIndex) {
     iTrack++) {
     if (iTrack->lastFrameIndex() < oldestFrameIndex) {
       //  remove the entire track, as it is totally outside of the window
+#if DEBUG==1
       printf("erase track %d, len=%d\n", iTrack->mId, iTrack->size());
+#endif
       mTracks.erase(iTrack);
     } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
 #if 0 // Do not do this as those older frames are used as fixed frames
@@ -182,12 +184,14 @@ bool VOSparseBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
 
         track.extend(obsv);
         status = true;
+#if DEBUG==1
         printf("extend track %3d => f=%3d, pi=%3d:[%3d, %3d]->f=%3d, pi=%3d:[%3d, %3d]\n",
             track.mId,
             frame.mLastKeyFrameIndex, p.second,
             (int)(coord0.x+.5), (int)(coord0.y+.5),
             frame.mFrameIndex,        p.first,
             (int)(coord1.x+.5), (int)(coord1.y+.5));
+#endif
         break;
       }
     }
@@ -213,12 +217,13 @@ bool VOSparseBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   tracks.mTracks.push_back(newtrack);
 
   int trackId = mTrackId-1;
+#if DEBUG==1
   printf("add new track %3d => %3d, %3d:[%8.2f, %8.2f, %8.2f]\n", trackId, inlierIndex, inlier,
       cartCoord1.x, cartCoord1.y, cartCoord1.z);
   printf("f=%3d, pi=%3d: [%3d, %3d], f=%3d, pi=%3d: [%3d, %3d]\n",
       frame.mLastKeyFrameIndex, p.second,  (int)(dispCoord0.x+.5), (int)(dispCoord0.y+.5),
       frame.mFrameIndex,        p.first,   (int)(dispCoord1.x+.5), (int)(dispCoord1.y+.5));
-
+#endif
   return status;
 }
 
@@ -240,23 +245,25 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
   BOOST_FOREACH( const VOSparseBundleAdj::Track& track, this->tracks.mTracks ){
     const VOSparseBundleAdj::TrackObserv& lastObsv = track.back();
-    const CvScalar colorFixedFrame = CvMatUtils::green;
+    const CvScalar colorFixedFrame = CvMatUtils::blue;
     CvScalar colorFreeFrame;
 
-    // drawing it red if the last observation is over the current frame
+    // drawing it green if the last observation is over the current frame
     // drawing it yellow otherwise.
     if (lastObsv.mFrameIndex < frame.mFrameIndex) {
       colorFreeFrame = CvMatUtils::yellow;
     } else {
-      colorFreeFrame  = CvMatUtils::red;
+      colorFreeFrame  = CvMatUtils::green;
     }
 
     int thickness = 1;
     int i=0;
     deque<VOSparseBundleAdj::TrackObserv>::const_iterator iObsv = track.begin();
     CvPoint pt0 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
+#if DEBUG==1
     printf("track %3d, len=%3d\n", track.mId, track.size());
     printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
+#endif
     CvScalar color;
     if (iObsv->mFrameIndex < slideWindowFront) {
       color = colorFixedFrame;
@@ -266,13 +273,16 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     for (iObsv++; iObsv != track.end(); iObsv++) {
       CvPoint pt1 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
       cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
+      // setting up for next iteration
+      pt0 = pt1;
       if (iObsv->mFrameIndex < slideWindowFront) {
         color = colorFixedFrame;
       } else {
         color = colorFreeFrame;
       }
-      pt0 = pt1;
+#if DEBUG==1
       printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
+#endif
     }
   }
 }

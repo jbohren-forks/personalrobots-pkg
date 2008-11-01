@@ -282,7 +282,8 @@ bool PoseEstimateStereo::goodFeaturesToTrack(
     const int16_t *disp = dispMap->ImageData();
     BOOST_FOREACH( Keypoint& kp, keypoints) {
       double d = disp[(int)(kp.y+.5) * sz.width + (int)(kp.x+.5)];
-      if (d>=0) { // this could happen due to rounding
+      // disparity needs to be greater than zero, as always.
+      if (d>0) { // this could happen due to rounding
         d /= disparityUnitInPixels;
         kp.z = d;
       } else {

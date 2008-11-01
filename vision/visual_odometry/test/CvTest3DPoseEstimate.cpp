@@ -224,7 +224,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
   string dispimgfmt(".dispmap-%04d.xml");
-  int start = 25;
+  int start = 0;
   int end   = 1509;
   int step  = 1;
 
@@ -321,8 +321,8 @@ bool CvTest3DPoseEstimate::testVideo() {
   string leftimgfmt("/left-%04d.ppm");
   string rightimgfmt("/right-%04d.ppm");
   string dispimgfmt(".dispmap-%04d.xml");
-  int start = 25;
-  int end   = 1509;
+  int start = 1150;
+  int end   = 1160;
   int step  = 1;
 
   // set up a FileSeq
