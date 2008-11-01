@@ -46,16 +46,28 @@ import fast
 
 class FeatureDetector:
 
+  def name(self):
+    return self.__class__.__name__
+
   def __init__(self):
     self.thresh = self.default_thresh
     self.cold = True
 
   def detect(self, frame, target_points):
+
     features = self.get_features(frame, target_points)
-    if len(features) > (target_points * 2.0):
-        print "TOO MANY KP"
-        self.thresh *= 1.2
-        return self.detect(frame, target_points)
+    if len(features) < (target_points * 0.5) or len(features) > (target_points * 2.0):
+        lo = self.thresh / 8.
+        hi = self.thresh * 8.
+        for i in range(7):
+          self.thresh = (lo + hi) / 2
+          features = self.get_features(frame, target_points)
+          if len(features) < target_points:
+            hi = self.thresh
+          if len(features) > target_points:
+            lo = self.thresh
+          
+    # Try to be a bit adaptive for next time
     if len(features) > (target_points * 1.1):
         self.thresh *= 1.05
     if len(features) < (target_points * 0.9):
@@ -67,7 +79,36 @@ class FeatureDetectorFast(FeatureDetector):
   default_thresh = 10
 
   def get_features(self, frame, target_points):
+    assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
     return fast.fast(frame.rawdata, frame.size[0], frame.size[1], int(self.thresh), 40)
+
+class FeatureDetector4x4:
+
+  def __init__(self, fd):
+    self.fds = [ fd() for i in range(16) ]
+
+  def name(self):
+    return "4x4 " + self.fds[0].__class__.__name__
+
+  def detect(self, frame, target_points):
+    w,h = frame.size
+    master = Image.fromstring("L", frame.size, frame.rawdata)
+    allpts = []
+    for x in range(4):
+      for y in range(4):
+        xleft = x * (w/4)
+        ytop = y * (h/4)
+        subimage = master.crop((xleft, ytop, xleft + (w/4), ytop + (h/4)))
+        assert subimage.size == ((w/4), (h/4))
+
+        class FrameAdapter:
+          def __init__(self, im):
+            self.size = im.size
+            self.rawdata = im.tostring()
+
+        subpts = self.fds[4 * x + y].detect(FrameAdapter(subimage), target_points / 16)
+        allpts += [(xleft + xp, ytop + yp) for (xp,yp) in subpts]
+    return allpts
 
 class FeatureDetectorHarris(FeatureDetector):
 
@@ -88,7 +129,9 @@ class FeatureDetectorStar(FeatureDetector):
     return [ (x,y) for (x,y,s,r) in sd.detect(frame.rawdata) ]
 
 class DescriptorScheme:
-  pass
+
+  def name(self):
+    return self.__class__.__name__
 
 class DescriptorSchemeEverything(DescriptorScheme):
 
@@ -115,10 +158,6 @@ class DescriptorSchemeSAD(DescriptorScheme):
     lgrad = " " * (frame.size[0] * frame.size[1])
     VO.ost_do_prefilter_norm(frame.rawdata, lgrad, frame.size[0], frame.size[1], 31, scratch)
     frame.descriptors = [ VO.grab_16x16(lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
-    if 1:
-      frame.debug_patches = []
-      im = Image.fromstring("L", frame.size, frame.rawdata)
-      frame.debug_patches = [im.crop((p[0]-7, p[1]-7, p[0]+9, p[1]+9)) for p in frame.kp]
 
   def match(self, af0, af1):
     Xs = vop.array([k[0] for k in af1.kp])
@@ -144,7 +183,6 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     self.ma = calonder.BruteForceMatcher()
 
   def collect(self, frame):
-    frame.debug_patches = []
     frame.descriptors = []
     im = Image.fromstring("L", frame.size, frame.rawdata)
     frame.matcher = calonder.BruteForceMatcher()
@@ -153,7 +191,6 @@ class DescriptorSchemeCalonder(DescriptorScheme):
       sig = self.cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
       frame.descriptors.append(sig)
       frame.matcher.addSignature(sig)
-      frame.debug_patches.append(patch)
 
   def match(self, af0, af1):
     Xs = vop.array([k[0] for k in af1.kp])
@@ -189,8 +226,11 @@ class VisualOdometer:
 
     self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
-    self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast)()
-    self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD)()
+    self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
+    self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
+
+  def name(self):
+    return "VisualOdometer< %s %s>" % (self.feature_detector.name(), self.descriptor_scheme.name())
 
   def reset_timers(self):
     for n,t in self.timer.items():

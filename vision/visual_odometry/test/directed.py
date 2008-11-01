@@ -46,7 +46,6 @@ def circle(im, x, y, r, color):
 class TestDirected(unittest.TestCase):
 
   def test_sad(self):
-    dir = "/u/konolige/vslam/data/indoor1/"
     cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
     vo = VisualOdometer(cam)
 
@@ -55,13 +54,15 @@ class TestDirected(unittest.TestCase):
         self.rawdata = im.tostring()
         self.size = im.size
 
-    im = adapter(Image.open("%s/left-%04d.ppm" % (dir,1000)))
+    im = adapter(Image.open("img1.pgm"))
     vo.feature_detector.thresh *= 15
     vo.find_keypoints(im)
     im.kp = im.kp2d
     vo.collect_descriptors(im)
     print len(im.kp)
-    print vo.temporal_match(im, im)
+    matches = vo.temporal_match(im, im)
+    for (a,b) in matches:
+      self.assert_(a == b)
 
   def xtest_smoke(self):
     cam = camera.Camera((389.0, 389.0, 89.23, 323.42, 323.42, 274.95))
