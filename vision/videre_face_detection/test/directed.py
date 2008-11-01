@@ -23,6 +23,7 @@ import math
 import numpy
 
 import os
+import copy
 
 DEBUG = True
 
@@ -239,7 +240,7 @@ class PeopleTracker:
       # First frame:
       if len(self.current_keyframes) < iface+1:
         self.current_keyframes.append(0)
-        self.keyframes.append(ia)
+        self.keyframes.append(copy.copy(ia))
 
         (cen,diff) = self.rect_to_center_diff((x,y,w,h))
         self.feats_to_centers.append(self.make_face_model( cen, diff, ia.kp2d ))
@@ -248,12 +249,12 @@ class PeopleTracker:
         ltf = self.cam.pix2cam(x,y,iaavgd)
         rbf = self.cam.pix2cam(x+w,y+h,iaavgd)
         fs3d = ( (rbf[0]-ltf[0]) + (rbf[1]-ltf[1]) )/4.0
-        self.face_sizes_3d.append( fs3d )
+        self.face_sizes_3d.append( copy.deepcopy(fs3d) )
         self.feats_to_centers_3d.append( self.make_face_model( cen3d, (fs3d,fs3d,fs3d), iakp3d) )
-        self.face_centers_3d.append( cen3d )
+        self.face_centers_3d.append( copy.deepcopy(cen3d) )
 
-        self.recent_good_frames.append(ia)
-        self.recent_good_rects.append([x,y,w,h])
+        self.recent_good_frames.append(copy.copy(ia))
+        self.recent_good_rects.append(copy.deepcopy([x,y,w,h]))
 
         self.same_key_rgfs.append(True)
 
@@ -288,11 +289,11 @@ class PeopleTracker:
               self.feats_to_centers_3d[iface] = self.make_face_model( cen3d, 
                                                                       (self.face_sizes_3d[iface], self.face_sizes_3d[iface], self.face_sizes_3d[iface]),
                                                                       [self.cam.pix2cam(kp[0],kp[1],kp[2]) for kp in self.recent_good_frames[iface].kp])
-              self.face_centers_3d[iface] = cen3d
+              self.face_centers_3d[iface] = copy.deepcopy(cen3d)
               # Not changing the face size
 
               self.current_keyframes[iface] = 0
-              self.keyframes[self.current_keyframes[iface]] = self.recent_good_frames[iface]
+              self.keyframes[self.current_keyframes[iface]] = copy.copy(self.recent_good_frames[iface])
 
               self.same_key_rgfs[iface] = True
 
@@ -309,7 +310,7 @@ class PeopleTracker:
               done_matching = True
     #          if DEBUG:
     #            print "Bad frame ", self.seq, " for face ", iface
-              self.keyframes[self.current_keyframes[iface]] = ia
+              self.keyframes[self.current_keyframes[iface]] = copy.copy(ia)
               self.current_keyframes[iface] = 0
               (cen,diff) = self.rect_to_center_diff(self.faces[iface])
               self.feats_to_centers[iface] = self.make_face_model( cen, diff, ia.kp2d )
@@ -317,7 +318,7 @@ class PeopleTracker:
               self.feats_to_centers_3d[iface] = self.make_face_model( cen3d, 
                                                                       (self.face_sizes_3d[iface], self.face_sizes_3d[iface], self.face_sizes_3d[iface]),
                                                                       iakp3d)
-              self.face_centers_3d[iface] = cen3d
+              self.face_centers_3d[iface] = copy.deepcopy(cen3d)
               matches = []
               self.same_key_rgfs[iface] = True
 
@@ -393,10 +394,10 @@ class PeopleTracker:
         ny += dy
 
         self.faces[iface] = [nx, ny, nw, nh]
-        self.face_centers_3d[iface] = new_center
+        self.face_centers_3d[iface] = copy.deepcopy(new_center)
         self.recent_good_rects[iface] = [nx,ny,nw,nh]
         ###
-        self.recent_good_frames[iface] = ia
+        self.recent_good_frames[iface] = copy.copy(ia)
         self.same_key_rgfs[iface] = False
         ###
 
@@ -492,8 +493,8 @@ def main(argv) :
       pass
 
     num_frames = 0
-    start_frame = 1700
-    end_frame = 2100
+    start_frame = 4000
+    end_frame = 4200
     for topic, msg in rosrecord.logplayer(filename):
       if topic == '/videre/cal_params':
         people_tracker.params(msg)
