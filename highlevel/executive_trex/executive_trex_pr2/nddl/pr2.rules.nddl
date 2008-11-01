@@ -39,6 +39,9 @@ Behavior::Inactive{
 Behavior::Active{
   met_by(Inactive);
   meets(Inactive);
+
+  // All behaviors must deactivate before the end of the agent time window
+  precedes(end, missionEnd);
 }
 
 MoveBase::Inactive {
