@@ -71,7 +71,7 @@
 
 #include <ros/node.h>
 #include <pr2_mechanism_controllers/JointPosCmd.h>
-#include <robot_mechanism_controllers/SingleJointPosCmd.h>
+#include <std_msgs/Float64.h>
 
 // For transform support
 #include <rosTF/rosTF.h>
@@ -128,8 +128,8 @@ class TArmK_Node : public ros::node
   private:
     pr2_mechanism_controllers::JointPosCmd lArmCmd;
     pr2_mechanism_controllers::JointPosCmd rArmCmd;
-    robot_mechanism_controllers::SingleJointPosCmd lGripperCmd;
-    robot_mechanism_controllers::SingleJointPosCmd rGripperCmd;
+    std_msgs::Float64 lGripperCmd;
+    std_msgs::Float64 rGripperCmd;
 
   public:
     TArmK_Node() : ros::node("tarmk"), tf(*this, true)
@@ -194,12 +194,12 @@ class TArmK_Node : public ros::node
 
     advertise<pr2_mechanism_controllers::JointPosCmd>("left_arm_commands");
     advertise<pr2_mechanism_controllers::JointPosCmd>("right_arm_commands");
-    advertise<robot_mechanism_controllers::SingleJointPosCmd>("left_gripper_commands");
-    advertise<robot_mechanism_controllers::SingleJointPosCmd>("right_gripper_commands");
+    advertise<std_msgs::Float64>("gripper_left_controller/set_command");
+    advertise<std_msgs::Float64>("gripper_right_controller/set_command");
 
     // deal with grippers separately
-    this->lGripperCmd.position      = 0;
-    this->rGripperCmd.position     = 0;
+    this->lGripperCmd.data      = 0;
+    this->rGripperCmd.data     = 0;
 
   }
     ~TArmK_Node() { }
@@ -214,7 +214,7 @@ class TArmK_Node : public ros::node
           << " " << this->lArmCmd.positions[4]
           << " " << this->lArmCmd.positions[5]
           << " " << this->lArmCmd.positions[6]
-          << " " << this->lGripperCmd.position
+          << " " << this->lGripperCmd.data
           << std::endl;
       std::cout << "right arm " << std::endl;
       std::cout << " cmds: "
@@ -225,7 +225,7 @@ class TArmK_Node : public ros::node
           << " " << this->rArmCmd.positions[4]
           << " " << this->rArmCmd.positions[5]
           << " " << this->rArmCmd.positions[6]
-          << " " << this->rGripperCmd.position
+          << " " << this->rGripperCmd.data
           << std::endl;
 
     }
@@ -304,10 +304,10 @@ main(int argc, char** argv)
 void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
   if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
   if(jointID == ARM_R_GRIPPER_GAP) {
-    this->rGripperCmd.position = .2;
+    this->rGripperCmd.data = .2;
     printf("Opening right gripper\n");
   } else { 
-    this->lGripperCmd.position = .2;
+    this->lGripperCmd.data = .2;
     printf("Opening left gripper\n");
   }
 }
@@ -315,9 +315,9 @@ void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
 void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
   if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
   if(jointID == ARM_R_GRIPPER_GAP) {
-    this->rGripperCmd.position = 0;
+    this->rGripperCmd.data = 0;
   } else { 
-    this->lGripperCmd.position = 0;
+    this->lGripperCmd.data = 0;
   }
 }
 
@@ -360,7 +360,7 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
       this->lArmCmd.positions[6] += jointCmdStep;
       break;
     case ARM_L_GRIPPER_GAP:
-      this->lGripperCmd.position += gripperStep;
+      this->lGripperCmd.data += gripperStep;
       break;
     case ARM_R_PAN:
       this->rArmCmd.positions[0] += jointCmdStep;
@@ -384,7 +384,7 @@ void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
       this->rArmCmd.positions[6] += jointCmdStep;
       break;
     case ARM_R_GRIPPER_GAP:
-      this->rGripperCmd.position += gripperStep;
+      this->rGripperCmd.data += gripperStep;
       break;
     default:
       printf("This joint is not handled.\n");
@@ -560,10 +560,10 @@ TArmK_Node::keyboardLoop()
       dirty=false; // Sending the command only once for each key press.
       if(!right_arm) {
         publish("left_arm_commands",lArmCmd);
-        publish("left_gripper_commands",lGripperCmd);
+        publish("gripper_left_controller/set_command",lGripperCmd);
       } else {
         publish("right_arm_commands",rArmCmd);
-        publish("right_gripper_commands",rGripperCmd);
+        publish("gripper_right_controller/set_command",rGripperCmd);
       }
     }
   }
