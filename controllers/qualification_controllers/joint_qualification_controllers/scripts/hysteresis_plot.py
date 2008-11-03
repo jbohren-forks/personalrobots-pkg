@@ -53,6 +53,7 @@ import rospy
 class App(wx.App):
   def OnInit(self):
     rospy.ready("Hysteresis", anonymous=True)
+    self.data_dict = {}
     self.data_topic = rospy.TopicSub("/hysteresis_data", ChannelFloat32, self.OnData)
     # Configure the plot panel
     self.plot = wxmpl.PlotApp('Hysteresis Plot')
@@ -65,11 +66,10 @@ class App(wx.App):
   def OnData(self,msg):
     print 'Got data named %s' % (msg.name)
     self.data_dict[msg.name] = msg.vals
-    self.data_topic.unregister()
-    self.Plot
+    self.Plot()
     
   def Plot(self):
-  
+    print "plotting"
     # Plot the values and line of best fit
     fig=self.plot.get_figure()
     axes1 = fig.add_subplot(211)
@@ -85,7 +85,6 @@ class App(wx.App):
     axes2.set_ylabel('Velocity')
     
     self.plot.draw()
-    self.plot.Show()
     self.data_topic.unregister()
     
 if __name__ == "__main__":
