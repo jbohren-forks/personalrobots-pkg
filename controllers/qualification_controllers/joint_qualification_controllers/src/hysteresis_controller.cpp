@@ -121,8 +121,8 @@ void HysteresisController::update()
 
   static int state = STOPPED;
   static int starting_count = 0;
-  if (state == STOPPED || state == STARTING || state == MOVING)
-  {
+  if (state == STOPPED || state == STARTING || state == MOVING || count_<=80000)
+  { 
     test_effort_.vals[count_] = joint_->applied_effort_;
     test_velocity_.vals[count_] =joint_->velocity_;
     test_position_.vals[count_] =joint_->position_;
