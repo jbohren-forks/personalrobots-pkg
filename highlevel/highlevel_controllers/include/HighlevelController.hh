@@ -39,6 +39,7 @@
 #include <ros/node.h>
 #include <sys/time.h>
 #include <rosthread/member_thread.h>
+#include <rosconsole/rosconsole.h>
 #include <time.h>
 #include <math.h>
 #include <iostream>
@@ -78,11 +79,14 @@ public:
     ROS_ASSERT(controller_frequency > 0);
     controllerCycleTime_ = 1/controller_frequency;
 
-    // Obtain the planner frequency for this node
+    // Obtain the planner frequency for this node. A negative value means run as fast as possible. A zero value means run
+    // on demand. Otherwise, run at the specified positive frequency
     double planner_frequency(0.0);
     param(nodeName + "/planner_frequency", planner_frequency, planner_frequency);
-    if(planner_frequency  > 0.0)
+    if(planner_frequency  > 0)
       plannerCycleTime_ = 1/planner_frequency;
+    else if (planner_frequency < 0)
+      plannerCycleTime_ = -1;
 
     // Advertize controller state updates - do not want to miss a state transition.
     advertise<S>(stateTopic, QUEUE_MAX());
@@ -147,15 +151,21 @@ public:
     while(ok() && !isTerminated()){
       struct timeval curr;
       gettimeofday(&curr,NULL);
+      double currentTime = curr.tv_sec+curr.tv_usec/1e6;
+      //ROS_INFO("Running the planner again at %f\n", currentTime);
 
       if(isInitialized() && isActive()){
 
-	// If the plannerCycleTime is 0 then we only call the planner when we need to, and we sleep for the duration of the controller
-	if(plannerCycleTime_ > 0 || !isValid())
+	// If the plannerCycleTime is 0 then we only call the planner when we need to
+	if(plannerCycleTime_ != 0 || !isValid())
 	  setValid(makePlan());
       }
 
-      sleep(curr.tv_sec+curr.tv_usec/1e6, std::max(plannerCycleTime_, controllerCycleTime_));
+
+      if(plannerCycleTime_ >= 0)
+	sleep(currentTime, std::max(plannerCycleTime_, controllerCycleTime_));
+      else
+	sleep(currentTime, currentTime + 0.001);
     }
   }
 
@@ -399,7 +409,7 @@ private:
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
   State state; /*!< Tracks the overall state of the controller */
   double controllerCycleTime_; /*!< The duration for each control cycle */
-  double plannerCycleTime_; /*!< The duration for each planner cycle */
+  double plannerCycleTime_; /*!< The duration for each planner cycle. */
   ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
   pthread_t* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
