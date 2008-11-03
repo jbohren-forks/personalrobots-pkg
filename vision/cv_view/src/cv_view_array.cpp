@@ -33,10 +33,12 @@ public:
   int img_cnt;
   bool made_dir;
 
+  bool fix_color;
+
   map<string, imgData> images;
 
   CvView() : node("cv_view", ros::node::ANONYMOUS_NAME), 
-             img_cnt(0), made_dir(false)
+             img_cnt(0), made_dir(false), fix_color(false)
   { 
     subscribe("images", image_msg, &CvView::image_cb, 1);
 
@@ -96,10 +98,14 @@ public:
 
         if (j->second.bridge->to_cv(&j->second.cv_image))
         {
-          decompand(j->second.cv_image, j->second.cv_image);
+          
+          if (fix_color)
+          {
+            decompand(j->second.cv_image, j->second.cv_image);
 
-          if (j->second.cv_image->nChannels == 3)
-            cvTransform(j->second.cv_image, j->second.cv_image, j->second.color_cal);
+            if (j->second.cv_image->nChannels == 3)
+              cvTransform(j->second.cv_image, j->second.cv_image, j->second.color_cal);
+          }
 
           printf("%d\n",image_msg.header.seq);
           cvShowImage(j->second.label.c_str(), j->second.cv_image);
@@ -115,7 +121,9 @@ public:
   {
     cv_mutex.lock();
     if (cvWaitKey(3) == 10)
-    { }
+    {
+      fix_color = !fix_color;
+    }
       //      save_image();
     cv_mutex.unlock();
   }

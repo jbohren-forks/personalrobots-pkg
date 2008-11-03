@@ -58,6 +58,7 @@ public:
     {
       cvShowImage("cv_view", cv_image);
     }
+    usleep(100000);
     cv_mutex.unlock();
   }
 
