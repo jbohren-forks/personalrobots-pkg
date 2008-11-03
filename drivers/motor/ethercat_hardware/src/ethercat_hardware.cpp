@@ -159,7 +159,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
   // Initialize slaves
   for (unsigned int slave = 0, a = 0; slave < num_slaves_; ++slave)
   {
-    if (slaves_[slave]->initialize(hw_->actuators_[a], allow_unprogrammed) < 0)
+    if (slaves_[slave]->initialize(slaves_[slave]->has_actuator_ ? hw_->actuators_[a] : NULL, allow_unprogrammed) < 0)
     {
       ROS_FATAL("Unable to initialize slave #%d", slave);
       ROS_BREAK();
