@@ -1,23 +1,34 @@
-all: eml
+all: build
 
-EML_REVISION = 36
+TARBALL = eml-r36-patched.tar.bz2
+TARBALL_URL = http://pr.willowgarage.com/downloads/$(TARBALL)
+SOURCE_DIR = eml-svn
+UNPACK_CMD = tar xjf
+include $(shell rospack find mk)/download_unpack.mk
 
-SVN_DIR = eml-svn
-SVN_URL = svn://svn.berlios.de/ethercatmaster/trunk 
-SVN_REVISION = -r $(EML_REVISION)
-SVN_PATCH = eml-r$(EML_REVISION).patch
-include $(shell rospack find mk)/svn_checkout.mk
+build: wiped eml
 
-eml: SVN_UP
-	cd eml-svn && \
+configured: $(SOURCE_DIR) Makefile
+	cd $(SOURCE_DIR) && \
 	mkdir -p build && \
 	cd build && \
 	`rospack find cmake`/cmake/bin/cmake -D RTNET_INSTALL_PATH=`rospack find rtnet`/rtnet -D XENOMAI_INSTALL_PATH=`rospack find xenomai`/xenomai -D CMAKE_INSTALL_PREFIX=`rospack find eml`/eml .. && \
-	make install
+	touch configured
+
+wiped: Makefile
+	make wipe
+	touch wiped
+
+.PHONY: eml
+eml: configured
+	make -C $(SOURCE_DIR)/build install
 
 clean:
-	cd eml-svn/build && make clean
-	
-wipe:
-	rm -rf eml eml-svn
+	-make -C $(SOURCE_DIR)/build clean
+	rm -rf eml configured
+
+wipe: clean
+	rm -rf $(SOURCE_DIR)
+
+
 
