@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+rospack(joint_qualification_controllers)
+genmsg()
+gensrv()
+rospack_add_library(joint_qualification_controllers src/hysteresis_controller.cpp)

@@ -1,0 +1,27 @@
+<package>
+  <description brief='Joint Qualification Controllers'>
+  </description>
+  <author> Melonee Wise</author>
+  <license>BSD</license>
+  <depend package="mechanism_model" />
+  <depend package="wg_robot_description_parser" />
+  <depend package="stl_utils" />
+  <depend package="newmat10" />
+  <depend package="misc_utils" />
+  <depend package="robot_msgs" />
+  <depend package="robot_mechanism_controllers" />
+  <depend package="wxmpl" />
+  <depend package="rospy" />
+  <depend package="robot_msgs" />
+  <depend package="robot_srvs" />
+  <url>http://pr.willowgarage.com</url>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-wxgtk2.8"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-wxgtk2.8"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libwxgtk2.8-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
+  <repository>http://pr.willowgarage.com/repos</repository>
+  <export>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ljoint_qualification_controllers'/>
+  </export>
+
+</package>
