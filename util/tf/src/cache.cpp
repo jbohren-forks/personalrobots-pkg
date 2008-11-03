@@ -83,7 +83,7 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros
   }
 
   //If time == 0 return the latest
-  if (target_time == 0)
+  if (target_time == 0ULL)
   {
     one = storage_.front();
     time_diff = ros::Time::now() - storage_.front().stamp_; ///@todo what should this be?? difference from "now"?
@@ -155,6 +155,10 @@ uint8_t TimeCache::findClosest(TransformStorage& one, TransformStorage& two, ros
 
 void TimeCache::interpolate(const TransformStorage& one, const TransformStorage& two, ros::Time time, TransformStorage& output)
 { 
+
+  //
+  if( two.stamp_ == one.stamp_ )
+    output = two;
   //Calculate the ratio
   btScalar ratio = ((time - one.stamp_).to_double()) / ((two.stamp_ - one.stamp_).to_double());
   

@@ -43,10 +43,10 @@ void seed_rand()
   srand(temp_time_struct.tv_usec);
 };
 
-void generate_rand_vectors(double scale, unsigned int runs, std::vector<double>& xvalues, std::vector<double>& yvalues, std::vector<double>&zvalues)
+void generate_rand_vectors(double scale, uint64_t runs, std::vector<double>& xvalues, std::vector<double>& yvalues, std::vector<double>&zvalues)
 {
   seed_rand();
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -61,13 +61,13 @@ using namespace tf;
 
 TEST(tf, TransformTransformsCartesian)
 {
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -81,7 +81,7 @@ TEST(tf, TransformTransformsCartesian)
   //std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
@@ -117,13 +117,13 @@ TEST(tf, TransformTransformsCartesian)
  * the leaf of the tree can transform to the leaf of the tree without a lookup exception and accurately */
 TEST(tf, TransformTransformToOwnFrame)
 {
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs), yawvalues(runs),  pitchvalues(runs),  rollvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -140,7 +140,7 @@ TEST(tf, TransformTransformToOwnFrame)
   //std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
@@ -184,13 +184,13 @@ TEST(tf, TransformTransformToOwnFrame)
 
 TEST(tf, TransformPointCartesian)
 {
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -204,7 +204,7 @@ TEST(tf, TransformPointCartesian)
   //  std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     double x =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -232,13 +232,13 @@ TEST(tf, TransformPointCartesian)
 
 TEST(tf, TransformVectorCartesian)
 {
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -252,7 +252,7 @@ TEST(tf, TransformVectorCartesian)
   //  std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     double x =10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -280,13 +280,13 @@ TEST(tf, TransformVectorCartesian)
 
 TEST(tf, TransformQuaternionCartesian)
 {
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   seed_rand();
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 1.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -301,7 +301,7 @@ TEST(tf, TransformQuaternionCartesian)
   //  std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     Stamped<btQuaternion> invec (btQuaternion(xvalues[i],yvalues[i],zvalues[i]), 10 + i, "child");
@@ -326,13 +326,13 @@ TEST(tf, TransformQuaternionCartesian)
 TEST(data, Vector3Conversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     btVector3 btv = btVector3(xvalues[i], yvalues[i], zvalues[i]);
     btVector3 btv_out = btVector3(0,0,0);
@@ -349,13 +349,13 @@ TEST(data, Vector3Conversions)
 TEST(data, Vector3StampedConversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     Stamped<btVector3> btv = Stamped<btVector3>(btVector3(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
     Stamped<btVector3> btv_out;
@@ -373,13 +373,13 @@ TEST(data, Vector3StampedConversions)
 TEST(data, QuaternionConversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     btQuaternion btv = btQuaternion(xvalues[i], yvalues[i], zvalues[i]);
     btQuaternion btv_out = btQuaternion(0,0,0);
@@ -397,13 +397,13 @@ TEST(data, QuaternionConversions)
 TEST(data, QuaternionStampedConversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     Stamped<btQuaternion> btv = Stamped<btQuaternion>(btQuaternion(xvalues[i], yvalues[i], zvalues[i]), 1000000000ULL, "no frame");
     Stamped<btQuaternion> btv_out;
@@ -422,7 +422,7 @@ TEST(data, QuaternionStampedConversions)
 TEST(data, TransformConversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
@@ -430,7 +430,7 @@ TEST(data, TransformConversions)
   std::vector<double> xvalues2(runs), yvalues2(runs), zvalues2(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     btTransform btv = btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i]));
     btTransform btv_out;
@@ -451,7 +451,7 @@ TEST(data, TransformConversions)
 TEST(data, TransformStampedConversions)
 {
   
-  unsigned int runs = 400;
+  uint64_t runs = 400;
   double epsilon = 1e-6;
   
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
@@ -459,7 +459,7 @@ TEST(data, TransformStampedConversions)
   std::vector<double> xvalues2(runs), yvalues2(runs), zvalues2(runs);
   generate_rand_vectors(1.0, runs, xvalues, yvalues,zvalues);
   
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     Stamped<btTransform> btv = Stamped<btTransform>(btTransform(btQuaternion(xvalues2[i], yvalues2[i], zvalues2[i]), btVector3(xvalues[i], yvalues[i], zvalues[i])), 1000000000ULL, "no frame");
     Stamped<btTransform> btv_out;
@@ -486,7 +486,7 @@ TEST(tf, ListOneInverse)
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -499,7 +499,7 @@ TEST(tf, ListOneInverse)
   //  std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "child");
@@ -577,7 +577,7 @@ TEST(tf, ListOneForward)
   
   tf::Transformer mTR(true);
   std::vector<double> xvalues(runs), yvalues(runs), zvalues(runs);
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
   {
     xvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
@@ -590,7 +590,7 @@ TEST(tf, ListOneForward)
   //  std::cout << mTR.allFramesAsString() << std::endl;
   //  std::cout << mTR.chainAsString("child", 0, "my_parent2", 0, "my_parent2") << std::endl;
 
-  for ( unsigned int i = 0; i < runs ; i++ )
+  for ( uint64_t i = 0; i < runs ; i++ )
 
   {
     Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 + i, "my_parent");
@@ -799,24 +799,24 @@ TEST(tf, getParent)
 
   tf::Transformer mTR(true);
 
-  for (unsigned int i = 0; i <  children.size(); i++)
+  for (uint64_t i = 0; i <  children.size(); i++)
     {
-      Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10 , children[i],  parents[i]);
+      Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10ULL , children[i],  parents[i]);
       mTR.setTransform(tranStamped);
     }
 
   //std::cout << mTR.allFramesAsString() << std::endl;
 
   std::string output;
-  for  (unsigned int i = 0; i <  children.size(); i++)
+  for  (uint64_t i = 0; i <  children.size(); i++)
     {
-      EXPECT_TRUE(mTR.getParent(children[i], 10, output));
+      EXPECT_TRUE(mTR.getParent(children[i], 10ULL, output));
       EXPECT_STREQ(parents[i].c_str(), output.c_str());
     }
   
-  EXPECT_FALSE(mTR.getParent("j", 10, output));
+  EXPECT_FALSE(mTR.getParent("j", 10ULL, output));
 
-  EXPECT_FALSE(mTR.getParent("no_value", 10, output));
+  EXPECT_FALSE(mTR.getParent("no_value", 10ULL, output));
   
 }
 
