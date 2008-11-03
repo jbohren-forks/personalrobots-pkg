@@ -176,7 +176,7 @@ namespace ros {
 	}
 	else {
 	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
-		    environmentType);
+		    environmentType.c_str());
 	  throw int(2);
 	}
 	
@@ -202,7 +202,7 @@ namespace ros {
 	param(get_name() + "/plannerType", plannerType, string("ARAPlanner"));
 	pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
 	if ( ! pMgr_->select(plannerType, false)) {
-	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType);
+	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
 	}
 	pStat_.pushBack(plannerType);
@@ -313,7 +313,7 @@ namespace ros {
 	se.plan_angle_change_rad = 0;
 	if (1 == se.status) {
 	  std::list<std_msgs::Pose2DFloat32> plan;
-	  double prevx, prevy, prevth;
+	  double prevx(0), prevy(0), prevth(0);
 	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
 	  for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
 	    std_msgs::Pose2DFloat32 const waypoint(env_->GetPoseFromState(*it));
