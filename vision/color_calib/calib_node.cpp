@@ -104,8 +104,19 @@ public:
           IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
           cvTransform(img2, corrected_img, color_cal);
 
+          XmlRpc::XmlRpcValue xml_color_cal;
+          for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+              xml_color_cal[3*i + j] = cvmGet(color_cal, i, j);
+          
+          set_param(map_name("images") + std::string("/") + l + std::string("/color_cal"), xml_color_cal);
+          
+
           cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
           cvShowImage("color_rect", corrected_img);
+
+          cvReleaseImage(&img);
+          cvReleaseImage(&img2);
         }
 
         delete cv_bridge;
@@ -118,7 +129,7 @@ public:
   {
     cv_mutex.lock();
     if (cvWaitKey(3) == 10)
-    { }
+      self_destruct();
 
     cv_mutex.unlock();
   }

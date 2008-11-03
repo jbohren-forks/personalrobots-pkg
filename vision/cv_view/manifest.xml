@@ -5,9 +5,10 @@
   </description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>
+  <depend package="color_calib"/>
 </package>

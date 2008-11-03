@@ -8,6 +8,8 @@
 #include "std_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
+#include "colorcalib.h"
+
 #include <sys/stat.h>
 
 using namespace std;
@@ -17,6 +19,7 @@ struct imgData
   string label;
   IplImage *cv_image;
   CvBridge<std_msgs::Image> *bridge;
+  CvMat* color_cal;
 };
 
 class CvView : public ros::node
@@ -53,6 +56,8 @@ public:
     {
       if (i->second.cv_image)
         cvReleaseImage(&i->second.cv_image);
+      if (i->second.color_cal)
+        cvReleaseMat(&i->second.color_cal);
     }
   }
 
@@ -71,6 +76,19 @@ public:
         images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
         cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
         images[l].cv_image = 0;
+
+        images[l].color_cal = cvCreateMat(3, 3, CV_32FC1);
+        cvSetIdentity(images[l].color_cal, cvScalar(1.0));
+
+        std::string color_cal_str = map_name("images") + std::string("/") + l + std::string("/color_cal");
+        if (has_param(color_cal_str))
+        {
+          XmlRpc::XmlRpcValue xml_color_cal;
+          get_param(color_cal_str, xml_color_cal);
+          for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 3; j++)
+              cvmSet(images[l].color_cal, i, j, (double)(xml_color_cal[3*i + j]));
+        }
       } else {
 
         if (j->second.cv_image)
@@ -78,6 +96,12 @@ public:
 
         if (j->second.bridge->to_cv(&j->second.cv_image))
         {
+          decompand(j->second.cv_image, j->second.cv_image);
+
+          if (j->second.cv_image->nChannels == 3)
+            cvTransform(j->second.cv_image, j->second.cv_image, j->second.color_cal);
+
+          printf("%d\n",image_msg.header.seq);
           cvShowImage(j->second.label.c_str(), j->second.cv_image);
         }
       }

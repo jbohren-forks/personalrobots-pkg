@@ -204,33 +204,17 @@ void on_mouse(int event, int x, int y, int flags, void *params)
        }
 
        IplImage* mask = cvCreateImage(cvGetSize(g_img), IPL_DEPTH_8U, 1);
+
+       cvSetZero(mask);
        cvFillConvexPoly(mask, poly, 4, cvScalar(1));
 
-       int cnt = 0;
-       CvScalar color = cvScalar(0,0,0);
-       //       CvScalar color = cvAvg(g_img, mask);
-
-       for( int u = minx; u < maxx; u++)
-         for (int v = miny; v < maxy; v++)
-           if (cvGetReal2D(mask,v,u) == 1)
-           {
-             CvScalar c = cvGet2D(g_img,v,u);
-             color.val[0] += c.val[0];
-             color.val[1] += c.val[1];
-             color.val[2] += c.val[2];
-             cnt++;
-           }
-       
-       color.val[0] /= cnt;
-       color.val[1] /= cnt;
-       color.val[2] /= cnt;
+       CvScalar color = cvAvg(g_img, mask);
 
        cvReleaseImage(&mask);
 
        cvmSet(g_meas_colors, i, 0, color.val[0]);
        cvmSet(g_meas_colors, i, 1, color.val[1]);
        cvmSet(g_meas_colors, i, 2, color.val[2]);
-       
      }
 
      cvReleaseMat(&reproj);
@@ -309,9 +293,11 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
     // Set to lbgr colors for opencv
     for (int i = 0; i < 24; i++)
     {
+
       float r = srgb2lrgb(g_srgb_colors_dat[3*i + 0])*mult;
       float g = srgb2lrgb(g_srgb_colors_dat[3*i + 1])*mult;
       float b = srgb2lrgb(g_srgb_colors_dat[3*i + 2])*mult;
+
       if (use_bgr)
       {
         cvmSet(g_real_colors, i, 0, b);
