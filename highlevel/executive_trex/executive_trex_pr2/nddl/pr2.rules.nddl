@@ -32,12 +32,11 @@
  * All behaviors will oscillate between active and inactive
  */
 Behavior::Inactive{
-  met_by(Active);
   meets(Active);
+  precedes(start, missionEnd);
 }
 
 Behavior::Active{
-  met_by(Inactive);
   meets(Inactive);
 
   // All behaviors must deactivate before the end of the agent time window
@@ -45,13 +44,12 @@ Behavior::Active{
 }
 
 MoveBase::Inactive {
-  met_by(Active p);
-
   // If desired values are set, then they are used to bind parameters of the
   // predecessor to accomplish the desired position.
   if(desX){
     if(desY) {
       if(desTh) {
+	met_by(Active p);
 	eq(p.x, desX);
 	eq(p.y, desY);
 	eq(p.th, desTh);
@@ -70,8 +68,6 @@ MoveBase::Active{
 }
 
 MoveArm::Inactive{
-  met_by(Active p);
-
   if(des_shoulder_pan){
     if(des_shoulder_pitch){
       if(des_upperarm_roll){
@@ -79,6 +75,7 @@ MoveArm::Inactive{
 	  if(des_forearm_roll){
 	    if(des_wrist_flex){
 	      if(des_gripper_roll){
+		met_by(Active p);
 		eq(p.shoulder_pan, des_shoulder_pan);
 		eq(p.shoulder_pitch, des_shoulder_pitch);
 		eq(p.upperarm_roll, des_upperarm_roll);
@@ -106,16 +103,14 @@ MoveArm::Inactive{
 
 
 MoveEndEffector::Inactive{
-  met_by(Active p);
-
   if(des_shoulder_pan){
     if(des_shoulder_pitch){
       if(des_upperarm_roll){
 	if(des_elbow_flex){
-
 	  if(des_forearm_roll){
 	    if(des_wrist_flex){
 	      if(des_gripper_roll){
+		met_by(Active p);
 		eq(p.shoulder_pan, des_shoulder_pan);
 		eq(p.shoulder_pitch, des_shoulder_pitch);
 		eq(p.upperarm_roll, des_upperarm_roll);

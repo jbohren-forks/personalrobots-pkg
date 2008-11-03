@@ -138,6 +138,7 @@ VenusDeMiles::Holds{
     eq(n.w, w);
     precedes(start, n.start);
 
+    // Carry forward parameters
     meets(Holds s);
     addEq(iterationCount, 1, s.iterationCount);
     eq(iterationLimit, s.iterationLimit);
@@ -237,11 +238,17 @@ WorkingStatus::Holds{
 RechargeController::Inactive{
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
   // this[start-1] == Active(desX, desY, desTh, goal_recharge_level)
-  met_by(Active p);
-  eq(p.x, desX);
-  eq(p.y, desY);
-  eq(p.th, desTh);
-  eq(p.recharge_level, goal_recharge_level);
+  if(desX){
+    if(desY){
+      if(desTh){
+	met_by(Active p);
+	eq(p.x, desX);
+	eq(p.y, desY);
+	eq(p.th, desTh);
+	eq(p.recharge_level, goal_recharge_level);
+      }
+    }
+  }
 
   // Compare values based on base state. We are only reading these values. This is an important idiom
   // to distinguish inputs evaluated from execution rather than planned for. This could be captured with suitable
@@ -262,8 +269,9 @@ RechargeController::Active{
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station. This is derived by the given parameters
-
+  // Alternatives:
   // moveBase[start, end] == Inactive(*, *, *, x, y, th);
+  // contained_by(moveBase.Inactive(*, *, *, x, y, th):
   any(MoveBase.Inactive mb);
   eq(mb.desX, x);
   eq(mb.desY, y);
