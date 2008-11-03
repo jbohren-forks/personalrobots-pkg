@@ -18,9 +18,17 @@
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
     <param name="move_base/controller_frequency" value="20.0"/>
-    <param name="move_base/planner_frequency" value="0.5"/>
-    <param name="move_base/plannerTimeLimit" value="1.5"/>
+    <param name="move_base/planner_frequency" value="0"/>
+    <param name="move_base/plannerTimeLimit" value="10.0"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
+
+    <!-- Set parameters for mailing -->
+    <param name="recharge/email_addresses" value="mcgann@willowgarage.com"/>
+    <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
+    <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
+    <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
+    <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
+    <param name="recharge/mail_client" value="mailx -s"/>
     <node pkg="highlevel_controllers" type="recharge_controller" args="battery_state:=bogus_battery_state" respawn="false" />
   </group>
 </launch>

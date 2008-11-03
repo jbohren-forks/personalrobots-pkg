@@ -5,7 +5,6 @@
 
     <include file="$(find wg_robot_description)/send.xml"/>
 
-
     <!--node pkg="gazebo" type="v.bash" args="-n $(find gazebo_robot_description)/world/robot_floorobj.world" respawn="false" output="screen"/-->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_floorobj.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />

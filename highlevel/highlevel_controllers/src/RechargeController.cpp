@@ -114,7 +114,7 @@ namespace highlevel_controllers {
 
   RechargeController::RechargeController(const std::string& stateTopic, const std::string& goalTopic)
     : HighlevelController<RechargeState, RechargeGoal>("recharge_controller", stateTopic, goalTopic),
-      m_addresses(""), m_pluginSubject("Robot Needs to Be Plugged In"), 
+      m_addresses("mcgann@willowgarage.com"), m_pluginSubject("Robot Needs to Be Plugged In"), 
       m_unplugSubject("Robot Needs to Be Unplugged"), m_pluginBody("Hello, could you please plug me in?\nThanks, PR2"),
       m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s"),
       controlState_(INACTIVE){
@@ -127,7 +127,6 @@ namespace highlevel_controllers {
     param("recharge/mail_client", m_mailClient,  m_mailClient);
     param("recharge/body_unplug", m_unplugBody, m_unplugBody);
     param("recharge/mail_client", m_mailClient,  m_mailClient);
-
 
     if (m_addresses == "") {
       ROS_INFO("There are no email addresses in the param server. Opening the text file.\n");
@@ -229,6 +228,7 @@ namespace highlevel_controllers {
       controlState_ = CHARGE;
       break;
     case CHARGE:
+      ROS_DEBUG("Charged up to %f percent, target is %f\n", stateMsg.recharge_level, stateMsg.goal_recharge_level);
       if(charged()){
 	sendMail(UNPLUG);
 	ROS_DEBUG("Transitioning to disconnect\n");
