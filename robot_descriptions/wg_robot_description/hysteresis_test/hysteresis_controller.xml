@@ -1,0 +1,6 @@
+<controller name="test_controller" type="HysteresisControllerNode" topic="test_controller">
+  <joint name="head_pan_joint">
+    <pid p="0.4" i="0.0" d="0" iClamp="1.0" />
+    <controller_defaults velocity="0.25" max_effort =".2" />   
+  </joint>
+</controller>
