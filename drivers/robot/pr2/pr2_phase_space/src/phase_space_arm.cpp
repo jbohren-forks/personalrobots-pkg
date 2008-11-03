@@ -42,9 +42,6 @@
 
 #include "ros/node.h"
 
-// Services
-#include "pr2_mechanism_controllers/TrackPoint.h"
-
 // Messages
 #include "phase_space/PhaseSpaceSnapshot.h"
 #include "phase_space/PhaseSpaceMarker.h"

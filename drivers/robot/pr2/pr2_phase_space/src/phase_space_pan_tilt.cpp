@@ -42,13 +42,12 @@
 
 #include "ros/node.h"
 
-// Services
-#include "pr2_mechanism_controllers/TrackPoint.h"
-
 // Messages
 #include "phase_space/PhaseSpaceSnapshot.h"
 #include "phase_space/PhaseSpaceMarker.h"
 #include "phase_space/PhaseSpaceBody.h"
+
+#include "std_msgs/PointStamped.h"
 
 using namespace std ;
 
@@ -76,7 +75,10 @@ public :
       if (snapshot_.frameNum % 16 != 0)
         return ;
       
-      string topic = "head_controller/track_point" ;
+      //! \todo Replace TrackPoint service with a PointStamped message.
+      
+      /*string topic = "head_controller/track_point" ;
+      
       
       pr2_mechanism_controllers::TrackPoint::request req ;
       pr2_mechanism_controllers::TrackPoint::response resp ;
@@ -95,7 +97,7 @@ public :
                                         << req.target.point.z << endl ;
 
       ros::service::call(topic, req, resp) ;
-      cout << "  Resp: Pan=" << resp.pan_angle << "  Tilt:" << resp.tilt_angle << endl ;
+      cout << "  Resp: Pan=" << resp.pan_angle << "  Tilt:" << resp.tilt_angle << endl ;*/
       
       return ;
     }
