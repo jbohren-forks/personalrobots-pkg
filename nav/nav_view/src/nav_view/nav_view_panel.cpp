@@ -439,6 +439,8 @@ void NavViewPanel::updateRadiusPosition()
     Ogre::SceneNode* node = radius_object_->getParentSceneNode();
     node->setPosition( Ogre::Vector3(map_pose.getOrigin().x(), map_pose.getOrigin().y(), RADIUS_DEPTH) );
     node->setOrientation( Ogre::Quaternion( Ogre::Radian( yaw ), Ogre::Vector3::UNIT_Z ) );
+
+    queueRender();
   }
   catch ( tf::TransformException& e )
   {
@@ -534,6 +536,8 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, std_ms
   object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
 
   path.unlock();
+
+  queueRender();
 }
 
 void NavViewPanel::processGuiPath()
