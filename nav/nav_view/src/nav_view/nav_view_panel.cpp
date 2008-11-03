@@ -517,23 +517,27 @@ void NavViewPanel::createObjectFromPolyLine( Ogre::ManualObject*& object, std_ms
 
   Ogre::ColourValue color( path.color.r, path.color.g, path.color.b );
   int num_points = path.get_points_size();
-  object->estimateVertexCount( num_points);
-  object->begin( "BaseWhiteNoLighting", op );
-  for( int i=0; i < num_points; ++i)
+
+  if ( num_points > 0 )
   {
-    object->position(path.points[i].x, path.points[i].y, 0.0f);
-    object->colour( color );
+    object->estimateVertexCount( num_points);
+    object->begin( "BaseWhiteNoLighting", op );
+    for( int i=0; i < num_points; ++i)
+    {
+      object->position(path.points[i].x, path.points[i].y, 0.0f);
+      object->colour( color );
+    }
+
+    if ( loop )
+    {
+      object->position(path.points[0].x, path.points[0].y, 0.0f);
+      object->colour( color );
+    }
+
+    object->end();
+
+    object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
   }
-
-  if ( loop && num_points > 0 )
-  {
-    object->position(path.points[0].x, path.points[0].y, 0.0f);
-    object->colour( color );
-  }
-
-  object->end();
-
-  object->getParentSceneNode()->setPosition( Ogre::Vector3( 0.0f, 0.0f, depth ) );
 
   path.unlock();
 
