@@ -138,7 +138,7 @@ namespace ros {
 	// clean up any new instances in the catch clause. The sentry
 	// gets destructed when we go out of scope, so unlock() gets
 	// called no matter what.
-	sentry guard(this);
+	sentry<MoveBaseSBPL> guard(this);
 	
 	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
 	string environmentType;

@@ -297,6 +297,9 @@ namespace ros {
      * The laserScanMsg_ member will have been updated. It is locked already too.
      */
     void MoveBase::laserScanCallback(){
+      if(isTerminated())
+	return;
+
       if(usingPointClouds_){
 	return;
 
@@ -341,6 +344,9 @@ namespace ros {
      * Point clouds are produced in the map frame so no transform is required. We simply use point clouds if produced
      */
     void MoveBase::pointCloudCallback(){
+      if(isTerminated())
+	return;
+
       // Ensure laser scans are disabled
       if(usingPointClouds_ == false){
 	ROS_INFO("Disabling laser scan processing\n");
@@ -354,6 +360,9 @@ namespace ros {
      * The odomMsg_ will be updates and we will do the transform to update the odom in the base frame
      */
     void MoveBase::odomCallback(){
+      if(isTerminated())
+	return;
+
       base_odom_.lock();
 
       try

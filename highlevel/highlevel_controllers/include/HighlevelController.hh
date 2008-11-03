@@ -69,8 +69,8 @@ public:
    * @param goalTopic The ROS topic on which controller goals are received
    */
   HighlevelController(const std::string& nodeName, const std::string& _stateTopic,  const std::string& _goalTopic): 
-    ros::node(nodeName), initialized(false), stateTopic(_stateTopic), goalTopic(_goalTopic), 
-    controllerCycleTime_(0.1), plannerCycleTime_(0.0){
+    ros::node(nodeName), initialized(false), terminated(false), stateTopic(_stateTopic), goalTopic(_goalTopic), 
+    controllerCycleTime_(0.1), plannerCycleTime_(0.0), plannerThread_(NULL){
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
@@ -97,29 +97,34 @@ public:
     deactivate();
 
     // Start planner loop on a separate thread
-    ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  
+    plannerThread_ = ros::thread::member_thread::startMemberFunctionThread(this, &HighlevelController<S, G>::plannerLoop);  
   }
 
   virtual ~HighlevelController(){
-    pthread_exit(&plannerThread_);
+    terminate();
+    pthread_join(*plannerThread_, NULL);
   }
 
   /**
    * @brief Test if the node has received required inputs allowing it to commence business as usual.
    * @see initialize()
    */
-  bool isInitialized(){
-    lock();
-    bool result =  initialized;
-    unlock();
-    return result;
+  bool isInitialized() const {
+    return initialized;
   }
 
+  void terminate() {
+    terminated = true;
+  }
+
+  bool isTerminated() const {
+    return terminated;
+  }
   /**
    * @brief The main run loop of the controller
    */
   void run(){
-    while(ok()) {
+    while(ok()  && !isTerminated()) {
       struct timeval curr;
       gettimeofday(&curr,NULL);
 	
@@ -139,7 +144,7 @@ public:
    * it will call the planner with the given timeout.
    */
   void plannerLoop(){
-    while(ok()){
+    while(ok() && !isTerminated()){
       struct timeval curr;
       gettimeofday(&curr,NULL);
 
@@ -177,9 +182,7 @@ protected:
    * are received to make sure it only publishes meaningful states
    */
   void initialize(){
-    lock();
     initialized = true;
-    unlock();
   }
 
 
@@ -250,12 +253,14 @@ protected:
    *   return -1; // ~sentry calls hlc->unlock()
    * }
    * @endcode
+   * @note Should me move this sentry class to ros? Seems generally useful.
    */
-  struct sentry {
-    sentry(HighlevelController * hlc): hlc_(hlc) { hlc->lock(); }
-    ~sentry() { hlc_->unlock(); }
+  template<class T> class sentry {
+  public:
+    sentry(T * t): t_(t) { t_->lock(); }
+    ~sentry() { t_->unlock(); }
   protected:
-    HighlevelController * hlc_;
+    T * t_;
   };
   
   
@@ -266,7 +271,7 @@ private:
 
   void goalCallback(){
     // Do nothing if not initialized
-    if(!isInitialized())
+    if(!isInitialized() || isTerminated())
       return;
 
     lock();
@@ -389,13 +394,14 @@ private:
   }
 
   bool initialized; /*!< Marks if the node has been initialized, and is ready for use. */
+  bool terminated; /*!< Marks if the node has been terminated. */
   const std::string stateTopic; /*!< The topic on which state updates are published */
   const std::string goalTopic; /*!< The topic on which it subscribes for goal requests and recalls */
   State state; /*!< Tracks the overall state of the controller */
   double controllerCycleTime_; /*!< The duration for each control cycle */
   double plannerCycleTime_; /*!< The duration for each planner cycle */
   ros::thread::mutex lock_; /*!< Lock for access to class members in callbacks */
-  pthread_t plannerThread_; /*!< Thread running the planner loop */
+  pthread_t* plannerThread_; /*!< Thread running the planner loop */
   highlevel_controllers::Ping shutdownMsg_; /*!< For receiving shutdown from executive */
 };
 
