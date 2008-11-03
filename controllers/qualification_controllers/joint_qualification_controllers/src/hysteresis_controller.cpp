@@ -121,7 +121,7 @@ void HysteresisController::update()
 
   static int state = STOPPED;
   static int starting_count = 0;
-  if (state == STOPPED || state == STARTING || state == MOVING || count_<=80000)
+  if (state == STOPPED || state == STARTING || state == MOVING || count_<80000)
   { 
     test_effort_.vals[count_] = joint_->applied_effort_;
     test_velocity_.vals[count_] =joint_->velocity_;
@@ -148,7 +148,7 @@ void HysteresisController::update()
       state = MOVING;
     break;
   case MOVING:
-    if (fabs(joint_->velocity_) < 1 && fabs(joint_->applied_effort_) > max_effort_)
+    if (fabs(joint_->velocity_) < 1 && fabs(joint_->commanded_effort_) > max_effort_)
     {
       velocity_controller_->setCommand(0.0);
       if (loop_count_ < 3)
@@ -190,7 +190,7 @@ void HysteresisController::analysis()
     node->publish("/hysteresis_data", test_position_);
     node->publish("/hysteresis_data", test_time_);
     node->publish("/hysteresis_data", test_cmd_);
-    node->publish("/diagnostics", diagnostic_message_);
+    //node->publish("/diagnostics", diagnostic_message_);
   }
 
   //publisher_.publish(diagnostic_message_);
