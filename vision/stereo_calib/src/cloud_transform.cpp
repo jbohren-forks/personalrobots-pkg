@@ -310,7 +310,7 @@ CvPoint transform_to_screen1(CvPoint3D32f pt, int image_width, int image_height)
 
 	cvGEMM(&xyz, &X2Z, 1.0, NULL, 0, &xyz1, CV_GEMM_B_T);
 
-	StereoCam.cartToDisp(xyz1, uvd);
+	StereoCam.cartToDisp(&xyz1, &uvd);
 
 	int x = lrint(_uvd[0]);
 	int y = lrint(_uvd[1]);
