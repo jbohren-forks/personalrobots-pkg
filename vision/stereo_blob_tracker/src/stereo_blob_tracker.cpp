@@ -31,7 +31,7 @@ typedef signed char schar;
 #define DISPLAYFREQ 30
 // set the following to be a number between 0.0 and 1.0
 // to specify how fast the head moves to track the blob.
-// 0.0 for no movemont; 1.0 for putting the blob at the center 
+// 0.0 for no movemont; 1.0 for putting the blob at the center
 // in next frame.
 #define BLOBNEARCENTER .01
 #define GIVEUPONFAILURE false
@@ -97,7 +97,7 @@ void resetSelection() {
 CvRect getSelection() {
   return g_selection;
 }
-  
+
 
 /*!
  * \brief Resets all of the global variables.
@@ -116,7 +116,7 @@ void resetGlobals() {
 
 /*!
  * Swap the values of two integers.
- */ 
+ */
 void swap(int *int1, int *int2) {
   int temp;
   temp = *int1;
@@ -181,11 +181,11 @@ void on_mouse(int event, int x, int y, int flags, void *params)
 
   default:
     break;
-  }    
+  }
 
 }
 
-/// VidereBlobTracker - blob tracking stereo images (left and disparity) from 
+/// VidereBlobTracker - blob tracking stereo images (left and disparity) from
 /// a videre
 
 struct imgData
@@ -224,7 +224,7 @@ public:
   IplImage *cv_image_cpy_;
   /// a copy of the disparity image of the current image
   IplImage *cv_dispImg_cpy_;
-  
+
   IplImage *cv_feat_image_cpy_;
   IplImage *cv_backproject_image_cpy_;
   IplImage *cv_mask_image_cpy_;
@@ -263,7 +263,7 @@ public:
 		    bool display,
 		    /// if true, remote gui is used to selection windows and
 		    /// display tracking results
-		    bool remote_gui) : 
+		    bool remote_gui) :
     node("videre_blob_tracker", ros::node::ANONYMOUS_NAME),
     display_(display),
     remote_gui_(remote_gui),
@@ -272,10 +272,10 @@ public:
     selectionBoxTopic_("selectionbox"),
     trackedBoxTopic_("trackedbox"),
     camModel_(NULL),
-    cv_image_cpy_(NULL), 
+    cv_image_cpy_(NULL),
     cv_dispImg_cpy_(NULL),
-    cv_feat_image_cpy_(NULL), 
-    cv_backproject_image_cpy_(NULL), 
+    cv_feat_image_cpy_(NULL),
+    cv_backproject_image_cpy_(NULL),
     cv_mask_image_cpy_(NULL),
     cv_depthmask_image_cpy_(NULL),
     cv_histogram_image_cpy_(NULL),
@@ -286,15 +286,15 @@ public:
     blobNearCenter_(min(1.0f, max(0.f, blobNearCenter))),
     numFrames_(0),
     waitForReEntry_(false)
-  { 
-    btracker_ = new BTracker();    
+  {
+    btracker_ = new BTracker();
 
     g_iframe = 0;
 
     resetGlobals();
 
     if (remote_gui_ == false ) {
-      // OpenCV: pop up an OpenCV highgui window and put in a mouse call back 
+      // OpenCV: pop up an OpenCV highgui window and put in a mouse call back
       cvNamedWindow("Tracker", CV_WINDOW_AUTOSIZE);
       cvSetMouseCallback("Tracker", on_mouse, 0);
     }
@@ -349,7 +349,7 @@ public:
 
   }
 
-  void check_keys() 
+  void check_keys()
   {
     cv_mutex_.lock();
     if (cvWaitKey(3) == 10)
@@ -358,7 +358,7 @@ public:
     cv_mutex_.unlock();
   }
 
-  /// The image callback. For each new image, copy it, find the new blob 
+  /// The image callback. For each new image, copy it, find the new blob
   /// window, report the 3D location, and draw the new window.
   void image_cb()
   {
@@ -390,12 +390,12 @@ public:
 	  return;
         }
       }
-      
+
     }
 
     string labelLeft("left");
     string labelDisp("left_disparity");
-    if ( images[labelLeft].cv_image != NULL && 
+    if ( images[labelLeft].cv_image != NULL &&
 	 images[labelDisp].cv_image != NULL )
     {
       IplImage *leftImg = images[labelLeft].cv_image;
@@ -406,7 +406,7 @@ public:
       if (depthmask_ == NULL) {
 	depthmask_ =  cvCreateImage(im_size,IPL_DEPTH_8U,1);
       }
-      
+
 
       // Track and draw the new window.
       if (g_start_track) {
@@ -418,10 +418,10 @@ public:
 
 	if (blobNearCenter_> 0.0) {
 	  // move the last window position to be somewhere between the last
-	  // tracked position and the center of the window, weighted by 
+	  // tracked position and the center of the window, weighted by
 	  // blobNearCenter
 	  double center_x = im_size.width/2  - selection.width /2;
-	  double center_y = im_size.height/2 - selection.height/2; 
+	  double center_y = im_size.height/2 - selection.height/2;
 	  selection.x +=  (center_x - selection.x) * blobNearCenter_;
 	  selection.y +=  (center_y - selection.y) * blobNearCenter_;
 
@@ -463,7 +463,7 @@ public:
 	// attemp some poor man's white balancing
 	balanceColor(leftImg);
 
-	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection, 
+	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection,
 					  &new_selection, mask, true);
 
 	if (!oktrack) {
@@ -474,9 +474,9 @@ public:
 	    return;
 	  } else {
 	    // log warning message
-	    
+
 	    printf("Track failed, waiting for new window or blob to come back.\n");
-	    // remove the depth mask and the last blotpts, 
+	    // remove the depth mask and the last blotpts,
 	    // as the blob may enter in a very different depth
 	    //if (depthmask_) cvReleaseImage(&depthmask_);
 	    //if (blobPts_  ) cvReleaseMat(&blobPts_);
@@ -484,7 +484,7 @@ public:
 	    // reasonable size (quarter of the window dimensions)
 	    int width  = im_size.width/4;
 	    int height = im_size.height/4;
-	    new_selection = cvRect(im_size.width/2  - width/2, 
+	    new_selection = cvRect(im_size.width/2  - width/2,
 				   im_size.height/2 - height/2,
 				   width, height);
 	    waitForReEntry_ = true;
@@ -496,7 +496,7 @@ public:
 	// Tracking succeeded, copy the new window, compute 3D point
 	// and draw it.
 	//
-	  
+
 	// copy the new window
 	if (setSelection(new_selection, isNewBlob) == false ) {
 	  // this iteration is out of sync with the new selection from gui
@@ -530,7 +530,7 @@ public:
 
       // Draw a rectangle which is still being defined.
       if (remote_gui_ == false && g_get_rect) {
-     
+
 	cvRectangle(leftImg,
 		    cvPoint(g_pt_lx, g_pt_ty),
 		    cvPoint(g_pt_rx, g_pt_by),
@@ -540,7 +540,7 @@ public:
       // Copy all of the images you might want to display.
       // This is necessary because OpenCV doesn't like multiple threads.
       // and we only do display every so often (30 frames)
-      if ((numFrames_) % DISPLAYFREQ == 0) 
+      if ((numFrames_) % DISPLAYFREQ == 0)
       {
 	cv_mutex_.lock();
 
@@ -548,7 +548,7 @@ public:
 	  cv_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,3);
 	}
 	cvCopy(leftImg, cv_image_cpy_);
-      
+
 
 	if (display_ && g_start_track) {
 
@@ -598,7 +598,7 @@ public:
 
 	cv_mutex_.unlock();
       }
-      
+
     }
   }
 
@@ -632,7 +632,7 @@ public:
     }
     // get all the non zero disparity inside this box
     // construct a list uvd points, in disparity space.
-    // convert each of them into cartesian space, and 
+    // convert each of them into cartesian space, and
     // compute the centroid of them.
     double _uvds[3*centerBox.width*centerBox.height];
     int numGoodPoints=0;
@@ -658,14 +658,14 @@ public:
       blobPts_ = cvCreateMat(numGoodPoints, 3, CV_64FC1);
       //double _xyzs[numGoodPoints*3];
       //CvMat xyzs = cvMat( numGoodPoints, 3, CV_64FC1, _xyzs );
-      camModel_->dispToCart(uvds, *blobPts_);
+      camModel_->dispToCart(&uvds, blobPts_);
 
       CvMat xyzsC3;
       cvReshape( blobPts_, &xyzsC3, 3, 0);
       blobCentroid_ = cvAvg( &xyzsC3 );
 
 #if 0
-      printf("centroid %f, %f, %f\n", 
+      printf("centroid %f, %f, %f\n",
 	     blobCentroid.val[0], blobCentroid.val[1], blobCentroid.val[2]);
 #endif
 
@@ -675,7 +675,7 @@ public:
 
       cvMinMaxLoc(&blobPtsZ, &minZ_, &maxZ_);
 
-      
+
     }
 
   }
@@ -691,23 +691,23 @@ public:
     point_stamped_.point.z = blobCentroid_.val[2]/1000.;
     // publish the centroid of the tracked object
     publish("points", point_stamped_);
-	      
+
     string topic = "head_controller/track_point" ;
-      
+
     std_msgs::PointStamped target;
 
     target.point.x =  point_stamped_.point.z ;
     target.point.y = -point_stamped_.point.x ;
     target.point.z = -point_stamped_.point.y;
-        
+
     target.header.frame_id = "stereo_block" ;
-        
+
 #if 0
     cout << "Requesting to move to: " << point_stamped_.point.x << ","
 	 << point_stamped_.point.y << ","
 	 << point_stamped_.point.z << endl ;
 #endif
-        
+
     static int count = 0;
     if (++count % 1 == 0)
       publish(topic, target);
@@ -767,8 +767,8 @@ public:
     //printf("%s\n", cal_params_.data.c_str());
     parseCaliParams(cal_params_.data);
   }
-  /// a small parser to pick up the projection matrix from 
-  /// calibration message. 
+  /// a small parser to pick up the projection matrix from
+  /// calibration message.
   /// TODO: one should turn those calibration parameters into
   /// xml format
   void parseCaliParams(const string& cal_param_str){
@@ -815,7 +815,7 @@ public:
     selection.width  = selection_box_.rect.w;
     selection.height = selection_box_.rect.h;
 
-    printf("receiving a selection box from gui [%d, %d, %d, %d]\n", 
+    printf("receiving a selection box from gui [%d, %d, %d, %d]\n",
 	   selection.x, selection.y,
 	   selection.width, selection.height);
 
