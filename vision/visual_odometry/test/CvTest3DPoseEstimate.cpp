@@ -218,7 +218,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  sba.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+  sba.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_, this->Clx_,
+      this->Crx_, this->Cy_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -315,7 +316,8 @@ bool CvTest3DPoseEstimate::testVideo() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  pathRecon.mPoseEstimator.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+  pathRecon.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_,
+      this->Clx_, this->Crx_, this->Cy_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -366,7 +368,8 @@ bool CvTest3DPoseEstimate::testVideo2() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize,
+      Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -411,7 +414,8 @@ bool CvTest3DPoseEstimate::testVideo3() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize,
+      Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -610,7 +614,8 @@ bool CvTest3DPoseEstimate::testVideo4() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize, mFx, mFy, mTx, mClx, mCrx, mCy);
+  CamTracker* tracker = CamTracker::getCamTracker(Pairwise, imgSize,
+      Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -734,7 +739,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     cout << "Testing in disparity space"<<endl;
     uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
-    this->cartToDisp(*points0, *uvds0);
+    this->cartToDisp(points0, uvds0);
     cvAvgSdv(uvds0, &mean, &std);
     cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
 
@@ -746,7 +751,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     peDisp.configureErrorMeasurement(NULL, threshold);
     cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 
-    peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+    peDisp.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
   } else if (this->mTestType == CartAndDisp) {
     cout << "testing mixed of cartesian and disparity space"<<endl;
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
@@ -761,7 +766,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     peDisp.configureErrorMeasurement(NULL, threshold);
     cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
 
-    peDisp.setCameraParams(this->mFx, this->mFy, this->mTx, this->mClx, this->mCrx, this->mCy);
+    peDisp.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
 
   } else {
     cerr << "Unknown test type: "<< this->mTestType<<endl;
@@ -820,7 +825,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       TransformAfterLevMarq      = peCart.getFinalTransformation();
     } else if (mTestType == Disparity){
       // convert both set of points into disparity color space
-      this->cartToDisp(*points1, *points1d);
+      this->cartToDisp(points1, points1d);
       disturb(points1d, uvds1);
 
       int64 t = cvGetTickCount();
@@ -832,7 +837,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       TransformAfterLevMarq      = peDisp.getFinalTransformation();
     } else if (mTestType == CartAndDisp) {
       // convert both set of points into disparity color space
-      this->cartToDisp(*points1, *points1d);
+      this->cartToDisp(points1, points1d);
       disturb(points1d, uvds1);
 
       int64 t = cvGetTickCount();

@@ -194,7 +194,7 @@ void PathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& x
   double _xyz[3*uvds.rows];
   CvMat localxyz = cvMat(uvds.rows, 3, CV_64FC1, _xyz);
   // Convert from disparity coordinates to Cartesian coordinates
-  mPoseEstimator.dispToCart(uvds, localxyz);
+  mPoseEstimator.dispToCart(&uvds, &localxyz);
   double _inliers1t[3*uvds.rows];
   CvMat inliers1t = cvMat(uvds.rows, 1, CV_64FC3, _inliers1t);
   CvMat localxyzC3;

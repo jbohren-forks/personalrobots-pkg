@@ -240,8 +240,8 @@ int PoseEstimateDisp::estimateMixedPointClouds(
   CvMat* uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
   CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
 
-  dispToCart(*uvds1, *xyzs1);
-  cartToDisp(*xyzs0, *uvds0);
+  dispToCart(uvds1, xyzs1);
+  cartToDisp(xyzs0, uvds0);
 
   int numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1,
       numRefGrps, refPoints,
@@ -262,8 +262,8 @@ int PoseEstimateDisp::estimate(CvMat *uvds0, CvMat *uvds1,
   CvMat* xyzs1 = cvCreateMat(numPoints, 3, CV_64FC1);
 
   // project from disparity space back to XYZ
-  dispToCart(*uvds0, *xyzs0);
-  dispToCart(*uvds1, *xyzs1);
+  dispToCart(uvds0, xyzs0);
+  dispToCart(uvds1, xyzs1);
 
   numInLiers = estimate(xyzs0, xyzs1, uvds0, uvds1, 0, NULL, rot, shift, smoothed);
 
@@ -407,7 +407,8 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
 bool PoseEstimateDisp::estimateWithLevMarq(const CvMat& uvds0Inlier,
     const CvMat& uvds1Inlier,
     CvMat& rot, CvMat& shift) {
-  return estimateWithLevMarq(uvds0Inlier, uvds1Inlier, mMatCartToDisp, mMatDispToCart, rot, shift);
+  return estimateWithLevMarq(uvds0Inlier, uvds1Inlier,
+      mat_cart_to_disp_, mat_disp_to_cart_, rot, shift);
 }
 
 bool PoseEstimateDisp::estimateWithLevMarq(
@@ -446,7 +447,8 @@ bool PoseEstimateDisp::constructDisparityHomography(const CvMat *R, const CvMat 
   if (R == NULL || T == NULL) {
     return false;
   }
-  return this->constructHomography(*R, *T, mMatDispToCart, mMatCartToDisp, *H);
+  return this->constructHomography(*R, *T, mat_disp_to_cart_, mat_cart_to_disp_,
+      *H);
 }
 
 bool PoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,

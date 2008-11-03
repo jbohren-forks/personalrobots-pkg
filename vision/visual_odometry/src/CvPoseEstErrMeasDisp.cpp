@@ -44,14 +44,14 @@ void CvPoseEstErrMeasDisp::measure(const CvMat& uvds0, const CvMat& uvds1) {
 	CvMat xyzs0 = cvMat(n, 3, CV_64FC1, _xyzs0);
 	CvMat xyzs1 = cvMat(n, 3, CV_64FC1, _xyzs1);
 
-	dispToCart(uvds0, xyzs0);
-	dispToCart(uvds1, xyzs1);
+	dispToCart(&uvds0, &xyzs0);
+	dispToCart(&uvds1, &xyzs1);
 
 	// compare in Cartesian Space
 	CvPoseEstErrMeas::compare(xyzs0, xyzs1);
 
 	// compare in Disparity Space
-	PoseEstimateDisp::constructHomography(mRotation, mShift, mMatDispToCart, mMatCartToDisp,
+	PoseEstimateDisp::constructHomography(mRotation, mShift, mat_disp_to_cart_, mat_cart_to_disp_,
 			mHomography);
 
 	double _uvds11[3*n];
@@ -154,13 +154,13 @@ void CvPoseEstErrMeasDisp::measureMixed(const CvMat& xyzs0, const CvMat& uvds1) 
 	cout << endl;
 	cout << "Convert Cartesian points to disparity and compute errors"<<endl;
 	cout << endl;
-	this->cartToDisp(xyzs0, uvds0);
+	this->cartToDisp(&xyzs0, &uvds0);
 	this->measure(uvds0, uvds1);
 
 	cout << endl;
 	cout << "Convert disparity  points to cartesian space and compute errors"<<endl;
 	cout << endl;
-	this->dispToCart(uvds1, xyzs1);
+	this->dispToCart(&uvds1, &xyzs1);
 
 	this->CvPoseEstErrMeas::measure(xyzs0, xyzs1);
 }
