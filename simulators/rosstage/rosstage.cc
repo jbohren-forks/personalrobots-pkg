@@ -256,20 +256,10 @@ StageNode::Update()
   // Also publish the base->base_laser Tx.  This could eventually move
   // into being retrieved from the param server as a static Tx.
   Stg::stg_pose_t lp = this->lasermodel->GetPose();
-  /*
-  tf.sendEuler("base_laser",
-               "base",
-               lp.x,
-               lp.y,
-               0.0,
-               lp.a,
-               0.0,
-               0.0,
-               sim_time);
-               */
-  tf.sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
-                                                                    tf::Point(lp.x, lp.y, 0.0)),
-                                                      sim_time, "base_laser", "base"));
+  tf.sendTransform(tf::Stamped<tf::Transform> 
+                   (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
+                                  tf::Point(lp.x, lp.y, 0.0)),
+                    sim_time, "base_laser", "base"));
 
   // Get latest odometry data
   // Translate into ROS message format and publish
@@ -288,29 +278,11 @@ StageNode::Update()
           tx(tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
                            tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
              sim_time, "odom", "base");
-  /*
-  printf("S: %.6f %.3f %.3f %.3f %.3f %.3f %.3f\n",
-         sim_time.to_double(),
-         tx.getOrigin().x(),
-         tx.getOrigin().y(),
-         tx.getRotation().x(),
-         tx.getRotation().y(),
-         tx.getRotation().z(),
-         tx.getRotation().w());
-         */
-
   this->tf.sendTransform(tx);
-  /*
-  printf("S: %.6f %.3f %.3f %.3f\n",
-         sim_time.to_double(),
-         odomMsg.pos.x, odomMsg.pos.y, odomMsg.pos.th);
-         */
 
   // Also publish the ground truth pose
   Stg::stg_pose_t gpose = this->positionmodel->GetGlobalPose();
   // Note that we correct for Stage's screwed-up coord system.
-  //pose.setFromEuler(gpose.y, -gpose.x, 0.0, 
-                    //Stg::normalize(gpose.a-M_PI/2.0), 0.0, 0.0);
   tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
                    tf::Point(gpose.y, -gpose.x, 0.0));
 
