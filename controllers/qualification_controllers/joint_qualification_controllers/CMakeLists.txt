@@ -3,4 +3,6 @@ include(rosbuild)
 rospack(joint_qualification_controllers)
 genmsg()
 gensrv()
-rospack_add_library(joint_qualification_controllers src/hysteresis_controller.cpp)
+rospack_add_library(joint_qualification_controllers 
+src/hysteresis_controller.cpp
+src/sine_sweep_controller.cpp)
