@@ -1,10 +1,11 @@
 import rostools
 rostools.update_path('videre_face_detection')
+import rospy
 import rostest
 import videre_face_detection
 import visualodometer
 import camera
-import std_msgs.msg
+from std_msgs.msg import Image, ImageArray, String, PointStamped
 import visual_odometry as VO
 import starfeature
 
@@ -186,13 +187,21 @@ class PeopleTracker:
   def params(self, pmsg):
 
     if not self.vo:
+      print "Setting calib params"
       self.cam = camera.VidereCamera(pmsg.data)
       self.vo = Tracker(self.cam)
         
 
+###############################################################
+  def point_stamped(self,psmsg):
+    print "Heard ", psmsg.point.x, psmsg.point.y, psmsg.point.z, psmsg.header.frame_id
+  
+
 
 ################### IMAGE CALLBACK ############################
   def frame(self, imarray):
+
+    print "Frame callback"
 
     # No calibration params yet.
     if not self.vo:
@@ -411,17 +420,19 @@ class PeopleTracker:
         center_uvd = (nx + (nw-1)/2.0, ny + (nh-1)/2.0, (numpy.average(ia.kp,0))[2] )
         center_camXYZ = self.cam.pix2cam(center_uvd[0], center_uvd[1], center_uvd[2])
         center_robXYZ = (center_camXYZ[2], -center_camXYZ[0], -center_camXYZ[1])
-        print ("center_uvd", center_uvd)
-        print ("center_camXYZ", center_camXYZ)
-        print ("center_robXYZ", center_robXYZ)
+        if DEBUG:
+          print ("center_uvd", center_uvd)
+          print ("center_camXYZ", center_camXYZ)
+          print ("center_robXYZ", center_robXYZ)
 
         if not self.usebag:
           #PointStamped stamped_point
+          stamped_point = PointStamped()
           stamped_point.point.x = center_robXYZ[0]
           stamped_point.point.y = center_robXYZ[1]
-          stamped_point.point.z = center_robYXZ[2]
+          stamped_point.point.z = center_robXYZ[2]
           stamped_point.header.frame_id = "stereo_block"
-          self.pub.publish(PointStamped(stamped_point))
+          self.pub.publish(stamped_point)
     
       
 ############ DRAWING ################
@@ -471,6 +482,8 @@ class PeopleTracker:
   
     self.seq += 1
 
+    
+
 
 ############# MAIN #############
 def main(argv) :
@@ -507,10 +520,12 @@ def main(argv) :
 
   # Use new ROS messages, and output the 3D position of the face in the camera frame.
   else :
+    print "Non-bag"
+    people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
     rospy.init_node('videre_face_tracker', anonymous=True)
+    #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
     rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
     rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
-    people_tracker.pub = rospy.advertise_topic('head_controller/track_point',PointStamped)
     rospy.spin()
 
 
