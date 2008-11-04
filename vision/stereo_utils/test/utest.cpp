@@ -16,7 +16,6 @@ static const double DISPUNITSCALE =.25;
 /// testing the following member methods
 /// getDeltaX, getDeltaU, getZ, getDisparity
 bool testGetDeltaXAndGetDeltaU() {
-  bool status = true;
   CvStereoCamModel camModel;
   camModel.setCameraParams(FX, FY, TX, CLX, CRX, CY, DISPUNITSCALE);
 
@@ -99,7 +98,7 @@ bool testSparsePointConversion() {
 
   CvMat* points_cart  = (CvMat*)cvLoad(filename);
   if (points_cart == NULL ) {
-    printf("Cannot load data file");
+    printf("Cannot load data file: %s\n", filename);
     return false;
   }
   CvMat* points_cart0 = (CvMat*)cvCreateMat(points_cart->rows, points_cart->cols,

@@ -463,7 +463,10 @@ void CvStereoCamModel::getDepthMask(// disparity image
 				    // mininum z in mask
 				    double minZ,
 				    // max z in mask
-				    double maxZ) const {
+				    double maxZ,
+				    // post processing options
+				    PostProcessOptions post_process_options
+) const {
     double maxDisp = getDisparity(minZ);
     double minDisp = getDisparity(maxZ);
 
@@ -472,29 +475,30 @@ void CvStereoCamModel::getDepthMask(// disparity image
     // fill in the mask according to disparity or depth
     cvInRangeS(dispImg, cvScalar(minDisp), cvScalar(maxDisp), depthMask);
 
-#if 1
-    // two simple morphology operation seem to be good enough. But
-    // but connected component analysis provides blob with better shape
-    cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
-    //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
-    cvDilate(depthMask, depthMask, DilateKernel, 1);
-#else
-
-    const float perimScale = 16;
-    const int maxNumBBoxes = 25;
-    CvRect bboxes[maxNumBBoxes];
-    int numCComp = maxNumBBoxes;
-    connectedComponents(depthMask, 0,
-			OpenKernel,
-			CloseKernel,
-			perimScale, &numCComp,
-			(CvRect *)NULL, // bboxes,
-			(CvPoint *)NULL);
-
-    //printf("found %d blobs\n", numCComp);
-
-    cvDilate(depthMask, depthMask, DilateKernel, 1);
-#endif
+    switch (post_process_options) {
+    case NO_POST_PROCESS:
+      break;
+    case POLYGONES:
+      // two simple morphology operation seem to be good enough. But
+      // but connected component analysis provides blob with better shape
+      cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
+      //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
+      cvDilate(depthMask, depthMask, DilateKernel, 1);
+      break;
+    case CONVEX_HULLS: {
+      const float perimScale = 16;
+      const int maxNumBBoxes = 25;
+      CvRect bboxes[maxNumBBoxes];
+      int numCComp = maxNumBBoxes;
+      connectedComponents(depthMask, 0,
+        OpenKernel,
+        CloseKernel,
+        perimScale, &numCComp,
+        (CvRect *)NULL, // bboxes,
+        (CvPoint *)NULL);
+      cvDilate(depthMask, depthMask, DilateKernel, 1);
+    }
+    }
 }
 
 //Just some convienience macros
@@ -521,7 +525,7 @@ void CvStereoCamModel::getDepthMask(// disparity image
 void CvStereoCamModel::connectedComponents(IplImage *mask, int poly1_hull0,
 			   IplConvKernel* openKernel,
 			   IplConvKernel* closeKernel,
-			   float perimScale, int *num, CvRect *bbs, CvPoint *centers)
+			   float perimScale, int *num, CvRect *bbs, CvPoint *centers) const
 {
   //CLEAN UP RAW MASK
   // open followed by a close

@@ -16,6 +16,8 @@
  * in disparity space, given a certain disparity (or depth), and routines that
  * converts between disparity values and depths.
  * As implied, the points and image in disparity space are rectified.
+ * This class also provides a method to compute mask according to depth/disparity
+ * ranges.
  */
 class CvStereoCamModel
 {
@@ -126,23 +128,23 @@ public:
 	}
 
 	/// \brief Compute delta u, given Z and delta X in Cartesian space.
-	/// @return DBL_MAX if Z is 0
+	/// @return delta u if Z is non-zero. DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
 	/// \brief Compute delta X, given disparity and delta u in disparity space.
 	/// \return  0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
 	/// \brief compute delta v, given Z and delta Y in Cartesian space.
-	/// @return DBL_MAX if Z is 0
+	/// @return delta v if Z is nonzero. DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
 	/// @brief compute delta Y, given disparity and delta v in disparity space.
-	/// @return 0 if d-(Clx-Crx) == 0
+	/// @return delta v, or 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
 	/// @brief compute Z given disparity.
 	/// Symbolically, Fx_*Tx_/(d*Du_ - (Clx_ - Crx_))
-	/// @return DBL_MAX if d-(Clx-Crx) == 0
+	/// @return delta Y, or DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
 	/// @brief compute disparity given Z.
-	/// symbolically ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_.
+	/// Symbolically, ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_.
 	///  @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 
@@ -176,7 +178,22 @@ public:
   /// @param Zmax  max depth to display in meters.  Zero values for thise => compute from image,
 	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
-	/// compute a depth mask according to the minZ and maxZ.
+	typedef enum {
+	  NO_POST_PROCESS,
+	  POLYGONES,
+	  CONVEX_HULLS,
+	} PostProcessOptions;
+	/// \brief compute a depth mask according to the minZ and maxZ.
+	/// This method generates a mask with pixel locations where depth in 3d are
+	/// within the specified range.
+	/// If post_process_opt = NO_POST_PROCESS, no processing is done
+	/// If post_process_opt = POLYGONES, small groups of connected components in the mask
+	/// are removed. The rest are merge into larger connected components, and
+	/// grow a certain size.
+	/// If post_process_opt = CONVEX_HULLS, small groups of connected components in the mask
+	/// are removed. The rest are merge into larger connected components, and
+	/// further replaced by the convex hulls of them.
+	/// This method has only been tested with raw disparity (U8 1 channel)
 	void getDepthMask(/// disparity image
 					const IplImage* dispImg,
 					/// pre-allocate image buffer for the depth mask
@@ -184,7 +201,10 @@ public:
 					/// mininum z (in mm) in mask
 					double minZ,
 					/// max z (in mm) in mask
-					double maxZ) const;
+					double maxZ,
+					/// post processing options.
+					PostProcessOptions post_process_opt = POLYGONES
+	) const;
 
 	void getParams(double* Fx, double* Fy, double* Tx, double* Clx, double* Crx,
 	    double* Cy, double* dispUnitScale) const;
@@ -199,7 +219,7 @@ protected:
   void connectedComponents(IplImage *mask, int poly1_hull0,
          IplConvKernel* openKernel,
          IplConvKernel* closeKernel,
-         float perimScale, int *num, CvRect *bbs, CvPoint *centers);
+         float perimScale, int *num, CvRect *bbs, CvPoint *centers) const;
 
   /*!
    * \brief class  member initialization.
@@ -227,7 +247,7 @@ protected:
 	CvMat  mat_disp_to_cart_;  //< projection matrix from disparity space to Cartesian space
   IplImage  *Iz8U_;  //Holds depth image to display for debug purposes
 
-  CvMemStorage*	mem_storage_;
+  mutable CvMemStorage*	mem_storage_;
   /// approx threshold - the bigger it is, the simpler is the boundary
   static const int CVCONTOUR_APPROX_LEVEL = 2;
   /// how many iterations of erosion and/or dilation
