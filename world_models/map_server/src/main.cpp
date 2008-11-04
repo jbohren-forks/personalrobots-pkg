@@ -93,6 +93,7 @@ Offers (name/type):
 
 #include "ros/node.h"
 #include "map_server/image_loader.h"
+#include "std_msgs/MapMetaData.h"
 
 class MapServer : public ros::node
 {
@@ -115,6 +116,13 @@ class MapServer : public ros::node
     /** The map response is cached here, to be sent out to service callers
      */
     std_srvs::StaticMap::response map_resp_;
+
+    void metadataSubscriptionCallback(ros::pub_sub_conn* conn)
+    {
+      publish( "map_metadata", meta_data_message_ );
+    }
+
+    std_msgs::MapMetaData meta_data_message_;
 };
 
 int main(int argc, char **argv)
@@ -140,8 +148,15 @@ int main(int argc, char **argv)
            ms.map_resp_.map.width,
            ms.map_resp_.map.height,
            ms.map_resp_.map.resolution);
+
+    ms.meta_data_message_.map_load_time = ros::Time::now();
+    ms.meta_data_message_.resolution = ms.map_resp_.map.resolution;
+    ms.meta_data_message_.width = ms.map_resp_.map.width;
+    ms.meta_data_message_.height = ms.map_resp_.map.height;
+    ms.meta_data_message_.origin = ms.map_resp_.map.origin;
     ms.advertise_service("static_map", &MapServer::mapCallback);
-    ms.set_param("map_resolution", res);
+    ms.advertise("map_metadata", ms.meta_data_message_, &MapServer::metadataSubscriptionCallback, 1);
+
     ms.spin();
   }
   catch(std::runtime_error& e)
