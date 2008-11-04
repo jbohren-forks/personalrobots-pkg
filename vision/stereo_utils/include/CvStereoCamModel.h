@@ -145,8 +145,16 @@ public:
 	double getZ(double d) const;
 	/// @brief compute disparity given Z.
 	/// Symbolically, ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_.
-	///  @return DBL_MAX if Z is zero
+	/// @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
+
+	/// @brief converts 3d points from Cartesian space to the image plane of the
+	/// left camera.
+	void cartToLeftCam(
+	    /// 3d points of either Nx1 3-channel or Nx3 1-channel.
+	    const CvMat* XYZs,
+	    /// 2d points of either Nx1 2-channel or Nx2 1-channel.
+	    CvMat* uvs) const;
 
   /// @brief Convert disparity coordinate into pixel location in left camera image.
 	/// @return pixel location in rectified left camera image.

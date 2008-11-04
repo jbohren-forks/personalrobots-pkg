@@ -24,7 +24,7 @@ void CvStereoCamModel::init() {
   mat_cart_to_disp_        = cvMat(4, 4, CV_64FC1, matdata_cart_to_disp_);
   mat_disp_to_cart_        = cvMat(4, 4, CV_64FC1, matdata_disp_to_cart_);
   Iz8U_                  = NULL;
-  mem_storage_          = NULL;
+  mem_storage_           = NULL;
 }
 
 CvStereoCamModel::CvStereoCamModel()
@@ -54,19 +54,22 @@ CvStereoCamModel::~CvStereoCamModel()
 }
 
 void CvStereoCamModel::constructMat3DToScreen(double Fx, double Fy, double Tx,
-		double Cx, double Cy, CvMat& mat){
-    double data [] = {
-        Fx, 0, Cx, -Fx*Tx,
-        0, Fy, Cy, 0,
-        0,  0,  1, 0
-    };
+    double Cx, double Cy, CvMat& mat){
+  // Note that this matrix projects 3d points to screen coordinates. Hence
+  // it has nothing to do with disparity and do not need to worry about
+  // unit scaling factor in disparity maps
+  double data [] = {
+      Fx, 0, Cx, -Fx*Tx,
+      0, Fy, Cy, 0,
+      0,  0,  1, 0
+  };
 
-    CvMat _P = cvMat(3, 4, CV_64FC1, data);
-    cvCopy(&_P, &mat);
+  CvMat _P = cvMat(3, 4, CV_64FC1, data);
+  cvCopy(&_P, &mat);
 }
 
 void CvStereoCamModel::constructProjectionMatrices(){
-  constructMat3DToScreen(Fx_, Fy_, Clx_, Cy_, Tx_, mat_cart_to_screen_left_);
+  constructMat3DToScreen(Fx_, Fy_, Clx_, Cy_,   0, mat_cart_to_screen_left_);
   constructMat3DToScreen(Fx_, Fy_, Crx_, Cy_, Tx_, mat_cart_to_screen_right_);
 
 
@@ -276,6 +279,39 @@ void CvStereoCamModel::cartToDisp(const CvMat* XYZs, CvMat* uvds) const {
 	cvReshape(uvds, &uvds0, 3, 0);
 	cvPerspectiveTransform(&xyzs0, &uvds0, &mat_cart_to_disp_);
 	__END__
+}
+
+void CvStereoCamModel::cartToLeftCam(const CvMat* XYZs, CvMat* uvs) const {
+  // this is not yet an efficient implementation.
+  __BEGIN__
+  if (parameterized_ == false) {
+    CV_ERROR( CV_StsInternal, "object not parameterized");
+  }
+  if (uvs == NULL || XYZs == NULL) {
+    CV_ERROR( CV_StsBadArg, "neither argument uvds nor XYZs shall be NULL");
+  }
+  CvMat xyzs0;
+  CvMat uvdsC3;
+  CvMat uvdsC1;
+  int numPoints;
+  numPoints = XYZs->rows;
+  double uvds_data[3*numPoints];
+  cvReshape(XYZs, &xyzs0, 3, 0);
+
+  uvdsC3 = cvMat(numPoints, 1, CV_MAT_TYPE(xyzs0.type), uvds_data);
+
+  cvPerspectiveTransform(&xyzs0, &uvdsC3, &mat_cart_to_disp_);
+
+  // copy channels 1, 2 to uvs
+  // reshape the matrix to be 1 channel, Nx3
+  cvReshape(&uvdsC3, &uvdsC1, 1, numPoints);
+  CvMat uvsC1;
+  cvGetCols(&uvdsC1, &uvsC1, 0, 2);
+  CvMat uvsC1a;
+  cvReshape(uvs, &uvsC1a, 1, numPoints);
+  cvCopy(&uvsC1, &uvsC1a);
+
+  __END__
 }
 
 double  CvStereoCamModel::getDeltaU(double deltaX, double Z) const {
