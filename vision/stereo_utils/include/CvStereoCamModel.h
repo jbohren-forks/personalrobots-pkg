@@ -56,7 +56,8 @@ public:
   virtual ~CvStereoCamModel();
 
   /**
-   * \brief Parameterized the object. Transformation matrices are built after
+   * \brief Parameterized the object.
+   * Transformation matrices are built after
    * this called. An object of this class is not usable unless it is constructed
    * by constructor that takes camera parameters, or after the first call
    * of one of the overloaded method of setCameraParams.
@@ -81,7 +82,8 @@ public:
 
   /*!
    * \brief Convert 3D points from disparity coordinates to Cartesian coordinates.
-   *
+   * The input are assumed to be "good points", i.e. with proper disparity
+   * values that are greater than zero.
    */
 	void dispToCart(
       /// (Input) 3D points in disparity coordinates.
@@ -131,17 +133,18 @@ public:
 	/// @brief compute delta v, given Z and delta Y in Cartesian space.
 	/// @return DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
-	/// @compute delta Y, given disparity and delta v in disparity space.
+	/// @brief compute delta Y, given disparity and delta v in disparity space.
 	/// @return 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
-	/// @compute Z given disparity.
+	/// @brief compute Z given disparity.
 	/// @return DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
-	/// @compute disparity given Z.
+	/// @brief compute disparity given Z.
 	//  @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 
-  /// Convert disparity coordinate into pixel location in left camera image
+  /// @brief Convert disparity coordinate into pixel location in left camera image.
+	/// @return pixel location in rectified left camera image.
   static inline CvPoint dispToLeftCam(
       /// coordinate in disparity coordinates
       const CvPoint3D64f& dispCoord)  {
@@ -150,7 +153,8 @@ public:
         (int)std::floor(dispCoord.y + .5)
     );
   }
-  /// Convert disparity coordinate into pixel location in left camera image
+  /// @brief Convert disparity coordinate into pixel location in left camera image.
+  /// @return pixel location in rectified right camera image.
   static inline CvPoint dispToRightCam(
       /// coordinate in disparity coordinates
       const CvPoint3D64f& dispCoord)  {
@@ -161,7 +165,7 @@ public:
   }
 
 
-	/// \brief This routine is used to display a singe channel floating point depth image.
+	/// \brief This routine is used to display a single channel floating point depth image.
 	/// It inverts the depth so that brightest points are closest.
 	/// @param Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
 	///            Just call the function with an image to display it.  Size of the image can change each frame.
