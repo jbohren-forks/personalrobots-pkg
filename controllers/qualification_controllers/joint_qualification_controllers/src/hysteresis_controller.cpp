@@ -119,8 +119,6 @@ void HysteresisController::update()
   double time = robot_->hw_->current_time_;
   velocity_controller_->update();
 
-  static int state = STOPPED;
-  static int starting_count = 0;
   if (state == STOPPED || state == STARTING || state == MOVING || count_<80000)
   { 
     test_effort_.vals[count_] = joint_->applied_effort_;
