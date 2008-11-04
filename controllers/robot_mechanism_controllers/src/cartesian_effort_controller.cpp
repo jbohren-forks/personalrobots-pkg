@@ -154,7 +154,7 @@ void CartesianEffortController::update()
     case mechanism::JOINT_ROTARY:
     case mechanism::JOINT_CONTINUOUS: {
       tf::Vector3 torque = cross(r, F);
-      joints_[i]->commanded_effort_ = torque.dot(joints_[i]->joint_->axis_);
+      joints_[i]->commanded_effort_ += torque.dot(joints_[i]->joint_->axis_);
 
       // Propagate back to link i
       break;
