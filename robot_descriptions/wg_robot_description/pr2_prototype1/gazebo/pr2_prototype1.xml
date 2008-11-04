@@ -823,7 +823,7 @@
               <alwaysOn>true</alwaysOn>
               <updateRate>15.0</updateRate>
               <!-- <topicName>tilt_scan</topicName> -->
-              <topicName>scan</topicName>
+              <topicName>tilt_scan</topicName>
               <frameName>tilt_laser</frameName>
               <interface:laser name="ros_tilt_laser_iface"/>
             </controller:ros_laser>
