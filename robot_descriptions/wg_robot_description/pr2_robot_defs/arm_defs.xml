@@ -159,13 +159,12 @@
 
     <joint name="${side}_shoulder_pan_joint" type="revolute">
       <axis xyz="0 0 1" />
-      <anchor xyz="0 0 0" />
-      <limit min="-2" max="0.9" effort="30" velocity="5" />
+      <!-- TODO: the arm on the test stand has the optical switch at 0.  It is actually
+           at 45 degrees -->
+      <limit min="-1.5" max="1.5" effort="30" velocity="5" />
       <calibration reference_position="0" values="1.5 -1" />
-      <!--
-      <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
-      -->
+      <safety_limit_min safety_length="0.15" damping_constant="20" spring_constant="100" />
+      <safety_limit_max safety_length="0.15" damping_constant="20" spring_constant="100" />
     </joint>
 
     <link name="${side}_shoulder_pan">
@@ -211,10 +210,8 @@
       <anchor xyz="0 0 0" />
       <limit min="-0.4" max="1.5" effort="30" velocity="5" />
       <calibration reference_position="0" values="1.5 -1 " />
-      <!--
-      <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
-      -->
+      <safety_limit_min safety_length="0.1" spring_constant="50" damping_constant="12"/>
+      <safety_limit_max safety_length="0.1" spring_constant="50" damping_constant="12"/>
     </joint>
 
     <link name="${side}_shoulder_pitch">
@@ -255,12 +252,10 @@
     <joint name="${side}_upper_arm_roll_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
-      <limit min="-2.5" max="2.5" effort="30" velocity="5" />
+      <limit min="-3.9" max="0.8" effort="30" velocity="5" />
       <calibration reference_position="${-M_PI/2}" values="1.5 -1 " />
-      <!--
-      <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
-      -->
+      <safety_limit_min safety_length="0.15" spring_constant="80" damping_constant="5"/>
+      <safety_limit_max safety_length="0.15" spring_constant="80" damping_constant="5"/>
     </joint>
 
     <link name="${side}_upper_arm_roll">
@@ -308,12 +303,10 @@
     <joint name="${side}_elbow_flex_joint" type="revolute">
       <axis xyz="0 ${-reflect} 0" />
       <anchor xyz="0 0 0" />
-      <limit min="0" max="2.3" effort="30" velocity="5" />
+      <limit min="-0.1" max="2.3" effort="30" velocity="5" />
       <calibration reference_position="1.1" values="1.5 -1" />
-      <!--
-      <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
-      -->
+      <safety_limit_min safety_length="0.1" spring_constant="60" damping_constant="6"/>
+      <safety_limit_max safety_length="0.4" spring_constant="60" damping_constant="6"/>
     </joint>
 
     <link name="${side}_elbow_flex">
@@ -408,8 +401,10 @@
     <joint name="${side}_wrist_flex_joint" type="revolute">
       <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
-      <limit min="-1" max="1" effort="200" velocity="5" />
+      <limit min="-0.1" max="2.2" effort="200" velocity="5" />
       <calibration reference_position="0.4" values="1.5 -1" />
+      <safety_limit_min safety_length="0.1" spring_constant="20" damping_constant="4"/>
+      <safety_limit_max safety_length="0.2" spring_constant="20" damping_constant="4"/>
     </joint>
 
     <link name="${side}_wrist_flex">
