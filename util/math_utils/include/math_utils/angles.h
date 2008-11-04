@@ -41,25 +41,29 @@
 namespace math_utils
 {
     
-  /** Convert degrees to radians */
+  /*!
+   * \brief Convert degrees to radians
+   */
     
   static inline double from_degrees(double degrees)
   {
     return degrees * M_PI / 180.0;   
   }
     
-  /** Convert radians to degrees */
+  /*!
+   * \brief Convert radians to degrees 
+   */
   static inline double to_degrees(double radians)
   {
     return radians * 180.0 / M_PI;
   }
     
 
-  /*
-   * normalize_angle_positive
+  /*!
+   * \brief normalize_angle_positive
    *
-   * Normalizes the angle to be 0 to 2*M_PI
-   * It takes and returns native units.
+   *        Normalizes the angle to be 0 to 2*M_PI
+   *        It takes and returns native units.
    */
   static inline double normalize_angle_positive(double angle)
   {
@@ -67,8 +71,8 @@ namespace math_utils
   }
 
 
-  /*
-   * normalize
+  /*!
+   * \brief normalize
    *
    * Normalizes the angle to be -M_PI circle to +M_PI circle
    * It takes and returns native units.
@@ -83,8 +87,9 @@ namespace math_utils
   }
 
     
-  /*
-   * shortest_angular_distance
+  /*!
+   * \function
+   * \brief shortest_angular_distance
    *
    * Given 2 angles, this returns the shortest angular
    * difference.  The inputs and ouputs are of course native
@@ -257,8 +262,8 @@ namespace math_utils
 
     
 
-  /*
-   * modNPiBy2
+  /*!
+   * \brief modNPiBy2
    *
    * Returns the angle between -M_PI/2 to M_PI/2
    */
