@@ -7,6 +7,18 @@ import rospy, sys
 from robot_mechanism_controllers.srv import *
 from robot_srvs.srv import *
 from std_msgs.msg import *
+from time import sleep
+
+class SendMessageOnSubscribeAndExit(rospy.SubscribeListener):
+    def __init__(self, msg):
+        self.msg = msg
+        print "Waiting for subscriber..."
+
+    def peer_subscribe(self, topic_name, topic_publish, peer_publish):
+        peer_publish(self.msg)
+        sleep(0.1)  # TODO: change this line when flushing messages is implemented
+        rospy.signal_shutdown("Done")
+        sys.exit(0)
 
 def list_controllers():
     rospy.wait_for_service('list_controllers')
@@ -16,10 +28,10 @@ def list_controllers():
         print t
 
 def set_controller(controller, command):
-    rospy.wait_for_service(controller + '/set_command')
-    s = rospy.ServiceProxy(controller + '/set_command', SetCommand)
-    resp = s.call(SetCommandRequest(command))
-    print resp.command
+    rospy.init_node('control', anonymous = True)
+    pub = rospy.Publisher('/' + controller + '/set_command', Float64,
+                          SendMessageOnSubscribeAndExit(Float64(command)))
+    rospy.spin()
 
 def set_controller_vector(controller, command):
     rospy.wait_for_service(controller + '/set_command')
