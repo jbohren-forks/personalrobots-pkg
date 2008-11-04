@@ -4,6 +4,6 @@
   <license>BSD</license>
   <depend package="roscpp" />
   <depend package="robot_msgs" />
-  <depend package="rosTF" />
+  <depend package="tf" />
   <depend package="math_utils" />
 </package>

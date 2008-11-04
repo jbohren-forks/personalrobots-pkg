@@ -79,7 +79,8 @@ Publishes to (name / type):
 #include <std_msgs/Pose2DFloat32.h>
 
 #include <math_utils/angles.h>
-#include <rosTF/rosTF.h>
+
+#include "tf/transform_broadcaster.h"
 
 
 class FakeOdomNode: public ros::node
@@ -87,32 +88,32 @@ class FakeOdomNode: public ros::node
 public:
     FakeOdomNode(void) : ros::node("fake_localization")
     {
-	advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-	advertise<std_msgs::ParticleCloud2D>("particlecloud");
-	
-	m_tfServer = new rosTFServer(*this);	
+      advertise<std_msgs::RobotBase2DOdom>("localizedpose");
+      advertise<std_msgs::ParticleCloud2D>("particlecloud");
 
-	m_lastUpdate = ros::Time::now();
-		
-	m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
-	m_particleCloud.set_particles_size(1);
+      m_tfServer = new tf::TransformBroadcaster(*this);	
 
-	param("max_publish_frequency", m_maxPublishFrequency, 0.5);
-	
-	subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
-	subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
+      m_lastUpdate = ros::Time::now();
+
+      m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
+      m_particleCloud.set_particles_size(1);
+
+      param("max_publish_frequency", m_maxPublishFrequency, 0.5);
+
+      subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
+      subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
     }
     
     ~FakeOdomNode(void)
     {
-	if (m_tfServer)
-	    delete m_tfServer; 
+      if (m_tfServer)
+        delete m_tfServer; 
     }
     
     
 private:
     
-    rosTFServer                   *m_tfServer;
+    tf::TransformBroadcaster       *m_tfServer;
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     
@@ -139,41 +140,31 @@ private:
 
       m_lastUpdate = ros::Time::now();
 
-      //since the msg uses Quaternion use libTF to get yaw
-      libTF::Pose3D pose;
+      tf::Transform txi(tf::Quaternion(m_basePosMsg.transform.rotation.x,
+                                       m_basePosMsg.transform.rotation.y, 
+                                       m_basePosMsg.transform.rotation.z, 
+                                       m_basePosMsg.transform.rotation.w),
+                        tf::Point(m_basePosMsg.transform.translation.x,
+                                  m_basePosMsg.transform.translation.y, 0.0));
 
-      // FIXME: temp work around during libtf upgrade transition
-      std_msgs::Pose3DStamped messagePose3D;
-      messagePose3D.header               = m_basePosMsg.header;
-      messagePose3D.pose3D.position.x    = m_basePosMsg.transform.translation.x;
-      messagePose3D.pose3D.position.y    = m_basePosMsg.transform.translation.y;
-      messagePose3D.pose3D.position.z    = m_basePosMsg.transform.translation.z;
-      messagePose3D.pose3D.orientation.x = m_basePosMsg.transform.rotation.x;
-      messagePose3D.pose3D.orientation.y = m_basePosMsg.transform.rotation.y;
-      messagePose3D.pose3D.orientation.z = m_basePosMsg.transform.rotation.z;
-      messagePose3D.pose3D.orientation.w = m_basePosMsg.transform.rotation.w;
+      double x = txi.getOrigin().x() + m_iniPos.x;
+      double y = txi.getOrigin().y() + m_iniPos.y;
+      double yaw, pitch, roll;
+      txi.getBasis().getEulerZYX(yaw, pitch, roll);
+      yaw = math_utils::normalize_angle(yaw + m_iniPos.th);
 
-      pose.setFromMessage(messagePose3D.pose3D);
+      tf::Transform txo(tf::Quaternion(yaw, 0.0, 0.0),
+                        tf::Point(x, y, 0.0));
 
-      m_currentPos.header = m_basePosMsg.header;	
-      m_currentPos.pos.x  = m_basePosMsg.transform.translation.x;
-      m_currentPos.pos.y  = m_basePosMsg.transform.translation.y;
-      m_currentPos.pos.th = pose.getEuler().yaw;
+      m_tfServer->sendTransform(tf::Stamped<tf::Transform>
+                                (txo.inverse(),
+                                 m_basePosMsg.header.stamp,
+                                 "map", "base"));
 
-      m_currentPos.pos.x += m_iniPos.x;
-      m_currentPos.pos.y += m_iniPos.y;
-      m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
-      m_currentPos.header.frame_id = "map";
-
-      m_tfServer->sendEuler("base",
-                            "map",
-                            m_currentPos.pos.x,
-                            m_currentPos.pos.y,
-                            0.0,
-                            m_currentPos.pos.th,
-                            0.0,
-                            0.0,
-                            m_currentPos.header.stamp); 
+      m_currentPos.header = m_basePosMsg.header;
+      m_currentPos.pos.x = x;
+      m_currentPos.pos.y = y;
+      m_currentPos.pos.th = yaw;
 
       publish("localizedpose", m_currentPos);
 
