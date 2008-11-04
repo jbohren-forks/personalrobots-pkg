@@ -57,15 +57,16 @@ class PhaseSpacePanTilt : public ros::node
 {
 public :
   
-  PhaseSpacePanTilt() : ros::node("phase_space_pan_tilt")
+  PhaseSpacePanTilt() : ros::node("phase_space_pan_tilt"), topic("head_controller/track_point")
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePanTilt::snapshotCallback, 10) ;
-    publish_count_ = 0 ;
+    advertise<std_msgs::PointStamped>(topic, 10) ;
   }
   
   ~PhaseSpacePanTilt()
   {
     unsubscribe("phase_space_snapshot") ;
+    unadvertise(topic) ;
   }
   
   void snapshotCallback()
@@ -75,36 +76,23 @@ public :
       if (snapshot_.frameNum % 16 != 0)
         return ;
       
-      //! \todo Replace TrackPoint service with a PointStamped message.
-      
-      /*string topic = "head_controller/track_point" ;
-      
-      
-      pr2_mechanism_controllers::TrackPoint::request req ;
-      pr2_mechanism_controllers::TrackPoint::response resp ;
-      
-      const phase_space::PhaseSpaceMarker& cur_marker = snapshot_.markers[0] ;
-      req.target.header = snapshot_.header ;
-      req.target.point = cur_marker.location ;
-      
-      req.target.point.x = cur_marker.location.x ;
-      req.target.point.y = -cur_marker.location.z ;
-      req.target.point.z = cur_marker.location.y-.8 ;
-      req.target.header.frame_id = "torso" ;
+      if (snapshot_.get_markers_size() == 0)
+        return ;
 
-      cout << "Requesting to move to: " << req.target.point.x << ","
-                                        << req.target.point.y << ","
-                                        << req.target.point.z << endl ;
-
-      ros::service::call(topic, req, resp) ;
-      cout << "  Resp: Pan=" << resp.pan_angle << "  Tilt:" << resp.tilt_angle << endl ;*/
+      phase_space::PhaseSpaceMarker& cur_marker = snapshot_.markers[0] ;
       
+      std_msgs::PointStamped target_point ;
+      target_point.header = snapshot_.header ;
+      target_point.point = cur_marker.location ;
+      
+      publish(topic, target_point) ;
+
       return ;
     }
   }
   
 private :
-  
+  const string topic ;
   phase_space::PhaseSpaceSnapshot snapshot_ ;
   
   int publish_count_ ;
