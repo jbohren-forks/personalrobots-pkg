@@ -22,7 +22,8 @@ class CvStereoCamModel
 public:
 	/// Constructor.
   /**
-   * \brief Constructor that takes camera parameters.
+   * \brief Constructor that takes camera parameters and parameterizes the object.
+   * The object is ready to be used after constructed by this constructor.
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
    *  @param Fy  - focal length in y direction of the rectified image in pixels.
    *  @param Tx  - Translation in x direction from the left camera to the right camera.
@@ -128,9 +129,9 @@ public:
 	// @return DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
 	/// \brief Compute delta X, given disparity and delta u in disparity space.
-	/// @return  0 if disparity is 0, namely d-(Clx-Crx) == 0
+	/// \return  0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
-	/// @brief compute delta v, given Z and delta Y in Cartesian space.
+	/// \brief compute delta v, given Z and delta Y in Cartesian space.
 	/// @return DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
 	/// @brief compute delta Y, given disparity and delta v in disparity space.
@@ -140,7 +141,7 @@ public:
 	/// @return DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
 	/// @brief compute disparity given Z.
-	//  @return DBL_MAX if Z is zero
+	///  @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 
   /// @brief Convert disparity coordinate into pixel location in left camera image.
