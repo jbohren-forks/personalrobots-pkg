@@ -134,51 +134,51 @@ private:
 
     void update(void)
     {
-	if ((ros::Time::now() - m_lastUpdate).to_double() < 1.0/m_maxPublishFrequency)
-	    return;
-	
-	m_lastUpdate = ros::Time::now();
+      if ((ros::Time::now() - m_lastUpdate).to_double() < 1.0/m_maxPublishFrequency)
+        return;
 
-  //since the msg uses Quaternion use libTF to get yaw
-  libTF::Pose3D pose;
+      m_lastUpdate = ros::Time::now();
 
-  // FIXME: temp work around during libtf upgrade transition
-  std_msgs::Pose3DStamped messagePose3D;
-  messagePose3D.header               = m_basePosMsg.header;
-  messagePose3D.pose3D.position.x    = m_basePosMsg.transform.translation.x;
-  messagePose3D.pose3D.position.y    = m_basePosMsg.transform.translation.y;
-  messagePose3D.pose3D.position.z    = m_basePosMsg.transform.translation.z;
-  messagePose3D.pose3D.orientation.x = m_basePosMsg.transform.rotation.x;
-  messagePose3D.pose3D.orientation.y = m_basePosMsg.transform.rotation.y;
-  messagePose3D.pose3D.orientation.z = m_basePosMsg.transform.rotation.z;
-  messagePose3D.pose3D.orientation.w = m_basePosMsg.transform.rotation.w;
+      //since the msg uses Quaternion use libTF to get yaw
+      libTF::Pose3D pose;
 
-  pose.setFromMessage(messagePose3D.pose3D);
-	
-	m_currentPos.header = m_basePosMsg.header;	
-	m_currentPos.pos.x  = m_basePosMsg.transform.translation.x;
-	m_currentPos.pos.y  = m_basePosMsg.transform.translation.y;
-	m_currentPos.pos.th = pose.getEuler().yaw;
+      // FIXME: temp work around during libtf upgrade transition
+      std_msgs::Pose3DStamped messagePose3D;
+      messagePose3D.header               = m_basePosMsg.header;
+      messagePose3D.pose3D.position.x    = m_basePosMsg.transform.translation.x;
+      messagePose3D.pose3D.position.y    = m_basePosMsg.transform.translation.y;
+      messagePose3D.pose3D.position.z    = m_basePosMsg.transform.translation.z;
+      messagePose3D.pose3D.orientation.x = m_basePosMsg.transform.rotation.x;
+      messagePose3D.pose3D.orientation.y = m_basePosMsg.transform.rotation.y;
+      messagePose3D.pose3D.orientation.z = m_basePosMsg.transform.rotation.z;
+      messagePose3D.pose3D.orientation.w = m_basePosMsg.transform.rotation.w;
 
-	m_currentPos.pos.x += m_iniPos.x;
-	m_currentPos.pos.y += m_iniPos.y;
-	m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
-	m_currentPos.header.frame_id = "map";
-	
-	m_tfServer->sendEuler("base",
-			      "map",
-			      m_currentPos.pos.x,
-			      m_currentPos.pos.y,
-			      0.0,
-			      m_currentPos.pos.th,
-			      0.0,
-			      0.0,
-			      m_currentPos.header.stamp); 
-			      
-	publish("localizedpose", m_currentPos);
-	
-	m_particleCloud.particles[0] = m_currentPos.pos;
-	publish("particlecloud", m_particleCloud);
+      pose.setFromMessage(messagePose3D.pose3D);
+
+      m_currentPos.header = m_basePosMsg.header;	
+      m_currentPos.pos.x  = m_basePosMsg.transform.translation.x;
+      m_currentPos.pos.y  = m_basePosMsg.transform.translation.y;
+      m_currentPos.pos.th = pose.getEuler().yaw;
+
+      m_currentPos.pos.x += m_iniPos.x;
+      m_currentPos.pos.y += m_iniPos.y;
+      m_currentPos.pos.th = math_utils::normalize_angle(m_currentPos.pos.th + m_iniPos.th);
+      m_currentPos.header.frame_id = "map";
+
+      m_tfServer->sendEuler("base",
+                            "map",
+                            m_currentPos.pos.x,
+                            m_currentPos.pos.y,
+                            0.0,
+                            m_currentPos.pos.th,
+                            0.0,
+                            0.0,
+                            m_currentPos.header.stamp); 
+
+      publish("localizedpose", m_currentPos);
+
+      m_particleCloud.particles[0] = m_currentPos.pos;
+      publish("particlecloud", m_particleCloud);
     }
     
 };
