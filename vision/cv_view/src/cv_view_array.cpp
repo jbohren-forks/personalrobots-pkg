@@ -99,10 +99,10 @@ public:
         if (j->second.bridge->to_cv(&j->second.cv_image))
         {
           
-          IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
-
           if (fix_color)
           {
+            IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
+
             decompand(j->second.cv_image, img);
 
             if (j->second.cv_image->nChannels == 3)
