@@ -77,6 +77,9 @@ class App(wx.App):
     axes2 = fig.add_subplot(212)
     axes2.clear()
     axes1.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['effort']), 'r--')
+    axes1.axhline(y=.15,color='k')
+    axes1.axhline(y=0,color='k')
+    axes1.axhline(y=-.15,color='k')
     axes1.set_xlabel('Position')
     axes1.set_ylabel('Effort')
 
