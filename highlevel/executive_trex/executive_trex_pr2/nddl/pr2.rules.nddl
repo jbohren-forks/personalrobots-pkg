@@ -28,6 +28,14 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+BaseState::Holds{
+  defaultOnCommit(accumulatedDistance, 0.0);
+  meets(Holds s);
+  float distance;
+  calcDistance(distance, x, y, s.x, s.y);
+  addEq(accumulatedDistance, distance, s.accumulatedDistance);
+}
+
 /**
  * All behaviors will oscillate between active and inactive
  */
