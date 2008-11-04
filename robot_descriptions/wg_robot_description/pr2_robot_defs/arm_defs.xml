@@ -153,11 +153,11 @@
 
 
 
-  <macro name="pr2_upperarm" params="suffix parent reflect *origin">
+  <macro name="pr2_upperarm" params="side parent reflect *origin">
 
     <!-- Shoulder pan -->
 
-    <joint name="shoulder_pan_${suffix}_joint" type="revolute">
+    <joint name="${side}_shoulder_pan_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit min="-2" max="0.9" effort="30" velocity="5" />
@@ -166,10 +166,10 @@
       <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
     </joint>
 
-    <link name="shoulder_pan_${suffix}">
+    <link name="${side}_shoulder_pan">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="shoulder_pan_${suffix}_joint" />
+      <joint name="${side}_shoulder_pan_joint" />
       <inertial>
         <mass value="16.29553" />
         <com xyz="-0.005215 -0.030552 0.0" />
@@ -191,20 +191,20 @@
           <box size="0.347 0.254 0.646" />
         </geometry>
       </collision>
-      <map name="pr2_shoulder_pan_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_shoulder_pan_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="shoulder_pan_${suffix}_trans">
-      <actuator name="shoulder_pan_${suffix}_motor" />
-      <joint name="shoulder_pan_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_shoulder_pan_trans">
+      <actuator name="${side}_shoulder_pan_motor" />
+      <joint name="${side}_shoulder_pan_joint" />
       <mechanicalReduction>63.16</mechanicalReduction>
     </transmission>
 
     <!-- Shoulder pitch -->
 
-    <joint name="shoulder_pitch_${suffix}_joint" type="revolute">
+    <joint name="${side}_shoulder_pitch_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.4" max="1.5" effort="30" velocity="5" />
@@ -213,10 +213,10 @@
       <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
     </joint>
 
-    <link name="shoulder_pitch_${suffix}">
-      <parent name="shoulder_pan_${suffix}" />
+    <link name="${side}_shoulder_pitch">
+      <parent name="${side}_shoulder_pan" />
       <origin xyz="0.1 0 0" rpy="0 0 0" />
-      <joint name="shoulder_pitch_${suffix}_joint" />
+      <joint name="${side}_shoulder_pitch_joint" />
       <inertial>
         <mass value="2.41223" />
         <com xyz="-0.035895  0.014422 -0.0028263" />
@@ -240,15 +240,15 @@
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="shoulder_pitch_${suffix}_trans">
-      <actuator name="shoulder_pitch_${suffix}_motor" />
-      <joint name="shoulder_pitch_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_shoulder_pitch_trans">
+      <actuator name="${side}_shoulder_pitch_motor" />
+      <joint name="${side}_shoulder_pitch_joint" />
       <mechanicalReduction>57.36</mechanicalReduction>
     </transmission>
 
     <!-- Upperarm roll -->
 
-    <joint name="upperarm_roll_${suffix}_joint" type="revolute">
+    <joint name="${side}_upperarm_roll_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit min="-2.5" max="2.5" effort="30" velocity="5" />
@@ -257,10 +257,10 @@
       <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
     </joint>
 
-    <link name="upperarm_roll_${suffix}">
-      <parent name="shoulder_pitch_${suffix}" />
+    <link name="${side}_upperarm_roll">
+      <parent name="${side}_shoulder_pitch" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="upperarm_roll_${suffix}_joint" />
+      <joint name="${side}_upperarm_roll_joint" />
 
       <inertial>
         <mass value="4.9481" />
@@ -286,20 +286,20 @@
         </geometry>
       </collision>
 
-      <map name="pr2_upperarm_roll_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_upperarm_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="upperarm_roll_${suffix}_trans">
-      <actuator name="upperarm_roll_${suffix}_motor" />
-      <joint name="upperarm_roll_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_upperarm_roll_trans">
+      <actuator name="${side}_upperarm_roll_motor" />
+      <joint name="${side}_upperarm_roll_joint" />
       <mechanicalReduction>32.65</mechanicalReduction>
     </transmission>
 
     <!-- Elbow flex -->
 
-    <joint name="elbow_flex_${suffix}_joint" type="revolute">
+    <joint name="${side}_elbow_flex_joint" type="revolute">
       <axis xyz="0 ${reflect} 0" />
       <anchor xyz="0 0 0" />
       <limit min="0" max="2.3" effort="30" velocity="5" />
@@ -308,10 +308,10 @@
       <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
     </joint>
 
-    <link name="elbow_flex_${suffix}">
-      <parent name="upperarm_roll_${suffix}" />
+    <link name="${side}_elbow_flex">
+      <parent name="${side}_upperarm_roll" />
       <origin xyz="0.4 0 0" rpy="0 0 0" />
-      <joint name="elbow_flex_${suffix}_joint" />
+      <joint name="${side}_elbow_flex_joint" />
 
       <inertial>
         <mass value="1.689246" />
@@ -334,35 +334,35 @@
           <cylinder radius="0.1" length="0.08" />
         </geometry>
       </collision>
-      <map name="pr2_elbow_flex_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_elbow_flex_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="elbow_flex_${suffix}_trans">
-      <actuator name="elbow_flex_${suffix}_motor" />
-      <joint name="elbow_flex_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_elbow_flex_trans">
+      <actuator name="${side}_elbow_flex_motor" />
+      <joint name="${side}_elbow_flex_joint" />
       <mechanicalReduction>36.17</mechanicalReduction>
     </transmission>
   </macro>
 
 
 
-  <macro name="pr2_forearm" params="suffix parent reflect">
+  <macro name="pr2_forearm" params="side parent reflect">
 
     <!-- Forearm roll -->
 
-    <joint name="forearm_roll_${suffix}_joint" type="revolute">
+    <joint name="${side}_forearm_roll_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit  effort="100" velocity="5" />
       <calibration reference_position="0" values="1.5 -1" />
     </joint>
 
-    <link name="forearm_roll_${suffix}">
+    <link name="${side}_forearm_roll">
       <parent name="${parent}" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="forearm_roll_${suffix}_joint" />
+      <joint name="${side}_forearm_roll_joint" />
       <inertial>
         <mass value="1.804155" />
         <com xyz="0.179474 -0.000058 0.013779" />
@@ -384,30 +384,30 @@
           <box size="0.27 0.12 0.08" />
         </geometry>
       </collision>
-      <map name="pr2_forearm_roll_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_forearm_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="forearm_roll_${suffix}_trans">
-      <actuator name="forearm_roll_${suffix}_motor" />
-      <joint name="forearm_roll_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
+      <actuator name="${side}_forearm_roll_motor" />
+      <joint name="${side}_forearm_roll_joint" />
       <mechanicalReduction>1</mechanicalReduction>
     </transmission>
 
     <!-- Wrist flex -->
 
-    <joint name="wrist_flex_${suffix}_joint" type="revolute">
+    <joint name="${side}_wrist_flex_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-1" max="1" effort="200" velocity="5" />
       <calibration reference_position="0.4" values="1.5 -1" />
     </joint>
 
-    <link name="wrist_flex_${suffix}">
-      <parent name="forearm_roll_${suffix}" />
+    <link name="${side}_wrist_flex">
+      <parent name="${side}_forearm_roll" />
       <origin xyz="0.32025 0 0" rpy="0 0 0" />
-      <joint name="wrist_flex_${suffix}_joint" />
+      <joint name="${side}_wrist_flex_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -429,20 +429,20 @@
           <cylinder radius="0.033" length="0.103" />
         </geometry>
       </collision>
-      <map name="pr2_wrist_flex_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_wrist_flex_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="wrist_flex_${suffix}_trans">
-      <actuator name="wrist_flex_${suffix}_motor" />
-      <joint name="wrist_flex_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_wrist_flex_trans">
+      <actuator name="wrist_flex_motor" />
+      <joint name="${side}_wrist_flex_joint" />
       <mechanicalReduction>1</mechanicalReduction>
     </transmission>
 
     <!-- Wrist roll -->
 
-    <joint name="wrist_roll_${suffix}_joint" type="revolute">
+    <joint name="${side}_wrist_roll_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="5" />
@@ -450,10 +450,10 @@
     </joint>
 
 
-    <link name="wrist_roll_${suffix}">
-      <parent name="wrist_flex_${suffix}" />
+    <link name="${side}_wrist_roll">
+      <parent name="${side}_wrist_flex" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="wrist_roll_${suffix}_joint" />
+      <joint name="${side}_wrist_roll_joint" />
       <inertial>
         <mass value="1.0" />
         <com xyz="0.179474 -0.000058  0.013779" />
@@ -476,14 +476,14 @@
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="pr2_wrist_roll_${suffix}_gravity" flag="gazebo">
+      <map name="pr2_wrist_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="wrist_roll_${suffix}_trans">
-      <actuator name="wrist_roll_${suffix}_motor" />
-      <joint name="wrist_roll_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${side}_wrist_roll_trans">
+      <actuator name="${side}_wrist_roll_motor" />
+      <joint name="${side}_wrist_roll_joint" />
       <mechanicalReduction>1</mechanicalReduction>
     </transmission>
 
@@ -491,11 +491,11 @@
 
 
 
-  <macro name="pr2_arm" params="suffix parent reflect *origin">
-    <pr2_upperarm suffix="${suffix}" reflect="${reflect}" parent="${parent}">
+  <macro name="pr2_arm" params="side parent reflect *origin">
+    <pr2_upperarm side="${side}" reflect="${reflect}" parent="${parent}">
       <insert_block name="origin" />
     </pr2_upperarm>
-    <pr2_forearm suffix="${suffix}" reflect="${reflect}" parent="elbow_flex_${suffix}" />
+    <pr2_forearm side="${side}" reflect="${reflect}" parent="${side}_elbow_flex" />
   </macro>
 
 
