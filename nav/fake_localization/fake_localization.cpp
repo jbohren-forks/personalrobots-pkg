@@ -149,12 +149,13 @@ private:
 
       double x = txi.getOrigin().x() + m_iniPos.x;
       double y = txi.getOrigin().y() + m_iniPos.y;
+      double z = txi.getOrigin().z();
       double yaw, pitch, roll;
       txi.getBasis().getEulerZYX(yaw, pitch, roll);
       yaw = math_utils::normalize_angle(yaw + m_iniPos.th);
 
-      tf::Transform txo(tf::Quaternion(yaw, 0.0, 0.0),
-                        tf::Point(x, y, 0.0));
+      tf::Transform txo(tf::Quaternion(yaw, pitch, roll),
+                        tf::Point(x, y, z));
 
       m_tfServer->sendTransform(tf::Stamped<tf::Transform>
                                 (txo.inverse(),
