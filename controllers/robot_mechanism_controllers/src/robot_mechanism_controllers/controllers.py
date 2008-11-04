@@ -34,9 +34,10 @@ def set_controller(controller, command):
     rospy.spin()
 
 def set_controller_vector(controller, command):
-    rospy.wait_for_service(controller + '/set_command')
-    s = rospy.ServiceProxy(controller + '/set_command', SetVector)
-    resp = s(Vector3(*command))
+    rospy.init_node('control', anonymous = True)
+    pub = rospy.Publisher('/' + controller + '/set_command', Vector3,
+                          SendMessageOnSubscribeAndExit(Vector3(*command)))
+    rospy.spin()
 
 def get_controller(controller):
     rospy.wait_for_service(controller + '/get_command')
