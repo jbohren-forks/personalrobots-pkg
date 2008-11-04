@@ -83,12 +83,47 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
 {
   num_points_ = numPoints;
 
+  if((int) p.size() < num_points_*dimension_)
+  {
+    ROS_WARN("Input has only %d values, expecting %d values for a %d dimensional trajectory with %d number of points",p.size(), num_points_*dimension_, dimension_, num_points_);
+    return -1;
+  }   
   tp_.resize(num_points_);
 
   for(int i=0; i<num_points_;i++)
   {
     tp_[i].setDimension(dimension_);
-    tp_[i].time_ = p[i*(dimension_+1)];
+    for(int j=0; j<dimension_; j++)
+      tp_[i].q_[j] = p[i*dimension_+j];
+  }
+  calcCoeff(interp_method_,autocalc_timing_);
+
+  autocalc_timing_ = true;//Enable autocalc timing by default since no time information given in trajectory
+
+  return 1;
+}  
+
+int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<double> &time, int numPoints)
+{
+  num_points_ = numPoints;
+
+  tp_.resize(num_points_);
+
+  if((int) time.size() != num_points_)
+  {
+    ROS_WARN("Number of points in vector specifying time (%d)  does not match number of points %d",(int) time.size(), num_points_);
+    return -1;
+  }
+  if((int) p.size() < num_points_*dimension_)
+  {
+    ROS_WARN("Input has only %d values, expecting %d values for a %d dimensional trajectory with %d number of points",p.size(), num_points_*dimension_, dimension_, num_points_);
+    return -1;
+  }   
+
+  for(int i=0; i<num_points_;i++)
+  {
+    tp_[i].setDimension(dimension_);
+    tp_[i].time_ = time[i];
     for(int j=0; j<dimension_; j++)
       tp_[i].q_[j] = p[i*(dimension_+1)+j+1];
   }
@@ -96,7 +131,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
   calcCoeff(interp_method_,autocalc_timing_);
 
   return 1;
-}  
+}
 
 void Trajectory::addPoint(const TPoint tp)
 {
@@ -166,7 +201,7 @@ int Trajectory::setMaxRate(std::vector<double> max_rate)
   return 1;
 }
 
-void Trajectory::calculateLinearCoeff(bool autocalc_timing)
+int Trajectory::calculateLinearCoeff(bool autocalc_timing)
 {
   double dT(0);
   TCoeff tc;
@@ -175,10 +210,20 @@ void Trajectory::calculateLinearCoeff(bool autocalc_timing)
   std::vector<double> temp;
   temp.resize(2);
 
-  tp_[0].time_ = 0.0;
+  if(autocalc_timing)
+    tp_[0].time_ = 0.0;
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+
+  if(autocalc_timing)
+  {
+    if(max_rate_.empty() || (int) max_rate_.size() < 0)
+    {
+      ROS_WARN("Trying to use autocalc_timing without setting max rate information. Use setMaxRate first");
+      return -1;
+    }
+  }
 
   for(int i=1; i < (int) tp_.size() ; i++)
   {

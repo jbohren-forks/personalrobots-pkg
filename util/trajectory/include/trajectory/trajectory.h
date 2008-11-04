@@ -43,30 +43,38 @@
 
 namespace trajectory
 {
-
+  /*! \class 
+    \brief The trajectory class specifies general n-DOF trajectories and allows the user to sample trajectories based on a number of interpolation schemes. A trajectory is composed of a set of trajectory points. Interpolation between trajectory points uses the interpolation scheme set by the user (default is linear). The TCoeff struct specifies all the coefficients required to perform the interpolation. */
   class Trajectory
   {
     public:
   
+    /*! \class
+      \brief The TPoint class specifies a point in a trajectory. A point in a trajectory is essentially a n dimensional vector of positions and velocities with a timestamp. 
+    */
     struct TPoint
     {
 
-        TPoint() {}
+        TPoint() {} /** Default constructor */
 
-        TPoint(int dimension){setDimension(dimension);};
+        TPoint(int dimension){setDimension(dimension);}; /** Constructor with dimension specified */
 
-        TPoint(const std::vector<double>& q, double time);
+        TPoint(const std::vector<double>& q, double time); /** Constructor with input of vector of positions for the point and timestamp */
             
-        std::vector<double> q_;
+        std::vector<double> q_; /** vector of positions of dimension = dimension_*/
 
-        std::vector<double> qdot_;
+        std::vector<double> qdot_; /** vector of velocities of dimension = dimension_ */
 
-        double time_;
+        double time_; /** timestamp */
 
-        int dimension_;
+        int dimension_; /** dimension of the point */
 
         friend class Trajectory;
 
+        /*! 
+          \brief Set the dimension of a trajectory point. This resizes the internal vectors to the right sizes
+          \param the dimension of the trajectory point
+        */
         void setDimension(int dimension){
           dimension_ = dimension;
           q_.resize(dimension_);
@@ -74,40 +82,84 @@ namespace trajectory
         }
     };
 
+    /*! \class
+      \brief The TCoeff class specifies the polynomial coefficients required for interpolation between two points in a trajectory. 
+    */
     struct TCoeff
     {
-
         TCoeff() {}
 
-        inline double get_coefficient(int degree, int dim_index);
+        /* 
+           \brief Get the coefficient corresponding to a degree in the polynomial and a dimension index */ 
+        inline double get_coefficient(int degree, int dim_index); 
 
         private: 
 
-        int degree_;
+        int degree_; /** degree of the polynomial*/
 
-        int dimension_;
+        int dimension_; /** dimension of the coefficient structure */
 
-        double duration_;
+        double duration_; /** duration of this trajectory segment */
 
-        std::vector<std::vector<double> > coeff_;
+        std::vector<std::vector<double> > coeff_; /** std::vector of coefficients */
 
         friend class Trajectory;
     };
   
+    /* 
+       \brief Constructor for instantiation of the class by specifying the dimension 
+     */
     Trajectory(int dimension);
 
+    /* 
+       \brief Destructor 
+     */
     virtual ~Trajectory() {}
 
+    /*
+      \brief clear the trajectory
+    */
     void clear();
 
+    /*
+      \brief Add a point to the trajectory
+    */
     void addPoint(const TPoint);
 
+    /*
+      \brief Set the trajectory using a vector of trajectory points
+      \param std::vector of trajectory points
+    */
     int setTrajectory(const std::vector<TPoint>& tp);
 
-    int setTrajectory(const std::vector<double> &p, int numFrames);
+    /*
+      \brief Set the trajectory using a vector of values and timestamps
+      \param std::vector of size dimension x number of points - specifies a list of waypoints to initialize the trajectory with
+      \param std::vector of time stamps 
+      \param number of points in the trajectory
+    */
+    int setTrajectory(const std::vector<double> &p, const std::vector<double> &time, int numPoints);
 
+    /*
+      \brief Set the trajectory using a vector of values, timestamps are not specified and so autocalc_timing_ is set to true within this function. 
+      Max rates and max accelerations should be set before this function is called.
+      \param std::vector of size dimension x number of points - specifies a list of waypoints to initialize the trajectory with
+      \param number of points in the trajectory
+    */
+    int setTrajectory(const std::vector<double> &p, int numPoints);
+
+    /* 
+      \brief Get the total time for the trajectory.
+      \return the total time for the trajectory.
+    */
     inline double getTotalTime();
 
+    /* 
+      \brief Sample the trajectory at a certain point in time.
+      \param reference to a pre-allocated struct of type TPoint
+      \param time at which trajectory is to be sampled
+      \return -1 if error, 1 if successful
+    */
     int sample(TPoint &tp, double time);
 
 //  void sample(std::vector<TPoint> &tp, double dT);
@@ -116,40 +168,71 @@ namespace trajectory
 
 //  std::vector<TPoint>& getPoints() const;
 
+    /*
+      \brief Set the interpolation method
+      \param std::string interpolation method
+    */
     void setInterpolationMethod(std::string interp_method);
  
+    /* 
+      \brief calculate minimum time for a trajectory segment using a linear interpolation
+      \param start TPoint
+      \param end TPoint
+    */
     double calculateMinimumTimeLinear(const TPoint &start, const TPoint &end);
 
+    /*
+      \brief set the max rates (velocities) 
+      \param std::vector of size dimension_ containing the max rates for the degrees of freedom in the trajectory
+     */
     int setMaxRate(std::vector<double> max_rate);
 
-    bool autocalc_timing_;
+    bool autocalc_timing_;/** if true, the max rates are used to compute trajectory timings, if false trajectory timings must be input by the user.*/
 
     private:
 
-    int num_points_;
+    int num_points_; /** number of points in the trajectory */
+ 
+    int dimension_; /** dimension of the trajectory */
 
-    int dimension_;
+    std::string interp_method_; /** string representation of interpolation method */
 
-    std::string interp_method_;
+    std::vector<TPoint> tp_; /** vector of TPoints in the trajectory */
 
-    std::vector<TPoint> tp_;
+    std::vector<TCoeff> tc_; /** vector of polynomial coefficients for use to define the trajectory segments*/
 
-    std::vector<TCoeff> tc_;
+    std::vector<double> max_limit_;/** vector of max limits on the n DOFs of the trajectory */
 
-    std::vector<double> max_limit_;
+    std::vector<double> min_limit_;/** vector of min limits on the n DOFs of the trajectory */
 
-    std::vector<double> min_limit_;
+    std::vector<double> max_rate_;/** vector of max rates on the n DOFs of the trajectory */
 
-    std::vector<double> max_rate_;
+    std::vector<double> max_acc_;/** vector of max accelerations on the n DOFs of the trajectory */
 
-    std::vector<double> max_acc_;
+    /*
+      \brief calculate the coefficients for interpolation between trajectory points
+      \param std::string representation of the interpolation method 
+      \param if true, timings for the trajectories are automatically calculated using max rate information
+    */
+    void calcCoeff(std::string interp_method, bool autocalc_timing);  
 
-    void calcCoeff(std::string interp_method, bool autocalc_timing);
+    /* \brief calculate the coefficients for interpolation between trajectory points using linear interpolation
+       \param if true, timings for the trajectories are automatically calculated using max rate information
+    */
+    int calculateLinearCoeff(bool autocalc_timing);
 
-    void calculateLinearCoeff(bool autocalc_timing);
-
+    /* \brief Sample the trajectory based on a linear interpolation
+       \param reference to pre-allocated output trajectory point
+       \param time at which trajectory is being sample
+       \param polynomial coefficients for this segment of the trajectory
+       \param segment start time
+    */
     void sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
 
+    /* \brief finds the trajectory segment corresponding to a particular time 
+       \param input time (in seconds)
+       \return segment index 
+    */
     inline int findTrajectorySegment(double time);
 
   };
