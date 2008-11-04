@@ -27,6 +27,7 @@ import os
 import copy
 
 DEBUG = True
+SAVE_PICS = True
 
 ################# CLASS IMGADAPTED ##################
 class imgAdapted:
@@ -69,6 +70,8 @@ class PeopleTracker:
     self.feats_to_centers_3d = []
     self.face_centers_3d = []
     self.face_sizes_3d = []
+    self.min_real_face_size = 50 # in mm
+    self.max_real_face_size = 400 # in mm
     self.good_points_thresh = 0.5
     self.recent_good_frames = []
     self.recent_good_rects = []
@@ -192,7 +195,7 @@ class PeopleTracker:
       self.vo = Tracker(self.cam)
         
 
-###############################################################
+################### STAMPED POINT CALLBACK (SANITY CHECK) #####
   def point_stamped(self,psmsg):
     print "Heard ", psmsg.point.x, psmsg.point.y, psmsg.point.z, psmsg.header.frame_id
   
@@ -243,21 +246,27 @@ class PeopleTracker:
 
       iakp3d = [self.cam.pix2cam(kp[0], kp[1], kp[2]) for kp in ia.kp] 
       iaavgd = sum([tz for (tx,ty,tz) in ia.kp])/len(ia.kp)
-      
-      self.vo.collect_descriptors(ia)
 
       # First frame:
       if len(self.current_keyframes) < iface+1:
-        self.current_keyframes.append(0)
-        self.keyframes.append(copy.copy(ia))
 
         (cen,diff) = self.rect_to_center_diff((x,y,w,h))
-        self.feats_to_centers.append(self.make_face_model( cen, diff, ia.kp2d ))
-
         cen3d = self.cam.pix2cam(cen[0],cen[1],iaavgd)
         ltf = self.cam.pix2cam(x,y,iaavgd)
         rbf = self.cam.pix2cam(x+w,y+h,iaavgd)
         fs3d = ( (rbf[0]-ltf[0]) + (rbf[1]-ltf[1]) )/4.0
+
+        # Check that the face is a reasonable size. If not, skip this face.
+        if fs3d < self.min_real_face_size or fs3d > self.max_real_face_size:
+          continue
+
+        self.vo.collect_descriptors(ia)
+
+        self.current_keyframes.append(0)
+        self.keyframes.append(copy.copy(ia))
+
+        self.feats_to_centers.append(self.make_face_model( cen, diff, ia.kp2d ))
+
         self.face_sizes_3d.append( copy.deepcopy(fs3d) )
         self.feats_to_centers_3d.append( self.make_face_model( cen3d, (fs3d,fs3d,fs3d), iakp3d) )
         self.face_centers_3d.append( copy.deepcopy(cen3d) )
@@ -269,6 +278,8 @@ class PeopleTracker:
 
       # Later frames
       else :
+        self.vo.collect_descriptors(ia)
+
         done_matching = False
         bad_frame = False
         while not done_matching:
@@ -426,7 +437,6 @@ class PeopleTracker:
           print ("center_robXYZ", center_robXYZ)
 
         if not self.usebag:
-          #PointStamped stamped_point
           stamped_point = PointStamped()
           stamped_point.point.x = center_robXYZ[0]
           stamped_point.point.y = center_robXYZ[1]
@@ -436,49 +446,50 @@ class PeopleTracker:
     
       
 ############ DRAWING ################
+      if SAVE_PICS:
 
-      if not self.keyframes or len(self.keyframes) <= iface :
-        bigim_py = im_py
-        draw = ImageDraw.Draw(bigim_py)
-      else :
-        key_im = self.keyframes[self.current_keyframes[iface]]
-        keyim_py = Image.fromstring("L", key_im.size, key_im.rawdata)
-        bigim_py = Image.new("RGB",(im_py.size[0]+key_im.size[0], im_py.size[1]))
-        bigim_py.paste(keyim_py.convert("RGB"),(0,0))
-        bigim_py.paste(im_py,(key_im.size[0]+1,0))
-        draw = ImageDraw.Draw(bigim_py)
+        if not self.keyframes or len(self.keyframes) <= iface :
+          bigim_py = im_py
+          draw = ImageDraw.Draw(bigim_py)
+        else :
+          key_im = self.keyframes[self.current_keyframes[iface]]
+          keyim_py = Image.fromstring("L", key_im.size, key_im.rawdata)
+          bigim_py = Image.new("RGB",(im_py.size[0]+key_im.size[0], im_py.size[1]))
+          bigim_py.paste(keyim_py.convert("RGB"),(0,0))
+          bigim_py.paste(im_py,(key_im.size[0]+1,0))
+          draw = ImageDraw.Draw(bigim_py)
 
-        (x,y,w,h) = self.faces[iface]
-        draw.rectangle((x,y,x+w,y+h),outline=(255,0,0))
-        draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,0,0))
-        (x,y,w,h) = old_rect
-        draw.rectangle((x,y,x+w,y+h),outline=(255,255,255))
-        draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,255,255))
+          (x,y,w,h) = self.faces[iface]
+          draw.rectangle((x,y,x+w,y+h),outline=(255,0,0))
+          draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,0,0))
+          (x,y,w,h) = old_rect
+          draw.rectangle((x,y,x+w,y+h),outline=(255,255,255))
+          draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,255,255))
 
-        for (x,y) in ia.kp2d:
-          draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(255,0,0))
-          draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(255,0,0))
+          for (x,y) in ia.kp2d:
+            draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(255,0,0))
+            draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(255,0,0))
 
-        for (x,y) in key_im.kp2d :
-          draw.line((x-1, y-1, x+1, y+1), fill=(255,0,0))
-          draw.line((x+1, y-1, x-1, y+1), fill=(255,0,0))
+          for (x,y) in key_im.kp2d :
+            draw.line((x-1, y-1, x+1, y+1), fill=(255,0,0))
+            draw.line((x+1, y-1, x-1, y+1), fill=(255,0,0))
 
-        if self.seq > 0 :
+          if self.seq > 0 :
 
-          for (x,y) in sparse_pred_list_2d :
-            draw.line((x-1, y-1, x+1, y+1), fill=(0,0,255))
-            draw.line((x+1, y-1, x-1, y+1), fill=(0,0,255))
-            draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(0,0,255))
-            draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(0,0,255))
+            for (x,y) in sparse_pred_list_2d :
+              draw.line((x-1, y-1, x+1, y+1), fill=(0,0,255))
+              draw.line((x+1, y-1, x-1, y+1), fill=(0,0,255))
+              draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(0,0,255))
+              draw.line((x+1+key_im.size[0], y-1, x-1+key_im.size[0], y+1), fill=(0,0,255))
 
-          for ((m1,m2), score) in zip(matches,sadscores) :
-            if score > self.sad_thresh :
-              color = (255,0,0)
-            else :
-              color = (0,255,0)
-            draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
+            for ((m1,m2), score) in zip(matches,sadscores) :
+              if score > self.sad_thresh :
+                color = (255,0,0)
+              else :
+                color = (0,255,0)
+              draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
 
-      bigim_py.save("/tmp/tiff/feats%06d_%03d.tiff" % (self.seq, iface))
+        bigim_py.save("/tmp/tiff/feats%06d_%03d.tiff" % (self.seq, iface))
   
     self.seq += 1
 
@@ -500,10 +511,11 @@ def main(argv) :
     filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
     #filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
-    try:
-      os.mkdir("/tmp/tiff/")
-    except:
-      pass
+    if SAVE_PICS:
+      try:
+        os.mkdir("/tmp/tiff/")
+      except:
+        pass
 
     num_frames = 0
     start_frame = 4000
@@ -521,6 +533,13 @@ def main(argv) :
   # Use new ROS messages, and output the 3D position of the face in the camera frame.
   else :
     print "Non-bag"
+
+    if SAVE_PICS:
+      try:
+        os.mkdir("/tmp/tiff/")
+      except:
+        pass
+
     people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
     rospy.init_node('videre_face_tracker', anonymous=True)
     #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
