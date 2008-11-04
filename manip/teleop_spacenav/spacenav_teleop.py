@@ -30,7 +30,7 @@
 
 import rostools; rostools.update_path('teleop_spacenav')
 import rospy, sys, math
-from robot_mechanism_controllers.srv import GetVector, SetVectorCommand
+from robot_srvs.srv import GetVector
 from std_msgs.msg import Vector3
 
 def print_usage(code = 0):
@@ -51,7 +51,6 @@ if __name__ == '__main__':
     topic = sys.argv[1]
     rospy.wait_for_service(topic + '/get_actual')
     get_position = rospy.ServiceProxy(topic + '/get_actual', GetVector)
-    set_command = rospy.ServiceProxy(topic + '/set_command', SetVectorCommand)
     publisher = rospy.Publisher(topic + '/command', Vector3)
 
     pos = get_position().v
