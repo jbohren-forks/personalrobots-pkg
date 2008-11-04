@@ -177,7 +177,7 @@ void HysteresisController::analysis()
 
   //test passed
   status->level = 0;
-  status->message = "OK: Passed.";
+  status->message = "OK: Done.";
 
   ros::node* node;
 

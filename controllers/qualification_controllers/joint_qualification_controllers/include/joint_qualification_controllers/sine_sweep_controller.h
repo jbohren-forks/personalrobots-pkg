@@ -42,13 +42,14 @@
 */
 /***************************************************/
 
-
+#include <std_msgs/ChannelFloat32.h>
 #include <ros/node.h>
+#include <math.h>
+#include <robot_msgs/DiagnosticMessage.h>
+#include <misc_utils/realtime_publisher.h>
 #include <mechanism_model/controller.h>
 #include <control_toolbox/sine_sweep.h>
-// Services
-#include <robot_mechanism_controllers/SetCommand.h>
-#include <robot_mechanism_controllers/GetActual.h>
+
 
 namespace controller
 {
@@ -77,29 +78,9 @@ public:
    * \param *robot The robot that is being controlled.
    */
   void init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot);
-  
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
-  /*!
-   * \brief Get latest position command to the joint: revolute (angle) and prismatic (position).
-   */
-  double getCommand();
-
-  /*!
-   * \brief Read the effort of the joint
-   */
-  double getMeasuredEffort();
-
-
-  /*!
-   * \brief Get latest time..
-   */
-  double getTime();
-
-  /*!
-   * \brief Issues commands to the joint. Should be called at regular intervals
-   */
-
+  void analysis();
   virtual void update();
 
 private:
@@ -108,8 +89,19 @@ private:
   control_toolbox::SineSweep *sweep_;       /**< Sine sweep. */
   double duration_;                         /**< Duration of the sweep. */
   double initial_time_;                     /**< Start time of the sweep. */
- 
+  int count_;
+  bool done_;
+  
+  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
+  misc_utils::RealtimePublisher<std_msgs::ChannelFloat32> data_publisher_;
 
+  robot_msgs::DiagnosticMessage diagnostic_message_;
+  
+  std_msgs::ChannelFloat32 test_effort_;
+  std_msgs::ChannelFloat32 test_velocity_;
+  std_msgs::ChannelFloat32 test_cmd_;
+  std_msgs::ChannelFloat32 test_position_;
+  std_msgs::ChannelFloat32 test_time_;
 };
 
 /***************************************************/

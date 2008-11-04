@@ -41,13 +41,24 @@ namespace controller {
 
 ROS_REGISTER_CONTROLLER(SineSweepController)
 
-SineSweepController::SineSweepController()
+SineSweepController::SineSweepController():
+joint_state_(NULL), robot_(NULL), publisher_("/diagnostics", 1), data_publisher_("/sinesweep_data", 5)
 {
-  robot_ = NULL;
-  joint_state_ = NULL;
+  test_effort_.set_vals_size(80000);
+  test_velocity_.set_vals_size(80000);
+  test_cmd_.set_vals_size(80000);
+  test_position_.set_vals_size(80000);
+  test_time_.set_vals_size(80000);
+  test_effort_.name="effort";
+  test_velocity_.name="velocity";
+  test_cmd_.name="cmd";
+  test_position_.name="position";
+  test_time_.name="time";
   sweep_=NULL;
   duration_ =0.0;
   initial_time_=0;
+  count_=1;
+  done_=0;
 }
 
 SineSweepController::~SineSweepController()
@@ -81,36 +92,62 @@ bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *co
   return true;
 }
 
-// Return the current effort command
-double SineSweepController::getCommand()
-{
-  return joint_state_->commanded_effort_;
-}
-
-// Return the measured joint effort
-double SineSweepController::getMeasuredEffort()
-{
-  return joint_state_->applied_effort_;
-}
-
-double SineSweepController::getTime()
-{
-  return robot_->hw_->current_time_;
-}
-
 void SineSweepController::update()
 {
   double time = robot_->hw_->current_time_;
-
+  if (count_<80000)
+  { 
+    test_effort_.vals[count_] = joint_state_->applied_effort_;
+    test_velocity_.vals[count_] =joint_state_->velocity_;
+    test_position_.vals[count_] =joint_state_->position_;
+    test_time_.vals[count_] = time;
+    test_cmd_.vals[count_] = joint_state_->commanded_effort_;
+    count_++;
+  }
+  
   if((time-initial_time_)<=duration_)
   {
     joint_state_->commanded_effort_ = sweep_->update(time-initial_time_);
+  }
+  else if(!done_)
+  {
+    analysis();
+    done_=1;
   }
   else
   {
     joint_state_->commanded_effort_=0;
   }
 }
+
+void SineSweepController::analysis()
+{
+  diagnostic_message_.set_status_size(1);
+
+  robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
+
+  status->name = "SineSweepTest";
+
+  //test passed
+  status->level = 0;
+  status->message = "OK: Done.";
+
+  ros::node* node;
+
+  if ((node = ros::node::instance()) != NULL)
+  {
+    node->publish("/sinesweep_data", test_effort_);
+    node->publish("/sinesweep_data", test_velocity_);
+    node->publish("/sinesweep_data", test_position_);
+    node->publish("/sinesweep_data", test_time_);
+    node->publish("/sinesweep_data", test_cmd_);
+    //node->publish("/diagnostics", diagnostic_message_);
+  }
+
+  //publisher_.publish(diagnostic_message_);
+  return;
+}
+
 
 ROS_REGISTER_CONTROLLER(SineSweepControllerNode)
 SineSweepControllerNode::SineSweepControllerNode()
