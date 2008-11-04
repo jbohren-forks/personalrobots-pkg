@@ -6,4 +6,13 @@
                velocity="0.6" />
     <pid p="3.0" i="0.2" d="0" iClamp="2.0" />
   </controller>
+
+  <controller type="JointCalibrationControllerNode" name="cal_forearm_roll" topic="cal_forearm_roll">
+    <calibrate transmission="left_forearm_roll_trans"
+               actuator="left_forearm_roll_motor"
+               joint="left_forearm_roll_joint"
+               velocity="-0.6" />
+    <pid p="3.0" i="0" d="0" iClamp="0" />
+  </controller>
+  
 </controllers>

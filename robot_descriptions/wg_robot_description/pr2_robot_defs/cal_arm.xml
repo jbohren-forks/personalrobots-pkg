@@ -1,28 +1,70 @@
 <controllers>
 
-  <macro name="shoulder_pan_calibrator" params="suffix">
-    <controller name="cal_shoulder_pan_${suffix}" topic="cal_shoulder_pan_${suffix}"
+  <macro name="shoulder_pan_calibrator" params="side">
+    <controller name="${side}_cal_shoulder_pan" topic="${side}_cal_shoulder_pan"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="shoulder_pan_${suffix}_joint"
-                 actuator="shoulder_pan_${suffix}_motor"
-                 transmission="shoulder_pan_${suffix}_trans"
-                 velocity="0.6" />
+      <calibrate joint="${side}_shoulder_pan_joint"
+                 actuator="${side}_shoulder_pan_motor"
+                 transmission="${side}_shoulder_pan_trans"
+                 velocity="1.0" />
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>
   </macro>
 
-  <macro name="shoulder_pitch_calibrator" params="suffix">
-    <controller name="cal_shoulder_pitch_${suffix}" topic="cal_shoulder_pitch_${suffix}"
+  <macro name="shoulder_pitch_calibrator" params="side">
+    <controller name="cal_shoulder_pitch_${side}" topic="cal_shoulder_pitch_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="shoulder_pitch_${suffix}_joint"
-                 actuator="shoulder_pitch_${suffix}_motor"
-                 transmission="shoulder_pitch_${suffix}_trans"
-                 velocity="0.6" />
+      <calibrate joint="${side}_shoulder_pitch_joint"
+                 actuator="${side}_shoulder_pitch_motor"
+                 transmission="${side}_shoulder_pitch_trans"
+                 velocity="-1.0" />
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>
   </macro>
+
+  <macro name="elbow_flex_calibrator" params="side">
+    <controller name="cal_${side}_elbow_flex" topic="cal_${side}_elbow_flex"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_elbow_flex_joint"
+                 actuator="${side}_elbow_flex_motor"
+                 transmission="${side}_elbow_flex_trans"
+                 velocity="1.0" />
+      <pid p="6" i="0.2" d="0" iClamp="1.0" />
+    </controller>
+  </macro>
+
+  <macro name="upperarm_roll_calibrator" params="side">
+    <controller name="cal_${side}_upper_arm_roll" topic="cal_${side}_upper_arm_roll"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_upper_arm_roll_joint"
+                 actuator="${side}_upper_arm_roll_motor"
+                 transmission="${side}_upper_arm_roll_trans"
+                 velocity="1.0" />
+      <pid p="6" i="0.2" d="0" iClamp="2.0" />
+    </controller>
+  </macro>
+
   
-  <shoulder_pan_calibrator suffix="right" />
-  <shoulder_pitch_calibrator suffix="right" />
+  <shoulder_pan_calibrator side="left" />
+  <shoulder_pitch_calibrator side="left" />
+  <upperarm_roll_calibrator side="left" />
+  <elbow_flex_calibrator side="left" />
+
+
+  <controller type="WristCalibrationControllerNode" name="cal_wrist" topic="cal_wrist">
+    <calibrate transmission="left_wrist_trans"
+               actuator_l="left_wrist_l_motor" actuator_r="left_wrist_r_motor"
+               flex_joint="left_wrist_flex_joint" roll_joint="left_wrist_roll_joint"
+               velocity="1.2" />
+    <pid p="3.0" i="0.2" d="0" iClamp="2.0" />
+  </controller>
+
+  <controller type="JointCalibrationControllerNode" name="cal_forearm_roll" topic="cal_forearm_roll">
+    <calibrate transmission="left_forearm_roll_trans"
+               actuator="left_forearm_roll_motor"
+               joint="left_forearm_roll_joint"
+               velocity="-0.6" />
+    <pid p="3.0" i="0" d="0" iClamp="0" />
+  </controller>
 
 </controllers>

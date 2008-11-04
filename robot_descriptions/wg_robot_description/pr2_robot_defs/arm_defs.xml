@@ -153,7 +153,7 @@
 
 
 
-  <macro name="pr2_upperarm" params="side parent reflect *origin">
+  <macro name="pr2_upper_arm" params="side parent reflect *origin">
 
     <!-- Shoulder pan -->
 
@@ -161,9 +161,11 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit min="-2" max="0.9" effort="30" velocity="5" />
-      <calibration reference_position="-0.7" values="1.5 -1" />
+      <calibration reference_position="0" values="1.5 -1" />
+      <!--
       <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
       <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+      -->
     </joint>
 
     <link name="${side}_shoulder_pan">
@@ -208,9 +210,11 @@
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.4" max="1.5" effort="30" velocity="5" />
-      <calibration reference_position="0.9" values="1.5 -1 " />
+      <calibration reference_position="0" values="1.5 -1 " />
+      <!--
       <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
       <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+      -->
     </joint>
 
     <link name="${side}_shoulder_pitch">
@@ -248,19 +252,21 @@
 
     <!-- Upperarm roll -->
 
-    <joint name="${side}_upperarm_roll_joint" type="revolute">
+    <joint name="${side}_upper_arm_roll_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit min="-2.5" max="2.5" effort="30" velocity="5" />
-      <calibration reference_position="0" values="1.5 -1 " />
+      <calibration reference_position="${-M_PI/2}" values="1.5 -1 " />
+      <!--
       <safety_limit_min spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
       <safety_limit_max spring_constant="200.0" safety_length="0.2" damping_constant="0.1"/>
+      -->
     </joint>
 
-    <link name="${side}_upperarm_roll">
+    <link name="${side}_upper_arm_roll">
       <parent name="${side}_shoulder_pitch" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="${side}_upperarm_roll_joint" />
+      <joint name="${side}_upper_arm_roll_joint" />
 
       <inertial>
         <mass value="4.9481" />
@@ -275,41 +281,43 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="pr2_shoulder_roll_mesh_file">
-          <mesh filename="upperarm_roll" />
+          <mesh filename="upper_arm_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.3 0 0" rpy="0 0 0" />
-        <geometry name="pr2_upperarm_roll_collision_geom">
+        <geometry name="pr2_upper_arm_roll_collision_geom">
           <box size="0.362 0.144 0.157" />
         </geometry>
       </collision>
 
-      <map name="pr2_upperarm_roll_${side}_gravity" flag="gazebo">
+      <map name="pr2_upper_arm_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_upperarm_roll_trans">
-      <actuator name="${side}_upperarm_roll_motor" />
-      <joint name="${side}_upperarm_roll_joint" />
+    <transmission type="SimpleTransmission" name="${side}_upper_arm_roll_trans">
+      <actuator name="${side}_upper_arm_roll_motor" />
+      <joint name="${side}_upper_arm_roll_joint" />
       <mechanicalReduction>32.65</mechanicalReduction>
     </transmission>
 
     <!-- Elbow flex -->
 
     <joint name="${side}_elbow_flex_joint" type="revolute">
-      <axis xyz="0 ${reflect} 0" />
+      <axis xyz="0 ${-reflect} 0" />
       <anchor xyz="0 0 0" />
       <limit min="0" max="2.3" effort="30" velocity="5" />
-      <calibration reference_position="0" values="1.5 -1" />
+      <calibration reference_position="1.1" values="1.5 -1" />
+      <!--
       <safety_limit_min spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
       <safety_limit_max spring_constant="400.0" safety_length="0.2" damping_constant="0.1"/>
+      -->
     </joint>
 
     <link name="${side}_elbow_flex">
-      <parent name="${side}_upperarm_roll" />
+      <parent name="${side}_upper_arm_roll" />
       <origin xyz="0.4 0 0" rpy="0 0 0" />
       <joint name="${side}_elbow_flex_joint" />
 
@@ -353,7 +361,7 @@
     <!-- Forearm roll -->
 
     <joint name="${side}_forearm_roll_joint" type="revolute">
-      <axis xyz="1 0 0" />
+      <axis xyz="-1 0 0" />
       <anchor xyz="0 0 0" />
       <limit  effort="100" velocity="5" />
       <calibration reference_position="0" values="1.5 -1" />
@@ -392,13 +400,13 @@
     <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
       <actuator name="${side}_forearm_roll_motor" />
       <joint name="${side}_forearm_roll_joint" />
-      <mechanicalReduction>1</mechanicalReduction>
+      <mechanicalReduction>${576/25*55/14}</mechanicalReduction>
     </transmission>
 
     <!-- Wrist flex -->
 
     <joint name="${side}_wrist_flex_joint" type="revolute">
-      <axis xyz="0 1 0" />
+      <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-1" max="1" effort="200" velocity="5" />
       <calibration reference_position="0.4" values="1.5 -1" />
@@ -478,8 +486,8 @@
     <transmission type="WristTransmission" name="${side}_wrist_trans">
       <rightActuator name="${side}_wrist_r_motor" />
       <leftActuator name="${side}_wrist_l_motor" />
-      <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="60.17" />
-      <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="60.17" />
+      <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="${624/35*54/16}" />
+      <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="${624/35*54/16}" />
     </transmission>
 
   </macro>
@@ -487,9 +495,9 @@
 
 
   <macro name="pr2_arm" params="side parent reflect *origin">
-    <pr2_upperarm side="${side}" reflect="${reflect}" parent="${parent}">
+    <pr2_upper_arm side="${side}" reflect="${reflect}" parent="${parent}">
       <insert_block name="origin" />
-    </pr2_upperarm>
+    </pr2_upper_arm>
     <pr2_forearm side="${side}" reflect="${reflect}" parent="${side}_elbow_flex" />
   </macro>
 
