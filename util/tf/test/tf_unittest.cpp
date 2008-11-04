@@ -705,74 +705,6 @@ TEST(tf, TransformThrougRoot)
   
 }
 
-TEST(tf, SignFlip)
-{
-  double epsilon = 1e-6;
-
-  double x, y, yaw, t;
-
-  x = 5.429;
-  y = 1.191;
-  yaw = 2.199;
-  t = 70.3;
-  
-  tf::Transformer mTR(true);
-
-  ros::Time ti;
-  ti.from_double(70.1);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(1.990,0,0), 
-                                  btVector3(5.429, 1.191, 0.0)).inverse(),
-                      ti, "odom",  "base"));
-  ti.from_double(70.2);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(2.094,0,0), 
-                                  btVector3(5.429, 1.191, 0.0)).inverse(),
-                      ti, "odom",  "base"));
-  ti.from_double(t);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(yaw,0,0), 
-                                  btVector3(x, y, 0.0)).inverse(),
-                      ti, "odom",  "base"));
-  ti.from_double(70.4);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(2.304,0,0), 
-                                  btVector3(5.429, 1.191, 0.0)).inverse(),
-                      ti, "odom",  "base"));
-
-  ti.from_double(70.1);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(0,0,0), 
-                                  btVector3(0.275, 0, 0.0)),
-                      ti, "base_laser",  "base"));
-  ti.from_double(t);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(0,0,0), 
-                                  btVector3(0.275, 0, 0.0)),
-                      ti, "base_laser",  "base"));
-  ti.from_double(70.4);
-  mTR.setTransform(Stamped<btTransform>(btTransform(btQuaternion(0,0,0), 
-                                  btVector3(0.275, 0, 0.0)),
-                      ti, "base_laser",  "base"));
-
-  ti.from_double(t);
-  Stamped<btTransform> inpose 
-          (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 
-           ti, "base_laser");
-
-  try{
-    Stamped<btTransform> outpose;
-    outpose.setIdentity(); //to make sure things are getting mutated
-    mTR.transformPose("odom",inpose, outpose);
-    EXPECT_NEAR(outpose.getOrigin().x(), x+0.275*cos(yaw), epsilon);
-    EXPECT_NEAR(outpose.getOrigin().y(), y+0.275*sin(yaw), epsilon);
-    double yaw_out, roll, pitch;
-    outpose.getBasis().getEulerZYX(yaw_out, pitch, roll);
-    EXPECT_NEAR(yaw_out, yaw, epsilon);
-  }
-  catch (tf::TransformException & ex)
-  {
-    std::cout << "TransformExcepion got through!!!!! " << ex.what() << std::endl;
-    bool exception_improperly_thrown = true;
-    EXPECT_FALSE(exception_improperly_thrown);
-  }
-}
-
-
 TEST(tf, getParent)
 {
   
@@ -819,8 +751,6 @@ TEST(tf, getParent)
   EXPECT_FALSE(mTR.getParent("no_value", 10ULL, output));
   
 }
-
-
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
