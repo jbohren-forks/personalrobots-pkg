@@ -137,7 +137,7 @@ void CartesianTorqueController::update()
     {
     case mechanism::JOINT_ROTARY:
     case mechanism::JOINT_CONTINUOUS: {
-      joints_[i]->commanded_effort_ = T.dot(joints_[i]->joint_->axis_);
+      joints_[i]->commanded_effort_ += T.dot(joints_[i]->joint_->axis_);
       break;
     }
     case mechanism::JOINT_PRISMATIC:
@@ -165,7 +165,7 @@ bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
 {
   ros::node *node = ros::node::instance();
 
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")
   {
     fprintf(stderr, "No topic given to CartesianTorqueControllerNode\n");
@@ -175,8 +175,12 @@ bool CartesianTorqueControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
   if (!c_.initXml(robot, config))
     return false;
 
-  node->advertise_service(topic + "/set_command",
-                          &CartesianTorqueControllerNode::setCommand, this);
+//  node->advertise_service(topic + "/set_command",
+//                          &CartesianTorqueControllerNode::setCommand, this);
+//  guard_set_command_.set(topic + "/set_command");
+
+  node->subscribe(topic + "/set_command", set_command_msg_,
+                  &CartesianTorqueControllerNode::setCommand, this, 1);
   guard_set_command_.set(topic + "/set_command");
   return true;
 }
@@ -186,12 +190,9 @@ void CartesianTorqueControllerNode::update()
   c_.update();
 }
 
-bool CartesianTorqueControllerNode::setCommand(
-  robot_srvs::SetVector::request &req,
-  robot_srvs::SetVector::response &resp)
+void CartesianTorqueControllerNode::setCommand()
 {
-  tf::Vector3MsgToTF(req.v, c_.command_);
-  return true;
+  tf::Vector3MsgToTF(set_command_msg_, c_.command_);
 }
 
 }

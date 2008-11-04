@@ -38,8 +38,8 @@
 #include "ros/node.h"
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
-#include "misc_utils/advertised_service_guard.h"
-#include "robot_srvs/SetVector.h"
+#include "misc_utils/subscription_guard.h"
+#include "std_msgs/Vector3.h"
 
 namespace controller {
 
@@ -68,13 +68,13 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
-  bool setCommand(robot_srvs::SetVector::request &req,
-                  robot_srvs::SetVector::response &resp);
-  void command();
+  void setCommand();
 
 private:
   CartesianTorqueController c_;
-  AdvertisedServiceGuard guard_set_command_;
+
+  std_msgs::Vector3 set_command_msg_;
+  SubscriptionGuard guard_set_command_;
 };
 
 }
