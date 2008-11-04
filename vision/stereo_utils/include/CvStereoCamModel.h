@@ -8,14 +8,21 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+//* CvStereoCamModel
 /**
- * Stereo camera model, including parameters and transformation derived from them.
+ * This class transforms to and fro disparity space and Cartesian space, on
+ * sparse data points as well as images. The class also includes routines that
+ * converts between a range in x (or y) in Cartesion space and a range in u (or v)
+ * in disparity space, given a certain disparity (or depth), and routines that
+ * converts between disparity values and depths.
+ * As implied, the points and image in disparity space are rectified.
  */
 class CvStereoCamModel
 {
 public:
 	/// Constructor.
   /**
+   * \brief Constructor that takes camera parameters.
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
    *  @param Fy  - focal length in y direction of the rectified image in pixels.
    *  @param Tx  - Translation in x direction from the left camera to the right camera.
@@ -33,13 +40,26 @@ public:
       double Cy,
       double dispUnitScale = DefaultDispUnitScale);
 
+  /**
+   * \brief Copy constructor.
+   */
   CvStereoCamModel(const CvStereoCamModel& camModel);
 
+  /**
+   * \brief Default constructor.
+   * At least a call of any overloaded method of setCameraParam() is needed
+   * to parameterize this object, or else a CV_ERROR happens on any attempt
+   * to use this object, as the object is not parameterized yet.
+   */
   CvStereoCamModel();
 
   virtual ~CvStereoCamModel();
 
   /**
+   * \brief Parameterized the object. Transformation matrices are built after
+   * this called. An object of this class is not usable unless it is constructed
+   * by constructor that takes camera parameters, or after the first call
+   * of one of the overloaded method of setCameraParams.
    *  @param Fx  - focal length in x direction of the rectified image in pixels.
    *  Valid value shall be greater than zero.
    *  @param Fy  - focal length in y direction of the rectified image in pixels.
@@ -73,11 +93,13 @@ public:
 	    /// or Nx1 3-channel matrix.
 	    CvMat* XYZs) const;
 
-	/// ALTERNATIVE INTERFACE WITH IMAGES (Id has to be  16SC1, Ixyz has to be 32F)
+	/**
+	 * \brief Convert disparity image map to image of 3D points.
+	 */
 	void dispToCart(
-    /// Id has to be 16SC1
+    /// disparity map. Id has to be 16SC1
     const IplImage *Id,
-    /// Ixyz has to be 32F
+    /// Output 3D image. Ixyz has to be 32F
 		IplImage *Ixyz) const;
 
   /// MUCH FASTER CONVERSION OF POINTS AND PUTTING THEM INTO X, Y, and Z images.
@@ -87,37 +109,36 @@ public:
 	void disp8UToCart32F(const IplImage *Id, float ZnearMM, float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const;
 
 
-  /// Convert 3D points from Cartesian coordinates to disparity coordinates.
+  /// \brief Convert 3D points from Cartesian coordinates to disparity coordinates.
 	void cartToDisp(
       /// (Input) 3D points stored in rows, in Cartesian coordinates.
 	    const CvMat* XYZs,
       /// (Output) 3D points stored in rows, in disparity coordinates.
 	    CvMat* uvds) const;
 
-	/// Get references to the projection matrices. Used mostly for
-	/// debugging.
-	void getProjectionMatrices(CvMat& cartToDisp, CvMat& dispToCart) {
-	  cartToDisp = mat_cart_to_disp_;
-	  dispToCart = mat_disp_to_cart_;
+	/// \brief Get references to the projection matrices.
+	void getProjectionMatrices(CvMat* cartToDisp, CvMat* dispToCart) const {
+	  *cartToDisp = mat_cart_to_disp_;
+	  *dispToCart = mat_disp_to_cart_;
 	}
 
-	/// Compute delta u, given Z and delta X in Cartesian space.
-	/// @return DBL_MAX if Z is 0
+	/// \brief Compute delta u, given Z and delta X in Cartesian space.
+	// @return DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
-	/// Compute delta X, given disparity and delta u in disparity space.
-	/// @return  - 0 if disparity is 0, namely d-(Clx-Crx) == 0
+	/// \brief Compute delta X, given disparity and delta u in disparity space.
+	/// @return  0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
-	/// \brief compute delta v, given Z and delta Y in Cartesian space.
-	/// @return - DBL_MAX if Z is 0
+	/// @brief compute delta v, given Z and delta Y in Cartesian space.
+	/// @return DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
-	/// compute delta Y, given disparity and delta v in disparity space.
-	/// returns 0 if d-(Clx-Crx) == 0
+	/// @compute delta Y, given disparity and delta v in disparity space.
+	/// @return 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
-	/// compute Z given disparity.
-	/// returns DBL_MAX if d-(Clx-Crx) == 0
+	/// @compute Z given disparity.
+	/// @return DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
-	/// compute disparity given Z.
-	/// returns DBL_MAX if Z is zero
+	/// @compute disparity given Z.
+	//  @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 
   /// Convert disparity coordinate into pixel location in left camera image
@@ -140,14 +161,15 @@ public:
   }
 
 
-	/// This routine is used to display a singe channel floating point depth image.
+	/// \brief This routine is used to display a singe channel floating point depth image.
 	/// It inverts the depth so that brightest points are closest.
-	/// Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
+	/// @param Iz  One Channel, float image.  Depth image (in mm).  If Iz=NULL, shut off display: e.g. just call member dspl_depth_image(); to turn off
 	///            Just call the function with an image to display it.  Size of the image can change each frame.
-	/// Zmin, Zmax  Min and Max depth to display in meters.  Zero values for thise => compute from image,
+	/// @param Zmin, min depth to dispaly in meters. Zero values for thise => compute from image,
+  /// @param Zmax  max depth to display in meters.  Zero values for thise => compute from image,
 	void dspl_depth_image(IplImage *Iz=NULL, double Zmin=0.0, double Zmax = 0.0);
 
-	/// compute a depth mask according to the minZ and maxZ
+	/// compute a depth mask according to the minZ and maxZ.
 	void getDepthMask(/// disparity image
 					const IplImage* dispImg,
 					/// pre-allocate image buffer for the depth mask
