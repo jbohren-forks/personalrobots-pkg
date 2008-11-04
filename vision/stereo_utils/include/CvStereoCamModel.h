@@ -60,7 +60,7 @@ public:
   void setCameraParams(const CvStereoCamModel& params);
 
   /*!
-   * \brief Convert 3D points from Cartesian coordinates to disparity coordinates.
+   * \brief Convert 3D points from disparity coordinates to Cartesian coordinates.
    *
    */
 	void dispToCart(
@@ -87,7 +87,7 @@ public:
 	void disp8UToCart32F(const IplImage *Id, float ZnearMM, float ZfarMM, IplImage *Iz, IplImage *Ix, IplImage *Iy) const;
 
 
-  /// Convert 3D points from disparity coordinates to Cartesian coordinates.
+  /// Convert 3D points from Cartesian coordinates to disparity coordinates.
 	void cartToDisp(
       /// (Input) 3D points stored in rows, in Cartesian coordinates.
 	    const CvMat* XYZs,
@@ -102,13 +102,13 @@ public:
 	}
 
 	/// Compute delta u, given Z and delta X in Cartesian space.
-	/// returns DBL_MAX if Z is 0
+	/// @return DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
 	/// Compute delta X, given disparity and delta u in disparity space.
-	/// returns 0 if disparity is 0, namely d-(Clx-Crx) == 0
+	/// @return  - 0 if disparity is 0, namely d-(Clx-Crx) == 0
 	double getDeltaX(double deltaU, double d) const;
-	/// compute delta v, given Z and delta Y in Cartesian space.
-	/// returns DBL_MAX if Z is 0
+	/// \brief compute delta v, given Z and delta Y in Cartesian space.
+	/// @return - DBL_MAX if Z is 0
 	double getDeltaV(double deltaY, double Z) const;
 	/// compute delta Y, given disparity and delta v in disparity space.
 	/// returns 0 if d-(Clx-Crx) == 0
