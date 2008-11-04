@@ -12,7 +12,6 @@ rospack_add_library(robot_mechanism_controllers
  src/cartesian_velocity_controller.cpp
  src/cartesian_position_controller.cpp
  src/cartesian_torque_controller.cpp
- src/sine_sweep_controller.cpp
  src/joint_autotuner.cpp
  src/joint_pd_controller.cpp
  src/joint_calibration_controller.cpp
