@@ -107,10 +107,6 @@ class PeopleTracker:
     fl = numpy.array(feat_list)
     feats_to_center = wc-fl
     return feats_to_center.tolist()
-    #inbounds = [ftc.tolist() for ftc in feats_to_center if numpy.max(numpy.fabs(ftc)-maxdiff)<0.0] 
-    #print feats_to_center
-    #print inbounds
-    #return inbounds
 
 
 #################### MEAN SHIFT ###############################
@@ -230,8 +226,11 @@ class PeopleTracker:
     ia = SparseStereoFrame(im_py,im_r_py)
 
     # Track each face
-    for iface in range(0,len(self.faces)):
+    iface = -1
+    for ifoundface in range(0,len(self.faces)):
       
+      iface += 1
+
       (x,y,w,h) = self.faces[iface]
       if DEBUG:
         print "A face ", (x,y,w,h)
@@ -257,7 +256,9 @@ class PeopleTracker:
         fs3d = ( (rbf[0]-ltf[0]) + (rbf[1]-ltf[1]) )/4.0
 
         # Check that the face is a reasonable size. If not, skip this face.
-        if fs3d < self.min_real_face_size or fs3d > self.max_real_face_size:
+        if fs3d < self.min_real_face_size or fs3d > self.max_real_face_size or iface > 0: #HACK: ONLY ALLOW ONE FACE
+          self.faces.pop(iface)
+          iface -= 1
           continue
 
         self.vo.collect_descriptors(ia)
@@ -445,7 +446,7 @@ class PeopleTracker:
           self.pub.publish(stamped_point)
     
       
-############ DRAWING ################
+      ############ DRAWING ################
       if SAVE_PICS:
 
         if not self.keyframes or len(self.keyframes) <= iface :
@@ -490,7 +491,11 @@ class PeopleTracker:
               draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
 
         bigim_py.save("/tmp/tiff/feats%06d_%03d.tiff" % (self.seq, iface))
-  
+        #END DRAWING
+
+
+      # END FACE LOOP
+
     self.seq += 1
 
     
