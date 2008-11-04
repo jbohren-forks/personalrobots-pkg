@@ -88,6 +88,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
     ROS_WARN("Input has only %d values, expecting %d values for a %d dimensional trajectory with %d number of points",p.size(), num_points_*dimension_, dimension_, num_points_);
     return -1;
   }   
+  autocalc_timing_ = true;//Enable autocalc timing by default since no time information given in trajectory
   tp_.resize(num_points_);
 
   for(int i=0; i<num_points_;i++)
@@ -98,7 +99,6 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
   }
   calcCoeff(interp_method_,autocalc_timing_);
 
-  autocalc_timing_ = true;//Enable autocalc timing by default since no time information given in trajectory
 
   return 1;
 }  
@@ -189,7 +189,7 @@ int Trajectory::sample(TPoint &tp, double time)
   return 1;
 }
 
-int Trajectory::setMaxRate(std::vector<double> max_rate)
+int Trajectory::setMaxRates(std::vector<double> max_rate)
 {
   if((int) max_rate.size() != dimension_)
   {
@@ -248,6 +248,7 @@ int Trajectory::calculateLinearCoeff(bool autocalc_timing)
     }
     tc_.push_back(tc);
   }
+  return 1;
 }
 
 void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
@@ -260,6 +261,38 @@ void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double 
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
+}
+
+int Trajectory::getNumberPoints()
+{
+  return num_points_;
+}
+
+int Trajectory::getDuration(std::vector<double> &duration)
+{
+  if((int) duration.size() != num_points_-1)
+  {
+    ROS_WARN("Size of duration vector %d does not match number of segments in trajectory %d", duration.size(), num_points_-1);
+    return -1;
+  }
+  for(int i = 0; i < num_points_-1; i++)
+    duration[i] = tc_[i].duration_;
+
+  return 1;
+}
+
+int Trajectory::getDuration(int index, double &duration)
+{
+  if(index > num_points_ -1)
+  {
+    ROS_WARN("Index %d outside number of segments in the trajectory %d", index, num_points_-1);
+    return -1;
+  }
+
+  duration = tc_[index].duration_;
+
+  return 1;
+
 }
 
 double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint &end)
