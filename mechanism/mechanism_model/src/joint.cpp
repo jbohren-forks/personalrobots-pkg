@@ -54,39 +54,39 @@ static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0])
 
 void Joint::enforceLimits(JointState *s)
 {
-  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_),effort_limit_);  //Always truncate to limits
-  double max_effort, min_effort, damping_force,spring_force,distance, equilibrium_position;
+  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
+
+  if( !(has_safety_limits_ && s->calibrated_) )
+    return;
 
   //TODO: add velocity control
 
-  if(!(has_safety_limits_&&s->calibrated_))
-    return;
-  const double middle = (joint_limit_max_ + joint_limit_min_)/2; //Center of the workspace.
+  double upper_limit = joint_limit_max_ - safety_length_max_;
+  double lower_limit = joint_limit_min_ + safety_length_min_;
 
-  if(s->position_>=middle) //Use the upper virtual spring
+  if (s->position_ > upper_limit)
   {
-    equilibrium_position = joint_limit_max_ - safety_length_max_;
-    //Distance from equilibrium in corrected coordinates.
-    distance = s->position_ - equilibrium_position;
-    damping_force = -damping_constant_max_ * s->velocity_;
-    spring_force  = -spring_constant_max_*distance;
-    max_effort = min(effort_limit_, spring_force+damping_force);
-    min_effort = -effort_limit_;
+    // Damping
+    if (s->velocity_ > 0)
+      s->commanded_effort_ += -damping_constant_max_ * s->velocity_;
+
+    // Spring
+    double offset = s->position_ - upper_limit;
+    s->commanded_effort_ += -spring_constant_max_ * offset;
   }
-  else
+  else if(s->position_ < lower_limit)
   {
-    equilibrium_position = joint_limit_min_ + safety_length_min_;
-    //Distance from equilibrium in corrected coordinates.
-    distance = s->position_-equilibrium_position;
-    damping_force = -damping_constant_min_*s->velocity_;
-    spring_force  = -spring_constant_min_*distance;
-    max_effort = effort_limit_;
-    min_effort = max(-effort_limit_,spring_force + damping_force);
+    // Damping
+    if (s->velocity_ < 0)
+      s->commanded_effort_ += -damping_constant_min_ * s->velocity_;
+
+    // Spring
+    double offset = s->position_ - lower_limit;
+    s->commanded_effort_ += -spring_constant_min_ * offset;
   }
 
-  //Truncate to artificial limits
-  s->commanded_effort_ = min(s->commanded_effort_, max_effort);
-  s->commanded_effort_ = max(s->commanded_effort_, min_effort);
+  // One more time, just in case there are bugs in the safety limit code
+  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
 }
 
 bool Joint::initXml(TiXmlElement *elt)
