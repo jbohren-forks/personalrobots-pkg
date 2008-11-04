@@ -434,12 +434,6 @@
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_wrist_flex_trans">
-      <actuator name="wrist_flex_motor" />
-      <joint name="${side}_wrist_flex_joint" />
-      <mechanicalReduction>1</mechanicalReduction>
-    </transmission>
-
     <!-- Wrist roll -->
 
     <joint name="${side}_wrist_roll_joint" type="revolute">
@@ -481,10 +475,11 @@
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_wrist_roll_trans">
-      <actuator name="${side}_wrist_roll_motor" />
-      <joint name="${side}_wrist_roll_joint" />
-      <mechanicalReduction>1</mechanicalReduction>
+    <transmission type="WristTransmission" name="${side}_wrist_trans">
+      <rightActuator name="${side}_wrist_r_motor" />
+      <leftActuator name="${side}_wrist_l_motor" />
+      <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="60.17" />
+      <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="60.17" />
     </transmission>
 
   </macro>
