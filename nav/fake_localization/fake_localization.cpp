@@ -88,8 +88,8 @@ class FakeOdomNode: public ros::node
 public:
     FakeOdomNode(void) : ros::node("fake_localization")
     {
-      advertise<std_msgs::RobotBase2DOdom>("localizedpose");
-      advertise<std_msgs::ParticleCloud2D>("particlecloud");
+      advertise<std_msgs::RobotBase2DOdom>("localizedpose",1);
+      advertise<std_msgs::ParticleCloud2D>("particlecloud",1);
 
       m_tfServer = new tf::TransformBroadcaster(*this);	
 
@@ -100,8 +100,8 @@ public:
 
       param("max_publish_frequency", m_maxPublishFrequency, 0.5);
 
-      subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived);
-      subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived);
+      subscribe("base_pose_ground_truth", m_basePosMsg, &FakeOdomNode::basePosReceived,2);
+      subscribe("initialpose", m_iniPos, &FakeOdomNode::initialPoseReceived,2);
     }
     
     ~FakeOdomNode(void)
