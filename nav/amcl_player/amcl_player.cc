@@ -180,7 +180,8 @@ class AmclNode: public ros::node, public Driver
     ros::Time last_cloud_pub_time;
 
     // Helper to get odometric pose from transform system
-    bool getOdomPose(double& x, double& y, double& yaw, const ros::Time& t);
+    bool getOdomPose(double& x, double& y, double& yaw, 
+                     const ros::Time& t, const std::string& f);
 
     // buffer of not-yet-transformed scans
     std::deque<std_msgs::LaserScan> laser_scans;
@@ -340,7 +341,7 @@ AmclNode::AmclNode() :
 
   // Turn this on for serious AMCL debugging, but you must have built
   // player with ENABLE_RTKGUI=ON.
-  this->cf->InsertFieldValue(0,"enable_gui","0");
+  this->cf->InsertFieldValue(0,"enable_gui","1");
 
   // Grab params off the param server
   int max_beams, min_samples, max_samples;
@@ -706,11 +707,12 @@ AmclNode::setPose(double x, double y, double a)
 }
 
 bool
-AmclNode::getOdomPose(double& x, double& y, double& yaw, const ros::Time& t)
+AmclNode::getOdomPose(double& x, double& y, double& yaw, 
+                      const ros::Time& t, const std::string& f)
 {
   // Get the robot's pose 
   tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
-                                           btVector3(0,0,0)), t, "base_laser");
+                                           btVector3(0,0,0)), t, f);
   tf::Stamped<btTransform> odom_pose;
   try
   {
@@ -743,7 +745,7 @@ AmclNode::laserReceived()
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp))
+    if(!getOdomPose(x, y, yaw, scan.header.stamp, scan.header.frame_id))
       break;
 
     laser_scans.pop_front();
