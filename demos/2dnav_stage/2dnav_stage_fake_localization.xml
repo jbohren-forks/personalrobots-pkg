@@ -7,10 +7,6 @@
       <remap from="scan" to="base_scan" />
     </node>
     <node pkg="nav_view" type="nav_view" respawn="false"/>
-
-    <!-- TODO: remove this remap after fake_localization is fixed to listen
-    to base_pose_ground_truth, and gazebo is fixed to publish on that topic -->
-    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
     <param name="max_publish_frequency" value="20.0"/>
     <node pkg="fake_localization" type="fake_localization" respawn="false" />
   </group>
