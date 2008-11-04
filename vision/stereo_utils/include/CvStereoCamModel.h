@@ -126,7 +126,7 @@ public:
 	}
 
 	/// \brief Compute delta u, given Z and delta X in Cartesian space.
-	// @return DBL_MAX if Z is 0
+	/// @return DBL_MAX if Z is 0
 	double getDeltaU(double deltaX, double Z) const;
 	/// \brief Compute delta X, given disparity and delta u in disparity space.
 	/// \return  0 if disparity is 0, namely d-(Clx-Crx) == 0
@@ -138,9 +138,11 @@ public:
 	/// @return 0 if d-(Clx-Crx) == 0
 	double getDeltaY(double deltaV, double d) const;
 	/// @brief compute Z given disparity.
+	/// Symbolically, Fx_*Tx_/(d*Du_ - (Clx_ - Crx_))
 	/// @return DBL_MAX if d-(Clx-Crx) == 0
 	double getZ(double d) const;
 	/// @brief compute disparity given Z.
+	/// symbolically ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_.
 	///  @return DBL_MAX if Z is zero
 	double getDisparity(double Z) const;
 

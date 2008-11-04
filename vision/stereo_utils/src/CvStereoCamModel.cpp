@@ -374,7 +374,7 @@ double CvStereoCamModel::getDisparity(double Z) const {
     d = DBL_MAX;
   } else {
 
-    /// symbolically ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_
+    // symbolically ((Clx_-Crx_) + Fx_*Tx_/Z)/Du_
 
     double m22 = matdata_cart_to_disp_[2*4 + 2];
     double m23 = matdata_cart_to_disp_[2*4 + 3];
@@ -455,14 +455,14 @@ void CvStereoCamModel::dspl_depth_image(IplImage *Iz, double Zmin, double Zmax)
 }
 
 
-/// compute a depth mask according to the minZ and maxZ
-void CvStereoCamModel::getDepthMask(/// disparity image
+// compute a depth mask according to the minZ and maxZ
+void CvStereoCamModel::getDepthMask(// disparity image
 				    const IplImage* dispImg,
-				    /// pre-allocate image buffer for the depth mask
+				    // pre-allocate image buffer for the depth mask
 				    IplImage* depthMask,
-				    /// mininum z in mask
+				    // mininum z in mask
 				    double minZ,
-				    /// max z in mask
+				    // max z in mask
 				    double maxZ) const {
     double maxDisp = getDisparity(minZ);
     double minDisp = getDisparity(maxZ);
@@ -504,7 +504,6 @@ void CvStereoCamModel::getDepthMask(/// disparity image
 
 
 /// The following function is modified based on Gary Bradsky's function cvconnectedComponents in cv_yuv_codebook.cpp
-///////////////////////////////////////////////////////////////////////////////////////////
 //void cvconnectedComponents(IplImage *mask, int poly1_hull0, float perimScale, int *num, CvRect *bbs, CvPoint *centers)
 // This cleans up the forground segmentation mask derived from calls to cvbackgroundDiff
 //
