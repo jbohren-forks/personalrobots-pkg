@@ -99,16 +99,23 @@ public:
         if (j->second.bridge->to_cv(&j->second.cv_image))
         {
           
+          IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
+
           if (fix_color)
           {
-            decompand(j->second.cv_image, j->second.cv_image);
+            decompand(j->second.cv_image, img);
 
             if (j->second.cv_image->nChannels == 3)
-              cvTransform(j->second.cv_image, j->second.cv_image, j->second.color_cal);
-          }
+              cvTransform(img, img, j->second.color_cal);
 
-          printf("%d\n",image_msg.header.seq);
-          cvShowImage(j->second.label.c_str(), j->second.cv_image);
+            //            compand(img, j->second.cv_image);
+
+            cvShowImage(j->second.label.c_str(), img);
+
+            cvReleaseImage(&img);
+          } else {
+            cvShowImage(j->second.label.c_str(), j->second.cv_image);
+          }
         }
       }
       
