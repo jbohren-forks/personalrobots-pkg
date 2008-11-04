@@ -98,8 +98,6 @@ private:
   bool complete;
   bool start;
   
-  int state;
-  int starting_count;
 
   misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
   misc_utils::RealtimePublisher<std_msgs::ChannelFloat32> data_publisher_;
