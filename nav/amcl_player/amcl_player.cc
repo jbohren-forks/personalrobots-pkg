@@ -426,13 +426,10 @@ AmclNode::AmclNode() :
 
   // Give Player a chance to start up, under heavy load conditions.
   // TODO: remove this.
-  usleep(5000000);
+  //usleep(5000000);
 
   this->tf = new tf::TransformBroadcaster(*this);
-  this->tfL = new tf::TransformListener(*this, true, 
-                                        10000000000ULL,
-                                          200000000ULL);
-                                         
+  this->tfL = new tf::TransformListener(*this);
 
   advertise<std_msgs::RobotBase2DOdom>("localizedpose",2);
   advertise<std_msgs::ParticleCloud2D>("particlecloud",2);
