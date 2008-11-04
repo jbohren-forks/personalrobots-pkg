@@ -620,13 +620,13 @@ WavefrontNode::doOneCycle()
   }
   catch(tf::LookupException& ex)
   {
-    puts("no global->local Tx yet");
+    puts("L: no global->local Tx yet");
     this->stopRobot();
     return;
   }
   catch(tf::ConnectivityException& ex)
     {
-      puts("no global->local Tx yet");
+      puts("C: no global->local Tx yet");
       printf("%s\n", ex.what());
       this->stopRobot();
       return;
