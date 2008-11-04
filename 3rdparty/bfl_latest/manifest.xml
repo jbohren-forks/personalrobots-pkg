@@ -1,0 +1,23 @@
+<package>
+<description brief="The Bayesian Filtering Library (latest)">
+
+This package contains the latest code from the Bayesian Filtering Libry (BFL).  
+This ROS package does not modify BFL in any way;
+it simply provides a convenient way to download and compile the library
+in a way that can be managed by the ROS dependency system.
+This ROS package compiles BFL with the Boost library for matrix operations and random number generation.
+
+</description>
+<author> Klaas Gadeyne, Wim Meeussen, Tinne Delaet and many others. See web page for a full contributor list. ROS package maintained by Wim Meeussen.</author>
+<license>LGPL</license>
+<url>http://www.orocos.org/bfl</url>
+<export>
+  <cpp cflags="-I${prefix}/bfl-boost/include" lflags="-Wl,-rpath,${prefix}/bfl-boost/lib  -L${prefix}/bfl-boost/lib -lorocos-bfl"/>
+  <doxymaker external="http://pr.willowgarage.com/" />
+</export>
+<sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="8.04-feisty" package="libboost-dev"/>
+</package>
+
