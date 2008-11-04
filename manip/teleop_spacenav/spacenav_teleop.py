@@ -30,11 +30,10 @@
 
 import rostools; rostools.update_path('teleop_spacenav')
 import rospy, sys, math
-from robot_srvs.srv import GetVector
 from std_msgs.msg import Vector3
 
 def print_usage(code = 0):
-    print sys.argv[0], '<cartesian velocity controller topic>'
+    print sys.argv[0], '<velocity topic> <rotational velocity topic>'
     sys.exit(code)
 
 
@@ -49,11 +48,16 @@ if __name__ == '__main__':
         print_usage(1)
 
     topic = sys.argv[1]
-    rospy.wait_for_service(topic + '/get_actual')
-    get_position = rospy.ServiceProxy(topic + '/get_actual', GetVector)
-    publisher = rospy.Publisher(topic + '/command', Vector3)
+    rot_topic = '-'
+    if len(sys.argv) > 2:
+        rot_topic = sys.argv[2]
 
-    pos = get_position().v
+    publisher = None
+    rot_publisher = None
+    if topic != '-':
+        publisher = rospy.Publisher(topic + '/command', Vector3)
+    if rot_topic != '-':
+        rot_publisher = rospy.Publisher(rot_topic + '/set_command', Vector3)
 
     i = 0
     def spacenav_updated(msg):
@@ -66,7 +70,22 @@ if __name__ == '__main__':
         msg.z = t(msg.z)
         publisher.publish(msg)
 
-    rospy.Subscriber("/spacenav/offset", Vector3, spacenav_updated)
+    rot_i = 0
+    def spacenav_rot_updated(msg):
+        global rot_i
+        def t(x):
+            return sign(x) * 0.000002 * abs(x) ** 2
+        msg.x = t(msg.x)
+        msg.y = t(msg.y)
+        msg.z = t(msg.z)
+        rot_publisher.publish(msg)
+
+    if publisher:
+        print "Publishing translations"
+        rospy.Subscriber("/spacenav/offset", Vector3, spacenav_updated)
+    if rot_publisher:
+        print "Publishing rotations"
+        rospy.Subscriber("/spacenav/rot_offset", Vector3, spacenav_rot_updated)
     rospy.init_node('spacenav_teleop')
     rospy.spin()
 
