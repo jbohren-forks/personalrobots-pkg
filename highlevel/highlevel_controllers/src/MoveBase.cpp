@@ -74,7 +74,7 @@ namespace ros {
       // as a parameter until we hear how static transforms are to be handled.
       double laser_x_offset(0.275);
       param("laser_x_offset", laser_x_offset, laser_x_offset);
-      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      //tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
       // Costmap parameters
       double windowLength(1.0);
@@ -540,7 +540,7 @@ namespace ros {
 	ROS_DEBUG("Moving to desired goal orientation\n");
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
-	cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
+	cmdVel.vw =  .5;
       }
       else {
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
@@ -621,9 +621,8 @@ namespace ros {
      * @todo Make based on loaded tolerances
      */
     bool MoveBase::withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const {
-      if(fabs(x1 - x2) < 2 * getCostMap().getResolution() &&
-	 fabs(y1 - y2) < 2 * getCostMap().getResolution() &&
-	 fabs(th1- th2) < 10)
+      if(fabs(x1 - x2) < 4 * getCostMap().getResolution() &&
+	 fabs(y1 - y2) < 4 * getCostMap().getResolution())
 	return true;
 
       return false;

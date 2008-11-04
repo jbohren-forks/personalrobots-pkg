@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.6)
 #SET (CMAKE_VERBOSE_MAKEFILE ON)
 
 include(rosbuild)
-set(ROS_BUILD_TYPE Release)
+#set(ROS_BUILD_TYPE Release)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
 
