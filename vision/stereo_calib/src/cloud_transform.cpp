@@ -284,52 +284,40 @@ CvPoint3D32f transform_to_cv_frame(CvPoint3D32f pt)
     return cvPoint3D32f(x, y, z);
 }
 
-CvStereoCamModel StereoCam(729., 729., 4.381214e+004/729.,  3.239809e+002, 3.239809e+002, 2.478744e+002);
+//CvStereoCamModel StereoCam(729., 729., 4.381214e+004/729.,  3.239809e+002, 3.239809e+002, 2.478744e+002);
+double Tx = 10.;// does not matter
+CvStereoCamModel StereoCam(320., 320., Tx, 320./2.,  320./2., 240./2., 1.);
 
-CvPoint transform_to_screen1(CvPoint3D32f pt, int image_width, int image_height){
-	double _xyz[3];
-	double _xyz1[3];
-	double _uvd[3];
-	CvMat xyz, xyz1;
+CvPoint transform_to_screen(CvPoint3D32f pt, int image_width, int image_height){
+//	float _uvd[3];
+	CvMat xyz;
 	CvMat uvd;
-	_xyz[0] = pt.x*1000.;
-	_xyz[1] = pt.y*1000.;
-	_xyz[2] = pt.z*1000.;
-	cvInitMatHeader(&xyz, 1, 3, CV_64F, _xyz);
-	cvInitMatHeader(&xyz1, 1, 3, CV_64F, _xyz1);
-	cvInitMatHeader(&uvd, 1, 3, CV_64F, _uvd);
 
-	// a rotation matrix to turn from x forward, z up to
-	// z forward and y down
-	double _X2Z[9] = {
-			0, -1,  0,
-			0,  0, -1,
-			1,  0,  0
-	};
-	CvMat X2Z = cvMat(3, 3, CV_64F, _X2Z);
+	cvInitMatHeader(&xyz, 1, 3, CV_32F, (void*)&pt);
+//	cvInitMatHeader(&uvd, 1, 3, CV_32F, _uvd);
 
-	cvGEMM(&xyz, &X2Z, 1.0, NULL, 0, &xyz1, CV_GEMM_B_T);
+//	StereoCam.cartToDisp(&xyz, &uvd);
 
-	StereoCam.cartToDisp(&xyz1, &uvd);
+//  int x = lrint(_uvd[0]);
+//  int y = lrint(_uvd[1]);
 
-	int x = lrint(_uvd[0]);
-	int y = lrint(_uvd[1]);
+	float _uv[2];
+	CvMat uv = cvMat(1, 2, CV_32FC1, _uv);
+	StereoCam.cartToLeftCam(&xyz, &uv);
+
+  int x = lrint(_uv[0]);
+  int y = lrint(_uv[1]);
+
 	return cvPoint(x, y);
 }
 
-CvPoint transform_to_screen(CvPoint3D32f pt, int image_width, int image_height)
+// old implementation from Hai
+CvPoint transform_to_screen2(CvPoint3D32f pt, int image_width, int image_height)
 {
-#if 1
     double focal_length_x = 320;
     double focal_length_y = 320;
     double camera_center_x = (float) image_width / 2.0;
     double camera_center_y = (float) image_height / 2.0;
-#else
-    double focal_length_x = 320.;
-    double focal_length_y = 320.;
-    double camera_center_x = (float) 323.9809;
-    double camera_center_y = (float) 247.8744;
-#endif
 
     int x = lrint(((focal_length_x * pt.x) / pt.z) + camera_center_x);
     int y = lrint(((focal_length_y * pt.y) / pt.z) + camera_center_y);
@@ -365,6 +353,11 @@ synthetic_image image_from_point_cloud(laser_scan &ls, int image_width, int imag
     {
         cvNamedWindow("img", 1);
     }
+    double focal_length_x = image_width;
+    double focal_length_y = image_width;
+    StereoCam.setCameraParams(focal_length_x, focal_length_y, Tx, image_width/2.,
+          image_width/2., image_height/2., 1.);
+
     //Output image
     IplImage *img       = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_8U, 1);
     //Whether the corresponding pixel in 'img' is filled

@@ -613,6 +613,7 @@ load_lrf(char *fname)
   synthetic_image si;
 
   if (ls.points) {
+    // 640x480 is too much for the current density of the laser points
 //	  si = image_from_point_cloud(ls, 640, 480);
 	  si = image_from_point_cloud(ls, 320, 240);
   } else {
