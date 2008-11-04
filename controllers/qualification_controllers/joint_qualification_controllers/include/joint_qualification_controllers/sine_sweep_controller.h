@@ -114,19 +114,11 @@ private:
 class SineSweepControllerNode : public Controller
 {
 public:
-  /*!
-   * \brief Default Constructor
-   *
-   */
+ 
   SineSweepControllerNode();
-
-  /*!
-   * \brief Destructor
-   */
   ~SineSweepControllerNode();
 
   void update();
-
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 private:

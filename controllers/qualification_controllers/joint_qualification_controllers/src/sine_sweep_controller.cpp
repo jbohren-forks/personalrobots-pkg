@@ -111,6 +111,7 @@ void SineSweepController::update()
   }
   else if(!done_)
   {
+    joint_state_->commanded_effort_=0;
     analysis();
     done_=1;
   }
