@@ -106,6 +106,63 @@ float lrgb2srgb(float x)
   return x;
 }
 
+void compand(IplImage* src, IplImage* dst)
+{
+
+  // TODO: type checking that src is type 8U or else "companding" makes less sense
+
+  int channels = dst->nChannels;
+  int depth = src->depth;
+
+  static int compandmap[4096];
+  static bool has_map = false;
+
+  if (!has_map)
+  {
+    int compandinc = 1;
+    float j = 0;
+    int i = 0;
+    while (i < 4096)
+    {
+      compandmap[i] = int(j);
+
+      if (i > 2047)
+        compandinc = 8;
+      else if (i > 511)
+        compandinc = 4;
+      else if (i > 255)
+        compandinc = 2;
+      else 
+        compandinc = 1;
+
+      i += 1;
+      j += 1.0/float(compandinc);
+    }
+    has_map = true;
+  }
+  
+  if (depth == IPL_DEPTH_32F)
+  {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < channels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*4096.0);
+          val = MAX(val, 0);
+          val = MIN(val, 4095);
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
+            compandmap[ val ] >> 2;
+        }
+  } else {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < channels; k++)
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
+            compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 4];
+  }
+}
+
+
 void decompand(IplImage* src, IplImage* dst)
 {
 
