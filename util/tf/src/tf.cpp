@@ -157,7 +157,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       //      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
 
       TimeCache* pointer = getFrame(frame);
-      if (pointer == NULL) break;
+      ROS_ASSERT(pointer);
 
       try{
         pointer->getData(time, temp);
@@ -166,6 +166,13 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       {
         last_inverse = frame;
         // this is thrown when there is no data
+        break;
+      }
+
+      //break if parent is NO_PARENT (0)
+      if (frame == 0) 
+      {
+        last_inverse = frame;
         break;
       }
       mTfLs.inverseTransforms.push_back((Stamped<btTransform>)temp);
@@ -194,7 +201,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     {
 
       TimeCache* pointer = getFrame(frame);
-      if (pointer == NULL) break;
+      ROS_ASSERT(pointer);
 
 
       try{
@@ -205,6 +212,13 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
         last_forward = frame;
         //std::cout << ex.what() << " THROWN " << lookupFrameString(frame);
         // this is thrown when there is no data for the link
+        break;
+      }
+
+      //break if parent is NO_PARENT (0)
+      if (frame == 0) 
+      {
+        last_forward = frame;
         break;
       }
       //      std::cout << "pushing back" << temp.frame_id_ << std::endl;
