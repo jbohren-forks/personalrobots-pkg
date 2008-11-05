@@ -78,7 +78,16 @@ public:
     stop();
     while (is_running())
       usleep(100);
-    node_->unadvertise(topic_);
+
+    // TODO: fix when multiple nodes per process are supported
+    
+    // Don't unadvertise topic because other threads within the
+    // process may still be publishing on the topic
+    //node_->unadvertise(topic_);
+
+    // Destroy pthread resources
+    pthread_cond_destroy(&updated_cond_);
+    pthread_mutex_destroy(&msg_lock_);
   }
 
   void stop()
