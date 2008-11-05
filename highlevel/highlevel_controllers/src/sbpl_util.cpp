@@ -374,6 +374,7 @@ namespace highlevel_controllers {
   
   EnvironmentWrapper3DKIN::
   EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
+			  unsigned char obst_cost_thresh,
 			  double startx, double starty, double starttheta,
 			  double goalx, double goaly, double goaltheta,
 			  double goaltol_x, double goaltol_y, double goaltol_theta,
@@ -381,6 +382,7 @@ namespace highlevel_controllers {
 			  double cellsize_m, double nominalvel_mpersecs,
 			  double timetoturn45degsinplace_secs)
     : EnvironmentWrapper(costmap),
+      obst_cost_thresh_(obst_cost_thresh),
       env_(new EnvironmentNAV3DKIN())
   {
     // Aarghh at least we only do this once at init time.
@@ -429,8 +431,7 @@ namespace highlevel_controllers {
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
       return false;
-#warning 'currently purely on/off obstacle info when we have theta'
-    if (costmap_2d::CostMap2D::LETHAL_OBSTACLE == newcost)
+    if (obst_cost_thresh_ >= newcost)
       return env_->UpdateCost(ix, iy, 1);
     return env_->UpdateCost(ix, iy, 0);
   }

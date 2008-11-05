@@ -277,6 +277,13 @@ namespace highlevel_controllers {
     typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
     
     EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
+			    /** Use
+				costmap_2d::CostMap2D::LETHAL_OBSTACLE
+				for workspace-only obstacles,
+				costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE
+				for obstacles blown up by the
+				inscribed radius, etc */
+			    unsigned char obst_cost_thresh,
 			    double startx, double starty, double starttheta,
 			    double goalx, double goaly, double goaltheta,
 			    double goaltol_x, double goaltol_y, double goaltol_theta,
@@ -296,6 +303,8 @@ namespace highlevel_controllers {
     virtual int GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const;
     
   protected:
+    unsigned char obst_cost_thresh_;
+    
     /** \note This is mutable because GetStateFromPose() can
 	conceivable change the underlying EnvironmentNAV3DKIN, which we
 	don't care about here. */

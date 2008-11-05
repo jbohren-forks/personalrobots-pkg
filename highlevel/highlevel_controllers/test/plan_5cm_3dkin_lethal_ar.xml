@@ -1,0 +1,39 @@
+<!--
+    Before launching this, you'll have to make sure to launch e.g. rosstage and map_server:
+    * terminal 1
+      $ roscaore
+    * terminal 2
+      $ roscd rosstage
+      $ ./rosstage `rospack find 2dnav_stage`/willow-pr2-5cm.world
+    * terminal 3
+      $ roscd map_server
+      $ ./map_server `rospack find 2dnav_stage`/willow-full-0.05.pgm 0.05
+-->
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <param name="max_publish_frequency" value="20.0"/>
+    <node pkg="fake_localization" type="fake_localization" respawn="false" />
+    <node pkg="nav_view" type="nav_view" respawn="false"/>
+    
+    <!-- for the moment use e.g.: ./shparam set move_base/plannerType
+         string ADPlanner -->
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ARAPlanner"/>
+
+    <param name="move_base/environmentType" value="3DKIN"/>
+    <param name="move_base/env3d/obst_cost_thresh" value="lethal"/>
+    <param name="move_base/env3d/goaltol_x" value="0.3"/>
+    <param name="move_base/env3d/goaltol_y" value="0.3"/>
+    <param name="move_base/env3d/goaltol_theta" value="30.0"/>
+    <param name="move_base/env3d/cellsize_m" value="0.05"/>
+    <param name="move_base/env3d/nominalvel_mpersecs" value="0.4"/>
+    <param name="move_base/env3d/timetoturn45degsinplace_secs" value="0.6"/>
+    
+    <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/planner_frequency" value="0"/>
+    <param name="move_base/plannerTimeLimit" value="10"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
+  </group>
+</launch>

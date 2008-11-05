@@ -154,6 +154,21 @@ namespace ros {
 	}
 	else if ("3DKIN" == environmentType) {
 	  string const prefix(get_name() + "/env3d/");
+	  string obst_cost_thresh_str;
+	  param(prefix + "obst_cost_thresh", obst_cost_thresh_str, string("lethal"));
+	  unsigned char obst_cost_thresh(0);
+	  if ("lethal" == obst_cost_thresh_str)
+	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
+	  else if ("inscribed" == obst_cost_thresh_str)
+	    obst_cost_thresh = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
+	  else if ("circumscribed" == obst_cost_thresh_str)
+	    obst_cost_thresh = costmap_2d::CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE;
+	  else {
+	    ROS_ERROR("invalid env3d/obst_cost_thresh \"%s\"\n"
+		      "  valid options: lethal, inscribed, or circumscribed",
+		      obst_cost_thresh_str.c_str());
+	    throw int(6);
+	  }
 	  double goaltol_x, goaltol_y, goaltol_theta, cellsize_m,
 	    nominalvel_mpersecs, timetoturn45degsinplace_secs;
 	  param(prefix + "goaltol_x", goaltol_x, 0.3);
@@ -168,7 +183,9 @@ namespace ros {
 	    throw int(1);
 	  }
 	  // Could also sanity check the other parameters...
-	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), 0, 0, 0, 0, 0, 0,
+	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
+					     0, 0, 0, // start (x, y, th)
+					     0, 0, 0, // goal (x, y, th)
 					     goaltol_x, goaltol_y, goaltol_theta,
 					     getFootprint(),
 					     cellsize_m, nominalvel_mpersecs,
