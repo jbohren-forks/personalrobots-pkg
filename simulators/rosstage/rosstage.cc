@@ -119,7 +119,7 @@ class StageNode : public ros::node
   public:
     // Constructor; stage itself needs argc/argv.  fname is the .world file
     // that stage should load.
-    StageNode(int argc, char** argv, const char* fname);
+    StageNode(int argc, char** argv, bool gui, const char* fname);
     ~StageNode();
 
     // Subscribe to models of interest.  Currently, we find and subscribe
@@ -135,7 +135,7 @@ class StageNode : public ros::node
     void cmdvelReceived();
 
     // The main simulator object
-    Stg::StgWorldGui* world;
+    Stg::StgWorld* world;
 };
 
 void
@@ -164,7 +164,7 @@ StageNode::cmdvelReceived()
   this->lock.unlock();
 }
 
-StageNode::StageNode(int argc, char** argv, const char* fname) :
+StageNode::StageNode(int argc, char** argv, bool gui, const char* fname) :
   ros::node("rosstage"),
   tf(*this)
 {
@@ -173,8 +173,11 @@ StageNode::StageNode(int argc, char** argv, const char* fname) :
 
   // initialize libstage
   Stg::Init( &argc, &argv );
-  //StgWorld world;
-  this->world = new Stg::StgWorldGui(800, 700, "Stage (ROS)");
+
+  if(gui)
+    this->world = new Stg::StgWorldGui(800, 700, "Stage (ROS)");
+  else
+    this->world = new Stg::StgWorld();
 
   this->world->Load(fname);
 
@@ -313,7 +316,14 @@ main(int argc, char** argv)
 
   ros::init(argc,argv);
 
-  StageNode sn(argc,argv,argv[1]);
+  bool gui = true;
+  for(int i=0;i<(argc-1);i++)
+  {
+    if(!strcmp(argv[i], "-g"))
+      gui = false;
+  }
+
+  StageNode sn(argc,argv,gui,argv[argc-1]);
 
   if(sn.SubscribeModels() != 0)
     exit(-1);

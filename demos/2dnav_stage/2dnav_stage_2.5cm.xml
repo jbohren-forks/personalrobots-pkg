@@ -1,0 +1,26 @@
+<launch>
+
+  <group name="wg">
+    <node pkg="rosstage" type="rosstage" args="-g $(find 2dnav_stage)/willow-pr2-2.5cm.world" respawn="false" output="screen"/>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" output="screen"/>
+    <param name="pf_laser_max_beams" value="6"/>
+    <param name="pf_min_samples" value="100"/>
+    <param name="pf_max_samples" value="1000"/>
+    <param name="pf_odom_drift_xx" value="0.1"/>
+    <param name="pf_odom_drift_yy" value="0.1"/>
+    <param name="pf_odom_drift_aa" value="0.1"/>
+    <param name="pf_odom_drift_xa" value="0.1"/>
+    <param name="pf_min_d" value="0.25"/>  <!-- 25cm -->
+    <param name="pf_min_a" value="0.349"/> <!-- 20 degrees -->
+    <node pkg="amcl_player" type="amcl_player" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+    </node>
+    <param name="robot_radius" value="0.325"/>
+    <node pkg="wavefront_player" type="wavefront_player" respawn="false" output="screen">
+      <remap from="scan" to="base_scan" />
+    </node>
+    <node pkg="nav_view" type="nav_view" respawn="false" output="screen"/>
+    <!--node pkg="nav_view_sdl" type="nav_view" respawn="false" output="screen"/> -->
+  </group>
+</launch>
+
