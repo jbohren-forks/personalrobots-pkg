@@ -5,6 +5,7 @@
 
 #include <opencv/cxtypes.h>
 #include "opencv/cxcore.h"
+#include "opencv/cvwimage.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
@@ -18,6 +19,9 @@
  * As implied, the points and image in disparity space are rectified.
  * This class also provides a method to compute mask according to depth/disparity
  * ranges.
+ *
+ * CONVENTION: The 3D Cartesian frame is specified as relative to the camera,
+ * X to the right, Y down, and Z forward.
  */
 class CvStereoCamModel
 {
@@ -120,6 +124,25 @@ public:
 	    const CvMat* XYZs,
       /// (Output) 3D points stored in rows, in disparity coordinates.
 	    CvMat* uvds) const;
+
+	/// \brief Maps 3D points with intensity to the left camera image plane.
+	/// The outputs are 1) intensity map on the left camera image plane. And
+	/// 2) (x, y, z) 3d points stored in pixel locations of the left camera
+	/// image plane. A 3d point is invalid if z is less than or equals zero.
+	/// The output buffers shall be pre-allocated, and memory managed by the caller.
+	/// Obviously, their dimensions shall be the same too.
+	/// As assumed in this class, we use the usual convention for camera frame,
+	/// i.e. X to the right, Y down, and Z forward.
+	void point3dToImage(
+	    /// 3d points with intensity. Nx4 1-channels matrix, or Nx1 4-channel matrix.
+	    /// In the first form, the points are stored in rows as x, y, z, intensity.
+	    /// In the second form, the channels are x, y, z, intensity.
+	    const CvMat *XYZIs,
+	    /// (Ouput) intensity map
+	    cv::WImage1_b *intensity_map,
+	    /// (Output) map of 3d point in pixel locations.
+	    cv::WImage3_f *xyz_map
+	    ) const;
 
 	/// \brief Get references to the projection matrices.
 	void getProjectionMatrices(CvMat* cartToDisp, CvMat* dispToCart) const {

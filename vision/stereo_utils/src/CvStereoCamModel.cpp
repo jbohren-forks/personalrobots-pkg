@@ -9,11 +9,19 @@ using namespace std;
 // #include "CvMatUtils.h"
 #include <vector>     //Gary added for collecting valid x,y,d points
 
+#define DISPLAY 1
+#define VERBOSE 1
+
 #define cvFuncName __PRETTY_FUNCTION__
 
-static IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
-static IplConvKernel* OpenKernel   = cvCreateStructuringElementEx(3, 3, 1, 1,   CV_SHAPE_RECT);
-static IplConvKernel* CloseKernel  = cvCreateStructuringElementEx(7, 7, 3, 3,   CV_SHAPE_RECT);
+static const IplConvKernel* DilateKernel = cvCreateStructuringElementEx(15, 15, 7, 7, CV_SHAPE_RECT);
+static const IplConvKernel* OpenKernel   = cvCreateStructuringElementEx(3, 3, 1, 1,   CV_SHAPE_RECT);
+static const IplConvKernel* CloseKernel  = cvCreateStructuringElementEx(7, 7, 3, 3,   CV_SHAPE_RECT);
+
+#define IMG_DEPTH uchar
+
+static const int OCC_EMPTY  = 0;
+static const int OCC_FILLED = 1;
 
 void CvStereoCamModel::init() {
   // lucky that we can pull off the member initialization here
@@ -282,7 +290,8 @@ void CvStereoCamModel::cartToDisp(const CvMat* XYZs, CvMat* uvds) const {
 }
 
 void CvStereoCamModel::cartToLeftCam(const CvMat* XYZs, CvMat* uvs) const {
-  // this is not yet an efficient implementation.
+  // this is not yet an efficient implementation. Will be replaced by Vadim's
+  // new code for 3d to 2d perspective transformation.
   __BEGIN__
   if (parameterized_ == false) {
     CV_ERROR( CV_StsInternal, "object not parameterized");
@@ -290,27 +299,376 @@ void CvStereoCamModel::cartToLeftCam(const CvMat* XYZs, CvMat* uvs) const {
   if (uvs == NULL || XYZs == NULL) {
     CV_ERROR( CV_StsBadArg, "neither argument uvds nor XYZs shall be NULL");
   }
-  CvMat xyzs0;
-  CvMat uvdsC3;
-  CvMat uvdsC1;
-  int numPoints;
-  numPoints = XYZs->rows;
-  double uvds_data[3*numPoints];
-  cvReshape(XYZs, &xyzs0, 3, 0);
+  {
+    int numPoints = XYZs->rows;
+    CvMat xyzs0;
+    cvReshape(XYZs, &xyzs0, 3, 0);
+    CvMat* uvdsC3 = cvCreateMat(numPoints, 1, CV_MAT_TYPE(xyzs0.type));
+    CvMat uvdsC1;
 
-  uvdsC3 = cvMat(numPoints, 1, CV_MAT_TYPE(xyzs0.type), uvds_data);
+    double* uvds_data = new double[3*numPoints];
 
-  cvPerspectiveTransform(&xyzs0, &uvdsC3, &mat_cart_to_disp_);
 
-  // copy channels 1, 2 to uvs
-  // reshape the matrix to be 1 channel, Nx3
-  cvReshape(&uvdsC3, &uvdsC1, 1, numPoints);
-  CvMat uvsC1;
-  cvGetCols(&uvdsC1, &uvsC1, 0, 2);
-  CvMat uvsC1a;
-  cvReshape(uvs, &uvsC1a, 1, numPoints);
-  cvCopy(&uvsC1, &uvsC1a);
+    cvPerspectiveTransform(&xyzs0, uvdsC3, &mat_cart_to_disp_);
 
+    // copy channels 1, 2 to uvs
+    // reshape the matrix to be 1 channel, Nx3
+    cvReshape(uvdsC3, &uvdsC1, 1, numPoints);
+    CvMat uvsC1;
+    cvGetCols(&uvdsC1, &uvsC1, 0, 2);
+    CvMat uvsC1a;
+    cvReshape(uvs, &uvsC1a, 1, numPoints);
+    cvCopy(&uvsC1, &uvsC1a);
+    cvReleaseMat(&uvdsC3);
+  }
+
+  __END__
+}
+
+static inline double magnitude(CvPoint3D32f& p)
+{
+  return std::pow(std::pow((double)p.x, 2.0) + std::pow((double)p.y, 2.0) + std::pow((double)p.z, 2.0), 0.5);
+}
+
+static inline bool in_bounds(CvPoint& pt, int image_width, int image_height)
+{
+   if ((0 <= pt.x) && (pt.x < image_width) && (0 <= pt.y) && (pt.y < image_height))
+     return true;
+   else
+     return false;
+}
+
+static inline uint int2uchar(uint n)
+{
+    return (uint) lrint(((double) n) / 25.0);
+}
+
+bool fill_missing_pixel(int x, int y, IplImage *original_d16_c1, IplImage *occupancy_d8_c1)
+{
+    int image_width  = original_d16_c1->width;
+    int image_height = original_d16_c1->height;
+
+    //Search for neighbors
+    vector<CvPoint> neighbors;
+
+    //top
+    int xt = x;
+    int yt = max(0, min(image_height, y+1));
+    if (OCC_FILLED == ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*yt))[xt])
+        neighbors.push_back(cvPoint(xt,yt));
+
+    //bottom
+    xt = x;
+    yt = max(0, min(image_height, y-1));
+    if (OCC_FILLED == ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*yt))[xt])
+        neighbors.push_back(cvPoint(xt,yt));
+
+    //left
+    xt = max(0, min(image_width, x+1));
+    yt = y;
+    if (OCC_FILLED == ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*yt))[xt])
+        neighbors.push_back(cvPoint(xt,yt));
+
+
+    //right
+    xt = max(0, min(image_width, x-1));
+    yt = y;
+    if (OCC_FILLED == ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*yt))[xt])
+        neighbors.push_back(cvPoint(xt,yt));
+
+    //Check if we can use edge sensing
+    bool         left_neighbor,  right_neighbor,  top_neighbor,  bottom_neighbor;
+    float        left_v,         right_v,         top_v,         bottom_v;
+    CvPoint      left_neighborp, right_neighborp, top_neighborp, bottom_neighborp;
+    //CvPoint3D32f left_loc,       right_loc,       top_loc,       bottom_loc;
+
+    left_neighbor = right_neighbor = top_neighbor = bottom_neighbor = false;
+    for (unsigned int i = 0; i < neighbors.size(); i++)
+    {
+        if (neighbors.at(i).x < x && neighbors.at(i).y == y)
+        {
+            left_neighbor  = true;
+            left_neighborp = neighbors.at(i);
+            left_v         = ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*left_neighborp.y))[left_neighborp.x];
+        }
+        if (neighbors.at(i).x > x && neighbors.at(i).y == y)
+        {
+            right_neighbor  = true;
+            right_neighborp = neighbors.at(i);
+            right_v         = ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*right_neighborp.y))[right_neighborp.x];
+        }
+        if (neighbors.at(i).y < y && neighbors.at(i).x == x)
+        {
+            top_neighbor  = true;
+            top_neighborp = neighbors.at(i);
+            top_v         = ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*top_neighborp.y))[top_neighborp.x];
+        }
+        if (neighbors.at(i).y > y && neighbors.at(i).x == x)
+        {
+            bottom_neighbor  = true;
+            bottom_neighborp = neighbors.at(i);
+            bottom_v         = ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*bottom_neighborp.y))[bottom_neighborp.x];
+        }
+    }
+
+    if (left_neighbor && right_neighbor && top_neighbor && bottom_neighbor)
+    {
+        //Edge sensing
+        //http://scien.stanford.edu/class/psych221/projects/99/tingchen/algodep/edgesense.html
+        float horizontal_gradient = (left_v + right_v) / 2.0;
+        float vertical_gradient   = (top_v + bottom_v) / 2.0;
+        float threshold = (horizontal_gradient + vertical_gradient) / 2.0;
+        if (horizontal_gradient < threshold && vertical_gradient > threshold)
+        {
+            ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] =
+                (IMG_DEPTH) lrint((left_v + right_v) / 2.0);
+        } else if (horizontal_gradient > threshold && vertical_gradient < threshold)
+        {
+            ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] =
+                (IMG_DEPTH) lrint((top_v + bottom_v) / 2.0);
+        } else {
+            ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] =
+                (IMG_DEPTH) lrint((top_v + bottom_v + left_v + right_v) / 4.0);
+        }
+        return true;
+    } else if (left_neighbor && right_neighbor)
+    {
+        ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] =
+            (IMG_DEPTH) lrint((left_v + right_v) / 2.0);
+        return true;
+    } else if (top_neighbor && bottom_neighbor)
+    {
+        ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] = (IMG_DEPTH) lrint((top_v + bottom_v) / 2.0);
+        return true;
+    } else {
+        if (neighbors.size() > 1)
+        {
+            //Calculcate weights
+            vector<float> weights;
+            double sum_intensity    = 0;
+            double sum_weights      = 0;
+            float size              = std::pow(.5f, 2);
+
+            for (unsigned int i = 0; i < neighbors.size(); i++)
+            {
+                CvPoint p = neighbors[i];
+                float weight = exp(-(std::pow((float)(p.x-x), 2) + pow((float)(p.y-y), 2)) / size);
+                weight = max((float).01, weight);
+                sum_intensity += weight * ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*p.y))[p.x];
+                sum_weights   += weight;
+
+            }
+
+            ((IMG_DEPTH*)(original_d16_c1->imageData + original_d16_c1->widthStep*y))[x] = (IMG_DEPTH) (sum_intensity / sum_weights);
+            return true;
+        } else {
+            return false;
+        }
+    }
+    return false;
+}
+
+
+void fill_missing_pixels(IplImage *original_d16_c1, IplImage *occupancy_d8_c1)
+{
+    int count = 0;
+    bool making_progress = true;
+    vector<CvPoint> *failed  = new vector<CvPoint>();
+    vector<CvPoint> *failed2 = new vector<CvPoint>();
+    for (int yi=0; yi < original_d16_c1->height; yi++)
+    for (int xi=0; xi < original_d16_c1->width;  xi++)
+    {
+        if (OCC_EMPTY == ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*yi))[xi])
+            failed->push_back(cvPoint(xi,yi));
+    }
+
+    while (making_progress)
+    {
+        making_progress = false;
+        vector<CvPoint>::iterator iter;
+        vector<CvPoint> succeeded;
+        for (iter = failed->begin(); iter != failed->end(); iter++)
+        {
+            CvPoint p = *iter;
+            if (fill_missing_pixel(p.x, p.y, original_d16_c1, occupancy_d8_c1))
+            {
+                making_progress = true;
+                succeeded.push_back(cvPoint(p.x, p.y));
+            } else {
+                failed2->push_back(cvPoint(p.x, p.y));
+            }
+
+            if (DISPLAY && count % 10000 == 0)
+            {
+              cvShowImage("img", original_d16_c1);
+              cvWaitKey(5);
+            }
+            count++;
+        }
+        //printf("found %d pixels to fill\n", succeeded.size());
+
+        //Mark pixels as occupied here instead of above, as results won't be affected by
+        //update order of fill-in sweeps
+        for (iter = succeeded.begin(); iter != succeeded.end(); iter++)
+        {
+            CvPoint p = *iter;
+            ((char*)(occupancy_d8_c1->imageData + occupancy_d8_c1->widthStep*p.y))[p.x] = OCC_FILLED;
+        }
+
+        delete failed;
+        failed = failed2;
+        failed2 = new vector<CvPoint>();
+    }
+
+    delete failed;
+    delete failed2;
+}
+
+
+void CvStereoCamModel::point3dToImage(
+    const CvMat *XYZIs,
+    cv::WImage1_b *intensity_map,
+    cv::WImage3_f *xyz_map
+) const {
+  __BEGIN__
+  //CV_ERROR( CV_StsNotImplemented, "Coming soon");
+  {
+    if (DISPLAY)
+    {
+      cvNamedWindow("img", 1);
+    }
+    int image_width = intensity_map->Width();
+    int image_height= intensity_map->Height();
+    int numPoints = XYZIs->rows;
+    CvMat XYZIs_C1;
+    CvMat XYZs_C1;
+    double uvs_data[2*numPoints];
+    /// TODO: how do I create a cvmat of 2-channel and that go with XYZIs
+    CvMat uvs = cvMat(numPoints, 1, CV_64FC2, uvs_data);
+    unsigned short uvs_16u_data[2*numPoints];
+    CvMat uvs_16u = cvMat(numPoints, 1, CV_16UC2, uvs_16u_data);
+    IplImage* xyz_32FC3 =  xyz_map->Ipl();
+
+    // get a view of the input matrix as numPoints x4, 1-channel matrix
+    cvReshape(XYZIs, &XYZIs_C1, 1, numPoints);
+    // get a view of the first 3 columns of XYZIs_C1, i.e. the X, Y, Z's
+    cvGetCols(&XYZIs_C1, &XYZs_C1, 0, 3);
+
+    //Whether the corresponding pixel in 'img' is filled
+    IplImage *occupancy = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_8U, 1);
+    cvSet(occupancy, cvScalar(OCC_EMPTY));
+
+    ////////////////////////////////////////////////////////////////////////////////////////
+    // Project 3D xyz points into camera uv points and plot associated intensity in image
+    ////////////////////////////////////////////////////////////////////////////////////////
+    //Turn 3D points into image points
+    IplImage *sums = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_64F, 1);
+    cvSet(sums, cvScalar(0));
+    IplImage *hits = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_32S, 1);
+    cvSet(hits, cvScalar(0));
+
+    int out_bound_pixels = 0;
+    int behind_camera    = 0;
+
+    int max_hits = 0;
+    unsigned int max_sum = 0;
+    if (VERBOSE)
+      cout << "reading scans...\n";
+    //For each 3D point
+    if (VERBOSE)
+      cout << "looping over points " << numPoints << "... and render over "<<image_width<<","<<image_height<<"\n";
+
+    // converts the x, y positions to left camera image pixel locations.
+    cartToLeftCam(&XYZs_C1, &uvs);
+    cvConvert(&uvs, &uvs_16u);
+
+    for (int i = 0; i < numPoints; i++)
+    {
+      CvPoint3D32f point3d;
+      point3d.x = cvmGet(&XYZIs_C1, i, 0);
+      point3d.y = cvmGet(&XYZIs_C1, i, 1);
+      point3d.z = cvmGet(&XYZIs_C1, i, 2);
+
+      // CvPoint3D32f cvpt = transform_to_cv_frame(scan_point);
+      if (point3d.z > 0 && magnitude(point3d) > 0.08)
+      {
+        CvPoint screen_pt = cvPoint(uvs_16u_data[i*2], uvs_16u_data[i*2+1]);
+        if (in_bounds(screen_pt, image_width, image_height))
+        {
+          unsigned int associated_intensity = (uint)lrint(cvmGet(&XYZIs_C1, i, 3));
+
+          //Add to sums
+          if (associated_intensity > 0)
+          {
+            ((char*)         (occupancy->imageData + occupancy->widthStep*screen_pt.y))[screen_pt.x] = OCC_FILLED;
+            double current_intensity = ((double*)(sums->imageData + sums->widthStep*screen_pt.y))[screen_pt.x];
+            ((double *)      (sums->imageData + sums->widthStep*screen_pt.y))          [screen_pt.x] = current_intensity + associated_intensity;
+            ((unsigned int *)(hits->imageData + hits->widthStep*screen_pt.y))          [screen_pt.x] += 1;
+
+            int cur_hits = ((unsigned int*)(hits->imageData + hits->widthStep*screen_pt.y))[screen_pt.x];
+            if (max_hits < cur_hits)
+            {
+              max_hits = cur_hits;
+              max_sum = max_hits;
+            }
+
+            // fill out the entry on the xyz map. With this implementation
+            // the same pixel location may get overridden again and again.
+            int row = screen_pt.y;
+            int col = screen_pt.x;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3     ) = point3d.x;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 1 ) = point3d.y;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 2 ) = point3d.z;
+          }
+
+        } else
+        {
+          out_bound_pixels++;
+        }
+      } else
+      {
+        behind_camera++;
+      }
+    }
+
+    if (VERBOSE)
+    {
+      cout << "out_bound_pixels: " << out_bound_pixels << endl;
+      cout << "behind_camera: "    << behind_camera << endl;
+      cout << "max hits: "    << max_hits << endl;
+      cout << "averging hits...\n";
+    }
+
+    IplImage* img = intensity_map->Ipl();
+    //Average hits in each cell and set to new image
+    for (int y = 0; y < sums->height; y++)
+      for (int x = 0; x < sums->width;  x++)
+      {
+        double current_intensity       = ((double*)(sums->imageData + sums->widthStep*y))[x];
+        unsigned int num_hits          = ((unsigned int*)(hits->imageData + hits->widthStep*y))[x];
+        if (current_intensity != 0) {
+          ((IMG_DEPTH*) (img->imageData + img->widthStep*y))[x] =
+            int2uchar(lrint((double) current_intensity / (double) num_hits));
+        }
+        else {
+          ((IMG_DEPTH*) (img->imageData + img->widthStep*y))[x] =  0;
+        }
+      }
+
+    if (DISPLAY)
+    {
+      //Show image before filling it in
+      cvShowImage("img", img);
+      printf("Waiting key...\n");
+      cvWaitKey(33);
+    }
+
+    //Loop over unfilled pixels & set them to average of 4 neighbors
+    fill_missing_pixels(img, occupancy);
+
+    if (DISPLAY)
+      cvShowImage("img", img);
+  }
   __END__
 }
 
@@ -517,22 +875,21 @@ void CvStereoCamModel::getDepthMask(// disparity image
     case POLYGONES:
       // two simple morphology operation seem to be good enough. But
       // but connected component analysis provides blob with better shape
-      cvMorphologyEx(depthMask, depthMask, NULL, OpenKernel, CV_MOP_OPEN, 1);
+      cvMorphologyEx(depthMask, depthMask, NULL, (IplConvKernel *)OpenKernel, CV_MOP_OPEN, 1);
       //cvMorphologyEx(depthMask, depthMask, NULL, DilateKernel, CV_MOP_CLOSE, 1);
-      cvDilate(depthMask, depthMask, DilateKernel, 1);
+      cvDilate(depthMask, depthMask, (IplConvKernel *)DilateKernel, 1);
       break;
     case CONVEX_HULLS: {
       const float perimScale = 16;
       const int maxNumBBoxes = 25;
-      CvRect bboxes[maxNumBBoxes];
       int numCComp = maxNumBBoxes;
       connectedComponents(depthMask, 0,
-        OpenKernel,
-        CloseKernel,
-        perimScale, &numCComp,
-        (CvRect *)NULL, // bboxes,
-        (CvPoint *)NULL);
-      cvDilate(depthMask, depthMask, DilateKernel, 1);
+          (IplConvKernel *)OpenKernel,
+          (IplConvKernel *)CloseKernel,
+          perimScale, &numCComp,
+          (CvRect *)NULL, // bboxes,
+          (CvPoint *)NULL);
+      cvDilate(depthMask, depthMask, (IplConvKernel *)DilateKernel, 1);
     }
     }
 }
