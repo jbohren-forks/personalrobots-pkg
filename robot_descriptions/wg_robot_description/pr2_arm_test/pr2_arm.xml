@@ -947,7 +947,6 @@
   -->
   
   <!-- new definitions for mechanism controls - JMH -->
-  <include>actuators_arm.xml</include> 
   <include>transmissions_arm.xml</include> 
 
   <!-- Define groups of links; a link may be part of multiple groups -->
