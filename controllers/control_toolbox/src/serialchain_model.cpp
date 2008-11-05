@@ -52,6 +52,12 @@ bool SerialChainModel::init(const robot_kinematics::RobotKinematics & r_kin, rob
   inputs_=chain_->num_joints_;
   states_=2*inputs_; //(angle and angular velocity)
   kdl_torque_ = new KDL::Vector[inputs_+1];
+  
+  //FIXME Get the proper order:
+  typedef std::map<std::string, int>::iterator It;
+  for(It it=chain->joint_id_map_.begin();it!=chain->joint_id_map_.end();++it)
+    ROS_DEBUG_STREAM(it->first<<":\t"<<it->second);
+  
   return true;
 }
 
@@ -65,13 +71,13 @@ bool SerialChainModel::init(const robot_kinematics::RobotKinematics & r_kin, rob
 // We first compute the matrices M,Q,G and then linearize the gravity term.
 bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, InputMatrix & B, InputVector & c)
 {
-  ROS_DEBUG("1");
+//   ROS_DEBUG("1");
   assert(inputs_>0);
   const int n=inputs_;
   KDL::JntArray kdl_q(n);
   KDL::JntArray kdl_q_dot(n);
 
-  ROS_DEBUG("2");
+//   ROS_DEBUG("2");
   //Fills the data
   for(int i=0; i<n; ++i)
   {
@@ -79,7 +85,7 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
     kdl_q_dot(i) = x(i+n);
   }
   
-  ROS_DEBUG("3");
+//   ROS_DEBUG("3");
   //Compute M
   Eigen::MatrixXd M(n,n);
   NEWMAT::Matrix mass(n,n);
@@ -87,24 +93,24 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
   for(int i=0;i<n;i++)
     for(int j=0;j<n;j++)
       M(i,j)=mass(i+1,j+1);
-  ROS_DEBUG("4");
+//   ROS_DEBUG("4");
   //Compute Q
   Eigen::MatrixXd Q(n,n);
   Q.setZero();
   NEWMAT::Matrix christoffel(n*n,n);
   chain_->computeChristoffelSymbols(kdl_q,kdl_torque_,christoffel);
-  ROS_DEBUG("5-");
+//   ROS_DEBUG("5-");
   for(int i=0;i<n;i++)
     for(int j=0;j<n;j++)
       for(int k=0;k<n;k++)
         Q(i,j)+=christoffel(i*n+j+1,k+1)*kdl_q_dot(j);
-  ROS_DEBUG("5");
+//   ROS_DEBUG("5");
   //Compute G
   Eigen::VectorXd G(n,1);
   chain_->computeGravityTerms(kdl_q,kdl_torque_);
   for(int i=0;i<n;i++)
     G(i)=kdl_torque_[i][2];
-  ROS_DEBUG("6");
+//   ROS_DEBUG("6");
   //Computing the gradient of G
   Eigen::MatrixXd gG(n,n);
   const double epsi=0.01;
@@ -116,7 +122,7 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
     for(int j=0;j<n;j++)
       gG(i,j)=(kdl_torque_[j][2]-G(j))/epsi;
   }
-  ROS_DEBUG("7");
+//   ROS_DEBUG("7");
   // Final assembling
   Eigen::MatrixXd Minvminus=-M.inverse(); //Computing M's inverse once
   ROS_DEBUG_STREAM(A.rows());
@@ -131,7 +137,7 @@ bool SerialChainModel::getLinearization(const StateVector & x, StateMatrix & A, 
   assert(B.cols()==n);
   B.block(0,0,n,n).setZero();
   B.block(n,0,n,n)=Minvminus;
-  ROS_DEBUG("8");
+//   ROS_DEBUG("8");
   c=-G;
   return true;
 }

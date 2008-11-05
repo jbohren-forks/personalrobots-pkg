@@ -83,11 +83,10 @@ struct LQRDP
       
       
       // --- debug ---
-      //FIXME: find the non-buggy version of the ES - it used to be working
-//       Eigen::EigenSolver<AType> es(A+B*K);
-//       std::cout<<"\nSTEP "<<steps<<"\nEigenValues(real part):\n"<<es.eigenvalues().real();
-//       if(steps%10==1)
-//         std::cout<<"\nERROR="<<error;
+//        Eigen::EigenSolver<AType> es(A+B*K);
+//        std::cout<<"\nSTEP "<<steps<<"\nEigenValues(real part):\n"<<es.eigenvalues().real();
+//        if(steps%10==1)
+//          std::cout<<"\nERROR="<<error;
 
     }
 //     std::cout<<"\nDone in "<<steps<<" steps\n";
@@ -113,4 +112,4 @@ struct LQRDP
 
 };
 
-}
+} //namespace

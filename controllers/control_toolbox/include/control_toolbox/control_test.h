@@ -111,16 +111,42 @@ template<typename Derived>
 static bool isConverging(const Eigen::MatrixBase<Derived> & A, double epsi=1e-4)
 {
   Eigen::EigenSolver<Derived> es(A);
-//   std::cout<<es.eigenvalues().real()<<std::endl;
+//   Eigen::IOFormat fmt(4, Eigen::AlignCols, ", ", ";\n", "", "", "[", "]");
+//   std::cout<<std::endl<<A.format(fmt)<<std::endl<<std::endl<<es.eigenvalues()<<std::endl;
   return es.eigenvalues().real().maxCoeff() < static_cast<typename Derived::Scalar>(-epsi);
 }
 
 template<typename DerivedA, typename DerivedB, typename DerivedG>
 static bool isConverging(const Eigen::MatrixBase<DerivedA> & A, const Eigen::MatrixBase<DerivedB> & B, const Eigen::MatrixBase<DerivedG> & K, double epsi=1e-4)
 {
+  Eigen::IOFormat fmt(4, Eigen::AlignCols, ", ", ";\n", "", "", "[", "]");
+//   std::cout<<std::endl<<A.format(fmt)<<std::endl<<std::endl<<std::endl;
+//   std::cout<<std::endl<<B.format(fmt)<<std::endl<<std::endl<<std::endl;
+//   std::cout<<std::endl<<K.format(fmt)<<std::endl<<std::endl<<std::endl;
   //Need to create a temporary here:
-  const DerivedA & A1=A-B*K;
+  const DerivedA & A1=A+B*K;
   return isConverging(A1, epsi);
+}
+
+template<typename Derived>
+static bool isConvergingDiscrete(const Eigen::MatrixBase<Derived> & A, double epsi=1e-4)
+{
+  Eigen::EigenSolver<Derived> es(A);
+//   Eigen::IOFormat fmt(4, Eigen::AlignCols, ", ", ";\n", "", "", "[", "]");
+//   std::cout<<std::endl<<A.format(fmt)<<std::endl<<std::endl<<es.eigenvalues()<<std::endl;
+  return (es.eigenvalues().cwise()*es.eigenvalues().conjugate()).real().maxCoeff() < static_cast<typename Derived::Scalar>(1-epsi);
+}
+
+template<typename DerivedA, typename DerivedB, typename DerivedG>
+static bool isConvergingDiscrete(const Eigen::MatrixBase<DerivedA> & A, const Eigen::MatrixBase<DerivedB> & B, const Eigen::MatrixBase<DerivedG> & K, double epsi=1e-4)
+{
+/*  Eigen::IOFormat fmt(4, Eigen::AlignCols, ", ", ";\n", "", "", "[", "]");
+  std::cout<<std::endl<<A.format(fmt)<<std::endl<<std::endl<<std::endl;
+  std::cout<<std::endl<<B.format(fmt)<<std::endl<<std::endl<<std::endl;
+  std::cout<<std::endl<<K.format(fmt)<<std::endl<<std::endl<<std::endl;*/
+  //Need to create a temporary here:
+  const DerivedA & A1=A+B*K;
+  return isConvergingDiscrete(A1, epsi);
 }
 
 };
