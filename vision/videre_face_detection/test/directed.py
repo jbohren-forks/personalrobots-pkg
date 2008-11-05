@@ -70,12 +70,13 @@ class PeopleTracker:
     self.feats_to_centers_3d = []
     self.face_centers_3d = []
     self.face_sizes_3d = []
-    self.min_real_face_size = 50 # in mm
-    self.max_real_face_size = 400 # in mm
+    self.min_real_face_size = 100 # in mm
+    self.max_real_face_size = 600 # in mm
     self.good_points_thresh = 0.5
     self.recent_good_frames = []
     self.recent_good_rects = []
     self.recent_good_rects_3d = []
+    self.recent_good_motion = []
     self.same_key_rgfs = []
     self.pub = []
 
@@ -186,7 +187,6 @@ class PeopleTracker:
   def params(self, pmsg):
 
     if not self.vo:
-      print "Setting calib params"
       self.cam = camera.VidereCamera(pmsg.data)
       self.vo = Tracker(self.cam)
         
@@ -200,16 +200,27 @@ class PeopleTracker:
 ################### IMAGE CALLBACK ############################
   def frame(self, imarray):
 
-    print "Frame callback"
-
     # No calibration params yet.
     if not self.vo:
       return
 
     im = imarray.images[1]
-    im_py = Image.fromstring("L", (im.width, im.height), im.data)
-    im_r = imarray.images[0]
-    im_r_py = Image.fromstring("L", (im_r.width, im_r.height), im_r.data)
+    if im.colorspace == "mono8":
+      #print "mono"
+      im_py = Image.fromstring("L", (im.width, im.height), im.data)
+      im_r = imarray.images[0]
+      im_r_py = Image.fromstring("L", (im_r.width, im_r.height), im_r.data)
+    elif im.colorspace == "rgb24":
+      #print "color"
+      im_py = Image.fromstring("RGB", (im.width, im.height), im.data)
+      im_py = im_py.convert("L")
+      im_r = imarray.images[0]
+      im_r_py = Image.fromstring("RGB", (im_r.width, im_r.height), im_r.data)
+      im_r_py = im_r_py.convert("L")
+    else :
+      #print "Unknown colorspace ", im.colorspace
+      return
+    
 
     # Detect faces on the first frame
     if not self.current_keyframes :
@@ -231,7 +242,7 @@ class PeopleTracker:
       
       iface += 1
 
-      (x,y,w,h) = self.faces[iface]
+      (x,y,w,h) = copy.copy(self.faces[iface])
       if DEBUG:
         print "A face ", (x,y,w,h)
       
@@ -256,7 +267,7 @@ class PeopleTracker:
         fs3d = ( (rbf[0]-ltf[0]) + (rbf[1]-ltf[1]) )/4.0
 
         # Check that the face is a reasonable size. If not, skip this face.
-        if fs3d < self.min_real_face_size or fs3d > self.max_real_face_size or iface > 0: #HACK: ONLY ALLOW ONE FACE
+        if 2*fs3d < self.min_real_face_size or 2*fs3d > self.max_real_face_size or iface > 1: #HACK: ONLY ALLOW ONE FACE
           self.faces.pop(iface)
           iface -= 1
           continue
@@ -274,6 +285,7 @@ class PeopleTracker:
 
         self.recent_good_frames.append(copy.copy(ia))
         self.recent_good_rects.append(copy.deepcopy([x,y,w,h]))
+        self.recent_good_motion.append([0.0,0.0,0.0]) #dx,dy,dimfacesize
 
         self.same_key_rgfs.append(True)
 
@@ -293,7 +305,7 @@ class PeopleTracker:
           good_matches = [m for m in sadscores if m < self.sad_thresh]
         
           # Not enough matches, get a new keyframe
-          if len(keyframe.kp)<2 or len(good_matches) < len(keyframe.kp)/2.0 : #3
+          if len(keyframe.kp)<2 or len(good_matches) < len(keyframe.kp)/2.0 : 
 
             #self.keyframe[self.current_keyframe] = ia
             if DEBUG:
@@ -329,8 +341,39 @@ class PeopleTracker:
               # However, if I turn this off, I tend to loose track. 
               #bad_frame = True
               done_matching = True
-    #          if DEBUG:
-    #            print "Bad frame ", self.seq, " for face ", iface
+              if DEBUG:
+                print "Bad frame ", self.seq, " for face ", iface
+
+              ###
+              if True :
+                (cen,diff) = self.rect_to_center_diff(self.faces[iface])
+                if DEBUG:
+                  print self.recent_good_motion[iface]
+                if self.recent_good_motion[iface][2] > 0.0:
+                  new_cen = [cen[0]+self.recent_good_motion[iface][0]/2.0, cen[1]+self.recent_good_motion[iface][1]/2.0] #Only compensating for half the motion
+                  diff = [(diff[0]+diff[0]*self.recent_good_motion[iface][2])/2.0, (diff[1]+diff[1]*self.recent_good_motion[iface][2])/2.0]
+                  self.faces[iface] = (new_cen[0]-diff[0], new_cen[1]-diff[1], 2*diff[0], 2*diff[1])
+                  (x,y,w,h) = copy.deepcopy(self.faces[iface])
+                  ia.kp2d = None
+                  ia.descriptors = None
+                  ia.kp = None
+                  ia.kp2d = self.get_features(ia, self.num_feats, (x,y,w,h))
+                  if not ia.kp2d:
+                    bad_frame = True
+                    continue
+
+                  self.vo.find_disparities(ia)
+                  if not ia.kp:
+                    bad_frame = True
+                    continue
+
+                  iakp3d = [self.cam.pix2cam(kp[0], kp[1], kp[2]) for kp in ia.kp] 
+                  iaavgd = sum([tz for (tx,ty,tz) in ia.kp])/len(ia.kp)
+
+                  self.vo.collect_descriptors(ia)
+                
+              ###
+
               self.keyframes[self.current_keyframes[iface]] = copy.copy(ia)
               self.current_keyframes[iface] = 0
               (cen,diff) = self.rect_to_center_diff(self.faces[iface])
@@ -392,7 +435,9 @@ class PeopleTracker:
 
         # 3D
         old_rect = self.faces[iface]
+        (old_center, old_diff) = self.rect_to_center_diff(old_rect)
         new_center = self.mean_shift_sparse( self.face_centers_3d[iface], sparse_pred_list, probs, bandwidths, 10, 5.0 )
+        #print new_center
         new_center_2d = self.cam.cam2pix(new_center[0], new_center[1], new_center[2])
         ltf = self.cam.cam2pix( new_center[0]-self.face_sizes_3d[iface], new_center[1]-self.face_sizes_3d[iface], new_center[2])
         rbf = self.cam.cam2pix( new_center[0]+self.face_sizes_3d[iface], new_center[1]+self.face_sizes_3d[iface], new_center[2])
@@ -417,10 +462,10 @@ class PeopleTracker:
         self.faces[iface] = [nx, ny, nw, nh]
         self.face_centers_3d[iface] = copy.deepcopy(new_center)
         self.recent_good_rects[iface] = [nx,ny,nw,nh]
-        ###
+        self.recent_good_motion[iface] = [new_center_2d[0]-old_center[0], new_center_2d[1]-old_center[1], ((nw-1.0)/2.0)/old_diff[0]]
         self.recent_good_frames[iface] = copy.copy(ia)
         self.same_key_rgfs[iface] = False
-        ###
+        
 
         if DEBUG:
           print "face 2d ", self.faces[iface]
@@ -466,6 +511,8 @@ class PeopleTracker:
           (x,y,w,h) = old_rect
           draw.rectangle((x,y,x+w,y+h),outline=(255,255,255))
           draw.rectangle((x+key_im.size[0],y,x+w+key_im.size[0],y+h),outline=(255,255,255))
+
+          draw.line((old_center[0], old_center[1], old_center[0]+self.recent_good_motion[iface][0], old_center[1]+self.recent_good_motion[iface][1]), fill=(255,255,255))
 
           for (x,y) in ia.kp2d:
             draw.line((x-1+key_im.size[0], y-1, x+1+key_im.size[0], y+1), fill=(255,0,0))
@@ -547,7 +594,7 @@ def main(argv) :
 
     people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
     rospy.init_node('videre_face_tracker', anonymous=True)
-    #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
+    rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
     rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
     rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
     rospy.spin()
