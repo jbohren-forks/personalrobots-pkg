@@ -2,6 +2,7 @@
 #define WGSTEREOCAMMODEL_H_
 
 #include <cmath>
+#include <vector>
 
 #include <opencv/cxtypes.h>
 #include "opencv/cxcore.h"
@@ -141,8 +142,10 @@ public:
 	    /// (Ouput) intensity map
 	    cv::WImage1_b *intensity_map,
 	    /// (Output) map of 3d point in pixel locations.
-	    cv::WImage3_f *xyz_map
-	    ) const;
+	    cv::WImage3_f *xyz_map,
+	    /// (Output) indices of points that are projected on to the image.
+	    std::vector<int>* inbound_pts
+	) const;
 
 	/// \brief Get references to the projection matrices.
 	void getProjectionMatrices(CvMat* cartToDisp, CvMat* dispToCart) const {

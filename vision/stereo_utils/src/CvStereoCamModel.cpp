@@ -9,8 +9,8 @@ using namespace std;
 // #include "CvMatUtils.h"
 #include <vector>     //Gary added for collecting valid x,y,d points
 
-#define DISPLAY 1
-#define VERBOSE 1
+#define DISPLAY 0
+#define VERBOSE 0
 
 #define cvFuncName __PRETTY_FUNCTION__
 
@@ -306,9 +306,6 @@ void CvStereoCamModel::cartToLeftCam(const CvMat* XYZs, CvMat* uvs) const {
     CvMat* uvdsC3 = cvCreateMat(numPoints, 1, CV_MAT_TYPE(xyzs0.type));
     CvMat uvdsC1;
 
-    double* uvds_data = new double[3*numPoints];
-
-
     cvPerspectiveTransform(&xyzs0, uvdsC3, &mat_cart_to_disp_);
 
     // copy channels 1, 2 to uvs
@@ -528,7 +525,8 @@ void fill_missing_pixels(IplImage *original_d16_c1, IplImage *occupancy_d8_c1)
 void CvStereoCamModel::point3dToImage(
     const CvMat *XYZIs,
     cv::WImage1_b *intensity_map,
-    cv::WImage3_f *xyz_map
+    cv::WImage3_f *xyz_map,
+    vector<int>* inbound_pts
 ) const {
   __BEGIN__
   //CV_ERROR( CV_StsNotImplemented, "Coming soon");
@@ -566,6 +564,9 @@ void CvStereoCamModel::point3dToImage(
     cvSet(sums, cvScalar(0));
     IplImage *hits = cvCreateImage(cvSize(image_width, image_height), IPL_DEPTH_32S, 1);
     cvSet(hits, cvScalar(0));
+
+    // initialize the xyz map to zero
+    cvSet(xyz_map->Ipl(), cvScalar(0,0,0));
 
     int out_bound_pixels = 0;
     int behind_camera    = 0;
@@ -614,11 +615,15 @@ void CvStereoCamModel::point3dToImage(
 
             // fill out the entry on the xyz map. With this implementation
             // the same pixel location may get overridden again and again.
+            // TODO: Shall do tri-linear interpolation instead?
             int row = screen_pt.y;
             int col = screen_pt.x;
-            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3     ) = point3d.x;
-            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 1 ) = point3d.y;
-            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 2 ) = point3d.z;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3     ) += point3d.x;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 1 ) += point3d.y;
+            CV_IMAGE_ELEM( xyz_32FC3, float, row, col*3 + 2 ) += point3d.z;
+            if (inbound_pts) {
+              inbound_pts->push_back(i);
+            }
           }
 
         } else
@@ -640,18 +645,22 @@ void CvStereoCamModel::point3dToImage(
     }
 
     IplImage* img = intensity_map->Ipl();
+    // clear the image with zeros
+    cvSet(img, cvScalar(0));
     //Average hits in each cell and set to new image
     for (int y = 0; y < sums->height; y++)
       for (int x = 0; x < sums->width;  x++)
       {
         double current_intensity       = ((double*)(sums->imageData + sums->widthStep*y))[x];
         unsigned int num_hits          = ((unsigned int*)(hits->imageData + hits->widthStep*y))[x];
-        if (current_intensity != 0) {
-          ((IMG_DEPTH*) (img->imageData + img->widthStep*y))[x] =
-            int2uchar(lrint((double) current_intensity / (double) num_hits));
-        }
-        else {
-          ((IMG_DEPTH*) (img->imageData + img->widthStep*y))[x] =  0;
+        if (num_hits>0)  {
+          if (current_intensity != 0) {
+            ((IMG_DEPTH*) (img->imageData + img->widthStep*y))[x] =
+              int2uchar(lrint((double) current_intensity / (double) num_hits));
+          }
+          CV_IMAGE_ELEM( xyz_32FC3, float, y, x*3     ) /= (double)num_hits;
+          CV_IMAGE_ELEM( xyz_32FC3, float, y, x*3 + 1 ) /= (double)num_hits;
+          CV_IMAGE_ELEM( xyz_32FC3, float, y, x*3 + 2 ) /= (double)num_hits;
         }
       }
 
