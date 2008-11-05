@@ -389,7 +389,7 @@ public:
         advertise<std_msgs::PointCloud>(cd.name + string("/cloud"), 1);
       } else {
         advertise<std_msgs::Image>(cd.name + string("/image"), 1);
-        advertise<std_msgs::Image>(cd.name + string("/images"), 1);
+        advertise<std_msgs::ImageArray>(cd.name + string("/images"), 1);
       }
 
       cams_.push_back(cd);
