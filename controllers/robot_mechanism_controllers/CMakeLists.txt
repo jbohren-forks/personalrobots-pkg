@@ -16,5 +16,6 @@ rospack_add_library(robot_mechanism_controllers
  src/joint_pd_controller.cpp
  src/joint_calibration_controller.cpp
  src/joint_blind_calibration_controller.cpp
- src/joint_manual_calibration_controller.cpp)
+ src/joint_manual_calibration_controller.cpp
+ src/lqr_controller.cpp)
 

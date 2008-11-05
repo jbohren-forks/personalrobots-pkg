@@ -48,7 +48,7 @@ LQRController::LQRController()
 {
   target_.setZero();
   gains_.setZero();
-  state_offset_.setZero();
+//   state_offset_.setZero();
   input_offset_.setZero();
   model_ = NULL;
   reset_previous_=true;
@@ -74,7 +74,7 @@ void LQRController::update()
   model_->observation(state_, previous_state_, commands_, dt);
   
   //Computes update from controller
-  commands_=dt*gains_*(state_-target_+state_offset_)+input_offset_;
+  commands_=-gains_*(state_-target_); //+input_offset_;
   
   //Updates joints
   setCommands();
@@ -157,7 +157,7 @@ void LQRController::setModel(ModelType *model)
   const int m=model_->inputs();
   target_=StateVector::Zero(n,1);
   gains_=GainsMatrix::Zero(m,n);
-  state_offset_=StateVector::Zero(n,1);
+//   state_offset_=StateVector::Zero(n,1);
   state_=StateVector::Zero(n,1);
   previous_state_=StateVector::Zero(n,1);
   input_offset_=InputVector::Zero(m,1);
@@ -216,8 +216,8 @@ LQRController::UpdateGainsJob::UpdateGainsJob(LQRController * c, const StateMatr
   ROS_DEBUG_STREAM("target is "<<target.transpose());
   const int n=weights.rows();
   const int m=input_weights.rows();
-//   const int m=input_weights.rows();
-  input_offset_.resize(n,1);
+  
+  input_offset_.resize(m,1);
   gains_.resize(n,n);
   
   //Computes a linearization around the target point
@@ -229,15 +229,18 @@ LQRController::UpdateGainsJob::UpdateGainsJob(LQRController * c, const StateMatr
     c_=NULL;
     return;
   }
-  ROS_DEBUG_STREAM("************ Obtained linearization **********\n"<<A<<std::endl<<std::endl<<B<<std::endl<<std::endl<<input_offset_<<"\n*************");
+  ROS_DEBUG_STREAM("************ Obtained linearization **********\n[A]\n"<<A<<std::endl<<"[B]"<<std::endl<<B<<std::endl<<"[input offset]"<<std::endl<<input_offset_<<"\n*************");
+  ROS_DEBUG("Sanity checks");
+  ROS_ASSERT(LQR::isCommandable(A,B));
   // Compute new gains matrix
   ROS_DEBUG("Computing LQR gains matrix. Hold on to your seatbelts...");
-  LQR::LQRDP<StateMatrix,InputMatrix,StateMatrix,InputMatrix>::runContinuous(A, B, weights, weights, input_weights, 0.1, 0.01, gains_);
-  ROS_DEBUG_STREAM("Done:\n***********\n"<<gains_<<"\n**********\n");
+  LQR::LQRDP<StateMatrix,InputMatrix,StateMatrix,InputMatrix>::runContinuous(A, B, weights, weights, input_weights, 0.01, 0.1, gains_);
+  ROS_DEBUG_STREAM("Done. Computed gains:\n***********\n"<<gains_<<"\n**********\n");
   // Check validity
-  typedef int OutputMatrix;
-  //FIXME: the test is not working for now
-//   bool test=LQR::isConverging(A,B,gains_);
+  ROS_DEBUG("Checking gains matrix...");
+  bool test=LQR::isConverging(A,B,gains_);
+  ROS_ASSERT(test);
+  ROS_DEBUG("Valid gains matrix");
 //   assert(test);
 }
 
@@ -385,21 +388,21 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
         state_cost_(i,j)=s_c.at(i*n+j);
   }
   
-  ROS_DEBUG("1bis");
+//   ROS_DEBUG("1bis");
   const std::vector<double> & i_c = req.input_cost;
   if((int)i_c.size()!=m && (int)i_c.size()!=m*m && i_c.size()!=0)
   {
     ROS_ERROR_STREAM("Bad length for state cost vector: # of states is "<<m<<", vector size is "<<i_c.size());
     return false;
   }
-  ROS_DEBUG("2");
+//   ROS_DEBUG("2");
   if((int)i_c.size() == m)
   {
     input_cost_.setZero();
     for(int i=0;i<m;i++)
       input_cost_(i,i)=i_c.at(i);
   }
-  ROS_DEBUG("3");
+//   ROS_DEBUG("3");
 
   if((int)i_c.size() == m*m)
   {
@@ -408,13 +411,13 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
         input_cost_(i,j)=i_c.at(i*m+j);
   }
   
-  ROS_DEBUG("4");
+//   ROS_DEBUG("4");
   if(!c_->toStateVector(req.target.names,req.target.positions,req.target.velocity,target_))
     return false;
-  ROS_DEBUG("5");
+//   ROS_DEBUG("5");
   
   c_->add(new LQRController::UpdateGainsJob(c_,state_cost_,input_cost_,target_));
-  ROS_DEBUG("6");
+//   ROS_DEBUG("6");
   
   return true;
 }

@@ -149,7 +149,7 @@ private:
   
   GainsMatrix gains_;   // The control matrix
   
-  StateVector state_offset_;
+//   StateVector state_offset_;
   InputVector input_offset_;
   
   StateVector target_; // Target state

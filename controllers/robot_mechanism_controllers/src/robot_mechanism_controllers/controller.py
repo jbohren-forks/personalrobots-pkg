@@ -52,6 +52,6 @@ class Controller:
         self._name = name
     print 'Creating controller %s' % self.topic_name
     
-  def __del__(self):
-    print 'Destroying controller %s...' % self._name
-    mechanism.kill_controller(self._name)
+#  def __del__(self):
+#    print 'Destroying controller %s...' % self._name
+#    mechanism.kill_controller(self._name)

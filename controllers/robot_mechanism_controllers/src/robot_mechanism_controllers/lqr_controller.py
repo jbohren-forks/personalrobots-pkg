@@ -19,10 +19,15 @@ class LQRProxy(Controller):
 
   def cmd(self, names, pos, vel, Q, R):
     acc=[]
+    effort=[]
     for i in pos:
       acc.append(0)
+      effort.append(0)
     print(acc)
-    zoo=SetLQRCommandRequest(SetJointCmdRequest(pos,vel,acc,names),Q,R)
+    zoo=SetLQRCommandRequest()
+    zoo.target=SetJointCmdRequest(effort,pos,vel,acc,names)
+    zoo.state_cost=Q
+    zoo.input_cost=R
     return self.cmd_(zoo)
 
   def target(self, name, pos, vel):
