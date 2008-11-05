@@ -3,5 +3,10 @@
   <author>Kurt Konolige, Jeremy Leibs</author>
   <license>BSD</license>
   <sysdepend os="ubuntu" package="libfltk-dev"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -ldcam"/>
+  </export>
+  <depend package="libdc1394v2"/>
+  <depend package="opencv_latest"/>
   <url></url>
 </package>
