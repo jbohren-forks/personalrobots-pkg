@@ -449,8 +449,8 @@ void
 WavefrontNode::laserReceived()
 {
   // Copy and push this scan into the list of buffered scans
-  std_msgs::LaserScan newscan(laserMsg);
-  this->buffered_laser_scans.push_back(newscan);
+  //std_msgs::LaserScan newscan(laserMsg);
+  this->buffered_laser_scans.push_back(laserMsg);
 
   // Iterate through the buffered scans, trying to interpolate each one
   for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
