@@ -21,7 +21,7 @@
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
     <param name="pf_max_samples" value="10000"/>
-    <param name="pf_odom_drift_xx" value="0.5"/>
+    <param name="pf_odom_drift_xx" value="0.2"/>
     <param name="pf_odom_drift_yy" value="0.2"/>
     <param name="pf_odom_drift_aa" value="0.2"/>
     <param name="pf_odom_drift_xa" value="0.2"/>
