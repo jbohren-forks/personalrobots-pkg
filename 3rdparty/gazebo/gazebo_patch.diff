@@ -194,6 +194,30 @@ Index: libgazebo/gazebo.h
    /// Pointer to the stereo data
    public: StereoCameraData *data;
  };
+Index: server/physics/MapGeom.cc
+===================================================================
+--- server/physics/MapGeom.cc	(revision 7049)
++++ server/physics/MapGeom.cc	(working copy)
+@@ -307,7 +307,9 @@
+ 
+   int diff = labs(freePixels - occPixels);
+ 
+-  if (diff > this->granularityP->GetValue())
++  //if (diff > this->granularityP->GetValue())
++  // use pixel size for granularity instead of occupancy
++  if (node->width*node->height > this->granularityP->GetValue())
+   {
+     float newX, newY;
+     float newW, newH;
+@@ -353,7 +355,7 @@
+         newY += ceil(newH);
+     }
+ 
+-    node->occupied = true;
++    node->occupied = false;
+     node->leaf = false;
+   }
+   else if (occPixels == 0)
 Index: server/physics/SphereGeom.cc
 ===================================================================
 --- server/physics/SphereGeom.cc	(revision 7049)
@@ -1122,7 +1146,7 @@ Index: server/Simulator.cc
        this->gui->Update();
 +#ifdef TIMING
 +    double tmpT3 = this->GetWallTime();
-+    std::cout << " GUI dt(" << tmpT3-tmpT2 << ")" << std::endl;
++    std::cout << " GUI TOTAL DT(" << tmpT3-tmpT2 << ")" << std::endl;
 +#endif
      }
  
