@@ -174,7 +174,9 @@ class AmclNode: public ros::node, public Driver
     int sx, sy;
     double resolution;
     // static laser transform (todo: make this cleaner)
-    double laser_x_offset;
+    //double laser_x_offset;
+    bool have_laser_pose;
+    double laser_x, laser_y, laser_yaw;
 
     ros::Duration cloud_pub_interval;
     ros::Time last_cloud_pub_time;
@@ -217,7 +219,8 @@ main(int argc, char** argv)
 
 AmclNode::AmclNode() :
         ros::node("amcl_player"), 
-        Driver(NULL,-1,false,PLAYER_QUEUE_LEN)
+        Driver(NULL,-1,false,PLAYER_QUEUE_LEN),
+        have_laser_pose(false)
         //tfClient(*this)
 {
   // libplayercore boiler plate
@@ -262,7 +265,7 @@ AmclNode::AmclNode() :
   /// way of retrieving such Txs;
   //
   // retrieve static laser transform, if it's available
-  param("laser_x_offset", laser_x_offset, 0.0);
+  //param("laser_x_offset", laser_x_offset, 0.0);
   
   //assert(read_map_from_image(&this->sx, &this->sy, &this->mapdata, fname, 0)
          //== 0);
@@ -421,13 +424,6 @@ AmclNode::AmclNode() :
   this->setPose(startX, startY, startTH);
 
   cloud_pub_interval.fromSec(1.0);
-
-  start();
-
-  // Give Player a chance to start up, under heavy load conditions.
-  // TODO: remove this.
-  //usleep(5000000);
-
   this->tf = new tf::TransformBroadcaster(*this);
   this->tfL = new tf::TransformListener(*this);
 
@@ -436,6 +432,8 @@ AmclNode::AmclNode() :
   //subscribe("odom", odomMsg, &AmclNode::odomReceived,2);
   subscribe("scan", laserMsg, &AmclNode::laserReceived,2);
   subscribe("initialpose", initialPoseMsg, &AmclNode::initialPoseReceived,2);
+
+  start();
 }
 
 AmclNode::~AmclNode()
@@ -602,11 +600,18 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                  PLAYER_LASER_REQ_GET_GEOM,
                                  this->laser_addr))
   {
+    while(!have_laser_pose)
+    {
+      ros::Duration d;
+      d.fromSec(0.5);
+      ROS_INFO("Waiting to receive base->base_laser transform...");
+      d.sleep();
+    }
     player_laser_geom_t geom;
     memset(&geom, 0, sizeof(geom));
-    geom.pose.px = laser_x_offset;
-    geom.pose.py = 0;
-    geom.pose.pyaw = 0;
+    geom.pose.px = laser_x;
+    geom.pose.py = laser_y;
+    geom.pose.pyaw = laser_yaw;
     geom.size.sl = 0.06;
     geom.size.sw = 0.06;
 
@@ -731,6 +736,29 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
 void
 AmclNode::laserReceived()
 {
+  // Do we have the base->base_laser Tx yet?
+  if(!have_laser_pose)
+  {
+    tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
+                                             btVector3(0,0,0)), 
+                                 0, laserMsg.header.frame_id);
+    tf::Stamped<btTransform> laser_pose;
+    try
+    {
+      this->tfL->transformPose("base", ident, laser_pose);
+    }
+    catch(tf::TransformException e)
+    {
+      return;
+    }
+
+    laser_x = laser_pose.getOrigin().x();
+    laser_y = laser_pose.getOrigin().y();
+    double p,r;
+    laser_pose.getBasis().getEulerZYX(laser_yaw,p,r);
+    have_laser_pose = true;
+  }
+
   // Put it on the queue
   std_msgs::LaserScan newscan(laserMsg);
   laser_scans.push_back(newscan);
@@ -742,7 +770,7 @@ AmclNode::laserReceived()
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp, scan.header.frame_id))
+    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base"))
       break;
 
     laser_scans.pop_front();
