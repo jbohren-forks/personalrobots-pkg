@@ -44,21 +44,56 @@ using Eigen::Dynamic;
 #include <control_toolbox/control_test.h>
 #include <control_toolbox/LQRDP.h>
 
+/**
+  * 2 types of tests are performed here:
+  * Given a system (A,B) and some cost matrices (Q,R), the gain matrix K is computed. 
+  * It is first checked that the matrix A+BK leads to a converging behaviour, and then 
+  * this is verified by a forward simulation from a random point during a fixed amount
+  * of time.
+  *
+  * In the case of a discrete system, it is checked that the complex module of the eigen
+  * values of A+BK is < 1 - epsilon
+  *
+  * In the case of a continuous system, it is checked that the real part of the eigen values
+  * of A+BK is < -epsilon
+  */
+
+//FIXME: test if the pair (A,Q) is controllable (one never knows...)
+//FIXME: we can factorize the code
+
+// Given a matrix A and a start point x0, returns true is the sequence x_i+1 = A x_i converges to 0 after a fixed number of iterations
 template<typename DerivedA, typename VectorX>
-bool test_convergence(const Eigen::MatrixBase<DerivedA> & A, VectorX x)
+bool test_convergenceDiscrete(const Eigen::MatrixBase<DerivedA> & A, VectorX x)
 {
+  const int iter_max=10000;
+  const double convergence_threshold=1e-2;
   double res=100;
-  for(int i=0;i<100;i++)
+  for(int i=0;i<iter_max&&res>convergence_threshold;i++)
+  {
+    res=(x).cwise().square().sum();
+    x=A*x;  
+  }
+  return res<convergence_threshold;
+}
+
+template<typename DerivedA, typename VectorX>
+bool test_convergence(const Eigen::MatrixBase<DerivedA> & A, VectorX x, double h)
+{
+  const int iter_max=10000;
+  const double convergence_threshold=1e-2;
+  double res=100;
+  for(int i=0;i<iter_max&&res>convergence_threshold;i++)
   {
     res=(x).cwise().square().sum();
 //     std::cout<<res<<std::endl;
-    x=A*x;  
+    x+=h*A*x;  
   }
-  return res<1e-5;
+  return res<convergence_threshold;
 }
 
+// Test discrete LQR solver with random matrices
 template<typename Scalar, int N, int M>
-void test_random(int n, int m, int repeats=1)
+void test_randomDiscrete(int n, int m, int repeats=1)
 {
   ASSERT_TRUE(N==n||N==Dynamic);
   ASSERT_TRUE(M==m||M==Dynamic);
@@ -78,20 +113,55 @@ void test_random(int n, int m, int repeats=1)
   
   for(int i=0;i<repeats;++i)
   {
+    const AMatrix & A = 3*AMatrix::Random(n,n);
+    const BMatrix & B = 3*BMatrix::Random(n,m);
+    
+    if(LQR::isCommandable(A,B))
+    {
+      LQR::LQRDP<AMatrix,BMatrix,AMatrix,BMatrix>::run(A,B,Q,Q,R,0.01,G);
+      const AVector & x0 = AVector::Random(n,1);
+      ASSERT_TRUE(test_convergenceDiscrete(A+B*G,x0));
+      ASSERT_TRUE(LQR::isConvergingDiscrete(A,B,G));
+    }   
+  }
+}
+
+// Test discrete LQR solver with the identity matrix as cost matrices
+template<typename Scalar, int N, int M>
+void test_identityDiscrete(int n, int m, int repeats=1)
+{
+  ASSERT_TRUE(N==n||N==Dynamic);
+  ASSERT_TRUE(M==m||M==Dynamic);
+  
+  typedef typename Eigen::Matrix<Scalar,N,N> AMatrix;
+  typedef typename Eigen::Matrix<Scalar,N,1> AVector;
+  typedef typename Eigen::Matrix<Scalar,N,M> BMatrix;
+  typedef typename Eigen::Matrix<Scalar,M,N> GMatrix;
+  typedef typename Eigen::Matrix<Scalar,M,M> WMatrix;
+  
+  AMatrix Q = AMatrix::Identity(n,n);
+  WMatrix R = WMatrix::Identity(m,m);
+  
+  GMatrix G(m,n);
+  
+  for(int i=0;i<repeats;++i)
+  {
     const AMatrix & A = AMatrix::Random(n,n);
     const BMatrix & B = BMatrix::Random(n,m);
     
     if(LQR::isCommandable(A,B))
     {
       LQR::LQRDP<AMatrix,BMatrix,AMatrix,BMatrix>::run(A,B,Q,Q,R,0.01,G);
+      
       const AVector & x0 = AVector::Random(n,1);
-      ASSERT_TRUE(test_convergence(A+B*G,x0));
+      ASSERT_TRUE(test_convergenceDiscrete(A+B*G,x0));
       // The Eigen solver seems to be buggy => to check
-//       ASSERT_TRUE(LQR::isConverging(A,B,G));
+      ASSERT_TRUE(LQR::isConvergingDiscrete(A,B,G));
     }   
   }
 }
 
+// Test continuous LQR solver with the identity matrix as cost matrices
 template<typename Scalar, int N, int M>
 void test_identity(int n, int m, int repeats=1)
 {
@@ -106,7 +176,8 @@ void test_identity(int n, int m, int repeats=1)
   
   AMatrix Q = AMatrix::Identity(n,n);
   WMatrix R = WMatrix::Identity(m,m);
-  R*=R.transpose();
+  
+  const double h=0.1;
   
   GMatrix G(m,n);
   
@@ -117,14 +188,74 @@ void test_identity(int n, int m, int repeats=1)
     
     if(LQR::isCommandable(A,B))
     {
-      LQR::LQRDP<AMatrix,BMatrix,AMatrix,BMatrix>::run(A,B,Q,Q,R,0.01,G);
+//       std::cout<<"********TEST*******\n";
+      LQR::LQRDP<AMatrix,BMatrix,AMatrix,BMatrix>::runContinuous(A,B,Q,Q,R,0.01,h,G);
       
-      const AVector & x0 = AVector::Random(n,1);
-      ASSERT_TRUE(test_convergence(A+B*G,x0));
-      // The Eigen solver seems to be buggy => to check
-//       ASSERT_TRUE(LQR::isConverging(A,B,G));
+      const AVector & x0 = 10*AVector::Random(n,1);
+      ASSERT_TRUE(LQR::isConverging(A,B,G));
+      ASSERT_TRUE(test_convergence(A+B*G,x0,0.01));
     }   
   }
+}
+
+// Test continuous LQR solver with the identity matrix as cost matrices
+template<typename Scalar, int N, int M>
+void test_random(int n, int m, int repeats=1)
+{
+  ASSERT_TRUE(N==n||N==Dynamic);
+  ASSERT_TRUE(M==m||M==Dynamic);
+  
+  typedef typename Eigen::Matrix<Scalar,N,N> AMatrix;
+  typedef typename Eigen::Matrix<Scalar,N,1> AVector;
+  typedef typename Eigen::Matrix<Scalar,N,M> BMatrix;
+  typedef typename Eigen::Matrix<Scalar,M,N> GMatrix;
+  typedef typename Eigen::Matrix<Scalar,M,M> WMatrix;
+  
+  
+  // A h-step of 0.1 provokes some failures (non-converging gains matrices)
+  const double h=1;
+  
+  GMatrix G(m,n);
+  
+  for(int i=0;i<repeats;++i)
+  {
+    AMatrix Q = AMatrix::Random(n,n);
+    Q*=Q.transpose();
+    WMatrix R = WMatrix::Random(m,m);
+    R*=R.transpose();
+    
+    const AMatrix & A = AMatrix::Random(n,n);
+    const BMatrix & B = BMatrix::Random(n,m);
+    
+    if(LQR::isCommandable(A,B))
+    {
+//       std::cout<<"********TEST*******\n";
+      LQR::LQRDP<AMatrix,BMatrix,AMatrix,BMatrix>::runContinuous(A,B,Q,Q,R,0.01,h,G);
+      
+      const AVector & x0 = 10*AVector::Random(n,1);
+      ASSERT_TRUE(LQR::isConverging(A,B,G));
+      ASSERT_TRUE(test_convergence(A+B*G,x0,0.01));
+    }   
+  }
+}
+
+
+TEST(LQR, IdentityDiscrete1)
+{
+  //Testing pathological cases
+//   test_random<double,3,3>(3,3,10);
+  test_identityDiscrete<double,3,3>(3,3,10);
+  // If it works with the answer to all questions in the universe, it short work, period :)
+  test_identityDiscrete<double,Dynamic,Dynamic>(42,10,10);
+}
+
+
+TEST(LQR, RandomDiscrete1)
+{
+  //Testing pathological cases
+  test_randomDiscrete<double,3,3>(3,3,10);
+  // If it works with the answer to all questions in the universe, it short work, period :)
+  test_randomDiscrete<double,Dynamic,Dynamic>(42,10,10);
 }
 
 
@@ -137,15 +268,14 @@ TEST(LQR, Identity1)
   test_identity<double,Dynamic,Dynamic>(42,10,10);
 }
 
-
 TEST(LQR, Random1)
 {
   //Testing pathological cases
+//   test_random<double,3,3>(3,3,10);
   test_random<double,3,3>(3,3,10);
   // If it works with the answer to all questions in the universe, it short work, period :)
   test_random<double,Dynamic,Dynamic>(42,10,10);
 }
-
 int main(int argc, char **argv)
 {
   testing::InitGoogleTest(&argc, argv);

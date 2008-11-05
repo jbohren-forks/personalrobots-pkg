@@ -85,7 +85,7 @@ void test_convergence1(int n, int repeats=1)
   ASSERT_TRUE(N==n||N==Dynamic);
   
   typedef typename Eigen::Matrix<Scalar,N,N> AMatrix;
-  AMatrix A1;
+  AMatrix A1(n,n);
   
   //This fails
   //fixme: SEND  BUG REPORT TO eigen-devel
