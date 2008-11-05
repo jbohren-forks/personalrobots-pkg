@@ -43,14 +43,15 @@ using namespace robot_kinematics;
 using namespace KDL;
 using namespace std;
 
-RobotKinematics::RobotKinematics():num_chains_(0)
+RobotKinematics::RobotKinematics():num_chains_(0), chains_(NULL)
 {
 }
 
 RobotKinematics::~RobotKinematics()
 {
   this->serial_chain_map_.clear();
-  delete[] this->chains_;
+  if (chains_)
+    delete[] this->chains_;
 }
 
 inline double getMagnitude(double xl[], int num)
