@@ -14,4 +14,4 @@ include_directories(${PYTHON_INCLUDE_PATH})
 rospack_add_library(pyvidere_face_detection src/py.cpp src/videre_face_detection.cpp src/people.cpp)
 set_target_properties(pyvidere_face_detection PROPERTIES OUTPUT_NAME videre_face_detection PREFIX "")
 
-rospack_add_pyunit(test/directed.py)
+#rospack_add_pyunit(test/directed.py)
