@@ -55,7 +55,6 @@ PathRecon::PathRecon(const CvSize& imageSize):
 	mTransform(cvMat(4, 4, CV_64FC1, _transform)),
 	mPathLength(0.),
 	mVisualizer(NULL),
-  mOutputDir(string("Output/indoor1/")),
   mRT(cvMat(4,4, CV_64FC1, _rt)),
   _mTempMat(cvMat(4,4,CV_64FC1, _tempMat))
 {
@@ -262,7 +261,8 @@ void PathRecon::updateTrajectory() {
 #if 0
     // save the inliers into a file
     char inliersFilename[256];
-    sprintf(inliersFilename, "%s/inliers1_%04d.xml", mOutputDir.c_str(), mFrameSeq.mCurrentFrame->mFrameIndex);
+    char outputDir = "test/Output/indoor1";
+    sprintf(inliersFilename, "%s/inliers1_%04d.xml", outputDir, mFrameSeq.mCurrentFrame->mFrameIndex);
     saveKeyPoints(*mFrameSeq.mCurrentFrame->mInliers1, string(inliersFilename));
 #endif
 

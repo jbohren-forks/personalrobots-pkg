@@ -146,9 +146,6 @@ public:
 
   virtual vector<FramePose>* getFramePoses();
 
-  // Output directory name
-  string mOutputDir;
-
   /// A routine to visualize the keypoints, tracks, disparity images
   /// etc. By default, it shows on the screen and save to disk.
   virtual void visualize();

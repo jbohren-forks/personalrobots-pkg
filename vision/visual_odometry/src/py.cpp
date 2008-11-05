@@ -232,7 +232,7 @@ PyObject *mkPathRecon(PyObject *self, PyObject *args)
 
   // mFx, mFy, mTx, mClx, mCrx, mCy);
   object->pr->mPoseEstimator.setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  object->pr->mOutputDir = string("test/Output/indoor1");
+  //object->pr->mOutputDir = string("test/Output/indoor1");
 
   return (PyObject*)object;
 }
@@ -258,7 +258,7 @@ PyObject *visual_odometry(PyObject *self, PyObject *args)
 
   // mFx, mFy, mTx, mClx, mCrx, mCy);
   pathRecon.mPoseEstimator.setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
-  pathRecon.mOutputDir = string("test/Output/indoor1");
+//  pathRecon.mOutputDir = string("test/Output/indoor1");
 
   while (!input.empty()) {
 
@@ -434,7 +434,7 @@ PyObject *grab_16x16(PyObject *self, PyObject *args)
 
   char sub[256];
   if (1) {
-    for (size_t i = 0; i < 16; i++) 
+    for (size_t i = 0; i < 16; i++)
       memcpy(sub + 16 * i, im + x + (y + i) * xim, 16);
   } else {
 #define COPY16(N) \
@@ -523,7 +523,7 @@ PyObject *sad_search(PyObject *self, PyObject *args)
 
         sad = sums[0] + sums[2];
       }
-      
+
       if (sad < best_sad) {
         best_sad = sad;
         best_ci = ci;
