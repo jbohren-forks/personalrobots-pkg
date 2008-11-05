@@ -40,6 +40,7 @@
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
+#include <deque>
 #include <set>
 
 namespace ros {
@@ -47,7 +48,7 @@ namespace ros {
 
     MoveBase::MoveBase()
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
-	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
+	tf_(*this, true, 10000000000ULL, 0ULL), // cache for 10 sec, no extrapolation
 	controller_(NULL),
 	costMap_(NULL),
 	ma_(NULL),
@@ -309,35 +310,47 @@ namespace ros {
 	*/
       }
 
-      // Assemble a point cloud, in the laser's frame
-      std_msgs::PointCloud local_cloud;
-      projector_.projectLaser(laserScanMsg_, local_cloud, laserMaxRange_);
-    
-      // Convert to a point cloud in the map frame
-      std_msgs::PointCloud global_cloud;
+      // Push the new scan on the queue
+      laser_scans_.push_back(laserScanMsg_);
 
-      try
-	{
-	  global_cloud = this->tf_.transformPointCloud("map", local_cloud);
-	}
-      catch(libTF::TransformReference::LookupException& ex)
-	{
-	  puts("no global->local Tx yet");
-	  ROS_DEBUG("%s\n", ex.what());
-	  return;
-	}
-      catch(libTF::TransformReference::ConnectivityException& ex)
-	{
-	  puts("no global->local Tx yet");
-	  ROS_DEBUG("%s\n", ex.what());
-	  return;
-	}
-      catch(libTF::TransformReference::ExtrapolateException& ex)
-	{
-	  puts("Extrapolation exception");
-	}
+      // Run through the queue and transform what we can
+      while(!laser_scans_.empty())
+      {
+        std_msgs::LaserScan scan = laser_scans_.front();
 
-      updateDynamicObstacles(laserScanMsg_.header.stamp.to_double(), global_cloud);
+        // Assemble a point cloud, in the laser's frame
+        std_msgs::PointCloud local_cloud;
+        projector_.projectLaser(scan, local_cloud, laserMaxRange_);
+
+        // Convert to a point cloud in the map frame
+        std_msgs::PointCloud global_cloud;
+
+        try
+        {
+          global_cloud = this->tf_.transformPointCloud("map", local_cloud);
+        }
+        catch(libTF::TransformReference::LookupException& ex)
+        {
+          puts("no global->local Tx yet");
+          ROS_DEBUG("%s\n", ex.what());
+          break;
+        }
+        catch(libTF::TransformReference::ConnectivityException& ex)
+        {
+          puts("no global->local Tx yet");
+          ROS_DEBUG("%s\n", ex.what());
+          break;
+        }
+        catch(libTF::TransformReference::ExtrapolateException& ex)
+        {
+          // We expect ExtrapolateExceptions
+          //puts("Extrapolation exception");
+          break;
+        }
+
+        laser_scans_.pop_front();
+        updateDynamicObstacles(scan.header.stamp.to_double(), global_cloud);
+      }
     }
 
     /**

@@ -210,6 +210,8 @@ namespace ros {
       double laserMaxRange_; /**< Used in laser scan projection */
 
       std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
+
+      std::deque<std_msgs::LaserScan> laser_scans_;
     };
   }
 }
