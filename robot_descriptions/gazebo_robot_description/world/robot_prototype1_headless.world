@@ -24,7 +24,7 @@
 <!-- erp is typically .1-.8 -->
 <!-- here's the global contact cfm/erp -->
   <physics:ode>
-    <stepTime>0.001</stepTime>
+    <stepTime>0.004</stepTime>
     <gravity>0 0 -9.8</gravity>
     <cfm>0.0000000001</cfm>
     <erp>0.2</erp>
@@ -83,7 +83,7 @@
      <geom:map name="willow_map_geom">
        <image>willowMap.png</image>
        <threshold>200</threshold>
-       <granularity>2</granularity>
+       <granularity>1</granularity>
        <negative>false</negative>
        <scale>0.1</scale>
        <offset>0 0 0</offset>

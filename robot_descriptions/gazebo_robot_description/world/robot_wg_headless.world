@@ -83,7 +83,7 @@
      <geom:map name="willow_map_geom">
        <image>willowMap.png</image>
        <threshold>200</threshold>
-       <granularity>2</granularity>
+       <granularity>1</granularity>
        <negative>false</negative>
        <scale>0.1</scale>
        <offset>0 0 0</offset>
