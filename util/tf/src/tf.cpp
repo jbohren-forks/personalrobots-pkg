@@ -30,7 +30,6 @@
 /** \author Tully Foote */
 
 #include "tf/tf.h"
-#include <cassert>
 #include <sys/time.h>
 using namespace tf;
 
@@ -158,8 +157,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
       //      printf("getting data from %d:%s \n", frame, lookupFrameString(frame).c_str());
 
       TimeCache* pointer = getFrame(frame);
-      ROS_ASSERT(pointer);
-      //      if (pointer == NULL) break;
+      if (pointer == NULL) break;
 
       try{
         pointer->getData(time, temp);
@@ -196,8 +194,7 @@ TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time tim
     {
 
       TimeCache* pointer = getFrame(frame);
-      ROS_ASSERT(pointer);
-      //      if (pointer == NULL) break;
+      if (pointer == NULL) break;
 
 
       try{
