@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <sys/time.h>
 #include "stereolrfgui.h"
+#include <opencv/cvwimage.h>
 #include <opencv/cv.h>
 #include <opencv/cxmisc.h>
 #include <opencv/cvaux.h>
@@ -54,6 +55,8 @@ using namespace std;
 stereolrfgui *stg;			// GUI object
 
 #define MAXIMAGES 20
+
+#define USE_OLD 0
 
 // image storage, need it for undistortions
 IplImage *imgs_left[MAXIMAGES];
@@ -502,7 +505,7 @@ load_right(char *fname)
 
       // find corners
       if (rightcorners[ind])
-	delete [] rightcorners[ind];
+        delete [] rightcorners[ind];
       rightcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
       rectrightcorners[ind] = new CvPoint2D32f[num_x_ints*num_y_ints];
       int numc = 0;
@@ -562,6 +565,35 @@ CvPoint3D32f getClosest3DPoint(std::vector<mapped_points>& points, CvPoint2D32f 
 	return best3DPoint;
 }
 
+CvPoint3D32f getClosest3DPoint(const cv::WImage3_f* xyz_map,  CvPoint2D32f uv){
+  float dist = FLT_MAX; // large enough initial dist;
+  CvPoint3D32f best3DPoint;
+  int w = xyz_map->Width();
+  int h = xyz_map->Height();
+
+  // TODO: improve on this
+  // implement a stupid loop first
+  for (int j=0; j < h; j++) {
+    for (int i = 0; i < w; i++ ) {
+      const float * point3d = (*xyz_map)(i, j);
+      if (point3d[2]>0) {
+        // a valid point
+        float dx = uv.x - i;
+        float dy = uv.y - j;
+        float d = dx*dx + dy*dy;
+        if (d < dist) {
+          // keep this point
+          best3DPoint.x = point3d[0];
+          best3DPoint.y = point3d[1];
+          best3DPoint.z = point3d[2];
+          dist = d;
+        }
+      }
+    }
+  }
+  return best3DPoint;
+}
+
 void get3DPointsOnBoard(CvPoint2D32f *corners, int numCorners, vector<mapped_points>& points,
 		vector<CvPoint3D32f>& ptsOnBoard){
 	// points 0, num_x_ints-1, (num_y_ints-1)*num_x_ints, and num_x_ints*num_y_ints-1 are the 4 corners
@@ -592,6 +624,32 @@ void get3DPointsOnBoard(CvPoint2D32f *corners, int numCorners, vector<mapped_poi
 	return;
 }
 
+void get3DPointsOnBoard(CvPoint2D32f *corners, int numCorners, cv::WImage3_f* xyz_map,
+    vector<CvPoint3D32f>& ptsOnBoard){
+  // points 0, num_x_ints-1, (num_y_ints-1)*num_x_ints, and num_x_ints*num_y_ints-1 are the 4 corners
+  // for now, get the larger of the u of the two left corners, smaller of the u of the two right corners
+  // the lower of the two upper corners, and the higher of the two lower corners,
+  float u_left, u_right, v_upper, v_lower;
+  u_left = (corners[0].x>corners[(num_y_ints-1)*num_x_ints].x) ? corners[0].x :
+    corners[(num_y_ints-1)*num_x_ints].x;
+  u_right = (corners[num_x_ints-1].x < corners[num_x_ints*num_y_ints-1].x)?
+      corners[num_x_ints-1].x : corners[num_x_ints*num_y_ints-1].x;
+
+  v_upper = (corners[0].y > corners[num_x_ints-1].y) ?
+      corners[0].y : corners[num_x_ints-1].y;
+  v_lower = (corners[(num_y_ints-1)*num_x_ints].y < corners[num_x_ints*num_y_ints-1].y)?
+      corners[(num_y_ints-1)*num_x_ints].y : corners[num_x_ints*num_y_ints-1].y;
+
+  for (int v=v_upper; v<=v_lower; v++) {
+    for (int u=u_left; u<=u_right; u++) {
+      const float *point = (*xyz_map)(u, v);
+      CvPoint3D32f p = cvPoint3D32f(point[0], point[1], point[2]);
+      ptsOnBoard.push_back(p);
+    }
+  }
+  return;
+}
+
 int
 load_lrf(char *fname)
 {
@@ -604,11 +662,8 @@ load_lrf(char *fname)
   // paste over the right suffix
   // load the xml file of 3d points
   strcpy(&xmlfilename[offset],"xml");
+#if USE_OLD
   laser_scan ls = read_lrf_xml_file(xmlfilename);
-
-  // load the dat file for now
-//  strcpy(&xmlfilename[offset],"dat");
-//  laser_scan ls = read_lrf_dat_file(xmlfilename);
 
   synthetic_image si;
 
@@ -620,6 +675,43 @@ load_lrf(char *fname)
 	  si.image = NULL;
   }
 
+#else
+  CvMat* XYZIs = (CvMat*) cvLoad(xmlfilename);
+  if (XYZIs == NULL) {
+    std::cout << "cannot load "<< xmlfilename <<std::endl;
+    return -1;
+  }
+  // convert the 3d points from lrf frame to camera frame
+  // TODO: this extra transformation shall be folded into others for speed
+  // efficiency.
+  CvMat XYZs;
+  cvGetCols(XYZIs, &XYZs, 0, 3);
+  double frame_cvt_data [] = {
+       0., 1.,0.,
+      -1., 0.,0.,
+       0., 0.,1.
+  };
+  float XYZ_data[XYZIs->rows*3];
+  CvMat frame_cvt = cvMat(3, 3, CV_64FC1, frame_cvt_data);
+  printf("0x%x, 0x%x\n", CV_MAT_TYPE(XYZs.type), CV_MAT_TYPE(frame_cvt.type));
+  cvGEMM(&XYZs, &frame_cvt, 1.0, NULL, 0.0, &XYZs, 0);
+
+  // projection the 3d points
+  int image_width  = 320;
+  int image_height = 240;
+  double Tx = 10; // arbitrary
+  double focal_length_x = image_width;
+  double focal_length_y = image_width;
+  CvStereoCamModel cm(focal_length_x, focal_length_y, Tx, image_width/2.,
+      image_width/2., image_height/2., 1.);
+
+  cv::WImageBuffer3_f xyz_map(image_width, image_height);
+  cv::WImageBuffer1_b intensity_map(image_width, image_height);
+
+
+  cm.point3dToImage(XYZIs, &intensity_map, &xyz_map, NULL);
+
+#endif
   IplImage *dbg_corners = 0;
 
   // get window tab
@@ -632,7 +724,11 @@ load_lrf(char *fname)
 //  im = cvLoadImage(fname);	// load image, could be color
 
   if (im == NULL) {
+#if USE_OLD
 	  im = si.image;
+#else
+	  im = intensity_map.Ipl();
+#endif
 	  if (im == NULL) {
 		  im = cvLoadImage(fname);
 		  if (im == NULL) {
@@ -678,7 +774,11 @@ load_lrf(char *fname)
 		  for (int ci=0; ci < numc; ci++) {
 			  CvPoint2D32f uv = lrfcorners[ind][ci];
 
+#if USE_OLD
 			  CvPoint3D32f xyz = getClosest3DPoint(si.points, uv);
+#else
+			  CvPoint3D32f xyz = getClosest3DPoint(&xyz_map, uv);
+#endif
 			  lrf3dcorners[ind][ci].x = xyz.x;
 			  lrf3dcorners[ind][ci].y = xyz.y;
 			  lrf3dcorners[ind][ci].z = xyz.z;
@@ -691,7 +791,11 @@ load_lrf(char *fname)
 		  // get all the 3d points that we know for sure are on the checkerboard
 		  //
 		  vector<CvPoint3D32f> ptsOnBoard;
+#if USE_OLD
 		  get3DPointsOnBoard(lrfcorners[ind], numc, si.points, ptsOnBoard);
+#else
+		  get3DPointsOnBoard(lrfcorners[ind], numc, &xyz_map, ptsOnBoard);
+#endif
 		  cout << "Found "<<ptsOnBoard.size() << " 3d points on board"<<endl;
 		  CvPoint3D32f _ptsOnBoard[ptsOnBoard.size()];
 		  vector<CvPoint3D32f>::const_iterator iter;
@@ -709,14 +813,14 @@ load_lrf(char *fname)
 		  strcpy(&pointsOnBoardFilename[offset-1+4],".xml");
 
 		  cvSave(pointsOnBoardFilename, &pointsOnBoard);
-
-
 	  }
 
 	  // set good/bad image
 	  goodlrf[ind] = ret;
 
+#if USE_OLD
 	  cvReleaseImage(&im);
+#endif
 	  return ind;
   }
   return -1;
@@ -1928,4 +2032,6 @@ laser_scan read_lrf_xml_file(const char *filename)
     ret.intensity = intensities;
     return ret;
 }
+
+
 
