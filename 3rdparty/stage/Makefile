@@ -2,7 +2,7 @@ all: build
 
 SVN_DIR = stage-svn
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/stage/branches/stage-ros
-SVN_REVISION = -r 7124
+SVN_REVISION = -r 7126
 include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP stage
