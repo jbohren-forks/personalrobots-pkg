@@ -6,4 +6,7 @@
   <depend package="rospy" />
   <depend package="rosthread" />
   <depend package="robot_msgs" />
+  <!--<depend package="boost" />-->
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread1.34.1"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-thread-dev"/>
 </package>

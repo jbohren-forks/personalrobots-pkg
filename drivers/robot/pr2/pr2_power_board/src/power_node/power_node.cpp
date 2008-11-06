@@ -39,6 +39,7 @@
 #include <signal.h>
 #include <vector>
 #include <iostream>
+#include <boost/thread/thread.hpp>
 
 // Internet/Socket stuff
 #include <sys/types.h>
@@ -50,119 +51,15 @@
 #include <sys/ioctl.h>
 
 #include "power_comm.h"
-
-#include "ros/node.h"
-#include "pr2_power_board/PowerBoardCommand.h"
-#include "rosthread/mutex.h"
-
+#include "power_node.h"
 #include "robot_msgs/DiagnosticMessage.h"
-
-struct Interface {
-  struct ifreq interface;
-  int recv_sock;
-  int send_sock;
-  Interface(const char* ifname);
-  ~Interface(void) {Close();}
-  void Close(void);
-  int Init(void);
-  void AddToReadSet(fd_set &set, int &max_sock) const;
-  bool IsReadSet(fd_set set) const;
-};
-
-
-struct Device {
-  PowerMessage *pmsg;  //last power message recived from device
-  Interface *iface;   //interface last message was recieved on;
-  Device(PowerMessage *_pmsg, Interface *_iface) :
-    pmsg(_pmsg),
-    iface(_iface) {}
-  ~Device(void) {
-    if (pmsg!=NULL) delete pmsg;
-    pmsg = NULL;
-  }	
-  void Print(unsigned);
-};
 
 
 // Keep a pointer to the last message recieved for
 // Each board.
 static std::vector<Device*> Devices;
 static std::vector<Interface*> Interfaces;
-//static const char *interface = NULL;
-int quit = 0;
-
-
-// CloseAll
-void CloseAllInterfaces(void) {
-  for (unsigned i=0; i<Interfaces.size(); ++i){
-    if (Interfaces[i] != NULL) {
-      delete Interfaces[i];
-    }
-  }
-}
-void CloseAllDevices(void) {
-  for (unsigned i=0; i<Devices.size(); ++i){
-    if (Devices[i] != NULL) {
-      delete Devices[i];
-    }
-  }
-}
-
-
-// Build list of interfaces
-int CreateAllInterfaces(void) {
-  struct ifreq req;
-
-  //
-  int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-  if (sock == -1) {
-    perror("Couldn't create socket for ioctl requests");		
-    return -1;
-  }
-	
-  // Go though interfaces 0-10 and get interface names for them
-  for (int ifindex=0; ifindex<10; ++ifindex) {
-    memset(&req, 0, sizeof(req));
-    req.ifr_ifindex = ifindex;
-    if (ioctl(sock,SIOCGIFNAME,&req)) {
-      if (errno != ENODEV) {
-        fprintf(stderr,"Could not get name of interface at index %d : %s (%d)\n",
-                req.ifr_ifindex, strerror(errno), errno);
-      }
-      continue;
-    }
-    if ((strncmp("lo", req.ifr_name, sizeof(req.ifr_name)) == 0) || 
-        (strncmp("vmnet", req.ifr_name, 5) == 0))
-    {
-      printf("Ignoring interface %*s\n",sizeof(req.ifr_name), req.ifr_name);
-      continue;
-    } else {
-      printf("Found interface    %*s\n",sizeof(req.ifr_name), req.ifr_name);
-      Interface *newInterface = new Interface(req.ifr_name);
-      assert(newInterface != NULL);
-      if (newInterface == NULL) {
-        close(sock);
-        return -1;				
-      }
-      if (newInterface->Init()) {
-        printf("Error initializing interface %*s\n", sizeof(req.ifr_name), req.ifr_name);
-        delete newInterface;
-        newInterface = NULL;
-        continue;
-      } else {
-        // Interface is good add it to interface list
-        Interfaces.push_back(newInterface);
-
-      }
-    }
-  }
-
-  printf("Found %d usable interfaces\n\n", Interfaces.size());	
-
-	
-  return 0;
-}
-
+static PowerBoard *myBoard;
 
 Interface::Interface(const char* ifname) :
   recv_sock(-1),
@@ -277,9 +174,8 @@ bool Interface::IsReadSet(fd_set set) const {
   return FD_ISSET(recv_sock,&set);	
 }
 
-
-
-int send_command(const char* input) {	
+int PowerBoard::send_command(const char* input) 
+{	
   int selected_device=-1;
   int circuit_breaker=-1;
   char command[8+1];
@@ -302,7 +198,6 @@ int send_command(const char* input) {
   Device* device = Devices[selected_device];
   assert(device != NULL);
   assert(device->iface != NULL);
-  assert(device->pmsg != NULL);
 
 	
   if ((circuit_breaker < 0) || (circuit_breaker >= 3)) {
@@ -341,7 +236,7 @@ int send_command(const char* input) {
   CommandMessage cmdmsg;
   memset(&cmdmsg, 0, sizeof(cmdmsg));
   cmdmsg.header.message_revision = CURRENT_MESSAGE_REVISION;
-  cmdmsg.header.serial_num = device->pmsg->header.serial_num;
+  cmdmsg.header.serial_num = device->pmsg.header.serial_num;
   //cmdmsg.header.serial_num = 0x12345678;
   strncpy(cmdmsg.header.text, "power command message", sizeof(cmdmsg.header.text));
   cmdmsg.command.CB0_command = NONE;
@@ -379,33 +274,7 @@ int send_command(const char* input) {
 }
 
 
-void Device::Print(unsigned index) {
-  assert(this != NULL);
-  assert(pmsg != NULL);
-  printf("[%u] %u : %.*s\n", index,
-         pmsg->header.serial_num,
-         sizeof(pmsg->header.text),
-         pmsg->header.text);	
-}
-
-int list_devices(void)
-{	
-  if (Devices.size() == 0) {
-    printf("No devices detected\n");
-    return 0;
-  }
-
-  printf("Devices:\n");
-  for (unsigned i = 0; i<Devices.size(); ++i) {
-    assert(Devices[i] != NULL);
-    Devices[i]->Print(i);
-  }
-	
-  return 0;
-}
-
-
-const char* cb_state_to_str(char state)
+const char* PowerBoard::cb_state_to_str(char state)
 {
   //enum CB_State { STATE_NOPOWER, STATE_STANDBY, STATE_PUMPING, STATE_ON, STATE_DISABLED };
   switch(state) {
@@ -423,7 +292,7 @@ const char* cb_state_to_str(char state)
   return "???";			
 }
 
-const char* master_state_to_str(char state)
+const char* PowerBoard::master_state_to_str(char state)
 {
   //enum CB_State { STATE_NOPOWER, STATE_STANDBY, STATE_PUMPING, STATE_ON, STATE_DISABLED };
   switch(state) {
@@ -439,108 +308,47 @@ const char* master_state_to_str(char state)
   return "???";			
 }
 
-int print_status(void)
-{
-  if (Devices.size() == 0) {
-    printf("No devices detected\n");
-    return 0;
-  }
-	
-  for (unsigned i = 0; i<Devices.size(); ++i) {
-    Device *device = Devices[i];
-    PowerMessage *pmsg = device->pmsg;		
-		
-    StatusStruct *status = &Devices[i]->pmsg->status;
-		
-    printf("\nDevice %u\n", i);
-    printf(" Serial       = %u\n", pmsg->header.serial_num);
-
-    printf(" Current      = %f\n", status->input_current);
-
-    printf(" Voltages:\n");
-    printf("  Input       = %f\n", status->input_voltage);
-    printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
-    printf("  DCDC 19     = %f\n", status->DCDC_12V_out_voltage);
-    printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
-    printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
-    printf("  CB1 (R-arm) = %f\n", status->CB1_voltage);
-    printf("  CB2 (L-arm) = %f\n", status->CB2_voltage);
-
-    printf(" Board Temp   = %f\n", status->ambient_temp);
-    printf(" Fan Speeds:\n");
-    printf("  Fan 0       = %u\n", status->fan0_speed);
-    printf("  Fan 1       = %u\n", status->fan1_speed);
-    printf("  Fan 2       = %u\n", status->fan2_speed);
-    printf("  Fan 3       = %u\n", status->fan3_speed);
-
-    printf(" State:\n");		
-    printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
-    printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
-    printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
-    printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
-		
-    printf(" Status:\n");		
-    printf("  CB0 (Base)  = %s\n", (status->CB0_status) ? "On" : "Off");
-    printf("  CB1 (R-arm) = %s\n", (status->CB1_status) ? "On" : "Off");
-    printf("  CB2 (L-arm) = %s\n", (status->CB2_status) ? "On" : "Off");
-    printf("  estop_button= %x\n", (status->estop_button_status));
-    printf("  estop_status= %x\n", (status->estop_status));
-
-    printf(" Revisions:\n");
-    printf("         PCA = %c\n", status->pca_rev);
-    printf("         PCB = %c\n", status->pcb_rev);
-    printf("       Major = %c\n", status->major_rev);
-    printf("       Minor = %c\n", status->minor_rev);
-		
-  }
-	
-  return 0;
-}
 
 // Determine if a record of the device already exists...
 // If it does use newest message a fill in pointer to old one .
 // If it does not.. use 
-int process_message(PowerMessage* &msg, Interface *recvInterface)
+int PowerBoard::process_message(PowerMessage &msg, Interface *recvInterface)
 {
   assert (recvInterface != NULL);
 
-  if (msg->header.message_revision != CURRENT_MESSAGE_REVISION) {
-    fprintf(stderr, "Got message with incorrect message revision %u\n", msg->header.message_revision);
+  if (msg.header.message_revision != CURRENT_MESSAGE_REVISION) {
+    fprintf(stderr, "Got message with incorrect message revision %u\n", msg.header.message_revision);
     return -1;
   }
 	
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->pmsg->header.serial_num == msg->header.serial_num) {
-      PowerMessage *old = Devices[i]->pmsg;
-      Devices[i]->pmsg = msg; 
-      msg = old; // recylce old power message
+    if (Devices[i]->pmsg.header.serial_num == msg.header.serial_num) {
+      library_lock_.lock();
+      memcpy(&(Devices[i]->pmsg), &msg, sizeof(msg)); 
+      library_lock_.unlock();
       return 0;
     }
   }
 
   // Add new device to list
-  Device *newDevice = new Device(msg, recvInterface);
+  Device *newDevice = new Device(recvInterface);
   Devices.push_back(newDevice);
-  msg = NULL; // Make sure calling function can use power message
-  // any more
+  memcpy(&(newDevice->pmsg), &msg, sizeof(msg)); 
   return 0;
 }
 
 // collect status packets for 0.5 seconds.  Keep the last packet sent
 // from each seperate power device.
-int collect_messages(void) {
-  PowerMessage *tmp_msg(NULL);
+int PowerBoard::collect_messages() 
+{
+  PowerMessage tmp_msg;
 
-  timeval timeout;
-  timeout.tv_sec = 0; 
-  timeout.tv_usec = 1000*100; //Collect packets for 1/10th of a second
-
+  timeval timeout;  //timeout once a second to check if we should die or not.
+  timeout.tv_sec = 1; 
+  timeout.tv_usec = 0;
 	
   while (1) {
-    if (tmp_msg == NULL)
-      tmp_msg = new PowerMessage;
-    assert(tmp_msg);
 		
     // Wait for packets to arrive on socket. 
     fd_set read_set;
@@ -558,7 +366,6 @@ int collect_messages(void) {
       return -1;
     }
     else if (result == 0) {
-      // timeout
       return 0;
     }
     else if (result >= 1) {
@@ -571,12 +378,12 @@ int collect_messages(void) {
         }
       }
 			
-      int len = recv(recvInterface->recv_sock, tmp_msg, sizeof(*tmp_msg), 0);
+      int len = recv(recvInterface->recv_sock, &tmp_msg, sizeof(tmp_msg), 0);
       if (len == -1) {
         perror("Error recieving on socket");
         return -1;
       }
-      else if (len != sizeof(*tmp_msg)) {
+      else if (len != sizeof(tmp_msg)) {
         fprintf(stderr, "recieved message of incorrect size %d\n", len);
       }
       else {
@@ -591,86 +398,52 @@ int collect_messages(void) {
     }
   }
 
-  if (tmp_msg)
-    delete tmp_msg;
-
   return 0;
 }
 
-
-// List devices and prompt use to select one
-int select_device(const char *command)
+PowerBoard::PowerBoard(): ros::node ("pr2_power_board")
 {
-	
-  return 0;
+  advertise_service("power_board_control", &PowerBoard::commandCallback);
+  advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
-
-
-void print_menu(void) {
-  printf(
-         "l - list devices\n"
-         "s - print status of devices\n"
-         "c - send command to selected device\n"
-         "    Must provide three arguments - device#, CB#, and command\n"		
-         "    1st : Device Num : must be integer from 0 to #devices-1\n"
-         "        Use (l)ist, to print list of detected devices\n"
-         "    2nd : Circuit Breaker Num : must be integer 0-2\n"
-         "        (0=Base, 1=RightArm, 2=LeftArm)\n"
-         "    3rd : Command to secnd :\n"
-         "        (start, stop, reset, disable, none)\n"
-         "q - quit\n\n"
-         );
-}
-
-
-void catch_signal(int sig)
-{
-  if (!quit) {
-    quit = 1;
-  } else {		
-    fprintf(stderr, "signal caught twice - quiting\n");
-    CloseAllInterfaces();
-    exit(1);
-  }
-}
-
-
-class PowerBoard : public ros::node
-{
-public:
-  PowerBoard(): ros::node ("pr2_power_board")
-  {
-    advertise_service("power_board_control", &PowerBoard::commandCallback);
-    advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
-  };
   
-  bool commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
-                       pr2_power_board::PowerBoardCommand::response &res_)
-  {
-    std::stringstream ss;
-    ss << " 0 " << req_.breaker_number<<" " << req_.command;
-    library_lock_.lock();
-    res_.retval = send_command(ss.str().c_str());
-    library_lock_.unlock();
-    return true;
-  }
+bool PowerBoard::commandCallback(pr2_power_board::PowerBoardCommand::request &req_,
+                     pr2_power_board::PowerBoardCommand::response &res_)
+{
+  std::stringstream ss;
+  ss << " 0 " << req_.breaker_number<<" " << req_.command;
+  //library_lock_.lock();
+  res_.retval = send_command(ss.str().c_str());
+  //library_lock_.unlock();
+  return true;
+}
 
-  void collectMessages()
+void PowerBoard::collectMessages()
+{
+  while(ok())
   {
-    library_lock_.lock();
+    //library_lock_.lock();
     collect_messages();
-    library_lock_.unlock();
+    //library_lock_.unlock();
+    printf("*");
+    fflush(stdout);
   }
+}
   
-  void sendDiagnostic()
+void PowerBoard::sendDiagnostic()
+{
+  
+  while(ok())
   {
-    
+    sleep(1);
+    printf("-");
+    fflush(stdout);
     library_lock_.lock();
     robot_msgs::DiagnosticMessage msg_out;
 
     for (unsigned i = 0; i<Devices.size(); ++i) {
       Device *device = Devices[i];
-      PowerMessage *pmsg = device->pmsg;		
+      PowerMessage *pmsg = &device->pmsg;		
     
       robot_msgs::DiagnosticStatus stat;
       std::stringstream ss;
@@ -678,7 +451,7 @@ public:
       stat.name = ss.str();
       stat.level = 0;///@todo fixem
       stat.message = "fixme";
-      StatusStruct *status = &Devices[i]->pmsg->status;
+      StatusStruct *status = &Devices[i]->pmsg.status;
       
       printf("\nDevice %u\n", i);
       printf(" Serial       = %u\n", pmsg->header.serial_num);
@@ -818,76 +591,114 @@ public:
     stat.message = "Running";
     msg_out.status.push_back(stat);      
 
-    printf("Publishing \n");        
+    //printf("Publishing \n");        
     publish("/diagnostics", msg_out);    
     library_lock_.unlock();
   }
+}
 
-private:
-  pr2_power_board::PowerBoardCommand::request req_;
-  pr2_power_board::PowerBoardCommand::response res_;
-  ros::thread::mutex library_lock_;
+void getMessages()
+{
+  myBoard->collectMessages();
+}
 
-};
+void sendMessages()
+{
+  myBoard->sendDiagnostic();
+}
 
-
-int main(int argc, char** argv) {
-  ros::init(argc, argv);
-  PowerBoard myBoard;
-  CreateAllInterfaces();
-	
-  signal(SIGTERM, catch_signal);
-  signal(SIGINT, catch_signal);
-  signal(SIGHUP, catch_signal);
-	
-  print_menu();
-	
-  char last_command = '?';
-  while (!quit) {
-    myBoard.collectMessages();    
-    myBoard.sendDiagnostic();
-    sleep(1);
-
-#if 0
-    char command [200];
-    std::cin.getline(command, sizeof(command));
-		
-    collect_messages();
-	
-
-    
-    switch((command[0] == 0) ? last_command : command[0]) {
-    case 'l':
-      list_devices();
-      break;
-    case 's':
-      print_status();
-      break;
-    case 'c':
-      send_command(command+1);
-      break;
-    case 'q':
-      quit = true;
-      break;
-    case '?':
-    default:
-      print_menu();
-      break;
+// CloseAll
+void CloseAllInterfaces(void) {
+  for (unsigned i=0; i<Interfaces.size(); ++i){
+    if (Interfaces[i] != NULL) {
+      delete Interfaces[i];
     }
-
-    assert(command!=NULL);
-
-    if(command[0] != 0)
-      last_command = command[0];
-#endif //0
-
-
   }
+}
+void CloseAllDevices(void) {
+  for (unsigned i=0; i<Devices.size(); ++i){
+    if (Devices[i] != NULL) {
+      delete Devices[i];
+    }
+  }
+}
+
+
+// Build list of interfaces
+int CreateAllInterfaces(void) 
+{
+  struct ifreq req;
+
+  //
+  int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
+  if (sock == -1) {
+    perror("Couldn't create socket for ioctl requests");		
+    return -1;
+  }
+	
+  // Go though interfaces 0-10 and get interface names for them
+  for (int ifindex=0; ifindex<10; ++ifindex) {
+    memset(&req, 0, sizeof(req));
+    req.ifr_ifindex = ifindex;
+    if (ioctl(sock,SIOCGIFNAME,&req)) {
+      if (errno != ENODEV) {
+        fprintf(stderr,"Could not get name of interface at index %d : %s (%d)\n",
+                req.ifr_ifindex, strerror(errno), errno);
+      }
+      continue;
+    }
+    if ((strncmp("lo", req.ifr_name, sizeof(req.ifr_name)) == 0) || 
+        (strncmp("vmnet", req.ifr_name, 5) == 0))
+    {
+      printf("Ignoring interface %*s\n",sizeof(req.ifr_name), req.ifr_name);
+      continue;
+    } else {
+      printf("Found interface    %*s\n",sizeof(req.ifr_name), req.ifr_name);
+      Interface *newInterface = new Interface(req.ifr_name);
+      assert(newInterface != NULL);
+      if (newInterface == NULL) {
+        close(sock);
+        return -1;				
+      }
+      if (newInterface->Init()) {
+        printf("Error initializing interface %*s\n", sizeof(req.ifr_name), req.ifr_name);
+        delete newInterface;
+        newInterface = NULL;
+        continue;
+      } else {
+        // Interface is good add it to interface list
+        Interfaces.push_back(newInterface);
+
+      }
+    }
+  }
+
+  printf("Found %d usable interfaces\n\n", Interfaces.size());	
+
+	
+  return 0;
+}
+
+int main(int argc, char** argv) 
+{
+  ros::init(argc, argv);
+
+  CreateAllInterfaces();
+  myBoard = new PowerBoard();
+
+  boost::thread getThread( &getMessages );
+  boost::thread sendThread( &sendMessages );
+
+  myBoard->spin(); //wait for ros to shut us down
+
+  sendThread.join();
+  getThread.join();
 
   CloseAllDevices();
   CloseAllInterfaces();
 		
   ros::fini();
+  delete myBoard;
   return 0;
 	
 }
