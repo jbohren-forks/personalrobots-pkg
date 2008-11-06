@@ -427,7 +427,7 @@ namespace highlevel_controllers {
 			  double goalx, double goaly, double goaltheta,
 			  double goaltol_x, double goaltol_y, double goaltol_theta,
 			  footprint_t const & footprint,
-			  double cellsize_m, double nominalvel_mpersecs,
+			  double nominalvel_mpersecs,
 			  double timetoturn45degsinplace_secs)
     : EnvironmentWrapper(costmap),
       obst_cost_thresh_(obst_cost_thresh),
@@ -448,7 +448,7 @@ namespace highlevel_controllers {
 			startx, starty, starttheta,
 			goalx, goaly, goaltheta,
 			goaltol_x, goaltol_y, goaltol_theta,
-			perimeterptsV, cellsize_m, nominalvel_mpersecs,
+			perimeterptsV, costmap.getResolution(), nominalvel_mpersecs,
 			timetoturn45degsinplace_secs);
   }
   

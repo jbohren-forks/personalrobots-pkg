@@ -147,7 +147,17 @@ namespace ros {
 	sentry<MoveBaseSBPL> guard(this);
 	
 	param(get_name() + "/planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
-	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
+	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, -1.0);
+	if (0 > plannerTimeLimit_) {
+	  int blah;
+	  param(get_name() + "/plannerTimeLimit", blah, -1); // parameters are picky about dots
+	  if (0 > blah) {
+	    ROS_ERROR("invalid or no %s/plannerTimeLimit specified: %g",
+		      get_name().c_str(), plannerTimeLimit_);
+	    throw int(7);
+	  }
+	  plannerTimeLimit_ = blah;
+	}
 	
 	string environmentType;
 	param(get_name() + "/environmentType", environmentType, string("2D"));
@@ -177,26 +187,19 @@ namespace ros {
 		      obst_cost_thresh_str.c_str());
 	    throw int(6);
 	  }
-	  double goaltol_x, goaltol_y, goaltol_theta, cellsize_m,
+	  double goaltol_x, goaltol_y, goaltol_theta,
 	    nominalvel_mpersecs, timetoturn45degsinplace_secs;
 	  param(prefix + "goaltol_x", goaltol_x, 0.3);
 	  param(prefix + "goaltol_y", goaltol_y, 0.3);
 	  param(prefix + "goaltol_theta", goaltol_theta, 30.0);
-	  param(prefix + "cellsize_m", cellsize_m, -1.0);
 	  param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
-	  if (0 > cellsize_m) {
-	    // Would be better to read the size from the map!
-	    ROS_ERROR("invalid env3d_cellsize_m %g, must correspond to the costmap", cellsize_m);
-	    throw int(1);
-	  }
 	  // Could also sanity check the other parameters...
 	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
 					     0, 0, 0, // start (x, y, th)
 					     0, 0, 0, // goal (x, y, th)
 					     goaltol_x, goaltol_y, goaltol_theta,
-					     getFootprint(),
-					     cellsize_m, nominalvel_mpersecs,
+					     getFootprint(), nominalvel_mpersecs,
 					     timetoturn45degsinplace_secs);
 	}
 	else {

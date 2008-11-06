@@ -297,7 +297,7 @@ namespace highlevel_controllers {
 			    double goalx, double goaly, double goaltheta,
 			    double goaltol_x, double goaltol_y, double goaltol_theta,
 			    footprint_t const & footprint,
-			    double cellsize_m, double nominalvel_mpersecs,
+			    double nominalvel_mpersecs,
 			    double timetoturn45degsinplace_secs);
     virtual ~EnvironmentWrapper3DKIN();
     
