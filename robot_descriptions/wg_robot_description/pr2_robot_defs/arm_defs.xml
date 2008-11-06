@@ -490,4 +490,75 @@
   </macro>
 
 
+
+  <!--                    Calibration                            -->
+
+
+  <macro name="upper_arm_calibrator" params="side">
+    <controller name="${side}_cal_shoulder_pan" topic="${side}_cal_shoulder_pan"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_shoulder_pan_joint"
+                 actuator="${side}_shoulder_pan_motor"
+                 transmission="${side}_shoulder_pan_trans"
+                 velocity="1.0" />
+      <pid p="7" i="0.5" d="0" iClamp="1.0" />
+    </controller>
+
+    <controller name="cal_shoulder_pitch_${side}" topic="cal_shoulder_pitch_${side}"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_shoulder_pitch_joint"
+                 actuator="${side}_shoulder_pitch_motor"
+                 transmission="${side}_shoulder_pitch_trans"
+                 velocity="-1.0" />
+      <pid p="7" i="0.5" d="0" iClamp="1.0" />
+    </controller>
+
+    <controller name="cal_${side}_upper_arm_roll" topic="cal_${side}_upper_arm_roll"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_upper_arm_roll_joint"
+                 actuator="${side}_upper_arm_roll_motor"
+                 transmission="${side}_upper_arm_roll_trans"
+                 velocity="1.0" />
+      <pid p="6" i="0.2" d="0" iClamp="2.0" />
+    </controller>
+
+    <controller name="cal_${side}_elbow_flex" topic="cal_${side}_elbow_flex"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_elbow_flex_joint"
+                 actuator="${side}_elbow_flex_motor"
+                 transmission="${side}_elbow_flex_trans"
+                 velocity="1.0" />
+      <pid p="6" i="0.2" d="0" iClamp="1.0" />
+    </controller>
+  </macro>
+
+
+  <macro name="forearm_calibrator" params="side">
+    <controller name="cal_${side}_forearm_roll" type="JointCalibrationControllerNode">
+      <calibrate joint="${side}_forearm_roll_joint"
+                 actuator="${side}_forearm_roll_motor"
+                 transmission="${side}_forearm_roll_trans"
+                 velocity="-1.2" />
+      <pid p="5.0" i="0" d="0" iClamp="0" />
+    </controller>
+
+    <controller type="WristCalibrationControllerNode" name="cal_wrist">
+      <calibrate transmission="${side}_wrist_trans"
+                 actuator_l="${side}_wrist_l_motor" actuator_r="${side}_wrist_r_motor"
+                 flex_joint="${side}_wrist_flex_joint" roll_joint="${side}_wrist_roll_joint"
+                 velocity="1.2" />
+      <pid p="3.0" i="0.2" d="0" iClamp="2.0" />
+    </controller>
+  </macro>
+
+
+  <macro name="gripper_calibrator" params="side">
+    <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
+      <calibrate joint="${side}_gripper_r_finger_joint"
+                 actuator="${side}_gripper_motor"
+                 velocity="10" />
+      <pid p="15" i="0" d="0" iClamp="0" />
+    </controller>
+  </macro>
+
 </robot>

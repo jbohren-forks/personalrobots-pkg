@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="mechanism_bringup" type="calibrate.py"
+        args="cal.xml"
+        output="screen" />
+</launch>
