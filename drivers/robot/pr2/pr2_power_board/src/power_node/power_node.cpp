@@ -625,16 +625,16 @@ int CreateAllInterfaces(void)
     perror("Couldn't create socket for ioctl requests");		
     return -1;
   }
-	
-  struct ifconf get_io;
-  get_io.ifc_req = new ifreq[10];
-  get_io.ifc_len = sizeof(ifreq) * 10;
 
   if(ioctl( sock, SIOCGIFCONF, &get_io ) != 0)
   {
     ROS_ERROR("Bad ioctl status");
     return -1;
   }
+
+  struct ifconf get_io;
+  get_io.ifc_req = new ifreq[10];
+  get_io.ifc_len = sizeof(ifreq) * 10;
 
   int num_interfaces = get_io.ifc_len / sizeof(ifreq);
   ROS_DEBUG("Got %d interfaces", num_interfaces);
@@ -660,8 +660,7 @@ int CreateAllInterfaces(void)
         assert(newInterface != NULL);
         if (newInterface == NULL) 
         {
-          close(sock);
-          return -1;				
+          continue;
         }
 
 
@@ -696,6 +695,8 @@ int CreateAllInterfaces(void)
       }
     }
   }
+
+  delete[] get_io.ifc_req;
 
   ROS_INFO("Found %d usable interfaces\n\n", Interfaces.size());	
 
