@@ -1,7 +1,7 @@
 <package>
   <description>
-    classes and function for converting from disparity space to Cartesion space, to synthesize
-    image from 3d point cloud ...
+    classes and functions for converting from disparity space to Cartesion space, to synthesize
+    image from 3d point cloud, to compute spatial masks.
   </description>
   <author>Jindong (JD) Chen</author>
   <license>BSD</license>
