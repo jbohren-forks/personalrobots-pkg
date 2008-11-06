@@ -61,6 +61,11 @@ public:
   double effort_limit_;
   double velocity_limit_;
 
+  // Joint Properites
+  double joint_damping_coefficient_; // non-dimensional
+  double joint_friction_coefficient_;
+
+
   // Calibration parameters
   double reference_position_; // The reading of the reference position, in radians
   /** \brief indicates wether the offset calibration value has been determined and wether the position safety parameters should be enforced.

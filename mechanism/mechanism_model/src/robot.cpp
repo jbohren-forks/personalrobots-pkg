@@ -88,6 +88,8 @@ bool Robot::initXml(TiXmlElement *root)
       delete link;
   }
 
+  /// @todo add checks here to see if MCN is setup correctly, or have a good viewer
+
   return true;
 }
 

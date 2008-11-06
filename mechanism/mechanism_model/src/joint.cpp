@@ -192,6 +192,21 @@ bool Joint::initXml(TiXmlElement *elt)
 
   if (type_ == JOINT_ROTARY || type_ == JOINT_CONTINUOUS || type_ == JOINT_PRISMATIC)
   {
+    // Parses out the joint properties
+    TiXmlElement *prop_el = elt->FirstChildElement("joint_properties");
+    if (!prop_el)
+    {
+      fprintf(stderr, "Warning: Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
+      joint_damping_coefficient_ = 0.0;
+      joint_friction_coefficient_ = 0.0;
+    }
+    double tmp_damping;
+    double tmp_friction;
+    if (prop_el->QueryDoubleAttribute("damping", &joint_damping_coefficient_) != TIXML_SUCCESS)
+      fprintf(stderr,"damping is not specified\n");
+    if (prop_el->QueryDoubleAttribute("friction", &joint_friction_coefficient_) != TIXML_SUCCESS)
+      fprintf(stderr,"friction is not specified\n");
+
     // Parses out the joint axis
     TiXmlElement *axis_el = elt->FirstChildElement("axis");
     if (!axis_el)
