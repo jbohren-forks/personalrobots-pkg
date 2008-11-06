@@ -31,14 +31,7 @@
 #define POWER_COMM_H
 
 static const unsigned CURRENT_MESSAGE_REVISION = 1;
-static const int MAX_PUMP_TRYS = 30;
-static const unsigned STATUS_MESSAGE_TIMER = 4688;  //100Hz at 46KHz timer
-static const float THRESHOLD_18V_GOOD = 17.0; //low limit for 18v standby power
-static const float THRESHOLD_48V_GOOD = 28.0; //low limit for input voltage
-static const float THRESHOLD_HYST = 2.0; // provide some hysteriesis
-static const int TEMP_LIMIT_MAX = 50; // 90 degrees celcius limit
 static const unsigned POWER_PORT = 6801; // port power board
-										 // broadcasts status data on
 
 enum Master_State { MASTER_NOPOWER, MASTER_STANDBY, MASTER_ON, MASTER_OFF };
 enum CB_State { STATE_NOPOWER, STATE_STANDBY, STATE_PUMPING, STATE_ON, STATE_DISABLED };
