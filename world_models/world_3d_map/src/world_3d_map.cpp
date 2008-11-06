@@ -319,12 +319,18 @@ private:
 
       const std_msgs::PointCloud& point_cloud = point_clouds_.front();
 
+      //make sure that we don't fall to far in the past
+      if(ros::Time::now() - point_cloud.header.stamp > ros::Duration(9, 0)){
+	      point_clouds_.pop_front();
+	      continue;
+      }
+
       std_msgs::PointCloud map_cloud;
 	
       /* Transform to the map frame */
       try
 	{
-	  m_tf.transformPointCloud("map", map_cloud, local_cloud);
+	  m_tf.transformPointCloud("map", map_cloud, point_cloud);
 	}
       catch(libTF::TransformReference::LookupException& ex)
 	{
@@ -333,6 +339,7 @@ private:
 	}
       catch(libTF::TransformReference::ExtrapolateException& ex)
 	{
+	  //ROS_ERROR("Extrapolation exception: %s\n", ex.what());
 	  break;
 	}
       catch(libTF::TransformReference::ConnectivityException& ex)
