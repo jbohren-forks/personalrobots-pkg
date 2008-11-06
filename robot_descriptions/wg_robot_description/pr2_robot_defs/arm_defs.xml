@@ -7,23 +7,22 @@
   <property name="shoulder_pitch_radius" value="0.12" />
 
 
-  <macro name="pr2_finger" params="suffix parent reflect">
+  <macro name="pr2_finger" params="prefix parent reflect">
 
     <!-- Finger proximal digit -->
 
-    <joint name="finger_${suffix}_joint" type="revolute">
+    <joint name="${prefix}_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="10" velocity="5" />
       <calibration values="1.5 -1 " />
-      <limit effort="10" velocity="10" min="-100" max="100" />
+      <limit effort="100" velocity="10" min="-100" max="100" />
     </joint>
 
-    <link name="finger_${suffix}">
+    <link name="${prefix}_finger">
       <parent name="${parent}" />
       <origin xyz="0.07751 ${reflect*0.01} 0" rpy="0 0 0" />
 
-      <joint name="finger_${suffix}_joint" />
+      <joint name="${prefix}_finger_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -46,7 +45,7 @@
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="finger_${suffix}_gravity" flag="gazebo">
+      <map name="${prefix}_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -54,17 +53,17 @@
 
     <!-- Finger tip -->
 
-    <joint name="finger_tip_${suffix}_joint" type="revolute">
+    <joint name="${prefix}_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="10" velocity="10" min="-100" max="100" />
+      <limit effort="100" velocity="10" min="-100" max="100" />
     </joint>
 
-    <link name="finger_tip_${suffix}">
-      <parent name="finger_${suffix}" />
+    <link name="${prefix}_finger_tip">
+      <parent name="${prefix}_finger" />
       <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
 
-      <joint name="finger_tip_${suffix}_joint" />
+      <joint name="${prefix}_finger_tip_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz=" 0 0 0 " />
@@ -87,7 +86,7 @@
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="finger_tip_${suffix}_gravity" flag="gazebo">
+      <map name="${prefix}_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -95,19 +94,12 @@
 
 
 
-  <macro name="pr2_gripper" params="suffix parent reflect">
-    <joint name="gripper_roll_${suffix}_joint" type="revolute">
-      <axis xyz="1 0 0" />
-      <anchor xyz="0 0 0" />
-      <limit effort="10" velocity="5" />
-      <calibration values="1.5 -1" />
-    </joint>
-
-    <link name="gripper_roll_${suffix}">
+  <macro name="pr2_gripper" params="side parent">
+    <joint name="${side}_gripper_palm_joint" type="fixed" />
+    <link name="${side}_gripper_palm">
       <parent name="${parent}" />
+      <joint name="${side}_gripper_palm_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="gripper_roll_${suffix}_joint"/>
-
       <inertial>
         <mass value="1.0" />
         <com xyz=" 0.179474 -0.000058  0.013779  " /><!-- FIXME John switched x and z for now-->
@@ -138,15 +130,15 @@
       </map>
     </link>
 
-    <pr2_finger suffix="l_${suffix}" parent="gripper_roll_${suffix}" reflect="1" />
-    <pr2_finger suffix="r_${suffix}" parent="gripper_roll_${suffix}" reflect="-1" />
+    <pr2_finger prefix="${side}_gripper_l" parent="${side}_gripper_palm" reflect="1" />
+    <pr2_finger prefix="${side}_gripper_r" parent="${side}_gripper_palm" reflect="-1" />
 
-    <transmission type="GripperTransmission" name="gripper_${suffix}_trans">
-      <actuator name="gripper_${suffix}_motor" />
-      <joint name="finger_r_${suffix}_joint" reduction="-1.0" />
-      <joint name="finger_tip_r_${suffix}_joint" reduction="1.0" />
-      <joint name="finger_l_${suffix}_joint" reduction="1.0" />
-      <joint name="finger_tip_l_${suffix}_joint" reduction="-1.0" />
+    <transmission type="GripperTransmission" name="${side}_gripper_trans">
+      <actuator name="${side}_gripper_motor" />
+      <joint name="${side}_gripper_r_finger_joint" reduction="-50.0" />
+      <joint name="${side}_gripper_r_finger_tip_joint" reduction="50.0" />
+      <joint name="${side}_gripper_l_finger_joint" reduction="50.0" />
+      <joint name="${side}_gripper_l_finger_tip_joint" reduction="-50.0" />
       <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
     </transmission>
   </macro>
@@ -301,7 +293,7 @@
     <!-- Elbow flex -->
 
     <joint name="${side}_elbow_flex_joint" type="revolute">
-      <axis xyz="0 ${-reflect} 0" />
+      <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.1" max="2.3" effort="30" velocity="5" />
       <calibration reference_position="1.1" values="1.5 -1" />
@@ -443,7 +435,8 @@
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="5" />
-      <calibration reference_position="-0.3" values="1.5 -1" />
+      <!--<calibration reference_position="${-0.3+M_PI/2}" values="1.5 -1" />-->
+      <calibration reference_position="1.27" values="1.5 -1" />
     </joint>
 
 
