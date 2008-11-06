@@ -52,6 +52,7 @@
 
 // Math utils
 #include <math_utils/angles.h>
+#include <math.h>
 #include <tf/transform_listener.h>
 
 namespace controller
@@ -69,19 +70,19 @@ static const int MAX_HEAD_JOINTS = 2;
 
     <controller name="head_controller" type="HeadPanTiltControllerNode"><br>
       <listen_topic name="head_commands" /><br>
-    
+
       <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController"><br>
         <joint name="head_pan_joint" ><br>
           <pid p="1.5" d="0.1" i="0.3" iClamp="0.2" /><br>
         </joint><br>
       </controller><br>
-      
+
       <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController"><br>
         <joint name="head_tilt_joint" ><br>
           <pid p="0.8" d="0.05" i="0.1" iClamp="0.1" /><br>
         </joint><br>
       </controller><br>
-    </controller> <br> 
+    </controller> <br>
 */
 /***************************************************/
 
@@ -132,10 +133,10 @@ public:
    * \brief Issues commands to the joint.
    */
   virtual void update(void); // Real time safe.
-  
+
   unsigned int num_joints_; /**< Number of joints. */
   controller::JointPositionController* getJointPositionControllerByName(std::string name); /**< Joints we're controlling. */
-  std::vector<JointPositionController *> joint_position_controllers_; /**< Vector of the joint controllers. */ 
+  std::vector<JointPositionController *> joint_position_controllers_; /**< Vector of the joint controllers. */
 
 
 private:
@@ -147,7 +148,7 @@ private:
   /*!
    * \brief Issues commands to the joint.
    */
-  void updateJointControllers(void); 
+  void updateJointControllers(void);
 
 };
 
@@ -164,7 +165,7 @@ private:
 class HeadPanTiltControllerNode : public Controller
 {
   public:
-    
+
     HeadPanTiltControllerNode();
     ~HeadPanTiltControllerNode();
 
@@ -173,37 +174,46 @@ class HeadPanTiltControllerNode : public Controller
 
     /*!
      * \brief Sets a command for all the joints managed by the controller at once.
-     * 
+     *
      * \param joint_cmds_ (names, positions)
      */
     void setJointCmd();
 
     /*!
      * \brief Gets the commands for all the joints managed by the controller at once.
-     * 
-     * \param req 
+     *
+     * \param req
      * \param resp (positions)
      */
     bool getJointCmd(robot_srvs::GetJointCmd::request &req,
                      robot_srvs::GetJointCmd::response &resp);
     /*!
-     * \brief Tracks a point in a specified frame.
-     * 
-     * \param track_point_ (header, point)
+     * \brief This points the head at a specified point from a given frame.
+     *
+     * \param head_track_point_ (header, point)
      */
-    void trackPoint();
+    void headTrackPoint();
+    /*!
+     * \brief This points the given frame at a specified point from the given frame.
+     *
+     * \param frame_track_point_ (header, point)
+     */
+    void frameTrackPoint();
 
   private:
 
     //node stuff
-    std::string service_prefix_;                  /**< The service name. */
-    ros::node *node_;                             /**< The node. */
-    AdvertisedServiceGuard guard_get_command_array_;   /**< Makes sure the advertise goes down neatly. */
-    SubscriptionGuard guard_set_command_array_ , guard_track_point_;        /**< Makes sure the subscription goes down neatly. */
+    std::string service_prefix_;                         /**< The service name. */
+    ros::node *node_;                                    /**< The node. */
+    AdvertisedServiceGuard guard_get_command_array_;     /**< Makes sure the advertise goes down neatly. */
+    SubscriptionGuard guard_set_command_array_;          /**< Makes sure the subscription goes down neatly. */
+    SubscriptionGuard guard_head_track_point_;           /**< Makes sure the subscription goes down neatly. */
+    SubscriptionGuard guard_frame_track_point_;           /**< Makes sure the subscription goes down neatly. */
 
-    //msgs 
-    std_msgs::PointStamped track_point_;         /**< The point from the subscription. */
-    robot_msgs::JointCmd joint_cmds_;            /**< The joint commands from the subscription.*/
+    //msgs
+    std_msgs::PointStamped head_track_point_;          /**< The point from the subscription. */
+    std_msgs::PointStamped frame_track_point_;         /**< The point from the subscription. */
+    robot_msgs::JointCmd joint_cmds_;                  /**< The joint commands from the subscription.*/
 
     //controller
     HeadPanTiltController *c_;                   /**< The controller. */

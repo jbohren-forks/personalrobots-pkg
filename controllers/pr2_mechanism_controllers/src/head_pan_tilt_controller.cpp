@@ -147,11 +147,11 @@ void HeadPanTiltController::updateJointControllers(void)
 {
 
   for(unsigned int i=0;i<num_joints_;++i)
-  { 
+  {
     if (!joint_position_controllers_[i]->joint_state_->calibrated_)
       return;  // joints are not calibrated
-      
-    joint_position_controllers_[i]->update(); 
+
+    joint_position_controllers_[i]->update();
   }
 }
 
@@ -162,7 +162,7 @@ ROS_REGISTER_CONTROLLER(HeadPanTiltControllerNode)
 HeadPanTiltControllerNode::HeadPanTiltControllerNode()
 : Controller(), node_(ros::node::instance()), TF(*ros::node::instance(),false, 10000000000ULL, 1000000000ULL)
 {
-  c_ = new HeadPanTiltController();  
+  c_ = new HeadPanTiltController();
 }
 
 HeadPanTiltControllerNode::~HeadPanTiltControllerNode()
@@ -179,26 +179,28 @@ bool HeadPanTiltControllerNode::initXml(mechanism::RobotState * robot, TiXmlElem
 {
   assert(node_);
   service_prefix_ = config->Attribute("name");
-  
+
   // Parses subcontroller configuration
   if(!c_->initXml(robot, config))
     return false;
   //suscriptions
   node_->subscribe(service_prefix_ + "/set_command_array", joint_cmds_, &HeadPanTiltControllerNode::setJointCmd, this,1);
   guard_set_command_array_.set(service_prefix_ + "/set_command_array");
-  node_->subscribe(service_prefix_ + "/track_point", track_point_, &HeadPanTiltControllerNode::trackPoint, this, 1);
-  guard_track_point_.set(service_prefix_ + "/track_point");
+  node_->subscribe(service_prefix_ + "/head_track_point", head_track_point_, &HeadPanTiltControllerNode::headTrackPoint, this, 1);
+  guard_head_track_point_.set(service_prefix_ + "/head_track_point");
+  node_->subscribe(service_prefix_ + "/frame_track_point", frame_track_point_, &HeadPanTiltControllerNode::frameTrackPoint, this, 1);
+  guard_frame_track_point_.set(service_prefix_ + "/head_track_point");
   //services
   node_->advertise_service(service_prefix_ + "/get_command_array", &HeadPanTiltControllerNode::getJointCmd, this);
   guard_get_command_array_.set(service_prefix_ + "/get_command_array");
 
   return true;
- 
+
 }
 
 void HeadPanTiltControllerNode::setJointCmd()
 {
-  c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names); 
+  c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names);
 }
 
 bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
@@ -210,20 +212,18 @@ bool HeadPanTiltControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &re
   return true;
 }
 
-void HeadPanTiltControllerNode::trackPoint()
+void HeadPanTiltControllerNode::headTrackPoint()
 {
   std::vector<double> pos;
   std::vector<std::string> names;
 
   tf::Stamped<tf::Point> point;
-  point.setX(track_point_.point.x);
-  point.setY(track_point_.point.y);
-  point.setZ(track_point_.point.z);
-  point.stamp_ = track_point_.header.stamp;
-  point.frame_id_ = track_point_.header.frame_id;
-  
+  point.setX(head_track_point_.point.x);
+  point.setY(head_track_point_.point.y);
+  point.setZ(head_track_point_.point.z);
+  point.stamp_ = head_track_point_.header.stamp;
+  point.frame_id_ = head_track_point_.header.frame_id;
 
-  
   tf::Stamped<tf::Point> pan_point;
 
   try{
@@ -236,12 +236,13 @@ void HeadPanTiltControllerNode::trackPoint()
   int id = c_->getJointControllerByName("head_pan_joint");
   assert(id>=0);
   double meas_pan_angle = c_->joint_position_controllers_[id]->joint_state_->position_;
-  double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x()); 
-  
+  double head_pan_angle= meas_pan_angle + atan2(pan_point.y(), pan_point.x());
+
   names.push_back("head_pan_joint");
   pos.push_back(head_pan_angle);
-  
+
   tf::Stamped<tf::Point> tilt_point;
+
   try{
     TF.transformPoint("head_tilt",point,tilt_point);
   }
@@ -254,13 +255,81 @@ void HeadPanTiltControllerNode::trackPoint()
   assert(id>=0);
   double meas_tilt_angle= c_->joint_position_controllers_[id]->joint_state_->position_;
   double head_tilt_angle= meas_tilt_angle + atan2(-tilt_point.z(), tilt_point.x());
-  
+
   names.push_back("head_tilt_joint");
   pos.push_back(head_tilt_angle);
-       
+
   c_->setJointCmd(pos,names);
-  
+
 }
 
 
+void HeadPanTiltControllerNode::frameTrackPoint()
+{
+  std::vector<double> pos;
+  std::vector<std::string> names;
+  tf::Stamped<tf::Transform> frame;
 
+  tf::Stamped<tf::Point> point;
+  point.setX(frame_track_point_.point.x);
+  point.setY(frame_track_point_.point.y);
+  point.setZ(frame_track_point_.point.z);
+  point.stamp_ = frame_track_point_.header.stamp;
+  point.frame_id_ = frame_track_point_.header.frame_id;
+
+  try
+  {
+    TF.lookupTransform(point.frame_id_,"head_pan",0,frame);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
+
+  tf::Stamped<tf::Point> pan_point;
+
+  try
+  {
+    TF.transformPoint("head_pan",point, pan_point);
+  }
+  catch(tf::TransformException& ex)
+  {
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
+
+  int id = c_->getJointControllerByName("head_pan_joint");
+  assert(id>=0);
+  double radius = pow(pan_point.x(),2)+pow(pan_point.y(),2);
+  double x_intercept = sqrt(radius-pow(frame.getOrigin().y(),2));
+  double delta_theta = atan2(pan_point.y(), pan_point.x())-atan2(frame.getOrigin().y(),x_intercept);
+  double meas_pan_angle = c_->joint_position_controllers_[id]->joint_state_->position_;
+  double head_pan_angle= meas_pan_angle + delta_theta;
+
+  names.push_back("head_pan_joint");
+  pos.push_back(head_pan_angle);
+
+  tf::Stamped<tf::Point> tilt_point;
+  try{
+    TF.transformPoint("head_tilt",point,tilt_point);
+  }
+  catch(tf::TransformException& ex){
+    ROS_WARN("Transform Exception %s", ex.what());
+    return;
+  }
+
+  id = c_->getJointControllerByName("head_tilt_joint");
+  assert(id>=0);
+  radius = pow(tilt_point.x(),2)+pow(tilt_point.y(),2);
+  x_intercept = sqrt(radius-pow(frame.getOrigin().z(),2));
+  delta_theta = atan2(-tilt_point.z(), tilt_point.x())-atan2(-frame.getOrigin().z(),x_intercept);
+  double meas_tilt_angle= c_->joint_position_controllers_[id]->joint_state_->position_;
+  double head_tilt_angle= meas_tilt_angle + delta_theta;
+
+  names.push_back("head_tilt_joint");
+  pos.push_back(head_tilt_angle);
+
+  c_->setJointCmd(pos,names);
+
+}
