@@ -9,9 +9,9 @@ Index: src/LinearMath/btQuaternion.h
 -		return btAcos(dot(q) / s);
 +                btScalar retval;
 +                if (dot(q) < 0) // Take care of long angle case see http://en.wikipedia.org/wiki/Slerp
-+                  retval = btAcos(GEN_clamped(dot(-q) / s, -1.0, 1.0)); //Clamped to prevent floating point precision crashes
++                  retval = btAcos(GEN_clamped(dot(-q) / s, (btScalar)-1.0, (btScalar)1.0)); //Clamped to prevent floating point precision crashes
 +                else 
-+                  retval = btAcos(GEN_clamped(dot(q) / s, -1.0, 1.0)); //Clamped to prevent floating point precision crashes
++                  retval = btAcos(GEN_clamped(dot(q) / s, (btScalar)-1.0, (btScalar)1.0)); //Clamped to prevent floating point precision crashes
 +		return retval;
  	}
    /**@brief Return the angle of rotation represented by this quaternion */
