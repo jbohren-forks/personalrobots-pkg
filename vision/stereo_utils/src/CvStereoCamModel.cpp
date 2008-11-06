@@ -300,6 +300,7 @@ void CvStereoCamModel::cartToLeftCam(const CvMat* XYZs, CvMat* uvs) const {
     CV_ERROR( CV_StsBadArg, "neither argument uvds nor XYZs shall be NULL");
   }
   {
+    /** @todo use new OpenCV suport for 3D to 2D perspective transformation */
     int numPoints = XYZs->rows;
     CvMat xyzs0;
     cvReshape(XYZs, &xyzs0, 3, 0);

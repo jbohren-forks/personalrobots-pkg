@@ -286,8 +286,8 @@ protected:
 	/// the unit of the value in a disparity map. e.g. 1/4 of a pixel.
 	double Du_;
 
-	// a set of "default parameters" copied from an example file
-
+  /// @todo remove  matdata_cart_to_screen_left_ and matdata_cart_to_screen_right_.
+	/// as there is too many matrices to maintain.
 	double matdata_cart_to_screen_left_[3*4];
 	double matdata_cart_to_screen_right_[3*4];
 	double matdata_cart_to_disp_[4*4];
