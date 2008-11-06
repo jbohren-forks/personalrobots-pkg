@@ -10,6 +10,23 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
+/**
+ *  @mainpage
+ *
+ *  @htmlinclude manifest.html
+ *
+ *  @b stereo_utils is a package of  classes and functions for converting from
+ *  disparity space to Cartesion space, to synthesize
+ *   image from 3d point cloud, to compute spatial masks.
+ *
+ *  @todo provide more test cases
+ *  @todo remove the projection matrices from 3d to left screen and right screen.
+ *  Derive them from the 2 4x4 matrices between disparity and cartesian.
+ *  @todo replace the code in cartToLeftScreen to use new opencv support for perspective
+ *  transformation of 3D to 2D.
+ *  @todo move the getClosed3DPoint function from stereo_calib to here.
+ */
+
 //* CvStereoCamModel
 /**
  * This class transforms to and fro disparity space and Cartesian space, on
