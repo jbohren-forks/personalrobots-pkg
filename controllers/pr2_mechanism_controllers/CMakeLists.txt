@@ -16,6 +16,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/caster_controller.cpp
   src/caster_calibration_controller.cpp
   src/wrist_calibration_controller.cpp
+  src/gripper_calibration_controller.cpp
   )
 
 rospack_add_executable(testBaseController test/test_base_controller.cpp)

@@ -34,17 +34,9 @@
 
 #pragma once
 
-/***************************************************/
-/*! \class controller::JointCalibratonController
-    \brief Joint Controller that finds zerop point
-    \author Timothy Hunter <tjhunter@willowgarage.com>
-
-
-    This class moves the joint and reads the value of the clibration_reading_ field to find the zero position of the joint. Once these are determined, these values
- * are passed to the joint and enable the joint for the other controllers.
-
+/*
  Example XML:
- <controller type="JointCalibrationController">
+ <controller type="GripperCalibrationController">
    <calibrate joint="upperarm_roll_right_joint"
               actuator="upperarm_roll_right_act"
               transmission="upperarm_roll_right_trans"
@@ -52,10 +44,7 @@
    <pid p="15" i="0" d="0" iClamp="0" />
  </controller>
 
-
-
 */
-/***************************************************/
 
 
 #include "mechanism_model/robot.h"
@@ -63,56 +52,72 @@
 #include "misc_utils/realtime_publisher.h"
 #include "std_msgs/Empty.h"
 
-
 namespace controller
 {
 
-class JointCalibrationController : public controller::Controller
+class GripperCalibrationController : public Controller
 {
 public:
-  JointCalibrationController();
-  virtual ~JointCalibrationController();
+  GripperCalibrationController();
+  ~GripperCalibrationController();
 
   virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
   virtual void update();
 
   bool calibrated() { return state_ == CALIBRATED; }
-  void beginCalibration()
-  {
+  void beginCalibration() {
     if (state_ == INITIALIZED)
       state_ = BEGINNING;
   }
 
 protected:
 
-  enum { INITIALIZED, BEGINNING, MOVING, CALIBRATED };
+  enum { INITIALIZED, BEGINNING, STARTING, CLOSING, CALIBRATED };
   int state_;
+  int count_;
 
   double search_velocity_;
-  bool original_switch_state_;
-
   Actuator *actuator_;
   mechanism::JointState *joint_;
-  mechanism::Transmission *transmission_;
 
-  controller::JointVelocityController vc_;
+  double init_time;
+
+  controller::JointVelocityController vc_; /** The joint velocity controller used to sweep the joint.*/
 };
 
 
-class JointCalibrationControllerNode : public Controller
+/***************************************************/
+/*! \class controller::GripperCalibrationControllerNode
+    \brief Joint Limit Controller ROS Node
+
+    This class starts and stops the initialization sequence
+
+*/
+/***************************************************/
+
+class GripperCalibrationControllerNode : public Controller
 {
 public:
-  JointCalibrationControllerNode();
-  ~JointCalibrationControllerNode();
+  /*!
+   * \brief Default Constructor
+   *
+   */
+  GripperCalibrationControllerNode();
+
+  /*!
+   * \brief Destructor
+   */
+  ~GripperCalibrationControllerNode();
 
   void update();
 
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
+
 private:
   mechanism::RobotState* robot_;
-  JointCalibrationController c_;
+  GripperCalibrationController c_;
 
   double last_publish_time_;
   misc_utils::RealtimePublisher<std_msgs::Empty> *pub_calibrated_;

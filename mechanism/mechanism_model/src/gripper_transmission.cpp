@@ -51,6 +51,7 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     fprintf(stderr, "GripperTransmission could not find actuator named \"%s\"\n", actuator_name);
     return false;
   }
+  robot->getActuator(actuator_name)->command_.enable_ = true;
   actuator_names_.push_back(actuator_name);
 
   for (TiXmlElement *j = config->FirstChildElement("joint"); j; j = j->NextSiblingElement("joint"))
@@ -81,9 +82,6 @@ bool GripperTransmission::initXml(TiXmlElement *config, Robot *robot)
     for (unsigned int i = 0; i < pids_.size(); ++i)
       pids_[i] = pid;
   }
-
-  motor_torque_constant_ = atof(config->FirstChildElement("motorTorqueConstant")->GetText()),
-  pulses_per_revolution_ = atof(config->FirstChildElement("pulsesPerRevolution")->GetText());
 
   return true;
 }

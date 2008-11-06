@@ -34,8 +34,6 @@
  *   <joint name="gripper_l_lower1_joint" reduction="-4" />
  *   <joint name="gripper_l_upper2_joint" reduction="-8" />
  *   <joint name="gripper_l_lower2_joint" reduction="8" />
- *   <motorTorqueConstant>1</motorTorqueConstant>
- *   <pulsesPerRevolution>90000</pulsesPerRevolution>
  *   <!-- GripTransmission uses a PID controller to keep the joint angles aligned in Gazebo -->
  *   <pid p="1.0" i="2.0" d="3.0" iClamp="2.0" /> <!-- Only needed for Gazebo -->
  * </transmission>
@@ -69,9 +67,6 @@ public:
 
   std::vector<double> reductions_;  // Mechanical reduction for each joint
   std::vector<control_toolbox::Pid> pids_;  // For keeping the joint angles aligned in Gazebo
-
-  double motor_torque_constant_;
-  double pulses_per_revolution_;
 };
 
 } // namespace mechanism
