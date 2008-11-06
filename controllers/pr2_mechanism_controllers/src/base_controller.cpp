@@ -873,7 +873,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 1) ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 
