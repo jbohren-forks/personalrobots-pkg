@@ -218,8 +218,11 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  // parameterize the post estimator
   sba.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_, this->Clx_,
-      this->Crx_, this->Cy_);
+      this->Crx_, this->Cy_, 1.0);
+  // parameterize the error measure object in the stat obj
+  sba.mStat.mErrMeas.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, 1.0);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -236,7 +239,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 #if DISPLAY
   // Optionally, set up the visualizer
   vector<FramePose>* fp = sba.getFramePoses();
-  const VOSparseBundleAdj::Tracks& tracks = sba.getTracks();
+  const PointTracks& tracks = sba.getTracks();
 
   sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks);
 #endif
@@ -253,7 +256,6 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 #endif
     sba.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
-
 
   vector<FramePose>* framePoses = sba.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
@@ -316,8 +318,11 @@ bool CvTest3DPoseEstimate::testVideo() {
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  // parameterize the pose estimator
   pathRecon.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_,
       this->Clx_, this->Crx_, this->Cy_);
+  // parameterize the stat object
+  pathRecon.mStat.mErrMeas.setCameraParams((const CvStereoCamModel&)(pathRecon.mPoseEstimator));
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");

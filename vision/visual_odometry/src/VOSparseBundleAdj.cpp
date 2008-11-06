@@ -8,6 +8,7 @@
 #include "VOSparseBundleAdj.h"
 #include "CvMatUtils.h"
 #include "CvTestTimer.h"
+#include "LevMarqSparseBundleAdj.h"
 
 using namespace cv::willow;
 
@@ -83,6 +84,8 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
+
+
       cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
 
@@ -106,31 +109,8 @@ void VOSparseBundleAdj::purgeTracks(int oldtestFrameIndex){
   mTracks.purge(oldtestFrameIndex);
 }
 
-void VOSparseBundleAdj::Tracks::purge(int oldestFrameIndex) {
-  for (deque<Track>::iterator iTrack = mTracks.begin();
-    iTrack != mTracks.end();
-    iTrack++) {
-    if (iTrack->lastFrameIndex() < oldestFrameIndex) {
-      //  remove the entire track, as it is totally outside of the window
-#if DEBUG==1
-      printf("erase track %d, len=%d\n", iTrack->mId, iTrack->size());
-#endif
-      mTracks.erase(iTrack);
-    } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
-#if 0 // Do not do this as those older frames are used as fixed frames
-      // get rid of the entries that fall out of the slide window
-      iTrack->purge(oldestFrameIndex);
-      // remove the track if its length is reduced to 1 or less.
-      if (iTrack->size() < 2) {
-        mTracks.erase(iTrack);
-      }
-#endif
-    }
-  }
-}
-
 bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
-    Tracks & tracks)
+    PointTracks & tracks)
 {
   bool status = true;
   int lastFrame = tracks.mCurrentFrameIndex;
@@ -157,7 +137,6 @@ bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
         addTrack(tracks, *frame, i);
       }
     }
-
   }
   if (frames.size()>0)
     tracks.mCurrentFrameIndex = frames.back()->mFrameIndex;
@@ -165,22 +144,22 @@ bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
   return status;
 }
 
-bool VOSparseBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+bool VOSparseBundleAdj::extendTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
     int inlierIndex){
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
-  BOOST_FOREACH( Track& track, tracks.mTracks ) {
+  BOOST_FOREACH( PointTrack& track, tracks.mTracks ) {
     if (// The last frame of this track is not the same as
         // the last frame of this inlier pair. Skip it.
         track.lastFrameIndex() == frame.mLastKeyFrameIndex ) {
-      TrackObserv& observ = track.back();
+      PointTrackObserv& observ = track.back();
       if (// keypoint index needs to match skip to next track
           observ.mKeypointIndex == p.second) {
         // found a matching track. Extend it.
         CvPoint3D64f coord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
         CvPoint3D64f coord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
-        TrackObserv obsv(frame.mFrameIndex, coord1, p.first);
+        PointTrackObserv obsv(frame.mFrameIndex, coord1, p.first);
 
         track.extend(obsv);
         status = true;
@@ -198,22 +177,22 @@ bool VOSparseBundleAdj::extendTrack(Tracks& tracks, PoseEstFrameEntry& frame,
   }
   return status;
 }
-bool VOSparseBundleAdj::addTrack(Tracks& tracks, PoseEstFrameEntry& frame,
+bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
     int inlierIndex){
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
   CvPoint3D64f dispCoord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
   CvPoint3D64f dispCoord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
-  TrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.second);
-  TrackObserv obsv1(frame.mFrameIndex,        dispCoord1, p.first);
+  PointTrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.second);
+  PointTrackObserv obsv1(frame.mFrameIndex,        dispCoord1, p.first);
   // initial estimate of the position of the 3d point in Cartesian coord.
   CvMat disp1;
   cvGetRow(frame.mInliers1, &disp1, inlierIndex);
   CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
   CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
   dispToGlobal(disp1, frame.mGlobalTransform, _cartCoord1);
-  Track newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
+  PointTrack newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
   tracks.mTracks.push_back(newtrack);
 
   int trackId = mTrackId-1;
@@ -243,8 +222,8 @@ void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
 
 void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
-  BOOST_FOREACH( const VOSparseBundleAdj::Track& track, this->tracks.mTracks ){
-    const VOSparseBundleAdj::TrackObserv& lastObsv = track.back();
+  BOOST_FOREACH( const PointTrack& track, this->tracks.mTracks ){
+    const PointTrackObserv& lastObsv = track.back();
     const CvScalar colorFixedFrame = CvMatUtils::blue;
     CvScalar colorFreeFrame;
 
@@ -258,7 +237,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 
     int thickness = 1;
     int i=0;
-    deque<VOSparseBundleAdj::TrackObserv>::const_iterator iObsv = track.begin();
+    deque<PointTrackObserv>::const_iterator iObsv = track.begin();
     CvPoint pt0 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
 #if DEBUG==1
     printf("track %3d, len=%3d\n", track.mId, track.size());
@@ -318,72 +297,13 @@ void SBAVisualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) 
   CvPoint3D64f shifGlobaltoCurrent = cvPoint3D64f(-shiftCurrentToGlobal.x,
       -shiftCurrentToGlobal.y, -shiftCurrentToGlobal.z);
 
-  BOOST_FOREACH( const VOSparseBundleAdj::Track& track, this->tracks.mTracks ){
-    BOOST_FOREACH( const VOSparseBundleAdj::TrackObserv& obsv, track ) {
+  BOOST_FOREACH( const PointTrack& track, this->tracks.mTracks ){
+    BOOST_FOREACH( const PointTrackObserv& obsv, track ) {
 
     }
   }
 }
 
-void VOSparseBundleAdj::Track::print() const {
-  printf("track of size %d: ", size());
-  BOOST_FOREACH( const TrackObserv& obsv, *this) {
-    printf("(%d, %d), ", obsv.mFrameIndex, obsv.mKeypointIndex);
-  }
-  printf("\n");
-}
-
-void VOSparseBundleAdj::Tracks::print() const {
-  // print the stats
-  int numTracks, maxLen, minLen;
-  double avgLen;
-  vector<int> lenHisto;
-  stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
-  printf("printing %d tracks", mTracks.size());
-  printf("Stat of the tracks: [num, maxLen, minLen, avgLen]=[%d,%d,%d,%f]\n",
-      numTracks, maxLen, minLen, avgLen);
-  printf("Histogram of track lengths  [len, count]:\n");
-  int len = 0;
-  BOOST_FOREACH( const int count, lenHisto) {
-    printf("%d  %d\n", len, count);
-    len++;
-  }
-
-  BOOST_FOREACH( const Track& track, mTracks) {
-    track.print();
-  }
-}
-
-void VOSparseBundleAdj::Tracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
-    vector<int>* lenHisto) const {
-  // note, we consider tracks that have at least two observations (detected in two frames)
-  int nTracks = 0;
-  int min = INT_MAX;
-  int max = 0;
-  int sum = 0;
-  BOOST_FOREACH( const Track& track, mTracks ) {
-    int sz = track.size();
-    if (sz>1) {
-      if (min > sz ) min = sz;
-      if (max < sz ) max = sz;
-      sum += sz;
-      nTracks++;
-    }
-  }
-
-  if (numTracks) *numTracks = mTracks.size();
-  if (maxLen) *maxLen = max;
-  if (minLen) *minLen = min;
-  if (avgLen) *avgLen = (double)sum/(double)nTracks;
-
-  if (lenHisto) {
-    lenHisto->resize(max+1);
-    BOOST_FOREACH( const Track& track, mTracks ) {
-      int& count = lenHisto->at(track.size());
-      count++;
-    }
-  }
-}
 
 void VOSparseBundleAdj::Stat2::print() {
   // The accumulator set which will calculate the properties for us:

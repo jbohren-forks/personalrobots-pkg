@@ -6,8 +6,7 @@
  */
 
 #include "LevMarqSparseBundleAdj.h"
-#include "PathRecon.h"
-#include "VOSparseBundleAdj.h"
+#include "PointTracks.h"
 #include "boost/foreach.hpp"
 
 namespace cv {
@@ -26,10 +25,10 @@ LevMarqSparseBundleAdj::~LevMarqSparseBundleAdj() {
 
 bool LevMarqSparseBundleAdj::optimize(
     deque<PoseEstFrameEntry *> windowOfFrames,
-    VOSparseBundleAdj::Tracks& tracks
+    PointTracks& tracks
 ) {
   /// Loop thru each track p
-  BOOST_FOREACH( VOSparseBundleAdj::Track& p, tracks.mTracks) {
+  BOOST_FOREACH( PointTrack& p, tracks.mTracks) {
     /// - Compute the part of JtJ w.r.t to p
     double Hpp[Dim*Dim]; // the part of JtJ w.r.t. track p (or point p)
     double bp[Dim];      // the part of bP  w.r.t. track p

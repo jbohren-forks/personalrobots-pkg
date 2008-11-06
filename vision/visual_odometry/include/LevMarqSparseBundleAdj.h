@@ -9,18 +9,25 @@
 #define LEVMARQBUNDLEADJ_H_
 
 #include "LevMarqTransformDispSpace.h"
-#include "LevMarqPartitioned.h"
+#include "PointTracks.h"
+// #include "LevMarqPartitioned.h"
 
-#include "PathRecon.h"
-#include "VOSparseBundleAdj.h"
+class Foo {};
 
 namespace cv { namespace willow {
+
+class Foo2 {};
 
 /// A special Levenberg-Marquardt for bundle adjustment in visual odometry
 class LevMarqSparseBundleAdj: public LevMarqTransformDispSpace {
 public:
   typedef LevMarqTransformDispSpace Parent;
-  LevMarqSparseBundleAdj(const CvMat *disparityTo3D, const CvMat *threeDToDisparity,
+  LevMarqSparseBundleAdj(
+      /// transformation matrix from disparity space to Cartesian space.
+      const CvMat *disparityTo3D,
+      /// transformation matrix from Cartesian space to disparity space.
+      const CvMat *threeDToDisparity,
+      /// number of max iterations in optimization.
       int numMaxInter = defNumMaxIter);
   virtual ~LevMarqSparseBundleAdj();
   /// Bundle-adjustment of a set of frames and tracks of points.
@@ -31,11 +38,11 @@ public:
       deque<PoseEstFrameEntry *> windowOfFrames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
-      VOSparseBundleAdj::Tracks& traks
+      PointTracks& tracks
   );
 protected:
   static const unsigned int Dim = 3;
-  LevMarqPartitioned levMarqPartitioned;
+  // LevMarqPartitioned levMarqPartitioned;
 };
 
 }

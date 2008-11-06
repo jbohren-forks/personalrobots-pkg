@@ -77,7 +77,7 @@ void PathRecon::_init() {
 
 	cvSetIdentity(&mTransform);
 
-	// seting up the pose estimator to use harris corner for finding feature
+	// setting up the pose estimator to use harris corner for finding feature
 	// points and keypoint ncc to find matching pairs
   mPoseEstimator.setInlierErrorThreshold(4.0);
 //  mPoseEstimator.setKeyPointDector(PoseEstimateStereo::HarrisCorner);
@@ -93,11 +93,6 @@ void PathRecon::_init() {
 	mVisualizer = new SBAVisualizer(mPoseEstimator);
 #endif
 #endif
-
-  int maxDisp = (int)(mPoseEstimator.getDisparity(400));// the closest point we care is at least 400 mm away
-  cout << "Max disparity is: " << maxDisp << endl;
-  mStat.mErrMeas.setCameraParams((const CvStereoCamModel& )(mPoseEstimator));
-
   mFrameSeq.reset();
 }
 
