@@ -1,0 +1,12 @@
+<launch>
+  <master auto="start"/>
+
+  <param name="odom_estimation/sys_covar_trans"       type="double" value="0.01"/>
+  <param name="odom_estimation/sys_covar_rot"         type="double" value="0.01"/>
+  <param name="odom_estimation/meas_odom_covar_trans" type="double" value="0.005"/>
+  <param name="odom_estimation/meas_odom_covar_rot"   type="double" value="0.005"/>
+  <param name="odom_estimation/meas_imu_covar_trans"  type="double" value="0.01"/>
+  <param name="odom_estimation/meas_imu_covar_rot"    type="double" value="0.01"/>
+
+  <node pkg="robot_pose_ekf" type="odom_estimation" output="screen"/>
+</launch>
