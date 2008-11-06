@@ -225,8 +225,7 @@ WorkingStatus::Holds{
     // to a token
     // where w = batteryState[level] : (w.energy_remaining/w.energy_capacity) >= recharge_level;
     if(end){
-      any(BatteryState.Holds bs_e);
-      concurrent(bs_e.end, end);
+      meets(BatteryState.Holds bs_e);
       leq(rc.recharge_level, bs_e.percentage_remaining);
     }
   }
