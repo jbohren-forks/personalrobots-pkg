@@ -223,6 +223,7 @@ int PowerBoard::send_command(const char* input)
   CommandMessage cmdmsg;
   memset(&cmdmsg, 0, sizeof(cmdmsg));
   cmdmsg.header.message_revision = CURRENT_MESSAGE_REVISION;
+  cmdmsg.header.message_id = MESSAGE_ID_COMMAND;
   cmdmsg.header.serial_num = device->pmsg.header.serial_num;
   //cmdmsg.header.serial_num = 0x12345678;
   strncpy(cmdmsg.header.text, "power command message", sizeof(cmdmsg.header.text));
@@ -300,21 +301,21 @@ const char* PowerBoard::master_state_to_str(char state)
 // Determine if a record of the device already exists...
 // If it does use newest message a fill in pointer to old one .
 // If it does not.. use 
-int PowerBoard::process_message(const PowerMessage &msg, Interface *recvInterface)
+int PowerBoard::process_message(const PowerMessage *msg, Interface *recvInterface)
 {
   ROS_ASSERT (recvInterface != NULL);
 
-  if (msg.header.message_revision != CURRENT_MESSAGE_REVISION) {
-    ROS_WARN("Got message with incorrect message revision %u\n", msg.header.message_revision);
+  if (msg->header.message_revision != CURRENT_MESSAGE_REVISION) {
+    ROS_WARN("Got message with incorrect message revision %u\n", msg->header.message_revision);
     return -1;
   }
 	
   // Look for device serial number in list of devices...
   for (unsigned i = 0; i<Devices.size(); ++i) {
-    if (Devices[i]->pmsg.header.serial_num == msg.header.serial_num) {
+    if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
       library_lock_.lock();
       Devices[i]->message_time = time(0);
-      memcpy(&(Devices[i]->pmsg), &msg, sizeof(msg)); 
+      memcpy(&(Devices[i]->pmsg), msg, sizeof(PowerMessage)); 
       library_lock_.unlock();
       return 0;
     }
@@ -324,7 +325,33 @@ int PowerBoard::process_message(const PowerMessage &msg, Interface *recvInterfac
   Device *newDevice = new Device(recvInterface);
   Devices.push_back(newDevice);
   newDevice->message_time = time(0);
-  memcpy(&(newDevice->pmsg), &msg, sizeof(msg)); 
+  memcpy(&(newDevice->pmsg), msg, sizeof(PowerMessage)); 
+  return 0;
+}
+
+int PowerBoard::process_transition_message(const TransitionMessage *msg, Interface *recvInterface)
+{
+  ROS_ASSERT (recvInterface != NULL);
+
+  if (msg->header.message_revision != CURRENT_MESSAGE_REVISION) {
+    ROS_WARN("Got message with incorrect message revision %u\n", msg->header.message_revision);
+    return -1;
+  }
+	
+  // Look for device serial number in list of devices...
+  for (unsigned i = 0; i<Devices.size(); ++i) {
+    if (Devices[i]->pmsg.header.serial_num == msg->header.serial_num) {
+      library_lock_.lock();
+      memcpy(&(Devices[i]->tmsg), msg, sizeof(TransitionMessage)); 
+      library_lock_.unlock();
+      return 0;
+    }
+  }
+
+  // Add new device to list
+  Device *newDevice = new Device(recvInterface);
+  Devices.push_back(newDevice);
+  memcpy(&(newDevice->tmsg), msg, sizeof(TransitionMessage)); 
   return 0;
 }
 
@@ -332,14 +359,20 @@ int PowerBoard::process_message(const PowerMessage &msg, Interface *recvInterfac
 // from each seperate power device.
 int PowerBoard::collect_messages() 
 {
-  PowerMessage tmp_msg;
+  PowerMessage *power_msg;
+  TransitionMessage *transition_msg;
+  MessageHeader *header;
+  char tmp_buf[256];  //bigger than our max size we expect
+
+  //ROS_DEBUG("PowerMessage size=%u", sizeof(PowerMessage));
+  //ROS_DEBUG("TransitionMessage size=%u", sizeof(TransitionMessage));
 
   timeval timeout;  //timeout once a second to check if we should die or not.
   timeout.tv_sec = 1; 
   timeout.tv_usec = 0;
 	
-  while (1) {
-		
+  while (1) 
+  {
     // Wait for packets to arrive on socket. 
     fd_set read_set;
     int max_sock = -1;
@@ -368,17 +401,53 @@ int PowerBoard::collect_messages()
         }
       }
 			
-      int len = recv(recvInterface->recv_sock, &tmp_msg, sizeof(tmp_msg), 0);
+      int len = recv(recvInterface->recv_sock, tmp_buf, sizeof(tmp_buf), 0);
       if (len == -1) {
         ROS_ERROR("Error recieving on socket");
         return -1;
       }
-      else if (len != sizeof(tmp_msg)) {
+      else if (len < (int)sizeof(MessageHeader)) {
         ROS_ERROR("recieved message of incorrect size %d\n", len);
       }
-      else {
-        if (process_message(tmp_msg, recvInterface)){
-          return -1;
+
+      header = (MessageHeader*)tmp_buf;
+      {
+        
+        //ROS_DEBUG("Header type=%d", header->message_id);
+        if(header->message_id == MESSAGE_ID_POWER)
+        {
+          power_msg = (PowerMessage*)tmp_buf;
+          if (len == -1) {
+            ROS_ERROR("Error recieving on socket");
+            return -1;
+          }
+          else if (len != (int)sizeof(PowerMessage)) {
+            ROS_ERROR("recieved message of incorrect size %d\n", len);
+          }
+          else {
+            if (process_message(power_msg, recvInterface))
+              return -1;
+          }
+        }
+        else if(header->message_id == MESSAGE_ID_TRANSITION)
+        {
+          transition_msg = (TransitionMessage *)tmp_buf;
+          if (len == -1) {
+            ROS_ERROR("Error recieving on socket");
+            return -1;
+          }
+          else if (len != sizeof(TransitionMessage)) {
+            ROS_ERROR("recieved message of incorrect size %d\n", len);
+          }
+          else {
+            if (process_transition_message(transition_msg, recvInterface))
+              return -1;
+          }
+        }
+        else
+        {
+          ;
+          //ROS_DEBUG("Discard message len=%d", len);
         }
       }
     }
@@ -393,6 +462,13 @@ int PowerBoard::collect_messages()
 
 PowerBoard::PowerBoard(): ros::node ("pr2_power_board")
 {
+
+  ROSCONSOLE_AUTOINIT;
+  log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
+
+  // Set the root ROS logger to output all statements
+  my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
+
   advertise_service("power_board_control", &PowerBoard::commandCallback);
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
 }
@@ -421,13 +497,14 @@ void PowerBoard::collectMessages()
   
 void PowerBoard::sendDiagnostic()
 {
+  robot_msgs::DiagnosticMessage msg_out;
   
   while(ok())
   {
     sleep(1);
     //ROS_DEBUG("-");
+    msg_out.status.clear();
     library_lock_.lock();
-    robot_msgs::DiagnosticMessage msg_out;
 
     for (unsigned i = 0; i<Devices.size(); ++i) {
       Device *device = Devices[i];
@@ -586,6 +663,7 @@ void PowerBoard::sendDiagnostic()
     //printf("Publishing ");        
     publish("/diagnostics", msg_out);    
     library_lock_.unlock();
+
   }
 }
 
