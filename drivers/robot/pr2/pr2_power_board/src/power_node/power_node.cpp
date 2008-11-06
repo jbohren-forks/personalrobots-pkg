@@ -89,17 +89,6 @@ void Interface::Close() {
 int Interface::Init(sockaddr_in *port_address) 
 {
 
-#if 0
-  uid_t uid = getuid();
-  uid_t euid = geteuid();
-
-  if(seteuid(euid) < 0)
-  {
-    ROS_ERROR ("Couldn't set uid.\n");
-    return -1;
-  }
-#endif
-
   recv_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (recv_sock == -1) {
     perror("Couldn't create recv socket");		
@@ -112,23 +101,6 @@ int Interface::Init(sockaddr_in *port_address)
     return -1;
   }
 
-#if 0
-  // Use specific interface for recv/send traffic 	
-  if (setsockopt(recv_sock, SOL_SOCKET, SO_BINDTODEVICE, 
-                 (char *)&interface.ifr_name, sizeof(interface.ifr_name))  < 0) {
-    fprintf(stderr, "Error binding send sock to interface '%s' : %s --case1\n",
-            interface.ifr_name, strerror(errno));
-    Close();
-    return -1;
-  }
-  if (setsockopt(send_sock, SOL_SOCKET, SO_BINDTODEVICE, 
-                 (char *)&interface.ifr_name, sizeof(interface.ifr_name))  < 0) {
-    fprintf(stderr, "Error binding send sock to interface '%s' : %s\n",
-            interface.ifr_name, strerror(errno));
-    Close();
-    return -1;
-  }
-#endif
 		
  // Allow reuse of recieve port
   int opt = 1;
@@ -169,21 +141,12 @@ int Interface::Init(sockaddr_in *port_address)
   // Connect send socket to use broadcast address and same port as recieve sock		
   sin.sin_port = htons(POWER_PORT);
   //sin.sin_addr.s_addr = INADDR_BROADCAST; //inet_addr("192.168.10.255");
-  //sin.sin_addr.s_addr = inet_netof(port_address->sin_addr);
   sin.sin_addr= port_address->sin_addr;
   if (connect(send_sock, (struct sockaddr*)&sin, sizeof(sin))) {
     perror("Connect'ing socket failed");
     Close();
     return -1;
   }
-
-#if 0
-  if(seteuid(uid) < 0)
-  {
-    ROS_ERROR ("Couldn't restore uid.\n");
-    return -1;
-  }
-#endif
 
   return 0;		
 }
