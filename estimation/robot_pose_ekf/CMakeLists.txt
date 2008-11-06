@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.4)
+include(rosbuild)
+rospack(robot_pose_ekf)
+genmsg()
+rospack_add_executable(robot_pose_ekf odom_estimation.cpp nonlinearanalyticconditionalgaussianodo.cpp)
