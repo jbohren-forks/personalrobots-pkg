@@ -88,7 +88,7 @@ namespace planning_node_util
 
     public:
 	
-        NodeRobotModel(ros::node *node, const std::string &robot_model) : m_tf(*node, true, 1 * 1000000000ULL, 1000000000ULL)
+        NodeRobotModel(ros::node *node, const std::string &robot_model) : m_tf(*node, true, 1 * 1000000000ULL, 0ULL)
 	{
 	    m_urdf = NULL;
 	    m_kmodel = NULL;
