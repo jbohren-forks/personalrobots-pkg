@@ -466,8 +466,11 @@ PowerBoard::PowerBoard(): ros::node ("pr2_power_board")
   ROSCONSOLE_AUTOINIT;
   log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
 
-  // Set the root ROS logger to output all statements
-  my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
+  if( my_logger->getLevel() == 0 )    //has anyone set our level??
+  {
+    // Set the ROS logger 
+    my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
+  }
 
   advertise_service("power_board_control", &PowerBoard::commandCallback);
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
@@ -527,9 +530,9 @@ void PowerBoard::sendDiagnostic()
       ROS_DEBUG("Device %u", i);
       ROS_DEBUG(" Serial       = %u", pmsg->header.serial_num);
 
-      val.label = "Time";
-      val.value = (float)Devices[i]->message_time;
-      stat.values.push_back(val);
+      //val.label = "Time";
+      //val.value = (float)Devices[i]->message_time;
+      //stat.values.push_back(val);
 
       ss.str("");
       ss << pmsg->header.serial_num;
@@ -659,42 +662,44 @@ void PowerBoard::sendDiagnostic()
       TransitionMessage *tmsg = &device->tmsg;		
       for(int cb_index=0; cb_index < 3; ++cb_index)
       {
-        val.value = tmsg->cb[cb_index].stop_count;
+        TransitionCount *trans = &tmsg->cb[cb_index];
+        ROS_DEBUG("Transition: CB%d", cb_index);
+        val.value = trans->stop_count;
         ss.str("");
         ss << "CB" << cb_index << " Stop Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].estop_count;
+        val.value = trans->estop_count;
         ss.str("");
         ss << "CB" << cb_index << " E-Stop Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].trip_count;
+        val.value = trans->trip_count;
         ss.str("");
         ss << "CB" << cb_index << " Trip Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].fail_18V_count;
+        val.value = trans->fail_18V_count;
         ss.str("");
         ss << "CB" << cb_index << " 18V Fail Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].disable_count;
+        val.value = trans->disable_count;
         ss.str("");
         ss << "CB" << cb_index << " Disable Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].start_count;
+        val.value = trans->start_count;
         ss.str("");
         ss << "CB" << cb_index << " Start Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].pump_fail_count;
+        val.value = trans->pump_fail_count;
         ss.str("");
         ss << "CB" << cb_index << " Pump Fail Count";
         val.label = ss.str();
         stat.values.push_back(val);
-        val.value = tmsg->cb[cb_index].reset_count;
+        val.value = trans->reset_count;
         ss.str("");
         ss << "CB" << cb_index << " Reset Count";
         val.label = ss.str();
@@ -750,7 +755,7 @@ int CreateAllInterfaces(void)
   //
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock == -1) {
-    perror("Couldn't create socket for ioctl requests");		
+    ROS_ERROR("Couldn't create socket for ioctl requests");		
     return -1;
   }
 
@@ -774,12 +779,12 @@ int CreateAllInterfaces(void)
         if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
             (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
         {
-          ROS_INFO("Ignoring interface %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+          ROS_INFO("Ignoring interface %*s",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
           continue;
         } 
         else 
         {
-          ROS_INFO("Found interface    %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+          ROS_INFO("Found interface    %*s",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
           Interface *newInterface = new Interface(get_io.ifc_req[yy].ifr_name);
           assert(newInterface != NULL);
           if (newInterface == NULL) 
@@ -795,11 +800,11 @@ int CreateAllInterfaces(void)
             {
               struct sockaddr_in *sin = (struct sockaddr_in *) &ifr->ifr_dstaddr;
               
-              ROS_DEBUG ("Broadcast addess %s\n", inet_ntoa(sin->sin_addr));
+              ROS_DEBUG ("Broadcast addess %s", inet_ntoa(sin->sin_addr));
 
               if (newInterface->Init(sin)) 
               {
-                printf("Error initializing interface %*s\n", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+                ROS_ERROR("Error initializing interface %*s", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
                 delete newInterface;
                 newInterface = NULL;
                 continue;
@@ -827,8 +832,7 @@ int CreateAllInterfaces(void)
 
   delete[] get_io.ifc_req;
 
-  ROS_INFO("Found %d usable interfaces\n\n", Interfaces.size());	
-
+  //ROS_INFO("Found %d usable interfaces", Interfaces.size());	
 	
   return 0;
 }
