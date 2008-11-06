@@ -60,8 +60,8 @@ floorplan
 ( 
   name "willow"
   bitmap "willow-full-0.025.pgm"
-  size3 [48.1 54.4 1.0]
-  pose [-27.200 24.050 90.000]
+  size3 [47.925 55.125 1.0]
+  pose [-27.5625 23.962 90.000]
 )
 
 # throw in a robot
