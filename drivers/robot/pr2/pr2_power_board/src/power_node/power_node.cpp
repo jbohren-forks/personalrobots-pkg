@@ -32,12 +32,12 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <sys/select.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
 #include <vector>
+#include <sstream>
 #include <iostream>
 #include <boost/thread/thread.hpp>
 
@@ -53,7 +53,10 @@
 #include "power_comm.h"
 #include "power_node.h"
 #include "robot_msgs/DiagnosticMessage.h"
+#include "rosconsole/macros_generated.h"
+#include "rosconsole/rosconsole.h"
 
+using namespace std;
 
 // Keep a pointer to the last message recieved for
 // Each board.
@@ -312,12 +315,12 @@ const char* PowerBoard::master_state_to_str(char state)
 // Determine if a record of the device already exists...
 // If it does use newest message a fill in pointer to old one .
 // If it does not.. use 
-int PowerBoard::process_message(PowerMessage &msg, Interface *recvInterface)
+int PowerBoard::process_message(const PowerMessage &msg, Interface *recvInterface)
 {
-  assert (recvInterface != NULL);
+  ROS_ASSERT (recvInterface != NULL);
 
   if (msg.header.message_revision != CURRENT_MESSAGE_REVISION) {
-    fprintf(stderr, "Got message with incorrect message revision %u\n", msg.header.message_revision);
+    ROS_WARN("Got message with incorrect message revision %u\n", msg.header.message_revision);
     return -1;
   }
 	
@@ -325,6 +328,7 @@ int PowerBoard::process_message(PowerMessage &msg, Interface *recvInterface)
   for (unsigned i = 0; i<Devices.size(); ++i) {
     if (Devices[i]->pmsg.header.serial_num == msg.header.serial_num) {
       library_lock_.lock();
+      Devices[i]->message_time = time(0);
       memcpy(&(Devices[i]->pmsg), &msg, sizeof(msg)); 
       library_lock_.unlock();
       return 0;
@@ -334,6 +338,7 @@ int PowerBoard::process_message(PowerMessage &msg, Interface *recvInterface)
   // Add new device to list
   Device *newDevice = new Device(recvInterface);
   Devices.push_back(newDevice);
+  newDevice->message_time = time(0);
   memcpy(&(newDevice->pmsg), &msg, sizeof(msg)); 
   return 0;
 }
@@ -380,11 +385,11 @@ int PowerBoard::collect_messages()
 			
       int len = recv(recvInterface->recv_sock, &tmp_msg, sizeof(tmp_msg), 0);
       if (len == -1) {
-        perror("Error recieving on socket");
+        ROS_ERROR("Error recieving on socket");
         return -1;
       }
       else if (len != sizeof(tmp_msg)) {
-        fprintf(stderr, "recieved message of incorrect size %d\n", len);
+        ROS_ERROR("recieved message of incorrect size %d\n", len);
       }
       else {
         if (process_message(tmp_msg, recvInterface)){
@@ -393,7 +398,7 @@ int PowerBoard::collect_messages()
       }
     }
     else {
-      fprintf(stderr,"Unexpected select result %d\n", result);
+      ROS_ERROR("Unexpected select result %d\n", result);
       return -1;
     }
   }
@@ -425,8 +430,7 @@ void PowerBoard::collectMessages()
     //library_lock_.lock();
     collect_messages();
     //library_lock_.unlock();
-    printf("*");
-    fflush(stdout);
+    ROS_DEBUG("*");
   }
 }
   
@@ -436,8 +440,7 @@ void PowerBoard::sendDiagnostic()
   while(ok())
   {
     sleep(1);
-    printf("-");
-    fflush(stdout);
+    ROS_DEBUG("-");
     library_lock_.lock();
     robot_msgs::DiagnosticMessage msg_out;
 
@@ -446,137 +449,142 @@ void PowerBoard::sendDiagnostic()
       PowerMessage *pmsg = &device->pmsg;		
     
       robot_msgs::DiagnosticStatus stat;
-      std::stringstream ss;
+      ostringstream ss;
       ss << "Power board" << i;
       stat.name = ss.str();
       stat.level = 0;///@todo fixem
-      stat.message = "fixme";
+      stat.message = "Power Node";
       StatusStruct *status = &Devices[i]->pmsg.status;
       
-      printf("\nDevice %u\n", i);
-      printf(" Serial       = %u\n", pmsg->header.serial_num);
+      ROS_DEBUG("Device %u", i);
+      ROS_DEBUG(" Serial       = %u", pmsg->header.serial_num);
       robot_msgs::DiagnosticValue val;
       robot_msgs::DiagnosticString strval;
-      ss.str("");
+
+      val.label = "Time Stamp";
+      val.value = (float)Devices[i]->message_time;
+      stat.values.push_back(val);
+
+      ss.clear();
       ss << pmsg->header.serial_num;
       strval.value = ss.str();
       strval.label = "Serial Number";
       stat.strings.push_back(strval);
 
-      printf(" Current      = %f\n", status->input_current);
+      ROS_DEBUG(" Current      = %f", status->input_current);
       val.value = status->input_current;
       val.label = "Input Current";
       stat.values.push_back(val);
 
-      printf(" Voltages:\n");
-      printf("  Input       = %f\n", status->input_voltage);
+      ROS_DEBUG(" Voltages:");
+      ROS_DEBUG("  Input       = %f", status->input_voltage);
       val.value = status->input_voltage;
       val.label = "Input Voltage";
       stat.values.push_back(val);
-      printf("  DCDC 12     = %f\n", status->DCDC_12V_out_voltage);
+      ROS_DEBUG("  DCDC 12     = %f", status->DCDC_12V_out_voltage);
       val.value = status->DCDC_12V_out_voltage;
       val.label = "DCDC12";
       stat.values.push_back(val);
-      printf("  DCDC 15     = %f\n", status->DCDC_19V_out_voltage);
+      ROS_DEBUG("  DCDC 15     = %f", status->DCDC_19V_out_voltage);
       val.value = status->DCDC_19V_out_voltage;
       val.label = "DCDC 15";
       stat.values.push_back(val);
-      printf("  CB0 (Base)  = %f\n", status->CB0_voltage);
+      ROS_DEBUG("  CB0 (Base)  = %f", status->CB0_voltage);
       val.value = status->CB0_voltage;
       val.label = "Breaker 0 Voltage";
       stat.values.push_back(val);
-      printf("  CB1 (R-arm) = %f\n", status->CB1_voltage);
+      ROS_DEBUG("  CB1 (R-arm) = %f", status->CB1_voltage);
       val.value = status->CB1_voltage;
       val.label = "Breaker 1 Voltage";
       stat.values.push_back(val);
-      printf("  CB2 (L-arm) = %f\n", status->CB2_voltage);
+      ROS_DEBUG("  CB2 (L-arm) = %f", status->CB2_voltage);
       val.value = status->CB2_voltage;
       val.label = "Breaker 2 Voltage";
       stat.values.push_back(val);
       
-      printf(" Board Temp   = %f\n", status->ambient_temp);
+      ROS_DEBUG(" Board Temp   = %f", status->ambient_temp);
       val.value = status->ambient_temp;
       val.label = "Board Temperature";
       stat.values.push_back(val);
-      printf(" Fan Speeds:\n");
-      printf("  Fan 0       = %u\n", status->fan0_speed);
+      ROS_DEBUG(" Fan Speeds:");
+      ROS_DEBUG("  Fan 0       = %u", status->fan0_speed);
       val.value = status->fan0_speed;
       val.label = "Fan 0 Speed";
       stat.values.push_back(val);
-      printf("  Fan 1       = %u\n", status->fan1_speed);
+      ROS_DEBUG("  Fan 1       = %u", status->fan1_speed);
       val.value = status->fan1_speed;
       val.label = "Fan 1 Speed";
       stat.values.push_back(val);
-      printf("  Fan 2       = %u\n", status->fan2_speed);
+      ROS_DEBUG("  Fan 2       = %u", status->fan2_speed);
       val.value = status->fan2_speed;
       val.label = "Fan 2 Speed";
       stat.values.push_back(val);
-      printf("  Fan 3       = %u\n", status->fan3_speed);
+      ROS_DEBUG("  Fan 3       = %u", status->fan3_speed);
       val.value = status->fan3_speed;
       val.label = "Fan 3 Speed";
       stat.values.push_back(val);
       
-      printf(" State:\n");		
-      printf("  CB0 (Base)  = %s\n", cb_state_to_str(status->CB0_state));
+      ROS_DEBUG(" State:");		
+      ROS_DEBUG("  CB0 (Base)  = %s", cb_state_to_str(status->CB0_state));
       strval.value = cb_state_to_str(status->CB0_state);
       strval.label = "Breaker 0 State";
       stat.strings.push_back(strval);
-      printf("  CB1 (R-arm) = %s\n", cb_state_to_str(status->CB1_state));
+      ROS_DEBUG("  CB1 (R-arm) = %s", cb_state_to_str(status->CB1_state));
       strval.value = cb_state_to_str(status->CB1_state);
       strval.label = "Breaker 1 State";
       stat.strings.push_back(strval);
-      printf("  CB2 (L-arm) = %s\n", cb_state_to_str(status->CB2_state));
+      ROS_DEBUG("  CB2 (L-arm) = %s", cb_state_to_str(status->CB2_state));
       strval.value = cb_state_to_str(status->CB2_state);
       strval.label = "Breaker 2 State";
       stat.strings.push_back(strval);
-      printf("  DCDC        = %s\n", master_state_to_str(status->DCDC_state));
+      ROS_DEBUG("  DCDC        = %s", master_state_to_str(status->DCDC_state));
       strval.value = master_state_to_str(status->DCDC_state);
       strval.label = "DCDC state";
       stat.strings.push_back(strval);
       
-      printf(" Status:\n");		
-      printf("  CB0 (Base)  = %s\n", (status->CB0_status) ? "On" : "Off");
+      ROS_DEBUG(" Status:");		
+      ROS_DEBUG("  CB0 (Base)  = %s", (status->CB0_status) ? "On" : "Off");
       strval.value = (status->CB0_status) ? "On" : "Off";
       strval.label = "Breaker 0 Status";
       stat.strings.push_back(strval);      
-      printf("  CB1 (R-arm) = %s\n", (status->CB1_status) ? "On" : "Off");
+      ROS_DEBUG("  CB1 (R-arm) = %s", (status->CB1_status) ? "On" : "Off");
       strval.value = (status->CB1_status) ? "On" : "Off";
       strval.label = "Breaker 1 Status";
       stat.strings.push_back(strval);
-      printf("  CB2 (L-arm) = %s\n", (status->CB2_status) ? "On" : "Off");
+      ROS_DEBUG("  CB2 (L-arm) = %s", (status->CB2_status) ? "On" : "Off");
       strval.value = (status->CB2_status) ? "On" : "Off";
       strval.label = "Breaker 2 Status";
       stat.strings.push_back(strval);
-      printf("  estop_button= %x\n", (status->estop_button_status));
+      ROS_DEBUG("  estop_button= %x", (status->estop_button_status));
       val.value = status->estop_button_status;
       val.label = "Estop Button Status";
       stat.values.push_back(val);
-      printf("  estop_status= %x\n", (status->estop_status));
+      ROS_DEBUG("  estop_status= %x", (status->estop_status));
       val.value = status->estop_status;
       val.label = "Estop Status";
       stat.values.push_back(val);
       
-      printf(" Revisions:\n");
-      printf("         PCA = %c\n", status->pca_rev);
-      ss.str("");
+      ROS_DEBUG(" Revisions:");
+      ROS_DEBUG("         PCA = %c", status->pca_rev);
+      ss.clear();
       ss << status->pca_rev;
       strval.value = ss.str();
       strval.label = "PCA";
       stat.strings.push_back(strval);
-      printf("         PCB = %c\n", status->pcb_rev);
-      ss.str("");
+      ROS_DEBUG("         PCB = %c", status->pcb_rev);
+      ss.clear();
       ss << status->pcb_rev;
       strval.value = ss.str();
       strval.label = "PCB";
       stat.strings.push_back(strval);
-      printf("       Major = %c\n", status->major_rev);
-      ss.str("");
+      ROS_DEBUG("       Major = %c", status->major_rev);
+      ss.clear();
       ss << status->major_rev;
       strval.value = ss.str();
       strval.label = "Major Revision";
       stat.strings.push_back(strval);
-      printf("       Minor = %c\n", status->minor_rev);
-      ss.str("");
+      ROS_DEBUG("       Minor = %c", status->minor_rev);
+      ss.clear();
       ss << status->minor_rev;
       strval.value = ss.str();
       strval.label = "Minor Revision";
@@ -585,13 +593,12 @@ void PowerBoard::sendDiagnostic()
       msg_out.status.push_back(stat);      
     }
     robot_msgs::DiagnosticStatus stat;
-    std::stringstream ss;
     stat.name = "pr2_power_board";
     stat.level = 0;
     stat.message = "Running";
     msg_out.status.push_back(stat);      
 
-    //printf("Publishing \n");        
+    //printf("Publishing ");        
     publish("/diagnostics", msg_out);    
     library_lock_.unlock();
   }

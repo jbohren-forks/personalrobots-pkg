@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <time.h>
 #include "ros/node.h"
 #include "pr2_power_board/PowerBoardCommand.h"
 #include "rosthread/mutex.h"
@@ -24,6 +25,7 @@ class Interface
 class Device 
 {
   public:
+    time_t message_time;
     PowerMessage pmsg;  //last power message recived from device
     Interface *iface;   //interface last message was recieved on;
     Device(Interface *_iface) : iface(_iface) {}
@@ -41,7 +43,7 @@ class PowerBoard : public ros::node
     void collectMessages();
     void sendDiagnostic();
     int collect_messages();
-    int process_message(PowerMessage &msg, Interface *recvInterface);
+    int process_message(const PowerMessage &msg, Interface *recvInterface);
     const char* master_state_to_str(char state);
     const char* cb_state_to_str(char state);
     int list_devices(void);
