@@ -169,7 +169,7 @@ public:
   //  static const unsigned int MAX_NUM_FRAMES = 10000; //!< The max value of frameID (due to preallocation of pointers)
   static const unsigned int MAX_GRAPH_DEPTH = 100;   //!< The maximum number of time to recurse before assuming the tree has a loop.
   static const ULLtime DEFAULT_CACHE_TIME = 10 * 1000000000ULL;  //!< The default amount of time to cache data
-  static const ULLtime DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 10 * 1000000000ULL; //!< The default amount of time to extrapolate
+  static const ULLtime DEFAULT_MAX_EXTRAPOLATION_DISTANCE = 0ULL; //!< The default amount of time to extrapolate
 
 
   /** Constructor 
