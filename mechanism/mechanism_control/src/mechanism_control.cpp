@@ -184,7 +184,7 @@ bool MechanismControl::killController(const std::string &name)
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
   : mc_(mc), mechanism_state_topic_("mechanism_state"),
     publisher_(mechanism_state_topic_, 1),
-    transform_publisher_("TransformArray", 1)
+    transform_publisher_("TransformArray", 5)
 {
   assert(mc != NULL);
   assert(mechanism_state_topic_);
