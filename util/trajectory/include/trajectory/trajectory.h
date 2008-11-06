@@ -148,6 +148,12 @@ namespace trajectory
     */
     int setTrajectory(const std::vector<double> &p, int numPoints);
 
+
+    int setTrajectory(const std::vector<double> &p, const std::vector<double> &pdot, const std::vector<double> &time, int numPoints);
+
+    int setMaxAcc(std::vector<double> max_acc);
+
+
     /*!
       \brief Get the total time for the trajectory.
       \return the total time for the trajectory.
@@ -175,13 +181,6 @@ namespace trajectory
     void setInterpolationMethod(std::string interp_method);
  
     /*!
-      \brief calculate minimum time for a trajectory segment using a linear interpolation
-      \param start TPoint
-      \param end TPoint
-    */
-    double calculateMinimumTimeLinear(const TPoint &start, const TPoint &end);
-
-    /*!
       \brief set the max rates (velocities) 
       \param std::vector of size dimension_ containing the max rates for the degrees of freedom in the trajectory
      */
@@ -194,6 +193,13 @@ namespace trajectory
       \return number of points
     */
     int getNumberPoints();
+
+    /*!
+      \brief Minimize segment times in the trajectory
+       Timings for the trajectory segments are automatically calculated using max rate and/or max accn information 
+       based on the current value of interp_method_; 
+    */
+    int minimizeSegmentTimes();
 
     int getDuration(std::vector<double> &duration);
 
@@ -222,15 +228,25 @@ namespace trajectory
     /*!
       \brief calculate the coefficients for interpolation between trajectory points
       \param std::string representation of the interpolation method 
-      \param if true, timings for the trajectories are automatically calculated using max rate information
+      \param if true, timings for the trajectories are automatically calculated using max rate and/or max accn information
+       Thus, the time duration for any trajectory segment is the maximum of two times: 
+       the time duration specified by the user and the time duration dictated by the constraints. 
     */
-    void calcCoeff(std::string interp_method, bool autocalc_timing);  
+    int parameterize();  
 
     /*!
       \brief calculate the coefficients for interpolation between trajectory points using linear interpolation
-      \param if true, timings for the trajectories are automatically calculated using max rate information
+      \param if true, timings for the trajectories are automatically calculated using max rate information. Thus,
+       the time duration for any segment is the maximum of two times: the time duration specified by the user
+       and the time duration dictated by the constraints. 
     */
-    int calculateLinearCoeff(bool autocalc_timing);
+    int parameterizeLinear();
+
+    /*!
+      \brief calculate a minimum time trajectory using linear interpolation
+       Timings for the trajectory are automatically calculated using max rate information. 
+    */
+    int  minimizeSegmentTimesWithLinearInterpolation();
 
     /*!
        \brief Sample the trajectory based on a linear interpolation
@@ -241,12 +257,27 @@ namespace trajectory
     */
     void sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
 
+    void sampleCubic(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
+
     /*! 
        \brief finds the trajectory segment corresponding to a particular time 
        \param input time (in seconds)
        \return segment index 
     */
     inline int findTrajectorySegment(double time);
+
+    double calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax);
+
+    /*!
+      \brief calculate minimum time for a trajectory segment using a linear interpolation
+      \param start TPoint
+      \param end TPoint
+    */
+    double calculateMinimumTimeLinear(const TPoint &start, const TPoint &end);
+
+    double calculateMinimumTimeCubic(const TPoint &start, const TPoint &end);
+
+    int parameterizeCubic();
 
   };
 }

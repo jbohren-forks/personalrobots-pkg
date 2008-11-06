@@ -134,8 +134,60 @@ TEST(Trajectory, samplingAfterInstantiationWithoutTime){
   t.setTrajectory(a,4);
 
   t.sample(b,1.5);
+  EXPECT_EQ(b.q_[0],1.5);
+  EXPECT_EQ(b.q_[1],2.5);
+}
 
-  ROS_INFO("Point: %f %f",b.q_[0],b.q_[1]);
+
+TEST(Trajectory, minimumTimeLinearTrajectory){
+  Trajectory t(2);
+  Trajectory::TPoint b(2);
+  std::vector<double> a;
+
+  std::vector<double> d;
+
+  d.resize(2);
+
+  d[0] = 1;
+  d[1] = 1;
+
+  t.setMaxRates(d);
+
+  a.resize(8);
+  
+  for(int i=0; i< 8; i++)
+    a[i] = (double) i;
+
+  t.setTrajectory(a,4);
+  t.minimizeSegmentTimes();
+
+  t.sample(b,1.5);
+  EXPECT_EQ(b.q_[0],1.5);
+  EXPECT_EQ(b.q_[1],2.5);
+}
+
+TEST(Trajectory, samplingAfterInstantiationWithoutTimeCubic){
+  Trajectory t(2);
+  Trajectory::TPoint b(2);
+  std::vector<double> a;
+
+  std::vector<double> d;
+
+  d.resize(2);
+
+  d[0] = 1;
+  d[1] = 1;
+
+  t.setMaxRates(d);
+  t.setInterpolationMethod("cubic");
+  a.resize(8);
+  
+  for(int i=0; i< 8; i++)
+    a[i] = (double) i;
+
+  t.setTrajectory(a,4);
+
+  t.sample(b,1.5);
 }
 
 

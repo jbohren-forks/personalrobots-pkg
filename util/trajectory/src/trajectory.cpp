@@ -32,6 +32,7 @@
 #include "trajectory/trajectory.h"
 
 #define MAX_ALLOWABLE_TIME 1.0e8
+#define EPS_TRAJECTORY 1.0e-8
 
 using namespace trajectory;
 
@@ -74,8 +75,7 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
     tp_[i] = tp[i];
   }
 
-  calcCoeff(interp_method_,autocalc_timing_);
-
+  parameterize();
   return 1;
 }  
 
@@ -94,12 +94,11 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
   for(int i=0; i<num_points_;i++)
   {
     tp_[i].setDimension(dimension_);
+    tp_[i].time_ = 0.0;
     for(int j=0; j<dimension_; j++)
       tp_[i].q_[j] = p[i*dimension_+j];
   }
-  calcCoeff(interp_method_,autocalc_timing_);
-
-
+  parameterize();
   return 1;
 }  
 
@@ -125,11 +124,42 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
     tp_[i].setDimension(dimension_);
     tp_[i].time_ = time[i];
     for(int j=0; j<dimension_; j++)
-      tp_[i].q_[j] = p[i*(dimension_+1)+j+1];
+      tp_[i].q_[j] = p[i*(dimension_)+j];
   }
 
-  calcCoeff(interp_method_,autocalc_timing_);
+  parameterize();
 
+  return 1;
+}
+
+int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<double> &pdot, const std::vector<double> &time, int numPoints)
+{
+  num_points_ = numPoints;
+
+  tp_.resize(num_points_);
+
+  if((int) time.size() != num_points_)
+  {
+    ROS_WARN("Number of points in vector specifying time (%d)  does not match number of points %d",(int) time.size(), num_points_);
+    return -1;
+  }
+  if((int) p.size() < num_points_*dimension_)
+  {
+    ROS_WARN("Input has only %d values, expecting %d values for a %d dimensional trajectory with %d number of points",p.size(), num_points_*dimension_, dimension_, num_points_);
+    return -1;
+  }   
+
+  for(int i=0; i<num_points_;i++)
+  {
+    tp_[i].setDimension(dimension_);
+    tp_[i].time_ = time[i];
+    for(int j=0; j<dimension_; j++)
+    {
+      tp_[i].q_[j] = p[i*dimension_+j];
+      tp_[i].qdot_[j] = pdot[i*dimension_+j];
+    }
+  }
+  parameterize();
   return 1;
 }
 
@@ -141,6 +171,7 @@ void Trajectory::addPoint(const TPoint tp)
   std::vector<TPoint>::iterator it = tp_.begin() + index;
   tp_.insert(it,tp);
   num_points_++;
+  parameterize();
 }
 
 inline int Trajectory::findTrajectorySegment(double time)
@@ -161,14 +192,6 @@ inline double Trajectory::getTotalTime()
   return (tp_.back().time_ - tp_.front().time_);
 }
 
-void Trajectory::calcCoeff(std::string interp_method, bool autocalc_timing)
-{
-  if(interp_method == std::string("linear"))
-     calculateLinearCoeff(autocalc_timing);
-  else
-    ROS_WARN("Unrecognized interp_method type: %s\n",interp_method.c_str());
-}
-
 int Trajectory::sample(TPoint &tp, double time)
 {
   if(time > tp_.back().time_ || time < tp_.front().time_)
@@ -182,10 +205,14 @@ int Trajectory::sample(TPoint &tp, double time)
     return -1;
   } 
   int segment_index = findTrajectorySegment(time);
+
   if(interp_method_ == std::string("linear"))
-  {
     sampleLinear(tp,time,tc_[segment_index],tp_[segment_index].time_);
-  }
+  else if(interp_method_ == std::string("cubic"))
+    sampleCubic(tp,time,tc_[segment_index],tp_[segment_index].time_);
+  else
+    ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
+
   return 1;
 }
 
@@ -201,7 +228,30 @@ int Trajectory::setMaxRates(std::vector<double> max_rate)
   return 1;
 }
 
-int Trajectory::calculateLinearCoeff(bool autocalc_timing)
+int Trajectory::setMaxAcc(std::vector<double> max_acc)
+{
+  if((int) max_acc.size() != dimension_)
+  {
+    ROS_WARN("Input size: %d does not match dimension of trajectory = %d",max_acc.size(),dimension_);
+    return -1;
+  }
+  max_acc.resize(dimension_);
+  max_acc_ = max_acc; 
+  return 1;
+}
+
+int Trajectory::minimizeSegmentTimes()
+{
+  int error_code = -1;
+  if(interp_method_ == std::string("linear"))
+     error_code = minimizeSegmentTimesWithLinearInterpolation();
+  else
+    ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
+
+  return error_code;
+}
+
+int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
 {
   double dT(0);
   TCoeff tc;
@@ -210,33 +260,19 @@ int Trajectory::calculateLinearCoeff(bool autocalc_timing)
   std::vector<double> temp;
   temp.resize(2);
 
-  if(autocalc_timing)
-    tp_[0].time_ = 0.0;
-
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
 
-  if(autocalc_timing)
+  if(max_rate_.empty() || (int) max_rate_.size() < 0)
   {
-    if(max_rate_.empty() || (int) max_rate_.size() < 0)
-    {
-      ROS_WARN("Trying to use autocalc_timing without setting max rate information. Use setMaxRate first");
-      return -1;
-    }
+    ROS_WARN("Trying to use autocalc_timing without setting max rate information. Use setMaxRate first");
+    return -1;
   }
 
   for(int i=1; i < (int) tp_.size() ; i++)
   {
-    if(autocalc_timing)
-    {
-      dT = calculateMinimumTimeLinear(tp_[i-1],tp_[i]);
-      tp_[i].time_ = tp_[i-1].time_ + dT;
-      ROS_INFO("dT for segment %d = %f",(i-1),dT);
-    }
-    else
-    {
-      dT = tp_[i].time_ - tp_[i-1].time_;
-    }
+    dT = calculateMinimumTimeLinear(tp_[i-1],tp_[i]);
+    tp_[i].time_ = tp_[i-1].time_ + dT;
 
     tc.duration_ = dT;
 
@@ -258,6 +294,18 @@ void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double 
   {
     tp.q_[i]    =  tc.coeff_[i][0] + segment_time * tc.coeff_[i][1];
     tp.qdot_[i] =  tc.coeff_[i][1];
+  }
+  tp.time_ = time;
+  tp.dimension_ = dimension_;
+}
+
+void Trajectory::sampleCubic(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
+{
+  double segment_time = time - segment_start_time;
+  for(int i =0; i < dimension_; i++)
+  {
+    tp.q_[i]    = tc.coeff_[i][0] + segment_time * tc.coeff_[i][1] + segment_time*segment_time*tc.coeff_[i][2] + segment_time*segment_time*segment_time*tc.coeff_[i][3];
+    tp.qdot_[i] = tc.coeff_[i][1] + 2*segment_time*tc.coeff_[i][2] + 3*segment_time*segment_time*tc.coeff_[i][3];
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -315,7 +363,176 @@ double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint 
   return minTime;
 }
 
+double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &end)
+{
+  double minJointTime(0);
+  double minTime(0);
+
+  for(int i = 0; i < start.dimension_; i++)
+  {
+    if(max_rate_[i] > 0)
+      minJointTime = calculateMinTimeCubic(start.q_[i],end.q_[i],start.qdot_[i],end.qdot_[i],max_rate_[i]);
+    else
+      minJointTime = MAX_ALLOWABLE_TIME;
+
+    if(minTime < minJointTime)
+      minTime = minJointTime;
+
+  }
+
+  return minTime;
+}
+
+double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double v1, double vmax)
+{
+  double t1(MAX_ALLOWABLE_TIME), t2(MAX_ALLOWABLE_TIME), result(MAX_ALLOWABLE_TIME);
+  double dq = q1 - q0;
+  double a = 3*(v0+v1)*vmax - 3* (v0+v1)*v0 + pow((2*v0+v1),2);
+  double b = -6*dq*vmax + 6 * v0 *dq - 6*dq*(2*v0+v1);
+  double c = 9 * pow(dq,2);
+
+  if (fabs(a) > EPS_TRAJECTORY)
+  {
+    if((pow(b,2)-4*a*c) >= 0)
+    {
+      t1 = (-b + sqrt(pow(b,2)-4*a*c))/(2*a);
+      t2 = (-b - sqrt(pow(b,2)-4*a*c))/(2*a);
+    }
+  }
+  else
+  {
+    t1 = -c/b;
+    t2 = t1;
+  }
+
+  if(t1 < 0)
+    t1 = MAX_ALLOWABLE_TIME;
+
+  if(t2 < 0)
+    t2 = MAX_ALLOWABLE_TIME;
+
+  result = std::min(t1,t2);
+  return result;
+}
+
+
 void Trajectory::setInterpolationMethod(std::string interp_method)
 {
   interp_method_ = interp_method;
+}
+
+int Trajectory::parameterize()
+{
+  int error_code = -1;
+  if(interp_method_ == std::string("linear"))
+     error_code = parameterizeLinear();
+  else if(interp_method_ == std::string("cubic"))
+     error_code = parameterizeCubic();
+  else
+  {
+    ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
+  }
+  return error_code;
+}
+
+
+int Trajectory::parameterizeLinear()
+{
+  double dT(0);
+  TCoeff tc;
+
+  std::vector<double> temp;
+
+  temp.resize(2);
+
+  tc.degree_ = 1;
+  tc.dimension_ = dimension_;
+
+  if(autocalc_timing_)
+  {
+    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+    {
+      ROS_WARN("Trying to use apply limits without setting max rate information. Use setMaxRate first");
+      return -1;
+    }
+  }
+  for(int i=1; i < (int) tp_.size() ; i++)
+  {
+    dT = tp_[i].time_ - tp_[i-1].time_;
+    if(autocalc_timing_) 
+    {
+      double dTMin = calculateMinimumTimeLinear(tp_[i-1],tp_[i]);
+      if(dTMin > dT) // if minimum time required to satisfy limits is greater than time available, stretch this segment
+        dT = dTMin;
+    }
+
+    tc.duration_ = dT;
+
+    for(int j=0; j < dimension_; j++)
+    {
+      temp[0] = tp_[i-1].q_[j];
+      temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
+      tc.coeff_.push_back(temp);
+    }
+    tc_.push_back(tc);
+  }
+
+  // Now modify all the times to bring them up to date
+  for(int i=1; i < (int) tp_.size(); i++)
+    tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
+
+  return 1;
+}
+
+
+int Trajectory::parameterizeCubic()
+{
+  double dT(0);
+  TCoeff tc;
+
+  std::vector<double> temp;
+
+  temp.resize(4);
+
+  tc.degree_ = 1;
+  tc.dimension_ = dimension_;
+
+  if(autocalc_timing_)
+  {
+    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+    {
+      ROS_WARN("Trying to use apply limits without setting max rate information. Use setMaxRate first");
+      return -1;
+    }
+  }
+
+  for(int i=1; i < (int) tp_.size() ; i++)
+  {
+    dT = tp_[i].time_ - tp_[i-1].time_;
+    if(autocalc_timing_) 
+    {
+      double dTMin = calculateMinimumTimeCubic(tp_[i-1],tp_[i]);
+      if(dTMin > dT) // if minimum time required to satisfy limits is greater than time available, stretch this segment
+        dT = dTMin;
+    }
+
+    tc.duration_ = dT;
+
+    for(int j=0; j < dimension_; j++)
+    {
+      temp[0] = tp_[i-1].q_[j];
+      temp[1] = tp_[i-1].qdot_[j];
+      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
+      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+
+      tc.coeff_.push_back(temp);
+    }
+    tc_.push_back(tc);
+  }
+
+  // Now modify all the times to bring them up to date
+  for(int i=1; i < (int) tp_.size(); i++)
+    tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
+
+  return 1;
 }
