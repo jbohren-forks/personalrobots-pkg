@@ -116,7 +116,7 @@ loadMapFromFile(std_srvs::StaticMap::response* resp,
       //
       /// @todo Make the color thresholds configurable, probably from
       /// within the comments section of the image file.
-      if(occ > 0.5)
+      if(occ > 0.65)
         resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = +100;
       else if(occ < 0.1)
         resp->map.data[MAP_IDX(resp->map.width,i,resp->map.height - j - 1)] = 0;
