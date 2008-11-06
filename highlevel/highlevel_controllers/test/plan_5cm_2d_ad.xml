@@ -17,6 +17,7 @@
     <node pkg="nav_view" type="nav_view" respawn="false"/>
     
     <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
+    <param name="move_base/planStatsFile" value="/tmp/move_base_sbpl.log"/>
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ADPlanner"/>

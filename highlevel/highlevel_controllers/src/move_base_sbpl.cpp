@@ -116,6 +116,9 @@ namespace ros {
        */
       virtual bool makePlan();
       
+      /** do MoveBase::updateGoalMsg() and increment goalCount_ */
+      virtual void updateGoalMsg();
+      
     private:
 
       bool isMapDataOK();
@@ -125,13 +128,16 @@ namespace ros {
       SBPLPlannerManager * pMgr_;
       SBPLPlannerStatistics pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
+      std::string planStatsFile_;
+      size_t goalCount_;
     };
     
     
     MoveBaseSBPL::MoveBaseSBPL()
       : MoveBase(),
 	env_(0),
-	pMgr_(0)
+	pMgr_(0),
+	goalCount_(0)
     {
       try {
 	// We're throwing int exit values if something goes wrong, and
@@ -140,7 +146,9 @@ namespace ros {
 	// called no matter what.
 	sentry<MoveBaseSBPL> guard(this);
 	
+	param(get_name() + "/planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
 	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, 1.0);
+	
 	string environmentType;
 	param(get_name() + "/environmentType", environmentType, string("2D"));
 	
@@ -222,7 +230,7 @@ namespace ros {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
 	}
-	pStat_.pushBack(plannerType);
+	pStat_.pushBack(plannerType, environmentType);
       }
       catch (int ii) {
 	delete env_;
@@ -274,9 +282,10 @@ namespace ros {
 
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
-
+      
+      SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
+      
       try {
-	SBPLPlannerStatistics::entry & se(pStat_.top());
 	const CostMap2D& cm = getCostMap();
 	
 	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
@@ -284,51 +293,55 @@ namespace ros {
 	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
 	// to lock protect those.
 	stateMsg.lock();
-	se.start = stateMsg.pos;
-	se.goal = stateMsg.goal;
+	statsEntry.start = stateMsg.pos;
+	statsEntry.goal = stateMsg.goal;
 	stateMsg.unlock();
 
 	// Set start state based on global pose, updating statistics in the process.
-	cm.WC_MC(se.start.x, se.start.y, se.startIx, se.startIy);
- 	env_->SetStart(se.start);
- 	se.startState = env_->GetStateFromPose(se.start);
-	if (0 > se.startState) {
+	cm.WC_MC(statsEntry.start.x, statsEntry.start.y, statsEntry.startIx, statsEntry.startIy);
+ 	env_->SetStart(statsEntry.start);
+ 	statsEntry.startState = env_->GetStateFromPose(statsEntry.start);
+	if (0 > statsEntry.startState) {
 	  ROS_ERROR("invalid start state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
-		    se.startState, se.start.x, se.start.y);
+		    statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
 	  return false;
 	}
-	int status(pMgr_->set_start(se.startState));
+	int status(pMgr_->set_start(statsEntry.startState));
 	if (1 != status) {
 	  ROS_ERROR("failed to set start state ID %d from (%ud, %ud): pMgr_->set_start() returned %d\n",
-		    se.startState, se.startIx, se.startIy, status);
+		    statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
 	  return false;
 	}
 	
 	// Set goal state, updating statistics in the process.
-	cm.WC_MC(se.goal.x, se.goal.y, se.goalIx, se.goalIy);
- 	env_->SetGoal(se.goal);
- 	se.goalState = env_->GetStateFromPose(se.goal);
-	if (0 > se.goalState) {
+	cm.WC_MC(statsEntry.goal.x, statsEntry.goal.y, statsEntry.goalIx, statsEntry.goalIy);
+ 	env_->SetGoal(statsEntry.goal);
+ 	statsEntry.goalState = env_->GetStateFromPose(statsEntry.goal);
+	if (0 > statsEntry.goalState) {
 	  ROS_ERROR("invalid goal state ID %d from pose (%+8.3f, %+8.3f): outside of map?\n",
-		    se.goalState, se.goal.x, se.goal.y);
+		    statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
 	  return false;
 	}
-	status = pMgr_->set_goal(se.goalState);
+	status = pMgr_->set_goal(statsEntry.goalState);
 	if (1 != status) {
 	  ROS_ERROR("failed to set goal state ID %d from (%ud, %ud): pMgr_->set_goal() returned %d\n",
-		    se.goalState, se.goalIx, se.goalIy, status);
+		    statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
 	  return false;
 	}
 	
 	// Invoke the planner, updating the statistics in the process.
 	std::vector<int> solutionStateIDs;
-	se.allocated_time_sec = plannerTimeLimit_;
-	se.status = pMgr_->replan(se.allocated_time_sec, &se.actual_time_sec, &solutionStateIDs);
+	statsEntry.allocated_time_sec = plannerTimeLimit_;
+	statsEntry.status = pMgr_->replan(statsEntry.allocated_time_sec,
+					  &statsEntry.actual_time_wall_sec,
+					  &statsEntry.actual_time_user_sec,
+					  &statsEntry.actual_time_system_sec,
+					  &solutionStateIDs);
 	
 	// Extract the solution, if available, and update statistics (as usual).
-	se.plan_length_m = 0;
-	se.plan_angle_change_rad = 0;
-	if (1 == se.status) {
+	statsEntry.plan_length_m = 0;
+	statsEntry.plan_angle_change_rad = 0;
+	if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
 	  std::list<std_msgs::Pose2DFloat32> plan;
 	  double prevx(0), prevy(0), prevth(0);
 	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
@@ -346,10 +359,10 @@ namespace ros {
 	    else {
 	      double const dx(waypoint.x - prevx);
 	      double const dy(waypoint.y - prevy);
-	      se.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
+	      statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
 	      double const th(atan2(dy, dx));
 	      if (42 > prevth) // see 42.17 above
-		se.plan_angle_change_rad += fabs(mod2pi(th - prevth));
+		statsEntry.plan_angle_change_rad += fabs(mod2pi(th - prevth));
 	      prevx = waypoint.x;
 	      prevy = waypoint.y;
 	      prevth = th;
@@ -359,12 +372,22 @@ namespace ros {
 	    plan.push_back(waypoint);
 	  }
 	  // probably we should add the delta from the last theta to
-	  // the goal theta onto se.plan_angle_change_rad here, but
+	  // the goal theta onto statsEntry.plan_angle_change_rad here, but
 	  // that depends on whether our planner handles theta for us,
 	  // and needs special handling if we have no plan...
-	  se.logInfo("move_base_sbpl: ");
-	  se.logFile("/tmp/move_base_sbpl.log");
-	  pStat_.pushBack(pMgr_->getName());
+	  {
+	    ostringstream prefix_os;
+	    prefix_os << "[" << goalCount_ << "] ";
+	    static size_t lastPlannedGoal(171717);
+	    char const * title("\nREPLAN SUCCESS");
+	    if (lastPlannedGoal != goalCount_) {
+	      lastPlannedGoal = goalCount_;
+	      title = "\nPLAN SUCCESS";
+	    }
+	    statsEntry.logFile(planStatsFile_.c_str(), title, prefix_os.str().c_str());
+	  }
+	  ////	  statsEntry.logInfo("move_base_sbpl: ");
+	  pStat_.pushBack(pMgr_->getName(), env_->getName());
 	  
 	  updatePlan(plan);
 	  return true;
@@ -376,7 +399,23 @@ namespace ros {
       }
 
       ROS_ERROR("No plan found\n");
+      {
+	static size_t lastFailedGoal(424242);
+	if (lastFailedGoal != goalCount_) {
+	  lastFailedGoal = goalCount_;
+	  ostringstream prefix_os;
+	  prefix_os << "[" << goalCount_ << "] ";
+	  statsEntry.logFile(planStatsFile_.c_str(), "\nPLAN FAILURE", prefix_os.str().c_str());
+	}
+      }
       return false;
+    }
+    
+    
+    void MoveBaseSBPL::updateGoalMsg()
+    {
+      MoveBase::updateGoalMsg();
+      ++goalCount_;
     }
     
   }

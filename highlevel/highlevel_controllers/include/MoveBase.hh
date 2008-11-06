@@ -106,12 +106,12 @@ namespace ros {
        */
       footprint_t footprint_;
       
-    private:
       /**
        * @brief Will process a goal update message.
        */
       virtual void updateGoalMsg();
 
+    private:
       /**
        * @brief Use global pose to publish currrent state data at the start of each cycle
        */

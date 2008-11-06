@@ -39,9 +39,12 @@
 #include <costmap_2d/costmap_2d.h>
 #include <headers.h>
 #include <sys/time.h>
+#include <sys/resource.h>
 #include <time.h>
-#include <err.h>
 #include <sstream>
+#include <errno.h>
+#include <cstring>
+
 
 namespace {
   
@@ -67,7 +70,7 @@ namespace highlevel_controllers {
     if ("ADPlanner" == name)
       return new ADPlanner(environment, bforwardsearch);
 
-#warning 'VIPlanner not instantiable... work in progress maybe?'
+    // VIPlanner not instantiable... work in progress by Max
 #ifdef UNDEFINED
     if ("VIPlanner" == name)
       return new VIPlanner(environment, mdpCfg);
@@ -127,20 +130,36 @@ namespace highlevel_controllers {
   
   
   int SBPLPlannerManager::
-  replan(double allocated_time_sec, double * actual_time_sec,
+  replan(double allocated_time_sec,
+	 double * actual_time_wall_sec,
+	 double * actual_time_user_sec,
+	 double * actual_time_system_sec,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)
   {
     if ( ! planner_)
       throw no_planner_selected();
     
+    struct rusage ru_started;
     struct timeval t_started;
-    struct timeval t_finished;
+    getrusage(RUSAGE_SELF, &ru_started);
     gettimeofday(&t_started, 0);
+
     int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V));
+
+    struct rusage ru_finished;
+    struct timeval t_finished;
+    getrusage(RUSAGE_SELF, &ru_finished);
     gettimeofday(&t_finished, 0);
-    *actual_time_sec =
+    
+    *actual_time_wall_sec =
       t_finished.tv_sec - t_started.tv_sec
       + 1e-6 * t_finished.tv_usec - 1e-6 * t_started.tv_usec;
+    *actual_time_user_sec =
+      ru_finished.ru_utime.tv_sec - ru_started.ru_utime.tv_sec
+      + 1e-6 * ru_finished.ru_utime.tv_usec - 1e-6 * ru_started.ru_utime.tv_usec;
+    *actual_time_system_sec =
+      ru_finished.ru_stime.tv_sec - ru_started.ru_stime.tv_sec
+      + 1e-6 * ru_finished.ru_stime.tv_usec - 1e-6 * ru_started.ru_stime.tv_usec;
     
     return status;
   }
@@ -174,8 +193,9 @@ namespace highlevel_controllers {
   
   
   SBPLPlannerStatistics::entry::
-  entry(std::string const & _plannerName)
-    : plannerName(_plannerName),
+  entry(std::string const & _plannerType, std::string const & _environmentType)
+    : plannerType(_plannerType),
+      environmentType(_environmentType),
       goalState(-1),
       startState(-1),
       status(-42)
@@ -184,9 +204,9 @@ namespace highlevel_controllers {
   
   
   void SBPLPlannerStatistics::
-  pushBack(std::string const & plannerName)
+  pushBack(std::string const & plannerType, std::string const & environmentType)
   {
-    stats_.push_back(entry(plannerName));
+    stats_.push_back(entry(plannerType, environmentType));
   }
   
   
@@ -216,10 +236,10 @@ namespace highlevel_controllers {
 	     "%splan_length [m]:         %+8.3f\n"
 	     "%splan_rotation [rad]:     %+8.3f\n",
 	     prefix,
-	     prefix, plannerName.c_str(),
+	     prefix, plannerType.c_str(),
 	     prefix, goal.x, goal.y, goal.th, goalIx, goalIy, goalState,
 	     prefix, start.x, start.y, start.th, startIx, startIy, startState,
-	     prefix, actual_time_sec, allocated_time_sec,
+	     prefix, actual_time_wall_sec, allocated_time_sec,
 	     prefix, status,
 	     prefix, plan_length_m,
 	     prefix, plan_angle_change_rad);
@@ -227,30 +247,50 @@ namespace highlevel_controllers {
   
   
   void SBPLPlannerStatistics::entry::
-  logFile(char const * filename, char const * prefix) const
+  logFile(char const * filename, char const * title, char const * prefix) const
   {
     FILE * ff(fopen(filename, "a"));
     if (0 == ff) {
-      warn("SBPLPlannerStatistics::entry::logFile(): fopen(%s)", filename);
+      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fopen(%s): %s",
+	       filename, strerror(errno));
       return;
     }
     fprintf(ff,
-	    "%splanner:                 %s\n"
-	    "%sgoal (map/grid/state):   %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	    "%sstart (map/grid/state):  %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	    "%stime [s] (actual/alloc): %g / %g\n"
-	    "%sstatus (1 == SUCCESS):   %d\n"
-	    "%splan_length [m]:         %+8.3f\n"
-	    "%splan_rotation [rad]:     %+8.3f\n",
-	    prefix, plannerName.c_str(),
-	    prefix, goal.x, goal.y, goal.th, goalIx, goalIy, goalState,
-	    prefix, start.x, start.y, start.th, startIx, startIy, startState,
-	    prefix, actual_time_sec, allocated_time_sec,
+	    "%s\n"
+	    "%splanner:               %s\n"
+	    "%senvironment:           %s\n"
+	    "%sgoal  map:             %+8.3f %+8.3f %+8.3f\n"
+	    "%sgoal  grid:            %u %u\n"
+	    "%sgoal  state:           %d\n"
+	    "%sstart map:             %+8.3f %+8.3f %+8.3f\n"
+	    "%sstart grid:            %u %u\n"
+	    "%sstart state:           %d\n"
+	    "%stime  alloc:           %g\n"
+	    "%stime  actual (wall):   %g\n"
+	    "%stime  actual (user):   %g\n"
+	    "%stime  actual (system): %g\n"
+	    "%sstatus (1 == SUCCESS): %d\n"
+	    "%splan_length [m]:       %+8.3f\n"
+	    "%splan_rotation [rad]:   %+8.3f\n",
+	    title,
+	    prefix, plannerType.c_str(),
+	    prefix, environmentType.c_str(),
+	    prefix, goal.x, goal.y, goal.th,
+	    prefix, goalIx, goalIy,
+	    prefix, goalState,
+	    prefix, start.x, start.y, start.th,
+	    prefix, startIx, startIy,
+	    prefix, startState,
+	    prefix, allocated_time_sec,
+	    prefix, actual_time_wall_sec,
+	    prefix, actual_time_user_sec,
+	    prefix, actual_time_system_sec,
 	    prefix, status,
 	    prefix, plan_length_m,
 	    prefix, plan_angle_change_rad);
     if (0 != fclose(ff))
-      warn("SBPLPlannerStatistics::entry::logFile(): fclose() on %s", filename);
+      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fclose() on %s: %s",
+	       filename, strerror(errno));
   }
   
   
@@ -372,6 +412,14 @@ namespace highlevel_controllers {
   }
   
   
+  std::string EnvironmentWrapper2D::
+  getName() const
+  {
+    std::string name("2D");
+    return name;
+  }
+  
+  
   EnvironmentWrapper3DKIN::
   EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
 			  unsigned char obst_cost_thresh,
@@ -489,6 +537,14 @@ namespace highlevel_controllers {
     if ( ! env_->PoseContToDisc(pose.x, pose.y, pose.th, ix, iy, ith))
       return -1;
     return env_->GetStateFromCoord(ix, iy, ith);
+  }
+  
+  
+  std::string EnvironmentWrapper3DKIN::
+  getName() const
+  {
+    std::string name("3DKIN");
+    return name;
   }
   
 }
