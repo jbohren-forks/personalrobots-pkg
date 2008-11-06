@@ -193,7 +193,7 @@ private:
   {
     if(!m_robotState)
       {
-	ROS_WARN("Ignoring state update because I haven't yet received the robot description");
+	//ROS_WARN("Ignoring state update because I haven't yet received the robot description");
 	return;
       }
     //m_robotState->print();
@@ -310,62 +310,74 @@ private:
     if (!m_acceptScans){
       return;
     }
-    std_msgs::PointCloud map_cloud;
 
-    if (m_verbose) 
-      fprintf(stdout, "Received laser scan with %d points in frame %s\n", local_cloud.get_pts_size(), local_cloud.header.frame_id.c_str());
+    m_worldDataMutex.lock();
+
+    point_clouds_.push_back(local_cloud);
+
+    while(!point_clouds_.empty()){
+
+      const std_msgs::PointCloud& point_cloud = point_clouds_.front();
+
+      std_msgs::PointCloud map_cloud;
 	
-    /* copy data to a place where incoming messages do not affect it */
-    try
-      {
-	m_tf.transformPointCloud("map", map_cloud, local_cloud);
-      }
-    catch(libTF::TransformReference::LookupException& ex)
-      {
-	fprintf(stderr, "Discarding point cloud: Transform reference lookup exception: %s\n", ex.what());
-	return;
-      }
-    catch(libTF::TransformReference::ExtrapolateException& ex)
-      {
-	fprintf(stderr, "Discarding point cloud: Extrapolation exception: %s\n", ex.what());
-	return;
-      }
-    catch(libTF::TransformReference::ConnectivityException& ex)
-      {
-	fprintf(stderr, "Discarding point cloud: Connectivity exception: %s\n", ex.what());
-	return;
-      }
-    catch(...)
-      {
-	fprintf(stderr, "Discarding point cloud: Exception in point cloud computation\n");
-	return;
-      }
+      /* Transform to the map frame */
+      try
+	{
+	  m_tf.transformPointCloud("map", map_cloud, local_cloud);
+	}
+      catch(libTF::TransformReference::LookupException& ex)
+	{
+	  ROS_ERROR("Lookup exception: %s\n", ex.what());
+	  break;
+	}
+      catch(libTF::TransformReference::ExtrapolateException& ex)
+	{
+	  break;
+	}
+      catch(libTF::TransformReference::ConnectivityException& ex)
+	{
+	  ROS_ERROR("Connectivity exception: %s\n", ex.what());
+	  break;
+	}
+      catch(...)
+	{
+	  ROS_ERROR("Exception in point cloud computation\n");
+	  break;
+	}
 
-    /* add new data */
-    std_msgs::PointCloud *newData = runFilters(map_cloud);
-    if (newData)
-      {
+      point_clouds_.pop_front();
+
+      /* add new data */
+
+      ROS_DEBUG( "Received laser scan with %d points in frame %s\n", 
+		local_cloud.get_pts_size(), local_cloud.header.frame_id.c_str());
+
+      std_msgs::PointCloud *newData = runFilters(map_cloud);
+
+      if (newData){
 	if (newData->get_pts_size() == 0)
 	  delete newData;
 	else{
-	  m_worldDataMutex.lock();
 	  m_currentWorld.push_back(newData);
-	  m_worldDataMutex.unlock();
 	}
       }
+    }
+
+    m_worldDataMutex.unlock();
   }
     
   std_msgs::PointCloud* runFilters(const std_msgs::PointCloud &cloud)
   {
     std_msgs::PointCloud *cloudF = filter0(cloud, m_retainPointcloudFraction);
-	
+    
     if (cloudF)
       {
 	std_msgs::PointCloud *temp = filter1(*cloudF);
 	delete cloudF;
 	cloudF = temp;
       }
-	
+    
     return cloudF;
   }
 
@@ -399,9 +411,10 @@ private:
     std_msgs::PointCloud *copy = new std_msgs::PointCloud();
     copy->header = cloud.header;
 	
+    
     for (int i = m_selfSeeParts.size() - 1 ; i >= 0 ; --i)
       m_selfSeeParts[i].body->setPose(m_selfSeeParts[i].link->globalTrans);
-
+    
     unsigned int n = cloud.get_pts_size();
     unsigned int j = 0;
     copy->set_pts_size(n);	
@@ -416,7 +429,7 @@ private:
 	    bool keep = true;
 	    for (int i = m_selfSeeParts.size() - 1 ; keep && i >= 0 ; --i)
 	      keep = !m_selfSeeParts[i].body->containsPoint(x, y, z);
-		
+			     
 	    if (keep)
 	      copy->pts[j++] = cloud.pts[k];
 	  }
@@ -449,6 +462,7 @@ private:
   random_utils::rngState           m_rng;
 
   laser_scan::LaserProjection m_projector; /**< Used to project laser scans */
+  std::deque<std_msgs::PointCloud> point_clouds_;
 };
 
 void usage(const char *progname)

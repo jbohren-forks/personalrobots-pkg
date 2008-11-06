@@ -3,7 +3,6 @@
 <author>Ioan Sucan</author>
 <license>BSD</license>
 <depend package="roscpp" />
-<!-- <depend package="rosout" /> -->
 <depend package="std_msgs" />
 <depend package="rosTF" />
 <depend package="random_utils" /> 
