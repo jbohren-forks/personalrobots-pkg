@@ -1,0 +1,9 @@
+<package>
+ <description brief="tools for comparing motion planners">
+ </description>
+ <author>Roland Philippsen</author>
+ <license>BSD</license>
+ <url>http://pr.willowgarage.com</url>
+ <depend package="highlevel_controllers"/>
+ <depend package="libsunflower"/>
+</package>
