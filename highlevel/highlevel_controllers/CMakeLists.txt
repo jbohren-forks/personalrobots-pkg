@@ -3,9 +3,8 @@ cmake_minimum_required(VERSION 2.6)
 ### If you're trying to debug include directives or so, this here
 ### might help:
 #SET (CMAKE_VERBOSE_MAKEFILE ON)
-
+set(ROS_BUILD_TYPE Release)
 include(rosbuild)
-#set(ROS_BUILD_TYPE Release)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
 
