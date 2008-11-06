@@ -626,74 +626,75 @@ int CreateAllInterfaces(void)
     return -1;
   }
 
-  if(ioctl( sock, SIOCGIFCONF, &get_io ) != 0)
-  {
-    ROS_ERROR("Bad ioctl status");
-    return -1;
-  }
-
   struct ifconf get_io;
   get_io.ifc_req = new ifreq[10];
   get_io.ifc_len = sizeof(ifreq) * 10;
 
-  int num_interfaces = get_io.ifc_len / sizeof(ifreq);
-  ROS_DEBUG("Got %d interfaces", num_interfaces);
-  for(int yy=0; yy < num_interfaces; ++yy)
+  if(ioctl( sock, SIOCGIFCONF, &get_io ) == 0)
   {
-    ROS_DEBUG("interface=%s", get_io.ifc_req[yy].ifr_name);
-    if(get_io.ifc_req[yy].ifr_addr.sa_family == AF_INET)
+    int num_interfaces = get_io.ifc_len / sizeof(ifreq);
+    ROS_DEBUG("Got %d interfaces", num_interfaces);
+    for(int yy=0; yy < num_interfaces; ++yy)
     {
-      //ROS_DEBUG("ioctl: family=%d", get_io.ifc_req[yy].ifr_addr.sa_family);
-      sockaddr_in *addr = (sockaddr_in*)&get_io.ifc_req[yy].ifr_addr;
-      ROS_DEBUG("address=%s", inet_ntoa(addr->sin_addr) );
+      ROS_DEBUG("interface=%s", get_io.ifc_req[yy].ifr_name);
+      if(get_io.ifc_req[yy].ifr_addr.sa_family == AF_INET)
+      {
+        //ROS_DEBUG("ioctl: family=%d", get_io.ifc_req[yy].ifr_addr.sa_family);
+        sockaddr_in *addr = (sockaddr_in*)&get_io.ifc_req[yy].ifr_addr;
+        ROS_DEBUG("address=%s", inet_ntoa(addr->sin_addr) );
 
-      if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
-          (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
-      {
-        ROS_INFO("Ignoring interface %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
-        continue;
-      } 
-      else 
-      {
-        ROS_INFO("Found interface    %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
-        Interface *newInterface = new Interface(get_io.ifc_req[yy].ifr_name);
-        assert(newInterface != NULL);
-        if (newInterface == NULL) 
+        if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
+            (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
         {
+          ROS_INFO("Ignoring interface %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
           continue;
-        }
-
-
-        struct ifreq *ifr = &get_io.ifc_req[yy];
-        if(ioctl(sock, SIOCGIFBRDADDR, ifr) == 0)
+        } 
+        else 
         {
-          if (ifr->ifr_broadaddr.sa_family == AF_INET) 
+          ROS_INFO("Found interface    %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+          Interface *newInterface = new Interface(get_io.ifc_req[yy].ifr_name);
+          assert(newInterface != NULL);
+          if (newInterface == NULL) 
           {
-            struct sockaddr_in *sin = (struct sockaddr_in *) &ifr->ifr_dstaddr;
-            
-            ROS_DEBUG ("Broadcast addess %s\n", inet_ntoa(sin->sin_addr));
-
-            if (newInterface->Init(sin)) 
-            {
-              printf("Error initializing interface %*s\n", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
-              delete newInterface;
-              newInterface = NULL;
-              continue;
-            } 
-            else 
-            {
-              // Interface is good add it to interface list
-              Interfaces.push_back(newInterface);
-
-            }
-         
+            continue;
           }
 
+
+          struct ifreq *ifr = &get_io.ifc_req[yy];
+          if(ioctl(sock, SIOCGIFBRDADDR, ifr) == 0)
+          {
+            if (ifr->ifr_broadaddr.sa_family == AF_INET) 
+            {
+              struct sockaddr_in *sin = (struct sockaddr_in *) &ifr->ifr_dstaddr;
+              
+              ROS_DEBUG ("Broadcast addess %s\n", inet_ntoa(sin->sin_addr));
+
+              if (newInterface->Init(sin)) 
+              {
+                printf("Error initializing interface %*s\n", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+                delete newInterface;
+                newInterface = NULL;
+                continue;
+              } 
+              else 
+              {
+                // Interface is good add it to interface list
+                Interfaces.push_back(newInterface);
+
+              }
+           
+            }
+
+          }
+
+
         }
-
-
       }
     }
+  }
+  else
+  {
+    ROS_ERROR("Bad ioctl status");
   }
 
   delete[] get_io.ifc_req;
