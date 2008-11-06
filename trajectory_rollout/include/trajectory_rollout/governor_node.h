@@ -105,15 +105,15 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
       origin_x_ = o_x;
       origin_y_ = o_y;
     }
-
+    /*
     void updateResolution(double res){
       resolution_ = res;
     }
-
     void updateSize(unsigned int width, unsigned int height){
       width_ = width;
       height_ = height;
     }
+    */
 
  private:
     MapGrid& map_;
