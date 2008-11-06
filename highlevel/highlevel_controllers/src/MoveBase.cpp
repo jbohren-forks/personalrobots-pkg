@@ -74,7 +74,7 @@ namespace ros {
       // This should become a static transform. For now we will simply allow it to be provided
       // as a parameter until we hear how static transforms are to be handled.
       double laser_x_offset(0.275);
-      param("laser_x_offset", laser_x_offset, laser_x_offset);
+      param("/laser_x_offset", laser_x_offset, laser_x_offset);
       //tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
       // Costmap parameters
@@ -87,15 +87,15 @@ namespace ros {
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
-      param("costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
-      param("costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
-      param("costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
-      param("costmap_2d/no_information_value", noInformation, noInformation);
-      param("costmap_2d/z_threshold", maxZ, maxZ);
-      param("costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
-      param("costmap_2d/inflation_radius", inflationRadius, inflationRadius);
-      param("costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
-      param("costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      param("/costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
+      param("/costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
+      param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
+      param("/costmap_2d/no_information_value", noInformation, noInformation);
+      param("/costmap_2d/z_threshold", maxZ, maxZ);
+      param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
+      param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
+      param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
+      param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -115,10 +115,7 @@ namespace ros {
       std::vector<unsigned char> inputData;
       unsigned int numCells = resp.map.width * resp.map.height;
       for(unsigned int i = 0; i < numCells; i++){
-	if(resp.map.data[i] == CostMap2D::NO_INFORMATION)
-	  inputData.push_back(CostMap2D::LETHAL_OBSTACLE);
-	else
-	  inputData.push_back((unsigned char) resp.map.data[i]);
+	inputData.push_back((unsigned char) resp.map.data[i]);
       }
 
       // Now allocate the cost map and its sliding window used by the controller
@@ -139,12 +136,12 @@ namespace ros {
       const unsigned int SAMPLES_PER_DIM = 25;
       const double DFAST_SCALE = 0;
       const double OCCDIST_SCALE = 0;
-      param("trajectory_rollout/map_size", mapSize, 2.0);
-      param("trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
-      param("trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
-      param("trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
-      param("trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
-      param("trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
+      param("/trajectory_rollout/map_size", mapSize, 2.0);
+      param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
+      param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
+      param("/trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
+      param("/trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
+      param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
 
       ROS_ASSERT(mapSize <= costMap_->getWidth());
       ROS_ASSERT(mapSize <= costMap_->getHeight());

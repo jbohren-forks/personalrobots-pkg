@@ -43,6 +43,7 @@
 #include <time.h>
 #include <math.h>
 #include <iostream>
+#include <sstream>
 #include <highlevel_controllers/Ping.h>
 
 /**
@@ -75,14 +76,14 @@ public:
 
     // Obtain the control frequency for this node
     double controller_frequency(10);
-    param(nodeName + "/controller_frequency", controller_frequency, controller_frequency);
+    local_param("controller_frequency", controller_frequency, controller_frequency);
     ROS_ASSERT(controller_frequency > 0);
     controllerCycleTime_ = 1/controller_frequency;
 
     // Obtain the planner frequency for this node. A negative value means run as fast as possible. A zero value means run
     // on demand. Otherwise, run at the specified positive frequency
     double planner_frequency(0.0);
-    param(nodeName + "/planner_frequency", planner_frequency, planner_frequency);
+    local_param("planner_frequency", planner_frequency, planner_frequency);
     if(planner_frequency  > 0)
       plannerCycleTime_ = 1/planner_frequency;
     else if (planner_frequency < 0)
@@ -273,6 +274,15 @@ protected:
     T * t_;
   };
   
+
+  template <class T>
+  void local_param(const std::string& localName, T& param, const T& defaultValue){
+    std::string globalName = get_name() + "/" + localName;
+    node::param<T>(globalName, param, defaultValue);
+    std::stringstream ss;
+    ss << param;
+    ROS_INFO("Setting %s to %s\n", globalName.c_str(), ss.str().c_str());
+  }
   
   G goalMsg; /*!< Message populated by callback */
   S stateMsg; /*!< Message published. Will be populated in the control loop */

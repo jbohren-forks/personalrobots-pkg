@@ -145,12 +145,12 @@ namespace ros {
 	// gets destructed when we go out of scope, so unlock() gets
 	// called no matter what.
 	sentry<MoveBaseSBPL> guard(this);
-	
-	param(get_name() + "/planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
-	param(get_name() + "/plannerTimeLimit", plannerTimeLimit_, -1.0);
+	local_param("planStatsFile", planStatsFile_, string("/tmp/move_base_sbpl.log"));
+	local_param("plannerTimeLimit", plannerTimeLimit_, 10.0);
+	/*
 	if (0 > plannerTimeLimit_) {
 	  int blah;
-	  param(get_name() + "/plannerTimeLimit", blah, -1); // parameters are picky about dots
+	  local_param("plannerTimeLimit", blah, -1); // parameters are picky about dots
 	  if (0 > blah) {
 	    ROS_ERROR("invalid or no %s/plannerTimeLimit specified: %g",
 		      get_name().c_str(), plannerTimeLimit_);
@@ -158,9 +158,9 @@ namespace ros {
 	  }
 	  plannerTimeLimit_ = blah;
 	}
-	
+	*/
 	string environmentType;
-	param(get_name() + "/environmentType", environmentType, string("2D"));
+	local_param("environmentType", environmentType, string("2D"));
 	
 	if ("2D" == environmentType) {
 	  // Initial Configuration is set with the threshold for
@@ -171,9 +171,9 @@ namespace ros {
 					  CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 	}
 	else if ("3DKIN" == environmentType) {
-	  string const prefix(get_name() + "/env3d/");
+	  string const prefix("env3d/");
 	  string obst_cost_thresh_str;
-	  param(prefix + "obst_cost_thresh", obst_cost_thresh_str, string("lethal"));
+	  local_param(prefix + "obst_cost_thresh", obst_cost_thresh_str, string("lethal"));
 	  unsigned char obst_cost_thresh(0);
 	  if ("lethal" == obst_cost_thresh_str)
 	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
@@ -189,11 +189,11 @@ namespace ros {
 	  }
 	  double goaltol_x, goaltol_y, goaltol_theta,
 	    nominalvel_mpersecs, timetoturn45degsinplace_secs;
-	  param(prefix + "goaltol_x", goaltol_x, 0.3);
-	  param(prefix + "goaltol_y", goaltol_y, 0.3);
-	  param(prefix + "goaltol_theta", goaltol_theta, 30.0);
-	  param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
-	  param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
+	  local_param(prefix + "goaltol_x", goaltol_x, 0.3);
+	  local_param(prefix + "goaltol_y", goaltol_y, 0.3);
+	  local_param(prefix + "goaltol_theta", goaltol_theta, 30.0);
+	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
+	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
 	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
 					     0, 0, 0, // start (x, y, th)
@@ -227,7 +227,7 @@ namespace ros {
 	}
 	
 	string plannerType;
-	param(get_name() + "/plannerType", plannerType, string("ARAPlanner"));
+	local_param("plannerType", plannerType, string("ARAPlanner"));
 	pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
 	if ( ! pMgr_->select(plannerType, false)) {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
