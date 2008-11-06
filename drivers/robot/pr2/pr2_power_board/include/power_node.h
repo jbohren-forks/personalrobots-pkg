@@ -16,7 +16,7 @@ class Interface
     Interface(const char* ifname);
     ~Interface() {Close();}
     void Close();
-    int Init();
+    int Init(sockaddr_in *port_address);
     void AddToReadSet(fd_set &set, int &max_sock) const;
     bool IsReadSet(fd_set set) const;
 };

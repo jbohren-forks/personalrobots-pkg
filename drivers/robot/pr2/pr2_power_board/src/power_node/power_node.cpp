@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/select.h>
+#include <sys/types.h>
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
@@ -73,7 +74,7 @@ Interface::Interface(const char* ifname) :
 }
 
 
-void Interface::Close(void) {
+void Interface::Close() {
   if (recv_sock != -1) {
     close(recv_sock);
     recv_sock = -1;
@@ -85,8 +86,20 @@ void Interface::Close(void) {
 }
 
 	
-int Interface::Init(void) 
+int Interface::Init(sockaddr_in *port_address) 
 {
+
+#if 0
+  uid_t uid = getuid();
+  uid_t euid = geteuid();
+
+  if(seteuid(euid) < 0)
+  {
+    ROS_ERROR ("Couldn't set uid.\n");
+    return -1;
+  }
+#endif
+
   recv_sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (recv_sock == -1) {
     perror("Couldn't create recv socket");		
@@ -98,7 +111,8 @@ int Interface::Init(void)
     perror("Couldn't create send socket");		
     return -1;
   }
-  /*		
+
+#if 0
   // Use specific interface for recv/send traffic 	
   if (setsockopt(recv_sock, SOL_SOCKET, SO_BINDTODEVICE, 
                  (char *)&interface.ifr_name, sizeof(interface.ifr_name))  < 0) {
@@ -114,7 +128,7 @@ int Interface::Init(void)
     Close();
     return -1;
   }
-  */
+#endif
 		
  // Allow reuse of recieve port
   int opt = 1;
@@ -144,7 +158,6 @@ int Interface::Init(void)
   struct sockaddr_in sin;
   memset(&sin, 0, sizeof(sin));
   sin.sin_family = AF_INET;
-  //sin.sin_port = htons(POWER_PORT);
   sin.sin_port = htons(POWER_PORT);
   sin.sin_addr.s_addr = (INADDR_ANY);
   if (bind(recv_sock, (struct sockaddr*)&sin, sizeof(sin))) {
@@ -155,14 +168,22 @@ int Interface::Init(void)
 	
   // Connect send socket to use broadcast address and same port as recieve sock		
   sin.sin_port = htons(POWER_PORT);
-  //sin.sin_addr.s_addr = inet_addr("255.255.255.255");
-  sin.sin_addr.s_addr = INADDR_BROADCAST; //inet_addr("192.168.10.255");
-  //sin.sin_addr.s_addr = (INADDR_ANY);
+  //sin.sin_addr.s_addr = INADDR_BROADCAST; //inet_addr("192.168.10.255");
+  //sin.sin_addr.s_addr = inet_netof(port_address->sin_addr);
+  sin.sin_addr= port_address->sin_addr;
   if (connect(send_sock, (struct sockaddr*)&sin, sizeof(sin))) {
     perror("Connect'ing socket failed");
     Close();
     return -1;
   }
+
+#if 0
+  if(seteuid(uid) < 0)
+  {
+    ROS_ERROR ("Couldn't restore uid.\n");
+    return -1;
+  }
+#endif
 
   return 0;		
 }
@@ -263,14 +284,15 @@ int PowerBoard::send_command(const char* input)
   errno = 0;
   int result = send(device->iface->send_sock, &cmdmsg, sizeof(cmdmsg), 0);
   if (result == -1) {
-    perror("Error sending");
+    ROS_ERROR("Error sending");
     return -1;
   } else if (result != sizeof(cmdmsg)) {
-    fprintf(stderr,"Error sending : send only took %d of %d bytes\n",
+    ROS_WARN("Error sending : send only took %d of %d bytes\n",
             result, sizeof(cmdmsg));
   }
 				
-  printf("Sent command %s(%d) to device %d, circuit %d\n",
+  ROS_DEBUG("Send to Serial=%u, revision=%u", cmdmsg.header.serial_num, cmdmsg.header.message_revision);
+  ROS_DEBUG("Sent command %s(%d) to device %d, circuit %d",
          command, command_enum, selected_device, circuit_breaker);
 	
   return 0;
@@ -430,7 +452,7 @@ void PowerBoard::collectMessages()
     //library_lock_.lock();
     collect_messages();
     //library_lock_.unlock();
-    ROS_DEBUG("*");
+    //ROS_DEBUG("*");
   }
 }
   
@@ -440,7 +462,7 @@ void PowerBoard::sendDiagnostic()
   while(ok())
   {
     sleep(1);
-    ROS_DEBUG("-");
+    //ROS_DEBUG("-");
     library_lock_.lock();
     robot_msgs::DiagnosticMessage msg_out;
 
@@ -634,8 +656,6 @@ void CloseAllDevices(void) {
 // Build list of interfaces
 int CreateAllInterfaces(void) 
 {
-  struct ifreq req;
-
   //
   int sock = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   if (sock == -1) {
@@ -643,44 +663,78 @@ int CreateAllInterfaces(void)
     return -1;
   }
 	
-  // Go though interfaces 0-10 and get interface names for them
-  for (int ifindex=0; ifindex<10; ++ifindex) {
-    memset(&req, 0, sizeof(req));
-    req.ifr_ifindex = ifindex;
-    if (ioctl(sock,SIOCGIFNAME,&req)) {
-      if (errno != ENODEV) {
-        fprintf(stderr,"Could not get name of interface at index %d : %s (%d)\n",
-                req.ifr_ifindex, strerror(errno), errno);
-      }
-      continue;
-    }
-    if ((strncmp("lo", req.ifr_name, sizeof(req.ifr_name)) == 0) || 
-        (strncmp("vmnet", req.ifr_name, 5) == 0))
+  struct ifconf get_io;
+  get_io.ifc_req = new ifreq[10];
+  get_io.ifc_len = sizeof(ifreq) * 10;
+
+  if(ioctl( sock, SIOCGIFCONF, &get_io ) != 0)
+  {
+    ROS_ERROR("Bad ioctl status");
+    return -1;
+  }
+
+  int num_interfaces = get_io.ifc_len / sizeof(ifreq);
+  ROS_DEBUG("Got %d interfaces", num_interfaces);
+  for(int yy=0; yy < num_interfaces; ++yy)
+  {
+    ROS_DEBUG("interface=%s", get_io.ifc_req[yy].ifr_name);
+    if(get_io.ifc_req[yy].ifr_addr.sa_family == AF_INET)
     {
-      printf("Ignoring interface %*s\n",sizeof(req.ifr_name), req.ifr_name);
-      continue;
-    } else {
-      printf("Found interface    %*s\n",sizeof(req.ifr_name), req.ifr_name);
-      Interface *newInterface = new Interface(req.ifr_name);
-      assert(newInterface != NULL);
-      if (newInterface == NULL) {
-        close(sock);
-        return -1;				
-      }
-      if (newInterface->Init()) {
-        printf("Error initializing interface %*s\n", sizeof(req.ifr_name), req.ifr_name);
-        delete newInterface;
-        newInterface = NULL;
+      //ROS_DEBUG("ioctl: family=%d", get_io.ifc_req[yy].ifr_addr.sa_family);
+      sockaddr_in *addr = (sockaddr_in*)&get_io.ifc_req[yy].ifr_addr;
+      ROS_DEBUG("address=%s", inet_ntoa(addr->sin_addr) );
+
+      if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
+          (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
+      {
+        ROS_INFO("Ignoring interface %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
         continue;
-      } else {
-        // Interface is good add it to interface list
-        Interfaces.push_back(newInterface);
+      } 
+      else 
+      {
+        ROS_INFO("Found interface    %*s\n",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+        Interface *newInterface = new Interface(get_io.ifc_req[yy].ifr_name);
+        assert(newInterface != NULL);
+        if (newInterface == NULL) 
+        {
+          close(sock);
+          return -1;				
+        }
+
+
+        struct ifreq *ifr = &get_io.ifc_req[yy];
+        if(ioctl(sock, SIOCGIFBRDADDR, ifr) == 0)
+        {
+          if (ifr->ifr_broadaddr.sa_family == AF_INET) 
+          {
+            struct sockaddr_in *sin = (struct sockaddr_in *) &ifr->ifr_dstaddr;
+            
+            ROS_DEBUG ("Broadcast addess %s\n", inet_ntoa(sin->sin_addr));
+
+            if (newInterface->Init(sin)) 
+            {
+              printf("Error initializing interface %*s\n", sizeof(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
+              delete newInterface;
+              newInterface = NULL;
+              continue;
+            } 
+            else 
+            {
+              // Interface is good add it to interface list
+              Interfaces.push_back(newInterface);
+
+            }
+         
+          }
+
+        }
+
 
       }
     }
   }
 
-  printf("Found %d usable interfaces\n\n", Interfaces.size());	
+  ROS_INFO("Found %d usable interfaces\n\n", Interfaces.size());	
 
 	
   return 0;

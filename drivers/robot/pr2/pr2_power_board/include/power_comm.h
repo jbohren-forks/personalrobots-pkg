@@ -31,7 +31,6 @@
 #define POWER_COMM_H
 
 static const unsigned CURRENT_MESSAGE_REVISION = 1;
-static const unsigned SERIAL_NUMBER = 1;
 static const int MAX_PUMP_TRYS = 30;
 static const unsigned STATUS_MESSAGE_TIMER = 4688;  //100Hz at 46KHz timer
 static const float THRESHOLD_18V_GOOD = 17.0; //low limit for 18v standby power
