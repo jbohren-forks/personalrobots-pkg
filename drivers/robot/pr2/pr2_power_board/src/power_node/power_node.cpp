@@ -467,7 +467,7 @@ PowerBoard::PowerBoard(): ros::node ("pr2_power_board")
   log4cxx::LoggerPtr my_logger = log4cxx::Logger::getLogger(ROSCONSOLE_DEFAULT_NAME);
 
   // Set the root ROS logger to output all statements
-  my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Debug]);
+  my_logger->setLevel(ros::console::g_level_lookup[ros::console::levels::Info]);
 
   advertise_service("power_board_control", &PowerBoard::commandCallback);
   advertise<robot_msgs::DiagnosticMessage>("/diagnostics", 2);
@@ -498,21 +498,27 @@ void PowerBoard::collectMessages()
 void PowerBoard::sendDiagnostic()
 {
   robot_msgs::DiagnosticMessage msg_out;
+  robot_msgs::DiagnosticStatus stat;
+  robot_msgs::DiagnosticValue val;
+  robot_msgs::DiagnosticString strval;
   
   while(ok())
   {
     sleep(1);
     //ROS_DEBUG("-");
-    msg_out.status.clear();
     library_lock_.lock();
 
-    for (unsigned i = 0; i<Devices.size(); ++i) {
+    for (unsigned i = 0; i<Devices.size(); ++i) 
+    {
+      msg_out.status.clear();
+      stat.values.clear();
+      stat.strings.clear();
+
       Device *device = Devices[i];
       PowerMessage *pmsg = &device->pmsg;		
-    
-      robot_msgs::DiagnosticStatus stat;
+
       ostringstream ss;
-      ss << "Power board" << i;
+      ss << "Power board " << i;
       stat.name = ss.str();
       stat.level = 0;///@todo fixem
       stat.message = "Power Node";
@@ -520,14 +526,12 @@ void PowerBoard::sendDiagnostic()
       
       ROS_DEBUG("Device %u", i);
       ROS_DEBUG(" Serial       = %u", pmsg->header.serial_num);
-      robot_msgs::DiagnosticValue val;
-      robot_msgs::DiagnosticString strval;
 
-      val.label = "Time Stamp";
+      val.label = "Time";
       val.value = (float)Devices[i]->message_time;
       stat.values.push_back(val);
 
-      ss.clear();
+      ss.str("");
       ss << pmsg->header.serial_num;
       strval.value = ss.str();
       strval.label = "Serial Number";
@@ -628,40 +632,86 @@ void PowerBoard::sendDiagnostic()
       
       ROS_DEBUG(" Revisions:");
       ROS_DEBUG("         PCA = %c", status->pca_rev);
-      ss.clear();
+      ss.str("");
       ss << status->pca_rev;
       strval.value = ss.str();
       strval.label = "PCA";
       stat.strings.push_back(strval);
       ROS_DEBUG("         PCB = %c", status->pcb_rev);
-      ss.clear();
+      ss.str("");
       ss << status->pcb_rev;
       strval.value = ss.str();
       strval.label = "PCB";
       stat.strings.push_back(strval);
       ROS_DEBUG("       Major = %c", status->major_rev);
-      ss.clear();
+      ss.str("");
       ss << status->major_rev;
       strval.value = ss.str();
       strval.label = "Major Revision";
       stat.strings.push_back(strval);
       ROS_DEBUG("       Minor = %c", status->minor_rev);
-      ss.clear();
+      ss.str("");
       ss << status->minor_rev;
       strval.value = ss.str();
       strval.label = "Minor Revision";
       stat.strings.push_back(strval);
 
-      msg_out.status.push_back(stat);      
-    }
-    robot_msgs::DiagnosticStatus stat;
-    stat.name = "pr2_power_board";
-    stat.level = 0;
-    stat.message = "Running";
-    msg_out.status.push_back(stat);      
+      TransitionMessage *tmsg = &device->tmsg;		
+      for(int cb_index=0; cb_index < 3; ++cb_index)
+      {
+        val.value = tmsg->cb[cb_index].stop_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Stop Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].estop_count;
+        ss.str("");
+        ss << "CB" << cb_index << " E-Stop Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].trip_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Trip Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].fail_18V_count;
+        ss.str("");
+        ss << "CB" << cb_index << " 18V Fail Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].disable_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Disable Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].start_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Start Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].pump_fail_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Pump Fail Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+        val.value = tmsg->cb[cb_index].reset_count;
+        ss.str("");
+        ss << "CB" << cb_index << " Reset Count";
+        val.label = ss.str();
+        stat.values.push_back(val);
+      }
 
-    //printf("Publishing ");        
-    publish("/diagnostics", msg_out);    
+
+      msg_out.status.push_back(stat);      
+      robot_msgs::DiagnosticStatus stat;
+      stat.name = "pr2_power_board";
+      stat.level = 0;
+      stat.message = "Running";
+      msg_out.status.push_back(stat);      
+
+      //ROS_DEBUG("Publishing ");        
+      publish("/diagnostics", msg_out);    
+    }
     library_lock_.unlock();
 
   }

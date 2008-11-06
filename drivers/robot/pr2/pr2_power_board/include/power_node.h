@@ -27,6 +27,7 @@ class Device
   public:
     time_t message_time;
     PowerMessage pmsg;  //last power message recived from device
+    TransitionMessage tmsg;
     Interface *iface;   //interface last message was recieved on;
     Device(Interface *_iface) : iface(_iface) {}
     ~Device() { }	
@@ -43,7 +44,8 @@ class PowerBoard : public ros::node
     void collectMessages();
     void sendDiagnostic();
     int collect_messages();
-    int process_message(const PowerMessage &msg, Interface *recvInterface);
+    int process_message(const PowerMessage *msg, Interface *recvInterface);
+    int process_transition_message(const TransitionMessage *msg, Interface *recvInterface);
     const char* master_state_to_str(char state);
     const char* cb_state_to_str(char state);
     int list_devices(void);

@@ -126,7 +126,7 @@ class PowerBoardPanel(wx.Panel):
 
         for message in self._messages:
             for status in message.status:
-                if (status.name == "Power board0"):
+                if (status.name == "Power board 0"):
                     for value in status.values:
                         if (value.label == "Breaker 0 Voltage"):
                             self.voltages[0] = value.value

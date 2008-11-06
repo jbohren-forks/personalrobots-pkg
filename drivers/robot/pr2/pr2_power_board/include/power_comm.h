@@ -24,13 +24,16 @@
  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-;5B * POSSIBILITY OF SUCH DAMAGE.
+* POSSIBILITY OF SUCH DAMAGE.
  */
 
 #ifndef POWER_COMM_H
 #define POWER_COMM_H
 
 static const unsigned CURRENT_MESSAGE_REVISION = 1;
+static const unsigned MESSAGE_ID_POWER = 0;
+static const unsigned MESSAGE_ID_COMMAND = 1;
+static const unsigned MESSAGE_ID_TRANSITION = 2;
 static const unsigned POWER_PORT = 6801; // port power board
 
 enum Master_State { MASTER_NOPOWER, MASTER_STANDBY, MASTER_ON, MASTER_OFF };
@@ -42,7 +45,7 @@ typedef struct
   unsigned int    message_revision; //32 bit 
   unsigned int    serial_num;       //32 bit  Unique ID number
   char            text[32];         //Description identifier
-  unsigned int    dumy;
+  unsigned int    message_id;
   unsigned int    data_length;      //Length of the following structure
 } __attribute__((__packed__)) MessageHeader;
 
@@ -103,5 +106,24 @@ typedef struct
   MessageHeader header;
   CommandStruct command;
 } __attribute__((__packed__)) CommandMessage;
+
+
+typedef struct
+{
+  unsigned char   stop_count;
+  unsigned char   estop_count;
+  unsigned char   trip_count;
+  unsigned char   fail_18V_count;
+  unsigned char   disable_count;
+  unsigned char   start_count;
+  unsigned char   pump_fail_count;
+  unsigned char   reset_count;
+} __attribute__((__packed__)) TransitionCount;
+
+typedef struct
+{
+  MessageHeader header;
+  TransitionCount cb[3]; // one for each circuit breaker
+} __attribute__((__packed__)) TransitionMessage;
 
 #endif
