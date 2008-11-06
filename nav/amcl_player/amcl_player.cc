@@ -767,6 +767,12 @@ AmclNode::laserReceived()
   while(!laser_scans.empty())
   {
     std_msgs::LaserScan scan = laser_scans.front();
+
+    //make sure that we don't fall to far in the past
+    if(ros::Time::now() - scan.header.stamp > ros::Duration(9, 0)){
+      laser_scans.pop_front();
+      continue;
+    }
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
