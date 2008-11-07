@@ -56,7 +56,8 @@ SlamGMapping::SlamGMapping()
   /// @todo Disable extrapolation, and implement scan-buffering.  This is
   /// not urgent for a robot like the PR2, where odometry is being
   /// published several times faster than laser scans.
-  tf_ = new tf::TransformListener(*node_, true, 10000000000ULL, 200000000ULL);
+  tf_ = new tf::TransformListener(*node_, true, 10000000000ULL);
+  tf_->setExtrapolationLimit((int64_t) 200000000ULL );
   ROS_ASSERT(tf_);
 
   gsp_laser_ = NULL;

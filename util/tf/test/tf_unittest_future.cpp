@@ -17,7 +17,7 @@ void seed_rand()
 
 TEST(tf, NoExtrapolationExceptionFromParent)
 {
-  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL), ros::Duration((int64_t)0LL));
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
   
 
 
@@ -54,7 +54,7 @@ TEST(tf, NoExtrapolationExceptionFromParent)
 
 TEST(tf, ExtrapolationFromOneValue)
 {
-  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL), ros::Duration((int64_t)0LL));
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
   
 
 

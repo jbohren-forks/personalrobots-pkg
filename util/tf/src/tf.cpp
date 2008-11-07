@@ -34,11 +34,10 @@
 using namespace tf;
 
 Transformer::Transformer(bool interpolating,
-                                ros::Duration cache_time,
-                                ros::Duration max_extrapolation_distance):
+                                ros::Duration cache_time):
   cache_time(cache_time),
   interpolating (interpolating),
-  max_extrapolation_distance_(max_extrapolation_distance)
+  max_extrapolation_distance_(DEFAULT_MAX_EXTRAPOLATION_DISTANCE)
 {
   frameIDs_["NO_PARENT"] = 0;
   frames_.push_back(NULL);// new TimeCache(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
@@ -130,6 +129,10 @@ bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::st
 
 };
 
+void Transformer::setExtrapolationLimit(const ros::Duration& distance)
+{
+  max_extrapolation_distance_ = distance;
+}
 
 
 TransformLists Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame)

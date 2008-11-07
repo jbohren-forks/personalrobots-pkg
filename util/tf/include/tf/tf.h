@@ -85,11 +85,10 @@ public:
   /** Constructor 
    * \param interpolating Whether to interpolate, if this is false the closest value will be returned
    * \param cache_time How long to keep a history of transforms in nanoseconds
-   * \param max_extrapolation_distance How far to extrapolate before throwing an exception
+   * 
    */
   Transformer(bool interpolating = true, 
-              ros::Duration cache_time_ = ros::Duration(DEFAULT_CACHE_TIME),
-              ros::Duration max_extrapolation_distance_ = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_DISTANCE));
+              ros::Duration cache_time_ = ros::Duration(DEFAULT_CACHE_TIME));
   virtual ~Transformer(void);
 
   /** \brief Clear all data */
@@ -166,6 +165,11 @@ public:
    * @param parent The reference to the string to fill the parent
    * Returns true unless "NO_PARENT" */
   bool getParent(const std::string& frame_id, ros::Time time, std::string& parent);
+
+  /**@brief Set the distance which tf is allow to extrapolate
+   * \param distance How far to extrapolate before throwing an exception
+   * default is zero */
+  void setExtrapolationLimit(const ros::Duration& distance);
 
 protected:
 

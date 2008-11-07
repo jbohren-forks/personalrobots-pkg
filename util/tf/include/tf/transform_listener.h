@@ -55,13 +55,15 @@ private:
   rosTF::TransformArray tfArrayIn;
 
 public:
+  /**@brief Constructor for transform listener
+   * \param rosnode A reference to an instance of a ros::node for communication
+   * \param interpolating Whether to interpolate or return the closest
+   * \param max_cache_time How long to store transform information */
   TransformListener(ros::node & rosnode, 
-                  bool interpolating = true,
-                  int64_t max_cache_time = DEFAULT_CACHE_TIME,
-                  int64_t max_extrapolation_distance = DEFAULT_MAX_EXTRAPOLATION_DISTANCE):
+                    bool interpolating = true,
+                    int64_t max_cache_time = DEFAULT_CACHE_TIME):
     Transformer(interpolating,
-                max_cache_time,
-                max_extrapolation_distance),
+                max_cache_time),
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");
