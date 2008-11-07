@@ -741,7 +741,7 @@ AmclNode::laserReceived()
   {
     tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
                                              btVector3(0,0,0)), 
-                                 0, laserMsg.header.frame_id);
+                                 ros::Time((uint64_t)0ull), laserMsg.header.frame_id);
     tf::Stamped<btTransform> laser_pose;
     try
     {

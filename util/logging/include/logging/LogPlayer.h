@@ -334,7 +334,7 @@ public:
     if (!done_)
       return next_msg_time_;
     else 
-      return ros::Time(0);
+      return ros::Time(0.0);
   }
 
   bool nextMsg()
@@ -487,7 +487,7 @@ public:
   {
     LogPlayer* next_player = 0;
 
-    ros::Time min_t = ros::Time(-1); // This should be the maximum unsigned int;
+    ros::Time min_t = ros::Time((uint64_t)-1); // This should be the maximum unsigned int;
 
     bool remaining = false;
 

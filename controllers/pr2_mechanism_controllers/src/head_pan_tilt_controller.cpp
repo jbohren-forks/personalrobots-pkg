@@ -279,7 +279,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   try
   {
-    TF.lookupTransform(point.frame_id_,"head_pan",0,frame);
+    TF.lookupTransform(point.frame_id_,"head_pan",ros::Time(0.0),frame);
   }
   catch(tf::TransformException& ex)
   {

@@ -68,7 +68,7 @@ public:
 	virtual void processData() = 0;
 
 	virtual bool loadData(std::string filename) {		
-		if (!mLp.open(filename, ros::Time(0))) return false;
+		if (!mLp.open(filename, ros::Time(0.0))) return false;
 		mLp.addHandler<OctreeLearningMsg>(std::string("grasp_learning_bus"), 
 					 &copyMsg<OctreeLearningMsg>, (void*)this, true);
 		mNewMsg = false;

@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
   LogPlayer player;
 
-  if (player.open(string(argv[1]), ros::Time(0)))
+  if (player.open(string(argv[1]), ros::Time(0.0)))
   {
     player.addHandler<AnyMsg>(string("*"), &checkFile, NULL, false);
   }

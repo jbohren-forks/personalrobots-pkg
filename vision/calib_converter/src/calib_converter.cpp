@@ -81,7 +81,7 @@ public:
 
 
     // -- Load the messages.
-    lp.open(fullname, ros::Time(0));
+    lp.open(fullname, ros::Time(0.0));
     lp.addHandler<std_msgs::ImageArray>(string("videre/images"), &copyMsg<std_msgs::ImageArray>, (void*)(&image_msg), true);
     lp.addHandler<std_msgs::String>(string("videre/cal_params"), &copyMsg<std_msgs::String>, (void*)(&calparams), true);
     lp.addHandler<std_msgs::PointCloud>(string("full_cloud"), &copyMsg<std_msgs::PointCloud>, (void*)(&cloud), true);

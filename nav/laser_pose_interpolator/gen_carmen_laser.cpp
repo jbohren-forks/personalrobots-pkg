@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i++)
     files.push_back(argv[i]);
 
-  player.open(files, ros::Time(0));
+  player.open(files, ros::Time(0.0));
 
   player.addHandler<laser_pose_interpolator::PoseLaserScan>(string("pose_scan"), &scan_callback, NULL);
 

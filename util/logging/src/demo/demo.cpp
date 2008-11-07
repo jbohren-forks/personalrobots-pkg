@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 
   int counter = 0;
 
-  if (player.open(string(argv[1]), ros::Time(0)))
+  if (player.open(string(argv[1]), ros::Time(0.0)))
   {
     player.addHandler<AnyMsg>(string("*"), &all_handler, &counter, false);
     player.addHandler<std_msgs::String>(string("chatter"), &string_handler, NULL);

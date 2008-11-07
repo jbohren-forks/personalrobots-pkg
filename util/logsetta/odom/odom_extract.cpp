@@ -62,7 +62,7 @@ int main(int argc, char **argv)
 
   LogPlayer player;
 
-  player.open(std::string(argv[1]), ros::Time(0));
+  player.open(std::string(argv[1]), ros::Time(0.0));
 
   int count;
 
