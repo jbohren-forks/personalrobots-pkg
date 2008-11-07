@@ -777,6 +777,7 @@ int CreateAllInterfaces(void)
         ROS_DEBUG("address=%s", inet_ntoa(addr->sin_addr) );
 
         if ((strncmp("lo", get_io.ifc_req[yy].ifr_name, strlen(get_io.ifc_req[yy].ifr_name)) == 0) || 
+            (strncmp("tun", get_io.ifc_req[yy].ifr_name, 3) == 0) ||
             (strncmp("vmnet", get_io.ifc_req[yy].ifr_name, 5) == 0))
         {
           ROS_INFO("Ignoring interface %*s",strlen(get_io.ifc_req[yy].ifr_name), get_io.ifc_req[yy].ifr_name);
