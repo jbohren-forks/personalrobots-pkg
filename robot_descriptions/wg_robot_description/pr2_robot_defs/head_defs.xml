@@ -13,6 +13,7 @@
       <anchor xyz="0 0 0" />
       <limit min="-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
       <calibration reference_position="-0.35" values="0 0" />
+      <joint_properties damping="1.0" />
     </joint>
 
     <link name="${name}_mount">
@@ -216,6 +217,7 @@
       <calibration reference_position="-2.79" values="0 0" />
       <safety_limit_min spring_constant="15.0" safety_length="0.15" damping_constant="0.7"/>
       <safety_limit_max spring_constant="15.0" safety_length="0.15" damping_constant="0.7"/>
+      <joint_properties damping="1.0" />
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
@@ -266,6 +268,7 @@
       <calibration reference_position="-0.195" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <joint_properties damping="1.0" />
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">

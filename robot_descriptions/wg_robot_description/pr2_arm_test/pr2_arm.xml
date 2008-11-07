@@ -120,6 +120,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" shoulder_pan_min_limit" max="shoulder_pan_max_limit" effort="63.16*0.184" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
 
   <const_block name="pr2_shoulder_pan_inertial">
@@ -152,6 +153,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" shoulder_pitch_min_limit" max="shoulder_pitch_max_limit" effort="1000" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="100.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_shoulder_pitch_inertial">
@@ -184,6 +186,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" upperarm_roll_min_limit" max="upperarm_roll_max_limit" effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_upperarm_roll_inertial">
@@ -216,6 +219,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min="  elbow_flex_min_limit" max="elbow_flex_max_limit"  effort="1000" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_elbow_flex_inertial">
@@ -248,6 +252,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit  effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_forearm_roll_inertial">
@@ -280,6 +285,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit min=" wrist_flex_min_limit" max="wrist_flex_max_limit" effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="10.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_wrist_flex_inertial">
@@ -313,6 +319,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_gripper_roll_inertial">
@@ -348,6 +355,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_finger_l_inertial">
@@ -383,6 +391,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_finger_tip_l_inertial">
@@ -417,6 +426,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_finger_r_inertial">
@@ -451,6 +461,7 @@
     <anchor xyz="0 0 0  " /> <!-- point on the joint relative to the parent's anchor in a global coordinate frame -->
     <limit effort="100" velocity="5" />
     <calibration values="1.5 -1 " /> <!-- Calibration stop/flag indicating location and then direction -->
+    <joint_properties damping="1.0" friction="0" /> <!-- Calibration stop/flag indicating location and then direction -->
   </const_block>
   
   <const_block name="pr2_finger_tip_r_inertial">

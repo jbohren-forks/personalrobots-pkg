@@ -12,8 +12,6 @@
     <alwaysOn>true</alwaysOn>
     <updateRate>1000.0</updateRate>
 
-    <gazebo_physics filename="gazebo_joints_prototype1.xml" /> <!-- for simulator/physics specific settigs -->
-
     <interface:audio name="gazebo_mechanism_control_dummy_iface" />
   </controller:gazebo_mechanism_control>
 

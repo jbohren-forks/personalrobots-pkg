@@ -71,7 +71,6 @@
   <!-- Define groups of links; a link may be part of multiple groups -->
   <include>groups_single_link.xml</include>
   <!-- mechanism controls -->
-  <include>actuators_single_link.xml</include> 
   <include>transmissions_single_link.xml</include> 
   
 </robot>

@@ -1156,6 +1156,13 @@ namespace robot_desc {
 		{
 		    if (loadDoubleValues(node, 3, joint->anchor, "xyz", true))
 			MARK_SET(node, joint, anchor);
+		}
+		else if (node->ValueStr() == "joint_properties" && !free)
+		{
+		    if (loadDoubleValues(node, 1, &(joint->damping), "damping", true))
+			MARK_SET(node, joint, damping);
+		    if (loadDoubleValues(node, 1, &(joint->friction), "friction", true))
+			MARK_SET(node, joint, friction);
 		}		
 		else if (node->ValueStr() == "limit" && !free)
 		{

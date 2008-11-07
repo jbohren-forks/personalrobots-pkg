@@ -9,6 +9,7 @@
     <joint name="${name}_joint" type="prismatic">
       <limit min="0.0" max="0.396" effort="10000" velocity="5" />
       <axis xyz="0 0 1" />
+      <joint_properties damping="10.0" />
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">

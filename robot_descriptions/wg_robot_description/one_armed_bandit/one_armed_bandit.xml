@@ -94,7 +94,6 @@
       <alwaysOn>true</alwaysOn>
       <updateRate>100.0</updateRate>
       <robot filename="pr2.xml" />
-      <gazebo_physics filename="gazebo_joints.xml" />
       <interface:audio name="gazebo_mechanism_control_dummy_iface" />
     </controller:gazebo_mechanism_control>
   </verbatim>

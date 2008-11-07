@@ -149,25 +149,20 @@ private:
   mechanism::RobotState *fake_state_;
   std::vector<gazebo::Joint*>  joints_;
 
-  // added for joint damping coefficients
-  std::vector<double>          joints_damping_;
-  std::map<std::string,double> joints_damping_map_;
-
   /*
    * \brief read pr2.xml for actuators, and pass tinyxml node to mechanism control node's initXml.
    */
   void ReadPr2Xml(XMLConfigNode *node);
 
   /*
-   * \brief read gazebo_joints.xml for joint damping and additional simulation parameters for joints
-   */
-  void ReadGazeboPhysics(XMLConfigNode *node);
-
-  /*
    *  \brief pointer to ros node
    */
   ros::node *rosnode_;
 
+  /*
+   *  \brief tmp vars for performance checking
+   */
+  double wall_start, sim_start;
 
 };
 

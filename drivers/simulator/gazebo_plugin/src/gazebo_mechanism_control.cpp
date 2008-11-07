@@ -69,6 +69,12 @@ GazeboMechanismControl::GazeboMechanismControl(Entity *parent)
       printf("-------------------- starting node in Gazebo Mechanism Control \n");
     }
 
+  if (getenv("CHECK_SPEEDUP"))
+  {
+    wall_start = Simulator::Instance()->GetWallTime();
+    sim_start  = Simulator::Instance()->GetSimTime();
+  }
+
 }
 
 GazeboMechanismControl::~GazeboMechanismControl()
@@ -83,10 +89,6 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
 
   // Initializes the fake state (for running the transmissions backwards).
   fake_state_ = new mechanism::RobotState(&mc_.model_, &hw_);
-
-  // Get gazebo joint properties such as explicit damping coefficient, simulation specific.
-  // Currently constructs a map of joint-name/damping-value pairs.
-  ReadGazeboPhysics(node);
 
   // The gazebo joints and mechanism joints should match up.
   for (unsigned int i = 0; i < mc_.model_.joints_.size(); ++i)
@@ -105,18 +107,6 @@ void GazeboMechanismControl::LoadChild(XMLConfigNode *node)
       joints_.push_back(NULL);
     }
 
-    // fill in gazebo joints / damping value pairs
-    std::map<std::string,double>::iterator jt = joints_damping_map_.find(joint_name);
-    if (jt!=joints_damping_map_.end())
-    {
-      joints_damping_.push_back(jt->second);
-      //std::cout << "adding gazebo joint name (" << joint_name << ") with damping=" << jt->second << std::endl;
-    }
-    else
-    {
-      joints_damping_.push_back(0); // no damping
-      //std::cout << "adding gazebo joint name (" << joint_name << ") with no damping." << std::endl;
-    }
   }
 
   hw_.current_time_ = Simulator::Instance()->GetSimTime();
@@ -130,8 +120,16 @@ void GazeboMechanismControl::InitChild()
 void GazeboMechanismControl::UpdateChild()
 {
 
+  if (getenv("CHECK_SPEEDUP"))
+  {
+    double wall_elapsed = Simulator::Instance()->GetWallTime() - wall_start;
+    double sim_elapsed  = Simulator::Instance()->GetSimTime()  - sim_start;
+    std::cout << " real time: " <<  wall_elapsed
+              << "  sim time: " <<  sim_elapsed
+              << "  speed up: " <<  sim_elapsed / wall_elapsed
+              << std::endl;
+  }
   assert(joints_.size() == fake_state_->joint_states_.size());
-  assert(joints_.size() == joints_damping_.size());
 
   //--------------------------------------------------
   //  Pushes out simulation state
@@ -201,11 +199,15 @@ void GazeboMechanismControl::UpdateChild()
     switch (joints_[i]->GetType())
     {
     case Joint::HINGE:
-      damping_force = joints_damping_[i] * ((HingeJoint*)joints_[i])->GetAngleRate();
+      //std::cout << " hinge joint name " << mc_.model_.joints_[i]->name_ << std::endl;
+      //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
+      damping_force = mc_.model_.joints_[i]->joint_damping_coefficient_ * ((HingeJoint*)joints_[i])->GetAngleRate();
       ((HingeJoint*)joints_[i])->SetTorque(effort - damping_force);
       break;
     case Joint::SLIDER:
-      damping_force = joints_damping_[i] * ((SliderJoint*)joints_[i])->GetPositionRate();
+      //std::cout << " slider joint name " << mc_.model_.joints_[i]->name_ << std::endl;
+      //std::cout << " check damping coef " << mc_.model_.joints_[i]->joint_damping_coefficient_ << std::endl;
+      damping_force = mc_.model_.joints_[i]->joint_damping_coefficient_ * ((SliderJoint*)joints_[i])->GetPositionRate();
       ((SliderJoint*)joints_[i])->SetSliderForce(effort - damping_force);
       break;
     default:
@@ -283,56 +285,4 @@ void GazeboMechanismControl::ReadPr2Xml(XMLConfigNode *node)
     mc_.state_->joint_states_[i].calibrated_ = true;
 }
 
-void GazeboMechanismControl::ReadGazeboPhysics(XMLConfigNode *node)
-{
-  XMLConfigNode *robot = node->GetChild("gazebo_physics");
-  if (!robot)
-  {
-    fprintf(stderr, "Error loading gazebo_physics config: no robot element\n");
-    return;
-  }
-
-  std::string filename = robot->GetFilename("filename", "", 1);
-  printf("Loading %s\n", filename.c_str());
-
-  TiXmlDocument doc(filename);
-  if (!doc.LoadFile())
-  {
-    fprintf(stderr, "Error: Could not load the gazebo mechanism_control plugin's configuration file for gazebo physics: %s\n",
-            filename.c_str());
-    abort();
-  }
-  // Pulls out the list of joints used in the gazebo physics configuration.
-  struct GetJoints : public TiXmlVisitor
-  {
-    std::map<const char*,double> joints;
-    virtual bool VisitEnter(const TiXmlElement &elt, const TiXmlAttribute *)
-    {
-      if (elt.ValueStr() == std::string("joint") && elt.Attribute("name"))
-      {
-        double damp;
-        //extract damping coefficient value
-        if (elt.FirstChildElement("explicitDampingCoefficient"))
-          //std::cout <<  "damp : " <<  elt.FirstChildElement("explicitDampingCoefficient")->GetText() << std::endl;
-          damp = atof(elt.FirstChildElement("explicitDampingCoefficient")->GetText());
-        else
-          damp = 0;
-
-        //std::cout << "inserting pair to map " << elt.Attribute("name") << " " << damp << std::endl;
-        joints.insert(make_pair(elt.Attribute("name"),damp));
-      }
-      return true;
-    }
-  } get_joints;
-  doc.RootElement()->Accept(&get_joints);
-
-  // Copy the found joint/damping pairs into the class variable
-  std::map<const char*,double>::iterator it;
-  for (it = get_joints.joints.begin(); it != get_joints.joints.end(); ++it)
-  {
-    std::string *jn = new std::string((it->first));
-    joints_damping_map_.insert(make_pair(*jn,it->second));
-  }
-
-}
 } // namespace gazebo

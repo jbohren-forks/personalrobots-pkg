@@ -14,8 +14,6 @@
 
     <robot filename="pr2_dual_link.xml" />
 
-    <gazebo_physics filename="gazebo_joints_dual_link.xml" /> <!-- for simulator/physics specific settigs -->
-
     <interface:audio name="gazebo_mechanism_control_dummy_iface" />
   </controller:gazebo_mechanism_control>
 
@@ -26,6 +24,18 @@
 
 <map name="controllers" flag="gazebo"> <!-- we can set a name too, but the convertor only cares about the flag -->
   <verbatim key="controllers"> <!-- The key attribute is needed noly if multiple <xml> tags are in the same <map> tag -->
+
+  <!-- P3D for position groundtruth -->
+  <controller:P3D name="p3d_link1_controller" plugin="libP3D.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <bodyName>link1</bodyName>
+      <topicName>link1_pose</topicName>
+      <frameName>link1_frame</frameName>
+      <xyzOffsets>0 0 0.5</xyzOffsets> <!-- at pivot of link2 -->
+      <rpyOffsets>0 0 0.0</rpyOffsets>
+      <interface:position name="p3d_link1_position"/>
+  </controller:P3D>
 
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_link2_controller" plugin="libP3D.so">

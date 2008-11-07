@@ -16,6 +16,7 @@
       <anchor xyz="0 0 0" />
       <calibration values="1.5 -1 " />
       <limit effort="100" velocity="10" min="-100" max="100" />
+      <joint_properties damping="0.05" /> 
     </joint>
 
     <link name="${prefix}_finger">
@@ -57,6 +58,7 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="10" min="-100" max="100" />
+      <joint_properties damping="0.01" />
     </joint>
 
     <link name="${prefix}_finger_tip">
@@ -157,6 +159,7 @@
       <calibration reference_position="0" values="1.5 -1" />
       <safety_limit_min safety_length="0.15" damping_constant="20" spring_constant="100" />
       <safety_limit_max safety_length="0.15" damping_constant="20" spring_constant="100" />
+      <joint_properties damping="10.0" /> 
     </joint>
 
     <link name="${side}_shoulder_pan">
@@ -204,6 +207,7 @@
       <calibration reference_position="0" values="1.5 -1 " />
       <safety_limit_min safety_length="0.1" spring_constant="50" damping_constant="12"/>
       <safety_limit_max safety_length="0.1" spring_constant="50" damping_constant="12"/>
+      <joint_properties damping="100.0" /> 
     </joint>
 
     <link name="${side}_shoulder_pitch">
@@ -248,6 +252,7 @@
       <calibration reference_position="${-M_PI/2}" values="1.5 -1 " />
       <safety_limit_min safety_length="0.15" spring_constant="80" damping_constant="5"/>
       <safety_limit_max safety_length="0.15" spring_constant="80" damping_constant="5"/>
+      <joint_properties damping="1.0" /> 
     </joint>
 
     <link name="${side}_upper_arm_roll">
@@ -299,6 +304,7 @@
       <calibration reference_position="1.1" values="1.5 -1" />
       <safety_limit_min safety_length="0.1" spring_constant="60" damping_constant="6"/>
       <safety_limit_max safety_length="0.4" spring_constant="60" damping_constant="6"/>
+      <joint_properties damping="10.0" /> 
     </joint>
 
     <link name="${side}_elbow_flex">
@@ -350,6 +356,7 @@
       <anchor xyz="0 0 0" />
       <limit  effort="100" velocity="5" />
       <calibration reference_position="0" values="1.5 -1" />
+      <joint_properties damping="1.0" /> 
     </joint>
 
     <link name="${side}_forearm_roll">
@@ -397,6 +404,7 @@
       <calibration reference_position="0.4" values="1.5 -1" />
       <safety_limit_min safety_length="0.1" spring_constant="20" damping_constant="4"/>
       <safety_limit_max safety_length="0.2" spring_constant="20" damping_constant="4"/>
+      <joint_properties damping="1.0" /> 
     </joint>
 
     <link name="${side}_wrist_flex">
@@ -437,6 +445,7 @@
       <limit effort="10" velocity="5" />
       <!--<calibration reference_position="${-0.3+M_PI/2}" values="1.5 -1" />-->
       <calibration reference_position="1.27" values="1.5 -1" />
+      <joint_properties damping="1.0" /> 
     </joint>
 
 

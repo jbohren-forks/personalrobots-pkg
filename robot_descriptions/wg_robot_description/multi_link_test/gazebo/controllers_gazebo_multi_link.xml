@@ -14,8 +14,6 @@
 
     <robot filename="pr2_multi_link.xml" />
 
-    <gazebo_physics filename="gazebo_joints_multi_link.xml" /> <!-- for simulator/physics specific settigs -->
-
     <interface:audio name="gazebo_mechanism_control_dummy_iface" />
   </controller:gazebo_mechanism_control>
 
