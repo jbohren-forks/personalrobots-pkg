@@ -145,7 +145,7 @@ void GripperCalibrationController::update()
 ROS_REGISTER_CONTROLLER(GripperCalibrationControllerNode)
 
 GripperCalibrationControllerNode::GripperCalibrationControllerNode()
-: robot_(NULL)
+: robot_(NULL), last_publish_time_(0)
 {
 }
 
