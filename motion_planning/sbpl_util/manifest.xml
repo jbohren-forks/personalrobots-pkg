@@ -9,6 +9,6 @@
  <depend package="costmap_2d"/>
  <depend package="sbpl"/>
  <export>
-    <cpp cflags="-I${prefix}/src"/>
+    <cpp cflags="-I${prefix}/src" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib"/>
  </export>
 </package>
