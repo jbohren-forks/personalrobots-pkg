@@ -15,8 +15,6 @@
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
   <depend package="robot_msgs" />
-  <depend package="rosTF"/>
-  <depend package="libTF"/>
   <depend package="rosthread"/>
   <depend package="stl_utils" />
   <depend package="math_utils" />
