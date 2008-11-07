@@ -15,6 +15,7 @@
   <depend package="pr2_power_board"/>
   <depend package="IBPSBatteryInterface"/>
   <depend package="joy"/>
+  <depend package="rosrecord"/>
 
 
 
