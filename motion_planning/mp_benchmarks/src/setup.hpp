@@ -34,10 +34,13 @@
 
 /** \file setup.hpp */
 
-#include <std_msgs/Pose2DFloat32.h>
-#include <std_msgs/Point2DFloat32.h>
-// #include <string>
-// #include <vector>
+#include <boost/shared_ptr.hpp>
+#include <string>
+#include <vector>
+
+namespace sfl {
+  class Mapper2d;
+}
 
 namespace costmap_2d {
   class CostMap2D;
@@ -50,50 +53,135 @@ namespace ompl {
   {
   public:
     struct task {
-      task(bool _from_scratch, std_msgs::Pose2DFloat32 _start, std_msgs::Pose2DFloat32 _goal)
-	: from_scratch(_from_scratch), start(_start), goal(_goal) {}
+      task(std::string const & description,
+	   bool from_scratch,
+	   double start_x, double start_y, double start_th, 
+	   double goal_x, double goal_y, double goal_th, 
+	   double goal_tol_xy, double goal_tol_th);
       
+      std::string description;
       bool from_scratch;
-      std_msgs::Pose2DFloat32 start, goal;
+      double start_x, start_y, start_th;
+      double goal_x, goal_y, goal_th;
+      double goal_tol_xy, goal_tol_th;
     };
     
     typedef std::vector<task> tasklist_t;
     
     
+    SBPLBenchmarkSetup(/** name of the setup */
+		       std::string const & name,
+		       /** cell size [m] (square cells) */
+		       double resolution,
+		       /** (inscribed) radius of the robot [m] */
+		       double robot_radius,
+		       /** distance from obstacles where cells become
+			   freespace [m] (e.g. the circumscribed robot
+			   radius) */
+		       double freespace_distance,
+		       /** the cost value at or above which a cell is
+			   considered an obstacle */
+		       int obstacle_cost);
+    
     virtual ~SBPLBenchmarkSetup();
     
-    virtual costmap_2d::CostMap2D const & getCostmap() const = 0;
-    virtual void dumpDescription(char const * filename, char const * title, char const * prefix) const = 0;
+    /**
+       Print a human-readable description of the setup to a
+       std::ostream.
+    */
+    virtual void dumpDescription(/** The stream to write the description to. */
+				 std::ostream & os,
+				 /** The title will be printed as-is,
+				     followed by a newline. If the
+				     title is an empty string, nothing
+				     is printed. */
+				 std::string const & title,
+				 /** The prefix is prepended to each
+				     line of the description, except
+				     for the title. */
+				 std::string const & prefix) const = 0;
+    
+    /**
+       Call sfl::TraversabilityMap::DumpMap() on the instance stored
+       in the underlying sfl::Mapper2d.
+    */
+    void dumpTravmap(std::ostream & os) const;
+    
+    /**
+       Draw an obstacle line into the costmap, expanded by the robot
+       radius and with costs descending out up to the freespace
+       distance. This uses the underlying sfl::Mapper2d instance to
+       automatically grow it sfl::TraversabilityMap.
+    */
+    void drawLine(double x0, double y0, double x1, double y1,
+		  /** optional: verbose operation if non-null */
+		  std::ostream * progress_os);
+    
+    void drawPoint(double xx, double yy,
+		   std::ostream * progress_os);
+    
+    /**
+       Add a task to the task list.
+    */
+    void addTask(std::string const & description,
+		 bool from_scratch,
+		 double start_x, double start_y, double start_th, 
+		 double goal_x, double goal_y, double goal_th, 
+		 double goal_tol_xy, double goal_tol_th);
+    
+    costmap_2d::CostMap2D const & getCostmap() const;
     
     tasklist_t const & getTasks() const;
     
+    double const resolution;
+    double const robot_radius;
+    double const freespace_distance;
+    int const obstacle_cost;
+    
   protected:
+    boost::shared_ptr<sfl::Mapper2d> m2d_;
     tasklist_t tasklist_;
+    
+  private:
+    mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
   };
   
   
-  class OfficeBenchmark1
+  class OfficeBenchmark
     : public SBPLBenchmarkSetup
   {
-  public:
-    OfficeBenchmark1(/** cell size [m] (square cells) */
-		     double resolution,
-		     /** (inscribed) radius of the robot [m] */
-		     double robot_radius,
-		     /** distance from obstacles where cells become
-			 freespace [m] (e.g. the circumscribed robot
-			 radius) */
-		     double freespace_distance,
-		     /** the cost value at or above which a cell is
-			 considered an obstacle */
-		     int obstacle_cost);
-    
-    virtual ~OfficeBenchmark1();
-    virtual costmap_2d::CostMap2D const & getCostmap() const;
-    virtual void dumpDescription(char const * filename, char const * title, char const * prefix) const;
-    
   protected:
-    costmap_2d::CostMap2D * costmap_;
+    OfficeBenchmark(std::string const & name,
+		    double resolution,
+		    double robot_radius,
+		    double freespace_distance,
+		    int obstacle_cost,
+		    double door_width,
+		    double hall_width);
+    
+  public:
+    /**
+       Valid names are:
+       - dots: 4 dots in a square of hall_width side length
+       - square: a square of hall_width side length
+       - office1: two offices, two hallways, some doors
+    */
+    static OfficeBenchmark * create(std::string const & name,
+				    double resolution,
+				    double robot_radius,
+				    double freespace_distance,
+				    int obstacle_cost,
+				    double door_width,
+				    double hall_width,
+				    std::ostream * progress_os,
+				    std::ostream * travmap_os);
+    
+    virtual void dumpDescription(std::ostream & os,
+				 std::string const & title,
+				 std::string const & prefix) const;
+    
+    double const door_width;
+    double const hall_width;
   };
-
+  
 }

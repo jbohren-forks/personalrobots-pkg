@@ -39,57 +39,116 @@
 #include <sfl/gplan/GridFrame.hpp>
 #include <sfl/gplan/Mapper2d.hpp>
 #include <sfl/util/numeric.hpp>
-// #include <headers.h>
-// #include <sys/time.h>
-// #include <sys/resource.h>
-// #include <time.h>
-// #include <sstream>
 #include <errno.h>
 #include <cstring>
-// #include <limits>
 
+using namespace std;
 
 namespace {
   
   
-  void drawLine(sfl::Mapper2d & m2d, double x0, double y0, double x1, double y1)
+  void drawDots(ompl::SBPLBenchmarkSetup & setup,
+		double hall, double door,
+		std::ostream * progress_os)
   {
-    sfl::Mapper2d::buffered_obstacle_adder boa(&m2d, 0);
-    m2d.gridframe.DrawGlobalLine(x0, y0, x1, y1,
-				 0, std::numeric_limits<ssize_t>::max(),
-				 0, std::numeric_limits<ssize_t>::max(),
-				 boa);
+    setup.drawPoint(       0,         0, progress_os);
+    setup.drawPoint(       0,  hall, progress_os);
+    setup.drawPoint(hall,         0, progress_os);
+    setup.drawPoint(hall,  hall, progress_os);
+
+    double const tol_xy(0.5 * door);
+    double const tol_th(M_PI);
+    setup.addTask("left to right", true,
+		     0, 0.5 * hall, 0,
+		  hall, 0.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("right to left", false,
+		  hall, 0.5 * hall, 0,
+		     0, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
   
-  void drawOfficeBenchmark1(sfl::Mapper2d & m2d,
-			    ompl::SBPLBenchmarkSetup::tasklist_t & tasklist,
-			    double hall,
-			    double door)
+  void drawSquare(ompl::SBPLBenchmarkSetup & setup,
+		  double hall, double door,
+		  std::ostream * progress_os)
+  {
+    setup.drawLine(   0,     0,  hall,     0, progress_os);
+    setup.drawLine(   0,     0,     0,  hall, progress_os);
+    setup.drawLine(   0,  hall,  hall,  hall, progress_os);
+    setup.drawLine(hall,     0,  hall,  hall, progress_os);
+
+    double const tol_xy(0.5 * door);
+    double const tol_th(M_PI);
+    setup.addTask("left to right", true,
+		         door, 0.5 * hall, 0,
+		  hall - door, 0.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("right to left", false,
+		  hall - door, 0.5 * hall, 0,
+		         door, 0.5 * hall, 0, tol_xy, tol_th);
+  }
+  
+  
+  void drawOffice1(ompl::SBPLBenchmarkSetup & setup,
+		   double hall, double door,
+		   std::ostream * progress_os)
   {
     // outer bounding box
-    drawLine(m2d,        0,         0,  3 * hall,         0);
-    drawLine(m2d,        0,         0,         0,  4 * hall);
-    drawLine(m2d,        0,  4 * hall,  3 * hall,  4 * hall);
-    drawLine(m2d, 3 * hall,         0,  3 * hall,  4 * hall);
+    setup.drawLine(       0,         0,  3 * hall,         0, progress_os);
+    setup.drawLine(       0,         0,         0,  4 * hall, progress_os);
+    setup.drawLine(       0,  4 * hall,  3 * hall,  4 * hall, progress_os);
+    setup.drawLine(3 * hall,         0,  3 * hall,  4 * hall, progress_os);
     
     // two long walls along y-axis, each with a door near the northern end
-    drawLine(m2d,      hall,  2 * hall,      hall,  4 * hall - 2 * door);
-    drawLine(m2d,      hall,  2 * hall,      hall,  4 * hall -     door);
-    drawLine(m2d,  2 * hall,      hall,  2 * hall,  4 * hall - 2 * door);
-    drawLine(m2d,  2 * hall,      hall,  2 * hall,  4 * hall -     door);
+    setup.drawLine(    hall,  2 * hall,      hall,  4 * hall - 2 * door, progress_os);
+    setup.drawLine(    hall,  2 * hall,      hall,  4 * hall -     door, progress_os);
+    setup.drawLine(2 * hall,      hall,  2 * hall,  4 * hall - 2 * door, progress_os);
+    setup.drawLine(2 * hall,      hall,  2 * hall,  4 * hall -     door, progress_os);
     
     // some shorter walls along x-axis
-    drawLine(m2d,           0,        hall,  0.5 * hall,        hall);
-    drawLine(m2d,           0,  0.5 * hall,  0.5 * hall,  0.5 * hall);
-    drawLine(m2d,  1.5 * hall,        hall,  2   * hall,        hall);
+    setup.drawLine(         0,        hall,  0.5 * hall,        hall, progress_os);
+    setup.drawLine(         0,  0.5 * hall,  0.5 * hall,  0.5 * hall, progress_os);
+    setup.drawLine(1.5 * hall,        hall,  2   * hall,        hall, progress_os);
     
     // y-axis wall with two office doors
-    drawLine(m2d,  0.5 * hall,                      0,  0.5 * hall,  0.5 * hall - 2 * door);
-    drawLine(m2d,  0.5 * hall,  0.5 * hall -     door,  0.5 * hall,  0.5 * hall +     door);
-    drawLine(m2d,  0.5 * hall,  0.5 * hall + 2 * door,  0.5 * hall,        hall           );
-
-#warning 'construct the task list'
+    setup.drawLine(0.5*hall,                  0,  0.5*hall,  0.5*hall - 2*door, progress_os);
+    setup.drawLine(0.5*hall,  0.5*hall -   door,  0.5*hall,  0.5*hall +   door, progress_os);
+    setup.drawLine(0.5*hall,  0.5*hall + 2*door,  0.5*hall,      hall         , progress_os);
+    
+    // tasks...
+    if (progress_os)
+      *progress_os << "adding tasks...\n" << flush;
+    
+    double const tol_xy(0.5 * door);
+    double const tol_th(M_PI);
+    setup.addTask("through door or around hall", true,
+		  0.5 * hall, 3.5 * hall, 0,
+		  1.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("through door or around hall, return trip", false,
+		  1.5 * hall, 3.5 * hall, 0,
+		  0.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("through door or around long hall", true,
+		  1.5 * hall, 3.5 * hall, 0,
+		  2.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("through door or around long hall, return trip", false,
+		  2.5 * hall, 3.5 * hall, 0,
+		  1.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+    setup.addTask("office to office", true,
+		  0.5 * hall, 0.75 * hall, 0,
+		  0.5 * hall, 0.25 * hall, 0, tol_xy, tol_th);
+    setup.addTask("office to office, return trip", false,
+		  0.5 * hall, 0.25 * hall, 0,
+		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+    setup.addTask("office to hall", true,
+		  0.5 * hall, 0.75 * hall, 0,
+		  1.5 * hall, 0.5  * hall, 0, tol_xy, tol_th);
+    setup.addTask("office to hall, return trip", false,
+		  1.5 * hall, 0.5  * hall, 0,
+		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+    setup.addTask("hall to office", true,
+		  1.5 * hall, 0.5  * hall, 0,
+		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+    setup.addTask("hall to office, return trip", false,
+		  0.5 * hall, 0.75 * hall, 0,
+		  1.5 * hall, 0.5  * hall, 0, tol_xy, tol_th);
   }
   
   
@@ -122,14 +181,90 @@ namespace {
 
 
 namespace ompl {
-
+  
+  
+  SBPLBenchmarkSetup::
+  SBPLBenchmarkSetup(std::string const & name,
+		     double _resolution,
+		     double _robot_radius,
+		     double _freespace_distance,
+		     int _obstacle_cost)
+    : resolution(_resolution),
+      robot_radius(_robot_radius),
+      freespace_distance(_freespace_distance),
+      obstacle_cost(_obstacle_cost)
+  {
+    sfl::GridFrame const gframe(resolution);
+    boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
+      growstrategy(new sfl::Mapper2d::always_grow());
+    double const buffer_zone(sfl::maxval(0.0, freespace_distance - robot_radius));
+    m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0, robot_radius, buffer_zone, 0, obstacle_cost,
+				 name, sfl::RWlock::Create(name), growstrategy));
     
+
+  }
+  
+  
   SBPLBenchmarkSetup::
   ~SBPLBenchmarkSetup()
   {
   }
-    
-    
+
+
+  void SBPLBenchmarkSetup::
+  dumpTravmap(std::ostream & os) const
+  {
+    boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
+    rdt->DumpMap(&os);
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  drawLine(double x0, double y0, double x1, double y1,
+	   std::ostream * progress_os)
+  {
+    if (progress_os)
+      *progress_os << "SBPLBenchmarkSetup::drawLine(" << x0 << "  " << y0 << "  "
+		   << x1 << "  " << y1 << ")\n" << flush;
+    sfl::Mapper2d::buffered_obstacle_adder boa(m2d_.get(), 0);
+    m2d_->gridframe.DrawGlobalLine(x0, y0, x1, y1,
+				   0, std::numeric_limits<ssize_t>::max(),
+				   0, std::numeric_limits<ssize_t>::max(),
+				   boa);
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  drawPoint(double xx, double yy,
+	    std::ostream * progress_os)
+  {
+    if (progress_os)
+      *progress_os << "SBPLBenchmarkSetup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
+    m2d_->AddBufferedObstacle(xx, yy, 0);
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  addTask(std::string const & description,
+	  bool from_scratch,
+	  double start_x, double start_y, double start_th, 
+	  double goal_x, double goal_y, double goal_th, 
+	  double goal_tol_xy, double goal_tol_th)
+  {
+    tasklist_.push_back(task(description, from_scratch, start_x, start_y, start_th,
+			     goal_x, goal_y, goal_th, goal_tol_xy, goal_tol_th));
+  }
+  
+  
+  costmap_2d::CostMap2D const & SBPLBenchmarkSetup::
+  getCostmap() const
+  {
+    if ( ! costmap_)
+      costmap_.reset(createCostMap2D(*m2d_));
+    return *costmap_;
+  }
+  
+  
   SBPLBenchmarkSetup::tasklist_t const & SBPLBenchmarkSetup::
   getTasks() const
   {
@@ -137,54 +272,95 @@ namespace ompl {
   }
     
     
-  OfficeBenchmark1::
-  OfficeBenchmark1(double resolution,
-		   double robot_radius,
-		   double freespace_distance,
-		   int obstacle_cost)
+  OfficeBenchmark::
+  OfficeBenchmark(std::string const & name,
+		  double resolution,
+		  double robot_radius,
+		  double freespace_distance,
+		  int obstacle_cost,
+		  double _door_width,
+		  double _hall_width)
+    : SBPLBenchmarkSetup(name, resolution, robot_radius, freespace_distance, obstacle_cost),
+      door_width(_door_width),
+      hall_width(_hall_width)
   {
-    sfl::GridFrame gframe(resolution);
-    boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
-      growstrategy(new sfl::Mapper2d::always_grow());
-    double const buffer_zone(sfl::maxval(0.0, freespace_distance - robot_radius));
-    sfl::Mapper2d m2d(gframe, 0, 0, 0, 0, robot_radius, buffer_zone, 0, obstacle_cost,
-		      "OfficeBenchmark1", sfl::RWlock::Create("OfficeBenchmark1"), growstrategy);
-    
-    drawOfficeBenchmark1(m2d, tasklist_, 4.5, 1.2);
-    costmap_ = createCostMap2D(m2d);
   }
   
   
-  OfficeBenchmark1::
-  ~OfficeBenchmark1()
+  OfficeBenchmark * OfficeBenchmark::
+  create(std::string const & name,
+	 double resolution,
+	 double robot_radius,
+	 double freespace_distance,
+	 int obstacle_cost,
+	 double door_width,
+	 double hall_width,
+	 std::ostream * progress_os,
+	 std::ostream * travmap_os)
   {
-    delete costmap_;
-  }
-  
-  
-  costmap_2d::CostMap2D const & OfficeBenchmark1::
-  getCostmap() const
-  {
-    return *costmap_;
-  }
-  
-  
-  void OfficeBenchmark1::
-  dumpDescription(char const * filename, char const * title, char const * prefix) const
-  {
-    FILE * ff(fopen(filename, "a"));
-    if (0 == ff) {
-      ROS_WARN("OfficeBenchmark1::dumpDescription(): fopen(%s): %s",
-	       filename, strerror(errno));
-      return;
+    OfficeBenchmark * setup(new OfficeBenchmark(name, resolution, robot_radius,
+						freespace_distance, obstacle_cost,
+						door_width, hall_width));
+    if ("dots" == name)
+      drawDots(*setup, hall_width, door_width, progress_os);
+    else if ("square" == name)
+      drawSquare(*setup, hall_width, door_width, progress_os);
+    else if ("office1" == name)
+      drawOffice1(*setup, hall_width, door_width, progress_os);
+    else {
+      delete setup;
+      if (progress_os)
+	*progress_os << "OfficeBenchmark::create(): invalid name \"" << name << "\", use one of:\n"
+		     << "  dots: 4 dots in a square of hall_width side length\n"
+		     << "  square: a square of hall_width side length\n"
+		     << "  office1: two offices, two hallways, some doors\n" << flush;
+      return 0;
     }
-    fprintf(ff,
-	    "%s\n"
-	    "%sname: OfficeBenchmark1\n",
-	    title, prefix);
-    if (0 != fclose(ff))
-      ROS_WARN("OfficeBenchmark1::dumpDescription(): fclose() on %s: %s",
-	       filename, strerror(errno));
+    if (travmap_os) {
+      if (progress_os)
+	*progress_os << "saving sfl::TraversabilityMap\n";
+      setup->dumpTravmap(*travmap_os);
+    }
+    return setup;
+  }
+  
+  
+  void OfficeBenchmark::
+  dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
+  {
+    if ( ! title.empty())
+      os << title << "\n";
+    os << prefix << "name:               OfficeBenchmark1\n"
+       << prefix << "resolution:         " << resolution << "\n"
+       << prefix << "robot_radius:       " << robot_radius << "\n"
+       << prefix << "freespace_distance: " << freespace_distance << "\n"
+       << prefix << "obstacle_cost:      " << obstacle_cost << "\n"
+       << prefix << "door_width:         " << door_width << "\n"
+       << prefix << "hall_width:         " << hall_width << "\n"
+       << prefix << "tasks:\n";
+    for (size_t ii(0); ii < tasklist_.size(); ++ii)
+      os << prefix << "  [" << ii << "] " << tasklist_[ii].description << "\n";
+  }
+  
+
+
+  SBPLBenchmarkSetup::task::
+  task(std::string const & _description,
+       bool _from_scratch,
+       double _start_x, double _start_y, double _start_th, 
+       double _goal_x, double _goal_y, double _goal_th, 
+       double _goal_tol_xy, double _goal_tol_th)
+    : description(_description),
+      from_scratch(_from_scratch),
+      start_x(_start_x),
+      start_y(_start_y),
+      start_th(_start_th),
+      goal_x(_goal_x),
+      goal_y(_goal_y),
+      goal_th(_goal_th),
+      goal_tol_xy(_goal_tol_xy),
+      goal_tol_th(_goal_tol_th)
+  {
   }
   
 }
