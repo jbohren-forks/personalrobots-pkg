@@ -78,7 +78,7 @@ class TestWpc(unittest.TestCase):
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)
         time.sleep(2.0)
-        os.system("killall trex_fast")
+        os.system("killall trexfast")
         self.assert_(self.success)
         
     
@@ -86,7 +86,7 @@ class TestWpc(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.run(PKG, sys.argv[0], TestWpc, sys.argv) #, text_mode=True)
-    os.system("killall trex_fast")
+    os.system("killall trexfast")
 
 
 
