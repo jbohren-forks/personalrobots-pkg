@@ -281,8 +281,8 @@ void WG0X::initXml(TiXmlElement *elt)
   GET_ATTR("pulsesPerRevolution");
   actuator_info_.pulses_per_revolution_ = atof(attr);
 
-  GET_ATTR("sign");
-  actuator_info_.sign_ = atoi(attr);
+  GET_ATTR("encoderReduction");
+  actuator_info_.encoder_reduction_ = atof(attr);
 
   GET_ATTR("maxCurrent");
   actuator_info_.max_current_ = atof(attr);
@@ -301,7 +301,7 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
 void WG0X::computeCurrent(ActuatorCommand &command)
 {
-  command.current_ = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+  command.current_ = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.encoder_reduction_;
 }
 
 void WG0X::truncateCurrent(ActuatorCommand &command)
@@ -355,8 +355,8 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
   state.last_commanded_current_ = this_status->programmed_current_ * config_info_.nominal_current_scale_;
   state.last_measured_current_ = this_status->measured_current_ * config_info_.nominal_current_scale_;
 
-  state.last_commanded_effort_ = this_status->programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
-  state.last_measured_effort_ = this_status->measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.sign_;
+  state.last_commanded_effort_ = this_status->programmed_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.encoder_reduction_;
+  state.last_measured_effort_ = this_status->measured_current_ * config_info_.nominal_current_scale_ * actuator_info_.motor_torque_constant_ * actuator_info_.encoder_reduction_;
 
   state.num_encoder_errors_ = this_status->num_encoder_errors_;
   state.num_communication_errors_ = 0; // TODO: communication errors are no longer reported in the process data
@@ -367,7 +367,7 @@ void WG0X::convertState(ActuatorState &state, unsigned char *this_buffer, unsign
 bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigned char *prev_buffer)
 {
   bool rv = true;
-  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.sign_ * backemf_constant_;
+  double expected_voltage = state.last_measured_current_ * actuator_info_.resistance_ + state.velocity_ * actuator_info_.encoder_reduction_ * backemf_constant_;
 
   if (!(state.is_enabled_)) {
     goto end;
@@ -421,7 +421,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
       //Something is wrong with the encoder, the motor, or the motor board
 
       //Disable motors
-      // TODO: don't disable motors for voltage error until all motor 
+      // TODO: don't disable motors for voltage error until all motor
       // parameters are properly configured
       //rv = false;
 
@@ -464,7 +464,7 @@ bool WG0X::verifyState(ActuatorState &state, unsigned char *this_buffer, unsigne
   if (current_error_ > 0.1 &&
       (last_commanded_current > 0 ?
            prev_status->programmed_pwm_value_ < 8400 :
-           prev_status->programmed_pwm_value_ > -8400)) 
+           prev_status->programmed_pwm_value_ > -8400))
   {
 printf("current_error: %f [%d], cmd: %f, mes: %f,  pwm: %d, %s\n", current_error_, consecutive_current_errors_, last_commanded_current, state.last_measured_current_, prev_status->programmed_pwm_value_, actuator_info_.name_);
     ++consecutive_current_errors_;
@@ -847,7 +847,7 @@ void WG0X::diagnostics(robot_msgs::DiagnosticStatus &d, unsigned char *buffer)
   ADD_STRING_FMT("Resistance", "%f", actuator_info_.resistance_);
   ADD_STRING_FMT("Motor Torque Constant", "%f", actuator_info_.motor_torque_constant_);
   ADD_STRING_FMT("Pulses Per Revolution", "%d", actuator_info_.pulses_per_revolution_);
-  ADD_STRING_FMT("Sign", "%d\n", actuator_info_.sign_);
+  ADD_STRING_FMT("Encoder Reduction", "%f\n", actuator_info_.encoder_reduction_);
 
   ADD_STRING_FMT("Safety Disable Status", "%s (%02x)", safetyDisableString(config_info_.safety_disable_status_).c_str(), config_info_.safety_disable_status_);
   ADD_STRING_FMT("Safety Disable Status Hold", "%s (%02x)", safetyDisableString(config_info_.safety_disable_status_hold_).c_str(), config_info_.safety_disable_status_hold_);

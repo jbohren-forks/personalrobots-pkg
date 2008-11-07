@@ -155,9 +155,9 @@ struct WG0XActuatorInfo
   double speed_constant_;       // Speed constant
   double resistance_;           // Resistance
   double motor_torque_constant_; // Motor torque constant
+  double encoder_reduction_;    // Reduction and sign between motor and encoder
   uint32_t pulses_per_revolution_; // # of encoder ticks per revolution
-  int32_t sign_;                // Sign of encoder count, should be 1 or -1
-  uint8_t pad[52];              // Pad entire structure to 264 bytes
+  uint8_t pad[48];              // Pad entire structure to 264 bytes
   uint32_t crc32_;              // CRC32 over structure (minus last 4 bytes)
 };
 

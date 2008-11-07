@@ -210,7 +210,7 @@ void parseConfig(TiXmlElement *config)
 
   WG0XActuatorInfo info;
   memset(&info, 0, sizeof(info));
-  info.minor_ = 1;
+  info.minor_ = 2;
   strcpy(info.robot_name_, "PR2");
   for (TiXmlElement *elt = motorElt->FirstChildElement("motor");
        elt;
@@ -229,7 +229,7 @@ void parseConfig(TiXmlElement *config)
     info.motor_torque_constant_ = atof(params->Attribute("motor_torque_constant"));
 
     info.pulses_per_revolution_ = atoi(encoder->Attribute("pulses_per_revolution"));
-    info.sign_ = atoi(encoder->Attribute("sign"));
+    info.encoder_reduction_ = atoi(encoder->Attribute("reduction"));
 
     motors[name] = info;
   }
