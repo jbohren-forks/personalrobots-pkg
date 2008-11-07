@@ -14,7 +14,8 @@
 #
 #  $ make svn-all
 
-all: tarball-all
+##all: tarball-all
+all: svn-all
 
 VERSION=     r910
 
@@ -53,7 +54,7 @@ tarball-all: $(SOURCE_DIR)
 
 rebuild: wipe really-all
 
-$(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
+$(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
 	cd $(SOURCE_DIR) && ./bootstrap-buildsystem.sh
 
 $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
