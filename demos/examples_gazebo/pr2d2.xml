@@ -3,7 +3,7 @@
   <master auto="start" />
   <group name="wg">
      <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_arm/pr2d2.xml&quot;" />
-     <node pkg="gazebo" type="gazebo" args="-g -n $(find gazebo_robot_description)/world/robot_pr2d2.world" respawn="false" output="screen">
+     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_pr2d2.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
