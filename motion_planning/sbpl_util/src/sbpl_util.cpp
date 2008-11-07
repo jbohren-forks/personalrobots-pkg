@@ -256,42 +256,35 @@ namespace ompl {
 	       filename, strerror(errno));
       return;
     }
-    fprintf(ff,
-	    "%s\n"
-	    "%splanner:               %s\n"
-	    "%senvironment:           %s\n"
-	    "%sgoal  map:             %+8.3f %+8.3f %+8.3f\n"
-	    "%sgoal  grid:            %u %u\n"
-	    "%sgoal  state:           %d\n"
-	    "%sstart map:             %+8.3f %+8.3f %+8.3f\n"
-	    "%sstart grid:            %u %u\n"
-	    "%sstart state:           %d\n"
-	    "%stime  alloc:           %g\n"
-	    "%stime  actual (wall):   %g\n"
-	    "%stime  actual (user):   %g\n"
-	    "%stime  actual (system): %g\n"
-	    "%sstatus (1 == SUCCESS): %d\n"
-	    "%splan_length [m]:       %+8.3f\n"
-	    "%splan_rotation [rad]:   %+8.3f\n",
-	    title,
-	    prefix, plannerType.c_str(),
-	    prefix, environmentType.c_str(),
-	    prefix, goal.x, goal.y, goal.th,
-	    prefix, goalIx, goalIy,
-	    prefix, goalState,
-	    prefix, start.x, start.y, start.th,
-	    prefix, startIx, startIy,
-	    prefix, startState,
-	    prefix, allocated_time_sec,
-	    prefix, actual_time_wall_sec,
-	    prefix, actual_time_user_sec,
-	    prefix, actual_time_system_sec,
-	    prefix, status,
-	    prefix, plan_length_m,
-	    prefix, plan_angle_change_rad);
+    ostringstream os;
+    logStream(os, title, prefix);
+    fprintf(ff, "%s", os.str().c_str());
     if (0 != fclose(ff))
       ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fclose() on %s: %s",
 	       filename, strerror(errno));
+  }
+  
+  
+  void SBPLPlannerStatistics::entry::
+  logStream(std::ostream & os, std::string const & title, std::string const & prefix) const
+  {
+    if ( ! title.empty())
+      os << title << "\n";
+    os << prefix << "planner:               " << plannerType << "\n"
+       << prefix << "environment:           " << environmentType << "\n"
+       << prefix << "goal  map:             " << goal.x << "  " << goal.y << "  " << goal.th << "\n"
+       << prefix << "goal  grid:            " << goalIx << "  " << goalIy << "\n"
+       << prefix << "goal  state:           " << goalState << "\n"
+       << prefix << "start map:             " << start.x << "  " << start.y << "  " << start.th << "\n"
+       << prefix << "start grid:            " << startIx << "  " << startIy << "\n"
+       << prefix << "start state:           " << startState << "\n"
+       << prefix << "time  alloc:           " << allocated_time_sec << "\n"
+       << prefix << "time  actual (wall):   " << actual_time_wall_sec << "\n"
+       << prefix << "time  actual (user):   " << actual_time_user_sec << "\n"
+       << prefix << "time  actual (system): " << actual_time_system_sec << "\n"
+       << prefix << "status (1 == SUCCESS): " << status << "\n"
+       << prefix << "plan_length [m]:       " << plan_length_m << "\n"
+       << prefix << "plan_rotation [rad]:   " << plan_angle_change_rad << "\n";
   }
   
   

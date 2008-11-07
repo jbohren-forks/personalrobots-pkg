@@ -105,11 +105,16 @@ namespace ompl {
       double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
       double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
       
-      /** Use ROS_INFO() to log this entry to rosconsole. */
+      /** Use ROS_INFO() to log this entry to rosconsole.
+	  \todo needs to be unified with the other logXXX() methods
+      */
       void logInfo(char const * prefix = "") const;
       
       /** Append this entry to a logfile (which is opened and closed each time). */
       void logFile(char const * filename, char const * title, char const * prefix) const;
+      
+      /** Append this entry to a stream. */
+      void logStream(std::ostream & os, std::string const & title, std::string const & prefix) const;
     };
     
     typedef std::vector<entry> stats_t;
