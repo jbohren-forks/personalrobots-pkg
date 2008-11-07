@@ -1,10 +1,5 @@
 #!/bin/bash
 
-TMPFILE=`mktemp` || {
-    echo "ERROR creating temporary file"
-    exit 1
-}
-
 # set default parameters
 
 STAGE_WORLD_FILE="willow-pr2-5cm.world"
@@ -107,6 +102,11 @@ case $ENVIRONMENT_TYPE in
 	echo "ERROR invalid environment: $ENVIRONMENT_TYPE"
 	exit 1;;
 esac
+
+TMPFILE=`mktemp` || {
+    echo "ERROR creating temporary file"
+    exit 1
+}
 
 cat testcase.xml.in \
     | sed -e s/@STAGE_WORLD_FILE@/$STAGE_WORLD_FILE/ \
