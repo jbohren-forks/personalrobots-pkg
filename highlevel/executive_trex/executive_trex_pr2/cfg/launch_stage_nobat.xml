@@ -1,0 +1,11 @@
+<!-- Should deprecate this file -->
+<launch>
+  <master auto="start"/>
+  <group name="wg">
+    <include file="$(find executive_trex_pr2)/cfg/launch_stage.xml" />
+    <node pkg="executive_trex_pr2" type="fake_battery_controller.py"/>
+    <node pkg="executive_trex_pr2" type="fake_battery_controller.py" args="battery_state:=bogus_battery_state"/>
+
+  </group>
+</launch>
+
