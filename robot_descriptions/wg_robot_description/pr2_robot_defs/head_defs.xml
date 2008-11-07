@@ -15,16 +15,16 @@
       <calibration reference_position="-0.35" values="0 0" />
     </joint>
 
-    <link name="${name}_mount"> 
+    <link name="${name}_mount">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${name}_mount_joint" /> 
+      <joint name="${name}_mount_joint" />
       <inertial>
         <mass value="1.0" />
         <com xyz="0 0 0" />
         <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
-      </inertial> 
-      
+      </inertial>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
@@ -34,11 +34,11 @@
           <mesh filename="hok_tilt" />
         </geometry>
       </visual>
-      
+
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_mount_collision_geom" >
-          <box size=".001 .001 .001" /> 
+          <box size=".001 .001 .001" />
         </geometry>
       </collision>
     </link>
@@ -56,41 +56,41 @@
 
     <sensor name="${name}" type="laser">
       <parent name="${name}_mount" />
-      <origin xyz="0 0 0.03" rpy="0 0 0" />      
-      <joint name="${name}_joint" /> 
+      <origin xyz="0 0 0.03" rpy="0 0 0" />
+      <joint name="${name}_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
         <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
-      </inertial> 
-      
+      </inertial>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="pr2_${name}_visual_geom">
           <mesh scale="0.001 0.001 0.001" />
         </geometry>
       </visual>
-      
+
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry name="${name}_collision_geom" >
-          <box size=".001 .001 .001" /> 
+          <box size=".001 .001 .001" />
         </geometry>
       </collision>
-      
+
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_ray">
           <sensor:ray name="${name}">
             <rayCount>683</rayCount>
             <rangeCount>683</rangeCount>
             <laserCount>1</laserCount>
-            
+
             <origin>0.0 0.0 0.0</origin>
             <displayRays>false</displayRays>
-            
+
             <minAngle>-45</minAngle>
             <maxAngle> 45</maxAngle>
-            
+
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
             <updateRate>10.0</updateRate>
@@ -117,10 +117,10 @@
   <property name="stereo_size_z" value="0.005" />
   <property name="stereo_center_box_center_offset_x" value="0.00" />
   <property name="stereo_center_box_center_offset_z" value="0.05" />
-  
+
   <macro name="stereo_camera" params="name parent *origin">
     <joint name="${name}_joint" type="fixed" />
-    
+
     <sensor name="${name}" type="camera">
       <parent name="${parent}" />
       <insert_block name="origin" />
@@ -132,7 +132,7 @@
         <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"
                  iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
       </inertial>
-      
+
       <visual>
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
@@ -141,16 +141,16 @@
         <geometry name="pr2_stereo_visual_geom">
           <mesh scale="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
-      </visual> 
-      
+      </visual>
+
       <collision>
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
         <geometry name="stereo_collision_geom">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </collision>
-      
-      
+
+
       <map name="sensor" flag="gazebo">
 	<verbatim key="${name}_camera">
           <sensor:camera name="${name}_left_sensor">
@@ -176,13 +176,13 @@
             <rayCount>30</rayCount>
             <rangeCount>30</rangeCount>
             <laserCount>1</laserCount>
-	    
+
             <origin>0.0 0.0 0.05</origin>
             <displayRays>false</displayRays>
-	    
+
             <minAngle>-15</minAngle>
             <maxAngle> 15</maxAngle>
-	    
+
             <minRange>0.05</minRange>
             <maxRange>100.0</maxRange>
             <updateRate>10.0</updateRate>
@@ -235,7 +235,7 @@
         <inertia ixx="0.00482611007"  ixy="-0.000144683999"  ixz="0.000110076136"
 		 iyy="0.005218991412"  iyz="-0.000314239509"  izz="0.008618784925" />
       </inertial>
-      
+
       <visual>
         <origin xyz="0 0 0.0" rpy="0 0 0 " />
         <map name="gazebo_material" flag="gazebo">
@@ -244,15 +244,15 @@
         <geometry name="pr2_${name}_mesh_file">
           <mesh filename="${name}" />
         </geometry>
-      </visual> 
-      
+      </visual>
+
       <collision>
         <origin xyz=" 0 0 0" rpy="0.0 0.0 0.0 " />
         <geometry name="${name}_collision_geom">
           <box size="0.188 0.219 0.137" />
         </geometry>
-      </collision> 
-      
+      </collision>
+
     </link>
   </macro>
 
@@ -260,7 +260,7 @@
   <macro name="pr2_head_tilt" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 1 0" /> 
+      <axis xyz="0 1 0" />
       <limit min="-0.55" max="1.047"
              effort="0.529" velocity="1256.64" />
       <calibration reference_position="-0.195" values="0 0" />
@@ -284,32 +284,32 @@
         <com xyz="0.041935 0.003569 0.028143" />
         <inertia ixx="0.010602303435"  ixy="-0.000408814235"  ixz="0.00198303894"  iyy="0.011874383747"  iyz="0.000197908779"  izz="0.005516790626" />
       </inertial>
-      
+
       <visual>
         <origin xyz="0 0 0" rpy="0.0 0.0 0.0 " />
         <map name="gazebo_material" flag="gazebo">
-          <elem key="material">Gazebo/Green</elem> 
+          <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="pr2_${name}_mesh_file">
           <mesh filename="${name}" />
         </geometry>
-      </visual> 
-      
+      </visual>
+
       <collision>
-        <origin xyz="0 0 0 " rpy="0 0 0" /> 
+        <origin xyz="0 0 0 " rpy="0 0 0" />
         <geometry name="${name}_collision_geom">
           <box size="0.164 0.253 0.181" />
         </geometry>
-      </collision> 
+      </collision>
     </link>
   </macro>
 
-  
+
   <macro name="pr2_head" params="name parent *origin">
     <pr2_head_pan name="${name}_pan" parent="${parent}">
       <insert_block name="origin" />
     </pr2_head_pan>
-    
+
     <pr2_head_tilt name="${name}_tilt" parent="${name}_pan">
       <origin xyz="0.058 0 0" rpy="0 0 0" />
     </pr2_head_tilt>
@@ -317,6 +317,30 @@
     <stereo_camera name="stereo" parent="${name}_tilt">
       <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
     </stereo_camera>
+  </macro>
+
+
+
+  <!--                    Calibration                            -->
+
+  <macro name="head_calibrator">
+    <controller name="cal_head_pan" topic="cal_head_pan"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="head_pan_joint"
+                 actuator="head_pan_motor"
+                 transmission="head_pan_trans"
+                 velocity="-1.5" />
+      <pid p="0.4" i="0.0" d="0" iClamp="1.0" />
+    </controller>
+
+    <controller name="cal_head_tilt" topic="cal_head_tilt"
+                type="JointCalibrationControllerNode">
+      <calibrate joint="head_tilt_joint"
+                 actuator="head_tilt_motor"
+                 transmission="head_tilt_trans"
+                 velocity="-0.7" />
+      <pid p="0.3" i="0.0" d="0" iClamp="5.0" />
+    </controller>
   </macro>
 
 </robot>

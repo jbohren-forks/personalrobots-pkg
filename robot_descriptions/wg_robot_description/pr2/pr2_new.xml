@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<robot name="pr2"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+
+
+  <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/head_defs.xml" />
+  <include filename="../pr2_robot_defs/body_defs.xml" />
+  <include filename="../pr2_robot_defs/base_defs.xml" />
+
+
+  <pr2_base name="base" />
+
+
+  <pr2_torso name="torso" parent="base">
+    <origin xyz="-0.05 0 0.739675" rpy="0 0 0" />
+  </pr2_torso>
+
+  <pr2_head name="head" parent="torso">
+    <origin xyz="0 0 0.3815" rpy="0 0 0" />
+  </pr2_head>
+
+  <pr2_tilting_laser name="tilt_laser" parent="torso">
+    <origin xyz="0.1 0 0.19525" rpy="0 0 0" />
+  </pr2_tilting_laser>
+
+  <pr2_arm side="right" reflect="-1" parent="torso">
+    <origin xyz="0.3 -0.4 0.7" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="right" parent="right_wrist_roll" />
+
+  <!--
+  <pr2_arm side="left" reflect="1" parent="torso">
+    <origin xyz="0.3 -0.4 0.7" rpy="0 0 0" />
+  </pr2_arm>
+  <pr2_gripper side="right" parent="right_wrist_roll" />
+  -->
+
+</robot>

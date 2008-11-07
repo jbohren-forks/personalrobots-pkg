@@ -231,4 +231,31 @@
   </macro>
 
 
+
+  <!--                    Calibration                            -->
+
+  <macro name="caster_calibrator" params="suffix">
+    <controller type="CasterCalibrationControllerNode"
+                name="cal_caster_${suffix}" topic="cal_caster_${suffix}">
+      <calibrate joint="caster_${suffix}_joint"
+                 actuator="caster_${suffix}_motor"
+                 transmission="caster_${suffix}_trans"
+                 velocity="1.0" />
+      <joints caster="caster_${suffix}_joint"
+              wheel_l="wheel_${suffix}_l_joint"
+              wheel_r="wheel_${suffix}_r_joint" />
+      <caster_pid p="6" i="0" d="0" iClamp="0" />
+      <wheel_pid p="4" i="0" d="0" iClamp="0" />
+    </controller>
+  </macro>
+
+
+  <macro name="base_calibrator">
+    <caster_calibrator suffix="front_left" />
+    <caster_calibrator suffix="front_right" />
+    <caster_calibrator suffix="rear_left" />
+    <caster_calibrator suffix="rear_right" />
+  </macro>
+
+
 </robot>

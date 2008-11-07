@@ -1,0 +1,23 @@
+<controllers>
+  <include filename="../pr2_robot_defs/arm_defs.xml" />
+  <include filename="../pr2_robot_defs/base_defs.xml" />
+  <include filename="../pr2_robot_defs/head_defs.xml" />
+  <include filename="../pr2_robot_defs/body_defs.xml" />
+
+  <upper_arm_calibrator side="right" />
+  <forearm_calibrator side="right" />
+  <gripper_calibrator side="right" />
+
+  <!--
+  <upper_arm_calibrator side="left" />
+  <forearm_calibrator side="left" />
+  <gripper_calibrator side="left" />
+  -->
+
+  <base_calibrator />
+
+  <head_calibrator />
+
+  <torso_calibrator />
+
+</controllers>
