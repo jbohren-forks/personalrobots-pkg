@@ -25,7 +25,7 @@ PLASMA:
                              else cd PLASMA &&  $(SVN_CMDLINE) up -r 5117 ; fi
 
 #install the patch
-patch-PLASMA: 
+patch-PLASMA: PLASMA
 	$(MAKE) PLASMA 
 	patch -p0 < PLASMA_PATCH.diff
 	touch patch-PLASMA 
