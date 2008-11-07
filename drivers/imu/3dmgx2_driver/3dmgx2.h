@@ -121,6 +121,8 @@ namespace MS_3DMGX2
 
     void receive_euler(uint64_t *time, double *roll, double *pitch, double *yaw);
 
+    void receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9]);
+
 
     // Send a packet and wait for a reply from the IMU.
     // Returns the number of bytes read.
