@@ -93,25 +93,25 @@ namespace {
   {
     // outer bounding box
     setup.drawLine(       0,         0,  3 * hall,         0, progress_os);
-    setup.drawLine(       0,         0,         0,  4 * hall, progress_os);
-    setup.drawLine(       0,  4 * hall,  3 * hall,  4 * hall, progress_os);
-    setup.drawLine(3 * hall,         0,  3 * hall,  4 * hall, progress_os);
+    setup.drawLine(       0,         0,         0,  5 * hall, progress_os);
+    setup.drawLine(       0,  5 * hall,  3 * hall,  5 * hall, progress_os);
+    setup.drawLine(3 * hall,         0,  3 * hall,  5 * hall, progress_os);
     
     // two long walls along y-axis, each with a door near the northern end
-    setup.drawLine(    hall,  2 * hall,      hall,  4 * hall - 2 * door, progress_os);
-    setup.drawLine(    hall,  2 * hall,      hall,  4 * hall -     door, progress_os);
-    setup.drawLine(2 * hall,      hall,  2 * hall,  4 * hall - 2 * door, progress_os);
-    setup.drawLine(2 * hall,      hall,  2 * hall,  4 * hall -     door, progress_os);
+    setup.drawLine(    hall,  3 * hall,      hall,  5 * hall - 2 * door, progress_os);
+    setup.drawLine(    hall,  5 * hall,      hall,  5 * hall -     door, progress_os);
+    setup.drawLine(2 * hall,      hall,  2 * hall,  5 * hall - 2 * door, progress_os);
+    setup.drawLine(2 * hall,  5 * hall,  2 * hall,  5 * hall -     door, progress_os);
     
     // some shorter walls along x-axis
-    setup.drawLine(         0,        hall,  0.5 * hall,        hall, progress_os);
-    setup.drawLine(         0,  0.5 * hall,  0.5 * hall,  0.5 * hall, progress_os);
-    setup.drawLine(1.5 * hall,        hall,  2   * hall,        hall, progress_os);
+    setup.drawLine(         0,      hall,  0.5 * hall,      hall, progress_os);
+    setup.drawLine(         0,  2 * hall,  0.5 * hall,  2 * hall, progress_os);
+    setup.drawLine(1.5 * hall,      hall,  2   * hall,      hall, progress_os);
     
     // y-axis wall with two office doors
-    setup.drawLine(0.5*hall,                  0,  0.5*hall,  0.5*hall - 2*door, progress_os);
-    setup.drawLine(0.5*hall,  0.5*hall -   door,  0.5*hall,  0.5*hall +   door, progress_os);
-    setup.drawLine(0.5*hall,  0.5*hall + 2*door,  0.5*hall,      hall         , progress_os);
+    setup.drawLine(0.5 * hall,              0,  0.5 * hall,    hall - 2*door, progress_os);
+    setup.drawLine(0.5 * hall,  hall -   door,  0.5 * hall,    hall +   door, progress_os);
+    setup.drawLine(0.5 * hall,  hall + 2*door,  0.5 * hall,  2*hall         , progress_os);
     
     // tasks...
     if (progress_os)
@@ -198,7 +198,10 @@ namespace ompl {
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
       growstrategy(new sfl::Mapper2d::always_grow());
     double const buffer_zone(sfl::maxval(0.0, freespace_distance - robot_radius));
-    m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0, robot_radius, buffer_zone, 0, obstacle_cost,
+    double const padding_factor(0);
+    m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
+				 robot_radius, buffer_zone, padding_factor,
+				 0, obstacle_cost,
 				 name, sfl::RWlock::Create(name), growstrategy));
     
 
