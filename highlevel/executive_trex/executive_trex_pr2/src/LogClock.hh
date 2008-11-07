@@ -2,6 +2,7 @@
 #define H_LogClock
 
 #include "Clock.hh"
+#include "XMLUtils.hh"
 #include <pthread.h>
 
 /**
@@ -43,7 +44,7 @@ namespace TREX {
    */
   class PlaybackClock: public Clock {
   public:
-    PlaybackClock(unsigned int finalTick, bool stats = true);
+    PlaybackClock(unsigned int finalTick, TiXmlElement* root, bool stats = true);
 
     /**
      * @brief Will idle till this is called.
@@ -54,19 +55,29 @@ namespace TREX {
      * @brief Retrieve the tick
      */
     TICK getNextTick();
+    /**
+     * @brief Get user input.
+     */
+    void consolePopup();
+    /**
+     * @brief Returns true if we are at the goal tick == should pop up the console.
+     */
+    bool isAtGoalTick();
+    /**
+     * @brief Returns true if this system has timed out.
+     */
+    bool isTimedOut();
   private:
     /**
      * @brief Generate help console popup.
      */
     void printHelp();
-    /**
-     * @brief Wit for user input.
-     */
-    void consolePopup();
 
     unsigned int m_gets, m_finalTick;
     FILE* m_file;
-    TICK m_tick, m_stopTick;
+    TICK m_tick, m_stopTick; 
+    TiXmlElement* m_root;
+    bool m_timedOut;
   };
 }
 

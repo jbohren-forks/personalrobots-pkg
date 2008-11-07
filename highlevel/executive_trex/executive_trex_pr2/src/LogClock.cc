@@ -57,9 +57,10 @@ namespace TREX {
   /**
    * Playback clock.
    */
-  PlaybackClock::PlaybackClock(unsigned int finalTick, bool stats)
+  PlaybackClock::PlaybackClock(unsigned int finalTick, EUROPA::TiXmlElement* root, bool stats)
     : Clock(0, stats),
-      m_gets(0), m_finalTick(finalTick), m_tick(0) {
+      m_gets(0), m_finalTick(finalTick), m_tick(0), m_stopTick(0), m_root(root), m_timedOut(false) {
+    if (m_finalTick < 2) { m_finalTick = 100; }
     m_file = fopen("clock.log", "r");
     if (!m_file) {
       std::cerr << "No clock.log file for playback." << std::endl;
@@ -106,9 +107,35 @@ namespace TREX {
 	if (atoi(tickStr.c_str()) > 0) {
 	  m_stopTick = (TICK)atoi(tickStr.c_str());
 	  cmdValid = true;
-	  if (m_tick >= m_stopTick) {
+	  if (m_tick > m_stopTick) {
+	    cmdValid = true;
+	    std::cout << "Doing a rewind." << std::endl;
+	    TREX::Agent::terminate();
+	    std::cout << "Terminated" << std::endl;
+	    TREX::Clock::sleep(1);
+	    std::cout << "Slept" << std::endl;
+	    TREX::Agent::reset();
+	    TREX::Agent::cleanupLog();
+	    std::cout << "Reseted" << std::endl;
+
+
+	    m_tick = 0;
+	    fclose(m_file);
+	    m_file = fopen("clock.log", "r");
+	    if (!m_file) {
+	      std::cerr << "No clock.log file for playback." << std::endl;
+	      exit(-1);
+	    }
+	    fscanf(m_file, "%u\n", &m_gets);
+	    
+
+	    TREX::Clock::sleep(1);
+	    std::cout << "Initing" << std::endl;
+	    TREX::Agent::initialize(*m_root, *this);
+	    std::cout << "Done" << std::endl;
+	  } else if (m_tick == m_stopTick) {
 	    cmdValid = false;
-	    std::cout << "Please enter a future tick." << std::endl;
+	    std::cout << "Already at that tick." << std::endl;
 	  }
 	} else {
 	  std::cout << "Please enter a number." << std::endl;
@@ -150,20 +177,28 @@ namespace TREX {
 
   TICK PlaybackClock::getNextTick() {
     unsigned int timeout = 0;
-    while (m_gets == 0 && timeout < 1000) {
-      advanceTick(m_tick);
-      if (m_tick == m_stopTick) {
-	consolePopup();
-      }
+    if (m_tick > m_stopTick) {
+      return m_tick;
+    }
+
+    while (m_gets == 0 && timeout <= m_finalTick) {
       fscanf(m_file, "%u\n", &m_gets);
-      if (m_tick == m_finalTick) {
-	Agent::terminate();
-	return m_tick;
-      }
       timeout++;
+      m_tick++;
+    }
+    if (timeout >= m_finalTick) {
+      m_timedOut = true;
     }
     m_gets--;
+
     TICK tick = m_tick;
     return tick;
+  }
+
+  bool PlaybackClock::isAtGoalTick() {
+    return m_tick == m_stopTick;
+  }
+  bool PlaybackClock::isTimedOut() {
+    return m_timedOut;
   }
 }
