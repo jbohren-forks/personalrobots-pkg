@@ -1,0 +1,22 @@
+/**
+ * Larger scale iteration around the office
+ */
+
+#include "milo.init.nddl";
+
+/* Waypoints */
+Waypoint w1 = new Waypoint(18.26, 16.57, 0.0);
+Waypoint w2 = new Waypoint(11.0, 29.4, 0.0);
+Waypoint w3 = new Waypoint(7.0, 18.0, 0.0);
+Waypoint w4 = new Waypoint(5.4, 42.0, 0.0);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(10.4, 23.7, 0.0);
+ChargingStation c2 = new ChargingStation(13.3, 42.0, 0.0);
+ChargingStation c3 = new ChargingStation(18.3, 16.17, 0.0);
+
+close();
+
+rejectable(venusDeMiles.Holds g);
+g.iterationCount = 0;
+g.alwaysBusy = true;
