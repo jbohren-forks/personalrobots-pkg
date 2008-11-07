@@ -1,0 +1,12 @@
+<package>
+  <description>A package containing ROS messages for dealing with images and associated utilities.</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package="std_msgs"/>
+  <depend package="opencv_latest"/>
+  <depend package="dcam"/>
+  <export>
+    <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
+  </export>
+  <url></url>
+</package>
