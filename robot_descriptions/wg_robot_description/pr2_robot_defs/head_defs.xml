@@ -211,7 +211,7 @@
   <macro name="pr2_head_pan" params="name parent *origin">
 
     <joint name="${name}_joint" type="revolute">
-      <axis xyz="0 0 1" /> 
+      <axis xyz="0 0 1" />
       <limit min="-2.92" max="2.92"
              effort="0.529" velocity="1256.64" />
       <calibration reference_position="-2.79" values="0 0" />
@@ -343,6 +343,16 @@
                  transmission="head_tilt_trans"
                  velocity="-0.7" />
       <pid p="0.3" i="0.0" d="0" iClamp="5.0" />
+    </controller>
+  </macro>
+
+  <macro name="tilting_laser_calibrator" params="name">
+    <controller name="cal_${name}" topic="cal_${name}" type="JointCalibrationControllerNode">
+      <calibrate joint="${name}_mount_joint"
+                 actuator="${name}_motor"
+                 transmission="${name}_mount_trans"
+                 velocity="-1.5" />
+      <pid p=".3" i="0.1" d="0" iClamp="1.0" />
     </controller>
   </macro>
 

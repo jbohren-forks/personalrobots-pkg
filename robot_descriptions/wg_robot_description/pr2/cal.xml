@@ -20,4 +20,6 @@
 
   <torso_calibrator />
 
+  <tilting_laser_calibrator name="tilt_laser" />
+
 </controllers>
