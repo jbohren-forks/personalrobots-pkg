@@ -402,8 +402,8 @@
       <anchor xyz="0 0 0" />
       <limit min="-0.1" max="2.2" effort="200" velocity="5" />
       <calibration reference_position="0.4" values="1.5 -1" />
-      <safety_limit_min safety_length="0.1" spring_constant="20" damping_constant="4"/>
-      <safety_limit_max safety_length="0.2" spring_constant="20" damping_constant="4"/>
+      <safety_limit_min safety_length="0.2" spring_constant="15" damping_constant="4"/>
+      <safety_limit_max safety_length="0.2" spring_constant="15" damping_constant="4"/>
       <joint_properties damping="1.0" /> 
     </joint>
 
