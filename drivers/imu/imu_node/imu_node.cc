@@ -191,13 +191,13 @@ public:
 
       imu.receive_accel_angrate_orientation(&time, accel, angrate, orientation);
 
-      reading.accel.x = accel[0];
-      reading.accel.y = accel[1];
-      reading.accel.z = accel[2];
+      reading.accel.ax = accel[0];
+      reading.accel.ay = accel[1];
+      reading.accel.az = accel[2];
  
-      reading.angrate.x = angrate[0];
-      reading.angrate.y = angrate[1];
-      reading.angrate.z = angrate[2];
+      reading.angrate.vx = angrate[0];
+      reading.angrate.vy = angrate[1];
+      reading.angrate.vz = angrate[2];
       
       for (int i = 0; i < 9; i++)
         reading.orientation[i] = orientation[i];
