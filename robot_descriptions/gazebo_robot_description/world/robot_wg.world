@@ -51,7 +51,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
-    <maxUpdateRate>10./maxUpdateRate>
+    <maxUpdateRate>10.</maxUpdateRate>
   </rendering:ogre>
 
   <model:physical name="gplane">
