@@ -14,6 +14,7 @@ Waypoint w4 = new Waypoint(5.4, 42.0, 0.0);
 ChargingStation c1 = new ChargingStation(10.4, 23.7, 0.0);
 ChargingStation c2 = new ChargingStation(13.3, 42.0, 0.0);
 ChargingStation c3 = new ChargingStation(18.3, 16.17, 0.0);
+ChargingStation c4 = new ChargingStation(30.0, 25.30, 0.0);
 
 close();
 
