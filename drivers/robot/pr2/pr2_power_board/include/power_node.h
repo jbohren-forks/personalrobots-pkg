@@ -16,9 +16,11 @@ class Interface
     Interface(const char* ifname);
     ~Interface() {Close();}
     void Close();
-    int Init(sockaddr_in *port_address);
+    int Init(sockaddr_in *port_address, sockaddr_in *broadcast_address);
+    int InitReceive();
     void AddToReadSet(fd_set &set, int &max_sock) const;
     bool IsReadSet(fd_set set) const;
+    sockaddr_in ifc_address;
 };
 
 
@@ -28,9 +30,8 @@ class Device
     time_t message_time;
     PowerMessage pmsg;  //last power message recived from device
     TransitionMessage tmsg;
-    Interface *iface;   //interface last message was recieved on;
-    Device(Interface *_iface) : iface(_iface) {}
-    ~Device() { }	
+    Device() {};
+    ~Device() { };
 };
 
 
@@ -44,8 +45,8 @@ class PowerBoard : public ros::node
     void collectMessages();
     void sendDiagnostic();
     int collect_messages();
-    int process_message(const PowerMessage *msg, Interface *recvInterface);
-    int process_transition_message(const TransitionMessage *msg, Interface *recvInterface);
+    int process_message(const PowerMessage *msg);
+    int process_transition_message(const TransitionMessage *msg);
     const char* master_state_to_str(char state);
     const char* cb_state_to_str(char state);
     int list_devices(void);
