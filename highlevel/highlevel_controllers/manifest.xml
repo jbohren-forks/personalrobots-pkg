@@ -21,6 +21,7 @@
  <depend package="costmap_2d"/>
  <depend package="rosTF"/>
  <depend package="sbpl"/>
+ <depend package="sbpl_util"/>
 
  <!-- for running all examples from test directory we further need: -->
  <depend package="rosstage"/>

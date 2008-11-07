@@ -124,9 +124,9 @@ namespace ros {
       bool isMapDataOK();
 
       MDPConfig mdpCfg_;
-      EnvironmentWrapper * env_;
-      SBPLPlannerManager * pMgr_;
-      SBPLPlannerStatistics pStat_;
+      ompl::EnvironmentWrapper * env_;
+      ompl::SBPLPlannerManager * pMgr_;
+      ompl::SBPLPlannerStatistics pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
       std::string planStatsFile_;
       size_t goalCount_;
@@ -167,8 +167,8 @@ namespace ros {
 	  // obstacles set to the inscribed obstacle threshold. These,
 	  // lethal obstacles, and cells with no information will thus
 	  // be regarded as obstacles
-	  env_ = new EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0,
-					  CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+	  env_ = new ompl::EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0,
+						CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 	}
 	else if ("3DKIN" == environmentType) {
 	  string const prefix("env3d/");
@@ -195,12 +195,12 @@ namespace ros {
 	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
-	  env_ = new EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
-					     0, 0, 0, // start (x, y, th)
-					     0, 0, 0, // goal (x, y, th)
-					     goaltol_x, goaltol_y, goaltol_theta,
-					     getFootprint(), nominalvel_mpersecs,
-					     timetoturn45degsinplace_secs);
+	  env_ = new ompl::EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
+						   0, 0, 0, // start (x, y, th)
+						   0, 0, 0, // goal (x, y, th)
+						   goaltol_x, goaltol_y, goaltol_theta,
+						   getFootprint(), nominalvel_mpersecs,
+						   timetoturn45degsinplace_secs);
 	}
 	else {
 	  ROS_ERROR("in MoveBaseSBPL ctor: invalid environmentType \"%s\", use 2D or 3DKIN",
@@ -228,7 +228,7 @@ namespace ros {
 	
 	string plannerType;
 	local_param("plannerType", plannerType, string("ARAPlanner"));
-	pMgr_ = new SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
+	pMgr_ = new ompl::SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
 	if ( ! pMgr_->select(plannerType, false)) {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
@@ -286,7 +286,7 @@ namespace ros {
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
       
-      SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
+      ompl::SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
       
       try {
 	const CostMap2D& cm = getCostMap();

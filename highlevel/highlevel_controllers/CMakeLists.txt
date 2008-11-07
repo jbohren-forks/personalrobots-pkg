@@ -18,7 +18,7 @@ genmsg()
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
 # Library
-rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc src/sbpl_util.cpp)
+rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
 
 # MoveArm
@@ -26,7 +26,7 @@ rospack_add_executable(move_arm src/MoveArm.cpp)
 
 # MoveBase
 rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
-target_link_libraries(move_base_sbpl highlevel_controllers)
+target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
 
 # MoveArmEndEffector
 rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
@@ -37,4 +37,3 @@ rospack_add_executable(recharge_controller src/RechargeController.cpp)
 
 #CLI
 rospack_add_executable(cli src/ControlCli.cpp)
-
