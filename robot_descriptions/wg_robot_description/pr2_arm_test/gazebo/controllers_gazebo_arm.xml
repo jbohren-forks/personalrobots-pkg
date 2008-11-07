@@ -10,9 +10,7 @@
   <!-- PR2_ACTARRAY -->
   <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>100.0</updateRate>
-
-    <robot filename="pr2_arm.xml" />
+    <updateRate>1000.0</updateRate>
 
     <interface:audio name="gazebo_mechanism_control_dummy_iface" />
   </controller:gazebo_mechanism_control>
@@ -27,7 +25,7 @@
   <!-- P3D for position groundtruth -->
   <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
     <alwaysOn>true</alwaysOn>
-    <updateRate>100.0</updateRate>
+    <updateRate>1000.0</updateRate>
     <bodyName>gripper_roll_left</bodyName>
     <topicName>gripper_roll_left_pose_ground_truth</topicName>
     <frameName>map</frameName>

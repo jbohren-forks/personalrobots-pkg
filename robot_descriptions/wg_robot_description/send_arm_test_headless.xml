@@ -1,5 +1,0 @@
-<launch>
-
-  <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_arm_test/pr2_arm_headless.xml&quot;" />
-  
-</launch>

@@ -12,8 +12,6 @@
     <alwaysOn>true</alwaysOn>
     <updateRate>1000.0</updateRate>
 
-    <robot filename="pr2_multi_link.xml" />
-
     <interface:audio name="gazebo_mechanism_control_dummy_iface" />
   </controller:gazebo_mechanism_control>
 

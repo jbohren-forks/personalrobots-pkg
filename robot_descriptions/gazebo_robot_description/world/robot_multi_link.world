@@ -55,7 +55,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
-    <maxUpdateRate>100</maxUpdateRate>
+    <maxUpdateRate>10.</maxUpdateRate>
   </rendering:ogre>
 
   <!-- White Directional light -->

@@ -49,7 +49,7 @@
     <gazeboPath>media</gazeboPath>
     <shadowTechnique>none</shadowTechnique>
     <grid>false</grid>
-    <maxUpdateRate>100</maxUpdateRate>
+    <maxUpdateRate>10.</maxUpdateRate>
   </rendering:ogre>
 
 
