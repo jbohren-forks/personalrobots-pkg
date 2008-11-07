@@ -227,8 +227,7 @@ namespace trajectory
 
     /*!
       \brief calculate the coefficients for interpolation between trajectory points
-      \param std::string representation of the interpolation method 
-      \param if true, timings for the trajectories are automatically calculated using max rate and/or max accn information
+       If autocalc_timing_ is true, timings for the trajectories are automatically calculated using max rate and/or max accn information
        Thus, the time duration for any trajectory segment is the maximum of two times: 
        the time duration specified by the user and the time duration dictated by the constraints. 
     */
@@ -236,17 +235,45 @@ namespace trajectory
 
     /*!
       \brief calculate the coefficients for interpolation between trajectory points using linear interpolation
-      \param if true, timings for the trajectories are automatically calculated using max rate information. Thus,
+       If autocalc_timing_ is true, timings for the trajectories are automatically calculated using max rate information. Thus,
        the time duration for any segment is the maximum of two times: the time duration specified by the user
        and the time duration dictated by the constraints. 
     */
     int parameterizeLinear();
 
     /*!
+      \brief calculate the coefficients for interpolation between trajectory points using blended linear interpolation.
+       If autocalc_timing_ is true, timings for the trajectories are automatically calculated using max rate  and max acceleration information. Thus,
+       the time duration for any segment is the maximum of two times: the time duration specified by the user
+       and the time duration dictated by the constraints. 
+    */
+    int parameterizeBlendedLinear();
+
+    /*!
+      \brief calculate the coefficients for interpolation between trajectory points using cubic interpolation.
+       If autocalc_timing_ is true, timings for the trajectories are automatically calculated using max rate information. Thus,
+       the time duration for any segment is the maximum of two times: the time duration specified by the user
+       and the time duration dictated by the constraints. 
+    */
+    int parameterizeCubic();
+
+    /*!
       \brief calculate a minimum time trajectory using linear interpolation
        Timings for the trajectory are automatically calculated using max rate information. 
     */
     int  minimizeSegmentTimesWithLinearInterpolation();
+
+    /*!
+      \brief calculate a minimum time trajectory using cubic interpolation
+       Timings for the trajectory are automatically calculated using max rate information. 
+    */
+    int  minimizeSegmentTimesWithCubicInterpolation();
+
+    /*!
+      \brief calculate a minimum time trajectory using blended linear interpolation
+       Timings for the trajectory are automatically calculated using max rate information. 
+    */
+    int  minimizeSegmentTimesWithBlendedLinearInterpolation();
 
     /*!
        \brief Sample the trajectory based on a linear interpolation
@@ -257,7 +284,23 @@ namespace trajectory
     */
     void sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
 
+    /*!
+       \brief Sample the trajectory based on a cubic interpolation
+       \param reference to pre-allocated output trajectory point
+       \param time at which trajectory is being sample
+       \param polynomial coefficients for this segment of the trajectory
+       \param segment start time
+    */
     void sampleCubic(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
+
+    /*!
+       \brief Sample the trajectory based on a cubic interpolation
+       \param reference to pre-allocated output trajectory point
+       \param time at which trajectory is being sample
+       \param polynomial coefficients for this segment of the trajectory
+       \param segment start time
+    */
+    void sampleBlendedLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time);
 
     /*! 
        \brief finds the trajectory segment corresponding to a particular time 
@@ -275,9 +318,17 @@ namespace trajectory
     */
     double calculateMinimumTimeLinear(const TPoint &start, const TPoint &end);
 
+    /*!
+      \brief calculate minimum time for a trajectory segment using LSPB. 
+      \param start TPoint
+      \param end TPoint
+    */
+    double calculateMinimumTimeLSPB(const TPoint &start, const TPoint &end);
+
+    double calculateMinTimeLSPB(double q0, double q1, double vmax, double amax);
+
     double calculateMinimumTimeCubic(const TPoint &start, const TPoint &end);
 
-    int parameterizeCubic();
 
   };
 }

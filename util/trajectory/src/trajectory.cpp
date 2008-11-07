@@ -210,6 +210,8 @@ int Trajectory::sample(TPoint &tp, double time)
     sampleLinear(tp,time,tc_[segment_index],tp_[segment_index].time_);
   else if(interp_method_ == std::string("cubic"))
     sampleCubic(tp,time,tc_[segment_index],tp_[segment_index].time_);
+  else if(interp_method_ == std::string("blended_linear"))
+    sampleBlendedLinear(tp,time,tc_[segment_index],tp_[segment_index].time_);
   else
     ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
 
@@ -245,8 +247,12 @@ int Trajectory::minimizeSegmentTimes()
   int error_code = -1;
   if(interp_method_ == std::string("linear"))
      error_code = minimizeSegmentTimesWithLinearInterpolation();
+  else if(interp_method_ == std::string("cubic"))
+     error_code = minimizeSegmentTimesWithCubicInterpolation();
+  else if(interp_method_ == std::string("blended_linear"))
+     error_code = minimizeSegmentTimesWithBlendedLinearInterpolation();
   else
-    ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
+    ROS_WARN("minimizeSegmentTimes:: Unrecognized interp_method type: %s\n",interp_method_.c_str());
 
   return error_code;
 }
@@ -265,7 +271,7 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
 
   if(max_rate_.empty() || (int) max_rate_.size() < 0)
   {
-    ROS_WARN("Trying to use autocalc_timing without setting max rate information. Use setMaxRate first");
+    ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
     return -1;
   }
 
@@ -287,6 +293,86 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
   return 1;
 }
 
+int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
+{
+  double dT(0);
+  TCoeff tc;
+
+  std::vector<double> temp;
+
+  temp.resize(4);
+
+  tc.degree_ = 1;
+  tc.dimension_ = dimension_;
+
+    if(max_rate_.empty() || (int) max_rate_.size() < 1)
+    {
+      ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
+      return -1;
+    }
+
+  for(int i=1; i < (int) tp_.size() ; i++)
+  {
+    dT = calculateMinimumTimeCubic(tp_[i-1],tp_[i]);
+    tp_[i].time_ = tp_[i-1].time_ + dT;
+    tc.duration_ = dT;
+
+    for(int j=0; j < dimension_; j++)
+    {
+      temp[0] = tp_[i-1].q_[j];
+      temp[1] = tp_[i-1].qdot_[j];
+      temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
+      temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+
+      tc.coeff_.push_back(temp);
+    }
+    tc_.push_back(tc);
+  }
+  return 1;
+}
+
+
+int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
+{
+  double dT(0);
+  TCoeff tc;
+
+  std::vector<double> temp;
+
+  temp.resize(5);
+
+  tc.degree_ = 1;
+  tc.dimension_ = dimension_;
+
+    if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
+    {
+      ROS_WARN("Trying to apply rate and acc limits without setting them. Use setMaxRate and setMaxAcc first");
+      return -1;
+    }
+
+  for(int i=1; i < (int) tp_.size() ; i++)
+  {
+    dT = calculateMinimumTimeLSPB(tp_[i-1],tp_[i]);
+    tp_[i].time_ = tp_[i-1].time_ + dT;
+    tc.duration_ = dT;
+
+    for(int j=0; j < dimension_; j++)
+    {
+      temp[0] = tp_[i-1].q_[j];
+      temp[1] = 0;
+      temp[2] = 1/2*max_acc_[j];
+      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
+      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
+
+      tc.coeff_.push_back(temp);
+    }
+    tc_.push_back(tc);
+  }
+  return 1;
+}
+
+
+
 void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
 {
   double segment_time = time - segment_start_time;
@@ -298,6 +384,41 @@ void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double 
   tp.time_ = time;
   tp.dimension_ = dimension_;
 }
+
+
+void Trajectory::sampleBlendedLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
+{
+  double segment_time = time - segment_start_time;
+  for(int i =0; i < dimension_; i++)
+  {
+    double taccend = tc.coeff_[i][3];
+    double tvelend = tc.coeff_[i][3] + tc.coeff_[i][4];
+    double tvel = tc.coeff_[i][4];
+    double acc = tc.coeff_[i][2]*2;
+    double v0 = tc.coeff_[i][1];
+ 
+    if(segment_time <= taccend)
+    {
+      tp.q_[i]    =  tc.coeff_[i][0] + segment_time * v0 + 0.5 * segment_time * segment_time * acc;
+      tp.qdot_[i] =  tc.coeff_[i][1] + segment_time * acc;
+    }
+    else if(segment_time >= tvelend)
+    {
+      double dT = segment_time - tvelend;
+      tp.q_[i] = tc.coeff_[i][0] +  v0 * taccend + 0.5 * acc * taccend * taccend + acc * taccend * tvel + acc * taccend * dT - 0.5 * acc * dT * dT;
+      tp.qdot_[i] = acc*taccend - acc*dT;
+    }
+    else
+    {
+      double dT = segment_time - taccend;
+      tp.q_[i] = tc.coeff_[i][0] +  v0 * taccend + 0.5 * acc * taccend * taccend + acc * taccend * dT;
+      tp.qdot_[i] = acc * taccend;
+    }
+  }
+  tp.time_ = time;
+  tp.dimension_ = dimension_;
+}
+
 
 void Trajectory::sampleCubic(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
 {
@@ -345,7 +466,7 @@ int Trajectory::getDuration(int index, double &duration)
 
 double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint &end)
 {
-  double minJointTime(0);
+  double minJointTime(MAX_ALLOWABLE_TIME);
   double minTime(0);
 
   for(int i = 0; i < start.dimension_; i++)
@@ -365,7 +486,7 @@ double Trajectory::calculateMinimumTimeLinear(const TPoint &start, const TPoint 
 
 double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &end)
 {
-  double minJointTime(0);
+  double minJointTime(MAX_ALLOWABLE_TIME);
   double minTime(0);
 
   for(int i = 0; i < start.dimension_; i++)
@@ -415,6 +536,37 @@ double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double
   return result;
 }
 
+double Trajectory::calculateMinimumTimeLSPB(const TPoint &start, const TPoint &end)
+{
+  double minJointTime(MAX_ALLOWABLE_TIME);
+  double minTime(0);
+
+  for(int i = 0; i < start.dimension_; i++)
+  {
+    if(max_rate_[i] > 0)
+      minJointTime = calculateMinTimeLSPB(start.q_[i],end.q_[i],max_rate_[i],max_acc_[i]);
+    else
+      minJointTime = MAX_ALLOWABLE_TIME;
+
+    if(minTime < minJointTime)
+      minTime = minJointTime;
+
+  }
+
+  return minTime;
+}
+
+double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, double amax)
+{
+  double tb = std::min(fabs(vmax/amax),sqrt(fabs(q1-q0)/amax));
+  double dist_tb = amax*tb*tb;
+  double ts = (fabs(q1-q0) - dist_tb)/(amax*tb);
+  if(ts < 0)
+    ts = 0;
+  return (2*tb+ts);
+}
+
+
 
 void Trajectory::setInterpolationMethod(std::string interp_method)
 {
@@ -428,6 +580,8 @@ int Trajectory::parameterize()
      error_code = parameterizeLinear();
   else if(interp_method_ == std::string("cubic"))
      error_code = parameterizeCubic();
+  else if(interp_method_ == std::string("blended_linear"))
+     error_code = parameterizeBlendedLinear();
   else
   {
     ROS_WARN("Unrecognized interp_method type: %s\n",interp_method_.c_str());
@@ -452,7 +606,7 @@ int Trajectory::parameterizeLinear()
   {
     if(max_rate_.empty() || (int) max_rate_.size() < 1)
     {
-      ROS_WARN("Trying to use apply limits without setting max rate information. Use setMaxRate first");
+      ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first.");
       return -1;
     }
   }
@@ -501,7 +655,7 @@ int Trajectory::parameterizeCubic()
   {
     if(max_rate_.empty() || (int) max_rate_.size() < 1)
     {
-      ROS_WARN("Trying to use apply limits without setting max rate information. Use setMaxRate first");
+      ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first.");
       return -1;
     }
   }
@@ -524,6 +678,60 @@ int Trajectory::parameterizeCubic()
       temp[1] = tp_[i-1].qdot_[j];
       temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
       temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+
+      tc.coeff_.push_back(temp);
+    }
+    tc_.push_back(tc);
+  }
+
+  // Now modify all the times to bring them up to date
+  for(int i=1; i < (int) tp_.size(); i++)
+    tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
+
+  return 1;
+}
+
+
+int Trajectory::parameterizeBlendedLinear()
+{
+  double dT(0);
+  TCoeff tc;
+
+  std::vector<double> temp;
+
+  temp.resize(5);
+
+  tc.degree_ = 1;
+  tc.dimension_ = dimension_;
+
+  if(autocalc_timing_)
+  {
+    if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
+    {
+      ROS_WARN("Trying to apply rate and acc limits without setting max rate or acc information. Use setMaxRate and setMaxAcc first.");
+      return -1;
+    }
+  }
+
+  for(int i=1; i < (int) tp_.size() ; i++)
+  {
+    dT = tp_[i].time_ - tp_[i-1].time_;
+    if(autocalc_timing_) 
+    {
+      double dTMin = calculateMinimumTimeLSPB(tp_[i-1],tp_[i]);
+      if(dTMin > dT)
+        dT = dTMin;
+    }
+
+    tc.duration_ = dT;
+
+    for(int j=0; j < dimension_; j++)
+    {
+      temp[0] = tp_[i-1].q_[j];
+      temp[1] = 0;
+      temp[2] = 1/2*max_acc_[j];
+      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
+      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
 
       tc.coeff_.push_back(temp);
     }

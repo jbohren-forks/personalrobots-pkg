@@ -11,3 +11,9 @@ rospack_add_gtest(utest test/utest.cpp)
 set_target_properties(utest PROPERTIES
                       RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
 target_link_libraries(utest trajectory)
+
+
+rospack_add_gtest(utestBlended test/utestBlended.cpp)
+set_target_properties(utestBlended PROPERTIES
+                      RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
+target_link_libraries(utestBlended trajectory)
