@@ -172,7 +172,7 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
   CvScalar avg = cvAvg( mask_ptr_ );
   cvResetImageROI(mask_ptr_);
   if (avg.val[0] < 0.25) {
-    printf("Too many pixels in the selected window are out of range.\n");
+    //printf("Too many pixels in the selected window are out of range.\n");
     return false;
   }
 
@@ -245,7 +245,7 @@ bool BTracker::processFrame(IplImage* rec_cv_image_ptr, bool is_new_blob, CvRect
   cvResetImageROI( backproject_ptr_ );
 
   if (track_error > CHI2MAX) {
-    printf("Histogram difference is too large at %g\n",track_error);
+    //printf("Histogram difference is too large at %g\n",track_error);
     num_bad_frames_++;
     if (num_bad_frames_ > BADFRAMESMAX) {
       return false;

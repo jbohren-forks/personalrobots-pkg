@@ -5,7 +5,6 @@
 #include "std_msgs/Image.h"
 
 #include "image_utils/cv_bridge.h"
-#include "pr2_mechanism_controllers/TrackPoint.h"
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -16,7 +15,7 @@
 using namespace std;
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/String.h"
-
+#include "std_msgs/PointStamped.h"
 #include "stereo_blob_tracker/Rect2DStamped.h"
 using namespace stereo_blob_tracker;
 
@@ -27,7 +26,7 @@ typedef signed char schar;
 
 #include "blob_tracker.h"
 
-#define DISPLAY true
+#define DISPLAY false
 #define DISPLAYFREQ 30
 // set the following to be a number between 0.0 and 1.0
 // to specify how fast the head moves to track the blob.
@@ -312,7 +311,7 @@ public:
 
     // Ros: advertise a topic
     advertise<std_msgs::PointStamped>("points", 1000);
-    advertise<std_msgs::PointStamped>("head_controller/track_point", 1000);
+    advertise<std_msgs::PointStamped>("head_controller/frame_track_point", 1000);
     // tracked box
     advertise<Rect2DStamped>(trackedBoxTopic_, 1000);
 
@@ -692,7 +691,7 @@ public:
     // publish the centroid of the tracked object
     publish("points", point_stamped_);
 
-    string topic = "head_controller/track_point" ;
+    string topic = "head_controller/frame_track_point" ;
 
     std_msgs::PointStamped target;
 
@@ -700,7 +699,8 @@ public:
     target.point.y = -point_stamped_.point.x ;
     target.point.z = -point_stamped_.point.y;
 
-    target.header.frame_id = "stereo_block" ;
+    target.header.frame_id = "stereo" ;
+    target.header.stamp=image_msg_.header.stamp;
 
 #if 0
     cout << "Requesting to move to: " << point_stamped_.point.x << ","
@@ -709,7 +709,7 @@ public:
 #endif
 
     static int count = 0;
-    if (++count % 1 == 0)
+    if (++count % 3== 0)
       publish(topic, target);
 
   }
@@ -839,3 +839,4 @@ int main(int argc, char **argv)
   ros::fini();
   return 0;
 }
+
