@@ -211,11 +211,11 @@
 
     <joint name="${name}_joint" type="revolute">
       <axis xyz="0 0 1" /> 
-      <limit min="-2.932" max="2.932"
+      <limit min="-2.92" max="2.92"
              effort="0.529" velocity="1256.64" />
-      <calibration reference_position="-2.862" values="0 0" />
-      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
-      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <calibration reference_position="-2.79" values="0 0" />
+      <safety_limit_min spring_constant="15.0" safety_length="0.15" damping_constant="0.7"/>
+      <safety_limit_max spring_constant="15.0" safety_length="0.15" damping_constant="0.7"/>
     </joint>
 
     <transmission type="SimpleTransmission" name="${name}_trans">
@@ -315,7 +315,7 @@
     </pr2_head_tilt>
 
     <stereo_camera name="stereo" parent="${name}_tilt">
-      <origin xyz="0.0232 0 0.0645" rpy="0 ${M_PI/2} ${M_PI/2}" />
+      <origin xyz="0.0232 0 0.0645" rpy="0 0 0" />
     </stereo_camera>
   </macro>
 
