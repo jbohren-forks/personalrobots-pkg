@@ -359,7 +359,7 @@ TEST(libTF, Lookup)
 TEST(libTF, Interpolation)
 {
   seed_rand();
-  libTF::TransformReference mTR(true);
+  libTF::TransformReference mTR(true, 10000000000ULL, 10000000000ULL);
   timeval temp_time_struct;
   gettimeofday(&temp_time_struct,NULL);
   uint64_t atime = temp_time_struct.tv_sec * 1000000000ULL + (uint64_t)temp_time_struct.tv_usec * 1000ULL;
