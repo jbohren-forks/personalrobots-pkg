@@ -20,6 +20,7 @@
     <param name="move_base/controller_frequency" value="20.0"/>
     <param name="move_base/planner_frequency" value="0.0"/>
     <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <param name="costmap_2d/dynamic_obstacle_window" value="60.0"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
 
     <!-- Set parameters for mailing -->

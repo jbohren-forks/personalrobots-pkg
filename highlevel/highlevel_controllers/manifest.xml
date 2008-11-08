@@ -28,6 +28,7 @@
  <depend package="map_server"/>
  <depend package="fake_localization"/>
  <depend package="nav_view"/>
+ <depend package="gazebo_plugin"/>
 
  
  <export>
