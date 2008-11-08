@@ -429,7 +429,7 @@ void NavViewPanel::updateRadiusPosition()
 {
   try
   {
-    tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(0ULL), "base");
+    tf::Stamped<tf::Pose> robot_pose(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time((uint64_t)0ULL), "base");
     tf::Stamped<tf::Pose> map_pose;
 
     tf_client_->transformPose("map", robot_pose, map_pose);
