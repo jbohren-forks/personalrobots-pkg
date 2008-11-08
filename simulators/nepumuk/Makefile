@@ -42,7 +42,7 @@ SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.
 include $(shell rospack find mk)/download_unpack.mk
 
 .PHONY: svn-all
-svn-all: checkout
+svn-all: checkout_or_update
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
 .PHONY: tarball-all
@@ -56,11 +56,9 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 	$(MAKE) symlinks
 
-checkout:
-	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
-
-update: checkout
+checkout_or_update:
 	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
 symlinks:
 	for foo in $(SIMULINKS); do \
