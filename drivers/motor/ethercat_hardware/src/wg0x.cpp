@@ -301,7 +301,7 @@ void WG0X::convertCommand(ActuatorCommand &command, unsigned char *buffer)
 
 void WG0X::computeCurrent(ActuatorCommand &command)
 {
-  command.current_ = command.effort_ / actuator_info_.motor_torque_constant_ * actuator_info_.encoder_reduction_;
+  command.current_ = (command.effort_ / actuator_info_.encoder_reduction_) / actuator_info_.motor_torque_constant_ ;
 }
 
 void WG0X::truncateCurrent(ActuatorCommand &command)
