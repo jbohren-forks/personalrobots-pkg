@@ -6,4 +6,6 @@
 <export>
 <cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>
+<sysdepend os="ubuntu" version="7.04-hardy" package="libboost-graph-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-graph-dev"/>
 </package>
