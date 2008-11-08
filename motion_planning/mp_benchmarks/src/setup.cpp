@@ -42,6 +42,8 @@
 #include <errno.h>
 #include <cstring>
 
+using sfl::minval;
+using sfl::maxval;
 using namespace std;
 
 namespace {
@@ -117,38 +119,38 @@ namespace {
     if (progress_os)
       *progress_os << "adding tasks...\n" << flush;
     
-    double const tol_xy(0.5 * door);
+    double const tol_xy(0.25 * door);
     double const tol_th(M_PI);
     setup.addTask("through door or around hall", true,
-		  0.5 * hall, 3.5 * hall, 0,
-		  1.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+		  0.5 * hall, 4.5 * hall, 0,
+		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("through door or around hall, return trip", false,
-		  1.5 * hall, 3.5 * hall, 0,
-		  0.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+		  1.5 * hall, 4.5 * hall, 0,
+		  0.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("through door or around long hall", true,
-		  1.5 * hall, 3.5 * hall, 0,
-		  2.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+		  1.5 * hall, 4.5 * hall, 0,
+		  2.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("through door or around long hall, return trip", false,
-		  2.5 * hall, 3.5 * hall, 0,
-		  1.5 * hall, 3.5 * hall, 0, tol_xy, tol_th);
+		  2.5 * hall, 4.5 * hall, 0,
+		  1.5 * hall, 4.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("office to office", true,
-		  0.5 * hall, 0.75 * hall, 0,
-		  0.5 * hall, 0.25 * hall, 0, tol_xy, tol_th);
+		  0.25 * hall, 0.5 * hall, 0,
+		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("office to office, return trip", false,
-		  0.5 * hall, 0.25 * hall, 0,
-		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+		  0.25 * hall, 1.5 * hall, 0,
+		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("office to hall", true,
-		  0.5 * hall, 0.75 * hall, 0,
-		  1.5 * hall, 0.5  * hall, 0, tol_xy, tol_th);
+		  0.25 * hall, 0.5 * hall, 0,
+		         hall,       hall, 0, tol_xy, tol_th);
     setup.addTask("office to hall, return trip", false,
-		  1.5 * hall, 0.5  * hall, 0,
-		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+		         hall,        hall, 0,
+		  0.25 * hall, 0.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("hall to office", true,
-		  1.5 * hall, 0.5  * hall, 0,
-		  0.5 * hall, 0.75 * hall, 0, tol_xy, tol_th);
+		         hall,       hall, 0,
+		  0.25 * hall, 1.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("hall to office, return trip", false,
-		  0.5 * hall, 0.75 * hall, 0,
-		  1.5 * hall, 0.5  * hall, 0, tol_xy, tol_th);
+		  0.25 * hall, 1.5 * hall, 0,
+		         hall,       hall, 0, tol_xy, tol_th);
   }
   
   
@@ -192,7 +194,11 @@ namespace ompl {
     : resolution(_resolution),
       robot_radius(_robot_radius),
       freespace_distance(_freespace_distance),
-      obstacle_cost(_obstacle_cost)
+      obstacle_cost(_obstacle_cost),
+      x0_(0),
+      y0_(0),
+      x1_(0),
+      y1_(0)
   {
     sfl::GridFrame const gframe(resolution);
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
@@ -217,8 +223,7 @@ namespace ompl {
   void SBPLBenchmarkSetup::
   dumpTravmap(std::ostream & os) const
   {
-    boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
-    rdt->DumpMap(&os);
+    getRDTravmap()->DumpMap(&os);
   }
   
   
@@ -234,6 +239,10 @@ namespace ompl {
 				   0, std::numeric_limits<ssize_t>::max(),
 				   0, std::numeric_limits<ssize_t>::max(),
 				   boa);
+    x0_ = minval(x0_, minval(x0 - freespace_distance, x1 - freespace_distance));
+    y0_ = minval(y0_, minval(y0 - freespace_distance, y1 - freespace_distance));
+    x1_ = maxval(x1_, maxval(x0 + freespace_distance, x1 + freespace_distance));
+    y1_ = maxval(y1_, maxval(y0 + freespace_distance, y1 + freespace_distance));
   }
   
   
@@ -244,6 +253,38 @@ namespace ompl {
     if (progress_os)
       *progress_os << "SBPLBenchmarkSetup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
     m2d_->AddBufferedObstacle(xx, yy, 0);
+    x0_ = minval(x0_, xx - freespace_distance);
+    y0_ = minval(y0_, yy - freespace_distance);
+    x1_ = maxval(x1_, xx + freespace_distance);
+    y1_ = maxval(y1_, yy + freespace_distance);
+  }
+  
+  
+  double SBPLBenchmarkSetup::
+  getX0() const
+  {
+    return x0_;
+  }
+  
+  
+  double SBPLBenchmarkSetup::
+  getY0() const
+  {
+    return y0_;
+  }
+  
+  
+  double SBPLBenchmarkSetup::
+  getX1() const
+  {
+    return x1_;
+  }
+  
+  
+  double SBPLBenchmarkSetup::
+  getY1() const
+  {
+    return y1_;
   }
   
   
@@ -256,6 +297,15 @@ namespace ompl {
   {
     tasklist_.push_back(task(description, from_scratch, start_x, start_y, start_th,
 			     goal_x, goal_y, goal_th, goal_tol_xy, goal_tol_th));
+  }
+  
+  
+  boost::shared_ptr<sfl::RDTravmap> SBPLBenchmarkSetup::
+  getRDTravmap() const
+  {
+    if ( ! rdtravmap_)
+      rdtravmap_ = m2d_->CreateRDTravmap();
+    return rdtravmap_;
   }
   
   

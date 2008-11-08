@@ -40,6 +40,7 @@
 
 namespace sfl {
   class Mapper2d;
+  class RDTravmap;
 }
 
 namespace costmap_2d {
@@ -129,9 +130,13 @@ namespace ompl {
 		 double goal_x, double goal_y, double goal_th, 
 		 double goal_tol_xy, double goal_tol_th);
     
+    boost::shared_ptr<sfl::RDTravmap> getRDTravmap() const;
     costmap_2d::CostMap2D const & getCostmap() const;
-    
     tasklist_t const & getTasks() const;
+    double getX0() const;
+    double getY0() const;
+    double getX1() const;
+    double getY1() const;
     
     double const resolution;
     double const robot_radius;
@@ -141,9 +146,11 @@ namespace ompl {
   protected:
     boost::shared_ptr<sfl::Mapper2d> m2d_;
     tasklist_t tasklist_;
+    double x0_, y0_, x1_, y1_;	// bounding box
     
   private:
     mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
+    mutable boost::shared_ptr<sfl::RDTravmap> rdtravmap_; // lazy init
   };
   
   

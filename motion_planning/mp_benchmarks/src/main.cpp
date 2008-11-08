@@ -38,11 +38,27 @@
 #include <costmap_2d/costmap_2d.h>
 #include <sbpl_util.hh>
 #include <sfl/util/numeric.hpp>
+#include <npm/common/wrap_glu.hpp>
+#include <npm/common/wrap_glut.hpp>
+#include <npm/common/Manager.hpp>
+#include <npm/common/View.hpp>
+#include <npm/common/StillCamera.hpp>
+#include <npm/common/TraversabilityDrawing.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
 
 extern "C" {
 #include <err.h>
+}
+
+namespace {
+  
+  class PlanDrawing: npm::Drawing {
+  public:
+    PlanDrawing(std::string const & name);
+    virtual void Draw();
+  };
+  
 }
 
 using namespace ompl;
@@ -52,7 +68,11 @@ using namespace std;
 static void cleanup();
 static void usage(ostream & os);
 static void parse_options(int argc, char ** argv);
+static void create_setup();
+static void run_tasks();
+static void display(int * argc, char ** argv);
 
+static bool enableGfx;
 static string logfname;
 static string setupName;
 static double resolution;
@@ -62,6 +82,7 @@ static int obstacleCost;
 static double doorWidth;
 static double hallWidth;
 static string travmapFilename;
+static string costmapFilename;
 
 static shared_ptr<OfficeBenchmark> setup;
 static shared_ptr<EnvironmentWrapper> environment;
@@ -69,161 +90,34 @@ static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
 
+typedef list<std_msgs::Pose2DFloat32> plan_t;
+typedef std::vector<plan_t> planList_t;
+static planList_t planList;
+
 
 int main(int argc, char ** argv)
 {
   if (0 != atexit(cleanup))
     errx(EXIT_FAILURE, "atexit() failed");
   parse_options(argc, argv);
-  
   logos.reset(new ofstream(logfname.c_str(), ios_base::app));
-  
-  *logos << "creating setup \"" << setupName << "\"\n" << flush;
-  {
-    shared_ptr<ostream> travmapos;
-    if ( ! travmapFilename.empty()) {
-      travmapos.reset(new ofstream(travmapFilename.c_str()));
-      if ( ! (*travmapos)) {
-	*logos << "could not open travmap file " << travmapFilename << "\n" << flush;
-	travmapos.reset();
-      }
-    }
-    setup.reset(OfficeBenchmark::create(setupName, resolution, robotRadius, freespaceDistance,
-					obstacleCost, doorWidth, hallWidth,
-					logos.get(), travmapos.get()));
-    if ( ! setup)
-      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", setupName.c_str());
-  }
-  setup->dumpDescription(*logos, "", "  ");
-  *logos << flush;
-  
-  *logos << "creating environment wrapper\n" << flush;
-  environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0,
-					     costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE));
-  MDPConfig mdpConfig;
-  if ( ! environment->InitializeMDPCfg(&mdpConfig))
-    errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed on environment %s", environment->getName().c_str());
-  *logos << "  environment name: " << environment->getName() << "\n" << flush;
-  
-  *logos << "creating planner manager\n" << flush;
-  bool const forwardsearch(false);
-  plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-  string const plannerType("ARAPlanner");
-  if ( ! plannerMgr->select(plannerType, false))
-    errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
-  *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
-  
-  *logos << "creating planner stats\n" << flush;
-  plannerStats.reset(new SBPLPlannerStatistics());
-  
-  *logos << "running tasks\n" << flush;
-  {
-    costmap_2d::CostMap2D const & costmap(setup->getCostmap());
-    SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
-    for (size_t ii(0); ii < tasklist.size(); ++ii) {
-      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
-      SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
-      SBPLBenchmarkSetup::task const & task(tasklist[ii]);
-      
-      *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
-      
-      // set start
-      statsEntry.start.x = task.start_x;
-      statsEntry.start.y = task.start_y;
-      statsEntry.start.th = task.start_th;
-      costmap.WC_MC(statsEntry.start.x, statsEntry.start.y, statsEntry.startIx, statsEntry.startIy);
-      environment->SetStart(statsEntry.start);
-      statsEntry.startState = environment->GetStateFromPose(statsEntry.start);
-      if (0 > statsEntry.startState)
-	errx(EXIT_FAILURE, "invalid start state ID %d from pose (%+8.3f, %+8.3f)",
-	     statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
-      int status(plannerMgr->set_start(statsEntry.startState));
-      if (1 != status)
-	errx(EXIT_FAILURE, "failed to set start state ID %d from (%ud, %ud): %d\n",
-	     statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
-      
-      // set goal
-      statsEntry.goal.x = task.goal_x;
-      statsEntry.goal.y = task.goal_y;
-      statsEntry.goal.th = task.goal_th;
-      costmap.WC_MC(statsEntry.goal.x, statsEntry.goal.y, statsEntry.goalIx, statsEntry.goalIy);
-      environment->SetGoal(statsEntry.goal);
-      statsEntry.goalState = environment->GetStateFromPose(statsEntry.goal);
-      if (0 > statsEntry.goalState)
-	errx(EXIT_FAILURE, "invalid goal state ID %d from pose (%+8.3f, %+8.3f)",
-	     statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
-      status = plannerMgr->set_goal(statsEntry.goalState);
-      if (1 != status)
-	errx(EXIT_FAILURE, "failed to set goal state ID %d from (%ud, %ud): %d\n",
-	     statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
-      
-      // plan it
-      vector<int> solutionStateIDs;
-#warning 'TO DO: use a progression of ever longer time limits'
-      statsEntry.allocated_time_sec = numeric_limits<double>::max();
-      statsEntry.status = plannerMgr->replan(statsEntry.allocated_time_sec,
-					     &statsEntry.actual_time_wall_sec,
-					     &statsEntry.actual_time_user_sec,
-					     &statsEntry.actual_time_system_sec,
-					     &solutionStateIDs);
-      
-      // extract the plan and update statistics
-      statsEntry.plan_length_m = 0;
-      statsEntry.plan_angle_change_rad = 0;
-      if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
-	list<std_msgs::Pose2DFloat32> plan;
-	double prevx(0), prevy(0), prevth(0);
-	prevth = 42.17;	// to detect when it has been initialized (see 42 below)
-	for(vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
-	  std_msgs::Pose2DFloat32 const waypoint(environment->GetPoseFromState(*it));
-	  
-	  // update stats:
-	  // - first round, nothing to do
-	  // - second round, update path length only
-	  // - third round, update path length and angular change
-	  if (plan.empty()) {
-	    prevx = waypoint.x;
-	    prevy = waypoint.y;
-	  }
-	  else {
-	    double const dx(waypoint.x - prevx);
-	    double const dy(waypoint.y - prevy);
-	    statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
-	    double const th(atan2(dy, dx));
-	    if (42 > prevth) // see 42.17 above
-	      statsEntry.plan_angle_change_rad += fabs(sfl::mod2pi(th - prevth));
-	    prevx = waypoint.x;
-	    prevy = waypoint.y;
-	    prevth = th;
-#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
-	  }
-	  
-	  plan.push_back(waypoint);
-	}
-      }
-      
-      char const * title("  SUCCESS");
-      if ((1 != statsEntry.status) || (1 >= solutionStateIDs.size()))
-	title = "  FAILURE";
-      statsEntry.logStream(*logos, title, "    ");
-      *logos << flush;
-    }
-  }
-  
-  *logos << "bye\n" << flush;
+  create_setup();
+  run_tasks();  
+  if (enableGfx)
+    display(&argc, argv);
 }
 
 
 void cleanup()
 {
+  if (logos)
+    *logos << "byebye!\n" << flush;
   setup.reset();
   environment.reset();
   plannerMgr.reset();
   plannerStats.reset();
   logos.reset();
 }
-
-
 
 
 void usage(ostream & os)
@@ -237,21 +131,24 @@ void usage(ostream & os)
      << "   -d  <doorwidth>  set width of doors\n"
      << "   -H  <hallwidth>  set width of hallways\n"
      << "   -l  <filename>   filename for logging\n"
-     << "   -o  <filename>   write sfl::TraversabilityMap to file\n";
+     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
+     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n";
 }
 
 
 void parse_options(int argc, char ** argv)
 {
+  enableGfx = true;		// no switch for this yet
   logfname = "/dev/stdout";
   setupName = "office1";
-  resolution = 0.05; // at libsunflower -r939, using 0.025 eats up all RAM...
+  resolution = 0.05;
   robotRadius = 0.5;
   freespaceDistance = 1.2;
   obstacleCost = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
   doorWidth = 1.2;
   hallWidth = 3;
   travmapFilename = "";
+  costmapFilename = "";
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -386,10 +283,306 @@ void parse_options(int argc, char ** argv)
 	travmapFilename = argv[ii];
  	break;
 	
+      case 'O':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -O requires a filename argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	costmapFilename = argv[ii];
+ 	break;
+	
       default:
 	cerr << argv[0] << ": invalid option '" << argv[ii] << "'\n";
 	usage(cerr);
 	exit(EXIT_FAILURE);
       }
   }
+}
+
+
+void create_setup()
+{
+  
+  *logos << "creating setup \"" << setupName << "\"\n" << flush;
+  {
+    shared_ptr<ostream> dump_os;
+    if ( ! travmapFilename.empty()) {
+      dump_os.reset(new ofstream(travmapFilename.c_str()));
+      if ( ! (*dump_os)) {
+	*logos << "could not open travmap file " << travmapFilename << "\n" << flush;
+	dump_os.reset();
+      }
+    }
+    setup.reset(OfficeBenchmark::create(setupName, resolution, robotRadius, freespaceDistance,
+					obstacleCost, doorWidth, hallWidth,
+					logos.get(), dump_os.get()));
+    if ( ! setup)
+      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", setupName.c_str());
+    if ( ! costmapFilename.empty()) {
+      dump_os.reset(new ofstream(costmapFilename.c_str()));
+      if ( ! (*dump_os))
+	*logos << "could not open costmap file " << costmapFilename << "\n" << flush;
+      else {
+	*logos << "writing costmap_2d::CostMap2d\n";
+	*dump_os << setup->getCostmap().toString();
+      }
+    }
+  }
+  setup->dumpDescription(*logos, "", "  ");
+  *logos << flush;
+  
+  *logos << "creating environment wrapper\n" << flush;
+  environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0,
+					     costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE));
+  MDPConfig mdpConfig;
+  if ( ! environment->InitializeMDPCfg(&mdpConfig))
+    errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed on environment %s",
+	 environment->getName().c_str());
+  *logos << "  environment name: " << environment->getName() << "\n" << flush;
+  
+  *logos << "creating planner manager\n" << flush;
+  bool const forwardsearch(false);
+  plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
+  string const plannerType("ARAPlanner");
+  if ( ! plannerMgr->select(plannerType, false))
+    errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
+  *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
+  
+  *logos << "creating planner stats\n" << flush;
+  plannerStats.reset(new SBPLPlannerStatistics());
+}
+
+
+void run_tasks()
+{  
+  *logos << "running tasks\n" << flush;
+  {
+    costmap_2d::CostMap2D const & costmap(setup->getCostmap());
+    SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
+    for (size_t ii(0); ii < tasklist.size(); ++ii) {
+      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
+      SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
+      SBPLBenchmarkSetup::task const & task(tasklist[ii]);
+      
+      *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
+      
+      // set start
+      statsEntry.start.x = task.start_x;
+      statsEntry.start.y = task.start_y;
+      statsEntry.start.th = task.start_th;
+      costmap.WC_MC(statsEntry.start.x, statsEntry.start.y,
+		    statsEntry.startIx, statsEntry.startIy);
+      environment->SetStart(statsEntry.start);
+      statsEntry.startState = environment->GetStateFromPose(statsEntry.start);
+      if (0 > statsEntry.startState)
+	errx(EXIT_FAILURE, "invalid start state ID %d from pose (%+8.3f, %+8.3f)",
+	     statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
+      int status(plannerMgr->set_start(statsEntry.startState));
+      if (1 != status)
+	errx(EXIT_FAILURE, "failed to set start state ID %d from (%ud, %ud): %d\n",
+	     statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
+      
+      // set goal
+      statsEntry.goal.x = task.goal_x;
+      statsEntry.goal.y = task.goal_y;
+      statsEntry.goal.th = task.goal_th;
+      costmap.WC_MC(statsEntry.goal.x, statsEntry.goal.y, statsEntry.goalIx, statsEntry.goalIy);
+      environment->SetGoal(statsEntry.goal);
+      statsEntry.goalState = environment->GetStateFromPose(statsEntry.goal);
+      if (0 > statsEntry.goalState)
+	errx(EXIT_FAILURE, "invalid goal state ID %d from pose (%+8.3f, %+8.3f)",
+	     statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
+      status = plannerMgr->set_goal(statsEntry.goalState);
+      if (1 != status)
+	errx(EXIT_FAILURE, "failed to set goal state ID %d from (%ud, %ud): %d\n",
+	     statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
+      
+      // plan it
+      if (task.from_scratch)
+	plannerMgr->force_planning_from_scratch();
+      vector<int> solutionStateIDs;
+#warning 'TO DO: use a progression of ever longer time limits'
+      statsEntry.allocated_time_sec = numeric_limits<double>::max();
+      statsEntry.status = plannerMgr->replan(statsEntry.allocated_time_sec,
+					     &statsEntry.actual_time_wall_sec,
+					     &statsEntry.actual_time_user_sec,
+					     &statsEntry.actual_time_system_sec,
+					     &solutionStateIDs);
+      
+      // extract the plan and update statistics
+      statsEntry.plan_length_m = 0;
+      statsEntry.plan_angle_change_rad = 0;
+      if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
+	plan_t plan;
+	double prevx(0), prevy(0), prevth(0);
+	prevth = 42.17;	// to detect when it has been initialized (see 42 below)
+	for(vector<int>::const_iterator it = solutionStateIDs.begin();
+	    it != solutionStateIDs.end(); ++it){
+	  std_msgs::Pose2DFloat32 const waypoint(environment->GetPoseFromState(*it));
+	  
+	  // update stats:
+	  // - first round, nothing to do
+	  // - second round, update path length only
+	  // - third round, update path length and angular change
+	  if (plan.empty()) {
+	    prevx = waypoint.x;
+	    prevy = waypoint.y;
+	  }
+	  else {
+	    double const dx(waypoint.x - prevx);
+	    double const dy(waypoint.y - prevy);
+	    statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
+	    double const th(atan2(dy, dx));
+	    if (42 > prevth) // see 42.17 above
+	      statsEntry.plan_angle_change_rad += fabs(sfl::mod2pi(th - prevth));
+	    prevx = waypoint.x;
+	    prevy = waypoint.y;
+	    prevth = th;
+#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
+	  }
+	  
+	  plan.push_back(waypoint);
+	}
+	planList.push_back(plan);
+      }
+      
+      char const * title("  SUCCESS");
+      if ((1 != statsEntry.status) || (1 >= solutionStateIDs.size()))
+	title = "  FAILURE";
+      statsEntry.logStream(*logos, title, "    ");
+      *logos << flush;
+    }
+  }
+}
+
+
+static void init_layout();
+static void draw();
+static void reshape(int width, int height);
+static void keyboard(unsigned char key, int mx, int my);
+////static void timer(int handle);
+
+namespace npm {
+  
+  // I can't remember why I never put this into nepumuk... probably
+  // there was a good reason (like supporting switchable layouts), so
+  // I do it here instead of risking breakage elsewhere.
+  template<>
+  shared_ptr<UniqueManager<View> > Instance()
+  {
+    static shared_ptr<UniqueManager<View> > instance;
+    if( ! instance)
+      instance.reset(new UniqueManager<View>());
+    return instance;
+  }
+  
+}
+
+
+void display(int * argc, char ** argv)
+{
+  init_layout();		// create views and such
+  
+  glutInit(argc, argv);
+  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
+  glutInitWindowPosition(10, 10);
+  glutInitWindowSize(800, 800);
+  int const handle(glutCreateWindow(setupName.c_str()));
+  if (0 == handle)
+    errx(EXIT_FAILURE, "glutCreateWindow(%s) failed",setupName.c_str());
+  
+  glutDisplayFunc(draw);
+  glutReshapeFunc(reshape);
+  glutKeyboardFunc(keyboard);
+  ////glutTimerFunc(glut_timer_ms, timer, handle);
+  
+  glutMainLoop();
+}
+
+
+void init_layout()
+{  
+  new npm::StillCamera("travmap",
+   		       setup->getX0(), setup->getY0(), setup->getX1(), setup->getY1(),
+   		       npm::Instance<npm::UniqueManager<npm::Camera> >());
+  
+  shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRDTravmap()));
+  //  new npm::TraversabilityCamera("travmap", rdt);
+  new npm::TraversabilityDrawing("travmap", rdt);
+  new PlanDrawing("plan");
+
+  npm::View * tmv(new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >()));
+  tmv->Configure(0, 0, 1, 1);
+  tmv->SetCamera("travmap");
+  if ( ! tmv->AddDrawing("travmap"))
+    errx(EXIT_FAILURE, "no drawing called \"travmap\"");
+  if ( ! tmv->AddDrawing("plan"))
+    errx(EXIT_FAILURE, "no drawing called \"plan\"");
+}
+
+
+void draw()
+{
+  glClear(GL_COLOR_BUFFER_BIT);
+  //   cout << "draw(): bbox " << setup->getX0() << " " << setup->getY0() << " "
+  //        << setup->getX1() << " " << setup->getY1() << "\n" << flush;
+  npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
+  glFlush();
+  glutSwapBuffers();
+}
+
+
+void reshape(int width, int height)
+{
+  npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::ReshapeWalker(width, height));
+}
+
+
+void keyboard(unsigned char key, int mx, int my)
+{
+  switch (key) {
+  case 'q':
+    errx(EXIT_SUCCESS, "key: q");
+  }
+}
+
+
+namespace {
+  
+  PlanDrawing::
+  PlanDrawing(std::string const & name)
+    : npm::Drawing(name,
+		   "the plans that ... were planned",
+		   npm::Instance<npm::UniqueManager<npm::Drawing> >())
+  {
+  }
+  
+  
+  void PlanDrawing::
+  Draw()
+  {
+    for (size_t ii(0); ii < planList.size(); ++ii) {
+      glColor3d(1, 1, 0);
+      glLineWidth(2);
+      glBegin(GL_LINE_STRIP);
+      for (plan_t::const_iterator ip(planList[ii].begin()); ip != planList[ii].end(); ++ip)
+	glVertex2d(ip->x, ip->y);
+      glEnd();
+    }
+    
+    SBPLBenchmarkSetup::tasklist_t const & tl(setup->getTasks());
+    glColor3d(1, 0.5, 0);
+    glLineWidth(1);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    glMatrixMode(GL_MODELVIEW);
+    for (size_t ii(0); ii < tl.size(); ++ii) {
+      glPushMatrix();
+      glTranslated(tl[ii].goal_x, tl[ii].goal_y, 0);
+      gluDisk(wrap_glu_quadric_instance(), tl[ii].goal_tol_xy, tl[ii].goal_tol_xy, 36, 1);
+      glPopMatrix();
+    }
+  }
+  
 }
