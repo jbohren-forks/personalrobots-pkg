@@ -65,6 +65,7 @@ static void run_tasks();
 static void display(int * argc, char ** argv);
 
 static bool enableGfx;
+static string plannerType;//("ARAPlanner");
 static string logfname;
 static string setupName;
 static double resolution;
@@ -119,6 +120,7 @@ void usage(ostream & os)
 {
   os << "options:\n"
      << "   -h               help (this message)\n"
+     << "   -p  <name>       name of the SBPL planner\n"
      << "   -s  <name>       name of the setup\n"
      << "   -c  <cellsize>   set grid resolution\n"
      << "   -r  <radius>     set robot radius\n"
@@ -134,6 +136,7 @@ void usage(ostream & os)
 void parse_options(int argc, char ** argv)
 {
   enableGfx = true;		// no switch for this yet
+  plannerType = "ARAPlanner";
   logfname = "/dev/stdout";
   setupName = "office1";
   resolution = 0.05;
@@ -157,6 +160,16 @@ void parse_options(int argc, char ** argv)
       case 'h':
 	usage(cout);
 	exit(EXIT_SUCCESS);
+	
+      case 'p':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -p requires a name argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	plannerType = argv[ii];
+ 	break;
 	
       case 's':
  	++ii;
@@ -340,7 +353,6 @@ void create_setup()
   *logos << "creating planner manager\n" << flush;
   bool const forwardsearch(false);
   plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-  string const plannerType("ARAPlanner");
   if ( ! plannerMgr->select(plannerType, false))
     errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
   *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
