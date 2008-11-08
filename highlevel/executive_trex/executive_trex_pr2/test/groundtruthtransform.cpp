@@ -13,7 +13,7 @@ public:
   std_msgs::Point32 msg;
   tf::TransformListener tf;
 
-  GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, true, 10000000000ULL) {
+  GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
     advertise<std_msgs::Point32>("groundtruthposition");
   }
 
@@ -21,7 +21,7 @@ public:
     tf::Stamped<tf::Pose> robotPose, globalPose;
     robotPose.setIdentity();
     robotPose.frame_id_ = "base";
-    robotPose.stamp_ = ros::Time(0ULL);
+    robotPose.stamp_ = ros::Time((uint64_t)0ULL);
     try {
       this->tf.transformPose("map", robotPose, globalPose);
     } catch(tf::LookupException& ex) {
