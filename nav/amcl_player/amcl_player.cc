@@ -607,6 +607,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
       ROS_INFO("Waiting to receive base->base_laser transform...");
       d.sleep();
     }
+    ROS_INFO("Received base->base_laser transform...");
     player_laser_geom_t geom;
     memset(&geom, 0, sizeof(geom));
     geom.pose.px = laser_x;
@@ -769,7 +770,10 @@ AmclNode::laserReceived()
     std_msgs::LaserScan scan = laser_scans.front();
 
     //make sure that we don't fall to far in the past
-    if(ros::Time::now() - scan.header.stamp > ros::Duration(9, 0)){
+    // To work around the lack of ros::Time support in roscpp, we'll take the time of the
+    // most recent laser message instead of ros::Time::now()
+    //if(ros::Time::now() - scan.header.stamp > ros::Duration(9, 0)){
+    if(laserMsg.header.stamp - scan.header.stamp > ros::Duration(9, 0)){
       laser_scans.pop_front();
       continue;
     }

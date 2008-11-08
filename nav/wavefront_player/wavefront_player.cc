@@ -366,20 +366,6 @@ WavefrontNode::WavefrontNode() :
 
   this->firstodom = true;
 
-
-  //TODO: broadcast this
-  // Static robot->laser transform
-  double laser_x_offset;
-  param("laser_x_offset", laser_x_offset, 0.05);
-  ///\todo broadcast this instead of setting it locally
-  //convert!
-  /*  this->tf.setWithEulers("base_laser",
-                         "base",
-                         laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);*/
-  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), ros::Time(0ULL), "base_laser", "base"));
-  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), ros::Time(0ULL), "map", "other"));///\todo fixme hack to get around short list edge case
-
-
   advertise<std_msgs::Planner2DState>("state",1);
   advertise<std_msgs::Polyline2D>("gui_path",1);
   advertise<std_msgs::Polyline2D>("gui_laser",1);
