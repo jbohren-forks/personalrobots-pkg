@@ -46,11 +46,11 @@ namespace image_msgs
   class ImageWrapper : public image_msgs::Image
   {
   public:
-    void fromData(std::string label_arg,
-                  uint32_t height_arg, uint32_t width_arg, uint32_t channel_arg,
-                  std::string encoding_arg, std::string depth_arg,
-                  void* data_arg,
-                  uint32_t channel_step = 0, uint32_t width_step = 0, uint32_t height_step = 0)
+    bool fromInterlacedData(std::string label_arg,
+                            uint32_t height_arg, uint32_t width_arg, uint32_t channel_arg,
+                            std::string encoding_arg, std::string depth_arg,
+                            void* data_arg,
+                            uint32_t channel_step = 0, uint32_t width_step = 0, uint32_t height_step = 0)
     {
       label    = label_arg;
       encoding = encoding_arg;
@@ -72,16 +72,29 @@ namespace image_msgs
                        channel_arg, channel_step,
                        data_arg);
 
+      else if (depth == "uint16")
+        fromDataHelper(uint16_data,
+                       height_arg, height_step,
+                       width_arg, width_step,
+                       channel_arg, channel_step,
+                       data_arg);
+
+      return true;
     }
 
     IplImage* asIplImage()
     {
-      IplImage* img = cvCreateImageHeader(cvSize(byte_data.layout.dim[1].size, byte_data.layout.dim[0].size), IPL_DEPTH_8U, 1);
-      cvSetData(img, &(byte_data.data[0]), byte_data.layout.dim[1].stride);
+      IplImage* img;
+      if (depth == "byte")
+      {
+        img = cvCreateImageHeader(cvSize(byte_data.layout.dim[1].size, byte_data.layout.dim[0].size), IPL_DEPTH_8U, 1);
+        cvSetData(img, &(byte_data.data[0]), byte_data.layout.dim[1].stride);
+      } else if (depth == "uint16") {
+        img = cvCreateImageHeader(cvSize(uint16_data.layout.dim[1].size, uint16_data.layout.dim[0].size), IPL_DEPTH_16U, 1);
+        cvSetData(img, &(uint16_data.data[0]), uint16_data.layout.dim[1].stride*sizeof(uint16_t));
+      }
       return img;
     }
-
-
   private:
     template <class M>
     void fromDataHelper(M &m,
