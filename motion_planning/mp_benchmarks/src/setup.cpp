@@ -161,11 +161,10 @@ namespace {
     unsigned int const height(rdt->GetYEnd());
     std::vector<unsigned char> data;
     data.reserve(width * height);
-    for (unsigned int iy(0); iy < height; ++iy)
-      for (unsigned int ix(0); ix < width; ++ix) {
-	int value;
-	if (rdt->GetValue(ix, iy, value)) // "always" succeeds though
-	  data.push_back(value & 0xff);
+    for (ssize_t iy(0); iy < height; ++iy)
+      for (ssize_t ix(0); ix < width; ++ix) {
+	if (rdt->IsWObst(ix, iy))
+	  data.push_back(costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE);
 	else
 	  data.push_back(0);	// suppose 0 means freespace
       }
@@ -175,8 +174,14 @@ namespace {
     
     // hm... what if our obstacle cost needs more than 8 bits?    
     unsigned char const threshold(m2d.obstacle & 0xff);
-    
-    return new costmap_2d::CostMap2D(width, height, data, m2d.gridframe.Delta(), window_length, threshold);
+    double const maxZ(1);
+    double const freeSpaceProjectionHeight(1);
+    double const inflationRadius(m2d.grown_robot_radius + m2d.buffer_zone);
+    double const circumscribedRadius(m2d.grown_robot_radius + m2d.buffer_zone);
+    double const inscribedRadius(m2d.grown_robot_radius);
+    return new costmap_2d::CostMap2D(width, height, data, m2d.gridframe.Delta(), window_length,
+				     threshold, maxZ, freeSpaceProjectionHeight, inflationRadius,
+				     circumscribedRadius, inscribedRadius);
   }
   
 }

@@ -44,21 +44,13 @@
 #include <npm/common/View.hpp>
 #include <npm/common/StillCamera.hpp>
 #include <npm/common/TraversabilityDrawing.hpp>
+#include <npm/common/SimpleImage.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
+#include <iomanip>
 
 extern "C" {
 #include <err.h>
-}
-
-namespace {
-  
-  class PlanDrawing: npm::Drawing {
-  public:
-    PlanDrawing(std::string const & name);
-    virtual void Draw();
-  };
-  
 }
 
 using namespace ompl;
@@ -89,6 +81,9 @@ static shared_ptr<EnvironmentWrapper> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
+
+static int glut_width;
+static int glut_height;
 
 typedef list<std_msgs::Pose2DFloat32> plan_t;
 typedef std::vector<plan_t> planList_t;
@@ -484,11 +479,13 @@ namespace npm {
 void display(int * argc, char ** argv)
 {
   init_layout();		// create views and such
+  glut_width = 640;
+  glut_height = 480;
   
   glutInit(argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
   glutInitWindowPosition(10, 10);
-  glutInitWindowSize(800, 800);
+  glutInitWindowSize(glut_width, glut_height);
   int const handle(glutCreateWindow(setupName.c_str()));
   if (0 == handle)
     errx(EXIT_FAILURE, "glutCreateWindow(%s) failed",setupName.c_str());
@@ -502,6 +499,41 @@ void display(int * argc, char ** argv)
 }
 
 
+namespace {
+  
+  class PlanDrawing: npm::Drawing {
+  public:
+    PlanDrawing(std::string const & name);
+    virtual void Draw();
+  };
+  
+  class CostMapProxy: public npm::TravProxyAPI {
+  public:
+    CostMapProxy()
+      : costmap(setup->getCostmap()), gframe(setup->resolution) {}
+    
+    virtual bool Enabled() const { return true; }
+    virtual double GetX() const { return 0; }
+    virtual double GetY() const { return 0; }
+    virtual double GetTheta() const { return 0; }
+    virtual double GetDelta() const { return gframe.Delta(); }
+    virtual sfl::GridFrame const * GetGridFrame() { return &gframe; }
+    virtual int GetObstacle() const
+    { return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
+    virtual int GetFreespace() const { return 0; }
+    virtual ssize_t GetXBegin() const { return 0; }
+    virtual ssize_t GetXEnd() const { return costmap.getWidth(); }
+    virtual ssize_t GetYBegin() const { return 0; }
+    virtual ssize_t GetYEnd() const { return costmap.getHeight(); }
+    virtual int GetValue(ssize_t ix, ssize_t iy) const { return costmap.getCost(ix, iy); }
+    
+    costmap_2d::CostMap2D const & costmap;
+    sfl::GridFrame gframe;
+  };
+  
+}
+
+
 void init_layout()
 {  
   new npm::StillCamera("travmap",
@@ -511,14 +543,23 @@ void init_layout()
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRDTravmap()));
   //  new npm::TraversabilityCamera("travmap", rdt);
   new npm::TraversabilityDrawing("travmap", rdt);
+  new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   new PlanDrawing("plan");
-
-  npm::View * tmv(new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >()));
-  tmv->Configure(0, 0, 1, 1);
-  tmv->SetCamera("travmap");
-  if ( ! tmv->AddDrawing("travmap"))
+  
+  npm::View * view(new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >()));
+  view->Configure(0, 0, 0.5, 1);
+  view->SetCamera("travmap");
+  if ( ! view->AddDrawing("travmap"))
     errx(EXIT_FAILURE, "no drawing called \"travmap\"");
-  if ( ! tmv->AddDrawing("plan"))
+  if ( ! view->AddDrawing("plan"))
+    errx(EXIT_FAILURE, "no drawing called \"plan\"");
+  
+  view = new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >());
+  view->Configure(0.5, 0, 0.5, 1);
+  view->SetCamera("travmap");
+  if ( ! view->AddDrawing("costmap"))
+    errx(EXIT_FAILURE, "no drawing called \"costmap\"");
+  if ( ! view->AddDrawing("plan"))
     errx(EXIT_FAILURE, "no drawing called \"plan\"");
 }
 
@@ -536,6 +577,8 @@ void draw()
 
 void reshape(int width, int height)
 {
+  glut_width = width;
+  glut_height = height;
   npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::ReshapeWalker(width, height));
 }
 
@@ -543,6 +586,17 @@ void reshape(int width, int height)
 void keyboard(unsigned char key, int mx, int my)
 {
   switch (key) {
+  case 'p':
+    {
+      static unsigned int count(0);
+      ostringstream filename;
+      filename << "mpbench" << setw(6) << setfill('0') << count++ << ".png";
+      npm::SimpleImage image(glut_width, glut_height);
+      image.read_framebuf(0, 0);
+      image.write_png(filename.str());
+      *logos << "saved screenshot " << filename.str() << "\n" << flush;
+    }
+    break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");
   }
