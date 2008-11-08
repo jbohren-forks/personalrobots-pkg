@@ -36,6 +36,8 @@
 
 #include "ros/node.h"
 #include "image_msgs/ImageWrapper.h"
+#include "image_msgs/CamInfo.h"
+#include "image_msgs/StereoInfo.h"
 #include "dcam.h"
 #include "stereocam.h"
 
@@ -45,11 +47,13 @@ class DcamNode : public ros::node
 {
 
   dcam::Dcam* cam_;
-  bool stereo_cam;
-  bool do_stereo;
-  bool do_rectify;
+  bool stereo_cam_;
+  bool do_stereo_;
+  bool do_rectify_;
 
-  image_msgs::ImageWrapper img;
+  image_msgs::ImageWrapper img_wrapper_;
+  image_msgs::CamInfo      cam_info_;
+  image_msgs::StereoInfo   stereo_info_;
 
 public:
 
@@ -110,7 +114,7 @@ public:
       string str_mode;
       dc1394video_mode_t mode;
       videre_proc_mode_t videre_mode;  
-      stereo_cam = false;
+      stereo_cam_ = false;
 
       param("~video_mode", str_mode, string("640x480_mono8"));
 
@@ -132,48 +136,48 @@ public:
         mode = DC1394_VIDEO_MODE_1600x1200_MONO8;
       else if (str_mode == string("640x480_videre_none"))
       {
-        stereo_cam = true;
+        stereo_cam_ = true;
         mode = VIDERE_STEREO_640x480;
         videre_mode = PROC_MODE_NONE;
       }
       else if (str_mode == string("640x480_videre_rectified"))
       {
-        stereo_cam = true;
+        stereo_cam_ = true;
         mode = VIDERE_STEREO_640x480;
         videre_mode = PROC_MODE_RECTIFIED;
       }
       else if (str_mode == string("640x480_videre_disparity"))
       {
-        stereo_cam = true;
+        stereo_cam_ = true;
         mode = VIDERE_STEREO_640x480;
         videre_mode = PROC_MODE_DISPARITY;
       }
       else if (str_mode == string("640x480_videre_disparity_raw"))
       {
-        stereo_cam = true;
+        stereo_cam_ = true;
         mode = VIDERE_STEREO_640x480;
         videre_mode = PROC_MODE_DISPARITY_RAW;
       }
       else
         mode = DC1394_VIDEO_MODE_640x480_MONO8;
 
-      param("~do_rectify", do_rectify, false);
+      param("~do_rectify", do_rectify_, false);
 
-      param("~do_stereo", do_stereo, false);
+      param("~do_stereo", do_stereo_, false);
 
       // Only do stereo 
-      do_stereo = do_stereo && stereo_cam;
+      do_stereo_ = do_stereo_ && stereo_cam_;
 
       // Must rectify if doing stereo
-      do_rectify = do_rectify || do_stereo;
+      do_rectify_ = do_rectify_ || do_stereo_;
 
       // Right now can only rectify if a StereoDcam -- this is wrong
-      do_rectify = do_rectify && stereo_cam;
+      do_rectify_ = do_rectify_ && stereo_cam_;
 
       // This switch might not be necessary... can maybe read
       // from regular cam with StereoDcam, but then the name
       // is definitely wrong.
-      if (stereo_cam)
+      if (stereo_cam_)
       {
         cam_ = new cam::StereoDcam(guid);
         cam_->setFormat(mode, fps, speed);
@@ -209,74 +213,164 @@ public:
 
     cam_->getImage(500);
 
-    if (do_rectify)
+    // THIS should be possible for all cameras, not just stereo
+    if (do_rectify_)
+    {
       ( (cam::StereoDcam*)(cam_) )->doRectify();
+    }
 
-    if (do_stereo)
+    if (do_stereo_)
       ( (cam::StereoDcam*)(cam_) )->doDisparity();
   }
 
   void publishCam()
   {
-    if (stereo_cam)
+    if (stereo_cam_)
     {
-
       StereoCam* stcam = ( (StereoDcam*)(cam_) );
 
-      if (stcam->stIm->imLeft->im)
+      publishImages("~left/", stcam->stIm->imLeft);
+      publishImages("~right/", stcam->stIm->imRight);
+      
+      if (stcam->stIm->imDisp)
       {
-        img.fromData( "image",
-                      stcam->stIm->imLeft->imHeight, stcam->stIm->imLeft->imWidth, 1,
-                      "mono", "byte",
-                      stcam->stIm->imLeft->im );
-
-        //        img.fromDcamImageData(cam_->camIm);
-        publish("~left_image", img);
+        img_wrapper_.fromInterlacedData( "disparity",
+                                         stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
+                                         "mono", "uint16",
+                                         stcam->stIm->imDisp );
+        publish("~disparity", img_wrapper_);
+        
+        stereo_info_.has_disparity = true;
+      } else {
+        stereo_info_.has_disparity = false;
       }
+
+      stereo_info_.height = stcam->stIm->imHeight;
+      stereo_info_.width = stcam->stIm->imWidth;
+
+      stereo_info_.dpp = stcam->stIm->dpp;
+      stereo_info_.numDisp = stcam->stIm->numDisp;
+      stereo_info_.imDtop = stcam->stIm->imDtop;
+      stereo_info_.imDleft = stcam->stIm->imDleft;
+      stereo_info_.imDwidth = stcam->stIm->imDwidth;
+      stereo_info_.imDheight = stcam->stIm->imDheight;
+      stereo_info_.corrSize = stcam->stIm->corrSize;
+      stereo_info_.filterSize = stcam->stIm->filterSize;
+      stereo_info_.horOffset = stcam->stIm->horOffset;
+      stereo_info_.textureThresh = stcam->stIm->textureThresh;
+      stereo_info_.uniqueThresh = stcam->stIm->uniqueThresh;
+
+      memcpy((char*)(&stereo_info_.T[0]),  (char*)(stcam->stIm->T),   3*sizeof(double));
+      memcpy((char*)(&stereo_info_.Om[0]), (char*)(stcam->stIm->Om),  3*sizeof(double));
+      memcpy((char*)(&stereo_info_.RP[0]), (char*)(stcam->stIm->RP), 12*sizeof(double));
+
+      publish("~stereo_info", stereo_info_);
 
     } else {
-      if (cam_->camIm->im)
-      {
-        img.fromData( "image",
-                      cam_->camIm->imHeight, cam_->camIm->imWidth, 1,
-                      "mono", "byte",
-                      cam_->camIm->im );
-
-        //        img.fromDcamImageData(cam_->camIm);
-        publish("~image", img);
-      }
+      publishImages("~", cam_->camIm);
     }
+  }
+
+  void publishImages(std::string base_name, cam::ImageData* img)
+  {
+
+    if (img->im)
+    {
+      img_wrapper_.fromInterlacedData( "image",
+                    img->imHeight, img->imWidth, 1,
+                    "mono", "byte",
+                    img->im );
+      publish(base_name + std::string("image"), img_wrapper_);
+      cam_info_.has_image = true;
+    } else {
+      cam_info_.has_image = false;
+    }
+
+    if (img->imColor)
+    {
+      img_wrapper_.fromInterlacedData( "image_color",
+                    img->imHeight, img->imWidth, 3,
+                    "rgb", "byte",
+                    img->imColor );
+      publish(base_name + std::string("image_color"), img_wrapper_);
+      cam_info_.has_image_color = true;
+    } else {
+      cam_info_.has_image_color = false;
+    }
+
+    if (img->imRect)
+    {
+      img_wrapper_.fromInterlacedData( "image_rect",
+                    img->imHeight, img->imWidth, 1,
+                    "mono", "byte",
+                    img->imRect );
+      publish(base_name + std::string("image_rect"), img_wrapper_);
+      cam_info_.has_image_rect = true;
+    } else {
+      cam_info_.has_image_rect = false;
+    }
+
+    if (img->imRectColor)
+    {
+      img_wrapper_.fromInterlacedData( "image_rect_color",
+                    img->imHeight, img->imWidth, 3,
+                    "rgb", "byte",
+                    img->imRectColor );
+      publish(base_name + std::string("image_rect_color"), img_wrapper_);
+      cam_info_.has_image_rect_color = true;
+    }else {
+      cam_info_.has_image_rect_color = false;
+    }
+
+    cam_info_.height = img->imHeight;
+    cam_info_.width  = img->imWidth;
+
+    memcpy((char*)(&cam_info_.D[0]), (char*)(img->D),  5*sizeof(double));
+    memcpy((char*)(&cam_info_.K[0]), (char*)(img->K),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.R[0]), (char*)(img->R),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.P[0]), (char*)(img->P), 12*sizeof(double));
+
+    publish(base_name + std::string("cam_info"), cam_info_);
+
+  }
+
+
+  void advertiseImages(std::string base_name, cam::ImageData* img)
+  {
+    advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
+
+    if (img->im)
+      advertise<image_msgs::ImageWrapper>(base_name + std::string("image"), 1);
+
+    if (img->imColor)
+      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_color"), 1);
+
+    if (img->imRect)
+      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect"), 1);
+
+    if (img->imRectColor)
+      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect_color"), 1);
+
   }
 
   void advertiseCam()
   {
-    if (stereo_cam)
+    if (stereo_cam_)
     {
-
       StereoCam* stcam = ( (StereoDcam*)(cam_) );
 
-      if (stcam->stIm->imLeft->im)
-        advertise<image_msgs::ImageWrapper>("~left_image",1);
+      advertise<image_msgs::StereoInfo>("~stereo_info", 1);
 
-      if (stcam->stIm->imRight->im)
-        advertise<image_msgs::ImageWrapper>("~right_image",1);
+      advertiseImages("~left/", stcam->stIm->imLeft);
+      advertiseImages("~right/", stcam->stIm->imRight);
 
       if (stcam->stIm->imDisp)
-        advertise<image_msgs::ImageWrapper>("~disparity",1);
+        advertise<image_msgs::ImageWrapper>("~disparity", 1);
 
-      // Add checks for other image types...
-
-    } else {
-
-      printf("Checking if camera has Im\n");
-      if (cam_->camIm->im)
-      {
-        printf("It does... advertising\n");
-        advertise<image_msgs::ImageWrapper>("~image", 1);
-      }
-
-      // Add checks for other image types...
-
+    }
+    else
+    {
+      advertiseImages("~", cam_->camIm);
     }
   }
 
