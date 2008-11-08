@@ -289,8 +289,8 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 10000000000ULL)// cache for 10 sec, no extrapolation
-        //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
+        tf(*this, true, (uint64_t)10000000000ULL)// cache for 10 sec, no extrapolation
+        //tf(*this, true, (uint64_t)200000000ULL, (uint64_t)200000000ULL) //nanoseconds
 {
   // Initialize global pose. Will be set in control loop based on actual data.
   ///\todo does this need to be initialized?  global_pose.setIdentity();
@@ -597,8 +597,8 @@ WavefrontNode::doOneCycle()
   tf::Stamped<tf::Pose> robotPose;
   robotPose.setIdentity();
   robotPose.frame_id_ = "base";
-  robotPose.stamp_ = ros::Time(0ULL); // request most recent pose
-  //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+  robotPose.stamp_ = ros::Time((uint64_t)0ULL); // request most recent pose
+  //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
