@@ -7,7 +7,6 @@ $(ROBOT).model: $(ROBOT).xml
 	$(XACRO) $^ > $^.expanded
 	$(URDF2GAZEBO) $^.expanded $@
 	$(RM) $^.expanded
-	mv $@.temp $@
 
 clean:
 	$(RM) $(ROBOT).model

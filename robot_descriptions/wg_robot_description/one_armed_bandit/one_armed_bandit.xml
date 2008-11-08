@@ -75,9 +75,9 @@
     </collision>
   </link>
 
-  <pr2_upperarm suffix="right" reflect="-1" parent="torso">
+  <pr2_upper_arm side="right" reflect="-1" parent="torso">
     <origin xyz="0 -0.188 0" rpy="0 0 0" />
-  </pr2_upperarm>
+  </pr2_upper_arm>
   <pr2_tilting_laser name="tilt_laser" parent="torso">
     <origin xyz="0.0635 0.01905 0.2413" rpy="0 0 0" />
   </pr2_tilting_laser>
