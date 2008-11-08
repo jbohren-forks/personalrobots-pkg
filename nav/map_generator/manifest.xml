@@ -1,0 +1,6 @@
+<package>
+  <author>Tony Pratkanis</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="std_srvs"/>
+</package>
