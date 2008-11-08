@@ -4,6 +4,7 @@
 #include "calonder_descriptor/randomized_tree.h"
 #include "calonder_descriptor/signature.h"
 #include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/vector_sparse.hpp>
 
 namespace ublas = boost::numeric::ublas;
@@ -13,7 +14,8 @@ namespace features {
 class RTreeClassifier
 {
 public:
-  static const int DEFAULT_TREES = 16;
+  static const int DEFAULT_TREES = 50;
+  typedef enum { PHI_GAUSS=1, PHI_BERNOULLI, PHI_DBFRIENDLY } PHI_DISTR_TYPE;   // used in makeRandomMeasMatrix
   
   RTreeClassifier();
 
@@ -28,6 +30,7 @@ public:
              int views = RandomizedTree::DEFAULT_VIEWS);
 
   DenseSignature getDenseSignature(IplImage* patch) const;
+  DenseSignature getCompressedSignature(IplImage* patch, bool from_sparse);
   SparseSignature getSparseSignature(IplImage* patch) const;
 
   int classes() { return classes_; }
@@ -37,6 +40,9 @@ public:
   // TODO: make threshold arg independent of the number of classes and trees.
   //float threshold();
   //void setThreshold(float thres);
+  
+  void makeRandomMeasMatrix(size_t m, PHI_DISTR_TYPE distr_type=PHI_GAUSS);
+  void setMeasMatrix(std::string filename, size_t m);
   
   void read(const char* file_name);
   void read(std::istream &is);
@@ -48,6 +54,7 @@ private:
   float threshold_;
   //float element_threshold_;
   std::vector<RandomizedTree> trees_;
+  ublas::matrix<float> cs_phi_;     // measurement matrix phi for compressive sensing
 };
 
 /*

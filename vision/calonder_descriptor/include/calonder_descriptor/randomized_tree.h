@@ -30,8 +30,8 @@ class RandomizedTree
 {
 public:
   static const int PATCH_SIZE = 32;
-  static const int DEFAULT_DEPTH = 12;
-  static const int DEFAULT_VIEWS = 1000;
+  static const int DEFAULT_DEPTH = 10;
+  static const int DEFAULT_VIEWS = 5000;
 
   RandomizedTree();
   
