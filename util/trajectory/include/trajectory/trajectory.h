@@ -170,7 +170,7 @@ namespace trajectory
 
 //  void sample(std::vector<TPoint> &tp, double dT);
 
-//  void sample(std::vector<TPoint> &tp, double start_time, double end_time, double dT); 
+//    void sample(std::vector<TPoint> &tp, double start_time, double end_time, double dT); 
 
 //  std::vector<TPoint>& getPoints() const;
 
