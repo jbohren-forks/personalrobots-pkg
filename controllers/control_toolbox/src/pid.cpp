@@ -119,10 +119,12 @@ double Pid::updatePid(double error, double dt)
     if (i_term > i_max_)
     {
       i_term = i_max_;
+      i_error_=i_term/i_gain_;
     }
     else if (i_term < i_min_)
     {
       i_term = i_min_;
+      i_error_=i_term/i_gain_;
     }
 
     // Calculate the derivative error
@@ -163,10 +165,12 @@ double Pid::updatePid(double error, double error_dot, double dt)
     if (i_term > i_max_)
     {
       i_term = i_max_;
+      i_error_=i_term/i_gain_;
     }
     else if (i_term < i_min_)
     {
       i_term = i_min_;
+      i_error_=i_term/i_gain_;
     }
 
     // Calculate derivative contribution to command
