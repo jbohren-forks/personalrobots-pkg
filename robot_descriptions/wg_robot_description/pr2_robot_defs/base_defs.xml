@@ -16,7 +16,7 @@
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="5" />
       <calibration values="1.5 -1" />
-      <joint_properties damping="0.0" />
+      <joint_properties damping="0.0" friction="0.0" />
     </joint>
 
     <link name="wheel_${suffix}">
@@ -65,7 +65,7 @@
       <anchor xyz="0 0 0" />
       <calibration values="1.5 -1" />
       <limit  effort="100" velocity="5" />
-      <joint_properties damping="1.0" />
+      <joint_properties damping="1.0" friction="0.0" />
     </joint>
 
     <link name="caster_${suffix}">

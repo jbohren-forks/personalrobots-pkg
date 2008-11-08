@@ -94,7 +94,7 @@
       <anchor xyz="0 0 0"/>
       <calibration values="1.5 -1"/>
       <limit effort="100" velocity="5"/>
-      <joint_properties damping="1.0"/>
+      <joint_properties damping="1.0" friction="0.0"/>
     </joint><link name="caster_front_left">
       <parent name="base"/>
       <origin rpy="0 0 0" xyz="0.2225 0.2225 0.0282"/>
@@ -131,7 +131,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_front_left_l">
       <parent name="caster_front_left"/>
       <joint name="wheel_front_left_l_joint"/>
@@ -171,7 +171,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_front_left_r">
       <parent name="caster_front_left"/>
       <joint name="wheel_front_left_r_joint"/>
@@ -211,7 +211,7 @@
       <anchor xyz="0 0 0"/>
       <calibration values="1.5 -1"/>
       <limit effort="100" velocity="5"/>
-      <joint_properties damping="1.0"/>
+      <joint_properties damping="1.0" friction="0.0"/>
     </joint><link name="caster_front_right">
       <parent name="base"/>
       <origin rpy="0 0 0" xyz="0.2225 -0.2225 0.0282"/>
@@ -248,7 +248,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_front_right_l">
       <parent name="caster_front_right"/>
       <joint name="wheel_front_right_l_joint"/>
@@ -288,7 +288,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_front_right_r">
       <parent name="caster_front_right"/>
       <joint name="wheel_front_right_r_joint"/>
@@ -328,7 +328,7 @@
       <anchor xyz="0 0 0"/>
       <calibration values="1.5 -1"/>
       <limit effort="100" velocity="5"/>
-      <joint_properties damping="1.0"/>
+      <joint_properties damping="1.0" friction="0.0"/>
     </joint><link name="caster_rear_left">
       <parent name="base"/>
       <origin rpy="0 0 0" xyz="-0.2225 0.2225 0.0282"/>
@@ -365,7 +365,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_rear_left_l">
       <parent name="caster_rear_left"/>
       <joint name="wheel_rear_left_l_joint"/>
@@ -405,7 +405,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_rear_left_r">
       <parent name="caster_rear_left"/>
       <joint name="wheel_rear_left_r_joint"/>
@@ -445,7 +445,7 @@
       <anchor xyz="0 0 0"/>
       <calibration values="1.5 -1"/>
       <limit effort="100" velocity="5"/>
-      <joint_properties damping="1.0"/>
+      <joint_properties damping="1.0" friction="0.0"/>
     </joint><link name="caster_rear_right">
       <parent name="base"/>
       <origin rpy="0 0 0" xyz="-0.2225 -0.2225 0.0282"/>
@@ -482,7 +482,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_rear_right_l">
       <parent name="caster_rear_right"/>
       <joint name="wheel_rear_right_l_joint"/>
@@ -522,7 +522,7 @@
       <anchor xyz="0 0 0"/>
       <limit effort="100" velocity="5"/>
       <calibration values="1.5 -1"/>
-      <joint_properties damping="0.0"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint><link name="wheel_rear_right_r">
       <parent name="caster_rear_right"/>
       <joint name="wheel_rear_right_r_joint"/>
@@ -600,7 +600,7 @@
     </link>
   
   <joint name="head_pan_joint" type="revolute">
-      <axis xyz="0 0 1"/> 
+      <axis xyz="0 0 1"/>
       <limit effort="0.529" max="2.92" min="-2.92" velocity="1256.64"/>
       <calibration reference_position="-2.79" values="0 0"/>
       <safety_limit_min damping_constant="0.7" safety_length="0.15" spring_constant="15.0"/>

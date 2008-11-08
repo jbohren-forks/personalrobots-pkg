@@ -1,8 +1,0 @@
-<robot name="pr2">
-  <joint name="link1_joint" >
-      <explicitDampingCoefficient>1</explicitDampingCoefficient>
-  </joint>
-  <joint name="link2_joint" >
-      <explicitDampingCoefficient>0</explicitDampingCoefficient>
-  </joint>
-</robot>

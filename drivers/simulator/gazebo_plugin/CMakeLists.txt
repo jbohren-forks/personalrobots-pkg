@@ -6,8 +6,8 @@ include_directories(msg/cpp)
 gensrv()
 include_directories(srv/cpp)
 
-add_definitions(-Wall -DNDEBUG -O3)
-#set(ROS_BUILD_TYPE Release)
+#add_definitions(-Wall -DNDEBUG -O3)
+set(ROS_BUILD_TYPE Release)
 
 rospack_add_library(Ros_Stereo_Camera src/Ros_Stereo_Camera.cc)
 rospack_add_library(Ros_Camera src/Ros_Camera.cc)

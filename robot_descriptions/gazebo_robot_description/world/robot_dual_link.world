@@ -169,6 +169,36 @@
       <xi:include href="pr2_xml_dual_link.model" />
     </include>
 
+    <!-- pr2_actarray -->
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+      <alwayson>true</alwayson>
+      <updaterate>1000.0</updaterate>
+
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
+
+    <!-- P3D for position groundtruth -->
+    <controller:P3D name="p3d_link1_controller" plugin="libP3D.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <bodyName>link1</bodyName>
+        <topicName>link1_pose</topicName>
+        <frameName>link1_frame</frameName>
+        <xyzOffsets>0 0 0.5</xyzOffsets> <!-- at pivot of link2 -->
+        <rpyOffsets>0 0 0.0</rpyOffsets>
+        <interface:position name="p3d_link1_position"/>
+    </controller:P3D>
+
+    <!-- P3D for position groundtruth -->
+    <controller:P3D name="p3d_link2_controller" plugin="libP3D.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <bodyName>link2</bodyName>
+        <topicName>link2_pose</topicName>
+        <frameName>link2_frame</frameName>
+        <interface:position name="p3d_link2_position"/>
+    </controller:P3D>
+
   </model:physical>
 
 
