@@ -17,7 +17,8 @@
 #
 #  $ make svn-all
 
-all: tarball-all
+##all: tarball-all
+all: svn-all
 
 VERSION=     r912
 
@@ -65,14 +66,14 @@ symlinks:
 	for foo in $(SIMULINKS); do \
 	  test -L $$foo || ln -s $(INST_DIR)/bin/$$foo || exit 42; done
 
-$(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
+$(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in: $(SOURCE_DIR)/Makefile.am $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
 	cd $(SOURCE_DIR) && ./bootstrap-buildsystem.sh
 
 ## --with-estar=$(ESTAR_DIR)
+## --enable-ros
 $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) \
-                                                   --enable-ros \
                                                    --with-sfl=$(SFL_DIR) \
                                                    --with-boost=$(BOOST_DIR)
 
