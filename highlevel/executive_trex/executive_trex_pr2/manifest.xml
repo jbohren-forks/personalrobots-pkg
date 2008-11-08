@@ -10,7 +10,7 @@
   <depend package="mechanism_control" />
   <depend package="2dnav_pr2" />
   <depend package="trex" />
-  <depend package="rosTF" />
+  <depend package="tf" />
   <depend package="rospy" />
   <depend package="rostest" />
   <depend package="rosstage" />
