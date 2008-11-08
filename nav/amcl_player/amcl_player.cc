@@ -467,9 +467,19 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                                                       tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
                                                         t, "base","map"));
                                                         */
-    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
-                                                                      tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
-                                                        t, "map", "base"));
+
+    //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
+    //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
+    //                                                    t, "map", "base"));
+
+    // subtracting base to odom from map to base and send map to odom instead
+    tf::Stamped<tf::Pose> odom_to_map;
+    this->tfL->transformPose("odom",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+                                                                       btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
+                                                           t, "base"),odom_to_map);
+    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
+                                                                      tf::Point(      odom_to_map.getOrigin() ) ),
+                                                        t, "map","odom"));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
