@@ -680,7 +680,7 @@ namespace ros {
       target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
       target_point.header.frame_id = "map";
-      publish("head_controller/track_point", target_point);
+      publish("head_controller/frame_track_point", target_point);
       return planOk;
     }
 
