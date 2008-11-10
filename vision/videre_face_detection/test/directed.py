@@ -57,7 +57,7 @@ class PeopleTracker:
     self.camparams = None
     self.vo = None
     self.feature_detector = FeatureDetectorStar() #visualodometer.FeatureDetectorStar()
-    self.feature_detector.thresh = 3.0
+    self.feature_detector.thresh = 1.0 #3.0
     self.cascade_file = "cascades/haarcascade_frontalface_alt.xml"
     assert os.access(self.cascade_file, os.R_OK)
     self.faces = None
@@ -131,7 +131,7 @@ class PeopleTracker:
     frame.kp3d = [self.cam.pix2cam(kp[0],kp[1],kp[2]) for kp in frame.kp]
     to_remove = [kp3d[2]>self.max_face_dist or kp3d[2]<censize3d[2]-censize3d[3] or kp3d[2]>censize3d[2]+censize3d[3] for kp3d in frame.kp3d]
     # But only remove the entries if there are a few left. Otherwise, leave them all.
-    if sum(to_remove)<len(frame.kp)-2:
+    if True: # sum(to_remove)<len(frame.kp)-2:
       #for k in [frame.kp, frame.kp3d]:
       frame.kp = [kp for (kp,remove) in zip(frame.kp,to_remove) if not remove]
       frame.kp3d = [kp for (kp,remove) in zip(frame.kp3d,to_remove) if not remove]
@@ -141,7 +141,10 @@ class PeopleTracker:
       print "0"
     # Enforce that kp2d and kp are the same. I would remove kp2d altogether except the stereo code uses it.
     frame.kp2d = [[kp[0],kp[1]] for kp in frame.kp]
-    frame.avgd = sum([kp[2] for kp in frame.kp])/len(frame.kp)
+    if frame.kp:
+      frame.avgd = sum([kp[2] for kp in frame.kp])/len(frame.kp)
+    else:
+      frame.avgd = -1.0
 
 
 ################### GET_FEATURES ##############################
@@ -244,11 +247,12 @@ class PeopleTracker:
 
     if self.seq > 10000:
       sys.exit()
-    print ""
-    print ""
-    print "Frame ", self.seq
-    print ""
-    print ""
+    if DEBUG:
+      print ""
+      print ""
+      print "Frame ", self.seq
+      print ""
+      print ""
 
 
     im = imarray.images[1]
@@ -260,7 +264,6 @@ class PeopleTracker:
       use_color = True
       im_col_py = Image.fromstring("RGB", (im.width, im.height), im.data)
       im_py = im_col_py.convert("L")
-      imdata = im_py.tostring()
       im_r_py = Image.fromstring("RGB", (im_r.width, im_r.height), im_r.data)
       im_r_py = im_r_py.convert("L")
     else :
@@ -270,7 +273,7 @@ class PeopleTracker:
 
     # Detect faces on the first frame
     if not self.current_keyframes :
-      self.faces = self.p.detectAllFaces(imdata, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
+      self.faces = self.p.detectAllFaces(im_py.tostring(), im.width, im.height, self.cascade_file, 1.0, None, None, True) 
       if DEBUG:
         print "Faces ", self.faces
       
@@ -299,7 +302,7 @@ class PeopleTracker:
         censize3d.append(1.0*self.real_face_sizes_3d[iface]) ###ZMULT
         self.get_features(ia, self.num_feats, (x,y,w,h), censize3d)
       else:
-        self.get_features(ia, self.num_feats, (x, y, w, h), (0.0,0.0,0.0,1000000))
+        self.get_features(ia, self.num_feats, (x, y, w, h), (0.0,0.0,0.0,1000000.0))
       if not ia.kp2d:
         continue
 
@@ -359,8 +362,8 @@ class PeopleTracker:
 
           # Try matching to the keyframe
           keyframe = self.keyframes[self.current_keyframes[iface]]
-          temp_match = self.vo.temporal_match(keyframe,ia,want_distances=True)
-          ia.matches = [(m1,m2) for (m1,m2,m3) in temp_match]
+          temp_match = self.vo.temporal_match(ia,keyframe,want_distances=True)
+          ia.matches = [(m2,m1) for (m1,m2,m3) in temp_match]
           ia.desc_diffs = [m3 for (m1,m2,m3) in temp_match]
           print "Scores", ia.desc_diffs
           #ia.matches = self.vo.temporal_match(keyframe,ia,want_distances=True)
@@ -423,6 +426,7 @@ class PeopleTracker:
             else :
 
               # Making a new model off of the current frame but with the predicted new position. 
+              # HACK: The displacement computation assumes that the robot/head is still, fix this.
               bad_frame = True
               #done_matching = True
               if DEBUG:
@@ -618,8 +622,8 @@ def main(argv) :
   if people_tracker.usebag :
   
     import rosrecord
-    filename = "/wg/stor2/prdata/videre-bags/people-color-close-single-2.bag"
-    #filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
+    #filename = "/wg/stor2/prdata/videre-bags/people-color-close-single-2.bag"
+    filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
     #filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
     if SAVE_PICS:
@@ -629,8 +633,8 @@ def main(argv) :
         pass
 
     num_frames = 0
-    start_frame = 0
-    end_frame = 450
+    start_frame = 4700
+    end_frame = 4900
     for topic, msg in rosrecord.logplayer(filename):
       if topic == '/videre/cal_params':
         people_tracker.params(msg)
