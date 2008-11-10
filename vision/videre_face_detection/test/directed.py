@@ -63,7 +63,7 @@ class PeopleTracker:
     self.faces = None
     self.seq = 0
     self.keyframe_maxlength = 1
-    self.sad_thresh = -1.0
+    self.desc_diff_thresh = -1.0
     self.num_feats = 40
     self.line_thresh = 10.0
     self.num_scales = 6
@@ -98,7 +98,7 @@ class PeopleTracker:
     
     # Clear out all of the match info since it's not valid anymore.
     frame.matches = []
-    frame.sadscores = []
+    frame.desc_diffs = []
     frame.good_matches = []
 
     # Extract 2d keypoints and get their disparities
@@ -221,10 +221,10 @@ class PeopleTracker:
       self.cam = camera.VidereCamera(pmsg.data)
       if DESCRIPTOR=='CALONDER':
         self.vo = VisualOdometer(self.cam, descriptor_scheme = DescriptorSchemeCalonder())
-        self.sad_thresh = 0.001
+        self.desc_diff_thresh = 0.001
       elif DESCRIPTOR=='SAD':
         self.vo = Tracker(self.cam)
-        self.sad_thresh = 2000.0
+        self.desc_diff_thresh = 2000.0
       else:
         print "Unknown descriptor"
         return
@@ -257,8 +257,10 @@ class PeopleTracker:
       im_py = Image.fromstring("L", (im.width, im.height), im.data)
       im_r_py = Image.fromstring("L", (im_r.width, im_r.height), im_r.data)
     elif im.colorspace == "rgb24":
-      im_py = Image.fromstring("RGB", (im.width, im.height), im.data)
-      im_py = im_py.convert("L")
+      use_color = True
+      im_col_py = Image.fromstring("RGB", (im.width, im.height), im.data)
+      im_py = im_col_py.convert("L")
+      imdata = im_py.tostring()
       im_r_py = Image.fromstring("RGB", (im_r.width, im_r.height), im_r.data)
       im_r_py = im_r_py.convert("L")
     else :
@@ -268,7 +270,7 @@ class PeopleTracker:
 
     # Detect faces on the first frame
     if not self.current_keyframes :
-      self.faces = self.p.detectAllFaces(im.data, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
+      self.faces = self.p.detectAllFaces(imdata, im.width, im.height, self.cascade_file, 1.0, None, None, True) 
       if DEBUG:
         print "Faces ", self.faces
       
@@ -277,7 +279,7 @@ class PeopleTracker:
     old_rect = [0,0,0,0]
     ia = SparseStereoFrame(im_py,im_r_py)
     ia.matches = []
-    ia.sadscores = []
+    ia.desc_diffs = []
     ia.good_matches = []
 
     # Track each face
@@ -359,13 +361,13 @@ class PeopleTracker:
           keyframe = self.keyframes[self.current_keyframes[iface]]
           temp_match = self.vo.temporal_match(keyframe,ia,want_distances=True)
           ia.matches = [(m1,m2) for (m1,m2,m3) in temp_match]
-          ia.sadscores = [m3 for (m1,m2,m3) in temp_match]
-          print "Scores", ia.sadscores
+          ia.desc_diffs = [m3 for (m1,m2,m3) in temp_match]
+          print "Scores", ia.desc_diffs
           #ia.matches = self.vo.temporal_match(keyframe,ia,want_distances=True)
-          #ia.sadscores = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in ia.matches]
-          ia.good_matches = [s < self.sad_thresh for s in ia.sadscores]
+          #ia.desc_diffs = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in ia.matches]
+          ia.good_matches = [s < self.desc_diff_thresh for s in ia.desc_diffs]
 
-          n_good_matches = len([m for m in ia.sadscores if m < self.sad_thresh])
+          n_good_matches = len([m for m in ia.desc_diffs if m < self.desc_diff_thresh])
         
           # Not enough matches, get a new keyframe
           if len(keyframe.kp)<2 or n_good_matches < len(keyframe.kp)/2.0 : 
@@ -407,7 +409,7 @@ class PeopleTracker:
               self.keyframes[self.current_keyframes[iface]].kp3d = kp3d_for_model
               self.keyframes[self.current_keyframes[iface]].matches = [(i,i) for i in range(len(kp_for_model))]
               self.keyframes[self.current_keyframes[iface]].good_matches = [True]*len(kp_for_model)
-              self.keyframes[self.current_keyframes[iface]].sadscores = [0]*len(kp_for_model)
+              self.keyframes[self.current_keyframes[iface]].desc_diffs = [0]*len(kp_for_model)
               
 
               self.face_centers_3d[iface] = copy.deepcopy(cen3d)
@@ -474,8 +476,8 @@ class PeopleTracker:
           probs = []
           bandwidths = []
           size_mult = 1.0
-          for ((match1, match2), score) in zip(ia.matches, ia.sadscores):
-            if score < self.sad_thresh:
+          for ((match1, match2), score) in zip(ia.matches, ia.desc_diffs):
+            if score < self.desc_diff_thresh:
               kp3d = self.cam.pix2cam(ia.kp[match2][0],ia.kp[match2][1],ia.kp[match2][2])
               sparse_pred_list.append( (kp3d[0]+self.feats_to_centers_3d[iface][match1][0], 
                                         kp3d[1]+self.feats_to_centers_3d[iface][match1][1],
@@ -585,8 +587,8 @@ class PeopleTracker:
               draw_x(draw, (x+key_im.size[0],y), (1,1), (0,0,255))
 
             if ia.matches:
-              for ((m1,m2), score) in zip(ia.matches,ia.sadscores) :
-                if score > self.sad_thresh :
+              for ((m1,m2), score) in zip(ia.matches,ia.desc_diffs) :
+                if score > self.desc_diff_thresh :
                   color = (255,0,0)
                 else :
                   color = (0,255,0)
@@ -616,7 +618,8 @@ def main(argv) :
   if people_tracker.usebag :
   
     import rosrecord
-    filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
+    filename = "/wg/stor2/prdata/videre-bags/people-color-close-single-2.bag"
+    #filename = "/wg/stor2/prdata/videre-bags/loop1-mono.bag"
     #filename = "/wg/stor2/prdata/videre-bags/face2.bag"
 
     if SAVE_PICS:
@@ -626,8 +629,8 @@ def main(argv) :
         pass
 
     num_frames = 0
-    start_frame = 5800
-    end_frame = 6000
+    start_frame = 0
+    end_frame = 450
     for topic, msg in rosrecord.logplayer(filename):
       if topic == '/videre/cal_params':
         people_tracker.params(msg)
