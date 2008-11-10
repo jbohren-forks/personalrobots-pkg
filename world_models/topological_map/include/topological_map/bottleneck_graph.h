@@ -40,28 +40,28 @@ namespace topological_map
 {
 
 
-// Node descriptions
+// Vertex descriptions
 typedef std::pair<int,int> Coords; 
 typedef std::set<Coords> Region;
-enum NodeType { BOTTLENECK, OPEN };
-struct NodeDescription
+enum VertexType { BOTTLENECK, OPEN };
+struct VertexDescription
 {
-  NodeType type;
+  VertexType type;
   Region region;
 };
 
 
 // Now we can define the graph type
-// Nodes will be labeled with NodeDescriptions 
+// Vertices will be labeled with VertexDescriptions 
 struct desc_t 
 {
   typedef boost::vertex_property_tag kind;
 };
-typedef boost::property<desc_t,NodeDescription> desc_property; 
+typedef boost::property<desc_t,VertexDescription> desc_property; 
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, desc_property> BottleneckGraph; 
 typedef boost::property_map<BottleneckGraph, desc_t>::type DescMap;
-typedef boost::graph_traits<BottleneckGraph>::vertex_descriptor BottleneckNode;
-typedef boost::graph_traits<BottleneckGraph>::vertex_iterator BottleneckNodeIterator;
+typedef boost::graph_traits<BottleneckGraph>::vertex_descriptor BottleneckVertex;
+typedef boost::graph_traits<BottleneckGraph>::vertex_iterator BottleneckVertexIterator;
 
 // Typedefs for occupancy grids
 typedef boost::multi_array<bool, 2> GridArray;
