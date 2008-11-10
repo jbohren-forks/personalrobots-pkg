@@ -91,76 +91,27 @@
   -->
 
   <!-- The "desk"-->
+  <!-- small desks -->
   <model:physical name="desk1_model">
-    <xyz>   2.28  -0.21  -0.10</xyz>
-    <rpy>   0.0    0.0    0.00</rpy>
-    <body:box name="desk1_legs_body">
-      <geom:box name="desk1_legs_geom">
-        <kp>100000000.0</kp>
-        <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.50</xyz>
-        <mesh>default</mesh>
-        <size>0.5 1.0  0.75</size>
-        <mass> 10.0</mass>
-        <visual>
-          <size> 0.5 1.0 0.75</size>
-          <material>Gazebo/Rocky</material>
-          <mesh>unit_box</mesh>
-        </visual>
-      </geom:box>
-      <geom:box name="desk1_top_geom">
-        <kp>100000000.0</kp>
-        <kd>0.1</kd>
-        <xyz>   0.0    0.0    0.90</xyz>
-        <mesh>default</mesh>
-        <size>0.75 1.5  0.05</size>
-        <mass> 10.0</mass>
-        <visual>
-          <size> 0.75 1.5 0.05</size>
-          <material>Gazebo/Rocky</material>
-          <mesh>unit_box</mesh>
-        </visual>
-      </geom:box>
-    </body:box>
+    <xyz>2.28  -0.21  0</xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <include embedded="true">
+      <xi:include href="desk4.model" />
+    </include>
   </model:physical>
 
   <!-- The second "desk"-->
   <model:physical name="desk2_model">
-    <xyz>   2.25  -3.0   -0.10</xyz>
-    <rpy>   0.0    0.0    0.00</rpy>
-    <body:box name="desk2_legs_body">
-      <geom:box name="desk2_legs_geom">
-        <kp>1000000.0</kp>
-        <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.50</xyz>
-        <mesh>default</mesh>
-        <size>0.5 1.0  0.75</size>
-        <mass> 10.0</mass>
-        <visual>
-          <size> 0.5 1.0 0.75</size>
-          <material>Gazebo/Rocky</material>
-          <mesh>unit_box</mesh>
-        </visual>
-      </geom:box>
-      <geom:box name="desk2_top_geom">
-        <kp>1000000.0</kp>
-        <kd>1.0</kd>
-        <xyz>   0.0    0.0    0.90</xyz>
-        <mesh>default</mesh>
-        <size>0.75 1.5  0.05</size>
-        <mass> 10.0</mass>
-        <visual>
-          <size> 0.75 1.5 0.05</size>
-          <material>Gazebo/Rocky</material>
-          <mesh>unit_box</mesh>
-        </visual>
-      </geom:box>
-    </body:box>
+    <xyz>2.25  -3.0   0</xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <include embedded="true">
+      <xi:include href="desk5.model" />
+    </include>
   </model:physical>
 
   <!-- The small cylinder "cup" -->
   <model:physical name="cylinder1_model">
-    <xyz>   2.5    0.0    0.9</xyz>
+    <xyz>   2.5    0.0    1.5</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:cylinder name="cylinder1_body">
       <geom:cylinder name="cylinder1_geom">
@@ -223,7 +174,7 @@
 
   <!-- The small ball -->
   <model:physical name="sphere1_model">
-    <xyz>   2.5   -2.8    1.0</xyz>
+    <xyz>   2.5   -2.8    1.5</xyz>
     <rpy>   0.0    0.0    0.0</rpy>
     <body:sphere name="sphere1_body">
       <geom:sphere name="sphere1_geom">
