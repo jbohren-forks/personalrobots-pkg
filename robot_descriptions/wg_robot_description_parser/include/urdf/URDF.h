@@ -293,7 +293,7 @@ namespace robot_desc
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
 		    verbose = false;
-		    geometry = new Geometry();
+		    geometry = NULL;
 		    isSet["name"] = false;
 		    isSet["verbose"] = false;
 		    isSet["xyz"] = false;
@@ -354,7 +354,7 @@ namespace robot_desc
 		{
 		    xyz[0] = xyz[1] = xyz[2] = 0.0;
 		    rpy[0] = rpy[1] = rpy[2] = 0.0;
-		    geometry = new Geometry();
+		    geometry = NULL;
 		    isSet["name"] = false;
 		    isSet["xyz"] = false;
 		    isSet["rpy"] = false;
@@ -382,10 +382,10 @@ namespace robot_desc
 		parent = NULL;
 		xyz[0] = xyz[1] = xyz[2] = 0.0;
 		rpy[0] = rpy[1] = rpy[2] = 0.0;
-		inertial  = new Inertial();
-		visual    = new Visual();
-		collision = new Collision();
-		joint     = new Joint();
+		inertial  = NULL;
+		visual    = NULL;
+		collision = NULL;
+		joint     = NULL;
 		isSet["name"] = false;
 		isSet["parent"] = false;
 		isSet["inertial"] = false;
@@ -505,6 +505,25 @@ namespace robot_desc
 	    std::map<std::string, bool> isSet;
 	};
 	
+	/** A class that represents a link chain */
+	struct Chain
+	{
+	    Chain(void)
+	    {
+	    }
+	    
+	    virtual ~Chain(void)
+	    {
+	    }
+	    
+	    virtual void print(std::ostream &out = std::cout, std::string indent = "") const;
+	    
+	    std::string        name;
+	    std::string        root;
+	    std::string        tip;
+	    std::vector<Link*> links;
+	};
+		
 	/** A class that represents groups of links or frames (or both) */
 	struct Group
 	{
@@ -576,7 +595,7 @@ namespace robot_desc
 	void setVerbose(bool verbose);
 
 	/** If set to true, unknown tags are stored in a list instead
-	    of presenting error messages. */
+	    of presenting error messages. Default is false. */
 	void rememberUnknownTags(bool remember);
 	
 	/** Returns the robot name */
@@ -614,7 +633,13 @@ namespace robot_desc
 
 	/** Get the list of all groups. The array is sorted alphabetically by name. */
 	void getGroups(std::vector<Group*> &groups) const;
+
+	/** Retrieve a chain by its name */
+	Chain* getChain(const std::string &name) const;
 	
+	/** Get the list of all chains. The array is sorted alphabetically by name. */
+	void getChains(std::vector<Chain*> &chains) const;
+
 	/** Get the data that was defined at top level */
 	const Map& getMap(void) const;
 
@@ -741,6 +766,9 @@ namespace robot_desc
 
 	/** Contains the list of parsed frames */
 	std::map<std::string, Frame*>           m_frames;
+
+	/** The list of parsed chains */
+	std::map<std::string, Chain*>           m_chains;
 	
 	/** Contains information specified in <data> tags at the top level */
 	Map                                     m_data;
