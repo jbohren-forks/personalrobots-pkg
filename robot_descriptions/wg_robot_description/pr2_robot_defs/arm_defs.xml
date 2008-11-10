@@ -273,7 +273,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="pr2_shoulder_roll_mesh_file">
-          <mesh filename="upper_arm_roll" />
+          <mesh filename="upperarm_roll" />
         </geometry>
       </visual>
 
