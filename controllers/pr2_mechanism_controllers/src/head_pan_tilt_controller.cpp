@@ -274,7 +274,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   point.setX(frame_track_point_.point.x);
   point.setY(frame_track_point_.point.y);
   point.setZ(frame_track_point_.point.z);
-  point.stamp_ = 0;//get the latest transform
+  point.stamp_ = 0.0;//get the latest transform
   point.frame_id_ = frame_track_point_.header.frame_id;
 
   try
