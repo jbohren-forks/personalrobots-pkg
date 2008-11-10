@@ -53,9 +53,9 @@ test:	$(OBJECTS) test.o
 	$(LD) -o test $(OBJECTS) test.o -lyaml
 
 clean:
-	- rm *.o
 	- rm obj/*.o
-	- rm bin/stereocal
+	- rm bin/*
+	- rm lib/*.so
 
 dist:
 	tar -cvzf ost.tgz *.c *.cpp *.h *.yaml src/*.c src/*.cpp src/*.fl include/*.h *.vcproj *.sln Makefile data/*.bmp

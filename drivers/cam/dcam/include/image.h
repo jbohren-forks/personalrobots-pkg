@@ -58,7 +58,7 @@
 
 // alignment on allocation
 #define MEMALIGN(x) memalign(16,x)
-#define MEMFREE free
+#define MEMFREE(x) {if (x) free(x);}
 
 #ifndef COLOR_CODING_T
 typedef enum {
@@ -123,16 +123,23 @@ namespace cam
 
     // image data
     // these can be NULL if no data is present
+    // the Type info is COLOR_CODING_NONE if the data is not current
+    // the Size info gives the buffer size, for allocation logic
     uint8_t *imRaw;		// raw image
     color_coding_t imRawType;	// type of raw data
+    size_t imRawSize;
     uint8_t *im;		// monochrome image
     color_coding_t imType;
+    size_t imSize;
     uint8_t *imColor;		// color image, always RGB32
     color_coding_t imColorType;
+    size_t imColorSize;
     uint8_t *imRect;		// rectified monochrome image
     color_coding_t imRectType;
+    size_t imRectSize;
     uint8_t *imRectColor;	// rectified color image, always RGB32
     color_coding_t imRectColorType;
+    size_t imRectColorSize;
 
     // timing
     uint64_t im_time;		// us time when the frame finished DMA into the host
@@ -194,6 +201,7 @@ namespace cam
 
     // disparity data
     uint16_t *imDisp;		// disparity image
+    size_t imDispSize;		// size of image in bytes
     int dpp;			// disparity units per pixel, e.g., 16 is 1/16 pixel per disparity
     bool hasDisparity;		// true if disparity present
     int numDisp;		// number of disparities, in pixels

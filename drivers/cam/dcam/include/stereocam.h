@@ -82,8 +82,8 @@ namespace cam
     virtual bool setUniqueThresh(int thresh);
 
   protected:
-    void stereoDeinterlace(uint8_t *src, uint8_t **d1, uint8_t **d2);
-    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, uint16_t **d2);
+    void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
+    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, uint16_t **d2, size_t *s2);
 
   private:
     // buffers for stereo
