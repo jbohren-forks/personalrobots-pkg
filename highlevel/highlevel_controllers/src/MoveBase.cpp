@@ -201,7 +201,7 @@ namespace ros {
       advertise<std_msgs::BaseVel>("cmd_vel", 1);
       
       //Advertize message to publis local goal for head to track
-      advertise<std_msgs::PointStamped>("head_controller/track_point", 1);
+      advertise<std_msgs::PointStamped>("head_controller/frame_track_point", 1);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
