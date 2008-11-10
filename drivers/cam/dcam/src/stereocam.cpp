@@ -253,8 +253,8 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	case VIDERE_STEREO_GRBG:
 	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRaw, 
 			    &stIm->imRight->imRaw);
-	  stIm->imLeft->imType = COLOR_CODING_BAYER8_RGGB;
-	  stIm->imRight->imType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  break;
 
 
@@ -275,7 +275,7 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	case VIDERE_STOC_RAW_DISP_RGGB:
 	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, 
 			    &stIm->imDisp);
-	  stIm->imLeft->imType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  stIm->hasDisparity = true;
 	  break;
 

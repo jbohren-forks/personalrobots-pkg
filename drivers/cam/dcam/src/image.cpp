@@ -59,7 +59,7 @@ ImageData::ImageData()
   imRect = NULL;
   imRectColor = NULL;
   imRaw = NULL;
-  imRawType = PIXEL_CODING_NONE;
+  imRawType = COLOR_CODING_NONE;
   imType = COLOR_CODING_NONE;
   imColorType = COLOR_CODING_NONE;
   imRectType = COLOR_CODING_NONE;
@@ -108,7 +108,7 @@ ImageData::releaseBuffers()
   imRect = NULL;
   imRectColor = NULL;
   imRaw = NULL;
-  imRawType = PIXEL_CODING_NONE;
+  imRawType = COLOR_CODING_NONE;
   imType = COLOR_CODING_NONE;
   imColorType = COLOR_CODING_NONE;
   imRectType = COLOR_CODING_NONE;
@@ -168,6 +168,7 @@ ImageData::initRectify()
 bool
 ImageData::doRectify()
 {
+  printf("In do rectify...\n");
   if (!hasRectification)
     return false;		// has no rectification
 
@@ -201,8 +202,8 @@ ImageData::doRectify()
       cvSetData(srcIm, im, imWidth);
       cvSetData(dstIm, imRect, imWidth);
       
-      //      printf("rect ptrs: %08x %08x\n", im, imRect);
-      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      printf("rect ptrs: %08x %08x\n", im, imRect);
+      cvRemap(srcIm,dstIm,rMapxy,rMapa);
       cvRemap(srcIm,dstIm,mx,my);
     }
 
@@ -223,6 +224,7 @@ ImageData::doRectify()
       cvSetData(srcIm, imColor, imWidth);
       cvSetData(dstIm, imRectColor, imWidth);
       
+      printf("rect ptrs: %08x %08x\n", imColor, imRectColor);
       cvRemap(srcIm,dstIm,mx,my);
       //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
     }

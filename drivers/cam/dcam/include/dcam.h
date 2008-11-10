@@ -46,9 +46,29 @@
 //   STOC modes have rectified images, raw encodings, disparity, etc
 //
 
-#ifndef PIXEL_CODING_T
+#ifndef COLOR_CODING_T
 typedef enum {
-  VIDERE_STEREO_MONO = 2000,
+  COLOR_CODING_MONO8 = 3000,
+  COLOR_CODING_MONO16,
+  COLOR_CODING_BAYER8_RGGB,
+  COLOR_CODING_BAYER8_BGGR,
+  COLOR_CODING_BAYER8_GBRG,
+  COLOR_CODING_BAYER8_GRBG,
+  COLOR_CODING_BAYER16_RGGB,
+  COLOR_CODING_BAYER16_BGGR,
+  COLOR_CODING_BAYER16_GBRG,
+  COLOR_CODING_BAYER16_GRBG,
+  COLOR_CODING_RGB8,		// RGB order
+  COLOR_CODING_RGBA8,		// RGBA order
+  COLOR_CODING_RGB16,		// RGB order
+  COLOR_CODING_RGBA16,		// RGBA order
+
+  // these are stereo interlace encodings
+  // Videre stereo:
+  //   Mono has left/right pixels interlaced
+  //   Color has left/right pixels interlace, bayer pixels
+  //   STOC modes have rectified images, raw encodings, disparity, etc
+  VIDERE_STEREO_MONO,
   VIDERE_STEREO_RGGB,
   VIDERE_STEREO_GRBG,
   VIDERE_STEREO_BGGR,
@@ -58,9 +78,11 @@ typedef enum {
   VIDERE_STOC_RAW_DISP_RGGB,	// left raw color, right disparity
   VIDERE_STOC_RAW_RAW_MONO,	// left and right raw, mono
   VIDERE_STOC_RAW_RAW_RGGB,	// left and right raw, color
-  RAW_NONE			// no raw type, already processed
-} pixel_coding_t;
-#define PIXEL_CODING_T
+
+
+  COLOR_CODING_NONE		// no image info
+} color_coding_t;
+#define COLOR_CODING_T
 #endif
 
 
@@ -192,7 +214,7 @@ namespace dcam
     virtual void setRawType();
     videre_proc_mode_t procMode; // STOC mode, if applicable
     dc1394color_filter_t bayerMode; // bayer color encoding 
-    pixel_coding_t rawType;	// what type of raw image we receive
+    color_coding_t rawType;	// what type of raw image we receive
   };
 
 };

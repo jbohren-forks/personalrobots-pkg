@@ -60,30 +60,6 @@
 #define MEMALIGN(x) memalign(16,x)
 #define MEMFREE free
 
-// Pixel raw modes
-// Videre stereo:
-//   Mono has left/right pixels interlaced
-//   Color has left/right pixels interlace, bayer pixels
-//   STOC modes have rectified images, raw encodings, disparity, etc
-//
-
-#ifndef PIXEL_CODING_T
-typedef enum {
-  VIDERE_STEREO_MONO = 2000,
-  VIDERE_STEREO_RGGB,
-  VIDERE_STEREO_GRBG,
-  VIDERE_STEREO_BGGR,
-  VIDERE_STOC_RECT_RECT,	// left and right rectified mono
-  VIDERE_STOC_RECT_DISP,	// left rectified mono, right disparity
-  VIDERE_STOC_RAW_DISP_MONO,	// left raw mono, right disparity
-  VIDERE_STOC_RAW_DISP_RGGB,	// left raw color, right disparity
-  VIDERE_STOC_RAW_RAW_MONO,	// left and right raw, mono
-  VIDERE_STOC_RAW_RAW_RGGB,	// left and right raw, color
-  PIXEL_CODING_NONE		// no image info
-} pixel_coding_t;
-#define PIXEL_CODING_T
-#endif
-
 #ifndef COLOR_CODING_T
 typedef enum {
   COLOR_CODING_MONO8 = 3000,
@@ -100,6 +76,24 @@ typedef enum {
   COLOR_CODING_RGBA8,		// RGBA order
   COLOR_CODING_RGB16,		// RGB order
   COLOR_CODING_RGBA16,		// RGBA order
+
+  // these are stereo interlace encodings
+  // Videre stereo:
+  //   Mono has left/right pixels interlaced
+  //   Color has left/right pixels interlace, bayer pixels
+  //   STOC modes have rectified images, raw encodings, disparity, etc
+  VIDERE_STEREO_MONO,
+  VIDERE_STEREO_RGGB,
+  VIDERE_STEREO_GRBG,
+  VIDERE_STEREO_BGGR,
+  VIDERE_STOC_RECT_RECT,	// left and right rectified mono
+  VIDERE_STOC_RECT_DISP,	// left rectified mono, right disparity
+  VIDERE_STOC_RAW_DISP_MONO,	// left raw mono, right disparity
+  VIDERE_STOC_RAW_DISP_RGGB,	// left raw color, right disparity
+  VIDERE_STOC_RAW_RAW_MONO,	// left and right raw, mono
+  VIDERE_STOC_RAW_RAW_RGGB,	// left and right raw, color
+
+
   COLOR_CODING_NONE		// no image info
 } color_coding_t;
 #define COLOR_CODING_T
@@ -130,7 +124,7 @@ namespace cam
     // image data
     // these can be NULL if no data is present
     uint8_t *imRaw;		// raw image
-    pixel_coding_t imRawType;	// type of raw data
+    color_coding_t imRawType;	// type of raw data
     uint8_t *im;		// monochrome image
     color_coding_t imType;
     uint8_t *imColor;		// color image, always RGB32
