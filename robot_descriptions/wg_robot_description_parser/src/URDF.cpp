@@ -1220,6 +1220,10 @@ namespace robot_desc {
 		    if (loadDoubleValues(node, 1, joint->safetyLength + 1, "safety_length", true))
 			MARK_SET(node, joint, safetyLengthMax);
 		}
+		else if (node->ValueStr() == "mimic" && !free)
+		{
+                    std::cout << "mimic is ignored for now." << std::endl;
+		}
 		else if (node->ValueStr() == "calibration")
 		{
 		    const char *vals = node->ToElement()->Attribute("values");
