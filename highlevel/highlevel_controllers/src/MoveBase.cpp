@@ -297,10 +297,12 @@ namespace ros {
     
     void MoveBase::baseScanCallback()
     {
+      ROS_INFO("Base Scan Callback");
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
+      ROS_INFO("Projected");
       processData(local_cloud);
     }
 
@@ -329,6 +331,11 @@ namespace ros {
       while(!point_clouds_.empty()){
 
 	const std_msgs::PointCloud& point_cloud = point_clouds_.front();
+
+	if(local_cloud.header.stamp - point_cloud.header.stamp > ros::Duration(9, 0)){
+	  point_clouds_.pop_front();
+	  continue;
+	}
 
 	std_msgs::PointCloud base_cloud;
 	std_msgs::PointCloud map_cloud;
@@ -371,7 +378,7 @@ namespace ros {
 	// Is the time stamp copied when we do a tranform?
 	// Verify what happens if we get many updates in the same update time step?
 	// How can interleaving effect things?
-	ROS_DEBUG("Processing point cloud with %d points\n", map_cloud.get_pts_size());
+	ROS_INFO("Processing point cloud with %d points\n", map_cloud.get_pts_size());
         updateDynamicObstacles(point_cloud.header.stamp.to_double(), map_cloud);
       }
 
