@@ -84,11 +84,9 @@ class TopicSynchronizer
       {
         cond_all_.broadcast();
       }
-      else
-      {
-        while (!done_ && *time == waiting_time_)
-          cond_all_.wait();
-      }
+
+      while (!done_ && *time == waiting_time_)
+        cond_all_.wait();
       
       cond_all_.unlock();
       return;
