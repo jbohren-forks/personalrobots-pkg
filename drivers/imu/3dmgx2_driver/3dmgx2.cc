@@ -288,7 +288,7 @@ MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3
     k += 4;
   }
 
-  *time = extract_time(rep+62);
+  *time = extract_time(rep+61);
 }
 
 
