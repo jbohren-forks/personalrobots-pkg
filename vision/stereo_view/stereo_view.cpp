@@ -59,26 +59,17 @@ public:
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
 
-  std::string ltopic;
-  std::string rtopic;
-  std::string dtopic;
-
   TopicSynchronizer<StereoView> sync;
 
   StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all)
   { 
-    ltopic = map_name("dcam") + std::string("/left/image_rect");
-    rtopic = map_name("dcam") + std::string("/right/image_rect");
-    dtopic = map_name("dcam") + std::string("/disparity");
-
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
-    sync.subscribe(ltopic, limage, 1);
-
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
-    sync.subscribe(rtopic, rimage, 1);
-
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
-    sync.subscribe(dtopic, dimage, 1);
+
+    sync.subscribe("dcam/left/image_rect", limage, 1);
+    sync.subscribe("dcam/right/image_rect", rimage, 1);
+    sync.subscribe("dcam/disparity", dimage, 1);
   }
 
   void image_cb_all()
@@ -87,9 +78,8 @@ public:
     rbridge.fromImage(rimage);
     dbridge.fromImage(dimage);
 
-    IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-
     // Disparity has to be scaled to be be nicely displayable
+    IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
     cvCvtScale(dbridge.toIpl(), disp, 1/4.0);
 
     cvShowImage("left", lbridge.toIpl());
