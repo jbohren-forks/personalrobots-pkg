@@ -118,7 +118,7 @@ namespace ros {
       std::vector<unsigned char> inputData;
       unsigned int numCells = resp.map.width * resp.map.height;
       for(unsigned int i = 0; i < numCells; i++){
-	inputData.push_back((unsigned char) resp.map.data[i]);
+        inputData.push_back((unsigned char) resp.map.data[i]);
       }
 
       // Now allocate the cost map and its sliding window used by the controller
@@ -336,7 +336,7 @@ namespace ros {
 	/* Transform to the base frame */
 	try
 	  {
-	    tf_.transformPointCloud("base", base_cloud, local_cloud);
+	    tf_.transformPointCloud("base", base_cloud, point_cloud);
 	    newData = extractFootprintAndGround(base_cloud);
 	    tf_.transformPointCloud("map", map_cloud, *newData);
 	  }
