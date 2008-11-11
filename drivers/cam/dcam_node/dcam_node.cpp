@@ -258,6 +258,8 @@ public:
         stereo_info_.has_disparity = false;
       }
 
+      stereo_info_.header.stamp = ros::Time(stcam->stIm->imLeft->im_time * 1000);
+
       stereo_info_.height = stcam->stIm->imHeight;
       stereo_info_.width = stcam->stIm->imWidth;
 
@@ -284,99 +286,102 @@ public:
     }
   }
 
-  void publishImages(std::string base_name, cam::ImageData* img)
+  void publishImages(std::string base_name, cam::ImageData* img_data)
   {
 
-    if (img->imRawType != COLOR_CODING_NONE)
+    img_.header.stamp = ros::Time(img_data->im_time * 1000);
+    cam_info_.header.stamp = ros::Time(img_data->im_time * 1000);
+
+    if (img_data->imRawType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_raw",
-                img->imHeight, img->imWidth, 1,
+                img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
-                img->imRaw );
+                img_data->imRaw );
       publish(base_name + std::string("image_raw"), img_);
       cam_info_.has_image = true;
     } else {
       cam_info_.has_image = false;
     }
 
-    if (img->imType != COLOR_CODING_NONE)
+    if (img_data->imType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image",
-                img->imHeight, img->imWidth, 1,
+                img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
-                img->im );
+                img_data->im );
       publish(base_name + std::string("image"), img_);
       cam_info_.has_image = true;
     } else {
       cam_info_.has_image = false;
     }
 
-    if (img->imColorType != COLOR_CODING_NONE)
+    if (img_data->imColorType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_color",
-                img->imHeight, img->imWidth, 4,
+                img_data->imHeight, img_data->imWidth, 4,
                 "rgba", "byte",
-                img->imColor );
+                img_data->imColor );
       publish(base_name + std::string("image_color"), img_);
       cam_info_.has_image_color = true;
     } else {
       cam_info_.has_image_color = false;
     }
 
-    if (img->imRectType != COLOR_CODING_NONE)
+    if (img_data->imRectType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_rect",
-                img->imHeight, img->imWidth, 1,
+                img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
-                img->imRect );
+                img_data->imRect );
       publish(base_name + std::string("image_rect"), img_);
       cam_info_.has_image_rect = true;
     } else {
       cam_info_.has_image_rect = false;
     }
 
-    if (img->imRectColorType != COLOR_CODING_NONE)
+    if (img_data->imRectColorType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_rect_color",
-                img->imHeight, img->imWidth, 4,
+                img_data->imHeight, img_data->imWidth, 4,
                 "rgba", "byte",
-                img->imRectColor );
+                img_data->imRectColor );
       publish(base_name + std::string("image_rect_color"), img_);
       cam_info_.has_image_rect_color = true;
-    }else {
+    } else {
       cam_info_.has_image_rect_color = false;
     }
 
-    cam_info_.height = img->imHeight;
-    cam_info_.width  = img->imWidth;
+    cam_info_.height = img_data->imHeight;
+    cam_info_.width  = img_data->imWidth;
 
-    memcpy((char*)(&cam_info_.D[0]), (char*)(img->D),  5*sizeof(double));
-    memcpy((char*)(&cam_info_.K[0]), (char*)(img->K),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.R[0]), (char*)(img->R),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.P[0]), (char*)(img->P), 12*sizeof(double));
+    memcpy((char*)(&cam_info_.D[0]), (char*)(img_data->D),  5*sizeof(double));
+    memcpy((char*)(&cam_info_.K[0]), (char*)(img_data->K),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.R[0]), (char*)(img_data->R),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
 
     publish(base_name + std::string("cam_info"), cam_info_);
 
   }
 
 
-  void advertiseImages(std::string base_name, cam::ImageData* img)
+  void advertiseImages(std::string base_name, cam::ImageData* img_data)
   {
     advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
 
-    if (img->imRawType != COLOR_CODING_NONE)
+    if (img_data->imRawType != COLOR_CODING_NONE)
       advertise<image_msgs::Image>(base_name + std::string("image_raw"), 1);
 
-    if (img->imType != COLOR_CODING_NONE)
+    if (img_data->imType != COLOR_CODING_NONE)
       advertise<image_msgs::Image>(base_name + std::string("image"), 1);
 
-    if (img->imColorType != COLOR_CODING_NONE)
+    if (img_data->imColorType != COLOR_CODING_NONE)
       advertise<image_msgs::Image>(base_name + std::string("image_color"), 1);
 
-    if (img->imRectType != COLOR_CODING_NONE)
+    if (img_data->imRectType != COLOR_CODING_NONE)
       advertise<image_msgs::Image>(base_name + std::string("image_rect"), 1);
 
-    if (img->imRectColorType != COLOR_CODING_NONE)
+    if (img_data->imRectColorType != COLOR_CODING_NONE)
       advertise<image_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
   }
