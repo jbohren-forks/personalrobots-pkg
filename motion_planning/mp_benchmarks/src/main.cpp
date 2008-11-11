@@ -65,12 +65,14 @@ static void run_tasks();
 static void display(int * argc, char ** argv);
 
 static bool enableGfx;
-static string plannerType;//("ARAPlanner");
-static string logfname;
+static string plannerType;
+static string logFilename;
+static string pngFilename;
 static string setupName;
 static double resolution;
-static double robotRadius;
-static double freespaceDistance;
+static double inscribedRadius;
+static double circumscribedRadius;
+static double inflationRadius;
 static int obstacleCost;
 static double doorWidth;
 static double hallWidth;
@@ -85,6 +87,7 @@ static shared_ptr<ostream> logos;
 
 static int glut_width;
 static int glut_height;
+static bool made_first_screenshot;
 
 typedef list<std_msgs::Pose2DFloat32> plan_t;
 typedef std::vector<plan_t> planList_t;
@@ -96,11 +99,13 @@ int main(int argc, char ** argv)
   if (0 != atexit(cleanup))
     errx(EXIT_FAILURE, "atexit() failed");
   parse_options(argc, argv);
-  logos.reset(new ofstream(logfname.c_str(), ios_base::app));
+  logos.reset(new ofstream(logFilename.c_str(), ios_base::app));
   create_setup();
   run_tasks();  
-  if (enableGfx)
+  if (enableGfx) {
+    made_first_screenshot = false;
     display(&argc, argv);
+  }
 }
 
 
@@ -122,29 +127,51 @@ void usage(ostream & os)
      << "   -h               help (this message)\n"
      << "   -p  <name>       name of the SBPL planner\n"
      << "   -s  <name>       name of the setup\n"
-     << "   -c  <cellsize>   set grid resolution\n"
-     << "   -r  <radius>     set robot radius\n"
-     << "   -f  <freedist>   set freespace distance\n"
+     << "   -r  <cellsize>   set grid resolution\n"
+     << "   -i  <in-radius>  set INSCRIBED radius\n"
+     << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
+     << "   -I  <inflate-r>  set INFLATION radius\n"
      << "   -d  <doorwidth>  set width of doors\n"
      << "   -H  <hallwidth>  set width of hallways\n"
-     << "   -l  <filename>   filename for logging\n"
+     << "   -l  <filename>   overwrite filename for logging\n"
+     << "   -P  <filename>   overwrite filename for screenshots\n"
      << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
      << "   -O  <filename>   write costmap_2d::CostMap2D to file\n";
 }
 
 
+static string summarizeOptions()
+{
+  ostringstream os;
+  os << "-p" << plannerType
+     << "-s" << setupName
+     << "-r" << (int) rint(1e3 * resolution)
+     << "-i" << (int) rint(1e3 * inscribedRadius)
+     << "-c" << (int) rint(1e3 * circumscribedRadius)
+     << "-I" << (int) rint(1e3 * inflationRadius)
+     << "-d" << (int) rint(1e3 * doorWidth)
+     << "-H" << (int) rint(1e3 * hallWidth);
+  return os.str();
+}
+
+
 void parse_options(int argc, char ** argv)
 {
-  enableGfx = true;		// no switch for this yet
+  // these should become options
+  enableGfx = true;
+  obstacleCost = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
+  
+  // default values for options
   plannerType = "ARAPlanner";
-  logfname = "/dev/stdout";
   setupName = "office1";
   resolution = 0.05;
-  robotRadius = 0.5;
-  freespaceDistance = 1.2;
-  obstacleCost = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
+  inscribedRadius = 0.5;
+  circumscribedRadius = 1.2;
+  inflationRadius = 2;
   doorWidth = 1.2;
   hallWidth = 3;
+  logFilename = "";
+  pngFilename = "";
   travmapFilename = "";
   costmapFilename = "";
   
@@ -181,10 +208,10 @@ void parse_options(int argc, char ** argv)
 	setupName = argv[ii];
  	break;
 	
-      case 'c':
+      case 'r':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -c requires a cellsize argument\n";
+ 	  cerr << argv[0] << ": -r requires a cellsize argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
@@ -199,36 +226,54 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
-      case 'r':
+      case 'i':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -r requires a radius argument\n";
+ 	  cerr << argv[0] << ": -i requires inscribed radius argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> robotRadius;
+	  is >> inscribedRadius;
 	  if ( ! is) {
-	    cerr << argv[0] << ": error reading radius argument from \"" << argv[ii] << "\"\n";
+	    cerr << argv[0] << ": error reading inscribed radius argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
 	    exit(EXIT_FAILURE);
 	  }
 	}
  	break;
 	
-      case 'f':
+      case 'c':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -f requires a freedist argument\n";
+ 	  cerr << argv[0] << ": -c requires circumscribed radius argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> freespaceDistance;
+	  is >> circumscribedRadius;
 	  if ( ! is) {
-	    cerr << argv[0] << ": error reading freedist argument from \"" << argv[ii] << "\"\n";
+	    cerr << argv[0] << ": error reading circumscribed radius argument from \"" << argv[ii] << "\"\n";
+	    usage(cerr);
+	    exit(EXIT_FAILURE);
+	  }
+	}
+ 	break;
+	
+      case 'I':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -I requires inflation radius argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	{
+	  istringstream is(argv[ii]);
+	  is >> inflationRadius;
+	  if ( ! is) {
+	    cerr << argv[0] << ": error reading inflation radius argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
 	    exit(EXIT_FAILURE);
 	  }
@@ -274,11 +319,21 @@ void parse_options(int argc, char ** argv)
       case 'l':
  	++ii;
  	if (ii >= argc) {
- 	  cerr << argv[0] << ": -l requires a filename argument\n";
+ 	  cerr << argv[0] << ": -l requires logging filename argument\n";
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	logfname = argv[ii];
+	logFilename = argv[ii];
+ 	break;
+	
+      case 'P':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -P requires screenshot filename argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	pngFilename = argv[ii];
  	break;
 	
       case 'o':
@@ -307,12 +362,17 @@ void parse_options(int argc, char ** argv)
 	exit(EXIT_FAILURE);
       }
   }
+  
+  if (logFilename.empty())
+    logFilename = "mpbench-" + summarizeOptions() + ".log";
+  
+  if (pngFilename.empty())
+    pngFilename = "mpbench-" + summarizeOptions() + ".png";
 }
 
 
 void create_setup()
-{
-  
+{  
   *logos << "creating setup \"" << setupName << "\"\n" << flush;
   {
     shared_ptr<ostream> dump_os;
@@ -323,7 +383,7 @@ void create_setup()
 	dump_os.reset();
       }
     }
-    setup.reset(OfficeBenchmark::create(setupName, resolution, robotRadius, freespaceDistance,
+    setup.reset(OfficeBenchmark::create(setupName, resolution, inscribedRadius, circumscribedRadius, inflationRadius,
 					obstacleCost, doorWidth, hallWidth,
 					logos.get(), dump_os.get()));
     if ( ! setup)
@@ -353,7 +413,7 @@ void create_setup()
   *logos << "creating planner manager\n" << flush;
   bool const forwardsearch(false);
   plannerMgr.reset(new SBPLPlannerManager(environment->getDSI(), forwardsearch, &mdpConfig));
-  if ( ! plannerMgr->select(plannerType, false))
+  if ( ! plannerMgr->select(plannerType, false, logos.get()))
     errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
   *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
   
@@ -576,6 +636,16 @@ void init_layout()
 }
 
 
+static void make_screenshot()
+{
+  npm::SimpleImage image(glut_width, glut_height);
+  image.read_framebuf(0, 0);
+  image.write_png(pngFilename);
+  *logos << "saved screenshot " << pngFilename << "\n" << flush;
+  cout << "saved screenshot " << pngFilename << "\n" << flush;
+}
+
+
 void draw()
 {
   glClear(GL_COLOR_BUFFER_BIT);
@@ -584,6 +654,11 @@ void draw()
   npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
   glFlush();
   glutSwapBuffers();
+
+  if ( ! made_first_screenshot) {
+    make_screenshot();
+    made_first_screenshot = true;
+  }
 }
 
 
@@ -599,15 +674,7 @@ void keyboard(unsigned char key, int mx, int my)
 {
   switch (key) {
   case 'p':
-    {
-      static unsigned int count(0);
-      ostringstream filename;
-      filename << "mpbench" << setw(6) << setfill('0') << count++ << ".png";
-      npm::SimpleImage image(glut_width, glut_height);
-      image.read_framebuf(0, 0);
-      image.write_png(filename.str());
-      *logos << "saved screenshot " << filename.str() << "\n" << flush;
-    }
+    make_screenshot();
     break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");

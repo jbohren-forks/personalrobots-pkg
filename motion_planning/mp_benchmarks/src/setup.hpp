@@ -74,12 +74,13 @@ namespace ompl {
 		       std::string const & name,
 		       /** cell size [m] (square cells) */
 		       double resolution,
-		       /** (inscribed) radius of the robot [m] */
-		       double robot_radius,
+		       /** inscribed radius of the robot [m] */
+		       double inscribed_radius,
+		       /** circumscribed radius of the robot [m] */
+		       double circumscribed_radius,
 		       /** distance from obstacles where cells become
-			   freespace [m] (e.g. the circumscribed robot
-			   radius) */
-		       double freespace_distance,
+			   freespace [m] */
+		       double inflation_radius,
 		       /** the cost value at or above which a cell is
 			   considered an obstacle */
 		       int obstacle_cost);
@@ -139,8 +140,9 @@ namespace ompl {
     double getY1() const;
     
     double const resolution;
-    double const robot_radius;
-    double const freespace_distance;
+    double const inscribed_radius;
+    double const circumscribed_radius;
+    double const inflation_radius;
     int const obstacle_cost;
     
   protected:
@@ -160,8 +162,9 @@ namespace ompl {
   protected:
     OfficeBenchmark(std::string const & name,
 		    double resolution,
-		    double robot_radius,
-		    double freespace_distance,
+		    double inscribed_radius,
+		    double circumscribed_radius,
+		    double inflation_radius,
 		    int obstacle_cost,
 		    double door_width,
 		    double hall_width);
@@ -175,8 +178,9 @@ namespace ompl {
     */
     static OfficeBenchmark * create(std::string const & name,
 				    double resolution,
-				    double robot_radius,
-				    double freespace_distance,
+				    double inscribed_radius,
+				    double circumscribed_radius,
+				    double inflation_radius,
 				    int obstacle_cost,
 				    double door_width,
 				    double hall_width,

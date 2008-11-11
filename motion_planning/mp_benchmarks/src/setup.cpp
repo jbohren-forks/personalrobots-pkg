@@ -193,12 +193,14 @@ namespace ompl {
   SBPLBenchmarkSetup::
   SBPLBenchmarkSetup(std::string const & name,
 		     double _resolution,
-		     double _robot_radius,
-		     double _freespace_distance,
+		     double _inscribed_radius,
+		     double _circumscribed_radius,
+		     double _inflation_radius,
 		     int _obstacle_cost)
     : resolution(_resolution),
-      robot_radius(_robot_radius),
-      freespace_distance(_freespace_distance),
+      inscribed_radius(_inscribed_radius),
+      circumscribed_radius(_circumscribed_radius),
+      inflation_radius(_inflation_radius),
       obstacle_cost(_obstacle_cost),
       x0_(0),
       y0_(0),
@@ -208,10 +210,10 @@ namespace ompl {
     sfl::GridFrame const gframe(resolution);
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
       growstrategy(new sfl::Mapper2d::always_grow());
-    double const buffer_zone(sfl::maxval(0.0, freespace_distance - robot_radius));
+    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
     double const padding_factor(0);
     m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
-				 robot_radius, buffer_zone, padding_factor,
+				 inscribed_radius, buffer_zone, padding_factor,
 				 0, obstacle_cost,
 				 name, sfl::RWlock::Create(name), growstrategy));
     
@@ -244,10 +246,10 @@ namespace ompl {
 				   0, std::numeric_limits<ssize_t>::max(),
 				   0, std::numeric_limits<ssize_t>::max(),
 				   boa);
-    x0_ = minval(x0_, minval(x0 - freespace_distance, x1 - freespace_distance));
-    y0_ = minval(y0_, minval(y0 - freespace_distance, y1 - freespace_distance));
-    x1_ = maxval(x1_, maxval(x0 + freespace_distance, x1 + freespace_distance));
-    y1_ = maxval(y1_, maxval(y0 + freespace_distance, y1 + freespace_distance));
+    x0_ = minval(x0_, minval(x0 - inflation_radius, x1 - inflation_radius));
+    y0_ = minval(y0_, minval(y0 - inflation_radius, y1 - inflation_radius));
+    x1_ = maxval(x1_, maxval(x0 + inflation_radius, x1 + inflation_radius));
+    y1_ = maxval(y1_, maxval(y0 + inflation_radius, y1 + inflation_radius));
   }
   
   
@@ -258,10 +260,10 @@ namespace ompl {
     if (progress_os)
       *progress_os << "SBPLBenchmarkSetup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
     m2d_->AddBufferedObstacle(xx, yy, 0);
-    x0_ = minval(x0_, xx - freespace_distance);
-    y0_ = minval(y0_, yy - freespace_distance);
-    x1_ = maxval(x1_, xx + freespace_distance);
-    y1_ = maxval(y1_, yy + freespace_distance);
+    x0_ = minval(x0_, xx - inflation_radius);
+    y0_ = minval(y0_, yy - inflation_radius);
+    x1_ = maxval(x1_, xx + inflation_radius);
+    y1_ = maxval(y1_, yy + inflation_radius);
   }
   
   
@@ -333,12 +335,13 @@ namespace ompl {
   OfficeBenchmark::
   OfficeBenchmark(std::string const & name,
 		  double resolution,
-		  double robot_radius,
-		  double freespace_distance,
+		  double inscribed_radius,
+		  double circumscribed_radius,
+		  double inflation_radius,
 		  int obstacle_cost,
 		  double _door_width,
 		  double _hall_width)
-    : SBPLBenchmarkSetup(name, resolution, robot_radius, freespace_distance, obstacle_cost),
+    : SBPLBenchmarkSetup(name, resolution, inscribed_radius, circumscribed_radius, inflation_radius, obstacle_cost),
       door_width(_door_width),
       hall_width(_hall_width)
   {
@@ -348,17 +351,22 @@ namespace ompl {
   OfficeBenchmark * OfficeBenchmark::
   create(std::string const & name,
 	 double resolution,
-	 double robot_radius,
-	 double freespace_distance,
+	 double inscribed_radius,
+	 double circumscribed_radius,
+	 double inflation_radius,
 	 int obstacle_cost,
 	 double door_width,
 	 double hall_width,
 	 std::ostream * progress_os,
 	 std::ostream * travmap_os)
   {
-    OfficeBenchmark * setup(new OfficeBenchmark(name, resolution, robot_radius,
-						freespace_distance, obstacle_cost,
-						door_width, hall_width));
+    OfficeBenchmark * setup(new OfficeBenchmark(name, resolution,
+						inscribed_radius,
+						circumscribed_radius,
+						inflation_radius,
+						obstacle_cost,
+						door_width,
+						hall_width));
     if ("dots" == name)
       drawDots(*setup, hall_width, door_width, progress_os);
     else if ("square" == name)
@@ -388,13 +396,14 @@ namespace ompl {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "name:               OfficeBenchmark1\n"
-       << prefix << "resolution:         " << resolution << "\n"
-       << prefix << "robot_radius:       " << robot_radius << "\n"
-       << prefix << "freespace_distance: " << freespace_distance << "\n"
-       << prefix << "obstacle_cost:      " << obstacle_cost << "\n"
-       << prefix << "door_width:         " << door_width << "\n"
-       << prefix << "hall_width:         " << hall_width << "\n"
+    os << prefix << "name:                 OfficeBenchmark1\n"
+       << prefix << "resolution:           " << resolution << "\n"
+       << prefix << "inscribed_radius:     " << inscribed_radius << "\n"
+       << prefix << "circumscribed_radius: " << circumscribed_radius << "\n"
+       << prefix << "inflation_radius:     " << inflation_radius << "\n"
+       << prefix << "obstacle_cost:        " << obstacle_cost << "\n"
+       << prefix << "door_width:           " << door_width << "\n"
+       << prefix << "hall_width:           " << hall_width << "\n"
        << prefix << "tasks:\n";
     for (size_t ii(0); ii < tasklist_.size(); ++ii)
       os << prefix << "  [" << ii << "] " << tasklist_[ii].description << "\n";
