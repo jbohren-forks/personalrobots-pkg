@@ -79,14 +79,15 @@ void P3D::LoadChild(XMLConfigNode *node)
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
   this->topicName    = node->GetString("topicName", "ground_truth", 1);
-  this->IMUTopicName = node->GetString("IMUTopicName", "imu", 1);
+  this->IMUTopicName = node->GetString("IMUTopicName", "", 1);
   this->frameName    = node->GetString("frameName", "", 1);
   this->xyzOffsets   = node->GetVector3("xyzOffsets", Vector3(0,0,0));
   this->rpyOffsets   = node->GetVector3("rpyOffsets", Vector3(0,0,0));
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
-  rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->IMUTopicName,10);
+  if (this->IMUTopicName != "")
+    rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->IMUTopicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -175,40 +176,44 @@ void P3D::UpdateChild()
 
 
 
-  // copy data into pose message
-  this->poseMsg.header.frame_id = "map";  // @todo: should this be changeable?
-  this->poseMsg.header.stamp.sec = (unsigned long)floor(cur_time);
-  this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->poseMsg.header.stamp.sec) );
+  if (this->IMUTopicName != "")
+  {
+    // copy data into pose message
+    this->poseMsg.header.frame_id = "map";  // @todo: should this be changeable?
+    this->poseMsg.header.stamp.sec = (unsigned long)floor(cur_time);
+    this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->poseMsg.header.stamp.sec) );
 
-  // pose is given in inertial frame for Gazebo, transform to the designated frame name
+    // pose is given in inertial frame for Gazebo, transform to the designated frame name
 
-  this->poseMsg.pos.position.x    = pos.x;
-  this->poseMsg.pos.position.y    = pos.y;
-  this->poseMsg.pos.position.z    = pos.z;
+    this->poseMsg.pos.position.x    = pos.x;
+    this->poseMsg.pos.position.y    = pos.y;
+    this->poseMsg.pos.position.z    = pos.z;
 
-  this->poseMsg.pos.orientation.x = rot.x;
-  this->poseMsg.pos.orientation.y = rot.y;
-  this->poseMsg.pos.orientation.z = rot.z;
-  this->poseMsg.pos.orientation.w = rot.u;
+    this->poseMsg.pos.orientation.x = rot.x;
+    this->poseMsg.pos.orientation.y = rot.y;
+    this->poseMsg.pos.orientation.z = rot.z;
+    this->poseMsg.pos.orientation.w = rot.u;
 
-  this->poseMsg.vel.vel.vx        = vpos.x;
-  this->poseMsg.vel.vel.vy        = vpos.y;
-  this->poseMsg.vel.vel.vz        = vpos.z;
-  // pass euler anglular rates
-  this->poseMsg.vel.ang_vel.vx    = veul.x;
-  this->poseMsg.vel.ang_vel.vy    = veul.y;
-  this->poseMsg.vel.ang_vel.vz    = veul.z;
+    this->poseMsg.vel.vel.vx        = vpos.x;
+    this->poseMsg.vel.vel.vy        = vpos.y;
+    this->poseMsg.vel.vel.vz        = vpos.z;
+    // pass euler anglular rates
+    this->poseMsg.vel.ang_vel.vx    = veul.x;
+    this->poseMsg.vel.ang_vel.vy    = veul.y;
+    this->poseMsg.vel.ang_vel.vz    = veul.z;
 
-  this->poseMsg.acc.acc.ax        = this->apos.x;
-  this->poseMsg.acc.acc.ay        = this->apos.y;
-  this->poseMsg.acc.acc.az        = this->apos.z;
-  // pass euler anglular rates
-  this->poseMsg.acc.ang_acc.ax    = this->aeul.x;
-  this->poseMsg.acc.ang_acc.ay    = this->aeul.y;
-  this->poseMsg.acc.ang_acc.az    = this->aeul.z;
+    this->poseMsg.acc.acc.ax        = this->apos.x;
+    this->poseMsg.acc.acc.ay        = this->apos.y;
+    this->poseMsg.acc.acc.az        = this->apos.z;
+    // pass euler anglular rates
+    this->poseMsg.acc.ang_acc.ax    = this->aeul.x;
+    this->poseMsg.acc.ang_acc.ay    = this->aeul.y;
+    this->poseMsg.acc.ang_acc.az    = this->aeul.z;
 
-  // publish to ros
-  rosnode->publish(this->IMUTopicName,this->poseMsg);
+    // publish to ros
+    rosnode->publish(this->IMUTopicName,this->poseMsg);
+  }
+
   this->lock.unlock();
 
   // save last time stamp
@@ -220,5 +225,6 @@ void P3D::UpdateChild()
 void P3D::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
-  rosnode->unadvertise(this->IMUTopicName);
+  if (this->IMUTopicName != "")
+    rosnode->unadvertise(this->IMUTopicName);
 }
