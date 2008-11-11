@@ -31,18 +31,20 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __ODOM_ESTIMATION__
-#define __ODOM_ESTIMATION__
+#ifndef __ODOM_ESTIMATION_NODE__
+#define __ODOM_ESTIMATION_NODE__
 
-// bayesian filtering
-#include "filter/extendedkalmanfilter.h"
-#include "model/linearanalyticsystemmodel_gaussianuncertainty.h"
-#include "model/linearanalyticmeasurementmodel_gaussianuncertainty.h"
-#include "pdf/analyticconditionalgaussian.h"
-#include "pdf/linearanalyticconditionalgaussian.h"
-#include "nonlinearanalyticconditionalgaussianodo.h"
+// ros stuff
+#include "ros/node.h" 
+#include "odom_estimation.h"
 
-// KDL
+// messages
+#include "std_msgs/RobotBase2DOdom.h"
+#include "std_msgs/BaseVel.h"
+#include "imu_node/ImuData.h"
+#include "std_msgs/PoseStamped.h"
+
+// kdl
 #include "kdl/frames.hpp"
 
 // log files
@@ -51,47 +53,49 @@
 namespace estimation
 {
 
-class odom_estimation
+class odom_estimation_node: public ros::node
 {
 public:
   // constructor
-  odom_estimation();
+  odom_estimation_node();
 
   // destructor
-  virtual ~odom_estimation();
+  virtual ~odom_estimation_node();
 
-  // update filter
-  void Update(KDL::Frame& odom_meas, double odom_time,
-	      KDL::Frame& imu_meas,  double imu_time, double filter_time);
+  // callback function for vel data
+  void vel_callback();
 
-  // initialize filter
-  void Initialize(KDL::Frame& odom_meas, double odom_time,
-		  KDL::Frame& imu_meas,  double imu_time, double filter_time);
+  // callback function for odo data
+  void odom_callback();
 
-
-  // get filter posterior
-  void GetEstimate(MatrixWrapper::ColumnVector& estimate, double& time);
-
+  // callback function for imu data
+  void imu_callback();
 
 private:
-  // correct for angle overflow
-  void AngleOverflowCorrect(double& a, double ref);
 
-  // pdf / model / filter
-  BFL::AnalyticSystemModelGaussianUncertainty* _sys_model;
-  BFL::NonLinearAnalyticConditionalGaussianOdo* _sys_pdf;
-  BFL::LinearAnalyticConditionalGaussian* _odom_meas_pdf;
-  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _odom_meas_model;
-  BFL::LinearAnalyticConditionalGaussian* _imu_meas_pdf;
-  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _imu_meas_model;
-  BFL::Gaussian* _prior;
-  BFL::ExtendedKalmanFilter* _filter;
+  // ekf filter
+  odom_estimation _my_filter;
+
+  // messages to receive
+  std_msgs::BaseVel         _vel;  
+  std_msgs::RobotBase2DOdom _odom;  
+  imu_node::ImuData         _imu;  
+
+  // estimated robot pose message to send
+  std_msgs::PoseStamped _output; 
 
   // vectors
-  MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
-  KDL::Frame _filter_estimate_old, _odom_meas_old, _imu_meas_old;
-  double _filter_time_old;
-  bool _filter_initialized;
+  MatrixWrapper::ColumnVector _vel_desi;
+  KDL::Frame _odom_meas, _imu_meas;
+  double _odom_time, _imu_time;
+  bool _vel_initialized, _odom_initialized, _imu_initialized;
+
+  // mutex
+  ros::thread::mutex _filter_mutex;
+
+  // log files for debugging
+  std::ofstream _odom_file, _imu_file, _corr_file;
+
 
 }; // class
 
