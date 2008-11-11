@@ -32,7 +32,6 @@
 
 #include <ros/node.h>
 #include <std_msgs/Pose3DStamped.h>
-#include <std_msgs/TransformWithRateStamped.h>
 #include <std_msgs/PoseWithRatesStamped.h>
 
 namespace gazebo
