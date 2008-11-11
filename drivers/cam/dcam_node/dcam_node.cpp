@@ -35,7 +35,8 @@
 #include <cstdio>
 
 #include "ros/node.h"
-#include "image_msgs/ImageWrapper.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/FillImage.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/StereoInfo.h"
 #include "dcam.h"
@@ -51,7 +52,7 @@ class DcamNode : public ros::node
   bool do_stereo_;
   bool do_rectify_;
 
-  image_msgs::ImageWrapper img_wrapper_;
+  image_msgs::Image        img_;
   image_msgs::CamInfo      cam_info_;
   image_msgs::StereoInfo   stereo_info_;
 
@@ -234,11 +235,11 @@ public:
       
       if (stcam->stIm->imDisp)
       {
-        img_wrapper_.fromInterlacedData( "disparity",
-                                         stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
-                                         "mono", "uint16",
-                                         stcam->stIm->imDisp );
-        publish("~disparity", img_wrapper_);
+        fillImage(img_,  "disparity",
+                  stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
+                  "mono", "uint16",
+                  stcam->stIm->imDisp );
+        publish("~disparity", img_);
         
         stereo_info_.has_disparity = true;
       } else {
@@ -276,11 +277,11 @@ public:
 
     if (img->imRawType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_raw",
-                    img->imHeight, img->imWidth, 1,
-                    "mono", "byte",
-                    img->imRaw );
-      publish(base_name + std::string("image_raw"), img_wrapper_);
+      fillImage(img_,  "image_raw",
+                img->imHeight, img->imWidth, 1,
+                "mono", "byte",
+                img->imRaw );
+      publish(base_name + std::string("image_raw"), img_);
       cam_info_.has_image = true;
     } else {
       cam_info_.has_image = false;
@@ -288,11 +289,11 @@ public:
 
     if (img->imType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image",
-                    img->imHeight, img->imWidth, 1,
-                    "mono", "byte",
-                    img->im );
-      publish(base_name + std::string("image"), img_wrapper_);
+      fillImage(img_,  "image",
+                img->imHeight, img->imWidth, 1,
+                "mono", "byte",
+                img->im );
+      publish(base_name + std::string("image"), img_);
       cam_info_.has_image = true;
     } else {
       cam_info_.has_image = false;
@@ -300,11 +301,11 @@ public:
 
     if (img->imColorType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_color",
-                    img->imHeight, img->imWidth, 3,
-                    "rgb", "byte",
-                    img->imColor );
-      publish(base_name + std::string("image_color"), img_wrapper_);
+      fillImage(img_,  "image_color",
+                img->imHeight, img->imWidth, 4,
+                "rgba", "byte",
+                img->imColor );
+      publish(base_name + std::string("image_color"), img_);
       cam_info_.has_image_color = true;
     } else {
       cam_info_.has_image_color = false;
@@ -312,11 +313,11 @@ public:
 
     if (img->imRectType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_rect",
-                    img->imHeight, img->imWidth, 1,
-                    "mono", "byte",
-                    img->imRect );
-      publish(base_name + std::string("image_rect"), img_wrapper_);
+      fillImage(img_,  "image_rect",
+                img->imHeight, img->imWidth, 1,
+                "mono", "byte",
+                img->imRect );
+      publish(base_name + std::string("image_rect"), img_);
       cam_info_.has_image_rect = true;
     } else {
       cam_info_.has_image_rect = false;
@@ -324,11 +325,11 @@ public:
 
     if (img->imRectColorType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_rect_color",
-                    img->imHeight, img->imWidth, 3,
-                    "rgb", "byte",
-                    img->imRectColor );
-      publish(base_name + std::string("image_rect_color"), img_wrapper_);
+      fillImage(img_,  "image_rect_color",
+                img->imHeight, img->imWidth, 4,
+                "rgba", "byte",
+                img->imRectColor );
+      publish(base_name + std::string("image_rect_color"), img_);
       cam_info_.has_image_rect_color = true;
     }else {
       cam_info_.has_image_rect_color = false;
@@ -352,19 +353,19 @@ public:
     advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
 
     if (img->imRawType != COLOR_CODING_NONE)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_raw"), 1);
+      advertise<image_msgs::Image>(base_name + std::string("image_raw"), 1);
 
     if (img->imType != COLOR_CODING_NONE)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image"), 1);
+      advertise<image_msgs::Image>(base_name + std::string("image"), 1);
 
     if (img->imColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_color"), 1);
+      advertise<image_msgs::Image>(base_name + std::string("image_color"), 1);
 
     if (img->imRectType != COLOR_CODING_NONE)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect"), 1);
+      advertise<image_msgs::Image>(base_name + std::string("image_rect"), 1);
 
     if (img->imRectColorType != COLOR_CODING_NONE)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect_color"), 1);
+      advertise<image_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
   }
 
@@ -380,7 +381,7 @@ public:
       advertiseImages("~right/", stcam->stIm->imRight);
 
       if (stcam->stIm->imDisp)
-        advertise<image_msgs::ImageWrapper>("~disparity", 1);
+        advertise<image_msgs::Image>("~disparity", 1);
 
     }
     else
@@ -391,7 +392,7 @@ public:
 
   bool spin()
   {
-    // Start up the laser
+    // Start up the camera
     while (ok())
     {
       serviceCam();
@@ -406,11 +407,9 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  //Keep things from dying poorly
   DcamNode dc;
 
   dc.spin();
-
 
   ros::fini();
   return 0;

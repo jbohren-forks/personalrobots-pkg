@@ -4,7 +4,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "image_msgs/ImageWrapper.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/CvBridge.h"
 
 using namespace std;
 using namespace ros;
@@ -12,7 +13,8 @@ using namespace ros;
 class CvView : public node
 {
 public:
-  image_msgs::ImageWrapper img;
+  image_msgs::Image img;
+  image_msgs::CvBridge bridge;
 
   CvView() : node("cv_view")
   { 
@@ -21,12 +23,11 @@ public:
   }
   void image_cb()
   {
-    IplImage *cv_image = img.asIplImage();
+    bridge.fromImage(img);
 
-    cvShowImage("cv_view", cv_image);
+    cvShowImage("cv_view", bridge.toIpl());
+
     cvWaitKey(5);
-
-    cvReleaseImageHeader(&cv_image);
   }
 };
 
