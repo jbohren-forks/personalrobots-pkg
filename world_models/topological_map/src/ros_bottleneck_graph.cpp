@@ -40,10 +40,10 @@ using std::endl;
 class BottleneckGraphRos: public ros::node
 {
 public:
-  BottleneckGraphRos(int size, int skip);
+  BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
 };
 
-BottleneckGraphRos::BottleneckGraphRos(int size, int skip) : ros::node("bottleneckgraph_ros")
+BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : ros::node("bottleneckgraph_ros")
 {
 
   std_srvs::StaticMap::request req;
@@ -74,8 +74,7 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip) : ros::node("bottlene
   }
   
   
-  topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (grid, size, skip);
-  topological_map::printBottlenecks (g, grid);
+  topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (grid, size, skip, radius, distanceMin, distanceMax);
 }  
 
 
@@ -84,7 +83,8 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip) : ros::node("bottlene
 int main(int argc, char** argv)
 {
   ros::init(argc, argv);
-  BottleneckGraphRos node (atoi(argv[1]), atoi(argv[2]));
+  assert (argc >= 6);
+  BottleneckGraphRos node (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
   node.shutdown();
 }
 

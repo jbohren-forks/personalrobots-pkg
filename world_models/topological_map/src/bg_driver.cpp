@@ -35,7 +35,7 @@ using std::cout;
 using std::endl;
 
 
-int main (int, char* argv[])
+int main (int argc, char* argv[])
 {
   
   // Initialize grid
@@ -44,7 +44,9 @@ int main (int, char* argv[])
   grid[2][2] = true;
   grid[3][2] = true;
 
-  printBottleneckGraph (topological_map::makeBottleneckGraph (grid, atoi(argv[1]), atoi(argv[2])));
+  assert (argc==4);
+
+  printBottleneckGraph (topological_map::makeBottleneckGraph (grid, atoi(argv[1]), atoi(argv[2]), atoi(argv[3])));
  
   cout << "done " << endl;
 }
