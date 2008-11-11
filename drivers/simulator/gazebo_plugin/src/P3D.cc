@@ -131,6 +131,8 @@ void P3D::UpdateChild()
   {
     this->apos = (this->last_vpos - vpos) / tmp_dt;
     this->aeul = (this->last_veul - veul) / tmp_dt;
+    this->last_vpos = vpos;
+    this->last_veul = veul;
   }
 
   this->lock.lock();
