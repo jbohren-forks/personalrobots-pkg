@@ -3,7 +3,7 @@ all: build
 SVN_DIR = bullet_svn
 SVN_URL = http://bullet.googlecode.com/svn/trunk/
 SVN_PATCH = quaternion.patch
-SVN_REVISION=-r1458
+SVN_REVISION=-r1497
 
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -12,7 +12,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP_REVERT_PATCH
 	cd $(SVN_DIR) && cmake .
-	make $(PARALLEL_JOBS) -C $(SVN_DIR) LibLinearMath
+	make $(PARALLEL_JOBS) -C $(SVN_DIR) LinearMath
 	touch bullet
 
 clean:
