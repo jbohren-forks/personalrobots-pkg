@@ -614,7 +614,8 @@ namespace ros {
 	ROS_DEBUG("Moving to desired goal orientation\n");
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
-	cmdVel.vw =  .5;
+        cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
+	cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
       }
       else {
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then
