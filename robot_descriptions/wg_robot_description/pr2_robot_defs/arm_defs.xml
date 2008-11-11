@@ -7,11 +7,11 @@
   <property name="shoulder_pitch_radius" value="0.12" />
 
 
-  <macro name="pr2_finger" params="prefix side parent reflect">
+  <macro name="finger" params="prefix side parent reflect">
 
     <!-- Finger proximal digit -->
 
-    <joint name="${prefix}_${side}_finger_joint" type="revolute">
+    <joint name="finger_${prefix}_${side}_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration values="1.5 -1 " />
@@ -19,11 +19,11 @@
       <joint_properties damping="0.05" />
     </joint>
 
-    <link name="${prefix}_${side}_finger">
+    <link name="finger_${prefix}_${side}">
       <parent name="${parent}" />
       <origin xyz="0.07751 ${reflect*0.01} 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_${side}_finger_joint" />
+      <joint name="finger_${prefix}_${side}_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -35,18 +35,18 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Shell</elem>
         </map>
-        <geometry name="pr2_finger_${side}_mesh_file">
-          <mesh filename="finger-${side}" />
+        <geometry name="finger_${prefix}_mesh_file">
+          <mesh filename="finger-${prefix}" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="pr2_finger_${side}_collision_geom">
+        <geometry name="finger_${side}_collision_geom">
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="${prefix}_${side}_finger_gravity" flag="gazebo">
+      <map name="finger_${prefix}_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -54,18 +54,18 @@
 
     <!-- Finger tip -->
 
-    <joint name="${prefix}_${side}_finger_tip_joint" type="revolute">
+    <joint name="finger_tip_${prefix}_${side}_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="10" min="-100" max="100" />
       <joint_properties damping="0.01" />
     </joint>
 
-    <link name="${prefix}_${side}_finger_tip">
-      <parent name="${prefix}_${side}_finger" />
+    <link name="finger_tip_${prefix}_${side}">
+      <parent name="finger_${prefix}_${side}" />
       <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
 
-      <joint name="${prefix}_${side}_finger_tip_joint" />
+      <joint name="finger_tip_${prefix}_${side}_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz=" 0 0 0 " />
@@ -77,18 +77,18 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_finger_tip_${side}_mesh_file">
-          <mesh filename="finger-tip-${side}" />
+        <geometry name="finger_tip_${prefix}_mesh_file">
+          <mesh filename="finger-tip-${prefix}" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="pr2_finger_tip_${side}_collision_geom">
+        <geometry name="finger_tip_${side}_collision_geom">
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="${prefix}_${side}_finger_tip_gravity" flag="gazebo">
+      <map name="finger_tip_${prefix}_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -97,10 +97,10 @@
 
 
   <macro name="pr2_gripper" params="side parent">
-    <joint name="${side}_gripper_palm_joint" type="fixed" />
-    <link name="${side}_gripper_palm">
+    <joint name="gripper_roll_${side}_joint" type="fixed" />
+    <link name="gripper_roll_${side}">
       <parent name="${parent}" />
-      <joint name="${side}_gripper_palm_joint" />
+      <joint name="gripper_roll_${side}_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <inertial>
         <mass value="1.0" />
@@ -114,44 +114,44 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="pr2_gripper_roll_mesh_file">
+        <geometry name="gripper_roll_mesh_file">
           <mesh filename="wr_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.05 0 0" rpy="0 0 0" />
-        <geometry name="pr2_gripper_roll_collision_geom">
+        <geometry name="gripper_roll_collision_geom">
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
       </collision>
 
-      <map name="pr2_gripper_roll_left_gravity" flag="gazebo">
+      <map name="gripper_roll_left_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <pr2_finger prefix="${side}_gripper" side="l" parent="${side}_gripper_palm" reflect="1" />
-    <pr2_finger prefix="${side}_gripper" side="r" parent="${side}_gripper_palm" reflect="-1" />
+    <finger prefix="l" side="${side}" parent="gripper_roll_${side}" reflect="1" />
+    <finger prefix="r" side="${side}" parent="gripper_roll_${side}" reflect="-1" />
 
-    <transmission type="GripperTransmission" name="${side}_gripper_trans">
-      <actuator name="${side}_gripper_motor" />
-      <joint name="${side}_gripper_r_finger_joint" reduction="-1000.0" />
-      <joint name="${side}_gripper_r_finger_tip_joint" reduction="1000.0" />
-      <joint name="${side}_gripper_l_finger_joint" reduction="1000.0" />
-      <joint name="${side}_gripper_l_finger_tip_joint" reduction="-1000.0" />
+    <transmission type="GripperTransmission" name="gripper_${side}_trans">
+      <actuator name="gripper_${side}_motor" />
+      <joint name="finger_r_${side}_joint" reduction="-1000.0" />
+      <joint name="finger_tip_r_${side}_joint" reduction="1000.0" />
+      <joint name="finger_l_${side}_joint" reduction="1000.0" />
+      <joint name="finger_tip_l_${side}_joint" reduction="-1000.0" />
       <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
     </transmission>
   </macro>
 
 
 
-  <macro name="pr2_upper_arm" params="side parent reflect *origin">
+  <macro name="upperarm" params="side parent reflect *origin">
 
     <!-- Shoulder pan -->
 
-    <joint name="${side}_shoulder_pan_joint" type="revolute">
+    <joint name="shoulder_pan_${side}_joint" type="revolute">
       <axis xyz="0 0 1" />
       <!-- TODO: the arm on the test stand has the optical switch at 0.  It is actually
            at 45 degrees -->
@@ -162,10 +162,10 @@
       <joint_properties damping="10.0" />
     </joint>
 
-    <link name="${side}_shoulder_pan">
+    <link name="shoulder_pan_${side}">
       <parent name="${parent}" />
       <insert_block name="origin" />
-      <joint name="${side}_shoulder_pan_joint" />
+      <joint name="shoulder_pan_${side}_joint" />
       <inertial>
         <mass value="16.29553" />
         <com xyz="-0.005215 -0.030552 0.0" />
@@ -177,30 +177,30 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_sholder_pan_mesh_file">
+        <geometry name="sholder_pan_mesh_file">
           <mesh filename="shoulder_yaw" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.05 0 -0.2" rpy="0 0 0 " />
-        <geometry name="pr2_shoulder_pan_collision_box_geom">
+        <geometry name="shoulder_pan_collision_box_geom">
           <box size="0.347 0.254 0.646" />
         </geometry>
       </collision>
-      <map name="pr2_shoulder_pan_${side}_gravity" flag="gazebo">
+      <map name="shoulder_pan_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_shoulder_pan_trans">
-      <actuator name="${side}_shoulder_pan_motor" />
-      <joint name="${side}_shoulder_pan_joint" />
+    <transmission type="SimpleTransmission" name="shoulder_pan_${side}_trans">
+      <actuator name="shoulder_pan_${side}_motor" />
+      <joint name="shoulder_pan_${side}_joint" />
       <mechanicalReduction>63.16</mechanicalReduction>
     </transmission>
 
     <!-- Shoulder pitch -->
 
-    <joint name="${side}_shoulder_pitch_joint" type="revolute">
+    <joint name="shoulder_pitch_${side}_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.4" max="1.5" effort="30" velocity="5" />
@@ -210,10 +210,10 @@
       <joint_properties damping="100.0" />
     </joint>
 
-    <link name="${side}_shoulder_pitch">
-      <parent name="${side}_shoulder_pan" />
+    <link name="shoulder_pitch_${side}">
+      <parent name="shoulder_pan_${side}" />
       <origin xyz="0.1 0 0" rpy="0 0 0" />
-      <joint name="${side}_shoulder_pitch_joint" />
+      <joint name="shoulder_pitch_${side}_joint" />
       <inertial>
         <mass value="2.41223" />
         <com xyz="-0.035895  0.014422 -0.0028263" />
@@ -225,27 +225,27 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_sholder_pitch_mesh_file">
+        <geometry name="sholder_pitch_mesh_file">
           <mesh filename="shoulder_pitch" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="${shoulder_pitch_length/2} 0 0 " rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_shoulder_pitch_collision_geom">
+        <geometry name="shoulder_pitch_collision_geom">
           <cylinder radius="${shoulder_pitch_radius}" length="${shoulder_pitch_length}" />
         </geometry>
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_shoulder_pitch_trans">
-      <actuator name="${side}_shoulder_pitch_motor" />
-      <joint name="${side}_shoulder_pitch_joint" />
+    <transmission type="SimpleTransmission" name="shoulder_pitch_${side}_trans">
+      <actuator name="shoulder_pitch_${side}_motor" />
+      <joint name="shoulder_pitch_${side}_joint" />
       <mechanicalReduction>57.36</mechanicalReduction>
     </transmission>
 
     <!-- Upperarm roll -->
 
-    <joint name="${side}_upper_arm_roll_joint" type="revolute">
+    <joint name="upperarm_roll_${side}_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit min="-3.9" max="0.8" effort="30" velocity="5" />
@@ -255,10 +255,10 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_upper_arm_roll">
-      <parent name="${side}_shoulder_pitch" />
+    <link name="upperarm_roll_${side}">
+      <parent name="shoulder_pitch_${side}" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="${side}_upper_arm_roll_joint" />
+      <joint name="upperarm_roll_${side}_joint" />
 
       <inertial>
         <mass value="4.9481" />
@@ -272,32 +272,32 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_shoulder_roll_mesh_file">
+        <geometry name="shoulder_roll_mesh_file">
           <mesh filename="upperarm_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.3 0 0" rpy="0 0 0" />
-        <geometry name="pr2_upper_arm_roll_collision_geom">
+        <geometry name="upperarm_roll_collision_geom">
           <box size="0.362 0.144 0.157" />
         </geometry>
       </collision>
 
-      <map name="pr2_upper_arm_roll_${side}_gravity" flag="gazebo">
+      <map name="upperarm_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_upper_arm_roll_trans">
-      <actuator name="${side}_upper_arm_roll_motor" />
-      <joint name="${side}_upper_arm_roll_joint" />
+    <transmission type="SimpleTransmission" name="upperarm_roll_${side}_trans">
+      <actuator name="upperarm_roll_${side}_motor" />
+      <joint name="upperarm_roll_${side}_joint" />
       <mechanicalReduction>32.65</mechanicalReduction>
     </transmission>
 
     <!-- Elbow flex -->
 
-    <joint name="${side}_elbow_flex_joint" type="revolute">
+    <joint name="elbow_flex_${side}_joint" type="revolute">
       <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.1" max="2.3" effort="30" velocity="5" />
@@ -307,10 +307,10 @@
       <joint_properties damping="10.0" />
     </joint>
 
-    <link name="${side}_elbow_flex">
-      <parent name="${side}_upper_arm_roll" />
+    <link name="elbow_flex_${side}">
+      <parent name="upperarm_roll_${side}" />
       <origin xyz="0.4 0 0" rpy="0 0 0" />
-      <joint name="${side}_elbow_flex_joint" />
+      <joint name="elbow_flex_${side}_joint" />
 
       <inertial>
         <mass value="1.689246" />
@@ -323,7 +323,7 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_elbow_flex_mesh_file">
+        <geometry name="elbow_flex_mesh_file">
           <mesh filename="elbow_pitch" />
         </geometry>
       </visual>
@@ -333,25 +333,25 @@
           <cylinder radius="0.1" length="0.08" />
         </geometry>
       </collision>
-      <map name="pr2_elbow_flex_${side}_gravity" flag="gazebo">
+      <map name="elbow_flex_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_elbow_flex_trans">
-      <actuator name="${side}_elbow_flex_motor" />
-      <joint name="${side}_elbow_flex_joint" />
+    <transmission type="SimpleTransmission" name="elbow_flex_${side}_trans">
+      <actuator name="elbow_flex_${side}_motor" />
+      <joint name="elbow_flex_${side}_joint" />
       <mechanicalReduction>36.17</mechanicalReduction>
     </transmission>
   </macro>
 
 
 
-  <macro name="pr2_forearm" params="side parent reflect">
+  <macro name="forearm" params="side parent reflect">
 
     <!-- Forearm roll -->
 
-    <joint name="${side}_forearm_roll_joint" type="revolute">
+    <joint name="forearm_roll_${side}_joint" type="revolute">
       <axis xyz="-1 0 0" />
       <anchor xyz="0 0 0" />
       <limit  effort="100" velocity="5" />
@@ -359,10 +359,10 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_forearm_roll">
+    <link name="forearm_roll_${side}">
       <parent name="${parent}" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="${side}_forearm_roll_joint" />
+      <joint name="forearm_roll_${side}_joint" />
       <inertial>
         <mass value="1.804155" />
         <com xyz="0.179474 -0.000058 0.013779" />
@@ -374,30 +374,30 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_forearm_roll_mesh_file">
+        <geometry name="forearm_roll_mesh_file">
           <mesh filename="forearm_roll" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.22 0 0" rpy="0 0 0" />
-        <geometry name="pr2_forearm_roll_collision_geom">
+        <geometry name="forearm_roll_collision_geom">
           <box size="0.27 0.12 0.08" />
         </geometry>
       </collision>
-      <map name="pr2_forearm_roll_${side}_gravity" flag="gazebo">
+      <map name="forearm_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_forearm_roll_trans">
-      <actuator name="${side}_forearm_roll_motor" />
-      <joint name="${side}_forearm_roll_joint" />
+    <transmission type="SimpleTransmission" name="forearm_roll_${side}_trans">
+      <actuator name="forearm_roll_${side}_motor" />
+      <joint name="forearm_roll_${side}_joint" />
       <mechanicalReduction>${576/25*55/14}</mechanicalReduction>
     </transmission>
 
     <!-- Wrist flex -->
 
-    <joint name="${side}_wrist_flex_joint" type="revolute">
+    <joint name="wrist_flex_${side}_joint" type="revolute">
       <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <limit min="-0.1" max="2.2" effort="200" velocity="5" />
@@ -407,10 +407,10 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_wrist_flex">
-      <parent name="${side}_forearm_roll" />
+    <link name="wrist_flex_${side}">
+      <parent name="forearm_roll_${side}" />
       <origin xyz="0.32025 0 0" rpy="0 0 0" />
-      <joint name="${side}_wrist_flex_joint" />
+      <joint name="wrist_flex_${side}_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -422,24 +422,24 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_wrist_flex_mesh_file">
+        <geometry name="wrist_flex_mesh_file">
           <mesh filename="wrist_pitch" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_wrist_flex_collision_geom">
+        <geometry name="wrist_flex_collision_geom">
           <cylinder radius="0.033" length="0.103" />
         </geometry>
       </collision>
-      <map name="pr2_wrist_flex_${side}_gravity" flag="gazebo">
+      <map name="wrist_flex_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
     <!-- Wrist roll -->
 
-    <joint name="${side}_wrist_roll_joint" type="revolute">
+    <joint name="wrist_roll_${side}_joint" type="revolute">
       <axis xyz="1 0 0" />
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="5" />
@@ -449,10 +449,10 @@
     </joint>
 
 
-    <link name="${side}_wrist_roll">
-      <parent name="${side}_wrist_flex" />
+    <link name="wrist_roll_${side}">
+      <parent name="wrist_flex_${side}" />
       <origin xyz="0 0 0" rpy="0 0 0" />
-      <joint name="${side}_wrist_roll_joint" />
+      <joint name="wrist_roll_${side}_joint" />
       <inertial>
         <mass value="1.0" />
         <com xyz="0.179474 -0.000058  0.013779" />
@@ -464,27 +464,27 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="pr2_wrist_roll_mesh_file">
+        <geometry name="wrist_roll_mesh_file">
           <mesh filename="wr_roll" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.05 0 0" rpy="0 0 0" />
-        <geometry name="pr2_wrist_roll_collision_geom">
+        <geometry name="wrist_roll_collision_geom">
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="pr2_wrist_roll_${side}_gravity" flag="gazebo">
+      <map name="wrist_roll_${side}_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="WristTransmission" name="${side}_wrist_trans">
-      <rightActuator name="${side}_wrist_r_motor" />
-      <leftActuator name="${side}_wrist_l_motor" />
-      <flexJoint name="${side}_wrist_flex_joint" mechanicalReduction="${624/35*54/16}" />
-      <rollJoint name="${side}_wrist_roll_joint" mechanicalReduction="${624/35*54/16}" />
+    <transmission type="WristTransmission" name="wrist_${side}_trans">
+      <rightActuator name="wrist_r_${side}_motor" />
+      <leftActuator name="wrist_l_${side}_motor" />
+      <flexJoint name="wrist_flex_${side}_joint" mechanicalReduction="${624/35*54/16}" />
+      <rollJoint name="wrist_roll_${side}_joint" mechanicalReduction="${624/35*54/16}" />
     </transmission>
 
   </macro>
@@ -492,10 +492,10 @@
 
 
   <macro name="pr2_arm" params="side parent reflect *origin">
-    <pr2_upper_arm side="${side}" reflect="${reflect}" parent="${parent}">
+    <upperarm side="${side}" reflect="${reflect}" parent="${parent}">
       <insert_block name="origin" />
-    </pr2_upper_arm>
-    <pr2_forearm side="${side}" reflect="${reflect}" parent="${side}_elbow_flex" />
+    </upperarm>
+    <forearm side="${side}" reflect="${reflect}" parent="elbow_flex_${side}" />
   </macro>
 
 
@@ -503,39 +503,39 @@
   <!--                    Calibration                            -->
 
 
-  <macro name="upper_arm_calibrator" params="side">
-    <controller name="${side}_cal_shoulder_pan" topic="${side}_cal_shoulder_pan"
+  <macro name="upperarm_calibrator" params="side">
+    <controller name="cal_shoulder_pan_${side}" topic="cal_shoulder_pan_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_shoulder_pan_joint"
-                 actuator="${side}_shoulder_pan_motor"
-                 transmission="${side}_shoulder_pan_trans"
+      <calibrate joint="shoulder_pan_${side}_joint"
+                 actuator="shoulder_pan_${side}_motor"
+                 transmission="shoulder_pan_${side}_trans"
                  velocity="1.0" />
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>
 
     <controller name="cal_shoulder_pitch_${side}" topic="cal_shoulder_pitch_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_shoulder_pitch_joint"
-                 actuator="${side}_shoulder_pitch_motor"
-                 transmission="${side}_shoulder_pitch_trans"
+      <calibrate joint="shoulder_pitch_${side}_joint"
+                 actuator="shoulder_pitch_${side}_motor"
+                 transmission="shoulder_pitch_${side}_trans"
                  velocity="-1.0" />
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>
 
-    <controller name="cal_${side}_upper_arm_roll" topic="cal_${side}_upper_arm_roll"
+    <controller name="cal_upperarm_roll_${side}" topic="cal_upperarm_roll_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_upper_arm_roll_joint"
-                 actuator="${side}_upper_arm_roll_motor"
-                 transmission="${side}_upper_arm_roll_trans"
+      <calibrate joint="upperarm_roll_${side}_joint"
+                 actuator="upperarm_roll_${side}_motor"
+                 transmission="upperarm_roll_${side}_trans"
                  velocity="1.0" />
       <pid p="6" i="0.2" d="0" iClamp="2.0" />
     </controller>
 
-    <controller name="cal_${side}_elbow_flex" topic="cal_${side}_elbow_flex"
+    <controller name="cal_elbow_flex_${side}" topic="cal_elbow_flex_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_elbow_flex_joint"
-                 actuator="${side}_elbow_flex_motor"
-                 transmission="${side}_elbow_flex_trans"
+      <calibrate joint="elbow_flex_${side}_joint"
+                 actuator="elbow_flex_${side}_motor"
+                 transmission="elbow_flex_${side}_trans"
                  velocity="1.0" />
       <pid p="6" i="0.2" d="0" iClamp="1.0" />
     </controller>
@@ -543,18 +543,18 @@
 
 
   <macro name="forearm_calibrator" params="side">
-    <controller name="cal_${side}_forearm_roll" type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_forearm_roll_joint"
-                 actuator="${side}_forearm_roll_motor"
-                 transmission="${side}_forearm_roll_trans"
+    <controller name="cal_forearm_roll_${side}" type="JointCalibrationControllerNode">
+      <calibrate joint="forearm_roll_${side}_joint"
+                 actuator="forearm_roll_${side}_motor"
+                 transmission="forearm_roll_${side}_trans"
                  velocity="-1.2" />
       <pid p="5.0" i="0" d="0" iClamp="0" />
     </controller>
 
     <controller type="WristCalibrationControllerNode" name="cal_wrist">
-      <calibrate transmission="${side}_wrist_trans"
-                 actuator_l="${side}_wrist_l_motor" actuator_r="${side}_wrist_r_motor"
-                 flex_joint="${side}_wrist_flex_joint" roll_joint="${side}_wrist_roll_joint"
+      <calibrate transmission="wrist_trans_${side}"
+                 actuator_l="wrist_l_${side}_motor" actuator_r="wrist_r_${side}_motor"
+                 flex_joint="wrist_flex_${side}_joint" roll_joint="wrist_roll_${side}_joint"
                  velocity="1.2" />
       <pid p="3.0" i="0.2" d="0" iClamp="2.0" />
     </controller>
@@ -562,9 +562,9 @@
 
 
   <macro name="gripper_calibrator" params="side">
-    <controller name="cal_${side}_gripper" type="GripperCalibrationControllerNode">
-      <calibrate joint="${side}_gripper_r_finger_joint"
-                 actuator="${side}_gripper_motor"
+    <controller name="cal_gripper_${side}" type="GripperCalibrationControllerNode">
+      <calibrate joint="finger_r_${side}_joint"
+                 actuator="gripper_${side}_motor"
                  velocity="10" />
       <pid p="15" i="0" d="0" iClamp="0" />
     </controller>
