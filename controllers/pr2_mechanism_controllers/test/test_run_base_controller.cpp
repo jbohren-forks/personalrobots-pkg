@@ -34,7 +34,7 @@
 
 #include <libTF/libTF.h>
 #include <ros/node.h>
-#include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/Quaternion.h>
@@ -86,7 +86,7 @@ class test_run_base
 
     ~test_run_base() {}
 
-    std_msgs::TransformWithRateStamped ground_truth;
+    std_msgs::PoseWithRatesStamped ground_truth;
 
     std_msgs::RobotBase2DOdom odom;
 
@@ -99,12 +99,12 @@ class test_run_base
 
     void odomMsgReceived()
     {
-//       cout << "Odom:: (" << ground_truth.transform.translation.x << "), (" <<  ground_truth.transform.rotation.x << ")" << std::endl;  
+//       cout << "Odom:: (" << ground_truth.pos.position.x << "), (" <<  ground_truth.pos.orientation.x << ")" << std::endl;  
     };
 
     void groundTruthMsgReceived()
     {
-//       cout << "Odom:: (" << ground_truth.transform.translation.x << "), (" <<  ground_truth.transform.rotation.x << ")" << std::endl;  
+//       cout << "Odom:: (" << ground_truth.pos.position.x << "), (" <<  ground_truth.pos.orientation.x << ")" << std::endl;  
     };
 };
 
@@ -117,7 +117,7 @@ int main( int argc, char** argv )
 
 
   // receive messages from 2dnav stack
-  std_msgs::TransformWithRateStamped ground_truth;
+  std_msgs::PoseWithRatesStamped ground_truth;
 
   test_run_base tb;
 
@@ -167,9 +167,9 @@ int main( int argc, char** argv )
      cout << "Sending out command " << cmd.vx << " " << cmd.vy << " " << cmd.vw  << endl;
      if(run_time_set && delta_time.toSec() > run_time)
         break;
-    //   ang_rates = GetAsEuler(tb.ground_truth.rate.rotation);
-     ground_truth_angles = GetAsEuler(tb.ground_truth.transform.rotation);
-     cout << "g:: " << tb.ground_truth.rate.translation.x <<  " " << tb.ground_truth.rate.translation.y << " "  << tb.ground_truth.rate.rotation.z  << " " << tb.ground_truth.transform.translation.x << " " << tb.ground_truth.transform.translation.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
+    //   ang_rates = GetAsEuler(tb.ground_truth.vel.ang_vel);
+     ground_truth_angles = GetAsEuler(tb.ground_truth.pos.orientation);
+     cout << "g:: " << tb.ground_truth.vel.vel.vx <<  " " << tb.ground_truth.vel.vel.vy << " "  << tb.ground_truth.vel.ang_vel.vz  << " " << tb.ground_truth.pos.position.x << " " << tb.ground_truth.pos.position.y <<  " " << ground_truth_angles.z << " " <<  tb.ground_truth.header.stamp.sec + tb.ground_truth.header.stamp.nsec/1.0e9 << std::endl;
     cout << "o:: " << tb.odom.vel.x <<  " " << tb.odom.vel.y << " " << tb.odom.vel.th << " " << tb.odom.pos.x <<  " " << tb.odom.pos.y << " " << tb.odom.pos.th << " " << tb.odom.header.stamp.sec + tb.odom.header.stamp.nsec/1.0e9 << std::endl;
     //    cout << delta_time.toSec() << "  " << run_time << endl;
     node->publish("cmd_vel",cmd);
