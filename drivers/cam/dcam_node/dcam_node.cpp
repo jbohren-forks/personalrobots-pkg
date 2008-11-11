@@ -274,7 +274,7 @@ public:
   void publishImages(std::string base_name, cam::ImageData* img)
   {
 
-    if (img->imRaw)
+    if (img->imRawType != COLOR_CODING_NONE)
     {
       img_wrapper_.fromInterlacedData( "image_raw",
                     img->imHeight, img->imWidth, 1,
@@ -286,7 +286,7 @@ public:
       cam_info_.has_image = false;
     }
 
-    if (img->im)
+    if (img->imType != COLOR_CODING_NONE)
     {
       img_wrapper_.fromInterlacedData( "image",
                     img->imHeight, img->imWidth, 1,
@@ -298,7 +298,7 @@ public:
       cam_info_.has_image = false;
     }
 
-    if (img->imColor)
+    if (img->imColorType != COLOR_CODING_NONE)
     {
       img_wrapper_.fromInterlacedData( "image_color",
                     img->imHeight, img->imWidth, 3,
@@ -310,7 +310,7 @@ public:
       cam_info_.has_image_color = false;
     }
 
-    if (img->imRect)
+    if (img->imRectType != COLOR_CODING_NONE)
     {
       img_wrapper_.fromInterlacedData( "image_rect",
                     img->imHeight, img->imWidth, 1,
@@ -322,7 +322,7 @@ public:
       cam_info_.has_image_rect = false;
     }
 
-    if (img->imRectColor)
+    if (img->imRectColorType != COLOR_CODING_NONE)
     {
       img_wrapper_.fromInterlacedData( "image_rect_color",
                     img->imHeight, img->imWidth, 3,
@@ -351,19 +351,19 @@ public:
   {
     advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
 
-    if (img->imRaw)
+    if (img->imRawType != COLOR_CODING_NONE)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image_raw"), 1);
 
-    if (img->im)
+    if (img->imType != COLOR_CODING_NONE)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image"), 1);
 
-    if (img->imColor)
+    if (img->imColorType != COLOR_CODING_NONE)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image_color"), 1);
 
-    if (img->imRect)
+    if (img->imRectType != COLOR_CODING_NONE)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect"), 1);
 
-    if (img->imRectColor)
+    if (img->imRectColorType != COLOR_CODING_NONE)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect_color"), 1);
 
   }
