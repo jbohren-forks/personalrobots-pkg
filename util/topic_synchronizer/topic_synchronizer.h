@@ -32,37 +32,58 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+/*! \mainpage
+ *  \htmlinclude manifest.html
+ */
 
 #ifndef TOPIC_SYNCHRONIZER_HH
 #define TOPIC_SYNCHRONIZER_HH
 
 #include "rosthread/condition.h"
 
+  //! A templated class for synchronizing incoming topics
+  /*! 
+   * The Topic Synchronizer should be templated by your node, and is
+   * passed a function pointer at construction to be called every time
+   * all of your topics have arrived.
+   */
 template <class N>
 class TopicSynchronizer
 {
   private:
 
+  //! A pointer to your node for calling callback
   N* node_;
+
+  //! The callback to be called
   void (N::*callback_)();
   
+  //! The condition variable used for synchronization
   ros::thread::condition cond_all_;
 
+  //! The number of expected incoming messages
   int expected_count_;
 
+  //! The count of messages received so far
   int count_;
 
+  //! Whether or not the given wait cycle has completed
   bool done_;
 
+  //! The timestamp that is currently being waited for
   ros::Time waiting_time_;
 
+  //! The callback invoked by roscpp when any topic comes in
+  /*!
+   *  \param p  A void* which should point to the timestamp field of the incoming message
+   */
   void msg_cb(void* p)
   {
     ros::Time* time = (ros::Time*)(p);
 
     cond_all_.lock();
 
-    // If first to time, wait
+    // If first to get message, wait for others
     if (count_ == 0)
     {
       wait_for_others(time);
@@ -76,7 +97,7 @@ class TopicSynchronizer
       return;
     }
 
-    // If at time, increment and signal or wait
+    // If at time, increment count, possibly signal, and wait
     if (*time == waiting_time_)
     {
       count_++;
@@ -92,7 +113,7 @@ class TopicSynchronizer
       return;
     }
 
-    // If ahead, wake up others and then wait
+    // If ahead, wakeup others, and ten wait for others
     if (*time > waiting_time_)
     {
       cond_all_.broadcast();
@@ -100,6 +121,7 @@ class TopicSynchronizer
     }
   }
 
+  //! The function called in a message cb to wait for other messages
   void wait_for_others(ros::Time* time)
   {
     count_ = 1;
@@ -129,9 +151,25 @@ class TopicSynchronizer
 
   public:
 
+  //! Constructor
+  /*! 
+   * The constructor for the TopicSynchronizer
+   *
+   * \param node      A pointer to your node.
+   * \param callback  A pointer to the callback to invoke when all messages have arrived
+   */
   TopicSynchronizer(N* node, void (N::*callback)()) : node_(node), callback_(callback), expected_count_(0), count_(0), done_(false)
   { }
 
+  //! Subscribe
+  /*! 
+   * The synchronized subscribe call.  Call this to subscribe for topics you want
+   * to be synchronized.
+   *
+   * \param topic_name The name of the topic to subscribe to
+   * \param msg        A reference to the message that will be populated on callbacks
+   * \param queue_size The size of the incoming queue for the message
+   */
   template <class M>
   void subscribe(std::string topic_name, M& msg, int queue_size)
   {
