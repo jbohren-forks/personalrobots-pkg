@@ -79,6 +79,7 @@ static double doorWidth;
 static double hallWidth;
 static string travmapFilename;
 static string costmapFilename;
+static bool websiteMode;
 
 static shared_ptr<OfficeBenchmark> setup;
 static shared_ptr<EnvironmentWrapper> environment;
@@ -138,7 +139,9 @@ void usage(ostream & os)
      << "   -l  <filename>   overwrite filename for logging\n"
      << "   -P  <filename>   overwrite filename for screenshots\n"
      << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
-     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n";
+     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
+     << "   -X               dump filename base to stdout (use as last option)\n"
+     << "   -W               run in website generation mode\n";
 }
 
 
@@ -178,6 +181,7 @@ void parse_options(int argc, char ** argv)
   pngFilename = "";
   travmapFilename = "";
   costmapFilename = "";
+  websiteMode = false;
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -369,6 +373,14 @@ void parse_options(int argc, char ** argv)
  	}
 	costmapFilename = argv[ii];
  	break;
+	
+      case 'X':
+	cout << "mpbench-" << summarizeOptions() << "\n";
+	exit(EXIT_SUCCESS);
+	
+      case 'W':
+	websiteMode = true;
+	break;
 	
       default:
 	cerr << argv[0] << ": invalid option '" << argv[ii] << "'\n";
@@ -673,9 +685,35 @@ static void make_screenshot()
 
 void draw()
 {
+  if (websiteMode) {
+    double x0, y0, x1, y1;
+    setup->getWorkspaceBounds(x0, y0, x1, y1);
+    
+    int scrwidth((int) ceil((x1 - x0) / resolution));
+    int scrheight((int) ceil((y1 - y0) / resolution));
+    reshape(scrwidth, scrheight);
+    glClear(GL_COLOR_BUFFER_BIT);
+    npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
+    glFlush();
+    glutSwapBuffers();
+    make_screenshot();
+    
+    while (scrwidth > 120) { 	// wow what a hack
+      scrwidth /= 2;
+      scrheight /= 2;
+    }
+    reshape(scrwidth, scrheight);
+    glClear(GL_COLOR_BUFFER_BIT);
+    npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
+    glFlush();
+    glutSwapBuffers();
+    pngFilename = "small-" + pngFilename; // and another one
+    make_screenshot();
+    
+    exit(EXIT_SUCCESS);
+  }
+  
   glClear(GL_COLOR_BUFFER_BIT);
-  //   cout << "draw(): bbox " << setup->getX0() << " " << setup->getY0() << " "
-  //        << setup->getX1() << " " << setup->getY1() << "\n" << flush;
   npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
   glFlush();
   glutSwapBuffers();
