@@ -1,9 +1,0 @@
-float32 zoom_val
-byte zoom_rel
-byte zoom_valid
-float32 focus_val
-byte focus_rel
-byte focus_valid
-float32 iris_val
-byte iris_rel
-byte iris_valid
