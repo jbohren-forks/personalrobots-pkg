@@ -181,7 +181,8 @@ namespace ompl {
     sfl::GridFrame const gframe(resolution);
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
       growstrategy(new sfl::Mapper2d::always_grow());
-    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
+    //    double const buffer_zone(sfl::maxval(0.0, inflation_radius - inscribed_radius));
+    double const buffer_zone(sfl::maxval(0.0, circumscribed_radius - inscribed_radius));
     double const padding_factor(0);
     m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
 				 inscribed_radius, buffer_zone, padding_factor,
