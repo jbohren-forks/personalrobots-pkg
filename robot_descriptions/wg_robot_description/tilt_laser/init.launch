@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find wg_robot_description)/tilt_laser/send_description.launch" />
+  <include file="$(find wg_robot_description)/tilt_laser/calibrate.launch" />
+  <group name="wg">
+    <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"
+          output="screen"/>
+  </group>
+</launch>

@@ -33,6 +33,7 @@
 #include <ros/node.h>
 #include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/PoseWithRatesStamped.h>
 
 namespace gazebo
 {
@@ -42,7 +43,7 @@ namespace gazebo
 
    \brief P3D controller.
 
-   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::TransformWithRateStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
+   This controller requires to a model as its parent. The plugin broadcasts a body's pose and rates through ROS std_msgs::PoseWithRatesStamped message.  In the example below, the plubin broadcasts pose and rate of a body named \b body_name over ROS topic name \b body_pose_groud_truth.
 
    Example Usage:
    \verbatim
@@ -67,7 +68,7 @@ namespace gazebo
 
    \brief P3D controller
           \li Starts a ROS node if none exists.
-          \li This controller simulates a 6 dof position and rate sensor, publishes std_msgs::TransformWithRateStamped.msg ROS topic.
+          \li This controller simulates a 6 dof position and rate sensor, publishes std_msgs::PoseWithRatesStamped.msg ROS topic.
           \li Example Usage:
    \verbatim
      <model:physical name="some_fancy_model">
@@ -119,7 +120,7 @@ namespace gazebo
       private: ros::node *rosnode;
 
       /// \brief ros message
-      private: std_msgs::TransformWithRateStamped transformMsg;
+      private: std_msgs::PoseWithRatesStamped poseMsg;
 
       /// \brief topic name
       private: std::string topicName;
@@ -134,6 +135,19 @@ namespace gazebo
 
       /// \brief A mutex to lock access to fields that are used in message callbacks
       private: ros::thread::mutex lock;
+
+      /// \brief save last_time
+      private: double last_time;
+      private: Vector3 last_vpos;
+      private: Vector3 last_veul;
+      private: Vector3 apos;
+      private: Vector3 aeul;
+
+      /// \brief Gaussian noise
+      private: double gaussianNoise;
+
+      /// \brief Gaussian noise generator
+      private: double GaussianKernel(double mu,double sigma);
 
    };
 

@@ -263,7 +263,10 @@ MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3
   int i, k;
   uint8_t rep[67];
 
-  receive(CMD_ACCEL_ANGRATE_ORIENT, rep, sizeof(rep), 0, time);
+  uint64_t sys_time;
+  uint64_t imu_time;
+
+  receive(CMD_ACCEL_ANGRATE_ORIENT, rep, sizeof(rep), 0, &sys_time);
 
   // Read the acceleration:
   k = 1;
@@ -288,7 +291,9 @@ MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3
     k += 4;
   }
 
-  *time = extract_time(rep+62);
+  imu_time = extract_time(rep+61);
+
+  *time = imu_time;
 }
 
 

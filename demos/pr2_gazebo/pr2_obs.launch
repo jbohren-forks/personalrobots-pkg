@@ -1,5 +1,7 @@
 <launch>
   <group name="wg">
+    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2/pr2.xml $(find gazebo_robot_description)/world/pr2_xml.model" />
+    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2/pr2.xml $(find gazebo_robot_description)/world/pr2_xml_nolimit.model 1" />
     <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2/pr2.xml&quot;" />
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_obstacle.world" respawn="false">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />

@@ -34,12 +34,16 @@
 
 #include <cstdio>
 
-#include "ros/node.h"
-#include "image_msgs/ImageWrapper.h"
-#include "image_msgs/CamInfo.h"
-#include "image_msgs/StereoInfo.h"
 #include "dcam.h"
 #include "stereocam.h"
+
+#include "ros/node.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/FillImage.h"
+#include "image_msgs/CamInfo.h"
+#include "image_msgs/StereoInfo.h"
+
+#include "diagnostic_updater/diagnostic_updater.h"
 
 using namespace std;
 
@@ -51,17 +55,24 @@ class DcamNode : public ros::node
   bool do_stereo_;
   bool do_rectify_;
 
-  image_msgs::ImageWrapper img_wrapper_;
+  image_msgs::Image        img_;
   image_msgs::CamInfo      cam_info_;
   image_msgs::StereoInfo   stereo_info_;
 
+  DiagnosticUpdater<DcamNode> diagnostic_;
+  int count_;
+  double desired_freq_;
+
+
 public:
 
-  DcamNode() : ros::node("dcam")
+  DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
   {
     dcam::init();
 
     int num_cams = dcam::numCameras();
+
+    diagnostic_.addUpdater( &DcamNode::freqStatus );
 
     if (num_cams > 0)
     {
@@ -94,6 +105,8 @@ public:
 
       param("~fps", dbl_fps, 30.0);
 
+      desired_freq_ = dbl_fps;
+
       if (dbl_fps >= 240.0)
         fps = DC1394_FRAMERATE_240;
       else if (dbl_fps >= 120.0)
@@ -110,7 +123,7 @@ public:
         fps = DC1394_FRAMERATE_3_75;
       else
         fps = DC1394_FRAMERATE_1_875;
-
+      
       string str_mode;
       dc1394video_mode_t mode;
       videre_proc_mode_t videre_mode;  
@@ -209,8 +222,6 @@ public:
 
   void serviceCam()
   {
-    printf("Servicing camera\n");
-
     cam_->getImage(500);
 
     // THIS should be possible for all cameras, not just stereo
@@ -221,6 +232,8 @@ public:
 
     if (do_stereo_)
       ( (cam::StereoDcam*)(cam_) )->doDisparity();
+
+    count_++;
   }
 
   void publishCam()
@@ -234,16 +247,20 @@ public:
       
       if (stcam->stIm->imDisp)
       {
-        img_wrapper_.fromInterlacedData( "disparity",
-                                         stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
-                                         "mono", "uint16",
-                                         stcam->stIm->imDisp );
-        publish("~disparity", img_wrapper_);
+        fillImage(img_,  "disparity",
+                  stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
+                  "mono", "uint16",
+                  stcam->stIm->imDisp );
+
+        img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+        publish("~disparity", img_);
         
         stereo_info_.has_disparity = true;
       } else {
         stereo_info_.has_disparity = false;
       }
+
+      stereo_info_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
 
       stereo_info_.height = stcam->stIm->imHeight;
       stereo_info_.width = stcam->stIm->imWidth;
@@ -271,85 +288,107 @@ public:
     }
   }
 
-  void publishImages(std::string base_name, cam::ImageData* img)
+  void publishImages(std::string base_name, cam::ImageData* img_data)
   {
-
-    if (img->im)
+    if (img_data->imRawType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image",
-                    img->imHeight, img->imWidth, 1,
-                    "mono", "byte",
-                    img->im );
-      publish(base_name + std::string("image"), img_wrapper_);
+      fillImage(img_,  "image_raw",
+                img_data->imHeight, img_data->imWidth, 1,
+                "mono", "byte",
+                img_data->imRaw );
+
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image_raw"), img_);
       cam_info_.has_image = true;
     } else {
       cam_info_.has_image = false;
     }
 
-    if (img->imColor)
+    if (img_data->imType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_color",
-                    img->imHeight, img->imWidth, 3,
-                    "rgb", "byte",
-                    img->imColor );
-      publish(base_name + std::string("image_color"), img_wrapper_);
+      fillImage(img_,  "image",
+                img_data->imHeight, img_data->imWidth, 1,
+                "mono", "byte",
+                img_data->im );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image"), img_);
+      cam_info_.has_image = true;
+    } else {
+      cam_info_.has_image = false;
+    }
+
+    if (img_data->imColorType != COLOR_CODING_NONE)
+    {
+      fillImage(img_,  "image_color",
+                img_data->imHeight, img_data->imWidth, 4,
+                "rgba", "byte",
+                img_data->imColor );
+
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image_color"), img_);
       cam_info_.has_image_color = true;
     } else {
       cam_info_.has_image_color = false;
     }
 
-    if (img->imRect)
+    if (img_data->imRectType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_rect",
-                    img->imHeight, img->imWidth, 1,
-                    "mono", "byte",
-                    img->imRect );
-      publish(base_name + std::string("image_rect"), img_wrapper_);
+      fillImage(img_,  "image_rect",
+                img_data->imHeight, img_data->imWidth, 1,
+                "mono", "byte",
+                img_data->imRect );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image_rect"), img_);
       cam_info_.has_image_rect = true;
     } else {
       cam_info_.has_image_rect = false;
     }
 
-    if (img->imRectColor)
+    if (img_data->imRectColorType != COLOR_CODING_NONE)
     {
-      img_wrapper_.fromInterlacedData( "image_rect_color",
-                    img->imHeight, img->imWidth, 3,
-                    "rgb", "byte",
-                    img->imRectColor );
-      publish(base_name + std::string("image_rect_color"), img_wrapper_);
+      fillImage(img_,  "image_rect_color",
+                img_data->imHeight, img_data->imWidth, 4,
+                "rgba", "byte",
+                img_data->imRectColor );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image_rect_color"), img_);
       cam_info_.has_image_rect_color = true;
-    }else {
+    } else {
       cam_info_.has_image_rect_color = false;
     }
 
-    cam_info_.height = img->imHeight;
-    cam_info_.width  = img->imWidth;
+    cam_info_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+    cam_info_.height = img_data->imHeight;
+    cam_info_.width  = img_data->imWidth;
 
-    memcpy((char*)(&cam_info_.D[0]), (char*)(img->D),  5*sizeof(double));
-    memcpy((char*)(&cam_info_.K[0]), (char*)(img->K),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.R[0]), (char*)(img->R),  9*sizeof(double));
-    memcpy((char*)(&cam_info_.P[0]), (char*)(img->P), 12*sizeof(double));
+    memcpy((char*)(&cam_info_.D[0]), (char*)(img_data->D),  5*sizeof(double));
+    memcpy((char*)(&cam_info_.K[0]), (char*)(img_data->K),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.R[0]), (char*)(img_data->R),  9*sizeof(double));
+    memcpy((char*)(&cam_info_.P[0]), (char*)(img_data->P), 12*sizeof(double));
 
     publish(base_name + std::string("cam_info"), cam_info_);
 
   }
 
 
-  void advertiseImages(std::string base_name, cam::ImageData* img)
+  void advertiseImages(std::string base_name, cam::ImageData* img_data)
   {
     advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
 
-    if (img->im)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image"), 1);
+    if (img_data->imRawType != COLOR_CODING_NONE)
+      advertise<image_msgs::Image>(base_name + std::string("image_raw"), 1);
 
-    if (img->imColor)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_color"), 1);
+    if (img_data->imType != COLOR_CODING_NONE)
+      advertise<image_msgs::Image>(base_name + std::string("image"), 1);
 
-    if (img->imRect)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect"), 1);
+    if (img_data->imColorType != COLOR_CODING_NONE)
+      advertise<image_msgs::Image>(base_name + std::string("image_color"), 1);
 
-    if (img->imRectColor)
-      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_rect_color"), 1);
+    if (img_data->imRectType != COLOR_CODING_NONE)
+      advertise<image_msgs::Image>(base_name + std::string("image_rect"), 1);
+
+    if (img_data->imRectColorType != COLOR_CODING_NONE)
+      advertise<image_msgs::Image>(base_name + std::string("image_rect_color"), 1);
 
   }
 
@@ -365,7 +404,7 @@ public:
       advertiseImages("~right/", stcam->stIm->imRight);
 
       if (stcam->stIm->imDisp)
-        advertise<image_msgs::ImageWrapper>("~disparity", 1);
+        advertise<image_msgs::Image>("~disparity", 1);
 
     }
     else
@@ -374,13 +413,45 @@ public:
     }
   }
 
+
+  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frequency Status";
+
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq_))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Images in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq_;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    printf("%g fps\n", freq);
+
+    count_ = 0;
+  }
+
   bool spin()
   {
-    // Start up the laser
+    // Start up the camera
     while (ok())
     {
       serviceCam();
       publishCam();
+      diagnostic_.update();
     }
 
     return true;
@@ -391,11 +462,9 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
 
-  //Keep things from dying poorly
   DcamNode dc;
 
   dc.spin();
-
 
   ros::fini();
   return 0;

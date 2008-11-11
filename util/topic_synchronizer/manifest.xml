@@ -1,0 +1,11 @@
+<package>
+  <description>A simple class to synchronize incoming topics by timestamp.</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package="roscpp" />
+  <depend package="std_msgs" />
+  <depend package="rosthread" />
+  <export>
+    <cpp cflags="-I${prefix}"/>
+  </export>
+</package>

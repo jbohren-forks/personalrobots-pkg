@@ -1,0 +1,16 @@
+<package>
+  <description brief="Dynamic 3D Planning">
+    A library of search-based planning algorithms
+
+  </description>
+  <author>Maxim Likhachev/maximl@seas.upenn.edu</author>
+  <license>BSD</license>
+  <url></url>
+
+  <depend package="sbpl"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/src -O3" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ldynamic_planning"/>
+  </export>
+  
+</package>

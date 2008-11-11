@@ -6,5 +6,6 @@
   <depend package="dcam"/>
   <depend package="std_msgs"/>
   <depend package="image_msgs"/>
+  <depend package="diagnostic_updater"/>
   <url></url>
 </package>

@@ -78,19 +78,26 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
-  this->topicName = node->GetString("topicName", "", 1);
-  this->frameName = node->GetString("frameName", "", 1);
-  this->xyzOffsets  = node->GetVector3("xyzOffsets", Vector3(0,0,0));
-  this->rpyOffsets  = node->GetVector3("rpyOffsets", Vector3(0,0,0));
+  this->topicName     = node->GetString("topicName", "ground_truth", 1);
+  this->frameName     = node->GetString("frameName", "", 1);
+  this->xyzOffsets    = node->GetVector3("xyzOffsets", Vector3(0,0,0));
+  this->rpyOffsets    = node->GetVector3("rpyOffsets", Vector3(0,0,0));
+  this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
+  if (this->topicName != "")
+    rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
 void P3D::InitChild()
 {
+  this->last_time = Simulator::Instance()->GetSimTime();
+  this->last_vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
+  this->last_veul = this->myBody->GetEulerRate(); // get velocity in gazebo frame
+  this->apos = 0;
+  this->aeul = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,46 +125,85 @@ void P3D::UpdateChild()
   Quatern vrot = this->myBody->GetRotationRate(); // get velocity in gazebo frame
   Vector3 veul = this->myBody->GetEulerRate(); // get velocity in gazebo frame
 
+  // differentiate to get accelerations
+  double tmp_dt = this->last_time - cur_time;
+  if (tmp_dt != 0)
+  {
+    this->apos = (this->last_vpos - vpos) / tmp_dt;
+    this->aeul = (this->last_veul - veul) / tmp_dt;
+    this->last_vpos = vpos;
+    this->last_veul = veul;
+  }
+
   this->lock.lock();
-  // copy data into pose message
-  this->transformMsg.header.frame_id = this->frameName;
-  this->transformMsg.header.stamp.sec = (unsigned long)floor(cur_time);
-  this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->transformMsg.header.stamp.sec) );
 
-  this->transformMsg.transform.translation.x    = pos.x;
-  this->transformMsg.transform.translation.y    = pos.y;
-  this->transformMsg.transform.translation.z    = pos.z;
 
-  this->transformMsg.transform.rotation.x       = rot.x;
-  this->transformMsg.transform.rotation.y       = rot.y;
-  this->transformMsg.transform.rotation.z       = rot.z;
-  this->transformMsg.transform.rotation.w       = rot.u;
+  if (this->topicName != "")
+  {
+    // copy data into pose message
+    this->poseMsg.header.frame_id = "map";  // @todo: should this be changeable?
+    this->poseMsg.header.stamp.sec = (unsigned long)floor(cur_time);
+    this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->poseMsg.header.stamp.sec) );
 
-  this->transformMsg.rate.translation.x         = vpos.x;
-  this->transformMsg.rate.translation.y         = vpos.y;
-  this->transformMsg.rate.translation.z         = vpos.z;
+    // pose is given in inertial frame for Gazebo, transform to the designated frame name
 
-  // pass quaternion
-  // this->transformMsg.rate.rotation.x            = vrot.x;
-  // this->transformMsg.rate.rotation.y            = vrot.y;
-  // this->transformMsg.rate.rotation.z            = vrot.z;
-  // this->transformMsg.rate.rotation.w            = vrot.u;
+    this->poseMsg.pos.position.x    = pos.x;
+    this->poseMsg.pos.position.y    = pos.y;
+    this->poseMsg.pos.position.z    = pos.z;
 
-  // pass euler anglular rates
-  this->transformMsg.rate.rotation.x            = veul.x;
-  this->transformMsg.rate.rotation.y            = veul.y;
-  this->transformMsg.rate.rotation.z            = veul.z;
-  this->transformMsg.rate.rotation.w            = 0;
+    this->poseMsg.pos.orientation.x = rot.x;
+    this->poseMsg.pos.orientation.y = rot.y;
+    this->poseMsg.pos.orientation.z = rot.z;
+    this->poseMsg.pos.orientation.w = rot.u;
 
-  // publish to ros
-  rosnode->publish(this->topicName,this->transformMsg);
+    this->poseMsg.vel.vel.vx        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.vel.vy        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.vel.vz        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    // pass euler anglular rates
+    this->poseMsg.vel.ang_vel.vx    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.ang_vel.vy    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.ang_vel.vz    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+
+    this->poseMsg.acc.acc.ax        = this->apos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.acc.ay        = this->apos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.acc.az        = this->apos.z + this->GaussianKernel(0,this->gaussianNoise) ;
+    // pass euler anglular rates
+    this->poseMsg.acc.ang_acc.ax    = this->aeul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.ang_acc.ay    = this->aeul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.ang_acc.az    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
+
+    // publish to ros
+    rosnode->publish(this->topicName,this->poseMsg);
+  }
+
   this->lock.unlock();
 
+  // save last time stamp
+  this->last_time = cur_time;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Finalize the controller
 void P3D::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
+  if (this->topicName != "")
+    rosnode->unadvertise(this->topicName);
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Utility for adding noise
+double P3D::GaussianKernel(double mu,double sigma)
+{
+  // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+  // see wikipedia
+  double U = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double V = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
+  //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
+  // we'll just use X
+  // scale to our mu and sigma
+  X = sigma * X + mu;
+  return X;
+}
+
+

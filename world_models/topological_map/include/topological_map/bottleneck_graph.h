@@ -72,17 +72,9 @@ typedef GridArray::size_type grid_size;
 
 
 // API
-BottleneckGraph makeBottleneckGraph (GridArray grid, char bottleneckSize, char bottleneckSkip);
-
-
-
-
-
-
-
-
-
-
+BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int distanceMultMin=3, int distanceMultMax=6);
+void printBottleneckGraph (const BottleneckGraph& g);
+void printBottlenecks (const BottleneckGraph& g, const GridArray& gr);
 } // namespace topological_map
 
 

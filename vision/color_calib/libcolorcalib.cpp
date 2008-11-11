@@ -158,7 +158,7 @@ void compand(IplImage* src, IplImage* dst)
       for (int j = 0; j < src->width; j++)
         for (int k = 0; k < channels; k++)
           ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
-            compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 4];
+            compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 4] >> 2;
   }
 }
 

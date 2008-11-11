@@ -78,8 +78,10 @@ Reads the following parameters from the parameter server
 #include "ros/time.h"
 #include "self_test/self_test.h"
 
-#include "imu_node/ImuData.h"
+#include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/EulerAngles.h"
+
+#include "tf/transform_datatypes.h"
 
 using namespace std;
 
@@ -87,7 +89,7 @@ class ImuNode: public ros::node
 {
 public:
   MS_3DMGX2::IMU imu;
-  imu_node::ImuData reading;
+  std_msgs::PoseWithRatesStamped reading;
   std_msgs::EulerAngles euler;
 
   string port;
@@ -105,7 +107,7 @@ public:
   
   ImuNode() : ros::node("imu"), count(0), self_test_(this)
   {
-    advertise<imu_node::ImuData>("imu_data", 100);
+    advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
     advertise<std_msgs::EulerAngles>("euler_angles", 100);
 
     param("~port", port, string("/dev/ttyUSB0"));
@@ -191,18 +193,25 @@ public:
 
       imu.receive_accel_angrate_orientation(&time, accel, angrate, orientation);
 
-      reading.accel.ax = accel[0];
-      reading.accel.ay = accel[1];
-      reading.accel.az = accel[2];
+      reading.acc.acc.ax = accel[0];
+      reading.acc.acc.ay = accel[1];
+      reading.acc.acc.az = accel[2];
  
-      reading.angrate.vx = angrate[0];
-      reading.angrate.vy = angrate[1];
-      reading.angrate.vz = angrate[2];
+      reading.vel.ang_vel.vx = angrate[0];
+      reading.vel.ang_vel.vy = angrate[1];
+      reading.vel.ang_vel.vz = angrate[2];
       
-      for (int i = 0; i < 9; i++)
-        reading.orientation[i] = orientation[i];
-
+      //      for (int i = 0; i < 9; i++)
+      // reading.orientation[i] = orientation[i];
+      btTransform pose(btMatrix3x3(orientation[0], orientation[1], orientation[2],
+                                   orientation[3], orientation[4], orientation[5],
+                                   orientation[6], orientation[7], orientation[8]), 
+                       btVector3(0,0,0));
+      tf::PoseTFToMsg(pose, reading.pos);
+      
+      
       reading.header.stamp = ros::Time(time);
+      //      reading.header.frame_id = "imu"
 
       publish("imu_data", reading);
         

@@ -8,6 +8,6 @@
   <author>Jeremy Leibs</author>
   <license>LGPL</license>
   <export>
-    <cpp cflags="-I${prefix}" lflags="-L${prefix} -limu"/>
+    <cpp cflags="-I${prefix}" lflags="-L${prefix}/lib -l3dmgx2"/>
   </export>
 </package>

@@ -3,6 +3,9 @@
 <author>Bhaskara Marthi</author>
 <license>BSD</license>
 <depend package="roscpp" />
+<depend package="std_msgs" />
+<depend package="std_srvs" />
+<depend package="rosconsole" />
 <export>
 <cpp cflags="-I${prefix}/include"  lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf" />
 </export>

@@ -54,7 +54,7 @@ $ odom_localization
 @section topic ROS topics
 
 Subscribes to (name/type):
-- @b "base_pose_ground_truth"/std_msgs::TransformWithRateStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
+- @b "base_pose_ground_truth"/std_msgs::PoseWithRatesStamped : robot's odometric pose.  Only the position information is used (velocity is ignored).
 - @b "initialpose"/Pose2DFloat32 : robot's odometric pose.  Only the position information is used (velocity is ignored).
 
 Publishes to (name / type):
@@ -73,7 +73,7 @@ Publishes to (name / type):
 #include <ros/time.h>
 
 #include <std_msgs/RobotBase2DOdom.h>
-#include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/Pose3DStamped.h>
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
@@ -117,7 +117,7 @@ private:
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
     
-    std_msgs::TransformWithRateStamped m_basePosMsg;
+    std_msgs::PoseWithRatesStamped  m_basePosMsg;
     std_msgs::ParticleCloud2D      m_particleCloud;
     std_msgs::RobotBase2DOdom      m_currentPos;
     std_msgs::Pose2DFloat32        m_iniPos;
@@ -140,12 +140,12 @@ private:
 
       m_lastUpdate = ros::Time::now();
 
-      tf::Transform txi(tf::Quaternion(m_basePosMsg.transform.rotation.x,
-                                       m_basePosMsg.transform.rotation.y, 
-                                       m_basePosMsg.transform.rotation.z, 
-                                       m_basePosMsg.transform.rotation.w),
-                        tf::Point(m_basePosMsg.transform.translation.x,
-                                  m_basePosMsg.transform.translation.y, 0.0));
+      tf::Transform txi(tf::Quaternion(m_basePosMsg.pos.orientation.x,
+                                       m_basePosMsg.pos.orientation.y, 
+                                       m_basePosMsg.pos.orientation.z, 
+                                       m_basePosMsg.pos.orientation.w),
+                             tf::Point(m_basePosMsg.pos.position.x,
+                                       m_basePosMsg.pos.position.y, 0.0));
 
       double x = txi.getOrigin().x() + m_iniPos.x;
       double y = txi.getOrigin().y() + m_iniPos.y;

@@ -85,7 +85,7 @@ Publishes to (name / type):
 #include <ros/node.h>
 #include <std_msgs/LaserScan.h>
 #include <std_msgs/RobotBase2DOdom.h>
-#include <std_msgs/TransformWithRateStamped.h>
+#include <std_msgs/PoseWithRatesStamped.h>
 #include <std_msgs/Pose3D.h>
 #include <std_msgs/BaseVel.h>
 
@@ -101,7 +101,7 @@ class StageNode : public ros::node
     std_msgs::BaseVel velMsg;
     std_msgs::LaserScan laserMsg;
     std_msgs::RobotBase2DOdom odomMsg;
-    std_msgs::TransformWithRateStamped groundTruthMsg;
+    std_msgs::PoseWithRatesStamped groundTruthMsg;
 
     // A mutex to lock access to fields that are used in message callbacks
     ros::thread::mutex lock;
@@ -210,7 +210,7 @@ StageNode::SubscribeModels()
 
   advertise<std_msgs::LaserScan>("base_scan",10);
   advertise<std_msgs::RobotBase2DOdom>("odom",10);
-  advertise<std_msgs::TransformWithRateStamped>("base_pose_ground_truth",10);
+  advertise<std_msgs::PoseWithRatesStamped>("base_pose_ground_truth",10);
   subscribe("cmd_vel", velMsg, &StageNode::cmdvelReceived, 10);
   return(0);
 }
@@ -289,13 +289,13 @@ StageNode::Update()
   tf::Transform gt(tf::Quaternion(gpose.a-M_PI/2.0, 0, 0), 
                    tf::Point(gpose.y, -gpose.x, 0.0));
 
-  this->groundTruthMsg.transform.translation.x = gt.getOrigin().x();
-  this->groundTruthMsg.transform.translation.y = gt.getOrigin().y();
-  this->groundTruthMsg.transform.translation.z = gt.getOrigin().z();
-  this->groundTruthMsg.transform.rotation.x    = gt.getRotation().x();
-  this->groundTruthMsg.transform.rotation.y    = gt.getRotation().y();
-  this->groundTruthMsg.transform.rotation.z    = gt.getRotation().z();
-  this->groundTruthMsg.transform.rotation.w    = gt.getRotation().w();
+  this->groundTruthMsg.pos.position.x     = gt.getOrigin().x();
+  this->groundTruthMsg.pos.position.y     = gt.getOrigin().y();
+  this->groundTruthMsg.pos.position.z     = gt.getOrigin().z();
+  this->groundTruthMsg.pos.orientation.x  = gt.getRotation().x();
+  this->groundTruthMsg.pos.orientation.y  = gt.getRotation().y();
+  this->groundTruthMsg.pos.orientation.z  = gt.getRotation().z();
+  this->groundTruthMsg.pos.orientation.w  = gt.getRotation().w();
 
   this->groundTruthMsg.header.frame_id = "odom";
   this->groundTruthMsg.header.stamp = sim_time;

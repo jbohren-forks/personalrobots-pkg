@@ -6,5 +6,4 @@
 <depend package="bfl_latest" />
 <depend package="std_msgs" />
 <depend package="kdl" />
-<depend package="imu_node" />
 </package>

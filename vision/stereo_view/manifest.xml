@@ -1,0 +1,13 @@
+<package>
+  <description>
+  An opencv based viewer for dcam stereo images
+  </description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <depend package="opencv_latest"/>
+  <depend package="std_msgs"/>
+  <depend package="std_srvs"/>
+  <depend package="image_msgs"/>
+  <depend package="roscpp"/>
+  <depend package="topic_synchronizer"/>
+</package>
