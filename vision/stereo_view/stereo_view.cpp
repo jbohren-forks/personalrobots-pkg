@@ -1,3 +1,37 @@
+/*********************************************************************
+* Software License Agreement (BSD License)
+* 
+*  Copyright (c) 2008, Willow Garage, Inc.
+*  All rights reserved.
+* 
+*  Redistribution and use in source and binary forms, with or without
+*  modification, are permitted provided that the following conditions
+*  are met:
+* 
+*   * Redistributions of source code must retain the above copyright
+*     notice, this list of conditions and the following disclaimer.
+*   * Redistributions in binary form must reproduce the above
+*     copyright notice, this list of conditions and the following
+*     disclaimer in the documentation and/or other materials provided
+*     with the distribution.
+*   * Neither the name of the Willow Garage nor the names of its
+*     contributors may be used to endorse or promote products derived
+*     from this software without specific prior written permission.
+* 
+*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+*  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+*  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+*  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+*  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+*  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+*  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+*  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+*  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+*  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+*  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+*  POSSIBILITY OF SUCH DAMAGE.
+*********************************************************************/
+
 #include <vector>
 
 #include "opencv/cxcore.h"
@@ -9,7 +43,7 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 
-#include "rosthread/condition.h"
+#include "topic_synchronizer.h"
 
 using namespace std;
 
@@ -29,102 +63,22 @@ public:
   std::string rtopic;
   std::string dtopic;
 
-  ros::Time image_time;
+  TopicSynchronizer<StereoView> sync;
 
-  ros::thread::condition cond_all;
-
-  int count;
-  bool done;
-
-  StereoView() : ros::node("cv_view"), count(0), done(false)
+  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all)
   { 
     ltopic = map_name("dcam") + std::string("/left/image_rect");
     rtopic = map_name("dcam") + std::string("/right/image_rect");
     dtopic = map_name("dcam") + std::string("/disparity");
 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
-    subscribe(ltopic, limage, &StereoView::image_cb, &limage, 1);
+    sync.subscribe(ltopic, limage, 1);
 
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
-    subscribe(rtopic, rimage, &StereoView::image_cb, &rimage, 1);
+    sync.subscribe(rtopic, rimage, 1);
 
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
-    subscribe(dtopic, dimage, &StereoView::image_cb, &dimage, 1);
-  }
-
-  void image_cb(void* p)
-  {
-    image_msgs::Image* img = (image_msgs::Image*)(p);
-
-    cond_all.lock();
-
-    // If first to time, wait
-    if (count == 0)
-    {
-      wait_for_others(img);
-      return;
-    }
-
-    // If behind, skip
-    if (img->header.stamp < image_time)
-    {
-      cond_all.unlock();
-      return;
-    }
-
-    // If at time, increment and signal or wait
-    if (img->header.stamp == image_time)
-    {
-      count++;
-      if (count == 3)
-      {
-        cond_all.broadcast();
-      }
-      else
-      {
-        while (!done && img->header.stamp == image_time)
-          cond_all.wait();
-      }
-      
-      cond_all.unlock();
-      return;
-    }
-
-    // If ahead, wake up others and then wait
-    if (img->header.stamp > image_time)
-    {
-      printf(" %s is already past with time: %d\n", img->label.c_str(), img->header.stamp.nsec);
-      cond_all.broadcast();
-      wait_for_others(img);
-    }
-  }
-
-  void wait_for_others(image_msgs::Image* img)
-  {
-    count = 1;
-    done = false;
-    image_time = img->header.stamp;
-    bool timed_out = false;
-
-    while (count < 3 && img->header.stamp == image_time && !timed_out)
-      if (!cond_all.timed_wait(1))
-      {
-        printf(" Timed out waiting for other images...\n");
-        timed_out = true;
-      }
-    
-    if (img->header.stamp == image_time && !timed_out)
-      image_cb_all();
-    else
-      printf(" Got interrupted from time %d\n", img->header.stamp.nsec);
-
-    if (img->header.stamp == image_time)
-    {
-      done = true;
-      count = 0;
-      cond_all.broadcast();
-    }
-    cond_all.unlock();
+    sync.subscribe(dtopic, dimage, 1);
   }
 
   void image_cb_all()

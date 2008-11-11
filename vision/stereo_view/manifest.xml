@@ -9,5 +9,5 @@
   <depend package="std_srvs"/>
   <depend package="image_msgs"/>
   <depend package="roscpp"/>
-  <depend package="rosthread"/>
+  <depend package="topic_synchronizer"/>
 </package>
