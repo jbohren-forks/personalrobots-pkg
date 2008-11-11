@@ -106,27 +106,26 @@ class PendulumTest(unittest.TestCase):
 
 
     #def printPendulum(self, p3d):
-        #print "P3D pose translan: " + "x: " + str(p3d.transform.translation.x)
-        #print "                   " + "y: " + str(p3d.transform.translation.y)
-        #print "                   " + "z: " + str(p3d.transform.translation.z)
-        #print "P3D pose rotation: " + "x: " + str(p3d.transform.rotation.x)
-        #print "                   " + "y: " + str(p3d.transform.rotation.y)
-        #print "                   " + "z: " + str(p3d.transform.rotation.z)
-        #print "                   " + "w: " + str(p3d.transform.rotation.w)
-        #print "P3D rate translan: " + "x: " + str(p3d.rate.translation.x)
-        #print "                   " + "y: " + str(p3d.rate.translation.y)
-        #print "                   " + "z: " + str(p3d.rate.translation.z)
-        #print "P3D rate rotation: " + "x: " + str(p3d.rate.rotation.x)
-        #print "                   " + "y: " + str(p3d.rate.rotation.y)
-        #print "                   " + "z: " + str(p3d.rate.rotation.z)
-        #print "                   " + "w: " + str(p3d.rate.rotation.w)
+        #print "P3D pose translan: " + "x: " + str(p3d.pos.position.x)
+        #print "                   " + "y: " + str(p3d.pos.position.y)
+        #print "                   " + "z: " + str(p3d.pos.position.z)
+        #print "P3D pose rotation: " + "x: " + str(p3d.pos.orientation.x)
+        #print "                   " + "y: " + str(p3d.pos.orientation.y)
+        #print "                   " + "z: " + str(p3d.pos.orientation.z)
+        #print "                   " + "w: " + str(p3d.pos.orientation.w)
+        #print "P3D rate translan: " + "x: " + str(p3d.vel.vel.x)
+        #print "                   " + "y: " + str(p3d.vel.vel.y)
+        #print "                   " + "z: " + str(p3d.vel.vel.z)
+        #print "P3D rate rotation: " + "x: " + str(p3d.vel.ang_vel.vx)
+        #print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
+        #print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
 
 
     def p3dInput1(self, p3d):
         #print "link1 pose ground truth received"
         #self.printPendulum(p3d)
-        tmpx = p3d.transform.translation.x
-        tmpz = p3d.transform.translation.z - 2.0
+        tmpx = p3d.pos.position.x
+        tmpz = p3d.pos.position.z - 2.0
         #print "link1 origin (" + str(tmpx) + " , " + str(tmpz) + ")"
         self.error1_total += math.sqrt(tmpx*tmpx+tmpz*tmpz)
         self.error1_count += 1
@@ -136,19 +135,19 @@ class PendulumTest(unittest.TestCase):
     def p3dInput2(self, p3d):
         #print "link2 pose ground truth received"
         #self.printPendulum(p3d)
-        q = Q(p3d.transform.rotation.x , p3d.transform.rotation.y , p3d.transform.rotation.z , p3d.transform.rotation.w)
+        q = Q(p3d.pos.orientation.x , p3d.pos.orientation.y , p3d.pos.orientation.z , p3d.pos.orientation.w)
         q.normalize()
         v = q.getEuler()
 
-        #FIXME: something wrong with the transform, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the transform, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the transform, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the transform, need to fix it.  abs masks the problem for now.
-        tmpx = abs(p3d.transform.translation.x) +0.0 - abs(math.cos(v.z)*math.cos(v.y))
-        tmpz = abs(p3d.transform.translation.z) -2.0 + abs(math.sin(v.y))
+        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
+        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
+        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
+        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
+        tmpx = abs(p3d.pos.position.x) +0.0 - abs(math.cos(v.z)*math.cos(v.y))
+        tmpz = abs(p3d.pos.position.z) -2.0 + abs(math.sin(v.y))
         #math.cos(v.x)*math.cos(v.z)-math.cos(v.x)*math.sin(v.y)*math.cos(v.z))
         #print "link2 origin (" + str(tmpx) + " , " + str(tmpz) + ")"
-        #print "link2 raw    (" + str(p3d.transform.translation.x) + " , " + str(p3d.transform.translation.z) + ") total: " + str(self.error2_total)
+        #print "link2 raw    (" + str(p3d.pos.position.x) + " , " + str(p3d.pos.position.z) + ") total: " + str(self.error2_total)
         #print "link2 correc (" + str(math.cos(v.y)) + " , " + str(math.sin(v.y)) + ") angle: " + str(v.x) +","+str(v.y)+","+str(v.z)
 
         self.error2_total += math.sqrt(tmpx*tmpx+tmpz*tmpz)
@@ -158,8 +157,8 @@ class PendulumTest(unittest.TestCase):
     
     def test_pendulum(self):
         print "LNK\n"
-        rospy.Subscriber("link1_pose", TransformWithRateStamped, self.p3dInput1)
-        rospy.Subscriber("link2_pose", TransformWithRateStamped, self.p3dInput2)
+        rospy.Subscriber("link1_pose", PoseWithRatesStamped, self.p3dInput1)
+        rospy.Subscriber("link2_pose", PoseWithRatesStamped, self.p3dInput2)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 20.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

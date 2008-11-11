@@ -145,7 +145,6 @@
       <updateRate>100.0</updateRate>
       <bodyName>base</bodyName>
       <topicName>base_pose_ground_truth</topicName>
-      <IMUTopicName>base_pose_imu</IMUTopicName>
       <gaussianNoise>0.01</gaussianNoise>
       <frameName>map</frameName>
       <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->

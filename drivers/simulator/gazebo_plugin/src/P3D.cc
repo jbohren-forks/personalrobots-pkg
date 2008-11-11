@@ -79,16 +79,14 @@ void P3D::LoadChild(XMLConfigNode *node)
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
   this->topicName     = node->GetString("topicName", "ground_truth", 1);
-  this->IMUTopicName  = node->GetString("IMUTopicName", "", 1);
   this->frameName     = node->GetString("frameName", "", 1);
   this->xyzOffsets    = node->GetVector3("xyzOffsets", Vector3(0,0,0));
   this->rpyOffsets    = node->GetVector3("rpyOffsets", Vector3(0,0,0));
   this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
-  rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
-  if (this->IMUTopicName != "")
-    rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->IMUTopicName,10);
+  if (this->topicName != "")
+    rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -138,46 +136,7 @@ void P3D::UpdateChild()
   this->lock.lock();
 
 
-  /// @todo: remove transform message
-  // copy data into a transform message
-  this->transformMsg.header.frame_id = this->frameName;
-  this->transformMsg.header.stamp.sec = (unsigned long)floor(cur_time);
-  this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->transformMsg.header.stamp.sec) );
-
-  this->transformMsg.transform.translation.x    = pos.x;
-  this->transformMsg.transform.translation.y    = pos.y;
-  this->transformMsg.transform.translation.z    = pos.z;
-
-  this->transformMsg.transform.rotation.x       = rot.x;
-  this->transformMsg.transform.rotation.y       = rot.y;
-  this->transformMsg.transform.rotation.z       = rot.z;
-  this->transformMsg.transform.rotation.w       = rot.u;
-
-  this->transformMsg.rate.translation.x         = vpos.x;
-  this->transformMsg.rate.translation.y         = vpos.y;
-  this->transformMsg.rate.translation.z         = vpos.z;
-
-  // pass quaternion
-  // this->transformMsg.rate.rotation.x            = vrot.x;
-  // this->transformMsg.rate.rotation.y            = vrot.y;
-  // this->transformMsg.rate.rotation.z            = vrot.z;
-  // this->transformMsg.rate.rotation.w            = vrot.u;
-
-  // pass euler anglular rates
-  this->transformMsg.rate.rotation.x            = veul.x;
-  this->transformMsg.rate.rotation.y            = veul.y;
-  this->transformMsg.rate.rotation.z            = veul.z;
-  this->transformMsg.rate.rotation.w            = 0;
-
-  // publish to ros
-  rosnode->publish(this->topicName,this->transformMsg);
-
-
-
-
-
-
-  if (this->IMUTopicName != "")
+  if (this->topicName != "")
   {
     // copy data into pose message
     this->poseMsg.header.frame_id = "map";  // @todo: should this be changeable?
@@ -212,7 +171,7 @@ void P3D::UpdateChild()
     this->poseMsg.acc.ang_acc.az    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
-    rosnode->publish(this->IMUTopicName,this->poseMsg);
+    rosnode->publish(this->topicName,this->poseMsg);
   }
 
   this->lock.unlock();
@@ -225,9 +184,8 @@ void P3D::UpdateChild()
 // Finalize the controller
 void P3D::FiniChild()
 {
-  rosnode->unadvertise(this->topicName);
-  if (this->IMUTopicName != "")
-    rosnode->unadvertise(this->IMUTopicName);
+  if (this->topicName != "")
+    rosnode->unadvertise(this->topicName);
 }
 
 //////////////////////////////////////////////////////////////////////////////

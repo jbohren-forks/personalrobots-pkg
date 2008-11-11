@@ -69,26 +69,25 @@ class BaseTest(unittest.TestCase):
 
 
     def printBase(self, p3d):
-        print "P3D pose translan: " + "x: " + str(p3d.transform.translation.x)
-        print "                   " + "y: " + str(p3d.transform.translation.y)
-        print "                   " + "z: " + str(p3d.transform.translation.z)
-        print "P3D pose rotation: " + "x: " + str(p3d.transform.rotation.x)
-        print "                   " + "y: " + str(p3d.transform.rotation.y)
-        print "                   " + "z: " + str(p3d.transform.rotation.z)
-        print "                   " + "w: " + str(p3d.transform.rotation.w)
-        print "P3D rate translan: " + "x: " + str(p3d.rate.translation.x)
-        print "                   " + "y: " + str(p3d.rate.translation.y)
-        print "                   " + "z: " + str(p3d.rate.translation.z)
-        print "P3D rate rotation: " + "x: " + str(p3d.rate.rotation.x)
-        print "                   " + "y: " + str(p3d.rate.rotation.y)
-        print "                   " + "z: " + str(p3d.rate.rotation.z)
-        print "                   " + "w: " + str(p3d.rate.rotation.w)
+        print "P3D pose translan: " + "x: " + str(p3d.pos.position.x)
+        print "                   " + "y: " + str(p3d.pos.position.y)
+        print "                   " + "z: " + str(p3d.pos.position.z)
+        print "P3D pose rotation: " + "x: " + str(p3d.pos.orientation.x)
+        print "                   " + "y: " + str(p3d.pos.orientation.y)
+        print "                   " + "z: " + str(p3d.pos.orientation.z)
+        print "                   " + "w: " + str(p3d.pos.orientation.w)
+        print "P3D rate translan: " + "x: " + str(p3d.vel.vel.x)
+        print "                   " + "y: " + str(p3d.vel.vel.y)
+        print "                   " + "z: " + str(p3d.vel.vel.z)
+        print "P3D rate rotation: " + "x: " + str(p3d.vel.ang_vel.vx)
+        print "                   " + "y: " + str(p3d.vel.ang_vel.vy)
+        print "                   " + "z: " + str(p3d.vel.ang_vel.vz)
 
     def p3dInput(self, p3d):
         i = 0
         print "base pose ground truth received"
         self.printBase(p3d)
-        error = abs(p3d.rate.rotation.z - TARGET_VW)
+        error = abs(p3d.vel.ang_vel.vz - TARGET_VW)
         print " Error: " + str(error)
         # has to reach target vw and maintain target vw for a duration of TARGET_DURATION seconds
         if self.reached_target_vw:
@@ -107,7 +106,7 @@ class BaseTest(unittest.TestCase):
     def test_base(self):
         print "LNK\n"
         pub = rospy.Publisher("cmd_vel", BaseVel)
-        rospy.Subscriber("base_pose_ground_truth", TransformWithRateStamped, self.p3dInput)
+        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 60.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:

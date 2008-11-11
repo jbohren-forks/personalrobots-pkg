@@ -13,7 +13,7 @@
       <anchor xyz="0 0 0" />
       <limit min="-0.785" max="1.48" effort="0.5292" velocity="1256.0" />
       <calibration reference_position="-0.35" values="0 0" />
-      <joint_properties damping="1.0" />
+      <joint_properties damping="0.1" />
     </joint>
 
     <link name="${name}_mount">
@@ -21,9 +21,9 @@
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
       <inertial>
-        <mass value="1.0" />
+        <mass value="0.01" />
         <com xyz="0 0 0" />
-        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
       </inertial>
 
       <visual>
@@ -62,7 +62,7 @@
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
-        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+        <inertia ixx="0.001" ixy="0" ixz="0" iyy="0.001" iyz="0" izz="0.001" />
       </inertial>
 
       <visual>

@@ -62,26 +62,26 @@ class TestSlide(unittest.TestCase):
         self.hits = 0
         self.runs = 0
         
-    def positionInput(self, pose):
+    def positionInput(self, p3d):
         self.runs = self.runs + 1
-        print " got pose ", self.runs
+        print " got p3d ", self.runs
         #if (pos.frame == 1):
-        print "x ", pose.transform.translation.x
-        print "y ", pose.transform.translation.y
-        print "z ", pose.transform.translation.z
-        dx = pose.transform.translation.x - TARGET_X
-        dy = pose.transform.translation.y - TARGET_Y
-        dz = pose.transform.translation.z - TARGET_Z
+        print "x ", p3d.pos.position.x
+        print "y ", p3d.pos.position.y
+        print "z ", p3d.pos.position.z
+        dx = p3d.pos.position.x - TARGET_X
+        dy = p3d.pos.position.y - TARGET_Y
+        dz = p3d.pos.position.z - TARGET_Z
         d = math.sqrt((dx * dx) + (dy * dy)) #+ (dz * dz))
-        print "P: " + str(pose.transform.translation.x) + " " + str(pose.transform.translation.y)
+        print "P: " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
         #print "D: " + str(dx) + " " + str(dy) + " " + str(dz) + " " + str(d) + " < " + str(TARGET_RAD * TARGET_RAD)
         if (d < TARGET_RAD):
-            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(pos.transform.translation.x) + " " + str(pos.transform.translation.y)
+            #print "HP: " + str(dx) + " " + str(dy) + " " + str(d) + " at " + str(p3d.pos.position.x) + " " + str(p3d.pos.position.y)
             #print "DONE"
             self.hits = self.hits + 1
             print "Hit goal, " + str(self.hits)
             if (self.runs < 100 and self.runs > 10):
-                print "Obviously wrong transforms!"
+                print "Obviously wrong poses!"
                 self.success = False
                 self.fail = True
                 #os.system("killall gazebo")
@@ -95,7 +95,7 @@ class TestSlide(unittest.TestCase):
     def testslide(self):
         print "LINK\n"
         #rospy.Subscriber("Odom", RobotBase2DOdom, self.positionInput)
-        rospy.Subscriber("base_pose_ground_truth", TransformWithRateStamped, self.positionInput)
+        rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 50.0 #59 seconds
         while not rospy.is_shutdown() and not self.success and not self.fail and time.time() < timeout_t:
