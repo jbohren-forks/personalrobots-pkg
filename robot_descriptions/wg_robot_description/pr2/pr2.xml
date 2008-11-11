@@ -716,24 +716,30 @@
   
   <joint name="finger_tip_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_right_joint" coeffs="1 0"/>
   </joint>
   <joint name="finger_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_right_joint" coeffs="-1 0"/>
   </joint>
   <joint name="finger_tip_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_right_joint" coeffs="-1 0"/>
   </joint>
   <joint name="finger_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
   </joint>
   <joint name="finger_tip_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
+    <mimic name="finger_l_left_joint" coeffs="1 0"/>
   </joint>
   <joint name="finger_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
+    <mimic name="finger_l_left_joint" coeffs="-1 0"/>
   </joint>
   <joint name="finger_tip_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
+    <mimic name="finger_l_left_joint" coeffs="-1 0"/>
   </joint>
   <joint name="finger_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
@@ -1488,7 +1494,7 @@
     <map name="finger_l_left_gravity" flag="gazebo">
       <elem key="turnGravityOff">true</elem>
     </map>
-   </link>
+  </link>
   <!-- End   left hand l finger proximal digit definition -->
   <!-- Begin left hand l finger tip (distal digit) definition -->
   <link name="finger_tip_l_left">
@@ -1511,22 +1517,22 @@
       <elem key="turnGravityOff">true</elem>
     </map>
     <!--
-    <map name="sensor" flag="gazebo">
-      <verbatim key="contact_sensor">
-        <sensor:contact name="finger_tip_l_left_contact_sensor">
-          <updateRate>15.0</updateRate>
-          <geom>pr2_finger_tip_l_collision_geom</geom>
-          <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>15.0</updateRate>
-            <topicName>finger_tip_l_contact</topicName>
-            <frameName>finger_tip_l_contact</frameName>
-            <interface:bumper name="dummy_bumper_iface" />
-          </controller:ros_bumper>
-        </sensor:contact>
-      </verbatim>
-    </map>
-    -->
+        <map name="sensor" flag="gazebo">
+          <verbatim key="contact_sensor">
+            <sensor:contact name="finger_tip_l_left_contact_sensor">
+              <updateRate>15.0</updateRate>
+              <geom>pr2_finger_tip_l_collision_geom</geom>
+              <controller:ros_bumper name="finger_tip_l_contact_controller" plugin="libRos_Bumper.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>15.0</updateRate>
+                <topicName>finger_tip_l_contact</topicName>
+                <frameName>finger_tip_l_contact</frameName>
+                <interface:bumper name="dummy_bumper_iface" />
+              </controller:ros_bumper>
+            </sensor:contact>
+          </verbatim>
+        </map>
+        -->
   </link>
   <!-- End   left hand l finger tip (distal digit) definition -->
   <!-- Begin left hand r finger proximal digit definition -->
