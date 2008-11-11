@@ -41,8 +41,15 @@
     <type>fltk</type>
     <size>1024 800</size>
     <pos>0 0</pos>
+    <frames>
+      <row height="100%">
+        <camera width="100%">
+          <xyz>0 0 20</xyz>
+          <rpy>0 90 90</rpy>
+        </camera>
+      </row>
+    </frames>
   </rendering:gui>
-
 
   <rendering:ogre>
     <ambient>1.0 1.0 1.0 1.0</ambient>
