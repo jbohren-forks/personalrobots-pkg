@@ -46,7 +46,6 @@
 #include "phase_space/PhaseSpaceBody.h"
 
 #include "std_msgs/Transform.h"
-#include "std_msgs/TransformWithRateStamped.h"
 #include "std_msgs/RobotBase2DOdom.h"
 
 #include <tf/tf.h>
