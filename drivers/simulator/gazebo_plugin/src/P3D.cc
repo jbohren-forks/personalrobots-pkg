@@ -85,12 +85,18 @@ void P3D::LoadChild(XMLConfigNode *node)
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
+  rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Initialize the controller
 void P3D::InitChild()
 {
+  this->last_time = Simulator::Instance()->GetSimTime();
+  this->last_vpos = this->myBody->GetPositionRate(); // get velocity in gazebo frame
+  this->last_veul = this->myBody->GetEulerRate(); // get velocity in gazebo frame
+  this->apos = 0;
+  this->aeul = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -118,8 +124,19 @@ void P3D::UpdateChild()
   Quatern vrot = this->myBody->GetRotationRate(); // get velocity in gazebo frame
   Vector3 veul = this->myBody->GetEulerRate(); // get velocity in gazebo frame
 
+  // differentiate to get accelerations
+  double tmp_dt = this->last_time - cur_time;
+  if (tmp_dt != 0)
+  {
+    this->apos = (this->last_vpos - vpos) / tmp_dt;
+    this->aeul = (this->last_veul - veul) / tmp_dt;
+  }
+
   this->lock.lock();
-  // copy data into pose message
+
+
+  /// @todo: remove transform message
+  // copy data into a transform message
   this->transformMsg.header.frame_id = this->frameName;
   this->transformMsg.header.stamp.sec = (unsigned long)floor(cur_time);
   this->transformMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->transformMsg.header.stamp.sec) );
@@ -151,8 +168,50 @@ void P3D::UpdateChild()
 
   // publish to ros
   rosnode->publish(this->topicName,this->transformMsg);
+
+
+
+
+
+
+  // copy data into pose message
+  this->poseMsg.header.frame_id = "map";  // @todo: should this be changeable?
+  this->poseMsg.header.stamp.sec = (unsigned long)floor(cur_time);
+  this->poseMsg.header.stamp.nsec = (unsigned long)floor(  1e9 * (  cur_time - this->poseMsg.header.stamp.sec) );
+
+  // pose is given in inertial frame for Gazebo, transform to the designated frame name
+
+  this->poseMsg.pos.position.x    = pos.x;
+  this->poseMsg.pos.position.y    = pos.y;
+  this->poseMsg.pos.position.z    = pos.z;
+
+  this->poseMsg.pos.orientation.x = rot.x;
+  this->poseMsg.pos.orientation.y = rot.y;
+  this->poseMsg.pos.orientation.z = rot.z;
+  this->poseMsg.pos.orientation.w = rot.u;
+
+  this->poseMsg.vel.vel.vx        = vpos.x;
+  this->poseMsg.vel.vel.vy        = vpos.y;
+  this->poseMsg.vel.vel.vz        = vpos.z;
+  // pass euler anglular rates
+  this->poseMsg.vel.ang_vel.vx    = veul.x;
+  this->poseMsg.vel.ang_vel.vy    = veul.y;
+  this->poseMsg.vel.ang_vel.vz    = veul.z;
+
+  this->poseMsg.acc.acc.ax        = this->apos.x;
+  this->poseMsg.acc.acc.ay        = this->apos.y;
+  this->poseMsg.acc.acc.az        = this->apos.z;
+  // pass euler anglular rates
+  this->poseMsg.acc.ang_acc.ax    = this->aeul.x;
+  this->poseMsg.acc.ang_acc.ay    = this->aeul.y;
+  this->poseMsg.acc.ang_acc.az    = this->aeul.z;
+
+  // publish to ros
+  rosnode->publish(this->topicName,this->poseMsg);
   this->lock.unlock();
 
+  // save last time stamp
+  this->last_time = cur_time;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
