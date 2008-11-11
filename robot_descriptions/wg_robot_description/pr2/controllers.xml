@@ -209,7 +209,7 @@
 
   <controller name="tilt_laser_controller" topic="tilt_laser_controller" type="LaserScannerControllerNode">
     <joint name="tilt_laser_mount_joint" >
-      <pid p="0.4" d="0" i="0" iClamp="0.1" />
+      <pid p="12" i=".1" d="1" iClamp="0.5" />
     </joint>
   </controller>
 
