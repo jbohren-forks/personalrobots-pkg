@@ -58,6 +58,13 @@ namespace ompl {
   
   
   /**
+     Translate a name or alias into a string that createSBPLPlanner()
+     understands.
+  */
+  std::string canonicalPlannerName(std::string const & name_or_alias);
+  
+  
+  /**
      Create a planner subclass based on its name.
      
      \todo Use some sort of registry instead of hard-coded
@@ -73,7 +80,9 @@ namespace ompl {
 				  /** Required by some planners (ARAPlanner, ADPlanner). */
 				  bool bforwardsearch,
 				  /** Required by some planners (VIPlanner). */
-				  MDPConfig* mdpCfg);
+				  MDPConfig* mdpCfg,
+				  /** optional stream to which error messages get written */
+				  std::ostream * opt_err_os);
   
   
   /**
@@ -171,7 +180,9 @@ namespace ompl {
 	
 	\return true if createSBPLPlanner() succeeded OR the old instance was recycled.
     */
-    bool select(std::string const & name, bool recycle);
+    bool select(std::string const & name, bool recycle,
+		/** optional stream to which error messages get written */
+		std::ostream * opt_err_os);
     
     /** Dispatch to the currently select()-ed planner's
 	SBPLPlanner::replan(), measuring the time it actually takes to

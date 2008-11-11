@@ -56,45 +56,52 @@ namespace estimation
 class odom_estimation_node: public ros::node
 {
 public:
-  // constructor
+  /// constructor
   odom_estimation_node();
 
-  // destructor
+  /// destructor
   virtual ~odom_estimation_node();
 
-  // callback function for vel data
+  /// callback function for vel data
   void vel_callback();
 
-  // callback function for odo data
+  /// callback function for odo data
   void odom_callback();
 
-  // callback function for imu data
+  /// callback function for imu data
   void imu_callback();
+
+  /// callback function for vo data
+  void vo_callback();
 
 private:
 
-  // ekf filter
+  /// update filter
+  void Update(double time);
+
+  /// ekf filter
   odom_estimation _my_filter;
 
   // messages to receive
-  std_msgs::BaseVel              _vel;  
-  std_msgs::RobotBase2DOdom      _odom;  
+  std_msgs::BaseVel               _vel;  
+  std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
+  std_msgs::PoseWithRatesStamped  _vo;  
 
   // estimated robot pose message to send
   std_msgs::PoseStamped _output; 
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
-  KDL::Frame _odom_meas, _imu_meas;
-  double _odom_time, _imu_time;
-  bool _vel_initialized, _odom_initialized, _imu_initialized;
+  KDL::Frame _odom_meas, _imu_meas, _vo_meas;
+  double _odom_time, _imu_time, _vo_time;
+  bool _vel_active, _odom_active, _imu_active, _vo_active;
 
   // mutex
   ros::thread::mutex _filter_mutex;
 
   // log files for debugging
-  std::ofstream _odom_file, _imu_file, _corr_file;
+  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file;
 
 
 }; // class

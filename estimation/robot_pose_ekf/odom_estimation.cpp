@@ -47,7 +47,10 @@ namespace estimation
   odom_estimation::odom_estimation():
     _prior(NULL),
     _filter(NULL),
-    _filter_initialized(false)
+    _filter_initialized(false),
+    _odom_initialized(false),
+    _imu_initialized(false),
+    _vo_initialized(false)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
@@ -87,6 +90,19 @@ namespace estimation
     Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
     _imu_meas_pdf   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
     _imu_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_imu_meas_pdf);
+
+
+    // create MEASUREMENT MODEL VO
+    ColumnVector measNoiseVo_Mu(3);  measNoiseVo_Mu = 0;
+    SymmetricMatrix measNoiseVo_Cov(3);  measNoiseVo_Cov = 0;
+    measNoiseVo_Cov(1,1) = pow(0.001,2);
+    measNoiseVo_Cov(2,2) = pow(0.001,2);
+    measNoiseVo_Cov(3,3) = pow(0.001,2);
+    Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
+    Matrix Hvo(3,6);  Hvo = 0;
+    Hvo(1,4) = 1;    Hvo(2,5) = 1;    Hvo(3,6) = 1;
+    _vo_meas_pdf   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
+    _vo_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_vo_meas_pdf);
   };
 
 
@@ -99,19 +115,20 @@ namespace estimation
     delete _odom_meas_pdf;
     delete _imu_meas_model;
     delete _imu_meas_pdf;
+    delete _vo_meas_model;
+    delete _vo_meas_pdf;
     delete _sys_pdf;
     delete _sys_model;
   };
 
 
   // initialize prior density of filter with odom data
-  void odom_estimation::Initialize(Frame& odom_meas, double odom_time,
-				   Frame& imu_meas,  double imu_time, double filter_time)
+  void odom_estimation::Initialize(Frame& prior, double time)
   {
     // set prior of filter to odom data
-    ColumnVector prior_Mu(6);   prior_Mu = 0;
-    prior_Mu(1) = odom_meas.p(0);  prior_Mu(2) = odom_meas.p(1); 
-    double tmp;  odom_meas.M.GetRPY(tmp, tmp, prior_Mu(6));
+    ColumnVector prior_Mu(6); 
+    prior_Mu(1) = prior.p(0);  prior_Mu(2) = prior.p(1); prior_Mu(3) = prior.p(2); 
+    prior.M.GetRPY(prior_Mu(4), prior_Mu(5), prior_Mu(6));
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
@@ -124,12 +141,8 @@ namespace estimation
 
     // remember prior
     _filter_estimate_old_vec = prior_Mu;
-    _filter_estimate_old = odom_meas;
-    _filter_time_old     = filter_time;
-
-    // remember sensor measurements
-    _odom_meas_old = odom_meas;
-    _imu_meas_old  = imu_meas;
+    _filter_estimate_old = prior;
+    _filter_time_old     = time;
 
     // filter initialized
     _filter_initialized = true;
@@ -140,34 +153,53 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation::Update(Frame& odom_meas, double odom_time,
-			       Frame& imu_meas,  double imu_time, double filter_time)
+  void odom_estimation::Update(Frame& odom_meas, double odom_time, bool odom_active,
+			       Frame& imu_meas,  double imu_time,  bool imu_active,
+			       Frame& vo_meas,   double vo_time,   bool vo_active, double filter_time)
   {
     if (_filter_initialized){
       // system update filter
       ColumnVector vel_desi(2); vel_desi = 0;
       _filter->Update(_sys_model, vel_desi * (filter_time - _filter_time_old));
       
-      // convert absolute odom measurements to relative odom measurements
-      Frame odom_rel_frame =  _filter_estimate_old * _odom_meas_old.Inverse() * odom_meas;
-      ColumnVector odom_rel(3);
-      odom_rel(1) = odom_rel_frame.p(0);   odom_rel(2) = odom_rel_frame.p(1); 
-      double tmp; odom_rel_frame.M.GetRPY(tmp, tmp, odom_rel(3));
-      AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
+      // process odom measurement
+      if (_odom_initialized && odom_active){
+	// convert absolute odom measurements to relative odom measurements
+	Frame odom_rel_frame =  _filter_estimate_old * _odom_meas_old.Inverse() * odom_meas;
+	ColumnVector odom_rel(3);
+	odom_rel(1) = odom_rel_frame.p(0);   odom_rel(2) = odom_rel_frame.p(1); 
+	double tmp; odom_rel_frame.M.GetRPY(tmp, tmp, odom_rel(3));
+	AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
+	// update filter
+	_filter->Update(_odom_meas_model, odom_rel);
+      }
+      if (odom_active){  _odom_meas_old = odom_meas;  _odom_initialized = true;}
 
-      // convert absolute imu measurements to relative imu measurements
-      Frame imu_rel_frame =  _filter_estimate_old * _imu_meas_old.Inverse() * imu_meas;
-      ColumnVector imu_rel(3);
-      imu_rel_frame.M.GetRPY(imu_rel(1), imu_rel(2), imu_rel(3));
-      AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
-      
-      // measurement update filter
-      _filter->Update(_odom_meas_model, odom_rel);
-      _filter->Update(_imu_meas_model,  imu_rel);
-      
-      // remember sensor measurements
-      _odom_meas_old = odom_meas;
-      _imu_meas_old  = imu_meas;
+      // process imu measurement
+      if (_imu_initialized && imu_active){
+	// convert absolute imu measurements to relative imu measurements
+	// NEED TO INTERPRET THE FIRST TWO ANGLED OF THE IMU AS ABSOLUTE ANGLES
+	Frame imu_rel_frame =  _filter_estimate_old * _imu_meas_old.Inverse() * imu_meas;
+	ColumnVector imu_rel(3);
+	imu_rel_frame.M.GetRPY(imu_rel(1), imu_rel(2), imu_rel(3));
+	AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
+	// update filter
+	_filter->Update(_imu_meas_model,  imu_rel);
+      }
+      if (imu_active){  _imu_meas_old = imu_meas;  _imu_initialized = true;}
+
+      // process vo measurement
+      if (_vo_initialized && vo_active){
+	// convert absolute vo measurements to relative vo measurements
+	Frame vo_rel_frame =  _filter_estimate_old * _vo_meas_old.Inverse() * vo_meas;
+	ColumnVector vo_rel(3);
+	vo_rel_frame.M.GetRPY(vo_rel(1), vo_rel(2), vo_rel(3));
+	AngleOverflowCorrect(vo_rel(3), _filter_estimate_old_vec(6));
+	// update filter
+	_filter->Update(_vo_meas_model,  vo_rel);
+      }
+      if (vo_active){  _vo_meas_old = vo_meas;  _vo_initialized = true;}
+
 
       // remember last estimate
       _filter_estimate_old_vec = _filter->PostGet()->ExpectedValueGet();

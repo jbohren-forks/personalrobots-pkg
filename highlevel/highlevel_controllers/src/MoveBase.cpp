@@ -118,7 +118,7 @@ namespace ros {
       std::vector<unsigned char> inputData;
       unsigned int numCells = resp.map.width * resp.map.height;
       for(unsigned int i = 0; i < numCells; i++){
-	inputData.push_back((unsigned char) resp.map.data[i]);
+        inputData.push_back((unsigned char) resp.map.data[i]);
       }
 
       // Now allocate the cost map and its sliding window used by the controller
@@ -297,10 +297,12 @@ namespace ros {
     
     void MoveBase::baseScanCallback()
     {
+      ROS_INFO("Base Scan Callback");
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
+      ROS_INFO("Projected");
       processData(local_cloud);
     }
 
@@ -330,13 +332,18 @@ namespace ros {
 
 	const std_msgs::PointCloud& point_cloud = point_clouds_.front();
 
+	if(local_cloud.header.stamp - point_cloud.header.stamp > ros::Duration(9, 0)){
+	  point_clouds_.pop_front();
+	  continue;
+	}
+
 	std_msgs::PointCloud base_cloud;
 	std_msgs::PointCloud map_cloud;
 	
 	/* Transform to the base frame */
 	try
 	  {
-	    tf_.transformPointCloud("base", base_cloud, local_cloud);
+	    tf_.transformPointCloud("base", base_cloud, point_cloud);
 	    newData = extractFootprintAndGround(base_cloud);
 	    tf_.transformPointCloud("map", map_cloud, *newData);
 	  }
@@ -371,7 +378,7 @@ namespace ros {
 	// Is the time stamp copied when we do a tranform?
 	// Verify what happens if we get many updates in the same update time step?
 	// How can interleaving effect things?
-	ROS_DEBUG("Processing point cloud with %d points\n", map_cloud.get_pts_size());
+	ROS_INFO("Processing point cloud with %d points\n", map_cloud.get_pts_size());
         updateDynamicObstacles(point_cloud.header.stamp.to_double(), map_cloud);
       }
 
@@ -607,7 +614,8 @@ namespace ros {
 	ROS_DEBUG("Moving to desired goal orientation\n");
 	cmdVel.vx = 0;
 	cmdVel.vy = 0;
-	cmdVel.vw =  .5;
+        cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
+	cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
       }
       else {
 	// Refine the plan to reflect progress made. If no part of the plan is in the local cost window then

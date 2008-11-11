@@ -12,7 +12,7 @@ The Bullet Physics Engine
 <sysdepend os="ubuntu" version="8.04-hardy" package="libglut3-dev"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libglut3-dev"/>
 <export>
-<cpp cflags="-I${prefix}/bullet_svn/src -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/bullet_svn/src/LinearMath/ -lLibLinearMath" />
+<cpp cflags="-I${prefix}/bullet_svn/src -DBT_USE_DOUBLE_PRECISION -DBT_EULER_DEFAULT_ZYX" lflags="-L${prefix}/bullet_svn/src/LinearMath/ -lLinearMath" />
   <doxymaker external="http://www.continuousphysics.com/Bullet/BulletFull/index.html" />
 </export>
 </package>

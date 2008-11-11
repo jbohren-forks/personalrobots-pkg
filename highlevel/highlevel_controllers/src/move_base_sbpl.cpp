@@ -229,7 +229,7 @@ namespace ros {
 	string plannerType;
 	local_param("plannerType", plannerType, string("ARAPlanner"));
 	pMgr_ = new ompl::SBPLPlannerManager(env_->getDSI(), false, &mdpCfg_);
-	if ( ! pMgr_->select(plannerType, false)) {
+	if ( ! pMgr_->select(plannerType, false, 0)) {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
 	}

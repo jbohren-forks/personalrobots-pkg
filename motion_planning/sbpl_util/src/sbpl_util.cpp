@@ -47,36 +47,73 @@
 #include <errno.h>
 #include <cstring>
 
+using namespace std;
+
 
 namespace {
   
-  std::string mk_invalid_state_str(std::string const & method, int state) {
-    std::ostringstream os;
+  string mk_invalid_state_str(string const & method, int state) {
+    ostringstream os;
     os << "EnvironmentWrapper::invalid_state in method " << method << ": state = " << state;
     return os.str();
   }
+  
+  static map<string, string> planner_alias;
   
 }
 
 namespace ompl {
   
   
+  std::string canonicalPlannerName(std::string const & name_or_alias)
+  {
+    if (planner_alias.empty()) {
+      planner_alias.insert(make_pair("ARAPlanner", "ARAPlanner"));
+      planner_alias.insert(make_pair("ara",        "ARAPlanner"));
+      planner_alias.insert(make_pair("ARA",        "ARAPlanner"));
+      planner_alias.insert(make_pair("arastar",    "ARAPlanner"));
+      planner_alias.insert(make_pair("ARAStar",    "ARAPlanner"));
+
+      planner_alias.insert(make_pair("ADPlanner",  "ADPlanner"));
+      planner_alias.insert(make_pair("ad",         "ADPlanner"));
+      planner_alias.insert(make_pair("AD",         "ADPlanner"));
+      planner_alias.insert(make_pair("adstar",     "ADPlanner"));
+      planner_alias.insert(make_pair("ADStar",     "ADPlanner"));
+    }
+    
+    map<string, string>::const_iterator is(planner_alias.find(name_or_alias));
+    if (planner_alias.end() == is)
+      return "";
+    return is->second;
+  }
+  
+  
   SBPLPlanner * createSBPLPlanner(std::string const & name,
 				  DiscreteSpaceInformation* environment,
 				  bool bforwardsearch,
-				  MDPConfig* mdpCfg)
+				  MDPConfig* mdpCfg,
+				  std::ostream * opt_err_os)
   {
-    if ("ARAPlanner" == name)
+    string const canonical_name(canonicalPlannerName(name));
+    if ("ARAPlanner" == canonical_name)
       return new ARAPlanner(environment, bforwardsearch);
-    if ("ADPlanner" == name)
+    if ("ADPlanner" == canonical_name)
       return new ADPlanner(environment, bforwardsearch);
 
     // VIPlanner not instantiable... work in progress by Max
 #ifdef UNDEFINED
-    if ("VIPlanner" == name)
+    if ("VIPlanner" == canonical_name)
       return new VIPlanner(environment, mdpCfg);
 #endif // UNDEFINED
-
+    
+    if (opt_err_os) {
+      *opt_err_os << "ompl::createSBPLPlanner(): no planner called \"name\"\n"
+		  << "  use \"ARAPlanner\" or \"ADPlanner\"\n"
+		  << "  or one of the registered aliases:\n";
+      for (map<string, string>::const_iterator is(planner_alias.begin()); is != planner_alias.end(); ++is)
+	*opt_err_os << "    " << is->first << " --> " << is->second << "\n";
+    }
+    
     return 0;    
   }
   
@@ -109,11 +146,11 @@ namespace ompl {
   
   
   bool SBPLPlannerManager::
-  select(std::string const & name, bool recycle)
+  select(std::string const & name, bool recycle, std::ostream * opt_err_os)
   {
     if (recycle && (name == name_))
       return true;
-    SBPLPlanner * new_planner(createSBPLPlanner(name, environment_, bforwardsearch_, mdpCfg_));
+    SBPLPlanner * new_planner(createSBPLPlanner(name, environment_, bforwardsearch_, mdpCfg_, opt_err_os));
     if ( ! new_planner)
       return false;
     delete planner_;

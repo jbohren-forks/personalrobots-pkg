@@ -1,5 +1,5 @@
 <package>
-  <description>A simple class to synchronize incoming topics by timestamp.</description>
+  <description>A class to synchronize incoming topics with the same timestamp.</description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
   <depend package="roscpp" />
@@ -8,4 +8,5 @@
   <export>
     <cpp cflags="-I${prefix}"/>
   </export>
+  <url>http://pr.willowgarage.com/wiki/topic_synchronizer</url>
 </package>
