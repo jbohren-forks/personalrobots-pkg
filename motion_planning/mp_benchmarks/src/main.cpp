@@ -66,6 +66,7 @@ static void display(int * argc, char ** argv);
 
 static bool enableGfx;
 static string plannerType;
+static string costmapType;
 static string logFilename;
 static string pngFilename;
 static string setupName;
@@ -126,6 +127,7 @@ void usage(ostream & os)
   os << "options:\n"
      << "   -h               help (this message)\n"
      << "   -p  <name>       name of the SBPL planner\n"
+     << "   -m  <name>       name of the costmap implementation\n"
      << "   -s  <name>       name of the setup\n"
      << "   -r  <cellsize>   set grid resolution\n"
      << "   -i  <in-radius>  set INSCRIBED radius\n"
@@ -145,6 +147,7 @@ static string summarizeOptions()
   ostringstream os;
   os << "-p" << plannerType
      << "-s" << setupName
+     << "-m" << costmapType
      << "-r" << (int) rint(1e3 * resolution)
      << "-i" << (int) rint(1e3 * inscribedRadius)
      << "-c" << (int) rint(1e3 * circumscribedRadius)
@@ -164,6 +167,7 @@ void parse_options(int argc, char ** argv)
   // default values for options
   plannerType = "ARAPlanner";
   setupName = "office1";
+  costmapType = "costmap_2d";
   resolution = 0.05;
   inscribedRadius = 0.5;
   circumscribedRadius = 1.2;
@@ -206,6 +210,16 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	setupName = argv[ii];
+ 	break;
+	
+      case 'm':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -m requires a name argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	costmapType = argv[ii];
  	break;
 	
       case 'r':
@@ -372,7 +386,15 @@ void parse_options(int argc, char ** argv)
 
 
 void create_setup()
-{  
+{
+  bool use_sfl_cost;
+  if ("costmap_2d" == costmapType)
+    use_sfl_cost = false;
+  else if ("sfl" == costmapType)
+    use_sfl_cost = true;
+  else
+    errx(EXIT_FAILURE, "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl", costmapType.c_str());
+  
   *logos << "creating setup \"" << setupName << "\"\n" << flush;
   {
     shared_ptr<ostream> dump_os;
@@ -384,7 +406,7 @@ void create_setup()
       }
     }
     setup.reset(OfficeBenchmark::create(setupName, resolution, inscribedRadius, circumscribedRadius, inflationRadius,
-					obstacleCost, doorWidth, hallWidth,
+					obstacleCost, use_sfl_cost, doorWidth, hallWidth,
 					logos.get(), dump_os.get()));
     if ( ! setup)
       errx(EXIT_FAILURE, "could not create setup with name \"%s\"", setupName.c_str());
@@ -401,7 +423,7 @@ void create_setup()
   setup->dumpDescription(*logos, "", "  ");
   *logos << flush;
   
-  *logos << "creating environment wrapper\n" << flush;
+  *logos << "creating environment wrapper for map type " << costmapType << "\n" << flush;
   environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0,
 					     costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE));
   MDPConfig mdpConfig;
@@ -607,27 +629,30 @@ namespace {
 
 
 void init_layout()
-{  
+{
+  double x0, y0, x1, y1;
+  setup->getWorkspaceBounds(x0, y0, x1, y1);
   new npm::StillCamera("travmap",
-   		       setup->getX0(), setup->getY0(), setup->getX1(), setup->getY1(),
+		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRDTravmap()));
-  //  new npm::TraversabilityCamera("travmap", rdt);
-  new npm::TraversabilityDrawing("travmap", rdt);
+  // //  new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   new PlanDrawing("plan");
   
-  npm::View * view(new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >()));
-  view->Configure(0, 0, 0.5, 1);
-  view->SetCamera("travmap");
-  if ( ! view->AddDrawing("travmap"))
-    errx(EXIT_FAILURE, "no drawing called \"travmap\"");
-  if ( ! view->AddDrawing("plan"))
-    errx(EXIT_FAILURE, "no drawing called \"plan\"");
+  npm::View * view;
+  // //   view = new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >());
+  // //   view->Configure(0, 0, 0.5, 1);
+  // //   view->SetCamera("travmap");
+  // //   if ( ! view->AddDrawing("travmap"))
+  // //     errx(EXIT_FAILURE, "no drawing called \"travmap\"");
+  // //   if ( ! view->AddDrawing("plan"))
+  // //     errx(EXIT_FAILURE, "no drawing called \"plan\"");
   
   view = new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >());
-  view->Configure(0.5, 0, 0.5, 1);
+  // //  view->Configure(0.5, 0, 0.5, 1);
+  view->Configure(0, 0, 1, 1);
   view->SetCamera("travmap");
   if ( ! view->AddDrawing("costmap"))
     errx(EXIT_FAILURE, "no drawing called \"costmap\"");

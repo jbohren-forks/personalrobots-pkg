@@ -153,37 +153,6 @@ namespace {
 		         hall,       hall, 0, tol_xy, tol_th);
   }
   
-  
-  costmap_2d::CostMap2D * createCostMap2D(sfl::Mapper2d const & m2d)
-  {
-    boost::shared_ptr<sfl::RDTravmap> rdt(m2d.CreateRDTravmap());
-    unsigned int const width(rdt->GetXEnd());
-    unsigned int const height(rdt->GetYEnd());
-    std::vector<unsigned char> data;
-    data.reserve(width * height);
-    for (ssize_t iy(0); iy < height; ++iy)
-      for (ssize_t ix(0); ix < width; ++ix) {
-	if (rdt->IsWObst(ix, iy))
-	  data.push_back(costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE);
-	else
-	  data.push_back(0);	// suppose 0 means freespace
-      }
-    
-    // whatever, we won't update dynamic obstacles anyway
-    double const window_length(0);
-    
-    // hm... what if our obstacle cost needs more than 8 bits?    
-    unsigned char const threshold(m2d.obstacle & 0xff);
-    double const maxZ(1);
-    double const freeSpaceProjectionHeight(1);
-    double const inflationRadius(m2d.grown_robot_radius + m2d.buffer_zone);
-    double const circumscribedRadius(m2d.grown_robot_radius + m2d.buffer_zone);
-    double const inscribedRadius(m2d.grown_robot_radius);
-    return new costmap_2d::CostMap2D(width, height, data, m2d.gridframe.Delta(), window_length,
-				     threshold, maxZ, freeSpaceProjectionHeight, inflationRadius,
-				     circumscribedRadius, inscribedRadius);
-  }
-  
 }
 
 
@@ -196,16 +165,18 @@ namespace ompl {
 		     double _inscribed_radius,
 		     double _circumscribed_radius,
 		     double _inflation_radius,
-		     int _obstacle_cost)
+		     int _obstacle_cost,
+		     bool _use_sfl_cost)
     : resolution(_resolution),
       inscribed_radius(_inscribed_radius),
       circumscribed_radius(_circumscribed_radius),
       inflation_radius(_inflation_radius),
       obstacle_cost(_obstacle_cost),
-      x0_(0),
-      y0_(0),
-      x1_(0),
-      y1_(0)
+      use_sfl_cost(_use_sfl_cost),
+      bbx0_(0),
+      bby0_(0),
+      bbx1_(0),
+      bby1_(0)
   {
     sfl::GridFrame const gframe(resolution);
     boost::shared_ptr<sfl::Mapper2d::travmap_grow_strategy>
@@ -246,10 +217,10 @@ namespace ompl {
 				   0, std::numeric_limits<ssize_t>::max(),
 				   0, std::numeric_limits<ssize_t>::max(),
 				   boa);
-    x0_ = minval(x0_, minval(x0 - inflation_radius, x1 - inflation_radius));
-    y0_ = minval(y0_, minval(y0 - inflation_radius, y1 - inflation_radius));
-    x1_ = maxval(x1_, maxval(x0 + inflation_radius, x1 + inflation_radius));
-    y1_ = maxval(y1_, maxval(y0 + inflation_radius, y1 + inflation_radius));
+    bbx0_ = minval(bbx0_, minval(x0, x1));
+    bby0_ = minval(bby0_, minval(y0, y1));
+    bbx1_ = maxval(bbx1_, maxval(x0, x1));
+    bby1_ = maxval(bby1_, maxval(y0, y1));
   }
   
   
@@ -260,38 +231,10 @@ namespace ompl {
     if (progress_os)
       *progress_os << "SBPLBenchmarkSetup::drawPoint(" << xx << "  " << yy << ")\n" << flush;
     m2d_->AddBufferedObstacle(xx, yy, 0);
-    x0_ = minval(x0_, xx - inflation_radius);
-    y0_ = minval(y0_, yy - inflation_radius);
-    x1_ = maxval(x1_, xx + inflation_radius);
-    y1_ = maxval(y1_, yy + inflation_radius);
-  }
-  
-  
-  double SBPLBenchmarkSetup::
-  getX0() const
-  {
-    return x0_;
-  }
-  
-  
-  double SBPLBenchmarkSetup::
-  getY0() const
-  {
-    return y0_;
-  }
-  
-  
-  double SBPLBenchmarkSetup::
-  getX1() const
-  {
-    return x1_;
-  }
-  
-  
-  double SBPLBenchmarkSetup::
-  getY1() const
-  {
-    return y1_;
+    bbx0_ = minval(bbx0_, xx);
+    bby0_ = minval(bby0_, yy);
+    bbx1_ = maxval(bbx1_, xx);
+    bby1_ = maxval(bby1_, yy);
   }
   
   
@@ -320,7 +263,7 @@ namespace ompl {
   getCostmap() const
   {
     if ( ! costmap_)
-      costmap_.reset(createCostMap2D(*m2d_));
+      costmap_.reset(createCostMap2D());
     return *costmap_;
   }
   
@@ -329,6 +272,54 @@ namespace ompl {
   getTasks() const
   {
     return tasklist_;
+  }
+  
+  
+  costmap_2d::CostMap2D * SBPLBenchmarkSetup::
+  createCostMap2D() const
+  {
+    boost::shared_ptr<sfl::RDTravmap> rdt(m2d_->CreateRDTravmap());
+    unsigned int const width(rdt->GetXEnd());
+    unsigned int const height(rdt->GetYEnd());
+    std::vector<unsigned char> data;
+    data.reserve(width * height);
+    for (ssize_t iy(0); iy < height; ++iy)
+      for (ssize_t ix(0); ix < width; ++ix) {
+	
+	if (rdt->IsWObst(ix, iy))
+	  data.push_back(costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE);
+	
+	else if (use_sfl_cost) {
+	  int cost;
+	  if (rdt->GetValue(ix, iy, cost)) {
+	    if (cost >= 0xff)
+	      data.push_back(0xff);
+	    else
+	      data.push_back(cost & 0xff);
+	  }
+	}
+	
+	else
+	  data.push_back(0);	// suppose 0 means freespace
+      }
+    
+    // whatever, we won't update dynamic obstacles anyway (???)
+    double const window_length(0);
+    
+    // hm... what if our obstacle cost needs more than 8 bits?    
+    unsigned char const threshold(obstacle_cost & 0xff);
+    double const maxZ(1);
+    double const freeSpaceProjectionHeight(1);
+    costmap_2d::CostMap2D * cm;
+    if (use_sfl_cost)
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
+				     threshold, maxZ, freeSpaceProjectionHeight,
+				     0, 0, 0);
+    else
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
+				     threshold, maxZ, freeSpaceProjectionHeight,
+				     inflation_radius, circumscribed_radius, inscribed_radius);
+    return cm;
   }
     
     
@@ -339,9 +330,12 @@ namespace ompl {
 		  double circumscribed_radius,
 		  double inflation_radius,
 		  int obstacle_cost,
+		  bool use_sfl_cost,
 		  double _door_width,
 		  double _hall_width)
-    : SBPLBenchmarkSetup(name, resolution, inscribed_radius, circumscribed_radius, inflation_radius, obstacle_cost),
+    : SBPLBenchmarkSetup(name, resolution,
+			 inscribed_radius, circumscribed_radius, inflation_radius,
+			 obstacle_cost, use_sfl_cost),
       door_width(_door_width),
       hall_width(_hall_width)
   {
@@ -355,6 +349,7 @@ namespace ompl {
 	 double circumscribed_radius,
 	 double inflation_radius,
 	 int obstacle_cost,
+	 bool use_sfl_cost,
 	 double door_width,
 	 double hall_width,
 	 std::ostream * progress_os,
@@ -365,6 +360,7 @@ namespace ompl {
 						circumscribed_radius,
 						inflation_radius,
 						obstacle_cost,
+						use_sfl_cost,
 						door_width,
 						hall_width));
     if ("dots" == name)
@@ -402,6 +398,7 @@ namespace ompl {
        << prefix << "circumscribed_radius: " << circumscribed_radius << "\n"
        << prefix << "inflation_radius:     " << inflation_radius << "\n"
        << prefix << "obstacle_cost:        " << obstacle_cost << "\n"
+       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n")
        << prefix << "door_width:           " << door_width << "\n"
        << prefix << "hall_width:           " << hall_width << "\n"
        << prefix << "tasks:\n";
@@ -428,6 +425,46 @@ namespace ompl {
       goal_tol_xy(_goal_tol_xy),
       goal_tol_th(_goal_tol_th)
   {
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const
+  {
+    x0 = bbx0_ + resolution;
+    y0 = bby0_ + resolution;
+    x1 = bbx1_ - resolution;
+    y1 = bby1_ - resolution;
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const
+  {
+    x0 = bbx0_ + inscribed_radius;
+    y0 = bby0_ + inscribed_radius;
+    x1 = bbx1_ - inscribed_radius;
+    y1 = bby1_ - inscribed_radius;
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const
+  {
+    x0 = bbx0_ + circumscribed_radius;
+    y0 = bby0_ + circumscribed_radius;
+    x1 = bbx1_ - circumscribed_radius;
+    y1 = bby1_ - circumscribed_radius;
+  }
+  
+  
+  void SBPLBenchmarkSetup::
+  getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const
+  {
+    x0 = bbx0_ + inflation_radius;
+    y0 = bby0_ + inflation_radius;
+    x1 = bbx1_ - inflation_radius;
+    y1 = bby1_ - inflation_radius;
   }
   
 }

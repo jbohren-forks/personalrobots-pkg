@@ -83,7 +83,8 @@ namespace ompl {
 		       double inflation_radius,
 		       /** the cost value at or above which a cell is
 			   considered an obstacle */
-		       int obstacle_cost);
+		       int obstacle_cost,
+		       bool use_sfl_costs);
     
     virtual ~SBPLBenchmarkSetup();
     
@@ -134,25 +135,28 @@ namespace ompl {
     boost::shared_ptr<sfl::RDTravmap> getRDTravmap() const;
     costmap_2d::CostMap2D const & getCostmap() const;
     tasklist_t const & getTasks() const;
-    double getX0() const;
-    double getY0() const;
-    double getX1() const;
-    double getY1() const;
+    void getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const;
+    void getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
+    void getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
+    void getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const;
     
     double const resolution;
     double const inscribed_radius;
     double const circumscribed_radius;
     double const inflation_radius;
     int const obstacle_cost;
+    bool const use_sfl_cost;
     
   protected:
     boost::shared_ptr<sfl::Mapper2d> m2d_;
     tasklist_t tasklist_;
-    double x0_, y0_, x1_, y1_;	// bounding box
+    double bbx0_, bby0_, bbx1_, bby1_; // workspace bounding box
     
   private:
     mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
     mutable boost::shared_ptr<sfl::RDTravmap> rdtravmap_; // lazy init
+    
+    costmap_2d::CostMap2D * createCostMap2D() const;
   };
   
   
@@ -166,6 +170,7 @@ namespace ompl {
 		    double circumscribed_radius,
 		    double inflation_radius,
 		    int obstacle_cost,
+		    bool use_sfl_cost,
 		    double door_width,
 		    double hall_width);
     
@@ -182,6 +187,7 @@ namespace ompl {
 				    double circumscribed_radius,
 				    double inflation_radius,
 				    int obstacle_cost,
+				    bool use_sfl_cost,
 				    double door_width,
 				    double hall_width,
 				    std::ostream * progress_os,
