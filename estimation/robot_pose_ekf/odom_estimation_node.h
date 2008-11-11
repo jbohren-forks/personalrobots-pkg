@@ -41,7 +41,7 @@
 // messages
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/BaseVel.h"
-#include "imu_node/ImuData.h"
+#include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
 
 // kdl
@@ -77,9 +77,9 @@ private:
   odom_estimation _my_filter;
 
   // messages to receive
-  std_msgs::BaseVel         _vel;  
-  std_msgs::RobotBase2DOdom _odom;  
-  imu_node::ImuData         _imu;  
+  std_msgs::BaseVel              _vel;  
+  std_msgs::RobotBase2DOdom      _odom;  
+  std_msgs::PoseWithRatesStamped  _imu;  
 
   // estimated robot pose message to send
   std_msgs::PoseStamped _output; 
