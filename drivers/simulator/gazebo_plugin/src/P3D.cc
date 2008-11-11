@@ -78,14 +78,15 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
-  this->topicName = node->GetString("topicName", "", 1);
-  this->frameName = node->GetString("frameName", "", 1);
-  this->xyzOffsets  = node->GetVector3("xyzOffsets", Vector3(0,0,0));
-  this->rpyOffsets  = node->GetVector3("rpyOffsets", Vector3(0,0,0));
+  this->topicName    = node->GetString("topicName", "ground_truth", 1);
+  this->IMUTopicName = node->GetString("IMUTopicName", "imu", 1);
+  this->frameName    = node->GetString("frameName", "", 1);
+  this->xyzOffsets   = node->GetVector3("xyzOffsets", Vector3(0,0,0));
+  this->rpyOffsets   = node->GetVector3("rpyOffsets", Vector3(0,0,0));
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
-  rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->topicName,10);
+  rosnode->advertise<std_msgs::PoseWithRatesStamped>(this->IMUTopicName,10);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -207,7 +208,7 @@ void P3D::UpdateChild()
   this->poseMsg.acc.ang_acc.az    = this->aeul.z;
 
   // publish to ros
-  rosnode->publish(this->topicName,this->poseMsg);
+  rosnode->publish(this->IMUTopicName,this->poseMsg);
   this->lock.unlock();
 
   // save last time stamp
@@ -219,4 +220,5 @@ void P3D::UpdateChild()
 void P3D::FiniChild()
 {
   rosnode->unadvertise(this->topicName);
+  rosnode->unadvertise(this->IMUTopicName);
 }

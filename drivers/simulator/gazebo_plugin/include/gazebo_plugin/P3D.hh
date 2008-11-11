@@ -53,6 +53,7 @@ namespace gazebo
          <updateRate>1000.0</updateRate>
          <bodyName>body_name</bodyName>
          <topicName>body_pose_ground_truth</topicName>
+         <IMUTopicName>body_pose_IMU</IMUTopicName>
          <frameName>map</frameName>
          <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
          <rpyOffsets>0 0 0</rpyOffsets>
@@ -77,6 +78,7 @@ namespace gazebo
          <updateRate>1000.0</updateRate>
          <bodyName>body_name</bodyName>
          <topicName>body_pose_ground_truth</topicName>
+         <IMUTopicName>body_pose_IMU</IMUTopicName>
          <frameName>map</frameName>
          <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- option to initialize odometry for fake localization-->
          <rpyOffsets>0 0 0</rpyOffsets>
@@ -125,6 +127,7 @@ namespace gazebo
 
       /// \brief topic name
       private: std::string topicName;
+      private: std::string IMUTopicName;
 
       /// \brief frame transform name, should match link name
       /// FIXME: extract link name directly?

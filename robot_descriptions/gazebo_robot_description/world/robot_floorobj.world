@@ -354,6 +354,7 @@
       <updateRate>1000.0</updateRate>
       <bodyName>gripper_roll_right</bodyName>
       <topicName>gripper_roll_right_pose_ground_truth</topicName>
+      <IMUTopicName>gripper_roll_right_pose_imu</IMUTopicName>
       <frameName>map</frameName>
       <interface:position name="p3d_right_wrist_position"/>
     </controller:P3D>
@@ -363,6 +364,7 @@
       <updateRate>1000.0</updateRate>
       <bodyName>gripper_roll_left</bodyName>
       <topicName>gripper_roll_left_pose_ground_truth</topicName>
+      <IMUTopicName>gripper_roll_left_pose_imu</IMUTopicName>
       <frameName>map</frameName>
       <interface:position name="p3d_left_wrist_position"/>
     </controller:P3D>
@@ -372,6 +374,7 @@
       <updateRate>1000.0</updateRate>
       <bodyName>base</bodyName>
       <topicName>base_pose_ground_truth</topicName>
+      <IMUTopicName>base_pose_imu</IMUTopicName>
       <frameName>map</frameName>
       <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
       <rpyOffsets>0 0 0</rpyOffsets>
