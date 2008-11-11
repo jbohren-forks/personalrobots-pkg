@@ -4,7 +4,12 @@ rospack(tf)
 
 genmsg()
 
-rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp)
+find_package(Boost 0 REQUIRED COMPONENTS thread)
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+
+rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
+target_link_libraries(tf ${Boost_LIBRARIES})
 
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)
@@ -27,7 +32,6 @@ target_link_libraries(cache_unittest tf)
 rospack_add_gtest(bullet_unittest test/bullet_unittest.cpp)
 target_link_libraries(bullet_unittest tf)
 
-
 rospack_add_executable(btTest test/quaternion.cpp)
 rospack_add_executable(testListener test/testListener.cpp)
 target_link_libraries(testListener tf)
@@ -36,3 +40,8 @@ rospack_add_executable(testBroadcaster test/testBroadcaster.cpp)
 target_link_libraries(testBroadcaster tf)
 rospack_add_executable(transform_sender src/transform_sender.cpp)
 
+rospack_add_executable(test_notifier test/test_notifier.cpp)
+rospack_is_test_harness(test_notifier)
+rospack_add_gtest_build_flags(test_notifier)
+target_link_libraries(test_notifier tf ${Boost_LIBRARIES})
+rospack_add_rostest(test/test_notifier.xml)
