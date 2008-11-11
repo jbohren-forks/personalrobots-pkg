@@ -46,86 +46,125 @@ TransformBroadcaster* g_broadcaster = NULL;
 class Notification
 {
 public:
-	Notification()
+	Notification(int expected_count)
 	: count_(0)
+	, expected_count_(expected_count)
 	{
+		boost::detail::thread::lock_ops<boost::timed_mutex>::lock(mutex_);
+	}
 
+	~Notification()
+	{
+		if (count_ < expected_count_)
+		{
+			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		}
 	}
 
 	void notify(const MessageNotifier<std_msgs::PositionStamped>::MessagePtr& message)
 	{
 		++count_;
+
+		//printf("Notify: %d\n", count_);
+
+		if (count_ == expected_count_)
+		{
+			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		}
 	}
 
 	int count_;
+	int expected_count_;
+
+	boost::timed_mutex mutex_;
 };
 
 template<class T>
 class Counter
 {
 public:
-	Counter(const std::string& topic)
+	Counter(const std::string& topic, int expected_count)
 	: count_(0)
+	, expected_count_(expected_count)
 	, topic_(topic)
 	{
+		boost::detail::thread::lock_ops<boost::timed_mutex>::lock(mutex_);
+
 		g_node->subscribe(topic_, message_, &Counter::callback, this, 0);
 	}
 
 	~Counter()
 	{
 		g_node->unsubscribe(topic_, &Counter::callback, this);
+
+		if (count_ < expected_count_)
+		{
+			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		}
 	}
 
 	void callback()
 	{
 		++count_;
+
+		//printf("Counter: %d\n", count_);
+
+		if (count_ == expected_count_)
+		{
+			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		}
 	}
 
 	T message_;
 
 	int count_;
+	int expected_count_;
 	std::string topic_;
+
+	boost::timed_mutex mutex_;
 };
 
 TEST(MessageNotifier, noTransforms)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message");
+	Notification n(1);
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 
-	ros::Duration(0.1).sleep();
+	Counter<std_msgs::PositionStamped> c("test_message", 1);
+
+	ros::Duration(0.2).sleep();
 
 	std_msgs::PositionStamped msg;
 	msg.header.stamp = ros::Time::now();
 	msg.header.frame_id = "frame2";
 	g_node->publish("test_message", msg);
 
-	while (c.count_ < 1)
-	{
-		ros::Duration(0.01).sleep();
-	}
+	ros::Duration(0.2).sleep();
 
-	EXPECT_EQ(n.count_, 0);
-
-	delete notifier;
+	EXPECT_EQ(0, n.count_);
 }
 
 TEST(MessageNotifier, preexistingTransforms)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message");
-	Counter<rosTF::TransformArray> c2("TransformArray"); /// \todo Switch this to tf_message once rosTF goes away completely
+	Notification n(1);
+	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 
-	ros::Duration(0.1).sleep();
+	ros::Duration(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
 	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1", "frame2");
 
-	while (c2.count_ < 1)
 	{
-		ros::Duration(0.01).sleep();
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
 	}
 
 	std_msgs::PositionStamped msg;
@@ -133,137 +172,190 @@ TEST(MessageNotifier, preexistingTransforms)
 	msg.header.frame_id = "frame2";
 	g_node->publish("test_message", msg);
 
-	while (c.count_ < 1)
 	{
-		ros::Duration(0.01).sleep();
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
 	}
 
-	ros::Duration(0.1).sleep();
-
-	EXPECT_EQ(n.count_, 1);
-
-	delete notifier;
+	EXPECT_EQ(1, n.count_);
 }
 
 TEST(MessageNotifier, postTransforms)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message");
+	Notification n(1);
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame3", 1);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 
-	ros::Duration(0.1).sleep();
+	Counter<std_msgs::PositionStamped> c("test_message", 1);
+
+	ros::Duration(0.2).sleep();
+
+	ros::Time stamp = ros::Time::now();
 
 	std_msgs::PositionStamped msg;
-	msg.header.stamp = ros::Time::now();
+	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame4";
 	g_node->publish("test_message", msg);
 
-	while (c.count_ < 1)
 	{
-		ros::Duration(0.01).sleep();
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
 	}
 
-	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), msg.header.stamp, "frame3", "frame4");
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame3", "frame4");
 
-	ros::Duration(0.1).sleep();
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
 
-	EXPECT_EQ(n.count_, 1);
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-	delete notifier;
+		EXPECT_EQ(true, lock.locked());
+	}
+
+	EXPECT_EQ(1, n.count_);
 }
 
 TEST(MessageNotifier, queueSize)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message");
+	Notification n(10);
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame5", 10);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 
-	ros::Duration(0.1).sleep();
+	Counter<std_msgs::PositionStamped> c("test_message", 20);
+
+	ros::Duration(0.2).sleep();
+
+	ros::Time stamp = ros::Time::now();
 
 	for (int i = 0; i < 20; ++i)
 	{
 		std_msgs::PositionStamped msg;
-		msg.header.stamp = ros::Time::now();
+		msg.header.stamp = stamp;
 		msg.header.frame_id = "frame6";
 		g_node->publish("test_message", msg);
-	}
 
-	while (c.count_ < 20)
-	{
 		ros::Duration(0.01).sleep();
 	}
 
-	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), ros::Time::now(), "frame5", "frame6");
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
 
-  ros::Duration(0.1).sleep();
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-	EXPECT_EQ(n.count_, 10);
+		EXPECT_EQ(true, lock.locked());
+	}
 
-	delete notifier;
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame5", "frame6");
+
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
+	}
+
+	EXPECT_EQ(10, n.count_);
 }
 
 TEST(MessageNotifier, setTopic)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message2");
+	Notification n(1);
+	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 	notifier->setTopic("test_message2");
 
-	ros::Duration(0.1).sleep();
+	ros::Duration(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
 	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame7", "frame8");
 
-	ros::Duration(0.1).sleep();
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
+	}
 
 	std_msgs::PositionStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame8";
 	g_node->publish("test_message2", msg);
 
-	while (c.count_ < 1)
 	{
-		ros::Duration(0.01).sleep();
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
 	}
 
-	ros::Duration(0.1).sleep();
-
-	EXPECT_EQ(n.count_, 1);
-
-	delete notifier;
+	EXPECT_EQ(1, n.count_);
 }
 
 TEST(MessageNotifier, setTargetFrame)
 {
-	Notification n;
-	Counter<std_msgs::PositionStamped> c("test_message");
+	Notification n(1);
+	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PositionStamped>* notifier = new MessageNotifier<std_msgs::PositionStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
+	std::auto_ptr<MessageNotifier<std_msgs::PositionStamped> > notifier_ptr(notifier);
 	notifier->setTargetFrame("frame1000");
 
-	ros::Duration(0.1).sleep();
+	ros::Duration(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
-	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame9", "frame10");
+	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame1000", "frame10");
 
-	ros::Duration(0.1).sleep();
+	{
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
+	}
 
 	std_msgs::PositionStamped msg;
 	msg.header.stamp = stamp;
 	msg.header.frame_id = "frame10";
 	g_node->publish("test_message", msg);
 
-	while (c.count_ < 1)
 	{
-		ros::Duration(0.01).sleep();
+		boost::xtime xt;
+		boost::xtime_get(&xt, boost::TIME_UTC);
+		xt.sec += 10;
+
+		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
+
+		EXPECT_EQ(true, lock.locked());
 	}
 
-	ros::Duration(0.1).sleep();
-
-	EXPECT_EQ(n.count_, 0);
-
-	delete notifier;
+	EXPECT_EQ(1, n.count_);
 }
 
 int main(int argc, char** argv)

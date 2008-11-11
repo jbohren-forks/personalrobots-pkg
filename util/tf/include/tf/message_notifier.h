@@ -158,7 +158,7 @@ public:
 	 */
 	void setTargetFrame(const std::string& target_frame)
 	{
-		boost::mutex::scoped_lock lock(list_mutex_);
+		boost::mutex::scoped_lock lock(queue_mutex_);
 
 		target_frame_ = target_frame;
 		new_data_.notify_all();
@@ -183,7 +183,7 @@ public:
 	void clear()
 	{
 		boost::mutex::scoped_lock notify_lock(notify_mutex_);
-		boost::mutex::scoped_lock list_lock(list_mutex_);
+		boost::mutex::scoped_lock list_lock(queue_mutex_);
 
 		messages_.clear();
 	}
@@ -202,9 +202,11 @@ private:
 	{
 		to_notify.reserve(message_count_);
 
+		int i = 0;
+
 		typename L_Message::iterator it = messages_.begin();
 		typename L_Message::iterator end = messages_.end();
-		for (; it != end;)
+		for (; it != end; ++i)
 		{
 			MessagePtr& message = *it;
 
@@ -221,9 +223,12 @@ private:
 
 				it = messages_.erase(it);
 				--message_count_;
+
+				//printf("Message %d ready, count now %d\n", i, message_count_);
 			}
-			catch(TransformException&)
+			catch(TransformException& e)
 			{
+				//printf("message %d: Transforms unavailable\n", i);
 				// If the transform failed, move on to the next message
 				++it;
 			}
@@ -247,6 +252,34 @@ private:
 	}
 
 	/**
+	 * \brief Adds messages into the message list, removing old messages if necessary
+	 */
+	void processNewMessages(V_Message& messages)
+	{
+		typename V_Message::iterator it = messages.begin();
+		typename V_Message::iterator end = messages.end();
+		for (; it != end; ++it)
+		{
+			MessagePtr& message = *it;
+
+			// If this message is about to push us past our queue size, erase the oldest message
+			if (message_count_ + 1 > queue_size_)
+			{
+				messages_.pop_front();
+				--message_count_;
+
+				//printf("Removed old message, count now %d\n", message_count_);
+			}
+
+			// Add the message to our list
+			messages_.push_back(message);
+			++message_count_;
+
+			//printf("Added message, count now %d\n", message_count_);
+		}
+	}
+
+	/**
 	 * \brief Entry point into the worker thread that does all our actual work, including calling the notification callback
 	 */
 	void workerThread()
@@ -254,12 +287,16 @@ private:
 		V_Message to_notify;
 		while (!destructing_)
 		{
-			{
-				boost::mutex::scoped_lock lock(list_mutex_);
+			V_Message local_queue;
 
-				// Wait until there is new data available
-				while (message_count_ == 0 && !destructing_)
+			{
+				//printf("workerThread: locking\n");
+				boost::mutex::scoped_lock lock(queue_mutex_);
+
+				// Wait for new data to be available
+				if (message_count_ == 0 && !new_transforms_ && !new_messages_ && !destructing_)
 				{
+					//printf("workerThread: waiting\n");
 					new_data_.wait(lock);
 				}
 
@@ -269,11 +306,18 @@ private:
 					break;
 				}
 
-				// Gather messages ready to be notified
-				gatherReadyMessages(to_notify);
+				local_queue.swap(new_message_queue_);
+
+				new_messages_ = false;
 			}
 
-			// Outside the lock, notify that the messages are available
+			processNewMessages(local_queue);
+
+			// Outside the lock, gather and notify that the messages are ready
+			gatherReadyMessages(to_notify);
+
+			new_transforms_ = false;
+
 			notify(to_notify);
 			to_notify.clear();
 		}
@@ -320,6 +364,7 @@ private:
 	 */
 	void incomingMessage()
 	{
+		//printf("incoming message\n");
 		// Allocate our new message and placement-new it
 		Message* mem = (Message*)notifierAllocate(sizeof(Message));
 		new(mem) Message();
@@ -330,18 +375,13 @@ private:
 		*message = message_;
 
 		{
-			boost::mutex::scoped_lock lock(list_mutex_);
+			boost::mutex::scoped_lock lock(queue_mutex_);
 
-			// If this message is about to push us past our queue size, erase the oldest message
-			if (message_count_ + 1 > queue_size_)
-			{
-				messages_.pop_front();
-				--message_count_;
-			}
+			new_message_queue_.push_back(message);
 
-			// Add the message to our list
-			messages_.push_back(message);
-			++message_count_;
+			//printf("Added message, count now %d\n", message_count_);
+
+			new_messages_ = true;
 
 			// Notify the worker thread that there is new data available
 			new_data_.notify_all();
@@ -355,6 +395,7 @@ private:
 	{
 		// Notify the worker thread that there is new data available
 		new_data_.notify_all();
+		new_transforms_ = true;
 	}
 
 	/**
@@ -362,8 +403,10 @@ private:
 	 */
 	void incomingOldTFMessage()
 	{
+		//printf("incoming transforms\n");
 		// Notify the worker thread that there is new data available
 		new_data_.notify_all();
+		new_transforms_ = true;
 	}
 
 	Transformer* tf_; 																		///< The Transformer used to determine if transformation data is available
@@ -375,7 +418,6 @@ private:
 
 	L_Message messages_;																	///< The message list
 	uint32_t message_count_;															///< The number of messages in the list.  Used because messages_.size() has linear cost
-	boost::mutex list_mutex_;															///< The mutex used for locking message list operations
 
 	Message message_;																			///< The incoming message
 
@@ -385,6 +427,10 @@ private:
 	bool destructing_;																		///< Used to notify the worker thread that it needs to shutdown
 	boost::thread* thread_handle_;												///< Thread handle for the worker thread
 	boost::condition new_data_;														///< Condition variable used for waking the worker thread
+	bool new_messages_;																		///< Used to skip waiting on new_data_ if new messages have come in while calling back
+	volatile bool new_transforms_; 												///< Used to skip waiting on new_data_ if new transforms have come in while calling back or transforming data
+	V_Message new_message_queue_;													///< Queues messages to later be processed by the worker thread
+	boost::mutex queue_mutex_;														///< The mutex used for locking message queue operations
 
 	boost::mutex notify_mutex_;														///< Mutex used for locking the notification process
 };
