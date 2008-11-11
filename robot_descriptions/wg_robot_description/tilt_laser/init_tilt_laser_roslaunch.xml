@@ -1,4 +1,0 @@
-<launch> 
-    <node pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x tilt_laser_test.xml" />
-    <node pkg="mechanism_bringup" type="calibrate_tilt_laser.py"/>
-</launch>
