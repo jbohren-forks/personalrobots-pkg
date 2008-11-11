@@ -147,6 +147,12 @@ namespace gazebo
       private: Vector3 apos;
       private: Vector3 aeul;
 
+      /// \brief Gaussian noise
+      private: double gaussianNoise;
+
+      /// \brief Gaussian noise generator
+      private: double GaussianKernel(double mu,double sigma);
+
    };
 
 /** \} */

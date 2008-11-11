@@ -78,11 +78,12 @@ void P3D::LoadChild(XMLConfigNode *node)
   this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 //  this->myBody = dynamic_cast<Body*>(this->myParent->GetBody(bodyName));
 
-  this->topicName    = node->GetString("topicName", "ground_truth", 1);
-  this->IMUTopicName = node->GetString("IMUTopicName", "", 1);
-  this->frameName    = node->GetString("frameName", "", 1);
-  this->xyzOffsets   = node->GetVector3("xyzOffsets", Vector3(0,0,0));
-  this->rpyOffsets   = node->GetVector3("rpyOffsets", Vector3(0,0,0));
+  this->topicName     = node->GetString("topicName", "ground_truth", 1);
+  this->IMUTopicName  = node->GetString("IMUTopicName", "", 1);
+  this->frameName     = node->GetString("frameName", "", 1);
+  this->xyzOffsets    = node->GetVector3("xyzOffsets", Vector3(0,0,0));
+  this->rpyOffsets    = node->GetVector3("rpyOffsets", Vector3(0,0,0));
+  this->gaussianNoise = node->GetDouble("gaussianNoise",0.0,0); //read from xml file
 
   std::cout << "==== topic name for P3D ======== " << this->topicName << std::endl;
   rosnode->advertise<std_msgs::TransformWithRateStamped>(this->topicName,10);
@@ -194,21 +195,21 @@ void P3D::UpdateChild()
     this->poseMsg.pos.orientation.z = rot.z;
     this->poseMsg.pos.orientation.w = rot.u;
 
-    this->poseMsg.vel.vel.vx        = vpos.x;
-    this->poseMsg.vel.vel.vy        = vpos.y;
-    this->poseMsg.vel.vel.vz        = vpos.z;
+    this->poseMsg.vel.vel.vx        = vpos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.vel.vy        = vpos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.vel.vz        = vpos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.vel.ang_vel.vx    = veul.x;
-    this->poseMsg.vel.ang_vel.vy    = veul.y;
-    this->poseMsg.vel.ang_vel.vz    = veul.z;
+    this->poseMsg.vel.ang_vel.vx    = veul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.ang_vel.vy    = veul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.vel.ang_vel.vz    = veul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
-    this->poseMsg.acc.acc.ax        = this->apos.x;
-    this->poseMsg.acc.acc.ay        = this->apos.y;
-    this->poseMsg.acc.acc.az        = this->apos.z;
+    this->poseMsg.acc.acc.ax        = this->apos.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.acc.ay        = this->apos.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.acc.az        = this->apos.z + this->GaussianKernel(0,this->gaussianNoise) ;
     // pass euler anglular rates
-    this->poseMsg.acc.ang_acc.ax    = this->aeul.x;
-    this->poseMsg.acc.ang_acc.ay    = this->aeul.y;
-    this->poseMsg.acc.ang_acc.az    = this->aeul.z;
+    this->poseMsg.acc.ang_acc.ax    = this->aeul.x + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.ang_acc.ay    = this->aeul.y + this->GaussianKernel(0,this->gaussianNoise) ;
+    this->poseMsg.acc.ang_acc.az    = this->aeul.z + this->GaussianKernel(0,this->gaussianNoise) ;
 
     // publish to ros
     rosnode->publish(this->IMUTopicName,this->poseMsg);
@@ -228,3 +229,21 @@ void P3D::FiniChild()
   if (this->IMUTopicName != "")
     rosnode->unadvertise(this->IMUTopicName);
 }
+
+//////////////////////////////////////////////////////////////////////////////
+// Utility for adding noise
+double P3D::GaussianKernel(double mu,double sigma)
+{
+  // using Box-Muller transform to generate two independent standard normally disbributed normal variables
+  // see wikipedia
+  double U = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double V = (double)rand()/(double)RAND_MAX; // normalized uniform random variable
+  double X = sqrt(-2.0 * ::log(U)) * cos( 2.0*M_PI * V);
+  //double Y = sqrt(-2.0 * ::log(U)) * sin( 2.0*M_PI * V); // the other indep. normal variable
+  // we'll just use X
+  // scale to our mu and sigma
+  X = sigma * X + mu;
+  return X;
+}
+
+
