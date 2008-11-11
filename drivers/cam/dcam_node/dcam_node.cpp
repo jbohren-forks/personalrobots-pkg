@@ -274,6 +274,18 @@ public:
   void publishImages(std::string base_name, cam::ImageData* img)
   {
 
+    if (img->imRaw)
+    {
+      img_wrapper_.fromInterlacedData( "image_raw",
+                    img->imHeight, img->imWidth, 1,
+                    "mono", "byte",
+                    img->imRaw );
+      publish(base_name + std::string("image_raw"), img_wrapper_);
+      cam_info_.has_image = true;
+    } else {
+      cam_info_.has_image = false;
+    }
+
     if (img->im)
     {
       img_wrapper_.fromInterlacedData( "image",
@@ -338,6 +350,9 @@ public:
   void advertiseImages(std::string base_name, cam::ImageData* img)
   {
     advertise<image_msgs::CamInfo>(base_name + std::string("cam_info"), 1);
+
+    if (img->imRaw)
+      advertise<image_msgs::ImageWrapper>(base_name + std::string("image_raw"), 1);
 
     if (img->im)
       advertise<image_msgs::ImageWrapper>(base_name + std::string("image"), 1);
