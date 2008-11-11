@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,58 +27,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef TOPOLOGICAL_MAP_BOTTLENECK_GRAPH_H
-#define TOPOLOGICAL_MAP_BOTTLENECK_GRAPH_H
 
-#include <utility>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/multi_array.hpp>
+#include <iostream>
+#include "topological_map/bottleneck_graph.h"
+
+using std::cout;
+using std::endl;
 
 
-namespace topological_map
+int main (int, char* argv[])
 {
+  
+  // Initialize grid
+  topological_map::GridArray grid(boost::extents[4][5]);
+  grid[0][2] = true;
+  grid[2][2] = true;
+  grid[3][2] = true;
 
-
-// Vertex descriptions
-typedef std::pair<int,int> Coords; 
-typedef std::set<Coords> Region;
-enum VertexType { BOTTLENECK, OPEN };
-struct VertexDescription
-{
-  VertexType type;
-  Region region;
-};
-
-
-// Now we can define the graph type
-// Vertices will be labeled with VertexDescriptions 
-struct desc_t 
-{
-  typedef boost::vertex_property_tag kind;
-};
-typedef boost::property<desc_t,VertexDescription> desc_property; 
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, desc_property> BottleneckGraph; 
-typedef boost::property_map<BottleneckGraph, desc_t>::type DescMap;
-typedef boost::graph_traits<BottleneckGraph>::vertex_descriptor BottleneckVertex;
-typedef boost::graph_traits<BottleneckGraph>::vertex_iterator BottleneckVertexIterator;
-
-// Typedefs for occupancy grids
-typedef boost::multi_array<bool, 2> GridArray;
-typedef GridArray::index grid_index;
-typedef GridArray::size_type grid_size;
+  printBottleneckGraph (topological_map::makeBottleneckGraph (grid, atoi(argv[1]), atoi(argv[2])));
+ 
+  cout << "done " << endl;
+}
 
 
 
 
-// API
-BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int distanceMultMin=3, int distanceMultMax=6);
-void printBottleneckGraph (const BottleneckGraph& g);
-void printBottlenecks (const BottleneckGraph& g, const GridArray& gr);
-} // namespace topological_map
-
-
-
-
-
-#endif //TOPOLOGICAL_MAP_BOTTLENECK_GRAPH_H
+  
+  
+  
+  
+  
