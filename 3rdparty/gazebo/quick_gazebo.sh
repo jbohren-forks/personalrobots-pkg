@@ -25,7 +25,7 @@ $URDF2GAZEBO $EXPANDED $MODEL
 # Inserts the include definition for the robot model.  For now, we
 # just use find-replace to insert the include before the world closing
 # tag.
-set -x
+
 INCLUDE_DEF="\
 <model:physical name=\"robot_model1\"> \\n\
 <include embedded=\"true\"> \
