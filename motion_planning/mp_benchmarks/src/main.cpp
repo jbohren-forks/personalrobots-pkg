@@ -390,7 +390,7 @@ void parse_options(int argc, char ** argv)
   }
   
   if (logFilename.empty())
-    logFilename = "mpbench-" + summarizeOptions() + ".log";
+    logFilename = "mpbench-" + summarizeOptions() + ".txt";
   
   if (pngFilename.empty())
     pngFilename = "mpbench-" + summarizeOptions() + ".png";
@@ -585,8 +585,13 @@ namespace npm {
 void display(int * argc, char ** argv)
 {
   init_layout();		// create views and such
-  glut_width = 640;
-  glut_height = 480;
+
+  {
+    double x0, y0, x1, y1;
+    setup->getWorkspaceBounds(x0, y0, x1, y1);
+    glut_width = (int) ceil((y1 - y0) / resolution);
+    glut_height = (int) ceil((x1 - x0) / resolution);
+  }
   
   glutInit(argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
@@ -688,21 +693,20 @@ void draw()
   if (websiteMode) {
     double x0, y0, x1, y1;
     setup->getWorkspaceBounds(x0, y0, x1, y1);
-    
-    int scrwidth((int) ceil((x1 - x0) / resolution));
-    int scrheight((int) ceil((y1 - y0) / resolution));
-    reshape(scrwidth, scrheight);
+    glut_width = (int) ceil((y1 - y0) / resolution);
+    glut_height = (int) ceil((x1 - x0) / resolution);
+    reshape(glut_width, glut_height);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();
     glutSwapBuffers();
     make_screenshot();
     
-    while (scrwidth > 120) { 	// wow what a hack
-      scrwidth /= 2;
-      scrheight /= 2;
+    while (glut_width > 200) { 	// wow what a hack
+      glut_width /= 2;
+      glut_height /= 2;
     }
-    reshape(scrwidth, scrheight);
+    reshape(glut_width, glut_height);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();
