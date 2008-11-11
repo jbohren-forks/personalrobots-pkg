@@ -23,6 +23,33 @@ TEST(Trajectory, instantiationWithTime){
   EXPECT_EQ(t.getNumberPoints(),4);
 }
 
+TEST(Trajectory, multipleInstantiationWithTime){
+  Trajectory t(1);
+  Trajectory::TPoint b(1);
+  std::vector<double> a;
+  std::vector<double> c;
+
+  a.resize(3);
+  c.resize(3);
+  
+  a[0] = 0.5;
+  a[1] = -0.5;
+  a[2] = 0.5;
+
+  c[0] = 0.0;
+  c[1] = 50.0;
+  c[2] = 100;
+
+  t.setTrajectory(a,c,3);
+  t.sample(b,50.0);
+//  ROS_INFO("b: %f ",b.q_[0]);
+
+  t.sample(b,50.01);
+  ROS_INFO("b: %f ",b.q_[0]);
+
+//  EXPECT_EQ(t.getNumberPoints(),3);
+}
+
 TEST(Trajectory, instantiationWithoutTime){
   Trajectory t(2);
   Trajectory::TPoint b(2);

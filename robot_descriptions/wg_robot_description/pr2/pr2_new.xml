@@ -36,7 +36,7 @@
   </pr2_tilting_laser>
 
   <pr2_arm side="right" reflect="-1" parent="torso">
-    <origin xyz="0.3 -0.4 0.7" rpy="0 0 0" />
+    <origin xyz="0 -0.22 0" rpy="0 0 ${-M_PI/4}" />
   </pr2_arm>
   <pr2_gripper side="right" parent="right_wrist_roll" />
 
@@ -44,7 +44,7 @@
   <pr2_arm side="left" reflect="1" parent="torso">
     <origin xyz="0.3 -0.4 0.7" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="right" parent="right_wrist_roll" />
+  <pr2_gripper side="left" parent="right_wrist_roll" />
   -->
 
 </robot>

@@ -313,6 +313,7 @@ private:
     // Call to allow derived class to update goal member variables
     updateGoalMsg();
 
+
     unlock();
   }
 

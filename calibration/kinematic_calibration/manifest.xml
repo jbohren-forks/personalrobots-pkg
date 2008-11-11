@@ -1,0 +1,10 @@
+<package>
+  <description>Tools for calibrating kinematics chains</description>
+  <author>Vijay Pradeep</author>
+  <license>BSD</license>
+  <depend package="kdl" />
+  <depend package="robot_kinematics" />
+  <depend package="phase_space" />
+  <depend package="robot_msgs" />
+  <depend package="robot_kinematics" />
+</package>

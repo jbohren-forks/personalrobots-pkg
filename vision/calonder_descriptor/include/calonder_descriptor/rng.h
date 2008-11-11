@@ -9,6 +9,7 @@
 #include <boost/random/uniform_int.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <boost/random.hpp>
 #endif
 
 namespace features {
@@ -123,7 +124,11 @@ inline double Rng::uniform(double a, double b)
 
 inline double Rng::gaussian(double sigma)
 {
-  return boost::normal_distribution<double>(0, sigma)(engine_);
+  // this did not work (got NANs): 
+  // return boost::normal_distribution<double>(0, sigma)(engine_);
+  boost::normal_distribution<double> norm_dist(0., sigma);
+  boost::variate_generator<engine_type&, boost::normal_distribution<double> >  normal_sampler(engine_, norm_dist);
+  return normal_sampler();  
 }
 
 #endif

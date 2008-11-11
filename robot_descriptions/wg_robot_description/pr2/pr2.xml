@@ -578,7 +578,7 @@
     <origin xyz="0 0 0" rpy="0 0 0" /> <!-- location defined with respect to the link origin in a local coordinate frame -->
     <!-- All angles always in radians, yaw about Z axis, pitch about the Y axis and roll about the X axis -->
     <map name="gazebo_material" flag="gazebo">
-      <elem key="material">Gazebo/Shell</elem>
+      <elem key="material">Gazebo/Grey</elem>
     </map>
     <geometry name="pr2_finger_l_mesh_file">
       <mesh filename="finger-l" />

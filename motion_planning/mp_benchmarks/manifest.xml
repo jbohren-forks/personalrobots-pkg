@@ -6,4 +6,6 @@
  <url>http://pr.willowgarage.com</url>
  <depend package="highlevel_controllers"/>
  <depend package="libsunflower"/>
+ <depend package="nepumuk"/>
+ <depend package="sbpl_util"/>
 </package>

@@ -21,7 +21,7 @@
     </transmission>
 
     <link name="${name}">
-      <parent name=" ${parent}" />
+      <parent name="${parent}" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 

@@ -49,6 +49,7 @@
 #include <robot_msgs/JointCmd.h>
 #include <robot_srvs/GetJointCmd.h>
 #include <std_msgs/PointStamped.h>
+#include <std_msgs/VisualizationMarker.h>
 
 // Math utils
 #include <math_utils/angles.h>

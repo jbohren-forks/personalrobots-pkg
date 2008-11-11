@@ -254,6 +254,43 @@ MS_3DMGX2::IMU::receive_accel_angrate_mag(uint64_t *time, double accel[3], doubl
   *time = extract_time(rep+37);
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Receive packet containing acceleration, angrate, and orientations
+// This assumes that the IMU is in continuous mode and the data is already being sent
+void
+MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3], double angrate[3], double orientation[9])
+{
+  int i, k;
+  uint8_t rep[67];
+
+  receive(CMD_ACCEL_ANGRATE_ORIENT, rep, sizeof(rep), 0, time);
+
+  // Read the acceleration:
+  k = 1;
+  for (i = 0; i < 3; i++)
+  {
+    accel[i] = extract_float(rep + k) * G;
+    k += 4;
+  }
+
+  // Read the angular rates
+  k = 13;
+  for (i = 0; i < 3; i++)
+  {
+    angrate[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  // Read the orientation matrix
+  k = 25;
+  for (i = 0; i < 9; i++) {
+    orientation[i] = extract_float(rep + k);
+    k += 4;
+  }
+
+  *time = extract_time(rep+62);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 void

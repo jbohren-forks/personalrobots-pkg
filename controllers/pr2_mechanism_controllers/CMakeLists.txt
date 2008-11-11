@@ -13,6 +13,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/arm_velocity_controller.cpp
   src/arm_dynamics_controller.cpp
   src/head_pan_tilt_controller.cpp
+  src/head_servoing_controller.cpp
   src/caster_controller.cpp
   src/caster_calibration_controller.cpp
   src/wrist_calibration_controller.cpp

@@ -289,8 +289,8 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, 10000000000ULL)// cache for 10 sec, no extrapolation
-        //tf(*this, true, 200000000ULL, 200000000ULL) //nanoseconds
+        tf(*this, true, (uint64_t)10000000000ULL)// cache for 10 sec, no extrapolation
+        //tf(*this, true, (uint64_t)200000000ULL, (uint64_t)200000000ULL) //nanoseconds
 {
   // Initialize global pose. Will be set in control loop based on actual data.
   ///\todo does this need to be initialized?  global_pose.setIdentity();
@@ -365,20 +365,6 @@ WavefrontNode::WavefrontNode() :
   this->laser_hitpts = NULL;
 
   this->firstodom = true;
-
-
-  //TODO: broadcast this
-  // Static robot->laser transform
-  double laser_x_offset;
-  param("laser_x_offset", laser_x_offset, 0.05);
-  ///\todo broadcast this instead of setting it locally
-  //convert!
-  /*  this->tf.setWithEulers("base_laser",
-                         "base",
-                         laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);*/
-  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), ros::Time(0ULL), "base_laser", "base"));
-  this->tf.setTransform(tf::Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(laser_x_offset, 0,0)), ros::Time(0ULL), "map", "other"));///\todo fixme hack to get around short list edge case
-
 
   advertise<std_msgs::Planner2DState>("state",1);
   advertise<std_msgs::Polyline2D>("gui_path",1);
@@ -611,8 +597,8 @@ WavefrontNode::doOneCycle()
   tf::Stamped<tf::Pose> robotPose;
   robotPose.setIdentity();
   robotPose.frame_id_ = "base";
-  robotPose.stamp_ = ros::Time(0ULL); // request most recent pose
-  //robotPose.time = laserMsg.header.stamp.sec * 1000000000ULL + 
+  robotPose.stamp_ = ros::Time((uint64_t)0ULL); // request most recent pose
+  //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {

@@ -17,7 +17,8 @@
 #
 #  $ make svn-all
 
-all: tarball-all
+##all: tarball-all
+all: svn-all
 
 VERSION=     r912
 
@@ -41,7 +42,7 @@ SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.
 include $(shell rospack find mk)/download_unpack.mk
 
 .PHONY: svn-all
-svn-all: checkout
+svn-all: checkout_or_update
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
 .PHONY: tarball-all
@@ -55,24 +56,22 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 	$(MAKE) symlinks
 
-checkout:
-	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
-
-update: checkout
+checkout_or_update:
 	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
 symlinks:
 	for foo in $(SIMULINKS); do \
 	  test -L $$foo || ln -s $(INST_DIR)/bin/$$foo || exit 42; done
 
-$(SOURCE_DIR)/configure: $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
+$(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in: $(SOURCE_DIR)/Makefile.am $(SOURCE_DIR)/configure.ac $(SOURCE_DIR)/bootstrap-buildsystem.sh
 	cd $(SOURCE_DIR) && ./bootstrap-buildsystem.sh
 
 ## --with-estar=$(ESTAR_DIR)
+## --enable-ros
 $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
 	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) \
-                                                   --enable-ros \
                                                    --with-sfl=$(SFL_DIR) \
                                                    --with-boost=$(BOOST_DIR)
 

@@ -39,32 +39,25 @@ using namespace MatrixWrapper;
 using namespace BFL;
 using namespace KDL;
 using namespace std;
-using namespace std_msgs;
-using namespace ros;
 
 
 namespace estimation
 {
   // constructor
-  odom_estimation::odom_estimation()
-    : ros::node("odom_estimation"),
-      _vel_desi(2),
-      _filter_initialized(false),
-      _odom_initialized(false),
-      _imu_initialized(false)
+  odom_estimation::odom_estimation():
+    _prior(NULL),
+    _filter(NULL),
+    _filter_initialized(false)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
-    double sys_covar_trans, sys_covar_rot;
-    param("sys_covar_trans",sys_covar_trans,1000.0);
-    param("sys_covar_rot",  sys_covar_rot,  1000.0);
     SymmetricMatrix sysNoise_Cov(6); sysNoise_Cov = 0;
-    sysNoise_Cov(1,1) = pow(sys_covar_trans,2);
-    sysNoise_Cov(2,2) = pow(sys_covar_trans,2);
-    sysNoise_Cov(3,3) = pow(sys_covar_trans,2);
-    sysNoise_Cov(4,4) = pow(sys_covar_rot,2);
-    sysNoise_Cov(5,5) = pow(sys_covar_rot,2);
-    sysNoise_Cov(6,6) = pow(sys_covar_rot,2);  
+    sysNoise_Cov(1,1) = pow(1000.0,2);
+    sysNoise_Cov(2,2) = pow(1000.0,2);
+    sysNoise_Cov(3,3) = pow(1000.0,2);
+    sysNoise_Cov(4,4) = pow(1000.0,2);
+    sysNoise_Cov(5,5) = pow(1000.0,2);
+    sysNoise_Cov(6,6) = pow(1000.0,2);  
     Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
     _sys_pdf   = new NonLinearAnalyticConditionalGaussianOdo(system_Uncertainty);
     _sys_model = new AnalyticSystemModelGaussianUncertainty(_sys_pdf);
@@ -72,13 +65,10 @@ namespace estimation
 
     // create MEASUREMENT MODEL ODOM
     ColumnVector measNoiseOdom_Mu(3);  measNoiseOdom_Mu = 0;
-    double meas_odom_covar_trans, meas_odom_covar_rot;
-    param("meas_odom_covar_trans",meas_odom_covar_trans,0.0000001);
-    param("meas_odom_covar_rot",  meas_odom_covar_rot,  0.0000001);
     SymmetricMatrix measNoiseOdom_Cov(3);  measNoiseOdom_Cov = 0;
-    measNoiseOdom_Cov(1,1) = pow(meas_odom_covar_trans,2);
-    measNoiseOdom_Cov(2,2) = pow(meas_odom_covar_trans,2);
-    measNoiseOdom_Cov(3,3) = pow(meas_odom_covar_rot,2);
+    measNoiseOdom_Cov(1,1) = pow(0.001,2);
+    measNoiseOdom_Cov(2,2) = pow(0.001,2);
+    measNoiseOdom_Cov(3,3) = pow(0.01,2);
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
     Matrix Hodom(3,6);  Hodom = 0;
     Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(3,6) = 1;
@@ -88,226 +78,123 @@ namespace estimation
 
     // create MEASUREMENT MODEL IMU
     ColumnVector measNoiseImu_Mu(3);  measNoiseImu_Mu = 0;
-    double meas_imu_covar_trans, meas_imu_covar_rot;
-    param("meas_imu_covar_trans",meas_imu_covar_trans,1.0);
-    param("meas_imu_covar_rot",  meas_imu_covar_rot,  1.0);
     SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    measNoiseImu_Cov(1,1) = pow(meas_imu_covar_trans,2);
-    measNoiseImu_Cov(2,2) = pow(meas_imu_covar_trans,2);
-    measNoiseImu_Cov(3,3) = pow(meas_imu_covar_rot,2);
+    measNoiseImu_Cov(1,1) = pow(0.001,2);
+    measNoiseImu_Cov(2,2) = pow(0.001,2);
+    measNoiseImu_Cov(3,3) = pow(0.001,2);
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
     Matrix Himu(3,6);  Himu = 0;
-    Himu(1,1) = 1;    Himu(2,2) = 1;    Himu(3,6) = 1;
+    Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
     _imu_meas_pdf   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
     _imu_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_imu_meas_pdf);
-
-    
-    // advertise our estimation
-    advertise<std_msgs::RobotBase2DOdom>("odom_estimation",10);
-
-    // subscribe to messages
-    subscribe("cmd_vel",      _vel,  &odom_estimation::vel_callback,  1);
-    subscribe("odom",         _odom, &odom_estimation::odom_callback, 10);
-    subscribe("eular_angles", _imu,  &odom_estimation::imu_callback,  10);
-
-    _odom_file.open("odom_file.txt");
-    _pred_file.open("pred_file.txt");
-    _corr_file.open("corr_file.txt");
-    _diff_file.open("diff_file.txt");
-    _sum_file.open("sum_file.txt");
-    _vel_file.open("vel_file.txt");
   };
 
 
 
   // destructor
   odom_estimation::~odom_estimation(){
-    delete _filter;
-    delete _prior;
+    if (_filter) delete _filter;
+    if (_prior)  delete _prior;
     delete _odom_meas_model;
     delete _odom_meas_pdf;
     delete _imu_meas_model;
     delete _imu_meas_pdf;
     delete _sys_pdf;
     delete _sys_model;
-
-    _vel_desi = 0;
-    _odom_file.close();
-    _pred_file.close();
-    _corr_file.close();
-    _diff_file.close();
-    _sum_file.close();
-    _vel_file.close();
   };
 
 
-
-
   // initialize prior density of filter with odom data
-  void odom_estimation::Initialize_filter(const Frame& fr, double time)
+  void odom_estimation::Initialize(Frame& odom_meas, double odom_time,
+				   Frame& imu_meas,  double imu_time, double filter_time)
   {
-    // set prior of filter
+    // set prior of filter to odom data
     ColumnVector prior_Mu(6);   prior_Mu = 0;
-    prior_Mu(1) = fr.p(0);  prior_Mu(2) = fr.p(1);   prior_Mu(3) = fr.p(2);
-    fr.M.GetRPY( prior_Mu(4),  prior_Mu(5),  prior_Mu(6));
+    prior_Mu(1) = odom_meas.p(0);  prior_Mu(2) = odom_meas.p(1); 
+    double tmp;  odom_meas.M.GetRPY(tmp, tmp, prior_Mu(6));
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
-	if (i==j)  prior_Cov(i,j) = 0;
-	else prior_Cov(i,j) = pow(0.001,2);
+	if (i==j)  prior_Cov(i,j) = pow(0.001,2);
+	else prior_Cov(i,j) = 0;
       }
     }
     _prior  = new Gaussian(prior_Mu,prior_Cov);
     _filter = new ExtendedKalmanFilter(_prior);
 
-    // set timestamp of prior
-    _filter_time = time;
-    
+    // remember prior
+    _filter_estimate_old_vec = prior_Mu;
+    _filter_estimate_old = odom_meas;
+    _filter_time_old     = filter_time;
+
+    // remember sensor measurements
+    _odom_meas_old = odom_meas;
+    _imu_meas_old  = imu_meas;
+
+    // filter initialized
     _filter_initialized = true;
   }
 
 
 
-  // callback function for vel data
-  void odom_estimation::vel_callback()
+
+
+  // update filter
+  void odom_estimation::Update(Frame& odom_meas, double odom_time,
+			       Frame& imu_meas,  double imu_time, double filter_time)
   {
-    // receive data
-    _vel_mutex.lock();
-    _vel_desi(1) = _vel.vx;   _vel_desi(2) = _vel.vw;
-    _vel_mutex.unlock();
-
-    // write vel data to file
-    _vel_file << _vel_desi(1) << " " << _vel_desi(2) << endl;
-  };
-
-
-
-
-  // callback function for odom data
-  void odom_estimation::odom_callback()
-  {
-    // receive data
-    _filter_mutex.lock();
-    _odom_time  = _odom.header.stamp.to_double();
-    _odom_frame = Frame(Rotation::RPY(0,0,_odom.pos.th), Vector(_odom.pos.x, _odom.pos.y, 0));
-
-    if (_filter_initialized && _odom_initialized){
-      OutputFrame(_odom_file, _odom_frame);
-
-      // predict the state up to the time of new odom measurement
-      _vel_mutex.lock();
-      _filter->Update(_sys_model, _vel_desi * (_odom_time - _filter_time));
-      //_vel_desi = 0;  _filter->Update(_sys_model, _vel_desi);
-      _filter_time = _odom_time;
-      _vel_mutex.unlock();
-      Frame pred; GetState(pred);
-      OutputFrame(_pred_file, pred);
+    if (_filter_initialized){
+      // system update filter
+      ColumnVector vel_desi(2); vel_desi = 0;
+      _filter->Update(_sys_model, vel_desi * (filter_time - _filter_time_old));
       
-      // update the state with new odom measurement
-      Frame meas_frame = _odom_estimation * _odom_frame_old.Inverse() * _odom_frame;
-      OutputFrame(_diff_file, _odom_frame_old.Inverse() * _odom_frame);
-      ColumnVector meas_vec(3); double tmp;
-      meas_vec(1) = meas_frame.p(0); meas_vec(2) = meas_frame.p(1); meas_frame.M.GetRPY(tmp,tmp,meas_vec(3));
+      // convert absolute odom measurements to relative odom measurements
+      Frame odom_rel_frame =  _filter_estimate_old * _odom_meas_old.Inverse() * odom_meas;
+      ColumnVector odom_rel(3);
+      odom_rel(1) = odom_rel_frame.p(0);   odom_rel(2) = odom_rel_frame.p(1); 
+      double tmp; odom_rel_frame.M.GetRPY(tmp, tmp, odom_rel(3));
+      AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
 
-      _filter->Update(_odom_meas_model, meas_vec);
-      Frame corr; GetState(corr);
-      OutputFrame(_corr_file, corr);
+      // convert absolute imu measurements to relative imu measurements
+      Frame imu_rel_frame =  _filter_estimate_old * _imu_meas_old.Inverse() * imu_meas;
+      ColumnVector imu_rel(3);
+      imu_rel_frame.M.GetRPY(imu_rel(1), imu_rel(2), imu_rel(3));
+      AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
+      
+      // measurement update filter
+      _filter->Update(_odom_meas_model, odom_rel);
+      _filter->Update(_imu_meas_model,  imu_rel);
+      
+      // remember sensor measurements
+      _odom_meas_old = odom_meas;
+      _imu_meas_old  = imu_meas;
 
-      _odom_sum_diff = _odom_sum_diff *  _odom_frame_old.Inverse() * _odom_frame;
-      OutputFrame(_sum_file, _odom_sum_diff);
-
-      // publish state
-      GetState(_output);
-      publish("odom_estimation", _output);
-      // remember last state estimate with odom measurement
-      GetState(_odom_estimation);
+      // remember last estimate
+      _filter_estimate_old_vec = _filter->PostGet()->ExpectedValueGet();
+      _filter_estimate_old = Frame(Rotation::RPY(_filter_estimate_old_vec(4), _filter_estimate_old_vec(5), _filter_estimate_old_vec(6)), 
+				   Vector(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
+      _filter_time_old     = filter_time;
+      
     }
-
-    // initialize filter with odom data
-    if (!_filter_initialized)  Initialize_filter(_odom_frame, _odom_time);
-
-    // we received first odom data
-    if (!_odom_initialized && _filter_initialized){
-      GetState(_odom_estimation);
-      _odom_sum_diff = _odom_estimation;
-      _odom_initialized = true;
-    }
-
-    // store last frame
-    _odom_frame_old = _odom_frame;
-
-    _filter_mutex.unlock();
   };
 
 
-
-  // callback function for imu data
-  void odom_estimation::imu_callback()
+  // get filter posterior as vector
+  void odom_estimation::GetEstimate(ColumnVector& estimate, double& time)
   {
-    // receive data
-    _filter_mutex.lock();
-    _imu_time = _imu.header.stamp.to_double();
-    _imu_frame = Frame(Rotation::RPY(_imu.roll, _imu.pitch, _imu.yaw), Vector(0,0,0));
-
-    // we received first imu data
-    if (!_imu_initialized) _imu_initialized = true;
-
-    // store last frame
-    _imu_frame_old = _imu_frame;
-    _filter_mutex.unlock();
+    estimate = _filter->PostGet()->ExpectedValueGet();
+    time = _filter_time_old;
   };
 
 
 
-  void odom_estimation::OutputFrame(ofstream& f, const Frame& fr)
+
+  // correct for angle overflow
+  void odom_estimation::AngleOverflowCorrect(double& a, double ref)
   {
-    double r,p,y;
-    fr.M.GetRPY(r,p,y);
-    f << fr.p(0) << " " << fr.p(1) << " " << fr.p(2) << " " << r << " " << p << " " << y << endl;
+    while ((a-ref) >  M_PI) a -= 2*M_PI;
+    while ((a-ref) < -M_PI) a += 2*M_PI;
   };
-
-
-
-  // get filter state as frame
-  void odom_estimation::GetState(Frame& f)
-  {
-    ColumnVector estimation = _filter->PostGet()->ExpectedValueGet();
-    f = Frame(Rotation::RPY(estimation(4), estimation(5), estimation(6)), 
-			Vector(estimation(1), estimation(2), estimation(3)));
-  };
-
-
-  // return filter state as pose
-  void odom_estimation::GetState(PoseStamped& p)
-  {
-    ColumnVector estimation = _filter->PostGet()->ExpectedValueGet();
-    p.pose.position.x    = estimation(1);   p.pose.position.y    = estimation(2);  p.pose.position.z    = estimation(3);
-    p.pose.orientation.x = estimation(4);   p.pose.orientation.y = estimation(5);  p.pose.orientation.z = estimation(6);
-    p.pose.orientation.w = 1;  p.header.stamp.from_double(_filter_time);
-  };
-
-
 
 
 }; // namespace
-
-
-
-using namespace estimation;
-
-
-int main(int argc, char **argv)
-{
-  // Initialize ROS
-  ros::init(argc, argv);
-
-  // create filter class
-  odom_estimation my_filter;
-
-  // wait for filter to finish
-  my_filter.spin();
-
-  // Clean up
-  ros::fini();
-  return 0;
-}

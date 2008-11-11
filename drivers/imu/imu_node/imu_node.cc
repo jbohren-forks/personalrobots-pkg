@@ -112,10 +112,7 @@ public:
 
     param("~autostart", autostart, true);
 
-    string type;
-    param("~type", type, string("accel_angrate"));
-
-    check_msg_type(type);
+    cmd = MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE_ORIENT;
     
     running = false;
 
@@ -127,14 +124,6 @@ public:
     self_test_.addTest(&ImuNode::GravityTest);
     self_test_.addTest(&ImuNode::DisconnectTest);
     self_test_.addTest(&ImuNode::ResumeTest);
-  }
-
-  void check_msg_type(string type)
-  {
-    if (type == string("euler"))
-      cmd = MS_3DMGX2::IMU::CMD_EULER;
-    else
-      cmd = MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE;
   }
 
   ~ImuNode()
@@ -196,48 +185,26 @@ public:
     {
       uint64_t time;
 
-      switch (cmd) {
-      case MS_3DMGX2::IMU::CMD_EULER:
-        double roll;
-        double pitch;
-        double yaw;
+      double accel[3];
+      double angrate[3];
+      double orientation[9];
 
-        imu.receive_euler(&time, &roll, &pitch, &yaw);
+      imu.receive_accel_angrate_orientation(&time, accel, angrate, orientation);
 
-        euler.roll = (float)(roll);
-        euler.pitch = (float)(pitch);
-        euler.yaw = (float)(yaw);
-
-        euler.header.stamp = ros::Time(time);
-
-        publish("euler_angles", reading);
-        printf("%g %g %g\n", roll, pitch, yaw);
-        break;
-
-      case MS_3DMGX2::IMU::CMD_ACCEL_ANGRATE:
-        double accel[3];
-        double angrate[3];
-
-        imu.receive_accel_angrate(&time, accel, angrate);
-
-        reading.accel.x = accel[0];
-        reading.accel.y = accel[1];
-        reading.accel.z = accel[2];
+      reading.accel.ax = accel[0];
+      reading.accel.ay = accel[1];
+      reading.accel.az = accel[2];
  
-        reading.angrate.x = angrate[0];
-        reading.angrate.y = angrate[1];
-        reading.angrate.z = angrate[2];
+      reading.angrate.vx = angrate[0];
+      reading.angrate.vy = angrate[1];
+      reading.angrate.vz = angrate[2];
+      
+      for (int i = 0; i < 9; i++)
+        reading.orientation[i] = orientation[i];
 
-        reading.header.stamp = ros::Time(time);
+      reading.header.stamp = ros::Time(time);
 
-        publish("imu_data", reading);
-        break;
-
-      default:
-        printf("Unhandled message type!\n");
-        return -1;
-
-      }
+      publish("imu_data", reading);
         
     } catch (MS_3DMGX2::exception& e) {
       printf("Exception thrown while trying to get the reading.\n%s\n", e.what());

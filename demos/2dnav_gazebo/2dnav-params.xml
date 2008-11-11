@@ -6,7 +6,7 @@
     <param name="robot_x_start" value="0" />
     <param name="robot_y_start" value="0" />
     <param name="robot_th_start" value="0" />
-    <param name="robot_radius" value="0.325" />
+    <param name="robot_radius" value="0.3" />
     <param name="dist_penalty" value="2.0" />
 
     <param name="pf_laser_max_beams" value="20"/>

@@ -280,6 +280,7 @@ namespace costmap_2d {
     const unsigned int inscribedRadius_;
     unsigned char* staticData_; /**< data loaded from the static map */
     unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
+    unsigned char* heightData_; /**< Stores the z value */
     TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
     double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
     unsigned int mx_; /** < The x position of the robot in the grid */

@@ -12,4 +12,8 @@
   <depend package="std_msgs"/>
   <depend package="boost"/>
   <depend package="libsunflower"/>
+  <export>
+    <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
+    <doxymaker external="http://libsunflower.sourceforge.net/"/>
+  </export>
 </package>

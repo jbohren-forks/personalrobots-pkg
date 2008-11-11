@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
+  <include file="$(find wg_robot_description)/pr2/send_description.launch" />
 
   <machine name="xenomai_root" user="root" address="prf1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
 
@@ -9,7 +9,7 @@
   <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
 
 <!-- PR2 Calibration -->
-  <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
+  <include file="$(find wg_robot_description)/pr2/calibrate.launch" />
 
 <!-- Joystick -->
   <node machine="four" pkg="joy" type="joy"  respawn="true"/>

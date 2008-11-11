@@ -543,7 +543,7 @@ dcam::Dcam::getImage(int ms)
 	camIm->imRectColorType = COLOR_CODING_NONE;
 
 	// check raw modes
-	if (rawType != PIXEL_CODING_NONE)
+	if (rawType != COLOR_CODING_NONE)
 	  camIm->imRaw = camFrame->image;	    
 	else			// ???
 	  camIm->im = camFrame->image;
@@ -745,7 +745,7 @@ dcam::Dcam::setRawType()
 	rawType = VIDERE_STEREO_MONO;
     }
   else
-    rawType = PIXEL_CODING_NONE;
+    rawType = COLOR_CODING_NONE;
 }
 
 

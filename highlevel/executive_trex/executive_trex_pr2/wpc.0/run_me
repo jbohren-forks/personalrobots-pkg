@@ -1,1 +1,1 @@
-../trex_fast ../cfg/nav.cfg
+../bin/trexfast ../cfg/nav.cfg

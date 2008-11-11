@@ -264,7 +264,7 @@ public:
     scan_msg_.range_max = scan_.config.max_range;
     scan_msg_.set_ranges_size(scan_.num_readings);
     scan_msg_.set_intensities_size(scan_.num_readings);
-    scan_msg_.header.stamp = ros::Time(scan_.system_time_stamp);
+    scan_msg_.header.stamp = ros::Time((uint64_t)scan_.system_time_stamp);
     scan_msg_.header.frame_id = frameid_;
 
     for(int i = 0; i < scan_.num_readings; ++i)

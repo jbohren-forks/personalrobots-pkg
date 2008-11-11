@@ -78,6 +78,8 @@ namespace robot_desc {
 	    delete i->second;
 	for (std::map<std::string, Frame*>::iterator i = m_frames.begin() ; i != m_frames.end() ; i++)
 	    delete i->second;
+	for (std::map<std::string, Chain*>::iterator i = m_chains.begin() ; i != m_chains.end() ; i++)
+	    delete i->second;
     }
     
     void URDF::clear(void)
@@ -199,6 +201,21 @@ namespace robot_desc {
 	    groups.push_back(getGroup(names[i]));
     }
     
+    URDF::Chain* URDF::getChain(const std::string &name) const
+    {
+	std::map<std::string, Chain*>::const_iterator it = m_chains.find(name);
+	return (it == m_chains.end()) ? NULL : it->second;
+    }
+    
+    void URDF::getChains(std::vector<Chain*> &chains) const
+    {
+	std::vector<Chain*> localChains;
+	for (std::map<std::string, Chain*>::const_iterator i = m_chains.begin() ; i != m_chains.end() ; i++)
+	    localChains.push_back(i->second);
+	std::sort(localChains.begin(), localChains.end(), SortByName<Chain>());
+	chains.insert(chains.end(), localChains.begin(), localChains.end());
+    }    
+
     const URDF::Map& URDF::getMap(void) const
     {
 	return m_data;
@@ -320,6 +337,9 @@ namespace robot_desc {
 	out << std::endl << "Groups:" << std::endl;
 	for (std::map<std::string, Group*>::const_iterator i = m_groups.begin() ; i != m_groups.end() ; i++)
 	    i->second->print(out, "  ");
+	out << std::endl << "Chains:" << std::endl;
+	for (std::map<std::string, Chain*>::const_iterator i = m_chains.begin() ; i != m_chains.end() ; i++)
+	    i->second->print(out, "  ");
 	out << std::endl << "Data types:" << std::endl;
 	m_data.print(out, "  ");
     }
@@ -340,6 +360,15 @@ namespace robot_desc {
 	    out << flags[i] << " ";
 	out << std::endl;
 	data.print(out, indent + "  ");
+    }
+
+    void URDF::Chain::print(std::ostream &out, std::string indent) const
+    {
+	out << indent << "Chain [" << name << "]:" << std::endl;
+	out << indent << "  - links: ";
+	for (unsigned int i = 0 ; i < links.size() ; ++i)
+	    out << links[i]->name << " ";
+	out << std::endl;
     }
     
     void URDF::Map::print(std::ostream &out, std::string indent) const
@@ -1340,6 +1369,8 @@ namespace robot_desc {
 		}		
 		else if (node->ValueStr() == "geometry")
 		{
+		    if (collision->geometry == NULL)
+			collision->geometry = new Link::Geometry();
 		    loadGeometry(node, name + "_geom", collision->geometry);
 		    MARK_SET(node, collision, geometry);		    
 		}		
@@ -1392,6 +1423,8 @@ namespace robot_desc {
 		}
 		else if (node->ValueStr() == "geometry")
 		{
+		    if (visual->geometry == NULL)
+			visual->geometry = new Link::Geometry();
 		    loadGeometry(node, name + "_geom", visual->geometry);
 		    MARK_SET(node, visual, geometry);
 		}
@@ -1536,21 +1569,29 @@ namespace robot_desc {
 		}		
 		else if (node->ValueStr() == "joint")
 		{
+		    if (link->joint == NULL)
+			link->joint = new Link::Joint();
 		    loadJoint(node, name + "_joint", link->joint);
 		    MARK_SET(node, link, joint);
 		}		
 		else if (node->ValueStr() == "collision")
 		{
+		    if (link->collision == NULL)
+			link->collision = new Link::Collision();
 		    loadCollision(node, name + "_collision", link->collision);
 		    MARK_SET(node, link, collision);
 		}
 		else if (node->ValueStr() == "inertial")
 		{
+		    if (link->inertial == NULL)
+			link->inertial = new Link::Inertial();
 		    loadInertial(node, name + "_inertial", link->inertial);
 		    MARK_SET(node, link, inertial);
 		}		
 		else if (node->ValueStr() == "visual")
 		{
+		    if (link->visual == NULL)
+			link->visual = new Link::Visual();
 		    loadVisual(node, name + "_visual", link->visual);
 		    MARK_SET(node, link, visual);
 		}		
@@ -1640,21 +1681,29 @@ namespace robot_desc {
 		}		
 		else if (node->ValueStr() == "joint")
 		{
+		    if (sensor->joint == NULL)
+			sensor->joint = new Sensor::Joint();
 		    loadJoint(node, name + "_joint", sensor->joint);
 		    MARK_SET(node, sensor, joint);
 		}
 		else if (node->ValueStr() == "collision")
 		{
+		    if (sensor->collision == NULL)
+			sensor->collision = new Sensor::Collision();
 		    loadCollision(node, name + "_collision", sensor->collision);
 		    MARK_SET(node, sensor, collision);
 		}		
 		else if (node->ValueStr() == "inertial")
 		{
+		    if (sensor->inertial == NULL)
+			sensor->inertial = new Sensor::Inertial();
 		    loadInertial(node, name + "_inertial", sensor->inertial);
 		    MARK_SET(node, sensor, inertial);
 		}		
 		else if (node->ValueStr() == "visual")
 		{
+		    if (sensor->visual == NULL)
+			sensor->visual = new Sensor::Visual();
 		    loadVisual(node, name + "_visual", sensor->visual);
 		    MARK_SET(node, sensor, visual);
 		}		
@@ -1911,6 +1960,32 @@ namespace robot_desc {
 	    for (unsigned int j = 0 ; j < i->second->groups.size() ; ++j)
 		i->second->inGroup[grpmap[i->second->groups[j]->name]] = true;
 	}
+
+	/* construct the pointers for chains */
+	for (std::map<std::string, Chain*>::iterator i = m_chains.begin() ; i != m_chains.end() ; i++)
+	{
+	    std::map<std::string, Link*>::const_iterator r = m_links.find(i->second->root);
+	    std::map<std::string, Link*>::const_iterator t = m_links.find(i->second->tip);
+	    if (r != m_links.end() && t  != m_links.end())
+	    {
+		std::vector<Link*> &clinks = i->second->links;
+		clinks.push_back(r->second);
+		clinks.push_back(t->second);
+		
+		while (clinks[0] != clinks[1]->parent && clinks[1]->parent != NULL)
+		    clinks.insert(clinks.begin() + 1, clinks[1]->parent);
+		
+		if (clinks[0] != clinks[1]->parent)
+		    errorMessage("Cannot reach link '" + t->first + "' from link '" + r->first + "' in chain '" + i->first + "'");
+	    }
+	    else
+	    {
+		if (r == m_links.end())
+		    errorMessage("Root of chain '" + i->first + "' is not a link ('" + r->first + "')");
+		if (t == m_links.end())
+		    errorMessage("Tip of chain '" + i->first + "' is not a link ('" + t->first + "')");
+	    }
+	}
     }
     
     
@@ -2109,10 +2184,41 @@ namespace robot_desc {
 			    delete g;
 			}			
 		    }
+		    else if (node->ValueStr() == "chain")
+		    {
+			std::string name;
+			std::string root;
+			std::string tip;
+			
+			for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
+			{
+			    if (strcmp(attr->Name(), "name") == 0)
+				name = string_utils::trim(attr->ValueStr());
+			    else
+			    {
+				if (strcmp(attr->Name(), "root") == 0)
+				    root = attr->ValueStr();
+				else
+				    if (strcmp(attr->Name(), "tip") == 0)
+					tip = attr->ValueStr();
+			    }
+			}
+			if (name.empty())
+			    name = root + "_2_" + tip;
+			
+			if (m_chains.find(name) != m_chains.end())
+			    errorMessage("Chain '" + name + "' was previously defined. Not adding again.");
+			else
+			{
+			    Chain *c = new Chain();
+			    c->name = name;
+			    c->root = root;
+			    c->tip  = tip;
+			    m_chains[name] = c;			    
+			}
+		    }
 		    else if (node->ValueStr() == "map")
 			loadMap(node, &m_data);
-		    else if (node->ValueStr() == "chain")
-			std::cout << "WARNING: Should chain be defined here?" << std::endl; //FIXME:
 		    else
 			m_stage2.push_back(node);
 	    break;

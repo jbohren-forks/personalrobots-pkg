@@ -62,12 +62,9 @@ StereoCam::StereoCam()
 StereoCam::~StereoCam()
 {
   // should free all buffers
-  if (buf)
-    MEMFREE(buf);
-  if (flim)
-    MEMFREE(flim);
-  if (frim)
-    MEMFREE(frim);
+  MEMFREE(buf);
+  MEMFREE(flim);
+  MEMFREE(frim);
   free(stIm);
 }
 
@@ -233,16 +230,16 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
       switch (rawType)
 	{
 	case VIDERE_STOC_RECT_RECT:
-	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRect, 
-			    &stIm->imRight->imRect);
+	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRect, &stIm->imLeft->imRectSize,
+			    &stIm->imRight->imRect, &stIm->imRight->imRectSize);
 	  stIm->imLeft->imRectType = COLOR_CODING_MONO8;
 	  stIm->imRight->imRectType = COLOR_CODING_MONO8;
 	  break;
 
 	case VIDERE_STOC_RAW_RAW_MONO:
 	case VIDERE_STEREO_MONO:
-	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->im, 
-			    &stIm->imRight->im);
+	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->im, &stIm->imLeft->imSize, 
+			    &stIm->imRight->im, &stIm->imRight->imSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
 	  stIm->imRight->imType = COLOR_CODING_MONO8;
 	  break;
@@ -251,31 +248,31 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 	case VIDERE_STEREO_RGGB:
 	case VIDERE_STEREO_BGGR:
 	case VIDERE_STEREO_GRBG:
-	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRaw, 
-			    &stIm->imRight->imRaw);
-	  stIm->imLeft->imType = COLOR_CODING_BAYER8_RGGB;
-	  stIm->imRight->imType = COLOR_CODING_BAYER8_RGGB;
+	  stereoDeinterlace(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize,
+			    &stIm->imRight->imRaw, &stIm->imRight->imRawSize);
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
+	  stIm->imRight->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  break;
 
 
 	case VIDERE_STOC_RECT_DISP:
-	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRect, 
-			    &stIm->imDisp);
+	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRect, &stIm->imLeft->imRectSize, 
+			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imRectType = COLOR_CODING_MONO8;
 	  stIm->hasDisparity = true;
 	  break;
 
 	case VIDERE_STOC_RAW_DISP_MONO:
-	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->im, 
-			    &stIm->imDisp);
+	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->im, &stIm->imLeft->imSize, 
+			    &stIm->imDisp, &stIm->imDispSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
 	  stIm->hasDisparity = true;
 	  break;
 
 	case VIDERE_STOC_RAW_DISP_RGGB:
-	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, 
-			    &stIm->imDisp);
-	  stIm->imLeft->imType = COLOR_CODING_BAYER8_RGGB;
+	  stereoDeinterlace2(camIm->imRaw, &stIm->imLeft->imRaw, &stIm->imLeft->imRawSize, 
+			    &stIm->imDisp, &stIm->imDispSize);
+	  stIm->imLeft->imRawType = COLOR_CODING_BAYER8_RGGB;
 	  stIm->hasDisparity = true;
 	  break;
 
@@ -344,17 +341,26 @@ StereoDcam::setUniqueThresh(int thresh)
 // de-interlace stereo data, reserving storage if necessary
 
 void
-StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, uint8_t **d2)
+StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, 
+			     uint8_t **d2, size_t *s2)
 {
-  int size = stIm->imWidth*stIm->imHeight;
-  if (!*d1)			// need to check alignment here...
-    *d1 = (uint8_t *)MEMALIGN(size);
-  if (!*d2)
-    *d2 = (uint8_t *)MEMALIGN(size);
+  size_t size = stIm->imWidth*stIm->imHeight;
+  if (*s1 < size)		// need to check alignment here...
+    {
+      MEMFREE(*d1);
+      *d1 = (uint8_t *)MEMALIGN(size);
+      *s1 = size;
+    }
+  if (*s2 < size)
+    {
+      MEMFREE(*d2);
+      *d2 = (uint8_t *)MEMALIGN(size);
+      *s2 = size;
+    }
   
   uint8_t *dd1 = *d1;
   uint8_t *dd2 = *d2;
-  for (int i=0; i<size; i++)
+  for (int i=0; i<(int)size; i++)
     {
       *dd2++ = *src++;
       *dd1++ = *src++;
@@ -366,15 +372,25 @@ StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, uint8_t **d2)
 // second buffer is 16-bit disparity data
 
 void
-StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, uint16_t **d2)
+StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
+			      uint16_t **d2, size_t *s2)
 {
   int w = stIm->imWidth;
   int h = stIm->imHeight;
-  int size = w*h;
-  if (!*d1)			// need to check alignment here...
-    *d1 = (uint8_t *)MEMALIGN(size);
-  if (!*d2)
-    *d2 = (uint16_t *)MEMALIGN(size*2);
+  size_t size = w*h;
+
+  if (*s1 < size)		// need to check alignment here...
+    {
+      MEMFREE(*d1);
+      *d1 = (uint8_t *)MEMALIGN(size);
+      *s1 = size;
+    }
+  if (*s2 < size*2)
+    {
+      MEMFREE(*d2);
+      *d2 = (uint16_t *)MEMALIGN(size*2);
+      *s2 = size*2;
+    }
   
   uint8_t *dd1 = *d1;
   uint16_t *dd2 = *d2;
@@ -399,7 +415,7 @@ StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, uint16_t **d2)
   dd2 += (dt*w + dl - 6) - ((h-dh)*w + w - dw);
 
   size = (h-dh)*w;
-  for (int i=0; i<size; i++)
+  for (int i=0; i<(int)size; i++)
     {
       dd2++;
       src++;
@@ -407,7 +423,7 @@ StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, uint16_t **d2)
     }
 
   size = dh*w;
-  for (int i=0; i<size; i++)
+  for (int i=0; i<(int)size; i++)
     {
       *dd2++ = ((uint16_t)*src++)<<2;
       *dd1++ = *src++;

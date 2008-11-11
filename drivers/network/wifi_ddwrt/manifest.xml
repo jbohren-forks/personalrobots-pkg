@@ -2,7 +2,7 @@
   <description brief="dd-wrt wifi ap">
      Access to the DD-WRT wifi
   </description>
-  <author>Scott Hasasn/hassan@willowgarage.com</author>
+  <author>Scott Hassan/hassan@willowgarage.com</author>
   <license>BSD</license>
   <url>http://pr.willowgarage.com/wiki/wifi_ddwrt</url>
   <depend package="rospy" />

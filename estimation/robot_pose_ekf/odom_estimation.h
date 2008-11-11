@@ -34,17 +34,7 @@
 #ifndef __ODOM_ESTIMATION__
 #define __ODOM_ESTIMATION__
 
-// ros stuff
-#include "ros/node.h" 
-#include "kdl/frames.hpp"
-
-// messages
-#include "std_msgs/RobotBase2DOdom.h"
-#include "std_msgs/EulerAngles.h"
-#include "std_msgs/BaseVel.h"
-#include "std_msgs/PoseStamped.h"
-
-// bayesian fitlering
+// bayesian filtering
 #include "filter/extendedkalmanfilter.h"
 #include "model/linearanalyticsystemmodel_gaussianuncertainty.h"
 #include "model/linearanalyticmeasurementmodel_gaussianuncertainty.h"
@@ -52,13 +42,16 @@
 #include "pdf/linearanalyticconditionalgaussian.h"
 #include "nonlinearanalyticconditionalgaussianodo.h"
 
+// KDL
+#include "kdl/frames.hpp"
+
 // log files
 #include <fstream>
 
 namespace estimation
 {
 
-class odom_estimation: public ros::node
+class odom_estimation
 {
 public:
   // constructor
@@ -67,33 +60,22 @@ public:
   // destructor
   virtual ~odom_estimation();
 
-  // callback function for vel data
-  void vel_callback();
+  // update filter
+  void Update(KDL::Frame& odom_meas, double odom_time,
+	      KDL::Frame& imu_meas,  double imu_time, double filter_time);
 
-  // callback function for odo data
-  void odom_callback();
+  // initialize filter
+  void Initialize(KDL::Frame& odom_meas, double odom_time,
+		  KDL::Frame& imu_meas,  double imu_time, double filter_time);
 
-  // callback function for imu data
-  void imu_callback();
+
+  // get filter posterior
+  void GetEstimate(MatrixWrapper::ColumnVector& estimate, double& time);
+
 
 private:
-
-  // initialize filter in first step
-  void Initialize_filter(const KDL::Frame& fr, double time);
-
-  // get filter state
-  void GetState(KDL::Frame& f);
-  void GetState(std_msgs::PoseStamped& p);
-
-  void OutputFrame(std::ofstream& f, const KDL::Frame& fr);
-
-  // messages to receive
-  std_msgs::BaseVel         _vel;  
-  std_msgs::RobotBase2DOdom _odom;  
-  std_msgs::EulerAngles     _imu;  
-
-  // estimated robot pose message to send
-  std_msgs::PoseStamped _output; 
+  // correct for angle overflow
+  void AngleOverflowCorrect(double& a, double ref);
 
   // pdf / model / filter
   BFL::AnalyticSystemModelGaussianUncertainty* _sys_model;
@@ -105,20 +87,11 @@ private:
   BFL::Gaussian* _prior;
   BFL::ExtendedKalmanFilter* _filter;
 
-  MatrixWrapper::ColumnVector _vel_desi;
-  KDL::Frame _odom_estimation, _odom_frame, _odom_frame_old,_imu_frame, _imu_frame_old, _odom_sum_diff;
-
-  double _odom_time, _imu_time, _filter_time;
-  bool _filter_initialized, _odom_initialized, _imu_initialized;
-
-  // mutex
-  ros::thread::mutex _vel_mutex, _filter_mutex;
-
-  // log files for debugging
-  std::ofstream _odom_file, _pred_file,_corr_file,  _vel_file, _diff_file, _sum_file
-;
-
-
+  // vectors
+  MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
+  KDL::Frame _filter_estimate_old, _odom_meas_old, _imu_meas_old;
+  double _filter_time_old;
+  bool _filter_initialized;
 
 }; // class
 

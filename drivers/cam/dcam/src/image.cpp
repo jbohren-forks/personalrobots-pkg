@@ -59,12 +59,17 @@ ImageData::ImageData()
   imRect = NULL;
   imRectColor = NULL;
   imRaw = NULL;
-  imRawType = PIXEL_CODING_NONE;
+  imRawType = COLOR_CODING_NONE;
+  imRawSize = 0;
   imType = COLOR_CODING_NONE;
+  imSize = 0;
   imColorType = COLOR_CODING_NONE;
+  imColorSize = 0;
   imRectType = COLOR_CODING_NONE;
+  imRectSize = 0;
   imRectColorType = COLOR_CODING_NONE;
-  
+  imRectColorSize = 0;  
+
   // rectification mapping
   hasRectification = false;
   initRect = false;
@@ -95,24 +100,26 @@ void
 ImageData::releaseBuffers()
 {
   // should we release im_raw???
-  if (im)
-    MEMFREE(im);
-  if (imColor)
-    MEMFREE(imColor);
-  if (imRect)
-    MEMFREE(imRect);
-  if (imRectColor)
-    MEMFREE(imRectColor);
+  MEMFREE(im);
+  MEMFREE(imColor);
+  MEMFREE(imRect);
+  MEMFREE(imRectColor);
   im = NULL;
   imColor = NULL;
   imRect = NULL;
   imRectColor = NULL;
   imRaw = NULL;
-  imRawType = PIXEL_CODING_NONE;
+
+  imRawType = COLOR_CODING_NONE;
+  imRawSize = 0;
   imType = COLOR_CODING_NONE;
+  imSize = 0;
   imColorType = COLOR_CODING_NONE;
+  imColorSize = 0;
   imRectType = COLOR_CODING_NONE;
+  imRectSize = 0;
   imRectColorType = COLOR_CODING_NONE;
+  imRectColorSize = 0;  
 
   if (rMapxy)
     cvReleaseMat(&rMapxy);
@@ -189,10 +196,12 @@ ImageData::doRectify()
   if (imType != COLOR_CODING_NONE)
     {
       // set up rectified data buffer
-      if (imRectType == COLOR_CODING_NONE)
+      if (imRectSize < imSize)
 	{
+	  MEMFREE(imRect);
 	  imRectType = imType;
-	  imRect = (uint8_t *)MEMALIGN(imWidth*imHeight);
+	  imSize = imWidth*imHeight;
+	  imRect = (uint8_t *)MEMALIGN(imSize);
 	}
 
       // set up images 
@@ -201,7 +210,6 @@ ImageData::doRectify()
       cvSetData(srcIm, im, imWidth);
       cvSetData(dstIm, imRect, imWidth);
       
-      //      printf("rect ptrs: %08x %08x\n", im, imRect);
       //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
       cvRemap(srcIm,dstIm,mx,my);
     }
@@ -211,10 +219,12 @@ ImageData::doRectify()
   if (imColorType != COLOR_CODING_NONE)
     {
       // set up rectified data buffer
-      if (imRectColorType == COLOR_CODING_NONE)
+      if (imRectColorSize < imColorSize)
 	{
+	  MEMFREE(imRectColor);
 	  imRectColorType = imColorType;
-	  imRectColor = (uint8_t *)MEMALIGN(imWidth*imHeight*3);
+	  imSize = imWidth*imHeight*3;
+	  imRectColor = (uint8_t *)MEMALIGN(imSize);
 	}
 
       // set up images 
@@ -223,8 +233,8 @@ ImageData::doRectify()
       cvSetData(srcIm, imColor, imWidth);
       cvSetData(dstIm, imRectColor, imWidth);
       
-      cvRemap(srcIm,dstIm,mx,my);
-      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      //      cvRemap(srcIm,dstIm,mx,my);
+      cvRemap(srcIm,dstIm,rMapxy,rMapa);
     }
   return true;
 }
@@ -237,6 +247,10 @@ StereoData::StereoData()
 {
   imLeft = new ImageData();
   imRight = new ImageData();
+
+  // disparity buffer
+  imDisp = NULL;
+  imDispSize = 0;
 
   // nominal values
   imWidth = 640;
@@ -281,9 +295,9 @@ StereoData::setDispOffsets()
 void
 StereoData::releaseBuffers()
 {
-  if (imDisp)
-    MEMFREE(imDisp);
+  MEMFREE(imDisp);
   imDisp = NULL;
+  imDispSize = 0;
   hasDisparity = false;
   imLeft->releaseBuffers();
   imRight->releaseBuffers();

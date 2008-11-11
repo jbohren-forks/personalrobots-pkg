@@ -134,20 +134,22 @@ namespace ros {
       virtual void handleDeactivation();
 
       /**
-       * @brief Call back for handling new laser scans
+       * @brief Callbacks for perceiving obstalces
        */
-      void laserScanCallback();
-
-
-      /**
-       * @brief Call back for handling new point clouds
-       */
-      void pointCloudCallback();
+      void baseScanCallback();
+      void tiltScanCallback();
+      void stereoCloudCallback();
 
       /**
        * @brief Robot odometry call back
        */
       void odomCallback();
+
+      /**
+       * @brief Process point cloud data
+       * @todo migrate to costmap
+       */
+      void processData(const std_msgs::PointCloud& local_cloud);
 
       void updateGlobalPose();
 
@@ -177,18 +179,30 @@ namespace ros {
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
       /**
+       * @brief Test if point in the square footprint of the robot
+       */
+      bool inFootprint(double x, double y) const;
+
+      /**
+       * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
+       * filter based on the min and max z values
+       */
+      std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
+
+      /**
        * @brief Watchdog Handling
        */
       void petTheWatchDog();
+
       bool checkWatchDog() const;
+
       struct timeval lastUpdated_;
 
-      std_msgs::LaserScan laserScanMsg_; /**< Filled by subscriber with new laser scans */
-
-      std_msgs::PointCloud pointCloudMsg_; /**< Filled by subscriber with point clouds */
-
+      // Callback messages
+      std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
+      std_msgs::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
+      std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
-
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
 
       rosTFClient tf_; /**< Used to do transforms */
@@ -204,14 +218,19 @@ namespace ros {
 
       std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
 
-      bool usingPointClouds_; /**< Configuration parameter to select point cloud call backs and block out laser scans */
-
       /** Parameters that will be passed on initialization soon */
-      double laserMaxRange_; /**< Used in laser scan projection */
+      double baseLaserMaxRange_; /**< Used in laser scan projection */
+      double tiltLaserMaxRange_; /**< Used in laser scan projection */
 
       std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
 
-      std::deque<std_msgs::LaserScan> laser_scans_;
+      std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
+      ros::thread::mutex bufferMutex_;
+
+      // Filter parameters
+      double minZ_;
+      double maxZ_;
+      double robotWidth_;
     };
   }
 }

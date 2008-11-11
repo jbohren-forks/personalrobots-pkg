@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(laser_pose_interpolator)
-genmsg()
-rospack_add_executable(laser_pose_interpolator laser_pose_interpolator.cpp)
-rospack_add_executable(gen_carmen_laser gen_carmen_laser.cpp)

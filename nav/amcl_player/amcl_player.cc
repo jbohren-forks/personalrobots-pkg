@@ -467,9 +467,19 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
                                                                       tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
                                                         t, "base","map"));
                                                         */
-    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
-                                                                      tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
-                                                        t, "map", "base"));
+
+    //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
+    //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
+    //                                                    t, "map", "base"));
+
+    // subtracting base to odom from map to base and send map to odom instead
+    tf::Stamped<tf::Pose> odom_to_map;
+    this->tfL->transformPose("odom",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+                                                                       btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
+                                                           t, "base"),odom_to_map);
+    this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
+                                                                      tf::Point(      odom_to_map.getOrigin() ) ),
+                                                        t, "map","odom"));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -607,6 +617,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
       ROS_INFO("Waiting to receive base->base_laser transform...");
       d.sleep();
     }
+    ROS_INFO("Received base->base_laser transform...");
     player_laser_geom_t geom;
     memset(&geom, 0, sizeof(geom));
     geom.pose.px = laser_x;
@@ -769,7 +780,10 @@ AmclNode::laserReceived()
     std_msgs::LaserScan scan = laser_scans.front();
 
     //make sure that we don't fall to far in the past
-    if(ros::Time::now() - scan.header.stamp > ros::Duration(9, 0)){
+    // To work around the lack of ros::Time support in roscpp, we'll take the time of the
+    // most recent laser message instead of ros::Time::now()
+    //if(ros::Time::now() - scan.header.stamp > ros::Duration(9, 0)){
+    if(laserMsg.header.stamp - scan.header.stamp > ros::Duration(9, 0)){
       laser_scans.pop_front();
       continue;
     }

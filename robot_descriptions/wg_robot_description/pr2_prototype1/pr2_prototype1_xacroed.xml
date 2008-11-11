@@ -1,0 +1,856 @@
+<?xml version="1.0" ?>
+<robot name="pr2">
+
+  
+  
+  
+
+  <joint name="base_joint" type="planar"/><link name="base">
+      <parent name="world"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <joint name="base_joint"/>
+
+      <inertial>
+        <mass value="70.750964"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="5.652232699207" ixy="-0.009719934438" ixz="1.293988226423" iyy="5.669473158652" iyz="-0.007379583694" izz="3.683196351726"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_base_mesh_file">
+          <mesh filename="base"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.13"/>
+        <geometry name="base_collision_geom">
+          <box size="0.65 0.65 0.26"/>
+        </geometry>
+      </collision>
+    </link><joint name="base_laser_joint" type="fixed">
+      <axis xyz="0 1 0"/>
+      <anchor xyz="0 0 0"/>
+    </joint><sensor name="base_laser" type="laser">
+      <calibration filename="calib_filename"/>
+      <parent name="base"/>
+      <origin rpy="0 0 0" xyz="0.275 0 0.182"/>
+      <joint name="base_laser_joint"/>
+      <inertial>
+        <mass value="1.0"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0.12"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/PioneerBody</elem>
+        </map>
+        <geometry name="pr2_base_laser_geom">
+          <mesh scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0.12"/>
+        <geometry name="base_laser_collision_geom">
+          <box size=".001 .001 .001"/>
+        </geometry>
+      </collision>
+
+      <map flag="gazebo" name="sensor">
+        <verbatim key="sensor_ray">
+          <sensor:ray name="base_laser">
+            <rayCount>683</rayCount>
+            <rangeCount>683</rangeCount>
+            <laserCount>1</laserCount>
+            <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
+            <displayRays>false</displayRays>
+
+            <minAngle>-90</minAngle>
+            <maxAngle>90</maxAngle>
+
+            <minRange>0.05</minRange>
+            <maxRange>10.0</maxRange>
+            <updateRate>10.0</updateRate>
+            <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
+              <gaussianNoise>0.005</gaussianNoise>
+              <alwaysOn>true</alwaysOn>
+	      <updateRate>10</updateRate>
+	      <topicName>base_scan</topicName>
+	      <frameName>base_laser</frameName>
+	      <interface:laser name="ros_base_laser_iface"/>
+            </controller:ros_laser>
+          </sensor:ray>
+        </verbatim>
+      </map>
+    </sensor><joint name="caster_front_left_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <anchor xyz="0 0 0"/>
+      <calibration values="1.5 -1"/>
+      <limit effort="100" velocity="5"/>
+      <joint_properties damping="1.0" friction="0.0"/>
+    </joint><link name="caster_front_left">
+      <parent name="base"/>
+      <origin rpy="0 0 0" xyz="0.2225 0.2225 0.0282"/>
+      <joint name="caster_front_left_joint"/>
+
+      <inertial>
+        <mass value="3.473082"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0 " xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_caster_mesh_file">
+          <mesh filename="caster" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
+        <geometry name="caster_collision_geom">
+          <box size="0.192 0.164 0.013"/>
+        </geometry>
+      </collision>
+    </link><transmission name="caster_front_left_trans" type="SimpleTransmission">
+      <actuator name="caster_front_left_motor"/>
+      <joint name="caster_front_left_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="wheel_front_left_l_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_front_left_l">
+      <parent name="caster_front_left"/>
+      <joint name="wheel_front_left_l_joint"/>
+      <origin rpy="0 0 0" xyz="0 0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_front_left_l_trans" type="SimpleTransmission">
+      <actuator name="wheel_front_left_l_motor"/>
+      <joint name="wheel_front_left_l_joint"/>
+      <mechanicalReduction>75.05</mechanicalReduction>
+    </transmission><joint name="wheel_front_left_r_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_front_left_r">
+      <parent name="caster_front_left"/>
+      <joint name="wheel_front_left_r_joint"/>
+      <origin rpy="0 0 0" xyz="0 -0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_front_left_r_trans" type="SimpleTransmission">
+      <actuator name="wheel_front_left_r_motor"/>
+      <joint name="wheel_front_left_r_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="caster_front_right_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <anchor xyz="0 0 0"/>
+      <calibration values="1.5 -1"/>
+      <limit effort="100" velocity="5"/>
+      <joint_properties damping="1.0" friction="0.0"/>
+    </joint><link name="caster_front_right">
+      <parent name="base"/>
+      <origin rpy="0 0 0" xyz="0.2225 -0.2225 0.0282"/>
+      <joint name="caster_front_right_joint"/>
+
+      <inertial>
+        <mass value="3.473082"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0 " xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_caster_mesh_file">
+          <mesh filename="caster" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
+        <geometry name="caster_collision_geom">
+          <box size="0.192 0.164 0.013"/>
+        </geometry>
+      </collision>
+    </link><transmission name="caster_front_right_trans" type="SimpleTransmission">
+      <actuator name="caster_front_right_motor"/>
+      <joint name="caster_front_right_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="wheel_front_right_l_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_front_right_l">
+      <parent name="caster_front_right"/>
+      <joint name="wheel_front_right_l_joint"/>
+      <origin rpy="0 0 0" xyz="0 0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_front_right_l_trans" type="SimpleTransmission">
+      <actuator name="wheel_front_right_l_motor"/>
+      <joint name="wheel_front_right_l_joint"/>
+      <mechanicalReduction>75.05</mechanicalReduction>
+    </transmission><joint name="wheel_front_right_r_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_front_right_r">
+      <parent name="caster_front_right"/>
+      <joint name="wheel_front_right_r_joint"/>
+      <origin rpy="0 0 0" xyz="0 -0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_front_right_r_trans" type="SimpleTransmission">
+      <actuator name="wheel_front_right_r_motor"/>
+      <joint name="wheel_front_right_r_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="caster_rear_left_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <anchor xyz="0 0 0"/>
+      <calibration values="1.5 -1"/>
+      <limit effort="100" velocity="5"/>
+      <joint_properties damping="1.0" friction="0.0"/>
+    </joint><link name="caster_rear_left">
+      <parent name="base"/>
+      <origin rpy="0 0 0" xyz="-0.2225 0.2225 0.0282"/>
+      <joint name="caster_rear_left_joint"/>
+
+      <inertial>
+        <mass value="3.473082"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0 " xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_caster_mesh_file">
+          <mesh filename="caster" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
+        <geometry name="caster_collision_geom">
+          <box size="0.192 0.164 0.013"/>
+        </geometry>
+      </collision>
+    </link><transmission name="caster_rear_left_trans" type="SimpleTransmission">
+      <actuator name="caster_rear_left_motor"/>
+      <joint name="caster_rear_left_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="wheel_rear_left_l_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_rear_left_l">
+      <parent name="caster_rear_left"/>
+      <joint name="wheel_rear_left_l_joint"/>
+      <origin rpy="0 0 0" xyz="0 0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_rear_left_l_trans" type="SimpleTransmission">
+      <actuator name="wheel_rear_left_l_motor"/>
+      <joint name="wheel_rear_left_l_joint"/>
+      <mechanicalReduction>75.05</mechanicalReduction>
+    </transmission><joint name="wheel_rear_left_r_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_rear_left_r">
+      <parent name="caster_rear_left"/>
+      <joint name="wheel_rear_left_r_joint"/>
+      <origin rpy="0 0 0" xyz="0 -0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_rear_left_r_trans" type="SimpleTransmission">
+      <actuator name="wheel_rear_left_r_motor"/>
+      <joint name="wheel_rear_left_r_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="caster_rear_right_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <anchor xyz="0 0 0"/>
+      <calibration values="1.5 -1"/>
+      <limit effort="100" velocity="5"/>
+      <joint_properties damping="1.0" friction="0.0"/>
+    </joint><link name="caster_rear_right">
+      <parent name="base"/>
+      <origin rpy="0 0 0" xyz="-0.2225 -0.2225 0.0282"/>
+      <joint name="caster_rear_right_joint"/>
+
+      <inertial>
+        <mass value="3.473082"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0 " xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_caster_mesh_file">
+          <mesh filename="caster" scale="1 1 1"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
+        <geometry name="caster_collision_geom">
+          <box size="0.192 0.164 0.013"/>
+        </geometry>
+      </collision>
+    </link><transmission name="caster_rear_right_trans" type="SimpleTransmission">
+      <actuator name="caster_rear_right_motor"/>
+      <joint name="caster_rear_right_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission><joint name="wheel_rear_right_l_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_rear_right_l">
+      <parent name="caster_rear_right"/>
+      <joint name="wheel_rear_right_l_joint"/>
+      <origin rpy="0 0 0" xyz="0 0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_rear_right_l_trans" type="SimpleTransmission">
+      <actuator name="wheel_rear_right_l_motor"/>
+      <joint name="wheel_rear_right_l_joint"/>
+      <mechanicalReduction>75.05</mechanicalReduction>
+    </transmission><joint name="wheel_rear_right_r_joint" type="revolute">
+      <axis xyz=" 0 1 0 "/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="100" velocity="5"/>
+      <calibration values="1.5 -1"/>
+      <joint_properties damping="0.0" friction="0.0"/>
+    </joint><link name="wheel_rear_right_r">
+      <parent name="caster_rear_right"/>
+      <joint name="wheel_rear_right_r_joint"/>
+      <origin rpy="0 0 0" xyz="0 -0.049 0"/>
+      <inertial>
+        <mass value="0.44036"/>
+        <com xyz=" 0 0 0 "/>
+        <inertia ixx="0.012411765597" ixy="-0.000711733678" ixz="0.00050272983" iyy="0.015218160428" iyz="-0.000004273467" izz="0.011763977943"/>
+      </inertial>
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <!-- TODO should be different for left and right wheel-->
+          <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_wheel_mesh_file">
+          <mesh filename="wheel_right"/>
+        </geometry>
+
+      </visual>
+      <collision>
+        <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_wheel_collision_geom">
+          <cylinder length="0.03" radius="0.079"/>
+        </geometry>
+        <map flag="gazebo" name="friction_coefficients">
+          <elem key="mu1" value="50.0"/>
+          <elem key="mu2" value="50.0"/>
+        </map>
+      </collision>
+    </link><transmission name="wheel_rear_right_r_trans" type="SimpleTransmission">
+      <actuator name="wheel_rear_right_r_motor"/>
+      <joint name="wheel_rear_right_r_joint"/>
+      <mechanicalReduction>-75.05</mechanicalReduction>
+    </transmission>
+
+
+  <joint name="torso_joint" type="prismatic">
+      <limit effort="10000" max="0.396" min="0.0" velocity="5"/>
+      <axis xyz="0 0 1"/>
+      <joint_properties damping="10.0"/>
+    </joint><transmission name="torso_trans" type="SimpleTransmission">
+      <actuator name="torso_motor"/>
+      <joint name="torso_joint"/>
+      <!-- <mechanicalReduction>19.26</mechanicalReduction> -->
+      <mechanicalReduction>-52143.33</mechanicalReduction><!-- measured by Stu and Keenan -->
+      <calibration reference_position="0.00536" values="0 0"/>
+    </transmission><link name="torso">
+      <parent name=" base"/>
+      <origin rpy="0 0 0" xyz="-0.05 0 0.739675"/>
+      <joint name="torso_joint"/>
+
+      <inertial>
+        <mass value="36.248046"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="2.771653750257" ixy="0.004284522609" ixz="-0.160418504506" iyy="2.510019507959" iyz="0.029664468704" izz="0.526432355569"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="foo">
+	  <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="pr2_torso_mesh_file">
+          <mesh filename="torso"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="-0.1 0 -0.0885"/>
+        <geometry name="torso_collision_geom">
+          <box size="0.432 0.620 0.823"/>
+        </geometry>
+      </collision>
+    </link>
+  
+  <joint name="head_pan_joint" type="revolute">
+      <axis xyz="0 0 1"/>
+      <limit effort="0.529" max="2.92" min="-2.92" velocity="1256.64"/>
+      <calibration reference_position="-2.79" values="0 0"/>
+      <safety_limit_min damping_constant="0.7" safety_length="0.15" spring_constant="15.0"/>
+      <safety_limit_max damping_constant="0.7" safety_length="0.15" spring_constant="15.0"/>
+      <joint_properties damping="1.0"/>
+    </joint><transmission name="head_pan_trans" type="SimpleTransmission">
+      <actuator name="head_pan_motor"/>
+      <joint name="head_pan_joint"/>
+      <mechanicalReduction>6.0</mechanicalReduction>
+    </transmission><link name="head_pan">
+      <parent name="torso"/>
+      <origin rpy="0 0 0" xyz="0 0 0.3815"/>
+      <joint name="head_pan_joint"/>
+
+      <inertial>
+        <mass value="1.611118"/>
+        <com xyz=" -0.005717  0.010312 -0.029649 "/>
+        <inertia ixx="0.00482611007" ixy="-0.000144683999" ixz="0.000110076136" iyy="0.005218991412" iyz="-0.000314239509" izz="0.008618784925"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0 " xyz="0 0 0.0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="pr2_head_pan_mesh_file">
+          <mesh filename="head_pan"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0.0 0.0 0.0 " xyz=" 0 0 0"/>
+        <geometry name="head_pan_collision_geom">
+          <box size="0.188 0.219 0.137"/>
+        </geometry>
+      </collision>
+
+    </link><joint name="head_tilt_joint" type="revolute">
+      <axis xyz="0 1 0"/>
+      <limit effort="0.529" max="1.047" min="-0.55" velocity="1256.64"/>
+      <calibration reference_position="-0.195" values="0 0"/>
+      <safety_limit_min damping_constant="0.1" safety_length="0.1" spring_constant="10.0"/>
+      <safety_limit_max damping_constant="0.1" safety_length="0.1" spring_constant="10.0"/>
+      <joint_properties damping="1.0"/>
+    </joint><transmission name="head_tilt_trans" type="SimpleTransmission">
+      <actuator name="head_tilt_motor"/>
+      <joint name="head_tilt_joint"/>
+      <mechanicalReduction>6.0</mechanicalReduction>
+    </transmission><link name="head_tilt">
+      <parent name="head_pan"/>
+      <origin rpy="0 0 0" xyz="0.058 0 0"/>
+      <joint name="head_tilt_joint"/>
+
+      <inertial>
+        <mass value="1.749727"/>
+        <com xyz="0.041935 0.003569 0.028143"/>
+        <inertia ixx="0.010602303435" ixy="-0.000408814235" ixz="0.00198303894" iyy="0.011874383747" iyz="0.000197908779" izz="0.005516790626"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0.0 0.0 0.0 " xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_head_tilt_mesh_file">
+          <mesh filename="head_tilt"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0 "/>
+        <geometry name="head_tilt_collision_geom">
+          <box size="0.164 0.253 0.181"/>
+        </geometry>
+      </collision>
+    </link><joint name="stereo_joint" type="fixed"/><sensor name="stereo" type="camera">
+      <parent name="head_tilt"/>
+      <origin rpy="0 0 0" xyz="0.0232 0 0.0645"/>
+      <joint name="stereo_joint"/>
+
+      <inertial>
+        <mass value="0.1"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.00482611007" ixy="-0.000144683999" ixz="0.000110076136" iyy="0.005218991412" iyz="-0.000314239509" izz="0.008618784925"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0.0 0 0.05"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="pr2_stereo_visual_geom">
+          <mesh scale="0.005 0.01 0.005"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0.0 0 0.05"/>
+        <geometry name="stereo_collision_geom">
+          <box size="0.005 0.01 0.005"/>
+        </geometry>
+      </collision>
+
+
+      <map flag="gazebo" name="sensor">
+	<verbatim key="stereo_camera">
+          <sensor:camera name="stereo_left_sensor">
+            <imageWidth>640</imageWidth>
+            <imageHeight>480</imageHeight>
+            <hfov>60</hfov>
+            <nearClip>0.1</nearClip>
+            <farClip>100</farClip>
+            <updateRate>15.0</updateRate>
+            <controller:ros_camera name="stereo_left_controller" plugin="libRos_Camera.so">
+              <alwaysOn>true</alwaysOn>
+	      <updateRate>15.0</updateRate>
+	      <topicName>stereo_left/image</topicName>
+	      <frameName>stereo</frameName>
+	      <interface:camera name="stereo_left_iface"/>
+            </controller:ros_camera>
+          </sensor:camera>
+	</verbatim>
+      </map>
+      <map flag="gazebo" name="sensor">
+	<verbatim key="sensor_ray">
+          <sensor:ray name="stereo_laser">
+            <rayCount>30</rayCount>
+            <rangeCount>30</rangeCount>
+            <laserCount>1</laserCount>
+
+            <origin>0.0 0.0 0.05</origin>
+            <displayRays>false</displayRays>
+
+            <minAngle>-15</minAngle>
+            <maxAngle> 15</maxAngle>
+
+            <minRange>0.05</minRange>
+            <maxRange>100.0</maxRange>
+            <updateRate>10.0</updateRate>
+
+            <verticalRayCount>30</verticalRayCount>
+            <verticalRangeCount>30</verticalRangeCount>
+            <verticalMinAngle>-20</verticalMinAngle>
+            <verticalMaxAngle>  0</verticalMaxAngle>
+
+            <controller:ros_block_laser name="stereo_laser_controller" plugin="libRos_Block_Laser.so">
+              <gaussianNoise>0.005</gaussianNoise>
+              <alwaysOn>true</alwaysOn>
+              <updateRate>10.0</updateRate>
+              <topicName>full_cloud</topicName>
+              <frameName>stereo</frameName>
+              <interface:laser name="stereo_laser_iface"/>
+            </controller:ros_block_laser>
+          </sensor:ray>
+	</verbatim>
+      </map>
+    </sensor>
+
+  <joint name="tilt_laser_mount_joint" type="revolute">
+      <axis xyz="0 1 0"/>
+      <anchor xyz="0 0 0"/>
+      <limit effort="0.5292" max="1.48" min="-0.785" velocity="1256.0"/>
+      <calibration reference_position="-0.35" values="0 0"/>
+      <joint_properties damping="1.0"/>
+    </joint><link name="tilt_laser_mount">
+      <parent name="torso"/>
+      <origin rpy="0 0 0" xyz="0.1 0 0.19525"/>
+      <joint name="tilt_laser_mount_joint"/>
+      <inertial>
+        <mass value="1.0"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="1" ixy="0" ixz="0" iyy="1" iyz="0" izz="1"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <map flag="gazebo" name="gazebo_material">
+          <elem key="material">Gazebo/PioneerBody</elem>
+        </map>
+        <geometry name="pr2_tilt_laser_mount_mesh_file">
+          <mesh filename="hok_tilt"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry name="tilt_laser_mount_collision_geom">
+          <box size=".001 .001 .001"/>
+        </geometry>
+      </collision>
+    </link><transmission name="tilt_laser_mount_trans" type="SimpleTransmission">
+      <actuator name="tilt_laser_motor"/>
+      <joint name="tilt_laser_mount_joint"/>
+      <mechanicalReduction>6.0</mechanicalReduction>
+    </transmission><joint name="tilt_laser_joint" type="fixed">
+      <axis xyz="0 1 0"/>
+      <anchor xyz="0 0 0"/>
+    </joint><sensor name="tilt_laser" type="laser">
+      <parent name="tilt_laser_mount"/>
+      <origin rpy="0 0 0" xyz="0 0 0.03"/>
+      <joint name="tilt_laser_joint"/>
+      <inertial>
+        <mass value="0.1"/>
+        <com xyz="0 0 0"/>
+        <inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01"/>
+      </inertial>
+
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry name="pr2_tilt_laser_visual_geom">
+          <mesh scale="0.001 0.001 0.001"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry name="tilt_laser_collision_geom">
+          <box size=".001 .001 .001"/>
+        </geometry>
+      </collision>
+
+      <map flag="gazebo" name="sensor">
+        <verbatim key="sensor_ray">
+          <sensor:ray name="tilt_laser">
+            <rayCount>683</rayCount>
+            <rangeCount>683</rangeCount>
+            <laserCount>1</laserCount>
+
+            <origin>0.0 0.0 0.0</origin>
+            <displayRays>false</displayRays>
+
+            <minAngle>-45</minAngle>
+            <maxAngle> 45</maxAngle>
+
+            <minRange>0.05</minRange>
+            <maxRange>10.0</maxRange>
+            <updateRate>10.0</updateRate>
+            <controller:ros_laser name="ros_tilt_laser_controller" plugin="libRos_Laser.so">
+              <gaussianNoise>0.005</gaussianNoise>
+              <alwaysOn>true</alwaysOn>
+              <updateRate>15.0</updateRate>
+              <!-- <topicName>tilt_scan</topicName> -->
+              <topicName>scan</topicName>
+              <frameName>tilt_laser</frameName>
+              <interface:laser name="ros_tilt_laser_iface"/>
+            </controller:ros_laser>
+          </sensor:ray>
+        </verbatim>
+      </map>
+
+    </sensor>
+  
+</robot>

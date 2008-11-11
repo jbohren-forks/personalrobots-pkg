@@ -52,8 +52,9 @@ namespace ros {
 	controller_(NULL),
 	costMap_(NULL),
 	ma_(NULL),
-	usingPointClouds_(false),
-	laserMaxRange_(10.0) {
+	baseLaserMaxRange_(10.0),
+	tiltLaserMaxRange_(10.0),
+	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0) {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
@@ -81,21 +82,23 @@ namespace ros {
       double windowLength(1.0);
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double maxZ(2.0);
       double freeSpaceProjectionHeight(0.5);
       double inflationRadius(0.50);
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
-      param("/costmap_2d/laser_max_range", laserMaxRange_, laserMaxRange_);
+      param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
+      param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
       param("/costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
       param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
       param("/costmap_2d/no_information_value", noInformation, noInformation);
-      param("/costmap_2d/z_threshold", maxZ, maxZ);
+      param("/costmap_2d/z_threshold", maxZ_, maxZ_);
       param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+
+      robotWidth_ = inscribedRadius * 2;
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -121,7 +124,7 @@ namespace ros {
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                inputData , resp.map.resolution, 
-			       windowLength, lethalObstacleThreshold, maxZ, freeSpaceProjectionHeight,
+			       windowLength, lethalObstacleThreshold, maxZ_, freeSpaceProjectionHeight,
 			       inflationRadius, circumscribedRadius, inscribedRadius);
 
       // Allocate Velocity Controller
@@ -198,13 +201,14 @@ namespace ros {
       advertise<std_msgs::BaseVel>("cmd_vel", 1);
       
       //Advertize message to publis local goal for head to track
-      advertise<std_msgs::PointStamped>("head_controller/track_point", 1);
+      advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
 
       // The cost map is populated with either laser scans in the case that we are unable to use a
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
-      subscribe("scan", laserScanMsg_, &MoveBase::laserScanCallback, 1);
-      subscribe("cloud", pointCloudMsg_, &MoveBase::pointCloudCallback, 1);
+      subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
+      subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
 
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
@@ -290,80 +294,133 @@ namespace ros {
       stateMsg.pos.y = global_pose_.y;
       stateMsg.pos.th = global_pose_.yaw;
     }
+    
+    void MoveBase::baseScanCallback()
+    {
+      // Project laser into point cloud
+      std_msgs::PointCloud local_cloud;
+      local_cloud.header = baseScanMsg_.header;
+      projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
+      processData(local_cloud);
+    }
 
-    /**
-     * The laserScanMsg_ member will have been updated. It is locked already too.
-     */
-    void MoveBase::laserScanCallback(){
-      if(isTerminated())
-	return;
+    void MoveBase::tiltScanCallback()
+    {
+      // Project laser into point cloud
+      std_msgs::PointCloud local_cloud;
+      local_cloud.header = tiltScanMsg_.header;
+      projector_.projectLaser(tiltScanMsg_, local_cloud, tiltLaserMaxRange_);
+      processData(local_cloud);
+    }
 
-      if(usingPointClouds_){
-	return;
+    void MoveBase::stereoCloudCallback()
+    {
+      processData(stereoCloudMsg_);
+    }
+    
+    void MoveBase::processData(const std_msgs::PointCloud& local_cloud)
+    {
+      bufferMutex_.lock();
 
-	/*
-	ROS_INFO("Unsubscribing from laser scan messages - using published point clouds instead.");
-	unsubscribe(laserScanMsg_);
-	*/
+      point_clouds_.push_back(local_cloud);
+
+      std_msgs::PointCloud * newData = NULL;
+
+      while(!point_clouds_.empty()){
+
+	const std_msgs::PointCloud& point_cloud = point_clouds_.front();
+
+	std_msgs::PointCloud base_cloud;
+	std_msgs::PointCloud map_cloud;
+	
+	/* Transform to the base frame */
+	try
+	  {
+	    tf_.transformPointCloud("base", base_cloud, local_cloud);
+	    newData = extractFootprintAndGround(base_cloud);
+	    tf_.transformPointCloud("map", map_cloud, *newData);
+	  }
+	catch(libTF::TransformReference::LookupException& ex)
+	  {
+	    ROS_ERROR("Lookup exception: %s\n", ex.what());
+	    break;
+	  }
+	catch(libTF::TransformReference::ExtrapolateException& ex)
+	  {
+	    ROS_DEBUG("No transform available yet - have to try later: %s . Buffer size is %d\n", ex.what(), point_clouds_.size());
+	    break;
+	  }
+	catch(libTF::TransformReference::ConnectivityException& ex)
+	  {
+	    ROS_ERROR("Connectivity exception: %s\n", ex.what());
+	    break;
+	  }
+	catch(...)
+	  {
+	    ROS_ERROR("Exception in point cloud computation\n");
+	    break;
+	  }
+
+	point_clouds_.pop_front();
+
+	if (newData == NULL){
+	    delete newData;
+	    newData = NULL;
+	}
+
+	// Is the time stamp copied when we do a tranform?
+	// Verify what happens if we get many updates in the same update time step?
+	// How can interleaving effect things?
+	ROS_DEBUG("Processing point cloud with %d points\n", map_cloud.get_pts_size());
+        updateDynamicObstacles(point_cloud.header.stamp.to_double(), map_cloud);
       }
 
-      // Push the new scan on the queue
-      laser_scans_.push_back(laserScanMsg_);
-
-      // Run through the queue and transform what we can
-      while(!laser_scans_.empty())
-      {
-        std_msgs::LaserScan scan = laser_scans_.front();
-
-        // Assemble a point cloud, in the laser's frame
-        std_msgs::PointCloud local_cloud;
-        projector_.projectLaser(scan, local_cloud, laserMaxRange_);
-
-        // Convert to a point cloud in the map frame
-        std_msgs::PointCloud global_cloud;
-
-        try
-        {
-          global_cloud = this->tf_.transformPointCloud("map", local_cloud);
-        }
-        catch(libTF::TransformReference::LookupException& ex)
-        {
-          puts("no global->local Tx yet");
-          ROS_DEBUG("%s\n", ex.what());
-          break;
-        }
-        catch(libTF::TransformReference::ConnectivityException& ex)
-        {
-          puts("no global->local Tx yet");
-          ROS_DEBUG("%s\n", ex.what());
-          break;
-        }
-        catch(libTF::TransformReference::ExtrapolateException& ex)
-        {
-          // We expect ExtrapolateExceptions
-          //puts("Extrapolation exception");
-          break;
-        }
-
-        laser_scans_.pop_front();
-        updateDynamicObstacles(scan.header.stamp.to_double(), global_cloud);
+      // In case we get thrown out on the second transform - clean up
+      if (newData == NULL){
+	delete newData;
+	newData = NULL;
       }
+
+      bufferMutex_.unlock();
     }
 
     /**
-     * Point clouds are produced in the map frame so no transform is required. We simply use point clouds if produced
+     * The point is in the footprint if its x and y values are in the range [0 robotWidth] in
+     * the base frame.
      */
-    void MoveBase::pointCloudCallback(){
-      if(isTerminated())
-	return;
+    bool MoveBase::inFootprint(double x, double y) const {
+      bool result = fabs(x) <= robotWidth_/2 && fabs(y) <= robotWidth_/2;
 
-      // Ensure laser scans are disabled
-      if(usingPointClouds_ == false){
-	ROS_INFO("Disabling laser scan processing\n");
-	usingPointClouds_ = true; // Block out scan messages
+      if(result){
+	ROS_DEBUG("Discarding point <%f, %f> in footprint\n", x, y);
+      }
+      return result;
+    }
+
+    std_msgs::PointCloud * MoveBase::extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const {
+      std_msgs::PointCloud *copy = new std_msgs::PointCloud();
+      copy->header = baseFrameCloud.header;
+
+      unsigned int n = baseFrameCloud.get_pts_size();
+      unsigned int j = 0;
+      copy->set_pts_size(n);
+      for (unsigned int k = 0 ; k < n ; ++k){
+
+	ROS_DEBUG("Evaluating <%f, %f, %f>\n", 
+		  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z);
+
+	bool ok = baseFrameCloud.pts[k].z > minZ_ &&   baseFrameCloud.pts[k].z < maxZ_;
+	ROS_DEBUG("Discarding point for height %f\n", baseFrameCloud.pts[k].z);
+	if (ok && !inFootprint(baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y))
+	  copy->pts[j++] = baseFrameCloud.pts[k];
+
       }
 
-      updateDynamicObstacles(pointCloudMsg_.header.stamp.to_double(), pointCloudMsg_);
+      copy->set_pts_size(j);
+	
+      ROS_DEBUG("Filter discarded %d points (%d left) \n", n - j, j);
+
+      return copy;
     }
 
     /**
@@ -623,7 +680,7 @@ namespace ros {
       target_point.point.z = 1;
       target_point.header.stamp = ros::Time::now();
       target_point.header.frame_id = "map";
-      publish("head_controller/track_point", target_point);
+      publish("head_controller/head_track_point", target_point);
       return planOk;
     }
 

@@ -55,7 +55,7 @@
     </sky>
     <gazeboPath>media</gazeboPath>
     <grid>false</grid>
-    <maxUpdateRate>100</maxUpdateRate>
+    <maxUpdateRate>10.</maxUpdateRate>
   </rendering:ogre>
 
   <!-- White Directional light -->
@@ -168,6 +168,24 @@
     <include embedded="true">
       <xi:include href="pr2_xml_multi_link.model" />
     </include>
+
+    <!-- PR2_ACTARRAY -->
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
+
+    <!-- P3D for position groundtruth -->
+    <controller:P3D name="p3d_link3_controller" plugin="libP3D.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <bodyName>link3</bodyName>
+        <topicName>link3_pose</topicName>
+        <frameName>link3_frame</frameName>
+        <interface:position name="p3d_link3_position"/>
+    </controller:P3D>
 
   </model:physical>
 

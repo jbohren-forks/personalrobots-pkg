@@ -1,7 +1,7 @@
 
 #include "ros/node.h"
 #include "std_msgs/Point32.h"
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 using std::string;
 
@@ -11,57 +11,35 @@ using std::string;
 class GroundTruthTransform : public ros::node {
 public:
   std_msgs::Point32 msg;
-  rosTFClient tf;
+  tf::TransformListener tf;
 
-  GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, false) {
+  GroundTruthTransform() : ros::node("GroundTruthTransform"), tf(*this, true, (uint64_t)10000000000ULL) {
     advertise<std_msgs::Point32>("groundtruthposition");
   }
 
   void speak() {
-    libTF::TFPose robotPose, global_pose;
-    robotPose.x = 0;
-    robotPose.y = 0;
-    robotPose.z = 0;
-    robotPose.yaw = 0;
-    robotPose.pitch = 0;
-    robotPose.roll = 0;
-    robotPose.time = 0;
+    tf::Stamped<tf::Pose> robotPose, globalPose;
+    robotPose.setIdentity();
+    robotPose.frame_id_ = "base";
+    robotPose.stamp_ = ros::Time((uint64_t)0ULL);
     try {
-      robotPose.frame = "base";
-    } catch(libTF::TransformReference::LookupException& ex) {
-      std::cerr << "LookupException in lookup(\"base\"): " << ex.what() << "\n";
-      std::cout << "LookupException in lookup(\"base\"): " << ex.what();
+      this->tf.transformPose("map", robotPose, globalPose);
+    } catch(tf::LookupException& ex) {
+      std::cerr << "LookupException in transformPose(\"map\", robotPose, globalPose): " << ex.what() << "\n";
+      std::cout << "LookupException in transformPose(\"map\", robotPose, globalPose): " << ex.what();
       return;
-    } catch(libTF::TransformReference::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in lookup(\"base\"): " << ex.what() << "\n";
-      std::cout << "ExtrapolateException in lookup(\"base\"): " << ex.what();
+    } catch(tf::ExtrapolationException& ex) {
+      std::cerr << "ExtrapolateException in transformPose(\"map\", robotPose, globalPose): " << ex.what() << "\n";
+      std::cout << "ExtrapolateException in transformPose(\"map\", robotPose, globalPose): " << ex.what();
       return;
-    } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in lookup(\"base\"): " << ex.what() << "\n";
-      std::cout << "ConnectivityException in lookup(\"base\"): " << ex.what();
+    } catch(tf::ConnectivityException& ex) {
+      std::cerr << "ConnectivityException in transformPose(\"map\", robotPose, globalPose): " << ex.what() << "\n";
+      std::cout << "ConnectivityException in transformPose(\"map\", robotPose, globalPose): " << ex.what();
       return;
     }
-
-
-    try {
-      global_pose = this->tf.transformPose("map", robotPose);
-    } catch(libTF::TransformReference::LookupException& ex) {
-      std::cerr << tf.viewFrames();
-      std::cerr << "LookupException in transformPose(\"map\", robotPose): " << ex.what() << "\n";
-      std::cout << "LookupException in transformPose(\"map\", robotPose): " << ex.what();
-      return;
-    } catch(libTF::TransformReference::ExtrapolateException& ex) {
-      std::cerr << "ExtrapolateException in transformPose(\"map\", robotPose): " << ex.what() << "\n";
-      std::cout << "ExtrapolateException in transformPose(\"map\", robotPose): " << ex.what();
-      return;
-    } catch(libTF::TransformReference::ConnectivityException& ex) {
-      std::cerr << "ConnectivityException in transformPose(\"map\", robotPose): " << ex.what() << "\n";
-      std::cout << "ConnectivityException in transformPose(\"map\", robotPose): " << ex.what();
-      return;
-    }
-    msg.x = global_pose.x;
-    msg.y = global_pose.y;
-    msg.z = global_pose.z;
+    msg.x = globalPose.getOrigin().x();
+    msg.y = globalPose.getOrigin().y();
+    msg.z = globalPose.getOrigin().z();
     std::cout << msg.x << ", " << msg.y << ", " << msg.z;
     publish("groundtruthposition", msg);
   }

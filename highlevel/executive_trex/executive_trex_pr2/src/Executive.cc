@@ -151,7 +151,7 @@ int main(int argc, char **argv)
   root->Attribute("finalTick", &finalTick);
 
   if (playback) {
-    agentClock = new TREX::PlaybackClock(finalTick);
+    agentClock = new TREX::PlaybackClock(finalTick, root);
   } else {
     // Allocate a real time clock with 1 second per tick
     agentClock = new TREX::LogClock(1.0);
@@ -160,12 +160,27 @@ int main(int argc, char **argv)
   // Allocate the agent
   TREX::Agent::initialize(*root, *agentClock);
 
-  try{
-    TREX::Agent::instance()->run();
+  
+
+  if (playback) {
+    agentClock->doStart();    
+    TREX::LogManager::instance().handleInit();
+    while (!((TREX::PlaybackClock*)agentClock)->isTimedOut()) {
+      if (((TREX::PlaybackClock*)agentClock)->isAtGoalTick()) {
+	((TREX::PlaybackClock*)agentClock)->consolePopup();
+      }
+      TREX::Agent::instance()->doNext();
+    }
+  } else {
+    try{
+      TREX::Agent::instance()->run();
+    }
+    catch(const char * str){
+      std::cout << str << std::endl;
+    }
+    std::cout << "Agent has finished running.\n";
   }
-  catch(const char * str){
-    std::cout << str << std::endl;
-  }
+
   /*
   catch(...){
     std::cout << "Caught unexpected exception." << std::endl;

@@ -5,7 +5,6 @@
 #include "std_msgs/Image.h"
 
 #include "image_utils/cv_bridge.h"
-#include "pr2_mechanism_controllers/TrackPoint.h"
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -16,7 +15,7 @@
 using namespace std;
 #include "std_msgs/ImageArray.h"
 #include "std_msgs/String.h"
-
+#include "std_msgs/PointStamped.h"
 #include "stereo_blob_tracker/Rect2DStamped.h"
 using namespace stereo_blob_tracker;
 
@@ -27,7 +26,7 @@ typedef signed char schar;
 
 #include "blob_tracker.h"
 
-#define DISPLAY true
+#define DISPLAY false
 #define DISPLAYFREQ 30
 // set the following to be a number between 0.0 and 1.0
 // to specify how fast the head moves to track the blob.
@@ -254,6 +253,7 @@ public:
   int  numFrames_;
 
   bool waitForReEntry_;
+  int  num_frames_failed_;
 
   VidereBlobTracker(/// if true, the blob is always near the center
 		    /// of the image
@@ -285,7 +285,8 @@ public:
     quit(false),
     blobNearCenter_(min(1.0f, max(0.f, blobNearCenter))),
     numFrames_(0),
-    waitForReEntry_(false)
+    waitForReEntry_(false),
+    num_frames_failed_(0)
   {
     btracker_ = new BTracker();
 
@@ -312,7 +313,7 @@ public:
 
     // Ros: advertise a topic
     advertise<std_msgs::PointStamped>("points", 1000);
-    advertise<std_msgs::PointStamped>("head_controller/track_point", 1000);
+    advertise<std_msgs::PointStamped>("head_controller/frame_track_point", 1000);
     // tracked box
     advertise<Rect2DStamped>(trackedBoxTopic_, 1000);
 
@@ -463,9 +464,17 @@ public:
 	// attemp some poor man's white balancing
 	balanceColor(leftImg);
 
+	bool use_cam_shift = true;
 	oktrack = btracker_->processFrame(leftImg, isNewBlob, selection,
-					  &new_selection, mask, true);
+					  &new_selection, mask, use_cam_shift);
 
+	// filter out blob that are too small or too skining. Based on
+	// empirical setting
+	if (new_selection.width < 5 || new_selection.height < 5 ||
+	    new_selection.width/new_selection.height > 5 ||
+	    new_selection.height/new_selection.width > 5 ) {
+	  oktrack = false;
+	}
 	if (!oktrack) {
 	  if (GIVEUPONFAILURE == true) {
 	    // Lost track, reset everything.
@@ -484,13 +493,44 @@ public:
 	    // reasonable size (quarter of the window dimensions)
 	    int width  = im_size.width/4;
 	    int height = im_size.height/4;
-	    new_selection = cvRect(im_size.width/2  - width/2,
-				   im_size.height/2 - height/2,
+	    int cx, cy;
+	    if (num_frames_failed_ < 20) {
+	      // search for two cycles 5 fixed position, and fixed
+	      // window size for the blob.
+	      int code = num_frames_failed_%5;
+	      switch (code) {
+	      case 0:
+		cx = 0+im_size.width/8; cy = 0+im_size.height/8;
+		break;
+	      case 1:
+		cx = 0+im_size.width/8;
+		cy = im_size.height/2+im_size.height/8;
+		break;
+	      case 2:
+		cx = im_size.width/2+im_size.width/8;
+		cy = im_size.height/2+im_size.height/8;
+		break;
+	      case 3:
+		cx = im_size.width/2 + im_size.width/8;
+		cy = 0 + im_size.width/8;
+		break;
+	      case 4:
+		cx = im_size.width/2 - width/2;
+		cy = im_size.height/2 - height/2;
+		break;
+	      }
+	    } else {
+	      cx = im_size.width/2 - width/2;
+	      cy = im_size.height/2 - height/2;
+	    }
+	    new_selection = cvRect(cx, cy,
 				   width, height);
 	    waitForReEntry_ = true;
+	    num_frames_failed_++;
 	  }
 	} else {
 	  waitForReEntry_ = false;
+	  num_frames_failed_ = 0;
 	}
 	//
 	// Tracking succeeded, copy the new window, compute 3D point
@@ -508,7 +548,8 @@ public:
 	// compute the 3D point
 	compute3dBlob(dispImg, new_selection);
 
-	publish3dBlobCentroid();
+	if (oktrack == true)
+	  publish3dBlobCentroid();
 
 	if (remote_gui_) {
 	  // publish tracked box
@@ -692,7 +733,7 @@ public:
     // publish the centroid of the tracked object
     publish("points", point_stamped_);
 
-    string topic = "head_controller/track_point" ;
+    string topic = "head_controller/frame_track_point" ;
 
     std_msgs::PointStamped target;
 
@@ -700,7 +741,8 @@ public:
     target.point.y = -point_stamped_.point.x ;
     target.point.z = -point_stamped_.point.y;
 
-    target.header.frame_id = "stereo_block" ;
+    target.header.frame_id = "stereo" ;
+    target.header.stamp=image_msg_.header.stamp;
 
 #if 0
     cout << "Requesting to move to: " << point_stamped_.point.x << ","
@@ -709,7 +751,7 @@ public:
 #endif
 
     static int count = 0;
-    if (++count % 1 == 0)
+    if (++count % 3== 0)
       publish(topic, target);
 
   }
@@ -839,3 +881,4 @@ int main(int argc, char **argv)
   ros::fini();
   return 0;
 }
+

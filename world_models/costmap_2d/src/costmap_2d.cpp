@@ -79,13 +79,15 @@ namespace costmap_2d {
       inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
       circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
       inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-      staticData_(NULL), fullData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0), mx_(0), my_(0)
+      staticData_(NULL), fullData_(NULL), heightData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0), mx_(0), my_(0)
   {
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
     fullData_ = new unsigned char[width_*height_];
+    heightData_ = new unsigned char[width_*height_];
     obsWatchDog_ = new TICK[width_*height_];
     memset(fullData_, 0, width_*height_);
+    memset(heightData_, 0, width_*height_);
     memset(obsWatchDog_, 0, width_*height_);
 
     cachedDistances = new double*[inflationRadius_+1];
@@ -178,6 +180,8 @@ namespace costmap_2d {
       // This only applies for points with the projection height limit
       if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
 	cellHits.push_back(ind);
+      else
+	heightData_[i] = 1;
     }
 
     // Propagate costs
@@ -259,7 +263,12 @@ namespace costmap_2d {
 	it = dynamicObstacles_.erase(it);
 	obsWatchDog_[ind] = 0;
 	unsigned char oldValue = fullData_[ind];
+
+	// Reset x,y cost to the value of the static map
 	fullData_[ind] = staticData_[ind];
+
+	// Clear the height
+	heightData_[ind] = 0;
 
 	// If the new value differs from the old value then insert it
 	if(fullData_[ind] != oldValue)
@@ -466,8 +475,8 @@ namespace costmap_2d {
       if(obsWatchDog_[ind] == MARKED_FOR_COST && fullData_[ind] < CIRCUMSCRIBED_INFLATED_OBSTACLE)
 	return;
 
-      // If already marked, ignore it
-      if(obsWatchDog_[ind] < WATCHDOG_LIMIT)
+      // If already marked, or there is an elevated hit that we do not want to clear
+      if(obsWatchDog_[ind] < WATCHDOG_LIMIT && heightData_[ind] == 0)
 	markFreeSpace(ind, updates);
 
       num += numadd;              // Increase the numerator by the top of the fraction
