@@ -34,13 +34,16 @@
 
 #include <cstdio>
 
+#include "dcam.h"
+#include "stereocam.h"
+
 #include "ros/node.h"
 #include "image_msgs/Image.h"
 #include "image_msgs/FillImage.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/StereoInfo.h"
-#include "dcam.h"
-#include "stereocam.h"
+
+#include "diagnostic_updater/diagnostic_updater.h"
 
 using namespace std;
 
@@ -56,13 +59,20 @@ class DcamNode : public ros::node
   image_msgs::CamInfo      cam_info_;
   image_msgs::StereoInfo   stereo_info_;
 
+  DiagnosticUpdater<DcamNode> diagnostic_;
+  int count_;
+  double desired_freq_;
+
+
 public:
 
-  DcamNode() : ros::node("dcam")
+  DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
   {
     dcam::init();
 
     int num_cams = dcam::numCameras();
+
+    diagnostic_.addUpdater( &DcamNode::freqStatus );
 
     if (num_cams > 0)
     {
@@ -95,6 +105,8 @@ public:
 
       param("~fps", dbl_fps, 30.0);
 
+      desired_freq_ = dbl_fps;
+
       if (dbl_fps >= 240.0)
         fps = DC1394_FRAMERATE_240;
       else if (dbl_fps >= 120.0)
@@ -111,7 +123,7 @@ public:
         fps = DC1394_FRAMERATE_3_75;
       else
         fps = DC1394_FRAMERATE_1_875;
-
+      
       string str_mode;
       dc1394video_mode_t mode;
       videre_proc_mode_t videre_mode;  
@@ -210,8 +222,6 @@ public:
 
   void serviceCam()
   {
-    printf("Servicing camera\n");
-
     cam_->getImage(500);
 
     // THIS should be possible for all cameras, not just stereo
@@ -222,6 +232,8 @@ public:
 
     if (do_stereo_)
       ( (cam::StereoDcam*)(cam_) )->doDisparity();
+
+    count_++;
   }
 
   void publishCam()
@@ -390,6 +402,37 @@ public:
     }
   }
 
+
+  void freqStatus(robot_msgs::DiagnosticStatus& status)
+  {
+    status.name = "Frequency Status";
+
+    double freq = (double)(count_)/diagnostic_.getPeriod();
+
+    if (freq < (.9*desired_freq_))
+    {
+      status.level = 2;
+      status.message = "Desired frequency not met";
+    }
+    else
+    {
+      status.level = 0;
+      status.message = "Desired frequency met";
+    }
+
+    status.set_values_size(3);
+    status.values[0].label = "Images in interval";
+    status.values[0].value = count_;
+    status.values[1].label = "Desired frequency";
+    status.values[1].value = desired_freq_;
+    status.values[2].label = "Actual frequency";
+    status.values[2].value = freq;
+
+    printf("%g fps\n", freq);
+
+    count_ = 0;
+  }
+
   bool spin()
   {
     // Start up the camera
@@ -397,6 +440,7 @@ public:
     {
       serviceCam();
       publishCam();
+      diagnostic_.update();
     }
 
     return true;
