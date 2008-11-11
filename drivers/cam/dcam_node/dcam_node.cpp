@@ -251,6 +251,8 @@ public:
                   stcam->stIm->imHeight, stcam->stIm->imWidth, 1,
                   "mono", "uint16",
                   stcam->stIm->imDisp );
+
+        img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
         publish("~disparity", img_);
         
         stereo_info_.has_disparity = true;
@@ -258,7 +260,7 @@ public:
         stereo_info_.has_disparity = false;
       }
 
-      stereo_info_.header.stamp = ros::Time(stcam->stIm->imLeft->im_time * 1000);
+      stereo_info_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
 
       stereo_info_.height = stcam->stIm->imHeight;
       stereo_info_.width = stcam->stIm->imWidth;
@@ -288,16 +290,14 @@ public:
 
   void publishImages(std::string base_name, cam::ImageData* img_data)
   {
-
-    img_.header.stamp = ros::Time(img_data->im_time * 1000);
-    cam_info_.header.stamp = ros::Time(img_data->im_time * 1000);
-
     if (img_data->imRawType != COLOR_CODING_NONE)
     {
       fillImage(img_,  "image_raw",
                 img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
                 img_data->imRaw );
+
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_raw"), img_);
       cam_info_.has_image = true;
     } else {
@@ -310,6 +310,7 @@ public:
                 img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
                 img_data->im );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image"), img_);
       cam_info_.has_image = true;
     } else {
@@ -322,6 +323,8 @@ public:
                 img_data->imHeight, img_data->imWidth, 4,
                 "rgba", "byte",
                 img_data->imColor );
+
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_color"), img_);
       cam_info_.has_image_color = true;
     } else {
@@ -334,6 +337,7 @@ public:
                 img_data->imHeight, img_data->imWidth, 1,
                 "mono", "byte",
                 img_data->imRect );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_rect"), img_);
       cam_info_.has_image_rect = true;
     } else {
@@ -346,12 +350,14 @@ public:
                 img_data->imHeight, img_data->imWidth, 4,
                 "rgba", "byte",
                 img_data->imRectColor );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
       publish(base_name + std::string("image_rect_color"), img_);
       cam_info_.has_image_rect_color = true;
     } else {
       cam_info_.has_image_rect_color = false;
     }
 
+    cam_info_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
     cam_info_.height = img_data->imHeight;
     cam_info_.width  = img_data->imWidth;
 
