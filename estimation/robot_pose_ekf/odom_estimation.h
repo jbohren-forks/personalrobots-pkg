@@ -54,27 +54,30 @@ namespace estimation
 class odom_estimation
 {
 public:
-  // constructor
+  /// constructor
   odom_estimation();
 
-  // destructor
+  /// destructor
   virtual ~odom_estimation();
 
-  // update filter
-  void Update(KDL::Frame& odom_meas, double odom_time,
-	      KDL::Frame& imu_meas,  double imu_time, double filter_time);
+  /// update filter
+  void Update(KDL::Frame& odom_meas, double odom_time, bool odom_active,
+	      KDL::Frame& imu_meas,  double imu_time,  bool imu_active,
+	      KDL::Frame& vo_meas,   double vo_time,   bool vo_active, double filter_time);
 
-  // initialize filter
-  void Initialize(KDL::Frame& odom_meas, double odom_time,
-		  KDL::Frame& imu_meas,  double imu_time, double filter_time);
+  /// initialize filter
+  void Initialize(KDL::Frame& prior, double time);
 
 
-  // get filter posterior
+  /// get filter posterior
   void GetEstimate(MatrixWrapper::ColumnVector& estimate, double& time);
+
+  /// return if filter was initialized
+  bool IsInitialized() {return _filter_initialized;};
 
 
 private:
-  // correct for angle overflow
+  /// correct for angle overflow
   void AngleOverflowCorrect(double& a, double ref);
 
   // pdf / model / filter
@@ -84,14 +87,16 @@ private:
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _odom_meas_model;
   BFL::LinearAnalyticConditionalGaussian* _imu_meas_pdf;
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _imu_meas_model;
+  BFL::LinearAnalyticConditionalGaussian* _vo_meas_pdf;
+  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _vo_meas_model;
   BFL::Gaussian* _prior;
   BFL::ExtendedKalmanFilter* _filter;
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
-  KDL::Frame _filter_estimate_old, _odom_meas_old, _imu_meas_old;
+  KDL::Frame _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
   double _filter_time_old;
-  bool _filter_initialized;
+  bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
 
 }; // class
 

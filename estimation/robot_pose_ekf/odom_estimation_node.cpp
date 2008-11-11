@@ -48,9 +48,10 @@ namespace estimation
   odom_estimation_node::odom_estimation_node()
     : ros::node("odom_estimation"),
       _vel_desi(2),
-      _vel_initialized(false),
-      _odom_initialized(false),
-      _imu_initialized(false)
+      _vel_active(false),
+      _odom_active(false),
+      _imu_active(false),
+      _vo_active(false)
   {
     // advertise our estimation
     advertise<std_msgs::PoseStamped>("odom_estimation",10);
@@ -59,9 +60,11 @@ namespace estimation
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
     subscribe("odom",         _odom, &odom_estimation_node::odom_callback, 10);
     subscribe("imu_data",     _imu,  &odom_estimation_node::imu_callback,  10);
+    subscribe("vo_data",      _vo,   &odom_estimation_node::vo_callback,   10);
 
     _odom_file.open("odom_file.txt");
     _imu_file.open("imu_file.txt");
+    _vo_file.open("vo_file.txt");
     _corr_file.open("corr_file.txt");
   };
 
@@ -71,23 +74,43 @@ namespace estimation
   odom_estimation_node::~odom_estimation_node(){
     _odom_file.close();
     _imu_file.close();
+    _vo_file.close();
     _corr_file.close();
   };
 
 
 
 
-  // callback function for vel data
-  void odom_estimation_node::vel_callback()
+  // update filter
+  void odom_estimation_node::Update(double time)
   {
-    // receive data
     _filter_mutex.lock();
-    _vel_desi(1) = _vel.vx;   _vel_desi(2) = _vel.vw;
-    _filter_mutex.unlock();
 
-    // initialized
-    //if (!_vel_initialized) _vel_initialized = true;
+    // update filter
+    if ( _my_filter.IsInitialized() )  {
+      _my_filter.Update(_odom_meas, _odom_time, _odom_active, 
+			_imu_meas,  _imu_time,  _imu_active,
+			_vo_meas,   _vo_time,   _vo_active,  time);
+      
+      // write to file
+      ColumnVector estimate; double tm;
+      _my_filter.GetEstimate(estimate, tm);
+      for (unsigned int i=1; i<=6; i++)
+	_corr_file << estimate(i) << " ";
+      _corr_file << tm << endl;
+      
+      // --> convert estimate to output message
+      // TODO: PUT SOMETHING IN OUTPUT
+      publish("odom_estimation", _output);
+    }
+
+    // initialize filer with odometry frame
+    if ( _odom_active && !_my_filter.IsInitialized())
+      _my_filter.Initialize(_odom_meas, _odom_time);
+
+    _filter_mutex.unlock();
   };
+
 
 
 
@@ -99,32 +122,13 @@ namespace estimation
     _filter_mutex.lock();
     _odom_time = _odom.header.stamp.to_double();
     _odom_meas =  Frame(Rotation::RPY(0,0,_odom.pos.th), Vector(_odom.pos.x, _odom.pos.y, 0));
-
-    // initialize filer
-    if ( !_odom_initialized && _imu_initialized)
-      _my_filter.Initialize(_odom_meas, _odom_time, _imu_meas, _imu_time, _odom_time);
-
-    // filter upate
-    if ( _odom_initialized && _imu_initialized)
-      {
-	//cout << "time odom " << _odom_time << "  -  time imu " << _imu_time << endl;
-
-	_my_filter.Update(_odom_meas, _odom_time, _imu_meas, _imu_time, _odom_time);
-	ColumnVector estimate; double tm;
-	_my_filter.GetEstimate(estimate, tm);
-
-	// write to file
-	for (unsigned int i=1; i<=6; i++)
-	  _corr_file << estimate(i) << " ";
-	_corr_file << tm << endl;
-
-	// --> convert estimate to output message
-	publish("odom_estimation", _output);
-      }
     _filter_mutex.unlock();
 
-    // initialized
-    if (!_odom_initialized) _odom_initialized = true;
+    // update filter
+    this->Update(_odom_time);
+
+    // activate odom
+    if (!_odom_active) _odom_active = true;
   };
 
 
@@ -138,25 +142,56 @@ namespace estimation
     _imu_time = _imu.header.stamp.to_double();
     _imu_meas = Frame( Rotation::Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
 		       Vector(0,0,0));
-    // ASK TULLY FOR ANGLE SIGN CONVENTION
-    _imu_meas = _imu_meas.Inverse();
     _filter_mutex.unlock();
 
-    // initialized
-    if (!_imu_initialized) _imu_initialized = true;
-
-
+    // activate imu
+    if (!_imu_active) _imu_active = true;
   };
 
 
+
+
+  // callback function for VO data
+  void odom_estimation_node::vo_callback()
+  {
+    // receive data
+    _filter_mutex.lock();
+    _vo_time = _vo.header.stamp.to_double();
+    _vo_meas = Frame( Rotation::Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
+		      Vector(0,0,0));
+    _filter_mutex.unlock();
+
+    // activate vo
+    if (!_vo_active) _vo_active = true;
+  };
+
+
+
+
+  // callback function for vel data
+  void odom_estimation_node::vel_callback()
+  {
+    // receive data
+    _filter_mutex.lock();
+    _vel_desi(1) = _vel.vx;   _vel_desi(2) = _vel.vw;
+    _filter_mutex.unlock();
+
+    // active
+    //if (!_vel_active) _vel_active = true;
+  };
 
 
 }; // namespace
 
 
 
-using namespace estimation;
 
+
+
+// ----------
+// -- MAIN --
+// ----------
+using namespace estimation;
 
 int main(int argc, char **argv)
 {
