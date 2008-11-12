@@ -45,6 +45,7 @@
 #include <urdf/URDF.h>
 #include <libTF/Pose3D.h>
 
+#include <reslocator/reslocator.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <errno.h>
@@ -347,7 +348,7 @@ int main(int argc, char **argv)
         if( outresdir.size() > 0 )
             outresdir += "/";
         outresdir += argv[3];
-        addKeyValue(kinbody,"modelsdir",argv[3]);
+        addKeyValue(kinbody,"modelsdir",string(argv[3])+string("/")+robotname);
     }
 
     outresdir += "/" + robotname;
@@ -367,7 +368,7 @@ int main(int argc, char **argv)
         exit(3);
     }
 
-    string inresdir = wgxml.getResourceLocation();
+    string inresdir = res_locator::resource2path(wgxml.getResourceLocation());
     if( inresdir.size() > 0 )
         inresdir += "/";
     if( outresdir.size() > 0 )
