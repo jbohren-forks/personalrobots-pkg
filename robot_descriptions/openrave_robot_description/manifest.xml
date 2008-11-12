@@ -1,0 +1,12 @@
+<package>
+  <description>Openrave robot file generator from wg_robot_description</description>
+  <author>Rosen Diankov (from gazebo_robot_description)</author>
+  <license>BSD</license>
+  <url>http://pr.willowgarage.com/wiki/FIXME</url>
+
+  <depend package="wg_robot_description"/>
+  <depend package="wg_robot_description_parser"/>
+  <depend package="openrave"/>
+  <depend package="resource_locator"/>
+  <depend package="libTF"/>
+</package>
