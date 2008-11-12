@@ -642,7 +642,10 @@ namespace robot_desc
 
 	/** Get the data that was defined at top level */
 	const Map& getMap(void) const;
-
+	
+	/** Get the defined resource path for this document */
+	const std::string& getResourcePath(void) const;
+	
 	/** Try to evaluate the constant as a double value */
 	double getConstantValue(const std::string &name, bool *error = NULL) const;
 
@@ -751,7 +754,10 @@ namespace robot_desc
 
 	/** The name of the file where the parsing started */
 	std::string                             m_source;
-	
+
+	/** A string that defines the base path for resources pointed to from the loaded document */
+	std::string                             m_resourcePath;
+		
 	/** The list of paths the parser knows about when it sees an <include> directive */
 	std::vector<std::string>                m_paths;
         
