@@ -335,6 +335,24 @@ TEST(Bullet, TransformOrder )
   
 }
 
+
+TEST(Bullet, SlerpOppositeSigns)
+{
+  //  btQuaternion q1 (M_PI/2,0,0);
+  btQuaternion q1 (M_PI/4,0,0);
+  btQuaternion q2(-q1.x(), -q1.y(), -q1.z()-.0001, -q1.w()+.0001);
+  q2.normalize();
+  btQuaternion q3 = q2.slerp(q1, .5);
+
+  //  printf("%f %f %f %f,%f %f %f %f\n", q2.x(), q2.y(), q2.z(), q2.w(), q3.x(), q3.y(), q3.z(), q3.w());
+
+  EXPECT_NEAR(q2.x(), q3.x(), 0.01);
+  EXPECT_NEAR(q2.y(), q3.y(), 0.01);
+  EXPECT_NEAR(q2.z(), q3.z(), 0.01);
+  EXPECT_NEAR(q2.w(), q3.w(), 0.01);
+
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
