@@ -88,7 +88,7 @@ main(int argc, char **argv)
       printf("Checking for STOC...\n");
       if (cam->isSTOC)
 	{
-	  printf("  ...Setting STOC mode to PROC_MODE_DISPARITY_RAW\n");
+	  printf("  ...Setting STOC mode to PROC_MODE_NONE\n");
 	  cam->setProcMode(PROC_MODE_NONE);
 	}
       else
@@ -125,7 +125,7 @@ main(int argc, char **argv)
 	      t1 = get_ms();
 	      cam->doRectify();	// rectify if it's not done by the STOC
 	      t2 = get_ms();
-	      //	      cam->doDisparity(); // perform stereo processing, if not done by STOC
+	      cam->doDisparity(); // perform stereo processing, if not done by STOC
 	      t3 = get_ms();
 
 	      printf("Timing - Rect %d ms, Disparity %d ms\n", (int)(t2-t1), (int)(t3-t2));
