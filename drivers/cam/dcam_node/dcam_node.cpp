@@ -126,7 +126,7 @@ public:
       
       string str_mode;
       dc1394video_mode_t mode;
-      videre_proc_mode_t videre_mode;  
+      videre_proc_mode_t videre_mode = PROC_MODE_NONE;  
       stereo_cam_ = false;
 
       param("~video_mode", str_mode, string("640x480_mono8"));
@@ -317,10 +317,10 @@ public:
       cam_info_.has_image = false;
     }
 
-    if (img_data->imColorType != COLOR_CODING_NONE)
+    if (img_data->imColorType != COLOR_CODING_NONE && img_data->imColorType == COLOR_CODING_RGB8)
     {
       fillImage(img_,  "image_color",
-                img_data->imHeight, img_data->imWidth, 4,
+                img_data->imHeight, img_data->imWidth, 3,
                 "rgba", "byte",
                 img_data->imColor );
 
@@ -344,7 +344,20 @@ public:
       cam_info_.has_image_rect = false;
     }
 
-    if (img_data->imRectColorType != COLOR_CODING_NONE)
+    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGB8)
+    {
+      fillImage(img_,  "image_rect_color",
+                img_data->imHeight, img_data->imWidth, 3,
+                "rgb", "byte",
+                img_data->imRectColor );
+      img_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+      publish(base_name + std::string("image_rect_color"), img_);
+      cam_info_.has_image_rect_color = true;
+    } else {
+      cam_info_.has_image_rect_color = false;
+    }
+
+    if (img_data->imRectColorType != COLOR_CODING_NONE && img_data->imRectColorType == COLOR_CODING_RGBA8)
     {
       fillImage(img_,  "image_rect_color",
                 img_data->imHeight, img_data->imWidth, 4,

@@ -45,21 +45,41 @@ namespace image_msgs
   class CvBridge
   {
     IplImage* img_;
-    bool owns_data_;
+    IplImage* rosimg_;
+    IplImage* cvtimg_;
+
+    void reallocCvtIfNeeded(CvSize sz, int depth, int channels)
+    {
+      if (cvtimg_ != 0)
+        if (cvtimg_->width     != sz.width  || 
+            cvtimg_->height    != sz.height || 
+            cvtimg_->depth     != depth     ||
+            cvtimg_->nChannels != channels)
+        {
+          cvReleaseImage(&cvtimg_);
+          cvtimg_ = 0;
+        }
+
+      if (cvtimg_ == 0)
+      {
+        cvtimg_ = cvCreateImage(sz, depth, channels);
+      }      
+    }
 
   public:
 
-    CvBridge() : img_(0), owns_data_(false)
+    CvBridge() : img_(0), rosimg_(0), cvtimg_(0)
     {
-      img_ = cvCreateImageHeader( cvSize(0,0), IPL_DEPTH_8U, 1 );
+      rosimg_ = cvCreateImageHeader( cvSize(0,0), IPL_DEPTH_8U, 1 );
     }
 
     ~CvBridge()
     {
-      if (owns_data_)
-        cvReleaseData(&img_);
+      if (rosimg_)
+        cvReleaseImageHeader(&rosimg_);
       
-      cvReleaseImageHeader(&img_);
+      if (cvtimg_)
+        cvReleaseImage(&cvtimg_);
     }
 
 
@@ -68,21 +88,35 @@ namespace image_msgs
       return img_;
     }
 
-    bool fromImage(Image& rosimg)
+    bool fromImage(Image& rosimg, std::string encoding = "")
     {
       if (rosimg.depth == "byte")
       {
-        cvInitImageHeader(img_, cvSize(rosimg.byte_data.layout.dim[1].size, rosimg.byte_data.layout.dim[0].size), IPL_DEPTH_8U, 1);
-        cvSetData(img_, &(rosimg.byte_data.data[0]), rosimg.byte_data.layout.dim[1].stride);
+        cvInitImageHeader(rosimg_, cvSize(rosimg.byte_data.layout.dim[1].size, rosimg.byte_data.layout.dim[0].size),
+                          IPL_DEPTH_8U, rosimg.byte_data.layout.dim[2].size);
+        cvSetData(rosimg_, &(rosimg.byte_data.data[0]), rosimg.byte_data.layout.dim[1].stride);
+        img_ = rosimg_;
       } else if (rosimg.depth == "uint16") {
-        cvInitImageHeader(img_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size), IPL_DEPTH_16U, 1);
-        cvSetData(img_, &(rosimg.uint16_data.data[0]), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
+        cvInitImageHeader(rosimg_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size),
+                          IPL_DEPTH_16U, rosimg.uint16_data.layout.dim[2].size);
+        cvSetData(rosimg_, &(rosimg.uint16_data.data[0]), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
+        img_ = rosimg_;
       } else {
         return false;
       }
-      
+
+      if (encoding != "" && (encoding != rosimg.encoding))
+      {
+        if (encoding == "bgr" && rosimg.encoding == "rgb")
+        {
+          reallocCvtIfNeeded(cvGetSize(rosimg_), IPL_DEPTH_8U, 3);
+          cvCvtColor(rosimg_, cvtimg_, CV_RGB2BGR);
+          img_ = cvtimg_;
+        } else {
+          return false;
+        }
+      }
       return true;
-        
     }
   private:
 

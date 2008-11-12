@@ -67,17 +67,17 @@ public:
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
-    sync.subscribe("dcam/left/image_rect", limage, 1);
-    sync.subscribe("dcam/right/image_rect", rimage, 1);
+    sync.subscribe("dcam/left/image_rect_color", limage, 1);
+    sync.subscribe("dcam/right/image_rect_color", rimage, 1);
     sync.subscribe("dcam/disparity", dimage, 1);
   }
 
   void image_cb_all(ros::Time t)
   {
-    if (lbridge.fromImage(limage))
+    if (lbridge.fromImage(limage, "bgr"))
       cvShowImage("left", lbridge.toIpl());
 
-    if (rbridge.fromImage(rimage))
+    if (rbridge.fromImage(rimage, "bgr"))
       cvShowImage("right", rbridge.toIpl());
 
     if (dbridge.fromImage(dimage))
