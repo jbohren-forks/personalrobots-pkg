@@ -42,6 +42,7 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
+#include <boost/regex.hpp>
 
 namespace robot_desc {
     
@@ -119,9 +120,43 @@ namespace robot_desc {
 	return m_name;
     }
     
-    const std::string& URDF::getResourceLocation(void) const
+    std::string URDF::getResourceLocation(void) const
     {
-	return m_resourceLocation;
+        // check if URL is valid
+        boost::cmatch matches;
+        boost::regex re("(ros-pkg|ros-param):\\/\\/((\\w+\\.)*(\\w*))\\/([\\w\\d]+\\/{0,1})+");
+        if (boost::regex_match(m_resourceLocation.c_str(), matches, re) && matches.size() >= 3) {
+            std::string protocol(matches[1].first, matches[1].second);
+            std::string protocol_path(matches[2].first, matches[2].second);
+            std::string relpath(matches[2].second,matches[matches.size()-1].second);
+
+            if( protocol == std::string("ros-pkg") ) {
+                // find the ROS package
+                FILE* f = popen((std::string("rospack find ") + protocol_path).c_str(),"r");
+                if( f == NULL )
+                    errorMessage(std::string("failed to launch rospack find ") + protocol_path);
+                else {
+                    char basepath[1024];
+                    fgets(basepath, sizeof(basepath), f);
+                    pclose(f);
+
+                    // strip out any new lines or spaces from the end
+                    if( strlen(basepath) > 0 ) {
+                        char* p = basepath+strlen(basepath)-1;
+                        while(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')
+                            *p-- = 0;
+                    }
+                    return std::string(basepath) + relpath;
+                }
+            }
+            else if( protocol == std::string("ros-param") ) {
+                errorMessage("ros-param option for the media path is not supported");
+            }
+        }
+        else // not a url so copy directly
+            return m_resourceLocation;
+
+        return "";
     }
     
     URDF::Link* URDF::getLink(const std::string &name) const
@@ -1228,7 +1263,24 @@ namespace robot_desc {
 		}
 		else if (node->ValueStr() == "mimic" && !free)
 		{
-                    std::cout << "mimic is ignored for now." << std::endl;
+            const char* jointname = node->ToElement()->Attribute("name");
+            const char* multcoeff = node->ToElement()->Attribute("mult");
+            const char* offsetcoeff = node->ToElement()->Attribute("offset");
+
+            if( jointname != NULL ) {
+                Link* plink = getJointLink(jointname);
+                if( plink == NULL )
+                    errorMessage(std::string("could not find link with joint name") + std::string(jointname));
+                else if( plink->joint == NULL )
+                    errorMessage(std::string("link ") + std::string(jointname) + std::string(" has NULL joint"));
+                else
+                    joint->pjointMimic = plink->joint;
+
+                if( multcoeff != NULL )
+                    joint->fMimicMult = atof(multcoeff);
+                if( offsetcoeff != NULL )
+                    joint->fMimicOffset = atof(offsetcoeff);
+            }
 		}
 		else if (node->ValueStr() == "calibration")
 		{
@@ -2229,11 +2281,11 @@ namespace robot_desc {
 		    }
 		    else if (node->ValueStr() == "resource")
 		    {
-			const char *loc = node->ToElement()->Attribute("location");
-			if (loc)
-			    m_resourceLocation = loc;
-			else
-			    errorMessage("Attribute 'location' was not defined for <resource> tag");
+                const char *loc = node->ToElement()->Attribute("location");
+                if (loc)
+                    m_resourceLocation = loc;
+                else
+                    errorMessage("Attribute 'location' was not defined for <resource> tag");
 		    }
 		    else if (node->ValueStr() == "map")
 			loadMap(node, &m_data);
