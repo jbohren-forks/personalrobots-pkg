@@ -312,6 +312,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 
 	//construct list of actions
 	EnvNAV3DKINCfg.ActionsV = new EnvNAV3DKINAction_t* [NAV3DKIN_THETADIRS];
+	EnvNAV3DKINCfg.PredActionsV = new vector<EnvNAV3DKINAction_t*> [NAV3DKIN_THETADIRS];
 	vector<sbpl_2Dcell_t> footprint;
 	//iterate over source angles
 	for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
@@ -341,6 +342,13 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 				tind, aind, EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, angle, EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.ActionsV[tind][aind].dY,
 				EnvNAV3DKINCfg.ActionsV[tind][aind].cost);
 #endif
+
+			//add to the list of backward actions
+			int targettheta = (tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta)%NAV3DKIN_THETADIRS;
+			if (targettheta < 0)
+				targettheta = targettheta + NAV3DKIN_THETADIRS;
+			 EnvNAV3DKINCfg.PredActionsV[targettheta].push_back(&(EnvNAV3DKINCfg.ActionsV[tind][aind]));
+
 		}
 		//decrease and increase angle without movement
 		aind = 3;
@@ -364,6 +372,13 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			EnvNAV3DKINCfg.ActionsV[tind][aind].cost);
 #endif
 
+		//add to the list of backward actions
+		int targettheta = (tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta)%NAV3DKIN_THETADIRS;
+		if (targettheta < 0)
+			targettheta = targettheta + NAV3DKIN_THETADIRS;
+		 EnvNAV3DKINCfg.PredActionsV[targettheta].push_back(&(EnvNAV3DKINCfg.ActionsV[tind][aind]));
+
+
 		aind = 4;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = 1; 
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
@@ -384,6 +399,14 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.ActionsV[tind][aind].dY,
 			EnvNAV3DKINCfg.ActionsV[tind][aind].cost);
 #endif
+
+		//add to the list of backward actions
+		targettheta = (tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta)%NAV3DKIN_THETADIRS;
+		if (targettheta < 0)
+			targettheta = targettheta + NAV3DKIN_THETADIRS;
+		 EnvNAV3DKINCfg.PredActionsV[targettheta].push_back(&(EnvNAV3DKINCfg.ActionsV[tind][aind]));
+
+
 
 	}
 
@@ -1024,16 +1047,16 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
        HashEntry->Y == 0 || HashEntry->Y == EnvNAV3DKINCfg.EnvHeight_c-1)
         bTestBounds = true;
 
-	for (aind = 0; aind < NAV3DKIN_ACTIONWIDTH; aind++)
+	for (aind = 0; aind < (int)EnvNAV3DKINCfg.PredActionsV[HashEntry->Theta].size(); aind++)
 	{
-		EnvNAV3DKINAction_t* nav3daction = &EnvNAV3DKINCfg.ActionsV[HashEntry->Theta][aind];
-        int predX = HashEntry->X + nav3daction->dX;
-		int predY = HashEntry->Y + nav3daction->dY;
-		int predTheta = NORMALIZEDISCTHETA(HashEntry->Theta + nav3daction->dTheta, NAV3DKIN_THETADIRS);	
-	
 
-		//TODO - incorrect - have to compute preds array
-		
+		EnvNAV3DKINAction_t* nav3daction = EnvNAV3DKINCfg.PredActionsV[HashEntry->Theta].at(aind);
+
+        int predX = HashEntry->X - nav3daction->dX;
+		int predY = HashEntry->Y - nav3daction->dY;
+		int predTheta = NORMALIZEDISCTHETA(HashEntry->Theta - nav3daction->dTheta, NAV3DKIN_THETADIRS);	
+	
+	
 		//skip the invalid cells
 		if(bTestBounds){ //TODO - need to modify to take robot perimeter into account
             if(!IsValidCell(predX, predY))
@@ -1041,11 +1064,9 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
         }
 
 		//skip invalid diagonal move
-	    if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST) //TODO -change after I have explicit backward actions
+	    if(GetActionCost(predX, predY, predTheta, nav3daction) >= INFINITECOST) 
 			continue;
         
-
-
     	EnvNAV3DKINHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY, predTheta)) == NULL)
 		{
@@ -1249,7 +1270,7 @@ bool EnvironmentNAV3DKIN::PoseContToDisc(double px, double py, double pth,
   ix = CONTXY2DISC(px, EnvNAV3DKINCfg.cellsize_m);
   iy = CONTXY2DISC(py, EnvNAV3DKINCfg.cellsize_m);
   ith = ContTheta2Disc(pth, NAV3DKIN_THETADIRS); // ContTheta2Disc() normalizes the angle
-  return (pth >= -2*M_PI) && (pth <= 2*M_PI)
+  return (pth >= -2*PI_CONST) && (pth <= 2*PI_CONST)
     && (ix >= 0) && (ix < EnvNAV3DKINCfg.EnvWidth_c)
     && (iy >= 0) && (iy < EnvNAV3DKINCfg.EnvHeight_c);
 }

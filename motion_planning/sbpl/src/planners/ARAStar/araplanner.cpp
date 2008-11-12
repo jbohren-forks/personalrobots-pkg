@@ -882,10 +882,20 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
 			break;
 		}
 
+#if DEBUG
+		fprintf(fDeb, "looking for succ %d of state %d\n", searchstateinfo->bestnextstate->StateID, state->StateID);
+#endif
+
+
         environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
         int actioncost = INFINITECOST;
         for(int i = 0; i < (int)SuccIDV.size(); i++)
         {   
+
+#if DEBUG
+			fprintf(fDeb, "succ %d at cost=%d\n", SuccIDV.at(i), CostV.at(i));
+#endif
+
             if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
                 actioncost = CostV.at(i);
 

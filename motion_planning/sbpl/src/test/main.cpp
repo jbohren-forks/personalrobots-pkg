@@ -342,7 +342,7 @@ int planandnavigate2d(int argc, char *argv[])
 int planandnavigate3dkin(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 0.5; //in seconds
+	double allocated_time_secs_foreachplan = 50; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV3DKIN environment_nav3Dkin;
 	EnvironmentNAV3DKIN trueenvironment_nav3Dkin;
@@ -351,9 +351,12 @@ int planandnavigate3dkin(int argc, char *argv[])
     double goalx=-1, goaly=-1, goaltheta = -1;
 	double goaltol_x = 0.1, goaltol_y = 0.1, goaltol_theta = 0.1;
     FILE* fSol = fopen("sol.txt", "w");
-    int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
-    int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = true, bPrintMap = true;
+    //int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
+    //int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
+	const int numofsensingcells = 16;
+    int dx[numofsensingcells] = {-2, -2, -2, -2, -2, -1, -1,  0,  0,  1,  1,  2,  2,  2,  2,  2}; //used for defining the cells that are sensed
+    int dy[numofsensingcells] = {-2, -1,  0,  1,  2, -2,  2, -2,  2, -2,  2, -2, -1,  0,  1,  2};
+	bool bPrint = true, bPrintMap = false;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
@@ -450,7 +453,7 @@ int planandnavigate3dkin(int argc, char *argv[])
         bool bChanges = false;
 		preds_of_changededgesIDV.clear();
 		changedcellsV.clear();
-        for(i = 0; i < 8; i++){
+        for(i = 0; i < numofsensingcells; i++){
             int x = CONTXY2DISC(startx,cellsize_m) + dx[i];
             int y = CONTXY2DISC(starty,cellsize_m) + dy[i];
             if(x < 0 || x >= size_x || y < 0 || y >= size_y)
@@ -486,17 +489,16 @@ int planandnavigate3dkin(int argc, char *argv[])
 
         //plan a path 
         bool bPlanExists = false;
-        while(bPlanExists == false){
-            printf("new planning...\n");   
-            bPlanExists = (planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V) == 1);
-            printf("done with the solution of size=%d\n", solution_stateIDs_V.size());   
-            environment_nav3Dkin.PrintTimeStat(stdout);
 
-            //for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-            //environment_nav3Dkin.PrintState(solution_stateIDs_V[i], true, fSol);
-            //}
-            //fprintf(fSol, "*********\n");
-        }
+		printf("new planning...\n");   
+        bPlanExists = (planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V) == 1);
+        printf("done with the solution of size=%d\n", solution_stateIDs_V.size());   
+        environment_nav3Dkin.PrintTimeStat(stdout);
+
+        //for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+        //environment_nav3Dkin.PrintState(solution_stateIDs_V[i], true, fSol);
+        //}
+        //fprintf(fSol, "*********\n");
 
 		//print the map
 		int startindex = startx_c + starty_c*size_x;
@@ -519,6 +521,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 					printf("%d ", map[index]);
 				else if(index == startindex)
 					printf("X ");
+				else if(index == goalindex)
+					printf("G ");
 				else if (bOnthePath)
 					printf("* ");
 				else
@@ -526,7 +530,6 @@ int planandnavigate3dkin(int argc, char *argv[])
 			}
 			printf("\n");
 		}
-		if(bPrint) system("pause");
 
 
         //move along the path
@@ -556,6 +559,13 @@ int planandnavigate3dkin(int argc, char *argv[])
                 exit(1);
             }
         }
+		else
+		{
+			printf("No move is made\n");
+		}
+
+		if(bPrint) system("pause");
+
 
     }
 

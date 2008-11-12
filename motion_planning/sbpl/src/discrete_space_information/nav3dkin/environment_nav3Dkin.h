@@ -87,6 +87,7 @@ typedef struct ENV_NAV3DKIN_CONFIG
 	int dXY[NAV3DKIN_DXYWIDTH][2];
 
 	EnvNAV3DKINAction_t** ActionsV; //array of actions, ActionsV[i][j] - jth action for sourcetheta = i
+	vector<EnvNAV3DKINAction_t*>* PredActionsV; //PredActionsV[i] - vector of pointers to the actions that result in a state with theta = i
 
 
 	vector<sbpl_2Dpt_t> FootprintPolygon;
