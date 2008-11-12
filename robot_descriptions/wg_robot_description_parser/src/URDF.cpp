@@ -141,11 +141,10 @@ namespace robot_desc {
                     pclose(f);
 
                     // strip out any new lines or spaces from the end
-                    if( strlen(basepath) > 0 ) {
-                        char* p = basepath+strlen(basepath)-1;
-                        while(*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r')
-                            *p-- = 0;
-                    }
+                    int len = strlen(basepath);
+                    char* p = basepath+len-1;
+                    while(len-- > 0 && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r'))
+                        *p-- = 0;
                     return std::string(basepath) + relpath;
                 }
             }
