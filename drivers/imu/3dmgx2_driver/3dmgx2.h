@@ -31,6 +31,9 @@ namespace MS_3DMGX2
   const double G               = 9.80665; // m/sec^2
   const int TICKS_PER_SEC      = 19660800;
   const int MAX_BYTES_SKIPPED  = 1000;
+  const int KF_NUM_SUM         = 100;
+  const double KF_K_1          = 0.00995031;
+  const double KF_K_2          = 0.0000497506;
 
 
   #define IMU_EXCEPT(except, msg) \
@@ -136,6 +139,15 @@ namespace MS_3DMGX2
 
     uint64_t extract_time(uint8_t* addr);
 
+    // Kalman filter for time
+    uint64_t filter_time(uint64_t imu_time, uint64_t sys_time);
+
+    // convert uint64_t time to double time
+    double to_double(uint64_t time);
+
+    // convert double time to uint64_t time
+    uint64_t to_uint64_t(double time);
+
     // Port file descriptor
     int fd;
 
@@ -153,6 +165,9 @@ namespace MS_3DMGX2
     double P_time_est[2][2];
 
     bool continuous;
+
+    unsigned int counter;
+    double offset, d_offset, sum_meas;
   };
 
 }

@@ -138,13 +138,18 @@ MS_3DMGX2::IMU::init_time()
   uint8_t rep[31];
   cmd[0] = CMD_RAW;
 
-  start_time = time_helper();
-
   transact(cmd, sizeof(cmd), rep, sizeof(rep));
+  start_time = time_helper();
 
   int k = 25;
   offset_ticks = bswap_32(*(uint32_t*)(rep + k));
   last_ticks = offset_ticks;
+
+  // reset kalman filter state
+  offset = 0;
+  d_offset = 0;
+  sum_meas = 0;
+  counter = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -292,8 +297,7 @@ MS_3DMGX2::IMU::receive_accel_angrate_orientation(uint64_t *time, double accel[3
   }
 
   imu_time = extract_time(rep+61);
-
-  *time = imu_time;
+  *time = filter_time(imu_time, sys_time);
 }
 
 
@@ -468,4 +472,46 @@ MS_3DMGX2::IMU::receive(uint8_t command, void *rep, int rep_len, int timeout, ui
     IMU_EXCEPT(MS_3DMGX2::corrupted_data_exception, "invalid checksum");
   
   return bytes;
+}
+
+
+
+// Kalman filter for time
+uint64_t MS_3DMGX2::IMU::filter_time(uint64_t imu_time, uint64_t sys_time)
+{
+  // first calculate the sum of KF_NUM_SUM measurements
+  if (counter < KF_NUM_SUM){
+    counter ++;
+    sum_meas += (to_double(imu_time) - to_double(sys_time));
+  }
+  // update kalman filter with fixed innovation
+  else{
+    // system update
+    offset += d_offset;
+
+    // measurement update
+    double meas_diff = (sum_meas/KF_NUM_SUM) - offset;
+    offset   += KF_K_1 * meas_diff;
+    d_offset += KF_K_2 * meas_diff;
+
+    // reset counter and average
+    counter = 0; sum_meas = 0;
+  }
+  return imu_time - to_uint64_t( offset );
+}
+
+
+// convert uint64_t time to double time
+double MS_3DMGX2::IMU::to_double(uint64_t time)
+{
+  double res = trunc(time/1e9);
+  res += (((double)time)/1e9) - res;
+  return res;
+}
+
+
+// convert double time to uint64_t time
+uint64_t  MS_3DMGX2::IMU::to_uint64_t(double time)
+{
+  return (uint64_t)(time * 1e9);
 }
