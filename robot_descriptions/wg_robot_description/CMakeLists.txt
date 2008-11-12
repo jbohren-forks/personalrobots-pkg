@@ -20,8 +20,8 @@ get_filename_component(basename ${it} NAME_WE)
 add_custom_command(
   OUTPUT ${basepath}/${basename}.iv
   COMMAND ivcon
-  ARGS < ${it} > ${basepath}/${basename}.iv
-  DEPENDS ${it})
+  ARGS ${it} ${basepath}/${basename}.iv
+  DEPENDS ${it} ivcon)
 
 #ogre files
 add_custom_command(

@@ -161,8 +161,8 @@ int    face_order[FACE_MAX];
 int    face_smooth[FACE_MAX];
 float  face_tex_uv[2][FACE_MAX];
 
-char   filein_name[81];
-char   fileout_name[81];
+char   filein_name[1024];
+char   fileout_name[1024];
 
 int    group_num;
 
@@ -2315,7 +2315,7 @@ int data_read ( void )
 /* 
   Retrieve the input file type. 
 */
-  filein_type = file_ext ( filein_name );
+   filein_type = file_ext ( filein_name );
 
   if ( filein_type == NULL ) {
     printf ( "\n" );
@@ -2430,10 +2430,16 @@ int data_read ( void )
 
     ierror = stla_read ( filein );
 
+    if( ierror ) {
+        // might be binary
+        fclose(filein);
+        filein = fopen ( filein_name, "rb" );
+        ierror = stlb_read ( filein );
+    }
   }
   else if ( leqi ( filein_type, "STLB") == TRUE ) {
 
-    ierror = stlb_read ( filein );
+      ierror = stlb_read ( filein );
 
   }
   else if ( 
