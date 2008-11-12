@@ -492,7 +492,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 		printf("new planning...\n");   
         bPlanExists = (planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V) == 1);
-        printf("done with the solution of size=%d\n", solution_stateIDs_V.size());   
+        printf("done with the solution of size=%d and sol. eps=%f\n", solution_stateIDs_V.size(), planner.get_solution_eps());   
         environment_nav3Dkin.PrintTimeStat(stdout);
 
         //for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {

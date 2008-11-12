@@ -111,6 +111,7 @@ public:
     void costs_changed();
     int force_planning_from_scratch(); 
 
+	double get_solution_eps(){return pSearchStateSpace_->eps_satisfied;};
 
 	//constructors & destructors
     ARAPlanner(DiscreteSpaceInformation* environment, bool bforwardsearch);
