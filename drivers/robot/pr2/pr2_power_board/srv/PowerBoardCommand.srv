@@ -1,4 +1,5 @@
 int32 breaker_number ## 0=Base, 1=RightArm 2=LeftArm
 string command  # Options start, stop, reset, disable, none
+uint32 flags
 ---
 int32 retval # 0 = false, 1=true

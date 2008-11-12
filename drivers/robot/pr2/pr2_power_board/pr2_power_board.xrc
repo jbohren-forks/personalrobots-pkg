@@ -2,7 +2,7 @@
 <resource xmlns="http://www.wxwindows.org/wxxrc" version="2.3.0.1">
 	<object class="wxPanel" name="PowerBoardPanel">
 		<style>wxTAB_TRAVERSAL</style>
-		<size>363,262</size>
+		<size>701,574</size>
 		<object class="wxBoxSizer">
 			<orient>wxVERTICAL</orient>
 			<object class="sizeritem">
@@ -184,11 +184,54 @@
 					</object>
 					<object class="sizeritem">
 						<option>0</option>
-						<flag>wxALL|wxEXPAND</flag>
+						<flag>wxEXPAND</flag>
 						<border>5</border>
-						<object class="wxTextCtrl" name="m_textCtrl9">
-							<value></value>
-							<maxlength>0</maxlength>
+						<object class="wxBoxSizer">
+							<orient>wxVERTICAL</orient>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxALL|wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxTextCtrl" name="m_textCtrl9">
+									<value></value>
+									<maxlength>0</maxlength>
+								</object>
+							</object>
+							<object class="sizeritem">
+								<option>0</option>
+								<flag>wxEXPAND</flag>
+								<border>5</border>
+								<object class="wxBoxSizer">
+									<orient>wxVERTICAL</orient>
+									<object class="sizeritem">
+										<option>1</option>
+										<flag>wxEXPAND</flag>
+										<border>5</border>
+										<object class="wxStaticBoxSizer">
+											<orient>wxHORIZONTAL</orient>
+											<label>Reset</label>
+											<object class="sizeritem">
+												<option>0</option>
+												<flag>wxALL</flag>
+												<border>5</border>
+												<object class="wxButton" name="button_reset_current">
+													<label>Current</label>
+													<default>0</default>
+												</object>
+											</object>
+											<object class="sizeritem">
+												<option>0</option>
+												<flag>wxALL</flag>
+												<border>5</border>
+												<object class="wxButton" name="button_reset_transitions">
+													<label>Transitions</label>
+													<default>0</default>
+												</object>
+											</object>
+										</object>
+									</object>
+								</object>
+							</object>
 						</object>
 					</object>
 				</object>

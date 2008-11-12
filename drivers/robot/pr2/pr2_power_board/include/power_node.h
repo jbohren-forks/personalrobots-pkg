@@ -50,7 +50,7 @@ class PowerBoard : public ros::node
     const char* master_state_to_str(char state);
     const char* cb_state_to_str(char state);
     int list_devices(void);
-    int send_command(const char* input) ;
+    int send_command(int selected_device, int circuit_breaker, const std::string &command, unsigned flags);
 
   private:
     pr2_power_board::PowerBoardCommand::request req_;

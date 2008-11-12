@@ -77,6 +77,9 @@ class PowerBoardPanel(wx.Panel):
         self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB0, id=xrc.XRCID('cb0_disable'))
         self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB1, id=xrc.XRCID('cb1_disable'))
         self._real_panel.Bind(wx.EVT_BUTTON, self.DisableCB2, id=xrc.XRCID('cb2_disable'))
+
+        self._real_panel.Bind(wx.EVT_BUTTON, self.ResetCurrent, id=xrc.XRCID('button_reset_current'))
+        self._real_panel.Bind(wx.EVT_BUTTON, self.ResetTransitions, id=xrc.XRCID('button_reset_transitions'))
         rospy.Subscriber("/diagnostics", DiagnosticMessage, self.diagnostics_callback)
         
         self.power_control = rospy.ServiceProxy('power_board_control', PowerBoardCommand)
@@ -134,12 +137,12 @@ class PowerBoardPanel(wx.Panel):
                             self.voltages[1] = value.value
                         if (value.label == "Breaker 2 Voltage"):
                             self.voltages[2] = value.value
-                        if (value.label == "Estop Status"):
+                        if (value.label == "RunStop Status"):
                             if value.value > 0.5:
                                 self.estop_wireless_status = "Run"
                             else:
                                 self.estop_wireless_status = "Stop"
-                        if (value.label == "Estop Button Status"):
+                        if (value.label == "RunStop Button Status"):
                             if value.value > 0.5:
                                 self.estop_button_status = "Run"
                             else:
@@ -190,7 +193,7 @@ class PowerBoardPanel(wx.Panel):
                         estop_status_temp = "Run"
                         self.estop_status.SetBackgroundColour("Light Green")
 
-                    self.estop_status.SetValue("Estop Status: %s      Button(%s) Wireless(%s)"%(estop_status_temp, self.estop_button_status, self.estop_wireless_status))
+                    self.estop_status.SetValue("RunStop Status: %s      Button(%s) Wireless(%s)"%(estop_status_temp, self.estop_button_status, self.estop_wireless_status))
 
         
 
@@ -205,77 +208,88 @@ class PowerBoardPanel(wx.Panel):
 
     def EnableCB0(self, event):
         try:
-            self.power_control(0, "start")
+            self.power_control(0, "start", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Enable CB0"
+        #print "Enable CB0"
     def EnableCB1(self, event):
         try:
-            self.power_control(1, "start")
+            self.power_control(1, "start", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Enable CB1"
+        #print "Enable CB1"
     def EnableCB2(self, event):
         try:
-            self.power_control(2, "start")
+            self.power_control(2, "start", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Enable CB2"
+        #print "Enable CB2"
 
     def StandbyCB0(self, event):
         try:
-            self.power_control(0, "stop")
+            self.power_control(0, "stop", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Standby CB0"
+        #print "Standby CB0"
     def StandbyCB1(self, event):
         try:
-            self.power_control(1, "stop")
+            self.power_control(1, "stop", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Standby CB1"
+        #print "Standby CB1"
     def StandbyCB2(self, event):
         try:
-            self.power_control(2, "stop")
+            self.power_control(2, "stop", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Standby CB2"
+        #print "Standby CB2"
 
     def ResetCB0(self, event):
         try:
-            self.power_control(0, "reset")
+            self.power_control(0, "reset", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Reset CB0"
+        #print "Reset CB0"
     def ResetCB1(self, event):
         try:
-            self.power_control(1, "reset")
+            self.power_control(1, "reset", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Reset CB1"
+        #print "Reset CB1"
     def ResetCB2(self, event):
         try:
-            self.power_control(2, "reset")
+            self.power_control(2, "reset", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Reset CB2"
+        #print "Reset CB2"
 
     def DisableCB0(self, event):
         try:
-            self.power_control(0, "disable")
+            self.power_control(0, "disable", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB0"
+        #print "Disable CB0"
     def DisableCB1(self, event):
         try:
-            self.power_control(1, "disable")
+            self.power_control(1, "disable", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB1"
+        #print "Disable CB1"
     def DisableCB2(self, event):
         try:
-            self.power_control(2, "disable")
+            self.power_control(2, "disable", 0)
         except rospy.ServiceException, e:
             print "Service Call Failed: %s"%e
-        print "Disable CB2"
+        #print "Disable CB2"
+
+    def ResetCurrent(self, event):
+        try:
+            self.power_control(0, "none", 1)
+        except rospy.ServiceException, e:
+            print "Service Call Failed: %s"%e
+    def ResetTransitions(self, event):
+        try:
+            self.power_control(0, "none", 2)
+        except rospy.ServiceException, e:
+            print "Service Call Failed: %s"%e
 
