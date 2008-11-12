@@ -42,8 +42,8 @@
 #include "pdf/linearanalyticconditionalgaussian.h"
 #include "nonlinearanalyticconditionalgaussianodo.h"
 
-// KDL
-#include "kdl/frames.hpp"
+// TF
+#include <tf/tf.h>
 
 // log files
 #include <fstream>
@@ -61,12 +61,12 @@ public:
   virtual ~odom_estimation();
 
   /// update filter
-  void Update(KDL::Frame& odom_meas, double odom_time, bool odom_active,
-	      KDL::Frame& imu_meas,  double imu_time,  bool imu_active,
-	      KDL::Frame& vo_meas,   double vo_time,   bool vo_active, double filter_time);
+  void Update(tf::Transform& odom_meas, double odom_time, bool odom_active,
+	      tf::Transform& imu_meas,  double imu_time,  bool imu_active,
+	      tf::Transform& vo_meas,   double vo_time,   bool vo_active, double filter_time);
 
   /// initialize filter
-  void Initialize(KDL::Frame& prior, double time);
+  void Initialize(tf::Transform& prior, double time);
 
 
   /// get filter posterior
@@ -94,7 +94,7 @@ private:
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
-  KDL::Frame _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
+  tf::Transform _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
   double _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
 

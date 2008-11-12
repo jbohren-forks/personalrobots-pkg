@@ -35,7 +35,8 @@
 #define __ODOM_ESTIMATION_NODE__
 
 // ros stuff
-#include "ros/node.h" 
+#include <ros/node.h>
+#include <tf/tf.h>
 #include "odom_estimation.h"
 
 // messages
@@ -43,9 +44,6 @@
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/Pose3DStamped.h"
-
-// kdl
-#include "kdl/frames.hpp"
 
 // log files
 #include <fstream>
@@ -93,7 +91,7 @@ private:
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
-  KDL::Frame _odom_meas, _imu_meas, _vo_meas;
+  tf::Transform _odom_meas, _imu_meas, _vo_meas;
   double _odom_time, _imu_time, _vo_time;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
 

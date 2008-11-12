@@ -37,7 +37,7 @@
 
 using namespace MatrixWrapper;
 using namespace BFL;
-using namespace KDL;
+using namespace tf;
 using namespace std;
 
 
@@ -126,12 +126,12 @@ namespace estimation
 
 
   // initialize prior density of filter with odom data
-  void odom_estimation::Initialize(Frame& prior, double time)
+  void odom_estimation::Initialize(Transform& prior, double time)
   {
     // set prior of filter to odom data
     ColumnVector prior_Mu(6); 
-    prior_Mu(1) = prior.p(0);  prior_Mu(2) = prior.p(1); prior_Mu(3) = prior.p(2); 
-    prior.M.GetRPY(prior_Mu(4), prior_Mu(5), prior_Mu(6));
+    prior_Mu(1) = prior.getOrigin().x();  prior_Mu(2) = prior.getOrigin().y(); prior_Mu(3) = prior.getOrigin().z(); 
+    prior.getBasis().getEulerZYX(prior_Mu(6), prior_Mu(5), prior_Mu(4));
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
@@ -156,9 +156,9 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation::Update(Frame& odom_meas, double odom_time, bool odom_active,
-			       Frame& imu_meas,  double imu_time,  bool imu_active,
-			       Frame& vo_meas,   double vo_time,   bool vo_active, double filter_time)
+  void odom_estimation::Update(Transform& odom_meas, double odom_time, bool odom_active,
+			       Transform& imu_meas,  double imu_time,  bool imu_active,
+			       Transform& vo_meas,   double vo_time,   bool vo_active, double filter_time)
   {
     if (_filter_initialized){
       // system update filter
@@ -169,10 +169,10 @@ namespace estimation
       // process odom measurement
       if (_odom_initialized && odom_active){
 	// convert absolute odom measurements to relative odom measurements
-	Frame odom_rel_frame =  _filter_estimate_old * _odom_meas_old.Inverse() * odom_meas;
+	Transform odom_rel_frame =  _filter_estimate_old * _odom_meas_old.inverse() * odom_meas;
 	ColumnVector odom_rel(3);
-	odom_rel(1) = odom_rel_frame.p(0);   odom_rel(2) = odom_rel_frame.p(1); 
-	double tmp; odom_rel_frame.M.GetRPY(tmp, tmp, odom_rel(3));
+	odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
+	double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
 	AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
 	// update filter
 	_filter->Update(_odom_meas_model, odom_rel);
@@ -184,9 +184,9 @@ namespace estimation
       if (_imu_initialized && imu_active){
 	// convert absolute imu measurements to relative imu measurements
 	// NEED TO INTERPRET THE FIRST TWO ANGLED OF THE IMU AS ABSOLUTE ANGLES
-	Frame imu_rel_frame =  _filter_estimate_old * _imu_meas_old.Inverse() * imu_meas;
+	Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * imu_meas;
 	ColumnVector imu_rel(3);
-	imu_rel_frame.M.GetRPY(imu_rel(1), imu_rel(2), imu_rel(3));
+	imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), imu_rel(2), imu_rel(1));
 	AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
 	// update filter
 	_filter->Update(_imu_meas_model,  imu_rel);
@@ -197,10 +197,10 @@ namespace estimation
       // process vo measurement
       if (_vo_initialized && vo_active){
 	// convert absolute vo measurements to relative vo measurements
-	Frame vo_rel_frame =  _filter_estimate_old * _vo_meas_old.Inverse() * vo_meas;
+	Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * vo_meas;
 	ColumnVector vo_rel(6);
-	vo_rel(1) = vo_rel_frame.p(0);  vo_rel(2) = vo_rel_frame.p(1);  vo_rel(3) = vo_rel_frame.p(2);  
-	vo_rel_frame.M.GetRPY(vo_rel(4), vo_rel(5), vo_rel(6));
+	vo_rel(1) = vo_rel_frame.getOrigin().x();  vo_rel(2) = vo_rel_frame.getOrigin().y();  vo_rel(3) = vo_rel_frame.getOrigin().z();  
+	vo_rel_frame.getBasis().getEulerZYX(vo_rel(6), vo_rel(5), vo_rel(4));
 	AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
 	// update filter
 	_filter->Update(_vo_meas_model,  vo_rel);
@@ -210,8 +210,8 @@ namespace estimation
 
       // remember last estimate
       _filter_estimate_old_vec = _filter->PostGet()->ExpectedValueGet();
-      _filter_estimate_old = Frame(Rotation::RPY(_filter_estimate_old_vec(4), _filter_estimate_old_vec(5), _filter_estimate_old_vec(6)), 
-				   Vector(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
+      _filter_estimate_old = Transform(Quaternion(_filter_estimate_old_vec(6), _filter_estimate_old_vec(5), _filter_estimate_old_vec(4)),
+				       Vector3(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
       _filter_time_old = filter_time;
       
     }

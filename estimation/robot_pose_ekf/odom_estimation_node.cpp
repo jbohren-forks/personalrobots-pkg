@@ -37,9 +37,8 @@
 
 using namespace MatrixWrapper;
 using namespace std;
-using namespace std_msgs;
 using namespace ros;
-using namespace KDL;
+using namespace tf;
 
 
 namespace estimation
@@ -121,16 +120,16 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _odom_time = _odom.header.stamp.to_double();
-    _odom_meas =  Frame(Rotation::RPY(0,0,_odom.pos.th), Vector(_odom.pos.x, _odom.pos.y, 0));
+    _odom_meas =  Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
     _filter_mutex.unlock();
 
     // update filter
     this->Update(_odom_time);
 
+    // write to fil
     double tmp, yaw;
-    _odom_meas.M.GetRPY(tmp, tmp, yaw);
-    _odom_file << _odom.pos.x << " " << _odom.pos.y << "  " << yaw << endl;
-
+    _odom_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
+    _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << endl;
 
     // activate odom
     if (!_odom_active) _odom_active = true;
@@ -145,14 +144,14 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _imu_time = _imu.header.stamp.to_double();
-    _imu_meas = Frame( Rotation::Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
-		       Vector(0,0,0));
+    _imu_meas = Transform( Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
+			   Vector3(0,0,0));
     _filter_mutex.unlock();
 
+    // write to file
     double tmp, yaw;
-    _imu_meas.M.GetRPY(tmp, tmp, yaw);
+    _imu_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
     _imu_file << yaw << endl;
-
 
     // activate imu
     if (!_imu_active) _imu_active = true;
@@ -167,8 +166,8 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _vo_time = _vo.header.stamp.to_double();
-    _vo_meas = Frame( Rotation::Quaternion(_vo.pose3D.orientation.x, _vo.pose3D.orientation.y,_vo.pose3D.orientation.z,_vo.pose3D.orientation.w),
-		      Vector(_vo.pose3D.position.x,_vo.pose3D.position.y,_vo.pose3D.position.z));
+    _vo_meas = Transform( Quaternion(_vo.pose3D.orientation.x, _vo.pose3D.orientation.y,_vo.pose3D.orientation.z,_vo.pose3D.orientation.w),
+			  Vector3(_vo.pose3D.position.x,_vo.pose3D.position.y,_vo.pose3D.position.z));
     _filter_mutex.unlock();
 
     // activate vo
@@ -202,7 +201,6 @@ namespace estimation
 // -- MAIN --
 // ----------
 using namespace estimation;
-
 int main(int argc, char **argv)
 {
   // Initialize ROS
