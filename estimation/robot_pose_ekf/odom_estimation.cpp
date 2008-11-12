@@ -93,14 +93,17 @@ namespace estimation
 
 
     // create MEASUREMENT MODEL VO
-    ColumnVector measNoiseVo_Mu(3);  measNoiseVo_Mu = 0;
-    SymmetricMatrix measNoiseVo_Cov(3);  measNoiseVo_Cov = 0;
-    measNoiseVo_Cov(1,1) = pow(0.001,2);
-    measNoiseVo_Cov(2,2) = pow(0.001,2);
-    measNoiseVo_Cov(3,3) = pow(0.001,2);
+    ColumnVector measNoiseVo_Mu(6);  measNoiseVo_Mu = 0;
+    SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
+    measNoiseVo_Cov(1,1) = pow(0.01,2);
+    measNoiseVo_Cov(2,2) = pow(0.01,2);
+    measNoiseVo_Cov(3,3) = pow(0.01,2);
+    measNoiseVo_Cov(4,4) = pow(0.001,2);
+    measNoiseVo_Cov(5,5) = pow(0.001,2);
+    measNoiseVo_Cov(6,6) = pow(0.001,2);
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
-    Matrix Hvo(3,6);  Hvo = 0;
-    Hvo(1,4) = 1;    Hvo(2,5) = 1;    Hvo(3,6) = 1;
+    Matrix Hvo(6,6);  Hvo = 0;
+    Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
     _vo_meas_pdf   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
     _vo_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_vo_meas_pdf);
   };
@@ -162,6 +165,7 @@ namespace estimation
       ColumnVector vel_desi(2); vel_desi = 0;
       _filter->Update(_sys_model, vel_desi * (filter_time - _filter_time_old));
       
+
       // process odom measurement
       if (_odom_initialized && odom_active){
 	// convert absolute odom measurements to relative odom measurements
@@ -174,6 +178,7 @@ namespace estimation
 	_filter->Update(_odom_meas_model, odom_rel);
       }
       if (odom_active){  _odom_meas_old = odom_meas;  _odom_initialized = true;}
+
 
       // process imu measurement
       if (_imu_initialized && imu_active){
@@ -188,13 +193,15 @@ namespace estimation
       }
       if (imu_active){  _imu_meas_old = imu_meas;  _imu_initialized = true;}
 
+
       // process vo measurement
       if (_vo_initialized && vo_active){
 	// convert absolute vo measurements to relative vo measurements
 	Frame vo_rel_frame =  _filter_estimate_old * _vo_meas_old.Inverse() * vo_meas;
-	ColumnVector vo_rel(3);
-	vo_rel_frame.M.GetRPY(vo_rel(1), vo_rel(2), vo_rel(3));
-	AngleOverflowCorrect(vo_rel(3), _filter_estimate_old_vec(6));
+	ColumnVector vo_rel(6);
+	vo_rel(1) = vo_rel_frame.p(0);  vo_rel(2) = vo_rel_frame.p(1);  vo_rel(3) = vo_rel_frame.p(2);  
+	vo_rel_frame.M.GetRPY(vo_rel(4), vo_rel(5), vo_rel(6));
+	AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
 	// update filter
 	_filter->Update(_vo_meas_model,  vo_rel);
       }
@@ -205,7 +212,7 @@ namespace estimation
       _filter_estimate_old_vec = _filter->PostGet()->ExpectedValueGet();
       _filter_estimate_old = Frame(Rotation::RPY(_filter_estimate_old_vec(4), _filter_estimate_old_vec(5), _filter_estimate_old_vec(6)), 
 				   Vector(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
-      _filter_time_old     = filter_time;
+      _filter_time_old = filter_time;
       
     }
   };

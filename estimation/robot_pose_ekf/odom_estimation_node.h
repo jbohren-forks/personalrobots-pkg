@@ -42,7 +42,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
-#include "std_msgs/PoseStamped.h"
+#include "std_msgs/Pose3DStamped.h"
 
 // kdl
 #include "kdl/frames.hpp"
@@ -86,10 +86,10 @@ private:
   std_msgs::BaseVel               _vel;  
   std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
-  std_msgs::PoseWithRatesStamped  _vo;  
+  std_msgs::Pose3DStamped         _vo;  
 
   // estimated robot pose message to send
-  std_msgs::PoseStamped _output; 
+  std_msgs::Pose3DStamped _output; 
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;

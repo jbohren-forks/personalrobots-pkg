@@ -54,7 +54,7 @@ namespace estimation
       _vo_active(false)
   {
     // advertise our estimation
-    advertise<std_msgs::PoseStamped>("odom_estimation",10);
+    advertise<std_msgs::Pose3DStamped>("odom_estimation",10);
 
     // subscribe to messages
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
@@ -127,6 +127,11 @@ namespace estimation
     // update filter
     this->Update(_odom_time);
 
+    double tmp, yaw;
+    _odom_meas.M.GetRPY(tmp, tmp, yaw);
+    _odom_file << _odom.pos.x << " " << _odom.pos.y << "  " << yaw << endl;
+
+
     // activate odom
     if (!_odom_active) _odom_active = true;
   };
@@ -144,6 +149,11 @@ namespace estimation
 		       Vector(0,0,0));
     _filter_mutex.unlock();
 
+    double tmp, yaw;
+    _imu_meas.M.GetRPY(tmp, tmp, yaw);
+    _imu_file << yaw << endl;
+
+
     // activate imu
     if (!_imu_active) _imu_active = true;
   };
@@ -157,8 +167,8 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _vo_time = _vo.header.stamp.to_double();
-    _vo_meas = Frame( Rotation::Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
-		      Vector(0,0,0));
+    _vo_meas = Frame( Rotation::Quaternion(_vo.pose3D.orientation.x, _vo.pose3D.orientation.y,_vo.pose3D.orientation.z,_vo.pose3D.orientation.w),
+		      Vector(_vo.pose3D.position.x,_vo.pose3D.position.y,_vo.pose3D.position.z));
     _filter_mutex.unlock();
 
     // activate vo
