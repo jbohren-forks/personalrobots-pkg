@@ -2,10 +2,10 @@
  * wavefront_player
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -14,7 +14,7 @@
  *     * Neither the name of the <ORGANIZATION> nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -125,7 +125,8 @@ robot.
 #include <std_msgs/Polyline2D.h>
 
 // For transform support
-#include "tf/transform_listener.h"
+#include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 
 //Laser projection
 #include "laser_scan_utils/laser_scan.h"
@@ -191,7 +192,6 @@ class WavefrontNode: public ros::node
     // Map update paramters (for adding obstacles)
     double laser_maxrange;
     ros::Duration laser_buffer_time;
-    std::list<std_msgs::LaserScan> buffered_laser_scans;
     std::list<laser_pts_t> laser_scans;
     double* laser_hitpts;
     size_t laser_hitpts_len, laser_hitpts_size;
@@ -204,24 +204,24 @@ class WavefrontNode: public ros::node
     // incoming/outgoing messages
     std_msgs::Planner2DGoal goalMsg;
     //MsgRobotBase2DOdom odomMsg;
-    std_msgs::LaserScan laserMsg;
     std_msgs::Polyline2D polylineMsg;
     std_msgs::Polyline2D pointcloudMsg;
     std_msgs::Planner2DState pstate;
-    std::vector<std_msgs::LaserScan> laserScans;
     //MsgRobotBase2DOdom prevOdom;
     bool firstodom;
+
+    tf::MessageNotifier<std_msgs::LaserScan>* scan_notifier;
 
     // Lock for access to class members in callbacks
     ros::thread::mutex lock;
 
     // Message callbacks
     void goalReceived();
-    void laserReceived();
+    void laserReceived(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message);
 
     // Internal helpers
     void sendVelCmd(double vx, double vy, double vth);
-  
+
     laser_scan::LaserProjection projector_;
   public:
     // Transform listener
@@ -229,7 +229,7 @@ class WavefrontNode: public ros::node
 
     WavefrontNode();
     virtual ~WavefrontNode();
-    
+
     // Stop the robot
     void stopRobot();
     // Execute a planning cycle
@@ -336,7 +336,7 @@ WavefrontNode::WavefrontNode() :
 
   // allocate space for map cells
   assert(this->plan->cells == NULL);
-  assert((this->plan->cells = 
+  assert((this->plan->cells =
           (plan_cell_t*)realloc(this->plan->cells,
                                 (sx * sy * sizeof(plan_cell_t)))));
 
@@ -371,15 +371,18 @@ WavefrontNode::WavefrontNode() :
   advertise<std_msgs::Polyline2D>("gui_laser",1);
   advertise<std_msgs::BaseVel>("cmd_vel",1);
   subscribe("goal", goalMsg, &WavefrontNode::goalReceived,1);
-  subscribe("scan", laserMsg, &WavefrontNode::laserReceived,1);
+
+  scan_notifier = new tf::MessageNotifier<std_msgs::LaserScan>(&tf, this, boost::bind(&WavefrontNode::laserReceived, this, _1), "scan", "map", 1);
 }
 
 WavefrontNode::~WavefrontNode()
 {
   plan_free(this->plan);
+
+  delete scan_notifier;
 }
 
-void 
+void
 WavefrontNode::goalReceived()
 {
   this->lock.lock();
@@ -387,7 +390,7 @@ WavefrontNode::goalReceived()
   this->enable = goalMsg.enable;
 
   if(this->enable){
-    printf("got new goal: %.3f %.3f %.3f\n", 
+    printf("got new goal: %.3f %.3f %.3f\n",
 	   goalMsg.goal.x,
 	   goalMsg.goal.y,
 	   RTOD(goalMsg.goal.th));
@@ -432,92 +435,65 @@ WavefrontNode::goalReceived()
 }
 
 void
-WavefrontNode::laserReceived()
+WavefrontNode::laserReceived(const tf::MessageNotifier<std_msgs::LaserScan>::MessagePtr& message)
 {
-  // Copy and push this scan into the list of buffered scans
-  //std_msgs::LaserScan newscan(laserMsg);
-  this->buffered_laser_scans.push_back(laserMsg);
+	// Assemble a point cloud, in the laser's frame
+	std_msgs::PointCloud local_cloud;
+	projector_.projectLaser(*message, local_cloud, laser_maxrange);
 
-  // Iterate through the buffered scans, trying to interpolate each one
-  for(std::list<std_msgs::LaserScan>::iterator it = this->buffered_laser_scans.begin();
-      it != this->buffered_laser_scans.end();
-      it++)
-  {
-    // Is this scan too old?
-    if((laserMsg.header.stamp - it->header.stamp) > this->laser_buffer_time)
-    {
-      it = this->buffered_laser_scans.erase(it);
-      it--;
-      continue;
-    }
+	// Convert to a point cloud in the map frame
+	std_msgs::PointCloud global_cloud;
 
+	try
+	{
+		this->tf.transformPointCloud("map", local_cloud, global_cloud);
+	}
+	catch(tf::LookupException& ex)
+	{
+		puts("no global->local Tx yet (point cloud)");
+		printf("%s\n", ex.what());
+		return;
+	}
+	catch(tf::ConnectivityException& ex)
+	{
+		puts("no global->local Tx yet (point cloud)");
+		printf("%s\n", ex.what());
+		return;
+	}
 
-    // Assemble a point cloud, in the laser's frame
-    std_msgs::PointCloud local_cloud;
-    projector_.projectLaser(*it, local_cloud, laser_maxrange);
-    
-    // Convert to a point cloud in the map frame
-    std_msgs::PointCloud global_cloud;
+	// Convert from point cloud to array of doubles formatted XYXYXY...
+	// TODO: increase efficiency by reducing number of data transformations
+	laser_pts_t pts;
+	pts.pts_num = global_cloud.get_pts_size();
+	pts.pts = new double[pts.pts_num*2];
+	assert(pts.pts);
+	pts.ts = global_cloud.header.stamp;
+	for(unsigned int i=0;i<global_cloud.get_pts_size();i++)
+	{
+		pts.pts[2*i] = global_cloud.pts[i].x;
+		pts.pts[2*i+1] = global_cloud.pts[i].y;
+	}
 
-    try
-    {
-      this->tf.transformPointCloud("map", local_cloud, global_cloud);
-    }
-    catch(tf::LookupException& ex)
-    {
-      puts("no global->local Tx yet (point cloud)");
-      printf("%s\n", ex.what());
-      return;
-    }
-    catch(tf::ConnectivityException& ex)
-    {
-      puts("no global->local Tx yet (point cloud)");
-      printf("%s\n", ex.what());
-      return;
-    }
-    catch(tf::ExtrapolationException& ex)
-    {
-      //      puts("extrapolation required");
-      //      printf("%s\n", ex.what());
-      continue;
-    }
+	// Add the new point set to our list
+	this->laser_scans.push_back(pts);
 
-    // Convert from point cloud to array of doubles formatted XYXYXY...
-    // TODO: increase efficiency by reducing number of data transformations
-    laser_pts_t pts;
-    pts.pts_num = global_cloud.get_pts_size();
-    pts.pts = new double[pts.pts_num*2];
-    assert(pts.pts);
-    pts.ts = global_cloud.header.stamp;
-    for(unsigned int i=0;i<global_cloud.get_pts_size();i++)
-    {
-      pts.pts[2*i] = global_cloud.pts[i].x;
-      pts.pts[2*i+1] = global_cloud.pts[i].y;
-    }
+	// Remove anything that's too old from the laser_scans list
+	// Also count how many points we have
+	unsigned int hitpt_cnt=0;
+	for(std::list<laser_pts_t>::iterator it = this->laser_scans.begin();
+			it != this->laser_scans.end();
+			it++)
+	{
+		if((message->header.stamp - it->ts) > this->laser_buffer_time)
+		{
+			delete[] it->pts;
+			it = this->laser_scans.erase(it);
+			it--;
+		}
+		else
+			hitpt_cnt += it->pts_num;
+	}
 
-    // Add the new point set to our list
-    this->laser_scans.push_back(pts);
-    it = this->buffered_laser_scans.erase(it);
-    it--;
-  }
-
-  // Remove anything that's too old from the laser_scans list
-  // Also count how many points we have
-  unsigned int hitpt_cnt=0;
-  for(std::list<laser_pts_t>::iterator it = this->laser_scans.begin();
-      it != this->laser_scans.end();
-      it++)
-  {
-    if((laserMsg.header.stamp - it->ts) > this->laser_buffer_time)
-    {
-      delete[] it->pts;
-      it = this->laser_scans.erase(it);
-      it--;
-    }
-    else
-      hitpt_cnt += it->pts_num;
-  }
-  
   // Lock here because we're operating on the laser_hitpts array, which is
   // used in another thread.
   this->lock.lock();
@@ -525,7 +501,7 @@ WavefrontNode::laserReceived()
   if(this->laser_hitpts_size < hitpt_cnt)
   {
     this->laser_hitpts_size = hitpt_cnt;
-    this->laser_hitpts = 
+    this->laser_hitpts =
             (double*)realloc(this->laser_hitpts,
                              2*this->laser_hitpts_size*sizeof(double));
     assert(this->laser_hitpts);
@@ -543,7 +519,7 @@ WavefrontNode::laserReceived()
            it->pts, it->pts_num * 2 * sizeof(double));
     this->laser_hitpts_len += it->pts_num;
   }
-  
+
   // Draw the points
 
   this->pointcloudMsg.set_points_size(this->laser_hitpts_len);
@@ -588,17 +564,17 @@ WavefrontNode::sendVelCmd(double vx, double vy, double vth)
 }
 
 // Execute a planning cycle
-void 
+void
 WavefrontNode::doOneCycle()
 {
   // Get the current robot pose in the map frame
   //convert!
-  
+
   tf::Stamped<tf::Pose> robotPose;
   robotPose.setIdentity();
   robotPose.frame_id_ = "base";
   robotPose.stamp_ = ros::Time((uint64_t)0ULL); // request most recent pose
-  //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL + 
+  //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL +
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
@@ -647,11 +623,11 @@ WavefrontNode::doOneCycle()
     case PURSUING_GOAL:
     //case STUCK:
       {
-        
+
         double yaw,pitch,roll; //fixme make cleaner namespace
         btMatrix3x3 mat =  global_pose.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
-        
+
         // Are we done?
         if(plan_check_done(this->plan,
                            global_pose.getOrigin().x(), global_pose.getOrigin().y(), yaw,
@@ -666,8 +642,8 @@ WavefrontNode::doOneCycle()
         }
 
         //printf("setting %d hit points\n", this->laser_hitpts_len);
-        plan_set_obstacles(this->plan, 
-                           this->laser_hitpts, 
+        plan_set_obstacles(this->plan,
+                           this->laser_hitpts,
                            this->laser_hitpts_len);
 
         bool plan_valid = true;
@@ -695,7 +671,7 @@ WavefrontNode::doOneCycle()
             }
             else
             {
-              if (ros::Time::now() > 
+              if (ros::Time::now() >
                   this->stuck_time + 1.5 * this->laser_buffer_time.to_double())
               {
                 puts("global plan failed");
@@ -708,7 +684,7 @@ WavefrontNode::doOneCycle()
           {
             // global plan succeeded; now try the local plan again
             this->printed_warning = false;
-            if(plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(), 
+            if(plan_do_local(this->plan, global_pose.getOrigin().x(), global_pose.getOrigin().y(),
                              this->plan_halfwidth) < 0)
             {
               // no local plan; better luck next time through
@@ -726,9 +702,9 @@ WavefrontNode::doOneCycle()
 
         // We have a valid local plan.  Now compute controls
         double vx, va;
-        
+
         //    double yaw,pitch,roll; //used temporarily earlier fixme make cleaner
-        //btMatrix3x3 
+        //btMatrix3x3
         mat =  global_pose.getBasis();
         mat.getEulerZYX(yaw, pitch, roll);
 
@@ -739,7 +715,7 @@ WavefrontNode::doOneCycle()
                                        this->goal[0], this->goal[1],
                                        this->goal[2],
                                        this->dist_eps, this->ang_eps,
-                                       this->lookahead_maxdist, 
+                                       this->lookahead_maxdist,
                                        this->lookahead_distweight,
                                        this->tvmin, this->tvmax,
                                        this->avmin, this->avmax,
@@ -759,9 +735,9 @@ WavefrontNode::doOneCycle()
         this->polylineMsg.color.a = 0;
         for(int i=0;i<this->plan->path_count;i++)
         {
-          this->polylineMsg.points[i].x = 
+          this->polylineMsg.points[i].x =
                   PLAN_WXGX(this->plan,this->plan->path[i]->ci);
-          this->polylineMsg.points[i].y = 
+          this->polylineMsg.points[i].y =
                   PLAN_WYGY(this->plan,this->plan->path[i]->cj);
         }
         publish("gui_path", polylineMsg);
@@ -800,7 +776,7 @@ WavefrontNode::doOneCycle()
 }
 
 // Sleep for the remaining time of the cycle
-void 
+void
 WavefrontNode::sleep(double loopstart)
 {
   struct timeval curr;
@@ -814,12 +790,12 @@ WavefrontNode::sleep(double loopstart)
     usleep((unsigned int)rint(tdiff*1e6));
 }
 
-bool 
+bool
 WavefrontNode::comparePoses(double x1, double y1, double a1,
                             double x2, double y2, double a2)
 {
   bool res;
-  if((fabs(x2-x1) <= _xy_tolerance) && 
+  if((fabs(x2-x1) <= _xy_tolerance) &&
      (fabs(y2-y1) <= _xy_tolerance) &&
      (fabs(ANG_NORM(ANG_NORM(a2)-ANG_NORM(a1))) <= _th_tolerance))
     res = true;
