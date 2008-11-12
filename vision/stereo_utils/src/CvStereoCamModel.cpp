@@ -882,6 +882,10 @@ void CvStereoCamModel::getDepthMask(// disparity image
     switch (post_process_options) {
     case NO_POST_PROCESS:
       break;
+    case NOISE_REMOVAL:
+      // just noise removal with an open operation.
+      cvMorphologyEx(depthMask, depthMask, NULL, (IplConvKernel *)OpenKernel, CV_MOP_OPEN, 1);
+      break;
     case POLYGONES:
       // two simple morphology operation seem to be good enough. But
       // but connected component analysis provides blob with better shape
