@@ -246,7 +246,7 @@ TEST(MessageNotifier, queueSize)
 		msg.header.frame_id = "frame6";
 		g_node->publish("test_message", msg);
 
-		ros::Duration(0.01).sleep();
+		//ros::Duration(0.01).sleep();
 	}
 
 	{
@@ -258,6 +258,8 @@ TEST(MessageNotifier, queueSize)
 
 		EXPECT_EQ(true, lock.locked());
 	}
+
+	ros::Duration(0.1).sleep();
 
 	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame5", "frame6");
 
