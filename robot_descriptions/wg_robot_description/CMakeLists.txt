@@ -23,14 +23,7 @@ add_custom_command(
   ARGS ${it} ${basepath}/${basename}.iv
   DEPENDS ${it} ivcon)
 
-#ogre files
-add_custom_command(
-  OUTPUT ${basepath}/${basename}.mesh
-  COMMAND rosrun 
-  ARGS ogre_tools stl_to_mesh ${it} ${basepath}/${basename}.mesh
-  DEPENDS ${it})
-
-set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv ${basepath}/${basename}.mesh)
+set(pr2_gen_files ${pr2_gen_files} ${basepath}/${basename}.iv)
 
 endforeach(it)
 

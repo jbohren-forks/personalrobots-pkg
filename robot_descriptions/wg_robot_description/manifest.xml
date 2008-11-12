@@ -10,8 +10,6 @@
   <license>BSD</license>
   
   <depend package="wg_robot_description_parser" />
-<!--  <depend package="ogre_tools" />-->
-  
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
 </package>

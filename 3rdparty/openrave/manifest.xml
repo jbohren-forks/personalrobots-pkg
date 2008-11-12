@@ -1,0 +1,10 @@
+<package>
+  <description brief="OpenRAVE">
+    A planning architecture for autonomous robotics.
+  </description>
+  <license>LGPL</license>
+  <export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
+  </export>
+  <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>
+</package>

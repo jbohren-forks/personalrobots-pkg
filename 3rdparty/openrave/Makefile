@@ -1,0 +1,18 @@
+all: openrave
+
+SVN_DIR = openrave_svn
+SVN_URL = https://openrave.svn.sourceforge.net/svnroot/openrave
+include $(shell rospack find mk)/svn_checkout.mk
+
+.PHONY: openrave
+
+build: SVN_UP openrave
+
+openrave: $(SVN_DIR)
+	cd $(SVN_DIR) && svn up && make prefix=$(PWD) && make install
+
+clean:
+	make -C $(SVN_DIR) clean
+
+wipe: clean
+	rm -rf $(SVN_DIR) include lib share
