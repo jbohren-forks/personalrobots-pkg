@@ -37,7 +37,7 @@
 
 namespace controller {
 
-ROS_REGISTER_CONTROLLER(CartesianPositionController)
+//ROS_REGISTER_CONTROLLER(CartesianPositionController)
 
 CartesianPositionController::CartesianPositionController()
 : command_(0,0,0), robot_(NULL), last_time_(0), reset_(true)
@@ -105,12 +105,19 @@ void CartesianPositionController::getTipPosition(btVector3 *p)
   *p = tip_->abs_position_ + quatRotate(tip_->abs_orientation_, effort_.offset_);
 }
 
+std::string CartesianPositionController::rootFrame()
+{
+  return effort_.links_[0]->link_->name_;
+}
+
 
 ROS_REGISTER_CONTROLLER(CartesianPositionControllerNode)
 
 CartesianPositionControllerNode::CartesianPositionControllerNode()
-: pos_publisher_(NULL), loop_count_(0)
+: robot_(NULL), pos_publisher_(NULL), TF(*ros::node::instance(), false) , loop_count_(0)
 {
+  assert(ros::node::instance());
+  TF.setExtrapolationLimit(ros::Duration(10.0e-3));
 }
 
 CartesianPositionControllerNode::~CartesianPositionControllerNode()
@@ -121,9 +128,10 @@ CartesianPositionControllerNode::~CartesianPositionControllerNode()
 
 bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  robot_ = robot;
   ros::node *node = ros::node::instance();
 
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
+  std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")
   {
     fprintf(stderr, "No topic given to CartesianPositionControllerNode\n");
@@ -133,6 +141,7 @@ bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXm
   if (!c_.initXml(robot, config))
     return false;
 
+  /*
   node->advertise_service(topic + "/set_command",
                           &CartesianPositionControllerNode::setCommand, this);
   guard_set_command_.set(topic + "/set_command");
@@ -143,8 +152,18 @@ bool CartesianPositionControllerNode::initXml(mechanism::RobotState *robot, TiXm
   node->subscribe(topic + "/command", command_msg_,
                   &CartesianPositionControllerNode::command, this, 0);
   guard_command_.set(topic + "/command");
+  */
 
-  pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::Vector3>(topic + "/position", 0);
+
+
+
+
+  node->subscribe(topic + "/set_command", command_msg_,
+                  &CartesianPositionControllerNode::setCommand, this, 1);
+  guard_set_command_.set(topic + "/set_command");
+
+  //pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::Vector3>(topic + "/position", 0);
+  pos_publisher_ = new misc_utils::RealtimePublisher<std_msgs::PointStamped>(topic + "/position", 1);
 
   return true;
 }
@@ -157,9 +176,13 @@ void CartesianPositionControllerNode::update()
     {
       if (pos_publisher_->trylock())
       {
-        tf::Vector3 p;
+        pos_publisher_->msg_.header.stamp = robot_->hw_->current_time_;
+        pos_publisher_->msg_.header.frame_id = c_.rootFrame();
+
+        tf::Point p;
         c_.getTipPosition(&p);
-        tf::Vector3TFToMsg(p, pos_publisher_->msg_);
+        tf::PointTFToMsg(p, pos_publisher_->msg_.point);
+
         pos_publisher_->unlockAndPublish();
       }
     }
@@ -168,12 +191,27 @@ void CartesianPositionControllerNode::update()
   c_.update();
 }
 
-bool CartesianPositionControllerNode::setCommand(
-  robot_srvs::SetVector::request &req,
-  robot_srvs::SetVector::response &resp)
+void CartesianPositionControllerNode::setCommand()
 {
-  tf::Vector3MsgToTF(req.v, c_.command_);
-  return true;
+  using namespace tf;
+
+  // Transforms the command into the root frame of the chain
+  Stamped<Point> point, out;
+  PointStampedMsgToTF(command_msg_, point);
+  try
+  {
+    TF.transformPoint(c_.rootFrame(), point, out);
+    c_.command_ = out;
+  }
+  catch (tf::ExtrapolationException ex)
+  {
+    fprintf(stderr, "CartesianPositionController extrapolated too far: %s\n", ex.what());
+  }
+  catch (tf::ConnectivityException ex)
+  {
+    fprintf(stderr, "CartesianPositionController cannot act in frame: %s\n", ex.what());
+  }
+
 }
 
 bool CartesianPositionControllerNode::getActual(
@@ -184,11 +222,6 @@ bool CartesianPositionControllerNode::getActual(
   c_.getTipPosition(&v);
   tf::Vector3TFToMsg(v, resp.v);
   return true;
-}
-
-void CartesianPositionControllerNode::command()
-{
-  tf::Vector3MsgToTF(command_msg_, c_.command_);
 }
 
 }
