@@ -123,7 +123,7 @@ main(int argc, char **argv)
 
 
 	      t1 = get_ms();
-	      //	      cam->doRectify();	// rectify if it's not done by the STOC
+	      cam->doRectify();	// rectify if it's not done by the STOC
 	      t2 = get_ms();
 	      //	      cam->doDisparity(); // perform stereo processing, if not done by STOC
 	      t3 = get_ms();
@@ -131,7 +131,12 @@ main(int argc, char **argv)
 	      printf("Timing - Rect %d ms, Disparity %d ms\n", (int)(t2-t1), (int)(t3-t2));
 
 	      // left window display, try rect, then raw
-	      if (cam->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+	      if (cam->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
+		{
+		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->imRectColor, 640, 480, 640, RGB24);
+		  win1->label("Left rectified image");
+		}
+	      else if (cam->stIm->imLeft->imRectType != COLOR_CODING_NONE)
 		{
 		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->imRect, 640, 480, 640);
 		  win1->label("Left rectified image");

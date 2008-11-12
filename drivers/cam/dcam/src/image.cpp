@@ -234,11 +234,11 @@ ImageData::doRectify()
       // set up images 
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 3);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 3);
-      cvSetData(srcIm, imColor, imWidth);
-      cvSetData(dstIm, imRectColor, imWidth);
+      cvSetData(srcIm, imColor, imWidth*3);
+      cvSetData(dstIm, imRectColor, imWidth*3);
       
-      //      cvRemap(srcIm,dstIm,mx,my);
-      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      //      cvRemap(srcIm,dstIm,rMapxy,rMapa);
+      cvRemap(srcIm,dstIm,mx,my);
     }
   return true;
 }
@@ -525,7 +525,7 @@ void
 ImageData::doBayerColorRGB()
 {
   // check allocation
-  int size = imWidth*imHeight;
+  size_t size = imWidth*imHeight;
   if (imSize < size)
     {
       MEMFREE(im);
