@@ -79,10 +79,10 @@ namespace ros {
       //tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
       // Costmap parameters
-      double windowLength(1.0);
+      double windowLength(5.0);
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
-      double freeSpaceProjectionHeight(0.5);
+      double freeSpaceProjectionHeight(0.19);
       double inflationRadius(0.50);
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
@@ -370,7 +370,7 @@ namespace ros {
 
 	point_clouds_.pop_front();
 
-	if (newData == NULL){
+	if (newData != NULL){
 	    delete newData;
 	    newData = NULL;
 	}
@@ -383,7 +383,7 @@ namespace ros {
       }
 
       // In case we get thrown out on the second transform - clean up
-      if (newData == NULL){
+      if (newData != NULL){
 	delete newData;
 	newData = NULL;
       }
