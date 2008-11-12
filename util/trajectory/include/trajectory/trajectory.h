@@ -206,6 +206,8 @@ namespace trajectory
 
     int getDuration(int index, double &duration);
 
+    int write(std::string filename, double dT);
+
     private:
 
     int num_points_; /** number of points in the trajectory */
@@ -330,6 +332,7 @@ namespace trajectory
 
     double calculateMinimumTimeCubic(const TPoint &start, const TPoint &end);
 
+    double blendTime(double aa,double bb,double cc);
 
   };
 }

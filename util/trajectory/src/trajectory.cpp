@@ -98,7 +98,6 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
     for(int j=0; j<dimension_; j++)
     {
       tp_[i].q_[j] = p[i*dimension_+j];
-//      ROS_INFO("tp_: %d %d %f",i,j,tp_[i].q_[j]);
     }
 
   }
@@ -130,7 +129,6 @@ int Trajectory::setTrajectory(const std::vector<double> &p, const std::vector<do
     for(int j=0; j<dimension_; j++)
     {
       tp_[i].q_[j] = p[i*(dimension_)+j];
-//      ROS_INFO("tp_: %d %d %f",i,j,tp_[i].q_[j]);
     }
   }
 
@@ -213,7 +211,7 @@ int Trajectory::sample(TPoint &tp, double time)
     return -1;
   } 
   int segment_index = findTrajectorySegment(time);
-//  ROS_INFO("segment index : %d",segment_index);
+  //ROS_DEBUG("segment index : %d",segment_index);
   if(interp_method_ == std::string("linear"))
     sampleLinear(tp,time,tc_[segment_index],tp_[segment_index].time_);
   else if(interp_method_ == std::string("cubic"))
@@ -372,7 +370,7 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 
 int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 {
-  double dT(0);
+   double dT(0),acc(0.0),tb(0.0);
   TCoeff tc;
 
   std::vector<double> temp;
@@ -397,12 +395,18 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 
     for(int j=0; j < dimension_; j++)
     {
+       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+          acc = max_acc_[j];
+       else
+          acc = -max_acc_[j];
+      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
-      temp[2] = 1/2*max_acc_[j];
-      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
-      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
-
+      temp[2] = 0.5*acc;
+      temp[3] = tb;
+      temp[4] = std::max(tc.duration_-2*tb,0.0);
+     
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -410,6 +414,17 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
   return 1;
 }
 
+double Trajectory::blendTime(double aa,double bb,double cc)
+{
+   double disc = (pow(bb,2) - 4*aa*cc);
+   if(disc < 0)
+      return 0.0;
+
+   double tb1 = (-bb + sqrt(disc))/(2*aa);
+   double tb2 = (-bb - sqrt(disc))/(2*aa);
+
+   return std::min(tb1,tb2);
+}
 
 
 void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
@@ -419,7 +434,6 @@ void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double 
   {
     tp.q_[i]    =  tc.coeff_[i][0] + segment_time * tc.coeff_[i][1];
     tp.qdot_[i] =  tc.coeff_[i][1];
-//    ROS_INFO("sample: %f %f",tc.coeff_[i][0],tc.coeff_[i][1]);
   }
   tp.time_ = time;
   tp.dimension_ = dimension_;
@@ -599,8 +613,13 @@ double Trajectory::calculateMinimumTimeLSPB(const TPoint &start, const TPoint &e
 double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, double amax)
 {
   double tb = std::min(fabs(vmax/amax),sqrt(fabs(q1-q0)/amax));
-  double dist_tb = amax*tb*tb;
-  double ts = (fabs(q1-q0) - dist_tb)/(amax*tb);
+  double acc(0);
+  if((q1-q0)>0)
+    acc = amax;
+  else
+    acc = -amax;
+  double dist_tb = acc*tb*tb;
+  double ts = (q1-q0 - dist_tb)/(acc*tb);
   if(ts < 0)
     ts = 0;
   return (2*tb+ts);
@@ -667,7 +686,6 @@ int Trajectory::parameterizeLinear()
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
-      //ROS_INFO("coeff: %d %d %f %f",i,j,temp[0],temp[1]);
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -745,7 +763,7 @@ int Trajectory::parameterizeCubic()
 
 int Trajectory::parameterizeBlendedLinear()
 {
-  double dT(0);
+   double dT(0.0),acc(0.0),tb(0.0);
   TCoeff tc;
 
   std::vector<double> temp;
@@ -779,12 +797,20 @@ int Trajectory::parameterizeBlendedLinear()
 
     for(int j=0; j < dimension_; j++)
     {
+       if(tp_[i].q_[j]-tp_[i-1].q_[j] > 0)
+          acc = max_acc_[j];
+       else
+          acc = -max_acc_[j];
+
+      tb =  blendTime(acc,-acc*tc.duration_,tp_[i].q_[j]-tp_[i-1].q_[j]);
+
       temp[0] = tp_[i-1].q_[j];
       temp[1] = 0;
-      temp[2] = 1/2*max_acc_[j];
-      temp[3] = fabs(tp_[i-1].q_[j]-tp_[i].q_[j])/(max_acc_[j]*tc.duration_);
-      temp[4] = std::max(tc.duration_-2*temp[3],0.0);
+      temp[2] = 0.5*acc;
+      temp[3] = tb;
+      temp[4] = std::max(tc.duration_-2*tb,0.0);
 
+      //ROS_DEBUG("coeff: %d %d %f %f %f %f %f %f\n", i,j,tc.duration_,temp[0],temp[1],temp[2],temp[3],temp[4]);
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -794,5 +820,31 @@ int Trajectory::parameterizeBlendedLinear()
   for(int i=1; i < (int) tp_.size(); i++)
     tp_[i].time_ = tp_[i-1].time_ + tc_[i-1].duration_;
 
+  return 1;
+}
+
+int Trajectory::write(std::string filename, double dT)
+{
+  FILE *f = fopen(filename.c_str(),"w");
+  double time = tp_.front().time_;
+  TPoint tp;
+  tp.setDimension(dimension_);
+
+  while(time < tp_.back().time_)
+  {
+    sample(tp,time);
+    fprintf(f,"%f ",time);
+    for(int j=0; j < dimension_; j++)
+    {
+      fprintf(f,"%f ",tp.q_[j]);
+    }
+    for(int j=0; j < dimension_; j++)
+    {
+      fprintf(f,"%f ",tp.qdot_[j]);
+    }
+    fprintf(f,"\n");
+    time += dT;
+  }
+  fclose(f);
   return 1;
 }
