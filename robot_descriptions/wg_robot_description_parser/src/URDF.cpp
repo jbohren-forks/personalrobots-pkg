@@ -42,7 +42,7 @@
 #include <fstream>
 #include <sstream>
 #include <queue>
-#include <boost/regex.hpp>
+
 
 namespace robot_desc {
     
@@ -122,40 +122,7 @@ namespace robot_desc {
     
     std::string URDF::getResourceLocation(void) const
     {
-        // check if URL is valid
-        boost::cmatch matches;
-        boost::regex re("(ros-pkg|ros-param):\\/\\/((\\w+\\.)*(\\w*))\\/([\\w\\d]+\\/{0,1})+");
-        if (boost::regex_match(m_resourceLocation.c_str(), matches, re) && matches.size() >= 3) {
-            std::string protocol(matches[1].first, matches[1].second);
-            std::string protocol_path(matches[2].first, matches[2].second);
-            std::string relpath(matches[2].second,matches[matches.size()-1].second);
-
-            if( protocol == std::string("ros-pkg") ) {
-                // find the ROS package
-                FILE* f = popen((std::string("rospack find ") + protocol_path).c_str(),"r");
-                if( f == NULL )
-                    errorMessage(std::string("failed to launch rospack find ") + protocol_path);
-                else {
-                    char basepath[1024];
-                    fgets(basepath, sizeof(basepath), f);
-                    pclose(f);
-
-                    // strip out any new lines or spaces from the end
-                    int len = strlen(basepath);
-                    char* p = basepath+len-1;
-                    while(len-- > 0 && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r'))
-                        *p-- = 0;
-                    return std::string(basepath) + relpath;
-                }
-            }
-            else if( protocol == std::string("ros-param") ) {
-                errorMessage("ros-param option for the media path is not supported");
-            }
-        }
-        else // not a url so copy directly
-            return m_resourceLocation;
-
-        return "";
+	return m_resourceLocation;
     }
     
     URDF::Link* URDF::getLink(const std::string &name) const

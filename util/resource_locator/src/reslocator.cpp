@@ -32,45 +32,49 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \author Ioan Sucan */
+/** \author Rosen Diankov, Ioan Sucan */
 
-#ifndef STRING_UTILS_STRING_UTILS_
-#define STRING_UTILS_STRING_UTILS_
+#include <reslocator/reslocator.h>
+#include <rosconsole/rosconsole.h>
+#include <boost/regex.hpp>
 
-#include <string>
-#include <vector>
-#include <sstream>
 
-namespace string_utils
+std::string res_locator::resource2path(const std::string &resource)
 {
+    // check if URL is valid
+    boost::cmatch matches;
+    boost::regex re("(ros-pkg|ros-param):\\/\\/((\\w+\\.)*(\\w*))\\/([\\w\\d]+\\/{0,1})+");
     
-void split(const std::string &str,
-           std::vector<std::string> &token_vec,
-           const std::string &delim = "\t\n\r ");
-
-std::string trim(const std::string &str);
-
-std::string tolower(const std::string& source);
-std::string toupper(const std::string& source);
-
-template<typename T>
-static inline std::string convert2str(const T &value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
+    if (boost::regex_match(resource.c_str(), matches, re) && matches.size() >= 3){
+	std::string protocol(matches[1].first, matches[1].second);
+	std::string protocol_path(matches[2].first, matches[2].second);
+	std::string relpath(matches[2].second,matches[matches.size()-1].second);
+	
+	if( protocol == std::string("ros-pkg") ) {
+	    // find the ROS package
+	    FILE* f = popen((std::string("rospack find ") + protocol_path).c_str(),"r");
+	    if( f == NULL )
+		ROS_ERROR("%s\n", (std::string("failed to launch rospack find ") + protocol_path).c_str());
+	    else {
+		char basepath[1024];
+		fgets(basepath, sizeof(basepath), f);
+		pclose(f);
+		
+		// strip out any new lines or spaces from the end
+		int len = strlen(basepath);
+		char* p = basepath+len-1;
+		while(len-- > 0 && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r'))
+		    *p-- = 0;
+		return std::string(basepath) + relpath;
+	    }
+	}
+	else if( protocol == std::string("ros-param") )
+	{
+	    return "";
+	}
+    }
+    else // not a url so copy directly
+	return resource;
+    
+    return "";
 }
-
-template<typename T>
-static inline T fromString(const std::string &str)
-{
-    std::stringstream ss(str);
-    T value;
-    ss >> value;
-    return value;
-}
-
-
-}
-
-#endif

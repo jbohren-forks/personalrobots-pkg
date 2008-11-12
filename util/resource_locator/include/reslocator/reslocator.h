@@ -32,45 +32,21 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \author Ioan Sucan */
+/** \author Rosen Diankov, Ioan Sucan */
 
-#ifndef STRING_UTILS_STRING_UTILS_
-#define STRING_UTILS_STRING_UTILS_
+#ifndef ROS_RESOURCE_LOCATOR_
+#define ROS_RESOURCE_LOCATOR_
 
 #include <string>
-#include <vector>
-#include <sstream>
 
-namespace string_utils
+namespace res_locator
 {
     
-void split(const std::string &str,
-           std::vector<std::string> &token_vec,
-           const std::string &delim = "\t\n\r ");
-
-std::string trim(const std::string &str);
-
-std::string tolower(const std::string& source);
-std::string toupper(const std::string& source);
-
-template<typename T>
-static inline std::string convert2str(const T &value)
-{
-  std::stringstream ss;
-  ss << value;
-  return ss.str();
-}
-
-template<typename T>
-static inline T fromString(const std::string &str)
-{
-    std::stringstream ss(str);
-    T value;
-    ss >> value;
-    return value;
-}
-
-
+    /** Attempt to compute the path equivalent to a resource.  This is
+      * only valid for some types of resources. The function returns
+      * an empty string if unsuccesful */
+    std::string resource2path(const std::string &resource);
+    
 }
 
 #endif

@@ -14,8 +14,6 @@
   <depend package="string_utils"/>
   <depend package="stl_utils" />
 
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-regex-dev"/>
-
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lURDF"/>
   </export>
