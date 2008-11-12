@@ -87,7 +87,7 @@ namespace robot_desc {
 	freeMemory();
 	m_name.clear();
 	m_source.clear();
-	m_resourcePath.clear();
+	m_resourceLocation.clear();
 	m_location.clear();
 	m_links.clear();
 	m_frames.clear();
@@ -119,9 +119,9 @@ namespace robot_desc {
 	return m_name;
     }
     
-    const std::string& URDF::getResourcePath(void) const
+    const std::string& URDF::getResourceLocation(void) const
     {
-	return m_resourcePath;
+	return m_resourceLocation;
     }
     
     URDF::Link* URDF::getLink(const std::string &name) const
@@ -2231,7 +2231,7 @@ namespace robot_desc {
 		    {
 			const char *loc = node->ToElement()->Attribute("location");
 			if (loc)
-			    m_resourcePath = loc;
+			    m_resourceLocation = loc;
 			else
 			    errorMessage("Attribute 'location' was not defined for <resource> tag");
 		    }
