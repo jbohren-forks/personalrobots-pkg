@@ -1,0 +1,111 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface">
+
+  <property name="M_PI" value="3.1415926535897931" />
+
+  <macro name="pr2_ptz" params="side parent reflect *origin">
+
+    <joint name="${side}_ptz_pan_joint" type="revolute">
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" />
+      <axis xyz="0 0 -1" />
+      <joint_properties damping="0.01" friction="0.0" />
+    </joint>
+
+    <link name="${side}_ptz_pan">
+      <parent name="${parent}" />
+      <insert_block name="origin" />
+      <joint name="${side}_ptz_pan_joint" />
+
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 ${reflect*0.025} 0" rpy="0 M_PI/2 0" />
+        <map name="foo" flag="gazebo">
+	  <elem key="material">Gazebo/Blue</elem>
+        </map>
+        <geometry name="${side}_ptz_pan_visual_geom">
+          <mesh scale="0.05 0.05 0.05" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 -0.025 0" rpy="0 M_PI/2 0" />
+        <geometry name="${side}_ptz_pan_collision_geom">
+          <cylinder radius="0.05" length="0.05" />
+        </geometry>
+      </collision>
+    </link>
+
+    <joint name="${side}_ptz_tilt_joint" type="revolute">
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" />
+      <axis xyz="0 -1 0" />
+      <anchor xyz="0 0 0" />
+      <joint_properties damping="0.01" friction="0.0" />
+    </joint>
+
+    <sensor name="${side}_ptz_tilt" type="camera">
+      <parent name="${side}_ptz_pan" />
+      <origin xyz="0.0 ${reflect*0.03} 0.0" rpy="0 0 0"/>
+      <joint name="${side}_ptz_tilt_joint" />
+
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia ixx="0.001" ixy="0.0" ixz="0.0"
+                 iyy="0.001" iyz="0.0"
+                 izz="0.001" />
+      </inertial>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 M_PI/2 0" />
+        <map name="foo" flag="gazebo">
+	  <elem key="material">Gazebo/Red</elem>
+        </map>
+        <geometry name="${side}_ptz_tilt_visual_geom">
+          <mesh scale="0.03 0.03 0.03" />
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin xyz="0 0 0" rpy="0 M_PI/2 0" />
+        <geometry name="${side}_ptz_tilt_collision_geom">
+          <cylinder radius="0.03" length="0.03" />
+        </geometry>
+      </collision>
+    </sensor>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_camera">
+        <sensor:camera name="${side}_ptz_cam_sensor">
+          <imageWidth>640</imageWidth>
+          <imageHeight>480</imageHeight>
+          <hfov>60</hfov>
+          <nearClip>0.1</nearClip>
+          <farClip>100</farClip>
+          <updateRate>15.0</updateRate>
+          <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libRos_Camera.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>15.0</updateRate>
+            <topicName>axis_left/image</topicName>
+            <frameName>ptz_left</frameName>
+            <interface:camera name="${side}_ptz_cam_iface" />
+          </controller:ros_camera>
+        </sensor:camera>
+      </verbatim>
+    </map>
+
+  </macro>
+
+
+  <!--                    Calibration                            -->
+
+</robot>

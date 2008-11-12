@@ -15,8 +15,8 @@
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <calibration values="1.5 -1 " />
-      <limit effort="100" velocity="10" min="-100" max="100" />
-      <joint_properties damping="0.05" />
+      <limit effort="10" velocity="10" min="-100" max="100" />
+      <joint_properties damping="0.01" />
     </joint>
 
     <link name="${prefix}_${side}_finger">
@@ -57,7 +57,7 @@
     <joint name="${prefix}_${side}_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="10" min="-100" max="100" />
+      <limit effort="10" velocity="10" min="-100" max="100" />
       <joint_properties damping="0.01" />
     </joint>
 
@@ -141,7 +141,7 @@
       <joint name="${side}_gripper_r_finger_tip_joint" reduction="1000.0" />
       <joint name="${side}_gripper_l_finger_joint" reduction="1000.0" />
       <joint name="${side}_gripper_l_finger_tip_joint" reduction="-1000.0" />
-      <pid p="0.10" i="0.0" d="0.005" iClamp="0.5" />
+      <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
     </transmission>
   </macro>
 
