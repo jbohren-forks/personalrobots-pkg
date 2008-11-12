@@ -388,11 +388,11 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 
 
 #if DEBUG
-		fprintf(fDeb, "expanding state(%d): h=%d g=%u key=%u v=%u iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
-			state->MDPstate->StateID, state->h, state->g, state->g+(int)(pSearchStateSpace->eps*state->h), state->v, 
-			state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
-		environment_->PrintState(state->MDPstate->StateID, true, fDeb);
-		fflush(fDeb);
+		//fprintf(fDeb, "expanding state(%d): h=%d g=%u key=%u v=%u iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
+		//	state->MDPstate->StateID, state->h, state->g, state->g+(int)(pSearchStateSpace->eps*state->h), state->v, 
+		//	state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
+		//environment_->PrintState(state->MDPstate->StateID, true, fDeb);
+		//fflush(fDeb);
 #endif
 
 #if DEBUG
@@ -882,19 +882,10 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
 			break;
 		}
 
-#if DEBUG
-		fprintf(fDeb, "looking for succ %d of state %d\n", searchstateinfo->bestnextstate->StateID, state->StateID);
-#endif
-
-
         environment_->GetSuccs(state->StateID, &SuccIDV, &CostV);
         int actioncost = INFINITECOST;
         for(int i = 0; i < (int)SuccIDV.size(); i++)
         {   
-
-#if DEBUG
-			fprintf(fDeb, "succ %d at cost=%d\n", SuccIDV.at(i), CostV.at(i));
-#endif
 
             if(SuccIDV.at(i) == searchstateinfo->bestnextstate->StateID)
                 actioncost = CostV.at(i);
@@ -906,6 +897,18 @@ vector<int> ARAPlanner::GetSearchPath(ARASearchStateSpace_t* pSearchStateSpace, 
         //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);
         //environment_->PrintState(state->StateID, false, fDeb);
         //environment_->PrintState(searchstateinfo->bestnextstate->StateID, false, fDeb);
+
+
+#if DEBUG
+		ARAState* nextstateinfo = (ARAState*)(searchstateinfo->bestnextstate->PlannerSpecificData);
+		if(actioncost != abs(searchstateinfo->g - nextstateinfo->g) && pSearchStateSpace->eps_satisfied <= 1.001)
+		{
+			fprintf(fDeb, "ERROR: actioncost=%d is not matching the difference in g-values of %d\n", actioncost,abs(searchstateinfo->g - nextstateinfo->g));
+			printf("ERROR: actioncost=%d is not matching the difference in g-values of %d\n", actioncost,abs(searchstateinfo->g - nextstateinfo->g));
+			PrintSearchState(searchstateinfo, fDeb);
+			PrintSearchState(nextstateinfo, fDeb);
+		}
+#endif
 
 
 		state = searchstateinfo->bestnextstate;

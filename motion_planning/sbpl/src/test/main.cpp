@@ -342,7 +342,7 @@ int planandnavigate2d(int argc, char *argv[])
 int planandnavigate3dkin(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 50; //in seconds
+	double allocated_time_secs_foreachplan = 0.5; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV3DKIN environment_nav3Dkin;
 	EnvironmentNAV3DKIN trueenvironment_nav3Dkin;

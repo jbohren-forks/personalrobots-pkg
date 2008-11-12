@@ -557,11 +557,10 @@ void EnvironmentNAV3DKIN::InitializeEnvironment()
 	EnvNAV3DKIN.goalstateid = HashEntry->stateID;
 }
 
-static int EuclideanDistance(int X1, int Y1, int X2, int Y2)
+double EnvironmentNAV3DKIN::EuclideanDistance(int X1, int Y1, int X2, int Y2)
 {
     int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
-    double dist = sqrt((double)sqdist);
-    return (int)(NAV3DKIN_COSTMULT*dist);
+    return EnvNAV3DKINCfg.cellsize_m*sqrt((double)sqdist);
 
 }
 
@@ -804,7 +803,7 @@ int EnvironmentNAV3DKIN::GetFromToHeuristic(int FromStateID, int ToStateID)
 	EnvNAV3DKINHashEntry_t* ToHashEntry = EnvNAV3DKIN.StateID2CoordTable[ToStateID];
 	
 
-	return EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y);	
+	return (int)(NAV3DKIN_COSTMULT*EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAV3DKINCfg.nominalvel_mpersecs);	
 
 }
 

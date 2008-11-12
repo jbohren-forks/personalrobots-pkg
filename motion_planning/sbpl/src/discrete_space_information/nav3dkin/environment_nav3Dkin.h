@@ -247,6 +247,8 @@ public:
 
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
 
+	double EuclideanDistance(int X1, int Y1, int X2, int Y2);
+
 
 };
 
