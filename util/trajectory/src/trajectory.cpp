@@ -191,7 +191,8 @@ inline int Trajectory::findTrajectorySegment(double time)
   return result;
 }
 
-inline double Trajectory::getTotalTime()
+//inline double Trajectory::getTotalTime()
+double Trajectory::getTotalTime()
 {
   if(tp_.size() == 0)
     return 0.0;

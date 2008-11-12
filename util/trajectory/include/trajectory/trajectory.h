@@ -158,7 +158,8 @@ namespace trajectory
       \brief Get the total time for the trajectory.
       \return the total time for the trajectory.
     */
-    inline double getTotalTime();
+    //inline double getTotalTime();
+    double getTotalTime();
 
     /*!
       \brief Sample the trajectory at a certain point in time.
