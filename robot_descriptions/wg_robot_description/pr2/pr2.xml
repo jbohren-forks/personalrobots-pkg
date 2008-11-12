@@ -1,7 +1,10 @@
 <?xml version="1.0"?>
 
 <robot name="pr2"><!-- name of the robot-->
-  
+
+  <!-- declare the path where all models/textures/materials are stored -->
+  <resource location="ros-pkg://wg_robot_description/models/pr2"/>
+
   <!-- Begin template definitions for ease of reuse -->
   
   <const name="M_PI" value="3.14159" />   <!-- FIXME @todo needed to make M_PI interpreted correctly. -->
@@ -716,30 +719,30 @@
   
   <joint name="finger_tip_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
-    <mimic name="finger_l_right_joint" coeffs="1 0"/>
+    <mimic name="finger_l_right_joint" mult="1" offset="0"/>
   </joint>
   <joint name="finger_r_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
-    <mimic name="finger_l_right_joint" coeffs="-1 0"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_tip_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
-    <mimic name="finger_l_right_joint" coeffs="-1 0"/>
+    <mimic name="finger_l_right_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_l_right_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
   </joint>
   <joint name="finger_tip_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_r_joint"/>
-    <mimic name="finger_l_left_joint" coeffs="1 0"/>
+    <mimic name="finger_l_left_joint" mult="1" offset="0"/>
   </joint>
   <joint name="finger_r_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_r_joint"/>
-    <mimic name="finger_l_left_joint" coeffs="-1 0"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_tip_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_tip_l_joint"/>
-    <mimic name="finger_l_left_joint" coeffs="-1 0"/>
+    <mimic name="finger_l_left_joint" mult="-1" offset="0"/>
   </joint>
   <joint name="finger_l_left_joint" type="revolute" >
     <insert_const_block name="pr2_finger_l_joint"/>
