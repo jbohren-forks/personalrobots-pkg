@@ -1239,7 +1239,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
     //fprintf(fStat, "%d %d\n", searchexpands, solcost);
 
-	return true;
+	return ret;
 
 }
 
