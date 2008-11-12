@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -54,7 +54,7 @@ void doUnsubscribe(string name, ros::msg* m, ros::Time t, void* n)
   cout << "Got a " << name << " message." << endl;
   nCallbacks++;
 
-  if (((ros::node*)(n))->num_subscriptions() == nCallbacks) { 
+  if (((ros::node*)(n))->num_subscriptions() == nCallbacks) {
     cout << "Dustbuster is full." << endl;
     ((ros::node*)(n))->self_destruct();
   }
@@ -80,13 +80,13 @@ int main(int argc, char **argv)
 	     tms->tm_hour     , tms->tm_min  , tms->tm_sec);
     mkdir(logdir, 0755);
     filename = std::string(logdir) + std::string("/topics.bag");
-    
+
     //Get the topics.
     for (int i = 2; i < argc; i++)
       topics.push_back(argv[i]);
   }
 
-  
+
   // -- Dataset collection usage case.
   else if(argc > 4 && !strcmp(argv[1], "--seq")) {
 
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     for (int i = 4; i < argc; i++)
       topics.push_back(argv[i]);
   }
-  
+
   // -- Usage description case.
   else {
     printf("\nusage:\n\n"
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 
 
   //Setup the logger.
-  ros::node n("dustbuster", ros::node::WRITE_LOG_FILE);  // Ros peer style usage.
+  ros::node n("dustbuster");  // Ros peer style usage.
   LogRecorder l(&n);
   ros::Time start = ros::Time::now();
 
