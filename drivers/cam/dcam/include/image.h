@@ -100,6 +100,15 @@ typedef enum {
 #endif
 
 
+#ifndef COLOR_CONVERSION_T
+typedef enum {
+  COLOR_CONVERSION_BILINEAR,
+  COLOR_CONVERSION_EDGE
+} color_conversion_t;
+#define COLOR_CONVERSION_T
+#endif
+
+
 
 namespace cam
 {
@@ -163,6 +172,12 @@ namespace cam
     bool initRectify();		// initializes the rectification internals from the
                                 //   calibration parameters
 
+    // color conversion
+    color_conversion_t colorConvertType; // BILINEAR or EDGE conversion
+    void doBayerColorRGB();	// does Bayer => color and mono
+    void doBayerMono();		// does Bayer => mono
+
+
   protected:
     // rectification arrays from OpenCV
     bool initRect;		// whether arrays are initialized or not
@@ -176,6 +191,12 @@ namespace cam
     CvMat* mx,* my;
     IplImage* srcIm;		// temps for rectification
     IplImage* dstIm;
+
+  private:
+    // various color converters
+    void convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
+				  int width, int height, color_conversion_t colorAlg); 
+    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, int width, int height);
   };
 
 

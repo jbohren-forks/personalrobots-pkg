@@ -440,7 +440,7 @@ imWindow::DisplayImage(unsigned char *im, int w, int h, int ls, int type, int nd
   int size = w*h;
   pixelType = type;
   if (pixelType == RGB24)
-    size = size * 4;
+    size = size * 3;
   if (pixelType == DISPARITY)
     size = size * 2;
 
@@ -610,13 +610,13 @@ imWindow::drawit()
 	{
 	  cbd.pdata = pixelData;
 	  cbd.ndisp = ndisp;
-	  cbd.linesize = linesize*4;
-	  cbd.skip = skipw*4;
+	  cbd.linesize = linesize*3;
+	  cbd.skip = skipw*3;
 	  cbd.gtab = gamtab;
 	  fl_draw_image(gamma_color_image_cb_fn, (void *)&cbd, xoff, yoff, width, height, 3);
 	}
       else
-	fl_draw_image(pixelData, xoff, yoff, width, height, skipw*4, linesize*4);
+	fl_draw_image(pixelData, xoff, yoff, width, height, skipw*3, linesize*3);
     }
 
   else if (pixelType == DISPARITY)
