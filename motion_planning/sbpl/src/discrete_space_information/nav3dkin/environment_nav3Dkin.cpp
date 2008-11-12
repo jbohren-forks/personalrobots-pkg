@@ -759,6 +759,8 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 
 
 bool EnvironmentNAV3DKIN::InitGeneral() {
+
+
   //Initialize other parameters of the environment
   InitializeEnvConfig();
   
@@ -1189,6 +1191,10 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 bool EnvironmentNAV3DKIN::UpdateCost(int x, int y, int new_status)
 {
 
+#if DEBUG
+	fprintf(fDeb, "Cost updated for cell %d %d from old cost=%d to new cost=%d\n", x,y,EnvNAV3DKINCfg.Grid2D[x][y], new_status);
+#endif
+
     EnvNAV3DKINCfg.Grid2D[x][y] = new_status;
 
     return true;
@@ -1239,6 +1245,11 @@ void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcel
 
 bool EnvironmentNAV3DKIN::IsObstacle(int x, int y)
 {
+
+#if DEBUG
+	fprintf(fDeb, "Status of cell %d %d is queried. Its cost=%d\n", x,y,EnvNAV3DKINCfg.Grid2D[x][y]);
+#endif
+
 
 	return (EnvNAV3DKINCfg.Grid2D[x][y] != 0);
 

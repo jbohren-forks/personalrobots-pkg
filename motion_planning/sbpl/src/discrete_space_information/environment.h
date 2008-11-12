@@ -37,7 +37,10 @@ public:
 
 	//data
 	vector<int*> StateID2IndexMapping;
-
+	
+#if DEBUG
+	FILE* fDeb;
+#endif
 
 	virtual bool InitializeEnv(const char* sEnvFile) = 0;
 
@@ -58,6 +61,19 @@ public:
     //destructor
     virtual ~DiscreteSpaceInformation(){};
 
+	//constructor
+	DiscreteSpaceInformation()
+	{
+
+#if DEBUG
+		if((fDeb = fopen("envdebug.txt", "w")) == NULL)
+		{
+			printf("ERROR: failed to open debug file for environment\n");
+			exit(1);
+		}
+#endif
+
+	}
 };
 
 

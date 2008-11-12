@@ -208,10 +208,8 @@ public:
 	//member data
 	EnvNAV3DKINConfig_t EnvNAV3DKINCfg;
 	EnvironmentNAV3DKIN_t EnvNAV3DKIN;
-
-
-
-	void ReadConfiguration(FILE* fCfg);
+	
+ 	void ReadConfiguration(FILE* fCfg);
 
 	void InitializeEnvConfig();
 
