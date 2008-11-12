@@ -61,7 +61,7 @@ public:
 
   TopicSynchronizer<StereoView> sync;
 
-  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all)
+  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -72,23 +72,39 @@ public:
     sync.subscribe("dcam/disparity", dimage, 1);
   }
 
-  void image_cb_all()
+  void image_cb_all(ros::Time t)
   {
-    lbridge.fromImage(limage);
-    rbridge.fromImage(rimage);
-    dbridge.fromImage(dimage);
+    if (lbridge.fromImage(limage))
+      cvShowImage("left", lbridge.toIpl());
 
-    // Disparity has to be scaled to be be nicely displayable
-    IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-    cvCvtScale(dbridge.toIpl(), disp, 1/4.0);
+    if (rbridge.fromImage(rimage))
+      cvShowImage("right", rbridge.toIpl());
 
-    cvShowImage("left", lbridge.toIpl());
-    cvShowImage("right", rbridge.toIpl());
-    cvShowImage("disparity", disp);
+    if (dbridge.fromImage(dimage))
+    {
+      // Disparity has to be scaled to be be nicely displayable
+      IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
+      cvCvtScale(dbridge.toIpl(), disp, 1/4.0);
+      cvShowImage("disparity", disp);
+      cvReleaseImage(&disp);
+    }
 
     cvWaitKey(5);
+  }
 
-    cvReleaseImage(&disp);
+  void image_cb_timeout(ros::Time t)
+  {
+    if (limage.header.stamp != t)
+      printf("Timed out waiting for left image\n");
+
+    if (rimage.header.stamp != t)
+      printf("Timed out waiting for right image\n");
+
+    if (dimage.header.stamp != t)
+      printf("Timed out waiting for disparity image\n");
+
+    //Proceed to show images anyways
+    image_cb_all(t);
   }
 };
 

@@ -40,6 +40,7 @@
 #define TOPIC_SYNCHRONIZER_HH
 
 #include "rosthread/condition.h"
+#include "ros/time.h"
 
   //! A templated class for synchronizing incoming topics
   /*! 
@@ -55,8 +56,14 @@ class TopicSynchronizer
   //! A pointer to your node for calling callback
   N* node_;
 
-  //! The callback to be called
-  void (N::*callback_)();
+  //! The callback to be called if successful
+  void (N::*callback_)(ros::Time);
+
+  //! Timeout duration
+  ros::Duration timeout_;
+
+  //! The callback to be called if timed out
+  void (N::*timeout_callback_)(ros::Time);
   
   //! The condition variable used for synchronization
   ros::thread::condition cond_all_;
@@ -122,6 +129,9 @@ class TopicSynchronizer
   }
 
   //! The function called in a message cb to wait for other messages
+  /*!
+   * \param time  The time that is being waited for
+   */
   void wait_for_others(ros::Time* time)
   {
     count_ = 1;
@@ -131,14 +141,15 @@ class TopicSynchronizer
     bool timed_out = false;
 
     while (count_ < expected_count_ && *time == waiting_time_ && !timed_out)
-      if (!cond_all_.timed_wait(1))
+      if (!cond_all_.timed_wait(timeout_))
       {
-        printf(" Timed out waiting for other images...\n");
         timed_out = true;
+        if (timeout_callback_)
+          (*node_.*timeout_callback_)(*time);
       }
 
     if (*time == waiting_time_ && !timed_out)
-      (*node_.*callback_)();
+      (*node_.*callback_)(*time);
 
     if (*time == waiting_time_)
     {
@@ -155,10 +166,12 @@ class TopicSynchronizer
   /*! 
    * The constructor for the TopicSynchronizer
    *
-   * \param node      A pointer to your node.
-   * \param callback  A pointer to the callback to invoke when all messages have arrived
+   * \param node             A pointer to your node.
+   * \param callback         A pointer to the callback to invoke when all messages have arrived
+   * \param timeout          The duration 
+   * \param timeout_callback A callback which is triggered when the timeout expires
    */
-  TopicSynchronizer(N* node, void (N::*callback)()) : node_(node), callback_(callback), expected_count_(0), count_(0), done_(false)
+  TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_(timeout), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
   { }
 
   //! Subscribe

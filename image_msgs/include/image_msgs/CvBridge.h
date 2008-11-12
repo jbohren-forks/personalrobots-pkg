@@ -77,6 +77,8 @@ namespace image_msgs
       } else if (rosimg.depth == "uint16") {
         cvInitImageHeader(img_, cvSize(rosimg.uint16_data.layout.dim[1].size, rosimg.uint16_data.layout.dim[0].size), IPL_DEPTH_16U, 1);
         cvSetData(img_, &(rosimg.uint16_data.data[0]), rosimg.uint16_data.layout.dim[1].stride*sizeof(uint16_t));
+      } else {
+        return false;
       }
       
       return true;
