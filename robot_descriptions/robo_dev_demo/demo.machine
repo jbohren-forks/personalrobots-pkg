@@ -1,0 +1,4 @@
+<launch>
+  <machine name="xenomai" address="prdemo1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" />   
+  <machine name="two" address="prdemo2" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)"  default="true"/>   
+</launch>
