@@ -520,7 +520,7 @@ int EnvironmentNAV3DKIN::GetActionCost(int SourceX, int SourceY, int SourceTheta
 {
 	sbpl_2Dcell_t cell;
 
-	for(int i = 0; i < action->intersectingcellsV.size(); i++)
+	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++)
 	{
 		//get the cell in the map
 		cell = action->intersectingcellsV.at(i);
@@ -585,8 +585,8 @@ void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vect
 
   vector<sbpl_2Dpt_t> bounding_polygon;
   unsigned int find;
-  double max_x, min_x, max_y, min_y;
-  sbpl_2Dpt_t pt;
+  double max_x = -INFINITECOST, min_x = INFINITECOST, max_y = -INFINITECOST, min_y = INFINITECOST;
+  sbpl_2Dpt_t pt = {0,0};
   for(find = 0; find < EnvNAV3DKINCfg.FootprintPolygon.size(); find++){
     
     //rotate and translate the corner of the robot
