@@ -547,6 +547,16 @@ ImageData::doBayerColorRGB()
 void 
 ImageData::doBayerMono()
 {
+  // check allocation
+  size_t size = imWidth*imHeight;
+  if (imSize < size)
+    {
+      MEMFREE(im);
+      im = (uint8_t *)MEMALIGN(size);
+      imSize = size;
+    }
+  convertBayerRGGBMono(imRaw, im, imWidth, imHeight, colorConvertType);
+  imType = COLOR_CODING_MONO8;
 }
 
 
@@ -588,7 +598,7 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 	    }		  	
 
 	  // blue line (BGBG...)
-	  *md = *(cd+2) = *s;		// blue pixel          
+	  *(cd+2) = *s;		// blue pixel          
 	  for (j=0; j<width-2; j+=2, cd+=6, md+=2)
 	    {
 	      s++;
@@ -722,6 +732,122 @@ ImageData::convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 	    }
 	  // last two pixels
 	  cd += 6;
+	  md += 2;
+	  s += 2;
+	}
+
+      // last two lines
+      for (j=0; j<width; j+=2)
+	{
+	}
+    }
+
+}
+
+
+// real function to do the job
+// converts to monochrome
+
+void
+ImageData::convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, 
+				int width, int height, color_conversion_t colorAlg)
+{
+  uint8_t *s;
+  int i, j;
+  int ll = width;
+  int ll2 = width*2;
+
+  s = src;
+  uint8_t *md = dstm;		// monochrome
+
+  // simple, but has "zipper" artifacts
+  if (colorAlg == COLOR_CONVERSION_BILINEAR)
+    {
+      for (i=0; i<height; i+=2)
+	{
+	  // red line (GRGR...)
+	  for (j=0; j<width; j+=2, md+=2)
+	    {
+	      *md = *s++;	// green pixel
+	      s++;	// red pixel          
+	      if (i > 1)
+		*(md-ll) = ((int)*(md) + (int)*(md-ll-1) + (int)*(md-ll+1) + (int)*(md-ll2)) >> 2;
+	    }		  	
+
+	  // blue line (BGBG...)
+	  for (j=0; j<width-2; j+=2, md+=2)
+	    {
+	      s++;
+	      *(md+1) = *s++; // green pixel
+	      if (i > 1)
+		*(md-ll+1) = ((int)*(md+1) + (int)*(md-ll) + (int)*(md-ll+2) + (int)*(md-ll2+1)) >> 2;
+	    }		  	
+	  // last pixels
+	  s++;
+	  *(md+1) = *s++;	// green pixel
+	  md +=2;
+	}
+    }
+
+  // EDGE color algorithm, better but slower
+  else
+    {
+      int dc, dv, dh;
+
+      // do first two lines
+      s += ll2;
+
+      for (i=0; i<height-4; i+=2)
+	{
+	  // GR line
+	  // do first two pixels
+	  md += 2;
+	  s += 2;
+
+	  // do most of line
+	  for (j=0; j<width-4; j+=2, md+=2)
+	    {
+	      // green pixels
+	      *md = *s++;
+	      dc = 2*(int)*(s);
+	      dh = dc - (int)*(s-2) - (int)*(s+2);
+	      if (dh < 0) dh = -dh;
+	      dv = dc - (int)*(s-ll2) - (int)*(s+ll2);
+	      if (dv < 0) dv = -dv;
+	      if (dv > dh) // vert is stronger, use horz
+		*(md+1) = ((int)*(s-1) + (int)*(s+1))>>1;
+	      else	// horz is stronger, use vert
+		*(md+1) = ((int)*(s-ll) + (int)*(s+ll))>>1;
+
+	      s++;
+	    }
+	  // last two pixels
+	  md += 2;
+	  s += 2;
+
+	  // BG line
+	  // do first two pixels
+	  md += 2;
+	  s += 2;
+
+	  // do most of line
+	  for (j=0; j<width-4; j+=2, md+=2)
+	    {
+	      dc = 2*(int)*s;
+	      dh = dc - (int)*(s-2) - (int)*(s+2);
+	      if (dh < 0) dh = -dh;
+	      dv = dc - (int)*(s-ll2) - (int)*(s+ll2);
+	      if (dv < 0) dv = -dv;
+	      if (dh < dv) // vert is stronger, use horz
+		*md = ((int)*(s-1) + (int)*(s+1))>>1;
+	      else	// horz is stronger, use vert
+		*md = ((int)*(s-ll) + (int)*(s+ll))>>1;
+
+	      *(md+1) = *(s+1); // green pixel
+
+	      s+=2;
+	    }
+	  // last two pixels
 	  md += 2;
 	  s += 2;
 	}

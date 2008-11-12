@@ -196,7 +196,8 @@ namespace cam
     // various color converters
     void convertBayerRGGBColorRGB(uint8_t *src, uint8_t *dstc, uint8_t *dstm,
 				  int width, int height, color_conversion_t colorAlg); 
-    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, int width, int height);
+    void convertBayerRGGBMono(uint8_t *src, uint8_t *dstm, 
+				  int width, int height, color_conversion_t colorAlg); 
   };
 
 
