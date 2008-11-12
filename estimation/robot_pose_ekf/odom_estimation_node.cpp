@@ -53,7 +53,7 @@ namespace estimation
       _vo_active(false)
   {
     // advertise our estimation
-    advertise<std_msgs::Pose3DStamped>("odom_estimation",10);
+    advertise<std_msgs::PoseStamped>("odom_estimation",10);
 
     // subscribe to messages
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
@@ -81,7 +81,7 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation_node::Update(double time)
+  void odom_estimation_node::Update(const Time& time)
   {
     _filter_mutex.lock();
 
@@ -92,7 +92,7 @@ namespace estimation
 			_vo_meas,   _vo_time,   _vo_active,  time);
       
       // write to file
-      ColumnVector estimate; double tm;
+      ColumnVector estimate; Time tm;
       _my_filter.GetEstimate(estimate, tm);
       for (unsigned int i=1; i<=6; i++)
 	_corr_file << estimate(i) << " ";
@@ -119,7 +119,7 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _odom_time = _odom.header.stamp.to_double();
+    _odom_time = _odom.header.stamp;
     _odom_meas =  Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
     _filter_mutex.unlock();
 
@@ -143,7 +143,7 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _imu_time = _imu.header.stamp.to_double();
+    _imu_time = _imu.header.stamp;
     _imu_meas = Transform( Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
 			   Vector3(0,0,0));
     _filter_mutex.unlock();
@@ -165,9 +165,9 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _vo_time = _vo.header.stamp.to_double();
-    _vo_meas = Transform( Quaternion(_vo.pose3D.orientation.x, _vo.pose3D.orientation.y,_vo.pose3D.orientation.z,_vo.pose3D.orientation.w),
-			  Vector3(_vo.pose3D.position.x,_vo.pose3D.position.y,_vo.pose3D.position.z));
+    _vo_time = _vo.header.stamp;
+    _vo_meas = Transform( Quaternion(_vo.pose.orientation.x, _vo.pose.orientation.y,_vo.pose.orientation.z,_vo.pose.orientation.w),
+			  Vector3(_vo.pose.position.x,_vo.pose.position.y,_vo.pose.position.z));
     _filter_mutex.unlock();
 
     // activate vo

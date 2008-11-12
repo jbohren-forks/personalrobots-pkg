@@ -43,7 +43,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
-#include "std_msgs/Pose3DStamped.h"
+#include "std_msgs/PoseStamped.h"
 
 // log files
 #include <fstream>
@@ -75,7 +75,7 @@ public:
 private:
 
   /// update filter
-  void Update(double time);
+  void Update(const ros::Time& time);
 
   /// ekf filter
   odom_estimation _my_filter;
@@ -84,15 +84,15 @@ private:
   std_msgs::BaseVel               _vel;  
   std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
-  std_msgs::Pose3DStamped         _vo;  
+  std_msgs::PoseStamped           _vo;  
 
   // estimated robot pose message to send
-  std_msgs::Pose3DStamped _output; 
+  std_msgs::PoseStamped _output; 
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
   tf::Transform _odom_meas, _imu_meas, _vo_meas;
-  double _odom_time, _imu_time, _vo_time;
+  ros::Time _odom_time, _imu_time, _vo_time;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
 
   // mutex

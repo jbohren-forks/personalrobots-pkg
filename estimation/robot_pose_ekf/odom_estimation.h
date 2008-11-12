@@ -61,16 +61,16 @@ public:
   virtual ~odom_estimation();
 
   /// update filter
-  void Update(tf::Transform& odom_meas, double odom_time, bool odom_active,
-	      tf::Transform& imu_meas,  double imu_time,  bool imu_active,
-	      tf::Transform& vo_meas,   double vo_time,   bool vo_active, double filter_time);
+  void Update(const tf::Transform& odom_meas, const ros::Time& odom_time, bool odom_active,
+	      const tf::Transform& imu_meas,  const ros::Time& imu_time,  bool imu_active,
+	      const tf::Transform& vo_meas,   const ros::Time& vo_time,   bool vo_active, const ros::Time& filter_time);
 
   /// initialize filter
-  void Initialize(tf::Transform& prior, double time);
+  void Initialize(const tf::Transform& prior, const ros::Time& time);
 
 
   /// get filter posterior
-  void GetEstimate(MatrixWrapper::ColumnVector& estimate, double& time);
+  void GetEstimate(MatrixWrapper::ColumnVector& estimate, ros::Time& time);
 
   /// return if filter was initialized
   bool IsInitialized() {return _filter_initialized;};
@@ -95,8 +95,11 @@ private:
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
   tf::Transform _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
-  double _filter_time_old;
+  ros::Time _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
+
+  // tf transformer
+  tf::Transformer _transformer;
 
 }; // class
 

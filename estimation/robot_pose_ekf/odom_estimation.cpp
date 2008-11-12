@@ -39,6 +39,7 @@ using namespace MatrixWrapper;
 using namespace BFL;
 using namespace tf;
 using namespace std;
+using namespace ros;
 
 
 namespace estimation
@@ -126,7 +127,7 @@ namespace estimation
 
 
   // initialize prior density of filter with odom data
-  void odom_estimation::Initialize(Transform& prior, double time)
+  void odom_estimation::Initialize(const Transform& prior, const Time& time)
   {
     // set prior of filter to odom data
     ColumnVector prior_Mu(6); 
@@ -156,18 +157,20 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation::Update(Transform& odom_meas, double odom_time, bool odom_active,
-			       Transform& imu_meas,  double imu_time,  bool imu_active,
-			       Transform& vo_meas,   double vo_time,   bool vo_active, double filter_time)
+  void odom_estimation::Update(const Transform& odom_meas, const Time& odom_time, bool odom_active,
+			       const Transform& imu_meas,  const Time& imu_time,  bool imu_active,
+			       const Transform& vo_meas,   const Time& vo_time,   bool vo_active, const Time&  filter_time)
   {
     if (_filter_initialized){
       // system update filter
       ColumnVector vel_desi(2); vel_desi = 0;
-      _filter->Update(_sys_model, vel_desi * (filter_time - _filter_time_old));
+      _filter->Update(_sys_model, vel_desi);
       
 
       // process odom measurement
       if (_odom_initialized && odom_active){
+	// store odom meas in transformer
+	_transformer.setTransform( Stamped<Transform>(odom_meas, odom_time, "odom", "base") );
 	// convert absolute odom measurements to relative odom measurements
 	Transform odom_rel_frame =  _filter_estimate_old * _odom_meas_old.inverse() * odom_meas;
 	ColumnVector odom_rel(3);
@@ -219,7 +222,7 @@ namespace estimation
 
 
   // get filter posterior as vector
-  void odom_estimation::GetEstimate(ColumnVector& estimate, double& time)
+  void odom_estimation::GetEstimate(ColumnVector& estimate, Time& time)
   {
     estimate = _filter->PostGet()->ExpectedValueGet();
     time = _filter_time_old;
