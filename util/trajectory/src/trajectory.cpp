@@ -98,6 +98,7 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
     for(int j=0; j<dimension_; j++)
     {
       tp_[i].q_[j] = p[i*dimension_+j];
+      tp_[i].qdot_[j] = 0.0;
     }
 
   }
@@ -550,11 +551,12 @@ double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
+    ROS_INFO("Min time: %f",minJointTime);
+
     if(minTime < minJointTime)
       minTime = minJointTime;
 
   }
-
   return minTime;
 }
 
@@ -562,16 +564,22 @@ double Trajectory::calculateMinTimeCubic(double q0, double q1, double v0, double
 {
   double t1(MAX_ALLOWABLE_TIME), t2(MAX_ALLOWABLE_TIME), result(MAX_ALLOWABLE_TIME);
   double dq = q1 - q0;
-  double a = 3*(v0+v1)*vmax - 3* (v0+v1)*v0 + pow((2*v0+v1),2);
-  double b = -6*dq*vmax + 6 * v0 *dq - 6*dq*(2*v0+v1);
-  double c = 9 * pow(dq,2);
+  double v(0.0);
+  if(dq > 0)
+     v = vmax;
+  else
+     v = -vmax;
+
+  double a = 3.0*(v0+v1)*v - 3.0* (v0+v1)*v0 + pow((2.0*v0+v1),2.0);
+  double b = -6.0*dq*v + 6.0 * v0 *dq - 6.0*dq*(2.0*v0+v1);
+  double c = 9.0 * pow(dq,2);
 
   if (fabs(a) > EPS_TRAJECTORY)
   {
-    if((pow(b,2)-4*a*c) >= 0)
+    if((pow(b,2)-4.0*a*c) >= 0)
     {
-      t1 = (-b + sqrt(pow(b,2)-4*a*c))/(2*a);
-      t2 = (-b - sqrt(pow(b,2)-4*a*c))/(2*a);
+      t1 = (-b + sqrt(pow(b,2)-4.0*a*c))/(2.0*a);
+      t2 = (-b - sqrt(pow(b,2)-4.0*a*c))/(2.0*a);
     }
   }
   else
@@ -844,6 +852,7 @@ int Trajectory::write(std::string filename, double dT)
     }
     fprintf(f,"\n");
     time += dT;
+//    printf("%f \n",time);
   }
   fclose(f);
   return 1;
