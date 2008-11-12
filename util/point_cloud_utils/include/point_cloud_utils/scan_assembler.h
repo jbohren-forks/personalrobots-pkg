@@ -40,7 +40,6 @@
 // Messages
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloud.h"
-#include "std_msgs/PointCloudFloat32.h"         // Deprecated: For backwards compatibility
 
 namespace point_cloud_utils {
 
@@ -78,13 +77,6 @@ public:
    */
   void getPointCloud(std_msgs::PointCloud& cloud) const ;
 
-  /**
-   * \brief ***DEPRECATED*** Retrieves the current assembled point cloud in the old point cloud format
-   * The timestamp on the cloud is the timestamp of the last scan that was added
-   * \param cloud Point Cloud to populate
-   */
-  void getPointCloudFloat32(std_msgs::PointCloudFloat32& cloud) const ;
-  
 private:
   tf::TransformListener tf_ ;
   std_msgs::PointCloud cloud_ ;
