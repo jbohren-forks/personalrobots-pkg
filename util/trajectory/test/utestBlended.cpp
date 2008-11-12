@@ -24,15 +24,18 @@ TEST(Trajectory, samplingAfterInstantiationWithoutTimeBlendedLinear){
   for(int i=0; i< 8; i++)
     a[i] = (double) i;
 
+  t.setTrajectory(a,4);
+  t.sample(b,1.5);
+  t.write(std::string("junk.txt"),0.01);
+
   a[2] = -1; 
   a[4] = -2;
   a[6] = -3;
 
   t.setTrajectory(a,4);
-
   t.sample(b,1.5);
+  t.write(std::string("junk2.txt"),0.01);
 
-  t.write(std::string("junk.txt"),0.01);
 }
 
 

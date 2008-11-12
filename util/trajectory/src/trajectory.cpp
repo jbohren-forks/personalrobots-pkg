@@ -73,6 +73,11 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
   {
     tp_[i].setDimension(dimension_);
     tp_[i] = tp[i];
+    ROS_INFO("Input point: %d is ",i);
+    for(int j=0; j < dimension_; j++)
+      ROS_INFO("%f ",tp_[i].q_[j]);
+
+    ROS_INFO(" ");
   }
 
   parameterize();
@@ -100,6 +105,12 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
       tp_[i].q_[j] = p[i*dimension_+j];
       tp_[i].qdot_[j] = 0.0;
     }
+
+    ROS_INFO("Input point: %d is ",i);
+    for(int j=0; j < dimension_; j++)
+      ROS_INFO("%f ",tp_[i].q_[j]);
+
+    ROS_INFO(" ");
 
   }
   parameterize();
@@ -304,6 +315,8 @@ int Trajectory::minimizeSegmentTimesWithLinearInterpolation()
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
 
+  tc_.clear();
+
   if(max_rate_.empty() || (int) max_rate_.size() < 0)
   {
     ROS_WARN("Trying to apply rate limits without setting max rate information. Use setMaxRate first");
@@ -340,6 +353,8 @@ int Trajectory::minimizeSegmentTimesWithCubicInterpolation()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+
+  tc_.clear();
 
     if(max_rate_.empty() || (int) max_rate_.size() < 1)
     {
@@ -380,6 +395,8 @@ int Trajectory::minimizeSegmentTimesWithBlendedLinearInterpolation()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+
+  tc_.clear();
 
     if(max_rate_.empty() || (int) max_rate_.size() != dimension_ || max_acc_.empty() || (int) max_acc_.size() != dimension_)
     {
@@ -668,6 +685,7 @@ int Trajectory::parameterizeLinear()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
@@ -726,6 +744,7 @@ int Trajectory::parameterizeCubic()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
@@ -780,6 +799,7 @@ int Trajectory::parameterizeBlendedLinear()
 
   tc.degree_ = 1;
   tc.dimension_ = dimension_;
+  tc_.clear();
 
   if(autocalc_timing_)
   {
