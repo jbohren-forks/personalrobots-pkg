@@ -261,7 +261,7 @@ StageNode::Update()
   Stg::stg_pose_t lp = this->lasermodel->GetPose();
   tf.sendTransform(tf::Stamped<tf::Transform> 
                    (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
-                                  tf::Point(lp.x, lp.y, 0.0)),
+                                  tf::Point(lp.x, lp.y, 0.15)),
                     sim_time, "base_laser", "base"));
 
   // Get latest odometry data
