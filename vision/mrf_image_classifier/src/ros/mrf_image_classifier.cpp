@@ -46,7 +46,8 @@ public:
   void processFrame() {
     if (bridgeIn == NULL)
       bridgeIn = new CvBridge<std_msgs::Image>
-	(&images.images[1],
+	// FIXME: should this be 0 or 1?
+	(&images.images[0],
 	 CvBridge<std_msgs::Image>::CORRECT_BGR | 
 	 CvBridge<std_msgs::Image>::MAXDEPTH_8U
 	 );

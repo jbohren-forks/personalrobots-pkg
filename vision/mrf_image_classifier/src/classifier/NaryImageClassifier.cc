@@ -17,7 +17,7 @@ using namespace boost::lambda;
 
 using namespace std;
 
-#define N_TRAINING_THREADS 8
+#define N_TRAINING_THREADS 4
 
 class TrainingThreadSyncData {
 public:
@@ -98,7 +98,7 @@ public:
 
       cerr << "Spawned children" << endl;
 
-      // run the classifier at this node
+      // train the classifier at this node
       { 
 	boost::mutex::scoped_lock lock(syncData->ioMutex);
 	cout << "Training node with scope... ";

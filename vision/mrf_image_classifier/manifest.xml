@@ -12,7 +12,7 @@
   <depend package="opencv"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>
-  <depend package="boost"/>
+<!--  <depend package="boost"/> -->
   <export>
     <!-- FIXME: move everything under src to a subdir -->
     <!-- FIXME: broken boost dependency! -->

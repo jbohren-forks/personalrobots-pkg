@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(mrf_image_classifier)
 
-include_directories(src)
+include_directories(src /opt/boost/include/boost-1_35)
 
 # FIXME: build unit tests
 

@@ -135,6 +135,12 @@ public:
   const Dvec* getWeightVector() const { return wvec; }
 
   /**
+     @return The best objective so far
+     @param vec Output argument for best solution found so far
+   */
+  double getBestSolution(Dvec& vec) const { return subgOpt->bestSolution(vec); }
+
+  /**
      @param A logger to be set
    */
   void setLogger(ThreadSafeLogger* logger);

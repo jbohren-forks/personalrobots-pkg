@@ -68,6 +68,7 @@ public:
     if (scnode.compare("cnode") != 0)
       throw DeserializationError();
 
+    /// @fixme also save best weight vector
     Dvec* wvec = DvecUtils::deserialize(istr);
     ObjectSet scope(istr);
 

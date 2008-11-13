@@ -16,7 +16,7 @@
 #define SP_MIN_SIZE 25
 
 /* image width is rescaled to this before finding superpixels */
-#define SUPERPIX_RESCALE_X 160
+#define SUPERPIX_RESCALE_X 320
 
 using namespace std;
 
