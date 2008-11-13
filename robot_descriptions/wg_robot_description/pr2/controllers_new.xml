@@ -138,8 +138,7 @@
   <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
     <joint name="left_gripper_l_finger_joint">
-      <pid p="0.001" d="0.00" i="0.00" iClamp="0.00" />
-      <gripper_defaults effortLimit="10" velocityLimit="10" />
+      <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
     </joint>
   </controller>
   <!-- ========================================= -->
@@ -191,8 +190,7 @@
   <!-- Special gripper joint -->
   <controller name="gripper_right_controller" topic="gripper_right_controller" type="JointPositionControllerNode">
     <joint name="right_gripper_l_finger_joint">
-      <pid p="0.001" d="0.00" i="0.00" iClamp="0.00" />
-      <gripper_defaults effortLimit="10" velocityLimit="10" />
+      <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
     </joint>
   </controller>
   <!-- head and above array -->

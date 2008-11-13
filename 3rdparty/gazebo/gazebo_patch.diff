@@ -722,6 +722,30 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7049)
++++ server/physics/Joint.hh	(working copy)
+@@ -162,6 +162,19 @@
+     private: ParamT<std::string> *anchorBodyNameP;
+     private: ParamT<Vector3> *anchorOffsetP;
+     private: ParamT<bool> *provideFeedbackP;
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
+ 
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7049)
@@ -847,6 +871,116 @@ Index: server/physics/ode/ODEPhysics.cc
  
          contact.surface.mu = MIN(geom1->contact->mu1, geom2->contact->mu1);
          contact.surface.mu2 = MIN(geom1->contact->mu2, geom2->contact->mu2);
+Index: server/physics/Joint.cc
+===================================================================
+--- server/physics/Joint.cc	(revision 7049)
++++ server/physics/Joint.cc	(working copy)
+@@ -30,6 +30,7 @@
+ #include "Model.hh"
+ #include "World.hh"
+ #include "Joint.hh"
++#include "HingeJoint.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -41,6 +42,9 @@
+   this->visual = NULL;
+   this->model = NULL;
+ 
++  this->enableMimic = false;
++  this->mimicJoint = NULL;
++
+   Param::Begin(&this->parameters);
+   this->erpP = new ParamT<double>("erp",0.4,0);
+   this->cfmP = new ParamT<double>("cfm",10e-3,0);
+@@ -50,6 +54,12 @@
+   this->anchorBodyNameP = new ParamT<std::string>("anchor",std::string(),0);
+   this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0), 0);
+   this->provideFeedbackP = new ParamT<bool>("provideFeedback", false, 0);
++  this->mimicJointP = new ParamT<std::string>("mimicJoint", std::string(), 0);
++  this->mimicMultP = new ParamT<double>("mimicMult", 1.0, 0);
++  this->mimicOffsetP = new ParamT<double>("mimicOffset", 0.0, 0);
++  this->mimicKpP = new ParamT<double>("mimicKp", 10.0, 0);
++  this->mimicKdP = new ParamT<double>("mimicKd", 0.0, 0);
++  this->mimicFMaxP = new ParamT<double>("mimicFMax", 1000.0, 0);
+   Param::End();
+ }
+ 
+@@ -67,6 +77,12 @@
+   delete this->anchorBodyNameP;
+   delete this->anchorOffsetP;
+   delete this->provideFeedbackP;
++  delete this->mimicJointP;
++  delete this->mimicMultP;
++  delete this->mimicOffsetP;
++  delete this->mimicKpP;
++  delete this->mimicKdP;
++  delete this->mimicFMaxP;
+ }
+ 
+ 
+@@ -92,6 +108,12 @@
+   this->cfmP->Load(node);
+   this->suspensionCfmP->Load(node);
+   this->provideFeedbackP->Load(node);
++  this->mimicJointP->Load(node);
++  this->mimicMultP->Load(node);
++  this->mimicOffsetP->Load(node);
++  this->mimicKpP->Load(node);
++  this->mimicKdP->Load(node);
++  this->mimicFMaxP->Load(node);
+ 
+   Body *body1 = this->model->GetBody( **(this->body1NameP));
+   Body *body2 = this->model->GetBody(**(this->body2NameP));
+@@ -144,6 +166,22 @@
+   {
+     this->SetAnchor(anchorVec);
+   }
++
++  // Check mimic option
++  this->mimicJoint = this->model->GetJoint( **(this->mimicJointP));
++  if (this->mimicJoint != NULL && this->mimicJoint != this)
++  {
++    // enforce constraint
++    this->enableMimic = true;
++    this->mimicMult   = this->mimicMultP->GetValue();
++    this->mimicOffset = this->mimicOffsetP->GetValue();
++    this->mimicKp     = this->mimicKpP->GetValue();
++    this->mimicKd     = this->mimicKdP->GetValue();
++    this->mimicFMax   = this->mimicFMaxP->GetValue();
++    std::cout << this->nameP->GetValue() << " this joint will mimic joint " << this->mimicJointP->GetValue() << std::endl;
++    if (this->type == Joint::HINGE)
++      this->SetParam(dParamFMax, this->mimicFMax);
++  }
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -181,6 +219,17 @@
+ /// Update the joint
+ void Joint::Update()
+ {
++  // enforce mimic
++  // only enforce constraint for same type hinge joints
++  if (this->enableMimic           == true         &&
++      this->mimicJoint->GetType() == Joint::HINGE &&
++      this->type                  == Joint::HINGE )
++  {
++    double error = (this->mimicMult*(((HingeJoint*)(this->mimicJoint))->GetAngle()) - this->mimicOffset - ((HingeJoint*)this)->GetAngle());
++    //std::cout << this->nameP->GetValue() << " error " << error << " " << this->mimicOffset << " " << this->mimicMult << std::endl;
++    this->SetParam(dParamVel, this->mimicKp*error);
++  }
++
+ //TODO: Evaluate impact of this code on performance
+   this->visual->SetVisible(World::Instance()->GetShowJoints());
+ 
+@@ -203,6 +252,7 @@
+     this->line2->SetPoint(0, start);
+     this->line2->Update();
+   }
++
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
 Index: server/physics/TrimeshGeom.cc
 ===================================================================
 --- server/physics/TrimeshGeom.cc	(revision 7049)

@@ -5,6 +5,7 @@
 
   <property name="shoulder_pitch_length" value="0.10" />
   <property name="shoulder_pitch_radius" value="0.12" />
+  <property name="gripper_max_angle" value="0.8" />
 
 
   <macro name="pr2_finger" params="prefix side parent reflect mimic_finger">
@@ -14,12 +15,17 @@
     <joint name="${prefix}_${side}_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${((reflect-1)/2)*0.8}" max="${((reflect+1)/2)*0.8}" />
+      <limit effort="100" velocity="1000" min="${((reflect-1)/2)*gripper_max_angle}" max="${((reflect+1)/2)*gripper_max_angle}" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <joint_properties damping="0.1" />
       <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${reflect}" offset="0"/>
+      <map name="${prefix}_${side}_finger_mimic" flag="gazebo">
+        <elem key="mimicKp">1000.0</elem>
+        <elem key="mimicKd"> 0.0</elem>
+        <elem key="mimicFMax">10000.0</elem>
+      </map>
     </joint>
 
     <link name="${prefix}_${side}_finger">
@@ -61,12 +67,17 @@
     <joint name="${prefix}_${side}_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${((-reflect-1)/2)*0.8}" max="${((-reflect+1)/2)*0.8}" />
+      <limit effort="100" velocity="1000" min="${((-reflect-1)/2)*gripper_max_angle}" max="${((-reflect+1)/2)*gripper_max_angle}" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <joint_properties damping="0.1" />
       <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${-reflect}" offset="0"/>
+      <map name="${prefix}_${side}_finger_tip_mimic" flag="gazebo">
+        <elem key="mimicKp">1000.0</elem>
+        <elem key="mimicKd"> 0.0</elem>
+        <elem key="mimicFMax">10000.0</elem>
+      </map>
     </joint>
 
     <link name="${prefix}_${side}_finger_tip">
