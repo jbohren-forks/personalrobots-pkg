@@ -46,14 +46,17 @@
 
 namespace tf
 {
-  /** \brief An internal representation of transform chains
-   * 
-   * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
-  typedef struct 
-  {
-    std::vector<Stamped<btTransform> > inverseTransforms;
-    std::vector<Stamped<btTransform> > forwardTransforms;
-  } TransformLists;
+
+enum ErrorValues { NO_ERROR = 0, LOOKUP_ERROR, CONNECTIVITY_ERROR, EXTRAPOLATION_ERROR};
+
+/** \brief An internal representation of transform chains
+ * 
+ * This struct is how the list of transforms are stored before being passed to computeTransformFromList. */
+typedef struct 
+{
+  std::vector<TransformStorage > inverseTransforms;
+  std::vector<TransformStorage > forwardTransforms;
+} TransformLists;
 
 /** \brief A Class which provides coordinate transforms between any two frames in a system. 
  * 
@@ -251,7 +254,9 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  TransformLists  lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame);
+  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string& error_string);
+
+  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string & error_string);
   
   /** Compute the transform based on the list of frames */
   btTransform computeTransformFromList(const TransformLists & list);

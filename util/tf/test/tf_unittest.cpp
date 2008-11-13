@@ -673,9 +673,9 @@ TEST(tf, TransformThrougRoot)
     yvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
     zvalues[i] = 10.0 * ((double) rand() - (double)RAND_MAX /2.0) /(double)RAND_MAX;
 
-    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)10 + i, "childA",  "my_parent");
+    Stamped<btTransform> tranStamped(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)1000 + i*100, "childA",  "my_parent");
     mTR.setTransform(tranStamped);
-    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)10 + i, "childB",  "my_parent");
+    Stamped<btTransform> tranStamped2(btTransform(btQuaternion(0,0,0), btVector3(xvalues[i],yvalues[i],zvalues[i])), (uint64_t)1000 + i*100, "childB",  "my_parent");
     mTR.setTransform(tranStamped2);
   }
 
@@ -685,7 +685,7 @@ TEST(tf, TransformThrougRoot)
   for ( unsigned int i = 0; i < runs ; i++ )
 
   {
-    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), (uint64_t)10 + i, "childA");
+    Stamped<btTransform> inpose (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), (uint64_t)1000 + i*100, "childA");
 
     try{
     Stamped<btTransform> outpose;
@@ -834,6 +834,195 @@ TEST(tf, NO_PARENT_SET)
   EXPECT_NEAR(outpose.getOrigin().z(), 0, epsilon);
   
 }
+
+TEST(tf, Exceptions)
+{
+
+ tf::Transformer mTR(true);
+
+ 
+ Stamped<btTransform> outpose;
+
+ //connectivity when no data
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10000000ULL , "me"), outpose);
+   EXPECT_FALSE("ConnectivityException Not Thrown");   
+ }
+ catch ( tf::ConnectivityException &ex)
+ {
+   EXPECT_TRUE("Connectivity Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ 
+
+ mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 100000ULL , "me",  "parent"));
+
+ //Extrapolation not valid with one value??
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ 
+
+ mTR.setTransform( Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 300000ULL , "me",  "parent"));
+
+ //NO Extration when Interpolating
+ //inverse list
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_FALSE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+
+ //forward list
+ try 
+ {
+   mTR.transformPose("me",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "parent"), outpose);
+   EXPECT_TRUE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_FALSE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+ //Extrapolating backwards
+ //inverse list
+ try 
+ {
+   mTR.transformPose("parent",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "me"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+ //forwards list
+ try 
+ {
+   mTR.transformPose("me",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "parent"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+
+ // Test extrapolation inverse and forward linkages FORWARD
+
+ //inverse list
+ try 
+ {
+   mTR.transformPose("parent", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "me"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+
+ //forward list
+ try 
+ {
+   mTR.transformPose("me", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "parent"), outpose);
+   EXPECT_FALSE("ExtrapolationException Not Thrown");
+ }
+ catch ( tf::ExtrapolationException &ex)
+ {
+   EXPECT_TRUE("Extrapolation Exception Caught");
+ }
+ catch (tf::TransformException& ex)
+ {
+   printf("%s\n",ex.what());
+   EXPECT_FALSE("Other Exception Caught");
+ }
+  
+
+
+
+}
+
+
+
+TEST(tf, NoExtrapolationExceptionFromParent)
+{
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
+  
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "a",  "parent"));
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "b",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "b",  "parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent's parent",  "parent's parent's parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent",  "parent's parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent's parent",  "parent's parent's parent"));
+
+  Stamped<Point> output;
+
+  try
+  {
+    mTR.transformPoint( "b", Stamped<Point>(Point(1,1,1), ros::Time(2000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    EXPECT_FALSE("Shouldn't have gotten this exception");
+  }
+
+
+
+};
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

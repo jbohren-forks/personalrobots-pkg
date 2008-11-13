@@ -38,7 +38,7 @@ TEST(tf, NoExtrapolationExceptionFromParent)
 
   try
   {
-    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(20000ULL), "a"), output);
+    mTR.transformPoint( "b", Stamped<Point>(Point(1,1,1), ros::Time(2000ULL), "a"), output);
   }
   catch (ExtrapolationException &ex)
   {
@@ -68,7 +68,7 @@ TEST(tf, ExtrapolationFromOneValue)
   bool excepted = false;
   try
   {
-    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(100000ULL), "a"), output);
   }
   catch (ExtrapolationException &ex)
   {
