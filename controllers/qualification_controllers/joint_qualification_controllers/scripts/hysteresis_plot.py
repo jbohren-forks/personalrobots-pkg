@@ -66,7 +66,9 @@ class App(wx.App):
   def OnData(self,msg):
     print 'Got data named %s' % (msg.name)
     self.data_dict[msg.name] = msg.vals
-    self.Plot()
+    print self.count
+    if self.count > 3:
+      self.Plot()
     
   def Plot(self):
     print "plotting"
@@ -88,7 +90,7 @@ class App(wx.App):
     axes2.set_ylabel('Velocity')
     
     self.plot.draw()
-    self.data_topic.unregister()
+    
     
 if __name__ == "__main__":
   try:
@@ -96,5 +98,5 @@ if __name__ == "__main__":
     app.MainLoop()
   except Exception, e:
     print e
-    
+  self.data_topic.unregister()
   print 'quit'

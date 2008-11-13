@@ -42,18 +42,19 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(SineSweepController)
 
 SineSweepController::SineSweepController():
-joint_state_(NULL), robot_(NULL), publisher_("/diagnostics", 1), data_publisher_("/sinesweep_data", 5)
+joint_state_(NULL), robot_(NULL)
 {
-  test_effort_.set_vals_size(80000);
-  test_velocity_.set_vals_size(80000);
-  test_cmd_.set_vals_size(80000);
-  test_position_.set_vals_size(80000);
-  test_time_.set_vals_size(80000);
-  test_effort_.name="effort";
-  test_velocity_.name="velocity";
-  test_cmd_.name="cmd";
-  test_position_.name="position";
-  test_time_.name="time";
+  test_data_.test_name ="sinesweep";
+  test_data_.time.reserve(80000);
+  test_data_.cmd.reserve(80000);
+  test_data_.effort.reserve(80000);
+  test_data_.position.reserve(80000);
+  test_data_.velocity.reserve(80000);
+  test_data_.arg_name.reserve(3);
+  test_data_.arg_name[0]="first_mode";
+  test_data_.arg_name[1]="second_mode";
+  test_data_.arg_name[2]="error_tolerance";
+  test_data_.arg_value.reserve(3);
   sweep_=NULL;
   duration_ =0.0;
   initial_time_=0;
@@ -65,13 +66,17 @@ SineSweepController::~SineSweepController()
 {
 }
 
-void SineSweepController::init(double start_freq, double end_freq, double duration, double amplitude, double time,std::string name,mechanism::RobotState *robot)
+void SineSweepController::init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot)
 {
+  assert(robot);
   robot_ = robot;
   joint_state_ = robot->getJointState(name);
   sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
   
+  test_data_.arg_value[0]=first_mode;
+  test_data_.arg_value[1]=second_mode;
+  test_data_.arg_value[2]=error_tolerance;
   duration_ = duration;     //in seconds
   initial_time_=time;       //in seconds
 
@@ -87,7 +92,10 @@ bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *co
     double end_freq = atof(jnt->FirstChildElement("controller_defaults")->Attribute("end_freq"));
     double amplitude = atof(jnt->FirstChildElement("controller_defaults")->Attribute("amplitude"));
     double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
-    init(start_freq,  end_freq, duration, amplitude,robot->hw_->current_time_,jnt->Attribute("name"), robot);
+    double first_mode = atof(jnt->Attribute("first_mode"));
+    double second_mode = atof(jnt->Attribute("second_mode"));
+    double error_tolerance = atof(jnt->Attribute("error_tolerance")); 
+    init(start_freq,  end_freq, duration, amplitude, first_mode, second_mode, error_tolerance, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
   return true;
 }
@@ -97,11 +105,11 @@ void SineSweepController::update()
   double time = robot_->hw_->current_time_;
   if (count_<80000)
   { 
-    test_effort_.vals[count_] = joint_state_->applied_effort_;
-    test_velocity_.vals[count_] =joint_state_->velocity_;
-    test_position_.vals[count_] =joint_state_->position_;
-    test_time_.vals[count_] = time;
-    test_cmd_.vals[count_] = joint_state_->commanded_effort_;
+    test_data_.time[count_]=time;
+    test_data_.cmd[count_]=joint_state_->commanded_effort_;
+    test_data_.effort[count_]=joint_state_->applied_effort_;
+    test_data_.position[count_]=joint_state_->position_;
+    test_data_.velocity[count_]=joint_state_->velocity_;
     count_++;
   }
   
@@ -129,20 +137,20 @@ void SineSweepController::analysis()
 
   status->name = "SineSweepTest";
 
-  //test passed
+  //test done
   status->level = 0;
   status->message = "OK: Done.";
-
+  test_data_.time.resize(count_);
+  test_data_.cmd.resize(count_);
+  test_data_.effort.resize(count_);
+  test_data_.position.resize(count_);
+  test_data_.velocity.resize(count_);
+  
   ros::node* node;
-
   if ((node = ros::node::instance()) != NULL)
   {
-    node->publish("/sinesweep_data", test_effort_);
-    node->publish("/sinesweep_data", test_velocity_);
-    node->publish("/sinesweep_data", test_position_);
-    node->publish("/sinesweep_data", test_time_);
-    node->publish("/sinesweep_data", test_cmd_);
-    //node->publish("/diagnostics", diagnostic_message_);
+    node->publish("/test_data", test_data_);
+    node->publish("/diagnostics", diagnostic_message_);
   }
 
   //publisher_.publish(diagnostic_message_);
@@ -169,9 +177,8 @@ void SineSweepControllerNode::update()
 
 bool SineSweepControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  string prefix = config->Attribute("name");
-
-  c_->initXml(robot, config);
+  if (!c_->initXml(robot, config))
+    return false;
 
   return true;
 }

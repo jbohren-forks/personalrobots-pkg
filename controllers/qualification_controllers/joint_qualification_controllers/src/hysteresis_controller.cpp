@@ -39,18 +39,19 @@ using namespace controller;
 ROS_REGISTER_CONTROLLER(HysteresisController)
 
 HysteresisController::HysteresisController():
-  joint_(NULL), robot_(NULL), publisher_("/diagnostics", 1),data_publisher_("/hysteresis_data", 5)
+  joint_(NULL), robot_(NULL)
 {
-  test_effort_.set_vals_size(80000);
-  test_velocity_.set_vals_size(80000);
-  test_cmd_.set_vals_size(80000);
-  test_position_.set_vals_size(80000);
-  test_time_.set_vals_size(80000);
-  test_effort_.name="effort";
-  test_velocity_.name="velocity";
-  test_cmd_.name="cmd";
-  test_position_.name="position";
-  test_time_.name="time";
+  test_data_.test_name ="hysteresis";
+  test_data_.time.reserve(80000);
+  test_data_.cmd.reserve(80000);
+  test_data_.effort.reserve(80000);
+  test_data_.position.reserve(80000);
+  test_data_.velocity.reserve(80000);
+  test_data_.arg_name.reserve(3);
+  test_data_.arg_name[0]="expected_effort";
+  test_data_.arg_name[1]="min_pos";
+  test_data_.arg_name[2]="max_pos";
+  test_data_.arg_value.reserve(3);
   state = STOPPED;
   starting_count = 0;
   velocity_=0;
@@ -66,12 +67,17 @@ HysteresisController::~HysteresisController()
 {
 }
 
-void HysteresisController::init( double velocity, double max_effort, double time, std::string name ,mechanism::RobotState *robot)
+void HysteresisController::init( double velocity, double max_effort, double expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot)
 {
+  assert(robot);
   robot_ = robot;
   joint_ = robot->getJointState(name);
 
   //printf("velocity: %f\n",velocity);
+  test_data_.arg_value[0]=expected_effort;
+  test_data_.arg_value[1]=min_pos;
+  test_data_.arg_value[2]=max_pos;
+  
   velocity_=velocity;
   max_effort_=max_effort;
   initial_time_=time;
@@ -105,7 +111,10 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
   {
     double velocity = atof(cd->Attribute("velocity"));
     double max_effort = atof(cd->Attribute("max_effort"));
-    init(velocity, max_effort, robot->hw_->current_time_,j->Attribute("name"), robot);
+    double expected_effort = atof(cd->Attribute("expected_effort"));
+    double min_pos = atof(cd->Attribute("min_pos"));
+    double max_pos = atof(cd->Attribute("max_pos")); 
+    init(velocity, max_effort, expected_effort, min_pos, max_pos, robot->hw_->current_time_,j->Attribute("name"), robot);
   }
   else
   {
@@ -119,15 +128,16 @@ void HysteresisController::update()
   double time = robot_->hw_->current_time_;
   velocity_controller_->update();
 
-  if (state == STOPPED || state == STARTING || state == MOVING || count_<80000)
-  { 
-    test_effort_.vals[count_] = joint_->applied_effort_;
-    test_velocity_.vals[count_] =joint_->velocity_;
-    test_position_.vals[count_] =joint_->position_;
-    test_time_.vals[count_] = time;
-    double temp;
-    velocity_controller_->getCommand(temp);
-    test_cmd_.vals[count_] = temp;
+  if (state == STOPPED || state == STARTING || state == MOVING || count_<80000 && loop_count_>0)
+  {
+    double cmd;
+    velocity_controller_->getCommand(cmd);
+    
+    test_data_.time[count_]=time;
+    test_data_.cmd[count_]=cmd;
+    test_data_.effort[count_]=joint_->applied_effort_;
+    test_data_.position[count_]=joint_->position_;
+    test_data_.velocity[count_]=joint_->velocity_;
     count_++;
   }
 
@@ -153,6 +163,7 @@ void HysteresisController::update()
         state = STOPPED;
       else
         state = ANALYZING;
+        
     }
     break;
   case ANALYZING:
@@ -170,28 +181,25 @@ void HysteresisController::update()
 void HysteresisController::analysis()
 {
   diagnostic_message_.set_status_size(1);
-
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "HysteresisTest";
 
-  //test passed
+  //test done
   status->level = 0;
   status->message = "OK: Done.";
-
+  test_data_.time.resize(count_);
+  test_data_.cmd.resize(count_);
+  test_data_.effort.resize(count_);
+  test_data_.position.resize(count_);
+  test_data_.velocity.resize(count_);
+  
   ros::node* node;
-
   if ((node = ros::node::instance()) != NULL)
   {
-    node->publish("/hysteresis_data", test_effort_);
-    node->publish("/hysteresis_data", test_velocity_);
-    node->publish("/hysteresis_data", test_position_);
-    node->publish("/hysteresis_data", test_time_);
-    node->publish("/hysteresis_data", test_cmd_);
-    //node->publish("/diagnostics", diagnostic_message_);
+    node->publish("/test_data", test_data_);
+    node->publish("/diagnostics", diagnostic_message_);
   }
-
-  //publisher_.publish(diagnostic_message_);
   return;
 }
 
@@ -213,13 +221,6 @@ void HysteresisControllerNode::update()
 
 bool HysteresisControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "")
-  {
-    fprintf(stderr, "No topic given to HysteresisControllerNode\n");
-    return false;
-  }
-  // Advertise topics
   if (!c_->initXml(robot, config))
     return false;
   return true;

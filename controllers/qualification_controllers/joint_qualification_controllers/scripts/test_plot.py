@@ -52,12 +52,10 @@ import rospy
 
 class App(wx.App):
   def OnInit(self):
-    rospy.ready("SineSweep", anonymous=True)
-    self.data_dict = {}
-    self.count =0
-    self.data_topic = rospy.TopicSub("/sinesweep_data", ChannelFloat32, self.OnData)
+    rospy.ready("TestPlotter", anonymous=True)
+    self.data_topic = rospy.TopicSub("/test_data", TestData, self.OnData)
     # Configure the plot panel
-    self.plot = wxmpl.PlotApp('Sine Sweep Plot')
+    self.plot = wxmpl.PlotApp('Test Plot')
 
     self.plot.set_crosshairs(True)
     self.plot.set_selection(True)
@@ -65,15 +63,48 @@ class App(wx.App):
     return True
     
   def OnData(self,msg):
-    print 'Got data named %s' % (msg.name)
-    self.data_dict[msg.name] = msg.vals
-    self.count=self.count+1
-    print self.count
-    if self.count > 3:
-      self.Plot()
+    print 'Got data named %s' % (msg.test_name)
+    self.data = msg
+    if self.data.test_name="hysteresis":
+      self.HysteresisPlot()
+    elif self.data.test_name="sinesweep":
+      self.SineSweepPlot()
+    else
+      print 'this test message cannot be analyzed'
+      
+  def HysteresisPlot(self):
+    print "plotting hysteresis"
+    self.plot = wxmpl.PlotApp('Hysteresis Plot')
+    # Plot the values and line of best fit
+    fig=self.plot.get_figure()
+    axes1 = fig.add_subplot(211)
+    axes1.clear()
+    axes2 = fig.add_subplot(212)
+    axes2.clear()
+    axes1.plot(numpy.array(self.data.position), numpy.array(self.data.effort), 'r--')
+    #encodermin=min(numpy.array(self.data.position))
+    #encodermax=max(numpy.array(self.data.position))
+    #indexmax = numpy.argmax(numpy.array(self.data.position))
+    #indexmin = numpy.argmin(numpy.array(self.data.position))
+    #end =numpy.array(self.data.position).size
+    #avg1 = numpy.average(numpy.array(self.data.effort)[indexmin:indexmax])
+    #avg2 = numpy.average(numpy.array(self.data.effort)[indexmax:end])
+    print end
+    print indexmax
+    axes1.axhline(y=avg1,color='b')
+    axes1.axhline(y=0,color='k')
+    axes1.axhline(y=avg2,color='g')
+    axes1.set_xlabel('Position')
+    axes1.set_ylabel('Effort')
+
+    axes2.plot(numpy.array(self.data.position), numpy.array(self.data.velocity), 'b--')
+    axes2.set_xlabel('Position')
+    axes2.set_ylabel('Velocity')
+    self.plot.draw()
     
-  def Plot(self):
-    print "plotting"
+  def SineSweepPlot(self):
+    print "plotting sinesweep"
+    self.plot = wxmpl.PlotApp('SineSweep Plot')
     # Plot the values and line of best fit
     fig=self.plot.get_figure()
     axes1 = fig.add_subplot(211)
@@ -81,21 +112,20 @@ class App(wx.App):
     axes2 = fig.add_subplot(212)
     axes2.clear()
     #axes1.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['effort']), 'r--')
-    axes1.psd(numpy.array(self.data_dict['effort']), NFFT=16384, Fs=1000, Fc=0, color='r')
-    axes1.psd(numpy.array(self.data_dict['position']), NFFT=16384, Fs=1000, Fc=0)
+    axes1.psd(numpy.array(self.data.effort), NFFT=16384, Fs=1000, Fc=0, color='r')
+    axes1.psd(numpy.array(self.data.position), NFFT=16384, Fs=1000, Fc=0)
     axes1.axis([0, 50, 0, -100])
 
     axes1.set_xlabel('Position PSD')
     #axes1.set_ylabel('Effort')
 
     #axes2.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['velocity']), 'b--')
-    pxx, f = axes2.psd(numpy.array(self.data_dict['velocity']), NFFT=16384, Fs=1000, Fc=0)
+    pxx, f = axes2.psd(numpy.array(self.data.velocity), NFFT=16384, Fs=1000, Fc=0)
     axes2.clear()
     axes2.plot(f,pxx)
     index = numpy.argmax(pxx)
     max_value=max(pxx)
 
-   
     axes2.plot([f[index]],[pxx[index]],'r.', markersize=10);
 
     axes2.axis([0, 50, 0, 1])
@@ -105,6 +135,7 @@ class App(wx.App):
     self.plot.draw()
 
     
+    
 if __name__ == "__main__":
   try:
     app = App(0)
@@ -112,5 +143,5 @@ if __name__ == "__main__":
   except Exception, e:
     print e
     
-  self.data_topic.unregister() 
+  self.data_topic.unregister()
   print 'quit'

@@ -44,7 +44,7 @@
 */
 /***************************************************/
 
-#include <std_msgs/ChannelFloat32.h>
+#include <robot_msgs/TestData.h>
 #include <ros/node.h>
 #include <math.h>
 #include <robot_msgs/DiagnosticMessage.h>
@@ -70,7 +70,7 @@ public:
    * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
    */
-  void init( double velocity, double max_effort, double time, std::string name ,mechanism::RobotState *robot);
+  void init( double velocity, double max_effort, double expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 
@@ -99,16 +99,9 @@ private:
   bool start;
   
 
-  misc_utils::RealtimePublisher<robot_msgs::DiagnosticMessage> publisher_;
-  misc_utils::RealtimePublisher<std_msgs::ChannelFloat32> data_publisher_;
-
   robot_msgs::DiagnosticMessage diagnostic_message_;
-
-  std_msgs::ChannelFloat32 test_effort_;
-  std_msgs::ChannelFloat32 test_velocity_;
-  std_msgs::ChannelFloat32 test_cmd_;
-  std_msgs::ChannelFloat32 test_position_;
-  std_msgs::ChannelFloat32 test_time_;
+  robot_msgs::TestData test_data_;
+ 
 
   int state;
   int starting_count;

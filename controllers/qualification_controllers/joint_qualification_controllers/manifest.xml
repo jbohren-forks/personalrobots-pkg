@@ -9,6 +9,7 @@
   <depend package="newmat10" />
   <depend package="misc_utils" />
   <depend package="robot_msgs" />
+
   <depend package="robot_mechanism_controllers" />
   <depend package="wxmpl" />
   <depend package="rospy" />
