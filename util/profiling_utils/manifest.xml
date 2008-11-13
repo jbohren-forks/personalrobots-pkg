@@ -8,6 +8,7 @@
   </description>
   <author>Ioan Sucan</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Brian)"/>
 
   <depend package="roscpp" />
 

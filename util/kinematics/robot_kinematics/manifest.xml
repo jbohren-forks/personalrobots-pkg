@@ -3,6 +3,7 @@
 </description>
 <author>Sachin Chitta sachinc@willowgarage.com, Advait Jain ajain@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="wg_robot_description_parser"/>
 <depend package="libTF"/>

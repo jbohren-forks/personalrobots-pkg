@@ -5,6 +5,7 @@
   </description>
   <author>Hai Nguyen, Advait Jain, Charlie Kemp, Cressel Anderson</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="numpy" />
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>

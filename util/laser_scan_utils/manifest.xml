@@ -6,6 +6,7 @@ Helper functions for manipulating Lasers Scans
 </description>
 <author>Tully Foote</author>
 <license>BSD</license>
+<review status="unreviewed" notes="API review in progress (Tully)"/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="std_msgs"/>

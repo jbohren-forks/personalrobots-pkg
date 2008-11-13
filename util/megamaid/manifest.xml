@@ -13,6 +13,7 @@
 
   </description>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <author>Morgan Quigley</author>
   <depend package="logging"/>
   <url>http://en.wikipedia.org/wiki/Spaceballs</url>

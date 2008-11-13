@@ -6,6 +6,7 @@ Library for doing kinematics and inverse kinematics for the PR2 robot
 </description>
 <author>Sachin Chitta</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="pr2Core"/>

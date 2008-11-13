@@ -6,6 +6,7 @@ General purpose trajectory library.
 </description>
 <author>Sachin Chitta</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="rosout"/>
 <depend package="roscpp"/>

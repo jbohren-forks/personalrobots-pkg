@@ -6,6 +6,7 @@
   </description>
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (John)"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmath_utils"/>
   </export>
