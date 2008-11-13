@@ -83,13 +83,18 @@ namespace estimation
   // update filter
   void odom_estimation_node::Update(const Time& time)
   {
+    // copy data
     _filter_mutex.lock();
+    Transform odom_meas = _odom_meas;
+    Transform imu_meas  = _imu_meas;
+    Transform vo_meas   = _vo_meas;
+    _filter_mutex.unlock();
 
     // update filter
     if ( _my_filter.IsInitialized() )  {
-      _my_filter.Update(_odom_meas, _odom_time, _odom_active, 
-			_imu_meas,  _imu_time,  _imu_active,
-			_vo_meas,   _vo_time,   _vo_active,  time);
+      _my_filter.Update(odom_meas, _odom_time, _odom_active, 
+			imu_meas,  _imu_time,  _imu_active,
+			vo_meas,   _vo_time,   _vo_active,  time);
       
       // write to file
       ColumnVector estimate; Time tm;
@@ -98,16 +103,15 @@ namespace estimation
 	_corr_file << estimate(i) << " ";
       _corr_file << tm << endl;
       
-      // --> convert estimate to output message
-      // TODO: PUT SOMETHING IN OUTPUT
+      // output estimate message
+      _my_filter.GetEstimate(_output);
       publish("odom_estimation", _output);
     }
 
     // initialize filer with odometry frame
     if ( _odom_active && !_my_filter.IsInitialized())
-      _my_filter.Initialize(_odom_meas, _odom_time);
+      _my_filter.Initialize(odom_meas, _odom_time);
 
-    _filter_mutex.unlock();
   };
 
 
@@ -126,7 +130,7 @@ namespace estimation
     // update filter
     this->Update(_odom_time);
 
-    // write to fil
+    // write to file
     double tmp, yaw;
     _odom_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
     _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << endl;
@@ -144,8 +148,7 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _imu_time = _imu.header.stamp;
-    _imu_meas = Transform( Quaternion(_imu.pos.orientation.x, _imu.pos.orientation.y,_imu.pos.orientation.z,_imu.pos.orientation.w),
-			   Vector3(0,0,0));
+    PoseMsgToTF(_imu.pos, _imu_meas);
     _filter_mutex.unlock();
 
     // write to file
@@ -166,8 +169,7 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _vo_time = _vo.header.stamp;
-    _vo_meas = Transform( Quaternion(_vo.pose.orientation.x, _vo.pose.orientation.y,_vo.pose.orientation.z,_vo.pose.orientation.w),
-			  Vector3(_vo.pose.position.x,_vo.pose.position.y,_vo.pose.position.z));
+    PoseMsgToTF(_vo.pose, _vo_meas);
     _filter_mutex.unlock();
 
     // activate vo

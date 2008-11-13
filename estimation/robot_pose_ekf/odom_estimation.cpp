@@ -168,33 +168,39 @@ namespace estimation
       
 
       // process odom measurement
-      if (_odom_initialized && odom_active){
-	// store odom meas in transformer
-	_transformer.setTransform( Stamped<Transform>(odom_meas, odom_time, "odom", "base") );
-	// convert absolute odom measurements to relative odom measurements
-	Transform odom_rel_frame =  _filter_estimate_old * _odom_meas_old.inverse() * odom_meas;
-	ColumnVector odom_rel(3);
-	odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
-	double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
-	AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
-	// update filter
-	_filter->Update(_odom_meas_model, odom_rel);
+      if (odom_active){
+	if (_odom_initialized){
+	  // store odom meas in transformer
+	  _transformer.setTransform( Stamped<Transform>(odom_meas, odom_time, "odom", "base") );
+	  // convert absolute odom measurements to relative odom measurements
+	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * odom_meas;
+	  ColumnVector odom_rel(3);
+	  odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
+	  double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
+	  AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
+	  // update filter
+	  _filter->Update(_odom_meas_model, odom_rel);
+	}
+	else _odom_initialized = true;
+	_odom_meas_old = odom_meas;
       }
-      if (odom_active){  _odom_meas_old = odom_meas;  _odom_initialized = true;}
 
 
       // process imu measurement
-      if (_imu_initialized && imu_active){
-	// convert absolute imu measurements to relative imu measurements
-	// NEED TO INTERPRET THE FIRST TWO ANGLED OF THE IMU AS ABSOLUTE ANGLES
-	Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * imu_meas;
-	ColumnVector imu_rel(3);
-	imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), imu_rel(2), imu_rel(1));
-	AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
-	// update filter
-	_filter->Update(_imu_meas_model,  imu_rel);
+      if (imu_active){
+	if (_imu_initialized){
+	  // convert absolute imu measurements to relative imu measurements
+	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * imu_meas;
+	  ColumnVector imu_rel(3); double tmp;
+	  imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), tmp, tmp);
+	  imu_meas.getBasis().getEulerZYX(tmp, imu_rel(2), imu_rel(1));
+	  AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
+	  // update filter
+	  _filter->Update(_imu_meas_model,  imu_rel);
+	}
+	else _imu_initialized = true;
+	_imu_meas_old = imu_meas; 
       }
-      if (imu_active){  _imu_meas_old = imu_meas;  _imu_initialized = true;}
 
 
       // process vo measurement
@@ -224,12 +230,23 @@ namespace estimation
   // get filter posterior as vector
   void odom_estimation::GetEstimate(ColumnVector& estimate, Time& time)
   {
-    estimate = _filter->PostGet()->ExpectedValueGet();
+    estimate = _filter_estimate_old_vec;
     time = _filter_time_old;
   };
 
+  // get filter posterior as Transform
+  void odom_estimation::GetEstimate(Transform& estimate, Time& time)
+  {
+    estimate = _filter_estimate_old;
+    time = _filter_time_old;
+  };
 
-
+  // get filter posterior as PoseStamped
+  void odom_estimation::GetEstimate(std_msgs::PoseStamped& estimate)
+  {
+    PoseTFToMsg(_filter_estimate_old, estimate.pose);
+    estimate.header.stamp = _filter_time_old;
+  };
 
   // correct for angle overflow
   void odom_estimation::AngleOverflowCorrect(double& a, double ref)

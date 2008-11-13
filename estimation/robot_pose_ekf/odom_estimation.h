@@ -71,6 +71,8 @@ public:
 
   /// get filter posterior
   void GetEstimate(MatrixWrapper::ColumnVector& estimate, ros::Time& time);
+  void GetEstimate(tf::Transform& estiamte, ros::Time& time);
+  void GetEstimate(std_msgs::PoseStamped& estimate);
 
   /// return if filter was initialized
   bool IsInitialized() {return _filter_initialized;};
