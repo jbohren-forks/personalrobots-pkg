@@ -43,7 +43,7 @@ svn-all: checkout_or_update
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
 checkout_or_update:
-	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+	- test -d $(SVN_DIR) && svn up $(SVN_DIR)
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
 .PHONY: tarball-all

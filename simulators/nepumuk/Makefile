@@ -57,7 +57,7 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) symlinks
 
 checkout_or_update:
-	test -d $(SVN_DIR) && svn up $(SVN_DIR)
+	- test -d $(SVN_DIR) && svn up $(SVN_DIR)
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
 
 symlinks:
