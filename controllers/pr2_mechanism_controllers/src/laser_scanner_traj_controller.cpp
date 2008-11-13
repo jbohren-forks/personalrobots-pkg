@@ -44,7 +44,7 @@ ROS_REGISTER_CONTROLLER(LaserScannerTrajController)
 
 LaserScannerTrajController::LaserScannerTrajController() : traj_(1)
 {
-  update_count_ = 0 ;
+
 }
 
 LaserScannerTrajController::~LaserScannerTrajController()
@@ -68,7 +68,7 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
   if (!jn)
     return false ;  
   std::string joint_name = jn ;
-  
+
   joint_state_ = robot_->getJointState(joint_name) ;  // Need joint state to check calibrated flag
   
   joint_position_controller_.initXml(robot, config) ; //Pass down XML snippet to encapsulated joint_position_controller_
@@ -77,12 +77,12 @@ bool LaserScannerTrajController::initXml(mechanism::RobotState *robot, TiXmlElem
 
 void LaserScannerTrajController::update()
 {
-  if (!joint_state_->calibrated_)
-    return;
+  //if (!joint_state_->calibrated_)
+  //  return;
 
   double time = robot_->hw_->current_time_ ;
   
-  if (!traj_lock_.trylock())
+  if (traj_lock_.trylock())
   {
     const double traj_duration = traj_.getTotalTime() ;
     if (traj_duration > 1e-6)                                   // Short trajectories make the mod_time calculation unstable
@@ -101,10 +101,6 @@ void LaserScannerTrajController::update()
       {
         joint_position_controller_.setCommand(sampled_point.q_[0]) ;
         joint_position_controller_.update() ;
-
-        if (update_count_ % 10 == 0)
-          printf("%f %f\n", mod_time, sampled_point.q_[0]) ;
-        update_count_++ ;
       }
   
     }
@@ -143,7 +139,7 @@ LaserScannerTrajControllerNode::LaserScannerTrajControllerNode(): node_(ros::nod
 
 LaserScannerTrajControllerNode::~LaserScannerTrajControllerNode()
 {
-  node_->unadvertise_service(service_prefix_ + "/set_command");
+  node_->unsubscribe(service_prefix_ + "/set_command");
   delete c_;
 }
 
@@ -157,8 +153,6 @@ void LaserScannerTrajControllerNode::setCommand()
 {
   if (cmd_.data >= -.5 && cmd_.data <= .5)
   {
-    printf("TRAJECTORY 0\n") ;
-    
     std::vector<trajectory::Trajectory::TPoint> tpoints ;
     
     trajectory::Trajectory::TPoint cur_point(1) ;
@@ -184,8 +178,6 @@ void LaserScannerTrajControllerNode::setCommand()
   }
   else if (cmd_.data >= -52.1 && cmd_.data <= -51.9)
   {
-    printf("TRAJECTORY -52\n") ;
-    
     std::vector<trajectory::Trajectory::TPoint> tpoints ;
     
     trajectory::Trajectory::TPoint cur_point(1) ;
@@ -211,8 +203,6 @@ void LaserScannerTrajControllerNode::setCommand()
   }
   else if (cmd_.data >= -53.1 && cmd_.data <= -52.9)
   {
-    printf("TRAJECTORY -53\n") ;
-    
     std::vector<trajectory::Trajectory::TPoint> tpoints ;
     
     trajectory::Trajectory::TPoint cur_point(1) ;
@@ -236,23 +226,17 @@ void LaserScannerTrajControllerNode::setCommand()
     
     c_->setTrajectory(tpoints, max_rate, max_acc, "blended_linear") ;
   }
-
 }
 
 bool LaserScannerTrajControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  printf("Starting to init XML\n") ;
-  
   service_prefix_ = config->Attribute("name");
 
   if (!c_->initXml(robot, config))
   {
-    printf("Error initialized XML\n") ;
     return false;
   }
   node_->subscribe(service_prefix_ + "/set_command", cmd_, &LaserScannerTrajControllerNode::setCommand, this, 1);
 
-  printf("Done with initing XML\n") ;
-  
   return true;
 }
