@@ -8,6 +8,7 @@ the SVN version of GMapping, and also removes its GSL dependency.
 </description>
 <author>Giorgio Grisetti, Cyrill Stachniss, Wolfram Burgard</author>
 <license>CreativeCommons-by-nc-sa-2.0</license>
+<review status="unreviewed" notes=""/>
 <url>http://openslam.org/</url>
 <export>
   <cpp lflags="-Xlinker -rpath ${prefix}/gmapping_export/lib -L${prefix}/gmapping_export/lib -lgridfastslam -lsensor_odometry -lsensor_range -lutils -lscanmatcher" cflags="-I${prefix}/gmapping_export/"/>

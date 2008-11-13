@@ -4,6 +4,7 @@
   </description>
   <author>Stuart Glaser sglaser@willowgarage.com</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="spacenav" />

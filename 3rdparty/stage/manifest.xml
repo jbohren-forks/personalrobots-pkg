@@ -10,6 +10,7 @@ system.
 </description>
 <author>Richard Vaughan, with contributions from many others. See web page for a full credits list.</author>
 <license>GPL</license>
+<review status="unreviewed" notes=""/>
 <url>http://playerstage.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/stage/lib `PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --libs stage`" cflags="`PKG_CONFIG_PATH=${prefix}/stage/lib/pkgconfig:$PKG_CONFIG_PATH pkg-config --cflags stage`"/>

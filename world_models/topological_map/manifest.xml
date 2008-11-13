@@ -2,6 +2,7 @@
 <description>Builds a graph containing higher level information from a 2d occupancy grid</description>
 <author>Bhaskara Marthi</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="std_srvs" />

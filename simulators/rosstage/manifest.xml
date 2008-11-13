@@ -2,6 +2,7 @@
   <description>A ROS node that wraps up the Stage mobile robot simulator.</description>
   <author>Brian P. Gerkey</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="rosthread" />
   <depend package="stage" />

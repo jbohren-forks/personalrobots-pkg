@@ -5,6 +5,7 @@
   </description>
   <author>Yuri Boykov and Vladimir Kolmogorov</author>
   <license>"Research-only"</license>
+  <review status="unreviewed" notes=""/>
   <url>http://www.cs.adastral.ucl.ac.uk/~vnk/software.html</url>
   <export>
     <cpp cflags="-I${prefix}/src" lflags=""/>

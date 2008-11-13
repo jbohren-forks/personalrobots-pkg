@@ -4,6 +4,7 @@
   </description>
   <author>Hai Nguyen/hai@gatech.edu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="xmlparam" />
   <depend package="rospy" />
   <depend package="numpy" />

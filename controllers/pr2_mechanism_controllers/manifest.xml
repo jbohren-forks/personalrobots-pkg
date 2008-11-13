@@ -4,6 +4,7 @@
   </description>
   <author>Sachin Chita, John Hsu, David Li, Jimmy Sastra, Melonee Wise</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="mechanism_model" />
   <depend package="wg_robot_description_parser" />

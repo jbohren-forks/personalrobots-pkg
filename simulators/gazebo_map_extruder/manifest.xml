@@ -3,6 +3,7 @@
   Gazebo model.</description>
   <author>Brian P. Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <!-- <depend package="sdl_image" /> -->
   <sysdepend os="ubuntu" version="8.04-hardy" package="libsdl-image1.2-dev"/>
 </package>

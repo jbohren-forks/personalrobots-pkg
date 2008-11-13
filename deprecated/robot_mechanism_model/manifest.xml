@@ -3,6 +3,7 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package='hw_interface'/>
 <url>http://pr.willowgarage.com</url>
 <export>

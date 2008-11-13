@@ -3,6 +3,7 @@
 </description>
 <author>Eric Berger berger@willowgarage.com</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="rosthread"/>

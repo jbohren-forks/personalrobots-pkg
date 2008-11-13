@@ -5,6 +5,7 @@ Generate color calibration matrix from macbeth chart.
 <author> Jeremy Leibs
 </author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>

@@ -10,6 +10,7 @@ system.
 </description>
 <author>Brian Gerkey, with contributions from many others. See web page for a full credits llist.</author>
 <license>LGPL</license>
+<review status="unreviewed" notes=""/>
 <url>http://playerstage.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers -Wl,-rpath,${prefix}/player-svn/build/rtk2 -L${prefix}/player-svn/build/rtk2 -lrtk" cflags="-I${prefix}/player/include/player-2.2"/>

@@ -8,6 +8,7 @@
   </description>
   <author>Tully Foote</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   
   <depend package="wg_robot_description" />
   <depend package="teleop_base"/>

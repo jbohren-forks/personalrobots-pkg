@@ -2,6 +2,7 @@
   <description>Gazebo world and model files for pr2.</description>
   <author>John Hsu, Ioan Sucan</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
 
   <depend package="wg_robot_description"/>

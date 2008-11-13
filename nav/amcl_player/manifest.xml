@@ -2,6 +2,7 @@
   <description>A ROS node that wraps up the Player amcl driver, which implements the Adaptive Monte Carlo Localization algorithm.</description>
   <author>Brian P. Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Brian)"/>
   <depend package="roscpp" />
   <depend package="player" />
   <depend package="tf" />

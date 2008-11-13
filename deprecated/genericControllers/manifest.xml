@@ -4,6 +4,7 @@
   </description>
   <author>Melonee Wise, John Hsu, David Li</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="pr2Core" />
   <depend package="math_utils" />
   <depend package="robot_mechanism_model" />

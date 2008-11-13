@@ -6,10 +6,12 @@ This package contains the C++ library Loki.
 </description>
 <author>Andrei Alexandrescu</author>
 <license>MIT</license>
+<review status="unreviewed" notes=""/>
 <url>http://loki-lib.sourceforge.net/</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/loki-svn/lib -L${prefix}/loki-svn/lib -lloki" cflags="-I${prefix}/loki-svn/include"/>
   <doxymaker external="http://loki-lib.sourceforge.net/html/modules.html"/>
+  <status api="10-9-2008" code="10-9-2008" cleared="11-10-2008"/>
 </export>
 <versioncontrol type="svn" url="https://loki-lib.svn.sourceforge.net/svnroot/loki-lib/trunk"/>
 </package>

@@ -4,6 +4,7 @@ A minimal package to try debugging single-threaded ros and curl interference.
 </description>
 <author>Jeremy Leibs</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url></url>
 <depend package="roscpp"/>
 <depend package="std_msgs"/>

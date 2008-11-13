@@ -8,6 +8,7 @@ Calibration tools for sterero cam. And between stereo cam and laser range finder
 <author> JD Chen, Kurt Konolige
 </author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://www.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="visual_odometry"/>

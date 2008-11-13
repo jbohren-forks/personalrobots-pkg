@@ -6,6 +6,7 @@
   </description>
   <author>Charles C. Kemp, Hai Nguyen</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="opencv"/>
   <depend package="pyrob"/>
   <depend package="numpy"/>

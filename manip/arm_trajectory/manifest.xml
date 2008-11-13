@@ -2,6 +2,7 @@
   <description>A ROS node that sends out a sample trajectory for PR2 arm.</description>
   <author>John M. Hsu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="rosthread" />

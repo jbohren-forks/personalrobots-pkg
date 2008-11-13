@@ -1,6 +1,7 @@
 <package>
   <author>Morgan Quigley, with USB-CAN interface courtesy Mike Montemerlo</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="std_msgs"/>
   <depend package="roscpp"/>
   <depend package="rosTF"/>

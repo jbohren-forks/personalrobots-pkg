@@ -5,6 +5,7 @@
   </description>
   <author>Nate Koenig, with contributions from many others. See web page for a full credits llist.</author>
   <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
   <depend package="opende" />
   <depend package="ogre" />
   <url>http://playerstage.sf.net</url>

@@ -4,6 +4,7 @@
   </description>
   <author>James Bowman</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <export>
   </export>
   <sysdepend os="ubuntu" version="7.04-fiesty" package="nasm"/>

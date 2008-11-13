@@ -4,6 +4,7 @@
   </description>
   <author>See web page for a full credits llist.</author>
   <license url="http://www.coin3d.org/licensing/index_html#free-edition-gpl">GPL</license>
+  <review status="unreviewed" notes=""/>
   <url>http://www.coin3d.org/</url>
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config --ldflags` `${prefix}/bin/soqt-config --libs`" cflags="`${prefix}/bin/soqt-config --cppflags`"/>

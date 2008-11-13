@@ -8,6 +8,7 @@ http://hubbard.engr.scu.edu/embedded/motorcontrol/etherdrive/v20/
 </description>
 <author>Jeremy Leibs (email: leibs@willowgarage.com)</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package='roscpp'/>
 <depend package='std_msgs'/>

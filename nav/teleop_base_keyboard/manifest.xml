@@ -3,6 +3,7 @@
 differential drive robot base from keyboard input</description>
   <author>Brian P. Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
 </package>

@@ -7,6 +7,7 @@
   </description>
   <author>Morgan Quigley, loosely derived from code by Jeremy Leibs and Brian Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="ipdcmot" />
   <depend package="hokuyo_driver" />

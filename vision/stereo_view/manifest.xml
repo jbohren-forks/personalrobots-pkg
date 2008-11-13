@@ -4,6 +4,7 @@
   </description>
   <author>Jeremy Leibs</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="std_srvs"/>

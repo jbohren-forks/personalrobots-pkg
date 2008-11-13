@@ -6,6 +6,7 @@ The Bullet Physics Engine
 </description>
 <author>Erwin Coumans</author>
 <license>ZLib</license>
+<review status="unreviewed" notes=""/>
 <url>http://code.google.com/p/bullet/</url>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libXext-dev"/>
 <sysdepend os="ubuntu" version="7.10-gutsy" package="libXext-dev"/>

@@ -2,6 +2,7 @@
   <description>A ROS node that wraps up the Player erratic driver, which provides access to the Erratic mobile robot.</description>
   <author>Brian P. Gerkey</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
   <depend package="player" />
   <depend package="std_msgs" />

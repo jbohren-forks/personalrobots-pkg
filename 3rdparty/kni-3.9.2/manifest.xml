@@ -2,6 +2,7 @@
   <author>Neuronics</author>
   <description>Control library and demos for the Katana arm</description>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <depend package="boost"/>
   <url>http://www.neuronics.ch</url>
   <export>

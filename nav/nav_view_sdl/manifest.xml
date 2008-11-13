@@ -2,6 +2,7 @@
   <description>A graphical interface for 2-D navigation.</description>
   <author>Morgan Quigley, Brian Gerkey and Josh Faust</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="roscpp"/>
   <depend package="std_srvs"/>
   <depend package="pr2_msgs"/>

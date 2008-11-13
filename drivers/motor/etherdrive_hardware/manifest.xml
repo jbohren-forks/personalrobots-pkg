@@ -4,6 +4,7 @@ This package interfaces to the robot
 </description>
 <author>Jimmy Sastra, Sachin Chitta (email: sastra@willowgarage.com)</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package='etherdrive'/>
 <depend package='hw_interface'/>

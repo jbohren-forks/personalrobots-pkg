@@ -3,6 +3,7 @@
 </description>
 <author>Advait Jain</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="pr2Core"/>
 <depend package="wg_robot_description_parser"/>

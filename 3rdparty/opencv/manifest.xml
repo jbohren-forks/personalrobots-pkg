@@ -11,6 +11,7 @@ I have patched the 1.0.0 release of OpenCV a tiny bit so it will happily compile
 </description>
 <author>Gary Bradski and many others. See web page for a full contributor list. ROS package maintained by Morgan Quigley.</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://opencvlibrary.sourceforge.net</url>
 <depend package="ffmpeg"/>
 <export>

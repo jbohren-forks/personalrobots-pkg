@@ -8,6 +8,7 @@
   takes 3 lines to make the service call to bumblebee_bridge.
   </description>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>

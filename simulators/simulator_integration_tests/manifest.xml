@@ -2,6 +2,7 @@
   <description>A testing package for tests that depend on two or more otherwise unrealated packages. This prevents the creation of needless dependancies.</description>
   <author>Tony T. Pratkanis</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="fake_localization" />
   <depend package="world_3d_map" />
   <depend package="rostest" />

@@ -4,6 +4,7 @@
   </description>
   <author>Morgan Quigley mquigley@cs.stanford.edu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>

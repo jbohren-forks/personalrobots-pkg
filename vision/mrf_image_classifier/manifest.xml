@@ -5,6 +5,7 @@
   </description>
   <author>Paul Vernaza/vernaza@seas.upenn.edu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com</url>
   <depend package="libbk_maxflow"/>
   <depend package="libfz_ht_superpixels"/>

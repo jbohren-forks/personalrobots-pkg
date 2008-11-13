@@ -6,6 +6,7 @@
   </description>
   <author>John Tsiombikas</author>
   <license>ZLib</license>
+  <review status="unreviewed" notes=""/>
   <url>http://spacenav.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/libspnav/include/"

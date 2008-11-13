@@ -5,6 +5,7 @@
   </description>
   <author>Ioan Sucan/isucan@willowgarage.com</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
 
   <depend package="wg_robot_description_parser"/>

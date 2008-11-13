@@ -2,6 +2,7 @@
 <description>Definitions of message types and servies for the grasp module</description>
 <author>Matei Ciocarlie</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="rosTF" />
 <depend package="std_msgs" />

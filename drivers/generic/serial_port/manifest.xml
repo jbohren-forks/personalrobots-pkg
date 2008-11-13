@@ -4,6 +4,7 @@ These are used all over the place for talking to hardware. These implementations
 </description>
 <author>Morgan Quigley (email: mquigley@cs.stanford.edu)</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://stair.stanford.edu</url>
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lserial_port"/>

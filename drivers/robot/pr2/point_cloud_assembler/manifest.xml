@@ -4,6 +4,7 @@
   </description>
   <author>Caroline Pantofaru, Jeremy Leibs, Vijay Pradeep</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Point_clouds_from_scanning_URG</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

@@ -3,6 +3,7 @@
     A planning architecture for autonomous robotics.
   </description>
   <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
   </export>

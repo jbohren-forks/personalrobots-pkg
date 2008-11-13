@@ -2,6 +2,7 @@
   <description>A ROS node to encapsulate the TeleoReactive Executive for task level planning and control.</description>
   <author>Conor McGann</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <depend package="std_msgs" />
   <depend package="std_srvs" />
   <depend package="pr2_msgs" />

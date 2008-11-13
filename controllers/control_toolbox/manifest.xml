@@ -4,6 +4,7 @@
   </description>
   <author>Melonee Wise, Sachin Chitta, John Hsu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Melonee)"/>
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <depend package="tinyxml" />

@@ -5,6 +5,7 @@
 </description>
 <author>E. Gil Jones</author>
 <license>BSD</license>
+<review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="roscpp"/>
 <depend package="std_srvs" />

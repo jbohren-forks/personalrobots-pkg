@@ -7,6 +7,7 @@
   </description>
   <author>Roland Philippsen</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <url>http://libsunflower.sourceforge.net/</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>

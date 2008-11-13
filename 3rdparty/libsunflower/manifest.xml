@@ -9,6 +9,7 @@
   </description>
   <author>Roland Philippsen</author>
   <license>GPL</license>
+  <review status="unreviewed" notes=""/>
   <url>http://libsunflower.sourceforge.net/</url>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />

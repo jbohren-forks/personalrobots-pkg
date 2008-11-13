@@ -2,6 +2,7 @@
   <description>Openrave robot file generator from wg_robot_description</description>
   <author>Rosen Diankov (from gazebo_robot_description)</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>
 
   <depend package="wg_robot_description"/>

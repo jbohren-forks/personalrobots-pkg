@@ -7,6 +7,7 @@ Specifications (also known as the IIDC or DCAM Specifications)
 </description>
 <author>Damien Douxchamps</author>
 <license>LGPL</license>
+<review status="unreviewed" notes=""/>
 <url>http://damien.douxchamps.net/ieee1394/libdc1394/</url>
 <export>
   <cpp cflags="-I${prefix}/libdc1394v2/include" lflags="-Wl,-rpath,${prefix}/libdc1394v2/lib -L${prefix}/libdc1394v2/lib/ -ldc1394 -lraw1394" />

@@ -2,6 +2,7 @@
   <description>This is an interface to the Osean Server Technology Intelligent Battery and Power System.</description>
   <author>Tully Foote</author>
   <license>BSD</license>
+  <review status="unreviewed" notes="API review in progress (Tully)"/>
   <depend package="rospy" />
   <depend package="robot_msgs" />
 </package>

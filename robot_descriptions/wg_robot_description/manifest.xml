@@ -8,6 +8,7 @@
   </description>
   <author>Sachin Chitta, John Hsu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   
   <depend package="wg_robot_description_parser" />
   <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>

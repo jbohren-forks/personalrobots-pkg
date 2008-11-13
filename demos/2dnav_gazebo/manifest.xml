@@ -2,6 +2,7 @@
   <description>A clone of  2-D navigation stack \b rosstage using a 3D simulation environment.</description>
   <author>John Hsu</author>
   <license>BSD</license>
+  <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="nav_view"/>
   <depend package="roslaunch"/>
