@@ -81,6 +81,7 @@ void HysteresisController::init( double velocity, double max_effort, double expe
   velocity_=velocity;
   max_effort_=max_effort;
   initial_time_=time;
+  initial_position_=joint_->position_;
 
 }
 
@@ -127,7 +128,7 @@ void HysteresisController::update()
 {
   double time = robot_->hw_->current_time_;
   velocity_controller_->update();
-
+  
   if (state == STOPPED || state == STARTING || state == MOVING || count_<80000 && loop_count_>0)
   {
     double cmd;
@@ -156,7 +157,7 @@ void HysteresisController::update()
       state = MOVING;
     break;
   case MOVING:
-    if (fabs(joint_->velocity_) < 1 && fabs(joint_->commanded_effort_) > max_effort_)
+    if (fabs(joint_->velocity_) < 1 && fabs(joint_->commanded_effort_) > max_effort_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
     {
       velocity_controller_->setCommand(0.0);
       if (loop_count_ < 3)
@@ -164,6 +165,15 @@ void HysteresisController::update()
       else
         state = ANALYZING;
         
+    }
+    else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==mechanism::JOINT_CONTINUOUS) 
+    {
+      velocity_controller_->setCommand(0.0);
+      initial_position_=joint_->position_;
+      if (loop_count_ < 3)
+        state = STOPPED;
+      else
+        state = ANALYZING;
     }
     break;
   case ANALYZING:

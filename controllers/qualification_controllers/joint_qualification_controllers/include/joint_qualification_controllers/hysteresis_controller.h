@@ -93,6 +93,7 @@ private:
   double velocity_;                                    /**< Torque applied during the test. */
   double max_effort_;
   double initial_time_;                                 /**< Start time of the test. */
+  double initial_position_;
   int count_;
   int loop_count_;
   bool complete;
