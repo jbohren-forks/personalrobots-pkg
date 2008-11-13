@@ -13,6 +13,7 @@ configured: $(SOURCE_DIR)
 
 soqt: configured
 	cd $(SOURCE_DIR) && make && make install
+	touch configured
 
 clean:
 	rm -rf $(SOURCE_DIR)
