@@ -1,13 +1,13 @@
 /*********************************************************************
  * Software License Agreement (BSD License)
- * 
+ *
  *  Copyright (c) 2008, Willow Garage, Inc.
  *  All rights reserved.
- * 
+ *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions
  *  are met:
- * 
+ *
  *   * Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
  *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
  *   * Neither the name of the Willow Garage nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -45,7 +45,7 @@
 
 
 namespace robot_desc {
-    
+
     /* Macro to mark the fact a certain member variable was set. Also
        prints a warning if the same member was set multiple times. */
 #define MARK_SET(node, owner, variable)                    \
@@ -57,7 +57,7 @@ namespace robot_desc {
     else                                \
         owner->isSet[#variable] = true;                \
     }
-    
+
 
     /* Operator for sorting objects by name */
     template<typename T>
@@ -68,7 +68,7 @@ namespace robot_desc {
         return a->name < b->name;
     }
     };
-    
+
     void URDF::freeMemory(void)
     {
     clearDocs();
@@ -82,7 +82,7 @@ namespace robot_desc {
     for (std::map<std::string, Chain*>::iterator i = m_chains.begin() ; i != m_chains.end() ; i++)
         delete i->second;
     }
-    
+
     void URDF::clear(void)
     {
     freeMemory();
@@ -93,33 +93,34 @@ namespace robot_desc {
     m_links.clear();
     m_frames.clear();
     m_groups.clear();
+    m_chains.clear();
     m_paths.clear();
     m_paths.push_back("");
     m_linkRoots.clear();
     clearTemporaryData();
     m_errorCount = 0;
     }
-    
+
     void URDF::setVerbose(bool verbose)
     {
     m_verbose = verbose;
     }
-    
+
     void URDF::rememberUnknownTags(bool remember)
     {
     m_rememberUnknownTags = remember;
     }
-    
+
     unsigned int URDF::getErrorCount(void) const
     {
     return m_errorCount;    
     }
-    
+
     const std::string& URDF::getRobotName(void) const
     {
     return m_name;
     }
-    
+
     std::string URDF::getResourceLocation(void) const
     {
 	return m_resourceLocation;
@@ -130,7 +131,7 @@ namespace robot_desc {
     std::map<std::string, Link*>::const_iterator it = m_links.find(name);
     return it == m_links.end() ? NULL : it->second;
     }
-    
+
     URDF::Link* URDF::getJointLink(const std::string &name) const
     {    
     for (std::map<std::string, Link*>::const_iterator i = m_links.begin() ; i != m_links.end() ; i++)
@@ -138,7 +139,7 @@ namespace robot_desc {
         return i->second;
     return NULL;    
     }
-    
+
     void URDF::getLinks(std::vector<Link*> &links) const
     {
     std::vector<Link*> localLinks;
@@ -153,7 +154,7 @@ namespace robot_desc {
     std::map<std::string, Frame*>::const_iterator it = m_frames.find(name);
     return it == m_frames.end() ? NULL : it->second;
     }
-    
+
     void URDF::getFrames(std::vector<Frame*> &frames) const
     {
     std::vector<Frame*> localFrames;
@@ -162,12 +163,12 @@ namespace robot_desc {
     std::sort(localFrames.begin(), localFrames.end(), SortByName<Frame>());
     frames.insert(frames.end(), localFrames.begin(), localFrames.end());
     }
-    
+
     unsigned int URDF::getDisjointPartCount(void) const
     {
     return m_linkRoots.size();
     }
-    
+
     URDF::Link* URDF::getDisjointPart(unsigned int index) const
     {
     if (index < m_linkRoots.size())
@@ -175,7 +176,7 @@ namespace robot_desc {
     else
         return NULL;
     }
-    
+
     bool URDF::isRoot(const Link* link) const
     {
     for (unsigned int i = 0 ; i < m_linkRoots.size() ; ++i)
@@ -183,7 +184,7 @@ namespace robot_desc {
         return true;
     return false;
     }
-    
+
     void URDF::getGroupNames(std::vector<std::string> &groups) const
     {
     std::vector<std::string> localGroups;
@@ -192,13 +193,13 @@ namespace robot_desc {
     std::sort(localGroups.begin(), localGroups.end());
     groups.insert(groups.end(), localGroups.begin(), localGroups.end());
     }
-    
+
     URDF::Group* URDF::getGroup(const std::string &name) const
     {
     std::map<std::string, Group*>::const_iterator it = m_groups.find(name);
     return (it == m_groups.end()) ? NULL : it->second;
     }
-    
+
     void URDF::getGroups(std::vector<Group*> &groups) const
     {
     /* To maintain the same ordering as getGroupNames, we do this in a slightly more cumbersome way */
@@ -207,13 +208,13 @@ namespace robot_desc {
     for (unsigned int i = 0 ; i < names.size() ; ++i)
         groups.push_back(getGroup(names[i]));
     }
-    
+
     URDF::Chain* URDF::getChain(const std::string &name) const
     {
     std::map<std::string, Chain*>::const_iterator it = m_chains.find(name);
     return (it == m_chains.end()) ? NULL : it->second;
     }
-    
+
     void URDF::getChains(std::vector<Chain*> &chains) const
     {
     std::vector<Chain*> localChains;
@@ -221,47 +222,47 @@ namespace robot_desc {
         localChains.push_back(i->second);
     std::sort(localChains.begin(), localChains.end(), SortByName<Chain>());
     chains.insert(chains.end(), localChains.begin(), localChains.end());
-    }    
+    }
 
     const URDF::Map& URDF::getMap(void) const
     {
     return m_data;
     }
-    
+
     void URDF::Map::add(const std::string &type, const std::string &name, const std::string &key, const std::string &value)
     {
     if (!m_data[type][name][key].str)
         m_data[type][name][key].str = new std::string();
     *(m_data[type][name][key].str) = value;
     }
-    
+
     void URDF::Map::add(const std::string &type, const std::string &name, const std::string &key, const TiXmlElement *value)
     {
     m_data[type][name][key].xml = value;
     }
-    
+
     bool URDF::Map::hasDefault(const std::string &key) const
     {
     std::map<std::string, std::string> m = getMapTagValues("", "");
     return m.find(key) != m.end();
     }
-    
+
     std::string URDF::Map::getDefaultValue(const std::string &key) const
     {
     return getMapTagValues("", "")[key];
     }
-    
+
     const TiXmlElement* URDF::Map::getDefaultXML(const std::string &key) const
     {
     return getMapTagXML("", "")[key];
     }
-    
+
     void URDF::Map::getMapTagFlags(std::vector<std::string> &flags) const
     {
     for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
         flags.push_back(i->first);
     }
-    
+
     void URDF::Map::getMapTagNames(const std::string &flag, std::vector<std::string> &names) const
     {
     std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
@@ -272,7 +273,7 @@ namespace robot_desc {
     }
     }
     std::map<std::string, std::string> URDF::Map::getMapTagValues(const std::string &flag, const std::string &name) const
-    {    
+    {
     std::map<std::string, std::string> result;
     
     std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
@@ -290,7 +291,7 @@ namespace robot_desc {
     }
     
     std::map<std::string, const TiXmlElement*> URDF::Map::getMapTagXML(const std::string &flag, const std::string &name) const
-    {    
+    {
     std::map<std::string, const TiXmlElement*> result;
     
     std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator pos = m_data.find(flag);
@@ -329,7 +330,7 @@ namespace robot_desc {
             queue.push(link->children[i]);
         }
     }
-    
+
     return false;
     }
     
@@ -377,7 +378,7 @@ namespace robot_desc {
         out << links[i]->name << " ";
     out << std::endl;
     }
-    
+
     void URDF::Map::print(std::ostream &out, std::string indent) const
     {
     for (std::map<std::string, std::map<std::string, std::map<std::string, Element > > >::const_iterator i = m_data.begin() ; i != m_data.end() ; ++i)
@@ -445,7 +446,7 @@ namespace robot_desc {
         }
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Link::Joint::print(std::ostream &out, std::string indent) const
     {
     out << indent << "Joint [" << name << "]:" << std::endl;
@@ -458,7 +459,7 @@ namespace robot_desc {
     out << indent << "  - calibration: " << calibration << std::endl;
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Link::Collision::print(std::ostream &out, std::string indent) const
     {
     out << indent << "Collision [" << name << "]:" << std::endl;
@@ -468,7 +469,7 @@ namespace robot_desc {
     geometry->print(out, indent + "  ");
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Link::Inertial::print(std::ostream &out, std::string indent) const
     {    
     out << indent << "Inertial [" << name << "]:" << std::endl;
@@ -477,7 +478,7 @@ namespace robot_desc {
     out << indent << "  - inertia: (" <<  inertia[0] << ", " << inertia[1] << ", " << inertia[2] << ", " << inertia[3] << ", " << inertia[4] << ", " << inertia[5] << ")" << std::endl;
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Link::Visual::print(std::ostream &out, std::string indent) const
     {
     out << indent << "Visual [" << name << "]:" << std::endl;
@@ -486,7 +487,7 @@ namespace robot_desc {
     geometry->print(out, indent + "  ");
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Link::print(std::ostream &out, std::string indent) const
     {
     out << indent << "Link [" << name << "]:" << std::endl;
@@ -517,7 +518,7 @@ namespace robot_desc {
         children[i]->print(out, indent + "  ");
     data.print(out, indent + "  ");
     }
-    
+
     void URDF::Sensor::print(std::ostream &out, std::string indent) const
     {
     out << indent << "Sensor:" << std::endl;
@@ -525,17 +526,17 @@ namespace robot_desc {
     out << indent << "  - calibration: " << calibration << std::endl;
     Link::print(out, indent + "  ");
     }
-    
+
     bool URDF::Link::canSense(void) const
     {
     return false;
     }
-    
+
     bool URDF::Sensor::canSense(void) const
     {
     return true;
     }
-    
+
     bool URDF::Link::insideGroup(Group *group) const
     {
     for (unsigned int i = 0 ; i < groups.size() ; ++i)
@@ -551,12 +552,12 @@ namespace robot_desc {
         return true;
     return false;
     }
-    
+
     bool URDF::Group::empty(void) const
     {
     return links.empty() && frames.empty();
     }
-    
+
     bool URDF::Group::hasFlag(const std::string &flag) const
     {
     for (unsigned int i = 0 ; i < flags.size() ; ++i)
@@ -572,14 +573,14 @@ namespace robot_desc {
         return true;
     return false;    
     }
-    
+
     void URDF::errorMessage(const std::string &msg) const
     {
     if (m_verbose)
         std::cerr << msg << std::endl;
     m_errorCount++;
     }
-    
+
     void URDF::errorLocation(const TiXmlNode* node) const
     {
     if (!m_verbose)
@@ -591,7 +592,7 @@ namespace robot_desc {
         if (!node)
         std::cerr << std::endl;
     }
-    
+
     if (node)
     {
         /* find the document the node is part of */
@@ -631,27 +632,27 @@ namespace robot_desc {
         break;
         }
     }
-    
+
     void URDF::getActuators(std::vector<const TiXmlElement*> &actuators) const
     {
     actuators = m_actuators;
     }
-    
+
     void URDF::getTransmissions(std::vector<const TiXmlElement*> &transmissions) const
     {
     transmissions = m_transmissions;
     }
-    
+
     void URDF::getControllers(std::vector<const TiXmlElement*> &controllers) const
     {
     controllers = m_controllers;
     }
-    
+
     void URDF::getUnknownTags(std::vector<const TiXmlNode*> &unknownTags) const
     {
     unknownTags = m_unknownTags;
     }
-    
+
     void URDF::getChildrenAndAttributes(const TiXmlNode *node, std::vector<const TiXmlNode*> &children, std::vector<const TiXmlAttribute*> &attributes) const
     {
     for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
@@ -680,7 +681,7 @@ namespace robot_desc {
         else
         children.push_back(child);
     }
-    
+
     if (node->Type() == TiXmlNode::ELEMENT && node->ValueStr() != "const_block")
         for (const TiXmlAttribute *attr = node->ToElement()->FirstAttribute() ; attr ; attr = attr->Next())
         attributes.push_back(attr);    
@@ -690,7 +691,7 @@ namespace robot_desc {
     {
     m_constants["M_PI"] = "3.14159265358979323846";
     }
-    
+
     void URDF::clearDocs(void)
     {
     /* first, clear datastructures that may be pointing to xml elements */
@@ -712,7 +713,7 @@ namespace robot_desc {
     }    
     m_docs.clear();
     }
-    
+
     void URDF::clearTemporaryData(void)
     {
     m_collision.clear();
@@ -722,7 +723,7 @@ namespace robot_desc {
     m_geoms.clear();
     m_stage2.clear();
     }
-    
+
     bool URDF::loadStream(std::istream &is)
     {
     if (!is.good())
@@ -760,8 +761,8 @@ namespace robot_desc {
         errorMessage(doc->ErrorDesc());
     
     return result;
-    }  
-    
+    }
+
     bool URDF::loadFile(FILE *file)
     {
     clear();
@@ -816,7 +817,7 @@ namespace robot_desc {
         m_paths.push_back(name + sep);
     }    
     }
-    
+
     char* URDF::findFile(const char *filename)
     {
     std::string fnm = string_utils::trim(filename);
@@ -834,7 +835,7 @@ namespace robot_desc {
     }
     
     std::string URDF::extractName(std::vector<const TiXmlAttribute*> &attributes, const std::string &defaultName) const
-    { 
+    {
     std::string name = defaultName;
     for (unsigned int i = 0 ; i < attributes.size() ; ++i)
     {
@@ -862,7 +863,7 @@ namespace robot_desc {
     unsigned int                        errorCount;
     std::vector<std::string>            errorMsg;
     };
-    
+
     static double getConstant(void *data, std::string &name)
     {
     getConstantData *d = reinterpret_cast<getConstantData*>(data);
@@ -908,7 +909,7 @@ namespace robot_desc {
         *error = data.errorCount > 0;
     return result;
     }
-    
+
     std::string URDF::getConstantString(const std::string &name, bool *error) const
     {
     std::map<std::string, std::string>::const_iterator pos = m_constants.find(name);
@@ -918,7 +919,7 @@ namespace robot_desc {
         return pos->second;
     return "";
     }
-    
+
     unsigned int URDF::loadDoubleValues(const TiXmlNode *node, unsigned int count, double *vals, const char *attrName, bool warn)
     {
     if (attrName)
@@ -976,7 +977,7 @@ namespace robot_desc {
         errorLocation(node);
         }        
     }
-    
+
     if (read != count)
     {
         errorMessage("Not all values were read: '" + data + "'");
@@ -1041,7 +1042,7 @@ namespace robot_desc {
         errorLocation(node);
         }        
     }
-    
+
     if (read != count)
     {
         errorMessage("Not all values were read: '" + data + "'");
@@ -1279,7 +1280,7 @@ namespace robot_desc {
         else
         unknownNode(node);
     }
-    
+
     }
     
     void URDF::loadGeometry(const TiXmlNode *node, const std::string &defaultName, Link::Geometry *geometry)
@@ -1363,7 +1364,7 @@ namespace robot_desc {
     }
     
     void URDF::loadCollision(const TiXmlNode *node, const std::string &defaultName, Link::Collision *collision)
-    {  
+    {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
@@ -1383,7 +1384,7 @@ namespace robot_desc {
         else
         collision = m_collision[name];
     }
-    
+
     collision->name = name;
     m_collision[name] = collision;
     
@@ -1422,7 +1423,7 @@ namespace robot_desc {
     }
     
     void URDF::loadVisual(const TiXmlNode *node, const std::string &defaultName, Link::Visual *visual)
-    {  
+    {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
@@ -1442,7 +1443,7 @@ namespace robot_desc {
         else
         visual = m_visual[name];
     }
-    
+
     visual->name = name;
     m_visual[name] = visual;
     
@@ -1476,7 +1477,7 @@ namespace robot_desc {
     }
     
     void URDF::loadInertial(const TiXmlNode *node, const std::string &defaultName, Link::Inertial *inertial)
-    { 
+    {
     std::vector<const TiXmlNode*> children;
     std::vector<const TiXmlAttribute*> attributes;
     getChildrenAndAttributes(node, children, attributes);
@@ -1496,7 +1497,7 @@ namespace robot_desc {
         else
         inertial = m_inertial[name];
     }
-    
+
     inertial->name = name;
     m_inertial[name] = inertial;
     
@@ -1640,7 +1641,7 @@ namespace robot_desc {
         else
         unknownNode(node);
     }
-    
+
     m_location = currentLocation;  
     }
     
@@ -1657,7 +1658,7 @@ namespace robot_desc {
         errorMessage("Link with name '" + name + "' has already been defined");
         sensor = new Sensor();
     }
-    
+
     sensor->name = name;
     if (sensor->name.empty())
         errorMessage("No sensor name given");
@@ -1829,7 +1830,7 @@ namespace robot_desc {
         if (strcmp(attr->Name(), "flag") == 0)
             flag = string_utils::trim(attr->ValueStr());
     }
-    
+
     for (const TiXmlNode *child = node->FirstChild() ; child ; child = child->NextSibling())
         if (child->Type() == TiXmlNode::ELEMENT && child->ValueStr() == "elem")
         {
@@ -2026,6 +2027,8 @@ namespace robot_desc {
     }
     
     
+
+
 
     bool URDF::parse(const TiXmlNode *node)
     {
@@ -2270,7 +2273,7 @@ namespace robot_desc {
     default:
         unknownNode(node);
     }
-    
+
     return true;
     }
     
