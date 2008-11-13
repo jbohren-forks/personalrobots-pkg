@@ -212,15 +212,8 @@ private:
     {
       MessagePtr& message = *it;
 
-      /// \todo Once the canTransform function is implemented, don't do things this way
-      try
+      if (tf_->canTransform(target_frame_, message->header.frame_id, message->header.stamp))
       {
-        // Attempt to transform from the source frame to the target frame at the message's timestamp
-        Stamped<Vector3> v(Vector3(0.0, 0.0, 0.0), message->header.stamp,
-            message->header.frame_id);
-        // If the transform fails an exception will be thrown, so the push_back statement will not be hit
-        tf_->transformVector(target_frame_, v, v);
-
         // If we get here the transform succeeded, so push the message onto the notify list, and erase it from or message list
         to_notify.push_back(message);
 
@@ -228,10 +221,9 @@ private:
         --message_count_;
 
         //printf("Message %d ready, count now %d\n", i, message_count_);
-      } catch (TransformException& e)
+      }
+      else
       {
-        //printf("message %d: Transforms unavailable\n", i);
-        // If the transform failed, move on to the next message
         ++it;
       }
     }
