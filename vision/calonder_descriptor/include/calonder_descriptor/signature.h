@@ -11,6 +11,7 @@
 #include <limits>
 #include <cassert>
 
+
 namespace ublas = boost::numeric::ublas;
 
 namespace features {

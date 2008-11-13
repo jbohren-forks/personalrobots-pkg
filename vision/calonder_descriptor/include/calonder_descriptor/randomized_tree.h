@@ -1,11 +1,22 @@
 #ifndef FEATURES_RANDOMIZED_TREE_H
 #define FEATURES_RANDOMIZED_TREE_H
 
+#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+
 #include "calonder_descriptor/rng.h"
 #include "calonder_descriptor/patch_generator.h"
 #include <cvwimage.h>
 #include <vector>
 #include <iostream>
+
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/vector_sparse.hpp>
+#include <boost/foreach.hpp>
+#include <boost/numeric/ublas/operation.hpp>
+#include <boost/random.hpp>
+
+namespace ublas = boost::numeric::ublas;
 
 namespace features {
 
@@ -29,19 +40,19 @@ struct BaseKeypoint
 class RandomizedTree
 {
 public:
+  typedef enum { PDT_GAUSS=1, PDT_BERNOULLI, PDT_DBFRIENDLY } PHI_DISTR_TYPE;   // used in makeRandomMeasMatrix
+  
   static const int PATCH_SIZE = 32;
   static const int DEFAULT_DEPTH = 10;
   static const int DEFAULT_VIEWS = 5000;
-
+  static const size_t DEFAULT_REDUCED_NUM_DIM = 250;
+  
   RandomizedTree();
   
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
-             int depth = RandomizedTree::DEFAULT_DEPTH,
-             int views = RandomizedTree::DEFAULT_VIEWS);
+             int depth, int views, size_t reduced_num_dim);
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
-             PatchGenerator &make_patch,
-             int depth = RandomizedTree::DEFAULT_DEPTH,
-             int views = RandomizedTree::DEFAULT_VIEWS);
+             PatchGenerator &make_patch, int depth, int views, size_t reduced_num_dim);
   
   // TODO: uBLASify?
   float* getPosterior(IplImage* patch);
@@ -66,10 +77,11 @@ private:
   void createNodes(int num_nodes, Rng &rng);
   void init(int classes, int depth, Rng &rng);
   void addExample(int class_id, IplImage* patch);
-  void finalize();
+  void finalize(size_t reduced_num_dim);
   int getIndex(IplImage* patch) const;
   float* getPosteriorByIndex(int index);
   const float* getPosteriorByIndex(int index) const;
+  void makeRandomMeasMatrix(ublas::matrix<float> &cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);
 };
 
 template < typename PointT >
@@ -111,6 +123,25 @@ struct RTreeNode
     return CV_IMAGE_ELEM(patch, uchar, y1, x1) > CV_IMAGE_ELEM(patch, uchar, y2, x2);
   }
 };
+
+
+template <typename FLT_T>
+inline FLT_T sample_normal(FLT_T mean, FLT_T sigma)
+{
+    using namespace boost;
+    
+    // Create a Mersenne twister random number generator
+    static mt19937 rng(23);
+ 
+    // select Gaussian probability distribution
+    normal_distribution<FLT_T> norm_dist(mean, sigma);
+ 
+    // bind random number generator to distribution, forming a function
+    variate_generator<mt19937&, normal_distribution<FLT_T> >  normal_sampler(rng, norm_dist);
+ 
+    // sample from the distribution
+    return normal_sampler();
+}
 
 } // namespace features
 
