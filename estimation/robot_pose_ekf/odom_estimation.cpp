@@ -157,23 +157,20 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation::Update(const Transform& odom_meas, const Time& odom_time, bool odom_active,
-			       const Transform& imu_meas,  const Time& imu_time,  bool imu_active,
-			       const Transform& vo_meas,   const Time& vo_time,   bool vo_active, const Time&  filter_time)
+  void odom_estimation::Update(const Time& odom_time, bool odom_active,
+			       const Time& imu_time,  bool imu_active,
+			       const Time& vo_time,   bool vo_active, const Time&  filter_time)
   {
     if (_filter_initialized){
       // system update filter
       ColumnVector vel_desi(2); vel_desi = 0;
       _filter->Update(_sys_model, vel_desi);
-      
-
       // process odom measurement
       if (odom_active){
 	if (_odom_initialized){
-	  // store odom meas in transformer
-	  _transformer.setTransform( Stamped<Transform>(odom_meas, odom_time, "odom", "base") );
-	  // convert absolute odom measurements to relative odom measurements
-	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * odom_meas;
+	  _transformer.lookupTransform("base","odom", odom_time, _odom_meas);
+	  // convert absolute odom measurements to relative odom measurements in horizontal plane
+	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * _odom_meas;
 	  ColumnVector odom_rel(3);
 	  odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
 	  double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
@@ -182,39 +179,44 @@ namespace estimation
 	  _filter->Update(_odom_meas_model, odom_rel);
 	}
 	else _odom_initialized = true;
-	_odom_meas_old = odom_meas;
+	_odom_meas_old = _odom_meas;
       }
 
 
       // process imu measurement
       if (imu_active){
 	if (_imu_initialized){
-	  // convert absolute imu measurements to relative imu measurements
-	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * imu_meas;
+	  _transformer.lookupTransform("base","imu", imu_time, _imu_meas);
+	  // convert absolute imu yaw measurement to relative imu yaw measurement 
+	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * _imu_meas;
 	  ColumnVector imu_rel(3); double tmp;
 	  imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), tmp, tmp);
-	  imu_meas.getBasis().getEulerZYX(tmp, imu_rel(2), imu_rel(1));
+	  _imu_meas.getBasis().getEulerZYX(tmp, imu_rel(2), imu_rel(1));
 	  AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
 	  // update filter
 	  _filter->Update(_imu_meas_model,  imu_rel);
 	}
 	else _imu_initialized = true;
-	_imu_meas_old = imu_meas; 
+	_imu_meas_old = _imu_meas; 
       }
 
 
       // process vo measurement
-      if (_vo_initialized && vo_active){
-	// convert absolute vo measurements to relative vo measurements
-	Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * vo_meas;
-	ColumnVector vo_rel(6);
-	vo_rel(1) = vo_rel_frame.getOrigin().x();  vo_rel(2) = vo_rel_frame.getOrigin().y();  vo_rel(3) = vo_rel_frame.getOrigin().z();  
-	vo_rel_frame.getBasis().getEulerZYX(vo_rel(6), vo_rel(5), vo_rel(4));
-	AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
-	// update filter
-	_filter->Update(_vo_meas_model,  vo_rel);
+      if (vo_active){
+	if (_vo_initialized){
+	  _transformer.lookupTransform("base","vo", vo_time, _vo_meas);
+	  // convert absolute vo measurements to relative vo measurements
+	  Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * _vo_meas;
+	  ColumnVector vo_rel(6);
+	  vo_rel(1) = vo_rel_frame.getOrigin().x();  vo_rel(2) = vo_rel_frame.getOrigin().y();  vo_rel(3) = vo_rel_frame.getOrigin().z();  
+	  vo_rel_frame.getBasis().getEulerZYX(vo_rel(6), vo_rel(5), vo_rel(4));
+	  AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
+	  // update filter
+	  _filter->Update(_vo_meas_model,  vo_rel);
+	}
+	else _vo_initialized = true;
+	_vo_meas_old = _vo_meas;
       }
-      if (vo_active){  _vo_meas_old = vo_meas;  _vo_initialized = true;}
 
 
       // remember last estimate
@@ -224,6 +226,12 @@ namespace estimation
       _filter_time_old = filter_time;
       
     }
+  };
+
+
+  void odom_estimation::AddMeasurement(const tf::Transform& meas, const string& name, const string& base, const ros::Time& time)
+  {
+    _transformer.setTransform( Stamped<Transform>(meas, time, name, base) );
   };
 
 

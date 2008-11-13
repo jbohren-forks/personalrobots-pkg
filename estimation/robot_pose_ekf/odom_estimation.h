@@ -61,9 +61,9 @@ public:
   virtual ~odom_estimation();
 
   /// update filter
-  void Update(const tf::Transform& odom_meas, const ros::Time& odom_time, bool odom_active,
-	      const tf::Transform& imu_meas,  const ros::Time& imu_time,  bool imu_active,
-	      const tf::Transform& vo_meas,   const ros::Time& vo_time,   bool vo_active, const ros::Time& filter_time);
+  void Update(const ros::Time& odom_time, bool odom_active,
+	      const ros::Time& imu_time,  bool imu_active,
+	      const ros::Time& vo_time,   bool vo_active, const ros::Time& filter_time);
 
   /// initialize filter
   void Initialize(const tf::Transform& prior, const ros::Time& time);
@@ -77,6 +77,8 @@ public:
   /// return if filter was initialized
   bool IsInitialized() {return _filter_initialized;};
 
+  /// Add a measurement to the measurement buffer
+  void AddMeasurement(const tf::Transform& meas, const string& name, const string& base, const ros::Time& time);
 
 private:
   /// correct for angle overflow
@@ -97,6 +99,7 @@ private:
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
   tf::Transform _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
+  tf::Stamped<tf::Transform> _odom_meas, _imu_meas, _vo_meas;
   ros::Time _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
 

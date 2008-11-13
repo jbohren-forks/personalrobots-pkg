@@ -83,18 +83,10 @@ namespace estimation
   // update filter
   void odom_estimation_node::Update(const Time& time)
   {
-    // copy data
-    _filter_mutex.lock();
-    Transform odom_meas = _odom_meas;
-    Transform imu_meas  = _imu_meas;
-    Transform vo_meas   = _vo_meas;
-    _filter_mutex.unlock();
-
     // update filter
     if ( _my_filter.IsInitialized() )  {
-      _my_filter.Update(odom_meas, _odom_time, _odom_active, 
-			imu_meas,  _imu_time,  _imu_active,
-			vo_meas,   _vo_time,   _vo_active,  time);
+      // update filter
+      _my_filter.Update(_odom_time, _odom_active, _imu_time,  _imu_active, _vo_time,   _vo_active,  time);
       
       // write to file
       ColumnVector estimate; Time tm;
@@ -110,7 +102,7 @@ namespace estimation
 
     // initialize filer with odometry frame
     if ( _odom_active && !_my_filter.IsInitialized())
-      _my_filter.Initialize(odom_meas, _odom_time);
+      _my_filter.Initialize(_odom_meas, _odom_time);
 
   };
 
@@ -124,11 +116,11 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _odom_time = _odom.header.stamp;
-    _odom_meas =  Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _filter_mutex.unlock();
-
+    _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
+    _my_filter.AddMeasurement(_odom_meas, "odom", "base", _odom.header.stamp);
     // update filter
     this->Update(_odom_time);
+    _filter_mutex.unlock();
 
     // write to file
     double tmp, yaw;
@@ -149,6 +141,7 @@ namespace estimation
     _filter_mutex.lock();
     _imu_time = _imu.header.stamp;
     PoseMsgToTF(_imu.pos, _imu_meas);
+    _my_filter.AddMeasurement(_imu_meas, "imu", "base", _imu.header.stamp);
     _filter_mutex.unlock();
 
     // write to file
@@ -168,8 +161,9 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _vo_time = _vo.header.stamp;
+    _vo_time =  _vo.header.stamp;
     PoseMsgToTF(_vo.pose, _vo_meas);
+    _my_filter.AddMeasurement(_vo_meas, "vo", "base", _vo.header.stamp);
     _filter_mutex.unlock();
 
     // activate vo
