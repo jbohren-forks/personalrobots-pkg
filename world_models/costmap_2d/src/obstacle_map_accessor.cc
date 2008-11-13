@@ -42,16 +42,20 @@ namespace costmap_2d {
   const unsigned char ObstacleMapAccessor::NO_INFORMATION(255);
   const unsigned char ObstacleMapAccessor::LETHAL_OBSTACLE(254);
   const unsigned char ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE(253);
-  const unsigned char ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE(252);
 
-  ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution)
-    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution){}
+  ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution, double weight)
+    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution), weight_(weight),
+      costLB_(0){}
 
   void ObstacleMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const{
     wx = origin_x_;
     wy = origin_y_;
   }
 
+  bool ObstacleMapAccessor::isCircumscribedCell(unsigned int mx, unsigned int my) const{
+    const unsigned char cost = getCost(mx, my);
+    return cost < INSCRIBED_INFLATED_OBSTACLE && cost >= costLB_;
+  }
 
   /**
    * @brief Get index of given world (x,y) point in map indexes

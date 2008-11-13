@@ -71,8 +71,8 @@ namespace costmap_2d {
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
 		       double resolution, double window_length,  unsigned char threshold, 
 		       double maxZ, double freeSpaceProjectionHeight,
-		       double inflationRadius,	double circumscribedRadius, double inscribedRadius)
-    : ObstacleMapAccessor(0, 0, width, height, resolution),
+		       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
+    : ObstacleMapAccessor(0, 0, width, height, resolution, weight),
       tickLength_(window_length/WATCHDOG_LIMIT),
       maxZ_(maxZ),
       freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
@@ -94,10 +94,12 @@ namespace costmap_2d {
     for (i=0; i<=inflationRadius_; i++) {
       cachedDistances[i] = new double[inflationRadius_+1];
       for (j=0; j<=i; j++) {
-	cachedDistances[i][j] = sqrt (pow(i,2) + pow(j,2));
+	cachedDistances[i][j] = sqrt (pow(i, 2) + pow(j, 2));
 	cachedDistances[j][i] = cachedDistances[i][j];
       }
     }
+
+    setCircumscribedCostLowerBound(computeCost(circumscribedRadius_));
 
     // For the first pass, just clean up the data and get the set of original obstacles.
     std::vector<unsigned int> updates;
@@ -145,6 +147,56 @@ namespace costmap_2d {
 					 std::vector<unsigned int>& updates)
   {
     updateDynamicObstacles(ts, 0, 0, cloud, updates);
+  }
+
+  void CostMap2D::updateDynamicObstacles(double ts,
+					 double wx, double wy,
+					 const std::vector<std_msgs::PointCloud*>& clouds,
+					 std::vector<unsigned int>& updates)
+  {
+    // Update current grid position
+    WC_MC(wx, wy, mx_, my_);
+
+    updates.clear();
+    ROS_ASSERT(queue_.empty());
+    std::vector<unsigned int> cellHits;
+
+    for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
+      const std_msgs::PointCloud& cloud = *(*it);
+      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+	// Filter out points too high (can use for free space propagation?)
+	if(cloud.pts[i].z > maxZ_)
+	  continue;
+
+	// Queue cell for cost propagation
+	unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+
+	// If we have already processed the cell for this point, skip it
+	if(obsWatchDog_[ind] == MARKED_FOR_COST)
+	  continue;
+
+	// Buffer for cost propagation
+	unsigned int mx, my;
+	IND_MC(ind, mx, my);
+	enqueue(ind, mx, my);
+
+	// Buffer for free space projection
+	if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
+	  cellHits.push_back(ind);
+	else
+	  heightData_[i] = 1;
+      }
+    }
+
+    // Propagate costs
+    propagateCosts(updates);
+
+    // Propagate free space
+    for(std::vector<unsigned int>::const_iterator it = cellHits.begin(); it != cellHits.end(); ++it)
+      updateFreeSpace(*it, updates);
+
+    // We always process deletions too
+    removeStaleObstaclesInternal(ts, updates);
   }
 
   void CostMap2D::updateDynamicObstacles(double ts,
@@ -311,10 +363,6 @@ namespace costmap_2d {
     return fullData_[ind];
   }
 
-  unsigned char CostMap2D::getCost(unsigned int mx, unsigned int my) const{
-    return fullData_[MC_IND(mx, my)];
-  }
-
   std::string CostMap2D::toString() const {
     std::stringstream ss;
     ss << std::endl;
@@ -325,7 +373,7 @@ namespace costmap_2d {
 	  ss << "O";
 	else if (cost == INSCRIBED_INFLATED_OBSTACLE)
 	  ss << "I";
-	else if (cost == CIRCUMSCRIBED_INFLATED_OBSTACLE)
+	else if (isCircumscribedCell(i, j))
 	  ss << "C";
 	else if (cost == NO_INFORMATION)
 	  ss << "?";
@@ -403,10 +451,8 @@ namespace costmap_2d {
       cost = LETHAL_OBSTACLE;
     else if(distance <= inscribedRadius_)
       cost = INSCRIBED_INFLATED_OBSTACLE;
-    else if (distance <= circumscribedRadius_)
-      cost = CIRCUMSCRIBED_INFLATED_OBSTACLE;
     else
-      cost = (unsigned char) (CIRCUMSCRIBED_INFLATED_OBSTACLE / pow(2, distance));
+      cost = (unsigned char) (INSCRIBED_INFLATED_OBSTACLE / pow(2, distance - inscribedRadius_));
 
     return cost;
   }
@@ -472,7 +518,7 @@ namespace costmap_2d {
       unsigned int ind = MC_IND(x, y);
 
       // If the cell is updated for cost, then it is not free space and we should not ray trace through it
-      if(obsWatchDog_[ind] == MARKED_FOR_COST && fullData_[ind] < CIRCUMSCRIBED_INFLATED_OBSTACLE)
+      if(obsWatchDog_[ind] == MARKED_FOR_COST)
 	return;
 
       // If already marked, or there is an elevated hit that we do not want to clear
@@ -497,8 +543,10 @@ namespace costmap_2d {
 			  computeWY(costMap, maxSize, poseX, poseY), 
 			  computeSize(maxSize, costMap.getResolution()), 
 			  computeSize(maxSize, costMap.getResolution()), 
-			  costMap.getResolution()), costMap_(costMap),
+			  costMap.getResolution(), costMap.getWeight()), costMap_(costMap),
       maxSize_(maxSize){
+
+    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
     // The origin locates this grid. Convert from world coordinates to cell co-ordinates
     // to get the cell coordinates of the origin

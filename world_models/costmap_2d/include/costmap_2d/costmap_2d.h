@@ -121,7 +121,7 @@ namespace costmap_2d {
 	      double resolution, double window_length,
 	      unsigned char threshold, 
 	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
-	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0);
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 0);
   
     /**
      * @brief Destructor.
@@ -145,6 +145,16 @@ namespace costmap_2d {
      * @param current time stamp
      * @param wx The current x position
      * @param wy The current y position
+     * @param cloud holds projected scan data
+     * @param updates holds the updated cell ids and values
+     */
+    void updateDynamicObstacles(double ts,
+				double wx, double wy,
+				const std::vector<std_msgs::PointCloud*>& clouds,
+				std::vector<unsigned int>& updates);
+    /**
+     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
+     * @param current time stamp
      * @param cloud holds projected scan data
      * @param updates holds the updated cell ids and values
      *
@@ -187,9 +197,18 @@ namespace costmap_2d {
     unsigned char operator [](unsigned int ind) const;
 
     /**
-     * @brief Accessor by map coordinates
+     * @brief Accessor by map coordinates stored cost value integrating dynamic and static data
+     * @param mx the x map index. mx must be in [0, width-1]
+     * @param my the y map index. my must be in [0, height-1]
+     * @return A cost value in the range [0 255]
+     * @note The inputs should always be in bounds. We could add a check for these values to avoid out of range errors
+     * but that should only arise as an error condition and should not burden the code for a common accessor
      */
-    unsigned char getCost(unsigned int mx, unsigned int my) const;
+    unsigned char getCost(unsigned int mx, unsigned int my) const{
+      ROS_ASSERT(mx < width_);
+      ROS_ASSERT(my < height_);
+      return fullData_[MC_IND(mx, my)];
+    }
 
     /**
      * @brief Utility for debugging
@@ -275,9 +294,10 @@ namespace costmap_2d {
     const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
     const double maxZ_; /**< Points above this will be excluded from consideration */
     const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
-    const unsigned int inflationRadius_; /**< The radius in meters to propagate cost and obstacle information */
-    const unsigned int circumscribedRadius_;
-    const unsigned int inscribedRadius_;
+    const unsigned int inflationRadius_; /**< The radius in cells to propagate cost and obstacle information */
+    const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
+    const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
+
     unsigned char* staticData_; /**< data loaded from the static map */
     unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
     unsigned char* heightData_; /**< Stores the z value */
@@ -290,9 +310,7 @@ namespace costmap_2d {
     std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
     QUEUE queue_; /**< Used for cost propagation */
 
-    double** cachedDistances; /**< Cached distances indexed by dx, dy */
-    
-  };
+    double** cachedDistances; /**< Cached distances indexed by dx, dy */  };
 
   /**
    * Wrapper class that provides a local window onto a global cost map

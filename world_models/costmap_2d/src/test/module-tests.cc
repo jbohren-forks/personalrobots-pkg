@@ -71,6 +71,45 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
   return false;
 }
 
+
+/**
+ * Test for the cost function correctness. testing:
+ * a) Correct base cost value
+ * b) Correct normalized cost value for the given weight
+ * c) Correctly evaluating if something is inscribed vs. circumscribed
+ */
+TEST(costmap, costFunctionCorrectness){
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2.0, ROBOT_RADIUS, 2);
+
+  // Add a point in the center
+  std_msgs::PointCloud cloud;
+  cloud.set_pts_size(1);
+  cloud.pts[0].x = 5;
+  cloud.pts[0].y = 5;
+
+  std::vector<unsigned int> updates;
+  map.updateDynamicObstacles(1, cloud, updates);
+
+  ASSERT_EQ(map.getCost(0, 0), 0);
+  ASSERT_EQ(map.getNormalizedCost(0, 0), 0);
+
+  ASSERT_EQ(map.getCost(6, 5), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+  ASSERT_EQ(map.isDefinitelyBlocked(6, 5), true);
+
+  // 2 to the right should be a circumscribed cell.
+  ASSERT_EQ(map.isCircumscribedCell(7, 5), true);
+
+  // Its normalized cost should be 2
+  ASSERT_EQ(map.getNormalizedCost(7, 5), 2);
+
+  // Nex one over should not be, but its cost should be half that of its neighbor
+  ASSERT_EQ(map.isCircumscribedCell(8, 5), false);
+  ASSERT_EQ(map.getCost(8, 5), map.getCost(7, 5) / 2);
+
+  ASSERT_EQ(updates.size(), 45);
+}
+
 // Test Priority queue handling
 TEST(costmap, test13){
   QUEUE q;
@@ -349,8 +388,6 @@ TEST(costmap, test7){
   for(unsigned int i=0;i<occupiedCells.size(); i++)
     setOfCells.insert(i);
 
-  std::cout << map.toString();
-
   ASSERT_EQ(setOfCells.size(), occupiedCells.size());
   ASSERT_EQ(setOfCells.size(), 37);
 
@@ -544,8 +581,8 @@ TEST(costmap, test11){
 
   // 4 updates to handle the new obstacle data and its cost implications
   ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
-  ASSERT_EQ(map.getCost(9,8), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
-  ASSERT_EQ(map.getCost(8,9), CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE / 2);
+  ASSERT_EQ(map.getCost(9,8), CostMap2D::INSCRIBED_INFLATED_OBSTACLE / 2);
+  ASSERT_EQ(map.getCost(8,9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE / 2);
 
   // In addition, all cells will have been switched to free space along the diagonal
   for(unsigned int i=0; i < 8; i++)
