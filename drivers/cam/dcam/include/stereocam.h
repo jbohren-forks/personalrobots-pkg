@@ -77,6 +77,7 @@ namespace cam
 
     virtual bool doRectify();	// rectify images
     virtual bool doDisparity();	// calculate disparity image
+    virtual bool doCalcPts();	// calculate 3D points
 
     virtual bool setTextureThresh(int thresh);
     virtual bool setUniqueThresh(int thresh);

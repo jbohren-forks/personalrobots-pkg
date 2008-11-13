@@ -226,19 +226,26 @@ namespace cam
     size_t imDispSize;		// size of image in bytes
     int dpp;			// disparity units per pixel, e.g., 16 is 1/16 pixel per disparity
     bool hasDisparity;		// true if disparity present
-    int numDisp;		// number of disparities, in pixels
+    int numDisp;		// number of search disparities, in pixels
+    int offx;			// x offset of disparity search
 
     // valid stereo data rectangle
     int imDtop, imDleft;
     int imDwidth, imDheight;
     void setDispOffsets();	// reset them, based on stereo processing params
 
+    // point cloud data
+    float *imPts;		// point array, 3xN floats
+    size_t imPtsSize;		// size of array in bytes, for storage manipulation
+    int numPts;			// number of points in array
+    bool isPtArray;		// true if the points are an image array, z=0.0 for no point
+
     // external parameters for undistorted images
     double T[3];		// pose of right camera in left camera coords
     double Om[3];		// rotation vector
 
     // reprojection matrix
-    double RP[12];
+    double RP[16];
 
     // buffers
     void releaseBuffers();	// get rid of all buffers

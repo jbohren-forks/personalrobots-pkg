@@ -268,7 +268,14 @@ StereoData::StereoData()
   uniqueThresh = 12;
 
   hasRectification = false;
+
+  // point array/vector
+  numPts = 0;
+  imPts = NULL;
+  isPtArray = false;
+  imPtsSize = 0;
 }
+
 
 StereoData::~StereoData()
 {
@@ -303,6 +310,9 @@ StereoData::releaseBuffers()
   imDisp = NULL;
   imDispSize = 0;
   hasDisparity = false;
+  MEMFREE(imPts);
+  imPtsSize = 0;
+  numPts = 0;
   imLeft->releaseBuffers();
   imRight->releaseBuffers();
 }
@@ -350,18 +360,31 @@ void extract(std::string& data, std::string section,
 }
 
 
+//
+// gets params from a string
+// "SVS"-type parameter strings use mm for the projection matrices, convert to m
+// "OST"-type parameter strings use m for projection matrices
+//
+
 void
 StereoData::extractParams(char *ps)
 {
   std::string params;
   params = ps;
   double *pp;
+  bool isSVS = false;
 
-  //  std::cout << params << "\n\n";
+  // std::cout << params << "\n\n";
+
+  if (strncmp(ps,"# SVS",5)==0) // SVS-type parameters
+    {
+      PRINTF("[dcam] SVS-type parameters\n");
+      isSVS = true;
+    }
 
   // left image
   for (int i=0; i<9; i++) imLeft->K[i] = 0.0; // original camera matrix
-  extract(params, "[left camera]", "f ", imLeft->K[0]); // ?? have to use "f " here
+  extract(params, "[left camera]", "f ", imLeft->K[0]); // have to use space after "f"
   extract(params, "[left camera]", "fy", imLeft->K[4]);
   extract(params, "[left camera]", "Cx", imLeft->K[2]);
   extract(params, "[left camera]", "Cy", imLeft->K[5]);
@@ -374,6 +397,7 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imLeft->K[i*3+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
 
   for (int i=0; i<5; i++) imLeft->D[i] = 0.0; // distortion params
   extract(params, "[left camera]", "kappa1", imLeft->D[0]);
@@ -385,6 +409,7 @@ StereoData::extractParams(char *ps)
   PRINTF("[dcam] Left distortion vector\n");
   for (int i=0; i<5; i++)
     PRINTF(" %.4f",imLeft->D[i]);
+  PRINTF("\n");
   PRINTF("\n");
 
   pp = (double *)imLeft->R; // rectification matrix
@@ -398,10 +423,13 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imLeft->R[i*3+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
 	  
   pp = (double *)imLeft->P; // projection matrix
   for (int i=0; i<12; i++) pp[i] = 0.0;
   extract(params, "[left camera]", "proj",  pp, 12);
+  if (isSVS)
+    imLeft->P[3] *= .001;	// convert from mm to m
 
   PRINTF("[dcam] Left projection matrix\n");
   for (int i=0; i<3; i++)
@@ -410,6 +438,7 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imLeft->P[i*4+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
 
   // check for camera matrix
   if (imLeft->K[0] == 0.0) 
@@ -436,6 +465,7 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imRight->K[i*3+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
 
   for (int i=0; i<5; i++) imRight->D[i] = 0.0; // distortion params
   extract(params, "[right camera]", "kappa1", imRight->D[0]);
@@ -447,6 +477,7 @@ StereoData::extractParams(char *ps)
   PRINTF("[dcam] Right distortion vector\n");
   for (int i=0; i<5; i++)
     PRINTF(" %.4f",imRight->D[i]);
+  PRINTF("\n");
   PRINTF("\n");
 
   pp = (double *)imRight->R; // rectification matrix
@@ -460,11 +491,13 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imRight->R[i*3+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
 	  
   pp = (double *)imRight->P; // projection matrix
   for (int i=0; i<12; i++) pp[i] = 0.0;
   extract(params, "[right camera]", "proj",  pp, 12);
-  imRight->P[3] *= .001;	// convert from mm to m
+  if (isSVS)
+    imRight->P[3] *= .001;	// convert from mm to m
 
   PRINTF("[dcam] Right projection matrix\n");
   for (int i=0; i<3; i++)
@@ -473,6 +506,39 @@ StereoData::extractParams(char *ps)
 	PRINTF(" %.4f",imRight->P[i*4+j]);
       PRINTF("\n");
     }
+  PRINTF("\n");
+
+
+  // reprojection matrix
+  double Tx = imRight->P[0] /  imRight->P[3];
+  // first column
+  RP[0] = 1.0;
+  RP[4] = RP[8] = RP[12] = 0.0;
+  
+  // second column
+  RP[5] = 1.0;
+  RP[1] = RP[9] = RP[13] = 0.0;
+
+  // third column
+  RP[2] = RP[6] = RP[10] = 0.0;
+  RP[14] = -Tx;
+
+  // fourth column
+  RP[3] = -imLeft->P[2];	// cx
+  RP[7] = -imLeft->P[6];	// cy
+  RP[11] = imLeft->P[0];	// fx, fy
+  RP[15] = (imLeft->P[2] - imRight->P[2] - (double)offx) / Tx;
+
+  PRINTF("[dcam] Reprojection matrix\n");
+  for (int i=0; i<4; i++)
+    {
+      for (int j=0; j<4; j++)
+	PRINTF(" %.4f",RP[i*4+j]);
+      PRINTF("\n");
+    }
+  PRINTF("\n");
+
+
 
   // external params of undistorted cameras
   for (int i=0; i<3; i++) T[i] = 0.0;
@@ -484,14 +550,24 @@ StereoData::extractParams(char *ps)
   extract(params, "[external]", "Ry", Om[1]);
   extract(params, "[external]", "Rz", Om[2]);  
 
+  if (isSVS)			// in mm, convert to m
+    {
+      T[0] *= .001;
+      T[1] *= .001;
+      T[2] *= .001;
+    }
+
+
   PRINTF("[dcam] External translation vector\n");
   for (int i=0; i<3; i++)
     PRINTF(" %.4f",T[i]);
+  PRINTF("\n");
   PRINTF("\n");
 
   PRINTF("[dcam] External rotation vector\n");
   for (int i=0; i<3; i++)
     PRINTF(" %.4f",Om[i]);
+  PRINTF("\n");
   PRINTF("\n");
 
   extract(params, "[stereo]", "corrxsize", corrSize);

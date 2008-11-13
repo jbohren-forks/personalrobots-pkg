@@ -142,6 +142,56 @@ StereoCam::setUniqueThresh(int thresh)
 }
 
 
+//
+// Conversion to 3D points
+// Convert to vector or image array of pts
+//
+
+
+bool
+StereoCam::doCalcPts()
+{
+  stIm->numPts = 0;
+  if (!stIm->hasDisparity)
+    return false;
+
+  int ix = stIm->imDleft;
+  int iy = stIm->imDtop;
+  int ih = stIm->imDheight;
+  int iw = stIm->imDwidth;
+  int w = stIm->imWidth;
+  int h = stIm->imHeight;
+
+  if (stIm->imPtsSize < 4*w*h*sizeof(float))
+    {
+      MEMFREE(stIm->imPts);
+      stIm->imPtsSize = 4*w*h*sizeof(float);
+      stIm->imPts = (float *)MEMALIGN(stIm->imPtsSize);
+    }
+
+  float *pt;
+  int y = iy;
+  int x = ix;
+      
+  for (int j=0; j<ih; j++, y++)
+    {
+      uint16_t *p = stIm->imDisp + x + y*w;
+      pt = stIm->imPts + x + y*w;
+
+      for (int i=0; i<iw; i++, x++, p++, pt++)
+	{
+	  if (*p > 0) 
+	    {
+	      //	      svsReconstruct3D(&pt->X, &pt->Y, &pt->Z, (float)x, (float)y, *p, &si->sp, si->myLoc);
+	      stIm->numPts++;
+	    }
+	}
+    }
+
+  return true;
+}
+
+
 
 
 // StereoDcam class
