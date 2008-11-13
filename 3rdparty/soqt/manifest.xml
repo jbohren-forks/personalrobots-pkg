@@ -9,8 +9,11 @@
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config --libs`" cflags="`${prefix}/bin/soqt-config --cppflags`"/>
     <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
   </export>
+  <sysdepend os="ubuntu" version="7.04-hardy" package="libcoin40-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libcoin40-dev"/>
+  <sysdepend os="ubuntu" version="7.04-hardy" package="qt4-dev-tools"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="qt4-dev-tools"/>
+  <sysdepend os="ubuntu" version="7.04-hardy" package="libqt4-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libqt4-dev"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="wget"/>
