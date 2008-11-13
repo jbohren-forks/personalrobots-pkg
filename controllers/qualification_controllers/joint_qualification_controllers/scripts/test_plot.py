@@ -73,29 +73,22 @@ class App(wx.App):
       print 'this test message cannot be analyzed'
       
   def HysteresisPlot(self):
+    self.HysteresisAnalysis()
     print "plotting hysteresis"
-    # Plot the values and line of best fit
+    #create the figure
     fig=self.plot.get_figure()
     axes1 = fig.add_subplot(211)
     axes1.clear()
     axes2 = fig.add_subplot(212)
     axes2.clear()
     axes1.plot(numpy.array(self.data.position), numpy.array(self.data.effort), 'r--')
-    #encodermin=min(numpy.array(self.data.position))
-    #encodermax=max(numpy.array(self.data.position))
-    #indexmax = numpy.argmax(numpy.array(self.data.position))
-    #indexmin = numpy.argmin(numpy.array(self.data.position))
-    #end =numpy.array(self.data.position).size
-    #avg1 = numpy.average(numpy.array(self.data.effort)[indexmin:indexmax])
-    #avg2 = numpy.average(numpy.array(self.data.effort)[indexmax:end])
-    #print end
-    #print indexmax
-    #axes1.axhline(y=avg1,color='b')
+    #show the average effort lines 
+    axes1.axhline(y=self.avg1,color='b')
     axes1.axhline(y=0,color='k')
-    #axes1.axhline(y=avg2,color='g')
+    axes1.axhline(y=self.avg2,color='g')
     axes1.set_xlabel('Position')
     axes1.set_ylabel('Effort')
-
+    #show that a constant velocity was achieved
     axes2.plot(numpy.array(self.data.position), numpy.array(self.data.velocity), 'b--')
     axes2.set_xlabel('Position')
     axes2.set_ylabel('Velocity')
@@ -115,8 +108,6 @@ class App(wx.App):
     axes1.axis([0, 50, 0, -100])
 
     axes1.set_xlabel('Position PSD')
-    #axes1.set_ylabel('Effort')
-
     #axes2.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['velocity']), 'b--')
     pxx, f = axes2.psd(numpy.array(self.data.velocity), NFFT=16384, Fs=1000, Fc=0)
     axes2.clear()
@@ -132,6 +123,24 @@ class App(wx.App):
     self.count=0
     self.plot.draw()
 
+  def HysteresisAnalysis(self):
+    #compute the encoder travel
+    encodermin=min(numpy.array(self.data.position))
+    encodermax=max(numpy.array(self.data.position))
+    #find the index to do the average over
+    indexmax = numpy.argmax(numpy.array(self.data.position))
+    indexmin = numpy.argmin(numpy.array(self.data.position))
+    index=min(indexmin,indexmax)
+    end =numpy.array(self.data.position).size
+    #compute the averages to display
+    self.avg1 = numpy.average(numpy.array(self.data.effort)[0:index])
+    self.avg2 = numpy.average(numpy.array(self.data.effort)[index:end])
+    if encodermin > self.data.arg_value[1] or encodermax < self.data.arg_value[2]:
+      print "mechanism is binding and not traveling the complete distace"
+      print "min expected: %f  measured: %f" % (self.data.arg_value[1],encodermin)
+      print "max expected: %f  measured: %f" % (self.data.arg_value[2],encodermax)
+    else:
+      print "passed test"
     
     
 if __name__ == "__main__":
