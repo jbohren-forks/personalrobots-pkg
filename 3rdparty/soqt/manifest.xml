@@ -6,7 +6,7 @@
   <license url="http://www.coin3d.org/licensing/index_html#free-edition-gpl">GPL</license>
   <url>http://www.coin3d.org/</url>
   <export>
-    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config --libs`" cflags="`${prefix}/bin/soqt-config --cppflags`"/>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/soqt-config --ldflags` `${prefix}/bin/soqt-config --libs`" cflags="`${prefix}/bin/soqt-config --cppflags`"/>
     <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
   </export>
   <sysdepend os="ubuntu" version="7.04-hardy" package="libcoin40-dev"/>
