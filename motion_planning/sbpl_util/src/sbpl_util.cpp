@@ -47,6 +47,7 @@
 #include <errno.h>
 #include <cstring>
 
+
 using namespace std;
 
 
@@ -464,7 +465,6 @@ namespace ompl {
       obst_cost_thresh_(obst_cost_thresh),
       env_(new EnvironmentNAV3DKIN())
   {
-    // Aarghh at least we only do this once at init time.
     vector<sbpl_2Dpt_t> perimeterptsV;
     perimeterptsV.reserve(footprint.size());
     for (size_t ii(0); ii < footprint.size(); ++ii) {
@@ -474,13 +474,26 @@ namespace ompl {
       perimeterptsV.push_back(pt);
     }
     
-#warning 'Would be nice to get (at least) start as a pose from current data'
-    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
+    int const width(costmap.getWidth());
+    int const height(costmap.getHeight());
+    int const mapsize(width * height);
+    unsigned char * outmap(new unsigned char[mapsize]);
+    {
+      unsigned char const * in(costmap.getMap());
+      unsigned char const * in_end(costmap.getMap() + mapsize);
+      unsigned char * out(outmap);
+      for (/**/; in < in_end; ++in, ++out)
+	*out = (*in >= obst_cost_thresh) ? 1 : 0;
+    }
+    
+    env_->InitializeEnv(width, height, outmap,
 			startx, starty, starttheta,
 			goalx, goaly, goaltheta,
 			goaltol_x, goaltol_y, goaltol_theta,
 			perimeterptsV, costmap.getResolution(), nominalvel_mpersecs,
 			timetoturn45degsinplace_secs);
+    
+    delete[] outmap;
   }
   
   
@@ -510,7 +523,7 @@ namespace ompl {
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
       return false;
-    if (obst_cost_thresh_ >= newcost)
+    if (obst_cost_thresh_ <= newcost)
       return env_->UpdateCost(ix, iy, 1);
     return env_->UpdateCost(ix, iy, 0);
   }
