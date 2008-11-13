@@ -19,6 +19,8 @@ This ROS package compiles BFL with the Boost library for matrix operations and r
 <sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-<sysdepend os="ubuntu" version="8.04-feisty" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libcppunit-dev"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libcppunit-dev"/>
 </package>
 
