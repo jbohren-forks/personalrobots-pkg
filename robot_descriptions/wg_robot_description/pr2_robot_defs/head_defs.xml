@@ -94,13 +94,12 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
-            <updateRate>10.0</updateRate>
+            <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_${name}_controller" plugin="libRos_Laser.so">
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
-              <updateRate>15.0</updateRate>
-              <!-- <topicName>tilt_scan</topicName> -->
-              <topicName>scan</topicName>
+              <updateRate>20.0</updateRate>
+              <topicName>tilt_scan</topicName>
               <frameName>tilt_laser</frameName>
               <interface:laser name="ros_${name}_iface" />
             </controller:ros_laser>
@@ -160,10 +159,10 @@
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
-            <updateRate>15.0</updateRate>
+            <updateRate>20.0</updateRate>
             <controller:ros_camera name="${name}_left_controller" plugin="libRos_Camera.so">
               <alwaysOn>true</alwaysOn>
-	      <updateRate>15.0</updateRate>
+	      <updateRate>20.0</updateRate>
 	      <topicName>${name}_left/image</topicName>
 	      <frameName>${name}</frameName>
 	      <interface:camera name="${name}_left_iface" />

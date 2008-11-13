@@ -33,7 +33,7 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <!-- TODO should be different for left and right wheel-->
-          <elem key="material">Gazebo/Red</elem>
+          <elem key="material">PR2/wheel_${suffix}</elem>
         </map>
         <geometry name="pr2_wheel_mesh_file">
           <mesh filename="wheel" />
@@ -91,7 +91,7 @@
       </visual>
 
       <collision>
-        <origin xyz="0 0 0"
+        <origin xyz="0 0 0.07"
                 rpy="0.0 0.0 0.0 " />
         <geometry name="caster_collision_geom">
           <box size="0.192 0.164 0.013" />
@@ -202,11 +202,11 @@
 
             <minRange>0.05</minRange>
             <maxRange>10.0</maxRange>
-            <updateRate>10.0</updateRate>
+            <updateRate>20.0</updateRate>
             <controller:ros_laser name="ros_base_laser_controller" plugin="libRos_Laser.so">
               <gaussianNoise>0.005</gaussianNoise>
               <alwaysOn>true</alwaysOn>
-	      <updateRate>10</updateRate>
+	      <updateRate>20.0</updateRate>
 	      <topicName>base_scan</topicName>
 	      <frameName>base_laser</frameName>
 	      <interface:laser name="ros_base_laser_iface" />

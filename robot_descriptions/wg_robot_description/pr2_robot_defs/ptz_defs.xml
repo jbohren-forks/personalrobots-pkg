@@ -81,27 +81,27 @@
           <cylinder radius="0.03" length="0.03" />
         </geometry>
       </collision>
-    </sensor>
 
-    <map name="sensor" flag="gazebo">
-      <verbatim key="sensor_camera">
-        <sensor:camera name="${side}_ptz_cam_sensor">
-          <imageWidth>640</imageWidth>
-          <imageHeight>480</imageHeight>
-          <hfov>60</hfov>
-          <nearClip>0.1</nearClip>
-          <farClip>100</farClip>
-          <updateRate>15.0</updateRate>
-          <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libRos_Camera.so">
-            <alwaysOn>true</alwaysOn>
+      <map name="sensor" flag="gazebo">
+        <verbatim key="sensor_camera">
+          <sensor:camera name="${side}_ptz_cam_sensor">
+            <imageWidth>640</imageWidth>
+            <imageHeight>480</imageHeight>
+            <hfov>60</hfov>
+            <nearClip>0.1</nearClip>
+            <farClip>100</farClip>
             <updateRate>15.0</updateRate>
-            <topicName>axis_left/image</topicName>
-            <frameName>ptz_left</frameName>
-            <interface:camera name="${side}_ptz_cam_iface" />
-          </controller:ros_camera>
-        </sensor:camera>
-      </verbatim>
-    </map>
+            <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libRos_Camera.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>15.0</updateRate>
+              <topicName>axis_left/image</topicName>
+              <frameName>ptz_left</frameName>
+              <interface:camera name="${side}_ptz_cam_iface" />
+            </controller:ros_camera>
+          </sensor:camera>
+        </verbatim>
+      </map>
+    </sensor>
 
   </macro>
 

@@ -256,11 +256,14 @@
         </geometry>
       </visual>
       <collision>
-        <origin xyz="${shoulder_pitch_length/2} 0 0 " rpy="${M_PI/2} 0 0" />
+        <origin xyz="0 0 0 " rpy="${M_PI/2} 0 0" />
         <geometry name="pr2_shoulder_pitch_collision_geom">
           <cylinder radius="${shoulder_pitch_radius}" length="${shoulder_pitch_length}" />
         </geometry>
       </collision>
+      <map name="pr2_shoulder_pitch_${side}_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
     </link>
 
     <transmission type="SimpleTransmission" name="${side}_shoulder_pitch_trans">

@@ -52,6 +52,7 @@
   <pr2_ptz side="right" reflect="-1" parent="torso">
     <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
   </pr2_ptz>
+
   <pr2_ptz side="left" reflect="1" parent="torso">
     <origin xyz="0.0  0.1975 0.2265" rpy="0 0 0" />
   </pr2_ptz>
