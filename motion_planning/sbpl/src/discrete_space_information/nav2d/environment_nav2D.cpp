@@ -339,11 +339,12 @@ bool EnvironmentNAV2D::IsWithinMapCell(int X, int Y)
 
 EnvironmentNAV2D::~EnvironmentNAV2D(){
   if(EnvNAV2D.Coord2StateIDHashTable != NULL){
-    for(unsigned int i = 0; i < EnvNAV2D.Coord2StateIDHashTable.size(); ++i){
-      if(EnvNAV2D.Coord2StateIDHashTable[i] != NULL)
-        delete EnvNAV2D.Coord2StateIDHashTable[i];
-    }
     delete[] EnvNAV2D.Coord2StateIDHashTable;
+  }
+
+  for(unsigned int i = 0; i < EnvNAV2D.StateID2CoordTable.size(); ++i){
+    if(EnvNAV2D.StateID2CoordTable[i] != NULL)
+      delete EnvNAV2D.StateID2CoordTable[i];
   }
 
   if(EnvNAV2DCfg.Grid2D != NULL){
