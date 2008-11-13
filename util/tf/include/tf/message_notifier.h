@@ -118,9 +118,16 @@ public:
    */
   MessageNotifier(Transformer* tf, ros::node* node, Callback callback,
       const std::string& topic, const std::string& target_frame,
-      uint32_t queue_size) :
-    tf_(tf), node_(node), callback_(callback), target_frame_(target_frame),
-        queue_size_(queue_size), message_count_(0), destructing_(false)
+      uint32_t queue_size)
+  : tf_(tf)
+  , node_(node)
+  , callback_(callback)
+  , target_frame_(target_frame)
+  , queue_size_(queue_size)
+  , message_count_(0)
+  , destructing_(false)
+  , new_messages_(false)
+  , new_transforms_(false)
   {
     setTopic(topic);
 
@@ -152,6 +159,8 @@ public:
     thread_handle_->join();
 
     delete thread_handle_;
+
+    clear();
   }
 
   /**
