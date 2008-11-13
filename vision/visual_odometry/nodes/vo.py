@@ -41,13 +41,10 @@ import getopt
 from math import *
 
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
-from cv_view.msg import Line, Lines
-from visual_odometry.msg import Frame, Pose44, Keypoint, Descriptor
 import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, Pose, FeatureDetectorHarris
 import camera
-from marker import Marker
 
 import PIL.Image
 import PIL.ImageDraw
@@ -67,7 +64,6 @@ class VO:
     rospy.TopicSub('/videre/images', ImageArray, self.handle_array)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
 
-    self.vo_pub = rospy.Publisher("/vo/key", Frame)
     self.vo = None
 
   def handle_params(self, iar):
