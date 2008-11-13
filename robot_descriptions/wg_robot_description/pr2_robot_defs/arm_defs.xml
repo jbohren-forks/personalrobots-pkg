@@ -7,7 +7,7 @@
   <property name="shoulder_pitch_radius" value="0.12" />
 
 
-  <macro name="pr2_finger" params="prefix side parent reflect">
+  <macro name="pr2_finger" params="prefix side parent reflect mimic_finger">
 
     <!-- Finger proximal digit -->
 
@@ -17,6 +17,7 @@
       <calibration values="1.5 -1 " />
       <limit effort="10" velocity="10" min="-100" max="100" />
       <joint_properties damping="0.01" />
+      <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${reflect}" offset="0"/>
     </joint>
 
     <link name="${prefix}_${side}_finger">
@@ -36,7 +37,7 @@
           <elem key="material">Gazebo/Shell</elem>
         </map>
         <geometry name="pr2_finger_${side}_mesh_file">
-          <mesh filename="finger-${side}" />
+          <mesh filename="upper_finger_${side}" />
         </geometry>
       </visual>
       <collision>
@@ -59,6 +60,7 @@
       <anchor xyz="0 0 0" />
       <limit effort="10" velocity="10" min="-100" max="100" />
       <joint_properties damping="0.01" />
+      <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${-reflect}" offset="0"/>
     </joint>
 
     <link name="${prefix}_${side}_finger_tip">
@@ -78,7 +80,7 @@
           <elem key="material">Gazebo/Green</elem>
         </map>
         <geometry name="pr2_finger_tip_${side}_mesh_file">
-          <mesh filename="finger-tip-${side}" />
+          <mesh filename="finger_tip_${side}" />
         </geometry>
       </visual>
       <collision>
@@ -96,7 +98,7 @@
 
 
 
-  <macro name="pr2_gripper" params="side parent">
+  <macro name="pr2_gripper" params="side parent mimic_finger">
     <joint name="${side}_gripper_palm_joint" type="fixed" />
     <link name="${side}_gripper_palm">
       <parent name="${parent}" />
@@ -132,17 +134,23 @@
       </map>
     </link>
 
-    <pr2_finger prefix="${side}_gripper" side="l" parent="${side}_gripper_palm" reflect="1" />
-    <pr2_finger prefix="${side}_gripper" side="r" parent="${side}_gripper_palm" reflect="-1" />
+    <pr2_finger mimic_finger="${mimic_finger}" prefix="${side}_gripper" side="l" parent="${side}_gripper_palm" reflect="1" />
+    <pr2_finger mimic_finger="${mimic_finger}" prefix="${side}_gripper" side="r" parent="${side}_gripper_palm" reflect="-1" />
 
-    <transmission type="GripperTransmission" name="${side}_gripper_trans">
+    <!--transmission type="GripperTransmission" name="${side}_gripper_trans">
       <actuator name="${side}_gripper_motor" />
       <joint name="${side}_gripper_r_finger_joint" reduction="-1000.0" />
       <joint name="${side}_gripper_r_finger_tip_joint" reduction="1000.0" />
       <joint name="${side}_gripper_l_finger_joint" reduction="1000.0" />
       <joint name="${side}_gripper_l_finger_tip_joint" reduction="-1000.0" />
       <pid p="0.01" i="0.001" d="0.005" iClamp="0.005" />
+    </transmission-->
+    <transmission type="SimpleTransmission" name="${side}_gripper_trans">
+      <actuator name="${side}_gripper_motor" />
+      <joint name="${side}_gripper_l_finger_joint" />
+      <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
+
   </macro>
 
 

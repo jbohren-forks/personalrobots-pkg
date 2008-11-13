@@ -36,7 +36,7 @@
           <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="pr2_wheel_mesh_file">
-          <mesh filename="wheel_right" />
+          <mesh filename="wheel" />
         </geometry>
 
       </visual>
