@@ -14,5 +14,16 @@ Specifications (also known as the IIDC or DCAM Specifications)
   <doxymaker external="http://damien.douxchamps.net/ieee1394/libdc1394/"/>
 </export>
 <versioncontrol type="svn" url="https://libdc1394.svn.sourceforge.net/svnroot/libdc1394/trunk/libdc1394"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="automake"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="automake"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="autoconf"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="autoconf"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libtool"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libtool"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libraw1394-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libraw1394-dev"/>
+
+
 </package>
 
