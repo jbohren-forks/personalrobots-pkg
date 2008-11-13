@@ -67,13 +67,12 @@ static void display(int * argc, char ** argv);
 
 static EnvironmentWrapper3DKIN::footprint_t const & getFootprint();
 static std::string canonicalEnvironmentName(std::string const & name_or_alias);
+static std::string baseFilename();
 
 static bool enableGfx;
 static string plannerType;
 static string costmapType;
 static string environmentType;
-static string logFilename;
-static string pngFilename;
 static string setupName;
 static double resolution;
 static double inscribedRadius;
@@ -99,8 +98,8 @@ static int glut_width;
 static int glut_height;
 static bool made_first_screenshot;
 
-typedef list<std_msgs::Pose2DFloat32> plan_t;
-typedef std::vector<plan_t> planList_t;
+typedef vector<std_msgs::Pose2DFloat32> plan_t;
+typedef vector<plan_t> planList_t;
 static planList_t planList;
 
 
@@ -109,7 +108,8 @@ int main(int argc, char ** argv)
   if (0 != atexit(cleanup))
     errx(EXIT_FAILURE, "atexit() failed");
   parse_options(argc, argv);
-  logos.reset(new ofstream(logFilename.c_str(), ios_base::app));
+  string logFilename(baseFilename() + ".txt");
+  logos.reset(new ofstream(logFilename.c_str()));
   create_setup();
   run_tasks();
   print_summary();
@@ -146,8 +146,6 @@ void usage(ostream & os)
      << "   -I  <inflate-r>  set INFLATION radius\n"
      << "   -d  <doorwidth>  set width of doors\n"
      << "   -H  <hallwidth>  set width of hallways\n"
-     << "   -l  <filename>   overwrite filename for logging\n"
-     << "   -P  <filename>   overwrite filename for screenshots\n"
      << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
      << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
      << "   -X               dump filename base to stdout (use as last option)\n"
@@ -158,10 +156,10 @@ void usage(ostream & os)
 static string summarizeOptions()
 {
   ostringstream os;
-  os << "-p" << plannerType
+  os << "-p" << canonicalPlannerName(plannerType)
      << "-s" << setupName
      << "-m" << costmapType
-     << "-e" << environmentType
+     << "-e" << canonicalEnvironmentName(environmentType)
      << "-r" << (int) rint(1e3 * resolution)
      << "-i" << (int) rint(1e3 * inscribedRadius)
      << "-c" << (int) rint(1e3 * circumscribedRadius)
@@ -169,6 +167,25 @@ static string summarizeOptions()
      << "-d" << (int) rint(1e3 * doorWidth)
      << "-H" << (int) rint(1e3 * hallWidth);
   return os.str();
+}
+
+
+std::string baseFilename()
+{
+  return "mpbench-" + summarizeOptions();
+}
+
+
+static void sanitizeOptions()
+{
+  if (inscribedRadius > circumscribedRadius)
+    circumscribedRadius = inscribedRadius;
+  if (inscribedRadius > inflationRadius)
+    inflationRadius = inscribedRadius;
+  if (circumscribedRadius > inflationRadius)
+    inflationRadius = circumscribedRadius;
+  plannerType = canonicalPlannerName(plannerType);
+  environmentType = canonicalEnvironmentName(environmentType);
 }
 
 
@@ -189,8 +206,6 @@ void parse_options(int argc, char ** argv)
   inflationRadius = 2;
   doorWidth = 1.2;
   hallWidth = 3;
-  logFilename = "";
-  pngFilename = "";
   travmapFilename = "";
   costmapFilename = "";
   websiteMode = false;
@@ -356,26 +371,6 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
-      case 'l':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -l requires logging filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	logFilename = argv[ii];
- 	break;
-	
-      case 'P':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -P requires screenshot filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	pngFilename = argv[ii];
- 	break;
-	
       case 'o':
  	++ii;
  	if (ii >= argc) {
@@ -397,7 +392,8 @@ void parse_options(int argc, char ** argv)
  	break;
 	
       case 'X':
-	cout << "mpbench-" << summarizeOptions() << "\n";
+	sanitizeOptions();
+	cout << baseFilename() << "\n";
 	exit(EXIT_SUCCESS);
 	
       case 'W':
@@ -411,21 +407,7 @@ void parse_options(int argc, char ** argv)
       }
   }
   
-  // sanitize
-  if (inscribedRadius > circumscribedRadius)
-    circumscribedRadius = inscribedRadius;
-  if (inscribedRadius > inflationRadius)
-    inflationRadius = inscribedRadius;
-  if (circumscribedRadius > inflationRadius)
-    inflationRadius = circumscribedRadius;
-  plannerType = canonicalPlannerName(plannerType);
-  environmentType = canonicalEnvironmentName(environmentType);
-  
-  if (logFilename.empty())
-    logFilename = "mpbench-" + summarizeOptions() + ".txt";
-  
-  if (pngFilename.empty())
-    pngFilename = "mpbench-" + summarizeOptions() + ".png";
+  sanitizeOptions();
 }
 
 
@@ -472,14 +454,14 @@ void create_setup()
 	 << "creating environment of type " << environmentType
 	 << " for map type " << costmapType << "\n" << flush;
   
-  // maybe make othresh configurable? see move_base_sbpl in
-  // highlevel_controllers
-  unsigned char const
-    obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
   if ("2D" == environmentType) {
+    unsigned char const
+      obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
     environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0, obst_cost_thresh));
   }
   else if ("3DKIN" == environmentType) {
+    unsigned char const
+      obst_cost_thresh(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
     // how about making these configurable?
     double const goaltol_x(0.5 * inscribedRadius);
     double const goaltol_y(0.5 * inscribedRadius);
@@ -492,36 +474,38 @@ void create_setup()
 							goaltol_x, goaltol_y, goaltol_theta,
 							getFootprint(), nominalvel_mpersecs,
 							timetoturn45degsinplace_secs));
-    // sanity check
-    bool sane(true);
-    cout << "3DKIN costmap sanity check:\n"
-	 << " * correct obstacle\n"
-	 << " O missing obstacle\n"
-	 << " . correct freespace\n"
-	 << " x missing freespace\n";
-    for (unsigned int ix(0); ix < setup->getCostmap().getWidth(); ++ix) {
-      cout << "  ";
-      for (unsigned int iy(0); iy < setup->getCostmap().getHeight(); ++iy)
-	if (setup->getCostmap().getCost(ix, iy) >= obst_cost_thresh) {
-	  if (environment->IsObstacle(ix, iy))
-	    cout << "*";
-	  else {
-	    cout << "O";
-	    sane = false;
+    static bool const do_sanity_check(false);
+    if (do_sanity_check) {
+      bool sane(true);
+      cout << "3DKIN costmap sanity check:\n"
+	   << " * correct obstacle\n"
+	   << " O missing obstacle\n"
+	   << " . correct freespace\n"
+	   << " x missing freespace\n";
+      for (unsigned int ix(0); ix < setup->getCostmap().getWidth(); ++ix) {
+	cout << "  ";
+	for (unsigned int iy(0); iy < setup->getCostmap().getHeight(); ++iy)
+	  if (setup->getCostmap().getCost(ix, iy) >= obst_cost_thresh) {
+	    if (environment->IsObstacle(ix, iy))
+	      cout << "*";
+	    else {
+	      cout << "O";
+	      sane = false;
+	    }
 	  }
-	}
-	else {
-	  if ( ! environment->IsObstacle(ix, iy))
-	    cout << ".";
 	  else {
-	    cout << "x";
-	    sane = false;
+	    if ( ! environment->IsObstacle(ix, iy))
+	      cout << ".";
+	    else {
+	      cout << "x";
+	      sane = false;
+	    }
 	  }
-	}
-      cout << "\n";
+	cout << "\n";
+      }
+      if ( ! sane)
+	errx(EXIT_FAILURE, "3DKIN environment is not sane");
     }
-    if ( ! sane)
-      errx(EXIT_FAILURE, "3DKIN environment is not sane");
   }
   else {
     errx(EXIT_FAILURE, "invalid environmentType \"%s\", use 2D or 3DKIN", environmentType.c_str());
@@ -655,6 +639,8 @@ void print_summary()
   size_t n_fail(0);
   double t_success(0);
   double t_fail(0);
+  double lplan(0);
+  double rplan(0);
   for (SBPLPlannerStatistics::stats_t::const_iterator ie(stats.begin()); ie != stats.end(); ++ie) {
     // cannot use status, some planners say SUCCESS even they fail
     if (ie->plan_length_m < 1e-3) {
@@ -664,22 +650,42 @@ void print_summary()
     else {
       ++n_success;
       t_success += ie->actual_time_user_sec;
+      lplan += ie->plan_length_m;
+      rplan += ie->plan_angle_change_rad;
     }
   }
-  *logos << "\nsummary (success / failure / total):\n"
-	 << "  N tasks: " << n_success << " / " << n_fail << " / " << n_success + n_fail << "\n"
-	 << "  time:    " << t_success << " / " << t_fail << " / " << t_success + t_fail << "\n";
+  rplan *= 180.0 / M_PI;
+  double const ntt(n_success + n_fail);
+  double x0, y0, x1, y1;
+  setup->getWorkspaceBounds(x0, y0, x1, y1);
+  double area((x1-x0)*(y1-y0));
+  double ncells(ceil(area / pow(resolution, 2)));
+  *logos << "\nsummary:\n"
+	 << "  map size:\n"
+	 << "    area [m2]:                 " << area << "\n"
+	 << "    cells (approx):            " << ncells << "\n"
+	 << "  N tasks:\n"
+	 << "    success:                   " << n_success << "\n"
+	 << "    fail:                      " << n_fail << "\n"
+    //	 << "    total:                     " << n_success + n_fail << "\n"
+	 << "  total / average:\n"
+	 << "    planning time success [s]: " << t_success << " / " << t_success / n_success << "\n"
+    //	 << "    planning time failure [s]: " << t_fail << " / " << t_fail / n_success << "\n"
+	 << "    plan length [m]:           " << lplan << " / " << lplan / n_success << "\n"
+	 << "    plan angle change [deg]:   " << rplan << " / " << rplan / n_success << "\n";
   if (websiteMode) {
     string foo("mpbench-" + summarizeOptions() + ".html");
     ofstream os(foo.c_str());
     if (os)
-      os << "<table border=\"1\"><tr><th>&nbsp;</th><th>success</th><th>failure</th><th>total</th></tr>\n"
-	 << "  <tr><td><b>N tasks</b></td><td>" << n_success
-	 << "</td><td>" << n_fail << "</td><td>"
-	 << n_success + n_fail << "</td></tr>\n"
-	 << "  <tr><td><b>time</b></td><td>" << t_success
-	 << "</td><td>" << t_fail
-	 << "</td><td>" << t_success + t_fail << "</td></tr>\n"
+      os << "<table border=\"1\" cellpadding=\"2\">\n"
+	 << "<tr><td><b>N tasks</b></td><td>success: " << n_success << "</td><td>fail: " << n_fail << "</td></tr>\n"
+	 << "<tr><td><b>map size</b></td><td>area: " << area << "</td><td>cells " << ncells << "</td></tr>\n"
+	 << "</table>\n"
+	 << "<table border=\"1\" cellpadding=\"2\">\n"
+	 << "<tr><th>&nbsp;</th><th>total</th><th>average</th></tr>\n"
+	 << "<tr><td><b>planning time success [s]</b></td><td>" << t_success << "</td><td>" << t_success / n_success << "</td></tr>\n"
+	 << "<tr><td><b>plan length [m]</b></td><td>" << lplan << "</td><td>" << lplan / n_success << "</td></tr>\n"
+	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
 	 << "</table>\n";
   }
 }
@@ -717,7 +723,7 @@ void display(int * argc, char ** argv)
     setup->getWorkspaceBounds(x0, y0, x1, y1);
     glut_width = (int) ceil(3 * (y1 - y0) / resolution);
     glut_height = (int) ceil((x1 - x0) / resolution);
-    while (glut_width < 800) {
+    while (glut_height < 800) {
       glut_width *= 2;
       glut_height *= 2;
     }
@@ -823,7 +829,7 @@ void init_layout()
     errx(EXIT_FAILURE, "no drawing called \"travmap\"");
   if ( ! view->AddDrawing("plan"))
     errx(EXIT_FAILURE, "no drawing called \"plan\"");
-  
+    
   view = new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >());
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(0.33, 0, 0.33, 1);
@@ -832,7 +838,7 @@ void init_layout()
     errx(EXIT_FAILURE, "no drawing called \"costmap\"");
   if ( ! view->AddDrawing("plan"))
     errx(EXIT_FAILURE, "no drawing called \"plan\"");
-  
+    
   view = new npm::View("envwrap", npm::Instance<npm::UniqueManager<npm::View> >());
   // beware of weird npm::View::Configure() param order: x, y, width, height
   view->Configure(0.66, 0, 0.33, 1);
@@ -844,9 +850,10 @@ void init_layout()
 }
 
 
-static void make_screenshot()
+static void make_screenshot(string const & namePrefix)
 {
   npm::SimpleImage image(glut_width, glut_height);
+  string pngFilename(namePrefix + baseFilename() + ".png");
   image.read_framebuf(0, 0);
   image.write_png(pngFilename);
   *logos << "saved screenshot " << pngFilename << "\n" << flush;
@@ -859,14 +866,14 @@ void draw()
   if (websiteMode) {
     double x0, y0, x1, y1;
     setup->getWorkspaceBounds(x0, y0, x1, y1);
-    glut_width = (int) ceil((y1 - y0) / resolution);
-    glut_height = (int) ceil((x1 - x0) / resolution);
-    reshape(glut_width, glut_height);
+    //     glut_width = (int) ceil((y1 - y0) / resolution);
+    //     glut_height = (int) ceil((x1 - x0) / resolution);
+    //     reshape(glut_width, glut_height);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();
     glutSwapBuffers();
-    make_screenshot();
+    make_screenshot("");
     
     while (glut_width > 200) { 	// wow what a hack
       glut_width /= 2;
@@ -877,8 +884,7 @@ void draw()
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
     glFlush();
     glutSwapBuffers();
-    pngFilename = "small-" + pngFilename; // and another one
-    make_screenshot();
+    make_screenshot("small-");
     
     exit(EXIT_SUCCESS);
   }
@@ -889,7 +895,7 @@ void draw()
   glutSwapBuffers();
 
   if ( ! made_first_screenshot) {
-    make_screenshot();
+    make_screenshot("");
     made_first_screenshot = true;
   }
 }
@@ -907,7 +913,7 @@ void keyboard(unsigned char key, int mx, int my)
 {
   switch (key) {
   case 'p':
-    make_screenshot();
+    make_screenshot("");
     break;
   case 'q':
     errx(EXIT_SUCCESS, "key: q");
@@ -976,29 +982,49 @@ namespace {
   }
   
   
+  static void drawFootprint()
+  {
+    EnvironmentWrapper3DKIN::footprint_t const & foot(getFootprint());
+    glBegin(GL_LINE_LOOP);
+    for (size_t jj(0); jj < foot.size(); ++jj)
+      glVertex2d(foot[jj].x, foot[jj].y);
+    glEnd();
+  }
+  
+  
   void PlanDrawing::
   Draw()
   {
-    for (size_t ii(0); ii < planList.size(); ++ii) {
-      glColor3d(1, 1, 0);
-      glLineWidth(2);
-      glBegin(GL_LINE_STRIP);
-      for (plan_t::const_iterator ip(planList[ii].begin()); ip != planList[ii].end(); ++ip)
-	glVertex2d(ip->x, ip->y);
-      glEnd();
+    glMatrixMode(GL_MODELVIEW);
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    
+    // trace of thin footprints or inscribed circles along path
+    double const llen(inscribedRadius / resolution / 2);
+    size_t const skip(static_cast<size_t>(ceil(llen)));
+    glColor3d(0.5, 1, 0);
+    glLineWidth(1);
+    if ("3DKIN" == environmentType) {
+      for (size_t ii(0); ii < planList.size(); ++ii)
+ 	for (size_t jj(0); jj < planList[ii].size(); jj += skip) {
+	  glPushMatrix();
+	  glTranslated(planList[ii][jj].x, planList[ii][jj].y, 0);
+	  glRotated(180 * planList[ii][jj].th / M_PI, 0, 0, 1);
+ 	  drawFootprint();
+	  glPopMatrix();
+ 	}
+    }
+    else {
+      for (size_t ii(0); ii < planList.size(); ++ii)
+ 	for (size_t jj(0); jj < planList[ii].size(); jj += skip) {
+	  glPushMatrix();
+	  glTranslated(planList[ii][jj].x, planList[ii][jj].y, 0);
+	  gluDisk(wrap_glu_quadric_instance(), inscribedRadius, inscribedRadius, 36, 1);
+	  glPopMatrix();
+ 	}
     }
     
+    // start and goal, with inscribed, circumscribed, and thick footprint
     SBPLBenchmarkSetup::tasklist_t const & tl(setup->getTasks());
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glMatrixMode(GL_MODELVIEW);
-    //    glColor3d(1, 0.5, 0);
-    //     for (size_t ii(0); ii < tl.size(); ++ii) {
-    //       glPushMatrix();
-    //       glTranslated(tl[ii].goal_x, tl[ii].goal_y, 0);
-    //       gluDisk(wrap_glu_quadric_instance(), tl[ii].goal_tol_xy, tl[ii].goal_tol_xy, 36, 1);
-    //       glPopMatrix();
-    //     }
-
     glColor3d(0.5, 1, 0);
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
@@ -1006,13 +1032,41 @@ namespace {
       gluDisk(wrap_glu_quadric_instance(), inscribedRadius, inscribedRadius, 36, 1);
       glPopMatrix();
     }
-    glLineWidth(1);
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
       glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
       gluDisk(wrap_glu_quadric_instance(), circumscribedRadius, circumscribedRadius, 36, 1);
       glPopMatrix();
     }
+    
+    glColor3d(1, 1, 0);
+    glLineWidth(3);
+    for (size_t ii(0); ii < tl.size(); ++ii) {
+      glPushMatrix();
+      glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
+      glRotated(180 * tl[ii].start_th / M_PI, 0, 0, 1);
+      drawFootprint();
+      glPopMatrix();
+    }
+
+    // goal tolerance
+    //    glColor3d(1, 0.5, 0);
+    //     for (size_t ii(0); ii < tl.size(); ++ii) {
+    //       glPushMatrix();
+    //       glTranslated(tl[ii].goal_x, tl[ii].goal_y, 0);
+    //       gluDisk(wrap_glu_quadric_instance(), tl[ii].goal_tol_xy, tl[ii].goal_tol_xy, 36, 1);
+    //       glPopMatrix();
+    //     }
+    
+    // path thich and yellow
+    glColor3d(1, 1, 0);
+    glLineWidth(3);
+    for (size_t ii(0); ii < planList.size(); ++ii) {
+      glBegin(GL_LINE_STRIP);
+      for (plan_t::const_iterator ip(planList[ii].begin()); ip != planList[ii].end(); ++ip)
+	glVertex2d(ip->x, ip->y);
+      glEnd();
+    }    
   }
   
 }

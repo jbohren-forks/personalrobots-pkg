@@ -82,10 +82,10 @@ namespace {
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.addTask("left to right", true,
-		         door, 0.5 * hall, 0,
+		         door, 0.5 * hall,   M_PI / 4,
 		  hall - door, 0.5 * hall, 0, tol_xy, tol_th);
     setup.addTask("right to left", false,
-		  hall - door, 0.5 * hall, 0,
+		  hall - door, 0.5 * hall, - M_PI / 4,
 		         door, 0.5 * hall, 0, tol_xy, tol_th);
   }
   
