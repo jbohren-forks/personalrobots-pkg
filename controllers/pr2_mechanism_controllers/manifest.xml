@@ -18,6 +18,8 @@
   <depend package="math_utils" />
   <depend package="robot_kinematics" />
   <depend package="rosout" />
+  <depend package="trajectory" />
+  <depend package="rosthread" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
