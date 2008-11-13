@@ -2,7 +2,7 @@
   <description>A ROS node to provide access to SCIP2.0-compliant Hokuyo laser devices.</description>
   <author>Brian P. Gerkey, Jeremy Leibs</author>
   <license>BSD</license>
-  <review status="API conditionally cleared" notes=iTully to code review"/>
+  <review status="API conditionally cleared" notes="iTully to code review"/>
   <depend package="roscpp" />
   <depend package="std_msgs" />
   <depend package="hokuyo_driver" />
