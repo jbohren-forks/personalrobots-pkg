@@ -62,11 +62,16 @@ static void usage(ostream & os);
 static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
+static void print_summary();
 static void display(int * argc, char ** argv);
+
+static EnvironmentWrapper3DKIN::footprint_t const & getFootprint();
+static std::string canonicalEnvironmentName(std::string const & name_or_alias);
 
 static bool enableGfx;
 static string plannerType;
 static string costmapType;
+static string environmentType;
 static string logFilename;
 static string pngFilename;
 static string setupName;
@@ -87,6 +92,9 @@ static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
 
+static shared_ptr<EnvironmentWrapper3DKIN::footprint_t> footprint;
+static map<string, string> environment_alias;
+
 static int glut_width;
 static int glut_height;
 static bool made_first_screenshot;
@@ -103,7 +111,8 @@ int main(int argc, char ** argv)
   parse_options(argc, argv);
   logos.reset(new ofstream(logFilename.c_str(), ios_base::app));
   create_setup();
-  run_tasks();  
+  run_tasks();
+  print_summary();
   if (enableGfx) {
     made_first_screenshot = false;
     display(&argc, argv);
@@ -129,6 +138,7 @@ void usage(ostream & os)
      << "   -h               help (this message)\n"
      << "   -p  <name>       name of the SBPL planner\n"
      << "   -m  <name>       name of the costmap implementation\n"
+     << "   -e  <name>       environment representation type\n"
      << "   -s  <name>       name of the setup\n"
      << "   -r  <cellsize>   set grid resolution\n"
      << "   -i  <in-radius>  set INSCRIBED radius\n"
@@ -151,6 +161,7 @@ static string summarizeOptions()
   os << "-p" << plannerType
      << "-s" << setupName
      << "-m" << costmapType
+     << "-e" << environmentType
      << "-r" << (int) rint(1e3 * resolution)
      << "-i" << (int) rint(1e3 * inscribedRadius)
      << "-c" << (int) rint(1e3 * circumscribedRadius)
@@ -171,6 +182,7 @@ void parse_options(int argc, char ** argv)
   plannerType = "ARAPlanner";
   setupName = "office1";
   costmapType = "costmap_2d";
+  environmentType = "2D";
   resolution = 0.05;
   inscribedRadius = 0.5;
   circumscribedRadius = 1.2;
@@ -224,6 +236,16 @@ void parse_options(int argc, char ** argv)
  	  exit(EXIT_FAILURE);
  	}
 	costmapType = argv[ii];
+ 	break;
+	
+      case 'e':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -e requires a name argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	environmentType = argv[ii];
  	break;
 	
       case 'r':
@@ -389,6 +411,16 @@ void parse_options(int argc, char ** argv)
       }
   }
   
+  // sanitize
+  if (inscribedRadius > circumscribedRadius)
+    circumscribedRadius = inscribedRadius;
+  if (inscribedRadius > inflationRadius)
+    inflationRadius = inscribedRadius;
+  if (circumscribedRadius > inflationRadius)
+    inflationRadius = circumscribedRadius;
+  plannerType = canonicalPlannerName(plannerType);
+  environmentType = canonicalEnvironmentName(environmentType);
+  
   if (logFilename.empty())
     logFilename = "mpbench-" + summarizeOptions() + ".txt";
   
@@ -405,7 +437,9 @@ void create_setup()
   else if ("sfl" == costmapType)
     use_sfl_cost = true;
   else
-    errx(EXIT_FAILURE, "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl", costmapType.c_str());
+    errx(EXIT_FAILURE,
+	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
+	 costmapType.c_str());
   
   *logos << "creating setup \"" << setupName << "\"\n" << flush;
   {
@@ -417,7 +451,8 @@ void create_setup()
 	dump_os.reset();
       }
     }
-    setup.reset(OfficeBenchmark::create(setupName, resolution, inscribedRadius, circumscribedRadius, inflationRadius,
+    setup.reset(OfficeBenchmark::create(setupName, resolution, inscribedRadius,
+					circumscribedRadius, inflationRadius,
 					obstacleCost, use_sfl_cost, doorWidth, hallWidth,
 					logos.get(), dump_os.get()));
     if ( ! setup)
@@ -433,11 +468,65 @@ void create_setup()
     }
   }
   setup->dumpDescription(*logos, "", "  ");
-  *logos << flush;
+  *logos << flush
+	 << "creating environment of type " << environmentType
+	 << " for map type " << costmapType << "\n" << flush;
   
-  *logos << "creating environment wrapper for map type " << costmapType << "\n" << flush;
-  environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0,
-					     costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE));
+  // maybe make othresh configurable? see move_base_sbpl in
+  // highlevel_controllers
+  unsigned char const
+    obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
+  if ("2D" == environmentType) {
+    environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0, obst_cost_thresh));
+  }
+  else if ("3DKIN" == environmentType) {
+    // how about making these configurable?
+    double const goaltol_x(0.5 * inscribedRadius);
+    double const goaltol_y(0.5 * inscribedRadius);
+    double const goaltol_theta(M_PI);
+    double const nominalvel_mpersecs(0.6); // human leisurely walking speed
+    double const timetoturn45degsinplace_secs(0.6); // guesstimate
+    environment.reset(new ompl::EnvironmentWrapper3DKIN(setup->getCostmap(), obst_cost_thresh,
+							0, 0, 0, // start (x, y, th)
+							0, 0, 0, // goal (x, y, th)
+							goaltol_x, goaltol_y, goaltol_theta,
+							getFootprint(), nominalvel_mpersecs,
+							timetoturn45degsinplace_secs));
+    // sanity check
+    bool sane(true);
+    cout << "3DKIN costmap sanity check:\n"
+	 << " * correct obstacle\n"
+	 << " O missing obstacle\n"
+	 << " . correct freespace\n"
+	 << " x missing freespace\n";
+    for (unsigned int ix(0); ix < setup->getCostmap().getWidth(); ++ix) {
+      cout << "  ";
+      for (unsigned int iy(0); iy < setup->getCostmap().getHeight(); ++iy)
+	if (setup->getCostmap().getCost(ix, iy) >= obst_cost_thresh) {
+	  if (environment->IsObstacle(ix, iy))
+	    cout << "*";
+	  else {
+	    cout << "O";
+	    sane = false;
+	  }
+	}
+	else {
+	  if ( ! environment->IsObstacle(ix, iy))
+	    cout << ".";
+	  else {
+	    cout << "x";
+	    sane = false;
+	  }
+	}
+      cout << "\n";
+    }
+    if ( ! sane)
+      errx(EXIT_FAILURE, "3DKIN environment is not sane");
+  }
+  else {
+    errx(EXIT_FAILURE, "invalid environmentType \"%s\", use 2D or 3DKIN", environmentType.c_str());
+  }
+  
   MDPConfig mdpConfig;
   if ( ! environment->InitializeMDPCfg(&mdpConfig))
     errx(EXIT_FAILURE, "environment->InitializeMDPCfg() failed on environment %s",
@@ -559,6 +648,43 @@ void run_tasks()
 }
 
 
+void print_summary()
+{
+  SBPLPlannerStatistics::stats_t const & stats(plannerStats->getAll());
+  size_t n_success(0);
+  size_t n_fail(0);
+  double t_success(0);
+  double t_fail(0);
+  for (SBPLPlannerStatistics::stats_t::const_iterator ie(stats.begin()); ie != stats.end(); ++ie) {
+    // cannot use status, some planners say SUCCESS even they fail
+    if (ie->plan_length_m < 1e-3) {
+      ++n_fail;
+      t_fail += ie->actual_time_user_sec;
+    }
+    else {
+      ++n_success;
+      t_success += ie->actual_time_user_sec;
+    }
+  }
+  *logos << "\nsummary (success / failure / total):\n"
+	 << "  N tasks: " << n_success << " / " << n_fail << " / " << n_success + n_fail << "\n"
+	 << "  time:    " << t_success << " / " << t_fail << " / " << t_success + t_fail << "\n";
+  if (websiteMode) {
+    string foo("mpbench-" + summarizeOptions() + ".html");
+    ofstream os(foo.c_str());
+    if (os)
+      os << "<table border=\"1\"><tr><th>&nbsp;</th><th>success</th><th>failure</th><th>total</th></tr>\n"
+	 << "  <tr><td><b>N tasks</b></td><td>" << n_success
+	 << "</td><td>" << n_fail << "</td><td>"
+	 << n_success + n_fail << "</td></tr>\n"
+	 << "  <tr><td><b>time</b></td><td>" << t_success
+	 << "</td><td>" << t_fail
+	 << "</td><td>" << t_success + t_fail << "</td></tr>\n"
+	 << "</table>\n";
+  }
+}
+
+
 static void init_layout();
 static void draw();
 static void reshape(int width, int height);
@@ -589,8 +715,12 @@ void display(int * argc, char ** argv)
   {
     double x0, y0, x1, y1;
     setup->getWorkspaceBounds(x0, y0, x1, y1);
-    glut_width = (int) ceil((y1 - y0) / resolution);
+    glut_width = (int) ceil(3 * (y1 - y0) / resolution);
     glut_height = (int) ceil((x1 - x0) / resolution);
+    while (glut_width < 800) {
+      glut_width *= 2;
+      glut_height *= 2;
+    }
   }
   
   glutInit(argc, argv);
@@ -642,6 +772,30 @@ namespace {
     sfl::GridFrame gframe;
   };
   
+  class EnvWrapProxy: public CostMapProxy {
+  public:
+    EnvWrapProxy() {
+      if (dynamic_cast<EnvironmentWrapper3DKIN *>(environment.get()))
+	env3d = true;
+      else
+	env3d = false; }
+    
+    virtual int GetObstacle() const {
+      if (env3d)
+	return 1;
+      return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE; }
+
+    virtual int GetValue(ssize_t ix, ssize_t iy) const {
+      if (env3d) {
+	if (environment->IsObstacle(ix, iy, false))
+	  return 1;
+	return 0;
+      }
+      return costmap.getCost(ix, iy); }
+    
+    bool env3d;
+  };
+  
 }
 
 
@@ -654,25 +808,37 @@ void init_layout()
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRDTravmap()));
-  // //  new npm::TraversabilityDrawing("travmap", rdt);
+  new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
+  new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
   new PlanDrawing("plan");
   
   npm::View * view;
-  // //   view = new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >());
-  // //   view->Configure(0, 0, 0.5, 1);
-  // //   view->SetCamera("travmap");
-  // //   if ( ! view->AddDrawing("travmap"))
-  // //     errx(EXIT_FAILURE, "no drawing called \"travmap\"");
-  // //   if ( ! view->AddDrawing("plan"))
-  // //     errx(EXIT_FAILURE, "no drawing called \"plan\"");
+  
+  view = new npm::View("travmap", npm::Instance<npm::UniqueManager<npm::View> >());
+  // beware of weird npm::View::Configure() param order: x, y, width, height
+  view->Configure(0, 0, 0.33, 1);
+  view->SetCamera("travmap");
+  if ( ! view->AddDrawing("travmap"))
+    errx(EXIT_FAILURE, "no drawing called \"travmap\"");
+  if ( ! view->AddDrawing("plan"))
+    errx(EXIT_FAILURE, "no drawing called \"plan\"");
   
   view = new npm::View("costmap", npm::Instance<npm::UniqueManager<npm::View> >());
-  // //  view->Configure(0.5, 0, 0.5, 1);
-  view->Configure(0, 0, 1, 1);
+  // beware of weird npm::View::Configure() param order: x, y, width, height
+  view->Configure(0.33, 0, 0.33, 1);
   view->SetCamera("travmap");
   if ( ! view->AddDrawing("costmap"))
     errx(EXIT_FAILURE, "no drawing called \"costmap\"");
+  if ( ! view->AddDrawing("plan"))
+    errx(EXIT_FAILURE, "no drawing called \"plan\"");
+  
+  view = new npm::View("envwrap", npm::Instance<npm::UniqueManager<npm::View> >());
+  // beware of weird npm::View::Configure() param order: x, y, width, height
+  view->Configure(0.66, 0, 0.33, 1);
+  view->SetCamera("travmap");
+  if ( ! view->AddDrawing("envwrap"))
+    errx(EXIT_FAILURE, "no drawing called \"envwrap\"");
   if ( ! view->AddDrawing("plan"))
     errx(EXIT_FAILURE, "no drawing called \"plan\"");
 }
@@ -749,6 +915,56 @@ void keyboard(unsigned char key, int mx, int my)
 }
 
 
+EnvironmentWrapper3DKIN::footprint_t const & getFootprint()
+{
+  if ( ! footprint)
+    footprint.reset(new EnvironmentWrapper3DKIN::footprint_t());
+  
+  // copy-pasted and adapted from highlevel_controllers/MoveBase
+  // constructor (make it configurable one day...)
+  
+  std_msgs::Point2DFloat32 pt;
+  //create a square footprint
+  pt.x = inscribedRadius;
+  pt.y = -1 * inscribedRadius;
+  footprint->push_back(pt);
+  pt.x = -1 * inscribedRadius;
+  pt.y = -1 * inscribedRadius;
+  footprint->push_back(pt);
+  pt.x = -1 * inscribedRadius;
+  pt.y = inscribedRadius;
+  footprint->push_back(pt);
+  pt.x = inscribedRadius;
+  pt.y = inscribedRadius;
+  footprint->push_back(pt);
+  
+  //give the robot a nose
+  pt.x = circumscribedRadius;
+  pt.y = 0;
+  footprint->push_back(pt);
+  
+  return *footprint;
+}
+
+
+std::string canonicalEnvironmentName(std::string const & name_or_alias)
+{
+  if (environment_alias.empty()) {
+    environment_alias.insert(make_pair("2D", "2D"));
+    environment_alias.insert(make_pair("2d", "2D"));
+    environment_alias.insert(make_pair("2",  "2D"));
+    environment_alias.insert(make_pair("3D", "3DKIN"));
+    environment_alias.insert(make_pair("3d", "3DKIN"));
+    environment_alias.insert(make_pair("3",  "3DKIN"));
+  }
+  
+  map<string, string>::const_iterator is(environment_alias.find(name_or_alias));
+  if (environment_alias.end() == is)
+    return "";
+  return is->second;
+}
+
+
 namespace {
   
   PlanDrawing::
@@ -773,16 +989,33 @@ namespace {
     }
     
     SBPLBenchmarkSetup::tasklist_t const & tl(setup->getTasks());
-    glColor3d(1, 0.5, 0);
-    glLineWidth(1);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glMatrixMode(GL_MODELVIEW);
+    //    glColor3d(1, 0.5, 0);
+    //     for (size_t ii(0); ii < tl.size(); ++ii) {
+    //       glPushMatrix();
+    //       glTranslated(tl[ii].goal_x, tl[ii].goal_y, 0);
+    //       gluDisk(wrap_glu_quadric_instance(), tl[ii].goal_tol_xy, tl[ii].goal_tol_xy, 36, 1);
+    //       glPopMatrix();
+    //     }
+
+    glColor3d(0.5, 1, 0);
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
-      glTranslated(tl[ii].goal_x, tl[ii].goal_y, 0);
-      gluDisk(wrap_glu_quadric_instance(), tl[ii].goal_tol_xy, tl[ii].goal_tol_xy, 36, 1);
+      glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
+      gluDisk(wrap_glu_quadric_instance(), inscribedRadius, inscribedRadius, 36, 1);
+      glPopMatrix();
+    }
+    glLineWidth(1);
+    for (size_t ii(0); ii < tl.size(); ++ii) {
+      glPushMatrix();
+      glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
+      gluDisk(wrap_glu_quadric_instance(), circumscribedRadius, circumscribedRadius, 36, 1);
       glPopMatrix();
     }
   }
   
 }
+
+
+

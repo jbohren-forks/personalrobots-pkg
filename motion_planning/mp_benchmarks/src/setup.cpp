@@ -53,11 +53,12 @@ namespace {
 		double hall, double door,
 		std::ostream * progress_os)
   {
-    setup.drawPoint(       0,         0, progress_os);
-    setup.drawPoint(       0,  hall, progress_os);
-    setup.drawPoint(hall,         0, progress_os);
+    setup.drawPoint(   0,     0, progress_os);
+    setup.drawPoint(   0,  hall, progress_os);
+    setup.drawPoint(hall,     0, progress_os);
     setup.drawPoint(hall,  hall, progress_os);
-
+    setup.drawPoint(door,  door, progress_os);
+    
     double const tol_xy(0.5 * door);
     double const tol_th(M_PI);
     setup.addTask("left to right", true,
@@ -432,40 +433,40 @@ namespace ompl {
   void SBPLBenchmarkSetup::
   getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + resolution;
-    y0 = bby0_ + resolution;
-    x1 = bbx1_ - resolution;
-    y1 = bby1_ - resolution;
+    x0 = bbx0_ - resolution;
+    y0 = bby0_ - resolution;
+    x1 = bbx1_ + resolution;
+    y1 = bby1_ + resolution;
   }
   
   
   void SBPLBenchmarkSetup::
   getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + inscribed_radius;
-    y0 = bby0_ + inscribed_radius;
-    x1 = bbx1_ - inscribed_radius;
-    y1 = bby1_ - inscribed_radius;
+    x0 = bbx0_ - inscribed_radius;
+    y0 = bby0_ - inscribed_radius;
+    x1 = bbx1_ + inscribed_radius;
+    y1 = bby1_ + inscribed_radius;
   }
   
   
   void SBPLBenchmarkSetup::
   getCircumscribedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + circumscribed_radius;
-    y0 = bby0_ + circumscribed_radius;
-    x1 = bbx1_ - circumscribed_radius;
-    y1 = bby1_ - circumscribed_radius;
+    x0 = bbx0_ - circumscribed_radius;
+    y0 = bby0_ - circumscribed_radius;
+    x1 = bbx1_ + circumscribed_radius;
+    y1 = bby1_ + circumscribed_radius;
   }
   
   
   void SBPLBenchmarkSetup::
   getInflatedBounds(double & x0, double & y0, double & x1, double & y1) const
   {
-    x0 = bbx0_ + inflation_radius;
-    y0 = bby0_ + inflation_radius;
-    x1 = bbx1_ - inflation_radius;
-    y1 = bby1_ - inflation_radius;
+    x0 = bbx0_ - inflation_radius;
+    y0 = bby0_ - inflation_radius;
+    x1 = bbx1_ + inflation_radius;
+    y1 = bby1_ + inflation_radius;
   }
   
 }
