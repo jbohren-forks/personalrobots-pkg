@@ -10,8 +10,8 @@
   <depend package="soqt"/>
   <depend package="opende"/>
   <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>
-  <sysdepend os="ubuntu" version="7.04-gutsy" package="libglew1.5-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libglew1.5-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libglew1.5-dev"/>
-  <sysdepend os="ubuntu" version="7.04-gutsy" package="libxml2-dev"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libxml2-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libxml2-dev"/>
 </package>
