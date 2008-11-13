@@ -564,7 +564,7 @@ void ARAPlanner::DeleteSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace
 	{
 		CMDPSTATE* state = pSearchStateSpace->searchMDP.StateArray[i];
 		DeleteSearchStateData((ARAState*)state->PlannerSpecificData);
-		delete (ARAState*)state->PlannerSpecificData;
+		free((ARAState*)state->PlannerSpecificData);
 		state->PlannerSpecificData = NULL;
 	}
 	pSearchStateSpace->searchMDP.Delete();
