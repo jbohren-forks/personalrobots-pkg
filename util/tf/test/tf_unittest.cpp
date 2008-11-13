@@ -844,6 +844,7 @@ TEST(tf, Exceptions)
  Stamped<btTransform> outpose;
 
  //connectivity when no data
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 10000000ULL));
  try 
  {
    mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 10000000ULL , "me"), outpose);
@@ -863,6 +864,7 @@ TEST(tf, Exceptions)
  mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 100000ULL , "me",  "parent"));
 
  //Extrapolation not valid with one value??
+ EXPECT_TRUE(mTR.canTransform("parent", "me", 200000ULL));
  try 
  {
    mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
@@ -883,6 +885,7 @@ TEST(tf, Exceptions)
 
  //NO Extration when Interpolating
  //inverse list
+ EXPECT_TRUE(mTR.canTransform("parent", "me", 200000ULL));
  try 
  {
    mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
@@ -899,6 +902,7 @@ TEST(tf, Exceptions)
  }
 
  //forward list
+ EXPECT_TRUE(mTR.canTransform("me", "parent", 200000ULL));
  try 
  {
    mTR.transformPose("me",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "parent"), outpose);
@@ -917,6 +921,7 @@ TEST(tf, Exceptions)
 
  //Extrapolating backwards
  //inverse list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 1000ULL));
  try 
  {
    mTR.transformPose("parent",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "me"), outpose);
@@ -932,6 +937,7 @@ TEST(tf, Exceptions)
    EXPECT_FALSE("Other Exception Caught");
  }
  //forwards list
+ EXPECT_FALSE(mTR.canTransform("me", "parent", 1000ULL));
  try 
  {
    mTR.transformPose("me",Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 1000ULL , "parent"), outpose);
@@ -952,6 +958,7 @@ TEST(tf, Exceptions)
  // Test extrapolation inverse and forward linkages FORWARD
 
  //inverse list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 350000ULL));
  try 
  {
    mTR.transformPose("parent", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "me"), outpose);
@@ -968,6 +975,7 @@ TEST(tf, Exceptions)
  }
 
  //forward list
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 350000ULL));
  try 
  {
    mTR.transformPose("me", Stamped<Pose> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 350000ULL , "parent"), outpose);
