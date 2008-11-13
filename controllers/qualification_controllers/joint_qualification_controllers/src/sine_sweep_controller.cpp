@@ -45,16 +45,16 @@ SineSweepController::SineSweepController():
 joint_state_(NULL), robot_(NULL)
 {
   test_data_.test_name ="sinesweep";
-  test_data_.time.reserve(80000);
-  test_data_.cmd.reserve(80000);
-  test_data_.effort.reserve(80000);
-  test_data_.position.reserve(80000);
-  test_data_.velocity.reserve(80000);
-  test_data_.arg_name.reserve(3);
+  test_data_.time.resize(80000);
+  test_data_.cmd.resize(80000);
+  test_data_.effort.resize(80000);
+  test_data_.position.resize(80000);
+  test_data_.velocity.resize(80000);
+  test_data_.arg_name.resize(3);
   test_data_.arg_name[0]="first_mode";
   test_data_.arg_name[1]="second_mode";
   test_data_.arg_name[2]="error_tolerance";
-  test_data_.arg_value.reserve(3);
+  test_data_.arg_value.resize(3);
   sweep_=NULL;
   duration_ =0.0;
   initial_time_=0;
@@ -92,9 +92,9 @@ bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *co
     double end_freq = atof(jnt->FirstChildElement("controller_defaults")->Attribute("end_freq"));
     double amplitude = atof(jnt->FirstChildElement("controller_defaults")->Attribute("amplitude"));
     double duration = atof(jnt->FirstChildElement("controller_defaults")->Attribute("duration"));
-    double first_mode = atof(jnt->Attribute("first_mode"));
-    double second_mode = atof(jnt->Attribute("second_mode"));
-    double error_tolerance = atof(jnt->Attribute("error_tolerance")); 
+    double first_mode = atof(jnt->FirstChildElement("controller_defaults")->Attribute("first_mode"));
+    double second_mode = atof(jnt->FirstChildElement("controller_defaults")->Attribute("second_mode"));
+    double error_tolerance = atof(jnt->FirstChildElement("controller_defaults")->Attribute("error_tolerance")); 
     init(start_freq,  end_freq, duration, amplitude, first_mode, second_mode, error_tolerance, robot->hw_->current_time_,jnt->Attribute("name"), robot);
   }
   return true;
@@ -149,6 +149,7 @@ void SineSweepController::analysis()
   ros::node* node;
   if ((node = ros::node::instance()) != NULL)
   {
+    node->advertise<robot_msgs::TestData>( "/test_data", 0 );
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);
   }

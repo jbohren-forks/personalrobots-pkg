@@ -65,16 +65,15 @@ class App(wx.App):
   def OnData(self,msg):
     print 'Got data named %s' % (msg.test_name)
     self.data = msg
-    if self.data.test_name="hysteresis":
+    if self.data.test_name=="hysteresis":
       self.HysteresisPlot()
-    elif self.data.test_name="sinesweep":
+    elif self.data.test_name=="sinesweep":
       self.SineSweepPlot()
-    else
+    else:
       print 'this test message cannot be analyzed'
       
   def HysteresisPlot(self):
     print "plotting hysteresis"
-    self.plot = wxmpl.PlotApp('Hysteresis Plot')
     # Plot the values and line of best fit
     fig=self.plot.get_figure()
     axes1 = fig.add_subplot(211)
@@ -89,11 +88,11 @@ class App(wx.App):
     #end =numpy.array(self.data.position).size
     #avg1 = numpy.average(numpy.array(self.data.effort)[indexmin:indexmax])
     #avg2 = numpy.average(numpy.array(self.data.effort)[indexmax:end])
-    print end
-    print indexmax
-    axes1.axhline(y=avg1,color='b')
+    #print end
+    #print indexmax
+    #axes1.axhline(y=avg1,color='b')
     axes1.axhline(y=0,color='k')
-    axes1.axhline(y=avg2,color='g')
+    #axes1.axhline(y=avg2,color='g')
     axes1.set_xlabel('Position')
     axes1.set_ylabel('Effort')
 
@@ -104,7 +103,6 @@ class App(wx.App):
     
   def SineSweepPlot(self):
     print "plotting sinesweep"
-    self.plot = wxmpl.PlotApp('SineSweep Plot')
     # Plot the values and line of best fit
     fig=self.plot.get_figure()
     axes1 = fig.add_subplot(211)

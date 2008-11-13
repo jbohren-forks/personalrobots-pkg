@@ -42,16 +42,16 @@ HysteresisController::HysteresisController():
   joint_(NULL), robot_(NULL)
 {
   test_data_.test_name ="hysteresis";
-  test_data_.time.reserve(80000);
-  test_data_.cmd.reserve(80000);
-  test_data_.effort.reserve(80000);
-  test_data_.position.reserve(80000);
-  test_data_.velocity.reserve(80000);
-  test_data_.arg_name.reserve(3);
+  test_data_.time.resize(80000);
+  test_data_.cmd.resize(80000);
+  test_data_.effort.resize(80000);
+  test_data_.position.resize(80000);
+  test_data_.velocity.resize(80000);
+  test_data_.arg_name.resize(3);
   test_data_.arg_name[0]="expected_effort";
   test_data_.arg_name[1]="min_pos";
   test_data_.arg_name[2]="max_pos";
-  test_data_.arg_value.reserve(3);
+  test_data_.arg_value.resize(3);
   state = STOPPED;
   starting_count = 0;
   velocity_=0;
@@ -196,7 +196,9 @@ void HysteresisController::analysis()
   
   ros::node* node;
   if ((node = ros::node::instance()) != NULL)
-  {
+  { 
+    node->advertise<robot_msgs::TestData>( "/test_data", 0 );
+    
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);
   }
