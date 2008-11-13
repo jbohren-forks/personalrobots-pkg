@@ -380,7 +380,7 @@
       <elem key="material">Gazebo/Shell</elem>
     </map>
     <geometry name="pr2_finger_l_mesh_file">
-      <mesh filename="finger-l" />
+      <mesh filename="upper_finger_l" />
     </geometry>
   </const_block> 
   
@@ -416,7 +416,7 @@
       <elem key="material">Gazebo/Green</elem>
     </map>
     <geometry name="pr2_finger_tip_l_mesh_file">
-      <mesh filename="finger-tip-l" />
+      <mesh filename="finger_tip_l" />
     </geometry>
   </const_block> 
   
@@ -451,7 +451,7 @@
       <elem key="material">Gazebo/Blue</elem>
     </map>
     <geometry name="pr2_finger_r_mesh_file">
-      <mesh filename="finger-r" />
+      <mesh filename="upper_finger_r" />
     </geometry>
   </const_block> 
   
@@ -486,7 +486,7 @@
       <elem key="material">Gazebo/Green</elem>
     </map>
     <geometry name="pr2_finger_tip_r_mesh_file">
-      <mesh filename="finger-tip-r" />
+      <mesh filename="finger_tip_r" />
     </geometry>
   </const_block> 
   
