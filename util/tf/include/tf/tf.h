@@ -117,6 +117,13 @@ public:
                        const std::string& source_frame, const ros::Time& source_time, 
                        const std::string& fixed_frame, Stamped<btTransform>& transform);  
   
+  bool canTransform(const std::string& target_frame, const std::string& source_frame, 
+                       const ros::Time& time);
+  //time traveling version
+  bool canTransform(const std::string& target_frame, const ros::Time& target_time, 
+                       const std::string& source_frame, const ros::Time& source_time, 
+                       const std::string& fixed_frame);  
+
   /** \brief Transform a Stamped Quaternion into the target frame */
   void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out);
   /** \brief Transform a Stamped Vector3 into the target frame */

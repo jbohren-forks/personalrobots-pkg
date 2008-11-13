@@ -154,6 +154,70 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   transform.frame_id_ = target_frame;
 
 };
+bool Transformer::canTransform(const std::string& target_frame, const std::string& source_frame,
+                     const ros::Time& time)
+{
+  std::string error_string;
+  TransformLists t_list;
+  ///\todo check return
+  int retval = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), t_list, error_string);
+
+  ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (retval != NO_ERROR)
+  {
+    if (retval == LOOKUP_ERROR)
+      return false;
+    if (retval == CONNECTIVITY_ERROR)
+      return false;
+  }
+   
+  if (test_extrapolation(time, t_list, error_string))
+    return false;
+
+  return true;
+};
+
+bool Transformer::canTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
+                     const ros::Time& source_time, const std::string& fixed_frame)
+{
+  std::string error_string;
+  //calculate first leg
+  TransformLists t_list;
+  ///\todo check return
+  int retval = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame), t_list, error_string);
+  ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (retval != NO_ERROR)
+  {
+    if (retval == LOOKUP_ERROR)
+      return false;
+    if (retval == CONNECTIVITY_ERROR)
+      return false;
+  }
+   
+  if (test_extrapolation(target_time, t_list, error_string))
+    return false;
+
+ 
+  btTransform temp1 = computeTransformFromList(t_list);
+
+
+  TransformLists t_list2;
+  ///\todo check return 
+  retval =  lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame), t_list2, error_string);
+  ///\todo WRITE HELPER FUNCITON TO RETHROW
+  if (retval != NO_ERROR)
+  {
+    if (retval == LOOKUP_ERROR)
+      return false;
+    if (retval == CONNECTIVITY_ERROR)
+      return false;
+  }
+   
+  if (test_extrapolation(target_time, t_list, error_string))
+    return false;
+
+  return true;
+};
 
 bool Transformer::getParent(const std::string& frame_id, ros::Time time, std::string& parent)
 {
