@@ -59,7 +59,12 @@ public:
 	virtual void PrintEnv_Config(FILE* fOut) = 0;
 
     //destructor
-    virtual ~DiscreteSpaceInformation(){};
+  virtual ~DiscreteSpaceInformation(){
+    for(unsigned int i = 0; i < StateID2IndexMapping.size(); ++i){
+      if(StateID2IndexMapping[i] != NULL)
+        delete[] StateID2IndexMapping[i];
+    }
+  }
 
 	//constructor
 	DiscreteSpaceInformation()
