@@ -7,5 +7,5 @@
   <depend package="wg_robot_description"/>
   <depend package="wg_robot_description_parser"/>
   <depend package="libTF"/>
-  
+  <depend package="ogre_tools"/>
 </package>

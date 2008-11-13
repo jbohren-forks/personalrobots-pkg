@@ -46,35 +46,35 @@ std::string res_locator::resource2path(const std::string &resource)
     boost::regex re("(ros-pkg|ros-param):\\/\\/((\\w+\\.)*(\\w*))\\/([\\w\\d]+\\/{0,1})+");
     
     if (boost::regex_match(resource.c_str(), matches, re) && matches.size() >= 3){
-	std::string protocol(matches[1].first, matches[1].second);
-	std::string protocol_path(matches[2].first, matches[2].second);
-	std::string relpath(matches[2].second,matches[matches.size()-1].second);
+        std::string protocol(matches[1].first, matches[1].second);
+        std::string protocol_path(matches[2].first, matches[2].second);
+        std::string relpath(matches[2].second,matches[matches.size()-1].second);
 	
-	if( protocol == std::string("ros-pkg") ) {
-	    // find the ROS package
-	    FILE* f = popen((std::string("rospack find ") + protocol_path).c_str(),"r");
-	    if( f == NULL )
-		ROS_ERROR("%s\n", (std::string("failed to launch rospack find ") + protocol_path).c_str());
-	    else {
-		char basepath[1024];
-		fgets(basepath, sizeof(basepath), f);
-		pclose(f);
+        if( protocol == std::string("ros-pkg") ) {
+            // find the ROS package
+            FILE* f = popen((std::string("rospack find ") + protocol_path).c_str(),"r");
+            if( f == NULL )
+                ROS_ERROR("%s\n", (std::string("failed to launch rospack find ") + protocol_path).c_str());
+            else {
+                char basepath[1024];
+                fgets(basepath, sizeof(basepath), f);
+                pclose(f);
 		
-		// strip out any new lines or spaces from the end
-		int len = strlen(basepath);
-		char* p = basepath+len-1;
-		while(len-- > 0 && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r'))
-		    *p-- = 0;
-		return std::string(basepath) + relpath;
-	    }
-	}
-	else if( protocol == std::string("ros-param") )
-	{
-	    return "";
-	}
+                // strip out any new lines or spaces from the end
+                int len = strlen(basepath);
+                char* p = basepath+len-1;
+                while(len-- > 0 && (*p == ' ' || *p == '\n' || *p == '\t' || *p == '\r'))
+                    *p-- = 0;
+                return std::string(basepath) + relpath;
+            }
+        }
+        else if( protocol == std::string("ros-param") )
+            {
+                return "";
+            }
     }
     else // not a url so copy directly
-	return resource;
+        return resource;
     
     return "";
 }

@@ -64,11 +64,6 @@ string values2str(unsigned int count, const double *values, double (*conv)(doubl
     return ss.str();
 }
 
-double rad2deg(double v)
-{
-    return v * 180.0 / M_PI;
-}
-
 void setupTransform(libTF::Pose3D &transform, const double *xyz, const double *rpy)
 {
     transform.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);
@@ -259,6 +254,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         joint->SetAttribute("type", jtype);
         joint->SetAttribute("name", link->joint->name);
 	    
+        if( link->joint->pjointMimic != NULL ) {
+            stringstream ss;
+            ss << link->joint->pjointMimic->name << " " << link->joint->fMimicMult << " " << link->joint->fMimicOffset;
+            joint->SetAttribute("mimic",ss.str());
+            joint->SetAttribute("enable","false");
+        }
+
         addKeyValue(joint, "body", link->name);
         addKeyValue(joint, "body", link->parentName);
         addKeyValue(joint, "offsetfrom", link->name);
@@ -272,18 +274,18 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
             addKeyValue(joint, "axis", values2str(3, link->joint->axis));
             addKeyValue(joint, "anchor", values2str(3, link->joint->anchor));
 		
-            if (enforce_limits && link->joint->isSet["limit"]) {
+            if (link->joint->pjointMimic == NULL  && enforce_limits && link->joint->isSet["limit"]) {
                 if (jtype == "slider") {
                     addKeyValue(joint, "lostop",  values2str(1, link->joint->limit             ));
                     addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1         ));
                 }
                 else {
-                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit    , rad2deg));
-                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1, rad2deg));
+                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit));
+                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1));
                 }
             }
         }
-            
+        
         root->LinkEndChild(joint);
     }
 
