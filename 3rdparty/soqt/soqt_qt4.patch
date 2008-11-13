@@ -1,0 +1,20 @@
+diff -Naur SoQt-1.4.1/configure.ac SoQt-1.4.1-new/configure.ac
+--- SoQt-1.4.1/configure.ac	2006-10-30 14:09:48.000000000 -0800
++++ SoQt-1.4.1-new/configure.ac	2008-11-13 14:37:09.157515796 -0800
+@@ -568,9 +568,14 @@
+   fi
+ fi
+ 
+-SIM_AC_QT_PROG(MOC, moc)
++# look for moc-qt4 first
++SIM_AC_QT_PROG(MOC, moc-qt4)
+ if test x"$MOC" = x"false"; then
+-  SIM_AC_ERROR([no-moc])
++  SIM_AC_QT_PROG(MOC2, moc)
++  if test x"$MOC2" = x"false"; then
++    SIM_AC_ERROR([no-moc])
++  fi
++  MOC=MOC2
+ fi
+ 
+ # see commented-out restore above

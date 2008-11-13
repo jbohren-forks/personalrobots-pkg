@@ -7,8 +7,11 @@ SOURCE_DIR = SoQt-1.4.1
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk
 
+PATCH=soqt_qt4.patch
+
 configured: $(SOURCE_DIR)
-	cd $(SOURCE_DIR) && ./configure --prefix=$(PWD)
+	cd $(SOURCE_DIR) && patch -s -N -p1 < ../$(PATCH) || echo
+	cd $(SOURCE_DIR) && autoconf && ./configure --prefix=$(PWD)
 	touch configured
 
 soqt: configured
