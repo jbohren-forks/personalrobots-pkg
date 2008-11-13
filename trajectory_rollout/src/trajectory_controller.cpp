@@ -546,7 +546,7 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 
 double TrajectoryController::pointCost(int x, int y){
   //if the cell is in an obstacle the path is invalid
-  if(ma_.isDefinitelyBlocked(x, y) && !map_(x, y).within_robot){
+  if(ma_.getCost(x, y) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE && !map_(x, y).within_robot){
     //printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
