@@ -82,7 +82,7 @@
 class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
  public:
   WavefrontMapAccessor(MapGrid &map, double outer_radius) 
-    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale),
+    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale, 1.0),
       map_(map), outer_radius_(outer_radius) {}
 
     virtual ~WavefrontMapAccessor(){};
@@ -97,7 +97,7 @@ class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
       if(map_(mx, my).occ_state == 1)
 	return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
       else if(map_(mx, my).occ_dist < outer_radius_)
-	return costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE;
+	return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE/2;
       return 0;
     }
 

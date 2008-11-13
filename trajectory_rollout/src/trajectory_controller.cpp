@@ -206,23 +206,24 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     }
 
     //we want to check if this cell definitely contains an obstacle
-    if(ma_.getCost(cell_x, cell_y) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+    if(ma_.isDefinitelyBlocked(cell_x, cell_y)){
       traj.cost_ = -1.0;
       return;
     }
 
     //we need to check if we need to lay down the footprint of the robot
-    if(ma_.getCost(cell_x, cell_y) >= costmap_2d::ObstacleMapAccessor::CIRCUMSCRIBED_INFLATED_OBSTACLE){
+    if(ma_.isCircumscribedCell(cell_x, cell_y)){
       double footprint_cost = footprintCost(x_i, y_i, theta_i);
       //if the footprint hits an obstacle this trajectory is invalid
       if(footprint_cost < 0){
         traj.cost_ = -1.0;
         return;
       }
+
       occ_cost += footprint_cost;
     }
     else{
-      occ_cost += double(ma_.getCost(cell_x, cell_y));
+      occ_cost += (ma_.getCost(cell_x, cell_y));
     }
 
     double cell_pdist = map_(cell_x, cell_y).path_dist;
@@ -544,14 +545,13 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 }
 
 double TrajectoryController::pointCost(int x, int y){
-  unsigned char cost = ma_.getCost(x, y);
   //if the cell is in an obstacle the path is invalid
-  if(cost == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE && !map_(x, y).within_robot){
+  if(ma_.isDefinitelyBlocked(x, y) && !map_(x, y).within_robot){
     //printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
 
-  return double(cost);
+  return ma_.getNormalizedCost(x, y);
 }
 
 //calculate the cost of a ray-traced line
