@@ -14,9 +14,11 @@
     <joint name="${prefix}_${side}_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <calibration values="1.5 -1 " />
-      <limit effort="10" velocity="10" min="-100" max="100" />
-      <joint_properties damping="0.01" />
+      <limit effort="100" velocity="1000" min="${((reflect-1)/2)*0.8}" max="${((reflect+1)/2)*0.8}" />
+      <calibration reference_position="0" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <joint_properties damping="0.1" />
       <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${reflect}" offset="0"/>
     </joint>
 
@@ -29,7 +31,8 @@
         <mass value="0.1" />
         <com xyz="0 0 0" />
         <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+                  iyy="0.013567548848" iyz="-0.000427679042"
+                  izz="0.001755089866" />
       </inertial>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
@@ -58,8 +61,11 @@
     <joint name="${prefix}_${side}_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="10" velocity="10" min="-100" max="100" />
-      <joint_properties damping="0.01" />
+      <limit effort="100" velocity="1000" min="${((-reflect-1)/2)*0.8}" max="${((-reflect+1)/2)*0.8}" />
+      <calibration reference_position="0" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <joint_properties damping="0.1" />
       <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${-reflect}" offset="0"/>
     </joint>
 
@@ -72,7 +78,8 @@
         <mass value="0.1" />
         <com xyz=" 0 0 0 " />
         <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
-                  iyy="0.013567548848" iyz="-0.000427679042" izz="0.001755089866" />
+                  iyy="0.013567548848" iyz="-0.000427679042"
+                  izz="0.001755089866" />
       </inertial>
       <visual>
         <origin xyz="0 0 0 " rpy="0 0 0 " />
