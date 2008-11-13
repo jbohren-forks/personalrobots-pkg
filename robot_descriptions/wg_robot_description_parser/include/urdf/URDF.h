@@ -247,8 +247,8 @@ namespace robot_desc
 		    velocityLimit = 0.0;
 		    effortLimit = 0.0;
 		    type = UNKNOWN;
-            pjointMimic = NULL;
-            fMimicMult = 1.0; fMimicOffset = 0.0;
+                    pjointMimic = NULL;
+                    fMimicMult = 1.0; fMimicOffset = 0.0;
 		    isSet["name"] = false;
 		    isSet["type"] = false;
 		    isSet["axis"] = false;
@@ -259,6 +259,9 @@ namespace robot_desc
 		    isSet["safetyLengthMin"] = false;
 		    isSet["safetyLengthMax"] = false;
 		    isSet["effortLimit"] = false;
+		    isSet["pjointMimic"] = false;
+		    isSet["fMimicMult"] = false;
+		    isSet["fMimicOffset"] = false;
 		    isSet["velocityLimit"] = false;
 		    isSet["calibration"] = false;
 		}
@@ -286,10 +289,10 @@ namespace robot_desc
 		Map                         data;
 		std::map<std::string, bool> isSet;
 
-        // only valid for joints that mimic other joint's values
-        Joint* pjointMimic;                 // if not NULL, this joint mimics pjointMimic
-        double fMimicMult, fMimicOffset;        // the multiplication and offset coeffs. Ie, X = mult*Y+offset
-                                                // where Y is pjointMimic's joint value, X is this joint's value.
+                // only valid for joints that mimic other joint's values
+                Joint* pjointMimic;                     // if not NULL, this joint mimics pjointMimic
+                double fMimicMult, fMimicOffset;        // the multiplication and offset coeffs. Ie, X = mult*Y+offset
+                                                        // where Y is pjointMimic's joint value, X is this joint's value.
 	    };
 	    
 	    /** Class for link collision component instances */
