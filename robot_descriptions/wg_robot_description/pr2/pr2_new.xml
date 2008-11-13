@@ -42,12 +42,12 @@
   <pr2_arm side="right" reflect="1" parent="torso">
     <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="right" parent="right_wrist_roll" />
+  <pr2_gripper side="right" parent="right_wrist_roll" mimic_finger="l" />
 
   <pr2_arm side="left" reflect="1" parent="torso">
     <origin xyz="0.0 0.188 0.0" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="left" parent="left_wrist_roll" />
+  <pr2_gripper side="left" parent="left_wrist_roll" mimic_finger="l" />
 
   <pr2_ptz side="right" reflect="-1" parent="torso">
     <origin xyz="0.0 -0.1975 0.2265" rpy="0 0 0" />
