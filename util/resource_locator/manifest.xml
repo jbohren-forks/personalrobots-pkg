@@ -14,6 +14,7 @@
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lresource_locator"/>
   </export>
 
+  <sysdepend os="ubuntu" version="7.04-gutsy" package="libboost-regex-dev"/>  
   <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-regex-dev"/>  
   
 </package>

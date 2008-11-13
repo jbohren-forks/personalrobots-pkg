@@ -9,7 +9,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 build: SVN_UP openrave
 
 openrave: $(SVN_DIR)
-	cd $(SVN_DIR) && svn up && make prefix=$(PWD) && make install
+	@cd $(SVN_DIR) && PATH="$(shell rospack find soqt)/bin:$(shell rospack find opende)/opende/bin:$(PATH)" && svn up && make prefix=$(PWD) && make install
 
 clean:
 	make -C $(SVN_DIR) clean
