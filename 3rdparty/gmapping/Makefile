@@ -14,7 +14,7 @@ configured: $(SOURCE_DIR) Makefile
 	cd $(SOURCE_DIR) && patch -p0 < ../$(PATCH) && ./configure
 	touch configured
 
-wiped: Makefile
+wiped: Makefile $(PATCH)
 	make wipe
 	touch wiped
 
