@@ -9,5 +9,9 @@
   </export>
   <depend package="libdc1394v2"/>
   <depend package="opencv_latest"/>
+
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libfltk1.1-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
+
   <url></url>
 </package>
