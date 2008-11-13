@@ -9,7 +9,7 @@
 const static int OCC_FILLED = 1;
 const static int OCC_EMPTY  = 0;
 const static bool VERBOSE   = true;
-const static bool DISPLAY   = true;
+const static bool DISPLAY   = false;
 
 using namespace std;
 
@@ -456,7 +456,7 @@ synthetic_image image_from_point_cloud(laser_scan &ls, int image_width, int imag
     {
         //Show image before filling it in
         cvShowImage("img", img);
-        printf("Waiting key...\n");
+        printf("Waiting key ...\n");
         cvWaitKey(33);
     }
 
