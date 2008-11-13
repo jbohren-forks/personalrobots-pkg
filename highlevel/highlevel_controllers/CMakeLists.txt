@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 ### If you're trying to debug include directives or so, this here
 ### might help:
 #SET (CMAKE_VERBOSE_MAKEFILE ON)
-set(ROS_BUILD_TYPE Release)
+#set(ROS_BUILD_TYPE Release)
 include(rosbuild)
 add_definitions(-Wall)
 rospack(highlevel_controllers)
@@ -12,14 +12,14 @@ genmsg()
 
 
 #uncomment for profiling
-#set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
-#set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
+set(ROS_COMPILE_FLAGS "-g -pg" ${ROS_COMPILE_FLAGS})
+set(ROS_LINK_FLAGS "-g -pg" ${ROS_LINK_FLAGS})
 #set(ROS_COMPILE_FLAGS "-g" ${ROS_COMPILE_FLAGS})
 #set(ROS_LINK_FLAGS "-g" ${ROS_LINK_FLAGS})
 
 # Library
 rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
-target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d)
+target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util)
 
 # MoveArm
 rospack_add_executable(move_arm src/MoveArm.cpp)

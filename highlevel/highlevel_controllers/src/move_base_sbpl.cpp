@@ -179,8 +179,6 @@ namespace ros {
 	    obst_cost_thresh = costmap_2d::CostMap2D::LETHAL_OBSTACLE;
 	  else if ("inscribed" == obst_cost_thresh_str)
 	    obst_cost_thresh = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
-	  else if ("circumscribed" == obst_cost_thresh_str)
-	    obst_cost_thresh = costmap_2d::CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE;
 	  else {
 	    ROS_ERROR("invalid env3d/obst_cost_thresh \"%s\"\n"
 		      "  valid options: lethal, inscribed, or circumscribed",
@@ -260,7 +258,7 @@ namespace ros {
       for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
 	unsigned int x, y; // Cell coordinates
 	cm.IND_MC(*it, x, y);
-	env_->UpdateCost(x, y, cm.getCost(x, y));
+	env_->UpdateCost(x, y, (unsigned char) cm.getNormalizedCost(x, y));
       }
     }
 

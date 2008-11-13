@@ -54,7 +54,7 @@ namespace ros {
 	ma_(NULL),
 	baseLaserMaxRange_(10.0),
 	tiltLaserMaxRange_(10.0),
-	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0) {
+	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0){
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.x = 0;
       global_pose_.y = 0;
@@ -76,17 +76,21 @@ namespace ros {
       // as a parameter until we hear how static transforms are to be handled.
       double laser_x_offset(0.275);
       param("/laser_x_offset", laser_x_offset, laser_x_offset);
-      //tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+
+      // Update rate for the cost map
+      local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
 
       // Costmap parameters
-      double windowLength(5.0);
+      double windowLength(60.0);
       unsigned char lethalObstacleThreshold(100);
       unsigned char noInformation(CostMap2D::NO_INFORMATION);
       double freeSpaceProjectionHeight(0.19);
-      double inflationRadius(0.50);
+      double inflationRadius(0.55);
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
+      double weight(1.0);
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
       param("/costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
@@ -97,6 +101,7 @@ namespace ros {
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
       param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
       param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      param("/costmap_2d/weight", weight, weight);
 
       robotWidth_ = inscribedRadius * 2;
 
@@ -125,7 +130,7 @@ namespace ros {
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                inputData , resp.map.resolution, 
 			       windowLength, lethalObstacleThreshold, maxZ_, freeSpaceProjectionHeight,
-			       inflationRadius, circumscribedRadius, inscribedRadius);
+			       inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
       // Allocate Velocity Controller
       double mapSize(2.0);
@@ -213,10 +218,17 @@ namespace ros {
       // Subscribe to odometry messages to get global pose
       subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
 
+      // Spawn map update thread
+      map_update_thread_ = ros::thread::member_thread::startMemberFunctionThread<MoveBase>(this, &MoveBase::mapUpdateLoop);
+
       // Note: derived classes must initialize.
     }
 
     MoveBase::~MoveBase(){
+
+      active_ = false;
+
+      pthread_join(*map_update_thread_, NULL);
 
       if(controller_ != NULL)
 	delete controller_;
@@ -226,6 +238,8 @@ namespace ros {
 
       if(costMap_ != NULL)
 	delete costMap_;
+
+      delete map_update_thread_;
     }
 
     void MoveBase::updateGlobalPose(){
@@ -303,7 +317,7 @@ namespace ros {
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
       ROS_INFO("Projected");
-      processData(local_cloud);
+      bufferData(local_cloud);
     }
 
     void MoveBase::tiltScanCallback()
@@ -312,40 +326,52 @@ namespace ros {
       std_msgs::PointCloud local_cloud;
       local_cloud.header = tiltScanMsg_.header;
       projector_.projectLaser(tiltScanMsg_, local_cloud, tiltLaserMaxRange_);
-      processData(local_cloud);
+      bufferData(local_cloud);
     }
 
     void MoveBase::stereoCloudCallback()
     {
-      processData(stereoCloudMsg_);
+      bufferData(stereoCloudMsg_);
     }
     
-    void MoveBase::processData(const std_msgs::PointCloud& local_cloud)
+    void MoveBase::bufferData(const std_msgs::PointCloud& local_cloud)
     {
       bufferMutex_.lock();
-
       point_clouds_.push_back(local_cloud);
+      petTheWatchDog(local_cloud.header.stamp);
+      bufferMutex_.unlock();
+    }
+
+    void MoveBase::processData()
+    {
+      // Setting timing values to
+      const ros::Duration maxDuration(10, 0);
+
+      bufferMutex_.lock();
 
       std_msgs::PointCloud * newData = NULL;
+      std_msgs::PointCloud * map_cloud = NULL;
+      std::vector<std_msgs::PointCloud*> pending_updates;
 
       while(!point_clouds_.empty()){
-
 	const std_msgs::PointCloud& point_cloud = point_clouds_.front();
 
-	if(local_cloud.header.stamp - point_cloud.header.stamp > ros::Duration(9, 0)){
+	// Throw out point clouds that are old. 
+	if(last_time_stamp_ -  point_cloud.header.stamp > maxDuration){
+	  ROS_INFO("Discarding stale point cloud\n");
 	  point_clouds_.pop_front();
 	  continue;
 	}
 
 	std_msgs::PointCloud base_cloud;
-	std_msgs::PointCloud map_cloud;
 	
 	/* Transform to the base frame */
 	try
 	  {
 	    tf_.transformPointCloud("base", base_cloud, point_cloud);
 	    newData = extractFootprintAndGround(base_cloud);
-	    tf_.transformPointCloud("map", map_cloud, *newData);
+	    map_cloud = new std_msgs::PointCloud();
+	    tf_.transformPointCloud("map", *map_cloud, *newData);
 	  }
 	catch(libTF::TransformReference::LookupException& ex)
 	  {
@@ -375,11 +401,8 @@ namespace ros {
 	    newData = NULL;
 	}
 
-	// Is the time stamp copied when we do a tranform?
-	// Verify what happens if we get many updates in the same update time step?
-	// How can interleaving effect things?
-	ROS_INFO("Processing point cloud with %d points\n", map_cloud.get_pts_size());
-        updateDynamicObstacles(point_cloud.header.stamp.to_double(), map_cloud);
+	pending_updates.push_back(map_cloud);
+	map_cloud = NULL;
       }
 
       // In case we get thrown out on the second transform - clean up
@@ -387,6 +410,17 @@ namespace ros {
 	delete newData;
 	newData = NULL;
       }
+
+      if(map_cloud != NULL){
+	delete map_cloud;
+	map_cloud = NULL;
+      }
+
+      updateDynamicObstacles(last_time_stamp_.to_double(), pending_updates);
+
+      // Now clean up retrieved clouds
+      for(std::vector<std_msgs::PointCloud*>::const_iterator it = pending_updates.begin(); it != pending_updates.end(); ++it)
+	delete *it;
 
       bufferMutex_.unlock();
     }
@@ -411,16 +445,15 @@ namespace ros {
       unsigned int n = baseFrameCloud.get_pts_size();
       unsigned int j = 0;
       copy->set_pts_size(n);
+
       for (unsigned int k = 0 ; k < n ; ++k){
-
-	ROS_DEBUG("Evaluating <%f, %f, %f>\n", 
-		  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z);
-
 	bool ok = baseFrameCloud.pts[k].z > minZ_ &&   baseFrameCloud.pts[k].z < maxZ_;
-	ROS_DEBUG("Discarding point for height %f\n", baseFrameCloud.pts[k].z);
-	if (ok && !inFootprint(baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y))
+	if (ok && !inFootprint(baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y)){
 	  copy->pts[j++] = baseFrameCloud.pts[k];
-
+	}
+	else {
+	  ROS_DEBUG("Discarding <%f, %f, %f>\n",  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z);
+	}
       }
 
       copy->set_pts_size(j);
@@ -491,7 +524,7 @@ namespace ros {
       for(std::list<std_msgs::Pose2DFloat32>::const_iterator it = plan_.begin(); it != plan_.end(); ++it){
 	const std_msgs::Pose2DFloat32& w = *it;
 	unsigned int ind = costMap_->WC_IND(w.x, w.y);
-	if((*costMap_)[ind] > CostMap2D::CIRCUMSCRIBED_INFLATED_OBSTACLE){
+	if((*costMap_)[ind] >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE){
 	  ROS_DEBUG("path in collision at <%f, %f>\n", w.x, w.y);
 	  return true;
 	}
@@ -577,8 +610,9 @@ namespace ros {
       return false;
     }
 
-    void MoveBase::petTheWatchDog(){
-      gettimeofday(&lastUpdated_, NULL);
+    void MoveBase::petTheWatchDog(const ros::Time& t){
+      last_time_stamp_ = t; 
+      gettimeofday(&last_updated_, NULL);
     }
 
     /**
@@ -588,12 +622,14 @@ namespace ros {
       struct timeval curr;
       gettimeofday(&curr,NULL);
       double curr_t, last_t, t_diff;
-      last_t = lastUpdated_.tv_sec + lastUpdated_.tv_usec / 1e6;
+      last_t = last_updated_.tv_sec + last_updated_.tv_usec / 1e6;
       curr_t = curr.tv_sec + curr.tv_usec / 1e6;
       t_diff = curr_t - last_t;
       bool ok = t_diff < 1.0;
+
       if(!ok) 
 	ROS_DEBUG("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+
       return ok;
     }
 
@@ -774,7 +810,7 @@ namespace ros {
       stopRobot();
     }
 
-    void MoveBase::updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud){
+    void MoveBase::updateDynamicObstacles(double ts, const std::vector<std_msgs::PointCloud*>& clouds){
       //Avoids laser race conditions.
       if (!isInitialized()) {
 	return;
@@ -782,12 +818,11 @@ namespace ros {
 
       std::vector<unsigned int> updates;
       lock();
-      petTheWatchDog();
       struct timeval curr;
       gettimeofday(&curr,NULL);
       double curr_t, last_t, t_diff;
       curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, cloud, updates);
+      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, clouds, updates);
       gettimeofday(&curr,NULL);
       last_t = curr.tv_sec + curr.tv_usec / 1e6;
       t_diff = last_t - curr_t;
@@ -801,5 +836,16 @@ namespace ros {
       return footprint_;
     }
 
+    
+    void MoveBase::mapUpdateLoop()
+    {
+      ros::Duration *d = new ros::Duration(1.0/map_update_frequency_);
+	
+      while (active_){
+	processData();
+	d->sleep();
+      }
+      delete d;
+    }
   }
 }

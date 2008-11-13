@@ -20,8 +20,10 @@
  <depend package="laser_scan_utils" />
  <depend package="costmap_2d"/>
  <depend package="rosTF"/>
+ <depend package="ompl"/>
  <depend package="sbpl"/>
  <depend package="sbpl_util"/>
+ <depend package="amcl_player"/>
 
  <!-- for running all examples from test directory we further need: -->
  <depend package="rosstage"/>

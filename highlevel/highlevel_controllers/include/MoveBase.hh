@@ -54,6 +54,10 @@
 // Laser projection
 #include "laser_scan_utils/laser_scan.h"
 
+// Thread suppport
+#include <rosthread/member_thread.h>
+#include <rosthread/mutex.h>
+
 #include <list>
 
 namespace ros {
@@ -145,18 +149,20 @@ namespace ros {
        */
       void odomCallback();
 
+      void bufferData(const std_msgs::PointCloud& local_cloud);
+
       /**
        * @brief Process point cloud data
        * @todo migrate to costmap
        */
-      void processData(const std_msgs::PointCloud& local_cloud);
+      void processData();
 
       void updateGlobalPose();
 
       /**
        * @brief Helper method to update the costmap and conduct other book-keeping
        */
-      void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
+      void updateDynamicObstacles(double ts, const std::vector<std_msgs::PointCloud*>& clouds);
 
       /**
        * @brief Issue zero velocity commands
@@ -192,11 +198,13 @@ namespace ros {
       /**
        * @brief Watchdog Handling
        */
-      void petTheWatchDog();
+      void petTheWatchDog(const ros::Time& t);
 
       bool checkWatchDog() const;
 
-      struct timeval lastUpdated_;
+      // Time stamp for laser data. Should go away when ros::Time::now() works in simulation
+      struct timeval last_updated_;
+      ros::Time last_time_stamp_;
 
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
@@ -231,6 +239,12 @@ namespace ros {
       double minZ_;
       double maxZ_;
       double robotWidth_;
+
+      // Thread control
+      void mapUpdateLoop();
+      pthread_t *map_update_thread_; /*<! Thread to process laser data and apply to the map */
+      bool active_; /*<! Thread control parameter */
+      double map_update_frequency_;
     };
   }
 }
