@@ -15,8 +15,6 @@ the SVN version of GMapping, and also removes its GSL dependency.
   <doxymaker external="http://openslam.org"/>
 </export>
 
-<sysdepend os="ubuntu" version="7.04-feisty"  package="libqt3-mt-dev"/>
-<sysdepend os="ubuntu" version="8.04-hardy"  package="libqt3-mt-dev"/>
 </package>
 
 
