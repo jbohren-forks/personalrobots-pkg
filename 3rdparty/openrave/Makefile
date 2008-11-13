@@ -1,6 +1,8 @@
 all: openrave
 
 SVN_DIR = openrave_svn
+# Should really specify a revision
+#SVN_REVISION = -r 455
 SVN_URL = https://openrave.svn.sourceforge.net/svnroot/openrave
 include $(shell rospack find mk)/svn_checkout.mk
 
@@ -8,7 +10,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP openrave
 
-openrave: $(SVN_DIR)
+openrave: SVN_UP
 	@cd $(SVN_DIR) && PATH="$(shell rospack find soqt)/bin:$(shell rospack find opende)/opende/bin:$(PATH)" && svn up && make prefix=$(PWD) && make install
 
 clean:
