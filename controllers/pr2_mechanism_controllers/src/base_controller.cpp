@@ -91,9 +91,6 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 
    new_cmd_available_ = false;
 
-   wheel_radius_multiplier_front_ = 1.0;
-   wheel_radius_multiplier_rear_  = 1.0;
-
    pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
@@ -506,7 +503,7 @@ void BaseController::computeDesiredWheelSpeeds()
 
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
-    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/(wheel_radius_*wheel_radius_multiplier_front_);
+    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/(wheel_radius_);
   }
 }
 
@@ -597,7 +594,7 @@ void BaseController::computeBaseVelocity()
   for(int i = 0; i < num_wheels_; i++) {
     caster_2d_velocity.z = base_wheels_[i].parent_->joint_state_->velocity_;
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/(wheel_radius_*wheel_radius_multiplier_front_);
+    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/(wheel_radius_);
 
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
@@ -860,8 +857,9 @@ bool BaseControllerNode::getWheelRadiusMultiplier(
   pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
   pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
 {
-  resp.wheel_radius_multiplier_front = c_->wheel_radius_multiplier_front_;
-  resp.wheel_radius_multiplier_rear  = c_->wheel_radius_multiplier_rear_;
+  double param_multiplier;
+  node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
+  resp.radius_multiplier = param_multiplier;
 
   return true;
 }
@@ -870,13 +868,14 @@ bool BaseControllerNode::setWheelRadiusMultiplier(
   pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
   pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
 {
-  c_->wheel_radius_multiplier_front_ = req.wheel_radius_multiplier_front;
-  c_->wheel_radius_multiplier_rear_  = req.wheel_radius_multiplier_rear;
+  double calibration_multiplier = req.radius_multiplier;
+  ROS_INFO("Received radius multiplier %f ",calibration_multiplier); 
+  c_->wheel_radius_ *= calibration_multiplier;
 
-  ROS_INFO("Received radius request %f ",req.wheel_radius_multiplier_front); 
-  ROS_INFO("Set radius request %f ",c_->wheel_radius_multiplier_front_ ); 
+  double param_multiplier;
+  node->param<double>("base_controller/wheel_radius_multiplier",param_multiplier,1.0);
 
-  node->set_param("base_controller/wheel_radius_multiplier",c_->wheel_radius_multiplier_front_);
+  node->set_param("base_controller/wheel_radius_multiplier",param_multiplier*calibration_multiplier);
 
   return true;
 }
@@ -914,14 +913,11 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     delete transform_publisher_ ;
   transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
 
-  double multiplier;
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
+
+  double multiplier;
   node->param<double>("base_controller/wheel_radius_multiplier",multiplier,1.0);
-  c_->wheel_radius_multiplier_rear_ = c_->wheel_radius_multiplier_front_;
-
-  ROS_INFO("Getting value from param server: %f", c_->wheel_radius_multiplier_front_);
-
   c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
