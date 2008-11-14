@@ -261,9 +261,9 @@ protected:
 
 
   /** Find the list of connected frames necessary to connect two different frames */
-  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string& error_string);
+  int lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists & lists, std::string* error_string);
 
-  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string & error_string);
+  bool test_extrapolation(const ros::Time& target_time, const TransformLists& t_lists, std::string * error_string);
   
   /** Compute the transform based on the list of frames */
   btTransform computeTransformFromList(const TransformLists & list);
