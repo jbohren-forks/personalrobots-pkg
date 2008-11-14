@@ -34,6 +34,8 @@
 
 #include "odom_estimation.h"
 
+//#define __EKF_DEBUG_COUT__
+
 
 using namespace MatrixWrapper;
 using namespace BFL;
@@ -133,6 +135,10 @@ namespace estimation
     ColumnVector prior_Mu(6); 
     prior_Mu(1) = prior.getOrigin().x();  prior_Mu(2) = prior.getOrigin().y(); prior_Mu(3) = prior.getOrigin().z(); 
     prior.getBasis().getEulerZYX(prior_Mu(6), prior_Mu(5), prior_Mu(4));
+
+#ifdef __EKF_DEBUG_COUT__
+    cout << "Prior " << prior_Mu << endl;
+#endif
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
@@ -165,34 +171,51 @@ namespace estimation
       // system update filter
       ColumnVector vel_desi(2); vel_desi = 0;
       _filter->Update(_sys_model, vel_desi);
+
+
       // process odom measurement
       if (odom_active){
+	_transformer.lookupTransform("base","odom", odom_time, _odom_meas);
 	if (_odom_initialized){
-	  _transformer.lookupTransform("base","odom", odom_time, _odom_meas);
+#ifdef __EKF_DEBUG_COUT__
+	  cout << "init filter estimate old vec  " << _filter_estimate_old_vec << endl;
+	  cout << "init odom meas " << _odom_meas.getOrigin().x() << " "  << _odom_meas.getOrigin().y() << endl;
+	  cout << "init odom meas old " << _odom_meas_old.getOrigin().x() << " "  << _odom_meas_old.getOrigin().y() << endl;
+#endif
 	  // convert absolute odom measurements to relative odom measurements in horizontal plane
 	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * _odom_meas;
 	  ColumnVector odom_rel(3);
 	  odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
 	  double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
 	  AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
+#ifdef __EKF_DEBUG_COUT__
+	  cout << "odom rel  " << odom_rel << endl;
+#endif
 	  // update filter
 	  _filter->Update(_odom_meas_model, odom_rel);
 	}
 	else _odom_initialized = true;
+#ifdef __EKF_DEBUG_COUT__
+	cout << "set odom meas " << _odom_meas.getOrigin().x() << " "  << _odom_meas.getOrigin().y() << endl;
+	cout << "set odom meas old " << _odom_meas_old.getOrigin().x() << " "  << _odom_meas_old.getOrigin().y() << endl;
+#endif
 	_odom_meas_old = _odom_meas;
       }
 
 
       // process imu measurement
       if (imu_active){
+	_transformer.lookupTransform("base","imu", imu_time, _imu_meas);
 	if (_imu_initialized){
-	  _transformer.lookupTransform("base","imu", imu_time, _imu_meas);
 	  // convert absolute imu yaw measurement to relative imu yaw measurement 
 	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * _imu_meas;
 	  ColumnVector imu_rel(3); double tmp;
 	  imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), tmp, tmp);
 	  _imu_meas.getBasis().getEulerZYX(tmp, imu_rel(2), imu_rel(1));
 	  AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
+#ifdef __EKF_DEBUG_COUT__
+	  cout << "imu   " << imu_rel << endl;
+#endif
 	  // update filter
 	  _filter->Update(_imu_meas_model,  imu_rel);
 	}
@@ -203,8 +226,8 @@ namespace estimation
 
       // process vo measurement
       if (vo_active){
+	_transformer.lookupTransform("base","vo", vo_time, _vo_meas);
 	if (_vo_initialized){
-	  _transformer.lookupTransform("base","vo", vo_time, _vo_meas);
 	  // convert absolute vo measurements to relative vo measurements
 	  Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * _vo_meas;
 	  ColumnVector vo_rel(6);

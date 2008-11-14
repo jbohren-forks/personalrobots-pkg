@@ -98,8 +98,8 @@ private:
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
-  tf::Transform _filter_estimate_old, _odom_meas_old, _imu_meas_old, _vo_meas_old;
-  tf::Stamped<tf::Transform> _odom_meas, _imu_meas, _vo_meas;
+  tf::Transform _filter_estimate_old;
+  tf::Stamped<tf::Transform> _odom_meas, _odom_meas_old, _imu_meas, _imu_meas_old, _vo_meas, _vo_meas_old;
   ros::Time _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
 

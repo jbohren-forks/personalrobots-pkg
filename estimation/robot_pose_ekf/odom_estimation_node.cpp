@@ -40,6 +40,7 @@ using namespace std;
 using namespace ros;
 using namespace tf;
 
+//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -61,20 +62,24 @@ namespace estimation
     subscribe("imu_data",     _imu,  &odom_estimation_node::imu_callback,  10);
     subscribe("vo_data",      _vo,   &odom_estimation_node::vo_callback,   10);
 
+#ifdef __EKF_DEBUG_FILE__
     _odom_file.open("odom_file.txt");
     _imu_file.open("imu_file.txt");
     _vo_file.open("vo_file.txt");
     _corr_file.open("corr_file.txt");
+#endif
   };
 
 
 
   // destructor
   odom_estimation_node::~odom_estimation_node(){
+#ifdef __EKF_DEBUG_FILE__
     _odom_file.close();
     _imu_file.close();
     _vo_file.close();
     _corr_file.close();
+#endif
   };
 
 
@@ -88,12 +93,14 @@ namespace estimation
       // update filter
       _my_filter.Update(_odom_time, _odom_active, _imu_time,  _imu_active, _vo_time,   _vo_active,  time);
       
+#ifdef __EKF_DEBUG_FILE__
       // write to file
       ColumnVector estimate; Time tm;
       _my_filter.GetEstimate(estimate, tm);
       for (unsigned int i=1; i<=6; i++)
 	_corr_file << estimate(i) << " ";
       _corr_file << tm << endl;
+#endif
       
       // output estimate message
       _my_filter.GetEstimate(_output);
@@ -103,7 +110,6 @@ namespace estimation
     // initialize filer with odometry frame
     if ( _odom_active && !_my_filter.IsInitialized())
       _my_filter.Initialize(_odom_meas, _odom_time);
-
   };
 
 
@@ -122,10 +128,12 @@ namespace estimation
     this->Update(_odom_time);
     _filter_mutex.unlock();
 
+#ifdef __EKF_DEBUG_FILE__
     // write to file
     double tmp, yaw;
     _odom_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
     _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << endl;
+#endif
 
     // activate odom
     if (!_odom_active) _odom_active = true;
@@ -144,10 +152,12 @@ namespace estimation
     _my_filter.AddMeasurement(_imu_meas, "imu", "base", _imu.header.stamp);
     _filter_mutex.unlock();
 
+#ifdef __EKF_DEBUG_FILE__
     // write to file
     double tmp, yaw;
-    _imu_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
-    _imu_file << yaw << endl;
+    _imu_meas.getBasis().getEulerZYX(yaw, tmp, tmp); 
+   _imu_file << yaw << endl;
+#endif
 
     // activate imu
     if (!_imu_active) _imu_active = true;
