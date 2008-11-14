@@ -1,6 +1,6 @@
-diff -Naur SoQt-1.4.1/configure.ac SoQt-1.4.1-new/configure.ac
---- SoQt-1.4.1/configure.ac	2006-10-30 14:09:48.000000000 -0800
-+++ SoQt-1.4.1-new/configure.ac	2008-11-13 14:37:09.157515796 -0800
+diff -Naur SoQt-1.4.1-old/configure.ac SoQt-1.4.1-new/configure.ac
+--- SoQt-1.4.1-old/configure.ac	2006-10-30 14:09:48.000000000 -0800
++++ SoQt-1.4.1-new/configure.ac	2008-11-13 19:56:03.697881260 -0800
 @@ -568,9 +568,14 @@
    fi
  fi
@@ -18,3 +18,15 @@ diff -Naur SoQt-1.4.1/configure.ac SoQt-1.4.1-new/configure.ac
  fi
  
  # see commented-out restore above
+diff -Naur SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp
+--- SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp	2006-10-30 14:09:20.000000000 -0800
++++ SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp	2008-11-13 19:56:20.237409512 -0800
+@@ -100,7 +100,7 @@
+   this->parent->removeEventFilter(this);
+ }
+ 
+-static void delete_dict_value(unsigned long key, void * value)
++static void delete_dict_value(SbDict::Key key, void * value)
+ {
+   delete (QCursor *)value;
+ }
