@@ -53,10 +53,11 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
   }
    NEWMAT::Matrix g0 = GetLinkPose(7,angles_d);
    this->SetHomePosition(g0);
+   solution_.resize(NUM_JOINTS_ARM7DOF);
 
 }
 
-NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
+void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
 {
   /*** A first solution using the shoulder rotation as a parameterization ***/
   /* Find shoulder offset point */
@@ -70,7 +71,6 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
   NEWMAT::Matrix g0_inv_ = g0.i();
 
   NEWMAT::Matrix g0Wrist = GetHomePosition();
-  NEWMAT::Matrix solution(8,8);
 
   NEWMAT::Matrix xi1,xi2,xi3,xi4,xi5,xi6,xi7;
   NEWMAT::Matrix p,q,r;
@@ -99,7 +99,7 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
 
   int solutionCount = 1;
 
-  solution = 0;
+//  solution = 0;
   t1 = theta1;
 
   sop(1,1) = a1x*cos(t1);
@@ -137,6 +137,8 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
   {
     t4 = theta4(jj,1);
       
+    if(isnan(t4))
+      continue;
     /* Start solving for the other angles */
     q0 = g0.SubMatrix(1,4,4,4);
 
@@ -145,8 +147,8 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
     xi4_inv_ = xi4.i();
     xi1_inv_ = xi1.i();
 
-//    q = xi1_inv_*g*g0_inv_*xi_0_inv_[6]*xi_0_inv_[5]*xi_0_inv_[4]*q0;
-     q = xi1_inv_*g*g0_inv_*q0;
+    q = xi1_inv_*g*g0_inv_*xi_0_inv_[6]*xi_0_inv_[5]*xi_0_inv_[4]*q0;
+//     q = xi1_inv_*g*g0_inv_*q0;
     p = xi4*q0;
     r = this->GetJointAxisPoint(1);
 
@@ -188,6 +190,8 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
     {
       t2 = theta2(kk,1);
       t3 = theta3(kk,1);
+      if(isnan(t2) || isnan(t3))
+        continue;
       /* Two more solutions here, making for a total of 4 solution stream so far */
    
 #ifdef DEBUG
@@ -225,7 +229,8 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
       {
         t5 = theta5(ll,1);
         t6 = theta6(ll,1);
-
+        if(isnan(t5) || isnan(t6))
+          continue;
         xi5 = this->GetJointExponential(4,t5);
         xi6 = this->GetJointExponential(5,t6);
 
@@ -236,7 +241,18 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
         pWrist(3,1) = pWrist(3,1) + 0.1;
         qWrist =  xi6_inv_*xi5_inv_*xi4_inv_*xi3_inv_*xi2_inv_*xi1_inv_*g*g0_inv_*pWrist;
         t7 = SubProblem1(pWrist,qWrist,rWrist,axis_[6]);
-
+        if(isnan(t7))
+          continue;
+        
+        solution_[0] = t1;
+        solution_[1] = t2;
+        solution_[2] = t3;
+        solution_[3] = t4;
+        solution_[4] = t5;
+        solution_[5] = t6;
+        solution_[6] = t7;
+        solution_ik_.push_back(solution_);
+/*
         solution(1,solutionCount) = t1;
         solution(2,solutionCount) = t2;
         solution(3,solutionCount) = t3;
@@ -244,9 +260,9 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
         solution(5,solutionCount) = t5;
         solution(6,solutionCount) = t6;
         solution(7,solutionCount) = t7;
-
-        if (isnan(t1) || isnan(t2) || isnan(t3) || isnan(t4) || isnan(t5) || isnan(t6) || isnan(t7))
-          solution(8,solutionCount) = -1;
+*/
+//        if (isnan(t1) || isnan(t2) || isnan(t3) || isnan(t4) || isnan(t5) || isnan(t6) || isnan(t7))
+//          solution(8,solutionCount) = -1;
 #ifdef DEBUG
         cout << "t1: " << t1 << ", t2: " << t2 << ", t3: " << t3 << ", t4: " << t4  << ", t5: " << t5 << ", t6: " << t6 << ", t7: " << t7 << endl;
 #endif
@@ -254,7 +270,7 @@ NEWMAT::Matrix arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
       }
     }
   }
-  return solution;
+//  return solution;
 }
 
 

@@ -92,11 +92,21 @@ int main()
    theta = 0;
 
    gettimeofday(&t0,NULL);
-   theta = myArm.ComputeIK(g,0.1);
+   //  theta = myArm.ComputeIK(g,0.1);
+   myArm.ComputeIK(g,0.2);
    gettimeofday(&t1,NULL);
    double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
    cout << "Time taken " << time_taken << endl;
-   PrintMatrix(theta,"Answer");
+   for(int i=0; i < (int) myArm.solution_ik_.size(); i++)
+   {
+     for(int j=0; j < 7; j++)
+     {
+       cout << myArm.solution_ik_[i][j] << " " ;
+     }
+     cout << endl;
+   }
+//   PrintMatrix(theta,"Answer");
+
 #ifdef DEBUG
    cout << "Main::End-effector Pose:" << endl << g << endl ;
    cout << "Main::End-effector Velocity:" << endl << eS;

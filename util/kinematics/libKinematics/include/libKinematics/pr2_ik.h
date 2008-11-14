@@ -55,8 +55,14 @@ namespace kinematics
     std::vector<NEWMAT::Matrix> xi_0_;
 
     std::vector<NEWMAT::Matrix> xi_0_inv_;
+
+    std::vector<std::vector<double> > solution_ik_;
        
-    NEWMAT::Matrix ComputeIK(NEWMAT::Matrix g, double theta1);
+    void ComputeIK(NEWMAT::Matrix g, double theta1);
+
+    private:
+
+    std::vector<double> solution_;
 
   };
 }
