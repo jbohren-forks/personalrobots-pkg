@@ -30,8 +30,8 @@ endforeach(it)
 add_custom_target(media_files ALL DEPENDS ${pr2_gen_files})
 
 # process all urdf files
-set(PR2_OUTPUT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml.model)
-set(PR2_OUTPUT_NOLIMIT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_xml_nolimit.model)
+set(PR2_OUTPUT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2.model)
+set(PR2_OUTPUT_NOLIMIT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_nolimit.model)
 set(PR2_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2/pr2.xml)
 add_custom_command(
   OUTPUT ${PR2_OUTPUT}
