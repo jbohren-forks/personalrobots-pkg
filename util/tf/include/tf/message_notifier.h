@@ -128,6 +128,10 @@ public:
   , destructing_(false)
   , new_messages_(false)
   , new_transforms_(false)
+  , successful_transform_count_(0)
+  , failed_transform_count_(0)
+  , transform_message_count_(0)
+  , incoming_message_count_(0)
   {
     setTopic(topic);
 
@@ -161,6 +165,9 @@ public:
     delete thread_handle_;
 
     clear();
+
+    //printf("MessageNotifier: Successful Transforms: %d, Failed Transforms: %d, Transform messages received: %d, Messages received: %d\n",
+    //       successful_transform_count_, failed_transform_count_, transform_message_count_, incoming_message_count_);
   }
 
   /**
@@ -230,10 +237,13 @@ private:
         --message_count_;
 
         //printf("Message %d ready, count now %d\n", i, message_count_);
+
+        ++successful_transform_count_;
       }
       else
       {
         ++it;
+        ++failed_transform_count_;
       }
     }
   }
@@ -291,16 +301,15 @@ private:
       V_Message local_queue;
 
       {
-        //printf("workerThread: locking\n");
         boost::mutex::scoped_lock lock(queue_mutex_);
 
         // Wait for new data to be available
-        if (message_count_ == 0 && !new_transforms_ && !new_messages_
-            && !destructing_)
+        while (!destructing_ && ((message_count_ == 0 && new_message_queue_.size() == 0) || (!new_transforms_ && !new_messages_)))
         {
-          //printf("workerThread: waiting\n");
           new_data_.wait(lock);
         }
+
+        //printf("workerThread: woken, message count: %d\n", message_count_);
 
         // If we're destructing, break out of the loop
         if (destructing_)
@@ -318,6 +327,8 @@ private:
         // Need to lock the list mutex because clear() can modify the message list
         boost::mutex::scoped_lock lock(list_mutex_);
         processNewMessages(local_queue);
+
+        local_queue.clear();
 
         gatherReadyMessages(to_notify);
 
@@ -386,13 +397,15 @@ private:
 
       new_message_queue_.push_back(message);
 
-      //printf("Added message, count now %d\n", message_count_);
+      //printf("Added message to message queue, count now %d\n", new_message_queue_.size());
 
       new_messages_ = true;
 
       // Notify the worker thread that there is new data available
       new_data_.notify_all();
     }
+
+    ++incoming_message_count_;
   }
 
   /**
@@ -400,9 +413,11 @@ private:
    */
   void incomingTFMessage()
   {
+    ////printf("incoming transforms\n");
     // Notify the worker thread that there is new data available
     new_data_.notify_all();
     new_transforms_ = true;
+    ++transform_message_count_;
   }
 
   /**
@@ -410,10 +425,11 @@ private:
    */
   void incomingOldTFMessage()
   {
-    //printf("incoming transforms\n");
+    ////printf("incoming transforms\n");
     // Notify the worker thread that there is new data available
     new_data_.notify_all();
     new_transforms_ = true;
+    ++transform_message_count_;
   }
 
   Transformer* tf_; ///< The Transformer used to determine if transformation data is available
@@ -439,6 +455,11 @@ private:
   volatile bool new_transforms_; ///< Used to skip waiting on new_data_ if new transforms have come in while calling back or transforming data
   V_Message new_message_queue_; ///< Queues messages to later be processed by the worker thread
   boost::mutex queue_mutex_; ///< The mutex used for locking message queue operations
+
+  int successful_transform_count_;
+  int failed_transform_count_;
+  int transform_message_count_;
+  int incoming_message_count_;
 };
 
 } // namespace tf
