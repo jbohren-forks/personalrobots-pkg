@@ -235,7 +235,8 @@ namespace cam
     void setDispOffsets();	// reset them, based on stereo processing params
 
     // point cloud data
-    float *imPts;		// point array, 3xN floats
+    float *imPts;		// points, 3xN floats for vector version
+    uint8_t *imPtsColor;	// color vector corresponding to points, RGB
     size_t imPtsSize;		// size of array in bytes, for storage manipulation
     int numPts;			// number of points in array
     bool isPtArray;		// true if the points are an image array, z=0.0 for no point
