@@ -88,7 +88,7 @@ void HysteresisController::init( double velocity, double max_effort, double expe
 bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   assert(robot);
-
+  fprintf(stderr, "Hello World\n");
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
@@ -103,7 +103,7 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
     fprintf(stderr, "HysteresisController could not find joint named \"%s\"\n", joint_name);
     return false;
   }
-
+  ///\todo check velocity controller comes up
   velocity_controller_ = new JointVelocityController();
   velocity_controller_->initXml(robot, config);
 
@@ -120,6 +120,7 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
   else
   {
     fprintf(stderr, "HysteresisController's config did not specify the default control parameters.\n");
+    return false;
   }
   return true;
 }

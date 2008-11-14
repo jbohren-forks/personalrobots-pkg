@@ -42,7 +42,7 @@ using namespace std;
 
 ROS_REGISTER_CONTROLLER(HeadServoingController);
 
-HeadServoingController::HeadServoingController():num_joints_(0),last_time_(0)
+HeadServoingController::HeadServoingController():num_joints_(0),last_time_(0),max_velocity_(4.0),gain_(1.0)
 {
 }
 
@@ -72,16 +72,19 @@ bool HeadServoingController::initXml(mechanism::RobotState * robot, TiXmlElement
     elt = elt->NextSiblingElement("controller");
   }
   
-  TiXmlElement *cd = elt->NextSiblingElement("controller_defaults");
+  TiXmlElement *cd = config->FirstChildElement("controller_defaults");
   if (cd)
   {
-
-    double max_velocity = atof(cd->Attribute("max_velocity"));
-    max_velocity_ = max_velocity;
+    
+     //TODO: make init function for this 
+    max_velocity_ = atof(cd->Attribute("max_velocity"));
+    gain_ = atof(cd->Attribute("gain"));
+ 
   }
   else
   {
     fprintf(stderr, "HeadServoingController's config did not specify the default control parameters.\n");
+
   }
 
   num_joints_ = joint_velocity_controllers_.size();
@@ -90,6 +93,10 @@ bool HeadServoingController::initXml(mechanism::RobotState * robot, TiXmlElement
 
   
   set_pts_.resize(num_joints_);
+  for(unsigned int i=0; i < num_joints_;++i)
+  {
+    set_pts_[i]=0;
+  }
   last_time_ = robot->hw_->current_time_;
 
   return true;
@@ -148,11 +155,13 @@ int HeadServoingController::getJointControllerByName(std::string name)
 
 void HeadServoingController::update(void)
 {
-  double error;
+  double error(0);
+  
+	
   for(unsigned int i=0; i < num_joints_;++i)
   {
-    math_utils::shortest_angular_distance_with_limits(set_pts_[i], joint_velocity_controllers_[i]->joint_state_->position_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_,error);
-    error=(error<max_velocity_)?error:max_velocity_;
+    math_utils::shortest_angular_distance_with_limits(joint_velocity_controllers_[i]->joint_state_->position_,set_pts_[i], joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_, error);
+    error=((gain_*error)<max_velocity_)?error:max_velocity_;
     joint_velocity_controllers_[i]->setCommand(error);
   }
 
@@ -185,7 +194,6 @@ HeadServoingControllerNode::~HeadServoingControllerNode()
 {
   delete c_;
 }
-
 void HeadServoingControllerNode::update()
 {
   c_->update();
@@ -200,14 +208,31 @@ bool HeadServoingControllerNode::initXml(mechanism::RobotState * robot, TiXmlEle
   if(!c_->initXml(robot, config))
     return false;
   //suscriptions
+  node_->subscribe(service_prefix_ + "/set_command_array", joint_cmds_, &HeadServoingControllerNode::setJointCmd, this,1);
+  guard_set_command_array_.set(service_prefix_ + "/set_command_array");
   node_->subscribe(service_prefix_ + "/head_track_point", head_track_point_, &HeadServoingControllerNode::headTrackPoint, this, 1);
   guard_head_track_point_.set(service_prefix_ + "/head_track_point");
   node_->subscribe(service_prefix_ + "/frame_track_point", frame_track_point_, &HeadServoingControllerNode::frameTrackPoint, this, 1);
   guard_frame_track_point_.set(service_prefix_ + "/frame_track_point");
   //services
+  node_->advertise_service(service_prefix_ + "/get_command_array", &HeadServoingControllerNode::getJointCmd, this);
+  guard_get_command_array_.set(service_prefix_ + "/get_command_array");
   node_->advertise<std_msgs::VisualizationMarker>( "visualizationMarker", 0 );
   return true;
 
+}
+void HeadServoingControllerNode::setJointCmd()
+{
+  c_->setJointCmd(joint_cmds_.positions,joint_cmds_.names);
+}
+
+bool HeadServoingControllerNode::getJointCmd(robot_srvs::GetJointCmd::request &req,
+					    robot_srvs::GetJointCmd::response &resp)
+{
+  robot_msgs::JointCmd cmd;
+  c_->getJointCmd(cmd);
+  resp.command = cmd;
+  return true;
 }
 
 void HeadServoingControllerNode::headTrackPoint()
