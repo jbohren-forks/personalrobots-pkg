@@ -885,6 +885,10 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   if(!c_->initXml(robot_state, config))
     return false;
 
+  node->advertise_service(service_prefix + "/set_wheel_radius_multiplier", &BaseControllerNode::setWheelRadiusMultiplier,this);
+  node->advertise_service(service_prefix + "/get_wheel_radius_multiplier", &BaseControllerNode::getWheelRadiusMultiplier,this);
+
+
   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
 
