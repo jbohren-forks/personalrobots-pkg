@@ -166,7 +166,7 @@
 
     <!-- multi link -->
     <include embedded="true">
-      <xi:include href="pr2_xml_multi_link.model" />
+      <xi:include href="multi_link.model" />
     </include>
 
     <!-- PR2_ACTARRAY -->

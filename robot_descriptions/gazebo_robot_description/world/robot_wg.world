@@ -142,7 +142,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml.model" />
+      <xi:include href="pr2.model" />
     </include>
 
     <!-- PR2_ACTARRAY -->
@@ -167,45 +167,45 @@
     </controller:gazebo_battery>
 
     <!-- ptz camera controls -->
-    <controller:Ros_PTZ name="ptz_cam_left_controller" plugin="libRos_PTZ.so">
+    <controller:Ros_PTZ name="left_ptz_cam_controller" plugin="libRos_PTZ.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>15.0</updateRate>
-      <panJoint>ptz_pan_left_joint</panJoint>
-      <tiltJoint>ptz_tilt_left_joint</tiltJoint>
+      <panJoint>left_ptz_pan_joint</panJoint>
+      <tiltJoint>left_ptz_tilt_joint</tiltJoint>
       <commandTopicName>axis_left/ptz_cmd</commandTopicName>
       <stateTopicName>axis_left/ptz_state</stateTopicName>
-      <interface:ptz name="ptz_left_iface" />
+      <interface:ptz name="left_ptz_cam_iface" />
     </controller:Ros_PTZ>
 
-    <controller:Ros_PTZ name="ptz_cam_right_controller" plugin="libRos_PTZ.so">
+    <controller:Ros_PTZ name="right_ptz_cam_controller" plugin="libRos_PTZ.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>15.0</updateRate>
-      <panJoint>ptz_pan_right_joint</panJoint>
-      <tiltJoint>ptz_tilt_right_joint</tiltJoint>
+      <panJoint>right_ptz_pan_joint</panJoint>
+      <tiltJoint>right_ptz_tilt_joint</tiltJoint>
       <commandTopicName>axis_right/ptz_cmd</commandTopicName>
       <stateTopicName>axis_right/ptz_state</stateTopicName>
-      <interface:ptz name="ptz_right_iface" />
+      <interface:ptz name="right_ptz_cam_iface" />
     </controller:Ros_PTZ>
 
     <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_right_wrist_controller" plugin="libP3D.so">
+    <controller:P3D name="p3d_right_gripper_palm_controller" plugin="libP3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>gripper_roll_right</bodyName>
-      <topicName>gripper_roll_right_pose_ground_truth</topicName>
+      <bodyName>right_gripper_palm</bodyName>
+      <topicName>right_gripper_palm_pose_ground_truth</topicName>
       <gaussianNoise>0.01</gaussianNoise>
       <frameName>map</frameName>
-      <interface:position name="p3d_right_wrist_position"/>
+      <interface:position name="p3d_right_gripper_palm_position"/>
     </controller:P3D>
 
-    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+    <controller:P3D name="p3d_left_gripper_palm_controller" plugin="libP3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>gripper_roll_left</bodyName>
-      <topicName>gripper_roll_left_pose_ground_truth</topicName>
+      <bodyName>left_gripper_palm</bodyName>
+      <topicName>left_gripper_palm_pose_ground_truth</topicName>
       <gaussianNoise>0.01</gaussianNoise>
       <frameName>map</frameName>
-      <interface:position name="p3d_left_wrist_position"/>
+      <interface:position name="p3d_left_gripper_palm_position"/>
     </controller:P3D>
 
     <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
@@ -220,40 +220,40 @@
       <interface:position name="p3d_base_position"/>
     </controller:P3D>
 
-    <controller:F3D name="f3d_finger_tip_l_left_controller" plugin="libF3D.so">
+    <controller:F3D name="f3d_left_gripper_l_finger_tip_controller" plugin="libF3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>finger_tip_l_left</bodyName>
-      <topicName>finger_tip_l_left_ground_truth</topicName>
+      <bodyName>left_gripper_l_finger_tip</bodyName>
+      <topicName>left_gripper_l_finger_tip_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="f3d_finger_tip_l_left_position"/>
+      <interface:position name="f3d_left_gripper_l_finger_tip_position"/>
     </controller:F3D>
 
-    <controller:F3D name="f3d_finger_tip_r_left_controller" plugin="libF3D.so">
+    <controller:F3D name="f3d_left_gripper_r_finger_tip_controller" plugin="libF3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>finger_tip_r_left</bodyName>
-      <topicName>finger_tip_r_left_ground_truth</topicName>
+      <bodyName>left_gripper_r_finger_tip</bodyName>
+      <topicName>left_gripper_r_finger_tip_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="f3d_finger_tip_r_left_position"/>
+      <interface:position name="f3d_left_gripper_r_finger_tip_position"/>
     </controller:F3D>
 
-    <controller:F3D name="f3d_finger_tip_l_right_controller" plugin="libF3D.so">
+    <controller:F3D name="f3d_right_gripper_l_finger_tip_controller" plugin="libF3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>finger_tip_l_right</bodyName>
-      <topicName>finger_tip_l_right_ground_truth</topicName>
+      <bodyName>right_gripper_l_finger_tip</bodyName>
+      <topicName>right_gripper_l_finger_tip_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="f3d_finger_tip_l_right_position"/>
+      <interface:position name="f3d_right_gripper_l_finger_tip_position"/>
     </controller:F3D>
 
-    <controller:F3D name="f3d_finger_tip_r_right_controller" plugin="libF3D.so">
+    <controller:F3D name="f3d_right_gripper_r_finger_tip_controller" plugin="libF3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>finger_tip_r_right</bodyName>
-      <topicName>finger_tip_r_right_ground_truth</topicName>
+      <bodyName>right_gripper_r_finger_tip</bodyName>
+      <topicName>right_gripper_r_finger_tip_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="f3d_finger_tip_r_right_position"/>
+      <interface:position name="f3d_right_gripper_r_finger_tip_position"/>
     </controller:F3D>
 
   </model:physical>

@@ -144,13 +144,13 @@ class TArmK_Node : public ros::node
     this->lArmCmd.set_margins_size(7);
     this->rArmCmd.set_margins_size(7);
 
-    this->lArmCmd.names[0] = "shoulder_pan_left_joint";
-    this->lArmCmd.names[1] = "shoulder_pitch_left_joint";
-    this->lArmCmd.names[2] = "upperarm_roll_left_joint";
-    this->lArmCmd.names[3] = "elbow_flex_left_joint";
-    this->lArmCmd.names[4] = "forearm_roll_left_joint";
-    this->lArmCmd.names[5] = "wrist_flex_left_joint";
-    this->lArmCmd.names[6] = "gripper_roll_left_joint";
+    this->lArmCmd.names[0] = "left_shoulder_pan_joint";
+    this->lArmCmd.names[1] = "left_shoulder_pitch_joint";
+    this->lArmCmd.names[2] = "left_upper_arm_roll_joint";
+    this->lArmCmd.names[3] = "left_elbow_flex_joint";
+    this->lArmCmd.names[4] = "left_forearm_roll_joint";
+    this->lArmCmd.names[5] = "left_wrist_flex_joint";
+    this->lArmCmd.names[6] = "left_wrist_roll_joint";
 
     this->lArmCmd.positions[0] = 0;
     this->lArmCmd.positions[1] = 0;
@@ -168,13 +168,13 @@ class TArmK_Node : public ros::node
     this->lArmCmd.margins[5] = 0;
     this->lArmCmd.margins[6] = 0;
 
-    this->rArmCmd.names[0] = "shoulder_pan_right_joint";
-    this->rArmCmd.names[1] = "shoulder_pitch_right_joint";
-    this->rArmCmd.names[2] = "upperarm_roll_right_joint";
-    this->rArmCmd.names[3] = "elbow_flex_right_joint";
-    this->rArmCmd.names[4] = "forearm_roll_right_joint";
-    this->rArmCmd.names[5] = "wrist_flex_right_joint";
-    this->rArmCmd.names[6] = "gripper_roll_right_joint";
+    this->rArmCmd.names[0] = "right_shoulder_pan_joint";
+    this->rArmCmd.names[1] = "right_shoulder_pitch_joint";
+    this->rArmCmd.names[2] = "right_upper_arm_roll_joint";
+    this->rArmCmd.names[3] = "right_elbow_flex_joint";
+    this->rArmCmd.names[4] = "right_forearm_roll_joint";
+    this->rArmCmd.names[5] = "right_wrist_flex_joint";
+    this->rArmCmd.names[6] = "right_wrist_roll_joint";
 
     this->rArmCmd.positions[0] = 0;
     this->rArmCmd.positions[1] = 0;
@@ -239,7 +239,7 @@ class TArmK_Node : public ros::node
       aPose.pitch = 0;
       aPose.yaw = 0;
       aPose.time = 0;
-      aPose.frame = "gripper_roll_right";
+      aPose.frame = "right_wrist_roll";
 
       libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ODOM", aPose);
 
@@ -259,7 +259,7 @@ class TArmK_Node : public ros::node
       aPose.time = 0;
       aPose.frame = "FRAMEID_ODOM";
 
-      libTF::TFPose inOdomFrame = tf.transformPose("gripper_roll_right", aPose);
+      libTF::TFPose inOdomFrame = tf.transformPose("right_wrist_roll", aPose);
 
       std::cout << "In shoulder frame x " << inOdomFrame.x << std::endl;
       std::cout << "In shoulder frame y " << inOdomFrame.y << std::endl;
@@ -325,7 +325,7 @@ void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
 void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
 {
   float jointCmdStep = 5*M_PI/180;
-  float gripperStep = 1*M_PI/180;
+  double gripperStep = 1*M_PI/180;
   if (increment == false)
   {
     jointCmdStep *= -1;

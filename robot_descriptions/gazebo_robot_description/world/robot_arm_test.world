@@ -170,7 +170,7 @@
 
     <!-- base and arm -->
     <include embedded="true">
-      <xi:include href="pr2_xml_arm.model" />
+      <xi:include href="pr2_arm.model" />
     </include>
 
     <!-- PR2_ACTARRAY -->
@@ -185,8 +185,8 @@
     <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>gripper_roll_left</bodyName>
-      <topicName>gripper_roll_left_pose_ground_truth</topicName>
+      <bodyName>left_gripper_palm</bodyName>
+      <topicName>left_gripper_palm_pose_ground_truth</topicName>
       <frameName>map</frameName>
       <interface:position name="p3d_left_wrist_position"/>
     </controller:P3D>

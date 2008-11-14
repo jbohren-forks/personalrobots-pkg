@@ -180,7 +180,7 @@
 
     <!-- single link -->
     <include embedded="true">
-      <xi:include href="pr2_xml_single_link.model" />
+      <xi:include href="single_link.model" />
     </include>
 
     <!-- PR2_ACTARRAY -->

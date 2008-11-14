@@ -18,5 +18,16 @@
     <param name="pf_odom_drift_xa" value="0.2"/>
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
+
+    <param name="world_3d_map/max_publish_frequency" type="double" value="20" /> <!-- Hz -->
+    <param name="world_3d_map/base_laser_range" type="double" value="10.0" /> <!-- Meters -->
+    <param name="world_3d_map/tilt_laser_range" type="double" value="4.0" /> <!-- Meters -->
+    <param name="world_3d_map/retain_pointcloud_fraction" type="double" value="0.25" /> <!-- percentage (between 0 and 1) -->
+    <param name="world_3d_map/retain_above_ground_threshold" type="double" value="0.03" /> <!-- double value -->
+    <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
+    <param name="world_3d_map/laser_x_offset" type="double" value=".275" />
+
+    <param name="costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
+    <param name="move_base_sbpl/controller_frequency" value="20.0" />
 </launch>
 

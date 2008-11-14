@@ -101,6 +101,33 @@
    </body:map>
   </model:physical>
 
+  <!-- large desk in green room -->
+  <model:physical name="obstacles_model1">
+    <xyz>-2 -12 0</xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <include embedded="true">
+      <xi:include href="desk1.model" />
+    </include>
+  </model:physical>
+
+  <!-- small desks -->
+  <model:physical name="obstacles_model2">
+    <xyz>-11 2.5 0</xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <include embedded="true">
+      <xi:include href="desk2.model" />
+    </include>
+  </model:physical>
+
+  <!-- small desks -->
+  <model:physical name="obstacles_model3">
+    <xyz>-4 -12 0</xyz>
+    <rpy>0.0 0.0 0.0 </rpy>
+    <include embedded="true">
+      <xi:include href="desk3.model" />
+    </include>
+  </model:physical>
+
 
   <model:physical name="robot_model1">
 
@@ -115,7 +142,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_prototype1.model" />
+      <xi:include href="pr2_prototype1.model" />
     </include>
 
     <!-- PR2_ACTARRAY -->

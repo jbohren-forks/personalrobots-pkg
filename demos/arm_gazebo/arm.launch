@@ -1,9 +1,9 @@
 <launch>
   <group name="wg">
     <!-- create model file for gazebo -->
-    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2_arm_test/pr2_arm.xml $(find gazebo_robot_description)/world/pr2_xml_arm.model" />
+    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2_arm_test/pr2_arm.xml.expanded $(find gazebo_robot_description)/world/pr2_arm.model" />
     <!-- send pr2_arm.xml to param server -->
-    <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/pr2_arm_test/pr2_arm.xml&quot;" />
+    <include file="$(find wg_robot_description)/pr2_arm_test/send_description.launch" />
     <!-- -g flag runs gazebo in gui-less mode -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_arm_test.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
@@ -13,8 +13,8 @@
     </node>
     <node pkg="mechanism_control" type="mech.py" args="sp $(find wg_robot_description)/pr2_arm_test/controllers_arm.xml" respawn="false" output="screen" /> <!-- load default arm controller -->
     <node pkg="robot_mechanism_controllers" type="control.py" args="set gripper_left_controller 0.5" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
-    <!-- for visualization -->
-    <node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" />
+    <!-- for visualization, heavy, off by default -->
+    <!--node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" /-->
   </group>
 </launch>
 

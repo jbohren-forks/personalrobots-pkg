@@ -1,10 +1,9 @@
 <launch>
   <group name="wg">
-    <!-- create model file for gazebo -->
-    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/single_link_test/pr2_single_link.xml $(find gazebo_robot_description)/world/pr2_xml_single_link.model" />
-    <!-- send pr2_arm.xml to param server -->
-    <!--include file="$(find wg_robot_description)/single_link_test/send_description.xml" /-->
-    <param name="robotdesc/pr2" command="$(find wg_robot_description_parser)/merge &quot;$(find wg_robot_description)/single_link_test/pr2_single_link.xml&quot;" />
+    <!-- send single_link.xml to param server -->
+    <include file="$(find wg_robot_description)/single_link_test/send_description.launch" />
+
+    <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="$(find gazebo_robot_description)/world/robot_single_link.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />

@@ -1,7 +1,19 @@
 <?xml version="1.0"?>
 
-<robot name="pr2"><!-- name of the robot-->
-  
+<robot name="pr2"
+       xmlns:xi="http://www.w3.org/2001/XInclude"
+       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
+       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
+       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
+       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
+       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
+       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
+
   <!-- joint blocks -->
   <joint name="link1_joint" type="revolute" >
     <axis xyz="1 0 0" />
@@ -69,8 +81,8 @@
     </map>
   </link>
   <!-- Define groups of links; a link may be part of multiple groups -->
-  <include>groups_single_link.xml</include>
+  <include filename="./groups_single_link.xml" />
   <!-- mechanism controls -->
-  <include>transmissions_single_link.xml</include> 
-  
+  <include filename="./transmissions_single_link.xml" />
+
 </robot>

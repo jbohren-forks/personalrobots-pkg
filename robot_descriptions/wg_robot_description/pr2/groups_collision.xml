@@ -5,24 +5,24 @@
   <!-- Define the parts of the robot that the robot's scanners can see -->
   
   <group name="self_see" flags="collision">
-    upperarm_roll_left
-    upperarm_roll_right
-    elbow_flex_left
-    elbow_flex_right
-    forearm_roll_left
-    forearm_roll_right
-    wrist_flex_left
-    wrist_flex_right
-    gripper_roll_left
-    gripper_roll_right
-    finger_l_left
-    finger_r_left
-    finger_l_right
-    finger_r_right
-    shoulder_pan_right
-    shoulder_pitch_right 
-    shoulder_pan_left
-    shoulder_pitch_left
+    left_upper_arm_roll
+    right_upper_arm_roll
+    left_elbow_flex
+    right_elbow_flex
+    left_forearm_roll
+    right_forearm_roll
+    left_wrist_flex
+    right_wrist_flex
+    left_wrist_roll
+    right_wrist_roll
+    left_gripper_l_finger
+    left_gripper_r_finger
+    right_gripper_l_finger
+    right_gripper_r_finger
+    right_shoulder_pan
+    right_shoulder_pitch 
+    left_shoulder_pan
+    left_shoulder_pitch
     torso
     base
   </group>
@@ -31,24 +31,24 @@
   <group name="collision_check" flags="collision">
     base
     torso
-    shoulder_pan_right
-    shoulder_pitch_right 
-    shoulder_pan_left
-    shoulder_pitch_left
-    upperarm_roll_left
-    upperarm_roll_right
-    elbow_flex_left
-    elbow_flex_right
-    forearm_roll_left
-    forearm_roll_right
-    wrist_flex_left
-    wrist_flex_right
-    gripper_roll_left
-    gripper_roll_right
-    finger_l_left
-    finger_r_left
-    finger_l_right
-    finger_r_right
+    right_shoulder_pan
+    right_shoulder_pitch 
+    left_shoulder_pan
+    left_shoulder_pitch
+    left_upper_arm_roll
+    right_upper_arm_roll
+    left_elbow_flex
+    right_elbow_flex
+    left_forearm_roll
+    right_forearm_roll
+    left_wrist_flex
+    right_wrist_flex
+    left_wrist_roll
+    right_wrist_roll
+    left_gripper_l_finger
+    left_gripper_r_finger
+    right_gripper_l_finger
+    right_gripper_r_finger
     head_pan
     head_tilt
   </group>
@@ -56,52 +56,52 @@
   <!-- Define groups to check for self collision -->
 
   <group name="collisions1" flags="self_collision">
-    upperarm_roll_right
+    right_upper_arm_roll
     torso
   </group>
 
   <group name="collisions2" flags="self_collision">
-    elbow_flex_right
+    right_elbow_flex
     base
   </group>
 
   <group name="collisions3" flags="self_collision">
-    forearm_roll_right
+    right_forearm_roll
     base
   </group>
 
   <group name="collisions4" flags="self_collision">
-    wrist_flex_right
+    right_wrist_flex
     base
   </group>
 
   <group name="collisions5" flags="self_collision">
-    gripper_roll_right
+    right_wrist_roll
     base
   </group>
 
   <group name="collisions6" flags="self_collision">
-    upperarm_roll_left
+    left_upper_arm_roll
     torso
   </group>
 
   <group name="collisions7" flags="self_collision">
-    elbow_flex_left
+    left_elbow_flex
     base
   </group>
 
   <group name="collisions8" flags="self_collision">
-    forearm_roll_left
+    left_forearm_roll
     base
   </group>
 
  <group name="collisions9" flags="self_collision">
-    wrist_flex_left
+    left_wrist_flex
     base
   </group>
 
   <group name="collisions10" flags="self_collision">
-    gripper_roll_left
+    left_wrist_roll
     base
   </group>
 

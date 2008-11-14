@@ -166,7 +166,7 @@
 
     <!-- dual link -->
     <include embedded="true">
-      <xi:include href="pr2_xml_dual_link.model" />
+      <xi:include href="dual_link.model" />
     </include>
 
     <!-- pr2_actarray -->

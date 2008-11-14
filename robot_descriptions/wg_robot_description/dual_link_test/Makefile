@@ -2,7 +2,7 @@ XACRO = `rospack find xacro`/xacro.py
 URDF2GAZEBO = `rospack find gazebo_robot_description`/urdf2gazebo
 MODEL_FILE = `rospack find gazebo_robot_description`/world
 
-ROBOT = pr2_prototype1
+ROBOT = dual_link
 
 $(ROBOT).model: $(ROBOT).xml
 	$(XACRO) $^ > $^.expanded
@@ -11,3 +11,4 @@ $(ROBOT).model: $(ROBOT).xml
 clean:
 	$(RM) $(ROBOT).xml.expanded $(MODEL_FILE)/$(ROBOT).model
 	$(RM) core.* Ogre.log
+
