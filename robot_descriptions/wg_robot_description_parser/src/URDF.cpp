@@ -1198,7 +1198,7 @@ namespace robot_desc {
         {
             if (loadDoubleValues(node, 1, &(joint->damping), "damping", true))
             MARK_SET(node, joint, damping);
-            if (loadDoubleValues(node, 1, &(joint->friction), "friction", true))
+            if (loadDoubleValues(node, 1, &(joint->friction), "friction", false))
             MARK_SET(node, joint, friction);
         }        
         else if (node->ValueStr() == "limit" && !free)
