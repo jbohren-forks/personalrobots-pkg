@@ -45,16 +45,12 @@ using namespace tf;
 namespace calibration
 {
   // constructor
-  odom_calib::odom_calib(double rot_vel = 0.0, double rot_angle = 0.0)
+  odom_calib::odom_calib()
     : ros::node("odom_calibration"),
       _odom_active(false),
       _imu_active(false),
-      _completed(false),
-      _rot_vel(max(min(rot_vel,MAX_ROT_VEL),-MAX_ROT_VEL)),
-      _rot_angle(max(min(rot_angle,MAX_ROT_ANGLE),-MAX_ROT_ANGLE))
+      _completed(false)
   {
-    cout << "(Odometry Calibration)  Will rotate over " << _rot_angle*180/M_PI << " degrees, at " << _rot_vel*180/M_PI << " degrees per second " << endl;
-
     // set translational velocity to 0
     _vel.vx = 0;  
     _vel.vy = 0;
@@ -65,6 +61,7 @@ namespace calibration
     // subscribe to messages
     subscribe("odom",         _odom, &odom_calib::odom_callback, 10);
     subscribe("imu_data",     _imu,  &odom_calib::imu_callback,  10);
+
   };
 
 
@@ -126,7 +123,16 @@ namespace calibration
 
   void odom_calib::start()
   {
-    cout << "(Odometry Calibration)  Start" << endl;
+    // get parameters
+    param("odom_calibration/rot_vel",_rot_vel, 0.0);
+    param("odom_calibration/rot_angle",_rot_angle, 0.0);
+    _rot_vel   = max(min(_rot_vel,MAX_ROT_VEL),-MAX_ROT_VEL);
+    _rot_angle = max(min(_rot_angle,MAX_ROT_ANGLE),-MAX_ROT_ANGLE);
+
+    cout << "(Odometry Calibration)  Will rotate " 
+	 << _rot_angle*180/M_PI << " degrees, at " 
+	 << _rot_vel*180/M_PI << " degrees per second " << endl;
+
 
     // wait for sensor measurements from odom and imu
     while (!(_odom_active && _imu_active)){
@@ -164,7 +170,7 @@ namespace calibration
     cout << "(Odometry Calibration)  Stop" << endl;
 
     // give robot time to stop
-    for (unsigned int i=0; i<100; i++){
+    for (unsigned int i=0; i<10; i++){
       _vel.vw = 0;
       publish("cmd_vel", _vel);
       usleep(50000);
@@ -175,9 +181,14 @@ namespace calibration
     _odom_mutex.lock();
     double d_imu  = _imu_end  - _imu_begin;
     double d_odom = _odom_end - _odom_begin;
-    cout << "(Odometry Calibration)  Rotated over " << d_imu*180/M_PI << " degrees." << endl;
-    cout << "(Odometry Calibration)  Absolute angle error of wheel odometry is " << (d_odom - d_imu)*180/M_PI << " degrees." << endl;
-    cout << "(Odometry Calibration)  Relative angle error of wheel odometry is " << (d_odom - d_imu) / d_imu * 100 << " percent." << endl;
+    cout << "(Odometry Calibration)  Rotated imu  " << d_imu*180/M_PI << " degrees." << endl;
+    cout << "(Odometry Calibration)  Rotated wheel odom " << d_odom*180/M_PI << " degrees." << endl;
+    cout << "(Odometry Calibration)  Absolute angle error of wheel odometry is " 
+	 << (d_odom - d_imu)*180/M_PI << " degrees." << endl;
+    cout << "(Odometry Calibration)  Relative angle error of wheel odometry is " 
+	 << (d_odom - d_imu) / d_imu * 100 << " percent." << endl;
+    cout << "(Odometry Calibration)  Sending correction ration " 
+	 << d_imu / d_odom << " to controller." << endl;
     _odom_mutex.unlock();
     _imu_mutex.unlock();
   }
@@ -199,7 +210,7 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
 
   // calibrate
-  odom_calib my_odom_calibration_node(0.2,1.0);
+  odom_calib my_odom_calibration_node;
 
   my_odom_calibration_node.start();
   my_odom_calibration_node.spin();

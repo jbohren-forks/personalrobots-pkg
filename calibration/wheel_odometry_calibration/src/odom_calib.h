@@ -50,7 +50,7 @@ class odom_calib: public ros::node
 {
 public:
   /// constructor
-  odom_calib(double rot_vel, double rot_angle);
+  odom_calib();
 
   /// destructor
   virtual ~odom_calib();
