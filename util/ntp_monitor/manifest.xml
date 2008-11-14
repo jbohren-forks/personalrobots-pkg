@@ -1,0 +1,10 @@
+<package>
+  <description>A simple node to monitor ntp offset to a particular server.</description>
+  <author>Jeremy Leibs</author>
+  <license>BSD</license>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="ntp"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy"  package="ntp"/>
+  <sysdepend os="ubuntu" version="8.04-hardy"  package="ntp"/>
+  <depend package="rospy" />
+  <depend package="robot_msgs" />
+</package>
