@@ -4,16 +4,16 @@ MODEL_FILE = `rospack find gazebo_robot_description`/world
 
 ROBOT = pr2
 
-$(ROBOT).model: $(ROBOT).xml
-	$(XACRO) $^ > $^.expanded
-	$(URDF2GAZEBO) $^.expanded $(MODEL_FILE)/$@
+$(ROBOT).model: $(ROBOT).xacro.xml
+	$(XACRO) $^ > $(ROBOT).xml
+	$(URDF2GAZEBO) $(ROBOT).xml $(MODEL_FILE)/$@
 
 # build a version without limits on joints
-$(ROBOT)_nolimit.model: $(ROBOT).xml
-	$(XACRO) $^ > $^.expanded
-	$(URDF2GAZEBO) $^.expanded $(MODEL_FILE)/$@ 1
+$(ROBOT)_nolimit.model: $(ROBOT).xacro.xml
+	$(XACRO) $^ > $(ROBOT).xml
+	$(URDF2GAZEBO) $(ROBOT).xml $(MODEL_FILE)/$@ 1
 
 clean:
-	$(RM) $(ROBOT).xml.expanded $(MODEL_FILE)/$(ROBOT).model $(MODEL_FILE)/$(ROBOT)_nolimit.model
+	$(RM) $(ROBOT).xml $(MODEL_FILE)/$(ROBOT).model $(MODEL_FILE)/$(ROBOT)_nolimit.model
 	$(RM) core.* Ogre.log
 
