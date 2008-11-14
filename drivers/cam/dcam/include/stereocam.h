@@ -84,7 +84,7 @@ namespace cam
 
   protected:
     void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
-    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, uint16_t **d2, size_t *s2);
+    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, int16_t **d2, size_t *s2);
 
   private:
     // buffers for stereo

@@ -105,7 +105,7 @@ StereoCam::doDisparity()
 
   // allocate buffers
   if (!stIm->imDisp)
-    stIm->imDisp = (uint16_t *)MEMALIGN(xim*yim*2);
+    stIm->imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
   if (!buf)
     buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
@@ -119,7 +119,7 @@ StereoCam::doDisparity()
   do_prefilter(rim, frim, xim, yim, ftzero, buf);
 
   // stereo
-  do_stereo(flim, frim, (int16_t *)stIm->imDisp, NULL, xim, yim, 
+  do_stereo(flim, frim, stIm->imDisp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
 
   stIm->hasDisparity = true;
@@ -171,23 +171,34 @@ StereoCam::doCalcPts()
 
   float *pt;
   int y = iy;
-  int x = ix;
+  float cx = (float)stIm->RP[3];
+  float cy = (float)stIm->RP[7];
+  float f  = (float)stIm->RP[11];
+  float itx = (float)stIm->RP[14];
+  itx *= 1.0 / (float)stIm->dpp; // adjust for subpixel interpolation
       
   for (int j=0; j<ih; j++, y++)
     {
-      uint16_t *p = stIm->imDisp + x + y*w;
+      int x = ix;
+      int16_t *p = (int16_t *)stIm->imDisp + x + y*w;
       pt = stIm->imPts + x + y*w;
 
-      for (int i=0; i<iw; i++, x++, p++, pt++)
+      for (int i=0; i<iw; i++, x++, p++)
 	{
 	  if (*p > 0) 
 	    {
-	      //	      svsReconstruct3D(&pt->X, &pt->Y, &pt->Z, (float)x, (float)y, *p, &si->sp, si->myLoc);
+	      float ax = (float)x + cx;
+	      float ay = (float)y + cy;
+	      float aw = 1.0 / (itx * (float)*p);
+	      *pt++ = ax*aw;	// X
+	      *pt++ = ay*aw;	// Y
+	      *pt++ = f*aw;	// Z
 	      stIm->numPts++;
 	    }
 	}
     }
 
+  //  printf("[Calc Pts] Number of pts: %d\n", stIm->numPts);
   return true;
 }
 
@@ -429,7 +440,7 @@ StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1,
 
 void
 StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
-			      uint16_t **d2, size_t *s2)
+			      int16_t **d2, size_t *s2)
 {
   int w = stIm->imWidth;
   int h = stIm->imHeight;
@@ -444,12 +455,12 @@ StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
   if (*s2 < size*2)
     {
       MEMFREE(*d2);
-      *d2 = (uint16_t *)MEMALIGN(size*2);
+      *d2 = (int16_t *)MEMALIGN(size*2);
       *s2 = size*2;
     }
   
   uint8_t *dd1 = *d1;
-  uint16_t *dd2 = *d2;
+  int16_t *dd2 = *d2;
 
   int dt = stIm->imDtop;
   int dl = stIm->imDleft;

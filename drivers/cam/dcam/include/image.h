@@ -222,7 +222,7 @@ namespace cam
     bool hasRectification;
 
     // disparity data
-    uint16_t *imDisp;		// disparity image
+    int16_t *imDisp;		// disparity image, negative and zero are invalid pixels
     size_t imDispSize;		// size of image in bytes
     int dpp;			// disparity units per pixel, e.g., 16 is 1/16 pixel per disparity
     bool hasDisparity;		// true if disparity present

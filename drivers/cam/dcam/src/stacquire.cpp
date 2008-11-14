@@ -42,7 +42,7 @@
 #include "imwin.h"
 
 double get_ms();		// for timing
-double t1,t2,t3;
+double t1,t2,t3,t4;
 
 int 
 main(int argc, char **argv)
@@ -127,8 +127,10 @@ main(int argc, char **argv)
 	      t2 = get_ms();
 	      cam->doDisparity(); // perform stereo processing, if not done by STOC
 	      t3 = get_ms();
+	      cam->doCalcPts();	// get 3D points
+	      t4 = get_ms();
 
-	      printf("Timing - Rect %d ms, Disparity %d ms\n", (int)(t2-t1), (int)(t3-t2));
+	      printf("Timing - Rect %d ms, Disparity %d ms, Pts %d ms\n", (int)(t2-t1), (int)(t3-t2), (int)(t4-t3));
 
 	      // left window display, try rect, then raw
 	      if (cam->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
