@@ -214,6 +214,12 @@ JointState *RobotState::getJointState(const std::string &name)
   return i >= 0 ? &joint_states_[i] : NULL;
 }
 
+const JointState *RobotState::getJointState(const std::string &name) const
+{
+  int i = model_->getJointIndex(name);
+  return i >= 0 ? &joint_states_[i] : NULL;
+}
+
 LinkState *RobotState::getLinkState(const std::string &name)
 {
   int i = model_->getLinkIndex(name);

@@ -114,6 +114,7 @@ public:
   std::vector<std::vector<int> > links_children_;
 
   JointState *getJointState(const std::string &name);
+  const JointState *getJointState(const std::string &name) const;
   LinkState *getLinkState(const std::string &name);
 
   void propagateState();
