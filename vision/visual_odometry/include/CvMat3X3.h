@@ -49,6 +49,7 @@ do {(rx) = TRANSFORM_X(T, x0, y0, z0) - (x1); \
 	(ry) = TRANSFORM_Y(T, x0, y0, z0) - (y1); \
 	(rz) = TRANSFORM_Z(T, x0, y0, z0) - (z1);} while(0)
 
+/// compute residue for perspective transformation
 #define PERSTRANSFORMRESIDUE(T, x0, y0, z0, x1, y1, z1, rx, ry, rz) \
  do {double _s = 1.0/TRANSFORM_W(T, x0, y0, z0);\
 	(rx) = TRANSFORM_X(T, x0, y0, z0)*_s - (x1); \
