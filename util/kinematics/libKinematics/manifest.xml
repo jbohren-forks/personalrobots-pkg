@@ -1,16 +1,12 @@
 <package>
-<description brief='Kinematics Library'>
-
-Library for doing kinematics and inverse kinematics for the PR2 robot
-
+<description brief='Kinematics library'>
 </description>
-<author>Sachin Chitta</author>
+<author>Sachin Chitta sachinc@willowgarage.com</author>
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
-<depend package="pr2Core"/>
 <export>
-<cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lKinematics -lIk"/>
+<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llibKinematics"/>
 </export>
 </package>

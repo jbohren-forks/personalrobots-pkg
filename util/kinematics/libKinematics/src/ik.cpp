@@ -42,7 +42,7 @@ PR2Arm::PR2Arm()
    this->AddJoint(p6,axis6,kinematics::ROTARY);
    this->AddJoint(p7,axis7,kinematics::ROTARY);
 
-   NEWMAT::Matrix g0 = this->GetLinkPose(7,angles);
+   NEWMAT::Matrix g0 = this->GetLinkPose(6,angles);
    this->SetHomePosition(g0);
 
 }
