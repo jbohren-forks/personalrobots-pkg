@@ -70,7 +70,7 @@ public:
    * \param max_effort Effort to limit the controller at.
    * \param *robot The robot that is being controlled.
    */
-  void init( double velocity, double max_effort, double expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot);
+  void init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot);
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
 
 
