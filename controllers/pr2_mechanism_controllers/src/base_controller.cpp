@@ -205,6 +205,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
     usleep(100000);
   }
 
+
   for(jcp_iter = jcp.begin(); jcp_iter != jcp.end(); jcp_iter++)
   {
     joint_name = jcp_iter->joint_name;
@@ -874,6 +875,9 @@ bool BaseControllerNode::setWheelRadiusMultiplier(
 
   ROS_INFO("Received radius request %f ",req.wheel_radius_multiplier_front); 
   ROS_INFO("Set radius request %f ",c_->wheel_radius_multiplier_front_ ); 
+
+  node->set_param("base_controller/wheel_radius_multiplier",c_->wheel_radius_multiplier_front_);
+
   return true;
 }
 
@@ -911,7 +915,8 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
-
+  node->param<double>("base_controller/wheel_radius_multiplier",c_->wheel_radius_multiplier_front_,1.0);
+  c_->wheel_radius_multiplier_rear_ = c_->wheel_radius_multiplier_front_;
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
 
   if(odom_publish_rate_ > 1e-5)
