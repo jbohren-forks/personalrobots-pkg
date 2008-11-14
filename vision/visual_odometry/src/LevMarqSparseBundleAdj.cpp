@@ -612,6 +612,7 @@ void LevMarqSparseBundleAdj::initCameraParams(
   int lowest_index_in_window = windowOfFrames->front()->mFrameIndex;
   // compute the size of the fixed camera window.
   fixed_window_size_ = 0;
+  lowest_fixed_global_index_ = lowest_index_in_window;
   BOOST_REVERSE_FOREACH(FramePose* fp, *frame_poses) {
     if (fp->mIndex < oldest_frame_in_tracks) {
       break;
@@ -619,6 +620,7 @@ void LevMarqSparseBundleAdj::initCameraParams(
       break;
     } else if (fp->mIndex < lowest_index_in_window) {
       fixed_window_size_++;
+      lowest_fixed_global_index_ = fp->mIndex;
     }
   }
   CvMat* transf_from_global = cvCreateMat(4, 4, CV_64FC1);
@@ -738,6 +740,11 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
         p.id_, p.coordinates_.x, p.coordinates_.y, p.coordinates_.z);
     BOOST_FOREACH(PointTrackObserv& obsv, p) {
 
+      if (isOldFrame(obsv.frame_index_) == true) {
+        // we do not update this frame anymore.
+        continue;
+      }
+
       printf("fi=%3d [%8.2f, %8.2f, %8.2f] free=%d, local_index=%d\n",
           obsv.frame_index_, obsv.disp_coord_.x, obsv.disp_coord_.y,
           obsv.disp_coord_.z, isFreeFrame(obsv.frame_index_), obsv.local_frame_index_);
@@ -798,6 +805,11 @@ double LevMarqSparseBundleAdj::costFunction(
     CvMat point = cvMat(1, 1, CV_64FC3, &track.coordinates_);
     /// For each observation of the track
     BOOST_FOREACH(PointTrackObserv& obsv, track) {
+      if (isOldFrame(obsv.frame_index_) == true) {
+        // we do not consider this frame anymore.
+        continue;
+      }
+
       CvMat disp_point = cvMat(1, 1, CV_64FC3, &obsv.disp_coord_);
       CvMat disp_point_est = cvMat(1, 1, CV_64FC3, &obsv.disp_coord_est_);
 

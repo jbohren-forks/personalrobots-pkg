@@ -90,6 +90,13 @@ protected:
       return false;
     }
   }
+  inline bool isOldFrame(int global_frame_index) {
+    if (global_frame_index < lowest_fixed_global_index_) {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   static const int NUM_POINT_PARAMS = 3;
   static const int NUM_CAM_PARAMS = numParams;
@@ -102,6 +109,7 @@ protected:
   int free_window_size_;
   int lowest_free_global_index_;
   int highest_free_global_index_;
+  int lowest_fixed_global_index_;
 
   const int full_fixed_window_size_;
   /// current fixed window size. less or equals to full_fixed_window_size.
