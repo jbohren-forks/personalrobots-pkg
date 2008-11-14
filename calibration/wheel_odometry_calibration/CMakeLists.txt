@@ -1,0 +1,5 @@
+cmake_minimum_required(VERSION 2.4)
+include(rosbuild)
+rospack(wheel_odometry_calibration)
+genmsg()
+rospack_add_executable(wheel_odometry_calibration src/odom_calib.cpp)
