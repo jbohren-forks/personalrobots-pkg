@@ -914,11 +914,15 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
     delete transform_publisher_ ;
   transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
 
+  double multiplier;
+
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
-  node->param<double>("base_controller/wheel_radius_multiplier",c_->wheel_radius_multiplier_front_,1.0);
+  node->param<double>("base_controller/wheel_radius_multiplier",multiplier,1.0);
   c_->wheel_radius_multiplier_rear_ = c_->wheel_radius_multiplier_front_;
 
   ROS_INFO("Getting value from param server: %f", c_->wheel_radius_multiplier_front_);
+
+  c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
 
