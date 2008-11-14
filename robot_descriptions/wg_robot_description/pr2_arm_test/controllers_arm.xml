@@ -1,6 +1,23 @@
 <?xml version="1.0"?>
 <controllers>
   <!-- left arm array -->
+  <!--
+  <controller name="left_arm_controller" type="LQRControllerNode">
+    <model name="serial_chain">
+      <robot_description>pr2</robot_description>
+      <kinematics>left_arm</kinematics>
+      <joints>
+        <joint name="shoulder_pan_left_joint"/>
+        <joint name="shoulder_pitch_left_joint"/>
+        <joint name="upperarm_roll_left_joint"/>
+        <joint name="elbow_flex_left_joint"/>
+        <joint name="forearm_roll_left_joint"/>
+        <joint name="wrist_flex_left_joint"/>      
+        <joint name="gripper_roll_left_joint"/>
+      </joints>
+    </model>
+  </controller> -->
+
   <controller name="left_arm_controller" type="ArmPositionControllerNode">
     <listen_topic name="left_arm_commands" />
     <kinematics>
@@ -45,7 +62,6 @@
       </joint>
     </controller>
   </controller>
-  <!-- Special gripper joint -->
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
     <joint name="left_gripper_l_finger_joint">
       <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
