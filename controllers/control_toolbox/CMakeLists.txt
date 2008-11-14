@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
+include_directories(include/control_toolbox/eigen2)
 rospack(control_toolbox)
 genmsg()
 gensrv()
