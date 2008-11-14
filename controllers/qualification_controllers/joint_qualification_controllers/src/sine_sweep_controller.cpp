@@ -136,7 +136,7 @@ void SineSweepController::analysis()
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "SineSweepTest";
-
+  count_=count_-1;
   //test done
   status->level = 0;
   status->message = "OK: Done.";

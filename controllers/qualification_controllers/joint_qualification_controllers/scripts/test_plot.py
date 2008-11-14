@@ -37,7 +37,7 @@ import wx
 import numpy
 import wxmpl
 import matplotlib
-
+import math
 from robot_msgs.msg import *
 from std_msgs.msg import *
 from robot_srvs.srv import *
@@ -83,9 +83,9 @@ class App(wx.App):
     axes2.clear()
     axes1.plot(numpy.array(self.data.position), numpy.array(self.data.effort), 'r--')
     #show the average effort lines 
-    axes1.axhline(y=self.avg1,color='b')
+    axes1.axhline(y=self.min_avg,color='b')
     axes1.axhline(y=0,color='k')
-    axes1.axhline(y=self.avg2,color='g')
+    axes1.axhline(y=self.max_avg,color='g')
     axes1.set_xlabel('Position')
     axes1.set_ylabel('Effort')
     #show that a constant velocity was achieved
@@ -102,22 +102,25 @@ class App(wx.App):
     axes1.clear()
     axes2 = fig.add_subplot(212)
     axes2.clear()
-    #axes1.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['effort']), 'r--')
-    axes1.psd(numpy.array(self.data.effort), NFFT=16384, Fs=1000, Fc=0, color='r')
-    axes1.psd(numpy.array(self.data.position), NFFT=16384, Fs=1000, Fc=0)
-    axes1.axis([0, 50, 0, -100])
-
+    next_pow_two=int(2**math.ceil(math.log(numpy.array(self.data.position).size,2)))
+    #plot in decibels
+    axes1.psd(numpy.array(self.data.effort), NFFT=next_pow_two, Fs=1000, Fc=0, color='r')
+    axes1.psd(numpy.array(self.data.position), NFFT=next_pow_two, Fs=1000, Fc=0)
+    axes1.set_xlim(0, 100)
     axes1.set_xlabel('Position PSD')
-    #axes2.plot(numpy.array(self.data_dict['position']), numpy.array(self.data_dict['velocity']), 'b--')
-    pxx, f = axes2.psd(numpy.array(self.data.velocity), NFFT=16384, Fs=1000, Fc=0)
+    
+    #plot in power
+    pxx, f = axes2.psd(numpy.array(self.data.velocity), NFFT=next_pow_two, Fs=1000, Fc=0)
     axes2.clear()
     axes2.plot(f,pxx)
+    #find the peak
     index = numpy.argmax(pxx)
     max_value=max(pxx)
-
     axes2.plot([f[index]],[pxx[index]],'r.', markersize=10);
-
-    axes2.axis([0, 50, 0, 1])
+    self.first_mode = f[index]
+    self.SineSweepAnalysis()
+    axes2.axvline(x=self.data.arg_value[0],color='r')
+    axes2.set_xlim(0, 100)
     axes2.set_xlabel('Velocity PSD')
     #axes2.set_ylabel('Velocity')
     self.count=0
@@ -125,23 +128,38 @@ class App(wx.App):
 
   def HysteresisAnalysis(self):
     #compute the encoder travel
-    encodermin=min(numpy.array(self.data.position))
-    encodermax=max(numpy.array(self.data.position))
+    min_encoder=min(numpy.array(self.data.position))
+    max_encoder=max(numpy.array(self.data.position))
     #find the index to do the average over
-    indexmax = numpy.argmax(numpy.array(self.data.position))
-    indexmin = numpy.argmin(numpy.array(self.data.position))
-    index=min(indexmin,indexmax)
+    index1 = numpy.argmax(numpy.array(self.data.position))
+    index1= numpy.argmin(numpy.array(self.data.position))
+    index=min(index1,index2)
     end =numpy.array(self.data.position).size
     #compute the averages to display
-    self.avg1 = numpy.average(numpy.array(self.data.effort)[0:index])
-    self.avg2 = numpy.average(numpy.array(self.data.effort)[index:end])
-    if encodermin > self.data.arg_value[1] or encodermax < self.data.arg_value[2]:
+    self.min_avg = min(numpy.average(numpy.array(self.data.effort)[0:index]),numpy.average(numpy.array(self.data.effort)[index:end]))
+    self.max_avg = max(numpy.average(numpy.array(self.data.effort)[0:index]),numpy.average(numpy.array(self.data.effort)[index:end]))
+    #check to see we went the full distance
+    if min_encoder > self.data.arg_value[2] or max_encoder < self.data.arg_value[3]:
       print "mechanism is binding and not traveling the complete distace"
-      print "min expected: %f  measured: %f" % (self.data.arg_value[1],encodermin)
-      print "max expected: %f  measured: %f" % (self.data.arg_value[2],encodermax)
+      print "min expected: %f  measured: %f" % (self.data.arg_value[2],min_encoder)
+      print "max expected: %f  measured: %f" % (self.data.arg_value[3],max_encoder)
+    #check to see we didn't use too much force
+    elif abs(self.min_avg-self.data.arg_value[0])/self.data.arg_value[0]>0.1 or abs(self.max_avg-self.data.arg_value[1])/self.data.arg_value[1]>0.1:
+      print "the mechanism average effort is too high"
+      print "min_expected: %f  min_measured : %f" % (self.data.arg_value[0],self.min_avg)
+      print "max_expected: %f  max_measured : %f" % (self.data.arg_value[1],self.max_avg)
+    #data looks okay see what the user thinks
     else:
-      print "passed test"
+      print "data reasonable"
     
+    
+  def SineSweepAnalysis(self):   
+    if abs(self.first_mode-self.data.arg_value[0])/self.data.arg_value[0]>self.data.arg_value[2]:
+      print "mechanism is binding and not traveling the complete distace"
+      print "first mode expected: %f  measured: %f" % (self.data.arg_value[0],self.first_mode)
+    #data looks okay see what the user thinks  
+    else:
+      print "data reasonable"
     
 if __name__ == "__main__":
   try:

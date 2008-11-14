@@ -47,10 +47,11 @@ HysteresisController::HysteresisController():
   test_data_.effort.resize(80000);
   test_data_.position.resize(80000);
   test_data_.velocity.resize(80000);
-  test_data_.arg_name.resize(3);
-  test_data_.arg_name[0]="expected_effort";
-  test_data_.arg_name[1]="min_pos";
-  test_data_.arg_name[2]="max_pos";
+  test_data_.arg_name.resize(4);
+  test_data_.arg_name[0]="min_expected_effort";
+  test_data_.arg_name[1]="max_expected_effort";
+  test_data_.arg_name[2]="min_pos";
+  test_data_.arg_name[3]="max_pos";
   test_data_.arg_value.resize(3);
   state = STOPPED;
   starting_count = 0;
@@ -67,16 +68,17 @@ HysteresisController::~HysteresisController()
 {
 }
 
-void HysteresisController::init( double velocity, double max_effort, double expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot)
+void HysteresisController::init( double velocity, double max_effort, double max_expected_effort, double min_expected_effort, double min_pos, double max_pos, double time, std::string name ,mechanism::RobotState *robot)
 {
   assert(robot);
   robot_ = robot;
   joint_ = robot->getJointState(name);
 
   //printf("velocity: %f\n",velocity);
-  test_data_.arg_value[0]=expected_effort;
-  test_data_.arg_value[1]=min_pos;
-  test_data_.arg_value[2]=max_pos;
+  test_data_.arg_value[0]=min_expected_effort;
+  test_data_.arg_value[1]=max_expected_effort;
+  test_data_.arg_value[2]=min_pos;
+  test_data_.arg_value[3]=max_pos;
   
   velocity_=velocity;
   max_effort_=max_effort;
@@ -112,10 +114,11 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
   {
     double velocity = atof(cd->Attribute("velocity"));
     double max_effort = atof(cd->Attribute("max_effort"));
-    double expected_effort = atof(cd->Attribute("expected_effort"));
+    double max_expected_effort = atof(cd->Attribute("max_expected_effort"));
+    double min_expected_effort = atof(cd->Attribute("min_expected_effort"));
     double min_pos = atof(cd->Attribute("min_pos"));
     double max_pos = atof(cd->Attribute("max_pos")); 
-    init(velocity, max_effort, expected_effort, min_pos, max_pos, robot->hw_->current_time_,j->Attribute("name"), robot);
+    init(velocity, max_effort, max_expected_effort, min_expected_effort, min_pos, max_pos, robot->hw_->current_time_,j->Attribute("name"), robot);
   }
   else
   {
@@ -195,7 +198,7 @@ void HysteresisController::analysis()
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "HysteresisTest";
-
+  count_=count_-1;
   //test done
   status->level = 0;
   status->message = "OK: Done.";
