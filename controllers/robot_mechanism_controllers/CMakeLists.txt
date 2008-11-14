@@ -17,4 +17,5 @@ rospack_add_library(robot_mechanism_controllers
  src/joint_calibration_controller.cpp
  src/joint_blind_calibration_controller.cpp
  src/lqr_controller.cpp
+ src/ros_serialchain_model.cpp
  )

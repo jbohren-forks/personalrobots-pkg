@@ -39,6 +39,8 @@
 #include <Eigen/Array>
 #include <rosconsole/rosconsole.h>
 
+#include <robot_mechanism_controllers/ros_serialchain_model.h>
+
 using std::string;
 using namespace controller;
 
@@ -46,12 +48,13 @@ ROS_REGISTER_CONTROLLER(LQRController);
 
 LQRController::LQRController()
 {
-  target_.setZero();
-  gains_.setZero();
-//   state_offset_.setZero();
-  input_offset_.setZero();
+  ROS_DEBUG("creating controller...");
+//   target_.setZero();
+//   gains_.setZero();
+//   input_offset_.setZero();
+  ROS_DEBUG("creating controller...");
   model_ = NULL;
-  reset_previous_=true;
+//   reset_previous_=true;
 }
 
 LQRController::~LQRController()
@@ -64,88 +67,19 @@ void LQRController::update()
 {
   queue_.processAll();
   
-  const double t=robot_->hw_->current_time_;
-  const double dt=t-previous_time_;
-  
   //Fills the current state
-  getValues();
+  model_->toState(robot_,state_);
 
-  //Updates the model if needed
-  model_->observation(state_, previous_state_, commands_, dt);
-  
   //Computes update from controller
   commands_=-gains_*(state_-target_); //+input_offset_;
   
   //Updates joints
-  setCommands();
-  
-  previous_state_=state_;
-  previous_time_=t;
-}
-
-void LQRController::getValues()
-{
-  const int n=joint_states_.size();
-  assert(n*2 == state_.rows());
-  previous_state_=state_;
-  
-  for(int i=0;i<n;i++)
-  {
-    state_(i,0)=joint_states_.at(i)->position_;  
-    state_(i+n,0)=joint_states_.at(i)->velocity_;  
-    commands_(i,0)=joint_states_.at(i)->applied_effort_;
-  }
-  
-  if(reset_previous_)
-  {
-    previous_state_=state_;
-    reset_previous_=false;
-  }
-}
-
-void LQRController::setCommands()
-{
-  for(unsigned int i=0;i<joint_states_.size();++i)
-  {
-    joint_states_.at(i)->commanded_effort_=commands_(i,0);  
-//     std::cout<<joint_states_.at(i)->commanded_effort_<<std::endl;
-  }
+  model_->setEffort(robot_,commands_);
 }
 
 bool LQRController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_=robot;
-  previous_time_=robot_->hw_->current_time_;
-
-  TiXmlElement *elt = config->FirstChildElement("joints");
-  if(!elt)
-  {
-    ROS_ERROR("No list of joints\nYou have to specify a list of joints to the LQR controller");
-    return false;
-  }
-  elt=elt->FirstChildElement("joint");
-  if(!elt)
-  {
-    ROS_ERROR("No list of joints\nYou have to specify a list of joints to the LQR controller");
-    return false;
-  }
-  while (elt)
-  {
-    const std::string & name=static_cast<std::string>(elt->Attribute("name"));
-    mechanism::JointState * state=robot_->getJointState(name);
-    if(!state)
-    {
-      ROS_ERROR_STREAM("Could not find joint called "<<name);
-      return false;
-    }
-    
-    joint_states_.push_back(state);
-    elt = elt->NextSiblingElement("joint");
-  }
-  ROS_DEBUG("State Vector:");
-  for(uint i=0;i<joint_states_.size();++i)
-    ROS_DEBUG_STREAM('\t'<<joint_states_[i]->joint_->name_);
-  
   return true;
 } 
 
@@ -155,55 +89,12 @@ void LQRController::setModel(ModelType *model)
   assert(model_);
   const int n=model_->states();
   const int m=model_->inputs();
-  target_=StateVector::Zero(n,1);
-  gains_=GainsMatrix::Zero(m,n);
-//   state_offset_=StateVector::Zero(n,1);
-  state_=StateVector::Zero(n,1);
-  previous_state_=StateVector::Zero(n,1);
-  input_offset_=InputVector::Zero(m,1);
-  commands_=InputVector::Zero(m,1);
-}
-
-bool LQRController::toStateVector(const std::vector<std::string> & names, const std::vector<double> & positions, const std::vector<double> & velocities, StateVector & v) const
-{
-  const int N = names.size();
-  assert(model_);
-  const int n = model_->states();
-  if(v.rows() != n)
-  {
-    ROS_ERROR("Supplied state vector has wrong size");
-    return false;
-  }
-
-  if((int)positions.size()!=N or (int)velocities.size()!=N)
-  {
-    ROS_ERROR("Incoherent data supplied");
-    return false;
-  }
-  
-  int count=1;
-  for(int i=0;i<N;i++)
-  {
-    const int index=jointIndex(names.at(i));
-    if(index>=0)
-    {
-      v(index,0)=positions.at(index);
-      v(index+n/2,0)=velocities.at(index);
-      count++;
-    }
-  }
-  
-  if(count!=n)
-    ROS_INFO("The state was only partly specified");
-  return true;
-}
-
-int LQRController::jointIndex(const std::string &name) const 
-{
-  for(uint i=0; i<joint_states_.size();i++)
-    if(joint_states_.at(i)->joint_->name_==name)
-      return i;
-  return -1;
+  //Using the set method ensures the matrices are resized if necessary
+  target_.set(StateVector::Zero(n,1));
+  gains_.set(GainsMatrix::Zero(m,n));
+  state_.set(StateVector::Zero(n,1));
+  input_offset_.set(InputVector::Zero(m,1));
+  commands_.set(InputVector::Zero(m,1));
 }
 
 //------------------ Jobs --------------
@@ -218,7 +109,7 @@ LQRController::UpdateGainsJob::UpdateGainsJob(LQRController * c, const StateMatr
   const int m=input_weights.rows();
   
   input_offset_.resize(m,1);
-  gains_.resize(n,n);
+  gains_.resize(m,n);
   
   //Computes a linearization around the target point
   StateMatrix A(n,n);
@@ -229,12 +120,13 @@ LQRController::UpdateGainsJob::UpdateGainsJob(LQRController * c, const StateMatr
     c_=NULL;
     return;
   }
+  ROS_DEBUG_STREAM("************ Weights **********\n[Q]\n"<<weights<<std::endl<<"[R]"<<std::endl<<input_weights<<std::endl<<"[input offset]"<<std::endl<<input_offset_<<"\n*************");
   ROS_DEBUG_STREAM("************ Obtained linearization **********\n[A]\n"<<A<<std::endl<<"[B]"<<std::endl<<B<<std::endl<<"[input offset]"<<std::endl<<input_offset_<<"\n*************");
   ROS_DEBUG("Sanity checks");
   ROS_ASSERT(LQR::isCommandable(A,B));
   // Compute new gains matrix
   ROS_DEBUG("Computing LQR gains matrix. Hold on to your seatbelts...");
-  LQR::LQRDP<StateMatrix,InputMatrix,StateMatrix,InputMatrix>::runContinuous(A, B, weights, weights, input_weights, 0.01, 0.1, gains_);
+  LQR::LQRDP<StateMatrix,InputMatrix,StateCostMatrix,InputCostMatrix>::runContinuous(A, B, weights,input_weights, gains_);
   ROS_DEBUG_STREAM("Done. Computed gains:\n***********\n"<<gains_<<"\n**********\n");
   // Check validity
   ROS_DEBUG("Checking gains matrix...");
@@ -250,7 +142,9 @@ ROS_REGISTER_CONTROLLER(LQRControllerNode);
 
 LQRControllerNode::LQRControllerNode()
 {
+  ROS_DEBUG("creating controller node...");
   c_ = new LQRController();
+  ROS_DEBUG("done");
 }
 
 LQRControllerNode::~LQRControllerNode()
@@ -263,6 +157,28 @@ void LQRControllerNode::update()
   c_->update();
 }
 
+//FIXME: this should be moved elsewhere and integrated in some API
+LQRController::ModelType * createModel(mechanism::RobotState * robot, TiXmlElement *config)
+{
+  if(!config)
+    return NULL;
+  LQRController::ModelType *model=NULL;
+  std::string model_name=static_cast<std::string>(config->Attribute("name"));
+  ROS_DEBUG_STREAM("Found model name: "<<model_name);
+  if(model_name=="serial_chain")
+  {
+    ROS_DEBUG("Attempting to load serial chain model");
+    model=new SerialChainModelWrapper();
+  }
+  if(model&&!model->initXml(robot,config))
+  {
+    ROS_DEBUG("Some error occurred... Clearing model");
+    delete model;
+    return NULL;
+  }
+  return model;
+}
+
 bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   //Init the model.
@@ -272,38 +188,6 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
   string prefix = config->Attribute("name");
   ROS_DEBUG_STREAM("the prefix is "<<prefix);
 
-  // Parses controller configuration.
-  std::string kdl_chain_name="";
-  std::string model_type="";
-  
-  TiXmlElement *j = config->FirstChildElement("map");
-  if(!j)
-  {
-    ROS_ERROR("Missing configuration options");
-    return false;
-  }
-  
-  j = j->FirstChildElement("elem");
-  
-  if(!j)
-  {
-    ROS_ERROR("Missing element field");
-    return false;
-  }
-  
-  while(j!=NULL)
-  {
-    if(j->Attribute("key")==std::string("kdl_chain_name"))
-      kdl_chain_name = j->GetText();
-
-    if(j->Attribute("key")==std::string("model_type"))
-      model_type = j->GetText();
-      
-    j = j->NextSiblingElement("elem");
-  }
-  
-  ROS_DEBUG_STREAM("the model is "<<model_type);
-
   
   // Parses subcontroller configuration
   if(c_->initXml(robot, config))
@@ -311,48 +195,29 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
     node->advertise_service(prefix + "/set_target", &LQRControllerNode::setTargetSrv, this);
     node->advertise_service(prefix + "/set_command", &LQRControllerNode::setLQRParamsSrv, this);
 
-    LQRController::ModelType * model=NULL;
-    
-    // Parses kinematics description
-    if(model_type=="serialchain")
+    TiXmlElement *model_xml = config->FirstChildElement("model");
+    if(!model_xml)
     {
-      ROS_DEBUG("Creating serial chain");
-      std::string pr2Contents;
-      node->get_param("robotdesc/pr2", pr2Contents);
-      SerialChainModel * model1 = new SerialChainModel();
-      
-      if(!model1->init(pr2Contents, kdl_chain_name))
-      {
-        delete model1;
-        ROS_ERROR("Could not load model parameters");
-        return false;
-      }
-      model=model1;
-    }
-    ROS_DEBUG_STREAM("Model has "<<model->states()<<" states and "<<model->inputs()<<" inputs, controller loaded "<< c_->joint_states_.size()<<" joints");
-    
-    if(model && model->states()!=2*model->inputs() && model->inputs() != (int)(c_->joint_states_.size()))
-    {
-      ROS_ERROR("Size mismatch between the model loaded and the joints provided\nFor info:\n");
-      ROS_ERROR_STREAM("Model has "<<model->states()<<" states and "<<model->inputs()<<" inputs, controller loaded "<< c_->joint_states_.size()<<" joints");
-      delete model;
+      ROS_ERROR("Missing model description");
       return false;
     }
+    LQRController::ModelType * model=createModel(robot,model_xml);
 
-    c_->setModel(model);
     if(!model)
     {
       ROS_DEBUG("LQR controller failed to load a model");
       return false;
     }
+    ROS_DEBUG("Setting controller model");
+    c_->setModel(model);
     // Default parameters
     const int n = model->states();
     const int m = model->inputs();
-    state_cost_ = LQRController::StateCostMatrix::Identity(n,n);
-    input_cost_ = LQRController::InputCostMatrix::Identity(m,m);
-    target_=LQRController::StateVector::Zero(n,1);
+    state_cost_.set(LQRController::StateCostMatrix::Identity(n,n));
+    input_cost_.set(LQRController::InputCostMatrix::Identity(m,m));
+    target_.set(LQRController::StateVector::Zero(n,1));
     
-    ROS_DEBUG("DONE LOADING LQR CONTROLLER NODE\nYou have to load parameters now.");
+    ROS_DEBUG("DONE LOADING LQR CONTROLLER NODE\n");
     return model;
   }
   ROS_DEBUG("ERROR LOADING LQR CONTROLLER NODE");
@@ -362,7 +227,6 @@ bool LQRControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *conf
 bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRCommand::request &req,
               robot_mechanism_controllers::SetLQRCommand::response &resp)
 {
-  // FIXME: factor conversion of state <-> robot parameters for more genericity
   const int n = c_->model()->states();
   const int m = c_->model()->inputs();
   
@@ -412,7 +276,7 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
   }
   
 //   ROS_DEBUG("4");
-  if(!c_->toStateVector(req.target.names,req.target.positions,req.target.velocity,target_))
+  if(!c_->model()->toState(&(req.target),target_))
     return false;
 //   ROS_DEBUG("5");
   
@@ -421,13 +285,28 @@ bool LQRControllerNode::setLQRParamsSrv(robot_mechanism_controllers::SetLQRComma
   
   return true;
 }
-              
-bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::request &req,
-              robot_srvs::SetJointCmd::response &resp)
+
+bool LQRControllerNode::setTargetAsynchronous(const robot_msgs::JointCmd &cmd)
 {
-  if(!c_->toStateVector(req.names,req.positions,req.velocity,target_))
+  if(!c_->model()->toState(&cmd,target_))
     return false;
   c_->add(new LQRController::UpdateTargetJob(c_,target_));
   return true;
+}
+
+//FIXME robot_srvs::SetJointCmd should use robot_msgs::JointCmd  
+bool LQRControllerNode::setTargetSrv(robot_srvs::SetJointCmd::request &req,
+              robot_srvs::SetJointCmd::response &resp)
+{
+  
+  robot_msgs::JointCmd cmd;
+  cmd.names=req.names;
+  cmd.positions=req.positions;
+  cmd.velocity=req.velocity;
+  return setTargetAsynchronous(cmd);
+/*  if(!c_->model_->toState(req.names,req.positions,req.velocity,target_))
+    return false;
+  
+  return true;*/
 }
 
