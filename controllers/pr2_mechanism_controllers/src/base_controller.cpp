@@ -917,6 +917,9 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
   node->param<double>("base_controller/wheel_radius_multiplier",c_->wheel_radius_multiplier_front_,1.0);
   c_->wheel_radius_multiplier_rear_ = c_->wheel_radius_multiplier_front_;
+
+  ROS_INFO("Getting value from param server: %f", c_->wheel_radius_multiplier_front_);
+
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
 
   if(odom_publish_rate_ > 1e-5)
