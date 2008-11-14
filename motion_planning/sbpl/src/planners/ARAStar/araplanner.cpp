@@ -65,11 +65,11 @@ ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment, bool bSearchForwar
 
 ARAPlanner::~ARAPlanner()
 {
-
+  if(pSearchStateSpace_ != NULL){
     //delete the statespace
     DeleteSearchStateSpace(pSearchStateSpace_);
-
-
+    delete pSearchStateSpace_;
+  }
 }
 
 
@@ -563,12 +563,13 @@ void ARAPlanner::DeleteSearchStateSpace(ARASearchStateSpace_t* pSearchStateSpace
 	for(int i=0; i < iend; i++)
 	{
 		CMDPSTATE* state = pSearchStateSpace->searchMDP.StateArray[i];
-		DeleteSearchStateData((ARAState*)state->PlannerSpecificData);
-		free((ARAState*)state->PlannerSpecificData);
-		state->PlannerSpecificData = NULL;
+    if(state != NULL && state->PlannerSpecificData != NULL){
+      DeleteSearchStateData((ARAState*)state->PlannerSpecificData);
+      free((ARAState*)state->PlannerSpecificData);
+      state->PlannerSpecificData = NULL;
+    }
 	}
 	pSearchStateSpace->searchMDP.Delete();
-	environment_->StateID2IndexMapping.clear();
 }
 
 
