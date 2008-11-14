@@ -44,6 +44,7 @@
 // Services
 #include <pr2_mechanism_controllers/SetBaseCommand.h>
 #include <pr2_mechanism_controllers/GetBaseCommand.h>
+#include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
 
 #include <libTF/Pose3D.h>
 #include <urdf/URDF.h>
@@ -254,6 +255,10 @@ namespace controller
 
     double wheel_radius_; /** radius of the wheel (filled in from urdf robot model) */
 
+    double wheel_radius_multiplier_front_;
+
+    double wheel_radius_multiplier_rear_;
+
     private:
 
     bool new_cmd_available_; /** true when new command received by node */
@@ -429,6 +434,12 @@ namespace controller
 
     bool getCommand(pr2_mechanism_controllers::GetBaseCommand::request &req,
                     pr2_mechanism_controllers::GetBaseCommand::response &resp);
+
+    bool getWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
+
+    bool setWheelRadiusMultiplier(pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+                                                      pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp);
 
     /*
      * \brief callback function for setting the desired velocity using a topic 

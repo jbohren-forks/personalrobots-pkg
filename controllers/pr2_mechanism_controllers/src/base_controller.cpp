@@ -91,6 +91,9 @@ BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 
    new_cmd_available_ = false;
 
+   wheel_radius_multiplier_front_ = 1.0;
+   wheel_radius_multiplier_rear_  = 1.0;
+
    pthread_mutex_init(&base_controller_lock_,NULL);
 }
 
@@ -502,7 +505,7 @@ void BaseController::computeDesiredWheelSpeeds()
 
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
     wheel_point_velocity_projected = wheel_point_velocity.rot2D(-steer_angle_actual);
-    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/wheel_radius_;
+    wheel_speed_cmd_[i] = (wheel_point_velocity_projected.x + wheel_caster_steer_component.x)/(wheel_radius_*wheel_radius_multiplier_front_);
   }
 }
 
@@ -593,7 +596,7 @@ void BaseController::computeBaseVelocity()
   for(int i = 0; i < num_wheels_; i++) {
     caster_2d_velocity.z = base_wheels_[i].parent_->joint_state_->velocity_;
     wheel_caster_steer_component = computePointVelocity2D(base_wheels_[i].pos_,caster_2d_velocity);
-    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/wheel_radius_;
+    wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/(wheel_radius_*wheel_radius_multiplier_front_);
 
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
     A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
@@ -743,6 +746,9 @@ BaseControllerNode::~BaseControllerNode()
 {
   node->unadvertise_service(service_prefix + "/set_command");
   node->unadvertise_service(service_prefix + "/get_actual");
+  node->unadvertise_service(service_prefix + "/set_wheel_radius_multiplier");
+  node->unadvertise_service(service_prefix + "/get_wheel_radius_multiplier");
+
   node->unsubscribe("cmd_vel");
 
   publisher_->stop();
@@ -849,6 +855,27 @@ bool BaseControllerNode::getCommand(
   return true;
 }
 
+bool BaseControllerNode::getWheelRadiusMultiplier(
+  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+{
+  resp.wheel_radius_multiplier_front = c_->wheel_radius_multiplier_front_;
+  resp.wheel_radius_multiplier_rear  = c_->wheel_radius_multiplier_rear_;
+
+  return true;
+}
+
+bool BaseControllerNode::setWheelRadiusMultiplier(
+  pr2_mechanism_controllers::WheelRadiusMultiplier::request &req,
+  pr2_mechanism_controllers::WheelRadiusMultiplier::response &resp)
+{
+  c_->wheel_radius_multiplier_front_ = req.wheel_radius_multiplier_front;
+  c_->wheel_radius_multiplier_rear_  = req.wheel_radius_multiplier_rear;
+
+  return true;
+}
+
+
 bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElement *config)
 {
   service_prefix = config->Attribute("name");
@@ -860,6 +887,8 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->advertise_service(service_prefix + "/get_command", &BaseControllerNode::getCommand, this); //FIXME: this is actually get command, just returning command for testing.
+
+  node->advertise_service(service_prefix + "/set_command", &BaseControllerNode::setCommand, this);
   node->subscribe("cmd_vel", baseVelMsg, &BaseControllerNode::CmdBaseVelReceived, this,1);
 
 
