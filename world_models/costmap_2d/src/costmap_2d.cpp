@@ -69,16 +69,16 @@ namespace costmap_2d {
   }
 
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
-		       double resolution, unsigned char threshold, 
-		       double maxZ, double freeSpaceProjectionHeight,
-		       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
+      double resolution, unsigned char threshold, 
+      double maxZ, double freeSpaceProjectionHeight,
+      double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
     : ObstacleMapAccessor(0, 0, width, height, resolution, weight),
-      maxZ_(maxZ),
-      freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
-      inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
-      circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
-      inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-      staticData_(NULL), costData_(NULL), xy_markers_(NULL), mx_(0), my_(0)
+    maxZ_(maxZ),
+    freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
+    inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
+    circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
+    inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
+    staticData_(NULL), costData_(NULL), xy_markers_(NULL), mx_(0), my_(0)
   {
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
@@ -91,8 +91,8 @@ namespace costmap_2d {
     for (i=0; i<=inflationRadius_; i++) {
       cachedDistances[i] = new double[inflationRadius_+1];
       for (j=0; j<=i; j++) {
-	cachedDistances[i][j] = sqrt (pow(i, 2) + pow(j, 2));
-	cachedDistances[j][i] = cachedDistances[i][j];
+        cachedDistances[i][j] = sqrt (pow(i, 2) + pow(j, 2));
+        cachedDistances[j][i] = cachedDistances[i][j];
       }
     }
 
@@ -102,19 +102,19 @@ namespace costmap_2d {
     std::vector<unsigned int> updates;
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
-	unsigned int ind = MC_IND(i, j);
-	costData_[ind] = data[ind];
+        unsigned int ind = MC_IND(i, j);
+        costData_[ind] = data[ind];
 
-	// If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
-	// then set it to the threshold. 
-	if (costData_[ind] != NO_INFORMATION && costData_[ind] >= threshold)
-	  costData_[ind] = LETHAL_OBSTACLE;
+        // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
+        // then set it to the threshold. 
+        if (costData_[ind] != NO_INFORMATION && costData_[ind] >= threshold)
+          costData_[ind] = LETHAL_OBSTACLE;
 
-	// Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
-	// as dynamic obstacles, and will be faded out as such, but
-	if(costData_[ind] == LETHAL_OBSTACLE){
-	  enqueue(ind, i, j);
-	}
+        // Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
+        // as dynamic obstacles, and will be faded out as such, but
+        if(costData_[ind] == LETHAL_OBSTACLE){
+          enqueue(ind, i, j);
+        }
       }
     }
 
@@ -129,6 +129,11 @@ namespace costmap_2d {
     if(staticData_ != NULL) delete[] staticData_;
     if(costData_ != NULL) delete[] costData_;
     if(xy_markers_ != NULL) delete[] xy_markers_;
+    if(cachedDistances != NULL){
+      for (unsigned int i=0; i<=inflationRadius_; i++)
+        delete[] cachedDistances[i];
+      delete[] cachedDistances;
+    }
   }
 
 
@@ -136,8 +141,8 @@ namespace costmap_2d {
    * @brief Updated dyanmic obstacles and compute a diff. Mainly for backward compatibility. This will go away soon.
    */
   void CostMap2D::updateDynamicObstacles(double wx, double wy,
-					 const std::vector<std_msgs::PointCloud*>& clouds,
-					 std::vector<unsigned int>& updates){
+      const std::vector<std_msgs::PointCloud*>& clouds,
+      std::vector<unsigned int>& updates){
     updates.clear();
 
     // Store the current cost data
@@ -150,14 +155,14 @@ namespace costmap_2d {
     while(i> 0){
       i--;
       if(oldValues[i] != costData_[i])
-	updates.push_back(i);
+        updates.push_back(i);
     }
 
-    delete oldValues;
+    delete[] oldValues;
   }
 
   void CostMap2D::updateDynamicObstacles(double wx, double wy,
-					 const std::vector<std_msgs::PointCloud*>& clouds)
+      const std::vector<std_msgs::PointCloud*>& clouds)
   {
     // Update current grid position
     WC_MC(wx, wy, mx_, my_);
@@ -171,25 +176,25 @@ namespace costmap_2d {
     for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
       const std_msgs::PointCloud& cloud = *(*it);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-	// Filter out points too high (can use for free space propagation?)
-	if(cloud.pts[i].z > maxZ_)
-	  continue;
+        // Filter out points too high (can use for free space propagation?)
+        if(cloud.pts[i].z > maxZ_)
+          continue;
 
-	// Queue cell for cost propagation
-	unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+        // Queue cell for cost propagation
+        unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
 
-	// If we have already processed the cell for this point, skip it
-	if(marked(ind))
-	  continue;
+        // If we have already processed the cell for this point, skip it
+        if(marked(ind))
+          continue;
 
-	// Buffer for cost propagation. This will mark the cell
-	unsigned int mx, my;
-	IND_MC(ind, mx, my);
-	enqueue(ind, mx, my);
+        // Buffer for cost propagation. This will mark the cell
+        unsigned int mx, my;
+        IND_MC(ind, mx, my);
+        enqueue(ind, mx, my);
 
-	// Buffer for free space projection (Need a ctest based on the origin)
-	if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
-	  F.push_back(ind);
+        // Buffer for free space projection (Need a ctest based on the origin)
+        if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
+          F.push_back(ind);
       }
     }
 
@@ -224,19 +229,19 @@ namespace costmap_2d {
     ss << std::endl;
     for(unsigned j = 0; j < getHeight(); j++){
       for (unsigned int i = 0; i < getWidth(); i++){
-	unsigned char cost = getCost(i, j);
-	if(cost == LETHAL_OBSTACLE)
-	  ss << "O";
-	else if (cost == INSCRIBED_INFLATED_OBSTACLE)
-	  ss << "I";
-	else if (isCircumscribedCell(i, j))
-	  ss << "C";
-	else if (cost == NO_INFORMATION)
-	  ss << "?";
-	else if (cost > 0)
-	  ss << "f";
-	else
-	  ss << "F";
+        unsigned char cost = getCost(i, j);
+        if(cost == LETHAL_OBSTACLE)
+          ss << "O";
+        else if (cost == INSCRIBED_INFLATED_OBSTACLE)
+          ss << "I";
+        else if (isCircumscribedCell(i, j))
+          ss << "C";
+        else if (cost == NO_INFORMATION)
+          ss << "?";
+        else if (cost > 0)
+          ss << "f";
+        else
+          ss << "F";
 
         ss << ",";
       }
@@ -397,23 +402,23 @@ namespace costmap_2d {
       y += yinc2;                 // Change the y as appropriate
 
       if(!marked(index))
-	costData_[index] = 0;
+        costData_[index] = 0;
     }
   }
 
   CostMapAccessor::CostMapAccessor(const CostMap2D& costMap, double maxSize, double poseX, double poseY)
     : ObstacleMapAccessor(computeWX(costMap, maxSize, poseX, poseY),
-			  computeWY(costMap, maxSize, poseX, poseY), 
-			  computeSize(maxSize, costMap.getResolution()), 
-			  computeSize(maxSize, costMap.getResolution()), 
-			  costMap.getResolution(), costMap.getWeight()), costMap_(costMap),
-      maxSize_(maxSize){
+        computeWY(costMap, maxSize, poseX, poseY), 
+        computeSize(maxSize, costMap.getResolution()), 
+        computeSize(maxSize, costMap.getResolution()), 
+        costMap.getResolution(), costMap.getWeight()), costMap_(costMap),
+    maxSize_(maxSize){
 
-    setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
+      setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
-    // The origin locates this grid. Convert from world coordinates to cell co-ordinates
-    // to get the cell coordinates of the origin
-    costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
+      // The origin locates this grid. Convert from world coordinates to cell co-ordinates
+      // to get the cell coordinates of the origin
+      costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
       ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
     }
