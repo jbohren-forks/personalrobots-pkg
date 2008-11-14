@@ -52,7 +52,7 @@ def ntp_monitor():
         return
     else:
         pub = rospy.Publisher("/diagnostics", DiagnosticMessage)
-        rospy.ready(NAME)
+        rospy.ready(NAME, anonymous=True)
 
         hostname = socket.gethostbyaddr(socket.gethostname())[0]
   
