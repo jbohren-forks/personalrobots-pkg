@@ -404,6 +404,7 @@
 
 
   <!-- White Directional light -->
+  <!--
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
@@ -413,6 +414,7 @@
       <attenuation>1 0.0 1.0 0.4</attenuation>
     </light>
   </model:renderable>
+  -->
   
 
 </gazebo:world>
