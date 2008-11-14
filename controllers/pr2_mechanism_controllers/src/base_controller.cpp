@@ -872,6 +872,8 @@ bool BaseControllerNode::setWheelRadiusMultiplier(
   c_->wheel_radius_multiplier_front_ = req.wheel_radius_multiplier_front;
   c_->wheel_radius_multiplier_rear_  = req.wheel_radius_multiplier_rear;
 
+  ROS_INFO("Received radius request %f ",req.wheel_radius_multiplier_front); 
+  ROS_INFO("Set radius request %f ",c_->wheel_radius_multiplier_front_ ); 
   return true;
 }
 
