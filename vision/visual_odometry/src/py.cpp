@@ -369,20 +369,20 @@ PyObject *visual_odometry(PyObject *self, PyObject *args)
   r = PyList_New(pathRecon.mFramePoses.size());
 
   for (size_t i = 0; i < pathRecon.mFramePoses.size(); i++) {
-    FramePose &fp = pathRecon.mFramePoses[i];
+    FramePose *fp = pathRecon.mFramePoses[i];
     PyObject *tup = PyTuple_New(3);
-    PyTuple_SetItem(tup, 0, PyInt_FromLong(fp.mIndex));
+    PyTuple_SetItem(tup, 0, PyInt_FromLong(fp->mIndex));
 
     PyObject *rod = PyTuple_New(3);
-    PyTuple_SetItem(rod, 0, PyFloat_FromDouble(fp.mRod.x));
-    PyTuple_SetItem(rod, 1, PyFloat_FromDouble(fp.mRod.y));
-    PyTuple_SetItem(rod, 2, PyFloat_FromDouble(fp.mRod.z));
+    PyTuple_SetItem(rod, 0, PyFloat_FromDouble(fp->mRod.x));
+    PyTuple_SetItem(rod, 1, PyFloat_FromDouble(fp->mRod.y));
+    PyTuple_SetItem(rod, 2, PyFloat_FromDouble(fp->mRod.z));
     PyTuple_SetItem(tup, 1, rod);
 
     PyObject *shift = PyTuple_New(3);
-    PyTuple_SetItem(shift, 0, PyFloat_FromDouble(fp.mShift.x));
-    PyTuple_SetItem(shift, 1, PyFloat_FromDouble(fp.mShift.y));
-    PyTuple_SetItem(shift, 2, PyFloat_FromDouble(fp.mShift.z));
+    PyTuple_SetItem(shift, 0, PyFloat_FromDouble(fp->mShift.x));
+    PyTuple_SetItem(shift, 1, PyFloat_FromDouble(fp->mShift.y));
+    PyTuple_SetItem(shift, 2, PyFloat_FromDouble(fp->mShift.z));
     PyTuple_SetItem(tup, 2, shift);
 
     PyList_SetItem(r, i, tup);

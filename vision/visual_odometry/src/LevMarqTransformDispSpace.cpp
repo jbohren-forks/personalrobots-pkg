@@ -31,7 +31,9 @@ LevMarqTransformDispSpace::LevMarqTransformDispSpace(
 	LevMarqTransform(
 			numMaxIter,
 			angleType
-	), m3DToDisparity(threeDToDisparity), mDisparityTo3D(disparityTo3D)
+	),
+	m3DToDisparity((CvMat*)cvClone(threeDToDisparity)),
+	mDisparityTo3D((CvMat*)cvClone(disparityTo3D))
 {
 //  mAngleType = Euler;
 	cvInitMatHeader(&mHomography, 4, 4, CV_64FC1, _Homography);
@@ -39,6 +41,8 @@ LevMarqTransformDispSpace::LevMarqTransformDispSpace(
 
 LevMarqTransformDispSpace::~LevMarqTransformDispSpace()
 {
+  cvReleaseMat((CvMat**)&m3DToDisparity);
+  cvReleaseMat((CvMat**)&mDisparityTo3D);
 }
 
 
@@ -79,18 +83,39 @@ bool LevMarqTransformDispSpace::constructTransformationMatrix(const CvMat * para
 	return constructHomographyMatrix(param, T);
 }
 
-bool LevMarqTransformDispSpace::constructTransformationMatrices(const CvMat *param, double delta) {
+void LevMarqTransformDispSpace::constructTransformationMatrices(
+    const CvMat *param, double delta, double *transf_data,
+    double *transf_fwds_data){
+  constructTransformationMatrix(param, transf_data);
 
-	constructTransformationMatrix(param);
+  double _param1[numParams];
+  CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
+  // transformation matrices for each parameter
+  for (int k=0; k<numParams; k++) {
+    // make a new copy for this parameter
+    cvCopy(param, &param1);
+    _param1[k] += delta;
+    constructTransformationMatrix(&param1, &transf_fwds_data[k*16]);
+  }
+}
 
-	double _param1[numParams];
-	CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
-	// transformation matrices for each parameter
-	for (int k=0; k<numParams; k++) {
-		cvCopy(param, &param1);
-		_param1[k] += delta;
-		constructTransformationMatrix(&param1, mFwdTData[k]);
-	}
+bool LevMarqTransformDispSpace::constructTransformationMatrices(
+    const CvMat *param, double delta) {
+  constructTransformationMatrices(param, delta, _Homography, (double *)mFwdTData);
+#if 0 // moved
+
+  constructTransformationMatrix(param);
+
+  double _param1[numParams];
+  CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
+  // transformation matrices for each parameter
+  for (int k=0; k<numParams; k++) {
+    // make a new copy for this parameter
+    cvCopy(param, &param1);
+    _param1[k] += delta;
+    constructTransformationMatrix(&param1, mFwdTData[k]);
+  }
+#endif
 	return true;
 }
 

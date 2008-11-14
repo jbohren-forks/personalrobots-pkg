@@ -41,12 +41,14 @@ public:
 	    double param[]) {
 		return optimizeAlt(P0, P1, param);
 	}
-private:
+protected:
 	bool constructHomographyMatrix(const CvMat* params);
 	bool constructHomographyMatrix(const CvMat* params, double H[]);
 	virtual bool constructTransformationMatrix(const CvMat *param);
 	virtual bool constructTransformationMatrix(const CvMat * param, double T[]);
-	virtual bool constructTransformationMatrices(const CvMat *param, double delta);
+  virtual bool constructTransformationMatrices(const CvMat *param, double delta);
+  virtual void constructTransformationMatrices(const CvMat *param, double delta,
+      double* transf, double* transf_fwd);
 	virtual bool computeResidueVector(const CvMat *xyzws0, const CvMat *xyzws1, CvMat* resVector);
 	virtual bool computeResidue(const CvMat *xyzs0, const CvMat *xyzs1, CvMat* resVector);
 	virtual bool computeResidue(const CvMat *xyzs0, const CvMat *xyzs1, const CvMat *T, CvMat* resVector);

@@ -83,14 +83,37 @@ public:
 
   static CvMat* dispMapToMask(const WImage1_16s& dispMap);
 
+  /// invert a rigid transformation matrix, 4x3 or 4x4
+  static void invertRigidTransform(const CvMat* transf, CvMat* inv_transf);
+
+  /**
+   *  A convenient utility to construct a 4x4 transformation matrix
+   *  from a 3x3 rotation matrix and a 3x1 translation matrix
+   */
+  static void transformFromRotationAndShift(
+      /// 3x3 rotation matrix
+      const CvMat& rot,
+      /// 3x1 translation matrix
+      const CvMat& shift,
+      /// 4x4 transformation matrix
+      CvMat& transform);
+
   /// Construct a transformation matrix (4x4 or 4x3), given
   /// the rodrigues and translation vector
-  static void TransformationFromRodriguesAndShift(
+  static void transformFromRodriguesAndShift(
       /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
       /// vector.
       const CvMat& param,
       /// Output. transformation matrix.
       CvMat& Transform);
+
+  /// Construct rodrigues and shift vectors from 4x4
+  /// transformation matrix
+  static void transformToRodriguesAndShift(
+      const CvMat& transform,
+      /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
+      /// vector.
+      CvMat& params);
 
   static void loadStereoImagePair(string& dirname, string& leftimagefmt,
       string& rightimagefmt, string& dispmapfmt, int & frameIndex,
@@ -101,7 +124,7 @@ public:
 	static const CvScalar green;
 	static const CvScalar yellow;
 	static const CvScalar blue;
-
+	static const CvScalar magenta;
 };
 
 }

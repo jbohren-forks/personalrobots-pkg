@@ -68,7 +68,12 @@ public:
 	  RESET(ColinearCheck);
     RESET(RandTripletGenerator);
     RESET(SparseStereo);
-	}
+    RESET(SBACostFunction);
+    RESET(SBADerivatives);
+    RESET(SBAOuterProdOfTrack);
+    RESET(SBALinearSolving);
+    RESET(SBABackSubstitution);
+}
 	int64 mNumIters;
 	int64 mFrequency;
 
@@ -112,6 +117,11 @@ public:
   DECLARE(ColinearCheck);
   DECLARE(RandTripletGenerator);
   DECLARE(SparseStereo);
+  DECLARE(SBACostFunction);
+  DECLARE(SBADerivatives);
+  DECLARE(SBAOuterProdOfTrack);
+  DECLARE(SBALinearSolving);
+  DECLARE(SBABackSubstitution);
 
 	void printStat();
 	void printStat(const char* title, int64 val, int64 count);

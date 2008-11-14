@@ -467,7 +467,7 @@ bool PoseEstimateDisp::constructHomography(const CvMat& R, const CvMat& T,
     cvInitMatHeader(&RT, 4, 4, CV_64FC1, _RT); // transformation matrix (including rotation and translation)
     cvInitMatHeader(&G,  4, 4, CV_64FC1, _G);  // a temp matrix
 
-    constructRT((CvMat *)&R, (CvMat *)&T, &RT);
+    CvMatUtils::transformFromRotationAndShift(R, T, RT);
 
     cvMatMul(&cartToDisp, &RT, &G);
     cvMatMul(&G, (CvMat *)&dispToCart, &H);

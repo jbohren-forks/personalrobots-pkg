@@ -10,32 +10,38 @@
 
 
 void PointTracks::purge(int oldestFrameIndex) {
-  for (deque<PointTrack>::iterator iTrack = mTracks.begin();
-    iTrack != mTracks.end();
+  if (tracks_.size()==0) {
+    return;
+  }
+  int oldest_frame_index_in_tracks = oldestFrameIndex;
+  for (deque<PointTrack>::iterator iTrack = tracks_.begin();
+    iTrack != tracks_.end();
     iTrack++) {
     if (iTrack->lastFrameIndex() < oldestFrameIndex) {
       //  remove the entire track, as it is totally outside of the window
 #if DEBUG==1
-      printf("erase track %d, len=%d\n", iTrack->mId, iTrack->size());
+      printf("erase track %d, len=%d\n", iTrack->id_, iTrack->size());
 #endif
-      mTracks.erase(iTrack);
+      tracks_.erase(iTrack);
     } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
-#if 0 // Do not do this as those older frames are used as fixed frames
-      // get rid of the entries that fall out of the slide window
-      iTrack->purge(oldestFrameIndex);
-      // remove the track if its length is reduced to 1 or less.
-      if (iTrack->size() < 2) {
-        mTracks.erase(iTrack);
+      // part of this track is in fixed frames/cameras.
+
+      // keep track of the oldest frame index in the existing tracks.
+      if (iTrack->firstFrameIndex() < oldest_frame_index_in_tracks) {
+        oldest_frame_index_in_tracks = iTrack->firstFrameIndex();
       }
-#endif
     }
   }
+  oldest_frame_index_in_tracks_  = oldest_frame_index_in_tracks;
+#if DEBUG==1
+  printf("oldest_frame_index_in_tracks_ set to %d\n", oldest_frame_index_in_tracks_);
+#endif
 }
 
 void PointTrack::print() const {
   printf("track of size %d: ", size());
   BOOST_FOREACH( const PointTrackObserv& obsv, *this) {
-    printf("(%d, %d), ", obsv.mFrameIndex, obsv.mKeypointIndex);
+    printf("(%d, %d), ", obsv.frame_index_, obsv.keypoint_index_);
   }
   printf("\n");
 }
@@ -46,7 +52,7 @@ void PointTracks::print() const {
   double avgLen;
   vector<int> lenHisto;
   stats(&numTracks, &maxLen, &minLen, &avgLen, &lenHisto);
-  printf("printing %d tracks", mTracks.size());
+  printf("printing %d tracks", tracks_.size());
   printf("Stat of the tracks: [num, maxLen, minLen, avgLen]=[%d,%d,%d,%f]\n",
       numTracks, maxLen, minLen, avgLen);
   printf("Histogram of track lengths  [len, count]:\n");
@@ -56,7 +62,7 @@ void PointTracks::print() const {
     len++;
   }
 
-  BOOST_FOREACH( const PointTrack& track, mTracks) {
+  BOOST_FOREACH( const PointTrack& track, tracks_) {
     track.print();
   }
 }
@@ -68,7 +74,7 @@ void PointTracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen
   int min = INT_MAX;
   int max = 0;
   int sum = 0;
-  BOOST_FOREACH( const PointTrack& track, mTracks ) {
+  BOOST_FOREACH( const PointTrack& track, tracks_ ) {
     int sz = track.size();
     if (sz>1) {
       if (min > sz ) min = sz;
@@ -78,14 +84,14 @@ void PointTracks::stats(int *numTracks, int *maxLen, int* minLen, double *avgLen
     }
   }
 
-  if (numTracks) *numTracks = mTracks.size();
+  if (numTracks) *numTracks = tracks_.size();
   if (maxLen) *maxLen = max;
   if (minLen) *minLen = min;
   if (avgLen) *avgLen = (double)sum/(double)nTracks;
 
   if (lenHisto) {
     lenHisto->resize(max+1);
-    BOOST_FOREACH( const PointTrack& track, mTracks ) {
+    BOOST_FOREACH( const PointTrack& track, tracks_ ) {
       int& count = lenHisto->at(track.size());
       count++;
     }

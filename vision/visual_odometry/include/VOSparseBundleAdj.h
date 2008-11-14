@@ -36,6 +36,10 @@ public:
    */
   virtual bool track(queue<StereoFrame>& inputImageQueue);
 
+  /// \brief setting the camera parameters
+  virtual void setCameraParams(double Fx, double Fy, double Tx,
+      double Clx, double Crx, double Cy, double dispUnitScale);
+
   /// Slide down the end mark of the sliding window. Update the
   /// beginning end of applicable. Plus book keeping of the tracks
   /// and others.
@@ -46,8 +50,10 @@ public:
       PointTracks& tracks);
   void purgeTracks(int frameIndex);
 
-  /// Default size of the sliding window
-  static const int DefaultSlideWindowSize  = 10;
+  /// Default size of the free window
+  static const int DefaultFreeWindowSize  = 5;
+  /// Default size of the fixed window
+  static const int DefaultFrozenWindowSize = 10;
   /// Default number of iteration
   static const int DefaultNumIteration = 20;
 
@@ -89,14 +95,14 @@ protected:
       int inlierIndex
   );
   PointTracks mTracks;
-  /// size of the sliding window
-  int mSlideWindowSize;
+  /// size of the sliding window of free cameras/frames
+  int mFreeWindowSize;
   /// number of frozen cameras in bundle adjustment.  Frozen (or fixed)
   /// frame (cameras) are those fall out of the sliding window, but still share
   /// tracks with frames(cameras) inside the sliding window.
   /// At the beginning when there are not enough frames (cameras) for a full
   /// slide window, we always keep the first frame frozen.
-  int mNumFrozenWindows;
+  int mFrozenWindowSize;
 
   /// number of iteration for bundle adjustment.
   int mNumIteration;
@@ -104,10 +110,9 @@ protected:
   /// unique id of the tracks
   int mTrackId;
 
-  Foo foo_;
-  Foo2 foo2_;
-
-//  LevMarqSparseBundleAdj* levmarq_sba_;
+  /// a pointer to the Levenberge-Marquardt optimizer for
+  /// sparse bundle adjustment.
+  LevMarqSparseBundleAdj* levmarq_sba_;
 };
 
 /// Visualizing the visual odometry process of bundle adjustment.
@@ -115,7 +120,7 @@ class SBAVisualizer: public F2FVisualizer {
   public:
     typedef F2FVisualizer Parent;
     SBAVisualizer(PoseEstimateDisp& poseEstimator,
-        const vector<FramePose>& framePoses,
+        const vector<FramePose*>& framePoses,
         const PointTracks& trcks):
       Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
     virtual ~SBAVisualizer(){}
@@ -138,7 +143,7 @@ class SBAVisualizer: public F2FVisualizer {
 
 
     /// a reference to the estimated pose of the frames
-    const vector<FramePose>& framePoses;
+    const vector<FramePose*>& framePoses;
     /// a reference to the tracks.
     const PointTracks& tracks;
     int   slideWindowFront;

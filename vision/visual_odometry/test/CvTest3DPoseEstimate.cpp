@@ -219,10 +219,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
   // parameterize the post estimator
-  sba.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_, this->Clx_,
-      this->Crx_, this->Cy_, 1.0);
-  // parameterize the error measure object in the stat obj
-  sba.mStat.mErrMeas.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, 1.0);
+  sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -232,13 +229,16 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   int end   = 1509;
   int step  = 1;
 
+  start = 30;
+  end   = 600;
+
   // set up a FileSeq
   FileSeq fileSeq;
   fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
-  vector<FramePose>* fp = sba.getFramePoses();
+  vector<FramePose*>* fp = sba.getFramePoses();
   const PointTracks& tracks = sba.getTracks();
 
   sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks);
@@ -257,13 +257,14 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
     sba.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 
-  vector<FramePose>* framePoses = sba.getFramePoses();
+  vector<FramePose*>* framePoses = sba.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
   saveFramePoses(string("Output/indoor1/"), *framePoses);
 
   sba.printStat();
+  sba.mStat2.print();
 
   CvTestTimer::getTimer().printStat();
   return status;
@@ -317,12 +318,9 @@ bool CvTest3DPoseEstimate::testVideo() {
   PathRecon pathRecon(imgSize);
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95, 1.0);
   // parameterize the pose estimator
-  pathRecon.mPoseEstimator.setCameraParams(this->Fx_, this->Fy_, this->Tx_,
-      this->Clx_, this->Crx_, this->Cy_);
-  // parameterize the stat object
-  pathRecon.mStat.mErrMeas.setCameraParams((const CvStereoCamModel&)(pathRecon.mPoseEstimator));
+  pathRecon.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
 
   string dirname("Data/indoor1");
   string leftimgfmt("/left-%04d.ppm");
@@ -355,7 +353,7 @@ bool CvTest3DPoseEstimate::testVideo() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = pathRecon.getFramePoses();
+  vector<FramePose*>* framePoses = pathRecon.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -395,7 +393,7 @@ bool CvTest3DPoseEstimate::testVideo2() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -452,7 +450,7 @@ bool CvTest3DPoseEstimate::testVideo3() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 
@@ -518,8 +516,8 @@ bool CvTest3DPoseEstimate::testVideo4OneFrame(queue<StereoFrame> inputImageQueue
           char dispfilename[256];
           char dispname[256];
           sprintf(dispfilename, "Output/indoor1/dispmap-%04d.xml",
-              currFrame->mFrameIndex);
-          sprintf(dispname, "dispmap-%04d.xml", currFrame->mFrameIndex);
+              currFrame->frame_index_);
+          sprintf(dispname, "dispmap-%04d.xml", currFrame->frame_index_);
           cvSave(dispfilename, currFrame->mDispMap, dispname, "disparity map 16s");
         }
 #endif
@@ -652,7 +650,7 @@ bool CvTest3DPoseEstimate::testVideo4() {
   } while(fileSeq.getNextFrame() == true);
 
 
-  vector<FramePose>* framePoses = tracker->getFramePoses();
+  vector<FramePose*>* framePoses = tracker->getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
   timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
 

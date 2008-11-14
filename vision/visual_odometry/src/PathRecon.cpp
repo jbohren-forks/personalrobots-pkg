@@ -28,7 +28,7 @@ using namespace cv::willow;
 
 #define DISPLAY 0
 
-#define DEBUG 0
+#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -62,8 +62,10 @@ PathRecon::PathRecon(const CvSize& imageSize):
 }
 
 PathRecon::~PathRecon() {
-	// TODO Auto-generated destructor stub
   delete mVisualizer;
+  BOOST_FOREACH(FramePose* fp, mFramePoses ) {
+    delete fp;
+  }
 }
 
 void PathRecon::_init() {
@@ -149,11 +151,12 @@ PathRecon::keyFrameEval(
 
 /**
  * Keep track of the trajectory
- * store the current transformation from starting point to current position
+ * store the current transformation from current position to starting position
  * in transform as transform = transform * rt
  */
 bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
-	PoseEstimate::constructTransform(rot, shift, mRT);
+	CvMatUtils::transformFromRotationAndShift(rot, shift, mRT);
+	/// @todo Check if cvMatMul can be done in place.
 	cvCopy(&mTransform, &_mTempMat);
 	cvMatMul(&_mTempMat, &mRT, &mTransform);
 	return true;
@@ -167,14 +170,27 @@ bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIn
 	CvMat shiftGlobal;
 	cvGetSubRect(&mTransform, &rotGlobal,   cvRect(0, 0, 3, 3));
 	cvGetSubRect(&mTransform, &shiftGlobal, cvRect(3, 0, 1, 3));
+
 	FramePose* fp = new FramePose(frameIndex);
 	CvMat rodGlobal2   = cvMat(1,3, CV_64FC1, &(fp->mRod));
 	CvMat shiftGlobal2 = cvMat(1,3, CV_64FC1, &(fp->mShift));
 	// make a copy
 	cvRodrigues2(&rotGlobal, &rodGlobal2);
 	cvTranspose(&shiftGlobal,  &shiftGlobal2);
+	cvCopy(&mTransform, &(fp->transf_local_to_global_));
 
-	mFramePoses.push_back(*fp);
+	mFramePoses.push_back(fp);
+#if DEBUG==1
+	printf("store frame %d in mFramePoses\n", fp->mIndex);
+
+	// @todo remove the following debugging stuff
+	if (fp->mIndex == 30) {
+	  CvMatUtils::printMat(&mTransform);
+	  CvMatUtils::printMat(&rodGlobal2);
+	  CvMatUtils::printMat(&shiftGlobal2);
+	}
+#endif
+
 
 	// update the path length as well
 	mPathLength += cvNorm((const CvMat *)&shift);
@@ -186,6 +202,8 @@ void PathRecon::dispToGlobal(const CvMat& uvds, CvMat& xyzs){
 }
 void PathRecon::dispToGlobal(const CvMat& uvds, const CvMat& transform, CvMat& xyzs) {
   double _xyz[3*uvds.rows];
+  /// @todo The two transformations, disp to local xyz, and local xyz to global xyz
+  /// shall be concatenated.
   CvMat localxyz = cvMat(uvds.rows, 3, CV_64FC1, _xyz);
   // Convert from disparity coordinates to Cartesian coordinates
   mPoseEstimator.dispToCart(&uvds, &localxyz);
@@ -257,18 +275,27 @@ void PathRecon::updateTrajectory() {
     // save the inliers into a file
     char inliersFilename[256];
     char outputDir = "test/Output/indoor1";
-    sprintf(inliersFilename, "%s/inliers1_%04d.xml", outputDir, mFrameSeq.mCurrentFrame->mFrameIndex);
+    sprintf(inliersFilename, "%s/inliers1_%04d.xml", outputDir, mFrameSeq.mCurrentFrame->frame_index_);
     saveKeyPoints(*mFrameSeq.mCurrentFrame->mInliers1, string(inliersFilename));
 #endif
 
     // stores rotation mat and shift vector in rods and shifts
     storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
-        mFrameSeq.mCurrentFrame->mFrameIndex - mFrameSeq.mStartFrameIndex);
+        mFrameSeq.mCurrentFrame->mFrameIndex);
 
 #if DEBUG==1
     // measure the errors
     measureErr(mFrameSeq.mCurrentFrame->mInliers1, mFrameSeq.mCurrentFrame->mInliers0);
 #endif
+  } else {
+    // first key frame
+    cvSetIdentity(&mTransform);
+    cvSetIdentity(&mFrameSeq.mCurrentFrame->mRot);
+    cvSetZero(&mFrameSeq.mCurrentFrame->mShift);
+    CvMatUtils::printMat(&mFrameSeq.mCurrentFrame->mRot);
+    CvMatUtils::printMat(&mFrameSeq.mCurrentFrame->mShift);
+    storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
+        mFrameSeq.mCurrentFrame->mFrameIndex);
   }
   // getting ready for next iteration
   setLastKeyFrame(mFrameSeq.mCurrentFrame);
@@ -308,6 +335,10 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
   // currFrame is a reference to frameSeq.mCurrentFrame;
   PoseEstFrameEntry*& currFrame = frameSeq.mCurrentFrame;
   bool stop = false;
+
+#if DEBUG==1
+  frameSeq.print();
+#endif
 
   if (frameSeq.mNextFrame.get()){
     // do not need to load new images nor compute the key points again
@@ -349,6 +380,13 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
     }
     inputImageQueue.pop();
   }
+
+#if DEBUG==1
+  if (stop==true){
+    cout << "stopping ...."<<endl;
+    frameSeq.print();
+  }
+#endif
 
   KeyFramingDecision kfd = KeyFrameBackTrack;
 
@@ -437,9 +475,10 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
 //        insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
       }
     } // not first frame;
+    insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
   } // stop == false
 
-  insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+//  insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
 
   TIMEREND(Total);
   return insertNewKeyFrame;
@@ -454,6 +493,9 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
     break;
   }
   case KeyFrameBackTrack:   {
+#if DEBUG==1
+    cout << "keyFrameAction: backtrack"<<endl;
+#endif
     // go back to the last good frame
     // do smoothing
     if (frameSeq.backTrack()== true) {
@@ -467,11 +509,17 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
     break;
   }
   case KeyFrameKeep:   {
+#if DEBUG==1
+    cout << "keyFrameAction: keep"<<endl;
+#endif
     // keep current frame as last good frame.
     frameSeq.keepCurrentAsGoodFrame();
     break;
   }
   case KeyFrameUse:  {
+#if DEBUG==1
+    cout << "keyFrameAction: use"<<endl;
+#endif
     // use currFrame as key frame
     // do smoothing
     if (mFrameSeq.mNumFrames>1) {
@@ -485,6 +533,9 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
     break;
   }
   default:
+#if DEBUG==1
+    cout << "keyFrameAction: none"<<endl;
+#endif
     break;
   }
   return insertNewKeyFrame;
@@ -657,7 +708,16 @@ bool PathRecon::track(queue<StereoFrame>& inputImageQueue)
   return status;
 }
 
-vector<FramePose>* PathRecon::getFramePoses() {
+void PathRecon::setCameraParams(
+    double Fx, double Fy, double Tx,
+    double Clx, double Crx, double Cy, double dispUnitScale) {
+  // parameterize the pose estimator
+  mPoseEstimator.setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  // parameterize the stat object
+  mStat.mErrMeas.setCameraParams((const CvStereoCamModel&)(mPoseEstimator));
+}
+
+vector<FramePose*>* PathRecon::getFramePoses() {
   return &mFramePoses;
 }
 
@@ -716,11 +776,12 @@ void PathRecon::Stat::print(){
   fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", numTotalKeyFrameTrackablePairs, (double)(numTotalKeyFrameTrackablePairs) * kfScale);
   fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", numTotalKeyFrameInliers,        (double)(numTotalKeyFrameInliers) *kfScale);
   fprintf(stdout, "Last pose, rod = (%f, %f, %f), shift = (%f,%f, %f)\n",
-      mFinalPose.mRod.x, mFinalPose.mRod.y, mFinalPose.mRod.z,
-      mFinalPose.mShift.x, mFinalPose.mShift.y, mFinalPose.mShift.z);
+      mFinalPose->mRod.x, mFinalPose->mRod.y, mFinalPose->mRod.z,
+      mFinalPose->mShift.x, mFinalPose->mShift.y, mFinalPose->mShift.z);
 
 }
 
+#if 0 // delete this constructor
 // See CvPathRecon.h for documentation
 PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
     WImageBuffer1_16s* dispMap,
@@ -746,4 +807,5 @@ PoseEstFrameEntry::PoseEstFrameEntry(WImageBuffer1_b* image,
   mInliers0 = inliers0;
   mInliers1 = inliers1;
 }
+#endif
 

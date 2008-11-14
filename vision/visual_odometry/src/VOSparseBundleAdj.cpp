@@ -28,27 +28,32 @@ using namespace boost::accumulators;
 #include <queue>
 
 #define DISPLAY 1
+#define DEBUG 1
 
 VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize):
   PathRecon(imageSize),
-  mSlideWindowSize(DefaultSlideWindowSize),
-  mNumFrozenWindows(1),
+  mFreeWindowSize(DefaultFreeWindowSize),
+  mFrozenWindowSize(DefaultFrozenWindowSize),
   mNumIteration(DefaultNumIteration),
-  mTrackId(0)
+  mTrackId(0),
+  levmarq_sba_(NULL)
 {
 
 }
 
 VOSparseBundleAdj::~VOSparseBundleAdj() {
-  // TODO Auto-generated destructor stub
+  delete levmarq_sba_;
 }
 
 void VOSparseBundleAdj::updateSlideWindow() {
-  while(mActiveKeyFrames.size() > (unsigned int)this->mSlideWindowSize) {
+  while(mActiveKeyFrames.size() > (unsigned int)this->mFreeWindowSize ||
+      (mActiveKeyFrames.size()>1 && mFramePoses.size() == mActiveKeyFrames.size())
+      ){
     PoseEstFrameEntry* frame = mActiveKeyFrames.front();
     mActiveKeyFrames.pop_front();
     delete frame;
   }
+
   // Since slide down the window, we shall purge the tracks as well
   if (mVisualizer) {
     ((SBAVisualizer*)mVisualizer)->slideWindowFront =
@@ -57,16 +62,19 @@ void VOSparseBundleAdj::updateSlideWindow() {
   // loop thru all tracks and get purge the old entries
   purgeTracks(mActiveKeyFrames.front()->mFrameIndex);
 #if DEBUG==1
-  cout << "Current slice window: ["<<mActiveKeyFrames.front()->mFrameIndex<<","
-  <<mActiveKeyFrames.back()->mFrameIndex << "]"<<endl;
+  cout << "Current slide window: [";
+  BOOST_FOREACH(const PoseEstFrameEntry* frame, mActiveKeyFrames) {
+    cout << frame->mFrameIndex << ",";
+  }
+  cout << "]" << endl;
 #endif
 
   int numWinSize = mActiveKeyFrames.size();
-  assert(numWinSize<=this->mSlideWindowSize);
-  int numFixedFrames = std::min(this->mNumFrozenWindows, numWinSize-mNumFrozenWindows);
+  assert(numWinSize<=this->mFreeWindowSize);
+  int numFixedFrames = std::min(this->mFrozenWindowSize, numWinSize-mFrozenWindowSize);
   numFixedFrames = std::max(1, numFixedFrames);
 #if DEBUG==1
-  cout << "window size: "<< numWinSize << " # fixed: " << numFixedFrames << endl;
+  cout << "free window size: "<< numWinSize << ", # fixed win: " << numFixedFrames << endl;
 #endif
 
 }
@@ -84,7 +92,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
-
+      levmarq_sba_->optimize(&mActiveKeyFrames, &mFramePoses, &mTracks);
 
       cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
@@ -113,7 +121,7 @@ bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
     PointTracks & tracks)
 {
   bool status = true;
-  int lastFrame = tracks.mCurrentFrameIndex;
+  int lastFrame = tracks.current_frame_index_;
 
   // loop thru all the frames in the current sliding window
   BOOST_FOREACH( PoseEstFrameEntry* frame, frames) {
@@ -139,7 +147,7 @@ bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
     }
   }
   if (frames.size()>0)
-    tracks.mCurrentFrameIndex = frames.back()->mFrameIndex;
+    tracks.current_frame_index_ = frames.back()->mFrameIndex;
 
   return status;
 }
@@ -149,13 +157,13 @@ bool VOSparseBundleAdj::extendTrack(PointTracks& tracks, PoseEstFrameEntry& fram
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
-  BOOST_FOREACH( PointTrack& track, tracks.mTracks ) {
+  BOOST_FOREACH( PointTrack& track, tracks.tracks_ ) {
     if (// The last frame of this track is not the same as
         // the last frame of this inlier pair. Skip it.
         track.lastFrameIndex() == frame.mLastKeyFrameIndex ) {
       PointTrackObserv& observ = track.back();
       if (// keypoint index needs to match skip to next track
-          observ.mKeypointIndex == p.second) {
+          observ.keypoint_index_ == p.second) {
         // found a matching track. Extend it.
         CvPoint3D64f coord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
         CvPoint3D64f coord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
@@ -165,7 +173,7 @@ bool VOSparseBundleAdj::extendTrack(PointTracks& tracks, PoseEstFrameEntry& fram
         status = true;
 #if DEBUG==1
         printf("extend track %3d => f=%3d, pi=%3d:[%3d, %3d]->f=%3d, pi=%3d:[%3d, %3d]\n",
-            track.mId,
+            track.id_,
             frame.mLastKeyFrameIndex, p.second,
             (int)(coord0.x+.5), (int)(coord0.y+.5),
             frame.mFrameIndex,        p.first,
@@ -191,9 +199,9 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   cvGetRow(frame.mInliers1, &disp1, inlierIndex);
   CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
   CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
-  dispToGlobal(disp1, frame.mGlobalTransform, _cartCoord1);
+  dispToGlobal(disp1, frame.transf_local_to_global_, _cartCoord1);
   PointTrack newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
-  tracks.mTracks.push_back(newtrack);
+  tracks.tracks_.push_back(newtrack);
 
   int trackId = mTrackId-1;
 #if DEBUG==1
@@ -202,6 +210,62 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   printf("f=%3d, pi=%3d: [%3d, %3d], f=%3d, pi=%3d: [%3d, %3d]\n",
       frame.mLastKeyFrameIndex, p.second,  (int)(dispCoord0.x+.5), (int)(dispCoord0.y+.5),
       frame.mFrameIndex,        p.first,   (int)(dispCoord1.x+.5), (int)(dispCoord1.y+.5));
+  // @todo remove the following debugging stuff
+#if 0
+  {
+    // project the cartesian coordinates back to screen and print it
+    // invert the global matrix to global to local matrix
+     CvMatUtils::invertRigidTransform(&frame.transf_local_to_global_,
+         &frame.transf_global_to_local_);
+     // lastly, global to local disparity
+     CvMat cartToDisp;
+     CvMat dispToCart;
+     mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
+     cvMatMul(&cartToDisp, &frame.transf_global_to_local_,
+         &frame.mTransformGlobalToDisp);
+
+     CvPoint3D64f dispCoord2;
+     CvMat mat_dispCoord2 = cvMat(1, 1, CV_64FC3, &dispCoord2);
+     CvMat mat_cartCoord1;
+     cvReshape(&_cartCoord1, &mat_cartCoord1, 3, 0);
+     cvPerspectiveTransform(&mat_cartCoord1, &mat_dispCoord2, &frame.mTransformGlobalToDisp);
+     printf("re-projected cartesian point = [%8.2f, %8.2f, %8.2f]=>[%8.2f, %8.2f, %8.2f]\n",
+         dispCoord1.x, dispCoord1.y, dispCoord1.z,
+         dispCoord2.x, dispCoord2.y, dispCoord2.z);
+     cout << "disparity coord key point 1: "<<endl;
+     CvMatUtils::printMat(&disp1);
+     cout << "global to disp: "<<endl;
+     CvMatUtils::printMat(&frame.mTransformGlobalToDisp);
+     cout << "local cart to global: "<<endl;
+     CvMatUtils::printMat(&frame.transf_local_to_global_);
+     cout << "global to local cart: "<<endl;
+     CvMatUtils::printMat(&frame.transf_global_to_local_);
+     double  dispToGlobal_data[16];
+     CvMat dispToGlobal = cvMat(4, 4, CV_64FC1, dispToGlobal_data);
+     cvMatMul(&frame.transf_local_to_global_, &dispToCart, &dispToGlobal);
+     cout << " disp to global "<< endl;
+     CvMatUtils::printMat(&dispToGlobal);
+     CvPoint3D64f dispCoord3;
+     CvMat mat_cartCoord3 = cvMat(1, 1, CV_64FC3, &dispCoord3);
+     CvMat mat_disp1 = cvMat(1, 1, CV_64FC3, &dispCoord1);
+     cvPerspectiveTransform(&mat_disp1, &mat_cartCoord3, &dispToGlobal);
+     cout << "global coordinates (again)"<<endl;
+     CvMat mat_cartCoord3C1;
+     cvReshape(&mat_cartCoord3, &mat_cartCoord3C1, 1, 1);
+     CvMatUtils::printMat(&mat_cartCoord3C1);
+     double data[16];
+     CvMat mat_id = cvMat(4,4, CV_64FC1, data);
+     cvMatMul(&dispToGlobal, &frame.mTransformGlobalToDisp, &mat_id);
+     cout << "dispToGlobal * globalToDisp"<<endl;
+     CvMatUtils::printMat(&mat_id);
+     cvMatMul(&frame.transf_local_to_global_, &frame.transf_global_to_local_, &mat_id);
+     cout << "localToGlobal * globalToLocal"<<endl;
+     CvMatUtils::printMat(&mat_id);
+     cvMatMul(&dispToCart, &cartToDisp, &mat_id);
+     cout << "dispToCart * cartToDisp "<<endl;
+     CvMatUtils::printMat(&mat_id);
+  }
+#endif
 #endif
   return status;
 }
@@ -222,14 +286,16 @@ void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
 
 void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
-  BOOST_FOREACH( const PointTrack& track, this->tracks.mTracks ){
+  BOOST_FOREACH( const PointTrack& track, this->tracks.tracks_ ){
     const PointTrackObserv& lastObsv = track.back();
     const CvScalar colorFixedFrame = CvMatUtils::blue;
+    const CvScalar colorEstimated  = CvMatUtils::magenta;
     CvScalar colorFreeFrame;
 
-    // drawing it green if the last observation is over the current frame
-    // drawing it yellow otherwise.
-    if (lastObsv.mFrameIndex < frame.mFrameIndex) {
+    // drawing it green if the last observation is over the current frame,
+    // namely a track that is still extending.
+    // drawing it yellow otherwise. Namely a track that is phasing out.
+    if (lastObsv.frame_index_ < frame.mFrameIndex) {
       colorFreeFrame = CvMatUtils::yellow;
     } else {
       colorFreeFrame  = CvMatUtils::green;
@@ -238,29 +304,41 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     int thickness = 1;
     int i=0;
     deque<PointTrackObserv>::const_iterator iObsv = track.begin();
-    CvPoint pt0 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
+    CvPoint pt0     = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_);
+    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_est_);
 #if DEBUG==1
-    printf("track %3d, len=%3d\n", track.mId, track.size());
-    printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
+    printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track.id_, track.size(),
+        track.coordinates_.x, track.coordinates_.y, track.coordinates_.z);
+    printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, iObsv->frame_index_, pt0.x, pt0.y);
+    printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     CvScalar color;
-    if (iObsv->mFrameIndex < slideWindowFront) {
+    if (iObsv->frame_index_ < slideWindowFront) {
       color = colorFixedFrame;
     } else {
       color = colorFreeFrame;
     }
     for (iObsv++; iObsv != track.end(); iObsv++) {
-      CvPoint pt1 = CvStereoCamModel::dispToLeftCam(iObsv->mDispCoord);
+      CvPoint pt1     = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_);
+      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_est_);
+
+      // draw the line between estimations, re-projected
+      cvLine(canvasTracking.Ipl(), est_pt0, est_pt1, colorEstimated, thickness, CV_AA);
+
+      // draw the line between observations
       cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
+
       // setting up for next iteration
-      pt0 = pt1;
-      if (iObsv->mFrameIndex < slideWindowFront) {
+      pt0     = pt1;
+      est_pt0 = est_pt1;
+      if (iObsv->frame_index_ < slideWindowFront) {
         color = colorFixedFrame;
       } else {
         color = colorFreeFrame;
       }
 #if DEBUG==1
-      printf("%3d: [%3d, %3d]\n", i++, pt0.x, pt0.y);
+      printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, iObsv->frame_index_, pt0.x, pt0.y);
+      printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     }
   }
@@ -280,24 +358,24 @@ void SBAVisualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) 
 
   // compute the transformation from the global frame (same as first frame)
   // to this frame.
-  vector<FramePose>::const_reverse_iterator ifp = framePoses.rbegin();
+  vector<FramePose*>::const_reverse_iterator ifp = framePoses.rbegin();
 
   while (ifp != framePoses.rend()) {
-    if (ifp->mIndex == frame.mFrameIndex) {
+    if ((*ifp)->mIndex == frame.mFrameIndex) {
       // found it
       break;
     }
     ifp++;
   }
   assert(ifp != framePoses.rend());
-  const CvPoint3D64f& rodCurrentToGlobal   = ifp->mRod;
-  const CvPoint3D64f& shiftCurrentToGlobal = ifp->mShift;
+  const CvPoint3D64f& rodCurrentToGlobal   = (*ifp)->mRod;
+  const CvPoint3D64f& shiftCurrentToGlobal = (*ifp)->mShift;
   CvPoint3D64f rodGlobalToCurrent =  cvPoint3D64f(-rodCurrentToGlobal.x,
       -rodCurrentToGlobal.y, -rodCurrentToGlobal.z);
   CvPoint3D64f shifGlobaltoCurrent = cvPoint3D64f(-shiftCurrentToGlobal.x,
       -shiftCurrentToGlobal.y, -shiftCurrentToGlobal.z);
 
-  BOOST_FOREACH( const PointTrack& track, this->tracks.mTracks ){
+  BOOST_FOREACH( const PointTrack& track, this->tracks.tracks_ ){
     BOOST_FOREACH( const PointTrackObserv& obsv, track ) {
 
     }
@@ -364,5 +442,16 @@ void VOSparseBundleAdj::updateStat2() {
       len++;
     }
   }
+}
+
+void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
+    double Clx, double Crx, double Cy, double dispUnitScale) {
+  Parent::setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy, dispUnitScale);
+  CvMat cartToDisp;
+  CvMat dispToCart;
+  mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
+  delete levmarq_sba_;
+  levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
+      mFreeWindowSize, mFrozenWindowSize);
 }
 

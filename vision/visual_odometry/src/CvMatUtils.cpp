@@ -15,6 +15,7 @@ const CvScalar CvMatUtils::red    = CV_RGB(255, 0, 0);
 const CvScalar CvMatUtils::green  = CV_RGB(0, 255, 0);
 const CvScalar CvMatUtils::yellow = CV_RGB(255, 255, 0);
 const CvScalar CvMatUtils::blue   = CV_RGB(0, 0, 255);
+const CvScalar CvMatUtils::magenta= CV_RGB(255, 0, 255);
 
 CvMatUtils::CvMatUtils()
 {
@@ -149,7 +150,7 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 	  CvMat invRot   = cvMat(3, 3, CV_64FC1, _invRot);
 	  CvMat invShift = cvMat(3, 1, CV_64FC1, _invShift);
 
-	  cvInvert(&rot, &invRot);
+	  cvTranspose(&rot, &invRot);
 	  cvGEMM(&invRot, &shift, -1., NULL, 0., &invShift, 0.0);
 	  CvMat xyzs0Reshaped;
 	  CvMat xyzs0To1Reshaped;
@@ -193,7 +194,29 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	return true;
 }
 
-void CvMatUtils::TransformationFromRodriguesAndShift(const CvMat& param, CvMat& transform) {
+void CvMatUtils::invertRigidTransform(const CvMat* transf, CvMat* inv_transf) {
+  CvMat rot, inv_rot;
+  CvMat shift, inv_shift;
+
+  cvGetSubRect(transf, &rot,   cvRect(0, 0, 3, 3));
+  cvGetSubRect(transf, &shift, cvRect(3, 0, 1, 3));
+  cvGetSubRect(inv_transf, &inv_rot,   cvRect(0, 0, 3, 3));
+  cvGetSubRect(inv_transf, &inv_shift, cvRect(3, 0, 1, 3));
+  // rotation matrix is the transpose of the input one.
+  cvTranspose(&rot, &inv_rot);
+  // translation vector is the new rotation matrix times the negative of
+  // the input translation vector.
+  cvGEMM(&inv_rot, &shift, -1.0, NULL, 0.0, &inv_shift, 0);
+
+  if (inv_transf->rows==4) {
+    cvmSet(inv_transf, 3, 0, 0.);
+    cvmSet(inv_transf, 3, 1, 0.);
+    cvmSet(inv_transf, 3, 2, 0.);
+    cvmSet(inv_transf, 3, 3, 1.);
+  }
+}
+
+void CvMatUtils::transformFromRodriguesAndShift(const CvMat& param, CvMat& transform) {
   CvMat rod;
   CvMat rot;
   CvMat shift;
@@ -203,12 +226,39 @@ void CvMatUtils::TransformationFromRodriguesAndShift(const CvMat& param, CvMat& 
   cvGetRows(&param, &shiftInParam, 3, 6);
   // get a view to the 3x3 sub matrix for rotation
   cvGetSubRect(&transform,  &rot, cvRect(0,0, 3, 3));
-  // rodrigues to rotation matrix
+
   cvRodrigues2(&rod, &rot);
+
   // get a view to the 3x1 submatrix for translation
   cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
   cvCopy(&shiftInParam, &shift);
+
+  if (transform.rows==4) {
+    cvmSet(&transform, 3, 0, 0.);
+    cvmSet(&transform, 3, 1, 0.);
+    cvmSet(&transform, 3, 2, 0.);
+    cvmSet(&transform, 3, 3, 1.);
+  }
 }
+
+void CvMatUtils::transformToRodriguesAndShift(
+    const CvMat& transform,
+    /// 6x1 matrix. The first 3 rows are the Rodrigues, the last 3 translation
+    /// vector.
+    CvMat& params) {
+  CvMat rot;
+  CvMat shift;
+  CvMat rod;
+  CvMat shift1;
+  cvGetRows(&params, &rod,    0, 3);
+  cvGetRows(&params, &shift1, 3, 6);
+  cvGetSubRect(&transform, &rot, cvRect(0, 0, 3, 3));
+  cvRodrigues2(&rot, &rod);
+
+  cvGetSubRect(&transform, &shift, cvRect(3, 0, 1, 3));
+  cvCopy(&shift, &shift1);
+}
+
 
 CvPoint3D64f CvMatUtils::rowToPoint(const CvMat& mat, int row){
   CvPoint3D64f coord;
@@ -296,6 +346,24 @@ void CvMatUtils::loadStereoImagePair(string& dirname, string& leftimagefmt,
     dispMap->SetIpl(dispimg);
   }
 }
+
+void CvMatUtils::transformFromRotationAndShift(
+    const CvMat& rot, const CvMat& shift, CvMat& transform) {
+  // construct RT
+  for (int r=0; r<3; r++) {
+    for (int c=0; c<3; c++) {
+      cvSetReal2D(&transform, r, c, cvmGet(&rot, r, c));
+    }
+    cvSetReal2D(&transform, r, 3, cvmGet(&shift, r, 0));
+  }
+
+  // last row
+  cvSetReal2D(&transform, 3, 0, 0.0);
+  cvSetReal2D(&transform, 3, 1, 0.0);
+  cvSetReal2D(&transform, 3, 2, 0.0);
+  cvSetReal2D(&transform, 3, 3, 1.0);
+}
+
 
 
 

@@ -16,6 +16,8 @@ using namespace cv::willow;
 
 #undef DEBUG
 
+/// @todo replace LevMarq with CvLevMarq in cv.h. CvLevMarq is the same with improvement.
+
 LevMarq::LevMarq()
 {
    prevParam = param = J = err = JtJ = JtJN = JtErr = JtJV = JtJW = 0;
@@ -175,6 +177,8 @@ bool LevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, dou
   {
     cvCopy( param, prevParam );
     solve();
+    // why subtraction ? right hand side is -JtErr, not JtErr. so the solution
+    // from solve() is the negative vector of what we need.
     cvSub( prevParam, param, param );
     _param = param;
     prevErrNorm = errNorm;
@@ -184,9 +188,10 @@ bool LevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, dou
   }
 
   assert( state == CHECK_ERR );
-  //   jdc debugging - numerically, what is the meaning of greater than
+
   if( errNorm > prevErrNorm)
   {
+    // no improvement, increase lambda
     lambdaLg10++;
     solve();
     cvSub( prevParam, param, param );
@@ -196,6 +201,7 @@ bool LevMarq::updateAlt( const CvMat*& _param, CvMat*& _JtJ, CvMat*& _JtErr, dou
     return true;
   }
 
+  // errNorm <= prevErrNorm
   lambdaLg10 = MAX(lambdaLg10-1, -16);
   if( ++iters >= criteria.max_iter ||
       (change = cvNorm(param, prevParam, CV_RELATIVE_L2)) < criteria.epsilon )

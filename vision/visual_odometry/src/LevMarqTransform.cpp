@@ -69,6 +69,7 @@ bool LevMarqTransform::constructRTMatrices(const CvMat *param, double delta) {
 	CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
 	// transformation matrices for each parameter
 	for (int k=0; k<numParams; k++) {
+	  // make a new copy for this parameter;
 		cvCopy(param, &param1);
 		_param1[k] += delta;
 		constructRTMatrix(&param1, mFwdTData[k]);
@@ -96,7 +97,7 @@ bool LevMarqTransform::constructRTMatrix(const CvMat * param, double _RT[]) cons
 	{
     CvMat rt;
     cvInitMatHeader(&rt, 4, 4, CV_64FC1, _RT);
-		CvMatUtils::TransformationFromRodriguesAndShift(*param, rt);
+		CvMatUtils::transformFromRodriguesAndShift(*param, rt);
 		break;
 	}
 	default:
