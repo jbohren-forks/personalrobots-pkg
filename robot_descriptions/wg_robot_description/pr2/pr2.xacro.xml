@@ -59,6 +59,7 @@
 
   <!-- Define groups of links; a link may be part of multiple groups -->
   <include filename="./groups.xml" />
+  <include filename="./groups_collision.xml" />
 
   <!-- Kinematic chains -->
   <chain root="torso" tip="left_wrist_roll" />
