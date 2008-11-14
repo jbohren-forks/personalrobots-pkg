@@ -162,7 +162,7 @@ namespace ros {
       /**
        * @brief Helper method to update the costmap and conduct other book-keeping
        */
-      void updateDynamicObstacles(double ts, const std::vector<std_msgs::PointCloud*>& clouds);
+      void updateDynamicObstacles(const std::vector<std_msgs::PointCloud*>& clouds);
 
       /**
        * @brief Issue zero velocity commands
@@ -177,6 +177,11 @@ namespace ros {
        * Utility to publish the local cost map around the robot
        */
       void publishLocalCostMap();
+
+      /**
+       * @brief Utility to publish updates in terms of cells with cost (red) and new free space (blue)
+       */
+      void publishFreeSpaceAndObstacles();
 
       /**
        * @brief Utility for comparing 2 points to be within a required distance, which is specified as a

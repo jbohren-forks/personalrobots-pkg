@@ -54,61 +54,60 @@ namespace ros {
       ma_(NULL),
       baseLaserMaxRange_(10.0),
       tiltLaserMaxRange_(10.0),
-      minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0){
-        // Initialize global pose. Will be set in control loop based on actual data.
-        global_pose_.x = 0;
-        global_pose_.y = 0;
-        global_pose_.yaw = 0;
+	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+    {
+      // Initialize global pose. Will be set in control loop based on actual data.
+      global_pose_.x = 0;
+      global_pose_.y = 0;
+      global_pose_.yaw = 0;
 
-        // Initialize odometry
-        base_odom_.vel.x = 0;
-        base_odom_.vel.y = 0;
-        base_odom_.vel.th = 0;
+      // Initialize odometry
+      base_odom_.vel.x = 0;
+      base_odom_.vel.y = 0;
+      base_odom_.vel.th = 0;
 
-        // Initialize state message parameters that are unsused
-        stateMsg.waypoint.x = 0.0;
-        stateMsg.waypoint.y = 0.0;
-        stateMsg.waypoint.th = 0.0;
-        stateMsg.set_waypoints_size(0);
-        stateMsg.waypoint_idx = -1;
+      // Initialize state message parameters that are unsused
+      stateMsg.waypoint.x = 0.0;
+      stateMsg.waypoint.y = 0.0;
+      stateMsg.waypoint.th = 0.0;
+      stateMsg.set_waypoints_size(0);
+      stateMsg.waypoint_idx = -1;
 
-        // This should become a static transform. For now we will simply allow it to be provided
-        // as a parameter until we hear how static transforms are to be handled.
-        double laser_x_offset(0.275);
-        param("/laser_x_offset", laser_x_offset, laser_x_offset);
-        tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      // This should become a static transform. For now we will simply allow it to be provided
+      // as a parameter until we hear how static transforms are to be handled.
+      double laser_x_offset(0.275);
+      param("/laser_x_offset", laser_x_offset, laser_x_offset);
+      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
-        // Update rate for the cost map
-        local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
+      // Update rate for the cost map
+      local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
 
-        // Costmap parameters
-        double windowLength(60.0);
-        unsigned char lethalObstacleThreshold(100);
-        unsigned char noInformation(CostMap2D::NO_INFORMATION);
-        double freeSpaceProjectionHeight(0.19);
-        double inflationRadius(0.55);
-        double robotRadius(0.325);
-        double circumscribedRadius(0.46);
-        double inscribedRadius(0.325);
-        double weight(1.0);
-        param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
-        param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
-        param("/costmap_2d/dynamic_obstacle_window", windowLength, windowLength);
-        param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
-        param("/costmap_2d/no_information_value", noInformation, noInformation);
-        param("/costmap_2d/z_threshold", maxZ_, maxZ_);
-        param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
-        param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
-        param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
-        param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
-        param("/costmap_2d/weight", weight, weight);
+      // Costmap parameters
+      unsigned char lethalObstacleThreshold(100);
+      unsigned char noInformation(CostMap2D::NO_INFORMATION);
+      double freeSpaceProjectionHeight(0.19);
+      double inflationRadius(0.55);
+      double robotRadius(0.325);
+      double circumscribedRadius(0.46);
+      double inscribedRadius(0.325);
+      double weight(1.0);
+      param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
+      param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
+      param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
+      param("/costmap_2d/no_information_value", noInformation, noInformation);
+      param("/costmap_2d/z_threshold", maxZ_, maxZ_);
+      param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
+      param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);
+      param("/costmap_2d/circumscribed_radius", circumscribedRadius, circumscribedRadius);
+      param("/costmap_2d/inscribed_radius", inscribedRadius, inscribedRadius);
+      param("/costmap_2d/weight", weight, weight);
 
-        robotWidth_ = inscribedRadius * 2;
+      robotWidth_ = inscribedRadius * 2;
 
-        // get map via RPC
-        std_srvs::StaticMap::request  req;
-        std_srvs::StaticMap::response resp;
-        ROS_INFO("Requesting the map...\n");
+      // get map via RPC
+      std_srvs::StaticMap::request  req;
+      std_srvs::StaticMap::response resp;
+      ROS_INFO("Requesting the map...\n");
         while(!ros::service::call("static_map", req, resp))
         {
           ROS_INFO("Request failed; trying again...\n");
@@ -126,11 +125,11 @@ namespace ros {
           inputData.push_back((unsigned char) resp.map.data[i]);
         }
 
-        // Now allocate the cost map and its sliding window used by the controller
-        costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-            inputData , resp.map.resolution, 
-            windowLength, lethalObstacleThreshold, maxZ_, freeSpaceProjectionHeight,
-            inflationRadius, circumscribedRadius, inscribedRadius, weight);
+      // Now allocate the cost map and its sliding window used by the controller
+      costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
+                               inputData , resp.map.resolution, 
+			       lethalObstacleThreshold, maxZ_, freeSpaceProjectionHeight,
+			       inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
         // Allocate Velocity Controller
         double mapSize(2.0);
@@ -415,7 +414,7 @@ namespace ros {
         map_cloud = NULL;
       }
 
-      updateDynamicObstacles(last_time_stamp_.to_double(), pending_updates);
+      updateDynamicObstacles(pending_updates);
 
       // Now clean up retrieved clouds
       for(std::vector<std_msgs::PointCloud*>::const_iterator it = pending_updates.begin(); it != pending_updates.end(); ++it)
@@ -796,6 +795,65 @@ namespace ros {
       publish("inflated_obstacles", pointCloudMsg);
     }
 
+
+    /**
+     * @brief Utility to output local obstacles. Make the local cost map accessor. It is very cheap :-) Then
+     * render the obstacles.
+     */
+    void MoveBase::publishFreeSpaceAndObstacles() {
+      double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.x, global_pose_.y);
+
+      // Publish obstacle data for each obstacle cell
+      std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
+      double origin_x, origin_y;
+      cm.getOriginInWorldCoordinates(origin_x, origin_y);
+      for(unsigned int i = 0; i<cm.getWidth(); i++){
+	for(unsigned int j = 0; j<cm.getHeight();j++){
+	  double wx, wy;
+	  wx = i * cm.getResolution() + origin_x;
+	  wy = j * cm.getResolution() + origin_y;
+	  std::pair<double, double> p(wx, wy);
+
+	  if(cm.getCost(i, j) > 0)
+	    rawObstacles.push_back(p);
+	  else if(cm.getCost(i, j) == 0)
+	    inflatedObstacles.push_back(p);
+	}
+      }
+
+      // First publish raw obstacles in red
+      std_msgs::Polyline2D pointCloudMsg;
+      unsigned int pointCount = rawObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 1.0;
+      pointCloudMsg.color.b = 0.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+	pointCloudMsg.points[i].x = rawObstacles[i].first;
+	pointCloudMsg.points[i].y = rawObstacles[i].second;
+      }
+
+      publish("raw_obstacles", pointCloudMsg);
+
+      // Now do inflated obstacles in blue
+      pointCount = inflatedObstacles.size();
+      pointCloudMsg.set_points_size(pointCount);
+      pointCloudMsg.color.a = 0.0;
+      pointCloudMsg.color.r = 0.0;
+      pointCloudMsg.color.b = 1.0;
+      pointCloudMsg.color.g = 0.0;
+
+      for(unsigned int i=0;i<pointCount;i++){
+	pointCloudMsg.points[i].x = inflatedObstacles[i].first;
+	pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+      }
+
+      publish("inflated_obstacles", pointCloudMsg);
+    }
+
     void MoveBase::stopRobot(){
       ROS_INFO("Stopping the robot now!\n");
       std_msgs::BaseVel cmdVel; // Commanded velocities
@@ -809,7 +867,7 @@ namespace ros {
       stopRobot();
     }
 
-    void MoveBase::updateDynamicObstacles(double ts, const std::vector<std_msgs::PointCloud*>& clouds){
+    void MoveBase::updateDynamicObstacles(const std::vector<std_msgs::PointCloud*>& clouds){
       //Avoids laser race conditions.
       if (!isInitialized()) {
         return;
@@ -821,7 +879,7 @@ namespace ros {
       gettimeofday(&curr,NULL);
       double curr_t, last_t, t_diff;
       curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-      costMap_->updateDynamicObstacles(ts, global_pose_.x, global_pose_.y, clouds, updates);
+      costMap_->updateDynamicObstacles(global_pose_.x, global_pose_.y, clouds, updates);
       gettimeofday(&curr,NULL);
       last_t = curr.tv_sec + curr.tv_usec / 1e6;
       t_diff = last_t - curr_t;
