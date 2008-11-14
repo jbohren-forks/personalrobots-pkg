@@ -162,6 +162,7 @@ struct ei_sparse_product_selector<Lhs,Rhs,ResultType,ColMajor,ColMajor,ColMajor>
       for (typename Rhs::InnerIterator rhsIt(rhs, j); rhsIt; ++rhsIt)
       {
         // FIXME should be written like this: tmp += rhsIt.value() * lhs.col(rhsIt.index())
+        tempVector.restart();
         Scalar x = rhsIt.value();
         for (typename Lhs::InnerIterator lhsIt(lhs, rhsIt.index()); lhsIt; ++lhsIt)
         {
@@ -169,7 +170,10 @@ struct ei_sparse_product_selector<Lhs,Rhs,ResultType,ColMajor,ColMajor,ColMajor>
         }
       }
       for (typename AmbiVector<Scalar>::Iterator it(tempVector); it; ++it)
-        res.fill(it.index(), j) = it.value();
+        if (ResultType::Flags&RowMajorBit)
+          res.fill(j,it.index()) = it.value();
+        else
+          res.fill(it.index(), j) = it.value();
     }
     res.endFill();
   }

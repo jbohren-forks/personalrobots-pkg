@@ -65,6 +65,7 @@ class SparseMatrix
     enum {
       RowMajor = SparseBase::RowMajor
     };
+    typedef SparseMatrix<Scalar,(Flags&~RowMajorBit)|(RowMajor?RowMajorBit:0)> TransposedSparseMatrix;
 
     int m_outerSize;
     int m_innerSize;
@@ -188,6 +189,10 @@ class SparseMatrix
         m_outerSize = outerSize;
       }
     }
+    void resizeNonZeros(int size)
+    {
+      m_data.resize(size);
+    }
 
     inline SparseMatrix()
       : m_outerSize(0), m_innerSize(0), m_outerIndex(0)
@@ -208,7 +213,7 @@ class SparseMatrix
 
     inline void swap(SparseMatrix& other)
     {
-      EIGEN_DBG_SPARSE(std::cout << "SparseMatrix:: swap\n");
+      //EIGEN_DBG_SPARSE(std::cout << "SparseMatrix:: swap\n");
       std::swap(m_outerIndex, other.m_outerIndex);
       std::swap(m_innerSize, other.m_innerSize);
       std::swap(m_outerSize, other.m_outerSize);
@@ -225,8 +230,7 @@ class SparseMatrix
       else
       {
         resize(other.rows(), other.cols());
-        for (int j=0; j<=m_outerSize; ++j)
-          m_outerIndex[j] = other.m_outerIndex[j];
+        memcpy(m_outerIndex, other.m_outerIndex, (m_outerSize+1)*sizeof(int));
         m_data = other.m_data;
       }
       return *this;
@@ -235,8 +239,54 @@ class SparseMatrix
     template<typename OtherDerived>
     inline SparseMatrix& operator=(const MatrixBase<OtherDerived>& other)
     {
-//       std::cout << "SparseMatrix& operator=(const MatrixBase<OtherDerived>& other)\n";
-      return SparseMatrixBase<SparseMatrix>::operator=(other.derived());
+      const bool needToTranspose = (Flags & RowMajorBit) != (OtherDerived::Flags & RowMajorBit);
+      if (needToTranspose)
+      {
+        // two passes algorithm:
+        //  1 - compute the number of coeffs per dest inner vector
+        //  2 - do the actual copy/eval
+        // Since each coeff of the rhs has to be evaluated twice, let's evauluate it if needed
+        typedef typename ei_nested<OtherDerived,2>::type OtherCopy;
+        OtherCopy otherCopy(other.derived());
+        typedef typename ei_cleantype<OtherCopy>::type _OtherCopy;
+
+        resize(other.rows(), other.cols());
+        Eigen::Map<VectorXi>(m_outerIndex,outerSize()).setZero();
+        // pass 1
+        // FIXME the above copy could be merged with that pass
+        for (int j=0; j<otherCopy.outerSize(); ++j)
+          for (typename _OtherCopy::InnerIterator it(otherCopy, j); it; ++it)
+            m_outerIndex[it.index()]++;
+
+        // prefix sum
+        int count = 0;
+        VectorXi positions(outerSize());
+        for (int j=0; j<outerSize(); ++j)
+        {
+          int tmp = m_outerIndex[j];
+          m_outerIndex[j] = count;
+          positions[j] = count;
+          count += tmp;
+        }
+        m_outerIndex[outerSize()] = count;
+        // alloc
+        m_data.resize(count);
+        // pass 2
+        for (int j=0; j<otherCopy.outerSize(); ++j)
+          for (typename _OtherCopy::InnerIterator it(otherCopy, j); it; ++it)
+          {
+            int pos = positions[it.index()]++;
+            m_data.index(pos) = j;
+            m_data.value(pos) = it.value();
+          }
+
+        return *this;
+      }
+      else
+      {
+        // there is no special optimization
+        return SparseMatrixBase<SparseMatrix>::operator=(other.derived());
+      }
     }
 
     friend std::ostream & operator << (std::ostream & s, const SparseMatrix& m)
@@ -269,6 +319,11 @@ class SparseMatrix
     #ifdef EIGEN_CHOLMOD_SUPPORT
     static SparseMatrix Map(cholmod_sparse& cholmodMatrix);
     cholmod_sparse asCholmodMatrix();
+    #endif
+
+    #ifdef EIGEN_SUPERLU_SUPPORT
+    static SparseMatrix Map(SluMatrix& sluMatrix);
+    SluMatrix asSluMatrix();
     #endif
 
     /** Destructor */

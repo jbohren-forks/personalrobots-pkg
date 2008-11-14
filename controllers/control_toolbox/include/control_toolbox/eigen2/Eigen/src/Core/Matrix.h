@@ -30,38 +30,48 @@
   *
   * \brief The matrix class, also used for vectors and row-vectors
   *
-  * Eigen's matrix class is the work-horse for all \em dense matrices and vectors within Eigen.  Dense
-  * matrices may either be allocated on the stack, using the template parameters above, or \em dynamically
-  * by specifying \em Dynamic as the size.
+  * The Matrix class is the work-horse for all \em dense matrices and vectors within Eigen. Vectors are matrices with one column,
+  * and row-vectors are matrices with one row.
   *
+  * The Matrix class encompasses \em both fixed-size and dynamic-size objects (see note below).
   *
   * \param _Scalar Numeric type, i.e. float, double, int
   * \param _Rows Number of rows, or \b Dynamic
   * \param _Cols Number of columns, or \b Dynamic
-  * \param _StorageOrder Either RowMajor or ColMajor. The default is ColMajor.
+  * \param _StorageOrder Either \b RowMajor or \b ColMajor. The default is \b ColMajor.
   * \param _MaxRows Maximum number of rows. Defaults to \a _Rows.  See note below.
   * \param _MaxCols Maximum number of columns. Defaults to \a _Cols.  See note below.
   *
-  * \note <b>Dynamic size:</b>
-  * \em Dynamic in this context only means specified at run-time instead of at compile time.  Dynamic
-  * matrices <em>do not</em> expand dynamically.
+  * \note <b>Fixed-size versus dynamic-size:</b>
+  * Fixed-size means that the numbers of rows and columns are known are compile-time. In this case, Eigen allocates the array
+  * of coefficients as a fixed-size array on the stack. This makes sense for very small matrices, typically up to 4x4, sometimes up
+  * to 16x16. Larger matrices should be declared as dynamic-size even if one happens to know their size at compile-time.
   *
-  * \note <b>Max Rows / Columns:</b>
-  * The most common reason to use these values is when you don't know the exact number of columns or rows,
-  * but know that they will remain below the given value.  Then you can set the \a _MaxRows or \a _MaxCols
-  * to that value, and set \a _Rows or \a _Cols to \a Dynamic.
+  * Dynamic-size means that the numbers of rows or columns are not necessarily known at compile-time. In this case they are runtime variables,
+  * and the array of coefficients is allocated dynamically, typically on the heap (See note on heap allocation below).
   *
-  * \warning For very large matrices, \em Dynamic allocation should be used, otherwise the stack will be
-  * overflowed.
+  * Note that dense matrices, be they Fixed-size or Dynamic-size, <em>do not</em> expand dynamically in the sense of a std::map.
+  * If you want this behavior, see the Sparse module.
+  *
+  * \note <b>_MaxRows and _MaxCols:</b>
+  * In most cases, one just leaves these parameters to the default values.
+  * These parameters mean the maximum size of rows and columns that the matrix may have. They are useful in cases
+  * when the exact numbers of rows and columns are not known are compile-time, but it is known at compile-time that they cannot
+  * exceed a certain value. This happens when taking dynamic-size blocks inside fixed-size matrices: in this case _MaxRows and _MaxCols
+  * are the dimensions of the original matrix, while _Rows and _Cols are Dynamic.
+  *
+  * \note <b> Heap allocation:</b>
+  * On the Linux platform, for small enough arrays, Eigen will avoid heap allocation and instead will use alloca() to perform a dynamic
+  * allocation on the stack.
   *
   * Eigen provides a number of typedefs to make working with matrices and vector simpler:
   *
   * For example:
   *
-  * \li <b>\c MatrixXf is a dynamically sized matrix of floats (\c Matrix<float, Dynamic, Dynamic>)</b>
-  * \li <b>\c VectorXf is a dynamically sized vector of floats (\c Matrix<float, Dynamic, 1>)</b>
+  * \li \c MatrixXf is a dynamic-size matrix of floats (\c Matrix<float, Dynamic, Dynamic>)
+  * \li \c VectorXf is a dynamic-size vector of floats (\c Matrix<float, Dynamic, 1>)
   *
-  * \li \c Matrix2d is a 2-row by 2-column square matrix of doubles (\c Matrix<double, 2, 2>)
+  * \li \c Matrix2d is a 2x2 square matrix of doubles (\c Matrix<double, 2, 2>)
   * \li \c RowVector3i is a row-vector with three elements containing integers (\c Matrix<int, 1, 3>)
   *
   * \see matrixtypedefs for a complete list of predefined \em Matrix and \em Vector types.
@@ -73,6 +83,9 @@
   * Eigen::VectorXf v(10);
   * v[0] = 0.1;
   * v[1] = 0.2;
+  * v(0) = 0.1;
+  * v(1) = 0.2;
+
   *
   * Eigen::MatrixXi m(10, 10);
   * m(0, 1) = 1;
@@ -108,7 +121,9 @@ class Matrix
   public:
     EIGEN_GENERIC_PUBLIC_INTERFACE(Matrix)
     friend class Eigen::Map<Matrix, Unaligned>;
+    typedef class Eigen::Map<Matrix, Unaligned> UnalignedMapType;
     friend class Eigen::Map<Matrix, Aligned>;
+    typedef class Eigen::Map<Matrix, Aligned> AlignedMapType;
 
   protected:
     ei_matrix_storage<Scalar, MaxSizeAtCompileTime, RowsAtCompileTime, ColsAtCompileTime> m_storage;
@@ -190,6 +205,17 @@ class Matrix
     inline Scalar *data()
     { return m_storage.data(); }
 
+    /** Resizes \c *this to a \a rows x \a cols matrix.
+      *
+      * Makes sense for dynamic-size matrices only.
+      *
+      * If the current number of coefficients of \c *this exactly matches the
+      * product \a rows * \a cols, then no memory allocation is performed and
+      * the current values are left unchanged. In all other cases, including
+      * shrinking, the data is reallocated and all previous values are lost.
+      *
+      * \sa resize(int) for vectors.
+      */
     inline void resize(int rows, int cols)
     {
       ei_assert(rows > 0
@@ -201,8 +227,13 @@ class Matrix
       m_storage.resize(rows * cols, rows, cols);
     }
 
+    /** Resizes \c *this to a vector of length \a size
+      *
+      * \sa resize(int,int) for the details.
+      */
     inline void resize(int size)
     {
+      ei_assert(size>0 && "a vector cannot be resized to 0 length");
       EIGEN_STATIC_ASSERT_VECTOR_ONLY(Matrix)
       if(RowsAtCompileTime == 1)
         m_storage.resize(size, 1, size);
@@ -210,16 +241,36 @@ class Matrix
         m_storage.resize(size, size, 1);
     }
 
-    /** Copies the value of the expression \a other into *this.
+    /** Copies the value of the expression \a other into \c *this.
       *
-      * *this is resized (if possible) to match the dimensions of \a other.
+      * \warning Note that the sizes of \c *this and \a other must match.
+      * If you want automatic resizing, then you must use the function set().
       *
       * As a special exception, copying a row-vector into a vector (and conversely)
-      * is allowed. The resizing, if any, is then done in the appropriate way so that
-      * row-vectors remain row-vectors and vectors remain vectors.
+      * is allowed.
+      *
+      * \sa set()
       */
     template<typename OtherDerived>
     inline Matrix& operator=(const MatrixBase<OtherDerived>& other)
+    {
+      ei_assert(m_storage.data()!=0 && "you cannot use operator= with a non initialized matrix (instead use set()");
+      return Base::operator=(other.derived());
+    }
+
+    /** Copies the value of the expression \a other into \c *this with automatic resizing.
+      *
+      * This function is the same than the assignment operator = excepted that \c *this might
+      * be resized to match the dimensions of \a other.
+      *
+      * Note that copying a row-vector into a vector (and conversely) is allowed.
+      * The resizing, if any, is then done in the appropriate way so that row-vectors
+      * remain row-vectors and vectors remain vectors.
+      *
+      * \sa operator=()
+      */
+    template<typename OtherDerived>
+    inline Matrix& set(const MatrixBase<OtherDerived>& other)
     {
       if(RowsAtCompileTime == 1)
       {
@@ -252,10 +303,28 @@ class Matrix
       *
       * For fixed-size matrices, does nothing.
       *
-      * For dynamic-size matrices, initializes with initial size 1x1, which is inefficient, hence
-      * when performance matters one should avoid using this constructor on dynamic-size matrices.
+      * For dynamic-size matrices, creates an empty matrix of size null.
+      * \warning while creating such an \em null matrix is allowed, it \b cannot
+      * \b be \b used before having being resized or initialized with the function set().
+      * In particular, initializing a null matrix with operator = is not supported.
+      * Finally, this constructor is the unique way to create null matrices: resizing
+      * a matrix to 0 is not supported.
+      * Here are some examples:
+      * \code
+      * MatrixXf r = MatrixXf::Random(3,4); // create a random matrix of floats
+      * MatrixXf m1, m2;  // creates two null matrices of float
+      *
+      * m1 = r;           // illegal (raise an assertion)
+      * r = m1;           // illegal (raise an assertion)
+      * m1 = m2;          // illegal (raise an assertion)
+      * m1.set(r);        // OK
+      * m2.resize(3,4);
+      * m2 = r;           // OK
+      * \endcode
+      *
+      * \sa resize(int,int), set()
       */
-    inline explicit Matrix() : m_storage(1, 1, 1)
+    inline explicit Matrix() : m_storage()
     {
       ei_assert(RowsAtCompileTime > 0 && ColsAtCompileTime > 0);
     }
@@ -352,7 +421,7 @@ class Matrix
     /** Override MatrixBase::eval() since matrices don't need to be evaluated, it is enough to just read them.
       * This prevents a useless copy when doing e.g. "m1 = m2.eval()"
       */
-    const Matrix& eval() const
+    inline const Matrix& eval() const
     {
       return *this;
     }
@@ -360,7 +429,7 @@ class Matrix
     /** Override MatrixBase::swap() since for dynamic-sized matrices of same type it is enough to swap the
       * data pointers.
       */
-    void swap(Matrix& other)
+    inline void swap(Matrix& other)
     {
       if (Base::SizeAtCompileTime==Dynamic)
         m_storage.swap(other.m_storage);
@@ -368,12 +437,52 @@ class Matrix
         this->Base::swap(other);
     }
 
+    /** \name Map
+      * These are convenience functions returning Map objects. The Map() static functions return unaligned Map objects,
+      * while the AlignedMap() functions return aligned Map objects and thus should be called only with 16-byte-aligned
+      * \a data pointers.
+      *
+      * \see class Map
+      */
+    //@{
+    inline static const UnalignedMapType Map(const Scalar* data)
+    { return UnalignedMapType(data); }
+    inline static UnalignedMapType Map(Scalar* data)
+    { return UnalignedMapType(data); }
+    inline static const UnalignedMapType Map(const Scalar* data, int size)
+    { return UnalignedMapType(data, size); }
+    inline static UnalignedMapType Map(Scalar* data, int size)
+    { return UnalignedMapType(data, size); }
+    inline static const UnalignedMapType Map(const Scalar* data, int rows, int cols)
+    { return UnalignedMapType(data, rows, cols); }
+    inline static UnalignedMapType Map(Scalar* data, int rows, int cols)
+    { return UnalignedMapType(data, rows, cols); }
+
+    inline static const AlignedMapType MapAligned(const Scalar* data)
+    { return AlignedMapType(data); }
+    inline static AlignedMapType MapAligned(Scalar* data)
+    { return AlignedMapType(data); }
+    inline static const AlignedMapType MapAligned(const Scalar* data, int size)
+    { return AlignedMapType(data, size); }
+    inline static AlignedMapType MapAligned(Scalar* data, int size)
+    { return AlignedMapType(data, size); }
+    inline static const AlignedMapType MapAligned(const Scalar* data, int rows, int cols)
+    { return AlignedMapType(data, rows, cols); }
+    inline static AlignedMapType MapAligned(Scalar* data, int rows, int cols)
+    { return AlignedMapType(data, rows, cols); }
+    //@}
+
 /////////// Geometry module ///////////
 
     template<typename OtherDerived>
     explicit Matrix(const RotationBase<OtherDerived,ColsAtCompileTime>& r);
     template<typename OtherDerived>
     Matrix& operator=(const RotationBase<OtherDerived,ColsAtCompileTime>& r);
+
+    // allow to extend Matrix outside Eigen
+    #ifdef EIGEN_MATRIX_PLUGIN
+    #include EIGEN_MATRIX_PLUGIN
+    #endif
 };
 
 /** \defgroup matrixtypedefs Global matrix typedefs

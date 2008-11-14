@@ -117,7 +117,7 @@ public:
 
   /** Constructs and initializes the quaternion \f$ w+xi+yj+zk \f$ from
     * its four coefficients \a w, \a x, \a y and \a z.
-    * 
+    *
     * \warning Note the order of the arguments: the real \a w coefficient first,
     * while internally the coefficients are stored in the following order:
     * [\c x, \c y, \c z, \c w]
@@ -154,21 +154,21 @@ public:
   inline Quaternion& setIdentity() { m_coeffs << 1, 0, 0, 0; return *this; }
 
   /** \returns the squared norm of the quaternion's coefficients
-    * \sa Quaternion::norm(), MatrixBase::norm2()
+    * \sa Quaternion::norm(), MatrixBase::squaredNorm()
     */
-  inline Scalar norm2() const { return m_coeffs.norm2(); }
+  inline Scalar squaredNorm() const { return m_coeffs.squaredNorm(); }
 
   /** \returns the norm of the quaternion's coefficients
-    * \sa Quaternion::norm2(), MatrixBase::norm()
+    * \sa Quaternion::squaredNorm(), MatrixBase::norm()
     */
   inline Scalar norm() const { return m_coeffs.norm(); }
-  
-  /** Normalizes the quaternion \c *this 
+
+  /** Normalizes the quaternion \c *this
     * \sa normalized(), MatrixBase::normalize() */
-  inline void normalize() { m_coeffs.normalize(); } 
+  inline void normalize() { m_coeffs.normalize(); }
   /** \returns a normalized version of \c *this
     * \sa normalize(), MatrixBase::normalized() */
-  inline Quaternion normalized() const { Quaternion(m_coeffs.normalized()); } 
+  inline Quaternion normalized() const { return Quaternion(m_coeffs.normalized()); }
 
   /** \returns the dot product of \c *this and \a other
     * Geometrically speaking, the dot product of two unit quaternions
@@ -194,6 +194,27 @@ public:
 
   template<typename Derived>
   Vector3 operator* (const MatrixBase<Derived>& vec) const;
+
+  /** \returns \c *this with scalar type casted to \a NewScalarType
+    *
+    * Note that if \a NewScalarType is equal to the current scalar type of \c *this
+    * then this function smartly returns a const reference to \c *this.
+    */
+  template<typename NewScalarType>
+  inline typename ei_cast_return_type<Quaternion,Quaternion<NewScalarType> >::type cast() const
+  { return typename ei_cast_return_type<Quaternion,Quaternion<NewScalarType> >::type(*this); }
+
+  /** Copy constructor with scalar type conversion */
+  template<typename OtherScalarType>
+  inline explicit Quaternion(const Quaternion<OtherScalarType>& other)
+  { m_coeffs = other.coeffs().template cast<OtherScalarType>(); }
+
+  /** \returns \c true if \c *this is approximately equal to \a other, within the precision
+    * determined by \a prec.
+    *
+    * \sa MatrixBase::isApprox() */
+  bool isApprox(const Quaternion& other, typename NumTraits<Scalar>::Real prec = precision<Scalar>()) const
+  { return m_coeffs.isApprox(other.m_coeffs, prec); }
 
 };
 
@@ -353,7 +374,7 @@ template <typename Scalar>
 inline Quaternion<Scalar> Quaternion<Scalar>::inverse() const
 {
   // FIXME should this function be called multiplicativeInverse and conjugate() be called inverse() or opposite()  ??
-  Scalar n2 = this->norm2();
+  Scalar n2 = this->squaredNorm();
   if (n2 > 0)
     return Quaternion(conjugate().coeffs() / n2);
   else

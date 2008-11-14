@@ -36,13 +36,23 @@
 
 #include <Eigen/Core>
 #include "system_model.h"
+#include <map>
 
 #include <robot_kinematics/robot_kinematics.h>
 
-/** @class ChainModel
+/** @class SerialChainModel
   * @brief Provides a model for a chain of rigid body
   * Given a chain of n links, this class provides a model of a system of 2n states (angles and angular velocities) and n inputs (torques at each node)
   * The state of the system is: angle_1 angle_2  ... vel_1 vel_2 ... 
+  * Example of a XML configuration snippet:
+  * <model type="SerialChainModel">
+  *   <kinematics>kin_chain_name</kinematics>
+  *   <robot_description>pr2</robot_description>
+  *   <joints>
+  *     <joint name="joint1"/>
+  *     <joint name="joint2"/>
+  *   </joints>
+  * </model>
   */
 class SerialChainModel : public DynamicsModel<double,Eigen::Dynamic,Eigen::Dynamic>
 {
@@ -55,21 +65,31 @@ public:
   
   SerialChainModel() : kdl_torque_(NULL),states_(-1),inputs_(-1){}
   
-  int states() { return states_; }
+  virtual ~SerialChainModel(){}
   
-  int inputs() { return inputs_; }
+  int states() const { return states_; }
+  
+  int inputs() const { return inputs_; }
+  
+  /** @brief This function contains all the parameters required to initialize the model
+    */
+  bool init(const std::string & robot_description, const std::string & chain_name);
   
   bool init(const robot_kinematics::RobotKinematics & r_kin, robot_kinematics::SerialChain *chain);
-  
-  bool init(const std::string & robot_description, const std::string & chain_name);
   
   bool getLinearization(const StateVector & x, StateMatrix & A, InputMatrix & B, InputVector & u0);
   
   bool forward(const StateVector & x, const InputVector & u, double dt, StateVector & next);
+
+  /** These functions depend on ROS-specific informations
+    */
+  virtual bool initXml(mechanism::RobotState *robot, TiXmlElement *config){return false;}
   
-  // Nothing to update through observation
-  void observation(const StateVector & x_next, const StateVector & x, const InputVector & u, double dt){}
+  virtual bool toState(const mechanism::RobotState * rstate, StateVector &state)const {return false;}
   
+  virtual bool toState(const robot_msgs::JointCmd * cmd, StateVector & state) const {return false;}
+
+
 private:
   robot_kinematics::RobotKinematics robot_kin_;
 

@@ -241,8 +241,31 @@ public:
 
   inline const MatrixType inverse(TransformTraits traits = Affine) const;
 
+  /** \returns a const pointer to the column major internal matrix */
   const Scalar* data() const { return m_matrix.data(); }
+  /** \returns a non-const pointer to the column major internal matrix */
   Scalar* data() { return m_matrix.data(); }
+
+  /** \returns \c *this with scalar type casted to \a NewScalarType
+    *
+    * Note that if \a NewScalarType is equal to the current scalar type of \c *this
+    * then this function smartly returns a const reference to \c *this.
+    */
+  template<typename NewScalarType>
+  inline typename ei_cast_return_type<Transform,Transform<NewScalarType,Dim> >::type cast() const
+  { return typename ei_cast_return_type<Transform,Transform<NewScalarType,Dim> >::type(*this); }
+
+  /** Copy constructor with scalar type conversion */
+  template<typename OtherScalarType>
+  inline explicit Transform(const Transform<OtherScalarType,Dim>& other)
+  { m_matrix = other.matrix().template cast<OtherScalarType>(); }
+
+  /** \returns \c true if \c *this is approximately equal to \a other, within the precision
+    * determined by \a prec.
+    *
+    * \sa MatrixBase::isApprox() */
+  bool isApprox(const Transform& other, typename NumTraits<Scalar>::Real prec = precision<Scalar>()) const
+  { return m_matrix.isApprox(other.m_matrix, prec); }
 
 protected:
 
