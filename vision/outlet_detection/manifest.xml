@@ -1,0 +1,19 @@
+<package>
+  <description>
+    Calonder feature descriptors.
+  </description>
+  <author>Patrick Mihelich</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="roscpp"/>
+  <depend package="boost"/>
+  <depend package="opencv_latest"/>
+  <depend package="rospy"/>
+  <depend package="rostest"/>
+  <depend package="fast_detector"/>
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags=" -L${prefix}/lib -lcalonder"/>
+  </export>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="python-imaging"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-imaging"/>
+</package>
