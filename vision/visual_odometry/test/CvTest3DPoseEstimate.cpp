@@ -213,8 +213,8 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj sba(imgSize);
-  // PathRecon pathRecon(imgSize);
+  VOSparseBundleAdj sba(imgSize, 1, 1);
+
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);

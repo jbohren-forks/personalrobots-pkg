@@ -27,7 +27,12 @@ public:
   typedef PathRecon Parent;
   VOSparseBundleAdj(
       /// Image size. Use for buffer allocation.
-      const CvSize& imageSize);
+      const CvSize& imageSize,
+      /// the number of free frames (cameras)
+      int num_free_frames = DefaultFreeWindowSize,
+      /// the number of fixed frames (cameras)
+      int num_fixed_frames = DefaultFrozenWindowSize
+  );
   virtual ~VOSparseBundleAdj();
 
   /**

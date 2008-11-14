@@ -30,10 +30,11 @@ using namespace boost::accumulators;
 #define DISPLAY 1
 #define DEBUG 1
 
-VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize):
+VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
+    int num_free_frames, int num_fixed_frames):
   PathRecon(imageSize),
-  mFreeWindowSize(DefaultFreeWindowSize),
-  mFrozenWindowSize(DefaultFrozenWindowSize),
+  mFreeWindowSize(num_free_frames),
+  mFrozenWindowSize(num_fixed_frames),
   mNumIteration(DefaultNumIteration),
   mTrackId(0),
   levmarq_sba_(NULL)
@@ -47,6 +48,7 @@ VOSparseBundleAdj::~VOSparseBundleAdj() {
 
 void VOSparseBundleAdj::updateSlideWindow() {
   while(mActiveKeyFrames.size() > (unsigned int)this->mFreeWindowSize ||
+      // make sure there is at least one fixed frame.
       (mActiveKeyFrames.size()>1 && mFramePoses.size() == mActiveKeyFrames.size())
       ){
     PoseEstFrameEntry* frame = mActiveKeyFrames.front();
@@ -54,13 +56,10 @@ void VOSparseBundleAdj::updateSlideWindow() {
     delete frame;
   }
 
-  // Since slide down the window, we shall purge the tracks as well
   if (mVisualizer) {
     ((SBAVisualizer*)mVisualizer)->slideWindowFront =
       mActiveKeyFrames.front()->mFrameIndex;
   }
-  // loop thru all tracks and get purge the old entries
-  purgeTracks(mActiveKeyFrames.front()->mFrameIndex);
 #if DEBUG==1
   cout << "Current slide window: [";
   BOOST_FOREACH(const PoseEstFrameEntry* frame, mActiveKeyFrames) {
@@ -149,6 +148,9 @@ bool VOSparseBundleAdj::updateTracks(deque<PoseEstFrameEntry*> & frames,
   if (frames.size()>0)
     tracks.current_frame_index_ = frames.back()->mFrameIndex;
 
+  // loop thru all tracks and get purge the tracks that
+  // fall out of the free window totally
+  purgeTracks(frames.front()->mFrameIndex);
   return status;
 }
 

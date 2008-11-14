@@ -9,6 +9,7 @@
 #define POINTTRACKS_H_
 
 #include <opencv/cxcore.h>
+#include <list>
 #include <deque>
 #include <vector>
 using namespace std;
@@ -105,7 +106,7 @@ public:
       /// histogram of the length of the tracks
       vector<int>* lenHisto) const;
   /// a container for all the tracks
-  deque<PointTrack> tracks_;
+  list<PointTrack> tracks_;
   /// The index of the last frame that tracks have been
   /// constructed against.
   int current_frame_index_;

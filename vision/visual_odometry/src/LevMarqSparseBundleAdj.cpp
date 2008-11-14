@@ -141,9 +141,9 @@ bool LevMarqSparseBundleAdj::optimize(
   // for CvMat's that are actually one columns vectors, we do not need to use
   // cvGetSubRect()
   cvGetSubRect(&mat_B_full_, &mat_B_, cvRect(0, 0, 1, free_window_size_*NUM_CAM_PARAMS));
-  mat_dC_      = cvMat(free_window_size_,NUM_CAM_PARAMS, CV_64FC1, frame_params_update_);
-  mat_C_       = cvMat(free_window_size_,NUM_CAM_PARAMS, CV_64FC1, frame_params_);
-  mat_prev_C_  = cvMat(free_window_size_,NUM_CAM_PARAMS, CV_64FC1, frame_prev_params_);
+  mat_dC_      = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_params_update_);
+  mat_C_       = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_params_);
+  mat_prev_C_  = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_prev_params_);
 
   double Hcc2[NUM_CAM_PARAMS*NUM_CAM_PARAMS];
   CvMat  mat_Hcc2 = cvMat(NUM_CAM_PARAMS, NUM_CAM_PARAMS, CV_64FC1, Hcc2);
@@ -198,6 +198,7 @@ bool LevMarqSparseBundleAdj::optimize(
 
   // a fall back iteration bound in case of error in iteration control.
   int max_iter_for_safety  = term_criteria_.max_iter + defMaxTimesOfUpdates;
+// @todo temporary turning it off
   max_iter_for_safety = 0;
 
   /// Main loop of optimization.

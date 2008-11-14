@@ -14,22 +14,26 @@ void PointTracks::purge(int oldestFrameIndex) {
     return;
   }
   int oldest_frame_index_in_tracks = oldestFrameIndex;
-  for (deque<PointTrack>::iterator iTrack = tracks_.begin();
-    iTrack != tracks_.end();
-    iTrack++) {
+  for (list<PointTrack>::iterator iTrack = tracks_.begin();
+       iTrack != tracks_.end() && tracks_.size() != 0;
+  ) {
     if (iTrack->lastFrameIndex() < oldestFrameIndex) {
       //  remove the entire track, as it is totally outside of the window
 #if DEBUG==1
       printf("erase track %d, len=%d\n", iTrack->id_, iTrack->size());
+      iTrack->print();
 #endif
-      tracks_.erase(iTrack);
-    } else if (iTrack->firstFrameIndex() < oldestFrameIndex){
-      // part of this track is in fixed frames/cameras.
+      iTrack = tracks_.erase(iTrack);
+    } else {
+      if (iTrack->firstFrameIndex() < oldestFrameIndex){
+        // part of this track is in fixed frames/cameras.
 
-      // keep track of the oldest frame index in the existing tracks.
-      if (iTrack->firstFrameIndex() < oldest_frame_index_in_tracks) {
-        oldest_frame_index_in_tracks = iTrack->firstFrameIndex();
+        // keep track of the oldest frame index in the existing tracks.
+        if (iTrack->firstFrameIndex() < oldest_frame_index_in_tracks) {
+          oldest_frame_index_in_tracks = iTrack->firstFrameIndex();
+        }
       }
+      iTrack++;
     }
   }
   oldest_frame_index_in_tracks_  = oldest_frame_index_in_tracks;
@@ -39,9 +43,11 @@ void PointTracks::purge(int oldestFrameIndex) {
 }
 
 void PointTrack::print() const {
-  printf("track of size %d: ", size());
+  printf("track %d of size %d: ", this->id_, size());
   BOOST_FOREACH( const PointTrackObserv& obsv, *this) {
-    printf("(%d, %d), ", obsv.frame_index_, obsv.keypoint_index_);
+    printf("(%d, %d, [%5.1f,%5.1f,%5.1f]), ",
+        obsv.frame_index_, obsv.keypoint_index_,
+        obsv.disp_coord_.x, obsv.disp_coord_.y, obsv.disp_coord_.z);
   }
   printf("\n");
 }
