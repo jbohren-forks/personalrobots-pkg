@@ -223,7 +223,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
       occ_cost += footprint_cost;
     }
     else{
-      occ_cost += (ma_.getCost(cell_x, cell_y));
+      occ_cost += double(ma_.getNormalizedCost(cell_x, cell_y));
     }
 
     double cell_pdist = map_(cell_x, cell_y).path_dist;
