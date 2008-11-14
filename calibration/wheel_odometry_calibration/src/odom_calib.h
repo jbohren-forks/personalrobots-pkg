@@ -37,6 +37,8 @@
 // ros stuff
 #include <ros/node.h>
 #include <tf/tf.h>
+#include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
+
 
 // messages
 #include "std_msgs/RobotBase2DOdom.h"
@@ -77,6 +79,9 @@ private:
 
   // estimated robot pose message to send
   std_msgs::BaseVel               _vel; 
+
+  // service messages
+  pr2_mechanism_controllers::WheelRadiusMultiplier::request _srv_snd, _srv_rsp;
 
   // active sensors
   bool _odom_active, _imu_active, _completed;

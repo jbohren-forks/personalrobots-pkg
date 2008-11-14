@@ -181,14 +181,25 @@ namespace calibration
     _odom_mutex.lock();
     double d_imu  = _imu_end  - _imu_begin;
     double d_odom = _odom_end - _odom_begin;
+
     cout << "(Odometry Calibration)  Rotated imu  " << d_imu*180/M_PI << " degrees." << endl;
     cout << "(Odometry Calibration)  Rotated wheel odom " << d_odom*180/M_PI << " degrees." << endl;
     cout << "(Odometry Calibration)  Absolute angle error of wheel odometry is " 
 	 << (d_odom - d_imu)*180/M_PI << " degrees." << endl;
     cout << "(Odometry Calibration)  Relative angle error of wheel odometry is " 
 	 << (d_odom - d_imu) / d_imu * 100 << " percent." << endl;
-    cout << "(Odometry Calibration)  Sending correction ration " 
+    cout << "(Odometry Calibration)  Sending correction ratio " 
 	 << d_imu / d_odom << " to controller." << endl;
+
+    // send results to base server
+    _srv_snd.wheel_radius_multiplier_front =  d_imu / d_odom;
+    _srv_snd.wheel_radius_multiplier_rear  =  d_imu / d_odom;
+    
+    if (service::call("", _srv_snd, _srv_rsp)) 
+      cout << "(Odometry Calibration)  Correction ratio seccessfully sent" << endl;
+    else
+      cout << "(Odometry Calibration)  Failed to send correction ratio" << endl;
+
     _odom_mutex.unlock();
     _imu_mutex.unlock();
   }
