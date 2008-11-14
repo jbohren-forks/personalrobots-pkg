@@ -79,11 +79,14 @@ namespace costmap_2d {
      * @param my the y map index. my must be in [0, height-1]
      * @return A cost value in the range [0 1]
      */
-    inline unsigned char getNormalizedCost(unsigned int mx, unsigned int my) const  {
-      static const unsigned char UPPER_BOUND_COST = INSCRIBED_INFLATED_OBSTACLE / 2;
+    inline double getNormalizedCost(unsigned int mx, unsigned int my) const  {
       const unsigned char c = getCost(mx, my);
-      double normalizedCost = ((double) c  )/ UPPER_BOUND_COST;
-      return (unsigned char) (normalizedCost * weight_);
+
+      if(c >= INSCRIBED_INFLATED_OBSTACLE)
+	return c;
+
+      double normalizedCost = ((double) c  )/ (INSCRIBED_INFLATED_OBSTACLE-1);
+      return normalizedCost * weight_;
     }
 
     /**
@@ -139,7 +142,6 @@ namespace costmap_2d {
      */
     void setCircumscribedCostLowerBound(unsigned char c){
       costLB_ = c;
-      ROS_INFO("Set boundary cosy to %d\n", c);
     }
 
     /**
@@ -238,7 +240,7 @@ namespace costmap_2d {
     const double weight_;  /**< The weighting to apply to a normalized cost value */
 
   private:
-    char costLB_; /**< The cost value for the lowest cost cell in the circumscribed radius.*/
+    unsigned char costLB_; /**< The cost value for the lowest cost cell in the circumscribed radius.*/
   };
 }
 #endif

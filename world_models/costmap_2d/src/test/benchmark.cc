@@ -53,7 +53,7 @@ int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++)
     mapData.push_back(0);
 
-  CostMap2D costMap(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, 
+  CostMap2D costMap(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, 
 		    ROBOT_RADIUS*3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
   for(unsigned int i = 0; i < 100; i++){
@@ -68,6 +68,6 @@ int main(int argc, char** argv){
     }
 
     std::vector<unsigned int> updates;
-    costMap.updateDynamicObstacles(i, cloud, updates);
+    costMap.updateDynamicObstacles(0, 0, CostMap2D::toVector(cloud), updates);
   }
 }

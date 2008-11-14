@@ -102,6 +102,12 @@ namespace costmap_2d {
   {
   public:
 
+    static std::vector<std_msgs::PointCloud*> toVector(std_msgs::PointCloud& cloud){
+      std::vector<std_msgs::PointCloud*> v;
+      v.push_back(&cloud);
+      return v;
+    }
+
     /**
      * @brief Constructor.
      *
@@ -118,8 +124,7 @@ namespace costmap_2d {
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
-	      double resolution, double window_length,
-	      unsigned char threshold, 
+	      double resolution, unsigned char threshold, 
 	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
 	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 0);
   
@@ -127,58 +132,29 @@ namespace costmap_2d {
      * @brief Destructor.
      */
     virtual ~CostMap2D();
-  
-    /**
-     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * @param current time stamp
-     * @param cloud holds projected scan data
-     * @param updates holds the updated cell ids and values
-     *
-     * @see removeStaleObstacles
-     */
-    void updateDynamicObstacles(double ts,
-				const std_msgs::PointCloud& cloud,
-				std::vector<unsigned int>& updates);
+
+    // Hack for backward compatability
+    void updateDynamicObstacles(std_msgs::PointCloud& cloud,
+				std::vector<unsigned int>& updates){
+      updateDynamicObstacles(0, 0, toVector(cloud), updates);
+    }
 
     /**
      * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * @param current time stamp
      * @param wx The current x position
      * @param wy The current y position
      * @param cloud holds projected scan data
      * @param updates holds the updated cell ids and values
      */
-    void updateDynamicObstacles(double ts,
-				double wx, double wy,
+    void updateDynamicObstacles(double wx, double wy,
 				const std::vector<std_msgs::PointCloud*>& clouds,
 				std::vector<unsigned int>& updates);
     /**
-     * @brief Updates the cost map accounting for the new value of time and a new set of obstacles. 
-     * @param current time stamp
-     * @param cloud holds projected scan data
-     * @param updates holds the updated cell ids and values
-     *
-     * @see removeStaleObstacles
+     * @brief Updates dynamic obstacles
+     * @param clouds holds projected scan data
      */
-    void updateDynamicObstacles(double ts,
-				double wx, double wy,
-				const std_msgs::PointCloud& cloud,
-				std::vector<unsigned int>& updates);
-    /**
-     * @brief A convenience method which will skip calculating the diffs
-     * @param current time stamp
-     * @param cloud holds projected scan data
-     *
-     * @see updateDynamicObstacles
-     */
-    void updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud);
-
-    /**
-     * @brief Updates the cost map, removing stale obstacles based on the new time stamp.
-     * @param current time stamp
-     * @param deletedObstacleCells holds vector for returning newly unoccupied ids
-     */
-    void removeStaleObstacles(double ts, std::vector<unsigned int>& updates);
+    void updateDynamicObstacles(double wx, double wy,
+				const std::vector<std_msgs::PointCloud*>& clouds);
 
     /**
      * @brief Get pointer into the obstacle map (which contains both static
@@ -207,7 +183,7 @@ namespace costmap_2d {
     unsigned char getCost(unsigned int mx, unsigned int my) const{
       ROS_ASSERT(mx < width_);
       ROS_ASSERT(my < height_);
-      return fullData_[MC_IND(mx, my)];
+      return costData_[MC_IND(mx, my)];
     }
 
     /**
@@ -216,18 +192,6 @@ namespace costmap_2d {
     std::string toString() const;
 
   private:
-    /**
-     * @brief Internal method that does not clear the updates first
-     */
-    void removeStaleObstaclesInternal(double ts, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief Compute the number of ticks that have elapsed between the given timestamp ts and the last time stamp.
-     * Will update the last time stamp value
-     *
-     * @param ts The current time stamp. Must be >= lastTimeStamp_
-     */
-    TICK getElapsedTime(double ts);
 
     /**
      * @brief Helper method to compute the inflated cells around an obstacle based on resolution and inflation radius
@@ -235,48 +199,28 @@ namespace costmap_2d {
     void computeInflation(unsigned int ind, std::vector< std::pair<unsigned int, unsigned char> >& inflation) const;
 
     /**
-     * @brief Utility to encapsulate dynamic cell updates
-     * @return true if the cell value is updated, otherwise false
-     */
-    void updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates);
-
-    /**
-     * @brief Utility to encapsulate marking cells free.
-     */
-    void markFreeSpace(unsigned int cell, std::vector<unsigned int>& updates);
-
-    /**
      * @brief Utility to propagate costs
      * @param A priority queue to seed propagation
      * @param A collection to retrieve all updated cells
      */
-    void propagateCosts(std::vector<unsigned int>& updates);
+    void propagateCosts();
 
     /**
      * @brief Utility to push free space inferred from a laser point hit via ray-tracing
      * @param ind the cell index of the obstacle detected
      * @param updates the buffer for updated cells as a result
      */ 
-    void updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates);
+    void updateFreeSpace(unsigned int ind);
 
     /**
      * @brief Simple test for a cell having been marked during current propaagtion
      */
-    bool marked(unsigned int ind) const;
+    bool marked(unsigned int ind) const {return xy_markers_[ind];}
 
     /**
-     * @brief Encapsulate calls to peth the watchdog, which impacts the set of dynamic obstacles
+     * @mark a cell
      */
-    void petWatchDog(unsigned int cell, unsigned char value);
-
-    /**
-     * Added to provide a single update location. Only need to add the update if we have not visitied the cell
-     * with an update already. This case is checked because of the watchdog value. This prevents multiply updating cells
-     * for free space and cost propagation.
-     */
-    inline void addUpdate(unsigned int cell, std::vector<unsigned int>& updates){
-      updates.push_back(cell);
-    }
+    void mark(unsigned int ind){xy_markers_[ind] = true;}
     
     /**
      * Utilities for cost propagation
@@ -288,29 +232,24 @@ namespace costmap_2d {
     double computeDistance(unsigned int a, unsigned int b) const;
 
     unsigned char computeCost(double distance) const;
-			   
-    static const TICK MARKED_FOR_COST = 255; /**< The value used to denote a cell has been marked in the current iteration of cost propagation */
-    static const TICK WATCHDOG_LIMIT = 254; /**< The value for a reset watchdog time for observing dynamic obstacles */
-    const double tickLength_; /**< The duration in seconds of a tick, used to manage the watchdog timeout on obstacles. Computed from window length */
+
+    void updateCellCost(unsigned int ind, unsigned char cost);
+
     const double maxZ_; /**< Points above this will be excluded from consideration */
     const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
     const unsigned int inflationRadius_; /**< The radius in cells to propagate cost and obstacle information */
     const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
     const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
 
-    unsigned char* staticData_; /**< data loaded from the static map */
-    unsigned char* fullData_; /**< the full map data that has both static and obstacle data */
-    unsigned char* heightData_; /**< Stores the z value */
-    TICK* obsWatchDog_; /**< Records time remaining in ticks before expiration of the observation */
-    double lastTimeStamp_; /** < The last recorded time value for when obstacles were added */
+    unsigned char* staticData_; /**< initial static map */
+    unsigned char* costData_; /**< the full map data that has both static and obstacle data */
+    bool* xy_markers_; /**< Records time remaining in ticks before expiration of the observation */
     unsigned int mx_; /** < The x position of the robot in the grid */
     unsigned int my_; /** < The y position of the robot in the grid */
-			   
-    std::list<unsigned int> dynamicObstacles_; /**< Dynamic Obstacle Collection */
-    std::vector<unsigned int> staticObstacles_; /**< Vector of statically occupied cells */
     QUEUE queue_; /**< Used for cost propagation */
 
-    double** cachedDistances; /**< Cached distances indexed by dx, dy */  };
+    double** cachedDistances; /**< Cached distances indexed by dx, dy */  
+  };
 
   /**
    * Wrapper class that provides a local window onto a global cost map

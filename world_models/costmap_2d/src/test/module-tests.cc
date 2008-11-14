@@ -79,8 +79,11 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
  * c) Correctly evaluating if something is inscribed vs. circumscribed
  */
 TEST(costmap, costFunctionCorrectness){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2.0, ROBOT_RADIUS, 2);
+
+  // Verify that the circumscribed cost lower bound is as expected
+  ASSERT_EQ(map.getCircumscribedCostLowerBound(), CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1);
 
   // Add a point in the center
   std_msgs::PointCloud cloud;
@@ -89,7 +92,7 @@ TEST(costmap, costFunctionCorrectness){
   cloud.pts[0].y = 5;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, cloud, updates);
+  map.updateDynamicObstacles(cloud, updates);
 
   ASSERT_EQ(map.getCost(0, 0), 0);
   ASSERT_EQ(map.getNormalizedCost(0, 0), 0);
@@ -100,10 +103,11 @@ TEST(costmap, costFunctionCorrectness){
   // 2 to the right should be a circumscribed cell.
   ASSERT_EQ(map.isCircumscribedCell(7, 5), true);
 
-  // Its normalized cost should be 2
+  // The distance - inscribed radius is 1. So the cost should be 
+  ASSERT_EQ(map.getCost(7, 5), CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1);
   ASSERT_EQ(map.getNormalizedCost(7, 5), 2);
 
-  // Nex one over should not be, but its cost should be half that of its neighbor
+  // Next one over should not be, but its cost should be half that of its neighbor
   ASSERT_EQ(map.isCircumscribedCell(8, 5), false);
   ASSERT_EQ(map.getCost(8, 5), map.getCost(7, 5) / 2);
 
@@ -134,7 +138,7 @@ TEST(costmap, test13){
  */
 TEST(costmap, test12){
   // Start with an empty map
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, 
 		ROBOT_RADIUS*3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
 
@@ -152,7 +156,7 @@ TEST(costmap, test12){
   cloud.pts[2].z = 0;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, cloud, updates);
+  map.updateDynamicObstacles(cloud, updates);
 
   // Expect to see a union of obstacles
   ASSERT_EQ(updates.size(), 79);
@@ -162,7 +166,7 @@ TEST(costmap, test12){
  * Test for ray tracing free space
  */
 TEST(costmap, test0){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
   // Add a point cloud and verify its insertion. There should be only one new one
   std_msgs::PointCloud cloud;
@@ -171,13 +175,13 @@ TEST(costmap, test0){
   cloud.pts[0].y = 0;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, cloud, updates);
+  map.updateDynamicObstacles(cloud, updates);
 
   ASSERT_EQ(updates.size(), 3);
 }
 
 TEST(costmap, test1){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
   ASSERT_EQ(map.getWidth(), 10);
   ASSERT_EQ(map.getHeight(), 10);
 
@@ -234,25 +238,10 @@ TEST(costmap, test1){
 }
 
 /**
- * Verify that static obstacles are not removed by an expired stamp
- */
-TEST(costmap, test2){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
-  std::vector<unsigned int> updates;
-  map.removeStaleObstacles(1000, updates);
-  ASSERT_EQ(updates.size(), 0);
-
-  // Now verify that we still have all our expected obstacles
-  std::vector<unsigned int> ids;
-  map.getOccupiedCellDataIndexList(ids);
-  ASSERT_EQ(ids.size(), 14);
-}
-
-/**
- * Verify that dynamic obstacles are added and removed
+ * Verify that dynamic obstacles are added
  */
 TEST(costmap, test3){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
 
   // Add a point cloud and verify its insertion. There should be only one new one
   std_msgs::PointCloud cloud;
@@ -266,36 +255,23 @@ TEST(costmap, test3){
 
   std::vector<unsigned int> updates;
   std::vector<unsigned int> ids;
-  map.updateDynamicObstacles(1, cloud, updates);
+  map.updateDynamicObstacles(cloud, updates);
 
   // Should now have 1 insertion and no deletions
   ASSERT_EQ(updates.size(), 1);
   map.getOccupiedCellDataIndexList(ids);
   ASSERT_EQ(ids.size(), 15);
 
-  // Repeating the call for the same time step we should see no insertions or deletions
-  map.updateDynamicObstacles(1, cloud, updates);
+  // Repeating the call - we should see no insertions or deletions
+  map.updateDynamicObstacles(cloud, updates);
   ASSERT_EQ(updates.empty(), true);
-
-  // Updating for a window prior to expiration, should see no deletions
-  map.removeStaleObstacles(5, updates);
-  ASSERT_EQ(updates.empty(), true);
-  map.getOccupiedCellDataIndexList(ids);
-  ASSERT_EQ(ids.size(), 15);
-
-  // Update for a window after expiration, should see 1 deletion
-  map.removeStaleObstacles(11, updates);
-  ASSERT_EQ(updates.size(), 1);
-  ASSERT_EQ(map[*(updates.begin())], 0);
-  map.getOccupiedCellDataIndexList(ids);
-  ASSERT_EQ(ids.size(), 14);
 }
 
 /**
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
 TEST(costmap, test4){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
 
   // A point cloud with one point that falls within an existing obstacle
   std_msgs::PointCloud cloud;
@@ -305,56 +281,15 @@ TEST(costmap, test4){
 
   std::vector<unsigned int> updates;
   std::vector<unsigned int> ids;
-  map.updateDynamicObstacles(1, cloud, updates);
+  map.updateDynamicObstacles(cloud, updates);
   ASSERT_EQ(updates.empty(), true);
-}
-
-/**
- * Add an obstacle that is on a cell with a positive cost but less than the threshold for a lethal
- * obstacle. Expect that we get a new obstacle. When the obstacle times out, should revert to remove
- * the obstacle but keep the cost in the full map at the original value.
- */
-TEST(costmap, test5){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD);
-
-  std::vector<unsigned int> updates;
-
-  // A point cloud with 2 points falling in a cell with a non-lethal cost
-  std_msgs::PointCloud c0;
-  c0.set_pts_size(2);
-  c0.pts[0].x = 0;
-  c0.pts[0].y = 5;
-  c0.pts[1].x = 1;
-  c0.pts[1].y = 5;
-
-  map.updateDynamicObstacles(1, c0, updates);
-
-  ASSERT_EQ(updates.size(), 2);
-  ASSERT_EQ(map[map.WC_IND(0, 5)], CostMap2D::LETHAL_OBSTACLE);
-  ASSERT_EQ(map[map.WC_IND(1, 5)], CostMap2D::LETHAL_OBSTACLE);
-
-  // Pet the watchdog with 1 point only
-  std_msgs::PointCloud c1;
-  c1.set_pts_size(1);
-  c1.pts[0].x = 0;
-  c1.pts[0].y = 5;
-  map.updateDynamicObstacles(WINDOW_LENGTH-1, c1, updates);
-  ASSERT_EQ(updates.empty(), true);
-
-  // Update map for later time point. SHould remove one of the dynamic obstacles, reverting to a value less than the threshold
-  map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 1);
-  ASSERT_EQ(map[map.WC_IND(0, 5)], CostMap2D::LETHAL_OBSTACLE);
-  ASSERT_EQ(map[map.WC_IND(1, 5)] < CostMap2D::LETHAL_OBSTACLE, true);
-  ASSERT_EQ(map[map.WC_IND(1, 5)] > 0, true);
-  ASSERT_EQ(map[map.WC_IND(1, 5)] == MAP_10_BY_10[map.WC_IND(1, 5)], true);
 }
 
 /**
  * Make sure we ignore points outside of our z threshold
  */
 TEST(costmap, test6){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z);
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
   std_msgs::PointCloud c0;
@@ -367,7 +302,7 @@ TEST(costmap, test6){
   c0.pts[1].z = 1.2;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, c0, updates);
+  map.updateDynamicObstacles(c0, updates);
   ASSERT_EQ(updates.size(), 1);
 }
 
@@ -375,7 +310,7 @@ TEST(costmap, test6){
  * Test inflation for both static and dynamic obstacles
  */
 TEST(costmap, test7){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
 
@@ -409,28 +344,25 @@ TEST(costmap, test7){
   c0.pts[0].x = 0;
   c0.pts[0].y = 0;
   c0.pts[0].z = 0.4;
-  map.updateDynamicObstacles(1, c0, updates);
+  map.updateDynamicObstacles(c0, updates);
 
   // It and its 2 neighbors makes 3 obstacles
   ASSERT_EQ(updates.size(), 3);
 
+  /* @todo Rewrite
   // Add an obstacle at <2,0> which will inflate and refresh to of the other inflated cells
   std_msgs::PointCloud c1;
   c1.set_pts_size(1);
   c1.pts[0].x = 2;
   c1.pts[0].y = 0;
   c1.pts[0].z = 0.0;
-  map.updateDynamicObstacles(WINDOW_LENGTH - 1, c1, updates);
+  map.updateDynamicObstacles(c1, updates);
 
   // Now we expect insertions for it, and 2 more neighbors, but not all 5. Free space will propagate from
   // the origin to the target, clearing the point at <0, 0>, but not over-writing the inflation of the obstacle
   // at <0, 1>
   ASSERT_EQ(updates.size(), 4);
 
-  // Staling out the first update will only result in 1 cell clearing <0, 1>, since other
-  // values were cleared by free space or will be retained by inflation of a neighbor
-  updates.clear();
-  map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
   std_msgs::PointCloud c2;
@@ -451,13 +383,14 @@ TEST(costmap, test7){
   c3.pts[0].z = 0.0;
   map.updateDynamicObstacles(WINDOW_LENGTH + 3, c3, updates);
   ASSERT_EQ(map.getCost(0, 9), CostMap2D::LETHAL_OBSTACLE);
+  */
 }
 
 /**
  * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
  */
 TEST(costmap, test8){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
   std::vector<unsigned int> updates;
@@ -475,7 +408,7 @@ TEST(costmap, test8){
   c0.pts[2].y = 2;
   c0.pts[2].z = 0;
 
-  map.updateDynamicObstacles(1, c0, updates);
+  map.updateDynamicObstacles(c0, updates);
   ASSERT_EQ(map.getCost(3, 2), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);  
   ASSERT_EQ(map.getCost(3, 3), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 }
@@ -491,7 +424,7 @@ TEST(costmap, test9){
     }
   }
 
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
   // There should be no occupied cells
@@ -507,7 +440,7 @@ TEST(costmap, test9){
   c0.pts[0].z = 0;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, c0, updates);
+  map.updateDynamicObstacles(c0, updates);
 
   ASSERT_EQ(updates.size(), 45);
 
@@ -515,20 +448,15 @@ TEST(costmap, test9){
   ASSERT_EQ(ids.size(), 5);
 
   // Update again - should see no change
-  map.updateDynamicObstacles(2, c0, updates);
+  map.updateDynamicObstacles(c0, updates);
   ASSERT_EQ(updates.size(), 0);
-
-  // All the obstacles should go away when we remove stale obstacles
-  updates.clear();
-  map.removeStaleObstacles(WINDOW_LENGTH + 2, updates);
-  ASSERT_EQ(updates.size(), 45);
 }
 
 /**
  * Test for the cost map accessor
  */
 TEST(costmap, test10){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, ROBOT_RADIUS);
 
   // A window around a robot in the top left
   CostMapAccessor ma(map, 5, 0, 0);
@@ -558,14 +486,14 @@ TEST(costmap, test10){
   ASSERT_EQ(wx, 5.5);
   ASSERT_EQ(wy, 5.5);
 
-
+  ASSERT_EQ(map.getCircumscribedCostLowerBound(), ma.getCircumscribedCostLowerBound());
 }
 
 /**
  * Test for ray tracing free space
  */
 TEST(costmap, test11){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, WINDOW_LENGTH, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free.
@@ -576,42 +504,12 @@ TEST(costmap, test11){
   c0.pts[0].z = MAX_Z;
 
   std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(1, c0, updates);
-  ASSERT_EQ(updates.size(), 6);
+  map.updateDynamicObstacles(c0, updates);
+  ASSERT_EQ(updates.size(), 3);
 
-  // 4 updates to handle the new obstacle data and its cost implications
-  ASSERT_EQ(map.getCost(9,9), CostMap2D::LETHAL_OBSTACLE);
-  ASSERT_EQ(map.getCost(9,8), CostMap2D::INSCRIBED_INFLATED_OBSTACLE / 2);
-  ASSERT_EQ(map.getCost(8,9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE / 2);
-
-  // In addition, all cells will have been switched to free space along the diagonal
+  // all cells will have been switched to free space along the diagonal except for this inflated in the update
   for(unsigned int i=0; i < 8; i++)
     ASSERT_EQ(map.getCost(i, i), 0);
-
-  // If we update for beyond the window length, the original costs updated should revert back to NO_INFORMATION
-  updates.clear();
-
-  map.removeStaleObstacles(WINDOW_LENGTH + 1, updates);
-  ASSERT_EQ(updates.size(), 6);
-  ASSERT_EQ(map.getCost(9,9), CostMap2D::NO_INFORMATION);
-  ASSERT_EQ(map.getCost(9,8), CostMap2D::NO_INFORMATION);
-  ASSERT_EQ(map.getCost(8,9), CostMap2D::NO_INFORMATION);
-
-  // Now we can switch our position and try again. This time we move to the top left
-  // for the point at the top right. Expect updates for the obstacle (3) and one extra one
-  // setting NO_INFORMATION to free space.
-  map.updateDynamicObstacles(WINDOW_LENGTH + 2, 0.5, 9.5, c0, updates);  
-  ASSERT_EQ(updates.size(), 4);
-
-  // Stale out all dynamic obstacles - then try again with point that is beyond free space projection
-  map.removeStaleObstacles(WINDOW_LENGTH * 3, updates);
-  std_msgs::PointCloud c1;
-  c1.set_pts_size(1);
-  c1.pts[0].x = 9.5;
-  c1.pts[0].y = 9.5;
-  c1.pts[0].z = MAX_Z + 1;
-  map.updateDynamicObstacles(1, c1, updates);
-  ASSERT_EQ(updates.size(), 3); // Just obstacle cost propagation - no free space impact
 }
 
 int main(int argc, char** argv){

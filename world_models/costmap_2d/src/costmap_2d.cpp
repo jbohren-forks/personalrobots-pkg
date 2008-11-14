@@ -69,26 +69,23 @@ namespace costmap_2d {
   }
 
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
-		       double resolution, double window_length,  unsigned char threshold, 
+		       double resolution, unsigned char threshold, 
 		       double maxZ, double freeSpaceProjectionHeight,
 		       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
     : ObstacleMapAccessor(0, 0, width, height, resolution, weight),
-    tickLength_(window_length/WATCHDOG_LIMIT),
-    maxZ_(maxZ),
-    freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
-    inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
-    circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
-    inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-    staticData_(NULL), fullData_(NULL), heightData_(NULL), obsWatchDog_(NULL), lastTimeStamp_(0.0), mx_(0), my_(0)
+      maxZ_(maxZ),
+      freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
+      inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
+      circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
+      inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
+      staticData_(NULL), costData_(NULL), xy_markers_(NULL), mx_(0), my_(0)
   {
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
-    fullData_ = new unsigned char[width_*height_];
-    heightData_ = new unsigned char[width_*height_];
-    obsWatchDog_ = new TICK[width_*height_];
-    memset(fullData_, 0, width_*height_);
-    memset(heightData_, 0, width_*height_);
-    memset(obsWatchDog_, 0, width_*height_);
+    costData_ = new unsigned char[width_*height_];
+    xy_markers_ = new bool[width_*height_];
+    memset(costData_, 0, width_*height_);
+    memset(xy_markers_, 0, width_*height_);
 
     cachedDistances = new double*[inflationRadius_+1];
     for (i=0; i<=inflationRadius_; i++) {
@@ -105,63 +102,72 @@ namespace costmap_2d {
     std::vector<unsigned int> updates;
     for (unsigned int i=0;i<width_;i++){
       for (unsigned int j=0;j<height_;j++){
-        unsigned int ind = MC_IND(i, j);
-        staticData_[ind] = data[ind];
+	unsigned int ind = MC_IND(i, j);
+	costData_[ind] = data[ind];
 
-        // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
-        // then set it to the threshold. 
-        if (staticData_[ind] != NO_INFORMATION && staticData_[ind] >= threshold)
-          staticData_[ind] = LETHAL_OBSTACLE;
+	// If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
+	// then set it to the threshold. 
+	if (costData_[ind] != NO_INFORMATION && costData_[ind] >= threshold)
+	  costData_[ind] = LETHAL_OBSTACLE;
 
-        // Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
-        // as dynamic obstacles, and will be faded out as such, but
-        if(staticData_[ind] == LETHAL_OBSTACLE){
-          enqueue(ind, i, j);
-          staticObstacles_.push_back(ind);
-        }
-        else
-          fullData_[ind] = staticData_[ind];
+	// Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
+	// as dynamic obstacles, and will be faded out as such, but
+	if(costData_[ind] == LETHAL_OBSTACLE){
+	  enqueue(ind, i, j);
+	}
       }
     }
 
-    // Now propagate the queue. The updates must be reapplied to the static map, which will ensure they are
-    // not staled out
-    propagateCosts(updates);
+    // Now propagate the costs derived from static data
+    propagateCosts();
 
-    // Now for every original obstacle, go back and fill in the inflated obstacles
-    for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
-      unsigned int ind = *it;
-      staticData_[ind] = fullData_[ind];
-      obsWatchDog_[ind] = WATCHDOG_LIMIT - 1;
-    }
+    // Instantiate static data
+    memcpy(staticData_, costData_, width_ * height_);
   }
 
   CostMap2D::~CostMap2D() {
     if(staticData_ != NULL) delete[] staticData_;
-    if(fullData_ != NULL) delete[] fullData_;
-    if(heightData_ != NULL) delete[] heightData_;
-    if(obsWatchDog_ != NULL) delete[] obsWatchDog_;
+    if(costData_ != NULL) delete[] costData_;
+    if(xy_markers_ != NULL) delete[] xy_markers_;
   }
 
-  void CostMap2D::updateDynamicObstacles(double ts,
-      const std_msgs::PointCloud& cloud,
-      std::vector<unsigned int>& updates)
-  {
-    updateDynamicObstacles(ts, 0, 0, cloud, updates);
-  }
 
-  void CostMap2D::updateDynamicObstacles(double ts,
-					 double wx, double wy,
+  /**
+   * @brief Updated dyanmic obstacles and compute a diff. Mainly for backward compatibility. This will go away soon.
+   */
+  void CostMap2D::updateDynamicObstacles(double wx, double wy,
 					 const std::vector<std_msgs::PointCloud*>& clouds,
-					 std::vector<unsigned int>& updates)
+					 std::vector<unsigned int>& updates){
+    updates.clear();
+
+    // Store the current cost data
+    unsigned char* oldValues = new unsigned char[width_ * height_];
+    memcpy(oldValues, costData_, width_ * height_);
+    updateDynamicObstacles(wx, wy, clouds);
+
+    // Compute the diff. Naive implementation
+    unsigned int i = width_*height_;
+    while(i> 0){
+      i--;
+      if(oldValues[i] != costData_[i])
+	updates.push_back(i);
+    }
+
+    delete oldValues;
+  }
+
+  void CostMap2D::updateDynamicObstacles(double wx, double wy,
+					 const std::vector<std_msgs::PointCloud*>& clouds)
   {
     // Update current grid position
     WC_MC(wx, wy, mx_, my_);
 
-    updates.clear();
-    ROS_ASSERT(queue_.empty());
-    std::vector<unsigned int> cellHits;
+    // Revert to initial state
+    memset(xy_markers_, 0, width_ * height_);
+    memcpy(costData_, staticData_, width_ * height_);
 
+    ROS_ASSERT(queue_.empty());
+    std::vector<unsigned int> F; // The set of points for free space projection
     for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
       const std_msgs::PointCloud& cloud = *(*it);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
@@ -173,196 +179,44 @@ namespace costmap_2d {
 	unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
 
 	// If we have already processed the cell for this point, skip it
-	if(obsWatchDog_[ind] == MARKED_FOR_COST)
+	if(marked(ind))
 	  continue;
 
-	// Buffer for cost propagation
+	// Buffer for cost propagation. This will mark the cell
 	unsigned int mx, my;
 	IND_MC(ind, mx, my);
 	enqueue(ind, mx, my);
 
-	// Buffer for free space projection
+	// Buffer for free space projection (Need a ctest based on the origin)
 	if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
-	  cellHits.push_back(ind);
-	else
-	  heightData_[i] = 1;
+	  F.push_back(ind);
       }
     }
 
     // Propagate costs
-    propagateCosts(updates);
+    propagateCosts();
 
     // Propagate free space
-    for(std::vector<unsigned int>::const_iterator it = cellHits.begin(); it != cellHits.end(); ++it)
-      updateFreeSpace(*it, updates);
-
-    // We always process deletions too
-    removeStaleObstaclesInternal(ts, updates);
+    for(std::vector<unsigned int>::const_iterator it = F.begin(); it != F.end(); ++it)
+      updateFreeSpace(*it);
   }
 
-  void CostMap2D::updateDynamicObstacles(double ts,
-					 double wx, double wy,
-					 const std_msgs::PointCloud& cloud,
-					 std::vector<unsigned int>& updates)
-  {
-    // Update current grid position
-    WC_MC(wx, wy, mx_, my_);
-
-    updates.clear();
-    ROS_ASSERT(queue_.empty());
-    std::vector<unsigned int> cellHits;
-
-    for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-      // Filter out points too high
-      if(cloud.pts[i].z > maxZ_)
-        continue;
-
-      // Queue cell for cost propagation
-      unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
-
-      // If we have already processed the cell for this point, skip it
-      if(obsWatchDog_[ind] == MARKED_FOR_COST)
-        continue;
-
-      // Buffer for cost propagation
-      unsigned int mx, my;
-      IND_MC(ind, mx, my);
-      enqueue(ind, mx, my);
-
-      // Immediately update free space, which is dominated by propagated costs so they are applied afterwards.
-      // This only applies for points with the projection height limit
-      if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
-        cellHits.push_back(ind);
-      else
-        heightData_[i] = 1;
-    }
-
-    // Propagate costs
-    propagateCosts(updates);
-
-    // Propagate free space
-    for(std::vector<unsigned int>::const_iterator it = cellHits.begin(); it != cellHits.end(); ++it)
-      updateFreeSpace(*it, updates);
-
-    // We always process deletions too
-    removeStaleObstaclesInternal(ts, updates);
-  }
-
-  void CostMap2D::updateCellCost(unsigned int cell, unsigned char cellState, std::vector<unsigned int>& updates){
-    // Will take the higher of the static value and the new value.
-    // We should also ensure that dynamic obstacles do not take the value of no information. That is basically unhandled
-    // and we should address what to do there once we have use cases to implement that exploit this unknown state
-    unsigned char oldValue = fullData_[cell];
-    unsigned char staticValue = (staticData_[cell] == NO_INFORMATION ? 0 : staticData_[cell]);
-    unsigned char dynamicValue = std::max(cellState, oldValue);
-    fullData_[cell] = std::min(std::max(dynamicValue, staticValue), LETHAL_OBSTACLE);
-
-    if(fullData_[cell] != oldValue)
-      addUpdate(cell, updates);
-  }
-
-  void CostMap2D::petWatchDog(unsigned int cell, unsigned char value){
-    // If it is a new dynamic obstacle, record it
-    if(obsWatchDog_[cell] == 0)
-      dynamicObstacles_.push_back(cell);
-
-    // Always pet the watchdog
-    obsWatchDog_[cell] = value;
-  }
-
-  void CostMap2D::markFreeSpace(unsigned int cell, std::vector<unsigned int>& updates){
-    // If not currently free space then buffer as an update
-    if(fullData_[cell] != 0)
-      addUpdate(cell, updates);
-
-    // Assign to free space
-    fullData_[cell] = 0;
-
-    petWatchDog(cell, WATCHDOG_LIMIT);
-  }
-
-  void CostMap2D::updateDynamicObstacles(double ts, const std_msgs::PointCloud& cloud){
-    std::vector<unsigned int> updates;
-    updateDynamicObstacles(ts, cloud, updates);
-  }
-
-  /**
-   * This algorithm uses the concept of a watchdog timer to decide when an obstacle can be removed.
-   */
-  void CostMap2D::removeStaleObstacles(double ts, std::vector<unsigned int>& updates){
-    updates.clear();
-    removeStaleObstaclesInternal(ts, updates);
-  }
-
-  void CostMap2D::removeStaleObstaclesInternal(double ts, std::vector<unsigned int>& updates){
-    // Calculate elapsed time in terms of ticks
-    TICK elapsedTime = getElapsedTime(ts);
-
-    // Iterate over the set of dyanmic obstacles
-    std::list<unsigned int>::iterator it = dynamicObstacles_.begin();
-
-    while(it != dynamicObstacles_.end()){
-      unsigned int ind = *it;
-      TICK timeLeft = obsWatchDog_[ind];
-
-      // Case 1: The watchdog has just been reset. Here we decrement the watchdog by 1 and move on
-      if(timeLeft >= WATCHDOG_LIMIT){
-        obsWatchDog_[ind] = WATCHDOG_LIMIT - 1;
-        ++it;
-        continue;
-      }
-
-      // Case 2: The watchdog has timed out. Here we remove the obstacle (if not static), zero the watchdog timer, and move on.
-      if(timeLeft <= elapsedTime){
-        it = dynamicObstacles_.erase(it);
-        obsWatchDog_[ind] = 0;
-        unsigned char oldValue = fullData_[ind];
-
-        // Reset x,y cost to the value of the static map
-        fullData_[ind] = staticData_[ind];
-
-        // Clear the height
-        heightData_[ind] = 0;
-
-        // If the new value differs from the old value then insert it
-        if(fullData_[ind] != oldValue)
-          addUpdate(ind, updates);
-
-        continue;
-      }
-
-      // Otherwise: Just have to decrement the watchdog and move on
-      obsWatchDog_[ind] = timeLeft - elapsedTime;
-      ++it;
-    }
-  }
 
   const unsigned char* CostMap2D::getMap() const {
-    return fullData_;
+    return costData_;
   }
 
   void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const {
     results.clear();
     unsigned int maxCellCount = getWidth() * getHeight();
     for(unsigned int i = 0; i < maxCellCount; i++){
-      if(fullData_[i] == INSCRIBED_INFLATED_OBSTACLE || fullData_[i] == LETHAL_OBSTACLE)
+      if(costData_[i] == INSCRIBED_INFLATED_OBSTACLE || costData_[i] == LETHAL_OBSTACLE)
         results.push_back(i);
     }
   }
 
-  TICK CostMap2D::getElapsedTime(double ts) {
-
-    double count = (ts - lastTimeStamp_) / tickLength_;
-
-    TICK result = (count > WATCHDOG_LIMIT ? WATCHDOG_LIMIT : (TICK) count);
-
-    lastTimeStamp_ = ts;
-
-    return result;
-  }
-
   unsigned char CostMap2D::operator [](unsigned int ind) const{
-    return fullData_[ind];
+    return costData_[ind];
   }
 
   std::string CostMap2D::toString() const {
@@ -392,12 +246,12 @@ namespace costmap_2d {
     return ss.str();
   }
 
-  void CostMap2D::propagateCosts(std::vector<unsigned int>& updates){
+  void CostMap2D::propagateCosts(){
     while(!queue_.empty()){
       QueueElement* c = queue_.top();
       queue_.pop();
-      unsigned char cost = computeCost(c->distance);      
-      updateCellCost(c->ind, cost, updates);
+      unsigned char cost = computeCost(c->distance);
+      updateCellCost(c->ind, cost);  
 
       // If distance reached the inflation radius then skip further expansion
       if(c->distance < inflationRadius_)
@@ -405,6 +259,16 @@ namespace costmap_2d {
 
       delete c;
     }
+  }
+
+  /**
+   * @brief It is arguable if this is the correct update rule. We are trying to avoid
+   * tracing holes through walls by propagating adjacent cells that are in sensor range through
+   * those cells in the map that are no out of range. If we do not use prior values then
+   * we will trace holes through walls. 
+   */
+  void CostMap2D::updateCellCost(unsigned int ind, unsigned char cost){
+    costData_[ind] = std::max(cost, costData_[ind]);
   }
 
   void CostMap2D::enqueueNeighbors(unsigned int source, unsigned int ind){
@@ -424,10 +288,10 @@ namespace costmap_2d {
   void CostMap2D::enqueue(unsigned int source, unsigned int mx, unsigned int my){
     // If the cell is not marked for cost propagation
     unsigned int ind = MC_IND(mx, my);
-    if(obsWatchDog_[ind] != MARKED_FOR_COST){
+    if(!marked(ind)){
       QueueElement* c = new QueueElement(computeDistance(source, ind), source, ind);
       queue_.push(c);
-      petWatchDog(ind, MARKED_FOR_COST);
+      mark(ind);
     }
   }
 
@@ -453,9 +317,10 @@ namespace costmap_2d {
       cost = LETHAL_OBSTACLE;
     else if(distance <= inscribedRadius_)
       cost = INSCRIBED_INFLATED_OBSTACLE;
-    else
-      cost = (unsigned char) (INSCRIBED_INFLATED_OBSTACLE / pow(2, distance - inscribedRadius_));
-
+    else {
+      // The cost for a non-lethal opbstacle should be in the range of [0, inscribed_inflated_obstacle - 1]
+      cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE-1) / (distance - inscribedRadius_));
+    }
     return cost;
   }
 
@@ -464,7 +329,7 @@ namespace costmap_2d {
    * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
    * current position (mx_, my_).
    */
-  void CostMap2D::updateFreeSpace(unsigned int ind, std::vector<unsigned int>& updates){
+  void CostMap2D::updateFreeSpace(unsigned int ind){
     unsigned int x1, y1;
     IND_MC(ind, x1, y1);
 
@@ -517,16 +382,9 @@ namespace costmap_2d {
     }
 
     for (unsigned int curpixel = 0; curpixel <= numpixels; curpixel++){
-      unsigned int ind = MC_IND(x, y);
+      unsigned int index = MC_IND(x, y);
 
-      // If the cell is updated for cost, then it is not free space and we should not ray trace through it
-      if(obsWatchDog_[ind] == MARKED_FOR_COST)
-        return;
-
-      // If already marked, or there is an elevated hit that we do not want to clear
-      if(obsWatchDog_[ind] < WATCHDOG_LIMIT && heightData_[ind] == 0)
-        markFreeSpace(ind, updates);
-
+      // Update x and y values
       num += numadd;              // Increase the numerator by the top of the fraction
       if (num >= den)             // Check if numerator >= denominator
       {
@@ -537,6 +395,9 @@ namespace costmap_2d {
 
       x += xinc2;                 // Change the x as appropriate
       y += yinc2;                 // Change the y as appropriate
+
+      if(!marked(index))
+	costData_[index] = 0;
     }
   }
 
