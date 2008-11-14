@@ -59,6 +59,7 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
 
 void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
 {
+  solution_ik_.clear();
   /*** A first solution using the shoulder rotation as a parameterization ***/
   /* Find shoulder offset point */
   int jj, kk, ll;

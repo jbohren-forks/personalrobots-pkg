@@ -92,11 +92,17 @@ int main()
    theta = 0;
 
    gettimeofday(&t0,NULL);
-   //  theta = myArm.ComputeIK(g,0.1);
-   myArm.ComputeIK(g,0.2);
+
+   myArm.ComputeIK(g,0.1);
+
    gettimeofday(&t1,NULL);
+
+   myArm.ComputeIK(g,0.2);
+
    double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
+
    cout << "Time taken " << time_taken << endl;
+
    for(int i=0; i < (int) myArm.solution_ik_.size(); i++)
    {
      for(int j=0; j < 7; j++)
