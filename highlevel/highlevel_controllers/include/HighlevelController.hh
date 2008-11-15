@@ -383,10 +383,13 @@ private:
     // is active, even if it transitions in the first cycle to an inactive state
     publish(stateTopic, this->stateMsg);
 
-    // If we are pursuing a goal, and thus we have a plan, we should check for
-    // the goal being reached, in which case we update the state
-    if(isActive() && isValid()){
-	if(goalReached()){
+    // If we are in an active state, we want to evalaute what to do whether we have a plan or not. In
+    // the latter case, commands may be given to maintain a fail-safe state. The structure here ensures
+    // the controller has an opportunity to command appropriately whether in a valid state or not. If this were
+    // not the case, for example, on a mobil robot, it could just maintain prior commanded values
+    // when the planner invalidates the plan, which can happen since planning is interleaved.
+    if(isActive()){
+      if(goalReached()){
 	  setDone(true);
 	  deactivate();
 	}
