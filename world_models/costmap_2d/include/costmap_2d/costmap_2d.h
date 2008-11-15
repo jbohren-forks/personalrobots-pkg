@@ -122,11 +122,12 @@ namespace costmap_2d {
      * @param inflationRadius the radius used to bound inflation - limit of cost propagation
      * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
+     * @param weight the scaling factor in the cost function. Should be <=1. Lower values reduce the effective cost
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, unsigned char threshold, 
 	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
-	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 0);
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1);
   
     /**
      * @brief Destructor.
@@ -187,6 +188,11 @@ namespace costmap_2d {
     }
 
     /**
+     * @brief The weight for scaling in the cost function
+     */
+    double getWeight() const {return weight_;}
+
+    /**
      * @brief Utility for debugging
      */
     std::string toString() const;
@@ -240,6 +246,7 @@ namespace costmap_2d {
     const unsigned int inflationRadius_; /**< The radius in cells to propagate cost and obstacle information */
     const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
     const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
+    const double weight_;  /**< The weighting to apply to a normalized cost value */
 
     unsigned char* staticData_; /**< initial static map */
     unsigned char* costData_; /**< the full map data that has both static and obstacle data */

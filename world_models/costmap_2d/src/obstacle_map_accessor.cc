@@ -43,9 +43,8 @@ namespace costmap_2d {
   const unsigned char ObstacleMapAccessor::LETHAL_OBSTACLE(254);
   const unsigned char ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE(253);
 
-  ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution, double weight)
-    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution), weight_(weight),
-      costLB_(0){}
+  ObstacleMapAccessor::ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution)
+    : origin_x_(origin_x), origin_y_(origin_y), width_(width), height_(height), resolution_(resolution), costLB_(0){}
 
   void ObstacleMapAccessor::getOriginInWorldCoordinates(double& wx, double& wy) const{
     wx = origin_x_;

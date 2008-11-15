@@ -72,14 +72,19 @@ namespace costmap_2d {
       double resolution, unsigned char threshold, 
       double maxZ, double freeSpaceProjectionHeight,
       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
-    : ObstacleMapAccessor(0, 0, width, height, resolution, weight),
+    : ObstacleMapAccessor(0, 0, width, height, resolution),
     maxZ_(maxZ),
     freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
     inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
     circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
     inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
+      weight_(std::max(0.0, std::min(weight, 1.0))),
     staticData_(NULL), costData_(NULL), xy_markers_(NULL), mx_(0), my_(0)
   {
+    if(weight != weight_){
+      ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
+    }
+
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
     costData_ = new unsigned char[width_*height_];
@@ -323,8 +328,8 @@ namespace costmap_2d {
     else if(distance <= inscribedRadius_)
       cost = INSCRIBED_INFLATED_OBSTACLE;
     else {
-      // The cost for a non-lethal opbstacle should be in the range of [0, inscribed_inflated_obstacle - 1]
-      cost = (unsigned char) ((INSCRIBED_INFLATED_OBSTACLE-1) / (distance - inscribedRadius_));
+      // The cost for a non-lethal obstacle should be in the range of [0, inscribed_inflated_obstacle - 1].
+      cost = (unsigned char) ( (INSCRIBED_INFLATED_OBSTACLE -1) * weight_/ pow(distance - inscribedRadius_, 2));
     }
     return cost;
   }
@@ -411,7 +416,7 @@ namespace costmap_2d {
         computeWY(costMap, maxSize, poseX, poseY), 
         computeSize(maxSize, costMap.getResolution()), 
         computeSize(maxSize, costMap.getResolution()), 
-        costMap.getResolution(), costMap.getWeight()), costMap_(costMap),
+        costMap.getResolution()), costMap_(costMap),
     maxSize_(maxSize){
 
       setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());

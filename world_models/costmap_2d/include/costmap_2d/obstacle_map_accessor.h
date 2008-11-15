@@ -73,23 +73,6 @@ namespace costmap_2d {
     virtual unsigned char getCost(unsigned int mx, unsigned int my) const = 0;
 
     /**
-     * @brief Accessor for a normalized cost value which maps a cost into the range [0 1] so that it can be combined
-     * meaningfully in a weighted sum with other factors
-     * @param mx the x map index. mx must bi in [0, width-1]
-     * @param my the y map index. my must be in [0, height-1]
-     * @return A cost value in the range [0 1]
-     */
-    inline double getNormalizedCost(unsigned int mx, unsigned int my) const  {
-      const unsigned char c = getCost(mx, my);
-
-      if(c >= INSCRIBED_INFLATED_OBSTACLE)
-	return c;
-
-      double normalizedCost = ((double) c  )/ (INSCRIBED_INFLATED_OBSTACLE-1);
-      return normalizedCost * weight_;
-    }
-
-    /**
      * @brief Test if the given cell is necessarily in the footprint of the robot. Note that a negative result
      * does not mean it is not in the footprint of the robot, it just means that we are not certain.
      * @param mx the x map index. mx must bi in [0, width-1]
@@ -129,12 +112,6 @@ namespace costmap_2d {
      * @brief the resolution in meters per cell, where cells are square
      */
     double getResolution() const {return resolution_;}
-
-    /**
-     * @brief The weight for multiplying with in the normalized cost
-     * @see getNormalizedCost
-     */
-    double getWeight() const {return weight_;}
 
 
     /**
@@ -230,14 +207,13 @@ namespace costmap_2d {
      * @param height Number of cells down (y direction)
      * @param resolution Width and hight of a cell in meters
      */
-    ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution, double weight);
+    ObstacleMapAccessor(double origin_x, double origin_y, unsigned int width, unsigned int height, double resolution);
 
     double origin_x_;
     double origin_y_;
     unsigned int width_;
     unsigned int height_;
     double resolution_;
-    const double weight_;  /**< The weighting to apply to a normalized cost value */
 
   private:
     unsigned char costLB_; /**< The cost value for the lowest cost cell in the circumscribed radius.*/

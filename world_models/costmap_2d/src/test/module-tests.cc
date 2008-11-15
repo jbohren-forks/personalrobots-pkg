@@ -53,6 +53,7 @@ const unsigned char MAP_10_BY_10_CHAR[] = {
 
 std::vector<unsigned char> MAP_10_BY_10;
 std::vector<unsigned char> EMPTY_10_BY_10;
+std::vector<unsigned char> EMPTY_100_BY_100;
 
 const unsigned int GRID_WIDTH(10);
 const unsigned int GRID_HEIGHT(10);
@@ -73,45 +74,58 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
 
 
 /**
- * Test for the cost function correctness. testing:
- * a) Correct base cost value
- * b) Correct normalized cost value for the given weight
- * c) Correctly evaluating if something is inscribed vs. circumscribed
+ * Test for the cost function correctness with a larger range and different values
  */
-TEST(costmap, costFunctionCorrectness){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
-		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2.0, ROBOT_RADIUS, 2);
+TEST(costmap, test14){
+  CostMap2D map(100, 100, EMPTY_100_BY_100, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+		ROBOT_RADIUS * 10.5, ROBOT_RADIUS * 8.0, ROBOT_RADIUS * 5.0, 0.5);
 
-  // Verify that the circumscribed cost lower bound is as expected
-  ASSERT_EQ(map.getCircumscribedCostLowerBound(), CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1);
+  // Verify that the circumscribed cost lower bound is as expected: based on the cost function.
+  unsigned char c = (unsigned char) ((CostMap2D::INSCRIBED_INFLATED_OBSTACLE -1) * 0.5/9);
+  ASSERT_EQ(map.getCircumscribedCostLowerBound(), c);
 
   // Add a point in the center
   std_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
-  cloud.pts[0].x = 5;
-  cloud.pts[0].y = 5;
+  cloud.pts[0].x = 50;
+  cloud.pts[0].y = 50;
+  cloud.pts[0].z = 1;
 
-  std::vector<unsigned int> updates;
-  map.updateDynamicObstacles(cloud, updates);
+  map.updateDynamicObstacles(0, 0, CostMap2D::toVector(cloud));
 
-  ASSERT_EQ(map.getCost(0, 0), 0);
-  ASSERT_EQ(map.getNormalizedCost(0, 0), 0);
+  for(unsigned int i = 0; i <= (unsigned int)ceil(ROBOT_RADIUS * 5.0); i++){
+    // To the right
+    ASSERT_EQ(map.isDefinitelyBlocked(50 + i, 50), true);
+    ASSERT_EQ(map.getCost(50 + i, 50) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 + i, 50) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    // To the left
+    ASSERT_EQ(map.isDefinitelyBlocked(50 - i, 50), true);
+    ASSERT_EQ(map.getCost(50 - i, 50) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50 - i, 50) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    // Down
+    ASSERT_EQ(map.isDefinitelyBlocked(50, 50 + i), true);
+    ASSERT_EQ(map.getCost(50, 50 + i) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 + i) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    // Up
+    ASSERT_EQ(map.isDefinitelyBlocked(50, 50 - i), true);
+    ASSERT_EQ(map.getCost(50, 50 - i) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+    ASSERT_EQ(map.getCost(50, 50 - i) >= CostMap2D::INSCRIBED_INFLATED_OBSTACLE, true);
+  }
 
-  ASSERT_EQ(map.getCost(6, 5), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-  ASSERT_EQ(map.isDefinitelyBlocked(6, 5), true);
+  // Verify the normalized cost attenuates as expected
+  for(unsigned int i = (unsigned int)(ceil(ROBOT_RADIUS * 5.0) + 1); i <= (unsigned int)ceil(ROBOT_RADIUS * 10.5); i++){
+    unsigned char expectedValue = ( unsigned char )((CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1)* 0.5 /pow(i-ceil(ROBOT_RADIUS * 5.0), 2));
+    ASSERT_EQ(map.getCost(50 + i, 50), expectedValue);
+  }
 
-  // 2 to the right should be a circumscribed cell.
-  ASSERT_EQ(map.isCircumscribedCell(7, 5), true);
+  // Update with no hits. Should clear (revert to the static map
+  cloud.set_pts_size(0);
+  map.updateDynamicObstacles(0, 0, CostMap2D::toVector(cloud));
 
-  // The distance - inscribed radius is 1. So the cost should be 
-  ASSERT_EQ(map.getCost(7, 5), CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1);
-  ASSERT_EQ(map.getNormalizedCost(7, 5), 2);
+  for(unsigned int i = 0; i < 100*100; i++)
+    ASSERT_EQ(map[i], 0);
 
-  // Next one over should not be, but its cost should be half that of its neighbor
-  ASSERT_EQ(map.isCircumscribedCell(8, 5), false);
-  ASSERT_EQ(map.getCost(8, 5), map.getCost(7, 5) / 2);
-
-  ASSERT_EQ(updates.size(), 45);
+  // On the next update, with Z too high, we should still see the projection onto 2D to give the same cost value as before
 }
 
 // Test Priority queue handling
@@ -517,6 +531,9 @@ int main(int argc, char** argv){
     EMPTY_10_BY_10.push_back(0);
     MAP_10_BY_10.push_back(MAP_10_BY_10_CHAR[i]);
   }
+
+  for(unsigned int i = 0; i< 100 * 100; i++)
+    EMPTY_100_BY_100.push_back(0);
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
