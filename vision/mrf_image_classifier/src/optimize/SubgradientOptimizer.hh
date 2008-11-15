@@ -167,6 +167,7 @@ public:
      @brief Returns best solution found so far (approximately)
    */
   double bestSolution(Dvec &outvec) {
+    //    cout << "BEST SOL " << bestObjective << std::endl;
     outvec = bestSoFar;
     return bestObjective;
   }

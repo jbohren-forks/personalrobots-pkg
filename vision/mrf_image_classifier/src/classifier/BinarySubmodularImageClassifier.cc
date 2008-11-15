@@ -255,7 +255,11 @@ evaluate(const IplImage* image, IplImage* segmented) {
 
   //  wvec->assertFinite();
   Dvec wbest(wvec->size());
-  subgOpt->bestSolution(wbest);
+
+  if (subgOpt == NULL)
+    wbest = *wvec;
+  else
+    subgOpt->bestSolution(wbest);
 
   vector<int> groundState;
   energy.groundState(wbest, groundState, gcut);
@@ -270,7 +274,11 @@ evaluate(const tUndirectedFeatureGraph* fgraph, vector<int>& labels) {
   BinarySubmodularEnergy<tFeatureMatrix> energy(fgraph);
 
   Dvec wbest(wvec->size());
-  subgOpt->bestSolution(wbest);
+
+  if (subgOpt == NULL)
+    wbest = *wvec;
+  else
+    subgOpt->bestSolution(wbest);
 
   energy.groundState(wbest, labels, gcut);
 }
