@@ -223,7 +223,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
       occ_cost += footprint_cost;
     }
     else{
-      occ_cost += double(ma_.getNormalizedCost(cell_x, cell_y));
+      occ_cost += ma_.getCost(cell_x, cell_y);
     }
 
     double cell_pdist = map_(cell_x, cell_y).path_dist;
@@ -235,7 +235,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
     //if a point on this trajectory has no clear path to goal it is invalid
     if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
-      //printf("No path to goal with goal distance = %f, path_distance = %f and max cost = %f\n", goal_dist, path_dist, impossible_cost);
+      printf("No path to goal with goal distance = %f, path_distance = %f and max cost = %f\n", goal_dist, path_dist, impossible_cost);
       traj.cost_ = -1.0;
       return;
     }
@@ -547,11 +547,11 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 double TrajectoryController::pointCost(int x, int y){
   //if the cell is in an obstacle the path is invalid
   if(ma_.getCost(x, y) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE && !map_(x, y).within_robot){
-    //printf("Footprint in collision at <%d, %d>\n", x, y);
+    printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
 
-  return ma_.getNormalizedCost(x, y);
+  return ma_.getCost(x, y);
 }
 
 //calculate the cost of a ray-traced line

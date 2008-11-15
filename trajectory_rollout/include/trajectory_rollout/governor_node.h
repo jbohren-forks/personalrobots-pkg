@@ -82,7 +82,7 @@
 class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
  public:
   WavefrontMapAccessor(MapGrid &map, double outer_radius) 
-    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale, 1.0),
+    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale),
       map_(map), outer_radius_(outer_radius) {}
 
     virtual ~WavefrontMapAccessor(){};
