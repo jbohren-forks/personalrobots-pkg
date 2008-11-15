@@ -1,5 +1,5 @@
 # Pull Log Directories from prior execution for playback
-cp ./latest/*.log .
+#cp ./latest/*.log .
 
 # Run the console window with the play back configuration
 trexfast `rospack find executive_trex_pr2`/cfg/$1.playback.cfg

@@ -3,6 +3,7 @@
   <master auto="start"/>
   <group name="wg">
     <include file="$(find highlevel_controllers)/test/launch_stage_5cm.xml" />
+    <node pkg="highlevel_controllers" type="cli" respawn="false"/>
   </group>
 </launch>
 
