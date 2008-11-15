@@ -204,7 +204,10 @@ namespace ompl {
     /** Dispatch to the currently select()-ed planner's
 	SBPLPlanner::force_planning_from_scratch(). */
     int force_planning_from_scratch() throw(no_planner_selected);
-    
+        
+    /** \brief Notify the planner that costs have changed */
+    void costs_changed() throw(no_planner_selected);
+
   protected:
     DiscreteSpaceInformation* environment_;
     bool bforwardsearch_;
@@ -236,7 +239,7 @@ namespace ompl {
     /** \return false if (ix,iy) is not in the map, or if the
 	delegated cost update failed. */
     virtual bool UpdateCost(int ix, int iy, unsigned char newcost) = 0;
-    
+
     /** \return true if there is no obstacle at (ix,iy)... if (ix,iy)
 	is not in the map, then outside_map_is_obstacle is
 	returned. */

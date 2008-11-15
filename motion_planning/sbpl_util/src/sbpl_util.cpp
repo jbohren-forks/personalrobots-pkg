@@ -230,6 +230,14 @@ namespace ompl {
     return planner_->force_planning_from_scratch();
   }
   
+  void SBPLPlannerManager::
+  costs_changed() throw(no_planner_selected)
+  {
+    if ( ! planner_)
+      throw no_planner_selected();
+
+    return planner_->costs_changed();
+  }
   
   SBPLPlannerStatistics::entry::
   entry(std::string const & _plannerType, std::string const & _environmentType)
