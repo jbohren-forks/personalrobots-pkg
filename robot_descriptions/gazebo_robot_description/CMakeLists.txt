@@ -33,6 +33,7 @@ add_custom_target(media_files ALL DEPENDS ${pr2_gen_files})
 set(PR2_OUTPUT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2.model)
 set(PR2_OUTPUT_NOLIMIT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_nolimit.model)
 set(PR2_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2/pr2.xml)
+
 add_custom_command(
   OUTPUT ${PR2_OUTPUT}
   COMMAND ${urdf2gazebo_exe}
@@ -46,3 +47,26 @@ add_custom_command(
 
 add_custom_target(pr2_urdf ALL DEPENDS ${PR2_OUTPUT} ${PR2_OUTPUT_NOLIMIT})
 add_dependencies(pr2_urdf urdf2gazebo)
+
+set(PR2_PROTOTYPE1_OUTPUT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_prototype1.model)
+set(PR2_PROTOTYPE1_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2_prototype1/pr2_prototype1.xml)
+add_custom_command(
+  OUTPUT ${PR2_PROTOTYPE1_OUTPUT}
+  COMMAND ${urdf2gazebo_exe}
+  ARGS ${PR2_PROTOTYPE1_INPUT} ${PR2_PROTOTYPE1_OUTPUT}
+  DEPENDS ${PR2_PROTOTYPE1_INPUT})
+
+add_custom_target(pr2_prototype1_urdf ALL DEPENDS ${PR2_PROTOTYPE1_OUTPUT} ${PR2_PROTOTYPE1_OUTPUT_NOLIMIT})
+add_dependencies(pr2_prototype1_urdf urdf2gazebo)
+
+
+set(PR2_ARM_OUTPUT ${gazebo_robot_description_PACKAGE_PATH}/world/pr2_arm.model)
+set(PR2_ARM_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2_arm_test/pr2_arm.xml)
+add_custom_command(
+  OUTPUT ${PR2_ARM_OUTPUT}
+  COMMAND ${urdf2gazebo_exe}
+  ARGS ${PR2_ARM_INPUT} ${PR2_ARM_OUTPUT}
+  DEPENDS ${PR2_ARM_INPUT})
+
+add_custom_target(pr2_arm_urdf ALL DEPENDS ${PR2_ARM_OUTPUT} ${PR2_ARM_OUTPUT_NOLIMIT})
+add_dependencies(pr2_arm_urdf urdf2gazebo)

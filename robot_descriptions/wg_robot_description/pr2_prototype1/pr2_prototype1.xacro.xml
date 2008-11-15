@@ -4,6 +4,7 @@
   <include filename="../pr2_robot_defs/head_defs.xml" />
   <include filename="../pr2_robot_defs/body_defs.xml" />
   <include filename="../pr2_robot_defs/base_defs.xml" />
+  <include filename="../pr2_robot_defs/gazebo_defs.xml" />
 
   <pr2_base name="base" />
 
