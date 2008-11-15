@@ -94,8 +94,8 @@
             <controller:ros_camera name="${side}_ptz_cam_controller" plugin="libRos_Camera.so">
               <alwaysOn>true</alwaysOn>
               <updateRate>15.0</updateRate>
-              <topicName>axis_left/image</topicName>
-              <frameName>ptz_left</frameName>
+              <topicName>axis_${side}/image</topicName>
+              <frameName>ptz_${side}</frameName>
               <interface:camera name="${side}_ptz_cam_iface" />
             </controller:ros_camera>
           </sensor:camera>
