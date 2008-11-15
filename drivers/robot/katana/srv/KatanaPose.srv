@@ -1,0 +1,9 @@
+std_msgs/Point pose  ## todo look at using std_msgs/Pose for all 6 dof
+float32 phi
+float32 theta
+float32 psi
+---
+std_msgs/Point pose
+float32 phi
+float32 theta
+float32 psi
