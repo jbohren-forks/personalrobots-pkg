@@ -258,7 +258,7 @@ namespace ros {
       for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
 	unsigned int x, y; // Cell coordinates
 	cm.IND_MC(*it, x, y);
-	env_->UpdateCost(x, y, (unsigned char) cm.getNormalizedCost(x, y));
+	env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
       }
     }
 

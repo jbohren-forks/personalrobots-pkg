@@ -90,7 +90,7 @@ namespace ros {
       double robotRadius(0.325);
       double circumscribedRadius(0.46);
       double inscribedRadius(0.325);
-      double weight(1.0);
+      double weight(0.1); // Scale costs down by a factor of 10
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
       param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
@@ -639,7 +639,10 @@ namespace ros {
      * to allow more flexibility to get near the goal - essentially treating the goal as a waypoint. 
      */
     bool MoveBase::dispatchCommands(){
-      bool planOk = checkWatchDog();
+      // First criteria is that we have had a sufficiently recent sensor update to trust perception and that we have a valid plan. This latter
+      // case is important since we can end up with an active controller that becomes invalid through the planner looking ahead. 
+      // We want to be able to stop the robot in that case
+      bool planOk = checkWatchDog() && isValid();
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
