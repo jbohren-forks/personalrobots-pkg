@@ -39,6 +39,9 @@ BinarySubmodularImageClassifier::
   if (wvec != NULL)
     delete wvec;
 
+  if (initialBestSolution != NULL)
+    delete initialBestSolution;
+
   delete objFunc;
 
   delete subgOpt;
@@ -204,6 +207,9 @@ loadTrainingData(const vector<tUndirectedFeatureGraph*>& afgraphs,
   subgOpt = new SubgradientOptimizer(objFunc, &l2reg, *wvec, 
 				     Cp, IIR_COEFF, rate,
 				     logger);
+
+  if (initialBestSolution != NULL)
+    subgOpt->setBestSolution(*initialBestSolution, initialBestObjective);
 }
 
 void BinarySubmodularImageClassifier::

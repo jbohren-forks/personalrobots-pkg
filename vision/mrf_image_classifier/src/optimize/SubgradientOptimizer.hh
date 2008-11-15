@@ -172,6 +172,14 @@ public:
   }
 
   /**
+     Manually sets best solution
+   */
+  void setBestSolution(Dvec& vec, double val) {
+    bestSoFar = vec;
+    bestObjective = val; 
+  }
+
+  /**
      @param aRate The learning rate to set
    */
   void setLearningRate(double aRate) {

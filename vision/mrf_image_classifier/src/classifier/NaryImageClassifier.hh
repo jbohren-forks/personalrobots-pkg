@@ -36,14 +36,19 @@ public:
   
   /**
      @param awvec A weight vector for the classifier for this node
+     @param abestvec The current best solution
+     @param abestobj The curretn best objective value
      @param ascope The objects in the scope of this node
    */
   ClassifierNode(const Dvec& awvec, 
+		 const Dvec& abestvec,
+		 double abestobj,
 		 const ObjectSet& ascope) :
     scope(ascope),
     classifier(&awvec),
     nullity(false)
   {
+    classifier.setInitialBestSolution(abestvec, abestobj);
   }
 
   /**
@@ -68,11 +73,31 @@ public:
     if (scnode.compare("cnode") != 0)
       throw DeserializationError();
 
-    /// @fixme also save best weight vector
     Dvec* wvec = DvecUtils::deserialize(istr);
+
+    // best weight vector so far
+    string best;
+    istr >> best;
+
+    if (best.compare("best") != 0)
+      throw DeserializationError();
+
+    // best objective value
+    double bestObj;
+    istr >> bestObj;
+
+    Dvec *bestvec = DvecUtils::deserialize(istr);
+
+    // parse scope
     ObjectSet scope(istr);
 
-    return new ClassifierNode(*wvec, scope);
+    ClassifierNode *cnode = 
+      new ClassifierNode(*wvec, *bestvec, bestObj, scope);
+
+    delete wvec;
+    delete bestvec;
+
+    return cnode;
   }
 
   /**
@@ -82,8 +107,15 @@ public:
    */
   void serialize(std::ostream& ostr) {
     ostr << "cnode" << endl;
-    // FIXME: make BinarySubmodularImageClassifier serialize itself
+
+    Dvec bestVec(classifier.getWeightVector()->size());
+    double bestObj = classifier.getBestSolution(bestVec);
+
+    /// @fixme make BinarySubmodularImageClassifier serialize itself
     DvecUtils::serialize(*classifier.getWeightVector(), ostr);
+    ostr << "best " << bestObj << std::endl;
+    DvecUtils::serialize(bestVec, ostr);
+
     scope.serialize(ostr);
   }
 

@@ -204,7 +204,7 @@ makeRandomBCTree(const ObjectSet& objset,
   //  objset.serialize(cout);
 
   BinaryClassifierTree* tree = 
-    new BinaryClassifierTree(new ClassifierNode(wvec0, objset));
+    new BinaryClassifierTree(new ClassifierNode(wvec0, wvec0, HUGE_VAL, objset));
 
   if (classes.size() > 1) {
     vector<ObjectClass> permuted = 

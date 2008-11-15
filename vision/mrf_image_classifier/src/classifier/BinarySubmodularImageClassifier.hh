@@ -63,6 +63,8 @@ public:
 				  double aCp = -1,
 				  double arate = -1) :
     wvec(NULL),
+    initialBestSolution(NULL),
+    initialBestObjective(HUGE_VAL),
     objFunc(NULL),
     subgOpt(NULL),
     Cp(aCp),
@@ -138,7 +140,22 @@ public:
      @return The best objective so far
      @param vec Output argument for best solution found so far
    */
-  double getBestSolution(Dvec& vec) const { return subgOpt->bestSolution(vec); }
+  double getBestSolution(Dvec& vec) const { 
+    if (subgOpt == NULL) {
+      vec = *wvec;
+      return HUGE_VAL;
+    } else
+      return subgOpt->bestSolution(vec); 
+  }
+
+  /** 
+      Manually sets best solution found so far.
+      Currently only used for deserialization
+   */
+  void setInitialBestSolution(const Dvec &wvec, double val) {
+    initialBestSolution = new Dvec(wvec);
+    initialBestObjective = val;
+  }
 
   /**
      @param A logger to be set
@@ -169,6 +186,9 @@ public:
 
 private:
   Dvec* wvec;
+  Dvec* initialBestSolution;
+  double initialBestObjective;
+
   vector<FeatureGraphExtractor<tFeatureMatrix>*> fgraphxs;
   vector<tUndirectedFeatureGraph*> fgraphs;
   vector<GraphCutMinimizer*> gcuts;
