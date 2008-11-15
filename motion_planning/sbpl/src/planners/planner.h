@@ -89,6 +89,10 @@ public:
     //forgets previous planning efforts and starts planning from scratch next time replan is called
     virtual int force_planning_from_scratch() = 0; 
 
+    // Notifies the planner that costs have changed. May need to be specialized for different subclasses in terms of what to
+    // do here
+    virtual void costs_changed() {}
+
     virtual ~SBPLPlanner(){};
 
 protected:
