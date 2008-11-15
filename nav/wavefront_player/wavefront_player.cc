@@ -118,7 +118,6 @@ robot.
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/LaserScan.h>
-#include <std_msgs/Pose2DFloat32.h>
 #include <std_srvs/StaticMap.h>
 
 // For GUI debug
