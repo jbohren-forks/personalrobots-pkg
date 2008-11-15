@@ -172,6 +172,8 @@
 		<controller:P3D name="p3d_object_controller" plugin="libP3D.so">
 			<updateRate>100.0</updateRate>
 			<bodyName>object1_body</bodyName>
+			<topicName>object1_body_ground_truth</topicName>
+			<frameName>map</frameName>
 			<interface:position name="p3d_object_position"/>
 		</controller:P3D>
 
@@ -309,12 +311,13 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2_xml_nolimit.model" />
+      <xi:include href="pr2_nolimit.model" />
     </include>
   </model:physical>
 
 
   <!-- White Directional light -->
+  <!--
   <model:renderable name="directional_white">
     <light>
       <type>directional</type>
@@ -324,6 +327,7 @@
       <attenuation>1 0.0 1.0 0.4</attenuation>
     </light>
   </model:renderable>
+  -->
 
 </gazebo:world>
 

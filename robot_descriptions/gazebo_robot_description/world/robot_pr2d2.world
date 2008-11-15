@@ -204,7 +204,7 @@
 			<updateRate>100.0</updateRate>
 			<bodyName>object1_body</bodyName>
 			<topicName>object1_body_ground_truth</topicName>
-			<frameName>object1_body_ground_truth_frame</frameName>
+			<frameName>map</frameName>
 			<interface:position name="p3d_object_position"/>
 		</controller:P3D>
 

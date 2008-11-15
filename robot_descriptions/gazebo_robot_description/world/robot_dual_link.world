@@ -183,7 +183,7 @@
         <updateRate>1000.0</updateRate>
         <bodyName>link1</bodyName>
         <topicName>link1_pose</topicName>
-        <frameName>link1_frame</frameName>
+        <frameName>map</frameName>
         <xyzOffsets>0 0 0.5</xyzOffsets> <!-- at pivot of link2 -->
         <rpyOffsets>0 0 0.0</rpyOffsets>
         <interface:position name="p3d_link1_position"/>
@@ -195,7 +195,7 @@
         <updateRate>1000.0</updateRate>
         <bodyName>link2</bodyName>
         <topicName>link2_pose</topicName>
-        <frameName>link2_frame</frameName>
+        <frameName>map</frameName>
         <interface:position name="p3d_link2_position"/>
     </controller:P3D>
 

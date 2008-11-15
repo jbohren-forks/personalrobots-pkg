@@ -197,7 +197,7 @@
         <updateRate>100.0</updateRate>
         <bodyName>link1</bodyName>
         <topicName>link1_pose</topicName>
-        <frameName>link1_frame</frameName>
+        <frameName>map</frameName>
         <interface:position name="p3d_link1_position"/>
     </controller:P3D>
 
