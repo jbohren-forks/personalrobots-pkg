@@ -97,6 +97,13 @@ int main( int argc, char** argv )
   else
     cout<<"Could not compute Fwd Kin."<<endl;
 
+  for (int i=0; i<7; i++)
+  {
+  if (left_arm->computeFK(pr2_config,f,i))
+     cout<<"Link transformation: "<< i << endl << f<<endl;
+  else
+     cout<<"Could not compute Fwd Kin.for link: "<< i << endl;
+  }
   (*left_arm->q_IK_guess)(0) = 0.1, (*left_arm->q_IK_guess)(1) = 0.0, (*left_arm->q_IK_guess)(2) = 0.0, (*left_arm->q_IK_guess)(3) = 0.0;
   (*left_arm->q_IK_guess)(4) = 0.0, (*left_arm->q_IK_guess)(5) = 0.0, (*left_arm->q_IK_guess)(6) = 0.0;
 
