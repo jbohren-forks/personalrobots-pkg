@@ -5,6 +5,7 @@
 #include "joy/Joy.h"
 
 #include "robot_srvs/SetJointCmd.h"
+#include "robot_msgs/JointCmd.h"
 
 using namespace ros;
 
@@ -44,9 +45,16 @@ class TeleopHead : public node
          */
          //         advertise<std_msgs::HeadVel>("cmd_vel", 1);
          subscribe("joy", joy, &TeleopHead::joy_cb, 1);
+         advertise<robot_msgs::JointCmd>("head_controller/set_command_array", 1) ;
          //subscribe("cmd_passthrough", cmd_passthrough, &TeleopHead::passthrough_cb, 1);
          printf("done with ctor\n");
       }
+  ~TeleopHead()
+  {
+    unsubscribe("joy") ;
+    unadvertise("head_controller/set_command_array") ;
+
+  }
       void joy_cb()
       {
          /*
@@ -71,18 +79,17 @@ class TeleopHead : public node
            req_tilt += joy.axes[axis_tilt] * tilt_step;
            req_tilt = std::max(std::min(req_tilt, max_tilt), -max_tilt);
          }
+         robot_msgs::JointCmd joint_cmds ;
 
-         robot_srvs::SetJointCmd::request req;
-         robot_srvs::SetJointCmd::response res;
-         req.positions.push_back(req_pan);
-         req.positions.push_back(req_tilt);
-         req.velocity.push_back(0.0);
-         req.velocity.push_back(0.0);
-         req.acc.push_back(0.0);
-         req.acc.push_back(0.0);
-         req.names.push_back("head_pan_joint");
-         req.names.push_back("head_tilt_joint");
-         ros::service::call("head_controller/set_command_array", req, res);
+         joint_cmds.positions.push_back(req_pan);
+         joint_cmds.positions.push_back(req_tilt);
+         joint_cmds.velocity.push_back(0.0);
+         joint_cmds.velocity.push_back(0.0);
+         joint_cmds.acc.push_back(0.0);
+         joint_cmds.acc.push_back(0.0);
+         joint_cmds.names.push_back("head_pan_joint");
+         joint_cmds.names.push_back("head_tilt_joint");
+         publish("head_controller/set_command_array", joint_cmds) ;
 
       }
 };
