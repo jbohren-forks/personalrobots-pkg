@@ -83,8 +83,18 @@ public:
       throw DeserializationError();
 
     // best objective value
-    double bestObj;
+    string bestObj;
+    double bestObjVal;
     istr >> bestObj;
+
+    cerr << "BEST " << bestObj << std::endl;
+
+    if (bestObj.compare("inf") == 0)
+      bestObjVal = HUGE_VAL;
+    else {
+      std::istringstream iss(bestObj);
+      iss >> bestObjVal;
+    }
 
     Dvec *bestvec = DvecUtils::deserialize(istr);
 
@@ -92,7 +102,7 @@ public:
     ObjectSet scope(istr);
 
     ClassifierNode *cnode = 
-      new ClassifierNode(*wvec, *bestvec, bestObj, scope);
+      new ClassifierNode(*wvec, *bestvec, bestObjVal, scope);
 
     delete wvec;
     delete bestvec;
@@ -113,6 +123,7 @@ public:
 
     /// @fixme make BinarySubmodularImageClassifier serialize itself
     DvecUtils::serialize(*classifier.getWeightVector(), ostr);
+
     ostr << "best " << bestObj << std::endl;
     DvecUtils::serialize(bestVec, ostr);
 
