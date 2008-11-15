@@ -15,7 +15,7 @@
     <joint name="${prefix}_l_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
+      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
@@ -60,7 +60,7 @@
     <joint name="${prefix}_r_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
+      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
@@ -111,7 +111,7 @@
     <joint name="${prefix}_l_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
+      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
@@ -162,7 +162,7 @@
     <joint name="${prefix}_r_finger_tip_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
+      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
