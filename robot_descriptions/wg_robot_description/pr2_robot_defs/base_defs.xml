@@ -189,7 +189,7 @@
       </collision>
 
       <map name="sensor" flag="gazebo">
-        <verbatim key="sensor_ray">
+        <verbatim key="sensor_base_laser_ray">
           <sensor:ray name="base_laser">
             <rayCount>683</rayCount>
             <rangeCount>683</rangeCount>
@@ -212,6 +212,32 @@
 	      <interface:laser name="ros_base_laser_iface" />
             </controller:ros_laser>
           </sensor:ray>
+
+          <!-- battery controls -->
+          <controller:gazebo_battery name="gazebo_battery_controller" plugin="libgazebo_battery.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>1.0</updateRate>
+            <timeout>5</timeout>
+            <diagnostic_rate>1.0</diagnostic_rate>
+            <battery_state_rate>1.0</battery_state_rate>
+            <full_charge_energy>120.0</full_charge_energy>
+            <diagnosticTopicName>diagnostic</diagnosticTopicName>
+            <stateTopicName>battery_state</stateTopicName>
+            <selfTestServiceName>self_test</selfTestServiceName>
+            <interface:audio name="battery_dummy_interface" />
+          </controller:gazebo_battery>
+
+          <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
+            <alwaysOn>true</alwaysOn>
+            <updateRate>1000.0</updateRate>
+            <bodyName>base</bodyName>
+            <topicName>base_pose_ground_truth</topicName>
+            <gaussianNoise>0.01</gaussianNoise>
+            <frameName>map</frameName>
+            <xyzOffsets>25.65 25.65 0</xyzOffsets> <!-- initialize odometry for fake localization-->
+            <rpyOffsets>0 0 0</rpyOffsets>
+            <interface:position name="p3d_base_position"/>
+          </controller:P3D>
         </verbatim>
       </map>
     </sensor>

@@ -1,7 +1,7 @@
  <robot name="tilt_laser_test">
   
-  <include filename="../robot_defs/head_defs.xml" />
-  <include filename="../robot_defs/body_defs.xml" />
+  <include filename="../pr2_robot_defs/head_defs.xml" />
+  <include filename="../pr2_robot_defs/body_defs.xml" />
 
   <pr2_tilting_laser name="tilt_laser" parent="torso">
     <origin xyz="0 0 0.03" rpy="0 0 0" />

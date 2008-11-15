@@ -80,7 +80,7 @@
       </collision>
 
       <map name="sensor" flag="gazebo">
-        <verbatim key="sensor_ray">
+        <verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}">
             <rayCount>683</rayCount>
             <rangeCount>683</rangeCount>
@@ -152,7 +152,7 @@
 
 
       <map name="sensor" flag="gazebo">
-	<verbatim key="${name}_camera">
+	<verbatim key="sensor_${name}_camera">
           <sensor:camera name="${name}_left_sensor">
             <imageWidth>640</imageWidth>
             <imageHeight>480</imageHeight>
@@ -171,7 +171,7 @@
 	</verbatim>
       </map>
       <map name="sensor" flag="gazebo">
-	<verbatim key="sensor_ray">
+	<verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}_laser">
             <rayCount>30</rayCount>
             <rangeCount>30</rangeCount>
