@@ -1,0 +1,9 @@
+<active_joints>
+  <joint_name name="shoulder_pan_right_joint" />
+  <joint_name name="shoulder_pitch_right_joint" />
+  <joint_name name="upperarm_roll_right_joint" />
+  <joint_name name="elbow_flex_right_joint" />
+  <joint_name name="forearm_roll_right_joint" />
+  <joint_name name="wrist_flex_right_joint" />
+  <joint_name name="gripper_roll_right_joint" />
+</active_joints>
