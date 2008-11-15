@@ -144,8 +144,6 @@ class SBAVisualizer: public F2FVisualizer {
     /// a trajectory, or track, is green if the last observation of the track is
     /// on the current frame. Yellow otherwise.
     virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
-    virtual void drawTrackEstimatedLocations(const PoseEstFrameEntry& frame);
-
 
     /// a reference to the estimated pose of the frames
     const vector<FramePose*>& framePoses;

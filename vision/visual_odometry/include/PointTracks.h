@@ -23,7 +23,14 @@ public:
     local_frame_index_(-1),
     mat_Hpc_(cvMat(3, 6, CV_64FC1, Hpc_)),
     mat_Tcp_(cvMat(6, 3, CV_64FC1, Tcp_))
-    {}
+    {
+    printf("construct a PointTrackObserv, fi=%d, li=%d, Tcp_ = 0x%x\n",
+        frame_index_, local_frame_index_, Tcp_);
+    }
+  ~PointTrackObserv() {
+    printf("Removing a PointTrackObserv, fi=%d, li=%d, Tcp_ = 0x%x\n",
+        frame_index_, local_frame_index_, Tcp_);
+  }
   /// the index of the image frame;
   int           frame_index_;
   /// observed disparity coordinates of the point in this frame
@@ -45,10 +52,10 @@ public:
 };
 /// A sequence of observations of a 3D feature over a sequence of
 /// video images.
-class PointTrack: public deque<PointTrackObserv> {
+class PointTrack: public deque<PointTrackObserv*> {
 public:
-  typedef deque<PointTrackObserv> Parent;
-  PointTrack(const PointTrackObserv& obsv0, const PointTrackObserv& obsv1,
+  typedef deque<PointTrackObserv*> Parent;
+  PointTrack(PointTrackObserv* obsv0, PointTrackObserv* obsv1,
       const CvPoint3D64f& coord, int frameIndex, int trackId):
         coordinates_(coord), id_(trackId),
         mat_tp_(cvMat(3, 1, CV_64FC1, tp_)),
@@ -56,22 +63,25 @@ public:
       push_back(obsv0);
       push_back(obsv1);
   }
-  inline void extend(const PointTrackObserv& obsv){
+  ~PointTrack();
+  inline void extend(PointTrackObserv* obsv){
     push_back(obsv);
   }
   /// purge all observation that is older than oldestFrameIndex
   void purge(int oldestFrameIndex) {
-    while (front().frame_index_ < oldestFrameIndex) {
+    while (front()->frame_index_ < oldestFrameIndex) {
+      PointTrackObserv* obsv = front();
       pop_front();
+      delete obsv;
     }
   }
   inline size_type size() const { return Parent::size();}
   /// Index of the frame with the lowest index in which
   /// this track is detected.
-  inline int firstFrameIndex() const { return front().frame_index_;}
+  inline int firstFrameIndex() const { return front()->frame_index_;}
   /// Index of the frame with the highest index in which
   /// this track is detected.
-  inline int lastFrameIndex()  const { return back().frame_index_; }
+  inline int lastFrameIndex()  const { return back()->frame_index_; }
   void print() const;
 
   /// estimated 3D Cartesian coordinates.
@@ -93,10 +103,11 @@ public:
 class PointTracks {
 public:
   PointTracks():current_frame_index_(0){}
-  PointTracks(PointTrack& track, int frameIndex):
+  PointTracks(PointTrack* track, int frameIndex):
     current_frame_index_(frameIndex){
     tracks_.push_back(track);
   }
+  ~PointTracks();
   /// purge the tracks for tracks and track observations
   /// that are older than oldestFrameIndex
   void purge(int oldestFrameIndex);
@@ -106,7 +117,7 @@ public:
       /// histogram of the length of the tracks
       vector<int>* lenHisto) const;
   /// a container for all the tracks
-  list<PointTrack> tracks_;
+  list<PointTrack*> tracks_;
   /// The index of the last frame that tracks have been
   /// constructed against.
   int current_frame_index_;

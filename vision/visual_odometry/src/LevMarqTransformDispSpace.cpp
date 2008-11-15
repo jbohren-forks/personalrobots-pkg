@@ -280,6 +280,14 @@ bool LevMarqTransformDispSpace::optimizeAlt(const CvMat *xyzs0, const CvMat *xyz
 					_r1_k++;
 
 				}
+				/// @todo jdc debugging. Remove the following lines
+#if 0
+				{
+				  printf ("Jacobian of this Point\n");
+				  CvMatUtils::printMat(&r1);
+
+				}
+#endif
 
 				_r1_k = _r1;
 				for (int k=0;

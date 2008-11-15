@@ -100,6 +100,7 @@ protected:
 
   static const int NUM_POINT_PARAMS = 3;
   static const int NUM_CAM_PARAMS = numParams;
+  static const int DIM = 3; // 2 for monocullar, 3 for stereo
   // LevMarqPartitioned levMarqPartitioned;
 
   /// max number of free cameras/frames. At the beginning, we may not
@@ -121,7 +122,7 @@ protected:
   /// row step of matrix A. Keep in fixed even though the window may not full.
   const int A_step_;
   inline double* getABlock(int c0, int c1) {
-    &A_data_[c0*NUM_CAM_PARAMS*A_step_ + c1*NUM_CAM_PARAMS];
+    return &A_data_[c0*NUM_CAM_PARAMS*A_step_ + c1*NUM_CAM_PARAMS];
   }
   inline void getABlock(CvMat* mat, int c0, int c1) {
     cvGetSubRect(&mat_A_, mat,
@@ -135,7 +136,7 @@ protected:
   /// a data buffer that is large enough for matrix B in case of a full sliding window.
   double* B_data_;
   inline double* getBBlock(int c) {
-    &B_data_[c*NUM_CAM_PARAMS];
+    return &B_data_[c*NUM_CAM_PARAMS];
   }
   /// CvMat header for B_data_, for full sliding windows.
   CvMat mat_B_full_;
@@ -172,11 +173,20 @@ protected:
   /// The second half stores the transformation matrices of the free cameras,
   /// from full_fixed_window_size to full_fixed_window_size+full_free_window_size
   double* transf_data_;
-  inline double* getTransf(int i) {
+  inline double* getFreeTransf(int i) {
     return &transf_data_[i*16];
   }
   inline double* getFixedTransf(int i){
     return &transf_data_[(full_free_window_size_+i)*16];
+  }
+  inline double* getTransf(int global_index, int local_index) {
+    if (isFreeFrame(global_index) == true) {
+      return getFreeTransf(local_index);
+    } else if (isOldFrame(global_index) == false ) {
+      return getFixedTransf(local_index);
+    } else { // it is an old frame
+      return NULL;
+    }
   }
   /// a data buffer that is large enough for transformation matrices from global
   /// to local disparity space, of forwarded

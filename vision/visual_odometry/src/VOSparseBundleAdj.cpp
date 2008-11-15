@@ -159,23 +159,23 @@ bool VOSparseBundleAdj::extendTrack(PointTracks& tracks, PoseEstFrameEntry& fram
   bool status = false;
   int inlier = frame.mInlierIndices[inlierIndex];
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
-  BOOST_FOREACH( PointTrack& track, tracks.tracks_ ) {
+  BOOST_FOREACH( PointTrack* track, tracks.tracks_ ) {
     if (// The last frame of this track is not the same as
         // the last frame of this inlier pair. Skip it.
-        track.lastFrameIndex() == frame.mLastKeyFrameIndex ) {
-      PointTrackObserv& observ = track.back();
+        track->lastFrameIndex() == frame.mLastKeyFrameIndex ) {
+      PointTrackObserv* observ = track->back();
       if (// keypoint index needs to match skip to next track
-          observ.keypoint_index_ == p.second) {
+          observ->keypoint_index_ == p.second) {
         // found a matching track. Extend it.
         CvPoint3D64f coord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
         CvPoint3D64f coord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
-        PointTrackObserv obsv(frame.mFrameIndex, coord1, p.first);
+        PointTrackObserv* obsv = new PointTrackObserv(frame.mFrameIndex, coord1, p.first);
 
-        track.extend(obsv);
+        track->extend(obsv);
         status = true;
 #if DEBUG==1
         printf("extend track %3d => f=%3d, pi=%3d:[%3d, %3d]->f=%3d, pi=%3d:[%3d, %3d]\n",
-            track.id_,
+            track->id_,
             frame.mLastKeyFrameIndex, p.second,
             (int)(coord0.x+.5), (int)(coord0.y+.5),
             frame.mFrameIndex,        p.first,
@@ -194,15 +194,15 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   std::pair<int, int>& p = frame.mTrackableIndexPairs->at(inlier);
   CvPoint3D64f dispCoord0 = CvMatUtils::rowToPoint(*frame.mInliers0, inlierIndex);
   CvPoint3D64f dispCoord1 = CvMatUtils::rowToPoint(*frame.mInliers1, inlierIndex);
-  PointTrackObserv obsv0(frame.mLastKeyFrameIndex, dispCoord0, p.second);
-  PointTrackObserv obsv1(frame.mFrameIndex,        dispCoord1, p.first);
+  PointTrackObserv* obsv0 = new PointTrackObserv(frame.mLastKeyFrameIndex, dispCoord0, p.second);
+  PointTrackObserv* obsv1 = new PointTrackObserv(frame.mFrameIndex,        dispCoord1, p.first);
   // initial estimate of the position of the 3d point in Cartesian coord.
   CvMat disp1;
   cvGetRow(frame.mInliers1, &disp1, inlierIndex);
   CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
   CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
   dispToGlobal(disp1, frame.transf_local_to_global_, _cartCoord1);
-  PointTrack newtrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
+  PointTrack* newtrack = new PointTrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
   tracks.tracks_.push_back(newtrack);
 
   int trackId = mTrackId-1;
@@ -283,13 +283,12 @@ void SBAVisualizer::drawTrackingCanvas(
 
 void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
   drawTrackTrajectories(frame);
-  drawTrackEstimatedLocations(frame);
 }
 
 void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
-  BOOST_FOREACH( const PointTrack& track, this->tracks.tracks_ ){
-    const PointTrackObserv& lastObsv = track.back();
+  BOOST_FOREACH( const PointTrack* track, this->tracks.tracks_ ){
+    const PointTrackObserv* lastObsv = track->back();
     const CvScalar colorFixedFrame = CvMatUtils::blue;
     const CvScalar colorEstimated  = CvMatUtils::magenta;
     CvScalar colorFreeFrame;
@@ -297,7 +296,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     // drawing it green if the last observation is over the current frame,
     // namely a track that is still extending.
     // drawing it yellow otherwise. Namely a track that is phasing out.
-    if (lastObsv.frame_index_ < frame.mFrameIndex) {
+    if (lastObsv->frame_index_ < frame.mFrameIndex) {
       colorFreeFrame = CvMatUtils::yellow;
     } else {
       colorFreeFrame  = CvMatUtils::green;
@@ -305,24 +304,24 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 
     int thickness = 1;
     int i=0;
-    deque<PointTrackObserv>::const_iterator iObsv = track.begin();
-    CvPoint pt0     = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_);
-    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_est_);
+    deque<PointTrackObserv*>::const_iterator iObsv = track->begin();
+    CvPoint pt0     = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_);
+    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
 #if DEBUG==1
-    printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track.id_, track.size(),
-        track.coordinates_.x, track.coordinates_.y, track.coordinates_.z);
-    printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, iObsv->frame_index_, pt0.x, pt0.y);
+    printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track->id_, track->size(),
+        track->coordinates_.x, track->coordinates_.y, track->coordinates_.z);
+    printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
     printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     CvScalar color;
-    if (iObsv->frame_index_ < slideWindowFront) {
+    if ((*iObsv)->frame_index_ < slideWindowFront) {
       color = colorFixedFrame;
     } else {
       color = colorFreeFrame;
     }
-    for (iObsv++; iObsv != track.end(); iObsv++) {
-      CvPoint pt1     = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_);
-      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam(iObsv->disp_coord_est_);
+    for (iObsv++; iObsv != track->end(); iObsv++) {
+      CvPoint pt1     = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_);
+      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
 
       // draw the line between estimations, re-projected
       cvLine(canvasTracking.Ipl(), est_pt0, est_pt1, colorEstimated, thickness, CV_AA);
@@ -333,57 +332,18 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
       // setting up for next iteration
       pt0     = pt1;
       est_pt0 = est_pt1;
-      if (iObsv->frame_index_ < slideWindowFront) {
+      if ((*iObsv)->frame_index_ < slideWindowFront) {
         color = colorFixedFrame;
       } else {
         color = colorFreeFrame;
       }
 #if DEBUG==1
-      printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, iObsv->frame_index_, pt0.x, pt0.y);
+      printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
       printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     }
   }
 }
-
-void SBAVisualizer::drawTrackEstimatedLocations(const PoseEstFrameEntry& frame) {
-  return;
-  // now draw all the observation of the same 3d points on to a copy of the
-  int imgWidth  = frame.mImage->Width();
-  int imgHeight = frame.mImage->Height();
-  // make sure the image buffers is allocated to the right sizes
-  canvasTracking.Allocate(imgWidth, imgHeight);
-
-  assert(frame.mImage);
-  cvCvtColor(frame.mImage->Ipl(), canvasTracking.Ipl(),  CV_GRAY2RGB);
-  // draw all the tracks on canvasTracking
-
-  // compute the transformation from the global frame (same as first frame)
-  // to this frame.
-  vector<FramePose*>::const_reverse_iterator ifp = framePoses.rbegin();
-
-  while (ifp != framePoses.rend()) {
-    if ((*ifp)->mIndex == frame.mFrameIndex) {
-      // found it
-      break;
-    }
-    ifp++;
-  }
-  assert(ifp != framePoses.rend());
-  const CvPoint3D64f& rodCurrentToGlobal   = (*ifp)->mRod;
-  const CvPoint3D64f& shiftCurrentToGlobal = (*ifp)->mShift;
-  CvPoint3D64f rodGlobalToCurrent =  cvPoint3D64f(-rodCurrentToGlobal.x,
-      -rodCurrentToGlobal.y, -rodCurrentToGlobal.z);
-  CvPoint3D64f shifGlobaltoCurrent = cvPoint3D64f(-shiftCurrentToGlobal.x,
-      -shiftCurrentToGlobal.y, -shiftCurrentToGlobal.z);
-
-  BOOST_FOREACH( const PointTrack& track, this->tracks.tracks_ ){
-    BOOST_FOREACH( const PointTrackObserv& obsv, track ) {
-
-    }
-  }
-}
-
 
 void VOSparseBundleAdj::Stat2::print() {
   // The accumulator set which will calculate the properties for us:
