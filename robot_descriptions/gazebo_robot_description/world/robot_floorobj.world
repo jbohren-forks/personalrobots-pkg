@@ -20,9 +20,9 @@
 
   <verbosity>5</verbosity>
 
-<!-- cfm is 1e-5 for single precision -->
-<!-- erp is typically .1-.8 -->
-<!-- here's the global contact cfm/erp -->
+  <!-- cfm is 1e-5 for single precision -->
+  <!-- erp is typically .1-.8 -->
+  <!-- here's the global contact cfm/erp -->
   <physics:ode>
     <stepTime>0.001</stepTime>
     <gravity>0 0 -9.8</gravity>
