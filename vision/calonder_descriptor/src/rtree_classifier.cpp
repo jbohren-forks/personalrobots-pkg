@@ -52,15 +52,15 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 // TODO: trivially vectorizable
 DenseSignature RTreeClassifier::getSignature(IplImage* patch)
 {
+  // used inside loop to cram float* into uBLAS-friendly type without copying
+  typedef const ublas::shallow_array_adaptor<float> PostStorage;
+  typedef const ublas::vector<float, PostStorage> PostVec;
+
   DenseSignature sig = ublas::zero_vector<float>(classes_);
 
   std::vector<RandomizedTree>::const_iterator tree_it;
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-    const float* post_array = tree_it->getPosterior(patch);
-    // cram float* into uBLAS-friendly type without copying
-    typedef const ublas::shallow_array_adaptor<float> PostStorage;
-    typedef const ublas::vector<float, PostStorage> PostVec;
-    PostVec post(classes_, PostStorage(classes_, const_cast<float*>(post_array)) );
+    PostVec post(classes_, PostStorage(classes_, const_cast<float*>(tree_it->getPosterior(patch))) );
     sig += post;
   }
 
