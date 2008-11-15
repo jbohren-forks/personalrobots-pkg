@@ -8,31 +8,25 @@
   <property name="gripper_max_angle" value="0.8" />
 
 
-  <macro name="pr2_finger" params="prefix side parent reflect mimic_finger">
+  <macro name="pr2_finger" params="prefix parent">
 
     <!-- Finger proximal digit -->
 
-    <joint name="${prefix}_${side}_finger_joint" type="revolute">
+    <joint name="${prefix}_l_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${((reflect-1)/2)*gripper_max_angle}" max="${((reflect+1)/2)*gripper_max_angle}" />
+      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <joint_properties damping="0.1" />
-      <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${reflect}" offset="0"/>
-      <map name="${prefix}_${side}_finger_mimic" flag="gazebo">
-        <elem key="mimicKp">1000.0</elem>
-        <elem key="mimicKd"> 0.0</elem>
-        <elem key="mimicFMax">10000.0</elem>
-      </map>
     </joint>
 
-    <link name="${prefix}_${side}_finger">
+    <link name="${prefix}_l_finger">
       <parent name="${parent}" />
-      <origin xyz="0.07751 ${reflect*0.01} 0" rpy="0 0 0" />
+      <origin xyz="0.07751 ${1*0.01} 0" rpy="0 0 0" />
 
-      <joint name="${prefix}_${side}_finger_joint" />
+      <joint name="${prefix}_l_finger_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz="0 0 0" />
@@ -45,45 +39,96 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Shell</elem>
         </map>
-        <geometry name="pr2_finger_${side}_mesh_file">
-          <mesh filename="upper_finger_${side}" />
+        <geometry name="pr2_finger_l_mesh_file">
+          <mesh filename="upper_finger_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="pr2_finger_${side}_collision_geom">
+        <geometry name="pr2_finger_l_collision_geom">
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="${prefix}_${side}_finger_gravity" flag="gazebo">
+      <map name="${prefix}_l_finger_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <!-- Finger tip -->
+    <!-- Finger proximal digit -->
 
-    <joint name="${prefix}_${side}_finger_tip_joint" type="revolute">
+    <joint name="${prefix}_r_finger_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="1000" min="${((-reflect-1)/2)*gripper_max_angle}" max="${((-reflect+1)/2)*gripper_max_angle}" />
+      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
       <calibration reference_position="0" values="0 0" />
       <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
       <joint_properties damping="0.1" />
-      <mimic name="${prefix}_${mimic_finger}_finger_joint" mult="${-reflect}" offset="0"/>
-      <map name="${prefix}_${side}_finger_tip_mimic" flag="gazebo">
+      <mimic name="${prefix}_l_finger_joint" mult="${-1}" offset="0"/>
+      <map name="${prefix}_r_finger_mimic" flag="gazebo">
         <elem key="mimicKp">1000.0</elem>
         <elem key="mimicKd"> 0.0</elem>
         <elem key="mimicFMax">10000.0</elem>
       </map>
     </joint>
 
-    <link name="${prefix}_${side}_finger_tip">
-      <parent name="${prefix}_${side}_finger" />
+    <link name="${prefix}_r_finger">
+      <parent name="${parent}" />
+      <origin xyz="0.07751 ${-1*0.01} 0" rpy="0 0 0" />
+
+      <joint name="${prefix}_r_finger_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz="0 0 0" />
+        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
+                  iyy="0.013567548848" iyz="-0.000427679042"
+                  izz="0.001755089866" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Shell</elem>
+        </map>
+        <geometry name="pr2_finger_r_mesh_file">
+          <mesh filename="upper_finger_r" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry name="pr2_finger_r_collision_geom">
+          <box size="0.131 0.056 0.049" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+      <map name="${prefix}_r_finger_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <!-- Finger tip -->
+
+    <joint name="${prefix}_l_finger_tip_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="1000" min="${-gripper_max_angle}" max="0" />
+      <calibration reference_position="0" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <joint_properties damping="0.1" />
+      <mimic name="${prefix}_l_finger_joint" mult="-1" offset="0"/>
+      <map name="${prefix}_l_finger_tip_mimic" flag="gazebo">
+        <elem key="mimicKp">1000.0</elem>
+        <elem key="mimicKd"> 0.0</elem>
+        <elem key="mimicFMax">10000.0</elem>
+      </map>
+    </joint>
+
+    <link name="${prefix}_l_finger_tip">
+      <parent name="${prefix}_l_finger" />
       <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
 
-      <joint name="${prefix}_${side}_finger_tip_joint" />
+      <joint name="${prefix}_l_finger_tip_joint" />
       <inertial>
         <mass value="0.1" />
         <com xyz=" 0 0 0 " />
@@ -96,57 +141,148 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_finger_tip_${side}_mesh_file">
-          <mesh filename="finger_tip_${side}" />
+        <geometry name="pr2_finger_tip_l_mesh_file">
+          <mesh filename="finger_tip_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="pr2_finger_tip_${side}_collision_geom">
+        <geometry name="pr2_finger_tip_l_collision_geom">
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="${prefix}_${side}_finger_tip_gravity" flag="gazebo">
+      <map name="${prefix}_l_finger_tip_gravity" flag="gazebo">
+        <elem key="turnGravityOff">true</elem>
+      </map>
+    </link>
+
+    <!-- Finger tip -->
+
+    <joint name="${prefix}_r_finger_tip_joint" type="revolute">
+      <axis xyz="0 0 1" />
+      <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="1000" min="0" max="${gripper_max_angle}" />
+      <calibration reference_position="0" values="0 0" />
+      <safety_limit_min spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <safety_limit_max spring_constant="10.0" safety_length="0.1" damping_constant="0.1"/>
+      <joint_properties damping="0.1" />
+      <mimic name="${prefix}_l_finger_joint" mult="1" offset="0"/>
+      <map name="${prefix}_r_finger_tip_mimic" flag="gazebo">
+        <elem key="mimicKp">1000.0</elem>
+        <elem key="mimicKd"> 0.0</elem>
+        <elem key="mimicFMax">10000.0</elem>
+      </map>
+    </joint>
+
+    <link name="${prefix}_r_finger_tip">
+      <parent name="${prefix}_r_finger" />
+      <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
+
+      <joint name="${prefix}_r_finger_tip_joint" />
+      <inertial>
+        <mass value="0.1" />
+        <com xyz=" 0 0 0 " />
+        <inertia  ixx="0.012430552544" ixy="-0.000003671102" ixz="0.000029379389"
+                  iyy="0.013567548848" iyz="-0.000427679042"
+                  izz="0.001755089866" />
+      </inertial>
+      <visual>
+        <origin xyz="0 0 0 " rpy="0 0 0 " />
+        <map name="gazebo_material" flag="gazebo">
+          <elem key="material">Gazebo/Green</elem>
+        </map>
+        <geometry name="pr2_finger_tip_r_mesh_file">
+          <mesh filename="finger_tip_r" />
+        </geometry>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0 " rpy="0 0 0" />
+        <geometry name="pr2_finger_tip_r_collision_geom">
+          <box size="0.053 0.04 0.023" />
+        </geometry>
+        <verbose value="Yes" />
+      </collision>
+      <map name="${prefix}_r_finger_tip_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
     <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${prefix}_${side}_finger">
+      <verbatim key="p3d_${prefix}_l_finger">
         <!--
-        <controller:P3D name="p3d_${prefix}_${side}_finger_controller" plugin="libP3D.so">
+        <controller:P3D name="p3d_${prefix}_l_finger_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_${side}_finger</bodyName>
-          <topicName>${prefix}_${side}_finger_pose_ground_truth</topicName>
+          <bodyName>${prefix}_l_finger</bodyName>
+          <topicName>${prefix}_l_finger_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_${side}_finger_position_iface" />
+          <interface:position name="p3d_${prefix}_l_finger_position_iface" />
         </controller:P3D>
         -->
       </verbatim>
     </map>
 
     <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_${prefix}_${side}_finger_tip">
+      <verbatim key="p3d_${prefix}_l_finger_tip">
         <!--
-        <controller:P3D name="p3d_${prefix}_${side}_finger_tip_controller" plugin="libP3D.so">
+        <controller:P3D name="p3d_${prefix}_l_finger_tip_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_${side}_finger_tip</bodyName>
-          <topicName>${prefix}_${side}_finger_tip_pose_ground_truth</topicName>
+          <bodyName>${prefix}_l_finger_tip</bodyName>
+          <topicName>${prefix}_l_finger_tip_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
-          <interface:position name="p3d_${prefix}_${side}_finger_tip_position_iface" />
+          <interface:position name="p3d_${prefix}_l_finger_tip_position_iface" />
         </controller:P3D>
-        <controller:F3D name="f3d_${prefix}_${side}_finger_tip_controller" plugin="libF3D.so">
+        <controller:F3D name="f3d_${prefix}_l_finger_tip_controller" plugin="libF3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_${side}_finger_tip</bodyName>
-          <topicName>${prefix}_${side}_finger_tip_force_ground_truth</topicName>
+          <bodyName>${prefix}_l_finger_tip</bodyName>
+          <topicName>${prefix}_l_finger_tip_force_ground_truth</topicName>
           <frameName>map</frameName>
-          <interface:position name="f3d_${prefix}_${side}_finger_tip_position_iface" />
+          <interface:position name="f3d_${prefix}_l_finger_tip_position_iface" />
+        </controller:P3D>
+        -->
+      </verbatim>
+    </map>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_r_finger">
+        <!--
+        <controller:P3D name="p3d_${prefix}_r_finger_controller" plugin="libP3D.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger</bodyName>
+          <topicName>${prefix}_r_finger_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_r_finger_position_iface" />
+        </controller:P3D>
+        -->
+      </verbatim>
+    </map>
+
+    <map name="sensor" flag="gazebo">
+      <verbatim key="p3d_${prefix}_r_finger_tip">
+        <!--
+        <controller:P3D name="p3d_${prefix}_r_finger_tip_controller" plugin="libP3D.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger_tip</bodyName>
+          <topicName>${prefix}_r_finger_tip_pose_ground_truth</topicName>
+          <gaussianNoise>0.0</gaussianNoise>
+          <frameName>map</frameName>
+          <interface:position name="p3d_${prefix}_r_finger_tip_position_iface" />
+        </controller:P3D>
+        <controller:F3D name="f3d_${prefix}_r_finger_tip_controller" plugin="libF3D.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>1000.0</updateRate>
+          <bodyName>${prefix}_r_finger_tip</bodyName>
+          <topicName>${prefix}_r_finger_tip_force_ground_truth</topicName>
+          <frameName>map</frameName>
+          <interface:position name="f3d_${prefix}_r_finger_tip_position_iface" />
         </controller:P3D>
         -->
       </verbatim>
@@ -156,7 +292,7 @@
 
 
 
-  <macro name="pr2_gripper" params="side parent mimic_finger">
+  <macro name="pr2_gripper" params="side parent">
     <joint name="${side}_gripper_palm_joint" type="fixed" />
     <link name="${side}_gripper_palm">
       <parent name="${parent}" />
@@ -209,8 +345,7 @@
     </map>
 
 
-    <pr2_finger mimic_finger="${mimic_finger}" prefix="${side}_gripper" side="l" parent="${side}_gripper_palm" reflect="1" />
-    <pr2_finger mimic_finger="${mimic_finger}" prefix="${side}_gripper" side="r" parent="${side}_gripper_palm" reflect="-1" />
+    <pr2_finger prefix="${side}_gripper" parent="${side}_gripper_palm" />
 
     <!--transmission type="GripperTransmission" name="${side}_gripper_trans">
       <actuator name="${side}_gripper_motor" />
