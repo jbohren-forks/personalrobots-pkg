@@ -1,0 +1,202 @@
+14:00:24: Creating resource group General
+14:00:24: Creating resource group Internal
+14:00:24: Creating resource group Autodetect
+14:00:24: SceneManagerFactory for type 'DefaultSceneManager' registered.
+14:00:24: Registering ResourceManager for type Material
+14:00:24: Registering ResourceManager for type Mesh
+14:00:24: Registering ResourceManager for type Skeleton
+14:00:24: MovableObjectFactory for type 'ParticleSystem' registered.
+14:00:24: OverlayElementFactory for type Panel registered.
+14:00:24: OverlayElementFactory for type BorderPanel registered.
+14:00:24: OverlayElementFactory for type TextArea registered.
+14:00:24: Registering ResourceManager for type Font
+14:00:24: ArchiveFactory for archive type FileSystem registered.
+14:00:24: ArchiveFactory for archive type Zip registered.
+14:00:24: FreeImage version: 3.10.0
+14:00:24: This program uses FreeImage, a free, open source image library supporting all common bitmap formats. See http://freeimage.sourceforge.net for details
+14:00:24: Supported formats: bmp,ico,jpg,jif,jpeg,jpe,jng,koa,iff,lbm,mng,pbm,pbm,pcd,pcx,pgm,pgm,png,ppm,ppm,ras,tga,targa,tif,tiff,wap,wbmp,wbm,psd,cut,xbm,xpm,gif,hdr,g3,sgi,exr,j2k,j2c,jp2
+14:00:24: DDS codec registering
+14:00:24: Registering ResourceManager for type HighLevelGpuProgram
+14:00:24: Registering ResourceManager for type Compositor
+14:00:24: MovableObjectFactory for type 'Entity' registered.
+14:00:24: MovableObjectFactory for type 'Light' registered.
+14:00:24: MovableObjectFactory for type 'BillboardSet' registered.
+14:00:24: MovableObjectFactory for type 'ManualObject' registered.
+14:00:24: MovableObjectFactory for type 'BillboardChain' registered.
+14:00:24: MovableObjectFactory for type 'RibbonTrail' registered.
+14:00:24: OGRE EXCEPTION(6:FileNotFoundException): 'plugins.cfg' file not found! in ConfigFile::load at OgreConfigFile.cpp (line 84)
+14:00:24: plugins.cfg not found, automatic plugin loading disabled.
+14:00:24: *-*-* OGRE Initialising
+14:00:24: *-*-* Version 1.4.9 (Eihort)
+14:00:24: Loading library /u/johnhsu/projects/pr2/3rdparty/ogre/ogre/lib/OGRE/RenderSystem_GL.so
+14:00:24: Installing plugin: GL RenderSystem
+14:00:24: OpenGL Rendering Subsystem created.
+14:00:24: Plugin successfully installed
+14:00:24: Loading library /u/johnhsu/projects/pr2/3rdparty/ogre/ogre/lib/OGRE/Plugin_ParticleFX.so
+14:00:24: Installing plugin: ParticleFX
+14:00:24: Particle Emitter Type 'Point' registered
+14:00:24: Particle Emitter Type 'Box' registered
+14:00:24: Particle Emitter Type 'Ellipsoid' registered
+14:00:24: Particle Emitter Type 'Cylinder' registered
+14:00:24: Particle Emitter Type 'Ring' registered
+14:00:24: Particle Emitter Type 'HollowEllipsoid' registered
+14:00:24: Particle Affector Type 'LinearForce' registered
+14:00:24: Particle Affector Type 'ColourFader' registered
+14:00:24: Particle Affector Type 'ColourFader2' registered
+14:00:24: Particle Affector Type 'ColourImage' registered
+14:00:24: Particle Affector Type 'ColourInterpolator' registered
+14:00:24: Particle Affector Type 'Scaler' registered
+14:00:24: Particle Affector Type 'Rotator' registered
+14:00:24: Particle Affector Type 'DirectionRandomiser' registered
+14:00:24: Particle Affector Type 'DeflectorPlane' registered
+14:00:24: Plugin successfully installed
+14:00:24: Loading library /u/johnhsu/projects/pr2/3rdparty/ogre/ogre/lib/OGRE/Plugin_BSPSceneManager.so
+14:00:24: Installing plugin: BSP Scene Manager
+14:00:24: Plugin successfully installed
+14:00:24: Loading library /u/johnhsu/projects/pr2/3rdparty/ogre/ogre/lib/OGRE/Plugin_OctreeSceneManager.so
+14:00:24: Installing plugin: Octree & Terrain Scene Manager
+14:00:24: Plugin successfully installed
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/fonts' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/materials/programs' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/materials/scripts' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/materials/textures' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/models' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/maps' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/.' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/..' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/.svn' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/healthshop' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/ninja' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/pioneer2dx' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/generalstoreshop' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/weapshop' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/pioneer2at' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/fish' of type 'FileSystem' to resource group 'General'
+14:00:24: Added resource location '/u/johnhsu/projects/pr2/robot_descriptions/gazebo_robot_description/world/Media/sets/RZR-002' of type 'FileSystem' to resource group 'General'
+14:00:24: CPU Identifier & Features
+14:00:24: -------------------------
+14:00:24:  *   CPU ID: GenuineIntel: Intel(R) Core(TM)2 CPU          6700  @ 2.66GHz
+14:00:24:  *      SSE: yes
+14:00:24:  *     SSE2: yes
+14:00:24:  *     SSE3: yes
+14:00:24:  *      MMX: yes
+14:00:24:  *   MMXEXT: yes
+14:00:24:  *    3DNOW: no
+14:00:24:  * 3DNOWEXT: no
+14:00:24:  *     CMOV: yes
+14:00:24:  *      TSC: yes
+14:00:24:  *      FPU: yes
+14:00:24:  *      PRO: yes
+14:00:24:  *       HT: no
+14:00:24: -------------------------
+14:00:24: ******************************
+*** Starting GLX Subsystem ***
+******************************
+14:00:24: GLRenderSystem::createRenderWindow "OgreWindow(0)", 1x1 windowed  miscParams: parentWindowHandle=136098720:0:102760450 
+14:00:24: GLXWindow::create
+14:00:24: Parsing miscParams
+14:00:24: GLXWindow::create -- Best visual is 36
+14:00:24: OGRE EXCEPTION(6:FileNotFoundException): Cannot locate resource GLX_icon.png in resource group General or any other group. in ResourceGroupManager::openResource at OgreResourceGroupManager.cpp (line 604)
+14:00:24: GL_VERSION = 2.1.2 NVIDIA 173.14.12
+14:00:24: GL_VENDOR = NVIDIA Corporation
+14:00:24: GL_RENDERER = GeForce 7600 GT/PCI/SSE2
+14:00:24: GL_EXTENSIONS = GL_ARB_color_buffer_float GL_ARB_depth_texture GL_ARB_draw_buffers GL_ARB_fragment_program GL_ARB_fragment_program_shadow GL_ARB_fragment_shader GL_ARB_half_float_pixel GL_ARB_imaging GL_ARB_multisample GL_ARB_multitexture GL_ARB_occlusion_query GL_ARB_pixel_buffer_object GL_ARB_point_parameters GL_ARB_point_sprite GL_ARB_shadow GL_ARB_shader_objects GL_ARB_shading_language_100 GL_ARB_texture_border_clamp GL_ARB_texture_compression GL_ARB_texture_cube_map GL_ARB_texture_env_add GL_ARB_texture_env_combine GL_ARB_texture_env_dot3 GL_ARB_texture_float GL_ARB_texture_mirrored_repeat GL_ARB_texture_non_power_of_two GL_ARB_texture_rectangle GL_ARB_transpose_matrix GL_ARB_vertex_buffer_object GL_ARB_vertex_program GL_ARB_vertex_shader GL_ARB_window_pos GL_ATI_draw_buffers GL_ATI_texture_float GL_ATI_texture_mirror_once GL_S3_s3tc GL_EXT_texture_env_add GL_EXT_abgr GL_EXT_bgra GL_EXT_blend_color GL_EXT_blend_equation_separate GL_EXT_blend_func_separate GL_EXT_blend_minmax GL_EXT_blend_subtract GL_EXT_compiled_vertex_array GL_EXT_Cg_shader GL_EXT_depth_bounds_test GL_EXT_draw_range_elements GL_EXT_fog_coord GL_EXT_framebuffer_blit GL_EXT_framebuffer_multisample GL_EXT_framebuffer_object GL_EXT_gpu_program_parameters GL_EXT_multi_draw_arrays GL_EXT_packed_depth_stencil GL_EXT_packed_pixels GL_EXT_pixel_buffer_object GL_EXT_point_parameters GL_EXT_rescale_normal GL_EXT_secondary_color GL_EXT_separate_specular_color GL_EXT_shadow_funcs GL_EXT_stencil_two_side GL_EXT_stencil_wrap GL_EXT_texture3D GL_EXT_texture_compression_s3tc GL_EXT_texture_cube_map GL_EXT_texture_edge_clamp GL_EXT_texture_env_combine GL_EXT_texture_env_dot3 GL_EXT_texture_filter_anisotropic GL_EXT_texture_lod GL_EXT_texture_lod_bias GL_EXT_texture_mirror_clamp GL_EXT_texture_object GL_EXT_texture_sRGB GL_EXT_timer_query GL_EXT_vertex_array GL_IBM_rasterpos_clip GL_IBM_texture_mirrored_repeat GL_KTX_buffer_region GL_NV_blend_square GL_NV_copy_depth_to_color GL_NV_depth_clamp GL_NV_fence GL_NV_float_buffer GL_NV_fog_distance GL_NV_fragment_program GL_NV_fragment_program_option GL_NV_fragment_program2 GL_NV_framebuffer_multisample_coverage GL_NV_half_float GL_NV_light_max_exponent GL_NV_multisample_filter_hint GL_NV_occlusion_query GL_NV_packed_depth_stencil GL_NV_pixel_data_range GL_NV_point_sprite GL_NV_primitive_restart GL_NV_register_combiners GL_NV_register_combiners2 GL_NV_texgen_reflection GL_NV_texture_compression_vtc GL_NV_texture_env_combine4 GL_NV_texture_expand_normal GL_NV_texture_rectangle GL_NV_texture_shader GL_NV_texture_shader2 GL_NV_texture_shader3 GL_NV_vertex_array_range GL_NV_vertex_array_range2 GL_NV_vertex_program GL_NV_vertex_program1_1 GL_NV_vertex_program2 GL_NV_vertex_program2_option GL_NV_vertex_program3 GL_NVX_conditional_render GL_SGIS_generate_mipmap GL_SGIS_texture_lod GL_SGIX_depth_texture GL_SGIX_shadow GL_SUN_slice_accum 
+14:00:24: ***************************
+14:00:24: *** GL Renderer Started ***
+14:00:24: ***************************
+14:00:24: Registering ResourceManager for type GpuProgram
+14:00:24: GLSL support detected
+14:00:24: GL: Using PBuffers for rendering to textures
+14:00:24: RenderSystem capabilities
+14:00:24: -------------------------
+14:00:24:  * Hardware generation of mipmaps: yes
+14:00:24:  * Texture blending: yes
+14:00:24:  * Anisotropic texture filtering: yes
+14:00:24:  * Dot product texture operation: yes
+14:00:24:  * Cube mapping: yes
+14:00:24:  * Hardware stencil buffer: yes
+14:00:24:    - Stencil depth: 8
+14:00:24:    - Two sided stencil support: yes
+14:00:24:    - Wrap stencil values: yes
+14:00:24:  * Hardware vertex / index buffers: yes
+14:00:24:  * Vertex programs: yes
+14:00:24:    - Max vertex program version: vp40
+14:00:24:  * Fragment programs: yes
+14:00:24:    - Max fragment program version: fp40
+14:00:24:  * Texture Compression: yes
+14:00:24:    - DXT: yes
+14:00:24:    - VTC: yes
+14:00:24:  * Scissor Rectangle: yes
+14:00:24:  * Hardware Occlusion Query: yes
+14:00:24:  * User clip planes: yes
+14:00:24:  * VET_UBYTE4 vertex element type: yes
+14:00:24:  * Infinite far plane projection: yes
+14:00:24:  * Hardware render-to-texture: yes
+14:00:24:  * Floating point textures: yes
+14:00:24:  * Non-power-of-two textures: yes
+14:00:24:  * Volume textures: yes
+14:00:24:  * Multiple Render Targets: 1
+14:00:24:  * Point Sprites: yes
+14:00:24:  * Extended point parameters: yes
+14:00:24:  * Max Point Size: 63.375
+14:00:24:  * Vertex texture fetch: yes
+14:00:24:    - Max vertex textures: 4
+14:00:24:    - Vertex textures shared: yes
+14:00:24: Registering ResourceManager for type Texture
+14:00:24: ResourceBackgroundQueue - threading enabled, starting own thread
+14:00:24: ResourceBackgroundQueue - thread starting.
+14:00:24: Particle Renderer Type 'billboard' registered
+14:00:24: SceneManagerFactory for type 'BspSceneManager' registered.
+14:00:24: Registering ResourceManager for type BspLevel
+14:00:24: SceneManagerFactory for type 'OctreeSceneManager' registered.
+14:00:24: SceneManagerFactory for type 'TerrainSceneManager' registered.
+14:00:24: Parsing scripts for resource group Autodetect
+14:00:24: Finished parsing scripts for resource group Autodetect
+14:00:24: Parsing scripts for resource group General
+14:00:24: Parsing script pr2.material
+14:00:24: Parsing script Gazebo.material
+14:00:24: GLSL compiling: Gazebo/PointLightVS
+14:00:24: GLSL compiled : Gazebo/PointLightVS
+14:00:24: GLSL compiling: Gazebo/PointLightFS
+14:00:24: GLSL compiled : Gazebo/PointLightFS
+14:00:24: GLSL compiling: Gazebo/SpotLightVS
+14:00:24: GLSL compiled : Gazebo/SpotLightVS
+14:00:24: GLSL compiling: Gazebo/SpotLightFS
+14:00:24: GLSL compiled : Gazebo/SpotLightFS
+14:00:24: GLSL compiling: Gazebo/AmbientOneTextureVS
+14:00:24: Cannot compile GLSL high-level shader : Gazebo/AmbientOneTextureVS (18) : error C1115: unable to find compatible overloaded function "clamp(error, int, int)"
+
+14:00:24: OGRE EXCEPTION(7:InternalErrorException): Cannot compile GLSL high-level shader : Gazebo/AmbientOneTextureVS Cannot compile GLSL high-level shader : Gazebo/AmbientOneTextureVS (18) : error C1115: unable to find compatible overloaded function "clamp(error, int, int)"
+ in GLSLProgram::loadFromSource at OgreGLSLExtSupport.cpp (line 66)
+14:00:24: High-level program Gazebo/AmbientOneTextureVS encountered an error during loading and is thus not supported.
+OGRE EXCEPTION(7:InternalErrorException): Cannot compile GLSL high-level shader : Gazebo/AmbientOneTextureVS Cannot compile GLSL high-level shader : Gazebo/AmbientOneTextureVS (18) : error C1115: unable to find compatible overloaded function "clamp(error, int, int)"
+ in GLSLProgram::loadFromSource at OgreGLSLExtSupport.cpp (line 66)
+14:00:24: GLSL compiling: Gazebo/AmbientOneTextureFS
+14:00:24: GLSL compiled : Gazebo/AmbientOneTextureFS
+14:00:24: Parsing script healthshop.material
+14:00:24: Parsing script ninja.material
+14:00:24: Parsing script shop.material
+14:00:24: Parsing script weapshop.material
+14:00:24: Parsing script fish.material
+14:00:24: Parsing script rzr-002.material
+14:00:24: Parsing script sample.fontdef
+14:00:24: Bad attribute line: glyph	 	0.152344	0.125	0.160156	0.1875 in font Ogre
+14:00:24: Parsing script Gazebo.fontdef
+14:00:24: Finished parsing scripts for resource group General
+14:00:24: Parsing scripts for resource group Internal
+14:00:24: Finished parsing scripts for resource group Internal
+14:00:24: TerrainSceneManager: Registered a new PageSource for type Heightmap
+14:00:24: WARNING: Mesh instance 'unit_sphere' was defined as manually loaded, but no manual loader was provided. This Resource will be lost if it has to be reloaded.
+14:00:24: WARNING: Mesh instance 'joint_anchor' was defined as manually loaded, but no manual loader was provided. This Resource will be lost if it has to be reloaded.
+14:00:24: WARNING: Mesh instance 'unit_box' was defined as manually loaded, but no manual loader was provided. This Resource will be lost if it has to be reloaded.
+14:00:24: WARNING: Mesh instance 'unit_cylinder' was defined as manually loaded, but no manual loader was provided. This Resource will be lost if it has to be reloaded.
+14:00:24: Texture: clouds.jpg: Loading 1 faces(PF_R8G8B8,256x256x1) with 5 generated mipmaps from Image. Internal format is PF_X8R8G8B8,256x256x1.
+14:00:24: GLRenderSystem::createRenderWindow "OgreWindow(1)", 772x680 windowed  miscParams: parentWindowHandle=136098720:0:102760456 
+14:00:24: GLXWindow::create
+14:00:24: Parsing miscParams
+14:00:24: GLXWindow::create -- Best visual is 36
+14:00:24: OGRE EXCEPTION(6:FileNotFoundException): Cannot locate resource GLX_icon.png in resource group General or any other group. in ResourceGroupManager::openResource at OgreResourceGroupManager.cpp (line 604)
+14:00:24: Creating viewport on target 'OgreWindow(1)', rendering from camera 'UserCamera(0)', relative dimensions L: 0.00 T: 0.00 W: 1.00 H: 1.00 ZOrder: 0
+14:00:24: Texture: spot_shadow_fade.png: Loading 1 faces(PF_R8G8B8,128x128x1) with 5 generated mipmaps from Image. Internal format is PF_X8R8G8B8,128x128x1.
