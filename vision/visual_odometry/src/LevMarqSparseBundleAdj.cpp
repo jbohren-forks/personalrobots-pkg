@@ -80,11 +80,9 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
   #endif
 }
 
-void LevMarqSparseBundleAdj::constructTransformationMatrices(
-    const CvMat *param, double delta, double *transf_data,
+void LevMarqSparseBundleAdj::constructFwdTransfMatrices(
+    const CvMat *param, double delta,
     double *transf_fwds_data){
-  constructTransfMatrix(param, transf_data);
-
   double _param1[numParams];
   CvMat param1 = cvMat(numParams, 1, CV_64F, _param1);
   // transformation matrices for each parameter
@@ -96,26 +94,41 @@ void LevMarqSparseBundleAdj::constructTransformationMatrices(
   }
 }
 
-void LevMarqSparseBundleAdj::constructTransformationMatrices(){
+void LevMarqSparseBundleAdj::constructTransfMatrices(){
   for (int iFrame=0; iFrame < free_window_size_; iFrame++) {
 #if DEBUG==1
     printf("construct matrices for frame of local index: %d\n", iFrame);
 #endif
     double *params_i = getFrameParams(iFrame);
     double *transf_data_i     = getFreeTransf(iFrame);
-    double *transf_fwd_data_i = getTransfFwd(iFrame, 0);
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, params_i);
-    constructTransformationMatrices((const CvMat *)&mat_params_i,
-        param_delta_,
-        transf_data_i, transf_fwd_data_i);
+    constructTransfMatrix((const CvMat *)&mat_params_i, transf_data_i);
   }
 }
+
+
+void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
+  for (int iFrame=0; iFrame < free_window_size_; iFrame++) {
+#if DEBUG==1
+    printf("construct matrices for frame of local index: %d\n", iFrame);
+#endif
+    double *params_i = getFrameParams(iFrame);
+    double *transf_fwd_data_i = getTransfFwd(iFrame, 0);
+    CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, params_i);
+    constructFwdTransfMatrices((const CvMat *)&mat_params_i,
+        param_delta_, transf_fwd_data_i);
+  }
+}
+
 
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
     PointTracks* tracks
 ) {
+  /// @todo separate constructTransformationMatrices() into two functions. One
+  /// computes only transformation matrix; the other computes ones with
+  /// parameter forward updates for computing numeric Jacobian.
   cout << __PRETTY_FUNCTION__ << endl;
 
   if (free_frames->size()<1 || fixed_frames->size()<1) {
@@ -190,9 +203,9 @@ bool LevMarqSparseBundleAdj::optimize(
   /// 2. Compute cost function at initial camera and point configuration.
   initCameraParams(free_frames, fixed_frames, tracks);
 
-  /// For each camera/frame, compute the transformation matrices
-  /// for computing the forward differences.
-  constructTransformationMatrices();
+  /// For each camera/frame, compute the transformation matrix
+  /// from global to disparity
+  constructTransfMatrices();
 
   double cost = costFunction(free_frames, tracks);
   double prev_cost = DBL_MAX;
@@ -216,6 +229,11 @@ bool LevMarqSparseBundleAdj::optimize(
     /// 3. Clear the left hand side matrix A and right hand side vector B
     cvSetZero(&mat_A_);
     cvSetZero(&mat_B_);
+
+    /// for computing numerical Jacobian,
+    /// for each camera/frame compute the transformation matrices
+    /// from global to disparity w.r.t. delta update on each camera parameter.
+    constructFwdTransfMatrices();
 
 #if DEBUG==1
     printf("[LevMarqSBA] mat_A at the beginning of loop. Shall be all zero\n");
@@ -397,9 +415,9 @@ bool LevMarqSparseBundleAdj::optimize(
 
 #if DEBUG==1
       printf("[LevMarqSBA] mat_A after Hcc updates for point %d\n", p->id_);
-      CvMatUtils::printMat(&mat_A_, "%07.4e");
+      CvMatUtils::printMat(&mat_A_);
       printf("[LevMarqSBA] mat_B after Hcc updates for point %d\n", p->id_);
-      CvMatUtils::printMat(&mat_B_, "%07.4e");
+      CvMatUtils::printMat(&mat_B_);
 
 #endif
 
@@ -410,7 +428,7 @@ bool LevMarqSparseBundleAdj::optimize(
 
 #if DEBUG==1
       printf("Hpp:\n");
-      CvMatUtils::printMat(&mat_Hpp, "%7.4e");
+      CvMatUtils::printMat(&mat_Hpp);
 #endif
 
       // Augment diagonal of Hpp.
@@ -421,13 +439,13 @@ bool LevMarqSparseBundleAdj::optimize(
       cvCompleteSymm(&mat_Hpp, 0);
 #if DEBUG==1
       printf("Hpp augmented:\n");
-      CvMatUtils::printMat(&mat_Hpp, "%7.4e");
+      CvMatUtils::printMat(&mat_Hpp);
 #endif
       /// @todo Can cvInvert be done in place?
       cvInvert(&mat_Hpp, &mat_Hpp_inv, CV_SVD_SYM);
 #if DEBUG==1
       printf("Hpp_inv augmented of p=%d, step=%d\n", p->id_, mat_Hpp_inv.step);
-      CvMatUtils::printMat(&mat_Hpp_inv,"%7.4e");
+      CvMatUtils::printMat(&mat_Hpp_inv);
 #endif
 
       /// Compute \f$ H_{pp}^{-1} b_p \f$ and store it in a variable \f$ t_p \f$.
@@ -437,10 +455,6 @@ bool LevMarqSparseBundleAdj::optimize(
           Hpp_inv[i*NUM_POINT_PARAMS+1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS+2]*bp[2];
       }
 
-#if DEBUG==1
-      printf("Hpp_inv augmented of p=%d (before outer prod oc track):\n", p->id_);
-      CvMatUtils::printMat(&mat_Hpp_inv,"%7.4e");
-#endif
       /// (Outer product of track) For each free camera c on track p
       /// {
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
@@ -461,16 +475,6 @@ bool LevMarqSparseBundleAdj::optimize(
           Bc[i] -= Hpc[i]*tp[0] + Hpc[i + NUM_CAM_PARAMS]*tp[1] +
             Hpc[i + NUM_CAM_PARAMS*2]*tp[2];
         }
-#if DEBUG==1
-        cvSetZero(&obsv->mat_Tcp_);
-        printf("Tcp before multiplication, 0x%x\n", (unsigned int)obsv->mat_Tcp_.data.ptr);
-        CvMatUtils::printMat(&obsv->mat_Tcp_);
-        printf("Hpp_inv augmented of p=%d(before multiplication), 0x%x, 0x%x:\n",
-            p->id_, mat_Hpp_inv.data.ptr,
-            (unsigned int)Hpp_inv);
-        CvMatUtils::printMat(&mat_Hpp_inv,"%7.4e");
-#endif
-
 
         ///   Compute the matrix \f$ H_{pc}^T H_{pp}^{-1} and store it in a variable
         ///   \f$ T_{cp} \f$ (6x3).
@@ -480,9 +484,9 @@ bool LevMarqSparseBundleAdj::optimize(
         printf("matrix Hpc, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index1);
         CvMatUtils::printMat(&mat_Hpc);
         printf("matrix Hpp_inv of p=%d\n", p->id_);
-        CvMatUtils::printMat(&mat_Hpp_inv, "%7.4e");
+        CvMatUtils::printMat(&mat_Hpp_inv);
         printf("matrix Tcp\n");
-        CvMatUtils::printMat(&obsv->mat_Tcp_, "%7.4e");
+        CvMatUtils::printMat(&obsv->mat_Tcp_);
 #endif
 
         ///   For each free camera c2 >= c on track p
@@ -507,12 +511,12 @@ bool LevMarqSparseBundleAdj::optimize(
           cvSub(&A_cc2, &mat_Hcc2, &A_cc2);
 #if DEBUG==1
           printf("matrix Tcp, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index2);
-          CvMatUtils::printMat(&obsv->mat_Tcp_, "%07.4e");
+          CvMatUtils::printMat(&obsv->mat_Tcp_);
           printf("matrix Hpc2, p=%d, c2=%d,%d\n", p->id_, obsv2->frame_index_, local_index2);
           CvMatUtils::printMat(&mat_Hpc2);
           printf("matrix Hcc2, c=%d,%d, c2=%d,%d\n", obsv->frame_index_, local_index1,
               obsv2->frame_index_, local_index2);
-          CvMatUtils::printMat(&mat_Hcc2, "%07.4e");
+          CvMatUtils::printMat(&mat_Hcc2);
 #endif
         }
         ///   }
@@ -520,7 +524,7 @@ bool LevMarqSparseBundleAdj::optimize(
       /// }
 #if DEBUG==1
       printf("[LevMarqSBA] mat_A after Outer Product of Tracks\n");
-      CvMatUtils::printMat(&mat_A_, "%07.4e");
+      CvMatUtils::printMat(&mat_A_);
 #endif
 
     } // done with a point track.
@@ -536,11 +540,11 @@ bool LevMarqSparseBundleAdj::optimize(
 #if DEBUG==1
     printf("[LevMarqSBA]: cvSolve\n");
     printf("[LevMarqSBA]: matrix A:\n");
-    CvMatUtils::printMat(&mat_A_, "%07.4e");
+    CvMatUtils::printMat(&mat_A_);
     printf("[LevMarqSBA]: matrix B:\n");
-    CvMatUtils::printMat(&mat_B_, "%07.4e");
+    CvMatUtils::printMat(&mat_B_);
     printf("[LevMarqSBA]: matrix dC:\n");
-    CvMatUtils::printMat(&mat_dC_, "%07.4e");
+    CvMatUtils::printMat(&mat_dC_);
 #endif
 
 
@@ -572,17 +576,22 @@ bool LevMarqSparseBundleAdj::optimize(
       }
 
       /// update point parameters with dp
-      p->prev_coordinates_ = p->coordinates_;
       p->coordinates_.x += dp[0];
       p->coordinates_.y += dp[1];
       p->coordinates_.z += dp[2];
+
+#if DEBUG==1
+    printf("[LevMarqSBA]: updated point params [%f, %f, %f]\n",
+        p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+#endif
 
       /// }
     }
     ///
     /// 8. Compute the cost function for the updated camera and point configuration
-    constructTransformationMatrices();
+    constructTransfMatrices();
     cost = costFunction(free_frames, tracks);
+    printf("cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost, prev_cost);
     ///
     if (cost <= prev_cost) {
       /// 9. If cost function has improved, accept the update step, decrease
@@ -608,6 +617,11 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
 
       prev_cost = cost;
+      // accept parameter changes
+      cvCopy(&mat_C_, &mat_prev_C_);
+      BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+        p->prev_coordinates_ = p->coordinates_;
+      }
     } else {
       /// 10. Otherwise, reject the update,
       /// increase \f$ \lambda \f$ and go to Step 3 (unless exceeded the
@@ -615,9 +629,16 @@ bool LevMarqSparseBundleAdj::optimize(
       lambdaLg10_++;
       num_retractions_++;
 
+      /// back off from current parameters to previous ones?
+      cvCopy(&mat_prev_C_, &mat_C_);
+      BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+        p->coordinates_ = p->prev_coordinates_;
+      }
+
       /// @todo, in stead of just going back to the beginning of the loop,
       /// we shall skip over the computation of derivatives and Jacobians, etc..
       /// what we really need is just updating the diagonal elements.
+      /// With this, we may be able to save parameter backing off in last step.
 
     }
 
@@ -658,15 +679,18 @@ void LevMarqSparseBundleAdj::initCameraParams(
 
     // compute the rodrigues and shift vectors, which are used as
     // optimization parameters.
-    CvMat mat_params_i = cvMat(6, 1, CV_64FC1, getFrameParams(local_index));
+    CvMat mat_frame_params_i = cvMat(6, 1, CV_64FC1, getFrameParams(local_index));
     CvMatUtils::transformToRodriguesAndShift(
-        global_to_local, mat_params_i);
+        global_to_local, mat_frame_params_i);
 
     // enter the mapping between global index and local index to the map.
     map_index_global_to_local_[free_frame->mIndex] = local_index;
 
     local_index++;
   }
+  /// copy init parameters from mat_C_ to mat_prev_C_
+  cvCopy(&mat_C_, &mat_prev_C_);
+
 #if DEBUG==1
   {
     printf("Initial free camera parameters\n");
@@ -725,6 +749,8 @@ void LevMarqSparseBundleAdj::initCameraParams(
   // loop thru the tracks and fill out the field of local_frame_index_
   // according to map_index_global_to_local_
   BOOST_FOREACH( PointTrack* p, tracks->tracks_) {
+    /// initialize prev_coordinates to the same as initial point params.
+    p->prev_coordinates_ = p->coordinates_;
     BOOST_FOREACH( PointTrackObserv* obsv, *p ) {
       boost::unordered_map<int, int>::const_iterator iter =
         map_index_global_to_local_.find(obsv->frame_index_);
@@ -914,8 +940,11 @@ double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) const {
   getPointParamChange(tracks, &point_param_diff_sum_sq, &point_param_norm_sq);
 
   double param_diff_norm = frame_param_diff_sum_sq + point_param_diff_sum_sq;
-  param_diff_norm /= frame_param_diff_sum_sq + point_param_diff_sum_sq;
+  param_diff_norm /= frame_param_norm_sq + point_param_norm_sq;
   param_diff_norm = sqrt(param_diff_norm);
+#if DEBUG==1
+  printf("parameter change (relative L2 norm of diff): %f\n", param_diff_norm);
+#endif
   return param_diff_norm;
 }
 

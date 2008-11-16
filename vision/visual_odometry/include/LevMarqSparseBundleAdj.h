@@ -77,10 +77,10 @@ protected:
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
   );
-  void constructTransformationMatrices();
-  void constructTransformationMatrices(
-      const CvMat *param, double delta, double *transf_data,
-      double *transf_fwds_data);
+  void constructTransfMatrices();
+  void constructFwdTransfMatrices();
+  void constructFwdTransfMatrices(
+      const CvMat *param, double delta, double *transf_fwds_data);
   void constructTransfMatrix(const CvMat* param, double _T[]);
 
   /// compute the 2-norm of the differences of parameters between last
