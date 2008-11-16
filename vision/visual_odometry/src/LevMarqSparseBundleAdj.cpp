@@ -35,7 +35,8 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
       frame_params_(new double[full_free_window_size*NUM_CAM_PARAMS]),
       frame_prev_params_(new double[full_free_window_size*NUM_CAM_PARAMS]),
       frame_params_update_(new double[full_free_window_size*NUM_CAM_PARAMS]),
-      transf_data_(new double[16*(full_free_window_size+full_fixed_window_size)]),
+      free_transf_data_(new double[16*full_free_window_size]),
+      fixed_transf_data_(new double[16*full_fixed_window_size]),
       transf_fwd_data_(new double[NUM_CAM_PARAMS*16*full_free_window_size]),
       lambdaLg10_(0),
       term_criteria_(term_criteria),
@@ -52,7 +53,8 @@ LevMarqSparseBundleAdj::~LevMarqSparseBundleAdj() {
   delete [] frame_params_;
   delete [] frame_prev_params_;
   delete [] frame_params_update_;
-  delete [] transf_data_;
+  delete [] free_transf_data_;
+  delete [] fixed_transf_data_;
   delete [] transf_fwd_data_;
 }
 
@@ -235,6 +237,10 @@ bool LevMarqSparseBundleAdj::optimize(
       double px = p->coordinates_.x;
       double py = p->coordinates_.y;
       double pz = p->coordinates_.z;
+#if DEBUG==1
+      CvMat cart_point = cvMat(1, 1, CV_64FC1, &(p->coordinates_));
+      printf("point %d: [%f, %f, %f]\n", p->id_, px, py, pz);
+#endif
 
       /// - Compute derivatives.  For each camera c on track p.
       ///   {
@@ -252,6 +258,9 @@ bool LevMarqSparseBundleAdj::optimize(
         double pu = obsv->disp_coord_.x;
         double pv = obsv->disp_coord_.y;
         double pd = obsv->disp_coord_.z;
+#if DEBUG==1
+        printf("obsv on frame %d: [%f, %f, %f]\n", obsv->frame_index_, pu, pv, pd);
+#endif
 
 #if 1 // the following shall be done by now
         // get a reference of the transformation matrix from global to disp
@@ -329,10 +338,15 @@ bool LevMarqSparseBundleAdj::optimize(
 
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
+#if 0 // remove this
+            CvMat transf_fwd = cvMat(4, 4, CV_64FC1, transf_fwd_global_disp);
+            printf("transf_fwd: k=%d\n", k);
+            CvMatUtils::printMat(&transf_fwd);
+#endif
 
             // fill out column k of Jc
             PERSTRANSFORMRESIDUE(transf_fwd_global_disp, px, py, pz, pu, pv, pd,
-                Jc[k], Jc[NUM_CAM_PARAMS+k], Jc[2*NUM_CAM_PARAMS*+k]);
+                Jc[k], Jc[NUM_CAM_PARAMS+k], Jc[2*NUM_CAM_PARAMS+k]);
 
             // compute the Jacobian regarding this point and this cam
             Jc[                   k] = (Jc[k]-rx)*scale;

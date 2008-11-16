@@ -724,9 +724,9 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
   CvMat* global_to_local = cvCreateMat(4, 4, CV_64FC1);
   CvMat* global_to_disp = cvCreateMat(4, 4, CV_64FC1);
   for (int ipt = 0; ipt < points->rows; ipt++) {
-    coord.x = cvmGet(points, 0, 0);
-    coord.y = cvmGet(points, 0, 1);
-    coord.z = cvmGet(points, 0, 2);
+    coord.x = cvmGet(points, ipt, 0);
+    coord.y = cvmGet(points, ipt, 1);
+    coord.z = cvmGet(points, ipt, 2);
     // convert from coord to disp_coord0 and disp_coord1
     CvMatUtils::invertRigidTransform(&frame_poses[0]->transf_local_to_global_, global_to_local);
     cvMatMul(&cartToDisp, global_to_local, global_to_disp);
@@ -760,13 +760,20 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
   vector<FramePose*> free_frames;
   vector<FramePose*> fixed_frames;
 
-  free_frames.push_back(frame_poses[0]);
-  fixed_frames.push_back(frame_poses[1]);
+  fixed_frames.push_back(frame_poses[0]);
+  free_frames.push_back(frame_poses[1]);
 
   sba.optimize(&free_frames, &fixed_frames, &tracks);
 
   // print some output
-
+  BOOST_FOREACH(const FramePose* fp, free_frames) {
+    printf("transf of frame: %d\n", fp->mIndex);
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+  }
+  BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
+    printf("point %d, [%f, %f, %f]\n", p->id_, p->coordinates_.x,
+        p->coordinates_.y, p->coordinates_.z);
+  }
 
   // clean up
   // remove the points;

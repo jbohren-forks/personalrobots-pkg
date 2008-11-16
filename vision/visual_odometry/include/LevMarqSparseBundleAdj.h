@@ -187,18 +187,21 @@ protected:
   /// CvMat header for previous parameters. Initialized in method optimize()
   CvMat mat_dC_;
 
-  /// a data buffer that is large enough for all transformation matrices from global
-  /// to local disparity space, including free frames and fixed frames. 4x4 for each.
-  /// The first half stores the transformation matrices of the fixed cameras,
+  /// a data buffer that is large enough for all transformation matrices
+  /// of the free frames from global
+  /// to local disparity space, 4x4 for each,
   /// up to full_fixed_window_size*16.
-  /// The second half stores the transformation matrices of the free cameras,
-  /// from full_fixed_window_size to full_fixed_window_size+full_free_window_size
-  double* transf_data_;
+  double* free_transf_data_;
+  /// a data buffer that is large enough for all transformation matrices
+  /// of the free frames from global
+  /// to local disparity space, 4x4 for each,
+  /// up to full_fixed_window_size*16.
+  double* fixed_transf_data_;
   inline double* getFreeTransf(int i) {
-    return &transf_data_[i*16];
+    return &free_transf_data_[i*16];
   }
   inline double* getFixedTransf(int i){
-    return &transf_data_[(full_free_window_size_+i)*16];
+    return &fixed_transf_data_[i*16];
   }
   inline double* getTransf(int global_index, int local_index) {
     if (isFreeFrame(global_index) == true) {
