@@ -115,6 +115,9 @@ public:
       /// vector.
       CvMat& params);
 
+  static void transformFromEulerAndShift(const CvMat* params,
+      CvMat* transform);
+
   static void loadStereoImagePair(string& dirname, string& leftimagefmt,
       string& rightimagefmt, string& dispmapfmt, int & frameIndex,
       WImageBuffer1_b* leftImage, WImageBuffer1_b* rightImage,

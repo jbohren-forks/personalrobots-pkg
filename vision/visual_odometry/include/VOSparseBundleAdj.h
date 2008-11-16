@@ -99,15 +99,26 @@ protected:
       /// the index of the inlier,
       int inlierIndex
   );
+
+  static void fillFrames(
+      const vector<FramePose*>* frames,
+      const int lowest_free_frame_index,
+      const int highest_free_frame_index,
+      const int free_window_size,
+      const int max_fixed_window_size,
+      const PointTracks* tracks,
+      vector<FramePose*>* free_frames,
+      vector<FramePose*>* fixed_frames);
+
   PointTracks mTracks;
   /// size of the sliding window of free cameras/frames
-  int mFreeWindowSize;
+  int full_free_window_size_;
   /// number of frozen cameras in bundle adjustment.  Frozen (or fixed)
   /// frame (cameras) are those fall out of the sliding window, but still share
   /// tracks with frames(cameras) inside the sliding window.
   /// At the beginning when there are not enough frames (cameras) for a full
   /// slide window, we always keep the first frame frozen.
-  int mFrozenWindowSize;
+  int full_fixed_window_size_;
 
   /// number of iteration for bundle adjustment.
   int mNumIteration;
@@ -126,9 +137,19 @@ class SBAVisualizer: public F2FVisualizer {
     typedef F2FVisualizer Parent;
     SBAVisualizer(PoseEstimateDisp& poseEstimator,
         const vector<FramePose*>& framePoses,
-        const PointTracks& trcks):
-      Parent(poseEstimator), framePoses(framePoses), tracks(trcks){}
-    virtual ~SBAVisualizer(){}
+        const PointTracks& trcks,
+        const boost::unordered_map<int, FramePose*>* map_index_to_FramePose
+    ):
+      Parent(poseEstimator), framePoses(framePoses), tracks(trcks),
+      map_index_to_FramePose_(map_index_to_FramePose)
+      {
+          CvMat cartToDisp;
+          CvMat dispToCart;
+          poseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
+          threeDToDisparity_ = cvCreateMat(4, 4, CV_64FC1);
+          cvCopy(&cartToDisp, threeDToDisparity_);
+      }
+    virtual ~SBAVisualizer(){ cvReleaseMat(&threeDToDisparity_); }
     /// Draw keypoints, tracks and disparity map on canvases for visualization
     virtual void drawTrackingCanvas(
         const PoseEstFrameEntry& lastFrame,
@@ -150,6 +171,8 @@ class SBAVisualizer: public F2FVisualizer {
     /// a reference to the tracks.
     const PointTracks& tracks;
     int   slideWindowFront;
+    CvMat* threeDToDisparity_;
+    const boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
 };
 
 

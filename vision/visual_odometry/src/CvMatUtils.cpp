@@ -8,6 +8,8 @@ using namespace cv::willow;
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
+#include "CvMat3X3.h"
+
 #include <boost/foreach.hpp>
 #undef DEBUG
 
@@ -193,6 +195,27 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 
 	cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &euler);
 	return true;
+}
+
+void CvMatUtils::transformFromEulerAndShift(const CvMat* params,
+    CvMat* transform) {
+  double p[6];
+  for (int r=0; r<6; r++) {
+    p[r] = cvmGet(params, r, 0);
+  }
+
+  CvMat rot;
+  double _rot[9];
+  CvMat rot0 = cvMat(3, 3, CV_64FC1, _rot);
+  cvGetSubRect(transform, &rot, cvRect(0, 0, 3, 3));
+
+  CvMat3X3<double>::rotMatrix(p[0], p[1], p[2], _rot,
+      CvMat3X3<double>::EulerXYZ);
+  cvCopy(&rot0, &rot);
+
+  cvmSet(transform, 0, 3, p[3]);
+  cvmSet(transform, 1, 3, p[4]);
+  cvmSet(transform, 2, 3, p[5]);
 }
 
 void CvMatUtils::invertRigidTransform(const CvMat* transf, CvMat* inv_transf) {

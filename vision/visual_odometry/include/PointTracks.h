@@ -24,12 +24,8 @@ public:
     mat_Hpc_(cvMat(3, 6, CV_64FC1, Hpc_)),
     mat_Tcp_(cvMat(6, 3, CV_64FC1, Tcp_))
     {
-    printf("construct a PointTrackObserv, fi=%d, li=%d, Tcp_ = 0x%x\n",
-        frame_index_, local_frame_index_, Tcp_);
     }
   ~PointTrackObserv() {
-    printf("Removing a PointTrackObserv, fi=%d, li=%d, Tcp_ = 0x%x\n",
-        frame_index_, local_frame_index_, Tcp_);
   }
   /// the index of the image frame;
   int           frame_index_;
@@ -56,7 +52,7 @@ class PointTrack: public deque<PointTrackObserv*> {
 public:
   typedef deque<PointTrackObserv*> Parent;
   PointTrack(PointTrackObserv* obsv0, PointTrackObserv* obsv1,
-      const CvPoint3D64f& coord, int frameIndex, int trackId):
+      const CvPoint3D64f& coord, int trackId):
         coordinates_(coord), id_(trackId),
         mat_tp_(cvMat(3, 1, CV_64FC1, tp_)),
         mat_dp_(cvMat(3, 1, CV_64FC1, dp_))  {

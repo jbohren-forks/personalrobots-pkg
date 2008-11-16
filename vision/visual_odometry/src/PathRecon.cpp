@@ -180,6 +180,9 @@ bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIn
 	cvCopy(&mTransform, &(fp->transf_local_to_global_));
 
 	mFramePoses.push_back(fp);
+
+	// enter in to an index map
+	map_index_to_FramePose_[frameIndex] = fp;
 #if DEBUG==1
 	printf("store frame %d in mFramePoses\n", fp->mIndex);
 

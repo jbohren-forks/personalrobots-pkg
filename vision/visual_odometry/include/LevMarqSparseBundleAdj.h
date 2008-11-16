@@ -43,6 +43,17 @@ public:
   bool optimize(
       /// The window of frames. For a free frame, the transformation matrix
       /// is used as initial value in entry and output in exit.
+      vector<FramePose*>* freeFrames,
+      //// all the frames so far.
+      vector<FramePose*>* fixedFrames,
+      /// The tracks of points. The global coordinates for each track are
+      /// used as initial value in entry and output in exit.
+      PointTracks* tracks
+  );
+#if 0
+  bool optimize(
+      /// The window of frames. For a free frame, the transformation matrix
+      /// is used as initial value in entry and output in exit.
       deque<PoseEstFrameEntry *>* windowOfFrames,
       //// all the frames so far.
       vector<FramePose*>* frame_poses,
@@ -50,17 +61,18 @@ public:
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
   );
+#endif
 protected:
   void initCameraParams(
-      deque<PoseEstFrameEntry *>* windowOfFrames,
-      vector<FramePose*>* frame_poses,
+      vector<FramePose*>* free_frames,
+      vector<FramePose*>* fixed_frames,
       PointTracks* tracks
   );
   /// compute the cost function, for example, the 2-norm of error vector.
   double costFunction(
       /// The window of frames. For a free frame, the transformation matrix
       /// is used as initial value in entry and output in exit.
-      deque<PoseEstFrameEntry *>* windowOfFrames,
+      vector<FramePose*>* free_frames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
@@ -79,8 +91,7 @@ protected:
       double *param_diff_sum_sq,
       double *param_sum_sq) const;
   void retrieveOptimizedParams(
-      deque<PoseEstFrameEntry *>* windowOfFrames,
-      vector<FramePose*>* frame_poses,
+      vector<FramePose*>* free_frames,
       PointTracks* tracks);
   inline bool isFreeFrame(int global_frame_index) {
     if (global_frame_index >= lowest_free_global_index_ &&
@@ -90,8 +101,17 @@ protected:
       return false;
     }
   }
+  inline bool isFixedFrame(int global_frame_index) {
+    if (global_frame_index >= lowest_fixed_global_index_ &&
+        global_frame_index <= highest_fixed_global_index_ ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
   inline bool isOldFrame(int global_frame_index) {
-    if (global_frame_index < lowest_fixed_global_index_) {
+    if (isFixedFrame(global_frame_index) == false &&
+        isFreeFrame(global_frame_index)  == false) {
       return true;
     } else {
       return false;
@@ -111,6 +131,7 @@ protected:
   int lowest_free_global_index_;
   int highest_free_global_index_;
   int lowest_fixed_global_index_;
+  int highest_fixed_global_index_;
 
   const int full_fixed_window_size_;
   /// current fixed window size. less or equals to full_fixed_window_size.

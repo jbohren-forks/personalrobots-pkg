@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <boost/foreach.hpp>
 
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
@@ -191,6 +192,9 @@ bool CvTest3DPoseEstimate::test() {
   case VideoBundleAdj:
     return testVideoBundleAdj();
     break;
+  case BundleAdj:
+    return testBundleAdj();
+    break;
   default:
     cout << "Unknown test type: "<<  mTestType << endl;
   }
@@ -231,6 +235,10 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 
   start = 30;
   end   = 600;
+//  end = 50;
+
+  // @todo if we run from frame 30 to frame 600. at frame 535 there is a weird behavior - two of the estimated
+  // point get map to the observed points.
 
   // set up a FileSeq
   FileSeq fileSeq;
@@ -241,7 +249,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   vector<FramePose*>* fp = sba.getFramePoses();
   const PointTracks& tracks = sba.getTracks();
 
-  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks);
+  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks, &sba.map_index_to_FramePose_);
 #endif
 
   if (fileSeq.getStartFrame() == false) {
@@ -666,6 +674,114 @@ bool CvTest3DPoseEstimate::testVideo4() {
   return status;
 }
 
+bool CvTest3DPoseEstimate::testBundleAdj() {
+  // rows of 3d points in Cartesian space
+  CvMat *points = (CvMat *)cvLoad("Data/cartesianPoints.xml");
+  // rows of euler angle and shift
+  CvMat *frames = (CvMat *)cvLoad("Data/frames.xml");
+  CvMat cartToDisp;
+  CvMat dispToCart;
+
+  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+  this->getProjectionMatrices(&cartToDisp, &dispToCart);
+
+  cvSetIdentity(&cartToDisp);
+  cvSetIdentity(&dispToCart);
+
+
+  // set up cameras
+  vector<FramePose* > frame_poses;
+  double rod_shift[6];
+  int index_offset = 9;
+  CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
+  for (int r=0; r<frames->rows; r++) {
+    CvMat param1x6;
+    CvMat param6x1;
+    cvGetRow(frames, &param1x6, r);
+    cvReshape(&param1x6, &param6x1, 1, 6);
+
+    FramePose* fp = new FramePose(r+index_offset);
+    CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
+    fp->mRod.x = rod_shift[0];
+    fp->mRod.y = rod_shift[1];
+    fp->mRod.z = rod_shift[2];
+
+    fp->mShift.x = rod_shift[3];
+    fp->mShift.y = rod_shift[4];
+    fp->mShift.z = rod_shift[5];
+    frame_poses.push_back(fp);
+  }
+
+  // set up tracks
+  PointTracks tracks;
+  CvPoint3D64f coord;
+  CvPoint3D64f disp_coord0;
+  CvPoint3D64f disp_coord1;
+  CvMat global_point = cvMat(1, 1, CV_64FC3, &coord);
+  CvMat disp_point0 = cvMat(1, 1, CV_64FC3, &disp_coord0);
+  CvMat disp_point1 = cvMat(1, 1, CV_64FC3, &disp_coord1);
+  CvMat* global_to_local = cvCreateMat(4, 4, CV_64FC1);
+  CvMat* global_to_disp = cvCreateMat(4, 4, CV_64FC1);
+  for (int ipt = 0; ipt < points->rows; ipt++) {
+    coord.x = cvmGet(points, 0, 0);
+    coord.y = cvmGet(points, 0, 1);
+    coord.z = cvmGet(points, 0, 2);
+    // convert from coord to disp_coord0 and disp_coord1
+    CvMatUtils::invertRigidTransform(&frame_poses[0]->transf_local_to_global_, global_to_local);
+    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+    cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+    CvMatUtils::invertRigidTransform(&frame_poses[1]->transf_local_to_global_, global_to_local);
+    cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+    cvPerspectiveTransform(&global_point, &disp_point1, global_to_disp);
+
+    PointTrackObserv* obsv0 = new PointTrackObserv(frame_poses[0]->mIndex, disp_coord0, ipt);
+    PointTrackObserv* obsv1 = new PointTrackObserv(frame_poses[1]->mIndex, disp_coord1, ipt);
+    PointTrack* point = new PointTrack(obsv0, obsv1, coord, ipt);
+
+    for (int iframe = 2; iframe < frames->rows; iframe++) {
+      // extend the track
+      CvMatUtils::invertRigidTransform(&frame_poses[iframe]->transf_local_to_global_, global_to_local);
+      cvMatMul(&cartToDisp, global_to_local, global_to_disp);
+      cvPerspectiveTransform(&global_point, &disp_point0, global_to_disp);
+      PointTrackObserv* obsv = new PointTrackObserv(frame_poses[iframe]->mIndex, disp_coord0, ipt);
+      point->extend(obsv);
+    }
+
+    tracks.tracks_.push_back(point);
+    tracks.oldest_frame_index_in_tracks_ = index_offset;
+  }
+
+  int full_free_window_size = 1;
+  int full_fixed_window_size = 1;
+  LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
+      full_free_window_size, full_fixed_window_size);
+
+  vector<FramePose*> free_frames;
+  vector<FramePose*> fixed_frames;
+
+  free_frames.push_back(frame_poses[0]);
+  fixed_frames.push_back(frame_poses[1]);
+
+  sba.optimize(&free_frames, &fixed_frames, &tracks);
+
+  // print some output
+
+
+  // clean up
+  // remove the points;
+
+  // remove the frames
+  BOOST_FOREACH(FramePose* fp, frame_poses) {
+    delete fp;
+  }
+
+  cvReleaseMat(&global_to_disp);
+  cvReleaseMat(&global_to_local);
+  cvReleaseMat(&frames);
+  cvReleaseMat(&points);
+}
+
 
 bool CvTest3DPoseEstimate::testPointClouds(){
     bool status = true;
@@ -1022,6 +1138,8 @@ int main(int argc, char **argv){
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video3;
     } else if (strcasecmp(option, "bundle") == 0) {
       test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::VideoBundleAdj;
+    } else if (strcasecmp(option, "bundle1") == 0) {
+      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::BundleAdj;
     } else {
       cerr << "Unknown option: "<<option<<endl;
       exit(1);

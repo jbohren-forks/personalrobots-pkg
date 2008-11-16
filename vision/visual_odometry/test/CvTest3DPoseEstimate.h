@@ -29,7 +29,8 @@ public:
     	Video2,
     	Video3,
     	/// bundle adjustment over a sequence of video images
-    	VideoBundleAdj
+    	VideoBundleAdj,
+    	BundleAdj
     } TestType;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();
@@ -40,6 +41,7 @@ public:
     bool testVideo3();
     bool testVideo4();
     bool testVideoBundleAdj();
+    bool testBundleAdj();
     bool test();
     TestType mTestType;
 

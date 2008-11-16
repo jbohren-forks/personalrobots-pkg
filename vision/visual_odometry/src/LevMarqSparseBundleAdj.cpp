@@ -110,18 +110,19 @@ void LevMarqSparseBundleAdj::constructTransformationMatrices(){
 }
 
 bool LevMarqSparseBundleAdj::optimize(
-    deque<PoseEstFrameEntry *>* windowOfFrames,
-    vector<FramePose*>* frame_poses,
+    vector<FramePose*>* free_frames,
+    vector<FramePose*>* fixed_frames,
     PointTracks* tracks
 ) {
   cout << __PRETTY_FUNCTION__ << endl;
 
-  if (frame_poses->size()<2) {
+  if (free_frames->size()<1 || fixed_frames->size()<1) {
     return false;
   }
 
   /// set up matrices, and others
-  free_window_size_ = windowOfFrames->size();
+  free_window_size_ = free_frames->size();
+  fixed_window_size_ = fixed_frames->size();
   num_tracks_  = tracks->tracks_.size();
 
   /// @todo get a more intelligent number than this arbitrary one.
@@ -134,8 +135,8 @@ bool LevMarqSparseBundleAdj::optimize(
   printf("free window size: %d\n", free_window_size_);
 #endif
 
-  lowest_free_global_index_ = windowOfFrames->front()->mFrameIndex;
-  highest_free_global_index_ = windowOfFrames->back()->mFrameIndex;
+  lowest_free_global_index_  = free_frames->front()->mIndex;
+  highest_free_global_index_ = free_frames->back()->mIndex;
   cvGetSubRect(&mat_A_full_, &mat_A_, cvRect(0, 0,
       free_window_size_*NUM_CAM_PARAMS, free_window_size_*NUM_CAM_PARAMS));
   // for CvMat's that are actually one columns vectors, we do not need to use
@@ -185,13 +186,13 @@ bool LevMarqSparseBundleAdj::optimize(
 
 
   /// 2. Compute cost function at initial camera and point configuration.
-  initCameraParams(windowOfFrames, frame_poses, tracks);
+  initCameraParams(free_frames, fixed_frames, tracks);
 
   /// For each camera/frame, compute the transformation matrices
   /// for computing the forward differences.
   constructTransformationMatrices();
 
-  double cost = costFunction(windowOfFrames, tracks);
+  double cost = costFunction(free_frames, tracks);
   double prev_cost = DBL_MAX;
 
 #if DEBUG==1
@@ -567,7 +568,7 @@ bool LevMarqSparseBundleAdj::optimize(
     ///
     /// 8. Compute the cost function for the updated camera and point configuration
     constructTransformationMatrices();
-    cost = costFunction(windowOfFrames, tracks);
+    cost = costFunction(free_frames, tracks);
     ///
     if (cost <= prev_cost) {
       /// 9. If cost function has improved, accept the update step, decrease
@@ -611,7 +612,7 @@ bool LevMarqSparseBundleAdj::optimize(
   } // next iteration
 
   /// copy the optimized parameters back
-  retrieveOptimizedParams(windowOfFrames, frame_poses, tracks);
+  retrieveOptimizedParams(free_frames, tracks);
 
 #if DEBUG==1
   printf("[LevMarqSBA]:  Number of retractions=%d, number of good updates=%d\n",
@@ -623,8 +624,8 @@ bool LevMarqSparseBundleAdj::optimize(
 }
 
 void LevMarqSparseBundleAdj::initCameraParams(
-    deque<PoseEstFrameEntry *>* windowOfFrames,
-    vector<FramePose*>* frame_poses,
+    vector<FramePose*>* free_frames,
+    vector<FramePose*>* fixed_frames,
     PointTracks* tracks) {
     int oldest_frame_in_tracks = tracks->oldest_frame_index_in_tracks_;
 #if DEBUG==1
@@ -636,9 +637,9 @@ void LevMarqSparseBundleAdj::initCameraParams(
   int local_index=0;
   double global_to_local_data[16];
   CvMat  global_to_local = cvMat(4, 4, CV_64FC1, global_to_local_data);
-  BOOST_FOREACH(PoseEstFrameEntry* pose_est_frame_entry, *windowOfFrames) {
+  BOOST_FOREACH(FramePose* free_frame, *free_frames) {
     // invert the global matrix to global to local matrix
-    CvMatUtils::invertRigidTransform(&pose_est_frame_entry->transf_local_to_global_,
+    CvMatUtils::invertRigidTransform( &(free_frame->transf_local_to_global_),
         &global_to_local);
 
     // compute the rodrigues and shift vectors, which are used as
@@ -648,7 +649,7 @@ void LevMarqSparseBundleAdj::initCameraParams(
         global_to_local, mat_params_i);
 
     // enter the mapping between global index and local index to the map.
-    map_index_global_to_local_[pose_est_frame_entry->mFrameIndex] = local_index;
+    map_index_global_to_local_[free_frame->mIndex] = local_index;
 
     local_index++;
   }
@@ -660,11 +661,14 @@ void LevMarqSparseBundleAdj::initCameraParams(
 #endif
 
   // compute and enter the transformations of the fixed frames/cameras.
-  int lowest_index_in_window = windowOfFrames->front()->mFrameIndex;
+//  int lowest_index_in_window = free_frames->front()->mFrameIndex;
   // compute the size of the fixed camera window.
-  fixed_window_size_ = 0;
-  lowest_fixed_global_index_ = lowest_index_in_window;
-  BOOST_REVERSE_FOREACH(FramePose* fp, *frame_poses) {
+  fixed_window_size_ = fixed_frames->size();
+  lowest_fixed_global_index_ = fixed_frames->front()->mIndex;
+  highest_fixed_global_index_ = fixed_frames->back()->mIndex;
+
+#if 0 // do not need the following
+  BOOST_REVERSE_FOREACH(FramePose* fp, *fixed_frames) {
     if (fp->mIndex < oldest_frame_in_tracks) {
       break;
     } else if (fixed_window_size_ >= full_fixed_window_size_) {
@@ -674,39 +678,34 @@ void LevMarqSparseBundleAdj::initCameraParams(
       lowest_fixed_global_index_ = fp->mIndex;
     }
   }
+#endif
   CvMat* transf_from_global = cvCreateMat(4, 4, CV_64FC1);
   int reverse_index=0;
-  BOOST_REVERSE_FOREACH(FramePose* fp, *frame_poses) {
-    if (fp->mIndex < oldest_frame_in_tracks) {
-      break;
-    } else if (fp->mIndex < lowest_index_in_window) {
-      // @todo we may not need this field transf_global_to_disp_
-      if (fp->transf_global_to_disp_ == NULL ) {
-        fp->transf_global_to_disp_ = cvCreateMat(4, 4, CV_64FC1);
+  BOOST_REVERSE_FOREACH(FramePose* fp, *fixed_frames) {
+    // @todo we may not need this field transf_global_to_disp_
+    if (fp->transf_global_to_disp_ == NULL ) {
+      fp->transf_global_to_disp_ = cvCreateMat(4, 4, CV_64FC1);
 
-        CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
-            transf_from_global);
-        cvMatMul(m3DToDisparity, transf_from_global, fp->transf_global_to_disp_);
-      }
+      CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
+          transf_from_global);
+      cvMatMul(m3DToDisparity, transf_from_global, fp->transf_global_to_disp_);
+    }
 
-      int local_index  = fixed_window_size_ - 1 - reverse_index;
-      double* transf   = getFixedTransf(local_index);
-      CvMat mat_transf = cvMat(4, 4, CV_64FC1, transf);
-      // make a copy
-      cvCopy(fp->transf_global_to_disp_,  &mat_transf );
+    int local_index  = fixed_window_size_ - 1 - reverse_index;
+    double* transf   = getFixedTransf(local_index);
+    CvMat mat_transf = cvMat(4, 4, CV_64FC1, transf);
+    // make a copy
+    cvCopy(fp->transf_global_to_disp_,  &mat_transf );
 
 #if DEBUG==1
-      printf("[LevMarqSBA] Store global to disp transf of fixed frame: %d, local index=%d\n",
-          fp->mIndex, local_index);
-      CvMatUtils::printMat(&mat_transf);
+    printf("[LevMarqSBA] Store global to disp transf of fixed frame: %d, local index=%d\n",
+        fp->mIndex, local_index);
+    CvMatUtils::printMat(&mat_transf);
 #endif
-      map_index_global_to_local_[fp->mIndex] = local_index;
+    map_index_global_to_local_[fp->mIndex] = local_index;
 
-      reverse_index++;
-      if (reverse_index>=fixed_window_size_) {
-        break;
-      }
-    }
+    reverse_index++;
+    assert(reverse_index<=fixed_window_size_);
   }
 
   // loop thru the tracks and fill out the field of local_frame_index_
@@ -731,25 +730,36 @@ void LevMarqSparseBundleAdj::initCameraParams(
 }
 
 void LevMarqSparseBundleAdj::retrieveOptimizedParams(
-    deque<PoseEstFrameEntry *>* windowOfFrames,
-    vector<FramePose*>* frame_poses,
+    vector<FramePose *>* free_frames,
     PointTracks* tracks
 ){
   double transf_global_to_local_data[4*4];
   CvMat transf_global_to_local = cvMat(4, 4, CV_64FC1, transf_global_to_local_data);
 
-  BOOST_FOREACH(PoseEstFrameEntry* pose_est_frame_entry, *windowOfFrames) {
-    int local_index = map_index_global_to_local_[pose_est_frame_entry->mFrameIndex];
+  double params_local_to_global_data[NUM_CAM_PARAMS];
+  CvMat  params_local_to_global = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, params_local_to_global_data);
+  BOOST_FOREACH(FramePose* fp, *free_frames) {
+    int local_index = map_index_global_to_local_[fp->mIndex];
     // copy the parameters out
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
     CvMatUtils::transformFromRodriguesAndShift(mat_params_i, transf_global_to_local);
 
     // compute the local to global matrix
     CvMatUtils::invertRigidTransform(&transf_global_to_local,
-        &pose_est_frame_entry->transf_local_to_global_);
+        &fp->transf_local_to_global_);
 
+    // update fp->mRod and fp->mShift
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
+    fp->mRod.x = params_local_to_global_data[0];
+    fp->mRod.y = params_local_to_global_data[1];
+    fp->mRod.z = params_local_to_global_data[2];
+
+    fp->mShift.x = params_local_to_global_data[3];
+    fp->mShift.y = params_local_to_global_data[4];
+    fp->mShift.z = params_local_to_global_data[5];
   }
 
+#if 0 // remove
   // make a copy to frame poses as well.
   // keep the two for loop separate, as we may remove the references  of
   // PoseEstFrameEntry from this class
@@ -781,10 +791,11 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
       fp->mShift.z = params_local_to_global_data[5];
     }
   }
+#endif
 
   /// @todo retrieve point parameters. Current implementation has
   /// the parameters on the tracks. So it is a noop.
-#if DEBUG==1
+#if 0
   // update update disp_coord_est_ of each obsv
   BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
     printf("update point track %3d [%8.2f, %8.2f, %8.2f]\n",
@@ -824,7 +835,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
 }
 
 double LevMarqSparseBundleAdj::costFunction(
-    deque<PoseEstFrameEntry *>* windowOfFrames,
+    vector<FramePose *>* free_frames,
     PointTracks* tracks
 ) {
   double err_norm = 0;

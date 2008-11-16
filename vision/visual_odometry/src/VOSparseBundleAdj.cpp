@@ -33,8 +33,8 @@ using namespace boost::accumulators;
 VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
     int num_free_frames, int num_fixed_frames):
   PathRecon(imageSize),
-  mFreeWindowSize(num_free_frames),
-  mFrozenWindowSize(num_fixed_frames),
+  full_free_window_size_(num_free_frames),
+  full_fixed_window_size_(num_fixed_frames),
   mNumIteration(DefaultNumIteration),
   mTrackId(0),
   levmarq_sba_(NULL)
@@ -47,7 +47,7 @@ VOSparseBundleAdj::~VOSparseBundleAdj() {
 }
 
 void VOSparseBundleAdj::updateSlideWindow() {
-  while(mActiveKeyFrames.size() > (unsigned int)this->mFreeWindowSize ||
+  while(mActiveKeyFrames.size() > (unsigned int)this->full_free_window_size_ ||
       // make sure there is at least one fixed frame.
       (mActiveKeyFrames.size()>1 && mFramePoses.size() == mActiveKeyFrames.size())
       ){
@@ -69,8 +69,8 @@ void VOSparseBundleAdj::updateSlideWindow() {
 #endif
 
   int numWinSize = mActiveKeyFrames.size();
-  assert(numWinSize<=this->mFreeWindowSize);
-  int numFixedFrames = std::min(this->mFrozenWindowSize, numWinSize-mFrozenWindowSize);
+  assert(numWinSize<=this->full_free_window_size_);
+  int numFixedFrames = std::min(this->full_fixed_window_size_, numWinSize-full_fixed_window_size_);
   numFixedFrames = std::max(1, numFixedFrames);
 #if DEBUG==1
   cout << "free window size: "<< numWinSize << ", # fixed win: " << numFixedFrames << endl;
@@ -80,6 +80,8 @@ void VOSparseBundleAdj::updateSlideWindow() {
 
 bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
   bool status = false;
+  vector<FramePose*> free_frames;
+  vector<FramePose*> fixed_frames;
 
   while (inputImageQueue.size()>0) {
     bool newKeyFrame = trackOneFrame(inputImageQueue, mFrameSeq);
@@ -91,7 +93,11 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
-      levmarq_sba_->optimize(&mActiveKeyFrames, &mFramePoses, &mTracks);
+      fillFrames(&mFramePoses, mActiveKeyFrames.front()->mFrameIndex,
+          mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
+          full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
+
+      levmarq_sba_->optimize(&free_frames, &fixed_frames, &mTracks);
 
       cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
@@ -202,7 +208,7 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   CvPoint3D64f cartCoord1; //< Estimated global Cartesian coordinate.
   CvMat _cartCoord1 = cvMat(1, 3, CV_64FC1, &cartCoord1);
   dispToGlobal(disp1, frame.transf_local_to_global_, _cartCoord1);
-  PointTrack* newtrack = new PointTrack(obsv0, obsv1, cartCoord1, frame.mFrameIndex, mTrackId++);
+  PointTrack* newtrack = new PointTrack(obsv0, obsv1, cartCoord1, mTrackId++);
   tracks.tracks_.push_back(newtrack);
 
   int trackId = mTrackId-1;
@@ -272,6 +278,53 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   return status;
 }
 
+void VOSparseBundleAdj::fillFrames(const vector<FramePose*>* frames,
+    int lowest_free_frame_index,
+    int highest_free_frame_index,
+    int free_window_size,
+    int max_fixed_window_size,
+    const PointTracks* tracks,
+    vector<FramePose*>* free_frames,
+    vector<FramePose*>* fixed_frames) {
+  free_frames->clear();
+  fixed_frames->clear();
+
+  vector<FramePose*> rfree_frames;
+  vector<FramePose*> rfixed_frames;
+
+  int oldest_frame_index_in_tracks = tracks->oldest_frame_index_in_tracks_;
+  int free_win_count = 0;
+  int fixed_win_size = 0;
+
+  BOOST_REVERSE_FOREACH(FramePose* fp, *frames) {
+    assert(fp->mIndex<=highest_free_frame_index);
+    if (fp->mIndex >= lowest_free_frame_index) {
+      free_win_count++;
+      rfree_frames.push_back(fp);
+    } else if (fp->mIndex >= oldest_frame_index_in_tracks ) {
+      fixed_win_size++;
+      rfixed_frames.push_back(fp);
+      if (fixed_win_size>=max_fixed_window_size) {
+        // done
+        break;
+      }
+    } else {
+      // done
+      assert(fp->mIndex == oldest_frame_index_in_tracks);
+      break;
+    }
+  }
+  assert (free_win_count == free_window_size);
+  // now reverse vectors of free frames and fixed frames
+  BOOST_REVERSE_FOREACH(FramePose* fp, rfree_frames) {
+    free_frames->push_back(fp);
+  }
+  BOOST_REVERSE_FOREACH(FramePose* fp, rfixed_frames) {
+    fixed_frames->push_back(fp);
+  }
+}
+
+
 void SBAVisualizer::drawTrackingCanvas(
     const PoseEstFrameEntry& lastFrame,
     const PoseEstFrameEntry& frame
@@ -287,6 +340,9 @@ void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
 
 void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
   // draw all the tracks on canvasTracking
+  CvMat* mat0 = cvCreateMat(4, 4, CV_64FC1);
+  CvMat* mat1 = cvCreateMat(4, 4, CV_64FC1);
+
   BOOST_FOREACH( const PointTrack* track, this->tracks.tracks_ ){
     const PointTrackObserv* lastObsv = track->back();
     const CvScalar colorFixedFrame = CvMatUtils::blue;
@@ -301,6 +357,32 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     } else {
       colorFreeFrame  = CvMatUtils::green;
     }
+
+    // @todo compute the estimated trajectory here. Not the right place.
+#if 1
+    BOOST_FOREACH(PointTrackObserv* obsv, *track) {
+      boost::unordered_map<int, FramePose*>::const_iterator it;
+      it = map_index_to_FramePose_->find(obsv->frame_index_);
+      assert(it!=map_index_to_FramePose_->end());
+      const FramePose* fp = it->second;
+
+      CvMat* mat_global_to_disp;
+      if (fp->transf_global_to_disp_) {
+        mat_global_to_disp = fp->transf_global_to_disp_;
+      } else {
+        // compute it here.
+        mat_global_to_disp = mat1;
+        CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
+            mat0);
+        cvMatMul(threeDToDisparity_, mat0, mat_global_to_disp);
+      }
+
+      CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
+      CvMat mat_disp_coord_est_ = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
+
+      cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est_, mat_global_to_disp);
+    }
+#endif
 
     int thickness = 1;
     int i=0;
@@ -343,6 +425,8 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 #endif
     }
   }
+  cvReleaseMat(&mat0);
+  cvReleaseMat(&mat1);
 }
 
 void VOSparseBundleAdj::Stat2::print() {
@@ -414,6 +498,6 @@ void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
   mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
   delete levmarq_sba_;
   levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
-      mFreeWindowSize, mFrozenWindowSize);
+      full_free_window_size_, full_fixed_window_size_);
 }
 

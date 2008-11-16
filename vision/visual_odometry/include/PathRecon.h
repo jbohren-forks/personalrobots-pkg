@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <deque>
+#include <boost/unordered_map.hpp>
 using namespace std;
 
 #include <opencv/cxtypes.h>
@@ -167,6 +168,7 @@ public:
   /// global transformation matrix up to the last key frame, in Cartesian space.
   CvMat mTransform;
   vector<FramePose *> mFramePoses;
+  boost::unordered_map<int, FramePose*> map_index_to_FramePose_;
 
   FrameSeq mFrameSeq;
   virtual FrameSeq& getFrameSeq() {return mFrameSeq;}
@@ -247,7 +249,6 @@ protected:
   CvMat mRT;
   double _tempMat[16];
   CvMat _mTempMat;
-
 };
 } // willow
 } // cv
