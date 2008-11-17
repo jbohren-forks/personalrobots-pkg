@@ -377,6 +377,13 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 	for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
 	{
 		EnvNAV3DKINCfg.ActionsV[tind] = new EnvNAV3DKINAction_t[NAV3DKIN_ACTIONWIDTH];
+
+		//compute sourcepose
+		EnvNAV3DKIN3Dpt_t sourcepose;
+		sourcepose.x = DISCXY2CONT(0, EnvNAV3DKINCfg.cellsize_m);
+		sourcepose.y = DISCXY2CONT(0, EnvNAV3DKINCfg.cellsize_m);
+		sourcepose.theta = DiscTheta2Cont(tind, NAV3DKIN_THETADIRS);
+
 		//the construction assumes that the robot first turns and then goes along this new theta
 		int aind = 0;
 		for(; aind < 3; aind++)
@@ -396,6 +403,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			pose.theta = angle;
 			EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 			CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+			RemoveSourceFootprint(sourcepose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
 
 #if DEBUG
 			printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
@@ -410,6 +418,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			 EnvNAV3DKINCfg.PredActionsV[targettheta].push_back(&(EnvNAV3DKINCfg.ActionsV[tind][aind]));
 
 		}
+
 		//decrease and increase angle without movement
 		aind = 3;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].starttheta = tind;
@@ -425,6 +434,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		pose.theta = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
 		EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+		RemoveSourceFootprint(sourcepose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
 
 #if DEBUG
 		printf("action tind=%d aind=%d: dTheta=%d (%f) dX=%d dY=%d cost=%d\n",
@@ -453,6 +463,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		pose.theta = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
 		EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV.clear();
 		CalculateFootprintForPose(pose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
+		RemoveSourceFootprint(sourcepose, &EnvNAV3DKINCfg.ActionsV[tind][aind].intersectingcellsV);
 
 
 #if DEBUG
@@ -630,6 +641,7 @@ double EnvironmentNAV3DKIN::EuclideanDistance(int X1, int Y1, int X2, int Y2)
 }
 
 
+
 void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
 {  
 
@@ -737,6 +749,31 @@ void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vect
 
     }//over x_min...x_max
   }
+}
+
+
+void EnvironmentNAV3DKIN::RemoveSourceFootprint(EnvNAV3DKIN3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint)
+{  
+	vector<sbpl_2Dcell_t> sourcefootprint;
+
+	//compute source footprint
+	CalculateFootprintForPose(sourcepose, &sourcefootprint);
+
+	//now remove the source cells from the footprint
+	for(int sind = 0; sind < (int)sourcefootprint.size(); sind++)
+	{
+		for(int find = 0; find < (int)footprint->size(); find++)
+		{
+			if(sourcefootprint.at(sind).x == footprint->at(find).x && sourcefootprint.at(sind).y == footprint->at(find).y)
+			{
+				footprint->erase(footprint->begin() + find);
+				break;
+			}
+		}//over footprint
+	}//over source
+
+
+
 }
 
 

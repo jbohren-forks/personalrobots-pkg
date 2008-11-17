@@ -255,6 +255,7 @@ public:
 	bool IsValidCell(int X, int Y);
 
 	void CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint);
+	void RemoveSourceFootprint(EnvNAV3DKIN3Dpt_t sourcepose, vector<sbpl_2Dcell_t>* footprint);
 
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
 
