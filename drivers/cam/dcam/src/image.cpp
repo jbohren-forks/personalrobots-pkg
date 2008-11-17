@@ -263,6 +263,7 @@ StereoData::StereoData()
   filterSize = 11;
   horOffset = 0;
   setDispOffsets();
+  dpp = 16;
 
   textureThresh = 10;
   uniqueThresh = 12;
@@ -539,7 +540,6 @@ StereoData::extractParams(char *ps)
   PRINTF("\n");
 
 
-
   // external params of undistorted cameras
   for (int i=0; i<3; i++) T[i] = 0.0;
   for (int i=0; i<3; i++) Om[i] = 0.0;
@@ -570,6 +570,9 @@ StereoData::extractParams(char *ps)
   PRINTF("\n");
   PRINTF("\n");
 
+  // disparity resolution
+  extract(params, "[stereo]", "dpp", dpp);
+  PRINTF("[dcam] Disparity resolution: 1/%d pixel\n", dpp);  
   extract(params, "[stereo]", "corrxsize", corrSize);
   PRINTF("[dcam] Correlation window: %d\n", corrSize);
   extract(params, "[stereo]", "convx", filterSize);

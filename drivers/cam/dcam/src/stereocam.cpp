@@ -167,6 +167,8 @@ StereoCam::doCalcPts()
       MEMFREE(stIm->imPts);
       stIm->imPtsSize = 4*w*h*sizeof(float);
       stIm->imPts = (float *)MEMALIGN(stIm->imPtsSize);
+      MEMFREE(stIm->imPtsColor);
+      stIm->imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
     }
 
   float *pt;
@@ -180,7 +182,7 @@ StereoCam::doCalcPts()
   for (int j=0; j<ih; j++, y++)
     {
       int x = ix;
-      int16_t *p = (int16_t *)stIm->imDisp + x + y*w;
+      int16_t *p = stIm->imDisp + x + y*w;
       pt = stIm->imPts + x + y*w;
 
       for (int i=0; i<iw; i++, x++, p++)
@@ -197,6 +199,29 @@ StereoCam::doCalcPts()
 	    }
 	}
     }
+
+  if (stIm->imLeft->imColorType != COLOR_CODING_NONE) // ok, have color
+    {
+      y = iy;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = stIm->imDisp + x + y*w;
+	  uint8_t *pc = stIm->imLeft->imColor + (x + y*w)*3;
+	  uint8_t *pcout = stIm->imPtsColor;
+
+	  for (int i=0; i<iw; i++, x++, p++, pc++)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *(pc+1);
+		  *pcout++ = *(pc+2);
+		}
+	    }
+	}
+    }
+
 
   //  printf("[Calc Pts] Number of pts: %d\n", stIm->numPts);
   return true;
