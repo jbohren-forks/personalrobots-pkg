@@ -79,7 +79,6 @@ Reads the following parameters from the parameter server
 #include "self_test/self_test.h"
 
 #include "std_msgs/PoseWithRatesStamped.h"
-#include "std_msgs/EulerAngles.h"
 
 #include "tf/transform_datatypes.h"
 
@@ -90,7 +89,6 @@ class ImuNode: public ros::node
 public:
   MS_3DMGX2::IMU imu;
   std_msgs::PoseWithRatesStamped reading;
-  std_msgs::EulerAngles euler;
 
   string port;
 
@@ -108,7 +106,6 @@ public:
   ImuNode() : ros::node("imu"), count(0), self_test_(this)
   {
     advertise<std_msgs::PoseWithRatesStamped>("imu_data", 100);
-    advertise<std_msgs::EulerAngles>("euler_angles", 100);
 
     param("~port", port, string("/dev/ttyUSB0"));
 
@@ -268,7 +265,7 @@ public:
   {
     status.name = "Interruption Test";
 
-    if (num_subscribers("imu_data") == 0 && num_subscribers("euler_angles") == 0)
+    if (num_subscribers("imu_data") == 0 )
     {
       status.level = 0;
       status.message = "No operation interrupted.";
