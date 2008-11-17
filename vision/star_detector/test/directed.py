@@ -88,6 +88,12 @@ class TestDirected(unittest.TestCase):
             self.assertEqual(a[2], e[2])
             self.assertAlmostEqual(a[3], e[3], 1)
 
+    def test_sizes(self):
+        sizes = [ 1,16,32,64,640,1024,1776,1777,1778,2000,8191,8192,8193]
+        for s in sizes:
+            simple(Image.new("L", (s,100)))
+            simple(Image.new("L", (100,s)))
+
     def test_blank(self):
         """ Blank images have 0 keypoints """
         
@@ -288,7 +294,7 @@ class TestDirected(unittest.TestCase):
 
 if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
-    if 1:
+    if 0:
       suite = unittest.TestSuite()
       suite.addTest(TestDirected('test_face'))
       unittest.TextTestRunner(verbosity=2).run(suite)

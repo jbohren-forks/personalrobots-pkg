@@ -1,4 +1,5 @@
 #include "star_detector/detector.h"
+#include "optimized_width.h"
 
 StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_projected,
@@ -15,7 +16,7 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                                 line_threshold_binarized)),
     m_interpolate(true)
 {
-  int sumwidth = 1777;
+  int sumwidth = std::max(OPTIMIZED_WIDTH, m_W+1);
   m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
