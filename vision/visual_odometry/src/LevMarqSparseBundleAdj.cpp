@@ -575,14 +575,33 @@ bool LevMarqSparseBundleAdj::optimize(
       for (int i = 0; i<NUM_POINT_PARAMS; i++) {
         dp[i] = p->tp_[i];
       }
-      /// for  each camera c on track p
+#if DEBUG==1
+      printf("[LevMarqSBA] backsubstitution, point %d, initial dp\n", p->id_);
+      CvMatUtils::printMat(&mat_dp);
+#endif
+      /// for  each free camera c on track p
       /// {
       BOOST_FOREACH( PointTrackObserv* obsv, *p ) {
+        if (isFreeFrame(obsv->frame_index_)  == false) {
+          continue;
+        }
         ///    Subtract T_{cp}^T dc from dp (where dc is the update for camera c).
         double* dc = getFrameParamsUpdate(obsv->local_frame_index_);
         CvMat mat_dc  = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, dc);
         CvMat& mat_Tcp = obsv->mat_Tcp_;
         cvGEMM(&mat_Tcp, &mat_dc, -1.0, &mat_dp, 1.0, &mat_dp, CV_GEMM_A_T);
+
+#if DEBUG==1
+        printf("[LevMarqSBA] backsubstitution, point %d, cam %d,%d\n", p->id_,
+            obsv->frame_index_, obsv->local_frame_index_);
+        printf("[LevMarqSBA] Tcp\n");
+        CvMatUtils::printMat(&mat_Tcp);
+        printf("[LevMarqSBA] dc\n");
+        CvMatUtils::printMat(&mat_dc);
+        printf("[LevMarqSBA] updated dp\n");
+        CvMatUtils::printMat(&mat_dp);
+
+#endif
       }
 
       /// update point parameters with dp
@@ -591,8 +610,8 @@ bool LevMarqSparseBundleAdj::optimize(
       p->coordinates_.z += dp[2];
 
 #if DEBUG==1
-    printf("[LevMarqSBA]: updated point params [%f, %f, %f]\n",
-        p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+      printf("[LevMarqSBA]: updated point params pid=%d, [%f, %f, %f]\n",
+          p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
 #endif
 
       /// }
@@ -601,7 +620,7 @@ bool LevMarqSparseBundleAdj::optimize(
     /// 8. Compute the cost function for the updated camera and point configuration
     constructTransfMatrices();
     cost = costFunction(free_frames, tracks);
-    printf("cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost, prev_cost);
+    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost, prev_cost);
     ///
     if (cost <= prev_cost) {
       /// 9. If cost function has improved, accept the update step, decrease
@@ -622,7 +641,7 @@ bool LevMarqSparseBundleAdj::optimize(
         break;
       }
 #if DEBUG==1
-      printf("[LevMarqSBA] num of iters=%d, change in param=%f",
+      printf("[LevMarqSBA] good update. num of iters=%d, change in param=%f\n",
           iters, param_change);
 #endif
 
@@ -644,6 +663,9 @@ bool LevMarqSparseBundleAdj::optimize(
       BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
         p->coordinates_ = p->prev_coordinates_;
       }
+#if DEBUG==1
+      printf("[LevMarqSBA] bad update.\n");
+#endif
 
       /// @todo, in stead of just going back to the beginning of the loop,
       /// we shall skip over the computation of derivatives and Jacobians, etc..
