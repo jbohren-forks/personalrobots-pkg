@@ -36,19 +36,24 @@ rostools.update_path('visual_odometry')
 
 import sys
 import time
+import getopt
+
+from vis import Vis
 
 from math import *
 
-from std_msgs.msg import Image, ImageArray, String
+from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
+from cv_view.msg import Line, Lines
+from visual_odometry.msg import Frame, Pose44, Keypoint, Descriptor
 import rospy
-import visual_odometry as VO
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer
+from visualodometer import VisualOdometer, Pose, FeatureDetectorHarris
 import camera
+from marker import Marker
 
 import PIL.Image
 import PIL.ImageDraw
-import cPickle
+import pickle
 
 SEE = 0
 
@@ -59,38 +64,48 @@ class imgAdapted:
   def tostring(self):
     return self.i.data
 
-def circle(im, x, y, r, color):
-    draw = PIL.ImageDraw.Draw(im)
-    box = [ int(i) for i in [ x - r, y - r, x + r, y + r ]]
-    draw.pieslice(box, 0, 360, fill = color)
-
 class VODemo:
   vo = None
   frame = 0
 
+  def __init__(self, mode, library):
+    self.mode = mode
+    self.library = library
+
+    rospy.TopicSub('/videre/images', ImageArray, self.display_array)
+    rospy.TopicSub('/videre/cal_params', String, self.display_params)
+    rospy.TopicSub('/vo/tmo', Pose44, self.handle_corrections)
+
+    self.vm_pub = rospy.Publisher("/visualizationMarker", VisualizationMarker)
+    self.viz_pub = rospy.Publisher("/overlay", Lines)
+    self.vo_key_pub = rospy.Publisher("/vo/key", Frame)
+    self.Tmo = Pose()
+
+    self.mymarker1 = Marker(10)
+    self.mymarkertrail = [ Marker(11 + i) for i in range(10) ]
+    self.trail = []
+
+    self.vis = Vis()
+
   def display_params(self, iar):
     if not self.vo:
-      matrix = []         # Matrix will be in row,column order
-      section = ""
-      in_proj = 0
-      for l in iar.data.split('\n'):
-        if len(l) > 0 and l[0] == '[':
-          section = l.strip('[]')
-        ws = l.split()
-        if ws != []:
-          if section == "right camera" and ws[0].isalpha():
-            in_proj = (ws[0] == 'proj')
-          elif in_proj:
-            matrix.append([ float(s) for s in l.split() ])
-      Fx = matrix[0][0]
-      Fy = matrix[1][1]
-      Cx = matrix[0][2]
-      Cy = matrix[1][2]
-      Tx = -matrix[0][3] / Fx
-      self.params = (Fx, Fy, Tx, Cx, Cx, Cy)
-      cam = camera.Camera(self.params)
+      cam = camera.VidereCamera(iar.data)
+      print "cam.params", cam.params
       self.vo = VisualOdometer(cam)
       self.started = None
+      if self.mode == 'learn':
+        self.library = set()
+      self.previous_keyframe = None
+      self.know_state = 'lost'
+      self.best_show_pose = None
+      self.mymarker1.floor()
+
+  def handle_corrections(self, corrmsg):
+    print "GOT CORRECTION AT", time.time()
+    Tmo_pose = Pose()
+    Tmo_pose.fromlist(corrmsg.v)
+    self.Tmo = Tmo_pose
+    self.know_state = 'corrected'
 
   def display_array(self, iar):
     diag = ""
@@ -98,19 +113,82 @@ class VODemo:
     if self.vo:
       if not self.started:
         self.started = time.time()
-      if 0:
-        time.sleep(0.028)
-      else:
-        imgR = imgAdapted(iar.images[0])
-        imgL = imgAdapted(iar.images[1])
-        af = SparseStereoFrame(imgL, imgR)
-        if 1:
+      imgR = imgAdapted(iar.images[0])
+      imgL = imgAdapted(iar.images[1])
+      af = SparseStereoFrame(imgL, imgR)
+
+      if 1:
+        if self.mode == 'play':
           pose = self.vo.handle_frame(af)
-          diag = "%d inliers, moved %.1f" % (self.vo.inl, pose.distance())
-      if (self.frame % 1) == 0:
-        took = time.time() - self.started
-        print "%4d: %5.1f [%f fps]" % (self.frame, took, self.frame / took), diag
-      self.frame += 1
+        if self.mode == 'learn':
+          pose = self.vo.handle_frame(af)
+          if (af.id != 0) and (self.vo.inl < 80):
+            print "*** LOST TRACK ***"
+            #sys.exit(1)
+          self.library.add(self.vo.keyframe)
+        else:
+          #diag = "best match %d from %d in library" % (max(probes)[0], len(self.library))
+          pass
+        diag = "%d/%d inliers, moved %.1f library size %d" % (self.vo.inl, len(af.kp), pose.distance(), len(self.library))
+
+        if self.mode == 'play':
+          kf = self.vo.keyframe
+          if kf != self.previous_keyframe:
+            f = Frame()
+            f.id = kf.id
+            f.pose = Pose44(kf.pose.tolist())
+            f.keypoints = [ Keypoint(x,y,d) for (x,y,d) in kf.kp ]
+            f.descriptors = [ Descriptor(d) for d in kf.descriptors ]
+            print "ASKING FOR MATCH AT", time.time()
+            self.vo_key_pub.publish(f)
+            self.previous_keyframe = kf
+            if kf.inl < 50 or self.vo.inl < 50:
+              self.know_state = 'lost'
+            else:
+              self.know_state = { 'lost':'lost', 'uncertain':'uncertain', 'corrected':'uncertain' }[self.know_state]
+
+        result_pose = af.pose
+        if self.mode == 'learn':
+          self.mymarker1.frompose(af.pose, self.vo.cam, (255,255,255))
+        else:
+          if self.best_show_pose and self.know_state == 'lost':
+            inmap = self.best_show_pose
+          else:
+            Top = af.pose
+            Tmo = self.Tmo
+            inmap = Tmo * Top
+            if self.know_state != 'lost':
+              self.best_show_pose = inmap
+          if self.know_state != 'lost' or not self.best_show_pose:
+            color = { 'lost' : (255,0,0), 'uncertain' : (127,127,0), 'corrected' : (0,255,0) }[self.know_state]
+            self.mymarker1.frompose(inmap, self.vo.cam, color)
+            if 0:
+              self.trail.append(inmap)
+              self.trail = self.trail[-10:]
+              for i,p in enumerate(self.trail):
+                self.mymarkertrail[i].frompose(p, color)
+        #print af.diff_pose.xform(0,0,0), af.pose.xform(0,0,0)
+
+        if self.frame > 5 and ((self.frame % 10) == 0):
+          inliers = self.vo.pe.inliers()
+          pts = [(1,int(x0),int(y0)) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+          self.vis.show(iar.images[1].data, pts )
+
+        if False and self.vo.pairs != []:
+          ls = Lines()
+          inliers = self.vo.pe.inliers()
+          lr = "left_rectified"
+          ls.lines = [ Line(lr, 0,255,0,x0,y0-2,x0,y0+2) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+          ls.lines += [ Line(lr, 0,255,0,x0-2,y0,x0+2,y0) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+          rr = "right_rectified"
+          #ls.lines += [ Line(rr, 0,255,0,x0-d0,y0-2,x0-d0,y0+2) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+          #ls.lines += [ Line(rr, 0,255,0,x0-2-d0,y0,x0+2-d0,y0) for ((x0,y0,d0), (x1,y1,d1)) in inliers]
+          self.viz_pub.publish(ls)
+
+        if (self.frame % 30) == 0:
+          took = time.time() - self.started
+          print "%4d: %5.1f [%f fps]" % (self.frame, took, self.frame / took), diag
+        self.frame += 1
 
     #print "got message", len(iar.images)
     #print iar.images[0].width
@@ -121,21 +199,57 @@ class VODemo:
       hg.cvShowImage('channel R', right)
       hg.cvWaitKey(5)
 
-def display_single(im):
-    imcv = ut.ros2cv(im)
-    hg.cvShowImage('channel 1', imcv)
-    hg.cvWaitKey(5)
+  def dump(self):
+    print
+    print self.vo.name()
+    self.vo.summarize_timers()
+    if self.mode == 'learn':
+      print "DUMPING LIBRARY", len(self.library)
+      f = open("library.pickle", "w")
+      pickle.dump(self.vo.cam, f)
+      db = [(af.id, af.pose, af.kp, af.descriptors) for af in self.library]
+      pickle.dump(db, f)
+      f.close()
+      print "DONE"
 
-def main():
-    vod = VODemo()
-    if SEE:
-      hg.cvNamedWindow('channel L', 1)
-      hg.cvNamedWindow('channel R', 1)
-    rospy.TopicSub('/videre/images', ImageArray, vod.display_array)
-    rospy.TopicSub('/videre/cal_params', String, vod.display_params)
-    rospy.TopicSub('image', Image, display_single)
-    rospy.ready('camview_py')
-    rospy.spin()
+def main(args):
+
+  time.sleep(3)
+  optlist, args = getopt.getopt(args[1:], 'l')
+  if ('-l', '') in optlist:
+    mode = 'learn'
+  else:
+    mode = 'play'
+
+  if mode == 'play':
+    f = open("pruned.pickle", "r")
+    cam = pickle.load(f)
+    db = pickle.load(f)
+    f.close()
+
+    class LibraryFrame:
+      def __init__(self, id, pose, kp, desc):
+        self.id = id
+        self.pose = pose
+        self.kp = kp
+        self.descriptors = desc
+
+    library = set()
+    for (id, pose, kp, desc) in db:
+      lf = LibraryFrame(id, pose, kp, desc)
+      library.add(lf)
+  else:
+    library = None
+
+  if SEE:
+    hg.cvNamedWindow('channel L', 1)
+    hg.cvNamedWindow('channel R', 1)
+
+  vod = VODemo(mode, library)
+
+  rospy.ready('camview_py')
+  rospy.spin()
+  vod.dump()
 
 if __name__ == '__main__':
-    main()
+  main(sys.argv)

@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import rostools
 rostools.update_path('visual_odometry')
 import rostest

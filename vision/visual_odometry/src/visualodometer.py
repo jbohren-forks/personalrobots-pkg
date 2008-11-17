@@ -1,19 +1,47 @@
 import vop
-import visual_odometry as VO
+import votools as VO
 from timer import Timer
 
 import Image
 from math import *
 import numpy
+import numpy.linalg
+
+import transform
 
 scratch = " " * (640 * 480)
 
 class Pose:
   def __init__(self, R=None, S=None):
-    if R != None:
-      self.M = numpy.mat(numpy.vstack((numpy.hstack((R, numpy.array(S).reshape((3,1)))), numpy.array([0, 0, 0, 1]))))
-    else:
-      self.M = numpy.mat(numpy.identity(4))
+    if R == None:
+      R = numpy.identity(3)
+    if S == None:
+      S = ( 0, 0, 0)
+    self.M = numpy.mat(numpy.vstack((numpy.hstack((R, numpy.array(S).reshape((3,1)))), numpy.array([0, 0, 0, 1]))))
+
+  def fromlist(self, L):
+    a = numpy.array(L)
+    a.shape = 4,4
+    self.M = numpy.mat(a)
+
+  def tolist(self):
+    return sum(self.M.tolist(), [])
+
+  def invert(self):
+    r = Pose()
+    r.M = numpy.linalg.inv(self.M)
+    return r
+
+  def __mul__(self, other):
+    r = Pose()
+    r.M = self.M * other.M
+    return r
+
+  def __invert__(self):
+    r = Pose()
+    #r.M = self.M.T
+    r.M = numpy.linalg.inv(self.M)
+    return r
 
   def concatenate(self, P):
     r = Pose()
@@ -21,7 +49,11 @@ class Pose:
     return r
 
   def xform(self, x, y, z):
-    return numpy.array(numpy.dot(self.M, numpy.array([x, y, z, 1]) ).T[0])
+    x,y,z,w = tuple(numpy.array(numpy.dot(self.M, numpy.array([x, y, z, 1]) ))[0])
+    x /= w
+    y /= w
+    z /= w
+    return (x,y,z)
 
   def quaternion(self):
     return transform.quaternion_from_rotation_matrix(self.M)
@@ -39,8 +71,8 @@ class Pose:
     return (sqrt(numpy.dot(d, d.conj())), eud[0], eud[1], eud[2])
 
   def distance(self):
-    d = numpy.array(numpy.dot(self.M, numpy.array([0, 0, 0, 1]) ).T[0])
-    return sqrt(numpy.dot(d,d.conj()))
+    x,y,z = self.xform(0,0,0)
+    return sqrt(x * x + y * y + z * z)
 
 import fast
 
@@ -145,7 +177,7 @@ class DescriptorSchemeEverything(DescriptorScheme):
     for (i,ki) in enumerate(af0.kp):
       # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
       predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
+      predY = (abs(Ys - ki[1]) < 64)
       hits = vop.where(predX & predY, 1, 0).tostring()
       for (j,c) in enumerate(hits):
         if ord(c) != 0:
@@ -242,6 +274,7 @@ class VisualOdometer:
 
   def summarize_timers(self):
     niter = self.num_frames
+    print niter, "frames"
     for n,t in self.timer.items():
       print "%-20s %fms" % (n, 1e3 * t.sum / niter)
     print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
@@ -255,7 +288,7 @@ class VisualOdometer:
   def find_disparities(self, frame):
     self.timer['disparity'].start()
     disparities = [frame.lookup_disparity(x,y) for (x,y) in frame.kp2d]
-    frame.kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z != None ]
+    frame.kp = [ (x,y,z) for ((x,y),z) in zip(frame.kp2d, disparities) if z]
     self.timer['disparity'].stop()
 
   lgrad = " " * (640 * 480)
@@ -273,7 +306,7 @@ class VisualOdometer:
     self.timer['temporal_match'].stop()
     return pairs
 
-  def solve(self, k0, k1, pairs):
+  def solve(self, k0, k1, pairs, polish = True):
     self.timer['solve'].start()
     if pairs != []:
       #r = self.pe.estimate(k0, k1, pairs)
@@ -283,6 +316,26 @@ class VisualOdometer:
     self.timer['solve'].stop()
 
     return r
+
+  def mkpose(self, rot, shift):
+    r33 = numpy.mat(numpy.array(rot).reshape(3,3))
+    return Pose(r33, numpy.array(shift))
+
+    #pr = Pose(r33, numpy.array([0,0,0]))
+    #ps = Pose(numpy.mat([[1,0,0],[0,1,0],[0,0,1]]), numpy.array(shift))
+    #return pr * ps
+
+  def proximity(self, f0, f1):
+    """Given frames f0, f1, returns (inliers, pose) where pose is the transform that maps f1's frame int f0's frame.)"""
+    self.num_frames += 1
+    pairs = self.temporal_match(f0, f1)
+    if len(pairs) > 10:
+      solution = self.solve(f0.kp, f1.kp, pairs, False)
+      (inl, rot, shift) = solution
+      pose = self.mkpose(rot, shift)
+      return (inl, pose)
+    else:
+      return (0, None)
 
   def handle_frame(self, frame):
     self.find_keypoints(frame)
@@ -299,22 +352,27 @@ class VisualOdometer:
       (inl, rot, shift) = solution
       self.inl = inl
       self.outl = len(self.pairs) - inl
-      r33 = numpy.mat(numpy.array(rot).reshape(3,3))
-      diff_pose = Pose(r33, numpy.array(shift))
+      diff_pose = self.mkpose(rot, shift)
+      frame.diff_pose = diff_pose
       is_far = inl < self.inlier_thresh
       if (self.keyframe != self.prev_frame) and is_far:
         self.keyframe = self.prev_frame
         self.log_keyframes.append(self.keyframe.id)
         return self.handle_frame(frame)
-      frame.pose = ref.pose.concatenate(diff_pose)
+      Tok = ref.pose
+      Tkp = diff_pose
+      Top = Tok * Tkp
+      frame.pose = Top
+      frame.inl = inl
     else:
       frame.pose = Pose()
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
+      frame.inl = 999
 
     self.pose = frame.pose
     self.prev_frame = frame
-    
+
     if 0:
       diff = self.pose.compare(self.keyframe.pose)
       if (max(diff[1:]) > self.angle_keypoint_thresh):

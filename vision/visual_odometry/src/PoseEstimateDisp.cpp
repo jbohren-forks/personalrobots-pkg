@@ -378,7 +378,7 @@ int PoseEstimateDisp::estimate(CvMat *xyzs0, CvMat *xyzs1,
   }
 
   if (maxNumInLiers<6) {
-    cout << "Too few inliers: "<< maxNumInLiers << endl;
+    // cout << "Too few inliers: "<< maxNumInLiers << endl;
     return maxNumInLiers;
   }
 

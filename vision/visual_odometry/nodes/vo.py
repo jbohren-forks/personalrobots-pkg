@@ -43,7 +43,8 @@ from math import *
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
 import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, FeatureDetectorHarris
+from visualodometer import VisualOdometer, FeatureDetectorHarris
+from visual_odometry.msg import Pose
 import camera
 
 import PIL.Image
@@ -83,6 +84,8 @@ class VO:
 
       pose = self.vo.handle_frame(af)
       print pose.xform(0,0,0)
+      p = Pose()
+      Pose.header.timestamp = 0
 
 def main(args):
 

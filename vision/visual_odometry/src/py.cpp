@@ -642,9 +642,10 @@ PyObject *estimate(PyObject *self, PyObject *args)
   vector <Keypoint> kpa;
   vector <Keypoint> kpb;
   vector <pair<int, int> > pairs;
+  int polishing = 1;
 
   PyObject *p_kpa, *p_kpb, *p_pairs;
-  if (!PyArg_ParseTuple(args, "OOO", &p_kpa, &p_kpb, &p_pairs)) return NULL;
+  if (!PyArg_ParseTuple(args, "OOO|i", &p_kpa, &p_kpb, &p_pairs, &polishing)) return NULL;
 
   double x, y, z;
   for (int i = 0; i < PyList_Size(p_kpa); i++) {
@@ -666,7 +667,7 @@ PyObject *estimate(PyObject *self, PyObject *args)
   CvMat rot   = cvMat(3, 3, CV_64FC1, _mRot);
   CvMat shift = cvMat(3, 1, CV_64FC1, _mShift);
 
-  int inliers = pe->estimate(kpa, kpb, pairs, rot, shift, true);
+  int inliers = pe->estimate(kpa, kpb, pairs, rot, shift, polishing);
 
   return Py_BuildValue("(i,(ddddddddd),(ddd))",
                        inliers,
@@ -751,6 +752,102 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   double Fx, Fy, Tx, Clx, Crx, Cy;
   if (!PyArg_ParseTuple(args, "dddddd", &Fx, &Fy, &Tx, &Clx, &Crx, &Cy)) return NULL;
   object->pe->setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
+  object->pe->setInlierErrorThreshold(3.0);
+
+  return (PyObject*)object;
+}
+/************************************************************************/
+#include "imwin.h"
+
+typedef struct {
+  PyObject_HEAD
+  imWindow *iw;
+} imWindow_t;
+
+PyObject *iwDisplayImage(PyObject *self, PyObject *args)
+{
+  imWindow *iw = ((imWindow_t*)self)->iw;
+  int imdata_size;
+  unsigned char *imdata;
+  PyObject *pts;
+  if (!PyArg_ParseTuple(args, "s#O", &imdata, &imdata_size, &pts)) return NULL;
+  iw->DisplayImage(imdata, 640, 480, 0, MONOCHROME);
+
+  // fl_color(FL_RED);
+  // fl_line(10, 10, 100, 100);
+  //
+  int c, x, y;
+  for (int i = 0; i < PyList_Size(pts); i++) {
+    PyArg_ParseTuple(PyList_GetItem(pts, i), "iii", &c, &x, &y);
+    if (c == 0)
+      fl_color(FL_RED);
+    else
+      fl_color(FL_GREEN);
+    fl_line(x-4, y, x+4, y);
+    fl_line(x, y-4, x, y+4);
+  }
+
+  fltk_check();
+  Py_RETURN_NONE;
+}
+
+static void
+imWindow_dealloc(PyObject *self)
+{
+  PyObject_Del(self);
+}
+
+/* Method table */
+static PyMethodDef imWindow_methods[] = {
+  {"DisplayImage", iwDisplayImage, METH_VARARGS},
+  {NULL, NULL},
+};
+
+static PyObject *
+imWindow_GetAttr(PyObject *self, char *attrname)
+{
+    return Py_FindMethod(imWindow_methods, self, attrname);
+}
+
+static PyTypeObject imWindow_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "imWindow",
+    sizeof(imWindow_t),
+    0,
+    (destructor)imWindow_dealloc,
+    0,
+    (getattrfunc)imWindow_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+
+    0,
+
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+PyObject *mkimWindow(PyObject *self, PyObject *args)
+{
+  imWindow_t *object = PyObject_NEW(imWindow_t, &imWindow_Type);
+  object->iw = new imWindow(640, 480);
+  object->iw->show();
 
   return (PyObject*)object;
 }
@@ -769,15 +866,16 @@ static PyMethodDef methods[] = {
   {"sad_search", sad_search, METH_VARARGS},
   {"dense_stereo", dense_stereo, METH_VARARGS},
   {"harris", harris, METH_VARARGS},
+  {"imWindow", mkimWindow, METH_VARARGS},
 
   {"pose_estimator", pose_estimator, METH_VARARGS},
   {NULL, NULL, NULL},
 };
 
-extern "C" void initvisual_odometry()
+extern "C" void initvotools()
 {
     PyObject *m, *d;
 
-    m = Py_InitModule("visual_odometry", methods);
+    m = Py_InitModule("votools", methods);
     d = PyModule_GetDict(m);
 }

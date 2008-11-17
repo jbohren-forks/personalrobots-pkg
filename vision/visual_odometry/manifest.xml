@@ -17,6 +17,7 @@
   <depend package="vop"/>
   <depend package="rosrecord"/>
   <depend package="calonder_descriptor"/>
+  <depend package="cv_view"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lvisual_odometry -Wl,-rpath,${prefix}/lib" />
   </export>
@@ -26,4 +27,6 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="python-matplotlib"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="python-matplotlib"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="fltk"/>
+  <sysdepend os="ubuntu" package="libfltk-dev"/>
 </package>
