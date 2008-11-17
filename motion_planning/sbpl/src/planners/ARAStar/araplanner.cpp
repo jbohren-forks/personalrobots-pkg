@@ -273,7 +273,7 @@ void ARAPlanner::UpdatePreds(ARAState* state, ARASearchStateSpace_t* pSearchStat
 			predstate->costtobestnextstate = CostV[pind];
 
 			//re-insert into heap if not closed yet
-			if(predstate->iterationclosed != pSearchStateSpace->iteration)
+			if(predstate->iterationclosed != pSearchStateSpace->searchiteration)
 			{
 				key.key[0] = predstate->g + (int)(pSearchStateSpace->eps*predstate->h);
 				//key.key[1] = predstate->h;
@@ -320,7 +320,7 @@ void ARAPlanner::UpdateSuccs(ARAState* state, ARASearchStateSpace_t* pSearchStat
 			succstate->bestpredstate = state->MDPstate; 
 
 			//re-insert into heap if not closed yet
-			if(succstate->iterationclosed != pSearchStateSpace->iteration)
+			if(succstate->iterationclosed != pSearchStateSpace->searchiteration)
 			{
 				
 				key.key[0] = succstate->g + (int)(pSearchStateSpace->eps*succstate->h);
@@ -391,8 +391,15 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 		//fprintf(fDeb, "expanding state(%d): h=%d g=%u key=%u v=%u iterc=%d callnuma=%d expands=%d (g(goal)=%u)\n",
 		//	state->MDPstate->StateID, state->h, state->g, state->g+(int)(pSearchStateSpace->eps*state->h), state->v, 
 		//	state->iterationclosed, state->callnumberaccessed, state->numofexpands, searchgoalstate->g);
-		//environment_->PrintState(state->MDPstate->StateID, true, fDeb);
-		//fflush(fDeb);
+		fprintf(fDeb, "expanding: ");
+		PrintSearchState(state, fDeb);
+		if(state->listelem[ARA_INCONS_LIST_ID]  != NULL)
+		{
+			fprintf(fDeb, "ERROR: expanding a state from inconslist\n");
+			printf("ERROR: expanding a state from inconslist\n");
+			exit(1);
+		}
+		fflush(fDeb);
 #endif
 
 #if DEBUG
@@ -407,12 +414,15 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 		if(state->v == state->g)
 		{
 			printf("ERROR: consistent state is being expanded\n");
+#if DEBUG
+			fprintf(fDeb, "ERROR: consistent state is being expanded\n");
 			exit(1);
+#endif
 		}
 
 		//recompute state value      
 		state->v = state->g;
-		state->iterationclosed = pSearchStateSpace->iteration;
+		state->iterationclosed = pSearchStateSpace->searchiteration;
 
 		//new expand      
 		expands++;
@@ -593,12 +603,12 @@ void ARAPlanner::ReInitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStat
 	pSearchStateSpace->callnumber++;
 
 	//reset iteration
-	pSearchStateSpace->iteration = 0;
-
+	pSearchStateSpace->searchiteration = 0;
+	pSearchStateSpace->bNewSearchIteration = true;
 
 #if DEBUG
     fprintf(fDeb, "reinitializing search state-space (new call number=%d search iter=%d)\n", 
-            pSearchStateSpace->callnumber,pSearchStateSpace->iteration );
+            pSearchStateSpace->callnumber,pSearchStateSpace->searchiteration );
 #endif
 
 
@@ -639,7 +649,8 @@ int ARAPlanner::InitializeSearchStateSpace(ARASearchStateSpace_t* pSearchStateSp
 
 	pSearchStateSpace->eps = this->finitial_eps;
     pSearchStateSpace->eps_satisfied = INFINITECOST;
-	pSearchStateSpace->iteration = 0;
+	pSearchStateSpace->searchiteration = 0;
+	pSearchStateSpace->bNewSearchIteration = true;
 	pSearchStateSpace->callnumber = 0;
 	pSearchStateSpace->bReevaluatefvals = false;
 
@@ -815,12 +826,13 @@ void ARAPlanner::PrintSearchPath(ARASearchStateSpace_t* pSearchStateSpace, FILE*
 
 void ARAPlanner::PrintSearchState(ARAState* state, FILE* fOut)
 {
-	fprintf(fOut, "state %d: h=%d g=%u v=%u iterc=%d callnuma=%d expands=%d \n",
+	fprintf(fOut, "state %d: h=%d g=%u v=%u iterc=%d callnuma=%d expands=%d heapind=%d inconslist=%d\n",
 		state->MDPstate->StateID, state->h, state->g, state->v, 
-		state->iterationclosed, state->callnumberaccessed, state->numofexpands);
+		state->iterationclosed, state->callnumberaccessed, state->numofexpands, state->heapindex, state->listelem[ARA_INCONS_LIST_ID]?1:0);
 	environment_->PrintState(state->MDPstate->StateID, true, fOut);
 
 }
+
 
 
 int ARAPlanner::getHeurValue(ARASearchStateSpace_t* pSearchStateSpace, int StateID)
@@ -952,8 +964,6 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	while(pSearchStateSpace->eps_satisfied > ARA_FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
-		//it will be a new search iteration
-		pSearchStateSpace->iteration++;
 
 		//decrease eps for all subsequent iterations
 		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
@@ -962,16 +972,26 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 			if(pSearchStateSpace->eps < ARA_FINAL_EPS)
 				pSearchStateSpace->eps = ARA_FINAL_EPS;
 
+			//the priorities need to be updated
+			pSearchStateSpace->bReevaluatefvals = true; 
 
-			pSearchStateSpace->bReevaluatefvals = true;
+			//it will be a new search
+			pSearchStateSpace->bNewSearchIteration = true;
 
 			//build a new open list by merging it with incons one
-			BuildNewOPENList(pSearchStateSpace);
+			BuildNewOPENList(pSearchStateSpace); 
 
-			//re-compute f-values if necessary and reorder the heap
-			if(pSearchStateSpace->bReevaluatefvals)
-				Reevaluatefvals(pSearchStateSpace);
 		}
+
+		if(pSearchStateSpace->bNewSearchIteration)
+		{
+			pSearchStateSpace->searchiteration++;
+			pSearchStateSpace->bNewSearchIteration = false;
+		}
+
+		//re-compute f-values if necessary and reorder the heap
+		if(pSearchStateSpace->bReevaluatefvals) 
+			Reevaluatefvals(pSearchStateSpace);
 
 		//improve or compute path
 		if(ImprovePath(pSearchStateSpace, MaxNumofSecs) == 1){

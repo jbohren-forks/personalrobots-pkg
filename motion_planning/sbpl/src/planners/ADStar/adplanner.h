@@ -86,7 +86,7 @@ typedef struct ADSEARCHSTATESPACE
     double eps_satisfied;
 	CHeap* heap;
 	CList* inconslist;
-	short unsigned int iteration;
+	short unsigned int searchiteration;
 	short unsigned int callnumber;
 	CMDPSTATE* searchgoalstate;
 	CMDPSTATE* searchstartstate;
@@ -95,6 +95,7 @@ typedef struct ADSEARCHSTATESPACE
 
 	bool bReevaluatefvals;
     bool bReinitializeSearchStateSpace;
+	bool bRebuildOpenList;
 
 } ADSearchStateSpace_t;
 

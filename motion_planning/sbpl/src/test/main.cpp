@@ -156,7 +156,7 @@ int planandnavigate2d(int argc, char *argv[])
     FILE* fSol = fopen("sol.txt", "w");
     int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	bool bPrint = true;
+	bool bPrint = false;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
@@ -342,7 +342,7 @@ int planandnavigate2d(int argc, char *argv[])
 int planandnavigate3dkin(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 0.5; //in seconds
+	double allocated_time_secs_foreachplan = 1.0; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV3DKIN environment_nav3Dkin;
 	EnvironmentNAV3DKIN trueenvironment_nav3Dkin;
@@ -425,8 +425,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 	//create a planner
 	vector<int> solution_stateIDs_V;
 	bool bforwardsearch = false;
-    ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
-	//ADPlanner planner(&environment_nav3Dkin);
+    //ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
+	ADPlanner planner(&environment_nav3Dkin, bforwardsearch);
 
 
 
@@ -472,12 +472,14 @@ int planandnavigate3dkin(int argc, char *argv[])
         }
 		
         if(bChanges){
-            planner.costs_changed(); //use by ARA* planner (non-incremental)
+            //planner.costs_changed(); //use by ARA* planner (non-incremental)
 
 			//get the affected states
-			//environment_nav3Dkin.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
+			environment_nav3Dkin.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
 			//let know the incremental planner about them
-			//planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
+			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
+			printf("%d states were affected\n", preds_of_changededgesIDV.size());
+
         }
 
 		int startx_c = CONTXY2DISC(startx,cellsize_m);

@@ -286,6 +286,64 @@ void EnvironmentNAV3DKIN::ReadConfiguration(FILE* fCfg)
 }
 
 
+void EnvironmentNAV3DKIN::ComputeReplanningDataforAction(EnvNAV3DKINAction_t* action)
+{
+
+	//iterate over all the cells involved in the action
+	EnvNAV3DKIN3Dcell_t startcell3d, endcell3d;
+	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++)
+	{
+		//compute the translated affected search Pose - what state has an outgoing action whose intersecting cell is at 0,0
+		startcell3d.theta = action->starttheta;
+		startcell3d.x = - action->intersectingcellsV.at(i).x;
+		startcell3d.y = - action->intersectingcellsV.at(i).y;
+
+		//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
+		endcell3d.theta = startcell3d.theta + action->dTheta;
+		endcell3d.x = startcell3d.x + action->dX; 
+		endcell3d.y = startcell3d.y + action->dY;
+
+		//store the cells if not already there
+		int j;
+		for(j = 0; j < (int)affectedsuccstatesV.size(); j++)
+		{
+			if(affectedsuccstatesV.at(j) == endcell3d)
+				break;
+		}
+		if (j == (int)affectedsuccstatesV.size())
+			affectedsuccstatesV.push_back(endcell3d);
+
+		for(j = 0; j < (int)affectedpredstatesV.size(); j++)
+		{
+			if(affectedpredstatesV.at(j) == startcell3d)
+				break;
+		}
+		if (j == (int)affectedpredstatesV.size())
+			affectedpredstatesV.push_back(startcell3d);
+
+    }//over intersecting cells
+}
+
+
+//computes all the 3D states whose outgoing actions are potentially affected when cell (0,0) changes its status
+//it also does the same for the 3D states whose incoming actions are potentially affected when cell (0,0) changes its status
+void EnvironmentNAV3DKIN::ComputeReplanningData()
+{
+
+    //iterate over all actions
+	//orientations
+	for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
+    {        
+        //actions
+		for(int aind = 0; aind < NAV3DKIN_ACTIONWIDTH; aind++)
+		{
+            //compute replanning data for this action 
+			ComputeReplanningDataforAction(&EnvNAV3DKINCfg.ActionsV[tind][aind]);
+		}
+	}
+}
+
+
 void EnvironmentNAV3DKIN::InitializeEnvConfig()
 {
 	//aditional to configuration file initialization of EnvNAV3DKINCfg if necessary
@@ -311,6 +369,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 
 
 	//construct list of actions
+	printf("Pre-computing action data...\n");
 	EnvNAV3DKINCfg.ActionsV = new EnvNAV3DKINAction_t* [NAV3DKIN_THETADIRS];
 	EnvNAV3DKINCfg.PredActionsV = new vector<EnvNAV3DKINAction_t*> [NAV3DKIN_THETADIRS];
 	vector<sbpl_2Dcell_t> footprint;
@@ -322,6 +381,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		int aind = 0;
 		for(; aind < 3; aind++)
 		{
+			EnvNAV3DKINCfg.ActionsV[tind][aind].starttheta = tind;
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = aind-1; //-1,0,1
 			double angle = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dX = (int)(cos(angle) + 0.5*(cos(angle)>0?1:-1));
@@ -352,6 +412,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		}
 		//decrease and increase angle without movement
 		aind = 3;
+		EnvNAV3DKINCfg.ActionsV[tind][aind].starttheta = tind;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = -1; 
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
@@ -380,6 +441,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 
 
 		aind = 4;
+		EnvNAV3DKINCfg.ActionsV[tind][aind].starttheta = tind;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = 1; 
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
@@ -406,9 +468,12 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			targettheta = targettheta + NAV3DKIN_THETADIRS;
 		 EnvNAV3DKINCfg.PredActionsV[targettheta].push_back(&(EnvNAV3DKINCfg.ActionsV[tind][aind]));
 
-
-
 	}
+
+	//now compute replanning data
+	ComputeReplanningData();
+
+	printf("done pre-computing action data\n");
 
 }
 
@@ -1225,19 +1290,26 @@ void EnvironmentNAV3DKIN::PrintTimeStat(FILE* fOut)
 void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
+	EnvNAV3DKIN3Dcell_t affectedcell;
+	EnvNAV3DKINHashEntry_t* affectedHashEntry;
 
-	for(int i = 0; i < (int)changedcellsV->size(); i++)
+	for(int i = 0; i < (int)changedcellsV->size(); i++) 
 	{
 		cell = changedcellsV->at(i);
-		for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
-			preds_of_changededgesIDV->push_back(GetStateFromCoord(cell.x,cell.y,tind));
-		for(int j = 0; j < 8; j++){
-			int affx = cell.x + EnvNAV3DKINCfg.dXY[j][0];
-			int affy = cell.y + EnvNAV3DKINCfg.dXY[j][1];
-			if(affx < 0 || affx >= EnvNAV3DKINCfg.EnvWidth_c || affy < 0 || affy >= EnvNAV3DKINCfg.EnvHeight_c)
-				continue;
-			for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
-				preds_of_changededgesIDV->push_back(GetStateFromCoord(affx,affy,tind));
+		
+		//now iterate over all states that could potentially be affected
+		for(int sind = 0; sind < (int)affectedpredstatesV.size(); sind++)
+		{
+			affectedcell = affectedpredstatesV.at(sind);
+
+			//translate to correct for the offset
+			affectedcell.x = affectedcell.x + cell.x;
+			affectedcell.y = affectedcell.y + cell.y;
+
+			//insert only if it was actually generated
+		    affectedHashEntry = GetHashEntry(affectedcell.x, affectedcell.y, affectedcell.theta);
+			if(affectedHashEntry != NULL)
+				preds_of_changededgesIDV->push_back(affectedHashEntry->stateID);
 		}
 	}
 }

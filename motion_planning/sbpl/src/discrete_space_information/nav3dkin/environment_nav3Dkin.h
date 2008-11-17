@@ -57,8 +57,18 @@ typedef struct{
 } EnvNAV3DKIN3Dpt_t;
 
 
+typedef struct EnvNAV3DKIN3DCELL{
+	int x;
+	int y;
+	int theta;
+public:
+	bool operator == (EnvNAV3DKIN3DCELL cell) {return (x==cell.x && y==cell.y && theta==cell.theta);}
+} EnvNAV3DKIN3Dcell_t;
+
+
 typedef struct
 {
+	char starttheta;
 	char dX;
 	char dY;
 	char dTheta;
@@ -208,7 +218,10 @@ public:
 	//member data
 	EnvNAV3DKINConfig_t EnvNAV3DKINCfg;
 	EnvironmentNAV3DKIN_t EnvNAV3DKIN;
+	vector<EnvNAV3DKIN3Dcell_t> affectedsuccstatesV; //arrays of states whose outgoing actions cross cell 0,0
+	vector<EnvNAV3DKIN3Dcell_t> affectedpredstatesV; //arrays of states whose incoming actions cross cell 0,0
 	
+
  	void ReadConfiguration(FILE* fCfg);
 
 	void InitializeEnvConfig();
@@ -246,6 +259,10 @@ public:
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
 
 	double EuclideanDistance(int X1, int Y1, int X2, int Y2);
+
+	void ComputeReplanningData();
+	void ComputeReplanningDataforAction(EnvNAV3DKINAction_t* action);
+
 
 
 };
