@@ -8,7 +8,7 @@ CMAKE = `rospack find cmake`/cmake/bin/cmake
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 	-DMATRIX_LIB=boost \
 	-DRNG_LIB=boost
-
+PATCH = bfl_patch.diff
 
 
 build: wiped bfl
@@ -19,6 +19,10 @@ $(SVN_DIR):
 	  svn co http://svn.mech.kuleuven.be:/repos/orocos/trunk/bfl bfl-svn; \
 	else \
 	  cd $(SVN_DIR) && svn up; \
+	fi
+	if [ ! -f ./$(SVN_DIR)/patched ]; then \
+	  cd $(SVN_DIR) && patch -p0 <../$(PATCH); \
+	  touch patched; \
 	fi
 
 
