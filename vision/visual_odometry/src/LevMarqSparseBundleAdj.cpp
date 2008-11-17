@@ -194,12 +194,6 @@ bool LevMarqSparseBundleAdj::optimize(
   num_retractions_ = 0;
   num_good_updates_= 0;
 
-#if DEBUG==1
-  printf("[LevMarqSBA] mat_A after initialization. Shall be all zero.\n");
-  CvMatUtils::printMat(&mat_A_);
-#endif
-
-
   /// 2. Compute cost function at initial camera and point configuration.
   initCameraParams(free_frames, fixed_frames, tracks);
 
@@ -235,13 +229,6 @@ bool LevMarqSparseBundleAdj::optimize(
     /// from global to disparity w.r.t. delta update on each camera parameter.
     constructFwdTransfMatrices();
 
-#if DEBUG==1
-    printf("[LevMarqSBA] mat_A at the beginning of loop. Shall be all zero\n");
-    CvMatUtils::printMat(&mat_A_);
-#endif
-
-
-
     /// 4. For each track p {
     BOOST_FOREACH( PointTrack* p, tracks->tracks_) {
       /// - Compute the part of JtJ w.r.t to p.
@@ -276,9 +263,6 @@ bool LevMarqSparseBundleAdj::optimize(
         double pu = obsv->disp_coord_.x;
         double pv = obsv->disp_coord_.y;
         double pd = obsv->disp_coord_.z;
-#if DEBUG==1
-        printf("obsv on frame %d: [%f, %f, %f]\n", obsv->frame_index_, pu, pv, pd);
-#endif
 
 #if 1 // the following shall be done by now
         // get a reference of the transformation matrix from global to disp
@@ -290,6 +274,10 @@ bool LevMarqSparseBundleAdj::optimize(
             rx, ry, rz);
 
         // @todo compute the err norm here, instead of doing it separately
+#endif
+#if DEBUG==1
+        printf("obsv on frame %d: [%f, %f, %f] <=> err [%f, %f, %f]\n",
+            obsv->frame_index_, pu, pv, pd, rx, ry, rz);
 #endif
         // compute the residue w.r.t. the point parameters with a delta increment
         // in each parameter.
@@ -356,15 +344,10 @@ bool LevMarqSparseBundleAdj::optimize(
 
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
-#if 0 // remove this
-            CvMat transf_fwd = cvMat(4, 4, CV_64FC1, transf_fwd_global_disp);
-            printf("transf_fwd: k=%d\n", k);
-            CvMatUtils::printMat(&transf_fwd);
-#endif
 
             // fill out column k of Jc
             PERSTRANSFORMRESIDUE(transf_fwd_global_disp, px, py, pz, pu, pv, pd,
-                Jc[k], Jc[NUM_CAM_PARAMS+k], Jc[2*NUM_CAM_PARAMS+k]);
+                Jc[k], Jc[NUM_CAM_PARAMS + k], Jc[2*NUM_CAM_PARAMS + k]);
 
             // compute the Jacobian regarding this point and this cam
             Jc[                   k] = (Jc[k]-rx)*scale;
@@ -373,7 +356,7 @@ bool LevMarqSparseBundleAdj::optimize(
           }
 #if DEBUG==1
           {
-            printf("Jacobian Jc of point %d, on frame %d,%d, [%f,%f,%f]\n",
+            printf("Jacobian Jc of point %d, on frame %d,%d, error=[%f,%f,%f]\n",
                 p->id_, obsv->frame_index_, obsv->local_frame_index_, rx, ry, rz);
             CvMatUtils::printMat(mat_Jc);
           }
@@ -382,6 +365,7 @@ bool LevMarqSparseBundleAdj::optimize(
           // update the JtJ entry corresponding to it, block (c, c)
           double *A_data_cc = getABlock(frame_li, frame_li);
           double *mat_B_data_c  = getBBlock(frame_li);
+          double *Hpc = obsv->Hpc_;
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double Jcx = Jc[k];
             double Jcy = Jc[k+NUM_CAM_PARAMS];
@@ -396,7 +380,6 @@ bool LevMarqSparseBundleAdj::optimize(
                 Jcx * Jc[l] + Jcy * Jc[l+NUM_CAM_PARAMS] + Jcz * Jc[l+2*NUM_CAM_PARAMS];
             }
             // H_{pc}, aka, block (p, c),
-            double *Hpc = obsv->Hpc_;
             for (int d=0; d<NUM_POINT_PARAMS; d++) {
               // compute entry (d, k) of Hpc = (col d of Jp)^T (col k of Jc)
               Hpc[d*NUM_CAM_PARAMS + k] =
@@ -404,11 +387,16 @@ bool LevMarqSparseBundleAdj::optimize(
             }
             // Subtract Jc^T f from part c of right hand side vector B
             mat_B_data_c[k] -= Jcx*rx + Jcy*ry + Jcz*rz;
+#if DEBUG==1
+            printf("row %d of B=%f, %f\n", k, mat_B_data_c[k], -(Jcx*rx + Jcy*ry + Jcz*rz));
+#endif
           }
 #if DEBUG==1
-          printf("after Hcc, Hpc matrix Hpc, p=%d, c=%d,%d, 0x%x\n:",
-              p->id_, obsv->frame_index_, obsv->local_frame_index_, (unsigned int)obsv->Hpc_);
-          CvMatUtils::printMat(&obsv->mat_Hpc_);
+          {
+            CvMat mat_Hpc = cvMat(3, 6, CV_64FC1, Hpc);
+            printf("Hpc p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, obsv->local_frame_index_);
+            CvMatUtils::printMat(&mat_Hpc);
+          }
 #endif
         } // if camera c is free
       } // loop thru all observations of the track.
@@ -418,8 +406,8 @@ bool LevMarqSparseBundleAdj::optimize(
       CvMatUtils::printMat(&mat_A_);
       printf("[LevMarqSBA] mat_B after Hcc updates for point %d\n", p->id_);
       CvMatUtils::printMat(&mat_B_);
-
 #endif
+
 
       /// Augment diagonal of \f$ H_{pp} \f$, which is now accumulated and ready.
       /// Invert \f$ H_{pp} \f$, taking advantage of the fact that is a symmetric
@@ -437,10 +425,7 @@ bool LevMarqSparseBundleAdj::optimize(
       }
       // invert Hpp in place
       cvCompleteSymm(&mat_Hpp, 0);
-#if DEBUG==1
-      printf("Hpp augmented:\n");
-      CvMatUtils::printMat(&mat_Hpp);
-#endif
+
       /// @todo Can cvInvert be done in place?
       cvInvert(&mat_Hpp, &mat_Hpp_inv, CV_SVD_SYM);
 #if DEBUG==1
@@ -451,10 +436,16 @@ bool LevMarqSparseBundleAdj::optimize(
       /// Compute \f$ H_{pp}^{-1} b_p \f$ and store it in a variable \f$ t_p \f$.
       double* tp = p->tp_;
       for (int i=0; i<NUM_POINT_PARAMS; i++) {
-        tp[0] = Hpp_inv[i*NUM_POINT_PARAMS+0] * bp[0] +
-          Hpp_inv[i*NUM_POINT_PARAMS+1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS+2]*bp[2];
+        tp[i] = Hpp_inv[i*NUM_POINT_PARAMS +0] * bp[0] +
+          Hpp_inv[i*NUM_POINT_PARAMS +1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS +2]*bp[2];
       }
 
+#if DEBUG==1
+      printf("[LevMarqSBA] mat_B before Outer Product of Tracks\n");
+      CvMatUtils::printMat(&mat_B_);
+      printf("bp=[%f, %f, %f]\n", bp[0], bp[1], bp[2]);
+      printf("tp=[%f, %f, %f]\n", tp[0], tp[1], tp[2]);
+#endif
       /// (Outer product of track) For each free camera c on track p
       /// {
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
@@ -468,12 +459,25 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
         double* Bc = getBBlock(local_index1);
         double* Hpc = obsv->Hpc_;
+#if DEBUG==1
+        {
+          CvMat mat_Hpc = cvMat(3, 6, CV_64FC1, Hpc);
+          printf("Hpc p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, obsv->local_frame_index_);
+          CvMatUtils::printMat(&mat_Hpc);
+          printf("tp=[%f, %f, %f]\n", tp[0], tp[1], tp[2]);
+        }
+#endif
         ///   Subtract \f$ H_{pc}^T t_p = H_{pc}^T H_{pp}^{-1} b_p \f$ from part c
         ///   of right hand side vector B.
         CvMat&  mat_Hpc = obsv->mat_Hpc_;
         for (int i=0; i<NUM_CAM_PARAMS; i++) {
           Bc[i] -= Hpc[i]*tp[0] + Hpc[i + NUM_CAM_PARAMS]*tp[1] +
             Hpc[i + NUM_CAM_PARAMS*2]*tp[2];
+#if DEBUG==1
+            printf("row %d of B=%f, %f\n", i, Bc[i], -(Hpc[i]*tp[0] + Hpc[i + NUM_CAM_PARAMS]*tp[1] +
+                Hpc[i + NUM_CAM_PARAMS*2]*tp[2]));
+#endif
+
         }
 
         ///   Compute the matrix \f$ H_{pc}^T H_{pp}^{-1} and store it in a variable
@@ -489,6 +493,10 @@ bool LevMarqSparseBundleAdj::optimize(
         CvMatUtils::printMat(&obsv->mat_Tcp_);
 #endif
 
+#if DEBUG==1
+        printf("[LevMarqSBA] mat_B before Hcc2\n");
+        CvMatUtils::printMat(&mat_B_);
+#endif
         ///   For each free camera c2 >= c on track p
         ///   {
         for (PointTrack::iterator iObsv2 = iObsv; iObsv2 != p->end(); iObsv2++) {
@@ -525,6 +533,8 @@ bool LevMarqSparseBundleAdj::optimize(
 #if DEBUG==1
       printf("[LevMarqSBA] mat_A after Outer Product of Tracks\n");
       CvMatUtils::printMat(&mat_A_);
+      printf("[LevMarqSBA] mat_B after Outer Product of Tracks\n");
+      CvMatUtils::printMat(&mat_B_);
 #endif
 
     } // done with a point track.
