@@ -1,5 +1,5 @@
 #include "star_detector/detector.h"
-#include "optimized_width.h"
+#include "star_detector/optimized_width.h"
 
 StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_projected,
