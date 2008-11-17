@@ -44,6 +44,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
+#include "robot_msgs/MechanismState.h"
 
 namespace calibration
 {
@@ -63,6 +64,9 @@ public:
   /// callback function for imu data
   void imu_callback();
 
+  /// callback function for mech data
+  void mech_callback();
+
   // spin
   void start();
   void spin();
@@ -76,6 +80,7 @@ private:
   // messages to receive
   std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
+  robot_msgs::MechanismState      _mech;
 
   // estimated robot pose message to send
   std_msgs::BaseVel               _vel; 
@@ -84,14 +89,18 @@ private:
   pr2_mechanism_controllers::WheelRadiusMultiplier::request _srv_snd, _srv_rsp;
 
   // active sensors
-  bool _odom_active, _imu_active, _completed;
+  bool _odom_active, _imu_active, _mech_active,  _completed;
 
   // angles
   double _odom_begin, _odom_end, _imu_begin, _imu_end;
-  double _rot_vel, _rot_angle;
+  double _rot_vel, _trans_vel, _duration;
+  ros::Time _time_begin;
+
+  // wheel angle vector
+  std::vector<double> _mech_begin, _mech_end;
 
   // mutex
-  ros::thread::mutex _odom_mutex, _imu_mutex;  
+  ros::thread::mutex _odom_mutex, _imu_mutex, _mech_mutex;  
 
 }; // class
 
