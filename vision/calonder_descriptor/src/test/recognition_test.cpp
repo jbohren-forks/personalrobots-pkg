@@ -8,6 +8,7 @@
 #include <boost/program_options.hpp>
 #include <vector>
 #include <algorithm>
+#include <iterator>
 #include <cassert>
 #include <fstream>
 #include <cstdio>
@@ -16,10 +17,9 @@ namespace po = boost::program_options;
 using namespace features;
 using std::string;
 
-void writeSignature(std::ostream &os, ublas::vector<float> sig)
+void writeSignature(std::ostream &os, const float* sig, size_t size)
 {
-  BOOST_FOREACH( float prob, sig )
-    os << prob << ' ';
+  std::copy(sig, sig + size, std::ostream_iterator<float>(os, " "));
   os << std::endl;
 }
 

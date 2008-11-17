@@ -1,10 +1,9 @@
 #include "calonder_descriptor/randomized_tree.h"
 #include "calonder_descriptor/rng.h"
 #include <fstream>
-#include <boost/numeric/ublas/matrix.hpp>
-
-
-namespace ublas = boost::numeric::ublas;
+#include <boost/foreach.hpp>
+#include <boost/numeric/ublas/vector.hpp>
+#include <boost/numeric/ublas/operation.hpp>
 
 namespace features {
 

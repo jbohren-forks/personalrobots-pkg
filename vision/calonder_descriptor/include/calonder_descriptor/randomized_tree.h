@@ -9,11 +9,7 @@
 #include <vector>
 #include <iostream>
 
-#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector_sparse.hpp>
-#include <boost/foreach.hpp>
-#include <boost/numeric/ublas/operation.hpp>
 #include <boost/random.hpp>
 
 namespace ublas = boost::numeric::ublas;
@@ -54,7 +50,6 @@ public:
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
              PatchGenerator &make_patch, int depth, int views, size_t reduced_num_dim);
   
-  // TODO: uBLASify?
   float* getPosterior(IplImage* patch);
   const float* getPosterior(IplImage* patch) const;
 

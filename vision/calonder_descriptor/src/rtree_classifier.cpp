@@ -1,10 +1,9 @@
-#define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 #include <fstream>
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/operation.hpp>
 #include <boost/random.hpp>
+#include <boost/numeric/ublas/operation.hpp>
 
 namespace features {
 
@@ -49,45 +48,26 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
   printf("\n");
 }
 
-// TODO: trivially vectorizable
-DenseSignature RTreeClassifier::getSignature(IplImage* patch)
+// TODO: vectorize, maybe improve memory allocation strategy
+float* RTreeClassifier::getSignature(IplImage* patch)
 {
-  // used inside loop to cram float* into uBLAS-friendly type without copying
-  typedef const ublas::shallow_array_adaptor<float> PostStorage;
-  typedef const ublas::vector<float, PostStorage> PostVec;
-
-  DenseSignature sig = ublas::zero_vector<float>(classes_);
+  // Allocate 16-byte aligned signature and zero-initialize
+  float* sig;
+  posix_memalign((void**)&sig, 16, classes_);
+  memset((void*)sig, 0, classes_ * sizeof(float));
 
   std::vector<RandomizedTree>::const_iterator tree_it;
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-    PostVec post(classes_, PostStorage(classes_, const_cast<float*>(tree_it->getPosterior(patch))) );
-    sig += post;
+    const float* posterior = tree_it->getPosterior(patch);
+    add(classes_, sig, posterior, sig);
   }
 
   // TODO: get rid of this multiply
-  sig *= (1.0 / trees_.size());
+  float normalizer = 1.0f / trees_.size();
+  for (int i = 0; i < classes_; ++i)
+    sig[i] *= normalizer;
 
   return sig;
-}
-
-SparseSignature RTreeClassifier::getSparseSignature(IplImage* patch) const
-{
-  printf("ERROR [RTreeClassifier::getSparseSignature()]: Framework does not support sparse signatures any longer.\n");
-  return SparseSignature(classes_, 0);
-  
-  /*
-  DenseSignature dense_sig = getDenseSignature(patch);
-  SparseSignature sparse_sig(classes_, 0);
-
-  for (int i = 0; i < classes_; ++i) {
-    float elem = dense_sig[i];
-    //if (elem > element_threshold_)
-    if (elem > threshold_)
-      sparse_sig.insert_element(i, elem);
-  }
-  
-  return sparse_sig;
-  */
 }
 
 void RTreeClassifier::read(const char* file_name)

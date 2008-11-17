@@ -2,12 +2,7 @@
 #define FEATURES_RTREE_CLASSIFIER_H
 
 #include "calonder_descriptor/randomized_tree.h"
-#include "calonder_descriptor/signature.h"
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/vector_sparse.hpp>
-
-namespace ublas = boost::numeric::ublas;
+#include "calonder_descriptor/basic_math.h"
 
 namespace features {
 
@@ -30,8 +25,8 @@ public:
              int views = RandomizedTree::DEFAULT_VIEWS,
              size_t reduced_num_dim = RandomizedTree::DEFAULT_REDUCED_NUM_DIM);
 
-  DenseSignature getSignature(IplImage* patch);
-  SparseSignature getSparseSignature(IplImage* patch) const;   // deprecated, to disappear soon
+  // Caller is responsible for calling free() on returned signature
+  float* getSignature(IplImage* patch);
    
   inline int classes() { return classes_; }
   inline int original_num_classes() { return original_num_classes_; }
