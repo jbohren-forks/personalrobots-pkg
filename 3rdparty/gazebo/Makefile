@@ -1,6 +1,6 @@
 all: build
 
-SVN_DIR = gazebo-svn
+SVN_DIR = gazebo-svn-ogre-v1.4.9
 #SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/trunk
 SVN_URL = https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/gazebo/branches/ogre-1.4.9
 SVN_REVISION = -r 7143
