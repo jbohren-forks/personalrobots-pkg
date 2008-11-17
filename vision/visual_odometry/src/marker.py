@@ -70,6 +70,7 @@ class Marker:
     marker.b = 0.7 * 255
     marker.points = []
     vm_pub.publish(marker)
+    print "sending floor"
 
   def update(self, offset, x, y, z, r, color):
     marker = VisualizationMarker()
@@ -136,8 +137,6 @@ class Marker:
     pose = xf*ipose
 
     #print ipose.xform(0,0,0), pose.xform(0,0,0)
-
-    eu = pose.euler()
 
     for xi,xoff in [ (0,0), (100, 0.088) ]:
       x,y,z = pose.xform(xoff,0,0)

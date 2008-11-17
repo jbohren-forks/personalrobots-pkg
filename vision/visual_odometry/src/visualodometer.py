@@ -7,8 +7,6 @@ from math import *
 import numpy
 import numpy.linalg
 
-import transform
-
 scratch = " " * (640 * 480)
 
 class Pose:

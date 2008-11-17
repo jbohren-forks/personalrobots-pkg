@@ -76,7 +76,6 @@ class VODemo:
     rospy.TopicSub('/videre/cal_params', String, self.display_params)
     rospy.TopicSub('/vo/tmo', Pose44, self.handle_corrections)
 
-    self.vm_pub = rospy.Publisher("/visualizationMarker", VisualizationMarker)
     self.viz_pub = rospy.Publisher("/overlay", Lines)
     self.vo_key_pub = rospy.Publisher("/vo/key", Frame)
     self.Tmo = Pose()
