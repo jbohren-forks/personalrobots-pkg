@@ -132,6 +132,14 @@ public:
 	    const CvMat& rot,
 	    /// translation matrix
 	    const CvMat& trans,
+	    /// optimization parameters
+	    double params[6]) const;
+	/// a convenient routine to convert from transformation matrix into
+	/// optimization parameters.
+	void transfToParams(
+	    /// transformation matrix
+	    const CvMat& transf,
+	    /// optimization parameters
 	    double params[6]) const;
 	/// a convenient routine to convert from optimization parameters to
 	/// rotatiom matrix and translation matrix

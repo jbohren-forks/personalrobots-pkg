@@ -186,7 +186,7 @@ bool CvMatUtils::drawMatchingPairs(CvMat& pts0, CvMat& pts1, cv::WImage3_b& canv
 /**
  * a convenient function to convert from rotation matrix to euler angles.
  */
-bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
+bool CvMatUtils::rotMatToEuler(const CvMat& rot, CvPoint3D64f& euler) {
 	double _R[9], _Q[9];
 	CvMat R, Q;
 	CvMat *pQx=NULL, *pQy=NULL, *pQz=NULL;  // optional. For debugging.
@@ -194,6 +194,10 @@ bool CvMatUtils::eulerAngle(const CvMat& rot, CvPoint3D64f& euler) {
 	cvInitMatHeader(&Q,  3, 3, CV_64FC1, _Q);
 
 	cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &euler);
+	// note that the euler angles are in degrees. convert them to radians
+	euler.x *= CV_PI/180.;
+	euler.y *= CV_PI/180.;
+	euler.z *= CV_PI/180.;
 	return true;
 }
 

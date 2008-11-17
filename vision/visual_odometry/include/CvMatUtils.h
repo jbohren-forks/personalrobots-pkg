@@ -24,9 +24,9 @@ public:
 	 */
 	static void printMat(const CvMat *mat, const char *format="%12.5f,");
 	/**
-	 *  Convert a rotation matrix to euler angles
+	 *  Convert a rotation matrix to euler angles, in ratians
 	 */
-	static bool eulerAngle(const CvMat& rot, CvPoint3D64f &euler);
+	static bool rotMatToEuler(const CvMat& rot, CvPoint3D64f &euler);
 	static CvPoint3D64f rowToPoint(const CvMat& mat, int row);
 	/**
 	 * convert a disparity map to an image suitable for display
@@ -115,7 +115,11 @@ public:
       /// vector.
       CvMat& params);
 
-  static void transformFromEulerAndShift(const CvMat* params,
+  /// given Euler angle and shift vector, construct a transformation matrix
+  static void transformFromEulerAndShift(
+      /// a matrix of 6x1, the first 3 rows are the euler angle (in radians),
+      /// the second 3 rows are the translation (shift) vector.
+      const CvMat* params,
       CvMat* transform);
 
   static void loadStereoImagePair(string& dirname, string& leftimagefmt,

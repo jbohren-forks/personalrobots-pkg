@@ -126,7 +126,11 @@ PathRecon::keyFrameEval(
 		keyFrameNeeded = true;
 	} else {
 		CvPoint3D64f eulerAngles;
-		CvMatUtils::eulerAngle(rot, eulerAngles);
+		CvMatUtils::rotMatToEuler(rot, eulerAngles);
+		// convert the euler angles to degree
+    eulerAngles.x *= 180./CV_PI;
+    eulerAngles.y *= 180./CV_PI;
+    eulerAngles.z *= 180./CV_PI;
 		if (fabs(eulerAngles.x) > mMaxAngleAlpha ||
 			fabs(eulerAngles.y) > mMaxAngleBeta  ||
 			fabs(eulerAngles.z) > mMaxAngleGamma ){
@@ -634,7 +638,11 @@ void F2FVisualizer::drawTrackingCanvas(
 
 
     CvPoint3D64f euler;
-    CvMatUtils::eulerAngle(frame.mRot, euler);
+    CvMatUtils::rotMatToEuler(frame.mRot, euler);
+    // convert the euler angles to degrees for ease of display
+    euler.x *= 180.*CV_PI;
+    euler.y *= 180.*CV_PI;
+    euler.z *= 180.*CV_PI;
     char info[256];
     CvPoint org = cvPoint(0, 475);
     CvFont font;

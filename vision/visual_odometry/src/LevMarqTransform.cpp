@@ -455,6 +455,13 @@ bool LevMarqTransform::optimizeAlt(const CvMat *xyzs0,
 	return status;
 }
 
+void LevMarqTransform::transfToParams(const CvMat& transf, double params[6]) const {
+  CvMat rot, shift;
+  cvGetSubRect(&transf, &rot, cvRect(0, 0, 3, 3));
+  cvGetSubRect(&transf, &shift, cvRect(3, 0, 1, 3));
+  rotAndShiftMatsToParams(rot, shift, params);
+}
+
 void LevMarqTransform::rotAndShiftMatsToParams(const CvMat& rot, const CvMat& trans,
     double param[6]) const {
   switch(mAngleType) {
@@ -470,6 +477,7 @@ void LevMarqTransform::rotAndShiftMatsToParams(const CvMat& rot, const CvMat& tr
 
       cvRQDecomp3x3(&rot, &R, &Q, pQx, pQy, pQz, &eulerAngles);
     }
+    // note that the angles are in degrees. Convert them to radians.
     param[0] = eulerAngles.x/180. * CV_PI;
     param[1] = eulerAngles.y/180. * CV_PI;
     param[2] = eulerAngles.z/180. * CV_PI;

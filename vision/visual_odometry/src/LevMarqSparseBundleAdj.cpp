@@ -21,7 +21,7 @@ LevMarqSparseBundleAdj::LevMarqSparseBundleAdj(const CvMat *disparityTo3D,
     int full_fixed_window_size,
     CvTermCriteria term_criteria):
       /// @todo move file term_criteria_ to Parent
-      Parent(disparityTo3D, threeDToDisparity, term_criteria.max_iter),
+      Parent(disparityTo3D, threeDToDisparity, term_criteria.max_iter, Rodrigues),
       full_free_window_size_(full_free_window_size),
       lowest_free_global_index_(-1),
       highest_free_global_index_(-1),
@@ -606,7 +606,7 @@ bool LevMarqSparseBundleAdj::optimize(
       {
         // Done!
 #if DEBUG==1
-        printf("[LevMarqSBA] Optimization Done. num of iters=%d, change in param=%f",
+        printf("[LevMarqSBA] Optimization Done. num of iters=%d, change in param=%f\n",
             iters, param_change);
 #endif
         break;
@@ -677,11 +677,17 @@ void LevMarqSparseBundleAdj::initCameraParams(
     CvMatUtils::invertRigidTransform( &(free_frame->transf_local_to_global_),
         &global_to_local);
 
+    // Convert from global_to_local transformation to optimization parameter of choice,
+    // e.g. Euler angle or Rodrigues.
     // compute the rodrigues and shift vectors, which are used as
     // optimization parameters.
+    double* frame_params_i = getFrameParams(local_index);
+    transfToParams(global_to_local, frame_params_i);
+#if   0 //@todo remove it
     CvMat mat_frame_params_i = cvMat(6, 1, CV_64FC1, getFrameParams(local_index));
     CvMatUtils::transformToRodriguesAndShift(
         global_to_local, mat_frame_params_i);
+#endif
 
     // enter the mapping between global index and local index to the map.
     map_index_global_to_local_[free_frame->mIndex] = local_index;
@@ -788,6 +794,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     CvMatUtils::invertRigidTransform(&transf_global_to_local,
         &fp->transf_local_to_global_);
 
+    // @todo, I do not think it is this function's job to do the following update.
     // update fp->mRod and fp->mShift
     CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
     fp->mRod.x = params_local_to_global_data[0];
@@ -943,7 +950,7 @@ double LevMarqSparseBundleAdj::getParamChange(const PointTracks* tracks) const {
   param_diff_norm /= frame_param_norm_sq + point_param_norm_sq;
   param_diff_norm = sqrt(param_diff_norm);
 #if DEBUG==1
-  printf("parameter change (relative L2 norm of diff): %f\n", param_diff_norm);
+  printf("parameter change (relative L2 norm of diff): %e\n", param_diff_norm);
 #endif
   return param_diff_norm;
 }

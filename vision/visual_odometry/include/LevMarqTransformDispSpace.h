@@ -23,7 +23,7 @@ public:
 	    int numMaxInter = defNumMaxIter,
 	    /// use rodrigues parameter or euler angles as optimization variables
 	    /// regarding rotation.
-	    AngleType angleType=Rodrigues);
+      AngleType angleType=Rodrigues);
 	virtual ~LevMarqTransformDispSpace();
   /**  A routine that performs optimization.
    *  @param P0  - Nx3 matrix stores data point list P0, one point (x, y, z) each row

@@ -769,9 +769,19 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
   BOOST_FOREACH(const FramePose* fp, free_frames) {
     printf("transf of frame: %d\n", fp->mIndex);
     CvMatUtils::printMat(&fp->transf_local_to_global_);
+    // in Euler angle and translation
+    CvMat rot, transl;
+    cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+    CvPoint3D64f euler;
+    CvMatUtils::rotMatToEuler(rot, euler);
+    cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+    printf("In Euler angle and translation:\n");
+    printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+    CvMatUtils::printMat(&transl, "%e");
   }
+
   BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
-    printf("point %d, [%f, %f, %f]\n", p->id_, p->coordinates_.x,
+    printf("point %3d, [%7.2f, %7.2f, %7.2f]\n", p->id_, p->coordinates_.x,
         p->coordinates_.y, p->coordinates_.z);
   }
 
