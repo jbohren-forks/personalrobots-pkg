@@ -82,27 +82,27 @@ $(BIN_PATH)/libsvlVision.a: $(VISION_LIB_OBJ)
 # shared libraries
 $(BIN_PATH)/libsvlBase.so.1.0.0: $(BASE_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlBase.so.1 -o $(BIN_PATH)/libsvlBase.so.1.0.0 $(BASE_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 $(BIN_PATH)/libsvlDeprecated.so.1.0.0: $(DEPRECATED_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlDeprecated.so.1 -o $(BIN_PATH)/libsvlDeprecated.so.1.0.0 $(DEPRECATED_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 $(BIN_PATH)/libsvlDevel.so.1.0.0: $(DEVEL_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlDevel.so.1 -o $(BIN_PATH)/libsvlDevel.so.1.0.0 $(DEVEL_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 $(BIN_PATH)/libsvlML.so.1.0.0: $(ML_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlML.so.1 -o $(BIN_PATH)/libsvlML.so.1.0.0 $(ML_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 $(BIN_PATH)/libsvlPGM.so.1.0.0: $(PGM_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlPGM.so.1 -o $(BIN_PATH)/libsvlPGM.so.1.0.0 $(PGM_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 $(BIN_PATH)/libsvlVision.so.1.0.0: $(VISION_LIB_OBJ)
 	gcc ${CFLAGS} -shared -Wl,-soname,libsvlVision.so.1 -o $(BIN_PATH)/libsvlVision.so.1.0.0 $(VISION_LIB_OBJ)
-	ldconfig -n $(BIN_PATH)
+	-ldconfig -n $(BIN_PATH)
 
 # object files
 .cpp.o:
