@@ -101,6 +101,7 @@ protected:
       return false;
     }
   }
+  /// returns true if it is a fixed camera
   inline bool isFixedFrame(int global_frame_index) {
     if (global_frame_index >= lowest_fixed_global_index_ &&
         global_frame_index <= highest_fixed_global_index_ ) {
@@ -109,7 +110,9 @@ protected:
       return false;
     }
   }
-  inline bool isOldFrame(int global_frame_index) {
+  /// returns true if neither free camera nor fixed camera. This camera
+  /// is not used in optimization.
+  inline bool isDontCareFrame(int global_frame_index) {
     if (isFixedFrame(global_frame_index) == false &&
         isFreeFrame(global_frame_index)  == false) {
       return true;
@@ -206,7 +209,7 @@ protected:
   inline double* getTransf(int global_index, int local_index) {
     if (isFreeFrame(global_index) == true) {
       return getFreeTransf(local_index);
-    } else if (isOldFrame(global_index) == false ) {
+    } else if (isDontCareFrame(global_index) == false ) {
       return getFixedTransf(local_index);
     } else { // it is an old frame
       return NULL;

@@ -126,9 +126,8 @@ bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* fixed_frames,
     PointTracks* tracks
 ) {
-  /// @todo separate constructTransformationMatrices() into two functions. One
-  /// computes only transformation matrix; the other computes ones with
-  /// parameter forward updates for computing numeric Jacobian.
+  /// @todo add a member field is TrackPointObserv to indicate if
+  /// the frame is free cam, fixed cam or don't care cam.
   cout << __PRETTY_FUNCTION__ << endl;
 
   if (free_frames->size()<1 || fixed_frames->size()<1) {
@@ -255,7 +254,7 @@ bool LevMarqSparseBundleAdj::optimize(
         ///     (in our case 3x3 matrix) and the camera parameters (in out case
         ///     3x6 matrix). respectively.
 
-        if (isOldFrame(obsv->frame_index_) == true) {
+        if (isDontCareFrame(obsv->frame_index_) == true) {
           continue;
         }
 
@@ -635,14 +634,14 @@ bool LevMarqSparseBundleAdj::optimize(
       {
         // Done!
 #if DEBUG==1
-        printf("[LevMarqSBA] Optimization Done. num of iters=%d, change in param=%f\n",
-            iters, param_change);
+        printf("[LevMarqSBA] Optimization Done. num of iters=%d >= %d || change in param=%e < %e\n",
+            iters, term_criteria_.max_iter,param_change, term_criteria_.epsilon);
 #endif
         break;
       }
 #if DEBUG==1
-      printf("[LevMarqSBA] good update. num of iters=%d, change in param=%f\n",
-          iters, param_change);
+      printf("[LevMarqSBA] good update. num of iters=%d, change in param=%e <=> %e\n",
+          iters, param_change, term_criteria_.epsilon);
 #endif
 
       prev_cost = cost;
@@ -881,7 +880,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
         p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
     BOOST_FOREACH(PointTrackObserv* obsv, *p) {
 
-      if (isOldFrame(obsv->frame_index_) == true) {
+      if (isDontCareFrame(obsv->frame_index_) == true) {
         // we do not update this frame anymore.
         continue;
       }
@@ -941,7 +940,7 @@ double LevMarqSparseBundleAdj::costFunction(
     CvMat point = cvMat(1, 1, CV_64FC3, &track->coordinates_);
     /// For each observation of the track
     BOOST_FOREACH(PointTrackObserv* obsv, *track) {
-      if (isOldFrame(obsv->frame_index_) == true) {
+      if (isDontCareFrame(obsv->frame_index_) == true) {
         // we do not consider this frame anymore.
         continue;
       }

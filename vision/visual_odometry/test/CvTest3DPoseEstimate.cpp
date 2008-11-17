@@ -685,8 +685,8 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
   this->getProjectionMatrices(&cartToDisp, &dispToCart);
 
-  cvSetIdentity(&cartToDisp);
-  cvSetIdentity(&dispToCart);
+//  cvSetIdentity(&cartToDisp);
+//  cvSetIdentity(&dispToCart);
 
 
   // set up cameras
