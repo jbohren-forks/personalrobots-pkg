@@ -752,8 +752,8 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
     tracks.oldest_frame_index_in_tracks_ = index_offset;
   }
 
-  int full_free_window_size = 1;
-  int full_fixed_window_size = 1;
+  int full_free_window_size = 5;
+  int full_fixed_window_size = 5;
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
       full_free_window_size, full_fixed_window_size);
 
@@ -762,10 +762,16 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
 
   fixed_frames.push_back(frame_poses[0]);
   free_frames.push_back(frame_poses[1]);
+  free_frames.push_back(frame_poses[2]);
+  free_frames.push_back(frame_poses[3]);
+  free_frames.push_back(frame_poses[4]);
+  free_frames.push_back(frame_poses[5]);
 
   sba.optimize(&free_frames, &fixed_frames, &tracks);
 
   // print some output
+  double transpose_transl_data[3];
+  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
   BOOST_FOREACH(const FramePose* fp, free_frames) {
     printf("transf of frame: %d\n", fp->mIndex);
     CvMatUtils::printMat(&fp->transf_local_to_global_);
@@ -777,7 +783,8 @@ bool CvTest3DPoseEstimate::testBundleAdj() {
     cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
     printf("In Euler angle and translation:\n");
     printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
-    CvMatUtils::printMat(&transl, "%e");
+    cvTranspose(&transl, &transpose_transl);
+    CvMatUtils::printMat(&transpose_transl, "%9.4f");
   }
 
   BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
