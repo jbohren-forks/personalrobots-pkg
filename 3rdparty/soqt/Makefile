@@ -1,9 +1,9 @@
 all: soqt
 
 TARBALL = SoQt-1.4.1.tar.gz
-TARBALL_URL = http://ftp.coin3d.org/coin/src/all/SoQt-1.4.1.tar.gz
+TARBALL_URL = http://pr.willowgarage.com/downloads/SoQt-1.4.1.tar.gz
 SOURCE_DIR = SoQt-1.4.1
-#MD5SUM_FILE = opencv-1.0.0.tar.gz.md5sum
+MD5SUM_FILE = SoQt-1.4.1.tar.gz.md5sum
 UNPACK_CMD = tar xzf
 include $(shell rospack find mk)/download_unpack.mk
 
