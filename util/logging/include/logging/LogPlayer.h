@@ -140,7 +140,7 @@ class LogPlayer
 
     virtual uint32_t serialization_length()    { return __serialized_length; }
 
-    virtual uint8_t *serialize(uint8_t *write_ptr)
+    virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t)
     { 
       assert(next_msg_);
       memcpy(write_ptr, next_msg_, next_msg_size_);

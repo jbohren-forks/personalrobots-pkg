@@ -52,7 +52,7 @@ public:
   static const string __s_get_datatype() { return string("*"); }
   static const string __s_get_md5sum()   { return string("*"); }
   uint32_t serialization_length() { return msgBufUsed; }
-  virtual uint8_t *serialize(uint8_t *writePtr)
+  virtual uint8_t *serialize(uint8_t *writePtr, uint32_t)
   {
     // yack up what we stored
     memcpy(writePtr, msgBuf, msgBufUsed);

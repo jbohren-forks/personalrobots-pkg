@@ -115,7 +115,7 @@ class LogRecorder
 
      virtual uint32_t serialization_length()    { return __serialized_length; }
 
-    virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
+    virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) { assert(0); return NULL; }
 
     virtual uint8_t *deserialize(uint8_t *read_ptr)
     {

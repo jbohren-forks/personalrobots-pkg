@@ -46,7 +46,7 @@ public:
   virtual const std::string __get_datatype() const { return std::string("*"); }
   virtual const std::string __get_md5sum()   const { return std::string("*"); }
   virtual uint32_t serialization_length() { return 0; }
-  virtual uint8_t *serialize(uint8_t *write_ptr) { assert(0); return NULL; }
+  virtual uint8_t *serialize(uint8_t *write_ptr, uint32_t) { assert(0); return NULL; }
   virtual uint8_t *deserialize(uint8_t *read_ptr) { assert(0); return NULL; }
 };
 
