@@ -497,15 +497,13 @@ namespace costmap_2d {
     }
 
   unsigned char CostMapAccessor::operator[](unsigned int ind) const {
-    double wx, wy;
-    IND_WC(ind, wx, wy);
-    return costMap_[costMap_.WC_IND(wx, wy)];
+    unsigned int mx = ind % width_;
+    unsigned int my = (unsigned int) ind / height_;
+    return getCost(mx, my);
   }
 
   unsigned char CostMapAccessor::getCost(unsigned int mx, unsigned int my) const {
-    double wx, wy;
-    MC_WC(mx, my, wx, wy);
-    return costMap_[costMap_.WC_IND(wx, wy)];
+    return costMap_.getCost(mx_0_ + mx, my_0_ + my);
   }
 
   void CostMapAccessor::updateForRobotPosition(double wx, double wy){
