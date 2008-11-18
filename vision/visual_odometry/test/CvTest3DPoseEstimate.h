@@ -41,7 +41,7 @@ public:
     bool testVideo3();
     bool testVideo4();
     bool testVideoBundleAdj();
-    bool testBundleAdj();
+    bool testBundleAdj(bool disturb_frames, bool disturb_points);
     bool test();
     TestType mTestType;
 
