@@ -13,9 +13,9 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
 <depend package='loki' />
 <depend package='misc_utils' />
 <depend package='robot_msgs' />
-<depend package='boost' />
 <export>
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib"/>
 </export>
 <repository>http://pr.willowgarage.com/repos</repository>
+<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
 </package>
