@@ -28,12 +28,13 @@
 #include <stdexcept>
 #include <termios.h>
 #include <string>
+#include <vector>
 
 //! A namespace containing the hokuyo device driver
 namespace hokuyo
 {
   //! The maximum number of readings that can be returned from a hokuyo
-  const int MAX_READINGS = 1128;
+  const uint32_t MAX_READINGS = 1128;
 
   //! The maximum length a command will ever be
   const int MAX_CMD_LEN = 100;
@@ -62,9 +63,9 @@ namespace hokuyo
   //! A struct for returning configuration from the Hokuyo
   struct LaserConfig
   {
-    //! Start angle for the laser scan [rad].
+    //! Start angle for the laser scan [rad].  0 is forward and angles are measured clockwise when viewing hokuyo from the top.
     float min_angle;
-    //! Stop angle for the laser scan [rad].
+    //! Stop angle for the laser scan [rad].   0 is forward and angles are measured clockwise when viewing hokuyo from the top.
     float max_angle;
     //! Scan resolution [rad].
     float ang_increment;
@@ -85,29 +86,34 @@ namespace hokuyo
   struct LaserScan
   {
     //! Array of ranges
-    float ranges[MAX_READINGS];
+    std::vector<float> ranges;
     //! Array of intensities
-    float intensities[MAX_READINGS];
-    //! Number of readings
-    int num_readings;
+    std::vector<float> intensities;
     //! Self reported time stamp in nanoseconds
-    unsigned long long self_time_stamp;
+    uint64_t self_time_stamp;
     //! System time when first range was measured in nanoseconds
-    unsigned long long system_time_stamp;
+    uint64_t system_time_stamp;
     //! Configuration of scan
     LaserConfig config;
   };
 
 
   //! A class for interfacing to an SCIP2.0-compliant Hokuyo laser device
-  /*! 
-   * NOTE: Just about all methods of this class may throw an exception
-   * of type hokuyo::exception in the event of an error when
-   * communicating with the device.  However, many methods which wrap
-   * commands that are sent to the hokuyo will return a hokuyo-supplied
-   * status code.  This code may indicate some form of failure on the
-   * part of the device itself.  For more information, consult the hokuyo
-   * manual.
+  /*!
+   * Almost all methods of this class may throw an exception of type
+   * hokuyo::Exception in the event of an error when communicating
+   * with the device.  This primarily include read/write problems
+   * (hokuyo::Exception), communication time-outs
+   * (hokuyo:TimeoutException), and corrupted data
+   * (hokuyo::CorruptedDataException).  However, many methods which
+   * wrap commands that are sent to the hokuyo will return a
+   * hokuyo-supplied status code as well.  These are not
+   * "exceptional," in that the device is operating correctly from a
+   * communication standpoint, although the return code may still
+   * indicate that the device has undergone some sort of failure.  In
+   * these cases, return codes of 0 are normal operation.  For more
+   * information on the possible device error codes, consult the
+   * hokuyo manual.
    */
   class Laser
   {
@@ -124,11 +130,9 @@ namespace hokuyo
      * wraps fopen, with some additional calls to tcsetattr.
      * 
      * \param port_name   A character array containing the name of the port
-     * \param use_serial  Set to 1 if using serial instead of USB
-     * \param baud        Baud rate to use when working over serial
      *
      */
-    void open(const char * port_name, bool use_serial = 0, int baud = B115200);
+    void open(const char * port_name);
 
     //! Close the port
     /*!
@@ -138,6 +142,7 @@ namespace hokuyo
   
     //! Check whether the port is open
     bool portOpen() {  return laser_port_ != NULL; }
+
 
     //! Sends an SCIP2.0 command to the hokuyo device
     /*!
@@ -153,23 +158,10 @@ namespace hokuyo
      */
     int sendCmd(const char* cmd, int timeout = -1);
 
-    //! Change the baud rate
-    /*!
-     * Baud rates are specified using defines in termios:
-     * 
-     * B19200 - B250000
-     *
-     * \param curr_baud The current baud rate
-     * \param new_baud  The desired baud rate
-     * \param timeout Timeout in milliseconds.
-     *
-     * \return          Returns true on success, false on failure
-     */
-    bool changeBaud(int curr_baud, int new_baud, int timeout = -1);
 
     //! Retrieve a single scan from the hokuyo
     /*!
-     * \param scan       A pointer to an LaserScan which will be populated
+     * \param scan       A reference to the LaserScan which will be populated
      * \param min_ang    Minimal angle of the scan
      * \param max_ang    Maximum angle of the scan
      * \param clustering Number of adjascent ranges to be clustered into a single measurement.
@@ -177,7 +169,7 @@ namespace hokuyo
      *
      * \return Status code returned from hokuyo device.
      */
-    int pollScan(LaserScan * scan, double min_ang, double max_ang, int clustering = 0, int timeout = -1);
+    int pollScan(LaserScan& scan, double min_ang, double max_ang, int clustering = 0, int timeout = -1);
 
     //! Request a sequence of scans from the hokuyo
     /*!
@@ -200,12 +192,12 @@ namespace hokuyo
 
     //! Retrieve a scan if they have been requested
     /*!
-     * \param scan       A pointer to an LaserScan which will be populated.
+     * \param scan       A reference to the LaserScan which will be populated.
      * \param timeout    Timeout in milliseconds.
      *
      * \return 0 on succes, Status code returned from hokuyo device on failure.  (Normally 99 is used for success)
      */
-    int serviceScan(LaserScan * scan, int timeout = -1);
+    int serviceScan(LaserScan& scan, int timeout = -1);
 
     //! Turn the laser off
     /*!
@@ -283,10 +275,10 @@ namespace hokuyo
     bool checkSum(const char* buf, int buf_len);
 
     //! Read in a time value
-    unsigned long long readTime(int timeout = -1);
+    uint64_t readTime(int timeout = -1);
 
     //! Read in a scan
-    void readData(LaserScan* scan, bool has_intensity, int timout = -1);
+    void readData(LaserScan& scan, bool has_intensity, int timout = -1);
 
     int dmin_;
     int dmax_;

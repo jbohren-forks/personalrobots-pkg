@@ -24,16 +24,16 @@
   <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="base_laser" />
-    <param name="min_ang" type="double" value="-100.0" />
-    <param name="max_ang" type="double" value="100.0" />
+    <param name="min_ang_degrees" type="double" value="-100.0" />
+    <param name="max_ang_degrees" type="double" value="100.0" />
   </node>
 
 <!-- Tilt Laser 
   <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM1" />
     <param name="frameid" type="string" value="tilt_laser" />
-    <param name="min_ang" type="double" value="-80.0" />
-    <param name="max_ang" type="double" value="80.0" />
+    <param name="min_ang_degrees" type="double" value="-80.0" />
+    <param name="max_ang_degrees" type="double" value="80.0" />
   </node>
 -->
 <!-- Runtime Diagnostics Logging -->
