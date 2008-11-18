@@ -32,13 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef MATH_UTILS_ANGLES
-#define MATH_UTILS_ANGLES
+#ifndef ANGLES_H
+#define ANGLES_H
 
 #include <cmath>
 
 
-namespace math_utils
+namespace angles
 {
     
   /*!
