@@ -120,7 +120,7 @@ namespace costmap_2d {
     circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
     inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
       weight_(std::max(0.0, std::min(weight, 1.0))),
-    staticData_(NULL), costData_(NULL), xy_markers_(NULL), mx_(0), my_(0)
+    staticData_(NULL), xy_markers_(NULL)
   {
     if(weight != weight_){
       ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
@@ -128,9 +128,7 @@ namespace costmap_2d {
 
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
-    costData_ = new unsigned char[width_*height_];
     xy_markers_ = new bool[width_*height_];
-    memset(costData_, 0, width_*height_);
     memset(xy_markers_, 0, width_*height_);
 
     cachedDistances = new double*[inflationRadius_+1];
@@ -173,7 +171,6 @@ namespace costmap_2d {
 
   CostMap2D::~CostMap2D() {
     if(staticData_ != NULL) delete[] staticData_;
-    if(costData_ != NULL) delete[] costData_;
     if(xy_markers_ != NULL) delete[] xy_markers_;
     if(cachedDistances != NULL){
       for (unsigned int i=0; i<=inflationRadius_; i++)
@@ -225,12 +222,10 @@ namespace costmap_2d {
 
   /**
    * @brief Update the cost map based on aggregate observations
+   * @todo Deprecate use of wx and wy here
    */
   void CostMap2D::updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations)
   {
-    // Update current grid position
-    WC_MC(wx, wy, mx_, my_);
-
     // Revert to initial state
     memset(xy_markers_, 0, width_ * height_);
     memcpy(costData_, staticData_, width_ * height_);
@@ -282,10 +277,6 @@ namespace costmap_2d {
     }
   }
 
-  const unsigned char* CostMap2D::getMap() const {
-    return costData_;
-  }
-
   void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const {
     results.clear();
     unsigned int maxCellCount = getWidth() * getHeight();
@@ -293,37 +284,6 @@ namespace costmap_2d {
       if(costData_[i] == INSCRIBED_INFLATED_OBSTACLE || costData_[i] == LETHAL_OBSTACLE)
         results.push_back(i);
     }
-  }
-
-  unsigned char CostMap2D::operator [](unsigned int ind) const{
-    return costData_[ind];
-  }
-
-  std::string CostMap2D::toString() const {
-    std::stringstream ss;
-    ss << std::endl;
-    for(unsigned j = 0; j < getHeight(); j++){
-      for (unsigned int i = 0; i < getWidth(); i++){
-        unsigned char cost = getCost(i, j);
-        if(cost == LETHAL_OBSTACLE)
-          ss << "O";
-        else if (cost == INSCRIBED_INFLATED_OBSTACLE)
-          ss << "I";
-        else if (isCircumscribedCell(i, j))
-          ss << "C";
-        else if (cost == NO_INFORMATION)
-          ss << "?";
-        else if (cost > 0)
-          ss << "f";
-        else
-          ss << "F";
-
-        ss << ",";
-      }
-
-      ss << std::endl;
-    }
-    return ss.str();
   }
 
   void CostMap2D::propagateCosts(){
@@ -407,7 +367,7 @@ namespace costmap_2d {
 
   /**
    * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
-   * current position (mx_, my_).
+   * origin and the sightline.
    */
   void CostMap2D::updateFreeSpace(const std_msgs::Point& origin, double wx, double wy){
     unsigned int x, y, x1, y1;
@@ -419,7 +379,7 @@ namespace costmap_2d {
     unsigned int xinc1, xinc2, yinc1, yinc2;
     unsigned int den, num, numadd, numpixels;
 
-    if (x1 >= mx_)                 // The x-values are increasing
+    if (x1 >= x)                 // The x-values are increasing
     {
       xinc1 = 1;
       xinc2 = 1;
@@ -430,7 +390,7 @@ namespace costmap_2d {
       xinc2 = -1;
     }
 
-    if (y1 >= my_)                 // The y-values are increasing
+    if (y1 >= y)                 // The y-values are increasing
     {
       yinc1 = 1;
       yinc2 = 1;
@@ -489,22 +449,11 @@ namespace costmap_2d {
 
       setCircumscribedCostLowerBound(costMap.getCircumscribedCostLowerBound());
 
-      // The origin locates this grid. Convert from world coordinates to cell co-ordinates
-      // to get the cell coordinates of the origin
-      costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
+      // Set robot position
+      updateForRobotPosition(poseX, poseY);
 
       ROS_DEBUG_NAMED("costmap_2d", "Creating Local %d X %d Map\n", getWidth(), getHeight());
     }
-
-  unsigned char CostMapAccessor::operator[](unsigned int ind) const {
-    unsigned int mx = ind % width_;
-    unsigned int my = (unsigned int) ind / height_;
-    return getCost(mx, my);
-  }
-
-  unsigned char CostMapAccessor::getCost(unsigned int mx, unsigned int my) const {
-    return costMap_.getCost(mx_0_ + mx, my_0_ + my);
-  }
 
   void CostMapAccessor::updateForRobotPosition(double wx, double wy){
     if(wx < 0 || wx > costMap_.getResolution() * costMap_.getWidth())
@@ -520,6 +469,15 @@ namespace costmap_2d {
     ROS_DEBUG_NAMED("costmap_2d", 
         "Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
         origin_x_, origin_y_, maxSize_, wx, wy);
+
+    // Now update all the cells from the cost map
+    for(unsigned int x = 0; x < width_; x++){
+      for (unsigned int y = 0; y < height_; y++){
+	unsigned int ind = x + y * width_;
+	unsigned int global_ind = mx_0_ + x + (my_0_ + y) * costMap_.getWidth();
+	costData_[ind] = costMap_[global_ind];
+      }
+    }
   }
 
   double CostMapAccessor::computeWX(const CostMap2D& costMap, double maxSize, double wx, double wy){

@@ -407,9 +407,6 @@ namespace ros {
       catch(libTF::TransformReference::ExtrapolateException& ex){
         ROS_INFO("Extrapolation Error\n");
       }
-
-      // Update the cost map window
-      ma_->updateForRobotPosition(global_pose_.x, global_pose_.y);
     }
 
 
@@ -669,6 +666,9 @@ namespace ros {
       // We want to be able to stop the robot in that case
       bool planOk = checkWatchDog() && isValid();
       std_msgs::BaseVel cmdVel; // Commanded velocities      
+
+      // Update the cost map window
+      ma_->updateForRobotPosition(global_pose_.x, global_pose_.y);
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation

@@ -210,44 +210,14 @@ namespace costmap_2d {
     void updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations);
 
     /**
-     * @brief Get pointer into the obstacle map (which contains both static
-     * and dynamic obstacles)
-     */
-    const unsigned char* getMap() const;
-
-    /**
      * @brief Obtain the collection of all occupied cells: the union of static and dynamic obstacles
      */
     void getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const;
 
     /**
-     * @brief Accessor for contents of full map cell by cell index
-     */
-    unsigned char operator [](unsigned int ind) const;
-
-    /**
-     * @brief Accessor by map coordinates stored cost value integrating dynamic and static data
-     * @param mx the x map index. mx must be in [0, width-1]
-     * @param my the y map index. my must be in [0, height-1]
-     * @return A cost value in the range [0 255]
-     * @note The inputs should always be in bounds. We could add a check for these values to avoid out of range errors
-     * but that should only arise as an error condition and should not burden the code for a common accessor
-     */
-    unsigned char getCost(unsigned int mx, unsigned int my) const{
-      ROS_ASSERT(mx < width_);
-      ROS_ASSERT(my < height_);
-      return costData_[MC_IND(mx, my)];
-    }
-
-    /**
      * @brief The weight for scaling in the cost function
      */
     double getWeight() const {return weight_;}
-
-    /**
-     * @brief Utility for debugging
-     */
-    std::string toString() const;
 
   private:
 
@@ -304,10 +274,7 @@ namespace costmap_2d {
     const double weight_;  /**< The weighting to apply to a normalized cost value */
 
     unsigned char* staticData_; /**< initial static map */
-    unsigned char* costData_; /**< the full map data that has both static and obstacle data */
     bool* xy_markers_; /**< Records time remaining in ticks before expiration of the observation */
-    unsigned int mx_; /** < The x position of the robot in the grid */
-    unsigned int my_; /** < The y position of the robot in the grid */
     QUEUE queue_; /**< Used for cost propagation */
 
     double** cachedDistances; /**< Cached distances indexed by dx, dy */  
@@ -326,10 +293,6 @@ namespace costmap_2d {
      * @param the current y position in global coords
      */
     CostMapAccessor(const CostMap2D& costMap, double maxSize, double pose_x, double pose_y);
-
-    /** Implementation for base class interface **/
-    virtual unsigned char operator[](unsigned int ind) const;
-    virtual unsigned char getCost(unsigned int mx, unsigned int my) const;
 
     /**
      * @brief Set the pose for the robot. Will adjust other parameters accordingly.
