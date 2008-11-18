@@ -35,6 +35,8 @@
 // Original version: Melonee Wise <mwise@willowgarage.com>
 
 #include "pr2_mechanism_controllers/head_servoing_controller.h"
+// Math utils
+#include <angles/angles.h>
 
 using namespace controller;
 using namespace std;
@@ -160,7 +162,7 @@ void HeadServoingController::update(void)
 	
   for(unsigned int i=0; i < num_joints_;++i)
   {
-    math_utils::shortest_angular_distance_with_limits(joint_velocity_controllers_[i]->joint_state_->position_,set_pts_[i], joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_, error);
+    angles::shortest_angular_distance_with_limits(joint_velocity_controllers_[i]->joint_state_->position_,set_pts_[i], joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_velocity_controllers_[i]->joint_state_->joint_->joint_limit_max_, error);
     error=((gain_*error)<max_velocity_)?error:max_velocity_;
     joint_velocity_controllers_[i]->setCommand(error);
   }

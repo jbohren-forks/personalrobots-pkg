@@ -73,7 +73,7 @@
 
 #include <genericControllers/Controller.h>
 #include <genericControllers/Pid.h>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 #include <mechanism_model/joint.h>
 #include <string>
 #include <math.h>

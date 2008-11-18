@@ -10,7 +10,7 @@
   <depend package="std_msgs" />
   <depend package="rosthread" />
   <depend package="rosTF" />
-  <depend package="math_utils" />
+  <depend package="angles" />
   <depend package="string_utils" />
   <depend package="libKDL" />
   <depend package="robot_mechanism_model" />

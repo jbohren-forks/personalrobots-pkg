@@ -36,6 +36,9 @@
 
 #include "pr2_mechanism_controllers/arm_dynamics_controller.h"
 
+// Math utils
+#include <angles/angles.h>
+
 using namespace controller;
 using namespace std;
 
@@ -216,12 +219,12 @@ void ArmDynamicsController::computeControlTorque(const double &time)
     j_type = joint_effort_controllers_[i]->joint_state_->joint_->type_;
     if(j_type == mechanism::JOINT_ROTARY)
     {
-      if(!math_utils::shortest_angular_distance_with_limits(command, actual, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_max_,error))
+      if(!angles::shortest_angular_distance_with_limits(command, actual, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_min_, joint_effort_controllers_[i]->joint_state_->joint_->joint_limit_max_,error))
         error = 0;
     }
     else if(j_type == mechanism::JOINT_CONTINUOUS)
     {
-      error = math_utils::shortest_angular_distance(command, actual);
+      error = angles::shortest_angular_distance(command, actual);
     }
     else
     {

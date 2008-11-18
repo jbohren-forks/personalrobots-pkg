@@ -29,7 +29,6 @@
 
 #include <gtest/gtest.h>
 #include <tf/tf.h>
-#include <math_utils/angles.h>
 #include <sys/time.h>
 #include "LinearMath/btVector3.h"
 

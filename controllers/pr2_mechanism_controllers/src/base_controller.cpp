@@ -33,8 +33,8 @@
  *********************************************************************/
 
 #include <pr2_mechanism_controllers/base_controller.h>
-#include <math_utils/angles.h>
-#include <math_utils/math_utils.h>
+#include <angles/angles.h>
+#include <control_toolbox/filters.h>
 #include "ros/node.h"
 
 #define NUM_TRANSFORMS 2
@@ -49,7 +49,6 @@ using namespace controller;
 using namespace control_toolbox;
 using namespace libTF;
 using namespace NEWMAT;
-using namespace math_utils;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
@@ -107,9 +106,9 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
 {
 
   pthread_mutex_lock(&base_controller_lock_);
-  cmd_vel_t_.x = clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
-  cmd_vel_t_.y = clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
-  cmd_vel_t_.z = clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
+  cmd_vel_t_.x = filters::clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
+  cmd_vel_t_.y = filters::clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
+  cmd_vel_t_.z = filters::clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 #if 0
 
@@ -132,9 +131,9 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
 libTF::Vector BaseController::interpolateCommand(libTF::Vector start, libTF::Vector end, libTF::Vector max_rate, double dT)
 {
   libTF::Vector result;
-  result.x = start.x + clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
-  result.y = start.y + clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
-  result.z = start.z + clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
+  result.x = start.x + filters::clamp(end.x - start.x,-max_rate.x*dT,max_rate.x*dT);
+  result.y = start.y + filters::clamp(end.y - start.y,-max_rate.y*dT,max_rate.y*dT);
+  result.z = start.z + filters::clamp(end.z - start.z,-max_rate.z*dT,max_rate.z*dT);
   return result;
 }
 */
@@ -476,10 +475,10 @@ void BaseController::computeDesiredCasterSteer()
       steer_angle_desired = atan2(result.y,result.x);
       steer_angle_stored_[i] = steer_angle_desired;
     }
-    steer_angle_desired_m_pi = normalize_angle(steer_angle_desired+M_PI);
+    steer_angle_desired_m_pi = angles::normalize_angle(steer_angle_desired+M_PI);
 
-    error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
-    error_steer_m_pi = shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
+    error_steer = angles::shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
+    error_steer_m_pi = angles::shortest_angular_distance(steer_angle_desired_m_pi, steer_angle_actual_[i]);
 
     if(fabs(error_steer_m_pi) < fabs(error_steer))
     {
@@ -546,7 +545,7 @@ void BaseController::setOdomMessage(std_msgs::RobotBase2DOdom &odom_msg_)
 
   odom_msg_.pos.x  = base_odom_position_.x;
   odom_msg_.pos.y  = base_odom_position_.y;
-  odom_msg_.pos.th = math_utils::normalize_angle(base_odom_position_.z);
+  odom_msg_.pos.th = angles::normalize_angle(base_odom_position_.z);
 
   odom_msg_.vel.x  = base_odom_velocity_.x;
   odom_msg_.vel.y  = base_odom_velocity_.y;
@@ -814,7 +813,7 @@ void BaseControllerNode::update()
       out.z = 0;
       out.roll = 0;
       out.pitch = 0;
-      out.yaw = math_utils::normalize_angle(-yaw);
+      out.yaw = angles::normalize_angle(-yaw);
 
 
       rosTF::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];

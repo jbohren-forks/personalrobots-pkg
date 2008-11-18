@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <libTF/Pose3D.h>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 #include <sys/time.h>
 #include <cstdlib>
 
@@ -413,8 +413,8 @@ TEST(Pose3D, EulerToMatrixToQuaternionToMatrixToEuler)
     libTF::Euler out2 = libTF::Pose3D::eulerFromMatrix(n,2);
 
     //Test the difference between input and output accounting for 2Pi redundancy.  
-    bool difference = ((fabs(math_utils::modNPiBy2(out.yaw) - math_utils::modNPiBy2(yaw)) > 0.001 || fabs(math_utils::modNPiBy2(out.pitch) - math_utils::modNPiBy2(pitch)) > 0.001 || fabs(math_utils::modNPiBy2(out.roll) -math_utils::modNPiBy2(roll)) > 0.0001) &&
-                       (fabs(math_utils::modNPiBy2(out2.yaw) - math_utils::modNPiBy2(yaw)) > 0.001 || fabs(math_utils::modNPiBy2(out2.pitch) - math_utils::modNPiBy2(pitch)) > 0.001 || fabs(math_utils::modNPiBy2(out2.roll) -math_utils::modNPiBy2(roll)) > 0.0001));
+    bool difference = ((fabs(angles::modNPiBy2(out.yaw) - angles::modNPiBy2(yaw)) > 0.001 || fabs(angles::modNPiBy2(out.pitch) - angles::modNPiBy2(pitch)) > 0.001 || fabs(angles::modNPiBy2(out.roll) -angles::modNPiBy2(roll)) > 0.0001) &&
+                       (fabs(angles::modNPiBy2(out2.yaw) - angles::modNPiBy2(yaw)) > 0.001 || fabs(angles::modNPiBy2(out2.pitch) - angles::modNPiBy2(pitch)) > 0.001 || fabs(angles::modNPiBy2(out2.roll) -angles::modNPiBy2(roll)) > 0.0001));
           
     ASSERT_FALSE(difference);
     if (difference){

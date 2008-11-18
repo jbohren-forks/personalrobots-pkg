@@ -11,7 +11,7 @@ Library for doing transformations.
 <depend package="newmat10"/>
 <depend package="ros_exception"/>
 <depend package="rosthread"/>
-<depend package="math_utils"/>
+<depend package="angles"/>
 <depend package="std_msgs"/>
 <depend package="roscpp"/>
 <export>

@@ -14,7 +14,7 @@
   <depend package="libKDL" />
   <depend package="wg_robot_description_parser" />
   <depend package="joy" />
-  <depend package="math_utils" />
+  <depend package="angles" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

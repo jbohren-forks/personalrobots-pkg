@@ -33,7 +33,6 @@
  *********************************************************************/
 #include <algorithm>
 #include <pr2_mechanism_controllers/laser_scanner_controller.h>
-#include <math_utils/angles.h>
 
 using namespace std;
 using namespace controller;

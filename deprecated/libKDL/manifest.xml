@@ -8,7 +8,7 @@
 <depend package="pr2Core"/>
 <depend package="wg_robot_description_parser"/>
 <depend package="rosTF"/>
-<depend package="math_utils"/>
+<depend package="angles"/>
 <depend package="kdl"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lKDL"/>

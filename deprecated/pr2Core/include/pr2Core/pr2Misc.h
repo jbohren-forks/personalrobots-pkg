@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <cstdio>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 
 namespace PR2
 {

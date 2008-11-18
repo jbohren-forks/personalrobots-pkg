@@ -8,7 +8,7 @@ Header file for PR2 core definitions of joints, bodies, models
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
-<depend package="math_utils" />
+<depend package="angles" />
 <export>
 <cpp cflags="-I${prefix}/include" lflags=""/>
 </export>

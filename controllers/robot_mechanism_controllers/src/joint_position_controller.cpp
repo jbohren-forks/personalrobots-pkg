@@ -33,7 +33,7 @@
  *********************************************************************/
 
 #include <robot_mechanism_controllers/joint_position_controller.h>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 
 using namespace std;
 using namespace controller;
@@ -134,12 +134,12 @@ void JointPositionController::update()
 
   if(joint_state_->joint_->type_ == mechanism::JOINT_ROTARY)
   {
-    math_utils::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
+    angles::shortest_angular_distance_with_limits(command_, joint_state_->position_, joint_state_->joint_->joint_limit_min_, joint_state_->joint_->joint_limit_max_,error);
 
   }
   else if(joint_state_->joint_->type_ == mechanism::JOINT_CONTINUOUS)
   {
-    error = math_utils::shortest_angular_distance(command_, joint_state_->position_);
+    error = angles::shortest_angular_distance(command_, joint_state_->position_);
   }
   else //prismatic
   {

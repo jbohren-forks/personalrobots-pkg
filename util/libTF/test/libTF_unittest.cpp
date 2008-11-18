@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <libTF/libTF.h>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 #include <sys/time.h>
 
 
@@ -28,20 +28,20 @@ TEST(libTF, DataTypes)
 
   odompose.x = 1;
   odompose.y = 0;
-  odompose.yaw = math_utils::from_degrees(60);
+  odompose.yaw = angles::from_degrees(60);
   odompose.frame = "3";
   odompose.time = atime;
 
   mappose.x = 30.0;
   mappose.y = 40.0;
-  //  mappose.yaw = math_utils::from_degrees(-36.0);
-  mappose.yaw = math_utils::from_degrees(90);
+  //  mappose.yaw = angles::from_degrees(-36.0);
+  mappose.yaw = angles::from_degrees(90);
   mappose.frame = "1";
   mappose.time = atime;
 
   apose.x = 0;
   apose.y = 0;
-  apose.yaw = math_utils::from_degrees(0);
+  apose.yaw = angles::from_degrees(0);
   apose.frame = "3";
   apose.time = atime;
 
@@ -52,10 +52,10 @@ TEST(libTF, DataTypes)
   //diffpose.x = 10;
   //diffpose.y = 100;
   diffpose.z = 1000;
-  //diffpose.yaw = math_utils::from_degrees(0);
-  diffpose.pitch = math_utils::from_degrees(0);
-  //diffpose.roll = math_utils::from_degrees(90);
-  diffpose.roll = math_utils::from_degrees(0);
+  //diffpose.yaw = angles::from_degrees(0);
+  diffpose.pitch = angles::from_degrees(0);
+  //diffpose.roll = angles::from_degrees(90);
+  diffpose.roll = angles::from_degrees(0);
   //  diffpose.yaw = 0;
   diffpose.frame = "1";
   diffpose.time = atime;
@@ -106,16 +106,16 @@ TEST(libTF, DataTypes)
 
   puts("--------------------------");
   printf("Odom: %.3f %.3f %.3f\n",
-         odompose.x, odompose.y, math_utils::to_degrees(odompose.yaw));
+         odompose.x, odompose.y, angles::to_degrees(odompose.yaw));
   printf("Map : %.3f %.3f %.3f\n",
-         mappose.x, mappose.y, math_utils::to_degrees(mappose.yaw));
+         mappose.x, mappose.y, angles::to_degrees(mappose.yaw));
   printf("Diff : %.3f %.3f %.3f %.3f %.3f %.3f\n",
-         diffpose.x, diffpose.y, diffpose.z, math_utils::to_degrees(diffpose.yaw), math_utils::to_degrees(diffpose.pitch), math_utils::to_degrees(diffpose.roll));
+         diffpose.x, diffpose.y, diffpose.z, angles::to_degrees(diffpose.yaw), angles::to_degrees(diffpose.pitch), angles::to_degrees(diffpose.roll));
   puts("--------------------------");
   printf("2D out Out odompose: %.3f %.3f %.3f\n",
-         result.x, result.y, math_utils::to_degrees(result.yaw));
+         result.x, result.y, angles::to_degrees(result.yaw));
   printf("2D out Out apose : %.3f %.3f %.3f\n",
-         result2.x, result2.y, math_utils::to_degrees(result2.yaw));
+         result2.x, result2.y, angles::to_degrees(result2.yaw));
   printf("Point : %.3f %.3f %.3f\n",
          point.x, point.y,point.z);
 
@@ -202,9 +202,9 @@ TEST(libTF, DataTypes)
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,
-			    math_utils::from_degrees(90*ind),
-			    math_utils::from_degrees(90*ind1),
-			    math_utils::from_degrees(90*ind2),
+			    angles::from_degrees(90*ind),
+			    angles::from_degrees(90*ind1),
+			    angles::from_degrees(90*ind2),
 			    atime++);
 
 
@@ -270,9 +270,9 @@ TEST(libTF, DataTypes)
 			    diffpose.x,
 			    diffpose.y,
 			    diffpose.z,
-			    math_utils::from_degrees(90*ind),
-			    math_utils::from_degrees(90*ind1),
-			    math_utils::from_degrees(90*ind2),
+			    angles::from_degrees(90*ind),
+			    angles::from_degrees(90*ind1),
+			    angles::from_degrees(90*ind2),
 			    atime++);
 
 

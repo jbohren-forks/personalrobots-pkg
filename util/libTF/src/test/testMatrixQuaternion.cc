@@ -1,10 +1,8 @@
 #include "libTF/libTF.h"
 
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 #include <sys/time.h>
 #include <cstdlib>
-
-using namespace math_utils;
 
 int main(int argc, char ** argv)
 {
@@ -62,8 +60,8 @@ int main(int argc, char ** argv)
 	  libTF::Euler out2 = libTF::Pose3D::eulerFromMatrix(m,2);
 
 	  // see if input is the same as output (accounting for floating point errors)
-	  if ((fabs(modNPiBy2(out.yaw) - modNPiBy2(yaw)) > 0.001 || fabs(modNPiBy2(out.pitch) - modNPiBy2(pitch)) > 0.001 || fabs(modNPiBy2(out.roll) -modNPiBy2(roll)) > 0.0001) &&
-              (fabs(modNPiBy2(out2.yaw) - modNPiBy2(yaw)) > 0.001 || fabs(modNPiBy2(out2.pitch) - modNPiBy2(pitch)) > 0.001 || fabs(modNPiBy2(out2.roll) -modNPiBy2(roll)) > 0.0001))
+	  if ((fabs(angles::modNPiBy2(out.yaw) - angles::modNPiBy2(yaw)) > 0.001 || fabs(angles::modNPiBy2(out.pitch) - angles::modNPiBy2(pitch)) > 0.001 || fabs(angles::modNPiBy2(out.roll) -angles::modNPiBy2(roll)) > 0.0001) &&
+              (fabs(angles::modNPiBy2(out2.yaw) - angles::modNPiBy2(yaw)) > 0.001 || fabs(angles::modNPiBy2(out2.pitch) - angles::modNPiBy2(pitch)) > 0.001 || fabs(angles::modNPiBy2(out2.roll) -angles::modNPiBy2(roll)) > 0.0001))
 	    {
 
 	      printf("in: %.3f %.3f %.3f\n",

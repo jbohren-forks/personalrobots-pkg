@@ -78,7 +78,7 @@ Publishes to (name / type):
 #include <std_msgs/ParticleCloud2D.h>
 #include <std_msgs/Pose2DFloat32.h>
 
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 
 #include "tf/transform_broadcaster.h"
 
@@ -152,7 +152,7 @@ private:
       double z = txi.getOrigin().z();
       double yaw, pitch, roll;
       txi.getBasis().getEulerZYX(yaw, pitch, roll);
-      yaw = math_utils::normalize_angle(yaw + m_iniPos.th);
+      yaw = angles::normalize_angle(yaw + m_iniPos.th);
 
       tf::Transform txo(tf::Quaternion(yaw, pitch, roll),
                         tf::Point(x, y, z));

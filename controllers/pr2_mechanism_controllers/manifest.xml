@@ -16,11 +16,12 @@
   <depend package="rosTF" />
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
-  <depend package="math_utils" />
   <depend package="robot_kinematics" />
   <depend package="rosout" />
   <depend package="trajectory" />
   <depend package="rosthread" />
+  <depend package="angles" />
+  <depend package="control_toolbox" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

@@ -33,7 +33,7 @@
  *********************************************************************/
 #include <algorithm>
 #include <pr2_mechanism_controllers/laser_scanner_traj_controller.h>
-#include <math_utils/angles.h>
+#include <angles/angles.h>
 
 #include <math.h>
 

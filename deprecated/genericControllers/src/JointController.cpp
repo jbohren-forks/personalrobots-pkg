@@ -284,8 +284,8 @@ controller::controllerErrorCode JointController::getVelAct(double *vel)
 
 double JointController::getMaxVelocity(){
       double disToMin,disToMax,closestLimit;
-      disToMin = fabs(math_utils::shortest_angular_distance(joint->position, joint->jointLimitMin));
-      disToMax = fabs(math_utils::shortest_angular_distance(joint->position, joint->jointLimitMax));
+      disToMin = fabs(angles::shortest_angular_distance(joint->position, joint->jointLimitMin));
+      disToMax = fabs(angles::shortest_angular_distance(joint->position, joint->jointLimitMax));
       closestLimit =  (disToMin<disToMax)?disToMin:disToMax; //min
       //std::cout<<"Dis to min"<<disToMin<<" Dist to Max"<<disToMax<<" Closest limit"<<closestLimit<<std::endl;
       return sqrt(fabs(closestLimit*maxAccel));
@@ -316,7 +316,7 @@ void JointController::update(void)
 
     case CONTROLLER_POSITION: //Close the loop around position
       if(joint->type == mechanism::JOINT_ROTARY || joint->type == mechanism::JOINT_CONTINUOUS)
-	error = math_utils::shortest_angular_distance(cmdPos, joint->position);
+	error = angles::shortest_angular_distance(cmdPos, joint->position);
       else
         error = joint->position - cmdPos;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);
@@ -384,7 +384,7 @@ void JointController::update(double time)
 
     case CONTROLLER_POSITION: //Close the loop around position
       if(joint->type == mechanism::JOINT_ROTARY || joint->type == mechanism::JOINT_CONTINUOUS)
-	error = math_utils::shortest_angular_distance(cmdPos, joint->position);
+	error = angles::shortest_angular_distance(cmdPos, joint->position);
       else
         error = joint->position - cmdPos;
       currentTorqueCmd = pidController.UpdatePid(error,time-lastTime);

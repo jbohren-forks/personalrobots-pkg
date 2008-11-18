@@ -34,8 +34,7 @@
 #include <algorithm>
 
 #include <pr2_mechanism_controllers/laser_scanner_velocity_controller.h>
-#include <math_utils/angles.h>
-#include <math_utils/velocity.h>
+
 using namespace std;
 using namespace controller;
 #define MIN_MOVING_SPEED 0.3
