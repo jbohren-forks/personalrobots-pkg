@@ -966,7 +966,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	{
 
 		//decrease eps for all subsequent iterations
-		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
+		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS && !bFirstSolution)
 		{
 			pSearchStateSpace->eps = pSearchStateSpace->eps - ARA_DECREASE_EPS;
 			if(pSearchStateSpace->eps < ARA_FINAL_EPS)
@@ -1062,7 +1062,7 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
     vector<int> pathIds; 
     int PathCost = 0;
     bool bFound = false;
-	bool bFirstSolution = false;
+	bool bFirstSolution = this->bsearchuntilfirstsolution;
 	bool bOptimalSolution = false;
 
     //plan
@@ -1150,6 +1150,13 @@ int ARAPlanner::force_planning_from_scratch()
 }
 
 
+int ARAPlanner::set_search_mode(bool bSearchUntilFirstSolution)
+{
+
+	bsearchuntilfirstsolution = bSearchUntilFirstSolution;
+
+	return 1;
+}
 
 //---------------------------------------------------------------------------------------------------------
 

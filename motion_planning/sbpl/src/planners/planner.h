@@ -89,6 +89,13 @@ public:
     //forgets previous planning efforts and starts planning from scratch next time replan is called
     virtual int force_planning_from_scratch() = 0; 
 
+	//sets the mode for searching
+	//if bSearchUntilFirstSolution is false, then planner searches for at most allocatime_time_sec, independently of whether it finds a solution or not (default mode)
+	//if bSearchUntilFirstSolution is true, then planner searches until it finds the first solution. It may be faster than allocated_time or it may be longer
+	//In other words, in the latter case, the planner does not spend time on improving the solution even if time permits, but may also take longer than allocated_time before returning
+	//So, normally bSearchUntilFirstSolution should be set to false.
+	virtual int set_search_mode(bool bSearchUntilFirstSolution) = 0;
+
     // Notifies the planner that costs have changed. May need to be specialized for different subclasses in terms of what to
     // do here
     virtual void costs_changed() {}

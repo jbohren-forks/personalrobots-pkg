@@ -364,6 +364,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 	int i;
 	double cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs;
 	vector<sbpl_2Dpt_t> perimeterptsV;
+	bool bsearchuntilfirstsolution = false; 
 
 
 	//srand(0);
@@ -428,7 +429,8 @@ int planandnavigate3dkin(int argc, char *argv[])
     //ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
 	ADPlanner planner(&environment_nav3Dkin, bforwardsearch);
 
-
+	//set search mode
+	planner.set_search_mode(bsearchuntilfirstsolution);
 
     //set the start and goal configurations
     if(planner.set_start(MDPCfg.startstateid) == 0)

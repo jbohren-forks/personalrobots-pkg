@@ -111,6 +111,9 @@ public:
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);
     int force_planning_from_scratch(); 
+	
+	int set_search_mode(bool bSearchUntilFirstSolution);
+
 
 	void update_succs_of_changededges(vector<int>* succsIDV);
 	void update_preds_of_changededges(vector<int>* predsIDV);
@@ -131,6 +134,7 @@ private:
 	MDPConfig* MDPCfg_;
 
 	bool bforwardsearch;
+	bool bsearchuntilfirstsolution; //if true, then search until first solution (see planner.h for search modes)
 
     ADSearchStateSpace_t* pSearchStateSpace_;
 

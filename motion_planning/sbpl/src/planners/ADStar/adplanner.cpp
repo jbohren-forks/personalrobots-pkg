@@ -1196,7 +1196,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 		if(pSearchStateSpace->searchiteration == 0) pSearchStateSpace->searchiteration++;
 
 		//decrease eps for all subsequent iterations
-		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS)
+		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS && !bFirstSolution)
 		{
 			pSearchStateSpace->eps = pSearchStateSpace->eps - AD_DECREASE_EPS;
 			if(pSearchStateSpace->eps < AD_FINAL_EPS)
@@ -1354,7 +1354,7 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
 
 
     //plan for the first solution only
-    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, false, false, allocated_time_secs)) == false) 
+    if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bsearchuntilfirstsolution, false, allocated_time_secs)) == false) 
     {
         printf("failed to find a solution\n");
     }
@@ -1444,6 +1444,13 @@ int ADPlanner::force_planning_from_scratch()
 }
 
 
+int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
+{
+
+	bsearchuntilfirstsolution = bSearchUntilFirstSolution;
+
+	return 1;
+}
 
 //---------------------------------------------------------------------------------------------------------
 

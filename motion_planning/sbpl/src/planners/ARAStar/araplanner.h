@@ -112,6 +112,9 @@ public:
     void costs_changed();
     int force_planning_from_scratch(); 
 
+	int set_search_mode(bool bSearchUntilFirstSolution);
+
+
 	double get_solution_eps(){return pSearchStateSpace_->eps_satisfied;};
 
 	//constructors & destructors
@@ -128,6 +131,7 @@ private:
 
 	bool bforwardsearch; //if true, then search proceeds forward, otherwise backward
 
+	bool bsearchuntilfirstsolution; //if true, then search until first solution only (see planner.h for search modes)
 
     ARASearchStateSpace_t* pSearchStateSpace_;
 

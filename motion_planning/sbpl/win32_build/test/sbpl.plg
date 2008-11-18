@@ -6,13 +6,13 @@
 --------------------Configuration: sbpl - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4A9.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP57D.tmp" with contents
 [
-/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Release/sbpl.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
-"C:\Max\codeforstarters\sbpl\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp"
+/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Release/" /Fp"Release/sbpl.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Max\codeforstarters\sbpl\src\test\main.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4A9.tmp" 
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4AA.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP57D.tmp" 
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP57E.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:"Release/sbpl.pdb" /machine:I386 /out:"Release/sbpl.exe" 
 .\Release\adplanner.obj
@@ -26,11 +26,27 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Release\utils.obj
 .\Release\viplanner.obj
 ]
-Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4AA.tmp"
+Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP57E.tmp"
 <h3>Output Window</h3>
 Compiling...
-environment_nav3Dkin.cpp
+main.cpp
 Linking...
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP580.tmp" with contents
+[
+/nologo /o"Release/sbpl.bsc" 
+.\Release\adplanner.sbr
+.\Release\araplanner.sbr
+.\Release\environment_nav2D.sbr
+.\Release\environment_nav3Dkin.sbr
+.\Release\environment_robarm.sbr
+.\Release\heap.sbr
+.\Release\main.sbr
+.\Release\mdp.sbr
+.\Release\utils.sbr
+.\Release\viplanner.sbr]
+Creating command line "bscmake.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP580.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
 
 
 
