@@ -104,15 +104,15 @@ namespace estimation
       
 #ifdef __EKF_DEBUG_FILE__
       // write to file
-      ColumnVector estimate; Time tm;
-      _my_filter.GetEstimate(estimate, tm);
+      ColumnVector estimate; 
+      _my_filter.GetEstimate(estimate);
       for (unsigned int i=1; i<=6; i++)
 	_corr_file << estimate(i) << " ";
-      _corr_file << tm << endl;
+      _corr_file << endl;
 #endif
       
-      // output estimate message
-      _my_filter.GetEstimate(_output);
+      // output most recent estimate message
+      _my_filter.GetEstimate(0.0, _output);
       publish("odom_estimation", _output);
     }
 

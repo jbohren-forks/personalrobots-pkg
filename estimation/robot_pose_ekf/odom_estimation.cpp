@@ -247,7 +247,8 @@ namespace estimation
       _filter_estimate_old = Transform(Quaternion(_filter_estimate_old_vec(6), _filter_estimate_old_vec(5), _filter_estimate_old_vec(4)),
 				       Vector3(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
       _filter_time_old = filter_time;
-      
+
+      AddMeasurement(Stamped<Transform>(_filter_estimate_old, filter_time, "odom_estimated", "base"));
     }
   };
 
@@ -258,25 +259,32 @@ namespace estimation
   };
 
 
-  // get filter posterior as vector
-  void odom_estimation::GetEstimate(ColumnVector& estimate, Time& time)
+  // get latest filter posterior as vector
+  void odom_estimation::GetEstimate(ColumnVector& estimate)
   {
     estimate = _filter_estimate_old_vec;
-    time = _filter_time_old;
   };
 
-  // get filter posterior as Transform
-  void odom_estimation::GetEstimate(Transform& estimate, Time& time)
+  // get filter posterior at time 'time' as Transform
+  void odom_estimation::GetEstimate(const Time& time, Transform& estimate)
   {
-    estimate = _filter_estimate_old;
-    time = _filter_time_old;
+    Stamped<Transform> tmp;
+    _transformer.lookupTransform("base","odom_estimated", time, tmp);
+    estimate = tmp;
   };
 
-  // get filter posterior as PoseStamped
-  void odom_estimation::GetEstimate(std_msgs::PoseStamped& estimate)
+  // get filter posterior at time 'time' as Stamped Transform
+  void odom_estimation::GetEstimate(const Time& time, Stamped<Transform>& estimate)
   {
-    PoseTFToMsg(_filter_estimate_old, estimate.pose);
-    estimate.header.stamp = _filter_time_old;
+    _transformer.lookupTransform("base","odom_estimated", time, estimate);
+  };
+
+  // get filter posterior at time 'time' as PoseStamped
+  void odom_estimation::GetEstimate(const Time& time, std_msgs::PoseStamped& estimate)
+  {
+    Stamped<Transform> tmp;
+    _transformer.lookupTransform("base","odom_estimated", time, tmp);
+    PoseStampedTFToMsg(tmp, estimate);
   };
 
   // correct for angle overflow
