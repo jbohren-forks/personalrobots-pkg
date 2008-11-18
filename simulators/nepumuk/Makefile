@@ -22,9 +22,9 @@ all: svn-all
 
 VERSION=     r912
 
-TARBALL=     nepumuk-$(VERSION).tar.gz
-TARBALL_URL= http://downloads.sourceforge.net/libsunflower/$(TARBALL)
-SOURCE_DIR=  $(PWD)/nepumuk-$(VERSION)
+TARBALL=     build/nepumuk-$(VERSION).tar.gz
+TARBALL_URL= http://downloads.sourceforge.net/libsunflower/nepumuk-$(VERSION).tar.gz
+SOURCE_DIR=  $(PWD)/build/nepumuk-$(VERSION)
 UNPACK_CMD=  tar xfz
 BUILD_DIR=   $(PWD)/build
 INST_DIR=    $(PWD)/local
@@ -39,7 +39,7 @@ SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk
 SIMULINKS=   nepumuk rostest ros0.sh robots.ros0 layout.ros0 expodemo.sh robots.expo layout.expo
 
 
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 .PHONY: svn-all
 svn-all: checkout_or_update

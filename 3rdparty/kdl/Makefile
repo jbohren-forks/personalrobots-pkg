@@ -2,12 +2,12 @@
 
 all: build
 
-TARBALL = kdl_29562.tar.gz
+TARBALL = build/kdl_29562.tar.gz
 TARBALL_URL = http://pr.willowgarage.com/downloads/kdl_29562.tar.gz
-SOURCE_DIR = kdl_export
+SOURCE_DIR = build/kdl_export
 #MD5SUM_FILE = opencv-1.0.0.tar.gz.md5sum
 UNPACK_CMD = tar xzf
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 
 
@@ -24,8 +24,8 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 build: wiped kdl
 
 configured: $(SOURCE_DIR) Makefile
-	cd $(SOURCE_DIR) && patch -p0 <../$(PATCH1)
-	cd $(SOURCE_DIR) && patch -p0 <../$(PATCH2)
+	cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH1)
+	cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH2)
 	mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured
@@ -42,4 +42,4 @@ clean:
 	rm -rf configured
 
 wipe: 	clean
-	rm -rf $(TARBALL)
+	rm -rf $(TARBALL) build

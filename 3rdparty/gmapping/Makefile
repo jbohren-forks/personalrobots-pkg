@@ -1,17 +1,17 @@
 all: build
 
-TARBALL = gmapping_r39.tar.gz
+TARBALL = build/gmapping_r39.tar.gz
 TARBALL_URL = http://pr.willowgarage.com/downloads/gmapping_r39.tar.gz
-SOURCE_DIR = gmapping_export
+SOURCE_DIR = build/gmapping_export
 UNPACK_CMD = tar xzf
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 PATCH = gmapping-r39.patch
 
 build: wiped gmapping
 
 configured: $(SOURCE_DIR) Makefile
-	cd $(SOURCE_DIR) && patch -p0 < ../$(PATCH) && ./configure
+	cd $(SOURCE_DIR) && patch -p0 < ../../$(PATCH) && ./configure
 	touch configured
 
 wiped: Makefile $(PATCH)
@@ -26,5 +26,5 @@ clean:
 	-cd $(SOURCE_DIR) && make clean
 	rm -rf gmapping configured
 wipe: clean
-	rm -rf $(SOURCE_DIR)
+	rm -rf build
 

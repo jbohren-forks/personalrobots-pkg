@@ -1,10 +1,10 @@
 all: build
 
-TARBALL = eml-r36-patched.tar.bz2
-TARBALL_URL = http://pr.willowgarage.com/downloads/$(TARBALL)
-SOURCE_DIR = eml-svn
+TARBALL = build/eml-r36-patched.tar.bz2
+TARBALL_URL = http://pr.willowgarage.com/downloads/eml-r36-patched.tar.bz2
+SOURCE_DIR = build/eml-svn
 UNPACK_CMD = tar xjf
-include $(shell rospack find mk)/download_unpack.mk
+include $(shell rospack find mk)/download_unpack_build.mk
 
 build: wiped eml
 
@@ -28,7 +28,7 @@ clean:
 	rm -rf eml configured
 
 wipe: clean
-	rm -rf $(SOURCE_DIR)
+	rm -rf build
 
 
 

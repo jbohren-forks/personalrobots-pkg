@@ -1,13 +1,13 @@
 all: ogre
 
 OGRE_VERSION = ogre-v1-4-9
-TARBALL = $(OGRE_VERSION).tar.bz2
-TARBALL_URL = http://pr.willowgarage.com/downloads/$(TARBALL)
-SOURCE_DIR = $(OGRE_VERSION)
+TARBALL = build/$(OGRE_VERSION).tar.bz2
+TARBALL_URL = http://pr.willowgarage.com/downloads/$(OGRE_VERSION).tar.bz2
+SOURCE_DIR = build/$(OGRE_VERSION)
 UNPACK_CMD = tar xf
 TARBALL_PATCH = warnings.patch
-INITIAL_DIR = ogre
-include $(shell rospack find mk)/download_unpack.mk
+INITIAL_DIR = build/ogre
+include $(shell rospack find mk)/download_unpack_build.mk
 
 ROOT = $(shell rospack find ogre)
 OGREROOT = $(shell rospack find ogre)/ogre
@@ -28,15 +28,15 @@ LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
 
 CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-g -O3 -I$(FIROOT)/include -I$(CGROOT)/include' LDFLAGS='-Wl,-rpath,$(FIROOT)/lib,-rpath,$(CGROOT)/lib -L$(FIROOT)/lib -L$(CGROOT)/lib' CFLAGS='-g -O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
 
-$(OGRE_VERSION)/Makefile: $(OGRE_VERSION)
+$(SOURCE_DIR)/Makefile: $(SOURCE_DIR)
 	if test `uname` = Darwin ; then \
-	  touch $(OGRE_VERSION)/Makefile; \
+	  touch $(SOURCE_DIR)/Makefile; \
 	else \
-	  cd $(OGRE_VERSION) && \
+	  cd $(SOURCE_DIR) && \
 	  export LIB="$(LFLAGS)" && \
 	  export CFLAGS="$(CFLAGS)" && \
 	  ./configure --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS) && \
-	  touch $(ROOT)/$(OGRE_VERSION)/Makefile && \
+	  touch $(ROOT)/$(SOURCE_DIR)/Makefile && \
 	  mkdir -p $(ROOT)/ogre && \
 	  mkdir -p $(ROOT)/ogre/lib && \
 	  mkdir -p $(ROOT)/ogre/include && \
@@ -66,10 +66,10 @@ ogre:
 	  ln -sf /usr/lib/OGRE ogre/lib/OGRE; \
 	fi
 
-ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
+ogre/lib/pkgconfig/OGRE.pc: $(SOURCE_DIR)/Makefile $(SOURCE_DIR)
 	# building OGRE
 	if test `uname` = Darwin ; then \
-	  cd $(ROOT)/$(OGRE_VERSION)/Mac/Ogre && \
+	  cd $(ROOT)/$(SOURCE_DIR)/Mac/Ogre && \
 	  export CPATH=Developer/SDKs/MacOSX10.5.sdk/usr/X11/include:/Developer/SDKs/MacOSX10.5.sdk/usr/X11/include/freetype2:`rospack find freeimage`/freeimage/include:/opt/local/include && \
 	  export LIBRARY_PATH=`rospack find freeimage`/freeimage/lib:/opt/local/lib && \
 	  xcodebuild ARCHS=i386 -target Ogre && \
@@ -79,8 +79,8 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 	  xcodebuild ARCHS=i386 -target "OctreeSceneManager Plugin" && \
 	  xcodebuild ARCHS=i386 -target "Bundle Resources"; \
 	else \
-	  cd $(ROOT)/$(OGRE_VERSION) && make $(JOBC) $(PARALLEL_JOBS); \
-	  cd $(ROOT)/$(OGRE_VERSION) && make install; \
+	  cd $(ROOT)/$(SOURCE_DIR) && make $(JOBC) $(PARALLEL_JOBS); \
+	  cd $(ROOT)/$(SOURCE_DIR) && make install; \
 	fi
 	@echo "patch OGRE.pc to pass -Wl,-rpath,-L{libdir}"
 	-mv ogre/lib/pkgconfig/OGRE.pc ogre/lib/pkgconfig/OGRE.bak
@@ -91,11 +91,10 @@ ogre/lib/pkgconfig/OGRE.pc: $(OGRE_VERSION)/Makefile $(OGRE_VERSION)
 .PHONY: clean wipe
 
 clean: 
-	-cd $(ROOT)/$(OGRE_VERSION) && make clean
+	-cd $(ROOT)/$(SOURCE_DIR) && make clean
 	-rm -rf ogre
 
 wipe: 
-	-rm -rf $(OGRE_VERSION)
-	-rm -rf $(OGRE_VERSION).tar.bz2
+	-rm -rf build
 
 
