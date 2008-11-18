@@ -2,8 +2,9 @@
 #include "calonder_descriptor/rng.h"
 #include <fstream>
 #include <boost/foreach.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/operation.hpp>
+#include <cblas.h>
+//#include <boost/numeric/ublas/vector.hpp>
+//#include <boost/numeric/ublas/operation.hpp>
 
 namespace features {
 
@@ -99,22 +100,46 @@ void RandomizedTree::addExample(int class_id, IplImage* patch)
 
 void RandomizedTree::finalize(size_t reduced_num_dim)
 {
-  // Normalize by number of patches to reach each leaf
-  float* posterior = &posteriors_[0];
-  for (int index = 0; index < num_leaves_; ++index) {
-    int count = leaf_counts_[index];
-    if (count != 0) {
-      float normalizer = 1.0f / count;
-      for (int c = 0; c < classes_; ++c) {
-        *posterior *= normalizer;
-        ++posterior;
+   // Normalize by number of patches to reach each leaf
+   float* posterior = &posteriors_[0];
+   for (int index = 0; index < num_leaves_; ++index) {
+      int count = leaf_counts_[index];
+      if (count != 0) {
+         float normalizer = 1.0f / count;
+         for (int c = 0; c < classes_; ++c) {
+            *posterior *= normalizer;
+            ++posterior;
+         }
+      } 
+      else {
+         posterior += classes_;
       }
-    } else {
-      posterior += classes_;
-    }
-  }
+   }
 
-  // apply compressive sensing to leafs (if user want compression)
+   if ((int)reduced_num_dim != classes_) {
+      float *cs_phi = new float[reduced_num_dim * classes_];           // reduced_num_dim x classes_ matrix
+      makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
+
+      float *cs_posteriors = new float[reduced_num_dim * num_leaves_];         // reduced_num_dim x num_leaves_ matrix     
+      for (int i=0; i<num_leaves_; ++i) {
+         float *post = getPosteriorByIndex(i);
+         float *prod = &cs_posteriors[i*reduced_num_dim];
+         //ublas::axpy_prod(cs_phi, post_vec, cs_post_vec, true);
+         cblas_sgemv(CblasRowMajor, CblasNoTrans, 
+                     reduced_num_dim, classes_, 1.f, cs_phi,
+                     classes_, post, 1, 0.f, prod, 1);       
+      }
+
+      // copy new posteriors
+      posteriors_.clear();
+      posteriors_.resize(reduced_num_dim*num_leaves_);
+      memcpy(&posteriors_[0], cs_posteriors, reduced_num_dim*num_leaves_*sizeof(float));
+      classes_ = reduced_num_dim;
+   }
+   
+   
+   // apply compressive sensing to leafs (if user wants compression)
+#if 0  // old ublas code (debugged)
   if ((int)reduced_num_dim != classes_) {
      ublas::matrix<float> cs_phi;
      makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
@@ -135,8 +160,9 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
      posteriors_.assign(cs_posteriors.begin(), cs_posteriors.end());
      classes_ = reduced_num_dim;
   }
-  
-  leaf_counts_.clear();
+#endif
+ 
+   leaf_counts_.clear();
 }
 
 float* RandomizedTree::getPosterior(IplImage* patch)
@@ -187,41 +213,35 @@ void RandomizedTree::write(std::ostream &os) const
   os.write((char*)(&posteriors_[0]), posteriors_.size() * sizeof(posteriors_[0]));
 }
 
-void RandomizedTree::makeRandomMeasMatrix(ublas::matrix<float> &cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
+void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
 {
    if ((int)reduced_num_dim == classes_) {
-      // special case - will not make use Compressive Sensing AT ALL
-      cs_phi = boost::numeric::ublas::identity_matrix<float>(classes_);
-      //printf("[NOTE] special case M=N=%i; using phi := identity.\n", classes_);
+      // special case - will not make use of Compressive Sensing AT ALL (set to 0 for safety)
+      memset(cs_phi, 0, reduced_num_dim*classes_*sizeof(float));
    }
    else {
-      // create phi
       Rng rng(23);
-      cs_phi.resize(reduced_num_dim, classes_);
       
       // par is distr param, cf 'Favorable JL Distributions' (Baraniuk et al, 2006)
       if (dt == PDT_GAUSS) {
          float par = (float)(1./reduced_num_dim);
-         for (size_t m=0; m<reduced_num_dim; ++m)
-            for (int n=0; n<classes_; ++n)         
-               cs_phi(m,n) = sample_normal<double>(0., par);
+         for (size_t i=0; i<reduced_num_dim*classes_; ++i)
+            *cs_phi++ = sample_normal<float>(0., par);
       }
       else if (dt == PDT_BERNOULLI) {
          float par = (float)(1./sqrt(reduced_num_dim));
-         for (size_t m=0; m<reduced_num_dim; ++m)
-            for (int n=0; n<classes_; ++n)
-               cs_phi(m,n) = (rng(2)==0 ? par : -par);
+         for (size_t i=0; i<reduced_num_dim*classes_; ++i)
+            *cs_phi++ = (rng(2)==0 ? par : -par);
       }
       else if (dt == PDT_DBFRIENDLY) {
          float par = (float)sqrt(3./reduced_num_dim); 
-         for (size_t m=0; m<reduced_num_dim; ++m)
-            for (int n=0; n<classes_; ++n) {
-               int i = rng(6);
-               cs_phi(m,n) = (i==0 ? par : (i==1 ? -par : 0.f));
-            }
+         for (size_t i=0; i<reduced_num_dim*classes_; ++i) {
+            int i = rng(6);
+            *cs_phi++ = (i==0 ? par : (i==1 ? -par : 0.f));
+         }
       }
       else
-         throw("this is impossible");
+         throw("PHI_DISTR_TYPE not implemented.");
    }
    
    //printf("[OK] created %i x %i CS meas matrix.\n", reduced_num_dim, classes_);

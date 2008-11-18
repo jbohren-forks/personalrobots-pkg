@@ -3,7 +3,9 @@
 #include <fstream>
 #include <boost/foreach.hpp>
 #include <boost/random.hpp>
-#include <boost/numeric/ublas/operation.hpp>
+//#include <boost/numeric/ublas/operation.hpp>
+//#include <boost/numeric/bindings/atlas/cblas1.hpp>
+#include <cblas.h>
 
 namespace features {
 
@@ -49,26 +51,42 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 }
 
 // TODO: vectorize, maybe improve memory allocation strategy
-float* RTreeClassifier::getSignature(IplImage* patch)
+void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 {
   // Allocate 16-byte aligned signature and zero-initialize
-  float* sig;
-  posix_memalign((void**)&sig, 16, classes_);
+  // float* sig;
+    
+  // this memalign causes troubles when calling free() on returned,
+  // pointer (where the malloc() is ok)
+  // posix_memalign((void**)&sig, 16, classes_);  
+  // sig = (float*) malloc(classes_*sizeof(float));  
+  
   memset((void*)sig, 0, classes_ * sizeof(float));
-
   std::vector<RandomizedTree>::const_iterator tree_it;
-  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-    const float* posterior = tree_it->getPosterior(patch);
-    add(classes_, sig, posterior, sig);
-  }
+  
+  #if 1 // inlined native C     
+     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
+       const float* posterior = tree_it->getPosterior(patch);
+       add(classes_, sig, posterior, sig);
+     }
 
-  // TODO: get rid of this multiply
-  float normalizer = 1.0f / trees_.size();
-  for (int i = 0; i < classes_; ++i)
-    sig[i] *= normalizer;
+     // TODO: get rid of this multiply
+     float normalizer = 1.0f / trees_.size();
+     for (int i = 0; i < classes_; ++i)
+       sig[i] *= normalizer;
 
-  return sig;
+  #else  // CBLAS
+     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
+       const float* posterior = tree_it->getPosterior(patch);
+       cblas_saxpy(classes_, 1., posterior, 1, sig, 1);    
+     } 
+
+     float normalizer = 1.0f / trees_.size();
+     cblas_sscal(classes_, normalizer, sig, 1);  
+     
+  #endif
 }
+
 
 void RTreeClassifier::read(const char* file_name)
 {
@@ -109,26 +127,5 @@ void RTreeClassifier::write(std::ostream &os) const
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it)
     tree_it->write(os);
 }
-
-
-/*DenseSignature RTreeClassifier::getCompressedSignature(IplImage* patch, bool from_sparse)
-{ 
-   DenseSignature sig(cs_phi_.size1());
-   if (cs_phi_.size1()==0 || cs_phi_.size2()==0) {
-      printf("Error: Must call RTreeClassifier::setReducedDim() prior to RTreeClassifier::getCompressedSignature().\n");
-      return sig;
-   }   
-   
-   if (from_sparse) {
-      SparseSignature sparse = getSparseSignature(patch);
-      ublas::axpy_prod(cs_phi_, sparse, sig, true);   
-   }
-   else {
-      DenseSignature dense = getDenseSignature(patch);
-      ublas::axpy_prod(cs_phi_, dense, sig, true);
-   }
-   return sig;
-}*/
-
 
 } // namespace features

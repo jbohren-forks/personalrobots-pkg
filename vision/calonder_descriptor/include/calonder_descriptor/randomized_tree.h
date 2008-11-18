@@ -76,18 +76,17 @@ private:
   int getIndex(IplImage* patch) const;
   float* getPosteriorByIndex(int index);
   const float* getPosteriorByIndex(int index) const;
-  void makeRandomMeasMatrix(ublas::matrix<float> &cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);
+  void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);
 };
 
 template < typename PointT >
-cv::WImageView1_b extractPatch(cv::WImageView1_b const& image, PointT pt)
+cv::WImageView1_b extractPatch(cv::WImageView1_b const& image, PointT pt, int patch_sz = RandomizedTree::PATCH_SIZE)
 {
-  static const int offset = RandomizedTree::PATCH_SIZE / 2;
+  const int offset = patch_sz / 2;
 
   // TODO: WImage{C}.View really should have const version
   cv::WImageView1_b &img_ref = const_cast< cv::WImageView1_b& >(image);
-  return img_ref.View(pt.x - offset, pt.y - offset,
-                      RandomizedTree::PATCH_SIZE, RandomizedTree::PATCH_SIZE);
+  return img_ref.View(pt.x - offset, pt.y - offset, patch_sz, patch_sz);
 }
 
 template < typename PointT >
