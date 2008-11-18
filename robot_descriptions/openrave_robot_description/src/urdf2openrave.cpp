@@ -64,6 +64,11 @@ string values2str(unsigned int count, const double *values, double (*conv)(doubl
     return ss.str();
 }
 
+double rad2deg(double f)
+{
+    return f / 3.1415926 * 180.0f;
+}
+
 void setupTransform(libTF::Pose3D &transform, const double *xyz, const double *rpy)
 {
     transform.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);
@@ -280,8 +285,8 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
                     addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1         ));
                 }
                 else {
-                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit));
-                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1));
+                    addKeyValue(joint, "lostop",  values2str(1, link->joint->limit,rad2deg));
+                    addKeyValue(joint, "histop", values2str(1, link->joint->limit + 1,rad2deg));
                 }
             }
         }
