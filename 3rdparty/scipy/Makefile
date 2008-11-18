@@ -11,7 +11,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 scipy: $(SOURCE_DIR)
 	mkdir -p src
 	cd $(SOURCE_DIR) && PYTHONPATH=${PYTHONPATH}:${NUMPY_PATH} python setup.py build && PYTHONPATH=${PYTHONPATH}:${NUMPY_PATH}  python setup.py install --prefix ../src
-	mv src/lib/python2.5/site-packages/* src/
+	mv build/src/lib/python2.5/site-packages/* src/
 	rm -rf src/bin src/lib
 	touch scipy
 clean:
