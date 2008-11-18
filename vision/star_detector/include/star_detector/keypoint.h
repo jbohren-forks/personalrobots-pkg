@@ -1,6 +1,7 @@
 #ifndef FEATURES_KEYPOINT_H
 #define FEATURES_KEYPOINT_H
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 #include <string>
