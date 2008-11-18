@@ -1,0 +1,7 @@
+<package>
+  <author>Morgan Quigley, Quoc Le, Sid Batra</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <depend package="libdc1394v2"/>
+  <depend package="roscpp"/>
+</package>
