@@ -32,16 +32,6 @@ int RandomizedTree::getIndex(IplImage* patch) const
   return index - nodes_.size();
 }
 
-inline float* RandomizedTree::getPosteriorByIndex(int index)
-{
-  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosteriorByIndex(index));
-}
-
-inline const float* RandomizedTree::getPosteriorByIndex(int index) const
-{
-  return &posteriors_[index * classes_];
-}
-
 void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
                            Rng &rng, int depth, int views, size_t reduced_num_dim)
 {

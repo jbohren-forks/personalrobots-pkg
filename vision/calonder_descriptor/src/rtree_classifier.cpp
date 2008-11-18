@@ -54,10 +54,11 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
 void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 {
   // Allocate 16-byte aligned signature and zero-initialize
-  // float* sig;
-    
+  // float* sig;    
+  
   // this memalign causes troubles when calling free() on returned,
-  // pointer (where the malloc() is ok)
+  // pointer (where the malloc() is ok) 
+  //  -> probably factor 'sizeof(float)' is missing
   // posix_memalign((void**)&sig, 16, classes_);  
   // sig = (float*) malloc(classes_*sizeof(float));  
   
@@ -65,15 +66,23 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   std::vector<RandomizedTree>::const_iterator tree_it;
   
   #if 1 // inlined native C     
-     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-       const float* posterior = tree_it->getPosterior(patch);
-       add(classes_, sig, posterior, sig);
-     }
-
-     // TODO: get rid of this multiply
-     float normalizer = 1.0f / trees_.size();
-     for (int i = 0; i < classes_; ++i)
-       sig[i] *= normalizer;
+    // get posteriors
+    const float **posteriors = new const float*[trees_.size()];  // TODO: move alloc outside this func
+    const float **pp = posteriors;
+    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
+      *posteriors = tree_it->getPosterior(patch);       
+    
+    // sum them up
+    posteriors = pp;
+    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
+      add(classes_, sig, *posteriors, sig);
+    
+    
+    // TODO: get rid of this multiply (-> number of trees is known at train 
+    // time, exploit it in RandomizedTree::finalize())
+    float normalizer = 1.0f / trees_.size();
+    for (int i = 0; i < classes_; ++i)
+      sig[i] *= normalizer;
 
   #else  // CBLAS
      for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {

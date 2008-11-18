@@ -67,6 +67,7 @@ private:
   int num_leaves_;
   std::vector<RTreeNode> nodes_;
   std::vector<float> posteriors_;
+  //float **posteriors_;      // 16 bytes aligned posteriors
   std::vector<int> leaf_counts_;
 
   void createNodes(int num_nodes, Rng &rng);
@@ -78,6 +79,16 @@ private:
   const float* getPosteriorByIndex(int index) const;
   void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);
 };
+
+inline float* RandomizedTree::getPosteriorByIndex(int index)
+{
+  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosteriorByIndex(index));
+}
+
+inline const float* RandomizedTree::getPosteriorByIndex(int index) const
+{
+  return &posteriors_[index * classes_];
+}
 
 template < typename PointT >
 cv::WImageView1_b extractPatch(cv::WImageView1_b const& image, PointT pt, int patch_sz = RandomizedTree::PATCH_SIZE)
