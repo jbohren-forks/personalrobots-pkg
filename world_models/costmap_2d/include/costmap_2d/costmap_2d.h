@@ -56,6 +56,8 @@
 
 // Base class
 #include "obstacle_map_accessor.h"
+#include <std_msgs/Point.h>
+#include <std_msgs/PointCloud.h>
 
 //c++
 #include <list>
@@ -63,11 +65,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include <map>
 #include <queue>
-
-// For point clouds <Could Make it a template>
-#include "std_msgs/PointCloud.h"
 
 namespace costmap_2d {
 
@@ -98,6 +96,50 @@ namespace costmap_2d {
 
   typedef std::priority_queue< QueueElement*, std::vector<QueueElement*>, QueueElementComparator > QUEUE;
 
+  /**
+   * @brief Stores an observation in terms of a point cloud and the origin of the source
+   * @note Tried to make members and constructor arguments const but the compiler would not accept the default
+   * assignment operator for vector insertion!
+   */
+  class Observation {
+  public:
+    // Structors
+  Observation(std_msgs::Point& p, std_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
+    Observation(const Observation& org): origin_(org.origin_), cloud_(org.cloud_){}
+
+    std_msgs::Point origin_;
+    std_msgs::PointCloud* cloud_;
+  };
+
+  /**
+   * @brief Base class for buffering observations with a time to live property
+   * The inputs are in the map frame
+   */
+  class ObservationBuffer {
+  public:
+  ObservationBuffer(ros::Duration keep_alive):keep_alive_(keep_alive){}
+
+    virtual ~ObservationBuffer();
+
+    /**
+     * @brief Buffer a current observation
+     * @return true if succeded, false if not (which might occur if there was no transform available for example)
+     */
+    bool buffer_observation(const Observation& observation);
+
+    /**
+     * @brief Queries for current observations. Any observations that are no longer
+     * current will be deleted. Will append observations to the input vector
+     */
+    virtual void get_observations(std::vector<Observation>& observations);
+
+  protected:
+    std::list<Observation> buffer_;
+    const ros::Duration keep_alive_;
+    ros::Time last_updated_;
+  };
+
+
   class CostMap2D: public ObstacleMapAccessor 
   {
   public:
@@ -126,7 +168,7 @@ namespace costmap_2d {
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, unsigned char threshold, 
-	      double maxZ = 0, double freeSpaceProjectionHeight = 0,
+	      double maxZ = 0.5,  double zLB = 0.10, double zUB = 0.15,
 	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1);
   
     /**
@@ -152,10 +194,20 @@ namespace costmap_2d {
 				std::vector<unsigned int>& updates);
     /**
      * @brief Updates dynamic obstacles
+     * @param wx The current x position
+     * @param wy The current y position
      * @param clouds holds projected scan data
      */
     void updateDynamicObstacles(double wx, double wy,
 				const std::vector<std_msgs::PointCloud*>& clouds);
+
+    /**
+     * @brief Updates dynamic obstacles based on a buffer of observations
+     * @param wx The current x position
+     * @param wy The current y position
+     * @param observations The collection of observations from all data sources
+     */
+    void updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations);
 
     /**
      * @brief Get pointer into the obstacle map (which contains both static
@@ -213,10 +265,10 @@ namespace costmap_2d {
 
     /**
      * @brief Utility to push free space inferred from a laser point hit via ray-tracing
-     * @param ind the cell index of the obstacle detected
-     * @param updates the buffer for updated cells as a result
+     * @param The origin from which to trace out
+     * @param The target in map co-ordinates to trace to
      */ 
-    void updateFreeSpace(unsigned int ind);
+    void updateFreeSpace(const std_msgs::Point& origin, double wx, double wy);
 
     /**
      * @brief Simple test for a cell having been marked during current propaagtion
@@ -241,8 +293,11 @@ namespace costmap_2d {
 
     void updateCellCost(unsigned int ind, unsigned char cost);
 
+    bool in_projection_range(double z){return z >= zLB_ && z <= zUB_;}
+
     const double maxZ_; /**< Points above this will be excluded from consideration */
-    const double freeSpaceProjectionHeight_; /**< Filters points for free space projection */
+    const double zLB_; /**< Filters points for free space projection */
+    const double zUB_; /**< Filters points for free space projection */
     const unsigned int inflationRadius_; /**< The radius in cells to propagate cost and obstacle information */
     const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
     const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */

@@ -63,6 +63,38 @@
 namespace ros {
   namespace highlevel_controllers {
 
+    /**
+     * @brief Extend base class to handle buffering until a transform is available, and to support locking for mult-threaded
+     * access
+     */
+    class ObservationBuffer: public costmap_2d::ObservationBuffer {
+    public:
+      ObservationBuffer(const std::string& frame_id, rosTFClient& tf, ros::Duration keepAlive, double robotRadius, double minZ, double maxZ);
+
+      void buffer_cloud(const std_msgs::PointCloud& local_cloud);
+
+      virtual void get_observations(std::vector<Observation>& observations);
+
+    private:
+
+      /**
+       * @brief Test if point in the square footprint of the robot
+       */
+      bool inFootprint(double x, double y) const;
+
+      /**
+       * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
+       * filter based on the min and max z values
+       */
+      std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
+
+      const std::string frame_id_;
+      rosTFClient& tf_;
+      std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
+      ros::thread::mutex buffer_mutex_;
+      const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
+    };
+
     class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
 
     public:
@@ -149,20 +181,7 @@ namespace ros {
        */
       void odomCallback();
 
-      void bufferData(const std_msgs::PointCloud& local_cloud);
-
-      /**
-       * @brief Process point cloud data
-       * @todo migrate to costmap
-       */
-      void processData();
-
       void updateGlobalPose();
-
-      /**
-       * @brief Helper method to update the costmap and conduct other book-keeping
-       */
-      void updateDynamicObstacles(const std::vector<std_msgs::PointCloud*>& clouds);
 
       /**
        * @brief Issue zero velocity commands
@@ -190,17 +209,6 @@ namespace ros {
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
       /**
-       * @brief Test if point in the square footprint of the robot
-       */
-      bool inFootprint(double x, double y) const;
-
-      /**
-       * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
-       * filter based on the min and max z values
-       */
-      std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
-
-      /**
        * @brief Watchdog Handling
        */
       void petTheWatchDog(const ros::Time& t);
@@ -220,6 +228,11 @@ namespace ros {
 
       rosTFClient tf_; /**< Used to do transforms */
 
+      // Observation Buffers
+      ObservationBuffer* baseScanBuffer_;
+      ObservationBuffer* tiltScanBuffer_;
+      ObservationBuffer* stereoCloudBuffer_;
+
       /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
       VelocityController* controller_;
 
@@ -236,9 +249,6 @@ namespace ros {
       double tiltLaserMaxRange_; /**< Used in laser scan projection */
 
       std::list<std_msgs::Pose2DFloat32>  plan_; /**< The 2D plan in grid co-ordinates of the cost map */
-
-      std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
-      ros::thread::mutex bufferMutex_;
 
       // Filter parameters
       double minZ_;

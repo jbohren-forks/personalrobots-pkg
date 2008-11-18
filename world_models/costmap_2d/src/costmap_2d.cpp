@@ -68,13 +68,54 @@ namespace costmap_2d {
     return (unsigned int) a;
   }
 
+  // Just clean up outstanding observations
+  ObservationBuffer::~ObservationBuffer(){
+    while(!buffer_.empty()){
+      std::list<Observation>::iterator it = buffer_.begin();
+      const std_msgs::PointCloud* cloud = it->cloud_;
+      delete cloud;
+      buffer_.erase(it);
+    }
+  }
+
+  // Only works if the observation is in the map frame - test for it. It should be transformed before
+  // we enque it
+  bool ObservationBuffer::buffer_observation(const Observation& observation){
+    last_updated_ = observation.cloud_->header.stamp;
+
+    if(observation.cloud_->header.frame_id != "map")
+      return false;
+
+    // If the duration is 0, then we just keep the latest one, so we clear out all existing observations
+    while(!buffer_.empty()){
+      std::list<Observation>::iterator it = buffer_.begin();
+      // Get the current one, and check if still alive. if so
+      Observation& obs = *it;
+      if((last_updated_ - obs.cloud_->header.stamp) > keep_alive_){
+	delete obs.cloud_;
+	buffer_.erase(it);
+      }
+      else 
+	break;
+    }
+
+    // Otherwise just store it and indicate success
+    buffer_.push_back(observation);
+    return true;
+  }
+
+  void ObservationBuffer::get_observations(std::vector<Observation>& observations){
+    // Add all remaining observations to the output
+    for(std::list<Observation>::const_iterator it = buffer_.begin(); it != buffer_.end(); ++it){
+      observations.push_back(*it);
+    }
+  }
+
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
-      double resolution, unsigned char threshold, 
-      double maxZ, double freeSpaceProjectionHeight,
+      double resolution, unsigned char threshold, double maxZ, double zLB, double zUB,
       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
-    maxZ_(maxZ),
-    freeSpaceProjectionHeight_(freeSpaceProjectionHeight),
+      maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
     inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
     circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
     inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
@@ -169,6 +210,24 @@ namespace costmap_2d {
   void CostMap2D::updateDynamicObstacles(double wx, double wy,
       const std::vector<std_msgs::PointCloud*>& clouds)
   {
+    std_msgs::Point origin;
+    origin.x = wx;
+    origin.y = wy;
+    origin.z = zLB_;
+    std::vector<Observation> observations;
+    for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
+      Observation obs(origin, *it);
+      observations.push_back(obs);
+    }
+
+    updateDynamicObstacles(wx, wy, observations);
+  }
+
+  /**
+   * @brief Update the cost map based on aggregate observations
+   */
+  void CostMap2D::updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations)
+  {
     // Update current grid position
     WC_MC(wx, wy, mx_, my_);
 
@@ -176,41 +235,52 @@ namespace costmap_2d {
     memset(xy_markers_, 0, width_ * height_);
     memcpy(costData_, staticData_, width_ * height_);
 
+    // Propagation queue should be empty from completion of last propagation.
     ROS_ASSERT(queue_.empty());
-    std::vector<unsigned int> F; // The set of points for free space projection
-    for(std::vector<std_msgs::PointCloud*>::const_iterator it = clouds.begin(); it != clouds.end(); ++it){
-      const std_msgs::PointCloud& cloud = *(*it);
+
+    // First we propagate costs. For this we iterate over observations, and process the internal point clouds
+    for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
+      const Observation& obs = *it;
+      const std_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-        // Filter out points too high (can use for free space propagation?)
-        if(cloud.pts[i].z > maxZ_)
-          continue;
+	// Filter out points too high (can use for free space propagation?)
+	if(cloud.pts[i].z > maxZ_)
+	  continue;
 
-        // Queue cell for cost propagation
-        unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+	// Queue cell for cost propagation
+	unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
 
-        // If we have already processed the cell for this point, skip it
-        if(marked(ind))
-          continue;
+	// If we have already processed the cell for this point, skip it
+	if(marked(ind))
+	  continue;
 
-        // Buffer for cost propagation. This will mark the cell
-        unsigned int mx, my;
-        IND_MC(ind, mx, my);
-        enqueue(ind, mx, my);
-
-        // Buffer for free space projection (Need a ctest based on the origin)
-        if(cloud.pts[i].z <= freeSpaceProjectionHeight_)
-          F.push_back(ind);
+	// Buffer for cost propagation. This will mark the cell
+	unsigned int mx, my;
+	IND_MC(ind, mx, my);
+	enqueue(ind, mx, my);
       }
     }
 
     // Propagate costs
     propagateCosts();
 
-    // Propagate free space
-    for(std::vector<unsigned int>::const_iterator it = F.begin(); it != F.end(); ++it)
-      updateFreeSpace(*it);
-  }
+    // Now propagate free space. We iterate again over observations, process only those from an origin
+    // within a specific range, and a point within a certain z-range. We only want to propagate free space
+    // in 2D so keep point and its origin within expected range
+    for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
+      const Observation& obs = *it;
+      if(!in_projection_range(obs.origin_.z))
+	continue;
 
+      const std_msgs::PointCloud& cloud = *(obs.cloud_);
+      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+	if(!in_projection_range(cloud.pts[i].z))
+	  continue;
+
+	updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      }
+    }
+  }
 
   const unsigned char* CostMap2D::getMap() const {
     return costData_;
@@ -339,14 +409,12 @@ namespace costmap_2d {
    * Utilizes Eitan's implementation of Bresenhams ray tracing algorithm to iterate over the cells between the
    * current position (mx_, my_).
    */
-  void CostMap2D::updateFreeSpace(unsigned int ind){
-    unsigned int x1, y1;
-    IND_MC(ind, x1, y1);
-
-    unsigned int deltax = abs(x1 - mx_);        // The difference between the x's
-    unsigned int deltay = abs(y1 - my_);        // The difference between the y's
-    unsigned int x = mx_;                       // Start x off at the first pixel
-    unsigned int y = my_;                       // Start y off at the first pixel
+  void CostMap2D::updateFreeSpace(const std_msgs::Point& origin, double wx, double wy){
+    unsigned int x, y, x1, y1;
+    WC_MC(origin.x, origin.y, x, y);
+    WC_MC(wx, wy, x1, y1);
+    unsigned int deltax = abs(x1 - x);        // The difference between the x's
+    unsigned int deltay = abs(y1 - y);        // The difference between the y's
 
     unsigned int xinc1, xinc2, yinc1, yinc2;
     unsigned int den, num, numadd, numpixels;

@@ -72,12 +72,19 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
   return false;
 }
 
+/**
+ * Basic testing for observation buffer
+ */
+TEST(costmap, test15){
+  ros::Duration keep_alive(10, 0);
+  ObservationBuffer buffer(keep_alive);
+}
 
 /**
  * Test for the cost function correctness with a larger range and different values
  */
 TEST(costmap, test14){
-  CostMap2D map(100, 100, EMPTY_100_BY_100, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(100, 100, EMPTY_100_BY_100, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,
 		ROBOT_RADIUS * 10.5, ROBOT_RADIUS * 8.0, ROBOT_RADIUS * 5.0, 0.5);
 
   // Verify that the circumscribed cost lower bound is as expected: based on the cost function.
@@ -89,7 +96,7 @@ TEST(costmap, test14){
   cloud.set_pts_size(1);
   cloud.pts[0].x = 50;
   cloud.pts[0].y = 50;
-  cloud.pts[0].z = 1;
+  cloud.pts[0].z = MAX_Z;
 
   map.updateDynamicObstacles(0, 0, CostMap2D::toVector(cloud));
 
@@ -152,7 +159,7 @@ TEST(costmap, test13){
  */
 TEST(costmap, test12){
   // Start with an empty map
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, EMPTY_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z,
 		ROBOT_RADIUS*3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
 
@@ -161,13 +168,13 @@ TEST(costmap, test12){
   cloud.set_pts_size(3);
   cloud.pts[0].x = 3;
   cloud.pts[0].y = 3;
-  cloud.pts[0].z = 0;
+  cloud.pts[0].z = MAX_Z;
   cloud.pts[1].x = 5;
   cloud.pts[1].y = 5;
-  cloud.pts[1].z = 0;
+  cloud.pts[1].z = MAX_Z;
   cloud.pts[2].x = 7;
   cloud.pts[2].y = 7;
-  cloud.pts[2].z = 0;
+  cloud.pts[2].z = MAX_Z;
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(cloud, updates);
@@ -180,13 +187,14 @@ TEST(costmap, test12){
  * Test for ray tracing free space
  */
 TEST(costmap, test0){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
   // Add a point cloud and verify its insertion. There should be only one new one
   std_msgs::PointCloud cloud;
   cloud.set_pts_size(1);
   cloud.pts[0].x = 0;
   cloud.pts[0].y = 0;
+  cloud.pts[0].z = MAX_Z;
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(cloud, updates);
@@ -303,7 +311,7 @@ TEST(costmap, test4){
  * Make sure we ignore points outside of our z threshold
  */
 TEST(costmap, test6){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z);
 
   // A point cloud with 2 points falling in a cell with a non-lethal cost
   std_msgs::PointCloud c0;
@@ -324,7 +332,7 @@ TEST(costmap, test6){
  * Test inflation for both static and dynamic obstacles
  */
 TEST(costmap, test7){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
 
@@ -404,7 +412,7 @@ TEST(costmap, test7){
  * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
  */
 TEST(costmap, test8){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
 
   std::vector<unsigned int> updates;
@@ -414,13 +422,13 @@ TEST(costmap, test8){
   c0.set_pts_size(3);
   c0.pts[0].x = 1;
   c0.pts[0].y = 1;
-  c0.pts[0].z = 0;
+  c0.pts[0].z = MAX_Z;
   c0.pts[1].x = 1;
   c0.pts[1].y = 2;
-  c0.pts[1].z = 0;
+  c0.pts[1].z = MAX_Z;
   c0.pts[2].x = 2;
   c0.pts[2].y = 2;
-  c0.pts[2].z = 0;
+  c0.pts[2].z = MAX_Z;
 
   map.updateDynamicObstacles(c0, updates);
   ASSERT_EQ(map.getCost(3, 2), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);  
@@ -438,7 +446,7 @@ TEST(costmap, test9){
     }
   }
 
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, 
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, mapData, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z, 
 		ROBOT_RADIUS * 3, ROBOT_RADIUS * 2, ROBOT_RADIUS);
 
   // There should be no occupied cells
@@ -451,7 +459,7 @@ TEST(costmap, test9){
   c0.set_pts_size(1);
   c0.pts[0].x = 5;
   c0.pts[0].y = 5;
-  c0.pts[0].z = 0;
+  c0.pts[0].z = MAX_Z;
 
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(c0, updates);
@@ -507,7 +515,7 @@ TEST(costmap, test10){
  * Test for ray tracing free space
  */
 TEST(costmap, test11){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free.

@@ -106,12 +106,6 @@ namespace ros {
     protected:
 
       /**
-       * @brief Called during update of cost map. Will just buffer and handle in batch.
-       * @see applyMapUpdates
-       */
-      virtual void handleMapUpdates(const std::vector<unsigned int>& updates);
-
-      /**
        * @brief Builds a plan from current state to goal state
        */
       virtual bool makePlan();
@@ -248,20 +242,6 @@ namespace ros {
       delete pMgr_;
     }
 
-    /**
-     * @brief This is called during a cost map update. Will insert new updates, possibly overwriting prior values
-     */
-    void MoveBaseSBPL::handleMapUpdates(const std::vector<unsigned int>& updates){
-      
-      const CostMap2D& cm = getCostMap();
-
-      for(std::vector<unsigned int>::const_iterator it = updates.begin(); it != updates.end(); ++it){
-	unsigned int x, y; // Cell coordinates
-	cm.IND_MC(*it, x, y);
-	env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
-      }
-    }
-
     bool MoveBaseSBPL::isMapDataOK() {
       const CostMap2D& cm = getCostMap();
       
@@ -287,8 +267,20 @@ namespace ros {
       ompl::SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
       
       try {
+	// Update costs
+	lock();
 	const CostMap2D& cm = getCostMap();
-	
+	unsigned int x = cm.getWidth();
+	while(x > 0){
+	  x--;
+	  unsigned int y = cm.getHeight();
+	  while(y > 0){
+	    y--;
+	    env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
+	  }
+	}
+	unlock();
+
 	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
 	// planner and controller were running on the same thread and the only contention was for cost map updates on call
 	// backs. Note that cost map queries here are const methods that merely do co-ordinate transformations, so we do not need
@@ -369,7 +361,7 @@ namespace ros {
 	      prevth = th;
 #warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
 	    }
-	    
+
 	    plan.push_back(waypoint);
 	  }
 	  // probably we should add the delta from the last theta to
