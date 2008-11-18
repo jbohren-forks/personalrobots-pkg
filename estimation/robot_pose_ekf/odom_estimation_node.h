@@ -106,7 +106,7 @@ private:
   ros::thread::mutex _filter_mutex;
 
   // log files for debugging
-  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file, _time_file;
+  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file, _time_file, _extra_file;
 
 
 }; // class

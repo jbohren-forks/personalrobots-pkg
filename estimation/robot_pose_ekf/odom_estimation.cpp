@@ -109,6 +109,10 @@ namespace estimation
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
     _vo_meas_pdf   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
     _vo_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_vo_meas_pdf);
+
+
+    // allow 1 second extrapolation
+    _transformer.setExtrapolationLimit(1.0);
   };
 
 
@@ -266,7 +270,7 @@ namespace estimation
   };
 
   // get filter posterior at time 'time' as Transform
-  void odom_estimation::GetEstimate(const Time& time, Transform& estimate)
+  void odom_estimation::GetEstimate(Time time, Transform& estimate)
   {
     Stamped<Transform> tmp;
     _transformer.lookupTransform("base","odom_estimated", time, tmp);
@@ -274,13 +278,13 @@ namespace estimation
   };
 
   // get filter posterior at time 'time' as Stamped Transform
-  void odom_estimation::GetEstimate(const Time& time, Stamped<Transform>& estimate)
+  void odom_estimation::GetEstimate(Time time, Stamped<Transform>& estimate)
   {
     _transformer.lookupTransform("base","odom_estimated", time, estimate);
   };
 
   // get filter posterior at time 'time' as PoseStamped
-  void odom_estimation::GetEstimate(const Time& time, std_msgs::PoseStamped& estimate)
+  void odom_estimation::GetEstimate(Time time, std_msgs::PoseStamped& estimate)
   {
     Stamped<Transform> tmp;
     _transformer.lookupTransform("base","odom_estimated", time, tmp);

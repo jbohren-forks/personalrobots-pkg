@@ -74,6 +74,7 @@ namespace estimation
     _vo_file.open("vo_file.txt");
     _corr_file.open("corr_file.txt");
     _time_file.open("time_file.txt");
+    _extra_file.open("extra_file.txt");
 #endif
   };
 
@@ -87,6 +88,7 @@ namespace estimation
     _vo_file.close();
     _corr_file.close();
     _time_file.close();
+    _extra_file.close();
 #endif
   };
 
@@ -235,6 +237,18 @@ namespace estimation
       _time_file << (Time::now() - _odom_time).toSec()  << " " << (Time::now() - _imu_time).toSec() << " "
 		 << (Time::now() - _odom_stamp).toSec() << " " << (Time::now() - _imu_stamp).toSec() << " "
 		 << (_odom_stamp - _imu_stamp).toSec()  <<  endl;
+
+      // write to file
+      Stamped<Transform> est_now, est_last;
+      _my_filter.GetEstimate(Time::now(), est_now);
+      _my_filter.GetEstimate(0.0, est_last);
+      double tmp, r_now, r_last;
+      est_now.getBasis().getEulerZYX(r_now, tmp, tmp);
+      est_last.getBasis().getEulerZYX(r_last, tmp, tmp);
+      _extra_file << est_now.getOrigin().x() - est_last.getOrigin().x() << " "
+		  << est_now.getOrigin().y() - est_last.getOrigin().y() << " "
+		  << est_now.getOrigin().z() - est_last.getOrigin().z() << " "
+		  << r_now - r_last << endl;
 #endif
 
       if (_odom_active || _imu_active || _vo_active){
