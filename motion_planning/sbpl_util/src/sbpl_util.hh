@@ -240,6 +240,9 @@ namespace ompl {
 	delegated cost update failed. */
     virtual bool UpdateCost(int ix, int iy, unsigned char newcost) = 0;
 
+    /** \return NO_INFORMATION if ix, iy not in the map. otherwise the cell value */  
+    virtual unsigned char GetMapCost(int ix, int iy) const = 0;
+
     /** \return true if there is no obstacle at (ix,iy)... if (ix,iy)
 	is not in the map, then outside_map_is_obstacle is
 	returned. */
@@ -280,6 +283,7 @@ namespace ompl {
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
     
     virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
+    virtual unsigned char GetMapCost(int ix, int iy) const;
     virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
     virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);
@@ -323,6 +327,7 @@ namespace ompl {
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
     
     virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
+    virtual unsigned char GetMapCost(int ix, int iy) const;
     virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
     virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);

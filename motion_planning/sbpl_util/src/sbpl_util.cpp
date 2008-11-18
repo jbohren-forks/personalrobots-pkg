@@ -392,6 +392,14 @@ namespace ompl {
   }
   
   
+  unsigned char 
+  EnvironmentWrapper2D::GetMapCost(int ix, int iy) const{
+    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
+      return costmap_2d::CostMap2D::NO_INFORMATION;
+
+    return env_->GetMapCost(ix, iy);
+  }
+
   bool EnvironmentWrapper2D::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
   {
@@ -537,6 +545,12 @@ namespace ompl {
   }
   
   
+  
+  unsigned char 
+  EnvironmentWrapper3DKIN::GetMapCost(int ix, int iy) const{
+    return costmap_2d::CostMap2D::NO_INFORMATION;
+  }
+
   bool EnvironmentWrapper3DKIN::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
   {
