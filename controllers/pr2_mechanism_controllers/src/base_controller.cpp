@@ -39,6 +39,10 @@
 
 #define NUM_TRANSFORMS 2
 #define EPS 1e-5
+#define CMD_VEL_TRANS_EPS 1e-5
+#define CMD_VEL_ROT_EPS 1e-5
+
+
 using namespace ros;
 using namespace std;
 using namespace controller;
@@ -228,6 +232,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
       base_object.local_id_ = num_casters_;
       base_casters_.push_back(base_object);
       steer_angle_actual_.push_back(0);
+      steer_angle_stored_.push_back(0);
       steer_velocity_desired_.push_back(0);
       num_casters_++;
 //      cout << "base_casters" << "::  " << base_object;
@@ -457,12 +462,20 @@ void BaseController::computeDesiredCasterSteer()
 
   double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
   double error_steer(0.0),error_steer_m_pi(0.0);
-
+  double trans_vel = sqrt(cmd_vel_.x * cmd_vel_.x + cmd_vel_.y * cmd_vel_.y);
   for(int i=0; i < num_casters_; i++)
   {
     result = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
 
-    steer_angle_desired = atan2(result.y,result.x);
+    if( trans_vel < CMD_VEL_TRANS_EPS && fabs(cmd_vel_.z) < CMD_VEL_ROT_EPS)
+    {
+      steer_angle_desired = steer_angle_stored_[i];
+    }
+    else
+    {
+      steer_angle_desired = atan2(result.y,result.x);
+      steer_angle_stored_[i] = steer_angle_desired;
+    }
     steer_angle_desired_m_pi = normalize_angle(steer_angle_desired+M_PI);
 
     error_steer = shortest_angular_distance(steer_angle_desired, steer_angle_actual_[i]);
@@ -474,6 +487,7 @@ void BaseController::computeDesiredCasterSteer()
       steer_angle_desired = steer_angle_desired_m_pi;
     }
     steer_velocity_desired_[i] =  -kp_speed_*error_steer;
+
   }
 }
 
@@ -597,17 +611,23 @@ void BaseController::computeBaseVelocity()
     wheel_speed = wheel_speed_actual_[i]-wheel_caster_steer_component.x/(wheel_radius_);
 
     steer_angle = base_wheels_[i].parent_->joint_state_->position_;
-    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
-    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*wheel_speed;
-  }
 
-  for(int i = 0; i < num_wheels_; i++) {
-    C.element(i*2, 0)   = 1;
-    C.element(i*2, 1)   = 0;
-    C.element(i*2, 2)   = -base_wheels_position_[i].y;
-    C.element(i*2+1, 0) = 0;
-    C.element(i*2+1, 1) = 1;
-    C.element(i*2+1, 2) =  base_wheels_position_[i].x;
+//    A.element(i*2,0)   = cos(steer_angle)*wheel_radius_*wheel_speed;
+//    A.element(i*2+1,0) = sin(steer_angle)*wheel_radius_*wheel_speed;
+
+    A.element(i*2,0)   = wheel_radius_*wheel_speed;
+    A.element(i*2+1,0) = 0;
+
+
+//  }
+//  for(int i = 0; i < num_wheels_; i++) {
+
+    C.element(i*2, 0)   = cos(steer_angle);
+    C.element(i*2, 1)   = sin(steer_angle);
+    C.element(i*2, 2)   = -cos(steer_angle) * base_wheels_position_[i].y + sin(steer_angle) *  base_wheels_position_[i].x;
+    C.element(i*2+1, 0)   = -sin(steer_angle);
+    C.element(i*2+1, 1)   = cos(steer_angle);
+    C.element(i*2+1, 2)   = sin(steer_angle) * base_wheels_position_[i].y + cos(steer_angle) *  base_wheels_position_[i].x;
   }
   //   D = pseudoInverse(C)*A;
   D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);

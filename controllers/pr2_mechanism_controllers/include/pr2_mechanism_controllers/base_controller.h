@@ -365,6 +365,8 @@ namespace controller
 
     std::vector<double> steer_angle_actual_; /** vector of actual caster steer angles */
 
+    std::vector<double> steer_angle_stored_; /** vector of stored caster steer angles */
+
     std::vector<double> wheel_speed_actual_; /** vector of actual wheel speeds */
 
     double last_time_; /** time corresponding to when update was last called */
