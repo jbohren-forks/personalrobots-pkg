@@ -117,8 +117,10 @@ namespace estimation
     }
 
     // initialize filer with odometry frame
-    if ( _odom_active && !_my_filter.IsInitialized())
+    if ( _odom_active && !_my_filter.IsInitialized()){
       _my_filter.Initialize(_odom_meas, _odom_time);
+      ROS_INFO("Fiter initialized");
+    }
   };
 
 
