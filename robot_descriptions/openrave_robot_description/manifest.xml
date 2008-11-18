@@ -1,6 +1,9 @@
 <package>
-  <description>Openrave robot file generator from wg_robot_description</description>
-  <author>Rosen Diankov (from gazebo_robot_description)</author>
+  <description brief="Openrave Robot Description Manager">
+     Base robot files auto-generated from wg_robot_description package.
+     To use in openrave, add this path to the OPENRAVE_DATA environment variable.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://pr.willowgarage.com/wiki/FIXME</url>

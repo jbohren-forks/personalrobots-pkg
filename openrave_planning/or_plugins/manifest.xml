@@ -1,0 +1,8 @@
+<package>
+  <description brief="OpenRAVE Plugins Maintainer">
+    This package depends on all OpenRAVE plugins. Once the plugins are compiled, they will be installed to this package. All an OpenRAVE user has to do is add this path to the OPENRAVE_PLUGINS environment variable.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <license>BSD</license>
+  <depend package="or_rosplanning"/>
+</package>

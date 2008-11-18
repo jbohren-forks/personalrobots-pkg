@@ -1,0 +1,24 @@
+<!-- uses the base kinematics from pr2.robot.xml and includes other definitions -->
+<Robot file="pr2.robot.xml">
+  <!-- left gripper -->
+  <Manipulator>
+    <base>torso</base>
+    <effector>left_gripper_palm</effector>
+    <armjoints>left_shoulder_pan_joint left_shoulder_pitch_joint left_upper_arm_roll_joint left_elbow_flex_joint left_forearm_roll_joint left_wrist_flex_joint left_wrist_roll_joint</armjoints>
+    <joints>left_gripper_l_finger_joint</joints>
+    <closed>0</closed>
+    <opened>0.8</opened>
+    <iksolver>rosarmik</iksolver>
+  </Manipulator>
+
+  <!-- right gripper -->
+  <Manipulator>
+    <base>torso</base>
+    <effector>right_gripper_palm</effector>
+    <armjoints>right_shoulder_pan_joint right_shoulder_pitch_joint right_upper_arm_roll_joint right_elbow_flex_joint right_forearm_roll_joint right_wrist_flex_joint right_wrist_roll_joint</armjoints>
+    <joints>right_gripper_l_finger_joint</joints>
+    <closed>0</closed>
+    <opened>0.8</opened>
+    <iksolver>rosarmik</iksolver>
+  </Manipulator>
+</Robot>
