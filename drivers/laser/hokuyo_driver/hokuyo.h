@@ -158,6 +158,18 @@ namespace hokuyo
      */
     int sendCmd(const char* cmd, int timeout = -1);
 
+    //! Retrieve the native hokuyo configuration.
+    /*!
+     * This function will retrieve the native configuration for the laser.
+     * In particular, this specifies the smallest possible min, and largest
+     * possible maximum values that can be used.
+     *
+     * \param config     A reference to the LaserConfig which will be populated
+     *
+     * \return Status code returned from hokuyo device.
+     */
+    void getConfig(LaserConfig& config);
+
 
     //! Retrieve a single scan from the hokuyo
     /*!

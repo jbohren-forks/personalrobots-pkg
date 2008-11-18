@@ -192,6 +192,20 @@ hokuyo::Laser::sendCmd(const char* cmd, int timeout)
 
 
 ///////////////////////////////////////////////////////////////////////////////
+void
+hokuyo::Laser::getConfig(LaserConfig& config)
+{
+  config.min_angle  =  (amin_ - afrt_) * (2.0*M_PI)/(ares_);
+  config.max_angle  =  (amax_ - afrt_) * (2.0*M_PI)/(ares_);
+  config.ang_increment =  (2.0*M_PI)/(ares_);
+  config.time_increment = (60.0)/(double)(rate_ * ares_);
+  config.scan_time = 60.0/((double)(rate_));
+  config.min_range  =  dmin_ / 1000.0;
+  config.max_range  =  dmax_ / 1000.0;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 int
 hokuyo::Laser::laserWrite(const char* msg)
 {
