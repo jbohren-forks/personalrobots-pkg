@@ -21,12 +21,16 @@ diff -Naur SoQt-1.4.1-old/configure.ac SoQt-1.4.1-new/configure.ac
 diff -Naur SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp
 --- SoQt-1.4.1-old/src/Inventor/Qt/SoQtComponent.cpp	2006-10-30 14:09:20.000000000 -0800
 +++ SoQt-1.4.1-new/src/Inventor/Qt/SoQtComponent.cpp	2008-11-13 19:56:20.237409512 -0800
-@@ -100,7 +100,7 @@
+@@ -100,7 +100,11 @@
    this->parent->removeEventFilter(this);
  }
  
 -static void delete_dict_value(unsigned long key, void * value)
++#if ((COIN_MAJOR_VERSION<<16)|(COIN_MINOR_VERSION<<8)|COIN_MICRO_VERSION) > 0x020406
 +static void delete_dict_value(SbDict::Key key, void * value)
++#else
++static void delete_dict_value(unsigned long key, void * value)
++#endif
  {
    delete (QCursor *)value;
  }
