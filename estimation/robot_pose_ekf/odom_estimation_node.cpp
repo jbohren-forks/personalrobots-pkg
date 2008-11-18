@@ -95,38 +95,6 @@ namespace estimation
 
 
 
-  // update filter
-  void odom_estimation_node::Update(const Time& time)
-  {
-    // update filter
-    if ( _my_filter.IsInitialized() )  {
-      // update filter
-      _my_filter.Update(_odom_active,_imu_active, _vo_active,  time);
-      //_my_filter.Update(_odom_active,_imu_active, _vo_active,  0.0);
-      
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      ColumnVector estimate; 
-      _my_filter.GetEstimate(estimate);
-      for (unsigned int i=1; i<=6; i++)
-	_corr_file << estimate(i) << " ";
-      _corr_file << endl;
-#endif
-      
-      // output most recent estimate message
-      _my_filter.GetEstimate(0.0, _output);
-      publish("odom_estimation", _output);
-    }
-
-    // initialize filer with odometry frame
-    if ( _odom_active && !_my_filter.IsInitialized()){
-      _my_filter.Initialize(_odom_meas, _odom_time);
-      ROS_INFO("Fiter initialized");
-    }
-  };
-
-
-
 
 
   // callback function for odom data
@@ -134,10 +102,12 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _odom_stamp = _odom.header.stamp;
-    _odom_time = Time::now();
+    if (_exact_time_mode)  
+      _odom_time = _odom.header.stamp;
+    else 
+      _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"odom", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom_time,"odom", "base"));
     _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -162,10 +132,13 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _imu_stamp = _imu.header.stamp;
     _imu_time = Time::now();
+    if (_exact_time_mode)  
+      _imu_time = _imu.header.stamp;
+    else 
+      _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu_time, "imu", "base"));
     _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -190,10 +163,13 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _vo_stamp =  _vo.header.stamp;
     _vo_time = Time::now();
+    if (_exact_time_mode)  
+      _vo_time = _vo.header.stamp;
+    else 
+      _vo_time = Time::now();
     PoseMsgToTF(_vo.pose, _vo_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo.header.stamp, "vo", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo_time, "vo", "base"));
     _filter_mutex.unlock();
 
     // activate vo
@@ -221,6 +197,48 @@ namespace estimation
 
 
 
+  // update filter
+  void odom_estimation_node::Update(const Time& time)
+  {
+    // update filter
+    if ( _my_filter.IsInitialized() )  {
+      _my_filter.Update(_odom_active,_imu_active, _vo_active,  time);
+      
+#ifdef __EKF_DEBUG_FILE__
+      // write to file
+      ColumnVector estimate; 
+      _my_filter.GetEstimate(estimate);
+      for (unsigned int i=1; i<=6; i++)
+	_corr_file << estimate(i) << " ";
+      _corr_file << endl;
+
+      // write to file
+      Stamped<Transform> est_now, est_last;
+      _my_filter.GetEstimate(Time::now(), est_now);
+      _my_filter.GetEstimate(0.0, est_last);
+      double tmp, r_now, r_last;
+      est_now.getBasis().getEulerZYX(r_now, tmp, tmp);
+      est_last.getBasis().getEulerZYX(r_last, tmp, tmp);
+      _extra_file << est_now.getOrigin().x()  << " " << est_now.getOrigin().y()  << " " << est_now.getOrigin().z()  << " " << r_now << " "
+		  << est_last.getOrigin().x() << " " << est_last.getOrigin().y() << " " << est_last.getOrigin().z() << " " << r_last << endl;
+#endif
+      
+      // output most recent estimate message
+      _my_filter.GetEstimate(0.0, _output);
+      publish("odom_estimation", _output);
+    }
+
+    // initialize filer with odometry frame
+    if ( _odom_active && !_my_filter.IsInitialized()){
+      _my_filter.Initialize(_odom_meas, _odom_time);
+      ROS_INFO("Fiter initialized");
+    }
+  };
+
+
+
+
+
 
   // filter loop
   void odom_estimation_node::spin()
@@ -235,20 +253,7 @@ namespace estimation
 #ifdef __EKF_DEBUG_FILE__
       // write to file
       _time_file << (Time::now() - _odom_time).toSec()  << " " << (Time::now() - _imu_time).toSec() << " "
-		 << (Time::now() - _odom_stamp).toSec() << " " << (Time::now() - _imu_stamp).toSec() << " "
-		 << (_odom_stamp - _imu_stamp).toSec()  <<  endl;
-
-      // write to file
-      Stamped<Transform> est_now, est_last;
-      _my_filter.GetEstimate(Time::now(), est_now);
-      _my_filter.GetEstimate(0.0, est_last);
-      double tmp, r_now, r_last;
-      est_now.getBasis().getEulerZYX(r_now, tmp, tmp);
-      est_last.getBasis().getEulerZYX(r_last, tmp, tmp);
-      _extra_file << est_now.getOrigin().x() - est_last.getOrigin().x() << " "
-		  << est_now.getOrigin().y() - est_last.getOrigin().y() << " "
-		  << est_now.getOrigin().z() - est_last.getOrigin().z() << " "
-		  << r_now - r_last << endl;
+		 << (_odom_time - _imu_time).toSec()  <<  endl;
 #endif
 
       if (_odom_active || _imu_active || _vo_active){
@@ -269,15 +274,11 @@ namespace estimation
 
 
 	// update filter with exact time stamps
-	if (_exact_time_mode){
-	  Time min_time = Time::now();
-	  if (_odom_active)  min_time = min(min_time, _odom_stamp);
-	  if (_imu_active)   min_time = min(min_time, _imu_stamp);
-	  if (_vo_active)    min_time = min(min_time, _vo_stamp);
-	  this->Update(min_time);
-	}
-	// update filter without exact time stamps, consider measurements as 'newest'
-	else this->Update(0.0);
+	Time min_time = Time::now();
+	if (_odom_active)  min_time = min(min_time, _odom_time);
+	if (_imu_active)   min_time = min(min_time, _imu_time);
+	if (_vo_active)    min_time = min(min_time, _vo_time);
+	this->Update(min_time);
       }
       _filter_mutex.unlock();
       
