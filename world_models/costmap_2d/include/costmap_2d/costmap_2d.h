@@ -133,7 +133,7 @@ namespace costmap_2d {
      */
     virtual void get_observations(std::vector<Observation>& observations);
 
-  protected:
+  private:
     std::list<Observation> buffer_;
     const ros::Duration keep_alive_;
     ros::Time last_updated_;

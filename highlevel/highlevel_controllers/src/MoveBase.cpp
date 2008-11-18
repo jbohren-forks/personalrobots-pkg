@@ -63,8 +63,8 @@ namespace ros {
 	std_msgs::Point origin;
 
         // Throw out point clouds that are old.
-        if((last_updated_ -  point_cloud.header.stamp) > max_transform_delay){
-          ROS_INFO("Discarding stale point cloud\n");
+        if((local_cloud.header.stamp -  point_cloud.header.stamp) > max_transform_delay){
+          ROS_DEBUG("Discarding stale point cloud\n");
           point_clouds_.pop_front();
           continue;
         }
@@ -93,17 +93,18 @@ namespace ros {
         }
         catch(libTF::TransformReference::LookupException& ex)
         {
-          ROS_ERROR("Lookup exception: %s\n", ex.what());
+          ROS_ERROR("Lookup exception for %s : %s\n", frame_id_.c_str(), ex.what());
           break;
         }
         catch(libTF::TransformReference::ExtrapolateException& ex)
         {
-          ROS_DEBUG("No transform available yet - have to try later: %s . Buffer size is %d\n", ex.what(), point_clouds_.size());
+          ROS_INFO("No transform available yet for %s - have to try later: %s . Buffer size is %d\n", 
+		    frame_id_.c_str(), ex.what(), point_clouds_.size());
           break;
         }
         catch(libTF::TransformReference::ConnectivityException& ex)
         {
-          ROS_ERROR("Connectivity exception: %s\n", ex.what());
+          ROS_ERROR("Connectivity exception for %s: %s\n", frame_id_.c_str(), ex.what());
           break;
         }
         catch(...)
@@ -723,7 +724,7 @@ namespace ros {
         start_t = start.tv_sec + double(start.tv_usec) / 1e6;
         end_t = end.tv_sec + double(end.tv_usec) / 1e6;
         t_diff = end_t - start_t;
-        ROS_INFO("Cycle Time: %.3f\n", t_diff);
+        ROS_DEBUG("Cycle Time: %.3f\n", t_diff);
 
         if(!planOk){
           // Zero out the velocities
@@ -735,8 +736,6 @@ namespace ros {
           publishPath(false, localPlan);
         }
       }
-
-      ROS_INFO("Dispatching velocity vector: (%f, %f, %f)\n", cmdVel.vx, cmdVel.vy, cmdVel.vw);
 
       publish("cmd_vel", cmdVel);
       publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
@@ -911,7 +910,7 @@ namespace ros {
 	//Avoids laser race conditions.
 	if (isInitialized()) {
 
-	  ROS_INFO("Starting cost map update/n");
+	  ROS_DEBUG("Starting cost map update/n");
 	  lock();
 	  // Aggregate buffered observations across 3 sources
 	  std::vector<costmap_2d::Observation> observations;
@@ -919,7 +918,7 @@ namespace ros {
 	  tiltScanBuffer_->get_observations(observations);
 	  stereoCloudBuffer_->get_observations(observations);
 
-	  ROS_INFO("Applying update with %d observations/n", observations.size());
+	  ROS_DEBUG("Applying update with %d observations/n", observations.size());
 	  // Apply to cost map
 	  struct timeval curr;
 	  gettimeofday(&curr,NULL);
@@ -931,7 +930,7 @@ namespace ros {
 	  t_diff = last_t - curr_t;
 	  publishLocalCostMap();
 	  unlock();
-	  ROS_INFO("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+	  ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
 	}
 
         d->sleep();
