@@ -14,5 +14,6 @@ rospack_add_library(pycalonder src/py.cpp src/randomized_tree.cpp src/rtree_clas
 set_target_properties(pycalonder PROPERTIES OUTPUT_NAME calonder PREFIX "")
 rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers -save-temps -march=pentium3 -msse3)
 #rospack_add_compile_flags(pycalonder -Wno-missing-field-initializers)
+target_link_libraries(pycalonder cblas)
 
 rospack_add_pyunit(test/directed.py)

@@ -18,6 +18,10 @@ public:
 
   ~BruteForceMatcher();
 
+  // TODO: mostly to get Python bindings working, probably don't want size to be changeable
+  BruteForceMatcher() : threshold_(std::numeric_limits<float>::max()), size_(0) {}
+  inline void setSize(size_t size) { size_ = size; }
+  
   // BruteForceMatcher takes ownership of signature's memory
   void addSignature(float* signature, Data const& data);
 

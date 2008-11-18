@@ -4,9 +4,6 @@
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 
-#include <boost/numeric/ublas/vector.hpp>
-#include <boost/numeric/ublas/vector_sparse.hpp>
-#include <boost/numeric/ublas/io.hpp>
 #include <highgui.h>
 #include <cvwimage.h>
 #include <cstdio>
@@ -17,8 +14,68 @@ using namespace features;
 #include "generated.i"
 
 typedef struct {
-    PyObject_HEAD
-    RTreeClassifier *classifier;
+  PyObject_HEAD
+  float *data;
+  int size;
+} signature_t;
+
+// How to handle transfer of ownership by matcher.addSignature?
+static void
+signature_dealloc(PyObject *self)
+{
+  //signature_t *pc = (signature_t*)self;
+  //free(pc->data);
+  PyObject_Del(self);
+}
+
+/* Method table */
+static PyMethodDef signature_methods[] = {
+  {NULL, NULL},
+};
+
+static PyObject *
+signature_GetAttr(PyObject *self, char *attrname)
+{
+  return Py_FindMethod(signature_methods, self, attrname);
+}
+
+static PyTypeObject signature_Type = {
+    PyObject_HEAD_INIT(&PyType_Type)
+    0,
+    "signature",
+    sizeof(signature_t),
+    0,
+    (destructor)signature_dealloc,
+    0,
+    (getattrfunc)signature_GetAttr,
+    0,
+    0,
+    0, // repr
+    0,
+    0,
+    0,
+
+    0,
+    0,
+    0,
+    0,
+    0,
+    
+    0,
+    
+    Py_TPFLAGS_CHECKTYPES,
+
+    0,
+    0,
+    0,
+    0
+
+    /* the rest are NULLs */
+};
+
+typedef struct {
+  PyObject_HEAD
+  RTreeClassifier *classifier;
 } classifier_t;
 
 static void
@@ -38,6 +95,7 @@ PyObject *setThreshold(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
+// TODO: allow specifying reduced dimension for compressive sensing
 PyObject *train(PyObject *self, PyObject *args)
 {
   classifier_t *pc = (classifier_t*)self;
@@ -62,7 +120,7 @@ PyObject *train(PyObject *self, PyObject *args)
 
   Rng rng( 0 );
   //pc->classifier->train(base_set, rng, 25, 10, 20);
-  pc->classifier->train(base_set, rng, 25, 10, 1000);
+  pc->classifier->train(base_set, rng, 25, 10, 1000, base_set.size());
 
   Py_RETURN_NONE;
 }
@@ -86,7 +144,7 @@ PyObject *Cread(PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-PyObject *getSparseSignature(PyObject *self, PyObject *args)
+PyObject *getSignature(PyObject *self, PyObject *args)
 {
   IplImage *input;
   {
@@ -98,12 +156,10 @@ PyObject *getSparseSignature(PyObject *self, PyObject *args)
     cvSetData(input, imgdata, x);
   }
   classifier_t *pc = (classifier_t*)self;
-  wrapped_SparseSignature_t *object = PyObject_NEW(wrapped_SparseSignature_t, &wrapped_SparseSignature_Type);
-  //new(&object->c) SparseSignature();
-  new(&object->c) SparseSignature(pc->classifier->getSparseSignature(input));
-  //object->c = pc->classifier->getSparseSignature(input);
-  //SparseSignature sig = pc->classifier->getSparseSignature(input);
-  //object->c.assign_temporary(sig);
+  signature_t *object = PyObject_NEW(signature_t, &signature_Type);
+  object->size = pc->classifier->classes();
+  // TODO: alignment
+  object->data = (float*) malloc(object->size * sizeof(float));
   return (PyObject*)object;
 }
 
@@ -113,7 +169,7 @@ static PyMethodDef classifier_methods[] = {
   {"train", train, METH_VARARGS},
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},
-  {"getSparseSignature", getSparseSignature, METH_VARARGS},
+  {"getSignature", getSignature, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -131,10 +187,12 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "O", &sig))
     return NULL;
 
+  // TODO: proper memory management
   // Py_INCREF(tag);
 
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
-  pm->c->addSignature(ps->c, 0);
+  signature_t *ps = (signature_t*)sig;
+  pm->c->setSize(ps->size); // TODO: this is kind of a hack
+  pm->c->addSignature(ps->data, 0);
   Py_RETURN_NONE;
 }
 
@@ -148,30 +206,19 @@ PyObject *wrapped_BruteForceMatcher_findMatch(PyObject *self, PyObject *args)
 
   if (!PyArg_ParseTuple(args, "O|s#", &sig, &predicates, &predicates_size))
     return NULL;
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)sig;
+  signature_t *ps = (signature_t*)sig;
 
   float distance;
   int index;
   if (predicates == NULL)
-    index = pm->c->findMatch(ps->c, &distance);
+    index = pm->c->findMatch(ps->data, &distance);
   else {
-    index = pm->c->findMatchPredicated(ps->c, predicates, &distance);
+    index = pm->c->findMatchPredicated(ps->data, predicates, &distance);
   }
   if (index == -1)
     Py_RETURN_NONE;
   else
     return Py_BuildValue("id", index, distance);
-}
-
-PyObject *wrapped_SparseSignature_dump(PyObject *self, PyObject *args)
-{
-  wrapped_SparseSignature_t *ps = (wrapped_SparseSignature_t*)self;
-
-  PyObject *r = PyTuple_New(ps->c.size());
-  for (size_t i = 0; i < ps->c.size(); i++) {
-    PyTuple_SetItem(r, i, PyFloat_FromDouble(ps->c[i]));
-  }
-  return r;
 }
 
 static PyTypeObject classifier_Type = {

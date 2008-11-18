@@ -37,13 +37,13 @@ class TestDirected(unittest.TestCase):
         sigs = []
         for (x,y) in kp:
           patch = im.crop((x,y,x+32,y+32))
-          sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
+          sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
           sigs.append(sig)
           ma.addSignature(sig)
 
         for (i,(x,y)) in enumerate(kp):
           patch = im.crop((x,y,x+32,y+32))
-          sig = cl.getSparseSignature(patch.tostring(), patch.size[0], patch.size[1])
+          sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
           (index, distance) = ma.findMatch(sig)
           self.assert_(i == index)
 
