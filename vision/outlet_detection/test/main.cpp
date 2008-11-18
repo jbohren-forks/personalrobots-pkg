@@ -11,12 +11,13 @@
 #include "star_detector/detector.h"
 #include "star_detector/keypoint.h"
 #include "boost/foreach.hpp"
-#include "mcutils/mcutils.h"
 #include <fstream>
+#include "mcutils/mcutils.h"
 #include <climits>
-#include <string>
+#include <string> 
 
 using namespace features;
+using namespace std;
 
 int main( int argc, char** argv )
 {
