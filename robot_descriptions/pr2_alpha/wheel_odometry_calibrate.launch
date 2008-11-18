@@ -1,0 +1,10 @@
+<launch>
+<param name="base_controller/odom_publish_rate" value="30.0"/>
+<node pkg="mechanism_control" type="spawner.py" args="controllers_base_lab.xml" output="screen"/>
+
+<param name="odom_calibration/rot_vel" value="0.5"/>
+<param name="odom_calibration/trans_vel" value="0.0"/>
+<param name="odom_calibration/duration" value="10.0"/>
+<node pkg="wheel_odometry_calibration" type="wheel_odometry_calibration" output="screen"/>
+</launch>
+
