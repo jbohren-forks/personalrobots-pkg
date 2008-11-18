@@ -37,8 +37,8 @@
 
 #include "rosconsole/rosconsole.h"
 
-#include "sensor/sensor_range/rangesensor.h"
-#include "sensor/sensor_odometry/odometrysensor.h"
+#include "gmapping/sensor/sensor_range/rangesensor.h"
+#include "gmapping/sensor/sensor_odometry/odometrysensor.h"
 
 // compute linear index for given map coords
 #define MAP_IDX(sx, i, j) ((sx) * (j) + (i))
