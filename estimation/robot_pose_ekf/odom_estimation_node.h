@@ -97,14 +97,16 @@ private:
   MatrixWrapper::ColumnVector _vel_desi;
   tf::Transform _odom_meas, _imu_meas,_vo_meas;
   ros::Time _odom_time, _imu_time, _vo_time, _filter_time;
+  ros::Time _odom_stamp, _imu_stamp, _vo_stamp;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
-  double _freq;
+  bool _exact_time_mode;
+  double _freq, _timeout;
 
   // mutex
   ros::thread::mutex _filter_mutex;
 
   // log files for debugging
-  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file;
+  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file, _time_file;
 
 
 }; // class

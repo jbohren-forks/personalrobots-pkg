@@ -64,12 +64,16 @@ namespace estimation
 
     // paramters
     param("odom_estimation/freq", _freq, 30.0);
+    param("odom_estimation/sensor_timeout", _timeout, 0.5);
+    param("odom_estimation/exact_time_mode", _exact_time_mode, false);
+
 
 #ifdef __EKF_DEBUG_FILE__
     _odom_file.open("odom_file.txt");
     _imu_file.open("imu_file.txt");
     _vo_file.open("vo_file.txt");
     _corr_file.open("corr_file.txt");
+    _time_file.open("time_file.txt");
 #endif
   };
 
@@ -82,6 +86,7 @@ namespace estimation
     _imu_file.close();
     _vo_file.close();
     _corr_file.close();
+    _time_file.close();
 #endif
   };
 
@@ -94,8 +99,8 @@ namespace estimation
     // update filter
     if ( _my_filter.IsInitialized() )  {
       // update filter
-      _my_filter.Update(_odom_time, _odom_active, _imu_time,  _imu_active, _vo_time,   _vo_active,  time);
-      //_my_filter.Update(time, _odom_active, time,  _imu_active, time, _vo_active,  time);
+      _my_filter.Update(_odom_active,_imu_active, _vo_active,  time);
+      //_my_filter.Update(_odom_active,_imu_active, _vo_active,  0.0);
       
 #ifdef __EKF_DEBUG_FILE__
       // write to file
@@ -125,24 +130,24 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _odom_time = _odom.header.stamp;
+    _odom_stamp = _odom.header.stamp;
+    _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _my_filter.AddMeasurement(_odom_meas, "odom", "base", _odom.header.stamp);
+    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"odom", "base"));
+    _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
     double tmp, yaw;
-    double imu_time = _imu_time.to_double();
-    double odom_time = _odom_time.to_double();
     _odom_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
-    _filter_mutex.unlock();
-    _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << "  " << odom_time - imu_time << endl;
-#else
-    _filter_mutex.unlock();
+    _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << "  " << endl;
 #endif
 
     // activate odom
-    if (!_odom_active) _odom_active = true;
+    if (!_odom_active){
+      _odom_active = true;
+      ROS_INFO("Odom sensor activated");      
+    }
   };
 
 
@@ -153,9 +158,10 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _imu_time = _imu.header.stamp;
+    _imu_stamp = _imu.header.stamp;
+    _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
-    _my_filter.AddMeasurement(_imu_meas, "imu", "base", _imu.header.stamp);
+    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base"));
     _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -166,7 +172,10 @@ namespace estimation
 #endif
 
     // activate imu
-    if (!_imu_active) _imu_active = true;
+   if (!_imu_active) {
+     _imu_active = true;
+      ROS_INFO("Imu sensor activated");      
+   }
   };
 
 
@@ -177,13 +186,17 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    _vo_time =  _vo.header.stamp;
+    _vo_stamp =  _vo.header.stamp;
+    _vo_time = Time::now();
     PoseMsgToTF(_vo.pose, _vo_meas);
-    _my_filter.AddMeasurement(_vo_meas, "vo", "base", _vo.header.stamp);
+    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo.header.stamp, "vo", "base"));
     _filter_mutex.unlock();
 
     // activate vo
-    if (!_vo_active) _vo_active = true;
+    if (!_vo_active){
+      _vo_active = true;
+      ROS_INFO("VO sensor activated"); 
+    }
   };
 
 
@@ -204,16 +217,47 @@ namespace estimation
 
 
 
+
   // filter loop
   void odom_estimation_node::spin()
   {
-    while (1){
-      // update filter
+    while (ok()){
       _filter_mutex.lock();
-      if (_odom_time.to_double() < _imu_time.to_double())
-	this->Update(_odom_time);
-      else
-	this->Update(_imu_time);
+#ifdef __EKF_DEBUG_FILE__
+      // write to file
+      _time_file << (Time::now() - _odom_time).toSec()  << " " << (Time::now() - _imu_time).toSec() << " "
+		 << (Time::now() - _odom_stamp).toSec() << " " << (Time::now() - _imu_stamp).toSec() << " "
+		 << (_odom_stamp - _imu_stamp).toSec()  <<  endl;
+#endif
+
+      if (_odom_active || _imu_active || _vo_active){
+
+	// check if sensors are still active
+	if (_odom_active && (Time::now() - _odom_time).toSec() > _timeout){
+	  _odom_active = false;
+	  ROS_INFO("Odom sensor not active any more");
+	}
+	if (_imu_active && (Time::now() - _imu_time).toSec() > _timeout){
+	  _imu_active = false;
+	  ROS_INFO("Imu sensor not active any more");
+	}
+	if (_vo_active && (Time::now() - _vo_time).toSec() > _timeout){
+	  _vo_active = false;
+	  ROS_INFO("VO sensor not active any more");
+	}
+
+
+	// update filter with exact time stamps
+	if (_exact_time_mode){
+	  Time min_time = Time::now();
+	  if (_odom_active)  min_time = min(min_time, _odom_stamp);
+	  if (_imu_active)   min_time = min(min_time, _imu_stamp);
+	  if (_vo_active)    min_time = min(min_time, _vo_stamp);
+	  this->Update(min_time);
+	}
+	// update filter without exact time stamps, consider measurements as 'newest'
+	else this->Update(0.0);
+      }
       _filter_mutex.unlock();
       
       // sleep
