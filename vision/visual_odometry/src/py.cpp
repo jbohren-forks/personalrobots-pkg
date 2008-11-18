@@ -679,7 +679,7 @@ PyObject *inliers(PyObject *self, PyObject *args)
 {
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
 
-  CvMat *inliers0, *inliers1;
+  CvMat *inliers0 = NULL, *inliers1 = NULL;
   pe->getInliers(inliers0, inliers1);
 
   PyObject *r;

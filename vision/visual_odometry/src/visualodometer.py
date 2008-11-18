@@ -278,6 +278,7 @@ class VisualOdometer:
     print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
   targetkp = 400
+
   def find_keypoints(self, frame):
     self.timer['feature'].start()
     frame.kp2d = self.feature_detector.detect(frame, self.targetkp)
@@ -308,7 +309,7 @@ class VisualOdometer:
     self.timer['solve'].start()
     if pairs != []:
       #r = self.pe.estimate(k0, k1, pairs)
-      r = self.pe.estimate(k1, k0, [ (b,a) for (a,b) in pairs ])
+      r = self.pe.estimate(k1, k0, [ (b,a) for (a,b) in pairs ], polish)
     else:
       r = None
     self.timer['solve'].stop()
@@ -370,12 +371,6 @@ class VisualOdometer:
 
     self.pose = frame.pose
     self.prev_frame = frame
-
-    if 0:
-      diff = self.pose.compare(self.keyframe.pose)
-      if (max(diff[1:]) > self.angle_keypoint_thresh):
-        self.keyframe = frame
-        print "KEYFRAME", frame.id
 
     self.num_frames += 1
 
