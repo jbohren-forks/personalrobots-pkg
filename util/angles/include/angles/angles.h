@@ -35,6 +35,7 @@
 #ifndef ANGLES_H
 #define ANGLES_H
 
+#include <algorithm>
 #include <cmath>
 
 
