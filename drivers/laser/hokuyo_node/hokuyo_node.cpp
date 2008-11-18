@@ -71,13 +71,12 @@ Subscribes to (name/type):
 
 Publishes to (name / type):
 - @b "scan"/<a href="../../std_msgs/html/classstd__msgs_1_1LaserScan.html">std_msgs/LaserScan</a> : scan data from the laser.
-- @b "diagnostic"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
+- @b "/diagnostics"/<a href="../../robot_msgs/html/classrobot__msgs_1_1DiagnosticMessage.html">robot_msgs/DiagnosticMessage</a> : diagnostic status information.
 
 <hr>
 
 @section services
  - @b "~self_test"    :  SelfTest service provided by SelfTest helper class
- - @b "~diagnostics"  :  DiagnosticMessage provided by DiagnosticUpdater helper class
 
 @section parameters ROS parameters
 
@@ -111,8 +110,6 @@ Reads the following parameters from the parameter server
 #include "diagnostic_updater/diagnostic_updater.h"
 
 #include "hokuyo.h"
-
-
 
 using namespace std;
 
@@ -188,8 +185,6 @@ public:
       max_ang_ = M_PI/2.0;
     }
 
-    printf("%f --> %f\n", min_ang_, max_ang_);
-
     param("~cluster", cluster_, 1);
     param("~skip", skip_, 1);
     param("~port", port_, string("/dev/ttyACM0"));
@@ -213,7 +208,7 @@ public:
 
     diagnostic_.addUpdater( &HokuyoNode::connectionStatus );
     diagnostic_.addUpdater( &HokuyoNode::freqStatus );
-    //    diagnostic_.addUpdater( &HokuyoNode::timeDiagnostic );
+
   }
 
   ~HokuyoNode()
@@ -240,6 +235,15 @@ public:
 
       if (calibrate_time_)
         laser_.calcLatency(true, min_ang_, max_ang_, cluster_, skip_);
+
+      hokuyo::LaserConfig config;
+     
+      laser_.getConfig(config);
+
+      set_param("~min_ang_limit", config.min_angle);
+      set_param("~max_ang_limit", config.max_angle);
+      set_param("~min_range", config.min_range);
+      set_param("~max_range", config.max_range);
 
       int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
