@@ -93,11 +93,13 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
+#if 0 // 0 for no sba
       fillFrames(&mFramePoses, mActiveKeyFrames.front()->mFrameIndex,
           mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
           full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
 
       levmarq_sba_->optimize(&free_frames, &fixed_frames, &mTracks);
+#endif
 
       cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
@@ -305,12 +307,12 @@ void VOSparseBundleAdj::fillFrames(const vector<FramePose*>* frames,
       fixed_win_size++;
       rfixed_frames.push_back(fp);
       if (fixed_win_size>=max_fixed_window_size) {
-        // done
+        // done. fixed window is full
         break;
       }
     } else {
-      // done
-      assert(fp->mIndex == oldest_frame_index_in_tracks);
+      // done. fixed window is not full but no more window
+      // referenced in the tracks.
       break;
     }
   }

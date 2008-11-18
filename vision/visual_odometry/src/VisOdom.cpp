@@ -169,18 +169,33 @@ PoseEstFrameEntry::~PoseEstFrameEntry(){
 }
 
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses) {
+
   // @TODO: for now, turn poses into a CvMat of numOfKeyFrames x 7 (index, rod[3], shift[3])
-  double _poses[framePoses.size()*7];
+    double _poses[framePoses.size()*7];
   CvMat  _framePoses = cvMat(framePoses.size(), 7, CV_64FC1, _poses);
   int i=0;
   for (vector<FramePose*>::const_iterator iter= framePoses.begin(); iter!=framePoses.end(); iter++,i++) {
-    _poses[i*7 + 0] = (*iter)->mIndex;
-    _poses[i*7 + 1] = (*iter)->mRod.x;
-    _poses[i*7 + 2] = (*iter)->mRod.y;
-    _poses[i*7 + 3] = (*iter)->mRod.z;
-    _poses[i*7 + 4] = (*iter)->mShift.x;
-    _poses[i*7 + 5] = (*iter)->mShift.y;
-    _poses[i*7 + 6] = (*iter)->mShift.z;
+    FramePose* fp = *iter;
+
+    // make sure the transformation matrix and the rodrigues and shift vectors are in sync
+    double params_local_to_global_data[6];
+    CvMat  params_local_to_global = cvMat(6, 1, CV_64FC1, params_local_to_global_data);
+    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
+    fp->mRod.x = params_local_to_global_data[0];
+    fp->mRod.y = params_local_to_global_data[1];
+    fp->mRod.z = params_local_to_global_data[2];
+
+    fp->mShift.x = params_local_to_global_data[3];
+    fp->mShift.y = params_local_to_global_data[4];
+    fp->mShift.z = params_local_to_global_data[5];
+
+    _poses[i*7 + 0] = fp->mIndex;
+    _poses[i*7 + 1] = fp->mRod.x;
+    _poses[i*7 + 2] = fp->mRod.y;
+    _poses[i*7 + 3] = fp->mRod.z;
+    _poses[i*7 + 4] = fp->mShift.x;
+    _poses[i*7 + 5] = fp->mShift.y;
+    _poses[i*7 + 6] = fp->mShift.z;
   }
   if (i>0) {
     string framePosesFilename("framePoses.xml");
