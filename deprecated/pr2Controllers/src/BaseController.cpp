@@ -9,7 +9,8 @@
 
 #include <mechanism_model/joint.h>
 
-#include <math_utils/math_utils.h>
+#include <angles/angles.h>
+#include <control_toolbox/filters.h>
 
 #include <newmat10/newmat.h>
 #include <newmat10/newmatio.h>
@@ -25,7 +26,7 @@
 using namespace controller;
 using namespace PR2;
 using namespace NEWMAT;
-using namespace math_utils;
+using namespace angles;
 
 static pthread_mutex_t dataMutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -173,13 +174,13 @@ void BaseController::receiveBaseCommandMessage(){
   maxXDot = maxYDot = maxYawDot = 1; //Until we start reading the xml file for parameters
  
   /*
-  double vx = clamp((double)baseCommandMessage.axes[1], -maxXDot, maxXDot);
-  double vy = clamp((double)baseCommandMessage.axes[0], -maxYDot, maxYDot);
-  double vyaw = clamp((double)baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
+  double vx = filters::clamp((double)baseCommandMessage.axes[1], -maxXDot, maxXDot);
+  double vy = filters::clamp((double)baseCommandMessage.axes[0], -maxYDot, maxYDot);
+  double vyaw = filters::clamp((double)baseCommandMessage.axes[2], -maxYawDot, maxYawDot);
   */
-  double vx = clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
-  double vy = clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
-  double vyaw = clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
+  double vx = filters::clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
+  double vy = filters::clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
+  double vyaw = filters::clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
 
   printf(" receive vx: %f\n", vx);
   commandTest.element(0,0) = vx;
@@ -188,9 +189,9 @@ void BaseController::receiveBaseCommandMessage(){
 
 
   /* 
-  double vx = clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
-  double vy = clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
-  double vyaw = clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
+  double vx = filters::clamp((double)baseCommandMessage.vx, -maxXDot, maxXDot);
+  double vy = filters::clamp((double)baseCommandMessage.vy, -maxYDot, maxYDot);
+  double vyaw = filters::clamp((double)baseCommandMessage.vw, -maxYawDot, maxYawDot);
   */
   setVelocity(vx, vy, vyaw);
 }
