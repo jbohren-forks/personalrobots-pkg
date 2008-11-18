@@ -61,9 +61,12 @@ class imgAdapted:
     return self.i.data
 
 class VO:
+
   def __init__(self):
     rospy.TopicSub('/videre/images', ImageArray, self.handle_array)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
+
+    self.pub_vo = rospy.Publisher("/vo", Pose)
 
     self.vo = None
 
@@ -85,7 +88,10 @@ class VO:
       pose = self.vo.handle_frame(af)
       print pose.xform(0,0,0)
       p = Pose()
-      Pose.header.timestamp = 0
+      p.v = pose.tolist()
+      p.inliers = self.vo.inl
+      p.header = iar.header
+      self.pub_vo.publish(p)
 
 def main(args):
 

@@ -30,7 +30,7 @@ import camera
 
 import numpy
 import numpy.linalg
-#import pylab
+import pylab
 
 import cairo
 import array
@@ -41,38 +41,51 @@ import visualize
 def imgAdapted(im):
     return Image.fromstring({'mono8' : 'L', 'rgb24' : 'RGB'}[im.colorspace], (im.width, im.height), im.data).convert("L")
 
-filename = sys.argv[1]
+ds = {}
 
-cam = None
-prev_frame = None
-framecounter = 0
-sos = numpy.array([.0, .0, .0])
+for filename in sys.argv[1:]:
+  cam = None
+  prev_frame = None
+  framecounter = 0
+  all_ds = []
+  sos = numpy.array([.0, .0, .0])
 
-for topic, msg in rosrecord.logplayer(filename):
-  if rospy.is_shutdown():
-    break
+  for topic, msg in rosrecord.logplayer(filename):
+    if rospy.is_shutdown():
+      break
 
-  if topic == "videre/cal_params" and not cam:
-    cam = camera.VidereCamera(msg.data)
+    if topic == "videre/cal_params" and not cam:
+      cam = camera.VidereCamera(msg.data)
 
-    vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD())
+      vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD())
 
-  if cam and topic == "videre/images":
-    imgR = imgAdapted(msg.images[0])
-    imgL = imgAdapted(msg.images[1])
-    assert msg.images[0].label == "right_rectified"
-    assert msg.images[1].label == "left_rectified"
+    if cam and topic == "videre/images":
+      imgR = imgAdapted(msg.images[0])
+      imgL = imgAdapted(msg.images[1])
+      assert msg.images[0].label == "right_rectified"
+      assert msg.images[1].label == "left_rectified"
 
-    frame = SparseStereoFrame(imgL, imgR)
-    vo.find_keypoints(frame)
-    vo.find_disparities(frame)
-    vo.collect_descriptors(frame)
-    if prev_frame:
-      pairs = vo.temporal_match(prev_frame, frame)
-      solution = vo.solve(prev_frame.kp, frame.kp, pairs, True)
-      (inl, rot, shift) = solution
-      sos += numpy.array(shift)
-      print sos
-    prev_frame = frame
+      frame = SparseStereoFrame(imgL, imgR)
+      vo.find_keypoints(frame)
+      vo.find_disparities(frame)
+      #frame.kp = [ (x,y,d) for (x,y,d) in frame.kp if d > 8]
+      all_ds += [ d for (x,y,d) in frame.kp ]
 
-    framecounter += 1
+      vo.collect_descriptors(frame)
+      if prev_frame:
+        pairs = vo.temporal_match(prev_frame, frame)
+        solution = vo.solve(prev_frame.kp, frame.kp, pairs, True)
+        (inl, rot, shift) = solution
+        sos += numpy.array(shift)
+        print sos
+      prev_frame = frame
+
+      framecounter += 1
+  ds[filename] = all_ds
+
+for i,(filename, ds) in enumerate(ds.items()):
+  pylab.figure(i+1)
+  pylab.title(filename)
+  pylab.hist(ds, 50, normed=1, facecolor='green', alpha=0.75)
+
+pylab.show()
