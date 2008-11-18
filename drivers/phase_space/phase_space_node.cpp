@@ -83,6 +83,8 @@ void PhaseSpaceNode::startStreaming()
 
 bool PhaseSpaceNode::spin()
 { 
+
+  unsigned int prev_frame_num = -1 ;
   while (ok())             // While the node has not been shutdown
   {
     usleep(1) ;
@@ -94,13 +96,17 @@ bool PhaseSpaceNode::spin()
     n_markers = grabMarkers(snapshot) ;
     n_bodies =  grabBodies(snapshot) ;
     
-    if (n_markers > 0 || n_bodies > 0)
+    if (prev_frame_num != snapshot.frameNum)            // Make sure that we're not reading stale data
     {
-      grabTime(snapshot) ;
-      publish("phase_space_snapshot", snapshot) ;
-      
-      if (snapshot.frameNum % 48 == 0)
-        dispSnapshot(snapshot) ;
+      prev_frame_num = snapshot.frameNum ;
+      if (n_markers > 0 || n_bodies > 0)
+      {
+        grabTime(snapshot) ;
+        publish("phase_space_snapshot", snapshot) ;
+        
+        if (snapshot.frameNum % 48 == 0)
+          dispSnapshot(snapshot) ;
+      }
     }
   }  
   return true ;
