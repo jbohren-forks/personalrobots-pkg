@@ -72,6 +72,10 @@ public:
   /// callback function for vo data
   void vo_callback();
 
+  /// filter loop
+  void spin();
+
+
 private:
 
   /// update filter
@@ -92,8 +96,9 @@ private:
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
   tf::Transform _odom_meas, _imu_meas,_vo_meas;
-  ros::Time _odom_time, _imu_time, _vo_time;
+  ros::Time _odom_time, _imu_time, _vo_time, _filter_time;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
+  double _freq;
 
   // mutex
   ros::thread::mutex _filter_mutex;

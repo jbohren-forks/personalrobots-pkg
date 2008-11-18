@@ -40,7 +40,7 @@ using namespace std;
 using namespace ros;
 using namespace tf;
 
-//#define __EKF_DEBUG_FILE__
+#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
@@ -61,6 +61,9 @@ namespace estimation
     subscribe("odom",         _odom, &odom_estimation_node::odom_callback, 10);
     subscribe("imu_data",     _imu,  &odom_estimation_node::imu_callback,  10);
     subscribe("vo_data",      _vo,   &odom_estimation_node::vo_callback,   10);
+
+    // paramters
+    param("odom_estimation/freq", _freq, 30.0);
 
 #ifdef __EKF_DEBUG_FILE__
     _odom_file.open("odom_file.txt");
@@ -92,6 +95,7 @@ namespace estimation
     if ( _my_filter.IsInitialized() )  {
       // update filter
       _my_filter.Update(_odom_time, _odom_active, _imu_time,  _imu_active, _vo_time,   _vo_active,  time);
+      //_my_filter.Update(time, _odom_active, time,  _imu_active, time, _vo_active,  time);
       
 #ifdef __EKF_DEBUG_FILE__
       // write to file
@@ -124,15 +128,17 @@ namespace estimation
     _odom_time = _odom.header.stamp;
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
     _my_filter.AddMeasurement(_odom_meas, "odom", "base", _odom.header.stamp);
-    // update filter
-    this->Update(_odom_time);
-    _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
     double tmp, yaw;
+    double imu_time = _imu_time.to_double();
+    double odom_time = _odom_time.to_double();
     _odom_meas.getBasis().getEulerZYX(yaw, tmp, tmp);
-    _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << endl;
+    _filter_mutex.unlock();
+    _odom_file << _odom_meas.getOrigin().x() << " " << _odom_meas.getOrigin().y() << "  " << yaw << "  " << odom_time - imu_time << endl;
+#else
+    _filter_mutex.unlock();
 #endif
 
     // activate odom
@@ -193,6 +199,26 @@ namespace estimation
 
     // active
     //if (!_vel_active) _vel_active = true;
+  };
+
+
+
+
+  // filter loop
+  void odom_estimation_node::spin()
+  {
+    while (1){
+      // update filter
+      _filter_mutex.lock();
+      if (_odom_time.to_double() < _imu_time.to_double())
+	this->Update(_odom_time);
+      else
+	this->Update(_imu_time);
+      _filter_mutex.unlock();
+      
+      // sleep
+      usleep(1e6/_freq);
+    }
   };
 
 
