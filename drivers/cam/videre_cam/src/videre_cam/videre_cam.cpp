@@ -219,6 +219,13 @@ videre_cam::VidereCam::start()
   setControlRegister(0xFF000, qval1);
   setControlRegister(0xFF000, qval2);
   
+  usleep(250000);
+  setControlRegister(0xFF000, qval1);
+  setControlRegister(0xFF000, qval2);
+  
+  usleep(250000);
+  setControlRegister(0xFF000, qval1);
+  setControlRegister(0xFF000, qval2);
 }
 
 
