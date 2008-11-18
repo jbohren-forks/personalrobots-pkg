@@ -6,7 +6,7 @@
   <include file="demo.machine" />
 
 <!-- pr2_etherCAT -->
- <node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
+<node machine="xenomai_root" pkg="pr2_etherCAT" type="pr2_etherCAT" args="-i rteth0 -x /robotdesc/pr2"/>
 <!-- PR2 Calibration -->
   <include file="$(find wg_robot_description)/robo_dev_head/calibrate.launch"/>
 
@@ -20,13 +20,18 @@
   <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="tilt_laser" />
-    <param name="min_ang_degrees" type="double" value="-80.0" />
-    <param name="max_ang_degrees" type="double" value="80.0" />
+    <param name="min_ang_degrees" type="double" value="-70.0" />
+    <param name="max_ang_degrees" type="double" value="70.0" />
+    <param name="skip" type="int" value="0" />
   </node>
 
 <!-- Runtime Diagnostics Logging -->
 <node pkg="rosrecord" type="rosrecord" args="-f /u/tfoote/runtime_logs/prg_runtime.bag /diagnostics" />
 
+
+  <include file="better_head_control.launch" />
+  <include file="teleop_head.launch" />
+  <include file="control_tilt_laser.launch" />
 
 </launch>
 
