@@ -682,16 +682,21 @@ PyObject *inliers(PyObject *self, PyObject *args)
   CvMat *inliers0, *inliers1;
   pe->getInliers(inliers0, inliers1);
 
-  PyObject *r = PyList_New(inliers0->rows);
-  for (int i = 0; i < inliers0->rows; i++) {
-    PyList_SetItem(r, i, Py_BuildValue("((ddd),(ddd))",
-        cvGetReal2D(inliers0, i, 0),
-        cvGetReal2D(inliers0, i, 1),
-        cvGetReal2D(inliers0, i, 2),
-        cvGetReal2D(inliers1, i, 0),
-        cvGetReal2D(inliers1, i, 1),
-        cvGetReal2D(inliers1, i, 2)
-        ));
+  PyObject *r;
+  if (inliers0 != NULL && inliers1 != NULL) {
+    r = PyList_New(inliers0->rows);
+    for (int i = 0; i < inliers0->rows; i++) {
+      PyList_SetItem(r, i, Py_BuildValue("((ddd),(ddd))",
+          cvGetReal2D(inliers0, i, 0),
+          cvGetReal2D(inliers0, i, 1),
+          cvGetReal2D(inliers0, i, 2),
+          cvGetReal2D(inliers1, i, 0),
+          cvGetReal2D(inliers1, i, 1),
+          cvGetReal2D(inliers1, i, 2)
+          ));
+    }
+  } else {
+    r = PyList_New(0);
   }
 
   return r;
