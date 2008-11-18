@@ -316,7 +316,7 @@
 
     <!-- base, torso and arms -->
     <include embedded="true">
-      <xi:include href="pr2.model" />
+      <xi:include href="pr2_prototype1.model" />
     </include>
 
   </model:physical>
