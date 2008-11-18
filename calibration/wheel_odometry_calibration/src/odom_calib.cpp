@@ -156,7 +156,8 @@ namespace calibration
     while (!(_odom_active && _imu_active && _mech_active)){
       _vel.vx = 0; _vel.vy = 0;  _vel.vw = 0;
       publish("cmd_vel", _vel);
-      usleep(50000);
+      ROS_INFO("Waiting for imu sensor and wheel odometry to start");
+      usleep(1e6);
     }
 
     // get time
@@ -168,6 +169,7 @@ namespace calibration
 
   void odom_calib::spin()
   {
+    ROS_INFO("Running calibration of wheel radius");
     while (!_completed){
       // still moving
       Duration duration = Time::now() - _time_begin;
@@ -204,23 +206,21 @@ namespace calibration
     // rotation
     double d_imu  = _imu_end  - _imu_begin;
     double d_odom = _odom_end - _odom_begin;
-    ROS_INFO("(Odometry Calibration)  Rotated imu  %f degrees", d_imu*180/M_PI);
-    ROS_INFO("(Odometry Calibration)  Rotated wheel odom %f degrees", d_odom*180/M_PI);
-    ROS_INFO("(Odometry Calibration)  Absolute angle error of wheel odometry is %f degrees",(d_odom - d_imu)*180/M_PI);
-    ROS_INFO("(Odometry Calibration)  Relative angle error of wheel odometry is %f precent", (d_odom - d_imu) / d_imu * 100);
-    ROS_INFO("(Odometry Calibration)  Sending correction ratio %f to controller", d_imu / d_odom);
+    ROS_INFO("Rotated imu  %f degrees", d_imu*180/M_PI);
+    ROS_INFO("Rotated wheel odom %f degrees", d_odom*180/M_PI);
+    ROS_INFO("Sending correction ratio %f to controller", d_imu / d_odom);
 
     // wheel rotation
     for (unsigned int i=0; i<12; i++){
-      ROS_INFO("(Odometry Calibration) %s moved %f radians.",_mech.joint_states[i+2].name.c_str(), _mech_end[i] - _mech_begin[i]);
+      ROS_INFO("%s moved %f radians.",_mech.joint_states[i+2].name.c_str(), _mech_end[i] - _mech_begin[i]);
     }
 
     // send results to base server
     _srv_snd.radius_multiplier =  d_imu / d_odom;
     if (service::call("base_controller/set_wheel_radius_multiplier", _srv_snd, _srv_rsp)) 
-      ROS_INFO("(Odometry Calibration)  Correction ratio seccessfully sent");
+      ROS_INFO("Correction ratio seccessfully sent");
     else
-      ROS_INFO("(Odometry Calibration)  Failed to send correction ratio");
+      ROS_INFO("Failed to send correction ratio");
 
     _mech_mutex.unlock();
     _odom_mutex.unlock();
