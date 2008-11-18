@@ -5,7 +5,7 @@ import rostest
 import videre_face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
-from std_msgs.msg import Image, ImageArray, String, PointStamped
+from std_msgs.msg import Image, ImageArray, String, PointStamped, PointCloud, Point
 import visual_odometry as VO
 import starfeature
 import calonder
@@ -50,6 +50,7 @@ class Tracker(VisualOdometer): #(visualodometer.VisualOdometer) :
 class PeopleTracker:
   def __init__(self):
     self.usebag = False
+    self.visualize = False
     self.keyframes = []
     self.current_keyframes = []
     self.p = videre_face_detection.people()
@@ -57,7 +58,7 @@ class PeopleTracker:
     self.camparams = None
     self.vo = None
     self.feature_detector = FeatureDetectorStar() #visualodometer.FeatureDetectorStar()
-    self.feature_detector.thresh = 1.0 #3.0
+    self.feature_detector.thresh = 3.0
     self.cascade_file = "cascades/haarcascade_frontalface_alt.xml"
     assert os.access(self.cascade_file, os.R_OK)
     self.faces = None
@@ -77,7 +78,7 @@ class PeopleTracker:
     self.max_face_dist = 3000 # in mm
     self.recent_good_frames = []
     self.recent_good_rects = []
-    self.recent_good_rects_3d = []
+    self.recent_good_centers_3d = []
     self.recent_good_motion = []
     self.recent_good_motion_3d = []
     self.same_key_rgfs = []
@@ -299,7 +300,7 @@ class PeopleTracker:
       
       if self.face_centers_3d and iface<len(self.face_centers_3d):
         censize3d = list(copy.copy(self.face_centers_3d[iface]))
-        censize3d.append(1.0*self.real_face_sizes_3d[iface]) ###ZMULT
+        censize3d.append(2.0*self.real_face_sizes_3d[iface]) ###ZMULT
         self.get_features(ia, self.num_feats, (x,y,w,h), censize3d)
       else:
         self.get_features(ia, self.num_feats, (x, y, w, h), (0.0,0.0,0.0,1000000.0))
@@ -311,9 +312,12 @@ class PeopleTracker:
 
         (cen,diff) = self.rect_to_center_diff((x,y,w,h))
         cen3d = self.cam.pix2cam(cen[0],cen[1],ia.avgd)
+        cen3d = list(cen3d)
         ltf = self.cam.pix2cam(x,y,ia.avgd)
         rbf = self.cam.pix2cam(x+w,y+h,ia.avgd)
         fs3d = ( (rbf[0]-ltf[0]) + (rbf[1]-ltf[1]) )/4.0
+        # This assumes that we're tracking the face plane center, not the center of the head sphere. 
+        # If you want to track the center of the sphere instead, do: cen3d[2] += fs3d
 
         # Check that the face is a reasonable size. If not, skip this face.
         if 2*fs3d < self.min_real_face_size or 2*fs3d > self.max_real_face_size or iface > 1: #HACK: ONLY ALLOW ONE FACE
@@ -339,11 +343,16 @@ class PeopleTracker:
 
         self.recent_good_frames.append(copy.copy(ia))
         self.recent_good_rects.append(copy.deepcopy([x,y,w,h]))
+        self.recent_good_centers_3d.append(copy.deepcopy(cen3d))
         self.recent_good_motion.append([0.0]*3) #dx,dy,dimfacesize
         self.recent_good_motion_3d.append([0.0]*3)
 
         self.same_key_rgfs.append(True)
         
+        if DEBUG:
+          print "cen2d", cen
+          print "cen3d", self.face_centers_3d[iface]
+
         # End first frame
 
       # Later frames
@@ -365,12 +374,16 @@ class PeopleTracker:
           temp_match = self.vo.temporal_match(ia,keyframe,want_distances=True)
           ia.matches = [(m2,m1) for (m1,m2,m3) in temp_match]
           ia.desc_diffs = [m3 for (m1,m2,m3) in temp_match]
-          print "Scores", ia.desc_diffs
-          #ia.matches = self.vo.temporal_match(keyframe,ia,want_distances=True)
-          #ia.desc_diffs = [(VO.sad(keyframe.descriptors[a], ia.descriptors[b])) for (a,b) in ia.matches]
+          print "temp matches", temp_match       
           ia.good_matches = [s < self.desc_diff_thresh for s in ia.desc_diffs]
 
           n_good_matches = len([m for m in ia.desc_diffs if m < self.desc_diff_thresh])
+
+          if DEBUG:
+            if len(keyframe.kp)<2:
+              print "Keyframe has less than 2 kps"
+            if n_good_matches < len(keyframe.kp)/2.0:
+              print "ngoodmatches, len key.kp, len key.kp/2", n_good_matches, len(keyframe.kp), len(keyframe.kp)/2.0
         
           # Not enough matches, get a new keyframe
           if len(keyframe.kp)<2 or n_good_matches < len(keyframe.kp)/2.0 : 
@@ -381,29 +394,29 @@ class PeopleTracker:
             # Make a new face model, either from a recent good frame, or from the current image
             if not self.same_key_rgfs[iface] :
 
-              matched_z_list = [tz for ((tx,ty,tz),is_good) in zip(self.recent_good_frames[iface].kp,self.recent_good_frames[iface].good_matches) if is_good]
+              if DEBUG:
+                print "centers at beginning of new keyframe"
+                print "cen2d", [self.faces[iface][0]+self.faces[iface][2]/2.0, self.faces[iface][1]+self.faces[iface][3]/2.0]
+                print "cen3d", self.face_centers_3d[iface]
+
+
+              matched_z_list = [kp3d[2] for (kp3d,is_good) in zip(self.recent_good_frames[iface].kp3d,self.recent_good_frames[iface].good_matches) if is_good]
               if len(matched_z_list) == 0:
-                matched_z_list = [tz for (tx,ty,tz) in self.recent_good_frames[iface].kp]
-              avgd_goodmatches = sum(matched_z_list)/ len(matched_z_list)
-              avg3d_goodmatches = self.cam.pix2cam(0.0,0.0,avgd_goodmatches)
-              kp3d = [self.cam.pix2cam(kp[0],kp[1],kp[2]) for kp in self.recent_good_frames[iface].kp]
-              print "kp ", self.recent_good_frames[iface].kp
-              print "kp3d ",kp3d
-              print avg3d_goodmatches
-              kp3d_for_model = [this_kp3d for this_kp3d in kp3d if math.fabs(this_kp3d[2]-avg3d_goodmatches[2]) < 2.0*self.real_face_sizes_3d[iface] ]
-              kp_for_model = [this_kp 
-                              for (this_kp, this_kp3d) in zip(self.recent_good_frames[iface].kp, kp3d) 
-                              if math.fabs(this_kp3d[2]-avg3d_goodmatches[2]) < 2.0*self.real_face_sizes_3d[iface] ]
+                matched_z_list = [kp3d[2] for kp3d in self.recent_good_frames[iface].kp3d]
+              avgz_goodmatches = sum(matched_z_list)/ len(matched_z_list)
+              tokeep = [math.fabs(self.recent_good_frames[iface].kp3d[i][2]-avgz_goodmatches) < 2.0*self.real_face_sizes_3d[iface] 
+                        for i in range(len(self.recent_good_frames[iface].kp3d))]
+              kp3d_for_model = [kp3d for (kp3d,tk) in zip(self.recent_good_frames[iface].kp3d,tokeep) if tk]
+              kp_for_model = [kp for (kp,tk) in zip(self.recent_good_frames[iface].kp,tokeep) if tk]
               # If you're not left with enough points, just take all of them and don't worry about the depth constraints.
               if len(kp3d_for_model) < 2:
-                kp3d_for_model = kp3d
+                kp3d_for_model = copy.deepcopy(self.recent_good_frames[iface].kp3d)
                 kp_for_model = copy.deepcopy(self.recent_good_frames[iface].kp)
 
               (cen, diff) = self.rect_to_center_diff(self.recent_good_rects[iface])
               self.feats_to_centers[iface] = self.make_face_model( cen, diff, [(kp0,kp1) for (kp0,kp1,kp2) in kp_for_model])
 
-              avgd = sum([kp2 for (kp0,kp1,kp2) in kp_for_model])/len(kp_for_model)
-              cen3d = self.cam.pix2cam(cen[0],cen[1],avgd)
+              cen3d = self.recent_good_centers_3d[iface]
               self.feats_to_centers_3d[iface] = self.make_face_model( cen3d, [self.real_face_sizes_3d[iface]]*3, kp3d_for_model)
 
               self.keyframes[self.current_keyframes[iface]] = copy.copy(self.recent_good_frames[iface])
@@ -413,6 +426,13 @@ class PeopleTracker:
               self.keyframes[self.current_keyframes[iface]].matches = [(i,i) for i in range(len(kp_for_model))]
               self.keyframes[self.current_keyframes[iface]].good_matches = [True]*len(kp_for_model)
               self.keyframes[self.current_keyframes[iface]].desc_diffs = [0]*len(kp_for_model)
+
+              if DESCRIPTOR=='CALONDER':
+                self.vo.collect_descriptors(self.keyframes[self.current_keyframes[iface]])
+              elif DESCRIPTOR=='SAD':
+                self.vo.collect_descriptors_sad(self.keyframes[self.current_keyframes[iface]])
+              else:
+                pass
               
 
               self.face_centers_3d[iface] = copy.deepcopy(cen3d)
@@ -422,6 +442,11 @@ class PeopleTracker:
 
               self.same_key_rgfs[iface] = True
               # Don't need to change the recent good frame yet.
+
+              if DEBUG:
+                print "centers at end of new keyframe"
+                print "cen2d", [self.faces[iface][0]+self.faces[iface][2]/2.0, self.faces[iface][1]+self.faces[iface][3]/2.0]
+                print "cen3d", self.face_centers_3d[iface]
 
             else :
 
@@ -442,7 +467,7 @@ class PeopleTracker:
               (x,y,w,h) = copy.deepcopy(self.faces[iface])
 
               pred_cen_3d = [o+n for (o,n) in zip(self.face_centers_3d[iface],self.recent_good_motion_3d[iface])]
-              pred_cen_3d.append(1.0*self.real_face_sizes_3d[iface])  #### ZMULT
+              pred_cen_3d.append(2.0*self.real_face_sizes_3d[iface])  #### ZMULT
               self.get_features(ia, self.num_feats, (x,y,w,h), pred_cen_3d)
               if not ia.kp2d:
                 break
@@ -459,9 +484,8 @@ class PeopleTracker:
               self.current_keyframes[iface] = 0
               (cen,diff) = self.rect_to_center_diff(self.faces[iface])
               self.feats_to_centers[iface] = self.make_face_model( cen, diff, ia.kp2d )
-              cen3d = self.cam.pix2cam(cen[0],cen[1],ia.avgd)
-              self.feats_to_centers_3d[iface] = self.make_face_model( cen3d, [self.real_face_sizes_3d[iface]]*3, ia.kp3d)
-              self.face_centers_3d[iface] = copy.deepcopy(cen3d)
+              self.feats_to_centers_3d[iface] = self.make_face_model( [pred_cen_3d[0],pred_cen_3d[1],pred_cen_3d[2]], [self.real_face_sizes_3d[iface]]*3, ia.kp3d)
+              self.face_centers_3d[iface] = copy.deepcopy(pred_cen_3d)
               self.same_key_rgfs[iface] = True
 
           # Good matches, mark this frame as good
@@ -480,24 +504,27 @@ class PeopleTracker:
           probs = []
           bandwidths = []
           size_mult = 1.0
+
           for ((match1, match2), score) in zip(ia.matches, ia.desc_diffs):
             if score < self.desc_diff_thresh:
-              kp3d = self.cam.pix2cam(ia.kp[match2][0],ia.kp[match2][1],ia.kp[match2][2])
-              sparse_pred_list.append( (kp3d[0]+self.feats_to_centers_3d[iface][match1][0], 
-                                        kp3d[1]+self.feats_to_centers_3d[iface][match1][1],
-                                        kp3d[2]+self.feats_to_centers_3d[iface][match1][2]) )
-              sparse_pred_list_2d.append( (ia.kp2d[match2][0]+self.feats_to_centers[iface][match1][0], ia.kp2d[match2][1]+self.feats_to_centers[iface][match1][1]) ) 
-          probs = [1.0] * len(sparse_pred_list_2d)
+              sparse_pred_list.append( [ia.kp3d[match2][i]+self.feats_to_centers_3d[iface][match1][i] for i in range(3)] )
+              sparse_pred_list_2d.append( [ia.kp2d[match2][i]+self.feats_to_centers[iface][match1][i] for i in range(2)] )
+              #probs.append(score)
+          probs = [1.0] * len(sparse_pred_list_2d) # Ignore actual match scores. Uncomment line above to use the match scores.
           bandwidths = [size_mult*self.real_face_sizes_3d[iface]] * len(sparse_pred_list_2d)
 
+          (old_center, old_diff) = self.rect_to_center_diff(self.faces[iface])
+ 
           if DEBUG:
             print "Old center 3d ", self.face_centers_3d[iface]
-            print "Old center 2d ",(x+(w-1)/2.0, y+(h-1)/2.0) 
+            print "Old center 2d ", old_center
 
-          old_rect = self.faces[iface]
-          (old_center, old_diff) = self.rect_to_center_diff(old_rect)
-          new_center = self.mean_shift_sparse( self.face_centers_3d[iface], sparse_pred_list, probs, bandwidths, 10, 5.0 )
-          new_center_2d = self.cam.cam2pix(new_center[0], new_center[1], new_center[2])
+          old_rect = self.faces[iface] # For display only
+
+          new_center = self.mean_shift_sparse( self.face_centers_3d[iface][0:3], sparse_pred_list, probs, bandwidths, 20, 2.0 )
+          new_center_2d = self.cam.cam2pix(new_center[0], new_center[1], new_center[2]) 
+          # The above line assumes that we're tracking the face plane center, not the center of the head sphere. 
+          # If you want to track the center of the sphere instead, subtract self.real_face_sizes[iface] from the z-coord.
           ltf = self.cam.cam2pix( new_center[0]-self.real_face_sizes_3d[iface], new_center[1]-self.real_face_sizes_3d[iface], new_center[2])
           rbf = self.cam.cam2pix( new_center[0]+self.real_face_sizes_3d[iface], new_center[1]+self.real_face_sizes_3d[iface], new_center[2])
           w = rbf[0]-ltf[0]
@@ -510,13 +537,12 @@ class PeopleTracker:
           (nx,ny,nw,nh) = (new_center_2d[0]-(w-1)/2.0, new_center_2d[1]-(h-1)/2.0, w, h)
 
           # Force the window back into the image.
-          dx = max(0,0-nx) + min(0, im.width - nx+nw)
-          dy = max(0,0-ny) + min(0, im.height - ny+nh)
-          nx += dx
-          ny += dy
+          nx += max(0,0-nx) + min(0, im.width - nx+nw)
+          ny += max(0,0-ny) + min(0, im.height - ny+nh)
 
           self.faces[iface] = [nx, ny, nw, nh]
           self.recent_good_rects[iface] = [nx,ny,nw,nh]
+          self.recent_good_centers_3d[iface] = copy.deepcopy(new_center)
           if bad_frame:
             self.recent_good_motion[iface] = self.recent_good_motion[iface]
             self.recent_good_motion_3d[iface] = self.recent_good_motion_3d[iface]
@@ -529,7 +555,7 @@ class PeopleTracker:
 
 
           if DEBUG:
-            print "motion ", self.recent_good_motion[iface]
+            print "motion ", self.recent_good_motion[iface], self.recent_good_motion_3d[iface]
             print "face 2d ", self.faces[iface]
             print "face center 3d ", self.face_centers_3d[iface]
 
@@ -586,10 +612,6 @@ class PeopleTracker:
 
           if self.seq > 0 :
 
-            for (x,y) in sparse_pred_list_2d :
-              draw_x(draw, (x,y), (1,1), (0,0,255))
-              draw_x(draw, (x+key_im.size[0],y), (1,1), (0,0,255))
-
             if ia.matches:
               for ((m1,m2), score) in zip(ia.matches,ia.desc_diffs) :
                 if score > self.desc_diff_thresh :
@@ -597,7 +619,32 @@ class PeopleTracker:
                 else :
                   color = (0,255,0)
                 draw.line((key_im.kp2d[m1][0], key_im.kp2d[m1][1], ia.kp2d[m2][0]+key_im.size[0], ia.kp2d[m2][1]), fill=color)
+
+            for (i, (u,v)) in enumerate(sparse_pred_list_2d) :
+              bscale = min(1,probs[i]/0.01)
+              draw_x(draw, (u,v), (1,1), (128.0+128.0*bscale,128.0+128.0*bscale,(1.0-bscale)*255.0))
+              draw_x(draw, (u+key_im.size[0],v), (1,1),(128.0+128.0*bscale,128.0+128.0*bscale,(1.0-bscale)*255.0))      
  
+
+          ####### PUBLISH 3d visualization point cloud ###################
+          if self.usebag and self.visualize:
+            cloud = PointCloud()
+            cloud.header.frame_id = "stereo"
+            cloud.header.stamp = imarray.header.stamp
+            cloud.pts = []
+            cloud.pts.append(Point())
+            (cloud.pts[0].x, cloud.pts[0].y, cloud.pts[0].z) = self.face_centers_3d[iface][:3]
+            for (i,kp3d) in enumerate(ia.kp3d):
+              cloud.pts.append(Point())
+              (cloud.pts[i].x,cloud.pts[i].y,cloud.pts[i].z) = kp3d
+
+            lp = len(cloud.pts)
+            if self.seq > 0:
+              for (i, (u,v)) in enumerate(sparse_pred_list):
+                cloud.pts[lp+i].append(Point())
+                (cloud.pts[lp+i].x,cloud.pts[lp+i].y,cloud.pts[lp+i].z) = sparse_pred_list[i][:3]
+                        
+            self.pub.publish(cloud)
 
         bigim_py.save("/tmp/tiff/feats%06d_%03d.tiff" % (self.seq, iface))
         #END DRAWING
@@ -616,7 +663,9 @@ def main(argv) :
   people_tracker = PeopleTracker()
 
   if len(argv)>0 and argv[0]=="-bag":
-    people_tracker.usebag = True
+      people_tracker.usebag = True
+      if len(argv)>1 and argv[1]=="-visualize":
+        people_tracker.visualize = True
 
   # Use a bag file
   if people_tracker.usebag :
@@ -632,6 +681,10 @@ def main(argv) :
       except:
         pass
 
+    if people_tracker.visualize:
+      people_tracker.pub = rospy.Publisher('/std_msgs/full_cloud',PointCloud)
+      rospy.init_node('videre_face_tracker',anonymous=True)
+
     num_frames = 0
     start_frame = 4700
     end_frame = 4900
@@ -641,6 +694,8 @@ def main(argv) :
       elif topic == '/videre/images':
         if num_frames >= start_frame and num_frames < end_frame:
           people_tracker.frame(msg)
+          if people_tracker.visualize:
+            s = raw_input("Press any key in this window to proceed to the next frame.")
         num_frames += 1
       else :
         pass
