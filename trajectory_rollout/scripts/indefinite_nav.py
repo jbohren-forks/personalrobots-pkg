@@ -9,7 +9,8 @@ from std_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 
-goals = [[1.437, 2.141, -2.356], [3.104, 2.084, -.0588], [1.906, 2.935, 1.460]]
+goals = [[1.437, 2.141, -2.356], [2.00, 1.300, 1.460]]
+#goals = [[1.437, 2.141, -2.356], [3.004, 2.184, -.0588], [1.906, 2.935, 1.460]]
 first = True
 
 def indefinite_nav():
@@ -21,6 +22,7 @@ def indefinite_nav():
     if first or done == 1:
       goal_pts = goals[random.randint(0, len(goals) - 1)]
       goal = Planner2DGoal()
+      goal.header.frame_id = "map"
       goal.goal.x = goal_pts[0]
       goal.goal.y = goal_pts[1]
       goal.goal.th = goal_pts[2]
