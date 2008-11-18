@@ -223,6 +223,11 @@ namespace estimation
   // filter loop
   void odom_estimation_node::spin()
   {
+    if (_exact_time_mode)
+      ROS_INFO("Exact time mode on: using timestamps of sensor messages");
+    else
+      ROS_INFO("Exact time mode off: use time when sensor messages are received instead of timestamp");
+
     while (ok()){
       _filter_mutex.lock();
 #ifdef __EKF_DEBUG_FILE__

@@ -1,6 +1,6 @@
 <launch>
 <param name="odom_estimation/freq" value="30.0"/>
-<param name="odom_estimation/sensor_timeout" value="0.5"/>
+<param name="odom_estimation/sensor_timeout" value="1.0"/>
 <param name="odom_estimation/exact_time_mode" value="false"/>
 
 <node pkg="robot_pose_ekf" type="robot_pose_ekf" output="screen"/>
