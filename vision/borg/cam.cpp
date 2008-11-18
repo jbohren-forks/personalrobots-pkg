@@ -1,3 +1,5 @@
+#include <cstdio>
+#include <cstdlib>
 #include "cam.h"
 
 using namespace borg;
@@ -10,19 +12,32 @@ bool Cam::init()
   return config_status == CAM_OK;
 }
 
-bool Cam::takePhoto(ImageSize size, uint8_t *raster)
+bool Cam::startImageStream()
 {
-  if (config_status == CAM_SHUTDOWN)
+  if (config_status != CAM_OK)
     return false;
-  else if (config_status == CAM_NOINIT)
+  config_status = CAM_STREAMING;
+  return _startImageStream();
+}
+
+bool Cam::stopImageStream()
+{
+  if (config_status != CAM_STREAMING)
+    return false;
+  if (!_stopImageStream())
   {
-    if (!_init())
-      return false;
-  }
-  if (config_status == CAM_OK)
-    return _takePhoto(size, raster);
-  else
+    config_status = CAM_ERROR;
     return false;
+  }
+  config_status = CAM_OK;
+  return true;
+}
+
+uint8_t *Cam::savePhoto()
+{
+  if (config_status != CAM_STREAMING)
+    return NULL;
+  return _savePhoto();
 }
 
 bool Cam::shutdown()

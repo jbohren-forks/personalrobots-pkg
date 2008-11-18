@@ -17,12 +17,6 @@ CamDC1394::~CamDC1394()
 {
 }
 
-
-bool CamDC1394::_takePhoto(ImageSize size, uint8_t *raster)
-{
-  return true;
-}
-
 bool CamDC1394::_shutdown()
 {
   if (cam)
@@ -58,12 +52,9 @@ bool CamDC1394::_init()
   dc1394camera_list_t *cams = NULL;
   ENSURE(dc1394_camera_enumerate(dc, &cams));
   ENSURE_NOTNULL(cams);
-  printf("%d cameras\n", cams->num);
   if (cams->num == 0)
   {
-    printf("bogus. no 1394 cameras found. Resetting the bus...\n");
-    // maybe the bus was hosed. reset it so perhaps it will work next time.
-    dc1394_free(dc);
+    printf("bogus. no 1394 cameras found.\n");
     return false;
   }
   for (uint32_t i = 0; i < cams->num; i++)
@@ -94,33 +85,7 @@ bool CamDC1394::_init()
                                   0, 0, 640, 480));
   }
   /*
-  ENSURE(dc1394_video_set_transmission(cam, DC1394_ON), "set transmission on");
-  dc1394video_frame_t *frame = NULL;
-  ros::Time t_start(ros::Time::now());
-  const int NUM_FRAMES = 200;
-  list<uint8_t *> frames;
-  for (int i = 0; i < NUM_FRAMES; i++)
-  {
-    ENSURE(dc1394_capture_dequeue(cam, DC1394_CAPTURE_POLICY_WAIT, &frame),"cap");
-    if (frame && 
-        (frame->frames_behind > 1 || 
-         dc1394_capture_is_frame_corrupt(cam, frame) == DC1394_TRUE))
-    {
-      //printf("corrupt frame\n");
-      dc1394_capture_enqueue(cam, frame);
-    }
-    else
-    {
-      //printf("got frame\n");
-      uint8_t *frame_copy = new uint8_t[640*480];
-      memcpy(frame_copy, frame->image, 640*480);
-      frames.push_back(frame_copy);
-      dc1394_capture_enqueue(cam, frame);
-    }
-  }
   printf("turning off camera transmission...\n");
-  ENSURE(dc1394_video_set_transmission(cam, DC1394_OFF), "stop ISO xfer");
-  ENSURE(dc1394_capture_stop(cam), "capture stop");
   ros::Time t_end(ros::Time::now());
   double dt = t_end.to_double() - t_start.to_double();
   printf("average time = %f fps = %f\n", dt / NUM_FRAMES, NUM_FRAMES / dt);
@@ -140,6 +105,48 @@ bool CamDC1394::_init()
   frames.clear();
   */
   
-  return 0;
+  return true;
+}
+
+bool CamDC1394::_startImageStream()
+{
+  ENSURE(dc1394_video_set_transmission(cam, DC1394_ON));
+  return true;
+}
+
+uint8_t *CamDC1394::_savePhoto()
+{
+  uint8_t *frame_copy = NULL;
+  int attempt = 0;
+  do
+  {
+    dc1394video_frame_t *frame = NULL;
+    ENSURE(dc1394_capture_dequeue(cam, DC1394_CAPTURE_POLICY_WAIT, &frame));
+    if (frame && 
+        (frame->frames_behind > 1 || 
+         dc1394_capture_is_frame_corrupt(cam, frame) == DC1394_TRUE))
+      dc1394_capture_enqueue(cam, frame);
+    else
+    {
+      frame_copy = new uint8_t[640*480];
+      memcpy(frame_copy, frame->image, 640*480);
+      dc1394_capture_enqueue(cam, frame);
+    }
+  } while (!frame_copy && attempt++ < 10);
+
+  //ros::Time t_start(ros::Time::now());
+  //const int NUM_FRAMES = 200;
+  //list<uint8_t *> frames;
+  //for (int i = 0; i < NUM_FRAMES; i++)
+  //{
+  //}
+  return frame_copy;
+}
+
+bool CamDC1394::_stopImageStream()
+{
+  ENSURE(dc1394_video_set_transmission(cam, DC1394_OFF));
+  ENSURE(dc1394_capture_stop(cam));
+  return true;
 }
 

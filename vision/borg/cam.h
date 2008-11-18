@@ -13,14 +13,18 @@ public:
   virtual ~Cam() { }
 
   bool init();
-  bool takePhoto(ImageSize size, uint8_t *raster);
+  uint8_t *savePhoto();
   bool shutdown();
+  bool startImageStream();
+  bool stopImageStream();
 
 protected:
   virtual bool _init() { return true; }
-  virtual bool _takePhoto(ImageSize size, uint8_t *raster) = 0;
+  virtual uint8_t *_savePhoto() = 0;
   virtual bool _shutdown() { return true; }
-  enum { CAM_NOINIT, CAM_OK, CAM_ERROR, CAM_SHUTDOWN } config_status;
+  virtual bool _startImageStream() = 0;
+  virtual bool _stopImageStream() = 0;
+  enum { CAM_NOINIT, CAM_OK, CAM_STREAMING, CAM_ERROR, CAM_SHUTDOWN } config_status;
 };
 
 }

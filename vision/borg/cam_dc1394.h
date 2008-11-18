@@ -14,8 +14,10 @@ public:
   virtual ~CamDC1394();
 protected:
   virtual bool _init();
-  virtual bool _takePhoto(ImageSize size, uint8_t *raster);
+  virtual uint8_t *_savePhoto();
   virtual bool _shutdown();
+  virtual bool _startImageStream();
+  virtual bool _stopImageStream();
 private:
   dc1394_t *dc;
   dc1394camera_t *cam;
