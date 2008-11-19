@@ -27,7 +27,26 @@
     <param name="world_3d_map/verbosity_level" type="int" value="1" /> <!-- integer value -->
     <param name="world_3d_map/laser_x_offset" type="double" value=".275" />
 
-    <param name="costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
     <param name="move_base_sbpl/controller_frequency" value="20.0" />
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ARAPlanner"/>
+    <param name="move_base/environmentType" value="2D"/>
+    <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/planner_frequency" value="0.0"/>
+    <param name="move_base/plannerTimeLimit" value="10.0"/>
+
+    <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="10.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="10.0"/>
+    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+    <param name="/costmap_2d/no_information_value" value="255"/>
+    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
+    <param name="/costmap_2d/inflation_radius" value="0.55"/>
+    <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
+    <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/weight" value="0.1"/>
+
 </launch>
 
