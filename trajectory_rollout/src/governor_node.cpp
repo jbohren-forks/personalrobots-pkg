@@ -82,6 +82,9 @@ void GovernorNode::planReceived(){
   //update the map from the message
   map_.update(plan_msg_.map);
 
+  // Synchronize the obstacle data
+  ma_.synchronize();
+
   //update the global plan from the message
   vector<std_msgs::Point2DFloat32> plan;
 
