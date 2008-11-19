@@ -9,8 +9,7 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="laser_scan_utils"/>
-  <depend package="rosTF"/>
-  <depend package="libTF"/>
+  <depend package="tf"/>
   <depend package="pr2_mechanism_controllers"/>
 </package>
 
