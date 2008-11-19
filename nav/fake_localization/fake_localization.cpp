@@ -80,6 +80,8 @@ Publishes to (name / type):
 
 #include <angles/angles.h>
 
+#include "rosconsole/rosconsole.h"
+
 #include "tf/transform_broadcaster.h"
 
 
@@ -94,6 +96,8 @@ public:
       m_tfServer = new tf::TransformBroadcaster(*this);	
 
       m_lastUpdate = ros::Time::now();
+      
+      m_base_pos_received = false;
 
       m_iniPos.x = m_iniPos.y = m_iniPos.th = 0.0;
       m_particleCloud.set_particles_size(1);
@@ -116,6 +120,7 @@ private:
     tf::TransformBroadcaster       *m_tfServer;
     ros::Time                      m_lastUpdate;
     double                         m_maxPublishFrequency;
+    bool                           m_base_pos_received;
     
     std_msgs::PoseWithRatesStamped  m_basePosMsg;
     std_msgs::ParticleCloud2D      m_particleCloud;
@@ -125,11 +130,15 @@ private:
     
     void initialPoseReceived(void)
     {
+      if(!m_base_pos_received)
+        ROS_WARN("Waiting to receive current pose on topic base_pose_ground_truth");
+      else
 	update();
     }
     
     void basePosReceived(void)
     {
+        m_base_pos_received = true;
 	update();
     }
 
