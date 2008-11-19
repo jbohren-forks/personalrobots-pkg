@@ -41,6 +41,7 @@ import getopt
 from math import *
 
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
+import std_msgs.msg as stdmsg
 import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, FeatureDetectorHarris
@@ -50,8 +51,6 @@ import camera
 import PIL.Image
 import PIL.ImageDraw
 import pickle
-
-SEE = 0
 
 class imgAdapted:
   def __init__(self, i):
@@ -86,11 +85,11 @@ class VO:
       af = SparseStereoFrame(imgL, imgR)
 
       pose = self.vo.handle_frame(af)
-      print pose.xform(0,0,0)
+      print pose.xform(0,0,0), pose.quaternion()
       p = Pose()
-      p.v = pose.tolist()
       p.inliers = self.vo.inl
       p.header = iar.header
+      p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
       self.pub_vo.publish(p)
 
 def main(args):

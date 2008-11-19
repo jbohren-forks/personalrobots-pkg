@@ -9,6 +9,9 @@ import numpy.linalg
 
 scratch = " " * (640 * 480)
 
+import transformations
+
+
 class Pose:
   def __init__(self, R=None, S=None):
     if R == None:
@@ -54,10 +57,10 @@ class Pose:
     return (x,y,z)
 
   def quaternion(self):
-    return transform.quaternion_from_rotation_matrix(self.M)
+    return transformations.quaternion_from_rotation_matrix(self.M)
 
   def euler(self):
-    return transform.euler_from_rotation_matrix(self.M)
+    return transformations.euler_from_rotation_matrix(self.M)
 
   def compare(self, other):
     p0 = self.xform(0, 0, 0)
