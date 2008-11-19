@@ -293,6 +293,9 @@ public:
         cloud_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
         cloud_.header.frame_id = "stereo";
         cloud_.pts.resize(stcam->stIm->numPts);
+        cloud_.chan.resize(1);
+        cloud_.chan[0].name = "rgb";
+        cloud_.chan[0].vals.resize(stcam->stIm->numPts);
         
         for (int i = 0; i < stcam->stIm->numPts; i++)
         {
@@ -301,6 +304,14 @@ public:
           cloud_.pts[i].z = stcam->stIm->imPts[3*i + 2];
           //          printf("(%d/%d) %f %f %f\n", i, stcam->stIm->numPts, cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
         }
+
+        for (int i = 0; i < stcam->stIm->numPts; i++)
+        {
+          int rgb = (stcam->stIm->imPtsColor[3*i] << 16) | (stcam->stIm->imPtsColor[3*i + 1] << 8) | stcam->stIm->imPtsColor[3*i + 2];
+          cloud_.chan[0].vals[i] = *(float*)(&rgb);
+        }
+
+        
 
         publish("~cloud", cloud_);
       }

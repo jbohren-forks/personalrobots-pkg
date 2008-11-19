@@ -64,7 +64,7 @@ public:
 
   bool subscribe_color_;
 
-  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout), subscribe_color_(false)
+  StereoView() : ros::node("stereo_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout), subscribe_color_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
