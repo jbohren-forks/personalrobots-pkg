@@ -19,11 +19,18 @@ add_custom_command(
   DEPENDS ${pr2robot}.xacro.xml)
 
 set(pr2prototype1 "${CMAKE_CURRENT_SOURCE_DIR}/pr2_prototype1/pr2_prototype1")
+
+# Replace the COMMAND block with a call to a version of xacro that reads in
+# a .deps file and a xacro.xml file, determines the dependencies of the
+# latter, and writes any changed dependencies to the .deps file.
+#add_custom_target(pr2prototype1_target ALL
+#  COMMAND touch ${pr2prototype1}.xacro.deps)
+
 add_custom_command(
   OUTPUT ${pr2prototype1}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2prototype1}.xacro.xml > ${pr2prototype1}.xml
-  DEPENDS ${pr2prototype1}.xacro.xml)
+  DEPENDS ${pr2prototype1}.xacro.xml ${pr2prototype1}.xacro.deps)
 
 set(pr2arm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_arm")
 add_custom_command(
