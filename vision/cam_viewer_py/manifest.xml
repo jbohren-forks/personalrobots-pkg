@@ -6,7 +6,7 @@
   <author>Hai Nguyen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>
 </package>
