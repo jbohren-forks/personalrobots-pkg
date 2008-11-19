@@ -240,10 +240,10 @@ public:
      
       laser_.getConfig(config);
 
-      set_param("~min_ang_limit", config.min_angle);
-      set_param("~max_ang_limit", config.max_angle);
-      set_param("~min_range", config.min_range);
-      set_param("~max_range", config.max_range);
+      set_param("~min_ang_limit", (double)(config.min_angle));
+      set_param("~max_ang_limit", (double)(config.max_angle));
+      set_param("~min_range", (double)(config.min_range));
+      set_param("~max_range", (double)(config.max_range));
 
       int status = laser_.requestScans(true, min_ang_, max_ang_, cluster_, skip_);
 
