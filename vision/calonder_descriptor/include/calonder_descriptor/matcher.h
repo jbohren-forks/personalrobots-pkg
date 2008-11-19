@@ -16,13 +16,11 @@ class BruteForceMatcher
 public:
   BruteForceMatcher(size_t signature_size);
 
-  ~BruteForceMatcher();
-
   // TODO: mostly to get Python bindings working, probably don't want size to be changeable
   BruteForceMatcher() : threshold_(std::numeric_limits<float>::max()), size_(0) {}
   inline void setSize(size_t size) { size_ = size; }
   
-  // BruteForceMatcher takes ownership of signature's memory
+  // BruteForceMatcher does NOT take ownership of signature's memory
   void addSignature(float* signature, Data const& data);
 
   float* getSignature(int index);
@@ -58,14 +56,6 @@ BruteForceMatcher<Data>::BruteForceMatcher(size_t signature_size)
   : threshold_(std::numeric_limits<float>::max()),
     size_(signature_size)
 {}
-
-template < typename Data >
-inline
-BruteForceMatcher<Data>::~BruteForceMatcher()
-{
-  BOOST_FOREACH( float* sig, signatures_ )
-    free(sig);
-}
 
 template < typename Data >
 inline

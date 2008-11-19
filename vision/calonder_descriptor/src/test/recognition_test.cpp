@@ -132,11 +132,11 @@ int main( int argc, char** argv )
   assert((int)keypts.size() >= num_keypts);
   keypts.erase(keypts.begin() + num_keypts, keypts.end());
   
-  BruteForceMatcher<SparseSignature, CvPoint> matcher;
-  //BruteForceMatcher<DenseSignature, CvPoint> matcher;
+  BruteForceMatcher<CvPoint> matcher(classifier.classes());
 
   // Extract patches and add their signatures to matcher database
   int index = 0;
+  float* signature_buffer = malloc(
   BOOST_FOREACH( Keypoint &pt, keypts ) {
     cv::WImageView1_b view = extractPatch(src_img.Ipl(), pt);
     SparseSignature sig = classifier.getSparseSignature(view.Ipl());

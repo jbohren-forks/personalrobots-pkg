@@ -19,12 +19,11 @@ typedef struct {
   int size;
 } signature_t;
 
-// TODO: how to handle transfer of ownership by matcher.addSignature?
 static void
 signature_dealloc(PyObject *self)
 {
-  //signature_t *pc = (signature_t*)self;
-  //free(pc->data);
+  signature_t *pc = (signature_t*)self;
+  free(pc->data);
   PyObject_Del(self);
 }
 
@@ -197,9 +196,6 @@ PyObject *wrapped_BruteForceMatcher_addSignature(PyObject *self, PyObject *args)
   PyObject *sig;
   if (!PyArg_ParseTuple(args, "O", &sig))
     return NULL;
-
-  // TODO: proper memory management
-  // Py_INCREF(tag);
 
   signature_t *ps = (signature_t*)sig;
   pm->c->setSize(ps->size); // TODO: this is kind of a hack

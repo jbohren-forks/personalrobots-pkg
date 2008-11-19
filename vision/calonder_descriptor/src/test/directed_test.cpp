@@ -45,15 +45,18 @@ int main(int argc, char** argv)
   make_patch.setPhiBounds(-TWENTY_DEG, TWENTY_DEG);
   make_patch.setLambdaBounds(0.85, 1.15);
   */
-  
+
+  size_t sig_size = num_corners;
   cl.train(base_set, rng, /*make_patch,*/ 25, 10, 1000, num_corners); // Only 20 views?
   cl.write(tree_name);
 
   BruteForceMatcher<CvPoint> matcher(cl.classes());
+  float* sig_buffer = (float*) malloc(sig_size * sizeof(float) * base_set.size());
+  float* sig = sig_buffer;
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
-    float *sig = (float*) malloc(num_corners * sizeof(float));
     cl.getSignature(patch.Ipl(), sig);
+    
     float sum = 0;
     for (int i = 0; i < num_corners; ++i) {
       float elem = sig[i];
@@ -62,9 +65,10 @@ int main(int argc, char** argv)
     }
     printf("sum = %f\n", sum);
     matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+    sig += sig_size;
   }
 
-  float* sig = (float*) malloc(num_corners * sizeof(float));
+  sig = (float*) malloc(sig_size * sizeof(float));
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);
     cl.getSignature(patch.Ipl(), sig);
@@ -73,7 +77,8 @@ int main(int argc, char** argv)
     printf("match = %d, distance = %f\n", match, distance);
   }
   free(sig);
-  
+
+  free(sig_buffer);
   free(kp);
   return 0;
 }
