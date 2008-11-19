@@ -27,7 +27,7 @@ import numpy
 import os
 import copy
 
-DEBUG = True
+DEBUG = False
 SAVE_PICS = True
 DESCRIPTOR = 'CALONDER'
 
@@ -195,26 +195,35 @@ class PeopleTracker:
     # For each iteration
     for iter in range(0,max_iter) :
       dpoint = 0.0*dpoint
+      t_bands_sqr = copy.copy(bands_sqr)
       # Add each prediction in the kernel to the displacement
-      for ipred in range(len(pred_list)) :
-        diff = pred_list[ipred]-new_point
-        dist = numpy.dot(diff,diff)
-        if dist < bands_sqr[ipred]: 
-          total_weight += probs[ipred]
-          dpoint += probs[ipred]*diff
-      # If there weren't any predictions in the kernel, return the old point.
-      if total_weight == 0.0 :
-        return new_point.tolist()
+      ntries = 0
+      while total_weight == 0.0:
+        for ipred in range(len(pred_list)) :
+          diff = pred_list[ipred]-new_point
+          dist = numpy.dot(diff,diff)
+          if dist < t_bands_sqr[ipred]: 
+            total_weight += probs[ipred]
+            dpoint += probs[ipred]*diff
+          # If there weren't any predictions in the kernel, return the old point.
+          if total_weight == 0.0 :
+            if ntries < 5:
+              t_bands_sqr = [4.0*tbs for tbs in t_bands_sqr]
+            else:
+              return new_point.tolist()
       # Otherwise, move the point
-      else :
-        dpoint /= total_weight
-        new_point = new_point + dpoint
+      dpoint /= total_weight
+      new_point = new_point + dpoint
         
       # If the displacement was small, return the point
       if numpy.dot(dpoint,dpoint) <= eps :
+        print "iter", iter, "eps"
+        print "newpoint", new_point.tolist()
         return new_point.tolist()
 
     # Reached the maximum number of iterations, return
+    print "iter", iter, "maxiter"
+    print "newpoint", new_point.tolist()
     return new_point.tolist()
 
 
@@ -503,7 +512,7 @@ class PeopleTracker:
           sparse_pred_list_2d = []
           probs = []
           bandwidths = []
-          size_mult = 1.0
+          size_mult = 0.05 #1.0
 
           for ((match1, match2), score) in zip(ia.matches, ia.desc_diffs):
             if score < self.desc_diff_thresh:
@@ -521,7 +530,7 @@ class PeopleTracker:
 
           old_rect = self.faces[iface] # For display only
 
-          new_center = self.mean_shift_sparse( self.face_centers_3d[iface][0:3], sparse_pred_list, probs, bandwidths, 20, 2.0 )
+          new_center = self.mean_shift_sparse( self.face_centers_3d[iface][0:3], sparse_pred_list, probs, bandwidths, 10, 1.0 )
           new_center_2d = self.cam.cam2pix(new_center[0], new_center[1], new_center[2]) 
           # The above line assumes that we're tracking the face plane center, not the center of the head sphere. 
           # If you want to track the center of the sphere instead, subtract self.real_face_sizes[iface] from the z-coord.
@@ -687,7 +696,7 @@ def main(argv) :
 
     num_frames = 0
     start_frame = 4700
-    end_frame = 4900
+    end_frame = 5000
     for topic, msg in rosrecord.logplayer(filename):
       if topic == '/videre/cal_params':
         people_tracker.params(msg)
@@ -696,6 +705,8 @@ def main(argv) :
           people_tracker.frame(msg)
           if people_tracker.visualize:
             s = raw_input("Press any key in this window to proceed to the next frame.")
+        elif num_frames >= end_frame:
+          break
         num_frames += 1
       else :
         pass
@@ -719,4 +730,11 @@ def main(argv) :
 
 
 if __name__ == '__main__' :
-  main(sys.argv[1:])
+
+  if False:
+    import hotshot
+    prof = hotshot.Profile("hotshot_directed")
+    prof.runcall(main,sys.argv[1:])
+    prof.close()
+  else:
+    main(sys.argv[1:])
