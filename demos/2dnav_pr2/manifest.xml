@@ -7,6 +7,7 @@
   <depend package="roslaunch"/>
   <depend package="amcl_player"/>
   <depend package="hokuyo_node"/>
+  <depend package="rosrecord" />
   <depend package="map_server"/>
   <depend package="highlevel_controllers"/>
   <depend package="world_3d_map"/>
