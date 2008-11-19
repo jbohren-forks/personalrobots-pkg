@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(pr2_etherDrive)
-add_definitions(-Wall)
-rospack_add_executable(pr2etherDrive src/pr2BaseEtherdrive.cpp)
