@@ -74,6 +74,15 @@ Index: libgazebo/gazebo.h
    /// Pointer to the laser data
    public: LaserData *data;
  };
+@@ -979,7 +992,7 @@
+   public: GazeboData head;
+ 
+   /// String describing the model to be initiated
+-  public: uint8_t newModel[4096];
++  public: uint8_t newModel[409600];
+ 
+   /// Delete a model by name
+   public: uint8_t deleteModel[512];
 @@ -1244,6 +1257,9 @@
    /// position / speed comand
    public: unsigned int joint_mode[GAZEBO_ACTARRAY_MAX_NUM_ACTUATORS];
@@ -430,32 +439,6 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7143)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,21 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7143)
@@ -692,6 +675,32 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7143)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,21 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7143)
@@ -1426,18 +1435,6 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7143)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7143)
@@ -1509,6 +1506,18 @@ Index: server/Model.cc
    return this->UpdateChild();
  }
  
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7143)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7143)
@@ -1654,6 +1663,18 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7143)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -85,6 +85,7 @@
+   // If there is a string, then add the contents to the world
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7143)
