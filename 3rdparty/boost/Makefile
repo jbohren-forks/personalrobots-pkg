@@ -8,9 +8,11 @@ UNPACK_CMD = tar zxf
 MD5SUM_FILE = boost_1_36_0.tar.gz.md5sum
 include $(shell rospack find mk)/download_unpack_build.mk
 
-boost: $(SOURCE_DIR)
+$(LOCAL_DIR): $(SOURCE_DIR)
+
+boost: $(LOCAL_DIR)
 	rm -rf $(LOCAL_DIR)
-	mv $(SOURCE_DIR) $(LOCAL_DIR)
+	ln -s $(SOURCE_DIR) $(LOCAL_DIR)
 clean:
 	rm -rf boost_1_36_0
 
