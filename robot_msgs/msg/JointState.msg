@@ -3,3 +3,4 @@ float64 position
 float64 velocity
 float64 applied_effort
 float64 commanded_effort
+byte is_calibrated

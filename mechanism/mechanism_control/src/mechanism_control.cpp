@@ -249,6 +249,7 @@ void MechanismControlNode::update()
         out->velocity = in->velocity_;
         out->applied_effort = in->applied_effort_;
         out->commanded_effort = in->commanded_effort_;
+        out->is_calibrated = in->calibrated_;
       }
 
       for (unsigned int i = 0; i < mc_->hw_->actuators_.size(); ++i)
