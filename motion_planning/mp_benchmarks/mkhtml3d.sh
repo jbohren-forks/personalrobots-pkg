@@ -2,8 +2,8 @@
 
 MPBENCH=`rospack find mp_benchmarks`/mpbench
 
-CONSTANT_OPTS="-i 0.5 -d 1.3 -H 3.0 -I 3"
-CONSTANT_HR="inscribedRadius:0.5 doorWidth:1.3 hallWidth:3.0 inflationRadius:3.0"
+CONSTANT_OPTS="-c 0.75 -d 1.3 -H 3.0 -I 3 -s cubicle"
+CONSTANT_HR="circumscribedRadius:0.75 doorWidth:1.3 hallWidth:3.0 inflationRadius:3.0"
 
 A_OPT="-p"
 A_VAR="ARAPlanner ADPlanner"
@@ -14,8 +14,8 @@ B_VAR="2d 3d"
 B_HR="environmentType"
 B_NOPTS="2"
 
-REST="-r:0.1:-c:0.6 -r:0.1:-c:0.9 -r:0.05:-c:0.6 -r:0.05:-c:0.9 -r:0.025:-c:0.6 -r:0.025:-c:0.9"
-REST_HR="-r:resolution -c:circumscribedRadius"
+REST="-i:0.65:-r:0.1 -i:0.55:-r:0.1 -i:0.65:-r:0.05 -i:0.55:-r:0.05 -i:0.65:-r:0.025 -i:0.55:-r:0.025 -i:0.65:-r:0.0125 -i:0.55:-r:0.0125"
+REST_HR="-i:inscribedRadius -r:resolution"
 
 rm -f index.html
 cat>>index.html<<EOF
