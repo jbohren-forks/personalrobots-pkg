@@ -41,7 +41,9 @@
 #include <sstream>
 
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
+
+#include "LinearMath/btTransform.h"
+#include "LinearMath/btVector3.h"
 
 std::string values2str(unsigned int count, const double *values, double (*conv)(double) = NULL)
 {
@@ -60,9 +62,11 @@ double rad2deg(double v)
     return v * 180.0 / M_PI;
 }
 
-void setupTransform(libTF::Pose3D &transform, const double *xyz, const double *rpy)
+void setupTransform(btTransform &transform, const double *xyz, const double *rpy)
 {
-    transform.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);
+    btMatrix3x3 mat;
+    mat.setEulerZYX(rpy[0],rpy[1],rpy[2]);
+    transform = btTransform(mat,btVector3(xyz[0],xyz[1],xyz[2]));
 }
 
 void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &value)
@@ -73,15 +77,13 @@ void addKeyValue(TiXmlElement *elem, const std::string& key, const std::string &
     elem->LinkEndChild(ekey); 
 }
 
-void addTransform(TiXmlElement *elem, const::libTF::Pose3D& transform)
+void addTransform(TiXmlElement *elem, const::btTransform& transform)
 {
-    libTF::Position pz;
-    transform.getPosition(pz);
-    double cpos[3] = { pz.x, pz.y, pz.z };
-    
-    libTF::Euler eu;
-    transform.getEuler(eu);
-    double crot[3] = { eu.roll, eu.pitch, eu.yaw };        
+    btVector3 pz = transform.getOrigin();
+    double cpos[3] = { pz.x(), pz.y(), pz.z() };
+    btMatrix3x3 mat = transform.getBasis();
+    double crot[3];
+    mat.getEulerZYX(crot[2],crot[1],crot[0]);
     
     /* set geometry transform */
     addKeyValue(elem, "xyz", values2str(3, cpos));
@@ -154,9 +156,9 @@ std::string getGeometrySize(robot_desc::URDF::Link::Geometry* geometry, int *siz
     return type;
 }
 
-void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::Pose3D &transform, bool enforce_limits)
+void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits)
 {
-    libTF::Pose3D currentTransform = transform;
+    btTransform currentTransform = transform;
     
     int linkGeomSize;
     double linkSize[3];
@@ -171,9 +173,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
         elem->SetAttribute("name", link->name);
         
         /* compute global transform */
-        libTF::Pose3D localTransform;
+        btTransform localTransform;
         setupTransform(localTransform, link->xyz, link->rpy);
-        currentTransform.multiplyPose(localTransform);
+        currentTransform *= localTransform;
         addTransform(elem, currentTransform);
         
         if (link->collision->verbose)
@@ -212,13 +214,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
             TiXmlElement *visual = new TiXmlElement("visual");
             {
                 /* compute the visualisation transfrom */
-                libTF::Pose3D coll;
+                btTransform coll;
                 setupTransform(coll, link->collision->xyz, link->collision->rpy);
-                coll.invert();
+                coll.inverse();
                 
-                libTF::Pose3D vis;
+                btTransform vis;
                 setupTransform(vis, link->visual->xyz, link->visual->rpy);
-                coll.multiplyPose(vis);
+                coll = coll.inverseTimes(vis);
                 
                 addTransform(visual, coll);
                 
@@ -376,7 +378,8 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
     /* set the transform for the whole model to identity */
     addKeyValue(robot, "xyz", "0 0 0");
     addKeyValue(robot, "rpy", "0 0 0");
-    libTF::Pose3D transform;    
+    btTransform transform;    
+    transform.setIdentity();    
     
     for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
         convertLink(robot, wgxml.getDisjointPart(k), transform, enforce_limits);
