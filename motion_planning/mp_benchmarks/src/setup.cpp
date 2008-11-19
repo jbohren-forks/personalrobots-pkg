@@ -154,6 +154,76 @@ namespace {
 		         hall,       hall, 0, tol_xy, tol_th);
   }
   
+  
+  void drawCubicle(ompl::SBPLBenchmarkSetup & setup,
+		   double hall, double door,
+		   size_t ncube,
+		   std::ostream * progress_os)
+  {
+    if (ncube < 2)
+      ncube = 2;
+    
+    double const alpha(M_PI / (4 * (ncube - 1)));
+    double const R0(hall / alpha);
+    double const R1(R0 + hall);
+    double const yoff(0.5 * hall * R1 / R0);
+    
+    // lowermost wall
+    setup.drawLine(R0,
+		   - 0.5 * hall + yoff,
+		   R1 * cos( - alpha / 2),
+		   R1 * sin( - alpha / 2) + yoff, progress_os);
+    
+    for (size_t ii(0); ii < ncube; ++ii) {
+      double const ux(cos(ii * alpha));
+      double const uy(sin(ii * alpha));
+      double const nx(-uy);
+      double const ny(ux);
+      
+      // door
+      setup.drawLine(R0 * ux - 0.5 * hall * nx,
+		     R0 * uy - 0.5 * hall * ny + yoff,
+		     R0 * ux - 0.5 * door * nx,
+		     R0 * uy - 0.5 * door * ny + yoff, progress_os);
+      setup.drawLine(R0 * ux + 0.5 * door * nx,
+		     R0 * uy + 0.5 * door * ny + yoff,
+		     R0 * ux + 0.5 * hall * nx,
+		     R0 * uy + 0.5 * hall * ny + yoff, progress_os);
+      // upper wall
+      setup.drawLine(R0 * ux + 0.5 * hall * nx,
+		     R0 * uy + 0.5 * hall * ny + yoff,
+		     R1 * cos((ii + 0.5) * alpha),
+		     R1 * sin((ii + 0.5) * alpha) + yoff, progress_os);
+      // hind wall
+      setup.drawLine(R1 * cos((ii + 0.5) * alpha),
+		     R1 * sin((ii + 0.5) * alpha) + yoff,
+		     R1 * cos((ii - 0.5) * alpha),
+		     R1 * sin((ii - 0.5) * alpha) + yoff, progress_os);
+    }
+    
+    // tasks...
+    if (progress_os)
+      *progress_os << "adding tasks...\n" << flush;
+    
+    double const tol_xy(0.25 * door);
+    double const tol_th(M_PI);
+    double const gx(0.5 * R0 * cos(M_PI / 8));
+    double const gy(0.5 * R0 * sin(M_PI / 8) + yoff);
+    for (size_t ii(0); ii < ncube; ++ii) {
+      ostringstream os;
+      os << "from hall to cubicle " << ii;
+      setup.addTask(os.str(), true, gx, gy, 0,
+		    (R0 + hall / 2) * cos(ii * alpha),
+		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+		    0, tol_xy, tol_th);
+      os << ", return trip";
+      setup.addTask(os.str(), false,
+		    (R0 + hall / 2) * cos(ii * alpha),
+		    (R0 + hall / 2) * sin(ii * alpha) + yoff,
+		    0, gx, gy, 0, tol_xy, tol_th);
+    }
+  }
+  
 }
 
 
@@ -374,6 +444,8 @@ namespace ompl {
       drawSquare(*setup, hall_width, door_width, progress_os);
     else if ("office1" == name)
       drawOffice1(*setup, hall_width, door_width, progress_os);
+    else if ("cubicle" == name)
+      drawCubicle(*setup, hall_width, door_width, 3, progress_os);
     else {
       delete setup;
       if (progress_os)
