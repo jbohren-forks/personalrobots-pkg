@@ -32,7 +32,7 @@ ESTAR_DIR=   `rospack find estar`/local
 SFL_DIR=     `rospack find libsunflower`/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
-SVN_DIR=     $(PWD)/nepumuk-svn
+SVN_DIR=     $(PWD)/build/nepumuk-svn
 SVN_REV=     HEAD
 SVN_URL=     https://libsunflower.svn.sourceforge.net/svnroot/libsunflower/trunk/nepumuk
 
