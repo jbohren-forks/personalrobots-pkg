@@ -412,6 +412,7 @@ public:
   {
 
     dc1394_cam::FrameSet fs = cd.cam->getFrames(DC1394_CAPTURE_POLICY_POLL);
+    ros::Time ts = ros::Time::now() + ros::Duration(-.125);
 
     if (fs.size() > 0)
     {
@@ -511,7 +512,7 @@ public:
                 j++;
               }
 
-            cloud_.header.stamp = ros::Time::now();
+            cloud_.header.stamp = ts;
             cloud_.header.frame_id = cd.frameid_cloud;
 
             publish(cd.name + "/cloud", cloud_);
