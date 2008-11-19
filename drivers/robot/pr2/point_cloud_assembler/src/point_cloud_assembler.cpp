@@ -64,7 +64,7 @@ Subscribes to (name/type):
 
 
 #include "ros/node.h"
-#include "rosTF/rosTF.h"
+#include "tf/transform_listener.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloud.h"
  
@@ -90,7 +90,7 @@ class PointCloudAssembler : public ros::node
 {
 public:
 
-  rosTFClient tf_;
+  tf::TransformListener tf_;
   laser_scan::LaserProjection projector_;
 
   LaserScan scan_;
@@ -103,6 +103,8 @@ public:
   
   PointCloudAssembler() : ros::node("point_cloud_assembler"), tf_(*this)
   {
+    tf_.setExtrapolationLimit(ros::Duration(1.0)) ;
+
     advertise_service("build_cloud", &PointCloudAssembler::buildCloud, this, 0) ;      // Don't spawn threads so that we can avoid dealing with mutexing [for now]
     subscribe("scan", scan_, &PointCloudAssembler::scans_callback, 40) ;
 
@@ -128,7 +130,7 @@ public:
     scan_hist_.push_back(scan_) ;                                                       // Add the newest scan to the back of the deque
     total_pts_ += scan_.get_ranges_size() ;                                             // Add the new scan to the running total of points
     
-    printf("Got Scan: TotalPoints=%u\n", total_pts_) ;
+    //printf("PointCloudAssembler:: Got Scan: TotalPoints=%u", total_pts_) ;
   }
 
   bool buildCloud(BuildCloud::request& req, BuildCloud::response& resp)
@@ -152,29 +154,36 @@ public:
     {
       i++ ;
     }
-    printf(" Start i=%u\n", i) ;
 
+    printf(" Start i=%u\n", i) ;
+    
     // Populate the cloud
     while ( i < scan_hist_.size() &&                                                    // Don't go past end of deque
             scan_hist_[i].header.stamp < req.end )                                      // Don't go past the end-time of the request
     {
       const LaserScan& cur_scan = scan_hist_[i] ;
-      
-      projector_.projectLaser(cur_scan, projector_cloud) ;                              // CRP: This takes care of converting the scan msg to the right format, so you don't really need to know what the format is.
-                                                                                        // CRP: Will be a transform in TF that takes scan time into account. High-precision, recalc for every point, from scan to point cloud. More expensive. Wait for new library to do this.
-      target_frame_cloud=tf_.transformPointCloud(req.target_frame_id, projector_cloud) ;// CRP: We'll make people do this themselves for one scan line, we'll just tansform and publish aggregate clouds.
-      
-      resp.cloud.header = target_frame_cloud.header ;                                   // Find a better place to do this/way to do this
-      // full_cloud_.header.stamp = ros::Time::now(); //HACK
-      
-      for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud
+
+      try
       {
-        resp.cloud.pts[cloud_count].x        = target_frame_cloud.pts[j].x;  
-        resp.cloud.pts[cloud_count].y        = target_frame_cloud.pts[j].y;  
-        resp.cloud.pts[cloud_count].z        = target_frame_cloud.pts[j].z;  
-        resp.cloud.chan[0].vals[cloud_count] = target_frame_cloud.chan[0].vals[j];
-        cloud_count++ ;
+        tf_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan) ;
+        
+        for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud
+        {
+          resp.cloud.pts[cloud_count].x        = target_frame_cloud.pts[j].x ;
+          resp.cloud.pts[cloud_count].y        = target_frame_cloud.pts[j].y ;
+          resp.cloud.pts[cloud_count].z        = target_frame_cloud.pts[j].z ;
+          resp.cloud.chan[0].vals[cloud_count] = target_frame_cloud.chan[0].vals[j] ;
+          cloud_count++ ;
+        }
       }
+      catch(tf::TransformException& ex)
+      {
+        ROS_WARN("Transform Exception %s", ex.what()) ;
+        
+        return true ;
+      }
+              
+      resp.cloud.header = target_frame_cloud.header ;                                   // Find a better place to do this/way to do this
 
       i++ ;                                                                             // Check the next scan in the scan history
     }
@@ -183,7 +192,6 @@ public:
     
     resp.cloud.set_pts_size( cloud_count ) ;                                            // Resize the output accordingly
     resp.cloud.chan[0].set_vals_size( cloud_count ) ;
-    
 
     return true ;
   }

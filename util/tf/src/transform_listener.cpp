@@ -200,17 +200,55 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
   std_msgs::PointCloud intermediate; //optimize out
   projector_.projectLaser(scanIn, intermediate, -1.0, true);
   
+  // Extract transforms for the beginning and end of the laser scan
+  ros::Time start_time = scanIn.header.stamp ;
+  ros::Time end_time   = scanIn.header.stamp + ros::Duration(scanIn.get_ranges_size()*scanIn.time_increment) ;
+  
+  tf::Stamped<tf::Transform> start_transform ;
+  tf::Stamped<tf::Transform> end_transform ;
+  tf::Stamped<tf::Transform> cur_transform ;
+  
+  lookupTransform(target_frame, scanIn.header.frame_id, start_time, start_transform) ;
+  lookupTransform(target_frame, scanIn.header.frame_id, end_time, end_transform) ;
+  
+  
   unsigned int count = 0;  
   for (unsigned int i = 0; i < scanIn.get_ranges_size(); i++)
   {
     if (scanIn.ranges[i] < scanIn.range_max 
         && scanIn.ranges[i] > scanIn.range_min) //only when valid
     {
+      // Looking up transforms in tree is too expensive. Need more optimized way
+      /*
       pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z), 
                                        ros::Time(scanIn.header.stamp.to_ull() + (uint64_t) (scanIn.time_increment * 1000000000)),
                                        pointIn.frame_id_ = scanIn.header.frame_id);///\todo optimize to no copy
       transformPoint(target_frame, pointIn, pointOut);
+      */
+
+      // Instead, assume constant motion during the laser-scan, and use slerp to compute intermediate transforms
+      btScalar ratio = i / ( (double) scanIn.get_ranges_size() - 1.0) ;
+
+      //! \todo Make a function that performs both the slerp and linear interpolation needed to interpolate a Full Transform (Quaternion + Vector)
       
+      //Interpolate translation
+      btVector3 v ;
+      v.setInterpolate3(start_transform.getOrigin(), end_transform.getOrigin(), ratio) ;
+      cur_transform.setOrigin(v) ;
+      
+      //Interpolate rotation
+      btQuaternion q1, q2 ;
+      start_transform.getBasis().getRotation(q1) ;
+      end_transform.getBasis().getRotation(q2) ;
+
+      // Compute the slerp-ed rotation
+      cur_transform.setRotation( slerp( q1, q2 , ratio) ) ;
+      
+      // Apply the transform to the current point
+      btVector3 pointIn(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z) ;
+      btVector3 pointOut = cur_transform * pointIn ;
+      
+      // Copy transformed point into cloud
       cloudOut.pts[count].x  = pointOut.x();
       cloudOut.pts[count].y  = pointOut.y();
       cloudOut.pts[count].z  = pointOut.z();
@@ -224,7 +262,6 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
   //downsize if necessary
   cloudOut.set_pts_size(count);
   cloudOut.chan[0].set_vals_size(count);
-    
 }
 
 
