@@ -22,11 +22,11 @@ void RandomizedTree::createNodes(int num_nodes, Rng &rng)
   }
 }
 
-int RandomizedTree::getIndex(IplImage* patch) const
+int RandomizedTree::getIndex(uchar* patch_data) const
 {
   int index = 0;
   for (int d = 0; d < depth_; ++d) {
-    int child_offset = nodes_[index](patch);
+    int child_offset = nodes_[index](patch_data);
     index = 2*index + 1 + child_offset;
   }
   return index - nodes_.size();
@@ -57,7 +57,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
     
     for (int i = 0; i < views; ++i) {
       make_patch(cvPoint(keypt_it->x, keypt_it->y), patch);
-      addExample(class_id, patch);
+      addExample(class_id, getData(patch));
     }
   }
 
@@ -80,9 +80,9 @@ void RandomizedTree::init(int classes, int depth, Rng &rng)
   createNodes(num_nodes, rng);
 }
 
-void RandomizedTree::addExample(int class_id, IplImage* patch)
+void RandomizedTree::addExample(int class_id, uchar* patch_data)
 {
-  int index = getIndex(patch);
+  int index = getIndex(patch_data);
   float* posterior = getPosteriorByIndex(index);
   ++leaf_counts_[index];
   ++posterior[class_id];
@@ -155,14 +155,14 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
    leaf_counts_.clear();
 }
 
-float* RandomizedTree::getPosterior(IplImage* patch)
+float* RandomizedTree::getPosterior(uchar* patch_data)
 {
-  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch));
+  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch_data));
 }
 
-const float* RandomizedTree::getPosterior(IplImage* patch) const
+const float* RandomizedTree::getPosterior(uchar* patch_data) const
 {
-  return getPosteriorByIndex( getIndex(patch) );
+  return getPosteriorByIndex( getIndex(patch_data) );
 }
 
 void RandomizedTree::read(const char* file_name)

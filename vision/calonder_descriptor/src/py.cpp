@@ -95,15 +95,6 @@ classifier_dealloc(PyObject *self)
   PyObject_Del(self);
 }
 
-PyObject *setThreshold(PyObject *self, PyObject *args)
-{
-  classifier_t *pc = (classifier_t*)self;
-  double thresh;
-  if (!PyArg_ParseTuple(args, "d", &thresh)) return NULL;
-  pc->classifier->setThreshold(thresh);
-  Py_RETURN_NONE;
-}
-
 // TODO: allow specifying reduced dimension for compressive sensing
 PyObject *train(PyObject *self, PyObject *args)
 {
@@ -175,7 +166,6 @@ PyObject *getSignature(PyObject *self, PyObject *args)
 
 /* Method table */
 static PyMethodDef classifier_methods[] = {
-  {"setThreshold", setThreshold, METH_VARARGS},
   {"train", train, METH_VARARGS},
   {"write", Cwrite, METH_VARARGS},
   {"read", Cread, METH_VARARGS},

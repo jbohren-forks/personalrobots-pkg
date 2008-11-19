@@ -6,6 +6,7 @@
 #include <vector>
 #include <ctime>
 #include <cstdio>
+#include <cstdlib>
 
 using namespace features;
 
@@ -51,7 +52,8 @@ int main(int argc, char** argv)
   cl.write(tree_name);
 
   BruteForceMatcher<CvPoint> matcher(cl.classes());
-  float* sig_buffer = (float*) malloc(sig_size * sizeof(float) * base_set.size());
+  float* sig_buffer = NULL;
+  posix_memalign((void**)&sig_buffer, 16, sig_size * sizeof(float) * base_set.size());
   float* sig = sig_buffer;
   BOOST_FOREACH( BaseKeypoint &pt, base_set ) {
     cv::WImageView1_b patch = extractPatch(im.Ipl(), pt);

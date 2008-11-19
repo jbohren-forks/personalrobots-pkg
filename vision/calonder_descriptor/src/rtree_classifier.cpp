@@ -1,6 +1,7 @@
 #include "calonder_descriptor/rtree_classifier.h"
 #include "calonder_descriptor/patch_generator.h"
 #include <fstream>
+#include <cstring>
 #include <boost/foreach.hpp>
 #include <boost/random.hpp>
 //#include <boost/numeric/ublas/operation.hpp>
@@ -11,7 +12,7 @@ namespace features {
 
 
 RTreeClassifier::RTreeClassifier()
-  : classes_(0), threshold_(0)
+  : classes_(0)
 {
    //setReducedDim(DEFAULT_RED);
 }
@@ -50,9 +51,25 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
   printf("\n");
 }
 
-// TODO: vectorize, maybe improve memory allocation strategy
+// TODO: vectorize
 void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 {
+  // Need pointer to 32x32 patch data
+  uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
+  uchar* patch_data;
+  if (patch->widthStep != RandomizedTree::PATCH_SIZE) {
+    uchar* data = getData(patch);
+    patch_data = buffer;
+    for (int i = 0; i < RandomizedTree::PATCH_SIZE; ++i) {
+      memcpy((void*)patch_data, (void*)data, RandomizedTree::PATCH_SIZE);
+      data += patch->widthStep;
+      patch_data += RandomizedTree::PATCH_SIZE;
+    }
+    patch_data = buffer;
+  } else {
+    patch_data = getData(patch);
+  }
+  
   // Allocate 16-byte aligned signature and zero-initialize
   // float* sig;    
   
@@ -65,12 +82,12 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   memset((void*)sig, 0, classes_ * sizeof(float));
   std::vector<RandomizedTree>::const_iterator tree_it;
   
-  #if 1 // inlined native C     
+  #if 1 // inlined native C
     // get posteriors
     const float **posteriors = new const float*[trees_.size()];  // TODO: move alloc outside this func
     const float **pp = posteriors;
     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
-      *posteriors = tree_it->getPosterior(patch);       
+      *posteriors = tree_it->getPosterior(patch_data);       
     
     // sum them up
     posteriors = pp;
@@ -86,7 +103,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 
   #else  // CBLAS
      for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-       const float* posterior = tree_it->getPosterior(patch);
+       const float* posterior = tree_it->getPosterior(patch_data);
        cblas_saxpy(classes_, 1., posterior, 1, sig, 1);    
      } 
 
@@ -108,8 +125,7 @@ void RTreeClassifier::read(std::istream &is)
   int num_trees = 0;
   is.read((char*)(&num_trees), sizeof(num_trees));
   is.read((char*)(&classes_), sizeof(classes_));
-  is.read((char*)(&original_num_classes_), sizeof(original_num_classes_));  
-  is.read((char*)(&threshold_), sizeof(threshold_));
+  is.read((char*)(&original_num_classes_), sizeof(original_num_classes_));
 
   trees_.resize(num_trees);
   std::vector<RandomizedTree>::iterator tree_it;
@@ -130,7 +146,6 @@ void RTreeClassifier::write(std::ostream &os) const
   os.write((char*)(&num_trees), sizeof(num_trees));
   os.write((char*)(&classes_), sizeof(classes_));
   os.write((char*)(&original_num_classes_), sizeof(original_num_classes_));
-  os.write((char*)(&threshold_), sizeof(threshold_));
 
   std::vector<RandomizedTree>::const_iterator tree_it;
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it)

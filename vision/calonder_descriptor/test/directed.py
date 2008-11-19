@@ -26,7 +26,6 @@ class TestDirected(unittest.TestCase):
       kp = [(x-16, y-16) for (x,y) in fast.fast(im.tostring(), im.size[0], im.size[1], 150, 40)]
 
       cl1 = calonder.classifier()
-      cl1.setThreshold(0.0)
 
       cl1.train(im.tostring(), im.size[0], im.size[1], kp)
       cl1.write('unittest.tree')
@@ -38,7 +37,7 @@ class TestDirected(unittest.TestCase):
         for (x,y) in kp:
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
-          #print sig.dump()
+          #print ["%3f" % x for x in sig.dump()]
           sigs.append(sig)
           ma.addSignature(sig)
 
@@ -54,7 +53,6 @@ class TestDirected(unittest.TestCase):
       # Now make another classifier, and read it from the file above
 
       cl2 = calonder.classifier()
-      cl2.setThreshold(0.0)
       cl2.read('unittest.tree')
 
       testclassifier(kp, im, cl2)

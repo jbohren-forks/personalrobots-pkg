@@ -3,7 +3,6 @@ include(rosbuild)
 rospack(calonder_descriptor)
 add_definitions(-Wall -O3 -DNDEBUG -march=pentium3)
 #add_definitions(-Wall -O0 -g)
-#add_definitions(-Wall -O3 -g)
 rospack_add_library(calonder src/randomized_tree.cpp src/rtree_classifier.cpp src/patch_generator.cpp)
 
 find_package(PythonLibs)

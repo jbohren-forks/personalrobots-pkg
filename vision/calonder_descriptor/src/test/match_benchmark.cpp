@@ -1,5 +1,3 @@
-//#define BOOST_UBLAS_INLINE
-
 // calonder_descriptor
 #include "calonder_descriptor/matcher.h"
 #include "calonder_descriptor/rtree_classifier.h"
@@ -21,11 +19,12 @@
 using namespace features;
 using namespace boost::accumulators;
 
-void print_signature_stats(std::vector< SparseSignature > const& sigs)
+/*
+void print_signature_stats(std::vector< float* > const& sigs)
 {
   accumulator_set<int, stats<tag::variance> > acc;
   float max_value = 0;
-  BOOST_FOREACH( SparseSignature const& sig, sigs ) {
+  BOOST_FOREACH( const float* sig, sigs ) {
     acc( sig.nnz() );
     BOOST_FOREACH( float val, sig ) {
       if (val > max_value) max_value = val;
@@ -35,11 +34,12 @@ void print_signature_stats(std::vector< SparseSignature > const& sigs)
   printf("\t%u signatures, mean length = %.1f, stddev = %.1f, max value = %f\n",
          sigs.size(), mean(acc), sqrt(variance(acc)), max_value);
 }
+*/
 
 // Usage: ./match_benchmark land30.trees img1.pgm img2.pgm
 int main( int argc, char** argv )
 {
-  static const unsigned NUM_PTS = 500;
+  static const unsigned NUM_PTS = 1000;
   // A threshold of 0 is safest (but slowest), as the signatures are
   // effectively dense vectors. Increasing the threshold makes the
   // signatures sparser, increasing the speed of matching at some cost
@@ -69,25 +69,32 @@ int main( int argc, char** argv )
                                                 DarkOrBright());
   
   // Extract patches and add their signatures to matcher database
-  BruteForceMatcher< SparseSignature, CvPoint > bright_matcher, dark_matcher;
+  BruteForceMatcher<CvPoint> bright_matcher, dark_matcher;
 
+  int sig_size = classifier.classes();
+  float* sig_buffer = NULL;
+  posix_memalign(reinterpret_cast<void**>(&sig_buffer), 16, sig_size * sizeof(float) * ref_keypts.size());
+  float* sig = sig_buffer;
   {
     Timer ref_timer("Generating reference signatures");
+    
     BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(ref_keypts.begin(),
                                                             ref_dark_begin) ) {
       cv::WImageView1_b view = extractPatch(reference.Ipl(), pt);
-      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      classifier.getSignature(view.Ipl(), sig);
       bright_matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+      sig += sig_size;
     }
     BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(ref_dark_begin,
                                                             ref_keypts.end()) ) {
       cv::WImageView1_b view = extractPatch(reference.Ipl(), pt);
-      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      classifier.getSignature(view.Ipl(), sig);
       dark_matcher.addSignature(sig, cvPoint(pt.x, pt.y));
+      sig += sig_size;
     }
   }
-  print_signature_stats(bright_matcher.signatures());
-  print_signature_stats(dark_matcher.signatures());
+  //print_signature_stats(bright_matcher.signatures());
+  //print_signature_stats(dark_matcher.signatures());
   
   // Detect points in query image
   StarDetector query_detector( cvSize(query.Width(), query.Height()) );
@@ -103,26 +110,32 @@ int main( int argc, char** argv )
   int bright_features = std::distance(query_keypts.begin(), query_dark_begin);
 
   // Find matches
-  std::vector< SparseSignature > query_bright_sigs, query_dark_sigs;
+  std::vector< float* > query_bright_sigs, query_dark_sigs;
   query_bright_sigs.reserve(bright_features);
   query_dark_sigs.reserve(query_keypts.size() - bright_features);
+  float* query_sig_buffer = NULL;
+  posix_memalign(reinterpret_cast<void**>(&query_sig_buffer), 16,
+                 sig_size * sizeof(float) * query_keypts.size());
+  sig = query_sig_buffer;
   {
     Timer query_timer("Generating query signatures");
     BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(query_keypts.begin(),
                                                             query_dark_begin) ) {
       cv::WImageView1_b view = extractPatch(query.Ipl(), pt);
-      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      classifier.getSignature(view.Ipl(), sig);
       query_bright_sigs.push_back(sig);
+      sig += sig_size;
     }
     BOOST_FOREACH( Keypoint &pt, boost::make_iterator_range(query_dark_begin,
                                                             query_keypts.end()) ) {
       cv::WImageView1_b view = extractPatch(query.Ipl(), pt);
-      SparseSignature sig = classifier.getSparseSignature(view.Ipl());
+      classifier.getSignature(view.Ipl(), sig);
       query_dark_sigs.push_back(sig);
+      sig += sig_size;
     }
   }
-  print_signature_stats(query_bright_sigs);
-  print_signature_stats(query_dark_sigs);
+  //print_signature_stats(query_bright_sigs);
+  //print_signature_stats(query_dark_sigs);
   
   int match;
   float distance;
@@ -131,15 +144,18 @@ int main( int argc, char** argv )
   {
     Timer match_timer("Matching");
     // Match bright features
-    BOOST_FOREACH( SparseSignature &sig, query_bright_sigs ) {
+    BOOST_FOREACH( const float* sig, query_bright_sigs ) {
       match = bright_matcher.findMatch(sig, &distance);
       //match = matcher.findMatchInWindow(sig, rect, &distance);
     }
     // Match dark features
-    BOOST_FOREACH( SparseSignature &sig, query_dark_sigs ) {
+    BOOST_FOREACH( const float* sig, query_dark_sigs ) {
       match = dark_matcher.findMatch(sig, &distance);
     }
   }
+
+  free(sig_buffer);
+  free(query_sig_buffer);
   
   return 0;
 }

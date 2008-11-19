@@ -34,10 +34,6 @@ public:
   inline int classes() { return classes_; }
   inline int original_num_classes() { return original_num_classes_; }
   
-  float threshold() { return threshold_; }
-  void setThreshold(float thres) { threshold_ = thres; }
-  // TODO: make threshold arg independent of the number of classes and trees.
-  
   void read(const char* file_name);
   void read(std::istream &is);
   void write(const char* file_name) const;
@@ -46,7 +42,6 @@ public:
 private:
   int classes_;
   int original_num_classes_;
-  float threshold_;
   std::vector<RandomizedTree> trees_;
 };
 
