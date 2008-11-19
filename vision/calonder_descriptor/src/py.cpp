@@ -19,7 +19,7 @@ typedef struct {
   int size;
 } signature_t;
 
-// How to handle transfer of ownership by matcher.addSignature?
+// TODO: how to handle transfer of ownership by matcher.addSignature?
 static void
 signature_dealloc(PyObject *self)
 {
@@ -28,8 +28,18 @@ signature_dealloc(PyObject *self)
   PyObject_Del(self);
 }
 
+PyObject *signature_dump(PyObject *self, PyObject *args)
+{
+  signature_t *ps = (signature_t*)self;
+  PyObject* list = PyList_New(0);
+  for (int i = 0; i < ps->size; ++i)
+    PyList_Append(list, PyFloat_FromDouble(ps->data[i]));
+  return list;
+}
+
 /* Method table */
 static PyMethodDef signature_methods[] = {
+  {"dump", signature_dump, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -160,6 +170,7 @@ PyObject *getSignature(PyObject *self, PyObject *args)
   object->size = pc->classifier->classes();
   // TODO: alignment
   object->data = (float*) malloc(object->size * sizeof(float));
+  pc->classifier->getSignature(input, object->data);
   return (PyObject*)object;
 }
 

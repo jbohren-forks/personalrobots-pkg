@@ -38,6 +38,7 @@ class TestDirected(unittest.TestCase):
         for (x,y) in kp:
           patch = im.crop((x,y,x+32,y+32))
           sig = cl.getSignature(patch.tostring(), patch.size[0], patch.size[1])
+          #print sig.dump()
           sigs.append(sig)
           ma.addSignature(sig)
 
