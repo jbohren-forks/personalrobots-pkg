@@ -30,7 +30,7 @@ add_custom_command(
   OUTPUT ${pr2prototype1}.xml
   COMMAND ${xacro_PACKAGE_PATH}/xacro.py
   ARGS ${pr2prototype1}.xacro.xml > ${pr2prototype1}.xml
-  DEPENDS ${pr2prototype1}.xacro.xml ${pr2prototype1}.xacro.deps)
+  DEPENDS ${pr2prototype1}.xacro.xml)
 
 set(pr2arm "${CMAKE_CURRENT_SOURCE_DIR}/pr2_arm_test/pr2_arm")
 add_custom_command(
