@@ -69,23 +69,14 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   } else {
     patch_data = getData(patch);
   }
-  
-  // Allocate 16-byte aligned signature and zero-initialize
-  // float* sig;    
-  
-  // this memalign causes troubles when calling free() on returned,
-  // pointer (where the malloc() is ok) 
-  //  -> probably factor 'sizeof(float)' is missing
-  // posix_memalign((void**)&sig, 16, classes_);  
-  // sig = (float*) malloc(classes_*sizeof(float));  
-  
+    
   memset((void*)sig, 0, classes_ * sizeof(float));
-  std::vector<RandomizedTree>::const_iterator tree_it;
+  std::vector<RandomizedTree>::iterator tree_it;
   
-  #if 1 // inlined native C
+  #if 1 // inlined native C for summing up
     // get posteriors
-    const float **posteriors = new const float*[trees_.size()];  // TODO: move alloc outside this func
-    const float **pp = posteriors;
+    float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
+    float **pp = posteriors;
     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
       *posteriors = tree_it->getPosterior(patch_data);       
     
@@ -94,6 +85,8 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
       add(classes_, sig, *posteriors, sig);
     
+    delete [] posteriors;
+    posteriors = NULL;
     
     // TODO: get rid of this multiply (-> number of trees is known at train 
     // time, exploit it in RandomizedTree::finalize())
@@ -101,7 +94,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     for (int i = 0; i < classes_; ++i)
       sig[i] *= normalizer;
 
-  #else  // CBLAS
+  #else  // CBLAS for summing up
      for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
        const float* posterior = tree_it->getPosterior(patch_data);
        cblas_saxpy(classes_, 1., posterior, 1, sig, 1);    

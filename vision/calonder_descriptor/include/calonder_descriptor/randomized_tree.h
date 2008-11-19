@@ -41,9 +41,10 @@ public:
   static const int PATCH_SIZE = 32;
   static const int DEFAULT_DEPTH = 10;
   static const int DEFAULT_VIEWS = 5000;
-  static const size_t DEFAULT_REDUCED_NUM_DIM = 250;
+  static const size_t DEFAULT_REDUCED_NUM_DIM = 176;
   
   RandomizedTree();
+  ~RandomizedTree();
   
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
              int depth, int views, size_t reduced_num_dim);
@@ -67,18 +68,20 @@ private:
   int depth_;
   int num_leaves_;
   std::vector<RTreeNode> nodes_;
-  std::vector<float> posteriors_;
-  //float **posteriors_;      // 16 bytes aligned posteriors
+  //std::vector<float> posteriors_;
+  float **posteriors_;      // 16 bytes aligned posteriors
   std::vector<int> leaf_counts_;
 
   void createNodes(int num_nodes, Rng &rng);
+  void allocPosteriorsAligned(int num_leaves, int num_classes);
+  void freePosteriors();
   void init(int classes, int depth, Rng &rng);
   void addExample(int class_id, uchar* patch_data);
   void finalize(size_t reduced_num_dim);
   int getIndex(uchar* patch_data) const;
-  float* getPosteriorByIndex(int index);
-  const float* getPosteriorByIndex(int index) const;
-  void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);
+  inline float* getPosteriorByIndex(int index) { return posteriors_[index]; }
+  //const float* getPosteriorByIndex(int index) const;
+  void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);  
 };
 
 inline uchar* getData(IplImage* image)
@@ -86,15 +89,12 @@ inline uchar* getData(IplImage* image)
   return reinterpret_cast<uchar*>(image->imageData);
 }
 
+/*
 inline float* RandomizedTree::getPosteriorByIndex(int index)
 {
   return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosteriorByIndex(index));
 }
-
-inline const float* RandomizedTree::getPosteriorByIndex(int index) const
-{
-  return &posteriors_[index * classes_];
-}
+*/
 
 template < typename PointT >
 cv::WImageView1_b extractPatch(cv::WImageView1_b const& image, PointT pt, int patch_sz = RandomizedTree::PATCH_SIZE)

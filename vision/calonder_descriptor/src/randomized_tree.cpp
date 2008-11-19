@@ -9,7 +9,14 @@
 namespace features {
 
 RandomizedTree::RandomizedTree()
-{}
+{
+   posteriors_ = NULL;
+}
+
+RandomizedTree::~RandomizedTree()
+{
+   freePosteriors();
+}
 
 void RandomizedTree::createNodes(int num_nodes, Rng &rng)
 {
@@ -44,7 +51,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
                            int depth, int views, size_t reduced_num_dim)
 {
   init(base_set.size(), depth, rng);
-
+  
   IplImage* patch = cvCreateImage(cvSize(PATCH_SIZE, PATCH_SIZE),
                                   IPL_DEPTH_8U, 1);
 
@@ -66,6 +73,25 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
   cvReleaseImage(&patch);
 }
 
+void RandomizedTree::allocPosteriorsAligned(int num_leaves, int num_classes)
+{  
+  posteriors_ = new float*[num_leaves];
+  for (int i=0; i<num_leaves; ++i)
+    posix_memalign((void**)&posteriors_[i], 16, num_classes*sizeof(float));
+  //printf("[DEBUG] tree alloc'ed: num_classes = %i, num_leaves = %i\n", num_classes, num_leaves);    
+}
+
+void RandomizedTree::freePosteriors()
+{
+   if (posteriors_) {
+      for (int i=0; i<num_leaves_; ++i)
+         free(posteriors_[i]);
+      delete [] posteriors_;
+      posteriors_ = NULL;
+      //printf("[DEBUG] tree freed\n");
+   }
+}
+
 void RandomizedTree::init(int classes, int depth, Rng &rng)
 {
   classes_ = classes;
@@ -74,7 +100,7 @@ void RandomizedTree::init(int classes, int depth, Rng &rng)
   int num_nodes = num_leaves_ - 1; // 2**d - 1
   
   // Initialize probabilities and counts to 0
-  posteriors_.resize(classes_ * num_leaves_);
+  allocPosteriorsAligned(num_leaves_, classes_);
   leaf_counts_.resize(num_leaves_);
 
   createNodes(num_nodes, rng);
@@ -90,9 +116,9 @@ void RandomizedTree::addExample(int class_id, uchar* patch_data)
 
 void RandomizedTree::finalize(size_t reduced_num_dim)
 {
-   // Normalize by number of patches to reach each leaf
-   float* posterior = &posteriors_[0];
+   // Normalize by number of patches to reach each leaf   
    for (int index = 0; index < num_leaves_; ++index) {
+      float* posterior = posteriors_[index];
       int count = leaf_counts_[index];
       if (count != 0) {
          float normalizer = 1.0f / count;
@@ -101,16 +127,13 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
             ++posterior;
          }
       } 
-      else {
-         posterior += classes_;
-      }
    }
 
    if ((int)reduced_num_dim != classes_) {
       float *cs_phi = new float[reduced_num_dim * classes_];           // reduced_num_dim x classes_ matrix
       makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
 
-      float *cs_posteriors = new float[reduced_num_dim * num_leaves_];         // reduced_num_dim x num_leaves_ matrix     
+      float *cs_posteriors = new float[num_leaves_ * reduced_num_dim];         // num_leaves_ x reduced_num_dim
       for (int i=0; i<num_leaves_; ++i) {
          float *post = getPosteriorByIndex(i);
          float *prod = &cs_posteriors[i*reduced_num_dim];
@@ -121,36 +144,39 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
       }
 
       // copy new posteriors
-      posteriors_.clear();
-      posteriors_.resize(reduced_num_dim*num_leaves_);
-      memcpy(&posteriors_[0], cs_posteriors, reduced_num_dim*num_leaves_*sizeof(float));
+      //posteriors_.clear();
+      //posteriors_.resize(num_leaves_*reduced_num_dim);
+      freePosteriors();
+      allocPosteriorsAligned(num_leaves_, reduced_num_dim);
+      for (int i=0; i<num_leaves_; ++i)         
+         memcpy(posteriors_[i], &cs_posteriors[i*reduced_num_dim], reduced_num_dim*sizeof(float));
       classes_ = reduced_num_dim;
    }
    
    
    // apply compressive sensing to leafs (if user wants compression)
-#if 0  // old ublas code (debugged)
-  if ((int)reduced_num_dim != classes_) {
-     ublas::matrix<float> cs_phi;
-     makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
-     
-     typedef ublas::shallow_array_adaptor<float> SigStorage;
-     typedef ublas::vector<float, SigStorage> SigVec;
-     std::vector<float> cs_posteriors;
-     cs_posteriors.resize(reduced_num_dim * num_leaves_);
-     
-     for (int i=0; i<num_leaves_; ++i) {
-       SigVec post_vec(   classes_,        SigStorage(classes_,        const_cast<float*>(getPosteriorByIndex(i))) );
-       SigVec cs_post_vec(reduced_num_dim, SigStorage(reduced_num_dim, const_cast<float*>(&cs_posteriors[i*reduced_num_dim])) );
-       ublas::axpy_prod(cs_phi, post_vec, cs_post_vec, true);
-     }
-     
-     // nasty assignement ok, we have time at this point...
-     posteriors_.clear();
-     posteriors_.assign(cs_posteriors.begin(), cs_posteriors.end());
-     classes_ = reduced_num_dim;
-  }
-#endif
+   #if 0  // old ublas code (debugged)
+   if ((int)reduced_num_dim != classes_) {
+      ublas::matrix<float> cs_phi;
+      makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
+
+      typedef ublas::shallow_array_adaptor<float> SigStorage;
+      typedef ublas::vector<float, SigStorage> SigVec;
+      std::vector<float> cs_posteriors;
+      cs_posteriors.resize(reduced_num_dim * num_leaves_);
+
+      for (int i=0; i<num_leaves_; ++i) {
+         SigVec post_vec(   classes_,        SigStorage(classes_,        const_cast<float*>(getPosteriorByIndex(i))) );
+         SigVec cs_post_vec(reduced_num_dim, SigStorage(reduced_num_dim, const_cast<float*>(&cs_posteriors[i*reduced_num_dim])) );
+         ublas::axpy_prod(cs_phi, post_vec, cs_post_vec, true);
+      }
+
+      // nasty assignement ok, we got time at this point
+      posteriors_.clear();
+      posteriors_.assign(cs_posteriors.begin(), cs_posteriors.end());
+      classes_ = reduced_num_dim;
+   }
+   #endif
  
    leaf_counts_.clear();
 }
@@ -162,7 +188,8 @@ float* RandomizedTree::getPosterior(uchar* patch_data)
 
 const float* RandomizedTree::getPosterior(uchar* patch_data) const
 {
-  return getPosteriorByIndex( getIndex(patch_data) );
+  //return getPosteriorByIndex( getIndex(patch_data) );
+  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch_data));
 }
 
 void RandomizedTree::read(const char* file_name)
@@ -183,8 +210,11 @@ void RandomizedTree::read(std::istream &is)
   nodes_.resize(num_nodes);
   is.read((char*)(&nodes_[0]), num_nodes * sizeof(nodes_[0]));
 
-  posteriors_.resize(classes_ * num_leaves_);
-  is.read((char*)(&posteriors_[0]), posteriors_.size() * sizeof(posteriors_[0]));
+  //posteriors_.resize(classes_ * num_leaves_);
+  freePosteriors();
+  allocPosteriorsAligned(num_leaves_, classes_);  
+  for (int i=0; i<num_leaves_; i++)
+    is.read((char*)posteriors_[i], classes_ * sizeof(*posteriors_[0]));
 }
 
 void RandomizedTree::write(const char* file_name) const
@@ -199,8 +229,9 @@ void RandomizedTree::write(std::ostream &os) const
   os.write((char*)(&classes_), sizeof(classes_));
   os.write((char*)(&depth_), sizeof(depth_));
 
-  os.write((char*)(&nodes_[0]), nodes_.size() * sizeof(nodes_[0]));
-  os.write((char*)(&posteriors_[0]), posteriors_.size() * sizeof(posteriors_[0]));
+  os.write((char*)(&nodes_[0]), nodes_.size() * sizeof(nodes_[0]));  
+  for (int i=0; i<num_leaves_; i++)
+    os.write((char*)posteriors_[i], classes_ * sizeof(*posteriors_[0]));
 }
 
 void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
