@@ -76,7 +76,7 @@ for topic, msg in rosrecord.logplayer(filename):
     print "HERE2"
 
   start,end = 941,1000
-  start,end = 0,2100
+  start,end = 1400,1410
   if cam and topic.endswith("videre/images"):
     print framecounter
     if framecounter == end:

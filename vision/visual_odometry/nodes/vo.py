@@ -44,7 +44,7 @@ from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
 import std_msgs.msg as stdmsg
 import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, FeatureDetectorHarris
+from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast
 from visual_odometry.msg import Pose
 import camera
 
@@ -72,7 +72,7 @@ class VO:
   def handle_params(self, iar):
     if not self.vo:
       cam = camera.VidereCamera(iar.data)
-      self.vo = VisualOdometer(cam)
+      self.vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
       self.started = None
       self.previous_keyframe = None
       self.know_state = 'lost'

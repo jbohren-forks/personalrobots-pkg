@@ -30,8 +30,6 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 #
-# Revision $Id: rosrecord.py 2621 2008-10-28 18:47:17Z sfkwc $
-# $Author: sfkwc $
 
 ## Main module for visual odometry.
 # authors: jamesb
@@ -127,16 +125,17 @@ class FeatureDetector:
 
     features = self.get_features(frame, target_points)
     if len(features) < (target_points * 0.5) or len(features) > (target_points * 2.0):
-        lo = self.thresh / 8.
-        hi = self.thresh * 8.
+        (lo,hi) = self.threshrange
         for i in range(7):
-          self.thresh = (lo + hi) / 2
+          self.thresh = 0.5 * (lo + hi)
           features = self.get_features(frame, target_points)
           if len(features) < target_points:
             hi = self.thresh
           if len(features) > target_points:
             lo = self.thresh
-          
+
+    print "thresh %8.3f -> %d" % (self.thresh, len(features))
+
     # Try to be a bit adaptive for next time
     if len(features) > (target_points * 1.1):
         self.thresh *= 1.05
@@ -147,6 +146,7 @@ class FeatureDetector:
 class FeatureDetectorFast(FeatureDetector):
 
   default_thresh = 10
+  threshrange = (5,127)
 
   def get_features(self, frame, target_points):
     assert len(frame.rawdata) == (frame.size[0] * frame.size[1])
@@ -183,6 +183,7 @@ class FeatureDetector4x4:
 class FeatureDetectorHarris(FeatureDetector):
 
   default_thresh = 1e-3
+  threshrange = (5,127)
 
   def get_features(self, frame, target_points):
     return VO.harris(frame.rawdata, frame.size[0], frame.size[1], int(target_points * 1.2), self.thresh, 2.0)
@@ -192,6 +193,7 @@ import starfeature
 class FeatureDetectorStar(FeatureDetector):
 
   default_thresh = 30.0
+  threshrange = (1,64)
   line_thresh = 10.0
 
   def get_features(self, frame, target_points):
@@ -362,6 +364,9 @@ class VisualOdometer:
     self.find_disparities(frame)
     self.collect_descriptors(frame)
     frame.id = self.num_frames
+    return self.handle_frame_0(frame)
+
+  def handle_frame_0(self, frame):
     if self.prev_frame:
       # If the key->current is good, use it
       # Otherwise, prev frame becomes the new key
@@ -383,7 +388,7 @@ class VisualOdometer:
       if (self.keyframe != self.prev_frame) and is_far:
         self.keyframe = self.prev_frame
         self.log_keyframes.append(self.keyframe.id)
-        return self.handle_frame(frame)
+        return self.handle_frame_0(frame)
       Tok = ref.pose
       Tkp = diff_pose
       Top = Tok * Tkp
