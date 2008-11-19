@@ -27,7 +27,7 @@ import numpy
 import os
 import copy
 
-DEBUG = False
+DEBUG = True
 SAVE_PICS = True
 DESCRIPTOR = 'CALONDER'
 
@@ -217,13 +217,9 @@ class PeopleTracker:
         
       # If the displacement was small, return the point
       if numpy.dot(dpoint,dpoint) <= eps :
-        print "iter", iter, "eps"
-        print "newpoint", new_point.tolist()
         return new_point.tolist()
 
     # Reached the maximum number of iterations, return
-    print "iter", iter, "maxiter"
-    print "newpoint", new_point.tolist()
     return new_point.tolist()
 
 
