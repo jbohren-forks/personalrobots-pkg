@@ -305,22 +305,25 @@ namespace ompl {
 	  data.push_back(0);	// suppose 0 means freespace
       }
     
-    // whatever, we won't update dynamic obstacles anyway (???)
-    double const window_length(0);
-    
     // hm... what if our obstacle cost needs more than 8 bits?    
     unsigned char const threshold(obstacle_cost & 0xff);
-    double const maxZ(1);
-    double const freeSpaceProjectionHeight(1);
+    double const maxZ(0.5);
+    double const zLB(0.10);
+    double const zUB(0.15);
+    double const weight(1);
     costmap_2d::CostMap2D * cm;
     if (use_sfl_cost)
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
-				     threshold, maxZ, freeSpaceProjectionHeight,
-				     0, 0, 0);
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
+				     threshold, maxZ, zLB, zUB,
+				     0,	// inflationRadius
+				     0,	// circumscribedRadius
+				     0,	// inscribedRadius
+				     weight);
     else
-      cm = new costmap_2d::CostMap2D(width, height, data, resolution, window_length,
-				     threshold, maxZ, freeSpaceProjectionHeight,
-				     inflation_radius, circumscribed_radius, inscribed_radius);
+      cm = new costmap_2d::CostMap2D(width, height, data, resolution,
+				     threshold, maxZ, zLB, zUB,
+				     inflation_radius, circumscribed_radius, inscribed_radius,
+				     weight);
     return cm;
   }
     
