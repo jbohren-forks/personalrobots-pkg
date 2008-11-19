@@ -13,7 +13,7 @@ system.
 <review status="unreviewed" notes=""/>
 <url>http://playerstage.sf.net</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers -Wl,-rpath,${prefix}/player-svn/build/rtk2 -L${prefix}/player-svn/build/rtk2 -lrtk" cflags="-I${prefix}/player/include/player-2.2"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/player/lib -L${prefix}/player/lib -lplayercore -lplayerxdr -lplayerutils -lplayererror -lplayerdrivers -Wl,-rpath,${prefix}/build/player-svn/build/rtk2 -L${prefix}/build/player-svn/build/rtk2 -lrtk" cflags="-I${prefix}/player/include/player-2.2"/>
   <doxymaker external="http://playerstage.sourceforge.net/doc/Player-cvs/player"/>
 </export>
 <versioncontrol type="svn" url="https://playerstage.svn.sourceforge.net/svnroot/playerstage/code/player/trunk"/>
