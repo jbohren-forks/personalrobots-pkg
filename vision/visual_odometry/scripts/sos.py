@@ -22,7 +22,7 @@ import math
 import copy
 
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, DescriptorSchemeEverything, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast
 from math import *
 
@@ -54,12 +54,12 @@ for filename in sys.argv[1:]:
     if rospy.is_shutdown():
       break
 
-    if topic == "videre/cal_params" and not cam:
+    if topic.endswith("videre/cal_params") and not cam:
       cam = camera.VidereCamera(msg.data)
 
       vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD())
 
-    if cam and topic == "videre/images":
+    if cam and topic.endswith("videre/images"):
       imgR = imgAdapted(msg.images[0])
       imgL = imgAdapted(msg.images[1])
       assert msg.images[0].label == "right_rectified"

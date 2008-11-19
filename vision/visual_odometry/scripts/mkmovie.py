@@ -22,7 +22,7 @@ import math
 import copy
 
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, DescriptorSchemeEverything, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
+from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast
 from math import *
 
@@ -54,7 +54,7 @@ for topic, msg in rosrecord.logplayer(filename):
   if rospy.is_shutdown():
     break
 
-  if topic == "videre/cal_params" and not cam:
+  if topic.endswith("videre/cal_params") and not cam:
     print msg.data
     cam = camera.VidereCamera(msg.data)
     print "HERE"
@@ -76,8 +76,8 @@ for topic, msg in rosrecord.logplayer(filename):
     print "HERE2"
 
   start,end = 941,1000
-  start,end = 0,10000
-  if cam and topic == "videre/images":
+  start,end = 0,2100
+  if cam and topic.endswith("videre/images"):
     print framecounter
     if framecounter == end:
       break

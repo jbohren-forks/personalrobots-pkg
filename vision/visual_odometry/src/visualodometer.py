@@ -1,3 +1,41 @@
+# Software License Agreement (BSD License)
+#
+# Copyright (c) 2008, Willow Garage, Inc.
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+#  * Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above
+#    copyright notice, this list of conditions and the following
+#    disclaimer in the documentation and/or other materials provided
+#    with the distribution.
+#  * Neither the name of the Willow Garage nor the names of its
+#    contributors may be used to endorse or promote products derived
+#    from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Revision $Id: rosrecord.py 2621 2008-10-28 18:47:17Z sfkwc $
+# $Author: sfkwc $
+
+## Main module for visual odometry.
+# authors: jamesb
+
 import vop
 import votools as VO
 from timer import Timer
@@ -10,7 +48,6 @@ import numpy.linalg
 scratch = " " * (640 * 480)
 
 import transformations
-
 
 class Pose:
   def __init__(self, R=None, S=None):
@@ -166,23 +203,20 @@ class DescriptorScheme:
   def name(self):
     return self.__class__.__name__
 
-class DescriptorSchemeEverything(DescriptorScheme):
-
-  def collect(self, frame):
-    pass
-
   def match(self, af0, af1):
+    if af0.kp == [] or af1.kp == []:
+      return []
     Xs = vop.array([k[0] for k in af1.kp])
     Ys = vop.array([k[1] for k in af1.kp])
     pairs = []
-    for (i,ki) in enumerate(af0.kp):
+    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
       # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
       predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 64)
+      predY = (abs(Ys - ki[1]) < 32)
       hits = vop.where(predX & predY, 1, 0).tostring()
-      for (j,c) in enumerate(hits):
-        if ord(c) != 0:
-          pairs.append((i, j))
+      best = self.search(di, af1, hits)
+      if best != None:
+        pairs.append((i, best[0], best[1]))
     return pairs
 
 class DescriptorSchemeSAD(DescriptorScheme):
@@ -192,19 +226,12 @@ class DescriptorSchemeSAD(DescriptorScheme):
     VO.ost_do_prefilter_norm(frame.rawdata, lgrad, frame.size[0], frame.size[1], 31, scratch)
     frame.descriptors = [ VO.grab_16x16(lgrad, frame.size[0], p[0]-7, p[1]-7) for p in frame.kp ]
 
-  def match(self, af0, af1):
-    Xs = vop.array([k[0] for k in af1.kp])
-    Ys = vop.array([k[1] for k in af1.kp])
-    pairs = []
-    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
-      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
-      predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
-      hits = vop.where(predX & predY, 1, 0).tostring()
-      best = VO.sad_search(di, af1.descriptors, hits)
-      if best != None:
-        pairs.append((i, best, 0))
-    return pairs
+  def search(self, di, af1, hits):
+      i = VO.sad_search(di, af1.descriptors, hits)
+      if i == None:
+        return None
+      else:
+        return (i, 0)
 
 import calonder
 
@@ -225,20 +252,11 @@ class DescriptorSchemeCalonder(DescriptorScheme):
       frame.descriptors.append(sig)
       frame.matcher.addSignature(sig)
 
-  def match(self, af0, af1):
-    Xs = vop.array([k[0] for k in af1.kp])
-    Ys = vop.array([k[1] for k in af1.kp])
-    pairs = []
-    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
-      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
-      predX = (abs(Xs - ki[0]) < 64)
-      predY = (abs(Ys - ki[1]) < 32)
-      hits = vop.where(predX & predY, 1, 0).tostring()
-      match = af1.matcher.findMatch(di, hits)
-      if match != None:
-        (best, distance) = match
-        pairs.append((i, best, distance))
-    return pairs
+  def search(self, di, af1, hits):
+    match = af1.matcher.findMatch(di, hits)
+    return match
+
+
 
 class VisualOdometer:
 
@@ -351,12 +369,17 @@ class VisualOdometer:
       ref = self.keyframe
       self.pairs = self.temporal_match(ref, frame)
       solution = self.solve(ref.kp, frame.kp, self.pairs)
-      (inl, rot, shift) = solution
-      self.inl = inl
-      self.outl = len(self.pairs) - inl
-      diff_pose = self.mkpose(rot, shift)
+      if solution:
+        (inl, rot, shift) = solution
+        self.inl = inl
+        self.outl = len(self.pairs) - inl
+        diff_pose = self.mkpose(rot, shift)
+      else:
+        self.inl = 0
+        self.outl = 0
+        diff_pose = Pose()
       frame.diff_pose = diff_pose
-      is_far = inl < self.inlier_thresh
+      is_far = self.inl < self.inlier_thresh
       if (self.keyframe != self.prev_frame) and is_far:
         self.keyframe = self.prev_frame
         self.log_keyframes.append(self.keyframe.id)
@@ -365,7 +388,7 @@ class VisualOdometer:
       Tkp = diff_pose
       Top = Tok * Tkp
       frame.pose = Top
-      frame.inl = inl
+      frame.inl = self.inl
     else:
       frame.pose = Pose()
       self.keyframe = frame
