@@ -49,7 +49,6 @@
 #include <math.h>
 
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
 #include <robot_kinematics/serial_chain.h>
 
 namespace robot_kinematics

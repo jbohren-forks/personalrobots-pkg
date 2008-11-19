@@ -49,8 +49,9 @@
 #include <iostream>
 #include <math.h>
 
+#include <newmat10/newmat.h>
+
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
 
 double modulus_double(double a, double b);
 double angle_within_mod180(double ang);
