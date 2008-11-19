@@ -1348,9 +1348,21 @@ void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
 //returns 1 if found a solution, and 0 otherwise
 int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V)
 {
+	int solcost;
+
+	return replan(allocated_time_secs, solution_stateIDs_V, &solcost);
+	
+}
+
+
+
+//returns 1 if found a solution, and 0 otherwise
+int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* psolcost)
+{
     vector<int> pathIds; 
     int PathCost = 0;
     bool bFound = false;
+	*psolcost = 0;
 
 
     //plan for the first solution only
@@ -1361,7 +1373,7 @@ int ADPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs
 
     //copy the solution
     *solution_stateIDs_V = pathIds;
-
+	*psolcost = PathCost;
 
 	return (int)bFound;
 

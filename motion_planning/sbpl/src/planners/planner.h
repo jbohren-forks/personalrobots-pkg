@@ -79,6 +79,7 @@ public:
 	//returns 1 if solution is found, 0 otherwise
     //will replan incrementally if possible (e.g., supported by the planner and not forced to replan from scratch)
 	virtual int replan(double allocated_time_sec, vector<int>* solution_stateIDs_V) = 0;
+	virtual int replan(double allocated_time_sec, vector<int>* solution_stateIDs_V, int* solcost) = 0;
 
     //sets the goal of search (planner will automatically decide whether it needs to replan from scratch)
     virtual int set_goal(int goal_stateID) = 0;

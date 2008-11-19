@@ -107,6 +107,7 @@ class ADPlanner : public SBPLPlanner
 
 public:
 	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V);
+	int replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* solcost);
 
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);

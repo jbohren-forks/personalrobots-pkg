@@ -1059,11 +1059,21 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 //returns 1 if found a solution, and 0 otherwise
 int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V)
 {
+	int solcost;
+
+	return replan(allocated_time_secs, solution_stateIDs_V, &solcost);
+	
+}
+
+//returns 1 if found a solution, and 0 otherwise
+int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateIDs_V, int* psolcost)
+{
     vector<int> pathIds; 
-    int PathCost = 0;
     bool bFound = false;
+	int PathCost;
 	bool bFirstSolution = this->bsearchuntilfirstsolution;
 	bool bOptimalSolution = false;
+	*psolcost = 0;
 
     //plan
     if((bFound = Search(pSearchStateSpace_, pathIds, PathCost, bFirstSolution, bOptimalSolution, allocated_time_secs)) == false) 
@@ -1073,11 +1083,12 @@ int ARAPlanner::replan(double allocated_time_secs, vector<int>* solution_stateID
 
     //copy the solution
     *solution_stateIDs_V = pathIds;
-
+	*psolcost = PathCost;
 
 	return (int)bFound;
 
 }
+
 
 int ARAPlanner::set_goal(int goal_stateID)
 {
