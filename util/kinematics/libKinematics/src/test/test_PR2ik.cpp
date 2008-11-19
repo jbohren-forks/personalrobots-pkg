@@ -78,26 +78,40 @@ int main()
    NEWMAT::Matrix g0 = myArm.ComputeFK(angles);
    NEWMAT::Matrix eS = myArm.ComputeEndEffectorVelocity(angles,speeds);
 
-   angles[0] = 0.1;
+   cout << "FK: " << g0 << endl;
+
+   angles[0] =  -1.35195;
+   angles[1] =  1.2231;
+   angles[2] =   -0.974907;
+   angles[3] =   -0.09257;
+   angles[4] =   -2.69175;
+   angles[5] =   0.0632374;
+   angles[6] =   0.178599;
+
+ 
+/*   angles[0] = 0.1;
    angles[1] = -1;
    angles[2] = 0.3;
    angles[3] = 0.3;
    angles[4] = 0.2;
    angles[5] = 0.5;
-
+*/
    NEWMAT::Matrix pose = myArm.ComputeFK(angles);
    g = pose;
+//   g(1,4) = g(1,4) - 0.5;
+
+   cout << "FK: " << g << endl;
 
    NEWMAT::Matrix theta(7,1);
    theta = 0;
 
    gettimeofday(&t0,NULL);
 
-   myArm.ComputeIK(g,0.1);
+   myArm.ComputeIK(g,0);
 
    gettimeofday(&t1,NULL);
 
-   myArm.ComputeIK(g,0.2);
+   myArm.ComputeIK(g, -1.35);
 
    double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
 

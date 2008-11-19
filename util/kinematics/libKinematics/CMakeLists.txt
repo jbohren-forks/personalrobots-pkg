@@ -7,4 +7,6 @@ rospack_add_library(libKinematics src/pr2_ik.cpp src/kinematics.cpp)
 rospack_add_executable(libKinematicsTest src/test/test_PR2ik.cpp)
 target_link_libraries(libKinematicsTest libKinematics)
 
+rospack_add_executable(test_ik src/test/test_ik.cpp)
+target_link_libraries(test_ik libKinematics)
 
