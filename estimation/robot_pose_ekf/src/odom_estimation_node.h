@@ -44,6 +44,7 @@
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
+//#include "visual_odometry/Pose.h"
 
 // log files
 #include <fstream>
@@ -88,7 +89,8 @@ private:
   std_msgs::BaseVel               _vel;  
   std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
-  std_msgs::PoseStamped           _vo;  
+  std_msgs::PoseWithRatesStamped  _vo;  
+  //visual_odometry::Pose           _vo;  
 
   // estimated robot pose message to send
   std_msgs::PoseStamped _output; 
@@ -98,7 +100,6 @@ private:
   tf::Transform _odom_meas, _imu_meas,_vo_meas;
   ros::Time _odom_time, _imu_time, _vo_time, _filter_time;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
-  bool _exact_time_mode;
   double _freq, _timeout;
 
   // mutex

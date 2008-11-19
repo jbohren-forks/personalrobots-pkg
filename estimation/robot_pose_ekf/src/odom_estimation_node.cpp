@@ -40,6 +40,7 @@ using namespace std;
 using namespace ros;
 using namespace tf;
 
+
 #define __EKF_DEBUG_FILE__
 
 namespace estimation
@@ -60,12 +61,11 @@ namespace estimation
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
     subscribe("odom",         _odom, &odom_estimation_node::odom_callback, 10);
     subscribe("imu_data",     _imu,  &odom_estimation_node::imu_callback,  10);
-    subscribe("vo_data",      _vo,   &odom_estimation_node::vo_callback,   10);
+    subscribe("vo",           _vo,   &odom_estimation_node::vo_callback,   10);
 
     // paramters
     param("odom_estimation/freq", _freq, 30.0);
-    param("odom_estimation/sensor_timeout", _timeout, 0.5);
-    param("odom_estimation/exact_time_mode", _exact_time_mode, false);
+    param("odom_estimation/sensor_timeout", _timeout, 1.0);
 
 
 #ifdef __EKF_DEBUG_FILE__
@@ -102,12 +102,9 @@ namespace estimation
   {
     // receive data
     _filter_mutex.lock();
-    if (_exact_time_mode)  
-      _odom_time = _odom.header.stamp;
-    else 
-      _odom_time = Time::now();
+    _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom_time,"odom", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"odom", "base"));
     _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -133,12 +130,8 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _imu_time = Time::now();
-    if (_exact_time_mode)  
-      _imu_time = _imu.header.stamp;
-    else 
-      _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu_time, "imu", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base"));
     _filter_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -164,17 +157,13 @@ namespace estimation
     // receive data
     _filter_mutex.lock();
     _vo_time = Time::now();
-    if (_exact_time_mode)  
-      _vo_time = _vo.header.stamp;
-    else 
-      _vo_time = Time::now();
-    PoseMsgToTF(_vo.pose, _vo_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo_time, "vo", "base"));
+    PoseMsgToTF(_vo.pos, _vo_meas);
+    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo.header.stamp, "vo", "base"));
     _filter_mutex.unlock();
 
     // activate vo
     if (!_vo_active){
-      _vo_active = true;
+      //_vo_active = true;
       ROS_INFO("VO sensor activated"); 
     }
   };
@@ -213,6 +202,7 @@ namespace estimation
       _corr_file << endl;
 
       // write to file
+      /*
       Stamped<Transform> est_now, est_last;
       _my_filter.GetEstimate(Time::now(), est_now);
       _my_filter.GetEstimate(0.0, est_last);
@@ -221,6 +211,7 @@ namespace estimation
       est_last.getBasis().getEulerZYX(r_last, tmp, tmp);
       _extra_file << est_now.getOrigin().x()  << " " << est_now.getOrigin().y()  << " " << est_now.getOrigin().z()  << " " << r_now << " "
 		  << est_last.getOrigin().x() << " " << est_last.getOrigin().y() << " " << est_last.getOrigin().z() << " " << r_last << endl;
+      */
 #endif
       
       // output most recent estimate message
@@ -230,7 +221,7 @@ namespace estimation
 
     // initialize filer with odometry frame
     if ( _odom_active && !_my_filter.IsInitialized()){
-      _my_filter.Initialize(_odom_meas, _odom_time);
+      _my_filter.Initialize(_odom_meas, _odom.header.stamp);
       ROS_INFO("Fiter initialized");
     }
   };
@@ -243,11 +234,6 @@ namespace estimation
   // filter loop
   void odom_estimation_node::spin()
   {
-    if (_exact_time_mode)
-      ROS_INFO("Exact time mode on: using timestamps of sensor messages");
-    else
-      ROS_INFO("Exact time mode off: use time when sensor messages are received instead of timestamp");
-
     while (ok()){
       _filter_mutex.lock();
 #ifdef __EKF_DEBUG_FILE__
@@ -272,12 +258,11 @@ namespace estimation
 	  ROS_INFO("VO sensor not active any more");
 	}
 
-
 	// update filter with exact time stamps
 	Time min_time = Time::now();
-	if (_odom_active)  min_time = min(min_time, _odom_time);
-	if (_imu_active)   min_time = min(min_time, _imu_time);
-	if (_vo_active)    min_time = min(min_time, _vo_time);
+	if (_odom_active)  min_time = min(min_time, _odom.header.stamp);
+	if (_imu_active)   min_time = min(min_time, _imu.header.stamp);
+	if (_vo_active)    min_time = min(min_time, _vo.header.stamp);
 	this->Update(min_time);
       }
       _filter_mutex.unlock();

@@ -77,11 +77,18 @@ public:
   bool IsInitialized() {return _filter_initialized;};
 
   /// Add a measurement to the measurement buffer
-  void AddMeasurement(const tf::Stamped<tf::Transform>& meas);
+  void AddMeasurement(const tf::Stamped<tf::Transform>& meas, double reliability=1);
 
 private:
   /// correct for angle overflow
   void AngleOverflowCorrect(double& a, double ref);
+
+  // decompose Transform into x,y,z,Rx,Ry,Rz
+  void DecomposeTransform(const tf::Stamped<tf::Transform>& trans,
+			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+  void DecomposeTransform(const tf::Transform& trans,
+			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
+
 
   // pdf / model / filter
   BFL::AnalyticSystemModelGaussianUncertainty* _sys_model;
@@ -94,6 +101,7 @@ private:
   BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _vo_meas_model;
   BFL::Gaussian* _prior;
   BFL::ExtendedKalmanFilter* _filter;
+  MatrixWrapper::SymmetricMatrix _vo_covariance;
 
   // vectors
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
@@ -101,6 +109,7 @@ private:
   tf::Stamped<tf::Transform> _odom_meas, _odom_meas_old, _imu_meas, _imu_meas_old, _vo_meas, _vo_meas_old;
   ros::Time _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
+  double _odom_reliability, _imu_reliatility, _vo_reliatility;
 
   // tf transformer
   tf::Transformer _transformer;

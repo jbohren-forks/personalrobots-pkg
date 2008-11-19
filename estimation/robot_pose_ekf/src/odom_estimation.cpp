@@ -34,9 +34,6 @@
 
 #include "odom_estimation.h"
 
-//#define __EKF_DEBUG_COUT__
-
-
 using namespace MatrixWrapper;
 using namespace BFL;
 using namespace tf;
@@ -53,7 +50,10 @@ namespace estimation
     _filter_initialized(false),
     _odom_initialized(false),
     _imu_initialized(false),
-    _vo_initialized(false)
+    _vo_initialized(false),
+    _odom_reliability(1.0),
+    _imu_reliatility(1.0),
+    _vo_reliatility(1.0)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
@@ -104,6 +104,7 @@ namespace estimation
     measNoiseVo_Cov(4,4) = pow(0.001,2);
     measNoiseVo_Cov(5,5) = pow(0.001,2);
     measNoiseVo_Cov(6,6) = pow(0.001,2);
+    _vo_covariance = measNoiseVo_Cov;
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
@@ -137,14 +138,7 @@ namespace estimation
   {
     // set prior of filter
     ColumnVector prior_Mu(6); 
-    prior_Mu(1) = prior.getOrigin().x();  
-    prior_Mu(2) = prior.getOrigin().y(); 
-    prior_Mu(3) = prior.getOrigin().z(); 
-    prior.getBasis().getEulerZYX(prior_Mu(6), prior_Mu(5), prior_Mu(4));
-
-#ifdef __EKF_DEBUG_COUT__
-    cout << "Prior " << prior_Mu << endl;
-#endif
+    DecomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3), prior_Mu(4), prior_Mu(5), prior_Mu(6));
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
@@ -187,9 +181,8 @@ namespace estimation
 	if (_odom_initialized){
 	  // convert absolute odom measurements to relative odom measurements in horizontal plane
 	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * _odom_meas;
-	  ColumnVector odom_rel(3);
-	  odom_rel(1) = odom_rel_frame.getOrigin().x();   odom_rel(2) = odom_rel_frame.getOrigin().y(); 
-	  double tmp; odom_rel_frame.getBasis().getEulerZYX(odom_rel(3), tmp, tmp);
+	  ColumnVector odom_rel(3);  double tmp;
+	  DecomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
 	  AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
 	  // update filter
 	  _filter->Update(_odom_meas_model, odom_rel);
@@ -210,8 +203,8 @@ namespace estimation
 	  // convert absolute imu yaw measurement to relative imu yaw measurement 
 	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * _imu_meas;
 	  ColumnVector imu_rel(3); double tmp;
-	  imu_rel_frame.getBasis().getEulerZYX(imu_rel(3), tmp, tmp);
-	  _imu_meas.getBasis().getEulerZYX(tmp, imu_rel(2), imu_rel(1));
+	  DecomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
+	  DecomposeTransform(_imu_meas,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
 	  AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
 	  // update filter
 	  _filter->Update(_imu_meas_model,  imu_rel);
@@ -232,9 +225,10 @@ namespace estimation
 	  // convert absolute vo measurements to relative vo measurements
 	  Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * _vo_meas;
 	  ColumnVector vo_rel(6);
-	  vo_rel(1) = vo_rel_frame.getOrigin().x();  vo_rel(2) = vo_rel_frame.getOrigin().y();  vo_rel(3) = vo_rel_frame.getOrigin().z();  
-	  vo_rel_frame.getBasis().getEulerZYX(vo_rel(6), vo_rel(5), vo_rel(4));
+	  DecomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	  AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
+	  // set covariance
+	  _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * _vo_reliatility);
 	  // update filter
 	  _filter->Update(_vo_meas_model,  vo_rel);
 	}
@@ -257,9 +251,12 @@ namespace estimation
   };
 
 
-  void odom_estimation::AddMeasurement(const Stamped<Transform>& meas)
+  void odom_estimation::AddMeasurement(const Stamped<Transform>& meas, const double reliability)
   {
     _transformer.setTransform( meas );
+    if (meas.frame_id_ == "odom")     _odom_reliability = reliability;
+    else if (meas.frame_id_ == "imu") _imu_reliatility  = reliability;
+    else if (meas.frame_id_ == "vo")  _vo_reliatility   = reliability;
   };
 
 
@@ -298,5 +295,22 @@ namespace estimation
     while ((a-ref) < -M_PI) a += 2*M_PI;
   };
 
+  // decompose Transform into x,y,z,Rx,Ry,Rz
+  void odom_estimation::DecomposeTransform(const Stamped<Transform>& trans, 
+					   double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
+    x = trans.getOrigin().x();   
+    y = trans.getOrigin().y(); 
+    z = trans.getOrigin().z(); 
+    trans.getBasis().getEulerZYX(Rz, Ry, Rx);
+  };
+
+  // decompose Transform into x,y,z,Rx,Ry,Rz
+  void odom_estimation::DecomposeTransform(const Transform& trans, 
+					   double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
+    x = trans.getOrigin().x();   
+    y = trans.getOrigin().y(); 
+    z = trans.getOrigin().z(); 
+    trans.getBasis().getEulerZYX(Rz, Ry, Rx);
+  };
 
 }; // namespace

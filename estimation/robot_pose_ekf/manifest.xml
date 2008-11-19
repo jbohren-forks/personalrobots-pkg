@@ -6,4 +6,5 @@
 <depend package="bfl_latest" />
 <depend package="std_msgs" />
 <depend package="tf" />
+<depend package="visual_odometry" />
 </package>
