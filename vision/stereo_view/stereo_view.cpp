@@ -54,6 +54,7 @@ public:
   image_msgs::Image limage;
   image_msgs::Image rimage;
   image_msgs::Image dimage;
+  image_msgs::StereoInfo stinfo;
 
   image_msgs::CvBridge lbridge;
   image_msgs::CvBridge rbridge;
@@ -61,15 +62,26 @@ public:
 
   TopicSynchronizer<StereoView> sync;
 
-  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout)
+  bool subscribe_color_;
+
+  StereoView() : ros::node("cv_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout), subscribe_color_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
-    sync.subscribe("dcam/left/image_rect_color", limage, 1);
-    sync.subscribe("dcam/right/image_rect_color", rimage, 1);
+    param("~subscribe_color", subscribe_color_, false);
+    
+    if (subscribe_color_)
+    {
+      sync.subscribe("dcam/left/image_rect_color", limage, 1);
+      sync.subscribe("dcam/right/image_rect_color", rimage, 1);
+    } else {
+      sync.subscribe("dcam/left/image_rect", limage, 1);
+      sync.subscribe("dcam/right/image_rect", rimage, 1);
+    }
     sync.subscribe("dcam/disparity", dimage, 1);
+    sync.subscribe("dcam/stereo_info", stinfo, 1);
   }
 
   void image_cb_all(ros::Time t)
@@ -84,7 +96,7 @@ public:
     {
       // Disparity has to be scaled to be be nicely displayable
       IplImage* disp = cvCreateImage(cvGetSize(dbridge.toIpl()), IPL_DEPTH_8U, 1);
-      cvCvtScale(dbridge.toIpl(), disp, 1/4.0);
+      cvCvtScale(dbridge.toIpl(), disp, 4.0/stinfo.dpp);
       cvShowImage("disparity", disp);
       cvReleaseImage(&disp);
     }

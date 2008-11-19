@@ -112,7 +112,15 @@ namespace image_msgs
           reallocCvtIfNeeded(cvGetSize(rosimg_), IPL_DEPTH_8U, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_RGB2BGR);
           img_ = cvtimg_;
-        } else {
+        }
+        else if (encoding == "bgr" && rosimg.encoding == "mono" )
+        {
+          reallocCvtIfNeeded(cvGetSize(rosimg_), IPL_DEPTH_8U, 3);
+          cvCvtColor(rosimg_, cvtimg_, CV_GRAY2BGR);
+          img_ = cvtimg_;
+        }
+        else
+        {
           return false;
         }
       }

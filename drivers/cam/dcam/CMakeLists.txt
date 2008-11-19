@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 
-set(ROS_BUILD_TYPE Release)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rospack(dcam)
 
@@ -17,5 +17,5 @@ target_link_libraries(stereocal dcam fltk)
 rospack_add_executable(acquire src/acquire.cpp)
 target_link_libraries(acquire dcam fltk)
 
-rospack_add_executable(stacquire src/stacquire.cpp src/imwin.cpp)
-target_link_libraries(stacquire dcam fltk)
+rospack_add_executable(stacquire src/stacquire.cpp src/imwin.cpp src/im3Dwin.cpp)
+target_link_libraries(stacquire dcam fltk fltk_gl glut)

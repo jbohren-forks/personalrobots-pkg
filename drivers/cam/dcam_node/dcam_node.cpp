@@ -71,6 +71,7 @@ class DcamNode : public ros::node
 public:
 
   static dcam::Dcam* cam_;
+  static cam::StereoDcam* stcam_;
 
 
   DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
@@ -204,7 +205,8 @@ public:
       // is definitely wrong.
       if (stereo_cam_)
       {
-        cam_ = new cam::StereoDcam(guid);
+        stcam_ = new cam::StereoDcam(guid);
+        cam_ = stcam_;
         cam_->setFormat(mode, fps, speed);
         cam_->setProcMode(videre_mode);
       } else {
@@ -213,6 +215,10 @@ public:
       }
 
       cam_->start();
+
+      cam_->setUniqueThresh(12);
+      cam_->setTextureThresh(10);
+
       serviceCam();
       printf("Advertising\n");
       advertiseCam();
@@ -237,19 +243,22 @@ public:
 
     if (do_rectify_)
     {
-      ( (cam::StereoDcam*)(cam_) )->doRectify();
+      //      ( (cam::StereoDcam*)(cam_) )->doRectify();
+      stcam_->doRectify();
     }
 
     //    cam_->doRectify();
  
     if (do_stereo_)
     {
-      ( (cam::StereoDcam*)(cam_) )->doDisparity();
+      //      ( (cam::StereoDcam*)(cam_) )->doDisparity();
+      stcam_->doDisparity();
     }
 
     if (do_calc_points_)
     {
-      ( (cam::StereoDcam*)(cam_) )->doCalcPts();
+      //( (cam::StereoDcam*)(cam_) )->doCalcPts();
+      stcam_->doCalcPts();
     }
 
     count_++;
@@ -511,6 +520,7 @@ public:
 };
 
 dcam::Dcam* DcamNode::cam_ = 0;
+cam::StereoDcam* DcamNode::stcam_ = 0;
 
 void sigsegv_handler(int sig)
 {

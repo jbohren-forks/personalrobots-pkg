@@ -273,6 +273,7 @@ StereoData::StereoData()
   // point array/vector
   numPts = 0;
   imPts = NULL;
+  imPtsColor = NULL;
   isPtArray = false;
   imPtsSize = 0;
 }
