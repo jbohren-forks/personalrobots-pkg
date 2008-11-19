@@ -233,8 +233,27 @@ namespace ros {
       double weight(0.1); // Scale costs down by a factor of 10
       param("/costmap_2d/base_laser_max_range", baseLaserMaxRange_, baseLaserMaxRange_);
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
-      param("/costmap_2d/lethal_obstacle_threshold", lethalObstacleThreshold, lethalObstacleThreshold);
-      param("/costmap_2d/no_information_value", noInformation, noInformation);
+
+      // Unsigned chars cannot be stored in parameter server
+
+      int tmpLethalObstacleThreshold;
+      param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
+      if (tmpLethalObstacleThreshold > 255)
+        tmpLethalObstacleThreshold = 255;
+      else if (tmpLethalObstacleThreshold < 0)
+        tmpLethalObstacleThreshold = 0;
+
+      lethalObstacleThreshold = tmpLethalObstacleThreshold;
+
+      int tmpNoInformation;
+      param("/costmap_2d/no_information_value", tmpNoInformation, int(noInformation));
+      if (tmpNoInformation > 255)
+        tmpNoInformation = 255;
+      else if (tmpNoInformation < 0)
+        tmpNoInformation = 0;
+
+      noInformation = tmpNoInformation;
+
       param("/costmap_2d/z_threshold", maxZ_, maxZ_);
       param("/costmap_2d/freespace_projection_height", freeSpaceProjectionHeight, freeSpaceProjectionHeight);
       param("/costmap_2d/inflation_radius", inflationRadius, inflationRadius);

@@ -109,7 +109,13 @@ public:
     advertise_service("build_cloud", &PointCloudAssembler::buildCloud, this, 0) ;      // Don't spawn threads so that we can avoid dealing with mutexing [for now]
     subscribe("scan", scan_, &PointCloudAssembler::scans_callback, 40) ;
 
-    param("point_cloud_assembler/max_scans", max_scans_, (unsigned int) 400) ;
+    int tmp_max_scans;
+    param("point_cloud_assembler/max_scans", tmp_max_scans, 400) ;
+    if (tmp_max_scans < 0)
+      tmp_max_scans = 400;
+
+    max_scans_ = tmp_max_scans;
+
     param("~ignore_laser_skew", ignore_laser_skew_, true) ;
 
     total_pts_ = 0 ;                                                                   // We're always going to start with no points in our history

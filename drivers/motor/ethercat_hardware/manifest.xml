@@ -17,5 +17,7 @@ Package for creating a hardware interface to the robot using the EtherCAT motor 
   <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lethercat_hardware -Wl,-rpath,${prefix}/lib"/>
 </export>
 <repository>http://pr.willowgarage.com/repos</repository>
+<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
+<sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
 </package>
