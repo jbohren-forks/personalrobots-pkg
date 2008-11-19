@@ -122,7 +122,7 @@ typedef struct ENV_NAV3DDYN_CONFIG
   char** Grid2D;
 
   double nominalvel_mpersecs; //translational velocity
-  double timetoturn45degsinplace_secs;
+  double timetoturnoneunitinplace_secs;
   double cellsize_m;
   
   int dXY[NAV3DDYN_DXYWIDTH][2];
@@ -183,9 +183,9 @@ public:
 		     double goalx, double goaly, double goaltheta,
 		     double goaltol_x, double goaltol_y, double goaltol_theta,
 		     const vector<sbpl_2Dpt_t> & perimeterptsV,
-		     double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
+		     double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs);
 
-  void PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions);
+  void PrecomputeActions();
   void CalculateFootprintForPath(vector<EnvNAV3DDYNContPose_t> path, vector<EnvNAV3DDYN2Dpt_t>* footprint);
   void CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint);
   void RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>* path);
@@ -212,7 +212,7 @@ public:
   int	 SizeofCreatedEnv();
   void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
 		   double* cellsize_m);
-
+  void GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPose_t>* path);
 
   //functions updated but not tested  
   int  GetGoalHeuristic(int stateID);
@@ -244,7 +244,7 @@ public:
 			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,
-			      double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV);
+			      double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV);
 	
 
 	bool InitGeneral();

@@ -18,48 +18,72 @@ if(size(end_pt,1) ~= 1 || size(end_pt,2) ~= 3)
     return;
 end
 
-max_itrs = 3000;
+start_grid = round(start_pt ./ cellsize)
+end_grid = round(end_pt ./ cellsize)
 
 %TODO: figure out how to get the read robot dimensions
-dist_from_robot_center = sqrt(robot_footprint(:,1).^2 + robot_footprint(:,2).^2);
-radius = round(max(dist_from_robot_center));
+robot_footprint2 = robot_footprint ./ cellsize;
+dist_from_robot_center = sqrt(robot_footprint2(:,1).^2 + robot_footprint2(:,2).^2);
+radius = round(max(dist_from_robot_center))
+
+
+if(start_grid(1) - radius <= 0 || start_grid(1) + radius > dimensions(1) ||...
+    start_grid(2) - radius <=0 || start_grid(2) + radius > dimensions(2))
+    fprintf(1, 'Illegal start point - robot cannot physically start here\n');
+    return;
+end
+
+if(end_grid(1) - radius <= 0 || end_grid(1) + radius > dimensions(1) ||...
+        end_grid(2) - radius <=0 || end_grid(2) + radius > dimensions(2))
+    fprintf(1, 'Illegal end point - robot cannot physically end here\n');
+    return;
+end
+
+max_height = round(dimensions(1)/10);
+max_width = round(dimensions(1)/10);
 
 env = zeros(dimensions);
 
 num_cells = dimensions(1)*dimensions(2);
 num_obstacles = num_cells*coverage/100;
 
-acheived_coverage = 0;
+itr = 0;
+max_itrs = 100;
 
-s = repmat(start_pt, num_obstacles, 1);
-e = repmat(end_pt, num_obstacles, 1);
+obs = 0;
 
-itrs = 0;
-while(~acheived_coverage && itrs < max_itrs)
-    obstacles = round(1 + (num_cells-1).*rand(num_obstacles,1));
-    [h, w] = ind2sub(dimensions, obstacles);
+while(obs < num_obstacles && itr < max_itrs)
+    %pick a random center
+    center = round(1 + (num_cells-1).*rand(1,1));
+    [cx, cy] = ind2sub(dimensions, center);
     
-    %check proximity to starting point
-    dist = sqrt((h-s(:,1)).^2 + (w - s(:,2)).^2);
-    no_illegal_obstacles_s = isempty(find(dist < radius));
+    %pick a random width and height
+    hgt = round(1 + (max_height-1).*rand(1,1));
+    wdt = round(1 + (max_width-1).*rand(1,1));
     
-    %check proximity to end point
-    dist = sqrt((h - e(:,1)).^2 + (w - e(:,2)).^2);
-    no_illegal_obstacles_e = isempty(find(dist < radius));
-    
-    if(no_illegal_obstacles_e && no_illegal_obstacles_s)
-        acheived_coverage = 1;
+    %fill the obstacle
+    if(cx-hgt <= 0 || cx+hgt > dimensions(1))
+        continue;
+    end
+    if(cy-wdt <= 0 || cy+wdt > dimensions(2))
+        continue;
     end
     
-    itrs = itrs + 1;
+    env(cx-hgt:cx+hgt, cy-wdt:cy+wdt) = 1;
+
+    %clear out start and goal - TODO: maybe this just once at end
+    env(start_grid(1) - radius: start_grid(1) + radius, start_grid(2) - radius: start_grid(2) + radius) = 0;
+    env(end_grid(1) - radius: end_grid(1) + radius, end_grid(2) - radius: end_grid(2) + radius) = 0;
+    %obs = obs + (2*hgt*2*wdt) 
+    obs = sum(sum(env))
+    
+    itr = itr + 1;
 end
 
-if(itrs == max_itrs)
+if(itr == max_itrs)
     fprintf(1, 'Unable to acheive desired coverage\n');
     return;
 end
-
-env(obstacles) = 1;
 
 %write the environment to file
 fid = fopen(filename, 'w');
@@ -80,9 +104,7 @@ fprintf(fid, 'footprint: \n');
 fprintf(fid, '%1.2f %1.2f\n', robot_footprint);
 fprintf(fid, 'environment:\n');
 for i=1:size(env,1)
-    for j=1:size(env,2)
-        fprintf(fid, '%d ', env(i,j));
-    end
+    fprintf(fid, '%d ', env(i,:));
     fprintf(fid, '\n');
 end
 

@@ -95,7 +95,7 @@ void testCalculateFootprintFromBoundaries(){
 int testPlan(char* env){
   
   int bRet = 0;
-  double allocated_time_secs = 300.0; //in seconds
+  double allocated_time_secs = 1.0; //in seconds
 
   EnvironmentNAV3DDYN environment_nav3Ddyn;
   MDPConfig MDPCfg;
@@ -145,7 +145,23 @@ int testPlan(char* env){
   for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
     environment_nav3Ddyn.PrintState(solution_stateIDs_V[i], true, NULL);
   }
-  //  fclose(fSol);
+  char solFilename[64];
+  sprintf(solFilename, "logs/%d-%d-%d-%d-%d-%d_solution.log", 
+	  formatted_time->tm_year + 1900,
+	  formatted_time->tm_mon + 1,
+	  formatted_time->tm_mday,
+	  formatted_time->tm_hour,
+	  formatted_time->tm_min,
+	  formatted_time->tm_sec);
+
+  vector<EnvNAV3DDYNContPose_t> path;
+  environment_nav3Ddyn.GetContPathFromStateIds(solution_stateIDs_V, &path);
+  FILE* fSol = fopen(solFilename, "w");
+
+  for(unsigned int i=0; i<path.size(); i++){
+    fprintf(fSol, "%f %f %f\n", path[i].X, path[i].Y, path[i].Theta);
+  }
+  fclose(fSol);
   
 }
 

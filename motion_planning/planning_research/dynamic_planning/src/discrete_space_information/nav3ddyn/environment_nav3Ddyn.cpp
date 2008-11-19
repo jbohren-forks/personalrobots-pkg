@@ -73,7 +73,7 @@ EnvNAV3DDYNHashEntry_t* EnvironmentNAV3DDYN::GetHashEntry(int X, int Y, int Thet
   
   int binid = GETHASHBIN(X, Y, Theta);
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   if ((int)EnvNAV3DDYN.Coord2StateIDHashTable[binid].size() > 500)
     {
       printf("WARNING: Hash table has a bin %d (X=%d Y=%d) of size %d\n", 
@@ -169,14 +169,14 @@ bool EnvironmentNAV3DDYN::InitializeEnv(int width, int height,
 					double goalx, double goaly, double goaltheta,
 					double goaltol_x, double goaltol_y, double goaltol_theta,
 					const vector<sbpl_2Dpt_t> & perimeterptsV,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs)
+					double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs)
 {
   
   SetConfiguration(width, height,
 		   mapdata,
 		   CONTXY2DISC(startx, cellsize_m), CONTXY2DISC(starty, cellsize_m), ContTheta2Disc(starttheta, NAV3DDYN_THETADIRS),
 		   CONTXY2DISC(goalx, cellsize_m), CONTXY2DISC(goaly, cellsize_m), ContTheta2Disc(goaltheta, NAV3DDYN_THETADIRS),
-		   cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, perimeterptsV);
+		   cellsize_m, nominalvel_mpersecs, timetoturnoneunitinplace_secs, perimeterptsV);
   
   InitGeneral();
   
@@ -188,7 +188,7 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
 					const unsigned char* mapdata,
 					int startx, int starty, int starttheta,
 					int goalx, int goaly, int goaltheta,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV) {
+					double cellsize_m, double nominalvel_mpersecs, double timetoturnoneunitinplace_secs, const vector<sbpl_2Dpt_t> & robot_perimeterV) {
 
   EnvNAV3DDYNCfg.EnvWidth_c = width;
   EnvNAV3DDYNCfg.EnvHeight_c = height;
@@ -235,7 +235,7 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
 
   EnvNAV3DDYNCfg.nominalvel_mpersecs = nominalvel_mpersecs;
   EnvNAV3DDYNCfg.cellsize_m = cellsize_m;
-  EnvNAV3DDYNCfg.timetoturn45degsinplace_secs = timetoturn45degsinplace_secs;
+  EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs = timetoturnoneunitinplace_secs;
 
   //allocate the 2D environment
   EnvNAV3DDYNCfg.Grid2D = new char* [EnvNAV3DDYNCfg.EnvWidth_c];
@@ -256,17 +256,17 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
   }
 }
 
-void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions)
+void EnvironmentNAV3DDYN::PrecomputeActions()
 {
 #if TIME_DEBUG
   clock_t currenttime = clock();
 #endif
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Precomputing Actions...\n");
 #endif
 
-  unsigned int rvind, tvind, tind, aind, dtind;
+  unsigned int rvind, tvind, tind, aind, dtind, ind;
   unsigned int num_actions = 0;
 
   unsigned int numRvValues = NAV3DDYN_NUMRV;  
@@ -289,7 +289,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
   }else{
     rvVals.push_back(0);
   }
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Rotation Velocity values: \n");
   for(unsigned int i=0; i<rvVals.size(); i++){
     printf("\t%f\n", rvVals[i]);
@@ -304,13 +304,16 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
   int numDtValues = 2;
   double dtVals[2] = {NAV3DDYN_LONGDUR, NAV3DDYN_SHORTDUR};
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Translational Velocity values: \n");
   for(unsigned int i=0; i<numTvValues; i++){
     printf("\t%f\n", tvVals[i]);
   }
 #endif
 
+  //calculate a set of turn in place actions
+  int numTurnsInPlace = 2;
+  int turnsInPlace[2] = {-1, 1};
 
   //create an initial pose
   EnvNAV3DDYNContPose_t initialPose_cont;
@@ -342,8 +345,65 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
     initialPose_cont.Theta = DiscTheta2Cont(initialPose_disc.Theta, NAV3DDYN_THETADIRS);
 
     //loop through all rotation velocity values
-    EnvNAV3DDYNCfg.ActionsV[tind] = new EnvNAV3DDYNAction_t[rvVals.size()*numTvValues + numTvValues];
+    EnvNAV3DDYNCfg.ActionsV[tind] = new EnvNAV3DDYNAction_t[rvVals.size()*numTvValues + numTvValues + numTurnsInPlace];
+    //EnvNAV3DDYNCfg.ActionsV[tind] = new EnvNAV3DDYNAction_t[rvVals.size()*numTvValues + numTvValues];
     aind = 0;
+    
+    //first compute the turn in place actions
+     for(ind = 0; ind < numTurnsInPlace; ind++){
+      EnvNAV3DDYNAction_t action;
+      action.rv = 0; //this doesn't matter
+      action.tv = 0;
+      action.time = EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs;
+
+      //put the start and the end positions on the path
+      path_cont.push_back(initialPose_cont);
+      action.path.push_back(initialPose_disc);
+
+      //calculate an end pose and put it on the path
+      currentPose_cont.X = initialPose_cont.X;
+      currentPose_cont.Y = initialPose_cont.Y;
+      currentPose_cont.Theta = initialPose_cont.Theta + DiscTheta2Cont(turnsInPlace[ind], NAV3DDYN_THETADIRS);
+      path_cont.push_back(currentPose_cont);
+
+      currentPose_disc.X = initialPose_disc.X;
+      currentPose_disc.Y = initialPose_disc.Y;
+      currentPose_disc.Theta = ContTheta2Disc(currentPose_cont.Theta, NAV3DDYN_THETADIRS);
+      action.path.push_back(currentPose_disc);
+
+      CalculateFootprintForPath(path_cont, &action.footprint);
+      RemoveDuplicatesFromFootprint(&action.footprint);
+
+      action.dX = 0;
+      action.dY = 0;
+      action.dTheta = turnsInPlace[ind];
+      action.cost = abs(turnsInPlace[ind])*EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs*1000;
+      
+      EnvNAV3DDYNCfg.ActionsV[tind][aind] = action;
+
+      int path_length = action.path.size();
+      EnvNAV3DDYNCfg.PredActionsV[action.path[path_length-1].Theta].push_back(&(EnvNAV3DDYNCfg.ActionsV[tind][aind]));
+      aind++;
+#if NAV3DDYN_DEBUG
+	  printf("----Adding action----\n");
+	  printf("rv: %f, tv: %f\n", action.rv, action.tv);
+	  printf("dX: %d, dY: %d, dTheta: %d, Cost: %d\n", action.dX, action.dY, action.dTheta, action.cost);
+	  printf("Path length: %d\n", path_length);
+	  printf("Path: \n");
+	  for(int i = 0; i<path_length; i++){
+	    printf("%d %d %d\n", action.path[i].X, action.path[i].Y, action.path[i].Theta);
+	  }
+	  printf("Footprint: \n");
+	  for(int i = 0; i<action.footprint.size(); i++){
+	    printf("%f %f\n", action.footprint[i].x, action.footprint[i].y);
+	  }
+	  
+	  printf("Adding action to predicessor list for theta: %d\n", action.path[path_length-1].Theta);
+#endif
+     }
+
+
+    // now compute the forward and backward moving actions
     for(rvind = 0; rvind < rvVals.size(); rvind++){
 
       //loop through all translational velocity values
@@ -363,7 +423,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
 	  action.time = dtVals[dtind];
 	  path_cont.clear();
 	  
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Computing action for tv: %f, rv: %f, dt: %d, abs: %f\n", 
 		 action.tv, action.rv, dtind, fabs(rvVals[rvind]));
 #endif
@@ -413,7 +473,7 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
 	  else if(errortheta < -PI_CONST)
 	    errortheta = errortheta+2*PI_CONST;
 	  
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Error X: %f, Error Y: %f, Error Theta: %f\n", errorx, errory, errortheta);
 #endif
 	  
@@ -450,13 +510,16 @@ void EnvironmentNAV3DDYN::PrecomputeActions(vector<EnvNAV3DDYNAction_t>* actions
 	    action.cost += EuclideanDistance(action.path[i].X, action.path[i].Y, action.path[i-1].X, action.path[i-1].Y);
 	  }
 	  
+	  //convert cost to a time value instead of a distance value
+	  action.cost = action.cost / EnvNAV3DDYNCfg.nominalvel_mpersecs;
+
 	  //add the action to the list of posible actions
 	  EnvNAV3DDYNCfg.ActionsV[tind][aind] = action;
 	  
 	  //put a backwards pointer to the ending locations
 	  EnvNAV3DDYNCfg.PredActionsV[action.path[path_length-1].Theta].push_back(&(EnvNAV3DDYNCfg.ActionsV[tind][aind]));
 	  aind++;
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("----Adding action----\n");
 	  printf("theta: %d, rv: %f, tv: %f, dt: %f\n", tind, action.rv, action.tv, dtVals[dtind]);
 	  printf("dX: %d, dY: %d, dTheta: %d, Cost: %d\n", action.dX, action.dY, action.dTheta, action.cost);
@@ -530,7 +593,7 @@ int EnvironmentNAV3DDYN::InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDY
     return(0);
   else
     return(1);
-#if DEBUG
+#if NAV3DDYN_DEBUG
   //printf("Returning from inside footprint: %d\n", c);
 #endif
   //  return c;
@@ -539,7 +602,7 @@ int EnvironmentNAV3DDYN::InsideFootprint(EnvNAV3DDYN2Dpt_t pt, vector<EnvNAV3DDY
 
 void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint)
 {  
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("---Calculating Footprint for Pose: %f %f %f---\n",
 	 pose.X, pose.Y, pose.Theta);
 #endif
@@ -568,7 +631,7 @@ void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, 
     corner.x = cos(pose.Theta)*pt.x - sin(pose.Theta)*pt.y + pose.X;
     corner.y = sin(pose.Theta)*pt.x + cos(pose.Theta)*pt.y + pose.Y;
     bounding_polygon.push_back(corner);
-#if DEBUG
+#if NAV3DDYN_DEBUG
     printf("Pt: %f %f, Corner: %f %f\n", pt.x, pt.y, corner.x, corner.y);
 #endif
     if(corner.x < min_x || find==0){
@@ -586,7 +649,7 @@ void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, 
     
   }
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Footprint bounding box: %f %f %f %f\n", min_x, max_x, min_y, max_y);
 #endif
   //initialize previous values to something that will fail the if condition during the first iteration in the for loop
@@ -606,26 +669,26 @@ void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, 
       
       //see if we just tested this point
       if(discrete_x != prev_discrete_x || discrete_y != prev_discrete_y || prev_inside==0){
-#if DEBUG
+#if NAV3DDYN_DEBUG
       printf("Testing point: %f %f Discrete: %d %d\n", pt.x, pt.y, discrete_x, discrete_y);
 #endif
 	if(InsideFootprint(pt, &bounding_polygon)){
 	//convert to a grid point
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Pt Inside %f %f\n", pt.x, pt.y);
 #endif
 	  pt.x = discrete_x;
 	  pt.y = discrete_y;
 	  footprint->push_back(pt);
 	  prev_inside = 1;
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Added pt to footprint: %f %f\n", pt.x, pt.y);
 #endif
 	}else{
 	  prev_inside = 0;
 	}
       }else{
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	//	printf("Skipping pt: %f %f\n", pt.x, pt.y);
 #endif
       }
@@ -641,7 +704,7 @@ void EnvironmentNAV3DDYN::CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, 
 
 void EnvironmentNAV3DDYN::RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t> *path){
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Entering function: RemoveDuplicatesFromPath - size=%d\n", path->size());
 #endif
 
@@ -651,7 +714,7 @@ void EnvironmentNAV3DDYN::RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>
   path->erase(new_end, path->end());
   
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Leaving function: RemoveDuplicatesFromPath - size=%d\n", path->size());
 #endif
 }
@@ -659,7 +722,7 @@ void EnvironmentNAV3DDYN::RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>
 void EnvironmentNAV3DDYN::RemoveDuplicatesFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* footprint)
 {
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Entering function: RemoveDuplicatesFromFootprint\n");
 #endif
   
@@ -669,7 +732,7 @@ void EnvironmentNAV3DDYN::RemoveDuplicatesFromFootprint(vector<EnvNAV3DDYN2Dpt_t
   new_end = unique(footprint->begin(), footprint->end());
   footprint->erase(new_end, footprint->end());
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Leaving function: RemoveDuplicatesFromFootprint\n");
 #endif
   
@@ -681,7 +744,7 @@ bool EnvironmentNAV3DDYN::InitializeMDPCfg(MDPConfig *MDPCfg)
   MDPCfg->goalstateid = EnvNAV3DDYN.goalstateid;
   MDPCfg->startstateid = EnvNAV3DDYN.startstateid;
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Initializing start id (%d) and goal id (%d)\n", 
 	 EnvNAV3DDYN.startstateid,
 	 EnvNAV3DDYN.goalstateid);
@@ -739,7 +802,7 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
   //get X, Y for the state
   EnvNAV3DDYNHashEntry_t* HashEntry = EnvNAV3DDYN.StateID2CoordTable[SourceStateID];
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Computing Successors: %d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
 #endif
   
@@ -759,7 +822,7 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
   	
   //get the set of valid actions from the current location
   EnvNAV3DDYNAction_t* valid_actions = EnvNAV3DDYNCfg.ActionsV[HashEntry->Theta];
-  int num_actions = NAV3DDYN_NUMRV * 2 + 2;
+  int num_actions = NAV3DDYN_NUMRV * 2 + 2 + 2;
   SuccIDV->reserve(num_actions);
   CostV->reserve(num_actions);
  
@@ -774,7 +837,7 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     int newX = HashEntry->X + nav3daction->dX;
     int newY = HashEntry->Y + nav3daction->dY;
     int newTheta = NORMALIZEDISCTHETA(HashEntry->Theta + nav3daction->dTheta, NAV3DDYN_THETADIRS);	
-#if DEBUG
+#if NAV3DDYN_DEBUG
     printf("Original Coords: %d %d %d, New Coords: %d %d %d\n",
 	   HashEntry->X, HashEntry->Y, HashEntry->Theta,
 	   newX, newY, newTheta);
@@ -794,14 +857,14 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 	
       if(IsValidCell(tempX, tempY)){
 	if(EnvNAV3DDYNCfg.Grid2D[tempX][tempY] != 0){
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Pt (%d, %d) is a collision\n", tempX, tempY);
 #endif
 	  collisionFree = false;
 	  break;
 	}
       }else{
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	printf("Pt (%d, %d) is not inside bounds\n", tempX, tempY);
 #endif
 	insideBounds = false;
@@ -827,9 +890,12 @@ void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
     //compute clow 
     int cost = nav3daction->cost;
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
     int heuristic = GetFromToHeuristic(HashEntry->stateID, OutHashEntry->stateID);
     printf("Adding state with cost %d and heuristic %d\n", cost, heuristic);
+    printf("\tFrom : %d %d %d, To: %d %d %d\n",
+	   HashEntry->X, HashEntry->Y, HashEntry->Theta,
+	   newX, newY, newTheta);
     if(OutHashEntry->stateID == EnvNAV3DDYN.goalstateid){
       printf("Adding goal state to list: %d %d %d\n", OutHashEntry->X, OutHashEntry->Y, OutHashEntry->Theta);
     }
@@ -850,7 +916,7 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
   unsigned int aind;
   unsigned int ftind;
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Inside GetPreds\n");
 #endif
 
@@ -865,7 +931,7 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
   //get X, Y for the state
   EnvNAV3DDYNHashEntry_t* HashEntry = EnvNAV3DDYN.StateID2CoordTable[TargetStateID];
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Hash Entry values: %d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
 #endif
   
@@ -875,7 +941,7 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
 
   //get the set of valid actions from the current location
   vector<EnvNAV3DDYNAction_t*> pred_actions = EnvNAV3DDYNCfg.PredActionsV[HashEntry->Theta];
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Number of actions: %d\n", pred_actions.size());
 #endif
   PredIDV->reserve(pred_actions.size());
@@ -893,7 +959,7 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
       int predY = HashEntry->Y - nav3daction->dY;
       int predTheta = NORMALIZEDISCTHETA(HashEntry->Theta - nav3daction->dTheta, NAV3DDYN_THETADIRS);	
     
-#if DEBUG
+#if NAV3DDYN_DEBUG
       printf("Delta Values: %d %d %d\n", nav3daction->dX, nav3daction->dY, nav3daction->dTheta);
       printf("Pred Values: %d %d %d\n", predX, predY, predTheta);
 #endif
@@ -911,14 +977,14 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
 
 	if(IsValidCell(tempX, tempY)){
 	  if(EnvNAV3DDYNCfg.Grid2D[tempX][tempY] != 0){
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	    	printf("Pt (%d, %d) is a collision\n", tempX, tempY);
 #endif
 		collisionFree = false;
 	    break;
 	  }
 	}else{
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	  printf("Pt (%d, %d) is not inside bounds\n", tempX, tempY);
 #endif
 	  insideBounds = false;
@@ -941,7 +1007,7 @@ void EnvironmentNAV3DDYN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
       
       //compute clow 
       int cost = nav3daction->cost;
-#if DEBUG
+#if NAV3DDYN_DEBUG
       int heuristic = GetFromToHeuristic(HashEntry->stateID, OutHashEntry->stateID);
       printf("Adding pred (%d %d %d) with cost %d and heuristic value %d\n", predX, predY, predTheta, cost, heuristic);
 #endif
@@ -964,7 +1030,7 @@ int EnvironmentNAV3DDYN::GetFromToHeuristic(int FromStateID, int ToStateID)
 #endif
   
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
   if(FromStateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size() 
      || ToStateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size())
     {
@@ -981,7 +1047,7 @@ int EnvironmentNAV3DDYN::GetFromToHeuristic(int FromStateID, int ToStateID)
   EnvNAV3DDYNHashEntry_t* ToHashEntry = EnvNAV3DDYN.StateID2CoordTable[ToStateID];
 	
 
-  return EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y);	
+  return EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAV3DDYNCfg.nominalvel_mpersecs;	
   
 }
 
@@ -1018,7 +1084,7 @@ bool EnvironmentNAV3DDYN::IsObstacle(int x, int y)
 //--------------------Debugging Functions---------------------
 void EnvironmentNAV3DDYN::PrintActionsToFile(char* logFile){
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   printf("Printing actions to file - %s\n", logFile);
 #endif
 
@@ -1070,7 +1136,7 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(char* logFile){
 
 void EnvironmentNAV3DDYN::PrintState(int stateID, bool bVerbose, FILE* fOut /*=NULL*/)
 {
-#if DEBUG
+#if NAV3DDYN_DEBUG
   if(stateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size())
     {
       printf("ERROR in EnvNAV3DDYN... function: stateID illegal (2)\n");
@@ -1128,6 +1194,75 @@ void EnvironmentNAV3DDYN::GetEnvParms(int *size_x, int *size_y, double* startx, 
 
 }
 
+void EnvironmentNAV3DDYN::GetContPathFromStateIds(vector<int> stateIdV, vector<EnvNAV3DDYNContPose_t>* path){
+  
+  //check to be sure there are some states, if so then just return
+  if(stateIdV.size() == 0){
+    return;
+  }
+
+  int currId = stateIdV[0];
+  int x, y, theta;
+  double currX, currY;
+  int currTheta;
+
+  GetCoordFromState(currId, x, y, theta);
+  currX = DISCXY2CONT(x, EnvNAV3DDYNCfg.cellsize_m);
+  currY = DISCXY2CONT(y, EnvNAV3DDYNCfg.cellsize_m);
+  currTheta = theta;
+  int nextId;
+  double prevX, prevY;
+  int prevTheta;
+
+  int found;
+ 
+
+  vector<EnvNAV3DDYNAction_t*> actions;
+  EnvNAV3DDYNContPose_t pose;
+
+  for(unsigned int i=1; i<stateIdV.size(); i++){
+    
+    nextId = stateIdV[i];    
+    GetCoordFromState(nextId, x, y, theta);
+    
+    actions = EnvNAV3DDYNCfg.PredActionsV[theta];
+    
+    found = 0;
+    for(unsigned int aind = 0; aind < actions.size(); aind++){
+      prevX = DISCXY2CONT(x - actions[aind]->dX, EnvNAV3DDYNCfg.cellsize_m);
+      prevY = DISCXY2CONT(y - actions[aind]->dY, EnvNAV3DDYNCfg.cellsize_m);
+      prevTheta = NORMALIZEDISCTHETA(theta - actions[aind]->dTheta, NAV3DDYN_THETADIRS);
+      #if NAV3DDYN_DEBUG
+      printf("Curr: %f %f %d, Prev: %f %f %d\n",
+	     currX, currY, currTheta,
+	     prevX, prevY, prevTheta);
+      #endif
+      if( max(prevX - currX, currX - prevX) < ERR_EPS && max(prevY - currY, currY - prevY) < ERR_EPS && prevTheta==currTheta){
+	
+	for(unsigned int pind = 0; pind < actions[aind]->path_cont.size(); pind++){
+	  pose = actions[aind]->path_cont[pind];
+	  pose.X += currX;
+	  pose.Y += currY;
+	  path->push_back(pose);
+	}
+	found = 1;
+	break;
+      }
+    }
+
+    if(found == 1){
+      currX = DISCXY2CONT(x,EnvNAV3DDYNCfg.cellsize_m);
+      currY = DISCXY2CONT(y,EnvNAV3DDYNCfg.cellsize_m);
+      currTheta = theta;
+      currId = nextId;
+    }else{
+      printf("Error occurred while computing path from stateIds....failed to find action for stateId %d\n", currId);
+      return;
+    }
+  }
+  
+  return;
+}
 
 int EnvironmentNAV3DDYN::GetGoalHeuristic(int stateID)
 {
@@ -1135,7 +1270,7 @@ int EnvironmentNAV3DDYN::GetGoalHeuristic(int stateID)
   return 0;
 #endif
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   if(stateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size())
     {
       printf("ERROR in EnvNAV3DDYN... function: stateID illegal\n");
@@ -1156,7 +1291,7 @@ int EnvironmentNAV3DDYN::GetStartHeuristic(int stateID)
 #endif
   
   
-#if DEBUG
+#if NAV3DDYN_DEBUG
   if(stateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size())
     {
       printf("ERROR in EnvNAV3DDYN... function: stateID illegal\n");
@@ -1225,7 +1360,7 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 	    exit(1);
 	  }
 	fscanf(fCfg, "%s", sTemp);
-	EnvNAV3DDYNCfg.timetoturn45degsinplace_secs = atoi(sTemp);
+	EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs = atoi(sTemp);
 
 	//start state
 	fscanf(fCfg, "%s", sTemp);
@@ -1345,12 +1480,12 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 			EnvNAV3DDYNCfg.Grid2D[x][y] = dTemp;
 		}
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	printf("Environment: \n");
 	printf("\tdiscretization(cells): %d %d\n", EnvNAV3DDYNCfg.EnvWidth_c, EnvNAV3DDYNCfg.EnvHeight_c);
 	printf("\tcellsize(meters): %f\n", EnvNAV3DDYNCfg.cellsize_m);
 	printf("\tnominalvel(mpersecs): %f\n", EnvNAV3DDYNCfg.nominalvel_mpersecs);
-	printf("\ttimetoturn45degsinplace(secs): %f\n", EnvNAV3DDYNCfg.timetoturn45degsinplace_secs);
+	printf("\ttimetoturnoneunitinplace(secs): %f\n", EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs);
 	printf("\tstart(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.StartY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.StartTheta);
 	printf("\tend(m,rad): %f %f %d\n", DISCXY2CONT(EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.cellsize_m), DISCXY2CONT(EnvNAV3DDYNCfg.EndY_c, EnvNAV3DDYNCfg.cellsize_m), EnvNAV3DDYNCfg.EndTheta);
 	printf("\tnum_footprint_corners: %u\n", EnvNAV3DDYNCfg.FootprintPolygon.size());
@@ -1386,8 +1521,7 @@ bool EnvironmentNAV3DDYN::InitGeneral() {
 void EnvironmentNAV3DDYN::InitializeEnvConfig()
 {
   //precompute a list of valid actions from postion (0, 0, 0)
-  vector<EnvNAV3DDYNAction_t> valid_actions;
-  PrecomputeActions(&valid_actions);
+  PrecomputeActions();
 
 }
 
@@ -1534,7 +1668,7 @@ void EnvironmentNAV3DDYN::SetAllActionsandAllOutcomes(CMDPSTATE* state)
   /*
 	int cost;
 
-#if DEBUG
+#if NAV3DDYN_DEBUG
 	if(state->StateID >= (int)EnvNAV3DDYN.StateID2CoordTable.size())
 	{
 		printf("ERROR in Env... function: stateID illegal\n");

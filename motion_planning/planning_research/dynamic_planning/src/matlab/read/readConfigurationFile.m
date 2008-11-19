@@ -44,6 +44,7 @@ end
 
 c = textscan(fid, 'environment:');
 for i=1:cfg.height
+    fprintf('%d ', i);
     c = textscan(fid, '%d ', cfg.width);
     cfg.environment(i,:) = c{:};
 end
