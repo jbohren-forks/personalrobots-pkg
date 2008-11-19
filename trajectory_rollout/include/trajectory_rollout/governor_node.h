@@ -81,24 +81,27 @@
 //So we can still use wavefront player we'll fake an obs accessor
 class WavefrontMapAccessor : public costmap_2d::ObstacleMapAccessor {
  public:
-  WavefrontMapAccessor(MapGrid &map, double outer_radius) 
-    : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale),
-      map_(map), outer_radius_(outer_radius) {}
+ WavefrontMapAccessor(MapGrid &map, double outer_radius) 
+   : costmap_2d::ObstacleMapAccessor(map.origin_x, map.origin_y, map.size_x_, map.size_y_, map.scale),
+    map_(map), outer_radius_(outer_radius) {
+    synchronize();
+  }
 
     virtual ~WavefrontMapAccessor(){};
 
-    virtual unsigned char operator[](unsigned int ind) const{
-      unsigned int mx, my;
-      IND_MC(ind, mx, my);
-      return getCost(mx, my);
-    }
-
-    virtual unsigned char getCost(unsigned int mx, unsigned int my) const {
-      if(map_(mx, my).occ_state == 1)
-	return costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
-      else if(map_(mx, my).occ_dist < outer_radius_)
-	return costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE/2;
-      return 0;
+    void synchronize(){
+      // Write Cost Data from the map
+      for(unsigned int x = 0; x < width_; x++){
+	for (unsigned int y = 0; y < height_; y++){
+	  unsigned int ind = x + (y * width_);
+	  if(map_(x, y).occ_state == 1)
+	    costData_[ind] = costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE;
+	  else if(map_(x, y).occ_dist < outer_radius_)
+	    costData_[ind] = costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE/2;
+	  else 
+	    costData_[ind] = 0;
+	}
+      }
     }
 
     void updateOrigin(double o_x, double o_y){

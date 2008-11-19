@@ -39,25 +39,35 @@ using namespace trajectory_rollout;
 MapGrid::MapGrid(unsigned int size_x, unsigned int size_y) 
   : size_x_(size_x), size_y_(size_y)
 {
-  //don't allow construction of zero size grid
-  assert(size_y != 0 && size_x != 0);
+  commonInit();
+}
 
-  map_.resize(size_y * size_x);
-
-  //make each cell aware of its location in the grid
-  for(unsigned int i = 0; i < size_y; ++i){
-    for(unsigned int j = 0; j < size_x; ++j){
-      unsigned int id = size_x * i + j;
-      map_[id].cx = j;
-      map_[id].cy = i;
-    }
-  }
+MapGrid::MapGrid(unsigned int size_x, unsigned int size_y, double s, double x, double y)
+  : size_x_(size_x), size_y_(size_y), scale(s), origin_x(x), origin_y(y)
+{
+  commonInit();
 }
 
 MapGrid::MapGrid(const MapGrid& mg){
   size_y_ = mg.size_y_;
   size_x_ = mg.size_x_;
   map_ = mg.map_;
+}
+
+void MapGrid::commonInit(){
+  //don't allow construction of zero size grid
+  assert(size_y_ != 0 && size_x_ != 0);
+
+  map_.resize(size_y_ * size_x_);
+
+  //make each cell aware of its location in the grid
+  for(unsigned int i = 0; i < size_y_; ++i){
+    for(unsigned int j = 0; j < size_x_; ++j){
+      unsigned int id = size_x_ * i + j;
+      map_[id].cx = j;
+      map_[id].cy = i;
+    }
+  }
 }
 
 size_t MapGrid::getIndex(int x, int y){
