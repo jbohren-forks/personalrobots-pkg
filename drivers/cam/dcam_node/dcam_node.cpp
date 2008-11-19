@@ -42,20 +42,24 @@
 #include "image_msgs/FillImage.h"
 #include "image_msgs/CamInfo.h"
 #include "image_msgs/StereoInfo.h"
+#include "std_msgs/PointCloud.h"
 
 #include "diagnostic_updater/diagnostic_updater.h"
 
 using namespace std;
 
+void sigsegv_handler(int sig);
+
 class DcamNode : public ros::node
 {
 
-  dcam::Dcam* cam_;
   bool stereo_cam_;
   bool do_stereo_;
   bool do_rectify_;
+  bool do_calc_points_;
 
   image_msgs::Image        img_;
+  std_msgs::PointCloud     cloud_;
   image_msgs::CamInfo      cam_info_;
   image_msgs::StereoInfo   stereo_info_;
 
@@ -66,8 +70,13 @@ class DcamNode : public ros::node
 
 public:
 
+  static dcam::Dcam* cam_;
+
+
   DcamNode() : ros::node("dcam"), diagnostic_(this), count_(0)
   {
+    signal(SIGSEGV, &sigsegv_handler);
+
     dcam::init();
 
     int num_cams = dcam::numCameras();
@@ -178,14 +187,17 @@ public:
 
       param("~do_stereo", do_stereo_, false);
 
-      // Only do stereo 
+      param("~do_calc_points", do_calc_points_, false);
+
+      // Only do stereo if using stereo cam
       do_stereo_ = do_stereo_ && stereo_cam_;
+
+      // Must do stereo if calculating points
+      do_stereo_ = do_stereo_ || do_calc_points_;
 
       // Must rectify if doing stereo
       do_rectify_ = do_rectify_ || do_stereo_;
 
-      // Right now can only rectify if a StereoDcam -- this is wrong
-      do_rectify_ = do_rectify_ && stereo_cam_;
 
       // This switch might not be necessary... can maybe read
       // from regular cam with StereoDcam, but then the name
@@ -201,9 +213,8 @@ public:
       }
 
       cam_->start();
-
       serviceCam();
-
+      printf("Advertising\n");
       advertiseCam();
     }
   }
@@ -224,14 +235,22 @@ public:
   {
     cam_->getImage(500);
 
-    // THIS should be possible for all cameras, not just stereo
     if (do_rectify_)
     {
       ( (cam::StereoDcam*)(cam_) )->doRectify();
     }
 
+    //    cam_->doRectify();
+ 
     if (do_stereo_)
+    {
       ( (cam::StereoDcam*)(cam_) )->doDisparity();
+    }
+
+    if (do_calc_points_)
+    {
+      ( (cam::StereoDcam*)(cam_) )->doCalcPts();
+    }
 
     count_++;
   }
@@ -258,6 +277,23 @@ public:
         stereo_info_.has_disparity = true;
       } else {
         stereo_info_.has_disparity = false;
+      }
+
+      if (do_calc_points_)
+      {
+        cloud_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
+        cloud_.header.frame_id = "stereo";
+        cloud_.pts.resize(stcam->stIm->numPts);
+        
+        for (int i = 0; i < stcam->stIm->numPts; i++)
+        {
+          cloud_.pts[i].x = stcam->stIm->imPts[3*i + 0];
+          cloud_.pts[i].y = stcam->stIm->imPts[3*i + 1];
+          cloud_.pts[i].z = stcam->stIm->imPts[3*i + 2];
+          //          printf("(%d/%d) %f %f %f\n", i, stcam->stIm->numPts, cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
+        }
+
+        publish("~cloud", cloud_);
       }
 
       stereo_info_.header.stamp = ros::Time(cam_->camIm->im_time * 1000);
@@ -418,6 +454,9 @@ public:
 
       if (stcam->stIm->imDisp)
         advertise<image_msgs::Image>("~disparity", 1);
+      
+      if (do_calc_points_)
+        advertise<std_msgs::PointCloud>("~cloud",1);
 
     }
     else
@@ -470,6 +509,19 @@ public:
     return true;
   }
 };
+
+dcam::Dcam* DcamNode::cam_ = 0;
+
+void sigsegv_handler(int sig)
+{
+  signal(SIGSEGV, SIG_DFL);
+  printf("System segfaulted, stopping camera nicely\n");
+  if (DcamNode::cam_)
+  {
+    DcamNode::cam_->stop();
+  }
+}
+
 
 int main(int argc, char **argv)
 {
