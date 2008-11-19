@@ -23,9 +23,10 @@
   <depend package="hardware_interface" />
   <depend package="mechanism_control" />
   <depend package="mechanism_model" />
-  <depend package="wg_robot_description_parser" />
   <depend package="tinyxml" />
   <depend package="axis_cam" />
+  <depend package="bullet" />
+  <depend package="wg_robot_description_parser" />
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
   </export>

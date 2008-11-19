@@ -33,3 +33,5 @@ rospack_add_rostest_future(test/hztest.xml)
 rospack_add_rostest_future(test/odom_hztest.xml)
 rospack_add_rostest_future(test/rostime_hztest.xml)
 
+rospack_add_executable(urdf2factory src/urdf2factory.cc)
+#rospack_add_executable(simiface src/simiface.cc)
