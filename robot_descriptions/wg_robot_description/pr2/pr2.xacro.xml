@@ -40,7 +40,7 @@
     <origin xyz="0.1 0 0.19525" rpy="0 0 0" />
   </pr2_tilting_laser>
 
-  <pr2_arm side="right" reflect="1" parent="torso">
+  <pr2_arm side="right" reflect="-1" parent="torso">
     <origin xyz="0 -0.188 0.0" rpy="0 0 0" />
   </pr2_arm>
   <pr2_gripper side="right" parent="right_wrist_roll" />
