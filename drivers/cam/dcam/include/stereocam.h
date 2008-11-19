@@ -82,10 +82,6 @@ namespace cam
     virtual bool setTextureThresh(int thresh);
     virtual bool setUniqueThresh(int thresh);
 
-  protected:
-    void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
-    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, int16_t **d2, size_t *s2);
-
   private:
     // buffers for stereo
     uint8_t *buf, *flim, *frim;
@@ -120,6 +116,11 @@ namespace cam
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
 
+
+  protected:
+    // Videre camera de-interlacing
+    void stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, uint8_t **d2, size_t *s2);
+    void stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, int16_t **d2, size_t *s2);
 
   protected:
     Dcam *rcam;			// right camera of two-camera setup

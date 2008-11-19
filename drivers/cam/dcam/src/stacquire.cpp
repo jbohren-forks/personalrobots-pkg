@@ -40,6 +40,7 @@
 #include "dcam.h"
 #include "stereocam.h"
 #include "imwin.h"
+#include "im3Dwin.h"
 
 double get_ms();		// for timing
 double t1,t2,t3,t4;
@@ -89,17 +90,21 @@ main(int argc, char **argv)
       if (cam->isSTOC)
 	{
 	  printf("  ...Setting STOC mode to PROC_MODE_NONE\n");
-	  cam->setProcMode(PROC_MODE_NONE);
+	  cam->setProcMode(PROC_MODE_DISPARITY);
 	}
       else
 	printf("  ...not a STOC\n");
 
       // set up windows for display
       imWindow *win1 = new imWindow(640, 480, "Left image");
-      win1->show();		// FLTK barfs if win1 isn't shown before win2 is created
+      win1->show(); // FLTK barfs if win1 isn't shown before win2 is created
       imWindow *win2 = new imWindow(640, 480, "right image");
       win2->show();
-      fltk_check();			// process fltk events
+      fltk_check();		// process fltk events
+
+      // set up OpenGL window
+      im3DWindow *w3d = new im3DWindow(0,0,640,480,"3D Display");
+      w3d->show();
 
       // start transmitting
       printf("Starting transmission\n");
@@ -131,6 +136,11 @@ main(int argc, char **argv)
 	      t4 = get_ms();
 
 	      printf("Timing - Rect %d ms, Disparity %d ms, Pts %d ms\n", (int)(t2-t1), (int)(t3-t2), (int)(t4-t3));
+
+	      // try displaying 3D points
+	      w3d->DisplayImage(cam->stIm);
+	      fltk_check();
+	      printf("Num points: %d\n", cam->stIm->numPts);
 
 	      // left window display, try rect, then raw
 	      if (cam->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)

@@ -178,12 +178,12 @@ StereoCam::doCalcPts()
   float f  = (float)stIm->RP[11];
   float itx = (float)stIm->RP[14];
   itx *= 1.0 / (float)stIm->dpp; // adjust for subpixel interpolation
+  pt = stIm->imPts;
       
   for (int j=0; j<ih; j++, y++)
     {
       int x = ix;
       int16_t *p = stIm->imDisp + x + y*w;
-      pt = stIm->imPts + x + y*w;
 
       for (int i=0; i<iw; i++, x++, p++)
 	{
@@ -200,23 +200,44 @@ StereoCam::doCalcPts()
 	}
     }
 
-  if (stIm->imLeft->imColorType != COLOR_CODING_NONE) // ok, have color
+  if (stIm->imLeft->imRectColorType != COLOR_CODING_NONE) // ok, have color
     {
       y = iy;
+      uint8_t *pcout = stIm->imPtsColor;
       for (int j=0; j<ih; j++, y++)
 	{
 	  int x = ix;
 	  int16_t *p = stIm->imDisp + x + y*w;
-	  uint8_t *pc = stIm->imLeft->imColor + (x + y*w)*3;
-	  uint8_t *pcout = stIm->imPtsColor;
+	  uint8_t *pc = stIm->imLeft->imRectColor + (x + y*w)*3;
 
-	  for (int i=0; i<iw; i++, x++, p++, pc++)
+	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
 	    {
 	      if (*p > 0) 
 		{
 		  *pcout++ = *pc;
 		  *pcout++ = *(pc+1);
 		  *pcout++ = *(pc+2);
+		}
+	    }
+	}
+    }
+  else if (stIm->imLeft->imRectType != COLOR_CODING_NONE) // ok, have mono
+    {
+      y = iy;
+      uint8_t *pcout = stIm->imPtsColor;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = stIm->imDisp + x + y*w;
+	  uint8_t *pc = stIm->imLeft->imRect + (x + y*w);
+
+	  for (int i=0; i<iw; i++, p++, pc++)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
 		}
 	    }
 	}
@@ -433,7 +454,7 @@ StereoDcam::setUniqueThresh(int thresh)
 // de-interlace stereo data, reserving storage if necessary
 
 void
-StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, 
+StereoDcam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1, 
 			     uint8_t **d2, size_t *s2)
 {
   size_t size = stIm->imWidth*stIm->imHeight;
@@ -464,7 +485,7 @@ StereoCam::stereoDeinterlace(uint8_t *src, uint8_t **d1, size_t *s1,
 // second buffer is 16-bit disparity data
 
 void
-StereoCam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
+StereoDcam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1, 
 			      int16_t **d2, size_t *s2)
 {
   int w = stIm->imWidth;
