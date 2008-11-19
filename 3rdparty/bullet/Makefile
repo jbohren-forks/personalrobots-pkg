@@ -3,6 +3,7 @@ all: bullet_svn
 VERSION = bullet_svn-r1497
 TARBALL = build/$(VERSION).tar.bz2
 TARBALL_URL = http://pr.willowgarage.com/downloads/$(VERSION).tar.bz2
+TARBALL_PATCH = quaternion.patch
 SOURCE_DIR = build/bullet_svn
 UNPACK_CMD = tar xf
 
@@ -24,7 +25,7 @@ bullet_svn: $(SOURCE_DIR)
 clean:
 	-make -C $(SOURCE_DIR) clean
 
-wipe: 
+wipe:
 	-rm -f bullet patched
 	-rm -rf bullet_svn
 	-rm -rf build

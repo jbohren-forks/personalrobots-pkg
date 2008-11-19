@@ -2,39 +2,16 @@ Index: src/LinearMath/btQuaternion.h
 ===================================================================
 --- src/LinearMath/btQuaternion.h	(revision 1458)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -198,7 +198,12 @@
- 	{
- 		btScalar s = btSqrt(length2() * q.length2());
- 		assert(s != btScalar(0.0));
--		return btAcos(dot(q) / s);
-+                btScalar retval;
-+                if (dot(q) < 0) // Take care of long angle case see http://en.wikipedia.org/wiki/Slerp
-+                  retval = btAcos(GEN_clamped(dot(-q) / s, (btScalar)-1.0, (btScalar)1.0)); //Clamped to prevent floating point precision crashes
-+                else 
-+                  retval = btAcos(GEN_clamped(dot(q) / s, (btScalar)-1.0, (btScalar)1.0)); //Clamped to prevent floating point precision crashes
-+		return retval;
+@@ -213,6 +213,12 @@
+ 		return s;
  	}
-   /**@brief Return the angle of rotation represented by this quaternion */
- 	btScalar getAngle() const 
-@@ -262,10 +267,17 @@
- 			btScalar d = btScalar(1.0) / btSin(theta);
- 			btScalar s0 = btSin((btScalar(1.0) - t) * theta);
- 			btScalar s1 = btSin(t * theta);   
--			return btQuaternion((m_floats[0] * s0 + q.x() * s1) * d,
--				(m_floats[1] * s0 + q.y() * s1) * d,
--				(m_floats[2] * s0 + q.z() * s1) * d,
--				(m_floats[3] * s0 + q.m_floats[3] * s1) * d);
-+                        if (dot(q) < 0) // Take care of long angle case see http://en.wikipedia.org/wiki/Slerp
-+                          return btQuaternion((m_floats[0] * s0 + -q.x() * s1) * d,
-+                                              (m_floats[1] * s0 + -q.y() * s1) * d,
-+                                              (m_floats[2] * s0 + -q.z() * s1) * d,
-+                                              (m_floats[3] * s0 + -q.m_floats[3] * s1) * d);
-+                        else
-+                          return btQuaternion((m_floats[0] * s0 + q.x() * s1) * d,
-+                                              (m_floats[1] * s0 + q.y() * s1) * d,
-+                                              (m_floats[2] * s0 + q.z() * s1) * d,
-+                                              (m_floats[3] * s0 + q.m_floats[3] * s1) * d);
-+                        
- 		}
- 		else
- 		{
+ 
++  /**@brief Return the axis of the rotation represented by this quaternion */
++	btVector3 getAxis() const
++	{
++		btScalar s = btSqrt(btScalar(1.) - btPow(m_floats[3], 2.));
++		return btVector3(m_floats[0] / s, m_floats[1] / s, m_floats[2] / s);
++	}
+ 
+   /**@brief Return the inverse of this quaternion */
+ 	btQuaternion inverse() const
