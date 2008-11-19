@@ -12,5 +12,5 @@
   <depend package="wg_robot_description_parser"/>
   <depend package="openrave"/>
   <depend package="resource_locator"/>
-  <depend package="libTF"/>
+  <depend package="bullet"/>
 </package>

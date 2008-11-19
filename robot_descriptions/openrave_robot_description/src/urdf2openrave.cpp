@@ -43,7 +43,9 @@
 #include <list>
 
 #include <urdf/URDF.h>
-#include <libTF/Pose3D.h>
+
+#include "LinearMath/btTransform.h"
+#include "LinearMath/btVector3.h"
 
 #include <reslocator/reslocator.h>
 #include <sys/stat.h>
@@ -69,9 +71,11 @@ double rad2deg(double f)
     return f / 3.1415926 * 180.0f;
 }
 
-void setupTransform(libTF::Pose3D &transform, const double *xyz, const double *rpy)
+void setupTransform(btTransform &transform, const double *xyz, const double *rpy)
 {
-    transform.setFromEuler(xyz[0], xyz[1], xyz[2], rpy[2], rpy[1], rpy[0]);
+    btMatrix3x3 mat;
+    mat.setEulerZYX(rpy[0],rpy[1],rpy[2]);
+    transform = btTransform(mat,btVector3(xyz[0],xyz[1],xyz[2]));
 }
 
 void addKeyValue(TiXmlElement *elem, const string& key, const string &value)
@@ -82,19 +86,17 @@ void addKeyValue(TiXmlElement *elem, const string& key, const string &value)
     elem->LinkEndChild(ekey); 
 }
 
-void addTransform(TiXmlElement *elem, const::libTF::Pose3D& transform)
+void addTransform(TiXmlElement *elem, const::btTransform& transform)
 {
-    libTF::Position pz;
-    transform.getPosition(pz);
-    double cpos[3] = { pz.x, pz.y, pz.z };
+    btVector3 pz = transform.getOrigin();
+    double cpos[3] = { pz.x(), pz.y(), pz.z() };
+    btMatrix3x3 mat = transform.getBasis();
+    double crot[3];
+    mat.getEulerZYX(crot[2],crot[1],crot[0]);
     
-    libTF::Quaternion q;
-    transform.getQuaternion(q);
-    double cquat[4] = { q.w, q.x, q.y, q.z };
-    
-    // set geometry transform
-    addKeyValue(elem, "translation", values2str(3, cpos));
-    addKeyValue(elem, "quaternion", values2str(4, cquat));  
+    /* set geometry transform */
+    addKeyValue(elem, "xyz", values2str(3, cpos));
+    addKeyValue(elem, "rpy", values2str(3, crot, rad2deg));  
 }
 
 void copyOpenraveMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const vector<string> *tags = NULL)
@@ -123,17 +125,17 @@ void copyOpenraveMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, cons
 }
 
 // ignore all collision data for the time being
-void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::Pose3D &transform, bool enforce_limits)
+void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTransform &transform, bool enforce_limits)
 {
-    libTF::Pose3D currentTransform = transform;
+    btTransform currentTransform = transform;
         
     TiXmlElement *body = new TiXmlElement("body");
     body->SetAttribute("name", link->name);
 	
     // compute global transform
-    libTF::Pose3D localTransform;
+    btTransform localTransform;
     setupTransform(localTransform, link->xyz, link->rpy);
-    currentTransform.multiplyPose(localTransform);
+    currentTransform *= localTransform;
     addTransform(body, currentTransform);
 	
     // begin create geometry node
@@ -204,13 +206,13 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const libTF::
     geom->SetAttribute("type", type);
         
     // compute the visualisation transfrom
-    //        libTF::Pose3D coll;
+    //        btTransform coll;
     //        setupTransform(coll, link->collision->xyz, link->collision->rpy);
-    //        coll.invert();
+    //        coll.inverse();
 		
-    libTF::Pose3D vis;
+    btTransform vis;
     setupTransform(vis, link->visual->xyz, link->visual->rpy);
-    //        coll.multiplyPose(vis);
+    //        coll = coll.inverseTimes(vis);
 		
     addTransform(geom, vis);
 	           
@@ -361,7 +363,9 @@ int main(int argc, char **argv)
     outresdir += "/" + robotname;
 
     // set the transform for the whole model to identity
-    libTF::Pose3D transform;        
+    btTransform transform;
+    transform.setIdentity();
+
     for (unsigned int k = 0 ; k < wgxml.getDisjointPartCount() ; ++k)
         convertLink(kinbody, wgxml.getDisjointPart(k), transform, enforce_limits);
     
