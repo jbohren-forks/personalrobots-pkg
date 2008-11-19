@@ -16,7 +16,7 @@ include $(shell rospack find mk)/download_unpack_build.mk
 
 
 bullet_svn: $(SOURCE_DIR)
-	ln -s $(SOURCE_DIR) bullet_svn
+	ln -sf $(SOURCE_DIR) bullet_svn
 	cd $(SOURCE_DIR) && cmake .
 	make $(PARALLEL_JOBS) -C $(SOURCE_DIR) LinearMath
 	touch bullet
