@@ -6,8 +6,9 @@
   <include filename="../pr2_robot_defs/base_defs.xml" />
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
 
-  <pr2_base name="base" />
-
+  <pr2_base name="base" >
+    <origin xyz="0 0 0.0408" rpy="0 0 0" />
+  </pr2_base>
 
   <pr2_torso name="torso" parent="base">
     <!-- TODO: if the spine is at all raised, the z offset is incorrect -->

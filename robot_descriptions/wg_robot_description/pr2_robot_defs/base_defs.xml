@@ -120,13 +120,13 @@
   <property name="base_size_z" value="0.26" />
 
 
-  <macro name="pr2_base" params="name">
+  <macro name="pr2_base" params="name *origin">
 
     <joint name="${name}_joint" type="planar" />
 
     <link name="${name}">
       <parent name="world" />
-      <origin xyz="0 0 0" rpy="0 0 0" />
+      <insert_block name="origin" />
       <joint name="${name}_joint" />
 
       <inertial>
