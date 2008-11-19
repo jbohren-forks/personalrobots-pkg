@@ -68,46 +68,53 @@ bool ROSArmIK::Init(RobotBase* probot, const RobotBase::Manipulator* pmanip, int
     joint_type.resize(7);
 
     // Shoulder pan
-    aj << 0 << 0 << -1.0;
+    aj << 0 << 0 << 1.0;
     axis.push_back(aj);
     an << 0 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(-1);
 
     // Shoulder pitch
-    aj << 0 << -1 << 0;
+    aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.1 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(-1);
 
     // Shoulder roll
-    aj << -1 << 0 << 0;
+    aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.1 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(-1);
 
     // Elbow flex
     aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.5 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(1);
 
     // Forearm roll
     aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.5 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(1);
 
     // Wrist flex
     aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.82025 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(1);
 
     // Gripper roll
-    aj << -1 << 0 << 0;
+    aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.82025 << 0 << 0;
     anchor.push_back(an);
+    _vjointmult.push_back(-1);
 
     for(int i=0; i < 7; i++)
         joint_type[i] = std::string("ROTARY");
@@ -189,11 +196,14 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
             vector<double>& sol = *itsol;
             assert( (int)sol.size() == _probot->GetActiveDOF());
             
+            for(int i = 0; i < (int)sol.size(); ++i)
+                vravesol[i] = sol[i]*_vjointmult[i];
+            
             // find the first valid solution that satisfies joint constraints and collisions
             wstringstream ss;
             int j;
             for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-                if( sol[j] < _qlower[j] || sol[j] > _qupper[j] )
+                if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
                     break;
             }
 
@@ -201,12 +211,11 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
                 continue; // out of bounds
 
             // check for self collisions
-            for(int i = 0; i < (int)sol.size(); ++i)
-                vravesol[i] = sol[i];
             _probot->SetActiveDOFValues(NULL, &vravesol[0]);
 
-            if( _probot->CheckSelfCollision() )
+            if( _probot->CheckSelfCollision() ) {
                 continue;
+            }
 
             COLLISIONREPORT report;
             if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot, &report) ) {
@@ -221,7 +230,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
 
                 dReal d = 0;
                 for(int k = 0; k < (int)pmanip->_vecarmjoints.size(); ++k)
-                    d += SQR(sol[k]-q0[k]);
+                    d += SQR(vravesol[k]-q0[k]);
 
                 if( bestdist > d ) {
                     pbest = &sol;
@@ -240,7 +249,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
 
             if( qResult != NULL ) {
                 for(int i = 0; i < (int)pbest->size(); ++i)
-                    qResult[i] = (*pbest)[i];
+                    qResult[i] = (*pbest)[i] * _vjointmult[i];
             }
             bsuccess = true;
             break;
@@ -307,11 +316,14 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
         FOREACH(itsol, iksolver->solution_ik_) {
             vector<double>& sol = *itsol;
             assert( (int)sol.size() == _probot->GetActiveDOF());
-
+            
+            for(int i = 0; i < (int)sol.size(); ++i)
+                vravesol[i] = sol[i]*_vjointmult[i];
+            
             // find the first valid solutino that satisfies joint constraints and collisions
             int j;
             for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-                if( sol[j] < _qlower[j] || sol[j] > _qupper[j] )
+                if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
                     break;
             }
 
@@ -319,8 +331,6 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
                 continue; // out of bounds
 
             // check for self collisions
-            for(int i = 0; i < (int)sol.size(); ++i)
-                vravesol[i] = sol[i];
             _probot->SetActiveDOFValues(NULL, &vravesol[0]);
 
             if( _probot->CheckSelfCollision() )
@@ -329,10 +339,7 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
             if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot) )
                 continue;
 
-            qSolutions.push_back(vector<dReal>());
-            qSolutions.back().resize(pmanip->_vecarmjoints.size());
-            for(int i = 0; i < (int)sol.size(); ++i)
-                qSolutions.back()[i] = sol[i];
+            qSolutions.push_back(vravesol);
         }
     }
 
@@ -369,10 +376,13 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
         vector<double>& sol = *itsol;
         assert( (int)sol.size() == _probot->GetActiveDOF());
         
+        for(int i = 0; i < (int)sol.size(); ++i)
+            vravesol[i] = sol[i] * _vjointmult[i];
+        
         // find the first valid solutino that satisfies joint constraints and collisions
         int j;
         for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-            if( sol[j] < _qlower[j] || sol[j] > _qupper[j] )
+            if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
                 break;
         }
         
@@ -380,8 +390,6 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
             continue; // out of bounds
         
         // check for self collisions (does WAM ever self-collide?)
-        for(int i = 0; i < (int)sol.size(); ++i)
-            vravesol[i] = sol[i];
         _probot->SetActiveDOFValues(NULL, &vravesol[0]);
         
         if( _probot->CheckSelfCollision() )
@@ -419,7 +427,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
     if( pbest != NULL ) {
         if( qResult != NULL ) {
             for(int i = 0; i < (int)pbest->size(); ++i)
-                qResult[i] = (*pbest)[i];
+                qResult[i] = (*pbest)[i]*_vjointmult[i];
         }
         return true;
     }
@@ -456,10 +464,13 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* pFreeParameters,
         vector<double>& sol = *itsol;
         assert( (int)sol.size() == _probot->GetActiveDOF());
 
+        for(int i = 0; i < (int)sol.size(); ++i)
+            vravesol[i] = sol[i];
+        
         // find the first valid solutino that satisfies joint constraints and collisions
         int j;   
         for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-            if( sol[j] < _qlower[j] || sol[j] > _qupper[j] )
+            if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
                 break;
         }
         
@@ -467,8 +478,6 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* pFreeParameters,
             continue; // out of bounds
         
         // check for self collisions
-        for(int i = 0; i < (int)sol.size(); ++i)
-            vravesol[i] = sol[i];
         _probot->SetActiveDOFValues(NULL, &vravesol[0]);
         
         if( _probot->CheckSelfCollision() )

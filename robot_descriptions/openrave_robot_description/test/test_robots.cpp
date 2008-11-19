@@ -31,7 +31,7 @@ TEST(URDF, LoadRobots)
     vector<string> files = tokenizer(ROBOT_FILES,"; \r\n");
     for(vector<string>::iterator it = files.begin(); it != files.end(); ++it) {
         cout << "testing: " << *it << "... ";
-        int result = runExternalProcess(OPENRAVE_EXECUTABLE, *it + string(" -testscene"));
+        int result = runExternalProcess(OPENRAVE_EXECUTABLE, *it + string(" -testscene -nogui"));
         if( result != 0 ) {
             bSuccess = false;
             cout << "fail." << endl;

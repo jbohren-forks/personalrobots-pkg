@@ -54,7 +54,7 @@ private:
     inline dReal GetPhiInc() { return 0.04f; }
 
     RobotBase* _probot;
-    std::vector<dReal> _qlower, _qupper;
+    std::vector<dReal> _qlower, _qupper, _vjointmult;
     Vector voffset;
     dReal fiFreeParam;
     boost::shared_ptr<kinematics::arm7DOF> iksolver;
