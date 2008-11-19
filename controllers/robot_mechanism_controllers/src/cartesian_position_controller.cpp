@@ -90,7 +90,10 @@ void CartesianPositionController::update()
   assert(tip_);
   double time = robot_->hw_->current_time_;
 
-  btVector3 error = command_ - (tip_->abs_position_ + effort_.offset_);
+  tf::Vector3 tip_position;
+  getTipPosition(&tip_position);
+
+  tf::Vector3 error = command_ - tip_position;
   effort_.command_[0] = -pid_x_.updatePid(error.x(), time - last_time_);
   effort_.command_[1] = -pid_y_.updatePid(error.y(), time - last_time_);
   effort_.command_[2] = -pid_z_.updatePid(error.z(), time - last_time_);
@@ -100,7 +103,7 @@ void CartesianPositionController::update()
   last_time_ = time;
 }
 
-void CartesianPositionController::getTipPosition(btVector3 *p)
+void CartesianPositionController::getTipPosition(tf::Vector3 *p)
 {
   *p = tip_->abs_position_ + quatRotate(tip_->abs_orientation_, effort_.offset_);
 }
@@ -218,7 +221,7 @@ bool CartesianPositionControllerNode::getActual(
   robot_srvs::GetVector::request &req,
   robot_srvs::GetVector::response &resp)
 {
-  btVector3 v;
+  tf::Vector3 v;
   c_.getTipPosition(&v);
   tf::Vector3TFToMsg(v, resp.v);
   return true;

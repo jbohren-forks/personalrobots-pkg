@@ -69,7 +69,7 @@ public:
   void update();
 
   tf::Vector3 command_;
-  void getTipPosition(btVector3 *p);
+  void getTipPosition(tf::Vector3 *p);
   std::string rootFrame();
 
 private:
