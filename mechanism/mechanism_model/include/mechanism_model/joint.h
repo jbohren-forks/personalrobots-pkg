@@ -68,12 +68,12 @@ public:
 
   // Calibration parameters
   double reference_position_; // The reading of the reference position, in radians
-  /** \brief indicates wether the offset calibration value has been determined and wether the position safety parameters should be enforced.
-   * \note The velocity and effort safety parameters are always enforced.
-   */
-  // Safety parameters
-  /** Indicates if some safety limit parameters have been provided. Should be deprecated soon.*/
+
   bool has_safety_limits_;
+
+  double k_position_limit_;
+  double k_velocity_limit_;
+
   double spring_constant_min_;
   double damping_constant_min_;
   double safety_length_min_;

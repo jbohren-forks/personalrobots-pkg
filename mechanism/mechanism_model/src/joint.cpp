@@ -54,39 +54,47 @@ static map<string, int> g_type_map(types, types + sizeof(types)/sizeof(types[0])
 
 void Joint::enforceLimits(JointState *s)
 {
-  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
+  double vel_high, vel_low;
+  double effort_high, effort_low;
 
-  if( !(has_safety_limits_ && s->calibrated_) )
+  if (!has_safety_limits_)
     return;
 
-  //TODO: add velocity control
-
-  double upper_limit = joint_limit_max_ - safety_length_max_;
-  double lower_limit = joint_limit_min_ + safety_length_min_;
-
-  if (s->position_ > upper_limit)
+  if(s->calibrated_ && s->joint_->type_ != JOINT_CONTINUOUS)
   {
-    // Damping
-    if (s->velocity_ > 0)
-      s->commanded_effort_ += -damping_constant_max_ * s->velocity_;
+    // Computes the position bounds based on the safety lengths.
+    double pos_high = joint_limit_max_ - safety_length_max_;
+    double pos_low = joint_limit_min_ + safety_length_min_;
 
-    // Spring
-    double offset = s->position_ - upper_limit;
-    s->commanded_effort_ += -spring_constant_max_ * offset;
+    // Computes the velocity bounds based on the absolute limit and the
+    // proximity to the joint limit.
+    vel_high = min(velocity_limit_,
+                   -k_position_limit_ * (s->position_ - pos_high));
+    vel_low = max(-velocity_limit_,
+                  -k_position_limit_ * (s->position_ - pos_low));
   }
-  else if(s->position_ < lower_limit)
+  else
   {
-    // Damping
-    if (s->velocity_ < 0)
-      s->commanded_effort_ += -damping_constant_min_ * s->velocity_;
-
-    // Spring
-    double offset = s->position_ - lower_limit;
-    s->commanded_effort_ += -spring_constant_min_ * offset;
+    vel_high = velocity_limit_;
+    vel_low = -velocity_limit_;
   }
 
-  // One more time, just in case there are bugs in the safety limit code
-  s->commanded_effort_ = min(max(s->commanded_effort_, -effort_limit_), effort_limit_);
+  // Computes the effort bounds based on the velocity bounds.
+  if (velocity_limit_ >= 0.0)
+  {
+    effort_high = min(effort_limit_,
+                      -k_velocity_limit_ * (s->velocity_ - vel_high));
+    effort_low = max(-effort_limit_,
+                     -k_velocity_limit_ * (s->velocity_ - vel_low));
+  }
+  else
+  {
+    effort_high = effort_limit_;
+    effort_low = -effort_limit_;
+  }
+
+  s->commanded_effort_ =
+    min( max(s->commanded_effort_, effort_low), effort_high);
 }
 
 bool Joint::initXml(TiXmlElement *elt)
@@ -124,7 +132,16 @@ bool Joint::initXml(TiXmlElement *elt)
     }
 
     if (limits->QueryDoubleAttribute("velocity", &velocity_limit_) != TIXML_SUCCESS)
-      velocity_limit_ = 0.0;
+      velocity_limit_ = -1.0;
+    else
+    {
+      if (limits->QueryDoubleAttribute("k_velocity", &k_velocity_limit_) != TIXML_SUCCESS)
+      {
+        fprintf(stderr, "No k_velocity for joint %s\n", name_.c_str());
+        return false;
+      }
+    }
+
 
     TiXmlElement *calibration = elt->FirstChildElement("calibration");
     if(calibration)
@@ -146,59 +163,30 @@ bool Joint::initXml(TiXmlElement *elt)
       fprintf(stderr, "Error: no min and max limits specified for joint \"%s\"\n", name_.c_str());
       return false;
     }
-  }
 
-  // Safety limit code
-  if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
-  {
-    // Loads safety limits
-    TiXmlElement *safetyMinElt =elt->FirstChildElement("safety_limit_min");
-
-    if(!safetyMinElt && SAFETY_LIMS_STRICTLY_ENFORCED)
-      return false;
-    else if (safetyMinElt)
+    if (type_ == JOINT_ROTARY || type_ == JOINT_PRISMATIC)
     {
-      if(safetyMinElt->QueryDoubleAttribute("spring_constant", &spring_constant_min_) != TIXML_SUCCESS)
-        return false;
-      if(safetyMinElt->QueryDoubleAttribute("damping_constant", &damping_constant_min_) != TIXML_SUCCESS)
-        return false;
-      if(safetyMinElt->QueryDoubleAttribute("safety_length", &safety_length_min_) != TIXML_SUCCESS)
-        return false;
-
-      TiXmlElement *safetyMaxElt =elt->FirstChildElement("safety_limit_max");
-      if(!safetyMaxElt)
-        return SAFETY_LIMS_STRICTLY_ENFORCED == false;
-
-      if(safetyMaxElt->QueryDoubleAttribute("spring_constant", &spring_constant_max_) != TIXML_SUCCESS)
-        return false;
-      if(safetyMaxElt->QueryDoubleAttribute("damping_constant", &damping_constant_max_) != TIXML_SUCCESS)
-        return false;
-      if(safetyMaxElt->QueryDoubleAttribute("safety_length", &safety_length_max_) != TIXML_SUCCESS)
-        return false;
-
-      std::cout<<"Loaded safety limit code for joint "<<name_<<std::endl;
-      std::cout<<spring_constant_min_<<" "<<damping_constant_min_<<" "<<safety_length_min_<<"\n";
-
-      assert(safety_length_max_ > 0);
-      assert(safety_length_min_ > 0);
-      assert(joint_limit_max_ > joint_limit_min_);
-      const double midpoint = 0.5*(joint_limit_max_+joint_limit_min_);
-      assert(joint_limit_max_ - safety_length_max_ > midpoint);
-      assert(joint_limit_min_ + safety_length_min_ < midpoint);
+      if (limits->QueryDoubleAttribute("k_position", &k_position_limit_) != TIXML_SUCCESS)
+        fprintf(stderr, "No k_position for joint %s\n", name_.c_str());
+      if (limits->QueryDoubleAttribute("safety_length_min", &safety_length_min_) != TIXML_SUCCESS)
+        fprintf(stderr, "No safety_length_min_ for joint %s\n", name_.c_str());
+      if (limits->QueryDoubleAttribute("safety_length_max", &safety_length_max_) != TIXML_SUCCESS)
+        fprintf(stderr, "No safety_lenght_max_ for joint %s\n", name_.c_str());
 
       has_safety_limits_ = true;
     }
   }
 
-  // Parses out the joint properties, this is done for all joints as default
+
+  // Parses out the joint properties, this is done for all joints by default
   TiXmlElement *prop_el = elt->FirstChildElement("joint_properties");
   if (!prop_el)
   {
     fprintf(stderr, "Warning: Joint \"%s\" did not specify any joint properties, default to 0.\n", name_.c_str());
     joint_damping_coefficient_ = 0.0;
     joint_friction_coefficient_ = 0.0;
-  } 
-  else 
+  }
+  else
   {
     if (prop_el->QueryDoubleAttribute("damping", &joint_damping_coefficient_) != TIXML_SUCCESS)
       fprintf(stderr,"damping is not specified\n");
@@ -216,7 +204,7 @@ bool Joint::initXml(TiXmlElement *elt)
       return false;
     }
     std::vector<double> axis_pieces;
-    urdf::queryVectorAttribute(axis_el, "xyz", &axis_pieces);   
+    urdf::queryVectorAttribute(axis_el, "xyz", &axis_pieces);
     if (axis_pieces.size() != 3)
     {
       fprintf(stderr, "Error: The axis for joint \"%s\" must have 3 value\n", name_.c_str());

@@ -12,11 +12,11 @@
 
   <macro name="pr2_wheel" params="suffix parent reflect">
     <joint name="wheel_${suffix}_joint" type="revolute">
-      <axis xyz=" 0 1 0 " />
+      <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
-      <limit effort="100" velocity="5" />
+      <limit effort="100" velocity="100" k_velocity="10" />
       <calibration values="1.5 -1" />
-      <joint_properties damping="0.0" friction="0.0" />
+      <joint_properties damping="1.0" friction="0.0" />
     </joint>
 
     <link name="wheel_${suffix}">
@@ -63,8 +63,8 @@
     <joint name="caster_${suffix}_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
+      <limit effort="100" velocity="100" k_velocity="10" />
       <calibration values="1.5 -1" />
-      <limit  effort="100" velocity="5" />
       <joint_properties damping="1.0" friction="0.0" />
     </joint>
 
