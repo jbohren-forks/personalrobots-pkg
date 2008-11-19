@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(etherdrive_hardware)
-add_definitions(-Wall)
-rospack_add_library(etherdrive_hardware src/etherdrive_hardware.cpp)
