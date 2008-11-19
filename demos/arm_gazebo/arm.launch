@@ -1,7 +1,5 @@
 <launch>
   <group name="wg">
-    <!-- create model file for gazebo -->
-    <node pkg="gazebo_robot_description" type="urdf2gazebo" args="$(find wg_robot_description)/pr2_arm_test/pr2_arm.xml.expanded $(find gazebo_robot_description)/world/pr2_arm.model" />
     <!-- send pr2_arm.xml to param server -->
     <include file="$(find wg_robot_description)/pr2_arm_test/send_description.launch" />
     <!-- -g flag runs gazebo in gui-less mode -->

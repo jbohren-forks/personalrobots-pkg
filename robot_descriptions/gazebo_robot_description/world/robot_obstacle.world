@@ -340,12 +340,6 @@
 
   <model:physical name="robot_model1">
 
-    <controller:ros_time name="ros_time" plugin="libRos_Time.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>100.0</updateRate>
-      <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
-    </controller:ros_time>
-
     <xyz>0.0 0.0 0.0408</xyz> <!-- bottom of base off the ground by this much, basically wheel height below skirt -->
     <rpy>0.0 0.0 0.0 </rpy>
 

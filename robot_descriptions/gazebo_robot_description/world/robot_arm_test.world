@@ -157,13 +157,6 @@
   <!-- Robot Arm -->
   <model:physical name="robot_model1">
 
-    <!-- Broadcat time over ROS -->
-    <controller:ros_time name="ros_time" plugin="libRos_Time.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
-      <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
-    </controller:ros_time>
-
     <!-- location of robot in the world -->
     <xyz>0.0 0.0 0.0408</xyz>
     <rpy>0.0 0.0 0.0</rpy>
@@ -172,16 +165,6 @@
     <include embedded="true">
       <xi:include href="pr2_arm.model" />
     </include>
-
-    <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
-      <alwaysOn>true</alwaysOn>
-      <updateRate>1000.0</updateRate>
-      <bodyName>left_gripper_palm</bodyName>
-      <topicName>left_gripper_palm_pose_ground_truth</topicName>
-      <frameName>map</frameName>
-      <interface:position name="p3d_left_wrist_position"/>
-    </controller:P3D>
 
   </model:physical>
 

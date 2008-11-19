@@ -9,5 +9,5 @@ $(ROBOT).model: $(ROBOT).xacro.xml
 	$(URDF2GAZEBO) $^.xml $(MODEL_FILE)/$@
 
 clean:
-	$(RM) $(ROBOT).xml.expanded $(MODEL_FILE)/$(ROBOT).model
+	$(RM) $(ROBOT).xml $(MODEL_FILE)/$(ROBOT).model
 	$(RM) core.* Ogre.log

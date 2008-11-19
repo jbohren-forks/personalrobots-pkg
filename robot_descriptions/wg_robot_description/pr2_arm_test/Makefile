@@ -4,11 +4,11 @@ MODEL_FILE = `rospack find gazebo_robot_description`/world
 
 ROBOT = pr2_arm
 
-$(ROBOT).model: $(ROBOT).xml
-	$(XACRO) $^ > $^.expanded
-	$(URDF2GAZEBO) $^.expanded $(MODEL_FILE)/$@
+$(ROBOT).model: $(ROBOT).xacro.xml
+	$(XACRO) $^ > $(ROBOT).xml
+	$(URDF2GAZEBO) $(ROBOT).xml $(MODEL_FILE)/$@
 
 clean:
-	$(RM) $(ROBOT).xml.expanded $(MODEL_FILE)/$(ROBOT).model
+	$(RM) $(ROBOT).xml $(MODEL_FILE)/$(ROBOT).model
 	$(RM) core.* Ogre.log
 
