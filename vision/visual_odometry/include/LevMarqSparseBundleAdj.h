@@ -50,20 +50,17 @@ public:
       /// used as initial value in entry and output in exit.
       PointTracks* tracks
   );
-#if 0
-  bool optimize(
-      /// The window of frames. For a free frame, the transformation matrix
-      /// is used as initial value in entry and output in exit.
-      deque<PoseEstFrameEntry *>* windowOfFrames,
-      //// all the frames so far.
-      vector<FramePose*>* frame_poses,
-      /// The tracks of points. The global coordinates for each track are
-      /// used as initial value in entry and output in exit.
-      PointTracks* tracks
-  );
-#endif
+
+  /// The cost of current iteration in optimize(). Or final cost when
+  /// optimize() returns.
+  double cost_;
+  /// number of retraction (when error/cost has increased).
+  int num_retractions_;
+  /// number of good update (when error/cost has decreased).
+  int num_good_updates_;
+
 protected:
-  void initCameraParams(
+  void initParams(
       vector<FramePose*>* free_frames,
       vector<FramePose*>* fixed_frames,
       PointTracks* tracks
@@ -229,10 +226,9 @@ protected:
   /// parameter delta value. Used for compute Jacobian numerically.
   const double param_delta_;
 
-  /// number of retraction (when error/cost has increased).
-  int num_retractions_;
-  /// number of good update (when error/cost has decreased).
-  int num_good_updates_;
+  /// cost of previous iteration.
+  double prev_cost_;
+
 };
 
 }

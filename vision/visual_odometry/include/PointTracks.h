@@ -91,8 +91,12 @@ public:
   /// updates on the point
   double        dp_[3];
   CvMat         mat_dp_;
+  /// estimated 3D Cartesian coordindates in optimization. It takes coordinates_
+  /// as initial position and updates coordinates_ if the optimization is
+  /// successful.
+  CvPoint3D64f  param_;
   /// estimated 3D Cartesian coordinates of previous iteration in optimization.
-  CvPoint3D64f  prev_coordinates_;
+  CvPoint3D64f  prev_param_;
 };
 
 /// Book keeping of point tracks.

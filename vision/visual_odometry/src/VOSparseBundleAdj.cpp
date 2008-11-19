@@ -39,7 +39,7 @@ VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
   mTrackId(0),
   levmarq_sba_(NULL)
 {
-
+  mPoseEstimator.setInlierErrorThreshold(3.0);
 }
 
 VOSparseBundleAdj::~VOSparseBundleAdj() {
@@ -93,7 +93,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
-#if 0 // 0 for no sba
+#if 1 // 0: no sba
       fillFrames(&mFramePoses, mActiveKeyFrames.front()->mFrameIndex,
           mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
           full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
@@ -367,9 +367,11 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
       it = map_index_to_FramePose_->find(obsv->frame_index_);
       assert(it!=map_index_to_FramePose_->end());
       const FramePose* fp = it->second;
+      assert(obsv->frame_index_ == fp->mIndex);
 
-      CvMat* mat_global_to_disp;
-      if (fp->transf_global_to_disp_) {
+      CvMat* mat_global_to_disp; 
+      /// @todo jdc debugging - turn off the following branch
+      if (false && fp->transf_global_to_disp_) {
         mat_global_to_disp = fp->transf_global_to_disp_;
       } else {
         // compute it here.
@@ -377,6 +379,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
         CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
             mat0);
         cvMatMul(threeDToDisparity_, mat0, mat_global_to_disp);
+
       }
 
       CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
@@ -394,7 +397,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 #if DEBUG==1
     printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track->id_, track->size(),
         track->coordinates_.x, track->coordinates_.y, track->coordinates_.z);
-    printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
+    printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
     printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     CvScalar color;
@@ -422,7 +425,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
         color = colorFreeFrame;
       }
 #if DEBUG==1
-      printf("%3d: fi=%d, [%3d, %3d] <=> ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
+      printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
       printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
     }
@@ -499,7 +502,11 @@ void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
   CvMat dispToCart;
   mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
   delete levmarq_sba_;
+  int num_good_updates = 500;
+  CvTermCriteria term_criteria =
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,DBL_EPSILON);
+
   levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
-      full_free_window_size_, full_fixed_window_size_);
+      full_free_window_size_, full_fixed_window_size_, term_criteria);
 }
 

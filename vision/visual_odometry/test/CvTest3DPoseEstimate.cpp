@@ -217,7 +217,7 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj sba(imgSize, 5, 10);
+  VOSparseBundleAdj sba(imgSize, 10, 10);
 
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
@@ -232,16 +232,6 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   int start = 0;
   int end   = 1509;
   int step  = 1;
-
-//  start = 30;
-  //start = 500;
-  //end   = 600;
-//  end = 50;
-//  start = 1050;
-//  end   = 1150;
-
-  start = 30;
-  end   = 200;
 
   // @todo if we run from frame 30 to frame 600. at frame 535 there is a weird behavior - two of the estimated
   // point get map to the observed points.

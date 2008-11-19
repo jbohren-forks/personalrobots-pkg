@@ -141,15 +141,17 @@ bool LevMarqSparseBundleAdj::optimize(
   fixed_window_size_ = fixed_frames->size();
   num_tracks_  = tracks->tracks_.size();
 
+#if DEBUG==1
+  printf("[LevMarqSBA] number of tracks: %d\n", num_tracks_);
+  printf("[LevMarqSBA] free window size: %d\n", free_window_size_);
+#endif
+
   /// @todo get a more intelligent number than this arbitrary one.
   if (num_tracks_<10) {
-    return false;
-  }
-
 #if DEBUG==1
-  printf("number of tracks: %d\n", num_tracks_);
-  printf("free window size: %d\n", free_window_size_);
+    printf("[LevMarqSBA] warning: number of tracks: %d is too few\n", num_tracks_);
 #endif
+  }
 
   lowest_free_global_index_  = free_frames->front()->mIndex;
   highest_free_global_index_ = free_frames->back()->mIndex;
@@ -192,17 +194,17 @@ bool LevMarqSparseBundleAdj::optimize(
   num_good_updates_= 0;
 
   /// 2. Compute cost function at initial camera and point configuration.
-  initCameraParams(free_frames, fixed_frames, tracks);
+  initParams(free_frames, fixed_frames, tracks);
 
   /// For each camera/frame, compute the transformation matrix
   /// from global to disparity
   constructTransfMatrices();
 
-  double cost = costFunction(free_frames, tracks);
-  double prev_cost = DBL_MAX;
+  cost_ = costFunction(free_frames, tracks);
+  prev_cost_ = DBL_MAX;
 
 #if DEBUG==1
-  printf("Initial cost: %f\n", cost);
+  printf("Initial cost: %f\n", cost_);
 #endif
 
   // 3x6 in stereo case
@@ -236,11 +238,11 @@ bool LevMarqSparseBundleAdj::optimize(
       memset(Hpp, 0, NUM_POINT_PARAMS*NUM_POINT_PARAMS*sizeof(double));
       memset(bp,  0, NUM_POINT_PARAMS*sizeof(double));
 
-      double px = p->coordinates_.x;
-      double py = p->coordinates_.y;
-      double pz = p->coordinates_.z;
+      double px = p->param_.x;
+      double py = p->param_.y;
+      double pz = p->param_.z;
 #if DEBUG2==1
-      CvMat cart_point = cvMat(1, 1, CV_64FC1, &(p->coordinates_));
+      CvMat cart_point = cvMat(1, 1, CV_64FC1, &(p->param_));
       printf("point %d: [%f, %f, %f]\n", p->id_, px, py, pz);
 #endif
 
@@ -602,13 +604,13 @@ bool LevMarqSparseBundleAdj::optimize(
       }
 
       /// update point parameters with dp
-      p->coordinates_.x += dp[0];
-      p->coordinates_.y += dp[1];
-      p->coordinates_.z += dp[2];
+      p->param_.x += dp[0];
+      p->param_.y += dp[1];
+      p->param_.z += dp[2];
 
 #if DEBUG2==1
       printf("[LevMarqSBA]: updated point params pid=%d, [%f, %f, %f]\n",
-          p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+          p->id_, p->param_.x, p->param_.y, p->param_.z);
 #endif
 
       /// }
@@ -616,12 +618,12 @@ bool LevMarqSparseBundleAdj::optimize(
     ///
     /// 8. Compute the cost function for the updated camera and point configuration
     constructTransfMatrices();
-    cost = costFunction(free_frames, tracks);
+    cost_ = costFunction(free_frames, tracks);
 #if DEBUG==1
-    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost, prev_cost);
+    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost_, prev_cost_);
 #endif
     ///
-    if (cost <= prev_cost) {
+    if (cost_ <= prev_cost_) {
       /// 9. If cost function has improved, accept the update step, decrease
       ///    \f$ \lambda \f$ and go to Step 3 (unless converged, in which case quit).
       ///    This step increases the influence of Gauss-Newton and decreases the
@@ -646,11 +648,11 @@ bool LevMarqSparseBundleAdj::optimize(
           iters, param_change, term_criteria_.epsilon);
 #endif
 
-      prev_cost = cost;
+      prev_cost_ = cost_;
       // accept parameter changes
       cvCopy(&mat_C_, &mat_prev_C_);
       BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
-        p->prev_coordinates_ = p->coordinates_;
+        p->prev_param_ = p->param_;
       }
     } else {
       /// 10. Otherwise, reject the update,
@@ -664,7 +666,7 @@ bool LevMarqSparseBundleAdj::optimize(
       /// back off from current parameters to previous ones?
       cvCopy(&mat_prev_C_, &mat_C_);
       BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
-        p->coordinates_ = p->prev_coordinates_;
+        p->param_ = p->prev_param_;
       }
 #if DEBUG==1
       printf("[LevMarqSBA] bad update.\n");
@@ -693,7 +695,7 @@ bool LevMarqSparseBundleAdj::optimize(
   return true;
 }
 
-void LevMarqSparseBundleAdj::initCameraParams(
+void LevMarqSparseBundleAdj::initParams(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
     PointTracks* tracks) {
@@ -718,11 +720,6 @@ void LevMarqSparseBundleAdj::initCameraParams(
     // optimization parameters.
     double* frame_params_i = getFrameParams(local_index);
     transfToParams(global_to_local, frame_params_i);
-#if   0 //@todo remove it
-    CvMat mat_frame_params_i = cvMat(6, 1, CV_64FC1, getFrameParams(local_index));
-    CvMatUtils::transformToRodriguesAndShift(
-        global_to_local, mat_frame_params_i);
-#endif
 
     // enter the mapping between global index and local index to the map.
     map_index_global_to_local_[free_frame->mIndex] = local_index;
@@ -746,18 +743,6 @@ void LevMarqSparseBundleAdj::initCameraParams(
   lowest_fixed_global_index_ = fixed_frames->front()->mIndex;
   highest_fixed_global_index_ = fixed_frames->back()->mIndex;
 
-#if 0 // do not need the following
-  BOOST_REVERSE_FOREACH(FramePose* fp, *fixed_frames) {
-    if (fp->mIndex < oldest_frame_in_tracks) {
-      break;
-    } else if (fixed_window_size_ >= full_fixed_window_size_) {
-      break;
-    } else if (fp->mIndex < lowest_index_in_window) {
-      fixed_window_size_++;
-      lowest_fixed_global_index_ = fp->mIndex;
-    }
-  }
-#endif
   CvMat* transf_from_global = cvCreateMat(4, 4, CV_64FC1);
   int reverse_index=0;
   BOOST_REVERSE_FOREACH(FramePose* fp, *fixed_frames) {
@@ -787,11 +772,14 @@ void LevMarqSparseBundleAdj::initCameraParams(
     assert(reverse_index<=fixed_window_size_);
   }
 
-  // loop thru the tracks and fill out the field of local_frame_index_
+  // loop thru the tracks to
+  // 1) initialize the parameters
+  // 2) fill out the field of local_frame_index_
   // according to map_index_global_to_local_
   BOOST_FOREACH( PointTrack* p, tracks->tracks_) {
     /// initialize prev_coordinates to the same as initial point params.
-    p->prev_coordinates_ = p->coordinates_;
+    p->param_      = p->coordinates_;
+    p->prev_param_ = p->param_;
     BOOST_FOREACH( PointTrackObserv* obsv, *p ) {
       boost::unordered_map<int, int>::const_iterator iter =
         map_index_global_to_local_.find(obsv->frame_index_);
@@ -875,13 +863,12 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
   }
 #endif
 
-  /// @todo retrieve point parameters. Current implementation has
-  /// the parameters on the tracks. So it is a noop.
-#if 0
-  // update update disp_coord_est_ of each obsv
+  // check and copy the point parameter back to p->coordinates_
   BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+    p->coordinates_ = p->param_;
+#if 0 // update disp_coord_est as well for each obv of the track.
     printf("update point track %3d [%8.2f, %8.2f, %8.2f]\n",
-        p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+        p->id_, p->param_.x, p->param_.y, p->param_.z);
     BOOST_FOREACH(PointTrackObserv* obsv, *p) {
 
       if (isDontCareFrame(obsv->frame_index_) == true) {
@@ -897,7 +884,7 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
       double *transf_global_to_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
 
       CvMat mat_global_to_disp = cvMat(4, 4, CV_64FC1, transf_global_to_disp);
-      CvMat mat_coord = cvMat(1, 1, CV_64FC3, &p->coordinates_);
+      CvMat mat_coord = cvMat(1, 1, CV_64FC3, &p->param_);
       CvMat mat_disp_coord_est_ = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
 
       cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est_, &mat_global_to_disp);
@@ -911,8 +898,8 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
 #endif
 
     }
-  }
 #endif
+  }
 
 }
 
@@ -941,7 +928,7 @@ double LevMarqSparseBundleAdj::costFunction(
 
   /// For each tracks
   BOOST_FOREACH(PointTrack* track, tracks->tracks_) {
-    CvMat point = cvMat(1, 1, CV_64FC3, &track->coordinates_);
+    CvMat point = cvMat(1, 1, CV_64FC3, &track->param_);
     /// For each observation of the track
     BOOST_FOREACH(PointTrackObserv* obsv, *track) {
       if (isDontCareFrame(obsv->frame_index_) == true) {
@@ -998,15 +985,15 @@ void LevMarqSparseBundleAdj::getPointParamChange(
   double diff_sum_sq = 0.;
   double sum_sq = 0.;
   BOOST_FOREACH(const PointTrack* track, tracks->tracks_) {
-    double x = track->coordinates_.x;
-    double y = track->coordinates_.y;
-    double z = track->coordinates_.z;
+    double x = track->param_.x;
+    double y = track->param_.y;
+    double z = track->param_.z;
     sum_sq = x*x + y*y + z*z;
 
     // recycle the variables for storage of the diffs
-    x -= track->prev_coordinates_.x;
-    y -= track->prev_coordinates_.y;
-    z -= track->prev_coordinates_.z;
+    x -= track->prev_param_.x;
+    y -= track->prev_param_.y;
+    z -= track->prev_param_.z;
 
     diff_sum_sq = x*x + y*y + z*z;
 

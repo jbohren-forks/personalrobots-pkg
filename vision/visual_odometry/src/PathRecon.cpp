@@ -28,7 +28,11 @@ using namespace cv::willow;
 
 #define DISPLAY 0
 
-#undef DEBUG
+#define SHOWKEYPOINTS    0
+#define SHOWDISPARITYMAP 0
+
+//#undef DEBUG
+#define DEBUG 1
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -188,14 +192,8 @@ bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIn
 	// enter in to an index map
 	map_index_to_FramePose_[frameIndex] = fp;
 #if DEBUG==1
-	printf("store frame %d in mFramePoses\n", fp->mIndex);
+	printf("store frame %d in mFramePoses\n", frameIndex, fp->mIndex);
 
-	// @todo remove the following debugging stuff
-	if (fp->mIndex == 30) {
-	  CvMatUtils::printMat(&mTransform);
-	  CvMatUtils::printMat(&rodGlobal2);
-	  CvMatUtils::printMat(&shiftGlobal2);
-	}
 #endif
 
 
@@ -433,10 +431,12 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
       }
 #endif
 
+#if SHOWKEYPOINTS==1
       // if applicable, pass a reference of the current frame for visualization
       if (mVisualizer) {
         mVisualizer->drawKeypoints(*getLastKeyFrame(), *currFrame, trackablePairs);
       }
+#endif
 
       if (currFrame->mNumTrackablePairs< defMinNumTrackablePairs) {
 #if DEBUG==1
@@ -529,7 +529,7 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
 #endif
     // use currFrame as key frame
     // do smoothing
-    if (mFrameSeq.mNumFrames>1) {
+    if (mFrameSeq.mNumFrames>1 && currFrame->mInliers0) {
       TIMERSTART2(PoseEstimateLevMarq);
       mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
           *currFrame->mInliers0, currFrame->mRot, currFrame->mShift);
@@ -565,13 +565,17 @@ F2FVisualizer::F2FVisualizer(PoseEstimateDisp& pe):
   {
   // create a list of windows to display results
   cvNamedWindow(poseEstWinName.c_str(), CV_WINDOW_AUTOSIZE);
+#if SHOWKEYPOINTS==1
   cvNamedWindow(leftCamWinName.c_str(), CV_WINDOW_AUTOSIZE);
-//  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+  cvMoveWindow(leftCamWinName.c_str(), 650, 0);
+#endif
+#if SHOWDISPARITYMAP==1
+  cvNamedWindow(dispWindowName.c_str(), CV_WINDOW_AUTOSIZE);
+  cvMoveWindow(dispWindowName.c_str(), 650, 530);
+#endif
 //  cvNamedWindow(lastTrackedLeftCam.c_str(), CV_WINDOW_AUTOSIZE);
 
   cvMoveWindow(poseEstWinName.c_str(), 0, 0);
-  cvMoveWindow(leftCamWinName.c_str(), 650, 0);
-//  cvMoveWindow(dispWindowName.c_str(), 650, 530);
 //  cvMoveWindow(lastTrackedLeftCam.c_str(), 0, 530);
 }
 
@@ -659,11 +663,13 @@ void F2FVisualizer::drawTrackingCanvas(
 }
 
 void VOVisualizer::show() {
+#if SHOWKEYPOINTS==1 // do not show key point matching
   if (canvasKeypointRedrawn && canvasKeypoint.Ipl())
     cvShowImage(leftCamWinName.c_str(), canvasKeypoint.Ipl());
+#endif
   if (canvasTrackingRedrawn && canvasTracking.Ipl())
     cvShowImage(poseEstWinName.c_str(), canvasTracking.Ipl());
-#if 0 // do not draw disparity map
+#if SHOWDISPARITYMAP==1 // do not draw disparity map
   if (canvasDispMapRedrawn && canvasDispMap.Ipl())
     cvShowImage(dispWindowName.c_str(),  canvasDispMap.Ipl());
 #endif

@@ -102,7 +102,7 @@ public:
 	const static int numNonLinearParams = 3;   ///< the num of nonlinear parameters, namely rotation related
 	const static int numParams = 6;	      ///< Total num of parameters
 	const static int defNumMaxIter = 50;  ///< Maximum num of iterations
-	const static int defMaxTimesOfUpdates = 300; //<maximum num of times update() or updateAlt() is called
+	const static int defMaxTimesOfUpdates = 800; //<maximum num of times update() or updateAlt() is called
 
 	/**
 	 *  A routine that performs optimization.
