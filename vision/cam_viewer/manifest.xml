@@ -6,7 +6,7 @@
   <author>John Hsu</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <depend package="std_msgs"/>
   <depend package="image_utils"/>
   <depend package="roscpp"/>

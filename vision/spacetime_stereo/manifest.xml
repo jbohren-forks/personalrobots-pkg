@@ -2,6 +2,6 @@
 <author>Federico</author>
 <depend package="roscpp" />
 <depend package="std_msgs" />
-<depend package="opencv" />
+<depend package="opencv_latest" />
 <depend package="image_utils" />
 </package>

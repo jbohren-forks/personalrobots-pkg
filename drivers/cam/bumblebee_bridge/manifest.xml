@@ -8,5 +8,5 @@
   <depend package="std_srvs"/>
   <depend package="roscpp"/>
   <depend package="image_utils"/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
 </package>

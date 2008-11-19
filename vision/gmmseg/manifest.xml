@@ -7,7 +7,7 @@
   <author>Charles C. Kemp, Hai Nguyen</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <depend package="pyrob"/>
   <depend package="numpy"/>
   <depend package="rospy"/>

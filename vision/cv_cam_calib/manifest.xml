@@ -7,5 +7,5 @@
   <author>Morgan Quigley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
 </package>

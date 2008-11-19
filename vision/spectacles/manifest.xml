@@ -15,7 +15,7 @@
   <author>Morgan Quigley</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <depend package="opencv"/>
+  <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib -lspectacles"/>
   </export>

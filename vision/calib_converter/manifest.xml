@@ -7,7 +7,7 @@
 <url></url>
 <depend package="megamaid"/>
 <depend package="logging"/>
-<depend package="opencv"/>
+<depend package="opencv_latest"/>
 <depend package="std_msgs"/>
 <depend package="image_utils"/>
 <depend package="roscpp"/>
