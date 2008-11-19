@@ -60,6 +60,7 @@ public:
     
   bool first_time_ ;
   
+  std::string fixed_frame_ ;
   
   PointCloudSnapshotter() : ros::node("point_cloud_snapshotter")
   {
@@ -67,6 +68,10 @@ public:
     
     advertise<PointCloud> ("full_cloud", 1) ;
     subscribe("laser_scanner_signal", cur_signal_, &PointCloudSnapshotter::scannerSignalCallback, 40) ;
+
+    std::string default_fixed_frame = "torso" ;
+
+    param("~fixed_frame", fixed_frame_, std::string("torso")) ;
     
     first_time_ = true ;
   }
@@ -90,7 +95,7 @@ public:
       
       req.begin = prev_signal_.header.stamp ;
       req.end   = cur_signal_.header.stamp ;
-      req.target_frame_id = "torso" ;
+      req.target_frame_id = fixed_frame_ ;
       
       printf("PointCloudSnapshotter::Making Service Call...\n") ;
       ros::service::call("build_cloud", req, resp) ;

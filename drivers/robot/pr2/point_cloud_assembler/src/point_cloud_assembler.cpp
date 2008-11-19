@@ -95,7 +95,8 @@ public:
 
   LaserScan scan_;
 
-  unsigned int max_scans_;
+  unsigned int max_scans_ ;
+  bool ignore_laser_skew_ ;
 
   deque<LaserScan> scan_hist_ ;            //!< Stores history of scans. We want them in time-ordered, which is (in most situations) the same as time-of-receipt-ordered
   unsigned int total_pts_ ;                //!< Stores the total number of range points in the entire stored history of scans. Useful for estimating points/scan
@@ -109,6 +110,7 @@ public:
     subscribe("scan", scan_, &PointCloudAssembler::scans_callback, 40) ;
 
     param("point_cloud_assembler/max_scans", max_scans_, (unsigned int) 400) ;
+    param("~ignore_laser_skew", ignore_laser_skew_, true) ;
 
     total_pts_ = 0 ;                                                                   // We're always going to start with no points in our history
   }
@@ -165,8 +167,16 @@ public:
 
       try
       {
-        tf_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan) ;
-        
+        if (ignore_laser_skew_)  // Do it the fast (approximate) way
+	{
+	  projector_.projectLaser(cur_scan, projector_cloud) ;
+          tf_.transformPointCloud(req.target_frame_id, projector_cloud, target_frame_cloud) ;
+	}
+	else                     // Do it the slower (more accurate) way
+	{
+	  tf_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan) ;
+        }
+
         for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud
         {
           resp.cloud.pts[cloud_count].x        = target_frame_cloud.pts[j].x ;
