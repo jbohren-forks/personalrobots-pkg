@@ -7,7 +7,7 @@
 #include "std_msgs/String.h"
 #include "rmp_frame.h"
 #include "usbcan.h"
-#include "rosTF/rosTF.h"
+#include "tf/transform_broadcaster.h"
 
 using namespace ros;
 
@@ -40,7 +40,7 @@ class Segway : public node
 		bool odom_init;
     int op_mode_req;
     enum { RUNNING, SHUTDOWN_REQ, SHUTDOWN } pkt_mode;
-    rosTFServer tf;
+    tf::TransformBroadcaster tf;
     bool req_timeout;
 };
 
@@ -299,15 +299,32 @@ void Segway::main_loop()
 					static int odom_count = 0;
 					if (odom_count++ % 3 == 0) // send it at 5 hz or so
 					{
-//						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
-            odom.pos.x  = odom_x;
-            odom.pos.y  = odom_y;
-            odom.pos.th = odom_yaw;
-            publish("odom", odom);
+                                          //						printf("(%f, %f, %f)\n", odom_x, odom_y, odom_yaw);
+                                          odom.pos.x  = odom_x;
+                                          odom.pos.y  = odom_y;
+                                          odom.pos.th = odom_yaw;
+                                          publish("odom", odom);
 
-            tf.sendInverseEuler("odom",
-                                "base",
-                                odom.pos.x,
+                                          tf.sendTransform(tf::Transform(tf::Quaternion(
+                                                                                        odom.pos.th,
+                                                                                        0,
+                                                                                        0), 
+                                                                         tf::Point(
+                                                                                   odom.pos.x,
+                                                                                   odom.pos.y,
+                                                                                   0.0)
+                                                                         ).inverse(),
+                                                           odom.header.stamp, 
+                                                           "odom",
+                                                           "base");
+                                        }
+                                }
+                                last_foreaft = rmp.foreaft;
+				last_yaw = rmp.yaw;
+
+                                /*            tf.sendInverseEuler("odom",
+                                              "base",
+                                              odom.pos.x,
                                 odom.pos.y,
                                 0.0,
                                 odom.pos.th,
@@ -318,6 +335,7 @@ void Segway::main_loop()
 				}
 				last_foreaft = rmp.foreaft;
 				last_yaw = rmp.yaw;
+            */
 /*
 				req_mutex.lock();
 				build_vel_pkt(req_x_vel, req_yaw_rate);
