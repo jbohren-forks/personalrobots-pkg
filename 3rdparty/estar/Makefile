@@ -13,7 +13,8 @@
 #
 #  $ make svn-all
 
-all: tarball-all
+##all: tarball-all
+all: svn-all
 
 VERSION=     r267
 
@@ -25,7 +26,7 @@ BUILD_DIR=   $(PWD)/build/build
 INST_DIR=    $(PWD)/local
 BOOST_DIR=   `rospack cflags-only-I boost`
 
-SVN_DIR=     $(PWD)/estar-svn
+SVN_DIR=     $(PWD)/build/estar-svn
 SVN_REV=     HEAD
 SVN_URL=     https://estar.svn.sourceforge.net/svnroot/estar/trunk/estar
 
@@ -36,14 +37,12 @@ really-all: $(SOURCE_DIR)/configure $(BUILD_DIR)/config.h
 	$(MAKE) -C $(BUILD_DIR) install
 
 .PHONY: svn-all
-svn-all: checkout
+svn-all: checkout_or_update
 	$(MAKE) SOURCE_DIR=$(SVN_DIR) really-all
 
-checkout:
+checkout_or_update:
+	- test -d $(SVN_DIR) && svn up $(SVN_DIR)
 	test -d $(SVN_DIR) || svn co -r$(SVN_REV) $(SVN_URL) $(SVN_DIR)
-
-update: checkout
-	test -d $(SVN_DIR) && svn up $(SVN_DIR)
 
 .PHONY: tarball-all
 tarball-all: $(SOURCE_DIR)
