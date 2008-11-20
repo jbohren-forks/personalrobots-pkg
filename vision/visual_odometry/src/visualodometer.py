@@ -372,15 +372,14 @@ class VisualOdometer:
       ref = self.keyframe
       self.pairs = self.temporal_match(ref, frame)
       solution = self.solve(ref.kp, frame.kp, self.pairs)
-      if solution:
+      if solution and solution[0] > 5:
         (inl, rot, shift) = solution
-        self.inl = inl
-        self.outl = len(self.pairs) - inl
         diff_pose = self.mkpose(rot, shift)
       else:
-        self.inl = 0
-        self.outl = 0
+        inl = 0
         diff_pose = Pose()
+      self.inl = inl
+      self.outl = len(self.pairs) - inl
       frame.diff_pose = diff_pose
       is_far = self.inl < self.inlier_thresh
       if (self.keyframe != self.prev_frame) and is_far:

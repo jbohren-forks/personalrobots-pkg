@@ -85,7 +85,7 @@ class VO:
       af = SparseStereoFrame(imgL, imgR)
 
       pose = self.vo.handle_frame(af)
-      print pose.xform(0,0,0), pose.quaternion()
+      print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
       p = Pose()
       p.inliers = self.vo.inl
       p.header = iar.header
