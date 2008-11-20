@@ -518,16 +518,20 @@ TEST(costmap, test11){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
-  // <0, 0> thru <7, 7> to be free.
+  // <0, 0> thru <8, 8> to be free
   std_msgs::PointCloud c0;
   c0.set_pts_size(1);
   c0.pts[0].x = 9.5;
   c0.pts[0].y = 9.5;
   c0.pts[0].z = MAX_Z;
-
   std::vector<unsigned int> updates;
   map.updateDynamicObstacles(c0, updates);
-  ASSERT_EQ(updates.size(), 3);
+
+  // Actual hit point and 3 cells alnong the diagonal. Note that neigbors are unchanged because they have higher cost in the static map (NO_INFORMATION).
+  // I considered allowing the cost function to over-ride this case but we quickly find that the planner will plan through walls once it gets out of sensor range.
+  // Note that this will not be the case when we persist the changes to the static map more aggressively since we will retain high cost obstacle data that 
+  // has not been ray tarced thru. If that is the case, this update count would change to 6
+  ASSERT_EQ(updates.size(), 4);
 
   // all cells will have been switched to free space along the diagonal except for this inflated in the update
   for(unsigned int i=0; i < 8; i++)
