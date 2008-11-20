@@ -12,6 +12,27 @@ Index: player/SConscript
  
  sources = ['GazeboDriver.cc',
             'GazeboClient.cc',
+Index: libgazebo/Client.cc
+===================================================================
+--- libgazebo/Client.cc	(revision 7143)
++++ libgazebo/Client.cc	(working copy)
+@@ -189,8 +189,14 @@
+ {
+   this->semKey = GZ_SEM_KEY + this->serverId;
+ 
+-  // Get the client semaphore group
+-  this->semId = semget(this->semKey, 0, S_IRWXU);
++  // While loop to wait for directory
++  this->semId = -1;
++  while(this->semId < 0)
++  {
++    // Get the client semaphore group
++    this->semId = semget(this->semKey, 0, S_IRWXU);
++    usleep(1000000);
++  }
+ 
+   if (this->semId < 0)
+   {
 Index: libgazebo/SConscript
 ===================================================================
 --- libgazebo/SConscript	(revision 7143)
@@ -25,6 +46,23 @@ Index: libgazebo/SConscript
  env = Environment (
    CC = 'g++',
    CCFLAGS = Split ('-pthread -pipe  -W -Wall -O2'),
+Index: libgazebo/Iface.cc
+===================================================================
+--- libgazebo/Iface.cc	(revision 7143)
++++ libgazebo/Iface.cc	(working copy)
+@@ -264,6 +264,12 @@
+ 
+   // Open the mmap file
+   this->mmapFd = open(this->filename.c_str(), O_RDWR);
++  while (this->mmapFd <= 0)
++  {
++    this->mmapFd = open(this->filename.c_str(), O_RDWR);
++    usleep(1000000); // wait and try again
++  }
++
+   if (this->mmapFd <= 0)
+   {
+     stream << "error opening device file " <<  this->filename.c_str() << " : "
 Index: libgazebo/gazebo.h
 ===================================================================
 --- libgazebo/gazebo.h	(revision 7143)
