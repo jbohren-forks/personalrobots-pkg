@@ -19,7 +19,7 @@
     </joint>
 
     <link name="${name}_mount">
-      <parent name="${parent}" />
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
       <inertial>
@@ -124,7 +124,7 @@
     <joint name="${name}_joint" type="fixed" />
 
     <sensor name="${name}" type="camera">
-      <parent name="${parent}" />
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -228,7 +228,7 @@
     </transmission>
 
     <link name="${name}">
-      <parent name="${parent}" />
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -278,7 +278,7 @@
     </transmission>
 
     <link name="${name}">
-      <parent name="${parent}" />
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
