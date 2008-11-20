@@ -277,18 +277,19 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   max_vel_x = min(1.0, vx + acc_x * sim_time_);
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
-  max_vel_y = min(0.2, vy + acc_y * sim_time_);
-  min_vel_y = max(-0.2, vy - acc_y * sim_time_);
+  max_vel_y = 0.1;
+  min_vel_y = -0.1;
 
   //max_vel_theta = vtheta + acc_theta * sim_time_;
   //min_vel_theta = vtheta - acc_theta * sim_time_;
 
   max_vel_theta = 1.0;
   min_vel_theta = -1.0;
+  int y_samples = 2;
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  double dvy = (max_vel_y - min_vel_y) / samples_per_dim_;
+  double dvy = (max_vel_y - min_vel_y) / (y_samples - 1);
   double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
@@ -386,36 +387,13 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     vtheta_samp += dvtheta;
   }
 
-  //do we have a legal trajectory
-  if(best_traj->cost_ >= 0){
-    if(best_traj->xv_ > 0){
-      rotating_left = false;
-      rotating_right = false;
-      stuck_left = false;
-      stuck_right = false;
-    }
-    else if(best_traj->thetav_ < 0){
-      if(rotating_right){
-        stuck_right = true;
-      }
-      rotating_left = true;
-    }
-    else if(best_traj->thetav_ > 0){
-      if(rotating_left){
-        stuck_left = true;
-      }
-      rotating_right = true;
-    }
-    return *best_traj;
-  }
-
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
   vy_samp = min_vel_y;
 
   //loop through all y velocities
-  for(int i = 0; i < samples_per_dim_; ++i){
+  for(int i = 0; i < y_samples; ++i){
     vtheta_samp = 0;
     //first sample the completely horizontal trajectory
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
@@ -455,10 +433,35 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     vy_samp += dvy;
   }
 
-  //if we find a legal horizontal/rotational trajectory... then take it
+  //do we have a legal trajectory
   if(best_traj->cost_ >= 0){
+    if(best_traj->xv_ > 0){
+      rotating_left = false;
+      rotating_right = false;
+      stuck_left = false;
+      stuck_right = false;
+    }
+    else if(best_traj->yv_ > 0){
+      rotating_left = false;
+      rotating_right = false;
+      stuck_left = false;
+      stuck_right = false;
+    }
+    else if(best_traj->thetav_ < 0){
+      if(rotating_right){
+        stuck_right = true;
+      }
+      rotating_left = true;
+    }
+    else if(best_traj->thetav_ > 0){
+      if(rotating_left){
+        stuck_left = true;
+      }
+      rotating_right = true;
+    }
     return *best_traj;
   }
+
 
 
   //and finally we want to generate trajectories that move backwards slowly
