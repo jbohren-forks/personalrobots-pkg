@@ -38,6 +38,7 @@
 #include <ros/node.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <tf/message_notifier.h>
 #include "odom_estimation.h"
 
@@ -98,7 +99,8 @@ private:
   robot_msgs::PoseWithCovariance  _output; 
 
   // robot state
-  tf::TransformListener _robot_state;
+  tf::TransformListener    _robot_state;
+  tf::TransformBroadcaster _odom_broadcaster;
 
   // message notifier for vo
   tf::MessageNotifier<robot_msgs::VOPose>  _vo_notifier;

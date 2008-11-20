@@ -49,6 +49,7 @@ namespace estimation
   odom_estimation_node::odom_estimation_node()
     : ros::node("odom_estimation"),
       _robot_state(*this, true),
+      _odom_broadcaster(*this),
       _vo_notifier(&_robot_state, this,  boost::bind(&odom_estimation_node::vo_callback, this, _1), "vo", "base", 10),
       _vel_desi(2),
       _vel_active(false),
@@ -57,7 +58,7 @@ namespace estimation
       _vo_active(false)
   {
     // advertise our estimation
-    advertise<std_msgs::PoseStamped>("odom_estimation",10);
+    advertise<robot_msgs::PoseWithCovariance>("odom_estimation",10);
 
     // subscribe to messages
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
@@ -109,7 +110,7 @@ namespace estimation
     _odom_mutex.lock();
     _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"odom", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"wheelodom", "map"));
     _odom_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -136,7 +137,7 @@ namespace estimation
     _imu_mutex.lock();
     _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "map"));
     _imu_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -174,7 +175,7 @@ namespace estimation
     
     // vo measurement as base transform
     Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
-    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base"),
+    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "map"),
 			      pow(21.0-((double)_vo.inliers)/10,2));
     _vo_mutex.unlock();
 
@@ -221,6 +222,12 @@ namespace estimation
       // output most recent estimate and relative covariance
       _my_filter.GetEstimate(0.0, _output);
       publish("odom_estimation", _output);
+
+      // broadcast most recent estimate to TransformArray
+      Stamped<Transform> tmp;
+      _my_filter.GetEstimate(0.0, tmp);
+      //_odom_broadcaster.sendTransform(tmp);
+
 
 #ifdef __EKF_DEBUG_FILE__
       // write to file
