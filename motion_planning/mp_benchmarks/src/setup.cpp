@@ -273,7 +273,7 @@ namespace ompl {
   void SBPLBenchmarkSetup::
   dumpTravmap(std::ostream & os) const
   {
-    getRDTravmap()->DumpMap(&os);
+    getRawSFLTravmap()->DumpMap(&os);
   }
   
   
@@ -323,7 +323,7 @@ namespace ompl {
   
   
   boost::shared_ptr<sfl::RDTravmap> SBPLBenchmarkSetup::
-  getRDTravmap() const
+  getRawSFLTravmap() const
   {
     if ( ! rdtravmap_)
       rdtravmap_ = m2d_->CreateRDTravmap();
@@ -332,7 +332,7 @@ namespace ompl {
   
   
   costmap_2d::CostMap2D const & SBPLBenchmarkSetup::
-  getCostmap() const
+  getRaw2DCostmap() const
   {
     if ( ! costmap_)
       costmap_.reset(createCostMap2D());
@@ -542,6 +542,32 @@ namespace ompl {
     y0 = bby0_ - inflation_radius;
     x1 = bbx1_ + inflation_radius;
     y1 = bby1_ + inflation_radius;
+  }
+  
+  
+  boost::shared_ptr<CostmapWrap> SBPLBenchmarkSetup::
+  getCostmap() const
+  {
+    if (costmapWrap_)
+      return costmapWrap_;
+    if (use_sfl_cost)
+      costmapWrap_.reset(createCostmapWrap(getRawSFLTravmap().get()));
+    else
+      costmapWrap_.reset(createCostmapWrap(&getRaw2DCostmap()));
+    return costmapWrap_;
+  }
+  
+  
+  boost::shared_ptr<IndexTransformWrap> SBPLBenchmarkSetup::
+  getIndexTransform() const
+  {
+    if (indexTransformWrap_)
+      return indexTransformWrap_;
+    if (use_sfl_cost)
+      indexTransformWrap_.reset(createIndexTransformWrap(&getRawSFLTravmap()->GetGridFrame()));
+    else
+      indexTransformWrap_.reset(createIndexTransformWrap(&getRaw2DCostmap()));
+    return indexTransformWrap_;
   }
   
 }

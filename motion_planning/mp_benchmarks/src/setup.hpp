@@ -34,6 +34,10 @@
 
 /** \file setup.hpp */
 
+// should say #include <sbpl_util/costmap_wrap.h> but that requires
+// code layout changes there first
+#include <costmap_wrap.h>
+
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
@@ -132,8 +136,12 @@ namespace ompl {
 		 double goal_x, double goal_y, double goal_th, 
 		 double goal_tol_xy, double goal_tol_th);
     
-    boost::shared_ptr<sfl::RDTravmap> getRDTravmap() const;
-    costmap_2d::CostMap2D const & getCostmap() const;
+    boost::shared_ptr<sfl::RDTravmap> getRawSFLTravmap() const;
+    costmap_2d::CostMap2D const & getRaw2DCostmap() const;
+    
+    boost::shared_ptr<CostmapWrap> getCostmap() const;
+    boost::shared_ptr<IndexTransformWrap> getIndexTransform() const;
+    
     tasklist_t const & getTasks() const;
     void getWorkspaceBounds(double & x0, double & y0, double & x1, double & y1) const;
     void getInscribedBounds(double & x0, double & y0, double & x1, double & y1) const;
@@ -155,6 +163,8 @@ namespace ompl {
   private:
     mutable boost::shared_ptr<costmap_2d::CostMap2D> costmap_; // lazy init
     mutable boost::shared_ptr<sfl::RDTravmap> rdtravmap_; // lazy init
+    mutable boost::shared_ptr<CostmapWrap> costmapWrap_; // lazy init
+    mutable boost::shared_ptr<IndexTransformWrap> indexTransformWrap_; // lazy init
     
     costmap_2d::CostMap2D * createCostMap2D() const;
   };

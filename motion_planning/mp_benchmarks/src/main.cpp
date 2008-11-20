@@ -445,7 +445,7 @@ void create_setup()
 	*logos << "could not open costmap file " << costmapFilename << "\n" << flush;
       else {
 	*logos << "writing costmap_2d::CostMap2d\n";
-	*dump_os << setup->getCostmap().toString();
+	*dump_os << setup->getRaw2DCostmap().toString();
       }
     }
   }
@@ -457,7 +457,11 @@ void create_setup()
   if ("2D" == environmentType) {
     unsigned char const
       obst_cost_thresh(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
-    environment.reset(new EnvironmentWrapper2D(setup->getCostmap(), 0, 0, 0, 0, obst_cost_thresh));
+    environment.reset(new EnvironmentWrapper2D(setup->getCostmap().get(), false,
+					       setup->getIndexTransform().get(), false,
+					       0, 0, // start INDEX (ix, iy)
+					       0, 0, // goal INDEX x (ix, iy)
+					       obst_cost_thresh));
   }
   else if ("3DKIN" == environmentType) {
     unsigned char const
@@ -468,24 +472,33 @@ void create_setup()
     double const goaltol_theta(M_PI);
     double const nominalvel_mpersecs(0.6); // human leisurely walking speed
     double const timetoturn45degsinplace_secs(0.6); // guesstimate
-    environment.reset(new ompl::EnvironmentWrapper3DKIN(setup->getCostmap(), obst_cost_thresh,
-							0, 0, 0, // start (x, y, th)
-							0, 0, 0, // goal (x, y, th)
+    environment.reset(new ompl::EnvironmentWrapper3DKIN(setup->getCostmap().get(), false,
+							setup->getIndexTransform().get(), false,
+							obst_cost_thresh,
+							0, 0, 0, // start POSE (x, y, th)
+							0, 0, 0, // goal POSE (x, y, th)
 							goaltol_x, goaltol_y, goaltol_theta,
 							getFootprint(), nominalvel_mpersecs,
 							timetoturn45degsinplace_secs));
-    static bool const do_sanity_check(false);
+    static bool const do_sanity_check(true);
     if (do_sanity_check) {
+      CostmapWrap const & cm(*setup->getCostmap());
       bool sane(true);
       cout << "3DKIN costmap sanity check:\n"
 	   << " * correct obstacle\n"
 	   << " O missing obstacle\n"
 	   << " . correct freespace\n"
-	   << " x missing freespace\n";
-      for (unsigned int ix(0); ix < setup->getCostmap().getWidth(); ++ix) {
+	   << " x missing freespace\n"
+	   << " @ missing information\n";
+      for (ssize_t ix(0); ix < cm.getXEnd(); ++ix) {
 	cout << "  ";
-	for (unsigned int iy(0); iy < setup->getCostmap().getHeight(); ++iy)
-	  if (setup->getCostmap().getCost(ix, iy) >= obst_cost_thresh) {
+	for (ssize_t iy(0); iy < cm.getYEnd(); ++iy) {
+	  int cost;
+	  if ( !  cm.getCost(ix, iy, &cost)) {
+	    cout << "@";
+	    sane = false;
+	  }
+	  else if (cost >= obst_cost_thresh) {
 	    if (environment->IsObstacle(ix, iy))
 	      cout << "*";
 	    else {
@@ -501,6 +514,7 @@ void create_setup()
 	      sane = false;
 	    }
 	  }
+	}
 	cout << "\n";
       }
       if ( ! sane)
@@ -533,7 +547,7 @@ void run_tasks()
 {  
   *logos << "running tasks\n" << flush;
   {
-    costmap_2d::CostMap2D const & costmap(setup->getCostmap());
+    IndexTransformWrap const & it(*setup->getIndexTransform());
     SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
     for (size_t ii(0); ii < tasklist.size(); ++ii) {
       plannerStats->pushBack(plannerMgr->getName(), environment->getName());
@@ -546,8 +560,8 @@ void run_tasks()
       statsEntry.start.x = task.start_x;
       statsEntry.start.y = task.start_y;
       statsEntry.start.th = task.start_th;
-      costmap.WC_MC(statsEntry.start.x, statsEntry.start.y,
-		    statsEntry.startIx, statsEntry.startIy);
+      it.globalToIndex(statsEntry.start.x, statsEntry.start.y,
+		       &statsEntry.startIx, &statsEntry.startIy);
       environment->SetStart(statsEntry.start);
       statsEntry.startState = environment->GetStateFromPose(statsEntry.start);
       if (0 > statsEntry.startState)
@@ -562,7 +576,8 @@ void run_tasks()
       statsEntry.goal.x = task.goal_x;
       statsEntry.goal.y = task.goal_y;
       statsEntry.goal.th = task.goal_th;
-      costmap.WC_MC(statsEntry.goal.x, statsEntry.goal.y, statsEntry.goalIx, statsEntry.goalIy);
+      it.globalToIndex(statsEntry.goal.x, statsEntry.goal.y,
+		       &statsEntry.goalIx, &statsEntry.goalIy);
       environment->SetGoal(statsEntry.goal);
       statsEntry.goalState = environment->GetStateFromPose(statsEntry.goal);
       if (0 > statsEntry.goalState)
@@ -757,7 +772,7 @@ namespace {
   class CostMapProxy: public npm::TravProxyAPI {
   public:
     CostMapProxy()
-      : costmap(setup->getCostmap()), gframe(setup->resolution) {}
+      : costmap(setup->getRaw2DCostmap()), gframe(setup->resolution) {}
     
     virtual bool Enabled() const { return true; }
     virtual double GetX() const { return 0; }
@@ -813,7 +828,7 @@ void init_layout()
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
   
-  shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRDTravmap()));
+  shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(setup->getRawSFLTravmap()));
   new npm::TraversabilityDrawing("travmap", rdt);
   new npm::TraversabilityDrawing("costmap", new CostMapProxy());
   new npm::TraversabilityDrawing("envwrap", new EnvWrapProxy());
