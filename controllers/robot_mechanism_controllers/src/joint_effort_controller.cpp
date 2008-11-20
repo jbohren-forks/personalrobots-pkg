@@ -69,7 +69,7 @@ bool JointEffortController::initXml(mechanism::RobotState *robot, TiXmlElement *
   TiXmlElement *j = config->FirstChildElement("joint");
   if (!j)
   {
-    fprintf(stderr, "JointPositionController was not given a joint\n");
+    fprintf(stderr, "JointEffortController was not given a joint\n");
     return false;
   }
 
