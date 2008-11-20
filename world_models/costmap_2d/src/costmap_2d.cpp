@@ -68,49 +68,6 @@ namespace costmap_2d {
     return (unsigned int) a;
   }
 
-  // Just clean up outstanding observations
-  ObservationBuffer::~ObservationBuffer(){
-    while(!buffer_.empty()){
-      std::list<Observation>::iterator it = buffer_.begin();
-      const std_msgs::PointCloud* cloud = it->cloud_;
-      delete cloud;
-      buffer_.erase(it);
-    }
-  }
-
-  // Only works if the observation is in the map frame - test for it. It should be transformed before
-  // we enque it
-  bool ObservationBuffer::buffer_observation(const Observation& observation){
-    last_updated_ = observation.cloud_->header.stamp;
-
-    if(observation.cloud_->header.frame_id != "map")
-      return false;
-
-    // If the duration is 0, then we just keep the latest one, so we clear out all existing observations
-    while(!buffer_.empty()){
-      std::list<Observation>::iterator it = buffer_.begin();
-      // Get the current one, and check if still alive. if so
-      Observation& obs = *it;
-      if((last_updated_ - obs.cloud_->header.stamp) > keep_alive_){
-        delete obs.cloud_;
-        buffer_.erase(it);
-      }
-      else 
-        break;
-    }
-
-    // Otherwise just store it and indicate success
-    buffer_.push_back(observation);
-    return true;
-  }
-
-  void ObservationBuffer::get_observations(std::vector<Observation>& observations){
-    // Add all remaining observations to the output
-    for(std::list<Observation>::const_iterator it = buffer_.begin(); it != buffer_.end(); ++it){
-      observations.push_back(*it);
-    }
-  }
-
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
       double resolution, unsigned char threshold, double maxZ, double zLB, double zUB,
       double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight, 

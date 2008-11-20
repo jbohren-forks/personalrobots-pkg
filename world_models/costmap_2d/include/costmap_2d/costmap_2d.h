@@ -56,14 +56,12 @@
 
 // Base class
 #include "obstacle_map_accessor.h"
-#include <std_msgs/Point.h>
-#include <std_msgs/PointCloud.h>
+
+// Need observations
+#include "observation.h"
 
 //c++
-#include <list>
 #include <vector>
-#include <map>
-#include <set>
 #include <string>
 #include <queue>
 
@@ -95,49 +93,6 @@ namespace costmap_2d {
   };
 
   typedef std::priority_queue< QueueElement*, std::vector<QueueElement*>, QueueElementComparator > QUEUE;
-
-  /**
-   * @brief Stores an observation in terms of a point cloud and the origin of the source
-   * @note Tried to make members and constructor arguments const but the compiler would not accept the default
-   * assignment operator for vector insertion!
-   */
-  class Observation {
-  public:
-    // Structors
-  Observation(std_msgs::Point& p, std_msgs::PointCloud* cloud): origin_(p), cloud_(cloud) {}
-    Observation(const Observation& org): origin_(org.origin_), cloud_(org.cloud_){}
-
-    std_msgs::Point origin_;
-    std_msgs::PointCloud* cloud_;
-  };
-
-  /**
-   * @brief Base class for buffering observations with a time to live property
-   * The inputs are in the map frame
-   */
-  class ObservationBuffer {
-  public:
-  ObservationBuffer(ros::Duration keep_alive):keep_alive_(keep_alive){}
-
-    virtual ~ObservationBuffer();
-
-    /**
-     * @brief Buffer a current observation
-     * @return true if succeded, false if not (which might occur if there was no transform available for example)
-     */
-    bool buffer_observation(const Observation& observation);
-
-    /**
-     * @brief Queries for current observations. Any observations that are no longer
-     * current will be deleted. Will append observations to the input vector
-     */
-    virtual void get_observations(std::vector<Observation>& observations);
-
-  private:
-    std::list<Observation> buffer_;
-    const ros::Duration keep_alive_;
-    ros::Time last_updated_;
-  };
 
 
   class CostMap2D: public ObstacleMapAccessor 

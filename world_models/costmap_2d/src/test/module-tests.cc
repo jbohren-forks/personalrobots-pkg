@@ -33,6 +33,7 @@
  */
 
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/observation_buffer.h>
 #include <set>
 #include <gtest/gtest.h>
 

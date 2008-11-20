@@ -40,6 +40,7 @@
 
 // Costmap used for the map representation
 #include <costmap_2d/costmap_2d.h>
+#include <costmap_2d/basic_observation_buffer.h>
 
 // Message structures used
 #include <std_msgs/Planner2DState.h>
@@ -62,38 +63,6 @@
 
 namespace ros {
   namespace highlevel_controllers {
-
-    /**
-     * @brief Extend base class to handle buffering until a transform is available, and to support locking for mult-threaded
-     * access
-     */
-    class ObservationBuffer: public costmap_2d::ObservationBuffer {
-    public:
-      ObservationBuffer(const std::string& frame_id, rosTFClient& tf, ros::Duration keepAlive, double robotRadius, double minZ, double maxZ);
-
-      void buffer_cloud(const std_msgs::PointCloud& local_cloud);
-
-      virtual void get_observations(std::vector<Observation>& observations);
-
-    private:
-
-      /**
-       * @brief Test if point in the square footprint of the robot
-       */
-      bool inFootprint(double x, double y) const;
-
-      /**
-       * @brief Provide a filtered set of points based on the extraction of the robot footprint and the 
-       * filter based on the min and max z values
-       */
-      std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
-
-      const std::string frame_id_;
-      rosTFClient& tf_;
-      std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
-      ros::thread::mutex buffer_mutex_;
-      const double robotRadius_, minZ_, maxZ_; /**< Constraints for filtering points */
-    };
 
     class MoveBase : public HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal> {
 
@@ -228,10 +197,14 @@ namespace ros {
 
       rosTFClient tf_; /**< Used to do transforms */
 
-      // Observation Buffers
-      ObservationBuffer* baseScanBuffer_;
-      ObservationBuffer* tiltScanBuffer_;
-      ObservationBuffer* stereoCloudBuffer_;
+      // Observation Buffers are dynamically allocated since their constructors take
+      // arguments bound by lookup to the param server. This could be chnaged with some reworking of how paramaters
+      // are looked up. If we wanted to generalize this node further, we could use a factory pattern to dynamically
+      // load specific derived classes. For that we would need a hand-shaking pattern to register subscribers for them
+      // with this node
+      costmap_2d::BasicObservationBuffer* baseScanBuffer_;
+      costmap_2d::BasicObservationBuffer* tiltScanBuffer_;
+      costmap_2d::BasicObservationBuffer* stereoCloudBuffer_;
 
       /** Should encapsulate as a controller wrapper that is not resident in the trajectory rollout package */
       VelocityController* controller_;

@@ -34,158 +34,16 @@
 
 
 #include <MoveBase.hh>
+#include <costmap_2d/basic_observation_buffer.h>
 #include <std_msgs/BaseVel.h>
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
-#include <deque>
-#include <set>
 
 namespace ros {
   namespace highlevel_controllers {
-
-    ObservationBuffer::ObservationBuffer(const std::string& frame_id, rosTFClient& tf, ros::Duration keepAlive, 
-					 double robotRadius, double minZ, double maxZ)
-      : costmap_2d::ObservationBuffer(keepAlive), frame_id_(frame_id), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ){}
-    
-    void ObservationBuffer::buffer_cloud(const std_msgs::PointCloud& local_cloud)
-    {
-      static const ros::Duration max_transform_delay(10, 0); // max time we will wait for a transform before chucking out the data
-      point_clouds_.push_back(local_cloud);
-
-      std_msgs::PointCloud * newData = NULL;
-      std_msgs::PointCloud * map_cloud = NULL;
-
-      while(!point_clouds_.empty()){
-        const std_msgs::PointCloud& point_cloud = point_clouds_.front();
-	std_msgs::Point origin;
-
-        // Throw out point clouds that are old.
-        if((local_cloud.header.stamp -  point_cloud.header.stamp) > max_transform_delay){
-          ROS_DEBUG("Discarding stale point cloud\n");
-          point_clouds_.pop_front();
-          continue;
-        }
-
-	libTF::TFPoint map_origin;
-        std_msgs::PointCloud base_cloud;
-
-        /* Transform to the base frame */
-        try
-        {
-	  // First we want the origin for the sensor
-	  libTF::TFPoint local_origin;
-	  local_origin.x = 0;
-	  local_origin.y = 0;
-	  local_origin.z = 0;
-	  local_origin.time = point_cloud.header.stamp.toNSec();
-	  local_origin.frame = frame_id_;
-	  map_origin = tf_.transformPoint("map", local_origin);
-
-          tf_.transformPointCloud("base", base_cloud, point_cloud);
-          newData = extractFootprintAndGround(base_cloud);
-          map_cloud = new std_msgs::PointCloud();
-          tf_.transformPointCloud("map", *map_cloud, *newData);
-
-	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.x, map_origin.y, map_origin.z);
-        }
-        catch(libTF::TransformReference::LookupException& ex)
-        {
-          ROS_ERROR("Lookup exception for %s : %s\n", frame_id_.c_str(), ex.what());
-          break;
-        }
-        catch(libTF::TransformReference::ExtrapolateException& ex)
-        {
-          ROS_DEBUG("No transform available yet for %s - have to try later: %s . Buffer size is %d\n", 
-		    frame_id_.c_str(), ex.what(), point_clouds_.size());
-          break;
-        }
-        catch(libTF::TransformReference::ConnectivityException& ex)
-        {
-          ROS_ERROR("Connectivity exception for %s: %s\n", frame_id_.c_str(), ex.what());
-          break;
-        }
-        catch(...)
-        {
-          ROS_ERROR("Exception in point cloud computation\n");
-          break;
-        }
-
-        point_clouds_.pop_front();
-
-        if (newData != NULL){
-          delete newData;
-          newData = NULL;
-        }
-
-	// Get the point from whihc we ray trace
-	std_msgs::Point o;
-	o.x = map_origin.x;
-	o.y = map_origin.y;
-	o.z = map_origin.z;
-
-	// Allocate and buffer the observation
-	Observation obs(o, map_cloud);
-	buffer_observation(obs);
-        map_cloud = NULL;
-      }
-
-      // In case we get thrown out on the second transform - clean up
-      if (newData != NULL){
-        delete newData;
-        newData = NULL;
-      }
-
-      if(map_cloud != NULL){
-        delete map_cloud;
-        map_cloud = NULL;
-      }    
-   }
-
-    void ObservationBuffer::get_observations(std::vector<costmap_2d::Observation>& observations){
-      costmap_2d::ObservationBuffer::get_observations(observations);
-    }
-
-    /**
-     * The point is in the footprint if its x and y values are in the range [0 robotWidth] in
-     * the base frame.
-     */
-    bool ObservationBuffer::inFootprint(double x, double y) const {
-      bool result = fabs(x) <= robotRadius_ && fabs(y) <= robotRadius_;
-
-      if(result){
-        ROS_DEBUG("Discarding point <%f, %f> in footprint\n", x, y);
-      }
-
-      return result;
-    }
-
-    std_msgs::PointCloud * ObservationBuffer::extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const {
-      std_msgs::PointCloud *copy = new std_msgs::PointCloud();
-      copy->header = baseFrameCloud.header;
-
-      unsigned int n = baseFrameCloud.get_pts_size();
-      unsigned int j = 0;
-      copy->set_pts_size(n);
-
-      for (unsigned int k = 0 ; k < n ; ++k){
-        bool ok = baseFrameCloud.pts[k].z > minZ_ &&   baseFrameCloud.pts[k].z < maxZ_;
-        if (ok && !inFootprint(baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y)){
-          copy->pts[j++] = baseFrameCloud.pts[k];
-        }
-        else {
-          ROS_DEBUG("Discarding <%f, %f, %f>\n",  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z);
-        }
-      }
-
-      copy->set_pts_size(j);
-
-      ROS_DEBUG("Filter discarded %d points (%d left) \n", n - j, j);
-
-      return copy;
-    }
 
     MoveBase::MoveBase()
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
@@ -265,9 +123,9 @@ namespace ros {
       robotWidth_ = inscribedRadius * 2;
 
       // Allocate observation buffers
-      baseScanBuffer_ = new ObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new ObservationBuffer(std::string("tilt_laser"), tf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
-      stereoCloudBuffer_ = new ObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("tilt_laser"), tf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -474,13 +332,11 @@ namespace ros {
 
     void MoveBase::baseScanCallback()
     {
-      ROS_DEBUG("Base Scan Callback");
       // Project laser into point cloud
       std_msgs::PointCloud local_cloud;
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
       petTheWatchDog(local_cloud.header.stamp);
-      ROS_DEBUG("Projected");
       lock();
       baseScanBuffer_->buffer_cloud(local_cloud);
       unlock();
