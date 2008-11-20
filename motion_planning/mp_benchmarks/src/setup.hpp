@@ -34,6 +34,9 @@
 
 /** \file setup.hpp */
 
+#ifndef OMPL_BENCHMARK_SETUP_HPP
+#define OMPL_BENCHMARK_SETUP_HPP
+
 // should say #include <sbpl_util/costmap_wrap.h> but that requires
 // code layout changes there first
 #include <costmap_wrap.h>
@@ -212,3 +215,5 @@ namespace ompl {
   };
   
 }
+
+#endif // OMPL_BENCHMARK_SETUP_HPP
