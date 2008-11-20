@@ -66,11 +66,13 @@ namespace estimation
 
     // paramters
     param("odom_estimation/freq", _freq, 30.0);
-    param("odom_estimation/sensor_timeout", _timeout, 4.0);
+    param("odom_estimation/sensor_timeout", _timeout, 1.0);
+
+    // fiexed transform between camera frame and vo frame
     _vo_camera = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
     
-
 #ifdef __EKF_DEBUG_FILE__
+    // open files for debugging
     _odom_file.open("odom_file.txt");
     _imu_file.open("imu_file.txt");
     _vo_file.open("vo_file.txt");
@@ -82,9 +84,11 @@ namespace estimation
 
 
 
+
   // destructor
   odom_estimation_node::~odom_estimation_node(){
 #ifdef __EKF_DEBUG_FILE__
+    // close files for debugging
     _odom_file.close();
     _imu_file.close();
     _vo_file.close();
@@ -93,7 +97,6 @@ namespace estimation
     _extra_file.close();
 #endif
   };
-
 
 
 
@@ -172,7 +175,7 @@ namespace estimation
     // vo measurement as base transform
     Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
     _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base"),
-			      (double)(201-_vo.inliers));
+			      pow(21.0-((double)_vo.inliers)/10,2));
     _vo_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -215,6 +218,10 @@ namespace estimation
     if ( _my_filter.IsInitialized() )  {
       _my_filter.Update(_odom_active,_imu_active, _vo_active,  time);
       
+      // output most recent estimate and relative covariance
+      _my_filter.GetEstimate(0.0, _output);
+      publish("odom_estimation", _output);
+
 #ifdef __EKF_DEBUG_FILE__
       // write to file
       ColumnVector estimate; 
@@ -235,10 +242,6 @@ namespace estimation
 		  << est_last.getOrigin().x() << " " << est_last.getOrigin().y() << " " << est_last.getOrigin().z() << " " << r_last << endl;
       */
 #endif
-      
-      // output most recent estimate and relative covariance
-      _my_filter.GetEstimate(0.0, _output);
-      publish("odom_estimation", _output);
     }
 
     // initialize filer with odometry frame
@@ -260,15 +263,9 @@ namespace estimation
       _odom_mutex.lock();  _imu_mutex.lock();  _vo_mutex.lock();
 #ifdef __EKF_DEBUG_FILE__
       // write to file
-      _time_file << (Time::now() - _odom_time).toSec() << " " 
-		 << (Time::now() - _imu_time).toSec()  << " "
-		 << (Time::now() - _vo_time).toSec()   << " "
-		 << (_odom_time - _imu_time).toSec()   << " "
-		 << (_odom_time - _vo_time).toSec()   << " "
-		 << (_imu_time  - _vo_time).toSec()   << " "
-		 << (_odom.header.stamp - _imu.header.stamp).toSec()   << " "
-		 << (_odom.header.stamp - _vo.header.stamp).toSec()   << " "
-		 << (_imu.header.stamp  - _vo.header.stamp).toSec()   << endl;
+      _time_file << (Time::now() - _odom_time).toSec() << " " << (Time::now() - _imu_time).toSec()  << " " << (Time::now() - _vo_time).toSec()   << " "
+		 << (_odom_time - _imu_time).toSec()   << " " << (_odom_time - _vo_time).toSec()   << " " << (_imu_time  - _vo_time).toSec()   << " "
+		 << (_odom.header.stamp - _imu.header.stamp).toSec()   << " " << (_odom.header.stamp - _vo.header.stamp).toSec()   << " " << (_imu.header.stamp  - _vo.header.stamp).toSec()   << endl;
 #endif
 
       if (_odom_active || _imu_active || _vo_active){

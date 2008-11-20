@@ -133,7 +133,7 @@ namespace estimation
   };
 
 
-  // initialize prior density of filter with odom data
+  // initialize prior density of filter 
   void odom_estimation::Initialize(const Transform& prior, const Time& time)
   {
     // set prior of filter
@@ -246,7 +246,6 @@ namespace estimation
       _filter_estimate_old = Transform(Quaternion(_filter_estimate_old_vec(6), _filter_estimate_old_vec(5), _filter_estimate_old_vec(4)),
 				       Vector3(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
       _filter_time_old = filter_time;
-
       AddMeasurement(Stamped<Transform>(_filter_estimate_old, filter_time, "odom_estimated", "base"));
     }
   };

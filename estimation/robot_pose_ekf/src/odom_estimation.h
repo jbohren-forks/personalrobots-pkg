@@ -69,7 +69,6 @@ public:
   /// initialize filter
   void Initialize(const tf::Transform& prior, const ros::Time& time);
 
-
   /// get filter posterior
   void GetEstimate(MatrixWrapper::ColumnVector& estimate);
   void GetEstimate(ros::Time time, tf::Transform& estiamte);
@@ -106,7 +105,7 @@ private:
   BFL::ExtendedKalmanFilter* _filter;
   MatrixWrapper::SymmetricMatrix _vo_covariance;
 
-  // vectors
+  // vars
   MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
   tf::Transform _filter_estimate_old;
   tf::Stamped<tf::Transform> _odom_meas, _odom_meas_old, _imu_meas, _imu_meas_old, _vo_meas, _vo_meas_old;

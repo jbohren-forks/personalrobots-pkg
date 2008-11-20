@@ -99,8 +99,10 @@ private:
 
   // robot state
   tf::TransformListener _robot_state;
+
+  // message notifier for vo
   tf::MessageNotifier<robot_msgs::VOPose>  _vo_notifier;
-  
+
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
   tf::Transform _odom_meas, _imu_meas,_vo_meas;
