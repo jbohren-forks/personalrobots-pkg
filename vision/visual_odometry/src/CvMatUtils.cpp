@@ -2,7 +2,8 @@
 #include "CvMatUtils.h"
 using namespace cv::willow;
 
-#include <iostream.h>
+#include <iostream>
+#include <limits.h>
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include <opencv/cv.h>

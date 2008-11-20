@@ -5,6 +5,8 @@
  *      Author: jdchen
  */
 
+#include <limits.h>
+
 #include <PointTracks.h>
 #include <boost/foreach.hpp>
 
