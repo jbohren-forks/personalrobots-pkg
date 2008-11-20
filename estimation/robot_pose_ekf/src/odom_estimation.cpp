@@ -177,7 +177,7 @@ namespace estimation
       // process odom measurement
       // ------------------------
       if (odom_active){
-	_transformer.lookupTransform("map","wheelodom", filter_time, _odom_meas);
+	_transformer.lookupTransform("base_footprint","wheelodom", filter_time, _odom_meas);
 	if (_odom_initialized){
 	  // convert absolute odom measurements to relative odom measurements in horizontal plane
 	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * _odom_meas;
@@ -198,7 +198,7 @@ namespace estimation
       // process imu measurement
       // -----------------------
       if (imu_active){
-	_transformer.lookupTransform("map","imu", filter_time, _imu_meas);
+	_transformer.lookupTransform("base_footprint","imu", filter_time, _imu_meas);
 	if (_imu_initialized){
 	  // convert absolute imu yaw measurement to relative imu yaw measurement 
 	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * _imu_meas;
@@ -221,7 +221,7 @@ namespace estimation
       // ----------------------
       //if (vo_active){
       if (false){
-	_transformer.lookupTransform("map","vo", filter_time, _vo_meas);
+	_transformer.lookupTransform("base_footprint","vo", filter_time, _vo_meas);
 	if (_vo_initialized){
 	  // convert absolute vo measurements to relative vo measurements
 	  Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * _vo_meas;
@@ -246,7 +246,7 @@ namespace estimation
       _filter_estimate_old = Transform(Quaternion(_filter_estimate_old_vec(6), _filter_estimate_old_vec(5), _filter_estimate_old_vec(4)),
 				       Vector3(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
       _filter_time_old = filter_time;
-      AddMeasurement(Stamped<Transform>(_filter_estimate_old, filter_time, "odom", "map"));
+      AddMeasurement(Stamped<Transform>(_filter_estimate_old, filter_time, "odom", "base_footprint"));
     }
   };
 
@@ -270,14 +270,14 @@ namespace estimation
   void odom_estimation::GetEstimate(Time time, Transform& estimate)
   {
     Stamped<Transform> tmp;
-    _transformer.lookupTransform("map","odom", time, tmp);
+    _transformer.lookupTransform("base_footprint","odom", time, tmp);
     estimate = tmp;
   };
 
   // get filter posterior at time 'time' as Stamped Transform
   void odom_estimation::GetEstimate(Time time, Stamped<Transform>& estimate)
   {
-    _transformer.lookupTransform("map","odom", time, estimate);
+    _transformer.lookupTransform("base_footprint","odom", time, estimate);
   };
 
   // get filter posterior at time 'time' as PoseStamped
@@ -285,7 +285,7 @@ namespace estimation
   {
     // pose
     Stamped<Transform> tmp;
-    _transformer.lookupTransform("map","odom", time, tmp);
+    _transformer.lookupTransform("base_footprint","odom", time, tmp);
     PoseTFToMsg(tmp, estimate.pose);
 
     // header

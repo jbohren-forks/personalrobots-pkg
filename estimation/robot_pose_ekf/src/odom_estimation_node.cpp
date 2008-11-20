@@ -110,7 +110,7 @@ namespace estimation
     _odom_mutex.lock();
     _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
-    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"wheelodom", "map"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"wheelodom", "base_footprint"));
     _odom_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -137,7 +137,7 @@ namespace estimation
     _imu_mutex.lock();
     _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "map"));
+    _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base_footprint"));
     _imu_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -172,10 +172,9 @@ namespace estimation
     if (!_vo_active){
       _base_vo_init = _camera_base.inverse() * _vo_camera.inverse() * _vo_meas.inverse();
     }
-    
     // vo measurement as base transform
     Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
-    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "map"),
+    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base_footprint"),
 			      pow(21.0-((double)_vo.inliers)/10,2));
     _vo_mutex.unlock();
 
@@ -226,7 +225,7 @@ namespace estimation
       // broadcast most recent estimate to TransformArray
       Stamped<Transform> tmp;
       _my_filter.GetEstimate(0.0, tmp);
-      //_odom_broadcaster.sendTransform(tmp);
+      //_odom_broadcaster.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom", "base_footprint"));
 
 
 #ifdef __EKF_DEBUG_FILE__
