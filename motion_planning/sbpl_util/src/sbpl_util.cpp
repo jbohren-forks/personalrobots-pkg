@@ -61,7 +61,33 @@ namespace {
   
   static map<string, string> planner_alias;
   
+  template<typename env_type>
+  class myChangedCellsGetter
+    : public ChangedCellsGetter
+  {
+  public:
+    myChangedCellsGetter(env_type * env,
+			 std::vector<nav2dcell_t> const & changedcellsV)
+      : env_(env),
+	changedcellsV_(changedcellsV)
+    {
+    }
+    
+    // lazy init, because we do not always end up calling this method
+    virtual std::vector<int> const * getPredsOfChangedCells() const
+    {
+      if (predsOfChangedCells_.empty() && ( ! changedcellsV_.empty()))
+	env_->GetPredsofChangedEdges(&changedcellsV_, &predsOfChangedCells_);
+      return &predsOfChangedCells_;
+    }
+    
+    env_type * env_;
+    std::vector<nav2dcell_t> const & changedcellsV_;
+    mutable std::vector<int> predsOfChangedCells_;
+  };
+  
 }
+
 
 namespace ompl {
   
@@ -230,14 +256,15 @@ namespace ompl {
     return planner_->force_planning_from_scratch();
   }
   
+  
   void SBPLPlannerManager::
-  costs_changed() throw(no_planner_selected)
+  flush_cost_changes(EnvironmentWrapper & ewrap) throw(no_planner_selected)
   {
     if ( ! planner_)
       throw no_planner_selected();
-
-    return planner_->costs_changed();
+    ewrap.FlushCostUpdates(planner_);
   }
+  
   
   SBPLPlannerStatistics::entry::
   entry(std::string const & _plannerType, std::string const & _environmentType)
@@ -348,6 +375,37 @@ namespace ompl {
   }
   
   
+  bool EnvironmentWrapper::
+  UpdateCost(int ix, int iy, unsigned char newcost)
+  {
+    if ( ! IsWithinMapCell(ix, iy))
+      return false;
+    unsigned char const oldcost(GetMapCost(ix, iy));
+    if (oldcost == newcost)
+      return true;
+    if ( ! DoUpdateCost(ix, iy, newcost))
+      return false;
+    changedcellsV_.push_back(nav2dcell_t());
+    changedcellsV_.back().x = ix;
+    changedcellsV_.back().y = iy;
+    return true;
+  }
+  
+  
+  void EnvironmentWrapper::
+  FlushCostUpdates(SBPLPlanner * planner)
+  {
+    if (changedcellsV_.empty())
+      return;
+
+#warning 'what a hack...'
+    ChangedCellsGetter const * ccg(createChangedCellsGetter(changedcellsV_));
+    planner->costs_changed(*ccg);
+    delete ccg;
+    changedcellsV_.clear();
+  }
+  
+  
   EnvironmentWrapper2D::
   EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
 		       int startx, int starty,
@@ -384,11 +442,25 @@ namespace ompl {
   
   
   bool EnvironmentWrapper2D::
-  UpdateCost(int ix, int iy, unsigned char newcost)
+  IsWithinMapCell(int ix, int iy) const
+  {
+    return env_->IsWithinMapCell(ix, iy);
+  }
+  
+  
+  bool EnvironmentWrapper2D::
+  DoUpdateCost(int ix, int iy, unsigned char newcost)
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
       return false;
     return env_->UpdateCost(ix, iy, newcost);
+  }
+
+
+  ChangedCellsGetter const * EnvironmentWrapper2D::
+  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  {
+    return new myChangedCellsGetter<EnvironmentNAV2D>(env_, changedcellsV);
   }
   
   
@@ -535,15 +607,35 @@ namespace ompl {
   
   
   bool EnvironmentWrapper3DKIN::
-  UpdateCost(int ix, int iy, unsigned char newcost)
+  IsWithinMapCell(int ix, int iy) const
+  {
+    return env_->IsWithinMapCell(ix, iy);
+  }
+  
+  
+  /**
+     \note Remapping the cost to binary obstacle info {0,1} actually
+     confuses the check for actually changed costs in the
+     EnvironmentWrapper::UpdateCost() method. However, this is bound
+     to change as soon as the 3DKIN environment starts dealing with
+     uniform obstacle costs.
+  */
+  bool EnvironmentWrapper3DKIN::
+  DoUpdateCost(int ix, int iy, unsigned char newcost)
   {
     if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV3DKIN::UpdateCost()
       return false;
     if (obst_cost_thresh_ <= newcost)
-      return env_->UpdateCost(ix, iy, 1);
-    return env_->UpdateCost(ix, iy, 0);
+      return env_->UpdateCost(ix, iy, 1); // see \note comment above if you change this!
+    return env_->UpdateCost(ix, iy, 0); // see \note comment above if you change this!
   }
-  
+
+
+  ChangedCellsGetter const * EnvironmentWrapper3DKIN::
+  createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const
+  {
+    return new myChangedCellsGetter<EnvironmentNAV3DKIN>(env_, changedcellsV);
+  }
   
   
   unsigned char 

@@ -47,11 +47,23 @@ class SBPLPlanner;		/**< see motion_planning/sbpl/src/planners/planner.h */
 class DiscreteSpaceInformation; /**< see motion_planning/sbpl/src/discrete_space_information/environment.h */
 class EnvironmentNAV2D;	        /**< see motion_planning/sbpl/src/discrete_space_information/nav2d/environment_nav2D.h */
 class EnvironmentNAV3DKIN;      /**< see motion_planning/sbpl/src/discrete_space_information/nav3dkin/environment_nav3Dkin.h */
+class ChangedCellsGetter;
 
 // would like to forward-declare, but in mdpconfig.h it's a typedef'ed
 // anonymous struct and GCC chokes on that... great
 //   struct MDPConfig; /**< see motion_planning/sbpl/src/utils/mdpconfig.h */
 #include <utils/mdpconfig.h>
+
+// Would like to forward-declare, but nav2dcell_t is used within a
+// std::vector<> ... see also the comments in
+// sbpl/src/planners/planner.h about the ChangedCellsGetter
+// class. Also, environment_nav2D.h needs some other includes to be
+// present and uses std::vector without the std:: prefix, so we
+// unfortunately have to add a using directive here.
+using std::vector;
+#include <utils/mdp.h>
+#include <discrete_space_information/environment.h>
+#include <discrete_space_information/nav2d/environment_nav2D.h>
 
 namespace costmap_2d {
   class CostMap2D;
@@ -147,6 +159,8 @@ namespace ompl {
   };
   
   
+  class EnvironmentWrapper;
+  
   /** Wraps around SBPLPlanner subclasses, which you can select by
       name, providing almost the same interface (augmented slightly to
       handle statistics). We do subclass SBPLPlanner because we want
@@ -208,9 +222,17 @@ namespace ompl {
 	SBPLPlanner::force_planning_from_scratch(). */
     int force_planning_from_scratch() throw(no_planner_selected);
         
-    /** \brief Notify the planner that costs have changed */
-    void costs_changed() throw(no_planner_selected);
-
+    /** Notify the planner that costs have changed.
+	
+	\todo Clarify the roles between SBPLPlannerManager,
+	EnvironmentWrapper, DiscreteSpaceInformation, and
+	SBPLPlanner. Actually, the user should not deal with separate
+	instances, but always combinations of planners and
+	environments, so probably the best way to put this is in a
+	facade.
+    */
+    void flush_cost_changes(EnvironmentWrapper & ewrap) throw(no_planner_selected);
+    
   protected:
     DiscreteSpaceInformation* environment_;
     bool bforwardsearch_;
@@ -239,10 +261,24 @@ namespace ompl {
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
     
-    /** \return false if (ix,iy) is not in the map, or if the
-	delegated cost update failed. */
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost) = 0;
-
+    /** Delegate to DoUpdateCost() and add the changed cell to
+	changedcellsV_ if (i) it is a valid coordinate and (ii) the
+	cost has actually changed.
+	
+	\return false if (ix,iy) is not in the map, or if the
+	delegated cost update failed. It returns true even if the
+	newcost is the same as the old cost at that cell, but then it
+	does not put the cell onto the changedcellsV_. */
+    bool UpdateCost(int ix, int iy, unsigned char newcost);
+    
+    /** If there are any pending cost updates, it calls
+	SBPLPlanner::costs_changed() and then clears that buffer. */
+    void FlushCostUpdates(SBPLPlanner * planner);
+    
+    /** \return true if the cell (ix,iy) lies within the bounds of the
+	underlying costmap. */
+    virtual bool IsWithinMapCell(int ix, int iy) const = 0;
+    
     /** \return NO_INFORMATION if ix, iy not in the map. otherwise the cell value */  
     virtual unsigned char GetMapCost(int ix, int iy) const = 0;
 
@@ -266,7 +302,15 @@ namespace ompl {
     virtual std::string getName() const = 0;
     
   protected:
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost) = 0;
+    
+    /** \todo XXXX HACKHACKHACK! */
+    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
+    
     costmap_2d::CostMap2D const & costmap_;
+
+  private:
+    std::vector<nav2dcell_t> changedcellsV_;
   };
   
   
@@ -285,7 +329,7 @@ namespace ompl {
     virtual DiscreteSpaceInformation * getDSI();
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
     
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
+    virtual bool IsWithinMapCell(int ix, int iy) const;
     virtual unsigned char GetMapCost(int ix, int iy) const;
     virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
@@ -295,6 +339,9 @@ namespace ompl {
     virtual std::string getName() const;
     
   protected:
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
+    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    
     /** \note This is mutable because GetStateFromPose() can
 	conceivable change the underlying EnvironmentNAV2D, which we
 	don't care about here. */
@@ -329,7 +376,7 @@ namespace ompl {
     virtual DiscreteSpaceInformation * getDSI();
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg);
     
-    virtual bool UpdateCost(int ix, int iy, unsigned char newcost);
+    virtual bool IsWithinMapCell(int ix, int iy) const;
     virtual unsigned char GetMapCost(int ix, int iy) const;
     virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
@@ -339,6 +386,9 @@ namespace ompl {
     virtual std::string getName() const;
     
   protected:
+    virtual bool DoUpdateCost(int ix, int iy, unsigned char newcost);
+    virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const;
+    
     unsigned char obst_cost_thresh_;
     
     /** \note This is mutable because GetStateFromPose() can
