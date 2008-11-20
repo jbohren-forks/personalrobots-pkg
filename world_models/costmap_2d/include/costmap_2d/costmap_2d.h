@@ -168,7 +168,7 @@ namespace costmap_2d {
      */
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, unsigned char threshold, 
-	      double maxZ = 0.5,  double zLB = 0.10, double zUB = 0.15,
+	      double maxZ = 0.5,  double zLB = 0.15, double zUB = 0.20,
 	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1, double obstacleRange = 10.0, double raytraceRange = 10.0);
   
     /**

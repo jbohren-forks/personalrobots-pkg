@@ -131,7 +131,7 @@ namespace costmap_2d {
     unsigned int i, j;
     staticData_ = new unsigned char[width_*height_];
     xy_markers_ = new bool[width_*height_];
-    memset(xy_markers_, 0, width_*height_);
+    memset(xy_markers_, 0, width_ * height_* sizeof(bool));
 
     cachedDistances = new double*[inflationRadius_+1];
     for (i=0; i<=inflationRadius_; i++) {
@@ -229,8 +229,26 @@ namespace costmap_2d {
   void CostMap2D::updateDynamicObstacles(double wx, double wy, const std::vector<Observation>& observations)
   {
     // Revert to initial state
-    memset(xy_markers_, 0, width_ * height_);
+    memset(xy_markers_, 0, width_ * height_ * sizeof(bool));
     memcpy(costData_, staticData_, width_ * height_);
+
+
+    // Now propagate free space. We iterate again over observations, process only those from an origin
+    // within a specific range, and a point within a certain z-range. We only want to propagate free space
+    // in 2D so keep point and its origin within expected range
+    for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
+      const Observation& obs = *it;
+      if(!in_projection_range(obs.origin_.z))
+        continue;
+
+      const std_msgs::PointCloud& cloud = *(obs.cloud_);
+      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
+        if(!in_projection_range(cloud.pts[i].z))
+          continue;
+
+        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+      }
+    }
 
     // Propagation queue should be empty from completion of last propagation.
     ROS_ASSERT(queue_.empty());
@@ -269,23 +287,6 @@ namespace costmap_2d {
 
     // Propagate costs
     propagateCosts();
-
-    // Now propagate free space. We iterate again over observations, process only those from an origin
-    // within a specific range, and a point within a certain z-range. We only want to propagate free space
-    // in 2D so keep point and its origin within expected range
-    for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
-      const Observation& obs = *it;
-      if(!in_projection_range(obs.origin_.z))
-        continue;
-
-      const std_msgs::PointCloud& cloud = *(obs.cloud_);
-      for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-        if(!in_projection_range(cloud.pts[i].z))
-          continue;
-
-        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
-      }
-    }
   }
 
   void CostMap2D::getOccupiedCellDataIndexList(std::vector<unsigned int>& results) const {
