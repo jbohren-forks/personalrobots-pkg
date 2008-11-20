@@ -89,7 +89,7 @@ class VO:
       p = VOPose()
       p.inliers = self.vo.inl
       p.header = iar.header
-      p.header.frame_id = "camera"  # XXX - remove after camera sets frame_id
+      p.header.frame_id = "stereo"  # XXX - remove after camera sets frame_id
       p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
       self.pub_vo.publish(p)
 
