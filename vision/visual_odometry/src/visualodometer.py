@@ -110,6 +110,9 @@ class Pose:
     x,y,z = self.xform(0,0,0)
     return sqrt(x * x + y * y + z * z)
 
+  def assert_sane(self):
+    print 
+
 import fast
 
 class FeatureDetector:

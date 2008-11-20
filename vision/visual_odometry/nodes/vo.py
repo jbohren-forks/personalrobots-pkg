@@ -41,11 +41,11 @@ import getopt
 from math import *
 
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
+from robot_msgs.msg import VOPose
 import std_msgs.msg as stdmsg
 import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
 from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast
-from visual_odometry.msg import Pose
 import camera
 
 import PIL.Image
@@ -65,7 +65,7 @@ class VO:
     rospy.TopicSub('/videre/images', ImageArray, self.handle_array)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
 
-    self.pub_vo = rospy.Publisher("/vo", Pose)
+    self.pub_vo = rospy.Publisher("/vo", VOPose)
 
     self.vo = None
 
@@ -86,7 +86,7 @@ class VO:
 
       pose = self.vo.handle_frame(af)
       print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
-      p = Pose()
+      p = VOPose()
       p.inliers = self.vo.inl
       p.header = iar.header
       p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))

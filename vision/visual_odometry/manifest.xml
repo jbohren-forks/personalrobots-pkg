@@ -9,6 +9,7 @@
   <depend package="rostest"/>
   <depend package="rospy"/>
   <depend package="std_msgs"/>
+  <depend package="robot_msgs"/>
   <depend package="boost"/>
   <depend package="fast_detector"/>
   <depend package="star_detector"/>
