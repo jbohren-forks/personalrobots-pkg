@@ -276,10 +276,18 @@ namespace ros {
 	  unsigned int y = cm.getHeight();
 	  while(y > 0){
 	    y--;
+	    // Note that ompl::EnvironmentWrapper::UpdateCost() will
+	    // check if the cost has actually changed, and do nothing
+	    // if it hasn't.
 	    env_->UpdateCost(x, y, (unsigned char) cm.getCost(x, y));
 	  }
 	}
 	unlock();
+	
+	// Tell the planner about the changed costs. Again, the called
+	// code checks whether anything has really changed before
+	// embarking on expensive computations.
+	pMgr_->flush_cost_changes(*env_);
 
 	// Copy out start and goal states to minimize locking requirement. Lock was not previously required because the
 	// planner and controller were running on the same thread and the only contention was for cost map updates on call
