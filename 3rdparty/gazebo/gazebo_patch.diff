@@ -1556,6 +1556,19 @@ Index: server/gui/StatusBar.cc
  #include <FL/Fl_Value_Output.H>
  #include <FL/Fl_Output.H>
  #include <FL/Fl_Button.H>
+Index: server/gui/GLWindow.cc
+===================================================================
+--- server/gui/GLWindow.cc	(revision 7143)
++++ server/gui/GLWindow.cc	(working copy)
+@@ -62,7 +62,7 @@
+ {
+   this->end();
+ 
+-  this->moveAmount = 1.0;
++  this->moveAmount = 0.1;
+   this->moveScale = 1;
+   this->rotateAmount = 0.5;
+ 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7143)
