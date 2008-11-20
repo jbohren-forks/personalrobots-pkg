@@ -6,5 +6,5 @@
   <depend package="roscpp" />
   <depend package="player" />
   <depend package="std_msgs" />
-  <depend package="rosTF" />
+  <depend package="tf" />
 </package>

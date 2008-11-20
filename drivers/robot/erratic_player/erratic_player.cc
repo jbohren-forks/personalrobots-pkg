@@ -83,7 +83,7 @@ Publishes to (name / type):
 // roscpp
 #include <ros/node.h>
 //rosTF
-#include "rosTF/rosTF.h"
+#include "tf/transform_broadcaster.h"
 // Messages that I need
 #include <std_msgs/RobotBase2DOdom.h>
 //#include <std_msgs/RobotBase2DCmdVel.h>
@@ -104,7 +104,7 @@ class ErraticNode: public ros::node
     //RobotBase2DCmdVel cmdvel;
     std_msgs::BaseVel cmdvel;
 
-  rosTFServer tf;
+  tf::TransformBroadcaster tf;
   
   ErraticNode() : ros::node("erratic_player"),
 		  tf(*this)
@@ -306,6 +306,23 @@ main(int argc, char** argv)
       // Publish the new data
       en.publish("odom", en.odom);
 
+      en.tf.sendTransform(tf::Transform(tf::Quaternion(pdata->pos.pa,
+                                                    0.0,
+                                                    0.0),
+                                     tf::Point(pdata->pos.px,
+                                               pdata->pos.py,
+                                               0.0)
+                                     ).inverse(),
+                       ros::Time((long long unsigned int)floor(hdr->timestamp),
+                                 (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)),
+                       "odom",
+                       "base");
+                       
+        
+                       
+
+
+      /*
       en.tf.sendInverseEuler("odom",
                              "base",
                              pdata->pos.px,
@@ -316,7 +333,7 @@ main(int argc, char** argv)
                              0.0,
                              ros::Time((long long unsigned int)floor(hdr->timestamp),
                                        (long long unsigned int)((hdr->timestamp - floor(hdr->timestamp)) * 1000000000ULL)));
-      
+      */
       std::cout <<"Sent 32" <<std::endl;
 
 
