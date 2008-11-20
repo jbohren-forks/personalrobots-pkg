@@ -12,12 +12,13 @@
 #include <vector>
 #include <queue>
 #include <iostream>
+#include <memory>
+using namespace std;
 
 #include <opencv/cxcore.h>
 #include <opencv/cvwimage.h>
 #include <opencv/cv.h>
 
-using namespace std;
 
 namespace cv { namespace willow {
 

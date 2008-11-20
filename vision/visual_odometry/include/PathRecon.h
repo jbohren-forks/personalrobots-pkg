@@ -12,6 +12,7 @@
 #include <deque>
 #include <boost/unordered_map.hpp>
 using namespace std;
+#include <limits.h>
 
 #include <opencv/cxtypes.h>
 
