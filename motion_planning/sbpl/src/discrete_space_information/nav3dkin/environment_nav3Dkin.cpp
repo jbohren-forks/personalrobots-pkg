@@ -145,13 +145,22 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
   }
   
   //environment:
-  for (int y = 0; y < EnvNAV3DKINCfg.EnvHeight_c; y++) {
-    for (int x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++) {
-      char cval = mapdata[x+y*width];
-      if(cval == 1) {
-	EnvNAV3DKINCfg.Grid2D[x][y] = 1;
-      } else {
+  if (0 == mapdata) {
+    for (int y = 0; y < EnvNAV3DKINCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++) {
 	EnvNAV3DKINCfg.Grid2D[x][y] = 0;
+      }
+    }
+  }
+  else {
+    for (int y = 0; y < EnvNAV3DKINCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++) {
+	char cval = mapdata[x+y*width];
+	if(cval == 1) {
+	  EnvNAV3DKINCfg.Grid2D[x][y] = 1;
+	} else {
+	  EnvNAV3DKINCfg.Grid2D[x][y] = 0;
+	}
       }
     }
   }

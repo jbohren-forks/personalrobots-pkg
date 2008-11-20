@@ -127,10 +127,19 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
   }
   
   //environment:
-  for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
-    for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
-      unsigned char cval = mapdata[x+y*width];
-	   EnvNAV2DCfg.Grid2D[x][y] = cval;
+  if (0 == mapdata) {
+    for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+	EnvNAV2DCfg.Grid2D[x][y] = 0;
+      }
+    }
+  }
+  else {
+    for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
+      for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+	unsigned char cval = mapdata[x+y*width];
+	EnvNAV2DCfg.Grid2D[x][y] = cval;
+      }
     }
   }
 }

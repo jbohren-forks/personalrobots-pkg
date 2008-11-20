@@ -154,8 +154,8 @@ public:
 	void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
 	void PrintEnv_Config(FILE* fOut);
 
-    //TODO - add perimeter, goal with tols
     bool InitializeEnv(int width, int height,
+		       /** if mapdata is NULL the grid is initialized to all freespace */
                        const unsigned char* mapdata,
                        double startx, double starty, double starttheta,
                        double goalx, double goaly, double goaltheta,
@@ -232,6 +232,7 @@ public:
 	bool CheckQuant(FILE* fOut);
 
 	void SetConfiguration(int width, int height,
+			      /** if mapdata is NULL the grid is initialized to all freespace */
 			      const unsigned char* mapdata,
 			      int startx, int starty, int starttheta,
 			      int goalx, int goaly, int goaltheta,

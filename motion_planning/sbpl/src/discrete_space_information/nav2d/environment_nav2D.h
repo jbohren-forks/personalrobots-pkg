@@ -113,6 +113,7 @@ public:
 	void PrintEnv_Config(FILE* fOut);
     
     bool InitializeEnv(int width, int height,
+		       /** if mapdata is NULL the grid is initialized to all freespace */
                        const unsigned char* mapdata,
                        int startx, int starty,
                        int goalx, int goaly, unsigned char obsthresh);
@@ -122,6 +123,7 @@ public:
 	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
+			      /** if mapdata is NULL the grid is initialized to all freespace */
 			      const unsigned char* mapdata,
 			      int startx, int starty,
 			      int goalx, int goaly);
