@@ -89,7 +89,7 @@ namespace ros {
           map_cloud = new std_msgs::PointCloud();
           tf_.transformPointCloud("map", *map_cloud, *newData);
 
-	  ROS_INFO("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.x, map_origin.y, map_origin.z);
+	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.x, map_origin.y, map_origin.z);
         }
         catch(libTF::TransformReference::LookupException& ex)
         {
@@ -98,7 +98,7 @@ namespace ros {
         }
         catch(libTF::TransformReference::ExtrapolateException& ex)
         {
-          ROS_INFO("No transform available yet for %s - have to try later: %s . Buffer size is %d\n", 
+          ROS_DEBUG("No transform available yet for %s - have to try later: %s . Buffer size is %d\n", 
 		    frame_id_.c_str(), ex.what(), point_clouds_.size());
           break;
         }
@@ -141,7 +141,8 @@ namespace ros {
       if(map_cloud != NULL){
         delete map_cloud;
         map_cloud = NULL;
-      }    }
+      }    
+   }
 
     void ObservationBuffer::get_observations(std::vector<costmap_2d::Observation>& observations){
       costmap_2d::ObservationBuffer::get_observations(observations);
@@ -292,7 +293,7 @@ namespace ros {
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
                                inputData , resp.map.resolution, 
-			       lethalObstacleThreshold, maxZ_, 0.0, freeSpaceProjectionHeight,
+			       lethalObstacleThreshold, maxZ_, 0.10, .20,
 			       inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
         // Allocate Velocity Controller
