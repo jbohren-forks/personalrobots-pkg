@@ -8,7 +8,7 @@ A python script to convert Quaternions and Matrices
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <url>http://lfd.uci.edu/~gohlke/code/transformations.py.html</url>
-<sysdepend os="ubuntu" version="8.04-hardy" package="numpy"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="numpy"/>
+<sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+<sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>
 
