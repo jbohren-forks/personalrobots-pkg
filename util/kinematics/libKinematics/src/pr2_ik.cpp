@@ -49,12 +49,57 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
   for(int i=0; i < NUM_JOINTS_ARM7DOF; i++)
   {
     xi_0_[i] = GetJointExponential(i,0);
-    xi_0_inv_[i] = xi_0_[i].i();
+    xi_0_inv_[i] = matInv(xi_0_[i]);
   }
    NEWMAT::Matrix g0 = GetLinkPose(7,angles_d);
    this->SetHomePosition(g0);
    solution_.resize(NUM_JOINTS_ARM7DOF);
 
+}
+
+NEWMAT::Matrix arm7DOF::matInv(const NEWMAT::Matrix &g)
+{
+  NEWMAT::Matrix result = g;
+  NEWMAT::Matrix p(3,1);
+  NEWMAT::Matrix Rt(3,3);
+
+  Rt(1,1) = g(1,1);
+  Rt(2,2) = g(2,2);
+  Rt(3,3) = g(3,3);
+
+  Rt(1,2) = g(2,1);
+  Rt(2,1) = g(1,2);
+
+  Rt(1,3) = g(3,1);
+  Rt(3,1) = g(1,3);
+
+  Rt(2,3) = g(3,2);
+  Rt(3,2) = g(2,3);
+
+  p(1,1) = g(1,4);
+  p(2,1) = g(2,4);
+  p(3,1) = g(3,4);
+
+  NEWMAT::Matrix pinv = -Rt*p;
+
+  result(1,1) = g(1,1);
+  result(2,2) = g(2,2);
+  result(3,3) = g(3,3);
+
+  result(1,2) = g(2,1);
+  result(2,1) = g(1,2);
+
+  result(1,3) = g(3,1);
+  result(3,1) = g(1,3);
+
+  result(2,3) = g(3,2);
+  result(3,2) = g(2,3);
+
+  result(1,4) = pinv(1,1);
+  result(2,4) = pinv(2,1);
+  result(3,4) = pinv(3,1);
+  
+  return result;
 }
 
 void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
@@ -69,7 +114,7 @@ void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
   NEWMAT::Matrix sop(3,1), distance(3,1);
 
   NEWMAT::Matrix g0 = GetHomePosition();
-  NEWMAT::Matrix g0_inv_ = g0.i();
+  NEWMAT::Matrix g0_inv_ = matInv(g0);
 
   NEWMAT::Matrix g0Wrist = GetHomePosition();
 
@@ -108,7 +153,8 @@ void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
   sop(3,1) = 0;
 
   distance = g.SubMatrix(1,3,4,4) - sop;
-  dd = pow(distance.NormFrobenius(),2);
+//  dd = pow(distance.NormFrobenius(),2);
+  dd = distance(1,1)*distance(1,1) + distance(2,1)*distance(2,1) + distance(3,1)*distance(3,1);
 
 #ifdef DEBUG
   PrintMatrix(distance,"ComputeIK::distance::");
@@ -145,8 +191,8 @@ void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
 
     xi1 = this->GetJointExponential(0,t1);
     xi4 = this->GetJointExponential(3,t4); 
-    xi4_inv_ = xi4.i();
-    xi1_inv_ = xi1.i();
+    xi4_inv_ = matInv(xi4);
+    xi1_inv_ = matInv(xi1);
 
     q = xi1_inv_*g*g0_inv_*xi_0_inv_[6]*xi_0_inv_[5]*xi_0_inv_[4]*q0;
 //     q = xi1_inv_*g*g0_inv_*q0;
@@ -205,8 +251,8 @@ void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
       xi2 = this->GetJointExponential(1,t2);
       xi3 = this->GetJointExponential(2,t3);
 
-      xi2_inv_ = xi2.i();
-      xi3_inv_ = xi3.i();
+      xi2_inv_ = matInv(xi2);
+      xi3_inv_ = matInv(xi3);
 
       rWrist = this->GetJointAxisPoint(6);
       pWrist = rWrist;
@@ -235,8 +281,8 @@ void arm7DOF::ComputeIK(NEWMAT::Matrix g, double theta1)
         xi5 = this->GetJointExponential(4,t5);
         xi6 = this->GetJointExponential(5,t6);
 
-        xi5_inv_= xi5.i();
-        xi6_inv_ = xi6.i();
+        xi5_inv_= matInv(xi5);
+        xi6_inv_ = matInv(xi6);
 
         /* Now use these solutions to solve for the 7th axis */
         pWrist(3,1) = pWrist(3,1) + 0.1;

@@ -64,6 +64,8 @@ namespace kinematics
 
     std::vector<double> solution_;
 
+    NEWMAT::Matrix matInv(const NEWMAT::Matrix &g);
+
   };
 }
 

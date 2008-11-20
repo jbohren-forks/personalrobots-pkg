@@ -104,7 +104,6 @@ int main(int argc, char** argv)
    NEWMAT::Matrix g0 = myArm.ComputeFK(angles);
    NEWMAT::Matrix gCheck = myArm.ComputeFK(angles);
 
-   gettimeofday(&t0,NULL);
    double first_angle(0.0);
 
    int count_success = 0;
@@ -113,6 +112,7 @@ int main(int argc, char** argv)
    int count_found_exact_solutions = 0;
 
    bool solved(false);
+   double time_taken = 0.0;
 
    for(int i=0; i < num_trials; i++)
    {
@@ -146,6 +146,8 @@ int main(int argc, char** argv)
              break;
            }
          }
+         if(solved)
+           break;
        }
 
 
@@ -185,34 +187,34 @@ int main(int argc, char** argv)
      }
 
      bool solution_exact = true;
-       myArm.ComputeIK(g0,angles[0]);
-       if (myArm.solution_ik_.size() > 0)
+     gettimeofday(&t0,NULL);
+     myArm.ComputeIK(g0,angles[0]);
+     gettimeofday(&t1,NULL);
+     time_taken += (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
+     if (myArm.solution_ik_.size() > 0)
+     {
+       for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
        {
-         for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
+         solution_exact = true;
+         for(int l=0; l < 7; l++)
          {
-           solution_exact = true;
-           for(int l=0; l < 7; l++)
+           if(fabs(myArm.solution_ik_[m][l] - angles[l]) > EPS_EXACT)
            {
-             if(fabs(myArm.solution_ik_[m][l] - angles[l]) > EPS_EXACT)
-             {
-               solution_exact = false;
-               break;
-             }
+             solution_exact = false;
+             break;
            }
+         }
 
-           if(solution_exact)
-           {
-              count_found_exact_solutions++;
-              break;
-           }
-
+         if(solution_exact)
+         {
+           count_found_exact_solutions++;
+           break;
          }
        }
+     }
 
          
    }
-   gettimeofday(&t1,NULL);
-   double time_taken = (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
 
    cout << "Success % in IK search: " << (double)count_success/(double)num_trials*100.0 << endl; 
    cout << "Time taken for " << num_trials << " is " << time_taken << " s" << endl;
