@@ -34,6 +34,9 @@
 
 /** \file sbpl_util.hh Utilities for handling SBPL planners independent of the exact subtype. */
 
+#ifndef OMPL_SBPL_UTIL_HPP
+#define OMPL_SBPL_UTIL_HPP
+
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Point2DFloat32.h>
 #include <stdexcept>
@@ -345,3 +348,5 @@ namespace ompl {
   };
 
 }
+
+#endif // OMPL_SBPL_UTIL_HPP
