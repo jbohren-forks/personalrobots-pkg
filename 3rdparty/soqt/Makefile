@@ -19,8 +19,9 @@ soqt: configured
 	touch configured
 
 clean:
+	-make -C $(SOURCE_DIR) clean
 	rm -rf $(SOURCE_DIR)
 	rm -rf configured
 
 wipe: clean
-	rm -rf $(TARBALL)
+	rm -rf build
