@@ -398,15 +398,13 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
 
 void usage(const char *progname)
 {
-    printf("\nUsage: %s URDF.xml Gazebo.model\n", progname);
-    printf("       where URDF.xml is the file containing a robot description in the Willow Garage format (URDF)\n");
-    printf("       and Gazebo.model is the file where the Gazebo model should be written\n\n");
-    printf("       if nothing is not specified, read from param and send to gazebo factory\n\n");
+    printf("\nUsage: %s robotdesc/pr2\n", progname);
+    printf("  read robotdesc/pr2 from param server and send to gazebo factory to spawn robot\n\n");
 }
 
 int main(int argc, char **argv)
 {
-    if (argc < 0)
+    if (argc < 2)
     {
         usage(argv[0]);
         exit(1);
@@ -414,31 +412,25 @@ int main(int argc, char **argv)
     
     // connect to gazebo
     gazebo::Client *client = new gazebo::Client();
-    gazebo::SimulationIface *simIface = new gazebo::SimulationIface();
     gazebo::FactoryIface *factoryIface = new gazebo::FactoryIface();
 
     int serverId = 0;
 
+    bool connected_to_server = false;
     /// Connect to the libgazebo server
-    try
+    while (!connected_to_server)
     {
-      client->ConnectWait(serverId, GZ_CLIENT_ID_USER_FIRST);
-    }
-    catch (gazebo::GazeboError e)
-    {
-      std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
-      return -1;
-    }
-
-    /// Open the Simulation Interface
-    try
-    {
-      simIface->Open(client, "default");
-    }
-    catch (gazebo::GazeboError e)
-    {
-      std::cout << "Gazebo error: Unable to connect to the sim interface\n" << e << "\n";
-      return -1;
+      try
+      {
+        client->ConnectWait(serverId, GZ_CLIENT_ID_USER_FIRST);
+        connected_to_server = true;
+      }
+      catch (gazebo::GazeboError e)
+      {
+        std::cout << "Gazebo error: Unable to connect\n" << e << "\n";
+        usleep(1000000);
+        connected_to_server = false;
+      }
     }
 
     /// Open the Factory interface
@@ -459,7 +451,7 @@ int main(int argc, char **argv)
     ros::node* rosnode = new ros::node("pr2_factory",ros::node::DONT_HANDLE_SIGINT);
     printf("-------------------- starting node for pr2 param server factory \n");
     std::string xml_content;
-    rosnode->get_param("robotdesc/pr2",xml_content);
+    rosnode->get_param(argv[1],xml_content);
 
     // Parse URDF to get gazebo model.
     bool enforce_limits = true;

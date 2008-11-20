@@ -81,7 +81,7 @@
 <!--
   <model:physical name="walls">
     <include embedded="false">
-      <xi:include href="tests/willow-walls.model" />
+      <xi:include href="../gazebo_objects/willow-walls.model" />
     </include>
   </model:physical>
 -->
