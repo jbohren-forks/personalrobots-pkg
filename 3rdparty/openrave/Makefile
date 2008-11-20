@@ -17,4 +17,4 @@ clean:
 	make -C $(SVN_DIR) clean
 
 wipe: clean
-	rm -rf $(SVN_DIR) include lib share
+	rm -rf $(SVN_DIR) include lib share bin
