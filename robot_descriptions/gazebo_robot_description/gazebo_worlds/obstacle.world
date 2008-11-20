@@ -336,6 +336,14 @@
     </body:box>
   </model:physical>
 
+  <model:empty name="factory_model">
+    <controller:factory name="factory_controller">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>1000.0</updateRate>
+      <interface:factory name="factory_iface"/>
+    </controller:factory>
+  </model:empty>
+
 
 
 
