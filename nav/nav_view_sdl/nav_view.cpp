@@ -93,7 +93,7 @@ Publishes to (name / type):
 
 // roscpp and friends
 #include "ros/node.h"
-#include "rosTF/rosTF.h"
+#include "tf/transform_listener.h"
 
 // messages and services
 #include "std_msgs/ParticleCloud2D.h"
@@ -138,7 +138,7 @@ public:
   // Lock for access to class members in callbacks
   ros::thread::mutex lock;
 
-  rosTFClient tf;
+  tf::TransformListener tf;
 
   NavView(int n_val) : ros::node("nav_view",ros::node::DONT_HANDLE_SIGINT),
                        view_scale(10), view_x(0), view_y(0), n_val_(n_val),
@@ -352,18 +352,18 @@ NavView::render()
   const float robot_rad = 0.3;
   try
   {
-    libTF::TFPose2D robotPose;
-    robotPose.x = 0;
-    robotPose.y = 0;
-    robotPose.yaw = 0;
-    robotPose.frame = "base";
-    robotPose.time = 0;
+    tf::Stamped<tf::Pose> robotPose;
+    robotPose.setIdentity();
+    robotPose.frame_id_ = "base";
+    robotPose.stamp_ = ros::Time(0);
 
-    libTF::TFPose2D mapPose = tf.transformPose2D("map", robotPose);
-
+    tf::Stamped<tf::Pose> mapPose ;
+    tf.transformPose("map", robotPose, mapPose );
+    double yaw, pitch, roll;
+    mapPose.getBasis().getEulerZYX(yaw, pitch, roll);
     glPushMatrix();
-    glTranslatef(mapPose.x, mapPose.y, 0);
-    glRotatef(mapPose.yaw * 180 / M_PI, 0, 0, 1);
+    glTranslatef(mapPose.getOrigin().x(), mapPose.getOrigin().y(), 0);
+    glRotatef(yaw * 180 / M_PI, 0, 0, 1);
     glColor3f(0.2, 1.0, 0.4);
     glBegin(GL_LINE_LOOP);
     for (float f = 0; f < (float)(2*M_PI); f += 0.5f)
@@ -375,11 +375,12 @@ NavView::render()
     glEnd();
     glPopMatrix();
   }
-  catch(libTF::TransformReference::LookupException& ex)
+  catch(tf::LookupException& ex)
   {
   }
   catch(...)
   {
+    printf("BAD GLOBAL CATCH");
   }
 
   cloud.lock();
