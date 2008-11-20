@@ -90,7 +90,7 @@ main(int argc, char **argv)
       if (cam->isSTOC)
 	{
 	  printf("  ...Setting STOC mode to PROC_MODE_NONE\n");
-	  cam->setProcMode(PROC_MODE_DISPARITY);
+	  cam->setProcMode(PROC_MODE_NONE);
 	}
       else
 	printf("  ...not a STOC\n");

@@ -349,8 +349,6 @@ StereoDcam::getImage(int ms)	// gets the next image, with timeout
 			    &stIm->imRight->im, &stIm->imRight->imSize);
 	  stIm->imLeft->imType = COLOR_CODING_MONO8;
 	  stIm->imRight->imType = COLOR_CODING_MONO8;
-	  stIm->imLeft->doBayerMono();
-	  stIm->imRight->doBayerMono();
 	  break;
 
 	case VIDERE_STOC_RAW_RAW_RGGB:
