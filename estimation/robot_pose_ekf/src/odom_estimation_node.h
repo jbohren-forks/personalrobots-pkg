@@ -37,6 +37,8 @@
 // ros stuff
 #include <ros/node.h>
 #include <tf/tf.h>
+#include <tf/transform_listener.h>
+#include <tf/message_notifier.h>
 #include "odom_estimation.h"
 
 // messages
@@ -44,7 +46,7 @@
 #include "std_msgs/BaseVel.h"
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
-//#include "visual_odometry/Pose.h"
+#include "robot_msgs/VOPose.h"
 
 // log files
 #include <fstream>
@@ -71,7 +73,7 @@ public:
   void imu_callback();
 
   /// callback function for vo data
-  void vo_callback();
+  void vo_callback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& message);
 
   /// filter loop
   void spin();
@@ -89,21 +91,26 @@ private:
   std_msgs::BaseVel               _vel;  
   std_msgs::RobotBase2DOdom       _odom;  
   std_msgs::PoseWithRatesStamped  _imu;  
-  std_msgs::PoseWithRatesStamped  _vo;  
-  //visual_odometry::Pose           _vo;  
+  robot_msgs::VOPose              _vo;  
 
   // estimated robot pose message to send
   std_msgs::PoseStamped _output; 
 
+  // robot state
+  tf::TransformListener _robot_state;
+  tf::MessageNotifier<robot_msgs::VOPose>  _vo_notifier;
+  
   // vectors
   MatrixWrapper::ColumnVector _vel_desi;
   tf::Transform _odom_meas, _imu_meas,_vo_meas;
+  tf::Transform _base_vo_init, _vo_camera;
+  tf::Stamped<tf::Transform> _camera_base;
   ros::Time _odom_time, _imu_time, _vo_time, _filter_time;
   bool _vel_active, _odom_active, _imu_active, _vo_active;
   double _freq, _timeout;
 
   // mutex
-  ros::thread::mutex _filter_mutex;
+  ros::thread::mutex _odom_mutex, _imu_mutex, _vo_mutex, _vel_mutex;
 
   // log files for debugging
   std::ofstream _odom_file, _imu_file, _vo_file, _corr_file, _time_file, _extra_file;

@@ -48,6 +48,8 @@ namespace estimation
   // constructor
   odom_estimation_node::odom_estimation_node()
     : ros::node("odom_estimation"),
+      _robot_state(*this, true),
+      _vo_notifier(&_robot_state, this,  boost::bind(&odom_estimation_node::vo_callback, this, _1), "vo", "base", 10),
       _vel_desi(2),
       _vel_active(false),
       _odom_active(false),
@@ -61,12 +63,12 @@ namespace estimation
     subscribe("cmd_vel",      _vel,  &odom_estimation_node::vel_callback,  10);
     subscribe("odom",         _odom, &odom_estimation_node::odom_callback, 10);
     subscribe("imu_data",     _imu,  &odom_estimation_node::imu_callback,  10);
-    subscribe("vo",           _vo,   &odom_estimation_node::vo_callback,   10);
 
     // paramters
     param("odom_estimation/freq", _freq, 30.0);
-    param("odom_estimation/sensor_timeout", _timeout, 1.0);
-
+    param("odom_estimation/sensor_timeout", _timeout, 4.0);
+    _vo_camera = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
+    
 
 #ifdef __EKF_DEBUG_FILE__
     _odom_file.open("odom_file.txt");
@@ -101,11 +103,11 @@ namespace estimation
   void odom_estimation_node::odom_callback()
   {
     // receive data
-    _filter_mutex.lock();
+    _odom_mutex.lock();
     _odom_time = Time::now();
     _odom_meas = Transform(Quaternion(_odom.pos.th,0,0), Vector3(_odom.pos.x, _odom.pos.y, 0));
     _my_filter.AddMeasurement(Stamped<Transform>(_odom_meas, _odom.header.stamp,"odom", "base"));
-    _filter_mutex.unlock();
+    _odom_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
@@ -128,11 +130,11 @@ namespace estimation
   void odom_estimation_node::imu_callback()
   {
     // receive data
-    _filter_mutex.lock();
+    _imu_mutex.lock();
     _imu_time = Time::now();
     PoseMsgToTF(_imu.pos, _imu_meas);
     _my_filter.AddMeasurement(Stamped<Transform>(_imu_meas, _imu.header.stamp, "imu", "base"));
-    _filter_mutex.unlock();
+    _imu_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
@@ -152,18 +154,38 @@ namespace estimation
 
 
   // callback function for VO data
-  void odom_estimation_node::vo_callback()
+  void odom_estimation_node::vo_callback(const MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo)
   {
-    // receive data
-    _filter_mutex.lock();
+    _vo_mutex.lock();
+    
+    // get data
+    _vo = *vo;
     _vo_time = Time::now();
-    PoseMsgToTF(_vo.pos, _vo_meas);
-    _my_filter.AddMeasurement(Stamped<Transform>(_vo_meas, _vo.header.stamp, "vo", "base"));
-    _filter_mutex.unlock();
+    _robot_state.lookupTransform("stereo","base", _vo.header.stamp, _camera_base);
+    PoseMsgToTF(_vo.pose, _vo_meas);
+    double reliability = ((double)_vo.inliers)/200.0;
+
+    // initialize
+    if (!_vo_active){
+      _base_vo_init = _camera_base.inverse() * _vo_camera.inverse() * _vo_meas.inverse();
+    }
+    
+    // vo measurement as base transform
+    Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
+    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base"), reliability);
+    _vo_mutex.unlock();
+
+#ifdef __EKF_DEBUG_FILE__
+      // write to file
+    double Rx, Ry, Rz;
+    vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
+    _vo_file << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
+	     << Rx << " " << Ry << " " << Rz << endl;
+#endif
 
     // activate vo
     if (!_vo_active){
-      //_vo_active = true;
+      _vo_active = true;
       ROS_INFO("VO sensor activated"); 
     }
   };
@@ -175,9 +197,9 @@ namespace estimation
   void odom_estimation_node::vel_callback()
   {
     // receive data
-    _filter_mutex.lock();
+    _vel_mutex.lock();
     _vel_desi(1) = _vel.vx;   _vel_desi(2) = _vel.vw;
-    _filter_mutex.unlock();
+    _vel_mutex.unlock();
 
     // active
     //if (!_vel_active) _vel_active = true;
@@ -235,11 +257,18 @@ namespace estimation
   void odom_estimation_node::spin()
   {
     while (ok()){
-      _filter_mutex.lock();
+      _odom_mutex.lock();  _imu_mutex.lock();  _vo_mutex.lock();
 #ifdef __EKF_DEBUG_FILE__
       // write to file
-      _time_file << (Time::now() - _odom_time).toSec()  << " " << (Time::now() - _imu_time).toSec() << " "
-		 << (_odom_time - _imu_time).toSec()  <<  endl;
+      _time_file << (Time::now() - _odom_time).toSec() << " " 
+		 << (Time::now() - _imu_time).toSec()  << " "
+		 << (Time::now() - _vo_time).toSec()   << " "
+		 << (_odom_time - _imu_time).toSec()   << " "
+		 << (_odom_time - _vo_time).toSec()   << " "
+		 << (_imu_time  - _vo_time).toSec()   << " "
+		 << (_odom.header.stamp - _imu.header.stamp).toSec()   << " "
+		 << (_odom.header.stamp - _vo.header.stamp).toSec()   << " "
+		 << (_imu.header.stamp  - _vo.header.stamp).toSec()   << endl;
 #endif
 
       if (_odom_active || _imu_active || _vo_active){
@@ -253,19 +282,19 @@ namespace estimation
 	  _imu_active = false;
 	  ROS_INFO("Imu sensor not active any more");
 	}
-	if (_vo_active && (Time::now() - _vo_time).toSec() > _timeout){
-	  _vo_active = false;
-	  ROS_INFO("VO sensor not active any more");
-	}
+	//if (_vo_active && (Time::now() - _vo_time).toSec() > _timeout){
+	//  _vo_active = false;
+	//  ROS_INFO("VO sensor not active any more");
+	//}
 
 	// update filter with exact time stamps
 	Time min_time = Time::now();
 	if (_odom_active)  min_time = min(min_time, _odom.header.stamp);
 	if (_imu_active)   min_time = min(min_time, _imu.header.stamp);
-	if (_vo_active)    min_time = min(min_time, _vo.header.stamp);
+	//if (_vo_active)    min_time = min(min_time, _vo.header.stamp);
 	this->Update(min_time);
       }
-      _filter_mutex.unlock();
+      _vo_mutex.unlock();  _imu_mutex.unlock();  _odom_mutex.unlock();
       
       // sleep
       usleep(1e6/_freq);
