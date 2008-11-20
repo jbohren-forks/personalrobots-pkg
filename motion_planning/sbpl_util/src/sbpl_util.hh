@@ -37,6 +37,11 @@
 #ifndef OMPL_SBPL_UTIL_HPP
 #define OMPL_SBPL_UTIL_HPP
 
+// should say #include <sbpl_util/costmap_wrap.h> but this requires
+// changes in the code layout and maybe in the export statement in
+// manifest.xml... to do later
+#include "costmap_wrap.h"
+
 #include <std_msgs/Pose2DFloat32.h>
 #include <std_msgs/Point2DFloat32.h>
 #include <stdexcept>
@@ -64,10 +69,6 @@ using std::vector;
 #include <utils/mdp.h>
 #include <discrete_space_information/environment.h>
 #include <discrete_space_information/nav2d/environment_nav2D.h>
-
-namespace costmap_2d {
-  class CostMap2D;
-}
 
 namespace ompl {
   
@@ -255,8 +256,13 @@ namespace ompl {
     struct invalid_state: public std::runtime_error
     { invalid_state(std::string const & method, int state); };
     
-    explicit EnvironmentWrapper(costmap_2d::CostMap2D const & costmap): costmap_(costmap) {}
-    virtual ~EnvironmentWrapper() {}
+    EnvironmentWrapper(CostmapWrap * cm,
+		       /** whether ~EnvironmentWrapper() should delete the CostmapWrap * cm */
+		       bool own_cm,
+		       IndexTransformWrap const * it,
+		       /** whether ~EnvironmentWrapper() should delete the IndexTransformWrap const * it */
+		       bool own_it);
+    virtual ~EnvironmentWrapper();
     
     virtual DiscreteSpaceInformation * getDSI() = 0;
     virtual bool InitializeMDPCfg(MDPConfig *MDPCfg) = 0;
@@ -307,7 +313,10 @@ namespace ompl {
     /** \todo XXXX HACKHACKHACK! */
     virtual ChangedCellsGetter const * createChangedCellsGetter(std::vector<nav2dcell_t> const & changedcellsV) const = 0;
     
-    costmap_2d::CostMap2D const & costmap_;
+    CostmapWrap * cm_;
+    bool const own_cm_;
+    IndexTransformWrap const * it_;
+    bool const own_it_;
 
   private:
     std::vector<nav2dcell_t> changedcellsV_;
@@ -320,7 +329,10 @@ namespace ompl {
     : public EnvironmentWrapper
   {
   public:
-    EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
+    EnvironmentWrapper2D(CostmapWrap * cm,
+			 bool own_cm,
+			 IndexTransformWrap const * it,
+			 bool own_it,
 			 int startx, int starty,
 			 int goalx, int goaly,
 			 unsigned char obsthresh);
@@ -357,7 +369,10 @@ namespace ompl {
   public:
     typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
     
-    EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
+    EnvironmentWrapper3DKIN(CostmapWrap * cm,
+			    bool own_cm,
+			    IndexTransformWrap const * it,
+			    bool own_it,
 			    /** Use
 				costmap_2d::CostMap2D::LETHAL_OBSTACLE
 				for workspace-only obstacles,

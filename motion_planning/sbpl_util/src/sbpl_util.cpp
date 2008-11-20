@@ -375,6 +375,29 @@ namespace ompl {
   }
   
   
+  EnvironmentWrapper::
+  EnvironmentWrapper(CostmapWrap * cm,
+		     bool own_cm,
+		     IndexTransformWrap const * it,
+		     bool own_it)
+    : cm_(cm),
+      own_cm_(own_cm),
+      it_(it),
+      own_it_(own_it)
+  {
+  }
+  
+  
+  EnvironmentWrapper::
+  ~EnvironmentWrapper()
+  {
+    if (own_it_)
+      delete it_;
+    if (own_cm_)
+      delete cm_;
+  }
+  
+  
   bool EnvironmentWrapper::
   UpdateCost(int ix, int iy, unsigned char newcost)
   {
@@ -407,16 +430,36 @@ namespace ompl {
   
   
   EnvironmentWrapper2D::
-  EnvironmentWrapper2D(costmap_2d::CostMap2D const & costmap,
+  EnvironmentWrapper2D(CostmapWrap * cm,
+		       bool own_cm,
+		       IndexTransformWrap const * it,
+		       bool own_it,
 		       int startx, int starty,
 		       int goalx, int goaly,
 		       unsigned char obsthresh)
-    : EnvironmentWrapper(costmap),
+    : EnvironmentWrapper(cm, own_cm, it, own_it),
       env_(new EnvironmentNAV2D())
   {
-#warning 'Would be nice to get (at least) start as a pose from current data'
-    env_->InitializeEnv(costmap.getWidth(), costmap.getHeight(), costmap.getMap(),
-		       startx, starty, goalx, goaly, obsthresh);
+    // good: Take advantage of the fact that InitializeEnv() can take
+    // a NULL-pointer as mapdata in order to initialize to all
+    // freespace.
+    //
+    // bad: Most costmaps do not support negative grid indices, so the
+    // generic CostmapWrap::getXBegin() and getYBegin() are ignored
+    // and simply assumed to always return 0 (which they won't if we
+    // use growable costmaps).
+    env_->InitializeEnv(cm->getXEnd(), // width
+			cm->getYEnd(), // height
+			0,	// mapdata
+			startx, starty, goalx, goaly, obsthresh);
+    
+    // as above, assume getXBegin() and getYBegin() are always zero
+    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
+      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
+	int cost;
+	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
+	  env_->UpdateCost(ix, iy, cost);
+      }
   }
   
   
@@ -464,14 +507,15 @@ namespace ompl {
   }
   
   
-  unsigned char 
-  EnvironmentWrapper2D::GetMapCost(int ix, int iy) const{
-    if ( ! env_->IsWithinMapCell(ix, iy)) // should be done inside EnvironmentNAV2D::SetStart()
+  unsigned char EnvironmentWrapper2D::
+  GetMapCost(int ix, int iy) const
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy))
       return costmap_2d::CostMap2D::NO_INFORMATION;
-
     return env_->GetMapCost(ix, iy);
   }
-
+  
+  
   bool EnvironmentWrapper2D::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
   {
@@ -484,8 +528,8 @@ namespace ompl {
   int EnvironmentWrapper2D::
   SetStart(std_msgs::Pose2DFloat32 const & start)
   {
-    unsigned int ix, iy;
-    costmap_.WC_MC(start.x, start.y, ix, iy);
+    ssize_t ix, iy;
+    it_->globalToIndex(start.x, start.y, &ix, &iy);
     return env_->SetStart(ix, iy);
   }
   
@@ -493,8 +537,8 @@ namespace ompl {
   int EnvironmentWrapper2D::
   SetGoal(std_msgs::Pose2DFloat32 const & goal)
   {
-    unsigned int ix, iy;
-    costmap_.WC_MC(goal.x, goal.y, ix, iy);
+    ssize_t ix, iy;
+    it_->globalToIndex(goal.x, goal.y, &ix, &iy);
     return env_->SetGoal(ix, iy);
   }
   
@@ -512,7 +556,7 @@ namespace ompl {
     // by construction (ix,iy) is always inside the map (otherwise we
     // wouldn't have a stateID)
     double px, py;
-    costmap_.MC_WC(ix, iy, px, py);
+    it_->indexToGlobal(ix, iy, &px, &py);
     std_msgs::Pose2DFloat32 pose;
     pose.x = px;
     pose.y = py;
@@ -524,8 +568,8 @@ namespace ompl {
   int EnvironmentWrapper2D::
   GetStateFromPose(std_msgs::Pose2DFloat32 const & pose) const
   {
-    unsigned int ix, iy;
-    costmap_.WC_MC(pose.x, pose.y, ix, iy);
+    ssize_t ix, iy;
+    it_->globalToIndex(pose.x, pose.y, &ix, &iy);
     if ( ! env_->IsWithinMapCell(ix, iy))
       return -1;
     return env_->GetStateFromCoord(ix, iy);
@@ -541,7 +585,10 @@ namespace ompl {
   
   
   EnvironmentWrapper3DKIN::
-  EnvironmentWrapper3DKIN(costmap_2d::CostMap2D const & costmap,
+  EnvironmentWrapper3DKIN(CostmapWrap * cm,
+			  bool own_cm,
+			  IndexTransformWrap const * it,
+			  bool own_it,
 			  unsigned char obst_cost_thresh,
 			  double startx, double starty, double starttheta,
 			  double goalx, double goaly, double goaltheta,
@@ -549,7 +596,7 @@ namespace ompl {
 			  footprint_t const & footprint,
 			  double nominalvel_mpersecs,
 			  double timetoturn45degsinplace_secs)
-    : EnvironmentWrapper(costmap),
+    : EnvironmentWrapper(cm, own_cm, it, own_it),
       obst_cost_thresh_(obst_cost_thresh),
       env_(new EnvironmentNAV3DKIN())
   {
@@ -562,26 +609,34 @@ namespace ompl {
       perimeterptsV.push_back(pt);
     }
     
-    int const width(costmap.getWidth());
-    int const height(costmap.getHeight());
-    int const mapsize(width * height);
-    unsigned char * outmap(new unsigned char[mapsize]);
-    {
-      unsigned char const * in(costmap.getMap());
-      unsigned char const * in_end(costmap.getMap() + mapsize);
-      unsigned char * out(outmap);
-      for (/**/; in < in_end; ++in, ++out)
-	*out = (*in >= obst_cost_thresh) ? 1 : 0;
-    }
-    
-    env_->InitializeEnv(width, height, outmap,
+    // good: Take advantage of the fact that InitializeEnv() can take
+    // a NULL-pointer as mapdata in order to initialize to all
+    // freespace.
+    //
+    // bad: Most costmaps do not support negative grid indices, so the
+    // generic CostmapWrap::getXBegin() and getYBegin() are ignored
+    // and simply assumed to always return 0 (which they won't if we
+    // use growable costmaps).
+    //
+    // also there is quite a bit of code duplication between this, the
+    // EnvironmentWrapper2D ctor, and
+    // EnvironmentWrapper3DKIN::DoUpdateCost()...
+    env_->InitializeEnv(cm->getXEnd(), // width
+			cm->getYEnd(), // height
+			0,	// mapdata
 			startx, starty, starttheta,
 			goalx, goaly, goaltheta,
 			goaltol_x, goaltol_y, goaltol_theta,
-			perimeterptsV, costmap.getResolution(), nominalvel_mpersecs,
+			perimeterptsV, it->getResolution(), nominalvel_mpersecs,
 			timetoturn45degsinplace_secs);
     
-    delete[] outmap;
+    // as above, assume getXBegin() and getYBegin() are always zero
+    for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
+      for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
+	int cost;
+	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
+	  env_->UpdateCost(ix, iy, cost >= obst_cost_thresh ? 1 : 0);
+      }
   }
   
   
@@ -638,11 +693,17 @@ namespace ompl {
   }
   
   
-  unsigned char 
-  EnvironmentWrapper3DKIN::GetMapCost(int ix, int iy) const{
-    return costmap_2d::CostMap2D::NO_INFORMATION;
+  unsigned char EnvironmentWrapper3DKIN::
+  GetMapCost(int ix, int iy) const
+  {
+    if ( ! env_->IsWithinMapCell(ix, iy))
+      return costmap_2d::CostMap2D::NO_INFORMATION;
+    if (env_->IsObstacle(ix, iy))
+      return costmap_2d::CostMap2D::LETHAL_OBSTACLE;
+    return 0;
   }
-
+  
+  
   bool EnvironmentWrapper3DKIN::
   IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
   {
@@ -655,7 +716,7 @@ namespace ompl {
   int EnvironmentWrapper3DKIN::
   SetStart(std_msgs::Pose2DFloat32 const & start)
   {
-#warning 'transform global to map frame? or is that the same?'
+    // assume global and map frame are the same
     return env_->SetStart(start.x, start.y, start.th);
   }
   
@@ -663,7 +724,7 @@ namespace ompl {
   int EnvironmentWrapper3DKIN::
   SetGoal(std_msgs::Pose2DFloat32 const & goal)
   {
-#warning 'transform global to map frame? or is that the same?'
+    // assume global and map frame are the same
     return env_->SetGoal(goal.x, goal.y, goal.th);
   }
   

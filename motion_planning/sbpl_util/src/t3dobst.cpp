@@ -216,12 +216,16 @@ static bool checkWrap()
   
   std::vector<unsigned char> data(width * height);
   initMapdata(data, obst_cost_thresh);
-  
-  CostMap2D costmap(width, height, data, resolution, window_length, obst_cost_thresh);
-  EnvironmentWrapper3DKIN envWrap(costmap, obst_cost_thresh, startx, starty, starttheta,
-				  goalx, goaly, goaltheta, goaltol_x, goaltol_y, goaltol_theta,
-				  footprint, nominalvel_mpersecs, timetoturn45degsinplace_secs);
-  return runTests(envWrap, obst_cost_thresh);
+
+#warning 'FIX ME (CostMap2D ctor changed)'
+  cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
+       << "adapt to the CostMap2D ctor changes\n";
+  return false;
+// //   CostMap2D costmap(width, height, data, resolution, window_length, obst_cost_thresh);
+// //   EnvironmentWrapper3DKIN envWrap(costmap, obst_cost_thresh, startx, starty, starttheta,
+// // 				  goalx, goaly, goaltheta, goaltol_x, goaltol_y, goaltol_theta,
+// // 				  footprint, nominalvel_mpersecs, timetoturn45degsinplace_secs);
+// //   return runTests(envWrap, obst_cost_thresh);
 }
 
 int main(int agrc, char ** argv)
