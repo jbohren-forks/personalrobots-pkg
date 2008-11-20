@@ -114,6 +114,7 @@ public:
     int force_planning_from_scratch(); 
 	
 	int set_search_mode(bool bSearchUntilFirstSolution);
+	void costs_changed(ChangedCellsGetter const & changedcells);
 
 
 	void update_succs_of_changededges(vector<int>* succsIDV);
@@ -224,9 +225,21 @@ private:
 
 	CKey ComputeKey(ADState* state);
 
-	void Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV);
+	void Update_SearchSuccs_of_ChangedEdges(vector<int> const * statesIDV);
 
 
+};
+
+
+/**
+   See comments in sbpl/src/planners/planner.h about the what and why
+   of this class.
+*/
+class ChangedCellsGetter
+{
+public:
+  virtual ~ChangedCellsGetter() {}
+  virtual std::vector<int> const * getPredsOfChangedCells() const = 0;
 };
 
 

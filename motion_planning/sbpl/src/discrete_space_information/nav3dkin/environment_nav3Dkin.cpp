@@ -1324,7 +1324,7 @@ void EnvironmentNAV3DKIN::PrintTimeStat(FILE* fOut)
 }
 
 
-void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV)
+void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
 	EnvNAV3DKIN3Dcell_t affectedcell;

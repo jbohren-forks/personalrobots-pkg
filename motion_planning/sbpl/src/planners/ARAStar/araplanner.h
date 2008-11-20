@@ -110,7 +110,7 @@ public:
 
     int set_goal(int goal_stateID);
     int set_start(int start_stateID);
-    void costs_changed();
+    void costs_changed(ChangedCellsGetter const & changedcells);
     int force_planning_from_scratch(); 
 
 	int set_search_mode(bool bSearchUntilFirstSolution);

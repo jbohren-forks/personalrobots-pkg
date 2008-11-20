@@ -119,7 +119,7 @@ public:
     int SetStart(int x, int y);
     int SetGoal(int x, int y);
     bool UpdateCost(int x, int y, unsigned char newcost);
-	void GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV);
+	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 	void SetConfiguration(int width, int height,
 			      const unsigned char* mapdata,

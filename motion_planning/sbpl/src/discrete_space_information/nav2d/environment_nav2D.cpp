@@ -900,7 +900,7 @@ void EnvironmentNAV2D::PrintTimeStat(FILE* fOut)
 }
 
 
-void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t>* changedcellsV, vector<int> *preds_of_changededgesIDV)
+void EnvironmentNAV2D::GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV)
 {
 	nav2dcell_t cell;
 

@@ -1280,7 +1280,7 @@ bool ADPlanner::Search(ADSearchStateSpace_t* pSearchStateSpace, vector<int>& pat
 
 }
 
-void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int>* statesIDV)
+void ADPlanner::Update_SearchSuccs_of_ChangedEdges(vector<int> const * statesIDV)
 {
 	printf("updating %d affected states\n", statesIDV->size());
 
@@ -1463,6 +1463,13 @@ int ADPlanner::set_search_mode(bool bSearchUntilFirstSolution)
 
 	return 1;
 }
+
+
+void ADPlanner::costs_changed(ChangedCellsGetter const & changedcells)
+{
+  Update_SearchSuccs_of_ChangedEdges(changedcells.getPredsOfChangedCells());
+}
+
 
 //---------------------------------------------------------------------------------------------------------
 
