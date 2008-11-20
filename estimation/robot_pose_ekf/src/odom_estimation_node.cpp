@@ -163,7 +163,6 @@ namespace estimation
     _vo_time = Time::now();
     _robot_state.lookupTransform("stereo","base", _vo.header.stamp, _camera_base);
     PoseMsgToTF(_vo.pose, _vo_meas);
-    double reliability = ((double)_vo.inliers)/200.0;
 
     // initialize
     if (!_vo_active){
@@ -172,7 +171,8 @@ namespace estimation
     
     // vo measurement as base transform
     Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
-    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base"), reliability);
+    _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base"),
+			      (double)(201-_vo.inliers));
     _vo_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -236,7 +236,7 @@ namespace estimation
       */
 #endif
       
-      // output most recent estimate message
+      // output most recent estimate and relative covariance
       _my_filter.GetEstimate(0.0, _output);
       publish("odom_estimation", _output);
     }

@@ -51,9 +51,9 @@ namespace estimation
     _odom_initialized(false),
     _imu_initialized(false),
     _vo_initialized(false),
-    _odom_reliability(1.0),
-    _imu_reliatility(1.0),
-    _vo_reliatility(1.0)
+    _odom_covar_multiplier(1.0),
+    _imu_covar_multiplier(1.0),
+    _vo_covar_multiplier(1.0)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
@@ -228,13 +228,10 @@ namespace estimation
 	  ColumnVector vo_rel(6);
 	  DecomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	  AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
+	  // set covariance
+	  _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * _vo_covar_multiplier);
 	  // update filter
-	  if (_vo_reliatility > 0.2){
-	    // set covariance
-	    _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * (-200 * _vo_reliatility + 201));
-	    // update filter
-	    _filter->Update(_vo_meas_model,  vo_rel);
-	  }
+	  _filter->Update(_vo_meas_model,  vo_rel);
 	}
 	else _vo_initialized = true;
 	_vo_meas_old = _vo_meas;
@@ -255,12 +252,12 @@ namespace estimation
   };
 
 
-  void odom_estimation::AddMeasurement(const Stamped<Transform>& meas, const double reliability)
+  void odom_estimation::AddMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
   {
     _transformer.setTransform( meas );
-    if (meas.frame_id_ == "odom")     _odom_reliability = reliability;
-    else if (meas.frame_id_ == "imu") _imu_reliatility  = reliability;
-    else if (meas.frame_id_ == "vo")  _vo_reliatility   = reliability;
+    if (meas.frame_id_ == "odom")     _odom_covar_multiplier = covar_multiplier;
+    else if (meas.frame_id_ == "imu") _imu_covar_multiplier  = covar_multiplier;
+    else if (meas.frame_id_ == "vo")  _vo_covar_multiplier   = covar_multiplier;
   };
 
 
@@ -285,11 +282,22 @@ namespace estimation
   };
 
   // get filter posterior at time 'time' as PoseStamped
-  void odom_estimation::GetEstimate(Time time, std_msgs::PoseStamped& estimate)
+  void odom_estimation::GetEstimate(Time time, robot_msgs::PoseWithCovariance& estimate)
   {
+    // pose
     Stamped<Transform> tmp;
     _transformer.lookupTransform("base","odom_estimated", time, tmp);
-    PoseStampedTFToMsg(tmp, estimate);
+    PoseTFToMsg(tmp, estimate.pose);
+
+    // header
+    estimate.header.stamp = time;
+    estimate.header.frame_id = "odom_estimation";
+
+    // covariance
+    SymmetricMatrix covar =  _filter->PostGet()->CovarianceGet();
+    for (unsigned int i=0; i<6; i++)
+      for (unsigned int j=0; j<6; j++)
+	estimate.covariance[6*i+j] = covar(i+1,j+1);
   };
 
   // correct for angle overflow

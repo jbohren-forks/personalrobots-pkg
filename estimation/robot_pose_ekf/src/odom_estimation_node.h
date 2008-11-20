@@ -47,6 +47,7 @@
 #include "std_msgs/PoseWithRatesStamped.h"
 #include "std_msgs/PoseStamped.h"
 #include "robot_msgs/VOPose.h"
+#include "robot_msgs/PoseWithCovariance.h"
 
 // log files
 #include <fstream>
@@ -73,7 +74,7 @@ public:
   void imu_callback();
 
   /// callback function for vo data
-  void vo_callback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& message);
+  void vo_callback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
 
   /// filter loop
   void spin();
@@ -94,7 +95,7 @@ private:
   robot_msgs::VOPose              _vo;  
 
   // estimated robot pose message to send
-  std_msgs::PoseStamped _output; 
+  robot_msgs::PoseWithCovariance  _output; 
 
   // robot state
   tf::TransformListener _robot_state;

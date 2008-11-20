@@ -35,15 +35,18 @@
 #define __ODOM_ESTIMATION__
 
 // bayesian filtering
-#include "filter/extendedkalmanfilter.h"
-#include "model/linearanalyticsystemmodel_gaussianuncertainty.h"
-#include "model/linearanalyticmeasurementmodel_gaussianuncertainty.h"
-#include "pdf/analyticconditionalgaussian.h"
-#include "pdf/linearanalyticconditionalgaussian.h"
+#include <filter/extendedkalmanfilter.h>
+#include <model/linearanalyticsystemmodel_gaussianuncertainty.h>
+#include <model/linearanalyticmeasurementmodel_gaussianuncertainty.h>
+#include <pdf/analyticconditionalgaussian.h>
+#include <pdf/linearanalyticconditionalgaussian.h>
 #include "nonlinearanalyticconditionalgaussianodo.h"
 
 // TF
 #include <tf/tf.h>
+
+// msgs
+#include <robot_msgs/PoseWithCovariance.h>
 
 // log files
 #include <fstream>
@@ -71,13 +74,13 @@ public:
   void GetEstimate(MatrixWrapper::ColumnVector& estimate);
   void GetEstimate(ros::Time time, tf::Transform& estiamte);
   void GetEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
-  void GetEstimate(ros::Time time, std_msgs::PoseStamped& estimate);
+  void GetEstimate(ros::Time time, robot_msgs::PoseWithCovariance& estimate);
 
   /// return if filter was initialized
   bool IsInitialized() {return _filter_initialized;};
 
   /// Add a measurement to the measurement buffer
-  void AddMeasurement(const tf::Stamped<tf::Transform>& meas, double reliability=1);
+  void AddMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
 
 private:
   /// correct for angle overflow
@@ -109,7 +112,7 @@ private:
   tf::Stamped<tf::Transform> _odom_meas, _odom_meas_old, _imu_meas, _imu_meas_old, _vo_meas, _vo_meas_old;
   ros::Time _filter_time_old;
   bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
-  double _odom_reliability, _imu_reliatility, _vo_reliatility;
+  double _odom_covar_multiplier, _imu_covar_multiplier, _vo_covar_multiplier;
 
   // tf transformer
   tf::Transformer _transformer;
