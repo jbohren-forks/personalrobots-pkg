@@ -4,15 +4,15 @@
   <include filename="../pr2_robot_defs/head_defs.xml" />
   <include filename="../pr2_robot_defs/body_defs.xml" />
 
-  <pr2_torso name="torso" parent="map">
+  <pr2_torso name="torso_lift" parent="map">
     <origin xyz="0 0 0" rpy="0 0 0" />
   </pr2_torso>
 
-  <pr2_head name="head" parent="torso">
+  <pr2_head name="head" parent="torso_lift">
     <origin xyz="0 0 0.3815" rpy="0 0 0" />
   </pr2_head>
 
-  <pr2_tilting_laser name="tilt_laser" parent="torso">
+  <pr2_tilting_laser name="laser_tilt" parent="torso_lift">
     <origin xyz="0.1 0 0.19525" rpy="0 0 0" />
   </pr2_tilting_laser>
   

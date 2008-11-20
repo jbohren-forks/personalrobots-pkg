@@ -21,8 +21,8 @@
       <mechanicalReduction>-52143.33</mechanicalReduction>
     </transmission>
 
-    <link name="${name}">
-      <parent name="${parent}" />
+    <link name="${name}_link">
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
 
@@ -38,14 +38,14 @@
         <map name="foo" flag="gazebo">
 	  <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="pr2_${name}_mesh_file">
-          <mesh filename="torso" />
+        <geometry name="${name}_visual">
+          <mesh filename="torso_lift" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="-0.1 0 -0.0885" rpy="0 0 0" />
-        <geometry name="${name}_collision_geom">
+        <geometry name="${name}_collision">
           <box size="0.432 0.620 0.823" />
         </geometry>
       </collision>
@@ -58,9 +58,9 @@
   <macro name="torso_calibrator">
     <controller type="JointCalibrationControllerNode"
                 name="cal_torso" topic="cal_torso">
-      <calibrate joint="torso_joint"
-                 actuator="torso_motor"
-                 transmission="torso_trans"
+      <calibrate joint="torso_lift_joint"
+                 actuator="torso_lift_motor"
+                 transmission="torso_lift_trans"
                  velocity="-2.0" />
       <pid p="20000.0" i="10" d="0" iClamp="1000" />
     </controller>

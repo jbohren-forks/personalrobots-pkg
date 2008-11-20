@@ -6,8 +6,8 @@
   <property name="M_PI" value="3.1415926535897931" />
   <property name="VELOCITY_LIMIT_SCALE" value="0.6" />
 
-  <property name="shoulder_pitch_length" value="0.10" />
-  <property name="shoulder_pitch_radius" value="0.12" />
+  <property name="shoulder_lift_length" value="0.10" />
+  <property name="shoulder_lift_radius" value="0.12" />
   <property name="gripper_max_angle" value="0.8" />
 
 
@@ -23,8 +23,8 @@
       <joint_properties damping="0.1" />
     </joint>
 
-    <link name="${prefix}_l_finger">
-      <parent name="${parent}" />
+    <link name="${prefix}_l_finger_link">
+      <parent name="${parent}_link" />
       <origin xyz="0.07751 ${1*0.01} 0" rpy="0 0 0" />
 
       <joint name="${prefix}_l_finger_joint" />
@@ -40,13 +40,13 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Shell</elem>
         </map>
-        <geometry name="pr2_finger_l_mesh_file">
+        <geometry name="${prefix}_l_finger_visual">
           <mesh filename="upper_finger_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="pr2_finger_l_collision_geom">
+        <geometry name="${prefix}_l_finger_collision">
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
@@ -72,8 +72,8 @@
       </map>
     </joint>
 
-    <link name="${prefix}_r_finger">
-      <parent name="${parent}" />
+    <link name="${prefix}_r_finger_link">
+      <parent name="${parent}_link" />
       <origin xyz="0.07751 ${-1*0.01} 0" rpy="0 0 0" />
 
       <joint name="${prefix}_r_finger_joint" />
@@ -89,13 +89,13 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Shell</elem>
         </map>
-        <geometry name="pr2_finger_r_mesh_file">
+        <geometry name="${prefix}_r_finger_visual">
           <mesh filename="upper_finger_r" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="pr2_finger_r_collision_geom">
+        <geometry name="${prefix}_r_finger_collision">
           <box size="0.131 0.056 0.049" />
         </geometry>
         <verbose value="Yes" />
@@ -123,8 +123,8 @@
       </map>
     </joint>
 
-    <link name="${prefix}_l_finger_tip">
-      <parent name="${prefix}_l_finger" />
+    <link name="${prefix}_l_finger_tip_link">
+      <parent name="${prefix}_l_finger_link" />
       <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
 
       <joint name="${prefix}_l_finger_tip_joint" />
@@ -140,13 +140,13 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_finger_tip_l_mesh_file">
+        <geometry name="${prefix}_l_finger_tip_visual">
           <mesh filename="finger_tip_l" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="pr2_finger_tip_l_collision_geom">
+        <geometry name="${prefix}_l_finger_tip_collision">
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
@@ -174,8 +174,8 @@
       </map>
     </joint>
 
-    <link name="${prefix}_r_finger_tip">
-      <parent name="${prefix}_r_finger" />
+    <link name="${prefix}_r_finger_tip_link">
+      <parent name="${prefix}_r_finger_link" />
       <origin xyz="0.0915 0 0" rpy=" 0 0 0 " />
 
       <joint name="${prefix}_r_finger_tip_joint" />
@@ -191,13 +191,13 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_finger_tip_r_mesh_file">
+        <geometry name="${prefix}_r_finger_tip_visual">
           <mesh filename="finger_tip_r" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="pr2_finger_tip_r_collision_geom">
+        <geometry name="${prefix}_r_finger_tip_collision">
           <box size="0.053 0.04 0.023" />
         </geometry>
         <verbose value="Yes" />
@@ -293,8 +293,8 @@
 
   <macro name="pr2_gripper" params="side parent">
     <joint name="${side}_gripper_palm_joint" type="fixed" />
-    <link name="${side}_gripper_palm">
-      <parent name="${parent}" />
+    <link name="${side}_gripper_palm_link">
+      <parent name="${parent}_link" />
       <joint name="${side}_gripper_palm_joint" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <inertial>
@@ -309,20 +309,20 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="pr2_gripper_roll_mesh_file">
+        <geometry name="${side}_gripper_roll_visual">
           <mesh filename="wr_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.05 0 0" rpy="0 0 0" />
-        <geometry name="pr2_gripper_roll_collision_geom">
+        <geometry name="${side}_gripper_roll_collision">
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
       </collision>
 
-      <map name="pr2_gripper_roll_left_gravity" flag="gazebo">
+      <map name="${side}_gripper_roll_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -380,8 +380,8 @@
       <joint_properties damping="10.0" />
     </joint>
 
-    <link name="${side}_shoulder_pan">
-      <parent name="${parent}" />
+    <link name="${side}_shoulder_pan_link">
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${side}_shoulder_pan_joint" />
       <inertial>
@@ -395,17 +395,17 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_sholder_pan_mesh_file">
+        <geometry name="${side}_shoulder_pan_visual">
           <mesh filename="shoulder_yaw" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.05 0 -0.2" rpy="0 0 0 " />
-        <geometry name="pr2_shoulder_pan_collision_box_geom">
+        <geometry name="${side}_shoulder_pan_collision">
           <box size="0.347 0.254 0.646" />
         </geometry>
       </collision>
-      <map name="pr2_shoulder_pan_${side}_gravity" flag="gazebo">
+      <map name="${side}_shoulder_pan_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -416,9 +416,9 @@
       <mechanicalReduction>63.16</mechanicalReduction>
     </transmission>
 
-    <!-- Shoulder pitch -->
+    <!-- Shoulder lift -->
 
-    <joint name="${side}_shoulder_pitch_joint" type="revolute">
+    <joint name="${side}_shoulder_lift_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
 
@@ -430,10 +430,10 @@
       <joint_properties damping="100.0" />
     </joint>
 
-    <link name="${side}_shoulder_pitch">
-      <parent name="${side}_shoulder_pan" />
+    <link name="${side}_shoulder_lift_link">
+      <parent name="${side}_shoulder_pan_link" />
       <origin xyz="0.1 0 0" rpy="0 0 0" />
-      <joint name="${side}_shoulder_pitch_joint" />
+      <joint name="${side}_shoulder_lift_joint" />
       <inertial>
         <mass value="2.41223" />
         <com xyz="-0.035895  0.014422 -0.0028263" />
@@ -445,24 +445,24 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_sholder_pitch_mesh_file">
-          <mesh filename="shoulder_pitch" />
+        <geometry name="${side}_shoulder_lift_visual">
+          <mesh filename="shoulder_lift" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0 " rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_shoulder_pitch_collision_geom">
-          <cylinder radius="${shoulder_pitch_radius}" length="${shoulder_pitch_length}" />
+        <geometry name="${side}_shoulder_lift_collision">
+          <cylinder radius="${shoulder_lift_radius}" length="${shoulder_lift_length}" />
         </geometry>
       </collision>
-      <map name="pr2_shoulder_pitch_${side}_gravity" flag="gazebo">
+      <map name="${side}_shoulder_lift_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
 
-    <transmission type="SimpleTransmission" name="${side}_shoulder_pitch_trans">
-      <actuator name="${side}_shoulder_pitch_motor" />
-      <joint name="${side}_shoulder_pitch_joint" />
+    <transmission type="SimpleTransmission" name="${side}_shoulder_lift_trans">
+      <actuator name="${side}_shoulder_lift_motor" />
+      <joint name="${side}_shoulder_lift_joint" />
       <mechanicalReduction>57.36</mechanicalReduction>
     </transmission>
 
@@ -480,8 +480,8 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_upper_arm_roll">
-      <parent name="${side}_shoulder_pitch" />
+    <link name="${side}_upper_arm_roll_link">
+      <parent name="${side}_shoulder_lift_link" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_upper_arm_roll_joint" />
 
@@ -497,19 +497,19 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_shoulder_roll_mesh_file">
+        <geometry name="${side}_upper_arm_roll_visual">
           <mesh filename="upperarm_roll" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0.3 0 0" rpy="0 0 0" />
-        <geometry name="pr2_upper_arm_roll_collision_geom">
+        <geometry name="${side}_upper_arm_roll_collision">
           <box size="0.362 0.144 0.157" />
         </geometry>
       </collision>
 
-      <map name="pr2_upper_arm_roll_${side}_gravity" flag="gazebo">
+      <map name="${side}_upper_arm_roll_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -534,8 +534,8 @@
       <joint_properties damping="10.0" />
     </joint>
 
-    <link name="${side}_elbow_flex">
-      <parent name="${side}_upper_arm_roll" />
+    <link name="${side}_elbow_flex_link">
+      <parent name="${side}_upper_arm_roll_link" />
       <origin xyz="0.4 0 0" rpy="0 0 0" />
       <joint name="${side}_elbow_flex_joint" />
 
@@ -550,17 +550,17 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_elbow_flex_mesh_file">
-          <mesh filename="elbow_pitch" />
+        <geometry name="${side}_elbow_flex_visual">
+          <mesh filename="elbow_lift" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
-        <geometry name="elbow_flex_collision_geom">
+        <geometry name="${side}_elbow_flex_collision">
           <cylinder radius="0.1" length="0.08" />
         </geometry>
       </collision>
-      <map name="pr2_elbow_flex_${side}_gravity" flag="gazebo">
+      <map name="${side}_elbow_flex_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -583,14 +583,14 @@
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_shoulder_pan_position_iface" />
         </controller:P3D>
-        <controller:P3D name="p3d_${side}_shoulder_pitch_controller" plugin="libP3D.so">
+        <controller:P3D name="p3d_${side}_shoulder_lift_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_shoulder_pitch</bodyName>
-          <topicName>${side}_shoulder_pitch_pose_ground_truth</topicName>
+          <bodyName>${side}_shoulder_lift</bodyName>
+          <topicName>${side}_shoulder_lift_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
-          <interface:position name="p3d_${side}_shoulder_pitch_position_iface" />
+          <interface:position name="p3d_${side}_shoulder_lift_position_iface" />
         </controller:P3D>
         <controller:P3D name="p3d_${side}_upper_arm_roll_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
@@ -633,8 +633,8 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_forearm_roll">
-      <parent name="${parent}" />
+    <link name="${side}_forearm_roll_link">
+      <parent name="${parent}_link" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_forearm_roll_joint" />
       <inertial>
@@ -648,17 +648,17 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_forearm_roll_mesh_file">
+        <geometry name="${side}_forearm_roll_visual">
           <mesh filename="forearm_roll" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.22 0 0" rpy="0 0 0" />
-        <geometry name="pr2_forearm_roll_collision_geom">
+        <geometry name="${side}_forearm_roll_collision">
           <box size="0.27 0.12 0.08" />
         </geometry>
       </collision>
-      <map name="pr2_forearm_roll_${side}_gravity" flag="gazebo">
+      <map name="${side}_forearm_roll_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -683,8 +683,8 @@
       <joint_properties damping="1.0" />
     </joint>
 
-    <link name="${side}_wrist_flex">
-      <parent name="${side}_forearm_roll" />
+    <link name="${side}_wrist_flex_link">
+      <parent name="${side}_forearm_roll_link" />
       <origin xyz="0.32025 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_flex_joint" />
       <inertial>
@@ -698,17 +698,17 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Grey</elem>
         </map>
-        <geometry name="pr2_wrist_flex_mesh_file">
-          <mesh filename="wrist_pitch" />
+        <geometry name="${side}_wrist_flex_visual">
+          <mesh filename="wrist_lift" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_wrist_flex_collision_geom">
+        <geometry name="${side}_wrist_flex_collision">
           <cylinder radius="0.033" length="0.103" />
         </geometry>
       </collision>
-      <map name="pr2_wrist_flex_${side}_gravity" flag="gazebo">
+      <map name="${side}_wrist_flex_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -724,8 +724,8 @@
     </joint>
 
 
-    <link name="${side}_wrist_roll">
-      <parent name="${side}_wrist_flex" />
+    <link name="${side}_wrist_roll_link">
+      <parent name="${side}_wrist_flex_link" />
       <origin xyz="0 0 0" rpy="0 0 0" />
       <joint name="${side}_wrist_roll_joint" />
       <inertial>
@@ -739,18 +739,18 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="pr2_wrist_roll_mesh_file">
+        <geometry name="${side}_wrist_roll_visual">
           <mesh filename="wr_roll" />
         </geometry>
       </visual>
       <collision>
         <origin xyz="0.05 0 0" rpy="0 0 0" />
-        <geometry name="pr2_wrist_roll_collision_geom">
+        <geometry name="${side}_wrist_roll_collision_">
           <box size="0.11 0.10 0.05" />
         </geometry>
         <verbose value="Yes" />
       </collision>
-      <map name="pr2_wrist_roll_${side}_gravity" flag="gazebo">
+      <map name="${side}_wrist_roll_gravity" flag="gazebo">
         <elem key="turnGravityOff">true</elem>
       </map>
     </link>
@@ -822,11 +822,11 @@
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>
 
-    <controller name="cal_shoulder_pitch_${side}" topic="cal_shoulder_pitch_${side}"
+    <controller name="cal_shoulder_lift_${side}" topic="cal_shoulder_lift_${side}"
                 type="JointCalibrationControllerNode">
-      <calibrate joint="${side}_shoulder_pitch_joint"
-                 actuator="${side}_shoulder_pitch_motor"
-                 transmission="${side}_shoulder_pitch_trans"
+      <calibrate joint="${side}_shoulder_lift_joint"
+                 actuator="${side}_shoulder_lift_motor"
+                 transmission="${side}_shoulder_lift_trans"
                  velocity="-1.0" />
       <pid p="7" i="0.5" d="0" iClamp="1.0" />
     </controller>

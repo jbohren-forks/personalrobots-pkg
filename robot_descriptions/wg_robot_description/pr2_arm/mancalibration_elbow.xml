@@ -1,3 +1,0 @@
-<controller name="elbow_calibration" topic="elbow_calibration" type="JointManualCalibrationControllerNode">
-  <param joint_name="elbow_right_joint" actuator_name="elbow_right_act" transmission_name="elbow_right_trans"/>
-</controller>

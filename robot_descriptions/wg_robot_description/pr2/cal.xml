@@ -4,14 +4,14 @@
   <include filename="../pr2_robot_defs/head_defs.xml" />
   <include filename="../pr2_robot_defs/body_defs.xml" />
 
-  <upper_arm_calibrator side="right" />
-  <forearm_calibrator side="right" />
-  <gripper_calibrator side="right" />
+  <upper_arm_calibrator side="r" />
+  <forearm_calibrator side="r" />
+  <gripper_calibrator side="r" />
 
   <!--
-  <upper_arm_calibrator side="left" />
-  <forearm_calibrator side="left" />
-  <gripper_calibrator side="left" />
+  <upper_arm_calibrator side="l" />
+  <forearm_calibrator side="l" />
+  <gripper_calibrator side="l" />
   -->
 
   <base_calibrator />
@@ -20,6 +20,6 @@
 
   <torso_calibrator />
 
-  <tilting_laser_calibrator name="tilt_laser" />
+  <tilting_laser_calibrator name="laser_tilt" />
 
 </controllers>

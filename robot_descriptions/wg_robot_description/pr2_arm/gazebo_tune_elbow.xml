@@ -1,4 +1,0 @@
-<controller name="elbow_calibration" topic="elbow_calibration" type="JointSineSweepControllerNode">
-  <!--   <param joint_name="elbow_right_joint" actuator_name="elbow_right_act" velocity="0.1"/> -->
-  <joint name="elbow_flex_left_joint"/>
-</controller>

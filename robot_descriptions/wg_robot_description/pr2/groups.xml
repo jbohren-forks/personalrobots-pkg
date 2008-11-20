@@ -32,13 +32,13 @@
   </group>
   
   <group name="left_arm" flags="planning kinematic">
-    left_shoulder_pan
-    left_shoulder_pitch
-    left_upper_arm_roll
-    left_elbow_flex
-    left_forearm_roll
-    left_wrist_flex
-    left_wrist_roll
+    l_shoulder_pan
+    l_shoulder_lift
+    l_upper_arm_roll
+    l_elbow_flex
+    l_forearm_roll
+    l_wrist_flex
+    l_wrist_roll
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -56,13 +56,13 @@
   
   <group name="right_arm" flags="planning kinematic">
 
-    right_shoulder_pan
-    right_shoulder_pitch
-    right_upper_arm_roll
-    right_elbow_flex
-    right_forearm_roll
-    right_wrist_flex
-    right_wrist_roll
+    r_shoulder_pan
+    r_shoulder_lift
+    r_upper_arm_roll
+    r_elbow_flex
+    r_forearm_roll
+    r_wrist_flex
+    r_wrist_roll
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -82,25 +82,25 @@
   <group name="base_left_arm" flags="planning">
     base
     torso
-    left_shoulder_pan
-    left_shoulder_pitch
-    left_upper_arm_roll
-    left_elbow_flex
-    left_forearm_roll
-    left_wrist_flex
-    left_wrist_roll
+    l_shoulder_pan
+    l_shoulder_lift
+    l_upper_arm_roll
+    l_elbow_flex
+    l_forearm_roll
+    l_wrist_flex
+    l_wrist_roll
   </group>
   
   <group name="base_right_arm" flags="planning">
     base
     torso
-    right_shoulder_pan
-    right_shoulder_pitch
-    right_upper_arm_roll
-    right_elbow_flex
-    right_forearm_roll
-    right_wrist_flex
-    right_wrist_roll
+    r_shoulder_pan
+    r_shoulder_lift
+    r_upper_arm_roll
+    r_elbow_flex
+    r_forearm_roll
+    r_wrist_flex
+    r_wrist_roll
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />
@@ -118,39 +118,39 @@
   </group>
   
   <group name="arms" flags="planning">
-    left_shoulder_pan
-    left_shoulder_pitch
-    left_upper_arm_roll
-    left_elbow_flex
-    left_forearm_roll
-    left_wrist_flex
-    left_wrist_roll
-    right_shoulder_pan
-    right_shoulder_pitch
-    right_upper_arm_roll
-    right_elbow_flex
-    right_forearm_roll
-    right_wrist_flex
-    right_wrist_roll
+    l_shoulder_pan
+    l_shoulder_lift
+    l_upper_arm_roll
+    l_elbow_flex
+    l_forearm_roll
+    l_wrist_flex
+    l_wrist_roll
+    r_shoulder_pan
+    r_shoulder_lift
+    r_upper_arm_roll
+    r_elbow_flex
+    r_forearm_roll
+    r_wrist_flex
+    r_wrist_roll
   </group>
 
   <group name="base_arms" flags="planning">
     base
     torso
-    left_shoulder_pan
-    left_shoulder_pitch
-    left_upper_arm_roll
-    left_elbow_flex
-    left_forearm_roll
-    left_wrist_flex
-    left_wrist_roll
-    right_shoulder_pan
-    right_shoulder_pitch
-    right_upper_arm_roll
-    right_elbow_flex
-    right_forearm_roll
-    right_wrist_flex
-    right_wrist_roll
+    l_shoulder_pan
+    l_shoulder_lift
+    l_upper_arm_roll
+    l_elbow_flex
+    l_forearm_roll
+    l_wrist_flex
+    l_wrist_roll
+    r_shoulder_pan
+    r_shoulder_lift
+    r_upper_arm_roll
+    r_elbow_flex
+    r_forearm_roll
+    r_wrist_flex
+    r_wrist_roll
   </group>
 
 </robot>

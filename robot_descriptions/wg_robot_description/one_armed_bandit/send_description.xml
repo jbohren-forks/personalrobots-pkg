@@ -1,5 +1,0 @@
-<launch>
-
-  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/one_armed_bandit/one_armed_bandit.xml'" />
-
-</launch>

@@ -21,10 +21,10 @@
   <include filename="../pr2_robot_defs/gazebo_defs.xml" />
   <include filename="./groups_arm.xml" />
 
-  <pr2_arm side="left" reflect="1" parent="base">
+  <pr2_arm side="l" reflect="1" parent="base">
     <origin xyz="0.0 0.0 1.0" rpy="0 0 0" />
   </pr2_arm>
-  <pr2_gripper side="left" parent="left_wrist_roll" />
+  <pr2_gripper side="l" parent="l_wrist_roll" />
 
   <!-- Solid Base -->
   <joint name="base_joint" type="planar"> 
@@ -61,13 +61,13 @@
   <map name="gazebo_material" flag="gazebo">
   <verbatim>
     <!-- P3D for position groundtruth -->
-    <controller:P3D name="p3d_left_wrist_controller" plugin="libP3D.so">
+    <controller:P3D name="p3d_l_wrist_controller" plugin="libP3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>left_gripper_palm</bodyName>
-      <topicName>left_gripper_palm_pose_ground_truth</topicName>
+      <bodyName>l_gripper_palm</bodyName>
+      <topicName>l_gripper_palm_pose_ground_truth</topicName>
       <frameName>map</frameName>
-      <interface:position name="p3d_left_wrist_position"/>
+      <interface:position name="p3d_l_wrist_position"/>
     </controller:P3D>
   </verbatim>
   </map>

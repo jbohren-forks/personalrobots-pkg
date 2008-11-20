@@ -1,5 +1,5 @@
 <launch>
   <node pkg="mechanism_bringup" type="calibrate.py"
-        args="$(find wg_robot_description)/tilt_laser/cal.xml"
+        args="$(find wg_robot_description)/laser_tilt/cal.xml"
         output="screen" />
 </launch>

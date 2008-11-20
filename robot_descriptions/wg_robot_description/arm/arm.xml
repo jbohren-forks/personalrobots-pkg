@@ -17,7 +17,7 @@
   <include filename="../pr2_robot_defs/arm_defs.xml" />
 
   <joint name="base_joint" type="planar" />
-  <link name="torso">
+  <link name="torso_lift">
     <parent name="world" />
     <joint name="base_joint" />
     <origin xyz="0 0 0" rpy="0 0 0" />
@@ -45,10 +45,10 @@
     </collision>
   </link>
 
-  <pr2_arm side="right" reflect="-1" parent="torso">
+  <pr2_arm side="right" reflect="-1" parent="torso_lift">
     <origin xyz="0 0 0.7" rpy="0 0 0" />
   </pr2_arm>
 
-  <pr2_gripper side="right" parent="right_wrist_roll" />
+  <pr2_gripper side="right" parent="r_wrist_roll" />
 
 </robot>

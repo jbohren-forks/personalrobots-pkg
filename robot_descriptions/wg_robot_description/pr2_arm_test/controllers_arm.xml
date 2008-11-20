@@ -8,7 +8,7 @@
       <kinematics>left_arm</kinematics>
       <joints>
         <joint name="shoulder_pan_left_joint"/>
-        <joint name="shoulder_pitch_left_joint"/>
+        <joint name="shoulder_lift_left_joint"/>
         <joint name="upperarm_roll_left_joint"/>
         <joint name="elbow_flex_left_joint"/>
         <joint name="forearm_roll_left_joint"/>
@@ -26,44 +26,44 @@
     <map name="controller_param">
       <elem key="kdl_chain_name">left_arm</elem>
     </map>
-    <controller name="left_shoulder_pan_controller" topic="left_shoulder_pan_controller" type="JointPositionController">
-      <joint name="left_shoulder_pan_joint" >
+    <controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointPositionController">
+      <joint name="l_shoulder_pan_joint" >
         <pid p="100" d="200" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_shoulder_pitch_controller" topic="left_shoulder_pitch_controller" type="JointPositionController">
-      <joint name="left_shoulder_pitch_joint" >
+    <controller name="l_shoulder_lift_controller" topic="l_shoulder_lift_controller" type="JointPositionController">
+      <joint name="l_shoulder_lift_joint" >
         <pid p="100" d="100.0" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_upper_arm_roll_controller" topic="left_upper_arm_roll_controller" type="JointPositionController">
-      <joint name="left_upper_arm_roll_joint" >
+    <controller name="l_upper_arm_roll_controller" topic="l_upper_arm_roll_controller" type="JointPositionController">
+      <joint name="l_upper_arm_roll_joint" >
         <pid p="400" d="400" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_elbow_flex_controller" topic="left_elbow_flex_controller" type="JointPositionController">
-      <joint name="left_elbow_flex_joint" >
+    <controller name="l_elbow_flex_controller" topic="l_elbow_flex_controller" type="JointPositionController">
+      <joint name="l_elbow_flex_joint" >
         <pid p="100" d="100" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_forearm_roll_controller" topic="left_forearm_roll_controller" type="JointPositionController">
-      <joint name="left_forearm_roll_joint" >
+    <controller name="l_forearm_roll_controller" topic="l_forearm_roll_controller" type="JointPositionController">
+      <joint name="l_forearm_roll_joint" >
         <pid p="200" d="200" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_wrist_flex_controller" topic="left_wrist_flex_controller" type="JointPositionController">
-      <joint name="left_wrist_flex_joint" >
+    <controller name="l_wrist_flex_controller" topic="l_wrist_flex_controller" type="JointPositionController">
+      <joint name="l_wrist_flex_joint" >
         <pid p="100" d="100" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="left_wrist_roll_controller" topic="left_wrist_roll_controller" type="JointPositionController">
-      <joint name="left_wrist_roll_joint" >
+    <controller name="l_wrist_roll_controller" topic="l_wrist_roll_controller" type="JointPositionController">
+      <joint name="l_wrist_roll_joint" >
         <pid p="100" d="100" i="0.1" iClamp="0" />
       </joint>
     </controller>
   </controller>
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
-    <joint name="left_gripper_l_finger_joint">
+    <joint name="l_gripper_l_finger_joint">
       <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
     </joint>
   </controller>

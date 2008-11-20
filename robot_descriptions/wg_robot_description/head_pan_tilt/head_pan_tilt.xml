@@ -3,11 +3,11 @@
   <include filename="../pr2_robot_defs/head_defs.xml" />
   <include filename="../pr2_robot_defs/body_defs.xml" />
 
-  <pr2_torso name="torso" parent="world">
+  <pr2_torso name="torso_lift" parent="world">
     <origin xyz="0 0 0" rpy="0 0 0" />
   </pr2_torso>
 
-  <pr2_head_pan name="head_pan" parent="torso">
+  <pr2_head_pan name="head_pan" parent="torso_lift">
     <origin xyz="0 0 0.3815" rpy="0 0 0" />
   </pr2_head_pan>
 

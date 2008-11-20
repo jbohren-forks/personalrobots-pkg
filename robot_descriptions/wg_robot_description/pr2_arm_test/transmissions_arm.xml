@@ -12,9 +12,9 @@
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>
   </transmission>
-  <transmission type="SimpleTransmission" name="shoulder_pitch_left_trans">
-    <actuator name="shoulder_pitch_left_motor" />
-    <joint name="shoulder_pitch_left_joint" />
+  <transmission type="SimpleTransmission" name="shoulder_lift_left_trans">
+    <actuator name="shoulder_lift_left_motor" />
+    <joint name="shoulder_lift_left_joint" />
     <mechanicalReduction>1</mechanicalReduction>
     <motorTorqueConstant>1</motorTorqueConstant>
     <pulsesPerRevolution>90000</pulsesPerRevolution>

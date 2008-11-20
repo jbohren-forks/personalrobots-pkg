@@ -1,7 +1,7 @@
 <controllers>
   <controller name="laser_controller" topic="laser_controller" type="LaserScannerTrajControllerNode">
     <filter smoothing_factor="0.1" />
-    <joint name="tilt_laser_mount_joint">
+    <joint name="laser_tilt_mount_joint">
       <pid p="12" i=".1" d="1" iClamp="0.5" />
     </joint>
   </controller> 

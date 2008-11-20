@@ -6,7 +6,7 @@
   <controller name="left_arm_controller" type="LQRControllerNode">
     <joints>
       <joint name="shoulder_pan_left_joint"/>
-      <joint name="shoulder_pitch_left_joint"/>
+      <joint name="shoulder_lift_left_joint"/>
       <joint name="upperarm_roll_left_joint"/>
       <joint name="elbow_flex_left_joint"/>
       <joint name="forearm_roll_left_joint"/>
@@ -32,8 +32,8 @@
         <pid p="100" d="200" i="0.1" iClamp="1" />
       </joint>
     </controller>
-    <controller name="shoulder_pitch_left_controller" topic="shoulder_pitch_left_controller" type="JointPositionController">
-      <joint name="shoulder_pitch_left_joint" >
+    <controller name="shoulder_lift_left_controller" topic="shoulder_lift_left_controller" type="JointPositionController">
+      <joint name="shoulder_lift_left_joint" >
         <pid p="100" d="100.0" i="0.1" iClamp="1" />
       </joint>
     </controller>
@@ -64,7 +64,7 @@
     </controller>
   </controller>
   <controller name="gripper_left_controller" topic="gripper_left_controller" type="JointPositionControllerNode">
-    <listen_topic name="left_gripper_commands" />
+    <listen_topic name="l_gripper_commands" />
     <joint name="finger_l_left_joint">
       <pid p="10" d="0" i="0" iClamp="0" />
       <gripper_defaults effortLimit="100" velocityLimit="10" />

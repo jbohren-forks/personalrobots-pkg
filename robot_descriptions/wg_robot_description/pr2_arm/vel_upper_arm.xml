@@ -1,6 +1,0 @@
-<controller name="upperarm_vcontroller" topic="upperarm_vcontroller" type="JointVelocityControllerNode">
-    <filter smoothing_factor="0.02" />
-    <joint name="upperarm_roll_right_joint">
-      <pid p="15" i="0" d="0" iClamp="0" />
-    </joint>
-</controller>

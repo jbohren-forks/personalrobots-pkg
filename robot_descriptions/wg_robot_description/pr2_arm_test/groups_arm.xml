@@ -3,13 +3,13 @@
 <robot name="pr2"><!-- name of the robot-->
   
   <group name="left_arm" flags="planning kinematic">
-    left_shoulder_pan
-    left_shoulder_pitch
-    left_upper_arm_roll
-    left_elbow_flex
-    left_forearm_roll
-    left_wrist_flex
-    left_wrist_roll
+    l_shoulder_pan
+    l_shoulder_lift
+    l_upper_arm_roll
+    l_elbow_flex
+    l_forearm_roll
+    l_wrist_flex
+    l_wrist_roll
 
     <map name="RRT" flag="planning">
       <elem key="range" value="0.75" />

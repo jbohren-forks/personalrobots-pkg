@@ -11,7 +11,7 @@
 
 
   <macro name="pr2_wheel" params="suffix parent reflect">
-    <joint name="wheel_${suffix}_joint" type="revolute">
+    <joint name="${parent}_${suffix}_wheel_joint" type="revolute">
       <axis xyz="0 1 0" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="100" k_velocity="10" />
@@ -19,9 +19,9 @@
       <joint_properties damping="1.0" friction="0.0" />
     </joint>
 
-    <link name="wheel_${suffix}">
-      <parent name="${parent}" />
-      <joint name="wheel_${suffix}_joint" />
+    <link name="${parent}_${suffix}_wheel_link">
+      <parent name="${parent}_rotation_link" />
+      <joint name="${parent}_${suffix}_wheel_joint" />
       <origin xyz="0 ${reflect*caster_wheel_offset_y} 0" rpy="0 0 0" />
       <inertial>
         <mass value="0.44036" />
@@ -33,16 +33,16 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="gazebo_material" flag="gazebo">
           <!-- TODO should be different for left and right wheel-->
-          <elem key="material">PR2/wheel_${suffix}</elem>
+          <elem key="material">PR2/${parent}_${suffix}_wheel_link</elem>
         </map>
-        <geometry name="pr2_wheel_mesh_file">
+        <geometry name="${parent}_${suffix}_wheel_visual">
           <mesh filename="wheel" />
         </geometry>
 
       </visual>
       <collision>
         <origin xyz="0 0 0" rpy="${M_PI/2} 0 0" />
-        <geometry name="pr2_wheel_collision_geom">
+        <geometry name="${parent}_${suffix}_wheel_collision">
           <cylinder radius="${wheel_radius}" length="${wheel_length}" />
         </geometry>
         <map name="friction_coefficients" flag="gazebo">
@@ -52,15 +52,15 @@
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="wheel_${suffix}_trans">
-      <actuator name="wheel_${suffix}_motor" />
-      <joint name="wheel_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${parent}_${suffix}_wheel_trans">
+      <actuator name="${parent}_${suffix}_wheel_motor" />
+      <joint name="${parent}_${suffix}_wheel_joint" />
       <mechanicalReduction>${reflect*75.05}</mechanicalReduction>
     </transmission>
   </macro>
 
   <macro name="pr2_caster" params="suffix parent *origin">
-    <joint name="caster_${suffix}_joint" type="revolute">
+    <joint name="${suffix}_caster_rotation_joint" type="revolute">
       <axis xyz="0 0 1" />
       <anchor xyz="0 0 0" />
       <limit effort="100" velocity="100" k_velocity="10" />
@@ -68,10 +68,10 @@
       <joint_properties damping="1.0" friction="0.0" />
     </joint>
 
-    <link name="caster_${suffix}">
-      <parent name="${parent}" />
+    <link name="${suffix}_caster_rotation_link">
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
-      <joint name="caster_${suffix}_joint" />
+      <joint name="${suffix}_caster_rotation_joint" />
 
       <inertial>
         <mass value="3.473082" />
@@ -85,7 +85,7 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_caster_mesh_file">
+        <geometry name="${suffix}_caster_rotation_visual">
           <mesh filename="caster" scale="1 1 1"/>
         </geometry>
       </visual>
@@ -93,20 +93,20 @@
       <collision>
         <origin xyz="0 0 0.07"
                 rpy="0.0 0.0 0.0 " />
-        <geometry name="caster_collision_geom">
+        <geometry name="${suffix}_caster_rotation_collision">
           <box size="0.192 0.164 0.013" />
         </geometry>
       </collision>
     </link>
 
-    <transmission type="SimpleTransmission" name="caster_${suffix}_trans">
-      <actuator name="caster_${suffix}_motor" />
-      <joint name="caster_${suffix}_joint" />
+    <transmission type="SimpleTransmission" name="${suffix}_caster_rotation_trans">
+      <actuator name="${suffix}_caster_rotation_motor" />
+      <joint name="${suffix}_caster_rotation_joint" />
       <mechanicalReduction>-75.05</mechanicalReduction>
     </transmission>
 
-    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_l" reflect="1" />
-    <pr2_wheel parent="caster_${suffix}" suffix="${suffix}_r" reflect="-1" />
+    <pr2_wheel parent="${suffix}_caster" suffix="l" reflect="1" />
+    <pr2_wheel parent="${suffix}_caster" suffix="r" reflect="-1" />
   </macro>
 
 
@@ -124,7 +124,7 @@
 
     <joint name="${name}_joint" type="planar" />
 
-    <link name="${name}">
+    <link name="${name}_link">
       <parent name="world" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
@@ -141,14 +141,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_base_mesh_file">
+        <geometry name="${name}_visual">
           <mesh filename="base" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 ${base_size_z/2}" rpy="0 0 0" />
-        <geometry name="base_collision_geom">
+        <geometry name="${name}_collision">
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
       </collision>
@@ -162,7 +162,7 @@
 
     <sensor name="base_laser" type="laser">
       <calibration filename="calib_filename" />
-      <parent name="${name}" />
+      <parent name="${name}_link" />
       <origin xyz="0.275 0 0.182" rpy="0 0 0" />
       <joint name="base_laser_joint" />
       <inertial>
@@ -176,14 +176,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/PioneerBody</elem>
         </map>
-        <geometry name="pr2_base_laser_geom">
+        <geometry name="base_laser_visual">
           <mesh scale="0.001 0.001 0.001"/>
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0.12" rpy="0 0 0" />
-        <geometry name="base_laser_collision_geom">
+        <geometry name="base_laser_collision">
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
@@ -218,16 +218,16 @@
     </sensor>
 
 
-    <pr2_caster suffix="front_left" parent="${name}">
+    <pr2_caster suffix="fl" parent="${name}">
       <origin xyz="${caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="front_right" parent="${name}">
+    <pr2_caster suffix="fr" parent="${name}">
       <origin xyz="${caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="rear_left" parent="${name}">
+    <pr2_caster suffix="bl" parent="${name}">
       <origin xyz="${-caster_offset_x} ${caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
-    <pr2_caster suffix="rear_right" parent="${name}">
+    <pr2_caster suffix="br" parent="${name}">
       <origin xyz="${-caster_offset_x} ${-caster_offset_y} ${caster_offset_z}" rpy="0 0 0" />
     </pr2_caster>
 
@@ -256,13 +256,13 @@
   <macro name="caster_calibrator" params="suffix">
     <controller type="CasterCalibrationControllerNode"
                 name="cal_caster_${suffix}" topic="cal_caster_${suffix}">
-      <calibrate joint="caster_${suffix}_joint"
-                 actuator="caster_${suffix}_motor"
-                 transmission="caster_${suffix}_trans"
+      <calibrate joint="${suffix}_caster_rotation_joint"
+                 actuator="${suffix}_caster_rotation_motor"
+                 transmission="${suffix}_caster_rotation_trans"
                  velocity="1.0" />
-      <joints caster="caster_${suffix}_joint"
-              wheel_l="wheel_${suffix}_l_joint"
-              wheel_r="wheel_${suffix}_r_joint" />
+      <joints caster="${suffix}_caster_rotation_joint"
+              wheel_l="${suffix}_caster_l_wheel_joint"
+              wheel_r="${suffix}_caster_r_wheel_joint" />
       <caster_pid p="6" i="0" d="0" iClamp="0" />
       <wheel_pid p="4" i="0" d="0" iClamp="0" />
     </controller>
@@ -270,10 +270,10 @@
 
 
   <macro name="base_calibrator">
-    <caster_calibrator suffix="front_left" />
-    <caster_calibrator suffix="front_right" />
-    <caster_calibrator suffix="rear_left" />
-    <caster_calibrator suffix="rear_right" />
+    <caster_calibrator suffix="fl" />
+    <caster_calibrator suffix="fr" />
+    <caster_calibrator suffix="bl" />
+    <caster_calibrator suffix="br" />
   </macro>
 
 

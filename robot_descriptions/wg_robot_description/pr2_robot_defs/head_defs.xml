@@ -33,14 +33,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/PioneerBody</elem>
         </map>
-        <geometry name="pr2_${name}_mount_mesh_file">
+        <geometry name="${name}_mount_mesh_file">
           <mesh filename="hok_tilt" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_mount_collision_geom" >
+        <geometry name="${name}_mount_collision" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
@@ -69,14 +69,14 @@
 
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="pr2_${name}_visual_geom">
+        <geometry name="${name}_visual">
           <mesh scale="0.001 0.001 0.001" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry name="${name}_collision_geom" >
+        <geometry name="${name}_collision" >
           <box size=".001 .001 .001" />
         </geometry>
       </collision>
@@ -102,7 +102,7 @@
               <alwaysOn>true</alwaysOn>
               <updateRate>20.0</updateRate>
               <topicName>tilt_scan</topicName>
-              <frameName>tilt_laser</frameName>
+              <frameName>laser_tilt</frameName>
               <interface:laser name="ros_${name}_iface" />
             </controller:ros_laser>
           </sensor:ray>
@@ -140,14 +140,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_stereo_visual_geom">
+        <geometry name="stereo_visual">
           <mesh scale="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
-        <geometry name="stereo_collision_geom">
+        <geometry name="stereo_collision">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </collision>
@@ -244,14 +244,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="pr2_${name}_mesh_file">
+        <geometry name="${name}_mesh_file">
           <mesh filename="${name}" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz=" 0 0 0" rpy="0.0 0.0 0.0 " />
-        <geometry name="${name}_collision_geom">
+        <geometry name="${name}_collision">
           <box size="0.188 0.219 0.137" />
         </geometry>
       </collision>
@@ -293,14 +293,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="pr2_${name}_mesh_file">
+        <geometry name="${name}_mesh_file">
           <mesh filename="${name}" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0 " rpy="0 0 0" />
-        <geometry name="${name}_collision_geom">
+        <geometry name="${name}_collision">
           <box size="0.164 0.253 0.181" />
         </geometry>
       </collision>

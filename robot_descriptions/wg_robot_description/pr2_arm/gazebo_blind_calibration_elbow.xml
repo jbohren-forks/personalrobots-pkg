@@ -1,9 +1,0 @@
-<controller name="elbow_calibration" topic="elbow_calibration" type="JointBlindCalibrationControllerNode">
-  <param joint_name="elbow_flex_left_joint" actuator_name="elbow_flex_left_motor" transmission_name="elbow_flex_left_trans" velocity="0.15"/>
-  <controller name="elbow_controller" topic="elbow_controller" type="JointVelocityController">
-    <filter smoothing_factor="0.1" />
-    <joint name="elbow_flex_left_joint">
-      <pid p="13" i="600" d="0.02" iClamp="1" />
-    </joint>
-  </controller>
-</controller>
