@@ -31,6 +31,7 @@ SuperpixelBlobber(const IplImage *iplImage, double akParam, int aminSize) :
   double scaledHeight = 
     iplImage->height * double(SUPERPIX_RESCALE_X) / iplImage->width;
 
+  /// @fixme: preallocate in constructor!
   IplImage* scaledSPIds = 
     cvCreateImage(cvSize(SUPERPIX_RESCALE_X, scaledHeight), IPL_DEPTH_32S, 1);
   IplImage* scaledImage = 

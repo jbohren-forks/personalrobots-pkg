@@ -242,7 +242,7 @@ getNodeFeaturesSeparateHist(SuperpixelBlobber &blobber) {
 
   int nextIndFeatMat = 
     calculateHistogramFeatures(histParams, 0, fmat);
-
+  
   /*
   // calculate whole-channel features
   CvScalar hMean = cvAvg(hPlane);
@@ -722,9 +722,15 @@ displayGraph(const IplImage* sourceImage,
 
   IplImage *temp = 
     cvCreateImage(cvGetSize(contourImage), IPL_DEPTH_8U, 3);
-  cvMerge(contourImage, contourImage, contourImage, NULL, temp);    
+  IplImage* contourCopy = 
+    cvCreateImage(cvGetSize(contourImage), IPL_DEPTH_8U, 1);
+  cvCopy(contourImage, contourCopy);
+  cvSet(contourCopy, cvScalar(0), contourCopy);
+  cvMerge(contourCopy, contourCopy, contourImage, NULL, temp);    
 
-  cvAdd(temp, imdisp, imdisp);
+  //  cvMerge(blankImage, blankImage, contourImage, NULL, temp);    
+  //  cvAdd(temp, imdisp, imdisp);
+  cvCopy(temp, imdisp, contourImage);
 
   cvNamedWindow("graph",0);
   int bnum = 0;
@@ -737,7 +743,7 @@ displayGraph(const IplImage* sourceImage,
       continue;
 
     blobStat* bstat = blobStats[ii];
-    cvCircle(imdisp, cvPoint(bstat->mx, bstat->my), 10, 
+    cvCircle(imdisp, cvPoint(bstat->mx, bstat->my), 2, 
 	     CV_RGB(255,0,0), 2);
     bnum++;
   }
@@ -786,6 +792,7 @@ displayGraph(const IplImage* sourceImage,
 
   cvReleaseImage(&imdisp);
   cvReleaseImage(&temp);
+  cvReleaseImage(&contourCopy);
 }
 
 /**

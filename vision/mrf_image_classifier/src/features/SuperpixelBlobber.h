@@ -12,11 +12,11 @@
 #include <ext/hash_map>
 
 #define SP_SIGMA 1.0
-#define SP_K 25
-#define SP_MIN_SIZE 25
+#define SP_K 100
+#define SP_MIN_SIZE 100
 
 /* image width is rescaled to this before finding superpixels */
-#define SUPERPIX_RESCALE_X 320
+#define SUPERPIX_RESCALE_X 160
 
 using namespace std;
 

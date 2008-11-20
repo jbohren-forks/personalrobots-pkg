@@ -89,7 +89,7 @@ public:
 
     cerr << "BEST " << bestObj << std::endl;
 
-    if (bestObj.compare("inf") == 0)
+    if (bestObj.compare("inf") == 0 || getenv("oIgnoreBest"))
       bestObjVal = HUGE_VAL;
     else {
       std::istringstream iss(bestObj);
@@ -218,9 +218,11 @@ public:
      @param segmented Output argument for segmented image
      @param labeling Output argument for labeling
      @param blobStats Output argument for blob statistics
+     @param edges Output argument for blob-blob edge list
    */
   void evaluate(const IplImage* image, IplImage* segmented, 
-		vector<int>& labeling, vector<blobStat>& blobStats);
+		vector<int>& labeling, vector<blobStat>& blobStats,
+		vector<std::pair<int,int> >& edges);
 
   /**
      @param segmented Segmented image

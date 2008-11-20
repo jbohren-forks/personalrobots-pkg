@@ -1,8 +1,8 @@
 #ifndef __FEAT_GRAPH_H__
 #define __FEAT_GRAPH_H__
 
-#define H_BINS 20
-#define S_BINS 20
+#define H_BINS 10
+#define S_BINS 10
 #define V_BINS 10
 #define THETA_BINS 10
 #define MAG_BINS 10
@@ -56,13 +56,6 @@ class FeatureGraphExtractor {
   void testBlobWeights();
 
   const IplImage* getContourImage();
-
-  /**
-     Returns a vector of blobs in which adjacent blobs 
-     with the same labels are merged.
-   */
-  void getMergedBlobs(const std::vector<int>& labeling,
-		      std::vector<blobStat>& blobStats);
 
   /*
   static int numNodeFeatures() { return H_BINS*S_BINS*V_BINS + 1; }

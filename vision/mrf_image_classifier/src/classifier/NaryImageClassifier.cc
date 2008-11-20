@@ -17,7 +17,7 @@ using namespace boost::lambda;
 
 using namespace std;
 
-#define N_TRAINING_THREADS 4
+#define N_TRAINING_THREADS 2
 
 class TrainingThreadSyncData {
 public:
@@ -637,10 +637,12 @@ evaluate(const IplImage* image, const IplImage* trueSegmentation,
   return evaluateErrors(image, trueSegmentation, errors);
 }
 
-// also returns vector of per-blob labels and per-blob statistics
+// also returns vector of per-blob labels and per-blob statistics (and edges)
 void NaryImageClassifier::
 evaluate(const IplImage* image, IplImage* segmented, 
-	 vector<int>& labeling, vector<blobStat>& blobStats) {
+	 vector<int>& labeling, 
+	 vector<blobStat>& blobStats,
+	 vector<std::pair<int,int> >& edges) {
 
   boost::timer totalTimer;
 
@@ -661,6 +663,7 @@ evaluate(const IplImage* image, IplImage* segmented,
 
   //  *blobStats = fgx.getBlobber()->getBlobStats();
   blobStats = fgx.getBlobber()->getBlobStatsCopy();
+  fg->getEdgeListCopy(edges);
 
   SegmentationLoader::
     writeBlobSegmentation(*fgx.getBlobber(), labeling, segmented);

@@ -27,15 +27,37 @@
 #include <dirent.h>
 #include <assert.h>
 
+/// @fixme: make sure the classifier evaluator uses the same image size
+#define IMAGE_WIDTH 160
+#define IMAGE_HEIGHT 120
+/*
+#define IMAGE_WIDTH 1024
+#define IMAGE_HEIGHT 768
+*/
+
+
+/// Per-pixel standard deviation of Gaussian image perturbations
+#define PERTURB_SIGMA 2.0
+
+/// This number of small peturbations of the original image are produced
+#define NUM_PETURBATIONS 4
+//#define NUM_PETURBATIONS 1
+#define EPOCHS HUGE_VAL
+#define NUM_ITERATIONS 1000
+
+
 /**
    
  **/
 int getObjectClasses(const string fname, ObjectSet& objset);
 
+void perturbImage(IplImage* image, IplImage* destImage, double sigma);
+
 void getImages(DIR* imageDir, 
 	       const string dirpath,
 	       vector<IplImage*>& images,
-	       vector<IplImage*>& segmentations);
+	       vector<IplImage*>& segmentations,
+	       vector<string>& fileNames);
 
 static IplImage* CurrSegmented = NULL;
 static ObjectSet Classes;
@@ -61,14 +83,14 @@ int main(int argc, char *argv[]) {
   assert(imageDir != NULL);
   vector<IplImage*> images;
   vector<IplImage*> segmentations;
-  getImages(imageDir, dirpath, images, segmentations);
+  vector<string> imageFileNames;
+  getImages(imageDir, dirpath, images, segmentations, imageFileNames);
 
   // gui stuff
   cvNamedWindow("original",0);
   cvNamedWindow("segmented",0);
   cvNamedWindow("true segmentation",0);
   cvNamedWindow("segmentation errors",0);
-  cvNamedWindow("true segmentation 2");
   cvSetMouseCallback("segmented", mouseCallback);
   cvSetMouseCallback("true segmentation", mouseCallback);
   cvResizeWindow("segmented", 600, 600);
@@ -78,10 +100,16 @@ int main(int argc, char *argv[]) {
   char sstartTime[1000], fname[1000], buf[1000];
   time_t thetime = time(NULL);
   struct tm* startTime = localtime(&thetime);
+
   strftime(sstartTime, sizeof(sstartTime), "%d_%m_%y_%T", startTime);
   snprintf(fname, sizeof(fname), "mweights-%s.dat", sstartTime);
   snprintf(buf, sizeof(buf), "ln -sf %s mweights-last.dat", fname);
   system(buf);
+
+  if (getenv("oOutputFile")) {
+    strcpy(fname, getenv("oOutputFile"));
+  }
+
   cout << "SAVE FILE " << fname << endl;
 
   // initialize classifier tree
@@ -120,9 +148,11 @@ int main(int argc, char *argv[]) {
     cvCreateImage(cvGetSize(images[0]), IPL_DEPTH_8U, 1);
 
   //debugging
-  maxClass = 4;
+  //  maxClass = 4;
 
-  while (1) {
+  int epochs = (getenv("oEpochs") ? atof(getenv("oEpochs")) : EPOCHS);
+
+  for (int epoch = 0; epoch < epochs; epoch++) {
     if (logger != NULL)
       logger->flush();
 
@@ -133,7 +163,8 @@ int main(int argc, char *argv[]) {
 	// evaluate classifier, get blob info
 	vector<int> labeling;
 	vector<blobStat> blobStats;
-	classifier.evaluate(images[ii], segmented, labeling, blobStats);
+	vector<std::pair<int,int> > edges;
+	classifier.evaluate(images[ii], segmented, labeling, blobStats, edges);
 	double pctCorr = 
 	  classifier.evaluateErrors(segmented, segmentations[ii], segmentErrors);
 
@@ -148,15 +179,14 @@ int main(int argc, char *argv[]) {
 				     images[ii], segmented);
 	LabelingViewer::viewLabeling("true segmentation", maxClass + 1, 
 				     images[ii], segmentations[ii]);
-	*/
+	*/	
+	IplImage* origImage = 
+	  cvLoadImage(imageFileNames[ii].c_str(), CV_LOAD_IMAGE_COLOR);
+
 	LabelingViewer::
 	  viewLabeling("segmented", maxClass + 1, 
-		       images[ii], segmented,
-		       Classes, labeling, blobStats);
-	LabelingViewer::
-	  viewLabeling("true segmentation", maxClass + 1, 
-		       images[ii], segmentations[ii]);
-
+		       origImage, segmented,
+		       Classes, labeling, blobStats, edges);
 	/*
 	LabelingViewer::
 	  imagesc("true segmentation 2", segmentations[ii]);
@@ -168,12 +198,27 @@ int main(int argc, char *argv[]) {
 	FeatureGraphExtractor<tFeatureMatrix> fgraph(images[ii]);
 	fgraph.displayGraph();
 
+	// display true segmentation
+	Blobber* blobber = fgraph.getBlobber();
+	vector<int> trueBlobLabels;
+	SegmentationLoader::loadBlobSegmentation(*blobber, 
+						 segmentations[ii], 
+						 trueBlobLabels);
+
+	LabelingViewer::
+	  viewLabeling("true segmentation", maxClass + 1, 
+		       origImage, segmentations[ii],
+		       Classes, trueBlobLabels, blobStats, edges);
+
+
+
 	//	cvWaitKey(10e3);
 	cvWaitKey();
+	cvReleaseImage(&origImage);
       }
     }
 
-    classifier.train(1000);
+    classifier.train(NUM_ITERATIONS);
     
     // save classifier
     ofstream file;
@@ -230,7 +275,8 @@ int getObjectClasses(const string fname, ObjectSet& objset) {
 void getImages(DIR* imageDir, 
 	       const string dirpath,
 	       vector<IplImage*>& images,
-	       vector<IplImage*>& segmentations) {
+	       vector<IplImage*>& segmentations,
+	       vector<string>& imageFileNames) {
 
   struct dirent *dent = readdir(imageDir);
 
@@ -251,10 +297,30 @@ void getImages(DIR* imageDir,
       IplImage *seg = SegmentationLoader::loadSegmentation(segPath);
       IplImage *image = cvLoadImage(imPath.c_str(), CV_LOAD_IMAGE_COLOR);
 
+      IplImage *segScaled = 
+	cvCreateImage(cvSize(IMAGE_WIDTH, IMAGE_HEIGHT), IPL_DEPTH_32S, 1);
+      IplImage *imageScaled = 
+	cvCreateImage(cvSize(IMAGE_WIDTH, IMAGE_HEIGHT), IPL_DEPTH_8U, 3);
+
+      cvResize(seg, segScaled, CV_INTER_NN);
+      cvResize(image, imageScaled, CV_INTER_LINEAR);
+
       cout << "I " << image->depth << endl;
 
-      images.push_back(image);
-      segmentations.push_back(seg);
+      for (int ii = 0; ii < NUM_PETURBATIONS; ii++) {
+	IplImage *imrand = 
+	  cvCreateImage(cvSize(IMAGE_WIDTH, IMAGE_HEIGHT), IPL_DEPTH_8U, 3);
+      
+	perturbImage(imageScaled, imrand, PERTURB_SIGMA);
+
+	images.push_back(imrand);
+	segmentations.push_back(segScaled);
+	imageFileNames.push_back(imPath);
+      }
+
+      cvReleaseImage(&seg);
+      cvReleaseImage(&image);
+      cvReleaseImage(&imageScaled);
 
       cout << "L " << imPath << endl;
     } else {
@@ -262,5 +328,34 @@ void getImages(DIR* imageDir,
     }
   }
 
-  getImages(imageDir, dirpath, images, segmentations);
+  getImages(imageDir, dirpath, images, segmentations, imageFileNames);
+}
+
+/// Add Gaussian random noise to an image
+void perturbImage(IplImage* image, IplImage* destImage, double sigma) {
+  static CvRNG rng;
+  static bool initialized = false;
+  //  const int seed = 0;
+
+  if (!initialized) {
+    rng = CvRNG(time(NULL));
+    initialized = true;
+  }
+
+  IplImage* randim[3];
+  for (int chan = 0; chan < 3; chan++) {
+    randim[chan] = cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 1);
+    cvRandArr(&rng, randim[chan], CV_RAND_NORMAL, 
+	      cvRealScalar(0), cvRealScalar(sigma));
+  }
+
+  IplImage *rand3chan = 
+    cvCreateImage(cvGetSize(image), IPL_DEPTH_8U, 3);
+  cvMerge(randim[0], randim[1], randim[2], NULL, rand3chan);
+
+  cvAdd(image, rand3chan, destImage);
+
+  for (int chan = 0; chan < 3; chan++)
+    cvReleaseImage(&randim[chan]);
+  cvReleaseImage(&rand3chan);
 }
