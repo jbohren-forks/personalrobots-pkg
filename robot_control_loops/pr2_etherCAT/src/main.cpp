@@ -212,7 +212,7 @@ void *controlLoop(void *)
 
   // Switch to hard real-time
 #if defined(__XENO__)
-  pthread_set_mode_np(0, PTHREAD_PRIMARY/*|PTHREAD_WARNSW*/);
+  pthread_set_mode_np(0, PTHREAD_PRIMARY|PTHREAD_WARNSW);
 #endif
 
   struct timespec tick;
@@ -380,7 +380,7 @@ int main(int argc, char *argv[])
   signal(SIGHUP, quitRequested);
 
   // Catch if we fall back to secondary mode
-  //signal(SIGXCPU, warnOnSecondary);
+  signal(SIGXCPU, warnOnSecondary);
 
   // Set up thread scheduler for realtime
   pthread_attr_init(&rtThreadAttr);
