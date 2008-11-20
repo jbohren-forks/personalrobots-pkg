@@ -206,10 +206,10 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     }
 
     //we want to check if this cell definitely contains an obstacle
-    if(ma_.isDefinitelyBlocked(cell_x, cell_y)){
-      traj.cost_ = -1.0;
-      return;
-    }
+    //if(ma_.isDefinitelyBlocked(cell_x, cell_y)){
+      //traj.cost_ = -1.0;
+      //return;
+    //}
 
     //we need to check if we need to lay down the footprint of the robot
     if(ma_.isCircumscribedCell(cell_x, cell_y)){
