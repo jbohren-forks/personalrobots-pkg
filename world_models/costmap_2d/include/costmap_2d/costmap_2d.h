@@ -169,7 +169,7 @@ namespace costmap_2d {
     CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data, 
 	      double resolution, unsigned char threshold, 
 	      double maxZ = 0.5,  double zLB = 0.10, double zUB = 0.15,
-	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1);
+	      double inflationRadius = 0, double circumscribedRadius = 0, double inscribedRadius = 0, double weight = 1, double obstacleRange = 10.0, double raytraceRange = 10.0);
   
     /**
      * @brief Destructor.
@@ -272,6 +272,10 @@ namespace costmap_2d {
     const unsigned int circumscribedRadius_; /**< The radius for the circumscribed radius, in cells */
     const unsigned int inscribedRadius_; /**< The radius for the inscribed radius, in cells */
     const double weight_;  /**< The weighting to apply to a normalized cost value */
+
+    //used squared distance because square root computations are expensive
+    double sq_obstacle_range_; /** The range out to which we will consider laser hitpoints **/
+    double sq_raytrace_range_; /** The range out to which we will raytrace **/
 
     unsigned char* staticData_; /**< initial static map */
     bool* xy_markers_; /**< Records time remaining in ticks before expiration of the observation */

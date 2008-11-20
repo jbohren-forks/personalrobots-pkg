@@ -92,11 +92,11 @@ namespace costmap_2d {
       // Get the current one, and check if still alive. if so
       Observation& obs = *it;
       if((last_updated_ - obs.cloud_->header.stamp) > keep_alive_){
-	delete obs.cloud_;
-	buffer_.erase(it);
+        delete obs.cloud_;
+        buffer_.erase(it);
       }
       else 
-	break;
+        break;
     }
 
     // Otherwise just store it and indicate success
@@ -113,13 +113,15 @@ namespace costmap_2d {
 
   CostMap2D::CostMap2D(unsigned int width, unsigned int height, const std::vector<unsigned char>& data,
       double resolution, unsigned char threshold, double maxZ, double zLB, double zUB,
-      double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight)
+      double inflationRadius,	double circumscribedRadius, double inscribedRadius, double weight, 
+      double  obstacleRange, double raytraceRange)
     : ObstacleMapAccessor(0, 0, width, height, resolution),
-      maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
+    maxZ_(maxZ), zLB_(zLB), zUB_(zUB),
     inflationRadius_(toCellDistance(inflationRadius, (unsigned int) ceil(width * resolution), resolution)),
     circumscribedRadius_(toCellDistance(circumscribedRadius, inflationRadius_, resolution)),
     inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
-      weight_(std::max(0.0, std::min(weight, 1.0))),
+    weight_(std::max(0.0, std::min(weight, 1.0))), sq_obstacle_range_(obstacleRange * obstacleRange),
+    sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
     staticData_(NULL), xy_markers_(NULL)
   {
     if(weight != weight_){
@@ -238,21 +240,30 @@ namespace costmap_2d {
       const Observation& obs = *it;
       const std_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-	// Filter out points too high (can use for free space propagation?)
-	if(cloud.pts[i].z > maxZ_)
-	  continue;
+        // Filter out points too high (can use for free space propagation?)
+        if(cloud.pts[i].z > maxZ_)
+          continue;
 
-	// Queue cell for cost propagation
-	unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+        //compute the squared distance from the hitpoint to the pointcloud's origin
+        double sq_dist = (cloud.pts[i].x - obs.origin_.x) * (cloud.pts[i].x - obs.origin_.x) 
+          + (cloud.pts[i].y - obs.origin_.y) * (cloud.pts[i].y - obs.origin_.y) 
+          + (cloud.pts[i].z - obs.origin_.z) * (cloud.pts[i].z - obs.origin_.z);
 
-	// If we have already processed the cell for this point, skip it
-	if(marked(ind))
-	  continue;
+        //Filter out points that are outside of the max range we'll consider
+        if(sq_dist >= sq_obstacle_range_)
+          continue;
 
-	// Buffer for cost propagation. This will mark the cell
-	unsigned int mx, my;
-	IND_MC(ind, mx, my);
-	enqueue(ind, mx, my);
+        // Queue cell for cost propagation
+        unsigned int ind = WC_IND(cloud.pts[i].x, cloud.pts[i].y);
+
+        // If we have already processed the cell for this point, skip it
+        if(marked(ind))
+          continue;
+
+        // Buffer for cost propagation. This will mark the cell
+        unsigned int mx, my;
+        IND_MC(ind, mx, my);
+        enqueue(ind, mx, my);
       }
     }
 
@@ -265,14 +276,14 @@ namespace costmap_2d {
     for(std::vector<Observation>::const_iterator it = observations.begin(); it!= observations.end(); ++it){
       const Observation& obs = *it;
       if(!in_projection_range(obs.origin_.z))
-	continue;
+        continue;
 
       const std_msgs::PointCloud& cloud = *(obs.cloud_);
       for(size_t i = 0; i < cloud.get_pts_size(); i++) {
-	if(!in_projection_range(cloud.pts[i].z))
-	  continue;
+        if(!in_projection_range(cloud.pts[i].z))
+          continue;
 
-	updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
+        updateFreeSpace(obs.origin_, cloud.pts[i].x, cloud.pts[i].y);
       }
     }
   }
@@ -373,6 +384,11 @@ namespace costmap_2d {
     unsigned int x, y, x1, y1;
     WC_MC(origin.x, origin.y, x, y);
     WC_MC(wx, wy, x1, y1);
+
+    //for determining where we should stop raytracing
+    unsigned int startx = x;
+    unsigned int starty = y;
+
     unsigned int deltax = abs(x1 - x);        // The difference between the x's
     unsigned int deltay = abs(y1 - y);        // The difference between the y's
 
@@ -436,6 +452,12 @@ namespace costmap_2d {
 
       if(!marked(index))
         costData_[index] = 0;
+
+      //we want to break out of the loop if we have raytraced far enough
+      double sq_cell_dist = (x - startx) * (x - startx) + (y - starty) * (y - starty);
+      if(sq_cell_dist >= sq_raytrace_range_)
+        break;
+
     }
   }
 
@@ -473,9 +495,9 @@ namespace costmap_2d {
     // Now update all the cells from the cost map
     for(unsigned int x = 0; x < width_; x++){
       for (unsigned int y = 0; y < height_; y++){
-	unsigned int ind = x + y * width_;
-	unsigned int global_ind = mx_0_ + x + (my_0_ + y) * costMap_.getWidth();
-	costData_[ind] = costMap_[global_ind];
+        unsigned int ind = x + y * width_;
+        unsigned int global_ind = mx_0_ + x + (my_0_ + y) * costMap_.getWidth();
+        costData_[ind] = costMap_[global_ind];
       }
     }
   }

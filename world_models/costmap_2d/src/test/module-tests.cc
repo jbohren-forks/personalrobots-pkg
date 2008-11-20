@@ -85,7 +85,7 @@ TEST(costmap, test15){
  */
 TEST(costmap, test14){
   CostMap2D map(100, 100, EMPTY_100_BY_100, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,
-		ROBOT_RADIUS * 10.5, ROBOT_RADIUS * 8.0, ROBOT_RADIUS * 5.0, 0.5);
+		ROBOT_RADIUS * 10.5, ROBOT_RADIUS * 8.0, ROBOT_RADIUS * 5.0, 0.5, 100.0, 100.0);
 
   // Verify that the circumscribed cost lower bound is as expected: based on the cost function.
   unsigned char c = (unsigned char) ((CostMap2D::INSCRIBED_INFLATED_OBSTACLE -1) * 0.5/9);
@@ -515,7 +515,7 @@ TEST(costmap, test10){
  * Test for ray tracing free space
  */
 TEST(costmap, test11){
-  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS);
+  CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
 
   // The initial position will be <0,0> by default. So if we add an obstacle at 9,9, we would expect cells
   // <0, 0> thru <7, 7> to be free.
