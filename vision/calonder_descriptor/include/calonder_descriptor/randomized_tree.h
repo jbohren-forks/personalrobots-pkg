@@ -79,8 +79,8 @@ private:
   void addExample(int class_id, uchar* patch_data);
   void finalize(size_t reduced_num_dim);
   int getIndex(uchar* patch_data) const;
-  inline float* getPosteriorByIndex(int index) { return posteriors_[index]; }
-  //const float* getPosteriorByIndex(int index) const;
+  inline float* getPosteriorByIndex(int index); // { return posteriors_[index]; }
+  inline const float* getPosteriorByIndex(int index) const;
   void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);  
 };
 
@@ -89,12 +89,17 @@ inline uchar* getData(IplImage* image)
   return reinterpret_cast<uchar*>(image->imageData);
 }
 
-/*
+
 inline float* RandomizedTree::getPosteriorByIndex(int index)
 {
-  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosteriorByIndex(index));
+  return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosteriorByIndex(index)); 
 }
-*/
+
+inline const float* RandomizedTree::getPosteriorByIndex(int index) const
+{
+  return posteriors_[index]; 
+}
+
 
 template < typename PointT >
 cv::WImageView1_b extractPatch(cv::WImageView1_b const& image, PointT pt, int patch_sz = RandomizedTree::PATCH_SIZE)

@@ -58,6 +58,8 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
   uchar* patch_data;
   if (patch->widthStep != RandomizedTree::PATCH_SIZE) {
+    //printf("[INFO] patch is padded, data will be copied (%i/%i).\n", 
+    //       patch->widthStep, RandomizedTree::PATCH_SIZE);
     uchar* data = getData(patch);
     patch_data = buffer;
     for (int i = 0; i < RandomizedTree::PATCH_SIZE; ++i) {
@@ -72,19 +74,20 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     
   memset((void*)sig, 0, classes_ * sizeof(float));
   std::vector<RandomizedTree>::iterator tree_it;
-  
+ 
   #if 1 // inlined native C for summing up
+
     // get posteriors
     float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
-    float **pp = posteriors;
-    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
-      *posteriors = tree_it->getPosterior(patch_data);       
+    float **pp = posteriors;    
+    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++) {
+      *pp = tree_it->getPosterior(patch_data);       
+    }
     
     // sum them up
-    posteriors = pp;
-    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, posteriors++)
-      add(classes_, sig, *posteriors, sig);
-    
+    pp = posteriors;
+    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+      add(classes_, sig, *pp, sig);
     delete [] posteriors;
     posteriors = NULL;
     
@@ -95,6 +98,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
       sig[i] *= normalizer;
 
   #else  // CBLAS for summing up
+
      for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
        const float* posterior = tree_it->getPosterior(patch_data);
        cblas_saxpy(classes_, 1., posterior, 1, sig, 1);    
