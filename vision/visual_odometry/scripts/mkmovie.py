@@ -88,22 +88,26 @@ for topic, msg in rosrecord.logplayer(filename):
       w,h = imgL.size
       comp = Image.new("RGB", (w*2,h*2))
 
-      for i,vo in enumerate(vos):
-        af = SparseStereoFrame(imgL, imgR)
-        vo.handle_frame(af)
-        if 1:
-          leftframe = visualize.render_source_with_keypoints(vo, af)
-          comp.paste(leftframe, (w*i,0))
-          leftframe = visualize.render_text(vo, af)
-          comp.paste(leftframe, (w*i,h))
-        else:
-          if af.id == 0:
-            master_frame = af
+      af = SparseStereoFrame(imgL, imgR)
+      if 0:
+        for i,vo in enumerate(vos):
+          vo.handle_frame(af)
+          if 1:
+            leftframe = visualize.render_source_with_keypoints(vo, af)
+            comp.paste(leftframe, (w*i,0))
+            leftframe = visualize.render_text(vo, af)
+            comp.paste(leftframe, (w*i,h))
           else:
-            print "id", af.id, "inliers:", vo.inl, "proximity:", vo.proximity(master_frame, af)
-          comp = visualize.render_source_with_keypoints_stats(vo, af)
+            if af.id == 0:
+              master_frame = af
+            else:
+              print "id", af.id, "inliers:", vo.inl, "proximity:", vo.proximity(master_frame, af)
+            comp = visualize.render_source_with_keypoints_stats(vo, af)
+            comp.save("/tmp/im%04d.tiff" % (framecounter - start))
+      else:
+        vo = vos[0]
+        vo.handle_frame(af)
 
-      #comp.save("/tmp/im%04d.tiff" % (framecounter - start))
       visualize.viz(vo, af)
 
     framecounter += 1

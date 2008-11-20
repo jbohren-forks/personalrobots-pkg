@@ -111,7 +111,8 @@ class Pose:
     return sqrt(x * x + y * y + z * z)
 
   def assert_sane(self):
-    print 
+    rot = self.M[0:3,0:3]
+    assert numpy.alltrue(numpy.abs(((rot * rot.T) - numpy.identity(3))) < 1.0e-5)
 
 import fast
 
@@ -399,6 +400,7 @@ class VisualOdometer:
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
       frame.inl = 999
+    self.pose.assert_sane()
 
     self.pose = frame.pose
     self.prev_frame = frame
