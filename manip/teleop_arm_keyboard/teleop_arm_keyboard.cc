@@ -73,9 +73,6 @@
 #include <pr2_mechanism_controllers/JointPosCmd.h>
 #include <std_msgs/Float64.h>
 
-// For transform support
-#include <rosTF/rosTF.h>
-
 #define COMMAND_TIMEOUT_SEC 0.2
 
 /// @todo Remove this giant enum, which was stoled from pr2Core/pr2Core.h.
@@ -132,7 +129,7 @@ class TArmK_Node : public ros::node
     std_msgs::Float64 rGripperCmd;
 
   public:
-    TArmK_Node() : ros::node("tarmk"), tf(*this, true)
+    TArmK_Node() : ros::node("tarmk")
   {
     // cmd_armconfig should probably be initialised
     // with the current joint angles of the arm rather
@@ -230,48 +227,12 @@ class TArmK_Node : public ros::node
 
     }
 
-    void printCurrentEndEffectorWorldCoord() {
-      libTF::TFPose aPose;
-      aPose.x = 0.0;
-      aPose.y = 0.0;
-      aPose.z = 0.0;
-      aPose.roll = 0;
-      aPose.pitch = 0;
-      aPose.yaw = 0;
-      aPose.time = 0;
-      aPose.frame = "right_wrist_roll";
-
-      libTF::TFPose inOdomFrame = tf.transformPose("FRAMEID_ODOM", aPose);
-
-      std::cout << "In odom frame x " << inOdomFrame.x << std::endl;
-      std::cout << "In odom frame y " << inOdomFrame.y << std::endl;
-      std::cout << "In odom frame z " << inOdomFrame.z << std::endl;
-    }
-
-    void printCurrentEndEffectorShoulderCoord() {
-      libTF::TFPose aPose;
-      aPose.x = .64;
-      aPose.y = -.37;
-      aPose.z = 1.76;
-      aPose.roll = 0;
-      aPose.pitch = 0;
-      aPose.yaw = 0;
-      aPose.time = 0;
-      aPose.frame = "FRAMEID_ODOM";
-
-      libTF::TFPose inOdomFrame = tf.transformPose("right_wrist_roll", aPose);
-
-      std::cout << "In shoulder frame x " << inOdomFrame.x << std::endl;
-      std::cout << "In shoulder frame y " << inOdomFrame.y << std::endl;
-      std::cout << "In shoulder frame z " << inOdomFrame.z << std::endl;
-    }
 
     void keyboardLoop();
     void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
     void openGripper(PR2_JOINT_ID jointID);
     void closeGripper(PR2_JOINT_ID jointID);
 
-    rosTFClient tf;
 };
 
 TArmK_Node* tarmk;
@@ -460,12 +421,6 @@ TArmK_Node::keyboardLoop()
         break;
       case 'q':
         printCurrentJointValues();
-        break;
-      case 'k':
-        printCurrentEndEffectorWorldCoord();
-        break;
-      case 'j':
-        printCurrentEndEffectorShoulderCoord();
         break;
       default:
         break;

@@ -7,5 +7,4 @@ individual joints of the PR2Arm from keyboard input</description>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="pr2_mechanism_controllers"/>
-  <depend package="rosTF"/>
 </package>
