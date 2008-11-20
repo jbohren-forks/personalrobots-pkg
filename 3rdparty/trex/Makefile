@@ -21,14 +21,14 @@ includes: trex PlanWorks PLASMA
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-@cd PLASMA && $(SVN_CMDLINE) up -r 5117 ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5141 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	-@cd PLASMA && $(SVN_CMDLINE) up -r 5141 ;
 
 #install the patch
-patch-PLASMA: PLASMA
-	$(MAKE) PLASMA 
-	patch -f -p0 < PLASMA_PATCH.diff
-	touch patch-PLASMA 
+#patch-PLASMA: PLASMA
+#	$(MAKE) PLASMA 
+#	patch -f -p0 < PLASMA_PATCH.diff
+#	touch patch-PLASMA 
 
 # GET PlanWorks
 PlanWorks:
@@ -36,7 +36,7 @@ PlanWorks:
 	-@cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
 
 # Get TREX
-trex: patch-PLASMA
+trex: PLASMA
 	@if [ ! -d TREX ]; then $(SVN_CMDLINE) co -r 35 http://trex-autonomy.googlecode.com/svn/trunk TREX; fi ;
 	@-cd TREX && $(SVN_CMDLINE) up -r 35 ;
 	@if [ ! -d logs ]; then mkdir logs; fi
