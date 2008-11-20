@@ -299,9 +299,9 @@ public:
         
         for (int i = 0; i < stcam->stIm->numPts; i++)
         {
-          cloud_.pts[i].x = stcam->stIm->imPts[3*i + 0];
-          cloud_.pts[i].y = stcam->stIm->imPts[3*i + 1];
-          cloud_.pts[i].z = stcam->stIm->imPts[3*i + 2];
+          cloud_.pts[i].y = -stcam->stIm->imPts[3*i + 0];
+          cloud_.pts[i].z = -stcam->stIm->imPts[3*i + 1];
+          cloud_.pts[i].x = stcam->stIm->imPts[3*i + 2];
           //          printf("(%d/%d) %f %f %f\n", i, stcam->stIm->numPts, cloud_.pts[i].x, cloud_.pts[i].y, cloud_.pts[i].z);
         }
 
