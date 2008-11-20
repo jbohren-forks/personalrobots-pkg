@@ -134,8 +134,6 @@ class FeatureDetector:
           if len(features) > target_points:
             lo = self.thresh
 
-    print "thresh %8.3f -> %d" % (self.thresh, len(features))
-
     # Try to be a bit adaptive for next time
     if len(features) > (target_points * 1.1):
         self.thresh *= 1.05
