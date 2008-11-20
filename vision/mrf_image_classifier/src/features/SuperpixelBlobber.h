@@ -12,8 +12,8 @@
 #include <ext/hash_map>
 
 #define SP_SIGMA 1.0
-#define SP_K 100
-#define SP_MIN_SIZE 100
+#define SP_K 20
+#define SP_MIN_SIZE 20
 
 /* image width is rescaled to this before finding superpixels */
 #define SUPERPIX_RESCALE_X 160
