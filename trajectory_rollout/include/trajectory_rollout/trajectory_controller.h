@@ -127,6 +127,9 @@ class TrajectoryController {
     bool stuck_left, stuck_right;
     bool rotating_left, rotating_right;
 
+    bool stuck_left_strafe, stuck_right_strafe;
+    bool strafe_right, strafe_left;
+
     double goal_x_,goal_y_;
 
   private:

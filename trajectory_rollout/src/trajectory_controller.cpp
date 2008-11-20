@@ -48,8 +48,13 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
   //the robot is not stuck to begin with
   stuck_left = false;
   stuck_right = false;
+  stuck_left_strafe = false;
+  stuck_right_strafe = false;
   rotating_left = false;
   rotating_right = false;
+  strafe_left = false;
+  strafe_right = false;
+
 }
 
 //update what map cells are considered path based on the global_plan
@@ -410,25 +415,22 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
       if(ma_.WC_MC(x_r, y_r, cell_x, cell_y)){
         double ahead_gdist = map_(cell_x, cell_y).goal_dist;
         if(ahead_gdist < heading_dist){
-          swap = best_traj;
-          best_traj = comp_traj;
-          comp_traj = swap;
+          //if we haven't already tried strafing left since we've moved forward
+          if(vy_samp > 0 && !stuck_left){
+            swap = best_traj;
+            best_traj = comp_traj;
+            comp_traj = swap;
+            heading_dist = ahead_gdist;
+          }
+          //if we haven't already tried rotating right since we've moved forward
+          else if(vy_samp < 0 && !stuck_right){
+            swap = best_traj;
+            best_traj = comp_traj;
+            comp_traj = swap;
+            heading_dist = ahead_gdist;
+          }
         }
       }
-    }
-
-    vtheta_samp = min_vel_theta;
-    //next sample all theta trajectories
-    for(int j = 0; j < samples_per_dim_ - 1; ++j){
-      generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
-
-      //if the new trajectory is better... let's take it
-      if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-        swap = best_traj;
-        best_traj = comp_traj;
-        comp_traj = swap;
-      }
-      vtheta_samp += dvtheta;
     }
     vy_samp += dvy;
   }
@@ -438,14 +440,24 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     if(best_traj->xv_ > 0){
       rotating_left = false;
       rotating_right = false;
+      strafe_left = false;
+      strafe_right = false;
       stuck_left = false;
       stuck_right = false;
+      stuck_left_strafe = false;
+      stuck_right_strafe = false;
     }
     else if(best_traj->yv_ > 0){
-      rotating_left = false;
-      rotating_right = false;
-      stuck_left = false;
-      stuck_right = false;
+      if(strafe_right){
+        stuck_right_strafe = true;
+      }
+      strafe_left = true;
+    }
+    else if(best_traj->yv_ < 0){
+      if(strafe_left){
+        stuck_left_strafe = true;
+      }
+      strafe_right = true;
     }
     else if(best_traj->thetav_ < 0){
       if(rotating_right){
@@ -461,8 +473,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     return *best_traj;
   }
-
-
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
@@ -550,7 +560,6 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
 double TrajectoryController::pointCost(int x, int y){
   //if the cell is in an obstacle the path is invalid
   if(ma_.getCost(x, y) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE && !map_(x, y).within_robot){
-    printf("Footprint in collision at <%d, %d>\n", x, y);
     return -1;
   }
 
