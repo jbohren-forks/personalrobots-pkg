@@ -157,10 +157,10 @@ namespace costmap_2d {
      * @param height height of map [cells]
      * @param data row-major obstacle data, each value indicates a cost
      * @param resolution resolution of map [m/cell]
-     * @param window_length how long to hold onto obstacle data [sec]
      * @param threshold The cost threshold where a cell is considered an obstacle
      * @param maxZ gives the cut-off for points in 3D space
-     * @param freeSpaceProjectionHeight gives the upper bound for evaluating points in z for projecting free space
+     * @param zLB lower bound for evaluating points in z for projecting free space
+     * @param zUB upper bound for evaluating points in z for projecting free space
      * @param inflationRadius the radius used to bound inflation - limit of cost propagation
      * @param circumscribedRadius the radius used to indicate objects in the circumscribed circle around the robot
      * @param inscribedRadius the radius used to indicate objects in the inscribed circle around the robot
