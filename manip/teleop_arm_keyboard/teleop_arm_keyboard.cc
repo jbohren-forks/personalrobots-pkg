@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-// Author: Advait Jain
+// Author: Advait Jain, John Hsu
 
 /**
 
@@ -75,52 +75,35 @@
 
 #define COMMAND_TIMEOUT_SEC 0.2
 
+#define LINKL0 "left_shoulder_pan_joint"
+#define LINKL1 "left_shoulder_lift_joint"
+#define LINKL2 "left_upper_arm_roll_joint"
+#define LINKL3 "left_elbow_flex_joint"
+#define LINKL4 "left_forearm_roll_joint"
+#define LINKL5 "left_wrist_flex_joint"
+#define LINKL6 "left_wrist_roll_joint"
+#define LINKL7 "left_gripper_joint"
+#define LINKR0 "right_shoulder_pan_joint"
+#define LINKR1 "right_shoulder_lift_joint"
+#define LINKR2 "right_upper_arm_roll_joint"
+#define LINKR3 "right_elbow_flex_joint"
+#define LINKR4 "right_forearm_roll_joint"
+#define LINKR5 "right_wrist_flex_joint"
+#define LINKR6 "right_wrist_roll_joint"
+#define LINKR7 "right_gripper_joint"
+
+#define LEFT_ARM_COMMAND_TOPIC "left_arm_commands"
+#define RIGHT_ARM_COMMAND_TOPIC "right_arm_commands"
+#define LEFT_GRIPPER_COMMAND_TOPIC "gripper_left_controller/set_command"
+#define RIGHT_GRIPPER_COMMAND_TOPIC "gripper_right_controller/set_command"
+#define JOINT_STEP_SIZE   5*M_PI/180
+#define GRIPPER_STEP_SIZE 1*M_PI/180
+
+
 /// @todo Remove this giant enum, which was stoled from pr2Core/pr2Core.h.
 /// It can be replaced by some simpler indexing scheme.
-enum PR2_JOINT_ID
-{
-  CASTER_FL_STEER   , // 0
-  CASTER_FL_DRIVE_L , // 1 
-  CASTER_FL_DRIVE_R , // 2
-  CASTER_FR_STEER   , // 3
-  CASTER_FR_DRIVE_L , // 4
-  CASTER_FR_DRIVE_R , // 5
-  CASTER_RL_STEER   , // 6
-  CASTER_RL_DRIVE_L , // 7 
-  CASTER_RL_DRIVE_R , // 8
-  CASTER_RR_STEER   , // 9 
-  CASTER_RR_DRIVE_L , // 10
-  CASTER_RR_DRIVE_R , // 11
-  SPINE_ELEVATOR    ,
-  ARM_L_PAN         , 
-  ARM_L_SHOULDER_PITCH, 
-  ARM_L_SHOULDER_ROLL,
-  ARM_L_ELBOW_PITCH , 
-  ARM_L_ELBOW_ROLL  ,
-  ARM_L_WRIST_PITCH , 
-  ARM_L_WRIST_ROLL  ,
-  ARM_L_GRIPPER_GAP ,  // added 20080802 by john
-  ARM_R_PAN         , 
-  ARM_R_SHOULDER_PITCH, 
-  ARM_R_SHOULDER_ROLL,
-  ARM_R_ELBOW_PITCH , 
-  ARM_R_ELBOW_ROLL  ,
-  ARM_R_WRIST_PITCH , 
-  ARM_R_WRIST_ROLL  ,
-  ARM_R_GRIPPER_GAP ,  // added 20080802 by john
-  HEAD_YAW          , 
-  HEAD_PITCH        ,
-  HEAD_LASER_PITCH  ,
-  HEAD_PTZ_L_PAN    , 
-  HEAD_PTZ_L_TILT   ,
-  HEAD_PTZ_R_PAN    , 
-  HEAD_PTZ_R_TILT   ,
-  BASE_6DOF,
-  PR2_WORLD,
-  MAX_JOINTS   
-};
 
-class TArmK_Node : public ros::node
+class TeleopArmKeyboardNode : public ros::node
 {
   private:
     pr2_mechanism_controllers::JointPosCmd lArmCmd;
@@ -129,77 +112,86 @@ class TArmK_Node : public ros::node
     std_msgs::Float64 rGripperCmd;
 
   public:
-    TArmK_Node() : ros::node("tarmk")
-  {
-    // cmd_armconfig should probably be initialised
-    // with the current joint angles of the arm rather
-    // than zeros.
-    this->lArmCmd.set_names_size(7);
-    this->rArmCmd.set_names_size(7);
-    this->lArmCmd.set_positions_size(7);
-    this->rArmCmd.set_positions_size(7);
-    this->lArmCmd.set_margins_size(7);
-    this->rArmCmd.set_margins_size(7);
+    double jointCmdStep;
+    double gripperStep;
+    // constructor
+    TeleopArmKeyboardNode() : ros::node("teleop_arm_keyboard_node")
+    {
 
-    this->lArmCmd.names[0] = "left_shoulder_pan_joint";
-    this->lArmCmd.names[1] = "left_shoulder_pitch_joint";
-    this->lArmCmd.names[2] = "left_upper_arm_roll_joint";
-    this->lArmCmd.names[3] = "left_elbow_flex_joint";
-    this->lArmCmd.names[4] = "left_forearm_roll_joint";
-    this->lArmCmd.names[5] = "left_wrist_flex_joint";
-    this->lArmCmd.names[6] = "left_wrist_roll_joint";
+      // initialize step size
+      this->jointCmdStep = JOINT_STEP_SIZE;
+      this->gripperStep  = GRIPPER_STEP_SIZE;
 
-    this->lArmCmd.positions[0] = 0;
-    this->lArmCmd.positions[1] = 0;
-    this->lArmCmd.positions[2] = 0;
-    this->lArmCmd.positions[3] = 0;
-    this->lArmCmd.positions[4] = 0;
-    this->lArmCmd.positions[5] = 0;
-    this->lArmCmd.positions[6] = 0;
+      // cmd_armconfig should probably be initialised
+      // with the current joint angles of the arm rather
+      // than zeros.
+      this->lArmCmd.set_names_size(7);
+      this->rArmCmd.set_names_size(7);
+      this->lArmCmd.set_positions_size(7);
+      this->rArmCmd.set_positions_size(7);
+      this->lArmCmd.set_margins_size(7);
+      this->rArmCmd.set_margins_size(7);
 
-    this->lArmCmd.margins[0] = 0;
-    this->lArmCmd.margins[1] = 0;
-    this->lArmCmd.margins[2] = 0;
-    this->lArmCmd.margins[3] = 0;
-    this->lArmCmd.margins[4] = 0;
-    this->lArmCmd.margins[5] = 0;
-    this->lArmCmd.margins[6] = 0;
+      this->lArmCmd.names[0] = LINKL0;
+      this->lArmCmd.names[1] = LINKL1;
+      this->lArmCmd.names[2] = LINKL2;
+      this->lArmCmd.names[3] = LINKL3;
+      this->lArmCmd.names[4] = LINKL4;
+      this->lArmCmd.names[5] = LINKL5;
+      this->lArmCmd.names[6] = LINKL6;
 
-    this->rArmCmd.names[0] = "right_shoulder_pan_joint";
-    this->rArmCmd.names[1] = "right_shoulder_pitch_joint";
-    this->rArmCmd.names[2] = "right_upper_arm_roll_joint";
-    this->rArmCmd.names[3] = "right_elbow_flex_joint";
-    this->rArmCmd.names[4] = "right_forearm_roll_joint";
-    this->rArmCmd.names[5] = "right_wrist_flex_joint";
-    this->rArmCmd.names[6] = "right_wrist_roll_joint";
+      this->lArmCmd.positions[0] = 0;
+      this->lArmCmd.positions[1] = 0;
+      this->lArmCmd.positions[2] = 0;
+      this->lArmCmd.positions[3] = 0;
+      this->lArmCmd.positions[4] = 0;
+      this->lArmCmd.positions[5] = 0;
+      this->lArmCmd.positions[6] = 0;
 
-    this->rArmCmd.positions[0] = 0;
-    this->rArmCmd.positions[1] = 0;
-    this->rArmCmd.positions[2] = 0;
-    this->rArmCmd.positions[3] = 0;
-    this->rArmCmd.positions[4] = 0;
-    this->rArmCmd.positions[5] = 0;
-    this->rArmCmd.positions[6] = 0;
+      this->lArmCmd.margins[0] = 0;
+      this->lArmCmd.margins[1] = 0;
+      this->lArmCmd.margins[2] = 0;
+      this->lArmCmd.margins[3] = 0;
+      this->lArmCmd.margins[4] = 0;
+      this->lArmCmd.margins[5] = 0;
+      this->lArmCmd.margins[6] = 0;
 
-    this->rArmCmd.margins[0] = 0;
-    this->rArmCmd.margins[1] = 0;
-    this->rArmCmd.margins[2] = 0;
-    this->rArmCmd.margins[3] = 0;
-    this->rArmCmd.margins[4] = 0;
-    this->rArmCmd.margins[5] = 0;
-    this->rArmCmd.margins[6] = 0;
+      this->rArmCmd.names[0] = LINKR0;
+      this->rArmCmd.names[1] = LINKR1;
+      this->rArmCmd.names[2] = LINKR2;
+      this->rArmCmd.names[3] = LINKR3;
+      this->rArmCmd.names[4] = LINKR4;
+      this->rArmCmd.names[5] = LINKR5;
+      this->rArmCmd.names[6] = LINKR6;
 
-    advertise<pr2_mechanism_controllers::JointPosCmd>("left_arm_commands");
-    advertise<pr2_mechanism_controllers::JointPosCmd>("right_arm_commands");
-    advertise<std_msgs::Float64>("gripper_left_controller/set_command");
-    advertise<std_msgs::Float64>("gripper_right_controller/set_command");
+      this->rArmCmd.positions[0] = 0;
+      this->rArmCmd.positions[1] = 0;
+      this->rArmCmd.positions[2] = 0;
+      this->rArmCmd.positions[3] = 0;
+      this->rArmCmd.positions[4] = 0;
+      this->rArmCmd.positions[5] = 0;
+      this->rArmCmd.positions[6] = 0;
 
-    // deal with grippers separately
-    this->lGripperCmd.data      = 0;
-    this->rGripperCmd.data     = 0;
+      this->rArmCmd.margins[0] = 0;
+      this->rArmCmd.margins[1] = 0;
+      this->rArmCmd.margins[2] = 0;
+      this->rArmCmd.margins[3] = 0;
+      this->rArmCmd.margins[4] = 0;
+      this->rArmCmd.margins[5] = 0;
+      this->rArmCmd.margins[6] = 0;
 
-  }
-    ~TArmK_Node() { }
+      advertise<pr2_mechanism_controllers::JointPosCmd>(LEFT_ARM_COMMAND_TOPIC);
+      advertise<pr2_mechanism_controllers::JointPosCmd>(RIGHT_ARM_COMMAND_TOPIC);
+      advertise<std_msgs::Float64>(LEFT_GRIPPER_COMMAND_TOPIC);
+      advertise<std_msgs::Float64>(RIGHT_GRIPPER_COMMAND_TOPIC);
+
+      // deal with grippers separately
+      this->lGripperCmd.data     = 0;
+      this->rGripperCmd.data     = 0;
+
+    }
+    // destructor
+    ~TeleopArmKeyboardNode() { }
 
     void printCurrentJointValues() {
       std::cout << "left arm " << std::endl;
@@ -227,20 +219,17 @@ class TArmK_Node : public ros::node
 
     }
 
-
     void keyboardLoop();
-    void changeJointAngle(PR2_JOINT_ID jointID, bool increment);
-    void openGripper(PR2_JOINT_ID jointID);
-    void closeGripper(PR2_JOINT_ID jointID);
+    void changeJointAngle(std::string joint_name, double direction);
+    void openGripper(std::string joint_name);
+    void closeGripper(std::string joint_name);
 
 };
 
-TArmK_Node* tarmk;
+// Stuff for keyboard interaction
 int kfd = 0;
 struct termios cooked, raw;
-
-  void
-quit(int sig)
+void quit(int sig)
 {
   //  tbk->stopRobot();
   ros::fini();
@@ -248,118 +237,83 @@ quit(int sig)
   exit(0);
 }
 
-  int
-main(int argc, char** argv)
+
+
+int main(int argc, char** argv)
 {
   ros::init(argc,argv);
 
-  tarmk = new TArmK_Node();
+  TeleopArmKeyboardNode* takn = new TeleopArmKeyboardNode();
 
   signal(SIGINT,quit);
 
-  tarmk->keyboardLoop();
+  takn->keyboardLoop();
 
   return(0);
 }
 
-void TArmK_Node::openGripper(PR2_JOINT_ID jointID) {
-  if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
-  if(jointID == ARM_R_GRIPPER_GAP) {
+void TeleopArmKeyboardNode::openGripper(std::string joint_name) {
+  if(joint_name == LINKR7 ) {
     this->rGripperCmd.data = .2;
     printf("Opening right gripper\n");
-  } else { 
+  } else if(joint_name == LINKL7 ) {
     this->lGripperCmd.data = .2;
     printf("Opening left gripper\n");
   }
 }
 
-void TArmK_Node::closeGripper(PR2_JOINT_ID jointID) {
-  if(jointID != ARM_R_GRIPPER_GAP && jointID != ARM_L_GRIPPER_GAP) return;
-  if(jointID == ARM_R_GRIPPER_GAP) {
+void TeleopArmKeyboardNode::closeGripper(std::string joint_name) {
+  if(joint_name == LINKR7 ) {
     this->rGripperCmd.data = 0;
-  } else { 
+  } else if(joint_name == LINKL7 ) {
     this->lGripperCmd.data = 0;
   }
 }
 
 
-void TArmK_Node::changeJointAngle(PR2_JOINT_ID jointID, bool increment)
+void TeleopArmKeyboardNode::changeJointAngle(std::string joint_name, double direction)
 {
-  float jointCmdStep = 5*M_PI/180;
-  double gripperStep = 1*M_PI/180;
-  if (increment == false)
-  {
-    jointCmdStep *= -1;
-    gripperStep *= -1;
-  }
+  if (joint_name == LINKL0)
+      this->lArmCmd.positions[0] += direction * this->jointCmdStep;
+  if (joint_name == LINKL1)
+      this->lArmCmd.positions[1] += direction * this->jointCmdStep;
+  if (joint_name == LINKL2)
+      this->lArmCmd.positions[2] += direction * this->jointCmdStep;
+  if (joint_name == LINKL3)
+      this->lArmCmd.positions[3] += direction * this->jointCmdStep;
+  if (joint_name == LINKL4)
+      this->lArmCmd.positions[4] += direction * this->jointCmdStep;
+  if (joint_name == LINKL5)
+      this->lArmCmd.positions[5] += direction * this->jointCmdStep;
+  if (joint_name == LINKL6)
+      this->lArmCmd.positions[6] += direction * this->jointCmdStep;
+  if (joint_name == LINKL7)
+      this->lGripperCmd.data     += direction * this->gripperStep;
 
-  //this->lArmCmd.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
-  //this->rArmCmd.gripperForceCmd = 10; // FIXME: why is this getting reset to 0?
-
-  switch(jointID)
-  {
-    case ARM_L_PAN:
-      this->lArmCmd.positions[0] += jointCmdStep;
-      std::cout << " lp " << this->lArmCmd.positions[0] << std::endl;
-      break;
-    case ARM_L_SHOULDER_PITCH:
-      this->lArmCmd.positions[1] += jointCmdStep;
-      break;
-    case ARM_L_SHOULDER_ROLL:
-      this->lArmCmd.positions[2] += jointCmdStep;
-      break;
-    case ARM_L_ELBOW_PITCH:
-      this->lArmCmd.positions[3] += jointCmdStep;
-      break;
-    case ARM_L_ELBOW_ROLL:
-      this->lArmCmd.positions[4] += jointCmdStep;
-      break;
-    case ARM_L_WRIST_PITCH:
-      this->lArmCmd.positions[5] += jointCmdStep;
-      break;
-    case ARM_L_WRIST_ROLL:
-      this->lArmCmd.positions[6] += jointCmdStep;
-      break;
-    case ARM_L_GRIPPER_GAP:
-      this->lGripperCmd.data += gripperStep;
-      break;
-    case ARM_R_PAN:
-      this->rArmCmd.positions[0] += jointCmdStep;
-      break;
-    case ARM_R_SHOULDER_PITCH:
-      this->rArmCmd.positions[1] += jointCmdStep;
-      break;
-    case ARM_R_SHOULDER_ROLL:
-      this->rArmCmd.positions[2] += jointCmdStep;
-      break;
-    case ARM_R_ELBOW_PITCH:
-      this->rArmCmd.positions[3] += jointCmdStep;
-      break;
-    case ARM_R_ELBOW_ROLL:
-      this->rArmCmd.positions[4] += jointCmdStep;
-      break;
-    case ARM_R_WRIST_PITCH:
-      this->rArmCmd.positions[5] += jointCmdStep;
-      break;
-    case ARM_R_WRIST_ROLL:
-      this->rArmCmd.positions[6] += jointCmdStep;
-      break;
-    case ARM_R_GRIPPER_GAP:
-      this->rGripperCmd.data += gripperStep;
-      break;
-    default:
-      printf("This joint is not handled.\n");
-      break;
-  }
+  if (joint_name == LINKR0)
+      this->rArmCmd.positions[0] += direction * this->jointCmdStep;
+  if (joint_name == LINKR1)
+      this->rArmCmd.positions[1] += direction * this->jointCmdStep;
+  if (joint_name == LINKR2)
+      this->rArmCmd.positions[2] += direction * this->jointCmdStep;
+  if (joint_name == LINKR3)
+      this->rArmCmd.positions[3] += direction * this->jointCmdStep;
+  if (joint_name == LINKR4)
+      this->rArmCmd.positions[4] += direction * this->jointCmdStep;
+  if (joint_name == LINKR5)
+      this->rArmCmd.positions[5] += direction * this->jointCmdStep;
+  if (joint_name == LINKR6)
+      this->rArmCmd.positions[6] += direction * this->jointCmdStep;
+  if (joint_name == LINKR7)
+      this->rGripperCmd.data     += direction * this->gripperStep;
 }
 
 
-  void
-TArmK_Node::keyboardLoop()
+void TeleopArmKeyboardNode::keyboardLoop()
 {
   char c;
   bool dirty=false;
-  PR2_JOINT_ID curr_jointID = ARM_L_PAN; // joint which will be actuated.
+  std::string current_joint_name = LINKL0; // joint which will be actuated.
   bool right_arm = false;
 
   // get the console in raw mode
@@ -402,21 +356,21 @@ TArmK_Node::keyboardLoop()
         break;
       case '+':
       case '=':
-        changeJointAngle(curr_jointID, true);
+        changeJointAngle(current_joint_name, 1);
         dirty=true;
         break;
       case '_':
       case '-':
-        changeJointAngle(curr_jointID, false);
+        changeJointAngle(current_joint_name, -1);
         dirty=true;
         break;
       case '.':
-        openGripper(curr_jointID);
+        openGripper(current_joint_name);
         dirty = true;
         break;
       case '/':
         sleep(1);
-        closeGripper(curr_jointID);
+        closeGripper(current_joint_name);
         dirty = true;
         break;
       case 'q':
@@ -431,35 +385,35 @@ TArmK_Node::keyboardLoop()
       switch(c)
       {
         case '1':
-          curr_jointID = ARM_L_PAN;
+          current_joint_name = LINKL0;
           printf("left turret\n");
           break;
         case '2':
-          curr_jointID = ARM_L_SHOULDER_PITCH;
+          current_joint_name = LINKL1;
           printf("left shoulder pitch\n");
           break;
         case '3':
-          curr_jointID = ARM_L_SHOULDER_ROLL;
+          current_joint_name = LINKL2;
           printf("left shoulder roll\n");
           break;
         case '4':
-          curr_jointID = ARM_L_ELBOW_PITCH;
+          current_joint_name = LINKL3;
           printf("left elbow pitch\n");
           break;
         case '5':
-          curr_jointID = ARM_L_ELBOW_ROLL;
+          current_joint_name = LINKL4;
           printf("left elbow roll\n");
           break;
         case '6':
-          curr_jointID = ARM_L_WRIST_PITCH;
+          current_joint_name = LINKL5;
           printf("left wrist pitch\n");
           break;
         case '7':
-          curr_jointID = ARM_L_WRIST_ROLL;
+          current_joint_name = LINKL6;
           printf("left wrist roll\n");
           break;
         case '8':
-          curr_jointID = ARM_L_GRIPPER_GAP;
+          current_joint_name = LINKL7;
           printf("left gripper\n");
           break;
         case '9':
@@ -473,35 +427,35 @@ TArmK_Node::keyboardLoop()
       switch(c)
       {
         case '1':
-          curr_jointID = ARM_R_PAN;
+          current_joint_name = LINKR0;
           printf("right turret\n");
           break;
         case '2':
-          curr_jointID = ARM_R_SHOULDER_PITCH;
+          current_joint_name = LINKR1;
           printf("right shoulder pitch\n");
           break;
         case '3':
-          curr_jointID = ARM_R_SHOULDER_ROLL;
+          current_joint_name = LINKR2;
           printf("right shoulder roll\n");
           break;
         case '4':
-          curr_jointID = ARM_R_ELBOW_PITCH;
+          current_joint_name = LINKR3;
           printf("right elbow pitch\n");
           break;
         case '5':
-          curr_jointID = ARM_R_ELBOW_ROLL;
+          current_joint_name = LINKR4;
           printf("right elbow roll\n");
           break;
         case '6':
-          curr_jointID = ARM_R_WRIST_PITCH;
+          current_joint_name = LINKR5;
           printf("right wrist pitch\n");
           break;
         case '7':
-          curr_jointID = ARM_R_WRIST_ROLL;
+          current_joint_name = LINKR6;
           printf("right wrist roll\n");
           break;
         case '8':
-          curr_jointID = ARM_R_GRIPPER_GAP;
+          current_joint_name = LINKR7;
           printf("right gripper\n");
           break;
         case '9':
@@ -514,11 +468,11 @@ TArmK_Node::keyboardLoop()
     if (dirty == true) {
       dirty=false; // Sending the command only once for each key press.
       if(!right_arm) {
-        publish("left_arm_commands",lArmCmd);
-        publish("gripper_left_controller/set_command",lGripperCmd);
+        publish(LEFT_ARM_COMMAND_TOPIC,lArmCmd);
+        publish(LEFT_GRIPPER_COMMAND_TOPIC,lGripperCmd);
       } else {
-        publish("right_arm_commands",rArmCmd);
-        publish("gripper_right_controller/set_command",rGripperCmd);
+        publish(RIGHT_ARM_COMMAND_TOPIC,rArmCmd);
+        publish(RIGHT_GRIPPER_COMMAND_TOPIC,rGripperCmd);
       }
     }
   }
