@@ -126,4 +126,44 @@
   <!-- mechanism controls -->
   <include filename="./transmissions_dual_link.xml" />
   
+  <map name="sensor" flag="gazebo">
+    <verbatim key="mechanism_control_simulation">
+    <controller:ros_time name="ros_time" plugin="libRos_Time.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>100.0</updateRate>
+      <interface:audio name="dummy_ros_time_iface_should_not_be_here"/>
+    </controller:ros_time>
+
+    <!-- pr2_actarray -->
+    <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
+      <alwayson>true</alwayson>
+      <updaterate>1000.0</updaterate>
+
+      <interface:audio name="gazebo_mechanism_control_dummy_iface" />
+    </controller:gazebo_mechanism_control>
+
+    <!-- P3D for position groundtruth -->
+    <controller:P3D name="p3d_link1_controller" plugin="libP3D.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <bodyName>link1</bodyName>
+        <topicName>link1_pose</topicName>
+        <frameName>map</frameName>
+        <xyzOffsets>0 0 0.5</xyzOffsets> <!-- at pivot of link2 -->
+        <rpyOffsets>0 0 0.0</rpyOffsets>
+        <interface:position name="p3d_link1_position"/>
+    </controller:P3D>
+
+    <!-- P3D for position groundtruth -->
+    <controller:P3D name="p3d_link2_controller" plugin="libP3D.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>1000.0</updateRate>
+        <bodyName>link2</bodyName>
+        <topicName>link2_pose</topicName>
+        <frameName>map</frameName>
+        <interface:position name="p3d_link2_position"/>
+    </controller:P3D>
+
+    </verbatim>
+  </map>
 </robot>
