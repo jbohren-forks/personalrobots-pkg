@@ -28,14 +28,10 @@
  */
 
 
-#include <iostream>
 #include <ros/node.h>
+#include <rosconsole/rosconsole.h>
 #include <std_srvs/StaticMap.h>
 #include "topological_map/bottleneck_graph.h"
-
-using std::cout;
-using std::endl;
-
 
 class BottleneckGraphRos: public ros::node
 {
@@ -48,16 +44,15 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
 
   std_srvs::StaticMap::request req;
   std_srvs::StaticMap::response resp;
-  cout << "Requesting map... " << endl;
+  ROS_INFO ("Requesting map... \n");
   while (!ros::service::call("static_map", req, resp))
   {
     sleep(2);
-    cout << "Request failed: trying again..." << endl;
+    ROS_INFO ("Request failed: trying again...\n");
     usleep(1000000);
   }
   sleep(2);
-  cout << "Received a " << resp.map.width << " by " << resp.map.height << " map at "
-       << resp.map.resolution << " m/pix " << endl;
+  ROS_INFO ("Received a %d by %d map at %f m/pix\n", resp.map.width, resp.map.height, resp.map.resolution);
   int sx = resp.map.width;
   int sy = resp.map.height;
   
@@ -68,13 +63,13 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
       int val = resp.map.data[i++];
       grid[r][c] = (val == 100);
       if ((val != 0) && (val != 100) && (val != 255)) {
-        cout << "Treating val " << val << " as occupied" << endl;
+        ROS_WARN ("Treating unexpected val %d in returned static map as occupied\n", val);
       }
     }
   }
   
-  
   topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (grid, size, skip, radius, distanceMin, distanceMax);
+  topological_map::printBottlenecks (g, grid);
 }  
 
 
@@ -87,12 +82,3 @@ int main(int argc, char** argv)
   BottleneckGraphRos node (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
   node.shutdown();
 }
-
-
-
-
-  
-  
-  
-  
-  

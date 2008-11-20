@@ -37,18 +37,28 @@ using std::endl;
 
 int main (int argc, char* argv[])
 {
-  
+  assert (argc>=4);
+  topological_map::GridArray *grid;
+  if ((argc==4) || (atoi(argv[4])==0)) {
   // Initialize grid
-  topological_map::GridArray grid(boost::extents[4][5]);
-  grid[0][2] = true;
-  grid[2][2] = true;
-  grid[3][2] = true;
-
-  assert (argc==4);
-
-  printBottleneckGraph (topological_map::makeBottleneckGraph (grid, atoi(argv[1]), atoi(argv[2]), atoi(argv[3])));
- 
-  cout << "done " << endl;
+    grid = new topological_map::GridArray(boost::extents[4][5]);
+    (*grid)[0][2] = true;
+    (*grid)[2][2] = true;
+    (*grid)[3][2] = true;
+  }
+  else {
+    grid = new topological_map::GridArray(boost::extents[41][41]);
+    for (int i=0; i<20; i++) {
+      (*grid)[10][i] = true;
+      (*grid)[10][40-i] = true;
+    }
+  }
+      
+  cout << "Bottleneck graph:" << endl;
+  topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (*grid, atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
+  topological_map::printBottleneckGraph (g);
+  cout << "Bottlenecks:" << endl;
+  topological_map::printBottlenecks (g, *grid);
 }
 
 
