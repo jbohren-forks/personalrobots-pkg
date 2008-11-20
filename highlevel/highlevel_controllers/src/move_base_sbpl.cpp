@@ -161,7 +161,9 @@ namespace ros {
 	  // obstacles set to the inscribed obstacle threshold. These,
 	  // lethal obstacles, and cells with no information will thus
 	  // be regarded as obstacles
-	  env_ = new ompl::EnvironmentWrapper2D(getCostMap(), 0, 0, 0, 0,
+	  env_ = new ompl::EnvironmentWrapper2D(ompl::createCostmapWrap(&getCostMap()), true,
+						ompl::createIndexTransformWrap(&getCostMap()), true,
+						0, 0, 0, 0,
 						CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 	}
 	else if ("3DKIN" == environmentType) {
@@ -187,7 +189,9 @@ namespace ros {
 	  local_param(prefix + "nominalvel_mpersecs", nominalvel_mpersecs, 0.4);
 	  local_param(prefix + "timetoturn45degsinplace_secs", timetoturn45degsinplace_secs, 0.6);
 	  // Could also sanity check the other parameters...
-	  env_ = new ompl::EnvironmentWrapper3DKIN(getCostMap(), obst_cost_thresh,
+	  env_ = new ompl::EnvironmentWrapper3DKIN(ompl::createCostmapWrap(&getCostMap()), true,
+						   ompl::createIndexTransformWrap(&getCostMap()), true,
+						   obst_cost_thresh,
 						   0, 0, 0, // start (x, y, th)
 						   0, 0, 0, // goal (x, y, th)
 						   goaltol_x, goaltol_y, goaltol_theta,
