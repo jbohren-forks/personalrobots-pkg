@@ -593,21 +593,13 @@ void
 dcam::Dcam::setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2)
 {
   CHECK_READY();
-  dc1394bool_t present;
-  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present), 
-		   "Could not check if feature was present");
-  if (present == DC1394_TRUE)
+  if (feature == DC1394_FEATURE_WHITE_BALANCE)
   {
-    if (feature == DC1394_FEATURE_WHITE_BALANCE)
-    {
-      CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value(dcCam, value, value2), 
-		       "Could not set feature");
-    }
-    else
-    {
-      CHECK_ERR_CLEAN( dc1394_feature_set_value(dcCam, feature, value), 
-		       "Could not set feature");
-    }
+    CHECK_ERR_CLEAN( dc1394_feature_whitebalance_set_value_blind(dcCam, value, value2), "Could not set feature");
+  }
+  else
+  {
+    CHECK_ERR_CLEAN( dc1394_feature_set_value_blind(dcCam, feature, value), "Could not set feature");
   }
 }
 
@@ -645,14 +637,7 @@ void
 dcam::Dcam::setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode)
 {
   CHECK_READY();
-  dc1394bool_t present;
-  CHECK_ERR_CLEAN( dc1394_feature_is_present(dcCam, feature, &present),
-		   "Could not check if feature was present");
-  if (present == DC1394_TRUE)
-  {
-    CHECK_ERR_CLEAN( dc1394_feature_set_mode(dcCam, feature, mode),
-		     "Could not set feature");
-  }
+  CHECK_ERR_CLEAN( dc1394_feature_set_mode_blind(dcCam, feature, mode), "Could not set feature");
 }
 
 
