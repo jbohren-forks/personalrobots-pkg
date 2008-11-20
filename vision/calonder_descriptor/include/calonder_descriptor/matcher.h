@@ -102,10 +102,7 @@ int BruteForceMatcher<Data>::findMatch(const float* query_sig,
   float best_distance = threshold_;
   int index = 0;
 
-//printf("sted = "); for (int i=0; i<10; i++) printf(" %.2e ", stored_sig[i]); printf("\n");
   BOOST_FOREACH( const float* stored_sig, signatures_ ) {
-//printf("call %i: best = %.6e, next = %.6e, size = %i\n", index, best_distance, next_distance, size_);    
-// printf("arg  = "); for (int i=0; i<10; i++) printf(" %.2e ", query_sig[i]); printf("\n");
     float next_distance = squaredDistance(size_, query_sig, stored_sig);
     if (next_distance < best_distance) {
       best_distance = next_distance;

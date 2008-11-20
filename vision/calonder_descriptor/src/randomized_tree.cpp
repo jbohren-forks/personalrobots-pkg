@@ -101,6 +101,8 @@ void RandomizedTree::init(int classes, int depth, Rng &rng)
   
   // Initialize probabilities and counts to 0
   allocPosteriorsAligned(num_leaves_, classes_);
+  for (int i = 0; i < num_leaves_; ++i)
+    memset((void*)posteriors_[i], 0, classes_*sizeof(float));
   leaf_counts_.resize(num_leaves_);
 
   createNodes(num_nodes, rng);
@@ -189,7 +191,6 @@ float* RandomizedTree::getPosterior(uchar* patch_data)
 const float* RandomizedTree::getPosterior(uchar* patch_data) const
 {
   return getPosteriorByIndex( getIndex(patch_data) );
-  //return const_cast<float*>(const_cast<const RandomizedTree*>(this)->getPosterior(patch));
 }
 
 void RandomizedTree::read(const char* file_name)

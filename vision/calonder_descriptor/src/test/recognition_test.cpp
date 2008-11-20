@@ -28,7 +28,6 @@ int main( int argc, char** argv )
 {
   int num_keypts;
   unsigned long seed = std::time(NULL);
-  float threshold;
   string trees_file, source_file, test_file, transform_file;
   string patch_dir;
 
@@ -41,8 +40,6 @@ int main( int argc, char** argv )
     ("transform,x", po::value<string>(), "source->test transform file")
     ("keypoints,k", po::value<int>(&num_keypts)->default_value(300),
      "number of keypoints")
-    ("threshold", po::value<float>(&threshold)->default_value(0.005),
-     "sparse signature threshold")
     ("source-sigs", po::value<string>(), "save signatures from source image")
     ("test-sigs", po::value<string>(), "save signatures from test image")
     ("patches", po::value<string>(), "save patches to directory")
@@ -112,7 +109,6 @@ int main( int argc, char** argv )
   
   RTreeClassifier classifier;
   classifier.read(trees_file.c_str());
-  classifier.setThreshold(threshold);
   Rng rng(seed);
   
   cv::WImageBuffer1_b src_img( cvLoadImage(source_file.c_str(), CV_LOAD_IMAGE_GRAYSCALE) );
@@ -201,7 +197,7 @@ int main( int argc, char** argv )
   printf("\nCorrect: %i / %i = %f%%\n\n", correct, num_keypts, 100.0f*correct/num_keypts);
 
   cvReleaseMat(&transform);
-  free(sig_buffer);
+  //free(sig_buffer);
   if (save_src_sigs) src_sig_file.close();
   if (save_test_sigs) test_sig_file.close();
   if (save_patches) matches_file.close();

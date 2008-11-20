@@ -88,6 +88,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     pp = posteriors;
     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
       add(classes_, sig, *pp, sig);
+
     delete [] posteriors;
     posteriors = NULL;
     
@@ -96,7 +97,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     float normalizer = 1.0f / trees_.size();
     for (int i = 0; i < classes_; ++i)
       sig[i] *= normalizer;
-
+    
   #else  // CBLAS for summing up
 
      for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {

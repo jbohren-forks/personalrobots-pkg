@@ -46,7 +46,7 @@ SOURCES = detectors.cpp
 OBJECTS = $(SOURCES:.cpp=.o)
 PROGRAMS = baseset_test recognition_test show_base_set patch_test
 PROGRAMS += match_benchmark directed_test
-#PROGRAMS += getsig_benchmark sig_profile
+PROGRAMS += getsig_benchmark sig_profile
 #PROGRAMS += matcher_test rtree_test classifier_test write_posteriors
 
 all: $(PROGRAMS)
