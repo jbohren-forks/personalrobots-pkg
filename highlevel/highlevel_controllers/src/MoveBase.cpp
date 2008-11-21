@@ -76,7 +76,7 @@ namespace ros {
       // as a parameter until we hear how static transforms are to be handled.
       double laser_x_offset(0.275);
       param("/laser_x_offset", laser_x_offset, laser_x_offset);
-      tf_.setWithEulers("base_laser", "base", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
+      tf_.setWithEulers("base_laser", "base_link", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
 
       // Update rate for the cost map
       local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
@@ -273,7 +273,7 @@ namespace ros {
       robotPose.x = 0;
       robotPose.y = 0;
       robotPose.yaw = 0;
-      robotPose.frame = "base";
+      robotPose.frame = "base_link";
       robotPose.time = 0; 
 
       try{
@@ -379,7 +379,7 @@ namespace ros {
         v_in.z = odomMsg_.vel.th;	  
         v_in.time = 0; // Gets the latest
         v_in.frame = "odom";
-        v_out = tf_.transformVector("base", v_in);
+        v_out = tf_.transformVector("base_link", v_in);
         base_odom_.vel.x = v_in.x;
         base_odom_.vel.y = v_in.y;
         base_odom_.vel.th = v_in.z;
