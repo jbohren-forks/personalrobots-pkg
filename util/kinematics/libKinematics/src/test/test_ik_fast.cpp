@@ -163,26 +163,26 @@ int main(int argc, char** argv)
          {
            for(int l=0; l < 7; l++)
            {
-             angles_check[l] = myArm.solution_ik_[m][l];
+              angles_check[l] = myArm.solution_ik_[m][l];
            }
            gCheck = myArm.ComputeFK(angles_check);
            if(compareMatrices(gCheck,g0))
            {
-             count_success++;
-             break;
+              count_success++;
+              break;
            }
          }
        }
        else
        {
-         count_failure++;
-       cout << "Angles " ;
-       for(int j=0; j < 7; j++)
-       {
-         cout << " " << angles[j];
-       }
-       cout << endl;
-       cout << "Parameters " << first_angle << "  " << 2*angles[0]/(double) num_first_angle << endl;
+          count_failure++;
+          cout << "Angles " ;
+          for(int j=0; j < 7; j++)
+          {
+             cout << " " << angles[j];
+          }
+          cout << endl;
+          cout << "Parameters " << first_angle << "  " << 2*angles[0]/(double) num_first_angle << endl;
 
        }
      }
@@ -194,35 +194,43 @@ int main(int argc, char** argv)
      time_taken += (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
      if (myArm.solution_ik_.size() > 0)
      {
-       for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
-       {
-         solution_exact = true;
-         for(int l=0; l < 7; l++)
-         {
-           if(fabs(myArm.solution_ik_[m][l] - angles[l]) > EPS_EXACT)
+//        cout << "Number of solutions: " << myArm.solution_ik_.size() << endl;
+        for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
+        {
+           solution_exact = true;
+           for(int l=0; l < 7; l++)
            {
-             solution_exact = false;
-             break;
+              if(fabs(myArm.solution_ik_[m][l] - angles[l]) > EPS_EXACT)
+              {
+                 solution_exact = false;
+/*                 cout << "Solution" << endl;
+                 for(int jjj = 0; jjj < 7; jjj++)
+                 {
+                    cout << " " << myArm.solution_ik_[m][jjj];
+                 }
+                 cout << endl << endl;
+*/
+                 break;
+              }
            }
-         }
 
-         if(solution_exact)
-         {
-           count_found_exact_solutions++;
-           break;
-         }
-       }
+           if(solution_exact)
+           {
+              count_found_exact_solutions++;
+              break;
+           }
+        }
      }
 
          
    }
 
    cout << "Angles" << endl;
-       for(int j=0; j < 7; j++)
-       {
-         cout << " " << angles[j];
-       }
-       cout << endl << endl;
+   for(int j=0; j < 7; j++)
+   {
+      cout << " " << angles[j];
+   }
+   cout << endl << endl;
 
    cout << "Success % in IK search: " << (double)count_success/(double)num_trials*100.0 << endl; 
    cout << "Time taken for " << num_trials << " is " << time_taken << " s" << endl;

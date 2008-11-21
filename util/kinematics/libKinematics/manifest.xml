@@ -6,6 +6,7 @@
 <review status="unreviewed" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
+<depend package="angles"/>
 <export>
 <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -llibKinematics"/>
 </export>

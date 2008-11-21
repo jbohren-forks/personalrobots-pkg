@@ -1,6 +1,7 @@
 #include <libKinematics/kinematics.h>
-#include <math.h>
 #include <libKinematics/pr2_ik.h>
+#include <angles/angles.h>
+#include <math.h>
 
 #define NUM_JOINTS_ARM7DOF 7
 #define IK_EPS 1e-16
@@ -8,6 +9,7 @@
 using namespace kinematics;
 using namespace std;
 using namespace NEWMAT;
+using namespace angles;
 
 arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix> axis, std::vector<std::string> joint_type) : SerialRobot(7)
 {
@@ -380,7 +382,7 @@ int arm7DOF::solveCosineEqn(const double &a, const double &b, const double &c, d
 
 void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 {
-  solution_ik_.clear();
+   solution_ik_.clear();
 
    int error_code(0);
 
@@ -388,7 +390,7 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 
    double at(0), bt(0), ct(0);
 
-   double theta2[2],theta3[2],theta4[2],theta6[2]; 
+   double theta2[2],theta3[2],theta4[2],theta5[2],theta6[2],theta7[2]; 
 
    double sopx = ap_[0]*cos(t1);
    double sopy = ap_[0]*sin(t1);
@@ -422,10 +424,10 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
    PrintMatrix(theta4,"theta4");/* There are now two solution streams */
 #endif
 
-  NEWMAT::Matrix g0 = GetHomePosition();
-  NEWMAT::Matrix g0_inv_ = matInv(g0);
-  NEWMAT::Matrix grhs = g0;
-  NEWMAT::Matrix gf = g*g0_inv_;
+   NEWMAT::Matrix g0 = GetHomePosition();
+   NEWMAT::Matrix g0_inv_ = matInv(g0);
+   NEWMAT::Matrix grhs = g0;
+   NEWMAT::Matrix gf = g*g0_inv_;
 
    for(int jj =0; jj < 2; jj++)
    {
@@ -442,9 +444,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
       if(error_code != 1)
       {
 /*         if(error_code == -1)
-            std::cout << "solveCosineEqn: degenerate condition in solving for theta 2" << endl;
-         else
-            std::cout << "solveCosineEqn: out of range in solving for theta 2: " << error_code << endl;
+           std::cout << "solveCosineEqn: degenerate condition in solving for theta 2" << endl;
+           else
+           std::cout << "solveCosineEqn: out of range in solving for theta 2: " << error_code << endl;
 */
          continue;
       }
@@ -461,9 +463,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
          if(error_code != 1)
          {
             /*          if(error_code == -1)
-               std::cout << "solveCosineEqn: degenerate condition in solving for theta 3" << endl;
-            else
-               std::cout << "solveCosineEqn: out of range in solving for theta 3" << endl;
+                        std::cout << "solveCosineEqn: degenerate condition in solving for theta 3" << endl;
+                        else
+                        std::cout << "solveCosineEqn: out of range in solving for theta 3" << endl;
             */
             continue;
          }
@@ -501,30 +503,40 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
                if(fabs(sin(t6)) < IK_EPS)
                {
                   std::cout << "Singularity" << endl;
-                  t5 = acos(grhs(2,2))/2.0;
-                  t7 = acos(grhs(2,2))/2.0;
+                  theta5[0] = acos(grhs(2,2))/2.0;
+                  theta7[0] = acos(grhs(2,2))/2.0;
+                  theta7[1] = M_PI+theta7[0];
+                  theta5[1] = M_PI+theta5[0];
                }
                else
                {
-                  t7 = atan2(grhs(1,2),grhs(1,3));
-                  t5 = atan2(grhs(2,1),-grhs(3,1));
+                  theta7[0] = atan2(grhs(1,2),grhs(1,3));
+                  theta5[0] = atan2(grhs(2,1),-grhs(3,1));
+                  theta7[1] = M_PI+theta7[0];
+                  theta5[1] = M_PI+theta5[0];
                }
 /*               std::cout << "theta1: " << t1 << endl;
-               std::cout << "theta2: " << t2 << endl;
-               std::cout << "theta3: " << t3 << endl;
-               std::cout << "theta4: " << t4 << endl;
-               std::cout << "theta5: " << t5 << endl;
-               std::cout << "theta6: " << t6 << endl;
-               std::cout << "theta7: " << t7 << endl << endl << endl;
-*/             solution_[0] = t1;
-               solution_[1] = t2;
-               solution_[2] = t3;
-               solution_[3] = t4;
-               solution_[4] = t5;
-               solution_[5] = t6;
-               solution_[6] = t7;
-               solution_ik_.push_back(solution_);
+                 std::cout << "theta2: " << t2 << endl;
+                 std::cout << "theta3: " << t3 << endl;
+                 std::cout << "theta4: " << t4 << endl;
+                 std::cout << "theta5: " << t5 << endl;
+                 std::cout << "theta6: " << t6 << endl;
+                 std::cout << "theta7: " << t7 << endl << endl << endl;
+*/
+               for(int lll =0; lll < 2; lll++)
+               {
+                  t5 = theta5[lll];
+                  t7 = theta7[lll];
 
+                  solution_[0] = normalize_angle(t1);
+                  solution_[1] = normalize_angle(t2);
+                  solution_[2] = normalize_angle(t3);
+                  solution_[3] = normalize_angle(t4);
+                  solution_[4] = normalize_angle(t5);
+                  solution_[5] = normalize_angle(t6);
+                  solution_[6] = normalize_angle(t7);
+                  solution_ik_.push_back(solution_);
+               }
             }
          }
       }
