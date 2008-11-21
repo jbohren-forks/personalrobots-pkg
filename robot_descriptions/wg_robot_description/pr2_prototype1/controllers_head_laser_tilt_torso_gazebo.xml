@@ -4,10 +4,10 @@
 
 
   <!-- ========================================= -->
-  <!-- torso array -->
-  <controller name="torso_controller" topic="torso_controller" type="JointPositionControllerNode">
-      <joint name="torso_joint">
-        <pid p="1000" d="0" i="0" iClamp="0" />
+  <!-- torso_lift array -->
+  <controller name="torso_lift_controller" topic="torso_lift_controller" type="JointPositionControllerNode">
+      <joint name="torso_lift_joint">
+        <pid p="1000" d="0" i="1" iClamp="100" />
       </joint>
   </controller>
   <!-- ========================================= -->
