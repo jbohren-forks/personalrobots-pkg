@@ -189,7 +189,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
 
         iter++;
         
-        iksolver->ComputeIK(nmT,curphi);
+        iksolver->ComputeIKEfficient(nmT,curphi);
         vector<dReal> vravesol(_probot->GetActiveDOF());
         vector<double>* pbest = NULL;
         FOREACH(itsol, iksolver->solution_ik_) {
@@ -310,7 +310,7 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
 
         iter++;
 
-        iksolver->ComputeIK(nmT,curphi);
+        iksolver->ComputeIKEfficient(nmT,curphi);
         vector<dReal> vravesol(_probot->GetActiveDOF());
 
         FOREACH(itsol, iksolver->solution_ik_) {
@@ -368,7 +368,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
     dReal bestdist = 1000; // only valid if q0 != NULL
     
     NEWMAT::Matrix nmT = GetNewMat(_T);
-    iksolver->ComputeIK(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
+    iksolver->ComputeIKEfficient(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
     
     vector<dReal> vravesol(_probot->GetActiveDOF());
     vector<double>* pbest = NULL;
@@ -458,7 +458,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* pFreeParameters,
 
     // start searching for phi close to q0, as soon as a solution is found for the curphi, return it
     NEWMAT::Matrix nmT = GetNewMat(_T);
-    iksolver->ComputeIK(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
+    iksolver->ComputeIKEfficient(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
     
     FOREACH(itsol, iksolver->solution_ik_) {
         vector<double>& sol = *itsol;
