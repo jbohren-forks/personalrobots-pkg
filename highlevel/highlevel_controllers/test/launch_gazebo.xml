@@ -3,10 +3,8 @@
   <master auto="start"/>
   <group name="wg">
 
-
-    <!-- start up gazebo with gazebo_robot_description/world/robot_floorobj.world -->
+    <!-- start up gazebo with gazebo_robot_description/world/robot_floorobj.world and startup default mechanism controllers -->
     <include file="$(find pr2_gazebo)/pr2_floorobj.launch" />
-
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" />
     <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
