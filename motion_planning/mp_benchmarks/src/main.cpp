@@ -137,8 +137,10 @@ void usage(ostream & os)
      << "   -i  <in-radius>  set INSCRIBED radius\n"
      << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
      << "   -I  <inflate-r>  set INFLATION radius\n"
-     << "   -d  <doorwidth>  set width of doors\n"
-     << "   -H  <hallwidth>  set width of hallways\n"
+     << "   -d  <doorwidth>  set width of doors (office setups)\n"
+     << "   -H  <hallwidth>  set width of hallways (office setups)\n"
+     << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
+     << "   -g  <gray>       cutoff for obstacles in PGM images (for -s pgm)\n"
      << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
      << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
      << "   -X               dump filename base to stdout (use as last option)\n"
@@ -357,6 +359,34 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
+      case 'n':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -n requires a filename argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	opt.pgm_filename = argv[ii];
+ 	break;
+	
+      case 'g':
+	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -g requires a gray argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	{
+	  istringstream is(argv[ii]);
+	  is >> opt.obstacle_gray;
+	  if ( ! is) {
+	    cerr << argv[0] << ": error reading gray argument from \"" << argv[ii] << "\"\n";
+	    usage(cerr);
+	    exit(EXIT_FAILURE);
+	  }
+	}
+ 	break;
+	
       case 'o':
  	++ii;
  	if (ii >= argc) {
@@ -463,7 +493,7 @@ void create_setup()
 							goaltol_x, goaltol_y, goaltol_theta,
 							getFootprint(), nominalvel_mpersecs,
 							timetoturn45degsinplace_secs));
-    static bool const do_sanity_check(true);
+    static bool const do_sanity_check(false);
     if (do_sanity_check) {
       CostmapWrap const & cm(*setup->getCostmap());
       bool sane(true);

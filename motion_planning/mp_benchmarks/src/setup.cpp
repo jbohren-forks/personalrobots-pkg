@@ -259,7 +259,7 @@ namespace {
     int format;
     pgm_readpgminit(pgmfile, &ncols, &nrows, &maxval, &format);
     gray * row(pgm_allocrow(ncols));
-    for (int ii(0); ii < nrows; ++ii) {
+    for (int ii(nrows - 1); ii >= 0; --ii) {
       pgm_readpgmrow(pgmfile, row, ncols, maxval, format);
       for (int jj(ncols - 1); jj >= 0; --jj)
 	if ((       invert_gray  && (obstacle_gray >= row[jj]))
@@ -704,7 +704,7 @@ namespace ompl {
       use_sfl_cost(false),
       door_width(1.2),
       hall_width(3),
-      pgm_filename("/var/roland/ros2/ros-pkg/demos/2dnav_stage/empty_room_05cm.pgm"),
+      pgm_filename("pgm/willow-clip0-r50.pgm"),
       obstacle_gray(64),
       invert_gray(true)
   {
@@ -768,7 +768,7 @@ namespace {
     warn("in createNetPGMBenchmark(): no support for netpgm\n", pgmFileName.c_str());
     return bench;
     
-#else MPBENCH_HAVE_NETPGM
+#else // MPBENCH_HAVE_NETPGM
     
     FILE * pgmfile(fopen(pgmFileName.c_str(), "rb"));
     if ( ! pgmfile) {
