@@ -1,6 +1,6 @@
 <launch>   
   <include file="$(find wg_robot_description)/send.xml" />
   <node pkg="kinematic_planning" type="kinematic_planning" args="robotdesc/pr2" />
-  <node pkg="megamaid" type="playback" args="$(find kinematic_planning)/test/monster.bag" />
+  <node pkg="rosrecord" type="rosplay" args="$(find kinematic_planning)/test/monster.bag" />
   <test test-name="avoid_monster" pkg="kinematic_planning" type="avoid_monster" />
 </launch>
