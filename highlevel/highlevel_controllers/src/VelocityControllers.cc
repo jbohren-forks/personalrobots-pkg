@@ -29,7 +29,7 @@ namespace ros {
       robot_vel.x = currentVel.vx;
       robot_vel.y = currentVel.vy;
       robot_vel.yaw = currentVel.vw;
-      robot_vel.frame = "base";
+      robot_vel.frame = "base_link";
       robot_vel.time = 0;
 
       //do we need to resize our map?

@@ -34,7 +34,7 @@ namespace TREX {
       p.frame = "forearm_roll_right";
       p.time = 0;
       try {
-	endEffectorPos = tfClient.transformPoint ("base", p);
+	endEffectorPos = tfClient.transformPoint ("base_link", p);
       }
       catch (TransformReference::LookupException& ex) {
 	cout << "No transform available error\n";

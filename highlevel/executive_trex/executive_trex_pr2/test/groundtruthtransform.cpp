@@ -20,7 +20,7 @@ public:
   void speak() {
     tf::Stamped<tf::Pose> robotPose, globalPose;
     robotPose.setIdentity();
-    robotPose.frame_id_ = "base";
+    robotPose.frame_id_ = "base_link";
     robotPose.stamp_ = ros::Time((uint64_t)0ULL);
     try {
       this->tf.transformPose("map", robotPose, globalPose);
