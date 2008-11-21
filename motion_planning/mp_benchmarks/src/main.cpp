@@ -73,19 +73,12 @@ static bool enableGfx;
 static string plannerType;
 static string costmapType;
 static string environmentType;
-static string setupName;
-static double resolution;
-static double inscribedRadius;
-static double circumscribedRadius;
-static double inflationRadius;
-static int obstacleCost;
-static double doorWidth;
-static double hallWidth;
+static SBPLBenchmarkOptions opt;
 static string travmapFilename;
 static string costmapFilename;
 static bool websiteMode;
 
-static shared_ptr<OfficeBenchmark> setup;
+static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<EnvironmentWrapper> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<SBPLPlannerStatistics> plannerStats;
@@ -157,15 +150,15 @@ static string summarizeOptions()
 {
   ostringstream os;
   os << "-p" << canonicalPlannerName(plannerType)
-     << "-s" << setupName
+     << "-s" << opt.name
      << "-m" << costmapType
      << "-e" << canonicalEnvironmentName(environmentType)
-     << "-r" << (int) rint(1e3 * resolution)
-     << "-i" << (int) rint(1e3 * inscribedRadius)
-     << "-c" << (int) rint(1e3 * circumscribedRadius)
-     << "-I" << (int) rint(1e3 * inflationRadius)
-     << "-d" << (int) rint(1e3 * doorWidth)
-     << "-H" << (int) rint(1e3 * hallWidth);
+     << "-r" << (int) rint(1e3 * opt.resolution)
+     << "-i" << (int) rint(1e3 * opt.inscribed_radius)
+     << "-c" << (int) rint(1e3 * opt.circumscribed_radius)
+     << "-I" << (int) rint(1e3 * opt.inflation_radius)
+     << "-d" << (int) rint(1e3 * opt.door_width)
+     << "-H" << (int) rint(1e3 * opt.hall_width);
   return os.str();
 }
 
@@ -178,12 +171,12 @@ std::string baseFilename()
 
 static void sanitizeOptions()
 {
-  if (inscribedRadius > circumscribedRadius)
-    circumscribedRadius = inscribedRadius;
-  if (inscribedRadius > inflationRadius)
-    inflationRadius = inscribedRadius;
-  if (circumscribedRadius > inflationRadius)
-    inflationRadius = circumscribedRadius;
+  if (opt.inscribed_radius > opt.circumscribed_radius)
+    opt.circumscribed_radius = opt.inscribed_radius;
+  if (opt.inscribed_radius > opt.inflation_radius)
+    opt.inflation_radius = opt.inscribed_radius;
+  if (opt.circumscribed_radius > opt.inflation_radius)
+    opt.inflation_radius = opt.circumscribed_radius;
   plannerType = canonicalPlannerName(plannerType);
   environmentType = canonicalEnvironmentName(environmentType);
 }
@@ -193,22 +186,15 @@ void parse_options(int argc, char ** argv)
 {
   // these should become options
   enableGfx = true;
-  obstacleCost = costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE;
   
   // default values for options
   plannerType = "ARAPlanner";
-  setupName = "office1";
   costmapType = "costmap_2d";
   environmentType = "2D";
-  resolution = 0.05;
-  inscribedRadius = 0.5;
-  circumscribedRadius = 1.2;
-  inflationRadius = 2;
-  doorWidth = 1.2;
-  hallWidth = 3;
   travmapFilename = "";
   costmapFilename = "";
   websiteMode = false;
+  // most other options handled through SBPLBenchmarkOptions
   
   for (int ii(1); ii < argc; ++ii) {
     if ((strlen(argv[ii]) < 2) || ('-' != argv[ii][0])) {
@@ -240,7 +226,7 @@ void parse_options(int argc, char ** argv)
  	  usage(cerr);
  	  exit(EXIT_FAILURE);
  	}
-	setupName = argv[ii];
+	opt.name = argv[ii];
  	break;
 	
       case 'm':
@@ -272,7 +258,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> resolution;
+	  is >> opt.resolution;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading cellsize argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -290,7 +276,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> inscribedRadius;
+	  is >> opt.inscribed_radius;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading inscribed radius argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -308,7 +294,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> circumscribedRadius;
+	  is >> opt.circumscribed_radius;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading circumscribed radius argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -326,7 +312,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> inflationRadius;
+	  is >> opt.inflation_radius;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading inflation radius argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -344,7 +330,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> doorWidth;
+	  is >> opt.door_width;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading doorwidth argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -362,7 +348,7 @@ void parse_options(int argc, char ** argv)
  	}
 	{
 	  istringstream is(argv[ii]);
-	  is >> hallWidth;
+	  is >> opt.hall_width;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading hallwidth argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
@@ -423,7 +409,7 @@ void create_setup()
 	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
 	 costmapType.c_str());
   
-  *logos << "creating setup \"" << setupName << "\"\n" << flush;
+  *logos << "creating setup \"" << opt.name << "\"\n" << flush;
   {
     shared_ptr<ostream> dump_os;
     if ( ! travmapFilename.empty()) {
@@ -433,12 +419,9 @@ void create_setup()
 	dump_os.reset();
       }
     }
-    setup.reset(OfficeBenchmark::create(setupName, resolution, inscribedRadius,
-					circumscribedRadius, inflationRadius,
-					obstacleCost, use_sfl_cost, doorWidth, hallWidth,
-					logos.get(), dump_os.get()));
+    setup.reset(createBenchmark(opt, logos.get(), dump_os.get()));
     if ( ! setup)
-      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", setupName.c_str());
+      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", opt.name.c_str());
     if ( ! costmapFilename.empty()) {
       dump_os.reset(new ofstream(costmapFilename.c_str()));
       if ( ! (*dump_os))
@@ -467,8 +450,8 @@ void create_setup()
     unsigned char const
       obst_cost_thresh(costmap_2d::CostMap2D::LETHAL_OBSTACLE);
     // how about making these configurable?
-    double const goaltol_x(0.5 * inscribedRadius);
-    double const goaltol_y(0.5 * inscribedRadius);
+    double const goaltol_x(0.5 * opt.inscribed_radius);
+    double const goaltol_y(0.5 * opt.inscribed_radius);
     double const goaltol_theta(M_PI);
     double const nominalvel_mpersecs(0.6); // human leisurely walking speed
     double const timetoturn45degsinplace_secs(0.6); // guesstimate
@@ -670,11 +653,11 @@ void print_summary()
     }
   }
   rplan *= 180.0 / M_PI;
-  double const ntt(n_success + n_fail);
+  //  double const ntt(n_success + n_fail);
   double x0, y0, x1, y1;
   setup->getWorkspaceBounds(x0, y0, x1, y1);
   double area((x1-x0)*(y1-y0));
-  double ncells(ceil(area / pow(resolution, 2)));
+  double ncells(ceil(area / pow(opt.resolution, 2)));
   *logos << "\nsummary:\n"
 	 << "  map size:\n"
 	 << "    area [m2]:                 " << area << "\n"
@@ -736,8 +719,8 @@ void display(int * argc, char ** argv)
   {
     double x0, y0, x1, y1;
     setup->getWorkspaceBounds(x0, y0, x1, y1);
-    glut_width = (int) ceil(3 * (y1 - y0) / resolution);
-    glut_height = (int) ceil((x1 - x0) / resolution);
+    glut_width = (int) ceil(3 * (y1 - y0) / opt.resolution);
+    glut_height = (int) ceil((x1 - x0) / opt.resolution);
     while (glut_height < 800) {
       glut_width *= 2;
       glut_height *= 2;
@@ -748,9 +731,9 @@ void display(int * argc, char ** argv)
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
   glutInitWindowPosition(10, 10);
   glutInitWindowSize(glut_width, glut_height);
-  int const handle(glutCreateWindow(setupName.c_str()));
+  int const handle(glutCreateWindow(opt.name.c_str()));
   if (0 == handle)
-    errx(EXIT_FAILURE, "glutCreateWindow(%s) failed",setupName.c_str());
+    errx(EXIT_FAILURE, "glutCreateWindow(%s) failed", opt.name.c_str());
   
   glutDisplayFunc(draw);
   glutReshapeFunc(reshape);
@@ -881,8 +864,8 @@ void draw()
   if (websiteMode) {
     double x0, y0, x1, y1;
     setup->getWorkspaceBounds(x0, y0, x1, y1);
-    //     glut_width = (int) ceil((y1 - y0) / resolution);
-    //     glut_height = (int) ceil((x1 - x0) / resolution);
+    //     glut_width = (int) ceil((y1 - y0) / opt.resolution);
+    //     glut_height = (int) ceil((x1 - x0) / opt.resolution);
     //     reshape(glut_width, glut_height);
     glClear(GL_COLOR_BUFFER_BIT);
     npm::Instance<npm::UniqueManager<npm::View> >()->Walk(npm::View::DrawWalker());
@@ -946,21 +929,21 @@ EnvironmentWrapper3DKIN::footprint_t const & getFootprint()
   
   std_msgs::Point2DFloat32 pt;
   //create a square footprint
-  pt.x = inscribedRadius;
-  pt.y = -1 * inscribedRadius;
+  pt.x = opt.inscribed_radius;
+  pt.y = -1 * opt.inscribed_radius;
   footprint->push_back(pt);
-  pt.x = -1 * inscribedRadius;
-  pt.y = -1 * inscribedRadius;
+  pt.x = -1 * opt.inscribed_radius;
+  pt.y = -1 * opt.inscribed_radius;
   footprint->push_back(pt);
-  pt.x = -1 * inscribedRadius;
-  pt.y = inscribedRadius;
+  pt.x = -1 * opt.inscribed_radius;
+  pt.y = opt.inscribed_radius;
   footprint->push_back(pt);
-  pt.x = inscribedRadius;
-  pt.y = inscribedRadius;
+  pt.x = opt.inscribed_radius;
+  pt.y = opt.inscribed_radius;
   footprint->push_back(pt);
   
   //give the robot a nose
-  pt.x = circumscribedRadius;
+  pt.x = opt.circumscribed_radius;
   pt.y = 0;
   footprint->push_back(pt);
   
@@ -1014,7 +997,7 @@ namespace {
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
     // trace of thin footprints or inscribed circles along path
-    double const llen(inscribedRadius / resolution / 2);
+    double const llen(opt.inscribed_radius / opt.resolution / 2);
     size_t const skip(static_cast<size_t>(ceil(llen)));
     glColor3d(0.5, 1, 0);
     glLineWidth(1);
@@ -1033,7 +1016,7 @@ namespace {
  	for (size_t jj(0); jj < planList[ii].size(); jj += skip) {
 	  glPushMatrix();
 	  glTranslated(planList[ii][jj].x, planList[ii][jj].y, 0);
-	  gluDisk(wrap_glu_quadric_instance(), inscribedRadius, inscribedRadius, 36, 1);
+	  gluDisk(wrap_glu_quadric_instance(), opt.inscribed_radius, opt.inscribed_radius, 36, 1);
 	  glPopMatrix();
  	}
     }
@@ -1044,13 +1027,13 @@ namespace {
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
       glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(), inscribedRadius, inscribedRadius, 36, 1);
+      gluDisk(wrap_glu_quadric_instance(), opt.inscribed_radius, opt.inscribed_radius, 36, 1);
       glPopMatrix();
     }
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
       glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(), circumscribedRadius, circumscribedRadius, 36, 1);
+      gluDisk(wrap_glu_quadric_instance(), opt.circumscribed_radius, opt.circumscribed_radius, 36, 1);
       glPopMatrix();
     }
     

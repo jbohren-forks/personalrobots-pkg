@@ -41,6 +41,17 @@
 #include <sfl/util/numeric.hpp>
 #include <errno.h>
 #include <cstring>
+#include <err.h>
+
+#ifdef MPBENCH_HAVE_NETPGM
+extern "C" {
+#include <stdio.h>
+// pgm.h is not very friendly with system headers... need to undef max() and min() afterwards
+#include <pgm.h>
+#undef max
+#undef min
+}
+#endif // MPBENCH_HAVE_NETPGM
 
 using sfl::minval;
 using sfl::maxval;
@@ -224,6 +235,95 @@ namespace {
     }
   }
   
+  
+#ifdef MPBENCH_HAVE_NETPGM
+  void readNetPGM(ompl::SBPLBenchmarkSetup & setup,
+		  FILE * pgmfile,
+		  unsigned int obstacle_gray,
+		  bool invert_gray,
+		  double resolution,
+		  std::ostream * progress_os)
+  {
+    // not sure how to properly handle this, the doc does not say
+    // whether it supports being initialized more than once...
+    static bool pgm_has_been_initialized(false);
+    if ( ! pgm_has_been_initialized) {
+      static int fake_argc(1);
+      static char * fake_arg("foo");
+      pgm_init(&fake_argc, &fake_arg);
+      pgm_has_been_initialized = true;
+    }
+    
+    int ncols, nrows;
+    gray maxval;
+    int format;
+    pgm_readpgminit(pgmfile, &ncols, &nrows, &maxval, &format);
+    gray * row(pgm_allocrow(ncols));
+    for (int ii(0); ii < nrows; ++ii) {
+      pgm_readpgmrow(pgmfile, row, ncols, maxval, format);
+      for (int jj(ncols - 1); jj >= 0; --jj)
+	if ((       invert_gray  && (obstacle_gray >= row[jj]))
+	    || (( ! invert_gray) && (obstacle_gray <= row[jj])))
+	  setup.drawPoint(jj * resolution, ii * resolution, progress_os);
+    }
+    pgm_freerow(row);
+  }
+#endif // MPBENCH_HAVE_NETPGM
+  
+  
+  class OfficeBenchmark
+    : public ompl::SBPLBenchmarkSetup
+  {
+  protected:
+    OfficeBenchmark(std::string const & name,
+		    double resolution,
+		    double inscribed_radius,
+		    double circumscribed_radius,
+		    double inflation_radius,
+		    int obstacle_cost,
+		    bool use_sfl_cost,
+		    double door_width,
+		    double hall_width);
+    
+  public:
+    /**
+       Valid names are:
+       - dots: 4 dots in a square of hall_width side length
+       - square: a square of hall_width side length
+       - office1: two offices, two hallways, some doors
+    */
+    static OfficeBenchmark * create(std::string const & name,
+				    double resolution,
+				    double inscribed_radius,
+				    double circumscribed_radius,
+				    double inflation_radius,
+				    int obstacle_cost,
+				    bool use_sfl_cost,
+				    double door_width,
+				    double hall_width,
+				    std::ostream * progress_os,
+				    std::ostream * travmap_os);
+    
+    virtual void dumpSubDescription(std::ostream & os,
+				    std::string const & prefix) const;
+    
+    double const door_width;
+    double const hall_width;
+  };
+  
+  
+  ompl::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
+						   unsigned int obstacle_gray,
+						   bool invert_gray,
+						   double resolution,
+						   double inscribed_radius,
+						   double circumscribed_radius,
+						   double inflation_radius,
+						   int obstacle_cost,
+						   bool use_sfl_cost,
+						   std::ostream * progress_os,
+						   std::ostream * travmap_os);
+  
 }
 
 
@@ -231,14 +331,15 @@ namespace ompl {
   
   
   SBPLBenchmarkSetup::
-  SBPLBenchmarkSetup(std::string const & name,
+  SBPLBenchmarkSetup(std::string const & _name,
 		     double _resolution,
 		     double _inscribed_radius,
 		     double _circumscribed_radius,
 		     double _inflation_radius,
 		     int _obstacle_cost,
 		     bool _use_sfl_cost)
-    : resolution(_resolution),
+    : name(_name),
+      resolution(_resolution),
       inscribed_radius(_inscribed_radius),
       circumscribed_radius(_circumscribed_radius),
       inflation_radius(_inflation_radius),
@@ -397,7 +498,10 @@ namespace ompl {
     return cm;
   }
     
-    
+}
+
+namespace {
+  
   OfficeBenchmark::
   OfficeBenchmark(std::string const & name,
 		  double resolution,
@@ -465,26 +569,44 @@ namespace ompl {
   
   
   void OfficeBenchmark::
+  dumpSubDescription(std::ostream & os,
+		     std::string const & prefix) const
+  {
+    os << prefix << "door_width:           " << door_width << "\n"
+       << prefix << "hall_width:           " << hall_width << "\n";
+  }
+
+}
+
+namespace ompl {  
+  
+  void SBPLBenchmarkSetup::
   dumpDescription(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "name:                 OfficeBenchmark1\n"
+    os << prefix << "name:                 " << name << "\n"
        << prefix << "resolution:           " << resolution << "\n"
        << prefix << "inscribed_radius:     " << inscribed_radius << "\n"
        << prefix << "circumscribed_radius: " << circumscribed_radius << "\n"
        << prefix << "inflation_radius:     " << inflation_radius << "\n"
        << prefix << "obstacle_cost:        " << obstacle_cost << "\n"
-       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n")
-       << prefix << "door_width:           " << door_width << "\n"
-       << prefix << "hall_width:           " << hall_width << "\n"
-       << prefix << "tasks:\n";
+       << prefix << "use_sfl_cost:         " << (use_sfl_cost ? "true\n" : "false\n");
+    dumpSubDescription(os, prefix);
+    os << prefix << "tasks:\n";
     for (size_t ii(0); ii < tasklist_.size(); ++ii)
       os << prefix << "  [" << ii << "] " << tasklist_[ii].description << "\n";
   }
   
-
-
+  
+  void SBPLBenchmarkSetup::
+  dumpSubDescription(std::ostream & os,
+		     std::string const & prefix) const
+  {
+    // nop
+  }
+  
+  
   SBPLBenchmarkSetup::task::
   task(std::string const & _description,
        bool _from_scratch,
@@ -568,6 +690,104 @@ namespace ompl {
     else
       indexTransformWrap_.reset(createIndexTransformWrap(&getRaw2DCostmap()));
     return indexTransformWrap_;
+  }
+  
+  
+  SBPLBenchmarkOptions::
+  SBPLBenchmarkOptions()
+    : name("office1"),
+      resolution(0.05),
+      inscribed_radius(0.5),
+      circumscribed_radius(1.2),
+      inflation_radius(2),
+      obstacle_cost(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE),
+      use_sfl_cost(false),
+      door_width(1.2),
+      hall_width(3),
+      pgm_filename("/var/roland/ros2/ros-pkg/demos/2dnav_stage/empty_room_05cm.pgm"),
+      obstacle_gray(64),
+      invert_gray(true)
+  {
+  }
+  
+  
+  SBPLBenchmarkSetup * createBenchmark(SBPLBenchmarkOptions const & opt,
+				       std::ostream * progress_os,
+				       std::ostream * travmap_os)
+  {
+    if ("pgm" == opt.name)
+      return createNetPGMBenchmark(opt.pgm_filename,
+				   opt.obstacle_gray,
+				   opt.invert_gray,
+				   opt.resolution,
+				   opt.inscribed_radius,
+				   opt.circumscribed_radius,
+				   opt.inflation_radius,
+				   opt.obstacle_cost,
+				   opt.use_sfl_cost,
+				   progress_os,
+				   travmap_os);
+    return OfficeBenchmark::create(opt.name,
+				   opt.resolution,
+				   opt.inscribed_radius,
+				   opt.circumscribed_radius,
+				   opt.inflation_radius,
+				   opt.obstacle_cost,
+				   opt.use_sfl_cost,
+				   opt.door_width,
+				   opt.hall_width,
+				   progress_os,
+				   travmap_os);
+  }
+  
+}
+
+namespace {
+  
+  ompl::SBPLBenchmarkSetup * createNetPGMBenchmark(std::string const & pgmFileName,
+						   unsigned int obstacle_gray,
+						   bool invert_gray,
+						   double resolution,
+						   double inscribed_radius,
+						   double circumscribed_radius,
+						   double inflation_radius,
+						   int obstacle_cost,
+						   bool use_sfl_cost,
+						   std::ostream * progress_os,
+						   std::ostream * travmap_os)
+  {
+    ompl::SBPLBenchmarkSetup * bench(0);
+
+#ifndef MPBENCH_HAVE_NETPGM
+
+    if (progress_os)
+      *progress_os << "ERROR in createNetPGMBenchmark(): no support for netpgm!\n"
+		   << "  Install the netpbm libraries and headers and recompile\n"
+		   << "  mp_benchmarks, for example under Ubuntu Feisty the package\n"
+		   << "  libnetpbm10-dev does the trick.\n";
+    warn("in createNetPGMBenchmark(): no support for netpgm\n", pgmFileName.c_str());
+    return bench;
+    
+#else MPBENCH_HAVE_NETPGM
+    
+    FILE * pgmfile(fopen(pgmFileName.c_str(), "rb"));
+    if ( ! pgmfile) {
+      if (progress_os)
+	*progress_os << "ERROR in createNetPGMBenchmark(): fopen(" << pgmFileName << ") failed\n";
+      warn("in createNetPGMBenchmark(): fopen(%s)", pgmFileName.c_str());
+      return bench;
+    }
+    bench = new ompl::SBPLBenchmarkSetup("pgm", resolution, inscribed_radius, circumscribed_radius,
+					 inflation_radius, obstacle_cost, use_sfl_cost);
+    readNetPGM(*bench, pgmfile, obstacle_gray, invert_gray, resolution, progress_os);
+    if (travmap_os) {
+      if (progress_os)
+	*progress_os << "createNetPGMBenchmark(): saving sfl::TraversabilityMap\n";
+      bench->dumpTravmap(*travmap_os);
+    }
+    return bench;
+
+#endif // MPBENCH_HAVE_NETPGM
   }
   
 }
