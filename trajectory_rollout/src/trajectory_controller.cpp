@@ -392,6 +392,34 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     vtheta_samp += dvtheta;
   }
 
+
+  //do we have a legal trajectory
+  if(best_traj->cost_ >= 0){
+    if(best_traj->xv_ > 0){
+      rotating_left = false;
+      rotating_right = false;
+      strafe_left = false;
+      strafe_right = false;
+      stuck_left = false;
+      stuck_right = false;
+      stuck_left_strafe = false;
+      stuck_right_strafe = false;
+    }
+    else if(best_traj->thetav_ < 0){
+      if(rotating_right){
+        stuck_right = true;
+      }
+      rotating_left = true;
+    }
+    else if(best_traj->thetav_ > 0){
+      if(rotating_left){
+        stuck_left = true;
+      }
+      rotating_right = true;
+    }
+    return *best_traj;
+  }
+
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
@@ -437,17 +465,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //do we have a legal trajectory
   if(best_traj->cost_ >= 0){
-    if(best_traj->xv_ > 0){
-      rotating_left = false;
-      rotating_right = false;
-      strafe_left = false;
-      strafe_right = false;
-      stuck_left = false;
-      stuck_right = false;
-      stuck_left_strafe = false;
-      stuck_right_strafe = false;
-    }
-    else if(best_traj->yv_ > 0){
+    if(best_traj->yv_ > 0){
       if(strafe_right){
         stuck_right_strafe = true;
       }
@@ -459,19 +477,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
       }
       strafe_right = true;
     }
-    else if(best_traj->thetav_ < 0){
-      if(rotating_right){
-        stuck_right = true;
-      }
-      rotating_left = true;
-    }
-    else if(best_traj->thetav_ > 0){
-      if(rotating_left){
-        stuck_left = true;
-      }
-      rotating_right = true;
-    }
-    return *best_traj;
   }
 
   //and finally we want to generate trajectories that move backwards slowly
@@ -495,6 +500,10 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   rotating_right = false;
   stuck_left = false;
   stuck_right = false;
+  strafe_left = false;
+  strafe_right = false;
+  stuck_left_strafe = false;
+  stuck_right_strafe = false;
 
   return *best_traj;
   
