@@ -4,6 +4,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="roscpp" />
+  <depend package="rosrecord" />
+  <depend package="wg_robot_description" />
   <depend package="robot_msgs" />
   <depend package="robot_srvs" />
   <depend package="planning_node_util" />

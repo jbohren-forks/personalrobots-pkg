@@ -40,6 +40,9 @@
 #include <collision_space/environment.h>
 #include <ode/ode.h>
 
+// check() is apparently defined as a macro on OS X (?)
+#undef check
+
 /** @htmlinclude ../../manifest.html
 
     A class describing an environment for a kinematic robot using ODE */
