@@ -219,7 +219,9 @@ public:
       cam_->setUniqueThresh(12);
       cam_->setTextureThresh(10);
 
-      serviceCam();
+      while (ok() && !serviceCam())
+        diagnostic_.update();
+        
       printf("Advertising\n");
       advertiseCam();
     }
@@ -237,9 +239,13 @@ public:
     dcam::fini();  
   }
 
-  void serviceCam()
+  bool serviceCam()
   {
-    cam_->getImage(500);
+    if (!cam_->getImage(100 + 1.0/desired_freq_ * 1000))
+    {
+      ROS_WARN("Timed out waiting for camera.");
+      return false;
+    }
 
     if (do_rectify_)
     {
@@ -262,6 +268,7 @@ public:
     }
 
     count_++;
+    return true;
   }
 
   void publishCam()
@@ -521,8 +528,8 @@ public:
     // Start up the camera
     while (ok())
     {
-      serviceCam();
-      publishCam();
+      if (serviceCam())
+        publishCam();
       diagnostic_.update();
     }
 
