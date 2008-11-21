@@ -57,7 +57,7 @@
       <anchor xyz="0 0 0" />
     </joint>
 
-    <sensor name="${name}" type="laser">
+    <sensor name="${name}_link" type="laser">
       <parent name="${name}_mount_link" />
       <origin xyz="0 0 0.03" rpy="0 0 0" />
       <joint name="${name}_joint" />
@@ -102,7 +102,7 @@
               <alwaysOn>true</alwaysOn>
               <updateRate>20.0</updateRate>
               <topicName>tilt_scan</topicName>
-              <frameName>laser_tilt</frameName>
+              <frameName>${name}_link</frameName>
               <interface:laser name="ros_${name}_iface" />
             </controller:ros_laser>
           </sensor:ray>
