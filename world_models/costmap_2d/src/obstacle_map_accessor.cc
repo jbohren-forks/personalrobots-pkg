@@ -35,6 +35,7 @@
 
 #include "costmap_2d/obstacle_map_accessor.h"
 #include <stdio.h>
+#include <cstring>
 
 namespace costmap_2d {
 	
