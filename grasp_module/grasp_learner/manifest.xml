@@ -9,8 +9,7 @@
 <depend package="grasp_module" />
 <depend package="grasp_planner" />
 <depend package="scan_utils" />
-<depend package="megamaid"/>
-<depend package="logging"/>
+<depend package="rosrecord"/>
 <depend package="newmat10"/>
 <export>
   <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags=""/>
