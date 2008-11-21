@@ -29,6 +29,8 @@
 #ifndef __MDP_H_
 #define __MDP_H_
 
+#include <cstdlib>
+
 #define EPS_ERROR 0.000001
 
 //the maximum size of the heap
