@@ -35,7 +35,7 @@ namespace costmap_2d {
 	  tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), point_cloud.header.stamp.toNSec(), frame_id_);
 	  tf_.transformPoint("map", local_origin, map_origin);
 
-          tf_.transformPointCloud("base", point_cloud, base_cloud);
+          tf_.transformPointCloud("base_link", point_cloud, base_cloud);
           newData = extractFootprintAndGround(base_cloud);
           map_cloud = new std_msgs::PointCloud();
           tf_.transformPointCloud("map", *newData, *map_cloud);
