@@ -28,7 +28,7 @@ vector<string> tokenizer(string str, string delims)
 TEST(URDF, LoadRobots)
 {
     bool bSuccess = true;
-    vector<string> files = tokenizer(ROBOT_FILES,"; \r\n");
+    vector<string> files = tokenizer(ROBOT_FILES,":; \r\n");
     for(vector<string>::iterator it = files.begin(); it != files.end(); ++it) {
         cout << "testing: " << *it << "... ";
         int result = runExternalProcess(OPENRAVE_EXECUTABLE, *it + string(" -testscene -nogui"));

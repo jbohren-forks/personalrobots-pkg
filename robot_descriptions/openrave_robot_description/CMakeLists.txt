@@ -26,4 +26,7 @@ add_dependencies(urdf_robots urdf2openrave)
 
 # add the test package
 rospack_add_gtest(test_or_robots test/test_robots.cpp)
-set_target_properties(test_or_robots PROPERTIES COMPILE_FLAGS "-DROBOT_FILES=\\\"${robot_files}\\\" -DOPENRAVE_EXECUTABLE=\\\"${openrave_PACKAGE_PATH}/bin/openrave\\\"")
+
+string(REGEX REPLACE ";" ":" robot_test_files "${robot_files}")
+set(robot_test_files "${robot_test_files}:${openrave_robot_description_PACKAGE_PATH}/robots/pr2full.robot.xml")
+set_target_properties(test_or_robots PROPERTIES COMPILE_FLAGS "-DROBOT_FILES=\\\"${robot_test_files}\\\" -DOPENRAVE_EXECUTABLE=\\\"${openrave_PACKAGE_PATH}/bin/openrave\\\"")

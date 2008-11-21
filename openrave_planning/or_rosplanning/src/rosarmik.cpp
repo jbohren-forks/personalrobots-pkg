@@ -72,49 +72,49 @@ bool ROSArmIK::Init(RobotBase* probot, const RobotBase::Manipulator* pmanip, int
     axis.push_back(aj);
     an << 0 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(-1);
+    _vjointmult.push_back(1);
 
     // Shoulder pitch
     aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.1 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(-1);
+    _vjointmult.push_back(1);
 
     // Shoulder roll
     aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.1 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(-1);
+    _vjointmult.push_back(1);
 
     // Elbow flex
     aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.5 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(1);
+    _vjointmult.push_back(-1);
 
     // Forearm roll
     aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.5 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(1);
+    _vjointmult.push_back(-1);
 
     // Wrist flex
     aj << 0 << 1 << 0;
     axis.push_back(aj);
     an << 0.82025 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(1);
+    _vjointmult.push_back(-1);
 
     // Gripper roll
     aj << 1 << 0 << 0;
     axis.push_back(aj);
     an << 0.82025 << 0 << 0;
     anchor.push_back(an);
-    _vjointmult.push_back(-1);
+    _vjointmult.push_back(1);
 
     for(int i=0; i < 7; i++)
         joint_type[i] = std::string("ROTARY");

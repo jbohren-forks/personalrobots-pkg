@@ -2,10 +2,10 @@
 <Robot file="pr2.robot.xml">
   <!-- left gripper -->
   <Manipulator>
-    <base>torso_lift</base>
-    <effector>l_gripper_palm</effector>
-    <armjoints>l_shoulder_pan_joint l_shoulder_lift_joint l_upper_arm_roll_joint l_elbow_flex_joint l_forearm_roll_joint l_wrist_flex_joint l_wrist_roll_joint</armjoints>
-    <joints>l_gripper_l_finger_joint</joints>
+    <base>torso</base>
+    <effector>left_gripper_palm</effector>
+    <armjoints>left_shoulder_pan_joint left_shoulder_pitch_joint left_upper_arm_roll_joint left_elbow_flex_joint left_forearm_roll_joint left_wrist_flex_joint left_wrist_roll_joint</armjoints>
+    <joints>left_gripper_l_finger_joint</joints>
     <closed>0</closed>
     <opened>0.8</opened>
     <iksolver>rosarmik</iksolver>
@@ -13,10 +13,10 @@
 
   <!-- right gripper -->
   <Manipulator>
-    <base>torso_lift</base>
-    <effector>r_gripper_palm</effector>
-    <armjoints>r_shoulder_pan_joint r_shoulder_lift_joint r_upper_arm_roll_joint r_elbow_flex_joint r_forearm_roll_joint r_wrist_flex_joint r_wrist_roll_joint</armjoints>
-    <joints>r_gripper_l_finger_joint</joints>
+    <base>torso</base>
+    <effector>right_gripper_palm</effector>
+    <armjoints>right_shoulder_pan_joint right_shoulder_pitch_joint right_upper_arm_roll_joint right_elbow_flex_joint right_forearm_roll_joint right_wrist_flex_joint right_wrist_roll_joint</armjoints>
+    <joints>right_gripper_l_finger_joint</joints>
     <closed>0</closed>
     <opened>0.8</opened>
     <iksolver>rosarmik</iksolver>

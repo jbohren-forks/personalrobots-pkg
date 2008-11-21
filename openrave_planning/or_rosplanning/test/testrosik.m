@@ -8,7 +8,8 @@ probid = orEnvCreateProblem('basemanipulation','pr2');
 
 manips = orRobotGetManipulators(robotid);
 
-% orBodySetJointValues(robotid,[ -0.21 0.754256 0.40712 0.323661 1.28898 0.175237 2.13528],manips{1}.armjoints);
+%% test any specific ik configuration
+% orBodySetJointValues(robotid,[ -0.503115 0.573333 -2.99203 0.365955 1.95347 2.04003 -0.175888 ],manips{1}.armjoints);
 % links = orBodyGetLinks(robotid);
 % Thand = reshape(links(:,manips{1}.eelink),[3 4]);
 % s = orProblemSendCommand(['iktest matrix ' sprintf('%f ',Thand(:))]);

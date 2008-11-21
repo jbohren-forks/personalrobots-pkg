@@ -90,13 +90,12 @@ void addTransform(TiXmlElement *elem, const::btTransform& transform)
 {
     btVector3 pz = transform.getOrigin();
     double cpos[3] = { pz.x(), pz.y(), pz.z() };
-    btMatrix3x3 mat = transform.getBasis();
-    double crot[3];
-    mat.getEulerZYX(crot[2],crot[1],crot[0]);
+    btQuaternion qt = transform.getRotation();
+    double cquat[4] = { qt.getW(),qt.getX(), qt.getY(), qt.getZ() };
     
-    /* set geometry transform */
-    addKeyValue(elem, "xyz", values2str(3, cpos));
-    addKeyValue(elem, "rpy", values2str(3, crot, rad2deg));  
+    // set geometry transform
+    addKeyValue(elem, "translation", values2str(3, cpos));
+    addKeyValue(elem, "quaternion", values2str(4, cquat));  
 }
 
 void copyOpenraveMap(const robot_desc::URDF::Map& data, TiXmlElement *elem, const vector<string> *tags = NULL)
@@ -277,8 +276,9 @@ void convertLink(TiXmlElement *root, robot_desc::URDF::Link *link, const btTrans
             addKeyValue(joint, "highStop", "0");
             addKeyValue(joint, "axis", "1 0 0");
         }
-        else {        
-            addKeyValue(joint, "axis", values2str(3, link->joint->axis));
+        else {
+            double jaxis[3] = {-link->joint->axis[0], -link->joint->axis[1], -link->joint->axis[2]};
+            addKeyValue(joint, "axis", values2str(3, jaxis));
             addKeyValue(joint, "anchor", values2str(3, link->joint->anchor));
 		
             if (link->joint->pjointMimic == NULL  && enforce_limits && link->joint->isSet["limit"]) {
