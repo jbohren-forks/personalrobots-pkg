@@ -16,7 +16,8 @@ LIST (APPEND MPBENCH_LIBS
       costmap_2d
       sunflower
       sbpl_util
-      nepumuk)
+      nepumuk
+      png)
 
 SET (CMAKE_REQUIRED_INCLUDES /usr/local/include)
 INCLUDE_DIRECTORIES (/usr/local/include)

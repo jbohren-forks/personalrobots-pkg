@@ -359,6 +359,7 @@ namespace ompl {
     m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
 				 inscribed_radius, buffer_zone, padding_factor,
 				 0, obstacle_cost,
+				 sfl::exponential_travmap_cost_decay(3), // guesstimate
 				 name, sfl::RWlock::Create(name), growstrategy));
     
 
