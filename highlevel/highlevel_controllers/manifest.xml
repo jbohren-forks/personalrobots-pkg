@@ -21,6 +21,7 @@
  <depend package="laser_scan_utils" />
  <depend package="costmap_2d"/>
  <depend package="rosTF"/>
+ <depend package="tf"/>
  <depend package="ompl"/>
  <depend package="sbpl"/>
  <depend package="sbpl_util"/>

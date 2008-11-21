@@ -123,9 +123,11 @@ namespace ros {
       robotWidth_ = inscribedRadius * 2;
 
       // Allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("tilt_laser"), tf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+
+      tf::TransformListener *tempTf_ = new tf::TransformListener(*this, true, (uint64_t)10000000000ULL);
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), *tempTf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("tilt_laser"), *tempTf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), *tempTf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
