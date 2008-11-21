@@ -1,0 +1,229 @@
+<?xml version="1.0"?>
+
+<controllers>
+
+  <controller name="base_controller" topic="base_controller" type="BaseControllerNode">
+    <map name="velocity_control" flag="base_control">
+      <elem key="kp_speed">100.0</elem>
+      <elem key="kp_caster_steer">0</elem>
+      <elem key="timeout">3</elem>
+
+      <elem key="max_x_dot">1</elem>
+      <elem key="max_y_dot">1</elem>
+      <elem key="max_yaw_dot">1</elem>
+
+      <elem key="max_x_accel">2.0</elem>
+      <elem key="max_y_accel">2.0</elem>
+      <elem key="max_yaw_accel">1.0</elem>
+    </map>
+
+    <controller name="fl_caster_l_wheel_controller" topic="fl_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="fl_caster_r_wheel_controller" topic="fl_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="fr_caster_l_wheel_controller" topic="fr_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="fr_caster_r_wheel_controller" topic="fr_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="bl_caster_l_wheel_controller" topic="bl_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="bl_caster_r_wheel_controller" topic="bl_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="br_caster_l_wheel_controller" topic="br_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+    <controller name="br_caster_r_wheel_controller" topic="br_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
+        </joint>
+    </controller>
+
+    <controller name="fl_caster_rotation_controller" topic="fl_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_rotation_joint" >
+          <pid p="3" d="0" i="0.1" iClamp="4" />
+        </joint>
+    </controller>
+    <controller name="fr_caster_rotation_controller" topic="fr_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_rotation_joint" >
+          <pid p="3" d="0" i="0.1" iClamp="4" />
+        </joint>
+    </controller>
+    <controller name="bl_caster_rotation_controller" topic="bl_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_rotation_joint" >
+          <pid p="3" d="0" i="0.1" iClamp="4" />
+        </joint>
+    </controller>
+    <controller name="br_caster_rotation_controller" topic="br_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_rotation_joint" >
+          <pid p="3" d="0" i="0.1" iClamp="4" />
+        </joint>
+    </controller>
+
+
+  </controller>
+
+  <!-- ========================================= -->
+  <!-- torso array -->
+  <controller name="torso_lift_controller" topic="torso_lift_controller" type="JointPositionControllerNode">
+      <joint name="torso_lift_joint">
+        <pid p="1000" d="0" i="0" iClamp="0" />
+      </joint>
+  </controller>
+  <!-- ========================================= -->
+  <!-- left arm array -->
+  <controller name="left_arm_controller" type="ArmPositionControllerNode">
+    <listen_topic name="left_arm_commands" />
+    <kinematics>
+      <elem key="kdl_chain_name">left_arm</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">left_arm</elem>
+    </map>
+    <controller name="l_shoulder_pan_controller" topic="l_shoulder_pan_controller" type="JointPositionController">
+      <joint name="l_shoulder_pan_joint" >
+        <pid p="100" d="200" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_shoulder_lift_controller" topic="l_shoulder_lift_controller" type="JointPositionController">
+      <joint name="l_shoulder_lift_joint" >
+        <pid p="100" d="100.0" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_upper_arm_roll_controller" topic="l_upper_arm_roll_controller" type="JointPositionController">
+      <joint name="l_upper_arm_roll_joint" >
+        <pid p="400" d="400" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_elbow_flex_controller" topic="l_elbow_flex_controller" type="JointPositionController">
+      <joint name="l_elbow_flex_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_forearm_roll_controller" topic="l_forearm_roll_controller" type="JointPositionController">
+      <joint name="l_forearm_roll_joint" >
+        <pid p="200" d="200" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_wrist_flex_controller" topic="l_wrist_flex_controller" type="JointPositionController">
+      <joint name="l_wrist_flex_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="l_wrist_roll_controller" topic="l_wrist_roll_controller" type="JointPositionController">
+      <joint name="l_wrist_roll_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="0" />
+      </joint>
+    </controller>
+  </controller>
+  <!-- Special gripper joint -->
+  <controller name="l_gripper_controller" topic="l_gripper_controller" type="JointPositionControllerNode">
+    <joint name="l_gripper_l_finger_joint">
+      <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
+    </joint>
+  </controller>
+  <!-- ========================================= -->
+  <!-- right arm array -->
+  <controller name="right_arm_controller" type="ArmPositionControllerNode">
+    <listen_topic name="right_arm_commands" />
+    <kinematics>
+      <elem key="kdl_chain_name">right_arm</elem>
+    </kinematics>
+    <map name="controller_param">
+      <elem key="kdl_chain_name">right_arm</elem>
+    </map>
+    <controller name="r_shoulder_pan_controller" topic="r_shoulder_pan_controller" type="JointPositionController">
+      <joint name="r_shoulder_pan_joint" >
+        <pid p="100" d="200" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_shoulder_lift_controller" topic="r_shoulder_lift_controller" type="JointPositionController">
+      <joint name="r_shoulder_lift_joint" >
+        <pid p="100" d="100.0" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_upper_arm_roll_controller" topic="r_upper_arm_roll_controller" type="JointPositionController">
+      <joint name="r_upper_arm_roll_joint" >
+        <pid p="400" d="400" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_elbow_flex_controller" topic="r_elbow_flex_controller" type="JointPositionController">
+      <joint name="r_elbow_flex_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_forearm_roll_controller" topic="r_forearm_roll_controller" type="JointPositionController">
+      <joint name="r_forearm_roll_joint" >
+        <pid p="200" d="200" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_wrist_flex_controller" topic="r_wrist_flex_controller" type="JointPositionController">
+      <joint name="r_wrist_flex_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="1" />
+      </joint>
+    </controller>
+    <controller name="r_wrist_roll_controller" topic="r_wrist_roll_controller" type="JointPositionController">
+      <joint name="r_wrist_roll_joint" >
+        <pid p="100" d="100" i="0.1" iClamp="0" />
+      </joint>
+    </controller>
+  </controller>
+  <!-- Special gripper joint -->
+  <controller name="r_gripper_controller" topic="r_gripper_controller" type="JointPositionControllerNode">
+    <joint name="r_gripper_l_finger_joint">
+      <pid p="1.0" d="0.00" i="0.00" iClamp="0.00" />
+    </joint>
+  </controller>
+  <!-- head and above array -->
+  <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionControllerNode">
+    <joint name="head_pan_joint" >
+      <pid p="100" d="0" i="0" iClamp="0" />
+    </joint>
+  </controller>
+  <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionControllerNode">
+    <joint name="head_tilt_joint" >
+      <pid p="100" d="0" i="0" iClamp="0" />
+    </joint>
+  </controller>
+
+  <controller name="laser_tilt_controller" topic="laser_tilt_controller" type="LaserScannerControllerNode">
+    <joint name="laser_tilt_mount_joint" >
+      <pid p="12" i=".1" d="1" iClamp="0.5" />
+    </joint>
+  </controller>
+
+  <!-- this version of laser scanner controller seems to be broken
+  <controller name="tilt_laser_controller" topic="laser_test" type="LaserScannerControllerNode">
+    <velocity>
+      <velocityFilter smoothing="0.2"/>
+      <joint name="tilt_laser_mount_joint" type="velocity">
+        <pid p="0.56" i = "14" d = "0.000001" iClamp = "0.02" />     
+      </joint>
+    </velocity>
+    <position>
+      <joint name="single_joint" type="position">
+      <pid p="4.4382" i = "31.2110" d = "0.0453" iClamp = "0.004" />   
+    </joint>
+    </position>
+  </controller>
+  -->
+</controllers>

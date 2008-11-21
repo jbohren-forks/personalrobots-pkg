@@ -28,17 +28,17 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 ${reflect*0.025} 0" rpy="0 M_PI/2 0" />
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
         <map name="foo" flag="gazebo">
 	  <elem key="material">Gazebo/Blue</elem>
         </map>
         <geometry name="${side}_ptz_pan_visual">
-          <mesh scale="0.05 0.05 0.05" />
+          <mesh filename="ptz_base_${side}" />
         </geometry>
       </visual>
 
       <collision>
-        <origin xyz="0 -0.025 0" rpy="0 M_PI/2 0" />
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
         <geometry name="${side}_ptz_pan_collision">
           <cylinder radius="0.05" length="0.05" />
         </geometry>
@@ -54,7 +54,7 @@
 
     <sensor name="${side}_ptz_tilt_link" type="camera">
       <parent name="${side}_ptz_pan_link" />
-      <origin xyz="0.0 ${reflect*0.03} 0.0" rpy="0 0 0"/>
+      <origin xyz="0.0 ${reflect*0.0} 0.0" rpy="0 0 0"/>
       <joint name="${side}_ptz_tilt_joint" />
 
       <inertial>
@@ -66,17 +66,17 @@
       </inertial>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 M_PI/2 0" />
+        <origin xyz="0 0 0" rpy="0 0 0" />
         <map name="foo" flag="gazebo">
 	  <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${side}_ptz_tilt_visual">
-          <mesh scale="0.03 0.03 0.03" />
+          <mesh filename="ptz_${side}" />
         </geometry>
       </visual>
 
       <collision>
-        <origin xyz="0 0 0" rpy="0 M_PI/2 0" />
+        <origin xyz="0 ${reflect*0.0} 0" rpy="0 0 0" />
         <geometry name="${side}_ptz_tilt_collision">
           <cylinder radius="0.03" length="0.03" />
         </geometry>
