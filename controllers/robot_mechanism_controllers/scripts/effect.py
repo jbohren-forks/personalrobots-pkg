@@ -31,7 +31,8 @@
 #
 # Author: Stuart Glaser
 
-CONTROLLER_NAME = 'quick_effort_controller'
+import random
+CONTROLLER_NAME = "quick_effort_controller_%08d" % random.randint(0,10**8-1)
 
 import sys
 
