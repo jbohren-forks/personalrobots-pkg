@@ -380,6 +380,8 @@ int arm7DOF::solveCosineEqn(const double &a, const double &b, const double &c, d
 
 void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 {
+  solution_ik_.clear();
+
    int error_code(0);
 
    double t2(0), t3(0), t4(0), t5(0), t6(0), t7(0);
