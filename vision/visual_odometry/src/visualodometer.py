@@ -202,6 +202,8 @@ class FeatureDetectorStar(FeatureDetector):
     sd = starfeature.star_detector(frame.size[0], frame.size[1], 5, self.thresh, self.line_thresh)
     return [ (x,y) for (x,y,s,r) in sd.detect(frame.rawdata) ]
 
+########################################################################
+
 class DescriptorScheme:
 
   def name(self):

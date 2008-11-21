@@ -38,69 +38,89 @@ import sys
 import time
 import getopt
 
+from vis import Vis
+
 from math import *
 
-import rospy
 from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
-from robot_msgs.msg import VOPose
-import std_msgs.msg as stdmsg
+from cv_view.msg import Line, Lines
+from visual_odometry.msg import Frame, Pose44, Keypoint, Descriptor
+import rospy
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast
+from visualodometer import VisualOdometer, Pose, FeatureDetectorHarris
 import camera
+from marker import Marker
+import timer
 
 import PIL.Image
 import PIL.ImageDraw
-import pickle
+#import pickle
+import cPickle as pickle
+import random
 
-class imgAdapted:
-  def __init__(self, i):
-    self.i = i
-    self.size = (i.width, i.height)
-  def tostring(self):
-    return self.i.data
+import pylab
 
-class VO:
+class as_lines:
+  type = Lines
+  def encode(self, x):
+    return Lines([ Line(l, r, g, b, x0, y0, x1, y1) for (l, r, g, b, x0, y0, x1, y1) in x ])
+  def decode(self, x):
+    return x
 
-  def __init__(self):
-    rospy.TopicSub('/videre/images', ImageArray, self.handle_array)
-    rospy.TopicSub('/videre/cal_params', String, self.handle_params)
+class as_string:
+  type = String
+  def encode(self, x):
+    return String(pickle.dumps(x))
+  def decode(self, x):
+    return Lines([ Line(l, r, g, b, x0, y0, x1, y1) for (l, r, g, b, x0, y0, x1, y1) in pickle.loads(x.data) ])
 
-    self.pub_vo = rospy.Publisher("/vo", VOPose)
+mydata = as_lines()
 
-    self.vo = None
+class lineperftest:
 
-  def handle_params(self, iar):
-    if not self.vo:
-      cam = camera.VidereCamera(iar.data)
-      self.vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
-      self.started = None
-      self.previous_keyframe = None
-      self.know_state = 'lost'
+  def __init__(self, mode):
+    if mode == 'send':
+      rospy.Subscriber('/videre/images', ImageArray, self.display_array)
+      rospy.Subscriber('/videre/cal_params', String, self.display_params)
+      self.viz_pub = rospy.Publisher("/overlay", mydata.type)
+    else:
+      rospy.Subscriber("/overlay", mydata.type, self.handle_lines, buff_size = 65536)
 
-  def handle_array(self, iar):
-    af = None
-    if self.vo:
-      imgR = imgAdapted(iar.images[0])
-      imgL = imgAdapted(iar.images[1])
-      af = SparseStereoFrame(imgL, imgR)
+    self.times = []
 
-      pose = self.vo.handle_frame(af)
-      print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
-      p = VOPose()
-      p.inliers = self.vo.inl
-      # XXX - remove after camera sets frame_id
-      p.header = rostools.msg.Header(0, iar.header.stamp, "stereo")
-      print iar.header.stamp.secs
-      p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
-      self.pub_vo.publish(p)
+  def display_params(self, iar):
+    cam = camera.VidereCamera(iar.data)
+
+  def display_array(self, iar):
+    points = [ (random.randrange(640), random.randrange(480)) for i in range(400) ]
+    ls = []
+    lr = "left_rectified"
+    ls = [ (lr, 0,255,0,  x,y-2,x,y+2) for (x,y) in points]
+    ls += [ (lr, 0,255,0, x-2,y,x+2,y) for (x,y) in points]
+    started = time.time()
+    w = mydata.encode(ls)
+    self.viz_pub.publish(w)
+    took = time.time() - started
+    print took
+    if took < 0.030:
+      self.times.append(took)
+
+  def handle_lines(self, iar):
+    d = mydata.decode(iar)
+    print "got %d lines" % len(d.lines)
+
+  def report(self):
+    pylab.hist(self.times, 100, (0.0, 0.030))
+    pylab.show()
 
 def main(args):
 
-  vod = VO()
+  vod = lineperftest(args[1])
 
-  rospy.ready('vo')
+  rospy.ready('lineperf_%s' % args[1])
   rospy.spin()
-  vod.vo.summarize_timers()
+  if args[1] == 'send':
+    vod.report()
 
 if __name__ == '__main__':
   main(sys.argv)
