@@ -300,9 +300,11 @@ class VisualOdometer:
   def summarize_timers(self):
     niter = self.num_frames
     print niter, "frames"
-    for n,t in self.timer.items():
-      print "%-20s %fms" % (n, 1e3 * t.sum / niter)
-    print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
+    print len(self.log_keyframes), "keyframes"
+    if niter != 0:
+      for n,t in self.timer.items():
+        print "%-20s %fms" % (n, 1e3 * t.sum / niter)
+      print "%-20s %fms" % ("TOTAL", self.average_time_per_frame())
 
   targetkp = 400
 

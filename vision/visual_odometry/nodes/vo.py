@@ -45,12 +45,8 @@ from std_msgs.msg import Image, ImageArray, String, VisualizationMarker
 from robot_msgs.msg import VOPose
 import std_msgs.msg as stdmsg
 from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast
+from visualodometer import VisualOdometer, FeatureDetectorHarris, FeatureDetector4x4, FeatureDetectorFast, Pose
 import camera
-
-import PIL.Image
-import PIL.ImageDraw
-import pickle
 
 class imgAdapted:
   def __init__(self, i):
@@ -61,46 +57,58 @@ class imgAdapted:
 
 class VO:
 
-  def __init__(self):
-    rospy.TopicSub('/videre/images', ImageArray, self.handle_array)
+  def __init__(self, decimate):
+    rospy.TopicSub('/videre/images', ImageArray, self.handle_array, queue_size=1)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
 
     self.pub_vo = rospy.Publisher("/vo", VOPose)
 
     self.vo = None
+    self.decimate = decimate
+    self.modulo = 0
 
   def handle_params(self, iar):
     if not self.vo:
       cam = camera.VidereCamera(iar.data)
-      self.vo = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
-      self.started = None
-      self.previous_keyframe = None
-      self.know_state = 'lost'
+      self.vo = VisualOdometer(cam)
+      self.intervals = []
+      self.took = []
 
   def handle_array(self, iar):
-    af = None
     if self.vo:
-      imgR = imgAdapted(iar.images[0])
-      imgL = imgAdapted(iar.images[1])
-      af = SparseStereoFrame(imgL, imgR)
+      t0 = time.time()
+      self.intervals.append(t0)
+      if (self.modulo % self.decimate) == 0:
+        imgR = imgAdapted(iar.images[0])
+        imgL = imgAdapted(iar.images[1])
+        af = SparseStereoFrame(imgL, imgR)
+        if 1:
+          pose = self.vo.handle_frame(af)
+        else:
+          pose = Pose()
+        #print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
+        p = VOPose()
+        p.inliers = self.vo.inl
+        # XXX - remove after camera sets frame_id
+        p.header = rostools.msg.Header(0, iar.header.stamp, "stereo")
+        p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
+        self.pub_vo.publish(p)
+      self.modulo += 1
+      self.took.append(time.time() - t0)
 
-      pose = self.vo.handle_frame(af)
-      print self.vo.num_frames, pose.xform(0,0,0), pose.quaternion()
-      p = VOPose()
-      p.inliers = self.vo.inl
-      # XXX - remove after camera sets frame_id
-      p.header = rostools.msg.Header(0, iar.header.stamp, "stereo")
-      print iar.header.stamp.secs
-      p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
-      self.pub_vo.publish(p)
+  def dump(self):
+    iv = self.intervals
+    took = self.took
+    print "Incoming frames: %d in %f, so %fms" % (len(iv), iv[-1] - iv[0], (iv[-1] - iv[0]) / len(iv))
+    print "Time in callback: %fms" % (sum(took) / len(took))
 
 def main(args):
-
-  vod = VO()
+  vod = VO(int(args[1]))
 
   rospy.ready('vo')
   rospy.spin()
   vod.vo.summarize_timers()
+  vod.dump()
 
 if __name__ == '__main__':
   main(sys.argv)
