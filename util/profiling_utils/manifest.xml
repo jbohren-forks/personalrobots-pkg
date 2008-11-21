@@ -14,5 +14,6 @@
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprofiling_utils -lpthread -lrt"/>
+    <cpp os="osx" cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lprofiling_utils -lpthread"/>
   </export>
 </package>
