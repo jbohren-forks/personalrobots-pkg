@@ -209,17 +209,15 @@
 
     <map name="sensor" flag="gazebo">
       <verbatim key="p3d_${prefix}_l_finger">
-        <!--
         <controller:P3D name="p3d_${prefix}_l_finger_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_l_finger</bodyName>
+          <bodyName>${prefix}_l_finger_link</bodyName>
           <topicName>${prefix}_l_finger_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${prefix}_l_finger_position_iface" />
         </controller:P3D>
-        -->
       </verbatim>
     </map>
 
@@ -229,7 +227,7 @@
         <controller:P3D name="p3d_${prefix}_l_finger_tip_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_l_finger_tip</bodyName>
+          <bodyName>${prefix}_l_finger_tip_link</bodyName>
           <topicName>${prefix}_l_finger_tip_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -238,7 +236,7 @@
         <controller:F3D name="f3d_${prefix}_l_finger_tip_controller" plugin="libF3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_l_finger_tip</bodyName>
+          <bodyName>${prefix}_l_finger_tip_link</bodyName>
           <topicName>${prefix}_l_finger_tip_force_ground_truth</topicName>
           <frameName>map</frameName>
           <interface:position name="f3d_${prefix}_l_finger_tip_position_iface" />
@@ -253,7 +251,7 @@
         <controller:P3D name="p3d_${prefix}_r_finger_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_r_finger</bodyName>
+          <bodyName>${prefix}_r_finger_link</bodyName>
           <topicName>${prefix}_r_finger_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -269,7 +267,7 @@
         <controller:P3D name="p3d_${prefix}_r_finger_tip_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_r_finger_tip</bodyName>
+          <bodyName>${prefix}_r_finger_tip_link</bodyName>
           <topicName>${prefix}_r_finger_tip_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -278,7 +276,7 @@
         <controller:F3D name="f3d_${prefix}_r_finger_tip_controller" plugin="libF3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${prefix}_r_finger_tip</bodyName>
+          <bodyName>${prefix}_r_finger_tip_link</bodyName>
           <topicName>${prefix}_r_finger_tip_force_ground_truth</topicName>
           <frameName>map</frameName>
           <interface:position name="f3d_${prefix}_r_finger_tip_position_iface" />
@@ -328,18 +326,18 @@
     </link>
 
     <map name="sensor" flag="gazebo">
-      <verbatim key="p3d_gripper_palm">
-        <!--
+      <verbatim key="p3d_${side}_gripper_palm">
         <controller:P3D name="p3d_${side}_gripper_palm_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_gripper_palm</bodyName>
+          <bodyName>${side}_gripper_palm_link</bodyName>
           <topicName>${side}_gripper_palm_pose_ground_truth</topicName>
+          <xyzOffsets>0 0 0</xyzOffsets>
+          <rpyOffsets>0 0 0</rpyOffsets>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
           <interface:position name="p3d_${side}_gripper_palm_position_iface" />
         </controller:P3D>
-        -->
       </verbatim>
     </map>
 
@@ -551,7 +549,7 @@
           <elem key="material">Gazebo/Grey</elem>
         </map>
         <geometry name="${side}_elbow_flex_visual">
-          <mesh filename="elbow_lift" />
+          <mesh filename="elbow_flex" />
         </geometry>
       </visual>
       <collision>
@@ -577,7 +575,7 @@
         <controller:P3D name="p3d_${side}_shoulder_pan_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_shoulder_pan</bodyName>
+          <bodyName>${side}_shoulder_pan_link</bodyName>
           <topicName>${side}_shoulder_pan_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -586,7 +584,7 @@
         <controller:P3D name="p3d_${side}_shoulder_lift_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_shoulder_lift</bodyName>
+          <bodyName>${side}_shoulder_lift_link</bodyName>
           <topicName>${side}_shoulder_lift_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -595,7 +593,7 @@
         <controller:P3D name="p3d_${side}_upper_arm_roll_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_upper_arm_roll</bodyName>
+          <bodyName>${side}_upper_arm_roll_link</bodyName>
           <topicName>${side}_upper_arm_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -604,7 +602,7 @@
         <controller:P3D name="p3d_${side}_elbow_flex_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_elbow_flex</bodyName>
+          <bodyName>${side}_elbow_flex_link</bodyName>
           <topicName>${side}_elbow_flex_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -699,7 +697,7 @@
           <elem key="material">Gazebo/Grey</elem>
         </map>
         <geometry name="${side}_wrist_flex_visual">
-          <mesh filename="wrist_lift" />
+          <mesh filename="wrist_flex" />
         </geometry>
       </visual>
       <collision>
@@ -768,7 +766,7 @@
         <controller:P3D name="p3d_${side}_forearm_roll_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_forearm_roll</bodyName>
+          <bodyName>${side}_forearm_roll_link</bodyName>
           <topicName>${side}_forearm_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -777,7 +775,7 @@
         <controller:P3D name="p3d_${side}_wrist_flex_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_wrist_flex</bodyName>
+          <bodyName>${side}_wrist_flex_link</bodyName>
           <topicName>${side}_wrist_flex_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>
@@ -786,7 +784,7 @@
         <controller:P3D name="p3d_${side}_wrist_roll_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>${side}_wrist_roll</bodyName>
+          <bodyName>${side}_wrist_roll_link</bodyName>
           <topicName>${side}_wrist_roll_pose_ground_truth</topicName>
           <gaussianNoise>0.0</gaussianNoise>
           <frameName>map</frameName>

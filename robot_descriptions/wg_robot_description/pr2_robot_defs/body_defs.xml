@@ -39,7 +39,7 @@
 	  <elem key="material">Gazebo/Red</elem>
         </map>
         <geometry name="${name}_visual">
-          <mesh filename="torso_lift" />
+          <mesh filename="torso" />
         </geometry>
       </visual>
 

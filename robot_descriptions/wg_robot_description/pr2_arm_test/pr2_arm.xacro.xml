@@ -29,7 +29,7 @@
   <!-- Solid Base -->
   <joint name="base_joint" type="planar"> 
   </joint>
-  <link name="base"><!-- link specifying the base of the robot -->
+  <link name="base_link"><!-- link specifying the base of the robot -->
     <parent name=" world" />
     <!-- rotation of a local coordinate frame attached to the link with respect to a global coordinate frame -->
     <origin xyz=" 0 0 0.002 " rpy=" 0 0 0" /> <!-- position of a local coordinate frame attached to the link with respect to the parent link's coordinate frame -->
@@ -64,7 +64,7 @@
     <controller:P3D name="p3d_l_wrist_controller" plugin="libP3D.so">
       <alwaysOn>true</alwaysOn>
       <updateRate>1000.0</updateRate>
-      <bodyName>l_gripper_palm</bodyName>
+      <bodyName>l_gripper_palm_link</bodyName>
       <topicName>l_gripper_palm_pose_ground_truth</topicName>
       <frameName>map</frameName>
       <interface:position name="p3d_l_wrist_position"/>

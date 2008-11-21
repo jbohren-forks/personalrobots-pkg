@@ -18,7 +18,7 @@
       <joint_properties damping="0.1" />
     </joint>
 
-    <link name="${name}_mount">
+    <link name="${name}_mount_link">
       <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_mount_joint" />
@@ -33,7 +33,7 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/PioneerBody</elem>
         </map>
-        <geometry name="${name}_mount_mesh_file">
+        <geometry name="${name}_mount_visual">
           <mesh filename="hok_tilt" />
         </geometry>
       </visual>
@@ -47,7 +47,7 @@
     </link>
 
     <transmission type="SimpleTransmission" name="${name}_mount_trans">
-      <actuator name="${name}_motor" />
+      <actuator name="${name}_mount_motor" />
       <joint name="${name}_mount_joint" />
       <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
@@ -58,7 +58,7 @@
     </joint>
 
     <sensor name="${name}" type="laser">
-      <parent name="${name}_mount" />
+      <parent name="${name}_mount_link" />
       <origin xyz="0 0 0.03" rpy="0 0 0" />
       <joint name="${name}_joint" />
       <inertial>
@@ -123,7 +123,7 @@
   <macro name="stereo_camera" params="name parent *origin">
     <joint name="${name}_joint" type="fixed" />
 
-    <sensor name="${name}" type="camera">
+    <sensor name="${name}_link" type="camera">
       <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
@@ -140,14 +140,14 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="stereo_visual">
+        <geometry name="${name}_visual">
           <mesh scale="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="${stereo_center_box_center_offset_x} 0 ${stereo_center_box_center_offset_z}" rpy="0 0 0" />
-        <geometry name="stereo_collision">
+        <geometry name="${name}_collision">
           <box size="${stereo_size_x} ${stereo_size_y} ${stereo_size_z}" />
         </geometry>
       </collision>
@@ -227,7 +227,7 @@
       <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
 
-    <link name="${name}">
+    <link name="${name}_link">
       <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
@@ -244,8 +244,8 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="${name}_mesh_file">
-          <mesh filename="${name}" />
+        <geometry name="${name}_visual">
+          <mesh filename="head_pan" />
         </geometry>
       </visual>
 
@@ -277,7 +277,7 @@
       <mechanicalReduction>6.0</mechanicalReduction>
     </transmission>
 
-    <link name="${name}">
+    <link name="${name}_link">
       <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${name}_joint" />
@@ -293,8 +293,8 @@
         <map name="gazebo_material" flag="gazebo">
           <elem key="material">Gazebo/Green</elem>
         </map>
-        <geometry name="${name}_mesh_file">
-          <mesh filename="${name}" />
+        <geometry name="${name}_visual">
+          <mesh filename="head_tilt" />
         </geometry>
       </visual>
 

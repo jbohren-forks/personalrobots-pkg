@@ -9,13 +9,13 @@
   <macro name="pr2_ptz" params="side parent reflect *origin">
 
     <joint name="${side}_ptz_pan_joint" type="revolute">
-      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" />
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
       <axis xyz="0 0 -1" />
       <joint_properties damping="0.01" friction="0.0" />
     </joint>
 
-    <link name="${side}_ptz_pan">
-      <parent name="${parent}" />
+    <link name="${side}_ptz_pan_link">
+      <parent name="${parent}_link" />
       <insert_block name="origin" />
       <joint name="${side}_ptz_pan_joint" />
 
@@ -32,28 +32,28 @@
         <map name="foo" flag="gazebo">
 	  <elem key="material">Gazebo/Blue</elem>
         </map>
-        <geometry name="${side}_ptz_pan_visual_geom">
+        <geometry name="${side}_ptz_pan_visual">
           <mesh scale="0.05 0.05 0.05" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 -0.025 0" rpy="0 M_PI/2 0" />
-        <geometry name="${side}_ptz_pan_collision_geom">
+        <geometry name="${side}_ptz_pan_collision">
           <cylinder radius="0.05" length="0.05" />
         </geometry>
       </collision>
     </link>
 
     <joint name="${side}_ptz_tilt_joint" type="revolute">
-      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" />
+      <limit min="-M_PI/2" max="M_PI/2" effort="10" velocity="5" k_velocity="1.0" k_position="1.0" />
       <axis xyz="0 -1 0" />
       <anchor xyz="0 0 0" />
       <joint_properties damping="0.01" friction="0.0" />
     </joint>
 
-    <sensor name="${side}_ptz_tilt" type="camera">
-      <parent name="${side}_ptz_pan" />
+    <sensor name="${side}_ptz_tilt_link" type="camera">
+      <parent name="${side}_ptz_pan_link" />
       <origin xyz="0.0 ${reflect*0.03} 0.0" rpy="0 0 0"/>
       <joint name="${side}_ptz_tilt_joint" />
 
@@ -70,14 +70,14 @@
         <map name="foo" flag="gazebo">
 	  <elem key="material">Gazebo/Red</elem>
         </map>
-        <geometry name="${side}_ptz_tilt_visual_geom">
+        <geometry name="${side}_ptz_tilt_visual">
           <mesh scale="0.03 0.03 0.03" />
         </geometry>
       </visual>
 
       <collision>
         <origin xyz="0 0 0" rpy="0 M_PI/2 0" />
-        <geometry name="${side}_ptz_tilt_collision_geom">
+        <geometry name="${side}_ptz_tilt_collision">
           <cylinder radius="0.03" length="0.03" />
         </geometry>
       </collision>

@@ -36,24 +36,24 @@
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_rear_left_l_controller" topic="wheel_rear_left_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_left_l_joint" >
-          <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
+    <controller name="bl_caster_l_wheel_controller" topic="bl_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
-    <controller name="wheel_rear_left_r_controller" topic="wheel_rear_left_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_left_r_joint" >
-          <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
+    <controller name="bl_caster_r_wheel_controller" topic="bl_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
-    <controller name="wheel_rear_right_l_controller" topic="wheel_rear_right_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_right_l_joint" >
-          <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
+    <controller name="br_caster_l_wheel_controller" topic="br_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_l_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
-    <controller name="wheel_rear_right_r_controller" topic="wheel_rear_right_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_right_r_joint" >
-          <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
+    <controller name="br_caster_r_wheel_controller" topic="br_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_r_wheel_joint" >
+          <pid p="2.0" d="0" i="0.2" iClamp="2" />
         </joint>
     </controller>
 

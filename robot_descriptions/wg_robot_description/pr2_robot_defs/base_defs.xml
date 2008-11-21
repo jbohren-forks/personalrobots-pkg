@@ -236,7 +236,7 @@
         <controller:P3D name="p3d_base_controller" plugin="libP3D.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>1000.0</updateRate>
-          <bodyName>base</bodyName>
+          <bodyName>base_link</bodyName>
           <topicName>base_pose_ground_truth</topicName>
           <gaussianNoise>0.01</gaussianNoise>
           <frameName>map</frameName>

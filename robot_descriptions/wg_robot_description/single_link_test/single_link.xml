@@ -1,5 +1,4 @@
 <?xml version="1.0"?>
-
 <robot name="pr2"
        xmlns:xi="http://www.w3.org/2001/XInclude"
        xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
@@ -18,7 +17,7 @@
   <joint name="link1_joint" type="revolute" >
     <axis xyz="1 0 0" />
     <anchor xyz="0 0 0" />
-    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit min="-3.14159" max="3.14159" effort="100" velocity="5" k_position="1.0" k_velocity="1.0" />
     <calibration values="1.5 -1 " />
   </joint>
   
@@ -80,6 +79,7 @@
       <elem key="turnGravityOff">true</elem>
     </map>
   </link>
+
   <map name="sensor" flag="gazebo">
     <verbatim key="mechanism_control_simulation">
       <controller:ros_time name="ros_time" plugin="libRos_Time.so">
@@ -92,7 +92,6 @@
       <controller:gazebo_mechanism_control name="gazebo_mechanism_control" plugin="libgazebo_mechanism_control.so">
         <alwaysOn>true</alwaysOn>
         <updateRate>100.0</updateRate>
-
         <interface:audio name="gazebo_mechanism_control_dummy_iface" />
       </controller:gazebo_mechanism_control>
 
