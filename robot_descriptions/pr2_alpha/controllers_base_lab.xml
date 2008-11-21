@@ -16,64 +16,64 @@
       <elem key="max_y_accel">2.0</elem>
       <elem key="max_yaw_accel">2.0</elem>
     </map>
-    <controller name="wheel_front_left_l_controller" topic="wheel_front_left_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_front_left_l_joint" >
+    <controller name="fl_caster_l_wheel_controller" topic="fl_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_l_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_front_left_r_controller" topic="wheel_front_left_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_front_left_r_joint" >
+    <controller name="fl_caster_r_wheel_controller" topic="fl_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_r_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_front_right_l_controller" topic="wheel_front_right_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_front_right_l_joint" >
+    <controller name="fr_caster_l_wheel_controller" topic="fr_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_l_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_front_right_r_controller" topic="wheel_front_right_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_front_right_r_joint" >
+    <controller name="fr_caster_r_wheel_controller" topic="fr_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_r_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_rear_left_l_controller" topic="wheel_rear_left_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_left_l_joint" >
+    <controller name="bl_caster_l_wheel_controller" topic="bl_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_l_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_rear_left_r_controller" topic="wheel_rear_left_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_left_r_joint" >
+    <controller name="bl_caster_r_wheel_controller" topic="bl_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_r_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_rear_right_l_controller" topic="wheel_rear_right_l_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_right_l_joint" >
+    <controller name="br_caster_l_wheel_controller" topic="br_caster_l_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_l_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
-    <controller name="wheel_rear_right_r_controller" topic="wheel_rear_right_r_controller" type="JointVelocityControllerNode">
-        <joint name="wheel_rear_right_r_joint" >
+    <controller name="br_caster_r_wheel_controller" topic="br_caster_r_wheel_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_r_wheel_joint" >
           <pid p="2.0" d="0" i="0.01" iClamp="0.4" />
         </joint>
     </controller>
 
-    <controller name="caster_front_left_controller" topic="caster_front_left_controller" type="JointVelocityControllerNode">
-        <joint name="caster_front_left_joint" >
+    <controller name="fl_caster_rotation_controller" topic="fl_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="fl_caster_rotation_joint" >
           <pid p="3" d="0" i="0.1" iClamp="4" />
         </joint>
     </controller>
-    <controller name="caster_front_right_controller" topic="caster_front_right_controller" type="JointVelocityControllerNode">
-        <joint name="caster_front_right_joint" >
+    <controller name="fr_caster_rotation_controller" topic="fr_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="fr_caster_rotation_joint" >
           <pid p="3" d="0" i="0.1" iClamp="4" />
         </joint>
     </controller>
-    <controller name="caster_rear_left_controller" topic="caster_rear_left_controller" type="JointVelocityControllerNode">
-        <joint name="caster_rear_left_joint" >
+    <controller name="bl_caster_rotation_controller" topic="bl_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="bl_caster_rotation_joint" >
           <pid p="3" d="0" i="0.1" iClamp="4" />
         </joint>
     </controller>
-    <controller name="caster_rear_right_controller" topic="caster_rear_right_controller" type="JointVelocityControllerNode">
-        <joint name="caster_rear_right_joint" >
+    <controller name="br_caster_rotation_controller" topic="br_caster_rotation_controller" type="JointVelocityControllerNode">
+        <joint name="br_caster_rotation_joint" >
           <pid p="3" d="0" i="0.1" iClamp="4" />
         </joint>
     </controller>
