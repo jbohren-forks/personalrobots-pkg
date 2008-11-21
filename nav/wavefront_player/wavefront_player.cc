@@ -571,7 +571,7 @@ WavefrontNode::doOneCycle()
 
   tf::Stamped<tf::Pose> robotPose;
   robotPose.setIdentity();
-  robotPose.frame_id_ = "base";
+  robotPose.frame_id_ = "base_link";
   robotPose.stamp_ = ros::Time((uint64_t)0ULL); // request most recent pose
   //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL +
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else

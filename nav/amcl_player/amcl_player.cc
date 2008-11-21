@@ -465,18 +465,18 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     /*
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
                                                                       tf::Point(pdata->pos.px, pdata->pos.py, 0.0)),
-                                                        t, "base","map"));
+                                                        t, "base_link","map"));
                                                         */
 
     //this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion(pdata->pos.pa, 0, 0), 
     //                                                                  tf::Point(pdata->pos.px, pdata->pos.py, 0.0)).inverse(),
-    //                                                    t, "map", "base"));
+    //                                                    t, "map", "base_link"));
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
     this->tfL->transformPose("odom",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
-                                                           t, "base"),odom_to_map);
+                                                           t, "base_link"),odom_to_map);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ),
                                                         t, "map","odom"));
@@ -756,7 +756,7 @@ AmclNode::laserReceived()
     tf::Stamped<btTransform> laser_pose;
     try
     {
-      this->tfL->transformPose("base", ident, laser_pose);
+      this->tfL->transformPose("base_link", ident, laser_pose);
     }
     catch(tf::TransformException e)
     {
@@ -790,7 +790,7 @@ AmclNode::laserReceived()
     
     // Where was the robot when this scan was taken?
     double x, y, yaw;
-    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base"))
+    if(!getOdomPose(x, y, yaw, scan.header.stamp, "base_link"))
       break;
 
     laser_scans.pop_front();

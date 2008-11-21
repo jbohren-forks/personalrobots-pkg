@@ -169,7 +169,7 @@ private:
       m_tfServer->sendTransform(tf::Stamped<tf::Transform>
                                 (txo.inverse(),
                                  m_basePosMsg.header.stamp,
-                                 "map", "base"));
+                                 "map", "base_link"));
 
       m_currentPos.header = m_basePosMsg.header;
       m_currentPos.pos.x = x;
