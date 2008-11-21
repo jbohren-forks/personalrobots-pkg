@@ -90,11 +90,13 @@ class VO:
         p = VOPose()
         p.inliers = self.vo.inl
         # XXX - remove after camera sets frame_id
-        p.header = rostools.msg.Header(0, iar.header.stamp, "stereo")
+        p.header = rostools.msg.Header(0, iar.header.stamp, "stereo_link")
         p.pose = stdmsg.Pose(stdmsg.Point(*pose.xform(0,0,0)), stdmsg.Quaternion(*pose.quaternion()))
         self.pub_vo.publish(p)
       self.modulo += 1
       self.took.append(time.time() - t0)
+      if (len(self.took) % 100) == 0:
+        print len(self.took)
 
   def dump(self):
     iv = self.intervals
