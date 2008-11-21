@@ -2,7 +2,7 @@
 
 namespace costmap_2d {
 
-  BasicObservationBuffer::BasicObservationBuffer(const std::string& frame_id, rosTFClient& tf, ros::Duration keepAlive, 
+  BasicObservationBuffer::BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, 
 				       double robotRadius, double minZ, double maxZ)
     : ObservationBuffer(keepAlive), frame_id_(frame_id), tf_(tf), robotRadius_(robotRadius), minZ_(minZ), maxZ_(maxZ){}
 
@@ -25,40 +25,35 @@ namespace costmap_2d {
 	continue;
       }
 
-      libTF::TFPoint map_origin;
+      tf::Stamped<btVector3> map_origin;
       std_msgs::PointCloud base_cloud;
 
       /* Transform to the base frame */
       try
         {
 	  // First we want the origin for the sensor
-	  libTF::TFPoint local_origin;
-	  local_origin.x = 0;
-	  local_origin.y = 0;
-	  local_origin.z = 0;
-	  local_origin.time = point_cloud.header.stamp.toNSec();
-	  local_origin.frame = frame_id_;
-	  map_origin = tf_.transformPoint("map", local_origin);
+	  tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), point_cloud.header.stamp.toNSec(), frame_id_);
+	  tf_.transformPoint("map", local_origin, map_origin);
 
-          tf_.transformPointCloud("base", base_cloud, point_cloud);
+          tf_.transformPointCloud("base", point_cloud, base_cloud);
           newData = extractFootprintAndGround(base_cloud);
           map_cloud = new std_msgs::PointCloud();
-          tf_.transformPointCloud("map", *map_cloud, *newData);
+          tf_.transformPointCloud("map", *newData, *map_cloud);
 
-	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.x, map_origin.y, map_origin.z);
+	  ROS_DEBUG("Buffering cloud for %s at origin <%f, %f, %f>\n", frame_id_.c_str(), map_origin.getX(), map_origin.getY(), map_origin.getZ());
         }
-      catch(libTF::TransformReference::LookupException& ex)
+      catch(tf::LookupException& ex)
         {
           ROS_ERROR("Lookup exception for %s : %s\n", frame_id_.c_str(), ex.what());
           break;
         }
-      catch(libTF::TransformReference::ExtrapolateException& ex)
+      catch(tf::ExtrapolationException& ex)
         {
           ROS_DEBUG("No transform available yet for %s - have to try later: %s . Buffer size is %d\n", 
 		    frame_id_.c_str(), ex.what(), point_clouds_.size());
           break;
         }
-      catch(libTF::TransformReference::ConnectivityException& ex)
+      catch(tf::ConnectivityException& ex)
         {
           ROS_ERROR("Connectivity exception for %s: %s\n", frame_id_.c_str(), ex.what());
           break;
@@ -78,9 +73,9 @@ namespace costmap_2d {
 
       // Get the point from whihc we ray trace
       std_msgs::Point o;
-      o.x = map_origin.x;
-      o.y = map_origin.y;
-      o.z = map_origin.z;
+      o.x = map_origin.getX();
+      o.y = map_origin.getY();
+      o.z = map_origin.getZ();
 
       // Allocate and buffer the observation
       Observation obs(o, map_cloud);
