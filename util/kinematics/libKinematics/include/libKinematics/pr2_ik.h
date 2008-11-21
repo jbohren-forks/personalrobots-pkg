@@ -60,7 +60,13 @@ namespace kinematics
        
     void ComputeIK(NEWMAT::Matrix g, double theta1);
 
+    void ComputeIKEfficient(NEWMAT::Matrix g, double t1);
+
     private:
+
+    double ap_[5];
+
+    int solveCosineEqn(const double &a, const double &b, const double &c, double &soln1, double &soln2);
 
     std::vector<double> solution_;
 

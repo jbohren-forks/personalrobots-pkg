@@ -3,6 +3,8 @@
 #include <libKinematics/pr2_ik.h>
 
 #define NUM_JOINTS_ARM7DOF 7
+#define IK_EPS 1e-5
+
 using namespace kinematics;
 using namespace std;
 using namespace NEWMAT;
@@ -10,6 +12,7 @@ using namespace NEWMAT;
 arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix> axis, std::vector<std::string> joint_type) : SerialRobot(7)
 {
   std::vector<double> angles;
+  NEWMAT::Matrix p_axis;
 /* Joint angles and speeds for testing */
    double angles_d[7] = {0,0,0,0,0,0,0};
 
@@ -45,6 +48,17 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
 
     angles[i] = 0.0;
   }
+
+  p_axis = GetJointAxisPoint(1);
+  ap_[0] = p_axis(1,1);
+  p_axis = GetJointAxisPoint(3);
+  ap_[1] = p_axis(1,1);
+  p_axis = GetJointAxisPoint(4);
+  ap_[2] = p_axis(1,1);
+  p_axis = GetJointAxisPoint(5);
+  ap_[3] = p_axis(1,1);
+  p_axis = GetJointAxisPoint(6);
+  ap_[4] = p_axis(1,1);
 
   for(int i=0; i < NUM_JOINTS_ARM7DOF; i++)
   {
@@ -330,3 +344,173 @@ th5 = elbow roll
 th6 = wrist pitch
 th7 = wrist roll 
 ****/
+
+
+int arm7DOF::solveCosineEqn(const double &a, const double &b, const double &c, double &soln1, double &soln2)
+{
+   double theta1 = atan2(b,a);
+   double denom  = sqrt(a*a+b*b);
+   int error_code = 1;
+
+   if(denom < IK_EPS) // should never happen, wouldn't make sense but make sure it is checked nonetheless
+   {
+      std::cout << "solveCosineEqn: degenerate condition" << endl;
+      return -1;
+   }
+   double rhs_ratio = c/denom;
+
+   if(rhs_ratio < -1)
+   {
+      rhs_ratio  = -1;
+      error_code = 0;
+   }
+   else if(rhs_ratio > 1)
+   {
+      rhs_ratio = 1;
+      error_code = 0;
+   }
+   double acos_term = acos(rhs_ratio);
+   soln1 = theta1 + acos_term;
+   soln2 = theta1 - acos_term;
+
+   return error_code;
+}
+
+
+
+void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
+{
+   int error_code(0);
+
+   double t2(0), t3(0), t4(0), t5(0), t6(0), t7(0);
+
+   double at(0), bt(0), ct(0);
+
+   double theta2[2],theta3[2],theta4[2],theta6[2]; 
+
+   double sopx = ap_[0]*cos(t1);
+   double sopy = ap_[0]*sin(t1);
+   double sopz = 0;
+
+   double x = g(1,4);
+   double y = g(2,4);
+   double z = g(3,4);
+
+   double dx = x - sopx;
+   double dy = y - sopy;
+   double dz = z - sopz;
+
+   double dd = dx*dx + dy*dy + dz*dz;
+
+   double numerator = dd-ap_[0]*ap_[0]+2*ap_[0]*ap_[1]-2*ap_[1]*ap_[1]+2*ap_[1]*ap_[3]-ap_[3]*ap_[3];
+   double denominator = 2*(ap_[0]-ap_[1])*(ap_[1]-ap_[3]);
+
+   double acosTerm = numerator/denominator;
+
+   if (acosTerm > 1.0)
+      acosTerm = 1.0;
+   if (acosTerm < -1.0)
+      acosTerm = -1.0;
+   
+   theta4[0] = acos(acosTerm);
+   theta4[1] = -acos(acosTerm);
+
+#ifdef DEBUG
+   cout << "ComputeIK::theta3:" << numerator << "," << denominator << "," << endl << solution << endl;
+   PrintMatrix(theta4,"theta4");/* There are now two solution streams */
+#endif
+
+  NEWMAT::Matrix g0 = GetHomePosition();
+  NEWMAT::Matrix g0_inv_ = matInv(g0);
+  NEWMAT::Matrix grhs = g0;
+  NEWMAT::Matrix gf = g*g0_inv_;
+
+   for(int jj =0; jj < 2; jj++)
+   {
+      t4 = theta4[jj];
+      if(isnan(t4))
+         continue;
+
+      at = x*cos(t1)+y*sin(t1)-ap_[0];
+      bt = -z;
+      ct = -ap_[0] + ap_[1] + (ap_[3]-ap_[1])*cos(t4);
+
+      error_code = solveCosineEqn(at,bt,ct,theta2[0],theta2[1]);
+
+      if(error_code != 1)
+         continue;
+
+      for(int ii=0; ii < 2; ii++)
+      {
+         t2 = theta2[ii];
+
+         at = sin(t1)*(ap_[1] - ap_[3])*sin(t2)*sin(t4);
+         bt = (-ap_[1]+ap_[3])*cos(t1)*sin(t4);
+         ct = y - (ap_[0]+cos(t2)*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cos(t4)))*sin(t1);
+         error_code = solveCosineEqn(at,bt,ct,theta3[0],theta3[1]);
+
+         if(error_code != 1)
+            continue;
+
+         for(int kk =0; kk < 2; kk++)
+         {
+            t3 = theta3[kk];
+
+            grhs(1,1) = cos(t4)*(gf(1,1)*cos(t1)*cos(t2)+gf(2,1)*cos(t2)*sin(t1)-gf(3,1)*sin(t2))-(gf(3,1)*cos(t2)*cos(t3) + cos(t3)*(gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2) + (-(gf(2,1)*cos(t1)) + gf(1,1)*sin(t1))*sin(t3))*sin(t4);
+
+            grhs(1,2) = cos(t4)*(gf(1,2)*cos(t1)*cos(t2) + gf(2,2)*cos(t2)*sin(t1) - gf(3,2)*sin(t2)) - (gf(3,2)*cos(t2)*cos(t3) + cos(t3)*(gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2) + (-(gf(2,2)*cos(t1)) + gf(1,2)*sin(t1))*sin(t3))*sin(t4);
+
+            grhs(1,3) = cos(t4)*(gf(1,3)*cos(t1)*cos(t2) + gf(2,3)*cos(t2)*sin(t1) - gf(3,3)*sin(t2)) - (gf(3,3)*cos(t2)*cos(t3) + cos(t3)*(gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2) + (-(gf(2,3)*cos(t1)) + gf(1,3)*sin(t1))*sin(t3))*sin(t4);
+
+            grhs(2,1) = cos(t3)*(gf(2,1)*cos(t1) - gf(1,1)*sin(t1)) + gf(3,1)*cos(t2)*sin(t3) + (gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2)*sin(t3);
+
+            grhs(2,2) = cos(t3)*(gf(2,2)*cos(t1) - gf(1,2)*sin(t1)) + gf(3,2)*cos(t2)*sin(t3) + (gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2)*sin(t3);
+
+            grhs(2,3) = cos(t3)*(gf(2,3)*cos(t1) - gf(1,3)*sin(t1)) + gf(3,3)*cos(t2)*sin(t3) + (gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2)*sin(t3);
+
+            grhs(3,1) = cos(t4)*(gf(3,1)*cos(t2)*cos(t3) + cos(t3)*(gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2) + (-(gf(2,1)*cos(t1)) + gf(1,1)*sin(t1))*sin(t3)) + (gf(1,1)*cos(t1)*cos(t2) + gf(2,1)*cos(t2)*sin(t1) - gf(3,1)*sin(t2))*sin(t4);
+
+            grhs(3,2) = cos(t4)*(gf(3,2)*cos(t2)*cos(t3) + cos(t3)*(gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2) + (-(gf(2,2)*cos(t1)) + gf(1,2)*sin(t1))*sin(t3)) + (gf(1,2)*cos(t1)*cos(t2) + gf(2,2)*cos(t2)*sin(t1) - gf(3,2)*sin(t2))*sin(t4);
+
+            grhs(3,3) = cos(t4)*(gf(3,3)*cos(t2)*cos(t3) + cos(t3)*(gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2) + (-(gf(2,3)*cos(t1)) + gf(1,3)*sin(t1))*sin(t3)) + (gf(1,3)*cos(t1)*cos(t2) + gf(2,3)*cos(t2)*sin(t1) - gf(3,3)*sin(t2))*sin(t4);
+
+
+            theta6[0] = atan2(sqrt(grhs(1,2)*grhs(1,2)+grhs(1,3)*grhs(1,3)),grhs(1,1));
+            theta6[1] = atan2(-sqrt(grhs(1,2)*grhs(1,2)+grhs(1,3)*grhs(1,3)),grhs(1,1));
+
+            for(int mm = 0; mm < 2; mm++)
+            {
+               t6 = theta6[mm];
+
+               if(fabs(sin(t6)) < IK_EPS)
+               {
+                  std::cout << "Singularity" << endl;
+                  t5 = acos(grhs(2,2))/2.0;
+                  t7 = acos(grhs(2,2))/2.0;
+               }
+               else
+               {
+                  t7 = atan2(grhs(1,2),grhs(1,3));
+                  t5 = atan2(grhs(2,1),-grhs(3,1));
+               }
+/*               std::cout << "theta1: " << t1 << endl;
+               std::cout << "theta2: " << t2 << endl;
+               std::cout << "theta3: " << t3 << endl;
+               std::cout << "theta4: " << t4 << endl;
+               std::cout << "theta5: " << t5 << endl;
+               std::cout << "theta6: " << t6 << endl;
+               std::cout << "theta7: " << t7 << endl << endl << endl;
+*/             solution_[0] = t1;
+               solution_[1] = t2;
+               solution_[2] = t3;
+               solution_[3] = t4;
+               solution_[4] = t5;
+               solution_[5] = t6;
+               solution_[6] = t7;
+               solution_ik_.push_back(solution_);
+
+            }
+         }
+      }
+   }
+}

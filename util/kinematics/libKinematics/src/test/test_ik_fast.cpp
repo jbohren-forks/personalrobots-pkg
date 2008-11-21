@@ -131,7 +131,7 @@ int main(int argc, char** argv)
      for(int k=0; k < num_first_angle; k++)
      {
        first_angle = -M_PI + 2*M_PI*k/(double) num_first_angle;
-       myArm.ComputeIK(g0,first_angle);
+       myArm.ComputeIKEfficient(g0,first_angle);
        if (myArm.solution_ik_.size() > 0)
        {
          count_found_solutions++;
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
      }
      if(!solved)
      {       
-       myArm.ComputeIK(g0,angles[0]);
+       myArm.ComputeIKEfficient(g0,angles[0]);
        if (myArm.solution_ik_.size() > 0)
        {
 //         cout << "Solution found with exact value of first angle" << endl << endl;
@@ -189,7 +189,7 @@ int main(int argc, char** argv)
 
      bool solution_exact = true;
      gettimeofday(&t0,NULL);
-     myArm.ComputeIK(g0,angles[0]);
+     myArm.ComputeIKEfficient(g0,angles[0]);
      gettimeofday(&t1,NULL);
      time_taken += (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
      if (myArm.solution_ik_.size() > 0)
@@ -216,6 +216,13 @@ int main(int argc, char** argv)
 
          
    }
+
+   cout << "Angles" << endl;
+       for(int j=0; j < 7; j++)
+       {
+         cout << " " << angles[j];
+       }
+       cout << endl << endl;
 
    cout << "Success % in IK search: " << (double)count_success/(double)num_trials*100.0 << endl; 
    cout << "Time taken for " << num_trials << " is " << time_taken << " s" << endl;
