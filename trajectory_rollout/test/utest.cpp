@@ -124,6 +124,7 @@ TEST(TrajectoryController, footprintObstacles){
   tc->map_(4, 6).occ_state = 1;
   wa.synchronize();
   Trajectory traj(0, 0, 0, 30);
+  //tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj, 2, 30);
   tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 4, 0, 0, 4, 0, 0, DBL_MAX, traj);
   //we expect this path to hit the obstacle
   EXPECT_FLOAT_EQ(traj.cost_, -1.0);
@@ -138,6 +139,7 @@ TEST(TrajectoryController, footprintObstacles){
   wa.synchronize();
 
   //try to rotate into it
+  //tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 0, 0, M_PI_2, 0, 0, M_PI_4, 100, traj, 2, 30);
   tc->generateTrajectory(4.5, 4.5, M_PI_2, 0, 0, 0, 0, 0, M_PI_2, 0, 0, M_PI_4, 100, traj);
   //we expect this path to hit the obstacle
   EXPECT_FLOAT_EQ(traj.cost_, -1.0);

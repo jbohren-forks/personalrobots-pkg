@@ -444,14 +444,14 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
         double ahead_gdist = map_(cell_x, cell_y).goal_dist;
         if(ahead_gdist < heading_dist){
           //if we haven't already tried strafing left since we've moved forward
-          if(vy_samp > 0 && !stuck_left){
+          if(vy_samp > 0 && !stuck_left_strafe){
             swap = best_traj;
             best_traj = comp_traj;
             comp_traj = swap;
             heading_dist = ahead_gdist;
           }
           //if we haven't already tried rotating right since we've moved forward
-          else if(vy_samp < 0 && !stuck_right){
+          else if(vy_samp < 0 && !stuck_right_strafe){
             swap = best_traj;
             best_traj = comp_traj;
             comp_traj = swap;
@@ -478,6 +478,16 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
       strafe_right = true;
     }
   }
+  else{
+    strafe_left = false;
+    strafe_right = false;
+    stuck_left_strafe = false;
+    stuck_right_strafe = false;
+    rotating_left = false;
+    rotating_right = false;
+    stuck_left = false;
+    stuck_right = false;
+  }
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
@@ -496,6 +506,10 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     //vtheta_samp += dvtheta;
   }
 
+  strafe_left = false;
+  strafe_right = false;
+  stuck_left_strafe = false;
+  stuck_right_strafe = false;
   rotating_left = false;
   rotating_right = false;
   stuck_left = false;
