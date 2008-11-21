@@ -1,3 +1,4 @@
+
 /*********************************************************************
 * Software License Agreement (BSD License)
 * 
@@ -219,7 +220,7 @@ namespace estimation
       _my_filter.Update(_odom_active,_imu_active, _vo_active,  time);
       
       // output most recent estimate and relative covariance
-      _my_filter.GetEstimate(0.0, _output);
+      _my_filter.GetEstimate(_output);
       publish("odom_estimation", _output);
 
       // broadcast most recent estimate to TransformArray

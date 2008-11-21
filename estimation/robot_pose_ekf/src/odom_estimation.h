@@ -69,14 +69,14 @@ public:
   /// initialize filter
   void Initialize(const tf::Transform& prior, const ros::Time& time);
 
+  /// return if filter was initialized
+  bool IsInitialized() {return _filter_initialized;};
+
   /// get filter posterior
   void GetEstimate(MatrixWrapper::ColumnVector& estimate);
   void GetEstimate(ros::Time time, tf::Transform& estiamte);
   void GetEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
-  void GetEstimate(ros::Time time, robot_msgs::PoseWithCovariance& estimate);
-
-  /// return if filter was initialized
-  bool IsInitialized() {return _filter_initialized;};
+  void GetEstimate(robot_msgs::PoseWithCovariance& estimate);
 
   /// Add a measurement to the measurement buffer
   void AddMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);

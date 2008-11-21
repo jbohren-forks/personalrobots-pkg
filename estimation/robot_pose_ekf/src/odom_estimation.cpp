@@ -280,16 +280,16 @@ namespace estimation
     _transformer.lookupTransform("base_footprint","odom", time, estimate);
   };
 
-  // get filter posterior at time 'time' as PoseStamped
-  void odom_estimation::GetEstimate(Time time, robot_msgs::PoseWithCovariance& estimate)
+  // get most recent filter posterior as PoseWithCovariance
+  void odom_estimation::GetEstimate(robot_msgs::PoseWithCovariance& estimate)
   {
     // pose
     Stamped<Transform> tmp;
-    _transformer.lookupTransform("base_footprint","odom", time, tmp);
+    _transformer.lookupTransform("base_footprint","odom", 0.0, tmp);
     PoseTFToMsg(tmp, estimate.pose);
 
     // header
-    estimate.header.stamp = time;
+    estimate.header.stamp = tmp.stamp_;
     estimate.header.frame_id = "odom";
 
     // covariance
