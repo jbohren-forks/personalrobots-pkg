@@ -317,10 +317,6 @@ namespace ros {
       stateMsg.goal.y = goalPose.y;
       stateMsg.goal.th = goalPose.yaw;
 
-
-      // We want to revert to the static map, and resume computations for cost map based on laser data - whenever we get a new goal
-      costMap_->revertToStaticMap();
-
       ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
     }
 
