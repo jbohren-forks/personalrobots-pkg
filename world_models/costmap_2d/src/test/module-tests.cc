@@ -127,6 +127,7 @@ TEST(costmap, test14){
   }
 
   // Update with no hits. Should clear (revert to the static map
+  map.revertToStaticMap();
   cloud.set_pts_size(0);
   map.updateDynamicObstacles(0, 0, CostMap2D::toVector(cloud));
 

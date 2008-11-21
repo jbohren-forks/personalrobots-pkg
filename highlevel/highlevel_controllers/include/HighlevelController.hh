@@ -158,10 +158,16 @@ public:
       if(isInitialized() && isActive()){
 
 	// If the plannerCycleTime is 0 then we only call the planner when we need to
-	if(plannerCycleTime_ != 0 || !isValid())
+	if(plannerCycleTime_ != 0 || !isValid()){
 	  setValid(makePlan());
+	  if(!isValid()){
+	    // Could use a refined locking scheme but for now do not want to delegate that to a derived class
+	    lock();
+	    handlePlanningFailure();
+	    unlock();
+	  }
+	}
       }
-
 
       if(plannerCycleTime_ >= 0)
 	sleep(currentTime, std::max(plannerCycleTime_, controllerCycleTime_));
@@ -238,6 +244,10 @@ protected:
    */
   virtual void handleActivation(){}
 
+  /**
+   * @brief A hook to handle the case when global planning fails
+   */
+  virtual void handlePlanningFailure(){}
 
   /**
    * @brief Aquire node level lock

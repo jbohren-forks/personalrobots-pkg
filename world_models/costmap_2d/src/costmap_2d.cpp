@@ -139,6 +139,10 @@ namespace costmap_2d {
   }
 
 
+  void CostMap2D::revertToStaticMap(){
+    memcpy(costData_, staticData_, width_ * height_);
+  }
+
   /**
    * @brief Updated dyanmic obstacles and compute a diff. Mainly for backward compatibility. This will go away soon.
    */
@@ -187,8 +191,6 @@ namespace costmap_2d {
   {
     // Revert to initial state
     memset(xy_markers_, 0, width_ * height_ * sizeof(bool));
-    memcpy(costData_, staticData_, width_ * height_);
-
 
     // Now propagate free space. We iterate again over observations, process only those from an origin
     // within a specific range, and a point within a certain z-range. We only want to propagate free space

@@ -7,8 +7,8 @@
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
     <param name="move_base/controller_frequency" value="20.0"/>
-    <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="10.0"/>
+    <param name="move_base/planner_frequency" value="1.0"/>
+    <param name="move_base/plannerTimeLimit" value="5.0"/>
     <param name="/costmap_2d/base_laser_max_range" value="10.0"/>
     <param name="/costmap_2d/tilt_laser_max_range" value="10.0"/>
     <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>

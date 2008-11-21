@@ -317,6 +317,10 @@ namespace ros {
       stateMsg.goal.y = goalPose.y;
       stateMsg.goal.th = goalPose.yaw;
 
+
+      // We want to revert to the static map, and resume computations for cost map based on laser data - whenever we get a new goal
+      costMap_->revertToStaticMap();
+
       ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
     }
 
@@ -398,6 +402,13 @@ namespace ros {
       }
 
       base_odom_.unlock();
+    }
+
+    /**
+     * A lock will already be aquired here, so just revert the cost map
+     */
+    void MoveBase::handlePlanningFailure(){
+      costMap_->revertToStaticMap();
     }
 
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
@@ -788,6 +799,7 @@ namespace ros {
 
 	  ROS_DEBUG("Starting cost map update/n");
 	  lock();
+
 	  // Aggregate buffered observations across 3 sources
 	  std::vector<costmap_2d::Observation> observations;
 	  baseScanBuffer_->get_observations(observations);

@@ -174,6 +174,10 @@ namespace costmap_2d {
      */
     double getWeight() const {return weight_;}
 
+    /**
+     * @brief Will reset the cost data to the initiali propagated costs of the static map
+     */
+    void revertToStaticMap();
   private:
 
     /**

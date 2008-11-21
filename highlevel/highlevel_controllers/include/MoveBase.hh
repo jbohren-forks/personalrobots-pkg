@@ -96,6 +96,12 @@ namespace ros {
       virtual void handleMapUpdates(const std::vector<unsigned int>& updates){}
 
       /**
+       * @brief When planning has failed should reset the cost map to clear persistent
+       * dynamic obstacles. This is important to provide some hysterisis when interleaving planning
+       */
+      virtual void handlePlanningFailure();
+
+      /**
        * @brief Overwrites the current plan with a new one. Will handle suitable publication
        * @see publishPlan
        */
