@@ -216,7 +216,6 @@ class DescriptorScheme:
     Ys = vop.array([k[1] for k in af1.kp])
     pairs = []
     for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
-      # hits = (Numeric.logical_and(Numeric.absolute(NXs - ki[0]) < 64, Numeric.absolute(NYs - ki[1]) < 32)).astype(Numeric.UnsignedInt8).tostring()
       predX = (abs(Xs - ki[0]) < 64)
       predY = (abs(Ys - ki[1]) < 32)
       hits = vop.where(predX & predY, 1, 0).tostring()
