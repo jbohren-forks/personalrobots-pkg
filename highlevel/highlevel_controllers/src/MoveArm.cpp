@@ -221,7 +221,7 @@ bool MoveArm::makePlan(){
   globalPose.x = robotPose.x = 0;
   globalPose.y = robotPose.y = 0;
   globalPose.yaw = robotPose.yaw = 0;
-  robotPose.frame = "base";
+  robotPose.frame = "base_link";
   globalPose.time = robotPose.time = 0;
   try{
     globalPose = this->tf_.transformPose2D("map", robotPose);
