@@ -174,7 +174,6 @@ void GripperCalibrationControllerNode::update()
 bool GripperCalibrationControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   robot_ = robot;
-  ros::node *node = ros::node::instance();
 
   std::string topic = config->Attribute("name") ? config->Attribute("name") : "";
   if (topic == "")

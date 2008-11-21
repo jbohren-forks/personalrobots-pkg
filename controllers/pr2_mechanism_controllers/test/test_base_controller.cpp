@@ -26,8 +26,6 @@ int main( int argc, char** argv )
 
   /*********** Initialize ROS  ****************/
   ros::init(argc,argv);
-  ros::node *node = new ros::node("test_base_controller"); 
-
 
   /*********** Load the robot model and state file ************/
   char *xml_robot_file = argv[1];
