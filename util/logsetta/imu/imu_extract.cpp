@@ -34,7 +34,7 @@
 
 #include "std_msgs/PoseWithRatesStamped.h"
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 
 void imu_callback(std::string name, std_msgs::PoseWithRatesStamped* imu, ros::Time t, void* f)
 {
@@ -55,7 +55,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  LogPlayer player;
+  ros::record::Player player;
 
   player.open(std::string(argv[1]), ros::Time(0.0));
 

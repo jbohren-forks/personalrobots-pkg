@@ -34,7 +34,7 @@
 #include "std_msgs/RobotBase2DOdom.h"
 #include <vector>
 #include <string>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 using std::vector;
 using std::string;
 
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
     return 1;
   }
 
-  MultiLogPlayer player;
+  ros::record::MultiPlayer player;
 
   vector<string> files;
 
