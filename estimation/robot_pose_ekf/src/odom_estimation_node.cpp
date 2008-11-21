@@ -50,7 +50,7 @@ namespace estimation
     : ros::node("odom_estimation"),
       _robot_state(*this, true),
       _odom_broadcaster(*this),
-      _vo_notifier(&_robot_state, this,  boost::bind(&odom_estimation_node::vo_callback, this, _1), "vo", "base", 10),
+      _vo_notifier(&_robot_state, this,  boost::bind(&odom_estimation_node::vo_callback, this, _1), "vo", "base_link", 10),
       _vel_desi(2),
       _vel_active(false),
       _odom_active(false),
@@ -165,7 +165,7 @@ namespace estimation
     // get data
     _vo = *vo;
     _vo_time = Time::now();
-    _robot_state.lookupTransform("stereo","base", _vo.header.stamp, _camera_base);
+    _robot_state.lookupTransform("stereo_link","base_link", _vo.header.stamp, _camera_base);
     PoseMsgToTF(_vo.pose, _vo_meas);
 
     // initialize
@@ -175,7 +175,7 @@ namespace estimation
     // vo measurement as base transform
     Transform vo_meas_base = _base_vo_init * _vo_meas * _vo_camera * _camera_base;
     _my_filter.AddMeasurement(Stamped<Transform>(vo_meas_base, _vo.header.stamp, "vo", "base_footprint"),
-			      pow(21.0-((double)_vo.inliers)/10,2));
+			      pow(21.0-(min(200.0,(double)_vo.inliers)/10),2));
     _vo_mutex.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -270,6 +270,7 @@ namespace estimation
 #ifdef __EKF_DEBUG_FILE__
       // write to file
       _time_file << (Time::now() - _odom_time).toSec() << " " << (Time::now() - _imu_time).toSec()  << " " << (Time::now() - _vo_time).toSec()   << " "
+		 << (Time::now() - _odom.header.stamp).toSec() << " " << (Time::now() - _imu.header.stamp).toSec()  << " " << (Time::now() - _vo.header.stamp).toSec()   << " "
 		 << (_odom_time - _imu_time).toSec()   << " " << (_odom_time - _vo_time).toSec()   << " " << (_imu_time  - _vo_time).toSec()   << " "
 		 << (_odom.header.stamp - _imu.header.stamp).toSec()   << " " << (_odom.header.stamp - _vo.header.stamp).toSec()   << " " << (_imu.header.stamp  - _vo.header.stamp).toSec()   << endl;
 #endif
@@ -285,16 +286,16 @@ namespace estimation
 	  _imu_active = false;
 	  ROS_INFO("Imu sensor not active any more");
 	}
-	//if (_vo_active && (Time::now() - _vo_time).toSec() > _timeout){
-	//  _vo_active = false;
-	//  ROS_INFO("VO sensor not active any more");
-	//}
+	if (_vo_active && (Time::now() - _vo_time).toSec() > _timeout){
+	  _vo_active = false;
+	  ROS_INFO("VO sensor not active any more");
+	}
 
 	// update filter with exact time stamps
 	Time min_time = Time::now();
 	if (_odom_active)  min_time = min(min_time, _odom.header.stamp);
 	if (_imu_active)   min_time = min(min_time, _imu.header.stamp);
-	//if (_vo_active)    min_time = min(min_time, _vo.header.stamp);
+	if (_vo_active)    min_time = min(min_time, _vo.header.stamp);
 	this->Update(min_time);
       }
       _vo_mutex.unlock();  _imu_mutex.unlock();  _odom_mutex.unlock();

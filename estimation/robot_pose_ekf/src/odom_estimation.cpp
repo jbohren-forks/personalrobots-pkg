@@ -219,8 +219,7 @@ namespace estimation
 
       // process vo measurement
       // ----------------------
-      //if (vo_active){
-      if (false){
+      if (vo_active){
 	_transformer.lookupTransform("base_footprint","vo", filter_time, _vo_meas);
 	if (_vo_initialized){
 	  // convert absolute vo measurements to relative vo measurements
@@ -228,10 +227,11 @@ namespace estimation
 	  ColumnVector vo_rel(6);
 	  DecomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
 	  AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
-	  // set covariance
-	  _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * _vo_covar_multiplier);
 	  // update filter
-	  _filter->Update(_vo_meas_model,  vo_rel);
+	  if (_vo_covar_multiplier < 100.0){
+	    _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * _vo_covar_multiplier);
+	    _filter->Update(_vo_meas_model,  vo_rel);
+	  }
 	}
 	else _vo_initialized = true;
 	_vo_meas_old = _vo_meas;
