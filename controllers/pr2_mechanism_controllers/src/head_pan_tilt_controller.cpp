@@ -228,7 +228,7 @@ void HeadPanTiltControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> pan_point;
 
   try{
-    TF.transformPoint("head_pan",point, pan_point);
+    TF.transformPoint("head_pan_link",point, pan_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -245,7 +245,7 @@ void HeadPanTiltControllerNode::headTrackPoint()
   tf::Stamped<tf::Point> tilt_point;
 
   try{
-    TF.transformPoint("head_tilt",point,tilt_point);
+    TF.transformPoint("head_tilt_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -280,7 +280,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   try
   {
-    TF.lookupTransform(point.frame_id_,"head_pan",ros::Time(0.0),frame);
+    TF.lookupTransform(point.frame_id_,"head_pan_link",ros::Time(0.0),frame);
   }
   catch(tf::TransformException& ex)
   {
@@ -292,7 +292,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   try
   {
-    TF.transformPoint("head_pan",point, pan_point);
+    TF.transformPoint("head_pan_link",point, pan_point);
   }
   catch(tf::TransformException& ex)
   {
@@ -312,7 +312,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
 
   tf::Stamped<tf::Point> tilt_point;
   try{
-    TF.transformPoint("head_tilt",point,tilt_point);
+    TF.transformPoint("head_tilt_link",point,tilt_point);
   }
   catch(tf::TransformException& ex){
     ROS_WARN("Transform Exception %s", ex.what());
@@ -353,7 +353,7 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   marker.b = 0;
   node_->publish("visualizationMarker", marker );
 
-  marker.header.frame_id = "head_pan";
+  marker.header.frame_id = "head_pan_link";
   marker.id = 1;
   marker.type = 2; 
   marker.action = 0;
