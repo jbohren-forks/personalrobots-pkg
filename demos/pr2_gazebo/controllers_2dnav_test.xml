@@ -212,10 +212,10 @@
   </controller>
 
   <!-- this version of laser scanner controller seems to be broken
-  <controller name="tilt_laser_controller" topic="laser_test" type="LaserScannerControllerNode">
+  <controller name="laser_tilt_mount_controller" topic="laser_test" type="LaserScannerControllerNode">
     <velocity>
       <velocityFilter smoothing="0.2"/>
-      <joint name="tilt_laser_mount_joint" type="velocity">
+      <joint name="laser_tilt_mount_joint" type="velocity">
         <pid p="0.56" i = "14" d = "0.000001" iClamp = "0.02" />     
       </joint>
     </velocity>

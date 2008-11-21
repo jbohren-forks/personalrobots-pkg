@@ -155,19 +155,19 @@
 
       <map name="sensor" flag="gazebo">
 	<verbatim key="sensor_${name}_camera">
-          <sensor:camera name="${name}_left_sensor">
+          <sensor:camera name="${name}_l_sensor">
             <imageWidth>640</imageWidth>
             <imageHeight>480</imageHeight>
             <hfov>60</hfov>
             <nearClip>0.1</nearClip>
             <farClip>100</farClip>
             <updateRate>20.0</updateRate>
-            <controller:ros_camera name="${name}_left_controller" plugin="libRos_Camera.so">
+            <controller:ros_camera name="${name}_l_controller" plugin="libRos_Camera.so">
               <alwaysOn>true</alwaysOn>
 	      <updateRate>20.0</updateRate>
-	      <topicName>${name}_left/image</topicName>
-	      <frameName>${name}</frameName>
-	      <interface:camera name="${name}_left_iface" />
+	      <topicName>${name}_l/image</topicName>
+	      <frameName>${name}_link</frameName>
+	      <interface:camera name="${name}_l_iface" />
             </controller:ros_camera>
           </sensor:camera>
 	</verbatim>
@@ -199,7 +199,7 @@
               <alwaysOn>true</alwaysOn>
               <updateRate>10.0</updateRate>
               <topicName>full_cloud</topicName>
-              <frameName>${name}</frameName>
+              <frameName>${name}_link</frameName>
               <interface:laser name="${name}_laser_iface" />
             </controller:ros_block_laser>
           </sensor:ray>
