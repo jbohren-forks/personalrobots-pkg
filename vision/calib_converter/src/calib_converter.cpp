@@ -9,7 +9,7 @@
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
 #include <time.h>
-#include "logging/LogPlayer.h"
+#include "rosrecord/Player.h"
 
 #include <set>
 
@@ -57,7 +57,7 @@ public:
   
 
   ros::thread::mutex cv_mutex;  
-  LogPlayer lp;
+  ros::record::Player lp;
   map<string, imgData> images;
   std_msgs::ImageArray image_msg;
   std_msgs::String calparams;
