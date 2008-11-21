@@ -3,7 +3,7 @@
 #include <libKinematics/pr2_ik.h>
 
 #define NUM_JOINTS_ARM7DOF 7
-#define IK_EPS 1e-5
+#define IK_EPS 1e-16
 
 using namespace kinematics;
 using namespace std;
@@ -352,13 +352,13 @@ int arm7DOF::solveCosineEqn(const double &a, const double &b, const double &c, d
    double denom  = sqrt(a*a+b*b);
    int error_code = 1;
 
-   if(denom < IK_EPS) // should never happen, wouldn't make sense but make sure it is checked nonetheless
+   if(fabs(denom) < IK_EPS) // should never happen, wouldn't make sense but make sure it is checked nonetheless
    {
-      std::cout << "solveCosineEqn: degenerate condition" << endl;
       return -1;
    }
    double rhs_ratio = c/denom;
 
+//   cout << "rhs_ratio " << rhs_ratio << endl; 
    if(rhs_ratio < -1)
    {
       rhs_ratio  = -1;
@@ -438,7 +438,14 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
       error_code = solveCosineEqn(at,bt,ct,theta2[0],theta2[1]);
 
       if(error_code != 1)
+      {
+/*         if(error_code == -1)
+            std::cout << "solveCosineEqn: degenerate condition in solving for theta 2" << endl;
+         else
+            std::cout << "solveCosineEqn: out of range in solving for theta 2: " << error_code << endl;
+*/
          continue;
+      }
 
       for(int ii=0; ii < 2; ii++)
       {
@@ -450,7 +457,14 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
          error_code = solveCosineEqn(at,bt,ct,theta3[0],theta3[1]);
 
          if(error_code != 1)
+         {
+            /*          if(error_code == -1)
+               std::cout << "solveCosineEqn: degenerate condition in solving for theta 3" << endl;
+            else
+               std::cout << "solveCosineEqn: out of range in solving for theta 3" << endl;
+            */
             continue;
+         }
 
          for(int kk =0; kk < 2; kk++)
          {
