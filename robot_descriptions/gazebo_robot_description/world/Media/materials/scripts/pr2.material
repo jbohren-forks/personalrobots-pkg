@@ -58,7 +58,7 @@ material PR2/wheel_left
 
 
 
-material PR2/wheel_front_right_l
+material PR2/fr_caster_l_wheel_link
 {
   technique
   {
@@ -72,7 +72,7 @@ material PR2/wheel_front_right_l
   }
 }
 
-material PR2/wheel_front_left_l
+material PR2/fl_caster_l_wheel_link
 {
   technique
   {
@@ -85,7 +85,7 @@ material PR2/wheel_front_left_l
     }
   }
 }
-material PR2/wheel_rear_right_l
+material PR2/br_caster_l_wheel_link
 {
   technique
   {
@@ -99,7 +99,7 @@ material PR2/wheel_rear_right_l
   }
 }
 
-material PR2/wheel_rear_left_l
+material PR2/bl_caster_l_wheel_link
 {
   technique
   {
@@ -114,7 +114,7 @@ material PR2/wheel_rear_left_l
 }
 
 
-material PR2/wheel_front_right_r
+material PR2/fr_caster_r_wheel_link
 {
   technique
   {
@@ -128,7 +128,7 @@ material PR2/wheel_front_right_r
   }
 }
 
-material PR2/wheel_front_left_r
+material PR2/fl_caster_r_wheel_link
 {
   technique
   {
@@ -141,7 +141,7 @@ material PR2/wheel_front_left_r
     }
   }
 }
-material PR2/wheel_rear_right_r
+material PR2/br_caster_r_wheel_link
 {
   technique
   {
@@ -155,7 +155,7 @@ material PR2/wheel_rear_right_r
   }
 }
 
-material PR2/wheel_rear_left_r
+material PR2/bl_caster_r_wheel_link
 {
   technique
   {
