@@ -819,7 +819,7 @@ void BaseControllerNode::update()
       rosTF::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
       out2.header.stamp.from_double(time);
       out2.header.frame_id = "base_footprint";
-      out2.parent = "base";
+      out2.parent = "base_link";
       out2.x = 0;
       out2.y = 0;
       out2.z = -c_->wheel_radius_;
