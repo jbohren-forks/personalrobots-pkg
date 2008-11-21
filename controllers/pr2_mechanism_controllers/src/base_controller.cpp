@@ -225,7 +225,7 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
 
     base_object.controller_.init(robot_state, joint_name, Pid(jcp_iter->p_gain,jcp_iter->i_gain,jcp_iter->d_gain,jcp_iter->windup));
 
-    if(joint_name.find("caster") != string::npos)
+    if(joint_name.find("rotation") != string::npos)
     {
 //         std::cout << " assigning casters " << joint_name << std::endl;
       base_object.local_id_ = num_casters_;
