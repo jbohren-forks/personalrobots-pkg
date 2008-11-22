@@ -72,12 +72,6 @@ namespace ros {
       stateMsg.set_waypoints_size(0);
       stateMsg.waypoint_idx = -1;
 
-      // This should become a static transform. For now we will simply allow it to be provided
-      // as a parameter until we hear how static transforms are to be handled.
-      double laser_x_offset(0.275);
-      param("/laser_x_offset", laser_x_offset, laser_x_offset);
-      tf_.setWithEulers("base_laser", "base_link", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
-
       // Update rate for the cost map
       local_param("map_update_frequency", map_update_frequency_, map_update_frequency_);
 
@@ -483,6 +477,9 @@ namespace ros {
     }
 
     bool MoveBase::goalReached(){
+      // We assume the plan is valid if we are checking the goal. This should be ensured in the base class
+      ROS_ASSERT(isValid());
+
       // Publish the global plan
       publishPath(true, plan_);
 
