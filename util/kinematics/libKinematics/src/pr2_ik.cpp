@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define NUM_JOINTS_ARM7DOF 7
-#define IK_EPS 1e-16
+#define IK_EPS 1e-12
 
 using namespace kinematics;
 using namespace std;
@@ -69,6 +69,7 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
   }
    NEWMAT::Matrix g0 = GetLinkPose(7,angles_d);
    this->SetHomePosition(g0);
+   cout << g0;
    solution_.resize(NUM_JOINTS_ARM7DOF);
 
 }
@@ -360,7 +361,6 @@ int arm7DOF::solveCosineEqn(const double &a, const double &b, const double &c, d
    }
    double rhs_ratio = c/denom;
 
-//   cout << "rhs_ratio " << rhs_ratio << endl; 
    if(rhs_ratio < -1)
    {
       rhs_ratio  = -1;
@@ -384,16 +384,24 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 {
    solution_ik_.clear();
 
+   double cost1, cost2, cost3, cost4;
+   double sint1, sint2, sint3, sint4;
+
+   cost1 = cos(t1);
+   sint1 = sin(t1);
+
+   t1 = angles::normalize_angle(t1);
+
    int error_code(0);
 
    double t2(0), t3(0), t4(0), t5(0), t6(0), t7(0);
 
    double at(0), bt(0), ct(0);
 
-   double theta2[2],theta3[2],theta4[2],theta5[2],theta6[2],theta7[2]; 
+   double theta2[2],theta3[2],theta4[2],theta5[2],theta6[4],theta7[2]; 
 
-   double sopx = ap_[0]*cos(t1);
-   double sopy = ap_[0]*sin(t1);
+   double sopx = ap_[0]*cost1;
+   double sopy = ap_[0]*sint1;
    double sopz = 0;
 
    double x = g(1,4);
@@ -411,10 +419,8 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 
    double acosTerm = numerator/denominator;
 
-   if (acosTerm > 1.0)
-      acosTerm = 1.0;
-   if (acosTerm < -1.0)
-      acosTerm = -1.0;
+   if (acosTerm > 1.0 || acosTerm < -1.0)
+     return;
    
    theta4[0] = acos(acosTerm);
    theta4[1] = -acos(acosTerm);
@@ -432,10 +438,12 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
    for(int jj =0; jj < 2; jj++)
    {
       t4 = theta4[jj];
+      cost4 = cos(t4);
+      sint4 = sin(t4);
+
       if(isnan(t4))
          continue;
-
-      at = x*cos(t1)+y*sin(t1)-ap_[0];
+      at = x*cost1+y*sint1-ap_[0];
       bt = -z;
       ct = -ap_[0] + ap_[1] + (ap_[3]-ap_[1])*cos(t4);
 
@@ -443,70 +451,66 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 
       if(error_code != 1)
       {
-/*         if(error_code == -1)
-           std::cout << "solveCosineEqn: degenerate condition in solving for theta 2" << endl;
-           else
-           std::cout << "solveCosineEqn: out of range in solving for theta 2: " << error_code << endl;
-*/
          continue;
       }
 
       for(int ii=0; ii < 2; ii++)
       {
          t2 = theta2[ii];
+         sint2 = sin(t2);
+         cost2 = cos(t2);
 
-         at = sin(t1)*(ap_[1] - ap_[3])*sin(t2)*sin(t4);
-         bt = (-ap_[1]+ap_[3])*cos(t1)*sin(t4);
-         ct = y - (ap_[0]+cos(t2)*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cos(t4)))*sin(t1);
+         at = sint1*(ap_[1] - ap_[3])*sint2*sint4;
+         bt = (-ap_[1]+ap_[3])*cost1*sint4;
+         ct = y - (ap_[0]+cost2*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cos(t4)))*sint1;
          error_code = solveCosineEqn(at,bt,ct,theta3[0],theta3[1]);
-
          if(error_code != 1)
          {
-            /*          if(error_code == -1)
-                        std::cout << "solveCosineEqn: degenerate condition in solving for theta 3" << endl;
-                        else
-                        std::cout << "solveCosineEqn: out of range in solving for theta 3" << endl;
-            */
             continue;
          }
 
          for(int kk =0; kk < 2; kk++)
-         {
-            t3 = theta3[kk];
+         {           
+           t3 = theta3[kk];
+           sint3 = sin(t3);
+           cost3 = cos(t3);
 
-            grhs(1,1) = cos(t4)*(gf(1,1)*cos(t1)*cos(t2)+gf(2,1)*cos(t2)*sin(t1)-gf(3,1)*sin(t2))-(gf(3,1)*cos(t2)*cos(t3) + cos(t3)*(gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2) + (-(gf(2,1)*cos(t1)) + gf(1,1)*sin(t1))*sin(t3))*sin(t4);
+            grhs(1,1) = cost4*(gf(1,1)*cost1*cost2+gf(2,1)*cost2*sint1-gf(3,1)*sint2)-(gf(3,1)*cost2*cost3 + cost3*(gf(1,1)*cost1 + gf(2,1)*sint1)*sint2 + (-(gf(2,1)*cost1) + gf(1,1)*sint1)*sint3)*sint4;
 
-            grhs(1,2) = cos(t4)*(gf(1,2)*cos(t1)*cos(t2) + gf(2,2)*cos(t2)*sin(t1) - gf(3,2)*sin(t2)) - (gf(3,2)*cos(t2)*cos(t3) + cos(t3)*(gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2) + (-(gf(2,2)*cos(t1)) + gf(1,2)*sin(t1))*sin(t3))*sin(t4);
+            grhs(1,2) = cost4*(gf(1,2)*cost1*cost2 + gf(2,2)*cost2*sint1 - gf(3,2)*sint2) - (gf(3,2)*cost2*cost3 + cost3*(gf(1,2)*cost1 + gf(2,2)*sint1)*sint2 + (-(gf(2,2)*cost1) + gf(1,2)*sint1)*sint3)*sint4;
 
-            grhs(1,3) = cos(t4)*(gf(1,3)*cos(t1)*cos(t2) + gf(2,3)*cos(t2)*sin(t1) - gf(3,3)*sin(t2)) - (gf(3,3)*cos(t2)*cos(t3) + cos(t3)*(gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2) + (-(gf(2,3)*cos(t1)) + gf(1,3)*sin(t1))*sin(t3))*sin(t4);
+            grhs(1,3) = cost4*(gf(1,3)*cost1*cost2 + gf(2,3)*cost2*sint1 - gf(3,3)*sint2) - (gf(3,3)*cost2*cost3 + cost3*(gf(1,3)*cost1 + gf(2,3)*sint1)*sint2 + (-(gf(2,3)*cost1) + gf(1,3)*sint1)*sint3)*sint4;
 
-            grhs(2,1) = cos(t3)*(gf(2,1)*cos(t1) - gf(1,1)*sin(t1)) + gf(3,1)*cos(t2)*sin(t3) + (gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2)*sin(t3);
+            grhs(2,1) = cost3*(gf(2,1)*cost1 - gf(1,1)*sint1) + gf(3,1)*cost2*sint3 + (gf(1,1)*cost1 + gf(2,1)*sint1)*sint2*sint3;
 
-            grhs(2,2) = cos(t3)*(gf(2,2)*cos(t1) - gf(1,2)*sin(t1)) + gf(3,2)*cos(t2)*sin(t3) + (gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2)*sin(t3);
+            grhs(2,2) = cost3*(gf(2,2)*cost1 - gf(1,2)*sint1) + gf(3,2)*cost2*sint3 + (gf(1,2)*cost1 + gf(2,2)*sint1)*sint2*sint3;
 
-            grhs(2,3) = cos(t3)*(gf(2,3)*cos(t1) - gf(1,3)*sin(t1)) + gf(3,3)*cos(t2)*sin(t3) + (gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2)*sin(t3);
+            grhs(2,3) = cost3*(gf(2,3)*cost1 - gf(1,3)*sint1) + gf(3,3)*cost2*sint3 + (gf(1,3)*cost1 + gf(2,3)*sint1)*sint2*sint3;
 
-            grhs(3,1) = cos(t4)*(gf(3,1)*cos(t2)*cos(t3) + cos(t3)*(gf(1,1)*cos(t1) + gf(2,1)*sin(t1))*sin(t2) + (-(gf(2,1)*cos(t1)) + gf(1,1)*sin(t1))*sin(t3)) + (gf(1,1)*cos(t1)*cos(t2) + gf(2,1)*cos(t2)*sin(t1) - gf(3,1)*sin(t2))*sin(t4);
+            grhs(3,1) = cost4*(gf(3,1)*cost2*cost3 + cost3*(gf(1,1)*cost1 + gf(2,1)*sint1)*sint2 + (-(gf(2,1)*cost1) + gf(1,1)*sint1)*sint3) + (gf(1,1)*cost1*cost2 + gf(2,1)*cost2*sint1 - gf(3,1)*sint2)*sint4;
 
-            grhs(3,2) = cos(t4)*(gf(3,2)*cos(t2)*cos(t3) + cos(t3)*(gf(1,2)*cos(t1) + gf(2,2)*sin(t1))*sin(t2) + (-(gf(2,2)*cos(t1)) + gf(1,2)*sin(t1))*sin(t3)) + (gf(1,2)*cos(t1)*cos(t2) + gf(2,2)*cos(t2)*sin(t1) - gf(3,2)*sin(t2))*sin(t4);
+            grhs(3,2) = cost4*(gf(3,2)*cost2*cost3 + cost3*(gf(1,2)*cost1 + gf(2,2)*sint1)*sint2 + (-(gf(2,2)*cost1) + gf(1,2)*sint1)*sint3) + (gf(1,2)*cost1*cost2 + gf(2,2)*cost2*sint1 - gf(3,2)*sint2)*sint4;
 
-            grhs(3,3) = cos(t4)*(gf(3,3)*cos(t2)*cos(t3) + cos(t3)*(gf(1,3)*cos(t1) + gf(2,3)*sin(t1))*sin(t2) + (-(gf(2,3)*cos(t1)) + gf(1,3)*sin(t1))*sin(t3)) + (gf(1,3)*cos(t1)*cos(t2) + gf(2,3)*cos(t2)*sin(t1) - gf(3,3)*sin(t2))*sin(t4);
+            grhs(3,3) = cost4*(gf(3,3)*cost2*cost3 + cost3*(gf(1,3)*cost1 + gf(2,3)*sint1)*sint2 + (-(gf(2,3)*cost1) + gf(1,3)*sint1)*sint3) + (gf(1,3)*cost1*cost2 + gf(2,3)*cost2*sint1 - gf(3,3)*sint2)*sint4;
 
 
             theta6[0] = atan2(sqrt(grhs(1,2)*grhs(1,2)+grhs(1,3)*grhs(1,3)),grhs(1,1));
             theta6[1] = atan2(-sqrt(grhs(1,2)*grhs(1,2)+grhs(1,3)*grhs(1,3)),grhs(1,1));
 
-            for(int mm = 0; mm < 2; mm++)
+            theta6[3] = M_PI + theta6[0];
+            theta6[4] = M_PI + theta6[1];
+
+            for(int mm = 0; mm < 4; mm++)
             {
                t6 = theta6[mm];
 
                if(fabs(sin(t6)) < IK_EPS)
                {
-                  std::cout << "Singularity" << endl;
+                 //                std::cout << "Singularity" << endl;
                   theta5[0] = acos(grhs(2,2))/2.0;
-                  theta7[0] = acos(grhs(2,2))/2.0;
+                  theta7[0] = theta7[0];
                   theta7[1] = M_PI+theta7[0];
-                  theta5[1] = M_PI+theta5[0];
+                  theta5[1] = theta7[1];
                }
                else
                {
@@ -515,18 +519,34 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
                   theta7[1] = M_PI+theta7[0];
                   theta5[1] = M_PI+theta5[0];
                }
-/*               std::cout << "theta1: " << t1 << endl;
+#ifdef DEBUG
+               std::cout << "theta1: " << t1 << endl;
                  std::cout << "theta2: " << t2 << endl;
                  std::cout << "theta3: " << t3 << endl;
                  std::cout << "theta4: " << t4 << endl;
                  std::cout << "theta5: " << t5 << endl;
                  std::cout << "theta6: " << t6 << endl;
                  std::cout << "theta7: " << t7 << endl << endl << endl;
-*/
+#endif
                for(int lll =0; lll < 2; lll++)
                {
                   t5 = theta5[lll];
                   t7 = theta7[lll];
+                  
+                  if(fabs(cos(t6) - grhs(1,1)) > IK_EPS)
+                    continue;
+
+                  if(fabs(sin(t6)*sin(t7)-grhs(1,2)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs(1,3)) > IK_EPS)
+                    continue;
+
+                  if(fabs(sin(t5)*sin(t6)-grhs(2,1)) > IK_EPS || fabs(-cos(t5)*sin(t6)-grhs(3,1)) > IK_EPS)
+                    continue;
+
+                  if(fabs((ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cost4)*sint2+(ap_[1]-ap_[3])*cost2*cost3*sint4-z) > IK_EPS )
+                    continue;
+
+                  if(fabs((ap_[1]-ap_[3])*sint1*sint3*sint4+cost1*(ap_[0]+cost2*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cost4)+(ap_[1]-ap_[3])*cost3*sint2*sint4) - x) > IK_EPS)
+                    continue;
 
                   solution_[0] = normalize_angle(t1);
                   solution_[1] = normalize_angle(t2);
@@ -536,6 +556,10 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
                   solution_[5] = normalize_angle(t6);
                   solution_[6] = normalize_angle(t7);
                   solution_ik_.push_back(solution_);
+
+#ifdef DEBUG
+                  std::cout << t1 << " " << t2 << " " <<  t3 << " " << t4 <<  " " << t5 << " " << t6 <<  " " << t7 << endl << endl;
+#endif
                }
             }
          }
