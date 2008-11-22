@@ -4,7 +4,7 @@
 #include <math.h>
 
 #define NUM_JOINTS_ARM7DOF 7
-#define IK_EPS 1e-12
+#define IK_EPS 1e-6
 
 using namespace kinematics;
 using namespace std;
@@ -67,11 +67,11 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
     xi_0_[i] = GetJointExponential(i,0);
     xi_0_inv_[i] = matInv(xi_0_[i]);
   }
+
    NEWMAT::Matrix g0 = GetLinkPose(7,angles_d);
    this->SetHomePosition(g0);
-   cout << g0;
    solution_.resize(NUM_JOINTS_ARM7DOF);
-
+   NEWMAT::Matrix g0h = ComputeFK(angles_d);
 }
 
 NEWMAT::Matrix arm7DOF::matInv(const NEWMAT::Matrix &g)
@@ -384,6 +384,15 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
 {
    solution_ik_.clear();
 
+/*   for(int i=0; i < 4; i++)
+   {
+     for(int j=0; j<4; j++)
+     {
+   wprintf(L" %f ",g(i+1,j+1));
+     }
+     wprintf(L"\n");
+   }
+*/
    double cost1, cost2, cost3, cost4;
    double sint1, sint2, sint3, sint4;
 
@@ -426,11 +435,13 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
    theta4[1] = -acos(acosTerm);
 
 #ifdef DEBUG
-   cout << "ComputeIK::theta3:" << numerator << "," << denominator << "," << endl << solution << endl;
+   cout << "ComputeIK::theta3:" << numerator << "," << denominator << "," << endl << theta4[0] << endl;
    PrintMatrix(theta4,"theta4");/* There are now two solution streams */
 #endif
 
    NEWMAT::Matrix g0 = GetHomePosition();
+
+
    NEWMAT::Matrix g0_inv_ = matInv(g0);
    NEWMAT::Matrix grhs = g0;
    NEWMAT::Matrix gf = g*g0_inv_;
@@ -441,6 +452,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
       cost4 = cos(t4);
       sint4 = sin(t4);
 
+#ifdef DEBUG
+      cout << "t4 " << t4 << endl;
+#endif
       if(isnan(t4))
          continue;
       at = x*cost1+y*sint1-ap_[0];
@@ -457,6 +471,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
       for(int ii=0; ii < 2; ii++)
       {
          t2 = theta2[ii];
+#ifdef DEBUG
+         cout << "t2 " << t2 << endl; 
+#endif
          sint2 = sin(t2);
          cost2 = cos(t2);
 
@@ -474,7 +491,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
            t3 = theta3[kk];
            sint3 = sin(t3);
            cost3 = cos(t3);
-
+#ifdef DEBUG
+           cout << "t3 " << t3 << endl; 
+#endif
                   if(fabs((ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cost4)*sint2+(ap_[1]-ap_[3])*cost2*cost3*sint4-z) > IK_EPS )
                     continue;
 
@@ -509,6 +528,9 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
             for(int mm = 0; mm < 4; mm++)
             {
                t6 = theta6[mm];
+#ifdef DEBUG
+               cout << "t6 " << t6 << endl;
+#endif
                if(fabs(cos(t6) - grhs(1,1)) > IK_EPS)
                     continue;
 
@@ -540,7 +562,10 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
                {
                   t5 = theta5[lll];
                   t7 = theta7[lll];
-                  
+#ifdef DEBUG
+                  cout << "t5" << t5 << endl;
+                  cout << "t7" << t7 << endl;
+#endif      
                   if(fabs(sin(t6)*sin(t7)-grhs(1,2)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs(1,3)) > IK_EPS)
                     continue;
 

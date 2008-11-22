@@ -3,7 +3,7 @@ include(rosbuild)
 add_definitions(-Wall)
 rospack(libKinematics)
 rospack_add_library(libKinematics src/pr2_ik.cpp src/kinematics.cpp)
-set_target_properties(libKinematics PROPERTIES COMPILE_FLAGS "-O2")
+set_target_properties(libKinematics PROPERTIES COMPILE_FLAGS "-g")
 
 rospack_add_executable(libKinematicsTest src/test/test_PR2ik.cpp)
 target_link_libraries(libKinematicsTest libKinematics)
@@ -15,3 +15,6 @@ target_link_libraries(test_ik libKinematics)
 
 rospack_add_executable(test_ik_fast src/test/test_ik_fast.cpp)
 target_link_libraries(test_ik_fast libKinematics)
+
+rospack_add_executable(test_ik_fast_single src/test/test_ik_fast_single.cpp)
+target_link_libraries(test_ik_fast_single libKinematics)
