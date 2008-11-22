@@ -475,6 +475,12 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
            sint3 = sin(t3);
            cost3 = cos(t3);
 
+                  if(fabs((ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cost4)*sint2+(ap_[1]-ap_[3])*cost2*cost3*sint4-z) > IK_EPS )
+                    continue;
+
+                  if(fabs((ap_[1]-ap_[3])*sint1*sint3*sint4+cost1*(ap_[0]+cost2*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cost4)+(ap_[1]-ap_[3])*cost3*sint2*sint4) - x) > IK_EPS)
+                    continue;
+
             grhs(1,1) = cost4*(gf(1,1)*cost1*cost2+gf(2,1)*cost2*sint1-gf(3,1)*sint2)-(gf(3,1)*cost2*cost3 + cost3*(gf(1,1)*cost1 + gf(2,1)*sint1)*sint2 + (-(gf(2,1)*cost1) + gf(1,1)*sint1)*sint3)*sint4;
 
             grhs(1,2) = cost4*(gf(1,2)*cost1*cost2 + gf(2,2)*cost2*sint1 - gf(3,2)*sint2) - (gf(3,2)*cost2*cost3 + cost3*(gf(1,2)*cost1 + gf(2,2)*sint1)*sint2 + (-(gf(2,2)*cost1) + gf(1,2)*sint1)*sint3)*sint4;
@@ -503,6 +509,8 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
             for(int mm = 0; mm < 4; mm++)
             {
                t6 = theta6[mm];
+               if(fabs(cos(t6) - grhs(1,1)) > IK_EPS)
+                    continue;
 
                if(fabs(sin(t6)) < IK_EPS)
                {
@@ -533,20 +541,12 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
                   t5 = theta5[lll];
                   t7 = theta7[lll];
                   
-                  if(fabs(cos(t6) - grhs(1,1)) > IK_EPS)
-                    continue;
-
                   if(fabs(sin(t6)*sin(t7)-grhs(1,2)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs(1,3)) > IK_EPS)
                     continue;
 
                   if(fabs(sin(t5)*sin(t6)-grhs(2,1)) > IK_EPS || fabs(-cos(t5)*sin(t6)-grhs(3,1)) > IK_EPS)
                     continue;
 
-                  if(fabs((ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cost4)*sint2+(ap_[1]-ap_[3])*cost2*cost3*sint4-z) > IK_EPS )
-                    continue;
-
-                  if(fabs((ap_[1]-ap_[3])*sint1*sint3*sint4+cost1*(ap_[0]+cost2*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cost4)+(ap_[1]-ap_[3])*cost3*sint2*sint4) - x) > IK_EPS)
-                    continue;
 
                   solution_[0] = normalize_angle(t1);
                   solution_[1] = normalize_angle(t2);
