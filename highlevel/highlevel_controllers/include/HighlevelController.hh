@@ -399,7 +399,7 @@ private:
     // not the case, for example, on a mobil robot, it could just maintain prior commanded values
     // when the planner invalidates the plan, which can happen since planning is interleaved.
     if(isActive()){
-      if(goalReached()){
+      if(isValid() && goalReached()){
 	  setDone(true);
 	  deactivate();
 	}
