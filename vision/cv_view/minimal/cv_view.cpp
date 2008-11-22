@@ -19,7 +19,7 @@ public:
   CvView() : node("cv_view"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR)
   { 
     cvNamedWindow("cv_view", CV_WINDOW_AUTOSIZE);
-    subscribe("image", image_msg, &CvView::image_cb);
+    subscribe("image", image_msg, &CvView::image_cb, 1);
   }
   void image_cb()
   {

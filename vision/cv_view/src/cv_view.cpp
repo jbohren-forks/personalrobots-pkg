@@ -49,7 +49,6 @@ public:
 
   void image_cb()
   {
-    printf("called image_cb\n");
     cv_mutex.lock();
     if (cv_image)
       cvReleaseImage(&cv_image);
@@ -58,7 +57,6 @@ public:
     {
       cvShowImage("cv_view", cv_image);
     }
-    usleep(100000);
     cv_mutex.unlock();
   }
 
