@@ -42,7 +42,9 @@ TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num
     const costmap_2d::ObstacleMapAccessor& ma, vector<std_msgs::Point2DFloat32> footprint_spec)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim),
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
-  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), tf_(tf), ma_(ma), traj_one(0, 0, 0, num_steps_),
+  acc_lim_x_(acc_lim_x), acc_lim_y_(acc_lim_y), acc_lim_theta_(acc_lim_theta), 
+  prev_x_(0), prev_y_(0),
+  tf_(tf), ma_(ma), traj_one(0, 0, 0, num_steps_),
   traj_two(0, 0, 0, num_steps), footprint_spec_(footprint_spec)
 {
   //the robot is not stuck to begin with
@@ -393,32 +395,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   }
 
 
-  //do we have a legal trajectory
-  if(best_traj->cost_ >= 0){
-    if(best_traj->xv_ > 0){
-      rotating_left = false;
-      rotating_right = false;
-      strafe_left = false;
-      strafe_right = false;
-      stuck_left = false;
-      stuck_right = false;
-      stuck_left_strafe = false;
-      stuck_right_strafe = false;
-    }
-    else if(best_traj->thetav_ < 0){
-      if(rotating_right){
-        stuck_right = true;
-      }
-      rotating_left = true;
-    }
-    else if(best_traj->thetav_ > 0){
-      if(rotating_left){
-        stuck_left = true;
-      }
-      rotating_right = true;
-    }
-    return *best_traj;
-  }
 
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
@@ -465,28 +441,49 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //do we have a legal trajectory
   if(best_traj->cost_ >= 0){
-    if(best_traj->yv_ > 0){
-      if(strafe_right){
-        stuck_right_strafe = true;
+    if(!(best_traj->xv_ > 0)){
+      if(best_traj->thetav_ < 0){
+        if(rotating_right){
+          stuck_right = true;
+        }
+        rotating_left = true;
       }
-      strafe_left = true;
-    }
-    else if(best_traj->yv_ < 0){
-      if(strafe_left){
-        stuck_left_strafe = true;
+      else if(best_traj->thetav_ > 0){
+        if(rotating_left){
+          stuck_left = true;
+        }
+        rotating_right = true;
       }
-      strafe_right = true;
+      else if(best_traj->yv_ > 0){
+        if(strafe_right){
+          stuck_right_strafe = true;
+        }
+        strafe_left = true;
+      }
+      else if(best_traj->yv_ < 0){
+        if(strafe_left){
+          stuck_left_strafe = true;
+        }
+        strafe_right = true;
+      }
     }
-  }
-  else{
-    strafe_left = false;
-    strafe_right = false;
-    stuck_left_strafe = false;
-    stuck_right_strafe = false;
-    rotating_left = false;
-    rotating_right = false;
-    stuck_left = false;
-    stuck_right = false;
+
+    double dist = sqrt((x - prev_x_) * (x - prev_x_) + (y - prev_y_) * (y - prev_y_));
+    if(dist > OSCILLATION_RESET_DIST){
+      rotating_left = false;
+      rotating_right = false;
+      strafe_left = false;
+      strafe_right = false;
+      stuck_left = false;
+      stuck_right = false;
+      stuck_left_strafe = false;
+      stuck_right_strafe = false;
+    }
+
+    prev_x_ = x;
+    prev_y_ = y;
+
+    return *best_traj;
   }
 
   //and finally we want to generate trajectories that move backwards slowly
@@ -514,10 +511,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   rotating_right = false;
   stuck_left = false;
   stuck_right = false;
-  strafe_left = false;
-  strafe_right = false;
-  stuck_left_strafe = false;
-  stuck_right_strafe = false;
 
   return *best_traj;
   

@@ -62,6 +62,7 @@
 #include <queue>
 
 #define HEADING_LOOKAHEAD .325
+#define OSCILLATION_RESET_DIST .05
 
 //Based on the plan from the path planner, determine what velocities to send to the robot
 class TrajectoryController {
@@ -138,6 +139,7 @@ class TrajectoryController {
     int samples_per_dim_;
     double pdist_scale_, gdist_scale_, dfast_scale_, occdist_scale_;
     double acc_lim_x_, acc_lim_y_, acc_lim_theta_;
+    double prev_x_, prev_y_;
 
     //transform client
     rosTFClient* tf_;
@@ -157,7 +159,7 @@ class TrajectoryController {
       check_cell->path_mark = true;
 
       //if the cell is an obstacle set the max path distance
-      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
         check_cell->path_dist = map_.map_.size();
         return;
       }
@@ -175,7 +177,7 @@ class TrajectoryController {
       check_cell->goal_mark = true;
 
       //if the cell is an obstacle set the max goal distance
-      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) >= costmap_2d::ObstacleMapAccessor::INSCRIBED_INFLATED_OBSTACLE){
+      if(!map_(check_cell->cx, check_cell->cy).within_robot && ma_.getCost(check_cell->cx, check_cell->cy) == costmap_2d::ObstacleMapAccessor::LETHAL_OBSTACLE){
         check_cell->goal_dist = map_.map_.size();
         return;
       }
