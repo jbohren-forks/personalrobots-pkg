@@ -262,7 +262,7 @@ StageNode::Update()
   tf.sendTransform(tf::Stamped<tf::Transform> 
                    (tf::Transform(tf::Quaternion(lp.a, 0, 0), 
                                   tf::Point(lp.x, lp.y, 0.15)),
-                    sim_time, "base_laser", "base"));
+                    sim_time, "base_laser", "base_link"));
 
   // Get latest odometry data
   // Translate into ROS message format and publish
@@ -280,7 +280,7 @@ StageNode::Update()
   tf::Stamped<tf::Transform> 
           tx(tf::Transform(tf::Quaternion(odomMsg.pos.th, 0, 0), 
                            tf::Point(odomMsg.pos.x, odomMsg.pos.y, 0.0)).inverse(),
-             sim_time, "odom", "base");
+             sim_time, "odom", "base_link");
   this->tf.sendTransform(tx);
 
   // Also publish the ground truth pose
