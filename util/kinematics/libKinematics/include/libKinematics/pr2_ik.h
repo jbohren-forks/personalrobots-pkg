@@ -72,6 +72,12 @@ namespace kinematics
 
     NEWMAT::Matrix matInv(const NEWMAT::Matrix &g);
 
+    NEWMAT::Matrix gf_;
+
+    NEWMAT::Matrix home_inv_;
+
+    NEWMAT::Matrix grhs_;
+
   };
 }
 
