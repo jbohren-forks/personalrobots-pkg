@@ -89,7 +89,7 @@ TEST(costmap, test14){
 		ROBOT_RADIUS * 10.5, ROBOT_RADIUS * 8.0, ROBOT_RADIUS * 5.0, 0.5, 100.0, 100.0);
 
   // Verify that the circumscribed cost lower bound is as expected: based on the cost function.
-  unsigned char c = (unsigned char) ((CostMap2D::INSCRIBED_INFLATED_OBSTACLE -1) * 0.5/9);
+  unsigned char c = (unsigned char) ((CostMap2D::INSCRIBED_INFLATED_OBSTACLE -1) * 0.5/(1 + pow(3.0, 2)));
   ASSERT_EQ(map.getCircumscribedCostLowerBound(), c);
 
   // Add a point in the center
@@ -122,7 +122,7 @@ TEST(costmap, test14){
 
   // Verify the normalized cost attenuates as expected
   for(unsigned int i = (unsigned int)(ceil(ROBOT_RADIUS * 5.0) + 1); i <= (unsigned int)ceil(ROBOT_RADIUS * 10.5); i++){
-    unsigned char expectedValue = ( unsigned char )((CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1)* 0.5 /pow(i-ceil(ROBOT_RADIUS * 5.0), 2));
+    unsigned char expectedValue = ( unsigned char )((CostMap2D::INSCRIBED_INFLATED_OBSTACLE - 1)* 0.5 /(1 + pow(i-ceil(ROBOT_RADIUS * 5.0), 2)));
     ASSERT_EQ(map.getCost(50 + i, 50), expectedValue);
   }
 

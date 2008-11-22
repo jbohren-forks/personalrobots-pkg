@@ -330,7 +330,8 @@ namespace costmap_2d {
       cost = INSCRIBED_INFLATED_OBSTACLE;
     else {
       // The cost for a non-lethal obstacle should be in the range of [0, inscribed_inflated_obstacle - 1].
-      cost = (unsigned char) ( (INSCRIBED_INFLATED_OBSTACLE -1) * weight_/ pow(distance - inscribedRadius_, 2));
+      double factor = weight_ / (1 + pow(distance - inscribedRadius_, 2));
+      cost = (unsigned char) ( (INSCRIBED_INFLATED_OBSTACLE -1) * factor);
     }
     return cost;
   }
