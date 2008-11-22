@@ -41,23 +41,32 @@ public:
   
   //! Constructor. The dimensions of the source images that will be used
   //! with the detector are required to pre-allocate memory.
-  StarDetector(CvSize dims, int n = DEFAULT_SCALES,
+  StarDetector(CvSize size, int n = DEFAULT_SCALES,
                float response_threshold = DEFAULT_RESPONSE_THRESHOLD,
                float line_threshold_projected = DEFAULT_LINE_THRESHOLD_PROJECTED,
                float line_threshold_binarized = DEFAULT_LINE_THRESHOLD_BINARIZED);
 
   ~StarDetector();
   
-  //! Returns a vector of keypoints in the source image.
+  //! Detects keypoints and outputs them through inserter. Returns the
+  //! number of keypoints detected.
   template< typename OutputIterator >
   int DetectPoints(IplImage* source, OutputIterator inserter);
 
-  
+  CvSize imageSize() const;
+  //! Reallocates internal images
+  void setImageSize(CvSize size);
+
+  //! Number of scales used
+  int scales() const { return m_n; }
+  void setScales(int n);
   
   float responseThreshold() const;
   void setResponseThreshold(float threshold);
+  
   float projectedThreshold() const;
   void setProjectedThreshold(float threshold);
+  
   float binarizedThreshold() const;
   void setBinarizedThreshold(float threshold);
 
@@ -86,12 +95,8 @@ private:
   
   static const float SCALE_RATIO = M_SQRT2;
 
-  //! Allocate memory for internal images.
-  void allocateImages();
   //! Release memory for internal images.
   void releaseImages();
-  //! Create array holding filter sizes, which increase geometrically.
-  void generateFilterSizes();
   
   //! Calculate sum of all pixel values in the "star" shape.
   int StarAreaSum(CvPoint center, int radius, int offset);
@@ -160,6 +165,11 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   }
 
   return FindExtrema(inserter);
+}
+
+inline CvSize StarDetector::imageSize() const
+{
+  return cvSize(m_W, m_H);
 }
 
 inline float StarDetector::responseThreshold() const

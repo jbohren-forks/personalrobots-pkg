@@ -4,8 +4,7 @@
 StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_projected,
                            float line_threshold_binarized)
-  : m_n(n), m_W(size.width), m_H(size.height),
-    m_upright(NULL),
+  : m_upright(NULL),
     m_tilted(NULL),
     m_flat(NULL),
     m_responses(NULL),
@@ -17,35 +16,8 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                                 line_threshold_binarized))
 {
   // Pre-allocate all the memory we need
-  allocateImages();
-
-  generateFilterSizes();
-}
-
-void StarDetector::allocateImages()
-{
-  releaseImages();
-
-  // SIMD optimized code requires integral images to have fixed width.
-  int sumwidth = std::max(OPTIMIZED_WIDTH, m_W+1);
-  m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
-  m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
-  m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
-
-  CvSize size = cvSize(m_W, m_H);
-  m_responses = new IplImage*[m_n];
-  m_projected = cvCreateImage(size, IPL_DEPTH_32F, 1);
-  m_scales = cvCreateImage(size, IPL_DEPTH_8U, 1);
-  
-  for (int i = 0; i < m_n; ++i) {
-    m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
-    cvZero(m_responses[i]);
-  }
-  cvSet(m_scales, cvScalar(1));
-  cvZero(m_projected);
-
-  m_nonmax.thresholdFunction().setProjectedImage(m_projected);
-  m_nonmax.thresholdFunction().setScaleImage(m_scales);
+  setScales(n);
+  setImageSize(size);
 }
 
 void StarDetector::releaseImages()
@@ -62,9 +34,16 @@ void StarDetector::releaseImages()
   delete[] m_responses;
 }
 
-void StarDetector::generateFilterSizes()
+StarDetector::~StarDetector()
+{
+  releaseImages();
+  delete[] m_filter_sizes;
+}
+
+void StarDetector::setScales(int n)
 {
   delete[] m_filter_sizes;
+  m_n = n;
   m_filter_sizes = new int[m_n];
   
   // Filter sizes increase geometrically, rounded to nearest integer
@@ -85,10 +64,32 @@ void StarDetector::generateFilterSizes()
   m_border = m_filter_sizes[m_n - 1] * 3;
 }
 
-StarDetector::~StarDetector()
+void StarDetector::setImageSize(CvSize size)
 {
   releaseImages();
-  delete[] m_filter_sizes;
+  
+  m_W = size.width;
+  m_H = size.height;
+
+  // SIMD optimized code requires integral images to have fixed width.
+  int sumwidth = std::max(OPTIMIZED_WIDTH, m_W+1);
+  m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+
+  m_responses = new IplImage*[m_n];
+  m_projected = cvCreateImage(size, IPL_DEPTH_32F, 1);
+  m_scales = cvCreateImage(size, IPL_DEPTH_8U, 1);
+  
+  for (int i = 0; i < m_n; ++i) {
+    m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
+    cvZero(m_responses[i]);
+  }
+  cvSet(m_scales, cvScalar(1));
+  cvZero(m_projected);
+
+  m_nonmax.thresholdFunction().setProjectedImage(m_projected);
+  m_nonmax.thresholdFunction().setScaleImage(m_scales);
 }
 
 inline
