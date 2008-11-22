@@ -63,7 +63,7 @@ MapGenerator::MapGenerator(string servname) : ros::node("map_generator") {
     for(unsigned int x = 0; x < resp.map.width; x++) {
       unsigned int i = x + (resp.map.height - y - 1) * resp.map.width;
       if (resp.map.data[i] == 0) { //occ [0,0.1)
-	fputc(255, out);
+	fputc(254, out);
       } else if (resp.map.data[i] == +100) { //occ (0.65,1]
 	fputc(000, out);
       } else { //occ [0.1,0.65]
@@ -73,6 +73,14 @@ MapGenerator::MapGenerator(string servname) : ros::node("map_generator") {
   }
 
   fclose(out);
+
+
+  FILE* yaml = fopen("map.yaml", "w");
+
+  fprintf(yaml, "-resolution:%f\n-orgin:(%f, %f)\n",
+	  resp.map.resolution, resp.map.origin.x, resp.map.origin.y);
+
+  fclose(yaml);
 
   printf("Done\n");
   
