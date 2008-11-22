@@ -1,7 +1,7 @@
 import math
 import sys
 
-TARGET_C = 0
+TARGET_C = 1
 SCALE_RATIO = math.sqrt(2.0)
 for l in open("include/star_detector/optimized_width.h"):
    sumwidth = int(l.split()[-1])
@@ -33,7 +33,7 @@ for n in range(3,13):
   border = (border+3) & ~3
 
   def genRead(im, yo, xo):
-      #return "CV_IMAGE_ELEM(%s, int, y + %d, x + %d)" % (im, yo, xo)
+      return "CV_IMAGE_ELEM(%s, int, y + %d, x + %d)" % (im, yo, xo)
       if TARGET_C:
           return '%s_p[%d]' % (im, xo + yo * sumwidth)
       else:

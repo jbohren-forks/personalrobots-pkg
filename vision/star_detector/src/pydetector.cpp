@@ -52,7 +52,7 @@ PyObject *detect(PyObject *self, PyObject *args)
         PyObject *t = PyTuple_New(4);
         PyTuple_SetItem(t, 0, PyInt_FromLong(kp[i].x));
         PyTuple_SetItem(t, 1, PyInt_FromLong(kp[i].y));
-        PyTuple_SetItem(t, 2, PyInt_FromLong(kp[i].s));
+        PyTuple_SetItem(t, 2, PyInt_FromLong(kp[i].scale));
         PyTuple_SetItem(t, 3, PyFloat_FromDouble(kp[i].response));
         PyList_SetItem(r, i, t);
     }

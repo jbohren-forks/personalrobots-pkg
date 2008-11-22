@@ -296,5 +296,5 @@ if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
     if 0:
       suite = unittest.TestSuite()
-      suite.addTest(TestDirected('test_face'))
+      suite.addTest(TestDirected('test_L_symmetry'))
       unittest.TextTestRunner(verbosity=2).run(suite)

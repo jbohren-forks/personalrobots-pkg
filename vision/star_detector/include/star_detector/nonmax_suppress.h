@@ -53,7 +53,7 @@ public:
   inline PostThreshold& thresholdFunction() { return m_post_thresh; }
   inline const PostThreshold& thresholdFunction() const { return m_post_thresh; }
   
-  //! Appends all maxima found to pts and returns how many were found.
+  //! Outputs (through inserter) all maxima found and returns how many were found.
   template< typename OutputIterator >
   int operator() (IplImage* projected, IplImage* scales, int n,
                   OutputIterator inserter, int border) {
@@ -111,8 +111,7 @@ public:
         if ( m_post_thresh(max_x, max_y, max_scale) )
           goto max_failed;
 
-        *inserter = Keypoint(max_x, max_y, (float)max_scale,
-                             max_response, max_scale);
+        *inserter = Keypoint(max_x, max_y, max_scale, max_response);
         ++num_pts;
 
       max_failed:
@@ -139,8 +138,7 @@ public:
         if ( m_post_thresh(min_x, min_y, min_scale) )
           continue;
 
-        *inserter = Keypoint(min_x, min_y, (float)min_scale,
-                             min_response, min_scale);
+        *inserter = Keypoint(min_x, min_y, min_scale, min_response);
         ++num_pts;
 
       min_failed: /* null statement */ ;

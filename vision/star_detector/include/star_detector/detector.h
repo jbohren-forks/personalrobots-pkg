@@ -58,7 +58,7 @@ public:
   void setImageSize(CvSize size);
 
   //! Number of scales used
-  int scales() const { return m_n; }
+  inline int scales() const { return m_n; }
   void setScales(int n);
   
   float responseThreshold() const;
@@ -70,6 +70,9 @@ public:
   float binarizedThreshold() const;
   void setBinarizedThreshold(float threshold);
 
+  //! StarDetector will not find keypoints within 'border' pixels of the edge.
+  inline int border() const { return m_border; }
+
 private:
   //! Scale/spatial dimensions
   int m_n, m_W, m_H;
@@ -79,9 +82,6 @@ private:
   IplImage* m_tilted;
   //! Tilted integral image with a rounded two-pixel corner
   IplImage* m_flat;
-  //! Array of filter response images over different scales
-  // TODO: remove once FilterResponses is replaced
-  IplImage** m_responses;
   //! Projected response image
   IplImage* m_projected;
   //! Scales of points in projected response image
@@ -92,6 +92,17 @@ private:
   NonmaxSuppressWxH<5, 5, float, LineSuppressHybrid> m_nonmax;
   //! Border size for non-max suppression
   int m_border;
+
+  struct FilterParams
+  {
+    int inner_r;
+    int outer_r;
+    int inner_offset;
+    int outer_offset;
+    float inner_normalizer;
+    float outer_normalizer;
+  };
+  FilterParams* m_filter_params;
   
   static const float SCALE_RATIO = M_SQRT2;
 
@@ -105,11 +116,8 @@ private:
   //! are counted twice.
   int StarPixels(int radius, int offset);
   
-  //! Calculate the center-surround filter response for some scale.
-  void BilevelFilter(IplImage* dst, int scale);
-  
-    //! Calculate the filter responses over the range of desired scales.
-  void FilterResponses();
+  //! Calculate the filter responses over the range of desired scales.
+  void FilterResponses(); // fallback pure C++ implementation
   void FilterResponsesGen3();
   void FilterResponsesGen4();
   void FilterResponsesGen5();
@@ -135,7 +143,7 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   // cvIntegral needs a destination 1 pixel larger than source,
   // while we use a larger width for all summed areas.
   // So run the function then paste the scratch into m_upright.
-
+  // TODO: eliminate copy
   IplImage *scratch = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
   cvIntegral(source, scratch, NULL, NULL);
   cvSetImageROI(scratch, cvRect(0, 0, m_W+1,m_H+1));
@@ -147,7 +155,8 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   TiltedIntegral(source, m_tilted, m_flat);
 
   // If possible, run one of the optimized versions
-  if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
+  if (false) {
+    //if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
     switch (m_n) {
       case 3: FilterResponsesGen3(); break;
       case 4: FilterResponsesGen4(); break;
