@@ -5,8 +5,6 @@
 #include "star_detector/integral.h"
 #include "star_detector/nonmax_suppress.h"
 #include "optimized_width.h"
-
-//#include "star_detector/timer.h" // DEBUG
 #include <cv.h>
 #include <vector>
 #include <cmath>
@@ -29,6 +27,9 @@
   suppression check similar to SIFT's. Note that smaller line response
   thresholds are more stringent. Reasonable defaults for the thresholds
   are provided.
+
+  The default response threshold (30) is most appropriate for outdoor
+  scenes. For indoor scenes, a smaller threshold (~10) may be needed.
  */
 class StarDetector
 {
@@ -51,12 +52,16 @@ public:
   template< typename OutputIterator >
   int DetectPoints(IplImage* source, OutputIterator inserter);
 
-  //! Fill in scales based on indices and interpolation
-  template< typename ForwardIterator >
-  void InterpolateScales(ForwardIterator first, ForwardIterator last);
+  
+  
+  float responseThreshold() const;
+  void setResponseThreshold(float threshold);
+  float projectedThreshold() const;
+  void setProjectedThreshold(float threshold);
+  float binarizedThreshold() const;
+  void setBinarizedThreshold(float threshold);
 
 private:
-  float m_response_threshold;
   //! Scale/spatial dimensions
   int m_n, m_W, m_H;
   //! Normal integral image
@@ -78,10 +83,15 @@ private:
   NonmaxSuppressWxH<5, 5, float, LineSuppressHybrid> m_nonmax;
   //! Border size for non-max suppression
   int m_border;
-  //! Scale interpolation flag (TODO: currently useless)
-  bool m_interpolate;
   
   static const float SCALE_RATIO = M_SQRT2;
+
+  //! Allocate memory for internal images.
+  void allocateImages();
+  //! Release memory for internal images.
+  void releaseImages();
+  //! Create array holding filter sizes, which increase geometrically.
+  void generateFilterSizes();
   
   //! Calculate sum of all pixel values in the "star" shape.
   int StarAreaSum(CvPoint center, int radius, int offset);
@@ -132,7 +142,6 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   TiltedIntegral(source, m_tilted, m_flat);
 
   // If possible, run one of the optimized versions
-
   if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
     switch (m_n) {
       case 3: FilterResponsesGen3(); break;
@@ -150,39 +159,43 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
     FilterResponses();
   }
 
-#if 0
-  // DEBUG
-  for (int i = 0; i < m_n; i++) {
-    char filename[10];
-    sprintf(filename, "out%d.pgm", i);
-    SaveResponseImage(filename, m_responses[i]);
-  }
-#endif
-
   return FindExtrema(inserter);
+}
+
+inline float StarDetector::responseThreshold() const
+{
+  return m_nonmax.responseThreshold();
+}
+
+inline void StarDetector::setResponseThreshold(float threshold)
+{
+  m_nonmax.setResponseThreshold(threshold);
+}
+
+inline float StarDetector::projectedThreshold() const
+{
+  return m_nonmax.thresholdFunction().projectedThreshold();
+}
+
+inline void StarDetector::setProjectedThreshold(float threshold)
+{
+  m_nonmax.thresholdFunction().setProjectedThreshold(threshold);
+}
+
+inline float StarDetector::binarizedThreshold() const
+{
+  return m_nonmax.thresholdFunction().binarizedThreshold();
+}
+
+inline void StarDetector::setBinarizedThreshold(float threshold)
+{
+  m_nonmax.thresholdFunction().setBinarizedThreshold(threshold);
 }
 
 template< typename OutputIterator >
 inline int StarDetector::FindExtrema(OutputIterator inserter)
 {
-  //Timer t("Nonmax suppression");
   return m_nonmax(m_projected, m_scales, m_n, inserter, m_border);
-}
-
-// TODO: this is useless when we discard the full set of response images, but we
-//       could do the interpolation when creating the projected image.
-template< typename ForwardIterator >
-void StarDetector::InterpolateScales(ForwardIterator first, ForwardIterator last)
-{
-  for (ForwardIterator i = first; i != last; ++i) {
-    // Do quadratic interpolation using finite differences
-    float r1 = CV_IMAGE_ELEM(m_responses[i->s - 2], float, i->y, i->x);
-    float r2 = CV_IMAGE_ELEM(m_responses[i->s - 1], float, i->y, i->x);
-    float r3 = CV_IMAGE_ELEM(m_responses[i->s], float, i->y, i->x);
-    float s_hat = 0.5*(r1 - r3) / (r1 - 2*r2 + r3);
-    
-    i->scale = pow(SCALE_RATIO, s_hat + i->s);
-  }
 }
 
 #endif

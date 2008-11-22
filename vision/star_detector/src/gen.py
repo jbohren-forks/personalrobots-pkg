@@ -150,7 +150,7 @@ for n in range(3,13):
         print "mx = PRED(is_win, %s, mx);" % (r)
 
       if 1:
-        print "__m128i thresh = (__m128i)_mm_set1_ps(m_response_threshold);"
+        print "__m128i thresh = (__m128i)_mm_set1_ps(responseThreshold());"
         print "is_win = _mm_cmpgt_epi32(ABS(mx), thresh);"
         print "mx_s = PRED(is_win, mx_s, K(1));"
 

@@ -5,48 +5,50 @@ StarDetector::StarDetector(CvSize size, int n, float response_threshold,
                            float line_threshold_projected,
                            float line_threshold_binarized)
   : m_n(n), m_W(size.width), m_H(size.height),
-    // Pre-allocate all the memory we need
-    m_responses(new IplImage*[n]),
-    m_projected( cvCreateImage(size, IPL_DEPTH_32F, 1) ),
-    m_scales( cvCreateImage(size, IPL_DEPTH_8U, 1) ),
-    m_filter_sizes(new int[n]),
+    m_upright(NULL),
+    m_tilted(NULL),
+    m_flat(NULL),
+    m_responses(NULL),
+    m_projected(NULL),
+    m_scales(NULL),
+    m_filter_sizes(NULL),
     m_nonmax(response_threshold,
-             LineSuppressHybrid(m_projected, m_scales, m_filter_sizes,
-                                line_threshold_projected,
-                                line_threshold_binarized)),
-    m_interpolate(true)
+             LineSuppressHybrid(line_threshold_projected,
+                                line_threshold_binarized))
 {
+  // Pre-allocate all the memory we need
+  allocateImages();
+
+  generateFilterSizes();
+}
+
+void StarDetector::allocateImages()
+{
+  releaseImages();
+
+  // SIMD optimized code requires integral images to have fixed width.
   int sumwidth = std::max(OPTIMIZED_WIDTH, m_W+1);
   m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
 
-  m_response_threshold = response_threshold;
-
-  for (int i = 0; i < n; ++i) {
+  CvSize size = cvSize(m_W, m_H);
+  m_responses = new IplImage*[m_n];
+  m_projected = cvCreateImage(size, IPL_DEPTH_32F, 1);
+  m_scales = cvCreateImage(size, IPL_DEPTH_8U, 1);
+  
+  for (int i = 0; i < m_n; ++i) {
     m_responses[i] = cvCreateImage(size, IPL_DEPTH_32F, 1);
     cvZero(m_responses[i]);
   }
   cvSet(m_scales, cvScalar(1));
   cvZero(m_projected);
 
-  // Filter sizes increase geometrically, rounded to nearest integer
-  m_filter_sizes[0] = 1;
-  float cur_size = 1;
-  int scale = 1;
-  while (scale < n) {
-    cur_size *= SCALE_RATIO;
-    int rounded_size = (int)(cur_size + 0.5);
-    if (rounded_size == m_filter_sizes[scale - 1])
-      continue;
-    m_filter_sizes[scale++] = rounded_size;
-  }
-
-  // Set border to size of maximum offset
-  m_border = m_filter_sizes[m_n - 1] * 3;
+  m_nonmax.thresholdFunction().setProjectedImage(m_projected);
+  m_nonmax.thresholdFunction().setScaleImage(m_scales);
 }
 
-StarDetector::~StarDetector()
+void StarDetector::releaseImages()
 {
   cvReleaseImage(&m_upright);
   cvReleaseImage(&m_tilted);
@@ -54,10 +56,38 @@ StarDetector::~StarDetector()
   cvReleaseImage(&m_projected);
   cvReleaseImage(&m_scales);
 
-  for (int i = 0; i < m_n; ++i) {
-    cvReleaseImage(&m_responses[i]);
-  }
+  if (m_responses)
+    for (int i = 0; i < m_n; ++i)
+      cvReleaseImage(&m_responses[i]);
   delete[] m_responses;
+}
+
+void StarDetector::generateFilterSizes()
+{
+  delete[] m_filter_sizes;
+  m_filter_sizes = new int[m_n];
+  
+  // Filter sizes increase geometrically, rounded to nearest integer
+  m_filter_sizes[0] = 1;
+  float cur_size = 1;
+  int scale = 1;
+  while (scale < m_n) {
+    cur_size *= SCALE_RATIO;
+    int rounded_size = (int)(cur_size + 0.5);
+    if (rounded_size == m_filter_sizes[scale - 1])
+      continue;
+    m_filter_sizes[scale++] = rounded_size;
+  }
+
+  m_nonmax.thresholdFunction().setScaleSizes(m_filter_sizes);
+
+  // Set border to size of maximum offset
+  m_border = m_filter_sizes[m_n - 1] * 3;
+}
+
+StarDetector::~StarDetector()
+{
+  releaseImages();
   delete[] m_filter_sizes;
 }
 
@@ -103,7 +133,7 @@ void StarDetector::BilevelFilter(IplImage* dst, int scale)
   }
 }
 
-/*inline*/ void StarDetector::FilterResponses()
+void StarDetector::FilterResponses()
 {
   for (int scale = 1; scale <= m_n; ++scale) {
     BilevelFilter(m_responses[scale-1], scale);
@@ -128,10 +158,6 @@ void StarDetector::BilevelFilter(IplImage* dst, int scale)
       CV_IMAGE_ELEM(m_scales, uchar, y, x) = scale;
     }
   }
-
-  // DEBUG
-  //cvSaveImage("scales.pgm", scales);
-  //SaveResponseImage("projected.pgm", projected);
 }
 
 #include "generated.i"
