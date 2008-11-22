@@ -47,7 +47,7 @@ namespace ros {
 
     MoveBase::MoveBase()
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
-	tf_(*this, true, 10000000000ULL, 0ULL), // cache for 10 sec, no extrapolation
+	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
 	controller_(NULL),
 	costMap_(NULL),
 	ma_(NULL),
@@ -56,9 +56,7 @@ namespace ros {
 	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
-      global_pose_.x = 0;
-      global_pose_.y = 0;
-      global_pose_.yaw = 0;
+      global_pose_.setIdentity();
 
       // Initialize odometry
       base_odom_.vel.x = 0;
@@ -117,10 +115,9 @@ namespace ros {
       robotWidth_ = inscribedRadius * 2;
 
       // Allocate observation buffers
-      tf::TransformListener *tempTf_ = new tf::TransformListener(*this, true, (uint64_t)10000000000ULL);
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), *tempTf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), *tempTf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), *tempTf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -261,58 +258,67 @@ namespace ros {
       delete stereoCloudBuffer_;
     }
 
-    void MoveBase::updateGlobalPose(){
-      libTF::TFPose2D robotPose;
-      robotPose.x = 0;
-      robotPose.y = 0;
-      robotPose.yaw = 0;
-      robotPose.frame = "base_link";
-      robotPose.time = 0; 
+    void MoveBase::updateGlobalPose(){ 
+      tf::Stamped<tf::Pose> robotPose;
+      robotPose.setIdentity();
+      robotPose.frame_id_ = "base_link";
+      robotPose.stamp_ = ros::Time((uint64_t)0ULL);
 
       try{
-        global_pose_ = this->tf_.transformPose2D("map", robotPose);
+	tf_.transformPose("map", robotPose, global_pose_);
       }
-      catch(libTF::TransformReference::LookupException& ex){
+      catch(tf::LookupException& ex) {
         ROS_INFO("No Transform available Error\n");
       }
-      catch(libTF::TransformReference::ConnectivityException& ex){
-        ROS_INFO("Connectivity Error\n");
+      catch(tf::ConnectivityException& ex) {
+	ROS_INFO("Connectivity Error\n");
       }
-      catch(libTF::TransformReference::ExtrapolateException& ex){
-        ROS_INFO("Extrapolation Error\n");
-      }
+      catch(tf::ExtrapolationException& ex) {
+	ROS_INFO("Extrapolation Error\n");
+       }
+      
+      // Update the cost map window
+      
+      
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      printf("Received new position (x=%f, y=%f, th=%f)\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
+      
+      ma_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
     }
 
 
     void MoveBase::updateGoalMsg(){
-      libTF::TFPose2D goalPose, transformedGoalPose;
-      goalPose.x = goalMsg.goal.x;
-      goalPose.y = goalMsg.goal.y;
-      goalPose.yaw = goalMsg.goal.th;
-      goalPose.frame = goalMsg.header.frame_id;
-      goalPose.time = 0;
-
+      tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
+      btQuaternion qt;
+      qt.setEulerZYX(goalMsg.goal.th, 0, 0);
+      goalPose.setData(btTransform(qt, btVector3(goalMsg.goal.x, goalMsg.goal.y, 0)));
+      goalPose.frame_id_ = goalMsg.header.frame_id;
+      goalPose.stamp_ = ros::Time((uint64_t)0ULL);
+      
       try{
-        transformedGoalPose = this->tf_.transformPose2D("map", goalPose);
+	tf_.transformPose("map", goalPose, transformedGoalPose);
       }
-      catch(libTF::TransformReference::LookupException& ex){
+      catch(tf::LookupException& ex){
         ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
         ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
-      catch(libTF::TransformReference::ConnectivityException& ex){
+      catch(tf::ConnectivityException& ex){
         ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
         ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
-      catch(libTF::TransformReference::ExtrapolateException& ex){
+      catch(tf::ExtrapolationException& ex){
         ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
         ROS_ERROR("The details of the LookupException are: %s\n", ex.what());
       }
 
-      stateMsg.goal.x = goalPose.x;
-      stateMsg.goal.y = goalPose.y;
-      stateMsg.goal.th = goalPose.yaw;
-
-      ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", goalMsg.goal.x, goalMsg.goal.y, goalMsg.goal.th);
+      stateMsg.goal.x = transformedGoalPose.getOrigin().x();
+      stateMsg.goal.y = transformedGoalPose.getOrigin().y();
+      double uselessPitch, uselessRoll, yaw;
+      transformedGoalPose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      stateMsg.goal.th = (float)yaw;
+      
+      ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
     }
 
     void MoveBase::updateStateMsg(){
@@ -320,9 +326,11 @@ namespace ros {
       updateGlobalPose();
 
       // Assign state data 
-      stateMsg.pos.x = global_pose_.x;
-      stateMsg.pos.y = global_pose_.y;
-      stateMsg.pos.th = global_pose_.yaw;
+      stateMsg.pos.x = global_pose_.getOrigin().x();
+      stateMsg.pos.y = global_pose_.getOrigin().y();
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      stateMsg.pos.th = (float)yaw;
     }
 
     void MoveBase::baseScanCallback()
@@ -366,28 +374,23 @@ namespace ros {
 
       try
       {
-        libTF::TFVector v_in, v_out;
-        v_in.x = odomMsg_.vel.x;
-        v_in.y = odomMsg_.vel.y;
-        v_in.z = odomMsg_.vel.th;	  
-        v_in.time = 0; // Gets the latest
-        v_in.frame = "odom";
-        v_out = tf_.transformVector("base_link", v_in);
-        base_odom_.vel.x = v_in.x;
-        base_odom_.vel.y = v_in.y;
-        base_odom_.vel.th = v_in.z;
+	tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), "odom"), v_out;
+	tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, "odom", v_out);	 
+	base_odom_.vel.x = v_in.x();
+	base_odom_.vel.y = v_in.y();
+	base_odom_.vel.th = v_in.z();	
       }
-      catch(libTF::TransformReference::LookupException& ex)
+      catch(tf::LookupException& ex)
       {
         puts("no odom->base Tx yet");
         ROS_DEBUG("%s\n", ex.what());
       }
-      catch(libTF::TransformReference::ConnectivityException& ex)
+      catch(tf::ConnectivityException& ex)
       {
         puts("no odom->base Tx yet");
         ROS_DEBUG("%s\n", ex.what());
       }
-      catch(libTF::TransformReference::ExtrapolateException& ex)
+      catch(tf::ExtrapolationException& ex)
       {
         puts("Extrapolation exception");
       }
@@ -485,12 +488,14 @@ namespace ros {
 
       // If the plan has been executed (i.e. empty) and we are within a required distance of the target orientation,
       // and we have stopped the robot, then we are done
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       if(plan_.empty() && 
-          fabs(global_pose_.yaw - stateMsg.goal.th) < 0.1){
+	 fabs(yaw - stateMsg.goal.th) < 0.1){
 
         ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-            global_pose_.x, global_pose_.y, global_pose_.yaw,
-            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+		  global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
         // The last act will issue stop command
         stopRobot();
@@ -500,11 +505,11 @@ namespace ros {
 
       // If we have reached the end of the path then clear the plan
       if(!plan_.empty() &&
-          withinDistance(global_pose_.x, global_pose_.y, global_pose_.yaw,
-            stateMsg.goal.x, stateMsg.goal.y, global_pose_.yaw)){
+	 withinDistance(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+			stateMsg.goal.x, stateMsg.goal.y, yaw)){
         ROS_DEBUG("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-            global_pose_.x, global_pose_.y, global_pose_.yaw,
-            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+		  global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
         plan_.clear();
       }
@@ -550,15 +555,17 @@ namespace ros {
       std_msgs::BaseVel cmdVel; // Commanded velocities      
 
       // Update the cost map window
-      ma_->updateForRobotPosition(global_pose_.x, global_pose_.y);
+      ma_->updateForRobotPosition(global_pose_.getOrigin().getX(), global_pose_.getOrigin().getY());
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
       if(plan_.empty()){
+	double uselessPitch, uselessRoll, yaw;
+	global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
         ROS_DEBUG("Moving to desired goal orientation\n");
         cmdVel.vx = 0;
         cmdVel.vy = 0;
-        cmdVel.vw =  stateMsg.goal.th - global_pose_.yaw;
+        cmdVel.vw =  stateMsg.goal.th - yaw;
         cmdVel.vw = cmdVel.vw >= 0.0 ? cmdVel.vw + .4 : cmdVel.vw - .4;
       }
       else {
@@ -570,8 +577,8 @@ namespace ros {
         while(it != plan_.end()){
           const std_msgs::Pose2DFloat32& w = *it;
           // Fixed error bound of 2 meters for now. Can reduce to a portion of the map size or based on the resolution
-          if(fabs(global_pose_.x - w.x) < 2 && fabs(global_pose_.y - w.y) < 2){
-            ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.x, global_pose_.y, w.x, w.y);
+          if(fabs(global_pose_.getOrigin().x() - w.x) < 2 && fabs(global_pose_.getOrigin().y() - w.y) < 2){
+            ROS_DEBUG("Nearest waypoint to <%f, %f> is <%f, %f>\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), w.x, w.y);
             break;
           }
 
@@ -619,7 +626,9 @@ namespace ros {
       }
 
       publish("cmd_vel", cmdVel);
-      publishFootprint(global_pose_.x, global_pose_.y, global_pose_.yaw);
+      double uselessPitch, uselessRoll, yaw;
+      global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+      publishFootprint(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
 
       //publish a point that the head can track
       double ptx, pty;
@@ -651,7 +660,7 @@ namespace ros {
      */
     void MoveBase::publishLocalCostMap() {
       double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
-      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.x, global_pose_.y);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
@@ -710,7 +719,7 @@ namespace ros {
      */
     void MoveBase::publishFreeSpaceAndObstacles() {
       double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
-      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.x, global_pose_.y);
+      CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
       // Publish obstacle data for each obstacle cell
       std::vector< std::pair<double, double> > rawObstacles, inflatedObstacles;
@@ -806,7 +815,7 @@ namespace ros {
 	  gettimeofday(&curr,NULL);
 	  double curr_t, last_t, t_diff;
 	  curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-	  costMap_->updateDynamicObstacles(global_pose_.x, global_pose_.y, observations);
+	  costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
 	  gettimeofday(&curr,NULL);
 	  last_t = curr.tv_sec + curr.tv_usec / 1e6;
 	  t_diff = last_t - curr_t;

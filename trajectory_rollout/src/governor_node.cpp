@@ -40,17 +40,15 @@ using namespace trajectory_rollout;
 
 GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec) : 
   ros::node("governor_node"), map_(MAP_SIZE_X, MAP_SIZE_Y), 
-  tf_(*this, true, 1 * 1000000000ULL, 100000000ULL), 
+  tf_(*this, true, (uint64_t)10000000000ULL), 
   ma_(map_, OUTER_RADIUS),
   tc_(map_, SIM_TIME, SIM_STEPS, VEL_SAMPLES, 
       PDIST_SCALE, GDIST_SCALE, OCCDIST_SCALE, DFAST_SCALE, MAX_ACC_X, MAX_ACC_Y, MAX_ACC_THETA, &tf_, ma_, footprint_spec),
   cycle_time_(0.1)
 {
-  robot_vel_.x = 0.0;
-  robot_vel_.y = 0.0;
-  robot_vel_.yaw = 0.0;
-  robot_vel_.frame = "base";
-  robot_vel_.time = 0;
+  robot_vel_.setIdentity();
+  robot_vel_.frame_id_ = "base_link";
+  robot_vel_.stamp_ = (ros::Time)0ULL;
 
   //so we can draw the local path
   advertise<std_msgs::Polyline2D>("local_path", 10);
@@ -66,11 +64,12 @@ GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec)
 void GovernorNode::odomReceived(){
   //we want to make sure that processPlan isn't using robot_vel_
   vel_lock.lock();
-  robot_vel_.x = odom_msg_.vel.x;
-  robot_vel_.y = odom_msg_.vel.y;
-  robot_vel_.yaw = odom_msg_.vel.th;
-  robot_vel_.frame = "base";
-  robot_vel_.time = 0;
+
+  btQuaternion qt(odom_msg_.vel.th, 0, 0);
+  robot_vel_.setData(btTransform(qt, btVector3(odom_msg_.vel.x, odom_msg_.vel.y, 0)));
+  robot_vel_.frame_id_ = "base_link";
+  robot_vel_.stamp_ = ros::Time((uint64_t)0ULL);
+
   //give robot_vel_ back
   vel_lock.unlock();
 }
@@ -97,44 +96,42 @@ void GovernorNode::planReceived(){
 }
 
 void GovernorNode::processPlan(){
-  libTF::TFPose2D robot_pose, global_pose;
-  robot_pose.x = 0.0;
-  robot_pose.y = 0.0;
-  robot_pose.yaw = 0.0;
-  robot_pose.frame = "base";
-  robot_pose.time = 0;
+  tf::Stamped<tf::Pose> robot_pose, global_pose;
+  robot_pose.setIdentity();
+  robot_pose.frame_id_ = "base_link";
+  robot_pose.stamp_ = ros::Time((uint64_t)0ULL);
 
   try
   {
-    global_pose = tf_.transformPose2D("map", robot_pose);
+    tf_.transformPose("map", robot_pose, global_pose);
   }
-  catch(libTF::TransformReference::LookupException& ex)
+  catch(tf::LookupException& ex)
   {
     puts("no global->local Tx yet");
     printf("%s\n", ex.what());
     return;
   }
-  catch(libTF::TransformReference::ConnectivityException& ex)
+  catch(tf::ConnectivityException& ex)
   {
     puts("no global->local Tx yet");
     printf("%s\n", ex.what());
     return;
   }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
+  catch(tf::ExtrapolationException& ex)
   {
     //      puts("extrapolation required");
     //      printf("%s\n", ex.what());
     return;
   }
 
-  libTF::TFPose2D robot_vel;
+  tf::Stamped<tf::Pose> robot_vel;
   //we need robot_vel_ to compute global_vel so we'll lock
   vel_lock.lock();
   robot_vel = robot_vel_;
   //give robot_vel_ back
   vel_lock.unlock();
 
-  libTF::TFPose2D drive_cmds;
+  tf::Stamped<tf::Pose> drive_cmds;
   struct timeval start;
   struct timeval end;
   double start_t, end_t, t_diff;
@@ -153,7 +150,10 @@ void GovernorNode::processPlan(){
   //give map_ back
   map_lock.unlock();
 
-  printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.x, robot_vel.y, robot_vel.yaw);
+
+  double uselessPitch, uselessRoll, yaw;
+  robot_vel.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+  printf("Robot Vel - vx: %.2f, vy: %.2f, vth: %.2f\n", robot_vel.getOrigin().getX(), robot_vel.getOrigin().getY(), yaw);
 
   if(path.cost_ >= 0){
     //let's print debug output to the screen
@@ -197,9 +197,10 @@ void GovernorNode::processPlan(){
   }
 
   //drive the robot!
-  cmd_vel_msg_.vx = drive_cmds.x;
-  cmd_vel_msg_.vy = drive_cmds.y;
-  cmd_vel_msg_.vw = drive_cmds.yaw;
+  cmd_vel_msg_.vx = drive_cmds.getOrigin().getX();
+  cmd_vel_msg_.vy = drive_cmds.getOrigin().getY();
+  drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+  cmd_vel_msg_.vw = yaw;
 
   
   if(path.cost_ < 0)

@@ -50,7 +50,8 @@
 #include <std_msgs/RobotBase2DOdom.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 
 // Laser projection
 #include "laser_scan_utils/laser_scan.h"
@@ -201,7 +202,7 @@ namespace ros {
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */
 
-      rosTFClient tf_; /**< Used to do transforms */
+      tf::TransformListener tf_; /**< Used to do transforms */
 
       // Observation Buffers are dynamically allocated since their constructors take
       // arguments bound by lookup to the param server. This could be chnaged with some reworking of how paramaters
@@ -219,7 +220,7 @@ namespace ros {
 
       CostMapAccessor* ma_; /**< Sliding read-only window on the cost map */
 
-      libTF::TFPose2D global_pose_; /**< The global pose in the map frame */
+      tf::Stamped<tf::Pose> global_pose_; /**< The global pose in the map frame */
 
       std_msgs::RobotBase2DOdom base_odom_; /**< Odometry in the base frame */
 

@@ -80,7 +80,7 @@
 #include <robot_msgs/DisplayKinematicPath.h>
 #include <robot_srvs/NamedKinematicPlanState.h>
 #include <robot_srvs/PlanNames.h>
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 static const unsigned int RIGHT_ARM_JOINTS_BASE_INDEX = 11;
 static const unsigned int LEFT_ARM_JOINTS_BASE_INDEX = 12;
@@ -120,7 +120,7 @@ private:
   robot_msgs::MechanismState mechanismState;
   robot_srvs::NamedKinematicPlanState::response plan;
   unsigned int currentWaypoint; /*!< The waypoint in the plan that we are targetting */
-  rosTFClient tf_; /**< Used to do transforms */
+  tf::TransformListener tf_; /**< Used to do transforms */
 
 protected:
   std::vector<std::string> jointNames_; /*< The collection of joint names of interest. Instantiate in the  derived class.*/
@@ -217,26 +217,23 @@ bool MoveArm::makePlan(){
 
 
   //Get the pose of the robot:
-  libTF::TFPose2D robotPose, globalPose;
-  globalPose.x = robotPose.x = 0;
-  globalPose.y = robotPose.y = 0;
-  globalPose.yaw = robotPose.yaw = 0;
-  robotPose.frame = "base_link";
-  globalPose.time = robotPose.time = 0;
-  try{
-    globalPose = this->tf_.transformPose2D("map", robotPose);
-  }
-  catch(libTF::TransformReference::LookupException& ex){
-    std::cout << "No Transform available Error\n";
-  }
-  catch(libTF::TransformReference::ConnectivityException& ex){
-    std::cout << "Connectivity Error\n";
-  }
-  catch(libTF::TransformReference::ExtrapolateException& ex){
-    std::cout << "Extrapolation Error\n";
-  }
-  
+  tf::Stamped<tf::Pose> robotPose, globalPose;
+  robotPose.setIdentity();
+  robotPose.frame_id_ = "base_link";
+  robotPose.stamp_ = ros::Time((uint64_t)0ULL);
 
+  try{
+    tf_.transformPose("map", robotPose, globalPose);
+  }
+  catch(tf::LookupException& ex) {
+    ROS_INFO("No Transform available Error\n");
+  }
+  catch(tf::ConnectivityException& ex) {
+    ROS_INFO("Connectivity Error\n");
+  }
+  catch(tf::ExtrapolationException& ex) {
+    ROS_INFO("Extrapolation Error\n");
+  }
 
 
   //initializing full value state
@@ -247,10 +244,12 @@ bool MoveArm::makePlan(){
     //std::cout << req.start_state.names[i] << ": " << names.num_values[i] << std::endl;
     req.start_state.joints[i].set_vals_size(names.num_values[i]);
     if (names.names[i] == "base_joint") {
-      std::cout << "Base: " << i << ", " << globalPose.x << ", " << globalPose.y << ", " << globalPose.yaw << std::endl;
-      req.start_state.joints[i].vals[0] = globalPose.x;
-      req.start_state.joints[i].vals[1] = globalPose.y;
-      req.start_state.joints[i].vals[2] = globalPose.yaw;
+      double yaw, pitch, roll;
+      globalPose.getBasis().getEulerZYX(yaw, pitch, roll);
+      std::cout << "Base: " << i << ", " << globalPose.getOrigin().getX() << ", " << globalPose.getOrigin().getY() << ", " << yaw << std::endl;
+      req.start_state.joints[i].vals[0] = globalPose.getOrigin().getX();
+      req.start_state.joints[i].vals[1] = globalPose.getOrigin().getY();
+      req.start_state.joints[i].vals[2] = yaw;
     } else {
       for (int k = 0 ; k < names.num_values[i]; k++) {
 	req.start_state.joints[i].vals[k] = 0;

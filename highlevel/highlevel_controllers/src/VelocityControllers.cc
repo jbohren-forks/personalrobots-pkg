@@ -4,7 +4,7 @@
 namespace ros {
   namespace highlevel_controllers {
 
-    TrajectoryRolloutController::TrajectoryRolloutController(rosTFClient* tf, const CostMapAccessor& ma,
+    TrajectoryRolloutController::TrajectoryRolloutController(tf::TransformListener* tf, const CostMapAccessor& ma,
 							     double sim_time, int sim_steps, int samples_per_dim,
 							     double pdist_scale, double gdist_scale, double dfast_scale, double occdist_scale, 
 							     double acc_lim_x, double acc_lim_y, double acc_lim_th, std::vector<std_msgs::Point2DFloat32> footprint_spec)
@@ -17,20 +17,20 @@ namespace ros {
     }
 
     bool TrajectoryRolloutController::computeVelocityCommands(const std::list<std_msgs::Pose2DFloat32>& globalPlan,
-							      const libTF::TFPose2D& pose,
+							      const tf::Stamped<tf::Pose>& pose,
 							      const std_msgs::BaseVel& currentVel,
 							      std_msgs::BaseVel& cmdVel,
 							      std::list<std_msgs::Pose2DFloat32>& localPlan){
       localPlan.clear();
 
-      libTF::TFPose2D drive_cmds;
+      tf::Stamped<tf::Pose> drive_cmds;
+      drive_cmds.frame_id_ = "base_link";
 
-      libTF::TFPose2D robot_vel;
-      robot_vel.x = currentVel.vx;
-      robot_vel.y = currentVel.vy;
-      robot_vel.yaw = currentVel.vw;
-      robot_vel.frame = "base_link";
-      robot_vel.time = 0;
+      tf::Stamped<tf::Pose> robot_vel;
+      btQuaternion qt(currentVel.vw, 0, 0);
+      robot_vel.setData(btTransform(qt, btVector3(currentVel.vx, currentVel.vy, 0)));
+      robot_vel.frame_id_ = "base_link";
+      robot_vel.stamp_ = ros::Time((uint64_t)0ULL);
 
       //do we need to resize our map?
       double origin_x, origin_y;
@@ -47,14 +47,20 @@ namespace ros {
       }
 
       tc_.updatePlan(copiedGlobalPlan);
-  
+ 
+
+
+
       //compute what trajectory to drive along
       Trajectory path = tc_.findBestPath(pose, robot_vel, drive_cmds);
 
       //pass along drive commands
-      cmdVel.vx = drive_cmds.x;
-      cmdVel.vy = drive_cmds.y;
-      cmdVel.vw = drive_cmds.yaw;
+      cmdVel.vx = drive_cmds.getOrigin().getX();
+      cmdVel.vy = drive_cmds.getOrigin().getY();
+      double uselessPitch, uselessRoll, yaw;
+      drive_cmds.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+ 
+      cmdVel.vw = yaw;
 
       //if we cannot move... tell someone
       if(path.cost_ < 0)

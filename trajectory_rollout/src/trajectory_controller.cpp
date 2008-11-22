@@ -38,7 +38,7 @@ using namespace std_msgs;
 
 TrajectoryController::TrajectoryController(MapGrid& mg, double sim_time, int num_steps, int samples_per_dim,
     double pdist_scale, double gdist_scale,
-    double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, rosTFClient* tf,
+    double dfast_scale, double occdist_scale, double acc_lim_x, double acc_lim_y, double acc_lim_theta, tf::TransformListener* tf,
     const costmap_2d::ObstacleMapAccessor& ma, vector<std_msgs::Point2DFloat32> footprint_spec)
   : map_(mg), num_steps_(num_steps), sim_time_(sim_time), samples_per_dim_(samples_per_dim),
   pdist_scale_(pdist_scale), gdist_scale_(gdist_scale), dfast_scale_(dfast_scale), occdist_scale_(occdist_scale), 
@@ -517,13 +517,22 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 }
 
 //given the current state of the robot, find a good trajectory
-Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF::TFPose2D global_vel, 
-    libTF::TFPose2D& drive_velocities){
+Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose, tf::Stamped<tf::Pose> global_vel, 
+    tf::Stamped<tf::Pose>& drive_velocities){
+
+
+
   //reset the map for new operations
   map_.resetPathDist();
 
+
+  double uselessPitch, uselessRoll, yaw, velYaw;
+  global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+
+ 
+
   //temporarily remove obstacles that are within the footprint of the robot
-  vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(global_pose.x, global_pose.y, global_pose.yaw, true);
+  vector<std_msgs::Position2DInt> footprint_list = getFootprintCells(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, true);
   
   //mark cells within the initial footprint of the robot
   for(unsigned int i = 0; i < footprint_list.size(); ++i){
@@ -535,8 +544,13 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
   printf("Path/Goal distance computed\n");
 
   
+  global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+  global_vel.getBasis().getEulerZYX(velYaw, uselessPitch, uselessRoll);
+
+
   //rollout trajectories and find the minimum cost one
-  Trajectory best = createTrajectories(global_pose.x, global_pose.y, global_pose.yaw, global_vel.x, global_vel.y, global_vel.yaw, 
+  Trajectory best = createTrajectories(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
+      global_vel.getOrigin().getX(), global_vel.getOrigin().getY(), velYaw, 
       acc_lim_x_, acc_lim_y_, acc_lim_theta_);
   printf("Trajectories created\n");
 
@@ -560,14 +574,14 @@ Trajectory TrajectoryController::findBestPath(libTF::TFPose2D global_pose, libTF
   */
 
   if(best.cost_ < 0){
-    drive_velocities.x = 0;
-    drive_velocities.y = 0;
-    drive_velocities.yaw = 0;
+    drive_velocities.setIdentity();
   }
   else{
-    drive_velocities.x = best.xv_;
-    drive_velocities.y = best.yv_;
-    drive_velocities.yaw = best.thetav_;
+    btVector3 start(best.xv_, best.yv_, 0);
+    drive_velocities.setOrigin(start);
+    btMatrix3x3 matrix;
+    matrix.setRotation(btQuaternion(best.thetav_, 0, 0));
+    drive_velocities.setBasis(matrix);
   }
 
   return best;

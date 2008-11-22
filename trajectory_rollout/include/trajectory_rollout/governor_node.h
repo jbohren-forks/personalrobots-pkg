@@ -52,7 +52,7 @@
 #include <sys/time.h>
 
 //for transform support
-#include <rosTF/rosTF.h>
+#include "tf/transform_listener.h"
 
 //the trajectory controller
 #include <trajectory_rollout/trajectory_controller.h>
@@ -145,7 +145,7 @@ class GovernorNode: public ros::node
     MapGrid map_;
     
     //transform client
-    rosTFClient tf_;
+    tf::TransformListener tf_;
 
     //map accessor
     WavefrontMapAccessor ma_;
@@ -168,7 +168,7 @@ class GovernorNode: public ros::node
     ros::thread::mutex map_lock;
 
     //keep track of the robot's velocity
-    libTF::TFPose2D robot_vel_;
+    tf::Stamped<tf::Pose> robot_vel_;
 
     //how long for each cycle
     double cycle_time_;
