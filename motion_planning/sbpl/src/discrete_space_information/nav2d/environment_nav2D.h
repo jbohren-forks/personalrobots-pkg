@@ -136,7 +136,7 @@ public:
 
 	bool IsObstacle(int x, int y);
 	unsigned char GetMapCost(int x, int y);
-	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly);
+	void GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh);
 
 	const EnvNAV2DConfig_t* GetEnvNavConfig();
 

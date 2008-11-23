@@ -33,6 +33,8 @@
 //eight-connected grid
 #define NAV3DKIN_DXYWIDTH 8
 
+#define ENVNAV3DKIN_DEFAULTOBSTHRESH 1	//see explanation of the value below
+
 
 //definition of theta orientations
 //0 - is aligned with X-axis in the positive direction (1,0 in polar coordinates)
@@ -88,7 +90,12 @@ typedef struct ENV_NAV3DKIN_CONFIG
 	int EndX_c;
 	int EndY_c;
 	int EndTheta;
-	char** Grid2D;
+	unsigned char** Grid2D;
+
+	//the value at which and above which cells are obstacles in the maps sent from outside
+	//the default is defined above
+	unsigned char obsthresh; 
+
 
 	double nominalvel_mpersecs;
 	double timetoturn45degsinplace_secs;
@@ -138,6 +145,8 @@ class EnvironmentNAV3DKIN : public DiscreteSpaceInformation
 
 public:
 
+	EnvironmentNAV3DKIN();
+
 	bool InitializeEnv(const char* sEnvFile);
 
 
@@ -161,10 +170,11 @@ public:
                        double goalx, double goaly, double goaltheta,
 					   double goaltol_x, double goaltol_y, double goaltol_theta,
 					   const vector<sbpl_2Dpt_t> & perimeterptsV,
-					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs);
+					   double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs, 
+					   unsigned char obsthresh);
     int SetStart(double x, double y, double theta);
     int SetGoal(double x, double y, double theta);
-    bool UpdateCost(int x, int y, int new_status);
+    bool UpdateCost(int x, int y, unsigned char newcost);
 	void GetPredsofChangedEdges(vector<nav2dcell_t> const * changedcellsV, vector<int> *preds_of_changededgesIDV);
 
 
@@ -173,8 +183,10 @@ public:
 	int GetStateFromCoord(int x, int y, int theta);
 
 	bool IsObstacle(int x, int y);
+	bool IsValidConfiguration(int X, int Y, int Theta);
+
 	void GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double* starttheta, double* goalx, double* goaly, double* goaltheta,
-			double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs);
+			double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs, unsigned char* obsthresh);
 
 	const EnvNAV3DKINConfig_t* GetEnvNavConfig();
 
@@ -183,6 +195,8 @@ public:
 
     void PrintTimeStat(FILE* fOut);
   
+	unsigned char GetMapCost(int x, int y);
+
   
   bool IsWithinMapCell(int X, int Y);
   

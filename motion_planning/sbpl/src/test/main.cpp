@@ -162,7 +162,7 @@ int planandnavigate2d(int argc, char *argv[])
 	vector<nav2dcell_t> changedcellsV;
 	nav2dcell_t nav2dcell;
 	int i;
-	const unsigned char obsthresh = 1;
+	unsigned char obsthresh = 0;
 	//srand(0);
 
     //initialize true map and robot map
@@ -171,7 +171,7 @@ int planandnavigate2d(int argc, char *argv[])
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
 	}
-	trueenvironment_nav2D.GetEnvParms(&size_x, &size_y, &startx, &starty, &goalx, &goaly);
+	trueenvironment_nav2D.GetEnvParms(&size_x, &size_y, &startx, &starty, &goalx, &goaly, &obsthresh);
     unsigned char* map = (unsigned char*)calloc(size_x*size_y, sizeof(unsigned char));
 
 	//print the map
@@ -356,7 +356,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 	const int numofsensingcells = 16;
     int dx[numofsensingcells] = {-2, -2, -2, -2, -2, -1, -1,  0,  0,  1,  1,  2,  2,  2,  2,  2}; //used for defining the cells that are sensed
     int dy[numofsensingcells] = {-2, -1,  0,  1,  2, -2,  2, -2,  2, -2,  2, -2, -1,  0,  1,  2};
-	bool bPrint = true, bPrintMap = false;
+	bool bPrint = false, bPrintMap = false;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
 	vector<nav2dcell_t> changedcellsV;
@@ -365,6 +365,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 	double cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs;
 	vector<sbpl_2Dpt_t> perimeterptsV;
 	bool bsearchuntilfirstsolution = false; 
+	unsigned char obsthresh = 0;
 
 
 	//srand(0);
@@ -375,7 +376,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
 	}
-	trueenvironment_nav3Dkin.GetEnvParms(&size_x, &size_y, &startx, &starty, &starttheta, &goalx, &goaly, &goaltheta, &cellsize_m, &nominalvel_mpersecs, &timetoturn45degsinplace_secs);
+	trueenvironment_nav3Dkin.GetEnvParms(&size_x, &size_y, &startx, &starty, &starttheta, &goalx, &goaly, &goaltheta, &cellsize_m, 
+		&nominalvel_mpersecs, &timetoturn45degsinplace_secs, &obsthresh);
 
     unsigned char* map = (unsigned char*)calloc(size_x*size_y, sizeof(unsigned char));
 
@@ -383,7 +385,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 	if(bPrintMap) printf("true map:\n");
 	for(y = 0; bPrintMap && y < size_y; y++){
 		for(x = 0; x < size_x; x++){
-			printf("%d ", (int)trueenvironment_nav3Dkin.IsObstacle(x,y));
+			printf("%3d ", trueenvironment_nav3Dkin.GetMapCost(x,y));
 		}
 		printf("\n");
 	}
@@ -410,7 +412,8 @@ int planandnavigate3dkin(int argc, char *argv[])
 	//Initialize Environment (should be called before initializing anything else)
     if(!environment_nav3Dkin.InitializeEnv(size_x, size_y, map, startx, starty, starttheta, goalx, goaly, goaltheta, 
 		goaltol_x, goaltol_y, goaltol_theta, perimeterptsV,
-		cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs)){
+		cellsize_m, nominalvel_mpersecs, timetoturn45degsinplace_secs, 
+		obsthresh)){
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
 	}
@@ -461,8 +464,9 @@ int planandnavigate3dkin(int argc, char *argv[])
             if(x < 0 || x >= size_x || y < 0 || y >= size_y)
                 continue;
             int index = x + y*size_x;
-            if(map[index] != 1 && trueenvironment_nav3Dkin.IsObstacle(x,y)){
-                map[index] = 1;
+			unsigned char truecost = trueenvironment_nav3Dkin.GetMapCost(x,y);
+            if(map[index] != truecost){
+                map[index] = truecost;
                 environment_nav3Dkin.UpdateCost(x,y,map[index]);
                 printf("setting cost[%d][%d] to %d\n", x,y,map[index]);
                 bChanges = true;
@@ -516,19 +520,19 @@ int planandnavigate3dkin(int argc, char *argv[])
 				for(int j = 1; j < (int)solution_stateIDs_V.size(); j++)
 				{
 					int newx, newy, newtheta=0;
-					environment_nav3Dkin.GetCoordFromState(solution_stateIDs_V[j], newx, newy, newtheta); //TODO - check against all thetas
+					environment_nav3Dkin.GetCoordFromState(solution_stateIDs_V[j], newx, newy, newtheta); 
 					if(x == newx && y == newy)
 						bOnthePath = true;
 				}
 
 				if (index != startindex && index != goalindex && !bOnthePath)
-					printf("%d ", map[index]);
+					printf("%3d ", map[index]);
 				else if(index == startindex)
-					printf("X ");
+					printf("  X ");
 				else if(index == goalindex)
-					printf("G ");
+					printf("  G ");
 				else if (bOnthePath)
-					printf("* ");
+					printf("  * ");
 				else
 					printf("? ");
 			}
@@ -542,9 +546,9 @@ int planandnavigate3dkin(int argc, char *argv[])
             int newx, newy, newtheta;
             environment_nav3Dkin.GetCoordFromState(solution_stateIDs_V[1], newx, newy, newtheta);
 
-			if(trueenvironment_nav3Dkin.IsObstacle(newx,newy))
+			if(!trueenvironment_nav3Dkin.IsValidConfiguration(newx,newy,newtheta))
 			{
-				printf("ERROR: robot is commanded to move into an obstacle\n");
+				printf("ERROR: robot is commanded to move into an invalid configuration\n");
 				exit(1);
 			}
 

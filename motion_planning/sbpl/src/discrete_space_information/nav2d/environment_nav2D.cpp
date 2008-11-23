@@ -847,8 +847,17 @@ const EnvNAV2DConfig_t* EnvironmentNAV2D::GetEnvNavConfig() {
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV2D::SetGoal(int x, int y){
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidCell(x,y))
+	{
+		printf("WARNING: goal cell is invalid\n");
+	}
+
 
     EnvNAV2DHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y)) == NULL){
@@ -865,8 +874,17 @@ int EnvironmentNAV2D::SetGoal(int x, int y){
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV2D::SetStart(int x, int y){
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidCell(x,y))
+	{
+		printf("WARNING: start cell is invalid\n");
+	}
+
 
     EnvNAV2DHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y)) == NULL){
@@ -942,7 +960,7 @@ unsigned char EnvironmentNAV2D::GetMapCost(int x, int y)
 
 
 
-void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly)
+void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* starty, int* goalx, int* goaly, unsigned char* obsthresh)
 {
 	*size_x = EnvNAV2DCfg.EnvWidth_c;
 	*size_y = EnvNAV2DCfg.EnvHeight_c;
@@ -951,6 +969,8 @@ void EnvironmentNAV2D::GetEnvParms(int *size_x, int *size_y, int* startx, int* s
 	*starty = EnvNAV2DCfg.StartY_c;
 	*goalx = EnvNAV2DCfg.EndX_c;
 	*goaly = EnvNAV2DCfg.EndY_c;
+
+	*obsthresh = EnvNAV2DCfg.obsthresh;
 }
 
 
