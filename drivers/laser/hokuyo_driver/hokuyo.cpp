@@ -354,7 +354,7 @@ hokuyo::Laser::readTime(int timeout)
 
   if (laser_time == last_time_)
   {
-    if (++time_repeat_count_ > 0)
+    if (++time_repeat_count_ > 1)
     {
       HOKUYO_EXCEPT_ARGS(hokuyo::RepeatedTimeException, "The timestamp has not changed for %d reads", time_repeat_count_);
     }
