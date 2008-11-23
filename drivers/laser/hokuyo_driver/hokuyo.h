@@ -304,6 +304,8 @@ namespace hokuyo
 
     unsigned int last_time_;
 
+    unsigned int time_repeat_count_;
+
     long long offset_;
 
     FILE* laser_port_;

@@ -70,7 +70,7 @@ static uint64_t timeHelper()
 ///////////////////////////////////////////////////////////////////////////////
 hokuyo::Laser::Laser() :
                       dmin_(0), dmax_(0), ares_(0), amin_(0), amax_(0), afrt_(0), rate_(0),
-                      wrapped_(0), last_time_(0), offset_(0),
+                      wrapped_(0), last_time_(0), time_repeat_count_(0), offset_(0),
                       laser_port_(NULL), laser_fd_(-1)
 { }
 
@@ -353,8 +353,18 @@ hokuyo::Laser::readTime(int timeout)
   unsigned int laser_time = ((buf[0]-0x30) << 18) | ((buf[1]-0x30) << 12) | ((buf[2]-0x30) << 6) | (buf[3] - 0x30);
 
   if (laser_time == last_time_)
-    fprintf(stderr, "This timestamp is same as the last timestamp.\nSomething is probably going wrong. Try decreasing data rate.");
-  else if (laser_time < last_time_)
+  {
+    if (time_repeat_count_++ > 2)
+    {
+      HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "The timestamp has not changed for %d reads", time_repeat_count_);
+    }
+  }
+  else
+  {
+    time_repeat_count_ = 0;
+  }
+
+  if (laser_time < last_time_)
     wrapped_++;
   
   last_time_ = laser_time;
