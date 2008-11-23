@@ -585,6 +585,7 @@ bool LevMarqSparseBundleAdj::optimize(
           continue;
         }
         ///    Subtract T_{cp}^T dc from dp (where dc is the update for camera c).
+        /// @todo replace cvGEMM with special 3x3 matrix calculation methods may help speeding up
         double* dc = getFrameParamsUpdate(obsv->local_frame_index_);
         CvMat mat_dc  = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, dc);
         CvMat& mat_Tcp = obsv->mat_Tcp_;
@@ -829,76 +830,9 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     fp->mShift.z = params_local_to_global_data[5];
   }
 
-#if 0 // remove
-  // make a copy to frame poses as well.
-  // keep the two for loop separate, as we may remove the references  of
-  // PoseEstFrameEntry from this class
-  double params_local_to_global_data[NUM_CAM_PARAMS];
-  CvMat  params_local_to_global = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, params_local_to_global_data);
-  BOOST_REVERSE_FOREACH(FramePose* fp, *frame_poses) {
-    if (fp->mIndex > highest_free_global_index_ ) {
-      continue;
-    } else if (fp->mIndex < lowest_free_global_index_) {
-      break;
-    } else {
-      int local_index = map_index_global_to_local_[fp->mIndex];
-      // copy the parameters out
-      CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
-      CvMatUtils::transformFromRodriguesAndShift(mat_params_i, transf_global_to_local);
-
-      // compute the local to global matrix
-      CvMatUtils::invertRigidTransform(&transf_global_to_local,
-          &fp->transf_local_to_global_);
-
-      // update fp->mRod and fp->mShift
-      CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
-      fp->mRod.x = params_local_to_global_data[0];
-      fp->mRod.y = params_local_to_global_data[1];
-      fp->mRod.z = params_local_to_global_data[2];
-
-      fp->mShift.x = params_local_to_global_data[3];
-      fp->mShift.y = params_local_to_global_data[4];
-      fp->mShift.z = params_local_to_global_data[5];
-    }
-  }
-#endif
-
   // check and copy the point parameter back to p->coordinates_
   BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
     p->coordinates_ = p->param_;
-#if 0 // update disp_coord_est as well for each obv of the track.
-    printf("update point track %3d [%8.2f, %8.2f, %8.2f]\n",
-        p->id_, p->param_.x, p->param_.y, p->param_.z);
-    BOOST_FOREACH(PointTrackObserv* obsv, *p) {
-
-      if (isDontCareFrame(obsv->frame_index_) == true) {
-        // we do not update this frame anymore.
-        continue;
-      }
-
-      printf("fi=%3d [%8.2f, %8.2f, %8.2f] free=%d, local_index=%d\n",
-          obsv->frame_index_, obsv->disp_coord_.x, obsv->disp_coord_.y,
-          obsv->disp_coord_.z, isFreeFrame(obsv->frame_index_), obsv->local_frame_index_);
-
-
-      double *transf_global_to_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
-
-      CvMat mat_global_to_disp = cvMat(4, 4, CV_64FC1, transf_global_to_disp);
-      CvMat mat_coord = cvMat(1, 1, CV_64FC3, &p->param_);
-      CvMat mat_disp_coord_est_ = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
-
-      cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est_, &mat_global_to_disp);
-#if 1
-      printf("global to disp for frame: %d, 0x%x\n", obsv->frame_index_,
-          (unsigned int)transf_global_to_disp);
-      CvMatUtils::printMat(&mat_global_to_disp);
-
-      printf("estimated disp: [%8.2f, %8.2f, %8.2f]\n", obsv->disp_coord_est_.x,
-          obsv->disp_coord_est_.y, obsv->disp_coord_est_.z);
-#endif
-
-    }
-#endif
   }
 
 }
@@ -908,23 +842,6 @@ double LevMarqSparseBundleAdj::costFunction(
     PointTracks* tracks
 ) {
   double err_norm = 0;
-
-  /// For each free frame (camera), set up transformation from global coordinates
-  /// to disparity space.
-  /// @todo the following is not necessary. Remove it and remove map_global_to_disp
-#if 0
-  BOOST_FOREACH(PoseEstFrameEntry* pose_est_frame_entry, *windowOfFrames) {
-    CvMatUtils::transformFromRodriguesAndShift(
-        pose_est_frame_entry->mTransformParams,
-        pose_est_frame_entry->transf_global_to_local_);
-    // lastly, global to local disparity
-    cvMatMul(m3DToDisparity, &pose_est_frame_entry->transf_global_to_local_,
-        &pose_est_frame_entry->mTransformGlobalToDisp);
-    // enter the global to disp transformation into the hash map. again and again???
-    map_global_to_disp_[pose_est_frame_entry->mFrameIndex] =
-      &pose_est_frame_entry->mTransformGlobalToDisp;
-  }
-#endif
 
   /// For each tracks
   BOOST_FOREACH(PointTrack* track, tracks->tracks_) {

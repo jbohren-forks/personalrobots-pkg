@@ -39,7 +39,7 @@ VOSparseBundleAdj::VOSparseBundleAdj(const CvSize& imageSize,
   mTrackId(0),
   levmarq_sba_(NULL)
 {
-  mPoseEstimator.setInlierErrorThreshold(3.0);
+  mPoseEstimator.setInlierErrorThreshold(4.0);
 }
 
 VOSparseBundleAdj::~VOSparseBundleAdj() {
@@ -98,13 +98,19 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
           mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
           full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
 
-      levmarq_sba_->optimize(&free_frames, &fixed_frames, &mTracks);
+      status = levmarq_sba_->optimize(&free_frames, &fixed_frames, &mTracks);
+
+      // update the current key frame
+      if (status) {
+    	  int fi = mActiveKeyFrames.back()->mFrameIndex;
+    	  FramePose* fp = map_index_to_FramePose_[fi];
+    	  cvCopy(&fp->transf_local_to_global_,
+    			  &(mActiveKeyFrames.back()->transf_local_to_global_) );
+    	  cvCopy(&fp->transf_local_to_global_, &(this->mTransform));
+      }
 #endif
 
-      cout << mActiveKeyFrames.back()->mFrameIndex << endl;
       updateStat2();
-
-      cout << mActiveKeyFrames.back()->mFrameIndex << endl;
 
       if (mVisualizer) {
         PoseEstFrameEntry* pee = mActiveKeyFrames.back();
