@@ -1150,6 +1150,13 @@ void ARAPlanner::costs_changed(ChangedCellsGetter const & changedcells)
 
 }
 
+void ARAPlanner::costs_changed()
+{
+
+    pSearchStateSpace_->bReinitializeSearchStateSpace = true;
+
+}
+
 
 
 int ARAPlanner::force_planning_from_scratch()

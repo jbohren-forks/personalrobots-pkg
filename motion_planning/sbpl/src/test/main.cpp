@@ -484,7 +484,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 			environment_nav3Dkin.GetPredsofChangedEdges(&changedcellsV, &preds_of_changededgesIDV);
 			//let know the incremental planner about them
 			planner.update_preds_of_changededges(&preds_of_changededgesIDV); //use by AD* planner (incremental)
-			printf("%d states were affected\n", preds_of_changededgesIDV.size());
+			//printf("%d states were affected\n", preds_of_changededgesIDV.size());
 
         }
 

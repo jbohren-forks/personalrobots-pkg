@@ -6,22 +6,13 @@
 --------------------Configuration: sbpl - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C3.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP590.tmp" with contents
 [
 /nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Release/" /Fp"Release/sbpl.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
-"C:\Max\codeforstarters\sbpl\src\planners\ADStar\adplanner.cpp"
-"C:\Max\codeforstarters\sbpl\src\planners\ARAStar\araplanner.cpp"
-"C:\Max\codeforstarters\sbpl\src\discrete_space_information\nav2d\environment_nav2D.cpp"
-"C:\Max\codeforstarters\sbpl\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp"
-"C:\Max\codeforstarters\sbpl\src\discrete_space_information\robarm\environment_robarm.cpp"
-"C:\Max\codeforstarters\sbpl\src\utils\heap.cpp"
 "C:\Max\codeforstarters\sbpl\src\test\main.cpp"
-"C:\Max\codeforstarters\sbpl\src\utils\mdp.cpp"
-"C:\Max\codeforstarters\sbpl\src\utils\utils.cpp"
-"C:\Max\codeforstarters\sbpl\src\planners\VI\viplanner.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C3.tmp" 
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C4.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP590.tmp" 
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP591.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:"Release/sbpl.pdb" /machine:I386 /out:"Release/sbpl.exe" 
 .\Release\adplanner.obj
@@ -35,21 +26,12 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Release\utils.obj
 .\Release\viplanner.obj
 ]
-Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C4.tmp"
+Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP591.tmp"
 <h3>Output Window</h3>
 Compiling...
-adplanner.cpp
-araplanner.cpp
-environment_nav2D.cpp
-environment_nav3Dkin.cpp
-environment_robarm.cpp
-heap.cpp
 main.cpp
-mdp.cpp
-utils.cpp
-viplanner.cpp
 Linking...
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C6.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP593.tmp" with contents
 [
 /nologo /o"Release/sbpl.bsc" 
 .\Release\adplanner.sbr
@@ -62,7 +44,7 @@ Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C6.tmp" with contents
 .\Release\mdp.sbr
 .\Release\utils.sbr
 .\Release\viplanner.sbr]
-Creating command line "bscmake.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP4C6.tmp"
+Creating command line "bscmake.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP593.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 
