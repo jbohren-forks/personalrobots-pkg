@@ -58,6 +58,9 @@ namespace hokuyo
   //! An exception for use when data is corrupted
   DEF_EXCEPTION(CorruptedDataException, Exception);
 
+  //! An exception for use when the timestamp on the data is repeating (a good indicator something has gone wrong)
+  DEF_EXCEPTION(RepeatedTimeException, Exception);
+
 #undef DEF_EXCEPTION
 
   //! A struct for returning configuration from the Hokuyo

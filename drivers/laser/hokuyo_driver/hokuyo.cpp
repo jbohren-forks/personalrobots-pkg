@@ -354,9 +354,9 @@ hokuyo::Laser::readTime(int timeout)
 
   if (laser_time == last_time_)
   {
-    if (time_repeat_count_++ > 2)
+    if (++time_repeat_count_ > 0)
     {
-      HOKUYO_EXCEPT_ARGS(hokuyo::Exception, "The timestamp has not changed for %d reads", time_repeat_count_);
+      HOKUYO_EXCEPT_ARGS(hokuyo::RepeatedTimeException, "The timestamp has not changed for %d reads", time_repeat_count_);
     }
   }
   else
@@ -666,11 +666,18 @@ hokuyo::Laser::calcLatency(bool intensity, double min_ang, double max_ang, int c
     usleep(1000);
     sendCmd("TM1",timeout);
     comp_time = timeHelper();
-    laser_time = readTime();
+    try 
+    {
+      laser_time = readTime();
 
-    diff_time = comp_time - laser_time;
+      diff_time = comp_time - laser_time;
 
-    tmp_offset1 += diff_time / count;
+      tmp_offset1 += diff_time / count;
+    } catch (hokuyo::RepeatedTimeException &e)
+    {
+      // We expect to get Repeated Time's when hammering on the time server
+      continue;
+    }
   }
 
   uint64_t start_time = timeHelper();
