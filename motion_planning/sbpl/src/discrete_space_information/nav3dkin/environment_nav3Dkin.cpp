@@ -36,6 +36,15 @@ static clock_t time_createhash = 0;
 static clock_t time_getsuccs = 0;
 #endif
 
+//-----------------constructors/destructors-------------------------------
+EnvironmentNAV3DKIN::EnvironmentNAV3DKIN()
+{
+	EnvNAV3DKINCfg.obsthresh = ENVNAV3DKIN_DEFAULTOBSTHRESH;
+
+}
+
+
+//---------------------------------------------------------------------
 
 
 //-------------------problem specific and local functions---------------------
@@ -139,9 +148,9 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
 
 
   //allocate the 2D environment
-  EnvNAV3DKINCfg.Grid2D = new char* [EnvNAV3DKINCfg.EnvWidth_c];
+  EnvNAV3DKINCfg.Grid2D = new unsigned char* [EnvNAV3DKINCfg.EnvWidth_c];
   for (int x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++) {
-    EnvNAV3DKINCfg.Grid2D[x] = new char [EnvNAV3DKINCfg.EnvHeight_c];
+    EnvNAV3DKINCfg.Grid2D[x] = new unsigned char [EnvNAV3DKINCfg.EnvHeight_c];
   }
   
   //environment:
@@ -273,10 +282,10 @@ void EnvironmentNAV3DKIN::ReadConfiguration(FILE* fCfg)
 
 
 	//allocate the 2D environment
-	EnvNAV3DKINCfg.Grid2D = new char* [EnvNAV3DKINCfg.EnvWidth_c];
+	EnvNAV3DKINCfg.Grid2D = new unsigned char* [EnvNAV3DKINCfg.EnvWidth_c];
 	for (x = 0; x < EnvNAV3DKINCfg.EnvWidth_c; x++)
 	{
-		EnvNAV3DKINCfg.Grid2D[x] = new char [EnvNAV3DKINCfg.EnvHeight_c];
+		EnvNAV3DKINCfg.Grid2D[x] = new unsigned char [EnvNAV3DKINCfg.EnvHeight_c];
 	}
 
 	//environment:
@@ -591,7 +600,7 @@ bool EnvironmentNAV3DKIN::IsValidCell(int X, int Y)
 {
 	return (X >= 0 && X < EnvNAV3DKINCfg.EnvWidth_c && 
 		Y >= 0 && Y < EnvNAV3DKINCfg.EnvHeight_c && 
-		EnvNAV3DKINCfg.Grid2D[X][Y] == 0);
+		EnvNAV3DKINCfg.Grid2D[X][Y] < EnvNAV3DKINCfg.obsthresh);
 }
 
 bool EnvironmentNAV3DKIN::IsWithinMapCell(int X, int Y)
@@ -600,12 +609,45 @@ bool EnvironmentNAV3DKIN::IsWithinMapCell(int X, int Y)
 		Y >= 0 && Y < EnvNAV3DKINCfg.EnvHeight_c);
 }
 
+bool EnvironmentNAV3DKIN::IsValidConfiguration(int X, int Y, int Theta)
+{
+	vector<sbpl_2Dcell_t> footprint;
+	EnvNAV3DKIN3Dpt_t pose;
+
+	//compute continuous pose
+	pose.x = DISCXY2CONT(X, EnvNAV3DKINCfg.cellsize_m);
+	pose.y = DISCXY2CONT(Y, EnvNAV3DKINCfg.cellsize_m);
+	pose.theta = DiscTheta2Cont(Theta, NAV3DKIN_THETADIRS);
+
+	//compute footprint cells
+	CalculateFootprintForPose(pose, &footprint);
+
+	//iterate over all footprint cells
+	for(int find = 0; find < (int)footprint.size(); find++)
+	{
+		int x = footprint.at(find).x;
+		int y = footprint.at(find).y;
+
+		if (x < 0 || x >= EnvNAV3DKINCfg.EnvWidth_c ||
+			y < 0 || Y >= EnvNAV3DKINCfg.EnvHeight_c ||		
+			EnvNAV3DKINCfg.Grid2D[x][y] >= EnvNAV3DKINCfg.obsthresh)
+		{
+			return false;
+		}
+	}
+
+	return true;
+}
+
 
 int EnvironmentNAV3DKIN::GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action)
 {
 	sbpl_2Dcell_t cell;
 
-	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++)
+	//TODO - go over bounding box (minpt and maxpt) to test validity and skip testing boundaries below, also order intersect cells so that the four farthest pts go first
+
+	int currentmaxcost = 0;
+	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++) 
 	{
 		//get the cell in the map
 		cell = action->intersectingcellsV.at(i);
@@ -615,9 +657,12 @@ int EnvironmentNAV3DKIN::GetActionCost(int SourceX, int SourceY, int SourceTheta
 		//check validity
 		if(!IsValidCell(cell.x, cell.y))
 			return INFINITECOST;
+
+		if(EnvNAV3DKINCfg.Grid2D[cell.x][cell.y] > currentmaxcost)
+			currentmaxcost = EnvNAV3DKINCfg.Grid2D[cell.x][cell.y];
 	}
 
-	return action->cost;
+	return action->cost*(currentmaxcost+1); //use cell cost as multiplicative factor
 }
 
 
@@ -853,8 +898,11 @@ bool EnvironmentNAV3DKIN::InitializeEnv(int width, int height,
 					double goalx, double goaly, double goaltheta,
 				    double goaltol_x, double goaltol_y, double goaltol_theta,
 					const vector<sbpl_2Dpt_t> & perimeterptsV,
-					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs)
+					double cellsize_m, double nominalvel_mpersecs, double timetoturn45degsinplace_secs,
+					unsigned char obsthresh)
 {
+	EnvNAV3DKINCfg.obsthresh = obsthresh;
+
 	//TODO - need to set the tolerance as well
 
 	SetConfiguration(width, height,
@@ -1013,16 +1061,10 @@ void EnvironmentNAV3DKIN::SetAllActionsandAllOutcomes(CMDPSTATE* state)
                 continue;
         }
 
-       if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST)
+		//get cost
+		cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
+        if(cost >= INFINITECOST)
             continue;
-
-		//skip invalid diagonal move
-        if(newX != HashEntry->X && newY != HashEntry->Y) //TODO - need to modify to take robot perimeter into account
-		{
-			if(EnvNAV3DKINCfg.Grid2D[HashEntry->X][newY] != 0 || EnvNAV3DKINCfg.Grid2D[newX][HashEntry->Y] != 0)
-				continue;
-		}
-
 
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
@@ -1030,9 +1072,6 @@ void EnvironmentNAV3DKIN::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 #if TIME_DEBUG
 		clock_t currenttime = clock();
 #endif
-
-        //compute cost
-		cost = nav3daction->cost;
 
     	EnvNAV3DKINHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
@@ -1100,16 +1139,10 @@ void EnvironmentNAV3DKIN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
                 continue;
         }
 
-        if(GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction) >= INFINITECOST)
+		//get cost
+		int cost = GetActionCost(HashEntry->X, HashEntry->Y, HashEntry->Theta, nav3daction);
+        if(cost >= INFINITECOST)
             continue;
-
-		//skip invalid diagonal move
-        if(newX != HashEntry->X && newY != HashEntry->Y) //TODO - need to modify to take robot perimeter into account
-		{
-			if(EnvNAV3DKINCfg.Grid2D[HashEntry->X][newY] != 0 || EnvNAV3DKINCfg.Grid2D[newX][HashEntry->Y] != 0)
-				continue;
-        }
-
 
     	EnvNAV3DKINHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(newX, newY, newTheta)) == NULL)
@@ -1117,9 +1150,6 @@ void EnvironmentNAV3DKIN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vect
 			//have to create a new entry
 			OutHashEntry = CreateNewHashEntry(newX, newY, newTheta);
 		}
-
-        //compute clow 
-        int cost = nav3daction->cost;
 
         SuccIDV->push_back(OutHashEntry->stateID);
         CostV->push_back(cost);
@@ -1149,10 +1179,6 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
 	//get X, Y for the state
 	EnvNAV3DKINHashEntry_t* HashEntry = EnvNAV3DKIN.StateID2CoordTable[TargetStateID];
 	
-	//no predecessors if obstacle
-	if(EnvNAV3DKINCfg.Grid2D[HashEntry->X][HashEntry->Y] != 0)
-		return;
-
 	//iterate through actions
     bool bTestBounds = false;
     if(HashEntry->X == 0 || HashEntry->X == EnvNAV3DKINCfg.EnvWidth_c-1 || //TODO - need to modify to take robot perimeter into account
@@ -1175,8 +1201,9 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
                 continue;
         }
 
-		//skip invalid diagonal move
-	    if(GetActionCost(predX, predY, predTheta, nav3daction) >= INFINITECOST) 
+		//get cost
+		int cost = GetActionCost(predX, predY, predTheta, nav3daction);
+	    if(cost >= INFINITECOST)
 			continue;
         
     	EnvNAV3DKINHashEntry_t* OutHashEntry;
@@ -1185,9 +1212,6 @@ void EnvironmentNAV3DKIN::GetPreds(int TargetStateID, vector<int>* PredIDV, vect
 			//have to create a new entry
 			OutHashEntry = CreateNewHashEntry(predX, predY, predTheta);
 		}
-
-        //compute clow 
-        int cost = nav3daction->cost;
 
         PredIDV->push_back(OutHashEntry->stateID);
         CostV->push_back(cost);
@@ -1260,11 +1284,19 @@ const EnvNAV3DKINConfig_t* EnvironmentNAV3DKIN::GetEnvNavConfig() {
 int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 
 	int x = CONTXY2DISC(x_m, EnvNAV3DKINCfg.cellsize_m);
-	int y = CONTXY2DISC(x_m, EnvNAV3DKINCfg.cellsize_m);
+	int y = CONTXY2DISC(y_m, EnvNAV3DKINCfg.cellsize_m);
 	int theta = ContTheta2Disc(theta_rad, NAV3DKIN_THETADIRS);
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a goal cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+    if(!IsValidConfiguration(x,y,theta))
+	{
+		printf("WARNING: goal configuration is invalid\n");
+	}
 
     EnvNAV3DKINHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y, theta)) == NULL){
@@ -1282,11 +1314,20 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 
 	int x = CONTXY2DISC(x_m, EnvNAV3DKINCfg.cellsize_m);
-	int y = CONTXY2DISC(x_m, EnvNAV3DKINCfg.cellsize_m);
+	int y = CONTXY2DISC(y_m, EnvNAV3DKINCfg.cellsize_m); 
 	int theta = ContTheta2Disc(theta_rad, NAV3DKIN_THETADIRS);
 
-    if(!IsWithinMapCell(x,y))
-        return -1;
+	if(!IsWithinMapCell(x,y))
+	{
+		printf("ERROR: trying to set a start cell %d %d that is outside of map\n", x,y);
+		return -1;
+	}
+
+
+    if(!IsValidConfiguration(x,y,theta))
+	{
+		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
+	}
 
     EnvNAV3DKINHashEntry_t* OutHashEntry;
     if((OutHashEntry = GetHashEntry(x, y, theta)) == NULL){
@@ -1299,14 +1340,14 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 
 }
 
-bool EnvironmentNAV3DKIN::UpdateCost(int x, int y, int new_status)
+bool EnvironmentNAV3DKIN::UpdateCost(int x, int y, unsigned char newcost)
 {
 
 #if DEBUG
-	fprintf(fDeb, "Cost updated for cell %d %d from old cost=%d to new cost=%d\n", x,y,EnvNAV3DKINCfg.Grid2D[x][y], new_status);
+	fprintf(fDeb, "Cost updated for cell %d %d from old cost=%d to new cost=%d\n", x,y,EnvNAV3DKINCfg.Grid2D[x][y], newcost);
 #endif
 
-    EnvNAV3DKINCfg.Grid2D[x][y] = new_status;
+    EnvNAV3DKINCfg.Grid2D[x][y] = newcost;
 
     return true;
 }
@@ -1369,12 +1410,12 @@ bool EnvironmentNAV3DKIN::IsObstacle(int x, int y)
 #endif
 
 
-	return (EnvNAV3DKINCfg.Grid2D[x][y] != 0);
+	return (EnvNAV3DKINCfg.Grid2D[x][y] >= EnvNAV3DKINCfg.obsthresh); 
 
 }
 
 void EnvironmentNAV3DKIN::GetEnvParms(int *size_x, int *size_y, double* startx, double* starty, double*starttheta, double* goalx, double* goaly, double* goaltheta,
-									  	double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs)
+									  	double* cellsize_m, double* nominalvel_mpersecs, double* timetoturn45degsinplace_secs, unsigned char* obsthresh)
 {
 	*size_x = EnvNAV3DKINCfg.EnvWidth_c;
 	*size_y = EnvNAV3DKINCfg.EnvHeight_c;
@@ -1389,6 +1430,9 @@ void EnvironmentNAV3DKIN::GetEnvParms(int *size_x, int *size_y, double* startx, 
 	*cellsize_m = EnvNAV3DKINCfg.cellsize_m;
 	*nominalvel_mpersecs = EnvNAV3DKINCfg.nominalvel_mpersecs;
 	*timetoturn45degsinplace_secs = EnvNAV3DKINCfg.timetoturn45degsinplace_secs;
+
+	*obsthresh = EnvNAV3DKINCfg.obsthresh;
+
 }
 
 
@@ -1413,6 +1457,11 @@ bool EnvironmentNAV3DKIN::PoseDiscToCont(int ix, int iy, int ith,
   return (ith >= 0) && (ith < NAV3DKIN_THETADIRS)
     && (ix >= 0) && (ix < EnvNAV3DKINCfg.EnvWidth_c)
     && (iy >= 0) && (iy < EnvNAV3DKINCfg.EnvHeight_c);
+}
+
+unsigned char EnvironmentNAV3DKIN::GetMapCost(int x, int y)
+{
+	return EnvNAV3DKINCfg.Grid2D[x][y];
 }
 
 //------------------------------------------------------------------------------
