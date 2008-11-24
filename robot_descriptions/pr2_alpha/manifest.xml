@@ -18,7 +18,7 @@
   <depend package="joy"/>
   <depend package="rosrecord"/>
   <depend package="hokuyo_node"/>
-
+  <depend package="imu_node"/>
 
 
 </package>

@@ -36,6 +36,9 @@
     <param name="max_ang_degrees" type="double" value="80.0" />
   </node>
 
+<!-- imu -->
+  <node machine="four" pkg="imu_node" type="imu_node"/>
+
 <!-- Runtime Diagnostics Logging -->
 <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
 
