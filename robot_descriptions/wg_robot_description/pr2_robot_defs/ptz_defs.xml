@@ -99,19 +99,23 @@
               <interface:camera name="${side}_ptz_cam_iface" />
             </controller:ros_camera>
           </sensor:camera>
-          <!-- controllers for ptz -->
-          <controller:Ros_PTZ name="${side}_ptz_actuators_controller" plugin="libRos_PTZ.so">
-            <alwaysOn>true</alwaysOn>
-            <updateRate>15.0</updateRate>
-            <panJoint>${side}_ptz_pan_joint</panJoint>
-            <tiltJoint>${side}_ptz_tilt_joint</tiltJoint>
-            <commandTopicName>axis_${side}/ptz_cmd</commandTopicName>
-            <stateTopicName>axis_${side}/ptz_state</stateTopicName>
-            <interface:ptz name="${side}_ptz_actuators_iface" />
-          </controller:Ros_PTZ>
         </verbatim>
       </map>
     </sensor>
+    <map name="sensor" flag="gazebo">
+      <verbatim key="sensor_${side}_ptz_actuators">
+        <!-- controllers for ptz -->
+        <controller:Ros_PTZ name="${side}_ptz_actuators_controller" plugin="libRos_PTZ.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>15.0</updateRate>
+          <panJoint>${side}_ptz_pan_joint</panJoint>
+          <tiltJoint>${side}_ptz_tilt_joint</tiltJoint>
+          <commandTopicName>axis_${side}/ptz_cmd</commandTopicName>
+          <stateTopicName>axis_${side}/ptz_state</stateTopicName>
+          <interface:ptz name="${side}_ptz_actuators_iface" />
+        </controller:Ros_PTZ>
+      </verbatim>
+    </map>
 
 
   </macro>
