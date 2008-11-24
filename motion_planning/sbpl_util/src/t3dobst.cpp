@@ -200,7 +200,7 @@ static bool checkNonWrap()
   env3d.InitializeEnv(width, height, mapdata, startx, starty, starttheta,
 		      goalx, goaly, goaltheta, goaltol_x, goaltol_y, goaltol_theta,
 		      perimeterptsV, cellsize_m, nominalvel_mpersecs,
-		      timetoturn45degsinplace_secs);
+		      timetoturn45degsinplace_secs, obstcost);
   
   return runTests(env3d, obstcost);
 }

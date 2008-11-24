@@ -628,7 +628,7 @@ namespace ompl {
 			goalx, goaly, goaltheta,
 			goaltol_x, goaltol_y, goaltol_theta,
 			perimeterptsV, it->getResolution(), nominalvel_mpersecs,
-			timetoturn45degsinplace_secs);
+			timetoturn45degsinplace_secs, obst_cost_thresh);
     
     // as above, assume getXBegin() and getYBegin() are always zero
     for (ssize_t ix(0); ix < cm->getXEnd(); ++ix)
