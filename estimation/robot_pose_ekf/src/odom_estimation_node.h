@@ -111,8 +111,10 @@ private:
   tf::Transform base_vo_init_, vo_camera_;
   tf::Stamped<tf::Transform> camera_base_;
   ros::Time odom_time_, imu_time_, vo_time_, filter_time_;
+  ros::Time odom_init_time_, imu_init_time_, vo_init_time_;
   bool vel_active_, odom_active_, imu_active_, vo_active_;
-  double freq_, timeout_;
+  bool odom_initializing_, imu_initializing_, vo_initializing_;
+  double freq_, timeout_, sensor_init_time_;
 
   // mutex
   ros::thread::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;

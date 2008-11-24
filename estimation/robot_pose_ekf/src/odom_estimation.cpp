@@ -149,6 +149,7 @@ namespace estimation
     filter_ = new ExtendedKalmanFilter(prior_);
 
     // remember prior
+    addMeasurement(Stamped<Transform>(prior, time, "odom", "base_footprint"));
     filter_estimate_old_vec_ = prior_Mu;
     filter_estimate_old_ = prior;
     filter_time_old_     = time;
@@ -164,7 +165,7 @@ namespace estimation
   // update filter
   void OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
   {
-    if (filter_initialized_){
+    if (filter_initialized_ && filter_time > filter_time_old_){
 
       // system update filter
       // --------------------
@@ -247,6 +248,8 @@ namespace estimation
       filter_time_old_ = filter_time;
       addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
     }
+    else if (filter_time < filter_time_old_)
+      ROS_INFO("Will not update robot pose with time %f sec in the past.",(filter_time - filter_time_old_).toSec());
   };
 
 

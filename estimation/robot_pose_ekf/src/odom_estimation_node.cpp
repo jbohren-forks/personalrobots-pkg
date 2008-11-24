@@ -56,7 +56,10 @@ namespace estimation
       vel_active_(false),
       odom_active_(false),
       imu_active_(false),
-      vo_active_(false)
+      vo_active_(false),
+      odom_initializing_(false),
+      imu_initializing_(false),
+      vo_initializing_(false)
   {
     // advertise our estimation
     advertise<robot_msgs::PoseWithCovariance>("odom_estimation",10);
@@ -69,6 +72,7 @@ namespace estimation
     // paramters
     param("odom_estimation/freq", freq_, 30.0);
     param("odom_estimation/sensor_timeout", timeout_, 1.0);
+    param("odom_estimation/sensor_init_time", sensor_init_time_, 1.0);
 
     // fiexed transform between camera frame and vo frame
     vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
@@ -122,10 +126,18 @@ namespace estimation
 #endif
 
     // activate odom
-    if (!odom_active_){
-      odom_active_ = true;
-      ROS_INFO("Odom sensor activated");      
-    }
+   if (!odom_active_) {
+     if (!odom_initializing_){
+       odom_initializing_ = true;
+       odom_init_time_ = odom_time_;
+       ROS_INFO("Initializing Odom sensor");      
+     }
+     else if ( (odom_time_ - odom_init_time_).toSec() > sensor_init_time_){
+       odom_active_ = true;
+       odom_initializing_ = false;
+       ROS_INFO("Odom sensor activated");      
+     }
+   }
   };
 
 
@@ -150,8 +162,16 @@ namespace estimation
 
     // activate imu
    if (!imu_active_) {
-     imu_active_ = true;
-      ROS_INFO("Imu sensor activated");      
+     if (!imu_initializing_){
+       imu_initializing_ = true;
+       imu_init_time_ = imu_time_;
+       ROS_INFO("Initializing Imu sensor");      
+     }
+     else if ( (imu_time_ - imu_init_time_).toSec() > sensor_init_time_){
+       imu_active_ = true;
+       imu_initializing_ = false;
+       ROS_INFO("Imu sensor activated");      
+     }
    }
   };
 
@@ -188,9 +208,17 @@ namespace estimation
 #endif
 
     // activate vo
-    if (!vo_active_){
-      vo_active_ = true;
-      ROS_INFO("VO sensor activated"); 
+   if (!vo_active_) {
+     if (!vo_initializing_){
+       vo_initializing_ = true;
+       vo_init_time_ = vo_time_;
+       ROS_INFO("Initializing Vo sensor");      
+     }
+     else if ( (vo_time_ - vo_init_time_).toSec() > sensor_init_time_){
+       vo_active_ = true;
+       vo_initializing_ = false;
+       ROS_INFO("Vo sensor activated");      
+     }
     }
   };
 
@@ -280,15 +308,15 @@ namespace estimation
 
 	// check if sensors are still active
 	if (odom_active_ && (Time::now() - odom_time_).toSec() > timeout_){
-	  odom_active_ = false;
+	  odom_active_ = false; odom_initializing_ = false;
 	  ROS_INFO("Odom sensor not active any more");
 	}
 	if (imu_active_ && (Time::now() - imu_time_).toSec() > timeout_){
-	  imu_active_ = false;
+	  imu_active_ = false;  imu_initializing_ = false;
 	  ROS_INFO("Imu sensor not active any more");
 	}
 	if (vo_active_ && (Time::now() - vo_time_).toSec() > timeout_){
-	  vo_active_ = false;
+	  vo_active_ = false;  vo_initializing_ = false;
 	  ROS_INFO("VO sensor not active any more");
 	}
 
