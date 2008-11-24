@@ -71,17 +71,16 @@ for topic, msg in rosrecord.logplayer(filename):
     #vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast())
     #vo2 = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
     #vos = [vo1,vo2]
-    print "HERE1"
-    vos = [VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast), descriptor_scheme = DescriptorSchemeSAD())]
-    print "HERE2"
+    vos = [VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD())]
 
   start,end = 941,1000
-  start,end = 0,9999
+  start,end = 0,10
+
   if cam and topic.endswith("videre/images"):
     print framecounter
     if framecounter == end:
       break
-    if start <= framecounter:
+    if start <= framecounter and (framecounter % 2) == 0:
       imgR = imgAdapted(msg.images[0])
       imgL = imgAdapted(msg.images[1])
 
@@ -107,6 +106,15 @@ for topic, msg in rosrecord.logplayer(filename):
       else:
         vo = vos[0]
         vo.handle_frame(af)
+        inliers = [ (P0,P1) for (P1,P0) in vo.pe.inliers()]
+        if inliers != []:
+          pts3d = [cam.pix2cam(*P1) for (P0,P1) in inliers]
+          X = [ x for (x,y,z) in pts3d ]
+          Y = [ y for (x,y,z) in pts3d ]
+          Z = [ z for (x,y,z) in pts3d ]
+          print "xrange", min(X), max(X)
+          print "yrange", min(Y), max(Y)
+          print "zrange", min(Z), max(Z)
 
       visualize.viz(vo, af)
 

@@ -188,27 +188,27 @@ class TestDirected(unittest.TestCase):
     # Test process with one 'ideal' camera, one real-world Videre
     camera_param_list = [
       # (200.0, 200.0, 3.00,  320.0, 320.0, 240.0),
-      (389.0, 389.0, 89.23, 323.42, 323.42, 274.95)
+      (389.0, 389.0, 1e-3 * 89.23, 323.42, 323.42, 274.95)
     ]
-    def move_combo(i):
-      R = rotation(i*0.02, 0, 1, 0)
-      S = (i * -0.01,0,0)
-      return Pose(R, S)
-    def move_translate(i):
-      R = rotation(0, 0, 1, 0)
-      S = (0,0,0)
-      return Pose(R, S)
-    def move_Yrot(i):
-      R = rotation(i*0.02, 0, 1, 0)
-      S = (i * 0,0,0)
-      return Pose(R, S)
+    def move_forward(i, prev):
+      """ Forward 1 meter, turn around, Back 1 meter """
+      if i == 0:
+        return Pose(rotation(0,0,1,0), (0,0,0))
+      elif i < 10:
+        return prev * Pose(rotation(0,0,1,0), (0,0,.1))
+      elif i < 40:
+        return prev * Pose(rotation(math.pi / 30, 0, 1, 0), (0, 0, 0))
+      elif i < 50:
+        return prev * Pose(rotation(0,0,1,0), (0,0,.1))
 
-    for movement in [ move_combo, move_Yrot ]:
+    for movement in [ move_forward ]: # move_combo, move_Yrot ]:
       for cam_params in camera_param_list:
         cam = camera.Camera(cam_params)
 
-        kps = []
-        model = [ (x*200,y*200,z*200) for x in range(-3,4) for y in range(-3,4) for z in range(-3,4) ]
+        random.seed(0)
+        def rr():
+          return 2 * random.random() - 1.0
+        model = [ (3 * rr(), 1 * rr(), 3 * rr()) for i in range(300) ]
         def rndimg():
           b = "".join(random.sample([ chr(c) for c in range(256) ], 64))
           return Image.fromstring("L", (8,8), b)
@@ -217,12 +217,13 @@ class TestDirected(unittest.TestCase):
             dst.paste(src, (int(x)-4,int(y)-4))
           except:
             print "paste failed", x, y
-        random.seed(0)
         palette = [ rndimg() for i in model ]
         expected = []
         afs = []
-        for i in range(100):
-          P = movement(i)
+        P = None
+        for i in range(50):
+          P = movement(i, P)
+          print P.xform(0,0,0)
           li = Image.new("L", (640, 480))
           ri = Image.new("L", (640, 480))
           q = 0
@@ -230,29 +231,31 @@ class TestDirected(unittest.TestCase):
             pp = None
             pt_camera = (numpy.dot(P.M.I, numpy.array([mx,my,mz,1]).T))
             (cx,cy,cz,cw) = numpy.array(pt_camera).ravel()
-            if cz > 100:
+            if cz > .100:
               ((xl,yl),(xr,yr)) = cam.cam2pixLR(cx, cy, cz)
               if 0 <= xl and xl < 640 and 0 <= yl and yl < 480:
                 sprite(li, xl, yl, palette[q])
                 sprite(ri, xr, yr, palette[q])
             q += 1
-          #li.save("sim/left-%04d.png" % i)
-          #ri.save("sim/right-%04d.png" % i)
+          li.save("sim/left-%04d.png" % i)
+          ri.save("sim/right-%04d.png" % i)
           expected.append(P)
           afs.append(SparseStereoFrame(li, ri))
 
-      threshes = [0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06]
-      threshes = [ 0.001 * i for i in range(100) ]
-      threshes = range(100, 500, 10)
-      error = []
-      for thresh in threshes:
-        vo = VisualOdometer(cam, inlier_thresh = thresh)
-        for (e,af) in zip(expected, afs)[::1]:
-          vo.handle_frame(af)
-        #error.append(e.compare(vo.pose)[0])
-      #print threshes, error
-      #pylab.scatter(threshes, error)
-    #pylab.show()
+      import visualize
+      vo = VisualOdometer(cam)
+      for i,(af,ep) in enumerate(zip(afs, expected)):
+        vo.handle_frame(af)
+        print ep.xform(0,0,0), vo.pose.xform(0,0,0)
+        if 0:
+          print vo.pose.xform(0,0,0)
+          print "expected", ep.M
+          print "vo.pose", vo.pose.M
+          print numpy.abs((ep.M - vo.pose.M))
+          self.assert_(numpy.alltrue(numpy.abs((ep.M - vo.pose.M)) < 0.2))
+        visualize.viz(vo, af)
+
+      return
 
   def test_solve_rotation(self):
 
@@ -326,5 +329,5 @@ if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)
     if 0:
         suite = unittest.TestSuite()
-        suite.addTest(TestDirected('xtest_smoke_bag'))
+        suite.addTest(TestDirected('xtest_sim'))
         unittest.TextTestRunner(verbosity=2).run(suite)

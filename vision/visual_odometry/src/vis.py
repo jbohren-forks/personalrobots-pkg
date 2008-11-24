@@ -6,8 +6,11 @@ import votools as VO
 
 class Vis:
 
-  def __init__(self):
-    self.iw = VO.imWindow()
+  def __init__(self, title):
+    self.iw = VO.imWindow(title)
+
+  def mouse(self):
+    return self.iw.mouse()
 
   def show(self, image, pts):
     self.iw.DisplayImage(image, pts)

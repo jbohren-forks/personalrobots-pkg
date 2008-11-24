@@ -71,7 +71,12 @@ class SparseStereoFrame:
 
   def lookup_disparity(self, x, y):
     (w, h) = self.size
-    refpat = VO.grab_16x16(self.lgrad, w, x-7, y-7)
+    if 1:
+      limg = self.lf.tostring()
+      rimg = self.rf.tostring()
+    else:
+      limg,rimg = self.lgrad, self.rgrad
+    refpat = VO.grab_16x16(limg, w, x-7, y-7)
 
     # ftzero         31
     # dlen           64
@@ -80,7 +85,7 @@ class SparseStereoFrame:
 
     assert x == int(x)
     assert y == int(y)
-    v = VO.ost_do_stereo_sparse(refpat, self.rgrad, x, y, w, h, 31, 64, 10, 15)
+    v = VO.ost_do_stereo_sparse(refpat, rimg, x, y, w, h, 31, 64, 10, 15)
 
     if v < 0:
       return None

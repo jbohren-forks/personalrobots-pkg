@@ -114,6 +114,8 @@ public:
   int saveNum;
   char *saveName;		// base file name
 
+  void *data;
+
 private: 
   void drawit();                // draws the pixmap on the screen
   int width, height;            // displayed image size

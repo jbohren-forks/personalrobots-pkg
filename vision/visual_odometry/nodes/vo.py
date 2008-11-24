@@ -58,7 +58,7 @@ class imgAdapted:
 class VO:
 
   def __init__(self, decimate):
-    rospy.TopicSub('/videre/images', ImageArray, self.handle_array, queue_size=1)
+    rospy.TopicSub('/videre/images', ImageArray, self.handle_array, queue_size=2, buff_size=7000000)
     rospy.TopicSub('/videre/cal_params', String, self.handle_params)
 
     self.pub_vo = rospy.Publisher("/vo", VOPose)
