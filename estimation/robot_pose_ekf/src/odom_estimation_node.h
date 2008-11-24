@@ -56,26 +56,26 @@
 namespace estimation
 {
 
-class odom_estimation_node: public ros::node
+class OdomEstimationNode: public ros::node
 {
 public:
   /// constructor
-  odom_estimation_node();
+  OdomEstimationNode();
 
   /// destructor
-  virtual ~odom_estimation_node();
+  virtual ~OdomEstimationNode();
 
   /// callback function for vel data
-  void vel_callback();
+  void velCallback();
 
   /// callback function for odo data
-  void odom_callback();
+  void odomCallback();
 
   /// callback function for imu data
-  void imu_callback();
+  void imuCallback();
 
   /// callback function for vo data
-  void vo_callback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
+  void voCallback(const tf::MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo);
 
   /// filter loop
   void spin();
@@ -84,41 +84,41 @@ public:
 private:
 
   /// update filter
-  void Update(const ros::Time& time);
+  void update(const ros::Time& time);
 
   /// ekf filter
-  odom_estimation _my_filter;
+  OdomEstimation my_filter_;
 
   // messages to receive
-  std_msgs::BaseVel               _vel;  
-  std_msgs::RobotBase2DOdom       _odom;  
-  std_msgs::PoseWithRatesStamped  _imu;  
-  robot_msgs::VOPose              _vo;  
+  std_msgs::BaseVel               vel_;  
+  std_msgs::RobotBase2DOdom       odom_;  
+  std_msgs::PoseWithRatesStamped  imu_;  
+  robot_msgs::VOPose              vo_;  
 
   // estimated robot pose message to send
-  robot_msgs::PoseWithCovariance  _output; 
+  robot_msgs::PoseWithCovariance  output_; 
 
   // robot state
-  tf::TransformListener    _robot_state;
-  tf::TransformBroadcaster _odom_broadcaster;
+  tf::TransformListener    robot_state_;
+  tf::TransformBroadcaster odom_broadcaster_;
 
   // message notifier for vo
-  tf::MessageNotifier<robot_msgs::VOPose>  _vo_notifier;
+  tf::MessageNotifier<robot_msgs::VOPose>  vo_notifier_;
 
   // vectors
-  MatrixWrapper::ColumnVector _vel_desi;
-  tf::Transform _odom_meas, _imu_meas,_vo_meas;
-  tf::Transform _base_vo_init, _vo_camera;
-  tf::Stamped<tf::Transform> _camera_base;
-  ros::Time _odom_time, _imu_time, _vo_time, _filter_time;
-  bool _vel_active, _odom_active, _imu_active, _vo_active;
-  double _freq, _timeout;
+  MatrixWrapper::ColumnVector vel_desi_;
+  tf::Transform odom_meas_, imu_meas_, vo_meas_;
+  tf::Transform base_vo_init_, vo_camera_;
+  tf::Stamped<tf::Transform> camera_base_;
+  ros::Time odom_time_, imu_time_, vo_time_, filter_time_;
+  bool vel_active_, odom_active_, imu_active_, vo_active_;
+  double freq_, timeout_;
 
   // mutex
-  ros::thread::mutex _odom_mutex, _imu_mutex, _vo_mutex, _vel_mutex;
+  ros::thread::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;
 
   // log files for debugging
-  std::ofstream _odom_file, _imu_file, _vo_file, _corr_file, _time_file, _extra_file;
+  std::ofstream odom_file_, imu_file_, vo_file_, corr_file_, time_file_, extra_file_;
 
 
 }; // class

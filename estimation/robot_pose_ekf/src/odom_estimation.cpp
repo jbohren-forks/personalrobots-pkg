@@ -44,16 +44,16 @@ using namespace ros;
 namespace estimation
 {
   // constructor
-  odom_estimation::odom_estimation():
-    _prior(NULL),
-    _filter(NULL),
-    _filter_initialized(false),
-    _odom_initialized(false),
-    _imu_initialized(false),
-    _vo_initialized(false),
-    _odom_covar_multiplier(1.0),
-    _imu_covar_multiplier(1.0),
-    _vo_covar_multiplier(1.0)
+  OdomEstimation::OdomEstimation():
+    prior_(NULL),
+    filter_(NULL),
+    filter_initialized_(false),
+    odom_initialized_(false),
+    imu_initialized_(false),
+    vo_initialized_(false),
+    odom_covar_multiplier_(1.0),
+    imu_covar_multiplier_(1.0),
+    vo_covar_multiplier_(1.0)
   {
     // create SYSTEM MODEL
     ColumnVector sysNoise_Mu(6);  sysNoise_Mu = 0;
@@ -65,8 +65,8 @@ namespace estimation
     sysNoise_Cov(5,5) = pow(1000.0,2);
     sysNoise_Cov(6,6) = pow(1000.0,2);  
     Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
-    _sys_pdf   = new NonLinearAnalyticConditionalGaussianOdo(system_Uncertainty);
-    _sys_model = new AnalyticSystemModelGaussianUncertainty(_sys_pdf);
+    sys_pdf_   = new NonLinearAnalyticConditionalGaussianOdo(system_Uncertainty);
+    sys_model_ = new AnalyticSystemModelGaussianUncertainty(sys_pdf_);
     
 
     // create MEASUREMENT MODEL ODOM
@@ -78,8 +78,8 @@ namespace estimation
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
     Matrix Hodom(3,6);  Hodom = 0;
     Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(3,6) = 1;
-    _odom_meas_pdf   = new LinearAnalyticConditionalGaussian(Hodom, measurement_Uncertainty_Odom);
-    _odom_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_odom_meas_pdf);
+    odom_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hodom, measurement_Uncertainty_Odom);
+    odom_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(odom_meas_pdf_);
     
 
     // create MEASUREMENT MODEL IMU
@@ -91,9 +91,8 @@ namespace estimation
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
     Matrix Himu(3,6);  Himu = 0;
     Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
-    _imu_meas_pdf   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
-    _imu_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_imu_meas_pdf);
-
+    imu_meas_pdf_   = new LinearAnalyticConditionalGaussian(Himu, measurement_Uncertainty_Imu);
+    imu_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(imu_meas_pdf_);
 
     // create MEASUREMENT MODEL VO
     ColumnVector measNoiseVo_Mu(6);  measNoiseVo_Mu = 0;
@@ -104,41 +103,41 @@ namespace estimation
     measNoiseVo_Cov(4,4) = pow(0.001,2);
     measNoiseVo_Cov(5,5) = pow(0.001,2);
     measNoiseVo_Cov(6,6) = pow(0.001,2);
-    _vo_covariance = measNoiseVo_Cov;
+    vo_covariance_ = measNoiseVo_Cov;
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
-    _vo_meas_pdf   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
-    _vo_meas_model = new LinearAnalyticMeasurementModelGaussianUncertainty(_vo_meas_pdf);
+    vo_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
+    vo_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(vo_meas_pdf_);
 
 
     // allow 1 second extrapolation
-    _transformer.setExtrapolationLimit(1.0);
+    transformer_.setExtrapolationLimit(1.0);
   };
 
 
 
   // destructor
-  odom_estimation::~odom_estimation(){
-    if (_filter) delete _filter;
-    if (_prior)  delete _prior;
-    delete _odom_meas_model;
-    delete _odom_meas_pdf;
-    delete _imu_meas_model;
-    delete _imu_meas_pdf;
-    delete _vo_meas_model;
-    delete _vo_meas_pdf;
-    delete _sys_pdf;
-    delete _sys_model;
+  OdomEstimation::~OdomEstimation(){
+    if (filter_) delete filter_;
+    if (prior_)  delete prior_;
+    delete odom_meas_model_;
+    delete odom_meas_pdf_;
+    delete imu_meas_model_;
+    delete imu_meas_pdf_;
+    delete vo_meas_model_;
+    delete vo_meas_pdf_;
+    delete sys_pdf_;
+    delete sys_model_;
   };
 
 
   // initialize prior density of filter 
-  void odom_estimation::Initialize(const Transform& prior, const Time& time)
+  void OdomEstimation::initialize(const Transform& prior, const Time& time)
   {
     // set prior of filter
     ColumnVector prior_Mu(6); 
-    DecomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3), prior_Mu(4), prior_Mu(5), prior_Mu(6));
+    decomposeTransform(prior, prior_Mu(1), prior_Mu(2), prior_Mu(3), prior_Mu(4), prior_Mu(5), prior_Mu(6));
     SymmetricMatrix prior_Cov(6); 
     for (unsigned int i=1; i<=6; i++) {
       for (unsigned int j=1; j<=6; j++){
@@ -146,16 +145,16 @@ namespace estimation
 	else prior_Cov(i,j) = 0;
       }
     }
-    _prior  = new Gaussian(prior_Mu,prior_Cov);
-    _filter = new ExtendedKalmanFilter(_prior);
+    prior_  = new Gaussian(prior_Mu,prior_Cov);
+    filter_ = new ExtendedKalmanFilter(prior_);
 
     // remember prior
-    _filter_estimate_old_vec = prior_Mu;
-    _filter_estimate_old = prior;
-    _filter_time_old     = time;
+    filter_estimate_old_vec_ = prior_Mu;
+    filter_estimate_old_ = prior;
+    filter_time_old_     = time;
 
     // filter initialized
-    _filter_initialized = true;
+    filter_initialized_ = true;
   }
 
 
@@ -163,129 +162,129 @@ namespace estimation
 
 
   // update filter
-  void odom_estimation::Update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
+  void OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
   {
-    if (_filter_initialized){
+    if (filter_initialized_){
 
       // system update filter
       // --------------------
       // for now only add system noise
       ColumnVector vel_desi(2); vel_desi = 0;
-      _filter->Update(_sys_model, vel_desi);
+      filter_->Update(sys_model_, vel_desi);
 
 
       // process odom measurement
       // ------------------------
       if (odom_active){
-	_transformer.lookupTransform("base_footprint","wheelodom", filter_time, _odom_meas);
-	if (_odom_initialized){
+	transformer_.lookupTransform("base_footprint","wheelodom", filter_time, odom_meas_);
+	if (odom_initialized_){
 	  // convert absolute odom measurements to relative odom measurements in horizontal plane
-	  Transform odom_rel_frame =  Transform(Quaternion(_filter_estimate_old_vec(6),0,0),_filter_estimate_old.getOrigin()) * _odom_meas_old.inverse() * _odom_meas;
+	  Transform odom_rel_frame =  Transform(Quaternion(filter_estimate_old_vec_(6),0,0),filter_estimate_old_.getOrigin()) * odom_meas_old_.inverse() * odom_meas_;
 	  ColumnVector odom_rel(3);  double tmp;
-	  DecomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
-	  AngleOverflowCorrect(odom_rel(3), _filter_estimate_old_vec(6));
+	  decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
+	  angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
 	  // update filter
-	  _filter->Update(_odom_meas_model, odom_rel);
+	  filter_->Update(odom_meas_model_, odom_rel);
 	}
-	else _odom_initialized = true;
-	_odom_meas_old = _odom_meas;
+	else odom_initialized_ = true;
+	odom_meas_old_ = odom_meas_;
       }
       // sensor not active
-      else _odom_initialized = false;
+      else odom_initialized_ = false;
 
 
 
       // process imu measurement
       // -----------------------
       if (imu_active){
-	_transformer.lookupTransform("base_footprint","imu", filter_time, _imu_meas);
-	if (_imu_initialized){
+	transformer_.lookupTransform("base_footprint","imu", filter_time, imu_meas_);
+	if (imu_initialized_){
 	  // convert absolute imu yaw measurement to relative imu yaw measurement 
-	  Transform imu_rel_frame =  _filter_estimate_old * _imu_meas_old.inverse() * _imu_meas;
+	  Transform imu_rel_frame =  filter_estimate_old_ * imu_meas_old_.inverse() * imu_meas_;
 	  ColumnVector imu_rel(3); double tmp;
-	  DecomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
-	  DecomposeTransform(_imu_meas,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
-	  AngleOverflowCorrect(imu_rel(3), _filter_estimate_old_vec(6));
+	  decomposeTransform(imu_rel_frame, tmp, tmp, tmp, tmp, tmp, imu_rel(3));
+	  decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
+	  angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
 	  // update filter
-	  _filter->Update(_imu_meas_model,  imu_rel);
+	  filter_->Update(imu_meas_model_,  imu_rel);
 	}
-	else _imu_initialized = true;
-	_imu_meas_old = _imu_meas; 
+	else imu_initialized_ = true;
+	imu_meas_old_ = imu_meas_; 
       }
       // sensor not active
-      else _imu_initialized = false;
+      else imu_initialized_ = false;
 
 
 
       // process vo measurement
       // ----------------------
       if (vo_active){
-	_transformer.lookupTransform("base_footprint","vo", filter_time, _vo_meas);
-	if (_vo_initialized){
+	transformer_.lookupTransform("base_footprint","vo", filter_time, vo_meas_);
+	if (vo_initialized_){
 	  // convert absolute vo measurements to relative vo measurements
-	  Transform vo_rel_frame =  _filter_estimate_old * _vo_meas_old.inverse() * _vo_meas;
+	  Transform vo_rel_frame =  filter_estimate_old_ * vo_meas_old_.inverse() * vo_meas_;
 	  ColumnVector vo_rel(6);
-	  DecomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
-	  AngleOverflowCorrect(vo_rel(6), _filter_estimate_old_vec(6));
+	  decomposeTransform(vo_rel_frame, vo_rel(1),  vo_rel(2), vo_rel(3), vo_rel(4), vo_rel(5), vo_rel(6));
+	  angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
 	  // update filter
-	  if (_vo_covar_multiplier < 100.0){
-	    _vo_meas_pdf->AdditiveNoiseSigmaSet(_vo_covariance * _vo_covar_multiplier);
-	    _filter->Update(_vo_meas_model,  vo_rel);
+	  if (vo_covar_multiplier_ < 100.0){
+	    vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * vo_covar_multiplier_);
+	    filter_->Update(vo_meas_model_,  vo_rel);
 	  }
 	}
-	else _vo_initialized = true;
-	_vo_meas_old = _vo_meas;
+	else vo_initialized_ = true;
+	vo_meas_old_ = vo_meas_;
       }
       // sensor not active
-      else _vo_initialized = false;
+      else vo_initialized_ = false;
 
 
 
       // remember last estimate
-      _filter_estimate_old_vec = _filter->PostGet()->ExpectedValueGet();
-      _filter_estimate_old = Transform(Quaternion(_filter_estimate_old_vec(6), _filter_estimate_old_vec(5), _filter_estimate_old_vec(4)),
-				       Vector3(_filter_estimate_old_vec(1), _filter_estimate_old_vec(2), _filter_estimate_old_vec(3)));
-      _filter_time_old = filter_time;
-      AddMeasurement(Stamped<Transform>(_filter_estimate_old, filter_time, "odom", "base_footprint"));
+      filter_estimate_old_vec_ = filter_->PostGet()->ExpectedValueGet();
+      filter_estimate_old_ = Transform(Quaternion(filter_estimate_old_vec_(6), filter_estimate_old_vec_(5), filter_estimate_old_vec_(4)),
+				       Vector3(filter_estimate_old_vec_(1), filter_estimate_old_vec_(2), filter_estimate_old_vec_(3)));
+      filter_time_old_ = filter_time;
+      addMeasurement(Stamped<Transform>(filter_estimate_old_, filter_time, "odom", "base_footprint"));
     }
   };
 
 
-  void odom_estimation::AddMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
+  void OdomEstimation::addMeasurement(const Stamped<Transform>& meas, const double covar_multiplier)
   {
-    _transformer.setTransform( meas );
-    if (meas.frame_id_ == "wheelodom") _odom_covar_multiplier = covar_multiplier;
-    else if (meas.frame_id_ == "imu")  _imu_covar_multiplier  = covar_multiplier;
-    else if (meas.frame_id_ == "vo")   _vo_covar_multiplier   = covar_multiplier;
+    transformer_.setTransform( meas );
+    if (meas.frame_id_ == "wheelodom") odom_covar_multiplier_ = covar_multiplier;
+    else if (meas.frame_id_ == "imu")  imu_covar_multiplier_  = covar_multiplier;
+    else if (meas.frame_id_ == "vo")   vo_covar_multiplier_   = covar_multiplier;
   };
 
 
   // get latest filter posterior as vector
-  void odom_estimation::GetEstimate(ColumnVector& estimate)
+  void OdomEstimation::getEstimate(ColumnVector& estimate)
   {
-    estimate = _filter_estimate_old_vec;
+    estimate = filter_estimate_old_vec_;
   };
 
   // get filter posterior at time 'time' as Transform
-  void odom_estimation::GetEstimate(Time time, Transform& estimate)
+  void OdomEstimation::getEstimate(Time time, Transform& estimate)
   {
     Stamped<Transform> tmp;
-    _transformer.lookupTransform("base_footprint","odom", time, tmp);
+    transformer_.lookupTransform("base_footprint","odom", time, tmp);
     estimate = tmp;
   };
 
   // get filter posterior at time 'time' as Stamped Transform
-  void odom_estimation::GetEstimate(Time time, Stamped<Transform>& estimate)
+  void OdomEstimation::getEstimate(Time time, Stamped<Transform>& estimate)
   {
-    _transformer.lookupTransform("base_footprint","odom", time, estimate);
+    transformer_.lookupTransform("base_footprint","odom", time, estimate);
   };
 
   // get most recent filter posterior as PoseWithCovariance
-  void odom_estimation::GetEstimate(robot_msgs::PoseWithCovariance& estimate)
+  void OdomEstimation::getEstimate(robot_msgs::PoseWithCovariance& estimate)
   {
     // pose
     Stamped<Transform> tmp;
-    _transformer.lookupTransform("base_footprint","odom", 0.0, tmp);
+    transformer_.lookupTransform("base_footprint","odom", 0.0, tmp);
     PoseTFToMsg(tmp, estimate.pose);
 
     // header
@@ -293,21 +292,21 @@ namespace estimation
     estimate.header.frame_id = "odom";
 
     // covariance
-    SymmetricMatrix covar =  _filter->PostGet()->CovarianceGet();
+    SymmetricMatrix covar =  filter_->PostGet()->CovarianceGet();
     for (unsigned int i=0; i<6; i++)
       for (unsigned int j=0; j<6; j++)
 	estimate.covariance[6*i+j] = covar(i+1,j+1);
   };
 
   // correct for angle overflow
-  void odom_estimation::AngleOverflowCorrect(double& a, double ref)
+  void OdomEstimation::angleOverflowCorrect(double& a, double ref)
   {
     while ((a-ref) >  M_PI) a -= 2*M_PI;
     while ((a-ref) < -M_PI) a += 2*M_PI;
   };
 
   // decompose Transform into x,y,z,Rx,Ry,Rz
-  void odom_estimation::DecomposeTransform(const Stamped<Transform>& trans, 
+  void OdomEstimation::decomposeTransform(const Stamped<Transform>& trans, 
 					   double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
     x = trans.getOrigin().x();   
     y = trans.getOrigin().y(); 
@@ -316,7 +315,7 @@ namespace estimation
   };
 
   // decompose Transform into x,y,z,Rx,Ry,Rz
-  void odom_estimation::DecomposeTransform(const Transform& trans, 
+  void OdomEstimation::decomposeTransform(const Transform& trans, 
 					   double& x, double& y, double&z, double&Rx, double& Ry, double& Rz){
     x = trans.getOrigin().x();   
     y = trans.getOrigin().y(); 

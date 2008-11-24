@@ -54,67 +54,67 @@
 namespace estimation
 {
 
-class odom_estimation
+class OdomEstimation
 {
 public:
   /// constructor
-  odom_estimation();
+  OdomEstimation();
 
   /// destructor
-  virtual ~odom_estimation();
+  virtual ~OdomEstimation();
 
   /// update filter
-  void Update(bool odom_active, bool imu_active, bool vo_active, const ros::Time& filter_time);
+  void update(bool odom_active, bool imu_active, bool vo_active, const ros::Time& filter_time);
 
   /// initialize filter
-  void Initialize(const tf::Transform& prior, const ros::Time& time);
+  void initialize(const tf::Transform& prior, const ros::Time& time);
 
   /// return if filter was initialized
-  bool IsInitialized() {return _filter_initialized;};
+  bool isInitialized() {return filter_initialized_;};
 
   /// get filter posterior
-  void GetEstimate(MatrixWrapper::ColumnVector& estimate);
-  void GetEstimate(ros::Time time, tf::Transform& estiamte);
-  void GetEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
-  void GetEstimate(robot_msgs::PoseWithCovariance& estimate);
+  void getEstimate(MatrixWrapper::ColumnVector& estimate);
+  void getEstimate(ros::Time time, tf::Transform& estiamte);
+  void getEstimate(ros::Time time, tf::Stamped<tf::Transform>& estiamte);
+  void getEstimate(robot_msgs::PoseWithCovariance& estimate);
 
   /// Add a measurement to the measurement buffer
-  void AddMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
+  void addMeasurement(const tf::Stamped<tf::Transform>& meas, double covar_multiplier=1);
 
 private:
   /// correct for angle overflow
-  void AngleOverflowCorrect(double& a, double ref);
+  void angleOverflowCorrect(double& a, double ref);
 
   // decompose Transform into x,y,z,Rx,Ry,Rz
-  void DecomposeTransform(const tf::Stamped<tf::Transform>& trans,
+  void decomposeTransform(const tf::Stamped<tf::Transform>& trans,
 			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
-  void DecomposeTransform(const tf::Transform& trans,
+  void decomposeTransform(const tf::Transform& trans,
 			  double& x, double& y, double&z, double&Rx, double& Ry, double& Rz);
 
 
   // pdf / model / filter
-  BFL::AnalyticSystemModelGaussianUncertainty* _sys_model;
-  BFL::NonLinearAnalyticConditionalGaussianOdo* _sys_pdf;
-  BFL::LinearAnalyticConditionalGaussian* _odom_meas_pdf;
-  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _odom_meas_model;
-  BFL::LinearAnalyticConditionalGaussian* _imu_meas_pdf;
-  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _imu_meas_model;
-  BFL::LinearAnalyticConditionalGaussian* _vo_meas_pdf;
-  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* _vo_meas_model;
-  BFL::Gaussian* _prior;
-  BFL::ExtendedKalmanFilter* _filter;
-  MatrixWrapper::SymmetricMatrix _vo_covariance;
+  BFL::AnalyticSystemModelGaussianUncertainty*            sys_model_;
+  BFL::NonLinearAnalyticConditionalGaussianOdo*           sys_pdf_;
+  BFL::LinearAnalyticConditionalGaussian*                 odom_meas_pdf_;
+  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* odom_meas_model_;
+  BFL::LinearAnalyticConditionalGaussian*                 imu_meas_pdf_;
+  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* imu_meas_model_;
+  BFL::LinearAnalyticConditionalGaussian*                 vo_meas_pdf_;
+  BFL::LinearAnalyticMeasurementModelGaussianUncertainty* vo_meas_model_;
+  BFL::Gaussian*                                          prior_;
+  BFL::ExtendedKalmanFilter*                              filter_;
+  MatrixWrapper::SymmetricMatrix                          vo_covariance_;
 
   // vars
-  MatrixWrapper::ColumnVector _vel_desi, _filter_estimate_old_vec;
-  tf::Transform _filter_estimate_old;
-  tf::Stamped<tf::Transform> _odom_meas, _odom_meas_old, _imu_meas, _imu_meas_old, _vo_meas, _vo_meas_old;
-  ros::Time _filter_time_old;
-  bool _filter_initialized, _odom_initialized, _imu_initialized, _vo_initialized;
-  double _odom_covar_multiplier, _imu_covar_multiplier, _vo_covar_multiplier;
+  MatrixWrapper::ColumnVector vel_desi_, filter_estimate_old_vec_;
+  tf::Transform filter_estimate_old_;
+  tf::Stamped<tf::Transform> odom_meas_, odom_meas_old_, imu_meas_, imu_meas_old_, vo_meas_, vo_meas_old_;
+  ros::Time filter_time_old_;
+  bool filter_initialized_, odom_initialized_, imu_initialized_, vo_initialized_;
+  double odom_covar_multiplier_, imu_covar_multiplier_, vo_covar_multiplier_;
 
   // tf transformer
-  tf::Transformer _transformer;
+  tf::Transformer transformer_;
 
 }; // class
 
