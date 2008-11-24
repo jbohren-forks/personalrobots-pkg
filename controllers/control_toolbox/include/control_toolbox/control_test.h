@@ -152,3 +152,4 @@ static bool isConvergingDiscrete(const Eigen::MatrixBase<DerivedA> & A, const Ei
 };
 
 #endif
+
