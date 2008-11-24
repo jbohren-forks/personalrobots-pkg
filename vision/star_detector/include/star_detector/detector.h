@@ -140,18 +140,7 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
 {
   assert(source && source->depth == (int)IPL_DEPTH_8U);
 
-  // cvIntegral needs a destination 1 pixel larger than source,
-  // while we use a larger width for all summed areas.
-  // So run the function then paste the scratch into m_upright.
-  // TODO: eliminate copy
-  IplImage *scratch = cvCreateImage(cvSize(m_W+1,m_H+1), IPL_DEPTH_32S, 1);
-  cvIntegral(source, scratch, NULL, NULL);
-  cvSetImageROI(scratch, cvRect(0, 0, m_W+1,m_H+1));
-  cvSetImageROI(m_upright, cvRect(0, 0, m_W+1,m_H+1));
-  cvCopy(scratch, m_upright);
-  cvReleaseImage(&scratch);
-  cvResetImageROI(m_upright);
-
+  cvIntegral(source, m_upright, NULL, NULL);
   TiltedIntegral(source, m_tilted, m_flat);
 
   // If possible, run one of the optimized versions

@@ -72,6 +72,8 @@ void StarDetector::setImageSize(CvSize size)
   m_upright = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_tilted  = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
   m_flat    = cvCreateImage(cvSize(sumwidth,m_H+1), IPL_DEPTH_32S, 1);
+  // Real width is m_W+1, rest is just padding
+  m_upright->width = m_tilted->width = m_flat->width = m_W+1;
 
   m_projected = cvCreateImage(size, IPL_DEPTH_32F, 1);
   m_scales = cvCreateImage(size, IPL_DEPTH_8U, 1);
