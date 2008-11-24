@@ -48,7 +48,7 @@ GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec)
 {
   robot_vel_.setIdentity();
   robot_vel_.frame_id_ = "base_link";
-  robot_vel_.stamp_ = (ros::Time)0ULL;
+  robot_vel_.stamp_ = ros::Time(uint64_t(0ULL));
 
   //so we can draw the local path
   advertise<std_msgs::Polyline2D>("local_path", 10);
