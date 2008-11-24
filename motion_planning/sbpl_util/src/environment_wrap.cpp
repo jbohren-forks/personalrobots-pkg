@@ -476,4 +476,23 @@ namespace ompl {
     return name;
   }
   
+  
+  std::string canonicalEnvironmentName(std::string const & name_or_alias)
+  {
+    static map<string, string> environment_alias;
+    if (environment_alias.empty()) {
+      environment_alias.insert(make_pair("2D", "2D"));
+      environment_alias.insert(make_pair("2d", "2D"));
+      environment_alias.insert(make_pair("2",  "2D"));
+      environment_alias.insert(make_pair("3D", "3DKIN"));
+      environment_alias.insert(make_pair("3d", "3DKIN"));
+      environment_alias.insert(make_pair("3",  "3DKIN"));
+    }
+    
+    map<string, string>::const_iterator is(environment_alias.find(name_or_alias));
+    if (environment_alias.end() == is)
+      return "";
+    return is->second;
+  }
+  
 }

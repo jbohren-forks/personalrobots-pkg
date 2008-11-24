@@ -71,6 +71,9 @@ using std::vector;
 namespace ompl {
   
   
+  std::string canonicalEnvironmentName(std::string const & name_or_alias);
+  
+  
   /** Helper class for abstracting away the usage (or not) of the
       robot's heading during planning. Represents a common (tweaked)
       subset of the DiscreteSpaceInformation-subclasses that are
