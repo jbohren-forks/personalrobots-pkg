@@ -291,7 +291,7 @@ namespace ompl {
     /** \return true if there is no obstacle at (ix,iy)... if (ix,iy)
 	is not in the map, then outside_map_is_obstacle is
 	returned. */
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) = 0;
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const = 0;
     
     /** \return The stateID of the start, or -1 if it lies outside the map. */
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start) = 0;
@@ -343,7 +343,7 @@ namespace ompl {
     
     virtual bool IsWithinMapCell(int ix, int iy) const;
     virtual unsigned char GetMapCost(int ix, int iy) const;
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
     virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);
     virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);
@@ -393,7 +393,7 @@ namespace ompl {
     
     virtual bool IsWithinMapCell(int ix, int iy) const;
     virtual unsigned char GetMapCost(int ix, int iy) const;
-    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false);
+    virtual bool IsObstacle(int ix, int iy, bool outside_map_is_obstacle = false) const;
     virtual int SetStart(std_msgs::Pose2DFloat32 const & start);
     virtual int SetGoal(std_msgs::Pose2DFloat32 const & goal);
     virtual std_msgs::Pose2DFloat32 GetPoseFromState(int stateID) const throw(invalid_state);

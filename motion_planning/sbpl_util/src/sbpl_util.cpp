@@ -517,7 +517,7 @@ namespace ompl {
   
   
   bool EnvironmentWrapper2D::
-  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
+  IsObstacle(int ix, int iy, bool outside_map_is_obstacle) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
       return outside_map_is_obstacle;
@@ -705,7 +705,7 @@ namespace ompl {
   
   
   bool EnvironmentWrapper3DKIN::
-  IsObstacle(int ix, int iy, bool outside_map_is_obstacle)
+  IsObstacle(int ix, int iy, bool outside_map_is_obstacle) const
   {
     if ( ! env_->IsWithinMapCell(ix, iy))
       return outside_map_is_obstacle;
