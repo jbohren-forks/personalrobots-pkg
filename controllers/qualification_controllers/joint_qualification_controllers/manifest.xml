@@ -23,7 +23,7 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="libwxgtk2.8-dev"/>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>
-    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ljoint_qualification_controllers'/>
+    <cpp cflags='-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp' lflags='${prefix}/lib/libjoint_qualification_controllers.a'/>
   </export>
 
 </package>

@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-rospack(mechanism_control_rt)
-find_ros_package(mechanism_control)
-include_directories(${mechanism_control_PACKAGE_PATH}/include;${mechanism_control_PACKAGE_PATH}/srv/cpp;${mechanism_control_PACKAGE_PATH}/msg/cpp;)
-rospack_add_library(mechanism_control_rt ${mechanism_control_PACKAGE_PATH}/src/mechanism_control.cpp)

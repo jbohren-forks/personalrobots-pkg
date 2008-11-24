@@ -17,7 +17,7 @@
 <depend package="robot_srvs" />
 <export>
     <cpp cflags='-I${prefix}/include'
-	 lflags='-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lmechanism_control'/>
+	       lflags='${prefix}/lib/libmechanism_control.a'/>
 </export>
 </package>
 
