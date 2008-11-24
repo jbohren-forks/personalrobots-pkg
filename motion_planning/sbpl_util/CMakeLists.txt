@@ -10,7 +10,7 @@ include (rosbuild)
 add_definitions (-Wall)
 rospack (sbpl_util)
 
-rospack_add_library (sbpl_util src/sbpl_util.cpp src/costmap_wrap.cpp)
+rospack_add_library (sbpl_util src/sbpl_util.cpp src/costmap_wrap.cpp src/footprint.cpp)
 target_link_libraries (sbpl_util costmap_2d)
 
 rospack_add_executable (t3dobst src/t3dobst.cpp)

@@ -211,7 +211,7 @@ static bool checkWrap()
   static double const resolution(0.1);
   static double const window_length(0.1);
 
-  EnvironmentWrapper3DKIN::footprint_t footprint;
+  footprint_t footprint;
   initOutline(footprint);
   
   std::vector<unsigned char> data(width * height);

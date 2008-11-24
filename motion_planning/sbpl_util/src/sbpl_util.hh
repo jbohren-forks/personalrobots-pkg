@@ -41,9 +41,9 @@
 // changes in the code layout and maybe in the export statement in
 // manifest.xml... to do later
 #include "costmap_wrap.h"
+#include "footprint.h"
 
 #include <std_msgs/Pose2DFloat32.h>
-#include <std_msgs/Point2DFloat32.h>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -366,9 +366,7 @@ namespace ompl {
   class EnvironmentWrapper3DKIN
     : public EnvironmentWrapper
   {
-  public:
-    typedef std::vector<std_msgs::Point2DFloat32> footprint_t;
-    
+  public:    
     EnvironmentWrapper3DKIN(CostmapWrap * cm,
 			    bool own_cm,
 			    IndexTransformWrap const * it,
