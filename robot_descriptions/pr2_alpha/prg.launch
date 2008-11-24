@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
 
-  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_REALTIME_PATH)" default="never"/>   
+  <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 
   <include file="prg.machine" />
 
