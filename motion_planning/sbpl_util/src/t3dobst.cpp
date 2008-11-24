@@ -33,6 +33,7 @@
  *********************************************************************/
 
 #include "sbpl_util.hh"
+#include "footprint.h"
 #include <costmap_2d/costmap_2d.h>
 
 // for sbpl... not a greatly descriptive name
