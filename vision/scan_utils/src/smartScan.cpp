@@ -135,6 +135,10 @@ void SmartScan::setPoints(int numPoints, const std_msgs::Point32 *points)
 	clearData();
 	mNumPoints = numPoints;
 	assert(mNumPoints >= 0);
+        if (mNativePoints)
+        {
+          delete [] mNativePoints;
+        }
 	mNativePoints = new std_msgs::Point32[mNumPoints];
 	for (int i=0; i<mNumPoints; i++) {
 		mNativePoints[i] = points[i];
@@ -346,6 +350,10 @@ void SmartScan::createVtkData()
 	mVtkPointLocator->SetDataSet(mVtkData);
 	mVtkPointLocator->BuildLocator();
 
+        pcoords->Delete();
+        points->Delete();
+        cells->Delete();
+
 	//fprintf(stderr,"Automatic: %d\n",mVtkPointLocator->GetAutomatic());
 	//fprintf(stderr,"p per b: %d\n",mVtkPointLocator->GetNumberOfPointsPerBucket());
 }
@@ -485,6 +493,8 @@ void SmartScan::addScan(const SmartScan *target)
 		newPoints[mNumPoints+i] = target->getPoint(i);
 	}
 	setPoints(mNumPoints + target->size(), newPoints);
+
+        delete [] newPoints;
 }
 
 
@@ -1470,6 +1480,7 @@ void SmartScan::subtractScan(const SmartScan *target, float thresh)
 
 	points->Delete();
 	delete [] indices;
+        delete [] newPoints;
 }
 
 
