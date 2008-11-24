@@ -131,6 +131,7 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
       } 
    }
 
+   // apply compressive sensing
    if ((int)reduced_num_dim != classes_) {
       float *cs_phi = new float[reduced_num_dim * classes_];           // reduced_num_dim x classes_ matrix
       makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
@@ -139,15 +140,11 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
       for (int i=0; i<num_leaves_; ++i) {
          float *post = getPosteriorByIndex(i);
          float *prod = &cs_posteriors[i*reduced_num_dim];
-         //ublas::axpy_prod(cs_phi, post_vec, cs_post_vec, true);
-         cblas_sgemv(CblasRowMajor, CblasNoTrans, 
-                     reduced_num_dim, classes_, 1.f, cs_phi,
+         cblas_sgemv(CblasRowMajor, CblasNoTrans, reduced_num_dim, classes_, 1.f, cs_phi,
                      classes_, post, 1, 0.f, prod, 1);       
       }
 
       // copy new posteriors
-      //posteriors_.clear();
-      //posteriors_.resize(num_leaves_*reduced_num_dim);
       freePosteriors();
       allocPosteriorsAligned(num_leaves_, reduced_num_dim);
       for (int i=0; i<num_leaves_; ++i)         
@@ -155,31 +152,19 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
       classes_ = reduced_num_dim;
    }
    
-   
-   // apply compressive sensing to leafs (if user wants compression)
-   #if 0  // old ublas code (debugged)
-   if ((int)reduced_num_dim != classes_) {
-      ublas::matrix<float> cs_phi;
-      makeRandomMeasMatrix(cs_phi, PDT_BERNOULLI, reduced_num_dim);
-
-      typedef ublas::shallow_array_adaptor<float> SigStorage;
-      typedef ublas::vector<float, SigStorage> SigVec;
-      std::vector<float> cs_posteriors;
-      cs_posteriors.resize(reduced_num_dim * num_leaves_);
-
+   // quantization (experimantal)
+   #if 0
+      double perc[2] = {-0.026093104854,0.025830298662}; // lower and upper percentiles (currently 5%/95%)
+      int map_bnd[2] = {0,1000};          // bounds of quantized target interval we're mapping to
       for (int i=0; i<num_leaves_; ++i) {
-         SigVec post_vec(   classes_,        SigStorage(classes_,        const_cast<float*>(getPosteriorByIndex(i))) );
-         SigVec cs_post_vec(reduced_num_dim, SigStorage(reduced_num_dim, const_cast<float*>(&cs_posteriors[i*reduced_num_dim])) );
-         ublas::axpy_prod(cs_phi, post_vec, cs_post_vec, true);
+         float *post = getPosteriorByIndex(i);
+         for (size_t k=0; k<reduced_num_dim; ++k, ++post) {
+            *post = int((*post - perc[0])/(perc[1] - perc[0])*(map_bnd[0] - map_bnd[1]) + map_bnd[0]);
+            *post = (*post<map_bnd[0]) ? map_bnd[0] : ((*post>map_bnd[1]) ? map_bnd[1] : *post);
+         }
       }
-
-      // nasty assignement ok, we got time at this point
-      posteriors_.clear();
-      posteriors_.assign(cs_posteriors.begin(), cs_posteriors.end());
-      classes_ = reduced_num_dim;
-   }
    #endif
- 
+       
    leaf_counts_.clear();
 }
 

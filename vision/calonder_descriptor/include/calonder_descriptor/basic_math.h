@@ -15,11 +15,6 @@ inline void add(int size, const float* src1, const float* src2, float* dst)
 inline float squaredDistance(int size, const float* a, const float* b)
 {
   float result = 0;
-/*printf("a = "); for (int i=0; i<10; i++) printf(" %.2e ", a[i]); printf("\n");
-printf("b = ");
-for (int i=0; i<10; i++)
-   printf(" %.2e ", b[i]);
-printf("\n");*/
   while (--size >= 0) {
     float diff = *a - *b;
     ++a; ++b;

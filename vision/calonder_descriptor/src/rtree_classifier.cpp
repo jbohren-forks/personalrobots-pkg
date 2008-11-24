@@ -80,10 +80,9 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     // get posteriors
     float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
     float **pp = posteriors;    
-    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++) {
+    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
       *pp = tree_it->getPosterior(patch_data);       
-    }
-    
+
     // sum them up
     pp = posteriors;
     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
