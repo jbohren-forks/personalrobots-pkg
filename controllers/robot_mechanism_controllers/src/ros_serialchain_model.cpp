@@ -178,3 +178,4 @@ bool SerialChainModelWrapper::initXml(mechanism::RobotState * robot, TiXmlElemen
   return true;
 }
 }
+
