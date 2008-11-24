@@ -698,9 +698,9 @@ namespace ompl {
   SBPLBenchmarkOptions()
     : name("office1"),
       resolution(0.05),
-      inscribed_radius(0.5),
-      circumscribed_radius(1.2),
-      inflation_radius(2),
+      inscribed_radius(0.325),	// from highlevel_controllers/test/launch_move_base.xml r7215
+      circumscribed_radius(0.46), // dito
+      inflation_radius(0.55),	// dito
       obstacle_cost(costmap_2d::CostMap2D::INSCRIBED_INFLATED_OBSTACLE),
       use_sfl_cost(false),
       door_width(1.2),

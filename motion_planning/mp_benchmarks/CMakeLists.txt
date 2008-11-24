@@ -81,7 +81,7 @@ ENDIF(WIN32)
 
 ##################################################
 
-rospack_add_library (mp_benchmarks src/setup.cpp)
+rospack_add_library (mp_benchmarks src/setup.cpp src/gfx.cpp)
 
 rospack_add_executable (mpbench src/main.cpp)
 target_link_libraries (mpbench ${MPBENCH_LIBS})
