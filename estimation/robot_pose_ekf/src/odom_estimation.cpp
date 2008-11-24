@@ -72,9 +72,10 @@ namespace estimation
     // create MEASUREMENT MODEL ODOM
     ColumnVector measNoiseOdom_Mu(3);  measNoiseOdom_Mu = 0;
     SymmetricMatrix measNoiseOdom_Cov(3);  measNoiseOdom_Cov = 0;
-    measNoiseOdom_Cov(1,1) = pow(0.001,2);
-    measNoiseOdom_Cov(2,2) = pow(0.001,2);
-    measNoiseOdom_Cov(3,3) = pow(0.01,2);
+    measNoiseOdom_Cov(1,1) = pow(0.002,2);    // = 2 mm / sec
+    measNoiseOdom_Cov(2,2) = pow(0.002,2);    // = 2 mm / sec
+    measNoiseOdom_Cov(3,3) = pow(0.017,2);    // = 1 degree / sec
+    odom_covariance_ = measNoiseOdom_Cov;
     Gaussian measurement_Uncertainty_Odom(measNoiseOdom_Mu, measNoiseOdom_Cov);
     Matrix Hodom(3,6);  Hodom = 0;
     Hodom(1,1) = 1;    Hodom(2,2) = 1;    Hodom(3,6) = 1;
@@ -85,9 +86,10 @@ namespace estimation
     // create MEASUREMENT MODEL IMU
     ColumnVector measNoiseImu_Mu(3);  measNoiseImu_Mu = 0;
     SymmetricMatrix measNoiseImu_Cov(3);  measNoiseImu_Cov = 0;
-    measNoiseImu_Cov(1,1) = pow(0.001,2);
-    measNoiseImu_Cov(2,2) = pow(0.001,2);
-    measNoiseImu_Cov(3,3) = pow(0.001,2);
+    measNoiseImu_Cov(1,1) = pow(0.0003,2);  // = 0.02 degrees / sec
+    measNoiseImu_Cov(2,2) = pow(0.0003,2);  // = 0.02 degrees / sec
+    measNoiseImu_Cov(3,3) = pow(0.0003,2);  // = 0.02 degrees / sec
+    imu_covariance_ = measNoiseImu_Cov;
     Gaussian measurement_Uncertainty_Imu(measNoiseImu_Mu, measNoiseImu_Cov);
     Matrix Himu(3,6);  Himu = 0;
     Himu(1,4) = 1;    Himu(2,5) = 1;    Himu(3,6) = 1;
@@ -97,19 +99,18 @@ namespace estimation
     // create MEASUREMENT MODEL VO
     ColumnVector measNoiseVo_Mu(6);  measNoiseVo_Mu = 0;
     SymmetricMatrix measNoiseVo_Cov(6);  measNoiseVo_Cov = 0;
-    measNoiseVo_Cov(1,1) = pow(0.01,2);
-    measNoiseVo_Cov(2,2) = pow(0.01,2);
-    measNoiseVo_Cov(3,3) = pow(0.01,2);
-    measNoiseVo_Cov(4,4) = pow(0.001,2);
-    measNoiseVo_Cov(5,5) = pow(0.001,2);
-    measNoiseVo_Cov(6,6) = pow(0.001,2);
+    measNoiseVo_Cov(1,1) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(2,2) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(3,3) = pow(0.01,2);  // = 1 cm / sec
+    measNoiseVo_Cov(4,4) = pow(0.003,2); // = 0.2 degrees / sec
+    measNoiseVo_Cov(5,5) = pow(0.003,2); // = 0.2 degrees / sec
+    measNoiseVo_Cov(6,6) = pow(0.003,2); // = 0.2 degrees / sec
     vo_covariance_ = measNoiseVo_Cov;
     Gaussian measurement_Uncertainty_Vo(measNoiseVo_Mu, measNoiseVo_Cov);
     Matrix Hvo(6,6);  Hvo = 0;
     Hvo(1,1) = 1;    Hvo(2,2) = 1;    Hvo(3,3) = 1;    Hvo(4,4) = 1;    Hvo(5,5) = 1;    Hvo(6,6) = 1;
     vo_meas_pdf_   = new LinearAnalyticConditionalGaussian(Hvo, measurement_Uncertainty_Vo);
     vo_meas_model_ = new LinearAnalyticMeasurementModelGaussianUncertainty(vo_meas_pdf_);
-
 
     // allow 1 second extrapolation
     transformer_.setExtrapolationLimit(1.0);
@@ -165,7 +166,8 @@ namespace estimation
   // update filter
   void OdomEstimation::update(bool odom_active, bool imu_active, bool vo_active, const Time&  filter_time)
   {
-    if (filter_initialized_ && filter_time > filter_time_old_){
+    double dt = (filter_time - filter_time_old_).toSec();
+    if (filter_initialized_ && dt > 0){
 
       // system update filter
       // --------------------
@@ -185,6 +187,7 @@ namespace estimation
 	  decomposeTransform(odom_rel_frame, odom_rel(1), odom_rel(2), tmp, tmp, tmp, odom_rel(3));
 	  angleOverflowCorrect(odom_rel(3), filter_estimate_old_vec_(6));
 	  // update filter
+	  odom_meas_pdf_->AdditiveNoiseSigmaSet(odom_covariance_ * pow(odom_covar_multiplier_ * dt,2));
 	  filter_->Update(odom_meas_model_, odom_rel);
 	}
 	else odom_initialized_ = true;
@@ -207,6 +210,7 @@ namespace estimation
 	  decomposeTransform(imu_meas_,     tmp, tmp, tmp, imu_rel(1), imu_rel(2), tmp);
 	  angleOverflowCorrect(imu_rel(3), filter_estimate_old_vec_(6));
 	  // update filter
+	  imu_meas_pdf_->AdditiveNoiseSigmaSet(imu_covariance_ * pow(imu_covar_multiplier_ * dt,2));
 	  filter_->Update(imu_meas_model_,  imu_rel);
 	}
 	else imu_initialized_ = true;
@@ -229,7 +233,7 @@ namespace estimation
 	  angleOverflowCorrect(vo_rel(6), filter_estimate_old_vec_(6));
 	  // update filter
 	  if (vo_covar_multiplier_ < 100.0){
-	    vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * vo_covar_multiplier_);
+	    vo_meas_pdf_->AdditiveNoiseSigmaSet(vo_covariance_ * pow(vo_covar_multiplier_ * dt,2));
 	    filter_->Update(vo_meas_model_,  vo_rel);
 	  }
 	}

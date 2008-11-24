@@ -196,7 +196,7 @@ namespace estimation
     // vo measurement as base transform
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_.header.stamp, "vo", "base_footprint"),
-			      pow(21.0-(min(200.0,(double)vo_.inliers)/10),2));
+			      21.0-(min(200.0,(double)vo_.inliers)/10));
     vo_mutex_.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
