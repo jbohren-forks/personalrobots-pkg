@@ -635,7 +635,7 @@ namespace ompl {
       for (ssize_t iy(0); iy < cm->getYEnd(); ++iy) {
 	int cost;
 	if (cm->getCost(ix, iy, &cost))	// "always" succeeds though
-	  env_->UpdateCost(ix, iy, cost >= obst_cost_thresh ? 1 : 0);
+	  env_->UpdateCost(ix, iy, cost);
       }
   }
   

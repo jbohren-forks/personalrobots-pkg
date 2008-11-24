@@ -359,7 +359,8 @@ namespace ompl {
     m2d_.reset(new sfl::Mapper2d(gframe, 0, 0, 0, 0,
 				 inscribed_radius, buffer_zone, padding_factor,
 				 0, obstacle_cost,
-				 sfl::exponential_travmap_cost_decay(3), // guesstimate
+				 // costmap_2d seems to use a quadratic decay in r7215
+				 sfl::exponential_travmap_cost_decay(2),
 				 name, sfl::RWlock::Create(name), growstrategy));
     
 
