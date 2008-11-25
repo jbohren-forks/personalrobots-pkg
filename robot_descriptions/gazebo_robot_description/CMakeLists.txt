@@ -14,6 +14,8 @@ set(pr2_gen_files "")
 
 set(pr2_out_path ${CMAKE_CURRENT_SOURCE_DIR}/world/Media/models/pr2)
 
+MAKE_DIRECTORY(${pr2_out_path})
+
 foreach(it ${pr2_stl_files})
   get_filename_component(basename ${it} NAME_WE)
 
