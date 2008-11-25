@@ -62,9 +62,13 @@ namespace kinematics
 
     void ComputeIKEfficient(NEWMAT::Matrix g, double t1);
 
+    void ComputeIKEfficientTheta3(NEWMAT::Matrix g, double t3);
+
     private:
 
     double ap_[5];
+
+    double a1_,a2_,a4_;
 
     int solveCosineEqn(const double &a, const double &b, const double &c, double &soln1, double &soln2);
 
@@ -77,6 +81,9 @@ namespace kinematics
     NEWMAT::Matrix home_inv_;
 
     NEWMAT::Matrix grhs_;
+
+    int solve_quadratic(double a, double b, double c, double *x1, double *x2);
+
 
   };
 }

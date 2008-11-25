@@ -62,6 +62,14 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
   p_axis = GetJointAxisPoint(6);
   ap_[4] = p_axis(1,1);
 
+  a1_ = ap_[0];
+  a2_ = ap_[1]-ap_[0];
+  a4_ = ap_[4]-ap_[1];
+
+  //  cout << "a1: " << a1_ << endl;
+  //  cout << "a2: " << a2_ << endl;
+  //  cout << "a4: " << a4_ << endl;
+
   for(int i=0; i < NUM_JOINTS_ARM7DOF; i++)
   {
     xi_0_[i] = GetJointExponential(i,0);
@@ -76,6 +84,30 @@ arm7DOF::arm7DOF(std::vector<NEWMAT::Matrix> anchors, std::vector<NEWMAT::Matrix
    grhs_ = g0;
    gf_ = home_inv_;
 
+}
+
+int arm7DOF::solve_quadratic(double a, double b, double c, double *x1, double *x2)
+{
+  double discriminant = b*b-4*a*c;
+  if(fabs(a) < IK_EPS)
+    {
+      *x1 = -c/b;
+      *x2 = *x1;
+      return 0;
+    }
+
+  if (discriminant >= 0)
+    {      
+      *x1 = (-b + sqrt(discriminant))/(2*a); 
+      *x2 = (-b - sqrt(discriminant))/(2*a);
+      return 0;
+    } 
+  else
+    {
+      *x1 = -b/(2*a);
+      *x2 = -b/(2*a);
+      return -1;
+    }
 }
 
 NEWMAT::Matrix arm7DOF::matInv(const NEWMAT::Matrix &g)
@@ -596,3 +628,226 @@ void arm7DOF::ComputeIKEfficient(NEWMAT::Matrix g, double t1)
       }
    }
 }
+
+
+void arm7DOF::ComputeIKEfficientTheta3(NEWMAT::Matrix g, double t3)
+{
+   solution_ik_.clear();
+
+   double x = g(1,4);
+   double y = g(2,4);
+   double z = g(3,4);
+
+/*   for(int i=0; i < 4; i++)
+   {
+     for(int j=0; j<4; j++)
+     {
+   wprintf(L" %f ",g(i+1,j+1));
+     }
+     wprintf(L"\n");
+   }
+*/
+   double cost1, cost2, cost3, cost4;
+   double sint1, sint2, sint3, sint4;
+
+   gf_ = g*home_inv_;
+
+   cost3 = cos(t3);
+   sint3 = sin(t3);
+
+   //   t3 = angles::normalize_angle(t3);
+
+   int error_code(0);
+
+   double t1(0), t2(0), t4(0), t5(0), t6(0), t7(0);
+
+   double at(0), bt(0), ct(0);
+
+   double theta1[2],theta2[2],theta4[4],theta5[2],theta6[4],theta7[2];
+
+   double c0 = -sin(-t3)*a4_;
+   double c1 = -cos(-t3)*a4_;
+
+   double d0 = 4*a1_*a1_*(a2_*a2_+c1*c1-z*z);
+   double d1 = 8*a1_*a1_*a2_*a4_;
+   double d2 = 4*a1_*a1_*(a4_*a4_-c1*c1);
+
+   double b0 = x*x+y*y+z*z-a1_*a1_-a2_*a2_-c0*c0-c1*c1;
+   double b1 = -2*a2_*a4_;
+   /* double denom = b2*b2;
+
+   double dq = (b0*b0-d0)/denom;
+   double cq = (2*b1*b0-d1)/denom;
+   double bq = (2*b0*b2+b1*b1-d2)/denom;
+   double aq = (2*b1*b2)/denom;
+   */
+   /*  cout << "c0 " << c0 << endl;
+   cout << "c1 " << c1 << endl;
+
+   cout << "d0 " << d0 << endl;
+   cout << "d1 " << d1 << endl;
+   cout << "d2 " << d2 << endl;
+
+   cout << "b0 " << b0 << endl;
+   cout << "b1 " << b1 << endl;
+   cout << "b2 " << b2 << endl;
+   */
+   int num_soln = -1;
+
+   int err_code = solve_quadratic(b1*b1-d2,2*b0*b1-d1,b0*b0-d0,&theta4[0],&theta4[1]);
+   theta4[0] = acos(theta4[0]);
+   theta4[2] = acos(theta4[1]);
+   theta4[1] = -theta4[0];
+   theta4[3] = -theta4[2];
+
+   if(err_code == 0)
+     num_soln = 2;
+
+   if(!num_soln) 
+     return;
+   for(int jj = 0; jj < 4; jj++)
+     {
+      t4 = theta4[jj];
+      cost4 = cos(t4);
+      sint4 = sin(t4);
+      //      cout << "t4 " << t4 << endl;
+      if(isnan(t4))
+         continue;
+      at = cos(t3)*sin(t4)*(ap_[1]-ap_[3]);
+      bt = (ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cos(t4));
+      ct = z;
+
+      error_code = solveCosineEqn(at,bt,ct,theta2[0],theta2[1]);
+
+      if(error_code != 1)
+      {
+         continue;
+      }
+
+      for(int ii=0; ii < 2; ii++)
+      {
+         t2 = theta2[ii];
+         //         cout << "t2 " << t2 << endl; 
+#ifdef DEBUG
+#endif
+         sint2 = sin(t2);
+         cost2 = cos(t2);
+
+         at = -y;
+         bt = x;
+         ct = (ap_[1]-ap_[3])*sin(t3)*sin(t4);
+         error_code = solveCosineEqn(at,bt,ct,theta1[0],theta1[1]);
+         if(error_code != 1)
+         {
+            continue;
+         }
+
+         for(int kk =0; kk < 2; kk++)
+         {           
+           t1 = theta1[kk];
+           sint1 = sin(t1);
+           cost1 = cos(t1);
+           //           cout << "t1 " << t1 << endl; 
+#ifdef DEBUG
+#endif
+                  if(fabs((ap_[0]-ap_[1]+(ap_[1]-ap_[3])*cost4)*sint2+(ap_[1]-ap_[3])*cost2*cost3*sint4-z) > IK_EPS )
+                    continue;
+
+                  if(fabs((ap_[1]-ap_[3])*sint1*sint3*sint4+cost1*(ap_[0]+cost2*(-ap_[0]+ap_[1]+(-ap_[1]+ap_[3])*cost4)+(ap_[1]-ap_[3])*cost3*sint2*sint4) - x) > IK_EPS)
+                    continue;
+
+            grhs_(1,1) = cost4*(gf_(1,1)*cost1*cost2+gf_(2,1)*cost2*sint1-gf_(3,1)*sint2)-(gf_(3,1)*cost2*cost3 + cost3*(gf_(1,1)*cost1 + gf_(2,1)*sint1)*sint2 + (-(gf_(2,1)*cost1) + gf_(1,1)*sint1)*sint3)*sint4;
+
+            grhs_(1,2) = cost4*(gf_(1,2)*cost1*cost2 + gf_(2,2)*cost2*sint1 - gf_(3,2)*sint2) - (gf_(3,2)*cost2*cost3 + cost3*(gf_(1,2)*cost1 + gf_(2,2)*sint1)*sint2 + (-(gf_(2,2)*cost1) + gf_(1,2)*sint1)*sint3)*sint4;
+
+            grhs_(1,3) = cost4*(gf_(1,3)*cost1*cost2 + gf_(2,3)*cost2*sint1 - gf_(3,3)*sint2) - (gf_(3,3)*cost2*cost3 + cost3*(gf_(1,3)*cost1 + gf_(2,3)*sint1)*sint2 + (-(gf_(2,3)*cost1) + gf_(1,3)*sint1)*sint3)*sint4;
+
+            grhs_(2,1) = cost3*(gf_(2,1)*cost1 - gf_(1,1)*sint1) + gf_(3,1)*cost2*sint3 + (gf_(1,1)*cost1 + gf_(2,1)*sint1)*sint2*sint3;
+
+            grhs_(2,2) = cost3*(gf_(2,2)*cost1 - gf_(1,2)*sint1) + gf_(3,2)*cost2*sint3 + (gf_(1,2)*cost1 + gf_(2,2)*sint1)*sint2*sint3;
+
+            grhs_(2,3) = cost3*(gf_(2,3)*cost1 - gf_(1,3)*sint1) + gf_(3,3)*cost2*sint3 + (gf_(1,3)*cost1 + gf_(2,3)*sint1)*sint2*sint3;
+
+            grhs_(3,1) = cost4*(gf_(3,1)*cost2*cost3 + cost3*(gf_(1,1)*cost1 + gf_(2,1)*sint1)*sint2 + (-(gf_(2,1)*cost1) + gf_(1,1)*sint1)*sint3) + (gf_(1,1)*cost1*cost2 + gf_(2,1)*cost2*sint1 - gf_(3,1)*sint2)*sint4;
+
+            grhs_(3,2) = cost4*(gf_(3,2)*cost2*cost3 + cost3*(gf_(1,2)*cost1 + gf_(2,2)*sint1)*sint2 + (-(gf_(2,2)*cost1) + gf_(1,2)*sint1)*sint3) + (gf_(1,2)*cost1*cost2 + gf_(2,2)*cost2*sint1 - gf_(3,2)*sint2)*sint4;
+
+            grhs_(3,3) = cost4*(gf_(3,3)*cost2*cost3 + cost3*(gf_(1,3)*cost1 + gf_(2,3)*sint1)*sint2 + (-(gf_(2,3)*cost1) + gf_(1,3)*sint1)*sint3) + (gf_(1,3)*cost1*cost2 + gf_(2,3)*cost2*sint1 - gf_(3,3)*sint2)*sint4;
+
+
+            double val1 = sqrt(grhs_(1,2)*grhs_(1,2)+grhs_(1,3)*grhs_(1,3));
+            double val2 = grhs_(1,1);
+
+            theta6[0] = atan2(val1,val2);
+            theta6[1] = atan2(-val1,val2);
+
+//            theta6[3] = M_PI + theta6[0];
+//            theta6[4] = M_PI + theta6[1];
+
+            for(int mm = 0; mm < 2; mm++)
+            {
+               t6 = theta6[mm];
+#ifdef DEBUG
+               cout << "t6 " << t6 << endl;
+#endif
+               if(fabs(cos(t6) - grhs_(1,1)) > IK_EPS)
+                    continue;
+
+               if(fabs(sin(t6)) < IK_EPS)
+               {
+                 //                std::cout << "Singularity" << endl;
+                  theta5[0] = acos(grhs_(2,2))/2.0;
+                  theta7[0] = theta7[0];
+                  theta7[1] = M_PI+theta7[0];
+                  theta5[1] = theta7[1];
+               }
+               else
+               {
+                  theta7[0] = atan2(grhs_(1,2),grhs_(1,3));
+                  theta5[0] = atan2(grhs_(2,1),-grhs_(3,1));
+                  theta7[1] = M_PI+theta7[0];
+                  theta5[1] = M_PI+theta5[0];
+               }
+#ifdef DEBUG
+               std::cout << "theta1: " << t1 << endl;
+                 std::cout << "theta2: " << t2 << endl;
+                 std::cout << "theta3: " << t3 << endl;
+                 std::cout << "theta4: " << t4 << endl;
+                 std::cout << "theta5: " << t5 << endl;
+                 std::cout << "theta6: " << t6 << endl;
+                 std::cout << "theta7: " << t7 << endl << endl << endl;
+#endif
+               for(int lll =0; lll < 2; lll++)
+               {
+                  t5 = theta5[lll];
+                  t7 = theta7[lll];
+#ifdef DEBUG
+                  cout << "t5" << t5 << endl;
+                  cout << "t7" << t7 << endl;
+#endif      
+                  if(fabs(sin(t6)*sin(t7)-grhs_(1,2)) > IK_EPS || fabs(cos(t7)*sin(t6)-grhs_(1,3)) > IK_EPS)
+                    continue;
+
+//                  if(fabs(sin(t5)*sin(t6)-grhs_(2,1)) > IK_EPS || fabs(-cos(t5)*sin(t6)-grhs_(3,1)) > IK_EPS)
+//                    continue;
+
+
+                  solution_[0] = normalize_angle(t1);
+                  solution_[1] = normalize_angle(t2);
+                  solution_[2] = normalize_angle(t3);
+                  solution_[3] = normalize_angle(t4);
+                  solution_[4] = normalize_angle(t5);
+                  solution_[5] = normalize_angle(t6);
+                  solution_[6] = normalize_angle(t7);
+                  solution_ik_.push_back(solution_);
+
+#ifdef DEBUG
+                  std::cout << t1 << " " << t2 << " " <<  t3 << " " << t4 <<  " " << t5 << " " << t6 <<  " " << t7 << endl << endl;
+#endif
+               }
+            }
+         }
+      }
+   }
+}
+

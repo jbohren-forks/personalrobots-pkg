@@ -9,8 +9,6 @@
 using namespace kinematics;
 using namespace std;
 
-
-
 double generate_rand_angle()
 {
   double result = ((double)(rand()-RAND_MAX/2))/(double)(RAND_MAX/2)*M_PI;
@@ -93,10 +91,9 @@ int main(int argc, char** argv)
 
   arm7DOF myArm(anchor,axis,joint_type);
 
-
 /* Joint angles and speeds for testing */
   double angles[7] = {0,0,0,0,0,0,0};
-  double angles_check[7] = { 1.42361,0.359057, -3.59363, 0.570208, -2.4035 ,1.86428 ,0.118674};
+  double angles_check[7] = { -1.42361,1.359057, -1.5, 1.2, -2.4035 ,1.86428 ,0.118674};
 
   NEWMAT::Matrix g0 = myArm.ComputeFK(angles);
   NEWMAT::Matrix gCheck = myArm.ComputeFK(angles);
@@ -124,8 +121,9 @@ int main(int argc, char** argv)
   cout << endl;
 
 
-  myArm.ComputeIKEfficient(g0,1.42);
-  cout << "Input" << endl << g0 << endl;
+  myArm.ComputeIKEfficientTheta3(g0,-1.5);
+  cout << "Input" << endl << g0 << endl << endl;
+  cout << "Solution" << endl << endl;
   for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
   {
     for(int l=0; l < 7; l++)

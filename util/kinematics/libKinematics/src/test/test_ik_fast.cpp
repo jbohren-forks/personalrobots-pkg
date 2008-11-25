@@ -6,10 +6,10 @@
 
 #define EPS_EXACT 0.001
 
+#define FREE_ANGLE_INDEX 2
+
 using namespace kinematics;
 using namespace std;
-
-
 
 double generate_rand_angle()
 {
@@ -136,7 +136,7 @@ int main(int argc, char** argv)
     for(int k=0; k < num_first_angle; k++)
     {
       first_angle = -M_PI + 2*M_PI*k/(double) num_first_angle;
-      myArm.ComputeIKEfficient(g0,first_angle);
+      myArm.ComputeIKEfficientTheta3(g0,first_angle);
       if (myArm.solution_ik_.size() > 0)
       {
         count_found_solutions++;
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
     }
     if(!solved)
     {       
-      myArm.ComputeIKEfficient(g0,angles[0]);
+      myArm.ComputeIKEfficientTheta3(g0,angles[FREE_ANGLE_INDEX]);
       if (myArm.solution_ik_.size() > 0)
       {
         for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
@@ -213,7 +213,7 @@ int main(int argc, char** argv)
 //    std::cout << "Solution exact" << endl << endl << endl;
     bool solution_exact = true;
     gettimeofday(&t0,NULL);
-    myArm.ComputeIKEfficient(g0,angles[0]);
+    myArm.ComputeIKEfficientTheta3(g0,angles[FREE_ANGLE_INDEX]);
     gettimeofday(&t1,NULL);
     time_taken += (t1.tv_sec*1000000+t1.tv_usec - (t0.tv_sec*1000000+t0.tv_usec))/1000000.;
 //    cout << "Number of solutions: " << myArm.solution_ik_.size() << endl;
@@ -227,7 +227,7 @@ int main(int argc, char** argv)
           if(fabs(myArm.solution_ik_[m][l] - angles[l]) > EPS_EXACT)
           {
             solution_exact = false;
-            /*          cout << "Solution" << endl;
+            /*            cout << "Solution" << endl;
             for(int jjj = 0; jjj < 7; jjj++)
             {
               cout << " " << myArm.solution_ik_[m][jjj];
@@ -246,6 +246,19 @@ int main(int argc, char** argv)
       }
     }
 
+    if(!solution_exact)
+      {
+        cout << "Solutions for case where exact solution not found" << endl;
+
+        for(int m = 0; m < (int) myArm.solution_ik_.size(); m++)
+          {
+            for(int jjj = 0; jjj < 7; jjj++)
+              {
+                cout << " " << myArm.solution_ik_[m][jjj];
+              }
+            cout << endl << endl;        
+          }
+      }
          
   }
 
