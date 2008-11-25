@@ -157,21 +157,32 @@ namespace ompl {
   
   
   int SBPLPlannerManager::
-  replan(double allocated_time_sec,
+  replan(bool stop_at_first_solution,
+	 bool plan_from_scratch,
+	 double allocated_time_sec,
 	 double * actual_time_wall_sec,
 	 double * actual_time_user_sec,
 	 double * actual_time_system_sec,
+	 int * solution_cost,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)
   {
     if ( ! planner_)
       throw no_planner_selected();
     
+    if (stop_at_first_solution)
+      planner_->set_search_mode(true);
+    else
+      planner_->set_search_mode(false);
+    
+    if (plan_from_scratch)
+      force_planning_from_scratch();
+    
     struct rusage ru_started;
     struct timeval t_started;
     getrusage(RUSAGE_SELF, &ru_started);
     gettimeofday(&t_started, 0);
-
-    int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V));
+    
+    int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V, solution_cost));
 
     struct rusage ru_finished;
     struct timeval t_finished;
@@ -263,22 +274,9 @@ namespace ompl {
   void SBPLPlannerStatistics::entry::
   logInfo(char const * prefix) const
   {
-    ROS_INFO("%s\n"
-	     "%splanner:                 %s\n"
-	     "%sgoal (map/grid/state):   %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	     "%sstart (map/grid/state):  %+8.3f %+8.3f %+8.3f / %u %u / %d\n"
-	     "%stime [s] (actual/alloc): %g / %g\n"
-	     "%sstatus (1 == SUCCESS):   %d\n"
-	     "%splan_length [m]:         %+8.3f\n"
-	     "%splan_rotation [rad]:     %+8.3f\n",
-	     prefix,
-	     prefix, plannerType.c_str(),
-	     prefix, goal.x, goal.y, goal.th, goalIx, goalIy, goalState,
-	     prefix, start.x, start.y, start.th, startIx, startIy, startState,
-	     prefix, actual_time_wall_sec, allocated_time_sec,
-	     prefix, status,
-	     prefix, plan_length_m,
-	     prefix, plan_angle_change_rad);
+    ostringstream os;
+    logStream(os, "ompl::SBPLPlannerStatistics", prefix);
+    ROS_INFO("%s", os.str().c_str());
   }
   
   
@@ -313,10 +311,13 @@ namespace ompl {
        << prefix << "start map:             " << start.x << "  " << start.y << "  " << start.th << "\n"
        << prefix << "start grid:            " << startIx << "  " << startIy << "\n"
        << prefix << "start state:           " << startState << "\n"
+       << prefix << "stop at first solution:" << (stop_at_first_solution ? "true\n" : "false\n")
+       << prefix << "plan from scratch:     " << (plan_from_scratch ? "true\n" : "false\n")
        << prefix << "time  alloc:           " << allocated_time_sec << "\n"
        << prefix << "time  actual (wall):   " << actual_time_wall_sec << "\n"
        << prefix << "time  actual (user):   " << actual_time_user_sec << "\n"
        << prefix << "time  actual (system): " << actual_time_system_sec << "\n"
+       << prefix << "solution cost:         " << solution_cost << "\n"
        << prefix << "status (1 == SUCCESS): " << status << "\n"
        << prefix << "plan_length [m]:       " << plan_length_m << "\n"
        << prefix << "plan_rotation [rad]:   " << plan_angle_change_rad << "\n";

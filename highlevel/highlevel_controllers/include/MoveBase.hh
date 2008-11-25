@@ -42,6 +42,9 @@
 #include <costmap_2d/costmap_2d.h>
 #include <costmap_2d/basic_observation_buffer.h>
 
+// Generic OMPL plan representation (will move into <sbpl_util/...> or <ompl_tools/...> later)
+#include <plan_wrap.h>
+
 // Message structures used
 #include <std_msgs/Planner2DState.h>
 #include <std_msgs/Planner2DGoal.h>
@@ -107,7 +110,13 @@ namespace ros {
        * @see publishPlan
        */
       void updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan);
-
+      
+      /**
+       * @brief Overwrites the current plan with a new one. Will handle suitable publication
+       * @see publishPlan
+       */
+      void updatePlan(ompl::waypoint_plan_t const & newPlan);
+      
       /**
        * @brief test the current plan for collisions with obstacles
        */

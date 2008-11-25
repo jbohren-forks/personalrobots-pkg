@@ -14,7 +14,8 @@ rospack_add_library (sbpl_util
 		     src/sbpl_util.cpp
 		     src/costmap_wrap.cpp
 		     src/footprint.cpp
-		     src/environment_wrap.cpp)
+		     src/environment_wrap.cpp
+		     src/plan_wrap.cpp)
 target_link_libraries (sbpl_util costmap_2d)
 
 rospack_add_executable (t3dobst src/t3dobst.cpp)

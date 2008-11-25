@@ -112,12 +112,15 @@ namespace ompl {
       unsigned int startIx;            /**< x-index of the start in the costmap */
       unsigned int startIy;            /**< y-index of the start in the costmap */
       int startState;                  /**< stateID of the start (from costmap indices) */
+      bool stop_at_first_solution;     /**< whether to just plan until any plan is found */
+      bool plan_from_scratch;          /**< whether to discard any previous solutions */
       double allocated_time_sec;       /**< the amount of time we had available for planning */
       double actual_time_wall_sec;     /**< the amount of time actually used for planning (wallclock) */
       double actual_time_user_sec;     /**< the amount of time actually used for planning (user time) */
       double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
 
       int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
+      int solution_cost;               /**< cost of the solution, as given by replan() */
       double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
       double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
       
@@ -195,11 +198,28 @@ namespace ompl {
     
     /** Dispatch to the currently select()-ed planner's
 	SBPLPlanner::replan(), measuring the time it actually takes to
-	run it. */
-    int replan(double allocated_time_sec,
+	run it.
+	
+	\note You can use ompl::convertPlan() to translate the
+	solution_stateIDs_V into something more generic.
+	
+	\return The status returned by SBPLPlanner::replan().
+    */
+    int replan(/** in: whether to just return the first feasible solution */
+	       bool stop_at_first_solution,
+	       /** in: whether to forcefully re-initialize the planner */
+	       bool plan_from_scratch,
+	       /** in: how much time is allocated for planning */
+	       double allocated_time_sec,
+	       /** out: how much time was actually used by the planner (wallclock) */
 	       double * actual_time_wall_sec,
+	       /** out: how much time was actually used by the planner (user time) */
 	       double * actual_time_user_sec,
+	       /** out: how much time was actually used by the planner (system time) */
 	       double * actual_time_system_sec,
+	       /** out: the cost of the planned path */
+	       int * solution_cost,
+	       /** out: the planned path, as a succession of state IDs */
 	       std::vector<int>* solution_stateIDs_V) throw(no_planner_selected);
 
     /** Dispatch to the currently select()-ed planner's

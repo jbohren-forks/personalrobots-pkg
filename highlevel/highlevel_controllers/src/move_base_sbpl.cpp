@@ -66,6 +66,7 @@
 #include <MoveBase.hh>
 #include <sbpl_util.hh>
 #include <environment_wrap.h>
+#include <plan_wrap.h>
 
 //sbpl headers file
 #include <headers.h>
@@ -338,49 +339,29 @@ namespace ros {
 	// Invoke the planner, updating the statistics in the process.
 	std::vector<int> solutionStateIDs;
 	statsEntry.allocated_time_sec = plannerTimeLimit_;
-	statsEntry.status = pMgr_->replan(statsEntry.allocated_time_sec,
+	statsEntry.stop_at_first_solution = false;
+	statsEntry.plan_from_scratch = false;
+	statsEntry.status = pMgr_->replan(statsEntry.stop_at_first_solution,
+					  statsEntry.plan_from_scratch,
+					  statsEntry.allocated_time_sec,
 					  &statsEntry.actual_time_wall_sec,
 					  &statsEntry.actual_time_user_sec,
 					  &statsEntry.actual_time_system_sec,
+					  &statsEntry.solution_cost,
 					  &solutionStateIDs);
 
-#warning 'use the (upcoming) sbpl_util/plan_wrap.h for plan conversion'
 	// Extract the solution, if available, and update statistics (as usual).
 	statsEntry.plan_length_m = 0;
 	statsEntry.plan_angle_change_rad = 0;
 	if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
-	  std::list<std_msgs::Pose2DFloat32> plan;
-	  double prevx(0), prevy(0), prevth(0);
-	  prevth = 42.17;	// to detect when it has been initialized (see 42 below)
-	  for(std::vector<int>::const_iterator it = solutionStateIDs.begin(); it != solutionStateIDs.end(); ++it){
-	    std_msgs::Pose2DFloat32 const waypoint(env_->GetPoseFromState(*it));
-	    
-	    // update stats:
-	    // - first round, nothing to do
-	    // - second round, update path length only
-	    // - third round, update path length and angular change
-	    if (plan.empty()) {
-	      prevx = waypoint.x;
-	      prevy = waypoint.y;
-	    }
-	    else {
-	      double const dx(waypoint.x - prevx);
-	      double const dy(waypoint.y - prevy);
-	      statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
-	      double const th(atan2(dy, dx));
-	      if (42 > prevth) // see 42.17 above
-		statsEntry.plan_angle_change_rad += fabs(mod2pi(th - prevth));
-	      prevx = waypoint.x;
-	      prevy = waypoint.y;
-	      prevth = th;
-	    }
-
-	    plan.push_back(waypoint);
-	  }
-	  // probably we should add the delta from the last theta to
-	  // the goal theta onto statsEntry.plan_angle_change_rad here, but
-	  // that depends on whether our planner handles theta for us,
-	  // and needs special handling if we have no plan...
+	  ompl::waypoint_plan_t plan;
+	  ompl::convertPlan(*env_,
+			    solutionStateIDs,
+			    &plan,
+			    &statsEntry.plan_length_m,
+			    &statsEntry.plan_angle_change_rad,
+			    0	// should be non-null for 3DKIN planning...
+			    );
 	  {
 	    ostringstream prefix_os;
 	    prefix_os << "[" << goalCount_ << "] ";

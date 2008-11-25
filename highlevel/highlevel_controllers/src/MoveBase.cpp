@@ -41,6 +41,8 @@
 #include <std_msgs/Polyline2D.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/PointStamped.h>
+#include <algorithm>
+#include <iterator>
 
 namespace ros {
   namespace highlevel_controllers {
@@ -416,6 +418,16 @@ namespace ros {
       }
 
       unlock();
+    }
+    
+    /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>&). */
+    void MoveBase::updatePlan(ompl::waypoint_plan_t const & newPlan) {
+      sentry<MoveBase> guard(this);
+      if (!isValid() || plan_.size() > newPlan.size()){
+        plan_.clear();
+	std::copy(newPlan.begin(), newPlan.end(), std::back_inserter(plan_));
+        publishPath(true, plan_);
+      }
     }
 
     /**
