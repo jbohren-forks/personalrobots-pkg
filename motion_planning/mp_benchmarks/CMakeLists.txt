@@ -2,9 +2,9 @@ cmake_minimum_required (VERSION 2.6)
 
 ### If you're trying to debug include directives or so, this here
 ### might help:
-#set (CMAKE_VERBOSE_MAKEFILE ON)
+set (CMAKE_VERBOSE_MAKEFILE ON)
 
-set (ROS_BUILD_TYPE Release)
+set (ROS_BUILD_TYPE Debug)
 include (rosbuild)
 add_definitions (-Wall)
 rospack (mp_benchmarks)
@@ -83,5 +83,8 @@ ENDIF(WIN32)
 
 rospack_add_library (mp_benchmarks src/setup.cpp src/gfx.cpp)
 
-rospack_add_executable (mpbench src/main.cpp)
+rospack_add_executable (mpbench src/mpbench.cpp)
 target_link_libraries (mpbench ${MPBENCH_LIBS})
+
+rospack_add_executable (mpbench-incremental src/mpbench-incremental.cpp)
+target_link_libraries (mpbench-incremental ${MPBENCH_LIBS})

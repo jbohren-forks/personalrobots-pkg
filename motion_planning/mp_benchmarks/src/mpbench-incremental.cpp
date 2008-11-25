@@ -32,12 +32,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
-/** \file main.cpp  */
-
 #include "setup.hpp"
 #include "gfx.hpp"
 #include <costmap_2d/costmap_2d.h>
+
+// XXXX should be <sbpl_util/blah> or so
 #include <sbpl_util.hh>
+#include <environment_wrap.h>
+
 #include <sfl/util/numeric.hpp>
 #include <boost/shared_ptr.hpp>
 #include <fstream>
@@ -58,8 +60,7 @@ static void create_setup();
 static void run_tasks();
 static void print_summary();
 
-static EnvironmentWrapper3DKIN::footprint_t const & getFootprint();
-static std::string canonicalEnvironmentName(std::string const & name_or_alias);
+static footprint_t const & getFootprint();
 static std::string baseFilename();
 
 static bool enableGfx;
@@ -67,9 +68,8 @@ static string plannerType;
 static string costmapType;
 static string environmentType;
 static SBPLBenchmarkOptions opt;
-static string travmapFilename;
-static string costmapFilename;
 static bool websiteMode;
+static double allocTimeMS(200);	// XXXX add an option for this
 
 static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<EnvironmentWrapper> environment;
@@ -77,8 +77,7 @@ static shared_ptr<SBPLPlannerManager> plannerMgr;
 static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
 
-static shared_ptr<EnvironmentWrapper3DKIN::footprint_t> footprint;
-static map<string, string> environment_alias;
+static shared_ptr<footprint_t> footprint;
 
 static planList_t planList;
 
@@ -135,8 +134,6 @@ void usage(ostream & os)
      << "   -H  <hallwidth>  set width of hallways (office setups)\n"
      << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
      << "   -g  <gray>       cutoff for obstacles in PGM images (for -s pgm)\n"
-     << "   -o  <filename>   write sfl::TraversabilityMap to file\n"
-     << "   -O  <filename>   write costmap_2d::CostMap2D to file\n"
      << "   -X               dump filename base to stdout (use as last option)\n"
      << "   -W               run in website generation mode\n";
 }
@@ -187,8 +184,6 @@ void parse_options(int argc, char ** argv)
   plannerType = "ARAPlanner";
   costmapType = "costmap_2d";
   environmentType = "2D";
-  travmapFilename = "";
-  costmapFilename = "";
   websiteMode = false;
   // most other options handled through SBPLBenchmarkOptions
   
@@ -381,26 +376,6 @@ void parse_options(int argc, char ** argv)
 	}
  	break;
 	
-      case 'o':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -o requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	travmapFilename = argv[ii];
- 	break;
-	
-      case 'O':
- 	++ii;
- 	if (ii >= argc) {
- 	  cerr << argv[0] << ": -O requires a filename argument\n";
- 	  usage(cerr);
- 	  exit(EXIT_FAILURE);
- 	}
-	costmapFilename = argv[ii];
- 	break;
-	
       case 'X':
 	sanitizeOptions();
 	cout << baseFilename() << "\n";
@@ -434,28 +409,9 @@ void create_setup()
 	 costmapType.c_str());
   
   *logos << "creating setup \"" << opt.name << "\"\n" << flush;
-  {
-    shared_ptr<ostream> dump_os;
-    if ( ! travmapFilename.empty()) {
-      dump_os.reset(new ofstream(travmapFilename.c_str()));
-      if ( ! (*dump_os)) {
-	*logos << "could not open travmap file " << travmapFilename << "\n" << flush;
-	dump_os.reset();
-      }
-    }
-    setup.reset(createBenchmark(opt, logos.get(), dump_os.get()));
-    if ( ! setup)
-      errx(EXIT_FAILURE, "could not create setup with name \"%s\"", opt.name.c_str());
-    if ( ! costmapFilename.empty()) {
-      dump_os.reset(new ofstream(costmapFilename.c_str()));
-      if ( ! (*dump_os))
-	*logos << "could not open costmap file " << costmapFilename << "\n" << flush;
-      else {
-	*logos << "writing costmap_2d::CostMap2d\n";
-	*dump_os << setup->getRaw2DCostmap().toString();
-      }
-    }
-  }
+  setup.reset(createBenchmark(opt, logos.get(), 0));
+  if ( ! setup)
+    errx(EXIT_FAILURE, "could not create setup with name \"%s\"", opt.name.c_str());
   setup->dumpDescription(*logos, "", "  ");
   *logos << flush
 	 << "creating environment of type " << environmentType
@@ -553,102 +509,122 @@ void create_setup()
 void run_tasks()
 {  
   *logos << "running tasks\n" << flush;
-  {
-    IndexTransformWrap const & it(*setup->getIndexTransform());
-    SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
-    for (size_t ii(0); ii < tasklist.size(); ++ii) {
-      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
-      SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
-      SBPLBenchmarkSetup::task const & task(tasklist[ii]);
+  
+  IndexTransformWrap const & it(*setup->getIndexTransform());
+  SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
+  for (size_t ii(0); ii < tasklist.size(); ++ii) {
+    plannerStats->pushBack(plannerMgr->getName(), environment->getName());
+    SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
+    SBPLBenchmarkSetup::task const & task(tasklist[ii]);
       
-      *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
+    *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
       
-      // set start
-      statsEntry.start.x = task.start_x;
-      statsEntry.start.y = task.start_y;
-      statsEntry.start.th = task.start_th;
-      it.globalToIndex(statsEntry.start.x, statsEntry.start.y,
-		       &statsEntry.startIx, &statsEntry.startIy);
-      environment->SetStart(statsEntry.start);
-      statsEntry.startState = environment->GetStateFromPose(statsEntry.start);
-      if (0 > statsEntry.startState)
-	errx(EXIT_FAILURE, "invalid start state ID %d from pose (%+8.3f, %+8.3f)",
-	     statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
-      int status(plannerMgr->set_start(statsEntry.startState));
-      if (1 != status)
-	errx(EXIT_FAILURE, "failed to set start state ID %d from (%ud, %ud): %d\n",
-	     statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
+    // set start
+    statsEntry.start.x = task.start_x;
+    statsEntry.start.y = task.start_y;
+    statsEntry.start.th = task.start_th;
+    it.globalToIndex(statsEntry.start.x, statsEntry.start.y,
+		     &statsEntry.startIx, &statsEntry.startIy);
+    environment->SetStart(statsEntry.start);
+    statsEntry.startState = environment->GetStateFromPose(statsEntry.start);
+    if (0 > statsEntry.startState)
+      errx(EXIT_FAILURE, "invalid start state ID %d from pose (%+8.3f, %+8.3f)",
+	   statsEntry.startState, statsEntry.start.x, statsEntry.start.y);
+    int status(plannerMgr->set_start(statsEntry.startState));
+    if (1 != status)
+      errx(EXIT_FAILURE, "failed to set start state ID %d from (%ud, %ud): %d\n",
+	   statsEntry.startState, statsEntry.startIx, statsEntry.startIy, status);
       
-      // set goal
-      statsEntry.goal.x = task.goal_x;
-      statsEntry.goal.y = task.goal_y;
-      statsEntry.goal.th = task.goal_th;
-      it.globalToIndex(statsEntry.goal.x, statsEntry.goal.y,
-		       &statsEntry.goalIx, &statsEntry.goalIy);
-      environment->SetGoal(statsEntry.goal);
-      statsEntry.goalState = environment->GetStateFromPose(statsEntry.goal);
-      if (0 > statsEntry.goalState)
-	errx(EXIT_FAILURE, "invalid goal state ID %d from pose (%+8.3f, %+8.3f)",
-	     statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
-      status = plannerMgr->set_goal(statsEntry.goalState);
-      if (1 != status)
-	errx(EXIT_FAILURE, "failed to set goal state ID %d from (%ud, %ud): %d\n",
-	     statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
+    // set goal
+    statsEntry.goal.x = task.goal_x;
+    statsEntry.goal.y = task.goal_y;
+    statsEntry.goal.th = task.goal_th;
+    it.globalToIndex(statsEntry.goal.x, statsEntry.goal.y,
+		     &statsEntry.goalIx, &statsEntry.goalIy);
+    environment->SetGoal(statsEntry.goal);
+    statsEntry.goalState = environment->GetStateFromPose(statsEntry.goal);
+    if (0 > statsEntry.goalState)
+      errx(EXIT_FAILURE, "invalid goal state ID %d from pose (%+8.3f, %+8.3f)",
+	   statsEntry.goalState, statsEntry.goal.x, statsEntry.goal.y);
+    status = plannerMgr->set_goal(statsEntry.goalState);
+    if (1 != status)
+      errx(EXIT_FAILURE, "failed to set goal state ID %d from (%ud, %ud): %d\n",
+	   statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
       
-      // plan it
-      if (task.from_scratch)
-	plannerMgr->force_planning_from_scratch();
-      vector<int> solutionStateIDs;
-#warning 'TO DO: use a progression of ever longer time limits'
-      statsEntry.allocated_time_sec = numeric_limits<double>::max();
-      statsEntry.status = plannerMgr->replan(statsEntry.allocated_time_sec,
+    // plan several solutions:
+    // - initially just the 1st path we come across
+    // - subsequently with some allocated timeslice
+    // - until there is no change in the returned path
+      
+    vector<int> prevSolution;
+    SBPLPlannerStatistics::entry & prevStatsEntry(statsEntry);
+    for (size_t jj(0); true; ++jj) {
+      
+      // Handle the first iteration specially.
+      if (0 == jj) {
+	statsEntry.stop_at_first_solution = true;
+	statsEntry.plan_from_scratch = task.from_scratch;
+      }
+      else {
+	statsEntry.stop_at_first_solution = false;
+	statsEntry.plan_from_scratch = false;
+      }
+      
+      vector<int> solution;
+      statsEntry.allocated_time_sec = 1e-3 * allocTimeMS;
+      statsEntry.status = plannerMgr->replan(statsEntry.stop_at_first_solution,
+					     statsEntry.plan_from_scratch,
+					     statsEntry.allocated_time_sec,
 					     &statsEntry.actual_time_wall_sec,
 					     &statsEntry.actual_time_user_sec,
 					     &statsEntry.actual_time_system_sec,
-					     &solutionStateIDs);
-      
-      // extract the plan and update statistics
-      statsEntry.plan_length_m = 0;
-      statsEntry.plan_angle_change_rad = 0;
-      if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
-	plan_t plan;
-	double prevx(0), prevy(0), prevth(0);
-	prevth = 42.17;	// to detect when it has been initialized (see 42 below)
-	for(vector<int>::const_iterator it = solutionStateIDs.begin();
-	    it != solutionStateIDs.end(); ++it){
-	  std_msgs::Pose2DFloat32 const waypoint(environment->GetPoseFromState(*it));
-	  
-	  // update stats:
-	  // - first round, nothing to do
-	  // - second round, update path length only
-	  // - third round, update path length and angular change
-	  if (plan.empty()) {
-	    prevx = waypoint.x;
-	    prevy = waypoint.y;
-	  }
-	  else {
-	    double const dx(waypoint.x - prevx);
-	    double const dy(waypoint.y - prevy);
-	    statsEntry.plan_length_m += sqrt(pow(dx, 2) + pow(dy, 2));
-	    double const th(atan2(dy, dx));
-	    if (42 > prevth) // see 42.17 above
-	      statsEntry.plan_angle_change_rad += fabs(sfl::mod2pi(th - prevth));
-	    prevx = waypoint.x;
-	    prevy = waypoint.y;
-	    prevth = th;
-#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
-	  }
-	  
-	  plan.push_back(waypoint);
-	}
-	planList.push_back(plan);
+					     &statsEntry.solution_cost,
+					     &solution);
+	
+      // forget about this task if we got a planning failure
+      if ((1 != statsEntry.status) // planners should provide status
+	  || (1 >= solution.size()) // but sometimes they do not
+	  ) {
+	statsEntry.logStream(*logos, "  FAILURE", "    ");
+	*logos << flush;
+	break;
       }
-      
-      char const * title("  SUCCESS");
-      if ((1 != statsEntry.status) || (1 >= solutionStateIDs.size()))
-	title = "  FAILURE";
-      statsEntry.logStream(*logos, title, "    ");
+	
+      // detect whether we got the same result as before, in which
+      // case we're done
+      if (prevSolution.size() == solution.size()) {
+	bool same(true);
+	for (size_t kk(0); kk < prevSolution.size(); ++kk)
+	  if (prevSolution[kk] != solution[kk]) {
+	    same = false;
+	    break;
+	  }
+	if (same) {
+	  statsEntry.logStream(*logos, "  FINAL", "    ");
+	  *logos << flush;
+	  statsEntry = prevStatsEntry;
+	  break;
+	}
+      }
+	
+      // save this plan, and prepare for the next round of
+      // incremental planning
+      shared_ptr<waypoint_plan_t> plan(new waypoint_plan_t());
+      convertPlan(*environment, solution, plan.get(),
+		  &statsEntry.plan_length_m,
+		  &statsEntry.plan_angle_change_rad,
+		  0 // XXXX if 3DKIN we actually want something here
+		  );
+      planList.push_back(plan);
+	
+      statsEntry.logStream(*logos, "  IMPROVED", "    ");
       *logos << flush;
+	
+      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
+      prevStatsEntry = statsEntry;
+      statsEntry = plannerStats->top();
+	
+      prevSolution.swap(solution);
     }
   }
 }
@@ -713,52 +689,11 @@ void print_summary()
 }
 
 
-EnvironmentWrapper3DKIN::footprint_t const & getFootprint()
+footprint_t const & getFootprint()
 {
-  if ( ! footprint)
-    footprint.reset(new EnvironmentWrapper3DKIN::footprint_t());
-  
-  // copy-pasted and adapted from highlevel_controllers/MoveBase
-  // constructor (make it configurable one day...)
-  
-  std_msgs::Point2DFloat32 pt;
-  //create a square footprint
-  pt.x = opt.inscribed_radius;
-  pt.y = -1 * opt.inscribed_radius;
-  footprint->push_back(pt);
-  pt.x = -1 * opt.inscribed_radius;
-  pt.y = -1 * opt.inscribed_radius;
-  footprint->push_back(pt);
-  pt.x = -1 * opt.inscribed_radius;
-  pt.y = opt.inscribed_radius;
-  footprint->push_back(pt);
-  pt.x = opt.inscribed_radius;
-  pt.y = opt.inscribed_radius;
-  footprint->push_back(pt);
-  
-  //give the robot a nose
-  pt.x = opt.circumscribed_radius;
-  pt.y = 0;
-  footprint->push_back(pt);
-  
-  return *footprint;
-}
-
-
-// XXXX move this to sbpl_util, or better, fuse benchmarks with sbpl_util
-std::string canonicalEnvironmentName(std::string const & name_or_alias)
-{
-  if (environment_alias.empty()) {
-    environment_alias.insert(make_pair("2D", "2D"));
-    environment_alias.insert(make_pair("2d", "2D"));
-    environment_alias.insert(make_pair("2",  "2D"));
-    environment_alias.insert(make_pair("3D", "3DKIN"));
-    environment_alias.insert(make_pair("3d", "3DKIN"));
-    environment_alias.insert(make_pair("3",  "3DKIN"));
+  if ( ! footprint) {
+    footprint.reset(new footprint_t());
+    initSimpleFootprint(*footprint, opt.inscribed_radius, opt.circumscribed_radius);
   }
-  
-  map<string, string>::const_iterator is(environment_alias.find(name_or_alias));
-  if (environment_alias.end() == is)
-    return "";
-  return is->second;
+  return *footprint;
 }

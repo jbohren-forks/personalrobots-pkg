@@ -33,6 +33,10 @@
  *********************************************************************/
 
 #include "gfx.hpp"
+
+// XXXX should be <sbpl_util/blah> or so
+#include <environment_wrap.h>
+
 #include <costmap_2d/costmap_2d.h>
 #include <npm/common/wrap_glu.hpp>
 #include <npm/common/wrap_glut.hpp>
@@ -92,7 +96,7 @@ namespace ompl {
 		  SBPLBenchmarkOptions const & opt,
 		  bool _websiteMode,
 		  std::string const & _baseFilename,
-		  EnvironmentWrapper3DKIN::footprint_t const & _footprint,
+		  footprint_t const & _footprint,
 		  planList_t const & _planList,
 		  bool _ignorePlanTheta,
 		  std::ostream & _logOs)
@@ -356,19 +360,26 @@ namespace {
     glLineWidth(1);
     if (configptr->ignorePlanTheta) {
       for (size_t ii(0); ii < configptr->planList.size(); ++ii)
- 	for (size_t jj(0); jj < configptr->planList[ii].size(); jj += skip) {
+ 	for (size_t jj(0); jj < configptr->planList[ii]->size(); jj += skip) {
 	  glPushMatrix();
-	  glTranslated(configptr->planList[ii][jj].x, configptr->planList[ii][jj].y, 0);
-	  gluDisk(wrap_glu_quadric_instance(), configptr->inscribedRadius, configptr->inscribedRadius, 36, 1);
+	  glTranslated((*configptr->planList[ii])[jj].x,
+		       (*configptr->planList[ii])[jj].y,
+		       0);
+	  gluDisk(wrap_glu_quadric_instance(),
+		  configptr->inscribedRadius,
+		  configptr->inscribedRadius,
+		  36, 1);
 	  glPopMatrix();
  	}
     }
     else {
       for (size_t ii(0); ii < configptr->planList.size(); ++ii)
- 	for (size_t jj(0); jj < configptr->planList[ii].size(); jj += skip) {
+ 	for (size_t jj(0); jj < configptr->planList[ii]->size(); jj += skip) {
 	  glPushMatrix();
-	  glTranslated(configptr->planList[ii][jj].x, configptr->planList[ii][jj].y, 0);
-	  glRotated(180 * configptr->planList[ii][jj].th / M_PI, 0, 0, 1);
+	  glTranslated((*configptr->planList[ii])[jj].x,
+		       (*configptr->planList[ii])[jj].y,
+		       0);
+	  glRotated(180 * (*configptr->planList[ii])[jj].th / M_PI, 0, 0, 1);
  	  drawFootprint();
 	  glPopMatrix();
  	}
@@ -380,13 +391,19 @@ namespace {
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
       glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(), configptr->inscribedRadius, configptr->inscribedRadius, 36, 1);
+      gluDisk(wrap_glu_quadric_instance(),
+	      configptr->inscribedRadius,
+	      configptr->inscribedRadius,
+	      36, 1);
       glPopMatrix();
     }
     for (size_t ii(0); ii < tl.size(); ++ii) {
       glPushMatrix();
       glTranslated(tl[ii].start_x, tl[ii].start_y, 0);
-      gluDisk(wrap_glu_quadric_instance(), configptr->circumscribedRadius, configptr->circumscribedRadius, 36, 1);
+      gluDisk(wrap_glu_quadric_instance(),
+	      configptr->circumscribedRadius,
+	      configptr->circumscribedRadius,
+	      36, 1);
       glPopMatrix();
     }
     
@@ -414,7 +431,8 @@ namespace {
     glLineWidth(3);
     for (size_t ii(0); ii < configptr->planList.size(); ++ii) {
       glBegin(GL_LINE_STRIP);
-      for (plan_t::const_iterator ip(configptr->planList[ii].begin()); ip != configptr->planList[ii].end(); ++ip)
+      for (waypoint_plan_t::const_iterator ip(configptr->planList[ii]->begin());
+	   ip != configptr->planList[ii]->end(); ++ip)
 	glVertex2d(ip->x, ip->y);
       glEnd();
     }    

@@ -35,15 +35,17 @@
 #ifndef OMPL_BENCHMARK_GFX_HPP
 #define OMPL_BENCHMARK_GFX_HPP
 
+// XXXX should be <sbpl_util/blah> or something like that
 #include <sbpl_util.hh>
+#include <footprint.h>
+#include <plan_wrap.h>
 
-// XXXX should be <something>g
+// XXXX should be <something>
 #include "setup.hpp"
 
 namespace ompl {
   
-  typedef vector<std_msgs::Pose2DFloat32> plan_t; // XXXX should move to sbpl_util (or fuse)
-  typedef vector<plan_t> planList_t;
+  typedef std::vector<boost::shared_ptr<waypoint_plan_t const> > planList_t;
   
   namespace gfx {
     
@@ -53,7 +55,7 @@ namespace ompl {
 		    SBPLBenchmarkOptions const & opt,
 		    bool websiteMode,
 		    std::string const & baseFilename,
-		    EnvironmentWrapper3DKIN::footprint_t const & footprint,
+		    footprint_t const & footprint,
 		    planList_t const & planList,
 		    bool ignorePlanTheta,
 		    std::ostream & logOs);
@@ -65,7 +67,7 @@ namespace ompl {
       double const circumscribedRadius;
       bool const websiteMode;
       std::string const baseFilename;
-      EnvironmentWrapper3DKIN::footprint_t const & footprint;
+      footprint_t const & footprint;
       planList_t const & planList;
       bool const ignorePlanTheta;
       mutable std::ostream & logOs;
