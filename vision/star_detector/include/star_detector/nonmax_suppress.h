@@ -6,7 +6,7 @@
 #include <cv.h>
 #include <iterator>
 #include <functional>
-#include <boost/static_assert.hpp>
+//#include <boost/static_assert.hpp>
 
 /*!
   Functor to perform non-maximal suppression on an image of projected
@@ -37,7 +37,7 @@ template< int W, int H, typename T = float,
           typename Compare = std::less_equal<T> >
 class NonmaxSuppressWxH
 {
-  BOOST_STATIC_ASSERT( W % 2 == 1 && H % 2 == 1 );
+  //BOOST_STATIC_ASSERT( W % 2 == 1 && H % 2 == 1 );
   
 public:
   //! Constructor taking the thresholds and comparison function to be used.
