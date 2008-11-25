@@ -12,6 +12,7 @@
   <depend package="rosrecord" />
   <depend package="map_server"/>
   <depend package="highlevel_controllers"/>
+  <depend package="executive_trex_pr2"/>
   <depend package="world_3d_map"/>
   <depend package="trajectory_rollout"/>
 </package>
