@@ -209,15 +209,15 @@ public:
         cam_ = stcam_;
         cam_->setFormat(mode, fps, speed);
         cam_->setProcMode(videre_mode);
+        cam_->setUniqueThresh(12);
+        cam_->setTextureThresh(10);
+        cam_->setCompanding(true);
       } else {
         cam_ = new dcam::Dcam(guid);
         cam_->setFormat(mode, fps, speed);
       }
 
       cam_->start();
-
-      cam_->setUniqueThresh(12);
-      cam_->setTextureThresh(10);
 
       while (ok() && !serviceCam())
         diagnostic_.update();
