@@ -14,8 +14,8 @@ B_VAR="costmap_2d sfl"
 B_HR="costmapType"
 B_NOPTS="2"
 
-REST="-r:0.1"
-#REST="-r 0.1 -r 0.05 -r 0.025"
+#REST="-r:0.1"
+REST="-r 0.1 -r 0.05 -r 0.025"
 REST_HR="-r:resolution"
 
 rm -f index.html
