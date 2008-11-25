@@ -350,7 +350,7 @@ Returns true iff X is one of
     (boolean formula)
     ((or conjunction disjunction)
      (cons (car formula)
-	   (mapset 'same #'(lambda (f) (bind f bindings)) (cdr formula))))
+	   (mapset :same #'(lambda (f) (bind f bindings)) (cdr formula))))
     (negation
      (negate (bind (negatee formula) bindings)))
     (proposition

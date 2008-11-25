@@ -45,11 +45,11 @@
 	(iterator-done)))))
 
 
-(defmethod mapset ((result-type (eql 'same)) fn (set1 list) &rest sets)
+(defmethod mapset ((result-type (eql :same)) fn (set1 list) &rest sets)
   (assert (not (nonlist set1)))
   (apply #'mapset 'list fn set1 sets))
 
-(defmethod mapset ((result-type (eql 'same)) fn (set1 vector) &rest sets)
+(defmethod mapset ((result-type (eql :same)) fn (set1 vector) &rest sets)
   (apply #'mapset 'vector fn set1 sets))
   
 

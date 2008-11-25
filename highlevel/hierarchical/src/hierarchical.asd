@@ -130,13 +130,13 @@
 	     (:file "abstract-planning-problem" :depends-on ("planning-problem" "hierarchy" "description"))
 	     (:file "subsumption" :depends-on ("description"))
 	     (:module "lookahead" :depends-on ("abstract-planning-problem" "subsumption" "angelic-pkg")
-							      :components
-							      ((:file "abstract-lookahead-tree")
-							       (:file "nodes" :depends-on ("abstract-lookahead-tree"))
-							       (:file "meta" :depends-on ("nodes"))
-							       (:file "hrt" :depends-on ("abstract-lookahead-tree"))
-							       (:file "ahrta" :depends-on ("abstract-lookahead-tree"))
-							       (:file "offline" :depends-on ("nodes"))))
+				  :components
+				  ((:file "abstract-lookahead-tree")
+				   (:file "nodes" :depends-on ("abstract-lookahead-tree"))
+				   (:file "meta" :depends-on ("nodes"))
+				   (:file "hrt" :depends-on ("abstract-lookahead-tree"))
+				   (:file "ahrta" :depends-on ("abstract-lookahead-tree"))
+				   (:file "offline" :depends-on ("nodes"))))
 	     (:module "prop"
 	      :depends-on ("angelic-pkg" "lookahead")
 	      :components
@@ -159,14 +159,11 @@
 			   (:file "hierarchy")
 			   (:file "descriptions")))
 							      
-	#|     (:module "pick-place" 
+	     (:module "pick-place" 
 	      :components 
 	      ((:file "pick-place")
-	       (:file "state-set" :depends-on ("pick-place"))
-	       (:file "hierarchy" :depends-on ("pick-place"))
-	       (:file "descriptions" :depends-on ("pick-place"))))|#
+	       (:file "state-set" :depends-on ("pick-place"))))))
 
-))
 		 
    (:module "motion-planning" :depends-on ("math" "prob" "geometry")
 	    :components ((:file "motion-planning")
@@ -194,7 +191,7 @@
    (:module "hybrid" :depends-on ("angelic" "motion-planning") :pathname "motion-planning/"
 	    :components
 	    ((:module "hybrid" :components ((:file "hybrid-domain")))
-	     (:module "roadmap" :components ((:file "hybrid")))))))
+	     (:module "roadmap" :components ((:file "hybrid")) :depends-on ("hybrid"))))))
 
 
 

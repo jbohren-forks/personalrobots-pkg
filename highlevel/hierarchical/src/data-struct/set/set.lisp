@@ -396,7 +396,7 @@ Like do, except each variable iterates through the corresponding set.  Stops as 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defgeneric mapset (result-type fn set1 &rest sets)
-  (:documentation "mapset RESULT-TYPE FN SET1 &rest SETS.  Apply FN to each element of SET.  If RESULT-TYPE is 'list, return the results in a list, and if its 'vector, return the results in a vector. If its a list of the form '(vector type), return the results in a vector where the elements are of that type.  If RESULT-TYPE is 'same, return a set of the same type as SET1 (not always implemented, and the exact meaning of this will depend on the subtype of SET1).  In the vector case, the vector is guaranteed to be simple."))
+  (:documentation "mapset RESULT-TYPE FN SET1 &rest SETS.  Apply FN to each element of SET.  If RESULT-TYPE is 'list, return the results in a list, and if its 'vector, return the results in a vector. If its a list of the form '(vector type), return the results in a vector where the elements are of that type.  If RESULT-TYPE is :same, return a set of the same type as SET1 (not always implemented, and the exact meaning of this will depend on the subtype of SET1).  In the vector case, the vector is guaranteed to be simple."))
 
 (defmethod mapset ((result-type (eql 'list)) fn set1 &rest sets)
   (apply #'map-iterator-to-list fn (mapcar #'iterator (cons set1 sets))))

@@ -18,8 +18,6 @@
     (flet ((add-new-modes (new-state)
 	     (do-elements (a (avail-symbolic-actions d new-state))
 	       (let ((s (action-result d new-state a)))
-		 (debug-prompt 0 "Enqueuing new mode state ~a" 
-			       (display-state d s))
 		 (when (member? s (goal d))
 		   (print "Goal")
 		   (break)))
@@ -33,8 +31,6 @@
 	    ;; If we don't have enough modes, and there exist modes on the queue, get the next one
 	    (dsbind (new-mode-state . prev-state) (dequeue mode-queue)
 	    
-	      (debug-prompt 0 "~%~%Considering new mode state ~a" (display-state d new-mode-state))
-
 	      ;; Unless we already have states with this mode, add it
 	      (unless (find (mode new-mode-state) modes :test #'same-mode :key #'me-mode)
 	      
@@ -55,7 +51,6 @@
 			      :mode (me-mode entry) :conf conf 
 			      :domain d :cspace cspace)))
 	  
-	    (debug-prompt 0 "~%~%Adding state ~a" (display-state d new-state))
 	    (incf i)
 	    (connect-to-existing-states cspace roadmap new-state (me-states entry))
 	    (add-new-modes new-state)
