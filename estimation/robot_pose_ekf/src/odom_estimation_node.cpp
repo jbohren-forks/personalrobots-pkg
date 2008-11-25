@@ -42,7 +42,7 @@ using namespace ros;
 using namespace tf;
 
 
-#define __EKF_DEBUG_FILE__
+//#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
