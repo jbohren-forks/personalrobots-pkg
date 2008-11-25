@@ -14,11 +14,19 @@ set(robot_files )
 # process all urdf files
 set(PR2_OUTPUT ${openrave_robot_description_PACKAGE_PATH}/robots/pr2.robot.xml)
 set(PR2_INPUT ${wg_robot_description_PACKAGE_PATH}/pr2/pr2.xml)
+set(MODELS ${openrave_robot_description_PACKAGE_PATH}/models)
+
+## create the models directory
+add_custom_command(
+  OUTPUT ${MODELS}
+  COMMAND mkdir ${MODELS}
+)
+
 add_custom_command(
   OUTPUT ${PR2_OUTPUT}
   COMMAND ${urdf2openrave_exe}
   ARGS ${PR2_INPUT} ${PR2_OUTPUT} ../models
-  DEPENDS ${PR2_INPUT} urdf2openrave)
+  DEPENDS  ${PR2_INPUT} ${MODELS} urdf2openrave)
 set(robot_files ${robot_files} ${PR2_OUTPUT})
 
 add_custom_target(urdf_robots ALL DEPENDS ${robot_files})
