@@ -8,7 +8,7 @@
 #include "std_msgs/ImageArray.h"
 #include "image_utils/cv_bridge.h"
 
-#include "colorcalib.h"
+#include "color_calib.h"
 
 #include <sys/stat.h>
 
@@ -104,14 +104,14 @@ public:
           {
             IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
 
-            decompand(j->second.cv_image, img);
+            color_calib::decompand(j->second.cv_image, img);
 
             if (j->second.cv_image->nChannels == 3)
               cvTransform(img, img, j->second.color_cal);
 
             if (recompand)
             {
-              compand(img, j->second.cv_image);
+              color_calib::compand(img, j->second.cv_image);
               cvShowImage(j->second.label.c_str(), j->second.cv_image);
             } else {
               cvShowImage(j->second.label.c_str(), img);
