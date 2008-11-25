@@ -51,3 +51,4 @@ test: trex
 clean:
 	rm -rf PLASMA TREX trex EUROPA logs PlanWorks include
 
+wipe: clean
