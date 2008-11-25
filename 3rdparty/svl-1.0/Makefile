@@ -21,6 +21,7 @@ svllibs:
 	cd svl/lib && make && cd ../..
 
 depend:
+	-mkdir bin
 	cd svl/lib && make depend && cd ../..
 	cd svl/apps && make depend && cd ../..
 
