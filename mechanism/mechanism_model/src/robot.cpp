@@ -57,7 +57,7 @@ bool Robot::initXml(TiXmlElement *root)
        xit = xit->NextSiblingElement("transmission"))
   {
     const char *type = xit->Attribute("type");
-    Transmission *t = type ? TransmissionFactory::instance().create(type) : NULL;
+    Transmission *t = type ? TransmissionFactory::Instance().CreateObject(type) : NULL;
     if (!t)
       fprintf(stderr, "Unknown transmission type: \"%s\"\n", type);
     else if (!t->initXml(xit, this))

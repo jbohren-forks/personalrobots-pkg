@@ -136,7 +136,7 @@ bool MechanismControl::spawnController(const std::string &type,
                                        const std::string &name,
                                        TiXmlElement *config)
 {
-  controller::Controller *c = controller::ControllerFactory::instance().create(type);
+  controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
   if (c == NULL)
     return false;
   printf("Spawning %s: %p\n", name.c_str(), &model_);
@@ -321,10 +321,8 @@ bool MechanismControlNode::listControllerTypes(
   robot_srvs::ListControllerTypes::request &req,
   robot_srvs::ListControllerTypes::response &resp)
 {
-  std::vector<std::string> types;
-
   (void) req;
-  controller::ControllerFactory::instance().getTypes(&types);
+  std::vector<std::string> types = controller::ControllerFactory::Instance().RegisteredIds();
   resp.set_types_vec(types);
   return true;
 }
