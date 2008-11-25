@@ -51,7 +51,8 @@ private:
 
     NEWMAT::Matrix GetNewMat(const TransformMatrix& tm);
 
-    inline dReal GetPhiInc() { return 0.04f; }
+    inline dReal GetPhiInc() { return 0.03f; }
+    bool checkjointangles(vector<dReal>& vravesol);
 
     RobotBase* _probot;
     std::vector<dReal> _qlower, _qupper, _vjointmult;

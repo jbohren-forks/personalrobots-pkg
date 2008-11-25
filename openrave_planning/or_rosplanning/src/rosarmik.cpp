@@ -55,7 +55,7 @@ bool ROSArmIK::Init(RobotBase* probot, const RobotBase::Manipulator* pmanip, int
     }
 
     if( _qlower.size() > 0 )
-        fiFreeParam = 1.0f / (_qupper[0]-_qlower[0]);
+        fiFreeParam = 1.0f / (_qupper[2]-_qlower[2]);
     else fiFreeParam = 1;
 
     std::vector<NEWMAT::Matrix> axis;
@@ -152,8 +152,8 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
     _probot->SetActiveDOFs(pmanip->_vecarmjoints);
 
     // start searching for phi close to q0, as soon as a solution is found for the curphi, return it
-    dReal startphi = q0 != NULL ? q0[0] : 0;
-    dReal upperphi = _qupper[0], lowerphi = _qlower[0], deltaphi = 0;
+    dReal startphi = q0 != NULL ? q0[2] : 0;
+    dReal upperphi = _qupper[2], lowerphi = _qlower[2], deltaphi = 0;
     int iter = 0;
     bool bsuccess = false;
 
@@ -189,9 +189,9 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
 
         iter++;
         
-        iksolver->ComputeIKEfficient(nmT,curphi);
+        iksolver->ComputeIKEfficientTheta3(nmT,curphi);
         vector<dReal> vravesol(_probot->GetActiveDOF());
-        vector<double>* pbest = NULL;
+        vector<dReal> vbest;
         FOREACH(itsol, iksolver->solution_ik_) {
             vector<double>& sol = *itsol;
             assert( (int)sol.size() == _probot->GetActiveDOF());
@@ -200,22 +200,14 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
                 vravesol[i] = sol[i]*_vjointmult[i];
             
             // find the first valid solution that satisfies joint constraints and collisions
-            wstringstream ss;
-            int j;
-            for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-                if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
-                    break;
-            }
-
-            if( j < (int)pmanip->_vecarmjoints.size() )
-                continue; // out of bounds
+            if( !checkjointangles(vravesol) )
+                continue;
 
             // check for self collisions
             _probot->SetActiveDOFValues(NULL, &vravesol[0]);
 
-            if( _probot->CheckSelfCollision() ) {
+            if( _probot->CheckSelfCollision() )
                 continue;
-            }
 
             COLLISIONREPORT report;
             if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot, &report) ) {
@@ -233,24 +225,20 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
                     d += SQR(vravesol[k]-q0[k]);
 
                 if( bestdist > d ) {
-                    pbest = &sol;
+                    vbest = vravesol;
                     bestdist = d;
                 }
             }
             else {
-                pbest = &sol;
+                vbest = vravesol;
                 break;
             }
         }
 
         // return as soon as a solution is found, since we're visiting phis starting from q0[0], we are guaranteed
         // that the solution will be close (ie, phi's dominate in the search). This is to speed things up
-        if( pbest != NULL ) {
-
-            if( qResult != NULL ) {
-                for(int i = 0; i < (int)pbest->size(); ++i)
-                    qResult[i] = (*pbest)[i] * _vjointmult[i];
-            }
+        if( vbest.size() == _qlower.size() && qResult != NULL ) {
+            memcpy(&qResult[0], &vbest[0], sizeof(dReal)*_qlower.size());
             bsuccess = true;
             break;
         }
@@ -277,7 +265,7 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
 
     // start searching for phi close to q0, as soon as a solution is found for the curphi, return it
     double startphi = 0;
-    double upperphi = _qupper[0], lowerphi = _qlower[0], deltaphi = 0;
+    double upperphi = _qupper[2], lowerphi = _qlower[2], deltaphi = 0;
     int iter = 0;
 
     NEWMAT::Matrix nmT = GetNewMat(_T);
@@ -310,7 +298,7 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
 
         iter++;
 
-        iksolver->ComputeIKEfficient(nmT,curphi);
+        iksolver->ComputeIKEfficientTheta3(nmT,curphi);
         vector<dReal> vravesol(_probot->GetActiveDOF());
 
         FOREACH(itsol, iksolver->solution_ik_) {
@@ -321,14 +309,8 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
                 vravesol[i] = sol[i]*_vjointmult[i];
             
             // find the first valid solutino that satisfies joint constraints and collisions
-            int j;
-            for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-                if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
-                    break;
-            }
-
-            if( j < (int)pmanip->_vecarmjoints.size() )
-                continue; // out of bounds
+            if( !checkjointangles(vravesol) )
+                continue;
 
             // check for self collisions
             _probot->SetActiveDOFValues(NULL, &vravesol[0]);
@@ -368,10 +350,10 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
     dReal bestdist = 1000; // only valid if q0 != NULL
     
     NEWMAT::Matrix nmT = GetNewMat(_T);
-    iksolver->ComputeIKEfficient(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
+    iksolver->ComputeIKEfficientTheta3(nmT,_qlower[2] + (_qupper[2]-_qlower[2])*pFreeParameters[0]);
     
     vector<dReal> vravesol(_probot->GetActiveDOF());
-    vector<double>* pbest = NULL;
+    vector<dReal> vbest;
     FOREACH(itsol, iksolver->solution_ik_) {
         vector<double>& sol = *itsol;
         assert( (int)sol.size() == _probot->GetActiveDOF());
@@ -380,14 +362,8 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
             vravesol[i] = sol[i] * _vjointmult[i];
         
         // find the first valid solutino that satisfies joint constraints and collisions
-        int j;
-        for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-            if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
-                break;
-        }
-        
-        if( j < (int)pmanip->_vecarmjoints.size() )
-            continue; // out of bounds
+        if( !checkjointangles(vravesol) )
+            continue;
         
         // check for self collisions (does WAM ever self-collide?)
         _probot->SetActiveDOFValues(NULL, &vravesol[0]);
@@ -412,23 +388,20 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
                 d += SQR(vravesol[k]-q0[k]);
             
             if( bestdist > d ) {
-                pbest = &sol;
+                vbest = vravesol;
                 bestdist = d;
             }
         }
         else {
-            pbest = &sol;
+            vbest = vravesol;
             break;
         }
     }
 
     // return as soon as a solution is found, since we're visiting phis starting from q0[0], we are guaranteed
     // that the solution will be close (ie, phi's dominate in the search). This is to speed things up
-    if( pbest != NULL ) {
-        if( qResult != NULL ) {
-            for(int i = 0; i < (int)pbest->size(); ++i)
-                qResult[i] = (*pbest)[i]*_vjointmult[i];
-        }
+    if( vbest.size() == _qlower.size() && qResult != NULL ) {
+        memcpy(&qResult[0], &vbest[0], sizeof(dReal)*_qlower.size());
         return true;
     }
     
@@ -458,24 +431,18 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* pFreeParameters,
 
     // start searching for phi close to q0, as soon as a solution is found for the curphi, return it
     NEWMAT::Matrix nmT = GetNewMat(_T);
-    iksolver->ComputeIKEfficient(nmT,_qlower[0] + (_qupper[0]-_qlower[0])*pFreeParameters[0]);
+    iksolver->ComputeIKEfficientTheta3(nmT,_qlower[2] + (_qupper[2]-_qlower[2])*pFreeParameters[0]);
     
     FOREACH(itsol, iksolver->solution_ik_) {
         vector<double>& sol = *itsol;
         assert( (int)sol.size() == _probot->GetActiveDOF());
 
         for(int i = 0; i < (int)sol.size(); ++i)
-            vravesol[i] = sol[i];
+            vravesol[i] = sol[i]*_vjointmult[i];
         
         // find the first valid solutino that satisfies joint constraints and collisions
-        int j;   
-        for(j = 0; j < (int)pmanip->_vecarmjoints.size(); ++j) {
-            if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
-                break;
-        }
-        
-        if( j < (int)pmanip->_vecarmjoints.size() )
-            continue; // out of bounds
+        if( !checkjointangles(vravesol) )
+            continue;
         
         // check for self collisions
         _probot->SetActiveDOFValues(NULL, &vravesol[0]);
@@ -499,12 +466,26 @@ bool ROSArmIK::GetFreeParameters(dReal* pFreeParameters) const
     const RobotBase::Manipulator* pmanip = _probot->GetActiveManipulator();
     if( pmanip == NULL )
         return false;
-    assert( pmanip->_vecarmjoints.size() > 0 && pmanip->_vecarmjoints[0] < _probot->GetDOF());
+    assert( pmanip->_vecarmjoints.size() > 0 && pmanip->_vecarmjoints[2] < _probot->GetDOF());
     assert( _qlower.size() > 0 && _qupper.size() > 0 );
 
     dReal values[3];
-    _probot->GetJointFromDOFIndex(pmanip->_vecarmjoints[0])->GetValues(values);
-    pFreeParameters[0] = (values[0]-_qlower[0])*fiFreeParam;
+    _probot->GetJointFromDOFIndex(pmanip->_vecarmjoints[2])->GetValues(values);
+    pFreeParameters[0] = (values[2]-_qlower[2])*fiFreeParam;
+    return true;
+}
+
+bool ROSArmIK::checkjointangles(vector<dReal>& vravesol)
+{
+    for(int j = 0; j < (int)_qlower.size(); ++j) {
+        if( _qlower[j] < -PI && vravesol[j] > _qupper[j] )
+            vravesol[j] -= 2*PI;
+        if( _qupper[j] > PI && vravesol[j] < _qlower[j] )
+            vravesol[j] += 2*PI;
+        if( vravesol[j] < _qlower[j] || vravesol[j] > _qupper[j] )
+            return false;
+    }
+
     return true;
 }
 
@@ -517,3 +498,4 @@ NEWMAT::Matrix ROSArmIK::GetNewMat(const TransformMatrix& tm)
     nmT(4,1) = 0; nmT(4,2) = 0; nmT(4,3) = 0; nmT(4,4) = 1;
     return nmT;
 }
+

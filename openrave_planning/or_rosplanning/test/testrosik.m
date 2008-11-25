@@ -21,9 +21,9 @@ manips = orRobotGetManipulators(robotid);
 %% left arm
 orProblemSendCommand('SetActiveManip 0')
 tic;
-orProblemSendCommand('debugik numtests 100',probid);
+orProblemSendCommand('debugik numtests 200',probid);
 toc
 
 %% right arm
-% orProblemSendCommand('SetActiveManip 1')
-% orProblemSendCommand('debugik numtests 1',probid);
+orProblemSendCommand('SetActiveManip 1')
+orProblemSendCommand('debugik numtests 200',probid);
