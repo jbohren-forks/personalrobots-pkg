@@ -115,6 +115,7 @@ void cleanup()
   plannerMgr.reset();
   plannerStats.reset();
   logos.reset();
+  planList.clear();
 }
 
 
@@ -616,8 +617,11 @@ void run_tasks()
 		  0 // XXXX if 3DKIN we actually want something here
 		  );
       planList.push_back(plan);
-	
-      statsEntry.logStream(*logos, "  IMPROVED", "    ");
+      
+      if (0 == jj)
+	statsEntry.logStream(*logos, "  FIRST_SOLUTION", "    ");
+      else
+	statsEntry.logStream(*logos, "  IMPROVED", "    ");
       *logos << flush;
 	
       plannerStats->pushBack(plannerMgr->getName(), environment->getName());

@@ -116,6 +116,7 @@ void cleanup()
   plannerMgr.reset();
   plannerStats.reset();
   logos.reset();
+  planList.clear();
 }
 
 
