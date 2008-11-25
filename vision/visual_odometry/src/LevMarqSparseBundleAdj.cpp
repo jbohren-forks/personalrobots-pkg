@@ -14,6 +14,14 @@
 
 #define DEBUG 1
 
+#if CHECKTIMING == 0
+#define TIMERSTART2(x)
+#define TIMEREND2(x)
+#else
+#define TIMERSTART2(x) CvTestTimerStart2(x)
+#define TIMEREND2(x)   CvTestTimerEnd2(x)
+#endif
+
 namespace cv {
 namespace willow {
 
@@ -71,6 +79,7 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
   _rt[15] = 1.0;
   _rt[12] = _rt[13] = _rt[14] = 0.0;
 
+  /// @todo replace the following with direct multiplication.
   cvMatMul(m3DToDisparity, &rt, &T);
 #if DEBUG2==1
   cout << "LevMarqSparseBundleAdj::constructTransfMatrix"<<endl;
@@ -509,11 +518,12 @@ bool LevMarqSparseBundleAdj::optimize(
               local_index1, local_index2);
 #endif
 
-          ///    Subtrack \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} from
+          ///    Subtract \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} from
           ///     block (c, c2) of left hand side matrix A.
           CvMat& mat_Hpc2 = obsv2->mat_Hpc_;
           CvMat A_cc2;
           getABlock(&A_cc2, local_index1, local_index2);
+          /// @todo replace the following two line with direct computation.
           cvMatMul(&obsv->mat_Tcp_, &mat_Hpc2, &mat_Hcc2);
           cvSub(&A_cc2, &mat_Hcc2, &A_cc2);
 #if DEBUG2==1
@@ -841,6 +851,7 @@ double LevMarqSparseBundleAdj::costFunction(
     vector<FramePose *>* free_frames,
     PointTracks* tracks
 ) {
+  TIMERSTART2(SBACostFunction);
   double err_norm = 0;
 
   /// For each tracks
@@ -868,6 +879,7 @@ double LevMarqSparseBundleAdj::costFunction(
     }
   }
 
+  TIMEREND2(SBACostFunction);
   return err_norm;
 }
 

@@ -34,12 +34,11 @@ void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
 
 void CvTestTimer::printStat() {
   cout << "Statistics of all counters (time in milliseconds, i.e .001 seconds)"<<endl;
-
-	cout << "num of iters: "<< mNumIters<<endl;
-	if (mNumIters==0) {
-	  cerr << "Please set mNumIters, the number of iterations"<<endl;
-	  return;
-	}
+  cout << "num of iters: "<< mNumIters<<endl;
+  if (mNumIters==0) {
+    cerr << "Please set mNumIters, the number of iterations"<<endl;
+    return;
+  }
   cout <<    "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
 	PRINTSTAT ("Total               ", Total);
 #if 0
