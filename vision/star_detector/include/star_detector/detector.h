@@ -4,9 +4,8 @@
 #include "star_detector/keypoint.h"
 #include "star_detector/integral.h"
 #include "star_detector/nonmax_suppress.h"
-#include "optimized_width.h"
+#include "star_detector/optimized_width.h"
 #include <cv.h>
-#include <vector>
 #include <cmath>
 
 /*!
@@ -144,7 +143,6 @@ int StarDetector::DetectPoints(IplImage* source, OutputIterator inserter)
   TiltedIntegral(source, m_tilted, m_flat);
 
   // If possible, run one of the optimized versions
-  //if (false) {
   if ((m_W < OPTIMIZED_WIDTH) && (3 <= m_n) && (m_n <= 12)) {
     switch (m_n) {
       case 3: FilterResponsesGen3(); break;

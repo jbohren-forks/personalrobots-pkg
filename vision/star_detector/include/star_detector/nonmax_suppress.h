@@ -4,7 +4,6 @@
 #include "star_detector/keypoint.h"
 #include "star_detector/threshold.h"
 #include <cv.h>
-#include <vector>
 #include <iterator>
 #include <functional>
 #include <boost/static_assert.hpp>
@@ -20,7 +19,7 @@
   images, but this behavior can be adapted.
 
   NonmaxSuppressWxH uses a tiled algorithm which has complexity independent
-  of W and H. See http://www.vision.ee.ethz.ch/~aneubeck/.
+  of W and H. See http://www.vision.ee.ethz.ch/~aneubeck/ for details.
 
   W, H: the width and height of the suppression window. Both must be odd.
   

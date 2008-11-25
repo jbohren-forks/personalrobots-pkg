@@ -104,6 +104,8 @@ int StarDetector::StarPixels(int radius, int offset)
   return upright_pixels + tilt_pixels;
 }
 
+// Lightly optimized pure C++ version. If possible, one of the SIMD versions
+// in generated.i will be used instead.
 void StarDetector::FilterResponses()
 {
   if (!m_filter_params) {

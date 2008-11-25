@@ -107,7 +107,7 @@ public:
         int Ly = (CV_IMAGE_ELEM(m_scales, uchar, y-1, x) == pt_s) -
           (CV_IMAGE_ELEM(m_scales, uchar, y+1, x) == pt_s);
 
-        // TODO: use abs instead for first two sums? Lx = -1, 0 or 1.
+        // Could use abs instead for first two sums, but doesn't seem to be quicker
         sum_Lx_2 += Lx*Lx;
         sum_Ly_2 += Ly*Ly;
         sum_LxLy += Lx*Ly;
