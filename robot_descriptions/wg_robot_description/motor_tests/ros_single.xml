@@ -1,8 +1,8 @@
 <robot name="pr2">
 
-  <joint name="single_joint" type="revolute">
+  <joint name="single_joint" type="continuous">
     <axis xyz=" 0 1 0 " /> 
-    <limit min="1.48" max="1.48" effort="3" velocity="0" />
+    <limit min="-5" max="5" effort="3" velocity="1" safety_length_min="0.1" safety_length_max="0.1" k_position="0.1" k_velocity="1" />
   </joint>
 
   <transmission type="SimpleTransmission" name="single_transmission">
