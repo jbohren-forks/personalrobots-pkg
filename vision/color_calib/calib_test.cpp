@@ -32,13 +32,13 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#include "ros/node.h"
-
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
-#include "colorcalib.h"
+#include "color_calib.h"
+
+using namespace color_calib;
 
 int main(int argc, char** argv)
 {
@@ -47,22 +47,23 @@ int main(int argc, char** argv)
   // Load image
   if (img)
   { 
-    CvMat* color_cal = cvCreateMat( 3, 3, CV_32FC1);
     IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_8U, 3);
 
-    find_calib(img, color_cal);
+    Calibration cal(0);
+
+    find_calib(img, cal);
 
      printf("Color calibration:\n");
      for (int i = 0; i < 3; i ++)
      {
        for (int j = 0; j < 3; j++)
        {
-         printf("%f ", cvmGet(color_cal, i, j));
+         printf("%f ", cvmGet(cal.getCal(), i, j));
        }
        printf("\n");
      }
 
-     cvTransform(img, corrected_img, color_cal);
+     cvTransform(img, corrected_img, cal.getCal());
 
      cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
      cvShowImage("color_rect", corrected_img);

@@ -4,8 +4,8 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="std_msgs"/>
-  <depend package="opencv_latest"/>
   <depend package="dcam"/>
+  <depend package="opencv_latest"/>
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp"/>
   </export>

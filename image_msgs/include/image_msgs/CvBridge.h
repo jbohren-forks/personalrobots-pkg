@@ -38,7 +38,6 @@
 #include "image_msgs/Image.h"
 #include "opencv/cxcore.h"
 
-
 namespace image_msgs
 {
 
@@ -48,21 +47,21 @@ namespace image_msgs
     IplImage* rosimg_;
     IplImage* cvtimg_;
 
-    void reallocCvtIfNeeded(CvSize sz, int depth, int channels)
+    void reallocIfNeeded_(IplImage** img, CvSize sz, int depth, int channels)
     {
-      if (cvtimg_ != 0)
-        if (cvtimg_->width     != sz.width  || 
-            cvtimg_->height    != sz.height || 
-            cvtimg_->depth     != depth     ||
-            cvtimg_->nChannels != channels)
+      if ((*img) != 0)
+        if ((*img)->width     != sz.width  || 
+            (*img)->height    != sz.height || 
+            (*img)->depth     != depth     ||
+            (*img)->nChannels != channels)
         {
-          cvReleaseImage(&cvtimg_);
-          cvtimg_ = 0;
+          cvReleaseImage(img);
+          *img = 0;
         }
 
-      if (cvtimg_ == 0)
+      if (*img == 0)
       {
-        cvtimg_ = cvCreateImage(sz, depth, channels);
+        *img = cvCreateImage(sz, depth, channels);
       }      
     }
 
@@ -109,13 +108,13 @@ namespace image_msgs
       {
         if (encoding == "bgr" && rosimg.encoding == "rgb")
         {
-          reallocCvtIfNeeded(cvGetSize(rosimg_), IPL_DEPTH_8U, 3);
+          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_RGB2BGR);
           img_ = cvtimg_;
         }
         else if (encoding == "bgr" && rosimg.encoding == "mono" )
         {
-          reallocCvtIfNeeded(cvGetSize(rosimg_), IPL_DEPTH_8U, 3);
+          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 3);
           cvCvtColor(rosimg_, cvtimg_, CV_GRAY2BGR);
           img_ = cvtimg_;
         }
@@ -126,8 +125,15 @@ namespace image_msgs
       }
       return true;
     }
-  private:
 
+    void reallocIfNeeded(IplImage** img, int depth = -1, int channels = -1)
+    {
+      if (depth == -1)
+        depth = img_->depth;
+      if (channels == -1)
+        channels = img_->nChannels;
+      reallocIfNeeded_(img, cvGetSize(img_), depth, channels);
+    }
   };
 }
 

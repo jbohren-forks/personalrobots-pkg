@@ -36,15 +36,43 @@
 #define COLORCALIB_HH
 
 #include "opencv/cxcore.h"
+#include <string>
+#include "ros/node.h"
 
 static const uint32_t COLOR_CAL_BGR = 1;
-static const uint32_t COLOR_CAL_FLOAT = 1 << 1;
 static const uint32_t COLOR_CAL_COMPAND_DISPLAY = 1 << 2;
 
-float srgb2lrgb(float x);
-float lrgb2srgb(float x);
-void decompand(IplImage* src, IplImage* dst);
-void compand(IplImage* src, IplImage* dst);
-bool find_calib(IplImage* img,  CvMat* m, int flags=0);
+namespace color_calib
+{
+
+  class Calibration
+  {
+    ros::node* node_;
+
+    CvMat* color_cal_;
+    CvMat* color_cal_bgr_;
+  public:
+    Calibration(ros::node* node);
+    ~Calibration();
+
+    bool getFromParam(std::string topic_name_);
+    bool setParam(std::string topic_name_);
+
+    CvMat* getCal(uint32_t flag = 0);
+    bool setCal(CvMat* cal, uint32_t flag = 0);
+
+    void correctColor(IplImage* src, IplImage* dst, bool do_decompand, bool do_recompand, uint32_t flags = 0);
+
+  private:
+    void populateBGR();
+    void populateRGB();
+  };
+
+  float srgb2lrgb(float x);
+  float lrgb2srgb(float x);
+  void decompand(IplImage* src, IplImage* dst);
+  void compand(IplImage* src, IplImage* dst);
+  bool find_calib(IplImage* img,  Calibration& cal, uint32_t flags=0);
+}
 
 #endif

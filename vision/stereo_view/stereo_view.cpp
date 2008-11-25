@@ -43,6 +43,8 @@
 #include "image_msgs/Image.h"
 #include "image_msgs/CvBridge.h"
 
+#include "color_calib.h"
+
 #include "topic_synchronizer.h"
 
 using namespace std;
@@ -60,11 +62,24 @@ public:
   image_msgs::CvBridge rbridge;
   image_msgs::CvBridge dbridge;
 
+  color_calib::Calibration lcal;
+  color_calib::Calibration rcal;
+
+  IplImage* lcalimage;
+  IplImage* rcalimage;
+
   TopicSynchronizer<StereoView> sync;
 
   bool subscribe_color_;
+  bool calib_color_;
+  bool recompand_;
 
-  StereoView() : ros::node("stereo_view"), sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout), subscribe_color_(false)
+  ros::thread::mutex cv_mutex;
+
+  StereoView() : ros::node("stereo_view"), 
+                 lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
+                 sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout),
+                 subscribe_color_(false), calib_color_(false), recompand_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
@@ -84,13 +99,43 @@ public:
     sync.subscribe("dcam/stereo_info", stinfo, 1);
   }
 
+  ~StereoView()
+  {
+    if (lcalimage)
+      cvReleaseImage(&lcalimage);
+    if (rcalimage)
+      cvReleaseImage(&rcalimage);
+  }
+
   void image_cb_all(ros::Time t)
   {
+    cv_mutex.lock();
+
     if (lbridge.fromImage(limage, "bgr"))
-      cvShowImage("left", lbridge.toIpl());
+    {
+      if (calib_color_)
+      {
+        lbridge.reallocIfNeeded(&lcalimage, IPL_DEPTH_32F);
+
+        lcal.correctColor(lbridge.toIpl(), lcalimage, true, recompand_, COLOR_CAL_BGR);
+
+        cvShowImage("left", lcalimage);
+      } else
+        cvShowImage("left", lbridge.toIpl());
+    }
 
     if (rbridge.fromImage(rimage, "bgr"))
-      cvShowImage("right", rbridge.toIpl());
+    {
+      if (calib_color_)
+      {
+        rbridge.reallocIfNeeded(&rcalimage, IPL_DEPTH_32F);
+
+        rcal.correctColor(rbridge.toIpl(), rcalimage, true, recompand_, COLOR_CAL_BGR);
+
+      cvShowImage("right", rcalimage);
+      } else
+        cvShowImage("right", rbridge.toIpl());
+    }
 
     if (dbridge.fromImage(dimage))
     {
@@ -101,7 +146,8 @@ public:
       cvReleaseImage(&disp);
     }
 
-    cvWaitKey(5);
+    cv_mutex.unlock();
+
   }
 
   void image_cb_timeout(ros::Time t)
@@ -117,6 +163,35 @@ public:
 
     //Proceed to show images anyways
     image_cb_all(t);
+  }
+  
+  bool spin()
+  {
+    while (ok())
+    {
+      cv_mutex.lock();
+      int key = cvWaitKey(3);
+      
+      switch (key) {
+      case 10:
+        calib_color_ = !calib_color_;
+        break;
+      case 32:
+        recompand_ = !recompand_;
+      }
+
+      // Fetch color calibration parameters as necessary
+      if (calib_color_)
+      {
+        lcal.getFromParam("dcam/left/image_rect_color");
+        rcal.getFromParam("dcam/right/image_rect_color");
+      }
+
+      cv_mutex.unlock();
+      usleep(10000);
+    }
+
+    return true;
   }
 };
 
