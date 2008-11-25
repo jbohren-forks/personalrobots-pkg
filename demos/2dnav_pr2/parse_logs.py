@@ -4,6 +4,7 @@ import math
 import rostools
 rostools.update_path('2dnav_pr2')
 
+import glob
 import sys, traceback, logging, rospy
 from rosrecord import *
 from std_msgs.msg import RobotBase2DOdom
@@ -43,7 +44,24 @@ class LogParser:
     return end - start
   
   def print_info(self):
-    print "Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (self.time_diff(), self.distance, self.radians)
+    return "Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (self.time_diff(), self.distance, self.radians)
+
+def parse_dir(directory):
+  output_file = open(sys.argv[2], 'w')
+  tot_dist = 0.0
+  tot_time = 0.0
+  tot_rads = 0.0
+  files = glob.glob(directory + "*.bag")
+  for file in files:
+    stats = parse(file)
+    tot_time == stats[0]
+    tot_dist += stats[1]
+    tot_rads += stats[2]
+    output_file.write(stats[3] + "\n")
+
+  total_string = "TOTAL: Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (tot_time, tot_dist, tot_rads)
+  output_file.write(total_string + "\n")
+  output_file.close()
 
 def parse(filename):
   parser = LogParser()
@@ -54,7 +72,7 @@ def parse(filename):
     if rospy.is_shutdown():
       break
 
-  parser.print_info()
+  return [parser.time_diff(), parser.distance, parser.radians, parser.print_info()]
 
 if __name__ == '__main__':
   parse(sys.argv[1])
