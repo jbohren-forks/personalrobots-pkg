@@ -275,7 +275,13 @@ void BaseController::init(std::vector<JointControlParam> jcp, mechanism::RobotSt
   {
     link = urdf_model_.getJointLink(base_wheels_[0].name_);
     robot_desc::URDF::Link::Geometry::Cylinder *wheel_geom = dynamic_cast<robot_desc::URDF::Link::Geometry::Cylinder*> (link->collision->geometry->shape);
-    wheel_radius_ = wheel_geom->radius;
+    if (wheel_geom)
+      wheel_radius_ = wheel_geom->radius;
+    else
+    {
+      ROS_WARN("Wheel geom is not found in URDF, base controller will set wheel_radius_ for %s to DEFAULT_WHEEL_RADIUS %f\n.",base_wheels_[0].name_.c_str(),DEFAULT_WHEEL_RADIUS);
+      wheel_radius_ = DEFAULT_WHEEL_RADIUS;
+    }
   }
   else
   {
