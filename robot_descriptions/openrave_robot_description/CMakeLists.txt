@@ -19,7 +19,7 @@ set(MODELS ${openrave_robot_description_PACKAGE_PATH}/models)
 ## create the models directory
 add_custom_command(
   OUTPUT ${MODELS}
-  COMMAND mkdir ${MODELS}
+  COMMAND mkdir -p ${MODELS}
 )
 
 add_custom_command(
