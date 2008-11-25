@@ -65,6 +65,7 @@
 
 #include <MoveBase.hh>
 #include <sbpl_util.hh>
+#include <environment_wrap.h>
 
 //sbpl headers file
 #include <headers.h>
@@ -342,7 +343,8 @@ namespace ros {
 					  &statsEntry.actual_time_user_sec,
 					  &statsEntry.actual_time_system_sec,
 					  &solutionStateIDs);
-	
+
+#warning 'use the (upcoming) sbpl_util/plan_wrap.h for plan conversion'
 	// Extract the solution, if available, and update statistics (as usual).
 	statsEntry.plan_length_m = 0;
 	statsEntry.plan_angle_change_rad = 0;
@@ -371,7 +373,6 @@ namespace ros {
 	      prevx = waypoint.x;
 	      prevy = waypoint.y;
 	      prevth = th;
-#warning 'add the cumulation of delta(waypoint.th) now that we can have 3D plans'
 	    }
 
 	    plan.push_back(waypoint);
