@@ -102,7 +102,9 @@ int main(int argc, char ** argv)
 			       planList,
 			       "3DKIN" != environmentType,
 			       *logos),
-	    opt.name.c_str(), &argc, argv);
+	    opt.name.c_str(),
+	    2, // hack: layoutID
+	    &argc, argv);
 }
 
 
@@ -616,7 +618,7 @@ void run_tasks()
 		  &statsEntry.plan_angle_change_rad,
 		  0 // XXXX if 3DKIN we actually want something here
 		  );
-      planList.push_back(plan);
+      planList.insert(make_pair(ii, plan));
       
       if (0 == jj)
 	statsEntry.logStream(*logos, "  FIRST_SOLUTION", "    ");

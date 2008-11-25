@@ -45,7 +45,9 @@
 
 namespace ompl {
   
-  typedef std::vector<boost::shared_ptr<waypoint_plan_t const> > planList_t;
+  /** Indexed by taskNumber, and allow more than one entry because
+      incremental planners can produce more than one plan per task. */
+  typedef std::multimap<size_t, boost::shared_ptr<waypoint_plan_t const> > planList_t;
   
   namespace gfx {
     
@@ -80,6 +82,8 @@ namespace ompl {
 	websiteMode, it just ends up taking two screenshots (one big
 	one small) and then calls exit(). */
     void display(Configuration const & config, char const * windowName,
+		 /** XXXX temporary hack */
+		 size_t layoutID,
 		 int * argc, char ** argv);
     
   }
