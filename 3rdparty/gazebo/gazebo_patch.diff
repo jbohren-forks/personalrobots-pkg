@@ -477,6 +477,32 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,21 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -713,32 +739,6 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,21 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7168)
@@ -1473,6 +1473,68 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7168)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
+Index: server/gui/GLWindow.cc
+===================================================================
+--- server/gui/GLWindow.cc	(revision 7168)
++++ server/gui/GLWindow.cc	(working copy)
+@@ -62,7 +62,7 @@
+ {
+   this->end();
+ 
+-  this->moveAmount = 1.0;
++  this->moveAmount = 0.1;
+   this->moveScale = 1;
+   this->rotateAmount = 0.5;
+ 
+@@ -223,8 +223,21 @@
+     Vector2<int> d = this->mousePos - this->prevMousePos;
+     if (this->leftMousePressed)
+     {
+-      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
+-      this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
++      if (model)
++      {
++        Pose3d pose = model->GetPose();
++        Vector3 eul = pose.rot.GetAsEuler();
++        eul.x -= d.x * 0.05;
++        eul.y -= d.y * 0.05;
++        pose.rot.SetFromEuler(eul);
++        model->SetPose(pose);
++      }
++      else
++      {
++        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
++        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      }
+     }
+     else if (this->rightMousePressed)
+     {
+@@ -267,6 +280,12 @@
+     pose.pos.z += dy * 0.05;
+     model->SetPose(pose);
+   }
++  else if (this->activeCamera && this->activeCamera->GetUserMovable())
++  {
++    this->directionVec.x +=  dy * this->moveAmount;
++    this->directionVec.y =  0;
++    this->directionVec.z =  0;
++  }
+ 
+ }
+ 
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7168)
@@ -1543,31 +1605,6 @@ Index: server/Model.cc
 +
    return this->UpdateChild();
  }
- 
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7168)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
-Index: server/gui/GLWindow.cc
-===================================================================
---- server/gui/GLWindow.cc	(revision 7168)
-+++ server/gui/GLWindow.cc	(working copy)
-@@ -62,7 +62,7 @@
- {
-   this->end();
- 
--  this->moveAmount = 1.0;
-+  this->moveAmount = 0.1;
-   this->moveScale = 1;
-   this->rotateAmount = 0.5;
  
 Index: server/World.hh
 ===================================================================
@@ -1654,6 +1691,18 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7168)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -85,6 +85,7 @@
+   // If there is a string, then add the contents to the world
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7168)
@@ -1714,18 +1763,6 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7168)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -85,6 +85,7 @@
-   // If there is a string, then add the contents to the world
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
