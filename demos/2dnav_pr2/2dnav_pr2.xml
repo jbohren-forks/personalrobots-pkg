@@ -1,11 +1,11 @@
 <launch>
   <group name="wg">
     <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" output="screen"/>
-    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/pr2_prototype1/laser_controller_config.xml" output="screen"/>-->
-    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" output="screen"/>-->
-    <!--<node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 1 .45 .40" />-->
-    <node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" output="screen"/>
-    <node pkg="2dnav_pr2" type="spine_levitation.py" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
+    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" output="screen"/>
+    <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 1 .45 .40" />
+    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" output="screen"/>
+    <node pkg="2dnav_pr2" type="spine_levitation.py" />-->
 
     <param name="axis_vx" value="3" type="int"/>
     <param name="axis_vy" value="2" type="int"/>
@@ -18,7 +18,8 @@
     <param name="deadman_button" value="4" type="int"/>
     <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
 
-    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/empty_room_5cm.pgm 0.05" respawn="false" />
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" />
+    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
     <param name="laser_x_offset" type="double" value=".275" />
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
@@ -35,11 +36,20 @@
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>
     <param name="move_base/environmentType" value="2D"/>
-    <param name="move_base/controller_frequency" value="20.0"/>
+    <param name="move_base/controller_frequency" value="15.0"/>
     <param name="move_base/planner_frequency" value="0.0"/>
-    <param name="move_base/plannerTimeLimit" value="10.0"/>
-    <param name="costmap_2d/dynamic_obstacle_window" value="60.0"/>
-    <node pkg="highlevel_controllers" type="move_base_sbpl" args="scan:=base_scan" respawn="false" />
+    <param name="move_base/plannerTimeLimit" value="5.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+    <param name="/costmap_2d/no_information_value" value="255"/>
+    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
+    <param name="/costmap_2d/inflation_radius" value="0.55"/>
+    <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
+    <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/weight" value="0.1"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
     <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
@@ -48,5 +58,8 @@
     <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
     <param name="recharge/mail_client" value="mailx -s"/>
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
+
+    <!-- For logging distance traveled -->
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/logs/odometry_log /odom /TransformArray /base_scan" />
   </group>
 </launch>
