@@ -10,7 +10,7 @@
     <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/> 
     <param name="max_publish_frequency" value="20.0"/>
     <!--node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" /-->
-    <!--node pkg="fake_localization" type="fake_localization" args="" respawn="false" /-->
+    <node pkg="fake_localization" type="fake_localization" args="" respawn="false" />
 
     <!-- Load parameters for moving the base. -->
     <param name="costmap_2d/inflation_radius" type="double" value="0.35" />
