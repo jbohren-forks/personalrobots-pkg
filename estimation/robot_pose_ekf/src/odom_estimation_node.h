@@ -111,6 +111,7 @@ private:
   tf::Transform base_vo_init_, vo_camera_;
   tf::Stamped<tf::Transform> camera_base_;
   ros::Time odom_time_, imu_time_, vo_time_, filter_time_;
+  ros::Time odom_stamp_, imu_stamp_, vo_stamp_;
   ros::Time odom_init_time_, imu_init_time_, vo_init_time_;
   bool vel_active_, odom_active_, imu_active_, vo_active_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;

@@ -113,9 +113,10 @@ namespace estimation
   {
     // receive data
     odom_mutex_.lock();
+    odom_stamp_ = odom_.header.stamp;
     odom_time_ = Time::now();
     odom_meas_ = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
-    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_.header.stamp,"wheelodom", "base_footprint"));
+    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"));
     odom_mutex_.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -148,9 +149,10 @@ namespace estimation
   {
     // receive data
     imu_mutex_.lock();
+    imu_stamp_ = imu_.header.stamp;
     imu_time_ = Time::now();
     PoseMsgToTF(imu_.pos, imu_meas_);
-    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_.header.stamp, "imu", "base_footprint"));
+    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
     imu_mutex_.unlock();
 
 #ifdef __EKF_DEBUG_FILE__
@@ -185,8 +187,9 @@ namespace estimation
     
     // get data
     vo_ = *vo;
+    vo_stamp_ = vo_.header.stamp;
     vo_time_ = Time::now();
-    robot_state_.lookupTransform("stereo_link","base_link", vo_.header.stamp, camera_base_);
+    robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
     PoseMsgToTF(vo_.pose, vo_meas_);
 
     // initialize
@@ -195,7 +198,7 @@ namespace estimation
     }
     // vo measurement as base transform
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
-    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_.header.stamp, "vo", "base_footprint"),
+    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
 			      21.0-(min(200.0,(double)vo_.inliers)/10));
     vo_mutex_.unlock();
 
@@ -281,7 +284,7 @@ namespace estimation
 
     // initialize filer with odometry frame
     if ( odom_active_ && !my_filter_.isInitialized()){
-      my_filter_.initialize(odom_meas_, odom_.header.stamp);
+      my_filter_.initialize(odom_meas_, odom_stamp_);
       ROS_INFO("Fiter initialized");
     }
   };
@@ -299,9 +302,9 @@ namespace estimation
 #ifdef __EKF_DEBUG_FILE__
       // write to file
       time_file_ << (Time::now() - odom_time_).toSec() << " " << (Time::now() - imu_time_).toSec()  << " " << (Time::now() - vo_time_).toSec()   << " "
-		 << (Time::now() - odom_.header.stamp).toSec() << " " << (Time::now() - imu_.header.stamp).toSec()  << " " << (Time::now() - vo_.header.stamp).toSec()   << " "
+		 << (Time::now() - odom_stamp_).toSec() << " " << (Time::now() - imu_stamp_).toSec()  << " " << (Time::now() - vo_stamp_).toSec()   << " "
 		 << (odom_time_ - imu_time_).toSec()   << " " << (odom_time_ - vo_time_).toSec()   << " " << (imu_time_  - vo_time_).toSec()   << " "
-		 << (odom_.header.stamp - imu_.header.stamp).toSec()   << " " << (odom_.header.stamp - vo_.header.stamp).toSec()   << " " << (imu_.header.stamp  - vo_.header.stamp).toSec()   << endl;
+		 << (odom_stamp_ - imu_stamp_).toSec()   << " " << (odom_stamp_ - vo_stamp_).toSec()   << " " << (imu_stamp_  - vo_stamp_).toSec()   << endl;
 #endif
 
       if (odom_active_ || imu_active_ || vo_active_){
@@ -322,9 +325,9 @@ namespace estimation
 
 	// update filter with exact time stamps
 	Time min_time = Time::now();
-	if (odom_active_)  min_time = min(min_time, odom_.header.stamp);
-	if (imu_active_)   min_time = min(min_time, imu_.header.stamp);
-	if (vo_active_)    min_time = min(min_time, vo_.header.stamp);
+	if (odom_active_)  min_time = min(min_time, odom_stamp_);
+	if (imu_active_)   min_time = min(min_time, imu_stamp_);
+	if (vo_active_)    min_time = min(min_time, vo_stamp_);
 	this->update(min_time);
       }
       vo_mutex_.unlock();  imu_mutex_.unlock();  odom_mutex_.unlock();
