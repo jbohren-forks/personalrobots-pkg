@@ -93,11 +93,16 @@ struct GridGraph
 
 
 
-// We want to have a breadth-first search that terminates
-// when a goal vertex is reached, or a distance threshold is
-// exceeded.  This is done by adding a visitor to the 
-// boost bfs algorithm that throws an exception when one
-// of these things happens. 
+
+
+/************************************************************
+ * We want to have a breadth-first search that terminates
+ * when a goal vertex is reached, or a distance threshold is
+ * exceeded.  This is done by adding a visitor to the 
+ * boost bfs algorithm that throws an exception when one
+ * of these things happens
+ ************************************************************/
+
 struct TerminateBfs
 {
   bool found;
@@ -152,63 +157,9 @@ bool distLessThan (GridGraph* gr, int r0, int c0, int r1, int c1, int threshold)
 
 
 
-
-/*
- * Constructor
- */
-GridGraph makeGraphFromGrid (const GridArray& grid, int inflationRadius)
-{
-  const grid_size* dims = grid.shape();
-  GridGraph gr(dims);
-  Vertex v;
-  CoordsMap coords = get (coords_t(), gr.g);
-  int threshold = inflationRadius*inflationRadius;
-
-  ROS_INFO ("Constructing map graph\n");
-  
-  for (int r=0; r!=(int)dims[0]; r++) {
-    ROS_DEBUG (" Row %d", r);
-    for (int c=0; c!=(int)dims[1]; c++) {
-
-      // A point is added to the graph iff there are no obstacles near it
-      gr.o[r][c] = true;
-      for (int r2=r-inflationRadius; r2<=r+inflationRadius; r2++) {
-        for (int c2=c-inflationRadius; c2<=c+inflationRadius; c2++) {
-          
-          //ROS_DEBUG ("%d %d %d %d %d\n", r, c, r2, c2, (r2-r)*(r2-r) + (c2-c)*(c2-c));
-          
-          if (((r2-r)*(r2-r) + (c2-c)*(c2-c) <= threshold) &&
-              (r2>=0) && (r2<(int)dims[0]) && (c2>=0) && (c2<(int)dims[1]) && grid[r2][c2]) {
-            //ROS_DEBUG ("accepted\n");
-            gr.o[r][c] = false;
-          }
-        }
-      }
-      
-      // If r,c is in the graph, add edges, do the necessary bookkeeping
-      if (gr.o[r][c]) {
-        v = add_vertex(gr.g);
-        gr.m[r][c] = v;
-        boost::put (coords, v, *(new Coords(r,c)));
-        
-        if ((r>0) && gr.o[r-1][c]) {
-          boost::add_edge (v, gr.m[r-1][c], gr.g);
-        }
-        if ((c>0) && gr.o[r][c-1]) {
-          boost::add_edge (v, gr.m[r][c-1], gr.g);
-        }
-      }
-    }
-  }
-  return gr;
-}
-
-
-
-
-
-
-
+/****************************************
+ * Printing
+ ****************************************/
 
 
 void printGraph (const Graph& g) 
@@ -482,7 +433,7 @@ void disconnectBottlenecks (GridGraph* gr)
 void addSmallestDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int r, int c, int r0, int c0, int r1, int c1, int threshold, int size)
 {
   bool someChildDisconnects=false;
-  ROS_DEBUG ("Looking for smallest disconnecting subblocks of block from (%d, %d) to (%d, %d)", r, c, r+size-1, c+size-1);
+  ROS_DEBUG_NAMED ("bottleneck_finder","Looking for smallest disconnecting subblocks of block from (%d, %d) to (%d, %d)", r, c, r+size-1, c+size-1);
   if (size > 2) {
     int blockR=-1;
     int blockC=-1;
@@ -504,7 +455,7 @@ void addSmallestDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBloc
     }
   }
   if ((size<=2) || !someChildDisconnects) {
-    ROS_DEBUG ("Adding disconnecting block at %d, %d of size %d", r, c, size);
+    ROS_DEBUG_NAMED ("bottleneck_finder","Adding disconnecting block at %d, %d of size %d", r, c, size);
     disconnectingBlocks->push_back(Block(r,c,size));
   }
 }
@@ -557,20 +508,109 @@ void connectRegions (const GridGraph& gr, const VertexCompMap& vertexComp, const
   }
 }
 
+  
+
+void removeBottleneck (BottleneckVertex v, BottleneckGraph* g)
+{
+  // First, figure out the overall union region r of v and its neighbors
+  
+  // Add a new vertex with region r, type Open
+
+  // For each neighbor n of v
+  // Connect newVertex to each neighbor of n except v
+  
+  // Remove v and its neighbors from graph (be mindful of iterator/descriptor stability)
+}
+
+
+void pruneIsolatedBottlenecks (const int regionSizeThreshold, BottleneckGraph* g)
+{
+  bool prunedBottleneck = false;
+  do {
+    // For each node of g
+
+    // If not bottleneck continue
+
+    // For each neighbor node
+    // Count number of cells in node's region.  If exceeds threshold, increment numLargeNeighbors.
+    // End for
+
+    // If numLargeNeighbors < 2
+    // removeBottleneck (g, n) and prunedBottleneck = true
+
+  } while (prunedBottleneck);
+}
+
+
+
+/************************************************************
+ * Top level
+ ************************************************************/
+
+
+// GridGraph constructor
+GridGraph makeGraphFromGrid (const GridArray& grid, int inflationRadius)
+{
+  const grid_size* dims = grid.shape();
+  GridGraph gr(dims);
+  Vertex v;
+  CoordsMap coords = get (coords_t(), gr.g);
+  int threshold = inflationRadius*inflationRadius;
+
+  ROS_INFO_NAMED ("bottleneck_finder", "Constructing map graph\n");
+  
+  for (int r=0; r!=(int)dims[0]; r++) {
+    ROS_DEBUG_NAMED ("bottleneck_finder"," Row %d", r);
+    for (int c=0; c!=(int)dims[1]; c++) {
+
+      // A point is added to the graph iff there are no obstacles near it
+
+      gr.o[r][c] = true;
+      for (int r2=r-inflationRadius; r2<=r+inflationRadius; r2++) {
+        for (int c2=c-inflationRadius; c2<=c+inflationRadius; c2++) {
+          
+          //ROS_DEBUG_NAMED ("bottleneck_finder","%d %d %d %d %d\n", r, c, r2, c2, (r2-r)*(r2-r) + (c2-c)*(c2-c));
+          
+          if (((r2-r)*(r2-r) + (c2-c)*(c2-c) <= threshold) &&
+              (r2>=0) && (r2<(int)dims[0]) && (c2>=0) && (c2<(int)dims[1]) && grid[r2][c2]) {
+            //ROS_DEBUG_NAMED ("bottleneck_finder","accepted\n");
+            gr.o[r][c] = false;
+          }
+        }
+      }
+      
+      // If r,c is in the graph, add edges, do the necessary bookkeeping
+      if (gr.o[r][c]) {
+        v = add_vertex(gr.g);
+        gr.m[r][c] = v;
+        boost::put (coords, v, *(new Coords(r,c)));
+        
+        if ((r>0) && gr.o[r-1][c]) {
+          boost::add_edge (v, gr.m[r-1][c], gr.g);
+        }
+        if ((c>0) && gr.o[r][c-1]) {
+          boost::add_edge (v, gr.m[r][c-1], gr.g);
+        }
+      }
+    }
+  }
+  return gr;
+}
 
 
 
 
-// Main loop: Iterate over the whole map and find square regions such that removing the region from the graph significantly increases the distance between cells on the boundary.
+
+// Main loop: Iterate over the whole map and find square regions such that removing the region from the graph significantly increases the distance between cells on either side
 void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int bottleneckSize, int bottleneckSkip,
                               int distanceMultMin, int distanceMultMax)
 {
-  ROS_INFO ("Searching for disconnecting blocks");
+  ROS_INFO_NAMED ("bottleneck_finder", "Searching for disconnecting blocks");
   const grid_size* dims = gr->m.shape();
   int r0, c0, r1, c1, dist=-1;
   for (grid_size r=1; r<dims[0]-bottleneckSize; r+=bottleneckSkip) {
     for (grid_size c=1; c<dims[1]-bottleneckSize; c+=bottleneckSkip) {
-      ROS_DEBUG ("Block from (%d, %d) to (%d, %d)\n", r, c, r+bottleneckSize-1, c+bottleneckSize-1);
+      ROS_DEBUG_NAMED ("bottleneck_finder","Block from (%d, %d) to (%d, %d)\n", r, c, r+bottleneckSize-1, c+bottleneckSize-1);
       
       // Will check pairs of cells on opposite sides of this block to see if they become disconnected
       bool disconnected = false;
@@ -598,17 +638,17 @@ void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int
         // At this point, (r0,c0) and (r1,c1) are unoccupied legal cells on opposite sides of the block
         // Check if the distance is less than lower limit with the block, but greater than upper limit with block removed from graph
         dist = abs(r0-r1) + abs(c0-c1);
-        ROS_DEBUG ("Checking if removing block %d, %d changes distance between %d,%d, and %d, %d from < %d to >= %d", 
+        ROS_DEBUG_NAMED ("bottleneck_finder","Checking if removing block %d, %d changes distance between %d,%d, and %d, %d from < %d to >= %d", 
                    r, c, r0, c0, r1, c1, dist+distanceMultMin*bottleneckSize, dist+distanceMultMax*bottleneckSize);
 
 
         if (distLessThan(gr, r0, c0, r1, c1, dist+distanceMultMin*bottleneckSize)) {
-          ROS_DEBUG ("Within threshold before removing block");
+          ROS_DEBUG_NAMED ("bottleneck_finder","Within threshold before removing block");
           removeBlock (gr, r, c, bottleneckSize);
           disconnected = !distLessThan(gr, r0, c0, r1, c1, dist+distanceMultMax*bottleneckSize);
           addBlock (gr, r, c, bottleneckSize);
           if (disconnected) {
-            ROS_DEBUG ("Disconnected because of cells (%d, %d) and (%d, %d)\n", r0, c0, r1, c1);
+            ROS_DEBUG_NAMED ("bottleneck_finder","Disconnected because of cells (%d, %d) and (%d, %d)\n", r0, c0, r1, c1);
             break;
           }
         }
@@ -620,13 +660,12 @@ void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int
         addSmallestDisconnectingBlocks (gr, disconnectingBlocks, r, c, r0, c0, r1, c1, dist+distanceMultMax*bottleneckSize, bottleneckSize);
       }
       else {
-        ROS_DEBUG ("Block is connected\n");
+        ROS_DEBUG_NAMED ("bottleneck_finder","Block is connected\n");
       }
     }
   }
 }
 
-    
 
 
 // The top-level function that returns a topological graph containing bottleneck and open regions, given an occupancy grid
@@ -666,6 +705,8 @@ BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bot
     boost::put (vertexDescriptions, g, v, d);
   }
   connectRegions (gr, vertexComp, bottleneckGraphVertices, &g);
+  pruneIsolatedBottlenecks (-1, &g);
+  
 
   return g;
 }

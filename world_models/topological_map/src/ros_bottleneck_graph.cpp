@@ -31,17 +31,86 @@
 #include <ros/node.h>
 #include <rosconsole/rosconsole.h>
 #include <std_srvs/StaticMap.h>
+#include <std_msgs/RobotBase2DOdom.h>
 #include "topological_map/bottleneck_graph.h"
+
+
+namespace topological_map
+{
+
+enum NodeStatus { WAITING_FOR_MAP, CREATING_BOTTLENECK_GRAPH, READY };
 
 class BottleneckGraphRos: public ros::node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
+
+  void loadMap(void);
+  void computeBottleneckGraph(void);
+  void setupTopics(void);
+
+  void poseCallback(void);
+
+  void convertToMapIndices(double, double, int*, int*);
+
+
+private:
+  BottleneckGraph bottleneckGraph_;
+  NodeStatus nodeStatus_;
+  GridArray* grid_;
+
+  int sx_, sy_;
+  double resolution_;
+
+  int size_, skip_, radius_, distanceMin_, distanceMax_;
+
+  std_msgs::RobotBase2DOdom pose_;
 };
 
-BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : ros::node("bottleneckgraph_ros")
-{
 
+
+
+
+// Constructor
+BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : 
+  ros::node("bottleneckgraph_ros"), nodeStatus_(WAITING_FOR_MAP), size_(size), skip_(skip), radius_(radius),
+  distanceMin_(distanceMin), distanceMax_(distanceMax)
+{
+}
+
+
+
+
+
+/************************************************************
+ * Callbacks
+ ************************************************************/
+
+void BottleneckGraphRos::poseCallback (void)
+{
+  int r, c;
+  convertToMapIndices (pose_.pos.x, pose_.pos.y, &r,&c);
+  ROS_DEBUG ("At map cell %d, %d\n", r, c);
+}
+
+
+
+/************************************************************
+ * Ops called by main
+ ************************************************************/
+
+void BottleneckGraphRos::computeBottleneckGraph (void)
+{
+  ROS_INFO ("Computing bottleneck graph... (this could take a while)\n");
+  bottleneckGraph_ = makeBottleneckGraph (*grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
+  nodeStatus_ = READY;
+  ROS_INFO ("Done computing bottleneck graph\n");
+  printBottlenecks (bottleneckGraph_, *grid_);
+}  
+
+void BottleneckGraphRos::loadMap (void)
+{
+    
   std_srvs::StaticMap::request req;
   std_srvs::StaticMap::response resp;
   ROS_INFO ("Requesting map... \n");
@@ -53,32 +122,69 @@ BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int dista
   }
   sleep(2);
   ROS_INFO ("Received a %d by %d map at %f m/pix\n", resp.map.width, resp.map.height, resp.map.resolution);
-  int sx = resp.map.width;
-  int sy = resp.map.height;
+  nodeStatus_ = CREATING_BOTTLENECK_GRAPH;
+  sx_ = resp.map.width;
+  sy_ = resp.map.height;
+  resolution_ = resp.map.resolution;
+
+  grid_ = new GridArray(boost::extents[sy_][sx_]);
   
-  topological_map::GridArray grid(boost::extents[sy][sx]);
   int i = 0;
-  for (int r=0; r<sy; r++) {
-    for (int c=0; c<sx; c++) {
+  bool expected[255];
+  for (int r=0; r<sy_; r++) {
+    for (int c=0; c<sx_; c++) {
       int val = resp.map.data[i++];
-      grid[r][c] = (val == 100);
-      if ((val != 0) && (val != 100) && (val != 255)) {
+      (*grid_)[r][c] = (val == 100);
+      if ((val != 0) && (val != 100) && (val != 255) && !expected[val]) {
+        expected[val] = true;
         ROS_WARN ("Treating unexpected val %d in returned static map as occupied\n", val);
       }
     }
   }
+}
+
+void BottleneckGraphRos::setupTopics (void)
+{
+  // Subscribe to 2d position
+  subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 100);
+
+} // namespace topological_map
   
-  topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (grid, size, skip, radius, distanceMin, distanceMax);
-  topological_map::printBottlenecks (g, grid);
-}  
 
 
+
+
+
+
+/************************************************************
+ * Internal
+ ************************************************************/
+
+void BottleneckGraphRos::convertToMapIndices (double x, double y, int* r, int* c)
+{
+  // Almost certainly wrong, as it ignores origin
+  // Also need to check if x and y should be reversed
   
+  *r = (int)floor(y/resolution_);
+  *c = (int)floor(x/resolution_);
+}
+
+
+}
+
 
 int main(int argc, char** argv)
 {
   ros::init(argc, argv);
   assert (argc >= 6);
-  BottleneckGraphRos node (atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
-  node.shutdown();
+  topological_map::BottleneckGraphRos* node = new topological_map::BottleneckGraphRos(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+
+  node->loadMap();
+  node->setupTopics();
+  node->computeBottleneckGraph();
+  node->spin();
+  node->shutdown();
+  delete node;
+
+  return 0;
 }
