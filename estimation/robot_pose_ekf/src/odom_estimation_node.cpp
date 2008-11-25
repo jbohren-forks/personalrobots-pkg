@@ -72,7 +72,6 @@ namespace estimation
     // paramters
     param("odom_estimation/freq", freq_, 30.0);
     param("odom_estimation/sensor_timeout", timeout_, 1.0);
-    param("odom_estimation/sensor_init_time", sensor_init_time_, 1.0);
 
     // fiexed transform between camera frame and vo frame
     vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
@@ -117,7 +116,20 @@ namespace estimation
     odom_time_ = Time::now();
     odom_meas_ = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"));
-    odom_mutex_.unlock();
+    
+    // activate odom
+    if (!odom_active_) {
+      if (!odom_initializing_){
+	odom_initializing_ = true;
+	odom_init_stamp_ = odom_stamp_;
+	ROS_INFO("Initializing Odom sensor");      
+      }
+      if ( filter_stamp_ >= odom_init_stamp_){
+	odom_active_ = true;
+	odom_initializing_ = false;
+	ROS_INFO("Odom sensor activated");      
+      }
+    }
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
@@ -126,19 +138,7 @@ namespace estimation
     odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
 #endif
 
-    // activate odom
-   if (!odom_active_) {
-     if (!odom_initializing_){
-       odom_initializing_ = true;
-       odom_init_time_ = odom_time_;
-       ROS_INFO("Initializing Odom sensor");      
-     }
-     else if ( (odom_time_ - odom_init_time_).toSec() > sensor_init_time_){
-       odom_active_ = true;
-       odom_initializing_ = false;
-       ROS_INFO("Odom sensor activated");      
-     }
-   }
+    odom_mutex_.unlock();
   };
 
 
@@ -153,7 +153,20 @@ namespace estimation
     imu_time_ = Time::now();
     PoseMsgToTF(imu_.pos, imu_meas_);
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
-    imu_mutex_.unlock();
+
+    // activate imu
+    if (!imu_active_) {
+      if (!imu_initializing_){
+	imu_initializing_ = true;
+	imu_init_stamp_ = imu_stamp_;
+	ROS_INFO("Initializing Imu sensor");      
+      }
+      if ( filter_stamp_ >= imu_init_stamp_){
+	imu_active_ = true;
+	imu_initializing_ = false;
+	ROS_INFO("Imu sensor activated");      
+      }
+    }
 
 #ifdef __EKF_DEBUG_FILE__
     // write to file
@@ -162,19 +175,7 @@ namespace estimation
     imu_file_ << yaw << endl;
 #endif
 
-    // activate imu
-   if (!imu_active_) {
-     if (!imu_initializing_){
-       imu_initializing_ = true;
-       imu_init_time_ = imu_time_;
-       ROS_INFO("Initializing Imu sensor");      
-     }
-     else if ( (imu_time_ - imu_init_time_).toSec() > sensor_init_time_){
-       imu_active_ = true;
-       imu_initializing_ = false;
-       ROS_INFO("Imu sensor activated");      
-     }
-   }
+    imu_mutex_.unlock();
   };
 
 
@@ -183,9 +184,8 @@ namespace estimation
   // callback function for VO data
   void OdomEstimationNode::voCallback(const MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo)
   {
-    vo_mutex_.lock();
-    
     // get data
+    vo_mutex_.lock();
     vo_ = *vo;
     vo_stamp_ = vo_.header.stamp;
     vo_time_ = Time::now();
@@ -200,29 +200,31 @@ namespace estimation
     Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
     my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
 			      21.0-(min(200.0,(double)vo_.inliers)/10));
-    vo_mutex_.unlock();
+    
+    // activate vo
+    if (!vo_active_) {
+      if (!vo_initializing_){
+	vo_initializing_ = true;
+	vo_init_stamp_ = vo_stamp_;
+	ROS_INFO("Initializing Vo sensor");      
+      }
+      if (filter_stamp_ >= vo_init_stamp_){
+	vo_active_ = true;
+	vo_initializing_ = false;
+	ROS_INFO("Vo sensor activated");      
+      }
+    }
 
 #ifdef __EKF_DEBUG_FILE__
-      // write to file
+    // write to file
     double Rx, Ry, Rz;
     vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
     vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
 	     << Rx << " " << Ry << " " << Rz << endl;
 #endif
 
-    // activate vo
-   if (!vo_active_) {
-     if (!vo_initializing_){
-       vo_initializing_ = true;
-       vo_init_time_ = vo_time_;
-       ROS_INFO("Initializing Vo sensor");      
-     }
-     else if ( (vo_time_ - vo_init_time_).toSec() > sensor_init_time_){
-       vo_active_ = true;
-       vo_initializing_ = false;
-       ROS_INFO("Vo sensor activated");      
-     }
-    }
+
+   vo_mutex_.unlock();
   };
 
 
@@ -243,56 +245,6 @@ namespace estimation
 
 
 
-  // update filter
-  void OdomEstimationNode::update(const Time& time)
-  {
-    // update filter
-    if ( my_filter_.isInitialized() )  {
-      my_filter_.update(odom_active_, imu_active_, vo_active_,  time);
-      
-      // output most recent estimate and relative covariance
-      my_filter_.getEstimate(output_);
-      publish("odom_estimation", output_);
-
-      // broadcast most recent estimate to TransformArray
-      Stamped<Transform> tmp;
-      my_filter_.getEstimate(0.0, tmp);
-      odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
-
-
-#ifdef __EKF_DEBUG_FILE__
-      // write to file
-      ColumnVector estimate; 
-      my_filter_.getEstimate(estimate);
-      for (unsigned int i=1; i<=6; i++)
-	corr_file_ << estimate(i) << " ";
-      corr_file_ << endl;
-
-      // write to file
-      /*
-      Stamped<Transform> est_now, est_last;
-      my_filter_.GetEstimate(Time::now(), est_now);
-      my_filter_.GetEstimate(0.0, est_last);
-      double tmp, r_now, r_last;
-      est_now.getBasis().getEulerZYX(r_now, tmp, tmp);
-      est_last.getBasis().getEulerZYX(r_last, tmp, tmp);
-      extra_file_ << est_now.getOrigin().x()  << " " << est_now.getOrigin().y()  << " " << est_now.getOrigin().z()  << " " << r_now << " "
-      << est_last.getOrigin().x() << " " << est_last.getOrigin().y() << " " << est_last.getOrigin().z() << " " << r_last << endl;
-      */
-#endif
-    }
-
-    // initialize filer with odometry frame
-    if ( odom_active_ && !my_filter_.isInitialized()){
-      my_filter_.initialize(odom_meas_, odom_stamp_);
-      ROS_INFO("Fiter initialized");
-    }
-  };
-
-
-
-
-
 
   // filter loop
   void OdomEstimationNode::spin()
@@ -306,29 +258,62 @@ namespace estimation
 		 << (odom_time_ - imu_time_).toSec()   << " " << (odom_time_ - vo_time_).toSec()   << " " << (imu_time_  - vo_time_).toSec()   << " "
 		 << (odom_stamp_ - imu_stamp_).toSec()   << " " << (odom_stamp_ - vo_stamp_).toSec()   << " " << (imu_stamp_  - vo_stamp_).toSec()   << endl;
 #endif
+      // initial value for filter stamp
+      filter_stamp_ = Time::now();
 
+      // update filter when one of the sensors is active
       if (odom_active_ || imu_active_ || vo_active_){
 
-	// check if sensors are still active
-	if (odom_active_ && (Time::now() - odom_time_).toSec() > timeout_){
+	// check which sensors are still active
+	if ((odom_active_ || odom_initializing_) && 
+	    (Time::now() - odom_time_).toSec() > timeout_){
 	  odom_active_ = false; odom_initializing_ = false;
 	  ROS_INFO("Odom sensor not active any more");
 	}
-	if (imu_active_ && (Time::now() - imu_time_).toSec() > timeout_){
+	if ((imu_active_ || imu_initializing_) && 
+	    (Time::now() - imu_time_).toSec() > timeout_){
 	  imu_active_ = false;  imu_initializing_ = false;
 	  ROS_INFO("Imu sensor not active any more");
 	}
-	if (vo_active_ && (Time::now() - vo_time_).toSec() > timeout_){
+	if ((vo_active_ || vo_initializing_) && 
+	    (Time::now() - vo_time_).toSec() > timeout_){
 	  vo_active_ = false;  vo_initializing_ = false;
 	  ROS_INFO("VO sensor not active any more");
 	}
 
-	// update filter with exact time stamps
-	Time min_time = Time::now();
-	if (odom_active_)  min_time = min(min_time, odom_stamp_);
-	if (imu_active_)   min_time = min(min_time, imu_stamp_);
-	if (vo_active_)    min_time = min(min_time, vo_stamp_);
-	this->update(min_time);
+	// update filter at time where all sensor measurements are available
+	if (odom_active_)  filter_stamp_ = min(filter_stamp_, odom_stamp_);
+	if (imu_active_)   filter_stamp_ = min(filter_stamp_, imu_stamp_);
+	if (vo_active_)    filter_stamp_ = min(filter_stamp_, vo_stamp_);
+
+	// update filter
+	if ( my_filter_.isInitialized() )  {
+	  my_filter_.update(odom_active_, imu_active_, vo_active_,  filter_stamp_);
+      
+	  // output most recent estimate and relative covariance
+	  my_filter_.getEstimate(output_);
+	  publish("odom_estimation", output_);
+
+	  // broadcast most recent estimate to TransformArray
+	  Stamped<Transform> tmp;
+	  my_filter_.getEstimate(0.0, tmp);
+	  odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
+
+#ifdef __EKF_DEBUG_FILE__
+	  // write to file
+	  ColumnVector estimate; 
+	  my_filter_.getEstimate(estimate);
+	  for (unsigned int i=1; i<=6; i++)
+	    corr_file_ << estimate(i) << " ";
+	  corr_file_ << endl;
+#endif
+	}
+
+	// initialize filer with odometry frame
+	if ( odom_active_ && !my_filter_.isInitialized()){
+	  my_filter_.initialize(odom_meas_, odom_stamp_);
+	  ROS_INFO("Fiter initialized");
+	}
       }
       vo_mutex_.unlock();  imu_mutex_.unlock();  odom_mutex_.unlock();
       

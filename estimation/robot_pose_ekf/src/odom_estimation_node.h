@@ -83,9 +83,6 @@ public:
 
 private:
 
-  /// update filter
-  void update(const ros::Time& time);
-
   /// ekf filter
   OdomEstimation my_filter_;
 
@@ -110,12 +107,12 @@ private:
   tf::Transform odom_meas_, imu_meas_, vo_meas_;
   tf::Transform base_vo_init_, vo_camera_;
   tf::Stamped<tf::Transform> camera_base_;
-  ros::Time odom_time_, imu_time_, vo_time_, filter_time_;
-  ros::Time odom_stamp_, imu_stamp_, vo_stamp_;
-  ros::Time odom_init_time_, imu_init_time_, vo_init_time_;
+  ros::Time odom_time_, imu_time_, vo_time_;
+  ros::Time odom_stamp_, imu_stamp_, vo_stamp_, filter_stamp_;
+  ros::Time odom_init_stamp_, imu_init_stamp_, vo_init_stamp_;
   bool vel_active_, odom_active_, imu_active_, vo_active_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;
-  double freq_, timeout_, sensor_init_time_;
+  double freq_, timeout_;
 
   // mutex
   ros::thread::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;
