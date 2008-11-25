@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.6)
+include(rosbuild)
+add_definitions(-Wall)
+rospack(openraveros)
+add_executable(openraveros src/openraveros.cpp)
+target_link_libraries (openraveros pthread openrave-core)

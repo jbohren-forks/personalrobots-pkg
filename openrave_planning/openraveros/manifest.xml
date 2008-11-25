@@ -1,0 +1,11 @@
+<package>
+  <description brief="OpenRAVE Session for ROS">
+    Main openrave server that provides a session interface.
+  </description>
+  <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
+  <license>BSD</license>
+  <depend package="roscpp"/>
+  <depend package="openrave"/>
+  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
+</package>

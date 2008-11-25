@@ -1,0 +1,2 @@
+depends on roscpp sessions, which can be found in
+https://ros.svn.sourceforge.net/svnroot/ros/branches/sessions-rosen/core/roscpp
