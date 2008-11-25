@@ -48,6 +48,7 @@ bool CamDC1394::_shutdown()
 
 bool CamDC1394::_init()
 {
+  printf("camdc1394 init\n");
   dc = dc1394_new();
   dc1394camera_list_t *cams = NULL;
   ENSURE(dc1394_camera_enumerate(dc, &cams));
@@ -84,6 +85,15 @@ bool CamDC1394::_init()
                                   DC1394_USE_MAX_AVAIL,
                                   0, 0, 640, 480));
   }
+  uint32_t sh1, sh2, g1, g2, ga1, ga2, b1, b2;
+  dc1394_feature_get_boundaries(cam, DC1394_FEATURE_SHUTTER, &sh1, &sh2);
+  printf("shutter range: %d to %d\n", sh1, sh2);
+  dc1394_feature_get_boundaries(cam, DC1394_FEATURE_GAIN, &g1, &g2);
+  printf("gain range: %d to %d\n", g1, g2);
+  dc1394_feature_get_boundaries(cam, DC1394_FEATURE_GAMMA, &ga1, &ga2);
+  printf("gamma range: %d to %d\n", ga1, ga2);
+  dc1394_feature_get_boundaries(cam, DC1394_FEATURE_BRIGHTNESS, &b1, &b2);
+  printf("brightness range: %d to %d\n", b1, b2);
   /*
   printf("turning off camera transmission...\n");
   ros::Time t_end(ros::Time::now());
@@ -147,6 +157,21 @@ bool CamDC1394::_stopImageStream()
 {
   ENSURE(dc1394_video_set_transmission(cam, DC1394_OFF));
   ENSURE(dc1394_capture_stop(cam));
+  return true;
+}
+
+bool CamDC1394::set(const char *setting, uint32_t value)
+{
+  printf("setting %s to %d\n", setting, value);
+  if (!strcmp(setting, "shutter"))
+    dc1394_feature_set_value(cam, DC1394_FEATURE_SHUTTER, value);
+  else if (!strcmp(setting, "gain"))
+    dc1394_feature_set_value(cam, DC1394_FEATURE_GAIN, value);
+  else if (!strcmp(setting, "gamma"))
+    dc1394_feature_set_value(cam, DC1394_FEATURE_GAMMA, value);
+  else if (!strcmp(setting, "brightness"))
+    dc1394_feature_set_value(cam, DC1394_FEATURE_BRIGHTNESS, value);
+
   return true;
 }
 

@@ -12,6 +12,7 @@ class CamDC1394 : public Cam
 public:
   CamDC1394();
   virtual ~CamDC1394();
+  virtual bool set(const char *setting, uint32_t value);
 protected:
   virtual bool _init();
   virtual uint8_t *_savePhoto();

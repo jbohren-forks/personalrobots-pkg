@@ -11,7 +11,7 @@ int main(int, char **)
   //cam->takePhoto(IMAGESIZE_640_480, raster);
   cam->startImageStream();
   uint8_t *raster = cam->savePhoto();
-  printf("raster = %x\n", raster);
+  printf("raster = %x\n", (unsigned)raster);
   if (raster)
     delete[] raster;
   cam->stopImageStream();

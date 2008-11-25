@@ -2,11 +2,10 @@
 #define BORG_H
 
 #include "ros/types.h"
+#include "cam.h"
 
 namespace borg
 {
-
-class Cam;
 
 class Borg
 {
@@ -16,7 +15,7 @@ public:
 
   Borg(uint32_t opts);
   ~Borg();
-
+  
   Cam *cam;
 private:
   int fps;

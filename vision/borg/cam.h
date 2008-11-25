@@ -9,7 +9,7 @@ namespace borg
 class Cam
 {
 public:
-  Cam() { }
+  Cam() : config_status(CAM_NOINIT) { }
   virtual ~Cam() { }
 
   bool init();
@@ -17,6 +17,7 @@ public:
   bool shutdown();
   bool startImageStream();
   bool stopImageStream();
+  virtual bool set(const char *setting, uint32_t value) = 0;
 
 protected:
   virtual bool _init() { return true; }

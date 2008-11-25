@@ -1,5 +1,5 @@
 <package>
-  <author>Morgan Quigley, Quoc Le, Sid Batra</author>
+  <author>Morgan Quigley, Quoc Le, Sid Batra, Jeremy Leibs</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <depend package="libdc1394v2"/>

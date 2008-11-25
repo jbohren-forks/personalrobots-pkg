@@ -1,9 +1,13 @@
+#include <map>
 #include <string>
+#include <stdexcept>
 #include "ros/common.h"
 #include "borg.h"
+#include "cam_dc1394.h"
 
 using namespace borg;
 using std::string;
+using std::map;
 
 Borg::Borg(uint32_t opts)
 {
@@ -19,6 +23,8 @@ Borg::Borg(uint32_t opts)
            "  ln -s config/avt_pike.config borg-config\n");
     exit(1);
   }
+  string cam_str;
+  map<string, uint32_t> cam_settings;
   for (int line = 1; !feof(f); line++)
   {
     char linebuf[200];
@@ -33,18 +39,43 @@ Borg::Borg(uint32_t opts)
     if (n != 2)
     {
       printf("unable to parse line %d of the borg-config file\n", line);
-      exit(1);
+      throw std::runtime_error("borg init failed");
     }
-    printf("key = [%s] value = [%s]\n", key, value);
+    if (!strcmp(key, "fps"))
+      fps = atoi(value);
+    else if (!strcmp(key, "cam"))
+      cam_str = string(value);
+    else if (!strncmp(key, "cam_", 4))
+      cam_settings[string(key+4)] = atoi(value);
+    else
+      printf("unknown key = [%s] with value = [%s]\n", key, value);
   }
   fclose(f);
   if (opts & INIT_CAM)
   {
-    printf("init cam\n");
+    if (cam_str == string("dc1394"))
+    {
+      printf("calling dc1394 init\n");
+      cam = new CamDC1394();
+      cam->init();
+      for (map<string,uint32_t>::iterator s = cam_settings.begin();
+           s != cam_settings.end(); ++s)
+        cam->set(s->first.c_str(), s->second);
+    }
+    else
+    {
+      printf("unknown camera\n");
+      throw std::runtime_error("borg init failed");
+    }
   }
 }
 
 Borg::~Borg()
 {
+  if (cam)
+  {
+    cam->shutdown();
+    delete cam;
+  }
 }
 

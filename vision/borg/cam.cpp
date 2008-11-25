@@ -42,6 +42,8 @@ uint8_t *Cam::savePhoto()
 
 bool Cam::shutdown()
 {
+  if (config_status == CAM_STREAMING)
+    _stopImageStream();
   if (config_status == CAM_OK || config_status == CAM_ERROR)
     return _shutdown();
   return false;
