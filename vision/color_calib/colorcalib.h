@@ -38,7 +38,8 @@
 #include "opencv/cxcore.h"
 
 static const uint32_t COLOR_CAL_BGR = 1;
-static const uint32_t COLOR_CAL_FLOAT = 1;
+static const uint32_t COLOR_CAL_FLOAT = 1 << 1;
+static const uint32_t COLOR_CAL_COMPAND_DISPLAY = 1 << 2;
 
 float srgb2lrgb(float x);
 float lrgb2srgb(float x);

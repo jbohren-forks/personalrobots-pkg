@@ -39,8 +39,8 @@
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 #include "ros/node.h"
-#include "std_msgs/ImageArray.h"
-#include "image_utils/cv_bridge.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/CvBridge.h"
 
 #include <sys/stat.h>
 
@@ -51,7 +51,8 @@ using namespace std;
 class ColorCalib : public ros::node
 {
 public:
-  std_msgs::ImageArray image_msg;
+  image_msgs::Image image;
+  image_msgs::CvBridge bridge;
 
   ros::thread::mutex cv_mutex;
 
@@ -61,7 +62,7 @@ public:
 
   ColorCalib() : node("color_calib", ros::node::ANONYMOUS_NAME), first(true)
   { 
-    subscribe("images", image_msg, &ColorCalib::image_cb, 1);
+    subscribe("image", image, &ColorCalib::image_cb, 1);
     color_cal = cvCreateMat( 3, 3, CV_32FC1);
   }
 
@@ -72,67 +73,61 @@ public:
 
   void image_cb()
   {
-    if (!first) 
+    if (!first)
       return;
     else
       first = false;
 
+    //    unsubscribe("image");
+
     cv_mutex.lock();
 
-    for (uint32_t i = 0; i < image_msg.get_images_size(); i++)
+    if (bridge.fromImage(image, "bgr"))
     {
-      string l = image_msg.images[i].label;
+      IplImage* cv_img  = bridge.toIpl();
+      IplImage* cv_img_decompand = cvCreateImage(cvGetSize(cv_img), IPL_DEPTH_32F, 3);
+      decompand(cv_img, cv_img_decompand);
 
-      if (image_msg.images[i].colorspace == std::string("rgb24"))
+      find_calib(cv_img_decompand, color_cal, COLOR_CAL_BGR | COLOR_CAL_COMPAND_DISPLAY);
+
+      printf("Color calibration:\n");
+      for (int i = 0; i < 3; i ++)
       {
-        CvBridge<std_msgs::Image>* cv_bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-        IplImage* img;
-
-        if (cv_bridge->to_cv(&img))
+        for (int j = 0; j < 3; j++)
         {
-          IplImage* img2 = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
-
-          decompand(img, img2);
-
-          find_calib(img2, color_cal, COLOR_CAL_BGR | COLOR_CAL_COMPAND_DISPLAY);
-          
-          printf("Color calibration:\n");
-          for (int i = 0; i < 3; i ++)
-          {
-            for (int j = 0; j < 3; j++)
-            {
-              printf("%f ", cvmGet(color_cal, i, j));
-            }
-            printf("\n");
-          }
-
-          IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
-          cvTransform(img2, corrected_img, color_cal);
-
-          XmlRpc::XmlRpcValue xml_color_cal;
-          for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-              xml_color_cal[3*i + j] = cvmGet(color_cal, i, j);
-          
-          set_param(map_name("images") + std::string("/") + l + std::string("/color_cal"), xml_color_cal);
-          
-
-          cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
-          cvShowImage("color_rect", corrected_img);
-
-          cvReleaseImage(&img);
-          cvReleaseImage(&img2);
+          printf("%f ", cvmGet(color_cal, i, j));
         }
-
-        delete cv_bridge;
+        printf("\n");
       }
+
+      IplImage* cv_img_correct = cvCreateImage(cvGetSize(cv_img), IPL_DEPTH_32F, 3);
+      cvTransform(cv_img_decompand, cv_img_correct, color_cal);
+      
+      XmlRpc::XmlRpcValue xml_color_cal;
+      for (int i = 0; i < 3; i++)
+        for (int j = 0; j < 3; j++)
+          xml_color_cal[3*i + j] = cvmGet(color_cal, i, j);
+      
+      set_param(map_name("image") + std::string("/") + std::string("/color_cal"), xml_color_cal);
+
+      cvNamedWindow("color_rect", CV_WINDOW_AUTOSIZE);
+      cvShowImage("color_rect", cv_img_correct);
+
+      compand(cv_img_correct, cv_img_correct);
+      cvNamedWindow("color_rect_compand", CV_WINDOW_AUTOSIZE);
+      cvShowImage("color_rect_compand", cv_img_correct);
+
+      cvReleaseImage(&cv_img_decompand);
+      cvReleaseImage(&cv_img_correct);
     }
+
     cv_mutex.unlock();
   }
 
   void check_keys() 
   {
     cv_mutex.lock();
+
     if (cvWaitKey(3) == 10)
       self_destruct();
 

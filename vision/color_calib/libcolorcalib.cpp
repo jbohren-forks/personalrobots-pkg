@@ -108,12 +108,6 @@ float lrgb2srgb(float x)
 
 void compand(IplImage* src, IplImage* dst)
 {
-
-  // TODO: type checking that src is type 8U or else "companding" makes less sense
-
-  int channels = dst->nChannels;
-  int depth = src->depth;
-
   static int compandmap[4096];
   static bool has_map = false;
 
@@ -141,36 +135,34 @@ void compand(IplImage* src, IplImage* dst)
     has_map = true;
   }
   
-  if (depth == IPL_DEPTH_32F)
+  if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_32F)
   {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
         {
           int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*4096.0);
           val = MAX(val, 0);
           val = MIN(val, 4095);
-          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
-            compandmap[ val ] >> 2;
-        }
-  } else {
+          ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
+            (float)(compandmap[ val ])/1024.0;
+         }
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_8U) {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
-          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
-            compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 4] >> 2;
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*4096.0);
+          val = MAX(val, 0);
+          val = MIN(val, 4095);
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[ val ] >> 2;
+        }
   }
 }
 
 
 void decompand(IplImage* src, IplImage* dst)
 {
-
-  // TODO: type checking that src is type 8U or else "companding" makes less sense
-
-  int channels = dst->nChannels;
-  int depth = dst->depth;
-
   static float compandmap[1024];
   static bool has_map = false;
 
@@ -198,19 +190,42 @@ void decompand(IplImage* src, IplImage* dst)
     has_map = true;
   }
   
-  if (depth == IPL_DEPTH_32F)
+  if (src->depth == IPL_DEPTH_8U && dst->depth == IPL_DEPTH_32F)
   {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
           ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
             compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 2];
-  } else {
+  } else if (src->depth == IPL_DEPTH_8U && dst->depth == IPL_DEPTH_8U)
+  {
     for (int i = 0; i < src->height; i++)
       for (int j = 0; j < src->width; j++)
-        for (int k = 0; k < channels; k++)
+        for (int k = 0; k < src->nChannels; k++)
           ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = 
             compandmap[((uchar *)(src->imageData + i*src->widthStep))[j*src->nChannels + k] << 2]*255;
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_32F)
+  {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*1024.0);
+          val = MAX(val, 0);
+          val = MIN(val, 1024);
+          ((float *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[val];
+        }
+  } else if (src->depth == IPL_DEPTH_32F && dst->depth == IPL_DEPTH_8U)
+  {
+    for (int i = 0; i < src->height; i++)
+      for (int j = 0; j < src->width; j++)
+        for (int k = 0; k < src->nChannels; k++)
+        {
+          int val = int(((float *)(src->imageData + i*src->widthStep))[j*src->nChannels + k]*1024.0);
+          val = MAX(val, 0);
+          val = MIN(val, 1024);
+          ((uchar *)(dst->imageData + i*dst->widthStep))[j*dst->nChannels + k] = compandmap[val]*255;
+        }
   }
 }
 
@@ -309,6 +324,7 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
 
   bool use_bgr = flags & COLOR_CAL_BGR;
   bool use_float = (img->depth == IPL_DEPTH_32F);
+  bool do_compand = flags & COLOR_CAL_COMPAND_DISPLAY;
 
   float mult;
   if (use_float)
@@ -321,7 +337,11 @@ bool find_calib(IplImage* img, CvMat* mat, int flags)
 
   if (!use_bgr)
     cvCvtColor(g_disp_img, g_disp_img, CV_RGB2BGR);
+
+  if (do_compand)
+    compand(g_disp_img, g_disp_img); 
  
+
   CvScalar a = cvAvg(g_img);
   printf("Avg value of g: %f %f %f\n", a.val[0], a.val[1], a.val[2]); 
 

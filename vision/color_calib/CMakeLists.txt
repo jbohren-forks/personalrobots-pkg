@@ -11,3 +11,6 @@ target_link_libraries(calib_test colorcalib)
 
 rospack_add_executable(calib_node calib_node.cpp)
 target_link_libraries(calib_node colorcalib)
+
+rospack_add_executable(calib_node_dcam calib_node_dcam.cpp)
+target_link_libraries(calib_node_dcam colorcalib)
