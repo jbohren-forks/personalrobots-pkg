@@ -30,6 +30,18 @@ bool compareMatrices(NEWMAT::Matrix g0, NEWMAT::Matrix g1)
 int main(int argc, char** argv)
 {
 
+/* Joint angles and speeds for testing */
+  double angles[7] = {0,0,0,0,0,0,0};
+  double angles_check[7] = { -1.42361,1.359057, -1.5, 1.2, -2.4035 ,1.86428 ,0.118674};
+
+  if(argc == 8)
+    {
+      for(int i=0; i < 7; i++)
+        {
+          angles_check[i] = atof(argv[i+1]);
+        }
+    }
+
   srand(time(NULL));
 
   NEWMAT::Matrix g(4,4);
@@ -91,9 +103,6 @@ int main(int argc, char** argv)
 
   arm7DOF myArm(anchor,axis,joint_type);
 
-/* Joint angles and speeds for testing */
-  double angles[7] = {0,0,0,0,0,0,0};
-  double angles_check[7] = { -1.42361,1.359057, -1.5, 1.2, -2.4035 ,1.86428 ,0.118674};
 
   NEWMAT::Matrix g0 = myArm.ComputeFK(angles);
   NEWMAT::Matrix gCheck = myArm.ComputeFK(angles);
