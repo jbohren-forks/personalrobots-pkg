@@ -59,9 +59,53 @@ PyObject *detect(PyObject *self, PyObject *args)
     return r;
 }
 
+PyObject *setScales(PyObject *self, PyObject *args)
+{
+    star_detector_t *sd = (star_detector_t*)self;
+    int scales;
+    if (!PyArg_ParseTuple(args, "i", &scales))
+        return NULL;
+    sd->psd->setScales(scales);
+    Py_RETURN_NONE;
+}
+
+PyObject *setResponseThreshold(PyObject *self, PyObject *args)
+{
+    star_detector_t *sd = (star_detector_t*)self;
+    double t;
+    if (!PyArg_ParseTuple(args, "d", &t))
+        return NULL;
+    sd->psd->setResponseThreshold(t);
+    Py_RETURN_NONE;
+}
+
+PyObject *setProjectedThreshold(PyObject *self, PyObject *args)
+{
+    star_detector_t *sd = (star_detector_t*)self;
+    double t;
+    if (!PyArg_ParseTuple(args, "d", &t))
+        return NULL;
+    sd->psd->setProjectedThreshold(t);
+    Py_RETURN_NONE;
+}
+
+PyObject *setBinarizedThreshold(PyObject *self, PyObject *args)
+{
+    star_detector_t *sd = (star_detector_t*)self;
+    double t;
+    if (!PyArg_ParseTuple(args, "d", &t))
+        return NULL;
+    sd->psd->setBinarizedThreshold(t);
+    Py_RETURN_NONE;
+}
+
 /* Method table */
 static PyMethodDef star_detector_methods[] = {
   {"detect", detect, METH_VARARGS},
+  {"setScales", setScales, METH_VARARGS},
+  {"setResponseThreshold", setResponseThreshold, METH_VARARGS},
+  {"setProjectedThreshold", setProjectedThreshold, METH_VARARGS},
+  {"setBinarizedThreshold", setBinarizedThreshold, METH_VARARGS},
   {NULL, NULL},
 };
 
@@ -108,20 +152,12 @@ static PyTypeObject star_detector_Type = {
 PyObject *star_detector(PyObject *self, PyObject *args)
 {
     star_detector_t *object = PyObject_NEW(star_detector_t, &star_detector_Type);
-    object->xsize = PyLong_AsLong(PyTuple_GetItem(args, 0));
-    object->ysize = PyLong_AsLong(PyTuple_GetItem(args, 1));
     int scales = 7;
-    float threshold = 30.0;
-    float line_threshold = 10.0;
-    float line_threshold_bin = 8.0;
-    if (PyTuple_Size(args) > 2)
-        scales = PyLong_AsLong(PyTuple_GetItem(args, 2));
-    if (PyTuple_Size(args) > 3)
-        threshold = PyFloat_AsDouble(PyTuple_GetItem(args,3));
-    if (PyTuple_Size(args) > 4)
-        line_threshold = PyFloat_AsDouble(PyTuple_GetItem(args,4));
-    if (PyTuple_Size(args) > 5)
-        line_threshold_bin = PyFloat_AsDouble(PyTuple_GetItem(args,5));
+    double threshold = 30.0;
+    double line_threshold = 10.0;
+    double line_threshold_bin = 8.0;
+    if (!PyArg_ParseTuple(args, "ii|iddd", &object->xsize, &object->ysize, &scales, &threshold, &line_threshold, &line_threshold_bin))
+        return NULL;
     object->psd = new StarDetector( cvSize(object->xsize, object->ysize), scales, threshold, line_threshold, line_threshold_bin );
     object->img = cvCreateImage(cvSize(object->xsize, object->ysize), IPL_DEPTH_8U, 1);
     return (PyObject*)object;

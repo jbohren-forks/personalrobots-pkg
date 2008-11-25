@@ -17,10 +17,13 @@ import math
 
 # A star detector object's results are invariant wrt image presentation order
 
-def simple(im, scales = 7, threshold = 30.0, line_threshold = 10.0, line_threshold_bin = 8.0):
-    sd = L.star_detector(im.size[0], im.size[1], scales, threshold, line_threshold, line_threshold_bin)
+def detect(sd, im):
     kp = sd.detect(im.tostring())
     return [ i[1] for i in sorted([ (abs(response), (x, y, s, response)) for (x, y, s, response) in kp])]
+
+def simple(im, scales = 7, threshold = 30.0, line_threshold = 10.0, line_threshold_bin = 8.0):
+    sd = L.star_detector(im.size[0], im.size[1], scales, threshold, line_threshold, line_threshold_bin)
+    return detect(sd, im)
 
 def circle(im, x, y, r, color):
     draw = ImageDraw.Draw(im)
@@ -87,6 +90,29 @@ class TestDirected(unittest.TestCase):
             self.assertEqual(a[1], e[1])
             self.assertEqual(a[2], e[2])
             self.assertAlmostEqual(a[3], e[3], 1)
+
+    def test_parameters(self):
+        """ Change scales and thresholds """
+        results = [
+            simple(self.im640, 7, 30.0, 10.0, 8.0),
+            simple(self.im640, 5, 30.0, 10.0, 8.0),
+            simple(self.im640, 5, 25.0, 10.0, 8.0),
+            simple(self.im640, 5, 25.0, 7.0, 8.0),
+            simple(self.im640, 5, 25.0, 7.0, 4.0)
+        ]
+        # All should have different lengths
+        self.assert_(len(set([ len(i) for i in results ])) == len(results))
+        im = self.im640
+        sd = L.star_detector(im.size[0], im.size[1], 7, 30.0, 10.0, 8.0)
+        self.assert_(detect(sd, im) == results[0])
+        sd.setScales(5)
+        self.assert_(detect(sd, im) == results[1])
+        sd.setResponseThreshold(25.0)
+        self.assert_(detect(sd, im) == results[2])
+        sd.setProjectedThreshold(7.0)
+        self.assert_(detect(sd, im) == results[3])
+        sd.setBinarizedThreshold(4.0)
+        self.assert_(detect(sd, im) == results[4])
 
     def test_sizes(self):
         sizes = [ 1,16,32,64,640,1024,1776,1777,1778,2000,8191,8192,8193]
@@ -296,5 +322,5 @@ if __name__ == '__main__':
     rostest.unitrun('star_detector', 'directed', TestDirected)
     if 0:
       suite = unittest.TestSuite()
-      suite.addTest(TestDirected('test_L_symmetry'))
+      suite.addTest(TestDirected('test_parameters'))
       unittest.TextTestRunner(verbosity=2).run(suite)
