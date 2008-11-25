@@ -1,8 +1,0 @@
-
-<launch>
-  <master auto="start"/>
-  <include file="$(find highlevel_controllers)/test/stage.xml" />
-  <node pkg="executive_trex_pr2" type="groundtruthtransform" args="" respawn="true" />
-  <node pkg="executive_trex_pr2" type="runtesttrex.sh" args="$(find executive_trex_pr2)/test/wpc.1.output $(find executive_trex_pr2)/wpc.1" respawn="false" />
-  <test test-name="executive_trex_wpc_1" pkg="executive_trex_pr2" type="test.wpc.1.py" />
-</launch>

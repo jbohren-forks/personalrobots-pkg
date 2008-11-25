@@ -1,9 +1,0 @@
-
-<launch>
-  <master auto="start"/>
-  <include file="$(find executive_trex_pr2)/cfg/launch_stage.xml" />
-  <node pkg="executive_trex_pr2" type="groundtruthtransform" args="" respawn="true" />
-  <node pkg="executive_trex_pr2" type="fake_battery_controller.py"/>
-  <node pkg="executive_trex_pr2" type="fake_battery_controller.py" args="battery_state:=bogus_battery_state"/>
-  <test test-name="executive_trex_wpc_0" pkg="executive_trex_pr2" type="trexfast"  args="$(find executive_trex_pr2)/cfg/nav.cfg" />
-</launch>
