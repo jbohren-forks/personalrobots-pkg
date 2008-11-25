@@ -366,7 +366,7 @@ namespace ros {
     }
 
     /**
-     * The odomMsg_ will be updates and we will do the transform to update the odom in the base frame
+     * The odomMsg_ will be updated and we will do the transform to update the odometry data in the base frame
      */
     void MoveBase::odomCallback(){
       if(isTerminated())
@@ -376,11 +376,11 @@ namespace ros {
 
       try
       {
-	tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), "odom"), v_out;
-	tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, "odom", v_out);	 
+	tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
+	tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, odomMsg_.header.frame_id, v_out);	 
 	base_odom_.vel.x = v_in.x();
 	base_odom_.vel.y = v_in.y();
-	base_odom_.vel.th = v_in.z();	
+	base_odom_.vel.th = v_in.z();
       }
       catch(tf::LookupException& ex)
       {
@@ -404,7 +404,9 @@ namespace ros {
      * A lock will already be aquired here, so just revert the cost map
      */
     void MoveBase::handlePlanningFailure(){
+      ROS_DEBUG("No plan found. Handling planning failure");
       costMap_->revertToStaticMap();
+      stopRobot();
     }
 
     void MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>& newPlan){
@@ -571,7 +573,7 @@ namespace ros {
 
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
-      if(plan_.empty()){
+      if(planOk && plan_.empty()){
 	double uselessPitch, uselessRoll, yaw;
 	global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
         ROS_DEBUG("Moving to desired goal orientation\n");
