@@ -57,7 +57,7 @@
     <param name="/costmap_2d/weight" value="0.1"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
-    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com"/>
+    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
     <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
     <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
