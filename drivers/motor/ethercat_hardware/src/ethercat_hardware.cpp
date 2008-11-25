@@ -138,7 +138,7 @@ void EthercatHardware::init(char *interface, bool allow_unprogrammed)
     }
     else
     {
-      ROS_FATAL("Unable to configure slave #%d, product code: %d", slave, sh->get_product_code());
+      ROS_FATAL("Unable to configure slave #%d, product code: %d, revision: %d", slave, sh->get_product_code(), sh->get_revision());
       ROS_BREAK();
     }
   }
