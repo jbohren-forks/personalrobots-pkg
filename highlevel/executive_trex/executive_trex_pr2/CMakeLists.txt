@@ -23,7 +23,6 @@ execute_process(
 
 set(TREX_FILES src/Executive.cc 
 	       src/ROSAdapter.cc 
-	       src/ROSNode.cc 
 	       src/Logger.cc 
                src/LogClock.cc 
 	       src/CalcAngleDiffConstraint.cc 
@@ -53,7 +52,7 @@ rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 # not received in time
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 
-rospack_add_rostest_future(test/test.wpc.0.xml) 
-#rospack_add_rostest(test/test.wpc.1.xml) 
-#rospack_add_rostest(test/test.arm.0.xml) 
+#rospack_add_rostest(wpc.0/test.xml)
+#rospack_add_rostest(wpc.1/test.xml)
+#rospack_add_rostest(wpc.2/test.xml)
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)

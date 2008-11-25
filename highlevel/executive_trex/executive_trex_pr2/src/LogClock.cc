@@ -6,6 +6,7 @@
 #include "Agent.hh"
 #include "LogManager.hh"
 #include "Components.hh"
+#include "Utilities.hh"
 
 namespace TREX {
  /**
@@ -61,7 +62,7 @@ namespace TREX {
     : Clock(0, stats),
       m_gets(0), m_finalTick(finalTick), m_tick(0), m_stopTick(0), m_root(root), m_timedOut(false) {
     if (m_finalTick < 2) { m_finalTick = 100; }
-    m_file = fopen("clock.log", "r");
+    m_file = fopen(findFile("clock.log").c_str(), "r");
     if (!m_file) {
       std::cerr << "No clock.log file for playback." << std::endl;
       exit(-1);

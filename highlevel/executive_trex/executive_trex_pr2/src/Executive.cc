@@ -77,6 +77,10 @@ Publishes to (name/type):
 - None
 
  **/
+
+// For integration of testing
+#include <gtest/gtest.h>
+
 #include <rosconsole/rosconsole.h>
 #include "Nddl.hh"
 #include "Components.hh"
@@ -84,34 +88,218 @@ Publishes to (name/type):
 #include "Agent.hh"
 #include "LogClock.hh"
 #include "Debug.hh"
+#include "Utilities.hh"
+#include <signal.h>
+#include <unistd.h>
 #include <signal.h>
 
-TiXmlElement* root = NULL;
-TREX::Clock* agentClock = NULL;
-std::ofstream dbgFile("Debug.log");
+#include "Executive.hh"
 
-TREX::LoggerId logger;
+//NDDL includes
+#include "Nddl.hh"
+#include "Token.hh"
+#include "TokenVariable.hh"
+#include "Utilities.hh"
+
+// TREX Includes 
+
+// Requirements for watchdog
+#include <highlevel_controllers/Ping.h>
+#include <sys/time.h>
+#include <rosthread/member_thread.h>
+
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+
+TREX::ExecutiveId node;
+
+namespace TREX {
+
+  ExecutiveId Executive::s_id;
+
+  /**
+   * Executive class implementation.
+   */
+
+
+  /**
+   * @brief Singleton accessor
+   */
+  ExecutiveId Executive::request(){
+    if(s_id == ExecutiveId::noId()){
+      int argc = 0;
+      ros::init(argc, NULL);
+      new Executive();
+    }
+    s_id->addRef();
+    return s_id;
+  }
+
+  /**
+   * @brief Executive constructor sets up the trex agent instance
+   */
+  Executive::Executive() 
+    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), play_back_(false)
+  {
+    s_id = m_id; 
+    m_refCount = 0;
+  
+    // ROS Parameters for running the agent
+    double ping_frequency;
+    std::string input_file;
+    std::string path;
+    int time_limit(0);
+    std::string log_dir;
+    param("/trex/ping_frequency", ping_frequency, ping_frequency);
+    param("/trex/input_file", input_file, input_file);
+    param("/trex/path", path, path);
+    param("/trex/time_limit", time_limit, time_limit);
+    param("/trex/play_back", play_back_, play_back_);
+    param("/trex/log_dir", log_dir, log_dir);
+
+    // Bind the watchdog loop sleep time from input controller frequency
+    if(ping_frequency > 0)
+      watchDogCycleTime_ = 1 / ping_frequency;
+
+    // Bind TREX environment variables
+    setenv("TREX_PATH", path.c_str(), 1);
+    setenv("TREX_LOG_DIR", log_dir.c_str(), 1);
+
+
+    // When not running in playback mode, we enable generation of a log file
+    if (!play_back_) {
+      logger_ = TREX::Logger::request();
+      logger_->setEnabled(true);
+    }
+
+    // When running in playback mode, we use the playback version of the given input file
+    if(play_back_){
+      input_file = "playback." + input_file;
+    }
+
+    // Read input XML configuration data
+    input_xml_root_ = TREX::LogManager::initXml( TREX::findFile(input_file) );
+
+    // This initialization looks after registration of factories required for TREX plug-ins
+    TREX::initROSExecutive(play_back_);
+
+    // Redirect debug output
+    DebugMessage::setStream(debug_file_);
+
+    // Set up the clock
+    int finalTick = 1;
+    input_xml_root_->Attribute("finalTick", &finalTick);
+    if (play_back_) {
+      agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), input_xml_root_);
+    } else {
+      // Allocate a real time clock with 1 second per tick
+      agent_clock_ = new TREX::LogClock(1.0);
+    }
+
+    // Allocate the agent
+    TREX::Agent::initialize(*input_xml_root_, *agent_clock_, time_limit);
+
+    // Set up  watchdog thread message generation
+    ros::node::advertise<highlevel_controllers::Ping>("trex/ping", 1);
+    ros::thread::member_thread::startMemberFunctionThread(this, &Executive::watchDogLoop); 
+
+    ROS_INFO("Executive created.\n");
+  }
+
+
+  Executive::~Executive() {
+    ROS_INFO("Shutting down at tick(%d)\n", TREX::Agent::instance()->getCurrentTick());
+
+    // Terminate the agent
+    TREX::Agent::terminate();
+    TREX::Clock::sleep(3);
+    TREX::Agent::reset();
+
+    TREX::Agent::cleanupLog();
+
+    // Deallocate clock
+    if(agent_clock_ != NULL)
+      delete agent_clock_;
+
+    // Deallocate logger, with a clean shutdown
+    if (logger_ != TREX::LoggerId::noId()) {
+      FILE* file = logger_->getFile();
+      if (file) { fprintf(file, "\n</log>\n"); }
+      logger_->release();
+    }
+
+    m_id.remove();
+  }
+
+  /**
+   * @broef Kicks off all the work to do.
+   */
+  void Executive::run(){
+    if (play_back_) {
+      agent_clock_->doStart();    
+      TREX::LogManager::instance().handleInit();
+      while (!((TREX::PlaybackClock*)agent_clock_)->isTimedOut()) {
+	if (((TREX::PlaybackClock*)agent_clock_)->isAtGoalTick()) {
+	  ((TREX::PlaybackClock*)agent_clock_)->consolePopup();
+	}
+	TREX::Agent::instance()->doNext();
+      }
+    } else {
+      try{
+	TREX::Agent::instance()->run();
+      }
+      catch(const char * str){
+	std::cout << str << std::endl;
+      }
+    }
+
+    ROS_INFO("Agent has finished running.\n");
+  }
+
+  void Executive::watchDogLoop(){
+    highlevel_controllers::Ping pingMsg;
+    while(!Agent::terminated()){
+      publish<highlevel_controllers::Ping>("trex/ping", pingMsg);
+      usleep((unsigned int) rint(watchDogCycleTime_ * 1e6));
+    }
+  }
+
+  void Executive::release() {
+    if (Executive::s_id->decRef()) {
+      ROS_INFO("Terminating ROS node.\n");
+      Executive::s_id->shutdown();
+      delete (Executive*)s_id;
+      s_id = ExecutiveId::noId();
+    }
+  }
+
+  void Executive::addRef() {
+    m_refCount++;
+  }
+
+  bool Executive::decRef() {
+    m_refCount--;
+    return m_refCount == 0;
+  }
+}
 
 /**
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  printf("Shutting down at tick(%d)\n", TREX::Agent::instance()->getCurrentTick());
-
-  // Terminate the agent
-  TREX::Agent::terminate();
-
-  TREX::Clock::sleep(3);
-
-  TREX::Agent::cleanupLog();
-
-  if (logger != TREX::LoggerId::noId()) {
-    FILE* file = logger->getFile();
-    if (file) { fprintf(file, "\n</log>\n"); }
-    logger->release();
-  }
-
+  node->shutdown();
+  node->release();
   exit(0);
+}
+
+/**
+ * Test for validating expected output. This will have to evolve
+ */
+TEST(trex, validateOutput){
+  ASSERT_EQ(true, true);
 }
 
 int main(int argc, char **argv)
@@ -121,71 +309,22 @@ int main(int argc, char **argv)
   signal(SIGQUIT, &TREX::signalHandler);
   signal(SIGKILL, &TREX::signalHandler);
 
-  bool playback = false;
-
-  if (argc != 2) {
-    std::cerr << "Invalid argument list: Usage: trex_fast configfile" << std::endl;
-    return -1;
-  }
-
   atexit(&cleanup);
 
-  TREX::LogManager& logManager = TREX::LogManager::instance();
-  std::cout << "Logging execution data to " << logManager.get_log_path().c_str() << std::endl;
+  node = TREX::Executive::request();
+  node->run();
 
-  char * configFile = argv[1];
-  root = TREX::LogManager::initXml( configFile );
+  // Parse command line arguments to see if we must apply test case validation
+  const std::string test_marker("--gtest");
+  for(int i = 0; i < argc; i++){
+    std::string s = argv[i];
 
-  playback = root->Attribute("playback") ? true : false;
-
-  if (!playback) {
-    logger = TREX::Logger::request();
-    logger->setEnabled(true);
-  }
-
-  TREX::initROSExecutive(playback);
-
-  DebugMessage::setStream(dbgFile);
-
-  int finalTick = 1;
-  root->Attribute("finalTick", &finalTick);
-
-  if (playback) {
-    agentClock = new TREX::PlaybackClock(finalTick, root);
-  } else {
-    // Allocate a real time clock with 1 second per tick
-    agentClock = new TREX::LogClock(1.0);
-  }
-
-  // Allocate the agent
-  TREX::Agent::initialize(*root, *agentClock);
-
-  
-
-  if (playback) {
-    agentClock->doStart();    
-    TREX::LogManager::instance().handleInit();
-    while (!((TREX::PlaybackClock*)agentClock)->isTimedOut()) {
-      if (((TREX::PlaybackClock*)agentClock)->isAtGoalTick()) {
-	((TREX::PlaybackClock*)agentClock)->consolePopup();
-      }
-      TREX::Agent::instance()->doNext();
+    if(s.find(test_marker) == 0){
+      testing::InitGoogleTest(&argc, argv);
+      return RUN_ALL_TESTS();
     }
-  } else {
-    try{
-      TREX::Agent::instance()->run();
-    }
-    catch(const char * str){
-      std::cout << str << std::endl;
-    }
-    std::cout << "Agent has finished running.\n";
   }
 
-  /*
-  catch(...){
-    std::cout << "Caught unexpected exception." << std::endl;
-  }
-  */
   return 0;
 }
 

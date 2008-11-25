@@ -1,7 +1,7 @@
 #ifndef H_ROSAdapter
 #define H_ROSAdapter
 
-#include "ROSNode.hh"
+#include "Executive.hh"
 #include "Adapter.hh"
 
 namespace TREX {
@@ -49,7 +49,7 @@ namespace TREX {
      */
     bool rosIndex(const std::string& rosName, unsigned int& ind) const;
 
-    ROSNodeId m_node; /*! The ROS node. */
+    ExecutiveId m_node; /*! The node. */
     const std::string timelineName;
     const std::string timelineType;
     const std::string stateTopic;

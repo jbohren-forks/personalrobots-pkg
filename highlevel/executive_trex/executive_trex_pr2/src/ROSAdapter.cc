@@ -4,7 +4,6 @@
 #include "Object.hh"
 #include "Debug.hh"
 #include "Observer.hh"
-#include "Logger.hh"
 
 namespace TREX { 				     
 
@@ -17,7 +16,7 @@ namespace TREX {
       timelineName(extractData(configData, "timelineName").toString()),
       timelineType(extractData(configData, "timelineType").toString()), 
       stateTopic(extractData(configData, "stateTopic").toString()){
-    m_node = ROSNode::request();
+    m_node = Executive::request();
 
     // Iterate over child xml nodes and look for nodes of type Param to populate the nddl to ros mappings
     // Iterate over internal and external configuration specifications

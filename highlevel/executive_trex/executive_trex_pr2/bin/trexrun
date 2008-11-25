@@ -1,1 +1,3 @@
-trexfast `rospack find executive_trex_pr2`/cfg/$1.cfg
+# Simple utility to set parameters correctly, including paths. 
+roslaunch param.xml
+trexfast
