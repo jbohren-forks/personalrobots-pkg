@@ -33,9 +33,6 @@
 #
 
 ## Gazebo test base controller vw
-##   sends cmd_vel vx= 0, vy=0, vw =TARGET_VW
-##   checks to see if P3D returns corresponding ground truth within TARGET_TOL of TARGET_VW
-##          for a duration of TARGET_DURATION seconds
 
 PKG = 'gazebo_plugin'
 NAME = 'testbase_odomw_gt'
@@ -56,8 +53,8 @@ import rospy, rostest
 from std_msgs.msg import *
 
 
-TARGET_VX       =  0.5
-TARGET_VY       =  0.5
+TARGET_VX       =  0.0
+TARGET_VY       =  0.0
 TARGET_VW       =  0.5
 TARGET_DURATION = 2.0
 TARGET_TOL      = 0.2 #empirical test result john - 20081124
@@ -185,7 +182,7 @@ class BaseTest(unittest.TestCase):
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + 10.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
-            pub.publish(BaseVel(0*TARGET_VX,0*TARGET_VY,TARGET_VW))
+            pub.publish(BaseVel(TARGET_VX,TARGET_VY,TARGET_VW))
             time.sleep(0.1)
             # display what odom thinks
             #print " odom    " + " x: " + str(self.odom_x) + " y: " + str(self.odom_y) + " t: " + str(self.odom_t)

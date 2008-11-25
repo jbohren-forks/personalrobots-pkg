@@ -35,7 +35,7 @@
 ## Gazebo test base controller vw
 
 PKG = 'gazebo_plugin'
-NAME = 'testbase_odomxy_gt'
+NAME = 'testbase_odomy_gt'
 
 import math
 import rostools
@@ -53,7 +53,7 @@ import rospy, rostest
 from std_msgs.msg import *
 
 
-TARGET_VX       =  0.5
+TARGET_VX       =  0.0
 TARGET_VY       =  0.5
 TARGET_VW       =  0.0
 TARGET_DURATION = 2.0
