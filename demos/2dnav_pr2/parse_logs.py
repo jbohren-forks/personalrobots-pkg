@@ -46,6 +46,17 @@ class LogParser:
   def print_info(self):
     return "Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (self.time_diff(), self.distance, self.radians)
 
+def parse(filename):
+  parser = LogParser()
+  for topic, msg in logplayer(filename):
+    if topic == "/odom":
+      parser.new_odom(msg)
+    # unfortunately have to include this as messages spin up the rospy infrastructure
+    if rospy.is_shutdown():
+      break
+
+  return [parser.time_diff(), parser.distance, parser.radians, parser.print_info()]
+
 def parse_dir(directory):
   output_file = open(sys.argv[2], 'w')
   tot_dist = 0.0
@@ -63,18 +74,7 @@ def parse_dir(directory):
   output_file.write(total_string + "\n")
   output_file.close()
 
-def parse(filename):
-  parser = LogParser()
-  for topic, msg in logplayer(filename):
-    if topic == "/odom":
-      parser.new_odom(msg)
-    # unfortunately have to include this as messages spin up the rospy infrastructure
-    if rospy.is_shutdown():
-      break
-
-  return [parser.time_diff(), parser.distance, parser.radians, parser.print_info()]
-
 if __name__ == '__main__':
-  parse(sys.argv[1])
+  parse_dir(sys.argv[1])
 
 
