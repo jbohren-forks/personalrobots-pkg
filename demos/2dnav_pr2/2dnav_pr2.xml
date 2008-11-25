@@ -18,6 +18,12 @@
     <param name="deadman_button" value="4" type="int"/>
     <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
 
+    <node pkg="imu_node" type="imu_node" respawn="false" />
+    <param name="odom_estimation/freq" value="30.0"/>
+    <param name="odom_estimation/sensor_timeout" value="1.0"/>
+    <param name="odom_estimation/exact_time_mode" value="true"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" output="screen"/>
+
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" />
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
     <param name="laser_x_offset" type="double" value=".275" />
@@ -60,6 +66,6 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
 
     <!-- For logging distance traveled -->
-    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/logs/odometry_log /odom /TransformArray /base_scan" />
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/logs/odometry_log /odom" />
   </group>
 </launch>
