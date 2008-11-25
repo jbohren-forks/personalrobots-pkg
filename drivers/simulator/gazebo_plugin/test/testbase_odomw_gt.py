@@ -60,7 +60,7 @@ TARGET_VX       =  0.5
 TARGET_VY       =  0.5
 TARGET_VW       =  0.5
 TARGET_DURATION = 2.0
-TARGET_TOL      = 0.08 #empirical test result john - 20081029
+TARGET_TOL      = 0.2 #empirical test result john - 20081124
 
 class E:
     def __init__(self,x,y,z):
@@ -196,7 +196,7 @@ class BaseTest(unittest.TestCase):
 
         # check total error
         total_error = abs(self.odom_x - self.p3d_x) + abs(self.odom_y - self.p3d_y) + abs(self.odom_t - self.p3d_t)
-        if total_error < 1:
+        if total_error < TARGET_TOL:
             self.success = True
 
         self.assert_(self.success)
