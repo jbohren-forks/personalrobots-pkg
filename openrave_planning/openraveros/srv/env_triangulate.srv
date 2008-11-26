@@ -1,0 +1,16 @@
+# Returns the triangulation of various objects in the scenes controlled by name and options
+string sessionname
+int32 sessionid
+
+# if 1, will only triangulate the bodies pointed to by ids
+# if 0, will triangulate all objects except the bodies pointed to by ids (default)
+# To triangulate everything, just set inclusive to 0 and have empty bodyids
+byte inclusive
+uint32[] bodyids
+---
+
+# 3xN matrix of 3D points
+float32[] points
+
+# 3xK matrix of indices into tripoints for every triangle.
+uint32[] indices

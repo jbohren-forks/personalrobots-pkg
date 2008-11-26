@@ -1,0 +1,16 @@
+# wait until all previously sent commands to matlab are finished.
+# Since problems are meant to last for a long time orEnvWait waits
+# until the problem's main function finishes.
+string sessionname
+int32 sessionid
+
+# If a robot id is != 0, will wait until the robot finishes with its trajectory.
+uint32 bodyid
+
+# timeout is in seconds, if 0 will return immediately (default)
+# if < 0, will block indefinitely
+float32 timeout
+---
+
+# will return with success set to 0 if robot did not finish its commands by the timeout.
+byte success

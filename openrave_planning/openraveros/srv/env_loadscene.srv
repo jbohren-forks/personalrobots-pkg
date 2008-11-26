@@ -1,0 +1,8 @@
+# loads a scene
+string sessionname
+int32 sessionid
+
+# absolute path of scene recommended, specifying an empty string resets the entire scene
+string filename
+---
+byte success

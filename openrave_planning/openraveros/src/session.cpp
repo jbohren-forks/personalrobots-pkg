@@ -7,9 +7,8 @@
 //   * Redistributions in binary form must reproduce the above copyright
 //     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its
-//     contributors may be used to endorse or promote products derived from
-//     this software without specific prior written permission.
+//   * The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -25,5 +24,144 @@
 //
 // author: Rosen Diankov
 
-#include "service_core.h"
+#include "openraveros.h"
+#include "session.h"
 
+#include <openraveros/
+
+body_destroy.h
+body_enable.h
+body_getaabb.h
+body_getaabbs.h
+body_getdof.h
+body_getlinks.h
+body_setjointvalues.h
+body_settransform.h
+env_checkcollision.h
+env_closefigures.h
+env_createbody.h
+env_createplanner.h
+env_createproblem.h
+env_createrobot.h
+env_destroyproblem.h
+env_getbodies.h
+env_getbody.h
+env_getrobots.h
+env_loadplugin.h
+env_loadscene.h
+env_plot.h
+env_raycollision.h
+env_set.h
+env_triangulate.h
+env_wait.h
+openrave_session.h
+planner_init.h
+planner_plan.h
+problem_sendcommand.h
+robot_controllersend.h
+robot_controllerset.h
+robot_getactivedof.h
+robot_getactivevalues.h
+robot_sensorgetdata.h
+robot_sensorsend.h
+robot_setactivedofs.h
+robot_setactivevalues.h
+
+
+// compile time assert RobotBase::DOF_X and CO_X 
+class Session
+{
+public:
+    Session() {
+    }
+    ~Session() {
+    }
+    
+    void startros()
+    {
+        // check if thread launched
+        ros::node* pnode = ros::node::instance();
+        
+        if( pnode && !pnode->check_master() ) {
+            ros::fini();
+            delete pnode;
+            pnode = NULL;
+        }
+
+        if (!pnode) {
+            int argc = 0;
+            ros::init(argc,NULL);
+            char strname[256] = "nohost";
+            gethostname(strname, sizeof(strname));
+            pnode = new ros::node(strname,);
+            member_thread::startMemberFunctionThread<node>(pnode, &ros::node::spin);
+        }
+
+        if( !pnode->check_master() )
+            return NULL;
+
+        return pnode;
+    }
+
+    void advertise_session()
+    {
+        ros::node* pnode = startros();
+        if( pnode == NULL )
+            return;
+        
+        sessionhandle = pnode->advertise_service("openrave_session",&OpenraveSession::startsession,this);
+    }
+    
+    bool startsession(roscpp_tutorials::simple_session::request& req, roscpp_tutorials::simple_session::response& res) {
+        if( req.sessionid ) {
+        }
+    }
+
+    bool getmap(StaticMap::request& req, StaticMap::response& res)
+    {
+        cout << "getmap!" << endl;
+        return true;
+    }
+    bool getimage(PolledImage::request& req, PolledImage::response& res)
+    {
+        cout << "getimage!" << endl;
+        return true;
+    }
+};
+
+
+ROSServer::ROSServer()
+{
+}
+
+ROSServer::~ROSServer()
+{
+}
+
+void ROSServer::Destroy()
+{
+}
+
+void ROSServer::Reset()
+{
+}
+
+bool ROSServer::Init(int port)
+{
+}
+
+void ROSServer::Worker()
+{
+}
+
+bool ROSServer::IsInit()
+{
+}
+
+bool ROSServer::IsClosing()
+{
+}
+
+void ROSServer::SyncWithWorkerThread()
+{
+]

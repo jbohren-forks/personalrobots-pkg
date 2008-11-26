@@ -7,9 +7,8 @@
 //   * Redistributions in binary form must reproduce the above copyright
 //     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its
-//     contributors may be used to endorse or promote products derived from
-//     this software without specific prior written permission.
+//   * The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -26,69 +25,23 @@
 // author: Rosen Diankov
 #include <iostream>
 
-#include "ros/node.h"
-#include "rosthread/member_thread.h"
-
-using namespace std;
-using namespace ros;
-using namespace ros::thread;
-
-class OpenraveSession
+class ROSServer : public RaveServerBase
 {
 public:
-    OpenraveSession() {
-    }
-    ~OpenraveSession() {
-    }
+    ROSServer();
+    virtual ~ROSServer();
 
-    abstractSessionHandle sessionhandle;
-    
-    void startros()
-    {
-        // check if thread launched
-        ros::node* pnode = ros::node::instance();
+    virtual void Destroy();
+    virtual void Reset();
 
-        if( pnode && !pnode->check_master() ) {
-            ros::fini();
-            delete pnode;
-            pnode = NULL;
-        }
+    virtual bool Init(int port);
 
-        if (!pnode) {
-            int argc = 0;
-            ros::init(argc,NULL);
-            char strname[256] = "nohost";
-            gethostname(strname, sizeof(strname));
-            pnode = new ros::node(strname,);
-            member_thread::startMemberFunctionThread<node>(pnode, &ros::node::spin);
-        }
+    /// worker thread called from the main environment thread
+    virtual void Worker();
 
-        if( !pnode->check_master() )
-            return NULL;
+    virtual bool IsInit();
+    virtual bool IsClosing();
 
-        return pnode;
-    }
-
-    void advertise_session()
-    {
-        ros::node* pnode = startros();
-        if( pnode == NULL )
-            return;
-
-        sessionhandle = pnode->advertise_service("openrave_service",&OpenraveSession::startsession,this);
-    }
-
-    bool startsession(roscpp_tutorials::simple_session::request& req, roscpp_tutorials::simple_session::response& res) {
-        if( req.sessionid ) {
-
-    bool getmap(StaticMap::request& req, StaticMap::response& res)
-    {
-        cout << "getmap!" << endl;
-        return true;
-    }
-    bool getimage(PolledImage::request& req, PolledImage::response& res)
-    {
-        cout << "getimage!" << endl;
-        return true;
-    }
+    // called from threads other than the main worker to wait until
+    virtual void SyncWithWorkerThread();
 };

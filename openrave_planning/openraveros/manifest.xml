@@ -6,5 +6,6 @@
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="openrave"/>
+  <depend package="std_msgs"/>
   <depend package="boost"/>
 </package>

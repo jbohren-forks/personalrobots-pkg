@@ -1,0 +1,5 @@
+# Destroys a body of id bodyid. bodyid can also be a robot.
+string sessionname
+int32 sessionid
+uint32 bodyid
+---

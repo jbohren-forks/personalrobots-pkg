@@ -1,0 +1,23 @@
+# Set various options of the environment
+string sessionname
+int32 sessionid
+
+uint32 setmask
+uint32 Set_Simulation=1
+uint32 Set_PhysicsEngine=2
+uint32 Set_CollisionChecker=4
+uint32 Set_Gravity=8
+uint32 Set_PublishAnytime=16
+uint32 Set_DebugLevel=32
+uint32 Set_Quit=64
+
+# validity depending on setmask
+string sim_option
+float32 sim_timestep
+
+string physicsengine
+string collisionchecker
+float32[3] gravity
+byte publishanytime
+byte debuglevel
+---

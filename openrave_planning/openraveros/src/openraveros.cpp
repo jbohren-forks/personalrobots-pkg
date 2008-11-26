@@ -7,9 +7,8 @@
 //   * Redistributions in binary form must reproduce the above copyright
 //     notice, this list of conditions and the following disclaimer in the
 //     documentation and/or other materials provided with the distribution.
-//   * Neither the name of Stanford University nor the names of its
-//     contributors may be used to endorse or promote products derived from
-//     this software without specific prior written permission.
+//   * The name of the author may not be used to endorse or promote products
+//     derived from this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 // AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
@@ -22,16 +21,15 @@
 // CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
-#include "plugindefs.h"
+//
+// author: Rosen Diankov
+#include "openraveros.h"
 #include <signal.h>
 
 void sigint_handler(int);
 void* MainOpenRAVEThread(void*p);
 
 static EnvironmentBase* penv = NULL;
-static int s_WindowWidth = 1024, s_WindowHeight = 768;
-static int s_WindowPosX, s_WindowPosY;
-static bool s_bSetWindowPosition = false;
 static bool bDisplayGUI = false;
 static pthread_t s_mainThread;
 static boost::shared_ptr<RaveServerBase> s_server;
@@ -64,24 +62,13 @@ int main(int argc, char ** argv)
             penv->LoadPlugin(argv[i+1]);
             i += 2;
         }
-        else if( stricmp(argv[i], "-dogui") == 0 ) {
+        else if( stricmp(argv[i], "-gui") == 0 ) {
             bDisplayGUI = true;
             i++;
         }
         else if( stricmp(argv[i], "-d") == 0 ) {
             nDebugLevel = atoi(argv[i+1]);
             i += 2;
-        }
-        else if( stricmp(argv[i], "-wdims") == 0 ) {
-            s_WindowWidth = atoi(argv[i+1]);
-            s_WindowHeight = atoi(argv[i+2]);
-            i += 3;
-        }
-        else if( stricmp(argv[i], "-wpos") == 0 ) {
-            s_WindowPosX = atoi(argv[i+1]);
-            s_WindowPosY = atoi(argv[i+2]);
-            s_bSetWindowPosition = true;
-            i += 3;
         }
         else if( stricmp(argv[i], "-server") == 0 ) {
             nServPort = atoi(argv[i+1]);
@@ -99,17 +86,6 @@ int main(int argc, char ** argv)
     penv->SetDebugLevel(nDebugLevel);
 
     if( nServPort > 0 ) {
-#ifdef _WIN32
-        WORD      wVersionRequested;
-        WSADATA   wsaData;
-
-        wVersionRequested = MAKEWORD(1,1);
-        if (WSAStartup(wVersionRequested, &wsaData) != 0) {
-            RAVEPRINT(L"Failed to start win socket\n");
-            return -1;
-        }
-#endif
-
         //penv->AttachServer(s_server.get());
     }
 
@@ -128,7 +104,6 @@ int main(int argc, char ** argv)
     }
 
     if( penv != NULL ) {
-        RaveViewerBase* pviewer = penv->GetViewer();
         penv->GetViewer()->quitmainloop();
         penv->AttachViewer(NULL);
         

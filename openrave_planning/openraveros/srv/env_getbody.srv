@@ -1,0 +1,6 @@
+# returns the bodyid given its name
+string sessionname
+int32 sessionid
+string name
+---
+uint32 bodyid

@@ -1,0 +1,5 @@
+# Destroy's a problem instance pointed to by problemid
+string sessionname
+int32 sessionid
+int32 problemid
+---

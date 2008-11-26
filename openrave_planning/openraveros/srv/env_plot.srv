@@ -1,0 +1,23 @@
+# plots various primitives in the viewer
+string sessionname
+int32 sessionid
+
+# 3xN values for N points
+float32[] points
+
+# 3xN values for N points
+float32[] colors
+
+# N values for N points
+float32[] sizes
+
+# [0,1] transparency of object (0 is opaque)
+float32 transparency
+
+byte drawtype
+
+byte Draw_Point=0 # default
+byte Draw_LineStrip=1
+byte Draw_LineList=2
+byte Draw_TriList=3
+byte Draw_Sphere=4

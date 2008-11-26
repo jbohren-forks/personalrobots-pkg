@@ -1,0 +1,7 @@
+# gets the active dof values of the robot
+string sessionname
+int32 sessionid
+
+uint32 bodyid
+---
+float32[] values

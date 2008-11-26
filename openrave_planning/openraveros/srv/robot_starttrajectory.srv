@@ -1,0 +1,7 @@
+# Starts a trajectory on the robot
+string sessionname
+int32 sessionid
+uint32 bodyid
+
+Trajectory trajectory
+---

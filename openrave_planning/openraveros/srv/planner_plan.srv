@@ -1,0 +1,7 @@
+# start a planner
+string sessionname
+int32 sessionid
+
+uint32 plannerid
+---
+Trajectory trajectory

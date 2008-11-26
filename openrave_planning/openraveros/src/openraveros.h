@@ -23,47 +23,63 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // author: Rosen Diankov
-#include "plugindefs.h"
+#ifndef OPENRAVE_ROS_H
+#define OPENRAVE_ROS_H
 
-#include "rosarmik.h"
+#include <assert.h>
+#include <cstdio>
+#include <cmath>
+#include <cstdlib>
 
-typedef void (*CREATECALLBACK)(PluginType type, const wchar_t* pname);
-EnvironmentBase* g_pEnviron = NULL;
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_DEPRECATE
 
-// need c linkage
-extern "C" {
+#include <boost/typeof/std/string.hpp>
+#include <boost/typeof/std/vector.hpp>
+#include <boost/typeof/std/list.hpp>
+#include <boost/typeof/std/map.hpp>
+#include <boost/typeof/std/string.hpp>
 
-InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name))
-{
-    switch(type) {
-    case PT_InverseKinematicsSolver:
-        if( wcsicmp(name, L"ROSArmIK") == 0 )
-            return new ROSArmIK();
-        break;
-        
-    default:
-        break;
-    }
+#define FOREACH(it, v) for(BOOST_TYPEOF(v)::iterator it = (v).begin(); it != (v).end(); (it)++)
+#define FOREACHC(it, v) for(BOOST_TYPEOF(v)::const_iterator it = (v).begin(); it != (v).end(); (it)++)
+#define RAVE_REGISTER_BOOST
+#else
 
-    return NULL;
-}
+#include <string>
+#include <vector>
+#include <list>
+#include <map>
+#include <string>
 
-bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
-{
-    if( pinfo == NULL ) return false;
-    if( size != sizeof(PLUGININFO) ) {
-        printf("bad plugin info sizes %d != %d\n", size, sizeof(PLUGININFO));
-        return false;
-    }
+#define FOREACH(it, v) for(typeof((v).begin()) it = (v).begin(); it != (v).end(); (it)++)
+#define FOREACHC FOREACH
 
-    pinfo->iksolvers.push_back(L"ROSArmIK");
-    return true;
-}
+#endif
 
-void DECL_STDCALL(OpenPlugin, (void* pcallback, EnvironmentBase* penv))
-{
-    RaveSetEnvironment(penv);
-    g_pEnviron = penv;
-}
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
-}
+#ifndef ARRAYSIZE
+#define ARRAYSIZE(x) (sizeof(x)/(sizeof( (x)[0] )))
+#endif
+
+#define FORIT(it, v) for(it = (v).begin(); it != (v).end(); (it)++)
+
+#ifndef _WIN32
+#define strnicmp strncasecmp
+#define stricmp strcasecmp
+#endif
+
+#include <boost/shared_ptr.hpp>
+
+#include <openrave-core.h>
+#include <ros/node.h>
+#include <rosthread/member_thread.h>
+
+using namespace OpenRAVE;
+using namespace ros;
+using namespace std;
+
+#endif

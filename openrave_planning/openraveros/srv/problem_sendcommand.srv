@@ -1,0 +1,16 @@
+# Sends a command to the problem. The function doesn't return until
+# the string command to send the problem
+string sessionname
+int32 sessionid
+
+string cmd
+
+# id of problem to send command to. if problemid is 0, then command is sent to all problems
+uint32 problemid
+
+# If 1, the SendCommand is called in the main thread, in sync
+# with the rest of the primitives. If 0, called in a different thread. (default is 1)
+byte sync
+---
+# the concatenated output of all the problems that the command is sent to
+string output

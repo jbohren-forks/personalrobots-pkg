@@ -1,0 +1,8 @@
+# loads a plugin
+string sessionname
+int32 sessionid
+
+# absolute path of plugin recommended
+string filename
+---
+byte success

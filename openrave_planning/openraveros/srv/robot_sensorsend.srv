@@ -1,0 +1,16 @@
+# sends a command to a sensor attached to the robot 
+# OpenRAVE sends directly to SensorBase::SendCmd,
+# SensorBase::SupportsCmd is used to check for command support.
+string sessionname
+int32 sessionid
+
+uint32 bodyid
+
+# zero-based index of sensor into robot's attached sensor array
+uint32 sensorindex
+string cmd
+---
+byte success
+
+# output of the command
+string out

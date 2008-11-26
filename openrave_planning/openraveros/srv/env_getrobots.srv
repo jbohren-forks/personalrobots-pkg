@@ -1,0 +1,12 @@
+# gets all the robots in the scene
+string sessionname
+int32 sessionid
+
+# if bodyid != 0, will get the information only about a particular robot, otherwise will get for all robots
+uint32 bodyid
+
+# optional mask field for robots (see BodyInfo::Req_X)
+uint16 options
+
+---
+RobotInfo[] robots
