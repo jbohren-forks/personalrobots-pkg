@@ -21,45 +21,45 @@
   <joint name="link1_joint" type="revolute" >
     <axis xyz="0 0 1" />
     <anchor xyz="0 0 0" />
-    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="10000" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="100.0" />
   </joint>
   
   <!-- joint blocks -->
   <joint name="link2_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="10000" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="10.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link3_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="5000" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="10.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link4_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="500" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="10.0" />
   </joint>
 
   <!-- joint blocks -->
   <joint name="link5_joint" type="revolute" >
     <axis xyz="0 1 0" />
     <anchor xyz="0.0 0 0" />
-    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
+    <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="500" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="50.0" />
   </joint>
 
   <!-- joint blocks -->
@@ -68,7 +68,7 @@
     <anchor xyz="0.0 0 0" />
     <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="100.0" />
   </joint>
 
   <!-- joint blocks -->
@@ -77,7 +77,7 @@
     <anchor xyz="0.0 0 0" />
     <limit k_position="10.0" k_velocity="10.0" min="-3.14159" max="3.14159" effort="100" velocity="5" />
     <calibration values="1.5 -1 " />
-    <joint_properties damping="1.0" />
+    <joint_properties damping="100.0" />
   </joint>
 
   <!-- link blocks -->

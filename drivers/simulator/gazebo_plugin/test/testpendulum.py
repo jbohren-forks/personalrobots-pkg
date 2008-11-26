@@ -125,36 +125,24 @@ class PendulumTest(unittest.TestCase):
         #print "link1 pose ground truth received"
         #self.printPendulum(p3d)
         tmpx = p3d.pos.position.x
+        tmpy = p3d.pos.position.y
         tmpz = p3d.pos.position.z - 2.0
-        #print "link1 origin (" + str(tmpx) + " , " + str(tmpz) + ")"
-        self.error1_total += math.sqrt(tmpx*tmpx+tmpz*tmpz)
+
+        self.error1_total += math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
         self.error1_count += 1
-        if math.sqrt(tmpx*tmpx+tmpz*tmpz) > self.error1_max:
-            self.error1_max =  math.sqrt(tmpx*tmpx+tmpz*tmpz)
+        if math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz) > self.error1_max:
+            self.error1_max =  math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
  
     def p3dInput2(self, p3d):
-        #print "link2 pose ground truth received"
-        #self.printPendulum(p3d)
-        q = Q(p3d.pos.orientation.x , p3d.pos.orientation.y , p3d.pos.orientation.z , p3d.pos.orientation.w)
-        q.normalize()
-        v = q.getEuler()
+        tmpx = p3d.pos.position.x
+        tmpy = p3d.pos.position.y
+        tmpz = p3d.pos.position.z - 2.0
 
-        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
-        #FIXME: something wrong with the pos, need to fix it.  abs masks the problem for now.
-        tmpx = abs(p3d.pos.position.x) +0.0 - abs(math.cos(v.z)*math.cos(v.y))
-        tmpz = abs(p3d.pos.position.z) -2.0 + abs(math.sin(v.y))
-        #math.cos(v.x)*math.cos(v.z)-math.cos(v.x)*math.sin(v.y)*math.cos(v.z))
-        #print "link2 origin (" + str(tmpx) + " , " + str(tmpz) + ")"
-        #print "link2 raw    (" + str(p3d.pos.position.x) + " , " + str(p3d.pos.position.z) + ") total: " + str(self.error2_total)
-        #print "link2 correc (" + str(math.cos(v.y)) + " , " + str(math.sin(v.y)) + ") angle: " + str(v.x) +","+str(v.y)+","+str(v.z)
-
-        self.error2_total += math.sqrt(tmpx*tmpx+tmpz*tmpz)
+        self.error2_total += math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
         self.error2_count += 1
-        if math.sqrt(tmpx*tmpx+tmpz*tmpz) > self.error2_max:
-            self.error2_max =  math.sqrt(tmpx*tmpx+tmpz*tmpz)
-    
+        if math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz) > self.error2_max:
+            self.error2_max =  math.sqrt(tmpx*tmpx+tmpy*tmpy+tmpz*tmpz)
+
     def test_pendulum(self):
         print "LNK\n"
         rospy.Subscriber("link1_pose", PoseWithRatesStamped, self.p3dInput1)

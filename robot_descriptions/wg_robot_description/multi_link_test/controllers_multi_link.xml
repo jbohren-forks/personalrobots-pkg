@@ -6,10 +6,10 @@
   <controller name="test_controller" type="ArmDynamicsControllerNode">
     <listen_topic name="multi_link_commands" />
     <kinematics>
-      <elem key="kdl_chain_name">right_arm</elem>
+      <elem key="kdl_chain_name">multi_link</elem>
     </kinematics>
     <map name="controller_param">
-      <elem key="kdl_chain_name">right_arm</elem>
+      <elem key="kdl_chain_name">multi_link</elem>
     </map>
     <controller name="link1_controller" topic="link1_controller" type="JointEffortController">
       <joint name="link1_joint" >
