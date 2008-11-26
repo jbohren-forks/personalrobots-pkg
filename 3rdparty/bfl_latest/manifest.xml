@@ -16,11 +16,10 @@ This ROS package compiles BFL with the Boost library for matrix operations and r
   <cpp cflags="-I${prefix}/bfl-boost/include/bfl" lflags="-Wl,-rpath,${prefix}/bfl-boost/lib  -L${prefix}/bfl-boost/lib -lorocos-bfl"/>
   <doxymaker external="http://orocos.org/bfl" />
 </export>
+
+<depend package="boost" />
 <sysdepend os="ubuntu" version="7.04-feisty" package="subversion"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="subversion"/>
-<sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-<sysdepend os="ubuntu" version="7.10-gutsy" package="libboost-dev=1.34.1-2ubuntu1"/>
-<sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="libcppunit-dev"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="libcppunit-dev"/>
 </package>

@@ -7,10 +7,8 @@ INSTALL_DIR = bfl-boost
 CMAKE = `rospack find cmake`/cmake/bin/cmake
 BOOST_ROOT =$(shell rospack find boost)/boost 
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
-  -DBOOST_INCLUDEDIR:STRING=$(BOOST_ROOT)/include \
-  -DBOOST_LIBRARYDIR:STRING=$(BOOST_ROOT)/lib \
-	-DMATRIX_LIB=boost \
-	-DRNG_LIB=boost
+	-DMATRIX_LIB=boost -DMATRIX_INSTALL=`rospack find boost`/boost \
+	-DRNG_LIB=boost -DRNG_INSTALL=`rospack find boost`/boost
 PATCH = bfl_patch.diff
 
 
