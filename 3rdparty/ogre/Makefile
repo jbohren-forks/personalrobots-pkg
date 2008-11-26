@@ -21,11 +21,13 @@ CFLAGS = -g -O3 \
 LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
          $(shell rospack --lang=cpp --attrib=lflags export opende) \
          $(shell rospack --lang=cpp --attrib=lflags export Cg) \
-         $(shell rospack --lang=cpp --attrib=lflags export boost)
+         $(shell rospack --lang=cpp --attrib=lflags export boost) \
+         -lpthread
 
 CONFIGURE_FLAGS = --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release
 
 $(SOURCE_DIR)/Makefile: $(SOURCE_DIR) changelist.txt
+	make clean
 	if test `uname` = Darwin ; then \
 	  touch $(SOURCE_DIR)/Makefile; \
 	else \
