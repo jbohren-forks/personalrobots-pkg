@@ -121,7 +121,7 @@ public:
 	void update_preds_of_changededges(vector<int>* predsIDV);
 
 
-	double get_solution_eps(){return pSearchStateSpace_->eps_satisfied;};
+	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
 
 	//constructors & destructors
     ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch);

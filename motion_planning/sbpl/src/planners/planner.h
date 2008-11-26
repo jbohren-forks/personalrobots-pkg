@@ -114,7 +114,13 @@ public:
     // Notifies the planner that costs have changed. May need to be specialized for different subclasses in terms of what to
     // do here
 	virtual void costs_changed(ChangedCellsGetter const & changedcells) = 0;
-
+  
+  /** \return The "epsilon" value of the solution last computed by
+      replan(), if such an epsilon is used by the planner. The base
+      class implementation returns -1 to express that it has no such
+      thing. */
+  virtual double get_solution_eps() const { return -1; }
+  
     virtual ~SBPLPlanner(){};
 
 protected:
