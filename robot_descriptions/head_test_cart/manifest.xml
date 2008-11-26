@@ -14,5 +14,5 @@
   <depend package="pr2_power_board"/>
   <depend package="IBPSBatteryInterface"/>
   <depend package="pr2_mechanism_controllers"/>
-
+  <depend package="rosrecord"/>
 </package>
