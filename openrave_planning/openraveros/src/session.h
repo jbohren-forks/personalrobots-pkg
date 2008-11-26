@@ -23,6 +23,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 //
 // author: Rosen Diankov
+
+#include <openraveros/openrave_session.h>
+
 #include <openraveros/body_destroy.h>
 #include <openraveros/body_enable.h>
 #include <openraveros/body_getaabb.h>
@@ -48,7 +51,6 @@
 #include <openraveros/env_set.h>
 #include <openraveros/env_triangulate.h>
 #include <openraveros/env_wait.h>
-#include <openraveros/openrave_session.h>
 #include <openraveros/planner_init.h>
 #include <openraveros/planner_plan.h>
 #include <openraveros/problem_sendcommand.h>
@@ -83,5 +85,42 @@ public:
     virtual void SyncWithWorkerThread();
 
 private:
-    bool
+    bool session_callback(openrave_session::request& openrave_session::response& res);
+
+    bool body_destroy_srv(body_destroy::request& body_destroy::response& res);
+    bool body_enable_srv(body_enable::request& body_enable::response& res);
+    bool body_getaabb_srv(body_getaabb::request& body_getaabb::response& res);
+    bool body_getaabbs_srv(body_getaabbs::request& body_getaabbs::response& res);
+    bool body_getdof_srv(body_getdof::request& body_getdof::response& res);
+    bool body_getlinks_srv(body_getlinks::request& body_getlinks::response& res);
+    bool body_setjointvalues_srv(body_setjointvalues::request& body_setjointvalues::response& res);
+    bool body_settransform_srv(body_settransform::request& body_settransform::response& res);
+    bool env_checkcollision_srv(env_checkcollision::request& env_checkcollision::response& res);
+    bool env_closefigures_srv(env_closefigures::request& env_closefigures::response& res);
+    bool env_createbody_srv(env_createbody::request& env_createbody::response& res);
+    bool env_createplanner_srv(env_createplanner::request& env_createplanner::response& res);
+    bool env_createproblem_srv(env_createproblem::request& env_createproblem::response& res);
+    bool env_createrobot_srv(env_createrobot::request& env_createrobot::response& res);
+    bool env_destroyproblem_srv(env_destroyproblem::request& env_destroyproblem::response& res);
+    bool env_getbodies_srv(env_getbodies::request& env_getbodies::response& res);
+    bool env_getbody_srv(env_getbody::request& env_getbody::response& res);
+    bool env_getrobots_srv(env_getrobots::request& env_getrobots::response& res);
+    bool env_loadplugin_srv(env_loadplugin::request& env_loadplugin::response& res);
+    bool env_loadscene_srv(env_loadscene::request& env_loadscene::response& res);
+    bool env_plot_srv(env_plot::request& env_plot::response& res);
+    bool env_raycollision_srv(env_raycollision::request& env_raycollision::response& res);
+    bool env_set_srv(env_set::request& env_set::response& res);
+    bool env_triangulate_srv(env_triangulate::request& env_triangulate::response& res);
+    bool env_wait_srv(env_wait::request& env_wait::response& res);
+    bool planner_init_srv(planner_init::request& planner_init::response& res);
+    bool planner_plan_srv(planner_plan::request& planner_plan::response& res);
+    bool problem_sendcommand_srv(problem_sendcommand::request& problem_sendcommand::response& res);
+    bool robot_controllersend_srv(robot_controllersend::request& robot_controllersend::response& res);
+    bool robot_controllerset_srv(robot_controllerset::request& robot_controllerset::response& res);
+    bool robot_getactivedof_srv(robot_getactivedof::request& robot_getactivedof::response& res);
+    bool robot_getactivevalues_srv(robot_getactivevalues::request& robot_getactivevalues::response& res);
+    bool robot_sensorgetdata_srv(robot_sensorgetdata::request& robot_sensorgetdata::response& res);
+    bool robot_sensorsend_srv(robot_sensorsend::request& robot_sensorsend::response& res);
+    bool robot_setactivedofs_srv(robot_setactivedofs::request& robot_setactivedofs::response& res);
+    bool robot_setactivevalues_srv(robot_setactivevalues::request& robot_setactivevalues::response& res);
 };

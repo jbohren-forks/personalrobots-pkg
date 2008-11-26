@@ -11,6 +11,7 @@
   </export>
   <depend package="soqt"/>
   <depend package="opende"/>
+  <depend package="std_msgs"/>
   <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="libglew-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libglew1.5-dev"/>
