@@ -477,32 +477,6 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,21 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -739,6 +713,32 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,21 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
 --- server/physics/ode/ODEPhysics.hh	(revision 7168)
@@ -1251,15 +1251,20 @@ Index: server/Simulator.cc
 ===================================================================
 --- server/Simulator.cc	(revision 7168)
 +++ server/Simulator.cc	(working copy)
-@@ -74,6 +74,7 @@
+@@ -72,8 +72,11 @@
+   guiEnabled(true),
+   physicsEnabled(true),
    timeout(-1),
-   selectedEntity(NULL)
+-  selectedEntity(NULL)
++  selectedEntity(NULL),
++  selectedBody(NULL)
  {
 +  selectedEntity = NULL;
++  selectedBody = NULL;
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -295,6 +296,11 @@
+@@ -295,6 +298,11 @@
    {
      currTime = this->GetRealTime();
  
@@ -1271,7 +1276,7 @@ Index: server/Simulator.cc
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -319,18 +325,27 @@
+@@ -319,18 +327,27 @@
        World::Instance()->Update();
      }
  
@@ -1307,6 +1312,41 @@ Index: server/Simulator.cc
      }
  
      elapsedTime = (this->GetRealTime() - currTime);
+@@ -512,6 +529,34 @@
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
++/// Set the selected entity
++void Simulator::SetSelectedBody( Body *bod )
++{
++  if (this->selectedBody)
++  {
++    this->selectedBody->GetVisualNode()->ShowSelectionBox(false);
++    this->selectedBody->SetSelected(false);
++  }
++
++  if (this->selectedBody != bod)
++  {
++    this->selectedBody = bod;
++    this->selectedBody->GetVisualNode()->ShowSelectionBox(true);
++    this->selectedBody->SetSelected(true);
++  }
++  else
++    this->selectedBody = NULL;
++
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Get the selected body
++Body *Simulator::GetSelectedBody() const
++{
++  return this->selectedBody;
++}
++
++////////////////////////////////////////////////////////////////////////////////
+ /// Get the model that currently selected
+ Model *Simulator::GetSelectedModel() const
+ {
 Index: server/XMLConfig.cc
 ===================================================================
 --- server/XMLConfig.cc	(revision 7168)
@@ -1385,6 +1425,83 @@ Index: server/XMLConfig.cc
    }
  }
  
+Index: server/rendering/OgreAdaptor.cc
+===================================================================
+--- server/rendering/OgreAdaptor.cc	(revision 7168)
++++ server/rendering/OgreAdaptor.cc	(working copy)
+@@ -35,6 +35,7 @@
+ #include <string.h>
+ 
+ #include "Model.hh"
++#include "Body.hh"
+ #include "OgreVisual.hh"
+ #include "UserCamera.hh"
+ #include "MovableText.hh"
+@@ -492,7 +493,8 @@
+       if (vis && vis->GetEntity())
+       {
+         entity = vis->GetEntity();
+-        entity->GetVisualNode()->ShowSelectionBox(true);
++        //entity->GetVisualNode()->ShowSelectionBox(true);
++        entity->GetVisualNode()->SetTransparency(0.6);
+         Model *model = NULL;
+         
+         do 
+@@ -512,6 +514,54 @@
+ 
+ 
+ ////////////////////////////////////////////////////////////////////////////////
++/// Get an body at a pixel location using a camera. Used for mouse picking. 
++Body *OgreAdaptor::GetBodyAt(OgreCamera *camera, Vector2<int> mousePos) 
++{
++  // these entities are geom's
++  Entity *entity = NULL;
++  Ogre::Camera *ogreCam = camera->GetOgreCamera();
++  Ogre::Vector3 camPos = ogreCam->getPosition();
++
++  Ogre::Ray mouseRay = ogreCam->getCameraToViewportRay(
++      (float)mousePos.x / ogreCam->getViewport()->getActualWidth(), 
++      (float)mousePos.y / ogreCam->getViewport()->getActualHeight() );
++
++  this->raySceneQuery->setRay( mouseRay );
++
++  // Perform the scene query
++  Ogre::RaySceneQueryResult &result = this->raySceneQuery->execute();
++  Ogre::RaySceneQueryResult::iterator iter = result.begin();
++
++  for (iter = result.begin(); iter != result.end(); iter++)
++  {
++    if (iter->movable)
++    {
++
++      OgreVisual *vis = dynamic_cast<OgreVisual*>(iter->movable->getUserObject());
++      if (vis && vis->GetEntity())
++      {
++        entity = vis->GetEntity();
++        //entity->GetVisualNode()->ShowSelectionBox(true);
++        entity->GetVisualNode()->SetTransparency(0.6);
++        Body *body = NULL;
++        
++        do 
++        {
++          body = dynamic_cast<Body*>(entity);
++          entity = entity->GetParent();
++        } while (body == NULL);
++
++        return body;
++      }
++    }
++
++  }
++
++  return NULL;
++}
++
++
++////////////////////////////////////////////////////////////////////////////////
+ /// Get the desired update rate
+ double OgreAdaptor::GetUpdateRate()
+ {
 Index: server/rendering/OgreVisual.cc
 ===================================================================
 --- server/rendering/OgreVisual.cc	(revision 7168)
@@ -1397,6 +1514,26 @@ Index: server/rendering/OgreVisual.cc
        if (!this->sceneNode->getCreator()->hasEntity(meshName))
        {
          OgreSimpleShape::CreateBox(meshName, Vector3(1,1,1), **this->meshTileP);
+Index: server/rendering/OgreAdaptor.hh
+===================================================================
+--- server/rendering/OgreAdaptor.hh	(revision 7168)
++++ server/rendering/OgreAdaptor.hh	(working copy)
+@@ -67,6 +67,7 @@
+   class XMLConfigNode;
+   class OgreFrameListener;
+   class Entity;
++  class Body;
+   class UserCamera;
+   class OgreCamera;
+   
+@@ -101,6 +102,7 @@
+     /// \brief Get an entity at a pixel location using a camera. Used for
+     ///        mouse picking. 
+     public: Entity *GetEntityAt(OgreCamera *camera, Vector2<int> mousePos);
++    public: Body *GetBodyAt(OgreCamera *camera, Vector2<int> mousePos);
+ 
+     private: void LoadPlugins();
+     private: void SetupResources();
 Index: server/GazeboConfig.cc
 ===================================================================
 --- server/GazeboConfig.cc	(revision 7168)
@@ -1473,68 +1610,6 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
-Index: server/gui/StatusBar.cc
-===================================================================
---- server/gui/StatusBar.cc	(revision 7168)
-+++ server/gui/StatusBar.cc	(working copy)
-@@ -25,6 +25,7 @@
-  */
- 
- #include <stdio.h>
-+#include <string.h>
- #include <FL/Fl_Value_Output.H>
- #include <FL/Fl_Output.H>
- #include <FL/Fl_Button.H>
-Index: server/gui/GLWindow.cc
-===================================================================
---- server/gui/GLWindow.cc	(revision 7168)
-+++ server/gui/GLWindow.cc	(working copy)
-@@ -62,7 +62,7 @@
- {
-   this->end();
- 
--  this->moveAmount = 1.0;
-+  this->moveAmount = 0.1;
-   this->moveScale = 1;
-   this->rotateAmount = 0.5;
- 
-@@ -223,8 +223,21 @@
-     Vector2<int> d = this->mousePos - this->prevMousePos;
-     if (this->leftMousePressed)
-     {
--      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
--      this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
-+      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
-+      if (model)
-+      {
-+        Pose3d pose = model->GetPose();
-+        Vector3 eul = pose.rot.GetAsEuler();
-+        eul.x -= d.x * 0.05;
-+        eul.y -= d.y * 0.05;
-+        pose.rot.SetFromEuler(eul);
-+        model->SetPose(pose);
-+      }
-+      else
-+      {
-+        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
-+        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
-+      }
-     }
-     else if (this->rightMousePressed)
-     {
-@@ -267,6 +280,12 @@
-     pose.pos.z += dy * 0.05;
-     model->SetPose(pose);
-   }
-+  else if (this->activeCamera && this->activeCamera->GetUserMovable())
-+  {
-+    this->directionVec.x +=  dy * this->moveAmount;
-+    this->directionVec.y =  0;
-+    this->directionVec.z =  0;
-+  }
- 
- }
- 
 Index: server/Model.cc
 ===================================================================
 --- server/Model.cc	(revision 7168)
@@ -1606,6 +1681,180 @@ Index: server/Model.cc
    return this->UpdateChild();
  }
  
+Index: server/gui/GLWindow.hh
+===================================================================
+--- server/gui/GLWindow.hh	(revision 7168)
++++ server/gui/GLWindow.hh	(working copy)
+@@ -139,6 +139,8 @@
+     private: bool middleMousePressed;
+     private: Vector2<int> prevMousePos;
+     private: Vector2<int> mousePos;
++    private: Vector2<int> mouseOriginPos; // for applying external forces
++    private: Vector3 forceVec; // for applying external forces
+     private: std::map<int,int> keys;
+ 
+     private: double lastUpdateTime;
+Index: server/gui/StatusBar.cc
+===================================================================
+--- server/gui/StatusBar.cc	(revision 7168)
++++ server/gui/StatusBar.cc	(working copy)
+@@ -25,6 +25,7 @@
+  */
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <FL/Fl_Value_Output.H>
+ #include <FL/Fl_Output.H>
+ #include <FL/Fl_Button.H>
+Index: server/gui/GLWindow.cc
+===================================================================
+--- server/gui/GLWindow.cc	(revision 7168)
++++ server/gui/GLWindow.cc	(working copy)
+@@ -35,6 +35,7 @@
+ 
+ #include "Param.hh"
+ #include "Entity.hh"
++#include "Body.hh"
+ #include "OgreCamera.hh"
+ #include "OgreCreator.hh"
+ #include "Simulator.hh"
+@@ -62,7 +63,7 @@
+ {
+   this->end();
+ 
+-  this->moveAmount = 1.0;
++  this->moveAmount = 0.1;
+   this->moveScale = 1;
+   this->rotateAmount = 0.5;
+ 
+@@ -143,6 +144,13 @@
+     this->activeCamera->UpdateCam();
+   else
+     this->userCamera->Update();
++
++  Body *body = Simulator::Instance()->GetSelectedBody();
++  if (body)
++  {
++    std::cout << "applied force " << this->forceVec << std::endl;
++    body->SetForce(this->forceVec);
++  }
+ }
+ 
+ 
+@@ -204,10 +212,22 @@
+   if (!this->mouseDrag)
+   {
+     Entity *ent = OgreAdaptor::Instance()->GetEntityAt(this->activeCamera, this->mousePos);
++    Body *bod = OgreAdaptor::Instance()->GetBodyAt(this->activeCamera, this->mousePos);
++    switch (Fl::event_button())
++    {
++      case FL_LEFT_MOUSE:
++        if (ent) Simulator::Instance()->SetSelectedEntity( ent );
++        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
++        break;
+ 
+-    if (ent)
+-    {
+-      Simulator::Instance()->SetSelectedEntity( ent );
++      case FL_RIGHT_MOUSE:
++        break;
++
++      case FL_MIDDLE_MOUSE:
++        if (bod) Simulator::Instance()->SetSelectedBody( bod );
++        this->mouseOriginPos = Vector2<int>( Fl::event_x(), Fl::event_y() );
++        this->forceVec = Vector3(0,0,0);
++        break;
+     }
+   }
+ 
+@@ -223,8 +243,21 @@
+     Vector2<int> d = this->mousePos - this->prevMousePos;
+     if (this->leftMousePressed)
+     {
+-      this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
+-      this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      Model *model = dynamic_cast<Model*>(Simulator::Instance()->GetSelectedEntity());
++      if (model)
++      {
++        Pose3d pose = model->GetPose();
++        Vector3 eul = pose.rot.GetAsEuler();
++        eul.x -= d.x * 0.05;
++        eul.y -= d.y * 0.05;
++        pose.rot.SetFromEuler(eul);
++        model->SetPose(pose);
++      }
++      else
++      {
++        this->activeCamera->RotateYaw(DTOR(-d.x * this->rotateAmount));
++        this->activeCamera->RotatePitch(DTOR(d.y * this->rotateAmount));
++      }
+     }
+     else if (this->rightMousePressed)
+     {
+@@ -246,10 +279,20 @@
+     }
+     else if (this->middleMousePressed)
+     {
+-      Vector2<int> d = this->mousePos - this->prevMousePos;
+-      this->directionVec.x =  d.y * this->moveAmount;
+-      this->directionVec.y =  0;
+-      this->directionVec.z =  0;
++      Body *body = Simulator::Instance()->GetSelectedBody();
++      if (body)
++      {
++        Vector2<int> d = this->mousePos - this->mouseOriginPos;
++        this->forceVec = Vector3(10.0*d.x,  0.0, -10.0*d.y);
++        body->SetForce(this->forceVec);
++      }
++      else
++      {
++        Vector2<int> d = this->mousePos - this->prevMousePos;
++        this->directionVec.x =  d.y * this->moveAmount;
++        this->directionVec.y =  0;
++        this->directionVec.z =  0;
++      }
+     }
+   }
+ 
+@@ -267,6 +310,12 @@
+     pose.pos.z += dy * 0.05;
+     model->SetPose(pose);
+   }
++  else if (this->activeCamera && this->activeCamera->GetUserMovable())
++  {
++    this->directionVec.x +=  10.0 * dy * this->moveAmount;
++    this->directionVec.y =  0;
++    this->directionVec.z =  0;
++  }
+ 
+ }
+ 
+@@ -309,6 +358,25 @@
+           this->moveAmount *= 0.5;
+           break;
+ 
++        case XK_j:
++          this->forceVec.z -= 100*this->moveAmount;
++          break;
++        case XK_k:
++          this->forceVec.z += 100*this->moveAmount;
++          break;
++        case XK_h:
++          this->forceVec.y -= 100*this->moveAmount;
++          break;
++        case XK_l:
++          this->forceVec.y += 100*this->moveAmount;
++          break;
++        case XK_x:
++          this->forceVec.x += 100*this->moveAmount;
++          break;
++        case XK_z:
++          this->forceVec.x -= 100*this->moveAmount;
++          break;
++
+         case XK_Up:
+         case XK_w:
+           this->directionVec.x += this->moveAmount;
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7168)
@@ -1691,18 +1940,6 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7168)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -85,6 +85,7 @@
-   // If there is a string, then add the contents to the world
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7168)
@@ -1763,6 +2000,18 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7168)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -85,6 +85,7 @@
+   // If there is a string, then add the contents to the world
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
@@ -1913,6 +2162,38 @@ Index: server/World.cc
  ///////////////////////////////////////////////////////////////////////////////
  // Load a model
  int World::LoadEntities(XMLConfigNode *node, Model *parent)
+Index: server/Simulator.hh
+===================================================================
+--- server/Simulator.hh	(revision 7168)
++++ server/Simulator.hh	(working copy)
+@@ -45,6 +45,7 @@
+   class GazeboConfig;
+   class OgreAdaptor;
+   class Entity;
++  class Body;
+   class Model;
+ 
+ /// \brief The World
+@@ -152,9 +153,11 @@
+ 
+     /// \brief Set the selected entity
+     public: void SetSelectedEntity( Entity *ent );
++    public: void SetSelectedBody( Body *bod );
+ 
+     /// \brief Get the selected entity
+     public: Entity *GetSelectedEntity() const;
++    public: Body *GetSelectedBody() const;
+ 
+     /// \brief Get the model that currently selected
+     public: Model *GetSelectedModel() const;
+@@ -215,6 +218,7 @@
+ 
+     /// The entity currently selected by the user
+     private: Entity *selectedEntity;
++    private: Body *selectedBody;
+ 
+     //Singleton implementation
+     private: friend class DestroyerT<Simulator>;
 Index: SConstruct
 ===================================================================
 --- SConstruct	(revision 7168)
