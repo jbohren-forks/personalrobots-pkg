@@ -20,15 +20,17 @@ TESTROOT = $(shell rospack find gazebo)/test-gazebo
 
 BOOST_ROOT = $(shell rospack find boost)/boost
 
+CCFLAGS=-I${BOOST_ROOT}/include 
+
 build: SVN_UP_REVERT_PATCH gazebo
 
 .PHONY: gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/worlds; mkdir -p gazebo/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} CCFLAGS=-I${BOOST_ROOT}/include \
-	scons mode=optimized prefix=$(ROOT) 
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
+	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib'
 	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
-	scons mode=optimized prefix=$(ROOT) install
+	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib' install
 	touch gazebo
 
 ROOT_ORIG = $(shell rospack find gazebo)/gazebo-original

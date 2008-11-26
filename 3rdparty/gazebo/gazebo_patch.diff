@@ -2207,7 +2207,14 @@ Index: SConstruct
  OGRE_VERSION = '= 1.4.9'
  ODE_VERSION = '>= 0.10.1'
  
-@@ -26,8 +26,9 @@
+@@ -21,13 +21,16 @@
+ opts.Add('destdir', 'The root directory to install into. Useful mainly for binary package building', '/')
+ opts.Add('mode','Defines how Gazebo will be built, options available: optimized, profile, debug','debug')
+ opts.Add('with_audio','Builds support for 3d sound. Options available: no, yes ', 'no')
++opts.Add('boost_cflags','c flags for custom boost lib','')
++opts.Add('boost_lflags','link flags for custom boost lib','')
+ 
+ #
  # 3rd party packages
  #
  parseConfigs=['pkg-config --cflags --libs OGRE',
@@ -2218,7 +2225,7 @@ Index: SConstruct
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
                'pkg-config --cflags --libs xft'
                ]
-@@ -35,6 +36,8 @@
+@@ -35,6 +38,8 @@
  #
  # setup the build environment
  #
@@ -2227,7 +2234,42 @@ Index: SConstruct
  env = Environment (
    CC = 'g++',
  
-@@ -86,7 +89,7 @@
+@@ -61,7 +66,7 @@
+   LIBPATH=Split('#libgazebo'),
+     
+   #LIBS=Split('gazebo boost_python')
+-  LIBS=Split('gazebo boost_signals'),
++  LIBS=Split('gazebo'),
+   LINKFLAGS=Split('-export-dynamic'),
+ 
+   TARFLAGS = '-c -z',
+@@ -70,6 +75,25 @@
+   options=opts
+ )
+ 
++#
++# custom boost flags
++#
++print ' boost_cflags '
++print env['boost_cflags']
++print ' boost_lflags '
++print env['boost_lflags']
++
++env['CCFLAGS'] += Split(env['boost_cflags'])
++env['LINKFLAGS'] += Split(env['boost_lflags'])
++
++print ' CCFLAGS '
++print env['CCFLAGS']
++print ' LINKFLAGS '
++print env['LINKFLAGS']
++
++
++
++
+ Help(opts.GenerateHelpText(env))
+ 
+ if env['destdir'] != '/':
+@@ -86,7 +110,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
