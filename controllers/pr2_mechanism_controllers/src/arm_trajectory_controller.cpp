@@ -61,6 +61,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   mechanism::Joint *joint;
   std::vector<double> joint_velocity_limits;
   std::vector<trajectory::Trajectory::TPoint> trajectory_points_vector;
+  std::string trajectory_type = "linear";
 
   TiXmlElement *elt = config->FirstChildElement("controller");
   while (elt)
@@ -84,13 +85,20 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   ROS_INFO("ArmTrajectoryController:: Done loading controllers");
 
   elt = config->FirstChildElement("trajectory");
-  ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",elt->Attribute("interpolation"));
+
+  if(!elt)
+    ROS_WARN("No trajectory information in xml file. ");
+  else
+  {
+    trajectory_type = std::string(elt->Attribute("interpolation"));
+    ROS_INFO("ArmTrajectoryController:: interpolation type:: %s",trajectory_type.c_str());    
+  }
   joint_cmd_rt_.resize(joint_position_controllers_.size()); 
 
   joint_trajectory_ = new trajectory::Trajectory((int) joint_position_controllers_.size());
 
   joint_trajectory_->setMaxRates(joint_velocity_limits);
-  joint_trajectory_->setInterpolationMethod(std::string(elt->Attribute("interpolation")));
+  joint_trajectory_->setInterpolationMethod(trajectory_type);
 
   trajectory_point_.setDimension((int) joint_position_controllers_.size());
   dimension_ = (int) joint_position_controllers_.size();
@@ -100,6 +108,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
   trajectory_point_.time_ = 0.0;
 
+// Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
   trajectory_points_vector.push_back(trajectory_point_);
   trajectory_points_vector.push_back(trajectory_point_);
 
@@ -174,9 +183,9 @@ void ArmTrajectoryController::update(void)
     for(unsigned int i=0; i < joint_cmd_rt_.size(); ++i)
     {
       joint_cmd_rt_[i] = trajectory_point_.q_[i];
-      cout << " " << joint_cmd_rt_[i];
+//      cout << " " << joint_cmd_rt_[i];
     }
-    cout << endl;
+//    cout << endl;
     arm_controller_lock_.unlock();
   }
 
@@ -258,26 +267,40 @@ bool ArmTrajectoryControllerNode::initXml(mechanism::RobotState * robot, TiXmlEl
 
 void ArmTrajectoryControllerNode::CmdTrajectoryReceived()
 {
-   std::vector<trajectory::Trajectory::TPoint> tp;
+  std::vector<trajectory::Trajectory::TPoint> tp;
 
   this->ros_lock_.lock();
-  tp.resize(traj_msg_.get_points_size());
+  tp.resize((int)traj_msg_.get_points_size()+1);
+
+  //set first point in trajectory to current position of the arm
+    tp[0].setDimension((int) c_->dimension_);
+  for(int j=0; j < c_->dimension_; j++)
+  {
+    tp[0].q_[j] = c_->joint_position_controllers_[j]->joint_state_->position_;
+    tp[0].time_ = 0.0;
+  }
 
   if(traj_msg_.get_points_size() > 0)
   {
      if((int) traj_msg_.points[0].get_positions_size() != (int) c_->dimension_)
+     {
+       ROS_WARN("Dimension of input trajectory = %d does not match number of controlled joints = %d",(int) traj_msg_.points[0].get_positions_size(), (int) c_->dimension_);
         return;
+     }
   }
   else
+  {
+    ROS_WARN("Trajectory message has no way points");
      return;
+  }
 
   for(int i=0; i < (int) traj_msg_.get_points_size(); i++)
   {
-     tp[i].setDimension((int) c_->dimension_);
+     tp[i+1].setDimension((int) c_->dimension_);
      for(int j=0; j < (int) c_->dimension_; j++)
      {
-        tp[i].q_[j] = traj_msg_.points[i].positions[j];
-        tp[i].time_ = traj_msg_.points[i].time;
+        tp[i+1].q_[j] = traj_msg_.points[i].positions[j];
+        tp[i+1].time_ = traj_msg_.points[i].time;
      }
   }
 
