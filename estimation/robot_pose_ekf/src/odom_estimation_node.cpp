@@ -113,8 +113,8 @@ namespace estimation
     // receive data
     odom_mutex_.lock();
     odom_stamp_ = odom_.header.stamp;
-    odom_time_ = Time::now();
-    odom_meas_ = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
+    odom_time_  = Time::now();
+    odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
     my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"));
     
     // activate odom
@@ -150,7 +150,7 @@ namespace estimation
     // receive data
     imu_mutex_.lock();
     imu_stamp_ = imu_.header.stamp;
-    imu_time_ = Time::now();
+    imu_time_  = Time::now();
     PoseMsgToTF(imu_.pos, imu_meas_);
     my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
 
@@ -188,12 +188,12 @@ namespace estimation
     vo_mutex_.lock();
     vo_ = *vo;
     vo_stamp_ = vo_.header.stamp;
-    vo_time_ = Time::now();
+    vo_time_  = Time::now();
     robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
     PoseMsgToTF(vo_.pose, vo_meas_);
 
     // initialize
-    if (!vo_active_){
+    if (!vo_active_ && !vo_initializing_){
       base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
     }
     // vo measurement as base transform
