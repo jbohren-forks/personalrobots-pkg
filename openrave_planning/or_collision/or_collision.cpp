@@ -112,9 +112,9 @@ void printhelp()
     printf("or_collision [--list] [--checker checker_name] [--joints #values [values]] robot_model\n"
            "  Load a robot into the openrave environment, set it at [joint values] and\n"
            "  check for self collisions. Returns number of contact points.\n"
-           "-listplugins             Will list all the loadable interfaces (ie, collision checkers).\n"
-           "-checker name            Load a different collision checker instead of the default one\n"
-           "-joints #values [values] Set the robot to specific joint values\n");
+           "--list             Will list all the loadable interfaces (ie, collision checkers).\n"
+           "--checker name            Load a different collision checker instead of the default one\n"
+           "--joints #values [values] Set the robot to specific joint values\n");
 }
 
 void printinterfaces(EnvironmentBase* penv)
