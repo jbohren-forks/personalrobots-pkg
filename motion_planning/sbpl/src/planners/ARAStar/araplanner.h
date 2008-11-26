@@ -117,7 +117,7 @@ public:
 	int set_search_mode(bool bSearchUntilFirstSolution);
 
 
-	double get_solution_eps(){return pSearchStateSpace_->eps_satisfied;};
+	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
 
 	//constructors & destructors
     ARAPlanner(DiscreteSpaceInformation* environment, bool bforwardsearch);
