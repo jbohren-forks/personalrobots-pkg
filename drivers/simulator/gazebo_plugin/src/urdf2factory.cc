@@ -398,8 +398,8 @@ void convert(robot_desc::URDF &wgxml, TiXmlDocument &doc, bool enforce_limits)
 
 void usage(const char *progname)
 {
-    printf("\nUsage: %s robotdesc/pr2\n", progname);
-    printf("  read robotdesc/pr2 from param server and send to gazebo factory to spawn robot\n\n");
+    printf("\nUsage: %s param_name [initial x y z roll pitch yaw]\n", progname);
+    printf("  e.g. read robotdesc/pr2 from param server and send to gazebo factory to spawn robot\n\n");
 }
 
 int main(int argc, char **argv)
@@ -409,7 +409,26 @@ int main(int argc, char **argv)
         usage(argv[0]);
         exit(1);
     }
-    
+
+    double initial_x = 0;
+    double initial_y = 0;
+    double initial_z = 0;
+    if (argc >= 5)
+    {
+        initial_x = atof(argv[2]);
+        initial_y = atof(argv[3]);
+        initial_z = atof(argv[4]);
+    }
+    double initial_rx = 0;
+    double initial_ry = 0;
+    double initial_rz = 0;
+    if (argc == 8)
+    {
+        initial_rx = atof(argv[5]);
+        initial_ry = atof(argv[6]);
+        initial_rz = atof(argv[7]);
+    }
+
     // connect to gazebo
     gazebo::Client *client = new gazebo::Client();
     gazebo::FactoryIface *factoryIface = new gazebo::FactoryIface();
@@ -465,14 +484,13 @@ int main(int argc, char **argv)
     // do the number crunching to make gazebo.model file
     convert(wgxml, doc, enforce_limits);
 
-    std::cout << " doc " << doc << std::endl << std::endl;
+    //std::cout << " doc " << doc << std::endl << std::endl;
 
     factoryIface->Lock(1);
 
-    // copy to a string
+    // copy model to a string
     std::ostringstream stream;
     stream << doc;
-    std::cout << " stream " << stream.str() << std::endl;
     std::string xml_string = stream.str();
 
     // strip <? ... xml version="1.0" ... ?> from xml_string
@@ -482,7 +500,29 @@ int main(int argc, char **argv)
     int pos2 = xml_string.find(close_bracket,0);
     xml_string.replace(pos1,pos2-pos1+2,std::string(""));
 
+    // replace initial pose of robot
+    // find first instance of xyz and rpy, replace with initial pose
+    if (argc >= 5)
+    {
+      std::ostringstream xyz_stream, rpy_stream;
+      xyz_stream << "<xyz>" << initial_x << " " << initial_y << " " << initial_z << "</xyz>";
+      int xyz_pos1 = xml_string.find("<xyz>" ,0);
+      int xyz_pos2 = xml_string.find("</xyz>",0);
+      if (xyz_pos1 != -1 && xyz_pos2 != -1)
+        xml_string.replace(xyz_pos1,xyz_pos2-xyz_pos1+6,std::string(xyz_stream.str()));
+      if (argc == 8)
+      {
+        rpy_stream << "<rpy>" << initial_rx << " " << initial_ry << " " << initial_rz << "</rpy>";
+        int rpy_pos1 = xml_string.find("<rpy>" ,0);
+        int rpy_pos2 = xml_string.find("</rpy>",0);
+        if (rpy_pos1 != -1 && rpy_pos2 != -1)
+          xml_string.replace(rpy_pos1,rpy_pos2-rpy_pos1+6,std::string(rpy_stream.str()));
+      }
+    }
 
+    //std::cout << " ------------------- xml ------------------- " << std::endl;
+    //std::cout << xml_string << std::endl;
+    //std::cout << " ------------------- xml ------------------- " << std::endl;
 
     printf("Creating Robot in Gazebo\n");
     strcpy((char*)factoryIface->data->newModel, xml_string.c_str());
