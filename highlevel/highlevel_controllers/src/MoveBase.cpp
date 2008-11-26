@@ -290,7 +290,13 @@ namespace ros {
     }
 
 
+    /**
+     * @brief Called by the main control loop in the base class. Lock already aquired
+     */
     void MoveBase::updateGoalMsg(){
+      // Revert to static map on new goal. May result in oscillation, but requested by Eitan for the milestone
+      costMap_->revertToStaticMap();
+
       tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
       btQuaternion qt;
       qt.setEulerZYX(goalMsg.goal.th, 0, 0);
