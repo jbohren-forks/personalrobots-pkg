@@ -92,65 +92,41 @@ namespace ompl {
 				  std::ostream * opt_err_os);
   
   
-  /**
-     Collection of statistic for SBPL planner runs.
-  */
-  class SBPLPlannerStatistics
-  {
-  public:
-    /** One element of the statistics. Represents one SBPLPlanner::replan() cycle. */
-    struct entry {
-      entry(std::string const & plannerType, std::string const & environmentType);
-      
-      std::string plannerType;         /**< name of the planner (an SBPLPlanner subclass) */
-      std::string environmentType;     /**< name of the environment type (2D, 3DKIN, ...) */
-      std_msgs::Pose2DFloat32 goal;    /**< from the std_msgs::Planner2DGoal we received (map frame) */
-      unsigned int goalIx;             /**< x-index of the goal in the costmap */
-      unsigned int goalIy;             /**< y-index of the goal in the costmap */
-      int goalState;                   /**< stateID of the goal (from costmap indices) */
-      std_msgs::Pose2DFloat32 start;   /**< global pose (map frame) "just before" before planning */
-      unsigned int startIx;            /**< x-index of the start in the costmap */
-      unsigned int startIy;            /**< y-index of the start in the costmap */
-      int startState;                  /**< stateID of the start (from costmap indices) */
-      bool stop_at_first_solution;     /**< whether to just plan until any plan is found */
-      bool plan_from_scratch;          /**< whether to discard any previous solutions */
-      double allocated_time_sec;       /**< the amount of time we had available for planning */
-      double actual_time_wall_sec;     /**< the amount of time actually used for planning (wallclock) */
-      double actual_time_user_sec;     /**< the amount of time actually used for planning (user time) */
-      double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
-
-      int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
-      int solution_cost;               /**< cost of the solution, as given by replan() */
-      double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
-      double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
-      
-      /** Use ROS_INFO() to log this entry to rosconsole.
-	  \todo needs to be unified with the other logXXX() methods
-      */
-      void logInfo(char const * prefix = "") const;
-      
-      /** Append this entry to a logfile (which is opened and closed each time). */
-      void logFile(char const * filename, char const * title, char const * prefix) const;
-      
-      /** Append this entry to a stream. */
-      void logStream(std::ostream & os, std::string const & title, std::string const & prefix) const;
-    };
+  struct SBPLPlannerStatsEntry {
+    SBPLPlannerStatsEntry(std::string const & plannerType, std::string const & environmentType);
     
-    typedef std::vector<entry> stats_t;
+    std::string plannerType;         /**< name of the planner (an SBPLPlanner subclass) */
+    std::string environmentType;     /**< name of the environment type (2D, 3DKIN, ...) */
+    std_msgs::Pose2DFloat32 goal;    /**< from the std_msgs::Planner2DGoal we received (map frame) */
+    unsigned int goalIx;             /**< x-index of the goal in the costmap */
+    unsigned int goalIy;             /**< y-index of the goal in the costmap */
+    int goalState;                   /**< stateID of the goal (from costmap indices) */
+    std_msgs::Pose2DFloat32 start;   /**< global pose (map frame) "just before" before planning */
+    unsigned int startIx;            /**< x-index of the start in the costmap */
+    unsigned int startIy;            /**< y-index of the start in the costmap */
+    int startState;                  /**< stateID of the start (from costmap indices) */
+    bool stop_at_first_solution;     /**< whether to just plan until any plan is found */
+    bool plan_from_scratch;          /**< whether to discard any previous solutions */
+    double allocated_time_sec;       /**< the amount of time we had available for planning */
+    double actual_time_wall_sec;     /**< the amount of time actually used for planning (wallclock) */
+    double actual_time_user_sec;     /**< the amount of time actually used for planning (user time) */
+    double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
     
-    /** Create a fresh entry and append it to the end of the
-	accumulated statistics. */
-    void pushBack(std::string const & plannerType, std::string const & environmentType);
+    int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
+    int solution_cost;               /**< cost of the solution, as given by replan() */
+    double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
+    double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
     
-    /** \return The topmost (latest) element, which is only defined if
-	you called pushBack() at least once. */
-    entry & top();
+    /** Use ROS_INFO() to log this entry to rosconsole.
+	\todo needs to be unified with the other logXXX() methods
+    */
+    void logInfo(char const * prefix = "") const;
     
-    /** Read-only access to the entire history. */
-    stats_t const & getAll() const;
+    /** Append this entry to a logfile (which is opened and closed each time). */
+    void logFile(char const * filename, char const * title, char const * prefix) const;
     
-  protected:
-    stats_t stats_;
+    /** Append this entry to a stream. */
+    void logStream(std::ostream & os, std::string const & title, std::string const & prefix) const;
   };
   
   

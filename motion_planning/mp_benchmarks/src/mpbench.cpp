@@ -75,12 +75,14 @@ static bool websiteMode;
 static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<EnvironmentWrapper> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
-static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
 
 static planList_t planList;
+
+typedef vector<SBPLPlannerStatsEntry> plannerStats_t;
+static plannerStats_t plannerStats;
 
 
 int main(int argc, char ** argv)
@@ -116,7 +118,6 @@ void cleanup()
   setup.reset();
   environment.reset();
   plannerMgr.reset();
-  plannerStats.reset();
   logos.reset();
   planList.clear();
 }
@@ -547,9 +548,6 @@ void create_setup()
   if ( ! plannerMgr->select(plannerType, false, logos.get()))
     errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
   *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
-  
-  *logos << "creating planner stats\n" << flush;
-  plannerStats.reset(new SBPLPlannerStatistics());
 }
 
 
@@ -560,8 +558,7 @@ void run_tasks()
     IndexTransformWrap const & it(*setup->getIndexTransform());
     SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
     for (size_t ii(0); ii < tasklist.size(); ++ii) {
-      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
-      SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
+      SBPLPlannerStatsEntry statsEntry(plannerMgr->getName(), environment->getName());
       SBPLBenchmarkSetup::task const & task(tasklist[ii]);
       
       *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
@@ -599,8 +596,6 @@ void run_tasks()
 	     statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
       
       // plan it
-      if (task.from_scratch)
-	plannerMgr->force_planning_from_scratch();
       vector<int> solutionStateIDs;
       statsEntry.stop_at_first_solution = false;
       statsEntry.plan_from_scratch = task.from_scratch;
@@ -632,6 +627,8 @@ void run_tasks()
 	title = "  FAILURE";
       statsEntry.logStream(*logos, title, "    ");
       *logos << flush;
+      
+      plannerStats.push_back(statsEntry);
     }
   }
 }
@@ -639,16 +636,15 @@ void run_tasks()
 
 void print_summary()
 {
-  SBPLPlannerStatistics::stats_t const & stats(plannerStats->getAll());
   size_t n_success(0);
   size_t n_fail(0);
   double t_success(0);
   double t_fail(0);
   double lplan(0);
   double rplan(0);
-  for (SBPLPlannerStatistics::stats_t::const_iterator ie(stats.begin()); ie != stats.end(); ++ie) {
-    // cannot use status, some planners say SUCCESS even they fail
-    if (ie->plan_length_m < 1e-3) {
+  for (plannerStats_t::const_iterator ie(plannerStats.begin()); ie != plannerStats.end(); ++ie) {
+    // cannot always use status, some planners say SUCCESS even they fail
+    if ((ie->status != 1) || (ie->plan_length_m < 1e-3)) {
       ++n_fail;
       t_fail += ie->actual_time_user_sec;
     }

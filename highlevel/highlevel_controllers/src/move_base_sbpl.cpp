@@ -116,13 +116,14 @@ namespace ros {
       virtual void updateGoalMsg();
       
     private:
+      typedef list<ompl::SBPLPlannerStatsEntry> plannerStats_t;
 
       bool isMapDataOK();
 
       MDPConfig mdpCfg_;
       ompl::EnvironmentWrapper * env_;
       ompl::SBPLPlannerManager * pMgr_;
-      ompl::SBPLPlannerStatistics pStat_;
+      plannerStats_t pStat_;
       double plannerTimeLimit_; /* The amount of time given to the planner to find a plan */
       std::string planStatsFile_;
       size_t goalCount_;
@@ -231,7 +232,6 @@ namespace ros {
 	  ROS_ERROR("in MoveBaseSBPL ctor: pMgr_->select(%s) failed", plannerType.c_str());
 	  throw int(5);
 	}
-	pStat_.pushBack(plannerType, environmentType);
       }
       catch (int ii) {
 	delete env_;
@@ -270,8 +270,7 @@ namespace ros {
     bool MoveBaseSBPL::makePlan(){
       ROS_DEBUG("Planning for new goal...\n");
       
-      ompl::SBPLPlannerStatistics::entry & statsEntry(pStat_.top());
-      
+      ompl::SBPLPlannerStatsEntry statsEntry(pMgr_->getName(), env_->getName());      
       try {
 	// Update costs
 	lock();
@@ -374,7 +373,7 @@ namespace ros {
 	    statsEntry.logFile(planStatsFile_.c_str(), title, prefix_os.str().c_str());
 	  }
 	  ////	  statsEntry.logInfo("move_base_sbpl: ");
-	  pStat_.pushBack(pMgr_->getName(), env_->getName());
+	  pStat_.push_back(statsEntry);
 	  
 	  updatePlan(plan);
 	  return true;

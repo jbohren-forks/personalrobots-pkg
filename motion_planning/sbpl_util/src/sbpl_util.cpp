@@ -239,8 +239,8 @@ namespace ompl {
   }
   
   
-  SBPLPlannerStatistics::entry::
-  entry(std::string const & _plannerType, std::string const & _environmentType)
+  SBPLPlannerStatsEntry::
+  SBPLPlannerStatsEntry(std::string const & _plannerType, std::string const & _environmentType)
     : plannerType(_plannerType),
       environmentType(_environmentType),
       goalState(-1),
@@ -250,28 +250,7 @@ namespace ompl {
   }
   
   
-  void SBPLPlannerStatistics::
-  pushBack(std::string const & plannerType, std::string const & environmentType)
-  {
-    stats_.push_back(entry(plannerType, environmentType));
-  }
-  
-  
-  SBPLPlannerStatistics::entry & SBPLPlannerStatistics::
-  top()
-  {
-    return stats_.back();
-  }
-  
-  
-  SBPLPlannerStatistics::stats_t const & SBPLPlannerStatistics::
-  getAll() const
-  {
-    return stats_;
-  }
-  
-  
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logInfo(char const * prefix) const
   {
     ostringstream os;
@@ -280,12 +259,12 @@ namespace ompl {
   }
   
   
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logFile(char const * filename, char const * title, char const * prefix) const
   {
     FILE * ff(fopen(filename, "a"));
     if (0 == ff) {
-      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fopen(%s): %s",
+      ROS_WARN("SBPLPlannerStatsEntry::logFile(): fopen(%s): %s",
 	       filename, strerror(errno));
       return;
     }
@@ -293,12 +272,12 @@ namespace ompl {
     logStream(os, title, prefix);
     fprintf(ff, "%s", os.str().c_str());
     if (0 != fclose(ff))
-      ROS_WARN("SBPLPlannerStatistics::entry::logFile(): fclose() on %s: %s",
+      ROS_WARN("SBPLPlannerStatsEntry::logFile(): fclose() on %s: %s",
 	       filename, strerror(errno));
   }
   
   
-  void SBPLPlannerStatistics::entry::
+  void SBPLPlannerStatsEntry::
   logStream(std::ostream & os, std::string const & title, std::string const & prefix) const
   {
     if ( ! title.empty())

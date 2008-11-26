@@ -74,12 +74,14 @@ static double allocTimeMS(200);	// XXXX add an option for this
 static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<EnvironmentWrapper> environment;
 static shared_ptr<SBPLPlannerManager> plannerMgr;
-static shared_ptr<SBPLPlannerStatistics> plannerStats;
 static shared_ptr<ostream> logos;
 
 static shared_ptr<footprint_t> footprint;
 
 static planList_t planList;
+
+typedef vector<SBPLPlannerStatsEntry> plannerStats_t;
+static plannerStats_t plannerStats;
 
 
 int main(int argc, char ** argv)
@@ -115,7 +117,6 @@ void cleanup()
   setup.reset();
   environment.reset();
   plannerMgr.reset();
-  plannerStats.reset();
   logos.reset();
   planList.clear();
 }
@@ -503,9 +504,6 @@ void create_setup()
   if ( ! plannerMgr->select(plannerType, false, logos.get()))
     errx(EXIT_FAILURE, "plannerMgr->select(%s) failed", plannerType.c_str());
   *logos << "  planner name: " << plannerMgr->getName() << "\n" << flush;
-  
-  *logos << "creating planner stats\n" << flush;
-  plannerStats.reset(new SBPLPlannerStatistics());
 }
 
 
@@ -516,10 +514,9 @@ void run_tasks()
   IndexTransformWrap const & it(*setup->getIndexTransform());
   SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
   for (size_t ii(0); ii < tasklist.size(); ++ii) {
-    plannerStats->pushBack(plannerMgr->getName(), environment->getName());
-    SBPLPlannerStatistics::entry & statsEntry(plannerStats->top());
+    SBPLPlannerStatsEntry statsEntry(plannerMgr->getName(), environment->getName());
     SBPLBenchmarkSetup::task const & task(tasklist[ii]);
-      
+    
     *logos << "\n  task " << ii << ": " << task.description << "\n" << flush;
       
     // set start
@@ -558,9 +555,10 @@ void run_tasks()
     // - initially just the 1st path we come across
     // - subsequently with some allocated timeslice
     // - until there is no change in the returned path
-      
+
+    statsEntry.plan_length_m = 0; // just in case the first replan() fails
+    statsEntry.plan_angle_change_rad = 0;
     vector<int> prevSolution;
-    SBPLPlannerStatistics::entry & prevStatsEntry(statsEntry);
     for (size_t jj(0); true; ++jj) {
       
       // Handle the first iteration specially.
@@ -583,16 +581,17 @@ void run_tasks()
 					     &statsEntry.actual_time_system_sec,
 					     &statsEntry.solution_cost,
 					     &solution);
-	
+      
       // forget about this task if we got a planning failure
       if ((1 != statsEntry.status) // planners should provide status
 	  || (1 >= solution.size()) // but sometimes they do not
 	  ) {
 	statsEntry.logStream(*logos, "  FAILURE", "    ");
 	*logos << flush;
+	plannerStats.push_back(statsEntry);
 	break;
       }
-	
+      
       // detect whether we got the same result as before, in which
       // case we're done
       if (prevSolution.size() == solution.size()) {
@@ -605,7 +604,7 @@ void run_tasks()
 	if (same) {
 	  statsEntry.logStream(*logos, "  FINAL", "    ");
 	  *logos << flush;
-	  statsEntry = prevStatsEntry;
+	  plannerStats.push_back(statsEntry);
 	  break;
 	}
       }
@@ -625,11 +624,8 @@ void run_tasks()
       else
 	statsEntry.logStream(*logos, "  IMPROVED", "    ");
       *logos << flush;
-	
-      plannerStats->pushBack(plannerMgr->getName(), environment->getName());
-      prevStatsEntry = statsEntry;
-      statsEntry = plannerStats->top();
-	
+      plannerStats.push_back(statsEntry);
+      
       prevSolution.swap(solution);
     }
   }
@@ -638,16 +634,15 @@ void run_tasks()
 
 void print_summary()
 {
-  SBPLPlannerStatistics::stats_t const & stats(plannerStats->getAll());
   size_t n_success(0);
   size_t n_fail(0);
   double t_success(0);
   double t_fail(0);
   double lplan(0);
   double rplan(0);
-  for (SBPLPlannerStatistics::stats_t::const_iterator ie(stats.begin()); ie != stats.end(); ++ie) {
-    // cannot use status, some planners say SUCCESS even they fail
-    if (ie->plan_length_m < 1e-3) {
+  for (plannerStats_t::const_iterator ie(plannerStats.begin()); ie != plannerStats.end(); ++ie) {
+    // cannot always use status, some planners say SUCCESS even they fail
+    if ((1 != ie->status) || (ie->plan_length_m < 1e-3)) {
       ++n_fail;
       t_fail += ie->actual_time_user_sec;
     }
