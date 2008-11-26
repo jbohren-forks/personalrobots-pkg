@@ -10,7 +10,7 @@ This package contains Cg, for Nvidia Cg.
 <review status="unreviewed" notes=""/>
 <url>http://developer.nvidia.com/page/cg_main.html</url>
 <export>
-  <cpp lflags="-Wl,-rpath,${prefix}/Cg/lib -L${prefix}/Cg/lib -lCg" cflags="-I${prefix}/Cg/include/Cg"/>
+  <cpp lflags="-Wl,-rpath,${prefix}/Cg/lib -L${prefix}/Cg/lib -lCg" cflags="-I${prefix}/Cg/include"/>
   <doxymaker external="http://developer.nvidia.com/page/documentation.html"/>
 </export>
 <sysdepend os="ubuntu" version="7.04-feisty" package="wget"/>
