@@ -171,6 +171,7 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
   TIMEREND2(SBAFwdTransfMats);
 }
 
+/// \brief Main method to perform sparse bundle adjustment.
 ///
 /// 1. Initialization of  \f$ \lambda \f$.
 ///
@@ -180,19 +181,19 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///
 /// Main loop of optimization.
 ///
-/// 3. Clear the left hand side matrix A and right hand side vector B
+/// 3. Clear the left hand side matrix \a A and right hand side vector \a B
 /// for computing numerical Jacobian.
 /// For each camera/frame compute the transformation matrices
 /// from global to disparity w.r.t. delta update on each camera parameter.
 ///
-/// 4. For each track p
-/// - Compute the part of JtJ w.r.t to p.
+/// 4. For each track \a p
+/// - Compute the part of JtJ w.r.t to \a p.
 ///   Clear a variable \f$ H_{pp} \f$ to represent block \f$ p \f$
 ///   of \f$ H_{PP} \f$ (in our case a 3x3 matrix) and a variable
 ///   \f$ b_p \f$ to represent part \f$ p \f$ of \f$ b_P \f$ (in our case
 ///   a 3-vector)
-/// - <b>(Compute derivatives)</b>.  For each camera c on track p.
-///    - Compute error vector f of reprojection in camera c of point p
+/// - <b>(Compute derivatives)</b>.  For each camera \a c on track \a p.
+///    - Compute error vector \a f of reprojection in camera c of point \a p
 ///     and its Jacobian \f$ J_p \f$ and \f$ J_c\f$ with respect to the point parameters
 ///     (in our case 3x3 matrix) and the camera parameters (in out case
 ///     3x6 matrix). respectively.
@@ -204,10 +205,10 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///    - If camera c is free
 ///      - Add \f$ J_c^TJ_c \f$ (optionally with an augmented diagonal)
 ///        to upper triangular part of block (c, c) of
-///        left hand side matrix A (in our case 6x6 matrix).
+///        left hand side matrix \a A (in our case 6x6 matrix).
 ///      - Compute block (p,c) of \f$ H_{PC} \f$ as \f$ H_{pc} = J_p^T J_c \f$
 ///        (in our case a 3x6 matrix) and store it until track is done.
-///        Subtract \f$ J_c^T f \f$ from part c of right hand side vector B
+///        Subtract \f$ J_c^T f \f$ from part c of right hand side vector \a B
 ///        (related to \f$ b_C \f$).
 ///
 ///    - Augment diagonal of \f$ H_{pp} \f$, which is now accumulated and ready.
@@ -216,30 +217,31 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///      We can reuse the space.
 ///      Compute \f$ H_{pp}^{-1} b_p \f$ and store it in a variable \f$ t_p \f$.
 ///
-/// - <b>(Outer product of track)</b> For each free camera c on track p
-///   - Subtract \f$ H_{pc}^T t_p = H_{pc}^T H_{pp}^{-1} b_p \f$ from part c
-///     of right hand side vector B.
+/// - <b>(Outer product of track)</b> For each free camera c on track \a p
+///   - Subtract \f$ H_{pc}^T t_p = H_{pc}^T H_{pp}^{-1} b_p \f$ from part \a c
+///     of right hand side vector \a B.
 ///   - Compute the matrix \f$ H_{pc}^T H_{pp}^{-1}\f$ and store it in a variable
 ///     \f$ T_{cp} \f$ (6x3).
-///   - For each free camera \f$ c2 >= c \f$ on track p
+///   - For each free camera \f$ c2 >= c \f$ on track \a p
 ///     - Subtract \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} \f$ from
-///       block (c, c2) of left hand side matrix A.
+///       block \f$ (c, c2) \f$ of left hand side matrix \a A.
 ///
 /// 5. (Optional) Fix gauge by freezing appropriate coordinates and
 /// therefore reducing the linear system with a few dimensions.
 ///
-/// 6. <b>(Linear Solving)</b> Cholesky factor the left hand side matrix A and
-/// solve for dC. Add the frozen coordinates back in.
+/// 6. <b>(Linear Solving)</b> Cholesky factor the left hand side matrix \a A and
+/// solve for \a dC. Add the frozen coordinates back in.
 /// (Instead we use SVD for symmetric square matrix.)
-/// Update camera parameters with dC.
+/// Update camera parameters with \a dC.
 ///
-/// 7. <b>(Backsubstitution)</b>  for each track p
+/// 7. <b>(Backsubstitution)</b>  for each track \a p
 ///   - Start with point update for this track \f$ dp = t_p \f$
 ///
-///   - for  each free camera c on track p,
-///     Subtract \f$ T_{cp}^T dc \f$ from dp (where dc is the update for camera c).
+///   - for  each free camera \a c on track \a p,
+///     Subtract \f$ T_{cp}^T dc \f$ from \a dp (where \a dc is the update for
+///     camera \a c).
 ///
-///   - Update point parameters with dp
+///   - Update point parameters with \a dp
 ///
 /// 8. <b>(Compute the cost function)</b> for the updated camera and point configuration
 ///
@@ -259,6 +261,8 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///  - They used a faster machine Alienware with Intel Pentium Xeon processor
 ///    3.4Ghz, 2.37GB.
 ///  - They might use 32 bit float.
+///  - \f$ J_p \f$ and \f$ J_c \f$ are smaller (2x3 and 2x6, instead of 3x3 and
+///  - 3x6).
 ///
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
