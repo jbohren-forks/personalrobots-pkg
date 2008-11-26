@@ -1,8 +1,8 @@
 # change the next flag to 'no' if drawstuff is not to be built
 WITH_DRAWSTUFF = yes
 
-CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic --enable-double-precision
-SVN_REVISION = -r 1550
+CFG_OPTIONS = --with-arch=nocona --enable-release --disable-asserts --with-pic #--enable-double-precision
+SVN_REVISION = -r 1598
 
 SVN_PATCH = opende_patch.diff
 
@@ -16,7 +16,7 @@ SVN_DIR = opende-svn
 SVN_URL = https://opende.svn.sourceforge.net/svnroot/opende/trunk 
 include $(shell rospack find mk)/svn_checkout.mk
 
-CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-ggdb -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-ggdb -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
+CONFIGURE_FLAGS = $(CFG_OPTIONS) CXXFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-DNDEBUG -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include'
 #CONFIGURE_FLAGS = $(CFG_OPTIONS) CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild' CXXFLAGS='-march=core2 -xT -parallel -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-march=core2 -xT -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib -L/opt/intel/cc/10.1.008/lib -lguide -lcxaguard -limf -lsvml -lirc -pthread'
 #CONFIGURE_FLAGS = $(CFG_OPTIONS) CC='/opt/intel/cc/10.1.008/bin/icc' CXX='/opt/intel/cc/10.1.008/bin/icpc' LD='/opt/intel/cc/10.1.008/bin/xild' CXXFLAGS='-march=core2 -xT -msse3 -openmp -parallel -O3 -fPIC -I$(ROOT)/include' LDFLAGS='-L$(ROOT)/lib' CFLAGS='-march=core2 -xT -msse3 -openmp -parallel -O3 -fPIC -I$(ROOT)/include -I$(ROOT)/usr/include' LDFLAGS='-Wl,-rpath,/opt/intel/cc/10.1.008/lib -L/opt/intel/cc/10.1.008/lib -lomp_db -lguide -lcxaguard -limf -lsvml -lompstub -lirc -liomp5 -lintlc -pthread'
 
