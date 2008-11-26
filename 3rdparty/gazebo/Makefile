@@ -59,7 +59,7 @@ test-gazebo: test-$(SVN_TARGET)
 #	export LD_LIBRARY_PATH="/usr/lib" && \
 
 clean:
-	-cd $(SVN_DIR) && scons --clean
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} scons --clean
 	rm -rf gazebo
 wipe: clean
 	rm -rf $(SVN_DIR) gazebo
