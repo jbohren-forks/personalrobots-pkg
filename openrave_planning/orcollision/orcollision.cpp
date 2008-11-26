@@ -126,7 +126,7 @@ int main(int argc, char ** argv)
     else RAVEPRINT(L"robot not in collision\n");
 
     // get the transformations of all the links
-    vector<TransformMatrix> vlinktransforms;
+    vector<Transform> vlinktransforms;
     probot->GetBodyTransformations(vlinktransforms);
 
     return contactpoints;
