@@ -4,5 +4,5 @@
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
-  <depend package="or_rosplanning"/>
+  <depend package="orrosplanning"/>
 </package>

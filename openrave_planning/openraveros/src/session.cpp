@@ -27,47 +27,6 @@
 #include "openraveros.h"
 #include "session.h"
 
-#include <openraveros/
-
-body_destroy.h
-body_enable.h
-body_getaabb.h
-body_getaabbs.h
-body_getdof.h
-body_getlinks.h
-body_setjointvalues.h
-body_settransform.h
-env_checkcollision.h
-env_closefigures.h
-env_createbody.h
-env_createplanner.h
-env_createproblem.h
-env_createrobot.h
-env_destroyproblem.h
-env_getbodies.h
-env_getbody.h
-env_getrobots.h
-env_loadplugin.h
-env_loadscene.h
-env_plot.h
-env_raycollision.h
-env_set.h
-env_triangulate.h
-env_wait.h
-openrave_session.h
-planner_init.h
-planner_plan.h
-problem_sendcommand.h
-robot_controllersend.h
-robot_controllerset.h
-robot_getactivedof.h
-robot_getactivevalues.h
-robot_sensorgetdata.h
-robot_sensorsend.h
-robot_setactivedofs.h
-robot_setactivevalues.h
-
-
 // compile time assert RobotBase::DOF_X and CO_X 
 class Session
 {
