@@ -96,6 +96,7 @@ for rest in $REST; do
 	    echo "<a href=\" $basename.png \"><img src=\" small-$basename.png \" alt=\" $basename.png \"></a><br>" >> index.html
 	    echo "running with $allopts -W"
 	    valgrind --log-file-exactly=vg-$basename.txt $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
+	    chmod a+r vg-$basename.txt
 	    
 	    cat $basename.html >> index.html
 	    

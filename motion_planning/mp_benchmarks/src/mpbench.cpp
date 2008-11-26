@@ -557,6 +557,7 @@ void run_tasks()
     IndexTransformWrap const & it(*setup->getIndexTransform());
     SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
     for (size_t ii(0); ii < tasklist.size(); ++ii) {
+      planBundle_t bundle;
       SBPLPlannerStatsEntry statsEntry(plannerMgr->getName(), environment->getName());
       SBPLBenchmarkSetup::task const & task(tasklist[ii]);
       
@@ -619,7 +620,7 @@ void run_tasks()
 		    &statsEntry.plan_angle_change_rad,
 		    0 // XXXX if 3DKIN we actually want something here
 		    );
-	planList.insert(make_pair(ii, plan));
+	bundle.push_back(plan);
       }
       
       char const * title("  SUCCESS");
@@ -629,6 +630,14 @@ void run_tasks()
       *logos << flush;
       
       plannerStats.push_back(statsEntry);
+      
+      // Well... this ends up copying a std::vector of
+      // boost::shared_ptr instances, could probably be smarter about
+      // it. Also we will end up storing empty bundles, which is
+      // actually what we want because for failed tasks we still want
+      // to plot the start and goal poses (see gfx.cpp), but there
+      // must be a neater solution to this.
+      planList.insert(make_pair(ii, bundle));
     }
   }
 }

@@ -69,7 +69,7 @@ static string costmapType;
 static string environmentType;
 static SBPLBenchmarkOptions opt;
 static bool websiteMode;
-static double allocTimeMS(200);	// XXXX add an option for this
+static double allocTimeMS;
 
 static shared_ptr<SBPLBenchmarkSetup> setup;
 static shared_ptr<EnvironmentWrapper> environment;
@@ -134,6 +134,7 @@ void usage(ostream & os)
      << "   -i  <in-radius>  set INSCRIBED radius\n"
      << "   -c  <out-radius> set CIRCUMSCRIBED radius\n"
      << "   -I  <inflate-r>  set INFLATION radius\n"
+     << "   -a  <time [ms]>  allocated time for (incremental) replan in milliseconds\n"
      << "   -d  <doorwidth>  set width of doors (office setups)\n"
      << "   -H  <hallwidth>  set width of hallways (office setups)\n"
      << "   -n  <filename>   Net PGM file to load (for -s pgm)\n"
@@ -154,8 +155,10 @@ static string summarizeOptions()
      << "-i" << (int) rint(1e3 * opt.inscribed_radius)
      << "-c" << (int) rint(1e3 * opt.circumscribed_radius)
      << "-I" << (int) rint(1e3 * opt.inflation_radius)
-     << "-d" << (int) rint(1e3 * opt.door_width)
-     << "-H" << (int) rint(1e3 * opt.hall_width);
+     << "-a" << (int) rint(allocTimeMS);
+  if ("pgm" != opt.name)
+    os << "-d" << (int) rint(1e3 * opt.door_width)
+       << "-H" << (int) rint(1e3 * opt.hall_width);
   return os.str();
 }
 
@@ -189,6 +192,7 @@ void parse_options(int argc, char ** argv)
   costmapType = "costmap_2d";
   environmentType = "2D";
   websiteMode = false;
+  allocTimeMS = 50;
   // most other options handled through SBPLBenchmarkOptions
   
   for (int ii(1); ii < argc; ++ii) {
@@ -328,6 +332,24 @@ void parse_options(int argc, char ** argv)
 	  is >> opt.door_width;
 	  if ( ! is) {
 	    cerr << argv[0] << ": error reading doorwidth argument from \"" << argv[ii] << "\"\n";
+	    usage(cerr);
+	    exit(EXIT_FAILURE);
+	  }
+	}
+ 	break;
+	
+      case 'a':
+ 	++ii;
+ 	if (ii >= argc) {
+ 	  cerr << argv[0] << ": -a requires a time [ms] argument\n";
+ 	  usage(cerr);
+ 	  exit(EXIT_FAILURE);
+ 	}
+	{
+	  istringstream is(argv[ii]);
+	  is >> allocTimeMS;
+	  if ( ! is) {
+	    cerr << argv[0] << ": error reading allocTimeMS argument from \"" << argv[ii] << "\"\n";
 	    usage(cerr);
 	    exit(EXIT_FAILURE);
 	  }
@@ -507,12 +529,13 @@ void create_setup()
 
 
 void run_tasks()
-{  
+{
   *logos << "running tasks\n" << flush;
   
   IndexTransformWrap const & it(*setup->getIndexTransform());
   SBPLBenchmarkSetup::tasklist_t const & tasklist(setup->getTasks());
   for (size_t ii(0); ii < tasklist.size(); ++ii) {
+    planBundle_t bundle;
     SBPLPlannerStatsEntry statsEntry(plannerMgr->getName(), environment->getName());
     SBPLBenchmarkSetup::task const & task(tasklist[ii]);
     
@@ -549,7 +572,7 @@ void run_tasks()
     if (1 != status)
       errx(EXIT_FAILURE, "failed to set goal state ID %d from (%ud, %ud): %d\n",
 	   statsEntry.goalState, statsEntry.goalIx, statsEntry.goalIy, status);
-      
+    
     // plan several solutions:
     // - initially just the 1st path we come across
     // - subsequently with some allocated timeslice
@@ -559,20 +582,25 @@ void run_tasks()
     statsEntry.plan_angle_change_rad = 0;
     vector<int> prevSolution;
     double prevEpsilon(-1);
+    double cumul_allocated_time(0);
+    double cumul_actual_time_wall(0);
+    double cumul_actual_time_user(0);
+    double cumul_actual_time_system(0);
     for (size_t jj(0); true; ++jj) {
       
       // Handle the first iteration specially.
       if (0 == jj) {
 	statsEntry.stop_at_first_solution = true;
 	statsEntry.plan_from_scratch = task.from_scratch;
+	statsEntry.allocated_time_sec = numeric_limits<double>::max();
       }
       else {
 	statsEntry.stop_at_first_solution = false;
 	statsEntry.plan_from_scratch = false;
+	statsEntry.allocated_time_sec = 1e-3 * allocTimeMS;
       }
       
       vector<int> solution;
-      statsEntry.allocated_time_sec = 1e-3 * allocTimeMS;
       statsEntry.status = plannerMgr->replan(statsEntry.stop_at_first_solution,
 					     statsEntry.plan_from_scratch,
 					     statsEntry.allocated_time_sec,
@@ -583,25 +611,49 @@ void run_tasks()
 					     &statsEntry.solution_epsilon,
 					     &solution);
       
+      // A little hack to make the initial solution appear as if it
+      // had used exactly the allocated time. Actually, it gets
+      // allocated a practically inifinite amount of time, which is
+      // not useful for cumulating in the statistics. Also, it seems
+      // that SBPLPlanner uses wall time, not user time, to limit its
+      // search.
+      
+      if (0 == jj)
+	statsEntry.allocated_time_sec = statsEntry.actual_time_wall_sec;
+      
       // forget about this task if we got a planning failure
       if ((1 != statsEntry.status) // planners should provide status
 	  || (1 >= solution.size()) // but sometimes they do not
 	  ) {
-	statsEntry.logStream(*logos, "  FAILURE", "    ");
+	statsEntry.allocated_time_sec = cumul_allocated_time;
+	statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
+	statsEntry.actual_time_user_sec = cumul_actual_time_user;
+	statsEntry.actual_time_system_sec = cumul_actual_time_system;
+	statsEntry.logStream(*logos, "  FAILURE (below are cumulated times)", "    ");
 	*logos << flush;
-	plannerStats.push_back(statsEntry);
+	//// do NOT add to overall stats because of cumulated times
+	// plannerStats.push_back(statsEntry);
 	break;
       }
       
       // detect whether we got the same result as before, in which
       // case we're done
-// //       if (statsEntry.solution_epsilon > 0) {
-// // 	// see if epsilon changed "perceptibly"
-// // 	// XXXX warning: hardcoded threshold
-// // 	if ((prevEpsilon > 0) && (fabs(prevEpsilon - statsEntry.solution_epsilon) > 1e-9))
-// // 	  break;
-// //       }
-// //       else {
+      if (statsEntry.solution_epsilon > 0) {
+       	// see if epsilon changed "perceptibly"
+       	// XXXX warning: hardcoded threshold
+       	if ((prevEpsilon > 0) && (fabs(prevEpsilon - statsEntry.solution_epsilon) < 1e-9)) {
+	  statsEntry.allocated_time_sec = cumul_allocated_time;
+	  statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
+	  statsEntry.actual_time_user_sec = cumul_actual_time_user;
+	  statsEntry.actual_time_system_sec = cumul_actual_time_system;
+	  statsEntry.logStream(*logos, "  FINAL: epsilon did not change (below are cumulated times)", "    ");
+	  *logos << flush;
+	  //// do NOT add to overall stats because of cumulated times
+	  // plannerStats.push_back(statsEntry);
+       	  break;
+	}
+      }
+      else {
 	// use brute force comparison with previous path
 	if (prevSolution.size() == solution.size()) {
 	  bool same(true);
@@ -611,13 +663,24 @@ void run_tasks()
 	      break;
 	    }
 	  if (same) {
-	    statsEntry.logStream(*logos, "  FINAL", "    ");
+	    statsEntry.allocated_time_sec = cumul_allocated_time;
+	    statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
+	    statsEntry.actual_time_user_sec = cumul_actual_time_user;
+	    statsEntry.actual_time_system_sec = cumul_actual_time_system;
+	    statsEntry.logStream(*logos, "  FINAL: path states did not change (below are cumulated times)", "    ");
 	    *logos << flush;
-	    plannerStats.push_back(statsEntry);
+	    //// do NOT add to overall stats because of cumulated times
+	    // plannerStats.push_back(statsEntry);
 	    break;
 	  }
-	  // //	}
+	}
       }
+      
+      // update the cumulated time measurements
+      cumul_allocated_time += statsEntry.allocated_time_sec;
+      cumul_actual_time_wall += statsEntry.actual_time_wall_sec;
+      cumul_actual_time_user += statsEntry.actual_time_user_sec;
+      cumul_actual_time_system += statsEntry.actual_time_system_sec;
       
       // save this plan, and prepare for the next round of
       // incremental planning
@@ -627,7 +690,7 @@ void run_tasks()
 		  &statsEntry.plan_angle_change_rad,
 		  0 // XXXX if 3DKIN we actually want something here
 		  );
-      planList.insert(make_pair(ii, plan));
+      bundle.push_back(plan);
       
       if (0 == jj)
 	statsEntry.logStream(*logos, "  FIRST_SOLUTION", "    ");
@@ -638,8 +701,17 @@ void run_tasks()
       
       prevSolution.swap(solution);
       prevEpsilon = statsEntry.solution_epsilon;
-    }
-  }
+    } // end loop over incremental solutions
+    
+    // Well... this ends up copying a std::vector of boost::shared_ptr
+    // instances, could probably be smarter about it. Also we will end
+    // up storing empty bundles, which is actually what we want
+    // because for failed tasks we still want to plot the start and
+    // goal poses (see gfx.cpp), but there must be a neater solution
+    // to this.
+    planList.insert(make_pair(ii, bundle));
+    
+  } // end loop over tasks
 }
 
 

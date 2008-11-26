@@ -45,9 +45,16 @@
 
 namespace ompl {
   
-  /** Indexed by taskNumber, and allow more than one entry because
-      incremental planners can produce more than one plan per task. */
-  typedef std::multimap<size_t, boost::shared_ptr<waypoint_plan_t const> > planList_t;
+  /** When we run incremental planners, we can (and do) get more than
+      one solution: the initial suboptimal solution followed by a
+      succession of ever better paths. */
+  typedef std::vector<boost::shared_ptr<waypoint_plan_t const> > planBundle_t;
+  
+  /** For each taskNumber, we can get a whole bundle of plans, because
+      we might be using an incremental planner. We cannot use a
+      std::vector though because there are places where we need to
+      infer the task number from just an iterator. */
+  typedef std::map<size_t, planBundle_t> planList_t;
   
   namespace gfx {
     

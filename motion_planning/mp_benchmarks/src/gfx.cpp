@@ -430,6 +430,10 @@ namespace {
 		       planList_t::const_iterator pend,
 		       bool detailed)
   {
+    typedef planList_t::const_iterator pli_t;
+    typedef planBundle_t::const_iterator pbi_t;
+    typedef waypoint_plan_t::const_iterator wpi_t;
+    
     glMatrixMode(GL_MODELVIEW);
     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     
@@ -440,53 +444,46 @@ namespace {
       glColor3d(0.5, 1, 0);
       glLineWidth(1);
       if (configptr->ignorePlanTheta) {
-	for (planList_t::const_iterator ip(pbegin); ip != pend; ++ip)
-	  for (size_t jj(0); jj < ip->second->size(); jj += skip) {
-	    glPushMatrix();
-	    glTranslated((*ip->second)[jj].x,
-			 (*ip->second)[jj].y,
-			 0);
-	    gluDisk(wrap_glu_quadric_instance(),
-		    configptr->inscribedRadius,
-		    configptr->inscribedRadius,
-		    36, 1);
-	    glPopMatrix();
-	  }
+	for (pli_t il(pbegin); il != pend; ++il)
+	  for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib)
+	    for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); iw += skip) {
+	      glPushMatrix();
+	      glTranslated(iw->x, iw->y, 0);
+	      gluDisk(wrap_glu_quadric_instance(),
+		      configptr->inscribedRadius,
+		      configptr->inscribedRadius,
+		      36, 1);
+	      glPopMatrix();
+	    }
       }
       else {
-	for (planList_t::const_iterator ip(pbegin); ip != pend; ++ip)
-	  for (size_t jj(0); jj < ip->second->size(); jj += skip) {
-	    glPushMatrix();
-	    glTranslated((*ip->second)[jj].x,
-			 (*ip->second)[jj].y,
-			 0);
-	    glRotated(180 * (*ip->second)[jj].th / M_PI, 0, 0, 1);
-	    drawFootprint();
-	    glPopMatrix();
-	  }
+	for (pli_t il(pbegin); il != pend; ++il)
+	  for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib)
+	    for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); iw += skip) {
+	      glPushMatrix();
+	      glTranslated(iw->x, iw->y, 0);
+	      glRotated(180 * iw->th / M_PI, 0, 0, 1);
+	      drawFootprint();
+	      glPopMatrix();
+	    }
       }
     }
-    
-    vector<size_t> tnums;
-    for (planList_t::const_iterator ip(pbegin); ip != pend; ++ip)
-      if ((tnums.empty()) || (ip->first != tnums.back()))
-	tnums.push_back(ip->first);
     
     // start and goal, with inscribed, circumscribed, and thick footprint
     SBPLBenchmarkSetup::tasklist_t const & tl(configptr->setup.getTasks());
     glColor3d(0.5, 1, 0);
-    for (vector<size_t>::const_iterator itask(tnums.begin()); itask != tnums.end(); ++itask) {
+    for (pli_t il(pbegin); il != pend; ++il) {
       glPushMatrix();
-      glTranslated(tl[*itask].start_x, tl[*itask].start_y, 0);
+      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
       gluDisk(wrap_glu_quadric_instance(),
 	      configptr->inscribedRadius,
 	      configptr->inscribedRadius,
 	      36, 1);
       glPopMatrix();
     }
-    for (vector<size_t>::const_iterator itask(tnums.begin()); itask != tnums.end(); ++itask) {
+    for (pli_t il(pbegin); il != pend; ++il) {
       glPushMatrix();
-      glTranslated(tl[*itask].start_x, tl[*itask].start_y, 0);
+      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
       gluDisk(wrap_glu_quadric_instance(),
 	      configptr->circumscribedRadius,
 	      configptr->circumscribedRadius,
@@ -495,10 +492,10 @@ namespace {
     }    
     glColor3d(1, 1, 0);
     glLineWidth(3);
-    for (vector<size_t>::const_iterator itask(tnums.begin()); itask != tnums.end(); ++itask) {
+    for (pli_t il(pbegin); il != pend; ++il) {
       glPushMatrix();
-      glTranslated(tl[*itask].start_x, tl[*itask].start_y, 0);
-      glRotated(180 * tl[*itask].start_th / M_PI, 0, 0, 1);
+      glTranslated(tl[il->first].start_x, tl[il->first].start_y, 0);
+      glRotated(180 * tl[il->first].start_th / M_PI, 0, 0, 1);
       drawFootprint();
       glPopMatrix();
     }
@@ -507,21 +504,24 @@ namespace {
     //  glColor3d(1, 0.5, 0);
     //  for (vector<size_t>::const_iterator itask(tnums.begin()); itask != tnums.end(); ++itask) {
     //     glPushMatrix();
-    //     glTranslated(tl[*itask].goal_x, tl[*itask].goal_y, 0);
-    //     gluDisk(wrap_glu_quadric_instance(), tl[*itask].goal_tol_xy, tl[*itask].goal_tol_xy, 36, 1);
+    //     glTranslated(tl[il->first].goal_x, tl[il->first].goal_y, 0);
+    //     gluDisk(wrap_glu_quadric_instance(), tl[il->first].goal_tol_xy, tl[il->first].goal_tol_xy, 36, 1);
     //     glPopMatrix();
     //   }
     
-    // path thick and yellow
+    // path yellow
     glColor3d(1, 1, 0);
-    glLineWidth(3);
-    for (planList_t::const_iterator ip(pbegin); ip != pend; ++ip) {
-      waypoint_plan_t const & plan(*ip->second);
-      glBegin(GL_LINE_STRIP);
-      for (waypoint_plan_t::const_iterator ip(plan.begin()); ip != plan.end(); ++ip)
-	glVertex2d(ip->x, ip->y);
-      glEnd();
-    }
+    if (detailed)
+      glLineWidth(3);		// make it stand out among the rest
+    else
+      glLineWidth(1);
+    for (pli_t il(pbegin); il != pend; ++il)
+      for (pbi_t ib(il->second.begin()); ib != il->second.end(); ++ib) {
+	glBegin(GL_LINE_STRIP);
+	for (wpi_t iw((*ib)->begin()); iw != (*ib)->end(); ++iw)
+	  glVertex2d(iw->x, iw->y);
+	glEnd();
+      }
   }
   
   
@@ -531,6 +531,8 @@ namespace {
     if (0 > taskNumber)
       drawPlan(configptr->planList.begin(), configptr->planList.end(), true);
     else {
+      // this is historically overly generic (works for multimaps as
+      // well as maps), but should not hurt
       pair<planList_t::const_iterator, planList_t::const_iterator>
 	prange(configptr->planList.equal_range(taskNumber));
       drawPlan(prange.first, prange.second, false);
