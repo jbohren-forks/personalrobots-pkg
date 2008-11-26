@@ -29,9 +29,6 @@
 #include "ros/node.h"
 #include "rosthread/member_thread.h"
 
-#includle "std_srvs/StaticMap.h"
-#includle "std_srvs/PolledImage.h"
-
 using namespace std;
 using namespace ros;
 using namespace ros::thread;
@@ -72,21 +69,17 @@ public:
         return pnode;
     }
 
-    void startsession()
+    void advertise_session()
     {
         ros::node* pnode = startros();
         if( pnode == NULL )
             return;
 
-        vector<string> vnames;
-        vnames.push_back("orgetmap");
-        vnames.push_back("orgetimage");
-        sessionhandle = pnode->advertise_session("mysession"
+        sessionhandle = pnode->advertise_service("openrave_service",&OpenraveSession::startsession,this);
     }
 
-    bool terminate(int id) {
-        cout << "terminate session: " << id << endl;
-    }
+    bool startsession(roscpp_tutorials::simple_session::request& req, roscpp_tutorials::simple_session::response& res) {
+        if( req.sessionid ) {
 
     bool getmap(StaticMap::request& req, StaticMap::response& res)
     {

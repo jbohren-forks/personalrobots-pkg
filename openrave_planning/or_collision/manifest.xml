@@ -1,11 +1,9 @@
 <package>
-  <description brief="OpenRAVE Session for ROS">
-    Main openrave server that provides a session interface.
+  <description brief="OpenRAVE Collision Checking">
+    Small test program that loads up the OpenRAVE run-time engine, loads a robot model, and checks for self-collisions. The program will return the contact points of the self-collisions. Various openrave checkers can be set to be tested.
   </description>
   <author>Rosen Diankov (rdiankov@cs.cmu.edu)</author>
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="openrave"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
 </package>
