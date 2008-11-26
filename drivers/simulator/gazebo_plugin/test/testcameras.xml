@@ -17,6 +17,9 @@
     <!-- load controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
 
+    <!-- send arm a command -->
+    <node pkg="robot_mechanism_controllers" type="control.py" args="set head_tilt_controller 0.2" respawn="false" output="screen" /> <!-- open gripper .5 radians -->
+
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_testcameras" pkg="gazebo_plugin" type="testcameras.py" />
 </launch>

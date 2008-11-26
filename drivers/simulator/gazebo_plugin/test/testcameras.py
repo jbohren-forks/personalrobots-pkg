@@ -77,7 +77,6 @@ class TestCameras(unittest.TestCase):
     def __init__(self, *args):
         super(TestCameras, self).__init__(*args)
         self.success = False
-        self.tested  = False
         #self.pollThread = PollCameraThread(self, FRAME_DIR)
 
     def onTargetFrame(self):
@@ -134,30 +133,31 @@ class TestCameras(unittest.TestCase):
         im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
         imc = pilic.difference(im0,im1)
         print "  - comparing images "
-        #im1.save("testsave.ppm") # to capture a new valid frame when things change
+        #im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
         #im1.show()
         #im0.show()
         #imc.show()
         comp_result = self.images_are_the_same(im0.getdata(),im1.getdata())
         print "test comparison ", comp_result
         #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
-        if (comp_result == 1):
-          print "  - images are the Same "
-          self.success = True
-        else:
-          print "  - images differ "
-          self.success = False
-        self.tested  = True
+        if (self.success == False): # test if we have not succeeded
+          if (comp_result == 1):
+            print "  - images are the Same "
+            self.success = True
+          else:
+            print "  - images differ "
+            self.success = False
 
     def testcameras(self):
         print " wait 3 sec for objects to settle "
         time.sleep(3)
-        print " subscribe image from ROS "
-        rospy.TopicSub("test_camera/image", Image, self.imageInput)
+        print " subscribe stereo left image from ROS "
+        #rospy.TopicSub("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups
+        rospy.TopicSub("stereo_l/image", Image, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         #self.pollThread.start()
-        timeout_t = time.time() + 10 #10 seconds delay for processing comparison
-        while not rospy.is_shutdown() and not self.tested and time.time() < timeout_t:
+        timeout_t = time.time() + 20 #20 seconds delay for processing comparison
+        while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)
         self.assert_(self.success)
         
