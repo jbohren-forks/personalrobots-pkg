@@ -21,6 +21,7 @@ rospack_add_library( pr2_mechanism_controllers
   src/caster_calibration_controller.cpp
   src/wrist_calibration_controller.cpp
   src/gripper_calibration_controller.cpp
+  src/arm_trajectory_controller.cpp
   )
 
 #rospack_add_executable(testBaseController test/test_base_controller.cpp)
@@ -34,3 +35,6 @@ rospack_add_library( pr2_mechanism_controllers
 
 #rospack_add_executable(testOdom test/test_odom.cpp)
 #target_link_libraries(testOdom pr2_mechanism_controllers)
+
+rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
+target_link_libraries(testTraj pr2_mechanism_controllers)
