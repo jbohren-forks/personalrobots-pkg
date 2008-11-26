@@ -427,11 +427,10 @@ void parse_options(int argc, char ** argv)
 
 void create_setup()
 {
-  bool use_sfl_cost;
   if ("costmap_2d" == costmapType)
-    use_sfl_cost = false;
+    opt.use_sfl_cost = false;
   else if ("sfl" == costmapType)
-    use_sfl_cost = true;
+    opt.use_sfl_cost = true;
   else
     errx(EXIT_FAILURE,
 	 "create_setup(): unknown costmapType \"%s\", use costmap_2d or sfl",
