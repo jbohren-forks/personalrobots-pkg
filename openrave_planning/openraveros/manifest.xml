@@ -6,6 +6,5 @@
   <license>BSD</license>
   <depend package="roscpp"/>
   <depend package="openrave"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
+  <depend package="boost"/>
 </package>
