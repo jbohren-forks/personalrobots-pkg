@@ -1,6 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-add_definitions(-Wall)
-rospack(or_collision)
-add_executable(or_collision or_collision.cpp)
-target_link_libraries (or_collision openrave-core)

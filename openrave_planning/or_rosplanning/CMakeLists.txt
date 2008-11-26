@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-add_definitions(-Wall)
-rospack(or_rosplanning)
-rospack_add_library(or_rosplanning src/or_rosplanningmain.cpp src/rosarmik.cpp)

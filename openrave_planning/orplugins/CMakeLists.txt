@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-rospack(or_plugins)
+rospack(orplugins)
 
-find_ros_package(or_rosplanning)
+find_ros_package(orrosplanning)
 
-file(GLOB or_rosplanning_files ${or_rosplanning_PACKAGE_PATH}/lib/*)
+file(GLOB orrosplanning_files ${orrosplanning_PACKAGE_PATH}/lib/*)
 
 set(openrave_plugins )
-foreach(it ${or_rosplanning_files})
+foreach(it ${orrosplanning_files})
 get_filename_component(basename ${it} NAME)
 add_custom_command(
   OUTPUT ${CMAKE_SOURCE_DIR}/${basename}
@@ -18,4 +18,4 @@ add_custom_command(
   set(openrave_plugins ${openrave_plugins} ${CMAKE_SOURCE_DIR}/${basename})
 endforeach(it)
 
-add_custom_target(or_plugins ALL DEPENDS ${openrave_plugins})
+add_custom_target(orplugins ALL DEPENDS ${openrave_plugins})
