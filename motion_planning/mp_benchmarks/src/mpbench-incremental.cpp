@@ -558,6 +558,7 @@ void run_tasks()
     statsEntry.plan_length_m = 0; // just in case the first replan() fails
     statsEntry.plan_angle_change_rad = 0;
     vector<int> prevSolution;
+    double prevEpsilon(-1);
     for (size_t jj(0); true; ++jj) {
       
       // Handle the first iteration specially.
@@ -579,6 +580,7 @@ void run_tasks()
 					     &statsEntry.actual_time_user_sec,
 					     &statsEntry.actual_time_system_sec,
 					     &statsEntry.solution_cost,
+					     &statsEntry.solution_epsilon,
 					     &solution);
       
       // forget about this task if we got a planning failure
@@ -593,21 +595,30 @@ void run_tasks()
       
       // detect whether we got the same result as before, in which
       // case we're done
-      if (prevSolution.size() == solution.size()) {
-	bool same(true);
-	for (size_t kk(0); kk < prevSolution.size(); ++kk)
-	  if (prevSolution[kk] != solution[kk]) {
-	    same = false;
+// //       if (statsEntry.solution_epsilon > 0) {
+// // 	// see if epsilon changed "perceptibly"
+// // 	// XXXX warning: hardcoded threshold
+// // 	if ((prevEpsilon > 0) && (fabs(prevEpsilon - statsEntry.solution_epsilon) > 1e-9))
+// // 	  break;
+// //       }
+// //       else {
+	// use brute force comparison with previous path
+	if (prevSolution.size() == solution.size()) {
+	  bool same(true);
+	  for (size_t kk(0); kk < prevSolution.size(); ++kk)
+	    if (prevSolution[kk] != solution[kk]) {
+	      same = false;
+	      break;
+	    }
+	  if (same) {
+	    statsEntry.logStream(*logos, "  FINAL", "    ");
+	    *logos << flush;
+	    plannerStats.push_back(statsEntry);
 	    break;
 	  }
-	if (same) {
-	  statsEntry.logStream(*logos, "  FINAL", "    ");
-	  *logos << flush;
-	  plannerStats.push_back(statsEntry);
-	  break;
-	}
+	  // //	}
       }
-	
+      
       // save this plan, and prepare for the next round of
       // incremental planning
       shared_ptr<waypoint_plan_t> plan(new waypoint_plan_t());
@@ -626,6 +637,7 @@ void run_tasks()
       plannerStats.push_back(statsEntry);
       
       prevSolution.swap(solution);
+      prevEpsilon = statsEntry.solution_epsilon;
     }
   }
 }

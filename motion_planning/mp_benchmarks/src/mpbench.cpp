@@ -606,6 +606,7 @@ void run_tasks()
 					     &statsEntry.actual_time_user_sec,
 					     &statsEntry.actual_time_system_sec,
 					     &statsEntry.solution_cost,
+					     &statsEntry.solution_epsilon,
 					     &solutionStateIDs);
       
       // extract the plan and update statistics
