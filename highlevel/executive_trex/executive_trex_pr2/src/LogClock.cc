@@ -1,12 +1,12 @@
 #include "Clock.hh"
-#include <errno.h>
-#include <time.h>
-#include <signal.h>
 #include "LogClock.hh"
 #include "Agent.hh"
 #include "LogManager.hh"
 #include "Components.hh"
 #include "Utilities.hh"
+#include <errno.h>
+#include <time.h>
+#include <signal.h>
 
 namespace TREX {
  /**
@@ -17,7 +17,7 @@ namespace TREX {
       m_gets(0), m_tick(0),
       m_secondsPerTick(secondsPerTick) {
     pthread_mutex_init(&m_lock, NULL);
-    m_file = fopen("./latest/clock.log", "w");
+    m_file = fopen(findFile("./latest/clock.log").c_str(), "w");
   }
 
   void LogClock::start(){
