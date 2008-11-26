@@ -164,6 +164,7 @@ namespace ompl {
 	 double * actual_time_user_sec,
 	 double * actual_time_system_sec,
 	 int * solution_cost,
+	 double * solution_epsilon,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)
   {
     if ( ! planner_)
@@ -188,6 +189,8 @@ namespace ompl {
     struct timeval t_finished;
     getrusage(RUSAGE_SELF, &ru_finished);
     gettimeofday(&t_finished, 0);
+    
+    *solution_epsilon = planner_->get_solution_eps();
     
     *actual_time_wall_sec =
       t_finished.tv_sec - t_started.tv_sec
@@ -297,6 +300,7 @@ namespace ompl {
        << prefix << "time  actual (user):   " << actual_time_user_sec << "\n"
        << prefix << "time  actual (system): " << actual_time_system_sec << "\n"
        << prefix << "solution cost:         " << solution_cost << "\n"
+       << prefix << "solution epsilon:      " << solution_epsilon << "\n"
        << prefix << "status (1 == SUCCESS): " << status << "\n"
        << prefix << "plan_length [m]:       " << plan_length_m << "\n"
        << prefix << "plan_rotation [rad]:   " << plan_angle_change_rad << "\n";

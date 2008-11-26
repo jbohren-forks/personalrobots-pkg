@@ -114,6 +114,7 @@ namespace ompl {
     
     int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
     int solution_cost;               /**< cost of the solution, as given by replan() */
+    double solution_epsilon;         /**< the "epsilon" value used to compute the solution */
     double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
     double plan_angle_change_rad;    /**< cumulated abs(delta(angle)) along planned waypoints */
     
@@ -195,6 +196,8 @@ namespace ompl {
 	       double * actual_time_system_sec,
 	       /** out: the cost of the planned path */
 	       int * solution_cost,
+	       /** out: the epsilon-value of the planned path */
+	       double * solution_epsilon,
 	       /** out: the planned path, as a succession of state IDs */
 	       std::vector<int>* solution_stateIDs_V) throw(no_planner_selected);
 
