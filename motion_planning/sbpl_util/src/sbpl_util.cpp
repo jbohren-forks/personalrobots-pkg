@@ -285,25 +285,25 @@ namespace ompl {
   {
     if ( ! title.empty())
       os << title << "\n";
-    os << prefix << "planner:               " << plannerType << "\n"
-       << prefix << "environment:           " << environmentType << "\n"
-       << prefix << "goal  map:             " << goal.x << "  " << goal.y << "  " << goal.th << "\n"
-       << prefix << "goal  grid:            " << goalIx << "  " << goalIy << "\n"
-       << prefix << "goal  state:           " << goalState << "\n"
-       << prefix << "start map:             " << start.x << "  " << start.y << "  " << start.th << "\n"
-       << prefix << "start grid:            " << startIx << "  " << startIy << "\n"
-       << prefix << "start state:           " << startState << "\n"
-       << prefix << "stop at first solution:" << (stop_at_first_solution ? "true\n" : "false\n")
-       << prefix << "plan from scratch:     " << (plan_from_scratch ? "true\n" : "false\n")
-       << prefix << "time  alloc:           " << allocated_time_sec << "\n"
-       << prefix << "time  actual (wall):   " << actual_time_wall_sec << "\n"
-       << prefix << "time  actual (user):   " << actual_time_user_sec << "\n"
-       << prefix << "time  actual (system): " << actual_time_system_sec << "\n"
-       << prefix << "solution cost:         " << solution_cost << "\n"
-       << prefix << "solution epsilon:      " << solution_epsilon << "\n"
-       << prefix << "status (1 == SUCCESS): " << status << "\n"
-       << prefix << "plan_length [m]:       " << plan_length_m << "\n"
-       << prefix << "plan_rotation [rad]:   " << plan_angle_change_rad << "\n";
+    os << prefix << "planner:                   " << plannerType << "\n"
+       << prefix << "environment:               " << environmentType << "\n"
+       << prefix << "goal map:                  " << goal.x << "  " << goal.y << "  " << goal.th << "\n"
+       << prefix << "goal grid:                 " << goalIx << "  " << goalIy << "\n"
+       << prefix << "goal state:                " << goalState << "\n"
+       << prefix << "start map:                 " << start.x << "  " << start.y << "  " << start.th << "\n"
+       << prefix << "start grid:                " << startIx << "  " << startIy << "\n"
+       << prefix << "start state:               " << startState << "\n"
+       << prefix << "stop at first solution:    " << (stop_at_first_solution ? "true\n" : "false\n")
+       << prefix << "plan from scratch:         " << (plan_from_scratch ? "true\n" : "false\n")
+       << prefix << "time alloc [ms]:           " << 1.0e3 * allocated_time_sec << "\n"
+       << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall_sec << "\n"
+       << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user_sec << "\n"
+       << prefix << "time actual (system) [ms]: " << 1.0e3 * actual_time_system_sec << "\n"
+       << prefix << "solution cost:             " << solution_cost << "\n"
+       << prefix << "solution epsilon:          " << solution_epsilon << "\n"
+       << prefix << "status (1 == SUCCESS):     " << status << "\n"
+       << prefix << "plan_length [m]:           " << plan_length_m << "\n"
+       << prefix << "plan_rotation [rad]:       " << plan_angle_change_rad << "\n";
   }
   
 }
