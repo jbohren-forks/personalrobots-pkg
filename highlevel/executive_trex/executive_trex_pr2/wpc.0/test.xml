@@ -6,5 +6,5 @@
   <param name="/trex/time_limit" value="20"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/wpc.0"/>
   <param name="/trex/play_back" value="0"/>
-  <test test-name="executive_trex_wpc.0" pkg="executive_trex_pr2" type="trexfast" time-limit="40"/>
+  <test test-name="executive_trex_wpc.0" pkg="executive_trex_pr2" type="trexdebug" time-limit="40"/>
 </launch>

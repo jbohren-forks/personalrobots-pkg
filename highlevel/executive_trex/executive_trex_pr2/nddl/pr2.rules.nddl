@@ -73,6 +73,13 @@ MoveBase::Inactive {
 
 MoveBase::Active{
  default(th, 0.0);
+ leq(max_duration, object.max_duration);
+
+  // If at the end, apply a default to the timeout flag so that it is not zero.
+  // This ensures the flag is set even if a max duration bound is not imposed
+  if(end){
+    defaultOnCommit(timed_out, false);
+  }
 }
 
 MoveArm::Inactive{

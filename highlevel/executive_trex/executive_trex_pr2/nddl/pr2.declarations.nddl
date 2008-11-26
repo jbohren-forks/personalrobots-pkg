@@ -122,7 +122,8 @@ class ArmState extends AgentTimeline {
 class Behavior extends AgentTimeline {
 	predicate Inactive{}
 
-	predicate Active{}
+	predicate Active{
+	}
 
 	Behavior(Mode _mode){
 		super(_mode, "Inactive");
@@ -135,6 +136,8 @@ class Behavior extends AgentTimeline {
  * a waypoint. This maps to the wave front player in the 2D nav stack.
  */
 class MoveBase extends Behavior {
+  int max_duration; // The maximum duration allowed for executing a single move
+
   predicate Inactive{
     float x;
     float y;
@@ -145,14 +148,24 @@ class MoveBase extends Behavior {
   }
 
   // Parameters to get to the target
-  predicate Active{
+  predicate Active {
+    int max_duration;
+    bool timed_out;
     float x;
     float y;
     float th;
+    leq(duration, max_duration);
+    testEQ(timed_out, duration, max_duration);
   }
 
   MoveBase(Mode _mode){
     super(_mode);
+    max_duration = +inf;
+  }
+
+  MoveBase(Mode _mode, int max_duration_){
+    super(_mode);
+    max_duration = max_duration_;
   }
 };
 

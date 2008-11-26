@@ -301,13 +301,18 @@ Navigator::Active{
   leq(mb.duration, ws.duration);
 
   // Check end conditions. Note that this formulation should always be resolved in implementation
-  // by binding to an existing token.
+  // by binding to an existing token. We allow for the fact that an effort to achieve the goal may have timed out,
+  // in which case we will not check the end condition (which would force a replan). Insetad we will simply let it go.
   // s = baseState[end];
   // distance(s.x, s.y, w.x, w.y) <= XY_ERROR
+  bool temp_t;
+  eq(mb.timed_out, temp_t);
   if(end){
-    ends(BaseState.Holds s);
-    float distance;
-    calcDistance(distance, s.x, s.y, w.x, w.y);
-    leq(distance, XY_ERROR);
+    if(temp_t == false){
+      ends(BaseState.Holds s);
+      float distance;
+      calcDistance(distance, s.x, s.y, w.x, w.y);
+      leq(distance, XY_ERROR);
+    }
   }
 }
