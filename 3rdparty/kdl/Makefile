@@ -17,9 +17,12 @@ PATCH2 = kdl_patch_quaternion.diff
 include $(shell rospack find mk)/svn_checkout.mk
 
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
+BOOST_ROOT =$(shell rospack find boost)/boost
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 		-DPYTHON_BINDINGS=ON \
-		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/
+		-DKDL_PYTHON_INSTALL_PATH=$(PWD)/kdl/lib/ \
+		-DBOOST_INCLUDEDIR:STRING=$(BOOST_ROOT)/include \
+  	-DBOOST_LIBRARYDIR:STRING=$(BOOST_ROOT)/lib
 
 build: wiped kdl
 

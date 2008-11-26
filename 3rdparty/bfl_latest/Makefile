@@ -4,8 +4,11 @@ all: bfl
 
 SVN_DIR = bfl-svn
 INSTALL_DIR = bfl-boost
-CMAKE = `rospack find cmake`/cmake/bin/cmake 
+CMAKE = `rospack find cmake`/cmake/bin/cmake
+BOOST_ROOT =$(shell rospack find boost)/boost 
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
+  -DBOOST_INCLUDEDIR:STRING=$(BOOST_ROOT)/include \
+  -DBOOST_LIBRARYDIR:STRING=$(BOOST_ROOT)/lib \
 	-DMATRIX_LIB=boost \
 	-DRNG_LIB=boost
 PATCH = bfl_patch.diff

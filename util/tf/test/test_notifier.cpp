@@ -50,14 +50,14 @@ public:
 	: count_(0)
 	, expected_count_(expected_count)
 	{
-		boost::detail::thread::lock_ops<boost::timed_mutex>::lock(mutex_);
+	  lock_ = new boost::timed_mutex::scoped_lock(mutex_);
 	}
 
 	~Notification()
 	{
 		if (count_ < expected_count_)
 		{
-			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		  delete lock_;
 		}
 	}
 
@@ -69,13 +69,14 @@ public:
 
 		if (count_ == expected_count_)
 		{
-			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+			delete lock_;
 		}
 	}
 
 	int count_;
 	int expected_count_;
 
+	boost::timed_mutex::scoped_lock* lock_;
 	boost::timed_mutex mutex_;
 };
 
@@ -88,7 +89,7 @@ public:
 	, expected_count_(expected_count)
 	, topic_(topic)
 	{
-		boost::detail::thread::lock_ops<boost::timed_mutex>::lock(mutex_);
+	  lock_ = new boost::timed_mutex::scoped_lock(mutex_);
 
 		g_node->subscribe(topic_, message_, &Counter::callback, this, 0);
 	}
@@ -99,7 +100,7 @@ public:
 
 		if (count_ < expected_count_)
 		{
-			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		  delete lock_;
 		}
 	}
 
@@ -111,7 +112,7 @@ public:
 
 		if (count_ == expected_count_)
 		{
-			boost::detail::thread::lock_ops<boost::timed_mutex>::unlock(mutex_);
+		  delete lock_;
 		}
 	}
 
@@ -121,6 +122,7 @@ public:
 	int expected_count_;
 	std::string topic_;
 
+	boost::timed_mutex::scoped_lock* lock_;
 	boost::timed_mutex mutex_;
 };
 
@@ -164,7 +166,7 @@ TEST(MessageNotifier, preexistingTransforms)
 
 		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	std_msgs::PointStamped msg;
@@ -179,7 +181,7 @@ TEST(MessageNotifier, preexistingTransforms)
 
 		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	EXPECT_EQ(1, n.count_);
@@ -209,7 +211,7 @@ TEST(MessageNotifier, postTransforms)
 
 		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame3", "frame4");
@@ -221,7 +223,7 @@ TEST(MessageNotifier, postTransforms)
 
 		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	EXPECT_EQ(1, n.count_);
@@ -256,7 +258,7 @@ TEST(MessageNotifier, queueSize)
 
 		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	ros::Duration(0.1).sleep();
@@ -270,7 +272,7 @@ TEST(MessageNotifier, queueSize)
 
 		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	EXPECT_EQ(10, n.count_);
@@ -297,7 +299,7 @@ TEST(MessageNotifier, setTopic)
 
 		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	std_msgs::PointStamped msg;
@@ -312,7 +314,7 @@ TEST(MessageNotifier, setTopic)
 
 		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	EXPECT_EQ(1, n.count_);
@@ -339,7 +341,7 @@ TEST(MessageNotifier, setTargetFrame)
 
 		boost::timed_mutex::scoped_timed_lock lock(c.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	std_msgs::PointStamped msg;
@@ -354,7 +356,7 @@ TEST(MessageNotifier, setTargetFrame)
 
 		boost::timed_mutex::scoped_timed_lock lock(n.mutex_, xt);
 
-		EXPECT_EQ(true, lock.locked());
+		EXPECT_EQ(true, lock.owns_lock());
 	}
 
 	EXPECT_EQ(1, n.count_);

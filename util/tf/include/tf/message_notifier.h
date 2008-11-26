@@ -450,7 +450,7 @@ private:
 
   bool destructing_; ///< Used to notify the worker thread that it needs to shutdown
   boost::thread* thread_handle_; ///< Thread handle for the worker thread
-  boost::condition new_data_; ///< Condition variable used for waking the worker thread
+  boost::condition_variable new_data_; ///< Condition variable used for waking the worker thread
   bool new_messages_; ///< Used to skip waiting on new_data_ if new messages have come in while calling back
   volatile bool new_transforms_; ///< Used to skip waiting on new_data_ if new transforms have come in while calling back or transforming data
   V_Message new_message_queue_; ///< Queues messages to later be processed by the worker thread

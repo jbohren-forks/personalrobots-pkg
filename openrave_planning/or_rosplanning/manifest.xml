@@ -8,6 +8,5 @@
   <depend package="openrave"/>
   <depend package="openrave_robot_description"/>
   <depend package="libKinematics"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-dev"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-dev"/>
+  <depend package="boost"/>
 </package>

@@ -12,30 +12,28 @@ include $(shell rospack find mk)/download_unpack_build.mk
 ROOT = $(shell rospack find ogre)
 OGREROOT = $(shell rospack find ogre)/ogre
 
-FIROOT = $(shell rospack find freeimage)/freeimage
-CGROOT = $(shell rospack find Cg)/Cg
-
-CFLAGS = -g \
+CFLAGS = -g -O3 \
 	 $(shell rospack --lang=cpp --attrib=cflags export freeimage) \
-         $(shell rospack --lang=cpp --attrib=cflags export player) \
          $(shell rospack --lang=cpp --attrib=cflags export opende) \
-         $(shell rospack --lang=cpp --attrib=cflags export Cg)
+         $(shell rospack --lang=cpp --attrib=cflags export Cg) \
+         $(shell rospack --lang=cpp --attrib=cflags export boost)
 
 LFLAGS = $(shell rospack --lang=cpp --attrib=lflags export freeimage) \
-         $(shell rospack --lang=cpp --attrib=lflags export player) \
          $(shell rospack --lang=cpp --attrib=lflags export opende) \
-         $(shell rospack --lang=cpp --attrib=lflags export Cg)
+         $(shell rospack --lang=cpp --attrib=lflags export Cg) \
+         $(shell rospack --lang=cpp --attrib=lflags export boost)
 
-CONFIGURE_FLAGS = --with-arch=nocona --enable-release CXXFLAGS='-g -O3 -I$(FIROOT)/include -I$(CGROOT)/include' LDFLAGS='-Wl,-rpath,$(FIROOT)/lib,-rpath,$(CGROOT)/lib -L$(FIROOT)/lib -L$(CGROOT)/lib' CFLAGS='-g -O3 -I$(FIROOT)/include -I$(OISROOT)/include -I$(CGROOT)/include'
+CONFIGURE_FLAGS = --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos --with-arch=nocona --enable-release
 
-$(SOURCE_DIR)/Makefile: $(SOURCE_DIR)
+$(SOURCE_DIR)/Makefile: $(SOURCE_DIR) changelist.txt
 	if test `uname` = Darwin ; then \
 	  touch $(SOURCE_DIR)/Makefile; \
 	else \
 	  cd $(SOURCE_DIR) && \
-	  export LIB="$(LFLAGS)" && \
+	  export LDFLAGS="$(LFLAGS)" && \
 	  export CFLAGS="$(CFLAGS)" && \
-	  ./configure --prefix=$(OGREROOT) --enable-threading --with-pic --with-platform=GLX --with-gui=gtk  --disable-ogre-demos $(CONFIGURE_FLAGS) && \
+	  export CXXFLAGS="$(CFLAGS)" && \
+	  ./configure $(CONFIGURE_FLAGS) && \
 	  touch $(ROOT)/$(SOURCE_DIR)/Makefile && \
 	  mkdir -p $(ROOT)/ogre && \
 	  mkdir -p $(ROOT)/ogre/lib && \
