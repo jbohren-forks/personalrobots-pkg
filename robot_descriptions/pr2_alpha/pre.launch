@@ -12,6 +12,7 @@
   <include file="$(find wg_robot_description)/pr2_prototype1/calibrate.launch" />
 
 <!-- Joystick -->
+  <param name="joy/deadzone" value="5000"/>
   <node machine="four" pkg="joy" type="joy"  respawn="true"/>
 
 <!-- Power Board Control Node -->
