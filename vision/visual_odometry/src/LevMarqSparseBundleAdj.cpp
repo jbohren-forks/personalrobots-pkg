@@ -254,6 +254,12 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 /// This step increases the influence of gradient descent and reduce the
 /// influence of Gauss-Newton.
 ///
+/// Potential excuses that this implementation is not as fast as reported in the
+/// above paper:
+///  - They used a faster machine Alienware with Intel Pentium Xeon processor
+///    3.4Ghz, 2.37GB.
+///  - They might use 32 bit float.
+///
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
     vector<FramePose*>* fixed_frames,
