@@ -347,6 +347,7 @@ namespace ros {
 					  &statsEntry.actual_time_user_sec,
 					  &statsEntry.actual_time_system_sec,
 					  &statsEntry.solution_cost,
+					  &statsEntry.solution_epsilon,
 					  &solutionStateIDs);
 
 	// Extract the solution, if available, and update statistics (as usual).
