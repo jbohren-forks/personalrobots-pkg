@@ -202,15 +202,22 @@ WorkingStatus::Holds{
 
   // Do the recharging if appropriate
   if(recharging == true){
-    // Note: this is a good example of where the semantics of waiting until a start event are important. If we simply constrain
-    // the token where start is a singleton then we end up with a plan that will not bind to grounded execution values.
-
-    // Actual charging station should be selected by the planner in principle, if we were using some optimization
-    // criteria. Here we select the nearest feasible charging station via a constraint. Feasibility should include access to
-    // obstacle data, but it doesn't. We might want to think about generally integrating obstacle data to constrain executive choices.
+    // Selection of a charging station can happen in principle in a number of ways. The ideal scenario is that actual obstacle data
+    // is used as a constraint on the available charging station. This could occur where we would say something like:
+    //   collissionFree(cs);
+    // However, no such integration is available and it is an open question how to interpret that constraint given a temporal
+    // context.
+    //
+    // We can select from the available set via the planner. This would allow branching over thde decision. This could yield a very
+    // high branching factor.
+    // We can pick the nearest available - which is simple and efficient. However, it may force a situation where we  re-commit to an
+    // unreachable location. This would look like what we had implemented before:
+    //   met_by(BaseState.Holds bs);
+    //   nearestReachableLocation(bs.x, bs.y, cs);
+    //
+    // Instead we will use the randomSelect again, and revisit this later
     ChargingStation cs;
-    met_by(BaseState.Holds bs);
-    nearestReachableLocation(bs.x, bs.y, cs);
+    randomSelect(cs);
 
     // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
     any(RechargeController.Active rc);
