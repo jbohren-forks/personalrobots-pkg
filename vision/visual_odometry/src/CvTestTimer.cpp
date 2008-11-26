@@ -24,12 +24,30 @@ CvTestTimer::~CvTestTimer()
 
 #define PRINTSTAT2(title, name) do {printStat((title), m##name.mTime, m##name.mCount);} while(0)
 
+#define PRINTSTATSBA(title, name) do {printStatSBA((title), m##name.mTime, m##name.mCount);} while(0)
+
 void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
-	fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f\n",
-	    title,
-	    (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,
-	    (mTotal>0&&mNumIters>0)?    ((double)val/(double)mTotal*100.0)      :0.0,
-	    (mNumIters>0)?              ((double)count/(double)mNumIters)       :0.0);
+  fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f\n",
+      title,
+      (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,
+      (mTotal>0&&mNumIters>0)?    ((double)val/(double)mTotal*100.0)      :0.0,
+      (mNumIters>0)?              ((double)count/(double)mNumIters)       :0.0);
+}
+
+void CvTestTimer::printStatSBA(const char* title, int64 val, int64 count) {
+  fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f, %10.2f, %12.2f%%\n",
+      title,
+      // average time
+      (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,
+      // percentage of the total time
+      (mTotal>0&&mNumIters>0)?    ((double)val/(double)mTotal*100.0)      :0.0,
+      // average frequency
+      (mNumIters>0)?              ((double)count/(double)mNumIters)       :0.0,
+      // average time in each sparse bundle adjustment iteration
+      ((double)val/(double)mSparseBundleAdj.mCount/(double)mFrequency),
+      // percentage of the total time in sparse bundle adjustment
+      ((double)val/(double)mSparseBundleAdj.mTime*100.0)
+  );
 }
 
 void CvTestTimer::printStat() {
@@ -39,39 +57,46 @@ void CvTestTimer::printStat() {
     cerr << "Please set mNumIters, the number of iterations"<<endl;
     return;
   }
-  cout <<    "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
-	PRINTSTAT ("Total               ", Total);
+  cout <<      "[counter]              [Avg time] [% of Total] [Avg Freq]"<<endl;
+	PRINTSTAT   ("Total                ", Total);
 #if 0
-	PRINTSTAT ("LevMarq::            ", LevMarqDoit);
-	PRINTSTAT2("LevMarq::DoitAlt2    ", LevMarq2);
-	PRINTSTAT2("LevMarq::DoitAlt3    ", LevMarq3);
-	PRINTSTAT2("LevMarq::DoitAlt4    ", LevMarq4);
-	PRINTSTAT2("LevMarq::DoitAlt5    ", LevMarq5);
-	PRINTSTAT2("LevMarq::getResidue  ", Residue);
-	PRINTSTAT2("LevMarq::FwdResidue  ", FwdResidue);
-	PRINTSTAT ("LevMarq::errNorm     ", ErrNorm);
-	PRINTSTAT ("LevMarq::JtJJtErr    ", JtJJtErr);
-	PRINTSTAT ("LevMarq::LevMarq     ", LevMarq);
-	PRINTSTAT ("LevMarq::CnstrctMats ", ConstructMatrices);
-	PRINTSTAT2("LoadImage            ", LoadImage);
-	PRINTSTAT2("DisparityMap         ", DisparityMap);
+	PRINTSTAT   ("LevMarq::            ", LevMarqDoit);
+	PRINTSTAT2  ("LevMarq::DoitAlt2    ", LevMarq2);
+	PRINTSTAT2  ("LevMarq::DoitAlt3    ", LevMarq3);
+	PRINTSTAT2  ("LevMarq::DoitAlt4    ", LevMarq4);
+	PRINTSTAT2  ("LevMarq::DoitAlt5    ", LevMarq5);
+	PRINTSTAT2  ("LevMarq::getResidue  ", Residue);
+	PRINTSTAT2  ("LevMarq::FwdResidue  ", FwdResidue);
+	PRINTSTAT   ("LevMarq::errNorm     ", ErrNorm);
+	PRINTSTAT   ("LevMarq::JtJJtErr    ", JtJJtErr);
+	PRINTSTAT   ("LevMarq::LevMarq     ", LevMarq);
+	PRINTSTAT   ("LevMarq::CnstrctMats ", ConstructMatrices);
+	PRINTSTAT2  ("LoadImage            ", LoadImage);
+	PRINTSTAT2  ("DisparityMap         ", DisparityMap);
 #endif
-	PRINTSTAT2("FeaturePoint         ", FeaturePoint);
-	PRINTSTAT2("KeypointDescriptor   ", KeyPointDescriptor);
-  PRINTSTAT2("KeypointMatch        ", KeyPointMatch);
-  PRINTSTAT2("SparseStereo         ", SparseStereo);
-	PRINTSTAT2("PoseEstimateRANSAC   ", PoseEstimateRANSAC);
-	PRINTSTAT2("  PointPicking       ", PointPicking);
-	PRINTSTAT2("    RandTripletGen   ", RandTripletGenerator);
-	PRINTSTAT2("    ColinearCheck    ", ColinearCheck);
-  PRINTSTAT2("  SVD                ", SVD);
-  PRINTSTAT ("  CheckInliers       ", CheckInliers);
-  PRINTSTAT ("  CopyInliers        ", CopyInliers);
-	PRINTSTAT2("PoseEstimateLevMarq  ", PoseEstimateLevMarq);
-	PRINTSTAT2("SBA::CostFunction    ", SBACostFunction);
-	PRINTSTAT2("SBA::Derivatives     ", SBADerivatives);
-	PRINTSTAT2("SBA::OuterProdOfTrack", SBAOuterProdOfTrack);
-	PRINTSTAT2("SBA::LinearSolving   ", SBALinearSolving);
-	PRINTSTAT2("SBA::BackSubstitution", SBABackSubstitution);
+	PRINTSTAT2  ("FeaturePoint         ", FeaturePoint);
+	PRINTSTAT2  ("KeypointDescriptor   ", KeyPointDescriptor);
+  PRINTSTAT2  ("KeypointMatch        ", KeyPointMatch);
+  PRINTSTAT2  ("SparseStereo         ", SparseStereo);
+	PRINTSTAT2  ("PoseEstimateRANSAC   ", PoseEstimateRANSAC);
+	PRINTSTAT2  ("  PointPicking       ", PointPicking);
+	PRINTSTAT2  ("    RandTripletGen   ", RandTripletGenerator);
+	PRINTSTAT2  ("    ColinearCheck    ", ColinearCheck);
+  PRINTSTAT2  ("  SVD                ", SVD);
+  PRINTSTAT   ("  CheckInliers       ", CheckInliers);
+  PRINTSTAT   ("  CopyInliers        ", CopyInliers);
+	PRINTSTAT2  ("PoseEstimateLevMarq  ", PoseEstimateLevMarq);
+  cout <<      "[counter]              [Avg time] [% of Total] [Avg Freq] [SBA Avg time] [% of SBA Total]"<<endl;
+	PRINTSTATSBA("SparseBundleAdjust   ", SparseBundleAdj);
+	PRINTSTATSBA("SBA::CostFunction    ", SBACostFunction);
+  PRINTSTATSBA("SBA::Derivatives     ", SBADerivatives);
+  PRINTSTATSBA("SBA::DerivativesHpp  ", SBADerivativesHpp);
+  PRINTSTATSBA("SBA::DerivHppInv     ", SBADerivativesHppInv);
+  PRINTSTATSBA("SBA::DerivativesHcc  ", SBADerivativesHcc);
+  PRINTSTATSBA("SBA::DerivativesHpc  ", SBADerivativesHpc);
+	PRINTSTATSBA("SBA::FwdTransfMats   ", SBAFwdTransfMats);
+	PRINTSTATSBA("SBA::OuterProdOfTrack", SBAOuterProdOfTrack);
+	PRINTSTATSBA("SBA::LinearSolving   ", SBALinearSolving);
+	PRINTSTATSBA("SBA::BackSubstitution", SBABackSubstitution);
 }
 

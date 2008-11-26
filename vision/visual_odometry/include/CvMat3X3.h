@@ -154,7 +154,7 @@ public:
 	      R[i*3+j] = cvmGet(&Rxyz, i, j);
 	    }
 	  }
-#ifdef DEBUG
+#if DEBUG==1
 	  cout << "CvMat3x3::rotMatrix()"<<endl;
 	  printMat(R);
 	  cout << "Qx:"<< endl;

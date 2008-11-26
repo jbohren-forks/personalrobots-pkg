@@ -31,8 +31,7 @@ using namespace cv::willow;
 #define SHOWKEYPOINTS    0
 #define SHOWDISPARITYMAP 0
 
-//#undef DEBUG
-#define DEBUG 1
+#undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
 // they themselves have taken substantial timing as well
@@ -297,8 +296,6 @@ void PathRecon::updateTrajectory() {
     cvSetIdentity(&mTransform);
     cvSetIdentity(&mFrameSeq.mCurrentFrame->mRot);
     cvSetZero(&mFrameSeq.mCurrentFrame->mShift);
-    CvMatUtils::printMat(&mFrameSeq.mCurrentFrame->mRot);
-    CvMatUtils::printMat(&mFrameSeq.mCurrentFrame->mShift);
     storeTransform(mFrameSeq.mCurrentFrame->mRot, mFrameSeq.mCurrentFrame->mShift,
         mFrameSeq.mCurrentFrame->mFrameIndex);
   }
