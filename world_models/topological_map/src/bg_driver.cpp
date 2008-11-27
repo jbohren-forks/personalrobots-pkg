@@ -55,14 +55,11 @@ int main (int argc, char* argv[])
   }
       
   cout << "Bottleneck graph:" << endl;
-  topological_map::BottleneckGraph g = topological_map::makeBottleneckGraph (*grid, atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
-  topological_map::printBottleneckGraph (g);
+  topological_map::IndexedBottleneckGraph g = topological_map::makeBottleneckGraph (*grid, atoi(argv[1]), atoi(argv[2]), atoi(argv[3]));
+  g.printBottleneckGraph ();
   cout << "Bottlenecks:" << endl;
-  topological_map::printBottlenecks (g, *grid);
+  g.printBottlenecks();
 }
-
-
-
 
   
   

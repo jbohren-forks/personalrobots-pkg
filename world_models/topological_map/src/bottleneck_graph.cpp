@@ -195,13 +195,13 @@ void printVertexMap (const GridGraph& gr)
 }
 
 
-void printBottleneckGraph (const BottleneckGraph& g)
+void IndexedBottleneckGraph::printBottleneckGraph (void)
 {
   BottleneckVertexIterator i, end;
-  for (boost::tie(i, end) = boost::vertices(g); i!=end; ++i) {
+  for (boost::tie(i, end) = boost::vertices(graph); i!=end; ++i) {
     BottleneckVertex v = *i;
     cout << "Vertex: " << endl << " Type: ";
-    VertexDescription d = get (desc_t(), g, v);
+    VertexDescription d = get (desc_t(), graph, v);
     if (d.type == BOTTLENECK)
       cout << "bottleneck" << endl << " Region: ";
     else
@@ -238,35 +238,29 @@ void printBottleneckGraph (const BottleneckGraph& g)
   }
 }
 
-void printBottlenecks (const BottleneckGraph& g, const GridArray& grid)
-{
-  const grid_size* dims = grid.shape();
 
-  BottleneckVertexIterator i, end;
+void IndexedBottleneckGraph::printBottlenecks (void)
+{
   
-  OccMap b(boost::extents[dims[0]][dims[1]]);
-  for (boost::tie(i, end) = boost::vertices(g); i!=end; ++i) {
+  BottleneckVertexIterator i, end;
+  cout << "Bottlenecks" << endl;
+  
+  for (boost::tie(i, end) = boost::vertices(graph); i!=end; ++i) {
     BottleneckVertex v = *i;
-    VertexDescription d = get (desc_t(), g, v);
+    VertexDescription d = get (desc_t(), graph, v);
     if (!(d.type == BOTTLENECK))
       continue;
 
     for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
       int r, c;
       boost::tie (r, c) = *i;
-      b[r][c] = true;
+      cout << r << " " << c << endl;
     }
   }
+}
 
-  cout << "Bottlenecks" << endl;
-  for (grid_size r=0; r<dims[0]; r++) {
-    for (grid_size c=0; c<dims[1]; c++) {
-      if (b[r][c]) {
-        cout << r << " " << c << endl;
-      }
-    }
-  }
-}           
+    
+           
 
 void printBlock (const GridGraph& g, int r, int c, int s, int r0, int c0, int r1, int c1, int nr, int nc)
 {
@@ -510,7 +504,7 @@ void connectRegions (const GridGraph& gr, const VertexCompMap& vertexComp, const
 
   
 
-void removeBottleneck (BottleneckVertex v, BottleneckGraph* g)
+void removeBottleneck (BottleneckVertex v, IndexedBottleneckGraph* g)
 {
   // First, figure out the overall union region r of v and its neighbors
   
@@ -523,7 +517,7 @@ void removeBottleneck (BottleneckVertex v, BottleneckGraph* g)
 }
 
 
-void pruneIsolatedBottlenecks (const int regionSizeThreshold, BottleneckGraph* g)
+void pruneIsolatedBottlenecks (const int regionSizeThreshold, IndexedBottleneckGraph* g)
 {
   bool prunedBottleneck = false;
   do {
@@ -540,6 +534,23 @@ void pruneIsolatedBottlenecks (const int regionSizeThreshold, BottleneckGraph* g
 
   } while (prunedBottleneck);
 }
+
+
+// Set up the index from cell coordinates to region id
+void indexRegions (IndexedBottleneckGraph* g)
+{
+  BottleneckVertexIterator i, end;
+  for (boost::tie(i, end) = boost::vertices(g->graph); i!=end; ++i) {
+    BottleneckVertex v=*i;
+    VertexDescription d = get(desc_t(), g->graph, v);
+    for (Region::iterator i = d.region.begin(); i!=d.region.end(); i++) {
+      int r, c;
+      boost::tie (r, c) = *i;
+      (*g->regions)[r][c] = v;
+    }
+  }
+}
+
 
 
 
@@ -669,10 +680,11 @@ void findDisconnectingBlocks (GridGraph* gr, BlockList* disconnectingBlocks, int
 
 
 // The top-level function that returns a topological graph containing bottleneck and open regions, given an occupancy grid
-BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin, int distanceMultMax)
+IndexedBottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin, int distanceMultMax)
 {
   GridGraph gr = makeGraphFromGrid(grid, inflationRadius);
-  BottleneckGraph g;
+  const grid_size* dims = gr.m.shape();
+  IndexedBottleneckGraph g (dims[0], dims[1]);
   BlockList disconnectingBlocks;
   typedef std::vector<Region> RegionVector;
 
@@ -697,15 +709,16 @@ BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bot
   std::vector<BottleneckVertex> bottleneckGraphVertices;
   for (unsigned int i=0; i<regions.size(); i++) {
     Coords c = *(regions[i].begin());
-    BottleneckVertex v = add_vertex (g);
+    BottleneckVertex v = add_vertex (g.graph);
     bottleneckGraphVertices.push_back (v);
     VertexDescription d;
     d.type = get (bottleneck_t(), gr.g, gr.m[c.first][c.second]) ? BOTTLENECK : OPEN;
     d.region = regions[i];
-    boost::put (vertexDescriptions, g, v, d);
+    boost::put (vertexDescriptions, g.graph, v, d);
   }
-  connectRegions (gr, vertexComp, bottleneckGraphVertices, &g);
+  connectRegions (gr, vertexComp, bottleneckGraphVertices, &(g.graph));
   pruneIsolatedBottlenecks (-1, &g);
+  indexRegions(&g);
   
 
   return g;

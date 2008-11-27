@@ -70,11 +70,26 @@ typedef GridArray::size_type grid_size;
 
 
 
+typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 
-// API
-BottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin=1, int distanceMultMax=3);
-void printBottleneckGraph (const BottleneckGraph& g);
-void printBottlenecks (const BottleneckGraph& g, const GridArray& grid);
+
+// Externally used ops
+struct IndexedBottleneckGraph
+{
+  IndexedBottleneckGraph (int nr, int nc) : numRows(nr), numCols(nc) { regions = new RegionArray(boost::extents[nr][nc]); }
+
+  void printBottleneckGraph (void);
+  void printBottlenecks (void);
+
+  BottleneckGraph graph;
+  RegionArray* regions;
+  int numRows, numCols;
+};
+
+IndexedBottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin=1, int distanceMultMax=3);
+
+
+
 } // namespace topological_map
 
 

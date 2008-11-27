@@ -28,12 +28,16 @@
  */
 
 
+#include <getopt.h>
+#include <sysexits.h>
 #include <ros/node.h>
 #include <rosconsole/rosconsole.h>
 #include <std_srvs/StaticMap.h>
 #include <std_msgs/RobotBase2DOdom.h>
 #include "topological_map/bottleneck_graph.h"
 
+
+using namespace std;
 
 namespace topological_map
 {
@@ -44,6 +48,7 @@ class BottleneckGraphRos: public ros::node
 {
 public:
   BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax);
+  BottleneckGraphRos(char* filename);
 
   void loadMap(void);
   void computeBottleneckGraph(void);
@@ -55,7 +60,7 @@ public:
 
 
 private:
-  BottleneckGraph bottleneckGraph_;
+  IndexedBottleneckGraph* bottleneckGraph_;
   NodeStatus nodeStatus_;
   GridArray* grid_;
 
@@ -71,10 +76,18 @@ private:
 
 
 
-// Constructor
+/************************************************************
+ * Constructors
+ ************************************************************/
+
 BottleneckGraphRos::BottleneckGraphRos(int size, int skip, int radius, int distanceMin, int distanceMax) : 
-  ros::node("bottleneckgraph_ros"), nodeStatus_(WAITING_FOR_MAP), size_(size), skip_(skip), radius_(radius),
-  distanceMin_(distanceMin), distanceMax_(distanceMax)
+  ros::node("bottleneck_graph_ros"), bottleneckGraph_(0), nodeStatus_(WAITING_FOR_MAP), size_(size), skip_(skip), radius_(radius),
+  distanceMin_(distanceMin), distanceMax_(distanceMax) 
+{
+}
+ 
+BottleneckGraphRos::BottleneckGraphRos(char* filename) :
+  ros::node("bottleneck_graph_ros")
 {
 }
 
@@ -102,10 +115,10 @@ void BottleneckGraphRos::poseCallback (void)
 void BottleneckGraphRos::computeBottleneckGraph (void)
 {
   ROS_INFO ("Computing bottleneck graph... (this could take a while)\n");
-  bottleneckGraph_ = makeBottleneckGraph (*grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
+  *bottleneckGraph_ = makeBottleneckGraph (*grid_, size_, skip_, radius_, distanceMin_, distanceMax_);
   nodeStatus_ = READY;
   ROS_INFO ("Done computing bottleneck graph\n");
-  printBottlenecks (bottleneckGraph_, *grid_);
+  bottleneckGraph_->printBottlenecks();
 }  
 
 void BottleneckGraphRos::loadMap (void)
@@ -149,7 +162,7 @@ void BottleneckGraphRos::setupTopics (void)
   subscribe("localizedpose",  pose_,  &BottleneckGraphRos::poseCallback, 100);
 
 } // namespace topological_map
-  
+
 
 
 
@@ -170,14 +183,98 @@ void BottleneckGraphRos::convertToMapIndices (double x, double y, int* r, int* c
 }
 
 
+} // End topological_map namespace
+
+
+
+void usage(void)
+{
+  cout << "Usage 1:\n Required:\n  --bottleneck-size, -b\n  --inflation-radius, -i\n Optional:\n"
+    "  --bottleneck-skip, -k\n  --distance-lower-bound, -d\n  --distance-upper-bound, -D\n  --output-to-file, -f\n"
+    "Usage 2:\n Required:\n  --load-from-file, -l\n";
 }
+
 
 
 int main(int argc, char** argv)
 {
+  int bottleneckSize=-1;
+  int bottleneckSkip=-1;
+  int inflationRadius=-1;
+  int distanceLower=1;
+  int distanceUpper=2;
+  char* inputFile=0;
+  char* outputFile=0;
+
+
+  while (1) {
+    static struct option options[] =
+      {{"bottleneck-size", required_argument, 0, 'b'},
+       {"bottleneck-skip", required_argument, 0, 'k'},
+       {"inflation-radius", required_argument, 0, 'i'},
+       {"distance-lower-bound", required_argument, 0, 'd'},
+       {"distance-upper-bound", required_argument, 0, 'D'},
+       {"load-from-file", required_argument, 0, 'l'},
+       {"output-to-file", required_argument, 0, 'f'},
+       {0, 0, 0, 0}};
+
+    int option_index=0;
+    int c = getopt_long (argc, argv, "b:k:d:D:l:f:i:", options, &option_index);
+    if (c==-1) {
+      break;
+    }
+    else {
+      switch (c) {
+      case 'b':
+        bottleneckSize=atoi(optarg);
+        if (bottleneckSkip<0) {
+          bottleneckSkip = 1+bottleneckSize/3;
+        }
+        break;
+      case 'k':
+        bottleneckSkip=atoi(optarg);
+        break;
+      case 'i':
+        inflationRadius=atoi(optarg);
+        break;
+      case 'd':
+        distanceLower=atoi(optarg);
+        break;
+      case 'D':
+        distanceUpper=atoi(optarg);
+        break;
+      case 'l':
+        inputFile=optarg;
+        break;
+      case 'o':
+        outputFile=optarg;
+        break;
+      case '?':
+        usage();
+        exit(EX_USAGE);
+      default:
+        usage();
+        exit(EX_USAGE);
+      }
+    }
+  }
+  if (!inputFile && ((bottleneckSkip<0) || (bottleneckSize<0) || (inflationRadius<0))) {
+    usage();
+    exit(EX_USAGE);
+  }
+  
   ros::init(argc, argv);
-  assert (argc >= 6);
-  topological_map::BottleneckGraphRos* node = new topological_map::BottleneckGraphRos(atoi(argv[1]), atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]));
+  ROS_INFO ("Creating bottleneck graph with bottleneck size %d, skip %d, inflation %d, distance lower bound %d, distance upper bound %d\n",
+            bottleneckSize, bottleneckSkip, inflationRadius, distanceLower, distanceUpper);
+  topological_map::BottleneckGraphRos* node;
+
+
+  if (inputFile) {
+    node = new topological_map::BottleneckGraphRos(inputFile);
+  }
+  else {
+    node = new topological_map::BottleneckGraphRos(bottleneckSize, bottleneckSkip, inflationRadius, distanceLower, distanceUpper);
+  }
 
   node->loadMap();
   node->setupTopics();
