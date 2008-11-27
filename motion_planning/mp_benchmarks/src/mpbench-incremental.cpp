@@ -80,8 +80,10 @@ static shared_ptr<footprint_t> footprint;
 
 static planList_t planList;
 
-typedef vector<SBPLPlannerStatsEntry> plannerStats_t;
-static plannerStats_t plannerStats;
+typedef map<waypoint_plan_t const *, SBPLPlannerStatsEntry> successStats_t;
+////typedef map<size_t, SBPLPlannerStatsEntry> failureStats_t;
+static successStats_t successStats;
+////static failureStats_t failureStats;
 
 
 int main(int argc, char ** argv)
@@ -697,7 +699,7 @@ void run_tasks()
       else
 	statsEntry.logStream(*logos, "  IMPROVED", "    ");
       *logos << flush;
-      plannerStats.push_back(statsEntry);
+      successStats.insert(make_pair(plan.get(), statsEntry));
       
       prevSolution.swap(solution);
       prevEpsilon = statsEntry.solution_epsilon;
@@ -717,59 +719,167 @@ void run_tasks()
 
 void print_summary()
 {
-  size_t n_success(0);
-  size_t n_fail(0);
-  double t_success(0);
-  double t_fail(0);
-  double lplan(0);
-  double rplan(0);
-  for (plannerStats_t::const_iterator ie(plannerStats.begin()); ie != plannerStats.end(); ++ie) {
-    // cannot always use status, some planners say SUCCESS even they fail
-    if ((1 != ie->status) || (ie->plan_length_m < 1e-3)) {
-      ++n_fail;
-      t_fail += ie->actual_time_user_sec;
-    }
-    else {
-      ++n_success;
-      t_success += ie->actual_time_user_sec;
-      lplan += ie->plan_length_m;
-      rplan += ie->plan_angle_change_rad;
-    }
+  if ( ! websiteMode) {
+    *logos << "sorry, summary only implemented for HTML mode\n";
+    return;
+  }  
+  string htmlFilename("mpbench-" + summarizeOptions() + ".html");
+  ofstream htmlOs(htmlFilename.c_str());
+  if ( ! htmlOs) {
+    cout << "sorry, could not open file " << htmlFilename << "\n";
+    return;
   }
-  rplan *= 180.0 / M_PI;
-  //  double const ntt(n_success + n_fail);
-  double x0, y0, x1, y1;
-  setup->getWorkspaceBounds(x0, y0, x1, y1);
-  double area((x1-x0)*(y1-y0));
-  double ncells(ceil(area / pow(opt.resolution, 2)));
-  *logos << "\nsummary:\n"
-	 << "  map size:\n"
-	 << "    area [m2]:                 " << area << "\n"
-	 << "    cells (approx):            " << ncells << "\n"
-	 << "  N tasks:\n"
-	 << "    success:                   " << n_success << "\n"
-	 << "    fail:                      " << n_fail << "\n"
-    //	 << "    total:                     " << n_success + n_fail << "\n"
-	 << "  total / average:\n"
-	 << "    planning time success [s]: " << t_success << " / " << t_success / n_success << "\n"
-    //	 << "    planning time failure [s]: " << t_fail << " / " << t_fail / n_success << "\n"
-	 << "    plan length [m]:           " << lplan << " / " << lplan / n_success << "\n"
-	 << "    plan angle change [deg]:   " << rplan << " / " << rplan / n_success << "\n";
-  if (websiteMode) {
-    string foo("mpbench-" + summarizeOptions() + ".html");
-    ofstream os(foo.c_str());
-    if (os)
-      os << "<table border=\"1\" cellpadding=\"2\">\n"
-	 << "<tr><td><b>N tasks</b></td><td>success: " << n_success << "</td><td>fail: " << n_fail << "</td></tr>\n"
-	 << "<tr><td><b>map size</b></td><td>area: " << area << "</td><td>cells " << ncells << "</td></tr>\n"
-	 << "</table>\n"
-	 << "<table border=\"1\" cellpadding=\"2\">\n"
-	 << "<tr><th>&nbsp;</th><th>total</th><th>average</th></tr>\n"
-	 << "<tr><td><b>planning time success [s]</b></td><td>" << t_success << "</td><td>" << t_success / n_success << "</td></tr>\n"
-	 << "<tr><td><b>plan length [m]</b></td><td>" << lplan << "</td><td>" << lplan / n_success << "</td></tr>\n"
-	 << "<tr><td><b>plan angle change [deg]</b></td><td>" << rplan << "</td><td>" << rplan / n_success << "</td></tr>\n"
-	 << "</table>\n";
+  
+  htmlOs << "<table border=\"1\" cellpadding=\"2\">\n"
+	 << "<tr><th colspan=\"5\">consumed planning time (wall) [ms]</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    planBundle_t::const_iterator ib(bundle.begin());
+    waypoint_plan_t const * initialPlan(ib->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    double cumul(initialStats->second.actual_time_wall_sec);
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">" << 1.0e3 * cumul << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    bool error(false);
+    for (++ib; ib != bundle.end(); ++ib) {
+      successStats_t::const_iterator stats(successStats.find(ib->get()));
+      if (successStats.end() == stats) {
+	error = true;
+	break;
+      }
+      cumul += stats->second.actual_time_wall_sec;
+    }
+    if (error) {
+      htmlOs << "<td colspan=\"3\"><em>error: missing stats</em></td></tr>\n";
+      continue;
+    }
+    double const delta(cumul - initialStats->second.actual_time_wall_sec);
+    htmlOs << "<td>" << 1.0e3 * initialStats->second.actual_time_wall_sec << "</td>"
+	   << "<td>" << 1.0e3 * cumul << "</td>"
+	   << "<td>" << 1.0e3 * delta << "</td>"
+	   << "<td>" << 1.0e2 * delta / initialStats->second.actual_time_wall_sec
+	   << "</td></tr>\n";
   }
+  
+  htmlOs << "<tr><th colspan=\"5\">epsilon</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * initialPlan(bundle.begin()->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">" << initialStats->second.solution_epsilon << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * finalPlan(bundle.rbegin()->get());
+    successStats_t::const_iterator finalStats(successStats.find(finalPlan));
+    if (successStats.end() == finalStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for final solution</em></td></tr>\n";
+      continue;
+    }
+    double const
+      delta(finalStats->second.solution_epsilon - initialStats->second.solution_epsilon);
+    htmlOs << "<td>" << initialStats->second.solution_epsilon << "</td>"
+	   << "<td>" << finalStats->second.solution_epsilon << "</td>"
+	   << "<td>" << delta << "</td>"
+	   << "<td>" << 1.0e2 * delta / initialStats->second.solution_epsilon << "</td></tr>\n";
+  }
+  
+  htmlOs << "<tr><th colspan=\"5\">plan length [m]</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * initialPlan(bundle.begin()->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">" << initialStats->second.plan_length_m << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * finalPlan(bundle.rbegin()->get());
+    successStats_t::const_iterator finalStats(successStats.find(finalPlan));
+    if (successStats.end() == finalStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for final solution</em></td></tr>\n";
+      continue;
+    }
+    double const delta(  finalStats->second.plan_length_m
+		       - initialStats->second.plan_length_m);
+    htmlOs << "<td>" << initialStats->second.plan_length_m << "</td>"
+	   << "<td>" << finalStats->second.plan_length_m << "</td>"
+	   << "<td>" << delta << "</td>"
+	   << "<td>" << 1.0e2 * delta / initialStats->second.plan_length_m
+	   << "</td></tr>\n";
+  }
+  
+  htmlOs << "<tr><th colspan=\"5\">plan tangent change [deg]</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * initialPlan(bundle.begin()->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">"
+	     << 180 * initialStats->second.plan_angle_change_rad / M_PI << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    waypoint_plan_t const * finalPlan(bundle.rbegin()->get());
+    successStats_t::const_iterator finalStats(successStats.find(finalPlan));
+    if (successStats.end() == finalStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for final solution</em></td></tr>\n";
+      continue;
+    }
+    double const delta(  finalStats->second.plan_angle_change_rad
+		       - initialStats->second.plan_angle_change_rad);
+    htmlOs << "<td>" << 180 * initialStats->second.plan_angle_change_rad / M_PI << "</td>"
+	   << "<td>" << 180 * finalStats->second.plan_angle_change_rad / M_PI << "</td>"
+	   << "<td>" << 180 * delta / M_PI << "</td>"
+	   << "<td>" << 1.0e2 * delta / initialStats->second.plan_angle_change_rad
+	   << "</td></tr>\n";
+  }
+  
+  htmlOs << "</table>\n";
 }
 
 
