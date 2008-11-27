@@ -262,6 +262,88 @@ Index: server/physics/Geom.hh
      private: ParamT<Vector3> *xyzP;
      private: ParamT<Quatern> *rpyP;
  
+Index: server/physics/PlaneGeom.cc
+===================================================================
+--- server/physics/PlaneGeom.cc	(revision 7168)
++++ server/physics/PlaneGeom.cc	(working copy)
+@@ -32,6 +32,7 @@
+ #include "Body.hh"
+ #include "ContactParams.hh"
+ #include "PlaneGeom.hh"
++#include "Simulator.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -110,7 +111,8 @@
+ {
+   double altitude = 0;
+ 
+-  this->meshName = OgreCreator::CreatePlane(**(this->normalP), 
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->meshName = OgreCreator::CreatePlane(**(this->normalP), 
+       **(this->sizeP), **(this->segmentsP), **(this->uvTileP), 
+       **(this->materialP), **(this->castShadowsP), this->GetVisualNode(), 
+       this->meshName);
+@@ -128,7 +130,8 @@
+ /// Set the normal
+ void PlaneGeom::SetNormal( const Vector3 &norm )
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->normalP->SetValue( norm );
+   this->CreatePlane();
+ }
+@@ -137,7 +140,8 @@
+ // Set the size
+ void PlaneGeom::SetSize( const Vector2<double> &size )
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->sizeP->SetValue( size );
+   this->CreatePlane();
+ }
+@@ -146,7 +150,8 @@
+ // Set the number of segments
+ void PlaneGeom::SetSegments(const Vector2<double> &seg)
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->segmentsP->SetValue( seg );
+   this->CreatePlane();
+ }
+@@ -156,7 +161,8 @@
+ // Set the uvtile
+ void PlaneGeom::SetUVTile(const Vector2<double> &uv)
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->uvTileP->SetValue( uv );
+   this->CreatePlane();
+ }
+@@ -165,7 +171,8 @@
+ // Set the material
+ void PlaneGeom::SetMaterial(const std::string &mat)
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->materialP->SetValue( mat );
+   this->CreatePlane();
+ }
+@@ -174,7 +181,8 @@
+ /// Set cast shadows
+ void PlaneGeom::SetCastShadows(const bool &cast)
+ {
+-  OgreCreator::RemoveMesh(this->meshName);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    OgreCreator::RemoveMesh(this->meshName);
+   this->castShadowsP->SetValue( cast );
+   this->CreatePlane();
+ }
 Index: server/physics/Body.hh
 ===================================================================
 --- server/physics/Body.hh	(revision 7168)
@@ -349,7 +431,15 @@ Index: server/physics/Geom.cc
 ===================================================================
 --- server/physics/Geom.cc	(revision 7168)
 +++ server/physics/Geom.cc	(working copy)
-@@ -73,6 +73,17 @@
+@@ -33,6 +33,7 @@
+ #include "World.hh"
+ #include "Body.hh"
+ #include "Geom.hh"
++#include "Simulator.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -73,6 +74,17 @@
  
    this->laserFiducialIdP = new ParamT<int>("laserFiducialId",-1,0);
    this->laserRetroP = new ParamT<float>("laserRetro",-1,0);
@@ -367,7 +457,24 @@ Index: server/physics/Geom.cc
    Param::End();
  }
  
-@@ -99,6 +110,16 @@
+@@ -88,17 +100,30 @@
+   if (this->transId)
+     dGeomDestroy(this->transId);
+ 
+-  for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++  if (Simulator::Instance()->GetRenderEngineEnabled())
+   {
+-    GZ_DELETE (*iter)
++    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++    {
++      GZ_DELETE (*iter)
++    }
++    this->visuals.clear();
+   }
+-  this->visuals.clear();
+ 
+   delete this->massP;
+   delete this->xyzP;
    delete this->rpyP;
    delete this->laserFiducialIdP;
    delete this->laserRetroP;
@@ -384,7 +491,7 @@ Index: server/physics/Geom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -123,6 +144,63 @@
+@@ -123,6 +148,63 @@
      this->massP->SetValue( 0.001 );
    }
  
@@ -448,7 +555,71 @@ Index: server/physics/Geom.cc
    this->contact->Load(node);
  
    this->LoadChild(node);
-@@ -396,23 +474,24 @@
+@@ -136,13 +218,17 @@
+ 
+   // TODO: This should probably be true....but "true" breaks trimesh postions.
+   this->SetPose(pose, true);
+-  childNode = node->GetChild("visual");
+-  while (childNode)
++
++  if (Simulator::Instance()->GetRenderEngineEnabled())
+   {
+-    OgreVisual *visual = new OgreVisual(this->visualNode, this);
+-    visual->Load(childNode);
+-    this->visuals.push_back(visual);
+-    childNode = childNode->GetNext("visual");
++    childNode = node->GetChild("visual");
++    while (childNode)
++    {
++      OgreVisual *visual = new OgreVisual(this->visualNode, this);
++      visual->Load(childNode);
++      this->visuals.push_back(visual);
++      childNode = childNode->GetNext("visual");
++    }
+   }
+ 
+   /*if (this->IsStatic())
+@@ -159,8 +245,11 @@
+     Vector3 min(aabb[0], aabb[2], aabb[4]);
+     Vector3 max(aabb[1], aabb[3], aabb[5]);
+ 
+-    this->bbVisual = new OgreVisual(this->visualNode);
+-    this->bbVisual->AttachBoundingBox(min,max);
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++    {
++      this->bbVisual = new OgreVisual(this->visualNode);
++      this->bbVisual->AttachBoundingBox(min,max);
++    }
+   }
+ 
+   if (this->geomId && dGeomGetClass(this->geomId) != dPlaneClass && 
+@@ -200,10 +289,11 @@
+   stream << prefix << "  " << *(this->laserFiducialIdP) << "\n";
+   stream << prefix << "  " << *(this->laserRetroP) << "\n";
+ 
+-  for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
+-  {
+-    (*iter)->Save(p, stream);
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++    {
++      (*iter)->Save(p, stream);
++    }
+ 
+   stream << prefix << "</geom:" << this->typeName << ">\n";
+ }
+@@ -307,7 +397,8 @@
+     dGeomSetPosition(this->geomId, localPose.pos.x, localPose.pos.y, localPose.pos.z);
+     dGeomSetQuaternion(this->geomId, q);
+ 
+-    this->visualNode->SetPose(pose);
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->visualNode->SetPose(pose);
+ 
+     if (updateCoM)
+     {
+@@ -396,23 +487,24 @@
    Pose3d pose;
    dQuaternion q;
    dMatrix3 r;
@@ -477,13 +648,171 @@ Index: server/physics/Geom.cc
    if (dMassCheck(&this->bodyMass))
    {
      dMassRotate(&this->bodyMass, r);
+@@ -454,8 +546,9 @@
+ /// Set the visibility of the Bounding box of this geometry
+ void Geom::ShowBoundingBox(bool show)
+ {
+-  if (this->bbVisual)
+-    this->bbVisual->SetVisible(show);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (this->bbVisual)
++      this->bbVisual->SetVisible(show);
+ }
+ 
+ // FIXME: ShowJoints and ShowPhysics will mess with each other and with the user's defined transparency visibility
+@@ -465,20 +558,21 @@
+ {
+   std::vector<OgreVisual*>::iterator iter;
+ 
+-  if (show)
+-  {
+-    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (show)
+     {
+-      (*iter)->SetTransparency(0.6);
++      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++      {
++        (*iter)->SetTransparency(0.6);
++      }
+     }
+-  }
+-  else
+-  {
+-    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++    else
+     {
+-      (*iter)->SetTransparency(0.0);
++      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++      {
++        (*iter)->SetTransparency(0.0);
++      }
+     }
+-  }
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -487,26 +581,27 @@
+ {
+   std::vector<OgreVisual*>::iterator iter;
+ 
+-  if (show)
+-  {
+-    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (show)
+     {
+-      (*iter)->SetVisible(false, false);
++      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++      {
++        (*iter)->SetVisible(false, false);
++      }
++      /*this->visualNode->SetVisible(true, false);
++      this->visualNode->SetTransparency(0.6);
++      */
+     }
+-    /*this->visualNode->SetVisible(true, false);
+-    this->visualNode->SetTransparency(0.6);
+-    */
+-  }
+-  else
+-  {
+-    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++    else
+     {
+-      (*iter)->SetVisible(true, false);
++      for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++      {
++        (*iter)->SetVisible(true, false);
++      }
++      /*this->visualNode->SetVisible(false, false);
++      this->visualNode->SetTransparency(1.0);
++      */
+     }
+-    /*this->visualNode->SetVisible(false, false);
+-    this->visualNode->SetTransparency(1.0);
+-    */
+-  }
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -521,15 +616,21 @@
+ /// Get the number of visuals
+ unsigned int Geom::GetVisualCount() const
+ {
+-  return this->visuals.size();
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    return this->visuals.size();
++  else
++    return 0;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /// Get a visual
+ OgreVisual *Geom::GetVisual(unsigned int index) const
+ {
+-  if (index < this->visuals.size())
++  if (Simulator::Instance()->GetRenderEngineEnabled() &&
++      index < this->visuals.size())
+     return this->visuals[index];
++  else
++    return NULL;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -538,11 +639,12 @@
+ {
+   std::vector<OgreVisual*>::const_iterator iter;
+ 
+-  for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
+-  {
+-    if ( (*iter)->GetId() == id)
+-      return *iter;
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    for (iter = this->visuals.begin(); iter != this->visuals.end(); iter++)
++    {
++      if ( (*iter)->GetId() == id)
++        return *iter;
++    }
+ 
+   return NULL;
+ }
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,21 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
 +++ server/physics/Body.cc	(working copy)
-@@ -45,6 +45,10 @@
+@@ -44,7 +44,12 @@
+ #include "PlaneGeom.hh"
  #include "Geom.hh"
  #include "Body.hh"
++#include "Simulator.hh"
  
 +#ifdef TIMING
 +#include "Simulator.hh"// for timing
@@ -492,7 +821,7 @@ Index: server/physics/Body.cc
  using namespace gazebo;
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -70,6 +74,7 @@
+@@ -70,6 +75,7 @@
  
    this->rpyP = new ParamT<Quatern>("rpy", Quatern(), 0);
    this->rpyP->Callback( &Body::SetRotation, this );
@@ -500,7 +829,7 @@ Index: server/physics/Body.cc
    Param::End();
  }
  
-@@ -107,6 +112,7 @@
+@@ -107,6 +113,7 @@
    this->nameP->Load(node);
    this->xyzP->Load(node);
    this->rpyP->Load(node);
@@ -508,7 +837,7 @@ Index: server/physics/Body.cc
    Pose3d initPose;
  
    initPose.pos = **(this->xyzP);
-@@ -134,8 +140,9 @@
+@@ -134,8 +141,9 @@
    }
  
    // If no geoms are attached, then don't let gravity affect the body.
@@ -519,7 +848,7 @@ Index: server/physics/Body.cc
      this->SetGravityMode(false);
    }
  
-@@ -218,25 +225,51 @@
+@@ -218,25 +226,52 @@
    std::vector< Sensor* >::iterator sensorIter;
    std::map< std::string, Geom* >::iterator geomIter;
  
@@ -538,7 +867,9 @@ Index: server/physics/Body.cc
    if (!this->IsStatic())
    {
      // Set the pose of the scene node
-     this->visualNode->SetPose(this->pose);
+-    this->visualNode->SetPose(this->pose);
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->visualNode->SetPose(this->pose);
    }
  
 +#ifdef TIMING
@@ -571,7 +902,27 @@ Index: server/physics/Body.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -404,6 +437,88 @@
+@@ -329,7 +364,8 @@
+     dBodySetPosition(this->bodyId, pos.x, pos.y, pos.z);
+ 
+   // Set the position of the scene node
+-  this->visualNode->SetPosition(pos);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->visualNode->SetPosition(pos);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -350,7 +386,8 @@
+   }
+ 
+   // Set the orientation of the scene node
+-  this->visualNode->SetRotation(rot);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->visualNode->SetRotation(rot);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -404,6 +441,88 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -660,7 +1011,7 @@ Index: server/physics/Body.cc
  // Return the ID of this body
  dBodyID Body::GetId() const
  {
-@@ -506,7 +621,6 @@
+@@ -506,7 +625,6 @@
  void Body::UpdateCoM()
  {
    const dMass *lmass;
@@ -668,7 +1019,7 @@ Index: server/physics/Body.cc
    std::map< std::string, Geom* >::iterator giter;
  
    if (!this->bodyId)
-@@ -524,7 +638,13 @@
+@@ -524,7 +642,13 @@
      }
    }
  
@@ -682,7 +1033,7 @@ Index: server/physics/Body.cc
    oldPose = this->comPose;
  
    if (std::isnan(this->mass.c[0]))
-@@ -546,19 +666,25 @@
+@@ -546,19 +670,25 @@
    {
      if (giter->second->IsPlaceable())
      {
@@ -713,31 +1064,89 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
-Index: server/physics/Joint.hh
+Index: server/physics/RayGeom.cc
 ===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,21 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
+--- server/physics/RayGeom.cc	(revision 7168)
++++ server/physics/RayGeom.cc	(working copy)
+@@ -33,6 +33,7 @@
+ #include "Body.hh"
+ #include "Global.hh"
+ #include "RayGeom.hh"
++#include "Simulator.hh"
  
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
+ using namespace gazebo;
+ 
+@@ -47,7 +48,7 @@
+   // Create default ray with unit length
+   this->SetGeom( dCreateRay( this->spaceId, 1.0 ),  false );
+ 
+-  if (displayRays)
++  if (Simulator::Instance()->GetRenderEngineEnabled() && displayRays)
+   {
+     this->line = new OgreDynamicLines(OgreDynamicRenderable::OT_LINE_LIST);
+ 
+@@ -71,11 +72,12 @@
+ // Destructor
+ RayGeom::~RayGeom()
+ {
+-  if (this->line)
+-  {
+-    delete this->line;
+-    this->line = NULL;
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (this->line)
++    {
++      delete this->line;
++      this->line = NULL;
++    }
+ }
+ 
+ void RayGeom::Update()
+@@ -119,13 +121,14 @@
+   dGeomRaySetLength( this->geomId,
+                      this->globalStartPos.Distance(this->globalEndPos) );
+ 
+-  if (this->line)
+-  {
+-    // Set the line's position relative to it's parent scene node
+-    this->line->SetPoint(0, this->relativeStartPos);
+-    this->line->SetPoint(1, this->relativeEndPos);
+-    this->line->Update();
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (this->line)
++    {
++      // Set the line's position relative to it's parent scene node
++      this->line->SetPoint(0, this->relativeStartPos);
++      this->line->SetPoint(1, this->relativeEndPos);
++      this->line->Update();
++    }
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
+@@ -151,14 +154,15 @@
+   //dGeomRaySetLength( this->geomId, len );
+   this->contactLen=len;
+ 
+-  if (this->line)
+-  {
+-    Vector3 dir = this->relativeEndPos - this->relativeStartPos;
+-    dir.Normalize();
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if (this->line)
++    {
++      Vector3 dir = this->relativeEndPos - this->relativeStartPos;
++      dir.Normalize();
+ 
+-    this->line->SetPoint(1,  dir * len + this->relativeStartPos);
+-    this->line->Update();
+-  }
++      this->line->SetPoint(1,  dir * len + this->relativeStartPos);
++      this->line->Update();
++    }
+ }
+ 
  
 Index: server/physics/ode/ODEPhysics.hh
 ===================================================================
@@ -868,15 +1277,16 @@ Index: server/physics/Joint.cc
 ===================================================================
 --- server/physics/Joint.cc	(revision 7168)
 +++ server/physics/Joint.cc	(working copy)
-@@ -30,6 +30,7 @@
+@@ -30,6 +30,8 @@
  #include "Model.hh"
  #include "World.hh"
  #include "Joint.hh"
 +#include "HingeJoint.hh"
++#include "Simulator.hh"
  
  using namespace gazebo;
  
-@@ -41,6 +42,9 @@
+@@ -41,6 +43,9 @@
    this->visual = NULL;
    this->model = NULL;
  
@@ -886,7 +1296,7 @@ Index: server/physics/Joint.cc
    Param::Begin(&this->parameters);
    this->erpP = new ParamT<double>("erp",0.4,0);
    this->cfmP = new ParamT<double>("cfm",10e-3,0);
-@@ -50,6 +54,13 @@
+@@ -50,6 +55,13 @@
    this->anchorOffsetP = new ParamT<Vector3>("anchorOffset",Vector3(0,0,0), 0);
    this->provideFeedbackP = new ParamT<bool>("provideFeedback", false, 0);
    this->fudgeFactorP = new ParamT<double>( "fudgeFactor", 1.0, 0 );
@@ -900,7 +1310,7 @@ Index: server/physics/Joint.cc
    Param::End();
  }
  
-@@ -67,6 +78,12 @@
+@@ -67,6 +79,12 @@
    delete this->anchorOffsetP;
    delete this->provideFeedbackP;
    delete this->fudgeFactorP;
@@ -913,7 +1323,7 @@ Index: server/physics/Joint.cc
  }
  
  
-@@ -92,6 +109,12 @@
+@@ -92,6 +110,12 @@
    this->cfmP->Load(node);
    this->provideFeedbackP->Load(node);
    this->fudgeFactorP->Load(node);
@@ -926,7 +1336,47 @@ Index: server/physics/Joint.cc
  
    Body *body1 = this->model->GetBody( **(this->body1NameP));
    Body *body2 = this->model->GetBody(**(this->body2NameP));
-@@ -147,6 +170,22 @@
+@@ -116,23 +140,26 @@
+   this->Attach(body1,body2);
+ 
+   /// Add a renderable for the joint
+-  this->visual = new OgreVisual(this->model->GetVisualNode());
+-  this->visual->AttachMesh("joint_anchor");
+-  this->visual->SetVisible(false);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    this->visual = new OgreVisual(this->model->GetVisualNode());
++    this->visual->AttachMesh("joint_anchor");
++    this->visual->SetVisible(false);
+ 
+-  this->line1 = new OgreDynamicLines(OgreDynamicRenderable::OT_LINE_LIST);
+-  this->line2 = new OgreDynamicLines(OgreDynamicRenderable::OT_LINE_LIST);
++    this->line1 = new OgreDynamicLines(OgreDynamicRenderable::OT_LINE_LIST);
++    this->line2 = new OgreDynamicLines(OgreDynamicRenderable::OT_LINE_LIST);
+ 
+-  this->line1->setMaterial("Gazebo/BlueEmissive");
+-  this->line2->setMaterial("Gazebo/BlueEmissive");
++    this->line1->setMaterial("Gazebo/BlueEmissive");
++    this->line2->setMaterial("Gazebo/BlueEmissive");
+ 
+-  this->visual->AttachObject(this->line1);
+-  this->visual->AttachObject(this->line2);
++    this->visual->AttachObject(this->line1);
++    this->visual->AttachObject(this->line2);
+ 
+-  this->line1->AddPoint(Vector3(0,0,0));
+-  this->line1->AddPoint(Vector3(0,0,0));
+-  this->line2->AddPoint(Vector3(0,0,0));
+-  this->line2->AddPoint(Vector3(0,0,0));
++    this->line1->AddPoint(Vector3(0,0,0));
++    this->line1->AddPoint(Vector3(0,0,0));
++    this->line2->AddPoint(Vector3(0,0,0));
++    this->line2->AddPoint(Vector3(0,0,0));
++  }
+ 
+   if (**this->provideFeedbackP)
+   {
+@@ -147,6 +174,22 @@
    {
      this->SetAnchor(anchorVec);
    }
@@ -949,7 +1399,7 @@ Index: server/physics/Joint.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -184,6 +223,17 @@
+@@ -184,13 +227,26 @@
  /// Update the joint
  void Joint::Update()
  {
@@ -965,9 +1415,20 @@ Index: server/physics/Joint.cc
 +  }
 +
  //TODO: Evaluate impact of this code on performance
-   this->visual->SetVisible(World::Instance()->GetShowJoints());
+-  this->visual->SetVisible(World::Instance()->GetShowJoints());
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->visual->SetVisible(World::Instance()->GetShowJoints());
  
-@@ -206,6 +256,7 @@
+   if (!World::Instance()->GetShowJoints())
+     return;
+ 
+-  this->visual->SetPosition(this->GetAnchor());
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->visual->SetPosition(this->GetAnchor());
+ 
+   Vector3 start;
+   if (this->body1)
+@@ -206,6 +262,7 @@
      this->line2->SetPoint(0, start);
      this->line2->Update();
    }
@@ -1247,6 +1708,45 @@ Index: server/Global.hh
 +//#define TIMING
 +
  #endif
+Index: server/Entity.cc
+===================================================================
+--- server/Entity.cc	(revision 7168)
++++ server/Entity.cc	(working copy)
+@@ -32,6 +32,7 @@
+ #include "World.hh"
+ #include "PhysicsEngine.hh"
+ #include "Entity.hh"
++#include "Simulator.hh"
+ 
+ using namespace gazebo;
+ 
+@@ -51,12 +52,14 @@
+   if (this->parent)
+   {
+     this->parent->AddChild(this);
+-    this->visualNode=new OgreVisual(this->parent->GetVisualNode());
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->visualNode=new OgreVisual(this->parent->GetVisualNode());
+     this->SetStatic(parent->IsStatic());
+   }
+   else
+   {
+-    this->visualNode = new OgreVisual(NULL);
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->visualNode = new OgreVisual(NULL);
+   }
+ 
+   // Add this to the phyic's engine
+@@ -69,7 +72,8 @@
+ {
+   delete this->staticP;
+ 
+-  GZ_DELETE(this->visualNode);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    GZ_DELETE(this->visualNode);
+   World::Instance()->GetPhysicsEngine()->RemoveEntity(this);
+ }
+ 
 Index: server/Simulator.cc
 ===================================================================
 --- server/Simulator.cc	(revision 7168)
@@ -1264,7 +1764,88 @@ Index: server/Simulator.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-@@ -295,6 +298,11 @@
+@@ -94,7 +97,8 @@
+   GZ_DELETE (this->xmlFile)
+   GZ_DELETE (this->gazeboConfig)
+   gazebo::World::Instance()->Close();
+-  gazebo::OgreAdaptor::Instance()->Close();
++  if (this->renderEngineEnabled)
++    gazebo::OgreAdaptor::Instance()->Close();
+ 
+   //GZ_DELETE(this->renderEngine);
+ }
+@@ -138,10 +142,11 @@
+   }
+ 
+   // Load the Ogre rendering system
+-  OgreAdaptor::Instance()->Load(rootNode);
++  if (this->renderEngineEnabled)
++    OgreAdaptor::Instance()->Load(rootNode);
+ 
+   // Create and initialize the Gui
+-  if (this->guiEnabled)
++  if (this->renderEngineEnabled && this->guiEnabled)
+   {
+     try
+     {
+@@ -172,15 +177,16 @@
+     this->gui = NULL;
+ 
+   //Initialize RenderEngine
+-  try
+-  {
+-    OgreAdaptor::Instance()->Init(rootNode);
+-    this->renderEngine = OgreAdaptor::Instance();
+-  }
+-  catch (gazebo::GazeboError e)
+-  {
+-    gzthrow("Failed to Initialize the Rendering engine subsystem\n" << e );
+-  }
++  if (this->renderEngineEnabled)
++    try
++    {
++      OgreAdaptor::Instance()->Init(rootNode);
++      this->renderEngine = OgreAdaptor::Instance();
++    }
++    catch (gazebo::GazeboError e)
++    {
++      gzthrow("Failed to Initialize the Rendering engine subsystem\n" << e );
++    }
+ 
+   // Initialize the GUI
+   if (this->gui)
+@@ -250,8 +256,11 @@
+     World::Instance()->GetPhysicsEngine()->Save(prefix, output);
+     output << "\n";
+ 
+-    this->GetRenderEngine()->Save(prefix, output);
+-    output << "\n";
++    if (this->renderEngineEnabled)
++    {
++      this->GetRenderEngine()->Save(prefix, output);
++      output << "\n";
++    }
+ 
+     this->gui->Save(prefix, output);
+     output << "\n";
+@@ -281,9 +290,14 @@
+ {
+   double step = World::Instance()->GetPhysicsEngine()->GetStepTime();
+   double physicsUpdateRate = World::Instance()->GetPhysicsEngine()->GetUpdateRate();
+-  double renderUpdateRate = OgreAdaptor::Instance()->GetUpdateRate();
++  double renderUpdateRate = 0;
++  double renderUpdatePeriod = 0;
++  if (this->renderEngineEnabled)
++  {
++    renderUpdateRate = OgreAdaptor::Instance()->GetUpdateRate();
++    renderUpdatePeriod = 1.0 / renderUpdateRate;
++  }
+   double physicsUpdatePeriod = 1.0 / physicsUpdateRate;
+-  double renderUpdatePeriod = 1.0 / renderUpdateRate;
+ 
+   double currTime;
+   double elapsedTime;
+@@ -295,6 +309,11 @@
    {
      currTime = this->GetRealTime();
  
@@ -1276,18 +1857,20 @@ Index: server/Simulator.cc
      if (physicsUpdateRate == 0 || 
          currTime - this->prevPhysicsTime >= physicsUpdatePeriod) 
      {
-@@ -319,18 +327,27 @@
+@@ -319,18 +338,28 @@
        World::Instance()->Update();
      }
  
 -    // Update the rendering
+-    if (renderUpdateRate == 0 || 
 +#ifdef TIMING
 +    double tmpT2 = this->GetWallTime();
 +    std::cout << " World::Instance() TOTAL DT(" << tmpT2-tmpT1 << ")" << std::endl;
 +#endif
 +
 +    // Update the gui
-     if (renderUpdateRate == 0 || 
++    if (this->renderEngineEnabled &&
++        renderUpdateRate == 0 || 
          currTime - this->prevRenderTime >= renderUpdatePeriod)
      {
 -      //this->GetRenderEngine()->Render(); 
@@ -1312,7 +1895,40 @@ Index: server/Simulator.cc
      }
  
      elapsedTime = (this->GetRealTime() - currTime);
-@@ -512,6 +529,34 @@
+@@ -362,7 +391,10 @@
+ 
+ OgreAdaptor *Simulator::GetRenderEngine() const
+ {
+-  return this->renderEngine;
++  if (this->renderEngineEnabled)
++    return this->renderEngine;
++  else
++    return NULL;
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -463,6 +495,20 @@
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
++// True if the gui is to be used
++void Simulator::SetRenderEngineEnabled( bool enabled )
++{
++  this->renderEngineEnabled = enabled;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++/// Return true if the gui is enabled
++bool Simulator::GetRenderEngineEnabled() const
++{
++  return this->renderEngineEnabled;
++}
++
++////////////////////////////////////////////////////////////////////////////////
+ /// Set the length of time the simulation should run.
+ void Simulator::SetTimeout(double time)
+ {
+@@ -512,6 +558,34 @@
  }
  
  ////////////////////////////////////////////////////////////////////////////////
@@ -1347,6 +1963,54 @@ Index: server/Simulator.cc
  /// Get the model that currently selected
  Model *Simulator::GetSelectedModel() const
  {
+Index: server/main.cc
+===================================================================
+--- server/main.cc	(revision 7168)
++++ server/main.cc	(working copy)
+@@ -115,6 +115,7 @@
+ unsigned int optServerId = 0;
+ bool optServerForce = true;
+ bool optGuiEnabled = true;
++bool optRenderEngineEnabled = true;
+ double optTimeout = -1;
+ unsigned int optMsgLevel = 1;
+ int optTimeControl = 1;
+@@ -131,6 +132,7 @@
+   fprintf(stderr, "  -d <-1:9>      : Verbose mode: -1 = none, 0 = critical (default), 9 = all)\n");
+   fprintf(stderr, "  -t <sec>      : Timeout and quit after <sec> seconds\n");
+   fprintf(stderr, "  -g            : Run without a GUI\n");
++  fprintf(stderr, "  -r            : Run without a rendering engine\n");
+   fprintf(stderr, "  -l <logfile>  : Log to indicated file.\n");
+   fprintf(stderr, "  -n            : Do not do any time control\n");
+   fprintf(stderr,"   -p            : Run without physics engine\n");
+@@ -156,7 +158,7 @@
+ {
+   FILE *tmpFile;
+   int ch;
+-  char *flags = (char*)("l:hd:s:fgxt:nqp");
++  char *flags = (char*)("l:hd:s:fgxt:nqpr");
+ 
+   // Get letter options
+   while ((ch = getopt(argc, argv, flags)) != -1)
+@@ -196,6 +198,10 @@
+         optGuiEnabled = false;
+         break;
+ 
++      case 'r':
++        optRenderEngineEnabled = false;
++        break;
++
+       case 'p':
+         optPhysicsEnabled = false;
+         break;
+@@ -260,6 +266,7 @@
+   }
+ 
+   gazebo::Simulator::Instance()->SetGuiEnabled( optGuiEnabled );
++  gazebo::Simulator::Instance()->SetRenderEngineEnabled( optRenderEngineEnabled );
+ 
+   //Load the simulator
+   try
 Index: server/XMLConfig.cc
 ===================================================================
 --- server/XMLConfig.cc	(revision 7168)
@@ -1610,77 +2274,6 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7168)
-+++ server/Model.cc	(working copy)
-@@ -47,6 +47,10 @@
- #include "IfaceFactory.hh"
- #include "Model.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -305,7 +309,7 @@
- 
-   return this->InitChild();
- }
--
-+  
- ////////////////////////////////////////////////////////////////////////////////
- // Update the model
- int Model::Update()
-@@ -316,6 +320,10 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +332,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +345,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,6 +368,11 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
-+#endif
-+
-   return this->UpdateChild();
- }
- 
 Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7168)
@@ -1855,6 +2448,123 @@ Index: server/gui/GLWindow.cc
          case XK_Up:
          case XK_w:
            this->directionVec.x += this->moveAmount;
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7168)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -127,7 +132,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -255,10 +263,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -305,7 +314,7 @@
+ 
+   return this->InitChild();
+ }
+-
++  
+ ////////////////////////////////////////////////////////////////////////////////
+ // Update the model
+ int Model::Update()
+@@ -316,6 +325,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +337,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +350,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,6 +373,11 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
+   return this->UpdateChild();
+ }
+ 
+@@ -730,10 +758,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7168)
@@ -1940,6 +2650,18 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7168)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -85,6 +85,7 @@
+   // If there is a string, then add the contents to the world
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7168)
@@ -2000,18 +2722,6 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7168)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -85,6 +85,7 @@
-   // If there is a string, then add the contents to the world
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
@@ -2174,7 +2884,20 @@ Index: server/Simulator.hh
    class Model;
  
  /// \brief The World
-@@ -152,9 +153,11 @@
+@@ -141,6 +142,12 @@
+     /// \brief Return true if the gui is enabled
+     public: bool GetGuiEnabled() const;
+ 
++    /// \brief True if the gui is to be used
++    public: void SetRenderEngineEnabled( bool enabled );
++
++    /// \brief Return true if the gui is enabled
++    public: bool GetRenderEngineEnabled() const;
++
+     /// \brief Set the length of time the simulation should run.
+     public: void SetTimeout(double time);
+ 
+@@ -152,9 +159,11 @@
  
      /// \brief Set the selected entity
      public: void SetSelectedEntity( Entity *ent );
@@ -2186,7 +2909,17 @@ Index: server/Simulator.hh
  
      /// \brief Get the model that currently selected
      public: Model *GetSelectedModel() const;
-@@ -215,6 +218,7 @@
+@@ -207,6 +216,9 @@
+     /// True if the GUI is enabled
+     private: bool guiEnabled;
+ 
++    /// True if the Rendering Engine is enabled
++    private: bool renderEngineEnabled;
++
+     /// True if physics is enabled
+     private: bool physicsEnabled;
+ 
+@@ -215,6 +227,7 @@
  
      /// The entity currently selected by the user
      private: Entity *selectedEntity;
