@@ -57,56 +57,59 @@
 #define PRIORITYBUFSIZE 10000
 
 
-//
-// Navigation function class
-// Holds buffers for costmap, navfn map
-// Maps are pixel-based
-// Origin is upper left, x is right, y is down
-//
+/**
+   Navigation function class.
+   - Holds buffers for costmap, navfn map
+   - Maps are pixel-based
+   - Origin is upper left, x is right, y is down
+*/
 
 class NavFn
 {
  public:
-  // constructor
+  /** \param nx width of map
+      \param ny height of map */
   NavFn(int nx, int ny);	// size of map
   ~NavFn();
 
-  void setNavArr(int nx, int ny); // sets or resets the size of the map
-  int nx, ny, ns;		// size of grid, in pixels
+  void setNavArr(int nx, int ny); /**< sets or resets the size of the map */
+  int nx, ny, ns;		/**< size of grid, in pixels */
 
-  // cell arrays
-  COSTTYPE *obsarr;		// obstacle array, to be expanded to cost array
-  COSTTYPE *costarr;		// cost array in 2D configuration space
-  float   *potarr;		// potential array, navigation function potential
-  bool    *pending;		// pending cells during propagation
-  int nobs;			// number of obstacle cells
+  /** cell arrays */
+  COSTTYPE *obsarr;		/**< obstacle array, to be expanded to cost array */
+  COSTTYPE *costarr;		/**< cost array in 2D configuration space */
+  float   *potarr;		/**< potential array, navigation function potential */
+  bool    *pending;		/**< pending cells during propagation */
+  int nobs;			/**< number of obstacle cells */
 
-  // block priority buffers
-  int *pb1, *pb2, *pb3;		// storage buffers for priority blocks
-  int *curP, *nextP, *overP;	// priority buffer block ptrs
-  int curPe, nextPe, overPe; // end points of arrays
+  /** block priority buffers */
+  int *pb1, *pb2, *pb3;		/**< storage buffers for priority blocks */
+  int *curP, *nextP, *overP;	/**< priority buffer block ptrs */
+  int curPe, nextPe, overPe; /**< end points of arrays */
 
-  // block priority thresholds
-  float curT;			// current threshold
-  float priInc;			// priority threshold increment
+  /** block priority thresholds */
+  float curT;			/**< current threshold */
+  float priInc;			/**< priority threshold increment */
 
-  // goal and start positions
+  /** goal and start positions */
   void setGoal(int *goal);	
   void setStart(int *start);	
   int goal[2];
   int start[2];
-  void initCost(int k, float v); // initialize cell <k> with cost <v>, for propagation
+  void initCost(int k, float v); /**< initialize cell <k> with cost <v>, for propagation */
 
-  // simple obstacle for testing
+  /** simple obstacle for testing */
   void setObs();
 
-  // propagation
-  void updateCell(int n);	// updates the cell at index i
-  void setupNavFn(bool keepit = false); // resets all nav fn arrays for propagation
-  bool propNavFn(int cycles, bool atStart = false); // run propagation for <cycles> iterations,
-                                            // or until Start is reached
-
-  // display callback
+  /** propagation */
+  void updateCell(int n);	/**< updates the cell at index i */
+  void setupNavFn(bool keepit = false); /**< resets all nav fn arrays for propagation */
+  
+  /** run propagation for <cycles> iterations, or until Start is
+      reached */
+  bool propNavFn(int cycles, bool atStart = false);
+  
+  /** display callback */
   void display(void fn(NavFn *nav), int n = 100);
   int displayInt;
   void (*displayFn)(NavFn *nav);
