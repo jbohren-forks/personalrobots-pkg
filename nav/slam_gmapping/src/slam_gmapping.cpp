@@ -119,7 +119,7 @@ SlamGMapping::getOdomPose(GMapping::OrientedPoint& gmap_pose, const ros::Time& t
 {
   // Get the robot's pose 
   tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
-                                           btVector3(0,0,0)), t, "base");
+                                           btVector3(0,0,0)), t, "base_link");
   tf::Stamped<btTransform> odom_pose;
   try
   {
@@ -150,7 +150,7 @@ SlamGMapping::initMapper(const std_msgs::LaserScan& scan)
   ident.stamp_ = scan.header.stamp;
   try
   {
-    this->tf_->transformPose("base", ident, laser_pose);
+    this->tf_->transformPose("base_link", ident, laser_pose);
   }
   catch(tf::TransformException e)
   {
