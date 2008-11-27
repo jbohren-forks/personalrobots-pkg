@@ -24,7 +24,7 @@
 								<border>5</border>
 								<object class="wxStaticBoxSizer">
 									<orient>wxVERTICAL</orient>
-									<label>Circuit Breaker 0</label>
+									<label>Circuit Breaker 0 (Left Arm)</label>
 									<object class="sizeritem">
 										<option>0</option>
 										<flag>wxALL|wxEXPAND</flag>
@@ -78,7 +78,7 @@
 								<border>5</border>
 								<object class="wxStaticBoxSizer">
 									<orient>wxVERTICAL</orient>
-									<label>Circuit Breaker 1</label>
+									<label>Circuit Breaker 1 (Base)</label>
 									<object class="sizeritem">
 										<option>0</option>
 										<flag>wxALL|wxEXPAND</flag>
@@ -132,7 +132,7 @@
 								<border>5</border>
 								<object class="wxStaticBoxSizer">
 									<orient>wxVERTICAL</orient>
-									<label>Circuit Breaker 2</label>
+									<label>Circuit Breaker 2 (Right Arm)</label>
 									<object class="sizeritem">
 										<option>0</option>
 										<flag>wxALL|wxEXPAND</flag>
