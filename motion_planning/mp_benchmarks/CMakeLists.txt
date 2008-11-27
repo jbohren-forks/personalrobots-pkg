@@ -89,3 +89,6 @@ target_link_libraries (mpbench ${MPBENCH_LIBS})
 
 rospack_add_executable (mpbench-incremental src/mpbench-incremental.cpp)
 target_link_libraries (mpbench-incremental ${MPBENCH_LIBS})
+
+rospack_add_executable (costmap2ascii src/costmap2ascii.cpp)
+target_link_libraries (costmap2ascii ${MPBENCH_LIBS})
