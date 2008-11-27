@@ -717,6 +717,24 @@ void run_tasks()
 }
 
 
+// there surely is a std function that does this but I have not searched very thoroughly
+static string timeStr(double time_sec)
+{
+  ostringstream os;
+  if (1e-6 > fabs(time_sec))
+    os << time_sec << " s";
+  else if (500e-6 > fabs(time_sec))
+    os << 1e6 * time_sec << " us";
+  else if (500e-3 > fabs(time_sec))
+    os << 1e3 * time_sec << " ms";
+  else if (60 > fabs(time_sec))
+    os << time_sec << " s";
+  else
+    os << floor(time_sec / 60) << " min " << fabs(fmod(time_sec, 60)) << " s";
+  return os.str();    
+}
+
+
 void print_summary()
 {
   if ( ! websiteMode) {
@@ -731,7 +749,7 @@ void print_summary()
   }
   
   htmlOs << "<table border=\"1\" cellpadding=\"2\">\n"
-	 << "<tr><th colspan=\"5\">consumed planning time (wall) [ms]</th></tr>\n"
+	 << "<tr><th colspan=\"5\">consumed planning time (wall clock)</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
   for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
     htmlOs << "<tr><td>" << ip->first << "</td>";
@@ -749,7 +767,7 @@ void print_summary()
     }
     double cumul(initialStats->second.actual_time_wall_sec);
     if (1 == bundle.size()) {
-      htmlOs << "<td colspan=\"2\">" << 1.0e3 * cumul << "</td>"
+      htmlOs << "<td colspan=\"2\">" << timeStr(cumul) << "</td>"
 	     << "<td colspan=\"2\">N/A</td></tr>\n";
       continue;
     }
@@ -767,9 +785,9 @@ void print_summary()
       continue;
     }
     double const delta(cumul - initialStats->second.actual_time_wall_sec);
-    htmlOs << "<td>" << 1.0e3 * initialStats->second.actual_time_wall_sec << "</td>"
-	   << "<td>" << 1.0e3 * cumul << "</td>"
-	   << "<td>" << 1.0e3 * delta << "</td>"
+    htmlOs << "<td>" << timeStr(initialStats->second.actual_time_wall_sec) << "</td>"
+	   << "<td>" << timeStr(cumul) << "</td>"
+	   << "<td>" << timeStr(delta) << "</td>"
 	   << "<td>" << 1.0e2 * delta / initialStats->second.actual_time_wall_sec
 	   << "</td></tr>\n";
   }

@@ -2,20 +2,20 @@
 
 MPBENCH=`rospack find mp_benchmarks`/mpbench-incremental
 
-CONSTANT_OPTS="-s cubicle -i 0.325 -c 0.46 -I 0.55 -d 1.2 -H 3 -e 2d -a 10"
-CONSTANT_HR="setup:cubicle inscribedRadius:0.325 circumscribedRadius:0.46 inflationRadius:0.55 doorWidth:1.2 hallWidth:3 environmentType:2D allocatedTime:10ms"
+CONSTANT_OPTS="-s cubicle -i 0.325 -c 0.46 -I 0.55 -d 0.75 -H 3 -a 500 -m costmap_2d"
+CONSTANT_HR="setup:cubicle inscribedRadius:0.325 circumscribedRadius:0.46 inflationRadius:0.55 doorWidth:0.75 hallWidth:3 allocatedTime:500ms costmapType:costmap_2d"
 
 A_OPT="-p"
 A_VAR="ARAPlanner ADPlanner"
 A_HR="plannerType"
 
-B_OPT="-m"
-B_VAR="costmap_2d sfl"
-B_HR="costmapType"
+B_OPT="-e"
+B_VAR="2d 3d"
+B_HR="environmentType"
 B_NOPTS="2"
 
-REST="-r:0.05"
-#REST="-r:0.1 -r:0.05 -r:0.025"
+#REST="-r:0.1"
+REST="-r:0.1 -r:0.05 -r:0.025"
 REST_HR="-r:resolution"
 
 rm -f index.html

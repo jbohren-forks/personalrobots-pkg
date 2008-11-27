@@ -61,6 +61,7 @@ static int glut_height(400);
 static int glut_handle(0);
 static bool made_first_screenshot(false);
 static ompl::gfx::Configuration const * configptr(0);
+static double glut_aspect(1); 	// desired width / height (defined in init_layout_X())
 
 static void init_layout_one();
 static void init_layout_two();
@@ -136,9 +137,9 @@ namespace ompl {
       
       double x0, y0, x1, y1;
       configptr->setup.getWorkspaceBounds(x0, y0, x1, y1);
-      glut_width = (int) ceil(3 * (y1 - y0) / configptr->resolution);
+      glut_width = (int) ceil(glut_aspect * (y1 - y0) / configptr->resolution);
       glut_height = (int) ceil((x1 - x0) / configptr->resolution);
-      while (glut_height < 800) {
+      while (glut_height < 800) { // wow, hack
 	glut_width *= 2;
 	glut_height *= 2;
       }
@@ -260,6 +261,7 @@ void init_layout_one()
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
+  glut_aspect = 3 * (x1 - x0) / (y1 - y0);
   
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(configptr->setup.getRawSFLTravmap()));
   new npm::TraversabilityDrawing("travmap", rdt);
@@ -312,6 +314,7 @@ void init_layout_two()
   new npm::StillCamera("travmap",
 		       x0, y0, x1, y1,
    		       npm::Instance<npm::UniqueManager<npm::Camera> >());
+  glut_aspect = ceil(tl.size() * 0.5) * (x1 - x0) / (2 * (y1 - y0));
   
   shared_ptr<npm::TravProxyAPI> rdt(new npm::RDTravProxy(configptr->setup.getRawSFLTravmap()));
   new npm::TraversabilityDrawing("costmapwrap", new CostMapProxy());
@@ -359,7 +362,7 @@ void draw()
     glutSwapBuffers();
     make_screenshot("");
     
-    while (glut_width > 200) { 	// wow what a hack
+    while (glut_width > 400) { 	// wow what a hack
       glut_width /= 2;
       glut_height /= 2;
     }
