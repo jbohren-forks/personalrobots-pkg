@@ -1,6 +1,7 @@
 #include "CvTest3DPoseEstimate.h"
 
 #include <iostream>
+#include <limits>
 #include <vector>
 #include <queue>
 #include <boost/foreach.hpp>
@@ -14,7 +15,7 @@
 
 #include <opencv/cxcore.hpp>
 
-#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
+//#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
 
 // WG Ext of OpenCV
 #include <CvPoseEstErrMeasDisp.h>
@@ -278,6 +279,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 }
 
 static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightImage, WImageBuffer1_16s& dispMap) {
+#if 0
   bool status = true;
 
   int w = leftImage.Width();
@@ -317,6 +319,7 @@ static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightI
       mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
 
   return status;
+#endif
 }
 
 bool CvTest3DPoseEstimate::testVideo() {
@@ -692,15 +695,21 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   // set up cameras
   vector<FramePose* > frame_poses;
   double rod_shift[6];
-  int index_offset = 9;
+//  int index_offset = 9;
+  int oldest_index = numeric_limits<int>::max();
   CvMat mat_rod_shift = cvMat(6, 1, CV_64FC1, rod_shift);
   for (int r=0; r<frames->rows; r++) {
     CvMat param1x6;
     CvMat param6x1;
-    cvGetRow(frames, &param1x6, r);
+    cvGetSubRect(frames, &param1x6, cvRect(1,r,6,1));
+//    cvGetRow(frames, &param1x6, r);
     cvReshape(&param1x6, &param6x1, 1, 6);
+    int frame_index = cvmGet(frames, r, 0);
+    if (frame_index<oldest_index) {
+      oldest_index = frame_index;
+    }
 
-    FramePose* fp = new FramePose(r+index_offset);
+    FramePose* fp = new FramePose(frame_index);
     CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
     CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
     fp->mRod.x = rod_shift[0];
@@ -749,7 +758,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     }
 
     tracks.tracks_.push_back(point);
-    tracks.oldest_frame_index_in_tracks_ = index_offset;
+    tracks.oldest_frame_index_in_tracks_ = oldest_index;
   }
 
   int full_free_window_size = 5;
@@ -1114,7 +1123,6 @@ bool CvTest3DPoseEstimate::testPointClouds(){
       numInLiers = peDisp.estimateMixedPointClouds(points0, uvds1, 0, NULL, rot, trans, true);
 
       peDisp.getInliers(inliers0, inliers1);
-
       CvTestTimer::getTimer().mTotal += cvGetTickCount() - t;
       TransformBestBeforeLevMarq = peDisp.getBestTWithoutNonLinearOpt();
       TransformAfterLevMarq      = peDisp.getFinalTransformation();
