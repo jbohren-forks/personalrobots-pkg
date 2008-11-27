@@ -13,4 +13,5 @@
   <depend package="map_server"/>
   <depend package="executive_trex_pr2"/>
   <depend package="trajectory_rollout"/>
+  <depend package="pr2_alpha"/>
 </package>
