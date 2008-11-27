@@ -1,5 +1,5 @@
-#ifndef WGMAT3X3SYM_H_
-#define WGMAT3X3SYM_H_
+#ifndef CVMAT3X3SYM_H_
+#define CVMAT3X3SYM_H_
 
 #include "CvMat3X3.h"
 
@@ -7,26 +7,56 @@
  *  class template for 3x3 symmetric matrix
  */
 template <typename DataT>
-class CvMat3x3Sym: public CvMat3x3<DataT>
+class CvMat3X3Sym: public CvMat3X3<DataT>
 {
 public:
-	CvMat3x3Sym(){};
-	virtual ~CvMat3x3Sym(){};
+	CvMat3X3Sym(){};
+	virtual ~CvMat3X3Sym(){};
 	/**
 	 *  get the index of the matrix
 	 */
 	static inline int index(int i, int j) {
-		return (i>=j)? i*3+j : j*3+i;
+	  assert(i<=j);
+		return i*3+j;
 	}
-	static inline DataT elem(DataT QQt[], int i, int j){
-		return QQt[index(i,j)];
+	/// \brief Compute the inversion of a 3x3 symmetric matrix.
+	/// @return false if \a A is singular.
+	static bool invert(
+	    /// Input matrix. Only upper right triangle will be used.
+	    DataT A[3*3],
+	    /// Output matrix. Only upper right triangle will be filled.
+	    /// B may be the same as A
+	    DataT B[3*3]) {
+	  // determinant of A00   = a11*a22 - a12*a12
+	  DataT A00 = elem(A,1,1)*elem(A,2,2) - elem(A,1,2)*elem(A,1,2);
+	  // determinant of -A01  = a12*a02 - a01*a22
+	  DataT A01 =  - elem(A,0,1)*elem(A,2,2) + elem(A,1,2)*elem(A,0,2);
+	  // determinant of A02 = a01*a12 - a02*a11
+	  DataT A02 = elem(A,0,1)*elem(A,1,2) - elem(A,0,2)*elem(A,1,1);
+	  // determinant  a00*A00 + a01*A01 + a02*A02
+	  DataT det = elem(A,0,0)*A00 + elem(A,0,1)*A01 + elem(A,0,2)*A02;
+	  if (det == 0) return false;
+	  DataT A11 =   elem(A,0,0)*elem(A,2,2) - elem(A,0,2)*elem(A,0,2);
+	  DataT A12 = - elem(A,0,0)*elem(A,1,2) + elem(A,0,2)*elem(A,0,1);
+	  DataT A22 =   elem(A,0,0)*elem(A,1,1) - elem(A,0,1)*elem(A,0,1);
+	  DataT scale = 1.0/det;
+	  elem(B, 0, 0) = A00*scale;
+	  elem(B, 0, 1) = A01*scale;
+	  elem(B, 0, 2) = A02*scale;
+	  elem(B, 1, 1) = A11*scale;
+	  elem(B, 1, 2) = A12*scale;
+	  elem(B, 2, 2) = A22*scale;
+	  return true;
 	}
-	static inline DataT minor(DataT QQt[], int i, int j){
+	static inline DataT& elem(DataT A[], int i, int j){
+		return A[index(i,j)];
+	}
+	static inline DataT matMinor(DataT A[], int i, int j){
 		int k0 = (i+1)%3;
 		int k1 = (i+2)%3;
 		int l0 = (j+1)%3;
 		int l1 = (j+2)%3;
-		return elem(QQt, k0, l0)*elem(QQt, k1, l1) - elem(QQt, k0, l1)*elem(QQt, k0, l1);
+		return elem(A, k0, l0)*elem(A, k1, l1) - elem(A, k0, l1)*elem(A, k0, l1);
 	}
 	/**
 	 * QQt = Q * Q^T
@@ -37,6 +67,7 @@ public:
 	 *   QQt[2], QQt[4], QQt[5]]
 	 */
 	static void QxQt(DataT Q[3*3], DataT QQt[]) {
+	  /// @todo the indexing seems to be inconsistent with the documentation.
 		QQt[index(0,0)] = DOTPROD3QQt(Q, 0, 0);
 		QQt[index(0,1)] = DOTPROD3QQt(Q, 0, 1);
 		QQt[index(0,2)] = DOTPROD3QQt(Q, 0, 2);
@@ -61,7 +92,7 @@ public:
 	static void eigValsSymmetricRank2(DataT QQt[], DataT ev[3]){
 		// construct the characteristic equation as a x^3 + b x^2 + c x + d = 0
 		// the char. equation is
-		//  	[ a00 - x    a01        a02     ]
+		//  	  [ a00 - x    a01        a02     ]
 		// det( [ a01        a11 - x    a12     ] ) = 0
 		//      [ a02        a12        a22 - x ]
 		//
@@ -102,9 +133,9 @@ public:
 		k2 = bestMinorIndex;
 		k0 = (k2+1)%3;
 		k1 = (k2+2)%3;
-		DataT denominator = minor(A, k2, k2);
-		DataT x0 = minor(A, k0, k2)/denominator;
-		DataT x1 = minor(A, k1, k2)/denominator;
+		DataT denominator = matMinor(A, k2, k2);
+		DataT x0 = matMinor(A, k0, k2)/denominator;
+		DataT x1 = matMinor(A, k1, k2)/denominator;
 		// x2 = 1.0
 		DataT norm = sqrt(x0*x0 + x1*x1 + 1);
 		x[k0] = x0/norm;
@@ -162,4 +193,4 @@ public:
 
 };
 
-#endif /*WGMAT3X3SYM_H_*/
+#endif /*CVMAT3X3SYM_H_*/

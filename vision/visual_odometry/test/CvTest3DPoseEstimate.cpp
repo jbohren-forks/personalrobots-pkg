@@ -45,7 +45,7 @@ using namespace std;
 #define DEBUG 1
 #define DISPLAY 1
 
-#if CHECKTIMING == 0
+#if CHECKTIMING == 1
 #define TIMERSTART(x)
 #define TIMEREND(x)
 #define TIMERSTART2(x)
@@ -217,7 +217,7 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
   CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj sba(imgSize, 10, 10);
+  VOSparseBundleAdj sba(imgSize, 5, 10);
 
   // The following parameters are from indoor1/proj.txt
   // note that B (or Tx) is in mm
@@ -232,6 +232,9 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   int start = 0;
   int end   = 1509;
   int step  = 1;
+
+  start = 100;
+  end   = 500;
 
   // @todo if we run from frame 30 to frame 600. at frame 535 there is a weird behavior - two of the estimated
   // point get map to the observed points.
@@ -253,8 +256,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   }
 
   do {
-    StereoFrame& sf = fileSeq.mInputImageQueue.front();
 #if 0
+    StereoFrame& sf = fileSeq.mInputImageQueue.front();
     sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
     getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
 #endif
@@ -751,7 +754,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   int full_free_window_size = 5;
   int full_fixed_window_size = 5;
-  int num_good_updates = 300;
+  int num_good_updates = 500;
   CvTermCriteria term_criteria =
     cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,DBL_EPSILON);
 
@@ -836,6 +839,9 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   sba.optimize(&free_frames, &fixed_frames, &tracks);
 
   // print some output
+  printf("Number of good updates: %d\n", sba.num_good_updates_);
+  printf("Number of retractions:  %d\n", sba.num_retractions_);
+
   double transpose_transl_data[3];
   CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
   BOOST_FOREACH(const FramePose* fp, free_frames) {
@@ -919,6 +925,10 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   } else {
     printf("testBundleAdj() failed\n");
   }
+
+  CvTestTimer& timer = CvTestTimer::getTimer();
+  timer.mNumIters = 1;
+  CvTestTimer::getTimer().printStat();
 
   return status;
 }

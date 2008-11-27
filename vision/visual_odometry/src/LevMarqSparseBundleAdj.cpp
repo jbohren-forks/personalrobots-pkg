@@ -40,6 +40,7 @@
  */
 
 #include "CvMat3X3.h"
+#include "CvMat3X3Sym.h"
 #include "LevMarqSparseBundleAdj.h"
 #include "PointTracks.h"
 #include "boost/foreach.hpp"
@@ -577,10 +578,23 @@ bool LevMarqSparseBundleAdj::optimize(
       for (int i=0; i<NUM_POINT_PARAMS; i++) {
         Hpp[i*NUM_POINT_PARAMS+i] *= lambda_plus_one;
       }
+
+#if DEBUG2==1
+      printf("Augmented Hpp:\n");
+      CvMatUtils::printMat(&mat_Hpp);
+#endif
       // invert Hpp
       /// @todo just a 3x3 symmetric, why use OpenCV?
+#if 0
+      // use OpenCV. 15 times slower than using a special implementation.
       cvCompleteSymm(&mat_Hpp, 0);
       cvInvert(&mat_Hpp, &mat_Hpp_inv, CV_SVD_SYM);
+#else
+      // use special implementation for 3x3 symmetric matrix. 15 times faster
+      // than cvInvert() -- see above.
+      CvMat3X3Sym<double>::invert(Hpp, Hpp_inv);
+      cvCompleteSymm(&mat_Hpp_inv, 0);
+#endif
 #if DEBUG2==1
       printf("Hpp_inv augmented of p=%d, step=%d\n", p->id_, mat_Hpp_inv.step);
       CvMatUtils::printMat(&mat_Hpp_inv);
