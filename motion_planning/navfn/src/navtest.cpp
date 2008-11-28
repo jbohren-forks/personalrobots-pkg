@@ -95,7 +95,10 @@ int main(int argc, char **argv)
     }
 
   // start point, for A*
-  start[0] = 20;
+  if (cmap)
+    start[0] = 100;
+  else
+    start[0] = 20;
   start[1] = sy/2;
 
   // display
