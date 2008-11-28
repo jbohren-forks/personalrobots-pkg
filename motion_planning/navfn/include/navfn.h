@@ -115,7 +115,7 @@ class NavFn
 
   /** gradient and paths */
   float *gradx, *grady;		/**< gradient arrays, size of potential array */
-  float *pathx, *pathy;		/**< path points */
+  float *pathx, *pathy;		/**< path points, as subpixel cell coordinates */
   int npath;			/**< number of path points */
   int npathbuf;			/**< size of pathx, pathy buffers */
   bool calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns true if good path */
