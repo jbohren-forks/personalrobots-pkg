@@ -55,22 +55,6 @@ typedef unsigned int u32;
 
 #include <sys/timeb.h>    // ftime(), struct timeb
 
-// declaring variables with stdcall can be a little complex
-#ifdef _MSC_VER
-
-#define PROT_STDCALL(name, paramlist) __stdcall name paramlist
-#define DECL_STDCALL(name, paramlist) __stdcall name paramlist
-
-#else
-
-#ifdef __x86_64__
-#define DECL_STDCALL(name, paramlist) name paramlist
-#else
-#define DECL_STDCALL(name, paramlist) __attribute__((stdcall)) name paramlist
-#endif
-
-#endif // _MSC_VER
-
 template<class T>
 inline T CLAMP_ON_RANGE(T value, T min, T max)
 {
@@ -159,7 +143,5 @@ inline int wcsicmp(const wchar_t* s1, const wchar_t* s2)
 
 #include <rave/rave.h>
 using namespace OpenRAVE;
-
-extern EnvironmentBase* g_pEnviron;
 
 #endif

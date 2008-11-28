@@ -72,14 +72,55 @@
 #define stricmp strcasecmp
 #endif
 
-#include <boost/shared_ptr.hpp>
-
 #include <openrave-core.h>
 #include <ros/node.h>
-#include <rosthread/member_thread.h>
+
+#include <boost/thread/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <boost/static_assert.hpp>
+#include <boost/bind.hpp>
+
+// services
+#include <openraveros/body_destroy.h>
+#include <openraveros/body_enable.h>
+#include <openraveros/body_getaabb.h>
+#include <openraveros/body_getaabbs.h>
+#include <openraveros/body_getdof.h>
+#include <openraveros/body_getlinks.h>
+#include <openraveros/body_setjointvalues.h>
+#include <openraveros/body_settransform.h>
+#include <openraveros/env_checkcollision.h>
+#include <openraveros/env_closefigures.h>
+#include <openraveros/env_createbody.h>
+#include <openraveros/env_createplanner.h>
+#include <openraveros/env_createproblem.h>
+#include <openraveros/env_createrobot.h>
+#include <openraveros/env_destroyproblem.h>
+#include <openraveros/env_getbodies.h>
+#include <openraveros/env_getbody.h>
+#include <openraveros/env_getrobots.h>
+#include <openraveros/env_loadplugin.h>
+#include <openraveros/env_loadscene.h>
+#include <openraveros/env_plot.h>
+#include <openraveros/env_raycollision.h>
+#include <openraveros/env_set.h>
+#include <openraveros/env_triangulate.h>
+#include <openraveros/env_wait.h>
+#include <openraveros/planner_init.h>
+#include <openraveros/planner_plan.h>
+#include <openraveros/problem_sendcommand.h>
+#include <openraveros/robot_controllersend.h>
+#include <openraveros/robot_controllerset.h>
+#include <openraveros/robot_getactivedof.h>
+#include <openraveros/robot_getactivevalues.h>
+#include <openraveros/robot_sensorgetdata.h>
+#include <openraveros/robot_sensorsend.h>
+#include <openraveros/robot_setactivedofs.h>
+#include <openraveros/robot_setactivevalues.h>
+#include <openraveros/robot_starttrajectory.h>
 
 using namespace OpenRAVE;
-using namespace ros;
 using namespace std;
+using namespace openraveros;
 
 #endif

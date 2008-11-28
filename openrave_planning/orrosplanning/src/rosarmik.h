@@ -32,7 +32,7 @@
 class ROSArmIK : public IkSolverBase
 {
 public:
-    ROSArmIK();
+    ROSArmIK(EnvironmentBase* penv);
 
     virtual bool Init(RobotBase* probot, const RobotBase::Manipulator* pmanip, int options);
 

@@ -27,18 +27,31 @@
 
 #include "rosarmik.h"
 
-typedef void (*CREATECALLBACK)(PluginType type, const wchar_t* pname);
-EnvironmentBase* g_pEnviron = NULL;
+// declaring variables with stdcall can be a little complex
+#ifdef _MSC_VER
+
+#define PROT_STDCALL(name, paramlist) __stdcall name paramlist
+#define DECL_STDCALL(name, paramlist) __stdcall name paramlist
+
+#else
+
+#ifdef __x86_64__
+#define DECL_STDCALL(name, paramlist) name paramlist
+#else
+#define DECL_STDCALL(name, paramlist) __attribute__((stdcall)) name paramlist
+#endif
+
+#endif // _MSC_VER
 
 // need c linkage
 extern "C" {
 
-InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name))
+InterfaceBase* DECL_STDCALL(ORCreate, (PluginType type, wchar_t* name, EnvironmentBase* penv))
 {
     switch(type) {
     case PT_InverseKinematicsSolver:
         if( wcsicmp(name, L"ROSArmIK") == 0 )
-            return new ROSArmIK();
+            return new ROSArmIK(penv);
         break;
         
     default:
@@ -58,12 +71,6 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
 
     pinfo->iksolvers.push_back(L"ROSArmIK");
     return true;
-}
-
-void DECL_STDCALL(OpenPlugin, (void* pcallback, EnvironmentBase* penv))
-{
-    RaveSetEnvironment(penv);
-    g_pEnviron = penv;
 }
 
 }

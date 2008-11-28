@@ -32,7 +32,7 @@ template <class T>
 inline T SQR(T x) { return x * x; }
 #endif
 
-ROSArmIK::ROSArmIK() : IkSolverBase()
+ROSArmIK::ROSArmIK(EnvironmentBase* penv) : IkSolverBase(penv)
 {
 }
 
@@ -211,7 +211,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, bool bCheckEnvCollisi
                 continue;
 
             COLLISIONREPORT report;
-            if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot, &report) ) {
+            if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot, &report) ) {
                 if( report.plink1 != NULL && report.plink2 != NULL ) {
                     RAVELOG(L"WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
                 }
@@ -319,7 +319,7 @@ bool ROSArmIK::Solve(const Transform &_T, bool bCheckEnvCollision, std::vector< 
             if( _probot->CheckSelfCollision() )
                 continue;
 
-            if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot) )
+            if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot) )
                 continue;
 
             qSolutions.push_back(vravesol);
@@ -373,7 +373,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* q0, const dReal* pFreePar
             continue;
         
         COLLISIONREPORT report;
-        if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot, &report) ) {
+        if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot, &report) ) {
             if( report.plink1 != NULL && report.plink2 != NULL ) {
                 RAVELOG(L"WAMIK: collision %S:%S with %S:%S\n", report.plink1->GetParent()->GetName(), report.plink1->GetName(), report.plink2->GetParent()->GetName(), report.plink2->GetName());
             }
@@ -451,7 +451,7 @@ bool ROSArmIK::Solve(const Transform &_T, const dReal* pFreeParameters,
         if( _probot->CheckSelfCollision() )
             continue;
         
-        if( bCheckEnvCollision && g_pEnviron->CheckCollision(_probot) )
+        if( bCheckEnvCollision && GetEnv()->CheckCollision(_probot) )
             continue;
         
         qSolutions.push_back(vravesol);

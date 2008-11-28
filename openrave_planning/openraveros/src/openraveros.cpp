@@ -24,126 +24,19 @@
 //
 // author: Rosen Diankov
 #include "openraveros.h"
-#include <signal.h>
-
-void sigint_handler(int);
-void* MainOpenRAVEThread(void*p);
-
-static EnvironmentBase* penv = NULL;
-static bool bDisplayGUI = false;
-static pthread_t s_mainThread;
-static boost::shared_ptr<RaveServerBase> s_server;
-static bool bThreadDestroyed = false;
-int g_argc;
-char** g_argv;
+#include "session.h"
 
 int main(int argc, char ** argv)
 {
-    g_argc = argc;
-    g_argv = argv;
+    ros::init(argc,argv);
+    ros::node masternode("openraveserver");
 
-    int nServPort = 4765;
-    int nDebugLevel = 0;
-
-    // Set up the output streams to support wide characters
-    if (fwide(stdout,1) < 0) {
-        printf("Unable to set stdout to wide characters\n");
-    }
-
-    // create environment and start a command-line controlled simulation 
-    penv = CreateEnvironment();
-    if( penv == NULL )
+    if( !masternode.check_master() )
         return -1;
     
-    // parse command line arguments
-    int i = 1;
-    while(i < argc) {
-        if( stricmp(argv[i], "-loadplugin") == 0 ) {
-            penv->LoadPlugin(argv[i+1]);
-            i += 2;
-        }
-        else if( stricmp(argv[i], "-gui") == 0 ) {
-            bDisplayGUI = true;
-            i++;
-        }
-        else if( stricmp(argv[i], "-d") == 0 ) {
-            nDebugLevel = atoi(argv[i+1]);
-            i += 2;
-        }
-        else if( stricmp(argv[i], "-server") == 0 ) {
-            nServPort = atoi(argv[i+1]);
-            i += 2;
-        }
-        else {
-            RAVEPRINT(L"Error in input parameters at %s\ntype --help to see a list of command line options\n", argv[i]);
-            return 0;
-        }
-    }
-
-    // add a signal handler
-    signal(SIGINT,sigint_handler); // control C
-
-    penv->SetDebugLevel(nDebugLevel);
-
-    if( nServPort > 0 ) {
-        //penv->AttachServer(s_server.get());
-    }
-
-    bThreadDestroyed = false;
-    if( pthread_create(&s_mainThread, NULL, MainOpenRAVEThread, NULL) ) {
-        RAVEPRINT(L"failed to create main openrave thread\n");
-    }
- 
-    while(!bThreadDestroyed) {
-#ifdef _WIN32
-        Sleep(100);
-#else
-        usleep(100000);
-        //pthread_yield();
-#endif
-    }
-
-    if( penv != NULL ) {
-        penv->GetViewer()->quitmainloop();
-        penv->AttachViewer(NULL);
-        
-        RAVEPRINT(L"deleting the environment\n");
-        delete penv; penv = NULL;
-    }
-
-    return 0;
-}
-
-// use to control openrave
-void* MainOpenRAVEThread(void*p)
-{
-    penv->GetViewer()->main();
-
-    if( !bThreadDestroyed ) {
-        penv->GetViewer()->quitmainloop();
-        penv->AttachViewer(NULL);
-        //s_viewer.reset();
-        
-        if( penv != NULL ) {        
-            delete penv; penv = NULL;
-        }
-        
-        bThreadDestroyed = true;
-    }
+    boost::shared_ptr<SessionServer> sessionserver(new SessionServer());
+    masternode.spin();
     
-    return NULL;
-}
-
-void sigint_handler(int)
-{
-
-    if( !bThreadDestroyed ) {
-#ifndef _WIN32
-        pthread_kill(s_mainThread, SIGINT);
-#else
-        pthread_kill(s_mainThread, 0);
-#endif
-        bThreadDestroyed = true;
-    }
-
+    sessionserver.reset();
+    ros::fini();
 }

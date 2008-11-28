@@ -24,103 +24,274 @@
 //
 // author: Rosen Diankov
 
+#include "openraveros.h"
+#include "rosserver.h"
+
 #include <openraveros/openrave_session.h>
 
-#include <openraveros/body_destroy.h>
-#include <openraveros/body_enable.h>
-#include <openraveros/body_getaabb.h>
-#include <openraveros/body_getaabbs.h>
-#include <openraveros/body_getdof.h>
-#include <openraveros/body_getlinks.h>
-#include <openraveros/body_setjointvalues.h>
-#include <openraveros/body_settransform.h>
-#include <openraveros/env_checkcollision.h>
-#include <openraveros/env_closefigures.h>
-#include <openraveros/env_createbody.h>
-#include <openraveros/env_createplanner.h>
-#include <openraveros/env_createproblem.h>
-#include <openraveros/env_createrobot.h>
-#include <openraveros/env_destroyproblem.h>
-#include <openraveros/env_getbodies.h>
-#include <openraveros/env_getbody.h>
-#include <openraveros/env_getrobots.h>
-#include <openraveros/env_loadplugin.h>
-#include <openraveros/env_loadscene.h>
-#include <openraveros/env_plot.h>
-#include <openraveros/env_raycollision.h>
-#include <openraveros/env_set.h>
-#include <openraveros/env_triangulate.h>
-#include <openraveros/env_wait.h>
-#include <openraveros/planner_init.h>
-#include <openraveros/planner_plan.h>
-#include <openraveros/problem_sendcommand.h>
-#include <openraveros/robot_controllersend.h>
-#include <openraveros/robot_controllerset.h>
-#include <openraveros/robot_getactivedof.h>
-#include <openraveros/robot_getactivevalues.h>
-#include <openraveros/robot_sensorgetdata.h>
-#include <openraveros/robot_sensorsend.h>
-#include <openraveros/robot_setactivedofs.h>
-#include <openraveros/robot_setactivevalues.h>
-using namespace openraveros;
+using namespace ros;
 
-class ROSServer : public RaveServerBase
+#define REFLECT_SERVICE(srvname) \
+    bool srvname##_srv(srvname::request& req, srvname::response& res) \
+    { \
+        SessionState state = getstate(req.sessionid); \
+        if( !state._pserver ) \
+            return false; \
+        state._pserver->srvname##_srv(req,res); \
+    }
+
+class SessionServer
 {
+    class SessionState
+    {
+    public:
+        virtual ~SessionState() {
+            _penv.reset();
+            _pserver.reset();
+        }
+
+        boost::shared_ptr<ROSServer> _pserver;
+        boost::shared_ptr<EnvironmentBase> _penv;
+    };
+
 public:
-    ROSServer();
-    virtual ~ROSServer();
+    SessionServer() {
+    }
+    virtual ~SessionServer() {
+        Destroy();
+    }
 
-    virtual void Destroy();
-    virtual void Reset();
+    bool Init() {
+        node* pnode = node::instance();
+        if( pnode == NULL )
+            return false;
 
-    virtual bool Init(int port);
+        if( !pnode->advertise_service("openrave_session",&SessionServer::session_callback,this) )
+            return false;
 
-    /// worker thread called from the main environment thread
-    virtual void Worker();
+        // advertise persistent services
+        if( !pnode->advertise_service("body_destroy",&SessionServer::body_destroy_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_enable",&SessionServer::body_enable_srv,this,1,true) )
+            return false;
 
-    virtual bool IsInit();
-    virtual bool IsClosing();
+        if( !pnode->advertise_service("body_getaabb",&SessionServer::body_getaabb_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_getaabbs",&SessionServer::body_getaabbs_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_getdof",&SessionServer::body_getdof_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_getlinks",&SessionServer::body_getlinks_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_setjointvalues",&SessionServer::body_setjointvalues_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_settransform",&SessionServer::body_settransform_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_checkcollision",&SessionServer::env_checkcollision_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_closefigures",&SessionServer::env_closefigures_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_createbody",&SessionServer::env_createbody_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_createplanner",&SessionServer::env_createplanner_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_createproblem",&SessionServer::env_createproblem_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_createrobot",&SessionServer::env_createrobot_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_destroyproblem",&SessionServer::env_destroyproblem_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_getbodies",&SessionServer::env_getbodies_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_getbody",&SessionServer::env_getbody_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_getrobots",&SessionServer::env_getrobots_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_loadplugin",&SessionServer::env_loadplugin_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_loadscene",&SessionServer::env_loadscene_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_plot",&SessionServer::env_plot_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_raycollision",&SessionServer::env_raycollision_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_set",&SessionServer::env_set_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_triangulate",&SessionServer::env_triangulate_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("env_wait",&SessionServer::env_wait_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("planner_init",&SessionServer::planner_init_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("planner_plan",&SessionServer::planner_plan_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("problem_sendcommand",&SessionServer::problem_sendcommand_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_controllersend",&SessionServer::robot_controllersend_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_controllerset",&SessionServer::robot_controllerset_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_getactivedof",&SessionServer::robot_getactivedof_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_getactivevalues",&SessionServer::robot_getactivevalues_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_sensorgetdata",&SessionServer::robot_sensorgetdata_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_sensorsend",&SessionServer::robot_sensorsend_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_setactivedofs",&SessionServer::robot_setactivedofs_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("robot_setactivevalues",&SessionServer::robot_setactivevalues_srv,this,1,true) )
+            return false;
 
-    // called from threads other than the main worker to wait until
-    virtual void SyncWithWorkerThread();
+        return true;
+    }
+
+    void Destroy()
+    {
+        node* pnode = node::instance();
+        if( pnode == NULL )
+            return;
+
+        pnode->unadvertise_service("openrave_session");
+        pnode->unadvertise_service("body_destroy");
+        pnode->unadvertise_service("body_enable");
+        pnode->unadvertise_service("body_getaabb");
+        pnode->unadvertise_service("body_getaabbs");
+        pnode->unadvertise_service("body_getdof");
+        pnode->unadvertise_service("body_getlinks");
+        pnode->unadvertise_service("body_setjointvalues");
+        pnode->unadvertise_service("body_settransform");
+        pnode->unadvertise_service("env_checkcollision");
+        pnode->unadvertise_service("env_closefigures");
+        pnode->unadvertise_service("env_createbody");
+        pnode->unadvertise_service("env_createplanner");
+        pnode->unadvertise_service("env_createproblem");
+        pnode->unadvertise_service("env_createrobot");
+        pnode->unadvertise_service("env_destroyproblem");
+        pnode->unadvertise_service("env_getbodies");
+        pnode->unadvertise_service("env_getbody");
+        pnode->unadvertise_service("env_getrobots");
+        pnode->unadvertise_service("env_loadplugin");
+        pnode->unadvertise_service("env_loadscene");
+        pnode->unadvertise_service("env_plot");
+        pnode->unadvertise_service("env_raycollision");
+        pnode->unadvertise_service("env_set");
+        pnode->unadvertise_service("set_triangulate");
+        pnode->unadvertise_service("env_wait");
+        pnode->unadvertise_service("planner_init");
+        pnode->unadvertise_service("planner_plan");
+        pnode->unadvertise_service("problem_sendcommand");
+        pnode->unadvertise_service("robot_controllersend");
+        pnode->unadvertise_service("robot_controllerset");
+        pnode->unadvertise_service("robot_getactivevalues");
+        pnode->unadvertise_service("robot_sensorgetdata");
+        pnode->unadvertise_service("robot_sensorsend");
+        pnode->unadvertise_service("robot_setactivedofs");
+        pnode->unadvertise_service("robot_setactivevalues");
+    }
 
 private:
-    bool session_callback(openrave_session::request& openrave_session::response& res);
+    map<int,SessionState> _mapsessions;
+    boost::mutex _mutexsession;
 
-    bool body_destroy_srv(body_destroy::request& body_destroy::response& res);
-    bool body_enable_srv(body_enable::request& body_enable::response& res);
-    bool body_getaabb_srv(body_getaabb::request& body_getaabb::response& res);
-    bool body_getaabbs_srv(body_getaabbs::request& body_getaabbs::response& res);
-    bool body_getdof_srv(body_getdof::request& body_getdof::response& res);
-    bool body_getlinks_srv(body_getlinks::request& body_getlinks::response& res);
-    bool body_setjointvalues_srv(body_setjointvalues::request& body_setjointvalues::response& res);
-    bool body_settransform_srv(body_settransform::request& body_settransform::response& res);
-    bool env_checkcollision_srv(env_checkcollision::request& env_checkcollision::response& res);
-    bool env_closefigures_srv(env_closefigures::request& env_closefigures::response& res);
-    bool env_createbody_srv(env_createbody::request& env_createbody::response& res);
-    bool env_createplanner_srv(env_createplanner::request& env_createplanner::response& res);
-    bool env_createproblem_srv(env_createproblem::request& env_createproblem::response& res);
-    bool env_createrobot_srv(env_createrobot::request& env_createrobot::response& res);
-    bool env_destroyproblem_srv(env_destroyproblem::request& env_destroyproblem::response& res);
-    bool env_getbodies_srv(env_getbodies::request& env_getbodies::response& res);
-    bool env_getbody_srv(env_getbody::request& env_getbody::response& res);
-    bool env_getrobots_srv(env_getrobots::request& env_getrobots::response& res);
-    bool env_loadplugin_srv(env_loadplugin::request& env_loadplugin::response& res);
-    bool env_loadscene_srv(env_loadscene::request& env_loadscene::response& res);
-    bool env_plot_srv(env_plot::request& env_plot::response& res);
-    bool env_raycollision_srv(env_raycollision::request& env_raycollision::response& res);
-    bool env_set_srv(env_set::request& env_set::response& res);
-    bool env_triangulate_srv(env_triangulate::request& env_triangulate::response& res);
-    bool env_wait_srv(env_wait::request& env_wait::response& res);
-    bool planner_init_srv(planner_init::request& planner_init::response& res);
-    bool planner_plan_srv(planner_plan::request& planner_plan::response& res);
-    bool problem_sendcommand_srv(problem_sendcommand::request& problem_sendcommand::response& res);
-    bool robot_controllersend_srv(robot_controllersend::request& robot_controllersend::response& res);
-    bool robot_controllerset_srv(robot_controllerset::request& robot_controllerset::response& res);
-    bool robot_getactivedof_srv(robot_getactivedof::request& robot_getactivedof::response& res);
-    bool robot_getactivevalues_srv(robot_getactivevalues::request& robot_getactivevalues::response& res);
-    bool robot_sensorgetdata_srv(robot_sensorgetdata::request& robot_sensorgetdata::response& res);
-    bool robot_sensorsend_srv(robot_sensorsend::request& robot_sensorsend::response& res);
-    bool robot_setactivedofs_srv(robot_setactivedofs::request& robot_setactivedofs::response& res);
-    bool robot_setactivevalues_srv(robot_setactivevalues::request& robot_setactivevalues::response& res);
+    SessionState getstate(int sessionid)
+    {
+        boost::mutex::scoped_lock(_mutexsession);
+        if( _mapsessions.find(sessionid) == _mapsessions.end() )
+            return SessionState();
+        return _mapsessions[sessionid];
+    }
+
+    bool session_callback(openrave_session::request& req, openrave_session::response& res)
+    {
+        if( req.sessionid ) {
+            // destory the session
+            boost::mutex::scoped_lock(_mutexsession);
+            if( _mapsessions.find(req.sessionid) != _mapsessions.end() ) {
+                _mapsessions.erase(req.sessionid);
+                ROS_INFO("destroyed openrave session: %d\n", req.sessionid);
+                return true;
+            }
+            
+            return false;
+        }
+
+        int id = rand();
+        while(id == 0 || _mapsessions.find(id) != _mapsessions.end())
+            id = rand();
+
+        SessionState state;
+        state._penv.reset(CreateEnvironment());
+        state._pserver.reset(new ROSServer(state._penv));
+
+        if( req.clone_sessionid ) {
+            // clone the environment from clone_sessionid
+            SessionState state = getstate(req.clone_sessionid);
+            if( !state._penv ) {
+                RAVEPRINT(L"failed to find session %d\n", req.clone_sessionid);
+            }
+            else {
+                // clone
+                
+            }
+        }
+
+        _mapsessions[id] = state;
+        res.sessionid = id;
+
+        ROS_INFO("started openrave session: %d\n", id);
+        return true;
+    }
+
+    REFLECT_SERVICE(body_destroy)
+    REFLECT_SERVICE(body_enable)
+    REFLECT_SERVICE(body_getaabb)
+    REFLECT_SERVICE(body_getaabbs)
+    REFLECT_SERVICE(body_getdof)
+    REFLECT_SERVICE(body_getlinks)
+    REFLECT_SERVICE(body_setjointvalues)
+    REFLECT_SERVICE(body_settransform)
+    REFLECT_SERVICE(env_checkcollision)
+    REFLECT_SERVICE(env_closefigures)
+    REFLECT_SERVICE(env_createbody)
+    REFLECT_SERVICE(env_createplanner)
+    REFLECT_SERVICE(env_createproblem)
+    REFLECT_SERVICE(env_createrobot)
+    REFLECT_SERVICE(env_destroyproblem)
+    REFLECT_SERVICE(env_getbodies)
+    REFLECT_SERVICE(env_getbody)
+    REFLECT_SERVICE(env_getrobots)
+    REFLECT_SERVICE(env_loadplugin)
+    REFLECT_SERVICE(env_loadscene)
+    REFLECT_SERVICE(env_plot)
+    REFLECT_SERVICE(env_raycollision)
+    REFLECT_SERVICE(env_set)
+    REFLECT_SERVICE(env_triangulate)
+    REFLECT_SERVICE(env_wait)
+    REFLECT_SERVICE(planner_init)
+    REFLECT_SERVICE(planner_plan)
+    REFLECT_SERVICE(problem_sendcommand)
+    REFLECT_SERVICE(robot_controllersend)
+    REFLECT_SERVICE(robot_controllerset)
+    REFLECT_SERVICE(robot_getactivedof)
+    REFLECT_SERVICE(robot_getactivevalues)
+    REFLECT_SERVICE(robot_sensorgetdata)
+    REFLECT_SERVICE(robot_sensorsend)
+    REFLECT_SERVICE(robot_setactivedofs)
+    REFLECT_SERVICE(robot_setactivevalues)
+    REFLECT_SERVICE(robot_starttrajectory)
 };
+
+// check that message constants match OpenRAVE constants
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_X==RobotBase::DOF_X);
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Y==RobotBase::DOF_Y);
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Z==RobotBase::DOF_Z);
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_RotationAxis==RobotBase::DOF_RotationAxis);
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Rotation3D==RobotBase::DOF_Rotation3D);
+BOOST_STATIC_ASSERT(ActiveDOFs::DOF_RotationQuat==RobotBase::DOF_RotationQuat);
+
+BOOST_STATIC_ASSERT(env_checkcollision::request::CO_Distance==CO_Distance);
+BOOST_STATIC_ASSERT(env_checkcollision::request::CO_UseTolerance==CO_UseTolerance);
+BOOST_STATIC_ASSERT(env_checkcollision::request::CO_Contacts==CO_Contacts);
+BOOST_STATIC_ASSERT(env_checkcollision::request::CO_RayAnyHit==CO_RayAnyHit);

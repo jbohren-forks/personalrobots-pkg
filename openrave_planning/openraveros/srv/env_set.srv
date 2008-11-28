@@ -9,14 +9,18 @@ uint32 Set_CollisionChecker=4
 uint32 Set_Gravity=8
 uint32 Set_PublishAnytime=16
 uint32 Set_DebugLevel=32
-uint32 Set_Quit=64
+uint32 Set_Viewer=64
 
 # validity depending on setmask
-string sim_option
+byte sim_action
+byte SimAction_Start=1
+byte SimAction_Stop=2
+byte SimAction_Timestep=3
 float32 sim_timestep
 
 string physicsengine
 string collisionchecker
+string viewer
 float32[3] gravity
 byte publishanytime
 byte debuglevel
