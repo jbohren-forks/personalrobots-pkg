@@ -50,6 +50,7 @@ NavFn::NavFn(int xs, int ys)
   obsarr = costarr = NULL;
   potarr = NULL;
   pending = NULL;
+  gradx = grady = NULL;
   setNavArr(xs,ys);
 
   // priority buffers
@@ -66,6 +67,10 @@ NavFn::NavFn(int xs, int ys)
   // display function
   displayFn = NULL;
   displayInt = 0;
+
+  // path buffers
+  npathbuf = 0;
+  pathx = pathy = NULL;
 }
 
 
@@ -79,6 +84,14 @@ NavFn::~NavFn()
     delete[] potarr;
   if(pending)
     delete[] pending;
+  if(gradx)
+    delete[] gradx;
+  if(grady)
+    delete[] grady;
+  if(pathx)
+    delete[] pathx;
+  if(pathy)
+    delete[] pathy;
 }
 
 
@@ -124,14 +137,20 @@ NavFn::setNavArr(int xs, int ys)
   if(pending)
     delete[] pending;
 
+  if(gradx)
+    delete[] gradx;
+  if(grady)
+    delete[] grady;
+
   obsarr = new COSTTYPE[ns];	// obstacles, 255 is obstacle
   memset(obsarr, 0, ns*sizeof(COSTTYPE));
   costarr = new COSTTYPE[ns]; // cost array, 2d config space
   memset(costarr, 0, ns*sizeof(uint16_t));
   potarr = new float[ns];	// navigation potential array
-  memset(potarr, 0, ns*sizeof(float));
   pending = new bool[ns];
   memset(pending, 0, ns*sizeof(bool));
+  gradx = new float[ns];
+  grady = new float[ns];
 }
 
 
@@ -179,16 +198,15 @@ void
 NavFn::setupNavFn(bool keepit)
 {
   // reset values in propagation arrays
-  float *pp = potarr;
-  COSTTYPE *pc = costarr;
   for (int i=0; i<ns; i++)
     {
-      *pp++ = POT_HIGH;
-      if (!keepit) *pc = COST_NEUTRAL;
-      pc++;
+      potarr[i] = POT_HIGH;
+      if (!keepit) costarr[i] = COST_NEUTRAL;
+      gradx[i] = grady[i] = 0.0;
     }
 
   // outer bounds of cost array
+  COSTTYPE *pc;
   pc = costarr;
   for (int i=0; i<nx; i++)
     *pc++ = COST_OBS;
@@ -304,7 +322,6 @@ NavFn::updateCell(int n)
 	  float ue = INVSQRT2*(float)costarr[n-nx];
 	  float de = INVSQRT2*(float)costarr[n+nx];
 	  potarr[n] = pot;
-	  pot += (float)0.01;
 	  if (pot < curT)	// low-cost buffer block 
 	    {
 	      if (l > pot+le) push_next(n-1);
@@ -312,7 +329,7 @@ NavFn::updateCell(int n)
 	      if (u > pot+ue) push_next(n-nx);
 	      if (d > pot+de) push_next(n+nx);
 	    }
-	  else
+	  else			// overflow block
 	    {
 	      if (l > pot+le) push_over(n-1);
 	      if (r > pot+re) push_over(n+1);
@@ -435,6 +452,9 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
   int nc = 0;			// number of cells put into priority blocks
   int cycle = 0;		// which cycle we're on
 
+  // set up start cell
+  int startCell = start[1]*nx + start[0];
+
   for (; cycle < cycles; cycle++) // go for this many cycles, unless interrupted
     {
       // 
@@ -481,8 +501,8 @@ NavFn::propNavFnDijkstra(int cycles, bool atStart)
 
       // check if we've hit the Start cell
       if (atStart)
-	{}			// TBD
-
+	if (potarr[startCell] < POT_HIGH)
+	  break;
     }
 
   printf("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
@@ -571,10 +591,133 @@ NavFn::propNavFnAstar(int cycles)
   printf("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
 	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
 
-  if (cycle < cycles) return true; // finished up here
+  if (potarr[startCell] < POT_HIGH) return true; // finished up here
   else return false;
 }
 
+
+//
+// Path construction
+// Find gradient at array points, interpolate path
+// Use step size of one pixel - should we use 1/2 pixel?
+//
+
+bool
+NavFn::calcPath(int n, int *st)
+{
+  // check path arrays
+  if (npathbuf < n)
+    {
+      if (pathx) delete [] pathx;
+      if (pathy) delete [] pathy;
+      pathx = new float[n];
+      pathy = new float[n];
+      npathbuf = n;
+    }
+  
+  // set up start position at cell
+  // st is always upper left corner for 4-point bilinear interpolation 
+  if (st == NULL) st = start;
+  int stc = st[1]*nx + st[0];
+
+  // set up offset
+  float dx=0;
+  float dy=0;
+  npath = 0;
+
+  // go for <n> cycles at most
+  for (int i=0; i<n; i++)
+    {
+      // check if near goal
+      if (potarr[stc] < COST_OBS)
+	return true;		// done!
+
+      if (stc < nx || stc > ns-nx) // would be out of bounds
+	return false;
+
+      // add to path
+      pathx[npath] = stc%nx + dx;
+      pathy[npath] = stc/nx + dy;
+      npath++;
+
+      // get grad at four positions near cell
+      int stcnx = stc+nx;
+      gradCell(stc);
+      gradCell(stc+1);
+      gradCell(stcnx);
+      gradCell(stcnx+1);
+      
+      // get interpolated gradient
+      float x1 = (1.0-dx)*gradx[stc] + dx*gradx[stc+1];
+      float x2 = (1.0-dx)*gradx[stcnx] + dx*gradx[stcnx+1];
+      float x = (1.0-dy)*x1 + dy*x2; // interpolated x
+      float y1 = (1.0-dx)*grady[stc] + dx*grady[stc+1];
+      float y2 = (1.0-dx)*grady[stcnx] + dx*grady[stcnx+1];
+      float y = (1.0-dy)*y1 + dy*y2; // interpolated y
+
+      // check for zero gradient, failed
+      if (x == 0.0 && y == 0.0)
+	return false;
+
+      // move in the right direction
+      dx += x;
+      dy += y;
+
+      // check for overflow
+      if (dx > 1.0) { stc++; dx -= 1.0; }
+      if (dx < -1.0) { stc--; dx += 1.0; }
+      if (dy > 1.0) { stc+=nx; dy -= 1.0; }
+      if (dy < -1.0) { stc-=nx; dy += 1.0; }
+
+      //      printf("[Path] Pot: %0.1f  grad: %0.1f,%0.1f  pos: %0.1f,%0.1f\n",
+      //	     potarr[stc], x, y, pathx[npath-1], pathy[npath-1]);
+    }
+
+  return true;			// out of cycles
+}
+
+
+//
+// gradient calculations
+//
+
+// calculate gradient at a cell
+// positive value are to the right and down
+void				
+NavFn::gradCell(int n)
+{
+  if (gradx[n]+grady[n] > 0.0)	// check this cell
+    return;			
+
+  if (n < nx || n > ns-nx)	// would be out of bounds
+    return;
+
+  float cv = potarr[n];
+  if (cv >= POT_HIGH) return;	// can't work in obstacles
+
+  // dx calc, average to sides
+  float dx = 0.0;
+  if (potarr[n-1] < POT_HIGH)
+    dx += potarr[n-1]- cv;	
+  if (potarr[n+1] < POT_HIGH)
+    dx += cv - potarr[n+1]; 
+
+  // dy calc, average to sides
+  float dy = 0.0;
+  if (potarr[n-nx] < POT_HIGH)
+    dy += potarr[n-nx]- cv;	
+  if (potarr[n+nx] < POT_HIGH)
+    dy += cv - potarr[n+nx]; 
+
+  // normalize
+  float norm = sqrtf(dx*dx+dy*dy);
+  if (norm > 0)
+    {
+      norm = 1.0/norm;
+      gradx[n] = norm*dx;
+      grady[n] = norm*dy;
+    }
+}
 
 
 //

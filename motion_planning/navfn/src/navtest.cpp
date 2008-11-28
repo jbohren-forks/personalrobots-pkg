@@ -138,6 +138,9 @@ int main(int argc, char **argv)
 
   printf("Time for plan calculation: %d ms\n", (int)(t1-t0));
   
+  // path
+  nav->calcPath(1000);
+
   // draw potential field
   float mmax = 0.0;
   float *pp = nav->potarr;

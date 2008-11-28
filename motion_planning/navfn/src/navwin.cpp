@@ -18,6 +18,8 @@ NavWin::NavWin(int w, int h, char *name)
   ph = h;
   pce = pne = poe = 0;
   pc = pn = po = NULL;
+  pathlen = pathbuflen = 0;
+  path = NULL;
 }
 
 NavWin::~NavWin()
@@ -136,8 +138,25 @@ NavWin::drawPot(NavFn *nav)
   po = new int[poe];
   memcpy(po, nav->overP, poe*sizeof(int));
 
+  // start and goal
   goal[0] = nav->goal[0];
   goal[1] = nav->goal[1];
+  start[0] = nav->start[0];
+  start[1] = nav->start[1];
+
+  // path
+  if (nav->npath > 0)
+    {
+      pathlen = nav->npath;
+      if (pathbuflen < pathlen)
+	{
+	  pathbuflen = pathlen;
+	  if (path) delete [] path;
+	  path = new int[pathbuflen];
+	}
+      for (int i=0; i<pathlen; i++)
+	path[i] = width*(int)(nav->pathy[i])+(int)(nav->pathx[i]);
+    }
 
   drawOverlay();
 
@@ -148,8 +167,6 @@ NavWin::drawPot(NavFn *nav)
 void 
 NavWin::drawOverlay()
 {
-  make_current();
-
   if (inc == 1)			// decimation
     {
       fl_color(255,0,0);
@@ -214,8 +231,32 @@ NavWin::drawOverlay()
   else
     fl_rectf(x*inc-2,y*inc-2,5,5);      
 
+  // draw the start
+  fl_color(200,255,0);
+  x = start[0];
+  y = start[1];
+  if (inc == 1)
+    fl_rectf(x/dec-2,y/dec-2,5,5);      
+  else
+    fl_rectf(x*inc-2,y*inc-2,5,5);      
 
+  // draw the path
+  fl_color(0,255,255);
+  if (inc == 1 && pathlen > 0)	// decimation or equal pixels
+    {
+      int y = path[0]/pw;
+      int x = path[0]%pw;
+      for (int i=1; i<pathlen; i++)
+	{
+	  int y1 = path[i]/pw;
+	  int x1 = path[i]%pw;
+	  fl_line(x/dec,y/dec,x1/dec,y1/dec);
+	  x = x1;
+	  y = y1;
+	}
+    }
 }
+
 
 void NavWin::draw()
 {

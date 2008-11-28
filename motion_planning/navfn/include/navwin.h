@@ -34,6 +34,10 @@ class NavWin
   int *pc, *pn, *po;		// priority buffers
   int pce, pne, poe;		// buffer sizes
   int goal[2];
+  int start[2];
+  int *path;			// path buffer, cell indices
+  int pathlen;			// how many we have
+  int pathbuflen;		// how big the path buffer is
 
   void draw();			// draw the image
 };

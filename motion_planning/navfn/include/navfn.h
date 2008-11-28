@@ -103,20 +103,28 @@ class NavFn
   void setObs();
 
   /** propagation */
-  void updateCell(int n);	/**< updates the cell at index n */
-  void updateCellAstar(int n);	/**< updates the cell at index n, uses A* heuristic */
+  void updateCell(int n);	/**< updates the cell at index <n> */
+  void updateCellAstar(int n);	/**< updates the cell at index <n>, uses A* heuristic */
   void setupNavFn(bool keepit = false); /**< resets all nav fn arrays for propagation */
   /** run propagation for <cycles> iterations, or until Start is
       reached; use breadth-first Dijkstra method */
-  bool propNavFnDijkstra(int cycles, bool atStart = false); 
+  bool propNavFnDijkstra(int cycles, bool atStart = false); /**< returns true if start point found or full prop */
   /** run propagation for <cycles> iterations, or until Start is
-      reached; use best-first A* method */
-  bool propNavFnAstar(int cycles);
+      reached; use best-first A* method with Euclidean distance heuristic */
+  bool propNavFnAstar(int cycles); /**< returns true if start point found */
+
+  /** gradient and paths */
+  float *gradx, *grady;		/**< gradient arrays, size of potential array */
+  float *pathx, *pathy;		/**< path points */
+  int npath;			/**< number of path points */
+  int npathbuf;			/**< size of pathx, pathy buffers */
+  bool calcPath(int n, int *st = NULL); /**< calculates path for at most <n> cycles, returns true if good path */
+  void gradCell(int n);		/**< calculates gradient at cell <n> */
 
   /** display callback */
-  void display(void fn(NavFn *nav), int n = 100);
-  int displayInt;
-  void (*displayFn)(NavFn *nav);
+  void display(void fn(NavFn *nav), int n = 100); /**< <n> is the number of cycles between updates  */
+  int displayInt;		/**< save second argument of display() above */
+  void (*displayFn)(NavFn *nav); /**< display function itself */
 };
 
 
