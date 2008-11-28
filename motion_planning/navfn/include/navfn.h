@@ -41,6 +41,7 @@
 #ifndef _NAVFN_H
 #define _NAVFN_H
 
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
@@ -102,13 +103,16 @@ class NavFn
   void setObs();
 
   /** propagation */
-  void updateCell(int n);	/**< updates the cell at index i */
+  void updateCell(int n);	/**< updates the cell at index n */
+  void updateCellAstar(int n);	/**< updates the cell at index n, uses A* heuristic */
   void setupNavFn(bool keepit = false); /**< resets all nav fn arrays for propagation */
-  
   /** run propagation for <cycles> iterations, or until Start is
-      reached */
-  bool propNavFn(int cycles, bool atStart = false);
-  
+      reached; use breadth-first Dijkstra method */
+  bool propNavFnDijkstra(int cycles, bool atStart = false); 
+  /** run propagation for <cycles> iterations, or until Start is
+      reached; use best-first A* method */
+  bool propNavFnAstar(int cycles);
+
   /** display callback */
   void display(void fn(NavFn *nav), int n = 100);
   int displayInt;

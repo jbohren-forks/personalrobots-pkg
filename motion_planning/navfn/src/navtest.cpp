@@ -94,8 +94,12 @@ int main(int argc, char **argv)
       goal[1] = sy/2;
     }
 
+  // start point, for A*
+  start[0] = 20;
+  start[1] = sy/2;
+
   // display
-  nwin = new NavWin(sx,sy,"Potential Field");
+  nwin = new NavWin(sx/2,sy/2,"Potential Field");
   nwin->maxval = 2*sx*COST_NEUTRAL;
   Fl::visual(FL_RGB);
   nwin->show();
@@ -104,6 +108,8 @@ int main(int argc, char **argv)
   // set goal and robot poses
   int *gg = goal;
   nav->setGoal(gg);
+  int *ss = start;
+  nav->setStart(ss);
 
   // set display function
   nav->display(dispPot,dispn);
@@ -123,7 +129,8 @@ int main(int argc, char **argv)
   // calculate the nav fn and path
   nav->priInc = inc;
   double t0 = get_ms();
-  nav->propNavFn(sx*sy/20);
+  //  nav->propNavFnDijkstra(sx*sy/20);
+  nav->propNavFnAstar(sx*sy/20);
   double t1 = get_ms();
 
   printf("Time for plan calculation: %d ms\n", (int)(t1-t0));

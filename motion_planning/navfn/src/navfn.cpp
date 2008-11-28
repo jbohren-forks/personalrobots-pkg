@@ -326,16 +326,110 @@ NavFn::updateCell(int n)
 }
 
 
+//
+// Use A* method for setting priorities
+// Critical function: calculate updated potential value of a cell,
+//   given its neighbors' values
+// Planar-wave update calculation from two lowest neighbors in a 4-grid
+// Quadratic approximation to the interpolated value 
+// No checking of bounds here, this function should be fast
+//
+
+#define INVSQRT2 0.707106781
+
+inline void
+NavFn::updateCellAstar(int n)
+{
+  // get neighbors
+  float u,d,l,r;
+  l = potarr[n-1];
+  r = potarr[n+1];		
+  u = potarr[n-nx];
+  d = potarr[n+nx];
+  //  printf("[Update] c: %0.1f  l: %0.1f  r: %0.1f  u: %0.1f  d: %0.1f\n", 
+  //	 potarr[n], l, r, u, d);
+  //  printf("[Update] cost: %d\n", costarr[n]);
+
+  // find lowest, and its lowest neighbor
+  float ta, tc;
+  if (l<r) tc=l; else tc=r;
+  if (u<d) ta=u; else ta=d;
+
+  // do planar wave update
+  if (costarr[n] < COST_OBS)	// don't propagate into obstacles
+    {
+      float hf = (float)costarr[n]; // traversability factor
+      float dc = tc-ta;		// relative cost between ta,tc
+      if (dc < 0) 		// ta is lowest
+	{
+	  dc = -dc;
+	  ta = tc;
+	}
+
+      // calculate new potential
+      float pot;
+      if (dc >= hf)		// if too large, use ta-only update
+	pot = ta+hf;
+      else			// two-neighbor interpolation update
+	{
+	  // use quadratic approximation
+	  // might speed this up through table lookup, but still have to 
+	  //   do the divide
+	  float d = dc/hf;
+	  float v = -0.2301*d*d + 0.5307*d + 0.7040;
+	  pot = ta + hf*v;
+	}
+
+      //      printf("[Update] new pot: %d\n", costarr[n]);
+
+      // now add affected neighbors to priority blocks
+      if (pot < potarr[n])
+	{
+	  float le = INVSQRT2*(float)costarr[n-1];
+	  float re = INVSQRT2*(float)costarr[n+1];
+	  float ue = INVSQRT2*(float)costarr[n-nx];
+	  float de = INVSQRT2*(float)costarr[n+nx];
+
+	  // calculate distance
+	  int x = n%nx;
+	  int y = n/nx;
+	  float dist = (x-start[0])*(x-start[0]) + (y-start[1])*(y-start[1]);
+	  dist = sqrtf(dist)*(float)COST_NEUTRAL;
+
+	  potarr[n] = pot;
+	  pot += dist;
+	  if (pot < curT)	// low-cost buffer block 
+	    {
+	      if (l > pot+le) push_next(n-1);
+	      if (r > pot+re) push_next(n+1);
+	      if (u > pot+ue) push_next(n-nx);
+	      if (d > pot+de) push_next(n+nx);
+	    }
+	  else
+	    {
+	      if (l > pot+le) push_over(n-1);
+	      if (r > pot+re) push_over(n+1);
+	      if (u > pot+ue) push_over(n-nx);
+	      if (d > pot+de) push_over(n+nx);
+	    }
+	}
+
+    }
+
+}
+
+
 
 //
 // main propagation function
+// Dijkstra method, breadth-first
 // runs for a specified number of cycles,
 //   or until it runs out of cells to update,
 //   or until the Start cell is found (atStart = true)
 //
 
 bool
-NavFn::propNavFn(int cycles, bool atStart)	
+NavFn::propNavFnDijkstra(int cycles, bool atStart)	
 {
   int nwv = 0;			// max priority block size
   int nc = 0;			// number of cells put into priority blocks
@@ -388,6 +482,89 @@ NavFn::propNavFn(int cycles, bool atStart)
       // check if we've hit the Start cell
       if (atStart)
 	{}			// TBD
+
+    }
+
+  printf("[NavFn] Used %d cycles, %d cells visited (%d%%), priority buf max %d\n", 
+	       cycle,nc,(int)((nc*100.0)/(ns-nobs)),nwv);
+
+  if (cycle < cycles) return true; // finished up here
+  else return false;
+}
+
+
+//
+// main propagation function
+// A* method, best-first
+// uses Euclidean distance heuristic
+// runs for a specified number of cycles,
+//   or until it runs out of cells to update,
+//   or until the Start cell is found (atStart = true)
+//
+
+bool
+NavFn::propNavFnAstar(int cycles)	
+{
+  int nwv = 0;			// max priority block size
+  int nc = 0;			// number of cells put into priority blocks
+  int cycle = 0;		// which cycle we're on
+
+  // set initial threshold, based on distance
+  float dist = (goal[0]-start[0])*(goal[0]-start[0]) + (goal[1]-start[1])*(goal[1]-start[1]);
+  dist = sqrtf(dist)*(float)COST_NEUTRAL;
+  curT = dist + curT;
+
+  // set up start cell
+  int startCell = start[1]*nx + start[0];
+
+  // do main cycle
+  for (; cycle < cycles; cycle++) // go for this many cycles, unless interrupted
+    {
+      // 
+      if (curPe == 0 && nextPe == 0) // priority blocks empty
+	break;
+
+      // stats
+      nc += curPe;
+      if (curPe > nwv)
+	nwv = curPe;
+
+      // reset pending flags on current priority buffer
+      int *pb = curP;
+      int i = curPe;			
+      while (i-- > 0)		
+        pending[*(pb++)] = false;
+		
+      // process current priority buffer
+      pb = curP; 
+      i = curPe;
+      while (i-- > 0)		
+	updateCellAstar(*pb++);
+
+      if (displayInt > 0 &&  (cycle % displayInt) == 0)
+	displayFn(this);
+
+      // swap priority blocks curP <=> nextP
+      curPe = nextPe;
+      nextPe = 0;
+      pb = curP;		// swap buffers
+      curP = nextP;
+      nextP = pb;
+
+      // see if we're done with this priority level
+      if (curPe == 0)
+        {
+          curT += priInc;	// increment priority threshold
+	  curPe = overPe;	// set current to overflow block
+	  overPe = 0;
+          pb = curP;		// swap buffers
+          curP = overP;
+          overP = pb;
+        }
+
+      // check if we've hit the Start cell
+      if (potarr[startCell] < POT_HIGH)
+	break;
 
     }
 
