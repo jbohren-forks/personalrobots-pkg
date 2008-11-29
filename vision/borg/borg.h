@@ -17,6 +17,7 @@ public:
   ~Borg();
   
   Cam *cam;
+  bool scan();
 private:
   int fps;
 };

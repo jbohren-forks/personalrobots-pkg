@@ -124,25 +124,25 @@ bool CamDC1394::_startImageStream()
   return true;
 }
 
-uint8_t *CamDC1394::_savePhoto()
+bool CamDC1394::_savePhoto(uint8_t *photo)
 {
-  uint8_t *frame_copy = NULL;
   int attempt = 0;
   do
   {
     dc1394video_frame_t *frame = NULL;
     ENSURE(dc1394_capture_dequeue(cam, DC1394_CAPTURE_POLICY_WAIT, &frame));
     if (frame && 
-        (frame->frames_behind > 1 || 
-         dc1394_capture_is_frame_corrupt(cam, frame) == DC1394_TRUE))
+        (frame->frames_behind > 1))// || 
+         //dc1394_capture_is_frame_corrupt(cam, frame) == DC1394_TRUE))
       dc1394_capture_enqueue(cam, frame);
     else
     {
-      frame_copy = new uint8_t[640*480];
-      memcpy(frame_copy, frame->image, 640*480);
+      memcpy(photo, frame->image, 640*480);
       dc1394_capture_enqueue(cam, frame);
+      return true;
     }
-  } while (!frame_copy && attempt++ < 10);
+  } while (attempt++ < 10);
+  return false;
 
   //ros::Time t_start(ros::Time::now());
   //const int NUM_FRAMES = 200;
@@ -150,7 +150,6 @@ uint8_t *CamDC1394::_savePhoto()
   //for (int i = 0; i < NUM_FRAMES; i++)
   //{
   //}
-  return frame_copy;
 }
 
 bool CamDC1394::_stopImageStream()

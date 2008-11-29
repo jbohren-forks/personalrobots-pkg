@@ -21,28 +21,26 @@ int main(int, char **)
   borg.cam->startImageStream();
   bool done = false;
   ros::Time t(ros::Time::now());
+  uint8_t *raster = new uint8_t[640*480];
   while (!done)
   {
-    uint8_t *raster = borg.cam->savePhoto();
+    borg.cam->savePhoto(raster);
     ros::Time t2(ros::Time::now());
     double dt = (t2 - t).to_double();
     t = t2;
-    printf("fps = %.1f\n", 1.0 / dt);
-    //printf("raster = %x\n", (unsigned)raster);
-    if (raster)
-    {
-      uint8_t *in = raster, *out = (uint8_t *)surface->pixels;
-      for (uint32_t row = 0; row < 640; row++)
-        for (uint32_t col = 0; col < 480; col++)
-        {
-          *(out++) = *in;
-          *(out++) = *in;
-          *(out++) = *in;
-          *(out++);
-          in++;
-        }
-      delete[] raster;
-    }
+    static int print_count = 0;
+    if (print_count++ % 10 == 0)
+      printf("fps = %.1f\n", 1.0 / dt);
+    uint8_t *in = raster, *out = (uint8_t *)surface->pixels;
+    for (uint32_t row = 0; row < 640; row++)
+      for (uint32_t col = 0; col < 480; col++)
+      {
+        *(out++) = *in;
+        *(out++) = *in;
+        *(out++) = *in;
+        *(out++);
+        in++;
+      }
     SDL_UpdateRect(surface, 0, 0, 640, 480);
     SDL_Event event;
     while (SDL_PollEvent(&event))

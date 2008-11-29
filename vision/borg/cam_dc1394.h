@@ -15,7 +15,7 @@ public:
   virtual bool set(const char *setting, uint32_t value);
 protected:
   virtual bool _init();
-  virtual uint8_t *_savePhoto();
+  virtual bool _savePhoto(uint8_t *);
   virtual bool _shutdown();
   virtual bool _startImageStream();
   virtual bool _stopImageStream();

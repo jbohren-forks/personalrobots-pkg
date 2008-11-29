@@ -13,7 +13,7 @@ public:
   virtual ~Cam() { }
 
   bool init();
-  uint8_t *savePhoto();
+  bool savePhoto(uint8_t *);
   bool shutdown();
   bool startImageStream();
   bool stopImageStream();
@@ -21,7 +21,7 @@ public:
 
 protected:
   virtual bool _init() { return true; }
-  virtual uint8_t *_savePhoto() = 0;
+  virtual bool _savePhoto(uint8_t *) = 0;
   virtual bool _shutdown() { return true; }
   virtual bool _startImageStream() = 0;
   virtual bool _stopImageStream() = 0;

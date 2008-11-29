@@ -1,13 +1,17 @@
 #include <map>
+#include <list>
 #include <string>
 #include <stdexcept>
+#include <string.h>
 #include "ros/common.h"
+#include "ros/time.h"
 #include "borg.h"
 #include "cam_dc1394.h"
 
 using namespace borg;
 using std::string;
 using std::map;
+using std::list;
 
 Borg::Borg(uint32_t opts)
 {
@@ -57,7 +61,8 @@ Borg::Borg(uint32_t opts)
     {
       printf("calling dc1394 init\n");
       cam = new CamDC1394();
-      cam->init();
+      if (!cam->init())
+        throw std::runtime_error("unable to init camera.\n");
       for (map<string,uint32_t>::iterator s = cam_settings.begin();
            s != cam_settings.end(); ++s)
         cam->set(s->first.c_str(), s->second);
@@ -77,5 +82,47 @@ Borg::~Borg()
     cam->shutdown();
     delete cam;
   }
+}
+
+struct ScanImage
+{
+  uint8_t *raster;
+  double t;
+};
+
+bool Borg::scan()
+{
+  list<ScanImage *> images;
+  cam->startImageStream();
+  for (int i = 0; i < 10; i++)
+  {
+    ScanImage *si = new ScanImage;
+    si->raster = new uint8_t[640*480];
+    si->t = ros::Time::now().to_double();
+    if (!cam->savePhoto(si->raster))
+    {
+      cam->stopImageStream();
+      return false;
+    }
+    images.push_back(si);
+  }
+  printf("captured %d images\n", images.size());
+  cam->stopImageStream();
+  // flush to disk
+  for (list<ScanImage *>::iterator i = images.begin(); i != images.end(); ++i)
+  {
+    char fname[100];
+    snprintf(fname, sizeof(fname), "img_%.6f.pgm", (*i)->t);
+    FILE *f = fopen(fname, "wb");
+    if (!f)
+      throw std::runtime_error("couldn't open pgm file for output");
+    fprintf(f, "P5\n640 480\n255\n");
+    fwrite((*i)->raster, 1, 640 * 480, f);
+    fclose(f);
+    delete[] (*i)->raster;
+    delete *i;
+  }
+  images.clear();
+  return true;
 }
 

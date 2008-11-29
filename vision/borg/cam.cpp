@@ -33,11 +33,11 @@ bool Cam::stopImageStream()
   return true;
 }
 
-uint8_t *Cam::savePhoto()
+bool Cam::savePhoto(uint8_t *photo)
 {
   if (config_status != CAM_STREAMING)
-    return NULL;
-  return _savePhoto();
+    return false;
+  return _savePhoto(photo);
 }
 
 bool Cam::shutdown()
