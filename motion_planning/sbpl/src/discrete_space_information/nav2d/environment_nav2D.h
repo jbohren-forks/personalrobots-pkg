@@ -36,7 +36,7 @@
 //-1, 0, 1 per each dX and dY
 #define ENVNAV2D_ACTIONSWIDTH 8
 
-#define ENVNAV2D_DEFAULTOBSTHRESH 1	//see explanation of the value below
+#define ENVNAV2D_DEFAULTOBSTHRESH 1 //253-for willow garage	//see explanation of the value below
 
 //configuration parameters
 typedef struct ENV_NAV2D_CONFIG

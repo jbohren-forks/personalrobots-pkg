@@ -119,8 +119,15 @@ public:
       replan(), if such an epsilon is used by the planner. The base
       class implementation returns -1 to express that it has no such
       thing. */
-  virtual double get_solution_eps() const { return -1; }
-  
+   virtual double get_solution_eps() const { return -1; }
+
+
+	//setting initial solution eps 
+   //This parameter is ignored in planners that don't have a notion of eps
+   //In ARA*/AD*: (cost(initialsolution) <= eps*cost(optimalsolution))
+   virtual void set_initialsolution_eps(double initialsolution_eps) {};
+
+
     virtual ~SBPLPlanner(){};
 
 protected:

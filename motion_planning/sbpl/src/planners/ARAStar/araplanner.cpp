@@ -39,6 +39,7 @@ ARAPlanner::ARAPlanner(DiscreteSpaceInformation* environment, bool bSearchForwar
 
     environment_ = environment;
     
+	bsearchuntilfirstsolution = false;
     finitial_eps = ARA_DEFAULT_INITIAL_EPS;
     searchexpands = 0;
     MaxMemoryCounter = 0;

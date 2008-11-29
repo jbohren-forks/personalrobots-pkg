@@ -39,6 +39,7 @@ ADPlanner::ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch)
     
 	bforwardsearch = bForwardSearch;
 
+	bsearchuntilfirstsolution = false;
     finitial_eps = AD_DEFAULT_INITIAL_EPS;
     searchexpands = 0;
     MaxMemoryCounter = 0;

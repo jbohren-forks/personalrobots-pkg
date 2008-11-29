@@ -123,6 +123,9 @@ public:
 
 	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
 
+	virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
+
+
 	//constructors & destructors
     ADPlanner(DiscreteSpaceInformation* environment, bool bForwardSearch);
     ~ADPlanner();

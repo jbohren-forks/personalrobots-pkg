@@ -42,7 +42,7 @@ int plan2d(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 0.5; //in seconds
+	double allocated_time_secs = 1.0; //in seconds
 	MDPConfig MDPCfg;
 	
 	//Initialize Environment (should be called before initializing anything else)
@@ -141,6 +141,109 @@ int plan2d(int argc, char *argv[])
     return bRet;
 }
 
+int plan3dkin(int argc, char *argv[])
+{
+
+	int bRet = 0;
+	double allocated_time_secs = 1.0; //in seconds
+	MDPConfig MDPCfg;
+	
+	//Initialize Environment (should be called before initializing anything else)
+	EnvironmentNAV3DKIN environment_nav3Dkin;
+	if(!environment_nav3Dkin.InitializeEnv(argv[1]))
+	{
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+
+	//Initialize MDP Info
+	if(!environment_nav3Dkin.InitializeMDPCfg(&MDPCfg))
+	{
+		printf("ERROR: InitializeMDPCfg failed\n");
+		exit(1);
+	}
+
+
+	//plan a path
+	vector<int> solution_stateIDs_V;
+	bool bforwardsearch = false;
+	ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
+
+    if(planner.set_start(MDPCfg.startstateid) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+
+    if(planner.set_goal(MDPCfg.goalstateid) == 0)
+        {
+            printf("ERROR: failed to set goal state\n");
+            exit(1);
+        }
+	planner.set_initialsolution_eps(4.0);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    FILE* fSol = fopen("sol.txt", "w");
+	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+	  environment_nav3Dkin.PrintState(solution_stateIDs_V[i], true, fSol);
+	}
+    fclose(fSol);
+
+    environment_nav3Dkin.PrintTimeStat(stdout);
+
+	//print a path
+	if(bRet)
+	{
+		//print the solution
+		printf("Solution is found\n");
+	}
+	else
+		printf("Solution does not exist\n");
+
+	fflush(NULL);
+
+
+    return bRet;
+}
 
 
 int planandnavigate2d(int argc, char *argv[])
@@ -668,10 +771,13 @@ int main(int argc, char *argv[])
 	}
 
     //2D planning
-    //planandnavigate2d(argc, argv);
+    //plan2d(argc, argv);
 
     //3D planning
-    planandnavigate3dkin(argc, argv);
+    plan3dkin(argc, argv);
+
+    //3D planning
+    //planandnavigate3dkin(argc, argv);
 
 
     //robotarm planning
