@@ -13,7 +13,8 @@ using std::string;
 using std::map;
 using std::list;
 
-Borg::Borg(uint32_t opts)
+Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
+  left(50), right(50), scan_duty(700), return_duty(600)
 {
   string cfg_path = ros::get_package_path("borg");
   cfg_path += "/borg-config";
@@ -29,6 +30,7 @@ Borg::Borg(uint32_t opts)
   }
   string cam_str;
   map<string, uint32_t> cam_settings;
+  map<string, string> stage_settings;
   for (int line = 1; !feof(f); line++)
   {
     char linebuf[200];
@@ -47,10 +49,20 @@ Borg::Borg(uint32_t opts)
     }
     if (!strcmp(key, "fps"))
       fps = atoi(value);
+    else if (!strcmp(key, "left"))
+      left = atof(value);
+    else if (!strcmp(key, "right"))
+      right = atof(value);
+    else if (!strcmp(key, "scan_duty"))
+      scan_duty = atoi(value);
+    else if (!strcmp(key, "return_duty"))
+      return_duty = atoi(value);
     else if (!strcmp(key, "cam"))
       cam_str = string(value);
     else if (!strncmp(key, "cam_", 4))
       cam_settings[string(key+4)] = atoi(value);
+    else if (!strncmp(key, "stage_", 6))
+      stage_settings[string(key+6)] = string(value);
     else
       printf("unknown key = [%s] with value = [%s]\n", key, value);
   }
@@ -73,6 +85,13 @@ Borg::Borg(uint32_t opts)
       throw std::runtime_error("borg init failed");
     }
   }
+  if (opts & INIT_STAGE)
+  {
+    stage = new Stage();
+    for (map<string,string>::iterator s = stage_settings.begin();
+        s != stage_settings.end(); ++s)
+      stage->set(s->first.c_str(), s->second);
+  }
 }
 
 Borg::~Borg()
@@ -87,37 +106,58 @@ Borg::~Borg()
 struct ScanImage
 {
   uint8_t *raster;
-  double t;
+  double t, pos;
 };
 
 bool Borg::scan()
 {
-  list<ScanImage *> images;
+  stage->setDuty(return_duty);
+  stage->gotoPosition(left, true);
+  stage->setDuty(scan_duty);
+  stage->gotoPosition(right, false);
+  stage->laser(true);
   cam->startImageStream();
-  for (int i = 0; i < 10; i++)
+  ros::Time t_start(ros::Time::now());
+  list<ScanImage *> images;
+  double pos = 0;
+  printf("right = %f\n", right);
+  for (ros::Time t_now(ros::Time::now()); 
+       (t_now - t_start).to_double() < 15 && fabs(pos - right) > 0.5;
+       t_now = ros::Time::now())
   {
+    pos = stage->getPosition(1.0);
+    //printf("%.3f %.3f\n", t_now.to_double(), pos);
     ScanImage *si = new ScanImage;
     si->raster = new uint8_t[640*480];
     si->t = ros::Time::now().to_double();
+    si->pos = pos;
     if (!cam->savePhoto(si->raster))
     {
+      printf("woah! couldn't grab photo\n");
       cam->stopImageStream();
       return false;
     }
     images.push_back(si);
   }
-  printf("captured %d images\n", images.size());
+  stage->laser(false);
+  double dt = (ros::Time::now() - t_start).to_double();
+  printf("captured %d images in %.3f seconds (%.3f fps)\n", 
+         images.size(), dt, images.size() / dt);
   cam->stopImageStream();
   // flush to disk
   for (list<ScanImage *>::iterator i = images.begin(); i != images.end(); ++i)
   {
     char fname[100];
-    snprintf(fname, sizeof(fname), "img_%.6f.pgm", (*i)->t);
+    snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm", (*i)->t, (*i)->pos);
     FILE *f = fopen(fname, "wb");
     if (!f)
       throw std::runtime_error("couldn't open pgm file for output");
     fprintf(f, "P5\n640 480\n255\n");
-    fwrite((*i)->raster, 1, 640 * 480, f);
+    if (640*480 != fwrite((*i)->raster, 1, 640 * 480, f))
+    {
+      printf("couldn't write pgm\n");
+      break;
+    }
     fclose(f);
     delete[] (*i)->raster;
     delete *i;
