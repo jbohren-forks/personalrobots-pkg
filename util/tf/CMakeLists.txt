@@ -5,7 +5,7 @@ rospack(tf)
 genmsg()
 
 rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
-target_link_libraries(tf boost_thread-mt)
+#target_link_libraries(tf boost_thread-mt)
 
 rospack_add_executable(simpletest simpletest.cpp)
 target_link_libraries(simpletest tf)
