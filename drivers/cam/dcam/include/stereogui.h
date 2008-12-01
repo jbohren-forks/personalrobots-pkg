@@ -2,11 +2,6 @@
 
 #ifndef stereogui_h
 #define stereogui_h
-
-#ifdef WIN32
-#pragma warning (disable: 4312 4311)
-#endif
-
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
 #include <FL/Fl_Group.H>
@@ -19,6 +14,7 @@ extern void load_images_cb(Fl_Menu_*, void*);
 extern void save_images_cb(Fl_Menu_*, void*);
 extern void load_params_cb(Fl_Menu_*, void*);
 extern void save_params_cb(Fl_Menu_*, void*);
+extern void video_window_cb(Fl_Menu_*, void*);
 extern void stereo_window_cb(Fl_Menu_*, void*);
 extern void cal_window_cb(Fl_Menu_*, void*);
 #include <FL/Fl_Button.H>
@@ -51,7 +47,16 @@ extern void speckle_cb(Fl_Counter*, void*);
 extern void disparity_cb(Fl_Counter*, void*);
 extern void corrsize_cb(Fl_Counter*, void*);
 extern void xoff_cb(Fl_Counter*, void*);
-extern void do_stereo_cb(Fl_Button*, void*);
+#include <FL/Fl_Light_Button.H>
+extern void do_rectify_cb(Fl_Light_Button*, void*);
+extern void do_stereo_cb(Fl_Light_Button*, void*);
+extern void do_3d_cb(Fl_Light_Button*, void*);
+#include <FL/Fl_Choice.H>
+extern void video_size_cb(Fl_Choice*, void*);
+extern void video_rate_cb(Fl_Choice*, void*);
+extern void do_video_cb(Fl_Light_Button*, void*);
+extern void video_dev_cb(Fl_Choice*, void*);
+extern void do_color_cb(Fl_Light_Button*, void*);
 
 class stereogui {
 public:
@@ -145,7 +150,15 @@ public:
   Fl_Check_Button *fixed_tau_button;
   Fl_Check_Button *zero_disparity_button;
   Fl_Window *stereo_window;
-  Fl_Button *stereo_button;
+  Fl_Light_Button *rectify_button;
+  Fl_Light_Button *stereo_button;
+  Fl_Light_Button *x3d_button;
+  Fl_Window *video_window;
+  static Fl_Menu_Item menu_Size[];
+  static Fl_Menu_Item menu_Rate[];
+  Fl_Light_Button *video_button;
+  Fl_Choice *cam_select;
+  Fl_Light_Button *color_button;
   ~stereogui(); 
 };
 #endif
