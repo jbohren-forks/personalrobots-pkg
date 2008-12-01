@@ -9,8 +9,23 @@ Fl_Menu_Item stereogui::menu_[] = {
  {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0},
+ {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Calibrate...", 0,  (Fl_Callback*)cal_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {0,0,0,0,0,0,0,0,0}
+};
+
+Fl_Menu_Item stereogui::menu_Size[] = {
+ {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {0,0,0,0,0,0,0,0,0}
+};
+
+Fl_Menu_Item stereogui::menu_Rate[] = {
+ {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
@@ -1204,14 +1219,63 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)xoff_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Button* o = stereo_button = new Fl_Button(160, 30, 90, 25, "Do Stereo");
-        stereo_button->down_box(FL_DOWN_BOX);
+      { Fl_Light_Button* o = rectify_button = new Fl_Light_Button(160, 35, 75, 25, "Do Rectify");
+        rectify_button->box(FL_THIN_UP_BOX);
+        rectify_button->labelsize(11);
+        rectify_button->callback((Fl_Callback*)do_rectify_cb);
+        o->user_data((void *)this);
+      } // Fl_Light_Button* rectify_button
+      { Fl_Light_Button* o = stereo_button = new Fl_Light_Button(160, 65, 75, 25, "Do Stereo");
+        stereo_button->box(FL_THIN_UP_BOX);
         stereo_button->labelsize(11);
         stereo_button->callback((Fl_Callback*)do_stereo_cb);
         o->user_data((void *)this);
-      } // Fl_Button* stereo_button
+      } // Fl_Light_Button* stereo_button
+      { Fl_Light_Button* o = x3d_button = new Fl_Light_Button(160, 95, 75, 25, "Do 3D");
+        x3d_button->box(FL_THIN_UP_BOX);
+        x3d_button->labelsize(11);
+        x3d_button->callback((Fl_Callback*)do_3d_cb);
+        o->user_data((void *)this);
+      } // Fl_Light_Button* x3d_button
       o->end();
     } // Fl_Group* o
     stereo_window->end();
   } // Fl_Window* stereo_window
+  { video_window = new Fl_Window(270, 260, "Video");
+    video_window->user_data((void*)(this));
+    { Fl_Group* o = new Fl_Group(20, 85, 285, 170);
+      { Fl_Box* o = new Fl_Box(20, 130, 135, 90, "label");
+        o->box(FL_ENGRAVED_FRAME);
+        o->labeltype(FL_NO_LABEL);
+      } // Fl_Box* o
+      { Fl_Choice* o = new Fl_Choice(60, 140, 90, 20, "Size");
+        o->down_box(FL_BORDER_BOX);
+        o->callback((Fl_Callback*)video_size_cb);
+        o->menu(menu_Size);
+      } // Fl_Choice* o
+      { Fl_Choice* o = new Fl_Choice(60, 165, 90, 20, "Rate");
+        o->down_box(FL_BORDER_BOX);
+        o->callback((Fl_Callback*)video_rate_cb);
+        o->menu(menu_Rate);
+      } // Fl_Choice* o
+      o->end();
+    } // Fl_Group* o
+    { Fl_Group* o = new Fl_Group(20, 30, 285, 170);
+      { Fl_Box* o = new Fl_Box(20, 30, 240, 85);
+        o->box(FL_ENGRAVED_FRAME);
+      } // Fl_Box* o
+      { video_button = new Fl_Light_Button(30, 75, 60, 25, "Video");
+        video_button->callback((Fl_Callback*)do_video_cb);
+      } // Fl_Light_Button* video_button
+      { cam_select = new Fl_Choice(60, 40, 195, 20, "Cam");
+        cam_select->down_box(FL_BORDER_BOX);
+        cam_select->callback((Fl_Callback*)video_dev_cb);
+      } // Fl_Choice* cam_select
+      { color_button = new Fl_Light_Button(115, 75, 60, 25, "Color");
+        color_button->callback((Fl_Callback*)do_color_cb);
+      } // Fl_Light_Button* color_button
+      o->end();
+    } // Fl_Group* o
+    video_window->end();
+  } // Fl_Window* video_window
 }

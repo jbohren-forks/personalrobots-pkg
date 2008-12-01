@@ -69,6 +69,7 @@
 #endif
 #include "stereogui.h"
 #include "stereolib.h"
+#include "stereocam.h"
 
 #include <cv.h>
 #include <cxmisc.h>
@@ -77,8 +78,9 @@
 
 using namespace std;
 
+
 // version of parameter files
-#define MAJORVERSION 1
+#define MAJORVERSION 5
 #define MINORVERSION 0
 
 //
@@ -86,6 +88,17 @@ using namespace std;
 // Read in images
 // Calibrate and write out parameters
 //
+
+cam::StereoDcam *dev = NULL;	// camera object
+int devNum;			// number of devices
+int devIndex;			// camera index in enumeration
+bool isVideo;			// true if video streaming
+bool startCam, stopCam;		// camera device stop and start flags
+bool isColor;			// true if color requested
+bool isRectify;			// true if rectification requested
+bool isStereo;			// true if stereo requested
+bool is3D;			// true if 3D points requested
+bool useSTOC;			// true if we want to use STOC processing
 
 stereogui *stg;			// GUI object
 
@@ -178,6 +191,10 @@ void PrintMat(CvMat *A, FILE *fp = stdout);
 // main program, just put up the GUI dialog
 
 imInfoWindow *iwin = NULL;
+calImageWindow * get_current_left_win();
+calImageWindow * get_current_right_win();
+void info_message(char *str, ...);	// print in the info line
+videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
 
 int
 main(int argc, char **argv)	// no arguments
@@ -198,7 +215,13 @@ main(int argc, char **argv)	// no arguments
     }
   mapx_left = mapy_left = mapx_right = mapy_right = NULL;
   
-
+  // device flags
+  startCam = false;
+  stopCam = false;
+  isVideo = false;
+  devIndex = -1;
+  devNum = 0;
+  useSTOC = true;
 
   // start up dialog window
   stg = new stereogui;
@@ -212,14 +235,146 @@ main(int argc, char **argv)	// no arguments
   iwin = new imInfoWindow(500,400,"OST output");
   iwin->show();
 
-  while (fltk_check())		// process GUI commands
-    {}
+  // get devices
+  dcam::init();
+  int devNum = dcam::numCameras();
+  printf("[Stereocal] Number of cameras: %d\n", devNum);
+
+  // print out GUIDs, vendor, model; set up Video pulldown
+  Fl_Choice *devs = stg->cam_select;
+  for (int i=0; i<devNum; i++)
+    {
+      printf("[Stereocal] Camera %d GUID: %llx  Vendor: %s  Model: %s\n", 
+	     i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
+      char buf[1024];
+      sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
+      devs->add(buf);
+    }
+  if (devNum > 0) 
+    devs->value(0);
+
+
+  static videre_proc_mode_t pmode = PROC_MODE_DISPARITY;
+
+  while (fltk_check())		// process GUI commands, serve video
+    {
+
+      // check for video stream commands
+      if (startCam)
+	{
+	  // have a device?
+	  if (!dev)
+	    {
+	      info_message("[Dcam] Finding first available camera");
+	      dev = new cam::StereoDcam(dcam::getGuid(0));
+	    }
+
+	  info_message("[Dcam] Setting format, frame rate and PROC mode");
+	  dev->setFormat(VIDERE_STEREO_640x480);
+	  dev->setProcMode(pmode);
+	  info_message("[Dcam] Starting device");
+	  dev->start();
+	  isVideo = true;	// needed to keep thread running
+	  startCam = false;
+	}
+
+      if (stopCam)
+	{
+	  if (dev)
+	    {
+	      info_message("[Dcam] Stopping device");
+	      isVideo = false;
+	      dev->stop();
+	      stopCam = false;
+	    }
+	}
+
+      // check for streaming video
+      if (isVideo)
+	{
+	  // check PROC modes, make consistent with requested info
+	  pmode = checkProcMode(pmode);
+
+	  bool ret = dev->getImage(500);
+	  if (ret)
+	    {
+	      int w = dev->stIm->imWidth;
+	      int h = dev->stIm->imHeight;
+
+	      // check processing
+	      if (isRectify)	// rectify images
+		dev->doRectify();
+	      if (isStereo)	// get stereo disparity
+		dev->doDisparity();
+	      if (is3D)		// get 3D points
+		dev->doCalcPts();
+
+
+	      // display left image
+	      calImageWindow *cwin = get_current_left_win();
+	      if (dev->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imRectColor, w, h, w, RGB24);
+	      else if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imRect, w, h, w);
+	      else if (dev->stIm->imLeft->imColorType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imColor, w, h, w, RGB24);
+	      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->im, w, h, w);
+	      
+	      // display right image
+	      cwin = get_current_right_win();
+	      if (dev->stIm->hasDisparity)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imDisp, w, h, w, DISPARITY, 64*16);
+	      else if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imRect, w, h, w);
+	      else if (dev->stIm->imRight->imColorType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imColor, w, h, w, RGB24);
+	      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
+		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->im, w, h, w);
+	    }
+	}
+    }
 }
 
 
 //
 // utility fns
 //
+
+// check PROC mode, reset if necessary
+videre_proc_mode_t
+checkProcMode(videre_proc_mode_t mode)
+{
+  videre_proc_mode_t mm = mode;
+
+  // check STOC processing
+  if (dev->isSTOC && useSTOC)	
+    {
+      if (isStereo && isColor && mode != PROC_MODE_DISPARITY_RAW)
+	mm = PROC_MODE_DISPARITY_RAW;
+      if (isStereo && !isColor && mode != PROC_MODE_DISPARITY)
+	mm = PROC_MODE_DISPARITY;
+      if (!isStereo && isColor && mode != PROC_MODE_NONE)
+	mm = PROC_MODE_NONE;
+      if (!isStereo && !isColor && !isRectify && mode != PROC_MODE_NONE)
+	mm = PROC_MODE_NONE;
+      if (!isStereo && !isColor && isRectify && mode != PROC_MODE_RECTIFIED)
+	mm = PROC_MODE_RECTIFIED;
+    }
+
+  // check non-STOC processing
+  if (dev->isSTOC && !useSTOC)	
+    {
+      if (mode != PROC_MODE_NONE)
+	mm = PROC_MODE_NONE;
+    }
+
+  if (mm != mode)
+    dev->setProcMode(mode);
+  return mm;
+}
+
+
 
 void
 info_message(char *str, ...)	// print in the info line
@@ -1163,14 +1318,43 @@ void cal_epipolar_cb(Fl_Button*, void*)
 
 
 //
+// do rectification
+// assumes rectification warping information is available
+//
+
+void do_rectify_cb(Fl_Light_Button* w, void*)
+{
+  // set flag
+  if (w->value())
+    isRectify = true;
+  else
+    isRectify = false;
+
+  // check for video streaming
+  if (isVideo)
+    return;
+}
+
+//
 // do stereo using new stereolib
-// assumes rectified images in left,right windows
+// checks for stereo capability of STOC device, uses it
+// else does stereo using stereolib on current images
 // 
 
-void do_stereo_cb(Fl_Button*, void*)
+void do_stereo_cb(Fl_Light_Button* w, void*)
 {
   uint8_t *lim, *rim, *flim, *frim, *buf;
   int16_t *disp;
+
+  // set flag
+  if (w->value())
+    isStereo = true;
+  else
+    isStereo = false;
+
+  // check for video streaming
+  if (isVideo)
+    return;
 
   // set window tab
   int ind = 0;
@@ -1260,6 +1444,25 @@ void do_stereo_cb(Fl_Button*, void*)
       cwin->DisplayImage((unsigned char *)lim, xim, yim, xim);
     }
 
+}
+
+
+//
+// do 3d point calculation
+// assumes stereo has been calculated
+//
+
+void do_3d_cb(Fl_Light_Button* w, void*)
+{
+  // set flag
+  if (w->value())
+    is3D = true;
+  else
+    is3D = false;
+
+  // check for video streaming
+  if (isVideo)
+    return;
 }
 
 
@@ -1779,7 +1982,83 @@ void save_params_cb(Fl_Menu_ *w, void *u)
 
 
 
+//
+// video
+//
+
+
+// select device
+void
+video_dev_cb(Fl_Choice *w, void *u)
+{
+  if (devNum > 0)
+    {
+      devIndex = w->value();
+      info_message("[StereoCal] Camera %d selected", devIndex);
+    }
+}
+
+
+// pop it up
+void 
+video_window_cb(Fl_Menu_ *w, void *u)
+{
+  stg->video_window->show();
+}
+
+// video size
+void
+video_size_cb(Fl_Choice *w, void *u)
+{
+  Fl_Menu_ *mw = (Fl_Menu_ *)w;
+  const Fl_Menu_Item* m = mw->mvalue();
+  
+  if (!strcmp(m->label(), "None"))
+    {
+    }
+}
+
+// video rate
+void
+video_rate_cb(Fl_Choice *w, void *u)
+{
+  Fl_Menu_ *mw = (Fl_Menu_ *)w;
+  const Fl_Menu_Item* m = mw->mvalue();
+  
+  if (!strcmp(m->label(), "None"))
+    {
+    }
+}
+
+
+
+// start up video
+void 
+do_video_cb(Fl_Light_Button *w, void*)
+{
+  if (w->value())		// turn it on
+    startCam = true;
+
+  else				// turn it off
+    stopCam = true;
+}
+
+// color in video
+void 
+do_color_cb(Fl_Light_Button *w, void*)
+{
+  if (w->value())		// turn it on
+    isColor = true;
+
+  else
+    isColor = false;
+}
+
+
+
+//
 // utilities
+//
 
 void PrintMat(CvMat *A, FILE *fp)
 {

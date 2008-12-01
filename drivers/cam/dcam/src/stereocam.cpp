@@ -145,6 +145,7 @@ StereoCam::setUniqueThresh(int thresh)
 //
 // Conversion to 3D points
 // Convert to vector or image array of pts
+// Should we do disparity automatically here?
 //
 
 
@@ -152,6 +153,7 @@ bool
 StereoCam::doCalcPts()
 {
   stIm->numPts = 0;
+  doDisparity();
   if (!stIm->hasDisparity)
     return false;
 

@@ -8,7 +8,7 @@ class stereogui {open
   } {
     Fl_Window stereo_calibration {
       label {Open STereo} open
-      xywh {542 50 675 360} type Single labelsize 11 hide
+      xywh {554 140 675 360} type Single labelsize 11 hide
     } {
       Fl_Group {} {open
         xywh {5 25 855 375}
@@ -764,9 +764,14 @@ class stereogui {open
           }
         }
         MenuItem {} {
+          label {Video...}
+          callback video_window_cb
+          xywh {0 0 30 20}
+        }
+        MenuItem {} {
           label {Stereo...}
           callback stereo_window_cb
-          xywh {0 0 30 20}
+          xywh {10 10 30 20}
         }
         MenuItem {} {
           label {Calibrate...}
@@ -776,8 +781,8 @@ class stereogui {open
       }
     }
     Fl_Window cal_window {
-      label Calibration
-      xywh {718 736 305 260} type Single hide
+      label Calibration open
+      xywh {439 264 305 260} type Single hide
     } {
       Fl_Group {} {
         xywh {10 20 160 300}
@@ -917,7 +922,7 @@ class stereogui {open
     }
     Fl_Window stereo_window {
       label Stereo open
-      xywh {190 886 265 260} type Single hide
+      xywh {509 587 265 260} type Single visible
     } {
       Fl_Group {} {open
         xywh {20 135 285 120}
@@ -955,7 +960,7 @@ class stereogui {open
         }
         Fl_Counter {} {
           label {Window:}
-          callback corrsize_cb selected
+          callback corrsize_cb
           xywh {75 60 55 20} type Simple labelsize 11 align 4 minimum 7 maximum 21 step 1 value 15
         }
         Fl_Counter {} {
@@ -963,11 +968,94 @@ class stereogui {open
           callback xoff_cb
           xywh {75 85 55 20} type Simple labelsize 11 align 4 minimum -40 maximum 40 step 1
         }
-        Fl_Button stereo_button {
+        Fl_Light_Button rectify_button {
+          label {Do Rectify}
+          callback do_rectify_cb
+          xywh {160 35 75 25} box THIN_UP_BOX labelsize 11
+          code0 {o->user_data((void *)this);}
+        }
+        Fl_Light_Button stereo_button {
           label {Do Stereo}
           callback do_stereo_cb
-          xywh {160 30 90 25} down_box DOWN_BOX labelsize 11
+          xywh {160 65 75 25} box THIN_UP_BOX labelsize 11
           code0 {o->user_data((void *)this);}
+        }
+        Fl_Light_Button x3d_button {
+          label {Do 3D}
+          callback do_3d_cb
+          xywh {160 95 75 25} box THIN_UP_BOX labelsize 11
+          code0 {o->user_data((void *)this);}
+        }
+      }
+    }
+    Fl_Window video_window {
+      label Video open
+      xywh {491 278 270 260} type Single visible
+    } {
+      Fl_Group {} {open
+        xywh {20 85 285 170}
+      } {
+        Fl_Box {} {
+          label label
+          xywh {20 130 135 90} box ENGRAVED_FRAME labeltype NO_LABEL
+        }
+        Fl_Choice {} {
+          label Size
+          callback video_size_cb
+          xywh {60 140 90 20} down_box BORDER_BOX
+        } {
+          MenuItem {} {
+            label 320x240
+            xywh {0 0 30 20}
+          }
+          MenuItem {} {
+            label 640x480
+            xywh {0 0 30 20}
+          }
+          MenuItem {} {
+            label 1280x960
+            xywh {10 10 30 20}
+          }
+        }
+        Fl_Choice {} {
+          label Rate
+          callback video_rate_cb open
+          xywh {60 165 90 20} down_box BORDER_BOX
+        } {
+          MenuItem {} {
+            label {30 Hz}
+            xywh {10 10 30 20}
+          }
+          MenuItem {} {
+            label {15 Hz}
+            xywh {10 10 30 20}
+          }
+          MenuItem {} {
+            label {7.5 Hz}
+            xywh {20 20 30 20}
+          }
+        }
+      }
+      Fl_Group {} {open
+        xywh {20 30 285 170}
+      } {
+        Fl_Box {} {
+          xywh {20 30 240 85} box ENGRAVED_FRAME
+        }
+        Fl_Light_Button video_button {
+          label Video
+          callback do_video_cb
+          xywh {30 75 60 25}
+        }
+        Fl_Choice cam_select {
+          label Cam
+          callback video_dev_cb open
+          xywh {60 40 195 20} down_box BORDER_BOX
+        } {}
+        Fl_Light_Button color_button {
+          label Color
+          callback do_color_cb selected
+          xywh {115 75 60 25}
         }
       }
     }

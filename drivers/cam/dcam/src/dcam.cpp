@@ -468,6 +468,7 @@ dcam::Dcam::stop()
   if (camFrame)
     CHECK_ERR_CLEAN( dc1394_capture_enqueue(dcCam, camFrame), "Could not release frame");    
 
+  camFrame = NULL;
   CHECK_READY();
   CHECK_ERR_CLEAN( dc1394_video_set_transmission(dcCam, DC1394_OFF),
 		   "Could not stop camera iso transmission");

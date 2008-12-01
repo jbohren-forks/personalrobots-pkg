@@ -63,16 +63,16 @@ main(int argc, char **argv)
 
 
   // open the first camera, and start streaming video
-  cam::StereoDcam *cam;		// camera object
+  cam::StereoDcam *dev;		// camera object
   if (nc > 0)
     {
       // initializing camera
       printf("Initializing camera 0\n");
-      cam = new cam::StereoDcam(dcam::getGuid(0));
+      dev = new cam::StereoDcam(dcam::getGuid(0));
       
       // find modes
       dc1394video_modes_t *modes;
-      modes = cam->getModes();
+      modes = dev->getModes();
       int nm = modes->num;
       printf("Found %d video modes\n", nm);
       if (nm > 0)
@@ -81,16 +81,16 @@ main(int argc, char **argv)
 		 dcam::getModeString(modes->modes[i]));
 
       printf("Setting format to 640x480\n");
-      cam->setFormat(DC1394_VIDEO_MODE_640x480_YUV422);
-      cam->setFormat(VIDERE_STEREO_640x480);
-      //      cam->setFormat(DC1394_VIDEO_MODE_320x240_YUV422); // should throw an error
+      dev->setFormat(DC1394_VIDEO_MODE_640x480_YUV422);
+      dev->setFormat(VIDERE_STEREO_640x480);
+      //      dev->setFormat(DC1394_VIDEO_MODE_320x240_YUV422); // should throw an error
       
       // check STOC mode
       printf("Checking for STOC...\n");
-      if (cam->isSTOC)
+      if (dev->isSTOC)
 	{
 	  printf("  ...Setting STOC mode to PROC_MODE_NONE\n");
-	  cam->setProcMode(PROC_MODE_NONE);
+	  dev->setProcMode(PROC_MODE_NONE);
 	}
       else
 	printf("  ...not a STOC\n");
@@ -108,89 +108,89 @@ main(int argc, char **argv)
 
       // start transmitting
       printf("Starting transmission\n");
-      cam->start();
+      dev->start();
       uint64_t ftime = 0;
 
       // set companding
-      //      cam->setCompanding(true);	// must be set after starting camera
-      cam->setUniqueThresh(12);
-      cam->setTextureThresh(10);
+      //      dev->setCompanding(true);	// must be set after starting camera
+      dev->setUniqueThresh(12);
+      dev->setTextureThresh(10);
 
       for (int i=0; i<200; i++)
 	{
-	  bool res = cam->getImage(500);
+	  bool res = dev->getImage(500);
 	  if (res)
 	    {
 	      if (ftime == 0)
-		ftime = cam->camIm->im_time;
-	      printf("Got frame %d at time +%llu us\n", i, cam->camIm->im_time - ftime);
-	      ftime = cam->camIm->im_time;
+		ftime = dev->camIm->im_time;
+	      printf("Got frame %d at time +%llu us\n", i, dev->camIm->im_time - ftime);
+	      ftime = dev->camIm->im_time;
 
 
 	      t1 = get_ms();
-	      cam->doRectify();	// rectify if it's not done by the STOC
+	      dev->doRectify();	// rectify if it's not done by the STOC
 	      t2 = get_ms();
-	      cam->doDisparity(); // perform stereo processing, if not done by STOC
+	      dev->doDisparity(); // perform stereo processing, if not done by STOC
 	      t3 = get_ms();
-	      cam->doCalcPts();	// get 3D points
+	      dev->doCalcPts();	// get 3D points
 	      t4 = get_ms();
 
 	      printf("Timing - Rect %d ms, Disparity %d ms, Pts %d ms\n", (int)(t2-t1), (int)(t3-t2), (int)(t4-t3));
 
 	      // try displaying 3D points
-	      w3d->DisplayImage(cam->stIm);
+	      w3d->DisplayImage(dev->stIm);
 	      fltk_check();
-	      printf("Num points: %d\n", cam->stIm->numPts);
+	      printf("Num points: %d\n", dev->stIm->numPts);
 
 	      // left window display, try rect, then raw
-	      if (cam->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
+	      if (dev->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
 		{
-		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->imRectColor, 640, 480, 640, RGB24);
+		  win1->DisplayImage((unsigned char *)dev->stIm->imLeft->imRectColor, 640, 480, 640, RGB24);
 		  win1->label("Left rectified image");
 		}
-	      else if (cam->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
 		{
-		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->imRect, 640, 480, 640);
+		  win1->DisplayImage((unsigned char *)dev->stIm->imLeft->imRect, 640, 480, 640);
 		  win1->label("Left rectified image");
 		}
-	      else if (cam->stIm->imLeft->imColorType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imLeft->imColorType != COLOR_CODING_NONE)
 		{
-		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->imColor, 640, 480, 640, RGB24);
+		  win1->DisplayImage((unsigned char *)dev->stIm->imLeft->imColor, 640, 480, 640, RGB24);
 		  win1->label("Left original image");
 		}
-	      else if (cam->stIm->imLeft->imType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
 		{
-		  win1->DisplayImage((unsigned char *)cam->stIm->imLeft->im, 640, 480, 640);
+		  win1->DisplayImage((unsigned char *)dev->stIm->imLeft->im, 640, 480, 640);
 		  win1->label("Left original image");
 		}
 
 	      // right window display, try disp, then rect, then raw
-	      if (cam->stIm->hasDisparity)
+	      if (dev->stIm->hasDisparity)
 		{
-		  win2->DisplayImage((unsigned char *)cam->stIm->imDisp, 640, 480, 640, DISPARITY, 64*16);
+		  win2->DisplayImage((unsigned char *)dev->stIm->imDisp, 640, 480, 640, DISPARITY, 64*16);
 		  win2->label("Disparity image");
 		}
-	      else if (cam->stIm->imRight->imRectType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
 		{
-		  win2->DisplayImage((unsigned char *)cam->stIm->imRight->imRect, 640, 480, 640);
+		  win2->DisplayImage((unsigned char *)dev->stIm->imRight->imRect, 640, 480, 640);
 		  win2->label("Right rectified image");
 		}
-	      else if (cam->stIm->imRight->imColorType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imRight->imColorType != COLOR_CODING_NONE)
 		{
-		  win2->DisplayImage((unsigned char *)cam->stIm->imRight->imColor, 640, 480, 640, RGB24);
+		  win2->DisplayImage((unsigned char *)dev->stIm->imRight->imColor, 640, 480, 640, RGB24);
 		  win2->label("Right original image");
 		}
-	      else if (cam->stIm->imRight->imType != COLOR_CODING_NONE)
+	      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
 		{
-		  win2->DisplayImage((unsigned char *)cam->stIm->imRight->im, 640, 480, 640);
+		  win2->DisplayImage((unsigned char *)dev->stIm->imRight->im, 640, 480, 640);
 		  win2->label("Right original image");
 		}
 	    }
 	}
 
       // freeing camera
-      cam->stop();
-      free(cam);
+      dev->stop();
+      free(dev);
     }
 
   return 0;
