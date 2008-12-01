@@ -393,6 +393,12 @@ void CvMatUtils::transformFromRotationAndShift(
   cvSetReal2D(&transform, 3, 3, 1.0);
 }
 
+#if 0
+
+/**
+ * \brief Solve a linear equation by Cholesky factorization.
+ * Not ready yet.
+ */
 bool CvMatUtils::SolveByCholeskyFact(const double *A, const double* b,
     double* x, int n){
   int i, j, k;
@@ -429,5 +435,5 @@ bool CvMatUtils::SolveByCholeskyFact(const double *A, const double* b,
 }
 
 
-
+#endif
 
