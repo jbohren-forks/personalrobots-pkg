@@ -85,6 +85,10 @@ LINK32=link.exe
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
+SOURCE=..\..\src\utils\2Dgridsearch.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\planners\ADStar\adplanner.cpp
 # End Source File
 # Begin Source File
@@ -144,6 +148,10 @@ SOURCE=..\..\src\planners\VI\viplanner.cpp
 # Begin Group "Header Files"
 
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
+# Begin Source File
+
+SOURCE=..\..\src\utils\2Dgridsearch.h
+# End Source File
 # Begin Source File
 
 SOURCE=..\..\src\planners\ADStar\adplanner.h

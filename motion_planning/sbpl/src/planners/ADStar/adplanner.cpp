@@ -184,7 +184,7 @@ int ADPlanner::ComputeHeuristic(CMDPSTATE* MDPstate, ADSearchStateSpace_t* pSear
 	else
 	{	
 		//backward search: heur = distance from searchgoal to state
-		return environment_->GetFromToHeuristic(pSearchStateSpace->searchgoalstate->StateID, MDPstate->StateID);
+		return environment_->GetStartHeuristic(MDPstate->StateID);
 	}
 
 }

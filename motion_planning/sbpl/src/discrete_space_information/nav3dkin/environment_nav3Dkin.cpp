@@ -41,8 +41,16 @@ EnvironmentNAV3DKIN::EnvironmentNAV3DKIN()
 {
 	EnvNAV3DKINCfg.obsthresh = ENVNAV3DKIN_DEFAULTOBSTHRESH;
 
+	grid2Dsearch = NULL;
+	bNeedtoRecomputeStartHeuristics = true;
 }
 
+EnvironmentNAV3DKIN::~EnvironmentNAV3DKIN()
+{
+	if(grid2Dsearch != NULL)
+		delete grid2Dsearch;
+	grid2Dsearch = NULL;
+}
 
 //---------------------------------------------------------------------
 
@@ -306,23 +314,24 @@ void EnvironmentNAV3DKIN::ReadConfiguration(FILE* fCfg)
 
 void EnvironmentNAV3DKIN::ComputeReplanningDataforAction(EnvNAV3DKINAction_t* action)
 {
+	int j;
 
 	//iterate over all the cells involved in the action
 	EnvNAV3DKIN3Dcell_t startcell3d, endcell3d;
 	for(int i = 0; i < (int)action->intersectingcellsV.size(); i++)
 	{
+
 		//compute the translated affected search Pose - what state has an outgoing action whose intersecting cell is at 0,0
 		startcell3d.theta = action->starttheta;
 		startcell3d.x = - action->intersectingcellsV.at(i).x;
 		startcell3d.y = - action->intersectingcellsV.at(i).y;
 
 		//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
-		endcell3d.theta = startcell3d.theta + action->dTheta;
+		endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAV3DKIN_THETADIRS); 
 		endcell3d.x = startcell3d.x + action->dX; 
 		endcell3d.y = startcell3d.y + action->dY;
 
 		//store the cells if not already there
-		int j;
 		for(j = 0; j < (int)affectedsuccstatesV.size(); j++)
 		{
 			if(affectedsuccstatesV.at(j) == endcell3d)
@@ -340,6 +349,67 @@ void EnvironmentNAV3DKIN::ComputeReplanningDataforAction(EnvNAV3DKINAction_t* ac
 			affectedpredstatesV.push_back(startcell3d);
 
     }//over intersecting cells
+
+	
+
+	//add the centers since with h2d we are using these in cost computations
+	//---intersecting cell = origin
+	//compute the translated affected search Pose - what state has an outgoing action whose intersecting cell is at 0,0
+	startcell3d.theta = action->starttheta;
+	startcell3d.x = - 0;
+	startcell3d.y = - 0;
+
+	//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
+	endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAV3DKIN_THETADIRS); 
+	endcell3d.x = startcell3d.x + action->dX; 
+	endcell3d.y = startcell3d.y + action->dY;
+
+	//store the cells if not already there
+	for(j = 0; j < (int)affectedsuccstatesV.size(); j++)
+	{
+		if(affectedsuccstatesV.at(j) == endcell3d)
+			break;
+	}
+	if (j == (int)affectedsuccstatesV.size())
+		affectedsuccstatesV.push_back(endcell3d);
+
+	for(j = 0; j < (int)affectedpredstatesV.size(); j++)
+	{
+		if(affectedpredstatesV.at(j) == startcell3d)
+			break;
+	}
+	if (j == (int)affectedpredstatesV.size())
+		affectedpredstatesV.push_back(startcell3d);
+
+
+	//---intersecting cell = outcome state
+	//compute the translated affected search Pose - what state has an outgoing action whose intersecting cell is at 0,0
+	startcell3d.theta = action->starttheta;
+	startcell3d.x = - action->dX;
+	startcell3d.y = - action->dY;
+
+	//compute the translated affected search Pose - what state has an incoming action whose intersecting cell is at 0,0
+	endcell3d.theta = NORMALIZEDISCTHETA(startcell3d.theta + action->dTheta, NAV3DKIN_THETADIRS); 
+	endcell3d.x = startcell3d.x + action->dX; 
+	endcell3d.y = startcell3d.y + action->dY;
+
+	for(j = 0; j < (int)affectedsuccstatesV.size(); j++)
+	{
+		if(affectedsuccstatesV.at(j) == endcell3d)
+			break;
+	}
+	if (j == (int)affectedsuccstatesV.size())
+		affectedsuccstatesV.push_back(endcell3d);
+
+	for(j = 0; j < (int)affectedpredstatesV.size(); j++)
+	{
+		if(affectedpredstatesV.at(j) == startcell3d)
+			break;
+	}
+	if (j == (int)affectedpredstatesV.size())
+		affectedpredstatesV.push_back(startcell3d);
+
+
 }
 
 
@@ -411,7 +481,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			double angle = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dX = (int)(cos(angle) + 0.5*(cos(angle)>0?1:-1));
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dY = (int)(sin(angle) + 0.5*(sin(angle)>0?1:-1));
-			EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.cellsize_m/EnvNAV3DKINCfg.nominalvel_mpersecs*sqrt(EnvNAV3DKINCfg.ActionsV[tind][aind].dX*EnvNAV3DKINCfg.ActionsV[tind][aind].dX + 
+			EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT_MTOMM*EnvNAV3DKINCfg.cellsize_m/EnvNAV3DKINCfg.nominalvel_mpersecs*sqrt(EnvNAV3DKINCfg.ActionsV[tind][aind].dX*EnvNAV3DKINCfg.ActionsV[tind][aind].dX + 
 					EnvNAV3DKINCfg.ActionsV[tind][aind].dY*EnvNAV3DKINCfg.ActionsV[tind][aind].dY));
 
 			//compute intersecting cells
@@ -443,7 +513,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = -1; 
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
-		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
+		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT_MTOMM*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
 
 		//compute intersecting cells
 		EnvNAV3DKIN3Dpt_t pose;
@@ -473,7 +543,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta = 1; 
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dX = 0;
 		EnvNAV3DKINCfg.ActionsV[tind][aind].dY = 0;
-		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
+		EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(NAV3DKIN_COSTMULT_MTOMM*EnvNAV3DKINCfg.timetoturn45degsinplace_secs);
 
 		//compute intersecting cells
 		pose.x = DISCXY2CONT(EnvNAV3DKINCfg.ActionsV[tind][aind].dX, EnvNAV3DKINCfg.cellsize_m);
@@ -662,7 +732,15 @@ int EnvironmentNAV3DKIN::GetActionCost(int SourceX, int SourceY, int SourceTheta
 			currentmaxcost = EnvNAV3DKINCfg.Grid2D[cell.x][cell.y];
 	}
 
+	//to ensure consistency of h2D:
+	currentmaxcost = __max(currentmaxcost, EnvNAV3DKINCfg.Grid2D[SourceX][SourceY]);
+	if(!IsValidCell(SourceX + action->dX, SourceY + action->dY))
+		return INFINITECOST;
+	currentmaxcost = __max(currentmaxcost, EnvNAV3DKINCfg.Grid2D[SourceX + action->dX][SourceY + action->dY]);
+
+
 	return action->cost*(currentmaxcost+1); //use cell cost as multiplicative factor
+ 
 }
 
 
@@ -687,7 +765,7 @@ void EnvironmentNAV3DKIN::InitializeEnvironment()
 	EnvNAV3DKIN.goalstateid = HashEntry->stateID;
 }
 
-double EnvironmentNAV3DKIN::EuclideanDistance(int X1, int Y1, int X2, int Y2)
+double EnvironmentNAV3DKIN::EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
 {
     int sqdist = ((X1-X2)*(X1-X2)+(Y1-Y2)*(Y1-Y2));
     return EnvNAV3DKINCfg.cellsize_m*sqrt((double)sqdist);
@@ -840,7 +918,8 @@ void EnvironmentNAV3DKIN::ComputeHeuristicValues()
 	//whatever necessary pre-computation of heuristic values is done here 
 	printf("Precomputing heuristics...\n");
 	
-
+	//allocated 2D grid search
+	grid2Dsearch = new SBPL2DGridSearch(EnvNAV3DKINCfg.EnvWidth_c, EnvNAV3DKINCfg.EnvHeight_c, EnvNAV3DKINCfg.cellsize_m);
 
 	printf("done\n");
 
@@ -945,6 +1024,7 @@ bool EnvironmentNAV3DKIN::InitializeMDPCfg(MDPConfig *MDPCfg)
 
 int EnvironmentNAV3DKIN::GetFromToHeuristic(int FromStateID, int ToStateID)
 {
+
 #if USE_HEUR==0
 	return 0;
 #endif
@@ -964,7 +1044,7 @@ int EnvironmentNAV3DKIN::GetFromToHeuristic(int FromStateID, int ToStateID)
 	EnvNAV3DKINHashEntry_t* ToHashEntry = EnvNAV3DKIN.StateID2CoordTable[ToStateID];
 	
 
-	return (int)(NAV3DKIN_COSTMULT*EuclideanDistance(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAV3DKINCfg.nominalvel_mpersecs);	
+	return (int)(NAV3DKIN_COSTMULT_MTOMM*EuclideanDistance_m(FromHashEntry->X, FromHashEntry->Y, ToHashEntry->X, ToHashEntry->Y)/EnvNAV3DKINCfg.nominalvel_mpersecs);	
 
 }
 
@@ -992,6 +1072,8 @@ int EnvironmentNAV3DKIN::GetGoalHeuristic(int stateID)
 
 int EnvironmentNAV3DKIN::GetStartHeuristic(int stateID)
 {
+
+
 #if USE_HEUR==0
 	return 0;
 #endif
@@ -1005,12 +1087,25 @@ int EnvironmentNAV3DKIN::GetStartHeuristic(int stateID)
 	}
 #endif
 
-    
 
+	if(bNeedtoRecomputeStartHeuristics)
+	{
+		grid2Dsearch->search(EnvNAV3DKINCfg.Grid2D, EnvNAV3DKINCfg.obsthresh, 
+			EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, SBPL_2DGRIDSEARCH_TERM_CONDITION_20PERCENTOVEROPTPATH);
+		bNeedtoRecomputeStartHeuristics = false;
+	}
 
-	//define this function if it used in the planner (heuristic backward search would use it)
-    return GetFromToHeuristic(EnvNAV3DKIN.startstateid, stateID);
+	EnvNAV3DKINHashEntry_t* HashEntry = EnvNAV3DKIN.StateID2CoordTable[stateID];
+	int h2D = grid2Dsearch->getlowerboundoncostfromstart_inmm(HashEntry->X, HashEntry->Y);
+	int hEuclid = NAV3DKIN_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, HashEntry->X, HashEntry->Y);
+		
 
+#if DEBUG
+	fprintf(fDeb, "h2D = %d hEuclid = %d\n", h2D, hEuclid);
+#endif
+
+	//define this function if it is used in the planner (heuristic backward search would use it)
+    return (int)(((double)__max(h2D,hEuclid))/EnvNAV3DKINCfg.nominalvel_mpersecs); 
 
 }
 
@@ -1305,6 +1400,11 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
     }
     EnvNAV3DKIN.goalstateid = OutHashEntry->stateID;
 
+	EnvNAV3DKINCfg.EndX_c = x;
+	EnvNAV3DKINCfg.EndY_c = y;
+	EnvNAV3DKINCfg.EndTheta = theta;
+
+
     return EnvNAV3DKIN.goalstateid;    
 
 }
@@ -1323,7 +1423,6 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 		return -1;
 	}
 
-
     if(!IsValidConfiguration(x,y,theta))
 	{
 		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
@@ -1334,7 +1433,16 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
         //have to create a new entry
         OutHashEntry = CreateNewHashEntry(x, y, theta);
     }
+
+	//need to recompute start heuristics?
+	if(EnvNAV3DKIN.startstateid != OutHashEntry->stateID)
+		bNeedtoRecomputeStartHeuristics = true;
+
+	//set start
     EnvNAV3DKIN.startstateid = OutHashEntry->stateID;
+	EnvNAV3DKINCfg.StartX_c = x;
+	EnvNAV3DKINCfg.StartY_c = y;
+	EnvNAV3DKINCfg.StartTheta = theta;
 
     return EnvNAV3DKIN.startstateid;    
 
@@ -1348,6 +1456,8 @@ bool EnvironmentNAV3DKIN::UpdateCost(int x, int y, unsigned char newcost)
 #endif
 
     EnvNAV3DKINCfg.Grid2D[x][y] = newcost;
+
+	bNeedtoRecomputeStartHeuristics = true;
 
     return true;
 }
@@ -1380,10 +1490,11 @@ void EnvironmentNAV3DKIN::GetPredsofChangedEdges(vector<nav2dcell_t> const * cha
 	EnvNAV3DKIN3Dcell_t affectedcell;
 	EnvNAV3DKINHashEntry_t* affectedHashEntry;
 
+
 	for(int i = 0; i < (int)changedcellsV->size(); i++) 
 	{
 		cell = changedcellsV->at(i);
-		
+			
 		//now iterate over all states that could potentially be affected
 		for(int sind = 0; sind < (int)affectedpredstatesV.size(); sind++)
 		{

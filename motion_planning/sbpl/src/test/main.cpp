@@ -167,7 +167,7 @@ int plan3dkin(int argc, char *argv[])
 	//plan a path
 	vector<int> solution_stateIDs_V;
 	bool bforwardsearch = false;
-	ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
+	ADPlanner planner(&environment_nav3Dkin, bforwardsearch);
 
     if(planner.set_start(MDPCfg.startstateid) == 0)
         {
@@ -456,9 +456,6 @@ int planandnavigate3dkin(int argc, char *argv[])
     FILE* fSol = fopen("sol.txt", "w");
     //int dx[8] = {-1, -1, -1,  0,  0,  1,  1,  1};
     //int dy[8] = {-1,  0,  1, -1,  1, -1,  0,  1};
-	const int numofsensingcells = 16;
-    int dx[numofsensingcells] = {-2, -2, -2, -2, -2, -1, -1,  0,  0,  1,  1,  2,  2,  2,  2,  2}; //used for defining the cells that are sensed
-    int dy[numofsensingcells] = {-2, -1,  0,  1,  2, -2,  2, -2,  2, -2,  2, -2, -1,  0,  1,  2};
 	bool bPrint = false, bPrintMap = false;
 	int x,y;
 	vector<int> preds_of_changededgesIDV;
@@ -498,7 +495,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
 	sbpl_2Dpt_t pt_m;
-	double side = 0.1;
+	double side = 0.03;
 	pt_m.x = -side;
 	pt_m.y = -side;
 	perimeterptsV.push_back(pt_m);
@@ -511,6 +508,39 @@ int planandnavigate3dkin(int argc, char *argv[])
 	pt_m.x = -side;
 	pt_m.y = side;
 	perimeterptsV.push_back(pt_m);
+
+
+	//compute sensing
+	double maxx = 0;
+	double maxy = 0;
+	for(i = 0; i < (int)perimeterptsV.size(); i++)
+	{
+		if(maxx < fabs(perimeterptsV.at(i).x))
+			maxx = fabs(perimeterptsV.at(i).x);
+		if(maxy < fabs(perimeterptsV.at(i).y))
+			maxy = fabs(perimeterptsV.at(i).y);
+	}
+	int sensingrange_c = __max(maxx, maxy)/cellsize_m+2;
+	printf("sensing range=%d cells\n", sensingrange_c);
+	vector<sbpl_2Dcell_t> sensecells;
+	for(i = -sensingrange_c; i <= sensingrange_c; i++)
+	{
+		sbpl_2Dcell_t sensecell;
+
+		sensecell.x = i;
+		sensecell.y = sensingrange_c;
+		sensecells.push_back(sensecell);
+		sensecell.x = i;
+		sensecell.y = -sensingrange_c;
+		sensecells.push_back(sensecell);
+		sensecell.x = sensingrange_c;
+		sensecell.y = i;
+		sensecells.push_back(sensecell);
+		sensecell.x = -sensingrange_c;
+		sensecell.y = i;
+		sensecells.push_back(sensecell);
+	}
+
 
 	//Initialize Environment (should be called before initializing anything else)
     if(!environment_nav3Dkin.InitializeEnv(size_x, size_y, map, startx, starty, starttheta, goalx, goaly, goaltheta, 
@@ -561,9 +591,9 @@ int planandnavigate3dkin(int argc, char *argv[])
         bool bChanges = false;
 		preds_of_changededgesIDV.clear();
 		changedcellsV.clear();
-        for(i = 0; i < numofsensingcells; i++){
-            int x = CONTXY2DISC(startx,cellsize_m) + dx[i];
-            int y = CONTXY2DISC(starty,cellsize_m) + dy[i];
+        for(i = 0; i < (int)sensecells.size(); i++){
+            int x = CONTXY2DISC(startx,cellsize_m) + sensecells.at(i).x;
+            int y = CONTXY2DISC(starty,cellsize_m) + sensecells.at(i).y;
             if(x < 0 || x >= size_x || y < 0 || y >= size_y)
                 continue;
             int index = x + y*size_x;
@@ -649,21 +679,29 @@ int planandnavigate3dkin(int argc, char *argv[])
             int newx, newy, newtheta;
             environment_nav3Dkin.GetCoordFromState(solution_stateIDs_V[1], newx, newy, newtheta);
 
-			if(!trueenvironment_nav3Dkin.IsValidConfiguration(newx,newy,newtheta))
+            printf("moving from %d %d %d to %d %d %d\n", startx_c, starty_c, starttheta_c, newx, newy, newtheta);
+ 
+
+			//this check is weak since true configuration does not know the actual perimeter of the robot
+			if(!trueenvironment_nav3Dkin.IsValidConfiguration(newx,newy,newtheta)) 
+			{
+				printf("ERROR: robot is commanded to move into an invalid configuration\n");
+				exit(1);
+			}
+			if(!environment_nav3Dkin.IsValidConfiguration(newx,newy,newtheta))
 			{
 				printf("ERROR: robot is commanded to move into an invalid configuration\n");
 				exit(1);
 			}
 
             //move
-            printf("moving from %d %d %d to %d %d %d\n", startx_c, starty_c, starttheta_c, newx, newy, newtheta);
             startx = DISCXY2CONT(newx, cellsize_m);
             starty = DISCXY2CONT(newy, cellsize_m);
 			starttheta = DiscTheta2Cont(newtheta, NAV3DKIN_THETADIRS);
 			
             //update the environment
             environment_nav3Dkin.SetStart(startx, starty,starttheta);
-            
+
             //update the planner
             if(planner.set_start(solution_stateIDs_V[1]) == 0){               
                 printf("ERROR: failed to update robot pose in the planner\n");
@@ -772,6 +810,7 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
+    //planandnavigate2d(argc, argv);
 
     //3D planning
     plan3dkin(argc, argv);

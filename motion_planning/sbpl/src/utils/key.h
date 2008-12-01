@@ -38,16 +38,21 @@ class CKey
 //data
 public: 
 	long int key[KEY_SIZE];
-	int key_size;
 
 //constructors
 public:
 	CKey(){
-		key_size = KEY_SIZE;
-		for(int i = 0; i < key_size; i++)
+
+#if KEY_SIZE == 1
+		key[0] = 0;
+#elif KEY_SIZE == 2
+		key[0] = 0; key[1] = 0;
+#else
+		for(int i = 0; i < KEY_SIZE; i++)
 		{	
 			key[i] = 0;
 		}
+#endif
 	};
 	~CKey(){};
 
@@ -55,14 +60,14 @@ public:
 public:
 	void SetKeytoInfinity()
 	{
-		for(int i = 0; i < key_size; i++)
+		for(int i = 0; i < KEY_SIZE; i++)
 		{	
 			key[i] = INFINITECOST;
 		}
 	};
 	void SetKeytoZero()
 	{
-		for(int i = 0; i < key_size; i++)
+		for(int i = 0; i < KEY_SIZE; i++)
 		{	
 			key[i] = 0;
 		}
@@ -77,25 +82,25 @@ public:
 	{
 		//iterate through the keys
 		//the 0ht is the most important key
-		key_size = RHSKey.key_size;
-		for(int i = 0; i < key_size; i++)
+
+#if KEY_SIZE == 1
+		key[0] = RHSKey.key[0];
+#elif KEY_SIZE == 2
+		key[0] = RHSKey.key[0]; key[1] = RHSKey.key[1];
+#else
+		for(int i = 0; i < KEY_SIZE; i++)
 			key[i] = RHSKey.key[i];
+#endif
+
 	};
 
 	CKey operator - (const CKey& RHSKey) const
 	{
 		CKey RetKey;
 
-		if(key_size != RHSKey.key_size)
-		{
-			printf("ERROR: keys should be of the same size for '-' operator\n");
-			exit(1);
-		}
-
 		//iterate through the keys
 		//the 0ht is the most important key
-		RetKey.key_size = key_size;
-		for(int i = 0; i < key_size; i++)
+		for(int i = 0; i < KEY_SIZE; i++)
 			RetKey.key[i] = key[i] - RHSKey.key[i];
 
 		return RetKey;
@@ -106,32 +111,48 @@ public:
 	{
 	  //iterate through the keys
 	  //the 0ht is the most important key
-	  for(int i = 0; i < key_size; i++)
+
+#if KEY_SIZE == 1
+		return (key[0] > RHSKey.key[0]);
+#elif KEY_SIZE == 2
+		return (key[0] > RHSKey.key[0] ||  (key[0] == RHSKey.key[0] && key[1] > RHSKey.key[1]));
+#else
+	  for(int i = 0; i < KEY_SIZE; i++)
 	    {
 	      //compare the current key
 	      if(key[i] > RHSKey.key[i])
-		return true;
+			return true;
 	      else if(key[i] < RHSKey.key[i])
-		return false;
-	    }
-	  
+			return false;
+	    }	  
 	  //all are equal
 	  return false;
+#endif
+
 	};
 
 	bool operator == (CKey& RHSKey)
 	{
 	  //iterate through the keys
 	  //the 0ht is the most important key
-	  for(int i = 0; i < key_size; i++)
+
+#if KEY_SIZE == 1
+		return (key[0] == RHSKey.key[0]);
+#elif KEY_SIZE == 2
+		return (key[0] == RHSKey.key[0] &&  key[1] == RHSKey.key[1]);
+#else
+
+	  for(int i = 0; i < KEY_SIZE; i++)
 	    {
 	      //compare the current key
 	      if(key[i] != RHSKey.key[i])
-		return false;
+			return false;
 	    }
 	  
 	  //all are equal
 	  return true;
+#endif
+
 	};
 
 	bool operator != (CKey& RHSKey)
@@ -141,12 +162,31 @@ public:
 
 	bool operator < (CKey& RHSKey)
 	{	
-	  return (!(*this > RHSKey) && !(*this == RHSKey));
+	  //iterate through the keys
+	  //the 0ht is the most important key
+
+#if KEY_SIZE == 1
+		return (key[0] < RHSKey.key[0]);
+#elif KEY_SIZE == 2
+		return (key[0] < RHSKey.key[0] ||  (key[0] == RHSKey.key[0] && key[1] < RHSKey.key[1]));
+#else
+	  for(int i = 0; i < KEY_SIZE; i++)
+	    {
+	      //compare the current key
+	      if(key[i] < RHSKey.key[i])
+			return true;
+	      else if(key[i] > RHSKey.key[i])
+			return false;
+	    }	  
+	  //all are equal
+	  return false;	
+#endif
+
 	};
 
 	bool operator >= (CKey& RHSKey)
 	{
-	  return ((*this > RHSKey) || (*this == RHSKey));
+	  return !(*this < RHSKey);
 	};
 
 	bool operator <= (CKey& RHSKey)

@@ -66,7 +66,7 @@ using namespace std;
 #include "planners/VI/viplanner.h"
 #include "planners/ARAStar/araplanner.h"
 #include "planners/ADStar/adplanner.h"
-
+#include "utils/2Dgridsearch.h"
 
 #endif
 

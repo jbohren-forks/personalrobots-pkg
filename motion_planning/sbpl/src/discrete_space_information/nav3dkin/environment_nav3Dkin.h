@@ -33,7 +33,7 @@
 //eight-connected grid
 #define NAV3DKIN_DXYWIDTH 8
 
-#define ENVNAV3DKIN_DEFAULTOBSTHRESH 1	//see explanation of the value below
+#define ENVNAV3DKIN_DEFAULTOBSTHRESH 253	//see explanation of the value below
 
 
 //definition of theta orientations
@@ -45,7 +45,7 @@
 //number of actions per x,y,theta state
 #define NAV3DKIN_ACTIONWIDTH 5 //decrease, increase, same angle while moving plus decrease, increase angle while standing.
 
-#define NAV3DKIN_COSTMULT 1000
+#define NAV3DKIN_COSTMULT_MTOMM 1000
 
 typedef struct{
 	double x;
@@ -138,7 +138,7 @@ typedef struct
 
 }EnvironmentNAV3DKIN_t;
 
-
+class SBPL2DGridSearch;
 
 class EnvironmentNAV3DKIN : public DiscreteSpaceInformation
 {
@@ -191,7 +191,7 @@ public:
 	const EnvNAV3DKINConfig_t* GetEnvNavConfig();
 
 
-    ~EnvironmentNAV3DKIN(){};
+    ~EnvironmentNAV3DKIN();
 
     void PrintTimeStat(FILE* fOut);
   
@@ -235,6 +235,9 @@ public:
 	vector<EnvNAV3DKIN3Dcell_t> affectedsuccstatesV; //arrays of states whose outgoing actions cross cell 0,0
 	vector<EnvNAV3DKIN3Dcell_t> affectedpredstatesV; //arrays of states whose incoming actions cross cell 0,0
 	
+	//2D search for heuristic computations
+	bool bNeedtoRecomputeStartHeuristics;
+	SBPL2DGridSearch* grid2Dsearch;
 
  	void ReadConfiguration(FILE* fCfg);
 
@@ -274,7 +277,7 @@ public:
 
 	int GetActionCost(int SourceX, int SourceY, int SourceTheta, EnvNAV3DKINAction_t* action);
 
-	double EuclideanDistance(int X1, int Y1, int X2, int Y2);
+	double EuclideanDistance_m(int X1, int Y1, int X2, int Y2);
 
 	void ComputeReplanningData();
 	void ComputeReplanningDataforAction(EnvNAV3DKINAction_t* action);

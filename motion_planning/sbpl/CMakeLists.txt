@@ -14,6 +14,7 @@ rospack_add_library(sbpl
                          src/utils/heap.cpp
                          src/utils/mdp.cpp
                          src/utils/utils.cpp
+						 src/utils/2Dgridsearch.cpp
 			 )
 # Build executables in the bin directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
