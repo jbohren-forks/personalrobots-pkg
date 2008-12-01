@@ -393,6 +393,41 @@ void CvMatUtils::transformFromRotationAndShift(
   cvSetReal2D(&transform, 3, 3, 1.0);
 }
 
+bool CvMatUtils::SolveByCholeskyFact(const double *A, const double* b,
+    double* x, int n){
+  int i, j, k;
+  double* buf = (double*)cvStackAlloc((n*(n+1)/2+n*2)*sizeof(buf[0]));
+  double* L0 = buf + n, *L = L0;
+  double* y = L + (n+1)*n/2;
+  double s;
+
+  // step one: compute L: A = L*L'
+  for( i = 0; i < n; ++i, L += i, A += n )
+  {
+    double si = 0;
+    const double* tL = L0;
+    for( j = 0; j < i; ++j, tL += j )
+    {
+      for( k = 0, s = 0; k < j; k++ )
+        s += L[k]*tL[k];
+      L[j] = (A[j] - s)*buf[j];
+      si += L[j]*L[j];
+    }
+    si = A[i] - si;
+    if( si < DBL_EPSILON )
+      return false;
+    L[i] = sqrt(si);
+    buf[i] = 1./L[i];
+  }
+
+  for( j = 0; j < n; j++ )
+    y[j] = 0;
+
+  // step two: solve Ly = b for y, then L'x = y for x.
+
+  return true;
+}
+
 
 
 

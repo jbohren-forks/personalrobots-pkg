@@ -761,11 +761,15 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     tracks.oldest_frame_index_in_tracks_ = oldest_index;
   }
 
-  int full_free_window_size = 5;
+  int full_free_window_size  = 5;
   int full_fixed_window_size = 5;
-  int num_good_updates = 500;
+  int num_good_updates = 5000;
+  double epsilon = DBL_EPSILON;
+//  epsilon = FLT_EPSILON;
+//  epsilon = LDBL_EPSILON;
+//  epsilon = .1e-10;
   CvTermCriteria term_criteria =
-    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,DBL_EPSILON);
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,epsilon);
 
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
       full_free_window_size, full_fixed_window_size, term_criteria);
@@ -802,6 +806,9 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     }
     cvReleaseMat(&xyzsNoised);
   }
+
+  string output_dir("Output");
+  tracks.save(output_dir);
 
   int numFreeFrames = free_frames.size();
   CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
@@ -898,8 +905,9 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
   int iPoints=0;
   BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
-    printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
-        p->coordinates_.y, p->coordinates_.z);
+//    printf("point %3d, [%9.4f, %9.4f, %9.4f]\n",
+    printf("point %3d, [%9.7e, %9.7e, %9.7e]\n",
+        p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
     cvmSet(points_est, iPoints, 0, p->coordinates_.x);
     cvmSet(points_est, iPoints, 1, p->coordinates_.y);
     cvmSet(points_est, iPoints, 2, p->coordinates_.z);

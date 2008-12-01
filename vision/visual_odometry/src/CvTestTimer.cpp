@@ -92,8 +92,8 @@ void CvTestTimer::printStat() {
   PRINTSTATSBA("SBA::Derivatives     ", SBADerivatives);
   PRINTSTATSBA("SBA::DerivativesHpp  ", SBADerivativesHpp);
   PRINTSTATSBA("SBA::DerivHppInv     ", SBADerivativesHppInv);
-  PRINTSTATSBA("SBA::DerivativesHcc  ", SBADerivativesHcc);
-  PRINTSTATSBA("SBA::DerivativesHpc  ", SBADerivativesHpc);
+  PRINTSTATSBA("SBA::DerivativesJc   ", SBADerivativesJc);
+  PRINTSTATSBA("SBA::DerivHccHpc     ", SBADerivativesHccHpc);
 	PRINTSTATSBA("SBA::FwdTransfMats   ", SBAFwdTransfMats);
 	PRINTSTATSBA("SBA::OuterProdOfTrack", SBAOuterProdOfTrack);
 	PRINTSTATSBA("SBA::LinearSolving   ", SBALinearSolving);

@@ -73,8 +73,8 @@ public:
     RESET(SBADerivatives);
     RESET(SBADerivativesHpp);
     RESET(SBADerivativesHppInv);
-    RESET(SBADerivativesHcc);
-    RESET(SBADerivativesHpc);
+    RESET(SBADerivativesJc);
+    RESET(SBADerivativesHccHpc);
     RESET(SBAFwdTransfMats);
     RESET(SBAOuterProdOfTrack);
     RESET(SBALinearSolving);
@@ -128,8 +128,8 @@ public:
   DECLARE(SBADerivatives);
   DECLARE(SBADerivativesHpp);
   DECLARE(SBADerivativesHppInv);
-  DECLARE(SBADerivativesHcc);
-  DECLARE(SBADerivativesHpc);
+  DECLARE(SBADerivativesJc);
+  DECLARE(SBADerivativesHccHpc);
   DECLARE(SBAFwdTransfMats);
   DECLARE(SBAOuterProdOfTrack);
   DECLARE(SBALinearSolving);

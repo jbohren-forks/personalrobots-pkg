@@ -12,6 +12,7 @@
 #include <list>
 #include <deque>
 #include <vector>
+#include <string>
 using namespace std;
 
 class PointTrackObserv {
@@ -112,6 +113,8 @@ public:
   /// that are older than oldestFrameIndex
   void purge(int oldestFrameIndex);
   void print() const;
+  void save(string& dir) const;
+  static PointTracks* load(string& dir, int start, int end);
   /// collection stats of the tracks
   void stats(int *numTracks, int *maxLen, int* minLen, double *avgLen,
       /// histogram of the length of the tracks

@@ -490,7 +490,7 @@ bool LevMarqSparseBundleAdj::optimize(
           // in each parameter.
           int frame_li = obsv->local_frame_index_;
 
-          TIMERSTART2(SBADerivativesHcc);
+          TIMERSTART2(SBADerivativesJc);
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
 
@@ -499,11 +499,11 @@ bool LevMarqSparseBundleAdj::optimize(
                 Jc[k], Jc[NUM_CAM_PARAMS + k], Jc[2*NUM_CAM_PARAMS + k]);
 
             // compute the Jacobian regarding this point and this cam
-            Jc[                   k] = (Jc[k]-rx)*scale;
+            Jc[                   k] = (Jc[                   k]-rx)*scale;
             Jc[  NUM_CAM_PARAMS + k] = (Jc[  NUM_CAM_PARAMS + k]-ry)*scale;
             Jc[2*NUM_CAM_PARAMS + k] = (Jc[2*NUM_CAM_PARAMS + k]-rz)*scale;
           }
-          TIMEREND2(SBADerivativesHcc);
+          TIMEREND2(SBADerivativesJc);
 #if DEBUG2==1
           {
             printf("Jacobian Jc of point %d, on frame %d,%d, error=[%f,%f,%f]\n",
@@ -516,11 +516,11 @@ bool LevMarqSparseBundleAdj::optimize(
           double *A_data_cc = getABlock(frame_li, frame_li);
           double *mat_B_data_c  = getBBlock(frame_li);
           double *Hpc = obsv->Hpc_;
+          TIMERSTART2(SBADerivativesHccHpc);
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
-            TIMERSTART2(SBADerivativesHcc);
             double Jcx = Jc[k];
-            double Jcy = Jc[k+NUM_CAM_PARAMS];
-            double Jcz = Jc[k+2*NUM_CAM_PARAMS];
+            double Jcy = Jc[k +  NUM_CAM_PARAMS];
+            double Jcz = Jc[k +2*NUM_CAM_PARAMS];
             // JtJ entry, H_{cc}, aka block(c,c)
             // augment the diagonal entries
             A_data_cc[k*A_step_ + k] +=
@@ -530,21 +530,19 @@ bool LevMarqSparseBundleAdj::optimize(
               A_data_cc[k*A_step_ + l] +=
                 Jcx * Jc[l] + Jcy * Jc[l+NUM_CAM_PARAMS] + Jcz * Jc[l+2*NUM_CAM_PARAMS];
             }
-            TIMEREND2(SBADerivativesHcc);
-            TIMERSTART2(SBADerivativesHpc);
             // H_{pc}, aka, block (p, c),
             for (int d=0; d<NUM_POINT_PARAMS; d++) {
               // compute entry (d, k) of Hpc = (col d of Jp)^T (col k of Jc)
               Hpc[d*NUM_CAM_PARAMS + k] =
                 Jp[d]*Jcx + Jp[NUM_POINT_PARAMS + d]*Jcy + Jp[2*NUM_POINT_PARAMS + d]*Jcz;
             }
-            TIMEREND2(SBADerivativesHpc);
             // Subtract Jc^T f from part c of right hand side vector B
             mat_B_data_c[k] -= Jcx*rx + Jcy*ry + Jcz*rz;
 #if DEBUG2==1
             printf("row %d of B=%f, %f\n", k, mat_B_data_c[k], -(Jcx*rx + Jcy*ry + Jcz*rz));
 #endif
           }
+          TIMEREND2(SBADerivativesHccHpc);
 #if DEBUG2==1
           {
             CvMat mat_Hpc = cvMat(3, 6, CV_64FC1, Hpc);
@@ -830,7 +828,8 @@ bool LevMarqSparseBundleAdj::optimize(
     constructTransfMatrices();
     cost_ = costFunction(free_frames, tracks);
 #if DEBUG==1
-    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n", iUpdates, iters, cost_, prev_cost_);
+    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n",
+        iUpdates, iters, cost_, prev_cost_);
 #endif
 
     if (cost_ <= prev_cost_) {
