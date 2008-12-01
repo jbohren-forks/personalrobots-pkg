@@ -4,8 +4,8 @@
     maximum flow/minimum cut of a graph.  This is a header-only library.
   </description>
   <author>Yuri Boykov and Vladimir Kolmogorov</author>
-  <license>"Research-only"</license>
-  <review status="unreviewed" notes=""/>
+  <license>Research-only</license>
+  <review status="3rdparty" notes=""/>
   <url>http://www.cs.adastral.ucl.ac.uk/~vnk/software.html</url>
   <export>
     <cpp cflags="-I${prefix}/src" lflags=""/>

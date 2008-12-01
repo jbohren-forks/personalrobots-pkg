@@ -10,7 +10,7 @@ many of matplotlib's figures and features as possible.
 </description>
 <author>Ken McIvor</author>
 <license>MIT</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://agni.phys.iit.edu/~kmcivor/wxmpl/</url>
 <export>
   <doxymaker external="http://agni.phys.iit.edu/~kmcivor/wxmpl/documentation/reference/" />

@@ -4,7 +4,7 @@ Provides an easy way of editing properties in wxWidgets.
 </description>
 <author>Jaakko Salli</author>
 <license url="http://www.opensource.org/licenses/wxwindows.php">wxWindows</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://wxpropgrid.sourceforge.net</url>
 <export>
   <cpp lflags="-L${prefix}/propgrid_install/lib -lwxcode_gtk2u_propgrid-2.8" cflags="-I${prefix}/propgrid_install/include -D__NOTWXPYTHON__"/>

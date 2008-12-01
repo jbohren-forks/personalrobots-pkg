@@ -39,7 +39,7 @@
 #include <sstream>
 #include <map>
 
-#include <ros/node.h>
+#include "rosconsole/rosconsole.h"
 
 namespace trajectory
 {

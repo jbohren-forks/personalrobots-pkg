@@ -6,7 +6,7 @@ The Sick LIDAR Matlab/C++ Toolbox offers stable and easy-to-use C++ drivers for 
 </description>
 <author>Jason Derenik</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://sicktoolbox.sourceforge.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/sicktoolbox/lib -L${prefix}/sicktoolbox/lib -lsicklms-1.0" cflags="-I${prefix}/sicktoolbox/include"/>

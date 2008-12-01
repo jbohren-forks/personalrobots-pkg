@@ -8,7 +8,7 @@
 
 <author>The SciPy developers scipy-dev@scipy.org </author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://www.scipy.org/</url>
 <depend package="numpy"/>
 <sysdepend os="osx" version="10.5.4" package="g95"/>

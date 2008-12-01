@@ -8,7 +8,7 @@ library in a way that can be managed by the ROS dependency system.
 </description>
 <author>Many; see the web page.</author>
 <license>LGPL</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://ffmpeg.mplayerhq.hu</url>
 <export>
   <cpp cflags="-I${prefix}/ffmpeg/include" lflags="-L${prefix}/ffmpeg/lib -Wl,-rpath,${prefix}/ffmpeg/lib -lavcodec -lavdevice -lavformat -lavutil" />

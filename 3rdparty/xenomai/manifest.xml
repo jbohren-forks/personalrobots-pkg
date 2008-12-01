@@ -9,7 +9,7 @@ over Linux 2.6.24.19 for the AOpen system
 </description>
 <author>Xenomai - Philippe Gerum et al, Linux - Linus Torvaalds et al</author>
 <license>Xenomai: LGPL, Linux: GPL</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://www.xenomai.org/ http://www.kernel.org</url>
 <export>
   <cpp lflags="`${prefix}/xenomai/bin/xeno-config --posix-ldflags`" cflags="`${prefix}/xenomai/bin/xeno-config --posix-cflags`"/>

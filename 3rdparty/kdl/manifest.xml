@@ -3,7 +3,7 @@
 </description>
 <author>Advait Jain, Sachin Chitta</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://pr.willowgarage.net</url>
 <export>
   <cpp cflags="-I${prefix}/kdl/include" lflags="-Wl,-rpath,${prefix}/kdl/lib  -L${prefix}/kdl/lib -lorocos-kdl"/>

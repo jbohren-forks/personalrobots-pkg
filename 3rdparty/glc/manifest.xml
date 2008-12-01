@@ -4,7 +4,7 @@
   </description>
   <author>Pyry Haulos</author>
   <license url="http://nullkey.ath.cx/projects/glc/wiki/HowtoPackaging">zlib, GPL, CDDL</license>
-  <review status="unreviewed" notes=""/>
+  <review status="3rdparty" notes=""/>
   <url>http://nullkey.ath.cx/projects/glc/</url>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libasound2-dev"/>
 </package>

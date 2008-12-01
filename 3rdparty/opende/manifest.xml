@@ -7,7 +7,7 @@ This package contains Open Dynamics Engine OpenDE or ODE
 </description>
 <author>Russel Smith</author>
 <license>LGPL</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://opende.sf.net</url>
 <export>
   <cpp lflags="-Wl,-rpath,${prefix}/opende/lib `${prefix}/opende/bin/ode-config --libs`" cflags="`${prefix}/opende/bin/ode-config --cflags`"/>

@@ -7,7 +7,7 @@ An Open Source implementation of the EtherCAT protocol
 </description>
 <author>Tom Panis</author>
 <license>GPL</license>
-<review status="unreviewed" notes=""/>
+<review status="3rdparty" notes=""/>
 <url>http://ethercatmaster.berlios.de/</url>
 <depend package="rtnet"/>
 <export>

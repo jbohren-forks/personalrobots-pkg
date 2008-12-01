@@ -5,7 +5,7 @@
     For successful compilation, remove Qt3 development tools (qt3-dev-tools,libqt3-headers) to prevent conflict with Qt4.
   </description>
   <license>LGPL</license>
-  <review status="unreviewed" notes=""/>
+  <review status="3rdparty" notes=""/>
   <export>
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
   </export>

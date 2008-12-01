@@ -1,5 +1,6 @@
 <package>
 <author>Federico</author>
+<license>BSD</license>
 <depend package="roscpp" />
 <depend package="std_msgs" />
 <depend package="opencv_latest" />
