@@ -134,7 +134,6 @@ namespace TREX {
       ros::init(argc, NULL);
       new Executive();
     }
-    s_id->addRef();
     return s_id;
   }
 
@@ -239,6 +238,7 @@ namespace TREX {
    */
   void Executive::run(){
     if (play_back_) {
+      ROS_INFO("Stepping the executive.\n");
       agent_clock_->doStart();    
       TREX::LogManager::instance().handleInit();
       while (!((TREX::PlaybackClock*)agent_clock_)->isTimedOut()) {
@@ -249,6 +249,7 @@ namespace TREX {
       }
     } else {
       try{
+	ROS_INFO("Running the executive.\n");
 	TREX::Agent::instance()->run();
       }
       catch(const char * str){
@@ -267,23 +268,6 @@ namespace TREX {
     }
   }
 
-  void Executive::release() {
-    if (Executive::s_id->decRef()) {
-      ROS_INFO("Terminating ROS node.\n");
-      Executive::s_id->shutdown();
-      delete (Executive*)s_id;
-      s_id = ExecutiveId::noId();
-    }
-  }
-
-  void Executive::addRef() {
-    m_refCount++;
-  }
-
-  bool Executive::decRef() {
-    m_refCount--;
-    return m_refCount == 0;
-  }
 }
 
 /**
@@ -291,7 +275,7 @@ namespace TREX {
  */
 void cleanup(){
   node->shutdown();
-  node->release();
+  delete (ros::node*) node;
   exit(0);
 }
 

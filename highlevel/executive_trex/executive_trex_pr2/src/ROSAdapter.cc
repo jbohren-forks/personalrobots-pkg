@@ -50,7 +50,6 @@ namespace TREX {
   }
 
   ROSAdapter::~ROSAdapter() {
-    m_node->release();
   }
 
   bool ROSAdapter::synchronize(){
