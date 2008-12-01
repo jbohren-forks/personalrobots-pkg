@@ -17,7 +17,7 @@
   <depend package="std_msgs" />
   <depend package="pr2_msgs" />
   <depend package="robot_kinematics" />
-  <depend package="rosout" />
+  <depend package="rosconsole" />
   <depend package="trajectory" />
   <depend package="rosthread" />
   <depend package="angles" />
