@@ -424,9 +424,14 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
       }
 
       CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
-      CvMat mat_disp_coord_est_ = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
+      CvPoint3D64f disp_coord_est;
+      disp_coord_est.x = track->coordinates_.x + obsv->disp_res_.x;
+      disp_coord_est.y = track->coordinates_.y + obsv->disp_res_.y;
+      disp_coord_est.z = track->coordinates_.z + obsv->disp_res_.z;
+//      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
+      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &disp_coord_est);
 
-      cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est_, mat_global_to_disp);
+      cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est, mat_global_to_disp);
     }
 #endif
 
@@ -434,7 +439,13 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     int i=0;
     deque<PointTrackObserv*>::const_iterator iObsv = track->begin();
     CvPoint pt0     = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_);
-    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
+    CvPoint3D64f disp_coord_est;
+    disp_coord_est.x = track->coordinates_.x + (*iObsv)->disp_res_.x;
+    disp_coord_est.y = track->coordinates_.y + (*iObsv)->disp_res_.y;
+    disp_coord_est.z = track->coordinates_.z + (*iObsv)->disp_res_.z;
+
+    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
+//    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
 #if DEBUG==1
     printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track->id_, track->size(),
         track->coordinates_.x, track->coordinates_.y, track->coordinates_.z);
@@ -449,7 +460,12 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     }
     for (iObsv++; iObsv != track->end(); iObsv++) {
       CvPoint pt1     = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_);
-      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
+      disp_coord_est.x = track->coordinates_.x + (*iObsv)->disp_res_.x;
+      disp_coord_est.y = track->coordinates_.y + (*iObsv)->disp_res_.y;
+      disp_coord_est.z = track->coordinates_.z + (*iObsv)->disp_res_.z;
+
+      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
+//      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
 
       // draw the line between estimations, re-projected
       cvLine(canvasTracking.Ipl(), est_pt0, est_pt1, colorEstimated, thickness, CV_AA);

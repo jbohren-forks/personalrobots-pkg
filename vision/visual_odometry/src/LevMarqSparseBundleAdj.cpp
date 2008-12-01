@@ -413,16 +413,19 @@ bool LevMarqSparseBundleAdj::optimize(
         double pv = obsv->disp_coord_.y;
         double pd = obsv->disp_coord_.z;
 
-#if 1 // the following shall be done by now
         // get a reference of the transformation matrix from global to disp
-        int local_index = map_index_global_to_local_[obsv->frame_index_];
-        double* transf_global_disp = getTransf(obsv->frame_index_, local_index);
+        double* transf_global_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
+
+#if 0
 
         // compute the error vector for this point
         PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz, pu, pv, pd,
             rx, ry, rz);
-
-        // @todo compute the err norm here, instead of doing it separately
+#else
+        // rx, ry, rz have been computed already in costFunction()
+        rx = obsv->disp_res_.x;
+        ry = obsv->disp_res_.y;
+        rz = obsv->disp_res_.z;
 #endif
 #if DEBUG2==1
         printf("obsv on frame %d: [%f, %f, %f] <=> err [%f, %f, %f]\n",
@@ -512,11 +515,11 @@ bool LevMarqSparseBundleAdj::optimize(
           }
 #endif
 
+          TIMERSTART2(SBADerivativesHccHpc);
           // update the JtJ entry corresponding to it, block (c, c)
           double *A_data_cc = getABlock(frame_li, frame_li);
           double *mat_B_data_c  = getBBlock(frame_li);
           double *Hpc = obsv->Hpc_;
-          TIMERSTART2(SBADerivativesHccHpc);
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double Jcx = Jc[k];
             double Jcy = Jc[k +  NUM_CAM_PARAMS];
@@ -1058,27 +1061,46 @@ double LevMarqSparseBundleAdj::costFunction(
   double err_norm = 0;
 
   /// For each tracks
-  BOOST_FOREACH(PointTrack* track, tracks->tracks_) {
-    CvMat point = cvMat(1, 1, CV_64FC3, &track->param_);
+  BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
+    CvMat point = cvMat(1, 1, CV_64FC3, &p->param_);
+
+    double px = p->param_.x;
+    double py = p->param_.y;
+    double pz = p->param_.z;
+
     /// For each observation of the track
-    BOOST_FOREACH(PointTrackObserv* obsv, *track) {
+    BOOST_FOREACH(PointTrackObserv* obsv, *p) {
       if (isDontCareFrame(obsv->frame_index_) == true) {
         // we do not consider this frame anymore.
         continue;
       }
 
+      double *transf_global_to_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
+      double rx, ry, rz;
+
+#if 0 // use OpenCV calls
       CvMat disp_point = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_);
       CvMat disp_point_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
-
-      double *transf_global_to_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
-
       CvMat mat_global_to_disp = cvMat(4, 4, CV_64FC1, transf_global_to_disp);
 
       cvPerspectiveTransform(&point, &disp_point_est, &mat_global_to_disp);
-      double dx = obsv->disp_coord_.x - obsv->disp_coord_est_.x;
-      double dy = obsv->disp_coord_.y - obsv->disp_coord_est_.y;
-      double dz = obsv->disp_coord_.z - obsv->disp_coord_est_.z;
-      err_norm += dx*dx + dy*dy + dz*dz;
+      rx = obsv->disp_coord_.x - obsv->disp_coord_est_.x;
+      ry = obsv->disp_coord_.y - obsv->disp_coord_est_.y;
+      rz = obsv->disp_coord_.z - obsv->disp_coord_est_.z;
+#else
+      {
+        double pu = obsv->disp_coord_.x;
+        double pv = obsv->disp_coord_.y;
+        double pd = obsv->disp_coord_.z;
+        // compute the error vector for this point
+        PERSTRANSFORMRESIDUE(transf_global_to_disp, px, py, pz, pu, pv, pd,
+            rx, ry, rz);
+      }
+#endif
+      obsv->disp_res_.x = rx;
+      obsv->disp_res_.y = ry;
+      obsv->disp_res_.z = rz;
+      err_norm += rx*rx + ry*ry + rz*rz;
     }
   }
 

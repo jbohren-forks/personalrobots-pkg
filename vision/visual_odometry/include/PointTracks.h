@@ -19,7 +19,11 @@ class PointTrackObserv {
 public:
   PointTrackObserv(const int fi, const CvPoint3D64f& coord, const int keypointIndex):
     frame_index_(fi),
-    disp_coord_(coord), disp_coord_est_(coord),
+    disp_coord_(coord),
+#if 0 // removed
+    disp_coord_est_(coord),
+#endif
+    disp_res_(cvPoint3D64f(0.,0.,0.)),
     keypoint_index_(keypointIndex),
     local_frame_index_(-1),
     mat_Hpc_(cvMat(3, 6, CV_64FC1, Hpc_)),
@@ -32,9 +36,14 @@ public:
   int           frame_index_;
   /// observed disparity coordinates of the point in this frame
   CvPoint3D64f  disp_coord_;
+#if 0 // removed
+  /// @todo replace disp_coord_est by disp_res
   /// re-projected disparity coordinate of the point from global estimation,
   /// initially set the same as disp_coord_
   CvPoint3D64f  disp_coord_est_;
+#endif
+  /// residue between observation and estimation (re-projected disparity coordinates)
+  CvPoint3D64f  disp_res_;
   /// the index of this point in the keypoint list of the frame
   int           keypoint_index_;
 
