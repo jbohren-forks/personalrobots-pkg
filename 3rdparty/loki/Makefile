@@ -2,6 +2,7 @@ all: build
 
 SVN_DIR = loki-svn
 SVN_URL = https://loki-lib.svn.sourceforge.net/svnroot/loki-lib/tags/Release_0_1_5
+sVN_PATCH = gcc4.3.patch
 SVN_REVISION =
 include $(shell rospack find mk)/svn_checkout.mk
 

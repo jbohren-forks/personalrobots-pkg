@@ -1,0 +1,57 @@
+Index: test/SmartPtr/main.cpp
+===================================================================
+--- test/SmartPtr/main.cpp	(revision 906)
++++ test/SmartPtr/main.cpp	(working copy)
+@@ -998,7 +998,7 @@
+ 
+ // ----------------------------------------------------------------------------
+ 
+-int main( unsigned int , const char * [] )
++int main( int , const char * [] )
+ {
+ 
+     DoRefLinkTests();
+Index: include/loki/AssocVector.h
+===================================================================
+--- include/loki/AssocVector.h	(revision 906)
++++ include/loki/AssocVector.h	(working copy)
+@@ -22,7 +22,7 @@
+ #include <functional>
+ #include <vector>
+ #include <utility>
+-
++#include <cstring>
+ namespace Loki
+ {
+ ////////////////////////////////////////////////////////////////////////////////
+Index: include/loki/SmallObj.h
+===================================================================
+--- include/loki/SmallObj.h	(revision 906)
++++ include/loki/SmallObj.h	(working copy)
+@@ -23,6 +23,7 @@
+ #include "Threads.h"
+ #include "Singleton.h"
+ #include <cstddef>
++#include <climits>
+ #include <new> // needed for std::nothrow_t parameter.
+ 
+ #ifndef LOKI_DEFAULT_CHUNK_SIZE
+Index: include/loki/SafeFormat.h
+===================================================================
+--- include/loki/SafeFormat.h	(revision 906)
++++ include/loki/SafeFormat.h	(working copy)
+@@ -22,11 +22,13 @@
+ // $Header$
+ 
+ #include <cstdio>
+-#include <string>
++#include <cstdlib>
++#include <cstring>
+ #include <stdexcept>
+ #include <utility>
+ #include <cassert>
+ #include <locale>
++#include <climits>
+ 
+ #include <loki/LokiExport.h>
+ 
