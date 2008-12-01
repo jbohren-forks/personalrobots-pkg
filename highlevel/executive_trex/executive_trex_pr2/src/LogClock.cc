@@ -17,7 +17,9 @@ namespace TREX {
       m_gets(0), m_tick(0),
       m_secondsPerTick(secondsPerTick) {
     pthread_mutex_init(&m_lock, NULL);
-    m_file = fopen(findFile("./latest/clock.log").c_str(), "w");
+    std::string file_name = LogManager::instance().file_name("clock.log");
+    // Open the file in the oupt directory designated by TREX_LOG_DIR
+    m_file = fopen(findFile(file_name.c_str()).c_str(), "w");
   }
 
   void LogClock::start(){
