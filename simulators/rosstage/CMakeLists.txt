@@ -3,4 +3,4 @@ include(rosbuild)
 rospack(rosstage)
 rospack_add_executable(rosstage rosstage.cc)
 
-rospack_add_rostest_future(test/hztest.xml)
+rospack_add_rostest(test/hztest.xml)

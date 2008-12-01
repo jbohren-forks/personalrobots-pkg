@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <node pkg="rosstage" type="rosstage" args="world/willow-erratic.world"/>
+  <node pkg="rosstage" type="rosstage" args="-g world/willow-erratic.world"/>
 
   <!-- Test for publication of 'scan' topic -->
   <!-- Run hztest -->
