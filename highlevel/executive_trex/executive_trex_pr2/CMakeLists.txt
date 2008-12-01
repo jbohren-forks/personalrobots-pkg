@@ -53,7 +53,8 @@ rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 # not received in time
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 
-#rospack_add_rostest(wpc.0/test.xml)
-#rospack_add_rostest(wpc.1/test.xml)
-#rospack_add_rostest(wpc.2/test.xml)
+rospack_add_rostest(wpc.0/test.xml)
+rospack_add_rostest(wpc.1/test.xml)
+rospack_add_rostest(wpc.2/test.xml)
+rospack_add_rostest(miles.0/test.xml)
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)
