@@ -1097,7 +1097,7 @@ int EnvironmentNAV3DKIN::GetStartHeuristic(int stateID)
 
 	EnvNAV3DKINHashEntry_t* HashEntry = EnvNAV3DKIN.StateID2CoordTable[stateID];
 	int h2D = grid2Dsearch->getlowerboundoncostfromstart_inmm(HashEntry->X, HashEntry->Y);
-	int hEuclid = NAV3DKIN_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, HashEntry->X, HashEntry->Y);
+	int hEuclid = (int)(NAV3DKIN_COSTMULT_MTOMM*EuclideanDistance_m(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, HashEntry->X, HashEntry->Y));
 		
 
 #if DEBUG

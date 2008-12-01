@@ -520,7 +520,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 		if(maxy < fabs(perimeterptsV.at(i).y))
 			maxy = fabs(perimeterptsV.at(i).y);
 	}
-	int sensingrange_c = __max(maxx, maxy)/cellsize_m+2;
+	int sensingrange_c = (int)(__max(maxx, maxy)/cellsize_m) + 2;
 	printf("sensing range=%d cells\n", sensingrange_c);
 	vector<sbpl_2Dcell_t> sensecells;
 	for(i = -sensingrange_c; i <= sensingrange_c; i++)
