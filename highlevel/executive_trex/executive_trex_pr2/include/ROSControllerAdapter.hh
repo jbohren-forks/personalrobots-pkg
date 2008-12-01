@@ -72,6 +72,7 @@ namespace TREX {
       // initialize, which will likely be a message subscription error or an absence of an expected publisher
       // to initialize state.
       if(state == UNDEFINED){
+	ROS_DEBUG("ROSControllerAdapter <%s> failed to get an observation with no initial state set yet", timelineName.c_str());
 	throw "ROSControllerAdapter: Tried to get an observation on with no initial state set yet.";
       }
 
