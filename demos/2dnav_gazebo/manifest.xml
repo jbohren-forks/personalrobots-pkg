@@ -17,4 +17,5 @@
   <depend package="pr2_gui"/>
   <depend package="world_3d_map"/>
   <depend package="highlevel_controllers"/>
+  <depend package="executive_trex_pr2"/>
 </package>
