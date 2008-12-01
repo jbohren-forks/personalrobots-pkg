@@ -99,7 +99,7 @@ private:
   bool complete;
   bool start;
   
-
+  ros::node* node;
   robot_msgs::DiagnosticMessage diagnostic_message_;
   robot_msgs::TestData test_data_;
  

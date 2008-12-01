@@ -42,7 +42,7 @@ namespace controller {
 ROS_REGISTER_CONTROLLER(SineSweepController)
 
 SineSweepController::SineSweepController():
-joint_state_(NULL), robot_(NULL)
+joint_state_(NULL), robot_(NULL), node(ros::node::instance())
 {
   test_data_.test_name ="sinesweep";
   test_data_.time.resize(80000);
@@ -58,7 +58,7 @@ joint_state_(NULL), robot_(NULL)
   sweep_=NULL;
   duration_ =0.0;
   initial_time_=0;
-  count_=1;
+  count_=0;
   done_=0;
 }
 
@@ -73,7 +73,7 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
   joint_state_ = robot->getJointState(name);
   sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
-  
+  node->advertise<robot_msgs::TestData>( "/test_data", 0 );
   test_data_.arg_value[0]=first_mode;
   test_data_.arg_value[1]=second_mode;
   test_data_.arg_value[2]=error_tolerance;
@@ -103,19 +103,20 @@ bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *co
 void SineSweepController::update()
 {
   double time = robot_->hw_->current_time_;
-  if (count_<80000)
-  { 
+  
+  
+  if((time-initial_time_)<=duration_)
+  {
+    joint_state_->commanded_effort_ = sweep_->update(time-initial_time_);
+    if (count_<80000 && !done_)
+    { 
     test_data_.time[count_]=time;
     test_data_.cmd[count_]=joint_state_->commanded_effort_;
     test_data_.effort[count_]=joint_state_->applied_effort_;
     test_data_.position[count_]=joint_state_->position_;
     test_data_.velocity[count_]=joint_state_->velocity_;
     count_++;
-  }
-  
-  if((time-initial_time_)<=duration_)
-  {
-    joint_state_->commanded_effort_ = sweep_->update(time-initial_time_);
+    }
   }
   else if(!done_)
   {
@@ -146,10 +147,9 @@ void SineSweepController::analysis()
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
   
-  ros::node* node;
+
   if ((node = ros::node::instance()) != NULL)
   {
-    node->advertise<robot_msgs::TestData>( "/test_data", 0 );
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);
   }
