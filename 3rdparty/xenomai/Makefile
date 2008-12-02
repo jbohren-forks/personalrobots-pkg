@@ -7,7 +7,7 @@ SVN_REVISION = -r $(XENOMAI_REVISION)
 SVN_PATCH = ipipe.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
-build: SVN_UP xenomai
+build: SVN_UP_REVERT_PATCH xenomai
 
 configured: $(SVN_DIR) linux Makefile
 	cd $(SVN_DIR) && mkdir -p build && cd build && ../configure --prefix=$(PWD)/xenomai --enable-x86-sep --enable-x86-tsc --enable-smp --disable-dox-doc
