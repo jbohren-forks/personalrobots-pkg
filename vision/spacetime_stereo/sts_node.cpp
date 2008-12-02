@@ -69,7 +69,7 @@ Advanced use: in some particular cases (e.g. smooth surfaces without big dispari
 #include <std_msgs/Image.h>
 #include "limits.h"
 #include "image_utils/cv_bridge.h"
-#include <vector.h>
+#include <vector>
 
 #include <std_msgs/String.h>
 #include <string>
@@ -213,7 +213,7 @@ free(unique);
 
 
 
-void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp, string cal_string);
+void spacetime_stereo(std::vector<IplImage*> left_frames, std::vector<IplImage*> right_frames, unsigned int nImages, short int* disp, string cal_string);
 //void extract_cal_params(String cal_string, calib_params cpar);
 
 // -- ROS Node class for getting Videre images.
@@ -231,8 +231,8 @@ class SpacetimeStereoNode : public ros::node
 	bool IsCal;	
 	//calib_params cpar;
 
-	vector<IplImage*> left_frames;
-	vector<IplImage*> right_frames;
+	std::vector<IplImage*> left_frames;
+	std::vector<IplImage*> right_frames;
 	unsigned int nImages;
 	short int* disp;
 		
@@ -266,7 +266,7 @@ class SpacetimeStereoNode : public ros::node
 	}
 	
 	//void compute_point_cloud(calib_params cpar, short int* disp, int w, int h);
-	void spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int *disp, string cal_string);
+	void spacetime_stereo(std::vector<IplImage*> left_frames, std::vector<IplImage*> right_frames, unsigned int nImages, short int *disp, string cal_string);
 
 	void processCal(){
 		//printf("Got a cal message\n");
@@ -426,7 +426,7 @@ free(acc);
 }
 
 
-void SpacetimeStereoNode::spacetime_stereo(vector<IplImage*> left_frames, vector<IplImage*> right_frames, unsigned int nImages, short int* disp, string cal_string){
+void SpacetimeStereoNode::spacetime_stereo(std::vector<IplImage*> left_frames, std::vector<IplImage*> right_frames, unsigned int nImages, short int* disp, string cal_string){
 
 	par.radius = RADIUS;
 	par.maxdisp = MAXDISP;
