@@ -9,6 +9,7 @@
   <review status="proposal cleared" notes=""/>
   <!-- <depend package="stl_utils" /> -->
   <depend package="std_msgs" />
+  <depend package="rosconsole" />
   <!-- <depend package="newmat10" /> -->
   <!-- <depend package="boost" /> -->
   <!-- <depend package="xmlparam" /> -->

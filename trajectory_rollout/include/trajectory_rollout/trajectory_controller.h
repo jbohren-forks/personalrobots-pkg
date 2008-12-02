@@ -43,6 +43,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <rosconsole/rosconsole.h>
 
 //For transform support
 #include "tf/transform_listener.h"

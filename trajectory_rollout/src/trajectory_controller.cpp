@@ -242,7 +242,7 @@ void TrajectoryController::generateTrajectory(double x, double y, double theta, 
     
     //if a point on this trajectory has no clear path to goal it is invalid
     if(impossible_cost <= goal_dist || impossible_cost <= path_dist){
-      printf("No path to goal with goal distance = %f, path_distance = %f and max cost = %f\n", goal_dist, path_dist, impossible_cost);
+      ROS_DEBUG("No path to goal with goal distance = %f, path_distance = %f and max cost = %f", goal_dist, path_dist, impossible_cost);
       traj.cost_ = -1.0;
       return;
     }
@@ -541,7 +541,7 @@ Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose,
   
   //make sure that we update our path based on the global plan and compute costs
   setPathCells();
-  printf("Path/Goal distance computed\n");
+  ROS_DEBUG("Path/Goal distance computed");
 
   
   global_pose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
@@ -552,7 +552,7 @@ Trajectory TrajectoryController::findBestPath(tf::Stamped<tf::Pose> global_pose,
   Trajectory best = createTrajectories(global_pose.getOrigin().getX(), global_pose.getOrigin().getY(), yaw, 
       global_vel.getOrigin().getX(), global_vel.getOrigin().getY(), velYaw, 
       acc_lim_x_, acc_lim_y_, acc_lim_theta_);
-  printf("Trajectories created\n");
+  ROS_DEBUG("Trajectories created");
 
   /*
   //If we want to print a ppm file to draw goal dist
