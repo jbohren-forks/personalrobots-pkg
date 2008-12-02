@@ -480,11 +480,6 @@ namespace controller
 
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
-  };
-
-    /** \brief A namespace ostream overload for displaying parameters */
-  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
-
     /*
      * \brief pointer to ros node
      */
@@ -493,6 +488,11 @@ namespace controller
      * \brief save service name prefix for unadvertise on exit
      */
     std::string service_prefix;
+  };
+
+    /** \brief A namespace ostream overload for displaying parameters */
+  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+
 }
 
 
