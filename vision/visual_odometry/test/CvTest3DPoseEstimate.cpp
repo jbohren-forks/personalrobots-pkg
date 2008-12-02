@@ -767,7 +767,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   double epsilon = DBL_EPSILON;
 //  epsilon = FLT_EPSILON;
 //  epsilon = LDBL_EPSILON;
-//  epsilon = .1e-10;
+//  epsilon = .1e-12;
   CvTermCriteria term_criteria =
     cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,epsilon);
 
@@ -779,13 +779,17 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   // the fixed windows
   fixed_frames.push_back(frame_poses[0]);
+  fixed_frames.push_back(frame_poses[1]);
+  fixed_frames.push_back(frame_poses[2]);
+  fixed_frames.push_back(frame_poses[3]);
+  fixed_frames.push_back(frame_poses[4]);
 
   // the free windows
-  free_frames.push_back(frame_poses[1]);
-  free_frames.push_back(frame_poses[2]);
-  free_frames.push_back(frame_poses[3]);
-  free_frames.push_back(frame_poses[4]);
   free_frames.push_back(frame_poses[5]);
+  free_frames.push_back(frame_poses[6]);
+  free_frames.push_back(frame_poses[7]);
+  free_frames.push_back(frame_poses[8]);
+  free_frames.push_back(frame_poses[9]);
 
   // disturb the point parameters.
   if (disturb_points == true) {
@@ -833,8 +837,12 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     }
   }
 
+  double transpose_transl_data[3];
+  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
   if (disturb_frames == true) {
     // disturb the frame parameters
+    printf("Disturbed Free Frames\n");
 
     double disturb_scale = .001;
     double sigma = disturb_scale/2.0; // ~ 95%
@@ -846,6 +854,22 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
       for (int i=0; i<6; i++) {
         rod_shift[i] += cvmGet(xyzsNoised, iFrames, i);
       }
+      // update the transformation matrix of fp
+      CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+
+      printf("transf of frame: %d\n", fp->mIndex);
+      CvMatUtils::printMat(&fp->transf_local_to_global_);
+      // in Euler angle and translation
+      CvMat rot, transl;
+      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+      CvPoint3D64f euler;
+      CvMatUtils::rotMatToEuler(rot, euler);
+      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+      printf("In Euler angle and translation:\n");
+      printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+      cvTranspose(&transl, &transpose_transl);
+      CvMatUtils::printMat(&transpose_transl, "%9.4f");
+
       iFrames++;
     }
 
@@ -858,8 +882,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   printf("Number of good updates: %d\n", sba.num_good_updates_);
   printf("Number of retractions:  %d\n", sba.num_retractions_);
 
-  double transpose_transl_data[3];
-  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
   BOOST_FOREACH(const FramePose* fp, free_frames) {
     printf("transf of frame: %d\n", fp->mIndex);
     CvMatUtils::printMat(&fp->transf_local_to_global_);
@@ -905,8 +927,8 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
   int iPoints=0;
   BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
-//    printf("point %3d, [%9.4f, %9.4f, %9.4f]\n",
-    printf("point %3d, [%9.7e, %9.7e, %9.7e]\n",
+    printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
+//    printf("point %3d, [%9.7e, %9.7e, %9.7e]\n",
         p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
     cvmSet(points_est, iPoints, 0, p->coordinates_.x);
     cvmSet(points_est, iPoints, 1, p->coordinates_.y);
