@@ -52,9 +52,16 @@ do {(rx) = TRANSFORM_X(T, x0, y0, z0) - (x1); \
 /// compute residue for perspective transformation
 #define PERSTRANSFORMRESIDUE(T, x0, y0, z0, x1, y1, z1, rx, ry, rz) \
  do {double _s = 1.0/TRANSFORM_W(T, x0, y0, z0);\
-	(rx) = TRANSFORM_X(T, x0, y0, z0)*_s - (x1); \
-	(ry) = TRANSFORM_Y(T, x0, y0, z0)*_s - (y1); \
-	(rz) = TRANSFORM_Z(T, x0, y0, z0)*_s - (z1);} while (0)
+  (rx) = TRANSFORM_X(T, x0, y0, z0)*_s - (x1); \
+  (ry) = TRANSFORM_Y(T, x0, y0, z0)*_s - (y1); \
+  (rz) = TRANSFORM_Z(T, x0, y0, z0)*_s - (z1);} while (0)
+
+/// compute residue for perspective transformation
+#define PERSTRANSFORMRESIDUE2(T, x0, y0, z0, x1, y1, z1, Tx_p, Ty_p, Tz_p, Tw_p, rx, ry, rz) \
+ do {double _s = 1.0/(Tw_p=TRANSFORM_W(T, x0, y0, z0));\
+  (rx) = (Tx_p=TRANSFORM_X(T, x0, y0, z0))*_s - (x1); \
+  (ry) = (Ty_p=TRANSFORM_Y(T, x0, y0, z0))*_s - (y1); \
+  (rz) = (Tz_p=TRANSFORM_Z(T, x0, y0, z0))*_s - (z1);} while (0)
 
 /**
  * Template class for fast matrix operations over 3x3 matrices.

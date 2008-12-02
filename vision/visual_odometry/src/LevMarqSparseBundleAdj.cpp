@@ -47,7 +47,7 @@
 
 #define DEBUG2 0
 
-#define DEBUG 1
+//#define DEBUG 1
 
 #define CHECKTIMING 1
 
@@ -436,7 +436,7 @@ bool LevMarqSparseBundleAdj::optimize(
         if (isDontCareFrame(obsv->frame_index_) == true) {
           continue;
         }
-        TIMERSTART2(SBADerivativesHpp);
+//        TIMERSTART2(SBADerivativesHpp);
 
         double rx, ry, rz;
         double pu = obsv->disp_coord_.x;
@@ -459,7 +459,7 @@ bool LevMarqSparseBundleAdj::optimize(
         printf("obsv on frame %d: [%f, %f, %f] <=> err [%f, %f, %f]\n",
             obsv->frame_index_, pu, pv, pd, rx, ry, rz);
 #endif
-#if 1
+#if 0
         // compute the residue w.r.t. the point parameters with a delta increment
         // in each parameter.
         // use the same buffer for Jacobian (3x3) of the error vector for point p.
@@ -484,37 +484,67 @@ bool LevMarqSparseBundleAdj::optimize(
         Jp[2] = (frx - rx)*scale;
         Jp[5] = (fry - ry)*scale;
         Jp[8] = (frz - rz)*scale;
-#endif
-#if 1
+#else
         // Jacobian Jp shall be estimated exact.
+#if 0
         // dot product of t[0,*] and [p, 1]
-        double t0_p = TRANSFORM_X(transf_global_disp, px, py, pz);
+        double Tx_p = TRANSFORM_X(transf_global_disp, px, py, pz);
         // dot product of t[1,*] and [p, 1]
-        double t1_p = TRANSFORM_Y(transf_global_disp, px, py, pz);
+        double Ty_p = TRANSFORM_Y(transf_global_disp, px, py, pz);
         // dot product of t[2,*] and [p, 1]
-        double t2_p = TRANSFORM_Z(transf_global_disp, px, py, pz);
+        double Tz_p = TRANSFORM_Z(transf_global_disp, px, py, pz);
         // dot product of t[3,*] and [p, 1]
-        double t3_p = TRANSFORM_W(transf_global_disp, px, py, pz);
-        double scale0 = 1./(t3_p*t3_p);
-        double Jp2[3*3];
-        Jp2[0*3 + 0] =  (transf_global_disp[0*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
-        Jp2[0*3 + 1] =  (transf_global_disp[0*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
-        Jp2[0*3 + 2] =  (transf_global_disp[0*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
+        double Tw_p = TRANSFORM_W(transf_global_disp, px, py, pz);
+        double scale1 = 1./(Tw_p*Tw_p);
+#else
+        /// @todo shall we compute Jp at the same place where we compute cost function?
+        // dot product of t[0,*] and [p, 1]
+        double Tx_p = obsv->T_p_[0];
+        // dot product of t[1,*] and [p, 1]
+        double Ty_p = obsv->T_p_[1];
+        // dot product of t[2,*] and [p, 1]
+        double Tz_p = obsv->T_p_[2];
+        // dot product of t[3,*] and [p, 1]
+        double Tw_p = obsv->T_p_[3];
+        double scale0 = 1./Tw_p;
+        double scale1 = scale0*scale0;
+#endif
+//        double Jp2[3*3];
+#if 1
+        Jp[0*3 + 0] =  (transf_global_disp[0*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tx_p)*scale1;
+        Jp[0*3 + 1] =  (transf_global_disp[0*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tx_p)*scale1;
+        Jp[0*3 + 2] =  (transf_global_disp[0*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tx_p)*scale1;
 
-        Jp2[1*3 + 0] =  (transf_global_disp[1*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
-        Jp2[1*3 + 1] =  (transf_global_disp[1*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
-        Jp2[1*3 + 2] =  (transf_global_disp[1*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
+        Jp[1*3 + 0] =  (transf_global_disp[1*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Ty_p)*scale1;
+        Jp[1*3 + 1] =  (transf_global_disp[1*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Ty_p)*scale1;
+        Jp[1*3 + 2] =  (transf_global_disp[1*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Ty_p)*scale1;
 
-        Jp2[2*3 + 0] =  (transf_global_disp[2*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
-        Jp2[2*3 + 1] =  (transf_global_disp[2*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
-        Jp2[2*3 + 2] =  (transf_global_disp[2*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
+        Jp[2*3 + 0] =  (transf_global_disp[2*4 + 0]*Tw_p - transf_global_disp[3*4 + 0]*Tz_p)*scale1;
+        Jp[2*3 + 1] =  (transf_global_disp[2*4 + 1]*Tw_p - transf_global_disp[3*4 + 1]*Tz_p)*scale1;
+        Jp[2*3 + 2] =  (transf_global_disp[2*4 + 2]*Tw_p - transf_global_disp[3*4 + 2]*Tz_p)*scale1;
+#else
+        double scale_x = Tx_p*scale1;
+        double scale_y = Ty_p*scale1;
+        double scale_z = Tz_p*scale1;
+        Jp[0*3 + 0] =  transf_global_disp[0*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_x;
+        Jp[0*3 + 1] =  transf_global_disp[0*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_x;
+        Jp[0*3 + 2] =  transf_global_disp[0*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_x;
+
+        Jp[1*3 + 0] =  transf_global_disp[1*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_y;
+        Jp[1*3 + 1] =  transf_global_disp[1*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_y;
+        Jp[1*3 + 2] =  transf_global_disp[1*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_y;
+
+        Jp[2*3 + 0] =  transf_global_disp[2*4 + 0]*scale0 - transf_global_disp[3*4 + 0]*scale_z;
+        Jp[2*3 + 1] =  transf_global_disp[2*4 + 1]*scale0 - transf_global_disp[3*4 + 1]*scale_z;
+        Jp[2*3 + 2] =  transf_global_disp[2*4 + 2]*scale0 - transf_global_disp[3*4 + 2]*scale_z;
+#endif
 #endif
 #if DEBUG==1
         {
           printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
               obsv->frame_index_, obsv->local_frame_index_);
           CvMatUtils::printMat(mat_Jp);
-#if 1
+#if 0
           CvMat mat_Jp2 = cvMat(3, 3, CV_64FC1, Jp2);
           CvMatUtils::printMat(&mat_Jp2);
 #endif
@@ -538,7 +568,7 @@ bool LevMarqSparseBundleAdj::optimize(
           bp[d0] -= Jpx * rx + Jpy * ry + Jpz * rz;
         }
 
-        TIMEREND2(SBADerivativesHpp);
+//        TIMEREND2(SBADerivativesHpp);
         //     If camera c is free
         if (isFreeFrame(obsv->frame_index_) == true){
           // Add \f$ J_c^TJ_c \f$ (optionally with an augmented diagonal)
@@ -553,7 +583,7 @@ bool LevMarqSparseBundleAdj::optimize(
           // in each parameter.
           int frame_li = obsv->local_frame_index_;
 
-          TIMERSTART2(SBADerivativesJc);
+//          TIMERSTART2(SBADerivativesJc);
           for (int k=0; k<NUM_CAM_PARAMS; k++) {
             double* transf_fwd_global_disp = getTransfFwd(frame_li, k);
 
@@ -566,7 +596,7 @@ bool LevMarqSparseBundleAdj::optimize(
             Jc[  NUM_CAM_PARAMS + k] = (Jc[  NUM_CAM_PARAMS + k]-ry)*scale;
             Jc[2*NUM_CAM_PARAMS + k] = (Jc[2*NUM_CAM_PARAMS + k]-rz)*scale;
           }
-          TIMEREND2(SBADerivativesJc);
+//          TIMEREND2(SBADerivativesJc);
 #if DEBUG2==1
           {
             printf("Jacobian Jc of point %d, on frame %d,%d, error=[%f,%f,%f]\n",
@@ -575,7 +605,7 @@ bool LevMarqSparseBundleAdj::optimize(
           }
 #endif
 
-          TIMERSTART2(SBADerivativesHccHpc);
+//          TIMERSTART2(SBADerivativesHccHpc);
           // update the JtJ entry corresponding to it, block (c, c)
           double *A_data_cc = getABlock(frame_li, frame_li);
           double *mat_B_data_c  = getBBlock(frame_li);
@@ -605,7 +635,7 @@ bool LevMarqSparseBundleAdj::optimize(
             printf("row %d of B=%f, %f\n", k, mat_B_data_c[k], -(Jcx*rx + Jcy*ry + Jcz*rz));
 #endif
           }
-          TIMEREND2(SBADerivativesHccHpc);
+//          TIMEREND2(SBADerivativesHccHpc);
 #if DEBUG2==1
           {
             CvMat mat_Hpc = cvMat(3, 6, CV_64FC1, Hpc);
@@ -634,7 +664,7 @@ bool LevMarqSparseBundleAdj::optimize(
       CvMatUtils::printMat(&mat_Hpp);
 #endif
 
-      TIMERSTART2(SBADerivativesHppInv);
+//      TIMERSTART2(SBADerivativesHppInv);
       // Augment diagonal of Hpp.
       for (int i=0; i<NUM_POINT_PARAMS; i++) {
         Hpp[i*NUM_POINT_PARAMS+i] *= lambda_plus_one;
@@ -667,7 +697,7 @@ bool LevMarqSparseBundleAdj::optimize(
         tp[i] = Hpp_inv[i*NUM_POINT_PARAMS +0] * bp[0] +
           Hpp_inv[i*NUM_POINT_PARAMS +1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS +2]*bp[2];
       }
-      TIMEREND2(SBADerivativesHppInv);
+//      TIMEREND2(SBADerivativesHppInv);
       TIMEREND2(SBADerivatives);
 
 #if DEBUG2==1
@@ -1151,8 +1181,8 @@ double LevMarqSparseBundleAdj::costFunction(
         double pv = obsv->disp_coord_.y;
         double pd = obsv->disp_coord_.z;
         // compute the error vector for this point
-        PERSTRANSFORMRESIDUE(transf_global_to_disp, px, py, pz, pu, pv, pd,
-            rx, ry, rz);
+        PERSTRANSFORMRESIDUE2(transf_global_to_disp, px, py, pz, pu, pv, pd,
+            obsv->T_p_[0], obsv->T_p_[1], obsv->T_p_[2], obsv->T_p_[3], rx, ry, rz);
       }
 #endif
       obsv->disp_res_.x = rx;

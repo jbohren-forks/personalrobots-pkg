@@ -44,6 +44,8 @@ public:
 #endif
   /// residue between observation and estimation (re-projected disparity coordinates)
   CvPoint3D64f  disp_res_;
+  /// The dot product between the point and the rows of the matrix global_to_disp
+  double        T_p_[4];
   /// the index of this point in the keypoint list of the frame
   int           keypoint_index_;
 
