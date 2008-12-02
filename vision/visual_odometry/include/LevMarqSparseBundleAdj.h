@@ -49,8 +49,9 @@
 
 namespace cv { namespace willow {
 
-/// A special Levenberg-Marquardt for bundle adjustment in visual odometry.
-/// The implementation of this class more or less follows this paper,
+/// \brief A special Levenberg-Marquardt for bundle adjustment in visual odometry.
+///
+/// The implementation of this class was based on the following paper,
 /// "Bundle Adjustment Rules", by Chris Engles, Henrik Stewenius, and David Nister,
 /// Photogrammetric Computer Vision (PCV), September 2006.
 ///
@@ -66,17 +67,21 @@ public:
       int full_free_window_size,
       /// max number of fixed frames(cameras)
       int full_fixed_window_size,
-      /// termination criteria
+      /// termination criteria. max_iter specifies the max number of iterations
+      /// allowed, including both good updates and retractions in Levenberg-Marquardt
+      /// epsilon specifies the maximum change in parameter to declare convergence.
+      /// Specifically, we declare convergence if the relative L2-norm of
+      /// the difference vector between the parameters of two consecutive iterations
+      /// is less than epsilon.
       CvTermCriteria term_criteria0 =
         cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,30,DBL_EPSILON) );
   virtual ~LevMarqSparseBundleAdj();
-  /// Bundle-adjustment of a set of frames and tracks of points.
-  /// The parameters are used as input as well as output.
+  // see .cpp file for detailed documentation.
   bool optimize(
-      /// The window of frames. For a free frame, the transformation matrix
+      /// The set of free frames. The transformation matrix
       /// is used as initial value in entry and output in exit.
       vector<FramePose*>* freeFrames,
-      //// all the frames so far.
+      /// The set of fixed frames.
       vector<FramePose*>* fixedFrames,
       /// The tracks of points. The global coordinates for each track are
       /// used as initial value in entry and output in exit.
@@ -112,9 +117,10 @@ protected:
       const CvMat *param, double delta, double *transf_fwds_data);
   void constructTransfMatrix(const CvMat* param, double _T[]);
 
-  /// compute the 2-norm of the differences of parameters between last
+  /// compute the relative 2-norm of the difference vector of parameters between last
   /// iteration and this one.
   double getParamChange(const PointTracks* tracks) const;
+  /// compute the change in point parameters between last iteration and this one.
   void getPointParamChange(
       const PointTracks* tracks,
       double *param_diff_sum_sq,

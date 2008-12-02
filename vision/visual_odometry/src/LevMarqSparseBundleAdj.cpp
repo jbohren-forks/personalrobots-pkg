@@ -288,13 +288,13 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 /// This step increases the influence of gradient descent and reduce the
 /// influence of Gauss-Newton.
 ///
-/// Potential excuses that this implementation is not as fast as reported in the
+/// Potential "excuses" that this implementation is not as fast as reported in the
 /// above paper:
 ///  - They used a faster machine Alienware with Intel Pentium Xeon processor
 ///    3.4Ghz, 2.37GB.
 ///  - They might use 32 bit float.
 ///  - \f$ J_p \f$ and \f$ J_c \f$ are smaller (2x3 and 2x6, instead of 3x3 and
-///  - 3x6).
+///    3x6).
 ///
 bool LevMarqSparseBundleAdj::optimize(
     vector<FramePose*>* free_frames,
@@ -673,7 +673,6 @@ bool LevMarqSparseBundleAdj::optimize(
       CvMatUtils::printMat(&mat_Hpp);
 #endif
       // invert Hpp
-      /// @todo just a 3x3 symmetric, why use OpenCV?
 #if 0
       // use OpenCV. 15 times slower than using a special implementation.
       cvCompleteSymm(&mat_Hpp, 0);
@@ -882,7 +881,8 @@ bool LevMarqSparseBundleAdj::optimize(
           continue;
         }
         //    Subtract T_{cp}^T dc from dp (where dc is the update for camera c).
-        /// @todo replace cvGEMM with special 3x3 matrix calculation methods may help speeding up
+        /// @todo replace cvGEMM with special 3x3 matrix calculation methods may help speeding up.
+        /// Not in bottleneck though.
         double* dc = getFrameParamsUpdate(obsv->local_frame_index_);
         CvMat mat_dc  = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, dc);
         CvMat& mat_Tcp = obsv->mat_Tcp_;
