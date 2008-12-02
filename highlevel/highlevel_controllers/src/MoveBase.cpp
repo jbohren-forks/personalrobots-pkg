@@ -49,13 +49,13 @@ namespace ros {
 
     MoveBase::MoveBase()
       : HighlevelController<std_msgs::Planner2DState, std_msgs::Planner2DGoal>("move_base", "state", "goal"),
-	tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
-	controller_(NULL),
-	costMap_(NULL),
-	ma_(NULL),
-	baseLaserMaxRange_(10.0),
-	tiltLaserMaxRange_(10.0),
-	minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
+      tf_(*this, true, 10000000000ULL), // cache for 10 sec, no extrapolation
+      controller_(NULL),
+      costMap_(NULL),
+      ma_(NULL),
+      baseLaserMaxRange_(10.0),
+      tiltLaserMaxRange_(10.0),
+      minZ_(0.03), maxZ_(2.0), robotWidth_(0.0), active_(true) , map_update_frequency_(10.0)
     {
       // Initialize global pose. Will be set in control loop based on actual data.
       global_pose_.setIdentity();
@@ -125,120 +125,120 @@ namespace ros {
       std_srvs::StaticMap::request  req;
       std_srvs::StaticMap::response resp;
       ROS_INFO("Requesting the map...\n");
-        while(!ros::service::call("static_map", req, resp))
-        {
-          ROS_INFO("Request failed; trying again...\n");
-          usleep(1000000);
-        }
+      while(!ros::service::call("static_map", req, resp))
+      {
+        ROS_INFO("Request failed; trying again...\n");
+        usleep(1000000);
+      }
 
-        ROS_INFO("Received a %d X %d map at %f m/pix\n",
-            resp.map.width, resp.map.height, resp.map.resolution);
+      ROS_INFO("Received a %d X %d map at %f m/pix\n",
+          resp.map.width, resp.map.height, resp.map.resolution);
 
-        // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
-        // our planner and controller do not reason about the no obstacle case
-        std::vector<unsigned char> inputData;
-        unsigned int numCells = resp.map.width * resp.map.height;
-        for(unsigned int i = 0; i < numCells; i++){
-          inputData.push_back((unsigned char) resp.map.data[i]);
-        }
+      // We are treating cells with no information as lethal obstacles based on the input data. This is not ideal but
+      // our planner and controller do not reason about the no obstacle case
+      std::vector<unsigned char> inputData;
+      unsigned int numCells = resp.map.width * resp.map.height;
+      for(unsigned int i = 0; i < numCells; i++){
+        inputData.push_back((unsigned char) resp.map.data[i]);
+      }
 
       // Now allocate the cost map and its sliding window used by the controller
       costMap_ = new CostMap2D((unsigned int)resp.map.width, (unsigned int)resp.map.height,
-                               inputData , resp.map.resolution, 
-			       lethalObstacleThreshold, maxZ_, 0.10, .20,
-			       inflationRadius, circumscribedRadius, inscribedRadius, weight);
+          inputData , resp.map.resolution, 
+          lethalObstacleThreshold, maxZ_, 0.10, .20,
+          inflationRadius, circumscribedRadius, inscribedRadius, weight);
 
-        // Allocate Velocity Controller
-        double mapSize(2.0);
-        double pathDistanceBias(0.4);
-        double goalDistanceBias(0.6);
-        double accLimit_x(0.15);
-        double accLimit_y(1.0);
-        double accLimit_th(1.0);
-        const double SIM_TIME = 1.0;
-        const unsigned int SIM_STEPS = 30;
-        const unsigned int SAMPLES_PER_DIM = 25;
-        const double DFAST_SCALE = 0;
-        const double OCCDIST_SCALE = 0;
-        param("/trajectory_rollout/map_size", mapSize, 2.0);
-        param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.4);
-        param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 0.6);
-        param("/trajectory_rollout/acc_limit_x", accLimit_x, 0.15);
-        param("/trajectory_rollout/acc_limit_y", accLimit_y, 0.15);
-        param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
+      // Allocate Velocity Controller
+      double mapSize(2.0);
+      double pathDistanceBias(0.0);
+      double goalDistanceBias(1.0);
+      double accLimit_x(1.0);
+      double accLimit_y(1.0);
+      double accLimit_th(1.0);
+      const double SIM_TIME = 1.0;
+      const unsigned int SIM_STEPS = 40;
+      const unsigned int SAMPLES_PER_DIM = 25;
+      const double DFAST_SCALE = 0;
+      const double OCCDIST_SCALE = 0.0;
+      param("/trajectory_rollout/map_size", mapSize, 2.0);
+      param("/trajectory_rollout/path_distance_bias", pathDistanceBias, 0.0);
+      param("/trajectory_rollout/goal_distance_bias", goalDistanceBias, 1.0);
+      param("/trajectory_rollout/acc_limit_x", accLimit_x, 1.0);
+      param("/trajectory_rollout/acc_limit_y", accLimit_y, 1.0);
+      param("/trajectory_rollout/acc_limit_th", accLimit_th, 1.0);
 
-        ROS_ASSERT(mapSize <= costMap_->getWidth());
-        ROS_ASSERT(mapSize <= costMap_->getHeight());
+      ROS_ASSERT(mapSize <= costMap_->getWidth());
+      ROS_ASSERT(mapSize <= costMap_->getHeight());
 
-        ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
+      ma_ = new CostMapAccessor(*costMap_, mapSize, 0.0, 0.0);
 
-        std_msgs::Point2DFloat32 pt;
-        //create a square footprint
-        pt.x = robotRadius;
-        pt.y = -1 * robotRadius;
-        footprint_.push_back(pt);
-        pt.x = -1 * robotRadius;
-        pt.y = -1 * robotRadius;
-        footprint_.push_back(pt);
-        pt.x = -1 * robotRadius;
-        pt.y = robotRadius;
-        footprint_.push_back(pt);
-        pt.x = robotRadius;
-        pt.y = robotRadius;
-        footprint_.push_back(pt);
+      std_msgs::Point2DFloat32 pt;
+      //create a square footprint
+      pt.x = robotRadius;
+      pt.y = -1 * robotRadius;
+      footprint_.push_back(pt);
+      pt.x = -1 * robotRadius;
+      pt.y = -1 * robotRadius;
+      footprint_.push_back(pt);
+      pt.x = -1 * robotRadius;
+      pt.y = robotRadius;
+      footprint_.push_back(pt);
+      pt.x = robotRadius;
+      pt.y = robotRadius;
+      footprint_.push_back(pt);
 
-        //give the robot a nose
-        pt.x = circumscribedRadius;
-        pt.y = 0;
-        footprint_.push_back(pt);
+      //give the robot a nose
+      pt.x = circumscribedRadius;
+      pt.y = 0;
+      footprint_.push_back(pt);
 
-        controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
-            SIM_TIME,
-            SIM_STEPS,
-            SAMPLES_PER_DIM,
-            pathDistanceBias,
-            goalDistanceBias,
-            DFAST_SCALE,
-            OCCDIST_SCALE,
-            accLimit_x,
-            accLimit_y,
-            accLimit_th, 
-            footprint_);
+      controller_ = new ros::highlevel_controllers::TrajectoryRolloutController(&tf_, *ma_,
+          SIM_TIME,
+          SIM_STEPS,
+          SAMPLES_PER_DIM,
+          pathDistanceBias,
+          goalDistanceBias,
+          DFAST_SCALE,
+          OCCDIST_SCALE,
+          accLimit_x,
+          accLimit_y,
+          accLimit_th, 
+          footprint_);
 
-        // Advertize messages to publish cost map updates
-        advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
-        advertise<std_msgs::Polyline2D>("inflated_obstacles", 1);
+      // Advertize messages to publish cost map updates
+      advertise<std_msgs::Polyline2D>("raw_obstacles", 1);
+      advertise<std_msgs::Polyline2D>("inflated_obstacles", 1);
 
-        // Advertize message to publish the global plan
-        advertise<std_msgs::Polyline2D>("gui_path", 1);
+      // Advertize message to publish the global plan
+      advertise<std_msgs::Polyline2D>("gui_path", 1);
 
-        // Advertize message to publish local plan
-        advertise<std_msgs::Polyline2D>("local_path", 1);
+      // Advertize message to publish local plan
+      advertise<std_msgs::Polyline2D>("local_path", 1);
 
-        // Advertize message to publish robot footprint
-        advertise<std_msgs::Polyline2D>("robot_footprint", 1);
+      // Advertize message to publish robot footprint
+      advertise<std_msgs::Polyline2D>("robot_footprint", 1);
 
-        // Advertize message to publish velocity cmds
-        advertise<std_msgs::BaseVel>("cmd_vel", 1);
+      // Advertize message to publish velocity cmds
+      advertise<std_msgs::BaseVel>("cmd_vel", 1);
 
-        //Advertize message to publish local goal for head to track
-        advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
+      //Advertize message to publish local goal for head to track
+      advertise<std_msgs::PointStamped>("head_controller/head_track_point", 1);
 
-        // The cost map is populated with either laser scans in the case that we are unable to use a
-        // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
-        // point clouds
-        subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
-        subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
-        subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
+      // The cost map is populated with either laser scans in the case that we are unable to use a
+      // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
+      // point clouds
+      subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
+      subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
 
-        // Subscribe to odometry messages to get global pose
-        subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
+      // Subscribe to odometry messages to get global pose
+      subscribe("odom", odomMsg_, &MoveBase::odomCallback, 1);
 
-        // Spawn map update thread
-        map_update_thread_ = ros::thread::member_thread::startMemberFunctionThread<MoveBase>(this, &MoveBase::mapUpdateLoop);
+      // Spawn map update thread
+      map_update_thread_ = ros::thread::member_thread::startMemberFunctionThread<MoveBase>(this, &MoveBase::mapUpdateLoop);
 
-        // Note: derived classes must initialize.
-      }
+      // Note: derived classes must initialize.
+    }
 
     MoveBase::~MoveBase(){
 
@@ -267,25 +267,25 @@ namespace ros {
       robotPose.stamp_ = ros::Time((uint64_t)0ULL);
 
       try{
-	tf_.transformPose("map", robotPose, global_pose_);
+        tf_.transformPose("map", robotPose, global_pose_);
       }
       catch(tf::LookupException& ex) {
         ROS_INFO("No Transform available Error\n");
       }
       catch(tf::ConnectivityException& ex) {
-	ROS_INFO("Connectivity Error\n");
+        ROS_INFO("Connectivity Error\n");
       }
       catch(tf::ExtrapolationException& ex) {
-	ROS_INFO("Extrapolation Error\n");
-       }
-      
+        ROS_INFO("Extrapolation Error\n");
+      }
+
       // Update the cost map window
-      
-      
+
+
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       printf("Received new position (x=%f, y=%f, th=%f)\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
-      
+
       ma_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
     }
 
@@ -303,9 +303,9 @@ namespace ros {
       goalPose.setData(btTransform(qt, btVector3(goalMsg.goal.x, goalMsg.goal.y, 0)));
       goalPose.frame_id_ = goalMsg.header.frame_id;
       goalPose.stamp_ = ros::Time((uint64_t)0ULL);
-      
+
       try{
-	tf_.transformPose("map", goalPose, transformedGoalPose);
+        tf_.transformPose("map", goalPose, transformedGoalPose);
       }
       catch(tf::LookupException& ex){
         ROS_ERROR("No transform available from %s to map. This may be because the frame_id of the goalMsg is wrong.\n", goalMsg.header.frame_id.c_str());
@@ -325,7 +325,7 @@ namespace ros {
       double uselessPitch, uselessRoll, yaw;
       transformedGoalPose.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       stateMsg.goal.th = (float)yaw;
-      
+
       ROS_DEBUG("Received new goal (x=%f, y=%f, th=%f)\n", stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
     }
 
@@ -382,11 +382,11 @@ namespace ros {
 
       try
       {
-	tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
-	tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, odomMsg_.header.frame_id, v_out);	 
-	base_odom_.vel.x = v_in.x();
-	base_odom_.vel.y = v_in.y();
-	base_odom_.vel.th = v_in.z();
+        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
+        tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, odomMsg_.header.frame_id, v_out);	 
+        base_odom_.vel.x = v_in.x();
+        base_odom_.vel.y = v_in.y();
+        base_odom_.vel.th = v_in.z();
       }
       catch(tf::LookupException& ex)
       {
@@ -427,13 +427,13 @@ namespace ros {
 
       unlock();
     }
-    
+
     /** \todo Some code duplication wrt MoveBase::updatePlan(const std::list<std_msgs::Pose2DFloat32>&). */
     void MoveBase::updatePlan(ompl::waypoint_plan_t const & newPlan) {
       sentry<MoveBase> guard(this);
       if (!isValid() || plan_.size() > newPlan.size()){
         plan_.clear();
-	std::copy(newPlan.begin(), newPlan.end(), std::back_inserter(plan_));
+        std::copy(newPlan.begin(), newPlan.end(), std::back_inserter(plan_));
         publishPath(true, plan_);
       }
     }
@@ -511,11 +511,11 @@ namespace ros {
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
       if(plan_.empty() && 
-	 fabs(yaw - stateMsg.goal.th) < 0.1){
+          fabs(yaw - stateMsg.goal.th) < 0.1){
 
         ROS_DEBUG("Goal achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-		  global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
-		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+            global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
         // The last act will issue stop command
         stopRobot();
@@ -525,11 +525,11 @@ namespace ros {
 
       // If we have reached the end of the path then clear the plan
       if(!plan_.empty() &&
-	 withinDistance(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
-			stateMsg.goal.x, stateMsg.goal.y, yaw)){
+          withinDistance(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, yaw)){
         ROS_DEBUG("Last waypoint achieved at: (%f, %f, %f) for (%f, %f, %f)\n",
-		  global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
-		  stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
+            global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw,
+            stateMsg.goal.x, stateMsg.goal.y, stateMsg.goal.th);
 
         plan_.clear();
       }
@@ -580,8 +580,8 @@ namespace ros {
       // if we have achieved all our waypoints but have yet to achieve the goal, then we know that we wish to accomplish our desired
       // orientation
       if(planOk && plan_.empty()){
-	double uselessPitch, uselessRoll, yaw;
-	global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
+        double uselessPitch, uselessRoll, yaw;
+        global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
         ROS_DEBUG("Moving to desired goal orientation\n");
         cmdVel.vx = 0;
         cmdVel.vy = 0;
@@ -746,17 +746,17 @@ namespace ros {
       double origin_x, origin_y;
       cm.getOriginInWorldCoordinates(origin_x, origin_y);
       for(unsigned int i = 0; i<cm.getWidth(); i++){
-	for(unsigned int j = 0; j<cm.getHeight();j++){
-	  double wx, wy;
-	  wx = i * cm.getResolution() + origin_x;
-	  wy = j * cm.getResolution() + origin_y;
-	  std::pair<double, double> p(wx, wy);
+        for(unsigned int j = 0; j<cm.getHeight();j++){
+          double wx, wy;
+          wx = i * cm.getResolution() + origin_x;
+          wy = j * cm.getResolution() + origin_y;
+          std::pair<double, double> p(wx, wy);
 
-	  if(cm.getCost(i, j) > 0)
-	    rawObstacles.push_back(p);
-	  else if(cm.getCost(i, j) == 0)
-	    inflatedObstacles.push_back(p);
-	}
+          if(cm.getCost(i, j) > 0)
+            rawObstacles.push_back(p);
+          else if(cm.getCost(i, j) == 0)
+            inflatedObstacles.push_back(p);
+        }
       }
 
       // First publish raw obstacles in red
@@ -769,8 +769,8 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = rawObstacles[i].first;
-	pointCloudMsg.points[i].y = rawObstacles[i].second;
+        pointCloudMsg.points[i].x = rawObstacles[i].first;
+        pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
       publish("raw_obstacles", pointCloudMsg);
@@ -784,8 +784,8 @@ namespace ros {
       pointCloudMsg.color.g = 0.0;
 
       for(unsigned int i=0;i<pointCount;i++){
-	pointCloudMsg.points[i].x = inflatedObstacles[i].first;
-	pointCloudMsg.points[i].y = inflatedObstacles[i].second;
+        pointCloudMsg.points[i].x = inflatedObstacles[i].first;
+        pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
       publish("inflated_obstacles", pointCloudMsg);
@@ -817,32 +817,32 @@ namespace ros {
       ros::Duration *d = new ros::Duration(1.0/map_update_frequency_);
 
       while (active_){
-	//Avoids laser race conditions.
-	if (isInitialized()) {
+        //Avoids laser race conditions.
+        if (isInitialized()) {
 
-	  ROS_DEBUG("Starting cost map update/n");
-	  lock();
+          ROS_DEBUG("Starting cost map update/n");
+          lock();
 
-	  // Aggregate buffered observations across 3 sources
-	  std::vector<costmap_2d::Observation> observations;
-	  baseScanBuffer_->get_observations(observations);
-	  tiltScanBuffer_->get_observations(observations);
-	  stereoCloudBuffer_->get_observations(observations);
+          // Aggregate buffered observations across 3 sources
+          std::vector<costmap_2d::Observation> observations;
+          baseScanBuffer_->get_observations(observations);
+          tiltScanBuffer_->get_observations(observations);
+          stereoCloudBuffer_->get_observations(observations);
 
-	  ROS_DEBUG("Applying update with %d observations/n", observations.size());
-	  // Apply to cost map
-	  struct timeval curr;
-	  gettimeofday(&curr,NULL);
-	  double curr_t, last_t, t_diff;
-	  curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-	  costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
-	  gettimeofday(&curr,NULL);
-	  last_t = curr.tv_sec + curr.tv_usec / 1e6;
-	  t_diff = last_t - curr_t;
-	  publishLocalCostMap();
-	  unlock();
-	  ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
-	}
+          ROS_DEBUG("Applying update with %d observations/n", observations.size());
+          // Apply to cost map
+          struct timeval curr;
+          gettimeofday(&curr,NULL);
+          double curr_t, last_t, t_diff;
+          curr_t = curr.tv_sec + curr.tv_usec / 1e6;
+          costMap_->updateDynamicObstacles(global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), observations);
+          gettimeofday(&curr,NULL);
+          last_t = curr.tv_sec + curr.tv_usec / 1e6;
+          t_diff = last_t - curr_t;
+          publishLocalCostMap();
+          unlock();
+          ROS_DEBUG("Updated map in %f seconds for %d observations/n", t_diff, observations.size());
+        }
 
         d->sleep();
       }
