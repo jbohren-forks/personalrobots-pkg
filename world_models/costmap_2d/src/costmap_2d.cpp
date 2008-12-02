@@ -279,7 +279,11 @@ namespace costmap_2d {
    * we will trace holes through walls. 
    */
   void CostMap2D::updateCellCost(unsigned int ind, unsigned char cost){
-    costData_[ind] = std::max(cost, costData_[ind]);
+    //need to check if the cell is unkown because we definitely want to replace it in that case
+    if(costData_[ind] == NO_INFORMATION)
+      costData_[ind] = cost;
+    else
+      costData_[ind] = std::max(cost, costData_[ind]);
   }
 
   void CostMap2D::enqueueNeighbors(unsigned int source, unsigned int ind){
