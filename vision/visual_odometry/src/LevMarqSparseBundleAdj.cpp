@@ -227,14 +227,15 @@ void LevMarqSparseBundleAdj::constructFwdTransfMatrices(){
 ///    - Compute error vector \a f of reprojection in camera c of point \a p
 ///     and its Jacobian \f$ J_p \f$ and \f$ J_c\f$ with respect to the point parameters
 ///     (in our case 3x3 matrix) and the camera parameters (in out case
-///     3x6 matrix). respectively.
+///     3x6 matrix) respectively. \f$ J_p \f$ is computed exact, while
+///     \f$ J_c \f$ is computed numerically (for simplicity).
 ///
 ///    - Add \f$ J_p^T J_p\f$ to the upper triangular part of \f$ H_{pp} \f$
 ///
 ///    - Subtract \f$ J_p^T \f$ from \f$ b_p \f$.
 ///
 ///    - If camera c is free
-///      - Add \f$ J_c^TJ_c \f$ (optionally with an augmented diagonal)
+///      - Add \f$ J_c^TJ_c \f$ (with an augmented diagonal)
 ///        to upper triangular part of block (c, c) of
 ///        left hand side matrix \a A (in our case 6x6 matrix).
 ///      - Compute block (p,c) of \f$ H_{PC} \f$ as \f$ H_{pc} = J_p^T J_c \f$
@@ -388,13 +389,10 @@ bool LevMarqSparseBundleAdj::optimize(
   CvMat* mat_Jp = cvCreateMat(DIM, NUM_POINT_PARAMS, CV_64FC1);
   double* Jp = mat_Jp->data.db;
 
-  // a fall back iteration bound in case of error in iteration control.
-  int max_iter_for_safety  = term_criteria_.max_iter + defMaxTimesOfUpdates;
-
   // Main loop of optimization.
-  bool done = false;
-  for (int iUpdates = 0, iters=0;
-    iUpdates< max_iter_for_safety && done == false;
+  bool converged = false;
+  for (int iUpdates = 0;
+    iUpdates < term_criteria_.max_iter && converged == false;
     iUpdates++ ) {
     TIMERSTART2(SparseBundleAdj);
     // 3. Clear the left hand side matrix A and right hand side vector B
@@ -921,8 +919,8 @@ bool LevMarqSparseBundleAdj::optimize(
     constructTransfMatrices();
     cost_ = costFunction(free_frames, tracks);
 #if DEBUG==1
-    printf("[LevMarqSBA] cost of iteration %d, %d = %e <=> %e (prev)\n",
-        iUpdates, iters, cost_, prev_cost_);
+    printf("[LevMarqSBA] cost of iteration %d = %e <=> %e (prev)\n",
+        iUpdates, cost_, prev_cost_);
 #endif
 
     if (cost_ <= prev_cost_) {
@@ -933,15 +931,14 @@ bool LevMarqSparseBundleAdj::optimize(
       num_good_updates_++;
 
       // check for convergence
-      double param_change=0;
-      if( ++iters >= term_criteria_.max_iter ||
-          (param_change = getParamChange(tracks)) < term_criteria_.epsilon )
+      double param_change;
+      if((param_change = getParamChange(tracks)) < term_criteria_.epsilon )
       {
-        // Done!
-        done = true;
+        // Converged!
+        converged = true;
 #if DEBUG==1
-        printf("[LevMarqSBA] Optimization Done. num of iters=%d >= %d || change in param=%e < %e\n",
-            iters, term_criteria_.max_iter,param_change, term_criteria_.epsilon);
+        printf("[LevMarqSBA] Optimization Converged. num of iters=%d >= %d || change in param=%e < %e\n",
+            iUpdates, term_criteria_.max_iter,param_change, term_criteria_.epsilon);
 #endif
       } else {
         lambdaLg10_ = MAX(lambdaLg10_-1, -16);
@@ -949,7 +946,7 @@ bool LevMarqSparseBundleAdj::optimize(
         lambda_plus_one = exp(lambdaLg10_*LOG10) + 1.0;
 #if DEBUG==1
         printf("[LevMarqSBA] good update. num of iters=%d, change in param=%e <=> %e\n",
-            iters, param_change, term_criteria_.epsilon);
+            iUpdates, param_change, term_criteria_.epsilon);
 #endif
 
         prev_cost_ = cost_;
@@ -976,7 +973,7 @@ bool LevMarqSparseBundleAdj::optimize(
         p->param_ = p->prev_param_;
       }
 #if DEBUG==1
-      printf("[LevMarqSBA] bad update.\n");
+      printf("[LevMarqSBA] bad update, iter %d.\n", iUpdates);
 #endif
 
       /// @todo In stead of just going back to the beginning of the loop,
@@ -992,6 +989,9 @@ bool LevMarqSparseBundleAdj::optimize(
   retrieveOptimizedParams(free_frames, tracks);
 
 #if DEBUG==1
+  if (converged==false) {
+    printf("[LevMarqSBA]: Stops before converged\n");
+  }
   printf("[LevMarqSBA]:  Number of retractions=%d, number of good updates=%d\n",
       num_retractions_, num_good_updates_);
 #endif
