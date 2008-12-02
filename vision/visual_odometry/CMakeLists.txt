@@ -17,11 +17,16 @@ rospack_add_compile_flags(votools_py -O3 -DNDEBUG -Wno-missing-field-initializer
 rospack_add_compile_flags(votools_py -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
 target_link_libraries(votools_py fltk)
 
-rospack_add_executable(test/testPoseEstimate test/CvTest3DPoseEstimate.cpp)
-target_link_libraries(test/testPoseEstimate visual_odometry)
+# a non-ros testing program
+rospack_add_executable(test/testVisOdom test/CvTest3DPoseEstimate.cpp test/testVisOdom.cpp)
+target_link_libraries(test/testVisOdom visual_odometry)
 
-#rospack_add_gtest(utest test/CvTest3DPoseEstimate.cpp )
-#set_target_properties(utest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
-#target_link_libraries(utest visual_odometry)
+rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
+#rospack_add_compile_flags(visual_odometry -g -O0 -DDEBUG=1 -Wno-missing-field-initializers -march=pentium3 -msse3)
+#rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers )
+
+# ROS unit tests
+rospack_add_gtest(test/utest test/CvTest3DPoseEstimate.cpp test/utest.cpp)
+target_link_libraries(test/utest visual_odometry)
 
 rospack_add_pyunit(test/directed.py)
