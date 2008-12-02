@@ -1,5 +1,5 @@
 #include <cstdio>
-#include <vector.h>
+#include <vector>
 #include <math.h>
 #include <SDL.h>
 #include <GL/gl.h>
