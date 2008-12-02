@@ -40,6 +40,33 @@
 <!-- imu -->
   <node machine="four" pkg="imu_node" type="imu_node"/>
 
+<!-- odom estimation -->
+  <node machine="two" pkg="robot_pose_ekf" type="robot_pose_ekf"/>
+
+<!-- Camera -->
+<!--
+  <param name="cam0" type="str" value="videre"/>
+  <param name="videre/video_mode" type="str" value="640x480_videre"/>
+  <param name="videre/videre_param/mode" type="str" value="disparity_raw"/>
+  <param name="videre/videre_param/companding" type="bool" value="True"/>
+  <param name="videre/colorize" type="bool" value="true"/>
+  <param name="videre/rectify" type="bool" value="true"/>
+  <param name="videre/frameid_cloud" type="str" value="stereo_block"/>
+  <param name="videre/exposure" type="str" value="auto"/>
+  <param name="videre/gain" type="int" value="10"/>
+  <param name="videre/gamma" type="int" value="1"/>
+  <node machine="three" pkg="dc1394_cam_server" type="dc1394_cam_server" respawn="false" output="screen"/>
+-->
+
+<!-- DCAM-->
+ <node machine="three" name="dcam" pkg="dcam_node" type="dcam_node" respawn="false">
+   <param name="video_mode" type="str" value="640x480_videre_none"/>
+   <param name="do_rectify" type="bool" value="True"/>
+   <param name="do_stereo" type="bool" value="True"/>
+   <param name="do_calc_points" type="bool" value="False"/>
+ </node>
+
+
 <!-- Runtime Diagnostics Logging -->
 <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
 
