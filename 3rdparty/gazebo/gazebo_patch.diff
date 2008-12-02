@@ -1475,6 +1475,126 @@ Index: server/sensors/Sensor.hh
    /// \}
  }
  #endif
+Index: server/sensors/camera/MonoCameraSensor.cc
+===================================================================
+--- server/sensors/camera/MonoCameraSensor.cc	(revision 7168)
++++ server/sensors/camera/MonoCameraSensor.cc	(working copy)
+@@ -42,6 +42,8 @@
+ #include "CameraManager.hh"
+ #include "MonoCameraSensor.hh"
+ 
++#include "Simulator.hh"
++
+ using namespace gazebo;
+ 
+ GZ_REGISTER_STATIC_SENSOR("camera", MonoCameraSensor);
+@@ -74,22 +76,25 @@
+     gzthrow("image has zero size");
+   }
+ 
+-  this->SetCameraSceneNode( this->GetVisualNode()->GetSceneNode() );
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    this->SetCameraSceneNode( this->GetVisualNode()->GetSceneNode() );
+ 
+-  this->ogreTextureName = this->GetName() + "_RttTex";
+-  this->ogreMaterialName = this->GetName() + "_RttMat";
++    this->ogreTextureName = this->GetName() + "_RttTex";
++    this->ogreMaterialName = this->GetName() + "_RttMat";
+ 
+-  // Create the render texture
+-  this->renderTexture = Ogre::TextureManager::getSingleton().createManual(
+-                          this->ogreTextureName,
+-                          Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
+-                          Ogre::TEX_TYPE_2D,
+-                          this->imageSizeP->GetValue().x, 
+-                          this->imageSizeP->GetValue().y, 0,
+-                          Ogre::PF_R8G8B8,
+-                          Ogre::TU_RENDERTARGET);
++    // Create the render texture
++    this->renderTexture = Ogre::TextureManager::getSingleton().createManual(
++                            this->ogreTextureName,
++                            Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME,
++                            Ogre::TEX_TYPE_2D,
++                            this->imageSizeP->GetValue().x, 
++                            this->imageSizeP->GetValue().y, 0,
++                            Ogre::PF_R8G8B8,
++                            Ogre::TU_RENDERTARGET);
+ 
+-  this->renderTarget = this->renderTexture->getBuffer()->getRenderTarget();
++    this->renderTarget = this->renderTexture->getBuffer()->getRenderTarget();
++  }
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
+@@ -104,22 +109,25 @@
+ // Initialize the camera
+ void MonoCameraSensor::InitChild()
+ {
+-  this->InitCam();
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    this->InitCam();
+ 
+-  Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create(
+-                            this->ogreMaterialName,
+-                            Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
++    Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create(
++                              this->ogreMaterialName,
++                              Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+ 
+ 
+-  mat->getTechnique(0)->getPass(0)->createTextureUnitState(this->ogreTextureName);
++    mat->getTechnique(0)->getPass(0)->createTextureUnitState(this->ogreTextureName);
+ 
+-  Ogre::HardwarePixelBufferSharedPtr mBuffer;
++    Ogre::HardwarePixelBufferSharedPtr mBuffer;
+ 
+-  // Get access to the buffer and make an image and write it to file
+-  mBuffer = this->renderTexture->getBuffer(0, 0);
++    // Get access to the buffer and make an image and write it to file
++    mBuffer = this->renderTexture->getBuffer(0, 0);
+ 
+-  this->textureWidth = mBuffer->getWidth();
+-  this->textureHeight = mBuffer->getHeight();
++    this->textureWidth = mBuffer->getWidth();
++    this->textureHeight = mBuffer->getHeight();
++  }
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
+@@ -133,6 +141,9 @@
+ // Update the drawing
+ void MonoCameraSensor::UpdateChild()
+ {
++  if (!Simulator::Instance()->GetRenderEngineEnabled())
++    return;
++
+   // Only continue if the controller has an active interface. Or frames need
+   // to be saved
+   if ( (this->controller && !this->controller->IsConnected()) &&
+@@ -187,7 +198,10 @@
+ // Return the material the camera renders to
+ std::string MonoCameraSensor::GetMaterialName() const
+ {
+-  return this->ogreMaterialName;
++  if (!Simulator::Instance()->GetRenderEngineEnabled())
++    return NULL;
++  else
++    return this->ogreMaterialName;
+ }
+ 
+ 
+@@ -205,6 +219,9 @@
+ // Save the current frame to disk
+ void MonoCameraSensor::SaveFrame()
+ {
++  if (!Simulator::Instance()->GetRenderEngineEnabled())
++    return;
++
+   Ogre::HardwarePixelBufferSharedPtr mBuffer;
+   std::ostringstream sstream;
+   Ogre::ImageCodec::ImageData *imgData;
 Index: server/sensors/ray/RaySensor.hh
 ===================================================================
 --- server/sensors/ray/RaySensor.hh	(revision 7168)
