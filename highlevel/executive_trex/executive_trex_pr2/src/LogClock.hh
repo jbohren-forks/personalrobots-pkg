@@ -4,6 +4,7 @@
 #include "Clock.hh"
 #include "XMLUtils.hh"
 #include <pthread.h>
+#include <fstream>
 
 /**
  * @brief Declaration of clock interface and implementation sub-classes
@@ -33,11 +34,11 @@ namespace TREX {
 
   private:
     unsigned int m_gets;
-    FILE* m_file;
     TICK m_tick;
     double m_secondsPerTick;
     pthread_t m_thread;
     pthread_mutex_t m_lock;
+    std::ofstream m_file;
   };
   /**
    * @brief A clock that monitors time on a separate thread and generates updates to the tick.
@@ -74,9 +75,9 @@ namespace TREX {
     void printHelp();
 
     unsigned int m_gets, m_finalTick;
-    FILE* m_file;
     TICK m_tick, m_stopTick; 
     TiXmlElement* m_root;
+    FILE* m_file;
     bool m_timedOut;
   };
 }

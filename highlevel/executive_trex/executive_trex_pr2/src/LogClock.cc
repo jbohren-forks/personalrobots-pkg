@@ -15,11 +15,9 @@ namespace TREX {
   LogClock::LogClock(double secondsPerTick, bool stats)
     : Clock(secondsPerTick/1000, stats),
       m_gets(0), m_tick(0),
-      m_secondsPerTick(secondsPerTick) {
+      m_secondsPerTick(secondsPerTick),
+      m_file(LogManager::instance().file_name("clock.log").c_str()){
     pthread_mutex_init(&m_lock, NULL);
-    std::string file_name = LogManager::instance().file_name("clock.log");
-    // Open the file in the oupt directory designated by TREX_LOG_DIR
-    m_file = fopen(findFile(file_name.c_str()).c_str(), "w");
   }
 
   void LogClock::start(){
@@ -48,7 +46,7 @@ namespace TREX {
       Clock::sleep(sleepTime);
       pthread_mutex_lock(&This->m_lock);
       This->advanceTick(This->m_tick);
-      fprintf(This->m_file, "%u\n", This->m_gets);
+      This->m_file << This->m_gets << std::endl;
       This->m_gets = 0;
       pthread_mutex_unlock(&This->m_lock);
     }
