@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <!--include file="$(find pr2_gazebo)/pr2.launch"/-->
+    <!--include file="$(find pr2_gazebo)/pr2_simple.launch"/-->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>
     <include file="$(find 2dnav_gazebo)/2dnav-params.xml"/>
 

@@ -1,7 +1,7 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1.launch"/>
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_wg.launch"/>
     <include file="$(find 2dnav_gazebo)/2dnav-params.xml"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />

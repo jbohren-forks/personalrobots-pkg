@@ -1,13 +1,11 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <!--include file="$(find pr2_gazebo)/pr2_simple.launch"/-->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>
     <include file="$(find 2dnav_gazebo)/2dnav-params.xml"/>
 
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
-    <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map_blank.png 0.1" respawn="false" output="screen" /-->
-    <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" output="screen" />
+    <node pkg="amcl_player" type="amcl_player" args="scan:=base_scan" respawn="false" />
     <node pkg="nav_view" type="nav_view" respawn="false" output="screen" />
     <node pkg="world_3d_map" type="world_3d_map" args="/robotdesc/pr2 scan:=tilt_scan cloud:=full_cloud" respawn="false" /> 
 
