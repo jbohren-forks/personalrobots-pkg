@@ -109,6 +109,7 @@ LevMarqSparseBundleAdj::~LevMarqSparseBundleAdj() {
 
 void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T[]){
   double _rt[16];
+#if 0 // use OpenCV calls
   CvMat rt;
   CvMat T;
   cvInitMatHeader(&rt, 4, 4, CV_64FC1, _rt);
@@ -127,7 +128,36 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
   CvMatUtils::printMat(m3DToDisparity);
   cout << "*"<<endl;
   CvMatUtils::printMat(&rt);
-  #endif
+#endif
+#else
+  // direct multiplication. Note that the last row is rt is 0, 0, 0, 1
+  constructRTMatrix(param, _rt);
+  double* cart_to_disp = m3DToDisparity->data.db;
+  _T[ 0] = cart_to_disp[0]*_rt[0] + cart_to_disp[1]*_rt[4] + cart_to_disp[2]*_rt[ 8];
+  _T[ 1] = cart_to_disp[0]*_rt[1] + cart_to_disp[1]*_rt[5] + cart_to_disp[2]*_rt[ 9];
+  _T[ 2] = cart_to_disp[0]*_rt[2] + cart_to_disp[1]*_rt[6] + cart_to_disp[2]*_rt[10];
+  _T[ 3] = cart_to_disp[0]*_rt[3] + cart_to_disp[1]*_rt[7] + cart_to_disp[2]*_rt[11] +
+    cart_to_disp[3];
+
+  _T[ 4] = cart_to_disp[4]*_rt[0] + cart_to_disp[5]*_rt[4] + cart_to_disp[6]*_rt[ 8];
+  _T[ 5] = cart_to_disp[4]*_rt[1] + cart_to_disp[5]*_rt[5] + cart_to_disp[6]*_rt[ 9];
+  _T[ 6] = cart_to_disp[4]*_rt[2] + cart_to_disp[5]*_rt[6] + cart_to_disp[6]*_rt[10];
+  _T[ 7] = cart_to_disp[4]*_rt[3] + cart_to_disp[5]*_rt[7] + cart_to_disp[6]*_rt[11] +
+    cart_to_disp[7];
+
+  _T[ 8] = cart_to_disp[8]*_rt[0] + cart_to_disp[9]*_rt[4] + cart_to_disp[10]*_rt[ 8];
+  _T[ 9] = cart_to_disp[8]*_rt[1] + cart_to_disp[9]*_rt[5] + cart_to_disp[10]*_rt[ 9];
+  _T[10] = cart_to_disp[8]*_rt[2] + cart_to_disp[9]*_rt[6] + cart_to_disp[10]*_rt[10];
+  _T[11] = cart_to_disp[8]*_rt[3] + cart_to_disp[9]*_rt[7] + cart_to_disp[10]*_rt[11] +
+    cart_to_disp[11];
+
+  _T[12] = cart_to_disp[12]*_rt[0] + cart_to_disp[13]*_rt[4] + cart_to_disp[14]*_rt[ 8];
+  _T[13] = cart_to_disp[12]*_rt[1] + cart_to_disp[13]*_rt[5] + cart_to_disp[14]*_rt[ 9];
+  _T[14] = cart_to_disp[12]*_rt[2] + cart_to_disp[13]*_rt[6] + cart_to_disp[14]*_rt[10];
+  _T[15] = cart_to_disp[12]*_rt[3] + cart_to_disp[13]*_rt[7] + cart_to_disp[14]*_rt[11] +
+    cart_to_disp[15];
+
+#endif
 }
 
 void LevMarqSparseBundleAdj::constructFwdTransfMatrices(
@@ -895,8 +925,6 @@ bool LevMarqSparseBundleAdj::optimize(
       /// With this, we may be able to save parameter backing off in last step.
 
     }
-
-
     TIMEREND2(SparseBundleAdj);
   } // next iteration
 
