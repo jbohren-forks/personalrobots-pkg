@@ -24,6 +24,7 @@ class LogParser:
     #if this is the first message, log the time
     if self.last_data == None:
       self.start_time = msg.header.stamp
+      self.end_time = msg.header.stamp
       self.last_data = msg
       return
 
@@ -39,16 +40,18 @@ class LogParser:
     return [dist_meters, dist_rads]
 
   def time_diff(self):
-    start = self.start_time.secs + self.start_time.nsecs / 1e9
-    end = self.end_time.secs + self.end_time.nsecs / 1e9
-    return end - start
+    if self.start_time != None and self.end_time != None:
+      start = self.start_time.secs + self.start_time.nsecs / 1e9
+      end = self.end_time.secs + self.end_time.nsecs / 1e9
+      return end - start
+    return 0.0
   
   def print_info(self):
     return "Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (self.time_diff(), self.distance, self.radians)
 
 def parse(filename):
   parser = LogParser()
-  for topic, msg in logplayer(filename):
+  for topic, msg, time in logplayer(filename):
     if topic == "/odom":
       parser.new_odom(msg)
     # unfortunately have to include this as messages spin up the rospy infrastructure
@@ -58,21 +61,23 @@ def parse(filename):
   return [parser.time_diff(), parser.distance, parser.radians, parser.print_info()]
 
 def parse_dir(directory):
-  output_file = open(sys.argv[2], 'w')
+  #output_file = open(sys.argv[2], 'w')
   tot_dist = 0.0
   tot_time = 0.0
   tot_rads = 0.0
   files = glob.glob(directory + "*.bag")
   for file in files:
     stats = parse(file)
-    tot_time == stats[0]
+    tot_time += stats[0]
     tot_dist += stats[1]
     tot_rads += stats[2]
-    output_file.write(stats[3] + "\n")
+    print file + " " + stats[3]
+    #output_file.write(stats[3] + "\n")
 
   total_string = "TOTAL: Run Time: %.2f (seconds), Distance Traveled: %.2f (meters), Radians Traveled: %.2f (radians)" % (tot_time, tot_dist, tot_rads)
-  output_file.write(total_string + "\n")
-  output_file.close()
+  print total_string
+  #output_file.write(total_string + "\n")
+  #output_file.close()
 
 if __name__ == '__main__':
   parse_dir(sys.argv[1])
