@@ -27,9 +27,9 @@ CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/kdl/ \
 build: wiped kdl
 
 configured: $(SOURCE_DIR) Makefile
-	cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH1)
-	cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH2)
-	mkdir -p $(SOURCE_DIR)/build
+	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH1)
+	-cd $(SOURCE_DIR) && patch -p0 <../../$(PATCH2)
+	-mkdir -p $(SOURCE_DIR)/build
 	cd $(SOURCE_DIR)/build && $(CMAKE) $(CMAKE_ARGS) ..
 	touch configured
 
