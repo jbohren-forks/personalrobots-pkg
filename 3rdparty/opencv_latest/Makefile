@@ -26,7 +26,7 @@ configured: $(CVS_DIR) Makefile
 
 .PHONY: $(INSTALL_DIR)
 $(INSTALL_DIR): configured
-	cd $(CVS_DIR) && ln -fs /usr/bin/libtool && make $(PARALLEL_JOBS) && make install
+	cd $(CVS_DIR) && ln -fs /usr/bin/libtool . && make $(PARALLEL_JOBS) && make install
 
 clean:
 	-rm -rf $(INSTALL_DIR) configured
