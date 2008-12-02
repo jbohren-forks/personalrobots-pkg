@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find pr2_gazebo)/pr2.launch"/>
+  <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
 
   <!-- Test for publication of 'odom' topic. -->
   <test test-name="hztest_test_rostime" pkg="rostest" type="hztest" name="rostime_test">

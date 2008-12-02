@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find pr2_gazebo)/pr2.launch"/>
+  <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
 
   <!-- Run hztest -->
   <!-- Test for publication of 'base_scan' topic -->
@@ -89,7 +89,7 @@
   <test test-name="hztest_test_axis_left_ptz_state" pkg="rostest" type="hztest" name="axis_left_ptz_state_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (axis_left/ptz_state_test vs. scan_test). -->
-    <param name="topic" value="axis_left/ptz_state" />
+    <param name="topic" value="axis_l/ptz_state" />
     <param name="hz" value="5.0" />
     <param name="hzerror" value="3.0" />
     <param name="test_duration" value="5.0" />
@@ -100,7 +100,7 @@
   <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" name="axis_left_image_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (axis_left/image_test vs. scan_test). -->
-    <param name="topic" value="axis_left/image" />
+    <param name="topic" value="axis_l/image" />
     <param name="hz" value="5.0" />
     <param name="hzerror" value="3.0" />
     <param name="test_duration" value="5.0" />
