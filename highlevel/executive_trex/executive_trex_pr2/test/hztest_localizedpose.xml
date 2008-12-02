@@ -1,14 +1,6 @@
 <launch>
   <include file="$(find executive_trex_pr2)/cfg/launch_gazebo.xml"/>
 
-    <!-- Launch Gazebo with suitable settings and world file -->
-    <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/world/robot_floorobj.world" respawn="false" output="screen">
-      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$LD_LIBRARY_PATH" />
-      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
-      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
-    </node>
-
   <test test-name="hz_localizedpose" pkg="rostest" type="hztest" name="hztest">
     <param name="topic" value="localizedpose"/>  
     <param name="hz" value="10.0" />
