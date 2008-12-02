@@ -47,7 +47,7 @@
 
 #define DEBUG2 0
 
-//#define DEBUG 1
+#define DEBUG 1
 
 #define CHECKTIMING 1
 
@@ -445,9 +445,7 @@ bool LevMarqSparseBundleAdj::optimize(
 
         // get a reference of the transformation matrix from global to disp
         double* transf_global_disp = getTransf(obsv->frame_index_, obsv->local_frame_index_);
-
 #if 0
-
         // compute the error vector for this point
         PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz, pu, pv, pd,
             rx, ry, rz);
@@ -461,34 +459,66 @@ bool LevMarqSparseBundleAdj::optimize(
         printf("obsv on frame %d: [%f, %f, %f] <=> err [%f, %f, %f]\n",
             obsv->frame_index_, pu, pv, pd, rx, ry, rz);
 #endif
+#if 1
         // compute the residue w.r.t. the point parameters with a delta increment
         // in each parameter.
         // use the same buffer for Jacobian (3x3) of the error vector for point p.
         // The two dimensions are dim x param
         // for parameter x, fill out column 0 of Jp
+        double frx, fry, frz;
         PERSTRANSFORMRESIDUE(transf_global_disp, px+param_delta_, py, pz, pu, pv, pd,
-            Jp[0], Jp[3], Jp[6]);
-        Jp[0] = (Jp[0] - rx)*scale;
-        Jp[3] = (Jp[3] - ry)*scale;
-        Jp[6] = (Jp[6] - rz)*scale;
+            frx, fry, frz);
+        Jp[0] = (frx - rx)*scale;
+        Jp[3] = (fry - ry)*scale;
+        Jp[6] = (frz - rz)*scale;
 
         // for paramter y, fill out column 1 of Jp
         PERSTRANSFORMRESIDUE(transf_global_disp, px, py+param_delta_, pz, pu, pv, pd,
-            Jp[1], Jp[4], Jp[7]);
-        Jp[1] = (Jp[1] - rx)*scale;
-        Jp[4] = (Jp[4] - ry)*scale;
-        Jp[7] = (Jp[7] - rz)*scale;
+            frx, fry, frz);
+        Jp[1] = (frx - rx)*scale;
+        Jp[4] = (fry - ry)*scale;
+        Jp[7] = (frz - rz)*scale;
         // for parameter z, fill out column 2 of Jp
         PERSTRANSFORMRESIDUE(transf_global_disp, px, py, pz+param_delta_, pu, pv, pd,
-            Jp[2], Jp[5], Jp[8]);
-        Jp[2] = (Jp[2] - rx)*scale;
-        Jp[5] = (Jp[5] - ry)*scale;
-        Jp[8] = (Jp[8] - rz)*scale;
+            frx, fry, frz);
+        Jp[2] = (frx - rx)*scale;
+        Jp[5] = (fry - ry)*scale;
+        Jp[8] = (frz - rz)*scale;
+#endif
+#if 1
+        // Jacobian Jp shall be estimated exact.
+        // dot product of t[0,*] and [p, 1]
+        double t0_p = TRANSFORM_X(transf_global_disp, px, py, pz);
+        // dot product of t[1,*] and [p, 1]
+        double t1_p = TRANSFORM_Y(transf_global_disp, px, py, pz);
+        // dot product of t[2,*] and [p, 1]
+        double t2_p = TRANSFORM_Z(transf_global_disp, px, py, pz);
+        // dot product of t[3,*] and [p, 1]
+        double t3_p = TRANSFORM_W(transf_global_disp, px, py, pz);
+        double scale0 = 1./(t3_p*t3_p);
+        double Jp2[3*3];
+        Jp2[0*3 + 0] =  (transf_global_disp[0*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
+        Jp2[0*3 + 1] =  (transf_global_disp[0*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
+        Jp2[0*3 + 2] =  (transf_global_disp[0*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
 
-#if DEBUG2==1
-        printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
-            obsv->frame_index_, obsv->local_frame_index_);
-        CvMatUtils::printMat(mat_Jp);
+        Jp2[1*3 + 0] =  (transf_global_disp[1*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
+        Jp2[1*3 + 1] =  (transf_global_disp[1*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
+        Jp2[1*3 + 2] =  (transf_global_disp[1*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
+
+        Jp2[2*3 + 0] =  (transf_global_disp[2*4 + 0]*t3_p - transf_global_disp[3*4 + 0]*t0_p)*scale0;
+        Jp2[2*3 + 1] =  (transf_global_disp[2*4 + 1]*t3_p - transf_global_disp[3*4 + 1]*t1_p)*scale0;
+        Jp2[2*3 + 2] =  (transf_global_disp[2*4 + 2]*t3_p - transf_global_disp[3*4 + 2]*t2_p)*scale0;
+#endif
+#if DEBUG==1
+        {
+          printf("Jacobian Jp of point track %d on frame %d, %d:\n", p->id_,
+              obsv->frame_index_, obsv->local_frame_index_);
+          CvMatUtils::printMat(mat_Jp);
+#if 1
+          CvMat mat_Jp2 = cvMat(3, 3, CV_64FC1, Jp2);
+          CvMatUtils::printMat(&mat_Jp2);
+#endif
+        }
 #endif
 
         //     Add \f$ J_p^T J_p\f$ to the upper triangular part of \f$ H_{pp} \f$
