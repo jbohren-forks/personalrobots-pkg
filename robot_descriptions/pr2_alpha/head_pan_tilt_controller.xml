@@ -1,0 +1,16 @@
+<controllers>
+<controller name="head_controller" type="HeadPanTiltControllerNode"> 
+    <controller name="head_pan_controller" topic="head_pan_controller" type="JointPositionController">
+      <joint name="head_pan_joint" >
+        <pid p="10.0" d="0.5" i="12.0" iClamp="0.5" />
+      </joint>
+    </controller>
+    
+    <controller name="head_tilt_controller" topic="head_tilt_controller" type="JointPositionController">
+      <joint name="head_tilt_joint" >
+        <pid p="16.4" d=".4" i="2.0" iClamp="0.1" />
+      </joint>
+    </controller>
+    
+</controller>    
+</controllers>
