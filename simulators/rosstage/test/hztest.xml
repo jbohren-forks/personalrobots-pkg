@@ -6,7 +6,7 @@
   <!-- Run hztest -->
   <test test-name="hztest_test_scan" pkg="rostest" type="hztest" name="scan_test">
     <!-- The topic to listen for -->
-    <param name="topic" value="scan" />  
+    <param name="topic" value="base_scan" />  
     <!-- 
       The expected publication rate [Hz].  Set to 0.0 to only check that
       at least one message is received. -->
@@ -33,7 +33,7 @@
   <!-- Note how we use a different node name for this test (odom_test
        vs. scan_test). -->
   <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test">
-    <param name="topic" value="scan" />  
+    <param name="topic" value="odom" />  
     <param name="hz" value="10.0" />
     <param name="hzerror" value="0.5" />
     <param name="test_duration" value="2.0" />    
