@@ -47,6 +47,10 @@ public:
 
     bool testVideo4OneFrame(queue<StereoFrame> inputImageQueue,
         FrameSeq& frameSeq, CamTracker& tracker);
+    string input_data_path_;
+    string output_data_path_;
+    bool   verbose_;
+
 protected:
     void _init();
     void transform(CvMat *points0, CvMat *points1);

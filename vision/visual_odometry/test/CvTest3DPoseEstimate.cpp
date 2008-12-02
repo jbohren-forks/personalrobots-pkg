@@ -61,6 +61,7 @@ using namespace std;
 
 CvTest3DPoseEstimate::CvTest3DPoseEstimate():
   Parent(),
+  verbose_(true),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -71,6 +72,7 @@ CvTest3DPoseEstimate::CvTest3DPoseEstimate():
 };
 CvTest3DPoseEstimate::CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
   Parent(Fx, Fy, Tx, Clx, Crx, Cy),
+  verbose_(true),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -678,10 +680,15 @@ bool CvTest3DPoseEstimate::testVideo4() {
 
 bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_points) {
   bool status = true;
+
   // rows of 3d points in Cartesian space
-  CvMat *points = (CvMat *)cvLoad("Data/cartesianPoints.xml");
+  string point_file(input_data_path_);
+  point_file.append("cartesianPoints.xml");
+  CvMat *points = (CvMat *)cvLoad(point_file.c_str());
   // rows of euler angle and shift
-  CvMat *frames = (CvMat *)cvLoad("Data/frames.xml");
+  string frames_file(input_data_path_);
+  frames_file.append("frames.xml");
+  CvMat *frames = (CvMat *)cvLoad(frames_file.c_str());
   CvMat cartToDisp;
   CvMat dispToCart;
 
@@ -763,13 +770,13 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   int full_free_window_size  = 5;
   int full_fixed_window_size = 5;
-  int num_good_updates = 5000;
+  int max_num_iters = 5;
   double epsilon = DBL_EPSILON;
 //  epsilon = FLT_EPSILON;
 //  epsilon = LDBL_EPSILON;
 //  epsilon = .1e-12;
   CvTermCriteria term_criteria =
-    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,epsilon);
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
 
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp,
       full_free_window_size, full_fixed_window_size, term_criteria);
@@ -793,7 +800,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   // disturb the point parameters.
   if (disturb_points == true) {
-    printf("Disturbed Points:\n");
     double disturb_scale = .001;
     double sigma = disturb_scale/2.0; // ~ 95%
     int numPoints = tracks.tracks_.size();
@@ -804,14 +810,20 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
       p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
       p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
       p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
-      printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
-          p->coordinates_.y, p->coordinates_.z);
+      if (verbose_)
+        printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
+            p->coordinates_.y, p->coordinates_.z);
       iPoints++;
     }
     cvReleaseMat(&xyzsNoised);
+
+    if (verbose_) {
+      printf("Disturbed Points:\n");
+      tracks.print();
+    }
   }
 
-  string output_dir("Output");
+  string output_dir(output_data_path_);
   tracks.save(output_dir);
 
   int numFreeFrames = free_frames.size();
@@ -842,7 +854,8 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   if (disturb_frames == true) {
     // disturb the frame parameters
-    printf("Disturbed Free Frames\n");
+    if (verbose_)
+      printf("Disturbed Free Frames\n");
 
     double disturb_scale = .001;
     double sigma = disturb_scale/2.0; // ~ 95%
@@ -857,6 +870,32 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
       // update the transformation matrix of fp
       CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
 
+      if (verbose_) {
+        printf("transf of frame: %d\n", fp->mIndex);
+        CvMatUtils::printMat(&fp->transf_local_to_global_);
+        // in Euler angle and translation
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        printf("In Euler angle and translation:\n");
+        printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+        cvTranspose(&transl, &transpose_transl);
+        CvMatUtils::printMat(&transpose_transl, "%9.4f");
+      }
+
+      iFrames++;
+    }
+
+    cvReleaseMat(&xyzsNoised);
+  }
+
+  sba.optimize(&free_frames, &fixed_frames, &tracks);
+
+  if (verbose_) {
+    // print some output
+    BOOST_FOREACH(const FramePose* fp, free_frames) {
       printf("transf of frame: %d\n", fp->mIndex);
       CvMatUtils::printMat(&fp->transf_local_to_global_);
       // in Euler angle and translation
@@ -869,35 +908,11 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
       printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
       cvTranspose(&transl, &transpose_transl);
       CvMatUtils::printMat(&transpose_transl, "%9.4f");
-
-      iFrames++;
     }
-
-    cvReleaseMat(&xyzsNoised);
-  }
-
-  sba.optimize(&free_frames, &fixed_frames, &tracks);
-
-  // print some output
-  printf("Number of good updates: %d\n", sba.num_good_updates_);
-  printf("Number of retractions:  %d\n", sba.num_retractions_);
-
-  BOOST_FOREACH(const FramePose* fp, free_frames) {
-    printf("transf of frame: %d\n", fp->mIndex);
-    CvMatUtils::printMat(&fp->transf_local_to_global_);
-    // in Euler angle and translation
-    CvMat rot, transl;
-    cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
-    CvPoint3D64f euler;
-    CvMatUtils::rotMatToEuler(rot, euler);
-    cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
-    printf("In Euler angle and translation:\n");
-    printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
-    cvTranspose(&transl, &transpose_transl);
-    CvMatUtils::printMat(&transpose_transl, "%9.4f");
   }
 
   // compare frame params
+  double error_norm_frames;
   {
     int iFrames = 0;
     BOOST_FOREACH(FramePose *fp, free_frames){
@@ -915,21 +930,19 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
       iFrames++;
     }
 
-    double error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
-    printf("Relative L2 Norm of the Errors for the frames: %e\n", error_norm_frames);
+    error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
 
     status = status && (error_norm_frames < 1.e-8);
 
   }
 
-
-
   CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
   int iPoints=0;
   BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
-    printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
-//    printf("point %3d, [%9.7e, %9.7e, %9.7e]\n",
-        p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+    if (verbose_) {
+      printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
+          p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+    }
     cvmSet(points_est, iPoints, 0, p->coordinates_.x);
     cvmSet(points_est, iPoints, 1, p->coordinates_.y);
     cvmSet(points_est, iPoints, 2, p->coordinates_.z);
@@ -938,8 +951,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   // compare input points and estimated points.
   double error_norm_points = cvNorm(points, points_est, CV_RELATIVE_L2);
-  printf("Relative L2 Norm of Errors for point params: %e\n", error_norm_points);
-
 
   status = status && (error_norm_points < 1.e-8);
 
@@ -959,15 +970,23 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   cvReleaseMat(&frames);
   cvReleaseMat(&points);
 
-  if (status == true) {
-    printf("testBundleAdj() passed\n");
-  } else {
-    printf("testBundleAdj() failed\n");
-  }
+  if (verbose_ == true) {
+    if (status == true) {
+      printf("testBundleAdj() passed\n");
+    } else {
+      printf("testBundleAdj() failed\n");
+    }
+    printf("Number of good updates: %d\n", sba.num_good_updates_);
+    printf("Number of retractions:  %d\n", sba.num_retractions_);
 
-  CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters = 1;
-  CvTestTimer::getTimer().printStat();
+    printf("Relative L2 Norm of Error vector for frames: %e\n", error_norm_frames);
+    printf("Relative L2 Norm of Error vector for points: %e\n", error_norm_points);
+
+
+    CvTestTimer& timer = CvTestTimer::getTimer();
+    timer.mNumIters = 1;
+    CvTestTimer::getTimer().printStat();
+  }
 
   return status;
 }
@@ -1305,44 +1324,6 @@ bool CvTest3DPoseEstimate::testPointClouds(){
   cvReleaseMat(&points1d);
   cvReleaseMat(&points1r);
 
-    return status;
-}
-
-int main(int argc, char **argv){
-  CvTest3DPoseEstimate test3DPoseEstimate;
-
-  if (argc >= 2) {
-    char *option = argv[1];
-    if (strcasecmp(option, "cartesian")==0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
-    } else if (strcasecmp(option, "disparity")==0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Disparity;
-    } else if (strcasecmp(option, "cartanddisp") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::CartAndDisp;
-    } else if (strcasecmp(option, "video") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video;
-    } else if (strcasecmp(option, "video2") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video2;
-    } else if (strcasecmp(option, "video3") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Video3;
-    } else if (strcasecmp(option, "bundle") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::VideoBundleAdj;
-    } else if (strcasecmp(option, "bundle1") == 0) {
-      test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::BundleAdj;
-    } else {
-      cerr << "Unknown option: "<<option<<endl;
-      exit(1);
-    }
-  } else {
-    test3DPoseEstimate.mTestType = CvTest3DPoseEstimate::Cartesian;
-  }
-
-  cout << "Testing wg3DPoseEstimate ..."<<endl;
-
-
-    test3DPoseEstimate.test();
-
-  cout << "Done testing wg3DPoseEstimate ..."<<endl;
-  return 0;
+  return status;
 }
 
