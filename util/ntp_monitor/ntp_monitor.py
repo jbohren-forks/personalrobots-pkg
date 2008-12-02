@@ -62,7 +62,7 @@ def ntp_monitor():
             (o,e) = p.communicate()
             if (res == 0):
                 offset = float(re.search("offset (.*),", o).group(1))*1000000
-                if (offset < 500):
+                if (abs(offset) < 500):
                     stat = DiagnosticStatus(0,hostname + " NTP offset", "Acceptable synchronization", [DiagnosticValue(offset,"offset (us)")],[])
                     print offset
                 else:
