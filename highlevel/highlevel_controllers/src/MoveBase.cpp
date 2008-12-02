@@ -284,7 +284,7 @@ namespace ros {
 
       double uselessPitch, uselessRoll, yaw;
       global_pose_.getBasis().getEulerZYX(yaw, uselessPitch, uselessRoll);
-      printf("Received new position (x=%f, y=%f, th=%f)\n", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
+      ROS_DEBUG("Received new position (x=%f, y=%f, th=%f)", global_pose_.getOrigin().x(), global_pose_.getOrigin().y(), yaw);
 
       ma_->updateForRobotPosition(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
     }
