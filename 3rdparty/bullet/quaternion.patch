@@ -1,8 +1,26 @@
+Index: src/LinearMath/btTransformUtil.h
+===================================================================
+--- src/LinearMath/btTransformUtil.h	(revision 1497)
++++ src/LinearMath/btTransformUtil.h	(working copy)
+@@ -115,12 +115,9 @@
+ 		}
+ 	}
+ 
+-	static void calculateDiffAxisAngleQuaternion(const btQuaternion& orn0,const btQuaternion& orn1a,btVector3& axis,btScalar& angle)
++	static void calculateDiffAxisAngleQuaternion(const btQuaternion& orn0,const btQuaternion& orn1,btVector3& axis,btScalar& angle)
+ 	{
+-		btQuaternion orn1 = orn0.farthest(orn1a);
+ 		btQuaternion dorn = orn1 * orn0.inverse();
+-		///floating point inaccuracy can lead to w component > 1..., which breaks 
+-		dorn.normalize();
+ 		angle = dorn.getAngle();
+ 		axis = btVector3(dorn.x(),dorn.y(),dorn.z());
+ 		axis[3] = btScalar(0.);
 Index: src/LinearMath/btQuaternion.h
 ===================================================================
 --- src/LinearMath/btQuaternion.h	(revision 1497)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -199,7 +199,12 @@
+@@ -199,15 +199,26 @@
  	{
  		btScalar s = btSqrt(length2() * q.length2());
  		assert(s != btScalar(0.0));
@@ -16,7 +34,9 @@ Index: src/LinearMath/btQuaternion.h
  	}
    /**@brief Return the angle of rotation represented by this quaternion */
  	btScalar getAngle() const 
-@@ -208,6 +213,12 @@
+ 	{
+-		btScalar s = btScalar(2.) * btAcos(m_floats[3]);
++		btScalar s = btScalar(2.) * btAcos(GEN_clamped(m_floats[3], (btScalar)-1.0, (btScalar)1.0));
  		return s;
  	}
  
