@@ -4,7 +4,7 @@ XENOMAI_REVISION = 4220
 SVN_DIR = xenomai-svn
 SVN_URL = http://svn.gna.org/svn/xenomai/tags/v2.4.5 
 SVN_REVISION = -r $(XENOMAI_REVISION)
-#SVN_PATCH = xenomai-r$(XENOMAI_REVISION).patch
+SVN_PATCH = ipipe.patch
 include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP xenomai
@@ -12,7 +12,6 @@ build: SVN_UP xenomai
 configured: $(SVN_DIR) linux Makefile
 	cd $(SVN_DIR) && mkdir -p build && cd build && ../configure --prefix=$(PWD)/xenomai --enable-x86-sep --enable-x86-tsc --enable-smp --disable-dox-doc
 	cd $(SVN_DIR) && \
-  patch -p0 < ../ipipe.patch && \
 	./scripts/prepare-kernel.sh --linux=../linux --arch=i386 \
 		--adeos=ksrc/arch/x86/patches/adeos-ipipe-2.6.24-x86-2.0-07.patch 
 	cd linux && \
