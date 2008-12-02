@@ -107,7 +107,7 @@ namespace costmap_2d {
     bool result = fabs(x) <= robotRadius_ && fabs(y) <= robotRadius_;
 
     if(result){
-      ROS_INFO("Discarding point <%f, %f> in footprint for %s\n", x, y, frame_id_.c_str());
+      ROS_DEBUG("Discarding point <%f, %f> in footprint for %s\n", x, y, frame_id_.c_str());
     }
 
     return result;
@@ -127,7 +127,7 @@ namespace costmap_2d {
 	copy->pts[j++] = baseFrameCloud.pts[k];
       }
       else {
-	ROS_INFO("Discarding <%f, %f, %f> for %s\n",  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z, frame_id_.c_str());
+	ROS_DEBUG("Discarding <%f, %f, %f> for %s\n",  baseFrameCloud.pts[k].x, baseFrameCloud.pts[k].y,   baseFrameCloud.pts[k].z, frame_id_.c_str());
       }
     }
 
