@@ -101,6 +101,7 @@ calImageWindow::draw()
 
   for(i=0; i<num_pts2D; i++)
     drawCross(Im2WinX((int)(pts2D[i].x)), Im2WinY((int)(pts2D[i].y)), color);
+  color = FL_RED;
   if (num_pts2D > 0)
     drawBox(Im2WinX((int)(pts2D[0].x)), Im2WinY((int)(pts2D[0].y)), color);
 }			
@@ -117,6 +118,6 @@ void
 calImageWindow::drawBox(int x, int y, Fl_Color color)
 {
   fl_color(color);
-  fl_rect(x-2,y-2,5,5);
+  fl_rect(x-3,y-3,7,7);
 }
 

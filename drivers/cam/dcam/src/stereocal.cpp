@@ -68,6 +68,7 @@
 #include <sys/time.h>
 #endif
 #include "stereogui.h"
+#include "im3Dwin.h"
 #include "stereolib.h"
 #include "stereocam.h"
 
@@ -99,8 +100,14 @@ bool isRectify;			// true if rectification requested
 bool isStereo;			// true if stereo requested
 bool is3D;			// true if 3D points requested
 bool useSTOC;			// true if we want to use STOC processing
+bool isTracking;		// true if we want to track the chessboard live
+bool isExit;			// true if we want to exit
 
+// GUI stuff
 stereogui *stg;			// GUI object
+im3DWindow *w3d;		// OpenGL 3D display
+Fl_Window *w3dwin;		// Enclosing window
+
 
 #define MAXIMAGES 21
 
@@ -163,10 +170,16 @@ int load_left(char *fname);
 int load_right(char *fname);
 
 
-// stereo function headings and globals
+// epipolar checks
 double epi_scanline_error(bool horz = true); // <horz> = 0 for horizontal, 1 for vertical epilines
-double get_ms();		// for timing
+double epi_scanline_error0(bool horz = true); // <horz> = 0 for horizontal, 1 for vertical epilines
 
+// timing fns
+double get_ms();		// for timing
+void wait_ms(int ms);		// for waiting
+
+
+// stereo function headings and globals
 bool is_fixed_aspect = true;
 bool is_zero_disparity = true;
 bool use_kappa1 = true;
@@ -194,12 +207,17 @@ imInfoWindow *iwin = NULL;
 calImageWindow * get_current_left_win();
 calImageWindow * get_current_right_win();
 void info_message(char *str, ...);	// print in the info line
+void debug_message(char *str, ...);	// print in the info line and to debug window
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
+void FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
 
 int
 main(int argc, char **argv)	// no arguments
 {
   Fl_Window *gwin;
+  w3d = NULL;			// no OpenGL window yet
+  w3dwin = NULL;
+  isExit = false;
 
   // initialize data structures
   for (int i=0; i<MAXIMAGES; i++)
@@ -222,6 +240,13 @@ main(int argc, char **argv)	// no arguments
   devIndex = -1;
   devNum = 0;
   useSTOC = true;
+  isTracking = false;
+
+  // IPL images for tracking
+  IplImage *trackImgL = NULL;
+  IplImage *trackImgR = NULL;
+  IplImage *trackCornersL = NULL;
+  IplImage *trackCornersR = NULL;
 
   // start up dialog window
   stg = new stereogui;
@@ -233,18 +258,18 @@ main(int argc, char **argv)	// no arguments
 
   // start up debug window
   iwin = new imInfoWindow(500,400,"OST output");
-  iwin->show();
+  //  iwin->show();
 
   // get devices
   dcam::init();
   int devNum = dcam::numCameras();
-  printf("[Stereocal] Number of cameras: %d\n", devNum);
+  debug_message("[Stereocal] Number of cameras: %d", devNum);
 
   // print out GUIDs, vendor, model; set up Video pulldown
   Fl_Choice *devs = stg->cam_select;
   for (int i=0; i<devNum; i++)
     {
-      printf("[Stereocal] Camera %d GUID: %llx  Vendor: %s  Model: %s\n", 
+      debug_message("[Stereocal] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
 	     i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
       char buf[1024];
       sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
@@ -254,9 +279,9 @@ main(int argc, char **argv)	// no arguments
     devs->value(0);
 
 
-  static videre_proc_mode_t pmode = PROC_MODE_DISPARITY;
+  static videre_proc_mode_t pmode = PROC_MODE_NONE;
 
-  while (fltk_check())		// process GUI commands, serve video
+  while (fltk_check() && !isExit) // process GUI commands, serve video
     {
 
       // check for video stream commands
@@ -265,14 +290,16 @@ main(int argc, char **argv)	// no arguments
 	  // have a device?
 	  if (!dev)
 	    {
-	      info_message("[Dcam] Finding first available camera");
+	      debug_message("[Dcam] Finding first available camera");
 	      dev = new cam::StereoDcam(dcam::getGuid(0));
 	    }
 
-	  info_message("[Dcam] Setting format, frame rate and PROC mode");
+	  debug_message("[Dcam] Setting format, frame rate and PROC mode");
 	  dev->setFormat(VIDERE_STEREO_640x480);
+	  if (dev->isSTOC)
+	    stg->stoc_button->value(true); // turn it on
 	  dev->setProcMode(pmode);
-	  info_message("[Dcam] Starting device");
+	  debug_message("[Dcam] Starting device");
 	  dev->start();
 	  isVideo = true;	// needed to keep thread running
 	  startCam = false;
@@ -282,7 +309,7 @@ main(int argc, char **argv)	// no arguments
 	{
 	  if (dev)
 	    {
-	      info_message("[Dcam] Stopping device");
+	      debug_message("[Dcam] Stopping device");
 	      isVideo = false;
 	      dev->stop();
 	      stopCam = false;
@@ -307,8 +334,66 @@ main(int argc, char **argv)	// no arguments
 	      if (isStereo)	// get stereo disparity
 		dev->doDisparity();
 	      if (is3D)		// get 3D points
-		dev->doCalcPts();
+		{
+		  dev->doCalcPts();
+		  // check for 3D window
+		  if (!w3d)
+		    {
+		      w3dwin = new Fl_Window(640,480,"3D Display");
+		      w3d = new im3DWindow(10,10,w3dwin->w()-20,w3dwin->h()-20);
+		      w3dwin->end();
+		      w3dwin->resizable(w3d);
+		      w3dwin->show();
+		    }
+		  w3d->DisplayImage(dev->stIm);
+		}
 
+
+	      // check for tracking of chessboard
+	      // first find images and convert into IPL images
+	      if (isTracking)
+		{
+		  // set up grayscale image
+		  if (trackImgL == NULL)
+		    {
+		      trackImgL = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
+		      trackCornersL = cvCreateImage(cvGetSize(trackImgL), IPL_DEPTH_8U, 3 );
+		    }
+		  if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+		    cvSetData(trackImgL,dev->stIm->imLeft->imRect,w);
+		  else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
+		    cvSetData(trackImgL,dev->stIm->imLeft->im,w);
+		  else
+		    isTracking = false;		    
+
+		  if (trackImgR == NULL)
+		    {
+		      trackImgR = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1); 
+		      trackCornersR = cvCreateImage(cvGetSize(trackImgR), IPL_DEPTH_8U, 3 );
+		    }
+		  if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
+		    cvSetData(trackImgR,dev->stIm->imRight->imRect,w);
+		  else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
+		    cvSetData(trackImgR,dev->stIm->imRight->im,w);
+		  else
+		    isTracking = false;
+
+		  if (!isTracking)
+		    {
+		      stg->track_button->value(0);
+		      calImageWindow *cwin;
+		      cwin = get_current_left_win();
+		      cwin->clear2DFeatures();
+		      cwin = get_current_right_win();
+		      cwin->clear2DFeatures();
+		    }
+		}
+
+	      if (isTracking)
+		{
+		  FindCorners(&leftcorners[0], &nleftcorners[0], &goodleft[0], trackImgL);
+		  FindCorners(&rightcorners[0], &nrightcorners[0], &goodright[0], trackImgR);
+		}
 
 	      // display left image
 	      calImageWindow *cwin = get_current_left_win();
@@ -321,6 +406,9 @@ main(int argc, char **argv)	// no arguments
 	      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->im, w, h, w);
 	      
+	      if (isTracking)
+		cwin->display2DFeatures(leftcorners[0],nleftcorners[0],goodleft[0]);
+
 	      // display right image
 	      cwin = get_current_right_win();
 	      if (dev->stIm->hasDisparity)
@@ -331,8 +419,34 @@ main(int argc, char **argv)	// no arguments
 		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imColor, w, h, w, RGB24);
 	      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->im, w, h, w);
+
+	      if (isTracking)
+		cwin->display2DFeatures(rightcorners[0],nrightcorners[0],goodright[0]);
+
+	      if (isTracking)
+		{
+		  if (goodright[0] && goodleft[0])
+		    {
+		      goodpair[0] = true;
+		      double ee = epi_scanline_error0();
+		      info_message("Epipolar error: %0.2f pixels", ee);
+		    }
+		}
+
 	    }
 	}
+
+      else			// no video, yield a little
+	wait_ms(10);
+    }
+
+  // exiting, turn off camera
+  if (dev)
+    {
+      debug_message("[Dcam] Stopping device");
+      isVideo = false;
+      dev->stop();
+      stopCam = false;
     }
 }
 
@@ -340,6 +454,38 @@ main(int argc, char **argv)	// no arguments
 //
 // utility fns
 //
+
+// find corners
+static int numcpts = 0;		// for managing corner points
+void FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img)
+{
+  // find corners
+  if (num_pts != numcpts)
+    {
+      if (*corners) delete [] *corners;
+      *corners = NULL;
+      numcpts = num_pts;
+    }
+
+  if (*corners == NULL)
+    *corners = new CvPoint2D32f[num_pts];
+
+  int numc = 0;
+  int ret = cvFindChessboardCorners(img, cvSize(num_x_ints, num_y_ints),
+		   *corners, &numc, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
+  *nc = numc;
+  *good = ret;
+
+  // do subpixel calculation, if corners have been found
+  if (ret)
+    {
+      cvFindCornerSubPix(img, *corners, numc, 
+			 cvSize(5,5),cvSize(-1,-1), 
+			 cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
+    }
+}
+
+
 
 // check PROC mode, reset if necessary
 videre_proc_mode_t
@@ -370,14 +516,29 @@ checkProcMode(videre_proc_mode_t mode)
     }
 
   if (mm != mode)
-    dev->setProcMode(mode);
+    dev->setProcMode(mm);
+
   return mm;
 }
 
 
-
+// info line only
 void
 info_message(char *str, ...)	// print in the info line
+{
+  char buf[1024];
+  va_list ptr;
+  va_start(ptr,str);
+  if (str)
+    {
+      vsprintf(buf,str,ptr);
+      stg->info_message->value(buf);
+    }
+}
+
+// print in message line and on debug window
+void
+debug_message(char *str, ...)	// print in the info line
 {
   char buf[1024];
   va_list ptr;
@@ -557,7 +718,7 @@ load_left(char *fname)
 
   im = cvLoadImage(fname);	// load image, could be color
   if (im == NULL)
-    info_message("Can't load file %s\n", fname);
+    debug_message("Can't load file %s\n", fname);
   else
     {
       // make grayscale, display
@@ -566,7 +727,7 @@ load_left(char *fname)
       cvConvertImage(im,img);
       imgs_left[ind] = img;
       imsize_left = cvGetSize(im);
-      info_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
       cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
 
       if (ind < 1) return ind;	// not a calibration image
@@ -580,7 +741,7 @@ load_left(char *fname)
       int ret = cvFindChessboardCorners(img, cvSize(num_x_ints, num_y_ints),
 		leftcorners[ind], &numc, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
       nleftcorners[ind] = numc;
-      info_message("Found %d corners", numc);
+      debug_message("Found %d corners", numc);
       cwin->display2DFeatures(leftcorners[ind],numc,ret);
 
       // do subpixel calculation, if corners have been found
@@ -630,7 +791,7 @@ load_right(char *fname)
 
   im = cvLoadImage(fname);	// load image, could be color
   if (im == NULL)
-    info_message("Can't load file %s\n", fname);
+    debug_message("Can't load file %s\n", fname);
   else
     {
       // convert to grayscale
@@ -638,7 +799,7 @@ load_right(char *fname)
       cvConvertImage(im,img);
       imgs_right[ind] = img;
       imsize_right = cvGetSize(im);
-      info_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
       cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
 
       if (ind < 1) return ind;	// not a calibration image
@@ -653,7 +814,7 @@ load_right(char *fname)
 					rightcorners[ind], &numc,
 					CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
       nrightcorners[ind] = numc;
-      info_message("Found %d corners", numc);
+      debug_message("Found %d corners", numc);
       cwin->display2DFeatures(rightcorners[ind],numc,ret);
 
       // do subpixel calculation, if corners have been found
@@ -884,7 +1045,7 @@ void cal_calibrate_cb(Fl_Button*, void*)
   
   if (n_pair < 4)
     {
-      info_message("Fewer than 4 stereo pairs, calibrating single cameras only");
+      debug_message("Fewer than 4 stereo pairs, calibrating single cameras only");
       cal_calibrate_single();
       return;
     }
@@ -958,25 +1119,25 @@ void cal_calibrate_cb(Fl_Button*, void*)
 
     // show params
     cvRodrigues2( &_R, &Rotv );
-    info_message("\nTranslation vector:\n");
+    debug_message("\nTranslation vector:\n");
     PrintMat(&Transv);
 
-    info_message("\nRotation vector:\n");
+    debug_message("\nRotation vector:\n");
     PrintMat(&Rotv);
 
-    info_message("\nLeft camera matrix:\n");
+    debug_message("\nLeft camera matrix:\n");
     PrintMat(&K_left);
 
-    info_message("\nLeft distortion vector:\n");
+    debug_message("\nLeft distortion vector:\n");
     PrintMat(&D_left);
 
-    info_message("\nRight camera matrix:\n");
+    debug_message("\nRight camera matrix:\n");
     PrintMat(&K_right);
 
-    info_message("\nRight distortion vector:\n");
+    debug_message("\nRight distortion vector:\n");
     PrintMat(&D_right);
 
-    info_message("\n\n");
+    debug_message("\n\n");
 
     // calculate rectification and "new" projection matrices
     flags = 0;
@@ -987,26 +1148,26 @@ void cal_calibrate_cb(Fl_Button*, void*)
 		    &R_left, &R_right, &P_left, &P_right, NULL, flags);
     is_horz = fabs(pr[1][3]) <= fabs(pr[0][3]);
 
-    info_message("\n\nRectified image parameters\n");
+    debug_message("\n\nRectified image parameters\n");
     if (is_horz)
-      info_message("(Horizontal epilines)\n");
+      debug_message("(Horizontal epilines)\n");
     else
-      info_message("(Vertical epilines)\n");
+      debug_message("(Vertical epilines)\n");
 
 
-    info_message("\nLeft camera projection matrix:\n");
+    debug_message("\nLeft camera projection matrix:\n");
     PrintMat(&P_left);
 
-    info_message("\nRight camera projection matrix:\n");
+    debug_message("\nRight camera projection matrix:\n");
     PrintMat(&P_right);    
 
-    info_message("\nLeft camera rectification matrix:\n");
+    debug_message("\nLeft camera rectification matrix:\n");
     PrintMat(&R_left);
 
-    info_message("\nRight camera rectification matrix:\n");
+    debug_message("\nRight camera rectification matrix:\n");
     PrintMat(&R_right);
 
-    info_message("\n\n");
+    debug_message("\n\n");
 
 
     // undistort images
@@ -1086,7 +1247,7 @@ void cal_calibrate_cb(Fl_Button*, void*)
 
     // compute and show epipolar line RMS error
     double err = epi_scanline_error(is_horz);
-    info_message("RMS error from scanline: %f pixels\n\n", err);
+    debug_message("RMS error from scanline: %f pixels\n\n", err);
 }
 
 
@@ -1118,7 +1279,7 @@ void cal_calibrate_single(void)
   // calibrate left camera
   if (n_left < 3)		// not enough left images
     {
-      info_message("Only %d good left images, need 3\n", n_left);
+      debug_message("Only %d good left images, need 3\n", n_left);
       return;
     }
 
@@ -1156,14 +1317,14 @@ void cal_calibrate_single(void)
   // focal lengths have 1/1 ratio
   CV_MAT_ELEM(*intrinsics_left, float, 0, 0 ) = 1.0f;
   CV_MAT_ELEM(*intrinsics_left, float, 1, 1 ) = 1.0f;
-  info_message("cvCalibrateCamera2\n");
+  debug_message("cvCalibrateCamera2\n");
   cvCalibrateCamera2(opts_left, ipts_left, npts_left,
 		     imsize_left, intrinsics_left,
 		     distortion_left, NULL, NULL,
 		     0);
 
   // Save for debug
-  info_message("Saving intrinsics and distortion in <Intrinsics_left.xml>\n  \
+  debug_message("Saving intrinsics and distortion in <Intrinsics_left.xml>\n  \
 and <Distortion_left.xml>");
   cvSave("Intrinsics_left.xml",intrinsics_left);
   cvSave("Distortion_left.xml",distortion_left);
@@ -1173,7 +1334,7 @@ and <Distortion_left.xml>");
   mapy_left = cvCreateImage(imsize_left, IPL_DEPTH_32F, 1 );
   rMapxy_left = cvCreateMat(imsize_left.height, imsize_left.width, CV_16SC2);
   rMapa_left  = cvCreateMat(imsize_left.height, imsize_left.width, CV_16SC1);
-  info_message("cvInitUndistortMap\n");
+  debug_message("cvInitUndistortMap\n");
   cvInitUndistortMap(intrinsics_left, distortion_left, mapx_left, mapy_left);
   cvConvertMaps(mapx_left,mapy_left,rMapxy_left,rMapa_left);
   
@@ -1196,7 +1357,7 @@ and <Distortion_left.xml>");
   // Calibrate right camera
   if (n_right < 3)		// not enough right images
     {
-      info_message("Only %d good right images, need 3\n", n_right);
+      debug_message("Only %d good right images, need 3\n", n_right);
       return;
     }
 
@@ -1234,14 +1395,14 @@ and <Distortion_left.xml>");
   // focal lengths have 1/1 ratio
   CV_MAT_ELEM(*intrinsics_right, float, 0, 0 ) = 1.0f;
   CV_MAT_ELEM(*intrinsics_right, float, 1, 1 ) = 1.0f;
-  info_message("cvCalibrateCamera2\n");
+  debug_message("cvCalibrateCamera2\n");
   cvCalibrateCamera2(opts_right, ipts_right, npts_right,
 		     imsize_right, intrinsics_right,
 		     distortion_right, NULL, NULL,
 		     0);
 
   // Save for debug
-  info_message("Saving intrinsics and distortion in <Intrinsics_right.xml>\n  \
+  debug_message("Saving intrinsics and distortion in <Intrinsics_right.xml>\n  \
 and <Distortion_right.xml>");
   cvSave("Intrinsics_right.xml",intrinsics_right);
   cvSave("Distortion_right.xml",distortion_right);
@@ -1251,7 +1412,7 @@ and <Distortion_right.xml>");
   mapy_right = cvCreateImage(imsize_right, IPL_DEPTH_32F, 1 );
   rMapxy_right = cvCreateMat(imsize_left.height, imsize_left.width, CV_16SC2);
   rMapa_right  = cvCreateMat(imsize_left.height, imsize_left.width, CV_16SC1);
-  info_message("cvInitUndistortMap\n");
+  debug_message("cvInitUndistortMap\n");
   cvInitUndistortMap(intrinsics_right, distortion_right, mapx_right, mapy_right);
   cvConvertMaps(mapx_right,mapy_right,rMapxy_right,rMapa_right);
   
@@ -1302,6 +1463,29 @@ double epi_scanline_error(bool horz)
   return sqrt(sum/((double)cnt));
 }
 
+// just for the first image
+double epi_scanline_error0(bool horz)
+{
+  double sum = 0.0;
+  int cnt = 0;
+  if (goodpair[0])		// have stereo images with corners found?
+    {
+      for (int j=0; j<nleftcorners[0]; j++)
+	{
+	  double dd;
+	  if (horz)
+	    dd = (leftcorners[0][j].y - rightcorners[0][j].y);
+	  else
+	    dd = (leftcorners[0][j].x - rightcorners[0][j].x);
+	  dd = dd*dd;
+	  sum += dd;
+	  cnt++;
+	}
+    }
+  if (cnt == 0) return 0.0;
+  return sqrt(sum/((double)cnt));
+}
+
 
 //
 // calculate epipolar error
@@ -1312,10 +1496,26 @@ double epi_scanline_error(bool horz)
 void cal_epipolar_cb(Fl_Button*, void*)
 {
   double err = epi_scanline_error();
-  info_message("Epiline RMS error: %f pixels", err);
+  debug_message("Epiline RMS error: %f pixels", err);
 }
 
 
+// stereo button state check
+void
+check_stereo_buttons()
+{
+  if (is3D)
+    {
+      isStereo = true;
+      stg->stereo_button->value(true);
+    }
+
+  if (isStereo)
+    {
+      isRectify = true;
+      stg->rectify_button->value(true);
+    }
+}
 
 //
 // do rectification
@@ -1330,9 +1530,13 @@ void do_rectify_cb(Fl_Light_Button* w, void*)
   else
     isRectify = false;
 
+  // check state of buttons
+  check_stereo_buttons();
+
   // check for video streaming
   if (isVideo)
     return;
+
 }
 
 //
@@ -1352,6 +1556,9 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   else
     isStereo = false;
 
+  // check state of buttons
+  check_stereo_buttons();
+
   // check for video streaming
   if (isVideo)
     return;
@@ -1365,7 +1572,7 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   IplImage *rimg = imgs_right[ind];
   if (limg == NULL || rimg == NULL)
     {
-      info_message("No stereo pair at index %d", ind);
+      debug_message("No stereo pair at index %d", ind);
       return;
     }
 
@@ -1427,9 +1634,9 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
   double t2 = get_ms();
 
-  info_message("Rectify time:   %0.1f ms", t3b-t3a);
-  info_message("Prefilter time: %0.1f ms", t1-t0);
-  info_message("Stereo time:    %0.1f ms", t2-t1);
+  debug_message("Rectify time:   %0.1f ms", t3b-t3a);
+  debug_message("Prefilter time: %0.1f ms", t1-t0);
+  debug_message("Stereo time:    %0.1f ms", t2-t1);
 
   // display disparity image
   calImageWindow *cwin = get_current_right_win();
@@ -1460,9 +1667,67 @@ void do_3d_cb(Fl_Light_Button* w, void*)
   else
     is3D = false;
 
+  // check state of buttons
+  check_stereo_buttons();
+
   // check for video streaming
   if (isVideo)
     return;
+}
+
+
+//
+// track chessboard
+//
+
+void 
+do_track_cb(Fl_Light_Button* w, void*)
+{
+  if (w->value())
+    isTracking = true;
+  else
+    {
+      isTracking = false;
+      calImageWindow *cwin;
+      cwin = get_current_left_win();
+      cwin->clear2DFeatures();
+      cwin = get_current_right_win();
+      cwin->clear2DFeatures();
+    }
+}
+
+
+
+// capture callback
+// save un-rectified images into next open cal buffer
+// problem: how to reset buffers
+
+static int calInd = 0;
+
+void cal_capture_cb(Fl_Button*, void*) 
+{
+#if 0
+  // get window tab
+  IplImage *im;			// OpenCV image
+
+  int ind = get_current_tab_index();
+  
+  calImageWindow *cwin = get_current_right_win();
+
+
+  im = cvLoadImage(fname);	// load image, could be color
+  if (im == NULL)
+    debug_message("Can't load file %s\n", fname);
+  else
+    {
+      // convert to grayscale
+      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
+      cvConvertImage(im,img);
+      imgs_right[ind] = img;
+      imsize_right = cvGetSize(im);
+      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
+#endif  
 }
 
 
@@ -1470,7 +1735,6 @@ void do_3d_cb(Fl_Light_Button* w, void*)
 // other callbacks
 
 void cal_save_image_cb(Fl_Button*, void*) {}
-void cal_capture_cb(Fl_Button*, void*) {}
 void cal_save_all_cb(Fl_Button*, void*) {}
 
 // save the parameters to a file
@@ -1535,13 +1799,13 @@ void cal_save_params_cb(Fl_Button*, void*)
   int ind = -1;
   bool ret;
   ret = parse_filename(fname, &lname, &rname, &ind, &bname);
-  info_message("File base name: %s\n", bname);
+  debug_message("File base name: %s\n", bname);
 
   char ff[1024];
 
   sprintf(ff, "%s.ini", bname);
   cal_save_params(ff);
-  info_message("Wrote %s", ff);
+  debug_message("Wrote %s", ff);
 }
 
 
@@ -1604,13 +1868,13 @@ void cal_zero_disparity_cb(Fl_Check_Button *w, void*)
 void cal_check_size_cb(Fl_Value_Input *w, void*)
 {
   squareSize = w->value()/1000.0; // size in mm
-  info_message("Target square size is %d mm", (int)w->value());
+  debug_message("Target square size is %d mm", (int)w->value());
 }
 
 void cal_check_x_cb(Fl_Value_Input *w, void*)
 {
   num_x_ints = (int)w->value();
-  info_message("Target X corners: %d", num_x_ints);
+  debug_message("Target X corners: %d", num_x_ints);
   num_pts = num_x_ints*num_y_ints;
 }
 
@@ -1618,7 +1882,7 @@ void cal_check_x_cb(Fl_Value_Input *w, void*)
 void cal_check_y_cb(Fl_Value_Input *w, void*)
 {
   num_y_ints = (int)w->value();
-  info_message("Target Y corners: %d", num_y_ints);
+  debug_message("Target Y corners: %d", num_y_ints);
   num_pts = num_x_ints*num_y_ints;
 }
 
@@ -1786,7 +2050,7 @@ parse_filename(char *fname, char **lname, char **rname, int *num, char **bname)
 	  strcpy(lbase,fname);
 	  strcpy(rbase,fname);
 	  rbase[stn+1] = 'R';
-	  info_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
 	  *lname = lbase;
 	  *rname = rbase;
 	}
@@ -1802,7 +2066,7 @@ parse_filename(char *fname, char **lname, char **rname, int *num, char **bname)
 	  strcat(lbase,&fname[sufn]); // suffix
 	  strcpy(rbase,lbase);
 	  rbase[stn-seq+4+1] = 'R';
-	  info_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
 	  *lname = lbase;
 	  *rname = rbase;
 	}
@@ -1833,7 +2097,7 @@ parse_filename(char *fname, char **lname, char **rname, int *num, char **bname)
 	  strcpy(rbase,fname);
 	  strcpy(&rbase[basen],"right");
 	  strcpy(&rbase[basen+5],&fname[basen+4]);
-	  info_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
 	  *lname = lbase;
 	  *rname = rbase;
 	  return true;
@@ -1851,7 +2115,7 @@ parse_filename(char *fname, char **lname, char **rname, int *num, char **bname)
 	  strcpy(rbase,lbase);
 	  strcpy(&rbase[basen],"right");
 	  strcpy(&rbase[basen+5],&lbase[basen+4]);
-	  info_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
+	  debug_message("lbase is [%s]\nrbase is [%s]\n", lbase, rbase);
 	  *lname = lbase;
 	  *rname = rbase;
 	  return true;
@@ -1948,25 +2212,25 @@ void save_images_cb(Fl_Menu_ *w, void *u)
     {
       sprintf(ff, "%s-L.png", bname);
       cvSaveImage(ff, imgs_left[0]);
-      info_message("Saved %s\n", ff);
+      debug_message("Saved %s\n", ff);
     }
   if (imgs_right[0])
     {
       sprintf(ff, "%s-R.png", bname);
       cvSaveImage(ff, imgs_right[0]);
-      info_message("Saved %s\n", ff);
+      debug_message("Saved %s\n", ff);
     }
   if (rect_left[0])
     {
       sprintf(ff, "%s-RL.png", bname);
       cvSaveImage(ff, rect_left[0]);
-      info_message("Saved %s\n", ff);
+      debug_message("Saved %s\n", ff);
     }
   if (rect_right[0])
     {
       sprintf(ff, "%s-RR.png", bname);
       cvSaveImage(ff, rect_right[0]);
-      info_message("Saved %s\n", ff);
+      debug_message("Saved %s\n", ff);
     }
 }
 
@@ -1994,7 +2258,7 @@ video_dev_cb(Fl_Choice *w, void *u)
   if (devNum > 0)
     {
       devIndex = w->value();
-      info_message("[StereoCal] Camera %d selected", devIndex);
+      debug_message("[StereoCal] Camera %d selected", devIndex);
     }
 }
 
@@ -2047,13 +2311,43 @@ do_video_cb(Fl_Light_Button *w, void*)
 void 
 do_color_cb(Fl_Light_Button *w, void*)
 {
+  if (dev && !dev->isColor)
+    {
+      w->value(false);
+      isColor = false;
+      return;
+    }
+
   if (w->value())		// turn it on
     isColor = true;
-
   else
     isColor = false;
 }
 
+// STOC processing
+void 
+do_stoc_cb(Fl_Light_Button *w, void*)
+{
+  if (dev && !dev->isSTOC)
+    {
+      w->value(false);
+      useSTOC = false;
+      return;
+    }
+
+  if (w->value())		// turn it on
+    useSTOC = true;
+  else
+    useSTOC = false;
+}
+
+
+// exit
+void
+do_exit_cb(Fl_Menu_ *x, void *)
+{
+  isExit = true;
+}
 
 
 //
@@ -2107,5 +2401,25 @@ double get_ms()
   double ret = t0.tv_sec * 1000.0;
   ret += ((double)t0.tv_usec)*0.001;
   return ret;
+}
+#endif
+
+
+// sleeps in ms
+#ifdef WIN32
+void
+wait_ms(int ms)
+{
+  Sleep(ms);
+}
+#else
+void
+wait_ms(int ms)
+{
+    struct timeval delay;
+    fd_set readfds, writefds, execfds;
+    delay.tv_sec = ms / 1000;
+    delay.tv_usec = (ms % 1000) * 1000;
+    select (0, &readfds, &writefds, &execfds, &delay);
 }
 #endif

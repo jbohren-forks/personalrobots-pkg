@@ -7,7 +7,8 @@ Fl_Menu_Item stereogui::menu_[] = {
  {"Load Images...", 0,  (Fl_Callback*)load_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
  {"Save Images...", 0,  (Fl_Callback*)save_images_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
  {"Load Params...", 0,  (Fl_Callback*)load_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Save Params...", 0,  (Fl_Callback*)save_params_cb, 0, 128, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Exit", 0,  (Fl_Callback*)do_exit_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0},
  {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -997,7 +998,7 @@ stereogui::stereogui() {
     } // Fl_Menu_Bar* o
     stereo_calibration->end();
   } // Fl_Window* stereo_calibration
-  { cal_window = new Fl_Window(305, 260, "Calibration");
+  { cal_window = new Fl_Window(305, 340, "Calibration");
     cal_window->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(10, 20, 160, 300);
       { Fl_Button* o = capture_button = new Fl_Button(10, 20, 90, 25, "Capture");
@@ -1006,48 +1007,53 @@ stereogui::stereogui() {
         capture_button->callback((Fl_Callback*)cal_capture_cb);
         o->user_data((void *)this);
       } // Fl_Button* capture_button
-      { Fl_Button* o = load_button = new Fl_Button(10, 90, 90, 25, "Load both");
+      { Fl_Button* o = load_button = new Fl_Button(10, 130, 90, 25, "Load both");
         load_button->down_box(FL_DOWN_BOX);
         load_button->labelsize(11);
         load_button->callback((Fl_Callback*)cal_load_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_button
-      { Fl_Button* o = save_button = new Fl_Button(10, 160, 90, 25, "Save");
+      { Fl_Button* o = save_button = new Fl_Button(10, 200, 90, 25, "Save");
         save_button->down_box(FL_DOWN_BOX);
         save_button->labelsize(11);
         save_button->callback((Fl_Callback*)cal_save_image_cb);
         o->user_data((void *)this);
       } // Fl_Button* save_button
-      { Fl_Button* o = save_all_button = new Fl_Button(10, 185, 90, 25, "Save All");
+      { Fl_Button* o = save_all_button = new Fl_Button(10, 225, 90, 25, "Save All");
         save_all_button->down_box(FL_DOWN_BOX);
         save_all_button->labelsize(11);
         save_all_button->callback((Fl_Callback*)cal_save_all_cb);
         o->user_data((void *)this);
       } // Fl_Button* save_all_button
-      { Fl_Button* o = delete_button = new Fl_Button(10, 225, 90, 25, "Delete");
+      { Fl_Button* o = delete_button = new Fl_Button(10, 265, 90, 25, "Delete");
         delete_button->down_box(FL_DOWN_BOX);
         delete_button->labelsize(11);
         delete_button->callback((Fl_Callback*)cal_delete_image);
         o->user_data((void *)this);
       } // Fl_Button* delete_button
-      { Fl_Button* o = load_left_button = new Fl_Button(10, 65, 45, 25, "Load L");
+      { Fl_Button* o = load_left_button = new Fl_Button(10, 105, 45, 25, "Load L");
         load_left_button->down_box(FL_DOWN_BOX);
         load_left_button->labelsize(11);
         load_left_button->callback((Fl_Callback*)cal_load_left_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_left_button
-      { Fl_Button* o = load_right_button = new Fl_Button(55, 65, 45, 25, "Load R");
+      { Fl_Button* o = load_right_button = new Fl_Button(55, 105, 45, 25, "Load R");
         load_right_button->down_box(FL_DOWN_BOX);
         load_right_button->labelsize(11);
         load_right_button->callback((Fl_Callback*)cal_load_right_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_right_button
-      { Fl_Button* o = load_seq_button = new Fl_Button(10, 115, 90, 25, "Load sequence");
+      { Fl_Button* o = load_seq_button = new Fl_Button(10, 155, 90, 25, "Load sequence");
         load_seq_button->down_box(FL_DOWN_BOX);
         load_seq_button->labelsize(11);
         load_seq_button->callback((Fl_Callback*)cal_load_seq_cb);
         o->user_data((void *)this);
       } // Fl_Button* load_seq_button
+      { track_button = new Fl_Light_Button(10, 55, 100, 25, "Track chessboard");
+        track_button->labelsize(11);
+        track_button->callback((Fl_Callback*)do_track_cb);
+        Fl_Group::current()->resizable(track_button);
+      } // Fl_Light_Button* track_button
       o->end();
     } // Fl_Group* o
     { Fl_Group* o = new Fl_Group(130, 200, 175, 55);
@@ -1271,9 +1277,12 @@ stereogui::stereogui() {
         cam_select->down_box(FL_BORDER_BOX);
         cam_select->callback((Fl_Callback*)video_dev_cb);
       } // Fl_Choice* cam_select
-      { color_button = new Fl_Light_Button(115, 75, 60, 25, "Color");
+      { color_button = new Fl_Light_Button(110, 75, 60, 25, "Color");
         color_button->callback((Fl_Callback*)do_color_cb);
       } // Fl_Light_Button* color_button
+      { stoc_button = new Fl_Light_Button(190, 75, 60, 25, "STOC");
+        stoc_button->callback((Fl_Callback*)do_stoc_cb);
+      } // Fl_Light_Button* stoc_button
       o->end();
     } // Fl_Group* o
     video_window->end();

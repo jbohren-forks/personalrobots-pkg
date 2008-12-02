@@ -103,7 +103,7 @@ main(int argc, char **argv)
       fltk_check();		// process fltk events
 
       // set up OpenGL window
-      im3DWindow *w3d = new im3DWindow(0,0,640,480,"3D Display");
+      im3DWindow *w3d = new im3DWindow(0,0,640,480);
       w3d->show();
 
       // start transmitting

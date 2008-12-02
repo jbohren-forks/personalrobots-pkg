@@ -760,7 +760,12 @@ class stereogui {open
           MenuItem {} {
             label {Save Params...}
             callback save_params_cb
-            xywh {0 0 30 20}
+            xywh {0 0 30 20} divider
+          }
+          MenuItem {} {
+            label Exit
+            callback do_exit_cb
+            xywh {10 10 30 20}
           }
         }
         MenuItem {} {
@@ -782,9 +787,9 @@ class stereogui {open
     }
     Fl_Window cal_window {
       label Calibration open
-      xywh {439 264 305 260} type Single hide
+      xywh {591 314 305 340} type Single visible
     } {
-      Fl_Group {} {
+      Fl_Group {} {open
         xywh {10 20 160 300}
       } {
         Fl_Button capture_button {
@@ -796,44 +801,49 @@ class stereogui {open
         Fl_Button load_button {
           label {Load both}
           callback cal_load_cb
-          xywh {10 90 90 25} down_box DOWN_BOX labelsize 11
+          xywh {10 130 90 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button save_button {
           label Save
           callback cal_save_image_cb
-          xywh {10 160 90 25} down_box DOWN_BOX labelsize 11
+          xywh {10 200 90 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button save_all_button {
           label {Save All}
           callback cal_save_all_cb
-          xywh {10 185 90 25} down_box DOWN_BOX labelsize 11
+          xywh {10 225 90 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button delete_button {
           label Delete
           callback cal_delete_image
-          xywh {10 225 90 25} down_box DOWN_BOX labelsize 11
+          xywh {10 265 90 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button load_left_button {
           label {Load L}
           callback cal_load_left_cb
-          xywh {10 65 45 25} down_box DOWN_BOX labelsize 11
+          xywh {10 105 45 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button load_right_button {
           label {Load R}
           callback cal_load_right_cb
-          xywh {55 65 45 25} down_box DOWN_BOX labelsize 11
+          xywh {55 105 45 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
         }
         Fl_Button load_seq_button {
           label {Load sequence}
           callback cal_load_seq_cb
-          xywh {10 115 90 25} down_box DOWN_BOX labelsize 11
+          xywh {10 155 90 25} down_box DOWN_BOX labelsize 11
           code0 {o->user_data((void *)this);}
+        }
+        Fl_Light_Button track_button {
+          label {Track chessboard}
+          callback do_track_cb selected
+          xywh {10 55 100 25} labelsize 11 resizable
         }
       }
       Fl_Group {} {open
@@ -887,7 +897,7 @@ class stereogui {open
           code0 {o->user_data((void *)this);}
         }
       }
-      Fl_Group {} {
+      Fl_Group {} {open
         xywh {125 105 180 95}
       } {
         Fl_Box {} {
@@ -921,8 +931,8 @@ class stereogui {open
       }
     }
     Fl_Window stereo_window {
-      label Stereo open
-      xywh {509 587 265 260} type Single visible
+      label Stereo
+      xywh {509 587 265 260} type Single hide
     } {
       Fl_Group {} {open
         xywh {20 135 285 120}
@@ -989,8 +999,8 @@ class stereogui {open
       }
     }
     Fl_Window video_window {
-      label Video open
-      xywh {491 278 270 260} type Single visible
+      label Video
+      xywh {491 278 270 260} type Single hide
     } {
       Fl_Group {} {open
         xywh {20 85 285 170}
@@ -1054,8 +1064,13 @@ class stereogui {open
         } {}
         Fl_Light_Button color_button {
           label Color
-          callback do_color_cb selected
-          xywh {115 75 60 25}
+          callback do_color_cb
+          xywh {110 75 60 25}
+        }
+        Fl_Light_Button stoc_button {
+          label STOC
+          callback do_stoc_cb
+          xywh {190 75 60 25}
         }
       }
     }

@@ -85,6 +85,10 @@ StereoCam::doDisparity()
   // first do any rectification necessary
   doRectify();
 
+  // check if disparity is already present
+  if (stIm->hasDisparity)
+    return true;
+
   // check if the rectified images are present
   if (stIm->imLeft->imRectType == COLOR_CODING_NONE ||
       stIm->imRight->imRectType == COLOR_CODING_NONE)

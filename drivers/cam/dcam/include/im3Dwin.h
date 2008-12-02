@@ -73,7 +73,7 @@ class im3DWindow : public Fl_Gl_Window {
   
  public:
   
-  im3DWindow(int X, int Y, int W, int H, const char *L); // constructor
+  im3DWindow(int X, int Y, int W, int H); // constructor
 
   // set up 3D image from disparity
   void DisplayImage(StereoData *stIm);
@@ -93,8 +93,10 @@ class im3DWindow : public Fl_Gl_Window {
 
  private:
 
+  int xs, ys;		    // window size
   void draw();              // draw function called when necessary by FLTK
   int handle(int);          // user event handling function, called by FLTK
+  void resize(int X, int Y, int W, int H);
 
   GLfloat *colorListR, *colorListG, *colorListB; // point colors
   GLfloat *pointListX, *pointListY, *pointListZ; // points 

@@ -330,7 +330,7 @@ static unsigned char dmap[768] =
 // construct a display window
 
 imWindow::imWindow(int x, int y, int w, int h, char *name)
-  : Fl_Double_Window(x,y,w,h,name)
+  : Fl_Window(x,y,w,h,name)
 {
   width = dwidth = w;
   height = dheight = h;
@@ -355,7 +355,7 @@ imWindow::imWindow(int x, int y, int w, int h, char *name)
 }
 
 imWindow::imWindow(int w, int h, char *name)
-  : Fl_Double_Window(w,h,name)
+  : Fl_Window(w,h,name)
 {
   width = dwidth = w;
   height = dheight = h;
@@ -495,8 +495,7 @@ imWindow::DisplayImage(unsigned char *im, int w, int h, int ls, int type, int nd
       linesize *= 2;
     }
 
-  drawit();
-
+  redraw();
 }
 
 
@@ -588,7 +587,7 @@ imWindow::drawit()
   if (!shown()) return;
 
   struct image_cb_data cbd;
-  make_current();
+  //  make_current();
 
   if (pixelType == MONOCHROME)
     {
@@ -690,7 +689,7 @@ imWindow::draw()
       fl_rectf(0,0,dwidth,dheight);
     }
   if (pixelData)
-    DisplayImage(pixelData, width, height, linesize, pixelType, ndisp, skipw, gamma, xoff, yoff);
+    drawit();
   DrawOverlay(myWhich, ovArg);
 }
 

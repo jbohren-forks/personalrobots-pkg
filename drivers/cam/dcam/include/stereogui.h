@@ -14,6 +14,7 @@ extern void load_images_cb(Fl_Menu_*, void*);
 extern void save_images_cb(Fl_Menu_*, void*);
 extern void load_params_cb(Fl_Menu_*, void*);
 extern void save_params_cb(Fl_Menu_*, void*);
+extern void do_exit_cb(Fl_Menu_*, void*);
 extern void video_window_cb(Fl_Menu_*, void*);
 extern void stereo_window_cb(Fl_Menu_*, void*);
 extern void cal_window_cb(Fl_Menu_*, void*);
@@ -26,6 +27,8 @@ extern void cal_delete_image(Fl_Button*, void*);
 extern void cal_load_left_cb(Fl_Button*, void*);
 extern void cal_load_right_cb(Fl_Button*, void*);
 extern void cal_load_seq_cb(Fl_Button*, void*);
+#include <FL/Fl_Light_Button.H>
+extern void do_track_cb(Fl_Light_Button*, void*);
 #include <FL/Fl_Value_Input.H>
 extern void cal_check_size_cb(Fl_Value_Input*, void*);
 extern void cal_check_x_cb(Fl_Value_Input*, void*);
@@ -47,7 +50,6 @@ extern void speckle_cb(Fl_Counter*, void*);
 extern void disparity_cb(Fl_Counter*, void*);
 extern void corrsize_cb(Fl_Counter*, void*);
 extern void xoff_cb(Fl_Counter*, void*);
-#include <FL/Fl_Light_Button.H>
 extern void do_rectify_cb(Fl_Light_Button*, void*);
 extern void do_stereo_cb(Fl_Light_Button*, void*);
 extern void do_3d_cb(Fl_Light_Button*, void*);
@@ -57,6 +59,7 @@ extern void video_rate_cb(Fl_Choice*, void*);
 extern void do_video_cb(Fl_Light_Button*, void*);
 extern void video_dev_cb(Fl_Choice*, void*);
 extern void do_color_cb(Fl_Light_Button*, void*);
+extern void do_stoc_cb(Fl_Light_Button*, void*);
 
 class stereogui {
 public:
@@ -137,6 +140,7 @@ public:
   Fl_Button *load_left_button;
   Fl_Button *load_right_button;
   Fl_Button *load_seq_button;
+  Fl_Light_Button *track_button;
   Fl_Value_Input *user_check_size;
   Fl_Value_Input *user_check_x;
   Fl_Value_Input *user_check_y;
@@ -159,6 +163,7 @@ public:
   Fl_Light_Button *video_button;
   Fl_Choice *cam_select;
   Fl_Light_Button *color_button;
+  Fl_Light_Button *stoc_button;
   ~stereogui(); 
 };
 #endif

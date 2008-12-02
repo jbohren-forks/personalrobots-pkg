@@ -33,32 +33,6 @@
 *********************************************************************/
 
 
-/*#########################################
- * im3Dwin.cpp
- *
- * OpenGL display in FLTK
- *
- *#########################################
- */
-
-/**
- ** im3Dwin.cpp
- **
- ** Kurt Konolige
- ** Senior Researcher
- ** Willow Garage
- ** 68 Willow Road
- ** Menlo Park, CA 94025
- ** E-mail:  konolige@willowgarage.com
- **
- **/
-
-#include <stdio.h>
-#include <math.h>
-#ifndef WIN32
-#include <sys/time.h>
-#endif
-
 #include "imwin.h"
 #include "im3Dwin.h"
 #include "FL/Fl.H"
@@ -68,8 +42,8 @@
 // GL graphics window definitions
 //
 
-im3DWindow::im3DWindow(int X, int Y, int W, int H, const char *L) 
-  : Fl_Gl_Window(X, Y, W, H, L) 
+im3DWindow::im3DWindow(int X, int Y, int W, int H) 
+  : Fl_Gl_Window(X, Y, W, H) 
 {
 
   // effects: im3DWindow contstructor; creates the window and
@@ -95,6 +69,9 @@ im3DWindow::im3DWindow(int X, int Y, int W, int H, const char *L)
   gammaTable = new GLfloat[256];
   for (int i=0; i<256; i++)
     gammaTable[i] = (GLfloat)((double)i/255.0);
+
+  xs = W;
+  ys = H;
 }
   
 void im3DWindow::setDisplayAxes(double value)
@@ -195,58 +172,6 @@ void im3DWindow::rotImageZ(float value)
 
 bool im3DWindow::calcCenterZ(StereoData *stIm, int nh)
 {
-#if 0
-  int w, h;
-  float *pts = stIm->imPts;
-  float *pt;
-  int np = 0;
-  int ld, td;
-  svsSP *sp = &di->sp;
-
-  w = di->ip.width;   
-  h = di->ip.height;
- 
-  // set center neighborhood boundaries
-  ld = w/2 - nh/2;
-  if (ld < 0)
-    ld = 0;
-  td = h/2 - nh/2;
-  if (td < 0)
-    td = 0;
-
-  if (ld + nh > w)
-    nh = w - ld - 1;
-  if (td + nh > h)
-    nh = h - td - 1;
-
-  centerz = 0.0;
-  float minz = 100000.0;
-  int i, j;
-  
-  for (j=td; j<td+nh; j++)
-    {
-      pt = pts + j*w + ld;
-      for (i=ld; i<ld+nh; i++, pt++)
-	{
-	  if (pt->A > 0.0) 
-	    {
-	      centerz = centerz + pt->Z;
-              if (pt->Z < minz)
-                minz = pt->Z;
-	      np++;
-	    }
-	}
-    }
-
-  if (np > 0)
-    {
-      centerz = centerz/np;
-      centerz = minz;		// try the minimum...
-      if (centerz > 10)
-	centerz = 10;
-      return true;
-    }
-#endif
 
   return false;
 }
@@ -310,38 +235,6 @@ void im3DWindow::DisplayImage(StereoData *stIm)
 
   else				// array of points, corresponding to image
     {
-#if 0
-      int i, j;
-      for (j=0; j<h; j++)
-	{
-	  cp =  j*w;
-	  pts = di->pts3D + cp;	// 3D point array
-	  for (i=0; i<w; i++, cp++, pts++)
-	    {
-	      if (pts->A > 0)	// invalid points have A = 0, -1, -2
-		{
-		  pointListX[ip] = pts->X;
-		  pointListY[ip] = pts->Y;
-		  pointListZ[ip] = pts->Z;
-		  if (!cflag)	// monochrome
-		    {
-		      colorR = c[cp];
-		      colorListR[ip] = colorListG[ip] = colorListB[ip] = gammaTable[colorR];
-		    }
-		  else 
-		    {
-		      colorR = cc[cp].r;
-		      colorB = cc[cp].b;
-		      colorG = cc[cp].g;
-		      colorListR[ip] = gammaTable[colorR];
-		      colorListG[ip] = gammaTable[colorG];
-		      colorListB[ip] = gammaTable[colorB];
-		    }
-		  ip++;
-		}
-	    }
-	}
-#endif
     }
 
   numPoints = ip;
@@ -404,8 +297,9 @@ void im3DWindow::draw()
     // ... window size is in w() and h().
     // ... valid() is turned on by FLTK after draw() returns
 
-    // hmm, should this be here?? or in an init somewhere?
-	glLoadIdentity();
+    // hmm, should all this be here?? or in an init somewhere?
+    valid(1);
+    glLoadIdentity();
     glShadeModel(GL_FLAT);
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_POINT_SMOOTH);
@@ -480,6 +374,28 @@ void im3DWindow::draw()
 
 
 
+}
+
+
+//
+// resize callback
+// seems to resize on any change in position, too - just ignore these
+//
+
+void im3DWindow::resize(int X, int Y, int W, int H) 
+{
+  if (xs == W && ys == H)
+    return;
+
+  Fl_Gl_Window::resize(X,Y,W,H);
+  xs = W;
+  ys = H;
+
+  glPopMatrix();
+  newModel = true;
+  context(NULL);		// need this to get the resized window to display
+
+  redraw();
 }
 
 

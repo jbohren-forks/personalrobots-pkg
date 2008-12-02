@@ -203,12 +203,12 @@ ImageData::doRectify()
       if (imRectSize < imSize)
 	{
 	  MEMFREE(imRect);
-	  imRectType = imType;
 	  imSize = imWidth*imHeight;
 	  imRect = (uint8_t *)MEMALIGN(imSize);
 	}
 
       // set up images 
+      imRectType = imType;
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 1);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 1);
       cvSetData(srcIm, im, imWidth);
@@ -226,12 +226,12 @@ ImageData::doRectify()
       if (imRectColorSize < imColorSize)
 	{
 	  MEMFREE(imRectColor);
-	  imRectColorType = imColorType;
 	  imSize = imWidth*imHeight*3;
 	  imRectColor = (uint8_t *)MEMALIGN(imSize);
 	}
 
       // set up images 
+      imRectColorType = imColorType;
       cvInitImageHeader(srcIm, size, IPL_DEPTH_8U, 3);
       cvInitImageHeader(dstIm, size, IPL_DEPTH_8U, 3);
       cvSetData(srcIm, imColor, imWidth*3);
