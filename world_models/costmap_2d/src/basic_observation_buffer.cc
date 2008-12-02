@@ -133,7 +133,7 @@ namespace costmap_2d {
 
     copy->set_pts_size(j);
 
-    ROS_INFO("Filter discarded %d points (%d left) \n", n - j, j);
+    ROS_DEBUG("Filter discarded %d points (%d left) \n", n - j, j);
 
     return copy;
   }
