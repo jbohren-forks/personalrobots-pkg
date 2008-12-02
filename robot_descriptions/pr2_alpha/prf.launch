@@ -41,7 +41,7 @@
   <node machine="four" pkg="imu_node" type="imu_node"/>
 
 <!-- Runtime Diagnostics Logging -->
-<node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prg_runtime_automatic /diagnostics" />
+<node pkg="rosrecord" type="rosrecord" args="-f /hwlog/prf_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
 <node pkg="ntp_monitor" type="ntp_monitor.py" machine="xenomai"/>
