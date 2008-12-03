@@ -397,7 +397,7 @@ public:
       // Publish the 3d head center for this person.
       pos.header.stamp = image_msg_.header.stamp;
       pos.name = "stereo_face_color_tracker";
-      pos.object_id = -1;
+      pos.object_id = people_->getID(iperson);
       pos.pos.x = cvmGet(end_points,iperson,2);
       pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
       pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
