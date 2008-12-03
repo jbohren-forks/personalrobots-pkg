@@ -44,12 +44,14 @@
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
 #include "CvStereoCamModel.h"
+#include <robot_msgs/PositionMeasurement.h>
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
 
 #include "people.h"
+
 
 using namespace std;
 
@@ -113,6 +115,10 @@ public:
     // Subscribe to calibration parameters
     subscribe("videre/cal_params", cal_params_, &VidereFaceDetector::cal_params_cb, 1);
 
+    // Advertise a position measure message.
+    advertise<robot_msgs::PositionMeasurement>("face_detection",1);
+    //subscribe<robot_msgs::PositionMeasurement>("face_detection",pos,&VidereFaceDetector::pos_cb,1);
+
   }
 
   ~VidereFaceDetector()
@@ -167,6 +173,50 @@ public:
       im_size = cvGetSize(cv_image_left_);
 
       vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
+      
+
+      // Get the average disparity in the middle half of the bounding box, and compute the face center in 3d. Publish the face center as a track point.
+      if (cv_image_disp_ && cam_model_) {
+	int r, c, good_pix;
+	uchar* ptr;
+	double avg_disp;
+	CvRect *one_face;
+	robot_msgs::PositionMeasurement pos;
+	CvMat *uvd = cvCreateMat(1,3,CV_32FC1);
+	CvMat *xyz = cvCreateMat(1,3,CV_32FC1);
+	for (uint iface = 0; iface < faces_vector.size(); iface++) {
+	  one_face = &faces_vector[iface];
+	  good_pix = 0;
+	  avg_disp = 0;
+	  for (r = floor(one_face->y+0.25*one_face->height); r < floor(one_face->y+0.75*one_face->height); r++) {
+	    ptr = (uchar*)(cv_image_disp_->imageData + r*cv_image_disp_->widthStep);
+	    for (c = floor(one_face->x+0.25*one_face->width); c < floor(one_face->x+0.75*one_face->width); c++) {
+	      if (ptr[c] > 0) {
+		avg_disp += ptr[c];
+		good_pix++;
+	      }
+	    }
+	  }
+	  avg_disp /= (double)good_pix; // Take the average.
+	  cvmSet(uvd,0,0,one_face->x+one_face->width/2.0);
+	  cvmSet(uvd,0,1,one_face->y+one_face->height/2.0);
+	  cvmSet(uvd,0,2,avg_disp);
+	  cam_model_->dispToCart(uvd,xyz);
+	  pos.header.stamp = image_msg_.header.stamp;
+	  pos.name = "face_detection";
+	  pos.object_id = -1;
+	  pos.pos.x = cvmGet(xyz,0,2);
+	  pos.pos.y = -1.0*cvmGet(xyz,0,0);
+	  pos.pos.z = -1.0*cvmGet(xyz,0,1);
+	  pos.header.frame_id = "stereo_link";
+	  pos.reliability = 0.8;
+	  pos.initialization = 0;
+	  //pos.covariance = ;
+	  publish("face_detection",pos);
+	}
+	cvReleaseMat(&uvd);
+	cvReleaseMat(&xyz);
+      }
  
       // Copy all of the images you might want to display.
       // This is necessary because OpenCV doesn't like multiple threads.
