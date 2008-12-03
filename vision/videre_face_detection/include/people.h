@@ -67,6 +67,8 @@ struct Person {
   CvRect face_bbox_2d;
   IplImage *face_mask_2d;
   CvScalar face_center_3d;
+  int id;
+  string name;
 };
 
 class People
@@ -105,6 +107,12 @@ class People
 
   // Use the list of people to recognize a face image.
   void recognizePerson(){}
+
+  // Set a person's id
+  void setID(int id, int iperson);
+
+  // Get a person's id
+  int getID(int iperson);
 
   /********
    * Detect all faces in an image.
