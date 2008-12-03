@@ -1,6 +1,6 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
+  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
 
   <!-- Run hztest -->
   <!-- Test for publication of 'base_scan' topic -->
@@ -9,7 +9,7 @@
     <param name="topic" value="base_scan" />
     <!-- The expected publication rate [Hz].  Set to 0.0 to only check that
     at least one message is received. -->
-    <param name="hz" value="5.0" />
+    <param name="hz" value="16.828" />
     <!-- Acceptable error in the publication rate [Hz].  Ignored if hz is set
     to 0.0. -->
     <param name="hzerror" value="3.0" />
@@ -28,7 +28,7 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (tilt_scan_test vs. scan_test). -->
     <param name="topic" value="tilt_scan" />
-    <param name="hz" value="5.0" />
+    <param name="hz" value="16.907" />
     <param name="hzerror" value="3.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
@@ -39,7 +39,7 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (full_cloud_test vs. scan_test). -->
     <param name="topic" value="full_cloud" />
-    <param name="hz" value="5.0" />
+    <param name="hz" value="8.661" />
     <param name="hzerror" value="3.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
@@ -49,8 +49,8 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (base_pose_ground_truth_test vs. scan_test). -->
     <param name="topic" value="base_pose_ground_truth" />
-    <param name="hz" value="22.0" />
-    <param name="hzerror" value="10.0" />
+    <param name="hz" value="807.682" />
+    <param name="hzerror" value="200.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
@@ -59,8 +59,8 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (mechanism_state_test vs. scan_test). -->
     <param name="topic" value="mechanism_state" />
-    <param name="hz" value="21.0" />
-    <param name="hzerror" value="10.0" />
+    <param name="hz" value="100.5678" />
+    <param name="hzerror" value="20.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
@@ -69,8 +69,8 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (TransformArray_test vs. scan_test). -->
     <param name="topic" value="TransformArray" />
-    <param name="hz" value="21.0" />
-    <param name="hzerror" value="10.0" />
+    <param name="hz" value="157.240" />
+    <param name="hzerror" value="15.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
@@ -79,8 +79,8 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (time_test vs. scan_test). -->
     <param name="topic" value="time" />
-    <param name="hz" value="40.0" />
-    <param name="hzerror" value="10.0" />
+    <param name="hz" value="796.054" />
+    <param name="hzerror" value="200.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
@@ -90,22 +90,10 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (axis_left/ptz_state_test vs. scan_test). -->
     <param name="topic" value="axis_l/ptz_state" />
-    <param name="hz" value="5.0" />
+    <param name="hz" value="12.282" />
     <param name="hzerror" value="3.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />
   </test>
-
-  <!-- Test for publication of 'axis_left_image' topic. -->
-  <test test-name="hztest_test_axis_left_image" pkg="rostest" type="hztest" name="axis_left_image_test">
-    <!-- Note how we use a different parameter namespace and node name
-    for this test (axis_left/image_test vs. scan_test). -->
-    <param name="topic" value="axis_l/image" />
-    <param name="hz" value="5.0" />
-    <param name="hzerror" value="3.0" />
-    <param name="test_duration" value="5.0" />
-    <param name="check_intervals" value="false" />
-  </test>
-
 
 </launch>
