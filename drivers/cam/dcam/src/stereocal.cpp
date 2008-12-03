@@ -209,7 +209,11 @@ calImageWindow * get_current_right_win();
 void info_message(char *str, ...);	// print in the info line
 void debug_message(char *str, ...);	// print in the info line and to debug window
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
-void FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
+bool FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
+
+// IPL images for transfers to OpenCV domain
+IplImage *img1 = NULL, *img2 = NULL;
+
 
 int
 main(int argc, char **argv)	// no arguments
@@ -242,7 +246,6 @@ main(int argc, char **argv)	// no arguments
   useSTOC = true;
   isTracking = false;
 
-  // IPL images for tracking
   IplImage *trackImgL = NULL;
   IplImage *trackImgR = NULL;
   IplImage *trackCornersL = NULL;
@@ -351,6 +354,7 @@ main(int argc, char **argv)	// no arguments
 
 	      // check for tracking of chessboard
 	      // first find images and convert into IPL images
+	      // TODO: check header size if IplImage is already created
 	      if (isTracking)
 		{
 		  // set up grayscale image
@@ -382,9 +386,9 @@ main(int argc, char **argv)	// no arguments
 		    {
 		      stg->track_button->value(0);
 		      calImageWindow *cwin;
-		      cwin = get_current_left_win();
+		      cwin = stg->mainLeft;
 		      cwin->clear2DFeatures();
-		      cwin = get_current_right_win();
+		      cwin = stg->mainRight;
 		      cwin->clear2DFeatures();
 		    }
 		}
@@ -396,7 +400,7 @@ main(int argc, char **argv)	// no arguments
 		}
 
 	      // display left image
-	      calImageWindow *cwin = get_current_left_win();
+	      calImageWindow *cwin = stg->mainLeft;
 	      if (dev->stIm->imLeft->imRectColorType != COLOR_CODING_NONE)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imLeft->imRectColor, w, h, w, RGB24);
 	      else if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
@@ -410,7 +414,7 @@ main(int argc, char **argv)	// no arguments
 		cwin->display2DFeatures(leftcorners[0],nleftcorners[0],goodleft[0]);
 
 	      // display right image
-	      cwin = get_current_right_win();
+	      cwin = stg->mainRight;
 	      if (dev->stIm->hasDisparity)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imDisp, w, h, w, DISPARITY, 64*16);
 	      else if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
@@ -457,7 +461,8 @@ main(int argc, char **argv)	// no arguments
 
 // find corners
 static int numcpts = 0;		// for managing corner points
-void FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img)
+bool
+FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img)
 {
   // find corners
   if (num_pts != numcpts)
@@ -483,6 +488,7 @@ void FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img)
 			 cvSize(5,5),cvSize(-1,-1), 
 			 cvTermCriteria( CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1 ));
     }
+  return ret;
 }
 
 
@@ -578,12 +584,10 @@ calImageWindow *
 get_current_left_win()
 {
   int ind = get_current_tab_index();
-  if (ind < 0)
+  if (ind < 1)
     return NULL;
   switch (ind)
     {
-    case 0:
-      return stg->calLeft0;
     case 1:
       return stg->calLeft1;
     case 2:
@@ -624,20 +628,19 @@ get_current_left_win()
       return stg->calLeft19;
     case 20:
       return stg->calLeft20;
+    default:
+      return NULL;
     }
-  return NULL;
 }
 
 calImageWindow *
 get_current_right_win()
 {
   int ind = get_current_tab_index();
-  if (ind < 0)
+  if (ind < 1)
     return NULL;
   switch (ind)
     {
-    case 0:
-      return stg->calRight0;
     case 1:
       return stg->calRight1;
     case 2:
@@ -678,8 +681,9 @@ get_current_right_win()
       return stg->calRight19;
     case 20:
       return stg->calRight20;
+    default:
+      return NULL;
     }
-  return NULL;
 }
 
 
@@ -1700,34 +1704,61 @@ do_track_cb(Fl_Light_Button* w, void*)
 
 // capture callback
 // save un-rectified images into next open cal buffer
-// problem: how to reset buffers
 
 static int calInd = 0;
 
 void cal_capture_cb(Fl_Button*, void*) 
 {
-#if 0
-  // get window tab
-  IplImage *im;			// OpenCV image
+  int w = dev->stIm->imWidth;
+  int h = dev->stIm->imHeight;
 
-  int ind = get_current_tab_index();
-  
-  calImageWindow *cwin = get_current_right_win();
-
-
-  im = cvLoadImage(fname);	// load image, could be color
-  if (im == NULL)
-    debug_message("Can't load file %s\n", fname);
+  // left image
+  if (img1 == NULL)
+    img1 = cvCreateImageHeader(cvSize(w,h),IPL_DEPTH_8U,1);
+  cvInitImageHeader(img1, cvSize(w,h), IPL_DEPTH_8U, 1);
+  if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
+    cvSetData(img1,dev->stIm->imLeft->im,w);  
   else
     {
-      // convert to grayscale
-      IplImage* img=cvCreateImage(cvGetSize(im),IPL_DEPTH_8U,1); 
-      cvConvertImage(im,img);
-      imgs_right[ind] = img;
-      imsize_right = cvGetSize(im);
-      debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
-      cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
-#endif  
+      debug_message("[Capture] No image to capture");
+      return;
+    }
+
+  if (calInd < 20)
+    set_current_tab_index(calInd);
+  calImageWindow *cwin = get_current_left_win();
+
+  // convert to grayscale, should just do a clone
+  // TBD: release previous image
+  IplImage* img=cvCreateImage(cvGetSize(img1),IPL_DEPTH_8U,1); 
+  cvConvertImage(img1,img);
+  imgs_left[calInd] = img;
+  imsize_left = cvGetSize(img);
+  cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
+  bool ret = FindCorners(&leftcorners[calInd], &nleftcorners[calInd], &goodleft[calInd], img);
+  cwin->display2DFeatures(leftcorners[calInd],nleftcorners[calInd],ret);
+
+  // right image
+  if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
+    cvSetData(img1,dev->stIm->imRight->im,w);  
+  else
+    {
+      debug_message("[Capture] No image to capture");
+      return;
+    }
+
+  cwin = get_current_right_win();
+  // convert to grayscale
+  img=cvCreateImage(cvGetSize(img1),IPL_DEPTH_8U,1); 
+  cvConvertImage(img1,img);
+  imgs_right[calInd] = img;
+  imsize_right = cvGetSize(img);
+  debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
+  cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
+  ret = FindCorners(&rightcorners[calInd], &nrightcorners[calInd], &goodright[calInd], img);
+  cwin->display2DFeatures(rightcorners[calInd],nrightcorners[calInd],ret);
+
+  calInd++;
 }
 
 
@@ -1815,6 +1846,7 @@ void cal_ok_cb(Fl_Button*, void*)
 {
   set_current_tab_index(0);	// set to first calibration image
   stg->cal_window->hide();	// have to request cal window
+  stg->cal_images->hide();	// have to request cal window
 }
 
 
@@ -2157,6 +2189,7 @@ parse_filename(char *fname, char **lname, char **rname, int *num, char **bname)
 void cal_window_cb(Fl_Menu_ *w, void *u)
 {
   stg->cal_window->show();
+  stg->cal_images->show();
   set_current_tab_index(1);	// set to first calibration image
 }
 

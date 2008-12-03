@@ -4,10 +4,6 @@
 #define stereogui_h
 #include <FL/Fl.H>
 #include <FL/Fl_Window.H>
-#include <FL/Fl_Group.H>
-#include <FL/Fl_Tabs.H>
-#include <FL/Fl_Box.H>
-#include "calwin.h"
 #include <FL/Fl_Output.H>
 #include <FL/Fl_Menu_Bar.H>
 extern void load_images_cb(Fl_Menu_*, void*);
@@ -18,6 +14,10 @@ extern void do_exit_cb(Fl_Menu_*, void*);
 extern void video_window_cb(Fl_Menu_*, void*);
 extern void stereo_window_cb(Fl_Menu_*, void*);
 extern void cal_window_cb(Fl_Menu_*, void*);
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Box.H>
+#include "calwin.h"
+#include <FL/Fl_Tabs.H>
 #include <FL/Fl_Button.H>
 extern void cal_capture_cb(Fl_Button*, void*);
 extern void cal_load_cb(Fl_Button*, void*);
@@ -65,10 +65,12 @@ class stereogui {
 public:
   stereogui();
   Fl_Window *stereo_calibration;
+  Fl_Output *info_message;
+  static Fl_Menu_Item menu_[];
+  calImageWindow *mainLeft;
+  calImageWindow *mainRight;
+  Fl_Window *cal_images;
   Fl_Tabs *window_tab;
-  Fl_Group *tab0;
-  calImageWindow *calLeft0;
-  calImageWindow *calRight0;
   Fl_Group *tab1;
   calImageWindow *calLeft1;
   calImageWindow *calRight1;
@@ -129,8 +131,6 @@ public:
   Fl_Group *tab20;
   calImageWindow *calLeft20;
   calImageWindow *calRight20;
-  Fl_Output *info_message;
-  static Fl_Menu_Item menu_[];
   Fl_Window *cal_window;
   Fl_Button *capture_button;
   Fl_Button *load_button;

@@ -8,734 +8,12 @@ class stereogui {open
   } {
     Fl_Window stereo_calibration {
       label {Open STereo} open
-      xywh {554 140 675 360} type Single labelsize 11 hide
+      xywh {554 140 655 305} type Single labelsize 11 visible
     } {
-      Fl_Group {} {open
-        xywh {5 25 855 375}
-      } {
-        Fl_Tabs window_tab {
-          xywh {5 25 665 295} box UP_BOX labeltype NO_LABEL
-        } {
-          Fl_Group tab0 {
-            label {Main       }
-            user_data 0 user_data_type long open
-            xywh {20 70 650 250} labelsize 11
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 60 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft0 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {340 60 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight0 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab1 {
-            label { 1 }
-            user_data 1 user_data_type long
-            xywh {10 60 660 250} labelsize 11 hide deactivate
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 60 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft1 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {340 60 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight1 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab2 {
-            label { 2}
-            user_data 2 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft2 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight2 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab3 {
-            label { 3}
-            user_data 3 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft3 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight3 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab4 {
-            label { 4}
-            user_data 4 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft4 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight4 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab5 {
-            label { 5}
-            user_data 5 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft5 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight5 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab6 {
-            label { 6}
-            user_data 6 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft6 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight6 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab7 {
-            label { 7}
-            user_data 7 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft7 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight7 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab8 {
-            label { 8}
-            user_data 8 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft8 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight8 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab9 {
-            label { 9}
-            user_data 9 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft9 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight9 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab10 {
-            label { 10}
-            user_data 10 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft10 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight10 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab11 {
-            label { 11}
-            user_data 11 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft11 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight11 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab12 {
-            label { 12}
-            user_data 12 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft12 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight12 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab13 {
-            label { 13}
-            user_data 13 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft13 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight13 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab14 {
-            label { 14}
-            user_data 14 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft14 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight14 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab15 {
-            label { 15}
-            user_data 15 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft15 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight15 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab16 {
-            label { 16}
-            user_data 16 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft16 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight16 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab17 {
-            label { 17}
-            user_data 17 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft17 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight17 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab18 {
-            label { 18}
-            user_data 18 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft18 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight18 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab19 {
-            label { 19}
-            user_data 19 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft19 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight19 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-          Fl_Group tab20 {
-            label { 20}
-            user_data 20 user_data_type long
-            xywh {10 50 660 260} labelsize 11 hide
-          } {
-            Fl_Group {} {open
-              xywh {15 60 645 245}
-            } {
-              Fl_Group {} {open
-                xywh {15 60 320 245}
-              } {
-                Fl_Box {} {
-                  xywh {15 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calLeft20 {
-                  xywh {15 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-              Fl_Group {} {open
-                xywh {340 60 320 240}
-              } {
-                Fl_Box {} {
-                  xywh {340 65 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
-                }
-                Fl_Box calRight20 {
-                  xywh {340 60 320 240} labeltype NO_LABEL
-                  code0 {\#include "calwin.h"}
-                  class calImageWindow
-                }
-              }
-            }
-          }
-        }
-      }
       Fl_Output info_message {
-        xywh {5 325 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
+        xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
-      Fl_Menu_Bar {} {open
+      Fl_Menu_Bar {} {
         xywh {0 0 680 20}
       } {
         Submenu {} {
@@ -784,9 +62,730 @@ class stereogui {open
           xywh {10 10 30 20}
         }
       }
+      Fl_Group {} {open
+        xywh {5 25 645 245}
+      } {
+        Fl_Group {} {open
+          xywh {5 25 320 245}
+        } {
+          Fl_Box {} {
+            xywh {5 25 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+          }
+          Fl_Box mainLeft {
+            xywh {5 25 320 240} labeltype NO_LABEL
+            code0 {\#include "calwin.h"}
+            class calImageWindow
+          }
+        }
+        Fl_Group {} {open
+          xywh {330 25 320 245}
+        } {
+          Fl_Box {} {
+            xywh {330 25 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+          }
+          Fl_Box mainRight {
+            xywh {330 25 320 240} labeltype NO_LABEL
+            code0 {\#include "calwin.h"}
+            class calImageWindow
+          }
+        }
+      }
+    }
+    Fl_Window cal_images {
+      label {Calibration images}
+      xywh {125 804 675 295} type Single visible
+    } {
+      Fl_Group {} {open
+        xywh {5 0 855 375}
+      } {
+        Fl_Tabs window_tab {open
+          xywh {5 0 665 295} box UP_BOX labeltype NO_LABEL
+        } {
+          Fl_Group tab1 {
+            label { 1 }
+            user_data 1 user_data_type long
+            xywh {10 35 660 250} labelsize 11 hide deactivate
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 35 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft1 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {340 35 320 240} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight1 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab2 {
+            label { 2}
+            user_data 2 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft2 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight2 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab3 {
+            label { 3}
+            user_data 3 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft3 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight3 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab4 {
+            label { 4}
+            user_data 4 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft4 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight4 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab5 {
+            label { 5}
+            user_data 5 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft5 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight5 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab6 {
+            label { 6}
+            user_data 6 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft6 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight6 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab7 {
+            label { 7}
+            user_data 7 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft7 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight7 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab8 {
+            label { 8}
+            user_data 8 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft8 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight8 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab9 {
+            label { 9}
+            user_data 9 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft9 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight9 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab10 {
+            label { 10}
+            user_data 10 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft10 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight10 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab11 {
+            label { 11}
+            user_data 11 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft11 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight11 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab12 {
+            label { 12}
+            user_data 12 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft12 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight12 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab13 {
+            label { 13}
+            user_data 13 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft13 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight13 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab14 {
+            label { 14}
+            user_data 14 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft14 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight14 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab15 {
+            label { 15}
+            user_data 15 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft15 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight15 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab16 {
+            label { 16}
+            user_data 16 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft16 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight16 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab17 {
+            label { 17}
+            user_data 17 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft17 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight17 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab18 {
+            label { 18}
+            user_data 18 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft18 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight18 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab19 {
+            label { 19}
+            user_data 19 user_data_type long
+            xywh {10 25 660 260} labelsize 11 hide
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft19 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight19 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+          Fl_Group tab20 {
+            label { 20}
+            user_data 20 user_data_type long
+            xywh {10 25 660 260} labelsize 11
+          } {
+            Fl_Group {} {open
+              xywh {15 35 645 245}
+            } {
+              Fl_Group {} {open
+                xywh {15 35 320 245}
+              } {
+                Fl_Box {} {
+                  xywh {15 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calLeft20 {
+                  xywh {15 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+              Fl_Group {} {open
+                xywh {340 35 320 240}
+              } {
+                Fl_Box {} {
+                  xywh {340 40 320 235} box EMBOSSED_FRAME labeltype NO_LABEL
+                }
+                Fl_Box calRight20 {
+                  xywh {340 35 320 240} labeltype NO_LABEL
+                  code0 {\#include "calwin.h"}
+                  class calImageWindow
+                }
+              }
+            }
+          }
+        }
+      }
     }
     Fl_Window cal_window {
-      label Calibration open
+      label Calibration
       xywh {591 314 305 340} type Single visible
     } {
       Fl_Group {} {open
@@ -842,7 +841,7 @@ class stereogui {open
         }
         Fl_Light_Button track_button {
           label {Track chessboard}
-          callback do_track_cb selected
+          callback do_track_cb
           xywh {10 55 100 25} labelsize 11 resizable
         }
       }
