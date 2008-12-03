@@ -55,6 +55,9 @@ from PIL import ImageChops as pilic
 
 FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "testcameraframes"
+TOTAL_ERROR_TOL = 5
+TEST_DURATION   = 30
+TEST_INIT_WAIT  = 10
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
@@ -96,7 +99,6 @@ class TestCameras(unittest.TestCase):
         error_count = 0
         error_total = 0
         pixel_tol = 0
-        total_tol = 5
         # assume len(i0)==len(i1)
         print "lengths ",len(i0), len(i1)
         for i in range(len(i0)):
@@ -110,7 +112,7 @@ class TestCameras(unittest.TestCase):
         error_avg = float(error_total)/float(len(i0))
         print "total error count:",error_count
         print "average error:    ",error_avg
-        if error_avg > total_tol:
+        if error_avg > TOTAL_ERROR_TOL:
           return False
         else:
           return True
@@ -133,7 +135,7 @@ class TestCameras(unittest.TestCase):
         im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
         imc = pilic.difference(im0,im1)
         print "  - comparing images "
-        #im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
+        im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
         #im1.show()
         #im0.show()
         #imc.show()
@@ -149,14 +151,14 @@ class TestCameras(unittest.TestCase):
             self.success = False
 
     def testcameras(self):
-        print " wait 3 sec for objects to settle "
-        time.sleep(3)
+        print " wait TEST_INIT_WAIT sec for objects to settle "
+        time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
         #rospy.TopicSub("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups
         rospy.TopicSub("stereo_l/image", Image, self.imageInput) # this is a camera mounted on PR2 head (left stereo camera)
         rospy.init_node(NAME, anonymous=True)
         #self.pollThread.start()
-        timeout_t = time.time() + 20 #20 seconds delay for processing comparison
+        timeout_t = time.time() + TEST_DURATION
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             time.sleep(0.1)
         self.assert_(self.success)
