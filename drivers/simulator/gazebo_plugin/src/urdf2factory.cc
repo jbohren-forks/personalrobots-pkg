@@ -486,8 +486,6 @@ int main(int argc, char **argv)
 
     //std::cout << " doc " << doc << std::endl << std::endl;
 
-    factoryIface->Lock(1);
-
     // copy model to a string
     std::ostringstream stream;
     stream << doc;
@@ -524,9 +522,9 @@ int main(int argc, char **argv)
     //std::cout << xml_string << std::endl;
     //std::cout << " ------------------- xml ------------------- " << std::endl;
 
+    factoryIface->Lock(1);
     printf("Creating Robot in Gazebo\n");
     strcpy((char*)factoryIface->data->newModel, xml_string.c_str());
-
     factoryIface->Unlock();
     usleep(1000000);
 
