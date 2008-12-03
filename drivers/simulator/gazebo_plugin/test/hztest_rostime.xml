@@ -8,7 +8,7 @@
     for this test (odom_test vs. scan_test). -->
     <param name="topic" value="time" />
     <param name="hz" value="811.765" />
-    <param name="hzerror" value="200.0" />
+    <param name="hzerror" value="400.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
