@@ -2,7 +2,7 @@
 <launch>
   <group name="wg">
     <!-- send single_link.xml to param server -->
-    <include file="$(find examples_gazebo)/dual_link.xml" />
+    <include file="$(find examples_gazebo)/dual_link_no_x.xml" />
 
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_testpendulum" pkg="gazebo_plugin" type="testpendulum.py" />
