@@ -1,8 +1,0 @@
-cmake_minimum_required(VERSION 2.6)
-include(rosbuild)
-set(ROS_BUILD_STATIC_LIBS true)
-set(ROS_BUILD_SHARED_LIBS false)
-rospack(motor_qualification_controllers)
-genmsg()
-gensrv()
-rospack_add_library(motor_qualification_controllers src/motor_test1.cpp)
