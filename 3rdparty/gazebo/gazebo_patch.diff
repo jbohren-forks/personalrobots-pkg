@@ -778,6 +778,32 @@ Index: server/physics/Geom.cc
  
    return NULL;
  }
+Index: server/physics/Joint.hh
+===================================================================
+--- server/physics/Joint.hh	(revision 7168)
++++ server/physics/Joint.hh	(working copy)
+@@ -163,6 +163,21 @@
+     private: ParamT<bool> *provideFeedbackP;
+     private: ParamT<double> *fudgeFactorP;
+ 
++    /// Added for mimicing other joints
++    private: ParamT<std::string> *mimicJointP;
++    private: ParamT<double> *mimicMultP;
++    private: ParamT<double> *mimicOffsetP;
++    private: ParamT<double> *mimicKpP;
++    private: ParamT<double> *mimicKdP;
++    private: ParamT<double> *mimicFMaxP;
++    private: Joint *mimicJoint;
++    private: bool enableMimic;
++    private: double mimicMult;
++    private: double mimicOffset;
++    private: double mimicKp;
++    private: double mimicKd;
++    private: double mimicFMax;
++
+     /// Feedback data for this joint
+     private: dJointFeedback *feedback;
+ 
 Index: server/physics/Body.cc
 ===================================================================
 --- server/physics/Body.cc	(revision 7168)
@@ -1038,32 +1064,6 @@ Index: server/physics/Body.cc
  
  
    // Settle on the new CoM pose
-Index: server/physics/Joint.hh
-===================================================================
---- server/physics/Joint.hh	(revision 7168)
-+++ server/physics/Joint.hh	(working copy)
-@@ -163,6 +163,21 @@
-     private: ParamT<bool> *provideFeedbackP;
-     private: ParamT<double> *fudgeFactorP;
- 
-+    /// Added for mimicing other joints
-+    private: ParamT<std::string> *mimicJointP;
-+    private: ParamT<double> *mimicMultP;
-+    private: ParamT<double> *mimicOffsetP;
-+    private: ParamT<double> *mimicKpP;
-+    private: ParamT<double> *mimicKdP;
-+    private: ParamT<double> *mimicFMaxP;
-+    private: Joint *mimicJoint;
-+    private: bool enableMimic;
-+    private: double mimicMult;
-+    private: double mimicOffset;
-+    private: double mimicKp;
-+    private: double mimicKd;
-+    private: double mimicFMax;
-+
-     /// Feedback data for this joint
-     private: dJointFeedback *feedback;
- 
 Index: server/physics/RayGeom.cc
 ===================================================================
 --- server/physics/RayGeom.cc	(revision 7168)
@@ -1440,60 +1440,260 @@ Index: server/physics/TrimeshGeom.cc
 ===================================================================
 --- server/physics/TrimeshGeom.cc	(revision 7168)
 +++ server/physics/TrimeshGeom.cc	(working copy)
-@@ -51,6 +51,9 @@
- // Destructor
- TrimeshGeom::~TrimeshGeom()
- {
-+  if (!Simulator::Instance()->GetRenderEngineEnabled())
-+    return;
-+
-   delete this->meshNameP;
-   delete this->scaleP;
- }
-@@ -59,6 +62,8 @@
+@@ -59,37 +59,40 @@
  /// Update function.
  void TrimeshGeom::UpdateChild()
  {
-+  if (!Simulator::Instance()->GetRenderEngineEnabled())
-+    return;
++  /// FIXME: use below to update trimesh geometry for collision without using above Ogre codes
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    // tell the tri-tri collider the current transform of the trimesh --
++    // this is fairly important for good results.
  
-   // tell the tri-tri collider the current transform of the trimesh --
-   // this is fairly important for good results.
-@@ -96,6 +101,9 @@
- /// Load the trimesh
- void TrimeshGeom::LoadChild(XMLConfigNode *node)
- {
-+  if (!Simulator::Instance()->GetRenderEngineEnabled())
-+    return;
-+
-   Ogre::SubMesh* subMesh;
-   Ogre::MeshPtr mesh;
+-  // tell the tri-tri collider the current transform of the trimesh --
+-  // this is fairly important for good results.
++    // Fill in the (4x4) matrix.
++    dReal* p_matrix = this->matrix_dblbuff + ( this->last_matrix_index * 16 );
++    const dReal *Pos = dGeomGetPosition(this->geomId);
++    const dReal *Rot = dGeomGetRotation(this->geomId);
  
-@@ -208,7 +216,13 @@
+-  // Fill in the (4x4) matrix.
+-  dReal* p_matrix = this->matrix_dblbuff + ( this->last_matrix_index * 16 );
+-  const dReal *Pos = dGeomGetPosition(this->geomId);
+-  const dReal *Rot = dGeomGetRotation(this->geomId);
++    p_matrix[ 0 ] = Rot[ 0 ];
++    p_matrix[ 1 ] = Rot[ 1 ];
++    p_matrix[ 2 ] = Rot[ 2 ];
++    p_matrix[ 3 ] = 0;
++    p_matrix[ 4 ] = Rot[ 4 ];
++    p_matrix[ 5 ] = Rot[ 5 ];
++    p_matrix[ 6 ] = Rot[ 6 ];
++    p_matrix[ 7 ] = 0;
++    p_matrix[ 8 ] = Rot[ 8 ];
++    p_matrix[ 9 ] = Rot[ 9 ];
++    p_matrix[10 ] = Rot[10 ];
++    p_matrix[11 ] = 0;
++    p_matrix[12 ] = Pos[ 0 ];
++    p_matrix[13 ] = Pos[ 1 ];
++    p_matrix[14 ] = Pos[ 2 ];
++    p_matrix[15 ] = 1;
  
-   this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
+-  p_matrix[ 0 ] = Rot[ 0 ];
+-  p_matrix[ 1 ] = Rot[ 1 ];
+-  p_matrix[ 2 ] = Rot[ 2 ];
+-  p_matrix[ 3 ] = 0;
+-  p_matrix[ 4 ] = Rot[ 4 ];
+-  p_matrix[ 5 ] = Rot[ 5 ];
+-  p_matrix[ 6 ] = Rot[ 6 ];
+-  p_matrix[ 7 ] = 0;
+-  p_matrix[ 8 ] = Rot[ 8 ];
+-  p_matrix[ 9 ] = Rot[ 9 ];
+-  p_matrix[10 ] = Rot[10 ];
+-  p_matrix[11 ] = 0;
+-  p_matrix[12 ] = Pos[ 0 ];
+-  p_matrix[13 ] = Pos[ 1 ];
+-  p_matrix[14 ] = Pos[ 2 ];
+-  p_matrix[15 ] = 1;
++    // Flip to other matrix.
++    this->last_matrix_index = !this->last_matrix_index;
+ 
+-  // Flip to other matrix.
+-  this->last_matrix_index = !this->last_matrix_index;
+-
+-  dGeomTriMeshSetLastTransform( this->geomId,
+-                                *(dMatrix4*)( this->matrix_dblbuff + this->last_matrix_index * 16) );
++    dGeomTriMeshSetLastTransform( this->geomId,
++                                  *(dMatrix4*)( this->matrix_dblbuff + this->last_matrix_index * 16) );
++  }
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
+@@ -118,103 +121,115 @@
+   this->meshNameP->Load(node);
+   this->scaleP->Load(node);
+ 
+-  mesh = Ogre::MeshManager::getSingleton().load(this->meshNameP->GetValue(),Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++  {
++    mesh = Ogre::MeshManager::getSingleton().load(this->meshNameP->GetValue(),Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+ 
+-  if (mesh.isNull())
+-    gzthrow("Failed to load trimesh "+ this->meshNameP->GetValue());
++    if (mesh.isNull())
++      gzthrow("Failed to load trimesh "+ this->meshNameP->GetValue());
+ 
+-  // Count the number of vertices and indices
+-  // for (i=0; i<mesh->getNumSubMeshes(); i++)
+-  for (i=0; i<1; i++)
+-  {
+-    subMesh = mesh->getSubMesh(i);
+-    if (subMesh->useSharedVertices)
+-      numVertices += mesh->sharedVertexData->vertexCount;
+-    else
+-      numVertices += subMesh->vertexData->vertexCount;
+-    numIndices += subMesh->indexData->indexCount;
+-  }
++    // Count the number of vertices and indices
++    // for (i=0; i<mesh->getNumSubMeshes(); i++)
++    for (i=0; i<1; i++)
++    {
++      subMesh = mesh->getSubMesh(i);
++      if (subMesh->useSharedVertices)
++        numVertices += mesh->sharedVertexData->vertexCount;
++      else
++        numVertices += subMesh->vertexData->vertexCount;
++      numIndices += subMesh->indexData->indexCount;
++    }
+ 
+-  // Create the vertex and index arrays
+-  vertices = new float[numVertices*3];
+-  indices = new int[numIndices];
++    // Create the vertex and index arrays
++    vertices = new float[numVertices*3];
++    indices = new int[numIndices];
+ 
+ 
+-  // Copy the vertex and index data from OGRE
+-  //for (i = 0; i < mesh->getNumSubMeshes(); i++)
+-  for (i = 0; i < 1; i++)
+-  {
+-    subMesh = mesh->getSubMesh(i);
++    // Copy the vertex and index data from OGRE
++    //for (i = 0; i < mesh->getNumSubMeshes(); i++)
++    for (i = 0; i < 1; i++)
++    {
++      subMesh = mesh->getSubMesh(i);
+ 
+-    if (subMesh->useSharedVertices)
+-      vertexData=mesh->sharedVertexData;
+-    else
+-      vertexData=subMesh->vertexData;
++      if (subMesh->useSharedVertices)
++        vertexData=mesh->sharedVertexData;
++      else
++        vertexData=subMesh->vertexData;
+ 
+-    elem = vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
+-    vbuf = vertexData->vertexBufferBinding->getBuffer(elem->getSource());
++      elem = vertexData->vertexDeclaration->findElementBySemantic(Ogre::VES_POSITION);
++      vbuf = vertexData->vertexBufferBinding->getBuffer(elem->getSource());
+ 
+-    // Pointer to vertex array.
+-    vertPtr = &(vertices[vindex]);
+-    vindex += vertexData->vertexCount*3;
++      // Pointer to vertex array.
++      vertPtr = &(vertices[vindex]);
++      vindex += vertexData->vertexCount*3;
+ 
+-    pData = static_cast<unsigned char*>(vbuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
++      pData = static_cast<unsigned char*>(vbuf->lock(Ogre::HardwareBuffer::HBL_READ_ONLY));
+ 
+-    // Add vertices to the vertex array
+-    for (j = 0; j < vertexData->vertexCount; j++)
+-    {
+-      elem->baseVertexPointerToElement(pData, &pFloat);
++      // Add vertices to the vertex array
++      for (j = 0; j < vertexData->vertexCount; j++)
++      {
++        elem->baseVertexPointerToElement(pData, &pFloat);
+ 
+-      *(vertPtr+0) = (*pFloat++) * this->scaleP->GetValue().x;
+-      *(vertPtr+1) = (*pFloat++) * this->scaleP->GetValue().y;
+-      *(vertPtr+2) = (*pFloat++) * this->scaleP->GetValue().z;
++        *(vertPtr+0) = (*pFloat++) * this->scaleP->GetValue().x;
++        *(vertPtr+1) = (*pFloat++) * this->scaleP->GetValue().y;
++        *(vertPtr+2) = (*pFloat++) * this->scaleP->GetValue().z;
+ 
+-      vertPtr += 3;
++        vertPtr += 3;
+ 
+-      pData += vbuf->getVertexSize();
+-    }
++        pData += vbuf->getVertexSize();
++      }
+ 
+-    vbuf->unlock();
++      vbuf->unlock();
+ 
+-    // Get the indices
+-    ibuf = subMesh->indexData->indexBuffer;
+-    indTmp = new unsigned short[subMesh->indexData->indexCount];
++      // Get the indices
++      ibuf = subMesh->indexData->indexBuffer;
++      indTmp = new unsigned short[subMesh->indexData->indexCount];
+ 
+-    ibuf->readData(0, ibuf->getSizeInBytes(), indTmp);
++      ibuf->readData(0, ibuf->getSizeInBytes(), indTmp);
+ 
+-    /// Copy the indices
+-    for (j = 0; j < subMesh->indexData->indexCount; j++)
+-    {
+-      indices[j+iindex] = indTmp[j];
+-    }
++      /// Copy the indices
++      for (j = 0; j < subMesh->indexData->indexCount; j++)
++      {
++        indices[j+iindex] = indTmp[j];
++      }
+ 
+-    iindex += subMesh->indexData->indexCount;
++      iindex += subMesh->indexData->indexCount;
+ 
+-    if (indTmp)
+-    {
+-      delete [] indTmp;
+-      indTmp = NULL;
++      if (indTmp)
++      {
++        delete [] indTmp;
++        indTmp = NULL;
++      }
+     }
+-  }
+ 
+ 
+-  /// This will hold the vertex data of the triangle mesh
+-  this->odeData = dGeomTriMeshDataCreate();
+ 
+-  // Build the ODE triangle mesh
+-  dGeomTriMeshDataBuildSingle( this->odeData,
+-                               (float*)vertices, 3*sizeof(float), numVertices,
+-                               (int*)indices, numIndices, 3*sizeof(int));
++    /// FIXME: use below to setup trimesh geometry for collision without using above Ogre codes
+ 
+-  this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
++    /// This will hold the vertex data of the triangle mesh
++    this->odeData = dGeomTriMeshDataCreate();
  
 -  dMassSetTrimesh(&this->mass, this->massP->GetValue(), this->geomId);
-+  if (this->customMassMatrix)
-+    dMassSetParameters(&this->mass, this->massP->GetValue(),
-+         this->cx, this->cy, this->cz,
-+         this->ixx,this->iyy,this->izz,
-+         this->ixy,this->ixz,this->iyz);
-+  else
-+    dMassSetTrimesh(&this->mass, this->massP->GetValue(), this->geomId);
++    // Build the ODE triangle mesh
++    dGeomTriMeshDataBuildSingle( this->odeData,
++                                 (float*)vertices, 3*sizeof(float), numVertices,
++                                 (int*)indices, numIndices, 3*sizeof(int));
  
-   // Create the trimesh geometry
-   this->SetGeom(this->geomId, true);
-@@ -221,6 +235,9 @@
- /// Save child parameters
- void TrimeshGeom::SaveChild(std::string &prefix, std::ostream &stream)
- {
-+  if (!Simulator::Instance()->GetRenderEngineEnabled())
-+    return;
+-  // Create the trimesh geometry
+-  this->SetGeom(this->geomId, true);
++    this->geomId = dCreateTriMesh( this->spaceId, this->odeData,0,0,0 );
+ 
+-  memset(this->matrix_dblbuff,0,32*sizeof(dReal));
+-  this->last_matrix_index = 0;
++    if (this->customMassMatrix)
++      dMassSetParameters(&this->mass, this->massP->GetValue(),
++           this->cx, this->cy, this->cz,
++           this->ixx,this->iyy,this->izz,
++           this->ixy,this->ixz,this->iyz);
++    else
++      dMassSetTrimesh(&this->mass, this->massP->GetValue(), this->geomId);
 +
-   stream << prefix << *(this->meshNameP) << "\n";
-   stream << prefix << *(this->scaleP) << "\n";
++    // Create the trimesh geometry
++    this->SetGeom(this->geomId, true);
++
++    memset(this->matrix_dblbuff,0,32*sizeof(dReal));
++    this->last_matrix_index = 0;
++  }
  }
+ 
+ //////////////////////////////////////////////////////////////////////////////
 Index: server/sensors/Sensor.hh
 ===================================================================
 --- server/sensors/Sensor.hh	(revision 7168)
@@ -2433,123 +2633,6 @@ Index: server/GazeboConfig.cc
      this->RTTMode="PBuffer";
    }
  }
-Index: server/Model.cc
-===================================================================
---- server/Model.cc	(revision 7168)
-+++ server/Model.cc	(working copy)
-@@ -46,7 +46,12 @@
- #include "ControllerFactory.hh"
- #include "IfaceFactory.hh"
- #include "Model.hh"
-+#include "Simulator.hh"
- 
-+#ifdef TIMING
-+#include "Simulator.hh"// for timing
-+#endif
-+
- using namespace gazebo;
- 
- uint Model::lightNumber = 0;
-@@ -127,7 +132,10 @@
-   if (this->type == "physical")
-     this->LoadPhysical(node);
-   else if (this->type == "renderable")
--    this->LoadRenderable(node);
-+  {
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      this->LoadRenderable(node);
-+  }
-   else if (this->type != "empty")
-   {
-     gzthrow("Invalid model type[" + this->type + "]\n");
-@@ -255,10 +263,11 @@
-   }
-   else
-   {
--    if (!this->lightName.empty())
--    {
--      OgreCreator::SaveLight(p, this->lightName, stream);
--    }
-+    if (Simulator::Instance()->GetRenderEngineEnabled())
-+      if (!this->lightName.empty())
-+      {
-+        OgreCreator::SaveLight(p, this->lightName, stream);
-+      }
-   }
- 
-   if (this->parentBodyNameP && this->myBodyNameP)
-@@ -305,7 +314,7 @@
- 
-   return this->InitChild();
- }
--
-+  
- ////////////////////////////////////////////////////////////////////////////////
- // Update the model
- int Model::Update()
-@@ -316,6 +325,10 @@
- 
-   Pose3d bodyPose, newPose, oldPose;
- 
-+#ifdef TIMING
-+  double tmpT1 = Simulator::Instance()->GetWallTime();
-+#endif
-+
-   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
-   {
-     if (bodyIter->second)
-@@ -324,6 +337,11 @@
-     }
-   }
- 
-+#ifdef TIMING
-+  double tmpT2 = Simulator::Instance()->GetWallTime();
-+  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
-+#endif
-+
-   for (contIter=this->controllers.begin();
-        contIter!=this->controllers.end(); contIter++)
-   {
-@@ -332,6 +350,11 @@
-       contIter->second->Update();
-   }
- 
-+#ifdef TIMING
-+  double tmpT3 = Simulator::Instance()->GetWallTime();
-+  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
-+#endif
-+
-   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
-   {
-     jointIter->second->Update();
-@@ -350,6 +373,11 @@
-     this->rpyP->SetValue(this->pose.rot);
-   }
- 
-+#ifdef TIMING
-+  double tmpT4 = Simulator::Instance()->GetWallTime();
-+  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
-+#endif
-+
-   return this->UpdateChild();
- }
- 
-@@ -730,10 +758,11 @@
-   body->SetPose(Pose3d());
-   this->bodies[body->GetName()] = body;
- 
--  if ((childNode = node->GetChild("light")))
--  {
--    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
--  }
-+  if (Simulator::Instance()->GetRenderEngineEnabled())
-+    if ((childNode = node->GetChild("light")))
-+    {
-+      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
-+    }
- 
- }
- 
 Index: server/gui/GLWindow.hh
 ===================================================================
 --- server/gui/GLWindow.hh	(revision 7168)
@@ -2724,6 +2807,123 @@ Index: server/gui/GLWindow.cc
          case XK_Up:
          case XK_w:
            this->directionVec.x += this->moveAmount;
+Index: server/Model.cc
+===================================================================
+--- server/Model.cc	(revision 7168)
++++ server/Model.cc	(working copy)
+@@ -46,7 +46,12 @@
+ #include "ControllerFactory.hh"
+ #include "IfaceFactory.hh"
+ #include "Model.hh"
++#include "Simulator.hh"
+ 
++#ifdef TIMING
++#include "Simulator.hh"// for timing
++#endif
++
+ using namespace gazebo;
+ 
+ uint Model::lightNumber = 0;
+@@ -127,7 +132,10 @@
+   if (this->type == "physical")
+     this->LoadPhysical(node);
+   else if (this->type == "renderable")
+-    this->LoadRenderable(node);
++  {
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      this->LoadRenderable(node);
++  }
+   else if (this->type != "empty")
+   {
+     gzthrow("Invalid model type[" + this->type + "]\n");
+@@ -255,10 +263,11 @@
+   }
+   else
+   {
+-    if (!this->lightName.empty())
+-    {
+-      OgreCreator::SaveLight(p, this->lightName, stream);
+-    }
++    if (Simulator::Instance()->GetRenderEngineEnabled())
++      if (!this->lightName.empty())
++      {
++        OgreCreator::SaveLight(p, this->lightName, stream);
++      }
+   }
+ 
+   if (this->parentBodyNameP && this->myBodyNameP)
+@@ -305,7 +314,7 @@
+ 
+   return this->InitChild();
+ }
+-
++  
+ ////////////////////////////////////////////////////////////////////////////////
+ // Update the model
+ int Model::Update()
+@@ -316,6 +325,10 @@
+ 
+   Pose3d bodyPose, newPose, oldPose;
+ 
++#ifdef TIMING
++  double tmpT1 = Simulator::Instance()->GetWallTime();
++#endif
++
+   for (bodyIter=this->bodies.begin(); bodyIter!=this->bodies.end(); bodyIter++)
+   {
+     if (bodyIter->second)
+@@ -324,6 +337,11 @@
+     }
+   }
+ 
++#ifdef TIMING
++  double tmpT2 = Simulator::Instance()->GetWallTime();
++  std::cout << "       bodies dt (" << tmpT2-tmpT1 << ")";
++#endif
++
+   for (contIter=this->controllers.begin();
+        contIter!=this->controllers.end(); contIter++)
+   {
+@@ -332,6 +350,11 @@
+       contIter->second->Update();
+   }
+ 
++#ifdef TIMING
++  double tmpT3 = Simulator::Instance()->GetWallTime();
++  std::cout << " controllers dt (" << tmpT3-tmpT2 << ")";
++#endif
++
+   for (jointIter = this->joints.begin(); jointIter != this->joints.end(); jointIter++)
+   {
+     jointIter->second->Update();
+@@ -350,6 +373,11 @@
+     this->rpyP->SetValue(this->pose.rot);
+   }
+ 
++#ifdef TIMING
++  double tmpT4 = Simulator::Instance()->GetWallTime();
++  std::cout << " joints/canonical body dt (" << tmpT4-tmpT3 << ")" << std::endl;
++#endif
++
+   return this->UpdateChild();
+ }
+ 
+@@ -730,10 +758,11 @@
+   body->SetPose(Pose3d());
+   this->bodies[body->GetName()] = body;
+ 
+-  if ((childNode = node->GetChild("light")))
+-  {
+-    this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
+-  }
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    if ((childNode = node->GetChild("light")))
++    {
++      this->lightName = OgreCreator::CreateLight(childNode, body->GetVisualNode());
++    }
+ 
+ }
+ 
 Index: server/World.hh
 ===================================================================
 --- server/World.hh	(revision 7168)
@@ -2809,6 +3009,38 @@ Index: server/controllers/camera/generic/Generic_Camera.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/controllers/factory/Factory.cc
+===================================================================
+--- server/controllers/factory/Factory.cc	(revision 7168)
++++ server/controllers/factory/Factory.cc	(working copy)
+@@ -76,6 +76,8 @@
+ // Initialize the controller
+ void Factory::InitChild()
+ {
++  // initialize newModel to blank
++  strcpy((char*)this->factoryIface->data->newModel,"");
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -83,8 +85,10 @@
+ void Factory::UpdateChild()
+ {
+   // If there is a string, then add the contents to the world
++  this->factoryIface->Lock(1);
+   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
+   {
++    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
+     std::string xmlString;
+     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
+ 
+@@ -121,6 +125,7 @@
+ 
+     strcpy((char*)this->factoryIface->data->deleteModel,"");
+   }
++  this->factoryIface->Unlock();
+ 
+ }
+ 
 Index: server/controllers/Controller.cc
 ===================================================================
 --- server/controllers/Controller.cc	(revision 7168)
@@ -2869,18 +3101,6 @@ Index: server/controllers/Controller.cc
    for (iter=this->ifaces.begin(); iter!=this->ifaces.end(); iter++)
    {
      if ((*iter)->GetOpenCount() > 0)
-Index: server/controllers/factory/Factory.cc
-===================================================================
---- server/controllers/factory/Factory.cc	(revision 7168)
-+++ server/controllers/factory/Factory.cc	(working copy)
-@@ -85,6 +85,7 @@
-   // If there is a string, then add the contents to the world
-   if (strcmp((const char*)this->factoryIface->data->newModel,"")!=0)
-   {
-+    //std::cout << " factory update: " << this->factoryIface->data->newModel << std::endl;
-     std::string xmlString;
-     std::string xmlMiddle = (const char*)(this->factoryIface->data->newModel);
- 
 Index: server/controllers/ptz/generic/Generic_PTZ.cc
 ===================================================================
 --- server/controllers/ptz/generic/Generic_PTZ.cc	(revision 7168)
