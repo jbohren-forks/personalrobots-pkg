@@ -116,7 +116,7 @@ public:
     subscribe("videre/cal_params", cal_params_, &VidereFaceDetector::cal_params_cb, 1);
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("face_detection",1);
+    advertise<robot_msgs::PositionMeasurement>("face_detection/position_measurement",1);
     //subscribe<robot_msgs::PositionMeasurement>("face_detection",pos,&VidereFaceDetector::pos_cb,1);
 
   }
@@ -212,7 +212,7 @@ public:
 	  pos.reliability = 0.8;
 	  pos.initialization = 0;
 	  //pos.covariance = ;
-	  publish("face_detection",pos);
+	  publish("face_detection/position_measurement",pos);
 	}
 	cvReleaseMat(&uvd);
 	cvReleaseMat(&xyz);
