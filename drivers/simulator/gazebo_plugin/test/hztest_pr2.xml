@@ -59,7 +59,7 @@
     <!-- Note how we use a different parameter namespace and node name
     for this test (mechanism_state_test vs. scan_test). -->
     <param name="topic" value="mechanism_state" />
-    <param name="hz" value="100.5678" />
+    <param name="hz" value="79.763" />
     <param name="hzerror" value="20.0" />
     <param name="test_duration" value="5.0" />
     <param name="check_intervals" value="false" />

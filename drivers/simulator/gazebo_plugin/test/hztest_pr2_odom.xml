@@ -1,15 +1,15 @@
 <launch>
   <!-- Bring up the node we want to test. -->
-  <include file="$(find pr2_gazebo)/pr2_headless.launch"/>
+  <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch"/>
 
   <!-- Test for publication of 'odom' topic. -->
   <test test-name="hztest_test_odom" pkg="rostest" type="hztest" name="odom_test">
     <!-- Note how we use a different parameter namespace and node name
     for this test (odom_test vs. scan_test). -->
     <param name="topic" value="odom" />
-    <param name="hz" value="25.0" />
-    <param name="hzerror" value="10.0" />
-    <param name="test_duration" value="5.0" />
+    <param name="hz" value="84.128" />
+    <param name="hzerror" value="20.0" />
+    <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
 </launch>

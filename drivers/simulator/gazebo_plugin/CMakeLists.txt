@@ -30,11 +30,14 @@ rospack_add_rostest(test/testbase.xml)
 rospack_add_rostest(test/testarm.xml)
 rospack_add_rostest(test/testpendulum.xml)
 
+rospack_add_rostest(test/hztest_pr2.xml)
+rospack_add_rostest(test/hztest_rostime.xml)
+rospack_add_rostest(test/hztest_pr2_odom.xml)
+
+# below need xvfb-run
 rospack_add_rostest_future(test/testcameras.xml)
 rospack_add_rostest_future(test/testscan.xml)
-rospack_add_rostest_future(test/hztest.xml)
-rospack_add_rostest_future(test/odom_hztest.xml)
-rospack_add_rostest_future(test/rostime_hztest.xml)
+rospack_add_rostest_future(test/hztest_pr2_image.xml)
 
 rospack_add_executable(urdf2factory src/urdf2factory.cc)
 #rospack_add_executable(simiface src/simiface.cc)
