@@ -45,6 +45,7 @@
 #include "image_utils/cv_bridge.h"
 #include "CvStereoCamModel.h"
 #include "colorcalib.h"
+#include <robot_msgs/PositionMeasurement.h>
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -133,6 +134,10 @@ public:
 
     // Subscribe to calibration parameters
     subscribe("videre/cal_params", cal_params_, &StereoFaceColorTracker::cal_params_cb, 1);
+
+    // Advertise a 3d position measurement for each head.
+    advertise<robot_msgs::PositionMeasurement>("stereo_face_color_tracker",1);
+    // subscribe<robot_msgs::PositionMeasurement>("track_filter",1); This will eventually initialize my tracks instead of the face detection.
 
   }
 
@@ -368,6 +373,7 @@ public:
     CvMat *four_corners_2d = cvCreateMat(4,3,CV_32FC1); 
     CvMat *my_end_point = cvCreateMat(1,3,CV_32FC1);
     CvMat *my_size = cvCreateMat(1,2,CV_32FC1);
+    robot_msgs::PositionMeasurement pos;
 
     for (int iperson = 0; iperson < npeople; iperson++) {
       people_->setFaceCenter3D(cvmGet(end_points,iperson,0),cvmGet(end_points,iperson,1),cvmGet(end_points,iperson,2),iperson);
@@ -386,7 +392,20 @@ public:
       cvRectangle(cv_image_left_, 
 		  cvPoint(cvmGet(four_corners_2d,0,0),cvmGet(four_corners_2d,0,1)), 
 		  cvPoint(cvmGet(four_corners_2d,3,0),cvmGet(four_corners_2d,3,1)),
-		  cvScalar(255,255,255));      
+		  cvScalar(255,255,255)); 
+
+      // Publish the 3d head center for this person.
+      pos.header.stamp = image_msg_.header.stamp;
+      pos.name = "stereo_face_color_tracker";
+      pos.object_id = -1;
+      pos.pos.x = cvmGet(end_points,iperson,2);
+      pos.pos.y = -1.0*cvmGet(end_points,iperson,0);
+      pos.pos.z = -1.0*cvmGet(end_points,iperson,1);
+      pos.header.frame_id = "stereo_link";
+      pos.reliability = 0.5;
+      pos.initialization = 0;
+      //pos.covariance
+      publish("stereo_face_color_tracker",pos);
     }
 	  
     cvReleaseMat(&end_points);
