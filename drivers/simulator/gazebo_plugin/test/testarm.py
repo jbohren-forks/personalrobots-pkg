@@ -160,7 +160,7 @@ class ArmTest(unittest.TestCase):
         rospy.Subscriber("l_gripper_palm_pose_ground_truth", PoseWithRatesStamped, self.armP3dInput)
         rospy.Subscriber("l_gripper_l_finger_pose_ground_truth", PoseWithRatesStamped, self.gripperP3dInput)
         rospy.init_node(NAME, anonymous=True)
-        timeout_t = time.time() + 10.0
+        timeout_t = time.time() + 30.0
         while not rospy.is_shutdown() and not self.success and time.time() < timeout_t:
             pub_arm.publish(JointPosCmd(['l_shoulder_pan_joint','l_shoulder_lift_joint','l_upper_arm_roll_joint','l_elbow_flex_joint','l_forearm_roll_joint','l_wrist_flex_joint','l_wrist_roll_joint'],[CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS,CMD_POS],[0,0,0,0,0,0,0],0))
             pub_gripper.publish(Float64(CMD_POS))
