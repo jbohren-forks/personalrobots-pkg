@@ -51,21 +51,22 @@
 
 // Thresholds for the face detection algorithm
 #define FACE_SIZE_MIN_MM 100
-#define FACE_SIZE_MAX_MM 400
+#define FACE_SIZE_MAX_MM 500
 #define MAX_Z_MM 10000
 
 using namespace std;
 
 struct Person {
-  CvHistogram *face_color_hist_;
-  CvHistogram *shirt_color_hist_;
-  double body_height_;
-  double body_width_;
-  CvRect body_bbox_;
-  IplImage *body_mask_;
-  double face_size_;
-  CvRect face_bbox_;
-  IplImage *face_mask_;
+  CvHistogram *face_color_hist;
+  CvHistogram *shirt_color_hist;
+  double body_height_3d;
+  double body_width_3d;
+  CvRect body_bbox_2d;
+  IplImage *body_mask_2d;
+  double face_size_3d;
+  CvRect face_bbox_2d;
+  IplImage *face_mask_2d;
+  CvScalar face_center_3d;
 };
 
 class People
@@ -79,7 +80,25 @@ class People
   ~People();
 
   // Add a person to the list of people.
-  void addPerson(){}
+  void addPerson();
+
+  // Return the number of people.
+  int getNumPeople();
+
+  // Return the face size in 3D
+  double getFaceSize3D(int iperson);
+
+  // Set a person's 3D face size.
+  void setFaceSize3D(double face_size, int iperson);
+
+  // Set a person's face.
+  void setFaceBbox2D(CvRect face_rect, int iperson );
+
+  // Set a person's position.
+  void setFaceCenter3D(double cx, double cy, double cz, int iperson);
+
+  // Takes in a rectangle center and size and outputs the four corners in the order (TL, TR, BL, BR)
+  void centerSizeToFourCorners( CvMat *centers, CvMat *sizes, CvMat *four_corners);
 
   // Remove a person from the list of people.
   void removePerson(){}
@@ -107,6 +126,9 @@ class People
   // Track a face.
   void track(){}
 
+  // Track a face based on the face colour histogram.
+  bool track_color_3d_bhattacharya(const IplImage *image, const IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
+
  ////////////////////
  private:
 
@@ -120,7 +142,26 @@ class People
   // Grayscale image (to avoid reallocating an image each time an OpenCV function is run.)
   IplImage *cv_image_gray_;
 
+  // Structures for the color face tracker.
+  // Color planes and normalized color planes.
+  IplImage *cft_r_plane_;
+  IplImage *cft_g_plane_;
+  IplImage *cft_b_plane_;
+  IplImage *cft_r_plane_norm_;
+  IplImage *cft_g_plane_norm_;
+  CvMat *rbins_;
+  CvMat *gbins_;
+  // The 3d coords for each point.
+  IplImage *cft_X_;
+  IplImage *cft_Y_;
+  IplImage *cft_Z_;
+  CvMat *cft_xyz_;
+  CvMat *cft_uvd_;
+  CvHistogram *cft_start_hist_;
+  CvHistogram *cft_ratio_hist_;
+
 
 };
 
 #endif
+
