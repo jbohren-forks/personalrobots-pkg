@@ -533,7 +533,7 @@ TEST(costmap, test11){
   // I considered allowing the cost function to over-ride this case but we quickly find that the planner will plan through walls once it gets out of sensor range.
   // Note that this will not be the case when we persist the changes to the static map more aggressively since we will retain high cost obstacle data that 
   // has not been ray tarced thru. If that is the case, this update count would change to 6
-  ASSERT_EQ(updates.size(), 4);
+  ASSERT_EQ(updates.size(), 6);
 
   // all cells will have been switched to free space along the diagonal except for this inflated in the update
   for(unsigned int i=0; i < 8; i++)
