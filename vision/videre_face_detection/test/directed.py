@@ -6,6 +6,7 @@ import videre_face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
 from std_msgs.msg import Image, ImageArray, String, PointStamped, PointCloud, Point
+from robot_msgs.msg import PositionMeasurement
 import visual_odometry as VO
 import starfeature
 import calonder
@@ -237,11 +238,6 @@ class PeopleTracker:
       else:
         print "Unknown descriptor"
         return
-        
-
-################### STAMPED POINT CALLBACK (SANITY CHECK) #####
-  def point_stamped(self,psmsg):
-    print "Heard ", psmsg.point.x, psmsg.point.y, psmsg.point.z, psmsg.header.frame_id
 
 
 ################### IMAGE CALLBACK ############################
@@ -573,11 +569,21 @@ class PeopleTracker:
 
           ########### PUBLISH the face center for the head controller to track. ########
           if not self.usebag:
-            stamped_point = PointStamped()
-            (stamped_point.point.x, stamped_point.point.y, stamped_point.point.z) = center_robXYZ
-            stamped_point.header.frame_id = "stereo"
-            stamped_point.header.stamp = imarray.header.stamp
-            self.pub.publish(stamped_point)
+            #stamped_point = PointStamped()
+            #(stamped_point.point.x, stamped_point.point.y, stamped_point.point.z) = center_robXYZ
+            #stamped_point.header.frame_id = "stereo"
+            #stamped_point.header.stamp = imarray.header.stamp
+            #self.pub.publish(stamped_point)
+            pm = PositionMeasurement()
+            pm.header.stamp = imarray.header.stamp
+            pm.name = "stereo_face_feature_tracker"
+            pm.object_id = -1
+            (pm.pos.x,pm.pos.y, pm.pos.z) = center_robXYZ
+            pm.header.frame_id = "stereo_link"
+            pm.reliability = 0.5;
+            pm.initialization = 0;
+            #pm.covariance
+            self.pub.publish(pm)            
     
 
         # End later frames
@@ -669,8 +675,8 @@ def main(argv) :
 
   if len(argv)>0 and argv[0]=="-bag":
       people_tracker.usebag = True
-      if len(argv)>1 and argv[1]=="-visualize":
-        people_tracker.visualize = True
+   #   if len(argv)>1 and argv[1]=="-visualize":
+   #     people_tracker.visualize = True
 
   # Use a bag file
   if people_tracker.usebag :
@@ -686,9 +692,9 @@ def main(argv) :
       except:
         pass
 
-    if people_tracker.visualize:
-      people_tracker.pub = rospy.Publisher('/std_msgs/full_cloud',PointCloud)
-      rospy.init_node('videre_face_tracker',anonymous=True)
+  #  if people_tracker.visualize:
+  #    people_tracker.pub = rospy.Publisher('/std_msgs/full_cloud',PointCloud)
+  #    rospy.init_node('videre_face_tracker',anonymous=True)
 
     num_frames = 0
     start_frame = 4700
@@ -717,9 +723,10 @@ def main(argv) :
       except:
         pass
 
-    people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
+    #people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
+    people_tracker.pub = rospy.Publisher('/stereo_face_feature_tracker/position_measurement',PositionMeasurement)
     rospy.init_node('videre_face_tracker', anonymous=True)
-    rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
+    #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
     rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
     rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
     rospy.spin()
