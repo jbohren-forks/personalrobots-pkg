@@ -220,15 +220,12 @@ void HysteresisController::analysis()
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
   
-  
   if ((node = ros::node::instance()) != NULL)
   { 
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);
   }
-    
-  return;
-  
+  return; 
 }
 
 ROS_REGISTER_CONTROLLER(HysteresisControllerNode)

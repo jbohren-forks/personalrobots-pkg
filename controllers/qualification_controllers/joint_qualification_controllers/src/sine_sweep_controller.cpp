@@ -64,6 +64,7 @@ joint_state_(NULL), robot_(NULL), node(ros::node::instance())
 
 SineSweepController::~SineSweepController()
 {
+  delete sweep_;
 }
 
 void SineSweepController::init(double start_freq, double end_freq, double duration, double amplitude, double first_mode, double second_mode, double error_tolerance, double time, std::string name,mechanism::RobotState *robot)
@@ -138,12 +139,12 @@ void SineSweepController::update()
 void SineSweepController::analysis()
 {
   diagnostic_message_.set_status_size(1);
-
   robot_msgs::DiagnosticStatus *status = &diagnostic_message_.status[0];
 
   status->name = "SineSweepTest";
   count_=count_-1;
   //test done
+  assert(count_>0);
   status->level = 0;
   status->message = "OK: Done.";
   test_data_.time.resize(count_);
@@ -152,14 +153,11 @@ void SineSweepController::analysis()
   test_data_.position.resize(count_);
   test_data_.velocity.resize(count_);
   
-
   if ((node = ros::node::instance()) != NULL)
   {
     node->publish("/test_data", test_data_);
     node->publish("/diagnostics", diagnostic_message_);
   }
-
-  //publisher_.publish(diagnostic_message_);
   return;
 }
 
