@@ -103,7 +103,12 @@ bool SineSweepController::initXml(mechanism::RobotState *robot, TiXmlElement *co
 void SineSweepController::update()
 {
   double time = robot_->hw_->current_time_;
-  
+  // wait until the joint is calibrated if it has limits
+  if(!joint_state_->calibrated_ && joint_state_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
+  {
+    initial_time_=time;
+    return;
+  }
   
   if((time-initial_time_)<=duration_)
   {

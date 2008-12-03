@@ -81,7 +81,7 @@ void HysteresisController::init( double velocity, double max_effort, double max_
   test_data_.arg_value[2]=min_pos;
   test_data_.arg_value[3]=max_pos;
   
-  node->advertise<robot_msgs::TestData>( "/test_data", 0 );
+  node->advertise<robot_msgs::TestData>( "/test_data", 0);
   
   velocity_=velocity;
   max_effort_=max_effort;
@@ -133,6 +133,12 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
 
 void HysteresisController::update()
 {
+  // wait until the joint is calibrated if it has limits
+  if(!joint_->calibrated_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
+  {
+    return;
+  }
+
   double time = robot_->hw_->current_time_;
   velocity_controller_->update();
   
@@ -205,6 +211,7 @@ void HysteresisController::analysis()
   status->name = "HysteresisTest";
   count_=count_-1;
   //test done
+  assert(count_>0);
   status->level = 0;
   status->message = "OK: Done.";
   test_data_.time.resize(count_);
