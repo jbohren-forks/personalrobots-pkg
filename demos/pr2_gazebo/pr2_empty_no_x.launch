@@ -1,22 +1,22 @@
 <launch>
-  <master auto="start" />
+  <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/wg_robot_description/pr2 -->
+  <group name="wg">
+    <!-- send pr2.xml to param server -->
+    <include file="$(find wg_robot_description)/pr2/send_description.launch" />
 
-    <node pkg="gazebo" type="gazebo" args="-r $(find gazebo_robot_description)/gazebo_worlds/test/testslide.world" respawn="false" output="screen">
+    <!-- start gazebo -->
+    <node pkg="gazebo" type="gazebo" args="-r $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
       <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$LD_LIBRARY_PATH" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
     </node>
 
-    <!-- send single_link.xml to param server -->
-    <include file="$(find wg_robot_description)/pr2/send_description.launch" />
-
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 0 8 110 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
     <include file="$(find pr2_gazebo)/pr2_default_controllers.launch" />
-
-    <!-- test -->
-    <test test-name="gazebo_plugin_testslide" pkg="gazebo_plugin" type="testslide.py" />
+  </group>
 </launch>
+

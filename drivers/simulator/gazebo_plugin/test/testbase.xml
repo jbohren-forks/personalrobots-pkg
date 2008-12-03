@@ -2,7 +2,7 @@
   <master auto="start" />
 
     <!-- send single_link.xml to param server -->
-    <include file="$(find pr2_gazebo)/pr2_empty.launch" />
+    <include file="$(find pr2_gazebo)/pr2_empty_no_x.launch" />
 
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
     <test test-name="gazebo_plugin_testbase_vw1"      pkg="gazebo_plugin" type="testbase_vw_gt.py" />
