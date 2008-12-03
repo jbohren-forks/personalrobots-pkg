@@ -15,8 +15,6 @@
 
 #include <opencv/cxcore.hpp>
 
-//#include <stereolib.h> // from 3DPoseEstimation/include. The header file is there temporarily
-
 // WG Ext of OpenCV
 #include <CvPoseEstErrMeasDisp.h>
 #include <Cv3DPoseEstimateStereo.h>
@@ -236,12 +234,6 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   int end   = 1509;
   int step  = 1;
 
-  start = 100;
-  end   = 500;
-
-  // @todo if we run from frame 30 to frame 600. at frame 535 there is a weird behavior - two of the estimated
-  // point get map to the observed points.
-
   // set up a FileSeq
   FileSeq fileSeq;
   fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
@@ -259,12 +251,7 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   }
 
   do {
-#if 0
-    StereoFrame& sf = fileSeq.mInputImageQueue.front();
-    sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
-    getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
-#endif
-    sba.track(fileSeq.mInputImageQueue);
+   sba.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 
   vector<FramePose*>* framePoses = sba.getFramePoses();
@@ -278,50 +265,6 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 
   CvTestTimer::getTimer().printStat();
   return status;
-}
-
-static bool getDisparityMap( WImageBuffer1_b& leftImage, WImageBuffer1_b& rightImage, WImageBuffer1_16s& dispMap) {
-#if 0
-  bool status = true;
-
-  int w = leftImage.Width();
-  int h = leftImage.Height();
-
-  if (w != rightImage.Width() || h != rightImage.Height()) {
-    cerr << __PRETTY_FUNCTION__ <<"(): size of images incompatible. "<< endl;
-    return false;
-  }
-
-  //
-  // Try Kurt's dense stereo pair
-  //
-  const uint8_t *lim = leftImage.ImageData();
-  const uint8_t *rim = rightImage.ImageData();
-
-  int16_t* disp    = dispMap.ImageData();
-  int16_t* textImg = NULL;
-
-  static const int mFTZero       = 31;    //< max 31 cutoff for prefilter value
-  static const int mDLen         = 64;    //< 64 disparities
-  static const int mCorr         = 15;    //< correlation window size
-  static const int mTextThresh   = 10;    //< texture threshold
-  static const int mUniqueThresh = 15;    //< uniqueness threshold
-
-  // scratch images
-  uint8_t *mBufStereoPairs     = new uint8_t[h*mDLen*(mCorr+5)]; // local storage for the stereo pair algorithm
-  uint8_t *mFeatureImgBufLeft  = new uint8_t[w*h];
-  uint8_t *mFeatureImgBufRight = new uint8_t[w*h];
-
-  // prefilter
-  do_prefilter((uint8_t *)lim, mFeatureImgBufLeft, w, h, mFTZero, mBufStereoPairs);
-  do_prefilter((uint8_t *)rim, mFeatureImgBufRight, w, h, mFTZero, mBufStereoPairs);
-
-  // stereo
-  do_stereo(mFeatureImgBufLeft, mFeatureImgBufRight, disp, textImg, w, h,
-      mFTZero, mCorr, mCorr, mDLen, mTextThresh, mUniqueThresh, mBufStereoPairs);
-
-  return status;
-#endif
 }
 
 bool CvTest3DPoseEstimate::testVideo() {
@@ -356,11 +299,6 @@ bool CvTest3DPoseEstimate::testVideo() {
   }
 
   do {
-    StereoFrame& sf = fileSeq.mInputImageQueue.front();
-#if 0
-    sf.mDispMap = new WImageBuffer1_16s(sf.mImage->Width(), sf.mImage->Height());
-    getDisparityMap(*sf.mImage, *sf.mRightImage, *sf.mDispMap);
-#endif
     pathRecon.track(fileSeq.mInputImageQueue);
   } while(fileSeq.getNextFrame() == true);
 
@@ -718,14 +656,6 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
     FramePose* fp = new FramePose(frame_index);
     CvMatUtils::transformFromEulerAndShift(&param6x1, &fp->transf_local_to_global_);
-    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
-    fp->mRod.x = rod_shift[0];
-    fp->mRod.y = rod_shift[1];
-    fp->mRod.z = rod_shift[2];
-
-    fp->mShift.x = rod_shift[3];
-    fp->mShift.y = rod_shift[4];
-    fp->mShift.z = rod_shift[5];
     frame_poses.push_back(fp);
   }
 
@@ -1065,6 +995,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     cout << "set disturb scale, threshold to be: "<< this->mDisturbScale<<","<<threshold<<endl;
   } else if (this->mTestType == Disparity){
     cout << "Testing in disparity space"<<endl;
+    this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
     uvds0 = cvCreateMat(numPoints, 3, CV_64FC1);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
     this->cartToDisp(points0, uvds0);
