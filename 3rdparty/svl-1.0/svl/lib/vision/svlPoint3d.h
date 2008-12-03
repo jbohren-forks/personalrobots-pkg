@@ -47,6 +47,7 @@
 #endif
 
 #include <cassert>
+#include <limits>
 #include <cmath>
 #include <iostream>
 

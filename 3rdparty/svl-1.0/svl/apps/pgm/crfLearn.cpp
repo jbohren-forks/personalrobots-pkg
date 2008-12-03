@@ -34,6 +34,7 @@
 *****************************************************************************/
 
 #include <cstdlib>
+#include <cstring>
 #include <cassert>
 #include <iostream>
 #include <fstream>

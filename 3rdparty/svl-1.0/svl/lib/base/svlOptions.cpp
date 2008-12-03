@@ -32,6 +32,7 @@
 *****************************************************************************/
 
 #include <cstdio>
+#include <cstring>
 #include <cassert>
 #include <vector>
 #include <map>

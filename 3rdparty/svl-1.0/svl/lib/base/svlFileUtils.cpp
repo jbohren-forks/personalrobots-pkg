@@ -32,7 +32,7 @@
 *****************************************************************************/
 
 #include <cassert>
-#include <string>
+#include <cstring>
 #include <algorithm>
 #include <sys/types.h>
 #include <sys/stat.h>
