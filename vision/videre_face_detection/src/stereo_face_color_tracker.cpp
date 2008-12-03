@@ -136,7 +136,7 @@ public:
     subscribe("videre/cal_params", cal_params_, &StereoFaceColorTracker::cal_params_cb, 1);
 
     // Advertise a 3d position measurement for each head.
-    advertise<robot_msgs::PositionMeasurement>("stereo_face_color_tracker",1);
+    advertise<robot_msgs::PositionMeasurement>("stereo_face_color_tracker/position_measurement",1);
     // subscribe<robot_msgs::PositionMeasurement>("track_filter",1); This will eventually initialize my tracks instead of the face detection.
 
   }
@@ -405,7 +405,7 @@ public:
       pos.reliability = 0.5;
       pos.initialization = 0;
       //pos.covariance
-      publish("stereo_face_color_tracker",pos);
+      publish("stereo_face_color_tracker/position_measurement",pos);
     }
 	  
     cvReleaseMat(&end_points);
