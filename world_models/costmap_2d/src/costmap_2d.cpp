@@ -110,12 +110,13 @@ namespace costmap_2d {
 
         // If the source value is greater than the threshold but less than the NO_INFORMATION LIMIT
         // then set it to the threshold. 
-        if (costData_[ind] != NO_INFORMATION && costData_[ind] >= threshold)
+	// Workaround for miletone 1. We treat no information as a lethal obstacle.
+        if (/*costData_[ind] != NO_INFORMATION &&  */costData_[ind] >= threshold)
           costData_[ind] = LETHAL_OBSTACLE;
 
         // Lethal obstacles will have to be inflated. We take the approach that they will all be treated initially
         // as dynamic obstacles, and will be faded out as such, but
-        if(costData_[ind] == LETHAL_OBSTACLE){
+        if(costData_[ind] >= LETHAL_OBSTACLE){
           enqueue(ind, i, j);
         }
       }
@@ -140,7 +141,11 @@ namespace costmap_2d {
 
 
   void CostMap2D::revertToStaticMap(){
-    memcpy(costData_, staticData_, width_ * height_);
+    // Revising the policy per Eitan's discussion with Eric where we want to revert to the most relaxed map based on our current perception
+    // and the static map. 
+    unsigned int cellCount = width_ * height_;
+    for (unsigned int i = 0; i < cellCount; i++)
+      costData_[i] = std::min(costData_[i], staticData_[i]);
   }
 
   /**
