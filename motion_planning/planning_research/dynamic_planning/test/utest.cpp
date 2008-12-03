@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <string.h>
 #include <gtest/gtest.h>
 
 #include "../src/headers.h"
@@ -39,7 +40,10 @@ void testPrecomputeActions(const std::string& env){
 
     std::string actionOutputFile = PATH_PREFIX + env + ".out";
     
-    environment_nav3Ddyn.PrintActionsToFile(actionOutputFile.c_str());
+    // PrintActionsToFile takes a non-const string for some reason...
+    char* tmpstr = strdup(actionOutputFile.c_str());
+    environment_nav3Ddyn.PrintActionsToFile(tmpstr);
+    free(tmpstr);
 
     std::string validActionFile = VALID_PATH_PREFIX + env + ".actions";
 
