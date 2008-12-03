@@ -329,6 +329,8 @@ void NavViewPanel::loadMap()
 
   root_node_->setPosition(Ogre::Vector3(-map_width_*map_resolution_/2, -map_height_*map_resolution_/2, 0.0f));
   map_node->setPosition(Ogre::Vector3(0.0f, 0.0f, MAP_DEPTH));
+
+  queueRender();
 }
 
 void NavViewPanel::clearMap()
