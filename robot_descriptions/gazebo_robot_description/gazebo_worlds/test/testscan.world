@@ -82,18 +82,18 @@
 
   <!-- The small cuboidal "test sphere" -->
   <model:physical name="sphere1_model">
-    <xyz>   2.5   -0.5    0.1464</xyz>
+    <xyz>   2.5   -0.5    0.5064</xyz>
     <rpy>   0.0    0.0    0.0 </rpy>
     <static>false</static>
     <body:sphere name="sphere1_body">
       <geom:sphere name="sphere1_geom">
         <mesh>default</mesh>
-        <size>0.15</size>
+        <size>0.5</size>
         <mass> 0.5</mass>
         <cfm>0.000001</cfm>
         <erp>0.8</erp>
         <visual>
-          <size> 0.3 0.3 0.3</size>
+          <size> 1.0 1.0 1.0</size>
           <material>Gazebo/PioneerBody</material>
           <mesh>unit_sphere</mesh>
         </visual>
@@ -144,6 +144,7 @@
   </model:physical>
 
   <!-- The trimesh cup -->
+  <!-- commented out because xvfb is not working reliably yet
   <model:physical name="cup1_model">
     <xyz>    3.0    0.0     0.009</xyz>
     <rpy>   90.0    0.0    90.0</rpy>
@@ -175,6 +176,7 @@
       </geom:trimesh>
     </body:trimesh>
   </model:physical>
+  -->
 
   <!-- White Directional light -->
   <model:renderable name="directional_white">
