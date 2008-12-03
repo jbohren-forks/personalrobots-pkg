@@ -61,9 +61,12 @@ namespace costmap_2d {
     wy = origin_y_;
   }
 
+  /**
+   * Modify because we no longer utilize a quick check on inscribed radius.
+   */
   bool ObstacleMapAccessor::isCircumscribedCell(unsigned int mx, unsigned int my) const{
     const unsigned char cost = getCost(mx, my);
-    return cost < INSCRIBED_INFLATED_OBSTACLE && cost >= costLB_;
+    return /*cost < INSCRIBED_INFLATED_OBSTACLE && */ cost >= costLB_;
   }
 
   std::string ObstacleMapAccessor::toString() const {
