@@ -8,6 +8,7 @@
 #include <opencv/cv.h>
 #include <opencv/cxcore.h>
 #include <opencv/highgui.h>
+#include <algorithm>
 using std::vector;
 using std::string;
 using std::deque;
