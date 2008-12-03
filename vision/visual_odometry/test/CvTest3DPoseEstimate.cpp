@@ -1013,6 +1013,7 @@ bool CvTest3DPoseEstimate::testPointClouds(){
     peDisp.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_);
   } else if (this->mTestType == CartAndDisp) {
     cout << "testing mixed of cartesian and disparity space"<<endl;
+    this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
     uvds1 = cvCreateMat(numPoints, 3, CV_64FC1);
     cvAvgSdv(points0, &mean, &std);
     cout << "mean and std of point cloud: "<<mean.val[0] << ","<<std.val[0]<<endl;
