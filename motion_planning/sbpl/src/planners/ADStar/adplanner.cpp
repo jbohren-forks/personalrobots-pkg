@@ -908,7 +908,7 @@ int ADPlanner::ReconstructPath(ADSearchStateSpace_t* pSearchStateSpace)
 		ADState *predstateinfo, *stateinfo;
 			
 		int steps = 0;
-		const int max_steps = 10000;
+		const int max_steps = 100000;
 		while(MDPstate != pSearchStateSpace->searchstartstate && steps < max_steps)
 		{
 			steps++;
@@ -987,7 +987,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 
 	int costFromStart = 0;
 	int steps = 0;
-	const int max_steps = 10000;
+	const int max_steps = 100000;
 	while(state->StateID != pSearchStateSpace->searchstartstate->StateID && steps < max_steps)
 	{
 		steps++;
@@ -1029,6 +1029,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 #if DEBUG
 		if(searchstateinfo->g > searchstateinfo->v){
 			fprintf(fOut, "ERROR: underconsistent state %d is encountered\n", state->StateID);
+			exit(1);
 		}
 
 		if(!bforwardsearch) //otherwise this cost is not even set
@@ -1036,6 +1037,7 @@ void ADPlanner::PrintSearchPath(ADSearchStateSpace_t* pSearchStateSpace, FILE* f
 			if(nextstate->PlannerSpecificData != NULL && searchstateinfo->g < searchstateinfo->costtobestnextstate + ((ADState*)(nextstate->PlannerSpecificData))->g)
 			{
 				fprintf(fOut, "ERROR: g(source) < c(source,target) + g(target)\n");
+				exit(1);
 			}
 		}
 #endif
@@ -1105,7 +1107,7 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 
 	FILE* fOut = stdout;
 	int steps = 0;
-	const int max_steps = 10000;
+	const int max_steps = 100000;
 	while(state->StateID != goalstate->StateID && steps < max_steps)
 	{
 		steps++;
@@ -1138,6 +1140,15 @@ vector<int> ADPlanner::GetSearchPath(ADSearchStateSpace_t* pSearchStateSpace, in
 
         }
         solcost += actioncost;
+
+		if(searchstateinfo->v < searchstateinfo->g)
+		{
+			printf("ERROR: underconsistent state on the path\n");
+			PrintSearchState(searchstateinfo, stdout);
+			//fprintf(fDeb, "ERROR: underconsistent state on the path\n");
+			//PrintSearchState(searchstateinfo, fDeb);
+			exit(1);
+		}
 
         //fprintf(fDeb, "actioncost=%d between states %d and %d\n", 
         //        actioncost, state->StateID, searchstateinfo->bestnextstate->StateID);

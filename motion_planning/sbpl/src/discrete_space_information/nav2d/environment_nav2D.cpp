@@ -601,7 +601,7 @@ void EnvironmentNAV2D::SetAllActionsandAllOutcomes(CMDPSTATE* state)
 		cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(1.414214*cost);
+            cost = (int)(ceil(1.414214*cost));
 
 		//add the action
 		CMDPACTION* action = state->AddAction(aind);
@@ -690,7 +690,7 @@ void EnvironmentNAV2D::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<
 		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(newX != HashEntry->X && newY != HashEntry->Y)
-            cost = (int)(1.414214*cost);
+            cost = (int)(ceil(1.414214*cost));
 		 
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
@@ -766,7 +766,7 @@ void EnvironmentNAV2D::GetPreds(int TargetStateID, vector<int>* PredIDV, vector<
 		int cost = (costmult+1)*ENVNAV2D_COSTMULT;
         //diagonal moves are costlier
         if(predX != HashEntry->X && predY != HashEntry->Y)
-            cost = (int)(1.414214*cost);
+            cost = (int)(ceil(1.414214*cost));
 
     	EnvNAV2DHashEntry_t* OutHashEntry;
 		if((OutHashEntry = GetHashEntry(predX, predY)) == NULL)

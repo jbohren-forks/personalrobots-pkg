@@ -248,8 +248,7 @@ int plan3dkin(int argc, char *argv[])
 
 int planandnavigate2d(int argc, char *argv[])
 {
-
-	double allocated_time_secs_foreachplan = 0.5; //in seconds
+	double allocated_time_secs_foreachplan = 10.0; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV2D environment_nav2D;
 	EnvironmentNAV2D trueenvironment_nav2D;
@@ -267,6 +266,8 @@ int planandnavigate2d(int argc, char *argv[])
 	int i;
 	unsigned char obsthresh = 0;
 	//srand(0);
+	int plantime_over1secs=0, plantime_over0p5secs=0, plantime_over0p1secs=0, plantime_over0p05secs=0, plantime_below0p05secs=0;
+
 
     //initialize true map and robot map
 	if(!trueenvironment_nav2D.InitializeEnv(argv[1]))
@@ -307,6 +308,7 @@ int planandnavigate2d(int argc, char *argv[])
     //ARAPlanner planner(&environment_nav2D, bforwardsearch);
 	ADPlanner planner(&environment_nav2D, bforwardsearch);
 
+	//planner.set_initialsolution_eps(1.0); //TODO
 
 
     //set the start and goal configurations
@@ -348,6 +350,8 @@ int planandnavigate2d(int argc, char *argv[])
             }
         }
 		
+		double TimeStarted = clock();
+
         if(bChanges){
             //planner.costs_changed(); //use by ARA* planner (non-incremental)
 
@@ -358,7 +362,7 @@ int planandnavigate2d(int argc, char *argv[])
         }
 
 
-        fprintf(fSol, "current state: %d %d\n",  startx, starty);
+        fprintf(fSol, "%d %d ",  startx, starty);
 
         //plan a path 
         bool bPlanExists = false;
@@ -373,6 +377,20 @@ int planandnavigate2d(int argc, char *argv[])
             //}
             //fprintf(fSol, "*********\n");
         }
+
+		double plantime_secs = (clock()-TimeStarted)/((double)CLOCKS_PER_SEC);
+		fprintf(fSol, "%.5f %.5f\n", plantime_secs, planner.get_solution_eps());
+		fflush(fSol);
+		if(plantime_secs > 1.0)
+			plantime_over1secs++;
+		else if(plantime_secs > 0.5)
+			plantime_over0p5secs++;
+		else if(plantime_secs > 0.1)
+			plantime_over0p1secs++;
+		else if(plantime_secs > 0.05)
+			plantime_over0p05secs++;
+		else
+			plantime_below0p05secs++;
 
 		//print the map
 		int startindex = startx + starty*size_x;
@@ -435,6 +453,13 @@ int planandnavigate2d(int argc, char *argv[])
         }
 
     }
+
+	//print stats
+	printf("stats: plantimes over 1 secs=%d; over 0.5 secs=%d; over 0.1 secs=%d; over 0.05 secs=%d; below 0.05 secs=%d\n",
+		plantime_over1secs, plantime_over0p5secs, plantime_over0p1secs, plantime_over0p05secs, plantime_below0p05secs);
+	fprintf(fSol, "stats: plantimes over 1 secs=%d; over 0.5; secs=%d; over 0.1 secs=%d; over 0.05 secs=%d; below 0.05 secs=%d\n",
+		plantime_over1secs, plantime_over0p5secs, plantime_over0p1secs, plantime_over0p05secs, plantime_below0p05secs);
+
 	fflush(NULL);
 
 
@@ -445,7 +470,7 @@ int planandnavigate2d(int argc, char *argv[])
 int planandnavigate3dkin(int argc, char *argv[])
 {
 
-	double allocated_time_secs_foreachplan = 1.0; //in seconds
+	double allocated_time_secs_foreachplan = 2.0; //in seconds
 	MDPConfig MDPCfg;
 	EnvironmentNAV3DKIN environment_nav3Dkin;
 	EnvironmentNAV3DKIN trueenvironment_nav3Dkin;
@@ -495,7 +520,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 
 	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
 	sbpl_2Dpt_t pt_m;
-	double side = 0.03;
+	double side = 0.6;
 	pt_m.x = -side;
 	pt_m.y = -side;
 	perimeterptsV.push_back(pt_m);
@@ -565,6 +590,8 @@ int planandnavigate3dkin(int argc, char *argv[])
     //ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
 	ADPlanner planner(&environment_nav3Dkin, bforwardsearch);
 
+	//planner.set_initialsolution_eps(10.0); //TODO
+
 	//set search mode
 	planner.set_search_mode(bsearchuntilfirstsolution);
 
@@ -609,7 +636,9 @@ int planandnavigate3dkin(int argc, char *argv[])
 				changedcellsV.push_back(nav2dcell);
             }
         }
-		
+
+		double TimeStarted = clock();
+
         if(bChanges){
             //planner.costs_changed(); //use by ARA* planner (non-incremental)
 
@@ -626,7 +655,7 @@ int planandnavigate3dkin(int argc, char *argv[])
 		int starttheta_c = ContTheta2Disc(starttheta, NAV3DKIN_THETADIRS);
 		
 
-        fprintf(fSol, "current state: %d %d %d\n",  startx_c, starty_c, starttheta_c);
+        fprintf(fSol, "%d %d %d ",  startx_c, starty_c, starttheta_c);
 
         //plan a path 
         bool bPlanExists = false;
@@ -635,6 +664,9 @@ int planandnavigate3dkin(int argc, char *argv[])
         bPlanExists = (planner.replan(allocated_time_secs_foreachplan, &solution_stateIDs_V) == 1);
         printf("done with the solution of size=%d and sol. eps=%f\n", solution_stateIDs_V.size(), planner.get_solution_eps());   
         environment_nav3Dkin.PrintTimeStat(stdout);
+
+		fprintf(fSol, "%.5f %.2f\n", (clock()-TimeStarted)/((double)CLOCKS_PER_SEC), planner.get_solution_eps());
+		fflush(fSol);
 
         //for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
         //environment_nav3Dkin.PrintState(solution_stateIDs_V[i], true, fSol);
@@ -810,10 +842,13 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    //planandnavigate2d(argc, argv);
+    planandnavigate2d(argc, argv);
 
     //3D planning
-    plan3dkin(argc, argv);
+    //plan3dkin(argc, argv);
+
+    //3D planning
+    //plan3dkin(argc, argv);
 
     //3D planning
     //planandnavigate3dkin(argc, argv);
