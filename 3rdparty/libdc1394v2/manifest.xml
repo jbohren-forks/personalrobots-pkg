@@ -24,6 +24,9 @@ Specifications (also known as the IIDC or DCAM Specifications)
   <sysdepend os="ubuntu" version="7.04-feisty" package="libraw1394-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libraw1394-dev"/>
 
+  <install>
+  	<intrepid><apt pkg="libdc1394-22"/></intrepid>
+  </install>
 
 </package>
 
