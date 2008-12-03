@@ -20,10 +20,10 @@
   <sysdepend os="ubuntu" version="8.04-hardy" package="libltdl3-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libfltk1.1-dev"/>
-  <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-signals1.34.1"/>
+  <!--sysdepend os="ubuntu" version="7.04-feisty" package="libboost-signals1.34.1"/>
   <sysdepend os="ubuntu" version="7.04-feisty" package="libboost-signals-dev"/>
   <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals1.34.1"/>
-  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/>
+  <sysdepend os="ubuntu" version="8.04-hardy" package="libboost-signals-dev"/-->
 </package>
 
 
