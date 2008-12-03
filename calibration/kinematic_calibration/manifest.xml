@@ -6,5 +6,12 @@
   <depend package="kdl" />
   <depend package="phase_space" />
   <depend package="robot_msgs" />
+  <depend package="std_msgs" />
   <depend package="robot_kinematics" />
+  <depend package="topic_synchronizer" />
+  <depend package="image_msgs" />
+
+  <export>
+    <cpp cflags="-I${prefix}/msg/cpp"/>
+  </export>
 </package>
