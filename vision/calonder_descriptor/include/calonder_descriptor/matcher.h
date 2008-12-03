@@ -48,13 +48,15 @@ private:
   std::vector< Data > data_;
   float threshold_;
   size_t size_;
+  float (*distanceFunction)(int size, const float* a, const float* b);
 };
 
 template < typename Data >
 inline
 BruteForceMatcher<Data>::BruteForceMatcher(size_t signature_size)
   : threshold_(std::numeric_limits<float>::max()),
-    size_(signature_size)
+    size_(signature_size),
+    distanceFunction(L1Distance)
 {}
 
 template < typename Data >
@@ -103,7 +105,7 @@ int BruteForceMatcher<Data>::findMatch(const float* query_sig,
   int index = 0;
 
   BOOST_FOREACH( const float* stored_sig, signatures_ ) {
-    float next_distance = squaredDistance(size_, query_sig, stored_sig);
+    float next_distance = distanceFunction(size_, query_sig, stored_sig);
     if (next_distance < best_distance) {
       best_distance = next_distance;
       match = index;
@@ -131,7 +133,7 @@ int BruteForceMatcher<Data>::findMatchInWindow(const float* signature,
         data.y >= window.y + window.height)
       continue;
 
-    float next_distance = squaredDistance(size_, signature, signatures_[i]);
+    float next_distance = distanceFunction(size_, signature, signatures_[i]);
     if (next_distance < best_distance) {
       best_distance = next_distance;
       match = i;
@@ -153,7 +155,7 @@ int BruteForceMatcher<Data>::findMatchPredicated(const float* signature,
 
   for (int i = 0; i < (int)signatures_.size(); ++i) {
     if (predicates[i]) {
-      float next_distance = squaredDistance(size_, signature, signatures_[i]);
+      float next_distance = distanceFunction(size_, signature, signatures_[i]);
       if (next_distance < best_distance) {
         best_distance = next_distance;
         match = i;
@@ -177,7 +179,7 @@ int BruteForceMatcher<Data>::findMatches(const float* query_sig,
   int index = 0;
 
   BOOST_FOREACH( const float* stored_sig, signatures_ ) {
-    float next_distance = squaredDistance(size_, query_sig, stored_sig);
+    float next_distance = distanceFunction(size_, query_sig, stored_sig);
     if (next_distance < best_distance) {
       second_distance = best_distance;
       second_match = best_match;

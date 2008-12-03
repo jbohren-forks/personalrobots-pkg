@@ -40,15 +40,17 @@ int RandomizedTree::getIndex(uchar* patch_data) const
 }
 
 void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
-                           Rng &rng, int depth, int views, size_t reduced_num_dim)
+                           Rng &rng, int depth, int views, size_t reduced_num_dim, 
+                           int num_quant_bits)
 {
   PatchGenerator make_patch(NULL, rng);
-  train(base_set, rng, make_patch, depth, views, reduced_num_dim);
+  train(base_set, rng, make_patch, depth, views, reduced_num_dim, num_quant_bits);
 }
 
 void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
                            Rng &rng, PatchGenerator &make_patch,
-                           int depth, int views, size_t reduced_num_dim)
+                           int depth, int views, size_t reduced_num_dim, 
+                           int num_quant_bits)
 {
   init(base_set.size(), depth, rng);
   
@@ -68,7 +70,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
     }
   }
 
-  finalize(reduced_num_dim);
+  finalize(reduced_num_dim, num_quant_bits);
 
   cvReleaseImage(&patch);
 }
@@ -116,7 +118,18 @@ void RandomizedTree::addExample(int class_id, uchar* patch_data)
   ++posterior[class_id];
 }
 
-void RandomizedTree::finalize(size_t reduced_num_dim)
+// returns the p% percentile of data
+static float percentile(float *data, int n, float p)
+{
+   assert(n>0);
+   assert(p>=0 && p<=1);
+   std::vector<float> vec(data, data+n);
+   sort(vec.begin(), vec.end());
+   int ix = (int)(p*(n-1));
+   return vec[ix];
+}
+
+void RandomizedTree::finalize(size_t reduced_num_dim, int num_quant_bits)
 {
    // Normalize by number of patches to reach each leaf   
    for (int index = 0; index < num_leaves_; ++index) {
@@ -152,20 +165,47 @@ void RandomizedTree::finalize(size_t reduced_num_dim)
       classes_ = reduced_num_dim;
    }
    
-   // quantization (experimantal)
-   #if 0
-      double perc[2] = {-0.026093104854,0.025830298662}; // lower and upper percentiles (currently 5%/95%)
-      int map_bnd[2] = {0,1000};          // bounds of quantized target interval we're mapping to
-      for (int i=0; i<num_leaves_; ++i) {
-         float *post = getPosteriorByIndex(i);
-         for (size_t k=0; k<reduced_num_dim; ++k, ++post) {
-            *post = int((*post - perc[0])/(perc[1] - perc[0])*(map_bnd[0] - map_bnd[1]) + map_bnd[0]);
-            *post = (*post<map_bnd[0]) ? map_bnd[0] : ((*post>map_bnd[1]) ? map_bnd[1] : *post);
-         }
+   // quantize (experimantal)   
+   if (num_quant_bits > 0) {
+      int N = (1<<num_quant_bits) - 1;
+      printf("[WARNING] Quantization is active! N=%i\n", N);
+      // estimate percentiles over all data (this here is approximative, fair enough)
+      float perc[2] = {0,0};
+      for (int i=0; i<num_leaves_; i++) {
+         perc[0] += percentile(posteriors_[i], reduced_num_dim, .05);
+         perc[1] += percentile(posteriors_[i], reduced_num_dim, .95);
       }
-   #endif
+      perc[0] /= num_leaves_;
+      perc[1] /= num_leaves_;
+
+      for (int i=0; i<num_leaves_; ++i) {
+         quantize_vector(posteriors_[i], reduced_num_dim, N, perc);      
+         // DEBUG
+         #if 0
+         if (i == 13) {
+            post = posteriors_[i];
+            std::ofstream ofs("/wg/stor1/calonder/dev/fw/train_base/debug/post13.txt");
+            for (size_t i=0; i<reduced_num_dim; i++)
+               ofs << *post++ << std::endl;
+            ofs.close();
+         }
+         #endif
+      }   
+   }
        
    leaf_counts_.clear();
+}
+
+void RandomizedTree::quantize_vector(float *vec, int dim, int N, float perc[2])
+{
+   // TODO: find percentiles here (no hardcoding!)
+   float map_bnd[2] = {0.f,(float)N};          // bounds of quantized target interval we're mapping to
+   for (int k=0; k<dim; ++k, ++vec) {
+      int p = int((*vec - perc[0])/(perc[1] - perc[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]);
+      *vec = (float)p;
+      *vec = (*vec<map_bnd[0]) ? map_bnd[0] : ((*vec>map_bnd[1]) ? map_bnd[1] : *vec);
+   }
+
 }
 
 float* RandomizedTree::getPosterior(uchar* patch_data)

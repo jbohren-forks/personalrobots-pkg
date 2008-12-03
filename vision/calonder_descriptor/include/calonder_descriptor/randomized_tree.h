@@ -47,9 +47,13 @@ public:
   ~RandomizedTree();
   
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
-             int depth, int views, size_t reduced_num_dim);
+             int depth, int views, size_t reduced_num_dim, int num_quant_bits=0);
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
-             PatchGenerator &make_patch, int depth, int views, size_t reduced_num_dim);
+             PatchGenerator &make_patch, int depth, int views, size_t reduced_num_dim, 
+             int num_quant_bits=0);
+
+  // experimantal, do not use
+  static void quantize_vector(float *vec, int dim, int N, float perc[2]);
 
   // patch_data must be a 32x32 array (no row padding)
   float* getPosterior(uchar* patch_data);
@@ -77,7 +81,7 @@ private:
   void freePosteriors();
   void init(int classes, int depth, Rng &rng);
   void addExample(int class_id, uchar* patch_data);
-  void finalize(size_t reduced_num_dim);
+  void finalize(size_t reduced_num_dim, int num_quant_bits);
   int getIndex(uchar* patch_data) const;
   inline float* getPosteriorByIndex(int index); // { return posteriors_[index]; }
   inline const float* getPosteriorByIndex(int index) const;

@@ -3,10 +3,6 @@
 #include <fstream>
 #include <cstring>
 #include <boost/foreach.hpp>
-#include <boost/random.hpp>
-//#include <boost/numeric/ublas/operation.hpp>
-//#include <boost/numeric/bindings/atlas/cblas1.hpp>
-#include <cblas.h>
 
 namespace features {
 
@@ -19,16 +15,18 @@ RTreeClassifier::RTreeClassifier()
 
 void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
                             Rng &rng, int num_trees, int depth,
-                            int views, size_t reduced_num_dim)
+                            int views, size_t reduced_num_dim,
+                            int num_quant_bits)
 {
   PatchGenerator make_patch(NULL, rng);
-  train(base_set, rng, make_patch, num_trees, depth, views, reduced_num_dim);
+  train(base_set, rng, make_patch, num_trees, depth, views, reduced_num_dim, num_quant_bits);
 }
 
 // Single-threaded version of train(), with progress output
 void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
                             Rng &rng, PatchGenerator &make_patch, int num_trees,
-                            int depth, int views, size_t reduced_num_dim)
+                            int depth, int views, size_t reduced_num_dim, 
+                            int num_quant_bits)
 {
   if (reduced_num_dim > base_set.size()) {
     printf("INVALID PARAMS in RTreeClassifier::train: reduced_num_dim > base_set.size()\n");
@@ -44,7 +42,7 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
   printf("[OK] Trained 0 / %i trees\r", num_trees);
   fflush(stdout);
   BOOST_FOREACH( RandomizedTree &tree, trees_ ) {
-    tree.train(base_set, rng, make_patch, depth, views, reduced_num_dim);    
+    tree.train(base_set, rng, make_patch, depth, views, reduced_num_dim, num_quant_bits);    
     printf("[OK] Trained %i / %i trees\r", count++, num_trees);
     fflush(stdout);
   }
@@ -75,38 +73,43 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   memset((void*)sig, 0, classes_ * sizeof(float));
   std::vector<RandomizedTree>::iterator tree_it;
  
-  #if 1 // inlined native C for summing up
+  // get posteriors
+  float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
+  float **pp = posteriors;    
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    *pp = tree_it->getPosterior(patch_data);       
 
-    // get posteriors
-    float **posteriors = new float*[trees_.size()];  // TODO: move alloc outside this func
-    float **pp = posteriors;    
-    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
-      *pp = tree_it->getPosterior(patch_data);       
+  // sum them up
+  pp = posteriors;
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    add(classes_, sig, *pp, sig);
 
-    // sum them up
-    pp = posteriors;
-    for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
-      add(classes_, sig, *pp, sig);
-
-    delete [] posteriors;
-    posteriors = NULL;
+  delete [] posteriors;
+  posteriors = NULL;
+      
+  // full quantization (experimental)
+  #if 0
+    int n_max = 1<<8 - 1;
+    int sum_max = (1<<3 - 1)*trees_.size();
+    int shift = 0;    
+    while ((sum_max>>shift) > n_max) shift++;
     
+    for (int i = 0; i < classes_; ++i) {
+      sig[i] = int(sig[i] + .5) >> shift;
+      if (sig[i]>n_max) sig[i] = n_max;
+    }
+
+    static bool warned = false;
+    if (!warned) {
+      printf("[WARNING] Using full quantization (RTreeClassifier::getSignature)! shift=%i\n", shift);
+      warned = true;
+    }    
+  #else
     // TODO: get rid of this multiply (-> number of trees is known at train 
     // time, exploit it in RandomizedTree::finalize())
     float normalizer = 1.0f / trees_.size();
     for (int i = 0; i < classes_; ++i)
       sig[i] *= normalizer;
-    
-  #else  // CBLAS for summing up
-
-     for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
-       const float* posterior = tree_it->getPosterior(patch_data);
-       cblas_saxpy(classes_, 1., posterior, 1, sig, 1);    
-     } 
-
-     float normalizer = 1.0f / trees_.size();
-     cblas_sscal(classes_, normalizer, sig, 1);  
-     
   #endif
 }
 

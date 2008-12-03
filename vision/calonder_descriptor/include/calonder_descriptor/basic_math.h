@@ -28,11 +28,24 @@ inline float L1Distance(int size, const float* a, const float* b)
 {
   float result = 0;
   while (--size >= 0) {
-    result += *a - *b;
+    result += fabs(*a - *b);
     ++a; ++b;
   }
   return result;
 }
+
+// infinity norm
+inline float LInfDistance(int size, const float* a, const float* b)
+{
+  float result = 0.f, diff;
+  while (--size >= 0) {
+    diff = fabs(*a - *b);
+    if (diff > result) result = diff;
+    ++a; ++b;
+  }
+  return result;
+}
+
 
 } // namespace features
 
