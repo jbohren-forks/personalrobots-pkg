@@ -29,6 +29,8 @@
 #ifndef __ENVIRONMENT_NAV3DDYN_H_
 #define __ENVIRONMENT_NAV3DDYN_H_
 
+//shrink footprint
+#define NAV3DDYN_SHRINK_FOOTPRINT 0
 
 //eight-connected grid
 #define NAV3DDYN_DXYWIDTH 1
@@ -119,6 +121,7 @@ typedef struct ENV_NAV3DDYN_CONFIG
   int EndX_c;
   int EndY_c;
   int EndTheta;
+  
   char** Grid2D;
 
   double nominalvel_mpersecs; //translational velocity
@@ -190,7 +193,9 @@ public:
   void CalculateFootprintForPose(EnvNAV3DDYNContPose_t pose, vector<EnvNAV3DDYN2Dpt_t>* footprint);
   void RemoveDuplicatesFromPath(vector<EnvNAV3DDYNDiscPose_t>* path);
   void RemoveDuplicatesFromFootprint(vector<EnvNAV3DDYN2Dpt_t>* footprint);
+  void DiscretizeAndShrinkFootprintBoundary();
   
+
   //planning initialization functions
   bool InitializeMDPCfg(MDPConfig *MDPCfg);
   int SetStart(double x, double y, double theta);
@@ -206,7 +211,8 @@ public:
   bool IsObstacle(int x, int y);
 
   //debugging functions
-  void PrintActionsToFile(char* logFile);
+  void PrintConfigurationToFile(const char* logFile);
+  void PrintActionsToFile(const char* logFile);
   void PrintState(int stateID, bool bVerbose, FILE* fOut=NULL);
   void PrintTimeStat(FILE* fOut);
   int	 SizeofCreatedEnv();

@@ -157,6 +157,11 @@ bool EnvironmentNAV3DDYN::InitializeEnv(const char* sEnvFile)
     }
   ReadConfiguration(fCfg);
   
+  if(NAV3DDYN_SHRINK_FOOTPRINT){
+    DiscretizeAndShrinkFootprintBoundary();
+  }
+
+
   InitGeneral();
   
   
@@ -178,6 +183,11 @@ bool EnvironmentNAV3DDYN::InitializeEnv(int width, int height,
 		   CONTXY2DISC(goalx, cellsize_m), CONTXY2DISC(goaly, cellsize_m), ContTheta2Disc(goaltheta, NAV3DDYN_THETADIRS),
 		   cellsize_m, nominalvel_mpersecs, timetoturnoneunitinplace_secs, perimeterptsV);
   
+  if(NAV3DDYN_SHRINK_FOOTPRINT){
+    DiscretizeAndShrinkFootprintBoundary();
+  }
+
+
   InitGeneral();
   
   return true;
@@ -254,6 +264,90 @@ void EnvironmentNAV3DDYN::SetConfiguration(int width, int height,
       }
     }
   }
+}
+
+void EnvironmentNAV3DDYN::DiscretizeAndShrinkFootprintBoundary(){
+  
+  if(EnvNAV3DDYNCfg.FootprintPolygon.size() <= 1){
+    return;
+  }
+
+  EnvNAV3DDYN2Dpt_t pt1 = EnvNAV3DDYNCfg.FootprintPolygon[0];
+  //tack the first point onto the back of the polygon
+  EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt1);
+
+  EnvNAV3DDYN2Dpt_t pt2;
+  EnvNAV3DDYN2Dpt_t pt;
+  vector<EnvNAV3DDYN2Dpt_t> footprintBoundary;
+
+  double min_radius = sqrt(pow(pt1.x,2.0) + pow(pt1.y,2.0));
+  double radius;
+
+  //first descritize
+  for(unsigned int i=1; i<EnvNAV3DDYNCfg.FootprintPolygon.size(); i++){
+    pt2 = EnvNAV3DDYNCfg.FootprintPolygon[i];
+
+    //create a line between pt1 and pt2 
+    for(double t=0; t<=1.0; t+=0.01){
+
+      pt.x = (1-t)*pt1.x + t*pt2.x;
+      pt.y = (1-t)*pt1.y + t*pt2.y;
+
+      radius = sqrt(pow(pt.x, 2.0) + pow(pt.y, 2.0));
+      
+      //check to see if this point is the closest to the center
+      if(radius < min_radius)
+	min_radius = radius;
+
+      footprintBoundary.push_back(pt);
+           
+    }
+    //shuffle the points to go to the next line
+    pt1 = pt2;
+  }
+
+#if NAV3DDYN_DEBUG
+  printf("Min radius: %f %f\n", min_radius,  min_radius/EnvNAV3DDYNCfg.cellsize_m);
+#endif
+
+  EnvNAV3DDYNCfg.FootprintPolygon.clear();
+
+  //now shrink footprint
+  double alpha;
+  for(unsigned int i=0; i<footprintBoundary.size(); i++){
+    pt = footprintBoundary[i];
+
+    alpha = atan2(pt.y, pt.x);
+
+    pt.x = pt.x - min_radius*cos(alpha);
+    pt.y = pt.y - min_radius*sin(alpha);
+
+    EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt);
+
+  }
+
+  
+  //now blow up all the obstacles in the environment
+  int r = static_cast<int>(min_radius/EnvNAV3DDYNCfg.cellsize_m + 0.5);
+  //TODO: probably can do this better
+  for(int w=0; w < EnvNAV3DDYNCfg.EnvWidth_c; w++){
+    for(int h=0; h < EnvNAV3DDYNCfg.EnvHeight_c; h++){
+      if(EnvNAV3DDYNCfg.Grid2D[w][h]==1){
+	
+	//pad
+	for(int x = w-r; x <= w+r; x++){
+	  for(int y = h-r; y <= h+r; y++){
+	    
+	    if(x >= 0 && y >= 0 && x < EnvNAV3DDYNCfg.EnvWidth_c && y < EnvNAV3DDYNCfg.EnvHeight_c &&
+	       EnvNAV3DDYNCfg.Grid2D[x][y] == 0){
+	      EnvNAV3DDYNCfg.Grid2D[x][y] = 2;
+	    }
+	  }
+	}
+      }
+    }
+  }
+
 }
 
 void EnvironmentNAV3DDYN::PrecomputeActions()
@@ -357,21 +451,21 @@ void EnvironmentNAV3DDYN::PrecomputeActions()
       action.time = EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs;
 
       //put the start and the end positions on the path
-      path_cont.push_back(initialPose_cont);
+      action.path_cont.push_back(initialPose_cont);
       action.path.push_back(initialPose_disc);
 
       //calculate an end pose and put it on the path
       currentPose_cont.X = initialPose_cont.X;
       currentPose_cont.Y = initialPose_cont.Y;
       currentPose_cont.Theta = initialPose_cont.Theta + DiscTheta2Cont(turnsInPlace[ind], NAV3DDYN_THETADIRS);
-      path_cont.push_back(currentPose_cont);
+      action.path_cont.push_back(currentPose_cont);
 
       currentPose_disc.X = initialPose_disc.X;
       currentPose_disc.Y = initialPose_disc.Y;
       currentPose_disc.Theta = ContTheta2Disc(currentPose_cont.Theta, NAV3DDYN_THETADIRS);
       action.path.push_back(currentPose_disc);
-
-      CalculateFootprintForPath(path_cont, &action.footprint);
+      
+      CalculateFootprintForPath(action.path_cont, &action.footprint);
       RemoveDuplicatesFromFootprint(&action.footprint);
 
       action.dX = 0;
@@ -794,7 +888,6 @@ int EnvironmentNAV3DDYN::SetGoal(double x_m, double y_m, double theta_rad){
   
 }
 
-
 void EnvironmentNAV3DDYN::GetSuccs(int SourceStateID, vector<int>* SuccIDV, vector<int>* CostV)
 {
   unsigned int aind, ftind;
@@ -1082,7 +1175,40 @@ bool EnvironmentNAV3DDYN::IsObstacle(int x, int y)
 }
 
 //--------------------Debugging Functions---------------------
-void EnvironmentNAV3DDYN::PrintActionsToFile(char* logFile){
+void EnvironmentNAV3DDYN::PrintConfigurationToFile(const char* logFile){
+
+#if NAV3DDYN_DEBUG
+  printf("Printing configuration to file - %s\n", logFile);
+#endif
+
+  FILE* fp = fopen(logFile, "w");
+  fprintf(fp, "discretization(cells):%d %d\n", EnvNAV3DDYNCfg.EnvWidth_c, EnvNAV3DDYNCfg.EnvHeight_c);
+  fprintf(fp, "cellsize(meters):%f\n", EnvNAV3DDYNCfg.cellsize_m);
+  fprintf(fp, "nominalvel(mpersecs):%f\n", EnvNAV3DDYNCfg.nominalvel_mpersecs);
+  fprintf(fp, "timetoturn45degsinplace(secs):%f\n", EnvNAV3DDYNCfg.timetoturnoneunitinplace_secs);
+  fprintf(fp, "start(m,rad):%d %d %d\n", EnvNAV3DDYNCfg.StartX_c, EnvNAV3DDYNCfg.StartY_c, EnvNAV3DDYNCfg.StartTheta);
+  fprintf(fp, "end(m,rad): %d %d %d\n", EnvNAV3DDYNCfg.EndX_c, EnvNAV3DDYNCfg.EndY_c, EnvNAV3DDYNCfg.EndTheta);
+  fprintf(fp, "num_footprint_corners:%d\n", EnvNAV3DDYNCfg.FootprintPolygon.size());
+  fprintf(fp, "footprint:\n");
+ 
+  for(unsigned int i=0; i<EnvNAV3DDYNCfg.FootprintPolygon.size(); i++){
+    fprintf(fp, "%f %f\n", EnvNAV3DDYNCfg.FootprintPolygon[i].x, EnvNAV3DDYNCfg.FootprintPolygon[i].y);
+  }
+
+  fprintf(fp, "environment:\n");
+  
+  for(unsigned int h=0; h<EnvNAV3DDYNCfg.EnvHeight_c; h++){
+    for(unsigned int w=0; w<EnvNAV3DDYNCfg.EnvWidth_c; w++){
+      fprintf(fp, "%d ", EnvNAV3DDYNCfg.Grid2D[w][h]);
+    }
+    fprintf(fp, "\n");
+  }
+
+  fclose(fp);
+
+}
+
+void EnvironmentNAV3DDYN::PrintActionsToFile(const char* logFile){
   
 #if NAV3DDYN_DEBUG
   printf("Printing actions to file - %s\n", logFile);
@@ -1099,7 +1225,7 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(char* logFile){
 
   for(tind = 0; tind < NAV3DDYN_THETADIRS; tind++){
     fwrite(&tind, sizeof(tind), 1, fp);
-    num_actions = NAV3DDYN_NUMRV * 2 + 2;
+    num_actions = NAV3DDYN_NUMRV * 2 + 2 + 2;
     //printf("Printing: %d %d\n", tind, num_actions);
     fwrite(&num_actions, sizeof(num_actions), 1, fp);
     for(aind = 0; aind < num_actions; aind++){
@@ -1131,6 +1257,7 @@ void EnvironmentNAV3DDYN::PrintActionsToFile(char* logFile){
     } 
   }
   
+  fclose(fp);
 
 }
 
@@ -1457,6 +1584,7 @@ void EnvironmentNAV3DDYN::ReadConfiguration(FILE* fCfg)
 	  //pt.y = CONTXY2DISC(atof(sTemp),EnvNAV3DDYNCfg.cellsize_m);
 	  EnvNAV3DDYNCfg.FootprintPolygon.push_back(pt);
 	}
+
 
 	//allocate the 2D environment
 	int x, y;
