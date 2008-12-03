@@ -2,7 +2,7 @@
   <master auto="start" />
 
     <!-- send single_link.xml to param server -->
-    <include file="$(find arm_gazebo)/arm.launch" />
+    <include file="$(find arm_gazebo)/arm_no_x.launch" />
 
     <!-- start arm controller -->
     <node pkg="mechanism_control" type="mech.py" args="sp $(find arm_gazebo)/l_arm_default_controller.xml" respawn="false"  /> <!-- load default arm controller -->
