@@ -148,6 +148,15 @@ static CvRect center_size_to_rect_2d( CvScalar center, CvScalar size) {
 /*****************************************************************/
 
 
+// Set a person's id
+void People::setID(int id, int iperson){
+  list_[iperson].id = id;
+}
+
+// Get a person's id
+int People::getID(int iperson){
+  return list_[iperson].id;
+}
 
 // Return the face size in 3D
 double People::getFaceSize3D(int iperson) {
@@ -196,6 +205,7 @@ void People::addPerson(){
   p.shirt_color_hist = NULL;
   p.body_mask_2d = NULL;
   p.face_mask_2d = NULL;
+  p.id = -1;
   list_.push_back(p);
 }
 
@@ -272,9 +282,9 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
 
     // Get the average disparity in the middle half of the bounding box.
     if (disparity_image && cam_model) {
-      for (r = floor(one_face.y+one_face.height/4.); r < floor(one_face.y+3.*one_face.height/4.); r++) {
+      for (r = floor(one_face.y+0.25*one_face.height); r < floor(one_face.y+0.75*one_face.height); r++) {
 	uchar* ptr = (uchar*)(disparity_image->imageData + r*disparity_image->widthStep);
-	for (c = floor(one_face.x+one_face.width/4.); c < floor(one_face.x+3.*one_face.width/4.); c++) {
+	for (c = floor(one_face.x+0.25*one_face.width); c < floor(one_face.x+0.75*one_face.width); c++) {
 	  if (ptr[c] > 0) {
 	    avg_disp += ptr[c];
 	    good_pix++;
