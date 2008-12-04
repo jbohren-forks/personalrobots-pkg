@@ -14,41 +14,6 @@ void seed_rand()
   srand(temp_time_struct.tv_usec);
 };
 
-TEST(tf, NoExtrapolationExceptionFromParent)
-{
-  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
-  
-
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "a",  "parent"));
-
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "b",  "parent"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "b",  "parent"));
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent's parent",  "parent's parent's parent"));
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent",  "parent's parent"));
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(10000ULL), "parent's parent",  "parent's parent's parent"));
-
-  Stamped<Point> output;
-
-  try
-  {
-    mTR.transformPoint( "b", Stamped<Point>(Point(1,1,1), ros::Time(2000ULL), "a"), output);
-  }
-  catch (ExtrapolationException &ex)
-  {
-    EXPECT_FALSE("Shouldn't have gotten this exception");
-  }
-
-
-
-};
-
-
 
 
 TEST(tf, ExtrapolationFromOneValue)
