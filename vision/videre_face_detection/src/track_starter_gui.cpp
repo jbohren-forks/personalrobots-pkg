@@ -60,6 +60,8 @@ struct PublishedPoint {
 
 vector<PublishedPoint> gxys;
 ros::thread::mutex g_selection_mutex;
+ros::Time g_last_image_time;
+bool g_do_cb;
 
 using namespace std;
 
@@ -90,9 +92,9 @@ public:
   CvBridge<std_msgs::Image> *cv_bridge_disp_;
   bool built_bridge_;
   bool quit_;
-  CvStereoCamModel *g_cam_model;
-  std_msgs::String g_cal_params;
-  CvMat *g_uvd, *g_xyz;
+  CvStereoCamModel *cam_model_;
+  std_msgs::String cal_params_;
+  CvMat *uvd_, *xyz_;
   IplImage *cv_image_;
   IplImage *cv_disp_image_;
   IplImage *cv_image_cpy_;
@@ -107,9 +109,9 @@ public:
     cv_bridge_disp_(NULL),
     built_bridge_(false),
     quit_(false),
-    g_cam_model(NULL),
-    g_uvd(NULL),
-    g_xyz(NULL),
+    cam_model_(NULL),
+    uvd_(NULL),
+    xyz_(NULL),
     cv_image_(NULL),
     cv_disp_image_(NULL),
     cv_image_cpy_(NULL),
@@ -120,9 +122,12 @@ public:
     cvNamedWindow("Track Starter: Disparity",0);
     cvSetMouseCallback("Track Starter: Left Image", on_mouse, 0);
 
+    uvd_ = cvCreateMat(1,3,CV_32FC1);
+    xyz_ = cvCreateMat(1,3,CV_32FC1);
+
     advertise<robot_msgs::PositionMeasurement>("/track_starter_gui/position_measurement",1);
     subscribe("videre/images",image_msg_,&TrackStarterGUI::image_cb,1);
-    subscribe("videre/cal_params",g_cal_params,&TrackStarterGUI::cal_params_cb,1);
+    subscribe("videre/cal_params",cal_params_,&TrackStarterGUI::cal_params_cb,1);
     subscribe("track_starter_gui/position_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
@@ -132,11 +137,13 @@ public:
     cvDestroyWindow("Track Starter: Left Image");
     cvDestroyWindow("Track Starter: Disparity");
     
-    delete g_cam_model;
+    delete cam_model_;
     cvReleaseImage(&cv_image_);
     cvReleaseImage(&cv_disp_image_);
     cvReleaseImage(&cv_image_cpy_);
     cvReleaseImage(&cv_disp_image_cpy_);
+    cvReleaseMat(&uvd_);
+    cvReleaseMat(&xyz_);
 
     if (built_bridge_) {
       delete cv_bridge_left_;
@@ -149,7 +156,7 @@ public:
   /// calibration message. This should really be somewhere else, this code is copied in multiple files.
   void parseCaliParams(const string& cal_param_str){
 
-    if (g_cam_model==NULL) {
+    if (cam_model_==NULL) {
       const string labelRightCamera("[right camera]");
       const string labelRightCamProj("proj");
       const string labelRightCamRect("rect");
@@ -178,13 +185,13 @@ public:
       double Clx = Crx; // the same
       double Tx  = - matdata[3]/Fx;
       std::cout << "base length "<< Tx << std::endl;
-      g_cam_model = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy, 0.25);
+      cam_model_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy, 0.25);
     }
   }
 
   // Calibration parameters callback
   void cal_params_cb() {
-    parseCaliParams(g_cal_params.data);
+    parseCaliParams(cal_params_.data);
   }
 
   void point_cb() {
@@ -194,6 +201,15 @@ public:
 
 
   void image_cb(){
+
+    cv_mutex_.lock();
+    if (!g_do_cb) {
+      cv_mutex_.unlock();
+      return;
+    }
+
+    cv_mutex_.unlock();
+
     // Set up the cv bridges, should only run once.
     if (!built_bridge_) {
       cv_bridge_left_ = new CvBridge<std_msgs::Image>(&image_msg_.images[1],  CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
@@ -205,7 +221,7 @@ public:
     if (cv_image_) {
       cvReleaseImage(&cv_image_);
       cvReleaseImage(&cv_disp_image_);
-    }
+    } 
     cv_bridge_left_->to_cv(&cv_image_);
     cv_bridge_disp_->to_cv(&cv_disp_image_);
 
@@ -213,11 +229,9 @@ public:
 
     for (uint i = 0; i<gxys.size(); i++) {
 
-      if (g_cam_model && !gxys[i].published) {
+      if (cam_model_ && !gxys[i].published) {
 	bool search = true;
   
-	g_uvd = cvCreateMat(1,3,CV_32FC1);
-	g_xyz = cvCreateMat(1,3,CV_32FC1);
 	int d = cvGetReal2D(cv_disp_image_,gxys[i].xy.y,gxys[i].xy.x);
 	if (d==0.0) {
 	  search = true;
@@ -250,25 +264,22 @@ public:
 	}
 	if (search) {  
 	  robot_msgs::PositionMeasurement pm;
-	  //pm.header.stamp = 
+	  pm.header.stamp = g_last_image_time;
 	  pm.name = "track_starter_gui";
 	  pm.object_id = gxys.size();   
-	  cvmSet(g_uvd,0,0,gxys[i].xy.x);
-	  cvmSet(g_uvd,0,1,gxys[i].xy.y);
-	  cvmSet(g_uvd,0,2,d);
-	  g_cam_model->dispToCart(g_uvd, g_xyz);
-	  pm.pos.x = cvmGet(g_xyz,0,2);
-	  pm.pos.y = -1.0*cvmGet(g_xyz,0,0);
-	  pm.pos.z = -1.0*cvmGet(g_xyz,0,1);
+	  cvmSet(uvd_,0,0,gxys[i].xy.x);
+	  cvmSet(uvd_,0,1,gxys[i].xy.y);
+	  cvmSet(uvd_,0,2,d);
+	  cam_model_->dispToCart(uvd_, xyz_);
+	  pm.pos.x = cvmGet(xyz_,0,2);
+	  pm.pos.y = -1.0*cvmGet(xyz_,0,0);
+	  pm.pos.z = -1.0*cvmGet(xyz_,0,1);
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
 	  publish("track_starter_gui/position_measurement",pm);
 	  gxys[i].published = true;
-	}
-	cvReleaseMat(&g_uvd);
-	cvReleaseMat(&g_xyz);
-	
+	}	
       }
 
       cvCircle(cv_image_, gxys[i].xy, 2 , cvScalar(255,0,0) ,4);
@@ -285,6 +296,8 @@ public:
       cv_disp_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
     }
     cvCopy(cv_disp_image_, cv_disp_image_cpy_);
+
+    g_last_image_time = image_msg_.header.stamp;
 
     cv_mutex_.unlock();
     
@@ -306,8 +319,15 @@ public:
       int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
-      if((c == 27)||(c == 'q')||(c == 'Q'))
+      if((c == 27)||(c == 'q')||(c == 'Q')){
 	quit_ = true;
+      }
+      else if ((c=='p') || (c=='P')){
+	cv_mutex_.lock();
+	g_do_cb = 1-g_do_cb;
+	cv_mutex_.unlock();
+      }
+	
     }
     return true;
   }
@@ -318,6 +338,7 @@ int main(int argc, char**argv)
 {
   ros::init(argc,argv);
  
+  g_do_cb = true;
   TrackStarterGUI tsgui;
   tsgui.spin();
   ros::fini();
