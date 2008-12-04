@@ -60,6 +60,8 @@ public:
 
 
 private:
+
+
   IndexedBottleneckGraph* bottleneckGraph_;
   NodeStatus nodeStatus_;
   GridArray* grid_;

@@ -31,6 +31,7 @@
 #define TOPOLOGICAL_MAP_BOTTLENECK_GRAPH_H
 
 #include <utility>
+#include <iostream>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/multi_array.hpp>
@@ -48,6 +49,7 @@ struct VertexDescription
 {
   VertexType type;
   Region region;
+  int id;
 };
 
 
@@ -62,6 +64,7 @@ typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, desc
 typedef boost::property_map<BottleneckGraph, desc_t>::type DescMap;
 typedef boost::graph_traits<BottleneckGraph>::vertex_descriptor BottleneckVertex;
 typedef boost::graph_traits<BottleneckGraph>::vertex_iterator BottleneckVertexIterator;
+typedef boost::graph_traits<BottleneckGraph>::adjacency_iterator BottleneckAdjacencyIterator;
 
 // Typedefs for occupancy grids
 typedef boost::multi_array<bool, 2> GridArray;
@@ -76,17 +79,32 @@ typedef boost::multi_array<BottleneckVertex, 2> RegionArray;
 // Externally used ops
 struct IndexedBottleneckGraph
 {
-  IndexedBottleneckGraph (int nr, int nc) : numRows(nr), numCols(nc) { regions = new RegionArray(boost::extents[nr][nc]); }
+  IndexedBottleneckGraph (int nr, int nc) : numRows(nr), numCols(nc) { regions = new RegionArray(boost::extents[nr][nc]); isFree=new GridArray(boost::extents[nr][nc]); }
+  IndexedBottleneckGraph () : numRows(-1), numCols(-1) {}
 
   void printBottleneckGraph (void);
+  void printBottlenecks (const char *filename);
   void printBottlenecks (void);
+
+  int regionId (int r, int c) 
+  { 
+    if ((r>=0) && (c>=0) && (r<numRows) && (c<numCols) && (*isFree)[r][c])
+      return boost::get(desc_t(), graph, (*regions)[r][c]).id;
+    else 
+      return -1;
+  }
 
   BottleneckGraph graph;
   RegionArray* regions;
+  GridArray* isFree;
   int numRows, numCols;
+
+private:
+  void writeToStream (std::ostream&);
 };
 
 IndexedBottleneckGraph makeBottleneckGraph (GridArray grid, int bottleneckSize, int bottleneckSkip, int inflationRadius, int distanceMultMin=1, int distanceMultMax=3);
+IndexedBottleneckGraph readBottleneckGraphFromFile (const char* filename);
 
 
 
