@@ -139,10 +139,12 @@ VenusDeMiles::Holds{
     precedes(start, n.start);
 
     // Carry forward parameters
-    meets(Holds s);
-    addEq(iterationCount, 1, s.iterationCount);
-    eq(iterationLimit, s.iterationLimit);
-    eq(alwaysBusy, s.alwaysBusy);
+    if(end){
+      meets(Holds s);
+      addEq(iterationCount, 1, s.iterationCount);
+      eq(iterationLimit, s.iterationLimit);
+      eq(alwaysBusy, s.alwaysBusy);
+    }
   }
 }
 
@@ -180,7 +182,7 @@ class RechargeController extends Behavior {
 BatteryState::Holds {
   // If below the threshold, transition working status to recharge
   // if(discharge_limit > (energy_remaining / energy_capacity))
-  //  workingStatus[start+1, end] == Holds(true);
+  //  workingStatus(start+1) == Holds(true);
   bool mustRecharge;
   testLEQ(mustRecharge, percentage_remaining, object.discharge_limit);
   if(mustRecharge == true){
@@ -194,8 +196,10 @@ BatteryState::Holds {
 WorkingStatus::Holds{
   // We should toggle between recharging and not recharging
   // this[end] == Holds(!recharging); 
-  meets(Holds s);
-  neq(s.recharging, recharging);
+  if(end){
+    meets(Holds s);
+    neq(s.recharging, recharging);
+  }
 
   // By default we are not recharging
   defaultOnCommit(recharging, false);

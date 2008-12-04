@@ -30,21 +30,29 @@
 
 BaseState::Holds{
   defaultOnCommit(accumulatedDistance, 0.0);
-  meets(Holds s);
-  float distance;
-  calcDistance(distance, x, y, s.x, s.y);
-  addEq(accumulatedDistance, distance, s.accumulatedDistance);
+  if(end){
+    meets(Holds s);
+    float distance;
+    calcDistance(distance, x, y, s.x, s.y);
+    addEq(accumulatedDistance, distance, s.accumulatedDistance);
+  }
 }
 
 /**
  * All behaviors will oscillate between active and inactive
  */
 Behavior::Inactive{
-  meets(Active);
   precedes(start, missionEnd);
+  // These semantics are that we want to check a constraint, but not drive planning. It would be much better
+  // to have these more explicitly listed as constraints, that get applied accordingly. For example, as transition
+  // constraints. This guard structure is a hack.
+  //if(end){
+  //meets(Active);
+  //}
 }
 
 Behavior::Active{
+  // Constraint on successor state
   meets(Inactive);
 
   // All behaviors must deactivate before the end of the agent time window

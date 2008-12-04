@@ -12,4 +12,4 @@ MoveBase moveBase = new MoveBase(External, 600);
 
 // Battery and Plug In Control
 RechargeController rechargeController = new RechargeController(External);
-BatteryState batteryState = new BatteryState(External, .3, .5);
+BatteryState batteryState = new BatteryState(External, .7, .8);
