@@ -196,6 +196,7 @@ namespace highlevel_controllers {
     stateMsg.lock();
     stateMsg.goal_recharge_level = goalMsg.recharge_level;
     stateMsg.unlock();
+    controlState_ = CONNECT;
   }
 
   void RechargeController::updateStateMsg(){
@@ -205,9 +206,6 @@ namespace highlevel_controllers {
   }
 
   bool RechargeController::makePlan(){
-    if(!isValid())
-      controlState_ = CONNECT;
-
     return true;
   }
 
