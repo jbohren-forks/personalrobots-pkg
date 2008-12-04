@@ -40,7 +40,7 @@
     for this test (full_cloud_test vs. scan_test). -->
     <param name="topic" value="full_cloud" />
     <param name="hz" value="8.661" />
-    <param name="hzerror" value="3.0" />
+    <param name="hzerror" value="5.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
