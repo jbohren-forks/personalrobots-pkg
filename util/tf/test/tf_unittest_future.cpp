@@ -16,59 +16,6 @@ void seed_rand()
 
 
 
-TEST(tf, ExtrapolationFromOneValue)
-{
-  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
-  
-
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
-
-
-  Stamped<Point> output;
-
-  bool excepted = false;
-  try
-  {
-    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(100000ULL), "a"), output);
-  }
-  catch (ExtrapolationException &ex)
-  {
-    excepted = true;
-  }
-  
-  EXPECT_TRUE(excepted);
-
-  excepted = false;
-  try
-  {
-    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
-  }
-  catch (ExtrapolationException &ex)
-  {
-    excepted = true;
-  }
-  
-  EXPECT_TRUE(excepted);
-
-  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(20000ULL), "a",  "parent"));
-
-  excepted = false;
-  try
-  {
-    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
-  }
-  catch (ExtrapolationException &ex)
-  {
-    excepted = true;
-  }
-  
-  EXPECT_FALSE(excepted);
-
-};
-
 TEST(tf, SignFlipExtrapolate)
 {
   double epsilon = 1e-3;

@@ -861,8 +861,8 @@ TEST(tf, Exceptions)
 
  mTR.setTransform( Stamped<btTransform>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 100000ULL , "me",  "parent"));
 
- //Extrapolation not valid with one value??
- EXPECT_TRUE(mTR.canTransform("parent", "me", 200000ULL));
+ //Extrapolation not valid with one value
+ EXPECT_FALSE(mTR.canTransform("parent", "me", 200000ULL));
  try 
  {
    mTR.transformPose("parent",Stamped<Pose>(btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), 200000ULL , "me"), outpose);
@@ -1029,6 +1029,91 @@ TEST(tf, NoExtrapolationExceptionFromParent)
 
 
 };
+
+
+
+TEST(tf, ExtrapolationFromOneValue)
+{
+  tf::Transformer mTR(true, ros::Duration((int64_t)1000000LL));
+  
+
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "parent",  "parent's parent"));
+
+
+  Stamped<Point> output;
+
+  bool excepted = false;
+  //Past time
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  excepted = false;
+  //Future one element
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(100000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  //Past multi link
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(1ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  //Future case multi link
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent's parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_TRUE(excepted);
+
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(20000ULL), "a",  "parent"));
+
+  excepted = false;
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(10000ULL), "a"), output);
+  }
+  catch (ExtrapolationException &ex)
+  {
+    excepted = true;
+  }
+  
+  EXPECT_FALSE(excepted);
+
+};
+
+
 
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);

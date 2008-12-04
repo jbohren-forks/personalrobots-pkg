@@ -455,7 +455,19 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
   std::stringstream ss;
   for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      if (lists.inverseTransforms[i].mode_ == EXTRAPOLATE_BACK)
+      if (lists.inverseTransforms[i].mode_ == ONE_VALUE)
+      {
+        if (lists.inverseTransforms[i].stamp_ - target_time > max_extrapolation_distance_ || target_time - lists.inverseTransforms[i].stamp_ > max_extrapolation_distance_)
+        {
+          retval = true;
+          if (error_string) {
+            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).to_double() <<", data at "
+               << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
+               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+          }
+        }
+      }
+      else if (lists.inverseTransforms[i].mode_ == EXTRAPOLATE_BACK)
       {
         if ( lists.inverseTransforms[i].stamp_ - target_time > max_extrapolation_distance_)
         {
@@ -482,7 +494,19 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
 
   for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
-      if (lists.forwardTransforms[i].mode_ == EXTRAPOLATE_BACK)
+      if (lists.forwardTransforms[i].mode_ == ONE_VALUE)
+      {
+        if (lists.forwardTransforms[i].stamp_ - target_time > max_extrapolation_distance_ || target_time - lists.forwardTransforms[i].stamp_ > max_extrapolation_distance_)
+        {
+          retval = true;
+          if (error_string) {
+            ss << "Extrapolation Too Far from single value: target_time = "<< (target_time).to_double() <<", data at "
+               << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
+               << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
+          }
+        }
+      }
+      else if (lists.forwardTransforms[i].mode_ == EXTRAPOLATE_BACK)
       {
         if ( lists.forwardTransforms[i].stamp_ - target_time > max_extrapolation_distance_)
         {
