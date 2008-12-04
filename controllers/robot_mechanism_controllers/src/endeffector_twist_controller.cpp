@@ -36,8 +36,8 @@
 #define SPACENAV_RANGE      400.0
 #define SPACENAV_MAX_VEL    0.2
 #define SPACENAV_MAX_ROT    0.05
-#define MASS_TRANS          10.0
-#define MASS_ROT            10.0
+#define MASS_TRANS          20.0
+#define MASS_ROT            5.0
 
 
 
@@ -193,10 +193,7 @@ void EndeffectorTwistController::update()
 #endif	   
 
   // twist feedback into wrench
-  // FOR DEBUG
-  //Twist diff = twist_desi_ - twist_meas_;
-  Twist diff = twist_desi_;
-
+  Twist diff = twist_desi_ - twist_meas_;
   for (unsigned int i=0; i<3; i++){
     wrench_out_.force(i)  = MASS_TRANS * diff.vel(i);
     wrench_out_.torque(i) = MASS_ROT   * diff.rot(i);
