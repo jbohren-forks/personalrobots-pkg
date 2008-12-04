@@ -38,6 +38,7 @@
 #include <newmat10/newmatio.h>
 #include <newmat10/newmatap.h>
 
+#include "rosthread/mutex.h"
 #include "std_msgs/LaserScan.h"
 
 /* \mainpage 
@@ -78,6 +79,7 @@ private:
   unsigned int num_ranges_; /// How many data point are in each row
   MedianMode_t mode_; ///Whether to return true every time or once every 3
       
+  ros::thread::mutex data_lock; /// Protection from multi threaded programs
   std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
       
 };

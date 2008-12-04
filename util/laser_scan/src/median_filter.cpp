@@ -44,6 +44,7 @@ LaserMedianFilter::LaserMedianFilter(unsigned int filter_length, MedianMode_t mo
 
 bool LaserMedianFilter::addScan(const std_msgs::LaserScan& scan_in)
 {
+  data_lock.lock();
   temp_scan_ = scan_in; //HACK to store all metadata 
 
   if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
@@ -64,20 +65,25 @@ bool LaserMedianFilter::addScan(const std_msgs::LaserScan& scan_in)
   if (current_packet_num_ == filter_length_)
   {
     current_packet_num_ = 0;
+    data_lock.unlock();
     return true;
   }
   if (mode_ == MEDIAN_TRAILING)
+  {
+    data_lock.unlock();
     return true;
+  }
+  data_lock.unlock();
   return false;
 }
 
 void LaserMedianFilter::getMedian(std_msgs::LaserScan& scan_result)
 {
+  data_lock.lock();
   scan_result = temp_scan_; //Fill in latest scan data
     
   NEWMAT::ColumnVector dColumn;
   NEWMAT::ColumnVector iColumn;
-
 
   unsigned int iterations = std::min(scan_result.get_ranges_size(), num_ranges_);
   /** \todo Resize output cloud/check length */
@@ -92,6 +98,7 @@ void LaserMedianFilter::getMedian(std_msgs::LaserScan& scan_result)
   }
   //reset to beginning
   current_packet_num_ = 0;
+  data_lock.unlock();
 }
 
 }
