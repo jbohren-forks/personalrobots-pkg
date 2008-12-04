@@ -21,8 +21,8 @@ includes: trex PlanWorks PLASMA
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5141 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-@cd PLASMA && $(SVN_CMDLINE) up -r 5141 ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5154 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	-@cd PLASMA && $(SVN_CMDLINE) up -r 5154 ;
 
 #install the patch
 #patch-PLASMA: PLASMA
