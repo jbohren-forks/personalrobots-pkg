@@ -44,7 +44,7 @@
 #include "std_msgs/String.h"
 #include "image_utils/cv_bridge.h"
 #include "CvStereoCamModel.h"
-#include "colorcalib.h"
+#include "color_calib.h"
 #include <robot_msgs/PositionMeasurement.h>
 
 #include "opencv/cxcore.h"
@@ -239,9 +239,9 @@ public:
     // Calibrate color if requested.
     if (calib_color_) {
       IplImage* t_img = cvCreateImage(im_size, IPL_DEPTH_32F, 3);
-      decompand(cv_image_left_, t_img);
+      color_calib::decompand(cv_image_left_, t_img);
       cvTransform(t_img, t_img, color_calib_mat_);
-      compand(t_img, cv_image_left_);
+      color_calib::compand(t_img, cv_image_left_);
       cvReleaseImage(&t_img);
     }
 
