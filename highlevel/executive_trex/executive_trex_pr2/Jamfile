@@ -9,6 +9,7 @@ if ! $(executive_trex_pr2_READY) {
  local TestInputs = 
 		[ FDirName $(EXEC_HOME) wpc.0 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
+		[ FDirName $(EXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc.1 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) wpc.2 pr2.exec.nddl ]
 		[ FDirName $(EXEC_HOME) nav.0 pr2.exec.nddl ]
