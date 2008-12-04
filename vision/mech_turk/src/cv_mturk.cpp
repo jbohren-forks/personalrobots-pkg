@@ -1,3 +1,9 @@
+// Mechanical Turk labeler node
+// Gary Bradski, Dec 3, 2008.  Modified from Jeremey's minimal camera node and connecting to Alexander Sorokin's Mech Turk stuff
+// 
+// TO DO:
+//Maybe make a parameter <path_to_location of submit_img.py>
+
 #include <cstdio>
 #include <vector>
 #include "opencv/cxcore.h"
@@ -6,6 +12,7 @@
 #include "ros/node.h"
 #include "std_msgs/Image.h"
 #include "image_utils/cv_bridge.h"
+#include <stdlib.h>
 
 using namespace std;
 using namespace ros;
@@ -15,12 +22,83 @@ class CvMTurk : public node
 public:
   std_msgs::Image image_msg;
   CvBridge<std_msgs::Image> cv_bridge;
+  //Parameters
+  char cmd[1024];   		//Will hold commands to run submit_img.py
+  char object_name[256]; 	//Will hold the object's base name (do not append endings) DEFAULT: Default0000
+  int object_count; 		//Version of image being stored
+ 
 
-  CvMTurk() : node("cv_mturk"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR)
+  CvMTurk() : node("cv_mturk"), cv_bridge(&image_msg, CvBridge<std_msgs::Image>::CORRECT_BGR), object_count(0)
   { 
     cvNamedWindow("cv_mturk", CV_WINDOW_AUTOSIZE);
-    subscribe("image", image_msg, &CvMTurk::image_cb, 1);
+    subscribe("image", image_msg, &CvMTurk::image_cb, 0);
+    sprintf(object_name,"Default");
   }
+
+
+  void help()
+  {
+	printf("\nUsage:\n  ./cv_mturk  image:=cam0/image [or whatever your camera name is]\n\n"
+	"   Takes keyboard input:\n"
+	"\tESQ,q,Q:   Quit\n"
+	"\th,H:       Print this help\n"
+	"\tm,M:       Submit to Mechanical Turk\n\n" 
+	"\tWhen you type \"m\", cv_mturk will invoke: submit_img.py which in turn depends on:\n"
+	"\t\t* id_rsa_SIU  [These are access keys in the same dir as submit_img.py]\n"
+	"\t\t* id_rsa_SIU.pub\n"
+	"\t\t* Needs an image storage subdirectory below submit_img.phy called: \"/images\"\n\n"
+	);
+  }
+
+/*
+std::string cvGetString(std::string prompt, std::string init)
+{
+	std::string str=init;
+	printf("%s\n%s",prompt.c_str(),str.c_str());
+	fflush(stdout);
+
+	 int c = 0, slen;
+	 //COLLECT USER INPUT, IGNORE WHITESPACE, ESC OUT
+	 while (1) 
+	 {
+		c = cvWaitKey(0) & 0xFF;
+		if(c == 27) {str.erase(); break;}
+		if((c == 0)||(c > 128)) continue;
+		if((c == 13)||(c == 10)) break; //Carriage return and/or line feed => accept this label
+		if((c == ' ')||(c == '\t')) continue; //Ignore white space
+		slen = str.length();
+		printf("\r");
+		for(int u=0; u<slen; ++u)
+			printf(" ");
+		printf("\r");
+			
+		if(c == 8) //backspace
+		{
+			//OVERLAY MASK ONTO IMAGE
+			printf("\r");
+			for(int u=0; u<slen; ++u)
+				printf(" ");
+			printf("\r");
+
+			if(slen)
+				str.erase(slen - 1);
+		}
+		else
+		{
+			str.append(1, (char)c);
+		}
+		printf("%s\r",str.c_str());
+		fflush(stdout);
+	} //End while
+	//CLEAN UP AND OUT
+	printf("string %s\n",str.c_str());
+	printf("\n");
+
+	return str;
+}
+*/
+
+
 
   void image_cb()
   {
@@ -42,8 +120,25 @@ public:
 		cvReleaseImage(&cv_img_to_label);
 		self_destruct();
 		break;
+	case 'h': //Help
+	case 'H':
+		help();
+		break;
+	case 'm': //Invoke Mechanical Turk submission
+	case 'M':
+		//Save the image first
+//		sprintf(cmd,"../src/images/%s%.4d.jpg",object_name,object_count);
+		sprintf(cmd,"images/%s%.4d.jpg",object_name,object_count);
+		cvSaveImage(cmd,cv_img_to_label);
+		printf("Saved %s\n",cmd);
+//		sprintf(cmd,"pushd ../src; ./submit_img.py %s%.4d.jpg; popd\n",object_name,object_count);
+		sprintf(cmd,"python submit_img.py images/%s%.4d.jpg\n",object_name,object_count);
+		printf("Issuing command: %s\n\n",cmd);
+		system(cmd);
+		object_count+= 1;		
+		break;
       }
-      //MECH TURK STUFF HERE, OR ABOVE ...
+
 
      //RELEASE THIS IMAGE FOR NEXT LOOP
       cvReleaseImage(&cv_img_to_label);

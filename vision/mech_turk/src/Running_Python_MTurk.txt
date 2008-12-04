@@ -1,0 +1,23 @@
+Running Mech Turk with python scripts
+Log into Mech Truk
+	email
+	**password
+
+Run:
+  python cam-histo-write.py  
+  [ You might have to: sudo chmod 666 /dev  and /dev/video1394 ]
+
+    When you type "a", it will invoke submit_img.py which in turn depends on:
+	* id_rsa_SIU [These are access keys]
+	* id_rsa_SIU.ppub
+	* Need a subdirectory called: "/images"
+
+To see the hit posted:
+  Go to your HITs page, 
+  sort by "HIT Creation Date (newest first)
+
+To see the hit result:
+http://vision-app1.cs.uiuc.edu:8080/mt/show_most_recent_result/people-poly-1/
+
+To see all hit results:
+http://vision-app1.cs.uiuc.edu:8080/mt/results/people-poly-1/p1/
