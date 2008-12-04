@@ -92,13 +92,15 @@ class EndeffectorWrenchControllerNode : public Controller
   void update();
   
   void command();
-
+  void spacenavPos();
+  void spacenavRot();
   
  private:
   EndeffectorWrenchController controller_;
   SubscriptionGuard guard_command_;
 
   robot_msgs::Wrench wrench_msg_;
+  std_msgs::Point spacenav_pos_msg_, spacenav_rot_msg_;
 };
 
 } // namespace

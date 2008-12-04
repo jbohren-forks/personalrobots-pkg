@@ -31,9 +31,11 @@
  * Author: Wim Meeussen
  */
 
-//#define DEBUG_PRINT
-#define MAX_PRINT_COUNTER  500
-
+#define DEBUG_PRINT
+#define MAX_PRINT_COUNTER   500
+#define SPACENAV_RANGE      400.0
+#define SPACENAV_MAX_FORCE  20.0
+#define SPACENAV_MAX_TORQUE 1.0
 
 
 #include "urdf/parser.h"
@@ -209,9 +211,7 @@ ROS_REGISTER_CONTROLLER(EndeffectorWrenchControllerNode)
 
 
 EndeffectorWrenchControllerNode::EndeffectorWrenchControllerNode()
-{
-  fprintf(stderr, "EndeffectorWrenchControllerNode::EndeffectorWrenchControllerNode\n");
-}
+{}
 
 
 EndeffectorWrenchControllerNode::~EndeffectorWrenchControllerNode()
@@ -225,7 +225,7 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   ros::node *node = ros::node::instance();
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "") {
-    fprintf(stderr, "No toooopic given to EndeffectorWrenchControllerNode--\n");
+    fprintf(stderr, "No topic given to EndeffectorWrenchControllerNode\n");
     return false;
   }
 
@@ -237,6 +237,18 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   node->subscribe(topic + "/command", wrench_msg_,
                   &EndeffectorWrenchControllerNode::command, this, 1);
   guard_command_.set(topic + "/command");
+
+  // subscribe to spacenav pos commands
+  node->subscribe("spacenav/offset", spacenav_pos_msg_,
+                  &EndeffectorWrenchControllerNode::spacenavPos, this, 1);
+  guard_command_.set("spacenav/offset");
+
+  // subscribe to spacenav rot commands
+  node->subscribe("spacenav/rot_offset", spacenav_rot_msg_,
+                  &EndeffectorWrenchControllerNode::spacenavRot, this, 1);
+  guard_command_.set("spacenav/rot_offset");
+
+
   return true;
 }
 
@@ -258,6 +270,21 @@ void EndeffectorWrenchControllerNode::command()
   controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
 }
 
+void EndeffectorWrenchControllerNode::spacenavPos()
+{
+  // convert to force command
+  controller_.wrench_desi_.force(0) = spacenav_pos_msg_.x * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
+  controller_.wrench_desi_.force(1) = spacenav_pos_msg_.y * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
+  controller_.wrench_desi_.force(2) = spacenav_pos_msg_.z * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
+}
+
+void EndeffectorWrenchControllerNode::spacenavRot()
+{
+  // convert to force command
+  //controller_.wrench_desi_.torque(0) = spacenav_rot_msg_.x * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  //controller_.wrench_desi_.torque(1) = spacenav_rot_msg_.y * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  //controller_.wrench_desi_.torque(2) = spacenav_rot_msg_.z * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+}
 
 
 
