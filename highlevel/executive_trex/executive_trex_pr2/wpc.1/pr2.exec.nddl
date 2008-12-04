@@ -1,17 +1,17 @@
 #include "nav.init.nddl"
 
 rejectable(moveBase.Active g0);
-g0.x = 20.5;
-g0.y = 17.8;
+g0.x = 19.5;
+g0.y = 28.5;
 g0.th= 3.14;
 
 
 rejectable(moveBase.Active g1);
-g1.x = 23.0;
-g1.y = 15.0;
+g1.x = 15.0;
+g1.y = 25.2;
 g1.th = 0.0;
 
 rejectable(moveBase.Active g2);
-g2.x = 21.5;
-g2.y = 11.5;
+g2.x = 10.6;
+g2.y = 27.15;
 g2.th = 1.0;
