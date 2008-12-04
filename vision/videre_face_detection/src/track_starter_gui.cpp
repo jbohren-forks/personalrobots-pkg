@@ -1,5 +1,5 @@
 /*********************************************************************
-* A GUI for clicking on points which are published as track initialization points.
+* A GUI for clicking on points which are then published as track initialization points.
 *
 **********************************************************************
 *
@@ -69,7 +69,8 @@ using namespace std;
 void on_mouse(int event, int x, int y, int flags, void *params){
   
   switch(event){
-  case CV_EVENT_LBUTTONDOWN:
+  case CV_EVENT_LBUTTONUP:
+    // Add a clicked-on point to the list of points, to be published by the image callback on the next image.
     g_selection_mutex.lock();
     PublishedPoint p;
     p.xy = cvPoint(x,y);
@@ -84,6 +85,7 @@ void on_mouse(int event, int x, int y, int flags, void *params){
     break;    
   }
 }
+
 
 class TrackStarterGUI: public ros::node
 {
@@ -195,12 +197,13 @@ public:
     parseCaliParams(cal_params_.data);
   }
 
+  // Sanity check, print the published point.
   void point_cb() {
     printf("pos %f %f %f\n",pos.pos.x,pos.pos.y,pos.pos.z);
 
   }
 
-
+  // Image callback. Draws selected points on images, publishes the point messages, and copies the images to be displayed.
   void image_cb(){
 
     cv_mutex_.lock();
@@ -304,7 +307,7 @@ public:
     
   }
 
-
+  // Wait for thread to exit.
   bool spin() {
     while (ok() && !quit_) {
       // Display the image
