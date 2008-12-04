@@ -70,12 +70,13 @@ namespace laser_scan{
       void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
 
       
+    private:
       /** \brief Return the unit vectors for this configuration
        * Return the unit vectors for this configuration.
        * if they have not been calculated yet, calculate them and store them
        * Otherwise it will return them from memory. */
       NEWMAT::Matrix& getUnitVectors(float angle_max, float angle_min, float angle_increment);
-    private:
+
       ///The map of pointers to stored values
       std::map<std::string,NEWMAT::Matrix*> unit_vector_map_;
       
