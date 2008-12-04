@@ -52,8 +52,9 @@ import os, os.path, threading, time
 import rospy, rostest
 from std_msgs.msg import *
 
-TEST_DURATION = 15
-ERROR_TOL     = 0.05
+TEST_DURATION  = 15
+ERROR_TOL      = 0.05
+FAIL_COUNT_TOL = 10
 
 TARGET_RANGES = [
 10.0500001907, 10.0500001907, 10.0500001907, 10.0500001907, 10.0500001907, 10.0500001907, 10.0500001907, 
@@ -276,13 +277,20 @@ class PointCloudTest(unittest.TestCase):
 
     def pointInput(self, cloud):
         i = 0
+        fail_count = 0
         print "Input laser scan received"
-        self.printPointCloud(cloud)
+        #self.printPointCloud(cloud)  #uncomment to capture new data
         while (i < len(cloud.ranges) and i < len(TARGET_RANGES_NO_CUP)):
             d = cloud.ranges[i] - TARGET_RANGES_NO_CUP[i]
             if ((d < - ERROR_TOL) or (d > ERROR_TOL)):
-                return
+                fail_count += 1
+                print "fail_count:" + str(fail_count) + " failed. error:" + str(d) + " exceeded tolerance:" + str(ERROR_TOL)
             i = i + 1
+
+        if fail_count > FAIL_COUNT_TOL:
+            print "Fail count too large (" + str(fail_count) + "), failing scan"
+            return
+
         self.success = True
     
     def test_pointcloud(self):
