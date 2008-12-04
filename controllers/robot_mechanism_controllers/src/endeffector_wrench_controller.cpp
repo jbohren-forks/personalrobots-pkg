@@ -31,12 +31,11 @@
  * Author: Wim Meeussen
  */
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 #define MAX_PRINT_COUNTER   500
 #define SPACENAV_RANGE      400.0
 #define SPACENAV_MAX_FORCE  20.0
-#define SPACENAV_MAX_TORQUE 1.0
-
+#define SPACENAV_MAX_TORQUE 0.75
 
 #include "urdf/parser.h"
 #include <algorithm>
@@ -55,7 +54,9 @@ EndeffectorWrenchController::EndeffectorWrenchController()
 : print_counter_(0),
   jnt_to_jac_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
-{}
+{
+  printf("EndeffectorWrenchController constructor\n");
+}
 
 
 EndeffectorWrenchController::~EndeffectorWrenchController()
@@ -67,7 +68,10 @@ EndeffectorWrenchController::~EndeffectorWrenchController()
 
 bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  printf("EndeffectorWrenchController::initXml starting\n");
+
   // parse robot description from xml file
+  printf("EndeffectorWrenchController::initXml get robot description\n");
   ros::node *node = ros::node::instance();
   robot_kinematics::RobotKinematics robot_kinematics ;
   string robot_desc;
@@ -79,6 +83,7 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
     fprintf(stderr, "Got NULL Chain\n") ;
 
   // convert description to KDL chain
+  printf("EndeffectorWrenchController::initXml building kdl chain\n");
   chain_        = serial_chain->chain;
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
@@ -89,6 +94,7 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
   assert(robot);
 
   // get chain
+  printf("EndeffectorWrenchController::initXml get robot joints\n");
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
     fprintf(stderr, "Error: EndeffectorWrenchController was not given a chain\n");
@@ -140,7 +146,7 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
   std::reverse(joints_.begin(), joints_.end());
 
 
-  printf("EndeffectorWrenchController succesfully initialized\n");
+  printf("EndeffectorWrenchController::initXml finished\n");
   return true;
 }
 
@@ -211,7 +217,9 @@ ROS_REGISTER_CONTROLLER(EndeffectorWrenchControllerNode)
 
 
 EndeffectorWrenchControllerNode::EndeffectorWrenchControllerNode()
-{}
+{
+  printf("EndeffectorWrenchControllerNode constructor\n");
+}
 
 
 EndeffectorWrenchControllerNode::~EndeffectorWrenchControllerNode()
@@ -221,6 +229,8 @@ EndeffectorWrenchControllerNode::~EndeffectorWrenchControllerNode()
 
 bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  printf("EndeffectorWrenchControllerNode::initXml starting\n");
+
   // get name of topic to listen to
   ros::node *node = ros::node::instance();
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
@@ -233,6 +243,8 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   if (!controller_.initXml(robot, config))
     return false;
   
+  printf("EndeffectorWrenchControllerNode::initXml subscribe to topics\n");
+
   // subscribe to wrench commands
   node->subscribe(topic + "/command", wrench_msg_,
                   &EndeffectorWrenchControllerNode::command, this, 1);
@@ -249,6 +261,7 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   guard_command_.set("spacenav/rot_offset");
 
 
+  printf("EndeffectorWrenchControllerNode::initXml finished\n");
   return true;
 }
 
@@ -278,14 +291,14 @@ void EndeffectorWrenchControllerNode::spacenavPos()
   controller_.wrench_desi_.force(2) = spacenav_pos_msg_.z * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
 }
 
+
 void EndeffectorWrenchControllerNode::spacenavRot()
 {
   // convert to force command
-  //controller_.wrench_desi_.torque(0) = spacenav_rot_msg_.x * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
-  //controller_.wrench_desi_.torque(1) = spacenav_rot_msg_.y * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
-  //controller_.wrench_desi_.torque(2) = spacenav_rot_msg_.z * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  controller_.wrench_desi_.torque(0) = spacenav_rot_msg_.x * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  controller_.wrench_desi_.torque(1) = spacenav_rot_msg_.y * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  controller_.wrench_desi_.torque(2) = spacenav_rot_msg_.z * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
 }
-
 
 
 }; // namespace
