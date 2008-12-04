@@ -60,7 +60,7 @@
     for this test (mechanism_state_test vs. scan_test). -->
     <param name="topic" value="mechanism_state" />
     <param name="hz" value="79.763" />
-    <param name="hzerror" value="20.0" />
+    <param name="hzerror" value="50.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>
@@ -70,7 +70,7 @@
     for this test (TransformArray_test vs. scan_test). -->
     <param name="topic" value="TransformArray" />
     <param name="hz" value="157.240" />
-    <param name="hzerror" value="50.0" />
+    <param name="hzerror" value="100.0" />
     <param name="test_duration" value="15.0" />
     <param name="check_intervals" value="false" />
   </test>

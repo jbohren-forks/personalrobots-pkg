@@ -136,9 +136,9 @@ class TestCameras(unittest.TestCase):
         imc = pilic.difference(im0,im1)
         print "  - comparing images "
         im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
-        #im1.show()
-        #im0.show()
-        #imc.show()
+        im1.show()
+        im0.show()
+        imc.show()
         comp_result = self.images_are_the_same(im0.getdata(),im1.getdata())
         print "test comparison ", comp_result
         #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
