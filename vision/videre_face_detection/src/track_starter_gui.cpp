@@ -75,6 +75,7 @@ void on_mouse(int event, int x, int y, int flags, void *params){
     p.xy = cvPoint(x,y);
     p.published = false;
     gxys.push_back(p);
+    g_do_cb = true;
     g_selection_mutex.unlock();
 
     break;
