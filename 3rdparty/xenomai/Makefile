@@ -9,7 +9,7 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 build: SVN_UP_REVERT_PATCH xenomai
 
-xenomai: changelist.txt
+xenomai: changelist.txt linux
 	cd $(SVN_DIR) && mkdir -p build && cd build && ../configure --prefix=$(PWD)/xenomai --enable-x86-sep --enable-x86-tsc --enable-smp --disable-dox-doc
 	cd $(SVN_DIR) && \
 	./scripts/prepare-kernel.sh --linux=../linux --arch=i386 \
