@@ -83,7 +83,7 @@ void addTransform(TiXmlElement *elem, const::btTransform& transform)
     double cpos[3] = { pz.x(), pz.y(), pz.z() };
     btMatrix3x3 mat = transform.getBasis();
     double crot[3];
-    mat.getEulerZYX(crot[2],crot[1],crot[0]);
+    mat.getEulerZYX(crot[0],crot[1],crot[2]);
     
     /* set geometry transform */
     addKeyValue(elem, "xyz", values2str(3, cpos));
