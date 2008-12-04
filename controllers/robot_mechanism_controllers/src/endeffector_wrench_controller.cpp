@@ -31,7 +31,9 @@
  * Author: Wim Meeussen
  */
 
+//#define DEBUG_PRINT
 #define MAX_PRINT_COUNTER  500
+
 
 
 #include "urdf/parser.h"
@@ -51,9 +53,7 @@ EndeffectorWrenchController::EndeffectorWrenchController()
 : print_counter_(0),
   jnt_to_jac_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
-{
-  printf("EndeffectorWrenchController::EndeffectorWrenchController\n");
-}
+{}
 
 
 EndeffectorWrenchController::~EndeffectorWrenchController()
@@ -116,6 +116,7 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
   if (!current)  {
     fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorWrenchController)\n", tip_name);
     return false;
+
   }
 
   // Works up the chain, from the tip to the root, and get joints
@@ -136,6 +137,8 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
   // reverse order of joint vector
   std::reverse(joints_.begin(), joints_.end());
 
+
+  printf("EndeffectorWrenchController succesfully initialized\n");
   return true;
 }
 
@@ -145,10 +148,12 @@ bool EndeffectorWrenchController::initXml(mechanism::RobotState *robot, TiXmlEle
 void EndeffectorWrenchController::update()
 {
   //  wrench_desi_.force(0) = 10;
+#ifdef DEBUG_PRINT
   if (print_counter_ == MAX_PRINT_COUNTER)
     printf("wrench desired %f %f %f %f %f %f\n",
-	   wrench_desi_(0), wrench_desi_(1), wrench_desi_(2),wrench_desi_(3), wrench_desi_(4), wrench_desi_(5));
-	   
+	   wrench_desi_(0), wrench_desi_(1), wrench_desi_(2),
+	   wrench_desi_(3), wrench_desi_(4), wrench_desi_(5));
+#endif	   
 
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
@@ -172,16 +177,18 @@ void EndeffectorWrenchController::update()
     for (unsigned int j=0; j<6; j++)
       jnt_torq(i) += (jacobian(j,i) * wrench_desi_(j));
     joints_[i]->commanded_effort_ = jnt_torq(i);
+#ifdef DEBUG_PRINT
     if (print_counter_ == MAX_PRINT_COUNTER)
       printf("joint torque %i set to %f\n",i,jnt_torq(i));
+#endif
   }
 
 
-
-
+#ifdef DEBUG_PRINT
   if (print_counter_ >= MAX_PRINT_COUNTER)
     print_counter_ = 0;
   print_counter_ ++;
+#endif
 }
 
 
