@@ -128,11 +128,11 @@ std::string cvGetString(std::string prompt, std::string init)
 	case 'M':
 		//Save the image first
 //		sprintf(cmd,"../src/images/%s%.4d.jpg",object_name,object_count);
-		sprintf(cmd,"images/%s%.4d.jpg",object_name,object_count);
+		sprintf(cmd,"src/images/%s%.4d.jpg",object_name,object_count);
 		cvSaveImage(cmd,cv_img_to_label);
 		printf("Saved %s\n",cmd);
-//		sprintf(cmd,"pushd ../src; ./submit_img.py %s%.4d.jpg; popd\n",object_name,object_count);
-		sprintf(cmd,"python submit_img.py images/%s%.4d.jpg\n",object_name,object_count);
+		sprintf(cmd,"cd src && ./submit_img.py images/%s%.4d.jpg;\n",object_name,object_count);
+//		sprintf(cmd,"python submit_img.py images/%s%.4d.jpg\n",object_name,object_count);
 		printf("Issuing command: %s\n\n",cmd);
 		system(cmd);
 		object_count+= 1;		
