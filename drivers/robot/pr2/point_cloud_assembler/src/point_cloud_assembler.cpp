@@ -75,7 +75,7 @@ Subscribes to (name/type):
 #include "point_cloud_assembler/BuildCloud.h"
 
 // Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 #include "math.h"
 

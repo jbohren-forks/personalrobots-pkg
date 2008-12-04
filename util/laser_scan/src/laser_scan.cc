@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 #include <algorithm>
 
 namespace laser_scan{

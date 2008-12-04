@@ -114,7 +114,7 @@
 #include <random_utils/random_utils.h>
 
 // Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 #include <deque>
 #include <cmath>

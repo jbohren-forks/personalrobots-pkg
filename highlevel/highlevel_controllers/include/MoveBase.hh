@@ -57,7 +57,7 @@
 #include <tf/transform_broadcaster.h>
 
 // Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 // Thread suppport
 #include <rosthread/member_thread.h>

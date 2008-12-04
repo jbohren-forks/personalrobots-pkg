@@ -18,7 +18,7 @@
  <depend package="pr2_msgs"/>
  <depend package="kinematic_planning"/>
  <depend package="trajectory_rollout"/>
- <depend package="laser_scan_utils" />
+ <depend package="laser_scan" />
  <depend package="costmap_2d"/>
  <depend package="tf"/>
  <depend package="ompl"/>

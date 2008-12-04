@@ -128,7 +128,7 @@ robot.
 #include <tf/message_notifier.h>
 
 //Laser projection
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 // For time support
 #include <ros/time.h>

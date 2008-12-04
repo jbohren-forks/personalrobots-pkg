@@ -8,7 +8,7 @@
   <url>http://pr.willowgarage.com/wiki/Point_clouds_from_scanning_URG</url>
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
-  <depend package="laser_scan_utils"/>
+  <depend package="laser_scan"/>
   <depend package="tf"/>
   <depend package="pr2_mechanism_controllers"/>
 </package>

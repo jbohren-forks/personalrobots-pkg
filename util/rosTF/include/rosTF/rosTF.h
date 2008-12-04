@@ -45,7 +45,7 @@
 #include "rosTF/TransformArray.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloud.h"
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 
 /** \brief A basic ROS client library for libTF

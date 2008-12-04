@@ -33,7 +33,7 @@
 #define TF_TRANSFORMLISTENER_H
 
 #include "std_msgs/PointCloud.h"
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 #include "tf/tfMessage.h"
 #include "tf/tf.h"
 #include "ros/node.h"
