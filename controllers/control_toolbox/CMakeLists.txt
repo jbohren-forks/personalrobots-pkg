@@ -10,6 +10,7 @@ rospack_add_library(control_toolbox
  src/serialchain_model.cpp
  src/sine_sweep.cpp
  src/ramp_output.cpp
+ src/base_position_pid.cpp
  )
  
 rospack_add_gtest(lqr_utils test/lqr_utils.cpp)

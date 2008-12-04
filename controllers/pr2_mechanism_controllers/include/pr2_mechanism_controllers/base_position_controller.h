@@ -35,6 +35,7 @@
 #ifndef PR2_MECHANISM_CONTROLLERS_BASE_POSITION_CONTROLLER_H
 #define PR2_MECHANISM_CONTROLLERS_BASE_POSITION_CONTROLLER_H
 
+#include "control_toolbox/base_position_pid.h"
 #include "pr2_mechanism_controllers/base_controller.h"
 #include "tf/transform_listener.h"
 #include "std_msgs/PoseStamped.h"
@@ -44,33 +45,6 @@
 
 namespace pr2_mechanism_controllers
 {
-
-/**
- * This is a simple math utility to generate velocity commands in order to close the loop around position (and rotation).
- */
-class BasePositionControlUtil
-{
-public:
-
-  BasePositionControlUtil() ;
-  ~BasePositionControlUtil() ;
-  
-  bool initXml(TiXmlElement *config) ;
-
-  /**
-   * Determines the base's x,y,w control velocities to try to achieve the commanded position.
-   * \param commanded_pos The [x,y,w] position we're trying to acheive
-   * \param actual_pos Our current position
-   * \param elapsed_time The time between our current update and the previous update
-   */
-  tf::Vector3 updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, double elapsed_time) ;
-  
-private:
-  control_toolbox::Pid pid_x_ ;                //!< Input: odom x error.   Output: Odom x velocity command
-  control_toolbox::Pid pid_y_ ;                //!< Input: odom y error.   Output: Odom y velocity command
-  control_toolbox::Pid pid_w_ ;                //!< Input: ang  w error.   Output: Odom/Base angular velocity command
-} ;
-
 
 class BasePositionControllerNode : public controller::Controller
 {
@@ -112,7 +86,7 @@ public :
   void setPoseOdomFrameCommand(double x, double y, double w) ;
   
 private :
-  BasePositionControlUtil base_position_control_util_ ;        // Does the math to compute a command velocity
+  control_toolbox::BasePositionPid base_position_pid_ ;        // Does the math to compute a command velocity
   controller::BaseControllerNode base_controller_node_ ;       // Converts a commanded velocity into a wheel velocities and turret angles
   ros::node *node_ ;
 

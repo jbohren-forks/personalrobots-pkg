@@ -11,6 +11,8 @@
   <depend package="robot_kinematics" />
   <depend package="newmat10" />
   <depend package="rosconsole" />
+  <depend package="tf" />
+  <depend package="angles" />
   <export>
     <cpp cflags="-I${prefix}/include -I${prefix}/include/control_toolbox/eigen2"
 	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcontrol_toolbox" />

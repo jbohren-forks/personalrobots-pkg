@@ -33,67 +33,9 @@
  *********************************************************************/
 
 #include "pr2_mechanism_controllers/base_position_controller.h"
-#include "angles/angles.h"                                              // For angular distance error calculation
 
 using namespace pr2_mechanism_controllers ;
 using namespace std ;
-
-BasePositionControlUtil::BasePositionControlUtil()
-{
-
-}
-
-
-BasePositionControlUtil::~BasePositionControlUtil()
-{
-  
-  
-}
-
-bool BasePositionControlUtil::initXml(TiXmlElement *config)
-{
-  TiXmlElement *pid_x_elem = config->FirstChildElement("pid_x") ;
-  TiXmlElement *pid_y_elem = config->FirstChildElement("pid_y") ;
-  TiXmlElement *pid_w_elem = config->FirstChildElement("pid_w") ;
-
-  if (!pid_x_elem || !pid_y_elem || !pid_w_elem)
-  {
-    printf("BasePositionController:: Error loading XML\n") ;
-    return false ;
-  }
-  
-  bool success_x = pid_x_.initXml(pid_x_elem) ;
-  bool success_y = pid_y_.initXml(pid_y_elem) ;
-  bool success_w = pid_w_.initXml(pid_w_elem) ;
-  
-  if (!success_x || !success_y || !success_w)
-  {
-    printf("BasePositionController:: Error loading pid controllers XML\n") ;
-    return false ;    
-  }
-  
-  return true ;
-}
-
-tf::Vector3 BasePositionControlUtil::updateControl(const tf::Vector3& commanded_pos, const tf::Vector3& actual_pos, double time_elapsed)
-{
-  double err_x = actual_pos.x() - commanded_pos.x() ;
-  double err_y = actual_pos.y() - commanded_pos.y() ;
-  double err_w = angles::shortest_angular_distance(commanded_pos.z(), actual_pos.z()) ;
-  
-  tf::Vector3 velocity_cmd ;
-  
-  double odom_cmd_x = pid_x_.updatePid(err_x, time_elapsed) ;            // Translation X in the odometric frame
-  double odom_cmd_y = pid_y_.updatePid(err_y, time_elapsed) ;            // Translation Y in the odometric frame
-
-  // Rotate the translation commands so that they're in the base frame (instead of the odom frame)
-  velocity_cmd.setX( odom_cmd_x*cos(actual_pos.z()) + odom_cmd_y*sin(actual_pos.z())) ;
-  velocity_cmd.setY(-odom_cmd_x*sin(actual_pos.z()) + odom_cmd_y*cos(actual_pos.z())) ;
-
-  velocity_cmd.setZ(pid_w_.updatePid(err_w, time_elapsed)) ;             // Rotation command is same is Odom and Base frames
-  
-  return velocity_cmd ;
-}
 
 ROS_REGISTER_CONTROLLER(BasePositionControllerNode)
 
@@ -123,16 +65,16 @@ bool BasePositionControllerNode::initXml(mechanism::RobotState *robot_state, TiX
   robot_state_ = robot_state ;
   
   // Initialize the BasePositionControlUtil
-  TiXmlElement *base_pos_control_util_elem = config->FirstChildElement("base_position_control_util") ;
-  if (!base_pos_control_util_elem)
+  TiXmlElement *base_pos_pid_elem = config->FirstChildElement("base_position_pid") ;
+  if (!base_pos_pid_elem)
   {
-    ROS_ERROR("Cannot start BasePositionControllerNode. Cannot find xml element BasePositionControlUtil") ;
+    ROS_ERROR("Cannot start BasePositionControllerNode. Cannot find xml element BasePositionPid") ;
     return false ;
   }
-  success = base_position_control_util_.initXml(base_pos_control_util_elem) ;  
+  success = base_position_pid_.initXml(base_pos_pid_elem) ;  
   if (!success)
   {
-    ROS_ERROR("Cannot start BasePositionControllerNode. Error initializing XML for BasePositionControlUtil") ;
+    ROS_ERROR("Cannot start BasePositionControllerNode. Error initializing XML for BasePositionPid") ;
     return false ;
   }
 
@@ -187,7 +129,7 @@ void BasePositionControllerNode::update()
   
   // Determine next velocity to command
   tf::Vector3 vel_cmd ;
-  vel_cmd = base_position_control_util_.updateControl(xyt_target_, xyt_current, time_elapsed) ;
+  vel_cmd = base_position_pid_.updateControl(xyt_target_, xyt_current, time_elapsed) ;
   
   // Command the velocity
   base_controller_node_.setCommand(vel_cmd.x(), vel_cmd.y(), vel_cmd.z()) ;
