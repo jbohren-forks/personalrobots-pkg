@@ -8,4 +8,5 @@
   <depend package="robot_msgs" />
   <depend package="tf" />
   <depend package="angles" />
+  <depend package="control_toolbox" />
 </package>
