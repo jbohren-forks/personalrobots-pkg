@@ -57,7 +57,8 @@ $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in: $(SOURCE_DIR)/configure.ac $(
 
 $(BUILD_DIR)/config.h: $(SOURCE_DIR)/configure $(SOURCE_DIR)/config.h.in
 	test -d $(BUILD_DIR) || mkdir -p $(BUILD_DIR)
-	cd $(BUILD_DIR) && $(SOURCE_DIR)/configure --prefix=$(INST_DIR) \
+	cd $(BUILD_DIR) && \
+	$(SOURCE_DIR)/configure --with-pic --prefix=$(INST_DIR) \
                                                    --with-estar=$(ESTAR_DIR) \
                                                    --with-boost=$(BOOST_DIR)
 
