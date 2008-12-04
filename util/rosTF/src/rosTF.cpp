@@ -102,6 +102,7 @@ std_msgs::PointCloud rosTFClient::transformPointCloud(const std::string & target
 
 
 
+/*
 void rosTFClient::transformLaserScanToPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn)
 {
   cloudOut.header = scanIn.header;
@@ -152,7 +153,7 @@ void rosTFClient::transformLaserScanToPointCloud(const std::string & target_fram
     
 }
 
-
+*/
 
 void rosTFClient::receiveArray()
 {

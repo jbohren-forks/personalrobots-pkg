@@ -45,7 +45,7 @@
 #include "rosTF/TransformArray.h"
 #include "libTF/libTF.h"
 #include "std_msgs/PointCloud.h"
-#include "laser_scan/laser_scan.h"
+//#include "laser_scan/laser_scan.h"
 
 
 /** \brief A basic ROS client library for libTF
@@ -67,8 +67,8 @@ class rosTFClient : public libTF::TransformReference
   void transformPointCloud(const std::string & target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::PointCloud & cloudIn) __attribute__((deprecated));
   void transformPointCloud(unsigned int target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::PointCloud & cloudIn) __attribute__((deprecated));
 
-  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
-  void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
+  //  void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
+  //void transformLaserScanToPointCloud(unsigned int target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn) __attribute__((deprecated));
 
   /** @brief Call back function for receiving on ROS */
   void receiveArray();
@@ -96,7 +96,7 @@ class rosTFClient : public libTF::TransformReference
   rosTF::TransformArray tfArrayIn;
 
   /** @brief A helper class for projecting laser scans */
-  laser_scan::LaserProjection projector_;
+  //  laser_scan::LaserProjection projector_;
 
   pthread_mutex_t cb_mutex;
 
