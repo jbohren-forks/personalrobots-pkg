@@ -82,39 +82,5 @@ namespace laser_scan{
       
     };
   
-  /** \brief A class to provide median filtering of laser scans */
-  class LaserMedianFilter
-    {
-    public:
-      enum MedianMode_t { MEDIAN_TRAILING, MEDIAN_DOWNSAMPLE};
-      
-      /** \brief Constructor
-       * \param averaging_length How many scans to average over.
-       * \param num_ranges Whether to downsample and return or compute a rolling median over the last n scans
-       * \param mode What mode to operate in Trailing or Downsampling (Effectively changes returning true every time or every 3)
-       */
-      LaserMedianFilter(unsigned int averaging_length, unsigned int num_ranges, MedianMode_t mode = MEDIAN_DOWNSAMPLE);
-      /** \brief Add a scan to the filter
-       * \param scan_in The new scan to filter
-       * return whether there is a new output to get */
-      bool addScan(const std_msgs::LaserScan& scan_in);
-      /** \brief get the Filtered results
-       * \param scan_result The scan to fill with the median results */
-      void getMedian(std_msgs::LaserScan& scan_result);
-      
-      
-    private:
-      unsigned int current_packet_num_; ///The number of scans recieved
-      NEWMAT::Matrix range_data_; ///Storage for range_data
-      NEWMAT::Matrix intensity_data_; ///Storage for intensity data
-      unsigned int filter_length_; ///How many scans to average over
-      unsigned int num_ranges_; /// How many data point are in each row
-      MedianMode_t mode_; ///Whether to return true every time or once every 3
-      
-      std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
-      
-    };
-  
-  
 }
 #endif //LASER_SCAN_UTILS_LASERSCAN_H
