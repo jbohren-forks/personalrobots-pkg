@@ -80,9 +80,11 @@ for topic, msg in rosrecord.logplayer(filename):
     ]
     vo_x = [ [] for i in vos]
     vo_y = [ [] for i in vos]
+    vo_u = [ [] for i in vos]
+    vo_v = [ [] for i in vos]
 
   start,end = 941,1000
-  start,end = 0,200
+  start,end = 0,1000
 
   if cam and topic.endswith("videre/images"):
     print framecounter
@@ -98,6 +100,9 @@ for topic, msg in rosrecord.logplayer(filename):
         x,y,z = vo.pose.xform(0,0,0)
         vo_x[i].append(x)
         vo_y[i].append(z)
+        x1,y1,z1 = vo.pose.xform(0,0,1)
+        vo_u[i].append(x1 - x)
+        vo_v[i].append(z1 - z)
       framecounter += 1
   if topic.endswith("odom_estimation"):
     oe_x.append(-msg.pose.position.y)
@@ -112,26 +117,28 @@ for i in range(len(vos)):
   xp = xs * cos(f) - ys * sin(f)
   yp = ys * cos(f) + xs * sin(f)
   pylab.plot(xp, yp, c = colors[i], label = vos[i].name())
+  pylab.quiver(xp, yp, vo_u[i], vo_v[i], color = colors[i]) #, label = '_nolegend_')
   #xk = [ x for j,x in enumerate(vo_x[i]) if j in vos[i].log_keyframes ]
   #yk = [ y for j,y in enumerate(vo_y[i]) if j in vos[i].log_keyframes ]
   #pylab.scatter(xk, yk, c = colors[i], label = '_nolegend_')
 
-CX = []
-CY = []
-for sbap in vos[0].posechain:
-  p = Pose()
-  p.fromlist(sbap.M)
-  x,y,z = p.xform(0,0,0)
-  CX.append(x)
-  CY.append(y)
+if vos[0].sba:
+  CX = []
+  CY = []
+  for sbap in vos[0].posechain:
+    p = Pose()
+    p.fromlist(sbap.M)
+    x,y,z = p.xform(0,0,0)
+    CX.append(x)
+    CY.append(z)
 
-xs = numpy.array(CX)
-ys = numpy.array(CY)
-xs -= 4.5 * 1e-3
-f = -0.06
-xp = xs * cos(f) - ys * sin(f)
-yp = ys * cos(f) + xs * sin(f)
-pylab.plot(xp, yp, c = 'magenta', label = 'with SBA')
+  xs = numpy.array(CX)
+  ys = numpy.array(CY)
+  xs -= 4.5 * 1e-3
+  f = -0.06
+  xp = xs * cos(f) - ys * sin(f)
+  yp = ys * cos(f) + xs * sin(f)
+  pylab.plot(xp, yp, c = 'magenta', label = 'with SBA')
 
 pylab.plot(oe_x, oe_y, c = 'green', label = 'wheel + IMU odometry')
 xlim = pylab.xlim()
