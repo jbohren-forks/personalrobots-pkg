@@ -501,15 +501,7 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
     localizedOdomMsg.pos.y = pdata->pos.py;
     localizedOdomMsg.pos.th = pdata->pos.pa;
     localizedOdomMsg.header.stamp.fromSec(hdr->timestamp);
-    try
-    {
-	localizedOdomMsg.header.frame_id = "map";
-    }
-    catch(...)
-    {
-      // WTF is this?
-      printf("Somehow could not set frame_id to map\n");
-    }
+    localizedOdomMsg.header.frame_id = "map";
     /*
     printf("O: %.6f %.3f %.3f %.3f\n",
            hdr->timestamp, 
