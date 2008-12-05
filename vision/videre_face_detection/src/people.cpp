@@ -341,7 +341,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
  *   end_points: List of the new face centers. Does *not* update the face centers of the people without further intervention. Assumes the endpoint array is allocated.
  *   Side effect: can update the person's colour histogram.
  *********************************************/
-bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
+bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_mm, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
  
 #if __PEOPLE_DEBUG__
   printf("in tracker\n");
@@ -548,7 +548,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     int cp[3], u1, u2, v1, v2;
     float *xptr, *yptr, *zptr, *nptr;
     uchar *rptr, *gptr;
-    double kernel_mult = 4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
+    double kernel_mult = kernel_radius_mm / t_person->face_size_3d;//4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
     double denom;
 
     // Compute the Bhattacharya coeff of the start hist vs the true face hist.
