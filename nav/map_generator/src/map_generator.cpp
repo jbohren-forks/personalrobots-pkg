@@ -77,7 +77,7 @@ MapGenerator::MapGenerator(string servname) : ros::node("map_generator") {
 
   FILE* yaml = fopen("map.yaml", "w");
 
-  fprintf(yaml, "-resolution:%f\n-orgin:(%f, %f)\n",
+  fprintf(yaml, "-resolution:%f\n-origin:(%f, %f)\n",
 	  resp.map.resolution, resp.map.origin.x, resp.map.origin.y);
 
   fclose(yaml);
