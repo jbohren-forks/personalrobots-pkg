@@ -295,7 +295,7 @@ namespace ros {
      */
     void MoveBase::updateGoalMsg(){
       // Revert to static map on new goal. May result in oscillation, but requested by Eitan for the milestone
-      costMap_->revertToStaticMap();
+      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
       tf::Stamped<tf::Pose> goalPose, transformedGoalPose;
       btQuaternion qt;
@@ -411,7 +411,7 @@ namespace ros {
      */
     void MoveBase::handlePlanningFailure(){
       ROS_DEBUG("No plan found. Handling planning failure");
-      costMap_->revertToStaticMap();
+      costMap_->revertToStaticMap(global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
       stopRobot();
     }
 

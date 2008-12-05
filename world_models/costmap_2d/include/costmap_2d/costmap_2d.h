@@ -175,9 +175,12 @@ namespace costmap_2d {
     double getWeight() const {return weight_;}
 
     /**
-     * @brief Will reset the cost data to the initiali propagated costs of the static map
+     * @brief Will reset the cost data
+     * @param wx the x position in world coordinates
+     * @param wy the y position in world coordinates
      */
-    void revertToStaticMap();
+    void revertToStaticMap(double wx = 0.0, double wy = 0.0);
+
   private:
 
     /**
@@ -241,6 +244,8 @@ namespace costmap_2d {
     QUEUE queue_; /**< Used for cost propagation */
 
     double** cachedDistances; /**< Cached distances indexed by dx, dy */  
+    const unsigned int kernelWidth_; /**< The width of the kernel matrix, which will be square */
+    unsigned char* kernelData_; /**< kernel data structure for cost map updates around the robot */
   };
 
   /**

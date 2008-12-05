@@ -74,6 +74,94 @@ bool find(const std::vector<unsigned int>& l, unsigned int n){
 }
 
 /**
+ * Tests the reset method
+ */
+TEST(costmap, testResetForStaticMap){
+  // Define a static map with a large object in the center
+  std::vector<unsigned char> staticMap;
+  for(unsigned int i=0; i<10; i++){
+    for(unsigned int j=0; j<10; j++){
+      staticMap.push_back(CostMap2D::LETHAL_OBSTACLE);
+    }
+  }
+
+  // Allocate the cost map, with a inflation to 3 cells all around
+  CostMap2D map(10, 10, staticMap, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,	3, 3, 3);
+
+  // Populate the cost map with a wall around the perimeter. Free space should clear out the room.
+  std_msgs::PointCloud cloud;
+  cloud.set_pts_size(40);
+
+  // Left wall
+  unsigned int ind = 0;
+  for (unsigned int i = 0; i < 10; i++){
+    // Left
+    cloud.pts[ind].x = 0;
+    cloud.pts[ind].y = i;
+    cloud.pts[ind].z = MAX_Z;
+    ind++;
+
+    // Top
+    cloud.pts[ind].x = i;
+    cloud.pts[ind].y = 0;
+    cloud.pts[ind].z = MAX_Z;
+    ind++;
+
+    // Right
+    cloud.pts[ind].x = 9;
+    cloud.pts[ind].y = i;
+    cloud.pts[ind].z = MAX_Z;
+    ind++;
+
+    // Bottom
+    cloud.pts[ind].x = i;
+    cloud.pts[ind].y = 9;
+    cloud.pts[ind].z = MAX_Z;
+    ind++;
+  }
+
+  double wx = 5.0, wy = 5.0;
+  std_msgs::Point p;
+  p.x = wx;
+  p.y = wy;
+  p.z = MAX_Z;
+  Observation obs(p, &cloud);
+  std::vector<Observation> obsBuf;
+  obsBuf.push_back(obs);
+
+  // Update the cost map for this observation
+  map.updateDynamicObstacles(wx, wy, obsBuf);
+
+  // Verify that we know have only 8 * 4 + 4 cells with lethal cost, thus provong that we have correctly cleared
+  // free space
+  unsigned int hitCount = 0;
+  for(unsigned int i=0; i <100; i++){
+    if(map.getMap()[i] == CostMap2D::LETHAL_OBSTACLE)
+      hitCount++;
+  }
+  ASSERT_EQ(hitCount, 36);
+
+  // Veriy that we have 4 free cells
+  hitCount = 0;
+  for(unsigned int i=0; i < 100; i++){
+    if(map.getMap()[i] == 0)
+      hitCount++;
+  }
+  ASSERT_EQ(hitCount, 4);
+
+  // Now if we reset the cost map, we shold retain the free space, and also retain values of INSCRIBED circle
+  // in the region of the circumscribed radius (3 cells)
+  map.revertToStaticMap(wx, wy);
+  unsigned int mx, my;
+  map.WC_MC(wx, wy, mx, my);
+  for(unsigned int x = mx - 3; x <= mx+3; x++){
+    for(unsigned int y = my -3; y <= my + 3; y++){
+      ASSERT_EQ(map.getCost(x, y) < CostMap2D::LETHAL_OBSTACLE, true);
+    }
+  }
+}
+
+/**
  * Basic testing for observation buffer
  */
 TEST(costmap, test15){

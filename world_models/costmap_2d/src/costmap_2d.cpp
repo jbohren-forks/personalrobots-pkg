@@ -79,7 +79,7 @@ namespace costmap_2d {
     inscribedRadius_(toCellDistance(inscribedRadius, circumscribedRadius_, resolution)),
     weight_(std::max(0.0, std::min(weight, 1.0))), sq_obstacle_range_(obstacleRange * obstacleRange),
     sq_raytrace_range_((raytraceRange / resolution) * (raytraceRange / resolution)), 
-    staticData_(NULL), xy_markers_(NULL)
+      staticData_(NULL), xy_markers_(NULL), kernelWidth_((circumscribedRadius_ * 2) + 1)
   {
     if(weight != weight_){
       ROS_INFO("Warning - input weight %f is invalid and has been set to %f\n", weight, weight_);
@@ -90,6 +90,7 @@ namespace costmap_2d {
     xy_markers_ = new bool[width_*height_];
     memset(xy_markers_, 0, width_ * height_* sizeof(bool));
 
+    // Set up a cache of distance values for a kernel around the robot
     cachedDistances = new double*[inflationRadius_+1];
     for (i=0; i<=inflationRadius_; i++) {
       cachedDistances[i] = new double[inflationRadius_+1];
@@ -98,6 +99,9 @@ namespace costmap_2d {
         cachedDistances[j][i] = cachedDistances[i][j];
       }
     }
+
+    // Allocate memory for a kernel matrix to be used for map updates aruond the robot
+    kernelData_ = new unsigned char[kernelWidth_ * kernelWidth_];
 
     setCircumscribedCostLowerBound(computeCost(circumscribedRadius_));
 
@@ -140,17 +144,35 @@ namespace costmap_2d {
   }
 
 
-  void CostMap2D::revertToStaticMap(){
-    // Using the original policy since the requested change implemented below performs poorly in practice
-    // as the map is accumulating free space and thus the planner does really strange things.
+  void CostMap2D::revertToStaticMap(double wx, double wy){
+    unsigned int mx, my;
+    WC_MC(wx, wy, mx, my);
+
+    // Reset the kernel. A box around the current position. Then copy the current cost data in that region
+    // We can assume the whole kernel is in the global map, because the robot is in the map and the borders of the map
+    // are walls anyway.
+    memset(kernelData_, 0, kernelWidth_ * kernelWidth_);
+    const unsigned int originX = mx - circumscribedRadius_;
+    const unsigned int originY = my - circumscribedRadius_;
+    for (unsigned int i = 0; i < kernelWidth_; i++){
+      for(unsigned int j = 0; j < kernelWidth_; j++){
+	unsigned int kernelIndex = (j * kernelWidth_) + i;
+	unsigned int costMapIndex = (originY + j) * width_ + originX + i;
+	kernelData_[kernelIndex] = costData_[costMapIndex];
+      }
+    }
+
+    // Reset the cost map to the static data
     memcpy(costData_, staticData_, width_ * height_);
-    /*
-    // Revising the policy per Eitan's discussion with Eric where we want to revert to the most relaxed map based on our current perception
-    // and the static map. 
-    unsigned int cellCount = width_ * height_;
-    for (unsigned int i = 0; i < cellCount; i++)
-      costData_[i] = std::min(costData_[i], staticData_[i]);
-    */
+
+    // Now repeat the iteration over the kernel, but this time write the data back
+    for (unsigned int i = 0; i < kernelWidth_; i++){
+      for(unsigned int j = 0; j < kernelWidth_; j++){
+	unsigned int kernelIndex = (j * kernelWidth_) + i;
+	unsigned int costMapIndex = (originY + j) * width_ + originX + i;
+	costData_[costMapIndex] = std::min(costData_[costMapIndex], kernelData_[kernelIndex]);
+      }
+    }
   }
 
   /**
