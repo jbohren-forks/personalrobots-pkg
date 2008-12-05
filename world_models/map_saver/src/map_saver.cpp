@@ -110,9 +110,6 @@ int main(int argc, char** argv) {
   ros::init(argc, argv);
   MapGenerator mg(argv[1]);
   
-  while(mg.ok()) {
-    usleep(100000);
-  }
 
 
   ros::fini();
