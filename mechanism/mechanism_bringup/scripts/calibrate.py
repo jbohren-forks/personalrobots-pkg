@@ -65,10 +65,10 @@ def calibrate(config):
 
     # Accumulates the list of spawned controllers
     launched = []
-    print "OKs: " + ','.join([str(ord(ok)) for ok in resp.ok])
+    print "OKs: " + ','.join([str(ok) for ok in resp.ok])
     try:
         for i in range(len(resp.ok)):
-            if ord(resp.ok[i]) == 0:
+            if resp.ok[i] == 0:
                 print "Failed: %s" % resp.name[i]
             else:
                 launched.append(resp.name[i])
