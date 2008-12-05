@@ -679,6 +679,9 @@ namespace ros {
      * render the obstacles.
      */
     void MoveBase::publishLocalCostMap() {
+ 
+
+
       double mapSize = std::min(costMap_->getWidth()/2, costMap_->getHeight()/2);
       CostMapAccessor cm(*costMap_, std::min(10.0, mapSize), global_pose_.getOrigin().x(), global_pose_.getOrigin().y());
 
@@ -714,6 +717,9 @@ namespace ros {
         pointCloudMsg.points[i].y = rawObstacles[i].second;
       }
 
+      if (!this->ok()) { 
+	return; 
+      }
       publish("raw_obstacles", pointCloudMsg);
 
       // Now do inflated obstacles in blue
@@ -729,6 +735,9 @@ namespace ros {
         pointCloudMsg.points[i].y = inflatedObstacles[i].second;
       }
 
+      if (!this->ok()) { 
+	return; 
+      }
       publish("inflated_obstacles", pointCloudMsg);
     }
 
