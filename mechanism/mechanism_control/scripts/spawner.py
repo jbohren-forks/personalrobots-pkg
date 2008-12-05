@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     spawned = []
     for i in range(len(resp.ok)):
-        if ord(resp.ok[i]):
+        if resp.ok[i]:
             spawned.append(resp.name[i])
         else:
             print "Failed to spawn %s" % resp.name[i]
