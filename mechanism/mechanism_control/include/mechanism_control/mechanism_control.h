@@ -122,7 +122,9 @@ private:
 
   MechanismControl *mc_;
 
-  static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
+  //static const double STATE_PUBLISHING_PERIOD = 0.01;  // this translates to about 100Hz
+  static const int CYCLES_PER_STATE_PUBLISH = 10;  // 100 Hz
+  int cycles_since_publish_;
 
   const char* const mechanism_state_topic_;
   misc_utils::RealtimePublisher<robot_msgs::MechanismState> publisher_;

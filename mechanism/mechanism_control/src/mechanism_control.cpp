@@ -182,7 +182,8 @@ bool MechanismControl::killController(const std::string &name)
 
 
 MechanismControlNode::MechanismControlNode(MechanismControl *mc)
-  : mc_(mc), mechanism_state_topic_("mechanism_state"),
+  : mc_(mc), cycles_since_publish_(0),
+    mechanism_state_topic_("mechanism_state"),
     publisher_(mechanism_state_topic_, 1),
     transform_publisher_("TransformArray", 5)
 {
@@ -234,9 +235,9 @@ void MechanismControlNode::update()
 {
   mc_->update();
 
-  static double last_publish_time = 0.0;
-  if (mc_->hw_->current_time_ - last_publish_time > STATE_PUBLISHING_PERIOD)
+  if (++cycles_since_publish_ >= CYCLES_PER_STATE_PUBLISH)
   {
+    cycles_since_publish_ = 0;
     if (publisher_.trylock())
     {
       assert(mc_->model_.joints_.size() == publisher_.msg_.get_joint_states_size());
@@ -288,6 +289,7 @@ void MechanismControlNode::update()
     if (transform_publisher_.trylock())
     {
       //assert(mc_->model_.links_.size() == transform_publisher_.msg_.get_quaternions_size());
+      transform_publisher_.msg_.header.stamp.fromSec(mc_->hw_->current_time_);
       int ti = 0;
       for (unsigned int i = 0; i < mc_->model_.links_.size(); ++i)
       {
@@ -298,7 +300,7 @@ void MechanismControlNode::update()
         tf::Quaternion quat = mc_->state_->link_states_[i].rel_frame_.getRotation();
         rosTF::TransformQuaternion &out = transform_publisher_.msg_.quaternions[ti++];
 
-        out.header.stamp.from_double(mc_->hw_->current_time_);
+        out.header.stamp.fromSec(mc_->hw_->current_time_);
         out.header.frame_id = mc_->model_.links_[i]->name_;
         out.parent = mc_->model_.links_[i]->parent_name_;
         out.xt = pos.x();
@@ -312,8 +314,6 @@ void MechanismControlNode::update()
 
       transform_publisher_.unlockAndPublish();
     }
-
-    last_publish_time = mc_->hw_->current_time_;
   }
 }
 
