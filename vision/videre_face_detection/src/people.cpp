@@ -39,7 +39,7 @@
 #include "people.h"
 #include <cfloat>
 
-#define MYDEBUG 0
+#define __PEOPLE_DEBUG__ 0
 
 
 People::People():
@@ -145,6 +145,8 @@ static CvRect center_size_to_rect_2d( CvScalar center, CvScalar size) {
   CvRect rect = cvRect(center.val[0]-size.val[0], center.val[1]-size.val[1], size.val[0]*2, size.val[1]*2);
   return rect;
 }
+
+
 /*****************************************************************/
 
 
@@ -184,7 +186,7 @@ void People::centerSizeToFourCorners( CvMat *centers, CvMat *sizes, CvMat *four_
   cvmSet(four_corners,3,0, cvmGet(four_corners,1,0)); // BR
   cvmSet(four_corners,3,1, cvmGet(four_corners,2,1)); // BR
   
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
   printf("Center %f %f, size %f %f, opposite corners (%f, %f), (%f, %f)\n", 
 	 cvGetReal2D(centers,0,0),cvGetReal2D(centers,0,1),
 	 cvGetReal2D(sizes,0,0),cvGetReal2D(sizes,0,1),
@@ -277,6 +279,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
   for (int iface = 0; iface < face_seq->total; iface++) {
 
     good_face = true;
+    color = cvScalar(0,255,0);
 
     one_face = *(CvRect*)cvGetSeqElem(face_seq, iface);
 
@@ -338,9 +341,9 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
  *   end_points: List of the new face centers. Does *not* update the face centers of the people without further intervention. Assumes the endpoint array is allocated.
  *   Side effect: can update the person's colour histogram.
  *********************************************/
-bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
+bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
  
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
   printf("in tracker\n");
 #endif
 
@@ -438,6 +441,10 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
 
 
   // Get the 3d coords for each point.
+  
+  //cvDilate(disparity_image, disparity_image);
+  //cvErode(disparity_image, disparity_image);
+
   //cam_model->disp8UToCart32F(disparity_image, (float)1.0, (float)MAX_Z_MM, cft_Z_, cft_X_, cft_Y_);
   float *fptr = (float*)(cft_uvd_->data.ptr);
   uchar *cptr;// = (uchar*)(disparity_image->imageData);
@@ -467,7 +474,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
  
   /*** Mean shift tracking of the face centers in the normalized RG colourspace using the Bhattacharya coeff of the colour histograms. ***/
 
-  // The bandwidths will be the same as the face sizes. Can change this later.
   CvRect bbox;
   double d, dx, dy, dz;
   CvMat* four_corners = cvCreateMat(4,3,CV_32FC1);
@@ -491,7 +497,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
     // Convert 3d point-size to 2d rectangle
     cvGetRow(start_points,my_start_point,iperson);
 
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
     printf("My start point: ");
     for (int ip = 0; ip < 3; ip++) {
       printf("%f ", cvmGet(my_start_point,0,ip));
@@ -512,11 +518,11 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
 		  (int)(cvmGet(four_corners_2d,2,1)-cvmGet(four_corners_2d,0,1)+1));
   
     // Calc histogram
-    //cvSetImageROI(cft_r_plane_norm_,bbox);
-    //cvSetImageROI(cft_g_plane_norm_,bbox);
+    cvSetImageROI(cft_r_plane_norm_,bbox);
+    cvSetImageROI(cft_g_plane_norm_,bbox);
     calc_weighted_rg_hist_with_depth_2(cft_r_plane_norm_, cft_g_plane_norm_, my_start_point, cft_X_, cft_Y_, cft_Z_, t_person->face_size_3d, cft_start_hist_);
-    //cvResetImageROI(cft_r_plane_norm_);
-    //cvResetImageROI(cft_g_plane_norm_);
+    cvResetImageROI(cft_r_plane_norm_);
+    cvResetImageROI(cft_g_plane_norm_);
 
     /*** If this is the first frame for this person, set their histogram and return the start point as the new point (don't track). ***/
     if (!t_person->face_color_hist) {
@@ -526,9 +532,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
       (*fptr2) = (*fptr1); fptr1++; fptr2++;
       (*fptr2) = (*fptr1); fptr1++; fptr2++;
       (*fptr2) = (*fptr1); fptr1 = NULL; fptr2 = NULL;
-      //cvmSet(end_points,iperson,0, cvmGet(start_points,iperson,0));
-      //cvmSet(end_points,iperson,1, cvmGet(start_points,iperson,1));
-      //cvmSet(end_points,iperson,2, cvmGet(start_points,iperson,2));
       continue;
     }
 
@@ -545,13 +548,15 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
     int cp[3], u1, u2, v1, v2;
     float *xptr, *yptr, *zptr, *nptr;
     uchar *rptr, *gptr;
+    double kernel_mult = 4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
+    double denom;
 
     // Compute the Bhattacharya coeff of the start hist vs the true face hist.
     bhat_coeff = cvCompareHist( t_person->face_color_hist, cft_start_hist_, CV_COMP_BHATTACHARYYA);
     int iter;
     for (iter = 0; iter < MAX_ITERS; iter++) {
 
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
       printf("iter %d\n",iter);
 #endif
 
@@ -564,9 +569,6 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
       cp[0] = (*fptr1); fptr1++;
       cp[1] = (*fptr1); fptr1++;
       cp[2] = (*fptr1); fptr1++;
-      //cp[0] = cvmGet(curr_point,0,0);
-      //cp[1] = cvmGet(curr_point,0,1);
-      //cp[2] = cvmGet(curr_point,0,2);
       //printf("try div\n\n");
       // cvDiv(&(t_person->face_color_hist->mat), &(start_hist->mat), &(ratio_hist->mat));
       //cvPow(&(ratio_hist->mat),&(ratio_hist->mat),0.5);
@@ -580,16 +582,20 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
 	break;
       }
 
-      cvConvertScale(size_3d,size_3d,2.0,0);
+      // Converting the scale here controls the size of the kernel we'll use.
+      
+      cvConvertScale(size_3d,size_3d,kernel_mult,0);
       centerSizeToFourCorners(curr_point, size_3d, four_corners);
-      cvConvertScale(size_3d,size_3d,0.5,0);
+      cvConvertScale(size_3d,size_3d,1./kernel_mult,0);
       cam_model->cartToDisp(four_corners, four_corners_2d);   
       
-      u1 = (int)cvmGet(four_corners_2d,0,0);
-      u2 = (int)cvmGet(four_corners_2d,1,0);
-      v1 = (int)cvmGet(four_corners_2d,0,1);
-      v2 = (int)cvmGet(four_corners_2d,2,1);
+      u1 = MAX((int)cvmGet(four_corners_2d,0,0),0);
+      u2 = MIN((int)cvmGet(four_corners_2d,1,0),cft_X_->width);
+      v1 = MAX((int)cvmGet(four_corners_2d,0,1),0);
+      v2 = MIN((int)cvmGet(four_corners_2d,2,1),cft_X_->height);
       //bbox = cvRect(u1, v1, u2-u1+1, v2-v1+1);
+      denom = kernel_mult*t_person->face_size_3d;
+      denom *= denom;
       for (int v=v1; v<=v2; v++) {
 	xptr = (float*)(cft_X_->imageData + v*cft_X_->widthStep) + u1;
 	yptr = (float*)(cft_Y_->imageData + v*cft_Y_->widthStep) + u1;
@@ -603,7 +609,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
 	    dx = (*xptr)-cp[0];
 	    dy = (*yptr)-cp[1];
 	    dz = (*zptr)-cp[2];
-	    d = (dx*dx + dy*dy + dz*dz)/(t_person->face_size_3d*t_person->face_size_3d);
+	    d = (dx*dx + dy*dy + dz*dz)/denom;
 	    r_bin = (int)(floor((float)(*rptr)/2.0));
 	    g_bin = (int)(floor((float)(*gptr)/2.0));
 	    if (d <= 1.0){// && 5 < r_bin && r_bin < 123 && 5 < g_bin && g_bin < 123) {
@@ -703,11 +709,11 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, const IplImage *
       (*fptr2) = (*fptr1); fptr2++; fptr1++;;
     }
 
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
     printf("iter=%d, d=%f\n",iter, d);
 #endif
 
-#if MYDEBUG
+#if __PEOPLE_DEBUG__
     printf("end point ");
     for (int i =0; i<3; i++) {
       printf("%f ",cvmGet(end_points,iperson,i));
