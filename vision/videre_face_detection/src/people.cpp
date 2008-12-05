@@ -40,6 +40,7 @@
 #include <cfloat>
 
 #define __PEOPLE_DEBUG__ 0
+#define __PEOPLE_DISPLAY__ 0
 
 
 People::People():
@@ -57,6 +58,12 @@ People::People():
   cft_Z_(NULL), 
   cft_start_hist_(NULL),
   cft_ratio_hist_(NULL){
+
+#if __PEOPLE_DISPLAY__
+  cvNamedWindow("Real face hist",CV_WINDOW_AUTOSIZE);
+  cvNamedWindow("Current face hist", CV_WINDOW_AUTOSIZE);
+#endif
+
 }
 
 People::~People() {
@@ -84,6 +91,11 @@ People::~People() {
   cvReleaseMat(&gbins_);
   cvReleaseHist(&cft_start_hist_);
   cvReleaseHist(&cft_ratio_hist_);
+
+#if __PEOPLE_DISPLAY__
+  cvDestroyWindow("Real face hist");
+  cvDestroyWindow("Current face hist");
+#endif
 
 }
 
@@ -120,7 +132,7 @@ static void calc_weighted_rg_hist_with_depth_2(IplImage* imager, IplImage* image
 	d = (dx*dx+dy*dy+dz*dz)/band;
 	rbin = floor(cvGetReal2D(imager,v-bbox.y,u-bbox.x)/2.0);
 	gbin = floor(cvGetReal2D(imageg,v-bbox.y,u-bbox.x)/2.0);
-	if (d <= 1.0) {// && 5 < rbin && rbin < 123 && 5 < gbin && gbin < 123) {
+	if (d <= 1.0 && 5 < rbin && rbin < 123 && 5 < gbin && gbin < 123) {
 	  //rbin = cvGetReal2D(imager,v-bbox.y,u-bbox.x);
 	  //rbin = (1.5*rbin <= 127) ? (int)1.5*rbin : 127;
 	  //gbin = (int)0.75*gbin;
@@ -220,6 +232,26 @@ void People::setFaceBbox2D(CvRect face_rect, int iperson ) {
 void People::setFaceCenter3D(double cx, double cy, double cz, int iperson) {
   list_[iperson].face_center_3d = cvScalar(cx,cy,cz);
 }
+
+
+
+// Make a histogram into an image. 
+// out_im should have depth 8U, all values will be put between 0-255.
+IplImage* People::faceHist2Im(int iperson){
+  CvSize hsize = cvGetSize(list_[iperson].face_color_hist->bins);
+  IplImage *out_im = cvCreateImage(hsize, IPL_DEPTH_8U, 1);
+  uchar *cptr;
+  for (int g=0; g<hsize.height; g++) {
+    cptr = (uchar*)(out_im->imageData + g*out_im->widthStep);
+    for (int r=0; r<hsize.width; r++) {
+      (*cptr) = (uchar)(round(255.0*(cvQueryHistValue_2D(list_[iperson].face_color_hist,r,g))));
+      cptr++; 
+    }
+  }
+  return out_im;
+}
+
+
 
 /********
  * Detect all faces in an image.
@@ -487,8 +519,18 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
   CvMat* tpt = cvCreateMat(1,3,CV_32FC1);
   Person *t_person;
 
+#if __PEOPLE_DISPLAY__
+  CvSize histsize = cvSize(hsizes[0],hsizes[1]);
+  IplImage *hist_im = cvCreateImage(histsize, IPL_DEPTH_8U, 1);
+  IplImage *hist_im_real = cvCreateImage(histsize,IPL_DEPTH_8U, 1);
+
+#endif
+
   for (int iperson = 0; iperson<npeople; iperson++) {
     t_person = &list_[which_people[iperson]];
+
+    
+
     cvSet(size_3d, cvScalar(t_person->face_size_3d));
 
     /*** Compute the histogram at the current position.***/
@@ -527,8 +569,8 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     /*** If this is the first frame for this person, set their histogram and return the start point as the new point (don't track). ***/
     if (!t_person->face_color_hist) {
       cvCopyHist(cft_start_hist_, &t_person->face_color_hist);
-      fptr1 = (float*)(start_points->data.ptr + iperson*start_points->width);
-      fptr2 = (float*)(end_points->data.ptr + iperson*end_points->width);
+      fptr1 = (float*)(start_points->data.ptr + iperson*start_points->step);
+      fptr2 = (float*)(end_points->data.ptr + iperson*end_points->step); 
       (*fptr2) = (*fptr1); fptr1++; fptr2++;
       (*fptr2) = (*fptr1); fptr1++; fptr2++;
       (*fptr2) = (*fptr1); fptr1 = NULL; fptr2 = NULL;
@@ -612,7 +654,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
 	    d = (dx*dx + dy*dy + dz*dz)/denom;
 	    r_bin = (int)(floor((float)(*rptr)/2.0));
 	    g_bin = (int)(floor((float)(*gptr)/2.0));
-	    if (d <= 1.0){// && 5 < r_bin && r_bin < 123 && 5 < g_bin && g_bin < 123) {
+	    if (d <= 1.0 && 5 < r_bin && r_bin < 123 && 5 < g_bin && g_bin < 123) {
 	      //r_bin = (int)(floor((float)(*rptr)/2.0));
 	      //g_bin = (int)(floor((float)(*gptr)/2.0));
 
@@ -700,6 +742,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
       }
 
       // start_hist was already updated in the loop above.
+      
     }
 
     // Set the new point.
@@ -721,7 +764,35 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     printf("\n");
 
 #endif
+
+
+#if __PEOPLE_DISPLAY__
+    uchar *cptr;
+    float min, max;
+    cvGetMinMaxHistValue( t_person->face_color_hist, &min, &max);
+
+    for (int g=0; g<histsize.height; g++) {
+      cptr = (uchar*)(hist_im_real->imageData + g*hist_im_real->widthStep);
+      for (int r=0; r<histsize.width; r++) {
+	(*cptr) = (uchar)(round(255.0*(cvQueryHistValue_2D(t_person->face_color_hist,r,g))/max));
+	cptr++;
+      }
+    }
+    for (int g=0; g<histsize.height; g++) {
+      cptr = (uchar*)(hist_im->imageData + g*hist_im->widthStep);
+      for (int r=0; r<histsize.width; r++) {
+	(*cptr) = (uchar)(MIN(255,round(255.0*(cvQueryHistValue_2D(cft_start_hist_,r,g))/max)));
+	cptr++;
+      }
+    }
+    cvShowImage("Real face hist",hist_im_real);
+    cvShowImage("Current face hist",hist_im);
+    //cvWaitKey(3);
+#endif
+
   }
+
+
 
   /*** Cleanup ***/ 
   cvReleaseMat(&four_corners);
@@ -731,11 +802,14 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
   cvReleaseMat(&next_point);
   cvReleaseMat(&curr_point);
   cvReleaseMat(&tpt);
+#if __PEOPLE_DISPLAY__
+  cvReleaseImage(&hist_im);
+  cvReleaseImage(&hist_im_real);
+#endif
 
   delete [] which_people;
   return true;
 }
-
 
 
 
