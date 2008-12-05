@@ -26,7 +26,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../../headers.h"
+#include "../../sbpl/headers.h"
 
 
 
@@ -36,6 +36,8 @@ static clock_t time_gethash = 0;
 static clock_t time_createhash = 0;
 static clock_t time_getsuccs = 0;
 #endif
+
+
 
 
 //-------------------constructor--------------------------------------------
@@ -107,7 +109,8 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
   EnvNAV2DCfg.EnvHeight_c = height;
   EnvNAV2DCfg.StartX_c = startx;
   EnvNAV2DCfg.StartY_c = starty;
- 
+  int x;
+
   if(EnvNAV2DCfg.StartX_c < 0 || EnvNAV2DCfg.StartX_c >= EnvNAV2DCfg.EnvWidth_c) {
     printf("ERROR: illegal start coordinates\n");
     exit(1);
@@ -122,10 +125,11 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
 
   //allocate the 2D environment
   EnvNAV2DCfg.Grid2D = new unsigned char* [EnvNAV2DCfg.EnvWidth_c];
-  for (int x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
+  for (x = 0; x < EnvNAV2DCfg.EnvWidth_c; x++) {
     EnvNAV2DCfg.Grid2D[x] = new unsigned char [EnvNAV2DCfg.EnvHeight_c];
   }
   
+
   //environment:
   if (0 == mapdata) {
     for (int y = 0; y < EnvNAV2DCfg.EnvHeight_c; y++) {
@@ -142,6 +146,7 @@ void EnvironmentNAV2D::SetConfiguration(int width, int height,
       }
     }
   }
+
 }
 
 void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
@@ -214,6 +219,8 @@ void EnvironmentNAV2D::ReadConfiguration(FILE* fCfg)
 			}
 			EnvNAV2DCfg.Grid2D[x][y] = dTemp;
 		}
+
+
 
 }
 
@@ -363,6 +370,7 @@ EnvironmentNAV2D::~EnvironmentNAV2D(){
     }
     delete[] EnvNAV2DCfg.Grid2D;
   }
+
 }
 
 void EnvironmentNAV2D::InitializeEnvironment()

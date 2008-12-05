@@ -105,6 +105,10 @@ SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.cpp
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\navxythetalat\environment_navxythetalat.cpp
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.cpp
 # End Source File
 # Begin Source File
@@ -162,7 +166,7 @@ SOURCE=..\..\src\planners\ARAStar\araplanner.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\config.h
+SOURCE=..\..\src\sbpl\config.h
 # End Source File
 # Begin Source File
 
@@ -178,6 +182,10 @@ SOURCE=..\..\src\discrete_space_information\nav3dkin\environment_nav3Dkin.h
 # End Source File
 # Begin Source File
 
+SOURCE=..\..\src\discrete_space_information\navxythetalat\environment_navxythetalat.h
+# End Source File
+# Begin Source File
+
 SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.h
 # End Source File
 # Begin Source File
@@ -189,7 +197,7 @@ SOURCE=..\..\src\discrete_space_information\template\environment_XXX.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\..\src\headers.h
+SOURCE=..\..\src\sbpl\headers.h
 # End Source File
 # Begin Source File
 

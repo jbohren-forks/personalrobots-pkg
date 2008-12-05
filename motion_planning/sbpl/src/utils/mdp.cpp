@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 //MDP.cpp - contains all the functions for MDP classes
-#include "../headers.h"
+#include "../sbpl/headers.h"
 
 
 //-------------------------MDPACTION class functions----------

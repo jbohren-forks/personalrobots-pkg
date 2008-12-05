@@ -29,7 +29,7 @@
 
 #include <iostream>
 
-#include "../headers.h"
+#include "../sbpl/headers.h"
 
 
 void PrintUsage(char *argv[])
@@ -42,7 +42,7 @@ int plan2d(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 1.0; //in seconds
+	double allocated_time_secs = 100.0; //in seconds
 	MDPConfig MDPCfg;
 	
 	//Initialize Environment (should be called before initializing anything else)
@@ -77,6 +77,8 @@ int plan2d(int argc, char *argv[])
             printf("ERROR: failed to set goal state\n");
             exit(1);
         }
+
+	planner.set_initialsolution_eps(1.0);
 
     printf("start planning...\n");
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
@@ -246,6 +248,136 @@ int plan3dkin(int argc, char *argv[])
 }
 
 
+int planxythetalat(int argc, char *argv[])
+{
+
+	int bRet = 0;
+	double allocated_time_secs = 0.5; //in seconds
+	MDPConfig MDPCfg;
+	
+	//read in motion primitives
+	FILE* fmprimitives = fopen("xytheta_mprimitives_1.cfg", "r");
+	if(fmprimitives == NULL)
+	{
+		printf("ERROR: motion primitives file can not be opened\n");
+		exit(1);
+	}
+	vector<SBPL_xytheta_mprimitive> mprimV;
+	while(!feof(fmprimitives))
+	{
+		SBPL_xytheta_mprimitive mprim;
+		mprim.intermptV.clear();
+		float ftemp;
+		fscanf(fmprimitives, "%f", &ftemp);
+		mprim.endx_m = ftemp;
+		fscanf(fmprimitives, "%f", &ftemp);
+		mprim.endy_m = ftemp;
+		fscanf(fmprimitives, "%f", &ftemp);
+		mprim.endtheta_rad = ftemp;
+		mprimV.push_back(mprim);
+	}
+
+	//Initialize Environment (should be called before initializing anything else)
+	EnvironmentNAVXYTHETALAT environment_navxythetalat;
+	if(!environment_navxythetalat.InitializeEnv(argv[1], &mprimV))
+	{
+		printf("ERROR: InitializeEnv failed\n");
+		exit(1);
+	}
+
+	//Initialize MDP Info
+	if(!environment_navxythetalat.InitializeMDPCfg(&MDPCfg))
+	{
+		printf("ERROR: InitializeMDPCfg failed\n");
+		exit(1);
+	}
+
+
+	//plan a path
+	vector<int> solution_stateIDs_V;
+	bool bforwardsearch = false;
+	ADPlanner planner(&environment_navxythetalat, bforwardsearch);
+
+    if(planner.set_start(MDPCfg.startstateid) == 0)
+        {
+            printf("ERROR: failed to set start state\n");
+            exit(1);
+        }
+
+    if(planner.set_goal(MDPCfg.goalstateid) == 0)
+        {
+            printf("ERROR: failed to set goal state\n");
+            exit(1);
+        }
+	planner.set_initialsolution_eps(4.0);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+	/*
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+    printf("start planning...\n");
+	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
+    printf("done planning\n");
+	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
+	*/
+
+    FILE* fSol = fopen("sol.txt", "w");
+	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
+	  environment_navxythetalat.PrintState(solution_stateIDs_V[i], false, fSol);
+	}
+    fclose(fSol);
+
+    environment_navxythetalat.PrintTimeStat(stdout);
+
+	//print a path
+	if(bRet)
+	{
+		//print the solution
+		printf("Solution is found\n");
+	}
+	else
+		printf("Solution does not exist\n");
+
+	fflush(NULL);
+
+
+    return bRet;
+}
+
+
+
 int planandnavigate2d(int argc, char *argv[])
 {
 	double allocated_time_secs_foreachplan = 10.0; //in seconds
@@ -308,7 +440,7 @@ int planandnavigate2d(int argc, char *argv[])
     //ARAPlanner planner(&environment_nav2D, bforwardsearch);
 	ADPlanner planner(&environment_nav2D, bforwardsearch);
 
-	//planner.set_initialsolution_eps(1.0); //TODO
+	planner.set_initialsolution_eps(2.0);
 
 
     //set the start and goal configurations
@@ -590,7 +722,7 @@ int planandnavigate3dkin(int argc, char *argv[])
     //ARAPlanner planner(&environment_nav3Dkin, bforwardsearch);
 	ADPlanner planner(&environment_nav3Dkin, bforwardsearch);
 
-	//planner.set_initialsolution_eps(10.0); //TODO
+	planner.set_initialsolution_eps(5.0); 
 
 	//set search mode
 	planner.set_search_mode(bsearchuntilfirstsolution);
@@ -842,17 +974,16 @@ int main(int argc, char *argv[])
 
     //2D planning
     //plan2d(argc, argv);
-    planandnavigate2d(argc, argv);
+    //planandnavigate2d(argc, argv);
 
     //3D planning
-    //plan3dkin(argc, argv);
-
-    //3D planning
-    //plan3dkin(argc, argv);
+    plan3dkin(argc, argv);
 
     //3D planning
     //planandnavigate3dkin(argc, argv);
 
+    //xytheta planning
+    //planxythetalat(argc, argv);
 
     //robotarm planning
     //planrobarm(argc, argv);

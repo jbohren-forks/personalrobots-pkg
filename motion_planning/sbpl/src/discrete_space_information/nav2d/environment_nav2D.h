@@ -154,7 +154,6 @@ private:
 	EnvironmentNAV2D_t EnvNAV2D;
 
 
-
 	void ReadConfiguration(FILE* fCfg);
 
 	void InitializeEnvConfig();
