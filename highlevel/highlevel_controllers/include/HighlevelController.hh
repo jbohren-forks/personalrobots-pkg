@@ -176,7 +176,7 @@ public:
     }
   }
 
-private:
+protected:
 
   /**
    * @brief Accessor for state of the controller
@@ -185,13 +185,39 @@ private:
     return this->state == ACTIVE;
   }
 
-protected:
-
   /**
    * @brief Access for valid status of the controller
    */
   bool isValid() {
     return this->stateMsg.valid;
+  }
+
+  /**
+   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
+   * goal has not yet been accomplished and that no plan has been constructed yet.
+   */
+  void activate(){
+    ROS_INFO("Activating controller\n");
+
+    this->state = ACTIVE;
+    this->stateMsg.active = 1;
+    this->stateMsg.valid = 0;
+    this->stateMsg.done = 0;
+
+    handleActivation();
+  }
+
+  /**
+   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
+   */
+  void deactivate(){
+    ROS_INFO("Deactivating controller\n");
+
+    this->state = INACTIVE;
+    this->stateMsg.active = 0;
+    this->stateMsg.valid = 0;
+
+    handleDeactivation();
   }
 
   /**
@@ -332,34 +358,6 @@ private:
     ROS_INFO("Shutdown received from executive.\n");
     deactivate();
     unlock();
-  }
-
-  /**
-   * @brief Activation of the controller will set the state, the stateMsg but indicate that the
-   * goal has not yet been accomplished and that no plan has been constructed yet.
-   */
-  void activate(){
-    ROS_INFO("Activating controller\n");
-
-    this->state = ACTIVE;
-    this->stateMsg.active = 1;
-    this->stateMsg.valid = 0;
-    this->stateMsg.done = 0;
-
-    handleActivation();
-  }
-
-  /**
-   * @brief Deactivation of the controller will set the state to inactive, and clear the valid flag.
-   */
-  void deactivate(){
-    ROS_INFO("Deactivating controller\n");
-
-    this->state = INACTIVE;
-    this->stateMsg.active = 0;
-    this->stateMsg.valid = 0;
-
-    handleDeactivation();
   }
 
   /**
