@@ -20,7 +20,7 @@ Index: src/LinearMath/btQuaternion.h
 ===================================================================
 --- src/LinearMath/btQuaternion.h	(revision 1497)
 +++ src/LinearMath/btQuaternion.h	(working copy)
-@@ -199,15 +199,26 @@
+@@ -199,15 +199,28 @@
  	{
  		btScalar s = btSqrt(length2() * q.length2());
  		assert(s != btScalar(0.0));
@@ -44,6 +44,8 @@ Index: src/LinearMath/btQuaternion.h
 +	btVector3 getAxis() const
 +	{
 +		btScalar s = btSqrt(btScalar(1.) - btPow(m_floats[3], 2.));
++		if (s == btScalar(0.0))
++			return btVector3(1.0, 0.0, 0.0);  // Arbitrary
 +		return btVector3(m_floats[0] / s, m_floats[1] / s, m_floats[2] / s);
 +	}
  
