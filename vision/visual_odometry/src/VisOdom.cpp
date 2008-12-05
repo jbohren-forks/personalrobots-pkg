@@ -181,21 +181,14 @@ void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses)
     double params_local_to_global_data[6];
     CvMat  params_local_to_global = cvMat(6, 1, CV_64FC1, params_local_to_global_data);
     CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
-    fp->mRod.x = params_local_to_global_data[0];
-    fp->mRod.y = params_local_to_global_data[1];
-    fp->mRod.z = params_local_to_global_data[2];
-
-    fp->mShift.x = params_local_to_global_data[3];
-    fp->mShift.y = params_local_to_global_data[4];
-    fp->mShift.z = params_local_to_global_data[5];
 
     _poses[i*7 + 0] = fp->mIndex;
-    _poses[i*7 + 1] = fp->mRod.x;
-    _poses[i*7 + 2] = fp->mRod.y;
-    _poses[i*7 + 3] = fp->mRod.z;
-    _poses[i*7 + 4] = fp->mShift.x;
-    _poses[i*7 + 5] = fp->mShift.y;
-    _poses[i*7 + 6] = fp->mShift.z;
+    _poses[i*7 + 1] = params_local_to_global_data[0];
+    _poses[i*7 + 2] = params_local_to_global_data[1];
+    _poses[i*7 + 3] = params_local_to_global_data[2];
+    _poses[i*7 + 4] = params_local_to_global_data[3];
+    _poses[i*7 + 5] = params_local_to_global_data[4];
+    _poses[i*7 + 6] = params_local_to_global_data[5];
   }
   if (i>0) {
     string framePosesFilename("framePoses.xml");

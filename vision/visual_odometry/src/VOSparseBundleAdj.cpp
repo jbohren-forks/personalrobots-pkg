@@ -127,7 +127,7 @@ bool VOSparseBundleAdj::track(queue<StereoFrame>& inputImageQueue) {
       // update the tracks
       status = updateTracks(mActiveKeyFrames, mTracks);
 
-#if 1 // 0: no sba
+#if 1 // 1: use sba;  0: no sba
       fillFrames(&mFramePoses, mActiveKeyFrames.front()->mFrameIndex,
           mActiveKeyFrames.back()->mFrameIndex, (int)mActiveKeyFrames.size(),
           full_fixed_window_size_, &mTracks, &free_frames, &fixed_frames);
@@ -260,62 +260,6 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   printf("f=%3d, pi=%3d: [%3d, %3d], f=%3d, pi=%3d: [%3d, %3d]\n",
       frame.mLastKeyFrameIndex, p.second,  (int)(dispCoord0.x+.5), (int)(dispCoord0.y+.5),
       frame.mFrameIndex,        p.first,   (int)(dispCoord1.x+.5), (int)(dispCoord1.y+.5));
-  // @todo remove the following debugging stuff
-#if 0
-  {
-    // project the cartesian coordinates back to screen and print it
-    // invert the global matrix to global to local matrix
-     CvMatUtils::invertRigidTransform(&frame.transf_local_to_global_,
-         &frame.transf_global_to_local_);
-     // lastly, global to local disparity
-     CvMat cartToDisp;
-     CvMat dispToCart;
-     mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
-     cvMatMul(&cartToDisp, &frame.transf_global_to_local_,
-         &frame.mTransformGlobalToDisp);
-
-     CvPoint3D64f dispCoord2;
-     CvMat mat_dispCoord2 = cvMat(1, 1, CV_64FC3, &dispCoord2);
-     CvMat mat_cartCoord1;
-     cvReshape(&_cartCoord1, &mat_cartCoord1, 3, 0);
-     cvPerspectiveTransform(&mat_cartCoord1, &mat_dispCoord2, &frame.mTransformGlobalToDisp);
-     printf("re-projected cartesian point = [%8.2f, %8.2f, %8.2f]=>[%8.2f, %8.2f, %8.2f]\n",
-         dispCoord1.x, dispCoord1.y, dispCoord1.z,
-         dispCoord2.x, dispCoord2.y, dispCoord2.z);
-     cout << "disparity coord key point 1: "<<endl;
-     CvMatUtils::printMat(&disp1);
-     cout << "global to disp: "<<endl;
-     CvMatUtils::printMat(&frame.mTransformGlobalToDisp);
-     cout << "local cart to global: "<<endl;
-     CvMatUtils::printMat(&frame.transf_local_to_global_);
-     cout << "global to local cart: "<<endl;
-     CvMatUtils::printMat(&frame.transf_global_to_local_);
-     double  dispToGlobal_data[16];
-     CvMat dispToGlobal = cvMat(4, 4, CV_64FC1, dispToGlobal_data);
-     cvMatMul(&frame.transf_local_to_global_, &dispToCart, &dispToGlobal);
-     cout << " disp to global "<< endl;
-     CvMatUtils::printMat(&dispToGlobal);
-     CvPoint3D64f dispCoord3;
-     CvMat mat_cartCoord3 = cvMat(1, 1, CV_64FC3, &dispCoord3);
-     CvMat mat_disp1 = cvMat(1, 1, CV_64FC3, &dispCoord1);
-     cvPerspectiveTransform(&mat_disp1, &mat_cartCoord3, &dispToGlobal);
-     cout << "global coordinates (again)"<<endl;
-     CvMat mat_cartCoord3C1;
-     cvReshape(&mat_cartCoord3, &mat_cartCoord3C1, 1, 1);
-     CvMatUtils::printMat(&mat_cartCoord3C1);
-     double data[16];
-     CvMat mat_id = cvMat(4,4, CV_64FC1, data);
-     cvMatMul(&dispToGlobal, &frame.mTransformGlobalToDisp, &mat_id);
-     cout << "dispToGlobal * globalToDisp"<<endl;
-     CvMatUtils::printMat(&mat_id);
-     cvMatMul(&frame.transf_local_to_global_, &frame.transf_global_to_local_, &mat_id);
-     cout << "localToGlobal * globalToLocal"<<endl;
-     CvMatUtils::printMat(&mat_id);
-     cvMatMul(&dispToCart, &cartToDisp, &mat_id);
-     cout << "dispToCart * cartToDisp "<<endl;
-     CvMatUtils::printMat(&mat_id);
-  }
-#endif
 #endif
   return status;
 }
@@ -400,7 +344,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
       colorFreeFrame  = CvMatUtils::green;
     }
 
-    // @todo compute the estimated trajectory here. Not the right place.
+    /// @todo compute the estimated trajectory here. Not the right place.
 #if 1
     BOOST_FOREACH(PointTrackObserv* obsv, *track) {
       boost::unordered_map<int, FramePose*>::const_iterator it;
@@ -425,13 +369,13 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 
       CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
       CvPoint3D64f disp_coord_est;
-      disp_coord_est.x = track->coordinates_.x + obsv->disp_res_.x;
-      disp_coord_est.y = track->coordinates_.y + obsv->disp_res_.y;
-      disp_coord_est.z = track->coordinates_.z + obsv->disp_res_.z;
 //      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
       CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &disp_coord_est);
 
       cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est, mat_global_to_disp);
+      obsv->disp_res_.x = disp_coord_est.x - obsv->disp_coord_.x;
+      obsv->disp_res_.y = disp_coord_est.y - obsv->disp_coord_.y;
+      obsv->disp_res_.z = disp_coord_est.z - obsv->disp_coord_.z;
     }
 #endif
 
@@ -561,9 +505,9 @@ void VOSparseBundleAdj::setCameraParams(double Fx, double Fy, double Tx,
   CvMat dispToCart;
   mPoseEstimator.getProjectionMatrices(&cartToDisp, &dispToCart);
   delete levmarq_sba_;
-  int num_good_updates = 500;
+  int num_updates = 10;
   CvTermCriteria term_criteria =
-    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_good_updates,DBL_EPSILON);
+    cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,num_updates,DBL_EPSILON);
 
   levmarq_sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp,
       full_free_window_size_, full_fixed_window_size_, term_criteria);

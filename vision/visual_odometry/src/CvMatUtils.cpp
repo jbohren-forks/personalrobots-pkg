@@ -356,9 +356,7 @@ void CvMatUtils::loadStereoImagePair(string& dirname, string& leftimagefmt,
   char leftfilename[PATH_MAX];
   char rightfilename[PATH_MAX];
   char dispmapfilename[PATH_MAX];
-#ifdef DEBUG
-  cout << "loading " << leftfilename << " and " << rightfilename << endl;
-#endif
+
   if (leftImage) {
     sprintf(leftfilename, leftimagefmt.c_str(),   frameIndex);
     IplImage* leftimg  = cvLoadImage(leftfilename,  CV_LOAD_IMAGE_GRAYSCALE);
@@ -374,6 +372,9 @@ void CvMatUtils::loadStereoImagePair(string& dirname, string& leftimagefmt,
     IplImage* dispimg = cvLoadImage(dispmapfilename, CV_LOAD_IMAGE_GRAYSCALE);
     dispMap->SetIpl(dispimg);
   }
+#if DEBUG==1
+  cout << "loaded " << leftfilename << " and " << rightfilename << endl;
+#endif
 }
 
 void CvMatUtils::transformFromRotationAndShift(

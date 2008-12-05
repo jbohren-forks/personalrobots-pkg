@@ -32,6 +32,10 @@ public:
     	VideoBundleAdj,
     	BundleAdj
     } TestType;
+    typedef enum {
+      Indoor1,
+      James4
+    } DataSet;
     CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx = 0.0, double Crx = 0.0, double Cy = 0.0);
     CvTest3DPoseEstimate();
     virtual ~CvTest3DPoseEstimate();
@@ -47,9 +51,17 @@ public:
 
     bool testVideo4OneFrame(queue<StereoFrame> inputImageQueue,
         FrameSeq& frameSeq, CamTracker& tracker);
+
+    void setInputData(DataSet data_set);
+
     string input_data_path_;
     string output_data_path_;
     bool   verbose_;
+
+    /// image size of input video sequences or images
+    CvSize img_size_;
+    /// input file sequence
+    FileSeq* input_file_sequence_;
 
 protected:
     void _init();

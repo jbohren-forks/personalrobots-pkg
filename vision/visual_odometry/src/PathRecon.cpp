@@ -173,20 +173,10 @@ bool PathRecon::appendTransform(const CvMat& rot, const CvMat& shift){
  * Store the current key frame to key frame transformation with w.r.t to starting frame
  */
 bool PathRecon::storeTransform(const CvMat& rot, const CvMat& shift, int frameIndex){
-	CvMat rotGlobal;
-	CvMat shiftGlobal;
-	cvGetSubRect(&mTransform, &rotGlobal,   cvRect(0, 0, 3, 3));
-	cvGetSubRect(&mTransform, &shiftGlobal, cvRect(3, 0, 1, 3));
+  FramePose* fp = new FramePose(frameIndex);
+  cvCopy(&mTransform, &(fp->transf_local_to_global_));
 
-	FramePose* fp = new FramePose(frameIndex);
-	CvMat rodGlobal2   = cvMat(1,3, CV_64FC1, &(fp->mRod));
-	CvMat shiftGlobal2 = cvMat(1,3, CV_64FC1, &(fp->mShift));
-	// make a copy
-	cvRodrigues2(&rotGlobal, &rodGlobal2);
-	cvTranspose(&shiftGlobal,  &shiftGlobal2);
-	cvCopy(&mTransform, &(fp->transf_local_to_global_));
-
-	mFramePoses.push_back(fp);
+  mFramePoses.push_back(fp);
 
 	// enter in to an index map
 	map_index_to_FramePose_[frameIndex] = fp;
@@ -776,6 +766,9 @@ void PathRecon::Stat::print(){
   BOOST_FOREACH(Pair& p, mHistoKeyFrameTrackablePairs) {
     numTotalKeyFrameTrackablePairs += p.second;
   }
+  double rod_shift[6];
+  CvMat params = cvMat(6, 1, CV_64FC1, rod_shift);
+  CvMatUtils::transformToRodriguesAndShift(mFinalPose->transf_local_to_global_, params);
   double scale   = 1. / (double)(numFrames);
   double kfScale = 1. / (double)(numKeyFrames);
   fprintf(stdout, "Num of frames skipped:    %d\n", numFrames-numKeyFrames);
@@ -790,9 +783,7 @@ void PathRecon::Stat::print(){
   fprintf(stdout, "Total/Average trackable pairs:     %d,   %05.2f\n", numTotalKeyFrameTrackablePairs, (double)(numTotalKeyFrameTrackablePairs) * kfScale);
   fprintf(stdout, "Total/Average inliers:             %d,   %05.2f\n", numTotalKeyFrameInliers,        (double)(numTotalKeyFrameInliers) *kfScale);
   fprintf(stdout, "Last pose, rod = (%f, %f, %f), shift = (%f,%f, %f)\n",
-      mFinalPose->mRod.x, mFinalPose->mRod.y, mFinalPose->mRod.z,
-      mFinalPose->mShift.x, mFinalPose->mShift.y, mFinalPose->mShift.z);
-
+      rod_shift[0], rod_shift[1], rod_shift[2], rod_shift[3], rod_shift[4], rod_shift[5]);
 }
 
 #if 0 // delete this constructor

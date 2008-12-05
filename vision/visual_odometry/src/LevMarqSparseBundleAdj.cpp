@@ -1121,17 +1121,6 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     // compute the local to global matrix
     CvMatUtils::invertRigidTransform(&transf_global_to_local,
         &fp->transf_local_to_global_);
-
-    // @todo, I do not think it is this function's job to do the following update.
-    // update fp->mRod and fp->mShift
-    CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, params_local_to_global);
-    fp->mRod.x = params_local_to_global_data[0];
-    fp->mRod.y = params_local_to_global_data[1];
-    fp->mRod.z = params_local_to_global_data[2];
-
-    fp->mShift.x = params_local_to_global_data[3];
-    fp->mShift.y = params_local_to_global_data[4];
-    fp->mShift.z = params_local_to_global_data[5];
   }
 
   // check and copy the point parameter back to p->coordinates_

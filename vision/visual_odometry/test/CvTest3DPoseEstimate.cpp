@@ -60,6 +60,8 @@ using namespace std;
 CvTest3DPoseEstimate::CvTest3DPoseEstimate():
   Parent(),
   verbose_(true),
+  img_size_(cvSize(640, 480)),
+  input_file_sequence_(NULL),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -71,6 +73,8 @@ CvTest3DPoseEstimate::CvTest3DPoseEstimate():
 CvTest3DPoseEstimate::CvTest3DPoseEstimate(double Fx, double Fy, double Tx, double Clx, double Crx, double Cy):
   Parent(Fx, Fy, Tx, Clx, Crx, Cy),
   verbose_(true),
+  img_size_(cvSize(640, 480)),
+  input_file_sequence_(NULL),
   mRng(cvRNG(time(NULL))),
   mDisturbScale(0.001),
   mOutlierScale(100.0),
@@ -215,28 +219,72 @@ void CvTest3DPoseEstimate::loadStereoImagePair(string & dirname, int & frameInde
     rightImage.SetIpl(rightimg);
 }
 
+void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
+  switch(data_set) {
+  case James4: {
+    img_size_ = cvSize(640, 480);
+    // The following parameters are from indoor1/proj.txt
+    // note that B (or Tx) is in mm
+    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    string dirname("/u/prdata/videre-bags/james4");
+    string leftimgfmt("/im.%06d.left_rectified.tiff");
+    string rightimgfmt("/im.%06d.right_rectified.tiff");
+    string dispimgfmt(".dispmap-%06d.xml");
+    int start = 0;
+    int end   = 2324;
+    int step  = 1;
+
+    step = 2323;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/james4/");
+
+    break;
+  }
+
+  default:
+  case Indoor1: {
+    img_size_ = cvSize(640, 480);
+    // The following parameters are from indoor1/proj.txt
+    // note that B (or Tx) is in mm
+    setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+    string dirname("Data/indoor1");
+    string leftimgfmt("/left-%04d.ppm");
+    string rightimgfmt("/right-%04d.ppm");
+    string dispimgfmt(".dispmap-%04d.xml");
+    int start = 0;
+    int end   = 1509;
+    int step  = 1;
+
+    // set up a FileSeq
+    delete input_file_sequence_;
+    input_file_sequence_ = new FileSeq;
+    input_file_sequence_->setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
+
+    // output directory
+    output_data_path_ = string("Output/indoor1/");
+    break;
+  }
+  }
+}
+
 bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   bool status = false;
-  CvSize imgSize = cvSize(640, 480);
-  VOSparseBundleAdj sba(imgSize, 5, 10);
 
-  // The following parameters are from indoor1/proj.txt
-  // note that B (or Tx) is in mm
-  this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
+//  setInputData(Indoor1);
+  setInputData(James4);
+
+  VOSparseBundleAdj sba(img_size_, 8, 3);
+//  VOSparseBundleAdj sba(img_size_, 1, 1);
+
   // parameterize the post estimator
   sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
 
-  string dirname("Data/indoor1");
-  string leftimgfmt("/left-%04d.ppm");
-  string rightimgfmt("/right-%04d.ppm");
-  string dispimgfmt(".dispmap-%04d.xml");
-  int start = 0;
-  int end   = 1509;
-  int step  = 1;
-
-  // set up a FileSeq
-  FileSeq fileSeq;
-  fileSeq.setInputVideoParams(dirname, leftimgfmt, rightimgfmt, dispimgfmt, start, end, step);
   // visualization
 #if DISPLAY
   // Optionally, set up the visualizer
@@ -244,21 +292,23 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   const PointTracks& tracks = sba.getTracks();
 
   sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks, &sba.map_index_to_FramePose_);
+  sba.mVisualizer->outputDirname = output_data_path_;
 #endif
 
-  if (fileSeq.getStartFrame() == false) {
+  if (input_file_sequence_ == NULL ||
+      input_file_sequence_->getStartFrame() == false) {
     return false;
   }
 
   do {
-   sba.track(fileSeq.mInputImageQueue);
-  } while(fileSeq.getNextFrame() == true);
+   sba.track(input_file_sequence_->mInputImageQueue);
+  } while(input_file_sequence_->getNextFrame() == true);
 
   vector<FramePose*>* framePoses = sba.getFramePoses();
   CvTestTimer& timer = CvTestTimer::getTimer();
-  timer.mNumIters = fileSeq.mNumFrames/fileSeq.mFrameStep;
+  timer.mNumIters = input_file_sequence_->mNumFrames/input_file_sequence_->mFrameStep;
 
-  saveFramePoses(string("Output/indoor1/"), *framePoses);
+  saveFramePoses(output_data_path_, *framePoses);
 
   sba.printStat();
   sba.mStat2.print();
