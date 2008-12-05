@@ -354,7 +354,6 @@ AmclNode::AmclNode() :
   int max_beams, min_samples, max_samples;
   double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
   double d_thresh, a_thresh;
-  string odom_frame_id;
   param("pf_laser_max_beams", max_beams, 20);
   param("pf_min_samples", min_samples, 500);
   param("pf_max_samples", max_samples, 10000);
