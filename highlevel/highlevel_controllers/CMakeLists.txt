@@ -11,7 +11,7 @@ rospack(highlevel_controllers)
 genmsg()
 
 # Library
-rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cc)
+rospack_add_library(highlevel_controllers src/MoveBase.cpp src/VelocityControllers.cpp)
 target_link_libraries(highlevel_controllers trajectory_rollout costmap_2d sbpl_util)
 
 # MoveArm
