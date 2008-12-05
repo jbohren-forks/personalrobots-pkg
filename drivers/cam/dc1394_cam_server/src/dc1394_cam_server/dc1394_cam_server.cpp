@@ -471,8 +471,8 @@ public:
 
           int goodPixCount = 0;
 
-          uint8_t *buf      = &(img_.images[0].data[0]);
-          uint8_t *buf1     = &(img_.images[1].data[0]);
+          uint8_t *buf      = (uint8_t*)&(img_.images[0].data[0]);
+          uint8_t *buf1     = (uint8_t*)&(img_.images[1].data[0]);
           uint32_t width    = img_.images[0].width;
           uint32_t height   = img_.images[0].height;
           uint32_t buf_size = width * height;
