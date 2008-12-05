@@ -1,0 +1,56 @@
+<launch>
+  <group name="wg">
+
+    <param name="odom_estimation/sensor_timeout" value="1.0"/>
+    <param name="odom_estimation/exact_time_mode" value="true"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" />
+
+    <!--node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" /-->
+    <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
+    <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
+
+    <param name="laser_x_offset" type="double" value=".275" />
+    <param name="pf_laser_max_beams" value="20"/>
+    <param name="pf_min_samples" value="500"/>
+    <param name="pf_max_samples" value="10000"/>
+    <param name="pf_odom_drift_xx" value="0.2"/>
+    <param name="pf_odom_drift_yy" value="0.2"/>
+    <param name="pf_odom_drift_aa" value="0.2"/>
+    <param name="pf_odom_drift_xa" value="0.2"/>
+    <param name="pf_min_d" value="0.25"/>
+    <param name="pf_min_a" value="0.524"/>
+    <param name="pf_odom_frame_id" value="odom_combined"/>
+    <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
+    <!-- publish mapping between odom and base_footprint -->
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" respawn="false" output="screen" />
+
+    <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
+    <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
+    <param name="move_base/plannerType" value="ARAPlanner"/>
+    <param name="move_base/environmentType" value="2D"/>
+    <param name="move_base/controller_frequency" value="15.0"/>
+    <param name="move_base/planner_frequency" value="0.0"/>
+    <param name="move_base/plannerTimeLimit" value="5.0"/>
+    <param name="/costmap_2d/base_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/tilt_laser_max_range" value="40.0"/>
+    <param name="/costmap_2d/lethal_obstacle_threshold" value="100.0"/>
+    <param name="/costmap_2d/no_information_value" value="255"/>
+    <param name="/costmap_2d/z_threshold" value="2.0"/>
+    <param name="/costmap_2d/freespace_projection_height" value="2.0"/>
+    <param name="/costmap_2d/inflation_radius" value="0.55"/>
+    <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
+    <param name="/costmap_2d/inscribed_radius" value="0.325"/>
+    <param name="/costmap_2d/weight" value="0.1"/>
+    <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
+    <!--node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" /-->
+
+    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
+    <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
+    <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
+    <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
+    <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
+    <param name="recharge/mail_client" value="mailx -s"/>
+    <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
+
+  </group>
+</launch>
