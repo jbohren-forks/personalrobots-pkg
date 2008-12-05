@@ -10,6 +10,7 @@
 
 #include <opencv/cv.h>
 #include "VisOdom.h"
+#include <limits>
 
 namespace cv { namespace willow {
 /// a keypoint decriptor that is merely a patch of 8-bit gray image
@@ -45,7 +46,8 @@ public:
     mData = new unsigned char[mSize.width*mSize.height];
     // make sure that unlikely event of overflow does not
     // happen in SAD computation in compare()
-    assert(mSize.width*mSize.height*UCHAR_MAX < INT_MAX);
+    assert(mSize.width*mSize.height*numeric_limits<unsigned char>::max() <
+        numeric_limits<int>::max());
   }
   virtual ~KeypointSADDescriptor(){delete [] mData;}
   float compare(const KeypointSADDescriptor& kpd) const;
