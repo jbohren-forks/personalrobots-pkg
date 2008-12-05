@@ -99,7 +99,7 @@ class People
   // Set a person's position.
   void setFaceCenter3D(double cx, double cy, double cz, int iperson);
 
-  // Takes in a rectangle center and size and outputs the four corners in the order (TL, TR, BL, BR)
+  // Takes in a rectangle center and size and outputs the four corners in the order (TL; TR; BL; BR)
   void centerSizeToFourCorners( CvMat *centers, CvMat *sizes, CvMat *four_corners);
 
   // Remove a person from the list of people.
@@ -135,7 +135,7 @@ class People
   void track(){}
 
   // Track a face based on the face colour histogram.
-  bool track_color_3d_bhattacharya(const IplImage *image, const IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
+  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
 
  ////////////////////
  private:
@@ -150,7 +150,7 @@ class People
   // Grayscale image (to avoid reallocating an image each time an OpenCV function is run.)
   IplImage *cv_image_gray_;
 
-  // Structures for the color face tracker.
+  // Structures for the color face tracker (cft).
   // Color planes and normalized color planes.
   IplImage *cft_r_plane_;
   IplImage *cft_g_plane_;
