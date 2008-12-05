@@ -96,20 +96,38 @@ class TestCameras(unittest.TestCase):
         rospy.signal_shutdown('test done')
 
     def images_are_the_same(self,i0,i1):
+        print "comparing images... "
         error_count = 0
         error_total = 0
         pixel_tol = 0
-        # assume len(i0)==len(i1)
-        print "lengths ",len(i0), len(i1)
-        for i in range(len(i0)):
-          (r0,g0,b0) = i0[i-1]
-          (r1,g1,b1) = i1[i-1]
+
+        # thumbnail-ize images
+        size = 100,100
+        i0.thumbnail(size,pili.ANTIALIAS)
+        i1.thumbnail(size,pili.ANTIALIAS)
+        i0.save("t_0.ppm")
+        i1.save("t_1.ppm")
+
+        # get raw data for comparison
+        i0d = i0.getdata()
+        i1d = i1.getdata()
+
+        # assert len(i0)==len(i1)
+        if len(i0d) != len(i1d):
+          print "lengths not equal ",len(i0d), len(i1d)
+          return False
+        print "thumbnail lengths ",len(i0d), len(i1d)
+
+        #compare thumbnails only
+        for i in range(len(i0d)):
+          (r0,g0,b0) = i0d[i-1]
+          (r1,g1,b1) = i1d[i-1]
           #if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
           #  print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
           if abs(r0-r1) > pixel_tol or abs(g0-g1) > pixel_tol or abs(b0-b1) > pixel_tol:
             error_count = error_count + 1
             error_total = error_total + abs(r0-r1) + abs(g0-g1) + abs(b0-b1)
-        error_avg = float(error_total)/float(len(i0))
+        error_avg = float(error_total)/float(len(i0d))
         print "total error count:",error_count
         print "average error:    ",error_avg
         if error_avg > TOTAL_ERROR_TOL:
@@ -136,10 +154,12 @@ class TestCameras(unittest.TestCase):
         imc = pilic.difference(im0,im1)
         print "  - comparing images "
         im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
-        im1.show()
-        im0.show()
-        imc.show()
-        comp_result = self.images_are_the_same(im0.getdata(),im1.getdata())
+        im0.save("test_0.ppm")
+        imc.save("test_diff.ppm")
+        #im1.show()
+        #im0.show()
+        #imc.show()
+        comp_result = self.images_are_the_same(im0,im1)
         print "test comparison ", comp_result
         #print "proofcomparison ", self.images_are_the_same(im1.getdata(),im1.getdata())
         if (self.success == False): # test if we have not succeeded
