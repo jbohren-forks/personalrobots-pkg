@@ -62,7 +62,7 @@ def power_board_client(breaker_number, command):
         print "Requesting %d to %s"%(breaker_number, command)
         
         # simplified style
-        resp1 = control(breaker_number, command)
+        resp1 = control(breaker_number, command, 0)
         return resp1.retval
     except rospy.ServiceException, e:
         print "Service call failed: %s"%e
