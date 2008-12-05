@@ -26,9 +26,9 @@ def spawn_controller(xml):
     rospy.wait_for_service('spawn_controller')
     s = rospy.ServiceProxy('spawn_controller', SpawnController)
     resp = s.call(SpawnControllerRequest(xml))
-    print ','.join([str(ord(k)) for k in resp.ok])
+    print ','.join([str(k) for k in resp.ok])
     for i in range(len(resp.ok)):
-        if ord(resp.ok[i]) != 0:
+        if resp.ok[i] != 0:
             print "Spawned", resp.name[i]
         else:
             print "Error when spawning", resp.name[i]
