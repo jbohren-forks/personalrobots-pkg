@@ -179,6 +179,7 @@ public:
   {
 
     // Set color calibration.
+    color_calib::Calibration color_cal(this);
     if (calib_color_) {
       // Exit if color calibration hasn't been performed.
       std::string color_cal_str = std::string("videre/images/") + image_msg_.images[1].label + std::string("/color_cal");
@@ -186,18 +187,7 @@ public:
 	//printf("No params\n");
 	return;
       }
-      // Otherwise, set the color calibration matrix.
-      if (!color_calib_mat_) {
-	color_calib_mat_ = cvCreateMat(3,3,CV_32FC1);
-	cvSetZero(color_calib_mat_);
-      }
-      XmlRpc::XmlRpcValue xml_color_cal;
-      get_param(color_cal_str, xml_color_cal);
-      for (int i=0; i<3; i++) {
-	for (int j=0; j<3; j++) {
-	  cvmSet(color_calib_mat_,i,j,(double)(xml_color_cal[3*i+j]));
-	}
-      }
+      color_cal.getFromParam(color_cal_str);
     }
 
     // Exit if the camera model params haven't yet arrived.
@@ -237,10 +227,9 @@ public:
 
     // Calibrate color if requested.
     if (calib_color_) {
-      IplImage* t_img = cvCreateImage(im_size, IPL_DEPTH_32F, 3);
-      color_calib::decompand(cv_image_left_, t_img);
-      cvTransform(t_img, t_img, color_calib_mat_);
-      color_calib::compand(t_img, cv_image_left_);
+      IplImage* t_img = cvCreateImage(im_size, IPL_DEPTH_8U,3);
+      color_cal.correctColor(cv_image_left_,t_img,true,true,COLOR_CAL_BGR);
+      cvCopyImage(t_img, cv_image_left_);
       cvReleaseImage(&t_img);
     }
 
@@ -269,9 +258,9 @@ public:
       cvSetZero(Y_);
       cvSetZero(Z_);
       cam_model_->disp8UToCart32F(cv_image_disp_, (float)1.0, (float)MAX_Z_MM, Z_, X_, Y_); ///
-      float *fptrz = (float*)(Z_->imageData + 300*Z_->width);
-      float *fptrx = (float*)(X_->imageData + 300*X_->width);
-      float *fptry = (float*)(Y_->imageData + 300*Y_->width);
+      float *fptrz = (float*)(Z_->imageData + 300*Z_->widthStep);
+      float *fptrx = (float*)(X_->imageData + 300*X_->widthStep);
+      float *fptry = (float*)(Y_->imageData + 300*Y_->widthStep);
       while (*fptrz == 0.0) {
 	fptrz++; fptrx++; fptry++;
       }
@@ -509,7 +498,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
-  bool color_calib = false;
+  bool color_calib = true;
 
 #if 0
   if (argc < 2) {
