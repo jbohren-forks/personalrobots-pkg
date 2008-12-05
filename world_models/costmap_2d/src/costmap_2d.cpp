@@ -141,11 +141,16 @@ namespace costmap_2d {
 
 
   void CostMap2D::revertToStaticMap(){
+    // Using the original policy since the requested change implemented below performs poorly in practice
+    // as the map is accumulating free space and thus the planner does really strange things.
+    memcpy(costData_, staticData_, width_ * height_);
+    /*
     // Revising the policy per Eitan's discussion with Eric where we want to revert to the most relaxed map based on our current perception
     // and the static map. 
     unsigned int cellCount = width_ * height_;
     for (unsigned int i = 0; i < cellCount; i++)
       costData_[i] = std::min(costData_[i], staticData_[i]);
+    */
   }
 
   /**
