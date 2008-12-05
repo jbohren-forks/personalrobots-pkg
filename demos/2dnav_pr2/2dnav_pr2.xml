@@ -1,10 +1,10 @@
 <launch>
   <group name="wg">
-    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" output="screen"/>
+    <node pkg="mechanism_control" type="spawner.py" args="$(find pr2_alpha)/controllers_base_lab.xml" />
     <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/laser_tilt/laser_tilt_controller.xml" />
-    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" output="screen"/>
+    <node pkg="mechanism_control" type="spawner.py" args="$(find wg_robot_description)/head_pan_tilt/head_pan_tilt_controller.xml" />
     <node pkg="pr2_mechanism_controllers" type="control_laser.py" args="laser_controller sine 1 .45 .40" />
-    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" output="screen"/>
+    <!--<node pkg="mechanism_control" type="spawner.py" args="$(find 2dnav_pr2)/torso_controller.xml" />
     <node pkg="2dnav_pr2" type="spine_levitation.py" />-->
 
     <param name="axis_vx" value="3" type="int"/>
@@ -16,13 +16,12 @@
     <param name="max_vx" value="0.6" />
     <param name="max_vy" value="0.6" />
     <param name="deadman_button" value="4" type="int"/>
-    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" output="screen"/>
+    <node pkg="teleop_base" type="teleop_base" args="--deadman_no_publish" />
 
-    <node pkg="imu_node" type="imu_node" respawn="false" />
     <param name="odom_estimation/freq" value="30.0"/>
     <param name="odom_estimation/sensor_timeout" value="1.0"/>
     <param name="odom_estimation/exact_time_mode" value="true"/>
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" output="screen"/>
+    <node pkg="robot_pose_ekf" type="robot_pose_ekf" />
 
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" />
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
@@ -36,6 +35,7 @@
     <param name="pf_odom_drift_xa" value="0.2"/>
     <param name="pf_min_d" value="0.25"/>
     <param name="pf_min_a" value="0.524"/>
+    <param name="pf_odom_frame_id" value="odom_combined"/>
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
 
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
@@ -57,7 +57,7 @@
     <param name="/costmap_2d/weight" value="0.1"/>
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
-    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com"/>
+    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
     <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
     <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
@@ -66,6 +66,6 @@
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
 
     <!-- For logging distance traveled -->
-    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/logs/odometry_log /odom" />
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
   </group>
 </launch>
