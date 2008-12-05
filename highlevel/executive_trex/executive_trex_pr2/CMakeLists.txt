@@ -64,9 +64,9 @@ rospack_add_compile_flags(bin/trexfast "-O3 -DEUROPA_FAST")
 rospack_add_executable(bin/trexwatchdog src/WatchDog.cc)
 
 # Integrated test cases for the nav stack running with the pr2 executive and model.
-rospack_add_rostest_graphical(wpc.0/test.xml)
-rospack_add_rostest_graphical(wpc.1/test.xml)
-rospack_add_rostest_graphical(wpc.2/test.xml)
-rospack_add_rostest_graphical(miles.0/test.xml)
+rospack_add_rostest_future(wpc.0/test.xml)
+rospack_add_rostest_future(wpc.1/test.xml)
+rospack_add_rostest_future(wpc.2/test.xml)
+rospack_add_rostest_future(miles.0/test.xml)
 
 rospack_add_executable(test/groundtruthtransform test/groundtruthtransform.cpp)
