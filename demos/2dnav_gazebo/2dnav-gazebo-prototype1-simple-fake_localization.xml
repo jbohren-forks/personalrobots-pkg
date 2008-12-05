@@ -1,6 +1,7 @@
 <launch>
   <group name="wg">
-    <!-- load gazebo -->
+
+    <!-- load robot -->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>
 
     <!-- load map -->
@@ -16,6 +17,7 @@
     <!-- for manual control -->
     <!--node pkg="teleop_base_keyboard" type="teleop_base_keyboard" respawn="false" output="screen" /-->
     <!--node pkg="teleop_arm_keyboard" type="teleop_arm_keyboard" respawn="false" output="screen" /-->
+
   </group>
 </launch>
 

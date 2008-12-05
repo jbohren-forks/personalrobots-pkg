@@ -1,6 +1,7 @@
 <launch>
   <group name="wg">
 
+    <!-- publish mapping between odom and base_footprint -->
     <param name="odom_estimation/sensor_timeout" value="1.0"/>
     <param name="odom_estimation/exact_time_mode" value="true"/>
     <node pkg="robot_pose_ekf" type="robot_pose_ekf" />
@@ -9,7 +10,8 @@
     <!--node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.025.pgm 0.025" respawn="false" /-->
     <!--<node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />-->
 
-    <param name="laser_x_offset" type="double" value=".275" />
+    <!-- localization settings -->
+    <param name="laser_x_offset" type="double" value=".275" /> <!-- for wavefront? -->
     <param name="pf_laser_max_beams" value="20"/>
     <param name="pf_min_samples" value="500"/>
     <param name="pf_max_samples" value="10000"/>
@@ -21,9 +23,20 @@
     <param name="pf_min_a" value="0.524"/>
     <param name="pf_odom_frame_id" value="odom_combined"/>
     <node pkg="amcl_player" type="amcl_player" name="amcl_player" respawn="false" args="scan:=base_scan" />
-    <!-- publish mapping between odom and base_footprint -->
-    <node pkg="robot_pose_ekf" type="robot_pose_ekf" respawn="false" output="screen" />
 
+    <!-- wavefront_player settings -->
+    <!--
+    <param name="max_publish_frequency" value="100.0" />
+    <param name="dist_eps" value="0" />
+    <param name="robot_x_start" value="0" />
+    <param name="robot_y_start" value="0" />
+    <param name="robot_th_start" value="0" />
+    <param name="robot_radius" value="0.3" />
+    <param name="dist_penalty" value="2.0" />
+    <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
+    -->
+
+    <!-- move_base_sbpl settings -->
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>
@@ -41,8 +54,8 @@
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
+    <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
-    <!--node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" /-->
 
     <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
