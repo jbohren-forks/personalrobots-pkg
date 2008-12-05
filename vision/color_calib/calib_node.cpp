@@ -93,7 +93,7 @@ public:
           
           IplImage* corrected_img = cvCreateImage(cvGetSize(img), IPL_DEPTH_32F, 3);
 
-          cvTransform(img2, corrected_img, color_cal.getCal());
+          cvTransform(img2, corrected_img, color_cal.getCal(COLOR_CAL_BGR));
 
           color_cal.setParam(map_name("images") + std::string("/") + l);
 
