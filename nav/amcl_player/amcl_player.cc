@@ -78,6 +78,7 @@ Publishes to (name / type):
 - @b pf_odom_drift_xa (double) : Element 2,0 of the covariance matrix used in estimating odometric error, default: 0.2
 - @b pf_min_d (double) : Minimum translational change (meters) required to trigger filter update, default: 0.2
 - @b pf_min_a (double) : Minimum rotational change (radians) required to trigger filter update, default: pi/6.0
+- @b odom_frame_id (string) : The desired frame_id to use for odometery
 
 @todo Expose the various amcl parameters via ROS.
 
@@ -169,6 +170,9 @@ class AmclNode: public ros::node, public Driver
     Device* position2d_dev;
     Device* laser_dev;
     Device* map_dev;
+
+    //parameter for what odom to use
+    string odom_frame_id;
 
     char* mapdata;
     int sx, sy;
@@ -350,6 +354,7 @@ AmclNode::AmclNode() :
   int max_beams, min_samples, max_samples;
   double odom_drift_xx, odom_drift_yy, odom_drift_aa, odom_drift_xa;
   double d_thresh, a_thresh;
+  string odom_frame_id;
   param("pf_laser_max_beams", max_beams, 20);
   param("pf_min_samples", min_samples, 500);
   param("pf_max_samples", max_samples, 10000);
@@ -359,6 +364,7 @@ AmclNode::AmclNode() :
   param("pf_odom_drift_xa", odom_drift_xa, 0.2);
   param("pf_min_d", d_thresh, 0.2);
   param("pf_min_a", a_thresh, M_PI/6.0);
+  param("odom_frame_id", odom_frame_id, string("odom"));
   // Annoyingly, we have to convert them back to strings for insertion into
   // Player's config file object
   char valbuf[1024];
@@ -474,12 +480,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
-    this->tfL->transformPose("odom_combined",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+    this->tfL->transformPose(odom_frame_id,tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
                                                            t, "base_link"),odom_to_map);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ),
-                                                        t, "map","odom_combined"));
+                                                        t, "map",odom_frame_id));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -729,7 +735,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   tf::Stamped<btTransform> odom_pose;
   try
   {
-    this->tfL->transformPose("odom_combined", ident, odom_pose);
+    this->tfL->transformPose(odom_frame_id, ident, odom_pose);
   }
   catch(tf::TransformException e)
   {
