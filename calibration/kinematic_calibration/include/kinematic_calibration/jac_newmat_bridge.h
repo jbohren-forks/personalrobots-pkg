@@ -32,43 +32,52 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Vijay Pradeep
+//! \author Vijay Pradeep                                                     
 
-#ifndef KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
-#define KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
+#ifndef KINEMATIC_CALIBRATION_JAC_NEWMAT_BRIDGE_H_
+#define KINEMATIC_CALIBRATION_JAC_NEWMAT_BRIDGE_H_
 
-
+#include "kinematic_calibration/active_link_params.h"
+#include "newmat10/newmat.h"
 #include "kinematic_calibration/link_param_jacobian.h"
-#include "kdl/chain.hpp"
-#include "kdl/jntarray.hpp"
 
 namespace kinematic_calibration
 {
 
-/**
- * Computes the end effector jacobian wrt all the link parameters along the kinematic chain. The eef motion is calculated for 6
- * differential perturbations: (dx, dy, dz, rx, ry, rz).
- * dx, dy, dz are the x,y & z translational displacements (respectively) of the end effector in the link's base frame
- * rx, ry, rz are the x y z rotations (respectively) of the end effector in the frame of the current link's tip.
- */
-class LinkParamJacobianSolver
+namespace JacNewmatBridge
 {
-public:
-  LinkParamJacobianSolver() ;
 
-  ~LinkParamJacobianSolver() ;
+//! Specifies which terms should be outputted by the bridge functions
+namespace JacTerms
+{
+  enum JacTerms {ALL, ROT, TRANS} ;
+}
 
-  /**
-   * Function that computes the link-parameter jacobian
-   * \param chain The KDL datatype specifying the kinematic chain
-   * \param joint_states stores the joint angles/displacements for the current configuration that we want to evaluate
-   * \param jac (output) Stores the computed jacobian
-   * \return negative on error
-   */
-  static int JointsToCartesian(const KDL::Chain& chain, const KDL::JntArray& joint_states, LinkParamJacobian& jac) ;
+/*NEWMAT::Matrix jacVectorToNewmat(const vector<LinkParamJacobian>& jacs, const NEWMAT::Matrix& free_params)
+{
   
-} ;
+  
+  
+}*/
+
+/**
+ * Converts a linkparam jacobian into a newmat matrix. The original jacobian is
+ * also pruned such that it only have the columns corresponding to the free matrix.
+ * \param jac The input jacobian. The # of links in this jacobian must correspond to \
+ *               the number of columns in active. Each true flag in active corresponds \
+ *               to a column in jac
+ * \active Specifies which link parameters are active.
+ * \jac_term Specifies whether the jacobian should store either translational terms \
+ *               or rotational terms. If both are stored then jac has 6 rows, with \
+ *               the first 3 being translational, and the last 3 being rotational
+ */
+int jacToNewmat(const LinkParamJacobian& jac, const ActiveLinkParams& active, NEWMAT::Matrix& mat, const JacTerms::JacTerms jac_term ) ;
+
 
 }
 
-#endif /* KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_ */
+}
+
+
+
+#endif /* KINEMATIC_CALIBRATION_JAC_NEWMAT_BRIDGE_H_ */

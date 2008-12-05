@@ -34,41 +34,80 @@
 
 //! \author Vijay Pradeep
 
-#ifndef KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
-#define KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
+#ifndef KINEMATIC_CALIBRATION_ACTIVE_LINK_PARAMS_H_
+#define KINEMATIC_CALIBRATION_ACTIVE_LINK_PARAMS_H_
 
+#include <vector>
 
-#include "kinematic_calibration/link_param_jacobian.h"
-#include "kdl/chain.hpp"
-#include "kdl/jntarray.hpp"
+#include "kdl/frames.hpp"
 
 namespace kinematic_calibration
 {
 
 /**
- * Computes the end effector jacobian wrt all the link parameters along the kinematic chain. The eef motion is calculated for 6
- * differential perturbations: (dx, dy, dz, rx, ry, rz).
- * dx, dy, dz are the x,y & z translational displacements (respectively) of the end effector in the link's base frame
- * rx, ry, rz are the x y z rotations (respectively) of the end effector in the frame of the current link's tip.
+ * A "smart" matrix that allows easy lookup for which link parameters in a
+ * chain are active during a calibration
  */
-class LinkParamJacobianSolver
+class ActiveLinkParams
 {
 public:
-  LinkParamJacobianSolver() ;
-
-  ~LinkParamJacobianSolver() ;
+  ActiveLinkParams() { }
+  ~ActiveLinkParams() { }
 
   /**
-   * Function that computes the link-parameter jacobian
-   * \param chain The KDL datatype specifying the kinematic chain
-   * \param joint_states stores the joint angles/displacements for the current configuration that we want to evaluate
-   * \param jac (output) Stores the computed jacobian
-   * \return negative on error
+   * Sets the number of links that the lookup table corresponds to. Data is not
+   * necessarily preserved during a resize
    */
-  static int JointsToCartesian(const KDL::Chain& chain, const KDL::JntArray& joint_states, LinkParamJacobian& jac) ;
+  inline void setNumLinks(unsigned int num_links)
+  {
+    table.resize(num_links) ;
+  }
+
+  inline void setAllInactive()
+  {
+    for (unsigned int i=0; i<table.size(); i++)
+      for (unsigned int j=0; j<6; j++)
+        table[i].active[j] = false ;
+  }
   
-} ;
+  //! Gets the number of links in the current table
+  inline unsigned int getNumLinks() const
+  {
+    return table.size() ;
+  }
+  
+  //! Get the number of active params in the current table
+  unsigned int getNumActive() const
+  {
+    unsigned int num_active = 0 ;
+    for (unsigned int i=0; i <table.size(); i++)
+      for (int j=0; j<6; j++)
+        if (table[i].active[j])
+          num_active++ ;
+    return num_active ;
+  }
+  
+  inline bool operator()(unsigned int param_num, unsigned int link_num) const
+  {
+    return table[link_num].active[param_num] ;
+  }
+  
+  inline bool& operator()(unsigned int param_num, unsigned int link_num)
+  {
+    return table[link_num].active[param_num] ;
+  }
+
+private:
+  //! Stores the 6 flags for a given link. (3 translational params, then 3 rotational params)
+  struct SingleLinkActiveParams
+  {
+    bool active[6] ;
+  };
+
+  // Stores the full table of param flags
+  std::vector<SingleLinkActiveParams>  table ;
+};
 
 }
 
-#endif /* KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_ */
+#endif /* KINEMATIC_CALIBRATION_ACTIVE_PARAMS_MAT_H_ */

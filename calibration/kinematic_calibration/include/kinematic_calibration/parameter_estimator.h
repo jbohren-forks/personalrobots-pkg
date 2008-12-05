@@ -32,43 +32,73 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Vijay Pradeep
+//! \author Vijay Pradeep                                                     
 
-#ifndef KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
-#define KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_
+#ifndef KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
+#define KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_
 
 
 #include "kinematic_calibration/link_param_jacobian.h"
+#include "kinematic_calibration/link_param_jacobian_solver.h"
+#include "kinematic_calibration/jac_newmat_bridge.h"
 #include "kdl/chain.hpp"
 #include "kdl/jntarray.hpp"
+#include "kdl/frames.hpp"
+
+#include <vector>
+
+using namespace std ;
 
 namespace kinematic_calibration
 {
 
-/**
- * Computes the end effector jacobian wrt all the link parameters along the kinematic chain. The eef motion is calculated for 6
- * differential perturbations: (dx, dy, dz, rx, ry, rz).
- * dx, dy, dz are the x,y & z translational displacements (respectively) of the end effector in the link's base frame
- * rx, ry, rz are the x y z rotations (respectively) of the end effector in the frame of the current link's tip.
- */
-class LinkParamJacobianSolver
+namespace ParameterEstimator
 {
-public:
-  LinkParamJacobianSolver() ;
 
-  ~LinkParamJacobianSolver() ;
-
-  /**
-   * Function that computes the link-parameter jacobian
-   * \param chain The KDL datatype specifying the kinematic chain
-   * \param joint_states stores the joint angles/displacements for the current configuration that we want to evaluate
-   * \param jac (output) Stores the computed jacobian
-   * \return negative on error
-   */
-  static int JointsToCartesian(const KDL::Chain& chain, const KDL::JntArray& joint_states, LinkParamJacobian& jac) ;
-  
+/**
+ * Stores a single data point used for calibration. Generally a vector of
+ * MarkerData3d will be passed into a calibration routine
+ */
+struct MarkerData3d
+{
+  KDL::JntArray joint_states ;          //!< The joint angles recorded
+  KDL::Vector marker_sensed ;           //!< The sensed position of a marker
 } ;
+
+void estimateParametersMarker3d( const KDL::Chain& chain_in, KDL::Chain& chain_out,
+                                 const vector<MarkerData3d>& input_data, bool free_params[][6])
+{
+
+  assert(chain_in.getNrOfJoints() == chain_in.getNrOfSegments() ) ;     // Not yet accounting for the case where there are more joints than segments
+  //const unsigned int M = chain_in.getNrOfJoints() ;
+  const unsigned int N = input_data.size() ;    // # of Data points
+
+  // Allocate memory
+  vector<LinkParamJacobian> jacs ;              // Stores all the jacobians in native KDL format
+  jacs.resize(N) ;
+  
+  vector<KDL::Vector> markers_fk ;              // Stores the forward kinematics position of the marker
+  markers_fk.resize(N) ;
+  
+  KDL::Chain cur_chain(chain_in) ;              // Stores
+
+  // Compute all the necessary jacobians
+  for(unsigned int i=0; i<N; i++)
+  {
+    int result ;
+    result = LinkParamJacobianSolver::JointsToCartesian(cur_chain, input_data[i].joint_states, jacs[i]) ;
+    if (result < 0)
+      printf("Error computing jacobian\n") ;
+  }
+  
+  // Convert the KDL jacobians into a newmat matrix
+  
+  //! \todo THIS IS NOT EVEN CLOSE TO COMPLETE YET
+  
+}
 
 }
 
-#endif /* KINEMATIC_CALIBRATION_LINK_PARAM_JACOBIAN_SOLVER_H_ */
+}
+
+#endif /* KINEMATIC_CALIBRATION_PARAMETER_ESTIMATOR_H_ */
