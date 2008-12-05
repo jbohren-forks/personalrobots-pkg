@@ -331,7 +331,7 @@ public:
 	people_->setFaceCenter3D((cvmGet(xyzpts,1,0)+cvmGet(xyzpts,0,0))/2.0,
 				 (cvmGet(xyzpts,1,1)+cvmGet(xyzpts,0,1))/2.0,
 				 cvmGet(xyzpts,0,2), iface);
-	people_->setFaceSize3D((x_size>y_size) ? x_size : y_size , iface);      
+	people_->setFaceSize3D((x_size>y_size) ? x_size : y_size , iface); 
 
 #if __FACE_COLOR_TRACKER_DEBUG_
 	printf("face opp corners 2d %d %d %d %d\n",
@@ -360,7 +360,7 @@ public:
     }
 
     CvMat *end_points = cvCreateMat(npeople,3,CV_32FC1);
-    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 0, NULL, NULL, end_points);
+    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 300.0, 0, NULL, NULL, end_points);
     if (!did_track) {
       // If tracking failed, just return.
       return;
