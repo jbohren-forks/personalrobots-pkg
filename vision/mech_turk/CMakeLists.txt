@@ -4,5 +4,5 @@ include(rosbuild)
 rospack(mech_turk)
 genmsg()
 
-rospack_add_executable(cv_mturk src/cv_mturk.cpp)
+rospack_add_executable(bin/cv_mturk src/cv_mturk.cpp)
 
