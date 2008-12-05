@@ -114,6 +114,9 @@ class People
   // Get a person's id
   int getID(int iperson);
 
+  // Make a histogram into an image.
+  IplImage* faceHist2Im(int iperson);
+
   /********
    * Detect all faces in an image.
    * Input:
