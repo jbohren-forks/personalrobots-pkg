@@ -131,7 +131,7 @@ std::string cvGetString(std::string prompt, std::string init)
 		sprintf(cmd,"./src/images/%s%.4d.jpg",object_name,object_count);
 		cvSaveImage(cmd,cv_img_to_label);
 		printf("Saved %s\n",cmd);
-		sprintf(cmd,"./src/submit_img.py ./src/images/%s%.4d.jpg;\n",object_name,object_count);
+		sprintf(cmd,"cd src && ./submit_img.py ./images/%s%.4d.jpg;\n",object_name,object_count);
 //		sprintf(cmd,"python submit_img.py images/%s%.4d.jpg\n",object_name,object_count);
 		printf("Issuing command: %s\n\n",cmd);
 		system(cmd);
