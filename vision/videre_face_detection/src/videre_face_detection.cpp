@@ -1,5 +1,5 @@
 /*********************************************************************
-* A ros node to run face detection and other people-related functions with images from the videre cameras.
+* A ros node to run face detection with images from the videre cameras.
 *
 **********************************************************************
 *
