@@ -53,8 +53,8 @@
 
 #include "people.h"
 
-#define MYDEBUG 0
-#define DISPLAY 1
+#define __FACE_COLOR_TRACKER_DEBUG__ 0
+#define __FACE_COLOR_TRACKER_DISPLAY__ 1
 
 using namespace std;
 
@@ -118,7 +118,7 @@ public:
     xyz_(NULL)
   { 
 
-#if DISPLAY
+#if  __FACE_COLOR_TRACKER_DISPLAY__
     // OpenCV: pop up an OpenCV highgui window
     cvNamedWindow("Disparity",CV_WINDOW_AUTOSIZE);
     cvNamedWindow("Face Detection", CV_WINDOW_AUTOSIZE);
@@ -149,7 +149,7 @@ public:
     cvReleaseImage(&cv_image_left_cpy_);
     cvReleaseImage(&cv_image_disp_cpy_);
 
-#if DISPLAY
+#if  __FACE_COLOR_TRACKER_DISPLAY__
     cvDestroyWindow("Face Detection");
     cvDestroyWindow("Disparity");
 #endif
@@ -182,9 +182,8 @@ public:
     if (calib_color_) {
       // Exit if color calibration hasn't been performed.
       std::string color_cal_str = std::string("videre/images/") + image_msg_.images[1].label + std::string("/color_cal");
-      cout << color_cal_str;
       if (!has_param(color_cal_str)) {
-	printf("No params\n");
+	//printf("No params\n");
 	return;
       }
       // Otherwise, set the color calibration matrix.
@@ -260,7 +259,7 @@ public:
     CvMat *xyzpts = cvCreateMat(2,3,CV_32FC1), *uvdpts = cvCreateMat(2,3,CV_32FC1) ;
     if (npeople == 0) {
       vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
-#if MYDEBUG
+#if __FACE_COLOR_TRACKER_DEBUG__
       printf("Detected faces\n");
 #endif
 
@@ -334,7 +333,7 @@ public:
 				 cvmGet(xyzpts,0,2), iface);
 	people_->setFaceSize3D((x_size>y_size) ? x_size : y_size , iface);      
 
-#if MYDEBUG
+#if __FACE_COLOR_TRACKER_DEBUG_
 	printf("face opp corners 2d %d %d %d %d\n",
 	       faces_vector[iface].x,faces_vector[iface].y,
 	       faces_vector[iface].x+faces_vector[iface].width-1, 
@@ -414,7 +413,7 @@ public:
     cvReleaseMat(&my_end_point);
     cvReleaseMat(&my_size);     
 
-#if DISPLAY
+#if  __FACE_COLOR_TRACKER_DISPLAY__
     // Copy all of the images you might want to display.
     // This is necessary because OpenCV doesn't like multiple threads.
     cv_mutex_.lock();
@@ -481,7 +480,7 @@ public:
   // Wait for completion, wait for user input, display images.
   bool spin() {
     while (ok() && !quit_) {
-#if DISPLAY
+#if  __FACE_COLOR_TRACKER_DISPLAY__
 	// Display all of the images.
 	cv_mutex_.lock();
 	if (cv_image_left_cpy_)
@@ -510,7 +509,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
-  bool color_calib = true;
+  bool color_calib = false;
 
 #if 0
   if (argc < 2) {
