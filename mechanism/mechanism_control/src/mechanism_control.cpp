@@ -31,6 +31,7 @@
 #include "mechanism_control/mechanism_control.h"
 #include "rosthread/member_thread.h"
 #include "misc_utils/mutex_guard.h"
+#include "rosconsole/rosconsole.h"
 
 using namespace mechanism;
 
@@ -138,7 +139,12 @@ bool MechanismControl::spawnController(const std::string &type,
 {
   controller::Controller *c = controller::ControllerFactory::Instance().CreateObject(type);
   if (c == NULL)
+  {
+    ROS_ERROR("Could spawn controller %s because controller type %s does not exist",
+              name.c_str(), type.c_str());
     return false;
+  }
+
   printf("Spawning %s: %p\n", name.c_str(), &model_);
 
 
@@ -339,10 +345,17 @@ bool MechanismControlNode::spawnController(
 
   TiXmlElement *config = doc.RootElement();
   if (!config)
+  {
+    ROS_ERROR("The XML given to SpawnController could not be parsed");
     return false;
+  }
   if (config->ValueStr() != "controllers" &&
       config->ValueStr() != "controller")
+  {
+    ROS_ERROR("The XML given to SpawnController must have either \"controller\" or \
+\"controllers\" as the root tag");
     return false;
+  }
 
   if (config->ValueStr() == "controllers")
   {
@@ -354,16 +367,22 @@ bool MechanismControlNode::spawnController(
     bool ok = true;
 
     if (!config->Attribute("type"))
+    {
+      ROS_ERROR("Could not spawn a controller because no type was given");
       ok = false;
+    }
     else if (!config->Attribute("name"))
+    {
+      ROS_ERROR("Could not spawn a controller because no name was given");
       ok = false;
+    }
     else
     {
       ok = mc_->spawnController(config->Attribute("type"), config->Attribute("name"), config);
     }
 
     oks.push_back(ok);
-    names.push_back(config->Attribute("name") ? config->Attribute("name") : "");
+    names.push_back(config->Attribute("name") ? config->Attribute("name") : "<unnamed>");
   }
 
   resp.set_ok_vec(oks);
