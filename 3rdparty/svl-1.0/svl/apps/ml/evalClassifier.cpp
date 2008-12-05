@@ -41,8 +41,8 @@
 #include <algorithm>
 #include <vector>
 
-#include "cv.h"
-#include "cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
 #include "ml.h"
 
 #include "svlBase.h"

@@ -46,9 +46,9 @@
 #include <vector>
 #include <map>
 
-#include "cv.h"
-#include "cxcore.h"
-#include "ml.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
+#include "opencv/ml.h"
 
 #include "svlBase.h"
 #include "svlVision.h"

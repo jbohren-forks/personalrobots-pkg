@@ -38,9 +38,9 @@
 #include <cassert>
 #include <string>
 
-#include "cv.h"
-#include "cxcore.h"
-#include "highgui.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
+#include "opencv/highgui.h"
 
 #if defined(_WIN32)||defined(WIN32)||defined(__WIN32__)
 #include "win32/dirent.h"

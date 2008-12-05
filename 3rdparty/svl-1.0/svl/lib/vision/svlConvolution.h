@@ -48,8 +48,8 @@
 
 #pragma once
 
-#include "cv.h"
-#include "cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
 
 // svlConvolution --------------------------------------------------------------
 

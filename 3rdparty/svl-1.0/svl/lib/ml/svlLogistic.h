@@ -54,7 +54,7 @@
 #include <vector>
 #include <limits>
 
-#include <cxcore.h>
+#include <opencv/cxcore.h>
 
 #include "svlBase.h"
 

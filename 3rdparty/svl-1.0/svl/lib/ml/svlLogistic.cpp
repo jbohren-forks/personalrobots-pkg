@@ -39,8 +39,8 @@
 #include <limits>
 
 // OpenCV libraries
-#include "cv.h"
-#include "cxcore.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
 
 // SVL libraries
 #include "svlBase.h"

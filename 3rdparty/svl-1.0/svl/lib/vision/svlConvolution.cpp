@@ -36,9 +36,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "cv.h"
-#include "cxcore.h"
-
 #include "svlBase.h"
 #include "svlConvolution.h"
 #include "svlVisionUtils.h"

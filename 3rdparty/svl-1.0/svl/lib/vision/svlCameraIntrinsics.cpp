@@ -39,9 +39,6 @@
 #include <fstream>
 #include <vector>
 
-#include <cv.h>
-#include <cxcore.h>
-
 #include "svlBase.h"
 #include "svlCameraIntrinsics.h"
 

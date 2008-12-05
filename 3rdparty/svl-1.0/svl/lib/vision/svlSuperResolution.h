@@ -42,9 +42,9 @@
 #include <iomanip>
 
 // OpenCV library
-#include "cv.h"
-#include "cxcore.h"
-#include "highgui.h"
+#include "opencv/cv.h"
+#include "opencv/cxcore.h"
+#include "opencv/highgui.h"
 
 // stair vision library
 #include "svlBase.h"

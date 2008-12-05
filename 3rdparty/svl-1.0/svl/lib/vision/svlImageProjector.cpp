@@ -37,9 +37,7 @@
 #include <algorithm>
 #include <limits>
 
-#include "cv.h"
-#include "cxcore.h"
-#include "highgui.h"
+#include "opencv/highgui.h"
 
 #include "svlBase.h"
 #include "svlVision.h"
