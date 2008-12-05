@@ -1,5 +1,5 @@
 string xml_config
 ---
-byte[] ok
+uint8[] ok
 string[] name
 string[] error
