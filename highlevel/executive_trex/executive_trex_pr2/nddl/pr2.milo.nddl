@@ -223,20 +223,21 @@ WorkingStatus::Holds{
     ChargingStation cs;
     randomSelect(cs);
 
-    // rechargeController[*, end] = Active(cs.x, cs.y, cs.th)
+    // allow a delay of 5 seconds after recharging before releasing the robot
     any(RechargeController.Active rc);
     eq(rc.x, cs.x);
     eq(rc.y, cs.y);
     eq(rc.th, cs.th);
-    concurrent(rc.end, end);
+    temporalDistance(rc.end, 5, end);
 
     // check expected end conditions. Notation assumes a single predicate, otherwise it would be
     // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. At run
     // time this can resolve to a token that cannot be inserted. At compile time, it must resolve unabiguously
     // to a token
     // where w = batteryState[level] : (w.energy_remaining/w.energy_capacity) >= recharge_level;
-    if(end){
-      meets(BatteryState.Holds bs_e);
+    if(rc.end){
+      any(BatteryState.Holds bs_e);
+      concurrent(rc.end, bs_e.start);
       leq(rc.recharge_level, bs_e.percentage_remaining);
     }
   }
@@ -274,6 +275,9 @@ RechargeController::Inactive{
 }
 
 RechargeController::Active{
+  contained_by(WorkingStatus.Holds ws);
+  eq(ws.recharging, true);
+
   BatteryState bs;
   eq(recharge_level, bs.recharge_level);
 
