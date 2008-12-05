@@ -241,10 +241,10 @@ bool FileSeq::getNextFrame() {
   if (mInputImageQueue.size()==0) {
     mCurrentFrameIndex += mFrameStep;
 
-    if (mCurrentFrameIndex < mEndFrameIndex ) {
+    if (mCurrentFrameIndex <= mEndFrameIndex ) {
       return getCurrentFrame();
     } else {
-      if (mCurrentFrameIndex < mEndFrameIndex + mFrameStep) {
+      if (mCurrentFrameIndex <= mEndFrameIndex + mFrameStep) {
         // signaling the end of the seq
         StereoFrame stereoFrame;
         stereoFrame.mFrameIndex = -1;

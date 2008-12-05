@@ -457,7 +457,7 @@ void estimateWithLevMarq(
     const CvMat& DispToCart,
     CvMat& rot, CvMat& trans);
 
-/// a data structue for tracking the filenames
+/// A class for tracking the filenames
 class FileSeq {
 public:
   FileSeq():
@@ -470,7 +470,9 @@ public:
     {}
 
   int mNumFrames;
+  /// index of the first frame
   int mStartFrameIndex;
+  /// index of the last frame, inclusive.
   int mEndFrameIndex;
   int mFrameStep;
   bool mStop;
@@ -511,11 +513,6 @@ private:
 class FrameSeq {
 public:
   FrameSeq():
-//    mNumFrames(-1),
-//    mStartFrameIndex(0),
-//    mEndFrameIndex(0),
-//    mFrameStep(1),
-//    mStop(false),
     mNumFrames(0),
     mStartFrameIndex(-1),
     mLastGoodFrame(NULL),

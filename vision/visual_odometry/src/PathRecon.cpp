@@ -465,14 +465,14 @@ bool PathRecon::trackOneFrame(queue<StereoFrame>& inputImageQueue, FrameSeq& fra
               currFrame->mNumInliers,
               currFrame->mRot, currFrame->mShift);
 
-        // key frame action
-//        insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
       }
     } // not first frame;
     insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
   } // stop == false
-
-//  insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+  else {
+    // stop = true
+    insertNewKeyFrame = keyFrameAction(kfd, frameSeq);
+  }
 
   TIMEREND(Total);
   return insertNewKeyFrame;
@@ -497,9 +497,9 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
       mPoseEstimator.estimateWithLevMarq(*(currFrame->mInliers1),
           *(currFrame->mInliers0), currFrame->mRot, currFrame->mShift);
       TIMEREND2(PoseEstimateLevMarq);
+      updateTrajectory();
+      insertNewKeyFrame = true;
     }
-    updateTrajectory();
-    insertNewKeyFrame = true;
     break;
   }
   case KeyFrameKeep:   {
@@ -516,14 +516,17 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
 #endif
     // use currFrame as key frame
     // do smoothing
-    if (mFrameSeq.mNumFrames>1 && currFrame->mInliers0) {
-      TIMERSTART2(PoseEstimateLevMarq);
-      mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
-          *currFrame->mInliers0, currFrame->mRot, currFrame->mShift);
-      TIMEREND2(PoseEstimateLevMarq);
+    if (currFrame) {
+      if (mFrameSeq.mNumFrames>1 && currFrame->mInliers0) {
+	TIMERSTART2(PoseEstimateLevMarq);
+	mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
+					   *currFrame->mInliers0, 
+					   currFrame->mRot, currFrame->mShift);
+	TIMEREND2(PoseEstimateLevMarq);
+      }
+      updateTrajectory();
+      insertNewKeyFrame = true;
     }
-    updateTrajectory();
-    insertNewKeyFrame = true;
     break;
   }
   default:
