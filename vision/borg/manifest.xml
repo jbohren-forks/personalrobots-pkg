@@ -4,4 +4,5 @@
   <review status="unreviewed" notes=""/>
   <depend package="libdc1394v2"/>
   <depend package="roscpp"/>
+  <depend package="opencv_latest"/>
 </package>

@@ -25,7 +25,7 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
            "create a symlink from one of the borg configuration files in "
            "borg/config, like this:\n"
            "  roscd borg\n"
-           "  ln -s config/avt_pike.config borg-config\n");
+           "  ln -s config/mobileborg.config borg-config\n");
     exit(1);
   }
   string cam_str;
@@ -63,6 +63,8 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
       cam_settings[string(key+4)] = atoi(value);
     else if (!strncmp(key, "stage_", 6))
       stage_settings[string(key+6)] = string(value);
+    else if (!strncmp(key, "calib_", 6))
+      calib_set(key+6, atof(value));
     else
       printf("unknown key = [%s] with value = [%s]\n", key, value);
   }
@@ -75,7 +77,7 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
       cam = new CamDC1394();
       if (!cam->init())
         throw std::runtime_error("unable to init camera.\n");
-      for (map<string,uint32_t>::iterator s = cam_settings.begin();
+      for (map<string, uint32_t>::iterator s = cam_settings.begin();
            s != cam_settings.end(); ++s)
         cam->set(s->first.c_str(), s->second);
     }
@@ -92,6 +94,19 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
         s != stage_settings.end(); ++s)
       stage->set(s->first.c_str(), s->second);
   }
+  intrinsics = cvCreateMat(3, 3, CV_32FC1);
+  distortion = cvCreateMat(1, 4, CV_32FC1);
+  cvSetZero(intrinsics);
+  CV_MAT_ELEM(*intrinsics, float, 0, 0) = fx;
+  CV_MAT_ELEM(*intrinsics, float, 1, 1) = fy;
+  CV_MAT_ELEM(*intrinsics, float, 0, 2) = x0;
+  CV_MAT_ELEM(*intrinsics, float, 1, 2) = y0;
+  CV_MAT_ELEM(*intrinsics, float, 2, 2) = 1.0f;
+  CV_MAT_ELEM(*distortion, float, 0, 0) = k1;
+  CV_MAT_ELEM(*distortion, float, 0, 1) = k2;
+  CV_MAT_ELEM(*distortion, float, 0, 2) = k3;
+  CV_MAT_ELEM(*distortion, float, 0, 3) = k4;
+
 }
 
 Borg::~Borg()
@@ -101,6 +116,8 @@ Borg::~Borg()
     cam->shutdown();
     delete cam;
   }
+  cvReleaseMat(&intrinsics);
+  cvReleaseMat(&distortion);
 }
 
 struct ScanImage
@@ -163,6 +180,13 @@ bool Borg::scan()
     delete *i;
   }
   images.clear();
+  return true;
+}
+
+bool Borg::calib_set(const char *setting, double value)
+{
+  if (!strcmp(setting, "fx"))
+    fx = value;
   return true;
 }
 

@@ -170,7 +170,6 @@ bool CamDC1394::set(const char *setting, uint32_t value)
     dc1394_feature_set_value(cam, DC1394_FEATURE_GAMMA, value);
   else if (!strcmp(setting, "brightness"))
     dc1394_feature_set_value(cam, DC1394_FEATURE_BRIGHTNESS, value);
-
   return true;
 }
 
