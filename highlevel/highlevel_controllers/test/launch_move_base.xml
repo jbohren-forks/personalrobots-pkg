@@ -19,6 +19,6 @@
     <param name="/costmap_2d/circumscribed_radius" value="0.46"/>
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
-    <node pkg="highlevel_controllers" type="move_base_sbpl" args="base_scan:=base_scan tilt_scan:=tilt_scan" respawn="false" />
+    <node pkg="highlevel_controllers" type="move_base_sbpl" args="base_scan:=base_scan tilt_scan:=tilt_scan" respawn="true" />
   </group>
 </launch>
