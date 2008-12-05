@@ -9,8 +9,19 @@ from std_msgs.msg import Planner2DState
 
 NAME = 'indefinite_nav'
 
-goals = [[1.437, 2.141, -2.356], [2.00, 1.300, 1.460]]
-#goals = [[1.437, 2.141, -2.356], [3.004, 2.184, -.0588], [1.906, 2.935, 1.460]]
+goals = [
+ [50.250, 6.863, 3.083], 
+ [18.550, 11.762, 2.554],
+ [53.550, 20.163, 0.00],
+ [18.850, 28.862, 0.00],
+ [47.250, 39.162, 1.571],
+ [11.450, 39.662, 0.00]
+ ]
+
+chrg_stations = [
+ [33.844, 36.379, -1.571]
+]
+
 first = True
 
 def indefinite_nav():
@@ -18,6 +29,7 @@ def indefinite_nav():
     send_goal(state.done)
 
   def send_goal(done):
+    global goals
     global first
     if first or done == 1:
       goal_pts = goals[random.randint(0, len(goals) - 1)]
