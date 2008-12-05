@@ -1,7 +1,7 @@
 /**
- * This is a test of correct recall behavior. A single navigation goal is constrained to have a very short duration.
- * The goal will be dispatched and pursued but the plan will break when the expected observation for completion does not appear.
- * The expected result is to recall the goal, causing the robot to stop. The goal will be rejected.
+ * This is a test of termination behavior. A single navigation goal is constrained to have a very short duration.
+ * The goal will be dispatched and pursued. However, the executive will dispatch a request to deactivae the move base node
+ * when it should have timed out.
  */
 #include "nav.init.nddl"
 
