@@ -135,7 +135,7 @@ class People
   void track(){}
 
   // Track a face based on the face colour histogram.
-  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
+  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_mm, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
 
  ////////////////////
  private:
