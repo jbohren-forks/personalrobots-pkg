@@ -28,15 +28,6 @@
  */
 
 /*
- * Example config:
-
- <controller type="CartesianEffortController" name="controller_name">
-   <chain root="root_link" tip="tip_link" offset="0.3 0.1 0.2" />
- </controller>
-
- * The root is fixed, and all commands are specified in its coordinate
- * frame.
- *
  * Author: Wim Meeussen
  */
 
@@ -65,19 +56,24 @@ public:
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
 
+  // input of the controller
   KDL::Twist twist_desi_, twist_meas_;
+
+  // output of the controller
   KDL::Wrench wrench_out_;
 
 
 private:
-  unsigned int print_counter_;
-
-  KDL::Chain             chain_;
-  KDL::ChainFkSolverVel* jnt_to_twist_solver_;
   unsigned int  num_joints_, num_segments_;
 
-  std::vector<mechanism::JointState*> joints_;  // root to tip, 1 element smaller than links_   
+  // kdl stuff for kinematics
+  KDL::Chain             chain_;
+  KDL::ChainFkSolverVel* jnt_to_twist_solver_;
 
+  // to get joint positions, velocities, and to set joint torques
+  std::vector<mechanism::JointState*> joints_; 
+
+  // internal wrench controller
   EndeffectorWrenchController wrench_controller_;
 };
 
@@ -89,13 +85,14 @@ private:
 class EndeffectorTwistControllerNode : public Controller
 {
  public:
-  EndeffectorTwistControllerNode();
-  ~EndeffectorTwistControllerNode();
+  EndeffectorTwistControllerNode() {};
+  ~EndeffectorTwistControllerNode() {};
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
-  
   void command();
+
+  // callback functions for spacenav
   void spacenavPos();
   void spacenavRot();
   

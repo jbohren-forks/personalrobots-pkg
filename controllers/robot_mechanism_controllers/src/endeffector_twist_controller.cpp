@@ -31,13 +31,11 @@
  * Author: Wim Meeussen
  */
 
-//#define DEBUG_PRINT
-#define MAX_PRINT_COUNTER   500
 #define SPACENAV_RANGE      400.0
-#define SPACENAV_MAX_VEL    0.2
-#define SPACENAV_MAX_ROT    0.05
-#define MASS_TRANS          20.0
-#define MASS_ROT            5.0
+#define SPACENAV_MAX_VEL    10.0
+#define SPACENAV_MAX_ROT    2.0
+#define MASS_TRANS          2.0
+#define MASS_ROT            0.5
 
 
 
@@ -48,17 +46,18 @@
 
 
 using namespace KDL;
-
 namespace controller {
+
+
 
 ROS_REGISTER_CONTROLLER(EndeffectorTwistController)
 
 
 EndeffectorTwistController::EndeffectorTwistController()
-: print_counter_(0),
-  jnt_to_twist_solver_(NULL),
+: jnt_to_twist_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
 {}
+
 
 
 EndeffectorTwistController::~EndeffectorTwistController()
@@ -70,12 +69,14 @@ EndeffectorTwistController::~EndeffectorTwistController()
 
 bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  printf("EndeffectorTwistController::initXml starting\n");
+  // set disired twist to 0
+  for (unsigned int i=0; i<3; i++){
+    twist_desi_.vel(i) = 0;
+    twist_desi_.rot(i) = 0;
+  }
 
   // create wrench controller
   wrench_controller_.initXml(robot, config);
-
-  printf("EndeffectorTwistController::initXml after wrench controller\n");
 
   // parse robot description from xml file
   ros::node *node = ros::node::instance();
@@ -161,13 +162,6 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
 
 void EndeffectorTwistController::update()
 {
-#ifdef DEBUG_PRINT
-  if (print_counter_ == MAX_PRINT_COUNTER)
-    printf("twist desired %f %f %f %f %f %f\n",
-	   twist_desi_(0), twist_desi_(1), twist_desi_(2),
-	   twist_desi_(3), twist_desi_(4), twist_desi_(5));
-#endif	   
-
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
     if (!joints_[i]->calibrated_)
@@ -185,12 +179,6 @@ void EndeffectorTwistController::update()
   FrameVel twist; 
   jnt_to_twist_solver_->JntToCart(jnt_posvel, twist);
   twist_meas_ = twist.deriv();
-#ifdef DEBUG_PRINT
-  if (print_counter_ == MAX_PRINT_COUNTER)
-    printf("twist meas %f %f %f %f %f %f\n",
-	   twist_meas_(0), twist_meas_(1), twist_meas_(2),
-	   twist_meas_(3), twist_meas_(4), twist_meas_(5));
-#endif	   
 
   // twist feedback into wrench
   Twist diff = twist_desi_ - twist_meas_;
@@ -202,20 +190,7 @@ void EndeffectorTwistController::update()
   // send wrench to wrench controller
   wrench_controller_.wrench_desi_ = wrench_out_;
   wrench_controller_.update();
-
-#ifdef DEBUG_PRINT
-  if (print_counter_ >= MAX_PRINT_COUNTER)
-    print_counter_ = 0;
-  print_counter_ ++;
-#endif
 }
-
-
-
-
-
-
-
 
 
 
@@ -226,14 +201,6 @@ void EndeffectorTwistController::update()
 
 ROS_REGISTER_CONTROLLER(EndeffectorTwistControllerNode)
 
-
-EndeffectorTwistControllerNode::EndeffectorTwistControllerNode()
-{}
-
-
-EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
-{
-}
 
 
 bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
