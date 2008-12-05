@@ -7,7 +7,6 @@
   <depend package="rospy" />
   <depend package="rostest" />
   <depend package="highlevel_controllers" />
-  <depend package="gtest" />
 
   <sysdepend os="ubuntu" version="8.04-hardy" package="jam"/>
 </package>
