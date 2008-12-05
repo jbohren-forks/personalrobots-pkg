@@ -382,11 +382,11 @@ namespace ros {
 
       try
       {
-        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, odomMsg_.vel.th), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
+        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, 0), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
         tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, odomMsg_.header.frame_id, v_out);	 
         base_odom_.vel.x = v_in.x();
         base_odom_.vel.y = v_in.y();
-        base_odom_.vel.th = v_in.z();
+        base_odom_.vel.th = odomMsg_.vel.th;
       }
       catch(tf::LookupException& ex)
       {
