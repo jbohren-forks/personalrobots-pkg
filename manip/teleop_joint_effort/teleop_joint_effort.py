@@ -54,9 +54,9 @@ def xml_for(joint):
 def main():
 
     rospy.init_node('effect', anonymous=True)
-    #rospy.wait_for_service('spawn_controller')
-    #spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
-    #kill_controller = rospy.ServiceProxy('kill_controller', KillController)
+    rospy.wait_for_service('spawn_controller')
+    spawn_controller = rospy.ServiceProxy('spawn_controller', SpawnController)
+    kill_controller = rospy.ServiceProxy('kill_controller', KillController)
 
     params = {}
     params['joint'] = rospy.get_param("joint")
@@ -64,17 +64,17 @@ def main():
     params['joy_axis'] = rospy.get_param("joy_axis")
     params['dead_zone'] = rospy.get_param("joy_dead_zone")
 
-    #resp = spawn_controller(xml_for(params['joint']))
-    #if len(resp.ok) < 1 or not ord(resp.ok[0]):
-    #    print "Failed to spawn effort controller"
-    #    sys.exit(1)
+    resp = spawn_controller(xml_for(params['joint']))
+    if len(resp.ok) < 1 or not ord(resp.ok[0]):
+        print "Failed to spawn effort controller"
+        sys.exit(1)
 
     pub = rospy.Publisher("/%s/set_command" % CONTROLLER_NAME, Float64)
     params['pub'] = pub
 
     rospy.Subscriber("joy", Joy, joy_callback, params)
     rospy.spin()
-    #kill_controller(CONTROLLER_NAME)
+    kill_controller(CONTROLLER_NAME)
 
 def joy_callback(data, params):
     command = data.axes[params['joy_axis']]
