@@ -19,7 +19,7 @@ struct imgData
   string label;
   IplImage *cv_image;
   CvBridge<std_msgs::Image> *bridge;
-  CvMat* color_cal;
+  color_calib::Calibration* color_cal;
 };
 
 class CvView : public ros::node
@@ -59,8 +59,6 @@ public:
     {
       if (i->second.cv_image)
         cvReleaseImage(&i->second.cv_image);
-      if (i->second.color_cal)
-        cvReleaseMat(&i->second.color_cal);
     }
   }
 
@@ -79,19 +77,10 @@ public:
         images[l].bridge = new CvBridge<std_msgs::Image>(&image_msg.images[i], CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
         cvNamedWindow(l.c_str(), CV_WINDOW_AUTOSIZE);
         images[l].cv_image = 0;
+        images[l].color_cal = new color_calib::Calibration(this);
 
-        images[l].color_cal = cvCreateMat(3, 3, CV_32FC1);
-        cvSetIdentity(images[l].color_cal, cvScalar(1.0));
-
-        std::string color_cal_str = map_name("images") + std::string("/") + l + std::string("/color_cal");
-        if (has_param(color_cal_str))
-        {
-          XmlRpc::XmlRpcValue xml_color_cal;
-          get_param(color_cal_str, xml_color_cal);
-          for (int i = 0; i < 3; i++)
-            for (int j = 0; j < 3; j++)
-              cvmSet(images[l].color_cal, i, j, (double)(xml_color_cal[3*i + j]));
-        }
+        std::string color_cal_str = map_name("images") + std::string("/") + images[l].label;
+        images[l].color_cal->getFromParam(color_cal_str);
       } else {
 
         if (j->second.cv_image)
@@ -103,19 +92,9 @@ public:
           if (fix_color)
           {
             IplImage* img = cvCreateImage(cvGetSize(j->second.cv_image), IPL_DEPTH_32F, 3);
-
-            color_calib::decompand(j->second.cv_image, img);
-
-            if (j->second.cv_image->nChannels == 3)
-              cvTransform(img, img, j->second.color_cal);
-
-            if (recompand)
-            {
-              color_calib::compand(img, j->second.cv_image);
-              cvShowImage(j->second.label.c_str(), j->second.cv_image);
-            } else {
-              cvShowImage(j->second.label.c_str(), img);
-            }
+            
+            j->second.color_cal->correctColor(j->second.cv_image, img, true, recompand, COLOR_CAL_BGR);
+            cvShowImage(j->second.label.c_str(), img);
             cvReleaseImage(&img);
           }
           else
