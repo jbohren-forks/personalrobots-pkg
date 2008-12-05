@@ -124,6 +124,11 @@ public:
                        const std::string& source_frame, const ros::Time& source_time, 
                        const std::string& fixed_frame);  
 
+  /**@brief Return the latest rostime which is common across the spanning set 
+   * zero if fails to cross */
+  ros::Time getLatestCommonTime(const std::string& source, const std::string& dest);
+
+
   /** \brief Transform a Stamped Quaternion into the target frame */
   void transformQuaternion(const std::string& target_frame, const Stamped<tf::Quaternion>& stamped_in, Stamped<tf::Quaternion>& stamped_out);
   /** \brief Transform a Stamped Vector3 into the target frame */

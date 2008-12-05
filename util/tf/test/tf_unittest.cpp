@@ -1115,6 +1115,80 @@ TEST(tf, ExtrapolationFromOneValue)
 
 
 
+TEST(tf, getLatestCommonTime)
+{
+  tf::Transformer mTR(true);
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(1000ULL), "a",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(2000ULL), "parent",  "parent's parent"));
+  
+  //simple case
+  ros::Time t = mTR.getLatestCommonTime("a", "parent's parent");
+  EXPECT_EQ(t, ros::Time(1000ULL));
+
+  //no connection
+  t = mTR.getLatestCommonTime("a", "not valid");
+  EXPECT_EQ(t, ros::Time(0ULL));
+
+  //testing with update
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(3000ULL), "a",  "parent"));
+  t = mTR.getLatestCommonTime("a", "parent's parent");
+  EXPECT_EQ(t, ros::Time(2000ULL));
+
+  //longer chain
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(4000ULL), "b",  "parent"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(3000ULL), "c",  "b"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(9000ULL), "d",  "c"));
+  mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(5000ULL), "e",  "f"));
+
+  //shared parent
+  t = mTR.getLatestCommonTime("a", "b");
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //two degrees
+  t = mTR.getLatestCommonTime("a", "c");
+  EXPECT_EQ(t, ros::Time(3000ULL));
+  //reversed
+  t = mTR.getLatestCommonTime("c", "a");
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //three degrees
+  t = mTR.getLatestCommonTime("a", "d");
+  EXPECT_EQ(t, ros::Time(3000ULL));
+  //reversed
+  t = mTR.getLatestCommonTime("d", "a");
+  EXPECT_EQ(t, ros::Time(3000ULL));
+
+  //disconnected tree
+  t = mTR.getLatestCommonTime("e", "f");
+  EXPECT_EQ(t, ros::Time(5000ULL));
+  //reversed order
+  t = mTR.getLatestCommonTime("f", "e");
+  EXPECT_EQ(t, ros::Time(5000ULL));
+
+
+  mTR.setExtrapolationLimit(ros::Duration(20000LL));
+
+  //check timestamps resulting
+  tf::Stamped<tf::Point> output, output2;
+  try
+  {
+    mTR.transformPoint( "parent", Stamped<Point>(Point(1,1,1), ros::Time(0ULL), "b"), output);
+    mTR.transformPoint( "a", ros::Time(0ULL),Stamped<Point>(Point(1,1,1), ros::Time(0ULL), "b"), "c",  output2);
+  }
+  catch (tf::TransformException &ex)
+  {
+    printf("%s\n", ex.what());
+    EXPECT_FALSE("Shouldn't get this Exception");
+  }
+
+  EXPECT_EQ(output.stamp_, ros::Time(4000ULL));
+  EXPECT_EQ(output2.stamp_, ros::Time(3000ULL));
+
+
+
+
+}
+
 int main(int argc, char **argv){
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

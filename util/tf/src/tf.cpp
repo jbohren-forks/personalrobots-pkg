@@ -82,10 +82,17 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
                      const ros::Time& time, Stamped<btTransform>& transform)
 {
+  ros::Time temp_time;
+  //If getting the latest get the latest common time
+  if (time == ros::Time(0ULL))
+    temp_time = getLatestCommonTime(target_frame, source_frame);
+  else
+    temp_time = time;
+
   std::string error_string;
   TransformLists t_list;
   ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( target_frame), time, lookupFrameNumber( source_frame), t_list, &error_string);
+  int retval = lookupLists(lookupFrameNumber( target_frame), temp_time, lookupFrameNumber( source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -96,12 +103,12 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
       throw ConnectivityException(error_string);
   }
    
-  if (test_extrapolation(time, t_list, &error_string))
+  if (test_extrapolation(temp_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
  
   transform.setData( computeTransformFromList(t_list));
-  transform.stamp_ = time;
+  transform.stamp_ = temp_time;
   transform.frame_id_ = target_frame;
 
 };
@@ -109,11 +116,24 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
+  ros::Time temp_target_time, temp_source_time;
+  //If getting the latest get the latest common time
+  if (target_time == ros::Time(0ULL))
+    temp_target_time = getLatestCommonTime(target_frame, fixed_frame);
+  else 
+    temp_target_time = target_time;
+
+  //If getting the latest get the latest common time
+  if (source_time == ros::Time(0ULL))
+    temp_source_time = getLatestCommonTime(fixed_frame, source_frame);
+  else 
+    temp_source_time = source_time;
+
   std::string error_string;
   //calculate first leg
   TransformLists t_list;
   ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( fixed_frame), source_time, lookupFrameNumber( source_frame), t_list, &error_string);
+  int retval = lookupLists(lookupFrameNumber( fixed_frame), temp_source_time, lookupFrameNumber( source_frame), t_list, &error_string);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {
@@ -123,7 +143,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
       throw ConnectivityException(error_string);
   }
    
-  if (test_extrapolation(target_time, t_list, &error_string))
+  if (test_extrapolation(temp_source_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
  
@@ -132,7 +152,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
 
   TransformLists t_list2;
   ///\todo check return 
-  retval =  lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame), t_list2, &error_string);
+  retval =  lookupLists(lookupFrameNumber( target_frame), temp_target_time, lookupFrameNumber( fixed_frame), t_list2, &error_string);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {
@@ -142,7 +162,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
       throw ConnectivityException(error_string);
   }
    
-  if (test_extrapolation(target_time, t_list, &error_string))
+  if (test_extrapolation(temp_target_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
  
@@ -150,7 +170,7 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   btTransform temp = computeTransformFromList(t_list2);
 
   transform.setData( temp1 * temp); ///\todo check order here
-  transform.stamp_ = target_time;
+  transform.stamp_ = temp_target_time;
   transform.frame_id_ = target_frame;
 
 };
@@ -233,6 +253,33 @@ void Transformer::setExtrapolationLimit(const ros::Duration& distance)
 {
   max_extrapolation_distance_ = distance;
 }
+
+ros::Time Transformer::getLatestCommonTime(const std::string& source, const std::string& dest)
+{
+  ros::Time output = ros::Time::now();///\todo hack fixme
+  
+  TransformLists lists;
+  if (!lookupLists(lookupFrameNumber(dest), ros::Time(0ULL), lookupFrameNumber(source), lists, NULL))
+  {
+    for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
+    {
+      if (output > lists.inverseTransforms[i].stamp_)
+        output = lists.inverseTransforms[i].stamp_;
+    }
+    for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
+    {
+      if (output > lists.forwardTransforms[i].stamp_)
+        output = lists.forwardTransforms[i].stamp_;
+    }
+    
+  }
+  else
+    output.fromNSec(0);
+
+
+  return output;
+};
+
 
 
 int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned int source_frame, TransformLists& lists, std::string * error_string)
@@ -644,7 +691,7 @@ void Transformer::transformQuaternion(const std::string& target_frame, const Sta
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData( transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
@@ -662,7 +709,7 @@ void Transformer::transformVector(const std::string& target_frame,
   btVector3 output = (transform * end) - (transform * origin);
   stamped_out.setData( output);
 
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
@@ -673,7 +720,7 @@ void Transformer::transformPoint(const std::string& target_frame, const Stamped<
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData(transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
   stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
@@ -684,7 +731,7 @@ void Transformer::transformPose(const std::string& target_frame, const Stamped<P
   lookupTransform(target_frame, stamped_in.frame_id_, stamped_in.stamp_, transform);
 
   stamped_out.setData(transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
@@ -701,7 +748,7 @@ void Transformer::transformQuaternion(const std::string& target_frame, const ros
                   fixed_frame, transform);
 
   stamped_out.setData( transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
@@ -722,7 +769,7 @@ void Transformer::transformVector(const std::string& target_frame, const ros::Ti
   btVector3 output = (transform * end) - (transform * origin);
   stamped_out.setData( output);
 
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
 };
 
@@ -738,7 +785,7 @@ void Transformer::transformPoint(const std::string& target_frame, const ros::Tim
                   fixed_frame, transform);
 
   stamped_out.setData(transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
   stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
@@ -754,7 +801,7 @@ void Transformer::transformPose(const std::string& target_frame, const ros::Time
                   fixed_frame, transform);
 
   stamped_out.setData(transform * stamped_in);
-  stamped_out.stamp_ = stamped_in.stamp_;
+  stamped_out.stamp_ = transform.stamp_;
   stamped_out.frame_id_ = target_frame;
   //  stamped_out.parent_id_ = stamped_in.parent_id_;//only useful for transforms
 };
