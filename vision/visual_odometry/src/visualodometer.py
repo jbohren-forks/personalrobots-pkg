@@ -418,8 +418,12 @@ class VisualOdometer:
   def maintain_tracks(self, f0, f1):
     fpairs = set(self.temporal_match(f0, f1))
     rpairs = set([ (i1,i0) for (i0,i1) in self.temporal_match(f1, f0)])
-    pairs = fpairs ^ rpairs
+    pairs = fpairs & rpairs
+    self.pairs = pairs
     myinl = set([p0 for (p0,p1) in self.pe.inliers()])
+    for (i0,i1) in pairs:
+      if f1.kp[i1] == (113, 300, 11.9375):
+        print (f0.kp[i0], f1.kp[i1])
     pairmap = dict([(f0.kp[i0], f1.kp[i1]) for (i0,i1) in pairs if f1.kp[i1] in myinl])
 
     for t in self.tracks:
