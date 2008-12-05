@@ -1122,16 +1122,17 @@ TEST(tf, getLatestCommonTime)
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(2000ULL), "parent",  "parent's parent"));
   
   //simple case
-  ros::Time t = mTR.getLatestCommonTime("a", "parent's parent");
+  ros::Time t;
+  mTR.getLatestCommonTime("a", "parent's parent", t);
   EXPECT_EQ(t, ros::Time(1000ULL));
 
   //no connection
-  t = mTR.getLatestCommonTime("a", "not valid");
+  mTR.getLatestCommonTime("a", "not valid", t);
   EXPECT_EQ(t, ros::Time(0ULL));
 
   //testing with update
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(3000ULL), "a",  "parent"));
-  t = mTR.getLatestCommonTime("a", "parent's parent");
+  mTR.getLatestCommonTime("a", "parent's parent",t);
   EXPECT_EQ(t, ros::Time(2000ULL));
 
   //longer chain
@@ -1141,28 +1142,28 @@ TEST(tf, getLatestCommonTime)
   mTR.setTransform(  Stamped<btTransform> (btTransform(btQuaternion(0,0,0), btVector3(0,0,0)), ros::Time(5000ULL), "e",  "f"));
 
   //shared parent
-  t = mTR.getLatestCommonTime("a", "b");
+  mTR.getLatestCommonTime("a", "b",t);
   EXPECT_EQ(t, ros::Time(3000ULL));
 
   //two degrees
-  t = mTR.getLatestCommonTime("a", "c");
+  mTR.getLatestCommonTime("a", "c", t);
   EXPECT_EQ(t, ros::Time(3000ULL));
   //reversed
-  t = mTR.getLatestCommonTime("c", "a");
+  mTR.getLatestCommonTime("c", "a", t);
   EXPECT_EQ(t, ros::Time(3000ULL));
 
   //three degrees
-  t = mTR.getLatestCommonTime("a", "d");
+  mTR.getLatestCommonTime("a", "d", t);
   EXPECT_EQ(t, ros::Time(3000ULL));
   //reversed
-  t = mTR.getLatestCommonTime("d", "a");
+  mTR.getLatestCommonTime("d", "a", t);
   EXPECT_EQ(t, ros::Time(3000ULL));
 
   //disconnected tree
-  t = mTR.getLatestCommonTime("e", "f");
+  mTR.getLatestCommonTime("e", "f", t);
   EXPECT_EQ(t, ros::Time(5000ULL));
   //reversed order
-  t = mTR.getLatestCommonTime("f", "e");
+  mTR.getLatestCommonTime("f", "e", t);
   EXPECT_EQ(t, ros::Time(5000ULL));
 
 

@@ -126,7 +126,7 @@ public:
 
   /**@brief Return the latest rostime which is common across the spanning set 
    * zero if fails to cross */
-  ros::Time getLatestCommonTime(const std::string& source, const std::string& dest);
+  int getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time& time);
 
 
   /** \brief Transform a Stamped Quaternion into the target frame */

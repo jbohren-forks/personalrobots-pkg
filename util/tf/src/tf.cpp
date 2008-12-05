@@ -82,17 +82,19 @@ void Transformer::setTransform(const Stamped<btTransform>& transform)
 void Transformer::lookupTransform(const std::string& target_frame, const std::string& source_frame,
                      const ros::Time& time, Stamped<btTransform>& transform)
 {
+  int retval = NO_ERROR;
   ros::Time temp_time;
   //If getting the latest get the latest common time
   if (time == ros::Time(0ULL))
-    temp_time = getLatestCommonTime(target_frame, source_frame);
+    retval = getLatestCommonTime(target_frame, source_frame, temp_time);
   else
     temp_time = time;
 
   std::string error_string;
   TransformLists t_list;
-  ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( target_frame), temp_time, lookupFrameNumber( source_frame), t_list, &error_string);
+
+  if (retval == NO_ERROR)
+    retval = lookupLists(lookupFrameNumber( target_frame), temp_time, lookupFrameNumber( source_frame), t_list, &error_string);
 
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -116,24 +118,26 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
 void Transformer::lookupTransform(const std::string& target_frame,const ros::Time& target_time, const std::string& source_frame,
                      const ros::Time& source_time, const std::string& fixed_frame, Stamped<btTransform>& transform)
 {
+  int retval = NO_ERROR;
   ros::Time temp_target_time, temp_source_time;
   //If getting the latest get the latest common time
   if (target_time == ros::Time(0ULL))
-    temp_target_time = getLatestCommonTime(target_frame, fixed_frame);
+    retval = getLatestCommonTime(target_frame, fixed_frame, temp_target_time);
   else 
     temp_target_time = target_time;
-
+  
   //If getting the latest get the latest common time
-  if (source_time == ros::Time(0ULL))
-    temp_source_time = getLatestCommonTime(fixed_frame, source_frame);
+  if (source_time == ros::Time(0ULL) && retval == NO_ERROR)
+    retval = getLatestCommonTime(fixed_frame, source_frame, temp_source_time);
   else 
     temp_source_time = source_time;
 
   std::string error_string;
   //calculate first leg
   TransformLists t_list;
-  ///\todo check return
-  int retval = lookupLists(lookupFrameNumber( fixed_frame), temp_source_time, lookupFrameNumber( source_frame), t_list, &error_string);
+  if (retval == NO_ERROR)
+    retval = lookupLists(lookupFrameNumber( fixed_frame), temp_source_time, lookupFrameNumber( source_frame), t_list, &error_string);
+
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
   {
@@ -254,30 +258,31 @@ void Transformer::setExtrapolationLimit(const ros::Duration& distance)
   max_extrapolation_distance_ = distance;
 }
 
-ros::Time Transformer::getLatestCommonTime(const std::string& source, const std::string& dest)
+int Transformer::getLatestCommonTime(const std::string& source, const std::string& dest, ros::Time & time)
 {
-  ros::Time output = ros::Time::now();///\todo hack fixme
-  
+  time = ros::Time::now();///\todo hack fixme
+  int retval;
   TransformLists lists;
-  if (!lookupLists(lookupFrameNumber(dest), ros::Time(0ULL), lookupFrameNumber(source), lists, NULL))
+  retval = lookupLists(lookupFrameNumber(dest), ros::Time(0ULL), lookupFrameNumber(source), lists, NULL);
+  if (retval == NO_ERROR)
   {
     for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
     {
-      if (output > lists.inverseTransforms[i].stamp_)
-        output = lists.inverseTransforms[i].stamp_;
+      if (time > lists.inverseTransforms[i].stamp_)
+        time = lists.inverseTransforms[i].stamp_;
     }
     for (unsigned int i = 0; i < lists.forwardTransforms.size(); i++)
     {
-      if (output > lists.forwardTransforms[i].stamp_)
-        output = lists.forwardTransforms[i].stamp_;
+      if (time > lists.forwardTransforms[i].stamp_)
+        time = lists.forwardTransforms[i].stamp_;
     }
     
   }
   else
-    output.fromNSec(0);
-
-
-  return output;
+    time.fromNSec(0);
+  
+  
+  return retval;
 };
 
 
