@@ -192,7 +192,6 @@ public:
   CvMat transf_local_to_global_;
   /// optional matrix to convert from global to disparity space
   CvMat* transf_global_to_disp_;
-protected:
   double transf_local_to_global_data_[16];
 };
 

@@ -78,6 +78,4 @@ class VidereCamera(Camera):
     Cy = matrix[1][2]
     Tx = -matrix[0][3] / Fx
     Tx *= 1e-3
-    print config_str
-    print "params", (Fx, Fy, Tx, Cx, Cx, Cy)
     Camera.__init__(self, (Fx, Fy, Tx, Cx, Cx, Cy))

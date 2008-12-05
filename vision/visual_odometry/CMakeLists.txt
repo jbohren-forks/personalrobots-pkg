@@ -21,8 +21,8 @@ target_link_libraries(votools_py fltk)
 rospack_add_executable(test/testVisOdom test/CvTest3DPoseEstimate.cpp test/testVisOdom.cpp)
 target_link_libraries(test/testVisOdom visual_odometry)
 
-rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
-#rospack_add_compile_flags(visual_odometry -g -O0 -DDEBUG=1 -Wno-missing-field-initializers -march=pentium3 -msse3)
+#rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers -march=pentium3 -msse3)
+rospack_add_compile_flags(visual_odometry -g -O0 -DDEBUG=1 -Wno-missing-field-initializers -march=pentium3 -msse3)
 #rospack_add_compile_flags(visual_odometry -O3 -DNDEBUG -Wno-missing-field-initializers )
 
 # ROS unit tests

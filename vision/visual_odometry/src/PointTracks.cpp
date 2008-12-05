@@ -11,9 +11,11 @@
 #include <boost/foreach.hpp>
 
 PointTracks::~PointTracks(){
+#if 0
   BOOST_FOREACH(PointTrack* pt, tracks_) {
     delete pt;
   }
+#endif
 }
 
 void PointTracks::purge(int oldestFrameIndex) {

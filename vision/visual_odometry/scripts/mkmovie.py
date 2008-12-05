@@ -38,8 +38,13 @@ import array
 import rosrecord
 import visualize
 
-def imgAdapted(im):
-    return Image.fromstring({'mono8' : 'L', 'rgb24' : 'RGB'}[im.colorspace], (im.width, im.height), im.data).convert("L")
+class imgAdapted:
+  def __init__(self, im):
+    assert im.colorspace == 'mono8'
+    self.size = (im.width, im.height)
+    self.data = im.data
+  def tostring(self):
+    return self.data
 
 cam = None
 filename = "/u/prdata/videre-bags/loop2-color.bag"
@@ -71,25 +76,27 @@ for topic, msg in rosrecord.logplayer(filename):
     #vo = VisualOdometer(cam, feature_detector = FeatureDetectorFast())
     #vo2 = VisualOdometer(cam, feature_detector = FeatureDetector4x4(FeatureDetectorFast))
     #vos = [vo1,vo2]
-    vos = [VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD())]
+    vos = [
+      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD()),
+#      VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), scavenge = True),
+    ]
 
-  start,end = 941,1000
   start,end = 0,10
 
   if cam and topic.endswith("videre/images"):
     print framecounter
     if framecounter == end:
       break
-    if start <= framecounter and (framecounter % 2) == 0:
+    if start <= framecounter and (framecounter % 1) == 0:
       imgR = imgAdapted(msg.images[0])
       imgL = imgAdapted(msg.images[1])
 
       w,h = imgL.size
       comp = Image.new("RGB", (w*2,h*2))
 
-      af = SparseStereoFrame(imgL, imgR)
       if 0:
         for i,vo in enumerate(vos):
+          af = SparseStereoFrame(imgL, imgR)
           vo.handle_frame(af)
           if 1:
             leftframe = visualize.render_source_with_keypoints(vo, af)
@@ -102,21 +109,22 @@ for topic, msg in rosrecord.logplayer(filename):
             else:
               print "id", af.id, "inliers:", vo.inl, "proximity:", vo.proximity(master_frame, af)
             comp = visualize.render_source_with_keypoints_stats(vo, af)
-            comp.save("/tmp/im%04d.tiff" % (framecounter - start))
+          comp.save("/tmp/im%04d.tiff" % (framecounter - start))
       else:
         vo = vos[0]
+        af = SparseStereoFrame(imgL, imgR)
         vo.handle_frame(af)
-        inliers = [ (P0,P1) for (P1,P0) in vo.pe.inliers()]
-        if inliers != []:
-          pts3d = [cam.pix2cam(*P1) for (P0,P1) in inliers]
-          X = [ x for (x,y,z) in pts3d ]
-          Y = [ y for (x,y,z) in pts3d ]
-          Z = [ z for (x,y,z) in pts3d ]
-          print "xrange", min(X), max(X)
-          print "yrange", min(Y), max(Y)
-          print "zrange", min(Z), max(Z)
-
-      visualize.viz(vo, af)
+        if 0:
+          inliers = [ (P0,P1) for (P1,P0) in vo.pe.inliers()]
+          if inliers != []:
+            pts3d = [cam.pix2cam(*P1) for (P0,P1) in inliers]
+            X = [ x for (x,y,z) in pts3d ]
+            Y = [ y for (x,y,z) in pts3d ]
+            Z = [ z for (x,y,z) in pts3d ]
+            print "xrange", min(X), max(X)
+            print "yrange", min(Y), max(Y)
+            print "zrange", min(Z), max(Z)
+        visualize.viz(vo, af)
 
     framecounter += 1
 

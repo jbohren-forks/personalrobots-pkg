@@ -56,11 +56,12 @@ def do_stereo_sparse(refpat, rgrad, x, y, xim, yim, ftzero, dlen, tfilter_thresh
   return (0.5 + 16*v)
 
 class SparseStereoFrame:
-  def __init__(self, lf, rf):
+  def __init__(self, lf, rf, use_grad_img = True):
     self.lf = lf
     self.rf = rf
     self.rawdata = lf.tostring()
     self.size = lf.size
+    self.use_grad_img = use_grad_img
     (w, h) = self.size
 
     self.lgrad = " " * (w * h)
@@ -71,7 +72,7 @@ class SparseStereoFrame:
 
   def lookup_disparity(self, x, y):
     (w, h) = self.size
-    if 1:
+    if self.use_grad_img:
       limg = self.lf.tostring()
       rimg = self.rf.tostring()
     else:

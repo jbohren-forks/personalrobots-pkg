@@ -36,6 +36,7 @@ public:
   int           frame_index_;
   /// observed disparity coordinates of the point in this frame
   CvPoint3D64f  disp_coord_;
+// private: - XXX jcb ought to be private past this point - JD take a look?
 #if 0 // removed
   /// @todo replace disp_coord_est by disp_res
   /// re-projected disparity coordinate of the point from global estimation,
@@ -97,6 +98,7 @@ public:
   /// for debugging analysis
   int              id_;
 
+// private: - XXX jcb ought to be private past this point - JD take a look?
   /// a buffer to store \f$ H_{pp}^{-1} b_{p} \f$
   double        tp_[3];
   CvMat         mat_tp_;

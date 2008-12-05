@@ -18,8 +18,8 @@ import random
 import unittest
 import math
 
-from stereo import DenseStereoFrame, SparseStereoFrame
-from visualodometer import VisualOdometer, Pose
+from stereo import ComputedDenseStereoFrame, SparseStereoFrame
+from visualodometer import VisualOdometer, Pose, DescriptorSchemeCalonder, DescriptorSchemeSAD, FeatureDetectorFast, FeatureDetector4x4, FeatureDetectorStar, FeatureDetectorHarris
 import fast
 from math import *
 
@@ -42,6 +42,13 @@ def circle(im, x, y, r, color):
     draw = ImageDraw.Draw(im)
     box = [ int(i) for i in [ x - r, y - r, x + r, y + r ]]
     draw.pieslice(box, 0, 360, fill = color)
+
+class imgStereo:
+  def __init__(self, im):
+    self.size = im.size
+    self.data = im.tostring()
+  def tostring(self):
+    return self.data
 
 class TestDirected(unittest.TestCase):
 
@@ -184,7 +191,7 @@ class TestDirected(unittest.TestCase):
         for (et, at) in zip(rot, expected_rot):
           self.assertAlmostEqual(et, at, 3)
 
-  def xtest_sim(self):
+  def test_sim(self):
     # Test process with one 'ideal' camera, one real-world Videre
     camera_param_list = [
       # (200.0, 200.0, 3.00,  320.0, 320.0, 240.0),
@@ -223,7 +230,6 @@ class TestDirected(unittest.TestCase):
         P = None
         for i in range(50):
           P = movement(i, P)
-          print P.xform(0,0,0)
           li = Image.new("L", (640, 480))
           ri = Image.new("L", (640, 480))
           q = 0
@@ -237,23 +243,35 @@ class TestDirected(unittest.TestCase):
                 sprite(li, xl, yl, palette[q])
                 sprite(ri, xr, yr, palette[q])
             q += 1
-          li.save("sim/left-%04d.png" % i)
-          ri.save("sim/right-%04d.png" % i)
           expected.append(P)
-          afs.append(SparseStereoFrame(li, ri))
+          afs.append(SparseStereoFrame(imgStereo(li), imgStereo(ri)))
 
-      import visualize
       vo = VisualOdometer(cam)
       for i,(af,ep) in enumerate(zip(afs, expected)):
         vo.handle_frame(af)
-        print ep.xform(0,0,0), vo.pose.xform(0,0,0)
         if 0:
           print vo.pose.xform(0,0,0)
           print "expected", ep.M
           print "vo.pose", vo.pose.M
           print numpy.abs((ep.M - vo.pose.M))
-          self.assert_(numpy.alltrue(numpy.abs((ep.M - vo.pose.M)) < 0.2))
-        visualize.viz(vo, af)
+        self.assert_(numpy.alltrue(numpy.abs((ep.M - vo.pose.M)) < 0.2))
+
+      def run(vos):
+        for af in afs:
+          for vo in vos:
+            vo.handle_frame(af)
+
+      # Check that the pose estimators are truly independent
+
+      v1 = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), inlier_error_threshold=1.0)
+      v2 = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), inlier_error_threshold=2.0)
+      v8 = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), inlier_error_threshold=8.0)
+      v1a = VisualOdometer(cam, feature_detector = FeatureDetectorFast(), descriptor_scheme = DescriptorSchemeSAD(), inlier_error_threshold=1.0)
+      run([v1])
+      run([v2,v8,v1a])
+      self.assert_(v1.pose.xform(0,0,0) == v1a.pose.xform(0,0,0))
+      for a,b in [ (v1,v2), (v2,v8), (v1, v8) ]:
+        self.assert_(a.pose.xform(0,0,0) != b.pose.xform(0,0,0))
 
       return
 
@@ -324,6 +342,35 @@ class TestDirected(unittest.TestCase):
           print old, new, new[0] - old[0]
       prev_af = af
       print "frame", x, "has", len(af.kp), "keypoints", pose
+
+  def test_stereo(self):
+    cam = camera.VidereCamera(open("wallcal.ini").read())
+    #lf = Image.open("wallcal-L.bmp").convert("L")
+    #rf = Image.open("wallcal-R.bmp").convert("L")
+    for offset in [ 1, 10, 10.25, 10.5, 10.75, 11, 63]:
+      lf = Image.open("snap.png").convert("L")
+      rf = Image.open("snap.png").convert("L")
+      rf = rf.resize((16 * 640, 480))
+      rf = ImageChops.offset(rf, -int(offset * 16), 0)
+      rf = rf.resize((640,480), Image.ANTIALIAS)
+      for gradient in [ False, True ]:
+        af = SparseStereoFrame(lf, rf, gradient)
+        vo = VisualOdometer(cam)
+        vo.find_keypoints(af)
+        vo.find_disparities(af)
+        error = offset - sum([d for (x,y,d) in af.kp]) / len(af.kp)
+        self.assert_(abs(error) < 0.25) 
+
+    if 0:
+      scribble = Image.merge("RGB", (lf,rf,Image.new("L", lf.size))).resize((1280,960))
+      #scribble = Image.merge("RGB", (Image.fromstring("L", lf.size, af0.lgrad),Image.fromstring("L", lf.size, af0.rgrad),Image.new("L", lf.size))).resize((1280,960))
+      draw = ImageDraw.Draw(scribble)
+      for (x,y,d) in af0.kp:
+        draw.line([ (2*x,2*y), (2*x-2*d,2*y) ], fill = (255,255,255))
+      for (x,y,d) in af1.kp:
+        draw.line([ (2*x,2*y+1), (2*x-2*d,2*y+1) ], fill = (0,0,255))
+      #scribble.save('out.png')
+
 
 if __name__ == '__main__':
     rostest.unitrun('visual_odometry', 'directed', TestDirected)

@@ -262,6 +262,25 @@ class DescriptorSchemeCalonder(DescriptorScheme):
     return match
 
 
+uniq_track_id = 100
+
+class Track:
+  def __init__(self, p0, p0id, p1, p1id, p1pose, cam):
+    global uniq_track_id
+    self.p = [p0, p1]
+    self.id = [p0id, p1id]
+    self.lastpt = p1
+    self.alive = True
+    print p0id,p0,p1id,p1,p1pose.xform(*cam.pix2cam(*p1)),uniq_track_id
+    self.sba_track = VO.point_track(p0id, p0, p1id, p1, p1pose.xform(*cam.pix2cam(*p1)), uniq_track_id)
+    uniq_track_id += 1
+  def kill(self):
+    self.alive = False
+  def extend(self, p1, p1id):
+    self.p.append(p1)
+    self.id.append(p1id)
+    self.lastpt = p1
+    self.sba_track.extend(p1id, p1)
 
 class VisualOdometer:
 
@@ -279,14 +298,20 @@ class VisualOdometer:
     self.keyframe = None
     self.log_keyframes = []
     self.pairs = []
+    self.tracks = set()
+    self.posechain = []
 
     self.angle_keypoint_thresh = kwargs.get('angle_keypoint_thresh', 0.05)
     self.inlier_thresh = kwargs.get('inlier_thresh', 175)
     self.feature_detector = kwargs.get('feature_detector', FeatureDetectorFast())
     self.descriptor_scheme = kwargs.get('descriptor_scheme', DescriptorSchemeSAD())
+    self.inlier_error_threshold = kwargs.get('inlier_error_threshold', 3.0)
+    self.scavenge = kwargs.get('scavenge', False)
+    self.sba = kwargs.get('sba', False)
+    self.pe.setInlierErrorThreshold(self.inlier_error_threshold)
 
   def name(self):
-    return "VisualOdometer< %s %s>" % (self.feature_detector.name(), self.descriptor_scheme.name())
+    return "VisualOdometer (%s %s iet=%.1f)" % (self.feature_detector.name(), self.descriptor_scheme.name(), self.inlier_error_threshold)
 
   def reset_timers(self):
     for n,t in self.timer.items():
@@ -364,12 +389,62 @@ class VisualOdometer:
     else:
       return (0, None)
 
+  def scavenger(self, diff_pose, frame):
+    af0 = self.keyframe
+    af1 = frame
+    Xs = vop.array([k[0] for k in af1.kp])
+    Ys = vop.array([k[1] for k in af1.kp])
+    pairs = []
+    fwd_pose = ~diff_pose
+    for (i,(ki,di)) in enumerate(zip(af0.kp,af0.descriptors)):
+      (x,y,d) = self.cam.cam2pix(*fwd_pose.xform(*self.cam.pix2cam(*ki)))
+      predX = (abs(Xs - x) < 4)
+      predY = (abs(Ys - y) < 4)
+      hits = vop.where(predX & predY, 1, 0).tostring()
+      best = self.descriptor_scheme.search(di, af1, hits)
+      if best != None:
+        pairs.append((i, best[0], best[1]))
+    self.pairs = [(i0,i1) for (i0,i1,d) in pairs]
+    solution = self.solve(af0.kp, af1.kp, self.pairs)
+    return solution
+
   def handle_frame(self, frame):
     self.find_keypoints(frame)
     self.find_disparities(frame)
     self.collect_descriptors(frame)
     frame.id = self.num_frames
     return self.handle_frame_0(frame)
+
+  def maintain_tracks(self, f0, f1):
+    fpairs = set(self.temporal_match(f0, f1))
+    rpairs = set([ (i1,i0) for (i0,i1) in self.temporal_match(f1, f0)])
+    pairs = fpairs ^ rpairs
+    myinl = set([p0 for (p0,p1) in self.pe.inliers()])
+    pairmap = dict([(f0.kp[i0], f1.kp[i1]) for (i0,i1) in pairs if f1.kp[i1] in myinl])
+
+    for t in self.tracks:
+      if not (t.lastpt in pairmap):
+        t.kill()
+
+    # Only keep tracks that have a recent frame
+    oldest_useful_frame = f0.id - 3
+    self.tracks = set([ t for t in self.tracks if oldest_useful_frame <= t.id[-1]])
+
+    oldtails = set([t.lastpt for t in self.tracks])
+    for t in self.tracks:
+      if t.alive:
+        t.extend(pairmap[t.lastpt], f1.id)
+
+    #print len(self.tracks), [ len(t.p) for t in self.tracks ]
+    for p0 in set(pairmap) - oldtails:
+      p1 = pairmap[p0]
+      #if not (p1 in [t.lastpt for t in self.tracks]):
+      self.tracks.add(Track(p0, f0.id, p1, f1.id, f1.pose, self.cam))
+
+  def sba_handle_frame(self, frame):
+    self.posechain.append(VO.frame_pose(frame.id, frame.pose.tolist()))
+    #topleft = [ p.M[0] for p in self.posechain ]
+    self.pe.sba(self.posechain[-2:-1], self.posechain[-1:], [ t.sba_track for t in self.tracks ])
 
   def handle_frame_0(self, frame):
     if self.prev_frame:
@@ -382,6 +457,9 @@ class VisualOdometer:
       if solution and solution[0] > 5:
         (inl, rot, shift) = solution
         diff_pose = self.mkpose(rot, shift)
+        if self.scavenge:
+          (inl, rot, shift) = self.scavenger(diff_pose, frame)
+          diff_pose = self.mkpose(rot, shift)
       else:
         inl = 0
         diff_pose = Pose()
@@ -398,12 +476,16 @@ class VisualOdometer:
       Top = Tok * Tkp
       frame.pose = Top
       frame.inl = self.inl
+      if self.prev_frame and self.sba:
+        self.maintain_tracks(self.prev_frame, frame)
     else:
       frame.pose = Pose()
       self.keyframe = frame
       self.log_keyframes.append(self.keyframe.id)
       frame.inl = 999
     self.pose.assert_sane()
+    if self.sba:
+      self.sba_handle_frame(frame)
 
     self.pose = frame.pose
     self.prev_frame = frame
