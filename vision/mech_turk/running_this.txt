@@ -27,4 +27,5 @@
 	* id_rsa_SIU  [These are access keys]
 	* id_rsa_SIU.pub
 	* Needs an image storage subdirectory called: "/images"
- 
+
+5 put id_rsa_SIU and id_rsa_SIU.pub in src/.  Note: id_rsa_SIU need to have permission 600 for scp and subsequent http request to work properly.
