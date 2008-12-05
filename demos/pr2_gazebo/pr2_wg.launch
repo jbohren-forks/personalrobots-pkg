@@ -12,7 +12,7 @@
     </node>
 
     <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
-    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2" respawn="false" output="screen" /> <!-- load default arm controller -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -5 -15 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
 
     <!-- load controllers -->
     <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_controllers.launch" />

@@ -44,7 +44,7 @@
     <frames>
       <row height="100%">
         <camera width="100%">
-          <xyz>0 0 20</xyz>
+          <xyz>-6 -8 20</xyz>
           <rpy>0 90 90</rpy>
         </camera>
       </row>
