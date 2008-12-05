@@ -364,7 +364,7 @@ AmclNode::AmclNode() :
   param("pf_odom_drift_xa", odom_drift_xa, 0.2);
   param("pf_min_d", d_thresh, 0.2);
   param("pf_min_a", a_thresh, M_PI/6.0);
-  param("odom_frame_id", odom_frame_id, string("odom"));
+  param("pf_odom_frame_id", odom_frame_id, string("odom"));
   // Annoyingly, we have to convert them back to strings for insertion into
   // Player's config file object
   char valbuf[1024];
