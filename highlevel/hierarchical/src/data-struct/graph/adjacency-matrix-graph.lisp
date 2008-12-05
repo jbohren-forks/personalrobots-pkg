@@ -11,11 +11,16 @@
 
 Initargs
 :nodes - set of nodes
+OR
+:node-test - a test, in which case, nodes will be an empty <indexed-set> using equality test test.
+
 :m - a 2d array representing the adjacencies.  M(i,j) = nil means no edge from i to j.  If it is an object of type edge, then that is the edge from i to j.  Otherwise, an edge object is created from i to j having M(i,j) as the label.  Can be left out, in which case an all-nil array will be used.  Even if M is provided, the graph doesn't keep a reference to it, so future modifications to M will not affect the graph."))
 
-(defmethod initialize-instance :after ((g <adjacency-matrix-graph>) &rest args &key (nodes nil nodes-supp) (m nil))
+(defmethod initialize-instance :after ((g <adjacency-matrix-graph>) &rest args &key (m nil) node-test node)
   (declare (ignore args))
-  (assert nodes-supp nil ":nodes argument must be supplied when creating <adjacency-matrix-graph>")
+  (assert (xor node node-test))
+  (set-if-unbound 'nodes g (make-instance '<indexed-set> :test node-test))
+  (let ((nodes (nodes g)))
   (let ((n (size nodes))
 	(table (setf (m g) (make-inf-array :rank 2 :default-val nil))))
     ;; The table is stored as an inf-array data structure, to make adding nodes constant-time
@@ -27,7 +32,7 @@ Initargs
 	      (setf (inf-aref table i j)
 		(cond
 		 ((edge-p e) (assert (and (eq (from e) (item i nodes)) (eq (to e) (item j nodes)))) e)
-		 (t (make-edge (item i nodes) (item j nodes) :label e)))))))))))
+		 (t (make-edge (item i nodes) (item j nodes) :label e))))))))))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

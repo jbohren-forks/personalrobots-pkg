@@ -13,11 +13,15 @@ get-edge
 nodes
 edges-from
 edges-to
+source
+dest
 incident-edges
 add-edge
 add-node
 edge-label
 neighbours
+parents
+children
 
 Operations
 ----------
@@ -45,11 +49,15 @@ unknown-node
    nodes
    edges-from
    edges-to
+   source
+dest
    incident-edges
    add-edge
    add-node
    edge-label
    neighbours
+   parents
+   children
    
    topological-sort
    descendant-matrix
@@ -84,7 +92,13 @@ unknown-node
   (label nil)
   (directed? t))
 
+(defun source (e) (from e))
+(defun dest (e) (to e))
+
+;; Seems unnecessary... might as well just use the function #'label defined in the structure
 (defun edge-label (e) (label e))
+(defun set-edge-label (e v) (setf (label e) v))
+(defsetf edge-label set-edge-label)
 
 (defun reverse-edge (e)
   (let ((e2 (copy-edge e)))
@@ -143,6 +157,14 @@ unknown-node
   (disjoint-union 
    (ndlet ((e (edges-from g n))) (to e))
    (ndlet ((e (edges-to g n))) (from e))))
+
+(defun parents (g n)
+  "parents GRAPH NODE.  Return implicitly specified set of nodes that are sources of edges whose destination is NODE."
+  (ndlet ((e (edges-to g n))) (from e)))
+
+(defun children (g n)
+  "children GRAPH NODE.  Return implicitly specified set of nodes that are destinations of edges whose source is NODE."
+  (ndlet ((e (edges-from g n))) (to e)))
 
 (defun num-nodes (g)
   "num-nodes GRAPH.  Return the number of nodes in the graph."

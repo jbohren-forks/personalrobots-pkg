@@ -1,5 +1,12 @@
 (in-package nav-switch)
 
+(defun plan-is-valid (plan)
+  (notany #'(lambda (a) (and (listp a)
+			     (eq (first a) 'nav-switch)
+			     (eql (second a) (fourth a))
+			     (eql (third a) (fifth a))))
+	  plan))
+
 (defun nav-switch-hierarchy (d)
   (let ((nr (lookup-type d 'rows))
 	(nc (lookup-type d 'columns))
@@ -11,6 +18,7 @@
       :planning-problem d
       :top-level-actions '(nav-goal nav-goal2 nav-switch)
       :refinement-order '((nav-goal nav-goal2 nav-switch) (nav))
+      :valid-plan-fn #'plan-is-valid ;; Disallow nav-switch with same start and goal
       :hla-schemas (p2alist 
 		    
 		    'nav-goal 

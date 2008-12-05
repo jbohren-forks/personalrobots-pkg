@@ -122,6 +122,7 @@
 
 
 (defun make-unguided-blocks-hierarchy2 (d)
+  "like unguided-hierarchy-1 except when doing a navigate with turn, the column in which the turn is done is fixed to equal the initial column."
   (let ((nr (num-rows d))
 	 (nc (num-cols d))
 	 (blocks (blocks d))
@@ -474,4 +475,30 @@
 	(p2alist 'nav-up nav-up 'nav-down nav-down 'nav-left nav-left
 		 'nav-right nav-right 'navigate navigate
 		 'move-block move-block)))))
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; And-or hierarchy
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defun block-moves (s)
+  (mvbind (a facing holding) (state->array s)
+    (declare (ignore facing holding))
+    (dbind (nc nr) (array-dimensions a)
+      (let ((movable nil) (targets nil))
+	(dotimes (c nc)
+	  (let ((lowest-clear 0))
+	    (dotimes (r (1- nr))
+	      (if (member (aref a c (1+ r)) '(nil gripper))
+		  (return)
+		  (incf lowest-clear)))
+	    (unless (= lowest-clear 0) (push (aref a c lowest-clear) movable))
+	    (unless (= lowest-clear (1- nr)) (push (aref a c lowest-clear) targets))))
+	(ndlet-fail ((b1 movable) (b2 targets))
+	  (if (eq b1 b2) 
+	      'fail
+	      (list 'move b1 b2)))))))
 

@@ -25,7 +25,7 @@
 A looping construct.  TEST is evaluated *before* each iteration, and if it is false, the construct terminates."
   `(loop
        while ,test
-       do ,@ body))
+       do ,@ (or body '(()))))
 
 (defmacro until (test &body body)
   "until TEST &rest BODY
@@ -535,13 +535,15 @@ Expands to code that defines two methods.  The first is obtained by replacing de
 			   (setf *lhs* ,x
 				 *rhs* ,y)
 			   (cerror "continue with remaining tests"
-				   "~a, which evaluated to ~&  ~a~&and~&  ~a~&did not satisfy test~:[~; ~:*~a~]" ',(first a) ,x ,y ',name))
-			 (write-char #\. t))
+				   "~a did not equal ~a when evaluating~&~a" ,x ,y ',(first a)))
+			 (write-char #\. t)
+			 (force-output t))
 		    `(let ((,x ,lhs))
 		       (unless (funcall ,test ,x)
 			 (cerror "continue with remaining tests"
 				 "~a, which evaluated to ~a, did not satisfy test~:[~; ~:*~a~]" ',(first a) ,x ',name))
-		       (write-char #\. t))))))
+		       (write-char #\. t)
+		       (force-output t))))))
 	  args)
        (format t "check"))))
 			   
@@ -610,3 +612,12 @@ Causes the dispatching read macro for CHAR in READTABLE to work by reading the n
 				
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; alist functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defmacro make-alist-function ((&rest args) &body body)
+  (let ((l (gensym)))
+    `#'(lambda (,l)
+	 (let ,(mapcar #'(lambda (a) `(,a (cdr (check-not-null (assoc ',a ,l))))) args)
+	   ,@body))))

@@ -138,7 +138,9 @@ Matrix must be a 2d array of real numbers.  Prints to stream STREAM.  No newline
 	(apply #'format str (string-replace-all (string-replace-all format-string "~&" "~:@_") "~%" "~:@_") args)
 	;; We use a pprint block to enforce the indent.  In turn, this means we have to replace unconditional newlines with
 	;; mandatory conditional newlines.  
-	)))
+	)
+      (force-output str)))
+
   (awhen args (slast it)))
 
   

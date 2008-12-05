@@ -64,7 +64,7 @@ Returns 1) A provably optimal plan of the appropriate type, or nil if time runs 
 
 (defun ahss (hpp r &key (state (init-state hpp)) (termination ':primitive) (valid-plan-pred (constantly t))
 			(priority-fn #'(lambda (a c s) (declare (ignore a s)) c))
-	     &aux (known-values (make-known-values 'state #'same-state)))
+	     &aux (known-values (make-known-values 'state #'same-state)) (checker (subsumption-checker hpp)))
   "ahss HPP REWARD-THRESHOLD &key (STATE (init-state hpp)) (TERMINATION ':primitive)(VALID-PLAN-PRED (constantly t)) (PRIORITY-FN complete-reward)
 
 Angelic hierarchical satisficing search. as described in the offline submission.
@@ -73,7 +73,7 @@ TERMINATION can be ':primitive, ':begins-with-primitive, or ':any
 
 Returns 1) A plan of the appropriate type that has guaranteed reward > the threshold, or nil if no such plan exists 2) The lookahead tree."
   
-  (reset-subsumption-checker (subsumption-checker hpp) state hpp)
+  (reset-subsumption-checker checker state hpp)
   (let ((tree (initial-tree hpp :init-state state :known-values known-values 
 			    :node-type '<node-with-priority> :node-initargs (list ':priority-fn priority-fn)))
 	(i 0))
@@ -106,7 +106,8 @@ Returns 1) A plan of the appropriate type that has guaranteed reward > the thres
 	      
 	      (when (my> val r)
 		(debug-print 2 "Committing to ~a with complete value ~a" plan val)
-		(remove-all-paths-except path))))))
+		(remove-all-paths-except path)
+		)))))
       
       ;; 3. Otherwise, refine the highest priority plan
       (mvbind (plan val path) (get-best-plan tree ':any :q-fn #'priority-q)

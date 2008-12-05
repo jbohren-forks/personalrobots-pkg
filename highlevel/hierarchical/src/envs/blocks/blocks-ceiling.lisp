@@ -19,6 +19,7 @@
    on
    turnL
    turnR
+   gripper
    left
    right
    up
@@ -339,6 +340,20 @@ Creates a blocks-world-with-ceiling domain of the given dimensions (where row 0 
   "Return the symbol for the base block in column I"
   (intern (format nil "T~a" i) 'keyword))
 
+(defun state->array (s)
+  "Return 1) A 2d array containing the contents of each cell (either a block name, 'gripper, or nil) 2) the direction the gripper is facing ('left or 'right) 3) what the gripper is holding (a block name or 'nothing)"
+  (let ((a (make-array (list (num-cols s) (num-rows s)) :initial-element nil)))
+    (do-elements (prop (pds-props s) (values a (facing s) (gripper-holding s)))
+      (case (first prop)
+	(block-pos (dsbind (name x y) (rest prop)
+		     (assert (not (aref a x y)) ()
+			     "Location (~a, ~a) contained ~a and ~a" x y name (aref a x y))
+		     (setf (aref a x y) name)
+		     ))
+	(gripper-pos (dsbind (x y) (rest prop)
+		       (assert (not (aref a x y)) ()
+			       "Location (~a, ~a) contained gripper and ~a" x y (aref a x y))
+		       (setf (aref a x y) 'gripper)))))))
     
 
 
@@ -348,30 +363,18 @@ Creates a blocks-world-with-ceiling domain of the given dimensions (where row 0 
 
 
 (defun pprint-bcs-state (str s)
-  (let* ((p (pds-props s))
-	 (nr (num-rows s))
-	 (nc (num-cols s))
-	 (a (make-array (list nc nr) :initial-element #\.))
-	 (holding (gripper-holding s)))
-
-    (do-elements (prop p)
-      (case (first prop)
-	(block-pos (dsbind (name x y) (rest prop)
-		     (assert (eql #\. (aref a x y)) ()
-		       "Location (~a, ~a) contained ~a and ~a" x y name (aref a x y))
-		     (setf (aref a x y) (char-upcase (aref (symbol-name name) 0)))))
-	(gripper-pos (dsbind (x y) (rest prop)
-		       (assert (eql #\. (aref a x y)) ()
-			 "Location (~a, ~a) contained gripper and ~a" x y (aref a x y))
-		       (setf (aref a x y)
-			 (if (eq holding 'nothing)
-			     #\G
-			   (char-downcase (aref (symbol-name holding) 0))))))))
+  (mvbind (a facing holding) (state->array s)
     (pprint-logical-block (str nil)
-      (for-loop (r (1- nr) 0 -1 #'<)
-		(dotimes (c nc)
-		  (write-char (aref a c r) str))
+      (for-loop (i (1- (num-rows s)) 0 -1 #'<)
+	(dotimes (j (num-cols s))
+	  (write-char 
+	   (cond
+	     ((eq (aref a j i) 'gripper)
+	      (if (eq holding 'nothing) #\G (char-downcase (sfirst (symbol-name holding)))))
+	     ((null (aref a j i)) #\.)
+	     (t (char-upcase (sfirst (symbol-name (aref a j i))))))
+	   str))
 	(format str "~@:_"))
-      (format str "Facing ~a~@:_" (facing s)))
+      (format str "Facing ~a~@:_" facing))
     (values)))
 

@@ -7,6 +7,9 @@
 	   
 	   def-struct-clone-method
 	   copy-into
+	   same
+	   canonicalize
+	   def-struct-canonicalize-method
 	   gendefstruct
 	   copy
 	   leave-out
@@ -158,6 +161,8 @@
 	   it
 	   
 	   define-read-dispatch
+
+	   make-alist-function
 	   
 	   to-boolean
 	   bit-true

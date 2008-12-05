@@ -130,15 +130,22 @@
 ;; Helpers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defparameter *dummy-reward-for-navigating-in-place* -1e-6)
+;; A hack, put in so that nav actions that have the same start and goal will be subsumed away
+
 (defun horiz-reward (xs ys xg yg s)
-  (let ((d (pss-domain s)))
-    (+ (* (good-move-cost d) (- (abs-diff xs xg)))
-       (* (bad-move-cost d) (- (abs-diff ys yg))))))
+  (min
+   (let ((d (pss-domain s)))
+     (+ (* (good-move-cost d) (- (abs-diff xs xg)))
+	(* (bad-move-cost d) (- (abs-diff ys yg)))))
+   *dummy-reward-for-navigating-in-place*))
 
 (defun vert-reward (xs ys xg yg s)
-  (let ((d (pss-domain s)))
-    (+ (* (bad-move-cost d) (- (abs-diff xs xg)))
-       (* (good-move-cost d) (- (abs-diff ys yg))))))
+  (min
+   (let ((d (pss-domain s)))
+     (+ (* (bad-move-cost d) (- (abs-diff xs xg)))
+	(* (good-move-cost d) (- (abs-diff ys yg)))))
+   *dummy-reward-for-navigating-in-place*))
 
 (defun horiz-reward-flip (xs ys xg yg s)
   (1- (horiz-reward xs ys xg yg s)))
