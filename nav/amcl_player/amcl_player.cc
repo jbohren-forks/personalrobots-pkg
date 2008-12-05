@@ -474,12 +474,12 @@ AmclNode::ProcessMessage(QueuePointer &resp_queue,
 
     // subtracting base to odom from map to base and send map to odom instead
     tf::Stamped<tf::Pose> odom_to_map;
-    this->tfL->transformPose("odom",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
+    this->tfL->transformPose("odom_combined",tf::Stamped<tf::Pose> (btTransform(btQuaternion(pdata->pos.pa, 0, 0), 
                                                                        btVector3(pdata->pos.px, pdata->pos.py, 0.0)).inverse(), 
                                                            t, "base_link"),odom_to_map);
     this->tf->sendTransform(tf::Stamped<tf::Transform> (tf::Transform(tf::Quaternion( odom_to_map.getRotation() ),
                                                                       tf::Point(      odom_to_map.getOrigin() ) ),
-                                                        t, "map","odom"));
+                                                        t, "map","odom_combined"));
 
     /*
     printf("lpose: (%.3f %.3f %.3f) @ (%llu:%llu)\n",
@@ -729,7 +729,7 @@ AmclNode::getOdomPose(double& x, double& y, double& yaw,
   tf::Stamped<btTransform> odom_pose;
   try
   {
-    this->tfL->transformPose("odom", ident, odom_pose);
+    this->tfL->transformPose("odom_combined", ident, odom_pose);
   }
   catch(tf::TransformException e)
   {
