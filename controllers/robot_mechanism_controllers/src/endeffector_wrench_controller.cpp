@@ -31,14 +31,15 @@
  * Author: Wim Meeussen
  */
 
-#define SPACENAV_RANGE      400.0
-#define SPACENAV_MAX_FORCE  20.0
-#define SPACENAV_MAX_TORQUE 0.75
-
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_kinematics/robot_kinematics.h"
 #include "robot_mechanism_controllers/endeffector_wrench_controller.h"
+
+
+static const double SPACENAV_RANGE     = 400.0;
+static const double SPACENAV_MAX_FORCE  = 20.0;
+static const double SPACENAV_MAX_TORQUE = 0.75;
 
 
 using namespace KDL;

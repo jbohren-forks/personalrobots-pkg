@@ -16,6 +16,7 @@
   <depend package="robot_srvs" />
   <depend package="robot_msgs" />
   <depend package="tf" />
+  <depend package="kdl" />
   <depend package="angles" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>

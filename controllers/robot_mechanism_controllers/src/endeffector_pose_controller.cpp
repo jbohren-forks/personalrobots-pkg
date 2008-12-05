@@ -31,17 +31,17 @@
  * Author: Wim Meeussen
  */
 
+
+
 #include "urdf/parser.h"
 #include <algorithm>
 #include "robot_kinematics/robot_kinematics.h"
-#include "robot_mechanism_controllers/endeffector_twist_controller.h"
-
+#include "robot_mechanism_controllers/endeffector_pose_controller.h"
 
 static const double SPACENAV_RANGE   = 400.0;
-static const double SPACENAV_MAX_VEL = 10.0;
-static const double SPACENAV_MAX_ROT = 2.0;
-static const double MASS_TRANS       = 2.0;
-static const double MASS_ROT         = 0.5;
+static const double SPACENAV_MAX_VEL = 0.1;
+static const double SPACENAV_MAX_ROT = 0.05;
+static const double POSE_FEEDBACK    = 20.0;
 
 
 using namespace KDL;
@@ -49,33 +49,25 @@ namespace controller {
 
 
 
-ROS_REGISTER_CONTROLLER(EndeffectorTwistController)
+ROS_REGISTER_CONTROLLER(EndeffectorPoseController)
 
 
-EndeffectorTwistController::EndeffectorTwistController()
-: jnt_to_twist_solver_(NULL),
+EndeffectorPoseController::EndeffectorPoseController()
+: jnt_to_pose_solver_(NULL),
   joints_(0,(mechanism::JointState*)NULL)
 {}
 
-
-
-EndeffectorTwistController::~EndeffectorTwistController()
+EndeffectorPoseController::~EndeffectorPoseController()
 {
-  if (jnt_to_twist_solver_) delete jnt_to_twist_solver_;
+  if (jnt_to_pose_solver_) delete jnt_to_pose_solver_;
 }
 
 
 
-bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool EndeffectorPoseController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // set disired twist to 0
-  for (unsigned int i=0; i<3; i++){
-    twist_desi_.vel(i) = 0;
-    twist_desi_.rot(i) = 0;
-  }
-
-  // create wrench controller
-  wrench_controller_.initXml(robot, config);
+  // create twist controller
+  twist_controller_.initXml(robot, config);
 
   // parse robot description from xml file
   ros::node *node = ros::node::instance();
@@ -93,7 +85,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   num_joints_   = chain_.getNrOfJoints();
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
-  jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
+  jnt_to_pose_solver_ = new ChainFkSolverPos_recursive(chain_);
 
   // test if we got robot pointer
   assert(robot);
@@ -101,7 +93,7 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
   if (!chain) {
-    fprintf(stderr, "Error: EndeffectorTwistController was not given a chain\n");
+    fprintf(stderr, "Error: EndeffectorPoseController was not given a chain\n");
     return false;
   }
 
@@ -109,24 +101,24 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   const char *root_name = chain->Attribute("root");
   const char *tip_name = chain->Attribute("tip");
   if (!root_name) {
-    fprintf(stderr, "Error: Chain element for EndeffectorTwistController must specify the root\n");
+    fprintf(stderr, "Error: Chain element for EndeffectorPoseController must specify the root\n");
     return false;
   }
   if (!tip_name)  {
-    fprintf(stderr, "Error: Chain element for EndeffectorTwistController must specify the tip\n");
+    fprintf(stderr, "Error: Chain element for EndeffectorPoseController must specify the tip\n");
     return false;
   }
 
   // test if we can get root from robot
   if (!robot->getLinkState(root_name)) {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorTwistController)\n", root_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorPoseController)\n", root_name);
     return false;
   }
 
   // get tip from robot
   mechanism::LinkState *current = robot->getLinkState(tip_name);
   if (!current)  {
-    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorTwistController)\n", tip_name);
+    fprintf(stderr, "Error: link \"%s\" does not exist (EndeffectorPoseController)\n", tip_name);
     return false;
 
   }
@@ -142,13 +134,15 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
       current = robot->getLinkState(current->link_->parent_name_);
       
       if (!current) {
-	  fprintf(stderr, "Error: for EndeffectorTwistController, tip is not connected to root\n");
+	  fprintf(stderr, "Error: for EndeffectorPoseController, tip is not connected to root\n");
 	  return false;
 	}
     }
   // reverse order of joint vector
   std::reverse(joints_.begin(), joints_.end());
 
+  // set desired pose to current pose
+  pose_desi_ = getPose();
 
   return true;
 }
@@ -158,56 +152,57 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
 
 
 
-void EndeffectorTwistController::update()
+void EndeffectorPoseController::update()
+{
+  // get current pose
+  pose_meas_ = getPose();
+
+  // pose feedback into twist
+  twist_out_ = diff(pose_meas_, pose_desi_);
+  //diff.RefPoint();
+  twist_out_ = twist_out_ * POSE_FEEDBACK;
+
+  // send twist to twist controller
+  twist_controller_.twist_desi_ = twist_out_;
+  twist_controller_.update();
+}
+
+
+
+Frame EndeffectorPoseController::getPose()
 {
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
     if (!joints_[i]->calibrated_)
-      return;
+      fprintf(stderr,"Joint not calibrated\n");
   }
 
-  // get the joint positions and velocities
-  JntArrayVel jnt_posvel(num_joints_);
-  for (unsigned int i=0; i<num_joints_; i++){
-    jnt_posvel.q(i)    = joints_[i]->position_;
-    jnt_posvel.qdot(i) = joints_[i]->velocity_;
-  }
+  // get the joint positions 
+  JntArray jnt_pos(num_joints_);
+  for (unsigned int i=0; i<num_joints_; i++)
+    jnt_pos(i) = joints_[i]->position_;
 
-  // get endeffector twist
-  FrameVel twist; 
-  jnt_to_twist_solver_->JntToCart(jnt_posvel, twist);
-  twist_meas_ = twist.deriv();
+  // get endeffector pose
+  Frame result;
+  jnt_to_pose_solver_->JntToCart(jnt_pos, result);
 
-  // twist feedback into wrench
-  Twist diff = twist_desi_ - twist_meas_;
-  for (unsigned int i=0; i<3; i++){
-    wrench_out_.force(i)  = MASS_TRANS * diff.vel(i);
-    wrench_out_.torque(i) = MASS_ROT   * diff.rot(i);
-  }
-
-  // send wrench to wrench controller
-  wrench_controller_.wrench_desi_ = wrench_out_;
-  wrench_controller_.update();
+  return result;
 }
 
 
 
 
+ROS_REGISTER_CONTROLLER(EndeffectorPoseControllerNode)
 
 
 
-
-ROS_REGISTER_CONTROLLER(EndeffectorTwistControllerNode)
-
-
-
-bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
+bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to
   ros::node *node = ros::node::instance();
   std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
   if (topic == "") {
-    fprintf(stderr, "No topic given to EndeffectorTwistControllerNode\n");
+    fprintf(stderr, "No topic given to EndeffectorPoseControllerNode\n");
     return false;
   }
 
@@ -215,59 +210,62 @@ bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXml
   if (!controller_.initXml(robot, config))
     return false;
   
-  // subscribe to twist commands
-  node->subscribe(topic + "/command", twist_msg_,
-                  &EndeffectorTwistControllerNode::command, this, 1);
+  // subscribe to pose commands
+  node->subscribe(topic + "/command", pose_msg_,
+                  &EndeffectorPoseControllerNode::command, this, 1);
   guard_command_.set(topic + "/command");
 
   // subscribe to spacenav pos commands
   node->subscribe("spacenav/offset", spacenav_pos_msg_,
-                  &EndeffectorTwistControllerNode::spacenavPos, this, 1);
+                  &EndeffectorPoseControllerNode::spacenavPos, this, 1);
   guard_command_.set("spacenav/offset");
 
   // subscribe to spacenav rot commands
   node->subscribe("spacenav/rot_offset", spacenav_rot_msg_,
-                  &EndeffectorTwistControllerNode::spacenavRot, this, 1);
+                  &EndeffectorPoseControllerNode::spacenavRot, this, 1);
   guard_command_.set("spacenav/rot_offset");
 
-
+  spacenav_twist = Twist::Zero();
   return true;
 }
 
 
-void EndeffectorTwistControllerNode::update()
+void EndeffectorPoseControllerNode::update()
 {
   controller_.update();
 }
 
 
-void EndeffectorTwistControllerNode::command()
+void EndeffectorPoseControllerNode::command()
 {
-  // convert to twist command
-  controller_.twist_desi_.vel(0) = twist_msg_.vel.x;
-  controller_.twist_desi_.vel(1) = twist_msg_.vel.y;
-  controller_.twist_desi_.vel(2) = twist_msg_.vel.z;
-  controller_.twist_desi_.rot(0) = twist_msg_.rot.x;
-  controller_.twist_desi_.rot(1) = twist_msg_.rot.y;
-  controller_.twist_desi_.rot(2) = twist_msg_.rot.z;
+  // convert to pose command
+  controller_.pose_desi_.p(0) = pose_msg_.pose.position.x;
+  controller_.pose_desi_.p(1) = pose_msg_.pose.position.y;
+  controller_.pose_desi_.p(2) = pose_msg_.pose.position.z;
+  controller_.pose_desi_.M = Rotation::Quaternion(pose_msg_.pose.orientation.x, pose_msg_.pose.orientation.y,
+						  pose_msg_.pose.orientation.z, pose_msg_.pose.orientation.w);
 }
 
-void EndeffectorTwistControllerNode::spacenavPos()
+
+void EndeffectorPoseControllerNode::spacenavPos()
 {
-  // convert to trans_vel command
-  controller_.twist_desi_.vel(0) = spacenav_pos_msg_.x * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  controller_.twist_desi_.vel(1) = spacenav_pos_msg_.y * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  controller_.twist_desi_.vel(2) = spacenav_pos_msg_.z * SPACENAV_MAX_VEL / SPACENAV_RANGE;
+  spacenav_twist.vel(0) = spacenav_pos_msg_.x * SPACENAV_MAX_VEL / SPACENAV_RANGE;
+  spacenav_twist.vel(1) = spacenav_pos_msg_.y * SPACENAV_MAX_VEL / SPACENAV_RANGE;
+  spacenav_twist.vel(2) = spacenav_pos_msg_.z * SPACENAV_MAX_VEL / SPACENAV_RANGE;
+
+  controller_.pose_desi_  = addDelta(controller_.pose_desi_, spacenav_twist);
 }
 
-void EndeffectorTwistControllerNode::spacenavRot()
+void EndeffectorPoseControllerNode::spacenavRot()
 {
-  // convert to rot_vel
-  controller_.twist_desi_.rot(0) = spacenav_rot_msg_.x * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  controller_.twist_desi_.rot(1) = spacenav_rot_msg_.y * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  controller_.twist_desi_.rot(2) = spacenav_rot_msg_.z * SPACENAV_MAX_ROT / SPACENAV_RANGE;
+  spacenav_twist.rot(0) = spacenav_rot_msg_.x * SPACENAV_MAX_ROT / SPACENAV_RANGE;
+  spacenav_twist.rot(1) = spacenav_rot_msg_.y * SPACENAV_MAX_ROT / SPACENAV_RANGE;
+  spacenav_twist.rot(2) = spacenav_rot_msg_.z * SPACENAV_MAX_ROT / SPACENAV_RANGE;
+
+  controller_.pose_desi_  = addDelta(controller_.pose_desi_, spacenav_twist);
 }
 
 
 
 }; // namespace
+
