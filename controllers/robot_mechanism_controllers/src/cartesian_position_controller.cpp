@@ -199,7 +199,7 @@ void CartesianPositionControllerNode::setCommand()
   using namespace tf;
 
   // Transforms the command into the root frame of the chain
-  Stamped<Point> point, out;
+  Stamped<tf::Point> point, out;
   PointStampedMsgToTF(command_msg_, point);
   try
   {
