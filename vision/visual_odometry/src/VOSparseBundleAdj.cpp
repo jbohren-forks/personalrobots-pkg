@@ -397,14 +397,14 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
     printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
-    CvScalar color;
-    if (obsv->frame_index_ < slideWindowFront) {
-      color = colorFixedFrame;
-    } else {
-      color = colorFreeFrame;
-    }
     for (iObsv++; iObsv != track->end(); iObsv++) {
       obsv = *iObsv;
+      CvScalar color;
+      if (obsv->frame_index_ < slideWindowFront) {
+        color = colorFixedFrame;
+      } else {
+        color = colorFreeFrame;
+      }
       CvPoint pt1     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
       disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
       disp_coord_est.y = obsv->disp_coord_.y + obsv->disp_res_.y;
@@ -422,11 +422,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
       // setting up for next iteration
       pt0     = pt1;
       est_pt0 = est_pt1;
-      if (obsv->frame_index_ < slideWindowFront) {
-        color = colorFixedFrame;
-      } else {
-        color = colorFreeFrame;
-      }
+
 #if DEBUG==1
       printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, obsv->frame_index_, pt0.x, pt0.y);
       printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
