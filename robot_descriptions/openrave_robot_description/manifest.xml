@@ -11,6 +11,7 @@
   <depend package="wg_robot_description"/>
   <depend package="wg_robot_description_parser"/>
   <depend package="openrave"/>
+  <depend package="boost"/>
   <depend package="resource_locator"/>
   <depend package="bullet"/>
 </package>
