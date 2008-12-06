@@ -1,7 +1,9 @@
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <node pkg="rosstage" type="rosstage" args="$(find 2dnav_stage)/willow-pr2-5cm.world" respawn="false" />
+    <node pkg="rosstage" type="rosstage" name="rosstage" args="$(find 2dnav_stage)/willow-pr2-5cm.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
     <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full-0.05.pgm 0.05" respawn="false" />
 
     <!-- TODO: remove this remap after fake_localization is fixed to listen

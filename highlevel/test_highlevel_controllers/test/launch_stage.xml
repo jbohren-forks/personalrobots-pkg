@@ -1,8 +1,28 @@
-
 <launch>
   <master auto="start"/>
   <group name="wg">
-    <include file="$(find highlevel_controllers)/test/stage.xml"/>
+    <node pkg="rosstage" type="rosstage" name="rosstage" args="$(find 2dnav_stage)/willow-pr2.world" respawn="false" >
+      <param name="base_watchdog_timeout" value="0.2"/>
+    </node>
+    <node pkg="map_server" type="map_server" args="$(find 2dnav_stage)/willow-full.pgm 0.1" respawn="false" />
+
+    <!-- TODO: remove this remap after fake_localization is fixed to listen
+    to base_pose_ground_truth, and gazebo is fixed to publish on that topic -->
+    <remap from="base_pose_gazebo_ground_truth" to="base_pose_ground_truth"/>
+    <param name="max_publish_frequency" value="20.0"/>
+    <node pkg="fake_localization" type="fake_localization" respawn="false" />
+    <node pkg="nav_view" type="nav_view" respawn="false"/>
+
+    <!-- Now launch controller node required -->
+    <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml"/>
+
+    <!-- Set parameters for mailing -->
+    <param name="recharge/email_addresses" value="mcgann@willowgarage.com"/>
+    <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
+    <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
+    <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
+    <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
+    <param name="recharge/mail_client" value="mailx -s"/>
+    <node pkg="highlevel_controllers" type="recharge_controller" args="battery_state:=bogus_battery_state" respawn="true" />
   </group>
 </launch>
-

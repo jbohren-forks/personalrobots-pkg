@@ -18,7 +18,7 @@
     <node pkg="nav_view" type="nav_view" args="odom:=localizedpose" respawn="false"/>
 
     <!-- Now launch controller node required -->
-    <include file="$(find highlevel_controllers)/test/launch_move_base.xml"/>
+    <include file="$(find test_highlevel_controllers)/test/launch_move_base.xml"/>
   </group>
 </launch>
 
