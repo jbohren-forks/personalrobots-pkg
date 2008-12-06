@@ -32,7 +32,7 @@ public:
   {
     wf_goal.enable = 0;
     publish("goal", wf_goal);
-    ros::Duration(0.5).sleep(); // hack to try and wait for the message to go
+    ros::Duration().fromSec(0.5).sleep(); // hack to try and wait for the message to go
   }
   virtual void peer_subscribe(const std::string &topic_name, 
                               ros::pub_sub_conn * const psc)
@@ -57,8 +57,8 @@ int main(int argc, char **argv)
   WavefrontCLI wf_cli(atof(argv[1]), atof(argv[2]), atof(argv[3]));
   ros::Time t_start(ros::Time::now());
   while (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE && 
-         ros::Time::now() - t_start < max_secs)
-    ros::Duration(0.1).sleep();
+         ros::Time::now() - t_start < ros::Duration().fromSec(max_secs))
+    ros::Duration().fromSec(0.1).sleep();
   if (wf_cli.ok() && wf_cli.state != WavefrontCLI::WF_DONE) // didn't get there
   {
     printf("timeout\n");

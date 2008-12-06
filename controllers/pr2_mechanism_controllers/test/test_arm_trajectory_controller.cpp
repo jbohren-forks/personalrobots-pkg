@@ -85,7 +85,7 @@ int main( int argc, char** argv )
   sleep(4);
 
   ros::Time start_time = ros::Time::now();
-  ros::Duration sleep_time(0.01);
+  ros::Duration sleep_time = ros::Duration().fromSec(0.01);
 
 /*  while(!done)
   {

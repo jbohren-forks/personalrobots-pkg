@@ -125,7 +125,7 @@ int main(int argc, char **argv)
   for (int i = 1; i < argc; i++)
     files.push_back(argv[i]);
 
-  player.open(files, ros::Time(0.0));
+  player.open(files, ros::Time(0));
 
   player.addHandler<std_msgs::RobotBase2DOdom>(string("*"), &odom_callback, NULL);
   player.addHandler<std_msgs::LaserScan>(string("*"), &scan_callback, NULL);

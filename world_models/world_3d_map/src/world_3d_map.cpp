@@ -227,7 +227,8 @@ private:
     
   void publishDataThread(void)
   {
-    ros::Duration *d = new ros::Duration(1.0/m_maxPublishFrequency);
+    ros::Duration *d = new ros::Duration();
+    d->fromSec(1.0/m_maxPublishFrequency);
 	
     /* Pump out buffered, filtered point clouds and clear the buffer */
     while (m_active)

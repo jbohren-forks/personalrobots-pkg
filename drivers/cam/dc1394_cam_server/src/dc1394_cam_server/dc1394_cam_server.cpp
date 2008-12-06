@@ -412,7 +412,7 @@ public:
   {
 
     dc1394_cam::FrameSet fs = cd.cam->getFrames(DC1394_CAPTURE_POLICY_POLL);
-    ros::Time ts = ros::Time::now() + ros::Duration(-.125);
+    ros::Time ts = ros::Time::now() + ros::Duration().fromSec(-.125);
 
     if (fs.size() > 0)
     {

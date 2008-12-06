@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 
   ros::record::Player player;
 
-  player.open(std::string(argv[1]), ros::Time(0.0));
+  player.open(std::string(argv[1]), ros::Time(0));
 
   int count;
 

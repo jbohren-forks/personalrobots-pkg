@@ -202,7 +202,7 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
   
   // Extract transforms for the beginning and end of the laser scan
   ros::Time start_time = scanIn.header.stamp ;
-  ros::Time end_time   = scanIn.header.stamp + ros::Duration(scanIn.get_ranges_size()*scanIn.time_increment) ;
+  ros::Time end_time   = scanIn.header.stamp + ros::Duration().fromSec(scanIn.get_ranges_size()*scanIn.time_increment) ;
   
   tf::Stamped<tf::Transform> start_transform ;
   tf::Stamped<tf::Transform> end_transform ;

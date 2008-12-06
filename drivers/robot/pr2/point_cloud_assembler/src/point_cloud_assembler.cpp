@@ -104,7 +104,7 @@ public:
   
   PointCloudAssembler() : ros::node("point_cloud_assembler"), tf_(*this)
   {
-    tf_.setExtrapolationLimit(ros::Duration(1.0)) ;
+    tf_.setExtrapolationLimit(ros::Duration().fromSec(1.0)) ;
 
     advertise_service("build_cloud", &PointCloudAssembler::buildCloud, this, 0) ;      // Don't spawn threads so that we can avoid dealing with mutexing [for now]
     subscribe("scan", scan_, &PointCloudAssembler::scans_callback, 40) ;

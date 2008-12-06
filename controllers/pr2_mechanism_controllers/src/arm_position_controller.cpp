@@ -311,7 +311,7 @@ bool ArmPositionControllerNode::setJointPosSingle(const pr2_mechanism_controller
   int ticks=0;
   static const double interval=1e-2;
   const int max_ticks = int(cmd.timeout/interval);
-  ros::Duration d=ros::Duration(interval);
+  ros::Duration d=ros::Duration().fromSec(interval);
   while(!(c_->goalAchieved() ||  ticks >= max_ticks))
   {
     d.sleep();

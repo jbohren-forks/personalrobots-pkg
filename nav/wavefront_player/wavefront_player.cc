@@ -279,7 +279,7 @@ WavefrontNode::WavefrontNode() :
         ang_eps(DTOR(4.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_buffer_time(3.0),
+        laser_buffer_time(3000000000LL),
         lookahead_maxdist(2.0),
         lookahead_distweight(5.0),
         tvmin(0.2),
@@ -288,8 +288,7 @@ WavefrontNode::WavefrontNode() :
         avmax(DTOR(80.0)),
         amin(DTOR(10.0)),
         amax(DTOR(40.0)),
-        tf(*this, true, (uint64_t)10000000000ULL)// cache for 10 sec, no extrapolation
-        //tf(*this, true, (uint64_t)200000000ULL, (uint64_t)200000000ULL) //nanoseconds
+        tf(*this, true, 10000000000ULL) // cache for 10 sec, no extrapolation
 {
   // Initialize global pose. Will be set in control loop based on actual data.
   ///\todo does this need to be initialized?  global_pose.setIdentity();

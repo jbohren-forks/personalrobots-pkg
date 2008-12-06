@@ -78,7 +78,7 @@ public:
 
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
-                 sync(this, &StereoView::image_cb_all, ros::Duration(0.05), &StereoView::image_cb_timeout),
+                 sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
                  subscribe_color_(false), calib_color_(false), recompand_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);

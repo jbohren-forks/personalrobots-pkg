@@ -120,7 +120,7 @@ CartesianPositionControllerNode::CartesianPositionControllerNode()
 : robot_(NULL), pos_publisher_(NULL), TF(*ros::node::instance(), false) , loop_count_(0)
 {
   assert(ros::node::instance());
-  TF.setExtrapolationLimit(ros::Duration(10.0e-3));
+  TF.setExtrapolationLimit(ros::Duration(10000000));
 }
 
 CartesianPositionControllerNode::~CartesianPositionControllerNode()
@@ -179,7 +179,7 @@ void CartesianPositionControllerNode::update()
     {
       if (pos_publisher_->trylock())
       {
-        pos_publisher_->msg_.header.stamp = robot_->hw_->current_time_;
+        pos_publisher_->msg_.header.stamp.fromSec(robot_->hw_->current_time_);
         pos_publisher_->msg_.header.frame_id = c_.rootFrame();
 
         tf::Point p;
