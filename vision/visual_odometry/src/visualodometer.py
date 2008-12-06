@@ -97,6 +97,11 @@ class Pose:
   def euler(self):
     return transformations.euler_from_rotation_matrix(self.M)
 
+  def comparison(self, other):
+    p0 = self.xform(0, 0, 0)
+    p1 = other.xform(0, 0, 0)
+    return "dist=%f" % (sqrt(sum([(a-b)**2 for a,b in zip(p0,p1)])))
+
   def compare(self, other):
     p0 = self.xform(0, 0, 0)
     p1 = other.xform(0, 0, 0)
@@ -439,7 +444,7 @@ class VisualOdometer:
       if t.alive:
         t.extend(pairmap[t.lastpt], f1.id)
 
-    #print len(self.tracks), [ len(t.p) for t in self.tracks ]
+    print len(self.tracks), [ len(t.p) for t in self.tracks ]
     for p0 in set(pairmap) - oldtails:
       p1 = pairmap[p0]
       #if not (p1 in [t.lastpt for t in self.tracks]):
