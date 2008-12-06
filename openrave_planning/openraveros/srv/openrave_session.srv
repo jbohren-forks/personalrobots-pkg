@@ -9,9 +9,12 @@ int32 sessionid
 int32 clone_sessionid
 
 # mask of Clone* options
-byte clone_options
+uint8 clone_options
 
-byte CloneBodies=1 # copy all bodies
+uint8 CloneBodies=1 # copy all bodies
+uint8 CloneViewer=2 # copy current viewer
+uint8 CloneSimulation=4 # copy simulation settings
+uint8 CloneRealControllers=8 # copy real robot controllers 
 
 ---
 int32 sessionid

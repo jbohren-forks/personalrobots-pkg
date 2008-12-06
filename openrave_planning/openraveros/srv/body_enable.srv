@@ -3,5 +3,5 @@
 string sessionname
 int32 sessionid
 uint32 bodyid
-byte enable
+uint8 enable
 ---

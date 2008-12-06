@@ -73,4 +73,8 @@ bool DECL_STDCALL(GetPluginAttributes, (PLUGININFO* pinfo, int size))
     return true;
 }
 
+void DECL_STDCALL(DestroyPlugin, ())
+{
+}
+
 }

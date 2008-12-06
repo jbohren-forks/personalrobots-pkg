@@ -12,16 +12,16 @@ uint32 Set_DebugLevel=32
 uint32 Set_Viewer=64
 
 # validity depending on setmask
-byte sim_action
-byte SimAction_Start=1
-byte SimAction_Stop=2
-byte SimAction_Timestep=3
+uint8 sim_action
+uint8 SimAction_Start=1
+uint8 SimAction_Stop=2
+uint8 SimAction_Timestep=3
 float32 sim_timestep
 
 string physicsengine
 string collisionchecker
 string viewer
 float32[3] gravity
-byte publishanytime
-byte debuglevel
+uint8 publishanytime
+uint8 debuglevel
 ---

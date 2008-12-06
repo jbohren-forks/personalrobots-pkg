@@ -8,4 +8,4 @@ uint32 bodyid
 string cmd
 ---
 # 1 if command was accepted, 0 if not
-byte success
+uint8 success

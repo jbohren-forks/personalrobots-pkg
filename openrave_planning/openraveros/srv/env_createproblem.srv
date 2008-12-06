@@ -7,6 +7,6 @@ string problemtype
 string args
 
 # if true, will destroy any problems with similar types (default is 1)
-byte destroyduplicates
+uint8 destroyduplicates
 ---
 uint32 problemid

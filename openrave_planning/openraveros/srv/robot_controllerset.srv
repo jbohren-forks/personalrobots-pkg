@@ -10,4 +10,4 @@ string controllername
 # the arguments to ControllerBase::Init
 string controllerargs
 ---
-byte success
+uint8 success

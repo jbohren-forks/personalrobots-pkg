@@ -5,7 +5,7 @@ int32 sessionid
 # if 1, will only triangulate the bodies pointed to by ids
 # if 0, will triangulate all objects except the bodies pointed to by ids (default)
 # To triangulate everything, just set inclusive to 0 and have empty bodyids
-byte inclusive
+uint8 inclusive
 uint32[] bodyids
 ---
 

@@ -5,7 +5,7 @@ int32 sessionid
 uint32 bodyid
 
 # the link of the body to check collision again, if -1 check all links
-byte linkid
+uint8 linkid
 
 uint32[] excludedbodyids
 
@@ -13,15 +13,15 @@ uint32[] excludedbodyids
 float32 tolerance
 
 # optional collision checker options, affects what information is sent back
-byte options
+uint8 options
 
-byte CO_Distance=1
-byte CO_UseTolerance=2
-byte CO_Contacts=4
-byte CO_RayAnyHit=8
+uint8 CO_Distance=1
+uint8 CO_UseTolerance=2
+uint8 CO_Contacts=4
+uint8 CO_RayAnyHit=8
 
 ---
-byte collision
+uint8 collision
 uint32 collidingbodyid
 Contact[] contacts
 

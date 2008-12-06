@@ -13,4 +13,4 @@ float32 timeout
 ---
 
 # will return with success set to 0 if robot did not finish its commands by the timeout.
-byte success
+uint8 success

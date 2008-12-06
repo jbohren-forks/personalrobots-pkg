@@ -39,6 +39,7 @@
 #include <boost/typeof/std/vector.hpp>
 #include <boost/typeof/std/list.hpp>
 #include <boost/typeof/std/map.hpp>
+#include <boost/typeof/std/set.hpp>
 #include <boost/typeof/std/string.hpp>
 
 #define FOREACH(it, v) for(BOOST_TYPEOF(v)::iterator it = (v).begin(); it != (v).end(); (it)++)
@@ -50,6 +51,7 @@
 #include <vector>
 #include <list>
 #include <map>
+#include <set>
 #include <string>
 
 #define FOREACH(it, v) for(typeof((v).begin()) it = (v).begin(); it != (v).end(); (it)++)

@@ -10,7 +10,7 @@ uint32 problemid
 
 # If 1, the SendCommand is called in the main thread, in sync
 # with the rest of the primitives. If 0, called in a different thread. (default is 1)
-byte sync
+uint8 sync
 ---
 # the concatenated output of all the problems that the command is sent to
 string output

@@ -10,7 +10,7 @@ uint32 bodyid
 uint32 sensorindex
 string cmd
 ---
-byte success
+uint8 success
 
 # output of the command
 string out

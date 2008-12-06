@@ -28,6 +28,16 @@
 
 class ROSServer : public RaveServerBase
 {
+    class LockEnvironment
+    {
+    public:
+        LockEnvironment(ROSServer* pserv) : _pserv(pserv) { _pserv->_penv->LockPhysics(true); }
+        ~LockEnvironment() { _pserv->_penv->LockPhysics(false); }
+
+    private:
+        ROSServer* _pserv;
+    };
+
 public:
     ROSServer(boost::shared_ptr<EnvironmentBase> penv) : RaveServerBase(penv.get()), _nNextFigureId(1), _nNextPlannerId(1) {
         _penv = penv;
@@ -60,15 +70,9 @@ public:
 
     virtual void Reset()
     {
-                
-//        pthread_mutex_lock(&_mutexWorker);
-//        listWorkers.clear();
-//        pthread_mutex_unlock(&_mutexWorker);
-//        pthread_cond_signal(&_condWorker);
-//
-//        FOREACH(it, s_mapFigureIds)  
-//            g_Environ.closegraph(it->second);
-//        s_mapFigureIds.clear();
+        FOREACH(it, _mapFigureIds)  
+            _penv->closegraph(it->second);
+        _mapFigureIds.clear();
 
         // destroy environment specific state: problems, planners, figures
         _mapplanners.clear();
@@ -95,17 +99,86 @@ public:
         return false;
     }
 
-    // called from threads other than the main worker to wait until
-    virtual void SyncWithWorkerThread()
+    bool body_destroy_srv(body_destroy::request& req, body_destroy::response& res)
     {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+
+        LockEnvironment envlock(this);
+        return _penv->RemoveKinBody(pbody,true);
     }
 
-    bool body_destroy_srv(body_destroy::request& req, body_destroy::response& res);
-    bool body_enable_srv(body_enable::request& req, body_enable::response& res);
-    bool body_getaabb_srv(body_getaabb::request& req, body_getaabb::response& res);
-    bool body_getaabbs_srv(body_getaabbs::request& req, body_getaabbs::response& res);
-    bool body_getdof_srv(body_getdof::request& req, body_getdof::response& res);
-    bool body_getlinks_srv(body_getlinks::request& req, body_getlinks::response& res);
+    bool body_enable_srv(body_enable::request& req, body_enable::response& res)
+    {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+
+        LockEnvironment envlock(this);
+        pbody->Enable(req.enable);
+        return true;
+    }
+
+    bool body_getaabb_srv(body_getaabb::request& req, body_getaabb::response& res)
+    {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+
+        LockEnvironment envlock(this);
+        OpenRAVE::AABB ab = pbody->ComputeAABB();
+        res.box.center[0] = ab.pos.x; res.box.center[1] = ab.pos.y; res.box.center[2] = ab.pos.z;
+        res.box.extents[0] = ab.extents.x; res.box.extents[1] = ab.extents.y; res.box.extents[2] = ab.extents.z;
+        return true;
+    }
+
+    bool body_getaabbs_srv(body_getaabbs::request& req, body_getaabbs::response& res)
+    {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+
+        LockEnvironment envlock(this);
+        res.set_boxes_size(pbody->GetLinks().size()); int index = 0;
+        FOREACHC(itlink, pbody->GetLinks()) {
+            OpenRAVE::AABB ab = (*itlink)->ComputeAABB();
+            openraveros::AABB& resbox = res.boxes[index++];
+            resbox.center[0] = ab.pos.x; resbox.center[1] = ab.pos.y; resbox.center[2] = ab.pos.z;
+            resbox.extents[0] = ab.extents.x; resbox.extents[1] = ab.extents.y; resbox.extents[2] = ab.extents.z;
+        }
+    }
+
+    bool body_getdof_srv(body_getdof::request& req, body_getdof::response& res)
+    {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+        LockEnvironment envlock(this);
+        res.dof = pbody->GetDOF();
+        return true;
+    }
+
+    bool body_getlinks_srv(body_getlinks::request& req, body_getlinks::response& res)
+    {
+        KinBody* pbody = _penv->GetBodyFromNetworkId(req.bodyid);
+        if( pbody == NULL )
+            return false;
+
+        LockEnvironment envlock(this);
+        vector<Transform> vtrans; pbody->GetBodyTransformations(vtrans);
+        
+        res.set_links_size(vtrans.size()); int index = 0;
+        FOREACH(ittrans, vtrans) {
+            TransformMatrix tm = TransformMatrix(*ittrans);
+            AffineTransformMatrix& am = res.links[index++];
+            am.transform[0] = tm.m[0]; am.transform[3] = tm.m[1]; am.transform[6] = tm.m[2];
+            am.transform[1] = tm.m[4]; am.transform[4] = tm.m[5]; am.transform[7] = tm.m[6];
+            am.transform[2] = tm.m[8]; am.transform[5] = tm.m[9]; am.transform[8] = tm.m[10];
+            am.transform[9] = tm.trans.x; am.transform[10] = tm.trans.y; am.transform[11] = tm.trans.z;
+        }
+    }
+
     bool body_setjointvalues_srv(body_setjointvalues::request& req, body_setjointvalues::response& res);
     bool body_settransform_srv(body_settransform::request& req, body_settransform::response& res);
     bool env_checkcollision_srv(env_checkcollision::request& req, env_checkcollision::response& res);

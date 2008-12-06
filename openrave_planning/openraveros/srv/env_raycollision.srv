@@ -8,9 +8,9 @@ Ray[] rays
 uint32 bodyid
 
 # if 1 will also return the contacts points of each of the rays (default is 0)
-byte request_contacts
+uint8 request_contacts
 
 ---
 # collision - N dim vector that is 1 for colliding rays and 0 otherwise
-byte[] collision
+uint8[] collision
 Contact[] contacts

@@ -5,5 +5,5 @@ int32 sessionid
 uint32 bodyid
 float32[] jointvalues
 # optional array specifying the indices to set
-byte[] indices
+uint8[] indices
 ---

@@ -56,6 +56,7 @@ class SessionServer
 
 public:
     SessionServer() {
+        _pParentEnvironment.reset(CreateEnvironment());
     }
     virtual ~SessionServer() {
         Destroy();
@@ -194,6 +195,7 @@ public:
 private:
     map<int,SessionState> _mapsessions;
     boost::mutex _mutexsession;
+    boost::shared_ptr<EnvironmentBase> _pParentEnvironment;
 
     SessionState getstate(int sessionid)
     {
@@ -222,19 +224,21 @@ private:
             id = rand();
 
         SessionState state;
-        state._penv.reset(CreateEnvironment());
         state._pserver.reset(new ROSServer(state._penv));
 
         if( req.clone_sessionid ) {
             // clone the environment from clone_sessionid
             SessionState state = getstate(req.clone_sessionid);
-            if( !state._penv ) {
-                RAVEPRINT(L"failed to find session %d\n", req.clone_sessionid);
-            }
-            else {
-                // clone
-                
-            }
+            if( !state._penv )
+                ROS_INFO("failed to find session %d\n", req.clone_sessionid);
+            else 
+                state._penv.reset(state._penv->CloneSelf(req.clone_options));
+        }
+
+        if( !state._penv ) {
+            // cloning from parent
+            ROS_DEBUG("cloning from parent\n");
+            state._penv.reset(_pParentEnvironment->CloneSelf(0));
         }
 
         _mapsessions[id] = state;
@@ -284,6 +288,11 @@ private:
 };
 
 // check that message constants match OpenRAVE constants
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Bodies==openrave_session::request::CloneBodies);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Viewer==openrave_session::request::CloneViewer);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_Simulation==openrave_session::request::CloneSimulation);
+BOOST_STATIC_ASSERT(EnvironmentBase::Clone_RealControllers==openrave_session::request::CloneRealControllers);
+
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_X==RobotBase::DOF_X);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Y==RobotBase::DOF_Y);
 BOOST_STATIC_ASSERT(ActiveDOFs::DOF_Z==RobotBase::DOF_Z);

@@ -14,10 +14,10 @@ float32[] sizes
 # [0,1] transparency of object (0 is opaque)
 float32 transparency
 
-byte drawtype
+uint8 drawtype
 
-byte Draw_Point=0 # default
-byte Draw_LineStrip=1
-byte Draw_LineList=2
-byte Draw_TriList=3
-byte Draw_Sphere=4
+uint8 Draw_Point=0 # default
+uint8 Draw_LineStrip=1
+uint8 Draw_LineList=2
+uint8 Draw_TriList=3
+uint8 Draw_Sphere=4

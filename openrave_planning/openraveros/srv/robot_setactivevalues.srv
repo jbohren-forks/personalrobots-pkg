@@ -6,5 +6,5 @@ uint32 bodyid
 float32[] values
 
 # indices into the active degree of freedom table
-byte[] indices
+uint8[] indices
 ---
