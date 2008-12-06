@@ -34,7 +34,7 @@
 
 #include "environment_wrap.h"
 #include <costmap_2d/costmap_2d.h>
-#include <headers.h>
+#include <sbpl/headers.h>
 
 using namespace std;
 

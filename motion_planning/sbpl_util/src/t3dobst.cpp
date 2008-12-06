@@ -36,8 +36,7 @@
 #include "footprint.h"
 #include <costmap_2d/costmap_2d.h>
 
-// for sbpl... not a greatly descriptive name
-#include <headers.h>
+#include <sbpl/headers.h>
 
 #include <iostream>
 #include <err.h>

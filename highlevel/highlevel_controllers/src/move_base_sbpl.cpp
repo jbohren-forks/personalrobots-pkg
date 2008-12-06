@@ -68,8 +68,7 @@
 #include <environment_wrap.h>
 #include <plan_wrap.h>
 
-//sbpl headers file
-#include <headers.h>
+#include <sbpl/headers.h>
 #include <err.h>
 
 

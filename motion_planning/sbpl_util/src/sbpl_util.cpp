@@ -34,7 +34,7 @@
 
 #include "sbpl_util.hh"
 #include "environment_wrap.h"
-#include <headers.h>
+#include <sbpl/headers.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <errno.h>
