@@ -199,7 +199,7 @@ int WG0X::initialize(Actuator *actuator, bool allow_unprogrammed)
 
   if (sh_->get_product_code() == WG05::PRODUCT_CODE)
   {
-    if (major != 1 || minor != 7)
+    if (major != 1 || minor < 7)
     {
       ROS_FATAL("Unsupported firmware revision %d.%02d\n", major, minor);
       ROS_BREAK();
