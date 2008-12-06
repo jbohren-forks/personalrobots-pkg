@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -57,7 +57,7 @@ namespace pr2_phase_space
 {
 
 /**
- * \brief Listens for a PhaseSpaceSnapshot message and then publishes it as a PoseStamped message, based on a 
+ * \brief Listens for a PhaseSpaceSnapshot message and then publishes it as a PoseStamped message, based on a
  * series a parameters.
  * @section topic ROS topics
  * Subscribes to (name [type]):
@@ -85,51 +85,51 @@ public :
   {
     subscribe("phase_space_snapshot", snapshot_, &PhaseSpacePoseStamped::snapshotCallback, 10) ;
     advertise<std_msgs::PoseStamped>("cmd", 1) ;
-    
+
     param("~body_id", body_id_, 1) ;
     param("~num_to_skip", num_to_skip_, 0) ;
-    
+
     param("~frame_id", frame_id_, string("base_link") ) ;
-    
+
     param("~scale_trans_x", scale_trans_[0], 1.0) ;
     param("~scale_trans_y", scale_trans_[1], 1.0) ;
     param("~scale_trans_z", scale_trans_[2], 1.0) ;
-    
+
     param("~offset_trans_x", offset_trans_[0], 0.0) ;
     param("~offset_trans_y", offset_trans_[1], 0.0) ;
     param("~offset_trans_z", offset_trans_[2], 0.0) ;
-    
+
     param("~offset_rot_axis_x", offset_rot_axis_[0], 0.0) ;
     param("~offset_rot_axis_y", offset_rot_axis_[1], 0.0) ;
     param("~offset_rot_axis_z", offset_rot_axis_[2], 1.0) ;
-    
+
     param("~offset_rot_angle", offset_rot_angle_, 0.0) ;
-    
+
     // Build the transform to apply each run
-    
+
     tf::Vector3 axis(offset_rot_axis_[0], offset_rot_axis_[1], offset_rot_axis_[2]) ;
     if (axis.length() < .000001)
       ROS_ERROR("WARNING: ROT AXIS is too small (%f, %f, %f)", offset_rot_axis_[0], offset_rot_axis_[1], offset_rot_axis_[2]) ;
-        
+
     tf::Quaternion rot(axis, offset_rot_angle_) ;
     tf::Vector3 trans(offset_trans_[0], offset_trans_[1], offset_trans_[2]) ;
-    
+
     transform_.setRotation(rot) ;
     transform_.setOrigin(trans) ;
-    
+
     publish_count_ = 0 ;
   }
-  
+
   ~PhaseSpacePoseStamped()
   {
     unsubscribe("cmd") ;
   }
-  
+
   void snapshotCallback()
   {
     if (snapshot_.frameNum % (num_to_skip_+1) != 0)
       return ;
-    
+
     for (unsigned int i=0; i<snapshot_.get_bodies_size(); i++)
     {
       if (snapshot_.bodies[i].id == body_id_)                   // Did we find our body?
@@ -146,30 +146,30 @@ public :
 
         // Transform our starting frame by our fixed transform
         tf::Transform pose_result(transform_.inverse()*pose_phasespace ) ;
-        
+
         std_msgs::PoseStamped pose_msg ;
-        
+
         pose_msg.header.stamp = ros::Time(0.0) ;
         pose_msg.header.frame_id =  frame_id_ ;
-        
+
         tf::PointTFToMsg(pose_result.getOrigin(), pose_msg.pose.position) ;
         tf::QuaternionTFToMsg(pose_result.getRotation(), pose_msg.pose.orientation) ;
 
         publish("cmd", pose_msg) ;
-        
+
         return ;
       }
       else
         printf("\n") ;
-    }    
+    }
     return ;
   }
-  
+
 private :
   phase_space::PhaseSpaceSnapshot snapshot_ ;
-  
+
   tf::Transform transform_ ;
-  
+
   double scale_trans_[3] ;
   double offset_trans_[3] ;
   double offset_rot_axis_[3] ;
