@@ -104,11 +104,11 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
     if (retval == CONNECTIVITY_ERROR)
       throw ConnectivityException(error_string);
   }
-   
+
   if (test_extrapolation(temp_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
- 
+
   transform.setData( computeTransformFromList(t_list));
   transform.stamp_ = temp_time;
   transform.frame_id_ = target_frame;
@@ -123,13 +123,13 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   //If getting the latest get the latest common time
   if (target_time == ros::Time(0ULL))
     retval = getLatestCommonTime(target_frame, fixed_frame, temp_target_time);
-  else 
+  else
     temp_target_time = target_time;
-  
+
   //If getting the latest get the latest common time
   if (source_time == ros::Time(0ULL) && retval == NO_ERROR)
     retval = getLatestCommonTime(fixed_frame, source_frame, temp_source_time);
-  else 
+  else
     temp_source_time = source_time;
 
   std::string error_string;
@@ -146,16 +146,16 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
     if (retval == CONNECTIVITY_ERROR)
       throw ConnectivityException(error_string);
   }
-   
+
   if (test_extrapolation(temp_source_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
- 
+
   btTransform temp1 = computeTransformFromList(t_list);
 
 
   TransformLists t_list2;
-  ///\todo check return 
+  ///\todo check return
   retval =  lookupLists(lookupFrameNumber( target_frame), temp_target_time, lookupFrameNumber( fixed_frame), t_list2, &error_string);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -165,11 +165,11 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
     if (retval == CONNECTIVITY_ERROR)
       throw ConnectivityException(error_string);
   }
-   
+
   if (test_extrapolation(temp_target_time, t_list, &error_string))
     throw ExtrapolationException(error_string);
 
- 
+
 
   btTransform temp = computeTransformFromList(t_list2);
 
@@ -189,13 +189,19 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
   if (retval != NO_ERROR)
   {
     if (retval == LOOKUP_ERROR)
+    {
       return false;
+    }
     if (retval == CONNECTIVITY_ERROR)
+    {
       return false;
+    }
   }
-   
-  if (test_extrapolation(time, t_list, NULL))
+
+  if (time != ros::Time((uint64_t)0ULL) && test_extrapolation(time, t_list, NULL))
+  {
     return false;
+  }
 
   return true;
 };
@@ -215,16 +221,16 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
     if (retval == CONNECTIVITY_ERROR)
       return false;
   }
-   
-  if (test_extrapolation(target_time, t_list, NULL))
+
+  if (target_time != ros::Time((uint64_t)0ULL) && test_extrapolation(target_time, t_list, NULL))
     return false;
 
- 
+
   btTransform temp1 = computeTransformFromList(t_list);
 
 
   TransformLists t_list2;
-  ///\todo check return 
+  ///\todo check return
   retval =  lookupLists(lookupFrameNumber( target_frame), target_time, lookupFrameNumber( fixed_frame), t_list2, NULL);
   ///\todo WRITE HELPER FUNCITON TO RETHROW
   if (retval != NO_ERROR)
@@ -234,8 +240,8 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
     if (retval == CONNECTIVITY_ERROR)
       return false;
   }
-   
-  if (test_extrapolation(target_time, t_list, NULL))
+
+  if (source_time != ros::Time((uint64_t)0ULL) && test_extrapolation(target_time, t_list, NULL))
     return false;
 
   return true;
@@ -276,12 +282,12 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
       if (time > lists.forwardTransforms[i].stamp_)
         time = lists.forwardTransforms[i].stamp_;
     }
-    
+
   }
   else
     time.fromNSec(0);
-  
-  
+
+
   return retval;
 };
 
@@ -328,7 +334,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       }
 
       //break if parent is NO_PARENT (0)
-      if (frame == 0) 
+      if (frame == 0)
       {
         last_inverse = frame;
         break;
@@ -341,7 +347,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       /* Check if we've gone too deep.  A loop in the tree would cause this */
       if (counter++ > MAX_GRAPH_DEPTH)
       {
-        if (error_string) 
+        if (error_string)
         {
           std::stringstream ss;
           ss<<"Recursed too deep into graph ( > MAX_GRAPH_DEPTH) there is probably a loop in the graph" << std::endl
@@ -360,7 +366,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
   frame = target_frame;
   counter = 0;
   unsigned int last_forward;
-  if (getFrame(frame) == NULL) 
+  if (getFrame(frame) == NULL)
   {
     if (error_string) *error_string = "Target Frame Did Not Exist";
     return LOOKUP_ERROR;
@@ -379,7 +385,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
       }
 
       //break if parent is NO_PARENT (0)
-      if (frame == 0) 
+      if (frame == 0)
       {
         last_forward = frame;
         break;
@@ -422,11 +428,11 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
     //    if (lookupFrameNumber(lists.forwardTransforms.back().frame_id_) != target_frame)
     if (last_forward != source_frame)
     {
-      if (error_string) 
+      if (error_string)
       {
         std::stringstream ss;
         ss<< "No Common ParentC between " << lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)
-          << std::endl << allFramesAsString() << std::endl << lists.forwardTransforms.size() << " forward length" 
+          << std::endl << allFramesAsString() << std::endl << lists.forwardTransforms.size() << " forward length"
           << " with " << lookupFrameString(last_forward) << std::endl;
         *error_string = ss.str();
       }
@@ -439,7 +445,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
   {
     if (lists.inverseTransforms.size() == 0)  //If it's going to itself it's already been caught
     {
-      if (error_string) 
+      if (error_string)
       {
         std::stringstream ss;
         ss<< "No Common ParentB between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame) << std::endl << allFramesAsString() << std::endl;
@@ -462,7 +468,7 @@ int Transformer::lookupLists(unsigned int target_frame, ros::Time time, unsigned
   /* Make sure the end of the search shares a parent. */
   if (last_forward != last_inverse)
   {
-    if (error_string) 
+    if (error_string)
     {
       std::stringstream ss;
       ss<< "No Common Parent, at top of search between "<< lookupFrameString(target_frame) <<" and " << lookupFrameString(source_frame)  << std::endl << allFramesAsString() << std::endl;
@@ -536,7 +542,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         if ( target_time - lists.inverseTransforms[i].stamp_ > max_extrapolation_distance_)
         {
           retval = true;
-          if (error_string) 
+          if (error_string)
             ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).toSec() <<", closest data at "
                << lists.inverseTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.inverseTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
@@ -563,7 +569,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         if ( lists.forwardTransforms[i].stamp_ - target_time > max_extrapolation_distance_)
         {
           retval = true;
-          if (error_string) 
+          if (error_string)
             ss << "Extrapolation Too Far in the past: target_time = "<< (target_time).toSec() <<", closest data at "
                << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
@@ -574,7 +580,7 @@ bool Transformer::test_extrapolation(const ros::Time& target_time, const Transfo
         if (target_time - lists.forwardTransforms[i].stamp_ > max_extrapolation_distance_)
         {
           retval = true;
-          if (error_string) 
+          if (error_string)
             ss << "Extrapolation Too Far in the future: target_time = "<< (target_time).toSec() <<", closest data at "
                << lists.forwardTransforms[i].stamp_.toSec()  <<" which are farther away than max_extrapolation_distance "
                << (max_extrapolation_distance_).toSec() <<" at "<< (target_time - lists.forwardTransforms[i].stamp_).toSec()<<"."; //sign flip since in the past
@@ -612,7 +618,7 @@ std::string Transformer::chainAsString(const std::string & target_frame, ros::Ti
   std::string error_string;
   std::stringstream mstream;
   TransformLists lists;
-  ///\todo check return code 
+  ///\todo check return code
   lookupLists(lookupFrameNumber(target_frame), target_time, lookupFrameNumber(source_frame), lists, &error_string);
 
   mstream << "Inverse Transforms:" <<std::endl;
