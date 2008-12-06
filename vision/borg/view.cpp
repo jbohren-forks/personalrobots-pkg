@@ -22,6 +22,8 @@ int main(int, char **)
   bool done = false;
   ros::Time t(ros::Time::now());
   uint8_t *raster = new uint8_t[640*480];
+  uint32_t image_num = 0;
+  char fname[100];
   while (!done)
   {
     borg.cam->savePhoto(raster);
@@ -51,8 +53,14 @@ int main(int, char **)
           switch (event.key.keysym.sym)
           {
             case SDLK_ESCAPE: done = true; break;
+            case SDLK_SPACE:  
+              printf("capturing file\n"); 
+              snprintf(fname, sizeof(fname), "image%03d.pgm", image_num++);
+              borg.cam->writePgm(fname, raster);
+              break;
             default: break;
           }
+          break;
         case SDL_QUIT:
           done = true;
           break;

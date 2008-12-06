@@ -49,3 +49,18 @@ bool Cam::shutdown()
   return false;
 }
 
+bool Cam::writePgm(const char *filename, const uint8_t *raster)
+{
+  FILE *f = fopen(filename, "wb");
+  if (!f)
+    return false;
+  fprintf(f, "P5\n640 480\n255\n");
+  if (640*480 != fwrite(raster, 1, 640 * 480, f))
+  {
+    printf("couldn't write pgm\n");
+    return false;
+  }
+  fclose(f);
+  return true;
+}
+

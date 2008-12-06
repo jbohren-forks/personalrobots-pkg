@@ -166,16 +166,8 @@ bool Borg::scan()
   {
     char fname[100];
     snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm", (*i)->t, (*i)->pos);
-    FILE *f = fopen(fname, "wb");
-    if (!f)
+    if (!cam->writePgm(fname, (*i)->raster))
       throw std::runtime_error("couldn't open pgm file for output");
-    fprintf(f, "P5\n640 480\n255\n");
-    if (640*480 != fwrite((*i)->raster, 1, 640 * 480, f))
-    {
-      printf("couldn't write pgm\n");
-      break;
-    }
-    fclose(f);
     delete[] (*i)->raster;
     delete *i;
   }

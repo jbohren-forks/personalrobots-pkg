@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     return 0;
   }
   Borg borg(Borg::INIT_STAGE);
+  borg.stage->setDuty(700);
   borg.stage->gotoPosition(atof(argv[1]), true);
   return 0;
 }
