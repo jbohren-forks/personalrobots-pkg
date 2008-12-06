@@ -31,6 +31,8 @@ using namespace cv::willow;
 #define SHOWKEYPOINTS    0
 #define SHOWDISPARITYMAP 0
 
+#define ALLKEYFRAMES 1
+
 #undef DEBUG
 
 // Please note that because the timing code is executed is called lots of lots of times
@@ -116,6 +118,8 @@ PathRecon::keyFrameEval(
 	//
 	if (numInliers < 3) {
 	  kfd = KeyFrameSkip;
+	} else if (ALLKEYFRAMES==1) {
+	  keyFrameNeeded = true;
 	} else if (numInliers < defMinNumInliersForGoodFrame) {
 		// Too few inliers to ensure good tracking
 	  // This one overides mMinNumInliers as the absolute minimum guard.
@@ -520,7 +524,7 @@ bool PathRecon::keyFrameAction(KeyFramingDecision kfd, FrameSeq& frameSeq) {
       if (mFrameSeq.mNumFrames>1 && currFrame->mInliers0) {
 	TIMERSTART2(PoseEstimateLevMarq);
 	mPoseEstimator.estimateWithLevMarq(*currFrame->mInliers1,
-					   *currFrame->mInliers0, 
+					   *currFrame->mInliers0,
 					   currFrame->mRot, currFrame->mShift);
 	TIMEREND2(PoseEstimateLevMarq);
       }
