@@ -183,8 +183,9 @@ int main(int argc, char** argv)
     ros::init(argc, argv);
     
     FakeOdomNode odom;
-    odom.run();
-    odom.shutdown();    
+    odom.spin();
+
+    ros::fini();
     
     return 0;
 }
