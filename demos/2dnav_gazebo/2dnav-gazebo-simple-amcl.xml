@@ -2,7 +2,7 @@
   <group name="wg">
 
     <!-- start up robot -->
-    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_simple.launch"/>
+    <include file="$(find pr2_gazebo)/pr2_simple.launch"/>
 
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/map3.png 0.1" respawn="false" output="screen" />
