@@ -44,9 +44,9 @@
 <node pkg="rosrecord" type="rosrecord" args="-f /hwlog/pre_runtime_automatic /diagnostics" />
 
 <!-- NTP monitoring script Warns to console if sync error -->
-<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre1" machine="two"/>
-<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre1" machine="three"/>
-<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre1" machine="four"/>
+<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="xenomai"/>
+<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="three"/>
+<node pkg="ntp_monitor" type="ntp_monitor.py" args="pre2" machine="four"/>
 
 
 </launch>
