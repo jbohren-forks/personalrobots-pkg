@@ -59,7 +59,15 @@ namespace pr2_phase_space
 /**
  * \brief Listens for a PhaseSpaceSnapshot message and then publishes it as a PoseStamped message, based on a 
  * series a parameters.
- * Parameters
+ * @section topic ROS topics
+ * Subscribes to (name [type]):
+ * - @b "phase_space_snapshot" [phase_space/PhaseSpaceSnapshot] : The current state of the phasespace system,
+ *               which is normally published by phase_space::PhaseSpaceNode
+ *
+ * Publishes to (name [type]):
+ * - @b "cmd" [std_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
+ *               probably have to remap this topic name in order to feed this command into a controller.               
+ * @section parameters ROS parameters
  * - @b ~body_id : The PhaseSpace ID associated with the rigid body we want to track
  * - @b ~num_to_skip : The number of PhaseSpace Snapshot frames we want to skip before republishing. If this
  *                       is 0, then always publish when we get phasespace data. If this is 29, then we publish
@@ -124,12 +132,8 @@ public :
     
     for (unsigned int i=0; i<snapshot_.get_bodies_size(); i++)
     {
-      printf("Looking for body #%u...", body_id_) ;
-      fflush(stdout) ;
       if (snapshot_.bodies[i].id == body_id_)                   // Did we find our body?
       {
-        printf("Found!\n") ;
-        
         const phase_space::PhaseSpaceBody& cur_body = snapshot_.bodies[i] ;
 
         // Define our starting frame
