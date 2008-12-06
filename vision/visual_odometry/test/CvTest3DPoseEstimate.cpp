@@ -225,7 +225,9 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     img_size_ = cvSize(640, 480);
     // The following parameters are from indoor1/proj.txt
     // note that B (or Tx) is in mm
-    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+    // now Tx is in meters
+    setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
@@ -234,7 +236,7 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     int end   = 2324;
     int step  = 1;
 
-    step = 2323;
+//    end = 1000;
 
     // set up a FileSeq
     delete input_file_sequence_;
@@ -279,8 +281,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
 //  setInputData(Indoor1);
   setInputData(James4);
 
-  VOSparseBundleAdj sba(img_size_, 8, 3);
-//  VOSparseBundleAdj sba(img_size_, 1, 1);
+//  VOSparseBundleAdj sba(img_size_, 8, 3);
+  VOSparseBundleAdj sba(img_size_, 1, 1);
 
   // parameterize the post estimator
   sba.setCameraParams(Fx_, Fy_, Tx_, Clx_, Crx_, Cy_, Du_);
