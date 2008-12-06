@@ -54,7 +54,8 @@ void PointTracks::purge(int oldestFrameIndex) {
 }
 
 void PointTrack::print() const {
-  printf("track %d of size %d: ", this->id_, size());
+  printf("track %d (%7.4f, %7.4f, %7.4f) of size %2d: ", id_, coordinates_.x,
+      coordinates_.y, this->coordinates_.z,  size());
   BOOST_FOREACH( const PointTrackObserv* obsv, *this) {
     printf("(%d, %d, [%5.1f,%5.1f,%5.1f]), ",
         obsv->frame_index_, obsv->keypoint_index_,
