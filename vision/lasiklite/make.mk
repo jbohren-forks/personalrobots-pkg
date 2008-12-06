@@ -28,8 +28,8 @@ ROOT_PATH = $(LASIK_PATH)/..
 BIN_PATH = $(LASIK_PATH)/bin
 LIB_PATH = $(LASIK_PATH)/lib
 
-OPENCV_CFLAGS=$(shell rospack export/cpp/cflags opencv)
-OPENCV_LFLAGS=$(shell rospack export/cpp/lflags opencv)
+OPENCV_CFLAGS=$(shell rospack --lang=cpp --attrib=cflags export opencv_latest)
+OPENCV_LFLAGS=$(shell rospack --lang=cpp --attrib=lflags export opencv_latest)
 
 LIBLASIK = $(BIN_PATH)/liblasiklite.a
 
