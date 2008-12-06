@@ -66,7 +66,7 @@ namespace pr2_phase_space
  *
  * Publishes to (name [type]):
  * - @b "cmd" [std_msgs/PoseStamped] : The commanded pose, with an associated timestamp and frame_id. You will
- *               probably have to remap this topic name in order to feed this command into a controller.               
+ *               probably have to remap this topic name in order to feed this command into a controller.
  * @section parameters ROS parameters
  * - @b ~body_id : The PhaseSpace ID associated with the rigid body we want to track
  * - @b ~num_to_skip : The number of PhaseSpace Snapshot frames we want to skip before republishing. If this
