@@ -45,7 +45,7 @@
 #include "PointTracks.h"
 #include "boost/foreach.hpp"
 
-#define DEBUG2 0
+//#define DEBUG2 1
 
 //#define DEBUG 1
 
@@ -121,14 +121,6 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
 
   /// @todo replace the following with direct multiplication.
   cvMatMul(m3DToDisparity, &rt, &T);
-#if DEBUG2==1
-  cout << "LevMarqSparseBundleAdj::constructTransfMatrix"<<endl;
-  CvMatUtils::printMat(&T);
-  cout << "="<<endl;
-  CvMatUtils::printMat(m3DToDisparity);
-  cout << "*"<<endl;
-  CvMatUtils::printMat(&rt);
-#endif
 #else
   // direct multiplication. Note that the last row is rt is 0, 0, 0, 1
   constructRTMatrix(param, _rt);
@@ -157,6 +149,20 @@ void LevMarqSparseBundleAdj::constructTransfMatrix(const CvMat* param, double _T
   _T[15] = cart_to_disp[12]*_rt[3] + cart_to_disp[13]*_rt[7] + cart_to_disp[14]*_rt[11] +
     cart_to_disp[15];
 
+#endif
+#if DEBUG2==1
+  {
+    cout << "LevMarqSparseBundleAdj::constructTransfMatrix"<<endl;
+    CvMat rt;
+    CvMat T;
+    cvInitMatHeader(&rt, 4, 4, CV_64FC1, _rt);
+    cvInitMatHeader(&T, 4, 4, CV_64FC1, _T);
+    CvMatUtils::printMat(&T);
+    cout << "="<<endl;
+    CvMatUtils::printMat(m3DToDisparity);
+    cout << "*"<<endl;
+    CvMatUtils::printMat(&rt);
+  }
 #endif
 }
 
@@ -338,9 +344,6 @@ bool LevMarqSparseBundleAdj::optimize(
   mat_dC_      = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_params_update_);
   mat_C_       = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_params_);
   mat_prev_C_  = cvMat(free_window_size_*NUM_CAM_PARAMS, 1, CV_64FC1, frame_prev_params_);
-
-  double Hcc2[NUM_CAM_PARAMS*NUM_CAM_PARAMS];
-  CvMat  mat_Hcc2 = cvMat(NUM_CAM_PARAMS, NUM_CAM_PARAMS, CV_64FC1, Hcc2);
 
   double Hpp[NUM_POINT_PARAMS*NUM_POINT_PARAMS]; // the part of JtJ w.r.t. track p (or point p)
   double Hpp_inv[NUM_POINT_PARAMS*NUM_POINT_PARAMS];
@@ -784,11 +787,13 @@ bool LevMarqSparseBundleAdj::optimize(
           //    Subtract \f$ T_{pc}H_{pc2} = H__{pc}^T H_{pp}^{-1} H_{pc2} from
           //     block (c, c2) of left hand side matrix A.
 #if 0
-          // use OpenCV calls
+          // use OpenCV calls. saved here for debugging only.
           CvMat& mat_Hpc2 = obsv2->mat_Hpc_;
           CvMat A_cc2;
           getABlock(&A_cc2, local_index1, local_index2);
           cvGEMM(&obsv->mat_Tcp_, &mat_Hpc2, -1.0, &A_cc2, 1.0, &A_cc2, 0);
+//          double Hcc2[NUM_CAM_PARAMS*NUM_CAM_PARAMS];
+//          CvMat  mat_Hcc2 = cvMat(NUM_CAM_PARAMS, NUM_CAM_PARAMS, CV_64FC1, Hcc2);
           //cvMatMul(&obsv->mat_Tcp_, &mat_Hpc2, &mat_Hcc2);
           //cvSub(&A_cc2, &mat_Hcc2, &A_cc2);
 #else
@@ -811,10 +816,10 @@ bool LevMarqSparseBundleAdj::optimize(
           printf("matrix Tcp, p=%d, c=%d,%d\n", p->id_, obsv->frame_index_, local_index2);
           CvMatUtils::printMat(&obsv->mat_Tcp_);
           printf("matrix Hpc2, p=%d, c2=%d,%d\n", p->id_, obsv2->frame_index_, local_index2);
-          CvMatUtils::printMat(&mat_Hpc2);
-          printf("matrix Hcc2, c=%d,%d, c2=%d,%d\n", obsv->frame_index_, local_index1,
-              obsv2->frame_index_, local_index2);
-          CvMatUtils::printMat(&mat_Hcc2);
+          CvMatUtils::printMat(&obsv2->mat_Hpc_);
+//          printf("matrix Hcc2, c=%d,%d, c2=%d,%d\n", obsv->frame_index_, local_index1,
+//              obsv2->frame_index_, local_index2);
+//          CvMatUtils::printMat(&mat_Hcc2);
 #endif
         }
       } // (Outer product of track)
@@ -1015,6 +1020,10 @@ void LevMarqSparseBundleAdj::initParams(
   double global_to_local_data[16];
   CvMat  global_to_local = cvMat(4, 4, CV_64FC1, global_to_local_data);
   BOOST_FOREACH(FramePose* free_frame, *free_frames) {
+#if DEBUG2==1
+    printf("initial transformation (local to global) for free frame %d\n", free_frame->mIndex);
+    CvMatUtils::printMat(&(free_frame->transf_local_to_global_));
+#endif
     // invert the global matrix to global to local matrix
     CvMatUtils::invertRigidTransform( &(free_frame->transf_local_to_global_),
         &global_to_local);
@@ -1051,6 +1060,10 @@ void LevMarqSparseBundleAdj::initParams(
   CvMat* transf_from_global = cvCreateMat(4, 4, CV_64FC1);
   int reverse_index=0;
   BOOST_REVERSE_FOREACH(FramePose* fp, *fixed_frames) {
+#if DEBUG2==1
+    printf("transformation (local to global) for fixed frame %d\n", fp->mIndex);
+    CvMatUtils::printMat(&(fp->transf_local_to_global_));
+#endif
     // @todo we may not need this field transf_global_to_disp_
     if (fp->transf_global_to_disp_ == NULL ) {
       fp->transf_global_to_disp_ = cvCreateMat(4, 4, CV_64FC1);
@@ -1098,6 +1111,9 @@ void LevMarqSparseBundleAdj::initParams(
         obsv->local_frame_index_ = -1;
       }
     }
+#if DEBUG2==1
+    p->print();
+#endif
   }
 
   cvReleaseMat(&transf_from_global);
@@ -1116,16 +1132,24 @@ void LevMarqSparseBundleAdj::retrieveOptimizedParams(
     int local_index = map_index_global_to_local_[fp->mIndex];
     // copy the parameters out
     CvMat mat_params_i = cvMat(NUM_CAM_PARAMS, 1, CV_64FC1, getFrameParams(local_index));
+    /// @todo should not tightened to rodrigues!
     CvMatUtils::transformFromRodriguesAndShift(mat_params_i, transf_global_to_local);
 
     // compute the local to global matrix
     CvMatUtils::invertRigidTransform(&transf_global_to_local,
         &fp->transf_local_to_global_);
+#if DEBUG==1
+    printf("Optimized result for frame %d\n", fp->mIndex);
+    CvMatUtils::printMat(&fp->transf_local_to_global_);
+#endif
   }
 
   // check and copy the point parameter back to p->coordinates_
   BOOST_FOREACH(PointTrack* p, tracks->tracks_) {
     p->coordinates_ = p->param_;
+#if DEBUG2==1
+    p->print();
+#endif
   }
 
 }
