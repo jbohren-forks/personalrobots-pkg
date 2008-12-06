@@ -37,7 +37,7 @@
 #define MEM_CHECK 0
 
 //regular debugging
-#define DEBUG 1
+#define DEBUG 0
 
 //timing debugging
 #define TIME_DEBUG 0
