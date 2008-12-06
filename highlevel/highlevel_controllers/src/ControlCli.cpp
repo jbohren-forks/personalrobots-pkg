@@ -80,23 +80,23 @@ private:
   }
 
   void fillNamesLeftArm(std::vector<std::string> &names) {
-    names.push_back("shoulder_pan_left_joint");
-    names.push_back("shoulder_pitch_left_joint");
-    names.push_back("upperarm_roll_left_joint");
-    names.push_back("elbow_flex_left_joint");
-    names.push_back("forearm_roll_left_joint");
-    names.push_back("wrist_flex_left_joint");
-    names.push_back("gripper_roll_left_joint"); 
+    names.push_back("l_shoulder_pan_joint");
+    names.push_back("l_shoulder_lift_joint");
+    names.push_back("l_upper_arm_roll_joint");
+    names.push_back("l_elbow_flex_joint");
+    names.push_back("l_forearm_roll_joint");
+    names.push_back("l_wrist_flex_joint");
+    names.push_back("l_wrist_roll_joint"); 
   }
   
   void fillNamesRightArm(std::vector<std::string> &names) {
-    names.push_back("shoulder_pan_right_joint");
-    names.push_back("shoulder_pitch_right_joint");
-    names.push_back("upperarm_roll_right_joint");
-    names.push_back("elbow_flex_right_joint");
-    names.push_back("forearm_roll_right_joint");
-    names.push_back("wrist_flex_right_joint");
-    names.push_back("gripper_roll_right_joint");
+    names.push_back("r_shoulder_pan_joint");
+    names.push_back("r_shoulder_lift_joint");
+    names.push_back("r_upper_arm_roll_joint");
+    names.push_back("r_elbow_flex_joint");
+    names.push_back("r_forearm_roll_joint");
+    names.push_back("r_wrist_flex_joint");
+    names.push_back("r_wrist_roll_joint");
   }
 
   float enterValue(float min, float max) {
