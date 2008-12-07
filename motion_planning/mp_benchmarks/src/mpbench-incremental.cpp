@@ -59,6 +59,7 @@ static void parse_options(int argc, char ** argv);
 static void create_setup();
 static void run_tasks();
 static void print_summary();
+static void print_gnuplot();
 
 static footprint_t const & getFootprint();
 static std::string baseFilename();
@@ -95,6 +96,7 @@ int main(int argc, char ** argv)
   create_setup();
   run_tasks();
   print_summary();
+  print_gnuplot();
   if (enableGfx)
     display(gfx::Configuration(*setup,
 			       *environment,
@@ -166,7 +168,7 @@ static string summarizeOptions()
 
 std::string baseFilename()
 {
-  return "mpbench-" + summarizeOptions();
+  return "mpbench-incremental-" + summarizeOptions();
 }
 
 
@@ -587,7 +589,7 @@ void run_tasks()
     double cumul_actual_time_wall(0);
     double cumul_actual_time_user(0);
     double cumul_actual_time_system(0);
-    ssize_t cumul_expands(0);
+    int cumul_expands(0);
     for (size_t jj(0); true; ++jj) {
       
       // Handle the first iteration specially.
@@ -742,7 +744,7 @@ void print_summary()
     *logos << "sorry, summary only implemented for HTML mode\n";
     return;
   }  
-  string htmlFilename("mpbench-" + summarizeOptions() + ".html");
+  string htmlFilename(baseFilename() + ".html");
   ofstream htmlOs(htmlFilename.c_str());
   if ( ! htmlOs) {
     cout << "sorry, could not open file " << htmlFilename << "\n";
@@ -774,7 +776,7 @@ void print_summary()
 	     << "<td colspan=\"2\">N/A</td></tr>\n";
       continue;
     }
-    ssize_t cumul_expands(initialStats->second.number_of_expands);
+    int cumul_expands(initialStats->second.number_of_expands);
     bool error(false);
     for (++ib; ib != bundle.end(); ++ib) {
       successStats_t::const_iterator stats(successStats.find(ib->get()));
@@ -788,7 +790,7 @@ void print_summary()
       htmlOs << "<td colspan=\"3\"><em>error: missing stats</em></td></tr>\n";
       continue;
     }
-    ssize_t const delta_expands(cumul_expands - initialStats->second.number_of_expands);
+    int const delta_expands(cumul_expands - initialStats->second.number_of_expands);
     htmlOs << "<td>" << initialStats->second.number_of_expands << "</td>"
 	   << "<td>" << cumul_expands << "</td>"
 	   << "<td>" << delta_expands << "</td>"
@@ -799,8 +801,7 @@ void print_summary()
   //////////////////////////////////////////////////
   // expansions per second
   
-  htmlOs << "<table border=\"1\" cellpadding=\"2\">\n"
-	 << "<tr><th colspan=\"5\">expansions speed [1/s] (wall clock)</th></tr>\n"
+  htmlOs << "<tr><th colspan=\"5\">expansions speed [1/s] (wall clock)</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
   for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
     htmlOs << "<tr><td>" << ip->first << "</td>";
@@ -1008,6 +1009,168 @@ void print_summary()
   }
   
   htmlOs << "</table>\n";
+}
+
+
+void print_gnuplot()
+{
+  string dataFilename(baseFilename() + ".data");
+  string plotFilename(baseFilename() + ".plot");
+  ofstream plotOs(plotFilename.c_str());
+  if ( ! plotOs) {
+    cout << "sorry, could not open file " << plotFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot script file: " << plotFilename << "\n";
+  plotOs
+    << "set terminal png large\n"
+    // relative plan quality vs relative time
+    << "set output \"" << baseFilename() << "--rqual-rtime.png\"\n"
+    << "set xlabel \"cumul planning time [% of final] (wallclock)\"\n"
+    << "set ylabel \"[% of final]\"\n"
+    << "plot \"" << dataFilename << "\" using ($3):($15) title \"solution cost\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($18) title \"plan length\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($20) title \"plan rotation\" with lines\n"
+    // absolute expansion speed vs relative time
+    << "set output \"" << baseFilename() << "--speed-rtime.png\"\n"
+    << "set xlabel \"cumul planning time [% of final] (wallclock)\"\n"
+    << "set ylabel \"[1/s] (wallclock)\"\n"
+    << "plot \"" << dataFilename << "\" using ($3):($10) title \"expansion speed\" with lines, "
+    << "\"" << dataFilename << "\" using ($3):($11) title \"avg expansion speed\" with lines\n"
+    // relative plan quality vs absolute time
+    << "set output \"" << baseFilename() << "--rqual-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[% of final]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($15) title \"solution cost\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($18) title \"plan length\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($20) title \"plan rotation\" with lines\n"
+    // absolute expansion speed vs absolute time
+    << "set output \"" << baseFilename() << "--speed-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[1/s] (wallclock)\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($10) title \"expansion speed\" with lines, "
+    << "\"" << dataFilename << "\" using ($2):($11) title \"avg expansion speed\" with lines\n"
+    // absolute solution cost vs absolute time
+    << "set output \"" << baseFilename() << "--cost-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[cost]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($14) title \"solution cost\" with lines\n"
+    // absolute plan length vs absolute time
+    << "set output \"" << baseFilename() << "--length-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[m]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($17) title \"plan length\" with lines\n"
+    // absolute plan rotation vs absolute time
+    << "set output \"" << baseFilename() << "--rotation-atime.png\"\n"
+    << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
+    << "set ylabel \"[rad]\"\n"
+    << "plot \"" << dataFilename << "\" using ($2):($19) title \"plan rotation\" with lines\n";
+  
+  ofstream dataOs(dataFilename.c_str());
+  if ( ! dataOs) {
+    cout << "sorry, could not open file " << dataFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot data file: " << dataFilename << "\n";
+  
+  dataOs << "# " << dataFilename << "\n"
+	 << "# data file for gnuplot\n"
+	 << "#\n"
+	 << "# multi-data sets correspond to individual tasks\n";
+  setup->dumpDescription(dataOs, "", "#   ");
+  dataOs << "#\n"
+	 << "# columns:\n"
+	 << "#  1           time actual (wall) [s]\n"
+	 << "#  2 cumulated time actual (wall) [s]\n"
+	 << "#  3 cumulated time actual (wall) [% of final]\n"
+	 << "#  4           time actual (user) [s]\n"
+	 << "#  5 cumulated time actual (user) [s]\n"
+	 << "#  6 cumulated time actual (user) [% of final]\n"
+	 << "#  7           number of expands\n"
+	 << "#  8 cumulated number of expands\n"
+	 << "#  9 cumulated number of expands [% of final]\n"
+	 << "# 10           expansion speed (wall) [1/s]\n"
+	 << "# 11 cumul avg expansion speed (wall) [1/s]\n"
+	 << "# 12           expansion speed (user) [1/s]\n"
+	 << "# 13 cumul avg expansion speed (user) [1/s]\n"
+	 << "# 14 solution cost\n"
+	 << "# 15 solution cost [% of final]\n"
+	 << "# 16 solution epsilon\n"
+	 << "# 17 plan length [m]\n"
+	 << "# 18 plan length [% of final]\n"
+	 << "# 19 plan rotation [rad]\n"
+	 << "# 20 plan rotation [% of final]\n";
+  
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    dataOs << "\n\n";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      dataOs << "# no solution\n";
+      continue;
+    }
+    
+    double final_cumul_wall(0);
+    double final_cumul_user(0);
+    int final_cumul_expands(0);
+    int final_cost(0);
+    double final_length(0);
+    double final_rotation(0);
+    for (planBundle_t::const_iterator ib(bundle.begin()); ib != bundle.end(); ++ib) {
+      successStats_t::const_iterator iStats(successStats.find(ib->get()));
+      if (successStats.end() == iStats) {
+	dataOs << "# error: no stats for solution\n";
+	continue;
+      }
+      final_cumul_wall += iStats->second.actual_time_wall_sec;
+      final_cumul_user += iStats->second.actual_time_user_sec;
+      final_cumul_expands += iStats->second.number_of_expands;
+      final_cost = iStats->second.solution_cost;
+      final_length = iStats->second.plan_length_m;
+      final_rotation = iStats->second.plan_angle_change_rad;
+    }
+    
+    double cumul_wall(0);
+    double cumul_user(0);
+    int cumul_expands(0);
+    for (planBundle_t::const_iterator ib(bundle.begin()); ib != bundle.end(); ++ib) {
+      successStats_t::const_iterator iStats(successStats.find(ib->get()));
+      if (successStats.end() == iStats) {
+	dataOs << "# error: no stats for solution\n";
+	continue;
+      }
+      cumul_wall += iStats->second.actual_time_wall_sec;
+      cumul_user += iStats->second.actual_time_user_sec;
+      cumul_expands += iStats->second.number_of_expands;
+      dataOs
+	// wall time
+	<< iStats->second.actual_time_wall_sec << "\t"
+	<< cumul_wall << "\t"
+	<< 100 * cumul_wall / final_cumul_wall << "\t"
+	// user time
+	<< iStats->second.actual_time_user_sec << "\t"
+	<< cumul_user << "\t"
+	<< 100 * cumul_user / final_cumul_user << "\t"
+	// expands
+	<< iStats->second.number_of_expands << "\t"
+	<< cumul_expands << "\t"
+	<< 100 * cumul_expands / final_cumul_expands << "\t"
+	// expansion speed
+	<< iStats->second.number_of_expands / iStats->second.actual_time_wall_sec << "\t"
+	<< cumul_expands / cumul_wall << "\t"
+	<< iStats->second.number_of_expands / iStats->second.actual_time_user_sec << "\t"
+	<< cumul_expands / cumul_user << "\t"
+	// cost
+	<< iStats->second.solution_cost << "\t"
+	<< (100.0 * iStats->second.solution_cost) / final_cost << "\t"
+	// epsilon
+	<< iStats->second.solution_epsilon << "\t"
+	// plan quality
+	<< iStats->second.plan_length_m << "\t"
+	<< 100 * iStats->second.plan_length_m / final_length << "\t"
+	<< iStats->second.plan_angle_change_rad << "\t"
+	<< 100 * iStats->second.plan_angle_change_rad / final_rotation << "\n";
+    }
+  }
 }
 
 

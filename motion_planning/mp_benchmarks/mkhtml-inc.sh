@@ -37,8 +37,8 @@ cat>>index.html<<EOF
 </ul>
 <h1>Categories</h1>
 <ul>
-<li>$A_HR <code>$A_OPT</code>: $A_VAR</li>
-<li>$B_HR <code>$B_OPT</code>: $B_VAR</li>
+ <li>$A_HR <code>$A_OPT</code>: $A_VAR</li>
+ <li>$B_HR <code>$B_OPT</code>: $B_VAR</li>
 </ul>
 <h1>Run Variables</h1>
 <ul>
@@ -87,22 +87,72 @@ for rest in $REST; do
     for aa in $A_VAR; do
 	for bb in $B_VAR; do
 	    allopts="$A_OPT $aa $B_OPT $bb $opts $CONSTANT_OPTS"
-	    echo "<td>" >> index.html
-	    echo "<code>$A_OPT $aa $B_OPT $bb $opts</code><br>" >> index.html
-
-	    echo "extracting basename for $allopts"
 	    basename=`$MPBENCH $allopts -X`
-	    echo "<a href=\" $basename.txt \"> log </a>&nbsp;<a href=\" cons-$basename.txt \"> cons </a>&nbsp;<a href=\" $basename.png \"> png </a><br>" >> index.html
-##	    echo "<a href=\" $basename.txt \"> log </a>&nbsp;<a href=\" cons-$basename.txt \"> cons </a>&nbsp;<a href=\" vg-$basename.txt \"> vg </a>&nbsp;<a href=\" $basename.png \"> png </a><br>" >> index.html
-	    echo "<a href=\" $basename.png \"><img src=\" small-$basename.png \" alt=\" $basename.png \"></a><br>" >> index.html
+
 	    echo "running with $allopts -W"
-##	    valgrind --log-file-exactly=vg-$basename.txt $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
-##	    chmod a+r vg-$basename.txt
 	    $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
 	    
-	    cat $basename.html >> index.html
-	    
-	    echo "</td>" >> index.html
+	    echo "invoking gnuplot $basename.plot"
+	    gnuplot $basename.plot 2>&1 | tee gnuplot-$basename.txt
+
+cat>>index.html<<EOF
+<td>
+ <table border="0" cellpadding="1">
+  <tr>
+   <td colspan="3"><code>$A_OPT $aa $B_OPT $bb $opts</code></td>
+  </tr>
+  <tr>
+   <td><a href="$basename.txt">bench log</a></td>
+   <td><a href="cons-$basename.txt">bench cons</a></td>
+   <td><a href="gnuplot-$basename.txt">plot cons</a></td>
+  </tr>
+  <tr>
+   <td colspan="3"><a href="$basename.png"><img src="small-$basename.png" alt="$basename.png"></a></td>
+  </tr>
+  <tr>
+   <td><a href="$basename.png">plan png</a></td>
+   <td><a href="table-$basename.html">table</a></td>
+   <td><a href="plots-$basename.html">plots</a></td>
+  </tr>
+ </table>
+</td>
+EOF
+
+cat>>table-$basename.html<<EOF   
+<html>
+<body>
+<h1>summary table</h1>
+<p>command line options: <code>$allopts</code></p>
+EOF
+cat $basename.html >> table-$basename.html
+cat>>table-$basename.html<<EOF   
+</body>
+</html>
+EOF
+
+cat>>plots-$basename.html<<EOF
+<html>
+<body>
+<h1>Summary plots</h1>
+ <p>command line options: <code>$allopts</code></p>
+ <h2>relative path quality vs relative time</h2>
+  <img src="$basename--rqual-rtime.png" alt="no image? no solution...">
+ <h2>expansion speed vs relative time</h2>
+  <img src="$basename--speed-rtime.png" alt="no image? no solution...">
+ <h2>relative path quality vs absolute time</h2>
+  <img src="$basename--rqual-atime.png" alt="no image? no solution...">
+ <h2>expansion speed vs absolute time</h2>
+  <img src="$basename--speed-atime.png" alt="no image? no solution...">
+ <h2>solution cost vs absolute time</h2>
+  <img src="$basename--cost-atime.png" alt="no image? no solution...">
+ <h2>plan length vs absolute time</h2>
+  <img src="$basename--length-atime.png" alt="no image? no solution...">
+ <h2>plan tangent rotation vs absolute time</h2>
+  <img src="$basename--rotation-atime.png" alt="no image? no solution...">
+</body>
+</html>
+EOF
+
 	done
     done
     echo "</tr>" >> index.html

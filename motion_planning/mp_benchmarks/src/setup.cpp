@@ -767,7 +767,7 @@ namespace {
 		   << "  Install the netpbm libraries and headers and recompile\n"
 		   << "  mp_benchmarks, for example under Ubuntu Feisty the package\n"
 		   << "  libnetpbm10-dev does the trick.\n";
-    warn("in createNetPGMBenchmark(): no support for netpgm\n", pgmFileName.c_str());
+    warn("in createNetPGMBenchmark(): no support for netpgm\n");
     return bench;
     
 #else // MPBENCH_HAVE_NETPGM
