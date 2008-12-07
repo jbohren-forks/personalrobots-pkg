@@ -182,7 +182,7 @@ public:
     color_calib::Calibration color_cal(this);
     if (calib_color_) {
       // Exit if color calibration hasn't been performed.
-      std::string color_cal_str = std::string("videre/images/") + image_msg_.images[1].label + std::string("/color_cal");
+      std::string color_cal_str = std::string("videre/images/") + image_msg_.images[1].label;
       if (!has_param(color_cal_str)) {
 	//printf("No params\n");
 	return;
