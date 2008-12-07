@@ -149,14 +149,28 @@ color_calib::Calibration::populateRGB()
 void
 color_calib::Calibration::correctColor(IplImage* src, IplImage* dst, bool do_decompand, bool do_recompand, uint32_t flags)
 {
+  IplImage* tmp;
+  bool cleanup = false;
+
+  if (dst->depth != IPL_DEPTH_32F)
+  {
+    tmp = cvCreateImage(cvGetSize(dst), IPL_DEPTH_32F,3);
+    cleanup = true;
+  } else {
+    tmp = dst;
+  }
+
   if (do_decompand)
-    decompand(src, dst);
+    decompand(src, tmp);
     
   if (flags & COLOR_CAL_BGR)
-    cvTransform(dst, dst, color_cal_bgr_);
+    cvTransform(tmp, tmp, color_cal_bgr_);
   else
-    cvTransform(dst, dst, color_cal_);
+    cvTransform(tmp, tmp, color_cal_);
     
   if (do_recompand)
-    compand(dst, dst);
+    compand(tmp, dst);
+
+  if (cleanup)
+    cvReleaseImage(&tmp);
 }
