@@ -34,6 +34,11 @@
 #define __min(x,y) (x>y?y:x)
 #endif
 
+#ifndef ssize_t
+#define ssize_t int
+#endif
+
+
 #define NORMALIZEDISCTHETA(THETA, THETADIRS) (((THETA>=0)?((THETA)%(THETADIRS)):(((THETA)%(THETADIRS)+THETADIRS)%THETADIRS)))
 
 #define CONTXY2DISC(X, CELLSIZE) (((X)>=0)?((int)((X)/(CELLSIZE))):((int)((X)/(CELLSIZE))-1))

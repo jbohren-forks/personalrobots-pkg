@@ -6,7 +6,7 @@
 --------------------Configuration: sbpl - Win32 Release--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP175E.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17EC.tmp" with contents
 [
 /nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Release/" /Fp"Release/sbpl.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
 "C:\Max\codeforstarters\sbpl\src\utils\2Dgridsearch.cpp"
@@ -22,8 +22,8 @@ Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP175E.tmp" with content
 "C:\Max\codeforstarters\sbpl\src\utils\utils.cpp"
 "C:\Max\codeforstarters\sbpl\src\planners\VI\viplanner.cpp"
 ]
-Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP175E.tmp" 
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP175F.tmp" with contents
+Creating command line "cl.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17EC.tmp" 
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17ED.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:no /pdb:"Release/sbpl.pdb" /machine:I386 /out:"Release/sbpl.exe" 
 .\Release\2Dgridsearch.obj
@@ -39,7 +39,7 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 .\Release\utils.obj
 .\Release\viplanner.obj
 ]
-Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP175F.tmp"
+Creating command line "link.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17ED.tmp"
 <h3>Output Window</h3>
 Compiling...
 2Dgridsearch.cpp
@@ -55,7 +55,7 @@ mdp.cpp
 utils.cpp
 viplanner.cpp
 Linking...
-Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP1761.tmp" with contents
+Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17EF.tmp" with contents
 [
 /nologo /o"Release/sbpl.bsc" 
 .\Release\2Dgridsearch.sbr
@@ -70,7 +70,7 @@ Creating temporary file "C:\DOCUME~1\Max\LOCALS~1\Temp\RSP1761.tmp" with content
 .\Release\mdp.sbr
 .\Release\utils.sbr
 .\Release\viplanner.sbr]
-Creating command line "bscmake.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP1761.tmp"
+Creating command line "bscmake.exe @C:\DOCUME~1\Max\LOCALS~1\Temp\RSP17EF.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 
