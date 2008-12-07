@@ -21,7 +21,7 @@ public:
     tf::Stamped<tf::Pose> robotPose, globalPose;
     robotPose.setIdentity();
     robotPose.frame_id_ = "base_link";
-    robotPose.stamp_ = ros::Time((uint64_t)0ULL);
+    robotPose.stamp_ = ros::Time();
     try {
       this->tf.transformPose("map", robotPose, globalPose);
     } catch(tf::LookupException& ex) {

@@ -288,7 +288,7 @@ namespace estimation
   {
     // pose
     Stamped<Transform> tmp;
-    transformer_.lookupTransform("base_footprint","odom", 0.0, tmp);
+    transformer_.lookupTransform("base_footprint","odom", ros::Time(), tmp);
     PoseTFToMsg(tmp, estimate.pose);
 
     // header

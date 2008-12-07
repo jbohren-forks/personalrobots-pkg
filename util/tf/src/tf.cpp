@@ -36,9 +36,9 @@ using namespace tf;
 Transformer::Transformer(bool interpolating,
                                 ros::Duration cache_time):
   cache_time(cache_time),
-  interpolating (interpolating),
-  max_extrapolation_distance_(DEFAULT_MAX_EXTRAPOLATION_DISTANCE)
+  interpolating (interpolating)
 {
+  max_extrapolation_distance_.fromNSec(DEFAULT_MAX_EXTRAPOLATION_DISTANCE);
   frameIDs_["NO_PARENT"] = 0;
   frames_.push_back(NULL);// new TimeCache(interpolating, cache_time, max_extrapolation_distance));//unused but needed for iteration over all elements
   frameIDs_reverse.push_back("NO_PARENT");
@@ -85,7 +85,7 @@ void Transformer::lookupTransform(const std::string& target_frame, const std::st
   int retval = NO_ERROR;
   ros::Time temp_time;
   //If getting the latest get the latest common time
-  if (time == ros::Time(0ULL))
+  if (time == ros::Time())
     retval = getLatestCommonTime(target_frame, source_frame, temp_time);
   else
     temp_time = time;
@@ -121,13 +121,13 @@ void Transformer::lookupTransform(const std::string& target_frame,const ros::Tim
   int retval = NO_ERROR;
   ros::Time temp_target_time, temp_source_time;
   //If getting the latest get the latest common time
-  if (target_time == ros::Time(0ULL))
+  if (target_time == ros::Time())
     retval = getLatestCommonTime(target_frame, fixed_frame, temp_target_time);
   else
     temp_target_time = target_time;
 
   //If getting the latest get the latest common time
-  if (source_time == ros::Time(0ULL) && retval == NO_ERROR)
+  if (source_time == ros::Time() && retval == NO_ERROR)
     retval = getLatestCommonTime(fixed_frame, source_frame, temp_source_time);
   else
     temp_source_time = source_time;
@@ -198,7 +198,7 @@ bool Transformer::canTransform(const std::string& target_frame, const std::strin
     }
   }
 
-  if (time != ros::Time((uint64_t)0ULL) && test_extrapolation(time, t_list, NULL))
+  if (time != ros::Time() && test_extrapolation(time, t_list, NULL))
   {
     return false;
   }
@@ -222,7 +222,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
       return false;
   }
 
-  if (target_time != ros::Time((uint64_t)0ULL) && test_extrapolation(target_time, t_list, NULL))
+  if (target_time != ros::Time() && test_extrapolation(target_time, t_list, NULL))
     return false;
 
 
@@ -241,7 +241,7 @@ bool Transformer::canTransform(const std::string& target_frame,const ros::Time& 
       return false;
   }
 
-  if (source_time != ros::Time((uint64_t)0ULL) && test_extrapolation(target_time, t_list, NULL))
+  if (source_time != ros::Time() && test_extrapolation(target_time, t_list, NULL))
     return false;
 
   return true;
@@ -269,7 +269,7 @@ int Transformer::getLatestCommonTime(const std::string& source, const std::strin
   time = ros::Time::now();///\todo hack fixme
   int retval;
   TransformLists lists;
-  retval = lookupLists(lookupFrameNumber(dest), ros::Time(0ULL), lookupFrameNumber(source), lists, NULL);
+  retval = lookupLists(lookupFrameNumber(dest), ros::Time(), lookupFrameNumber(source), lists, NULL);
   if (retval == NO_ERROR)
   {
     for (unsigned int i = 0; i < lists.inverseTransforms.size(); i++)
@@ -650,7 +650,7 @@ std::string Transformer::allFramesAsString()
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
     unsigned int parent_id;
-    if(  getFrame(counter)->getData((uint64_t)0ULL, temp))
+    if(  getFrame(counter)->getData(ros::Time(), temp))
       parent_id = temp.parent_frame_id;
     else
     {
@@ -673,14 +673,6 @@ void Transformer::getFrameStrings(std::vector<std::string> & vec)
   //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
   for (unsigned int counter = 1; counter < frames_.size(); counter ++)
   {
-    ///\todo why did I do this and then catch??
-    /*   try{
-      getFrame(counter)->getData((uint64_t)0ULL, temp);
-    }
-    catch (tf::LookupException& ex)
-    {
-    }
-    */
     vec.push_back(frameIDs_reverse[counter]);
   }
   frame_mutex_.unlock();

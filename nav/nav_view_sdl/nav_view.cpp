@@ -355,7 +355,7 @@ NavView::render()
     tf::Stamped<tf::Pose> robotPose;
     robotPose.setIdentity();
     robotPose.frame_id_ = "base_link";
-    robotPose.stamp_ = ros::Time(0);
+    robotPose.stamp_ = ros::Time();
 
     tf::Stamped<tf::Pose> mapPose ;
     tf.transformPose("map", robotPose, mapPose );

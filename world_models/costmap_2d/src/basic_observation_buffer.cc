@@ -32,7 +32,7 @@ namespace costmap_2d {
       try
         {
 	  // First we want the origin for the sensor
-	  tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), point_cloud.header.stamp.toNSec(), frame_id_);
+	  tf::Stamped<btVector3> local_origin(btVector3(0, 0, 0), point_cloud.header.stamp, frame_id_);
 	  tf_.transformPoint("map", local_origin, map_origin);
 
           tf_.transformPointCloud("base_link", point_cloud, base_cloud);

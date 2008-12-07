@@ -307,7 +307,7 @@ public:
     scan_msg_.range_max = scan_.config.max_range;
     scan_msg_.ranges = scan_.ranges;
     scan_msg_.intensities = scan_.intensities;
-    scan_msg_.header.stamp = ros::Time((uint64_t)scan_.system_time_stamp);
+    scan_msg_.header.stamp = ros::Time().fromNSec((uint64_t)scan_.system_time_stamp);
     scan_msg_.header.frame_id = frameid_;
 
     publish("scan", scan_msg_);

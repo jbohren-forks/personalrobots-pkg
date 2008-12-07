@@ -279,7 +279,7 @@ WavefrontNode::WavefrontNode() :
         ang_eps(DTOR(4.0)),
         cycletime(0.1),
         laser_maxrange(4.0),
-        laser_buffer_time(3000000000LL),
+        laser_buffer_time(ros::Duration().fromSec(3)),
         lookahead_maxdist(2.0),
         lookahead_distweight(5.0),
         tvmin(0.2),
@@ -571,7 +571,7 @@ WavefrontNode::doOneCycle()
   tf::Stamped<tf::Pose> robotPose;
   robotPose.setIdentity();
   robotPose.frame_id_ = "base_link";
-  robotPose.stamp_ = ros::Time((uint64_t)0ULL); // request most recent pose
+  robotPose.stamp_ = ros::Time(); // request most recent pose
   //robotPose.time = laserMsg.header.stamp.sec * (uint64_t)1000000000ULL +
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try

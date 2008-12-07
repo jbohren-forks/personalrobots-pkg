@@ -57,7 +57,7 @@ SlamGMapping::SlamGMapping()
   /// not urgent for a robot like the PR2, where odometry is being
   /// published several times faster than laser scans.
   tf_ = new tf::TransformListener(*node_, true, 10000000000ULL);
-  tf_->setExtrapolationLimit((int64_t) 200000000ULL );
+  tf_->setExtrapolationLimit( ros::Duration().fromSec(0.2));
   ROS_ASSERT(tf_);
 
   gsp_laser_ = NULL;

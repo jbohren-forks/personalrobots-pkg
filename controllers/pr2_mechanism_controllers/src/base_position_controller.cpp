@@ -160,7 +160,7 @@ void BasePositionControllerNode::setPoseOdomFrameCommandCallback()
 void BasePositionControllerNode::setPoseCommand(std_msgs::PoseStamped cmd)
 {
   std_msgs::PoseStamped pose_odom ;               // Stores the pose in the odometric frame
-  cmd.header.stamp = ros::Time(0) ;             // Transform using the latest transform
+  cmd.header.stamp = ros::Time() ;                // Transform using the latest transform
   tf_.transformPose(odom_frame_name_, cmd, pose_odom) ;
 
   tf::Quaternion orientation_odom ;               // Orientation in the odometric frame

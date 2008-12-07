@@ -222,11 +222,11 @@ void HeadPanTiltControllerNode::headTrackPoint()
   point.setX(head_track_point_.point.x);
   point.setY(head_track_point_.point.y);
   point.setZ(head_track_point_.point.z);
-  point.stamp_ =0;
+  point.stamp_ = ros::Time();
   point.frame_id_ = head_track_point_.header.frame_id;
 
   std::string pan_parent;
-  TF.getParent("head_pan_link", 0, pan_parent);
+  TF.getParent("head_pan_link", ros::Time(), pan_parent);
   std::string tilt_parent("head_pan_link");
 
   //     Pan angle
@@ -282,12 +282,12 @@ void HeadPanTiltControllerNode::frameTrackPoint()
   point.setX(frame_track_point_.point.x);
   point.setY(frame_track_point_.point.y);
   point.setZ(frame_track_point_.point.z);
-  point.stamp_ = 0;//get the latest transform
+  point.stamp_ = ros::Time();//get the latest transform
   point.frame_id_ = frame_track_point_.header.frame_id;
 
   try
   {
-    TF.lookupTransform(point.frame_id_,"head_pan_link",ros::Time(0),frame);
+    TF.lookupTransform(point.frame_id_,"head_pan_link",ros::Time(),frame);
   }
   catch(tf::TransformException& ex)
   {

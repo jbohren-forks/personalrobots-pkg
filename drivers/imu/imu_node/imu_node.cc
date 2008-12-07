@@ -225,7 +225,7 @@ public:
       tf::PoseTFToMsg(pose, reading.pos);
       
       
-      reading.header.stamp = ros::Time(time);
+      reading.header.stamp = ros::Time().fromNSec(time);
       reading.header.frame_id = frameid_;
 
       publish("imu_data", reading);

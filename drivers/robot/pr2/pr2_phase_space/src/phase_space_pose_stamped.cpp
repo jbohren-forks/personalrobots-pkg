@@ -149,7 +149,7 @@ public :
 
         std_msgs::PoseStamped pose_msg ;
 
-        pose_msg.header.stamp = ros::Time(0.0) ;
+        pose_msg.header.stamp = ros::Time() ;
         pose_msg.header.frame_id =  frame_id_ ;
 
         tf::PointTFToMsg(pose_result.getOrigin(), pose_msg.pose.position) ;

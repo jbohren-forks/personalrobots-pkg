@@ -264,7 +264,7 @@ namespace ros {
       tf::Stamped<tf::Pose> robotPose;
       robotPose.setIdentity();
       robotPose.frame_id_ = "base_link";
-      robotPose.stamp_ = ros::Time((uint64_t)0ULL);
+      robotPose.stamp_ = ros::Time();
 
       try{
         tf_.transformPose("map", robotPose, global_pose_);
@@ -302,7 +302,7 @@ namespace ros {
       qt.setEulerZYX(goalMsg.goal.th, 0, 0);
       goalPose.setData(btTransform(qt, btVector3(goalMsg.goal.x, goalMsg.goal.y, 0)));
       goalPose.frame_id_ = goalMsg.header.frame_id;
-      goalPose.stamp_ = ros::Time((uint64_t)0ULL);
+      goalPose.stamp_ = ros::Time();
 
       try{
         tf_.transformPose("map", goalPose, transformedGoalPose);
@@ -382,8 +382,8 @@ namespace ros {
 
       try
       {
-        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, 0), ros::Time((uint64_t)0ULL), odomMsg_.header.frame_id), v_out;
-        tf_.transformVector("base_link", ros::Time((uint64_t)0ULL), v_in, odomMsg_.header.frame_id, v_out);	 
+        tf::Stamped<btVector3> v_in(btVector3(odomMsg_.vel.x, odomMsg_.vel.y, 0), ros::Time(), odomMsg_.header.frame_id), v_out;
+        tf_.transformVector("base_link", ros::Time(), v_in, odomMsg_.header.frame_id, v_out);	 
         base_odom_.vel.x = v_in.x();
         base_odom_.vel.y = v_in.y();
         base_odom_.vel.th = odomMsg_.vel.th;
@@ -823,7 +823,8 @@ namespace ros {
      */
     void MoveBase::mapUpdateLoop()
     {
-      ros::Duration *d = new ros::Duration(1.0/map_update_frequency_);
+      ros::Duration *d = new ros::Duration();
+      d->fromSec(1.0/map_update_frequency_);
 
       while (active_){
         //Avoids laser race conditions.

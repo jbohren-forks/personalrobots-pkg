@@ -296,7 +296,7 @@ namespace estimation
 
 	  // broadcast most recent estimate to TransformArray
 	  Stamped<Transform> tmp;
-	  my_filter_.getEstimate(0, tmp);
+	  my_filter_.getEstimate(ros::Time(), tmp);
 	  odom_broadcaster_.sendTransform(Stamped<Transform>(tmp.inverse(), tmp.stamp_, "odom_combined", "base_footprint"));
 
 #ifdef __EKF_DEBUG_FILE__

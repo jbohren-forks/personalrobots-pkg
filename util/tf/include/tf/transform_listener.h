@@ -63,7 +63,7 @@ public:
                     bool interpolating = true,
                     int64_t max_cache_time = DEFAULT_CACHE_TIME):
     Transformer(interpolating,
-                max_cache_time),
+                ros::Duration().fromNSec(max_cache_time)),
     node_(rosnode)
   {
     //  printf("Constructed rosTF\n");
@@ -154,7 +154,7 @@ void receiveArray()
       //      setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
       setTransform(Stamped<Transform>(Transform(Quaternion(tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll), 
                                                     Vector3(tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z)), 
-                                        tfArrayIn.eulers[i].header.stamp.sec * (uint64_t)1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec, 
+                                        tfArrayIn.eulers[i].header.stamp, 
                                       tfArrayIn.eulers[i].header.frame_id , tfArrayIn.eulers[i].parent) );
     }    
     catch (tf::TransformException &ex)
@@ -174,9 +174,9 @@ void receiveArray()
     try{
       //    setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
       setTransform(Stamped<Transform>(Transform(Quaternion(tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w), 
-                                                    Vector3(tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt)), 
-                                        tfArrayIn.quaternions[i].header.stamp.sec * (uint64_t)1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec, 
-                                        tfArrayIn.quaternions[i].header.frame_id , tfArrayIn.quaternions[i].parent) 
+                                                Vector3(tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt)), 
+                                      tfArrayIn.quaternions[i].header.stamp,
+                                      tfArrayIn.quaternions[i].header.frame_id , tfArrayIn.quaternions[i].parent) 
                    );
     }    
     catch (tf::TransformException &ex)

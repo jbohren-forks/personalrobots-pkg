@@ -105,7 +105,7 @@ public:
   string output_topic_ ;                // Topic name for publishing our SensorKinematics metapacket
   
   SensorKinematicsGrabber() : ros::node("sensor_kinematics_grabber"),
-                              dcam_sync_(this, &SensorKinematicsGrabber::dcamCallback, ros::Duration(0.05), &SensorKinematicsGrabber::dcamCallbackTimeout)
+                              dcam_sync_(this, &SensorKinematicsGrabber::dcamCallback, ros::Duration().fromSec(0.05), &SensorKinematicsGrabber::dcamCallbackTimeout)
   {
     param("~subscribe_color", subscribe_color_, false);
     param("~output_topic", output_topic_, string("sensor_kinematics"));

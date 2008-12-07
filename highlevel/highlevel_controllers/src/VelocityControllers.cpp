@@ -30,7 +30,7 @@ namespace ros {
       btQuaternion qt(currentVel.vw, 0, 0);
       robot_vel.setData(btTransform(qt, btVector3(currentVel.vx, currentVel.vy, 0)));
       robot_vel.frame_id_ = "base_link";
-      robot_vel.stamp_ = ros::Time((uint64_t)0ULL);
+      robot_vel.stamp_ = ros::Time();
 
       //do we need to resize our map?
       double origin_x, origin_y;

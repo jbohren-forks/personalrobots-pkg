@@ -48,7 +48,7 @@ GovernorNode::GovernorNode(std::vector<std_msgs::Point2DFloat32> footprint_spec)
 {
   robot_vel_.setIdentity();
   robot_vel_.frame_id_ = "base_link";
-  robot_vel_.stamp_ = ros::Time(uint64_t(0ULL));
+  robot_vel_.stamp_ = ros::Time();
 
   //so we can draw the local path
   advertise<std_msgs::Polyline2D>("local_path", 10);
@@ -68,7 +68,7 @@ void GovernorNode::odomReceived(){
   btQuaternion qt(odom_msg_.vel.th, 0, 0);
   robot_vel_.setData(btTransform(qt, btVector3(odom_msg_.vel.x, odom_msg_.vel.y, 0)));
   robot_vel_.frame_id_ = "base_link";
-  robot_vel_.stamp_ = ros::Time((uint64_t)0ULL);
+  robot_vel_.stamp_ = ros::Time();
 
   //give robot_vel_ back
   vel_lock.unlock();
@@ -99,7 +99,7 @@ void GovernorNode::processPlan(){
   tf::Stamped<tf::Pose> robot_pose, global_pose;
   robot_pose.setIdentity();
   robot_pose.frame_id_ = "base_link";
-  robot_pose.stamp_ = ros::Time((uint64_t)0ULL);
+  robot_pose.stamp_ = ros::Time();
 
   try
   {

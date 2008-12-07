@@ -749,7 +749,7 @@ AmclNode::laserReceived()
   {
     tf::Stamped<tf::Pose> ident (btTransform(btQuaternion(0,0,0), 
                                              btVector3(0,0,0)), 
-                                 ros::Time((uint64_t)0ull), laserMsg.header.frame_id);
+                                 ros::Time(), laserMsg.header.frame_id);
     tf::Stamped<btTransform> laser_pose;
     try
     {
@@ -792,7 +792,7 @@ AmclNode::laserReceived()
 
     laser_scans.pop_front();
 
-    double timestamp = scan.header.stamp.to_double();
+    double timestamp = scan.header.stamp.toSec();
     //printf("I: %.6f %.3f %.3f %.3f\n",
            //timestamp, x, y, yaw);
 
@@ -875,7 +875,7 @@ AmclNode::odomReceived()
   pdata.vel.pa = this->odomMsg.vel.th;
   pdata.stall = this->odomMsg.stall;
 
-  double timestamp = this->odomMsg.header.stamp.to_double();
+  double timestamp = this->odomMsg.header.stamp.toSec();
 
   this->Driver::Publish(this->position2d_addr,
                         PLAYER_MSGTYPE_DATA,

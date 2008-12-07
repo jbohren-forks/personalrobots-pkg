@@ -120,7 +120,7 @@ CartesianPositionControllerNode::CartesianPositionControllerNode()
 : robot_(NULL), pos_publisher_(NULL), TF(*ros::node::instance(), false) , loop_count_(0)
 {
   assert(ros::node::instance());
-  TF.setExtrapolationLimit(ros::Duration(10000000));
+  TF.setExtrapolationLimit(ros::Duration().fromNSec(10000000));
 }
 
 CartesianPositionControllerNode::~CartesianPositionControllerNode()

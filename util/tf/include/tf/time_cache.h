@@ -69,8 +69,8 @@ class TimeCache
   static const int64_t DEFAULT_MAX_EXTRAPOLATION_TIME = 0LL; //!< default max extrapolation of 0 nanoseconds \todo remove and make not optional??
 
 
-  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration(DEFAULT_MAX_STORAGE_TIME),
-            ros::Duration  max_extrapolation_time = ros::Duration(DEFAULT_MAX_EXTRAPOLATION_TIME)):
+  TimeCache(bool interpolating = true, ros::Duration  max_storage_time = ros::Duration().fromNSec(DEFAULT_MAX_STORAGE_TIME),
+            ros::Duration  max_extrapolation_time = ros::Duration().fromNSec(DEFAULT_MAX_EXTRAPOLATION_TIME)):
     interpolating_(interpolating),
     max_storage_time_(max_storage_time),
     max_extrapolation_time_(max_extrapolation_time)
