@@ -34,6 +34,7 @@
 #include <time.h>
 #include <math.h>
 #include <vector>
+#include <stdlib.h>
 
 using namespace std;
 

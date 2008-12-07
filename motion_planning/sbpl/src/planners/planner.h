@@ -123,7 +123,7 @@ public:
 
   /** \return The number of states expanded during the last replan()
       operation, or -1 if this information is not available. */
-  virtual ssize_t get_n_expands() const { return -1; }
+  virtual int get_n_expands() const { return -1; }
 
 	//setting initial solution eps 
    //This parameter is ignored in planners that don't have a notion of eps
