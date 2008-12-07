@@ -119,7 +119,6 @@ SOURCE=..\..\src\discrete_space_information\template\environment_XXX.cpp
 !IF  "$(CFG)" == "sbpl - Win32 Release"
 
 # PROP BASE Exclude_From_Build 1
-# PROP Exclude_From_Build 1
 
 !ELSEIF  "$(CFG)" == "sbpl - Win32 Debug"
 
@@ -192,8 +191,18 @@ SOURCE=..\..\src\discrete_space_information\robarm\environment_robarm.h
 
 SOURCE=..\..\src\discrete_space_information\template\environment_XXX.h
 # PROP Exclude_From_Scan -1
+
+!IF  "$(CFG)" == "sbpl - Win32 Release"
+
+# PROP BASE Exclude_From_Build 1
+
+!ELSEIF  "$(CFG)" == "sbpl - Win32 Debug"
+
 # PROP BASE Exclude_From_Build 1
 # PROP Exclude_From_Build 1
+
+!ENDIF 
+
 # End Source File
 # Begin Source File
 
