@@ -13,6 +13,7 @@
   <depend package="std_msgs"/>
   <depend package="boost"/>
   <depend package="libsunflower"/>
+  <sysdepend os="debian" version="4.0-etch" package="libpng12-dev"/>
   <export>
     <cpp cflags="-I${prefix}/local/include" lflags="-Wl,-rpath,${prefix}/local/lib -L${prefix}/local/lib -lsunflower" />
     <doxymaker external="http://libsunflower.sourceforge.net/"/>
