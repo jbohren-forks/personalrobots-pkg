@@ -228,6 +228,7 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
 //    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     // now Tx is in meters
     setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
+//    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
     string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
@@ -235,8 +236,6 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     int start = 0;
     int end   = 2324;
     int step  = 1;
-
-//    end = 1000;
 
     // set up a FileSeq
     delete input_file_sequence_;
@@ -260,8 +259,10 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
     string rightimgfmt("/right-%04d.ppm");
     string dispimgfmt(".dispmap-%04d.xml");
     int start = 0;
-    int end   = 1509;
+    int end   = 1508;
     int step  = 1;
+
+//    step = 1508;
 
     // set up a FileSeq
     delete input_file_sequence_;
@@ -293,7 +294,8 @@ bool CvTest3DPoseEstimate::testVideoBundleAdj() {
   vector<FramePose*>* fp = sba.getFramePoses();
   const PointTracks& tracks = sba.getTracks();
 
-  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, *fp, tracks, &sba.map_index_to_FramePose_);
+  sba.mVisualizer = new SBAVisualizer(sba.mPoseEstimator, fp, (PointTracks *)&tracks,
+      &sba.map_index_to_FramePose_);
   sba.mVisualizer->outputDirname = output_data_path_;
 #endif
 
