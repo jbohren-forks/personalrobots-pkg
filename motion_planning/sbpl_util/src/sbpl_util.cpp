@@ -163,7 +163,7 @@ namespace ompl {
 	 double * actual_time_wall_sec,
 	 double * actual_time_user_sec,
 	 double * actual_time_system_sec,
-	 ssize_t * number_of_expands,
+	 int * number_of_expands,
 	 int * solution_cost,
 	 double * solution_epsilon,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)

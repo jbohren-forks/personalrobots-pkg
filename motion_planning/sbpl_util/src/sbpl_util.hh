@@ -113,7 +113,7 @@ namespace ompl {
     double actual_time_system_sec;   /**< the amount of time actually used for planning (system time) */
     
     int status;                      /**< return value of replan() (i.e. success == 1, or -42 if replan() never got called) */
-    ssize_t number_of_expands;       /**< number of state expansions, or -1 if not available */
+    int number_of_expands;           /**< number of state expansions, or -1 if not available */
     int solution_cost;               /**< cost of the solution, as given by replan() */
     double solution_epsilon;         /**< the "epsilon" value used to compute the solution */
     double plan_length_m;            /**< cumulated Euclidean distance between planned waypoints */
@@ -196,7 +196,7 @@ namespace ompl {
 	       /** out: how much time was actually used by the planner (system time) */
 	       double * actual_time_system_sec,
 	       /** out: number of state expansions (or -1 if not available) */
-	       ssize_t * number_of_expands,
+	       int * number_of_expands,
 	       /** out: the cost of the planned path */
 	       int * solution_cost,
 	       /** out: the epsilon-value of the planned path */
