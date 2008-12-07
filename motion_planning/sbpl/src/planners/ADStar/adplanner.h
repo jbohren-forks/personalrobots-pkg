@@ -122,6 +122,7 @@ public:
 
 
 	virtual double get_solution_eps() const {return pSearchStateSpace_->eps_satisfied;};
+        virtual ssize_t get_n_expands() const { return searchexpands; }
 
 	virtual void set_initialsolution_eps(double initialsolution_eps) {finitial_eps = initialsolution_eps;};
 
