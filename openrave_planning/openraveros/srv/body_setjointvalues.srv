@@ -2,7 +2,7 @@
 # joints ignoring its current active degrees of freedom.
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 float32[] jointvalues
 # optional array specifying the indices to set
 uint8[] indices

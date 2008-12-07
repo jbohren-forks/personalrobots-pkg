@@ -2,7 +2,7 @@
 string sessionname
 int32 sessionid
 
-uint32 bodyid
+int32 bodyid
 
 # name used to query a controller
 string controllername
@@ -10,4 +10,3 @@ string controllername
 # the arguments to ControllerBase::Init
 string controllerargs
 ---
-uint8 success

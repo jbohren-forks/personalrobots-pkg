@@ -3,4 +3,14 @@
 BodyInfo bodyinfo
 Manipulator[] manips
 AttachedSensor[] sensors
-ActiveDOFs dofs
+
+# total active dof
+uint8 activedof
+
+# information about the active dofs
+ActiveDOFs active
+
+# upper 8 bits
+uint16 Req_Manipulators=256
+uint16 Req_Sensors=512
+uint16 Req_ActiveDOFs=1024

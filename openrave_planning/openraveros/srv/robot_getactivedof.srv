@@ -1,7 +1,0 @@
-# returns the robot's active degrees of freedom used for planning (not necessary corresponding to joints)
-string sessionname
-int32 sessionid
-
-uint32 bodyid
----
-ActiveDOFs dofs

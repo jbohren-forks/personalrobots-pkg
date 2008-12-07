@@ -5,4 +5,3 @@ int32 sessionid
 # absolute path of plugin recommended
 string filename
 ---
-uint8 success

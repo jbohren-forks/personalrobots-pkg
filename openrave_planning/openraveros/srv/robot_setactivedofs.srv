@@ -2,6 +2,6 @@
 string sessionname
 int32 sessionid
 
-uint32 bodyid
-ActiveDOFs dofs
+int32 bodyid
+ActiveDOFs active
 ---

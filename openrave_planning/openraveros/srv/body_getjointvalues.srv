@@ -4,8 +4,7 @@ int32 sessionid
 
 int32 bodyid
 
-# specifies indices into the active dofs to get. if empty, returns all active dof values
+# specifies indices to get. if empty, returns all joint values
 uint8[] indices
-
 ---
 float32[] values

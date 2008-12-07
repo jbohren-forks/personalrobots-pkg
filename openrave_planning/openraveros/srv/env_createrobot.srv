@@ -3,7 +3,7 @@ string sessionname
 int32 sessionid
 
 # the name to give the body (should be unique!)
-string bodyname
+string name
 
 # the (XML) file to load the body geometry from
 string file
@@ -11,4 +11,4 @@ string file
 # the robot type 
 string type
 ---
-uint32 bodyid
+int32 bodyid

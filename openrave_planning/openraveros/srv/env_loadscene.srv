@@ -2,7 +2,9 @@
 string sessionname
 int32 sessionid
 
-# absolute path of scene recommended, specifying an empty string resets the entire scene
+# absolute path of scene recommended
 string filename
+
+# if 1, resets the entire scene
+uint8 resetscene
 ---
-uint8 success

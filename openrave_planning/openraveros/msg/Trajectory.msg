@@ -1,2 +1,2 @@
 TrajectoryPoint[] points
-ActiveDOFs dofs
+ActiveDOFs active

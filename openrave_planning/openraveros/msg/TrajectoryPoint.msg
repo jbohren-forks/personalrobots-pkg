@@ -2,6 +2,6 @@
 float32[] position
 
 # optional
-float32[] velocities
+float32[] velocity
 AffineTransformMatrix transform
 float32 timestamp

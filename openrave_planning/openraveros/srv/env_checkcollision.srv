@@ -2,12 +2,12 @@
 # is colliding, colbodyid is the id of the object that body collided with
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 
 # the link of the body to check collision again, if -1 check all links
-uint8 linkid
+int8 linkid
 
-uint32[] excludedbodyids
+int32[] excludedbodyids
 
 # value to specify tolerance of collision checks (only valid if correct option is set), default is 0
 float32 tolerance
@@ -22,7 +22,12 @@ uint8 CO_RayAnyHit=8
 
 ---
 uint8 collision
-uint32 collidingbodyid
+int32 collidingbodyid
+
+# index of first colliding link of colliding body
+uint8 collidinglink
+
+# filled only if CO_Contacts is specified in request
 Contact[] contacts
 
 # minimum distance between the two links if not colliding (only valid if requested)

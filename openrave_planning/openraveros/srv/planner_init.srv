@@ -6,4 +6,3 @@ uint32 plannerid
 uint32 robotid
 PlannerParameters params
 ---
-uint8 success

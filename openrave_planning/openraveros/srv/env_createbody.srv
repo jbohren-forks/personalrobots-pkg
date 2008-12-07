@@ -3,9 +3,9 @@ string sessionname
 int32 sessionid
 
 # the name to give the body (should be unique!)
-string bodyname
+string name
 
 # the (XML) file to load the body geometry from
 string file
 ---
-uint32 bodyid
+int32 bodyid

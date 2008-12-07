@@ -46,8 +46,9 @@ class SessionServer
     {
     public:
         virtual ~SessionState() {
-            _penv.reset();
+            _penv->AttachServer(NULL);
             _pserver.reset();
+            _penv.reset();
         }
 
         boost::shared_ptr<ROSServer> _pserver;
@@ -81,6 +82,8 @@ public:
         if( !pnode->advertise_service("body_getaabbs",&SessionServer::body_getaabbs_srv,this,1,true) )
             return false;
         if( !pnode->advertise_service("body_getdof",&SessionServer::body_getdof_srv,this,1,true) )
+            return false;
+        if( !pnode->advertise_service("body_getjointvalues",&SessionServer::body_getjointvalues_srv,this,1,true) )
             return false;
         if( !pnode->advertise_service("body_getlinks",&SessionServer::body_getlinks_srv,this,1,true) )
             return false;
@@ -132,8 +135,6 @@ public:
             return false;
         if( !pnode->advertise_service("robot_controllerset",&SessionServer::robot_controllerset_srv,this,1,true) )
             return false;
-        if( !pnode->advertise_service("robot_getactivedof",&SessionServer::robot_getactivedof_srv,this,1,true) )
-            return false;
         if( !pnode->advertise_service("robot_getactivevalues",&SessionServer::robot_getactivevalues_srv,this,1,true) )
             return false;
         if( !pnode->advertise_service("robot_sensorgetdata",&SessionServer::robot_sensorgetdata_srv,this,1,true) )
@@ -160,6 +161,7 @@ public:
         pnode->unadvertise_service("body_getaabb");
         pnode->unadvertise_service("body_getaabbs");
         pnode->unadvertise_service("body_getdof");
+        pnode->unadvertise_service("body_getjointvalues");
         pnode->unadvertise_service("body_getlinks");
         pnode->unadvertise_service("body_setjointvalues");
         pnode->unadvertise_service("body_settransform");
@@ -224,7 +226,7 @@ private:
             id = rand();
 
         SessionState state;
-        state._pserver.reset(new ROSServer(state._penv));
+        state._pserver.reset(new ROSServer(state._penv.get()));
 
         if( req.clone_sessionid ) {
             // clone the environment from clone_sessionid
@@ -253,6 +255,7 @@ private:
     REFLECT_SERVICE(body_getaabb)
     REFLECT_SERVICE(body_getaabbs)
     REFLECT_SERVICE(body_getdof)
+    REFLECT_SERVICE(body_getjointvalues)
     REFLECT_SERVICE(body_getlinks)
     REFLECT_SERVICE(body_setjointvalues)
     REFLECT_SERVICE(body_settransform)
@@ -278,7 +281,6 @@ private:
     REFLECT_SERVICE(problem_sendcommand)
     REFLECT_SERVICE(robot_controllersend)
     REFLECT_SERVICE(robot_controllerset)
-    REFLECT_SERVICE(robot_getactivedof)
     REFLECT_SERVICE(robot_getactivevalues)
     REFLECT_SERVICE(robot_sensorgetdata)
     REFLECT_SERVICE(robot_sensorsend)

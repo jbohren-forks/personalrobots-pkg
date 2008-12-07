@@ -6,7 +6,7 @@ int32 sessionid
 # if 0, will triangulate all objects except the bodies pointed to by ids (default)
 # To triangulate everything, just set inclusive to 0 and have empty bodyids
 uint8 inclusive
-uint32[] bodyids
+int32[] bodyids
 ---
 
 # 3xN matrix of 3D points

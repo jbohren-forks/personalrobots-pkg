@@ -3,5 +3,6 @@ string sessionname
 int32 sessionid
 
 # array of ids returned from orEnvPlot or other plotting functions
-int32[] figureids
+# if empty, delete all
+uint64[] figureids
 ---

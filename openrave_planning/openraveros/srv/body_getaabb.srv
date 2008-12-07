@@ -3,6 +3,6 @@
 # and the second is the extents
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 ---
 AABB box

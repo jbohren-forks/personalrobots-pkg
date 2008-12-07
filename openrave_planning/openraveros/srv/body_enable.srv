@@ -2,6 +2,6 @@
 # and physics will will be turned off for it.
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 uint8 enable
 ---

@@ -4,6 +4,6 @@
 # 3 values describe the extents (half width/length/height) on each of the axes.
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 ---
 AABB[] boxes

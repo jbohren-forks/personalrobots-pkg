@@ -1,11 +1,17 @@
 # specifies the active degrees of freedom of the robot
-byte[] activedofs
-byte affinedofs
+
+# mask of active base degrees of freedom
+uint8 affine
+
+# active joints
+uint8[] joints
+
+float32[3] rotationaxis
 
 # mask for affine dofs
-byte DOF_X = 1
-byte DOF_Y = 2
-byte DOF_Z = 4
-byte DOF_RotationAxis = 8
-byte DOF_Rotation3D = 16
-byte DOF_RotationQuat = 32
+uint8 DOF_X = 1
+uint8 DOF_Y = 2
+uint8 DOF_Z = 4
+uint8 DOF_RotationAxis = 8
+uint8 DOF_Rotation3D = 16
+uint8 DOF_RotationQuat = 32

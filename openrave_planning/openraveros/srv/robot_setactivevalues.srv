@@ -2,7 +2,7 @@
 string sessionname
 int32 sessionid
 
-uint32 bodyid
+int32 bodyid
 float32[] values
 
 # indices into the active degree of freedom table

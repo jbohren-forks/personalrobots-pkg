@@ -74,6 +74,26 @@
 #define stricmp strcasecmp
 #endif
 
+inline std::wstring _ravembstowcs(const char* pstr)
+{
+    size_t len = mbstowcs(NULL, pstr, 0);
+    std::wstring w; w.resize(len);
+    mbstowcs(&w[0], pstr, len);
+    return w;
+}
+
+inline std::string _stdwcstombs(const wchar_t* pname)
+{
+    std::string s;
+    size_t len = wcstombs(NULL, pname, 0);
+    if( len != (size_t)-1 ) {
+        s.resize(len);
+        wcstombs(&s[0], pname, len);
+    }
+
+    return s;
+}
+
 #include <openrave-core.h>
 #include <ros/node.h>
 
@@ -88,6 +108,7 @@
 #include <openraveros/body_getaabb.h>
 #include <openraveros/body_getaabbs.h>
 #include <openraveros/body_getdof.h>
+#include <openraveros/body_getjointvalues.h>
 #include <openraveros/body_getlinks.h>
 #include <openraveros/body_setjointvalues.h>
 #include <openraveros/body_settransform.h>
@@ -113,7 +134,6 @@
 #include <openraveros/problem_sendcommand.h>
 #include <openraveros/robot_controllersend.h>
 #include <openraveros/robot_controllerset.h>
-#include <openraveros/robot_getactivedof.h>
 #include <openraveros/robot_getactivevalues.h>
 #include <openraveros/robot_sensorgetdata.h>
 #include <openraveros/robot_sensorsend.h>

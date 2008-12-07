@@ -4,8 +4,6 @@
 string sessionname
 int32 sessionid
 
-uint32 bodyid
+int32 bodyid
 string cmd
 ---
-# 1 if command was accepted, 0 if not
-uint8 success

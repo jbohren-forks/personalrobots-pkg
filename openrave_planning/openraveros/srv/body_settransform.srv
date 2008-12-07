@@ -2,6 +2,6 @@
 # link of the body. The rest of the links are determined from the joint angles.
 string sessionname
 int32 sessionid
-uint32 bodyid
+int32 bodyid
 AffineTransformMatrix transform
 ---

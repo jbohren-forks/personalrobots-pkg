@@ -4,13 +4,13 @@
 string sessionname
 int32 sessionid
 
-uint32 bodyid
+int32 bodyid
 
 # zero-based index of sensor into robot's attached sensor array
-uint32 sensorindex
+uint8 sensorindex
 string cmd
----
-uint8 success
+string args
 
+---
 # output of the command
 string out
