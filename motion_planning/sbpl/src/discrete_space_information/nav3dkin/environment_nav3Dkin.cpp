@@ -481,8 +481,8 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 			double angle = DiscTheta2Cont(tind + EnvNAV3DKINCfg.ActionsV[tind][aind].dTheta, NAV3DKIN_THETADIRS);
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dX = (int)(cos(angle) + 0.5*(cos(angle)>0?1:-1));
 			EnvNAV3DKINCfg.ActionsV[tind][aind].dY = (int)(sin(angle) + 0.5*(sin(angle)>0?1:-1));
-			EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(ceil(NAV3DKIN_COSTMULT_MTOMM*EnvNAV3DKINCfg.cellsize_m/EnvNAV3DKINCfg.nominalvel_mpersecs*sqrt(EnvNAV3DKINCfg.ActionsV[tind][aind].dX*EnvNAV3DKINCfg.ActionsV[tind][aind].dX + 
-					EnvNAV3DKINCfg.ActionsV[tind][aind].dY*EnvNAV3DKINCfg.ActionsV[tind][aind].dY)));
+			EnvNAV3DKINCfg.ActionsV[tind][aind].cost = (int)(ceil(NAV3DKIN_COSTMULT_MTOMM*EnvNAV3DKINCfg.cellsize_m/EnvNAV3DKINCfg.nominalvel_mpersecs*sqrt((double)(EnvNAV3DKINCfg.ActionsV[tind][aind].dX*EnvNAV3DKINCfg.ActionsV[tind][aind].dX + 
+					EnvNAV3DKINCfg.ActionsV[tind][aind].dY*EnvNAV3DKINCfg.ActionsV[tind][aind].dY))));
 
 			//compute intersecting cells
 			EnvNAV3DKIN3Dpt_t pose;
@@ -919,7 +919,7 @@ void EnvironmentNAV3DKIN::ComputeHeuristicValues()
 	printf("Precomputing heuristics...\n");
 	
 	//allocated 2D grid search
-	grid2Dsearch = new SBPL2DGridSearch(EnvNAV3DKINCfg.EnvWidth_c, EnvNAV3DKINCfg.EnvHeight_c, EnvNAV3DKINCfg.cellsize_m);
+	grid2Dsearch = new SBPL2DGridSearch(EnvNAV3DKINCfg.EnvWidth_c, EnvNAV3DKINCfg.EnvHeight_c, (float)EnvNAV3DKINCfg.cellsize_m);
 
 	printf("done\n");
 

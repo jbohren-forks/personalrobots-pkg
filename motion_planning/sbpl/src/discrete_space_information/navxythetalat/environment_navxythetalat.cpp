@@ -472,8 +472,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta = ContTheta2Disc(motionprimitiveV->at(aind).endtheta_rad, NAVXYTHETALAT_THETADIRS);
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = endx_c;
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = endy_c;
-			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*sqrt(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
-					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY)));
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*sqrt((double)(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
+					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY))));
 
 			//compute intersecting cells
 			int endangle_c = NORMALIZEDISCTHETA(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS);
@@ -540,8 +540,8 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions()
 			double angle = DiscTheta2Cont(tind + EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dTheta, NAVXYTHETALAT_THETADIRS);
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX = (int)(cos(angle) + 0.5*(cos(angle)>0?1:-1));
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY = (int)(sin(angle) + 0.5*(sin(angle)>0?1:-1));
-			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*sqrt(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
-					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY)));
+			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].cost = (int)(ceil(NAVXYTHETALAT_COSTMULT_MTOMM*EnvNAVXYTHETALATCfg.cellsize_m/EnvNAVXYTHETALATCfg.nominalvel_mpersecs*sqrt((double)(EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dX + 
+					EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY*EnvNAVXYTHETALATCfg.ActionsV[tind][aind].dY))));
 
 			//compute intersecting cells
 			EnvNAVXYTHETALAT3Dpt_t pose;
@@ -1014,7 +1014,7 @@ void EnvironmentNAVXYTHETALAT::ComputeHeuristicValues()
 	printf("Precomputing heuristics...\n");
 	
 	//allocated 2D grid search
-	grid2Dsearch = new SBPL2DGridSearch(EnvNAVXYTHETALATCfg.EnvWidth_c, EnvNAVXYTHETALATCfg.EnvHeight_c, EnvNAVXYTHETALATCfg.cellsize_m);
+	grid2Dsearch = new SBPL2DGridSearch(EnvNAVXYTHETALATCfg.EnvWidth_c, EnvNAVXYTHETALATCfg.EnvHeight_c, (float)EnvNAVXYTHETALATCfg.cellsize_m);
 
 	printf("done\n");
 
