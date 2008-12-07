@@ -137,12 +137,23 @@ Borg::~Borg()
 
 bool Borg::scan()
 {
+  uint8_t *flush_raster = new uint8_t[640*480];
+  cam->startImageStream();
+  cam->prepareStill();
+  for (int flush = 0; flush < 5; flush++)
+    cam->savePhoto(flush_raster);
   stage->setDuty(return_duty);
   stage->gotoPosition(left, true);
+  Image *still_image = new Image(new uint8_t[640*480],
+                                 ros::Time::now().to_double(), 0);
+  if (!cam->savePhoto(still_image->raster))
+    printf("woah! couldn't grab still photo\n");
+  cam->prepareScan();
+  for (int flush = 0; flush < 5; flush++)
+    cam->savePhoto(flush_raster);
   stage->setDuty(scan_duty);
   stage->gotoPosition(right, false);
   stage->laser(true);
-  cam->startImageStream();
   ros::Time t_start(ros::Time::now());
   list<Image *> images;
   double pos = 0;
@@ -174,12 +185,22 @@ bool Borg::scan()
     char fname[100];
     snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm", 
              (*i)->t, (*i)->angle);
+    //printf("writing to [%s]\n", fname);
     if (!cam->writePgm(fname, (*i)->raster))
       throw std::runtime_error("couldn't open pgm file for output");
     delete[] (*i)->raster;
     delete *i;
   }
+  char fname[100];
+  snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm",
+           still_image->t, still_image->angle);
+  if (!cam->writePgm(fname, still_image->raster))
+    throw std::runtime_error("couldn't open pgm file for still image output");
+  if (!cam->writePgm("out/still.pgm", still_image->raster))
+    throw std::runtime_error("couldn't open pgm file for still image output");
   images.clear();
+  delete[] flush_raster;
+  delete still_image;
   return true;
 }
 

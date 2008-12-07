@@ -19,6 +19,8 @@ public:
   bool stopImageStream();
   virtual bool set(const char *setting, uint32_t value) = 0;
   bool writePgm(const char *filename, const uint8_t *raster);
+  virtual void prepareStill() = 0;
+  virtual void prepareScan() = 0;
 
 protected:
   virtual bool _init() { return true; }

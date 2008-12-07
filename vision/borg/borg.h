@@ -39,8 +39,8 @@ public:
     uint8_t *raster;
     double   t, angle;
     std::vector<Centroid> centroids;
-    Image(uint8_t *_raster, double t, double _angle)
-    : raster(_raster), angle(_angle) { }
+    Image(uint8_t *_raster, double _t, double _angle)
+    : raster(_raster), t(_t), angle(_angle) { }
     Image(const char *filename);
   };
   

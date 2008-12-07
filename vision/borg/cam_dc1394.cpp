@@ -163,13 +163,29 @@ bool CamDC1394::set(const char *setting, uint32_t value)
 {
   printf("setting %s to %d\n", setting, value);
   if (!strcmp(setting, "shutter"))
-    dc1394_feature_set_value(cam, DC1394_FEATURE_SHUTTER, value);
+    scan_shutter = value;
   else if (!strcmp(setting, "gain"))
-    dc1394_feature_set_value(cam, DC1394_FEATURE_GAIN, value);
+    scan_gain = value;
+  else if (!strcmp(setting, "still_gain"))
+    still_gain = value;
+  else if (!strcmp(setting, "still_shutter"))
+    still_shutter = value;
   else if (!strcmp(setting, "gamma"))
     dc1394_feature_set_value(cam, DC1394_FEATURE_GAMMA, value);
   else if (!strcmp(setting, "brightness"))
     dc1394_feature_set_value(cam, DC1394_FEATURE_BRIGHTNESS, value);
   return true;
+}
+
+void CamDC1394::prepareStill()
+{
+  dc1394_feature_set_value(cam, DC1394_FEATURE_SHUTTER, still_shutter);
+  dc1394_feature_set_value(cam, DC1394_FEATURE_GAIN, still_gain);
+}
+
+void CamDC1394::prepareScan()
+{
+  dc1394_feature_set_value(cam, DC1394_FEATURE_SHUTTER, scan_shutter);
+  dc1394_feature_set_value(cam, DC1394_FEATURE_GAIN, scan_gain);
 }
 

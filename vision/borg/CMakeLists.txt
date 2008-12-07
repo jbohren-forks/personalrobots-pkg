@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
 rospack(borg)
-add_definitions(-Wall -O3 -g -pg)
+add_definitions(-Wall -O3 -g)
 rospack_add_library(borg borg.cpp cam_dc1394.cpp cam.cpp stage.cpp)
 #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
 #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
