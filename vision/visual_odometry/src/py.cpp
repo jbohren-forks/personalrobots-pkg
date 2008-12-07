@@ -4,6 +4,8 @@
 #include <vector>
 #include <queue>
 
+#include <boost/foreach.hpp>
+
 #include <opencv/cxcore.h>
 #include <opencv/cv.h>
 #include <opencv/cvwimage.h>
@@ -33,6 +35,8 @@ using namespace cv::willow;
 
 using namespace cv;
 using namespace std;
+
+#define JDC_DEBUG 1
 
 /************************************************************************/
 
@@ -457,6 +461,10 @@ PyObject *point_track(PyObject *self, PyObject *args)
 typedef struct {
   PyObject_HEAD
   PoseEstimateStereo *pe;
+#if JDC_DEBUG==1 // jdc
+  LevMarqSparseBundleAdj *sba_;
+  SBAVisualizer          *vis_;
+#endif
 } pose_estimator_t;
 
 static void
@@ -555,6 +563,8 @@ static vector<FramePose*> fpl_p2c(PyObject *o)
 
 PyObject *sba(PyObject *self, PyObject *args)
 {
+#if JDC_DEBUG==1  // commented out by jdc
+#else
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
   CvMat cartToDisp;
   CvMat dispToCart;
@@ -566,6 +576,7 @@ PyObject *sba(PyObject *self, PyObject *args)
   double epsilon = DBL_EPSILON;
   CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
   LevMarqSparseBundleAdj sba(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+#endif
 
   PyObject *ofixed, *ofree, *otracks;
   if (!PyArg_ParseTuple(args, "OOO", &ofixed, &ofree, &otracks)) return NULL;
@@ -584,7 +595,49 @@ PyObject *sba(PyObject *self, PyObject *args)
     tracks.tracks_.push_back(pt);
   }
 
+#if JDC_DEBUG==1 // jdc
+  LevMarqSparseBundleAdj* sba = ((pose_estimator_t*)self)->sba_;
+  sba->optimize(&free_frames, &fixed_frames, &tracks);
+
+  SBAVisualizer* vis = ((pose_estimator_t*)self)->vis_;
+  // set frame poses, point tracks and maps from index to frame poses
+  vector<FramePose* > frame_poses;
+  BOOST_FOREACH(FramePose *fp, free_frames) {
+    frame_poses.push_back(fp);
+    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex,fp));
+  }
+  BOOST_FOREACH(FramePose *fp, fixed_frames) {
+    frame_poses.push_back(fp);
+    vis->map_index_to_FramePose_->insert(make_pair(fp->mIndex, fp));;
+  }
+  vis->framePoses = &frame_poses;
+  vis->tracks = &tracks;
+  int current_frame_index = free_frames.back()->mIndex;
+
+  // make sure the image buffers is allocated to the right sizes
+  vis->canvasTracking.Allocate(640, 480);
+  // clear the image
+  cvSet(vis->canvasTracking.Ipl(), cvScalar(0,0,0));
+  { // annotation on the canvas
+    char info[256];
+    CvPoint org = cvPoint(0, 475);
+    CvFont font;
+    cvInitFont( &font, CV_FONT_HERSHEY_SIMPLEX, .5, .4);
+    sprintf(info, "%04d, nTrcks=%d",
+        current_frame_index, tracks.tracks_.size());
+
+    cvPutText(vis->canvasTracking.Ipl(), info, org, &font, CvMatUtils::yellow);
+  }
+  sprintf(vis->poseEstFilename,  "%s/poseEst-%04d.png", vis->outputDirname.c_str(),
+      current_frame_index);
+  vis->slideWindowFront = free_frames.front()->mIndex;
+  vis->drawTrackTrajectories(current_frame_index);
+  vis->show();
+  vis->save();
+  vis->reset();
+#else
   sba.optimize(&free_frames, &fixed_frames, &tracks);
+#endif
 
   Py_RETURN_NONE;
 }
@@ -647,6 +700,23 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   if (!PyArg_ParseTuple(args, "dddddd", &Fx, &Fy, &Tx, &Clx, &Crx, &Cy)) return NULL;
   object->pe->setCameraParams(Fx, Fy, Tx, Clx, Crx, Cy);
   object->pe->setInlierErrorThreshold(3.0);
+
+#if JDC_DEBUG==1 // jdc
+  CvMat cartToDisp;
+  CvMat dispToCart;
+  object->pe->getProjectionMatrices(&cartToDisp, &dispToCart);
+  int full_free_window_size  = 1;
+  int full_fixed_window_size = 1;
+  int max_num_iters = 5;
+  double epsilon = DBL_EPSILON;
+  CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER,max_num_iters,epsilon);
+  object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
+
+  object->vis_ = new SBAVisualizer((PoseEstimateDisp&)*object->pe, NULL, NULL, NULL);
+  object->vis_->map_index_to_FramePose_ =
+    new boost::unordered_map<int, FramePose*>();
+  object->vis_->outputDirname = string("Output/james4/");
+#endif
 
   return (PyObject*)object;
 }

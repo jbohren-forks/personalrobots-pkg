@@ -11,6 +11,7 @@
 #include <boost/foreach.hpp>
 
 PointTracks::~PointTracks(){
+  /// @todo need to delete PointTrack's when it owns them
 #if 0
   BOOST_FOREACH(PointTrack* pt, tracks_) {
     delete pt;

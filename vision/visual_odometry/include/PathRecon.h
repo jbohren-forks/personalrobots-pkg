@@ -168,7 +168,9 @@ public:
   PoseEstimateStereo mPoseEstimator;
   /// global transformation matrix up to the last key frame, in Cartesian space.
   CvMat mTransform;
+  /// a list of FramePose objects representing the processed frames.
   vector<FramePose *> mFramePoses;
+  /// a map from frame index to its object of FramePose
   boost::unordered_map<int, FramePose*> map_index_to_FramePose_;
 
   FrameSeq mFrameSeq;

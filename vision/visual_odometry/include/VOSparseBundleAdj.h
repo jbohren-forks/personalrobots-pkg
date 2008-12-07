@@ -170,9 +170,9 @@ class SBAVisualizer: public F2FVisualizer {
   public:
     typedef F2FVisualizer Parent;
     SBAVisualizer(PoseEstimateDisp& poseEstimator,
-        const vector<FramePose*>& framePoses,
-        const PointTracks& trcks,
-        const boost::unordered_map<int, FramePose*>* map_index_to_FramePose
+        vector<FramePose*>* framePoses,
+        PointTracks* trcks,
+        boost::unordered_map<int, FramePose*>* map_index_to_FramePose
     ):
       Parent(poseEstimator), framePoses(framePoses), tracks(trcks),
       map_index_to_FramePose_(map_index_to_FramePose)
@@ -198,15 +198,15 @@ class SBAVisualizer: public F2FVisualizer {
     /// For the part that is in the free frames,
     /// a trajectory, or track, is green if the last observation of the track is
     /// on the current frame. Yellow otherwise.
-    virtual void drawTrackTrajectories(const PoseEstFrameEntry& frame);
+    virtual void drawTrackTrajectories(int frame_index);
 
     /// a reference to the estimated pose of the frames
-    const vector<FramePose*>& framePoses;
+    vector<FramePose*>* framePoses;
     /// a reference to the tracks.
-    const PointTracks& tracks;
+    PointTracks* tracks;
     int   slideWindowFront;
     CvMat* threeDToDisparity_;
-    const boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
+    boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
 };
 
 

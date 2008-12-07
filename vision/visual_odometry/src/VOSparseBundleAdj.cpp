@@ -321,15 +321,16 @@ void SBAVisualizer::drawTrackingCanvas(
 }
 
 void SBAVisualizer::drawTrack(const PoseEstFrameEntry& frame){
-  drawTrackTrajectories(frame);
+  drawTrackTrajectories(frame.mFrameIndex);
 }
 
-void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
+void SBAVisualizer::drawTrackTrajectories(int frame_index) {
   // draw all the tracks on canvasTracking
   CvMat* mat0 = cvCreateMat(4, 4, CV_64FC1);
   CvMat* mat1 = cvCreateMat(4, 4, CV_64FC1);
 
-  BOOST_FOREACH( const PointTrack* track, this->tracks.tracks_ ){
+  if (tracks && map_index_to_FramePose_ && framePoses )
+  BOOST_FOREACH( const PointTrack* track, this->tracks->tracks_ ){
     const PointTrackObserv* lastObsv = track->back();
     const CvScalar colorFixedFrame = CvMatUtils::blue;
     const CvScalar colorEstimated  = CvMatUtils::magenta;
@@ -338,7 +339,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
     // drawing it green if the last observation is over the current frame,
     // namely a track that is still extending.
     // drawing it yellow otherwise. Namely a track that is phasing out.
-    if (lastObsv->frame_index_ < frame.mFrameIndex) {
+    if (lastObsv->frame_index_ < frame_index) {
       colorFreeFrame = CvMatUtils::yellow;
     } else {
       colorFreeFrame  = CvMatUtils::green;
@@ -429,6 +430,7 @@ void SBAVisualizer::drawTrackTrajectories(const PoseEstFrameEntry& frame) {
 #endif
     }
   }
+  canvasTrackingRedrawn = true;
   cvReleaseMat(&mat0);
   cvReleaseMat(&mat1);
 }
