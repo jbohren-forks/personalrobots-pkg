@@ -92,11 +92,13 @@ for rest in $REST; do
 
 	    echo "extracting basename for $allopts"
 	    basename=`$MPBENCH $allopts -X`
-	    echo "<a href=\" $basename.txt \"> log </a>&nbsp;<a href=\" cons-$basename.txt \"> cons </a>&nbsp;<a href=\" vg-$basename.txt \"> vg </a>&nbsp;<a href=\" $basename.png \"> png </a><br>" >> index.html
+	    echo "<a href=\" $basename.txt \"> log </a>&nbsp;<a href=\" cons-$basename.txt \"> cons </a>&nbsp;<a href=\" $basename.png \"> png </a><br>" >> index.html
+##	    echo "<a href=\" $basename.txt \"> log </a>&nbsp;<a href=\" cons-$basename.txt \"> cons </a>&nbsp;<a href=\" vg-$basename.txt \"> vg </a>&nbsp;<a href=\" $basename.png \"> png </a><br>" >> index.html
 	    echo "<a href=\" $basename.png \"><img src=\" small-$basename.png \" alt=\" $basename.png \"></a><br>" >> index.html
 	    echo "running with $allopts -W"
-	    valgrind --log-file-exactly=vg-$basename.txt $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
-	    chmod a+r vg-$basename.txt
+##	    valgrind --log-file-exactly=vg-$basename.txt $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
+##	    chmod a+r vg-$basename.txt
+	    $MPBENCH $allopts -W 2>&1 | tee cons-$basename.txt
 	    
 	    cat $basename.html >> index.html
 	    

@@ -81,10 +81,9 @@ static shared_ptr<footprint_t> footprint;
 static planList_t planList;
 
 typedef map<waypoint_plan_t const *, SBPLPlannerStatsEntry> successStats_t;
-////typedef map<size_t, SBPLPlannerStatsEntry> failureStats_t;
+typedef map<size_t, SBPLPlannerStatsEntry> failureStats_t;
 static successStats_t successStats;
-////static failureStats_t failureStats;
-
+static failureStats_t failureStats;
 
 int main(int argc, char ** argv)
 {
@@ -588,6 +587,7 @@ void run_tasks()
     double cumul_actual_time_wall(0);
     double cumul_actual_time_user(0);
     double cumul_actual_time_system(0);
+    ssize_t cumul_expands(0);
     for (size_t jj(0); true; ++jj) {
       
       // Handle the first iteration specially.
@@ -609,13 +609,24 @@ void run_tasks()
 					     &statsEntry.actual_time_wall_sec,
 					     &statsEntry.actual_time_user_sec,
 					     &statsEntry.actual_time_system_sec,
+					     &statsEntry.number_of_expands,
 					     &statsEntry.solution_cost,
 					     &statsEntry.solution_epsilon,
 					     &solution);
       
+      // forget about this task if we got a planning failure
+      if ((1 != statsEntry.status) // planners should provide status
+	  || (1 >= solution.size()) // but sometimes they do not
+	  ) {
+	statsEntry.logStream(*logos, "  FAILURE", "    ");
+	*logos << flush;
+	failureStats.insert(make_pair(ii, statsEntry));
+	break;
+      }
+      
       // A little hack to make the initial solution appear as if it
       // had used exactly the allocated time. Actually, it gets
-      // allocated a practically inifinite amount of time, which is
+      // allocated a practically infinite amount of time, which is
       // not useful for cumulating in the statistics. Also, it seems
       // that SBPLPlanner uses wall time, not user time, to limit its
       // search.
@@ -623,20 +634,8 @@ void run_tasks()
       if (0 == jj)
 	statsEntry.allocated_time_sec = statsEntry.actual_time_wall_sec;
       
-      // forget about this task if we got a planning failure
-      if ((1 != statsEntry.status) // planners should provide status
-	  || (1 >= solution.size()) // but sometimes they do not
-	  ) {
-	statsEntry.allocated_time_sec = cumul_allocated_time;
-	statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
-	statsEntry.actual_time_user_sec = cumul_actual_time_user;
-	statsEntry.actual_time_system_sec = cumul_actual_time_system;
-	statsEntry.logStream(*logos, "  FAILURE (below are cumulated times)", "    ");
-	*logos << flush;
-	//// do NOT add to overall stats because of cumulated times
-	// plannerStats.push_back(statsEntry);
-	break;
-      }
+      if (0 < statsEntry.number_of_expands)
+	cumul_expands += statsEntry.number_of_expands;
       
       // detect whether we got the same result as before, in which
       // case we're done
@@ -648,7 +647,8 @@ void run_tasks()
 	  statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
 	  statsEntry.actual_time_user_sec = cumul_actual_time_user;
 	  statsEntry.actual_time_system_sec = cumul_actual_time_system;
-	  statsEntry.logStream(*logos, "  FINAL: epsilon did not change (below are cumulated times)", "    ");
+	  statsEntry.number_of_expands = cumul_expands;
+	  statsEntry.logStream(*logos, "  FINAL: epsilon did not change (below are cumulated times and expands)", "    ");
 	  *logos << flush;
 	  //// do NOT add to overall stats because of cumulated times
 	  // plannerStats.push_back(statsEntry);
@@ -669,7 +669,8 @@ void run_tasks()
 	    statsEntry.actual_time_wall_sec = cumul_actual_time_wall;
 	    statsEntry.actual_time_user_sec = cumul_actual_time_user;
 	    statsEntry.actual_time_system_sec = cumul_actual_time_system;
-	    statsEntry.logStream(*logos, "  FINAL: path states did not change (below are cumulated times)", "    ");
+	    statsEntry.number_of_expands = cumul_expands;
+	    statsEntry.logStream(*logos, "  FINAL: path states did not change (below are cumulated times and expands)", "    ");
 	    *logos << flush;
 	    //// do NOT add to overall stats because of cumulated times
 	    // plannerStats.push_back(statsEntry);
@@ -747,9 +748,109 @@ void print_summary()
     cout << "sorry, could not open file " << htmlFilename << "\n";
     return;
   }
+
+  //////////////////////////////////////////////////
+  // cumulated state expansions
   
   htmlOs << "<table border=\"1\" cellpadding=\"2\">\n"
-	 << "<tr><th colspan=\"5\">consumed planning time (wall clock)</th></tr>\n"
+	 << "<tr><th colspan=\"5\">cumulated state expansions</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    planBundle_t::const_iterator ib(bundle.begin());
+    waypoint_plan_t const * initialPlan(ib->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">" << initialStats->second.number_of_expands << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    ssize_t cumul_expands(initialStats->second.number_of_expands);
+    bool error(false);
+    for (++ib; ib != bundle.end(); ++ib) {
+      successStats_t::const_iterator stats(successStats.find(ib->get()));
+      if (successStats.end() == stats) {
+	error = true;
+	break;
+      }
+      cumul_expands += stats->second.number_of_expands;
+    }
+    if (error) {
+      htmlOs << "<td colspan=\"3\"><em>error: missing stats</em></td></tr>\n";
+      continue;
+    }
+    ssize_t const delta_expands(cumul_expands - initialStats->second.number_of_expands);
+    htmlOs << "<td>" << initialStats->second.number_of_expands << "</td>"
+	   << "<td>" << cumul_expands << "</td>"
+	   << "<td>" << delta_expands << "</td>"
+	   << "<td>" << 1.0e2 * delta_expands / initialStats->second.number_of_expands
+	   << "</td></tr>\n";
+  }
+  
+  //////////////////////////////////////////////////
+  // expansions per second
+  
+  htmlOs << "<table border=\"1\" cellpadding=\"2\">\n"
+	 << "<tr><th colspan=\"5\">expansions speed [1/s] (wall clock)</th></tr>\n"
+	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
+  for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
+    htmlOs << "<tr><td>" << ip->first << "</td>";
+    planBundle_t const & bundle(ip->second);
+    if (bundle.empty()) {
+      htmlOs << "<td colspan=\"4\"><em>no solution</em></td></tr>\n";
+      continue;
+    }
+    planBundle_t::const_iterator ib(bundle.begin());
+    waypoint_plan_t const * initialPlan(ib->get());
+    successStats_t::const_iterator initialStats(successStats.find(initialPlan));
+    if (successStats.end() == initialStats) {
+      htmlOs << "<td colspan=\"4\"><em>error: no stats for initial solution</em></td></tr>\n";
+      continue;
+    }
+    double cumul_time(initialStats->second.actual_time_wall_sec);
+    double cumul_expands(initialStats->second.number_of_expands);
+    double const init_speed(cumul_expands / cumul_time);
+    if (1 == bundle.size()) {
+      htmlOs << "<td colspan=\"2\">" << init_speed << "</td>"
+	     << "<td colspan=\"2\">N/A</td></tr>\n";
+      continue;
+    }
+    bool error(false);
+    for (++ib; ib != bundle.end(); ++ib) {
+      successStats_t::const_iterator stats(successStats.find(ib->get()));
+      if (successStats.end() == stats) {
+	error = true;
+	break;
+      }
+      cumul_time += stats->second.actual_time_wall_sec;
+      cumul_expands += stats->second.number_of_expands;
+    }
+    if (error) {
+      htmlOs << "<td colspan=\"3\"><em>error: missing stats</em></td></tr>\n";
+      continue;
+    }
+    double const final_speed(cumul_expands / cumul_time);
+    double const delta_speed(final_speed - init_speed);
+    htmlOs << "<td>" << init_speed << "</td>"
+	   << "<td>" << final_speed << "</td>"
+	   << "<td>" << delta_speed << "</td>"
+	   << "<td>" << 1.0e2 * delta_speed / init_speed
+	   << "</td></tr>\n";
+  }
+  
+  //////////////////////////////////////////////////
+  // consumed planning time
+  
+  htmlOs << "<tr><th colspan=\"5\">consumed planning time (wall clock)</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
   for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
     htmlOs << "<tr><td>" << ip->first << "</td>";
@@ -792,6 +893,9 @@ void print_summary()
 	   << "</td></tr>\n";
   }
   
+  //////////////////////////////////////////////////
+  // epsilon
+  
   htmlOs << "<tr><th colspan=\"5\">epsilon</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
   for (planList_t::const_iterator ip(planList.begin()); ip != planList.end(); ++ip) {
@@ -825,6 +929,9 @@ void print_summary()
 	   << "<td>" << delta << "</td>"
 	   << "<td>" << 1.0e2 * delta / initialStats->second.solution_epsilon << "</td></tr>\n";
   }
+  
+  //////////////////////////////////////////////////
+  // plan length
   
   htmlOs << "<tr><th colspan=\"5\">plan length [m]</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";
@@ -860,6 +967,9 @@ void print_summary()
 	   << "<td>" << 1.0e2 * delta / initialStats->second.plan_length_m
 	   << "</td></tr>\n";
   }
+
+  //////////////////////////////////////////////////
+  // plan tangent change
   
   htmlOs << "<tr><th colspan=\"5\">plan tangent change [deg]</th></tr>\n"
 	 << "<tr><td>task</td><td>init</td><td>final</td><td>delta</td><td>% delta</td></tr>\n";

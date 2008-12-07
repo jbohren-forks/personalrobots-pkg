@@ -345,6 +345,7 @@ namespace ros {
 					  &statsEntry.actual_time_wall_sec,
 					  &statsEntry.actual_time_user_sec,
 					  &statsEntry.actual_time_system_sec,
+					  &statsEntry.number_of_expands,
 					  &statsEntry.solution_cost,
 					  &statsEntry.solution_epsilon,
 					  &solutionStateIDs);

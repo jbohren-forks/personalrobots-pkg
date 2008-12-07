@@ -163,6 +163,7 @@ namespace ompl {
 	 double * actual_time_wall_sec,
 	 double * actual_time_user_sec,
 	 double * actual_time_system_sec,
+	 ssize_t * number_of_expands,
 	 int * solution_cost,
 	 double * solution_epsilon,
 	 vector<int>* solution_stateIDs_V) throw(no_planner_selected)
@@ -184,12 +185,13 @@ namespace ompl {
     gettimeofday(&t_started, 0);
     
     int const status(planner_->replan(allocated_time_sec, solution_stateIDs_V, solution_cost));
-
+    
     struct rusage ru_finished;
     struct timeval t_finished;
     getrusage(RUSAGE_SELF, &ru_finished);
     gettimeofday(&t_finished, 0);
     
+    *number_of_expands = planner_->get_n_expands();
     *solution_epsilon = planner_->get_solution_eps();
     
     *actual_time_wall_sec =
@@ -299,6 +301,7 @@ namespace ompl {
        << prefix << "time actual (wall) [ms]:   " << 1.0e3 * actual_time_wall_sec << "\n"
        << prefix << "time actual (user) [ms]:   " << 1.0e3 * actual_time_user_sec << "\n"
        << prefix << "time actual (system) [ms]: " << 1.0e3 * actual_time_system_sec << "\n"
+       << prefix << "number of expands:         " << number_of_expands << "\n"
        << prefix << "solution cost:             " << solution_cost << "\n"
        << prefix << "solution epsilon:          " << solution_epsilon << "\n"
        << prefix << "status (1 == SUCCESS):     " << status << "\n"
