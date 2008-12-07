@@ -6,4 +6,5 @@
   <depend package="roscpp"/>
   <depend package="sdl"/>
   <depend package="opencv_latest"/>
+  <depend package="newmat10"/>
 </package>

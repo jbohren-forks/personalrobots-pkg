@@ -15,7 +15,7 @@ int main(int argc, char **argv)
   for (int a = 1; a < argc; a++)
     images.push_back(new Borg::Image(argv[a]));
   borg.extract(images);
-  borg.print_extraction(images);
+  borg.printExtraction(images);
   for (list<Borg::Image *>::iterator i = images.begin(); i != images.end(); ++i)
   {
     delete (*i)->raster;

@@ -43,10 +43,61 @@ public:
     : raster(_raster), t(_t), angle(_angle) { }
     Image(const char *filename);
   };
+
+  class SensedPoint
+  {
+  public:
+    float angle, col;
+    int row;
+    uint8_t r, g, b;
+    SensedPoint(float _angle, float _col, int _row,
+                uint8_t _r, uint8_t _g, uint8_t _b)
+    : angle(_angle), col(_col), row(_row), r(_r), g(_g), b(_b) { }
+  };
+
+  class ProjectedPoint
+  {
+  public:
+    float angle, col;
+    int row;
+    float x, y, z;
+    uint8_t r, g, b;
+    ProjectedPoint(float _x, float _y, float _z, int _row, float _col,
+                   uint8_t _r, uint8_t _g, uint8_t _b)
+    : angle(0), col(_col), row(_row), x(_x), y(_y), z(_z),
+      r(_r), g(_g), b(_b) { }
+  };
   
   void extract(std::list<Image *> &images);
-  void print_extraction(std::list<Image *> &images);
+  void printExtraction(std::list<Image *> &images);
+  void project(const std::vector<SensedPoint> &sensed,
+               std::vector<ProjectedPoint> &projected);
+  void loadExtractionFile(const char *fn, std::vector<SensedPoint> &extraction);
+  void calibrate(const double size, const uint32_t x, const uint32_t y, 
+                 const std::list<std::string> &filename_prefixes);
 private:
+  class CheckerCorner
+  {
+  public:
+    double row, col;
+    double x, y, z;
+    CheckerCorner(double _row, double _col) : row(_row), col(_col) { }
+  };
+  class CalibrationScene
+  {
+  public:
+    double sq_size; // length of a side of a checker on the board
+    std::vector<CheckerCorner> corners;
+    std::vector<SensedPoint> points;
+    std::vector<ProjectedPoint> proj;
+    CalibrationScene(double _size) : sq_size(_size) { }
+    void projectCorners();
+    double objective();
+    void writeFile(const char *filename);
+  };
+  double calibration_objective(std::vector<CalibrationScene *> &scenes);
+  void project(std::vector<CalibrationScene *> &scenes);
+
   int fps;
   double left, right;
   int scan_duty, return_duty;
@@ -55,6 +106,7 @@ private:
   CvMat *intrinsics, *distortion, *map_x, *map_y;
   uint32_t image_queue_size;
   int laser_thresh;
+  double tx, ty, tz, enc_offset, laser_rot;
 };
 
 }
