@@ -15,7 +15,7 @@ spacenavd_configured: spacenav_svn
 	touch $@
 
 libspnav: libspnav_configured
-	mkdir -p libspnav/lib libspnav/include
+	mkdir -p libspnav/lib libspnav/lib64 libspnav/include
 	cd $(SVN_DIR)/libspnav && make && make install
 
 libspnav_configured: spacenav_svn
