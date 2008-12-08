@@ -1015,6 +1015,7 @@ void print_summary()
 void print_gnuplot()
 {
   string dataFilename(baseFilename() + ".data");
+  string costhistFilename(baseFilename() + ".costhist");
   string plotFilename(baseFilename() + ".plot");
   ofstream plotOs(plotFilename.c_str());
   if ( ! plotOs) {
@@ -1049,7 +1050,7 @@ void print_gnuplot()
     << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
     << "set ylabel \"[1/s] (wallclock)\"\n"
     << "plot \"" << dataFilename << "\" using ($2):($10) title \"expansion speed\" with lines, "
-    << "\"" << dataFilename << "\" using ($2):($11) title \"avg expansion speed\" with lines\n"
+    << "\"" << dataFilename << "\" using ($2):($11) title \"avg expansion speed\" with lines lw 2\n"
     // absolute solution cost vs absolute time
     << "set output \"" << baseFilename() << "--cost-atime.png\"\n"
     << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
@@ -1064,7 +1065,12 @@ void print_gnuplot()
     << "set output \"" << baseFilename() << "--rotation-atime.png\"\n"
     << "set xlabel \"cumul planning time [s] (wallclock)\"\n"
     << "set ylabel \"[rad]\"\n"
-    << "plot \"" << dataFilename << "\" using ($2):($19) title \"plan rotation\" with lines\n";
+    << "plot \"" << dataFilename << "\" using ($2):($19) title \"plan rotation\" with lines\n"
+    // costmap histogram
+    << "set output \"" << baseFilename() << "--costhist.png\"\n"
+    << "set xlabel \"cell cost\"\n"
+    << "set ylabel \"log count\"\n"
+    << "plot \"" << costhistFilename << "\" using ($1):($3) title \"log cell count\" with impulses lw 10\n";
   
   ofstream dataOs(dataFilename.c_str());
   if ( ! dataOs) {
@@ -1171,6 +1177,39 @@ void print_gnuplot()
 	<< 100 * iStats->second.plan_angle_change_rad / final_rotation << "\n";
     }
   }
+
+  ofstream costhistOs(costhistFilename.c_str());
+  if ( ! costhistOs) {
+    cout << "sorry, could not open file " << costhistFilename << "\n";
+    return;
+  }
+  cout << "writing gnuplot cost histogram file: " << costhistFilename << "\n";
+  
+  costhistOs << "# " << costhistFilename << "\n"
+	     << "# cost histogram file for gnuplot\n"
+	     << "#\n"
+	     << "# columns:\n"
+	     << "#  1 cell cost\n"
+	     << "#  2 count\n"
+	     << "#  3 log(count)\n";
+  boost::shared_ptr<CostmapWrap const> cm(setup->getCostmap());
+  typedef map<int, size_t> hist_t;
+  hist_t hist;
+  for (ssize_t ix(cm->getXBegin()); ix < cm->getXEnd(); ++ix)
+    for (ssize_t iy(cm->getYBegin()); iy < cm->getYEnd(); ++iy) {
+      int cost;
+      if ( ! cm->getCost(ix, iy, &cost))
+	continue;
+      hist_t::iterator ih(hist.find(cost));
+      if (hist.end() == ih)
+	hist.insert(make_pair(cost, (ssize_t) 1));
+      else
+	++ih->second;
+    }
+  for (hist_t::const_iterator ih(hist.begin()); ih != hist.end(); ++ih)
+    costhistOs << ih->first << "\t"
+	       << ih->second << "\t"
+	       << log10((double) ih->second) << "\n";
 }
 
 
