@@ -10,6 +10,7 @@
     <cpp lflags="-Wl,-rpath,${prefix}/lib `${prefix}/bin/openrave-config --libs`" cflags="`${prefix}/bin/openrave-config --cflags`"/>
   </export>
   <depend package="soqt"/>
+  <depend package="bullet"/>
   <depend package="opende"/>
   <depend package="std_msgs"/>
   <versioncontrol type="svn" url="https://openrave.svn.sourceforge.net/svnroot/openrave"/>

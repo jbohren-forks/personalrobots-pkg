@@ -11,8 +11,8 @@ include $(shell rospack find mk)/svn_checkout.mk
 
 
 build: SVN_UP_REVERT_PATCH
-	cd $(SVN_DIR) && cmake .
-	make $(PARALLEL_JOBS) -C $(SVN_DIR) LinearMath
+	cd $(SVN_DIR) && cmake -DCMAKE_INSTALL_PREFIX=$(PWD) .
+	cd $(SVN_DIR) && make $(PARALLEL_JOBS) && make $(PARALLEL_JOBS) install
 	touch bullet
 
 clean:
