@@ -74,7 +74,11 @@ void HysteresisController::init( double velocity, double max_effort, double max_
   assert(robot);
   robot_ = robot;
   joint_ = robot->getJointState(name);
+  if(name=="r_gripper_joint" || name=="l_gripper_joint")
+  {
+    joint_->calibrated_ = true;
 
+  }
   
   test_data_.arg_value[0]=min_expected_effort;
   test_data_.arg_value[1]=max_expected_effort;
@@ -133,6 +137,7 @@ bool HysteresisController::initXml(mechanism::RobotState *robot, TiXmlElement *c
 
 void HysteresisController::update()
 {
+
   // wait until the joint is calibrated if it has limits
   if(!joint_->calibrated_ && joint_->joint_->type_!=mechanism::JOINT_CONTINUOUS)
   {
@@ -168,6 +173,7 @@ void HysteresisController::update()
     state = STARTING;
     break;
   case STARTING:
+    
     ++starting_count;
     if (starting_count > 100)
       state = MOVING;
@@ -183,6 +189,7 @@ void HysteresisController::update()
     }
     else if(fabs(joint_->position_-initial_position_)>6.28 && joint_->joint_->type_==mechanism::JOINT_CONTINUOUS) 
     {
+   
       velocity_controller_->setCommand(0.0);
       initial_position_=joint_->position_;
       if (loop_count_ < 3)

@@ -7,4 +7,5 @@ genmsg()
 gensrv()
 rospack_add_library(joint_qualification_controllers 
 src/hysteresis_controller.cpp
-src/sine_sweep_controller.cpp)
+src/sine_sweep_controller.cpp
+src/backlash_controller.cpp)
