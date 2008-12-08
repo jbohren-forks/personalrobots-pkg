@@ -380,7 +380,7 @@ int ARAPlanner::ImprovePath(ARASearchStateSpace_t* pSearchStateSpace, double Max
 	//expand states until done
 	minkey = pSearchStateSpace->heap->getminkeyheap();
 	CKey oldkey = minkey;
-	while(!pSearchStateSpace->heap->emptyheap() && goalkey > minkey &&
+	while(!pSearchStateSpace->heap->emptyheap() && minkey.key[0] < INFINITECOST && goalkey > minkey &&
 		(clock()-TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC) 
     {
 

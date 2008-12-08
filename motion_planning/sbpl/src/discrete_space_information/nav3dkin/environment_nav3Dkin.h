@@ -33,7 +33,7 @@
 //eight-connected grid
 #define NAV3DKIN_DXYWIDTH 8
 
-#define ENVNAV3DKIN_DEFAULTOBSTHRESH 253	//see explanation of the value below
+#define ENVNAV3DKIN_DEFAULTOBSTHRESH 254	//see explanation of the value below
 
 
 //definition of theta orientations
@@ -148,6 +148,7 @@ public:
 	EnvironmentNAV3DKIN();
 
 	bool InitializeEnv(const char* sEnvFile);
+	bool InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t> & perimeterptsV);
 
 
 	bool InitializeMDPCfg(MDPConfig *MDPCfg);

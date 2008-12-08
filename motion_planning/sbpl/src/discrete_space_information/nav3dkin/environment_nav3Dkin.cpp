@@ -130,7 +130,12 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
     printf("ERROR: illegal start coordinates for theta\n");
     exit(1);
   }
-  
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
+    printf("WARNING: invalid start configuration\n");
+  }
+ 
+
+
   EnvNAV3DKINCfg.EndX_c = goalx;
   EnvNAV3DKINCfg.EndY_c = goaly;
   EnvNAV3DKINCfg.EndTheta = goaltheta;
@@ -146,6 +151,9 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
   if(EnvNAV3DKINCfg.EndTheta < 0 || EnvNAV3DKINCfg.EndTheta >= NAV3DKIN_THETADIRS) {
     printf("ERROR: illegal goal coordinates for theta\n");
     exit(1);
+  }
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
+    printf("WARNING: invalid goal configuration\n");
   }
 
   EnvNAV3DKINCfg.FootprintPolygon = robot_perimeterV;
@@ -434,6 +442,8 @@ void EnvironmentNAV3DKIN::ComputeReplanningData()
 
 void EnvironmentNAV3DKIN::InitializeEnvConfig()
 {
+	int aind;
+
 	//aditional to configuration file initialization of EnvNAV3DKINCfg if necessary
 
 	//dXY dirs
@@ -454,13 +464,32 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 	EnvNAV3DKINCfg.dXY[7][0] = 1;
 	EnvNAV3DKINCfg.dXY[7][1] = 1;
 
+	printf("Obsthresh=%d\n", EnvNAV3DKINCfg.obsthresh);
 
 
 	//construct list of actions
 	printf("Pre-computing action data...\n");
+	EnvNAV3DKIN3Dpt_t temppose;
+	temppose.x = 0.0;
+	temppose.y = 0.0;
+	temppose.theta = 0.0;
+	vector<sbpl_2Dcell_t> footprint;
+	CalculateFootprintForPose(temppose, &footprint);
+	printf("number of cells in footprint of the robot = %d\n", footprint.size());
+
+#if DEBUG
+	fprintf(fDeb, "footprint cells:\n");
+	for(int i = 0; i < (int) footprint.size(); i++)
+	{
+		fprintf(fDeb, "%d %d %.3f %.3f\n", footprint.at(i).x, footprint.at(i).y, 
+			DISCXY2CONT(footprint.at(i).x, EnvNAV3DKINCfg.cellsize_m), 
+			DISCXY2CONT(footprint.at(i).y, EnvNAV3DKINCfg.cellsize_m));
+	}
+#endif
+
+
 	EnvNAV3DKINCfg.ActionsV = new EnvNAV3DKINAction_t* [NAV3DKIN_THETADIRS];
 	EnvNAV3DKINCfg.PredActionsV = new vector<EnvNAV3DKINAction_t*> [NAV3DKIN_THETADIRS];
-	vector<sbpl_2Dcell_t> footprint;
 	//iterate over source angles
 	for(int tind = 0; tind < NAV3DKIN_THETADIRS; tind++)
 	{
@@ -473,7 +502,7 @@ void EnvironmentNAV3DKIN::InitializeEnvConfig()
 		sourcepose.theta = DiscTheta2Cont(tind, NAV3DKIN_THETADIRS);
 
 		//the construction assumes that the robot first turns and then goes along this new theta
-		int aind = 0;
+		aind = 0;
 		for(; aind < 3; aind++)
 		{
 			EnvNAV3DKINCfg.ActionsV[tind][aind].starttheta = tind;
@@ -777,10 +806,6 @@ double EnvironmentNAV3DKIN::EuclideanDistance_m(int X1, int Y1, int X2, int Y2)
 void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vector<sbpl_2Dcell_t>* footprint)
 {  
 
-#if DEBUG
-  printf("---Calculating Footprint for Pose: %f %f %f---\n",
-	 pose.x, pose.y, pose.theta);
-#endif
 
   //handle special case where footprint is just a point
   if(EnvNAV3DKINCfg.FootprintPolygon.size() <= 1){
@@ -805,9 +830,7 @@ void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vect
     corner.x = cos(pose.theta)*pt.x - sin(pose.theta)*pt.y + pose.x;
     corner.y = sin(pose.theta)*pt.x + cos(pose.theta)*pt.y + pose.y;
     bounding_polygon.push_back(corner);
-#if DEBUG
-    printf("Pt: %f %f, Corner: %f %f\n", pt.x, pt.y, corner.x, corner.y);
-#endif
+
     if(corner.x < min_x || find==0){
       min_x = corner.x;
     }
@@ -823,9 +846,6 @@ void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vect
     
   }
 
-#if DEBUG
-  printf("Footprint bounding box: %f %f %f %f\n", min_x, max_x, min_y, max_y);
-#endif
   //initialize previous values to something that will fail the if condition during the first iteration in the for loop
   int prev_discrete_x = CONTXY2DISC(pt.x, EnvNAV3DKINCfg.cellsize_m) + 1; 
   int prev_discrete_y = CONTXY2DISC(pt.y, EnvNAV3DKINCfg.cellsize_m) + 1;
@@ -843,26 +863,26 @@ void EnvironmentNAV3DKIN::CalculateFootprintForPose(EnvNAV3DKIN3Dpt_t pose, vect
       //see if we just tested this point
       if(discrete_x != prev_discrete_x || discrete_y != prev_discrete_y || prev_inside==0){
 
-#if DEBUG
-		printf("Testing point: %f %f Discrete: %d %d\n", pt.x, pt.y, discrete_x, discrete_y);
-#endif
 	
 		if(IsInsideFootprint(pt, &bounding_polygon)){
 		//convert to a grid point
 
-#if DEBUG
-			printf("Pt Inside %f %f\n", pt.x, pt.y);
-#endif
 
 			sbpl_2Dcell_t cell;
 			cell.x = discrete_x;
 			cell.y = discrete_y;
-			footprint->push_back(cell);
+
+			//insert point if not there already
+			int pind = 0;
+			for(pind = 0; pind < (int)footprint->size(); pind++)
+			{
+				if(cell.x == footprint->at(pind).x && cell.y == footprint->at(pind).y)
+					break;
+			}
+			if(pind == (int)footprint->size()) footprint->push_back(cell);
+
 			prev_inside = 1;
 
-#if DEBUG
-			printf("Added pt to footprint: %f %f\n", pt.x, pt.y);
-#endif
 		}
 		else{
 			prev_inside = 0;
@@ -967,6 +987,20 @@ bool EnvironmentNAV3DKIN::InitializeEnv(const char* sEnvFile)
 
 
 	return true;
+
+
+}
+
+
+
+bool EnvironmentNAV3DKIN::InitializeEnv(const char* sEnvFile, const vector<sbpl_2Dpt_t> & perimeterptsV)
+{
+
+	EnvNAV3DKINCfg.FootprintPolygon = perimeterptsV;
+
+
+	return InitializeEnv(sEnvFile);
+
 }
 
 
@@ -1007,6 +1041,14 @@ bool EnvironmentNAV3DKIN::InitGeneral() {
   
   //pre-compute heuristics
   ComputeHeuristicValues();
+
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
+    printf("WARNING: invalid start configuration\n");
+  }
+  if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
+    printf("WARNING: invalid goal configuration\n");
+  }
+ 
 
   return true;
 }
@@ -1350,7 +1392,8 @@ void EnvironmentNAV3DKIN::PrintState(int stateID, bool bVerbose, FILE* fOut /*=N
     if(bVerbose)
     	fprintf(fOut, "X=%d Y=%d Theta=%d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
     else
-    	fprintf(fOut, "%d %d %d\n", HashEntry->X, HashEntry->Y, HashEntry->Theta);
+    	fprintf(fOut, "%.3f %.3f %.3f\n", DISCXY2CONT(HashEntry->X, EnvNAV3DKINCfg.cellsize_m), DISCXY2CONT(HashEntry->Y,EnvNAV3DKINCfg.cellsize_m), 
+		DiscTheta2Cont(HashEntry->Theta, NAV3DKIN_THETADIRS));
 
 }
 
@@ -1412,6 +1455,7 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 
 //returns the stateid if success, and -1 otherwise
 int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
+
 
 	int x = CONTXY2DISC(x_m, EnvNAV3DKINCfg.cellsize_m);
 	int y = CONTXY2DISC(y_m, EnvNAV3DKINCfg.cellsize_m); 

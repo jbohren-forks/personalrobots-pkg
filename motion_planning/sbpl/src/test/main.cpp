@@ -147,12 +147,31 @@ int plan3dkin(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 1.0; //in seconds
+	double allocated_time_secs = 60.0; //in seconds
 	MDPConfig MDPCfg;
+
+	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
+	vector<sbpl_2Dpt_t> perimeterptsV;
+	sbpl_2Dpt_t pt_m;
+	double halfwidth = 0.3;
+	double halflength = 0.45;
+	pt_m.x = -halflength;
+	pt_m.y = -halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = halflength;
+	pt_m.y = -halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = halflength;
+	pt_m.y = halfwidth;
+	perimeterptsV.push_back(pt_m);
+	pt_m.x = -halflength;
+	pt_m.y = halfwidth;
+	perimeterptsV.push_back(pt_m);
 	
+
 	//Initialize Environment (should be called before initializing anything else)
 	EnvironmentNAV3DKIN environment_nav3Dkin;
-	if(!environment_nav3Dkin.InitializeEnv(argv[1]))
+	if(!environment_nav3Dkin.InitializeEnv(argv[1], perimeterptsV))
 	{
 		printf("ERROR: InitializeEnv failed\n");
 		exit(1);
@@ -226,7 +245,7 @@ int plan3dkin(int argc, char *argv[])
 
     FILE* fSol = fopen("sol.txt", "w");
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
-	  environment_nav3Dkin.PrintState(solution_stateIDs_V[i], true, fSol);
+	  environment_nav3Dkin.PrintState(solution_stateIDs_V[i], false, fSol);
 	}
     fclose(fSol);
 

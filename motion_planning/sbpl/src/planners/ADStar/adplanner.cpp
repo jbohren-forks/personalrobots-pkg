@@ -522,7 +522,7 @@ int ADPlanner::ComputePath(ADSearchStateSpace_t* pSearchStateSpace, double MaxNu
 	//expand states until done
 	minkey = pSearchStateSpace->heap->getminkeyheap();
 	CKey oldkey = minkey;
-	while(!pSearchStateSpace->heap->emptyheap() && (goalkey > minkey || searchgoalstate->g > searchgoalstate->v) &&
+	while(!pSearchStateSpace->heap->emptyheap() && minkey.key[0] < INFINITECOST && (goalkey > minkey || searchgoalstate->g > searchgoalstate->v) &&
 		(clock()-TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC) 
     {
 
