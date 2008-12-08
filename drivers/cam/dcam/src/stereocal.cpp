@@ -80,10 +80,6 @@
 using namespace std;
 
 
-// version of parameter files
-#define MAJORVERSION 5
-#define MINORVERSION 0
-
 //
 // Stereo cal application
 // Read in images
@@ -199,6 +195,7 @@ static int sp_speckle = 30;	// speckle threshold, percent
 
 // printing matrices
 void PrintMat(CvMat *A, FILE *fp = stdout);
+int  PrintMatStr(CvMat *A, char *str);
 
 
 // main program, just put up the GUI dialog
@@ -256,7 +253,6 @@ main(int argc, char **argv)	// no arguments
   gwin = stg->stereo_calibration;
   set_current_tab_index(1);
   gwin->show();
-  set_current_tab_index(0);	// set to first calibration image
   stg->cal_window->hide();	// have to request cal window
 
   // start up debug window
@@ -575,7 +571,7 @@ set_current_tab_index(int ind)
 {
   Fl_Tabs *tb = (Fl_Tabs *)stg->window_tab;
   Fl_Widget *wd;
-  wd = tb->child(ind);
+  wd = tb->child(ind-1);
   tb->value(wd);
 }
 
@@ -877,12 +873,13 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
 {
   // get window tab
   int ind = get_current_tab_index();
+  printf("Current tab: %d\n", ind);
   
   char *fname = fl_file_chooser("Load file", NULL, NULL);
   if (fname == NULL)
     return;
 
-  printf("File name: %s\n", fname);
+  debug_message("[StereoCal] File name: %s", fname);
 
   char *lname = NULL, *rname = NULL;
   int seq;
@@ -1199,8 +1196,8 @@ void cal_calibrate_cb(Fl_Button*, void*)
 	if (!goodleft[i]) continue;
 	if (rect_left[i] == NULL)
 	  rect_left[i] = cvCloneImage(imgs_left[i]);
-	//	cvRemap(imgs_left[i], rect_left[i], mapx_left, mapy_left);
-	cvRemap(imgs_left[i], rect_left[i], rMapxy_left, rMapa_left);
+	cvRemap(imgs_left[i], rect_left[i], mapx_left, mapy_left);
+	//	cvRemap(imgs_left[i], rect_left[i], rMapxy_left, rMapa_left);
 	IplImage *img = rect_left[i];
 	set_current_tab_index(i);
 	calImageWindow *cwin = get_current_left_win();
@@ -1567,16 +1564,12 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   if (isVideo)
     return;
 
-  // set window tab
-  int ind = 0;
-  set_current_tab_index(ind);
-
   // get images
-  IplImage *limg = imgs_left[ind];
-  IplImage *rimg = imgs_right[ind];
+  IplImage *limg = imgs_left[0];
+  IplImage *rimg = imgs_right[0];
   if (limg == NULL || rimg == NULL)
     {
-      debug_message("No stereo pair at index %d", ind);
+      debug_message("No stereo pair at index %d", 0);
       return;
     }
 
@@ -1586,18 +1579,14 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   double t3b = get_ms();
   if (mapx_left != NULL)
     {
-      if (rect_left[ind] == NULL)
-	rect_left[ind] = cvCloneImage(imgs_left[ind]);
-      cvRemap(imgs_left[ind], rect_left[ind], mapx_left, mapy_left);
-      if (rect_right[ind] == NULL)
-	rect_right[ind] = cvCloneImage(imgs_right[ind]);
-      t3a = get_ms();
-      //      for (int i=0; i<100; i++)
-      cvRemap(imgs_right[ind], rect_right[ind], mapx_right, mapy_right);
-      t3b = get_ms();
-      cvSaveImage("rect-R.png", rect_right[ind]);
-      limg = rect_left[ind];
-      rimg = rect_right[ind];
+      if (rect_left[0] == NULL)
+	rect_left[0] = cvCloneImage(imgs_left[0]);
+      cvRemap(imgs_left[0], rect_left[0], mapx_left, mapy_left);
+      if (rect_right[0] == NULL)
+	rect_right[0] = cvCloneImage(imgs_right[0]);
+      cvRemap(imgs_right[0], rect_right[0], mapx_right, mapy_right);
+      limg = rect_left[0];
+      rimg = rect_right[0];
     }
 
 
@@ -1705,7 +1694,7 @@ do_track_cb(Fl_Light_Button* w, void*)
 // capture callback
 // save un-rectified images into next open cal buffer
 
-static int calInd = 0;
+static int calInd = 1;
 
 void cal_capture_cb(Fl_Button*, void*) 
 {
@@ -1730,8 +1719,7 @@ void cal_capture_cb(Fl_Button*, void*)
 
   // convert to grayscale, should just do a clone
   // TBD: release previous image
-  IplImage* img=cvCreateImage(cvGetSize(img1),IPL_DEPTH_8U,1); 
-  cvConvertImage(img1,img);
+  IplImage* img=cvCloneImage(img1);
   imgs_left[calInd] = img;
   imsize_left = cvGetSize(img);
   cwin->DisplayImage((unsigned char *)img->imageData, img->width, img->height, img->width);
@@ -1749,8 +1737,7 @@ void cal_capture_cb(Fl_Button*, void*)
 
   cwin = get_current_right_win();
   // convert to grayscale
-  img=cvCreateImage(cvGetSize(img1),IPL_DEPTH_8U,1); 
-  cvConvertImage(img1,img);
+  img = cvCloneImage(img1);
   imgs_right[calInd] = img;
   imsize_right = cvGetSize(img);
   debug_message("Size: %d x %d, ch: %d", img->width, img->height, img->nChannels);
@@ -1763,10 +1750,95 @@ void cal_capture_cb(Fl_Button*, void*)
 
 
 
-// other callbacks
-
+// save an image
 void cal_save_image_cb(Fl_Button*, void*) {}
-void cal_save_all_cb(Fl_Button*, void*) {}
+
+// save all calibration images
+// current save to name "cal-XXX"
+
+void cal_save_all_cb(Fl_Button*, void*) 
+{
+  int ind = 1;
+  char fname[4096];
+  for (int i=1; i<MAXIMAGES; i++)
+    {
+      if (imgs_left[i] != NULL && imgs_right[i] != NULL)
+	{
+	  sprintf(fname, "cal%d-L.png", ind);
+	  cvSaveImage(fname, imgs_left[i]);
+	  sprintf(fname, "cal%d-R.png", ind);
+	  cvSaveImage(fname, imgs_right[i]);
+	  ind++;
+	}
+    }
+  info_message("[StereoCal] Saved %d calibration images", ind-1);
+}
+
+
+
+
+// get parameter string from current parameters
+char *
+cal_get_param_string()
+{
+  char *str = new char[4096];
+  int n = 0;
+
+  // header
+  n += sprintf(str,"# oST version %d.%d parameters\n\n", OST_MAJORVERSION, OST_MINORVERSION);
+
+  // externals
+  n += sprintf(&str[n],"\n[externals]\n");
+
+  n += sprintf(&str[n],"\ntranslation\n");
+  n += PrintMatStr(&Transv,&str[n]);
+
+  n += sprintf(&str[n],"\nrotation\n");
+  n += PrintMatStr(&Rotv,&str[n]);
+
+  // left camera
+  n += sprintf(&str[n],"\n[left camera]\n");
+  
+  n += sprintf(&str[n],"\ncamera matrix\n");
+  n += PrintMatStr(&K_left,&str[n]);
+
+  n += sprintf(&str[n],"\ndistortion\n");
+  n += PrintMatStr(&D_left,&str[n]);
+
+  n += sprintf(&str[n],"\nrectification\n");
+  n += PrintMatStr(&R_left,&str[n]);
+
+  n += sprintf(&str[n],"\nprojection\n");
+  n += PrintMatStr(&P_left,&str[n]);    
+
+  // right camera
+  n += sprintf(&str[n],"\n[right camera]\n");
+  n += sprintf(&str[n],"\ncamera matrix\n");
+  n += PrintMatStr(&K_right,&str[n]);
+
+  n += sprintf(&str[n],"\ndistortion\n");
+  n += PrintMatStr(&D_right,&str[n]);
+
+  n += sprintf(&str[n],"\nrectification\n");
+  n += PrintMatStr(&R_right,&str[n]);
+
+  n += sprintf(&str[n],"\nprojection\n");
+  n += PrintMatStr(&P_right,&str[n]);    
+
+  str[n] = 0;			// just in case
+  return str;
+}
+
+
+// set parameter string
+void
+cal_set_dev_params()
+{
+  if (!dev)
+    return;			// no device yet...
+  dev->camIm->params = dev->stIm->createParams();
+}
+
 
 // save the parameters to a file
 void cal_save_params(char *fname)
@@ -1774,49 +1846,10 @@ void cal_save_params(char *fname)
   FILE *fp;
   fp = fopen(fname, "w");
 
-  // header
-  fprintf(fp,"# oST version %d.%d parameters\n\n", MAJORVERSION, MINORVERSION);
-
-  // externals
-  fprintf(fp,"\n[externals]\n");
-
-  fprintf(fp,"\ntranslation\n");
-  PrintMat(&Transv,fp);
-
-  fprintf(fp,"\nrotation\n");
-  PrintMat(&Rotv,fp);
-
-  // left camera
-  fprintf(fp,"\n[left camera]\n");
-  
-  fprintf(fp,"\ncamera matrix\n");
-  PrintMat(&K_left,fp);
-
-  fprintf(fp,"\ndistortion\n");
-  PrintMat(&D_left,fp);
-
-  fprintf(fp,"\nrectification\n");
-  PrintMat(&R_left,fp);
-
-  fprintf(fp,"\nprojection\n");
-  PrintMat(&P_left,fp);    
-
-  // right camera
-  fprintf(fp,"\n[right camera]\n");
-  
-  fprintf(fp,"\ncamera matrix\n");
-  PrintMat(&K_right,fp);
-
-  fprintf(fp,"\ndistortion\n");
-  PrintMat(&D_right,fp);
-
-  fprintf(fp,"\nrectification\n");
-  PrintMat(&R_right,fp);
-
-  fprintf(fp,"\nprojection\n");
-  PrintMat(&P_right,fp);    
-
+  char *str = cal_get_param_string();
+  fprintf(fp, "%s", str);
   fclose(fp);
+  delete [] str;
 }
 
 void cal_save_params_cb(Fl_Button*, void*)
@@ -1830,13 +1863,128 @@ void cal_save_params_cb(Fl_Button*, void*)
   int ind = -1;
   bool ret;
   ret = parse_filename(fname, &lname, &rname, &ind, &bname);
-  debug_message("File base name: %s\n", bname);
+  debug_message("[StereoCal] File base name: %s\n", bname);
 
   char ff[1024];
 
   sprintf(ff, "%s.ini", bname);
   cal_save_params(ff);
-  debug_message("Wrote %s", ff);
+  debug_message("[StereoCal] Wrote %s", ff);
+}
+
+
+// upload to device
+
+void cal_upload_params_cb(Fl_Button*, void*)
+{
+  FILE *fp;
+  int fd;
+  if (dev)
+    {
+      cal_set_dev_params();	// set the parameters from the current values
+      debug_message("[StereoCal] Setting FW parameters");
+      dev->setParameters();	// set the parameters in FW firmware
+
+      debug_message("[StereoCal] Setting STOC parameters");
+      // ok, load up things here...
+      uint8_t *cbuf = NULL, *lbuf = NULL, *rbuf = NULL;
+      int cn = 0, rn = 0, ln = 0;
+
+      // set up choice for config filesptr
+      int fwver = dev->camFirmware;
+      int imver = dev->imFirmware;
+      //      debug_message("[StereoCal] FW firmware is %04x", fwver);
+
+      // FW versions:
+      //   < 5.0  no embedded warp table checksums
+      //   5.0    embedded warp table checksums
+      //
+      // Cam versions
+      //   < 6    standard 640 width, no horiz offset
+      //   6      752 width, horiz pixel offset
+      //
+      // Mapping to STOC config files
+      //   STOC   FW    CAM
+      //   2.x    <5.0  <6
+      //   3.x    <5.0   6+
+      //   4.x     5+    6+
+      //
+
+      char *types;
+      if (dev->isColor)
+	{
+	  if (fwver < 0x0500 && imver < 6)
+	    types = "{do_sys_color-2.*.bin,do_sys_color-2.*.dat}";
+	  if (fwver < 0x0500 && imver >= 6)
+	    types = "{do_sys_color-3.*.bin,do_sys_color-3.*.dat}";
+	  if (fwver >= 0x0500 && imver >= 6)
+	    types = "{do_sys_color-4.*.bin,do_sys_color-4.*.dat}";
+	}
+      else
+	{
+	  if (fwver < 0x0500 && imver < 6)
+	    types = "{do_sys-2.*.bin,do_sys-2.*.dat}";
+	  if (fwver < 0x0500 && imver >= 6)
+	    types = "{do_sys-3.*.bin,do_sys-3.*.dat}";
+	  if (fwver >= 0x0500 && imver >= 6)
+	    types = "{do_sys-4.*.bin,do_sys-4.*.dat}";
+	}
+
+      char *name = fl_file_chooser("Config files", types, NULL);
+      if (!name)
+	return;
+  
+      debug_message("[Device] Config file name: %s", name);
+
+      fp = fopen(name,"rb");
+      if (fp == NULL)
+	{
+	  debug_message("[Device] Can't find file %s", name);
+	  return;
+	}
+      else
+	debug_message("[Device] Opened file %s", name);
+
+      Fl::check();
+
+      unsigned int xx = 0;
+      int n = strlen(name);
+      if (strcmp(&name[n-3], "dat") == 0) // scrambled
+	xx = 0x1a2b3c4d;
+
+      debug_message("[Device] Setting FPGA Configuration");
+
+      // read in bytes, save them out to flash
+      fd = fileno(fp);
+#ifdef MSW
+      _setmode(fd,_O_BINARY);
+#endif
+
+      cbuf = new uint8_t[512000];
+      uint8_t *cptr = cbuf;
+
+      // read in bytes from file
+      while (cn < 512000)
+	{
+	  int ret = read(fd,cptr,4);
+	  cn += ret;
+	  if (ret < 4)
+	    break;
+	  // unscramble
+	  xx = xx*xx+xx;
+	  unsigned int *cint = (unsigned int *)cptr;
+	  *cint = *cint ^ xx;
+	  cptr += 4;
+	}
+
+      fclose(fp);
+      debug_message("[Device] Read %d bytes from file", cn);
+
+
+      dev->setSTOCParams(cbuf, cn, lbuf, ln, rbuf, rn);	// set the STOC firmware
+    }
+  else
+    debug_message("[StereoCal] No device selected");
 }
 
 
@@ -1844,7 +1992,7 @@ void cal_save_params_cb(Fl_Button*, void*)
 
 void cal_ok_cb(Fl_Button*, void*)
 {
-  set_current_tab_index(0);	// set to first calibration image
+  set_current_tab_index(1);	// set to first calibration image
   stg->cal_window->hide();	// have to request cal window
   stg->cal_images->hide();	// have to request cal window
 }
@@ -1937,18 +2085,24 @@ void
 unique_cb(Fl_Counter *w, void *x)
 {
   sp_uthresh = (int)w->value();
+  if (dev && dev->isSTOC)
+    dev->setUniqueThresh(sp_uthresh);
 }
 
 void
 texture_cb(Fl_Counter *w, void *x)
 {
   sp_tthresh = (int)w->value();
+  if (dev && dev->isSTOC)
+    dev->setTextureThresh(sp_tthresh);
 }
 
 void
 xoff_cb(Fl_Counter *w, void *x)
 {
   sp_xoff = (int)w->value();
+  if (dev && dev->isSTOC)
+    dev->setHoropter(sp_xoff);
 }
 
 void
@@ -2201,8 +2355,6 @@ void cal_window_cb(Fl_Menu_ *w, void *u)
 
 void load_images_cb(Fl_Menu_ *w, void *u)
 {
-  set_current_tab_index(0);	// set to main window
-
   char *fname = fl_file_chooser("Load file", NULL, NULL);
   if (fname == NULL)
     return;
@@ -2224,8 +2376,6 @@ void load_images_cb(Fl_Menu_ *w, void *u)
 
 void save_images_cb(Fl_Menu_ *w, void *u)
 {
-  set_current_tab_index(0);	// set to main window
-
   char *fname = fl_file_chooser("Save images (png)", NULL, NULL);
   if (fname == NULL)
     return;
@@ -2276,6 +2426,18 @@ void load_params_cb(Fl_Menu_ *w, void *u)
 
 void save_params_cb(Fl_Menu_ *w, void *u)
 {}
+
+
+//
+// debug window
+//
+
+// pop it up
+void 
+debug_window_cb(Fl_Menu_ *w, void *u)
+{
+  iwin->show();
+}
 
 
 
@@ -2410,6 +2572,34 @@ void PrintMat(CvMat *A, FILE *fp)
       fprintf(fp,"\n");
     }
 }
+
+int
+PrintMatStr(CvMat *A, char *str)
+{
+  int i, j;
+  int n = 0;
+  for (i = 0; i < A->rows; i++)
+    {
+      switch (CV_MAT_DEPTH(A->type))
+	{
+	case CV_32F:
+	case CV_64F:
+	  for (j = 0; j < A->cols; j++)
+	    n += sprintf(&str[n],"%8.5f ", (float)cvGetReal2D(A, i, j));
+	  break;
+	case CV_8U:
+	case CV_16U:
+	  for(j = 0; j < A->cols; j++)
+	    n += sprintf(&str[n],"%6d",(int)cvGetReal2D(A, i, j));
+	  break;
+	default:
+	  break;
+	}
+      n += sprintf(&str[n],"\n");
+    }
+  return n;
+}
+
 
 // gets time in ms
 

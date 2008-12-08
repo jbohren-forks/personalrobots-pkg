@@ -195,10 +195,15 @@ namespace dcam
     virtual bool setHDR(bool on); // high dynamic range
     virtual bool setUniqueThresh(int val); // uniqueness threshold
     virtual bool setTextureThresh(int val); // texture threshold
+    virtual bool setHoropter(int val); // horopter offset, 0-63 for STOC
 
     virtual char *getParameters(); // download from device
-    virtual bool setParameters(char *params); // upload to device
+    virtual bool setParameters(); // upload to device
+    virtual bool setSTOCParams(uint8_t *cbuf, int cn, // upload to STOC device
+			       uint8_t *lbuf, int ln, // STOC firmware, left and right warp tables
+			       uint8_t *rbuf, int rn);
 
+    virtual int  getIncRectTable(uint8_t *buf);	// make a warp table for a STOC device
     uint64_t camGUID;		// our own GUID
     uint32_t imFirmware, camFirmware, stocFirmware;
     bool isSTOC, isVidereStereo, isColor; // true if a STOC, Videre stereo, color device
@@ -215,6 +220,7 @@ namespace dcam
     videre_proc_mode_t procMode; // STOC mode, if applicable
     dc1394color_filter_t bayerMode; // bayer color encoding 
     color_coding_t rawType;	// what type of raw image we receive
+    virtual bool store_eeprom_bytes(int addr, uint8_t *buf, int count);
   };
 
 };

@@ -56,6 +56,11 @@
 #include <highgui.h>
 
 
+// version of parameter files
+#define OST_MAJORVERSION 5
+#define OST_MINORVERSION 0
+
+
 // alignment on allocation
 #define MEMALIGN(x) memalign(16,x)
 #define MEMFREE(x) {if (x) free(x);}
@@ -253,6 +258,7 @@ namespace cam
 
     // parameters
     void extractParams(char *params); // extracts params from string and puts in vars
+    char *createParams();	// takes parameters and puts them into a string
 
     // stereo processing params
     int corrSize;		// correlation window size, assumed square

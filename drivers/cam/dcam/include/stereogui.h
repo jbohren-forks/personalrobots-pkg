@@ -14,6 +14,7 @@ extern void do_exit_cb(Fl_Menu_*, void*);
 extern void video_window_cb(Fl_Menu_*, void*);
 extern void stereo_window_cb(Fl_Menu_*, void*);
 extern void cal_window_cb(Fl_Menu_*, void*);
+extern void debug_window_cb(Fl_Menu_*, void*);
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Box.H>
 #include "calwin.h"
@@ -37,6 +38,7 @@ extern void cal_calibrate_cb(Fl_Button*, void*);
 extern void cal_save_params_cb(Fl_Button*, void*);
 extern void cal_ok_cb(Fl_Button*, void*);
 extern void cal_epipolar_cb(Fl_Button*, void*);
+extern void cal_upload_params_cb(Fl_Button*, void*);
 #include <FL/Fl_Check_Button.H>
 extern void cal_fixed_aspect_cb(Fl_Check_Button*, void*);
 extern void cal_fixed_kappa2_cb(Fl_Check_Button*, void*);
@@ -148,6 +150,7 @@ public:
   Fl_Button *save_params_button;
   Fl_Button *done_button;
   Fl_Button *epi_button;
+  Fl_Button *upload_params_button;
   Fl_Check_Button *fixed_aspect_button;
   Fl_Check_Button *fixed_kappa2_button;
   Fl_Check_Button *fixed_kappa3_button;

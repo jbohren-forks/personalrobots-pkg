@@ -8,12 +8,12 @@ class stereogui {open
   } {
     Fl_Window stereo_calibration {
       label {Open STereo} open
-      xywh {554 140 655 305} type Single labelsize 11 visible
+      xywh {554 140 655 305} type Single labelsize 11 hide
     } {
       Fl_Output info_message {
         xywh {5 275 490 25} box BORDER_BOX color 49 labelsize 11 textsize 11
       }
-      Fl_Menu_Bar {} {
+      Fl_Menu_Bar {} {open
         xywh {0 0 680 20}
       } {
         Submenu {} {
@@ -61,6 +61,11 @@ class stereogui {open
           callback cal_window_cb
           xywh {10 10 30 20}
         }
+        MenuItem {} {
+          label {Debug...}
+          callback debug_window_cb
+          xywh {20 20 30 20}
+        }
       }
       Fl_Group {} {open
         xywh {5 25 645 245}
@@ -93,7 +98,7 @@ class stereogui {open
     }
     Fl_Window cal_images {
       label {Calibration images}
-      xywh {125 804 675 295} type Single visible
+      xywh {125 804 675 295} type Single hide
     } {
       Fl_Group {} {open
         xywh {5 0 855 375}
@@ -786,7 +791,7 @@ class stereogui {open
     }
     Fl_Window cal_window {
       label Calibration
-      xywh {591 314 305 340} type Single visible
+      xywh {591 314 305 340} type Single hide
     } {
       Fl_Group {} {open
         xywh {10 20 160 300}
@@ -869,7 +874,7 @@ class stereogui {open
         }
       }
       Fl_Group {} {open
-        xywh {120 20 165 65}
+        xywh {120 20 165 290}
       } {
         Fl_Button calibrate_button {
           label Calibrate
@@ -893,6 +898,12 @@ class stereogui {open
           label {Epi check}
           callback cal_epipolar_cb
           xywh {220 50 60 25} down_box DOWN_BOX labelsize 11
+          code0 {o->user_data((void *)this);}
+        }
+        Fl_Button upload_params_button {
+          label {Upload params}
+          callback cal_upload_params_cb
+          xywh {130 270 130 40} down_box DOWN_BOX
           code0 {o->user_data((void *)this);}
         }
       }
@@ -930,7 +941,7 @@ class stereogui {open
       }
     }
     Fl_Window stereo_window {
-      label Stereo
+      label Stereo open selected
       xywh {509 587 265 260} type Single hide
     } {
       Fl_Group {} {open
@@ -975,7 +986,7 @@ class stereogui {open
         Fl_Counter {} {
           label {X off:}
           callback xoff_cb
-          xywh {75 85 55 20} type Simple labelsize 11 align 4 minimum -40 maximum 40 step 1
+          xywh {75 85 55 20} type Simple labelsize 11 align 4 minimum -4 maximum 128 step 1
         }
         Fl_Light_Button rectify_button {
           label {Do Rectify}

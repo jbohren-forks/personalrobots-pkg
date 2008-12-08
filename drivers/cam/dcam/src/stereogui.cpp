@@ -13,6 +13,7 @@ Fl_Menu_Item stereogui::menu_[] = {
  {"Video...", 0,  (Fl_Callback*)video_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Stereo...", 0,  (Fl_Callback*)stereo_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Calibrate...", 0,  (Fl_Callback*)cal_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"Debug...", 0,  (Fl_Callback*)debug_window_cb, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
@@ -1088,7 +1089,7 @@ stereogui::stereogui() {
       } // Fl_Value_Input* user_check_y
       o->end();
     } // Fl_Group* o
-    { Fl_Group* o = new Fl_Group(120, 20, 165, 65);
+    { Fl_Group* o = new Fl_Group(120, 20, 165, 290);
       { Fl_Button* o = calibrate_button = new Fl_Button(135, 20, 75, 25, "Calibrate");
         calibrate_button->down_box(FL_DOWN_BOX);
         calibrate_button->labelsize(11);
@@ -1113,6 +1114,11 @@ stereogui::stereogui() {
         epi_button->callback((Fl_Callback*)cal_epipolar_cb);
         o->user_data((void *)this);
       } // Fl_Button* epi_button
+      { Fl_Button* o = upload_params_button = new Fl_Button(130, 270, 130, 40, "Upload params");
+        upload_params_button->down_box(FL_DOWN_BOX);
+        upload_params_button->callback((Fl_Callback*)cal_upload_params_cb);
+        o->user_data((void *)this);
+      } // Fl_Button* upload_params_button
       o->end();
     } // Fl_Group* o
     { Fl_Group* o = new Fl_Group(125, 105, 180, 95);
@@ -1217,8 +1223,8 @@ stereogui::stereogui() {
       { Fl_Counter* o = new Fl_Counter(75, 85, 55, 20, "X off:");
         o->type(1);
         o->labelsize(11);
-        o->minimum(-40);
-        o->maximum(40);
+        o->minimum(-4);
+        o->maximum(128);
         o->step(1);
         o->callback((Fl_Callback*)xoff_cb);
         o->align(FL_ALIGN_LEFT);
