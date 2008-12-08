@@ -63,6 +63,8 @@ namespace cam
     StcamException(const char* msg) : std::runtime_error(msg) {}
   };
 
+  // this is now legacy, folded in to StereoData...
+
   class StereoCam
   {
   public:
@@ -81,6 +83,7 @@ namespace cam
 
     virtual bool setTextureThresh(int thresh);
     virtual bool setUniqueThresh(int thresh);
+    virtual bool setHoropter(int offset);	// set horopter offset
 
   private:
     // buffers for stereo
@@ -91,11 +94,13 @@ namespace cam
   using namespace dcam;
 
   class StereoDcam
-    : public Dcam, public StereoCam
+    : public Dcam
   {
   public:
     StereoDcam(uint64_t guid, size_t buffersize = 8);
     virtual ~StereoDcam();
+
+    StereoData *stIm;		// stereo image and processing
 
     void setFormat(dc1394video_mode_t video = DC1394_VIDEO_MODE_640x480_YUV422,
 			   dc1394framerate_t fps = DC1394_FRAMERATE_30,
@@ -115,7 +120,13 @@ namespace cam
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
+    bool setHoropter(int thresh);
 
+    // visible calls to StereoData functions
+    bool doRectify();
+    bool doDisparity();
+    bool doCalcPts();
+    bool setNumDisp(int ndisp);
 
   protected:
     // Videre camera de-interlacing

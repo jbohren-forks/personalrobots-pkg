@@ -256,6 +256,9 @@ StereoData::StereoData()
   // disparity buffer
   imDisp = NULL;
   imDispSize = 0;
+  buf = NULL;
+  flim = NULL;
+  frim = NULL;
 
   // nominal values
   imWidth = 640;
@@ -287,7 +290,49 @@ StereoData::~StereoData()
   releaseBuffers();
   free(imLeft);
   free(imRight);
+  // should free all buffers
+  MEMFREE(buf);
+  MEMFREE(flim);
+  MEMFREE(frim);
 }
+
+bool
+StereoData::setHoropter(int val)
+{
+  if (val < 0) val = 0;
+  if (val > 128) val = 128;
+  offx = val;
+  return true;
+}
+
+bool
+StereoData::setTextureThresh(int val)
+{
+  if (val < 0) val = 0;
+  if (val > 100) val = 10;
+  textureThresh = val;
+  return true;
+}
+
+bool
+StereoData::setUniqueThresh(int val)
+{
+  if (val < 0) val = 0;
+  if (val > 100) val = 10;
+  uniqueThresh = val;
+  return true;
+}
+
+bool
+StereoData::setNumDisp(int val)
+{
+  val = (val/16)*16;		// set to multiple of 16
+  if (val < 0) val = 0;
+  if (val > 256) val = 256;
+  numDisp = val;
+  return true;
+}
+
 
 void
 StereoData::setDispOffsets()
@@ -337,6 +382,72 @@ StereoData::setSize(int width, int height)
 }
 
 
+//
+// rectification and  stereo processing
+//
+
+bool
+StereoData::doRectify()
+{
+  bool res = imLeft->doRectify();
+  res = res && imRight->doRectify();
+  return res;
+}
+
+
+bool 
+StereoData::doDisparity()
+{
+  uint8_t *lim, *rim;
+
+  // first do any rectification necessary
+  doRectify();
+
+  // check if disparity is already present
+  if (hasDisparity)
+    return true;
+
+  // check if the rectified images are present
+  if (imLeft->imRectType == COLOR_CODING_NONE ||
+      imRight->imRectType == COLOR_CODING_NONE)
+    return false;
+
+  // variables
+  lim = (uint8_t *)imLeft->imRect;
+  rim = (uint8_t *)imRight->imRect;
+  int xim = imWidth;
+  int yim = imHeight;
+
+  // some parameters
+  int ftzero = 31;		// max 31 cutoff for prefilter value (31 default)
+  int dlen   = numDisp;	// number of disparities
+  int corr   = corrSize;	// correlation window size
+  int tthresh = textureThresh; // texture threshold
+  int uthresh = uniqueThresh; // uniqueness threshold, percent
+
+  // allocate buffers
+  if (!imDisp)
+    imDisp = (int16_t *)MEMALIGN(xim*yim*2);
+
+  if (!buf)
+    buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
+  if (!flim)
+    flim = (uint8_t *)MEMALIGN(xim*yim); // feature image
+  if (!frim)
+    frim = (uint8_t *)MEMALIGN(xim*yim); // feature image
+
+  // prefilter
+  do_prefilter(lim, flim, xim, yim, ftzero, buf);
+  do_prefilter(rim, frim, xim, yim, ftzero, buf);
+
+  // stereo
+  do_stereo(flim, frim, imDisp, NULL, xim, yim, 
+	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+
+  hasDisparity = true;
+  return true;
+}
+
 
 //
 // param sting parsing routines
@@ -379,6 +490,116 @@ void extract(std::string& data, std::string section,
 	}
     }
 }
+
+
+//
+// Conversion to 3D points
+// Convert to vector or image array of pts
+// Should we do disparity automatically here?
+//
+
+
+bool
+StereoData::doCalcPts()
+{
+  numPts = 0;
+  doDisparity();
+  if (!hasDisparity)
+    return false;
+
+  int ix = imDleft;
+  int iy = imDtop;
+  int ih = imDheight;
+  int iw = imDwidth;
+  int w = imWidth;
+  int h = imHeight;
+
+  if (imPtsSize < 4*w*h*sizeof(float))
+    {
+      MEMFREE(imPts);
+      imPtsSize = 4*w*h*sizeof(float);
+      imPts = (float *)MEMALIGN(imPtsSize);
+      MEMFREE(imPtsColor);
+      imPtsColor = (uint8_t *)MEMALIGN(3*w*h);
+    }
+
+  float *pt;
+  int y = iy;
+  float cx = (float)RP[3];
+  float cy = (float)RP[7];
+  float f  = (float)RP[11];
+  float itx = (float)RP[14];
+  itx *= 1.0 / (float)dpp; // adjust for subpixel interpolation
+  pt = imPts;
+      
+  for (int j=0; j<ih; j++, y++)
+    {
+      int x = ix;
+      int16_t *p = imDisp + x + y*w;
+
+      for (int i=0; i<iw; i++, x++, p++)
+	{
+	  if (*p > 0) 
+	    {
+	      float ax = (float)x + cx;
+	      float ay = (float)y + cy;
+	      float aw = 1.0 / (itx * (float)*p);
+	      *pt++ = ax*aw;	// X
+	      *pt++ = ay*aw;	// Y
+	      *pt++ = f*aw;	// Z
+	      numPts++;
+	    }
+	}
+    }
+
+  if (imLeft->imRectColorType != COLOR_CODING_NONE) // ok, have color
+    {
+      y = iy;
+      uint8_t *pcout = imPtsColor;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = imDisp + x + y*w;
+	  uint8_t *pc = imLeft->imRectColor + (x + y*w)*3;
+
+	  for (int i=0; i<iw; i++, x++, p++, pc+=3)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *(pc+1);
+		  *pcout++ = *(pc+2);
+		}
+	    }
+	}
+    }
+  else if (imLeft->imRectType != COLOR_CODING_NONE) // ok, have mono
+    {
+      y = iy;
+      uint8_t *pcout = imPtsColor;
+      for (int j=0; j<ih; j++, y++)
+	{
+	  int x = ix;
+	  int16_t *p = imDisp + x + y*w;
+	  uint8_t *pc = imLeft->imRect + (x + y*w);
+
+	  for (int i=0; i<iw; i++, p++, pc++)
+	    {
+	      if (*p > 0) 
+		{
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
+		  *pcout++ = *pc;
+		}
+	    }
+	}
+    }
+
+
+  //  printf("[Calc Pts] Number of pts: %d\n", numPts);
+  return true;
+}
+
 
 
 //

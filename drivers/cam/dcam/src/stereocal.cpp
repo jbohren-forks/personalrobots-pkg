@@ -300,6 +300,8 @@ main(int argc, char **argv)	// no arguments
 	  dev->setProcMode(pmode);
 	  debug_message("[Dcam] Starting device");
 	  dev->start();
+	  dev->setTextureThresh(sp_tthresh);
+	  dev->setUniqueThresh(sp_uthresh);
 	  isVideo = true;	// needed to keep thread running
 	  startCam = false;
 	}
@@ -2079,13 +2081,15 @@ void
 disparity_cb(Fl_Counter *w, void *x)
 {
   sp_dlen = (int)w->value();
+  if (dev)
+    dev->setNumDisp(sp_dlen);
 }
 
 void
 unique_cb(Fl_Counter *w, void *x)
 {
   sp_uthresh = (int)w->value();
-  if (dev && dev->isSTOC)
+  if (dev)
     dev->setUniqueThresh(sp_uthresh);
 }
 
@@ -2093,7 +2097,7 @@ void
 texture_cb(Fl_Counter *w, void *x)
 {
   sp_tthresh = (int)w->value();
-  if (dev && dev->isSTOC)
+  if (dev)
     dev->setTextureThresh(sp_tthresh);
 }
 
@@ -2101,7 +2105,7 @@ void
 xoff_cb(Fl_Counter *w, void *x)
 {
   sp_xoff = (int)w->value();
-  if (dev && dev->isSTOC)
+  if (dev)
     dev->setHoropter(sp_xoff);
 }
 

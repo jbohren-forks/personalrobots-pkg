@@ -53,7 +53,7 @@
 #include <cv.h>
 #include <cxmisc.h>
 #include <cvaux.h>
-#include <highgui.h>
+#include "stereolib.h"
 
 
 // version of parameter files
@@ -234,6 +234,15 @@ namespace cam
     int numDisp;		// number of search disparities, in pixels
     int offx;			// x offset of disparity search
 
+    bool setHoropter(int offset); // set horopter offset
+    bool setNumDisp(int ndisp);	// set number of disparities
+
+    // disparity and rectification functions
+    bool doRectify();		// rectify images
+    bool doDisparity();		// calculate disparity image
+    bool doCalcPts();		// calculate 3D points
+
+
     // valid stereo data rectangle
     int imDtop, imDleft;
     int imDwidth, imDheight;
@@ -266,8 +275,15 @@ namespace cam
     int horOffset;		// horopter offset
     
     // filter thresholds
-    int textureThresh;		// units???
-    int uniqueThresh;		// units???
+    int textureThresh;		// percent
+    int uniqueThresh;		// percent
+
+    bool setTextureThresh(int thresh);
+    bool setUniqueThresh(int thresh);
+
+  private:
+    // buffers for stereo
+    uint8_t *buf, *flim, *frim;
 
   }; 
 

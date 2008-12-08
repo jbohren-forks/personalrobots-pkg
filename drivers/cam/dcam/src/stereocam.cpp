@@ -145,6 +145,13 @@ StereoCam::setUniqueThresh(int thresh)
   return true;
 }
 
+bool
+StereoCam::setHoropter(int val)
+{
+  stIm->offx = val;
+  return true;
+}
+
 
 //
 // Conversion to 3D points
@@ -264,7 +271,10 @@ StereoCam::doCalcPts()
 StereoDcam::StereoDcam(uint64_t guid, size_t buffersize)
   : Dcam(guid,buffersize)
 {
-  // currently just set up a Videre stereo cam
+  // set up stereo image data
+  stIm = new StereoData();
+  
+  // set up a Videre stereo cam
   if (isVidereStereo)
     {
       char *params;
@@ -282,8 +292,10 @@ StereoDcam::StereoDcam(uint64_t guid, size_t buffersize)
 
 StereoDcam::~StereoDcam()
 {
+  delete stIm;
 }
  
+
 // format of image
 
 void 
@@ -438,16 +450,31 @@ StereoDcam::setRegister(uint64_t offset, uint32_t value)
 bool
 StereoDcam::setTextureThresh(int thresh)
 {
-  StereoCam::setTextureThresh(thresh);
+  stIm->setTextureThresh(thresh);
   return Dcam::setTextureThresh(thresh);
 }
 
 bool
 StereoDcam::setUniqueThresh(int thresh)
 {
-  StereoCam::setUniqueThresh(thresh);
+  stIm->setUniqueThresh(thresh);
   return Dcam::setUniqueThresh(thresh);
 }
+
+bool
+StereoDcam::setHoropter(int val)
+{
+  stIm->setHoropter(val);
+  return Dcam::setHoropter(val);
+}
+
+bool
+StereoDcam::setNumDisp(int val)
+{
+  stIm->setNumDisp(val);	
+  return false;			// can't set number of disparities in STOC
+}
+
 
 
 //
@@ -547,4 +574,10 @@ StereoDcam::stereoDeinterlace2(uint8_t *src, uint8_t **d1, size_t *s1,
     }
 }
 
+
+
+// visible calls
+bool StereoDcam::doDisparity() { return stIm->doDisparity(); }
+bool StereoDcam::doRectify() { return stIm->doRectify(); }
+bool StereoDcam::doCalcPts() { return stIm->doCalcPts(); }
 
