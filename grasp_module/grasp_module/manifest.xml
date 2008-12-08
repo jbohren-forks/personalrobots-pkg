@@ -4,7 +4,6 @@
 <license>BSD</license>
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
-<depend package="rosTF" />
 <depend package="std_msgs" />
 <export>
   <cpp cflags="-I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags=""/>
