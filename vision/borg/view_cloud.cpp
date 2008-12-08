@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 
   cloud_viewer.set_opengl_params(w,h);
   cloud_viewer.set_look_tgt(0, 0, 0);
-  cloud_viewer.render(CloudViewer::RM_MESH);
+  cloud_viewer.render();
   SDL_GL_SwapBuffers();
 
   bool done = false;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
       {
         case SDL_MOUSEMOTION:
           cloud_viewer.mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-          cloud_viewer.render(CloudViewer::RM_MESH);
+          cloud_viewer.render();
           SDL_GL_SwapBuffers();
           break;
         case SDL_MOUSEBUTTONDOWN:
@@ -133,7 +133,7 @@ int main(int argc, char **argv)
             done = true;
           else
             cloud_viewer.keypress(event.key.keysym.sym);
-          cloud_viewer.render(CloudViewer::RM_MESH);
+          cloud_viewer.render();
           SDL_GL_SwapBuffers();
           break;
         case SDL_QUIT:
