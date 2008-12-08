@@ -330,6 +330,7 @@ StereoData::setNumDisp(int val)
   if (val < 0) val = 0;
   if (val > 256) val = 256;
   numDisp = val;
+  printf("[StereoData] Num disp set to %d\n", val);
   return true;
 }
 
@@ -430,7 +431,7 @@ StereoData::doDisparity()
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
   if (!buf)
-    buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
+    buf  = (uint8_t *)malloc(yim*2*dlen*(corr+5)); // local storage for the algorithm
   if (!flim)
     flim = (uint8_t *)MEMALIGN(xim*yim); // feature image
   if (!frim)
