@@ -37,9 +37,8 @@
 #include "robot_mechanism_controllers/endeffector_wrench_controller.h"
 
 
-static const double SPACENAV_RANGE     = 400.0;
-static const double SPACENAV_MAX_FORCE  = 20.0;
-static const double SPACENAV_MAX_TORQUE = 0.75;
+static const double JOYSTICK_MAX_FORCE  = 20.0;
+static const double JOYSTICK_MAX_TORQUE = 0.75;
 
 
 using namespace KDL;
@@ -208,14 +207,9 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
   guard_command_.set(topic + "/command");
 
   // subscribe to spacenav pos commands
-  node->subscribe("spacenav/offset", spacenav_pos_msg_,
-                  &EndeffectorWrenchControllerNode::spacenavPos, this, 1);
-  guard_command_.set("spacenav/offset");
-
-  // subscribe to spacenav rot commands
-  node->subscribe("spacenav/rot_offset", spacenav_rot_msg_,
-                  &EndeffectorWrenchControllerNode::spacenavRot, this, 1);
-  guard_command_.set("spacenav/rot_offset");
+  node->subscribe("spacenav/joy", joystick_msg_,
+                  &EndeffectorWrenchControllerNode::joystick, this, 1);
+  guard_command_.set("spacenav/joy");
 
   return true;
 }
@@ -240,22 +234,13 @@ void EndeffectorWrenchControllerNode::command()
 
 
 
-void EndeffectorWrenchControllerNode::spacenavPos()
+void EndeffectorWrenchControllerNode::joystick()
 {
-  // convert to force command
-  controller_.wrench_desi_.force(0) = spacenav_pos_msg_.x * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
-  controller_.wrench_desi_.force(1) = spacenav_pos_msg_.y * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
-  controller_.wrench_desi_.force(2) = spacenav_pos_msg_.z * SPACENAV_MAX_FORCE / SPACENAV_RANGE;
-}
-
-
-
-void EndeffectorWrenchControllerNode::spacenavRot()
-{
-  // convert to force command
-  controller_.wrench_desi_.torque(0) = spacenav_rot_msg_.x * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
-  controller_.wrench_desi_.torque(1) = spacenav_rot_msg_.y * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
-  controller_.wrench_desi_.torque(2) = spacenav_rot_msg_.z * SPACENAV_MAX_TORQUE / SPACENAV_RANGE;
+  // convert to wrench command
+  for (unsigned int i=0; i<3; i++){
+    controller_.wrench_desi_.force(i)  = joystick_msg_.axes[i]   * JOYSTICK_MAX_FORCE;
+    controller_.wrench_desi_.torque(i) = joystick_msg_.axes[i+3] * JOYSTICK_MAX_TORQUE;
+  }
 }
 
 

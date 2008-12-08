@@ -38,9 +38,8 @@
 #include "robot_kinematics/robot_kinematics.h"
 #include "robot_mechanism_controllers/endeffector_pose_controller.h"
 
-static const double SPACENAV_RANGE   = 400.0;
-static const double SPACENAV_MAX_VEL = 0.1;
-static const double SPACENAV_MAX_ROT = 0.05;
+static const double JOYSTICK_MAX_VEL = 0.1;
+static const double JOYSTICK_MAX_ROT = 0.05;
 static const double POSE_FEEDBACK    = 20.0;
 
 
@@ -215,17 +214,12 @@ bool EndeffectorPoseControllerNode::initXml(mechanism::RobotState *robot, TiXmlE
                   &EndeffectorPoseControllerNode::command, this, 1);
   guard_command_.set(topic + "/command");
 
-  // subscribe to spacenav pos commands
-  node->subscribe("spacenav/offset", spacenav_pos_msg_,
-                  &EndeffectorPoseControllerNode::spacenavPos, this, 1);
-  guard_command_.set("spacenav/offset");
+  // subscribe to joystick commands
+  node->subscribe("spacenav/joy", joystick_msg_,
+                  &EndeffectorPoseControllerNode::joystick, this, 1);
+  guard_command_.set("spacenav/joy");
 
-  // subscribe to spacenav rot commands
-  node->subscribe("spacenav/rot_offset", spacenav_rot_msg_,
-                  &EndeffectorPoseControllerNode::spacenavRot, this, 1);
-  guard_command_.set("spacenav/rot_offset");
-
-  spacenav_twist = Twist::Zero();
+  joystick_twist_ = Twist::Zero();
   return true;
 }
 
@@ -247,24 +241,17 @@ void EndeffectorPoseControllerNode::command()
 }
 
 
-void EndeffectorPoseControllerNode::spacenavPos()
+
+void EndeffectorPoseControllerNode::joystick()
 {
-  spacenav_twist.vel(0) = spacenav_pos_msg_.x * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  spacenav_twist.vel(1) = spacenav_pos_msg_.y * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  spacenav_twist.vel(2) = spacenav_pos_msg_.z * SPACENAV_MAX_VEL / SPACENAV_RANGE;
+  // convert to pose command
+  for (unsigned int i=0; i<3; i++){
+    joystick_twist_.vel(i) = joystick_msg_.axes[i]   * JOYSTICK_MAX_VEL;
+    joystick_twist_.rot(i) = joystick_msg_.axes[i+3] * JOYSTICK_MAX_ROT;
+  }
 
-  controller_.pose_desi_  = addDelta(controller_.pose_desi_, spacenav_twist);
+  controller_.pose_desi_  = addDelta(controller_.pose_desi_, joystick_twist_);
 }
-
-void EndeffectorPoseControllerNode::spacenavRot()
-{
-  spacenav_twist.rot(0) = spacenav_rot_msg_.x * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  spacenav_twist.rot(1) = spacenav_rot_msg_.y * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  spacenav_twist.rot(2) = spacenav_rot_msg_.z * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-
-  controller_.pose_desi_  = addDelta(controller_.pose_desi_, spacenav_twist);
-}
-
 
 
 }; // namespace

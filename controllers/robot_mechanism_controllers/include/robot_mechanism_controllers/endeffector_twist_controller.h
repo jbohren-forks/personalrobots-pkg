@@ -44,6 +44,7 @@
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
 #include "robot_mechanism_controllers/endeffector_wrench_controller.h"
+#include "joy/Joy.h"
 
 namespace controller {
 
@@ -92,16 +93,15 @@ class EndeffectorTwistControllerNode : public Controller
   void update();
   void command();
 
-  // callback functions for spacenav
-  void spacenavPos();
-  void spacenavRot();
+  // callback functions for joystick
+  void joystick();
   
  private:
   EndeffectorTwistController controller_;
   SubscriptionGuard guard_command_;
 
   robot_msgs::Twist twist_msg_;
-  std_msgs::Point spacenav_pos_msg_, spacenav_rot_msg_;
+  joy::Joy joystick_msg_;
 };
 
 } // namespace

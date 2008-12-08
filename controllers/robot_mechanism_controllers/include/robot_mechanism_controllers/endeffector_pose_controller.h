@@ -91,17 +91,16 @@ class EndeffectorPoseControllerNode : public Controller
   void update();
   void command();
 
-  // callback functions for spacenav
-  void spacenavPos();
-  void spacenavRot();
+  // callback functions for joystick
+  void joystick();
   
  private:
   EndeffectorPoseController controller_;
   SubscriptionGuard guard_command_;
 
   std_msgs::PoseStamped pose_msg_;
-  std_msgs::Point spacenav_pos_msg_, spacenav_rot_msg_;
-  KDL::Twist spacenav_twist;
+  joy::Joy joystick_msg_;
+  KDL::Twist joystick_twist_;
 };
 
 } // namespace

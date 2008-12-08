@@ -37,9 +37,8 @@
 #include "robot_mechanism_controllers/endeffector_twist_controller.h"
 
 
-static const double SPACENAV_RANGE   = 400.0;
-static const double SPACENAV_MAX_VEL = 10.0;
-static const double SPACENAV_MAX_ROT = 2.0;
+static const double JOYSTICK_MAX_VEL = 10.0;
+static const double JOYSTICK_MAX_ROT = 2.0;
 static const double MASS_TRANS       = 2.0;
 static const double MASS_ROT         = 0.5;
 
@@ -69,10 +68,7 @@ EndeffectorTwistController::~EndeffectorTwistController()
 bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // set disired twist to 0
-  for (unsigned int i=0; i<3; i++){
-    twist_desi_.vel(i) = 0;
-    twist_desi_.rot(i) = 0;
-  }
+  twist_desi_ = Twist::Zero();
 
   // create wrench controller
   wrench_controller_.initXml(robot, config);
@@ -220,16 +216,10 @@ bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXml
                   &EndeffectorTwistControllerNode::command, this, 1);
   guard_command_.set(topic + "/command");
 
-  // subscribe to spacenav pos commands
-  node->subscribe("spacenav/offset", spacenav_pos_msg_,
-                  &EndeffectorTwistControllerNode::spacenavPos, this, 1);
-  guard_command_.set("spacenav/offset");
-
-  // subscribe to spacenav rot commands
-  node->subscribe("spacenav/rot_offset", spacenav_rot_msg_,
-                  &EndeffectorTwistControllerNode::spacenavRot, this, 1);
-  guard_command_.set("spacenav/rot_offset");
-
+  // subscribe to joystick commands
+  node->subscribe("spacenav/joy", joystick_msg_,
+                  &EndeffectorTwistControllerNode::joystick, this, 1);
+  guard_command_.set("spacenav/joy");
 
   return true;
 }
@@ -252,22 +242,15 @@ void EndeffectorTwistControllerNode::command()
   controller_.twist_desi_.rot(2) = twist_msg_.rot.z;
 }
 
-void EndeffectorTwistControllerNode::spacenavPos()
-{
-  // convert to trans_vel command
-  controller_.twist_desi_.vel(0) = spacenav_pos_msg_.x * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  controller_.twist_desi_.vel(1) = spacenav_pos_msg_.y * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-  controller_.twist_desi_.vel(2) = spacenav_pos_msg_.z * SPACENAV_MAX_VEL / SPACENAV_RANGE;
-}
 
-void EndeffectorTwistControllerNode::spacenavRot()
+void EndeffectorTwistControllerNode::joystick()
 {
-  // convert to rot_vel
-  controller_.twist_desi_.rot(0) = spacenav_rot_msg_.x * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  controller_.twist_desi_.rot(1) = spacenav_rot_msg_.y * SPACENAV_MAX_ROT / SPACENAV_RANGE;
-  controller_.twist_desi_.rot(2) = spacenav_rot_msg_.z * SPACENAV_MAX_ROT / SPACENAV_RANGE;
+  // convert to twist command
+  for (unsigned int i=0; i<3; i++){
+    controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * JOYSTICK_MAX_VEL;
+    controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * JOYSTICK_MAX_ROT;
+  }
 }
-
 
 
 }; // namespace

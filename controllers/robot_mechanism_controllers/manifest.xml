@@ -18,6 +18,7 @@
   <depend package="tf" />
   <depend package="kdl" />
   <depend package="angles" />
+  <depend package="joy" />
   <url>http://pr.willowgarage.com</url>
   <repository>http://pr.willowgarage.com/repos</repository>
   <export>

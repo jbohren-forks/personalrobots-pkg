@@ -43,6 +43,7 @@
 #include "mechanism_model/controller.h"
 #include "tf/transform_datatypes.h"
 #include "misc_utils/advertised_service_guard.h"
+#include "joy/Joy.h"
 
 namespace controller {
 
@@ -85,16 +86,15 @@ class EndeffectorWrenchControllerNode : public Controller
   void update();
   void command();
 
-  // callback functions for spacenav
-  void spacenavPos();
-  void spacenavRot();
+  // callback functions for joystick
+  void joystick();
   
  private:
   EndeffectorWrenchController controller_;
   SubscriptionGuard guard_command_;
 
   robot_msgs::Wrench wrench_msg_;
-  std_msgs::Point spacenav_pos_msg_, spacenav_rot_msg_;
+  joy::Joy joystick_msg_;
 };
 
 } // namespace
