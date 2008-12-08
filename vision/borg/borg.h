@@ -11,24 +11,27 @@
 namespace borg
 {
 
+extern bool g_silent;
+
 class Borg
 {
 public:
-  const static uint32_t INIT_CAM   = 0x1;
-  const static uint32_t INIT_STAGE = 0x2;
+  const static uint32_t INIT_CAM    = 0x1;
+  const static uint32_t INIT_STAGE  = 0x2;
+  const static uint32_t INIT_SILENT = 0x4;
 
   Borg(uint32_t opts);
   ~Borg();
   
   Cam *cam;
   Stage *stage;
-  bool scan();
  
   class Centroid
   {
   public:
     float col;
     int row, val, noisy;
+    std::vector<int> cluster;
     Centroid(float _col, int _row, int _val)
     : col(_col), row(_row), val(_val), noisy(0) { }
   };
@@ -68,7 +71,10 @@ public:
       r(_r), g(_g), b(_b) { }
   };
   
-  void extract(std::list<Image *> &images);
+  void scan(std::list<Image *> &images);
+  void saveScan(std::list<Image *> &images, const char *prefix);
+  void extract(std::list<Image *> &images, bool show_gui = true);
+  void sensedPoints(std::list<Image *> &images, std::vector<SensedPoint> &pts);
   void printExtraction(std::list<Image *> &images);
   void project(const std::vector<SensedPoint> &sensed,
                std::vector<ProjectedPoint> &projected);
@@ -107,6 +113,7 @@ private:
   uint32_t image_queue_size;
   int laser_thresh;
   double tx, ty, tz, enc_offset, laser_rot;
+  double max_stripe_width;
 };
 
 }

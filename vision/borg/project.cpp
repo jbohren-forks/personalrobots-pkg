@@ -22,7 +22,7 @@ int main(int argc, char **argv)
        p != projection.end(); ++p)
     printf("%.3f %.3f %.3f 0 0 0 %.3f %.3f %.3f 0\n", 
            p->x, p->y, p->z,
-           p->r / 255.0, 0.3 /*p->g / 255.0*/, p->b / 255.0);
+           p->r / 255.0, p->g / 255.0, p->b / 255.0);
   return 0;
 }
 

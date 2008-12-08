@@ -25,11 +25,15 @@ using boost::format;
 using std::runtime_error;
 using NEWMAT::Matrix;
 
+bool borg::g_silent = false;
+
 Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
   left(50), right(50), scan_duty(700), return_duty(600),
   map_x(NULL), map_y(NULL), image_queue_size(15), laser_thresh(10),
-  tx(1), ty(0), tz(0), enc_offset(0), laser_rot(0)
+  tx(1), ty(0), tz(0), enc_offset(0), laser_rot(0), max_stripe_width(5)
 {
+  if (opts & INIT_SILENT)
+    g_silent = true; // don't print diagnostic / progress information 
   string cfg_path = ros::get_package_path("borg");
   cfg_path += "/borg-config";
   FILE *f = fopen(cfg_path.c_str(), "r");
@@ -75,6 +79,8 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
       laser_thresh = atoi(value);
     else if (!strcmp(key, "image_queue_size"))
       image_queue_size = atoi(value);
+    else if (!strcmp(key, "max_stripe_width" ))
+      max_stripe_width = atof(value);
     else if (!strcmp(key, "cam"))
       cam_str = string(value);
     else if (!strncmp(key, "cam_", 4))
@@ -91,7 +97,6 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
   {
     if (cam_str == string("dc1394"))
     {
-      printf("calling dc1394 init\n");
       cam = new CamDC1394();
       if (!cam->init())
         throw std::runtime_error("unable to init camera.\n");
@@ -141,8 +146,9 @@ Borg::~Borg()
     cvReleaseMat(&map_y);
 }
 
-bool Borg::scan()
+void Borg::scan(list<Image *> &images)
 {
+  images.clear();
   uint8_t *flush_raster = new uint8_t[640*480];
   cam->startImageStream();
   cam->prepareStill();
@@ -161,53 +167,61 @@ bool Borg::scan()
   stage->gotoPosition(right, false);
   stage->laser(true);
   ros::Time t_start(ros::Time::now());
-  list<Image *> images;
+  images.push_back(still_image);
   double pos = 0;
-  printf("right = %f\n", right);
   for (ros::Time t_now(ros::Time::now()); 
        (t_now - t_start).to_double() < 15 && fabs(pos - right) > 0.5;
        t_now = ros::Time::now())
   {
     pos = stage->getPosition(1.0);
-    //printf("%.3f %.3f\n", t_now.to_double(), pos);
     Image *image = new Image(new uint8_t[640*480], 
                              ros::Time::now().to_double(), pos);
     if (!cam->savePhoto(image->raster))
     {
-      printf("woah! couldn't grab photo\n");
       cam->stopImageStream();
-      return false;
+      throw runtime_error("couldn't grab photo");
     }
     images.push_back(image);
   }
   stage->laser(false);
   double dt = (ros::Time::now() - t_start).to_double();
-  printf("captured %d images in %.3f seconds (%.3f fps)\n", 
-         images.size(), dt, images.size() / dt);
+  if (!g_silent)
+    printf("captured %d images in %.3f seconds (%.3f fps)\n", 
+           images.size(), dt, images.size() / dt);
   cam->stopImageStream();
+  delete[] flush_raster;
+}
+
+void Borg::saveScan(list<Image *> &images, const char *prefix)
+{
+  if (images.empty())
+    return;
   // flush to disk
   for (list<Image *>::iterator i = images.begin(); i != images.end(); ++i)
   {
     char fname[100];
-    snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm", 
-             (*i)->t, (*i)->angle);
-    //printf("writing to [%s]\n", fname);
+    snprintf(fname, sizeof(fname), "%s_%.6f_%.6f.pgm", 
+             prefix, (*i)->t, (*i)->angle);
     if (!cam->writePgm(fname, (*i)->raster))
-      throw std::runtime_error("couldn't open pgm file for output");
+      throw runtime_error(string("couldn't write to ") + string(prefix));
+      /*
     delete[] (*i)->raster;
     delete *i;
+    */
   }
+  /*
   char fname[100];
   snprintf(fname, sizeof(fname), "out/img_%.6f_%.6f.pgm",
            still_image->t, still_image->angle);
   if (!cam->writePgm(fname, still_image->raster))
     throw std::runtime_error("couldn't open pgm file for still image output");
-  if (!cam->writePgm("out/still.pgm", still_image->raster))
-    throw std::runtime_error("couldn't open pgm file for still image output");
+  */
+  if (!cam->writePgm("out/still.pgm", (*images.begin())->raster))
+    throw runtime_error("couldn't open pgm file for still image output");
+    /*
   images.clear();
-  delete[] flush_raster;
   delete still_image;
-  return true;
+  */
 }
 
 bool Borg::calib_set(const char *setting, double value)
@@ -231,9 +245,10 @@ bool Borg::calib_set(const char *setting, double value)
   return true;
 }
 
-void Borg::extract(std::list<Image *> &images)
+void Borg::extract(std::list<Image *> &images, bool show_gui)
 {
-  cvNamedWindow("debug");
+  if (show_gui)
+    cvNamedWindow("debug");
   if (!map_x || !map_y)
   {
     map_x = cvCreateMat(480, 640, CV_32FC1);
@@ -242,6 +257,10 @@ void Borg::extract(std::list<Image *> &images)
   }
   deque<IplImage *> image_deque;
   ros::Time t_start(ros::Time::now());
+  IplImage *still_remapped;
+  vector< vector< vector<double> > > hits(640); // reject blinking stuff
+  for (int row = 0; row < 480; row++)
+    hits[row].resize(640); // prepare histogram
   for (std::list<Image *>::iterator image = images.begin();
        image != images.end(); ++image)
   {
@@ -252,7 +271,11 @@ void Borg::extract(std::list<Image *> &images)
     cvReleaseImageHeader(&cv_image);
     //cvSaveImage("remap.jpg", remapped);
     if (image == images.begin())
-      cvSaveImage("first_image.jpg", remapped);
+    {
+      cvSaveImage("still_remapped.jpg", remapped);
+      still_remapped = remapped; // pull intensity values from this one
+      continue; // this one will be brighter; don't difference it
+    }
     if (image_deque.size() == 0)
     {
       image_deque.push_back(remapped);
@@ -264,17 +287,17 @@ void Borg::extract(std::list<Image *> &images)
     CvScalar ref_sum = cvSum(ref_image);
     CvScalar tgt_sum = cvSum(remapped);
     cvConvertScale(ref_image, ref_scaled, tgt_sum.val[0] / ref_sum.val[0]);
-
-    //printf("%f %f\n", ref_sum.val[0], tgt_sum.val[0]);
-    //printf("ref sum = %f tgt sum = %f\n", ref_sum.val[0], tgt_sum.val[0]);
     cvSetZero(diff_image);
     for (int row = 0; row < 480; row++)
       for (int col = 0; col < 640; col++)
       {
         int cur = CV_IMAGE_ELEM(remapped, unsigned char, row, col);
         int ref = CV_IMAGE_ELEM(ref_scaled, unsigned char, row, col);
-        if (cur - ref > laser_thresh && ref < 200) // laser always injects light
+        if (cur - ref > laser_thresh) // laser always injects light
+        {
           CV_IMAGE_ELEM(diff_image, unsigned char, row, col) = cur - ref;
+          hits[row][col].push_back((*image)->angle);
+        }
       }
     for (int row = 0; row < 480; row++)
     {
@@ -302,6 +325,7 @@ void Borg::extract(std::list<Image *> &images)
       if (clusters.size() == 0)
         continue; // nothing happened on this row.
       float max_avg = -1, max_centroid = -1;
+      vector<int> max_cluster;
       for (size_t c = 0; c < clusters.size(); c++)
       {
         float avg = 0, centroid = 0;
@@ -318,10 +342,13 @@ void Borg::extract(std::list<Image *> &images)
         {
           max_avg = avg;
           max_centroid = centroid;
+          max_cluster = clusters[c];
         }
       }
       (*image)->centroids.push_back(Centroid(max_centroid, row, 
-            CV_IMAGE_ELEM(ref_scaled, unsigned char, row, (int)max_centroid)));
+            CV_IMAGE_ELEM(still_remapped, unsigned char, row,
+                          (int)max_centroid)));
+      (*image)->centroids.back().cluster = max_cluster;
     }
     // forward pass
     const double MIN_SLOPE = 0.5;
@@ -354,20 +381,24 @@ void Borg::extract(std::list<Image *> &images)
       else
         ++c;
     }
-    IplImage *cent_image = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 3);
-    cvConvertImage(diff_image, cent_image);
-    for (vector<Centroid>::iterator c = (*image)->centroids.begin();
-         c != (*image)->centroids.end(); ++c)
+    if (show_gui)
     {
-      if (c->noisy == 0)
-        CV_IMAGE_ELEM(cent_image, unsigned char, c->row, 
-                      3 * ((int)c->col)+1) = 255;
-      else
-        CV_IMAGE_ELEM(cent_image, unsigned char, c->row,
-                      3 * ((int)c->col)+2) = 255;
+      IplImage *cent_image = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 3);
+      cvConvertImage(diff_image, cent_image);
+      for (vector<Centroid>::iterator c = (*image)->centroids.begin();
+           c != (*image)->centroids.end(); ++c)
+      {
+        if (c->noisy == 0)
+          CV_IMAGE_ELEM(cent_image, unsigned char, c->row, 
+                        3 * ((int)c->col)+1) = 255;
+        else
+          CV_IMAGE_ELEM(cent_image, unsigned char, c->row,
+                        3 * ((int)c->col)+2) = 255;
+      }
+      cvShowImage("debug", cent_image);//diff_image);
+      cvWaitKey(10);
+      cvReleaseImage(&cent_image);
     }
-    cvShowImage("debug", cent_image);//diff_image);
-    cvWaitKey(10);
     cvReleaseImage(&diff_image);
     cvReleaseImage(&ref_scaled);
     if (images.size() > image_queue_size)
@@ -377,8 +408,9 @@ void Borg::extract(std::list<Image *> &images)
     }
     image_deque.push_back(remapped);
   }
-  printf("processed %d images in %.3f seconds\n", images.size(), 
-         (ros::Time::now() - t_start).to_double());
+  if (!g_silent)
+    printf("processed %d images in %.3f seconds\n", images.size(), 
+           (ros::Time::now() - t_start).to_double());
   // purge the queue
   while (!image_deque.empty())
   {
@@ -386,6 +418,38 @@ void Borg::extract(std::list<Image *> &images)
     image_deque.pop_front();
     cvReleaseImage(&image);
   }
+  cvReleaseImage(&still_remapped);
+  // now, go through and prune out pixels of the image that returned 
+  // a wide range of disparity
+  for (int row = 0; row < 480; row++)
+    for (int col = 0; col < 640; col++)
+    {
+      sort(hits[row][col].begin(), hits[row][col].end());
+      if (hits[row][col].size())
+      {
+        double diff = hits[row][col].back() - hits[row][col].front();
+        if (diff > max_stripe_width)
+        {
+          // go through and blow away all clusters which touched this point
+          for (list<Image *>::iterator image = images.begin();
+               image != images.end(); ++image)
+            for (vector<Centroid>::iterator c = (*image)->centroids.begin();
+                 c != (*image)->centroids.end();)
+            {
+              bool bad_centroid = false;
+              if (c->row == row)
+                for (vector<int>::iterator j = c->cluster.begin();
+                     j != c->cluster.end(); ++j)
+                  if (*j == col)
+                    bad_centroid = true;
+              if (bad_centroid)
+                c = (*image)->centroids.erase(c);
+              else
+                ++c;
+            }
+        }
+      }
+    }
 }
 
 Borg::Image::Image(const char *filename)
@@ -694,7 +758,19 @@ void Borg::CalibrationScene::writeFile(const char *filename)
        p != proj.end(); ++p)
     fprintf(f,"%.3f %.3f %.3f 0 0 0 %.3f %.3f %.3f 0\n", 
             p->x, p->y, p->z,
-            p->r / 255.0, 0.3, p->b / 255.0);
+            p->r / 255.0, p->g / 255.0, p->b / 255.0);
   fclose(f);
+}
+
+void Borg::sensedPoints(list<Image *> &images, vector<SensedPoint> &pts)
+{
+  for (list<Image *>::iterator image = images.begin();
+       image != images.end(); ++image)
+  {
+    Image *img = *image;
+    for (vector<Centroid>::iterator c = img->centroids.begin();
+         c != img->centroids.end(); ++c)
+      pts.push_back(SensedPoint(img->angle, c->col, c->row, c->val, c->val, c->val));
+  }
 }
 

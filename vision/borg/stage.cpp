@@ -4,6 +4,7 @@
 #include "stage.h"
 #include <pthread.h>
 #include "ros/time.h"
+#include "borg.h"
 
 using std::string;
         
@@ -34,7 +35,8 @@ Stage::~Stage()
 
 void Stage::set(string key, string value)
 {
-  printf("setting %s to %s\n", key.c_str(), value.c_str());
+  if (!borg::g_silent)
+    printf("setting %s to %s\n", key.c_str(), value.c_str());
   if (key == "host")
     assign_host(value);
 }
@@ -64,7 +66,8 @@ bool Stage::gotoPosition(double deg, bool blocking, double max_wait)
       if (stage_state == STAGE_IDLE  || 
           stage_state == STAGE_ERROR)
       {
-        printf("got there\n");
+        if (!borg::g_silent)
+          printf("got there\n");
         break;
       }
       usleep(100);
@@ -146,12 +149,14 @@ void Stage::assign_host(std::string host)
       throw std::runtime_error("aborting due to unresolved host\n");
     }
     stage_addr.sin_addr.s_addr = *((unsigned long *)hp->h_addr);
-    printf("resolved [%s] to [%s]\n", 
-           host.c_str(), inet_ntoa(stage_addr.sin_addr));
+    if (!borg::g_silent)
+      printf("resolved [%s] to [%s]\n", 
+             host.c_str(), inet_ntoa(stage_addr.sin_addr));
   }
   else
     stage_addr.sin_addr.s_addr = inet_addr(host.c_str());
-  printf("stage address: %s\n", inet_ntoa(stage_addr.sin_addr));
+  if (!borg::g_silent)
+    printf("stage address: %s\n", inet_ntoa(stage_addr.sin_addr));
 }
 
 void *Stage::s_recv_thread(void *parent)
@@ -242,7 +247,8 @@ void Stage::setDuty(long duty)
 {
   if (duty < 0) duty = 0;
   else if (duty > MAX_DUTY) duty = MAX_DUTY;
-  printf("set duty %ld\n", duty);
+  if (!borg::g_silent)
+    printf("set duty %ld\n", duty);
   uint8_t *d = (uint8_t *)&duty;
   uint8_t pkt[7];
   pkt[0] = CMD_SET_DUTY;

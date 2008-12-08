@@ -5,6 +5,7 @@
 #include "dc1394/dc1394.h"
 #include "ros/time.h"
 #include "cam_dc1394.h"
+#include "borg.h"
 
 using std::list;
 using namespace borg;
@@ -48,7 +49,6 @@ bool CamDC1394::_shutdown()
 
 bool CamDC1394::_init()
 {
-  printf("camdc1394 init\n");
   dc = dc1394_new();
   dc1394camera_list_t *cams = NULL;
   ENSURE(dc1394_camera_enumerate(dc, &cams));
@@ -58,13 +58,15 @@ bool CamDC1394::_init()
     printf("bogus. no 1394 cameras found.\n");
     return false;
   }
-  for (uint32_t i = 0; i < cams->num; i++)
-    printf("cam %d: %llu-%u\n", i, cams->ids[i].guid, cams->ids[i].unit);
+  if (!g_silent)
+    for (uint32_t i = 0; i < cams->num; i++)
+      printf("cam %d: %llu-%u\n", i, cams->ids[i].guid, cams->ids[i].unit);
   cam = dc1394_camera_new(dc, cams->ids[0].guid);
   dc1394_camera_free_list(cams);
   ENSURE_NOTNULL(cam);
 
-  dc1394_camera_print_info(cam, stdout);
+  if (!g_silent)
+    dc1394_camera_print_info(cam, stdout);
   ENSURE(dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B));
   ENSURE(dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800));
   ENSURE(dc1394_video_set_mode(cam, DC1394_VIDEO_MODE_FORMAT7_0));
@@ -87,13 +89,16 @@ bool CamDC1394::_init()
   }
   uint32_t sh1, sh2, g1, g2, ga1, ga2, b1, b2;
   dc1394_feature_get_boundaries(cam, DC1394_FEATURE_SHUTTER, &sh1, &sh2);
-  printf("shutter range: %d to %d\n", sh1, sh2);
   dc1394_feature_get_boundaries(cam, DC1394_FEATURE_GAIN, &g1, &g2);
-  printf("gain range: %d to %d\n", g1, g2);
   dc1394_feature_get_boundaries(cam, DC1394_FEATURE_GAMMA, &ga1, &ga2);
-  printf("gamma range: %d to %d\n", ga1, ga2);
   dc1394_feature_get_boundaries(cam, DC1394_FEATURE_BRIGHTNESS, &b1, &b2);
-  printf("brightness range: %d to %d\n", b1, b2);
+  if (!g_silent)
+  {
+    printf("shutter range: %d to %d\n", sh1, sh2);
+    printf("gain range: %d to %d\n", g1, g2);
+    printf("gamma range: %d to %d\n", ga1, ga2);
+    printf("brightness range: %d to %d\n", b1, b2);
+  }
   /*
   printf("turning off camera transmission...\n");
   ros::Time t_end(ros::Time::now());
@@ -161,7 +166,8 @@ bool CamDC1394::_stopImageStream()
 
 bool CamDC1394::set(const char *setting, uint32_t value)
 {
-  printf("setting %s to %d\n", setting, value);
+  if (!g_silent)
+    printf("setting %s to %d\n", setting, value);
   if (!strcmp(setting, "shutter"))
     scan_shutter = value;
   else if (!strcmp(setting, "gain"))

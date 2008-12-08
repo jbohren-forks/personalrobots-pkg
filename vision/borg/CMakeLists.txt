@@ -13,8 +13,11 @@ pkg_check_modules(SDL REQUIRED sdl)
 include_directories(${SDL_INCLUDE_DIRS})
 link_directories(${SDL_LIBRARY_DIRS})
 
-#rospack_add_executable(scan scan.cpp)
-#target_link_libraries(scan borg)
+rospack_add_executable(scan scan.cpp)
+target_link_libraries(scan borg)
+
+rospack_add_executable(scan_pipeline scan_pipeline.cpp)
+target_link_libraries(scan_pipeline borg)
 
 #rospack_add_executable(home home.cpp)
 #target_link_libraries(home borg pthread)
@@ -28,14 +31,14 @@ link_directories(${SDL_LIBRARY_DIRS})
 #rospack_add_executable(scan_enc_test scan_enc_test.cpp)
 #target_link_libraries(scan_enc_test borg pthread)
 
-rospack_add_executable(extract extract.cpp)
-target_link_libraries(extract borg pthread)
+#rospack_add_executable(extract extract.cpp)
+#target_link_libraries(extract borg pthread)
 
-rospack_add_executable(project project.cpp)
-target_link_libraries(project borg pthread)
+#rospack_add_executable(project project.cpp)
+#target_link_libraries(project borg pthread)
 
-rospack_add_executable(calibrate calibrate.cpp)
-target_link_libraries(calibrate borg pthread)
+#rospack_add_executable(calibrate calibrate.cpp)
+#target_link_libraries(calibrate borg pthread)
 
 #rospack_add_executable(view view.cpp)
 #target_link_libraries(view borg)
