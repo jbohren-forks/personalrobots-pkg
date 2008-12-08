@@ -31,6 +31,9 @@ target_link_libraries(scan_pipeline borg)
 #rospack_add_executable(scan_enc_test scan_enc_test.cpp)
 #target_link_libraries(scan_enc_test borg pthread)
 
+rospack_add_executable(view_cloud view_cloud.cpp)
+target_link_libraries(view_cloud cloud_viewer)
+
 #rospack_add_executable(extract extract.cpp)
 #target_link_libraries(extract borg pthread)
 

@@ -7,4 +7,5 @@
   <depend package="sdl"/>
   <depend package="opencv_latest"/>
   <depend package="newmat10"/>
+  <depend package="cloud_viewer"/>
 </package>

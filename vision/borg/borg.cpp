@@ -269,7 +269,6 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
     IplImage *remapped = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 1);
     cvRemap(cv_image, remapped, map_x, map_y);
     cvReleaseImageHeader(&cv_image);
-    //cvSaveImage("remap.jpg", remapped);
     if (image == images.begin())
     {
       cvSaveImage("still_remapped.jpg", remapped);
@@ -505,10 +504,10 @@ void Borg::project(const vector<SensedPoint> &sensed,
                    vector<ProjectedPoint> &projected)
 {
   projected.clear();
-  for (vector<SensedPoint>::const_iterator p = sensed.begin(); p != sensed.end(); ++p)
+  for (vector<SensedPoint>::const_iterator p = sensed.begin();
+       p != sensed.end(); ++p)
   {
     // compute pixel ray
-    //printf("x0 = %f y0 = %f fx = %f fy = %f\n", x0, y0, fx, fy); exit(1);
     const double xc = (p->col - x0) / fx;
     const double yc = (p->row - y0) / fy;
     const double ray_norm = sqrt(xc*xc + yc*yc + 1);
@@ -518,12 +517,9 @@ void Borg::project(const vector<SensedPoint> &sensed,
     const double stationary_laser_norm[3] = { 1, 0, 0 };
     rotate_y(enc_offset + p->angle * 3.14159 / 180.0, 
              stationary_laser_norm, laser);
-    //printf("%f %f %f\n", ray[0], ray[1], ray[2]);
-    //printf("%f %f %f %f %f %f\n", enc_offset + p->angle * 3.14159 / 180.0, 
-    //       enc_offset, p->angle, laser[0], laser[1], laser[2]);
+    // calculate intersection
     const double t =  (    tx*laser[0] +     ty*laser[1] +     tz*laser[2]) /
                       (ray[0]*laser[0] + ray[1]*laser[1] + ray[2]*laser[2]);
-    //printf("%f\n", t);
     projected.push_back(ProjectedPoint(t * ray[0], t * ray[1], t * ray[2],
                                        p->row, p->col, p->r, p->g, p->b));
   }
