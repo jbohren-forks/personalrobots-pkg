@@ -38,7 +38,7 @@
 #include <ros/node.h>
 
 // For transform support
-#include <rosTF/rosTF.h>
+#include <tf/transform_listener.h>
 
 #include <std_msgs/PointCloud.h>
 #include <std_msgs/Planner2DGoal.h>
@@ -65,7 +65,7 @@ public:
 
   void doOneCycle();
 
-  rosTFClient tf_;
+  tf::TransformListener tf_;
 private:
 
   MDPConfig MDPCfg;
@@ -91,7 +91,7 @@ private:
 };
 
 Sbpl2DNav::Sbpl2DNav(void): ros::node("sbpl_2dnav"), 
-                            tf_(*this, true, 1 * 1000000000ULL, 0ULL) 
+                            tf_(*this, true) 
 {
   last_pose_x_ = -1;
   last_pose_y_ = -1;
@@ -269,32 +269,28 @@ void Sbpl2DNav::doOneCycle() {
   //first update pose
   
   // Get the current robot pose in the map frame
-  libTF::TFPose2D robot_pose, global_pose;
-  robot_pose.x = 0;
-  robot_pose.y = 0;
-  robot_pose.yaw = 0;
-  robot_pose.frame = "base";
-  robot_pose.time = 0; // request most recent pose
+  tf::Stamped<tf::Pose> robot_pose(tf::Pose(tf::Quaternion(0,0,0), tf::Point(0,0,0)), ros::Time(), "base_link");
+  tf::Stamped<tf::Pose> global_pose;
   //robot_pose_.time = laserMsg.header.stamp.sec * 1000000000ULL + 
   //        laserMsg.header.stamp.nsec; ///HACKE FIXME we should be able to get time somewhere else
   try
   {
-    global_pose = tf_.transformPose2D("map", robot_pose);
+    tf_.transformPose("map", robot_pose, global_pose);
   }
-  catch(libTF::TransformReference::LookupException& ex)
+  catch(tf::LookupException& ex)
   {
     puts("no global->local Tx yet");
     return;
   }
-  catch(libTF::TransformReference::ExtrapolateException& ex)
+  catch(tf::ExtrapolationException& ex)
   {
     // this should never happen
     puts("WARNING: extrapolation failed!");
     return;
   }
 
-  int mx = global_pose.x/.1;
-  int my = global_pose.y/.1;
+  int mx = global_pose.getOrigin().x()/0.1;
+  int my = global_pose.getOrigin().y()/0.1;
 
   if(abs(last_pose_x_-mx) >= NEW_POSE_REPLAN_THRESHOLD ||
      abs(last_pose_y_-my) >= NEW_POSE_REPLAN_THRESHOLD) {
