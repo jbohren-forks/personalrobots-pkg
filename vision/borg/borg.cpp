@@ -15,6 +15,7 @@
 #include "newmat10/newmat.h"
 #include "newmat10/newmatio.h"
 #include "newmat10/newmatap.h"
+#include <boost/thread/thread.hpp>
 
 using namespace borg;
 using std::string;
@@ -249,6 +250,21 @@ bool Borg::calib_set(const char *setting, double value)
   return true;
 }
 
+void remap_worker(std::list<Borg::Image *> &images, CvMat *map_x, CvMat *map_y)
+{
+  printf("in worker, size = %d\n", images.size());
+  for (std::list<Borg::Image *>::iterator image = images.begin();
+       image != images.end(); ++image)
+  {
+    IplImage *cv_image = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 1);
+    cvSetData(cv_image, (*image)->raster, 640);
+    (*image)->remapped = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 1);
+    cvRemap(cv_image, (*image)->remapped, map_x, map_y);
+    cvReleaseImageHeader(&cv_image);
+  }
+  printf("leaving worker, size = %d\n", images.size());
+}
+
 void Borg::extract(std::list<Image *> &images, bool show_gui)
 {
   if (show_gui)
@@ -265,15 +281,24 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
   vector< vector< vector<double> > > hits(640); // reject blinking stuff
   for (int row = 0; row < 480; row++)
     hits[row].resize(640); // prepare histogram
-  for (std::list<Image *>::iterator image = images.begin();
+  // split the images list into multiple chunks
+  const int NUM_WORKERS = 4;
+  list<Image *> work[NUM_WORKERS];
+  int work_idx = 0;
+  for (list<Image *>::iterator image = images.begin();
        image != images.end(); ++image)
   {
-    IplImage *cv_image = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 1);
-    cvSetData(cv_image, (*image)->raster, 640);
-    (*image)->remapped = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 1);
-    cvRemap(cv_image, (*image)->remapped, map_x, map_y);
-    cvReleaseImageHeader(&cv_image);
+    work[work_idx].push_back(*image);
+    if (++work_idx >= NUM_WORKERS)
+      work_idx = 0;
   }
+  // farm out these chunks to all cores
+  boost::thread workers[NUM_WORKERS];
+  for (int i = 0; i < NUM_WORKERS; i++)
+    workers[i] = boost::thread(remap_worker, boost::ref(work[i]), map_x, map_y);
+  // bring threads back together
+  for (int i = 0; i < NUM_WORKERS; i++)
+    workers[i].join();
   for (std::list<Image *>::iterator image = images.begin();
        image != images.end(); ++image)
   {
