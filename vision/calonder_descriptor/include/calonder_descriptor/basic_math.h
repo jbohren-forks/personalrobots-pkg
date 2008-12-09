@@ -1,6 +1,8 @@
 #ifndef FEATURES_BASIC_MATH_H
 #define FEATURES_BASIC_MATH_H
 
+#include <cmath>
+
 namespace features {
 
 inline void add(int size, const float* src1, const float* src2, float* dst)
