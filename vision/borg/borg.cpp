@@ -31,7 +31,7 @@ bool borg::g_silent = false;
 Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
   left(50), right(50), scan_duty(700), return_duty(600),
   map_x(NULL), map_y(NULL), image_queue_size(15), laser_thresh(10),
-  tx(1), ty(0), tz(0), enc_offset(0), laser_rot(0), max_stripe_width(5),
+  tx(1), ty(0), tz(0), enc_offset(0), laser_roll(0), max_stripe_width(5),
   tilt(30)
 {
   if (opts & INIT_SILENT)
@@ -242,7 +242,7 @@ bool Borg::calib_set(const char *setting, double value)
   else if (!strcmp(setting, "ty")) ty = value;
   else if (!strcmp(setting, "tz")) tz = value;
   else if (!strcmp(setting, "enc_offset")) enc_offset = value;
-  else if (!strcmp(setting, "laser_rot" )) laser_rot  = value;
+  else if (!strcmp(setting, "laser_roll")) laser_roll = value;
   else
     throw std::runtime_error((format("unknown calibration setting %s") % 
                               setting).str());
@@ -270,9 +270,14 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
   {
     IplImage *cv_image = cvCreateImageHeader(cvSize(640, 480), IPL_DEPTH_8U, 1);
     cvSetData(cv_image, (*image)->raster, 640);
-    IplImage *remapped = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 1);
-    cvRemap(cv_image, remapped, map_x, map_y);
+    (*image)->remapped = cvCreateImage(cvSize(640, 480), IPL_DEPTH_8U, 1);
+    cvRemap(cv_image, (*image)->remapped, map_x, map_y);
     cvReleaseImageHeader(&cv_image);
+  }
+  for (std::list<Image *>::iterator image = images.begin();
+       image != images.end(); ++image)
+  {
+    IplImage *remapped = (*image)->remapped;
     if (image == images.begin())
     {
       cvSaveImage("still_remapped.jpg", remapped);
@@ -560,7 +565,7 @@ void Borg::loadExtractionFile(const char *filename,
   fclose(f);
 }
 
-//#define SHOW_IMAGES
+#define SHOW_IMAGES
 
 void Borg::calibrate(const double size, const uint32_t x, const uint32_t y,
                      const list<string> &filename_prefixes)
@@ -613,13 +618,13 @@ void Borg::calibrate(const double size, const uint32_t x, const uint32_t y,
     throw runtime_error("couldn't find checkerboards on any scenes");
   // now, we hammer on the scenes to make them more reasonable
   // estimate gradient in our directions
-  const double t_step = 0.0001, enc_step = 0.001;
+  const double t_step = 0.001, enc_step = 0.01, roll_step = 0.01;
   for (int iter = 0; iter < 200; iter++)
   {
     project(scenes);
     double obj = calibration_objective(scenes);
-    printf("objective: %f  tx = %f tz = %f ofs = %f\n", 
-           obj, tx, tz, enc_offset);
+    printf("obj=%.5f tx=%.5f tz=%.5f ofs=%.5f roll=%.5f\n", 
+           obj, tx, tz, enc_offset, laser_roll);
 
     tx += t_step;
     project(scenes);
@@ -638,15 +643,23 @@ void Borg::calibrate(const double size, const uint32_t x, const uint32_t y,
     sobj = calibration_objective(scenes);
     double drot = (sobj - obj) / enc_step;
     enc_offset -= enc_step;
+    
+    laser_roll += roll_step;
+    project(scenes);
+    sobj = calibration_objective(scenes);
+    double droll = (sobj - obj) / roll_step;
+    laser_roll -= roll_step;
 
-    double grad_len = sqrt(dtx*dtx + dtz*dtz + drot*drot);
+    double grad_len = sqrt(dtx*dtx + dtz*dtz + drot*drot + droll*droll);
     dtx /= grad_len;
     dtz /= grad_len;
     drot /= grad_len;
+    droll /= grad_len;
     const double step_len = 0.001;
     tx += step_len * -dtx;
     tz += step_len * -dtz;
     enc_offset += step_len * -drot;
+    laser_roll += step_len * -droll;
   }
   scenes[0]->writeFile("final.proj");
 }
@@ -704,7 +717,7 @@ double Borg::CalibrationScene::objective()
 //  Matrix summer(3, 1);
 //  summer << 1 << 1 << 1;
   double fnorm = c_proj.SumAbsoluteValue(); //NormFrobenius(); //Matrix norms = (SP(c_proj, c_proj) * summer;
-  double obj = 2 * fnorm;
+  double obj = .8 * fnorm;
   //Matrix diff = c - c_proj;
 //  cout << c_proj;
 
@@ -726,7 +739,8 @@ double Borg::CalibrationScene::objective()
         min_dist = dist;
     }
     min_dists.push_back(min_dist);
-    //printf("             %f\n", min_dist);
+    if (rand() % 50 == 0)
+      printf("             %f\n", min_dist);
   }
   //printf("fobj = %f\n", obj);
   for (vector<double>::iterator d = min_dists.begin(); 
@@ -757,14 +771,15 @@ void Borg::CalibrationScene::projectCorners()
   {
     priority_queue<CornerProjection> q;
     // it would be smart to do an octree or whatever, but we'll brute-force it
-    double min_sq_dist = 1e100;
-    Borg::ProjectedPoint *closest = NULL;
+    //double min_sq_dist = 1e100;
+    //Borg::ProjectedPoint *closest = NULL;
     for (vector<Borg::ProjectedPoint>::iterator p = proj.begin();
          p != proj.end(); ++p)
     {
       double sq_dist = (p->row - c->row) * (p->row - c->row) +
                        (p->col - c->col) * (p->col - c->col);
       //printf("(%f, %f) -> (%d, %f) sq_dist = %f\n", c->row, c->col, p->row, p->col, sq_dist);
+      if (sq_dist < 3)
       q.push(CornerProjection(&(*p), sqrt(sq_dist)));
       /*
       if (sq_dist < min_sq_dist)
@@ -776,8 +791,10 @@ void Borg::CalibrationScene::projectCorners()
     }
     // take top 10 guys, weight according to exp(-dist)
     double wx = 0, wy = 0, wz = 0;
-    for (int i = 0; i < 10; i++)
+    int n = 0;
+    for (int i = 0; i < 10 && !q.empty(); i++)
     {
+      n++;
       CornerProjection cp = q.top();
       q.pop();
       wx += cp.pt->x;
@@ -789,9 +806,9 @@ void Borg::CalibrationScene::projectCorners()
     wy /= 10;
     wz /= 10;
     */
-    c->x = wx / 10; //closest->x;
-    c->y = wy / 10; //closest->y;
-    c->z = wz / 10; //closest->z;
+    c->x = wx / n; //closest->x;
+    c->y = wy / n; //closest->y;
+    c->z = wz / n; //closest->z;
   }
 }
     

@@ -45,6 +45,7 @@ public:
     Image(uint8_t *_raster, double _t, double _angle)
     : raster(_raster), t(_t), angle(_angle) { }
     Image(const char *filename);
+    IplImage *remapped;
   };
 
   class SensedPoint
@@ -113,10 +114,9 @@ private:
   CvMat *intrinsics, *distortion, *map_x, *map_y;
   uint32_t image_queue_size;
   int laser_thresh;
-  double tx, ty, tz, enc_offset, laser_rot;
+  double tx, ty, tz, enc_offset, laser_roll;
   double max_stripe_width;
   double tilt; // tilt of the entire assembly (it's usually aimed down a bit)
-  double laser_roll;
 };
 
 }
