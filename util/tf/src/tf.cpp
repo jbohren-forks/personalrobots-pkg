@@ -662,6 +662,33 @@ std::string Transformer::allFramesAsString()
   return mstream.str();
 }
 
+std::string Transformer::allFramesAsDot()
+{
+  std::stringstream mstream;
+  mstream << "digraph G {" << std::endl;
+  frame_mutex_.lock();
+
+  TransformStorage temp;
+
+  
+  //  for (std::vector< TimeCache*>::iterator  it = frames_.begin(); it != frames_.end(); ++it)
+  for (unsigned int counter = 1; counter < frames_.size(); counter ++)
+  {
+    unsigned int parent_id;
+    if(  getFrame(counter)->getData(ros::Time(), temp))
+      parent_id = temp.parent_frame_id;
+    else
+    {
+      parent_id = 0;
+    }
+    if (parent_id != 0)
+      mstream << frameIDs_reverse[counter] << " -> " << frameIDs_reverse[parent_id] << ";" <<std::endl;
+  }
+  frame_mutex_.unlock();
+  mstream << "}";
+  return mstream.str();
+}
+
 void Transformer::getFrameStrings(std::vector<std::string> & vec)
 {
   vec.clear();

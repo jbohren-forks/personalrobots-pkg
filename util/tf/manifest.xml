@@ -17,7 +17,8 @@ Library for doing transformations.
 <depend package="bullet"/>
 <depend package="laser_scan"/>
 <depend package="boost"/>
+<depend package="rospy"/>
 <export>
-<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf"/>
+<cpp cflags="-I${prefix}/include -I${prefix}/msg/cpp -I${prefix}/srv/cpp" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -ltf"/>
 </export>
 </package>

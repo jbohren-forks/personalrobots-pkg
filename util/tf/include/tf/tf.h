@@ -172,6 +172,11 @@ public:
    */
   std::string allFramesAsString();
 
+  /** \brief A way to see what frames have been cached 
+   * Useful for debugging 
+   */
+  std::string allFramesAsDot();
+
   /** \brief A way to get a std::vector of available frame ids */
   void getFrameStrings(std::vector<std::string>& ids);
 

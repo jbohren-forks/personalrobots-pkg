@@ -3,6 +3,7 @@ include(rosbuild)
 rospack(tf)
 
 genmsg()
+gensrv()
 
 rospack_add_library(tf src/tf.cpp src/transform_listener.cpp src/cache.cpp src/message_notifier.cpp)
 #target_link_libraries(tf boost_thread-mt)

@@ -64,7 +64,7 @@ public:
     std_msgs::TransformStamped msgtf;
     TransformStampedTFToMsg(transform, msgtf);
     message.transforms.push_back(msgtf);
-    ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
+    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
     tf::TransformArray tfArray;
@@ -82,7 +82,7 @@ public:
     tfArray.quaternions[0].w = q.w();
     tfArray.quaternions[0].header.stamp = ros::Time(transform.stamp_);
 
-    node_.publish("TransformArray", tfArray);
+    //node_.publish("TransformArray", tfArray);
 
   } 
   

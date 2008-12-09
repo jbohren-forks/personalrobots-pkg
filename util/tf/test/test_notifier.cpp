@@ -134,14 +134,14 @@ TEST(MessageNotifier, noTransforms)
 
 	Counter<std_msgs::PointStamped> c("test_message", 1);
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	std_msgs::PointStamped msg;
 	msg.header.stamp = ros::Time::now();
 	msg.header.frame_id = "frame2";
 	g_node->publish("test_message", msg);
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	EXPECT_EQ(0, n.count_);
 }
@@ -149,11 +149,11 @@ TEST(MessageNotifier, noTransforms)
 TEST(MessageNotifier, preexistingTransforms)
 {
 	Notification n(1);
-	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame1", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
@@ -195,7 +195,7 @@ TEST(MessageNotifier, postTransforms)
 
 	Counter<std_msgs::PointStamped> c("test_message", 1);
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
@@ -237,7 +237,7 @@ TEST(MessageNotifier, queueSize)
 
 	Counter<std_msgs::PointStamped> c("test_message", 20);
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
@@ -248,7 +248,7 @@ TEST(MessageNotifier, queueSize)
 		msg.header.frame_id = "frame6";
 		g_node->publish("test_message", msg);
 
-		//ros::Duration(0.01).sleep();
+		//ros::Duration().fromSec(0.01).sleep();
 	}
 
 	{
@@ -261,7 +261,7 @@ TEST(MessageNotifier, queueSize)
 		EXPECT_EQ(true, lock.owns_lock());
 	}
 
-	ros::Duration(0.1).sleep();
+	ros::Duration().fromSec(0.1).sleep();
 
 	g_broadcaster->sendTransform(btTransform(btQuaternion(0,0,0), btVector3(1,2,3)), stamp, "frame5", "frame6");
 
@@ -281,12 +281,12 @@ TEST(MessageNotifier, queueSize)
 TEST(MessageNotifier, setTopic)
 {
 	Notification n(1);
-	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame7", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTopic("test_message2");
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 
@@ -323,12 +323,12 @@ TEST(MessageNotifier, setTopic)
 TEST(MessageNotifier, setTargetFrame)
 {
 	Notification n(1);
-	Counter<rosTF::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
+	Counter<tf::TransformArray> c("TransformArray", 1); /// \todo Switch this to tf_message once rosTF goes away completely
 	MessageNotifier<std_msgs::PointStamped>* notifier = new MessageNotifier<std_msgs::PointStamped>(g_tf, g_node, boost::bind(&Notification::notify, &n, _1), "test_message", "frame9", 1);
 	std::auto_ptr<MessageNotifier<std_msgs::PointStamped> > notifier_ptr(notifier);
 	notifier->setTargetFrame("frame1000");
 
-	ros::Duration(0.2).sleep();
+	ros::Duration().fromSec(0.2).sleep();
 
 	ros::Time stamp = ros::Time::now();
 

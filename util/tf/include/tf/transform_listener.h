@@ -38,6 +38,8 @@
 #include "tf/tf.h"
 #include "ros/node.h"
 
+#include "tf/FrameGraph.h" //frame graph service
+
 /// \todo remove backward compatability only
 #include "tf/TransformArray.h"
 // end remove
@@ -72,6 +74,7 @@ public:
     /// \todo remove backward compatability only
     node_.subscribe("/TransformArray", tfArrayIn, &TransformListener::receiveArray, this,100);
 
+    node_.advertise_service("~tf_frames", &TransformListener::getFrames, this);
   };
   
   ~TransformListener()
@@ -130,6 +133,11 @@ public:
 
     ///\todo move to high precision laser projector class  void projectAndTransformLaserScan(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud& pcout); 
 
+  bool getFrames(tf::FrameGraph::request & req, tf::FrameGraph::response & res)
+  {
+    res.dot_graph = allFramesAsDot();
+    return true;
+  }
 
 private:
   /// memory space for callback
@@ -144,6 +152,7 @@ private:
 
   /** @brief A helper class for projecting laser scans */
   laser_scan::LaserProjection projector_;
+
 
   ///\todo Remove : for backwards compatability only
 void receiveArray()
