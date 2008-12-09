@@ -962,10 +962,11 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 
 	//the main loop of ARA*
 	int prevexpands = 0;
+	clock_t loop_time;
 	while(pSearchStateSpace->eps_satisfied > ARA_FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
-
+                loop_time = clock();
 		//decrease eps for all subsequent iterations
 		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS && !bFirstSolution)
 		{
@@ -1000,12 +1001,12 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
         }
 
 		//print the solution cost and eps bound
-		printf("eps=%f expands=%d g(searchgoal)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
-							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
+		printf("eps=%f expands=%d g(searchgoal)=%d time=%.3f\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
+							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g,double(clock()-loop_time)/CLOCKS_PER_SEC);
 
 #if DEBUG
-        fprintf(fDeb, "eps=%f expands=%d g(searchgoal)=%d\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
-							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g);
+        fprintf(fDeb, "eps=%f expands=%d g(searchgoal)=%d time=%.3f\n", pSearchStateSpace->eps_satisfied, searchexpands - prevexpands,
+							((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData)->g,double(clock()-loop_time)/CLOCKS_PER_SEC);
 		PrintSearchState((ARAState*)pSearchStateSpace->searchgoalstate->PlannerSpecificData, fDeb);
 #endif
 		prevexpands = searchexpands;
@@ -1032,7 +1033,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	printf("MaxMemoryCounter = %d\n", MaxMemoryCounter);
 
 	int solcost = INFINITECOST;
-    bool ret = false;
+        bool ret = false;
 	if(PathCost == INFINITECOST)
 	{
 		printf("could not find a solution\n");

@@ -1,0 +1,20 @@
+<package>
+  <description brief="Robotic Arm Planning Research">
+    
+  </description>
+  <author>Maxim Likhachev/maximl@seas.upenn.edu</author>
+  <license>BSD</license>
+    <depend package="sbpl" />
+    <depend package="robot_kinematics" />
+    <depend package="wg_robot_description_parser"/>
+    <depend package="roscpp"/>
+    <depend package="std_msgs"/>
+    <depend package="robot_msgs" />
+  <url></url>
+  
+  <export>
+      <cpp cflags="-I${prefix}/src -O3" lflags="-Wl, -rpath,${prefix}/lib -L${prefix}/lib"/>
+  </export>
+  
+</package>
+
