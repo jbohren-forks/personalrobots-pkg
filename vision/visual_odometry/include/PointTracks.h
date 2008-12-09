@@ -15,6 +15,7 @@
 #include <string>
 using namespace std;
 
+namespace cv { namespace willow {
 class PointTrackObserv {
 public:
   PointTrackObserv(const int fi, const CvPoint3D64f& coord, const int keypointIndex):
@@ -98,7 +99,9 @@ public:
   /// for debugging analysis
   int              id_;
 
-// private: - XXX jcb ought to be private past this point - JD take a look?
+private:
+  // The following fields are used by as intermediate buffers by the
+  // sparse bundle adjustment code.
   /// a buffer to store \f$ H_{pp}^{-1} b_{p} \f$
   double        tp_[3];
   CvMat         mat_tp_;
@@ -111,6 +114,7 @@ public:
   CvPoint3D64f  param_;
   /// estimated 3D Cartesian coordinates of previous iteration in optimization.
   CvPoint3D64f  prev_param_;
+  friend class LevMarqSparseBundleAdj;
 };
 
 /// Book keeping of point tracks.
@@ -140,5 +144,6 @@ public:
   /// The index of the oldest frame (lowest index) of all tracks.
   int oldest_frame_index_in_tracks_;
 };
-
+}
+}
 #endif /* POINTTRACKS_H_ */

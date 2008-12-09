@@ -464,6 +464,7 @@ typedef struct {
 #if JDC_DEBUG==1 // jdc
   LevMarqSparseBundleAdj *sba_;
   SBAVisualizer          *vis_;
+  boost::unordered_map<int, FramePose*>* map_index_to_FramePose_;
 #endif
 } pose_estimator_t;
 
@@ -472,6 +473,12 @@ pose_estimator_dealloc(PyObject *self)
 {
   PoseEstimateStereo *pe = ((pose_estimator_t*)self)->pe;
   delete pe;
+#if JDC_DEBUG==1
+  pose_estimator_t* obj = (pose_estimator_t*)self;
+  delete obj->sba_;
+  delete obj->vis_;
+  delete obj->map_index_to_FramePose_;
+#endif
   PyObject_Del(self);
 }
 
@@ -713,8 +720,10 @@ PyObject *pose_estimator(PyObject *self, PyObject *args)
   object->sba_ = new LevMarqSparseBundleAdj(&dispToCart, &cartToDisp, full_free_window_size, full_fixed_window_size, term_criteria);
 
   object->vis_ = new SBAVisualizer((PoseEstimateDisp&)*object->pe, NULL, NULL, NULL);
-  object->vis_->map_index_to_FramePose_ =
+  object->map_index_to_FramePose_ =
     new boost::unordered_map<int, FramePose*>();
+  // note that SBAVisualizer by design does not own map_index_to_FramePose
+  object->vis_->map_index_to_FramePose_ = object->map_index_to_FramePose_;
   object->vis_->outputDirname = string("Output/james4/");
 #endif
 

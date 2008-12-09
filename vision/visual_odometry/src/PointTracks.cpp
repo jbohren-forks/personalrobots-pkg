@@ -10,6 +10,8 @@
 #include <PointTracks.h>
 #include <boost/foreach.hpp>
 
+namespace cv {
+namespace willow {
 PointTracks::~PointTracks(){
   /// @todo need to delete PointTrack's when it owns them
 #if 0
@@ -202,5 +204,7 @@ PointTracks* PointTracks::load(string& dir, int start, int end) {
     cvReleaseMat(&tracks_mat);
   }
   return tracks;
+}
+}
 }
 

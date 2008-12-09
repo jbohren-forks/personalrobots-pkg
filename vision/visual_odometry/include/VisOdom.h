@@ -190,9 +190,13 @@ public:
   int mIndex;
   /// Transformation matrix from local frame to global frame
   CvMat transf_local_to_global_;
+  /// data buffer of transf_local_to_global
+  double transf_local_to_global_data_[16];
+private:
   /// optional matrix to convert from global to disparity space
   CvMat* transf_global_to_disp_;
-  double transf_local_to_global_data_[16];
+  friend class LevMarqSparseBundleAdj;
+  friend class SBAVisualizer;
 };
 
 void saveFramePoses(const string& dirname, const vector<FramePose*>& framePoses);
