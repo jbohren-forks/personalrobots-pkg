@@ -388,6 +388,8 @@ namespace controller
 
     double odometer_angle_;
 
+    double max_trans_vel_magnitude_;
+
     friend class BaseControllerNode;
   };
 

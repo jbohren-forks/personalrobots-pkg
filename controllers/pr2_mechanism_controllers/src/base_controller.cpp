@@ -52,8 +52,6 @@ using namespace NEWMAT;
 
 ROS_REGISTER_CONTROLLER(BaseController)
 
-
-
 BaseController::BaseController() : num_wheels_(0), num_casters_(0)
 {
    MAX_DT_ = 0.01;
@@ -106,8 +104,22 @@ void BaseController::setCommand(libTF::Vector cmd_vel)
 {
 
   pthread_mutex_lock(&base_controller_lock_);
-  cmd_vel_t_.x = filters::clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
-  cmd_vel_t_.y = filters::clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
+
+  double vel_mag = sqrt(cmd_vel.x*cmd_vel.x+cmd_vel.y*cmd_vel.y);
+  double clamped_vel_mag = filters::clamp(vel_mag,-max_trans_vel_magnitude_,max_trans_vel_magnitude_);
+
+  if(vel_mag > EPS)
+  {
+    cmd_vel_t_.x = cmd_vel.x * clamped_vel_mag/vel_mag;
+    cmd_vel_t_.y = cmd_vel.y * clamped_vel_mag/vel_mag;
+  }
+  else
+  {
+    cmd_vel_t_.x = 0.0;
+    cmd_vel_t_.y = 0.0;
+  }
+//  cmd_vel_t_.x = filters::clamp(cmd_vel.x,-max_vel_.x, max_vel_.x);
+//  cmd_vel_t_.y = filters::clamp(cmd_vel.y,-max_vel_.y, max_vel_.y);
   cmd_vel_t_.z = filters::clamp(cmd_vel.z,-max_vel_.z, max_vel_.z);
   cmd_received_timestamp_ = robot_state_->hw_->current_time_;
 #if 0
@@ -345,7 +357,8 @@ bool BaseController::initXml(mechanism::RobotState *robot_state, TiXmlElement *c
     elt = config->NextSiblingElement("map");
   }
 
-
+  max_trans_vel_magnitude_  = fabs(max_vel_.x);
+ 
   ROS_INFO("BaseController:: kp_speed %f",kp_speed_);
   ROS_INFO("BaseController:: kp_caster_steer  %f",caster_steer_vel_gain_);
   ROS_INFO("BaseController:: timeout %f",timeout_);
