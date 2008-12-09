@@ -42,11 +42,7 @@ using namespace KDL;
 
 #define ROBARM_MAXNUMOFLONGACTIONSUCCS ((int)pow((double)2*ROBARM_LONGACTIONDIST_CELLS, NUMOFLINKS))
 
-//if cleared then the intersection of the whole arm against obstacles 
-//and bounds is checked
-#define ENDEFF_CHECK_ONLY 0
-
-#define UNIFORM_COST 1	//all the actions have the same costs when set
+#define UNIFORM_COST 1	//all the joint actions have the same costs when set
 
 #define INVALID_NUMBER 999
 
@@ -75,38 +71,38 @@ typedef struct STATE3D_t
 // robot arm physical configuration structure
 typedef struct ENV_ROBARM_CONFIG
 {
-    // environment dimensions (meters)
+    //environment dimensions (meters)
     double EnvWidth_m;
     double EnvHeight_m;
     double EnvDepth_m;
 
-    // environment dimensions (cells)
-    int EnvWidth_c;         
+    //environment dimensions (cells)
+    int EnvWidth_c;
     int EnvHeight_c;
     int EnvDepth_c;
 
-    // fixed location of shoulder base
+    //fixed location of shoulder base (cells)
     int BaseX_c;
     int BaseY_c;
     int BaseZ_c;
 
-    // fixed location of shoulder base
+    //fixed location of shoulder base (meters)
     double BaseX_m;
     double BaseY_m;
     double BaseZ_m;
 
-    // end effector goal position (goal cell)
+    //end effector goal position (goal cell)
     short unsigned int EndEffGoalX_c;
     short unsigned int EndEffGoalY_c;
     short unsigned int EndEffGoalZ_c;
 
-    // robot arm dimensions/positions
+    //robot arm dimensions/positions
     double LinkLength_m[NUMOFLINKS];
     double LinkStartAngles_d[NUMOFLINKS];
     double LinkGoalAngles_d[NUMOFLINKS];
 
     //3d grid of world space 
-    char*** Grid3D;     // occupancy grid?
+    char*** Grid3D;     
     double GridCellWidth;   // cells are square
 
     //DH Parameters
@@ -119,25 +115,29 @@ typedef struct ENV_ROBARM_CONFIG
     double PosMotorLimits[NUMOFLINKS];
     double NegMotorLimits[NUMOFLINKS];
 
-    double angledelta[NUMOFLINKS]; // increments
-    int anglevals[NUMOFLINKS];     // translates angledelta's into array of values
+    //joint angle discretization
+    double angledelta[NUMOFLINKS]; 
+    int anglevals[NUMOFLINKS];     
 
-    //for Forward Kinematics computation
+    //for kinematic library use
     RobotKinematics pr2_kin;
     SerialChain *left_arm;
     JntArray *pr2_config;
 
     short unsigned int goalcoords[NUMOFLINKS];
 
+    //options
     bool use_DH;
     bool enforce_motor_limits;
     bool dijkstra_heuristic;
     bool endeff_check_only;
 
-
+    //for precomputing cos/sin & DH matrices 
     double cos_r[360];
     double sin_r[360];
     double T_DH[4*NUM_TRANS_MATRICES][4][8];
+
+    //this should be moved to EnvironmentROBARM_t
     double T_array[4][4][8];
 
 } EnvROBARMConfig_t;
@@ -147,23 +147,13 @@ typedef struct ENVROBARMHASHENTRY
 {
     int stateID;
     //state coordinates
-    short unsigned int coord[NUMOFLINKS];   // angles of joints
+    short unsigned int coord[NUMOFLINKS];
     short unsigned int wrist[3];
     short unsigned int elbow[3];
     short unsigned int endeffx;
     short unsigned int endeffy;
     short unsigned int endeffz;
 } EnvROBARMHashEntry_t;
-
-/*
-// struct for passing around arm configuration without adding new hash entry
-typedef struct ARM_CONFIG
-{
-    short unsigned int wrist[3];
-    short unsigned int elbow[3];
-    short unsigned int endeff[3];
-} ArmConfig_t;
-*/
 
 // main structure that stores environment data used in planning
 typedef struct
@@ -217,78 +207,68 @@ private:
     EnvROBARMConfig_t EnvROBARMCfg;
     EnvironmentROBARM_t EnvROBARM;
 
-    // temporary solution - used to output goal angles for sol.txt
-    short unsigned int goalcoords[NUMOFLINKS];
+    //hash table
+    unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
+    void PrintHashTableHist();
+    EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeffx, short unsigned int endeffy,short unsigned int endeffz, short unsigned int wrist[3], short unsigned int elbow[3]);
 
-    void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
-    void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
-//     int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int*  pX, short unsigned int* pY, short unsigned int* pZ);
-    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int*  pX, short unsigned int* pY, short unsigned int*  pZ, short unsigned int wrist[3], short unsigned int elbow[3]);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
-    void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
+    //initialization
+    void ReadParams(FILE* fCfg);
+    void ReadConfiguration(FILE* fCfg);
+    void InitializeEnvConfig();
+    void CreateStartandGoalStates();
+    bool InitializeEnvironment();
+
+    //coordinate frame/angle functions
     void DiscretizeAngles();
     void Cell2ContXY(int x, int y, int z, double *pX, double *pY, double *pZ);
     void ContXYZ2Cell(double x, double y, double z, short unsigned int* pX, short unsigned int *pY, short unsigned int *pZ);
+    void ComputeContAngles(short unsigned int coord[NUMOFLINKS], double angle[NUMOFLINKS]);
+    void ComputeCoord(double angle[NUMOFLINKS], short unsigned int coord[NUMOFLINKS]);
+    int ComputeEndEffectorPos(double angles[NUMOFLINKS], short unsigned int*  pX, short unsigned int* pY, short unsigned int*  pZ, short unsigned int wrist[3], short unsigned int elbow[3]);
+
+    //bounds/error checking
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], char*** Grid3D=NULL, vector<CELLV>* pTestedCells=NULL);
+    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);
     int IsValidLineSegment(double x0, double y0, double z0, double x1, double y1, double z1, char ***Grid3D, vector<CELLV>* pTestedCells);
     int IsValidLineSegment(short unsigned int x0, short unsigned int y0, short unsigned int z0, short unsigned int x1, short unsigned int y1, short unsigned int z1, char ***Grid3D, vector<CELLV>* pTestedCells);
-
-    void PrintHeader(FILE* fOut);
-    int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
-
-    void ReadConfiguration(FILE* fCfg);
-
-    void InitializeEnvConfig();
-
-    unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
-    void PrintHashTableHist();
-
-    EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
-
-//     EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord,  short unsigned int endeffx, short unsigned int endeffy, short unsigned int endeffz);
-
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeffx, short unsigned int endeffy,short unsigned int endeffz, short unsigned int wrist[3], short unsigned int elbow[3]);
-
-    void CreateStartandGoalStates();
-    bool InitializeEnvironment();
-    void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
-    void ComputeHeuristicValues();
-
     bool IsValidCell(int X, int Y, int Z);
-
     bool IsWithinMapCell(int X, int Y, int Z);
-
-    int GetEdgeCost(int FromStateID, int ToStateID);
-
     bool AreEquivalent(int State1ID, int State2ID);
 
+    //cost functions
+    int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
+    int cost(short unsigned int state1coord[], short unsigned int state2coord[],bool bState2IsGoal);
+    int GetEdgeCost(int FromStateID, int ToStateID);
+
+    //output
+    void PrintHeader(FILE* fOut);
+    void outputjointpositions(EnvROBARMHashEntry_t* H); // for early debugging - remove this 
+    void PrintConfiguration();
+    void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
 
-    // functions I added
-    void getDHMatrix(boost::numeric::ublas::matrix<double>*T, double alpha, double a, double d, double theta);
-    void getTransformations_robarm7d(boost::numeric::ublas::matrix<double> *T, double angle[NUMOFLINKS]);
-    void outputjointpositions(EnvROBARMHashEntry_t* H); // for early debugging - remove this 
-    void InitializeKinNode();   
+    //compute heuristic
+    void InitializeKinNode();
     void ComputeForwardKinematics(double *angles, int f_num, double *x, double *y, double *z);
-    void PrintConfiguration();
-
+    void getDistancetoGoal(int* HeurGrid, int goalx, int goaly, int goalz);
+    void ComputeHeuristicValues();
     void ReInitializeState3D(State3D* state);
     void InitializeState3D(State3D* state, short unsigned int x, short unsigned int y, short unsigned int z);
     void Create3DStateSpace(State3D**** statespace3D);
     void Delete3DStateSpace(State3D**** statespace3D);
     void Search3DwithQueue(State3D*** statespace, int* HeurGrid, short unsigned  int searchstartx, short unsigned int searchstarty, short unsigned int searchstartz);
-    void ReadParams(FILE* fCfg);
+
+    //forward kinematics
+    void getDHMatrix(boost::numeric::ublas::matrix<double>*T, double alpha, double a, double d, double theta);
+    void getTransformations_robarm7d(boost::numeric::ublas::matrix<double> *T, double angle[NUMOFLINKS]);
     void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
     void GetPrecomputedDHMatrix(boost::numeric::ublas::matrix<double>*T, double theta, int frame);
-//     int IsValidCoord(short unsigned int coord[NUMOFLINKS], ArmConfig_t arm);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);
-    int cost(short unsigned int state1coord[], short unsigned int state2coord[],bool bState2IsGoal);
-
     void GetDHMatrix( double theta, int frame);
     void GetDHTransformations(double angles[NUMOFLINKS]);
-//     void Mult4x4(double** A, double ** B, double ** C);
     void Mult4x4(int A, int B, int C);
-
 };
 
 #endif

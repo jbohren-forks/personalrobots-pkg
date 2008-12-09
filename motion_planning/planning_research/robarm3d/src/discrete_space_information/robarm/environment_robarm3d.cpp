@@ -28,7 +28,7 @@
  */
 
 #include "../../headers.h"
-#include <queue>
+
 
 #define PI_CONST 3.141592653
 
@@ -67,15 +67,7 @@
 // length of gripper along x-axis in wrist frame (meters)
 #define GRIPPER_LENGTHX 0.11
 
-// enforce PR2's motor limits
-// #define ENFORCE_MOTOR_LIMITS 1
-
-// use Dijkstra's algorithm as the Heuristic cost
-// #define DIJKSTRA_HEURISTIC 1
-
-// use DH convention or use Robotics Kinematics Library to solve forward kinematics
-// #define USE_DH 1
-
+//padding of obstacles (meters)
 #define PADDING 0.16
 
 #define PRECOMPUTE_DH 1
@@ -1157,7 +1149,7 @@ int EnvironmentROBARM::ComputeEndEffectorPos(double angles[NUMOFLINKS], short un
 //         getTransformations_robarm7d(T,angles);
 
         GetDHTransformations(angles);
-        
+
         //get position of elbow
 //         x = T[3](0,3) + EnvROBARMCfg.BaseX_m;
 //         y = T[3](1,3) + EnvROBARMCfg.BaseY_m;
@@ -2211,8 +2203,6 @@ void EnvironmentROBARM::outputjointpositions(EnvROBARMHashEntry_t* H)
     printf("elbow: (%u,%u,%u)  wrist:(%u,%u,%u) endeff:(%u,%u,%u)\n", H->elbow[0], H->elbow[1],H->elbow[2],H->wrist[0],H->wrist[1],H->wrist[2],H->endeffx, H->endeffy,H->endeffz);
 }
 
-
-
 // int EnvironmentROBARM::CheckSelfCollision(short unsigned int* pX, short unsigned int* pY, short unsigned int pZ, short unsigned int wrist[3], short unsigned int elbow[3])
 
 void EnvironmentROBARM::CloseKinNode()
@@ -2226,10 +2216,10 @@ void EnvironmentROBARM::CloseKinNode()
     {
         printf("DH Computation:\n");
         printf("Total: %3.2f sec\n", DH_time/(double)CLOCKS_PER_SEC);
-        printf("Trigonometry: %3.2f sec\n", trig_time/(double)CLOCKS_PER_SEC);
-        printf("Construct transformation: %3.2f sec\n",DH_construct_trans_time/(double)CLOCKS_PER_SEC);
-        printf("Multiply transformations: %3.2f sec\n",DH_matrix_mult_time/(double)CLOCKS_PER_SEC);
-        printf("Fetching transformations: %3.2f sec\n",DH_fetch_trans_time/(double)CLOCKS_PER_SEC);
+//         printf("Trigonometry: %3.2f sec\n", trig_time/(double)CLOCKS_PER_SEC);
+//         printf("Construct transformation: %3.2f sec\n",DH_construct_trans_time/(double)CLOCKS_PER_SEC);
+//         printf("Multiply transformations: %3.2f sec\n",DH_matrix_mult_time/(double)CLOCKS_PER_SEC);
+//         printf("Fetching transformations: %3.2f sec\n",DH_fetch_trans_time/(double)CLOCKS_PER_SEC);
         printf("\n");
     }
     else
