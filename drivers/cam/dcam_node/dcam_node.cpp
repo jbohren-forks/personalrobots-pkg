@@ -275,7 +275,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoCam* stcam = ( (StereoDcam*)(cam_) );
+      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
 
       publishImages("~left/", stcam->stIm->imLeft);
       publishImages("~right/", stcam->stIm->imRight);
@@ -472,7 +472,7 @@ public:
   {
     if (stereo_cam_)
     {
-      StereoCam* stcam = ( (StereoDcam*)(cam_) );
+      StereoDcam* stcam = ( (StereoDcam*)(cam_) );
 
       advertise<image_msgs::StereoInfo>("~stereo_info", 1);
 
