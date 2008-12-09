@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -32,7 +32,7 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-//! \author Vijay Pradeep                                                     
+//! \author Vijay Pradeep
 
 #ifndef KINEMATIC_CALIBRATION_JAC_NEWMAT_BRIDGE_H_
 #define KINEMATIC_CALIBRATION_JAC_NEWMAT_BRIDGE_H_
@@ -53,12 +53,18 @@ namespace JacTerms
   enum JacTerms {ALL, ROT, TRANS} ;
 }
 
-/*NEWMAT::Matrix jacVectorToNewmat(const vector<LinkParamJacobian>& jacs, const NEWMAT::Matrix& free_params)
-{
-  
-  
-  
-}*/
+/**
+ * Builds a matrix with stacked jacobians, with each jacobian being a row.
+ * \jacs Vector of Jacobians. Note that every LinkParamJacobian must have the same number of links.
+ *          Otherwise this method will fail (and the matrix representation wouldn't make any sense anyways)
+ * \active Specifies which link parameters are active. The number of active parameters is equal to the number of cols in the output mat
+ * \mat The output matrix where the jacobian is stored. If this is sized correctly, then it won't be reallocated, thus saving time.
+ * \jac_term Specifies whether each jacobian should store either translational terms \
+ *               or rotational terms. If both are stored each jac has 6 rows, with \
+ *               the first 3 being translational, and the last 3 being rotational
+ * \return negative on error
+ */
+int jacVectorToNewmat(const vector<LinkParamJacobian>& jacs, const ActiveLinkParams& active, NEWMAT::Matrix& mat, const JacTerms::JacTerms jac_term ) ;
 
 /**
  * Converts a linkparam jacobian into a newmat matrix. The original jacobian is
@@ -70,6 +76,7 @@ namespace JacTerms
  * \jac_term Specifies whether the jacobian should store either translational terms \
  *               or rotational terms. If both are stored then jac has 6 rows, with \
  *               the first 3 being translational, and the last 3 being rotational
+ * \return negative on error
  */
 int jacToNewmat(const LinkParamJacobian& jac, const ActiveLinkParams& active, NEWMAT::Matrix& mat, const JacTerms::JacTerms jac_term ) ;
 

@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -61,8 +61,13 @@ public:
    * \param cur_to_next vector specifying the point to propagate the jacobian to. Defined wrt the current coordinate frame.
    */
   void changeRefPoint(const KDL::Vector& cur_to_next) ;
-  
-  std::vector<LinkTwists> twists_ ;                             // Should this be private?
+
+  /**
+   * Stores all of the individual twists for the system parameters.  Each element of links_ stores
+   * the twists specific to the parameters of the link in the system with the same index.
+   * ie. links_[0] corresponds to segment 0 in the associated chain.
+   */
+  std::vector<LinkTwists> links_ ;
 };
 
 }

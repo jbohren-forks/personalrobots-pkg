@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -45,60 +45,74 @@
 
 #include "kinematic_calibration/link_param_jacobian_solver.h"
 
-
 namespace kinematic_calibration
 {
 
+/**
+ * \brief Used to extract a KDL model from a simple text file
+ */
 class ModelGetter
 {
 public:
   ModelGetter() { }
   ~ModelGetter() { }
-  
+
   int OpenFile(const std::string& filename) ;
-  
+
   KDL::Chain GetModel() ;
-  
+
   void CloseFile() ;
 private:
   std::ifstream infile_ ;
-  
+
 } ;
 
+/**
+ * \brief Used to incrementally extract KDL joint-array data from a text file.
+ */
 class JointStatesGetter
 {
 public:
   JointStatesGetter() { }
   ~JointStatesGetter() { }
-  
+
   int OpenFile(const std::string& filename) ;
+   //! brief Extracts the next joint array from the text file
   int GetNextJointArray(KDL::JntArray& joint_array) ;
-  void CloseFile() ;  
+  void CloseFile() ;
 private:
-  std::ifstream infile_ ;  
+  std::ifstream infile_ ;
 } ;
 
+/**
+ * \brief Used to incrementally extract LinkParamJacobians from a text file.
+ */
 class JacobiansGetter
 {
 public:
   JacobiansGetter() { }
   ~JacobiansGetter() { }
-  
+
   int OpenFile(const std::string& filename) ;
   int GetNextJacobian(LinkParamJacobian& jac ) ;
-  void CloseFile() ;  
+  void CloseFile() ;
 private:
-  std::ifstream infile_ ;  
+  std::ifstream infile_ ;
 } ;
 
-
-
-
+/**
+ * \brief The main piece of the LinkParamJacobian test harness
+ * Combines the JacobiansGetter, JointStatesGetter, and ModelGetter to create a more streamlined way to manipulate
+ * LinkParamJacobian stored in files.
+ */
 class VerifyJacobian
 {
 public:
   VerifyJacobian() ;
   ~VerifyJacobian() ;
+  /**
+   * \brief Computes the max error between the LinkParamJacobian in a text file and the LinkParamJacobian calculated by KDL
+   */
   int ComputeMaxError(const std::string& model_file, const std::string& joint_params_file, const std::string& jacobians_file, double& max_error) ;
 private:
   ModelGetter model_getter_ ;
