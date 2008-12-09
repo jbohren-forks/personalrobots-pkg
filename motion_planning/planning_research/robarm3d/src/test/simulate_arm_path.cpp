@@ -38,7 +38,7 @@
 #include <ros/node.h>
 #include "time.h"
 #include "robot_msgs/MechanismState.h"
-#include "/home/ben/ros/ros-pkg/controllers/pr2_mechanism_controllers/msg/cpp/pr2_mechanism_controllers/JointPosCmd.h"
+#include "pr2_mechanism_controllers/JointPosCmd.h"
 
 #define GRIPPER_ROLL_LEFT_JOINT 4
 #define WRIST_FLEX_LEFT_JOINT 5

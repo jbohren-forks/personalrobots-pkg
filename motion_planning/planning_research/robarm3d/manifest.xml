@@ -10,6 +10,7 @@
     <depend package="roscpp"/>
     <depend package="std_msgs"/>
     <depend package="robot_msgs" />
+    <depend package="pr2_mechanism_controllers" />
   <url></url>
   
   <export>
