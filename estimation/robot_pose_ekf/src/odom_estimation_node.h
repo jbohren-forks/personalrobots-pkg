@@ -60,7 +60,7 @@ class OdomEstimationNode: public ros::node
 {
 public:
   /// constructor
-  OdomEstimationNode();
+  OdomEstimationNode(const string& node_name);
 
   /// destructor
   virtual ~OdomEstimationNode();
@@ -82,6 +82,7 @@ public:
 
 
 private:
+  std::string node_name_;
 
   /// ekf filter
   OdomEstimation my_filter_;
@@ -111,8 +112,9 @@ private:
   ros::Time odom_stamp_, imu_stamp_, vo_stamp_, filter_stamp_;
   ros::Time odom_init_stamp_, imu_init_stamp_, vo_init_stamp_;
   bool vel_active_, odom_active_, imu_active_, vo_active_;
+  bool odom_used_, imu_used_, vo_used_;
   bool odom_initializing_, imu_initializing_, vo_initializing_;
-  double freq_, timeout_;
+  double freq_, timeout_, odom_multiplier_;
 
   // mutex
   ros::thread::mutex odom_mutex_, imu_mutex_, vo_mutex_, vel_mutex_;

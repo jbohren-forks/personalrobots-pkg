@@ -281,6 +281,9 @@ namespace estimation
   void OdomEstimation::getEstimate(Time time, Stamped<Transform>& estimate)
   {
     transformer_.lookupTransform("base_footprint","odom", time, estimate);
+
+    // TODO: REMOVE WHEN TF BUG FIXED
+    estimate.stamp_ = filter_time_old_;
   };
 
   // get most recent filter posterior as PoseWithCovariance

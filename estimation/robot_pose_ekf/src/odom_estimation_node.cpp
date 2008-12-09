@@ -42,13 +42,14 @@ using namespace ros;
 using namespace tf;
 
 
-//#define __EKF_DEBUG_FILE__
+#define __EKF_DEBUG_FILE__
 
 namespace estimation
 {
   // constructor
-  OdomEstimationNode::OdomEstimationNode()
-    : ros::node("odom_estimation"),
+  OdomEstimationNode::OdomEstimationNode(const string& node_name)
+    : ros::node(node_name),
+      node_name_(node_name),
       robot_state_(*this, true),
       odom_broadcaster_(*this),
       vo_notifier_(&robot_state_, this,  boost::bind(&OdomEstimationNode::voCallback, this, _1), "vo", "base_link", 10),
@@ -61,17 +62,25 @@ namespace estimation
       imu_initializing_(false),
       vo_initializing_(false)
   {
+    // paramters
+    param(node_name_+"/freq", freq_, 30.0);
+    param(node_name_+"/sensor_timeout", timeout_, 1.0);
+    param(node_name_+"/odom_used", odom_used_, true);
+    param(node_name_+"/imu_used",  imu_used_, true);
+    param(node_name_+"/vo_used",   vo_used_, true);
+    if (odom_used_) ROS_INFO((node_name_+"  Odom sensor can be used").c_str());
+    else            ROS_INFO((node_name_+"  Odom sensor will NOT be used").c_str());
+    if (imu_used_)  ROS_INFO((node_name_+"  Imu sensor can be used").c_str());
+    else            ROS_INFO((node_name_+"  Imu sensor will NOT be used").c_str());
+    if (vo_used_)   ROS_INFO((node_name_+"  VO sensor can be used").c_str());
+    else            ROS_INFO((node_name_+"  VO sensor will NOT be used").c_str());
     // advertise our estimation
-    advertise<robot_msgs::PoseWithCovariance>("odom_estimation",10);
+    advertise<robot_msgs::PoseWithCovariance>(node_name_, 10);
 
     // subscribe to messages
     subscribe("cmd_vel",      vel_,  &OdomEstimationNode::velCallback,  10);
     subscribe("odom",         odom_, &OdomEstimationNode::odomCallback, 10);
     subscribe("imu_data",     imu_,  &OdomEstimationNode::imuCallback,  10);
-
-    // paramters
-    param("odom_estimation/freq", freq_, 30.0);
-    param("odom_estimation/sensor_timeout", timeout_, 1.0);
 
     // fiexed transform between camera frame and vo frame
     vo_camera_ = Transform(Quaternion(M_PI/2.0, -M_PI/2,0), Vector3(0,0,0));
@@ -110,35 +119,41 @@ namespace estimation
   // callback function for odom data
   void OdomEstimationNode::odomCallback()
   {
-    // receive data
-    odom_mutex_.lock();
-    odom_stamp_ = odom_.header.stamp;
-    odom_time_  = Time::now();
-    odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
-    my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"));
-    
-    // activate odom
-    if (!odom_active_) {
-      if (!odom_initializing_){
-	odom_initializing_ = true;
-	odom_init_stamp_ = odom_stamp_;
-	ROS_INFO("Initializing Odom sensor");      
+    if (odom_used_){
+      // receive data 
+      odom_mutex_.lock();
+      odom_stamp_ = odom_.header.stamp;
+      odom_time_  = Time::now();
+      odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
+      if (odom_.stall == 0)
+	odom_multiplier_ = 1;
+      else
+	odom_multiplier_ = 0.00001;
+      my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
+      
+      // activate odom
+      if (!odom_active_) {
+	if (!odom_initializing_){
+	  odom_initializing_ = true;
+	  odom_init_stamp_ = odom_stamp_;
+	  ROS_INFO((node_name_+"  Initializing Odom sensor").c_str());      
+	}
+	if ( filter_stamp_ >= odom_init_stamp_){
+	  odom_active_ = true;
+	  odom_initializing_ = false;
+	  ROS_INFO((node_name_+"  Odom sensor activated").c_str());      
+	}
       }
-      if ( filter_stamp_ >= odom_init_stamp_){
-	odom_active_ = true;
-	odom_initializing_ = false;
-	ROS_INFO("Odom sensor activated");      
-      }
-    }
-
+      
 #ifdef __EKF_DEBUG_FILE__
-    // write to file
-    double tmp, yaw;
-    odom_meas_.getBasis().getEulerZYX(yaw, tmp, tmp);
-    odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
+      // write to file
+      double tmp, yaw;
+      odom_meas_.getBasis().getEulerZYX(yaw, tmp, tmp);
+      odom_file_ << odom_meas_.getOrigin().x() << " " << odom_meas_.getOrigin().y() << "  " << yaw << "  " << endl;
 #endif
 
-    odom_mutex_.unlock();
+      odom_mutex_.unlock();
+    }
   };
 
 
@@ -147,35 +162,39 @@ namespace estimation
   // callback function for imu data
   void OdomEstimationNode::imuCallback()
   {
-    // receive data
-    imu_mutex_.lock();
-    imu_stamp_ = imu_.header.stamp;
-    imu_time_  = Time::now();
-    PoseMsgToTF(imu_.pos, imu_meas_);
-    my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
-
-    // activate imu
-    if (!imu_active_) {
-      if (!imu_initializing_){
-	imu_initializing_ = true;
-	imu_init_stamp_ = imu_stamp_;
-	ROS_INFO("Initializing Imu sensor");      
+    if (imu_used_){
+      // receive data
+      imu_mutex_.lock();
+      
+      // TODO: TMP FIX FOR WRONG DATA IN BAG BRIAN
+      imu_stamp_ = imu_.header.stamp + Duration(0.902);
+      imu_time_  = Time::now();
+      PoseMsgToTF(imu_.pos, imu_meas_);
+      my_filter_.addMeasurement(Stamped<Transform>(imu_meas_, imu_stamp_, "imu", "base_footprint"));
+      
+      // activate imu
+      if (!imu_active_) {
+	if (!imu_initializing_){
+	  imu_initializing_ = true;
+	  imu_init_stamp_ = imu_stamp_;
+	  ROS_INFO((node_name_+"  Initializing Imu sensor").c_str());      
+	}
+	if ( filter_stamp_ >= imu_init_stamp_){
+	  imu_active_ = true;
+	  imu_initializing_ = false;
+	  ROS_INFO((node_name_+"  Imu sensor activated").c_str());      
+	}
       }
-      if ( filter_stamp_ >= imu_init_stamp_){
-	imu_active_ = true;
-	imu_initializing_ = false;
-	ROS_INFO("Imu sensor activated");      
-      }
-    }
-
+      
 #ifdef __EKF_DEBUG_FILE__
-    // write to file
-    double tmp, yaw;
-    imu_meas_.getBasis().getEulerZYX(yaw, tmp, tmp); 
-    imu_file_ << yaw << endl;
+      // write to file
+      double tmp, yaw;
+      imu_meas_.getBasis().getEulerZYX(yaw, tmp, tmp); 
+      imu_file_ << yaw << endl;
 #endif
-
-    imu_mutex_.unlock();
+      
+      imu_mutex_.unlock();
+    }
   };
 
 
@@ -184,47 +203,48 @@ namespace estimation
   // callback function for VO data
   void OdomEstimationNode::voCallback(const MessageNotifier<robot_msgs::VOPose>::MessagePtr& vo)
   {
-    // get data
-    vo_mutex_.lock();
-    vo_ = *vo;
-    vo_stamp_ = vo_.header.stamp;
-    vo_time_  = Time::now();
-    robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
-    PoseMsgToTF(vo_.pose, vo_meas_);
-
-    // initialize
-    if (!vo_active_ && !vo_initializing_){
-      base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
-    }
-    // vo measurement as base transform
-    Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
-    my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
-			      21.0-(min(200.0,(double)vo_.inliers)/10));
-    
-    // activate vo
-    if (!vo_active_) {
-      if (!vo_initializing_){
-	vo_initializing_ = true;
-	vo_init_stamp_ = vo_stamp_;
-	ROS_INFO("Initializing Vo sensor");      
+    if (vo_used_){
+      // get data
+      vo_mutex_.lock();
+      vo_ = *vo;
+      vo_stamp_ = vo_.header.stamp;
+      vo_time_  = Time::now();
+      robot_state_.lookupTransform("stereo_link","base_link", vo_stamp_, camera_base_);
+      PoseMsgToTF(vo_.pose, vo_meas_);
+      
+      // initialize
+      if (!vo_active_ && !vo_initializing_){
+	base_vo_init_ = camera_base_.inverse() * vo_camera_.inverse() * vo_meas_.inverse();
       }
-      if (filter_stamp_ >= vo_init_stamp_){
-	vo_active_ = true;
-	vo_initializing_ = false;
-	ROS_INFO("Vo sensor activated");      
+      // vo measurement as base transform
+      Transform vo_meas_base = base_vo_init_ * vo_meas_ * vo_camera_ * camera_base_;
+      my_filter_.addMeasurement(Stamped<Transform>(vo_meas_base, vo_stamp_, "vo", "base_footprint"),
+				21.0-(min(200.0,(double)vo_.inliers)/10));
+      
+      // activate vo
+      if (!vo_active_) {
+	if (!vo_initializing_){
+	  vo_initializing_ = true;
+	  vo_init_stamp_ = vo_stamp_;
+	  ROS_INFO((node_name_+"  Initializing Vo sensor").c_str());      
+	}
+	if (filter_stamp_ >= vo_init_stamp_){
+	  vo_active_ = true;
+	  vo_initializing_ = false;
+	  ROS_INFO((node_name_+"  Vo sensor activated").c_str());      
+	}
       }
-    }
-
+      
 #ifdef __EKF_DEBUG_FILE__
-    // write to file
-    double Rx, Ry, Rz;
-    vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
-    vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
-	     << Rx << " " << Ry << " " << Rz << endl;
+      // write to file
+      double Rx, Ry, Rz;
+      vo_meas_base.getBasis().getEulerZYX(Rz, Ry, Rx);
+      vo_file_ << vo_meas_base.getOrigin().x() << " " << vo_meas_base.getOrigin().y() << " " << vo_meas_base.getOrigin().z() << " "
+	       << Rx << " " << Ry << " " << Rz << endl;
 #endif
 
-
-   vo_mutex_.unlock();
+      vo_mutex_.unlock();
+    }
   };
 
 
@@ -268,17 +288,17 @@ namespace estimation
 	if ((odom_active_ || odom_initializing_) && 
 	    (Time::now() - odom_time_).toSec() > timeout_){
 	  odom_active_ = false; odom_initializing_ = false;
-	  ROS_INFO("Odom sensor not active any more");
+	  ROS_INFO((node_name_+"  Odom sensor not active any more").c_str());
 	}
 	if ((imu_active_ || imu_initializing_) && 
 	    (Time::now() - imu_time_).toSec() > timeout_){
 	  imu_active_ = false;  imu_initializing_ = false;
-	  ROS_INFO("Imu sensor not active any more");
+	  ROS_INFO((node_name_+"  Imu sensor not active any more").c_str());
 	}
 	if ((vo_active_ || vo_initializing_) && 
 	    (Time::now() - vo_time_).toSec() > timeout_){
 	  vo_active_ = false;  vo_initializing_ = false;
-	  ROS_INFO("VO sensor not active any more");
+	  ROS_INFO((node_name_+"  VO sensor not active any more").c_str());
 	}
 
 	// update filter at time where all sensor measurements are available
@@ -312,7 +332,7 @@ namespace estimation
 	// initialize filer with odometry frame
 	if ( odom_active_ && !my_filter_.isInitialized()){
 	  my_filter_.initialize(odom_meas_, odom_stamp_);
-	  ROS_INFO("Fiter initialized");
+	  ROS_INFO((node_name_+"  Fiter initialized").c_str());
 	}
       }
       vo_mutex_.unlock();  imu_mutex_.unlock();  odom_mutex_.unlock();
@@ -339,8 +359,18 @@ int main(int argc, char **argv)
   // Initialize ROS
   ros::init(argc, argv);
 
+  // get node name from arguments
+  string node_name("odom_estimation");
+  if (argc > 2){
+    ROS_INFO((node_name+"  Too many arguments for robot_pose_ekf.").c_str());
+    assert(0);
+  }
+  if (argc == 2)
+    node_name = argv[1];
+  ROS_INFO((node_name+"  Creating robot pose ekf with name %s").c_str(), node_name.c_str());
+
   // create filter class
-  OdomEstimationNode my_filter_node;
+  OdomEstimationNode my_filter_node(node_name);
 
   // wait for filter to finish
   my_filter_node.spin();
