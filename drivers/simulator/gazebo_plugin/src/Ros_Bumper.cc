@@ -24,14 +24,14 @@
  * Date: 09 Setp. 2008
  */
 
-#include "Global.hh"
-#include "XMLConfig.hh"
+#include "gazebo/Global.hh"
+#include "gazebo/XMLConfig.hh"
 #include "ContactSensor.hh"
-#include "World.hh"
-#include "gazebo.h"
-#include "GazeboError.hh"
-#include "ControllerFactory.hh"
-#include "Simulator.hh"
+#include "gazebo/World.hh"
+#include "gazebo/gazebo.h"
+#include "gazebo/GazeboError.hh"
+#include "gazebo/ControllerFactory.hh"
+#include "gazebo/Simulator.hh"
 #include "gazebo_plugin/Ros_Bumper.hh"
 
 using namespace gazebo;
@@ -47,18 +47,40 @@ Ros_Bumper::Ros_Bumper(Entity *parent )
 
   if (!this->myParent)
     gzthrow("Bumper controller requires a Contact Sensor as its parent");
+
+  Param::Begin(&this->parameters);
+  this->bumperTopicNameP = new ParamT<std::string>("bumperTopicName", "bumper", 0);
+  Param::End();
+
+  rosnode = ros::g_node; // comes from where?
+  int argc = 0;
+  char** argv = NULL;
+  if (rosnode == NULL)
+  {
+    // this only works for a single camera.
+    ros::init(argc,argv);
+    rosnode = new ros::node("ros_gazebo",ros::node::DONT_HANDLE_SIGINT);
+    printf("-------------------- starting node in bumper \n");
+  }
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Destructor
 Ros_Bumper::~Ros_Bumper()
 {
+  delete this->bumperTopicNameP;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Load the controller
 void Ros_Bumper::LoadChild(XMLConfigNode *node)
 {
+  this->bumperTopicNameP->Load(node);
+  this->bumperTopicName = this->bumperTopicNameP->GetValue();
+  std::cout << " publishing contact/collisions to topic name: " << this->bumperTopicName << std::endl;
+
+  rosnode->advertise<std_msgs::String>(this->bumperTopicName,100);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +93,39 @@ void Ros_Bumper::InitChild()
 // Update the controller
 void Ros_Bumper::UpdateChild()
 {
+  this->lock.lock();
+
+  unsigned int num_contacts = this->myParent->GetContactCount();
+
+  double current_time = Simulator::Instance()->GetRealTime();
+
+  std::string my_geom_name;
+  int i_hit_geom;
+  double when_i_hit;
+  std::string geom_i_hit;;
+
+  for (unsigned int i=0; i < num_contacts; i++)
+  {
+    my_geom_name = this->myParent->GetGeomName(i); 
+    i_hit_geom = this->myParent->GetContactState(i); 
+    when_i_hit= this->myParent->GetContactTime(i); 
+    geom_i_hit = this->myParent->GetContactGeomName(i); 
+    if (i_hit_geom == 1)
+    {
+      std::ostringstream stream;
+      stream    << "touched!    i:" << i
+                << "      my geom:" << my_geom_name
+                << "   other geom:" << geom_i_hit
+                << "         time:" << when_i_hit    << std::endl;
+      std::cout << stream;
+      this->bumperMsg.data = stream.str();
+      rosnode->publish(this->bumperTopicName,this->bumperMsg);
+    }
+  }
+
+  this->myParent->ResetContactStates();
+
+  this->lock.unlock();
 }
 
 ////////////////////////////////////////////////////////////////////////////////

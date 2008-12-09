@@ -120,8 +120,8 @@ class TestCameras(unittest.TestCase):
 
         #compare thumbnails only
         for i in range(len(i0d)):
-          (r0,g0,b0) = i0d[i-1]
-          (r1,g1,b1) = i1d[i-1]
+          (r0,g0,b0) = i0d[i]
+          (r1,g1,b1) = i1d[i]
           #if abs(r0-r1) > 0 or abs(g0-g1) > 0 or abs(b0-b1) > 0:
           #  print "debug errors ",i,abs(r0-r1),abs(g0-g1),abs(b0-b1)
           if abs(r0-r1) > pixel_tol or abs(g0-g1) > pixel_tol or abs(b0-b1) > pixel_tol:

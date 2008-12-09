@@ -152,6 +152,20 @@
           <box size="${base_size_x} ${base_size_y} ${base_size_z}" />
         </geometry>
       </collision>
+      <map name="bumper_sensor" flag="gazebo">
+        <verbatim key="sensor_base_bumper">
+          <sensor:contact name="${name}_contact_sensor">
+            <geom>${name}_collision</geom>
+            <updateRate>100.0</updateRate>
+            <controller:ros_bumper name="${name}_ros_bumper_controller" plugin="libRos_Bumper.so">
+              <alwaysOn>true</alwaysOn>
+              <updateRate>100.0</updateRate>
+              <bumperTopicName>${name}_bumper</bumperTopicName>
+              <interface:bumper name="${name}_bumper_iface" />
+            </controller:ros_bumper>
+          </sensor:contact>
+        </verbatim>
+      </map>
     </link>
 
 
@@ -212,7 +226,6 @@
 	      <interface:laser name="ros_base_laser_iface" />
             </controller:ros_laser>
           </sensor:ray>
-
         </verbatim>
       </map>
     </sensor>

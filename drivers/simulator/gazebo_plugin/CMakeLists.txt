@@ -19,6 +19,7 @@ rospack_add_library(P3D src/P3D.cc)
 rospack_add_library(F3D src/F3D.cc)
 rospack_add_library(gazebo_mechanism_control src/gazebo_mechanism_control.cpp)
 rospack_add_library(gazebo_battery src/gazebo_battery.cpp)
+rospack_add_library(Ros_Bumper src/Ros_Bumper.cc)
 
 # This target requires adding player to the manifest.xml.
 #rospack_add_executable(player_pr2 src/player/Pr2_Player.cc)

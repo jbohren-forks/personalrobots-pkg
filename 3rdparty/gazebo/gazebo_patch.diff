@@ -1834,6 +1834,83 @@ Index: server/sensors/camera/MonoCameraSensor.cc
    Ogre::HardwarePixelBufferSharedPtr mBuffer;
    std::ostringstream sstream;
    Ogre::ImageCodec::ImageData *imgData;
+Index: server/sensors/contact/ContactSensor.hh
+===================================================================
+--- server/sensors/contact/ContactSensor.hh	(revision 7168)
++++ server/sensors/contact/ContactSensor.hh	(working copy)
+@@ -68,6 +68,12 @@
+     /// \brief Return a contact state
+     public: uint8_t GetContactState(unsigned int index) const;
+ 
++    /// \brief Return contact geometry name
++    public: std::string GetContactGeomName(unsigned int index) const;
++
++    /// \brief Return geometry name
++    public: std::string GetGeomName(unsigned int index) const;
++
+     /// \brief Reset the contact states
+     public: void ResetContactStates();
+ 
+@@ -93,9 +99,11 @@
+     /// Geom name parameter
+     private: std::vector< ParamT<std::string> *> geomNamesP;
+ 
++    private: std::vector<std::string> geomNames;
+     private: uint8_t *contactStates;
+     private: double *contactTimes;
+     private: unsigned int contactCount;
++    private: std::vector<std::string> contactNames;
+   };
+   /// \}
+   /// \}
+Index: server/sensors/contact/ContactSensor.cc
+===================================================================
+--- server/sensors/contact/ContactSensor.cc	(revision 7168)
++++ server/sensors/contact/ContactSensor.cc	(working copy)
+@@ -107,6 +107,26 @@
+ }
+ 
+ //////////////////////////////////////////////////////////////////////////////
++/// Return the contact geom name
++std::string ContactSensor::GetContactGeomName(unsigned int index) const
++{
++  if (index < this->contactCount)
++    return this->contactNames[index];
++
++  return std::string("");
++}
++
++//////////////////////////////////////////////////////////////////////////////
++/// Return the self geom name
++std::string ContactSensor::GetGeomName(unsigned int index) const
++{
++  if (index < this->contactCount)
++    return this->geomNamesP[index]->GetValue();
++
++  return std::string("");
++}
++
++//////////////////////////////////////////////////////////////////////////////
+ /// Reset the contact states
+ void ContactSensor::ResetContactStates()
+ {
+@@ -138,6 +158,8 @@
+   this->contactCount = this->geomNamesP.size();
+   this->contactTimes = new double[ this->contactCount ];
+   this->contactStates = new uint8_t[ this->contactCount ];
++  for (unsigned int i=0; i< this->contactCount; i++)
++    this->contactNames.push_back("");
+ 
+   memset(this->contactStates,0, sizeof(uint8_t) * this->contactCount);
+   memset(this->contactStates,0, sizeof(double) * this->contactCount);
+@@ -206,6 +228,7 @@
+     {
+       this->contactStates[i] = 1;
+       this->contactTimes[i] = Simulator::Instance()->GetRealTime();
++      this->contactNames[i] = **(*iter)==g1->GetName()? g2->GetName() : g1->GetName();
+     }
+   }
+ 
 Index: server/sensors/ray/RaySensor.hh
 ===================================================================
 --- server/sensors/ray/RaySensor.hh	(revision 7168)
