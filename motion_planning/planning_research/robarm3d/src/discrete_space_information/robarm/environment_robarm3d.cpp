@@ -29,8 +29,6 @@
 
 #include "../../headers.h"
 #include <queue>
-#include "../../utils/DistBetLineSegments2.cpp"
-
 
 #define PI_CONST 3.141592653
 
