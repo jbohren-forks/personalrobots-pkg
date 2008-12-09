@@ -9,7 +9,7 @@ BOOST_ROOT =$(shell rospack find boost)/boost
 CMAKE_ARGS = -DCMAKE_INSTALL_PREFIX=$(PWD)/$(INSTALL_DIR)/ \
 	-DMATRIX_LIB=boost -DMATRIX_INSTALL=`rospack find boost`/boost \
 	-DRNG_LIB=boost -DRNG_INSTALL=`rospack find boost`/boost
-PATCH = bfl_patch.diff
+#PATCH = bfl_patch.diff
 
 
 build: wiped bfl
@@ -21,10 +21,10 @@ $(SVN_DIR):
 	else \
 	  cd $(SVN_DIR) && svn up; \
 	fi
-	if [ ! -f ./$(SVN_DIR)/patched ]; then \
-	  cd $(SVN_DIR) && patch -p0 <../$(PATCH); \
-	  touch patched; \
-	fi
+#	if [ ! -f ./$(SVN_DIR)/patched ]; then \
+#	  cd $(SVN_DIR) && patch -p0 <../$(PATCH); \
+#	  touch patched; \
+#	fi
 
 
 configured: $(SVN_DIR) Makefile
