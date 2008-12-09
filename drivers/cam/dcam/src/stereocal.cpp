@@ -207,6 +207,7 @@ void info_message(char *str, ...);	// print in the info line
 void debug_message(char *str, ...);	// print in the info line and to debug window
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
 bool FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
+cam::StereoDcam *initcam(uint64_t guid);
 
 // IPL images for transfers to OpenCV domain
 IplImage *img1 = NULL, *img2 = NULL;
@@ -277,6 +278,9 @@ main(int argc, char **argv)	// no arguments
   if (devNum > 0) 
     devs->value(0);
 
+  // don't fool around, open the first device
+  debug_message("[Dcam] Finding first available camera");
+  dev = initcam(dcam::getGuid(0));
 
   static videre_proc_mode_t pmode = PROC_MODE_NONE;
 
@@ -286,24 +290,20 @@ main(int argc, char **argv)	// no arguments
       // check for video stream commands
       if (startCam)
 	{
-	  // have a device?
-	  if (!dev)
+	  if (dev)
 	    {
-	      debug_message("[Dcam] Finding first available camera");
-	      dev = new cam::StereoDcam(dcam::getGuid(0));
+	      debug_message("[Dcam] Setting format, frame rate and PROC mode");
+	      dev->setFormat(VIDERE_STEREO_640x480);
+	      if (dev->isSTOC)
+		stg->stoc_button->value(true); // turn it on
+	      dev->setProcMode(pmode);
+	      debug_message("[Dcam] Starting device");
+	      dev->start();
+	      dev->setTextureThresh(sp_tthresh);
+	      dev->setUniqueThresh(sp_uthresh);
+	      isVideo = true;	// needed to keep thread running
+	      startCam = false;
 	    }
-
-	  debug_message("[Dcam] Setting format, frame rate and PROC mode");
-	  dev->setFormat(VIDERE_STEREO_640x480);
-	  if (dev->isSTOC)
-	    stg->stoc_button->value(true); // turn it on
-	  dev->setProcMode(pmode);
-	  debug_message("[Dcam] Starting device");
-	  dev->start();
-	  dev->setTextureThresh(sp_tthresh);
-	  dev->setUniqueThresh(sp_uthresh);
-	  isVideo = true;	// needed to keep thread running
-	  startCam = false;
 	}
 
       if (stopCam)
@@ -451,6 +451,25 @@ main(int argc, char **argv)	// no arguments
       stopCam = false;
     }
 }
+
+
+//
+// initialize a camera
+//
+
+cam::StereoDcam *
+initcam(uint64_t guid)
+{
+  if (dev)			// get rid of old one
+    delete dev;
+
+  dev = new cam::StereoDcam(guid);
+  stg->exposure_val->range(dev->expMax,dev->expMin);
+
+  return dev;
+}
+
+
 
 
 //
@@ -2130,6 +2149,97 @@ speckle_cb(Fl_Counter *w, void *x)
 {
   sp_speckle = (int)w->value();
 }
+
+
+//
+// video parameters
+//
+
+void
+do_auto_exposure_cb(Fl_Light_Button *w, void *x)
+{
+  if (dev)
+    {
+      if (w->value())		// turn it on
+	dev->setExposure(0,true);
+      else
+	{
+	  int val = (int)stg->exposure_val->value();
+	  dev->setExposure(val,false);
+	}
+    }
+}
+
+
+void
+do_exposure_cb(Fl_Slider *w, void *x)
+{
+  if (dev)
+    {
+      int val = (int)w->value();
+      printf("Exp val: %d\n", val);
+      dev->setExposure(val,false);
+      stg->exposure_auto_button->value(false);
+    }
+}
+
+
+void
+do_auto_gain_cb(Fl_Light_Button *w, void *x)
+{
+  if (dev)
+    {
+      if (w->value())		// turn it on
+	dev->setGain(0,true);
+      else
+	{
+	  int val = (int)stg->gain_val->value();
+	  dev->setGain(100-val,false);
+	}
+    }
+}
+
+
+void
+do_gain_cb(Fl_Slider *w, void *x)
+{
+  if (dev)
+    {
+      int val = (int)w->value();
+      dev->setGain(100-val,false);
+      stg->gain_auto_button->value(false);
+    }
+}
+
+
+void
+do_auto_brightness_cb(Fl_Light_Button *w, void *x)
+{
+  if (dev)
+    {
+      if (w->value())		// turn it on
+	dev->setBrightness(0,true);
+      else
+	{
+	  int val = (int)stg->brightness_val->value();
+	  dev->setBrightness(100-val,false);
+	}
+    }
+}
+
+
+void
+do_brightness_cb(Fl_Slider *w, void *x)
+{
+  if (dev)
+    {
+      int val = (int)w->value();
+      dev->setBrightness(100-val,false);
+      stg->brightness_auto_button->value(false);
+    }
+}
+
+
 
 
 // parsing file names

@@ -180,12 +180,24 @@ namespace dcam
     virtual bool getImage(int ms); // gets the next image, with timeout
     virtual void setCapturePolicy(dc1394capture_policy_t policy = DC1394_CAPTURE_POLICY_WAIT);
 
+    // general DC1394 interface
     virtual bool hasFeature(dc1394feature_t feature);
     virtual void getFeatureBoundaries(dc1394feature_t feature, uint32_t& min, uint32_t& max);
     virtual void setFeature(dc1394feature_t feature, uint32_t value, uint32_t value2 = 0);
     virtual void setFeatureAbsolute(dc1394feature_t feature, float value);
     virtual void setFeatureMode(dc1394feature_t feature, dc1394feature_mode_t mode);
 
+    // particular features of importance
+    virtual void setExposure(int val, bool isauto);
+    virtual void setGain(int val, bool isauto);
+    virtual void setBrightness(int val, bool isauto);
+    // feature boundaries
+    uint32_t expMax, expMin;
+    uint32_t gainMax, gainMin;
+    uint32_t brightMax, brightMin;
+
+
+    // low-level register access
     virtual void setRegister(uint64_t offset, uint32_t value);
     virtual uint32_t getRegister(uint64_t offset);
 

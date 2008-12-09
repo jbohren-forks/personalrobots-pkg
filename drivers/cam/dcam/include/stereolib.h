@@ -69,7 +69,8 @@ extern "C" {
 #define YKERN KSIZE
 
 // filtered disparity value
-#define FILTERED -1
+// NOTE: lowest valid disparity is 1
+#define FILTERED 0
 
 // prefilter
 

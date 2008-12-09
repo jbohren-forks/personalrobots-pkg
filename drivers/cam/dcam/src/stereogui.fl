@@ -941,7 +941,7 @@ class stereogui {open
       }
     }
     Fl_Window stereo_window {
-      label Stereo open selected
+      label Stereo
       xywh {509 587 265 260} type Single hide
     } {
       Fl_Group {} {open
@@ -1009,78 +1009,112 @@ class stereogui {open
       }
     }
     Fl_Window video_window {
-      label Video
-      xywh {491 278 270 260} type Single hide
+      label Video open
+      xywh {453 593 425 205} type Single visible
     } {
       Fl_Group {} {open
         xywh {20 85 285 170}
       } {
         Fl_Box {} {
           label label
-          xywh {20 130 135 90} box ENGRAVED_FRAME labeltype NO_LABEL
+          xywh {20 125 135 70} box ENGRAVED_FRAME labeltype NO_LABEL
         }
         Fl_Choice {} {
           label Size
           callback video_size_cb
-          xywh {60 140 90 20} down_box BORDER_BOX
+          xywh {50 135 90 20} down_box BORDER_BOX labelsize 11
         } {
           MenuItem {} {
             label 320x240
-            xywh {0 0 30 20}
+            xywh {0 0 30 20} labelsize 11
           }
           MenuItem {} {
             label 640x480
-            xywh {0 0 30 20}
+            xywh {0 0 30 20} labelsize 11
           }
           MenuItem {} {
             label 1280x960
-            xywh {10 10 30 20}
+            xywh {10 10 30 20} labelsize 11
           }
         }
         Fl_Choice {} {
           label Rate
-          callback video_rate_cb open
-          xywh {60 165 90 20} down_box BORDER_BOX
+          callback video_rate_cb
+          xywh {50 165 90 20} down_box BORDER_BOX labelsize 11
         } {
           MenuItem {} {
             label {30 Hz}
-            xywh {10 10 30 20}
+            xywh {10 10 30 20} labelsize 11
           }
           MenuItem {} {
             label {15 Hz}
-            xywh {10 10 30 20}
+            xywh {10 10 30 20} labelsize 11
           }
           MenuItem {} {
             label {7.5 Hz}
-            xywh {20 20 30 20}
+            xywh {20 20 30 20} labelsize 11
           }
         }
       }
-      Fl_Group {} {open
-        xywh {20 30 285 170}
+      Fl_Group {} {
+        xywh {20 25 295 170}
       } {
         Fl_Box {} {
-          xywh {20 30 240 85} box ENGRAVED_FRAME
+          xywh {20 25 200 85} box ENGRAVED_FRAME labelsize 11
         }
         Fl_Light_Button video_button {
           label Video
           callback do_video_cb
-          xywh {30 75 60 25}
+          xywh {30 70 50 25} labelsize 11
         }
         Fl_Choice cam_select {
           label Cam
           callback video_dev_cb open
-          xywh {60 40 195 20} down_box BORDER_BOX
+          xywh {60 35 145 20} down_box BORDER_BOX labelsize 11
         } {}
         Fl_Light_Button color_button {
           label Color
           callback do_color_cb
-          xywh {110 75 60 25}
+          xywh {100 70 45 25} labelsize 11
         }
         Fl_Light_Button stoc_button {
           label STOC
           callback do_stoc_cb
-          xywh {190 75 60 25}
+          xywh {160 70 45 25} labelsize 11
+        }
+      }
+      Fl_Group {} {open
+        xywh {245 40 160 185}
+      } {
+        Fl_Slider exposure_val {
+          label Exposure
+          callback do_exposure_cb
+          xywh {265 40 20 130} type {Vert Knob} labelsize 11 align 1 maximum 100 step 1 value 100
+        }
+        Fl_Slider gain_val {
+          label Gain
+          callback do_gain_cb
+          xywh {320 40 20 130} type {Vert Knob} labelsize 11 align 1 maximum 100 step 1
+        }
+        Fl_Slider brightness_val {
+          label Bright
+          callback do_brightness_cb selected
+          xywh {375 40 20 130} type {Vert Knob} labelsize 11 align 1 maximum 100 step 1
+        }
+        Fl_Light_Button exposure_auto_button {
+          label Auto
+          callback do_auto_exposure_cb
+          xywh {255 175 40 20} labelsize 11
+        }
+        Fl_Light_Button gain_auto_button {
+          label Auto
+          callback do_auto_gain_cb
+          xywh {310 175 40 20} labelsize 11
+        }
+        Fl_Light_Button brightness_auto_button {
+          label Auto
+          callback do_auto_brightness_cb
+          xywh {365 175 40 20} labelsize 11
         }
       }
     }

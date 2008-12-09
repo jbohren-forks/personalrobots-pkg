@@ -851,8 +851,10 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 				  0x08, 0x0, 0x08, 0x0, 0x08, 0x0, 0x08, 0x0};
   const __m128i val_epi16_1    = {0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00,
 				  0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00};
-  //  const __m128i val_epi16_2    = {0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
-  //				  0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+  const __m128i val_epi16_2    = {0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00,
+				  0x02, 0x00, 0x02, 0x00, 0x02, 0x00, 0x02, 0x00};
+  const __m128i val_epi16_3    = {0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00,
+				  0x03, 0x00, 0x03, 0x00, 0x03, 0x00, 0x03, 0x00};
 #else
   const __m128i p0xfffffff0 = {0xffffffffffff0000LL, 0xffffffffffffffffLL};
   const __m128i p0x0000000f = {0xffffLL, 0x0LL};
@@ -860,7 +862,8 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
   const __m128i val_epi16_7fff = {0x7fff7fff7fff7fffLL, 0x7fff7fff7fff7fffLL};
   const __m128i val_epi16_8    = {0x0008000800080008LL, 0x0008000800080008LL};
   const __m128i val_epi16_1    = {0x0001000100010001LL, 0x0001000100010001LL};
-  //  const __m128i val_epi16_2    = {0x0002000200020002LL, 0x0002000200020002LL};
+  const __m128i val_epi16_2    = {0x0002000200020002LL, 0x0002000200020002LL};
+  const __m128i val_epi16_3    = {0x0003000300030003LL, 0x0003000300030003LL};
 #endif
 
   // set up buffers, first align to 16 bytes
@@ -1212,11 +1215,11 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 	      //	      unim = _mm_cmpgt_epi16(uniqth,pval); // compare to unique thresh
 	      //	      uval = _mm_add_epi16(uval,unim); // sub out
 #ifdef EXACTUNIQ
-	      uval = _mm_cmpgt_epi16(uval,val_epi16_1);	// 1s where uniqcnt > 1
+	      uval = _mm_cmplt_epi16(uval,val_epi16_2);	// 0s where uniqcnt > 1
 #else
-	      uval = _mm_cmpgt_epi16(uval,val_epi16_2);	// 1s where uniqcnt > 2
+	      uval = _mm_cmplt_epi16(uval,val_epi16_3);	// 0s where uniqcnt > 2
 #endif
-	      ival = _mm_or_si128(uval,ival); // set to -1
+	      ival = _mm_and_si128(uval,ival); // set to bad values to 0
 
 	      // store in output array
 	      *disppp = _mm_extract_epi16(ival,7);

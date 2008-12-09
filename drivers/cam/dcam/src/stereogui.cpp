@@ -18,16 +18,16 @@ Fl_Menu_Item stereogui::menu_[] = {
 };
 
 Fl_Menu_Item stereogui::menu_Size[] = {
- {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"320x240", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"640x480", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"1280x960", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
 Fl_Menu_Item stereogui::menu_Rate[] = {
- {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
- {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
+ {"30 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"15 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
+ {"7.5 Hz", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 11, 0},
  {0,0,0,0,0,0,0,0,0}
 };
 
@@ -1251,42 +1251,89 @@ stereogui::stereogui() {
     } // Fl_Group* o
     stereo_window->end();
   } // Fl_Window* stereo_window
-  { video_window = new Fl_Window(270, 260, "Video");
+  { video_window = new Fl_Window(425, 205, "Video");
     video_window->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(20, 85, 285, 170);
-      { Fl_Box* o = new Fl_Box(20, 130, 135, 90, "label");
+      { Fl_Box* o = new Fl_Box(20, 125, 135, 70, "label");
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       } // Fl_Box* o
-      { Fl_Choice* o = new Fl_Choice(60, 140, 90, 20, "Size");
+      { Fl_Choice* o = new Fl_Choice(50, 135, 90, 20, "Size");
         o->down_box(FL_BORDER_BOX);
+        o->labelsize(11);
         o->callback((Fl_Callback*)video_size_cb);
         o->menu(menu_Size);
       } // Fl_Choice* o
-      { Fl_Choice* o = new Fl_Choice(60, 165, 90, 20, "Rate");
+      { Fl_Choice* o = new Fl_Choice(50, 165, 90, 20, "Rate");
         o->down_box(FL_BORDER_BOX);
+        o->labelsize(11);
         o->callback((Fl_Callback*)video_rate_cb);
         o->menu(menu_Rate);
       } // Fl_Choice* o
       o->end();
     } // Fl_Group* o
-    { Fl_Group* o = new Fl_Group(20, 30, 285, 170);
-      { Fl_Box* o = new Fl_Box(20, 30, 240, 85);
+    { Fl_Group* o = new Fl_Group(20, 25, 295, 170);
+      { Fl_Box* o = new Fl_Box(20, 25, 200, 85);
         o->box(FL_ENGRAVED_FRAME);
+        o->labelsize(11);
       } // Fl_Box* o
-      { video_button = new Fl_Light_Button(30, 75, 60, 25, "Video");
+      { video_button = new Fl_Light_Button(30, 70, 50, 25, "Video");
+        video_button->labelsize(11);
         video_button->callback((Fl_Callback*)do_video_cb);
       } // Fl_Light_Button* video_button
-      { cam_select = new Fl_Choice(60, 40, 195, 20, "Cam");
+      { cam_select = new Fl_Choice(60, 35, 145, 20, "Cam");
         cam_select->down_box(FL_BORDER_BOX);
+        cam_select->labelsize(11);
         cam_select->callback((Fl_Callback*)video_dev_cb);
       } // Fl_Choice* cam_select
-      { color_button = new Fl_Light_Button(110, 75, 60, 25, "Color");
+      { color_button = new Fl_Light_Button(100, 70, 45, 25, "Color");
+        color_button->labelsize(11);
         color_button->callback((Fl_Callback*)do_color_cb);
       } // Fl_Light_Button* color_button
-      { stoc_button = new Fl_Light_Button(190, 75, 60, 25, "STOC");
+      { stoc_button = new Fl_Light_Button(160, 70, 45, 25, "STOC");
+        stoc_button->labelsize(11);
         stoc_button->callback((Fl_Callback*)do_stoc_cb);
       } // Fl_Light_Button* stoc_button
+      o->end();
+    } // Fl_Group* o
+    { Fl_Group* o = new Fl_Group(245, 40, 160, 185);
+      { exposure_val = new Fl_Slider(265, 40, 20, 130, "Exposure");
+        exposure_val->type(4);
+        exposure_val->labelsize(11);
+        exposure_val->maximum(100);
+        exposure_val->step(1);
+        exposure_val->value(100);
+        exposure_val->callback((Fl_Callback*)do_exposure_cb);
+        exposure_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* exposure_val
+      { gain_val = new Fl_Slider(320, 40, 20, 130, "Gain");
+        gain_val->type(4);
+        gain_val->labelsize(11);
+        gain_val->maximum(100);
+        gain_val->step(1);
+        gain_val->callback((Fl_Callback*)do_gain_cb);
+        gain_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* gain_val
+      { brightness_val = new Fl_Slider(375, 40, 20, 130, "Bright");
+        brightness_val->type(4);
+        brightness_val->labelsize(11);
+        brightness_val->maximum(100);
+        brightness_val->step(1);
+        brightness_val->callback((Fl_Callback*)do_brightness_cb);
+        brightness_val->align(FL_ALIGN_TOP);
+      } // Fl_Slider* brightness_val
+      { exposure_auto_button = new Fl_Light_Button(255, 175, 40, 20, "Auto");
+        exposure_auto_button->labelsize(11);
+        exposure_auto_button->callback((Fl_Callback*)do_auto_exposure_cb);
+      } // Fl_Light_Button* exposure_auto_button
+      { gain_auto_button = new Fl_Light_Button(310, 175, 40, 20, "Auto");
+        gain_auto_button->labelsize(11);
+        gain_auto_button->callback((Fl_Callback*)do_auto_gain_cb);
+      } // Fl_Light_Button* gain_auto_button
+      { brightness_auto_button = new Fl_Light_Button(365, 175, 40, 20, "Auto");
+        brightness_auto_button->labelsize(11);
+        brightness_auto_button->callback((Fl_Callback*)do_auto_brightness_cb);
+      } // Fl_Light_Button* brightness_auto_button
       o->end();
     } // Fl_Group* o
     video_window->end();

@@ -62,6 +62,13 @@ extern void do_video_cb(Fl_Light_Button*, void*);
 extern void video_dev_cb(Fl_Choice*, void*);
 extern void do_color_cb(Fl_Light_Button*, void*);
 extern void do_stoc_cb(Fl_Light_Button*, void*);
+#include <FL/Fl_Slider.H>
+extern void do_exposure_cb(Fl_Slider*, void*);
+extern void do_gain_cb(Fl_Slider*, void*);
+extern void do_brightness_cb(Fl_Slider*, void*);
+extern void do_auto_exposure_cb(Fl_Light_Button*, void*);
+extern void do_auto_gain_cb(Fl_Light_Button*, void*);
+extern void do_auto_brightness_cb(Fl_Light_Button*, void*);
 
 class stereogui {
 public:
@@ -167,6 +174,12 @@ public:
   Fl_Choice *cam_select;
   Fl_Light_Button *color_button;
   Fl_Light_Button *stoc_button;
+  Fl_Slider *exposure_val;
+  Fl_Slider *gain_val;
+  Fl_Slider *brightness_val;
+  Fl_Light_Button *exposure_auto_button;
+  Fl_Light_Button *gain_auto_button;
+  Fl_Light_Button *brightness_auto_button;
   ~stereogui(); 
 };
 #endif

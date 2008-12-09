@@ -350,6 +350,15 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
 
   setRawType();
 
+  // set up max/min values
+  getFeatureBoundaries(DC1394_FEATURE_EXPOSURE,expMin,expMax);
+  getFeatureBoundaries(DC1394_FEATURE_GAIN,gainMin,gainMax);
+  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,brightMin,brightMax);
+  PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
+  PRINTF("[Dcam] Gain     min/max: [%d,%d]\n",gainMin,gainMax);
+  PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+
+
   //  dc1394_iso_release_bandwidth(dcCam, 10000000);
 
   //  CHECK_ERR_CLEAN( dc1394_reset_bus(dcCam), "Could not reset bus" );
@@ -1026,6 +1035,78 @@ dcam::Dcam::setHoropter(int val)
   return true;
 }
 
+
+//
+// value boundaries are given by the max/min variables
+//
+
+void
+dcam::Dcam::setExposure(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < expMin)
+    v = expMin;
+  if (v > expMax)
+    v = expMax;
+
+  printf("Exposure: %d %d\n", v, isauto);
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_EXPOSURE,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_EXPOSURE,v);      // ??? do we have to set manual here ???
+}
+
+
+void
+dcam::Dcam::setGain(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < gainMin)
+    v = gainMin;
+  if (v > gainMax)
+    v = gainMax;
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_GAIN,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_GAIN,v);      // ??? do we have to set manual here ???
+}
+
+void
+dcam::Dcam::setBrightness(int val, bool isauto)
+{
+  usleep(50000);
+
+  uint32_t v;
+  if (val < 0) v = 0;
+  else v = val;
+
+  if (v < brightMin)
+    v = brightMin;
+  if (v > brightMax)
+    v = brightMax;
+
+  if (isauto)
+    setFeatureMode(DC1394_FEATURE_BRIGHTNESS,DC1394_FEATURE_MODE_AUTO);
+  else
+    setFeature(DC1394_FEATURE_BRIGHTNESS,v);   //   ??? do we have to set manual here ???
+}
+
+
+//
+// upload bytes to on-camera EEPROM
+//
 
 volatile int xx = 0x1a2b3c4d;
 

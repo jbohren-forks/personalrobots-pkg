@@ -427,6 +427,7 @@ StereoData::doDisparity()
   int uthresh = uniqueThresh; // uniqueness threshold, percent
 
   // allocate buffers
+  // TODO: make these consistent with current values
   if (!imDisp)
     imDisp = (int16_t *)MEMALIGN(xim*yim*2);
 
