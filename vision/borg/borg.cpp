@@ -272,6 +272,7 @@ void Borg::extract(std::list<Image *> &images, bool show_gui)
     if (image == images.begin())
     {
       cvSaveImage("still_remapped.jpg", remapped);
+      cvSaveImage("still_remapped.pgm", remapped);
       still_remapped = remapped; // pull intensity values from this one
       continue; // this one will be brighter; don't difference it
     }

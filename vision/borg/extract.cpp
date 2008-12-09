@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   list<Borg::Image *> images;
   for (int a = 1; a < argc; a++)
     images.push_back(new Borg::Image(argv[a]));
-  borg.extract(images);
+  borg.extract(images, false);
   borg.printExtraction(images);
   for (list<Borg::Image *>::iterator i = images.begin(); i != images.end(); ++i)
   {
