@@ -34,8 +34,8 @@
 using namespace tf;
 
 void TransformListener::transformQuaternion(const std::string& target_frame,
-                                            const std_msgs::QuaternionStamped& msg_in,
-                                            std_msgs::QuaternionStamped& msg_out)
+    const std_msgs::QuaternionStamped& msg_in,
+    std_msgs::QuaternionStamped& msg_out)
 {
   Stamped<Quaternion> pin, pout;
   QuaternionStampedMsgToTF(msg_in, pin);
@@ -44,8 +44,8 @@ void TransformListener::transformQuaternion(const std::string& target_frame,
 }
 
 void TransformListener::transformVector(const std::string& target_frame,
-                                        const std_msgs::Vector3Stamped& msg_in,
-                                        std_msgs::Vector3Stamped& msg_out)
+    const std_msgs::Vector3Stamped& msg_in,
+    std_msgs::Vector3Stamped& msg_out)
 {
   Stamped<Vector3> pin, pout;
   Vector3StampedMsgToTF(msg_in, pin);
@@ -54,8 +54,8 @@ void TransformListener::transformVector(const std::string& target_frame,
 }
 
 void TransformListener::transformPoint(const std::string& target_frame,
-                                       const std_msgs::PointStamped& msg_in,
-                                       std_msgs::PointStamped& msg_out)
+    const std_msgs::PointStamped& msg_in,
+    std_msgs::PointStamped& msg_out)
 {
   Stamped<Point> pin, pout;
   PointStampedMsgToTF(msg_in, pin);
@@ -64,8 +64,8 @@ void TransformListener::transformPoint(const std::string& target_frame,
 }
 
 void TransformListener::transformPose(const std::string& target_frame,
-                                      const std_msgs::PoseStamped& msg_in,
-                                      std_msgs::PoseStamped& msg_out)
+    const std_msgs::PoseStamped& msg_in,
+    std_msgs::PoseStamped& msg_out)
 {
   Stamped<Pose> pin, pout;
   PoseStampedMsgToTF(msg_in, pin);
@@ -73,8 +73,8 @@ void TransformListener::transformPose(const std::string& target_frame,
   PoseStampedTFToMsg(pout, msg_out);
 }
 void TransformListener::transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
-                                            const std_msgs::QuaternionStamped& msg_in, 
-                                            const std::string& fixed_frame, std_msgs::QuaternionStamped& msg_out)
+    const std_msgs::QuaternionStamped& msg_in, 
+    const std::string& fixed_frame, std_msgs::QuaternionStamped& msg_out)
 {
   Stamped<Quaternion> pin, pout;
   QuaternionStampedMsgToTF(msg_in, pin);
@@ -83,8 +83,8 @@ void TransformListener::transformQuaternion(const std::string& target_frame, con
 }
 
 void TransformListener::transformVector(const std::string& target_frame, const ros::Time& target_time, 
-                                            const std_msgs::Vector3Stamped& msg_in, 
-                                            const std::string& fixed_frame, std_msgs::Vector3Stamped& msg_out)
+    const std_msgs::Vector3Stamped& msg_in, 
+    const std::string& fixed_frame, std_msgs::Vector3Stamped& msg_out)
 {
   Stamped<Vector3> pin, pout;
   Vector3StampedMsgToTF(msg_in, pin);
@@ -93,8 +93,8 @@ void TransformListener::transformVector(const std::string& target_frame, const r
 }
 
 void TransformListener::transformPoint(const std::string& target_frame, const ros::Time& target_time, 
-                                            const std_msgs::PointStamped& msg_in, 
-                                            const std::string& fixed_frame, std_msgs::PointStamped& msg_out)
+    const std_msgs::PointStamped& msg_in, 
+    const std::string& fixed_frame, std_msgs::PointStamped& msg_out)
 {
   Stamped<Point> pin, pout;
   PointStampedMsgToTF(msg_in, pin);
@@ -103,8 +103,8 @@ void TransformListener::transformPoint(const std::string& target_frame, const ro
 }
 
 void TransformListener::transformPose(const std::string& target_frame, const ros::Time& target_time, 
-                                      const std_msgs::PoseStamped& msg_in, 
-                                      const std::string& fixed_frame, std_msgs::PoseStamped& msg_out)
+    const std_msgs::PoseStamped& msg_in, 
+    const std::string& fixed_frame, std_msgs::PoseStamped& msg_out)
 {
   Stamped<Pose> pin, pout;
   PoseStampedMsgToTF(msg_in, pin);
@@ -120,17 +120,17 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   transformPointCloud(target_frame, transform, cloudIn.header.stamp, cloudIn, cloudOut);
 }
 void TransformListener::transformPointCloud(const std::string& target_frame, const ros::Time& target_time, 
-                                            const std_msgs::PointCloud& cloudIn, 
-                                            const std::string& fixed_frame, std_msgs::PointCloud& cloudOut)
+    const std_msgs::PointCloud& cloudIn, 
+    const std::string& fixed_frame, std_msgs::PointCloud& cloudOut)
 {
   Stamped<Transform> transform;
   lookupTransform(target_frame, target_time, 
-                  cloudIn.header.frame_id, cloudIn.header.stamp,
-                  fixed_frame, 
-                  transform);
+      cloudIn.header.frame_id, cloudIn.header.stamp,
+      fixed_frame, 
+      transform);
 
   transformPointCloud(target_frame, transform, target_time, cloudIn, cloudOut);
-  
+
 
 }
 
@@ -142,40 +142,40 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   unsigned int length = cloudIn.get_pts_size();
 
   NEWMAT::Matrix matIn(4, length);
-  
+
   double * matrixPtr = matIn.Store();
-  
+
   for (unsigned int i = 0; i < length ; i++) 
-    { 
-      matrixPtr[i] = cloudIn.pts[i].x;
-      matrixPtr[length +i] = cloudIn.pts[i].y;
-      matrixPtr[2 * length + i] = cloudIn.pts[i].z;
-      matrixPtr[3 * length + i] = 1;
-    };
-  
+  { 
+    matrixPtr[i] = cloudIn.pts[i].x;
+    matrixPtr[length +i] = cloudIn.pts[i].y;
+    matrixPtr[2 * length + i] = cloudIn.pts[i].z;
+    matrixPtr[3 * length + i] = 1;
+  };
+
   NEWMAT::Matrix matOut = transform * matIn;
-  
+
   // Copy relevant data from cloudIn, if needed
   if (&cloudIn != &cloudOut)
   {
-      cloudOut.header = cloudIn.header;
-      cloudOut.set_pts_size(length);  
-      cloudOut.set_chan_size(cloudIn.get_chan_size());
-      for (unsigned int i = 0 ; i < cloudIn.get_chan_size() ; ++i)
-	  cloudOut.chan[i] = cloudIn.chan[i];
+    cloudOut.header = cloudIn.header;
+    cloudOut.set_pts_size(length);  
+    cloudOut.set_chan_size(cloudIn.get_chan_size());
+    for (unsigned int i = 0 ; i < cloudIn.get_chan_size() ; ++i)
+      cloudOut.chan[i] = cloudIn.chan[i];
   }
-  
+
   matrixPtr = matOut.Store();
-  
+
   //Override the positions
   cloudOut.header.stamp = target_time;
   cloudOut.header.frame_id = target_frame;
   for (unsigned int i = 0; i < length ; i++) 
-    { 
-      cloudOut.pts[i].x = matrixPtr[i];
-      cloudOut.pts[i].y = matrixPtr[1*length + i];
-      cloudOut.pts[i].z = matrixPtr[2*length + i];
-    };
+  { 
+    cloudOut.pts[i].x = matrixPtr[i];
+    cloudOut.pts[i].y = matrixPtr[1*length + i];
+    cloudOut.pts[i].z = matrixPtr[2*length + i];
+  };
 }
 
 
@@ -184,34 +184,37 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
   cloudOut.header = scanIn.header;
   cloudOut.header.frame_id = target_frame;
   cloudOut.set_pts_size(scanIn.get_ranges_size());
-    if (scanIn.get_intensities_size() > 0)
-      {
-        cloudOut.set_chan_size(1);
-        cloudOut.chan[0].name ="intensities";
-        cloudOut.chan[0].set_vals_size(scanIn.get_intensities_size());
-      }
+  if (scanIn.get_intensities_size() > 0)
+  {
+    cloudOut.set_chan_size(2);
+    cloudOut.chan[0].name ="intensities";
+    cloudOut.chan[0].set_vals_size(scanIn.get_intensities_size());
+
+    cloudOut.chan[1].name ="index";
+    cloudOut.chan[1].set_vals_size(scanIn.get_ranges_size());
+  }
 
   tf::Stamped<tf::Point> pointIn;
   tf::Stamped<tf::Point> pointOut;
 
   pointIn.frame_id_ = scanIn.header.frame_id;
-  
+
   ///\todo this can be optimized
   std_msgs::PointCloud intermediate; //optimize out
   projector_.projectLaser(scanIn, intermediate, -1.0, true);
-  
+
   // Extract transforms for the beginning and end of the laser scan
   ros::Time start_time = scanIn.header.stamp ;
   ros::Time end_time   = scanIn.header.stamp + ros::Duration().fromSec(scanIn.get_ranges_size()*scanIn.time_increment) ;
-  
+
   tf::Stamped<tf::Transform> start_transform ;
   tf::Stamped<tf::Transform> end_transform ;
   tf::Stamped<tf::Transform> cur_transform ;
-  
+
   lookupTransform(target_frame, scanIn.header.frame_id, start_time, start_transform) ;
   lookupTransform(target_frame, scanIn.header.frame_id, end_time, end_transform) ;
-  
-  
+
+
   unsigned int count = 0;  
   for (unsigned int i = 0; i < scanIn.get_ranges_size(); i++)
   {
@@ -220,22 +223,22 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
     {
       // Looking up transforms in tree is too expensive. Need more optimized way
       /*
-      pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z), 
-                                       ros::Time(scanIn.header.stamp.to_ull() + (uint64_t) (scanIn.time_increment * 1000000000)),
-                                       pointIn.frame_id_ = scanIn.header.frame_id);///\todo optimize to no copy
-      transformPoint(target_frame, pointIn, pointOut);
-      */
+         pointIn = tf::Stamped<tf::Point>(btVector3(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z), 
+         ros::Time(scanIn.header.stamp.to_ull() + (uint64_t) (scanIn.time_increment * 1000000000)),
+         pointIn.frame_id_ = scanIn.header.frame_id);///\todo optimize to no copy
+         transformPoint(target_frame, pointIn, pointOut);
+         */
 
       // Instead, assume constant motion during the laser-scan, and use slerp to compute intermediate transforms
       btScalar ratio = i / ( (double) scanIn.get_ranges_size() - 1.0) ;
 
       //! \todo Make a function that performs both the slerp and linear interpolation needed to interpolate a Full Transform (Quaternion + Vector)
-      
+
       //Interpolate translation
       btVector3 v ;
       v.setInterpolate3(start_transform.getOrigin(), end_transform.getOrigin(), ratio) ;
       cur_transform.setOrigin(v) ;
-      
+
       //Interpolate rotation
       btQuaternion q1, q2 ;
       start_transform.getBasis().getRotation(q1) ;
@@ -243,25 +246,30 @@ void TransformListener::transformLaserScanToPointCloud(const std::string & targe
 
       // Compute the slerp-ed rotation
       cur_transform.setRotation( slerp( q1, q2 , ratio) ) ;
-      
+
       // Apply the transform to the current point
       btVector3 pointIn(intermediate.pts[i].x, intermediate.pts[i].y, intermediate.pts[i].z) ;
       btVector3 pointOut = cur_transform * pointIn ;
-      
+
       // Copy transformed point into cloud
       cloudOut.pts[count].x  = pointOut.x();
       cloudOut.pts[count].y  = pointOut.y();
       cloudOut.pts[count].z  = pointOut.z();
-      
+
+      //Copy index over from projected point cloud
+      cloudOut.chan[1].vals[count] = intermediate.chan[1].vals[i];
+
+
       if (scanIn.get_intensities_size() >= i) /// \todo optimize and catch length difference better
-	  cloudOut.chan[0].vals[count] = scanIn.intensities[i];
+        cloudOut.chan[0].vals[count] = scanIn.intensities[i];
       count++;
     }
-    
+
   }
   //downsize if necessary
   cloudOut.set_pts_size(count);
   cloudOut.chan[0].set_vals_size(count);
+  cloudOut.chan[1].set_vals_size(count);
 }
 
 
@@ -275,7 +283,7 @@ void TransformListener::subscription_callback()
     {
       setTransform(trans);
     }
-    
+
     catch (TransformException& ex)
     {
       ///\todo Use error reporting
