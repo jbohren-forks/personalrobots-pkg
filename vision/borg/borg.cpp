@@ -1,4 +1,5 @@
 #include <map>
+#include <queue>
 #include <list>
 #include <string>
 #include <stdexcept>
@@ -475,9 +476,9 @@ Borg::Image::Image(const char *filename)
   if (strlen(name) >= 32)
   {
     char abuf[50], tbuf[50];
-    strncpy(abuf, name + 22, 9);
+    strncpy(abuf, name + 23, 9);
     abuf[9] = 0;
-    strncpy(tbuf, name + 4, 16);
+    strncpy(tbuf, name + 5, 16);
     tbuf[16] = 0;
     angle = atof(abuf);
     t = atof(tbuf);
@@ -501,6 +502,13 @@ void rotate_y(const double th, const double *v, double *w)
   w[2] = -sin(th) * v[0] + cos(th) * v[2];
 }
 
+void rotate_z(const double th, const double *v, double *w)
+{
+  w[0] =  cos(th) * v[0] + sin(th) * v[1];
+  w[1] = -sin(th) * v[0] + cos(th) * v[1];
+  w[2] =  v[2];
+}
+
 void Borg::project(const vector<SensedPoint> &sensed,
                    vector<ProjectedPoint> &projected)
 {
@@ -514,10 +522,11 @@ void Borg::project(const vector<SensedPoint> &sensed,
     const double ray_norm = sqrt(xc*xc + yc*yc + 1);
     const double ray[3] = { xc / ray_norm, yc / ray_norm, 1.0 / ray_norm };
     // rotate laser plane normal
-    double laser[3];
+    double rolled_laser[3], laser[3];
     const double stationary_laser_norm[3] = { 1, 0, 0 };
+    rotate_z(laser_roll * 3.14159 / 180.0, stationary_laser_norm, rolled_laser);
     rotate_y(enc_offset + p->angle * 3.14159 / 180.0, 
-             stationary_laser_norm, laser);
+             rolled_laser, laser);
     // calculate intersection
     const double t =  (    tx*laser[0] +     ty*laser[1] +     tz*laser[2]) /
                       (ray[0]*laser[0] + ray[1]*laser[1] + ray[2]*laser[2]);
@@ -722,29 +731,62 @@ double Borg::CalibrationScene::objective()
   return obj;
 }
 
+class CornerProjection
+{
+public:
+  Borg::ProjectedPoint *pt; // into projected points matrix
+  double dist; // distance from the corner to this point
+  CornerProjection(Borg::ProjectedPoint *_pt, double _dist)
+  : pt(_pt), dist(_dist) { }
+};
+
+bool operator< (const CornerProjection &lhs, const CornerProjection &rhs)
+{
+  return lhs.dist < rhs.dist;
+}
+
 void Borg::CalibrationScene::projectCorners()
 {
   for (vector<CheckerCorner>::iterator c = corners.begin();
        c != corners.end(); ++c)
   {
+    priority_queue<CornerProjection> q;
     // it would be smart to do an octree or whatever, but we'll brute-force it
     double min_sq_dist = 1e100;
-    ProjectedPoint *closest = NULL;
-    for (vector<ProjectedPoint>::iterator p = proj.begin();
+    Borg::ProjectedPoint *closest = NULL;
+    for (vector<Borg::ProjectedPoint>::iterator p = proj.begin();
          p != proj.end(); ++p)
     {
       double sq_dist = (p->row - c->row) * (p->row - c->row) +
                        (p->col - c->col) * (p->col - c->col);
       //printf("(%f, %f) -> (%d, %f) sq_dist = %f\n", c->row, c->col, p->row, p->col, sq_dist);
+      q.push(CornerProjection(&(*p), sqrt(sq_dist)));
+      /*
       if (sq_dist < min_sq_dist)
       {
         min_sq_dist = sq_dist;
         closest = &(*p);
       }
+      */
     }
-    c->x = closest->x;
-    c->y = closest->y;
-    c->z = closest->z;
+    // take top 10 guys, weight according to exp(-dist)
+    double wx = 0, wy = 0, wz = 0;
+    for (int i = 0; i < 10; i++)
+    {
+      CornerProjection cp = q.top();
+      q.pop();
+      wx += cp.pt->x;
+      wy += cp.pt->y;
+      wz += cp.pt->z;
+    }
+    /*
+    wx /= 10;
+    wy /= 10;
+    wz /= 10;
+    */
+    c->x = wx / 10; //closest->x;
+    c->y = wy / 10; //closest->y;
+    c->z = wz / 10; //closest->z;
   }
 }
     

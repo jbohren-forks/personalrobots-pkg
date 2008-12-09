@@ -114,6 +114,7 @@ private:
   int laser_thresh;
   double tx, ty, tz, enc_offset, laser_rot;
   double max_stripe_width;
+  double laser_roll;
 };
 
 }
