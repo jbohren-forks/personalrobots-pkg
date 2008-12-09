@@ -22,7 +22,7 @@
   <node machine="two" pkg="IBPSBatteryInterface" type="monitorBatteries" respawn="true"/>
 
 <!-- Base Laser -->
-  <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
+  <node  machine="two" pkg="hokuyo_node" type="hokuyo_node" name="base_hokuyo_node" args="scan:=base_scan">
     <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="base_laser" />
     <param name="min_ang_degrees" type="double" value="-100.0" />
@@ -30,8 +30,8 @@
   </node>
 
 <!-- Tilt Laser -->
-  <node  machine="xenomai" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
-    <param name="port" type="string" value="/dev/ttyACM1" />
+  <node  machine="three" pkg="hokuyo_node" type="hokuyo_node" name="tilt_hokuyo_node" args="scan:=tilt_scan">
+    <param name="port" type="string" value="/dev/ttyACM0" />
     <param name="frameid" type="string" value="laser_tilt_link" />
     <param name="min_ang_degrees" type="double" value="-80.0" />
     <param name="max_ang_degrees" type="double" value="80.0" />
