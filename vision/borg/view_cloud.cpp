@@ -26,13 +26,22 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
 // POSSIBILITY OF SUCH DAMAGE.
 
-
+#include <math.h>
 #include <SDL.h>
 #include <cstdio>
 #include <unistd.h>
 #include <string.h>
 #include "cloud_viewer/cloud_viewer.h"
 #include <ctime>
+#include <time.h>
+#include <vector>
+#include "ros/time.h"
+#include "borg.h"
+
+using namespace borg;
+using std::vector;
+
+static const double D2R = 3.1415926 / 180.0;
 
 int main(int argc, char **argv)
 {
@@ -53,8 +62,11 @@ int main(int argc, char **argv)
     printf("couldn't open [%s]\n", argv[1]);
     return -1;
   }
+  Borg borg(0);
   CloudViewer cloud_viewer;
   int line_num = 1;
+  double tilt = borg.get_tilt() * D2R;
+  printf("tilt = %f\n", tilt);
   while (!feof(f))
   {
     double x, y, z;
@@ -65,6 +77,10 @@ int main(int argc, char **argv)
       printf("bad syntax on line %d\n", line_num);
       break;
     }
+    // rotate about x so that the floor is level in the rendering
+    double ry =  y * cos(tilt) + z * sin(tilt);
+    double rz = -y * sin(tilt) + z * cos(tilt);
+    y = ry; z = rz;
 
     if (line_num == 1)
     {
@@ -88,7 +104,7 @@ int main(int argc, char **argv)
   }
   SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE,   24);
   SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-  const int w = 1280, h = 960;
+  const int w = 1100, h = 700;
   if (SDL_SetVideoMode(w, h, 32, SDL_OPENGL | SDL_HWSURFACE) == 0)
   {
     fprintf(stderr, "setvideomode failed: %s\n", SDL_GetError());
@@ -96,23 +112,84 @@ int main(int argc, char **argv)
   }
 
   cloud_viewer.set_opengl_params(w,h);
-  cloud_viewer.set_look_tgt(0, 0, 0);
+  // choose a look target by sampling a bunch of points and choosing one 
+  // closest to the mean
+  srand(time(NULL));
+  double x_mean = 0, y_mean = 0, z_mean = 0;
+  vector<CloudViewerPoint> *pts = &cloud_viewer.points;
+  for (size_t i = 0; i < pts->size(); i++)
+  {
+    x_mean += pts->at(i).x;
+    y_mean += pts->at(i).y;
+    z_mean += pts->at(i).z;
+  }
+  x_mean /= pts->size();
+  y_mean /= pts->size();
+  z_mean /= pts->size();
+  // now, grab some samples and use the closest one
+  int c = 0; // c is for closest
+  double closest_dist = 1e100;
+  for (int i = 0; i < 1000; i++)
+  {
+    int j = rand() % pts->size();
+    double dx = pts->at(j).x - x_mean;
+    double dy = pts->at(j).y - y_mean;
+    double dz = pts->at(j).z - z_mean;
+    double dist = sqrt(dx*dx + dy*dy + dz*dz);
+    if (dist < closest_dist)
+    {
+      closest_dist = dist;
+      c = j;
+    }
+  }
+  cloud_viewer.set_look_tgt((*pts)[c].x, (*pts)[c].y, (*pts)[c].z);
   cloud_viewer.render();
   SDL_GL_SwapBuffers();
+  ros::Time last_render(ros::Time::now());
+  double rho_min =  0.5, rho_max = 1.5, rho_step = 0.001;
+  double azi_min = -1.57, azi_max = -1.4, azi_step = 0.003;
+  double ele_min = 0.5, ele_max = 1, ele_step = 0.002;
+  cloud_viewer.cam_rho = 0.5 * (rho_min + rho_max);
+  cloud_viewer.cam_azi = 0.5 * (azi_min + azi_max);
+  cloud_viewer.cam_ele = 0.5 * (ele_min + ele_max);
+  bool auto_move = false;
+  double rho_dir = -1, azi_dir = 1, ele_dir = 1;
 
   bool done = false;
   while(!done)
   {
     usleep(1000);
+    ros::Time t(ros::Time::now());
+    if ((t - last_render).to_double() > 0.0333)
+    {
+      last_render = t;
+      cloud_viewer.render();
+      SDL_GL_SwapBuffers();
+      // pan the camera for next time
+      if (auto_move)
+      {
+        cloud_viewer.cam_rho += rho_dir * rho_step;
+        if ((rho_dir > 0 && cloud_viewer.cam_rho > rho_max) || 
+            cloud_viewer.cam_rho < rho_min)
+          rho_dir *= -1;
+        cloud_viewer.cam_azi += azi_dir * azi_step;
+        if ((azi_dir > 0 && cloud_viewer.cam_azi > azi_max) || 
+            cloud_viewer.cam_azi < azi_min)
+          azi_dir *= -1;
+        cloud_viewer.cam_ele += ele_dir * ele_step;
+        if ((ele_dir > 0 && cloud_viewer.cam_ele > ele_max) || 
+            cloud_viewer.cam_ele < ele_min)
+          ele_dir *= -1;
+      }
+    }
     SDL_Event event;
     while(SDL_PollEvent(&event))
     {
       switch(event.type)
       {
         case SDL_MOUSEMOTION:
-          cloud_viewer.mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-          cloud_viewer.render();
-          SDL_GL_SwapBuffers();
+          cloud_viewer.mouse_motion(event.motion.x, event.motion.y, 
+                                    event.motion.xrel, event.motion.yrel);
           break;
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
@@ -131,10 +208,12 @@ int main(int argc, char **argv)
         case SDL_KEYDOWN:
           if (event.key.keysym.sym == SDLK_ESCAPE)
             done = true;
+          else if (event.key.keysym.sym == SDLK_m)
+            auto_move = !auto_move;
           else
             cloud_viewer.keypress(event.key.keysym.sym);
-          cloud_viewer.render();
-          SDL_GL_SwapBuffers();
+          //cloud_viewer.render();
+          //SDL_GL_SwapBuffers();
           break;
         case SDL_QUIT:
           done = true;

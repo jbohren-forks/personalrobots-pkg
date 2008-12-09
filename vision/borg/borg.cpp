@@ -31,7 +31,8 @@ bool borg::g_silent = false;
 Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
   left(50), right(50), scan_duty(700), return_duty(600),
   map_x(NULL), map_y(NULL), image_queue_size(15), laser_thresh(10),
-  tx(1), ty(0), tz(0), enc_offset(0), laser_rot(0), max_stripe_width(5)
+  tx(1), ty(0), tz(0), enc_offset(0), laser_rot(0), max_stripe_width(5),
+  tilt(30)
 {
   if (opts & INIT_SILENT)
     g_silent = true; // don't print diagnostic / progress information 
@@ -82,6 +83,8 @@ Borg::Borg(uint32_t opts) : cam(NULL), stage(NULL),
       image_queue_size = atoi(value);
     else if (!strcmp(key, "max_stripe_width" ))
       max_stripe_width = atof(value);
+    else if (!strcmp(key, "tilt"))
+      tilt = atof(value);
     else if (!strcmp(key, "cam"))
       cam_str = string(value);
     else if (!strncmp(key, "cam_", 4))
@@ -606,6 +609,8 @@ void Borg::calibrate(const double size, const uint32_t x, const uint32_t y,
   }
   printf("%d of %d images had all corners detected\n", 
          scenes.size(), filename_prefixes.size());
+  if (!scenes.size())
+    throw runtime_error("couldn't find checkerboards on any scenes");
   // now, we hammer on the scenes to make them more reasonable
   // estimate gradient in our directions
   const double t_step = 0.0001, enc_step = 0.001;

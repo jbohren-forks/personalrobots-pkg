@@ -35,16 +35,16 @@ rospack_add_executable(extract extract.cpp)
 target_link_libraries(extract borg pthread)
 
 rospack_add_executable(view_cloud view_cloud.cpp)
-target_link_libraries(view_cloud cloud_viewer)
+target_link_libraries(view_cloud cloud_viewer borg)
 
 #rospack_add_executable(extract extract.cpp)
 #target_link_libraries(extract borg pthread)
 
-#rospack_add_executable(project project.cpp)
-#target_link_libraries(project borg pthread)
+rospack_add_executable(project project.cpp)
+target_link_libraries(project borg pthread)
 
-#rospack_add_executable(calibrate calibrate.cpp)
-#target_link_libraries(calibrate borg pthread)
+rospack_add_executable(calibrate calibrate.cpp)
+target_link_libraries(calibrate borg pthread)
 
 rospack_add_executable(grab_image grab_image.cpp)
 target_link_libraries(grab_image borg pthread)

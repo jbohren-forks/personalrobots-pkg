@@ -20,9 +20,8 @@ int main(int argc, char **argv)
   borg.project(extraction, projection);
   for (vector<Borg::ProjectedPoint>::iterator p = projection.begin();
        p != projection.end(); ++p)
-    printf("%.3f %.3f %.3f 0 0 0 %.3f %.3f %.3f 0\n", 
-           p->x, p->y, p->z,
-           p->r / 255.0, p->g / 255.0, p->b / 255.0);
+    printf("%.3f %.3f %.3f %d %d %d\n", 
+           p->x, p->y, p->z, p->r, p->g, p->b);
   return 0;
 }
 

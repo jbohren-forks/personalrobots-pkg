@@ -81,6 +81,7 @@ public:
   void loadExtractionFile(const char *fn, std::vector<SensedPoint> &extraction);
   void calibrate(const double size, const uint32_t x, const uint32_t y, 
                  const std::list<std::string> &filename_prefixes);
+  const double &get_tilt() { return tilt; }
 private:
   class CheckerCorner
   {
@@ -114,6 +115,7 @@ private:
   int laser_thresh;
   double tx, ty, tz, enc_offset, laser_rot;
   double max_stripe_width;
+  double tilt; // tilt of the entire assembly (it's usually aimed down a bit)
   double laser_roll;
 };
 
