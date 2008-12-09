@@ -54,9 +54,12 @@ namespace laser_scan{
     cloud_out.set_pts_size(scan_in.get_ranges_size());
     if (scan_in.get_intensities_size() > 0)
       {
-        cloud_out.set_chan_size(1);
+        cloud_out.set_chan_size(2);
         cloud_out.chan[0].name ="intensities";
         cloud_out.chan[0].set_vals_size(scan_in.get_intensities_size());
+
+        cloud_out.chan[1].name = "index";
+        cloud_out.chan[1].set_vals_size(scan_in.get_ranges_size());
       }
 
     double* outputMat = output.Store();
@@ -76,8 +79,13 @@ namespace laser_scan{
           cloud_out.pts[count].x = outputMat[index];
           cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
           cloud_out.pts[count].z = 0.0;
-          if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
+
+          //write index to point cloud
+          cloud_out.chan[1].vals[count] = index;
+
+          if (scan_in.get_intensities_size() >= index){ /// \todo optimize and catch length difference better
             cloud_out.chan[0].vals[count] = scan_in.intensities[index];
+          }
           count++;
         }
       }
@@ -85,8 +93,14 @@ namespace laser_scan{
         cloud_out.pts[count].x = outputMat[index];
         cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
         cloud_out.pts[count].z = 0.0;
-        if (scan_in.get_intensities_size() >= index) /// \todo optimize and catch length difference better
+
+        //write index to point cloud
+        cloud_out.chan[1].vals[count] = index;
+
+        if (scan_in.get_intensities_size() >= index){ /// \todo optimize and catch length difference better
           cloud_out.chan[0].vals[count] = scan_in.intensities[index];
+        }
+
         count++;
       }
         
@@ -95,6 +109,7 @@ namespace laser_scan{
     //downsize if necessary
     cloud_out.set_pts_size(count);
     cloud_out.chan[0].set_vals_size(count);
+    cloud_out.chan[1].set_vals_size(count);
  
   };
 
