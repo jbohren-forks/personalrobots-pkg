@@ -55,11 +55,11 @@ from pr2_mechanism_controllers.msg import *
 
 
 CMD_POS_1      =  0.0
-CMD_POS_2      =  2.0
+CMD_POS_2      =  3.142
 CMD_POS_3      =  0.0
-CMD_POS_4      =  2.0
+CMD_POS_4      =  3.142
 CMD_POS_5      =  3.142
-CMD_POS_6      =  2.0
+CMD_POS_6      =  3.142
 CMD_POS_7      =  0.0
 CMD_POS_8      =  0.8
 
