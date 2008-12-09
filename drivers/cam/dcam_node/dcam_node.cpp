@@ -342,7 +342,7 @@ public:
 
       memcpy((char*)(&stereo_info_.T[0]),  (char*)(stcam->stIm->T),   3*sizeof(double));
       memcpy((char*)(&stereo_info_.Om[0]), (char*)(stcam->stIm->Om),  3*sizeof(double));
-      memcpy((char*)(&stereo_info_.RP[0]), (char*)(stcam->stIm->RP), 12*sizeof(double));
+      memcpy((char*)(&stereo_info_.RP[0]), (char*)(stcam->stIm->RP), 16*sizeof(double));
 
       publish("~stereo_info", stereo_info_);
 
