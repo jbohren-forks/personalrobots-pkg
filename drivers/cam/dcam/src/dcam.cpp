@@ -350,14 +350,68 @@ dcam::Dcam::Dcam(uint64_t guid, size_t bsize)
 
   setRawType();
 
-  // set up max/min values
-  getFeatureBoundaries(DC1394_FEATURE_EXPOSURE,expMin,expMax);
-  getFeatureBoundaries(DC1394_FEATURE_GAIN,gainMin,gainMax);
-  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,brightMin,brightMax);
-  PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
-  PRINTF("[Dcam] Gain     min/max: [%d,%d]\n",gainMin,gainMax);
-  PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+  // check registers
+  uint32_t qval;
+  qval = getRegister(0x404);
+  printf("[Dcam] Feature register hi: %08x\n", qval);
+  qval = getRegister(0x408);
+  printf("[Dcam] Feature register lo: %08x\n", qval);
 
+  // set up max/min values
+  // NOTE: on Videre cameras with FW firmware < 6.0, control reg
+  //   does not have presence switch on
+  //
+
+  expMin = expMax = 0;
+  gainMin = gainMax = 0;
+  brightMin = brightMax = 0;
+
+  if (isVidereStereo && camFirmware < 0x0600)
+    {
+      expMax = 530;
+      gainMax = 48;
+      brightMax = 255;
+
+      uint32_t qval;
+      qval = getRegister(0x504); // exposure inquiry reg
+      expMax = qval & 0x3ff;
+      PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
+
+      qval = getRegister(0x520); // exposure inquiry reg
+      gainMax = qval & 0x3ff;
+      PRINTF("[Dcam] Gain min/max: [%d,%d]\n",gainMin,gainMax);
+
+      qval = getRegister(0x500); // brightness inquiry reg
+      brightMax = qval & 0x3ff;
+      PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+    }
+
+  else
+    {
+      if (hasFeature(DC1394_FEATURE_EXPOSURE))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_EXPOSURE,expMin,expMax);
+	  PRINTF("[Dcam] Exposure min/max: [%d,%d]\n",expMin,expMax);
+	}
+      else
+	PRINTF("[Dcam] No exposure feature\n");
+
+      if (hasFeature(DC1394_FEATURE_GAIN))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_GAIN,gainMin,gainMax);
+	  PRINTF("[Dcam] Gain min/max: [%d,%d]\n",expMin,expMax);
+	}
+      else
+	PRINTF("[Dcam] No gain feature\n");
+
+      if (hasFeature(DC1394_FEATURE_BRIGHTNESS))
+	{
+	  getFeatureBoundaries(DC1394_FEATURE_BRIGHTNESS,gainMin,gainMax);
+	  PRINTF("[Dcam] Brightness min/max: [%d,%d]\n",brightMin,brightMax);
+	}
+      else
+	PRINTF("[Dcam] No brightness feature\n");
+    }
 
   //  dc1394_iso_release_bandwidth(dcCam, 10000000);
 
@@ -1053,8 +1107,6 @@ dcam::Dcam::setExposure(int val, bool isauto)
     v = expMin;
   if (v > expMax)
     v = expMax;
-
-  printf("Exposure: %d %d\n", v, isauto);
 
   if (isauto)
     setFeatureMode(DC1394_FEATURE_EXPOSURE,DC1394_FEATURE_MODE_AUTO);

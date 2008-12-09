@@ -2177,7 +2177,6 @@ do_exposure_cb(Fl_Slider *w, void *x)
   if (dev)
     {
       int val = (int)w->value();
-      printf("Exp val: %d\n", val);
       dev->setExposure(val,false);
       stg->exposure_auto_button->value(false);
     }

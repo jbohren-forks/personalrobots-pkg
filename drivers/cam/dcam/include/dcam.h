@@ -198,6 +198,8 @@ namespace dcam
 
 
     // low-level register access
+    // implicitly assumes CCR base, so that DCAM register are at offsets
+    //   e.g., for EXPOSURE use 0x804
     virtual void setRegister(uint64_t offset, uint32_t value);
     virtual uint32_t getRegister(uint64_t offset);
 
