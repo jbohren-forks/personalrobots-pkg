@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <!-- send pr2.xml to param server -->
-    <include file="$(find wg_robot_description)/pr2/send_description.xml" />
+    <include file="$(find wg_robot_description)/pr2/send_description.launch" />
 
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/wg.world" respawn="false" output="screen">
