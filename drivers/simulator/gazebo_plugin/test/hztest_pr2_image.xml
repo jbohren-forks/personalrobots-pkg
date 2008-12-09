@@ -14,7 +14,7 @@
     to 0.0. -->
     <param name="hzerror" value="20.0" />
     <!-- Time to listen for [seconds] -->
-    <param name="test_duration" value="60.0" />    
+    <param name="test_duration" value="50.0" />    
     <!-- Whether each inter-message time interval should be checked against
     the expected publication rate and error bound [boolean].  If true, then
     the test will fail if the time elapsed between *any* two consecutive
@@ -28,7 +28,7 @@
     <param name="topic" value="axis_r/image" />
     <param name="hz" value="1.0" />
     <param name="hzerror" value="20.0" />
-    <param name="test_duration" value="60.0" />    
+    <param name="test_duration" value="50.0" />    
     <param name="check_intervals" value="false" />    
   </test>
 
@@ -37,7 +37,7 @@
     <param name="topic" value="stereo_l/image" />
     <param name="hz" value="1.0" />
     <param name="hzerror" value="20.0" />
-    <param name="test_duration" value="60.0" />    
+    <param name="test_duration" value="50.0" />    
     <param name="check_intervals" value="false" />    
   </test>
 
