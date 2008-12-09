@@ -140,15 +140,6 @@ public:
     m_acceptScans = false;
     random_utils::init(&m_rng);
 
-    /// @todo Find a way to make this work for pr2, with mechanism control,
-    /// but not break for STAIR.  Somebody needs to be periodically
-    /// publishing the base->base_laser Tx.  Or else we need a more standard
-    /// way of retrieving such Txs;
-    /* Set up the transform client */
-    double laser_x_offset;
-    param("laser_x_offset", laser_x_offset, 0.275);
-    m_tf.setWithEulers("base_laser", "base_link", laser_x_offset, 0.0, 0.0, 0.0, 0.0, 0.0, 0);
-
     /* create a thread that handles the publishing of the data */	
     m_publishingThread = ros::thread::member_thread::startMemberFunctionThread<World3DMap>(this, &World3DMap::publishDataThread);
 

@@ -5,7 +5,7 @@
 <review status="unreviewed" notes=""/>
 <depend package="roscpp" />
 <depend package="std_msgs" />
-<depend package="rosTF" />
+<depend package="tf" /> <!-- Code not changed from rosTF yet -->
 <depend package="laser_scan" />
 <depend package="random_utils" /> 
 <depend package="wg_robot_description_parser" /> 

@@ -11,7 +11,7 @@
   <depend package="roscpp"/>
   <depend package="std_msgs"/>
   <depend package="robot_msgs"/>
-  <depend package="rosTF"/>
+  <depend package="tf"/>
   <depend package="wg_robot_description_parser"/>
   <depend package="planning_models"/>
   <depend package="collision_space"/>
