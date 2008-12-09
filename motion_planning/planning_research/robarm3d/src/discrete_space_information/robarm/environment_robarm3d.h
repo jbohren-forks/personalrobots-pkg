@@ -155,6 +155,7 @@ typedef struct ENVROBARMHASHENTRY
     short unsigned int endeffz;
 } EnvROBARMHashEntry_t;
 
+/*
 // struct for passing around arm configuration without adding new hash entry
 typedef struct ARM_CONFIG
 {
@@ -162,6 +163,7 @@ typedef struct ARM_CONFIG
     short unsigned int elbow[3];
     short unsigned int endeff[3];
 } ArmConfig_t;
+*/
 
 // main structure that stores environment data used in planning
 typedef struct
@@ -176,8 +178,9 @@ typedef struct
     //vector that maps from stateID to coords	
     vector<EnvROBARMHashEntry_t*> StateID2CoordTable;
 
+    //transformation matrices - maybe not needed
     boost::numeric::ublas::matrix<double> T[NUMOFLINKS_DH];
-    
+
     //any additional variables
     int* Heur;    // euclidean distance
 }EnvironmentROBARM_t;
@@ -277,7 +280,7 @@ private:
     void ValidateDH2KinematicsLibrary();
     void ComputeDHTransformations();
     void GetPrecomputedDHMatrix(boost::numeric::ublas::matrix<double>*T, double theta, int frame);
-    int IsValidCoord(short unsigned int coord[NUMOFLINKS], ArmConfig_t arm);
+//     int IsValidCoord(short unsigned int coord[NUMOFLINKS], ArmConfig_t arm);
     int IsValidCoord(short unsigned int coord[NUMOFLINKS], EnvROBARMHashEntry_t* arm);
     int cost(short unsigned int state1coord[], short unsigned int state2coord[],bool bState2IsGoal);
 

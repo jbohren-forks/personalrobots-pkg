@@ -35,9 +35,6 @@ CMAKE_COMMAND = /home/ben/ros/ros/3rdparty/cmake/cmake/bin/cmake
 # The command to remove a file.
 RM = /home/ben/ros/ros/3rdparty/cmake/cmake/bin/cmake -E remove -f
 
-# The program to use to edit the cache.
-CMAKE_EDIT_COMMAND = /home/ben/ros/ros/3rdparty/cmake/cmake/bin/ccmake
-
 # The top-level source directory on which CMake was run.
 CMAKE_SOURCE_DIR = /home/ben/ros/ros-pkg/motion_planning/planning_research/robarm3d
 
@@ -49,8 +46,8 @@ CMAKE_BINARY_DIR = /home/ben/ros/ros-pkg/motion_planning/planning_research/robar
 
 # Special rule for the target edit_cache
 edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/home/ben/ros/ros/3rdparty/cmake/cmake/bin/ccmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running interactive CMake command-line interface..."
+	/home/ben/ros/ros/3rdparty/cmake/cmake/bin/cmake -i .
 .PHONY : edit_cache
 
 # Special rule for the target edit_cache
