@@ -74,12 +74,16 @@ if __name__ == "__main__":
     
     if len(sys.argv) != 3:
         print usage()
-    else:
-        try:
-            breaker_number = string.atoi(sys.argv[1])
-            command = sys.argv[2]
-        except:
-            print "excepted"
-            print usage()
-            sys.exit(1)
+    try:
+        breaker_number = string.atoi(sys.argv[1])
+        command = sys.argv[2]
+    except:
+        print "excepted"
+        print usage()
+        sys.exit(1)
+    if command == "force_start":
+        power_board_client(breaker_number, "reset")
+        sleep(0.5)
+        command = "start"
+
     print "breaker:%d command:%s = response:%d"%(breaker_number, command, power_board_client(breaker_number, command))
