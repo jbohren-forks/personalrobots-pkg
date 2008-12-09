@@ -280,7 +280,7 @@ void TransformListener::subscription_callback()
     {
       ///\todo Use error reporting
       std::string temp = ex.what();
-      printf("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.transforms[i].header.frame_id.c_str(), msg_in_.transforms[i].parent_id.c_str(), temp.c_str());
+      ROS_ERROR("Failure to set recieved transform %s to %s with error: %s\n", msg_in_.transforms[i].header.frame_id.c_str(), msg_in_.transforms[i].parent_id.c_str(), temp.c_str());
     }
   }
 

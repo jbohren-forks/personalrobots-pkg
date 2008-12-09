@@ -15,7 +15,7 @@
   <depend package="teleop_arm_keyboard"/>
   <depend package="laser_view"/>
   <depend package="pr2_gui"/>
-  <depend package="world_3d_map"/>
+  <!--depend package="world_3d_map"/  Commented due to breaking 12/9/08 Tully-->
   <depend package="highlevel_controllers"/>
   <depend package="executive_trex_pr2"/>
   <depend package="robot_pose_ekf"/>

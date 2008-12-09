@@ -39,7 +39,7 @@
 #include "ros/node.h"
 
 /// \todo remove backward compatability only
-#include "rosTF/TransformArray.h"
+#include "tf/TransformArray.h"
 // end remove
 
 namespace tf{
@@ -52,7 +52,7 @@ private:
 
   /// \todo remove backward compatability only
   //Temporary storage for callbacks(todo check threadsafe? make scoped in call?)
-  rosTF::TransformArray tfArrayIn;
+  tf::TransformArray tfArrayIn;
 
 public:
   /**@brief Constructor for transform listener

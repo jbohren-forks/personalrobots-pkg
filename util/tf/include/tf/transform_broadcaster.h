@@ -37,7 +37,7 @@
 #include "tf/tf.h"
 #include "tf/tfMessage.h"
 ///\todo only for backwards compatabilty, remove!
-#include "rosTF/TransformArray.h"
+#include "tf/TransformArray.h"
 
 namespace tf
 {
@@ -54,7 +54,7 @@ public:
   {
     node_.advertise<tfMessage>("/tf_message", 100);
     ///\todo remove when no longer backwards compatable
-      node_.advertise<rosTF::TransformArray>("TransformArray", 100);
+      node_.advertise<tf::TransformArray>("TransformArray", 100);
   };
   /** \brief Send a Stamped<Transform> with parent parent_id 
    * The stamped data structure includes frame_id, and time, and parent_id already.  */
@@ -67,7 +67,7 @@ public:
     ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
-    rosTF::TransformArray tfArray;
+    tf::TransformArray tfArray;
     tfArray.set_quaternions_size(1);
 
     tfArray.quaternions[0].header.frame_id = transform.frame_id_;
@@ -99,7 +99,7 @@ public:
     ///\todo removed for non collision with backwards compatability    node_.publish("/tf_message", message);
 
     ///\todo only for backwards compatabilty, remove!
-    rosTF::TransformArray tfArray;
+    tf::TransformArray tfArray;
     tfArray.set_quaternions_size(1);
 
     tfArray.quaternions[0].header.frame_id = frame_id;

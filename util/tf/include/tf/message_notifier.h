@@ -42,7 +42,7 @@
 #include <boost/thread.hpp>
 
 /// \todo remove backward compatability
-#include "rosTF/TransformArray.h"
+#include "tf/TransformArray.h"
 
 namespace tf
 {
@@ -446,7 +446,7 @@ private:
   Message message_; ///< The incoming message
 
   tfMessage transforms_message_; ///< The incoming TF transforms message
-  rosTF::TransformArray old_transforms_message_; ///< The incoming old TF (rosTF) TransformArray message
+  tf::TransformArray old_transforms_message_; ///< The incoming old TF (rosTF) TransformArray message
 
   bool destructing_; ///< Used to notify the worker thread that it needs to shutdown
   boost::thread* thread_handle_; ///< Thread handle for the worker thread

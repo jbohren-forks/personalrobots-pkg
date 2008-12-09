@@ -51,7 +51,7 @@
 #include <robot_srvs/SpawnController.h>
 #include <robot_srvs/KillController.h>
 #include <robot_msgs/MechanismState.h>
-#include "rosTF/TransformArray.h"
+#include "tf/TransformArray.h"
 
 
 typedef controller::Controller* (*ControllerAllocator)();
@@ -129,7 +129,7 @@ private:
   const char* const mechanism_state_topic_;
   misc_utils::RealtimePublisher<robot_msgs::MechanismState> publisher_;
 
-  misc_utils::RealtimePublisher<rosTF::TransformArray> transform_publisher_;
+  misc_utils::RealtimePublisher<tf::TransformArray> transform_publisher_;
 
   AdvertisedServiceGuard list_controllers_guard_, list_controller_types_guard_,
     spawn_controller_guard_, kill_controller_guard_;

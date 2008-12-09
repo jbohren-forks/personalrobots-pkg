@@ -59,8 +59,7 @@
 
 #include <misc_utils/realtime_publisher.h>
 
-#include <rosTF/rosTF.h>
-#include <rosTF/TransformEuler.h>
+#include <tf/TransformArray.h>
 
 #include <pthread.h>
 
@@ -476,7 +475,7 @@ namespace controller
            
     misc_utils::RealtimePublisher <std_msgs::RobotBase2DOdom>* publisher_ ;  //!< Publishes the odometry msg from the update() realtime loop
 
-    misc_utils::RealtimePublisher <rosTF::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+    misc_utils::RealtimePublisher <tf::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 

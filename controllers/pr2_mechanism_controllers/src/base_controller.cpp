@@ -810,7 +810,7 @@ void BaseControllerNode::update()
     {
       double x=0,y=0,yaw=0,vx,vy,vyaw;
       this->getOdometry(x,y,yaw,vx,vy,vyaw);
-      rosTF::TransformEuler &out = transform_publisher_->msg_.eulers[0];
+      tf::TransformEuler &out = transform_publisher_->msg_.eulers[0];
       out.header.stamp.from_double(time);
       out.header.frame_id = "odom";
       out.parent = "base_footprint";
@@ -822,7 +822,7 @@ void BaseControllerNode::update()
       out.yaw = angles::normalize_angle(-yaw);
 
 
-      rosTF::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
+      tf::TransformEuler &out2 = transform_publisher_->msg_.eulers[1];
       out2.header.stamp.from_double(time);
       out2.header.frame_id = "base_footprint";
       out2.parent = "base_link";
@@ -936,7 +936,7 @@ bool BaseControllerNode::initXml(mechanism::RobotState *robot_state, TiXmlElemen
 
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
-  transform_publisher_ = new misc_utils::RealtimePublisher <rosTF::TransformArray> ("TransformArray", 5) ;
+  transform_publisher_ = new misc_utils::RealtimePublisher <tf::TransformArray> ("TransformArray", 5) ;
 
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
