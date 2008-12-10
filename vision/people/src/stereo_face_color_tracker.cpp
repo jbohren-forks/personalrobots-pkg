@@ -95,7 +95,7 @@ public:
   ros::thread::mutex cv_mutex_;
 
   StereoFaceColorTracker(const char *haar_filename, bool use_depth, bool calib_color) : 
-    node("videre_face_detector", ros::node::ANONYMOUS_NAME),
+    node("stereo_face_color_tracker", ros::node::ANONYMOUS_NAME),
     cv_bridge_left_(NULL),
     cv_bridge_disp_(NULL),
     built_bridge_(false),
