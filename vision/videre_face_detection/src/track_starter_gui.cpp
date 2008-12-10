@@ -208,7 +208,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
-    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,stinfo_.dpp);
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
 
     CvSize im_size = cvGetSize(cv_image_);
 
