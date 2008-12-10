@@ -2,7 +2,7 @@
   <description>Gazebo 3D simulation examples.</description>
   <author>John Hsu</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="na" notes=""/>
   <url>http://pr.willowgarage.com/wiki/Simulator</url>
   <depend package="roslaunch"/>
   <depend package="gazebo_plugin"/>

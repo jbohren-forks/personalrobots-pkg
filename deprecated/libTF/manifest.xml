@@ -6,7 +6,7 @@ Library for doing transformations.
 </description>
 <author>Tully Foote</author>
 <license>BSD</license>
-<review status="unreviewed" notes=""/>
+<review status="deprecated" notes=""/>
 <url>http://pr.willowgarage.com</url>
 <depend package="newmat10"/>
 <depend package="ros_exception"/>

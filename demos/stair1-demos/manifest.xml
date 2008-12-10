@@ -2,7 +2,7 @@
   <description>Some demos that are specific to the STAIR1 robot. Most of these could easily be ported to other robots if the desire/hardware was there.</description>
   <author>Morgan Quigley</author>
   <license>BSD</license>
-  <review status="unreviewed" notes=""/>
+  <review status="na" notes=""/>
   <depend package="nav_view"/>
   <depend package="roslaunch"/>
   <depend package="amcl_player"/>
