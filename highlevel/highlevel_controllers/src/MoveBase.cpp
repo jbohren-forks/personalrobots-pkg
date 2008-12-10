@@ -228,7 +228,8 @@ namespace ros {
       // world model   source, or point clouds if we are. We shall pick one, and will be dominated by
       // point clouds
       subscribe("base_scan",  baseScanMsg_,  &MoveBase::baseScanCallback, 1);
-      subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      //subscribe("tilt_scan",  tiltScanMsg_,  &MoveBase::tiltScanCallback, 1);
+      subscribe("tilt_laser_cloud_filtered", tiltCloudMsg_, &MoveBase::tiltCloudCallback, 1);
       subscribe("stereo_cloud",  stereoCloudMsg_,  &MoveBase::stereoCloudCallback, 1);
 
       // Subscribe to odometry messages to get global pose
@@ -361,6 +362,13 @@ namespace ros {
       projector_.projectLaser(tiltScanMsg_, local_cloud, tiltLaserMaxRange_);
       lock();
       tiltScanBuffer_->buffer_cloud(local_cloud);
+      unlock();
+    }
+
+    void MoveBase::tiltCloudCallback()
+    {
+      lock();
+      tiltScanBuffer_->buffer_cloud(tiltCloudMsg_);
       unlock();
     }
 

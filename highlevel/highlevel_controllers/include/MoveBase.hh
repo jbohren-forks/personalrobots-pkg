@@ -159,6 +159,7 @@ namespace ros {
        */
       void baseScanCallback();
       void tiltScanCallback();
+      void tiltCloudCallback();
       void stereoCloudCallback();
 
       /**
@@ -207,6 +208,7 @@ namespace ros {
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */
       std_msgs::LaserScan tiltScanMsg_; /**< Filled by subscriber with new tilte laser scans */
+      std_msgs::PointCloud tiltCloudMsg_; /**< Filled by subscriber with new tilte laser scans */
       std_msgs::PointCloud stereoCloudMsg_; /**< Filled by subscriber with point clouds */
       std_msgs::RobotBase2DOdom odomMsg_; /**< Odometry in the odom frame picked up by subscription */
       laser_scan::LaserProjection projector_; /**< Used to project laser scans */

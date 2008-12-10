@@ -41,16 +41,18 @@ class JoyBattSender : public ros::node
   public:
     JoyBattSender() : ros::node("joy_batt_msg") 
     {
-      param<int>("~button", button_, 7);
+      param<int>("~stop_button", stop_button_, 7);
+      param<int>("~go_button", go_button_, 5);
       param<int>("~deadman_button", deadman_button_, 4);
-      advertise<robot_msgs::BatteryState>("bogus_battery_state", 2);
+      robot_msgs::BatteryState bs;
+      advertise("bogus_battery_state", bs, &JoyBattSender::sendHeartbeat, 2);
       subscribe("joy", joy_msg_, &JoyBattSender::handleJoyMsg, 2);
     }
 
     void handleJoyMsg()
     {
       ROS_INFO("%d", joy_msg_.buttons.size());
-      if(joy_msg_.buttons[button_] && (joy_msg_.buttons[deadman_button_]))
+      if(joy_msg_.buttons[stop_button_] && (joy_msg_.buttons[deadman_button_]))
       {
         // Fake battery message that says we're empty
         robot_msgs::BatteryState s;
@@ -62,11 +64,36 @@ class JoyBattSender : public ros::node
 
         ROS_INFO("Published bogus battery message");
       }
+      else if(joy_msg_.buttons[go_button_] && (joy_msg_.buttons[deadman_button_]))
+      {
+        // Fake battery message that says we're empty
+        robot_msgs::BatteryState s;
+        s.energy_remaining = 1000.0;
+        s.energy_capacity = 1000.0;
+        s.power_consumption = -800.0;
+
+        publish("bogus_battery_state", s);
+
+        ROS_INFO("Published bogus battery message");
+      }
+    }
+
+    void sendHeartbeat(ros::pub_sub_conn *sub)
+    {
+        robot_msgs::BatteryState s;
+        s.energy_remaining = 1000.0;
+        s.energy_capacity = 1000.0;
+        s.power_consumption = -800.0;
+
+        publish("bogus_battery_state", s);
+
+        ROS_INFO("Published bogus battery message");
     }
 
   private:
     joy::Joy joy_msg_;
-    int button_;
+    int stop_button_;
+    int go_button_;
     int deadman_button_;
 
 };
