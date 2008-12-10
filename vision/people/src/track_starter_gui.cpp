@@ -126,9 +126,11 @@ public:
     cv_disp_image_(NULL),
     //cv_image_cpy_(NULL),
     //cv_disp_image_cpy_(NULL),
-    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration(0.05), &TrackStarterGUI::image_cb_timeout)
+    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration(500), &TrackStarterGUI::image_cb_timeout)
   {
     
+    printf("Starting track starter gui\n");
+
     cvNamedWindow("Track Starter: Left Image",CV_WINDOW_AUTOSIZE);
     cvNamedWindow("Track Starter: Disparity",CV_WINDOW_AUTOSIZE);
     cvSetMouseCallback("Track Starter: Left Image", on_mouse, 0);
@@ -137,7 +139,10 @@ public:
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
     advertise<robot_msgs::PositionMeasurement>("/track_starter_gui/position_measurement",1);
-    sync_.subscribe("dcam/left/image_rect_color",limage_,1);
+    std::list<std::string> left_list;
+    left_list.push_back(std::string("dcam/left/image_rect_color"));
+    left_list.push_back(std::string("dcam/left/image_rect"));    
+    sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("dcam/disparity",dimage_,1);
     sync_.subscribe("dcam/stereo_info", stinfo_,1);
     sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
@@ -147,6 +152,8 @@ public:
 
   ~TrackStarterGUI() 
   {
+    printf("Destroying gui\n");
+
     cvDestroyWindow("Track Starter: Left Image");
     cvDestroyWindow("Track Starter: Disparity");
     
@@ -171,27 +178,37 @@ public:
   // Image callback. Draws selected points on images, publishes the point messages, and copies the images to be displayed.
   void image_cb_all(ros::Time t){
 
+    printf("Got messages\n");
+
     cv_mutex_.lock();
     if (!g_do_cb) {
       cv_mutex_.unlock();
       return;
     }
 
-    // Set color calibration.
     bool do_calib = false;
-    if (calib_color_ && has_param("dcam/left/image_rect_color")) {
-      // Exit if color calibration hasn't been performed.
-      do_calib = true;
-      lcolor_cal_.getFromParam("dcam/left/image_rect_color");
-    }
+    if (limage_.encoding == "rgb") {
+      // If this is a color image, set the calibration and convert it.
+      if (calib_color_ && has_param("dcam/left/image_rect_color")) {
+	// Exit if color calibration hasn't been performed.
+	do_calib = true;
+	lcolor_cal_.getFromParam("dcam/left/image_rect_color");
+      }
 
-    // Convert the images to OpenCV format.
-    if (lbridge_.fromImage(limage_,"bgr")) {
-      if (do_calib) {
-	lbridge_.reallocIfNeeded(&cv_image_, IPL_DEPTH_8U);
-	lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_, true, true, COLOR_CAL_BGR);
+      // Convert the images to OpenCV format.
+      if (lbridge_.fromImage(limage_,"bgr")) {
+	if (do_calib) {
+	  lbridge_.reallocIfNeeded(&cv_image_, IPL_DEPTH_8U);
+	  lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_, true, true, COLOR_CAL_BGR);
+	}
       }
     }
+    else {
+      // If this is a mono image, just convert it.
+      lbridge_.fromImage(limage_,"mono");
+      cv_image_ = lbridge_.toIpl();
+    }
+
     if (dbridge_.fromImage(dimage_)) {
       //dbridge_.reallocIfNeeded(&cv_disp_image_, IPL_DEPTH_16U);
       cv_disp_image_ = dbridge_.toIpl();
@@ -290,19 +307,19 @@ public:
   }
 
   void image_cb_timeout(ros::Time t) {
-    if (limage_.header.stamp != t)
-      printf("Timed out waiting for left image\n");
-    if (dimage_.header.stamp != t)
-      printf("Timed out waiting for disparity image\n");
+    printf("Not synced\n");
+    printf("t %f limage_ %f dimage_ %f stinfo %f rcinfo %f\n", t.toSec(), limage_.header.stamp.toSec(), dimage_.header.stamp.toSec(), stinfo_.header.stamp.toSec(), rcinfo_.header.stamp.toSec());
   }
 
   // Wait for thread to exit.
   bool spin() {
+    printf("Spinning\n");
+
     while (ok() && !quit_) {
       // Display the image
       cv_mutex_.lock();
 
-      int c = cvWaitKey(2);
+      int c = cvWaitKey(5);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
       if((c == 27)||(c == 'q')||(c == 'Q')){
