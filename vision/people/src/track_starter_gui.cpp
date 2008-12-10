@@ -179,7 +179,7 @@ public:
     }
 
     bool do_calib = false;
-    if (limage_.encoding == "rgb") {
+    if (limage_.encoding != "mono") {
       // If this is a color image, set the calibration and convert it.
       if (calib_color_ && has_param("dcam/left/image_rect_color")) {
 	// Exit if color calibration hasn't been performed.
