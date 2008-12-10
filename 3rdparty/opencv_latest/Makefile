@@ -27,6 +27,9 @@ configured: $(CVS_DIR) Makefile
 .PHONY: $(INSTALL_DIR)
 $(INSTALL_DIR): configured
 	cd $(CVS_DIR) && ln -fs /usr/bin/libtool . && make $(PARALLEL_JOBS) && make install
+	@echo "patch opencv.pc to pass -Wl,-rpath,-L{libdir}"
+	-mv $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.pc $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.bak
+	sed 's%Libs: -L$${libdir} -lcxcore%Libs: -Wl,-rpath,$${libdir} -L$${libdir} -lcxcore%g' $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.bak > $(PWD)/$(INSTALL_DIR)/lib/pkgconfig/opencv.pc
 
 clean:
 	-rm -rf $(INSTALL_DIR) configured
