@@ -318,7 +318,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
     // Get the average disparity in the middle half of the bounding box.
     if (disparity_image && cam_model) {
       for (r = floor(one_face.y+0.25*one_face.height); r < floor(one_face.y+0.75*one_face.height); r++) {
-	uchar* ptr = (uchar*)(disparity_image->imageData + r*disparity_image->widthStep);
+	ushort* ptr = (ushort*)(disparity_image->imageData + r*disparity_image->widthStep);
 	for (c = floor(one_face.x+0.25*one_face.width); c < floor(one_face.x+0.75*one_face.width); c++) {
 	  if (ptr[c] > 0) {
 	    avg_disp += ptr[c];
@@ -477,11 +477,10 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
   //cvDilate(disparity_image, disparity_image);
   //cvErode(disparity_image, disparity_image);
 
-  //cam_model->disp8UToCart32F(disparity_image, (float)1.0, (float)MAX_Z_MM, cft_Z_, cft_X_, cft_Y_);
   float *fptr = (float*)(cft_uvd_->data.ptr);
-  uchar *cptr;// = (uchar*)(disparity_image->imageData);
+  ushort *cptr;// = (uchar*)(disparity_image->imageData);
   for (int v =0; v < imsize.height; v++) {
-    cptr = (uchar*)(disparity_image->imageData+v*disparity_image->widthStep);
+    cptr = (ushort*)(disparity_image->imageData+v*disparity_image->widthStep);
     for (int u=0; u<imsize.width; u++) {
       (*fptr) = (float)u; fptr++;
       (*fptr) = (float)v; fptr++;
