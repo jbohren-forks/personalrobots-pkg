@@ -37,6 +37,7 @@
 
 #include "image_msgs/Image.h"
 #include "opencv/cxcore.h"
+#include "opencv/cv.h"
 
 namespace image_msgs
 {
