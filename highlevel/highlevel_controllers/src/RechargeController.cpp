@@ -108,6 +108,7 @@ namespace highlevel_controllers {
     robot_msgs::BatteryState batteryStateMsg_;
     bool pluginNotified_;
     bool unplugNotified_;
+    unsigned int connectionCount_; // Use to make sure we connect to a socket at least once. Handly for forcing a rest
   };
 
   RechargeController::RechargeController(const std::string& stateTopic, const std::string& goalTopic)
@@ -115,7 +116,7 @@ namespace highlevel_controllers {
       m_addresses("mcgann@willowgarage.com"), m_pluginSubject("Robot Needs to Be Plugged In"), 
       m_unplugSubject("Robot Needs to Be Unplugged"), m_pluginBody("Hello, could you please plug me in?\nThanks, PR2"),
       m_unplugBody("Hello, could you please unplug me?\nThanks, PR2"), m_mailClient("mailx -s"),
-      pluginNotified_(false), unplugNotified_(false){
+      pluginNotified_(false), unplugNotified_(false), connectionCount_(0){
 
     param("recharge/email_addresses", m_addresses, m_addresses);
     param("recharge/subject_plugin", m_pluginSubject, m_pluginSubject);
@@ -167,9 +168,11 @@ namespace highlevel_controllers {
     if(connected() && !isActive())
       activate();
 
-    // If connected, we can reset notification to plug in
-    if(connected())
+    // If connected, we can reset notification to plug in. We also clear it to be releasable, meaning
+    if(connected()){
       pluginNotified_ = false;
+      connectionCount_++;
+    }
 
     // If !connected, we can reset notification to unplug
     if(!connected() )
@@ -207,6 +210,7 @@ namespace highlevel_controllers {
     stateMsg.goal_recharge_level = goalMsg.recharge_level;
     pluginNotified_ = false;
     unplugNotified_ = false;
+    connectionCount_ = 0;
     stateMsg.unlock();
   }
 
@@ -221,7 +225,7 @@ namespace highlevel_controllers {
   /**
    * @brief When the state machine has transitioned back into an inactive state, we think we are done
    */
-  bool RechargeController::goalReached(){return !connected() && charged();}
+  bool RechargeController::goalReached(){return !connected() && charged() && connectionCount_ > 0;}
 
   /**
    * @brief Commands involve sending mail to plug and unplug, as well as waiting to charge.

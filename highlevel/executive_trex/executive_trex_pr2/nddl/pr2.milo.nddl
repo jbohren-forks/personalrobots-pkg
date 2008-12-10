@@ -6,6 +6,7 @@ float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
 typedef float [0.0 1.0] UNIT_FLOAT;
 
+
 /**
  * Monitors battery state information
  * @see BatteryState.msg
@@ -13,6 +14,7 @@ typedef float [0.0 1.0] UNIT_FLOAT;
 class BatteryState extends AgentTimeline {
   float discharge_limit; // Percentage of total capacity we are allowed to draw down before recharging
   float recharge_level; // Percentage of total capacity we expect to be at or better than after recharging
+  bool actual_value; // If true this is the real battery state
 
   predicate Holds {
     float energy_remaining; // Remaining energy in Joules
@@ -22,16 +24,25 @@ class BatteryState extends AgentTimeline {
     mulEq(energy_capacity, percentage_remaining, energy_remaining);
   }
 
+  BatteryState(Mode _mode, float ds, float rc, bool av){
+    super(_mode, "Holds");
+    discharge_limit = ds;
+    recharge_level = rc;
+    actual_value = av;
+  }
+
   BatteryState(Mode _mode, float ds, float rc){
     super(_mode, "Holds");
     discharge_limit = ds;
     recharge_level = rc;
+    actual_value = true;
   }
 
   BatteryState(Mode _mode){
     super(_mode, "Holds");
     discharge_limit = 0.1;
     recharge_level = 0.9;
+    actual_value = true;
   }
 };
 
@@ -237,6 +248,7 @@ WorkingStatus::Holds{
     // where w = batteryState[level] : (w.energy_remaining/w.energy_capacity) >= recharge_level;
     if(rc.end){
       any(BatteryState.Holds bs_e);
+      eq(bs_e.object.actual_value, true);
       concurrent(rc.end, bs_e.start);
       leq(rc.recharge_level, bs_e.percentage_remaining);
     }
@@ -279,6 +291,7 @@ RechargeController::Active{
   eq(ws.recharging, true);
 
   BatteryState bs;
+  eq(bs.actual_value, true);
   eq(recharge_level, bs.recharge_level);
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
