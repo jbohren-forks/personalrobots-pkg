@@ -34,6 +34,8 @@
 
 #include <vector>
 
+#include "image_msgs/CvBridge.h"
+
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
 #include "opencv/highgui.h"
@@ -41,7 +43,7 @@
 #include "ros/node.h"
 #include "image_msgs/StereoInfo.h"
 #include "image_msgs/Image.h"
-#include "image_msgs/CvBridge.h"
+
 
 #include "color_calib.h"
 
@@ -79,22 +81,23 @@ public:
   StereoView() : ros::node("stereo_view"), 
                  lcal(this), rcal(this), lcalimage(NULL), rcalimage(NULL),
                  sync(this, &StereoView::image_cb_all, ros::Duration().fromSec(0.05), &StereoView::image_cb_timeout),
-                 subscribe_color_(false), calib_color_(false), recompand_(false)
+                 calib_color_(false), recompand_(false)
   { 
     cvNamedWindow("left", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("right", CV_WINDOW_AUTOSIZE);
     cvNamedWindow("disparity", CV_WINDOW_AUTOSIZE);
 
-    param("~subscribe_color", subscribe_color_, false);
-    
-    if (subscribe_color_)
-    {
-      sync.subscribe("dcam/left/image_rect_color", limage, 1);
-      sync.subscribe("dcam/right/image_rect_color", rimage, 1);
-    } else {
-      sync.subscribe("dcam/left/image_rect", limage, 1);
-      sync.subscribe("dcam/right/image_rect", rimage, 1);
-    }
+    std::list<std::string> left_list;
+    left_list.push_back(std::string("dcam/left/image_rect_color"));
+    left_list.push_back(std::string("dcam/left/image_rect"));
+
+    std::list<std::string> right_list;
+    right_list.push_back(std::string("dcam/right/image_rect_color"));
+    right_list.push_back(std::string("dcam/right/image_rect"));
+
+    sync.subscribe(left_list,  limage, 1);
+    sync.subscribe(right_list, rimage, 1);
+
     sync.subscribe("dcam/disparity", dimage, 1);
     sync.subscribe("dcam/stereo_info", stinfo, 1);
   }

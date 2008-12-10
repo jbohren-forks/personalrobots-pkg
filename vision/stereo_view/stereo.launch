@@ -8,14 +8,11 @@
          640x480_videre_none:          No stereo on chip (all processing done in software).
                                         Provides: all 3 images available
           -->
-    <param name="video_mode" type="str" value="640x480_videre_none"/>
+    <param name="video_mode" type="str" value="640x480_videre_disparity_raw"/>
     <param name="do_rectify" type="bool" value="True"/>
     <param name="do_stereo" type="bool" value="True"/>
-    <param name="do_calc_points" type="bool" value="False"/>
+    <param name="do_calc_points" type="bool" value="True"/>
   </node>
-  <node name="stereo_view" pkg="stereo_view" type="stereo_view" respawn="false">
-    <!-- Remove this parameter to subscribe to mono images instead -->
-    <param name="subscribe_color" type="bool" value="True"/>
-  </node>
+  <node name="stereo_view" pkg="stereo_view" type="stereo_view" respawn="false" output="screen"/>
 </launch>
 
