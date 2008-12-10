@@ -7,8 +7,8 @@
 namespace features {
 
 
-RTreeClassifier::RTreeClassifier()
-  : classes_(0)
+RTreeClassifier::RTreeClassifier(bool keep_floats)
+  : classes_(0), keep_floats_(keep_floats)
 {
    //setReducedDim(DEFAULT_RED);
 }
@@ -32,26 +32,35 @@ void RTreeClassifier::train(std::vector<BaseKeypoint> const& base_set,
     printf("INVALID PARAMS in RTreeClassifier::train: reduced_num_dim > base_set.size()\n");
     return;
   }
+  if (!keep_floats_) {
+    printf("WARNING: Cannot release FLOAT posteriors when training, otherwise saving will\n"
+           "         not be possible afterwards. Setting keep_floats_ <- TRUE.\n"
+           "         Releasing float posteriors is possible when you load the classifier\n"
+           "         from the disc.\n");
+    keep_floats_ = true;
+  }
+  
   classes_ = reduced_num_dim; // base_set.size();
   original_num_classes_ = base_set.size();
-  trees_.resize(num_trees);
+  trees_.resize(num_trees);  
   
   printf("[OK] Training trees: base size=%i, reduced size=%i\n", base_set.size(), reduced_num_dim); 
   
   int count = 1;
-  printf("[OK] Trained 0 / %i trees\r", num_trees);
+  printf("[OK] Trained 0 / %i trees", num_trees);
   fflush(stdout);
   BOOST_FOREACH( RandomizedTree &tree, trees_ ) {
-    tree.train(base_set, rng, make_patch, depth, views, reduced_num_dim, num_quant_bits);    
-    printf("[OK] Trained %i / %i trees\r", count++, num_trees);
+    tree.setKeepFloatPosteriors(keep_floats_);
+    tree.train(base_set, rng, make_patch, depth, views, reduced_num_dim, num_quant_bits);
+    printf("\r[OK] Trained %i / %i trees", count++, num_trees);
     fflush(stdout);
   }
-  printf("\n");
+  printf("\n\n");  
 }
 
 // TODO: vectorize
-void RTreeClassifier::getSignature(IplImage* patch, float *sig)
-{
+void RTreeClassifier::getFloatSignature(IplImage* patch, float *sig)
+{ 
   // Need pointer to 32x32 patch data
   uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
   uchar* patch_data;
@@ -66,7 +75,8 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
       patch_data += RandomizedTree::PATCH_SIZE;
     }
     patch_data = buffer;
-  } else {
+  } 
+  else {
     patch_data = getData(patch);
   }
     
@@ -90,7 +100,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
   // full quantization (experimental)
   #if 0
     int n_max = 1<<8 - 1;
-    int sum_max = (1<<3 - 1)*trees_.size();
+    int sum_max = (1<<4 - 1)*trees_.size();
     int shift = 0;    
     while ((sum_max>>shift) > n_max) shift++;
     
@@ -103,7 +113,7 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
     if (!warned) {
       printf("[WARNING] Using full quantization (RTreeClassifier::getSignature)! shift=%i\n", shift);
       warned = true;
-    }    
+    }
   #else
     // TODO: get rid of this multiply (-> number of trees is known at train 
     // time, exploit it in RandomizedTree::finalize())
@@ -114,10 +124,71 @@ void RTreeClassifier::getSignature(IplImage* patch, float *sig)
 }
 
 
+void RTreeClassifier::getSignature(IplImage* patch, ushort *sig)
+{  
+  // Need pointer to 32x32 patch data
+  uchar buffer[RandomizedTree::PATCH_SIZE * RandomizedTree::PATCH_SIZE];
+  uchar* patch_data;
+  if (patch->widthStep != RandomizedTree::PATCH_SIZE) {
+    //printf("[INFO] patch is padded, data will be copied (%i/%i).\n", 
+    //       patch->widthStep, RandomizedTree::PATCH_SIZE);
+    uchar* data = getData(patch);
+    patch_data = buffer;
+    for (int i = 0; i < RandomizedTree::PATCH_SIZE; ++i) {
+      memcpy((void*)patch_data, (void*)data, RandomizedTree::PATCH_SIZE);
+      data += patch->widthStep;
+      patch_data += RandomizedTree::PATCH_SIZE;
+    }
+    patch_data = buffer;
+  } else {
+    patch_data = getData(patch);
+  }
+    
+  memset((void*)sig, 0, classes_ * sizeof(sig[0]));
+  std::vector<RandomizedTree>::iterator tree_it;
+ 
+  // get posteriors
+  uchar **posteriors = new uchar*[trees_.size()];  // TODO: move alloc outside this func
+  uchar **pp = posteriors;    
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    *pp = tree_it->getPosterior2(patch_data);       
+
+  // sum them up
+  pp = posteriors;
+  for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it, pp++)
+    add(classes_, sig, *pp, sig);
+
+  delete [] posteriors;
+  posteriors = NULL;  
+
+  // full quantization (experimental, later implicit)
+  #if 1
+    int n_max = 1<<8 - 1;
+    int sum_max = (1<<4 - 1)*trees_.size();
+    int shift = 0;    
+    while ((sum_max>>shift) > n_max) shift++;
+    
+    for (int i = 0; i < classes_; ++i) {
+      sig[i] = int(sig[i] + .5) >> shift;
+      if (sig[i]>n_max) sig[i] = n_max;
+    }
+  #endif
+}
+
+
+void RTreeClassifier::getSparseSignature(IplImage *patch, float *sig)
+{
+   printf("(%s:%i) ERROR: NOT IMPLEMENTED!\n", __FILE__, __LINE__);
+   exit(1);
+   //getSignature
+}
+
+
 void RTreeClassifier::read(const char* file_name)
 {
   std::ifstream file(file_name, std::ifstream::binary);
   read(file);
+  file.close();
 }
 
 void RTreeClassifier::read(std::istream &is)
@@ -129,7 +200,9 @@ void RTreeClassifier::read(std::istream &is)
 
   trees_.resize(num_trees);
   std::vector<RandomizedTree>::iterator tree_it;
+
   for (tree_it = trees_.begin(); tree_it != trees_.end(); ++tree_it) {
+    tree_it->setKeepFloatPosteriors(keep_floats_);
     tree_it->read(is);
   }
 }
@@ -137,7 +210,8 @@ void RTreeClassifier::read(std::istream &is)
 void RTreeClassifier::write(const char* file_name) const
 {
   std::ofstream file(file_name, std::ofstream::binary);
-  write(file);
+  write(file);  
+  file.close();
 }
 
 void RTreeClassifier::write(std::ostream &os) const

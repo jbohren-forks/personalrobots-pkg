@@ -9,10 +9,9 @@ namespace features {
 class RTreeClassifier
 {
 public:
-  typedef enum { QL_NONE=0, QL_LEAVES_ONLY=1, QL_FULL=2 } QUANTIZATION_LEVEL;
   static const int DEFAULT_TREES = 50;
     
-  RTreeClassifier();
+  RTreeClassifier(bool keep_floats);
 
   void train(std::vector<BaseKeypoint> const& base_set, Rng &rng,
              int num_trees = RTreeClassifier::DEFAULT_TREES,
@@ -31,8 +30,10 @@ public:
   // Caller is responsible for calling free() on returned signature
   //float* getSignature(IplImage* patch);
   
-  // sig must point to a memory block of at least classes()*sizeof(float) bytes
-  void getSignature(IplImage *patch, float *sig);  
+  // sig must point to a memory block of at least classes()*sizeof(float|uchar) bytes
+  void getSignature(IplImage *patch, ushort *sig);
+  void getFloatSignature(IplImage *patch, float *sig);  
+  void getSparseSignature(IplImage *patch, float *sig);
     
   inline int classes() { return classes_; }
   inline int original_num_classes() { return original_num_classes_; }
@@ -46,6 +47,7 @@ private:
   int classes_;
   int original_num_classes_;
   std::vector<RandomizedTree> trees_;
+  bool keep_floats_;
 };
 
 } // namespace features

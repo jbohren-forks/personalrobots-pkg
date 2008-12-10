@@ -8,13 +8,13 @@
 
 namespace features {
 
-RandomizedTree::RandomizedTree()
-{
-   posteriors_ = NULL;
-}
+RandomizedTree::RandomizedTree() 
+  : posteriors_(NULL), posteriors2_(NULL), keep_float_posteriors_(false)
+{ }
 
 RandomizedTree::~RandomizedTree()
 {
+   //DEBUG printf("[DEBUG] RandomizedTree::~RandomizedTree\n");
    freePosteriors();
 }
 
@@ -54,8 +54,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
 {
   init(base_set.size(), depth, rng);
   
-  IplImage* patch = cvCreateImage(cvSize(PATCH_SIZE, PATCH_SIZE),
-                                  IPL_DEPTH_8U, 1);
+  IplImage* patch = cvCreateImage(cvSize(PATCH_SIZE, PATCH_SIZE), IPL_DEPTH_8U, 1);
 
   // Estimate posterior probabilities using random affine views
   std::vector<BaseKeypoint>::const_iterator keypt_it;
@@ -69,7 +68,7 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
       addExample(class_id, getData(patch));
     }
   }
-
+  
   finalize(reduced_num_dim, num_quant_bits);
 
   cvReleaseImage(&patch);
@@ -77,21 +76,36 @@ void RandomizedTree::train(std::vector<BaseKeypoint> const& base_set,
 
 void RandomizedTree::allocPosteriorsAligned(int num_leaves, int num_classes)
 {  
-  posteriors_ = new float*[num_leaves];
+  posteriors_ = new float*[num_leaves]; //(float**) malloc(num_leaves*sizeof(float*)); 
   for (int i=0; i<num_leaves; ++i)
-    posix_memalign((void**)&posteriors_[i], 16, num_classes*sizeof(float));
-  //printf("[DEBUG] tree alloc'ed: num_classes = %i, num_leaves = %i\n", num_classes, num_leaves);    
+    posix_memalign((void**)&posteriors_[i], 16, num_classes*sizeof(float));  //(float*)malloc(num_classes*sizeof(float));
+     
+  posteriors2_ = new uchar*[num_leaves];
+  for (int i=0; i<num_leaves; ++i)
+    posix_memalign((void**)&posteriors2_[i], 16, classes_*sizeof(uchar));
 }
 
 void RandomizedTree::freePosteriors()
 {
-   if (posteriors_) {
+   //DEBUG static int tree_no = 0;
+   if (posteriors_) {      
+      //DEBUG printf("[DEBUG] releasing posteriors_ of tree %i\n", tree_no); fflush(stdout);
       for (int i=0; i<num_leaves_; ++i)
-         free(posteriors_[i]);
+         if (posteriors_[i]) {
+            free(posteriors_[i]); //delete [] posteriors_[i];
+            posteriors_[i] = NULL;
+         }
       delete [] posteriors_;
       posteriors_ = NULL;
-      //printf("[DEBUG] tree freed\n");
    }
+   if (posteriors2_) {
+      //DEBUG printf("[DEBUG] releasing posteriors2_ of tree %i\n", tree_no); fflush(stdout);
+      for (int i=0; i<num_leaves_; ++i)
+         free(posteriors2_[i]);
+      delete [] posteriors2_;
+      posteriors2_ = NULL;
+   }
+   //DEBUG tree_no++;
 }
 
 void RandomizedTree::init(int classes, int depth, Rng &rng)
@@ -118,7 +132,7 @@ void RandomizedTree::addExample(int class_id, uchar* patch_data)
   ++posterior[class_id];
 }
 
-// returns the p% percentile of data
+// returns the p% percentile of data (length n vector)
 static float percentile(float *data, int n, float p)
 {
    assert(n>0);
@@ -143,6 +157,7 @@ void RandomizedTree::finalize(size_t reduced_num_dim, int num_quant_bits)
          }
       } 
    }
+   leaf_counts_.clear();
 
    // apply compressive sensing
    if ((int)reduced_num_dim != classes_) {
@@ -163,47 +178,89 @@ void RandomizedTree::finalize(size_t reduced_num_dim, int num_quant_bits)
       for (int i=0; i<num_leaves_; ++i)         
          memcpy(posteriors_[i], &cs_posteriors[i*reduced_num_dim], reduced_num_dim*sizeof(float));
       classes_ = reduced_num_dim;
+      
+      delete [] cs_posteriors;
+   }
+  
+   // quantize
+   if (num_quant_bits > 0)
+      quantize_leaves(num_quant_bits, .05f, .95f, 0);
+
+   // convert float-posteriors to char-posteriors
+   makePosteriors2();
+}
+
+
+void RandomizedTree::makePosteriors2() 
+{   
+   for (int i=0; i<num_leaves_; ++i) {
+      float* posterior = posteriors_[i];
+      uchar* posterior2 = posteriors2_[i];
+      for (int k=0; k<classes_; ++k) {
+         *posterior2 = (uchar)(*posterior);
+         posterior++;
+         posterior2++;
+      }
+   }
+
+   // free posteriors_
+   if (!keep_float_posteriors_) {
+      for (int i=0; i<num_leaves_; ++i)
+         free(posteriors_[i]);
+      delete [] posteriors_;
+      posteriors_ = NULL;
    }
    
-   // quantize (experimantal)   
-   if (num_quant_bits > 0) {
-      int N = (1<<num_quant_bits) - 1;
-      printf("[WARNING] Quantization is active! N=%i\n", N);
-      // estimate percentiles over all data (this here is approximative, fair enough)
-      float perc[2] = {0,0};
+   static bool warned=false;
+   if (!warned) {
+      printf("[OK] converted posteriors from float to uchar\n");
+      warned = true;
+   }
+}
+
+void RandomizedTree::quantize_leaves(int num_quant_bits, float p1, float p2, int clamp_mode)
+{         
+   int N = (1<<num_quant_bits) - 1;
+   
+   static bool warned = false;
+   if (!warned) {
+      printf("[WARNING] RandomizedTree: Quantazing leaves, N=%i\n", N);
+      warned = true;
+   }
+   
+   // estimate percentiles (approximative but fair enough)
+   static float perc[2];
+   static float last_p2 = -1.f;
+   if (p2 != last_p2) {
       for (int i=0; i<num_leaves_; i++) {
-         perc[0] += percentile(posteriors_[i], reduced_num_dim, .05);
-         perc[1] += percentile(posteriors_[i], reduced_num_dim, .95);
+         perc[0] += percentile(posteriors_[i], classes_, p1);
+         perc[1] += percentile(posteriors_[i], classes_, p2);
       }
       perc[0] /= num_leaves_;
       perc[1] /= num_leaves_;
+   }  
 
-      for (int i=0; i<num_leaves_; ++i) {
-         quantize_vector(posteriors_[i], reduced_num_dim, N, perc);      
-         // DEBUG
-         #if 0
-         if (i == 13) {
-            post = posteriors_[i];
-            std::ofstream ofs("/wg/stor1/calonder/dev/fw/train_base/debug/post13.txt");
-            for (size_t i=0; i<reduced_num_dim; i++)
-               ofs << *post++ << std::endl;
-            ofs.close();
-         }
-         #endif
-      }   
-   }
-       
-   leaf_counts_.clear();
+   for (int i=0; i<num_leaves_; ++i)
+      quantize_vector(posteriors_[i], classes_, N, perc, clamp_mode);
 }
 
-void RandomizedTree::quantize_vector(float *vec, int dim, int N, float perc[2])
+void RandomizedTree::quantize_vector(float *vec, int dim, int N, float bnds[2], int clamp_mode)
 {
-   // TODO: find percentiles here (no hardcoding!)
    float map_bnd[2] = {0.f,(float)N};          // bounds of quantized target interval we're mapping to
    for (int k=0; k<dim; ++k, ++vec) {
-      int p = int((*vec - perc[0])/(perc[1] - perc[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]);
+      int p = int((*vec - bnds[0])/(bnds[1] - bnds[0])*(map_bnd[1] - map_bnd[0]) + map_bnd[0]);
       *vec = (float)p;
-      *vec = (*vec<map_bnd[0]) ? map_bnd[0] : ((*vec>map_bnd[1]) ? map_bnd[1] : *vec);
+      if (clamp_mode == 0)  // clamp both, lower and upper values
+         *vec = (*vec<map_bnd[0]) ? map_bnd[0] : ((*vec>map_bnd[1]) ? map_bnd[1] : *vec);
+      else if (clamp_mode == 1)  // clamp lower values only
+         *vec = (*vec<map_bnd[0]) ? map_bnd[0] : *vec;
+      else if (clamp_mode == 2)  // clamp upper values only
+         *vec = (*vec>map_bnd[1]) ? map_bnd[1] : *vec;
+      else if (clamp_mode == 4) ; // NO clamping (yes, nothing to do here)
+      else {
+         printf("clamp_mode == %i is not valid (%s:%i).\n", clamp_mode, __FILE__, __LINE__);
+         exit(1);
+      }
    }
 
 }
@@ -216,6 +273,11 @@ float* RandomizedTree::getPosterior(uchar* patch_data)
 const float* RandomizedTree::getPosterior(uchar* patch_data) const
 {
   return getPosteriorByIndex( getIndex(patch_data) );
+}
+
+uchar* RandomizedTree::getPosterior2(uchar* patch_data)
+{
+   return getPosteriorByIndex2( getIndex(patch_data) );
 }
 
 void RandomizedTree::read(const char* file_name)
@@ -237,10 +299,14 @@ void RandomizedTree::read(std::istream &is)
   is.read((char*)(&nodes_[0]), num_nodes * sizeof(nodes_[0]));
 
   //posteriors_.resize(classes_ * num_leaves_);
-  freePosteriors();
+  //freePosteriors();
+  //printf("[DEBUG] reading: %i leaves, %i classes\n", num_leaves_, classes_);  
   allocPosteriorsAligned(num_leaves_, classes_);  
   for (int i=0; i<num_leaves_; i++)
     is.read((char*)posteriors_[i], classes_ * sizeof(*posteriors_[0]));
+  
+  // convert float-posteriors to char-posteriors
+  makePosteriors2();
 }
 
 void RandomizedTree::write(const char* file_name) const
@@ -252,12 +318,18 @@ void RandomizedTree::write(const char* file_name) const
 
 void RandomizedTree::write(std::ostream &os) const
 {
+  if (!posteriors_) {
+    printf("WARNING: Cannot write posteriors (posteriors_ = NULL).\n");
+    return;
+  }
+  
   os.write((char*)(&classes_), sizeof(classes_));
   os.write((char*)(&depth_), sizeof(depth_));
 
   os.write((char*)(&nodes_[0]), nodes_.size() * sizeof(nodes_[0]));  
-  for (int i=0; i<num_leaves_; i++)
+  for (int i=0; i<num_leaves_; i++) {
     os.write((char*)posteriors_[i], classes_ * sizeof(*posteriors_[0]));
+  }
 }
 
 void RandomizedTree::makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim)
@@ -310,6 +382,33 @@ void RandomizedTree::setMeasMatrix(std::string filename, size_t dim_m)
    }
    ifs.close();
 }*/
+
+void RandomizedTree::savePosteriors(std::string url)
+{   
+   std::ofstream file(url.c_str());
+   for (int i=0; i<num_leaves_; i++) {
+      float *post = posteriors_[i];      
+      char buf[20];
+      for (int i=0; i<classes_; i++) {
+         sprintf(buf, "%.10e", *post++);
+         file << buf << ((i<classes_-1) ? " " : "");
+      }
+      file << std::endl;      
+   }
+   file.close();
+}
+
+void RandomizedTree::savePosteriors2(std::string url)
+{   
+   std::ofstream file(url.c_str());
+   for (int i=0; i<num_leaves_; i++) {
+      uchar *post = posteriors2_[i];      
+      for (int i=0; i<classes_; i++)
+         file << int(*post++) << (i<classes_-1?" ":"");
+      file << std::endl;
+   }
+   file.close();
+}
 
 
 } // namespace features

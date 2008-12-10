@@ -3,9 +3,25 @@
 
 #include <cmath>
 
+#ifndef ushort
+typedef unsigned short int ushort;
+#endif
+
+#ifndef uchar
+typedef unsigned char uchar;
+#endif
+
 namespace features {
 
 inline void add(int size, const float* src1, const float* src2, float* dst)
+{
+  while(--size >= 0) {
+    *dst = *src1 + *src2;
+    ++dst; ++src1; ++src2;
+  }
+}
+
+inline void add(int size, const ushort* src1, const uchar* src2, ushort* dst)
 {
   while(--size >= 0) {
     *dst = *src1 + *src2;
@@ -31,6 +47,16 @@ inline float L1Distance(int size, const float* a, const float* b)
   float result = 0;
   while (--size >= 0) {
     result += fabs(*a - *b);
+    ++a; ++b;
+  }
+  return result;
+}
+
+inline int L1Distance(int size, const unsigned char* a, const unsigned char* b)
+{
+  int result = 0;
+  while (--size >= 0) {
+    result += abs(*a - *b);
     ++a; ++b;
   }
   return result;

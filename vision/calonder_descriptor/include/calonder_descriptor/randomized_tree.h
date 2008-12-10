@@ -37,6 +37,7 @@ class RandomizedTree
 {
 public:
   typedef enum { PDT_GAUSS=1, PDT_BERNOULLI, PDT_DBFRIENDLY } PHI_DISTR_TYPE;   // used in makeRandomMeasMatrix
+  //typedef enum { PF_FLOAT=1, PF_UCHAR } POSTERIOR_FORMAT;
   
   static const int PATCH_SIZE = 32;
   static const int DEFAULT_DEPTH = 10;
@@ -52,12 +53,14 @@ public:
              PatchGenerator &make_patch, int depth, int views, size_t reduced_num_dim, 
              int num_quant_bits=0);
 
-  // experimantal, do not use
-  static void quantize_vector(float *vec, int dim, int N, float perc[2]);
+  // following two funcs are EXPERIMENTAL (do not use unless you know exactly what you do)
+  static void quantize_vector(float *vec, int dim, int N, float clamp[2], int clamp_mode=0);
+  void quantize_leaves(int num_quant_bits, float p1, float p2, int clamp_mode=0);
 
   // patch_data must be a 32x32 array (no row padding)
   float* getPosterior(uchar* patch_data);
   const float* getPosterior(uchar* patch_data) const;
+  uchar* getPosterior2(uchar* patch_data);
 
   void read(const char* file_name);
   void read(std::istream &is);
@@ -67,32 +70,42 @@ public:
   int classes() { return classes_; }
   int depth() { return depth_; }
   
+  void setKeepFloatPosteriors(bool b) { keep_float_posteriors_ = b; }
+  
+  // debug
+  void savePosteriors(std::string url);
+  void savePosteriors2(std::string url);
+  
 private:
   int classes_;
   int depth_;
   int num_leaves_;
-  std::vector<RTreeNode> nodes_;
-  //std::vector<float> posteriors_;
+  std::vector<RTreeNode> nodes_;  
   float **posteriors_;      // 16 bytes aligned posteriors
+  uchar **posteriors2_;      // 16 bytes aligned posteriors
   std::vector<int> leaf_counts_;
+  bool keep_float_posteriors_;
 
   void createNodes(int num_nodes, Rng &rng);
   void allocPosteriorsAligned(int num_leaves, int num_classes);
   void freePosteriors();
   void init(int classes, int depth, Rng &rng);
   void addExample(int class_id, uchar* patch_data);
-  void finalize(size_t reduced_num_dim, int num_quant_bits);
+  void finalize(size_t reduced_num_dim, int num_quant_bits);  
   int getIndex(uchar* patch_data) const;
-  inline float* getPosteriorByIndex(int index); // { return posteriors_[index]; }
+  inline float* getPosteriorByIndex(int index);
+  inline uchar* getPosteriorByIndex2(int index);
   inline const float* getPosteriorByIndex(int index) const;
   void makeRandomMeasMatrix(float *cs_phi, PHI_DISTR_TYPE dt, size_t reduced_num_dim);  
+  void convertPosteriorsToChar();
+  void makePosteriors2();
 };
+
 
 inline uchar* getData(IplImage* image)
 {
   return reinterpret_cast<uchar*>(image->imageData);
 }
-
 
 inline float* RandomizedTree::getPosteriorByIndex(int index)
 {
@@ -102,6 +115,11 @@ inline float* RandomizedTree::getPosteriorByIndex(int index)
 inline const float* RandomizedTree::getPosteriorByIndex(int index) const
 {
   return posteriors_[index]; 
+}
+
+inline uchar* RandomizedTree::getPosteriorByIndex2(int index)
+{
+  return posteriors2_[index];
 }
 
 
