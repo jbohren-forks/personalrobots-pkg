@@ -455,7 +455,6 @@ def monitor_main(argv, stdout, env):
 
     rospy.init_node(NAME)
 
-    port_list = []
     rospy.logout("opening ports: %s"%','.join(port_list))
     # set port settings to talk to IBPS and make sure the ports are
     # sending hex
