@@ -1,7 +1,7 @@
 <launch>
   <!-- <node pkg="rosrecord" type="rosplay" args="/u/prdata/videre-bags/bagname.bag" output="log" />-->
   <!-- Track starter gui -->
-  <node pkg="videre_face_detection" type="track_starter_gui" args="" />
+  <node pkg="people" type="track_starter_gui" args="" />
   <!-- Colour calibration - Must be launched by hand when you seen an appropriate image -->
   <!-- <node pkg="color_calib" type="calib_node" args="" /> --> 
 </launch>
