@@ -1,5 +1,5 @@
 <package>
-<description brief="ROS wrapper for the OpenCV face detector using the videre images">
+<description brief="All functions related to people. Detection, tracking, etc.">
 
 </description>
 <author> Caroline Pantofaru
@@ -19,6 +19,8 @@
 <depend package="pyrob"/>
 <depend package="rosrecord"/>
 <depend package="rospy"/>
+<depend package="image_msgs"/>
+<depend package="topic_synchronizer"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
 </package>
