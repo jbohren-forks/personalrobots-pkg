@@ -5,7 +5,7 @@ set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rospack(dcam)
 
-rospack_add_library(dcam src/dcam.cpp src/stereocam.cpp src/image.cpp src/stereolib.c)
+rospack_add_library(dcam src/dcam.cpp src/stereocam.cpp)
 
 rospack_add_compile_flags(dcam "-msse2 -mpreferred-stack-boundary=4")
 

@@ -941,8 +941,8 @@ class stereogui {open
       }
     }
     Fl_Window stereo_window {
-      label Stereo
-      xywh {509 587 265 260} type Single hide
+      label Stereo open
+      xywh {549 261 265 260} type Single visible
     } {
       Fl_Group {} {open
         xywh {20 135 285 120}
@@ -1084,12 +1084,12 @@ class stereogui {open
         }
       }
       Fl_Group {} {open
-        xywh {245 40 160 185}
+        xywh {190 40 215 185}
       } {
         Fl_Slider exposure_val {
           label Exposure
           callback do_exposure_cb
-          xywh {265 40 20 130} type {Vert Knob} labelsize 11 align 1 maximum 100 step 1 value 100
+          xywh {265 40 20 130} type {Vert Knob} labelsize 11 align 1 minimum 100 maximum 0 step 1 value 100
         }
         Fl_Slider gain_val {
           label Gain
@@ -1098,23 +1098,28 @@ class stereogui {open
         }
         Fl_Slider brightness_val {
           label Bright
-          callback do_brightness_cb selected
+          callback do_brightness_cb
           xywh {375 40 20 130} type {Vert Knob} labelsize 11 align 1 maximum 100 step 1
         }
         Fl_Light_Button exposure_auto_button {
           label Auto
           callback do_auto_exposure_cb
-          xywh {255 175 40 20} labelsize 11
+          xywh {255 175 40 20} value 1 labelsize 11
         }
         Fl_Light_Button gain_auto_button {
           label Auto
           callback do_auto_gain_cb
-          xywh {310 175 40 20} labelsize 11
+          xywh {310 175 40 20} value 1 labelsize 11
         }
         Fl_Light_Button brightness_auto_button {
           label Auto
           callback do_auto_brightness_cb
-          xywh {365 175 40 20} labelsize 11
+          xywh {365 175 40 20} value 1 labelsize 11
+        }
+        Fl_Light_Button gamma_button {
+          label Gamma
+          callback do_gamma_cb selected
+          xywh {190 135 55 25} value 1 labelsize 11
         }
       }
     }

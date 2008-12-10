@@ -69,6 +69,7 @@ extern void do_brightness_cb(Fl_Slider*, void*);
 extern void do_auto_exposure_cb(Fl_Light_Button*, void*);
 extern void do_auto_gain_cb(Fl_Light_Button*, void*);
 extern void do_auto_brightness_cb(Fl_Light_Button*, void*);
+extern void do_gamma_cb(Fl_Light_Button*, void*);
 
 class stereogui {
 public:
@@ -180,6 +181,7 @@ public:
   Fl_Light_Button *exposure_auto_button;
   Fl_Light_Button *gain_auto_button;
   Fl_Light_Button *brightness_auto_button;
+  Fl_Light_Button *gamma_button;
   ~stereogui(); 
 };
 #endif

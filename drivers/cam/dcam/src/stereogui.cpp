@@ -1296,11 +1296,12 @@ stereogui::stereogui() {
       } // Fl_Light_Button* stoc_button
       o->end();
     } // Fl_Group* o
-    { Fl_Group* o = new Fl_Group(245, 40, 160, 185);
+    { Fl_Group* o = new Fl_Group(190, 40, 215, 185);
       { exposure_val = new Fl_Slider(265, 40, 20, 130, "Exposure");
         exposure_val->type(4);
         exposure_val->labelsize(11);
-        exposure_val->maximum(100);
+        exposure_val->minimum(100);
+        exposure_val->maximum(0);
         exposure_val->step(1);
         exposure_val->value(100);
         exposure_val->callback((Fl_Callback*)do_exposure_cb);
@@ -1323,17 +1324,25 @@ stereogui::stereogui() {
         brightness_val->align(FL_ALIGN_TOP);
       } // Fl_Slider* brightness_val
       { exposure_auto_button = new Fl_Light_Button(255, 175, 40, 20, "Auto");
+        exposure_auto_button->value(1);
         exposure_auto_button->labelsize(11);
         exposure_auto_button->callback((Fl_Callback*)do_auto_exposure_cb);
       } // Fl_Light_Button* exposure_auto_button
       { gain_auto_button = new Fl_Light_Button(310, 175, 40, 20, "Auto");
+        gain_auto_button->value(1);
         gain_auto_button->labelsize(11);
         gain_auto_button->callback((Fl_Callback*)do_auto_gain_cb);
       } // Fl_Light_Button* gain_auto_button
       { brightness_auto_button = new Fl_Light_Button(365, 175, 40, 20, "Auto");
+        brightness_auto_button->value(1);
         brightness_auto_button->labelsize(11);
         brightness_auto_button->callback((Fl_Callback*)do_auto_brightness_cb);
       } // Fl_Light_Button* brightness_auto_button
+      { gamma_button = new Fl_Light_Button(190, 135, 55, 25, "Gamma");
+        gamma_button->value(1);
+        gamma_button->labelsize(11);
+        gamma_button->callback((Fl_Callback*)do_gamma_cb);
+      } // Fl_Light_Button* gamma_button
       o->end();
     } // Fl_Group* o
     video_window->end();

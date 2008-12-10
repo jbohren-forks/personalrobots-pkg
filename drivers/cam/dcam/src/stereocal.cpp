@@ -2239,6 +2239,18 @@ do_brightness_cb(Fl_Slider *w, void *x)
 }
 
 
+void
+do_gamma_cb(Fl_Light_Button *w, void *x)
+{
+  if (dev)
+    {
+      if (w->value())		// turn it on
+	dev->setCompanding(true);
+      else
+	dev->setCompanding(false);
+    }
+}
+
 
 
 // parsing file names
