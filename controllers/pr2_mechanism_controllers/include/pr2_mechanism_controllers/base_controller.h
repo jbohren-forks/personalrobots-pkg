@@ -56,6 +56,7 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
 #include <pr2_msgs/Odometer.h>
+#include <pr2_msgs/Covariance2D.h>
 
 #include <misc_utils/realtime_publisher.h>
 
@@ -257,6 +258,10 @@ namespace controller
     double wheel_radius_multiplier_front_;
 
     double wheel_radius_multiplier_rear_;
+
+//    NEWMAT::Matrix odometry_residual_;
+
+    double odometry_residual_max_;
 
     private:
 
@@ -480,6 +485,8 @@ namespace controller
     misc_utils::RealtimePublisher <tf::TransformArray>* transform_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+
+    misc_utils::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     /*
      * \brief pointer to ros node
