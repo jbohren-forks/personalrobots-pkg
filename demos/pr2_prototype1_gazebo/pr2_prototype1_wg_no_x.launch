@@ -1,0 +1,25 @@
+<launch>
+  <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/wg_robot_description/pr2 -->
+  <!-- if needed, group tag allows pushing components into namespace via ns="namespace" -->
+  <group name="wg">
+
+    <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it
+         (Mechanism Control, BaseControllerNode, etc...) -->
+    <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
+
+    <!-- assign environment variables for gazebo and startup gazebo with argument containing the world file.  -->
+    <node pkg="gazebo" type="gazebo" args="-r -n $(find gazebo_robot_description)/gazebo_worlds/wg.world" respawn="false" output="screen">
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$LD_LIBRARY_PATH" />
+      <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+      <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
+      <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
+    </node>
+
+    <!-- push robotdesc/pr2 to factory and spawn robot in gazebo -->
+    <node pkg="gazebo_plugin" type="urdf2factory" args="robotdesc/pr2 -5 -15 0 0 0 90" respawn="false" output="screen" /> <!-- load default arm controller -->
+
+    <!-- use mech.py to spawn all controllers listed in controllers.xml -->
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_controllers.launch" />
+  </group>
+</launch>
+
