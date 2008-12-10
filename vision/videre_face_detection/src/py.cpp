@@ -53,10 +53,10 @@ static PyMethodDef methods[] = {
   {NULL, NULL},
 };
 
-extern "C" void initvidere_face_detection()
+extern "C" void initface_detection()
 {
     PyObject *m, *d;
 
-    m = Py_InitModule("videre_face_detection", methods);
+    m = Py_InitModule("face_detection", methods);
     d = PyModule_GetDict(m);
 }
