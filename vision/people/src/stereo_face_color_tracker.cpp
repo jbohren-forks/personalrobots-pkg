@@ -40,12 +40,14 @@
 #include <iostream>
 
 #include "ros/node.h"
-#include "std_msgs/ImageArray.h"
-#include "std_msgs/String.h"
-#include "image_utils/cv_bridge.h"
 #include "CvStereoCamModel.h"
 #include "color_calib.h"
 #include <robot_msgs/PositionMeasurement.h>
+#include "image_msgs/StereoInfo.h"
+#include "image_msgs/CamInfo.h"
+#include "image_msgs/Image.h"
+#include "image_msgs/CvBridge.h"
+#include "topic_synchronizer.h"
 
 #include "opencv/cxcore.h"
 #include "opencv/cv.h"
@@ -63,25 +65,23 @@ using namespace std;
 class StereoFaceColorTracker: public ros::node {
 public:
   // Images and conversion
-  std_msgs::ImageArray image_msg_;
-  std_msgs::String cal_params_;
-  CvBridge<std_msgs::Image> *cv_bridge_left_;
-  CvBridge<std_msgs::Image> *cv_bridge_disp_;
-  bool built_bridge_;
+  image_msgs::Image limage_;
+  image_msgs::Image dimage_;
+  image_msgs::StereoInfo stinfo_;
+  image_msgs::CamInfo rcinfo_;
+  image_msgs::CvBridge lbridge_;
+  image_msgs::CvBridge dbridge_;
+  color_calib::Calibration lcolor_cal_;
+  TopicSynchronizer<StereoFaceColorTracker> sync_;
 
   // The left and disparity images.
   IplImage *cv_image_left_;
   IplImage *cv_image_disp_;
 
-  // Display copies of the images.
-  IplImage *cv_image_left_cpy_;
-  IplImage *cv_image_disp_cpy_;
-
   bool use_depth_;
   CvStereoCamModel *cam_model_;
   
   bool calib_color_;
-  CvMat* color_calib_mat_;
 
   People *people_;
   const char *haar_filename_;
@@ -95,18 +95,14 @@ public:
   ros::thread::mutex cv_mutex_;
 
   StereoFaceColorTracker(const char *haar_filename, bool use_depth, bool calib_color) : 
-    node("stereo_face_color_tracker", ros::node::ANONYMOUS_NAME),
-    cv_bridge_left_(NULL),
-    cv_bridge_disp_(NULL),
-    built_bridge_(false),
+    ros::node("stereo_face_color_tracker"),
+    lcolor_cal_(this),
+    sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration(0.05), &StereoFaceColorTracker::image_cb_timeout),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
-    cv_image_left_cpy_(NULL), 
-    cv_image_disp_cpy_(NULL),
     use_depth_(use_depth),
     cam_model_(NULL),
     calib_color_(false),
-    color_calib_mat_(NULL),
     people_(NULL),
     haar_filename_(haar_filename),
     quit_(false),
@@ -120,20 +116,19 @@ public:
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
     // OpenCV: pop up an OpenCV highgui window
-    cvNamedWindow("Disparity",CV_WINDOW_AUTOSIZE);
-    cvNamedWindow("Face Detection", CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Face color tracker: Disparity",CV_WINDOW_AUTOSIZE);
+    cvNamedWindow("Face color tracker: Face Detection", CV_WINDOW_AUTOSIZE);
 #endif
 
     calib_color_ = calib_color;
 
     people_ = new People();
 
-    // Subscribe to image
-    subscribe("videre/images", image_msg_, &StereoFaceColorTracker::image_cb, 1);
-
-
-    // Subscribe to calibration parameters
-    subscribe("videre/cal_params", cal_params_, &StereoFaceColorTracker::cal_params_cb, 1);
+    // Subscribe to the images and parameters
+    sync_.subscribe("dcam/left/image_rect_color",limage_,1);
+    sync_.subscribe("dcam/disparity",dimage_,1);
+    sync_.subscribe("dcam/stereo_info",stinfo_,1);
+    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
 
     // Advertise a 3d position measurement for each head.
     advertise<robot_msgs::PositionMeasurement>("stereo_face_color_tracker/position_measurement",1);
@@ -146,17 +141,13 @@ public:
 
     cvReleaseImage(&cv_image_left_);
     cvReleaseImage(&cv_image_disp_);
-    cvReleaseImage(&cv_image_left_cpy_);
-    cvReleaseImage(&cv_image_disp_cpy_);
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-    cvDestroyWindow("Face Detection");
-    cvDestroyWindow("Disparity");
+    cvDestroyWindow("Face color tracker: Face Detection");
+    cvDestroyWindow("Face color tracker: Disparity");
 #endif
 
     delete cam_model_;
-
-    cvReleaseMat(&color_calib_mat_);
 
     cvReleaseImage(&X_);
     cvReleaseImage(&Y_);
@@ -165,73 +156,66 @@ public:
     cvReleaseMat(&xyz_);
 
     delete people_;
+  }
 
-    if (built_bridge_) {
-      delete cv_bridge_left_;
-      delete cv_bridge_disp_;
-    }
-
-
+  /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
+  void image_cb_timeout(ros::Time t) {
+    if (limage_.header.stamp != t)
+      printf("Timed out waiting for left image\n");
+    if (dimage_.header.stamp != t)
+      printf("Timed out waiting for disparity image\n");
   }
 
   /// The image callback. For each new image, copy it, perform face detection or track it, and draw the rectangles on the image.
-  void image_cb()
+  void image_cb_all(ros::Time t)
   {
 
-    // Set color calibration.
-    color_calib::Calibration color_cal(this);
-    if (calib_color_) {
-      // Exit if color calibration hasn't been performed.
-      std::string color_cal_str = std::string("videre/images/") + image_msg_.images[1].label;
-      if (!has_param(color_cal_str)) {
-	//printf("No params\n");
-	return;
-      }
-      color_cal.getFromParam(color_cal_str);
-    }
-
-    // Exit if the camera model params haven't yet arrived.
-    if (cam_model_==NULL) {
-      return;
-    }
-
+    cv_mutex_.lock();
+ 
     CvSize im_size;
 
-    // Set up the cv bridges, should only run once.
-    if (!built_bridge_) {
-      cv_bridge_left_ = new CvBridge<std_msgs::Image>(&image_msg_.images[1],  
-						      CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-      cv_bridge_disp_ = new CvBridge<std_msgs::Image>(&image_msg_.images[0], 
-						      CvBridge<std_msgs::Image>::CORRECT_BGR | CvBridge<std_msgs::Image>::MAXDEPTH_8U);
-      built_bridge_ = true;
+    // Set color calibration.
+    bool do_calib = false;
+    if (calib_color_ && has_param("dcam/left/image_rect_color")) {
+      // Exit if color calibration hasn't been performed.
+      do_calib = true;
+      lcolor_cal_.getFromParam("dcam/left/image_rect_color");
     }
- 
-    // Convert the images to opencv format.
-    if (cv_image_left_) {
-      cvReleaseImage(&cv_image_left_);
-      cvReleaseImage(&cv_image_disp_);
-    }
-    cv_bridge_left_->to_cv(&cv_image_left_);
-    cv_bridge_disp_->to_cv(&cv_image_disp_);
 
-    if ( !cv_image_left_ )  {
-      return;
+    // Convert the images to OpenCV format
+    if (lbridge_.fromImage(limage_,"bgr")) {
+      if (do_calib) {
+	lbridge_.reallocIfNeeded(&cv_image_left_, IPL_DEPTH_8U);
+	lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_left_, true, true, COLOR_CAL_BGR);
+      }
+      else {
+	cv_image_left_ = lbridge_.toIpl();
+      }
     }
+    if (dbridge_.fromImage(dimage_)) {
+      cv_image_disp_ = dbridge_.toIpl();
+    }
+
+    // Convert the stereo calibration into a camera model.
+    if (cam_model_) {
+      delete cam_model_;
+    }
+    double Fx = rcinfo_.P[0];
+    double Fy = rcinfo_.P[5];
+    double Clx = rcinfo_.P[2];
+    double Crx = Clx;
+    double Cy = rcinfo_.P[6];
+    double Tx = -rcinfo_.P[3]/Fx;
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
+
     // Check that the image is in color.
     if (cv_image_left_->nChannels!=3) {
       printf("The left image is not a 3-channel color image.\n");
+      cv_mutex_.unlock();
       return;
     }
 
     im_size = cvGetSize(cv_image_left_);
-
-    // Calibrate color if requested.
-    if (calib_color_) {
-      IplImage* t_img = cvCreateImage(im_size, IPL_DEPTH_8U,3);
-      color_cal.correctColor(cv_image_left_,t_img,true,true,COLOR_CAL_BGR);
-      cvCopyImage(t_img, cv_image_left_);
-      cvReleaseImage(&t_img);
-    }
 
     int npeople = people_->getNumPeople();
     if (!X_) {
@@ -268,7 +252,7 @@ public:
 #endif
 #if 1
       float* fptr = (float*)(uvd_->data.ptr);
-      uchar* cptr = (uchar*)(cv_image_disp_->imageData);
+      ushort* cptr = (ushort*)(cv_image_disp_->imageData);
       for (int v =0; v < im_size.height; v++) {
 	for (int u=0; u<im_size.width; u++) {
 	  *fptr = u; fptr++;
@@ -383,7 +367,7 @@ public:
 		  cvScalar(255,255,255)); 
 
       // Publish the 3d head center for this person.
-      pos.header.stamp = image_msg_.header.stamp;
+      pos.header.stamp = limage_.header.stamp;
       pos.name = "stereo_face_color_tracker";
       pos.object_id = people_->getID(iperson);
       pos.pos.x = cvmGet(end_points,iperson,2);
@@ -403,89 +387,26 @@ public:
     cvReleaseMat(&my_size);     
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-    // Copy all of the images you might want to display.
-    // This is necessary because OpenCV doesn't like multiple threads.
-    cv_mutex_.lock();
-
-    if (cv_image_left_cpy_ == NULL) {
-      cv_image_left_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,3);
-    }
-    cvCopy(cv_image_left_, cv_image_left_cpy_);
-
-    if (cv_image_disp_cpy_==NULL) {
-      cv_image_disp_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-    }
-    cvCopy(cv_image_disp_, cv_image_disp_cpy_);
-
-    cv_mutex_.unlock();
+    cvShowImage("Face color tracker: Face Detection", cv_image_left_);
+    cvShowImage("Face color tracker: Disparity", cv_image_disp_);
 #endif
-          
-      
+    cv_mutex_.unlock();        
   }
-
-  // Calibration parameters callback
-  void cal_params_cb() {
-    parseCaliParams(cal_params_.data);
-  }
-
-  /// JD's small parser to pick up the projection matrix from the
-  /// calibration message. This should really be somewhere else, this code is copied in multiple files.
-  void parseCaliParams(const string& cal_param_str){
-
-    if (cam_model_==NULL) {
-      const string labelRightCamera("[right camera]");
-      const string labelRightCamProj("proj");
-      const string labelRightCamRect("rect");
-      // move the current position to the section of "[right camera]"
-      size_t rightCamSection = cal_param_str.find(labelRightCamera);
-      // move the current position to part of proj in the section of "[right camera]"
-      size_t rightCamProj = cal_param_str.find(labelRightCamProj, rightCamSection);
-      // get the position of the word "rect", which is also the end of the projection matrix
-      size_t rightCamRect = cal_param_str.find(labelRightCamRect, rightCamProj);
-      // the string after the word "proj" is the starting of the matrix
-      size_t matrix_start = rightCamProj + labelRightCamProj.length();
-      // get the sub string that contains the matrix
-      string mat_str = cal_param_str.substr(matrix_start, rightCamRect-matrix_start);
-      // convert the string to a double array of 12
-      stringstream sstr(mat_str);
-      double matdata[12];
-      for (int i=0; i<12; i++) {
-	sstr >> matdata[i];
-      }
-
-      //if (cam_model_ == NULL) {
-      double Fx  = matdata[0]; // 0,0
-      double Fy  = matdata[5]; // 1,1
-      double Crx = matdata[2]; // 0,2
-      double Cy  = matdata[6]; // 1,2
-      double Clx = Crx; // the same
-      double Tx  = - matdata[3]/Fx;
-      std::cout << "base length "<< Tx << std::endl;
-      cam_model_ = new CvStereoCamModel(Fx, Fy, Tx, Clx, Crx, Cy, 0.25);
-    }
-  }
-
 
   // Wait for completion, wait for user input, display images.
   bool spin() {
     while (ok() && !quit_) {
 #if  __FACE_COLOR_TRACKER_DISPLAY__
-	// Display all of the images.
-	cv_mutex_.lock();
-	if (cv_image_left_cpy_)
-	  cvShowImage("Face Detection",cv_image_left_cpy_);
-	if (cv_image_disp_cpy_)
-	  cvShowImage("Disparity",cv_image_disp_cpy_);
-
-	cv_mutex_.unlock();
-
-	// Get user input and allow OpenCV to refresh windows.
-	int c = cvWaitKey(2);
-	c &= 0xFF;
-	// Quit on ESC, "q" or "Q"
-	if((c == 27)||(c == 'q')||(c == 'Q'))
-	  quit_ = true;
+      cv_mutex_.lock(); 
+      // Get user input and allow OpenCV to refresh windows.
+      int c = cvWaitKey(2);
+      c &= 0xFF;
+      // Quit on ESC, "q" or "Q"
+      if((c == 27)||(c == 'q')||(c == 'Q'))
+	quit_ = true;
+      cv_mutex_.unlock(); 
 #endif
+      usleep(10000);
     }
     return true;
   } 
