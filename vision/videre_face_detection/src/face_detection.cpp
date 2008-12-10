@@ -55,9 +55,9 @@
 
 using namespace std;
 
-// VidereFaceDetector - Face detection using the videre cams. A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
+// FaceDetector - Face detection using the videre cams. A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
 
-class VidereFaceDetector: public ros::node {
+class FaceDetector: public ros::node {
 public:
   // Images and conversion
   std_msgs::ImageArray image_msg_;
@@ -85,7 +85,7 @@ public:
 
   ros::thread::mutex cv_mutex_;
 
-  VidereFaceDetector(const char *haar_filename, bool use_depth) : 
+  FaceDetector(const char *haar_filename, bool use_depth) : 
     node("videre_face_detector", ros::node::ANONYMOUS_NAME),
     cv_bridge_left_(NULL),
     cv_bridge_disp_(NULL),
@@ -109,19 +109,19 @@ public:
     people_ = new People();
 
     // Subscribe to image
-    subscribe("videre/images", image_msg_, &VidereFaceDetector::image_cb, 1);
+    subscribe("videre/images", image_msg_, &FaceDetector::image_cb, 1);
 
 
     // Subscribe to calibration parameters
-    subscribe("videre/cal_params", cal_params_, &VidereFaceDetector::cal_params_cb, 1);
+    subscribe("videre/cal_params", cal_params_, &FaceDetector::cal_params_cb, 1);
 
     // Advertise a position measure message.
     advertise<robot_msgs::PositionMeasurement>("face_detection/position_measurement",1);
-    //subscribe<robot_msgs::PositionMeasurement>("face_detection",pos,&VidereFaceDetector::pos_cb,1);
+    //subscribe<robot_msgs::PositionMeasurement>("face_detection",pos,&FaceDetector::pos_cb,1);
 
   }
 
-  ~VidereFaceDetector()
+  ~FaceDetector()
   {
 
     cvReleaseImage(&cv_image_left_);
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
   char *haar_filename = argv[1]; //"./cascades/haarcascade_frontalface_alt.xml";
   //char haar_filename[] = "./cascades/haarcascade_profileface.xml";
   //char haar_filename[] = "./cascades/haarcascade_upperbody.xml";
-  VidereFaceDetector fd(haar_filename, use_depth);
+  FaceDetector fd(haar_filename, use_depth);
  
   fd.spin();
 
