@@ -42,6 +42,8 @@ using namespace ros;
 using namespace tf;
 
 
+static const double EPS = 1e-5;
+
 #define __EKF_DEBUG_FILE__
 
 namespace estimation
@@ -125,10 +127,13 @@ namespace estimation
       odom_stamp_ = odom_.header.stamp;
       odom_time_  = Time::now();
       odom_meas_  = Transform(Quaternion(odom_.pos.th,0,0), Vector3(odom_.pos.x, odom_.pos.y, 0));
-      if (odom_.stall == 0)
-	odom_multiplier_ = 1;
-      else
+
+      double norm = sqrt(pow(odom_.vel.x,2) + pow(odom_.vel.y,2) + pow(odom_.vel.th,2));
+      if (norm < EPS) 
 	odom_multiplier_ = 0.00001;
+      else
+	odom_multiplier_ = 1;
+
       my_filter_.addMeasurement(Stamped<Transform>(odom_meas_, odom_stamp_,"wheelodom", "base_footprint"), odom_multiplier_);
       
       // activate odom
