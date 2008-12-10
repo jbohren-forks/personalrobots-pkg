@@ -33,6 +33,7 @@
 *********************************************************************/
 
 #include "tracker.h"
+#include "gaussian_pos_vel.h"
 
 using namespace MatrixWrapper;
 using namespace BFL;
@@ -40,13 +41,12 @@ using namespace tf;
 using namespace std;
 using namespace ros;
 
-static const unsigned int NUM_CONDARG   = 1;
 
 namespace estimation
 {
   // constructor
   Tracker::Tracker(unsigned int num_particles):
-    prior_(num_particles, NUM_CONDARG),
+    prior_(num_particles),
     filter_(NULL),
     tracker_initialized_(false),
     num_particles_(num_particles)
@@ -96,6 +96,13 @@ namespace estimation
   {
   };
 
+
+  /// Get histogram from certain area
+  Matrix Tracker::getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
+  {
+    return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogram(min, max, step);
+  };
+
 }; // namespace
 
 
@@ -114,5 +121,15 @@ int main()
   tracker.initialize(mu, sigma, Time());
 
 
+  Vector3 min(0,0,0);  Vector3 max(4,4,4); Vector3 step(0.1, 0.1, 0.1);
+  Matrix hist = tracker.getHistogram(min, max, step);
+  cout << hist.rows() << " " << hist.columns() << endl;
+  ofstream file; file.open("test.txt");
+  for (unsigned int i=1; i<= hist.rows(); i++){
+    for (unsigned int j=1; j<= hist.columns(); j++)
+      file << hist(i,j) << " ";
+    file << endl;
+  }
+  file.close();
   return 0;
 }

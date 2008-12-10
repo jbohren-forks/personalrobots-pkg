@@ -31,68 +31,33 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __TRACKER__
-#define __TRACKER__
+#ifndef MCPDF_POSVEL_H
+#define MCPDF_POSVEL_H
 
-// bayesian filtering
-#include <filter/bootstrapfilter.h>
-#include <model/systemmodel.h>
-#include <model/measurementmodel.h>
+#include <pdf/mcpdf.h>
 #include "state_pos_vel.h"
-#include "mcpdf_pos_vel.h"
-//#include "nonlinearSystemPdf.h"
-//#include "nonlinearMeasurementPdf.h"
-
-// TF
 #include <tf/tf.h>
 
-// msgs
-#include <robot_msgs/PositionMeasurement.h>
-
-// log files
-#include <fstream>
-
-namespace estimation
+namespace BFL
 {
+  /// Class representing a posvel mcpdf
+ class MCPdfPosVel: public MCPdf<StatePosVel>
+    {
+    public:
+      /// Constructor
+      MCPdfPosVel (unsigned int num_samples);
 
-class Tracker
-{
-public:
-  /// constructor
-  Tracker(unsigned int num_particles);
+      /// Destructor
+      virtual ~MCPdfPosVel();
 
-  /// destructor
-  virtual ~Tracker();
+      /// Get histogram from certain area
+      MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
-  /// update tracker
-  void update(const ros::Time& filter_time);
+      virtual WeightedSample<StatePosVel> SampleGet(unsigned int particle) const;
+      virtual unsigned int numParticlesGet() const;
+      virtual MCPdfPosVel* PostGet() {return (MCPdfPosVel*)PostGet();};
 
-  /// initialize tracker
-  void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const ros::Time& time);
+    };
 
-  /// return if tracker was initialized
-  bool isInitialized() {return tracker_initialized_;};
-
-  /// get filter posterior
-  void getEstimate(robot_msgs::PositionMeasurement& estimate);
-
-  /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
-
-
-private:
-  // pdf / model / filter
-  BFL::MCPdfPosVel                                          prior_;
-  BFL::BootstrapFilter<BFL::StatePosVel, tf::Vector3>*      filter_;
-
-  // vars
-  bool tracker_initialized_;
-
-  unsigned int num_particles_;
-
-
-}; // class
-
-}; // namespace
-
+} // end namespace
 #endif

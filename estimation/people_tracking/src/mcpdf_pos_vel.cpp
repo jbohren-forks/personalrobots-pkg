@@ -31,68 +31,59 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef __TRACKER__
-#define __TRACKER__
 
-// bayesian filtering
-#include <filter/bootstrapfilter.h>
-#include <model/systemmodel.h>
-#include <model/measurementmodel.h>
-#include "state_pos_vel.h"
 #include "mcpdf_pos_vel.h"
-//#include "nonlinearSystemPdf.h"
-//#include "nonlinearMeasurementPdf.h"
+#include <assert.h>
+#include <vector>
 
-// TF
-#include <tf/tf.h>
 
-// msgs
-#include <robot_msgs/PositionMeasurement.h>
+  using namespace MatrixWrapper;
+  using namespace BFL;
+  using namespace tf;
+  
+  static const unsigned int NUM_CONDARG   = 1;
 
-// log files
-#include <fstream>
 
-namespace estimation
-{
+  MCPdfPosVel::MCPdfPosVel (unsigned int num_samples) 
+    : MCPdf<StatePosVel> ( num_samples, NUM_CONDARG )
+  {}
 
-class Tracker
-{
-public:
-  /// constructor
-  Tracker(unsigned int num_particles);
-
-  /// destructor
-  virtual ~Tracker();
-
-  /// update tracker
-  void update(const ros::Time& filter_time);
-
-  /// initialize tracker
-  void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const ros::Time& time);
-
-  /// return if tracker was initialized
-  bool isInitialized() {return tracker_initialized_;};
-
-  /// get filter posterior
-  void getEstimate(robot_msgs::PositionMeasurement& estimate);
+  MCPdfPosVel::~MCPdfPosVel(){}
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
+  MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step) const
+  {  
+    unsigned int num_smaples = _listOfSamples.size();
+    unsigned int rows = trunc((M[0]-m[0])/step[0]);
+    unsigned int cols = trunc((M[1]-m[1])/step[1]);
+    Matrix hist(rows, cols);
+    hist = 0;
+
+    // calculate histogram
+    for (unsigned int i=0; i<num_smaples; i++){
+      Vector3 pos_rel   = _listOfSamples[i].ValueGet().pos_ - m;
+
+      unsigned int r = trunc(min((double)rows,max(1.0,pos_rel[0] * rows / M[0])));
+      unsigned int c = trunc(min((double)cols,max(1.0,pos_rel[1] * rows / M[1])));
+      hist(r,c) += _listOfSamples[i].WeightGet();
+    }
+
+    return hist;
+  }
 
 
-private:
-  // pdf / model / filter
-  BFL::MCPdfPosVel                                          prior_;
-  BFL::BootstrapFilter<BFL::StatePosVel, tf::Vector3>*      filter_;
-
-  // vars
-  bool tracker_initialized_;
-
-  unsigned int num_particles_;
+  WeightedSample<StatePosVel>
+  MCPdfPosVel::SampleGet(unsigned int particle) const
+  {
+    assert ((int)particle >= 0 && particle < _listOfSamples.size());
+    return _listOfSamples[particle];
+  }
 
 
-}; // class
+  unsigned int
+  MCPdfPosVel::numParticlesGet() const
+  {
+    return _listOfSamples.size();
+  }
+  
 
-}; // namespace
-
-#endif
