@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.6)
 include(rosbuild)
-rospack(videre_face_detection)
+rospack(people)
 #genmsg()
 #find_library(curl REQUIRED)
 
