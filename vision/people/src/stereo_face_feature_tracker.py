@@ -1,8 +1,8 @@
 import rostools
-rostools.update_path('videre_face_detection')
+rostools.update_path('people')
 import rospy
 import rostest
-import videre_face_detection
+import face_detection
 from visualodometer import VisualOdometer, FeatureDetectorStar, DescriptorSchemeCalonder, DescriptorSchemeSAD
 import camera
 from std_msgs.msg import Image, ImageArray, String, PointStamped, PointCloud, Point
@@ -54,7 +54,7 @@ class PeopleTracker:
     self.visualize = False
     self.keyframes = []
     self.current_keyframes = []
-    self.p = videre_face_detection.people()
+    self.p = people.people()
     self.cam = None
     self.camparams = None
     self.vo = None
@@ -725,7 +725,7 @@ def main(argv) :
 
     #people_tracker.pub = rospy.Publisher('head_controller/track_point',PointStamped)
     people_tracker.pub = rospy.Publisher('/stereo_face_feature_tracker/position_measurement',PositionMeasurement)
-    rospy.init_node('videre_face_tracker', anonymous=True)
+    rospy.init_node('stereo_face_feature_tracker', anonymous=True)
     #rospy.TopicSub('/head_controller/track_point',PointStamped,people_tracker.point_stamped)
     rospy.TopicSub('/videre/images',ImageArray,people_tracker.frame)
     rospy.TopicSub('/videre/cal_params',String,people_tracker.params)
