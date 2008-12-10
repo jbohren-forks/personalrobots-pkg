@@ -12,6 +12,7 @@ OGRE_PKG = $(shell rospack find ogre)/ogre/lib/pkgconfig
 PLAYER_PKG = $(shell rospack find player)/player/lib/pkgconfig
 FI_PKG = $(shell rospack find freeimage)/freeimage/lib/pkgconfig
 ODE_PKG = $(shell rospack find opende)/opende/lib/pkgconfig
+CV_PKG = $(shell rospack find opencv_latest)/opencv/lib/pkgconfig
 
 ODE_PATH = $(shell rospack find opende)/opende/bin
 FI_LD = $(shell rospack find freeimage)/freeimage/lib
@@ -27,9 +28,9 @@ build: SVN_UP_REVERT_PATCH gazebo
 .PHONY: gazebo
 gazebo: $(SVN_DIR)
 	if [ ! -d gazebo ]; then mkdir -p gazebo; mkdir -p gazebo/share; mkdir -p gazebo/share/gazebo; mkdir -p gazebo/share/gazebo/worlds; mkdir -p gazebo/share/gazebo/Media; fi
-	cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
+	cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_system-mt -lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib'
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons mode=optimized prefix=$(ROOT) boost_cflags='-I${BOOST_ROOT}/include' boost_lflags='-lboost_system-mt -lboost_graph -lboost_regex -lboost_signals -lboost_thread -L${BOOST_ROOT}/lib' install
 	touch gazebo
 
@@ -38,9 +39,9 @@ SVN_ORIG_DIR = gazebo-svn-original
 .PHONY: gazebo-original
 gazebo-original: $(SVN_ORIG_DIR)
 	if [ ! -d gazebo-original ]; then mkdir -p gazebo-original; mkdir -p gazebo-original/share; mkdir -p gazebo-original/share/gazebo/worlds; mkdir -p gazebo-original/share/gazebo; mkdir -p gazebo-original/share/gazebo/Media; fi
-	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
+	cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT_ORIG) 
-	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
+	-cd $(SVN_ORIG_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} \
 	scons prefix=$(ROOT_ORIG) install
 	touch gazebo-original
 
@@ -59,7 +60,7 @@ test-gazebo: test-$(SVN_TARGET)
 #	export LD_LIBRARY_PATH="/usr/lib" && \
 
 clean:
-	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} scons --clean
+	-cd $(SVN_DIR) && PKG_CONFIG_PATH=${CV_PKG}:${ODE_PKG}:${FI_PKG}:${PLAYER_PKG}:${OGRE_PKG}:${PKG_CONFIG_PATH} PATH=${ODE_PATH}:${PATH} scons --clean
 	rm -rf gazebo
 wipe: clean
 	rm -rf $(SVN_DIR) gazebo

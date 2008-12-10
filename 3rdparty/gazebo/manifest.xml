@@ -8,6 +8,7 @@
   <review status="3rdparty" notes=""/>
   <depend package="opende" />
   <depend package="ogre" />
+  <depend package="opencv_latest" />
   <url>http://playerstage.sf.net</url>
   <export>
     <cpp lflags="`xml2-config --libs` -Wl,-rpath,${prefix}/gazebo/lib -L${prefix}/gazebo/lib -lgazebo -lgazeboServer" cflags="`xml2-config --cflags` -I${prefix}/gazebo/include -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers -I${prefix}/gazebo-svn-ogre-v1.4.9/server/controllers/camera/generic -I${prefix}/gazebo-svn-ogre-v1.4.9/server/physics -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/ray -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/camera -I${prefix}/gazebo-svn-ogre-v1.4.9/server/sensors/contact -I${prefix}/gazebo-svn-ogre-v1.4.9/server -I${prefix}/gazebo-svn-ogre-v1.4.9/server/rendering"/>

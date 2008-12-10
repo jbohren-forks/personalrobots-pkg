@@ -211,6 +211,32 @@ Index: server/physics/SphereGeom.cc
  }
  
  ////////////////////////////////////////////////////////////////////////////////
+Index: server/physics/MapGeom.hh
+===================================================================
+--- server/physics/MapGeom.hh	(revision 7168)
++++ server/physics/MapGeom.hh	(working copy)
+@@ -27,7 +27,10 @@
+ #ifndef MAPGEOM_HH
+ #define MAPGEOM_HH
+ 
+-#include <Ogre.h>
++//#include <Ogre.h>
++#include <cv.h>
++#include <highgui.h>
++#include <cxcore.h>
+ #include <deque>
+ 
+ #include "Vector2.hh"
+@@ -141,7 +144,8 @@
+ 
+     private: ParamT<double> *wallHeightP;
+ 
+-    private: Ogre::Image mapImage;
++    //private: Ogre::Image mapImage;
++    private: IplImage* img;
+ 
+     private: QuadNode *root;
+ 
 Index: server/physics/BoxGeom.cc
 ===================================================================
 --- server/physics/BoxGeom.cc	(revision 7168)
@@ -407,7 +433,78 @@ Index: server/physics/MapGeom.cc
 ===================================================================
 --- server/physics/MapGeom.cc	(revision 7168)
 +++ server/physics/MapGeom.cc	(working copy)
-@@ -307,7 +307,9 @@
+@@ -25,16 +25,16 @@
+  */
+ 
+ #include <ode/ode.h>
+-#include <Ogre.h>
++//#include <Ogre.h>
+ #include <iostream>
+ #include <string.h>
+ #include <math.h>
+ 
+ #include "BoxGeom.hh"
+ #include "GazeboError.hh"
+-#include "OgreAdaptor.hh"
++//#include "OgreAdaptor.hh"
+ #include "Simulator.hh"
+-#include "OgreAdaptor.hh"
++//#include "OgreAdaptor.hh"
+ #include "OgreVisual.hh"
+ #include "Global.hh"
+ #include "Body.hh"
+@@ -88,9 +88,9 @@
+ /// Load the heightmap
+ void MapGeom::LoadChild(XMLConfigNode *node)
+ {
+-  OgreAdaptor *ogreAdaptor;
++  //OgreAdaptor *ogreAdaptor;
+ 
+-  ogreAdaptor = Simulator::Instance()->GetRenderEngine();
++  //ogreAdaptor = Simulator::Instance()->GetRenderEngine();
+ 
+   std::string imageFilename = node->GetString("image","",1);
+ 
+@@ -107,13 +107,24 @@
+   if (this->wallHeightP->GetValue() <= 0) this->wallHeightP->SetValue( 1.0 );
+ 
+   // Load the image 
+-  this->mapImage.load(imageFilename,
+-                Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
++  //this->mapImage.load(imageFilename,
++  //              Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
++  char *gazebo_resource_path = getenv("GAZEBO_RESOURCE_PATH");
++  if (gazebo_resource_path)
++    imageFilename = std::string(gazebo_resource_path)+std::string("/Media/materials/textures/")+imageFilename;
++  img=cvLoadImage(imageFilename.c_str());
++  if (!img)
++  {
++          printf("couldn't open file %s\n", imageFilename.c_str());
++          exit(0);
++  }
+ 
+   this->root->x = 0;
+   this->root->y = 0;
+-  this->root->width = this->mapImage.getWidth();
+-  this->root->height = this->mapImage.getHeight();
++  //this->root->width = this->mapImage.getWidth();
++  //this->root->height = this->mapImage.getHeight();
++  this->root->width = this->img->width;
++  this->root->height = this->img->height;
+ 
+   this->BuildTree(this->root);
+ 
+@@ -126,7 +137,8 @@
+ 
+   this->CreateBoxes(this->root);
+ 
+-  this->visualNode->MakeStatic();
++  if (Simulator::Instance()->GetRenderEngineEnabled())
++    this->visualNode->MakeStatic();
+ }
+ 
+ 
+@@ -307,7 +319,9 @@
  
    int diff = labs(freePixels - occPixels);
  
@@ -418,7 +515,7 @@ Index: server/physics/MapGeom.cc
    {
      float newX, newY;
      float newW, newH;
-@@ -353,7 +355,7 @@
+@@ -353,7 +367,7 @@
          newY += ceil(newH);
      }
  
@@ -427,6 +524,30 @@ Index: server/physics/MapGeom.cc
      node->leaf = false;
    }
    else if (occPixels == 0)
+@@ -376,7 +390,8 @@
+                                  unsigned int &freePixels, 
+                                  unsigned int &occPixels )
+ {
+-  Ogre::ColourValue pixColor;
++  //Ogre::ColourValue pixColor;
++  CvScalar pixColor;
+   unsigned char v;
+   unsigned int x,y;
+ 
+@@ -386,8 +401,11 @@
+   {
+     for (x = xStart; x < xStart + width; x++)
+     {
+-      pixColor = this->mapImage.getColourAt(x, y, 0);
+-      v = (unsigned char)(255 * ((pixColor[0] + pixColor[1] + pixColor[2]) / 3.0));
++      //pixColor = this->mapImage.getColourAt(x, y, 0);
++      pixColor = cvGet2D(this->img,y,x);
++      //v = (unsigned char)(255 * ((pixColor[0] + pixColor[1] + pixColor[2]) / 3.0));
++      v = (unsigned char)((pixColor.val[0] + pixColor.val[1] + pixColor.val[2]) / 3.0);
++
+       if (this->negativeP->GetValue())
+         v = 255 - v;
+ 
 Index: server/physics/Geom.cc
 ===================================================================
 --- server/physics/Geom.cc	(revision 7168)
@@ -3396,7 +3517,7 @@ Index: SConstruct
  OGRE_VERSION = '= 1.4.9'
  ODE_VERSION = '>= 0.10.1'
  
-@@ -21,13 +21,16 @@
+@@ -21,20 +21,26 @@
  opts.Add('destdir', 'The root directory to install into. Useful mainly for binary package building', '/')
  opts.Add('mode','Defines how Gazebo will be built, options available: optimized, profile, debug','debug')
  opts.Add('with_audio','Builds support for 3d sound. Options available: no, yes ', 'no')
@@ -3412,9 +3533,11 @@ Index: SConstruct
                'xml2-config --cflags --libs', 
 -      	      'ode-config --cflags --libs',
                'fltk-config --cflags --libs --ldflags --use-gl --use-images',
-               'pkg-config --cflags --libs xft'
+-              'pkg-config --cflags --libs xft'
++              'pkg-config --cflags --libs xft',
++              'pkg-config --cflags --libs opencv'
                ]
-@@ -35,6 +38,8 @@
+ 
  #
  # setup the build environment
  #
@@ -3423,7 +3546,7 @@ Index: SConstruct
  env = Environment (
    CC = 'g++',
  
-@@ -70,6 +75,9 @@
+@@ -70,6 +76,9 @@
    options=opts
  )
  
@@ -3433,7 +3556,7 @@ Index: SConstruct
  Help(opts.GenerateHelpText(env))
  
  if env['destdir'] != '/':
-@@ -86,7 +94,7 @@
+@@ -86,7 +95,7 @@
  rcconfig = env.RCConfig(target='gazeborc', source=Value(install_prefix))
  
  # DEFAULT list of subdirectories to build
@@ -3442,7 +3565,7 @@ Index: SConstruct
  
  # Set the compile mode
  if env['mode'] == 'debug':
-@@ -154,9 +162,10 @@
+@@ -154,9 +163,10 @@
          Exit(1)
  
  # Check for trimesh support in ODE
