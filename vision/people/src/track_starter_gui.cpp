@@ -193,8 +193,8 @@ public:
       }
     }
     if (dbridge_.fromImage(dimage_)) {
-      dbridge_.reallocIfNeeded(&cv_disp_image_, IPL_DEPTH_16U);
-      dbridge_.toIpl();
+      //dbridge_.reallocIfNeeded(&cv_disp_image_, IPL_DEPTH_16U);
+      cv_disp_image_ = dbridge_.toIpl();
       //cvCvtScale(cv_disp_image_, cv_disp_image_, 4.0/stinfo.dpp);
     }
     
