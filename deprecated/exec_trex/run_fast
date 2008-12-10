@@ -1,2 +1,0 @@
-export TREX_LOG_DIR=`pwd`/logs
-exec_trex_o_rt $1
