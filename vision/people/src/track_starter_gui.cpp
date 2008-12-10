@@ -304,7 +304,7 @@ public:
       // Display the image
       cv_mutex_.lock();
 
-      int c = cvWaitKey(5);
+      int c = cvWaitKey(2);
       c &= 0xFF;
       // Quit on ESC, "q" or "Q"
       if((c == 27)||(c == 'q')||(c == 'Q')){
