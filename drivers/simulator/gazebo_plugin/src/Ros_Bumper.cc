@@ -117,7 +117,7 @@ void Ros_Bumper::UpdateChild()
                 << "      my geom:" << my_geom_name
                 << "   other geom:" << geom_i_hit
                 << "         time:" << when_i_hit    << std::endl;
-      std::cout << stream;
+      //std::cout << stream.str();
       this->bumperMsg.data = stream.str();
       rosnode->publish(this->bumperTopicName,this->bumperMsg);
     }
