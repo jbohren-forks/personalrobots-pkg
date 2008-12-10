@@ -278,25 +278,23 @@ void TrajectoryController::updatePlan(const vector<Point2DFloat32>& new_plan){
 Trajectory TrajectoryController::createTrajectories(double x, double y, double theta, double vx, double vy, double vtheta,
     double acc_x, double acc_y, double acc_theta){
   //compute feasible velocity limits in robot space
-  double max_vel_x, max_vel_y, max_vel_theta;
-  double min_vel_x, min_vel_y, min_vel_theta;
+  double max_vel_x, max_vel_theta;
+  double min_vel_x, min_vel_theta;
 
-  max_vel_x = min(1.0, vx + acc_x * sim_time_);
+  max_vel_x = min(0.55, vx + acc_x * sim_time_);
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
-  max_vel_y = 0.3;
-  min_vel_y = -0.3;
-
-  //max_vel_theta = vtheta + acc_theta * sim_time_;
-  //min_vel_theta = vtheta - acc_theta * sim_time_;
+  std::vector<double> y_vels(4);
+  y_vels[0] = -0.3;
+  y_vels[1] = -0.1;
+  y_vels[2] = 0.1;
+  y_vels[3] = 0.3;
 
   max_vel_theta = 1.0;
   min_vel_theta = -1.0;
-  int y_samples = 2;
 
   //we want to sample the velocity space regularly
   double dvx = (max_vel_x - min_vel_x) / samples_per_dim_;
-  double dvy = (max_vel_y - min_vel_y) / (y_samples - 1);
   double dvtheta = (max_vel_theta - min_vel_theta) / (samples_per_dim_ - 1);
 
   double vx_samp = min_vel_x;
@@ -399,12 +397,12 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   //if we can't rotate in place or move forward... maybe we can move sideways and rotate
   vtheta_samp = min_vel_theta;
   vx_samp = 0.0;
-  vy_samp = min_vel_y;
 
   //loop through all y velocities
-  for(int i = 0; i < y_samples; ++i){
+  for(unsigned int i = 0; i < y_vels.size(); ++i){
     vtheta_samp = 0;
-    //first sample the completely horizontal trajectory
+    vy_samp = y_vels[i];
+    //sample completely horizontal trajectories
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
     //if the new trajectory is better... let's take it
@@ -436,7 +434,6 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
         }
       }
     }
-    vy_samp += dvy;
   }
 
   //do we have a legal trajectory
@@ -488,8 +485,9 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
 
   //and finally we want to generate trajectories that move backwards slowly
   //vtheta_samp = min_vel_theta;
+  /*
   vtheta_samp = 0.0;
-  vx_samp = 0.0;
+  vx_samp = -0.1;
   vy_samp = 0.0;
   for(int i = 0; i < samples_per_dim_; ++i){
     generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
@@ -502,6 +500,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     }
     //vtheta_samp += dvtheta;
   }
+  */
 
   strafe_left = false;
   strafe_right = false;
