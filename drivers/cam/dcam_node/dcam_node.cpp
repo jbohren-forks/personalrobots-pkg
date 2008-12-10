@@ -207,6 +207,10 @@ public:
       {
         stcam_ = new cam::StereoDcam(guid);
         cam_ = stcam_;
+
+        std::string params(cam_->getParameters());
+        set_param("~/params", params);
+
         cam_->setFormat(mode, fps, speed);
         cam_->setProcMode(videre_mode);
         cam_->setUniqueThresh(12);
