@@ -72,6 +72,11 @@ void SineSweepController::init(double start_freq, double end_freq, double durati
   assert(robot);
   robot_ = robot;
   joint_state_ = robot->getJointState(name);
+  if(name=="r_gripper_joint" || name=="l_gripper_joint")
+  {
+    joint_state_->calibrated_ = true;
+
+  }
   sweep_ = new SineSweep;
   sweep_->init(start_freq, end_freq, duration, amplitude);
   node->advertise<robot_msgs::TestData>( "/test_data", 0 );
