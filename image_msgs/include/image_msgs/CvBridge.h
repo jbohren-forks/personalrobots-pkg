@@ -119,6 +119,18 @@ namespace image_msgs
           cvCvtColor(rosimg_, cvtimg_, CV_GRAY2BGR);
           img_ = cvtimg_;
         }
+        else if (encoding == "mono" && rosimg.encoding == "rgb" )
+        {
+          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 1);
+          cvCvtColor(rosimg_, cvtimg_, CV_RGB2GRAY);
+          img_ = cvtimg_;
+        }
+        else if (encoding == "mono" && rosimg.encoding == "bgr" )
+        {
+          reallocIfNeeded(&cvtimg_, IPL_DEPTH_8U, 1);
+          cvCvtColor(rosimg_, cvtimg_, CV_BGR2GRAY);
+          img_ = cvtimg_;
+        }
         else
         {
           return false;
