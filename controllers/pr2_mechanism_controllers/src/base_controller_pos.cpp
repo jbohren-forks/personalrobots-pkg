@@ -42,6 +42,8 @@
 #define CMD_VEL_TRANS_EPS 1e-5
 #define CMD_VEL_ROT_EPS 1e-5
 
+static const double MIN_BASE_CONTROLLER_COVARIANCE = 0.00001;
+
 using namespace ros;
 using namespace std;
 using namespace controller;
@@ -685,6 +687,8 @@ void BaseControllerPos::computeBaseVelocity()
   libTF::Vector caster_2d_velocity;
   libTF::Vector wheel_caster_steer_component;
 
+  NEWMAT::Matrix odometry_residual(2*num_wheels_,1);
+
   caster_2d_velocity.x = 0;
   caster_2d_velocity.y = 0;
 
@@ -714,6 +718,10 @@ void BaseControllerPos::computeBaseVelocity()
   }
   //   D = pseudoInverse(C)*A;
   D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
+
+  odometry_residual = C*D-A;
+  odometry_residual_max_ = odometry_residual.MaximumAbsoluteValue();
+
   base_odom_velocity_.x = (double)D.element(0,0);
   base_odom_velocity_.y = (double)D.element(1,0);
   base_odom_velocity_.z = (double)D.element(2,0);
@@ -838,6 +846,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerPosNode)
   publisher_ = NULL;
   transform_publisher_ = NULL;
   odometer_publisher_ = NULL;
+  covariance_publisher_ = NULL;
 }
 
 BaseControllerPosNode::~BaseControllerPosNode()
@@ -851,6 +860,9 @@ BaseControllerPosNode::~BaseControllerPosNode()
 
   publisher_->stop();
   transform_publisher_->stop();
+  odometer_publisher_->stop();
+  covariance_publisher_->stop();
+
   delete publisher_;
   delete transform_publisher_;
   delete odometer_publisher_;
@@ -879,6 +891,36 @@ void BaseControllerPosNode::update()
       c_->setOdomMessage(publisher_->msg_);
       publisher_->unlockAndPublish() ;
       last_time_message_sent_ = time;
+    }
+
+    if (covariance_publisher_->trylock())
+    {
+      double base_odom_velocity_mag = sqrt(c_->base_odom_velocity_.x*c_->base_odom_velocity_.x+c_->base_odom_velocity_.y*c_->base_odom_velocity_.y+c_->base_odom_velocity_.z*c_->base_odom_velocity_.z);
+      double dirn_x(0),dirn_y(0),dirn_z(0);
+
+      if (base_odom_velocity_mag > EPS)
+      {
+        dirn_x = fabs(c_->base_odom_velocity_.x/base_odom_velocity_mag);
+        dirn_y = fabs(c_->base_odom_velocity_.y/base_odom_velocity_mag);   
+        dirn_z = fabs(c_->base_odom_velocity_.z/base_odom_velocity_mag);
+      }
+      else
+      {
+        dirn_x = 0.0;
+        dirn_y = 0.0;
+        dirn_z = 0.0;
+      }
+      covariance_publisher_->msg_.Cxx = c_->odometry_residual_max_;
+
+      covariance_publisher_->msg_.Cxx = std::max<double>(c_->odometry_residual_max_*dirn_x,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cyy = std::max<double>(c_->odometry_residual_max_*dirn_y,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Czz = std::max<double>(c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+
+      covariance_publisher_->msg_.Cxy = std::max<double>(c_->odometry_residual_max_*dirn_x+c_->odometry_residual_max_*dirn_y,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cxz = std::max<double>(c_->odometry_residual_max_*dirn_x+c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+      covariance_publisher_->msg_.Cyz = std::max<double>(c_->odometry_residual_max_*dirn_y+c_->odometry_residual_max_*dirn_z,MIN_BASE_CONTROLLER_COVARIANCE);
+
+      covariance_publisher_->unlockAndPublish() ;
     }
 
     if (transform_publisher_->trylock())
@@ -1016,6 +1058,10 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
   if (transform_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
     delete transform_publisher_ ;
   transform_publisher_ = new misc_utils::RealtimePublisher <tf::TransformArray> ("TransformArray", 5) ;
+
+  if (covariance_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete covariance_publisher_ ;
+  covariance_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
 
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 

@@ -57,6 +57,7 @@
 #include <std_msgs/RobotBase2DOdom.h>
 #include <std_msgs/BaseVel.h>
 #include <pr2_msgs/Odometer.h>
+#include <pr2_msgs/Covariance2D.h>
 
 #include <misc_utils/realtime_publisher.h>
 
@@ -406,6 +407,8 @@ namespace controller
 
     double odometer_angle_;
 
+    double odometry_residual_max_;
+
     friend class BaseControllerPosNode;
   };
 
@@ -497,10 +500,7 @@ namespace controller
 
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
-  };
-
-    /** \brief A namespace ostream overload for displaying parameters */
-//  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+    misc_utils::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     /*
      * \brief pointer to ros node
@@ -510,6 +510,12 @@ namespace controller
      * \brief save service name prefix for unadvertise on exit
      */
     std::string service_prefix;
+
+  };
+
+    /** \brief A namespace ostream overload for displaying parameters */
+//  std::ostream & operator<<(std::ostream& mystream, const controller::BaseParam &bp);
+
 }
 
 
