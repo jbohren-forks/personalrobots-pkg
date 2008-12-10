@@ -180,7 +180,7 @@ public:
 	}
 	else                     // Do it the slower (more accurate) way
 	{
-	  tf_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan) ;
+	  projector_.transformLaserScanToPointCloud(req.target_frame_id, target_frame_cloud, cur_scan, tf_) ;
         }
 
         for(unsigned int j = 0; j < target_frame_cloud.get_pts_size(); j++)               // Populate full_cloud from the cloud

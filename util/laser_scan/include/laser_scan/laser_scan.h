@@ -38,6 +38,8 @@
 #include <newmat10/newmatio.h>
 #include <newmat10/newmatap.h>
 
+#include "tf/tf.h"
+
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloud.h"
 #include "std_msgs/PointCloud.h"
@@ -68,6 +70,10 @@ namespace laser_scan{
        * \param preservative Default: false  If true all points in scan will be projected, including out of range values.  Otherwise they will not be added to the cloud.
        */
       void projectLaser(const std_msgs::LaserScan& scan_in, std_msgs::PointCloud & cloud_out, double range_cutoff=-1.0, bool preservative = false);
+
+
+      /** \brief Transform a std_msgs::LaserScan into a PointCloud in target frame */
+      void transformLaserScanToPointCloud(const std::string& target_frame, std_msgs::PointCloud & cloudOut, const std_msgs::LaserScan & scanIn, tf::Transformer & tf);
 
       
     private:
