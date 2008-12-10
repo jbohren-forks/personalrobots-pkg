@@ -106,15 +106,13 @@ public:
   CvMat *uvd_, *xyz_;
   IplImage *cv_image_;
   IplImage *cv_disp_image_;
-  //IplImage *cv_image_cpy_;
-  //IplImage *cv_disp_image_cpy_;
+  IplImage *cv_disp_image_out_;
   ros::thread::mutex cv_mutex_;
   robot_msgs::PositionMeasurement pos;
   TopicSynchronizer<TrackStarterGUI> sync_;
   
 
   TrackStarterGUI():
-    //node("track_starter_gui",ros::node::ANONYMOUS_NAME),
     ros::node("track_starter_gui"),
     lcolor_cal_(this),
     quit_(false),
@@ -124,12 +122,10 @@ public:
     xyz_(NULL),
     cv_image_(NULL),
     cv_disp_image_(NULL),
-    //cv_image_cpy_(NULL),
-    //cv_disp_image_cpy_(NULL),
-    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration(500), &TrackStarterGUI::image_cb_timeout)
+    cv_disp_image_out_(NULL),
+    sync_(this, &TrackStarterGUI::image_cb_all, ros::Duration().fromSec(0.05), &TrackStarterGUI::image_cb_timeout)
   {
     
-    printf("Starting track starter gui\n");
 
     cvNamedWindow("Track Starter: Left Image",CV_WINDOW_AUTOSIZE);
     cvNamedWindow("Track Starter: Disparity",CV_WINDOW_AUTOSIZE);
@@ -152,15 +148,13 @@ public:
 
   ~TrackStarterGUI() 
   {
-    printf("Destroying gui\n");
 
     cvDestroyWindow("Track Starter: Left Image");
     cvDestroyWindow("Track Starter: Disparity");
     
     cvReleaseImage(&cv_image_);
     cvReleaseImage(&cv_disp_image_);
-    //cvReleaseImage(&cv_image_cpy_);
-    //cvReleaseImage(&cv_disp_image_cpy_);
+    cvReleaseImage(&cv_disp_image_out_);
     cvReleaseMat(&uvd_);
     cvReleaseMat(&xyz_);
 
@@ -177,8 +171,6 @@ public:
 
   // Image callback. Draws selected points on images, publishes the point messages, and copies the images to be displayed.
   void image_cb_all(ros::Time t){
-
-    printf("Got messages\n");
 
     cv_mutex_.lock();
     if (!g_do_cb) {
@@ -201,6 +193,7 @@ public:
 	  lbridge_.reallocIfNeeded(&cv_image_, IPL_DEPTH_8U);
 	  lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_, true, true, COLOR_CAL_BGR);
 	}
+	cv_image_ = lbridge_.toIpl();
       }
     }
     else {
@@ -209,10 +202,14 @@ public:
       cv_image_ = lbridge_.toIpl();
     }
 
+    CvSize im_size = cvGetSize(cv_image_);
+
     if (dbridge_.fromImage(dimage_)) {
-      //dbridge_.reallocIfNeeded(&cv_disp_image_, IPL_DEPTH_16U);
       cv_disp_image_ = dbridge_.toIpl();
-      //cvCvtScale(cv_disp_image_, cv_disp_image_, 4.0/stinfo.dpp);
+      if (!cv_disp_image_out_) {
+	cv_disp_image_out_ = cvCreateImage(im_size,IPL_DEPTH_8U, 1);
+      }
+      cvCvtScale(cv_disp_image_, cv_disp_image_out_, 4.0/stinfo_.dpp);
     }
     
     // Convert the stereo calibration into a camera model.
@@ -226,8 +223,6 @@ public:
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
-
-    CvSize im_size = cvGetSize(cv_image_);
 
     for (uint i = 0; i<gxys.size(); i++) {
 
@@ -288,32 +283,22 @@ public:
     }
 
     cvShowImage("Track Starter: Left Image", cv_image_);
-    cvShowImage("Track Starter: Disparity", cv_disp_image_);
+    cvShowImage("Track Starter: Disparity", cv_disp_image_out_);
+    
     g_last_image_time = limage_.header.stamp;
-//     if (cv_image_cpy_ == NULL) {
-//       cv_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,3);
-//     }
-//     cvCopy(cv_image_, cv_image_cpy_);
-
-//     if (cv_disp_image_cpy_==NULL) {
-//       cv_disp_image_cpy_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
-//     }
-//     cvCopy(cv_disp_image_, cv_disp_image_cpy_);
-
-//     g_last_image_time = image_msg_.header.stamp;
 
     cv_mutex_.unlock();
     
   }
 
-  void image_cb_timeout(ros::Time t) {
-    printf("Not synced\n");
-    printf("t %f limage_ %f dimage_ %f stinfo %f rcinfo %f\n", t.toSec(), limage_.header.stamp.toSec(), dimage_.header.stamp.toSec(), stinfo_.header.stamp.toSec(), rcinfo_.header.stamp.toSec());
+  void image_cb_timeout(ros::Time t) {   
+    if (!g_do_cb) {
+      return;
+    }
   }
 
   // Wait for thread to exit.
   bool spin() {
-    printf("Spinning\n");
 
     while (ok() && !quit_) {
       // Display the image
