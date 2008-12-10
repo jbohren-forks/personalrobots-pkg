@@ -232,7 +232,7 @@ namespace highlevel_controllers {
    */
   bool RechargeController::dispatchCommands(){
 
-    if(!connected() && !charged() && !pluginNotified_){
+    if(!connected() && (connectionCount_ == 0 || !charged()) && !pluginNotified_){
       sendMail(PLUG);
       pluginNotified_ = true;
       ROS_DEBUG("Requested help to plug in.");
