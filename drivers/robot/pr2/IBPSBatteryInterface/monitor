@@ -205,7 +205,7 @@ time remaining per battery pack in minutes"""
             if timeout < time.time() - c.last_time:
                 controller_status_string = " Timeout %f > %f"%(c.last_time, timeout)
                 controller_status_value = 2
-            stat.append(DiagnosticStatus(controller_status_value, "IBPS %d"%c, controller_status_string, sval, []))
+            stat.append(DiagnosticStatus(controller_status_value, "IBPS %d"%ci, controller_status_string, sval, []))
             ## @todo make the status string represent errors etc
 
             for bi in range(0,len(c.batteries)):
@@ -232,7 +232,7 @@ time remaining per battery pack in minutes"""
                         (b.cycle_count, "cycle count"),
                         (b.design_capacity, "design capacity (mAh)"),
                         (b.design_voltage, "design voltage (V)"),
-                        (time.time() - b.last_time, "Time since update (s)"),
+                        (time.time() - b.last_time, "Time since update (s)")]
                 bval = [DiagnosticValue(v, s) for v,s in bval]
                 stringval = [DiagnosticString("%s"%b.serial_number, "Serial Number")]
 ##stringval.append(DiagnosticString(b.chemistry, "Chemistry"))
@@ -343,7 +343,7 @@ battery_keys = {
     '13': (float_hex2dec, 'average_time_to_full'),
     # 14 and 15 undocumented
     ## @todo 0x16 battery status a large bit field with lots of parsing    
-    '16': (battery_status_value, 'battery_status'),
+    '16': (battery_status, 'battery_status'),
     '17': (float_hex2dec, 'cycle_count'),
     '18': (capacity_mode_float_hex2dec, 'design_capacity'),
     '19': (capacity_mode_float_hex2dec, 'design_voltage'),
@@ -455,17 +455,19 @@ def monitor_main(argv, stdout, env):
 
     rospy.init_node(NAME)
 
-    print "opening ports:", port_list
-
-    # set port settings to talk to IBPS
-    for port in port_list:
-        os.system('stty 19200 <%s'%port)
-
-    # make sure the ports are sending hex
+    port_list = []
+    rospy.logout("opening ports: %s"%','.join(port_list))
+    # set port settings to talk to IBPS and make sure the ports are
+    # sending hex
     for name in port_list:
-        f = open('%s'%name,'w')
-        f.write('X')
-        f.close()
+        try:
+            os.system('stty 19200 <%s'%name)
+            f = open('%s'%name,'w')
+            f.write('X')
+            f.close()
+        except IOError:
+            rospy.logfatal("cannot open port [%s]"%name)
+            sys.exit(1)
 
     p_num = 0 # temp variable for filling in controller numbers
     port_number = {} # dictionary to hold lookup to port number
@@ -483,7 +485,15 @@ def monitor_main(argv, stdout, env):
     # continuously read from the ports while not shutdown
     while not rospy.is_shutdown():
         # select from all open ports to wait for new data
-        current, _, _ = select.select(ports,[],[],1)
+        try:
+            current, _, _ = select.select(ports,[],[],1)
+        except select.error, e:
+            if e[0] == 4:
+                rospy.logout("exiting on interrupt")
+                sys.exit(0)
+            else:
+                rospy.logfatal("select call failed with IOError [%s]"%str(e))
+                sys.exit(1)
         # figure out which port(s) got new data
         for f in current:
             for p in ports: #determine which port it came in on
