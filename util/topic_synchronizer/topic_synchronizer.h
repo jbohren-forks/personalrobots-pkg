@@ -51,6 +51,51 @@
 template <class N>
 class TopicSynchronizer
 {
+
+  class UnsubscribeList
+  {
+    std::list<std::string> list_;
+    ros::thread::mutex list_mutex_;
+    
+  public:
+    UnsubscribeList(std::list<std::string>& l) : list_(l) { }
+
+    void doUnsubscribe(ros::node* n, std::string topic)
+    {
+      list_mutex_.lock();
+      std::list<std::string>::iterator i = list_.begin();
+      while (i != list_.end() && *i != topic)
+        i++;
+      
+      if (i != list_.end())
+      {
+        i++;
+
+        while (i != list_.end())
+        {
+          n->unsubscribe(*i);
+          list_.erase(i++);
+        }
+      }
+      list_mutex_.unlock();
+    }
+  };
+
+  class UnsubscribeHelper
+  {
+    UnsubscribeList* ul_;
+    std::string topic_;
+
+  public:
+
+    UnsubscribeHelper(UnsubscribeList* ul, std::string topic) : ul_(ul), topic_(topic) {} 
+
+    void doUnsubscribe(ros::node* node)
+    {
+      ul_->doUnsubscribe(node, topic_);
+    }
+  };
+
   private:
 
   //! A pointer to your node for calling callback
@@ -79,6 +124,9 @@ class TopicSynchronizer
 
   //! The timestamp that is currently being waited for
   ros::Time waiting_time_;
+
+  std::list< UnsubscribeList* > exclusion_lists_;
+  std::list< UnsubscribeHelper** > helper_list_;
 
   //! The callback invoked by roscpp when any topic comes in
   /*!
@@ -128,6 +176,18 @@ class TopicSynchronizer
     }
   }
 
+  void msg_unsubothers(void* p)
+  {
+    UnsubscribeHelper** uh = (UnsubscribeHelper**)(p);
+
+    if (*uh != 0)
+    {
+      (*uh)->doUnsubscribe(node_);
+      delete (*uh);
+      (*uh) = 0;
+    }
+  }
+
   //! The function called in a message cb to wait for other messages
   /*!
    * \param time  The time that is being waited for
@@ -174,6 +234,24 @@ class TopicSynchronizer
   TopicSynchronizer(N* node, void (N::*callback)(ros::Time), ros::Duration timeout = ros::Duration(1.0), void (N::*timeout_callback)(ros::Time) = NULL) : node_(node), callback_(callback), timeout_(timeout), timeout_callback_(timeout_callback), expected_count_(0), count_(0), done_(false)
   { }
 
+  //! Destructor
+  ~TopicSynchronizer()
+  {
+    for (typename std::list<UnsubscribeList*>::iterator i = exclusion_lists_.begin();
+         i != exclusion_lists_.end();
+         i++)
+      delete (*i);
+
+    for (typename std::list<UnsubscribeHelper**>::iterator i = helper_list_.begin();
+         i != helper_list_.end();
+         i++)
+    {
+      if (**i != 0)
+        delete **i;
+      delete (*i);
+    }
+  }
+
   //! Subscribe
   /*! 
    * The synchronized subscribe call.  Call this to subscribe for topics you want
@@ -187,6 +265,26 @@ class TopicSynchronizer
   void subscribe(std::string topic_name, M& msg, int queue_size)
   {
     node_->subscribe(topic_name, msg, &TopicSynchronizer<N>::msg_cb, this, &(msg.header.stamp), queue_size);
+    expected_count_++;
+  }
+
+  template <class M>
+  void subscribe(std::list<std::string> topic_names, M& msg, int queue_size)
+  {
+    UnsubscribeList* ul = new UnsubscribeList(topic_names);
+    exclusion_lists_.push_back(ul); // so we can delete later
+
+    for (std::list<std::string>::iterator tn_iter = topic_names.begin();
+         tn_iter != topic_names.end();
+         tn_iter++)
+    {
+      UnsubscribeHelper** uh = new UnsubscribeHelper*;
+      *uh = new UnsubscribeHelper(ul, *tn_iter);
+      helper_list_.push_back(uh);
+
+      node_->subscribe(*tn_iter, msg, &TopicSynchronizer<N>::msg_unsubothers, this, uh, queue_size);
+      node_->subscribe(*tn_iter, msg, &TopicSynchronizer<N>::msg_cb, this, &(msg.header.stamp), queue_size);
+    }
     expected_count_++;
   }
 };
