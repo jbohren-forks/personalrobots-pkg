@@ -186,13 +186,18 @@ void EndeffectorWrenchController::update()
 
 ROS_REGISTER_CONTROLLER(EndeffectorWrenchControllerNode)
 
+EndeffectorWrenchControllerNode::~EndeffectorWrenchControllerNode()
+{
+  ros::node *node = ros::node::instance();
+  node->unsubscribe(topic_ + "/command");
+}
 
 bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
   // get name of topic to listen to from xml file
   ros::node *node = ros::node::instance();
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "") {
+  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic_ == "") {
     fprintf(stderr, "No topic given to EndeffectorWrenchControllerNode\n");
     return false;
   }
@@ -202,14 +207,9 @@ bool EndeffectorWrenchControllerNode::initXml(mechanism::RobotState *robot, TiXm
     return false;
   
   // subscribe to wrench commands
-  node->subscribe(topic + "/command", wrench_msg_,
+  node->subscribe(topic_ + "/command", wrench_msg_,
                   &EndeffectorWrenchControllerNode::command, this, 1);
-  guard_command_.set(topic + "/command");
-
-  // subscribe to spacenav pos commands
-  node->subscribe("spacenav/joy", joystick_msg_,
-                  &EndeffectorWrenchControllerNode::joystick, this, 1);
-  guard_command_.set("spacenav/joy");
+  guard_command_.set(topic_ + "/command");
 
   return true;
 }
@@ -231,17 +231,5 @@ void EndeffectorWrenchControllerNode::command()
   controller_.wrench_desi_.torque(1) = wrench_msg_.torque.y;
   controller_.wrench_desi_.torque(2) = wrench_msg_.torque.z;
 }
-
-
-
-void EndeffectorWrenchControllerNode::joystick()
-{
-  // convert to wrench command
-  for (unsigned int i=0; i<3; i++){
-    controller_.wrench_desi_.force(i)  = joystick_msg_.axes[i]   * JOYSTICK_MAX_FORCE;
-    controller_.wrench_desi_.torque(i) = joystick_msg_.axes[i+3] * JOYSTICK_MAX_TORQUE;
-  }
-}
-
 
 }; // namespace

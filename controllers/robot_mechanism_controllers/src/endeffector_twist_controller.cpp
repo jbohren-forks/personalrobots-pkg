@@ -37,10 +37,10 @@
 #include "robot_mechanism_controllers/endeffector_twist_controller.h"
 
 
-static const double JOYSTICK_MAX_VEL = 10.0;
-static const double JOYSTICK_MAX_ROT = 2.0;
-static const double MASS_TRANS       = 2.0;
-static const double MASS_ROT         = 0.5;
+static const double JOYSTICK_MAX_TRANS = 10.0;
+static const double JOYSTICK_MAX_ROT   = 2.0;
+static const double MASS_TRANS         = 2.0;
+static const double MASS_ROT           = 0.5;
 
 
 using namespace KDL;
@@ -90,6 +90,10 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
+
+  // get paramters from param server
+  node->param("arm_twist/mass_trans", mass_trans_, MASS_TRANS) ;
+  node->param("arm_twist/mass_rot", mass_rot_, MASS_ROT) ;
 
   // test if we got robot pointer
   assert(robot);
@@ -177,8 +181,8 @@ void EndeffectorTwistController::update()
   // twist feedback into wrench
   Twist diff = twist_desi_ - twist_meas_;
   for (unsigned int i=0; i<3; i++){
-    wrench_out_.force(i)  = MASS_TRANS * diff.vel(i);
-    wrench_out_.torque(i) = MASS_ROT   * diff.rot(i);
+    wrench_out_.force(i)  = mass_trans_ * diff.vel(i);
+    wrench_out_.torque(i) = mass_rot_   * diff.rot(i);
   }
 
   // send wrench to wrench controller
@@ -195,26 +199,37 @@ void EndeffectorTwistController::update()
 
 ROS_REGISTER_CONTROLLER(EndeffectorTwistControllerNode)
 
+EndeffectorTwistControllerNode::~EndeffectorTwistControllerNode()
+{
+  ros::node *node = ros::node::instance();
+
+  node->unsubscribe(topic_ + "/command");
+  node->unsubscribe(topic_ + "spacenav/joy");
+}
 
 
 bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
-  // get name of topic to listen to
+  // get name of topic_ to listen to
   ros::node *node = ros::node::instance();
-  std::string topic = config->Attribute("topic") ? config->Attribute("topic") : "";
-  if (topic == "") {
+  topic_ = config->Attribute("topic") ? config->Attribute("topic") : "";
+  if (topic_ == "") {
     fprintf(stderr, "No topic given to EndeffectorTwistControllerNode\n");
     return false;
   }
+
+  // get parameters
+  node->param("arm_twist/joystick_max_trans", joystick_max_trans_, JOYSTICK_MAX_TRANS) ;
+  node->param("arm_twist/joystick_max_rot", joystick_max_rot_, JOYSTICK_MAX_ROT) ;
 
   // initialize controller  
   if (!controller_.initXml(robot, config))
     return false;
   
   // subscribe to twist commands
-  node->subscribe(topic + "/command", twist_msg_,
+  node->subscribe(topic_ + "/command", twist_msg_,
                   &EndeffectorTwistControllerNode::command, this, 1);
-  guard_command_.set(topic + "/command");
+  guard_command_.set(topic_ + "/command");
 
   // subscribe to joystick commands
   node->subscribe("spacenav/joy", joystick_msg_,
@@ -247,8 +262,8 @@ void EndeffectorTwistControllerNode::joystick()
 {
   // convert to twist command
   for (unsigned int i=0; i<3; i++){
-    controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * JOYSTICK_MAX_VEL;
-    controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * JOYSTICK_MAX_ROT;
+    controller_.twist_desi_.vel(i)  = joystick_msg_.axes[i]   * joystick_max_trans_;
+    controller_.twist_desi_.rot(i)  = joystick_msg_.axes[i+3] * joystick_max_rot_;
   }
 }
 

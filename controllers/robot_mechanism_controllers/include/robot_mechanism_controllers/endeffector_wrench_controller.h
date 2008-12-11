@@ -80,21 +80,19 @@ class EndeffectorWrenchControllerNode : public Controller
 {
  public:
   EndeffectorWrenchControllerNode() {};
-  ~EndeffectorWrenchControllerNode() {};
+  ~EndeffectorWrenchControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
   void command();
 
-  // callback functions for joystick
-  void joystick();
-  
  private:
+  std::string topic_;
+
   EndeffectorWrenchController controller_;
   SubscriptionGuard guard_command_;
 
   robot_msgs::Wrench wrench_msg_;
-  joy::Joy joystick_msg_;
 };
 
 } // namespace

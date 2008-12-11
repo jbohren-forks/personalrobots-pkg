@@ -66,6 +66,7 @@ public:
 
 private:
   unsigned int  num_joints_, num_segments_;
+  double mass_trans_, mass_rot_;
 
   // kdl stuff for kinematics
   KDL::Chain             chain_;
@@ -87,7 +88,7 @@ class EndeffectorTwistControllerNode : public Controller
 {
  public:
   EndeffectorTwistControllerNode() {};
-  ~EndeffectorTwistControllerNode() {};
+  ~EndeffectorTwistControllerNode();
   
   bool initXml(mechanism::RobotState *robot, TiXmlElement *config);
   void update();
@@ -97,6 +98,9 @@ class EndeffectorTwistControllerNode : public Controller
   void joystick();
   
  private:
+  double joystick_max_trans_, joystick_max_rot_;
+  std::string topic_;
+
   EndeffectorTwistController controller_;
   SubscriptionGuard guard_command_;
 
