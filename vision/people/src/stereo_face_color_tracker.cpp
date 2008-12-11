@@ -141,8 +141,6 @@ public:
   ~StereoFaceColorTracker()
   {
 
-    cvReleaseImage(&cv_image_left_);
-    cvReleaseImage(&cv_image_disp_);
     cvReleaseImage(&cv_image_disp_out_);
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
@@ -178,6 +176,8 @@ public:
       cv_mutex_.unlock();
       return;
     }
+      
+    printf("past mono\n");
 
     // Set color calibration.
     bool do_calib = false;
@@ -186,13 +186,13 @@ public:
 	cv_image_left_ = lbridge_.toIpl();
       }
     }
-    else if (calib_color_ && has_param("dcam/left/image_rect_color")) {
+    else if (calib_color_ && lcolor_cal_.getFromParam("dcam/left/image_rect_color")) {
       // Exit if color calibration hasn't been performed.
       do_calib = true;
-      lcolor_cal_.getFromParam("dcam/left/image_rect_color");
       if (lbridge_.fromImage(limage_,"bgr")) {
-	lbridge_.reallocIfNeeded(&cv_image_left_, IPL_DEPTH_8U);
-	lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_left_, true, true, COLOR_CAL_BGR);
+	cv_image_left_ = lbridge_.toIpl();
+	lcolor_cal_.correctColor(cv_image_left_, cv_image_left_, true, true, COLOR_CAL_BGR);
+	
       }
     }
     else {
