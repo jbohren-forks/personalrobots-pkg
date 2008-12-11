@@ -353,7 +353,7 @@ namespace ros {
 	// Extract the solution, if available, and update statistics (as usual).
 	statsEntry.plan_length_m = 0;
 	statsEntry.plan_angle_change_rad = 0;
-	if ((1 == statsEntry.status) && (1 < solutionStateIDs.size())) {
+	if (1 == statsEntry.status) {
 	  ompl::waypoint_plan_t plan;
 	  ompl::convertPlan(*env_,
 			    solutionStateIDs,
