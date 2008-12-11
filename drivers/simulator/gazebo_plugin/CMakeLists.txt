@@ -25,19 +25,19 @@ rospack_add_library(Ros_Bumper src/Ros_Bumper.cc)
 #rospack_add_executable(player_pr2 src/player/Pr2_Player.cc)
 #target_link_libraries(player_pr2 playerc++)
 
-rospack_add_rostest(test/testslide.xml)
-rospack_add_rostest(test/testbase.xml)
-rospack_add_rostest(test/testarm.xml)
-rospack_add_rostest(test/testpendulum.xml)
-rospack_add_rostest(test/testscan.xml)
+rospack_add_rostest(test/test_slide.xml)
+rospack_add_rostest(test/test_base.xml)
+rospack_add_rostest(test/test_arm.xml)
+rospack_add_rostest(test/test_pendulum.xml)
+rospack_add_rostest(test/test_scan.xml)
 
 rospack_add_rostest(test/hztest_pr2.xml)
 rospack_add_rostest(test/hztest_rostime.xml)
 rospack_add_rostest(test/hztest_pr2_odom.xml)
 
 # below need xvfb-run
-# testcameras seems to fail a lot
-rospack_add_rostest_future(test/testcameras.xml)
+# test_camera seems to fail a lot
+rospack_add_rostest_graphical(test/test_camera.xml)
 rospack_add_rostest_graphical(test/hztest_pr2_image.xml)
 
 rospack_add_executable(urdf2factory src/urdf2factory.cc)

@@ -34,7 +34,7 @@
 
 ## Gazebo collision validation 
 
-NAME = 'testslide'
+NAME = 'test_slide'
 
 import rostools
 rostools.update_path('gazebo_plugin')
@@ -92,7 +92,7 @@ class TestSlide(unittest.TestCase):
                 #os.system("killall gazebo")
         
     
-    def testslide(self):
+    def test_slide(self):
         print "LINK\n"
         #rospy.Subscriber("Odom", RobotBase2DOdom, self.positionInput)
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.positionInput)

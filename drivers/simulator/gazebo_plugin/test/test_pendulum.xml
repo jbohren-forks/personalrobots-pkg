@@ -5,6 +5,6 @@
     <include file="$(find examples_gazebo)/dual_link_no_x.xml" />
 
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
-    <test test-name="gazebo_plugin_testpendulum" pkg="gazebo_plugin" type="testpendulum.py" />
+    <test test-name="gazebo_plugin_test_pendulum" pkg="gazebo_plugin" type="test_pendulum.py" />
   </group>
 </launch>

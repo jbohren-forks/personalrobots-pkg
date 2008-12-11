@@ -35,7 +35,7 @@
 ## Gazebo test cameras validation 
 
 PKG = 'gazebo_plugin'
-NAME = 'testscan'
+NAME = 'test_scan'
 
 import math
 import rostools

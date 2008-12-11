@@ -12,5 +12,5 @@
 
 
     <!--<node pkg="gazebo_plugin" type="groundtruthtransform" args="" respawn="true" />-->
-    <test test-name="gazebo_plugin_testarm"      pkg="gazebo_plugin" type="testarm.py" />
+    <test test-name="gazebo_plugin_test_arm"      pkg="gazebo_plugin" type="test_arm.py" />
 </launch>

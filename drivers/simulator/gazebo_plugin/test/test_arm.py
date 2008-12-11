@@ -38,7 +38,7 @@
 ##          for a duration of TARGET_DURATION seconds
 
 PKG = 'gazebo_plugin'
-NAME = 'testarm'
+NAME = 'test_arm'
 
 import math
 import rostools

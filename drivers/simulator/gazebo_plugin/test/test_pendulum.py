@@ -36,7 +36,7 @@
 ##          see error in joint constraint for ODE
 
 PKG = 'gazebo_plugin'
-NAME = 'testpendulum'
+NAME = 'test_pendulum'
 
 import math
 import rostools

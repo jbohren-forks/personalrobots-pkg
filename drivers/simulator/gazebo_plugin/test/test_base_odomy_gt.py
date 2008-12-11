@@ -35,7 +35,7 @@
 ## Gazebo test base controller vw
 
 PKG = 'gazebo_plugin'
-NAME = 'testbase_odomy_gt'
+NAME = 'test_base_odomy_gt'
 
 import math
 import rostools

@@ -35,7 +35,7 @@
 ## Gazebo test cameras validation 
 
 PKG = 'gazebo_plugin'
-NAME = 'testcameras'
+NAME = 'test_camera'
 
 import math
 import rostools
@@ -54,7 +54,7 @@ from PIL import Image      as pili
 from PIL import ImageChops as pilic
 
 FRAME_TARGET = "cam_sen-0050.ppm"
-FRAME_DIR = "testcameraframes"
+FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
 TEST_DURATION   = 30
 TEST_INIT_WAIT  = 10
@@ -84,7 +84,7 @@ class TestCameras(unittest.TestCase):
 
     def onTargetFrame(self):
         time.sleep(0.5) #Safety, to make sure the image is really done being written.
-        ps = "diff -q " + FRAME_DIR + "/" + FRAME_TARGET + " test/testcamera.valid.ppm"
+        ps = "diff -q " + FRAME_DIR + "/" + FRAME_TARGET + " test/test_camera.valid.ppm"
         #print "CMD: " + ps + "\n"
         result = os.system(ps)
         if (result == 0):
@@ -105,8 +105,10 @@ class TestCameras(unittest.TestCase):
         size = 100,100
         i0.thumbnail(size,pili.ANTIALIAS)
         i1.thumbnail(size,pili.ANTIALIAS)
+        ic = pilic.difference(i0,i1)
         i0.save("t_0.ppm")
         i1.save("t_1.ppm")
+        ic.save("t_d.ppm")
 
         # get raw data for comparison
         i0d = i0.getdata()
@@ -136,22 +138,27 @@ class TestCameras(unittest.TestCase):
           return True
 
     def imageInput(self,image):
-        print " got image from ROS, begin comparing images "
-        print "  - load validation image from file testcamera.valid.ppm "
-        if os.path.isfile("testcamera.valid.ppm"):
-          im0 = pili.open("testcamera.valid.ppm")
-        elif os.path.isfile("test/testcamera.valid.ppm"):
-          im0 = pili.open("test/testcamera.valid.ppm")
+
+        print " got image message from ROS, begin comparing images "
+
+        print "  - load validation image from file test_camera.valid.ppm "
+        if os.path.isfile("test_camera.valid.ppm"):
+          im0 = pili.open("test_camera.valid.ppm")
+        elif os.path.isfile("test/test_camera.valid.ppm"):
+          im0 = pili.open("test/test_camera.valid.ppm")
         else:
-          print "cannot find validation file: testcamera.valid.ppm"
+          print "cannot find validation file: test_camera.valid.ppm"
           self.success = False
           return
+
         print "  - load image from ROS "
         size = image.width,image.height
         im1 = pili.new("RGBA",size)
         im1 = pili.frombuffer("RGB",size,str(image.data));
         im1 = im1.transpose(pili.FLIP_LEFT_RIGHT).rotate(180);
         imc = pilic.difference(im0,im1)
+
+
         print "  - comparing images "
         im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
         im0.save("test_0.ppm")
@@ -170,7 +177,7 @@ class TestCameras(unittest.TestCase):
             print "  - images differ "
             self.success = False
 
-    def testcameras(self):
+    def test_camera(self):
         print " wait TEST_INIT_WAIT sec for objects to settle "
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
