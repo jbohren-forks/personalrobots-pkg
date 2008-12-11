@@ -56,8 +56,8 @@ from PIL import ImageChops as pilic
 FRAME_TARGET = "cam_sen-0050.ppm"
 FRAME_DIR = "test_camera_frames"
 TOTAL_ERROR_TOL = 5
-TEST_DURATION   = 30
-TEST_INIT_WAIT  = 10
+TEST_DURATION   = 10
+TEST_INIT_WAIT  = 40
 
 class PollCameraThread(threading.Thread):
     def __init__(self, target, dir):
@@ -160,9 +160,9 @@ class TestCameras(unittest.TestCase):
 
 
         print "  - comparing images "
-        im1.save("testsave.ppm") # uncomment this line to capture a new valid frame when things change
+        im1.save("test_1.ppm") # uncomment this line to capture a new valid frame when things change
         im0.save("test_0.ppm")
-        imc.save("test_diff.ppm")
+        imc.save("test_d.ppm")
         #im1.show()
         #im0.show()
         #imc.show()
@@ -178,7 +178,7 @@ class TestCameras(unittest.TestCase):
             self.success = False
 
     def test_camera(self):
-        print " wait TEST_INIT_WAIT sec for objects to settle "
+        print " wait TEST_INIT_WAIT sec for objects to settle and arms to tuck "
         time.sleep(TEST_INIT_WAIT)
         print " subscribe stereo left image from ROS "
         #rospy.TopicSub("test_camera/image", Image, self.imageInput)  # this is a test camera, simply looking at the cups

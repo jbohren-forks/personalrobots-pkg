@@ -7,6 +7,9 @@
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
 
+    <!-- Tug Arms For Navigation -->
+    <node pkg="pr2_gazebo" type="tuck_arms.py" output="screen"/>
+
     <!-- nav-stack -->
     <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.xml"/>
 

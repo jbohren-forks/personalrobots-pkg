@@ -35,7 +35,7 @@
 ## Gazebo tug arms for navigation
 
 PKG = 'pr2_gazebo'
-NAME = 'setarms'
+NAME = 'tuck_arms'
 
 import math
 import rostools
