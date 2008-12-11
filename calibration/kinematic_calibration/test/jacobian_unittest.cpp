@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-* 
+*
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-* 
+*
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-* 
+*
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-* 
+*
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -46,16 +46,16 @@ static const double epsilon = 1e-6 ;
 
 int RunVerifier(const string& path, double& max_error)
 {
-  VerifyJacobian verifier ;  
-  int result ;  
-  result = verifier.ComputeMaxError(path+"/model.txt", path+"/joint_states.txt", path+"/jacobians.txt", max_error) ;  
+  VerifyJacobian verifier ;
+  int result ;
+  result = verifier.ComputeMaxError(path+"/model.txt", path+"/joint_states.txt", path+"/jacobians.txt", max_error) ;
   return result ;
 }
 
 TEST(KINEMATIC_CALIBRATION_JACOBIAN, 2d_easy)
 {
   double max_error ;
-  int result = RunVerifier("./test/data/2d_easy", max_error) ;
+  int result = RunVerifier("./test/data/jacobian_unittest/2d_easy", max_error) ;
   EXPECT_EQ(0, result) ;
   EXPECT_NEAR(max_error, 0, epsilon) ;
 }
@@ -63,7 +63,7 @@ TEST(KINEMATIC_CALIBRATION_JACOBIAN, 2d_easy)
 TEST(KINEMATIC_CALIBRATION_JACOBIAN, 2d_hard)
 {
   double max_error ;
-  int result = RunVerifier("./test/data/2d_hard", max_error) ;
+  int result = RunVerifier("./test/data/jacobian_unittest/2d_hard", max_error) ;
   EXPECT_EQ(0, result) ;
   EXPECT_NEAR(max_error, 0, epsilon) ;
 }
@@ -71,7 +71,7 @@ TEST(KINEMATIC_CALIBRATION_JACOBIAN, 2d_hard)
 TEST(KINEMATIC_CALIBRATION_JACOBIAN, 3d_hard)
 {
   double max_error ;
-  int result = RunVerifier("./test/data/3d_hard", max_error) ;
+  int result = RunVerifier("./test/data/jacobian_unittest/3d_hard", max_error) ;
   EXPECT_EQ(0, result) ;
   EXPECT_NEAR(max_error, 0, epsilon) ;
 }
@@ -79,7 +79,7 @@ TEST(KINEMATIC_CALIBRATION_JACOBIAN, 3d_hard)
 TEST(KINEMATIC_CALIBRATION_JACOBIAN, edge_case_1)
 {
   double max_error ;
-  int result = RunVerifier("./test/data/edge_case_1", max_error) ;
+  int result = RunVerifier("./test/data/jacobian_unittest/edge_case_1", max_error) ;
   EXPECT_EQ(0, result) ;
   EXPECT_NEAR(max_error, 0, epsilon) ;
 }

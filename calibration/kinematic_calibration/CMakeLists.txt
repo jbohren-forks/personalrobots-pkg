@@ -7,6 +7,7 @@ rospack_add_library(kinematic_calibration src/link_param_jacobian.cpp
                                           src/link_param_jacobian_solver.cpp
                                           src/verify_jacobian.cpp
                                           src/jac_newmat_bridge.cpp
+                                          src/chain_modifier.cpp
                                           )
 
 rospack_add_executable(arm_phasespace_grabber src/arm_phasespace_grabber.cpp)
@@ -22,3 +23,7 @@ set_target_properties(jacobian_unittest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PR
 
 rospack_add_gtest(bridge_unittest test/bridge_unittest.cpp)
 target_link_libraries(bridge_unittest kinematic_calibration)
+
+rospack_add_gtest(chain_modifier_unittest test/chain_modifier_unittest.cpp)
+target_link_libraries(chain_modifier_unittest kinematic_calibration)
+set_target_properties(chain_modifier_unittest PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/test)
