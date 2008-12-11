@@ -54,6 +54,7 @@ import rospy, rostest, rostools
 from std_msgs.msg import *
 from rostools.msg import *
 from transformations import *
+from numpy import *
 
 TARGET_DURATION = 2.0
 TARGET_TOL      = 1.0
@@ -62,12 +63,12 @@ TEST_TIMEOUT    = 120.0
 # goal position
 TARGET_X = 25.5
 TARGET_Y = 15.5
+TARGET_T =  0.0
 
 # starting position
 #TARGET_X = 20.0
 #TARGET_Y = 10.0
 
-TARGET_T =  0.0
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
@@ -131,11 +132,12 @@ class NavStackTest(unittest.TestCase):
             self.odom_qi = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
         else:
             # update odom
-            self.odom_x = odom.pos.x   - self.odom_xi
-            self.odom_y = odom.pos.y   - self.odom_yi
+            self.odom_x = odom.pos.x
+            self.odom_y = odom.pos.y
             self.odom_q = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
 
     def p3dInput(self, p3d):
+        #self.printBaseP3D(p3d)
         # initialize ground truth
         if self.odom_initialized == False or self.p3d_initialized == False:
             self.p3d_initialized = True
@@ -147,8 +149,8 @@ class NavStackTest(unittest.TestCase):
                           ,p3d.pos.orientation.w]
         else:
             # update ground truth
-            self.p3d_x = p3d.pos.position.x - self.p3d_xi
-            self.p3d_y = p3d.pos.position.y - self.p3d_yi
+            self.p3d_x = p3d.pos.position.x
+            self.p3d_y = p3d.pos.position.y
             self.p3d_q =[ p3d.pos.orientation.x \
                          ,p3d.pos.orientation.y \
                          ,p3d.pos.orientation.z \
@@ -173,30 +175,37 @@ class NavStackTest(unittest.TestCase):
             time.sleep(1.0)
             # compute angular error between deltas in odom and p3d
             # compute delta in odom from initial pose
-            tmpqi = self.odom_qi
-            tmpqi[3] = -tmpqi[3] #reverse
-            odom_q_delta = quaternion_multiply(tmpqi,self.odom_q)
-            print "------------------------"
-            print "odom delta:"
-            print euler_from_quaternion(odom_q_delta)
+            print "========================"
+            tmpori = rotation_matrix_from_quaternion(self.odom_qi)
+            tmpoqi = quaternion_from_rotation_matrix(linalg.inv(tmpori))
+            odom_q_delta = quaternion_multiply(tmpoqi,self.odom_q)
+            print "odom delta:" , euler_from_quaternion(odom_q_delta)
             # compute delta in p3d from initial pose
-            tmpqi = self.p3d_qi
-            tmpqi[3] = -tmpqi[3] #reverse
-            p3d_q_delta = quaternion_multiply(tmpqi,self.p3d_q)
-            print "p3d delta:"
-            print euler_from_quaternion(p3d_q_delta)
+            tmppri = rotation_matrix_from_quaternion(self.p3d_qi)
+            tmppqi = quaternion_from_rotation_matrix(linalg.inv(tmppri))
+            p3d_q_delta = quaternion_multiply(tmppqi,self.p3d_q)
+            print "p3d delta:" , euler_from_quaternion(p3d_q_delta)
             # compute delta between odom and p3d
-            tmpqi = p3d_q_delta
-            tmpqi[3] = -tmpqi[3] #reverse
-            error_delta = quaternion_multiply(p3d_q_delta,odom_q_delta)
-            print "delta error:"
-            print euler_from_quaternion(error_delta)
+            tmpdri = rotation_matrix_from_quaternion(p3d_q_delta)
+            tmpdqi = quaternion_from_rotation_matrix(linalg.inv(tmpdri))
+            delta = quaternion_multiply(tmpdqi,odom_q_delta)
+            delta_euler = euler_from_quaternion(delta)
+            delta_yaw = delta_euler[2]
+            print "delta error:" , euler_from_quaternion(delta)
             print "------------------------"
 
-            # check total error
-            odom_error = abs(self.odom_x - self.p3d_x) + abs(self.odom_y - self.p3d_y)
-            nav_error  =  abs(self.p3d_x - (TARGET_X - self.p3d_xi   )) \
-                        + abs(self.p3d_y - (TARGET_Y - self.p3d_yi   ))
+            # check odom error (odom error from ground truth)
+            odom_error =  abs(self.odom_x - self.p3d_x - self.odom_xi + self.p3d_xi ) \
+                        + abs(self.odom_y - self.p3d_y - self.odom_yi + self.p3d_yi ) \
+                        + abs(delta_yaw)
+
+            # check total error (difference between ground truth and target)
+            current_euler_angles = euler_from_quaternion(self.p3d_q)
+            current_yaw = current_euler_angles[2]
+
+            nav_error  =  abs(self.p3d_x - TARGET_X) \
+                        + abs(self.p3d_y - TARGET_Y) \
+                        + abs(current_yaw -  TARGET_T)
             print "nav error:" + str(nav_error) + " tol:" + str(TARGET_TOL) + " odom error:" + str(odom_error)
 
             if nav_error < TARGET_TOL:

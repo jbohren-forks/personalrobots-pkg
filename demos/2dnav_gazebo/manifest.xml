@@ -22,4 +22,7 @@
   <depend package="pr2_gazebo"/>
   <depend package="pr2_prototype1_gazebo"/>
   <depend package="transformations"/>
+
+  <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
+  <sysdepend os="ubuntu" version="7.10-gutsy" package="python-numpy"/>
 </package>
