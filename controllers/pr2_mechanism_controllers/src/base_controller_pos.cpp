@@ -401,7 +401,7 @@ void BaseControllerPos::update()
     setVelocityCmdTrajectory(cmd_vel_,max_accel_);
   }
   else
-     cmd_vel_ = interpolateCommand(current_time-sample_time_);
+    cmd_vel_ = interpolateCommand(current_time-sample_time_,true);
 
 
   getJointValues();
@@ -433,22 +433,30 @@ void BaseControllerPos::update()
 
 }
 
-libTF::Vector BaseControllerPos::interpolateCommand(double time)
+libTF::Vector BaseControllerPos::interpolateCommand(double time, bool set)
 {
    libTF::Vector result;
 
    cmd_vel_trajectory_->sample(current_vel_point_,time);
-
+   if(set)
+     {
    cmd_vel_direction_.x = current_vel_point_.q_[0];
    cmd_vel_direction_.y = current_vel_point_.q_[1];
    cmd_vel_direction_.z = current_vel_point_.q_[2];
    cmd_vel_magnitude_ =  current_vel_point_.q_[3];
+     }
+   else
+     {
+       cmd_vel_dt_direction_.x = current_vel_point_.q_[0];
+       cmd_vel_dt_direction_.y = current_vel_point_.q_[1];
+       cmd_vel_dt_direction_.z = current_vel_point_.q_[2];
+     }
 
    result.x = current_vel_point_.q_[0] * current_vel_point_.q_[3];
    result.y = current_vel_point_.q_[1] * current_vel_point_.q_[3];
    result.z = current_vel_point_.q_[2] * current_vel_point_.q_[3];
 
-   ROS_INFO("Interpolate command: done sampling trajectory: %f %f %f",result.x, result.y, result.z);
+   //   ROS_INFO("Interpolate command: done sampling trajectory: %f %f %f",result.x, result.y, result.z);
 
    return result;
 }
@@ -496,7 +504,7 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
    }
    else
    {
-     ROS_INFO("Keeping the old trajectory %f %f %f",cmd_vel_direction_.x,cmd_vel_direction_.y,cmd_vel_direction_.z);
+     //     ROS_INFO("Keeping the old trajectory %f %f %f",cmd_vel_direction_.x,cmd_vel_direction_.y,cmd_vel_direction_.z);
       new_vel_direction.x = cmd_vel_direction_.x;
       new_vel_direction.y = cmd_vel_direction_.y;
       new_vel_direction.z = cmd_vel_direction_.z; 
@@ -536,7 +544,18 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
    libTF::Vector result, result_dt;
    libTF::Vector cmd_vel_dt;
 
-   cmd_vel_dt = interpolateCommand(current_sample_time+dT);
+   libTF::Vector cmd_vel_dirn;
+   libTF::Vector cmd_vel_dirn_dt;
+
+   cmd_vel_dirn.x = cmd_vel_direction_.x;
+   cmd_vel_dirn.y = cmd_vel_direction_.y;
+   cmd_vel_dirn.z = cmd_vel_direction_.z;
+
+   cmd_vel_dt = interpolateCommand(current_sample_time+dT,false);
+
+   cmd_vel_dirn_dt.x = cmd_vel_dt_direction_.x;
+   cmd_vel_dirn_dt.y = cmd_vel_dt_direction_.y;
+   cmd_vel_dirn_dt.z = cmd_vel_dt_direction_.z;
 
   double steer_angle_desired(0.0), steer_angle_desired_m_pi(0.0);
   double error_steer(0.0),error_steer_m_pi(0.0);
@@ -547,8 +566,8 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
 
   for(int i=0; i < num_casters_; i++)
   {
-    result    = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_);
-    result_dt = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_dt);
+    result    = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_dirn);
+    result_dt = computePointVelocity2D(base_casters_[i].pos_, cmd_vel_dirn_dt);
 
     if( trans_vel < CMD_VEL_TRANS_EPS && fabs(cmd_vel_.z) < CMD_VEL_ROT_EPS)
     {
@@ -570,7 +589,7 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
     error_steer_dt = angles::shortest_angular_distance(steer_angle_desired_dt, steer_angle_actual_[i]);
     error_steer_m_pi_dt = angles::shortest_angular_distance(steer_angle_desired_m_pi_dt, steer_angle_actual_[i]);
 
-    if(fabs(error_steer_m_pi) < fabs(error_steer))
+    /*    if(fabs(error_steer_m_pi) < fabs(error_steer))
     {
       error_steer = error_steer_m_pi;
       steer_angle_desired = steer_angle_desired_m_pi;
@@ -581,10 +600,10 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
       error_steer_dt = error_steer_m_pi_dt;
       steer_angle_desired_dt = steer_angle_desired_m_pi_dt;
     }
-
+    */
     steer_position_desired_[i] = steer_angle_desired;
     steer_velocity_desired_[i] = (steer_angle_desired_dt - steer_angle_desired)/dT - kp_speed_*error_steer;
-    ROS_INFO("Caster position desired: %d %f ",i,steer_position_desired_[i]);
+    //    ROS_INFO("Caster position desired: %d %f ",i,steer_position_desired_[i]);
   }
 }
 

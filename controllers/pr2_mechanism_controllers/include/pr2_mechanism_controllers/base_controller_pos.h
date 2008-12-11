@@ -227,7 +227,7 @@ namespace controller
      * specified by max_rate
      * \param dT - timestep
      */
-    libTF::Vector interpolateCommand(double time);
+    libTF::Vector interpolateCommand(double time, bool set);
 
     /*!
      * \brief iterative least squares implementation to compute odometry. This implementation computes and returns x where A*x = b
@@ -268,6 +268,8 @@ namespace controller
     std::vector<trajectory::Trajectory::TPoint> cmd_vel_points_;
 
     libTF::Vector cmd_vel_direction_;
+
+    libTF::Vector cmd_vel_dt_direction_;
 
     double cmd_vel_magnitude_;
 
