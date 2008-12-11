@@ -95,6 +95,28 @@ void SampleSet::appendToCloud(std_msgs::PointCloud& cloud, int r, int g, int b)
   }
 }
 
+std_msgs::Point SampleSet::center()
+{
+  std_msgs::Point p;
+
+  float x_mean = 0.0;
+  float y_mean = 0.0;
+  for (iterator i = begin();
+       i != end();
+       i++)
+      
+  {
+    x_mean += ((*i)->x)/size();
+    y_mean += ((*i)->y)/size();
+  }
+
+  p.x = x_mean;
+  p.y = y_mean;
+  p.z = 0.0;
+  
+  return p;
+}
+
 
 void ScanMask::addScan(std_msgs::LaserScan& scan)
 {

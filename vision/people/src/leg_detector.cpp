@@ -76,8 +76,8 @@ public:
       self_destruct();
     }
 
-    subscribe("scan", scan_, &LegDetector::laserCallback, 1);
-    advertise<std_msgs::PointCloud>("filt_cloud",1);
+    subscribe("scan", scan_, &LegDetector::laserCallback, 10);
+    advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
   }
 
@@ -109,7 +109,18 @@ public:
         (*i)->appendToCloud(cloud_, 255, 0, 0);
 
         robot_msgs::PositionMeasurement pos;
-
+        pos.header.stamp = scan_.header.stamp;
+        pos.header.frame_id = scan_.header.frame_id;
+        pos.name = "leg_detector";
+        pos.object_id = "unknown";
+        pos.pos = (*i)->center();
+        pos.reliability = 0.7;
+        pos.covariance[0] = 1.0;
+        pos.covariance[4] = 1.0;
+        pos.covariance[8] = 0.1;
+        pos.initialization = 0;
+        
+        publish("person_measurement", pos);
       }
     }
 

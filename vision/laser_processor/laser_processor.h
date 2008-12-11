@@ -47,6 +47,7 @@
 #include "ros/node.h"
 #include "std_msgs/LaserScan.h"
 #include "std_msgs/PointCloud.h"
+#include "std_msgs/Point.h"
 
 #include <list>
 #include <set>
@@ -93,6 +94,8 @@ namespace laser_processor
     void clear();
 
     void appendToCloud(std_msgs::PointCloud& cloud, int r = 0, int g = 0, int b = 0);
+
+    std_msgs::Point center();
   };
 
   //! A mask for filtering out Samples based on range
