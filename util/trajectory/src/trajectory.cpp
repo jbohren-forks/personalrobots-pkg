@@ -54,7 +54,7 @@ void Trajectory::clear()
 
 int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
 {
-  if(tp.size() <= 1)
+  if(tp.size() < 2)
   {
     ROS_WARN("Trying to set trajectory with number of points <= 0");
     return -1;
@@ -65,6 +65,8 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
     return -1;
   }
 
+//  ROS_INFO("Initializing trajectory with %d points",tp.size());
+
   num_points_ = tp.size();
 
   tp_.resize(num_points_);
@@ -73,11 +75,11 @@ int Trajectory::setTrajectory(const std::vector<TPoint>& tp)
   {
     tp_[i].setDimension(dimension_);
     tp_[i] = tp[i];
-    ROS_INFO("Input point: %d is ",i);
-    for(int j=0; j < dimension_; j++)
-      ROS_INFO("%f ",tp_[i].q_[j]);
+//    ROS_INFO("Input point: %d is ",i);
+//    for(int j=0; j < dimension_; j++)
+//      ROS_INFO("%f ",tp_[i].q_[j]);
 
-    ROS_INFO(" ");
+//    ROS_INFO(" ");
   }
 
   parameterize();
@@ -106,11 +108,11 @@ int Trajectory::setTrajectory(const std::vector<double> &p, int numPoints)
       tp_[i].qdot_[j] = 0.0;
     }
 
-    ROS_INFO("Input point: %d is ",i);
-    for(int j=0; j < dimension_; j++)
-      ROS_INFO("%f ",tp_[i].q_[j]);
+//    ROS_INFO("Input point: %d is ",i);
+//    for(int j=0; j < dimension_; j++)
+//      ROS_INFO("%f ",tp_[i].q_[j]);
 
-    ROS_INFO(" ");
+//    ROS_INFO(" ");
 
   }
   parameterize();
@@ -212,18 +214,26 @@ double Trajectory::getTotalTime()
 
 int Trajectory::sample(TPoint &tp, double time)
 {
-  if(time > tp_.back().time_ || time < tp_.front().time_)
+//  ROS_INFO("Trajectory has %d points",tp_.size());
+//  ROS_INFO("Time: %f, %f, %f",time,tp_.front().time_,tp_.back().time_);
+  if(time > tp_.back().time_)
   {
-    ROS_WARN("Invalid input sample time.");
-    return -1;
+//    ROS_WARN("Invalid input sample time.");
+    time = tp_.back().time_;
   }
+  else if( time < tp_.front().time_)
+  {
+    time = tp_.front().time_;
+//    ROS_WARN("Invalid input sample time.");
+  }
+
   if((int) tp.q_.size() != dimension_ || (int) tp.qdot_.size() != dimension_)
   {
     ROS_WARN("Dimension of sample point passed in = %d does not match dimension of trajectory = %d",tp.q_.size(),dimension_);
     return -1;
   } 
   int segment_index = findTrajectorySegment(time);
-  //ROS_DEBUG("segment index : %d",segment_index);
+//  ROS_INFO("segment index : %d",segment_index);
   if(interp_method_ == std::string("linear"))
     sampleLinear(tp,time,tc_[segment_index],tp_[segment_index].time_);
   else if(interp_method_ == std::string("cubic"))
@@ -440,7 +450,10 @@ double Trajectory::blendTime(double aa,double bb,double cc)
 
    double tb1 = (-bb + sqrt(disc))/(2*aa);
    double tb2 = (-bb - sqrt(disc))/(2*aa);
-
+   if(isnan(tb1))
+     tb1 = 0.0;
+   if(isnan(tb2))
+     tb2 = 0.0;
    return std::min(tb1,tb2);
 }
 
@@ -448,8 +461,11 @@ double Trajectory::blendTime(double aa,double bb,double cc)
 void Trajectory::sampleLinear(TPoint &tp, double time, const TCoeff &tc, double segment_start_time)
 {
   double segment_time = time - segment_start_time;
+//  ROS_INFO("Coeff size: %d",tc.coeff_.size());
+//  ROS_INFO("Coeff internal size: %d", tc.coeff_[0].size());
   for(int i =0; i < dimension_; i++)
   {
+//    ROS_INFO("Coeffs: %f %f", tc.coeff_[i][0], tc.coeff_[i][1]);
     tp.q_[i]    =  tc.coeff_[i][0] + segment_time * tc.coeff_[i][1];
     tp.qdot_[i] =  tc.coeff_[i][1];
   }
@@ -568,7 +584,7 @@ double Trajectory::calculateMinimumTimeCubic(const TPoint &start, const TPoint &
     else
       minJointTime = MAX_ALLOWABLE_TIME;
 
-    ROS_INFO("Min time: %f",minJointTime);
+//    ROS_INFO("Min time: %f",minJointTime);
 
     if(minTime < minJointTime)
       minTime = minJointTime;
@@ -651,10 +667,10 @@ double Trajectory::calculateMinTimeLSPB(double q0, double q1, double vmax, doubl
 }
 
 
-
 void Trajectory::setInterpolationMethod(std::string interp_method)
 {
   interp_method_ = interp_method;
+  ROS_INFO("Trajectory:: interpolation type %s",interp_method_.c_str());
 }
 
 int Trajectory::parameterize()
@@ -712,6 +728,11 @@ int Trajectory::parameterizeLinear()
     {
       temp[0] = tp_[i-1].q_[j];
       temp[1] = (tp_[i].q_[j] - tp_[i-1].q_[j])/tc.duration_;  
+      if(isnan(temp[1]))
+        {
+         temp[1] = 0.0;
+//         ROS_WARN("Zero duration between two trajectory points");
+        }
       tc.coeff_.push_back(temp);
     }
     tc_.push_back(tc);
@@ -774,6 +795,10 @@ int Trajectory::parameterizeCubic()
       temp[1] = tp_[i-1].qdot_[j];
       temp[2] = (3*(tp_[i].q_[j]-tp_[i-1].q_[j])-(2*tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(tc.duration_*tc.duration_);
       temp[3] = (2*(tp_[i-1].q_[j]-tp_[i].q_[j])+(tp_[i-1].qdot_[j]+tp_[i].qdot_[j])*tc.duration_)/(pow(tc.duration_,3));
+      if(isnan(temp[2]))
+        temp[2] = 0.0;
+      if(isnan(temp[3]))
+        temp[3] = 0.0;
 
       tc.coeff_.push_back(temp);
     }

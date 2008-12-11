@@ -148,7 +148,6 @@ namespace trajectory
     */
     int setTrajectory(const std::vector<double> &p, int numPoints);
 
-
     int setTrajectory(const std::vector<double> &p, const std::vector<double> &pdot, const std::vector<double> &time, int numPoints);
 
     int setMaxAcc(std::vector<double> max_acc);
@@ -208,13 +207,15 @@ namespace trajectory
 
     int write(std::string filename, double dT);
 
+    protected:
+
+    std::string interp_method_; /** string representation of interpolation method */
+
     private:
 
     int num_points_; /** number of points in the trajectory */
  
     int dimension_; /** dimension of the trajectory */
-
-    std::string interp_method_; /** string representation of interpolation method */
 
     std::vector<TPoint> tp_; /** vector of TPoints in the trajectory */
 
