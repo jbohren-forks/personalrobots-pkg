@@ -158,7 +158,7 @@ namespace TREX {
     m_refCount = 0;
   
     // ROS Parameters for running the agent
-    double ping_frequency;
+    double ping_frequency(1.0);
     std::string input_file;
     std::string path;
     int time_limit(0);
