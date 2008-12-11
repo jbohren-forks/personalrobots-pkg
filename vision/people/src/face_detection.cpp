@@ -56,7 +56,6 @@
 
 #include "people.h"
 
-
 using namespace std;
 
 // FaceDetector - A wrapper around OpenCV's face detection, plus some usage of depth to restrict the search.
@@ -75,6 +74,8 @@ public:
   // The left and disparity images.
   IplImage *cv_image_left_;
   IplImage *cv_image_disp_;
+  bool do_display_;
+  IplImage *cv_image_disp_out_;
 
   bool use_depth_;
   CvStereoCamModel *cam_model_;
@@ -87,11 +88,13 @@ public:
 
   ros::thread::mutex cv_mutex_;
 
-  FaceDetector(const char *haar_filename, bool use_depth) : 
-    ros::node("face_detector"),
-    sync_(this, &FaceDetector::image_cb_all, ros::Duration(0.05), &FaceDetector::image_cb_timeout),
+  FaceDetector(const char *haar_filename, bool use_depth, bool do_display) : 
+    ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
+    sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
+    do_display_(do_display),
+    cv_image_disp_out_(NULL),
     use_depth_(use_depth),
     cam_model_(NULL),
     people_(NULL),
@@ -100,14 +103,19 @@ public:
     detect_(0)
   { 
 
-    // OpenCV: pop up an OpenCV highgui window
-    cvNamedWindow("Face detector: Disparity",CV_WINDOW_AUTOSIZE);
-    cvNamedWindow("Face detector: Face Detection", CV_WINDOW_AUTOSIZE);
+    if (do_display_) {
+      // OpenCV: pop up an OpenCV highgui window
+      cvNamedWindow("Face detector: Disparity",CV_WINDOW_AUTOSIZE);
+      cvNamedWindow("Face detector: Face Detection", CV_WINDOW_AUTOSIZE);
+    }
 
     people_ = new People();
 
     // Subscribe to the images and parameters
-    sync_.subscribe("dcam/left/image_rect_color",limage_,1);
+    std::list<std::string> left_list;
+    left_list.push_back(std::string("dcam/left/image_rect"));
+    left_list.push_back(std::string("dcam/left/image_rect_color"));
+    sync_.subscribe(left_list,limage_,1);
     sync_.subscribe("dcam/disparity",dimage_,1);
     sync_.subscribe("dcam/stereo_info",stinfo_,1);
     sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
@@ -121,13 +129,20 @@ public:
   ~FaceDetector()
   {
 
-    cvReleaseImage(&cv_image_left_);
-    cvReleaseImage(&cv_image_disp_);
+    if (cv_image_left_)
+      cvReleaseImage(&cv_image_left_);
+    if (cv_image_disp_)
+      cvReleaseImage(&cv_image_disp_);
+    if (cv_image_disp_out_) 
+      cvReleaseImage(&cv_image_disp_out_);
 
-    cvDestroyWindow("Face detector: Face Detection");
-    cvDestroyWindow("Face detector: Disparity");
+    if (do_display_) {
+      cvDestroyWindow("Face detector: Face Detection");
+      cvDestroyWindow("Face detector: Disparity");
+    }
 
-    delete cam_model_;
+    if (cam_model_)
+      delete cam_model_;
 
     delete people_;
 
@@ -135,10 +150,6 @@ public:
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
   void image_cb_timeout(ros::Time t) {
-    if (limage_.header.stamp != t)
-      printf("Timed out waiting for left image\n");
-    if (dimage_.header.stamp != t)
-      printf("Timed out waiting for disparity image\n");
   }
 
   /// The image callback. For each new image, copy it, perform face detection, and draw the rectangles on the image.
@@ -180,7 +191,8 @@ public:
       vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
       
 
-      // Get the average disparity in the middle half of the bounding box, and compute the face center in 3d. Publish the face center as a track point.
+      // Get the average disparity in the middle half of the bounding box, and compute the face center in 3d. 
+      // Publish the face center as a track point.
       if (cv_image_disp_ && cam_model_) {
 	int r, c, good_pix;
 	ushort* ptr;
@@ -223,10 +235,15 @@ public:
 	cvReleaseMat(&xyz);
       }
 
+      if (do_display_) {
+	if (!cv_image_disp_out_) {
+	  cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	}
+	cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
 
-      cvShowImage("Face detector: Face Detection",cv_image_left_);
-      cvShowImage("Face detector: Disparity",cv_image_disp_);
- 
+	cvShowImage("Face detector: Face Detection",cv_image_left_);
+	cvShowImage("Face detector: Disparity",cv_image_disp_out_);
+      }
       cv_mutex_.unlock();
     }
   }
@@ -261,17 +278,19 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
+  bool do_display = true;
 
   if (argc < 2) {
     cerr << "Path to cascade file required.\n" << endl;
     return 0;
   }
   char *haar_filename = argv[1]; 
-  FaceDetector fd(haar_filename, use_depth);
+  if (argc >= 2) {
+    do_display = atoi(argv[2]);
+  }
+  FaceDetector fd(haar_filename, use_depth, do_display);
  
   fd.spin();
-
-
   ros::fini();
   return 0;
 }
