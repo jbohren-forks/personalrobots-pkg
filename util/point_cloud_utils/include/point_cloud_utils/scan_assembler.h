@@ -35,7 +35,7 @@
 #include "ros/node.h"
 
 #include "tf/transform_listener.h"
-#include "laser_scan_utils/laser_scan.h"
+#include "laser_scan/laser_scan.h"
 
 // Messages
 #include "std_msgs/LaserScan.h"

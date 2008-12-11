@@ -436,7 +436,10 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
 }
 
 void VOSparseBundleAdj::Stat2::print() {
+  printf("VOSpareBundleAdj::Stat2::print() was responsible for too many warnings and has been commented out.\n");
+
   // The accumulator set which will calculate the properties for us:
+  /*
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc;
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc2;
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc3;
@@ -458,6 +461,7 @@ void VOSparseBundleAdj::Stat2::print() {
   printf("max maxtracklen = %d, ", extract::max( acc3 ));
   printf("avg maxtracklen = %f, ", extract::mean( acc3 ));
   printf("\n");
+
   accumulator_set< double, stats<tag::min, tag::mean, tag::max> > acc1;
   acc1 = std::for_each( avgTrackLens.begin(), avgTrackLens.end(), acc1 );
   printf("min avgTracklen = %f, ", extract::min( acc1 ));
@@ -472,6 +476,7 @@ void VOSparseBundleAdj::Stat2::print() {
     printf("%2d  %5d, %7.2f\n", len, count, (double)count/(double)numKeyFrames);
     len++;
   }
+*/
 }
 
 void VOSparseBundleAdj::updateStat2() {
