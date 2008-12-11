@@ -10,7 +10,6 @@
 
 @subsection power_node Power Node
 ./power_node  
-
  Execute this to communicate with the power board.  It will look for the powerboard on the ethernet 
 interface routed to 192.168.1.1
 
@@ -19,11 +18,14 @@ interface routed to 192.168.1.1
  - breaker_number (0 | 1 | 2)
  - command = (start | stop | reset | disable)
 
+send_command will send a command over ROS to the power_node which will then execute it.  
+Thus send_command requires a power_node to be operating to be useful.  
 
 @subsection gui Power Board GUI
 ./view_power.py  
 
- This will start up a wx based gui to allow viewing and commanding of the power board.
+ This will start up a wx based gui to allow viewing and commanding of the power board.  This simply
+provides a graphical interface to the power_node over ROS.  
 
 @section topic ROS topics
 
