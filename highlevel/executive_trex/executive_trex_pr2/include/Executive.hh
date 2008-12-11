@@ -66,7 +66,7 @@ namespace TREX{
     bool decRef();
 
     /**
-     * A watchdog loop to keep pump ping messages to a watchdog
+     * A watchdog loop to keep pumping ping messages to a watchdog
      */
     void watchDogLoop();
 
@@ -79,7 +79,7 @@ namespace TREX{
     std::ofstream debug_file_; /*!< TREX debug output sent here */
     TREX::LoggerId logger_; /*!< handles TREX logging */
     TiXmlElement* input_xml_root_; /*!< Root to xml file used by all */
-    bool play_back_; /*! Will be true if node running off a playback log */
+    bool playback_; /*! Will be true if node running off a playback log */
   };
 }
 

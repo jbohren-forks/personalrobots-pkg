@@ -121,6 +121,19 @@ namespace TREX {
   ExecutiveId Executive::s_id;
 
   /**
+   * @brief Utilty to check for an argument in an arg list
+   */
+  bool isArg(int argc, char** argv, const char* argName){
+    for(int i=0;i<argc;i++){
+      std::string toCheck(argv[i]);
+      if(toCheck.find(argName) == 0)
+	return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Executive class implementation.
    */
 
@@ -130,8 +143,6 @@ namespace TREX {
    */
   ExecutiveId Executive::request(){
     if(s_id == ExecutiveId::noId()){
-      int argc = 0;
-      ros::init(argc, NULL);
       new Executive();
     }
     return s_id;
@@ -141,7 +152,7 @@ namespace TREX {
    * @brief Executive constructor sets up the trex agent instance
    */
   Executive::Executive() 
-    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), play_back_(false)
+    : ros::node("trex"), m_id(this), watchDogCycleTime_(0.1), agent_clock_(NULL), debug_file_("Debug.log"), input_xml_root_(NULL), playback_(isArg(argc, argv, "--playback"))
   {
     s_id = m_id; 
     m_refCount = 0;
@@ -156,7 +167,6 @@ namespace TREX {
     param("/trex/input_file", input_file, input_file);
     param("/trex/path", path, path);
     param("/trex/time_limit", time_limit, time_limit);
-    param("/trex/play_back", play_back_, play_back_);
     param("/trex/log_dir", log_dir, log_dir);
 
     // Bind the watchdog loop sleep time from input controller frequency
@@ -169,13 +179,13 @@ namespace TREX {
 
 
     // When not running in playback mode, we enable generation of a log file
-    if (!play_back_) {
+    if (!playback_) {
       logger_ = TREX::Logger::request();
       logger_->setEnabled(true);
     }
 
     // When running in playback mode, we use the playback version of the given input file
-    if(play_back_){
+    if(playback_){
       input_file = "playback." + input_file;
     }
 
@@ -183,7 +193,7 @@ namespace TREX {
     input_xml_root_ = TREX::LogManager::initXml( TREX::findFile(input_file) );
 
     // This initialization looks after registration of factories required for TREX plug-ins
-    TREX::initROSExecutive(play_back_);
+    TREX::initROSExecutive(playback_);
 
     // Redirect debug output
     DebugMessage::setStream(debug_file_);
@@ -191,7 +201,7 @@ namespace TREX {
     // Set up the clock
     int finalTick = 1;
     input_xml_root_->Attribute("finalTick", &finalTick);
-    if (play_back_) {
+    if (playback_) {
       agent_clock_ = new TREX::PlaybackClock((time_limit == 0 ? finalTick : time_limit), input_xml_root_);
     } else {
       // Allocate a real time clock with 1 second per tick
@@ -237,7 +247,7 @@ namespace TREX {
    * @broef Kicks off all the work to do.
    */
   void Executive::run(){
-    if (play_back_) {
+    if (playback_) {
       ROS_INFO("Stepping the executive.\n");
       agent_clock_->doStart();    
       TREX::LogManager::instance().handleInit();
@@ -274,8 +284,10 @@ namespace TREX {
  * @brief Handle cleanup on exit
  */
 void cleanup(){
-  node->shutdown();
-  delete (ros::node*) node;
+  if(node.isId()){
+    node->shutdown();
+    delete (ros::node*) node;
+  }
   exit(0);
 }
 
@@ -293,22 +305,48 @@ int main(int argc, char **argv)
   signal(SIGQUIT, &TREX::signalHandler);
   signal(SIGKILL, &TREX::signalHandler);
 
-  atexit(&cleanup);
+  ros::init(argc, argv);
 
-  node = TREX::Executive::request();
-  node->run();
-
-  // Parse command line arguments to see if we must apply test case validation
-  const std::string test_marker("--gtest");
-  for(int i = 0; i < argc; i++){
-    std::string s = argv[i];
-
-    if(s.find(test_marker) == 0){
-      testing::InitGoogleTest(&argc, argv);
-      return RUN_ALL_TESTS();
-    }
+  if(TREX::isArg(argc, argv, "--help")){
+    std::cout << "\n";
+    std::cout << "Welcome! TREX is an executive for supervisory  control of an autonomous system. TREX requires the following ROS parameters:\n";
+    std::cout << "* trex/input_file: An xml file that defines the agent control configuration.\n";
+    std::cout << "* trex/path:       A search path for locating input files. This should include a location for\n";
+    std::cout << "                   the input configuration file, as well as locations for agent initialization files (nddl files)\n";
+    std::cout << "* trex/log_dir:    An output directory for TREX log files.\n";
+    std::cout << "\n";
+    std::cout << "Usage: trexfast  [--help | --playback]\n";
+    std::cout << "--help:            Provides this message!\n";
+    std::cout << "--playback:        Use if debugging a previous run. Expects an xml observation log file as input named <your_agent_name>.log\n";
+    std::cout << "                   and a clock log file names clock.log.\n";
+    return 0;
   }
 
-  return 0;
+  int success = 0;
+
+  try{
+    node = TREX::Executive::request();
+    node->run();
+  }
+  catch(char* e){
+    ROS_INFO("Caught %s. Shutting down.\n", e);
+    success = -1;
+  }
+  catch(...){
+    ROS_INFO("Caught Unknown Exception!. Shutting down.\n");
+    success = -1;
+  }
+
+  // Parse command line arguments to see if we must apply test case validation
+  if(TREX::isArg(argc, argv, "--gtest")){
+    testing::InitGoogleTest(&argc, argv);
+    success = RUN_ALL_TESTS();
+  }
+
+  node->shutdown();
+  delete (ros::node*) node;
+  node = TREX::ExecutiveId::noId();
+
+  return success;
 }
 
