@@ -33,6 +33,20 @@
 
 namespace costmap_2d {
 
+  ros::Duration ObservationBuffer::computeRefreshInterval(double rate){
+    if(rate <= 0)
+      return ros::Duration(0, 0);
+
+    double period = 1 / rate;
+    return ros::Duration((int) rint(period), (int) rint((period - rint(period)) * pow(10.0, 9.0)));
+  }
+
+  ObservationBuffer::ObservationBuffer(const std::string& frame_id, ros::Duration keep_alive, ros::Duration refresh_interval)
+    :frame_id_(frame_id), keep_alive_(keep_alive), refresh_interval_(refresh_interval){
+    ROS_INFO("Initializing observation buffer for %s with keepAlive = %f and refresh_interval = %f\n", 
+	     frame_id_.c_str(), keep_alive.toSec(), refresh_interval_.toSec());
+  }
+
   // Just clean up outstanding observations
   ObservationBuffer::~ObservationBuffer(){
     while(!buffer_.empty()){
@@ -46,7 +60,8 @@ namespace costmap_2d {
   // Only works if the observation is in the map frame - test for it. It should be transformed before
   // we enque it
   bool ObservationBuffer::buffer_observation(const Observation& observation){
-    last_updated_ = observation.cloud_->header.stamp;
+    // Basically petting the watchdog here
+    last_updated_ = ros::Time::now();
 
     if(observation.cloud_->header.frame_id != "map")
       return false;
@@ -74,5 +89,16 @@ namespace costmap_2d {
     for(std::list<Observation>::const_iterator it = buffer_.begin(); it != buffer_.end(); ++it){
       observations.push_back(*it);
     }
+  }
+
+  bool ObservationBuffer::isCurrent() const {
+    static const ros::Duration FOREVER(0, 0);
+    bool ok = refresh_interval_ == FOREVER || (ros::Time::now() - last_updated_ <= refresh_interval_);
+
+    if(!ok){
+      ROS_INFO("Observation Buffer %s is not up to date. It has not been updated for %f seconds.", frame_id_.c_str(), (ros::Time::now() - last_updated_).toSec());
+    }
+
+    return ok;
   }
 }

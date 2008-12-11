@@ -195,15 +195,9 @@ namespace ros {
       bool withinDistance(double x1, double y1, double th1, double x2, double y2, double th2) const ;
 
       /**
-       * @brief Watchdog Handling
+       * @brief Tests if all the buffers are appropriately up to date
        */
-      void petTheWatchDog(const ros::Time& t);
-
       bool checkWatchDog() const;
-
-      // Time stamp for laser data. Should go away when ros::Time::now() works in simulation
-      struct timeval last_updated_;
-      ros::Time last_time_stamp_;
 
       // Callback messages
       std_msgs::LaserScan baseScanMsg_; /**< Filled by subscriber with new base laser scans */

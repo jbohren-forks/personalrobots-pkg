@@ -47,7 +47,7 @@ namespace costmap_2d {
    */
   class ObservationBuffer {
   public:
-  ObservationBuffer(ros::Duration keep_alive):keep_alive_(keep_alive){}
+    ObservationBuffer(const std::string& frame_id, ros::Duration keep_alive, ros::Duration refresh_interval);
 
     virtual ~ObservationBuffer();
 
@@ -63,9 +63,27 @@ namespace costmap_2d {
      */
     virtual void get_observations(std::vector<Observation>& observations);
 
+    /**
+     * @brief Checks if the buffered observations are up to date.
+     *
+     * In order to avoid working with stale data, we wish to check if the buffer has been updated
+     * within its refresh interval
+     */
+    bool isCurrent() const;
+
+
+    /**
+     * @brief Translates a rate to an interval in ros duration
+     */
+    static ros::Duration computeRefreshInterval(double rate);
+
+  protected:
+    const std::string frame_id_;
+
   private:
     std::list<Observation> buffer_;
     const ros::Duration keep_alive_;
+    const ros::Duration refresh_interval_;
     ros::Time last_updated_;
   };
 

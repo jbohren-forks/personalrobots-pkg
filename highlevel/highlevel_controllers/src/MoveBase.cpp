@@ -88,7 +88,6 @@ namespace ros {
       param("/costmap_2d/tilt_laser_max_range", tiltLaserMaxRange_, tiltLaserMaxRange_);
 
       // Unsigned chars cannot be stored in parameter server
-
       int tmpLethalObstacleThreshold;
       param("/costmap_2d/lethal_obstacle_threshold", tmpLethalObstacleThreshold, int(lethalObstacleThreshold));
       if (tmpLethalObstacleThreshold > 255)
@@ -116,10 +115,23 @@ namespace ros {
 
       robotWidth_ = inscribedRadius * 2;
 
-      // Allocate observation buffers
-      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
-      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), inscribedRadius, minZ_, maxZ_);
-      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), inscribedRadius, minZ_, maxZ_);
+      // Obtain parameters for sensors and allocate observation buffers accordingly. Rates are in Hz. 
+      double base_laser_update_rate(2.0);
+      double tilt_laser_update_rate(2.0);
+      double stereo_update_rate(2.0);
+      param("/costmap_2d/base_laser_update_rate", base_laser_update_rate , base_laser_update_rate);
+      param("/costmap_2d/tilt_laser_update_rate", tilt_laser_update_rate , tilt_laser_update_rate);
+      param("/costmap_2d/stereo_update_rate", stereo_update_rate , stereo_update_rate);
+      // Then allocate observation buffers
+      baseScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("base_laser"), tf_, ros::Duration(0, 0), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(base_laser_update_rate),
+							       inscribedRadius, minZ_, maxZ_);
+      tiltScanBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("laser_tilt_link"), tf_, ros::Duration(1, 0), 
+							       costmap_2d::BasicObservationBuffer::computeRefreshInterval(tilt_laser_update_rate),
+							       inscribedRadius, minZ_, maxZ_);
+      stereoCloudBuffer_ = new costmap_2d::BasicObservationBuffer(std::string("stereo"), tf_, ros::Duration(0, 0), 
+								  costmap_2d::BasicObservationBuffer::computeRefreshInterval(stereo_update_rate),
+								  inscribedRadius, minZ_, maxZ_);
 
       // get map via RPC
       std_srvs::StaticMap::request  req;
@@ -348,7 +360,6 @@ namespace ros {
       std_msgs::PointCloud local_cloud;
       local_cloud.header = baseScanMsg_.header;
       projector_.projectLaser(baseScanMsg_, local_cloud, baseLaserMaxRange_);
-      petTheWatchDog(local_cloud.header.stamp);
       lock();
       baseScanBuffer_->buffer_cloud(local_cloud);
       unlock();
@@ -545,25 +556,14 @@ namespace ros {
       return false;
     }
 
-    void MoveBase::petTheWatchDog(const ros::Time& t){
-      last_time_stamp_ = t; 
-      gettimeofday(&last_updated_, NULL);
-    }
-
     /**
-     * At most one second between updates
+     * The conjunction of all observation buffers must be current
      */
     bool MoveBase::checkWatchDog() const {
-      struct timeval curr;
-      gettimeofday(&curr,NULL);
-      double curr_t, last_t, t_diff;
-      last_t = last_updated_.tv_sec + last_updated_.tv_usec / 1e6;
-      curr_t = curr.tv_sec + curr.tv_usec / 1e6;
-      t_diff = curr_t - last_t;
-      bool ok = t_diff < 1.0;
+      bool ok =  baseScanBuffer_->isCurrent() && tiltScanBuffer_->isCurrent() && stereoCloudBuffer_->isCurrent();
 
       if(!ok) 
-        ROS_DEBUG("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
+        ROS_INFO("Missed required cost map update. Should not allow commanding now. Check cost map data source.\n");
 
       return ok;
     }

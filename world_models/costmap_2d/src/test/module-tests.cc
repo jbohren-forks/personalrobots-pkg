@@ -132,7 +132,7 @@ TEST(costmap, testResetForStaticMap){
   // Update the cost map for this observation
   map.updateDynamicObstacles(wx, wy, obsBuf);
 
-  // Verify that we know have only 8 * 4 + 4 cells with lethal cost, thus provong that we have correctly cleared
+  // Verify that we now have only 8 * 4 + 4 cells with lethal cost, thus provong that we have correctly cleared
   // free space
   unsigned int hitCount = 0;
   for(unsigned int i=0; i <100; i++){
@@ -165,8 +165,55 @@ TEST(costmap, testResetForStaticMap){
  * Basic testing for observation buffer
  */
 TEST(costmap, test15){
+  // Rate calculations
+  ASSERT_EQ(ObservationBuffer::computeRefreshInterval(-100), ros::Duration(0, 0));
+  ASSERT_EQ(ObservationBuffer::computeRefreshInterval(100), ros::Duration(0, 10000000));
+  ASSERT_EQ(ObservationBuffer::computeRefreshInterval(0), ros::Duration(0, 0));
+  ASSERT_EQ(ObservationBuffer::computeRefreshInterval(5), ros::Duration(0, (int)(0.2 * pow(10.0, 9.0))));
+  ASSERT_EQ(ObservationBuffer::computeRefreshInterval(0.3), ros::Duration(3, (int)((1.0/3.0) * pow(10.0, 9.0))));
+
   ros::Duration keep_alive(10, 0);
-  ObservationBuffer buffer(keep_alive);
+  ros::Duration refresh_interval(0, 200000000); // 200 ms
+  ObservationBuffer buffer("Foo", keep_alive, refresh_interval);
+
+  // Initially it should be false
+  ASSERT_EQ(buffer.isCurrent(), false);
+
+  std_msgs::Point origin; // Map origin
+  origin.x = 0;
+  origin.y = 0;
+  origin.z = 0;
+
+  ros::Time epoch; // Beginning of time
+
+  // Buffer a point cloud with a time stamp that is very old. It should still not be current
+  std_msgs::PointCloud* p0 = new std_msgs::PointCloud();
+  p0->set_pts_size(1);
+  p0->pts[0].x = 50;
+  p0->pts[0].y = 50;
+  p0->pts[0].z = MAX_Z;
+  p0->header.stamp = epoch;
+  Observation o0(origin, p0);
+  buffer.buffer_observation(o0);
+  // Up to date - ignores the time stamp.
+  ASSERT_EQ(buffer.isCurrent(), true);
+
+  // Now buffer another which has a current time stamp
+  std_msgs::PointCloud* p1 = new std_msgs::PointCloud();
+  p1->set_pts_size(1);
+  p1->pts[0].x = 50;
+  p1->pts[0].y = 50;
+  p1->pts[0].z = MAX_Z;
+  p1->header.stamp = ros::Time::now();
+  Observation o1(origin, p1);
+  buffer.buffer_observation(o1);
+  ASSERT_EQ(buffer.isCurrent(), true);
+
+  // Now go again after sleeping for a bit too long - 300 ms
+  ros::Time oldValue = ros::Time::now();
+  ros::Duration excessiveSleep(0, 300000000);
+  excessiveSleep.sleep();
+  ASSERT_EQ(buffer.isCurrent(), false);
 }
 
 /**

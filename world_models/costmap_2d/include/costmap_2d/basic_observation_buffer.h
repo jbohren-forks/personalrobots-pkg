@@ -42,7 +42,7 @@ namespace costmap_2d {
    */
   class BasicObservationBuffer: public ObservationBuffer {
   public:
-    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, double robotRadius, double minZ, double maxZ);
+    BasicObservationBuffer(const std::string& frame_id, tf::TransformListener& tf, ros::Duration keepAlive, ros::Duration refresh_interval,double robotRadius, double minZ, double maxZ);
 
     virtual void buffer_cloud(const std_msgs::PointCloud& local_cloud);
 
@@ -60,8 +60,6 @@ namespace costmap_2d {
      * filter based on the min and max z values
      */
     std_msgs::PointCloud * extractFootprintAndGround(const std_msgs::PointCloud& baseFrameCloud) const;
-
-    const std::string frame_id_;
     tf::TransformListener& tf_;
     std::deque<std_msgs::PointCloud> point_clouds_; /**< Buffer point clouds until a transform is available */
     ros::thread::mutex buffer_mutex_;
