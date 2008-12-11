@@ -11,8 +11,8 @@ rospack_add_compile_flags(dcam "-msse2 -mpreferred-stack-boundary=4")
 
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
-rospack_add_executable(stereocal src/stereocal.cpp src/stereogui.cpp src/imwin.cpp src/im3Dwin.cpp src/calwin.cpp)
-target_link_libraries(stereocal dcam fltk fltk_gl glut)
+rospack_add_executable(ost src/ost.cpp src/stereogui.cpp src/imwin.cpp src/im3Dwin.cpp src/calwin.cpp)
+target_link_libraries(ost dcam fltk fltk_gl glut)
 
 rospack_add_executable(acquire src/acquire.cpp)
 target_link_libraries(acquire dcam fltk)
