@@ -149,13 +149,21 @@ class MoveBase extends Behavior {
 
   // Parameters to get to the target
   predicate Active {
-    int max_duration;
-    bool timed_out;
     float x;
     float y;
     float th;
+    // Should be in the base class
+    int max_duration;
+    bool timed_out;
+    int dispatch_time; // The time at which the goal was dispatched
     leq(duration, max_duration);
     testEQ(timed_out, duration, max_duration);
+    precedes(dispatch_time, start); // This is a <= constraint
+
+    // This part is particular to the MoveBase node. It is probably fair that it would apply to all behaviors
+    // in the ROS set up, but not all behaviors more generally. This pattern allows us to impose a bounded
+    // synchronization model
+    temporalDistance(dispatch_time, [0, 2], start);
   }
 
   MoveBase(Mode _mode){

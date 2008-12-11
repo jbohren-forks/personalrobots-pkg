@@ -183,6 +183,9 @@ class RechargeController extends Behavior {
     float y;
     float th;
     UNIT_FLOAT recharge_level;
+    // Should be in the base class
+    int dispatch_time; // The time at which the goal was dispatched
+    precedes(dispatch_time, start); // This is a <= constraint
   }
 
 };
