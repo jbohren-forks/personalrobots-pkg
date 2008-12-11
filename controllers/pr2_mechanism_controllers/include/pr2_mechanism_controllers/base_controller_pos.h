@@ -46,6 +46,7 @@
 #include <pr2_mechanism_controllers/SetBaseCommand.h>
 #include <pr2_mechanism_controllers/GetBaseCommand.h>
 #include <pr2_mechanism_controllers/WheelRadiusMultiplier.h>
+#include <pr2_mechanism_controllers/OdometryResiduals.h>
 
 #include <libTF/Pose3D.h>
 #include <urdf/URDF.h>
@@ -276,6 +277,8 @@ namespace controller
 
     private:
 
+    std::vector<double> odometry_residuals_vector_;
+
     bool new_cmd_available_; /** true when new command received by node */
 
     /*!
@@ -501,6 +504,8 @@ namespace controller
     misc_utils::RealtimePublisher <pr2_msgs::Odometer>* odometer_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     misc_utils::RealtimePublisher <pr2_msgs::Covariance2D>* covariance_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
+
+    misc_utils::RealtimePublisher <pr2_mechanism_controllers::OdometryResiduals>* residuals_publisher_ ;  //!< Publishes the odom to base transform msg from the update() realtime loop
 
     /*
      * \brief pointer to ros node

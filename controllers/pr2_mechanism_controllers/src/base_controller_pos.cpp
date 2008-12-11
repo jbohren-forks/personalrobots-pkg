@@ -230,6 +230,8 @@ void BaseControllerPos::init(std::vector<JointControlParam> jcp, mechanism::Robo
       }
    }
 
+   odometry_residuals_vector_.resize(num_wheels_);
+
    for(int i =0; i < num_wheels_; i++)
    {
       link = urdf_model_.getJointLink(base_wheels_[i].name_);
@@ -720,6 +722,11 @@ void BaseControllerPos::computeBaseVelocity()
   D = iterativeLeastSquares(C,A,ils_weight_type_,ils_max_iterations_);
 
   odometry_residual = C*D-A;
+  for(int i=0; i< num_wheels_; i++)
+  {
+    odometry_residuals_vector_[i] = odometry_residual(i+1,1);
+  }
+
   odometry_residual_max_ = odometry_residual.MaximumAbsoluteValue();
 
   base_odom_velocity_.x = (double)D.element(0,0);
@@ -847,6 +854,7 @@ ROS_REGISTER_CONTROLLER(BaseControllerPosNode)
   transform_publisher_ = NULL;
   odometer_publisher_ = NULL;
   covariance_publisher_ = NULL;
+  residuals_publisher_ = NULL;
 }
 
 BaseControllerPosNode::~BaseControllerPosNode()
@@ -859,13 +867,17 @@ BaseControllerPosNode::~BaseControllerPosNode()
   node->unsubscribe("cmd_vel");
 
   publisher_->stop();
-  transform_publisher_->stop();
   odometer_publisher_->stop();
+  residuals_publisher_->stop();
+  transform_publisher_->stop();
   covariance_publisher_->stop();
 
   delete publisher_;
-  delete transform_publisher_;
+  delete residuals_publisher_;
   delete odometer_publisher_;
+  delete transform_publisher_;
+  delete covariance_publisher_;
+
   delete c_;
 }
 
@@ -891,6 +903,17 @@ void BaseControllerPosNode::update()
       c_->setOdomMessage(publisher_->msg_);
       publisher_->unlockAndPublish() ;
       last_time_message_sent_ = time;
+    }
+
+    if (residuals_publisher_->trylock())
+    {
+      for(int i = 0; i < c_->num_wheels_ ; i++)
+      {
+        residuals_publisher_->msg_.residuals[i] = c_->odometry_residuals_vector_[i];
+        residuals_publisher_->msg_.names[i] = (std::string) c_->base_wheels_[i].name_;
+      }        
+      residuals_publisher_->msg_.time = time;
+      residuals_publisher_->unlockAndPublish() ;
     }
 
     if (covariance_publisher_->trylock())
@@ -1063,6 +1086,10 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
     delete covariance_publisher_ ;
   covariance_publisher_ = new misc_utils::RealtimePublisher <pr2_msgs::Covariance2D> (service_prefix + "/odometry_covariance", 1) ;
 
+  if (residuals_publisher_ != NULL)// Make sure that we don't memory leak if initXml gets called twice
+    delete residuals_publisher_ ;
+  residuals_publisher_ = new misc_utils::RealtimePublisher <pr2_mechanism_controllers::OdometryResiduals> (service_prefix + "/odometry_residuals", 1) ;
+
   node->param<double>("base_controller/odom_publish_rate",odom_publish_rate_,100);
 
   double multiplier;
@@ -1070,6 +1097,8 @@ bool BaseControllerPosNode::initXml(mechanism::RobotState *robot_state, TiXmlEle
   c_->wheel_radius_ = c_->wheel_radius_*multiplier;
 
   transform_publisher_->msg_.set_eulers_size(NUM_TRANSFORMS);
+  residuals_publisher_->msg_.set_names_size(c_->num_wheels_);
+  residuals_publisher_->msg_.set_residuals_size(c_->num_wheels_);
 
   if(odom_publish_rate_ > 1e-5)
     odom_publish_delta_t_ = 1.0/odom_publish_rate_;
