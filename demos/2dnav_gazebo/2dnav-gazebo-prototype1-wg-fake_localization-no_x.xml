@@ -2,13 +2,13 @@
   <group name="wg">
 
     <!-- start up robot -->
-    <include file="$(find pr2_gazebo)/pr2_wg_no_x.launch"/>
+    <include file="$(find pr2_prototype1_gazebo)/pr2_prototype1_wg_no_x.launch"/>
 
     <!-- load map -->
     <node pkg="map_server" type="map_server" args="$(find gazebo_robot_description)/world/Media/materials/textures/willowMap.png 0.1" respawn="false" output="screen" />
 
     <!-- nav-stack -->
-    <include file="$(find 2dnav_gazebo)/2dnav-stack-amcl.xml"/>
+    <include file="$(find 2dnav_gazebo)/2dnav-stack-fake_localization.xml"/>
 
     <!-- for visualization -->
     <!--node pkg="pr2_gui" type="pr2_gui" respawn="false" output="screen" /-->

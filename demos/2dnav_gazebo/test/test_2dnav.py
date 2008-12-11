@@ -45,6 +45,7 @@ rostools.update_path('std_msgs')
 rostools.update_path('robot_msgs')
 rostools.update_path('rostools')
 rostools.update_path('rospy')
+rostools.update_path('transformations')
 
 
 import sys, unittest
@@ -52,72 +53,21 @@ import os, os.path, threading, time
 import rospy, rostest, rostools
 from std_msgs.msg import *
 from rostools.msg import *
-
+from transformations import *
 
 TARGET_DURATION = 2.0
 TARGET_TOL      = 1.0
-TEST_TIMEOUT    = 90.0
+TEST_TIMEOUT    = 120.0
 
-TARGET_X = 25.0
-TARGET_Y = 19.0
+# goal position
+TARGET_X = 25.5
+TARGET_Y = 15.5
+
+# starting position
+#TARGET_X = 20.0
+#TARGET_Y = 10.0
+
 TARGET_T =  0.0
-
-class E:
-    def __init__(self,x,y,z):
-        self.x = x
-        self.y = y
-        self.z = z
-
-    def shortest_euler_distance(self, e_from, e_to):
-       # takes two sets of euler angles, finds minimum transform between the two, FIXME: return some hacked norm for now
-       # start from the euler-from, and apply reverse euler-to transform, see how far we are from 0,0,0
-       r0 = e_from.x
-       p0 = e_from.y
-       y0 = e_from.z
-
-       r1 =  math.cos(e_to.z)*r0       + math.sin(e_to.z)*p0
-       p1 = -math.sin(e_to.z)*r0       + math.cos(e_to.z)*p0
-       y1 =  y0
-
-       r2 =  math.cos(e_to.y)*r1     - math.sin(e_to.y)*y1
-       p2 =  p1
-       y2 =  math.sin(e_to.y)*r1     + math.cos(e_to.y)*y1
-
-       self.x =  r2
-       self.y =  math.cos(e_to.x)*p1     + math.sin(e_to.x)*y1
-       self.z = -math.sin(e_to.x)*p1     + math.cos(e_to.x)*y1
-
-class Q:
-    def __init__(self,x,y,z,u):
-        self.x = x
-        self.y = y
-        self.z = z
-        self.u = u
-
-    def normalize(self):
-        s = math.sqrt(self.u * self.u + self.x * self.x + self.y * self.y + self.z * self.z)
-        self.u /= s
-        self.x /= s
-        self.y /= s
-        self.z /= s
-
-    def getEuler(self):
-        self.normalize()
-        squ = self.u
-        sqx = self.x
-        sqy = self.y
-        sqz = self.z
-        # init euler angles
-        vec = E(0,0,0)
-        # Roll
-        vec.x = math.atan2(2 * (self.y*self.z + self.u*self.x), squ - sqx - sqy + sqz);
-        # Pitch
-        vec.y = math.asin(-2 * (self.x*self.z - self.u*self.y));
-        # Yaw
-        vec.z = math.atan2(2 * (self.x*self.y + self.u*self.z), squ + sqx - sqy - sqz);
-        return vec
-
-
 
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
@@ -126,38 +76,23 @@ class NavStackTest(unittest.TestCase):
         self.reached_target_vw = False
         self.duration_start = 0
 
-        self.odom_xi = 0;
-        self.odom_yi = 0;
-        self.odom_ei = E(0,0,0)
+        self.odom_xi = 0
+        self.odom_yi = 0
+        self.odom_qi = [0,0,0,0]
         self.odom_initialized = False;
 
-        self.odom_x = 0;
-        self.odom_y = 0;
-        self.odom_e = E(0,0,0)
+        self.odom_x = 0
+        self.odom_y = 0
+        self.odom_q = [0,0,0,0]
 
-        self.p3d_xi = 0;
-        self.p3d_yi = 0;
-        self.p3d_ei = E(0,0,0)
+        self.p3d_xi = 0
+        self.p3d_yi = 0
+        self.p3d_qi = [0,0,0,0]
         self.p3d_initialized = False;
 
-        self.p3d_x = 0;
-        self.p3d_y = 0;
-        self.p3d_e = E(0,0,0)
-
-    def normalize_angle_positive(self, angle):
-        return math.fmod(math.fmod(angle, 2*math.pi) + 2*math.pi, 2*math.pi)
-
-    def normalize_angle(self, angle):
-        anorm = self.normalize_angle_positive(angle)
-        if anorm > math.pi:
-          anorm -= 2*math.pi
-        return anorm
-
-    def shortest_angular_distance(self, angle_from, angle_to):
-        angle_diff = self.normalize_angle_positive(angle_to) - self.normalize_angle_positive(angle_from)
-        if angle_diff > math.pi:
-          angle_diff = -(2*math.pi - angle_diff)
-        return self.normalize_angle(angle_diff)
+        self.p3d_x = 0
+        self.p3d_y = 0
+        self.p3d_q = [0,0,0,0]
 
     def printBaseOdom(self, odom):
         print "odom received"
@@ -188,32 +123,36 @@ class NavStackTest(unittest.TestCase):
 
     def odomInput(self, odom):
         #self.printBaseOdom(odom)
-        if self.odom_initialized == False:
+        # initialize odom
+        if self.odom_initialized == False or self.p3d_initialized == False:
             self.odom_initialized = True
             self.odom_xi = odom.pos.x
             self.odom_yi = odom.pos.y
-            self.odom_ei = E(0,0,odom.pos.th)
-        self.odom_x = odom.pos.x   - self.odom_xi
-        self.odom_y = odom.pos.y   - self.odom_yi
-        self.odom_e.shortest_euler_distance(self.odom_ei, E(0,0,odom.pos.th))
-
+            self.odom_qi = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
+        else:
+            # update odom
+            self.odom_x = odom.pos.x   - self.odom_xi
+            self.odom_y = odom.pos.y   - self.odom_yi
+            self.odom_q = quaternion_from_euler(0,0,odom.pos.th,'rxyz')
 
     def p3dInput(self, p3d):
-        q = Q(p3d.pos.orientation.x , p3d.pos.orientation.y , p3d.pos.orientation.z , p3d.pos.orientation.w)
-        q.normalize()
-        v = q.getEuler()
-
-        if self.p3d_initialized == False:
+        # initialize ground truth
+        if self.odom_initialized == False or self.p3d_initialized == False:
             self.p3d_initialized = True
             self.p3d_xi = p3d.pos.position.x
             self.p3d_yi = p3d.pos.position.y
-            self.p3d_ei = E(v.x,v.y,v.z)
-
-        self.p3d_x = p3d.pos.position.x - self.p3d_xi
-        self.p3d_y = p3d.pos.position.y - self.p3d_yi
-        self.p3d_e.shortest_euler_distance(self.p3d_ei,E(v.x,v.y,v.z))
-        #print "p3d initial:" + str(self.p3d_ei.x) + "," + str(self.p3d_ei.y) + "," + str(self.p3d_ei.z) \
-        #    +  " p3d final:" + str(v.x)           + "," + str(v.y)           + "," + str(v.z)
+            self.p3d_qi =[ p3d.pos.orientation.x \
+                          ,p3d.pos.orientation.y \
+                          ,p3d.pos.orientation.z \
+                          ,p3d.pos.orientation.w]
+        else:
+            # update ground truth
+            self.p3d_x = p3d.pos.position.x - self.p3d_xi
+            self.p3d_y = p3d.pos.position.y - self.p3d_yi
+            self.p3d_q =[ p3d.pos.orientation.x \
+                         ,p3d.pos.orientation.y \
+                         ,p3d.pos.orientation.z \
+                         ,p3d.pos.orientation.w]
 
     
     def test_2dnav(self):
@@ -232,29 +171,34 @@ class NavStackTest(unittest.TestCase):
             h.frame_id = "map"
             pub_goal.publish(Planner2DGoal(h,Pose2DFloat32(TARGET_X,TARGET_Y,TARGET_T),1))
             time.sleep(1.0)
-            # display what odom thinks
-            #print " odom    " + " x: " + str(self.odom_e.x) + " y: " + str(self.odom_e.y) + " t: " + str(self.odom_e.t)
-            # display what ground truth is
-            #print " p3d     " + " x: " + str(self.p3d_e.x)  + " y: " + str(self.p3d_e.y)  + " t: " + str(self.p3d_e.t)
-            # display what the odom error is
-            odom_yaw_error = E(0,0,0)
-            odom_yaw_error.shortest_euler_distance(self.p3d_e,self.odom_e)
-            nav_yaw_error = E(0,0,0)
-            nav_yaw_error.shortest_euler_distance(self.p3d_ei,E(0,0,TARGET_T))
-            nav_yaw_error.shortest_euler_distance(self.p3d_e,nav_yaw_error)
-            print " error   " + " odom_x:" + str(self.odom_x - self.p3d_x) \
-                              + " odom_y:" + str(self.odom_y - self.p3d_y) \
-                              + " odom_e:" + str(odom_yaw_error.x) + "," + str(odom_yaw_error.y) + "," + str(odom_yaw_error.z) \
-                              + "  nav_x:" + str(self.p3d_x - (TARGET_X - self.p3d_xi   )) \
-                              + "  nav_y:" + str(self.p3d_y - (TARGET_Y - self.p3d_yi   )) \
-                              + "  nav_e:" + str(nav_yaw_error.x) + "," + str(nav_yaw_error.y) + "," + str(nav_yaw_error.z)
+            # compute angular error between deltas in odom and p3d
+            # compute delta in odom from initial pose
+            tmpqi = self.odom_qi
+            tmpqi[3] = -tmpqi[3] #reverse
+            odom_q_delta = quaternion_multiply(tmpqi,self.odom_q)
+            print "------------------------"
+            print "odom delta:"
+            print euler_from_quaternion(odom_q_delta)
+            # compute delta in p3d from initial pose
+            tmpqi = self.p3d_qi
+            tmpqi[3] = -tmpqi[3] #reverse
+            p3d_q_delta = quaternion_multiply(tmpqi,self.p3d_q)
+            print "p3d delta:"
+            print euler_from_quaternion(p3d_q_delta)
+            # compute delta between odom and p3d
+            tmpqi = p3d_q_delta
+            tmpqi[3] = -tmpqi[3] #reverse
+            error_delta = quaternion_multiply(p3d_q_delta,odom_q_delta)
+            print "delta error:"
+            print euler_from_quaternion(error_delta)
+            print "------------------------"
+
             # check total error
-            odom_error = abs(self.odom_x - self.p3d_x) + abs(self.odom_y - self.p3d_y) \
-                       + abs(odom_yaw_error.x) + abs(odom_yaw_error.y) + abs(odom_yaw_error.z)
+            odom_error = abs(self.odom_x - self.p3d_x) + abs(self.odom_y - self.p3d_y)
             nav_error  =  abs(self.p3d_x - (TARGET_X - self.p3d_xi   )) \
-                        + abs(self.p3d_y - (TARGET_Y - self.p3d_yi   )) \
-                        + abs(nav_yaw_error.x) + abs(nav_yaw_error.y) + abs(nav_yaw_error.z)
+                        + abs(self.p3d_y - (TARGET_Y - self.p3d_yi   ))
             print "nav error:" + str(nav_error) + " tol:" + str(TARGET_TOL) + " odom error:" + str(odom_error)
+
             if nav_error < TARGET_TOL:
                 self.success = True
 
