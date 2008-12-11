@@ -17,5 +17,6 @@ rospack_add_library(pyface_detection src/py.cpp src/face_detection.cpp src/peopl
 set_target_properties(pyface_detection PROPERTIES OUTPUT_NAME face_detection PREFIX "")
 
 rospack_add_executable(leg_detector src/leg_detector.cpp src/calc_leg_features.cpp)
+rospack_add_executable(train_leg_detector src/train_leg_detector.cpp src/calc_leg_features.cpp)
 
 #rospack_add_pyunit(test/directed.py)
