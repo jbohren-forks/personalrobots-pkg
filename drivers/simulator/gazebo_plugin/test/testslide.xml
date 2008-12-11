@@ -2,7 +2,7 @@
   <master auto="start" />
 
     <node pkg="gazebo" type="gazebo" args="-r $(find gazebo_robot_description)/gazebo_worlds/test/testslide.world" respawn="false" output="screen">
-      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$LD_LIBRARY_PATH" />
+      <env name="LD_LIBRARY_PATH" value="$(find gazebo_plugin)/lib:$(find gazebo)/gazebo/lib:$(find Cg)/Cg/lib:$(find boost)/boost/lib:$(env LD_LIBRARY_PATH)" />
       <env name="GAZEBO_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
       <env name="OGRE_RESOURCE_PATH" value="$(find ogre)/ogre/lib/OGRE" />
       <env name="MC_RESOURCE_PATH" value="$(find gazebo_robot_description)/world" />
