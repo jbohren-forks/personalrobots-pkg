@@ -219,10 +219,14 @@ public:
   {
     double frame_error = 0.0 ;
     for (int i=0; i<3; i++)
+    {
       frame_error += abs( frame1.p.data[i] - frame2.p.data[i] ) ;
+    }
 
     for (int i=0; i<9; i++)
+    {
       frame_error += abs( frame1.M.data[i] - frame2.M.data[i] ) ;
+    }
 
     error = frame_error ;
 
@@ -287,6 +291,15 @@ TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_med2_all_active)
   ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/med2_all"), 2, CALC_MODE::ACTIVE_ONLY) ;
 }
 
+TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard1B_all_mat)
+{
+  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard1B_all"), 1, CALC_MODE::MAT) ;
+}
+TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard1B_all_active)
+{
+  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard1B_all"), 1, CALC_MODE::ACTIVE_ONLY) ;
+}
+
 
 TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard1_rot_mat)
 {
@@ -297,17 +310,17 @@ TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard1_rot_active)
   ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard1_rot"), 1, CALC_MODE::ACTIVE_ONLY) ;
 }
 
-TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard4_all_mat)
+TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard10_all_mat)
 {
-  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard4_all"), 4, CALC_MODE::MAT) ;
+  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard10_all"), 10, CALC_MODE::MAT) ;
 }
-TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard4_all_active)
+TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard10_all_active)
 {
-  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard4_all"), 4, CALC_MODE::ACTIVE_ONLY) ;
+  ChainModifierTester::ChainTest(string("./test/data/chain_modifier_unittest/hard10_all"), 10, CALC_MODE::ACTIVE_ONLY) ;
 }
-TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard4_all_sparse_test)
+TEST(KINEMATIC_CALIBRATION_CHAIN_MODIFIER, chain_modifier_hard10_all_sparse_test)
 {
-  ChainModifierTester::SparseTest(string("./test/data/chain_modifier_unittest/hard4_all"), 4) ;
+  ChainModifierTester::SparseTest(string("./test/data/chain_modifier_unittest/hard10_all"), 10) ;
 }
 
 
