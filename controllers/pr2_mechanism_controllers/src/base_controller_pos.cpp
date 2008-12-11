@@ -448,7 +448,7 @@ libTF::Vector BaseControllerPos::interpolateCommand(double time)
    result.y = current_vel_point_.q_[1] * current_vel_point_.q_[3];
    result.z = current_vel_point_.q_[2] * current_vel_point_.q_[3];
 
-//   ROS_INFO("Interpolate command: done sampling trajectory: %f %f %f",result.x, result.y, result.z);
+   ROS_INFO("Interpolate command: done sampling trajectory: %f %f %f",result.x, result.y, result.z);
 
    return result;
 }
@@ -482,9 +482,21 @@ void BaseControllerPos::setVelocityCmdTrajectory(libTF::Vector new_cmd, libTF::V
       new_vel_direction.x = new_cmd.x/new_cmd_mag;
       new_vel_direction.y = new_cmd.y/new_cmd_mag;
       new_vel_direction.z = new_cmd.z/new_cmd_mag;
+     double dot_direction = new_vel_direction.x * cmd_vel_direction_.x + new_vel_direction.y * cmd_vel_direction_.y +  new_vel_direction.z * cmd_vel_direction_.z;
+     double delta_direction = acos(dot_direction);
+     double delta_direction_m_pi = angles::normalize_angle(acos(dot_direction)+M_PI);
+
+     if(fabs(delta_direction_m_pi) <= fabs(delta_direction))
+     {
+       new_vel_direction.x = -new_vel_direction.x;
+       new_vel_direction.y = -new_vel_direction.y;
+       new_vel_direction.z = -new_vel_direction.z;
+       new_cmd_mag = new_cmd.x*new_vel_direction.x + new_cmd.y*new_vel_direction.y + new_cmd.z*new_vel_direction.z;
+     } 
    }
    else
    {
+     ROS_INFO("Keeping the old trajectory %f %f %f",cmd_vel_direction_.x,cmd_vel_direction_.y,cmd_vel_direction_.z);
       new_vel_direction.x = cmd_vel_direction_.x;
       new_vel_direction.y = cmd_vel_direction_.y;
       new_vel_direction.z = cmd_vel_direction_.z; 
@@ -572,7 +584,7 @@ void BaseControllerPos::computeDesiredCasterSteer(double current_sample_time, do
 
     steer_position_desired_[i] = steer_angle_desired;
     steer_velocity_desired_[i] = (steer_angle_desired_dt - steer_angle_desired)/dT - kp_speed_*error_steer;
-//    ROS_INFO("Caster speed component: %d %f %f %f",i,steer_angle_desired,steer_angle_desired_dt,steer_velocity_desired_[i]);
+    ROS_INFO("Caster position desired: %d %f ",i,steer_position_desired_[i]);
   }
 }
 
