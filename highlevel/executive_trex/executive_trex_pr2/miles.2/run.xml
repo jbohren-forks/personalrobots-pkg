@@ -3,6 +3,5 @@
   <param name="/trex/input_file" value="nav.cfg"/>
   <param name="/trex/path" value="$(find executive_trex_pr2)/cfg:$(find executive_trex_pr2)/miles.2"/>
   <param name="/trex/log_dir" value="$(find executive_trex_pr2)/miles.2"/>
-  <param name="/trex/play_back" value="0"/>
   <node pkg="executive_trex_pr2" type="trexfast"/>
 </launch>
