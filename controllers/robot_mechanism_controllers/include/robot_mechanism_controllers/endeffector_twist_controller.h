@@ -45,6 +45,7 @@
 #include "misc_utils/advertised_service_guard.h"
 #include "robot_mechanism_controllers/endeffector_wrench_controller.h"
 #include "joy/Joy.h"
+#include <control_toolbox/pid.h>
 
 namespace controller {
 
@@ -66,7 +67,13 @@ public:
 
 private:
   unsigned int  num_joints_, num_segments_;
-  double mass_trans_, mass_rot_;
+  double last_time_;
+
+  // robot structure
+  mechanism::RobotState *robot_;       
+
+  // pid controllers
+  std::vector<control_toolbox::Pid> pid_controller_;     
 
   // kdl stuff for kinematics
   KDL::Chain             chain_;

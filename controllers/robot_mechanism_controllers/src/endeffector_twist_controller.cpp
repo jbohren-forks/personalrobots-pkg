@@ -39,13 +39,10 @@
 
 static const double JOYSTICK_MAX_TRANS = 10.0;
 static const double JOYSTICK_MAX_ROT   = 2.0;
-static const double MASS_TRANS         = 2.0;
-static const double MASS_ROT           = 0.5;
 
 
 using namespace KDL;
 namespace controller {
-
 
 
 ROS_REGISTER_CONTROLLER(EndeffectorTwistController)
@@ -67,6 +64,30 @@ EndeffectorTwistController::~EndeffectorTwistController()
 
 bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElement *config)
 {
+  fprintf(stderr, "initializing twist controller\n");
+
+  // test if we got robot pointer
+  assert(robot);
+  robot_ = robot;
+
+  // get pid controller
+  TiXmlElement *p_trans = config->FirstChildElement("pid_trans");
+  control_toolbox::Pid pid_trans;
+  pid_trans.initXml(p_trans);
+  for (unsigned int i=0; i<3; i++)
+    pid_controller_.push_back(pid_trans);
+
+  TiXmlElement *p_rot = config->FirstChildElement("pid_rot");
+  control_toolbox::Pid pid_rot;
+  pid_rot.initXml(p_rot);
+  for (unsigned int i=0; i<3; i++)
+    pid_controller_.push_back(pid_rot);
+  fprintf(stderr, "pid controllers created\n");
+
+
+  // time
+  last_time_ = robot->hw_->current_time_;
+
   // set disired twist to 0
   twist_desi_ = Twist::Zero();
 
@@ -90,13 +111,6 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   num_segments_ = chain_.getNrOfSegments();
   printf("Extracted KDL Chain with %u Joints and %u segments\n", num_joints_, num_segments_ );
   jnt_to_twist_solver_ = new ChainFkSolverVel_recursive(chain_);
-
-  // get paramters from param server
-  node->param("arm_twist/mass_trans", mass_trans_, MASS_TRANS) ;
-  node->param("arm_twist/mass_rot", mass_rot_, MASS_ROT) ;
-
-  // test if we got robot pointer
-  assert(robot);
 
   // get chain
   TiXmlElement *chain = config->FirstChildElement("chain");
@@ -150,6 +164,8 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
   std::reverse(joints_.begin(), joints_.end());
 
 
+  fprintf(stderr, "initialized twist controller\n");
+
   return true;
 }
 
@@ -160,6 +176,9 @@ bool EndeffectorTwistController::initXml(mechanism::RobotState *robot, TiXmlElem
 
 void EndeffectorTwistController::update()
 {
+  // get current time
+  double time = robot_->hw_->current_time_;
+
   // check if joints are calibrated
   for (unsigned int i = 0; i < joints_.size(); ++i) {
     if (!joints_[i]->calibrated_)
@@ -173,21 +192,23 @@ void EndeffectorTwistController::update()
     jnt_posvel.qdot(i) = joints_[i]->velocity_;
   }
 
-  // get endeffector twist
+  // get endeffector twist error
   FrameVel twist; 
   jnt_to_twist_solver_->JntToCart(jnt_posvel, twist);
   twist_meas_ = twist.deriv();
+  Twist error = twist_desi_ - twist_meas_;
+  double dt = time - last_time_;
 
-  // twist feedback into wrench
-  Twist diff = twist_desi_ - twist_meas_;
-  for (unsigned int i=0; i<3; i++){
-    wrench_out_.force(i)  = mass_trans_ * diff.vel(i);
-    wrench_out_.torque(i) = mass_rot_   * diff.rot(i);
-  }
+  // pid feedback
+  for (unsigned int i=0; i<6; i++)
+    wrench_out_(i)  = pid_controller_[i].updatePid(error(i), dt);
 
   // send wrench to wrench controller
   wrench_controller_.wrench_desi_ = wrench_out_;
   wrench_controller_.update();
+
+  // remember time
+  last_time_ = time;
 }
 
 
