@@ -152,8 +152,6 @@ public:
     cvDestroyWindow("Track Starter: Left Image");
     cvDestroyWindow("Track Starter: Disparity");
     
-    cvReleaseImage(&cv_image_);
-    cvReleaseImage(&cv_disp_image_);
     cvReleaseImage(&cv_disp_image_out_);
     cvReleaseMat(&uvd_);
     cvReleaseMat(&xyz_);
@@ -181,19 +179,15 @@ public:
     bool do_calib = false;
     if (limage_.encoding != "mono") {
       // If this is a color image, set the calibration and convert it.
-      if (calib_color_ && has_param("dcam/left/image_rect_color")) {
-	// Exit if color calibration hasn't been performed.
-	do_calib = true;
-	lcolor_cal_.getFromParam("dcam/left/image_rect_color");
+      if (calib_color_ && lcolor_cal_.getFromParam("dcam/left/image_rect_color")) {
+	do_calib = true;      
       }
-
       // Convert the images to OpenCV format.
       if (lbridge_.fromImage(limage_,"bgr")) {
-	if (do_calib) {
-	  lbridge_.reallocIfNeeded(&cv_image_, IPL_DEPTH_8U);
-	  lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_, true, true, COLOR_CAL_BGR);
-	}
 	cv_image_ = lbridge_.toIpl();
+	if (do_calib) {
+	  lcolor_cal_.correctColor(cv_image_, cv_image_, true, true, COLOR_CAL_BGR);
+	}
       }
     }
     else {
