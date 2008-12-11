@@ -114,13 +114,13 @@ void P3D::UpdateChild()
   // apply xyz offsets and get position and rotation components
   pos = pose.pos + this->xyzOffsets;
   rot = pose.rot;
+  // std::cout << " --------- P3D rot " << rot.x << ", " << rot.y << ", " << rot.z << ", " << rot.u << std::endl;
 
   // apply rpy offsets
-  Vector3 rpyTotal;
-  rpyTotal.x = this->rpyOffsets.x + rot.GetRoll();
-  rpyTotal.y = this->rpyOffsets.y + rot.GetPitch();
-  rpyTotal.z = this->rpyOffsets.z + rot.GetYaw();
-  rot.SetFromEuler(rpyTotal);
+  Quatern qOffsets;
+  qOffsets.SetFromEuler(this->rpyOffsets);
+  rot = qOffsets*rot;
+  rot.Normalize();
 
   double cur_time = Simulator::Instance()->GetSimTime();
   
