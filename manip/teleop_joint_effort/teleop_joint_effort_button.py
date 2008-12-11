@@ -63,9 +63,10 @@ def main():
     params['joy_button_positive'] = rospy.get_param("joy_button_positive")
     params['joy_button_negative'] = rospy.get_param("joy_button_negative")
 
+    print "Spawning effort controller %s"%params['joint']
     resp = spawn_controller(xml_for(params['joint']))
-    if len(resp.ok) < 1 or not ord(resp.ok[0]):
-        print "Failed to spawn effort controller"
+    if len(resp.ok) < 1 or not resp.ok[0]:
+        print "Failed to spawn effort controller %s"%params['joint']
         sys.exit(1)
 
     pub = rospy.Publisher("/%s/set_command" % CONTROLLER_NAME, Float64)
@@ -83,7 +84,6 @@ def joy_callback(data, params):
       command = -1;
     if(command != 0):
       effort = command * params['max_effort']
-      print "Sending effort %d"%effort
       params['pub'].publish(Float64(effort));
 
 if __name__ == '__main__':
