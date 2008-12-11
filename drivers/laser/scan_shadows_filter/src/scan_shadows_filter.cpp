@@ -215,7 +215,7 @@ class ScanShadowsFilter : public ros::node
           break;
         }
       }
-      if (c_idx == -1) return;
+      if (c_idx == -1 || tilt_cloud.chan[c_idx].vals.size () == 0) return;
       /// ]--
 
       // Prepare the storage for the temporary array ([] and resize are faster than push_back)
