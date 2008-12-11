@@ -253,8 +253,8 @@ bool VOSparseBundleAdj::addTrack(PointTracks& tracks, PoseEstFrameEntry& frame,
   PointTrack* newtrack = new PointTrack(obsv0, obsv1, cartCoord1, mTrackId++);
   tracks.tracks_.push_back(newtrack);
 
-  int trackId = mTrackId-1;
 #if DEBUG==1
+  int trackId = mTrackId-1;
   printf("add new track %3d => %3d, %3d:[%8.2f, %8.2f, %8.2f]\n", trackId, inlierIndex, inlier,
       cartCoord1.x, cartCoord1.y, cartCoord1.z);
   printf("f=%3d, pi=%3d: [%3d, %3d], f=%3d, pi=%3d: [%3d, %3d]\n",
@@ -329,105 +329,106 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
   CvMat* mat0 = cvCreateMat(4, 4, CV_64FC1);
   CvMat* mat1 = cvCreateMat(4, 4, CV_64FC1);
 
-  if (tracks && map_index_to_FramePose_ && framePoses )
-  BOOST_FOREACH( const PointTrack* track, this->tracks->tracks_ ){
-    const PointTrackObserv* lastObsv = track->back();
-    const CvScalar colorFixedFrame = CvMatUtils::blue;
-    const CvScalar colorEstimated  = CvMatUtils::magenta;
-    CvScalar colorFreeFrame;
+  if (tracks && map_index_to_FramePose_ && framePoses ) {
+    BOOST_FOREACH( const PointTrack* track, this->tracks->tracks_ ){
+      const PointTrackObserv* lastObsv = track->back();
+      const CvScalar colorFixedFrame = CvMatUtils::blue;
+      const CvScalar colorEstimated  = CvMatUtils::magenta;
+      CvScalar colorFreeFrame;
 
-    // drawing it green if the last observation is over the current frame,
-    // namely a track that is still extending.
-    // drawing it yellow otherwise. Namely a track that is phasing out.
-    if (lastObsv->frame_index_ < frame_index) {
-      colorFreeFrame = CvMatUtils::yellow;
-    } else {
-      colorFreeFrame  = CvMatUtils::green;
-    }
+      // drawing it green if the last observation is over the current frame,
+      // namely a track that is still extending.
+      // drawing it yellow otherwise. Namely a track that is phasing out.
+      if (lastObsv->frame_index_ < frame_index) {
+        colorFreeFrame = CvMatUtils::yellow;
+      } else {
+        colorFreeFrame  = CvMatUtils::green;
+      }
 
-    /// @todo compute the estimated trajectory here. Not the right place.
+      /// @todo compute the estimated trajectory here. Not the right place.
 #if 1
-    BOOST_FOREACH(PointTrackObserv* obsv, *track) {
-      boost::unordered_map<int, FramePose*>::const_iterator it;
-      it = map_index_to_FramePose_->find(obsv->frame_index_);
-      assert(it!=map_index_to_FramePose_->end());
-      const FramePose* fp = it->second;
-      assert(obsv->frame_index_ == fp->mIndex);
+      BOOST_FOREACH(PointTrackObserv* obsv, *track) {
+        boost::unordered_map<int, FramePose*>::const_iterator it;
+        it = map_index_to_FramePose_->find(obsv->frame_index_);
+        assert(it!=map_index_to_FramePose_->end());
+        const FramePose* fp = it->second;
+        assert(obsv->frame_index_ == fp->mIndex);
 
-      CvMat* mat_global_to_disp;
+        CvMat* mat_global_to_disp;
 
-      /// @todo jdc debugging - turn off the following branch
-      if (false && fp->transf_global_to_disp_) {
-        mat_global_to_disp = fp->transf_global_to_disp_;
-      } else {
-        // compute it here.
-        mat_global_to_disp = mat1;
-        CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
-            mat0);
-        cvMatMul(threeDToDisparity_, mat0, mat_global_to_disp);
+        /// @todo jdc debugging - turn off the following branch
+        if (false && fp->transf_global_to_disp_) {
+          mat_global_to_disp = fp->transf_global_to_disp_;
+        } else {
+          // compute it here.
+          mat_global_to_disp = mat1;
+          CvMatUtils::invertRigidTransform(&fp->transf_local_to_global_,
+              mat0);
+          cvMatMul(threeDToDisparity_, mat0, mat_global_to_disp);
 
+        }
+
+        CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
+        CvPoint3D64f disp_coord_est;
+        //      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
+        CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &disp_coord_est);
+
+        cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est, mat_global_to_disp);
+        obsv->disp_res_.x = disp_coord_est.x - obsv->disp_coord_.x;
+        obsv->disp_res_.y = disp_coord_est.y - obsv->disp_coord_.y;
+        obsv->disp_res_.z = disp_coord_est.z - obsv->disp_coord_.z;
       }
+#endif
 
-      CvMat mat_coord = cvMat(1, 1, CV_64FC3, (double *)&track->coordinates_);
+      int thickness = 1;
+      deque<PointTrackObserv*>::const_iterator iObsv = track->begin();
+      PointTrackObserv* obsv = *iObsv;
+      CvPoint pt0     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
       CvPoint3D64f disp_coord_est;
-//      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &obsv->disp_coord_est_);
-      CvMat mat_disp_coord_est = cvMat(1, 1, CV_64FC3, &disp_coord_est);
-
-      cvPerspectiveTransform(&mat_coord, &mat_disp_coord_est, mat_global_to_disp);
-      obsv->disp_res_.x = disp_coord_est.x - obsv->disp_coord_.x;
-      obsv->disp_res_.y = disp_coord_est.y - obsv->disp_coord_.y;
-      obsv->disp_res_.z = disp_coord_est.z - obsv->disp_coord_.z;
-    }
-#endif
-
-    int thickness = 1;
-    int i=0;
-    deque<PointTrackObserv*>::const_iterator iObsv = track->begin();
-    PointTrackObserv* obsv = *iObsv;
-    CvPoint pt0     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
-    CvPoint3D64f disp_coord_est;
-    disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
-    disp_coord_est.y = obsv->disp_coord_.y + obsv->disp_res_.y;
-    disp_coord_est.z = obsv->disp_coord_.z + obsv->disp_res_.z;
-
-    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
-//    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
-#if DEBUG==1
-    printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track->id_, track->size(),
-        track->coordinates_.x, track->coordinates_.y, track->coordinates_.z);
-    printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
-    printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
-#endif
-    for (iObsv++; iObsv != track->end(); iObsv++) {
-      obsv = *iObsv;
-      CvScalar color;
-      if (obsv->frame_index_ < slideWindowFront) {
-        color = colorFixedFrame;
-      } else {
-        color = colorFreeFrame;
-      }
-      CvPoint pt1     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
       disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
       disp_coord_est.y = obsv->disp_coord_.y + obsv->disp_res_.y;
       disp_coord_est.z = obsv->disp_coord_.z + obsv->disp_res_.z;
 
-      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
-//      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
-
-      // draw the line between estimations, re-projected
-      cvLine(canvasTracking.Ipl(), est_pt0, est_pt1, colorEstimated, thickness, CV_AA);
-
-      // draw the line between observations
-      cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
-
-      // setting up for next iteration
-      pt0     = pt1;
-      est_pt0 = est_pt1;
-
+      CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
+      //    CvPoint est_pt0 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
 #if DEBUG==1
-      printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, obsv->frame_index_, pt0.x, pt0.y);
+      int i=0;
+      printf("track %3d, len=%3d, [%7.2f, %7.2f, %7.2f]\n", track->id_, track->size(),
+          track->coordinates_.x, track->coordinates_.y, track->coordinates_.z);
+      printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, (*iObsv)->frame_index_, pt0.x, pt0.y);
       printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
 #endif
+      for (iObsv++; iObsv != track->end(); iObsv++) {
+        obsv = *iObsv;
+        CvScalar color;
+        if (obsv->frame_index_ < slideWindowFront) {
+          color = colorFixedFrame;
+        } else {
+          color = colorFreeFrame;
+        }
+        CvPoint pt1     = CvStereoCamModel::dispToLeftCam(obsv->disp_coord_);
+        disp_coord_est.x = obsv->disp_coord_.x + obsv->disp_res_.x;
+        disp_coord_est.y = obsv->disp_coord_.y + obsv->disp_res_.y;
+        disp_coord_est.z = obsv->disp_coord_.z + obsv->disp_res_.z;
+
+        CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam(disp_coord_est);
+        //      CvPoint est_pt1 = CvStereoCamModel::dispToLeftCam((*iObsv)->disp_coord_est_);
+
+        // draw the line between estimations, re-projected
+        cvLine(canvasTracking.Ipl(), est_pt0, est_pt1, colorEstimated, thickness, CV_AA);
+
+        // draw the line between observations
+        cvLine(canvasTracking.Ipl(), pt0, pt1, color, thickness, CV_AA);
+
+        // setting up for next iteration
+        pt0     = pt1;
+        est_pt0 = est_pt1;
+
+#if DEBUG==1
+        printf("%3d: fi=%d, [%3d, %3d] <=> est: ", i++, obsv->frame_index_, pt0.x, pt0.y);
+        printf("[%3d, %3d] \n", est_pt0.x, est_pt0.y);
+#endif
+      }
     }
   }
   canvasTrackingRedrawn = true;
@@ -436,13 +437,34 @@ void SBAVisualizer::drawTrackTrajectories(int frame_index) {
 }
 
 void VOSparseBundleAdj::Stat2::print() {
-  printf("VOSpareBundleAdj::Stat2::print() was responsible for too many warnings and has been commented out.\n");
+  CvMat mat_num_tracks = cvMat(1, numTracks.size(), CV_32SC1, &(numTracks[0]));
+  CvScalar average = cvAvg(&mat_num_tracks);
+  double   min_val, max_val;
+  cvMinMaxLoc(&mat_num_tracks, &min_val, &max_val);
+  printf("min numTracks    = %d, ", (int)min_val);
+  printf("max numTracks    = %d, ", (int)max_val);
+  printf("avg numTracks    = %f, ", average.val[0]);
+  printf("\n");
 
+  CvMat mat_minTrackLens = cvMat(1, minTrackLens.size(), CV_32SC1, &(minTrackLens[0]));
+  average = cvAvg(&mat_minTrackLens);
+  cvMinMaxLoc(&mat_minTrackLens, &min_val, &max_val);
+  printf("min minTrackLens = %d, ", (int)min_val);
+  printf("max minTrackLens = %d, ", (int)max_val);
+  printf("avg minTrackLens = %f, ", average.val[0]);
+  printf("\n");
+  CvMat mat_maxTrackLens = cvMat(1, maxTrackLens.size(), CV_32SC1, &(maxTrackLens[0]));
+  average = cvAvg(&mat_maxTrackLens);
+  cvMinMaxLoc(&mat_maxTrackLens, &min_val, &max_val);
+  printf("min maxTrackLens = %d, ", (int)min_val);
+  printf("max maxTrackLens = %d, ", (int)max_val);
+  printf("avg maxTrackLens = %f, ", average.val[0]);
+  printf("\n");
+
+#if 0 // I would prefer using the following if I can figure out how to
+  // avoid the excessive compilation warnings.
   // The accumulator set which will calculate the properties for us:
-  /*
   accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc;
-  accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc2;
-  accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc3;
 
   // Use std::for_each to accumulate the statistical properties:
   acc = std::for_each( numTracks.begin(), numTracks.end(), acc );
@@ -451,11 +473,13 @@ void VOSparseBundleAdj::Stat2::print() {
   printf("avg numTracks = %f, ", extract::mean( acc ));
   printf("\n");
 
+  accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc2;
   acc2 = std::for_each( minTrackLens.begin(), minTrackLens.end(), acc2 );
   printf("min mintracklen = %d, ", extract::min( acc2 ));
   printf("max mintracklen = %d, ", extract::max( acc2 ));
   printf("avg mintracklen = %f, ", extract::mean( acc2 ));
   printf("\n");
+  accumulator_set< int, stats<tag::min, tag::mean, tag::max> > acc3;
   acc3 = std::for_each( maxTrackLens.begin(), maxTrackLens.end(), acc3 );
   printf("min maxtracklen = %d, ", extract::min( acc3 ));
   printf("max maxtracklen = %d, ", extract::max( acc3 ));
@@ -468,6 +492,7 @@ void VOSparseBundleAdj::Stat2::print() {
   printf("max avgTracklen = %f, ", extract::max( acc1 ));
   printf("mean avgTracklen = %f, ", extract::mean( acc1 ));
   printf("\n");
+#endif
 
   printf("Histogram of track lengths  [len, count, avg count]:\n");
   int len = 0;
@@ -476,7 +501,6 @@ void VOSparseBundleAdj::Stat2::print() {
     printf("%2d  %5d, %7.2f\n", len, count, (double)count/(double)numKeyFrames);
     len++;
   }
-*/
 }
 
 void VOSparseBundleAdj::updateStat2() {
