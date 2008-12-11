@@ -129,12 +129,9 @@ public:
   ~FaceDetector()
   {
 
-    if (cv_image_left_)
-      cvReleaseImage(&cv_image_left_);
-    if (cv_image_disp_)
-      cvReleaseImage(&cv_image_disp_);
     if (cv_image_disp_out_) 
       cvReleaseImage(&cv_image_disp_out_);
+    cv_image_disp_out_ = NULL;
 
     if (do_display_) {
       cvDestroyWindow("Face detector: Face Detection");
@@ -187,9 +184,7 @@ public:
  
     if ( cv_image_left_ )  {
       im_size = cvGetSize(cv_image_left_);
-
       vector<CvRect> faces_vector = people_->detectAllFaces(cv_image_left_, haar_filename_, 1.0, cv_image_disp_, cam_model_, true);
-      
 
       // Get the average disparity in the middle half of the bounding box, and compute the face center in 3d. 
       // Publish the face center as a track point.
@@ -244,8 +239,8 @@ public:
 	cvShowImage("Face detector: Face Detection",cv_image_left_);
 	cvShowImage("Face detector: Disparity",cv_image_disp_out_);
       }
-      cv_mutex_.unlock();
     }
+    cv_mutex_.unlock();
   }
 
 
