@@ -69,6 +69,7 @@ public:
   {
     if (argc > 1) {
       forest.load(argv[1]);
+      feat_count_ = forest.get_active_var_mask()->cols;
       printf("Loaded forest: %s\n", argv[1]);
     } else {
       printf("Please provide a trained random forests classifier as an input.\n");
@@ -77,6 +78,7 @@ public:
 
     subscribe("scan", scan_, &LegDetector::laserCallback, 1);
     advertise<std_msgs::PointCloud>("filt_cloud",1);
+    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
   }
 
   void laserCallback()
@@ -103,9 +105,12 @@ public:
         tmp_mat->data.fl[k] = (float)(f[k]);
 
       if (forest.predict( tmp_mat ) > 0)
+      {
         (*i)->appendToCloud(cloud_, 255, 0, 0);
-      else
-        (*i)->appendToCloud(cloud_, 0, 255, 0);
+
+        robot_msgs::PositionMeasurement pos;
+
+      }
     }
 
     cloud_.header = scan_.header;
