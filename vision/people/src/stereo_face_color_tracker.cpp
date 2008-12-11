@@ -77,6 +77,7 @@ public:
   // The left and disparity images.
   IplImage *cv_image_left_;
   IplImage *cv_image_disp_;
+  IplImage *cv_image_disp_out_;
 
   bool use_depth_;
   CvStereoCamModel *cam_model_;
@@ -95,11 +96,12 @@ public:
   ros::thread::mutex cv_mutex_;
 
   StereoFaceColorTracker(const char *haar_filename, bool use_depth, bool calib_color) : 
-    ros::node("stereo_face_color_tracker"),
+    ros::node("stereo_face_color_tracker",ros::node::ANONYMOUS_NAME),
     lcolor_cal_(this),
-    sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration(0.05), &StereoFaceColorTracker::image_cb_timeout),
+    sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration().fromSec(0.05), &StereoFaceColorTracker::image_cb_timeout),
     cv_image_left_(NULL),
     cv_image_disp_(NULL),
+    cv_image_disp_out_(NULL),
     use_depth_(use_depth),
     cam_model_(NULL),
     calib_color_(false),
@@ -141,6 +143,7 @@ public:
 
     cvReleaseImage(&cv_image_left_);
     cvReleaseImage(&cv_image_disp_);
+    cvReleaseImage(&cv_image_disp_out_);
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
     cvDestroyWindow("Face color tracker: Face Detection");
@@ -160,10 +163,6 @@ public:
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
   void image_cb_timeout(ros::Time t) {
-    if (limage_.header.stamp != t)
-      printf("Timed out waiting for left image\n");
-    if (dimage_.header.stamp != t)
-      printf("Timed out waiting for disparity image\n");
   }
 
   /// The image callback. For each new image, copy it, perform face detection or track it, and draw the rectangles on the image.
@@ -174,24 +173,33 @@ public:
  
     CvSize im_size;
 
-    // Set color calibration.
-    bool do_calib = false;
-    if (calib_color_ && has_param("dcam/left/image_rect_color")) {
-      // Exit if color calibration hasn't been performed.
-      do_calib = true;
-      lcolor_cal_.getFromParam("dcam/left/image_rect_color");
+    if (limage_.encoding=="mono") {
+      printf("The left image is not a color image.\n");
+      cv_mutex_.unlock();
+      return;
     }
 
-    // Convert the images to OpenCV format
-    if (lbridge_.fromImage(limage_,"bgr")) {
-      if (do_calib) {
-	lbridge_.reallocIfNeeded(&cv_image_left_, IPL_DEPTH_8U);
-	lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_left_, true, true, COLOR_CAL_BGR);
-      }
-      else {
+    // Set color calibration.
+    bool do_calib = false;
+    if (!calib_color_) {
+      if (lbridge_.fromImage(limage_,"bgr")) {
 	cv_image_left_ = lbridge_.toIpl();
       }
     }
+    else if (calib_color_ && has_param("dcam/left/image_rect_color")) {
+      // Exit if color calibration hasn't been performed.
+      do_calib = true;
+      lcolor_cal_.getFromParam("dcam/left/image_rect_color");
+      if (lbridge_.fromImage(limage_,"bgr")) {
+	lbridge_.reallocIfNeeded(&cv_image_left_, IPL_DEPTH_8U);
+	lcolor_cal_.correctColor(lbridge_.toIpl(), cv_image_left_, true, true, COLOR_CAL_BGR);
+      }
+    }
+    else {
+      cv_mutex_.unlock();
+      return;
+    }
+
     if (dbridge_.fromImage(dimage_)) {
       cv_image_disp_ = dbridge_.toIpl();
     }
@@ -207,13 +215,6 @@ public:
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
     cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
-
-    // Check that the image is in color.
-    if (cv_image_left_->nChannels!=3) {
-      printf("The left image is not a 3-channel color image.\n");
-      cv_mutex_.unlock();
-      return;
-    }
 
     im_size = cvGetSize(cv_image_left_);
 
@@ -236,21 +237,6 @@ public:
       printf("Detected faces\n");
 #endif
 
-#if 0
-      cvResetImageROI(cv_image_disp_);
-      cvSetZero(X_);
-      cvSetZero(Y_);
-      cvSetZero(Z_);
-      cam_model_->disp8UToCart32F(cv_image_disp_, (float)1.0, (float)MAX_Z_MM, Z_, X_, Y_); ///
-      float *fptrz = (float*)(Z_->imageData + 300*Z_->widthStep);
-      float *fptrx = (float*)(X_->imageData + 300*X_->widthStep);
-      float *fptry = (float*)(Y_->imageData + 300*Y_->widthStep);
-      while (*fptrz == 0.0) {
-	fptrz++; fptrx++; fptry++;
-      }
-      printf("\n%f %f %f\n", *fptrx, *fptry, *fptrz);
-#endif
-#if 1
       float* fptr = (float*)(uvd_->data.ptr);
       ushort* cptr = (ushort*)(cv_image_disp_->imageData);
       for (int v =0; v < im_size.height; v++) {
@@ -275,7 +261,6 @@ public:
 	}
       }
 
-#endif
       for (unsigned int iface = 0; iface < faces_vector.size(); iface++) {
 	people_->addPerson();
 	people_->setFaceBbox2D(faces_vector[iface],iface);
@@ -329,6 +314,7 @@ public:
 
     if (npeople==0) {
       // No people to track, try again later.
+      cv_mutex_.unlock();
       return;
     }
 
@@ -336,6 +322,7 @@ public:
     bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 300.0, 0, NULL, NULL, end_points);
     if (!did_track) {
       // If tracking failed, just return.
+      cv_mutex_.unlock();
       return;
     }
     // Copy endpoints to the people. This is temporary, eventually you might have something else sending a new location as well.
@@ -387,11 +374,16 @@ public:
     cvReleaseMat(&my_size);     
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
+    if (!cv_image_disp_out_) {
+      cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+    }
+    cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
     cvShowImage("Face color tracker: Face Detection", cv_image_left_);
-    cvShowImage("Face color tracker: Disparity", cv_image_disp_);
+    cvShowImage("Face color tracker: Disparity", cv_image_disp_out_);
 #endif
     cv_mutex_.unlock();        
   }
+
 
   // Wait for completion, wait for user input, display images.
   bool spin() {
@@ -419,7 +411,7 @@ int main(int argc, char **argv)
 {
   ros::init(argc, argv);
   bool use_depth = true;
-  bool color_calib = true;
+  bool color_calib = false;
 
 #if 0
   if (argc < 2) {
