@@ -1160,11 +1160,11 @@ stereogui::stereogui() {
   { stereo_window = new Fl_Window(265, 260, "Stereo");
     stereo_window->user_data((void*)(this));
     { Fl_Group* o = new Fl_Group(20, 135, 285, 120);
-      { Fl_Box* o = new Fl_Box(20, 135, 115, 85, "label");
+      { Fl_Box* o = new Fl_Box(20, 135, 140, 110, "label");
         o->box(FL_ENGRAVED_FRAME);
         o->labeltype(FL_NO_LABEL);
       } // Fl_Box* o
-      { Fl_Counter* o = new Fl_Counter(70, 140, 55, 20, "Unique:");
+      { Fl_Counter* o = new Fl_Counter(90, 140, 55, 20, "UniqueThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1174,7 +1174,7 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)unique_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(70, 165, 55, 20, "Texture:");
+      { Fl_Counter* o = new Fl_Counter(90, 165, 55, 20, "TextureThresh");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
@@ -1184,14 +1184,24 @@ stereogui::stereogui() {
         o->callback((Fl_Callback*)texture_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
-      { Fl_Counter* o = new Fl_Counter(70, 190, 55, 20, "Speckle:");
+      { Fl_Counter* o = new Fl_Counter(90, 190, 55, 20, "SpeckleSize");
         o->type(1);
         o->labelsize(11);
         o->minimum(0);
-        o->maximum(100);
+        o->maximum(400);
+        o->step(10);
+        o->value(100);
+        o->callback((Fl_Callback*)speckle_size_cb);
+        o->align(FL_ALIGN_LEFT);
+      } // Fl_Counter* o
+      { Fl_Counter* o = new Fl_Counter(90, 215, 55, 20, "SpeckleDiff");
+        o->type(1);
+        o->labelsize(11);
+        o->minimum(0);
+        o->maximum(20);
         o->step(1);
-        o->value(30);
-        o->callback((Fl_Callback*)speckle_cb);
+        o->value(8);
+        o->callback((Fl_Callback*)speckle_diff_cb);
         o->align(FL_ALIGN_LEFT);
       } // Fl_Counter* o
       o->end();

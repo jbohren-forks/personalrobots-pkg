@@ -121,6 +121,8 @@ namespace cam
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
     bool setHoropter(int thresh);
+    bool setSpeckleSize(int size);
+    bool setSpeckleDiff(int diff);
 
     // visible calls to StereoData functions
     bool doRectify();

@@ -949,22 +949,27 @@ class stereogui {open
       } {
         Fl_Box {} {
           label label
-          xywh {20 135 115 85} box ENGRAVED_FRAME labeltype NO_LABEL
+          xywh {20 135 140 110} box ENGRAVED_FRAME labeltype NO_LABEL
         }
         Fl_Counter {} {
-          label {Unique:}
+          label UniqueThresh
           callback unique_cb
-          xywh {70 140 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+          xywh {90 140 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
         Fl_Counter {} {
-          label {Texture:}
+          label TextureThresh
           callback texture_cb
-          xywh {70 165 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+          xywh {90 165 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
         }
         Fl_Counter {} {
-          label {Speckle:}
-          callback speckle_cb
-          xywh {70 190 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 100 step 1 value 30
+          label SpeckleSize
+          callback speckle_size_cb
+          xywh {90 190 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 400 step 10 value 100
+        }
+        Fl_Counter {} {
+          label SpeckleDiff
+          callback speckle_diff_cb selected
+          xywh {90 215 55 20} type Simple labelsize 11 align 4 minimum 0 maximum 20 step 1 value 8
         }
       }
       Fl_Group {} {open
@@ -1118,7 +1123,7 @@ class stereogui {open
         }
         Fl_Light_Button gamma_button {
           label Gamma
-          callback do_gamma_cb selected
+          callback do_gamma_cb
           xywh {190 135 55 25} value 1 labelsize 11
         }
       }

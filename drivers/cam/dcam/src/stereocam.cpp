@@ -153,6 +153,8 @@ StereoCam::setHoropter(int val)
 }
 
 
+
+
 //
 // Conversion to 3D points
 // Convert to vector or image array of pts
@@ -473,6 +475,20 @@ StereoDcam::setNumDisp(int val)
 {
   stIm->setNumDisp(val);	
   return false;			// can't set number of disparities in STOC
+}
+
+bool
+StereoDcam::setSpeckleSize(int val)
+{
+  stIm->speckleRegionSize = val;
+  return true;
+}
+
+bool
+StereoDcam::setSpeckleDiff(int val)
+{
+  stIm->speckleDiff = val;
+  return true;
 }
 
 

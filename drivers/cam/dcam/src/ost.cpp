@@ -189,7 +189,8 @@ static int sp_xoff    =  0;	// no offset
 static int sp_corr    = 15;	// correlation window size
 static int sp_tthresh = 30;	// texture threshold
 static int sp_uthresh = 30;	// uniqueness threshold, percent
-static int sp_speckle = 30;	// speckle threshold, percent
+static int sp_ssize   = 100;	// speckle size, pixels
+static int sp_sdiff   = 8;	// speckle diff, disparities
 
 
 
@@ -208,6 +209,7 @@ void debug_message(char *str, ...);	// print in the info line and to debug windo
 videre_proc_mode_t checkProcMode(videre_proc_mode_t mode); // consistent STOC mode
 bool FindCorners(CvPoint2D32f **corners, int *nc, bool *good, IplImage *img);
 cam::StereoDcam *initcam(uint64_t guid);
+int do_button(int e, int x, int y, int b, int m, imWindow *w);
 
 // IPL images for transfers to OpenCV domain
 IplImage *img1 = NULL, *img2 = NULL;
@@ -256,6 +258,10 @@ main(int argc, char **argv)	// no arguments
   gwin->show();
   stg->cal_window->hide();	// have to request cal window
 
+  // button handler
+  stg->mainLeft->ButtonHandler(do_button);
+  stg->mainRight->ButtonHandler(do_button);
+
   // start up debug window
   iwin = new imInfoWindow(500,400,"OST output");
   //  iwin->show();
@@ -263,13 +269,13 @@ main(int argc, char **argv)	// no arguments
   // get devices
   dcam::init();
   int devNum = dcam::numCameras();
-  debug_message("[Stereocal] Number of cameras: %d", devNum);
+  debug_message("[oST] Number of cameras: %d", devNum);
 
   // print out GUIDs, vendor, model; set up Video pulldown
   Fl_Choice *devs = stg->cam_select;
   for (int i=0; i<devNum; i++)
     {
-      debug_message("[Stereocal] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
+      debug_message("[oST] Camera %d GUID: %llx  Vendor: %s  Model: %s", 
 	     i, dcam::getGuid(i), dcam::getVendor(i), dcam::getModel(i));
       char buf[1024];
       sprintf(buf, "%s %s %llx", dcam::getVendor(i), dcam::getModel(i), dcam::getGuid(i));
@@ -301,6 +307,8 @@ main(int argc, char **argv)	// no arguments
 	      dev->start();
 	      dev->setTextureThresh(sp_tthresh);
 	      dev->setUniqueThresh(sp_uthresh);
+	      dev->setSpeckleSize(sp_ssize);
+	      dev->setSpeckleDiff(sp_sdiff);
 	      isVideo = true;	// needed to keep thread running
 	      startCam = false;
 	    }
@@ -900,7 +908,7 @@ cal_load_seq_cb(Fl_Button* b, void* arg)
   if (fname == NULL)
     return;
 
-  debug_message("[StereoCal] File name: %s", fname);
+  debug_message("[oST] File name: %s", fname);
 
   char *lname = NULL, *rname = NULL;
   int seq;
@@ -1623,6 +1631,8 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   int corr   = sp_corr;		// correlation window size
   int tthresh = sp_tthresh;	// texture threshold
   int uthresh = sp_uthresh;	// uniqueness threshold, percent
+  int sdiff  = sp_sdiff;	// speckle parameters: size and difference
+  int ssize  = sp_ssize;
 
   // allocate buffers
   buf  = (uint8_t *)malloc(yim*dlen*(corr+5)); // local storage for the algorithm
@@ -1646,6 +1656,8 @@ void do_stereo_cb(Fl_Light_Button* w, void*)
   // stereo
   do_stereo(flim, frim, disp, NULL, xim, yim, 
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
+  // speckle filter: TBD
+
   double t2 = get_ms();
 
   debug_message("Rectify time:   %0.1f ms", t3b-t3a);
@@ -1792,7 +1804,7 @@ void cal_save_all_cb(Fl_Button*, void*)
 	  ind++;
 	}
     }
-  info_message("[StereoCal] Saved %d calibration images", ind-1);
+  info_message("[oST] Saved %d calibration images", ind-1);
 }
 
 
@@ -1884,13 +1896,13 @@ void cal_save_params_cb(Fl_Button*, void*)
   int ind = -1;
   bool ret;
   ret = parse_filename(fname, &lname, &rname, &ind, &bname);
-  debug_message("[StereoCal] File base name: %s\n", bname);
+  debug_message("[oST] File base name: %s\n", bname);
 
   char ff[1024];
 
   sprintf(ff, "%s.ini", bname);
   cal_save_params(ff);
-  debug_message("[StereoCal] Wrote %s", ff);
+  debug_message("[oST] Wrote %s", ff);
 }
 
 
@@ -1903,10 +1915,10 @@ void cal_upload_params_cb(Fl_Button*, void*)
   if (dev)
     {
       cal_set_dev_params();	// set the parameters from the current values
-      debug_message("[StereoCal] Setting FW parameters");
+      debug_message("[oST] Setting FW parameters");
       dev->setParameters();	// set the parameters in FW firmware
 
-      debug_message("[StereoCal] Setting STOC parameters");
+      debug_message("[oST] Setting STOC parameters");
       // ok, load up things here...
       uint8_t *cbuf = NULL, *lbuf = NULL, *rbuf = NULL;
       int cn = 0, rn = 0, ln = 0;
@@ -1914,7 +1926,7 @@ void cal_upload_params_cb(Fl_Button*, void*)
       // set up choice for config filesptr
       int fwver = dev->camFirmware;
       int imver = dev->imFirmware;
-      //      debug_message("[StereoCal] FW firmware is %04x", fwver);
+      //      debug_message("[oST] FW firmware is %04x", fwver);
 
       // FW versions:
       //   < 5.0  no embedded warp table checksums
@@ -2005,7 +2017,7 @@ void cal_upload_params_cb(Fl_Button*, void*)
       dev->setSTOCParams(cbuf, cn, lbuf, ln, rbuf, rn);	// set the STOC firmware
     }
   else
-    debug_message("[StereoCal] No device selected");
+    debug_message("[oST] No device selected");
 }
 
 
@@ -2145,9 +2157,19 @@ corrsize_cb(Fl_Counter *w, void *x)
 }
 
 void
-speckle_cb(Fl_Counter *w, void *x)
+speckle_size_cb(Fl_Counter *w, void *x)
 {
-  sp_speckle = (int)w->value();
+  sp_ssize = (int)w->value();
+  if (dev)
+    dev->setSpeckleSize(sp_ssize);
+}
+
+void
+speckle_diff_cb(Fl_Counter *w, void *x)
+{
+  sp_sdiff = (int)w->value();
+  if (dev)
+    dev->setSpeckleDiff(sp_sdiff);
 }
 
 
@@ -2578,7 +2600,7 @@ video_dev_cb(Fl_Choice *w, void *u)
   if (devNum > 0)
     {
       devIndex = w->value();
-      debug_message("[StereoCal] Camera %d selected", devIndex);
+      debug_message("[oST] Camera %d selected", devIndex);
     }
 }
 
@@ -2667,6 +2689,61 @@ void
 do_exit_cb(Fl_Menu_ *x, void *)
 {
   isExit = true;
+}
+
+
+//
+// button handler
+//
+
+
+// mouse button callback
+
+int
+do_button(int e, int x, int y, int b, int m, imWindow *w)
+{
+  x = w->Win2ImX(x);
+  y = w->Win2ImY(y);
+
+  //  printf("[button] %d,%d\n", x,y);
+
+  if (e == FL_PUSH && b == FL_BUTTON1) // left button, return values
+    {
+      int rval = 0, lval = 0;
+      float fx=0, fy=0, fz=0;
+      
+      if (dev == NULL)
+        return 1;
+      
+      int w = dev->stIm->imWidth;
+      int h = dev->stIm->imHeight;
+
+      if (x > w || y > h)
+        return 1;
+
+      if (dev->stIm->imLeft->imRectType != COLOR_CODING_NONE)
+	lval = dev->stIm->imLeft->imRect[y*w+x];
+      else if (dev->stIm->imLeft->imType != COLOR_CODING_NONE)
+	lval = dev->stIm->imLeft->im[y*w+x];
+
+      if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
+	rval = dev->stIm->imRight->imRect[y*w+x];
+      else if (dev->stIm->imRight->imType != COLOR_CODING_NONE)
+	rval = dev->stIm->imRight->im[y*w+x];
+
+      if (dev->stIm->hasDisparity)
+        {
+	  rval = dev->stIm->imDisp[y*w+x];
+          if (rval > 0)     // have a valid disparity
+	    dev->stIm->calcPt(x,y,&fx, &fy, &fz);
+        }
+
+      debug_message("[oST] (%d,%d) [v%d] [dv%d] X%d Y%d Z%d", 
+		    x, y, lval, rval, (int)(1000*fx), (int)(1000*fy), (int)(1000*fz));
+      return 1;
+    }
+
+  return 0;
 }
 
 

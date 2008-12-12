@@ -48,7 +48,8 @@ extern void cal_zero_disparity_cb(Fl_Check_Button*, void*);
 #include <FL/Fl_Counter.H>
 extern void unique_cb(Fl_Counter*, void*);
 extern void texture_cb(Fl_Counter*, void*);
-extern void speckle_cb(Fl_Counter*, void*);
+extern void speckle_size_cb(Fl_Counter*, void*);
+extern void speckle_diff_cb(Fl_Counter*, void*);
 extern void disparity_cb(Fl_Counter*, void*);
 extern void corrsize_cb(Fl_Counter*, void*);
 extern void xoff_cb(Fl_Counter*, void*);
