@@ -77,7 +77,7 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
 
     joint = (robot->getJointState(jpc->getJointName()))->joint_;
     if(joint)
-      joint_velocity_limits.push_back(joint->velocity_limit_/5.0);
+      joint_velocity_limits.push_back(joint->velocity_limit_/2.0);
 
     elt = elt->NextSiblingElement("controller");
   }

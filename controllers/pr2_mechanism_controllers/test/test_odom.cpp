@@ -143,8 +143,6 @@ int main( int argc, char** argv )
 
   node->advertise<std_msgs::BaseVel>("cmd_vel",10);
   sleep(1);
-  node->publish("cmd_vel",cmd);
-  sleep(1);
 
   libTF::Vector ang_rates;
   ros::Time start_time = ros::Time::now();

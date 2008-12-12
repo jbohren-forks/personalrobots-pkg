@@ -800,6 +800,9 @@ BaseControllerNode::~BaseControllerNode()
 
   publisher_->stop();
   transform_publisher_->stop();
+  odometer_publisher_->stop();
+  covariance_publisher_->stop();
+
   delete publisher_;
   delete transform_publisher_;
   delete odometer_publisher_;
@@ -848,7 +851,7 @@ void BaseControllerNode::update()
         dirn_y = 0.0;
         dirn_z = 0.0;
       }
-      covariance_publisher_->msg_.Cxx = c_->odometry_residual_max_;
+      //     covariance_publisher_->msg_.Cxx = c_->odometry_residual_max_;
 
       covariance_publisher_->msg_.Cxx = std::max<double>(c_->odometry_residual_max_*dirn_x,MIN_BASE_CONTROLLER_COVARIANCE);
       covariance_publisher_->msg_.Cyy = std::max<double>(c_->odometry_residual_max_*dirn_y,MIN_BASE_CONTROLLER_COVARIANCE);

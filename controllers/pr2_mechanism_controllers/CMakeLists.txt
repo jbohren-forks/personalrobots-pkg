@@ -9,6 +9,7 @@ gensrv()
 
 rospack_add_library( pr2_mechanism_controllers
   src/base_controller.cpp
+  src/base_controller_pos.cpp
   src/base_position_controller.cpp
   src/laser_scanner_controller.cpp
   src/laser_scanner_traj_controller.cpp
@@ -34,8 +35,8 @@ rospack_add_library( pr2_mechanism_controllers
 #rospack_add_executable(testArmDynamicsController test/test_arm_dynamics_controller.cpp)
 #target_link_libraries(testRunBaseController pr2_mechanism_controllers)
 
-#rospack_add_executable(testOdom test/test_odom.cpp)
-#target_link_libraries(testOdom pr2_mechanism_controllers)
+rospack_add_executable(testOdom test/test_odom.cpp)
+target_link_libraries(testOdom pr2_mechanism_controllers)
 
 rospack_add_executable(testTraj test/test_arm_trajectory_controller.cpp)
 target_link_libraries(testTraj pr2_mechanism_controllers)
