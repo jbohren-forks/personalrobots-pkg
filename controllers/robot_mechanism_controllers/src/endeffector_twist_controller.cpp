@@ -37,10 +37,6 @@
 #include "robot_mechanism_controllers/endeffector_twist_controller.h"
 
 
-static const double JOYSTICK_MAX_TRANS = 10.0;
-static const double JOYSTICK_MAX_ROT   = 2.0;
-
-
 using namespace KDL;
 namespace controller {
 
@@ -196,7 +192,7 @@ void EndeffectorTwistController::update()
   FrameVel twist; 
   jnt_to_twist_solver_->JntToCart(jnt_posvel, twist);
   twist_meas_ = twist.deriv();
-  Twist error = twist_desi_ - twist_meas_;
+  Twist error = twist_meas_ - twist_desi_;
   double dt = time - last_time_;
 
   // pid feedback
@@ -240,8 +236,8 @@ bool EndeffectorTwistControllerNode::initXml(mechanism::RobotState *robot, TiXml
   }
 
   // get parameters
-  node->param("arm_twist/joystick_max_trans", joystick_max_trans_, JOYSTICK_MAX_TRANS) ;
-  node->param("arm_twist/joystick_max_rot", joystick_max_rot_, JOYSTICK_MAX_ROT) ;
+  node->param("arm_twist/joystick_max_trans", joystick_max_trans_, 0.0);
+  node->param("arm_twist/joystick_max_rot", joystick_max_rot_, 0.0);
 
   // initialize controller  
   if (!controller_.initXml(robot, config))
