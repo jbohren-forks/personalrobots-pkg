@@ -241,6 +241,7 @@ namespace cam
     bool doRectify();		// rectify images
     bool doDisparity();		// calculate disparity image
     bool doCalcPts();		// calculate 3D points
+    bool calcPt(int x, int y, float *fx, float *fy, float *fz); // single point
 
     // valid stereo data rectangle
     int imDtop, imDleft;

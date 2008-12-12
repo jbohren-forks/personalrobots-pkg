@@ -628,6 +628,45 @@ StereoData::doCalcPts()
 
 
 //
+// Conversion to 3D points
+// Just a single point
+//
+
+
+bool
+StereoData::calcPt(int x, int y, float *fx, float *fy, float *fz) 
+{
+  doDisparity();
+  if (!hasDisparity)
+    return false;
+
+  float cx = (float)RP[3];
+  float cy = (float)RP[7];
+  float f  = (float)RP[11];
+  float itx = (float)RP[14];
+  itx *= 1.0 / (float)dpp; // adjust for subpixel interpolation
+
+  int16_t *p = imDisp + x + y*imWidth;
+
+  if (*p > 0) 
+    {
+      float ax = (float)x + cx;
+      float ay = (float)y + cy;
+      float aw = 1.0 / (itx * (float)*p);
+      *fx = ax*aw;	// X
+      *fy = ay*aw;	// Y
+      *fz = f*aw;	// Z
+    }
+
+  if (*p)
+    return true;
+  else
+    return false;
+}
+
+
+
+//
 // gets params from a string
 // "SVS"-type parameter strings use mm for the projection matrices, convert to m
 // "OST"-type parameter strings use m for projection matrices
