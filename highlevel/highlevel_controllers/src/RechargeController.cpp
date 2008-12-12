@@ -254,7 +254,7 @@ namespace highlevel_controllers {
    * If published power consumption is positive, then we must be connected to a power source
    */
   bool RechargeController::connected() const {
-    return batteryStateMsg_.power_consumption > 0;
+    return batteryStateMsg_.power_consumption > -5;
   }
 }
 
