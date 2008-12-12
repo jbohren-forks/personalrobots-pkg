@@ -85,6 +85,8 @@ public:
   bool calib_color_;
 
   People *people_;
+  bool detect_faces_;
+  robot_msgs::PositionMeasurement init_pos_;
   const char *haar_filename_;
 
   bool quit_;
@@ -95,7 +97,7 @@ public:
 
   ros::thread::mutex cv_mutex_;
 
-  StereoFaceColorTracker(const char *haar_filename, bool use_depth, bool calib_color) : 
+  StereoFaceColorTracker(bool detect_faces, const char *haar_filename, bool use_depth, bool calib_color) : 
     ros::node("stereo_face_color_tracker",ros::node::ANONYMOUS_NAME),
     lcolor_cal_(this),
     sync_(this, &StereoFaceColorTracker::image_cb_all, ros::Duration().fromSec(0.05), &StereoFaceColorTracker::image_cb_timeout),
@@ -106,6 +108,7 @@ public:
     cam_model_(NULL),
     calib_color_(false),
     people_(NULL),
+    detect_faces_(detect_faces),
     haar_filename_(haar_filename),
     quit_(false),
     detect_(0),
@@ -127,21 +130,24 @@ public:
     people_ = new People();
 
     // Subscribe to the images and parameters
-    sync_.subscribe("dcam/left/image_rect_color",limage_,1);
-    sync_.subscribe("dcam/disparity",dimage_,1);
-    sync_.subscribe("dcam/stereo_info",stinfo_,1);
-    sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
+    sync_.subscribe("dcam/left/image_rect_color",limage_,100);
+    sync_.subscribe("dcam/disparity",dimage_,100);
+    sync_.subscribe("dcam/stereo_info",stinfo_,100);
+    sync_.subscribe("dcam/right/cam_info",rcinfo_,100);
 
     // Advertise a 3d position measurement for each head.
-    advertise<robot_msgs::PositionMeasurement>("stereo_face_color_tracker/position_measurement",1);
-    // subscribe<robot_msgs::PositionMeasurement>("track_filter",1); This will eventually initialize my tracks instead of the face detection.
+    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+
+    if (!detect_faces_) {
+      subscribe<robot_msgs::PositionMeasurement>("person_measurement",init_pos_, &StereoFaceColorTracker::init_pos_cb,1);
+    }
 
   }
 
   ~StereoFaceColorTracker()
   {
 
-    cvReleaseImage(&cv_image_disp_out_);
+    cvReleaseImage(&cv_image_disp_out_); cv_image_disp_out_ = 0;
 
 #if  __FACE_COLOR_TRACKER_DISPLAY__
     cvDestroyWindow("Face color tracker: Face Detection");
@@ -150,13 +156,28 @@ public:
 
     delete cam_model_;
 
-    cvReleaseImage(&X_);
-    cvReleaseImage(&Y_);
-    cvReleaseImage(&Z_);
-    cvReleaseMat(&uvd_);
-    cvReleaseMat(&xyz_);
+    cvReleaseImage(&X_); X_ = 0;
+    cvReleaseImage(&Y_); Y_ = 0;
+    cvReleaseImage(&Z_); Z_ = 0;
+    cvReleaseMat(&uvd_); uvd_ = 0;
+    cvReleaseMat(&xyz_); xyz_ = 0;
 
     delete people_;
+  }
+
+
+  // Callback to (re)initialize the location of a face.
+  void init_pos_cb() {
+    cv_mutex_.lock();
+    // Find the person
+    // If it's a new person
+    //   If you have a message with the right timestamp
+    //     Set their id, compute their histogram, start tracking.
+    //   Otherwise
+    //     Do nothing, they should reappear with a closer timestamp.
+    // If it's an old person
+    //   Update their position.
+    cv_mutex_.unlock();
   }
 
   /// The image callback when not all topics are sync'ed. Don't do anything, just wait for sync.
@@ -319,7 +340,7 @@ public:
     }
 
     CvMat *end_points = cvCreateMat(npeople,3,CV_32FC1);
-    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 300.0, 0, NULL, NULL, end_points);
+    bool did_track = people_->track_color_3d_bhattacharya(cv_image_left_, cv_image_disp_, cam_model_, 0.3, 0, NULL, NULL, end_points);
     if (!did_track) {
       // If tracking failed, just return.
       cv_mutex_.unlock();
@@ -364,7 +385,7 @@ public:
       pos.reliability = 0.5;
       pos.initialization = 0;
       //pos.covariance
-      publish("stereo_face_color_tracker/position_measurement",pos);
+      publish("person_measurement",pos);
     }
 	  
     cvReleaseMat(&end_points);
@@ -412,18 +433,13 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   bool use_depth = true;
   bool color_calib = false;
+  bool detect_faces = false;
 
-#if 0
-  if (argc < 2) {
-    cerr << "Path to cascade file required.\n" << endl;
-    return 0;
+  if (argc > 1) {
+    detect_faces = atoi(argv[1]);
   }
-#endif
-  //char *haar_filename = argv[1]; 
   char haar_filename[] = "./cascades/haarcascade_frontalface_alt.xml";
-  //char haar_filename[] = "./cascades/haarcascade_profileface.xml";
-  //char haar_filename[] = "./cascades/haarcascade_upperbody.xml";
-  StereoFaceColorTracker sfct(haar_filename, use_depth, color_calib);
+  StereoFaceColorTracker sfct(detect_faces, haar_filename, use_depth, color_calib);
  
   sfct.spin();
 
