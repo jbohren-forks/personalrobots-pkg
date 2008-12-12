@@ -338,7 +338,7 @@ TEST(costmap, test0){
 
   ASSERT_EQ(updates.size(), 3);
 }
-/*
+
 TEST(costmap, test1){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
   ASSERT_EQ(map.getWidth(), 10);
@@ -347,7 +347,7 @@ TEST(costmap, test1){
   // Verify that obstacles correctly identified from the static map.
   std::vector<unsigned int> occupiedCells;
   map.getOccupiedCellDataIndexList(occupiedCells);
-  ASSERT_EQ(occupiedCells.size(), 14);
+  ASSERT_EQ(occupiedCells.size(), 20);
 
   // Iterate over all id's and verify that they are present according to their
   const unsigned char* costData = map.getMap();
@@ -395,12 +395,12 @@ TEST(costmap, test1){
   ASSERT_EQ(wx, 9.5);
   ASSERT_EQ(wy, 9.5);
 }
-*/
+
 
 /**
  * Verify that dynamic obstacles are added
  */
-/*
+
 TEST(costmap, test3){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD);
 
@@ -421,13 +421,13 @@ TEST(costmap, test3){
   // Should now have 1 insertion and no deletions
   ASSERT_EQ(updates.size(), 1);
   map.getOccupiedCellDataIndexList(ids);
-  ASSERT_EQ(ids.size(), 15);
+  ASSERT_EQ(ids.size(), 21);
 
   // Repeating the call - we should see no insertions or deletions
   map.updateDynamicObstacles(cloud, updates);
   ASSERT_EQ(updates.empty(), true);
 }
-*/
+
 /**
  * Verify that if we add a point that is already a static obstacle we do not end up with a new ostacle
  */
@@ -470,7 +470,7 @@ TEST(costmap, test6){
 /**
  * Test inflation for both static and dynamic obstacles
  */
-/*
+
 TEST(costmap, test7){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z, MAX_Z, MAX_Z,
 		ROBOT_RADIUS, ROBOT_RADIUS, ROBOT_RADIUS);
@@ -486,7 +486,7 @@ TEST(costmap, test7){
     setOfCells.insert(i);
 
   ASSERT_EQ(setOfCells.size(), occupiedCells.size());
-  ASSERT_EQ(setOfCells.size(), 37);
+  ASSERT_EQ(setOfCells.size(), 48);
 
   const unsigned char* costData = map.getMap();
 
@@ -523,30 +523,34 @@ TEST(costmap, test7){
   // Now we expect insertions for it, and 2 more neighbors, but not all 5. Free space will propagate from
   // the origin to the target, clearing the point at <0, 0>, but not over-writing the inflation of the obstacle
   // at <0, 1>
-  ASSERT_EQ(updates.size(), 4);
+  ASSERT_EQ(updates.size(), 3);
 
 
   // Add an obstacle at <1, 9>. This will inflate obstacles around it
+  vector<std_msgs::PointCloud*> cv2;
   std_msgs::PointCloud c2;
+  cv2.push_back(&c2);
   c2.set_pts_size(1);
   c2.pts[0].x = 1;
   c2.pts[0].y = 9;
   c2.pts[0].z = 0.0;
-  map.updateDynamicObstacles(WINDOW_LENGTH + 2, c2, updates);
+  map.updateDynamicObstacles(0.0, 0.0, cv2); //, updates); //WINDOW_LENGTH + 2
   ASSERT_EQ(map.getCost(1, 9), CostMap2D::LETHAL_OBSTACLE);
   ASSERT_EQ(map.getCost(0, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
   ASSERT_EQ(map.getCost(2, 9), CostMap2D::INSCRIBED_INFLATED_OBSTACLE);
 
   // Add an obstacle and verify that it over-writes its inflated status
+  vector<std_msgs::PointCloud*> cv3;
   std_msgs::PointCloud c3;
+  cv3.push_back(&c3);
   c3.set_pts_size(1);
   c3.pts[0].x = 0;
   c3.pts[0].y = 9;
   c3.pts[0].z = 0.0;
-  map.updateDynamicObstacles(WINDOW_LENGTH + 3, c3, updates);
+  map.updateDynamicObstacles(0.0, 0.0, cv3); //, updates); //WINDOW_LENGTH + 3
   ASSERT_EQ(map.getCost(0, 9), CostMap2D::LETHAL_OBSTACLE);
 }
-*/
+
 /**
  * Test specific inflation scenario to ensure we do not set inflated obstacles to be raw obstacles.
  */
@@ -653,7 +657,7 @@ TEST(costmap, test10){
 /**
  * Test for ray tracing free space
  */
-/*
+
 TEST(costmap, test11){
   CostMap2D map(GRID_WIDTH, GRID_HEIGHT, MAP_10_BY_10, RESOLUTION, THRESHOLD, MAX_Z * 2, MAX_Z, MAX_Z, ROBOT_RADIUS, 0, 0, 1, 100.0, 100.0);
 
@@ -671,13 +675,13 @@ TEST(costmap, test11){
   // I considered allowing the cost function to over-ride this case but we quickly find that the planner will plan through walls once it gets out of sensor range.
   // Note that this will not be the case when we persist the changes to the static map more aggressively since we will retain high cost obstacle data that 
   // has not been ray tarced thru. If that is the case, this update count would change to 6
-  ASSERT_EQ(updates.size(), 6);
+  ASSERT_EQ(updates.size(), 4);
 
   // all cells will have been switched to free space along the diagonal except for this inflated in the update
   for(unsigned int i=0; i < 8; i++)
     ASSERT_EQ(map.getCost(i, i), 0);
 }
-*/
+
 int main(int argc, char** argv){
   for(unsigned int i = 0; i< GRID_WIDTH * GRID_HEIGHT; i++){
     EMPTY_10_BY_10.push_back(0);
