@@ -77,13 +77,14 @@ elem_type kth_smallest(elem_type a[], int n, int k)
 
 
 MedianFilter::MedianFilter(uint32_t number_of_observations, uint32_t elements_per_observation):
-  last_updated_row_(0),
+  last_updated_row_(number_of_observations),
   iterations_(0),
   number_of_observations_(number_of_observations),
   elements_per_observation_(elements_per_observation)
 {
   data_storage_ = new double[number_of_observations_ * elements_per_observation];
   temp_storage_ = new double[elements_per_observation];
+
 };
 
 MedianFilter::~MedianFilter()
@@ -102,14 +103,14 @@ bool MedianFilter::update(double const* const data_in, double* data_out)
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
     last_updated_row_ = 0;
-  
+  else 
+    last_updated_row_++;
+
   //copy incoming data into perminant storage
   memcpy(&data_storage_[elements_per_observation_ * last_updated_row_],
-         &data_in, 
+         data_in, 
          sizeof(double) * elements_per_observation_);
   
-
-
   //Return values
   
   //keep track of number of rows used while starting up
@@ -127,15 +128,11 @@ bool MedianFilter::update(double const* const data_in, double* data_out)
   //Return each value
   for (uint32_t i = 0; i < number_of_observations_; i++)
   {
-    printf("values: ");
     for (uint32_t row = 0; row < length; row ++)
     {
       temp_storage_[row] = data_storage_[i + row * elements_per_observation_];
-      printf("%f, ", temp_storage_[row]);
     }
     data_out[i] = median(temp_storage_, length);
-    printf("NET: %f\n", data_out[i]);
-    
   }    
   
   return true;
