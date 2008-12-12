@@ -13,7 +13,7 @@ ifeq ($(strip $(SVN_CMDLINE)),)
 SVN_CMDLINE = svn
 endif
 
-all: trex PlanWorks includes
+all: trex PLASMA PlanWorks includes
 
 includes: trex PlanWorks PLASMA
 	./copyIncludes.sh
@@ -21,8 +21,8 @@ includes: trex PlanWorks PLASMA
 
 # GET PLASMA
 PLASMA:
-	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5154 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
-	-@cd PLASMA && $(SVN_CMDLINE) up -r 5154 ;
+	@if [ ! -d PLASMA ]; then $(SVN_CMDLINE) co -r 5163 http://europa-pso.googlecode.com/svn/PLASMA/trunk PLASMA; fi ;
+	@-cd PLASMA && $(SVN_CMDLINE) up -r 5163 ;
 
 #install the patch
 #patch-PLASMA: PLASMA
@@ -33,7 +33,7 @@ PLASMA:
 # GET PlanWorks
 PlanWorks:
 	@if [ ! -d PlanWorks ]; then $(SVN_CMDLINE) co -r 5117 http://europa-pso.googlecode.com/svn/PlanWorks/trunk PlanWorks; fi ;
-	-@cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
+	@-cd PlanWorks && $(SVN_CMDLINE) up -r 5117 ;
 
 # Get TREX
 trex: PLASMA
