@@ -1,5 +1,5 @@
 <launch>
-  <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
+  <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2_prototype1/pr2_prototype1.xacro.xml'" />
 
   <machine name="xenomai_root" user="root" address="prg1" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="never"/>   
 

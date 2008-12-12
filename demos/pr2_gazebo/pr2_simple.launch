@@ -2,7 +2,7 @@
   <!-- this launch file corresponds to robot model in ros-pkg/robot_descriptions/wg_robot_description/pr2 -->
   <group name="wg">
     <!-- send pr2.xml to param server -->
-    <include file="$(find wg_robot_description)/pr2/send_description.launch" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2/pr2.xacro.xml'" />
 
     <!-- start gazebo -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/simple.world" respawn="false" output="screen">

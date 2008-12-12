@@ -5,7 +5,7 @@
 
     <!-- send pr2.xml to parameter server as a string, allow retrieval by various components whe needs it
          (Mechanism Control, BaseControllerNode, etc...) -->
-    <include file="$(find wg_robot_description)/pr2_prototype1/send_description.xml" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2_prototype1/pr2_prototype1.xacro.xml'" />
 
     <!-- assign environment variables for gazebo and startup gazebo with argument containing the world file.  -->
     <node pkg="gazebo" type="gazebo" args="-n $(find gazebo_robot_description)/gazebo_worlds/tables.world" respawn="false" output="screen">

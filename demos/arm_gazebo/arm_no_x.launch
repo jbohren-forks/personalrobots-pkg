@@ -1,7 +1,7 @@
 <launch>
   <group name="wg">
     <!-- send pr2_arm.xml to param server -->
-    <include file="$(find wg_robot_description)/pr2_arm_test/send_description.launch" />
+    <param name="robotdesc/pr2" command="$(find xacro)/xacro.py '$(find wg_robot_description)/pr2_arm_test/pr2_arm.xacro.xml'" />
 
     <!-- -g flag runs gazebo in gui-less mode -->
     <node pkg="gazebo" type="gazebo" args="-r $(find gazebo_robot_description)/gazebo_worlds/empty.world" respawn="false" output="screen">
