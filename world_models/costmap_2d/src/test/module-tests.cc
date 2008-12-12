@@ -636,20 +636,20 @@ TEST(costmap, test10){
   // Max in x and y
   ma.updateForRobotPosition(9.5, 9.5);
   ma.MC_WC(0, 0, wx, wy);
-  ASSERT_EQ(wx, 5.5);
-  ASSERT_EQ(wy, 5.5);
+  ASSERT_EQ(wx, 4.5);
+  ASSERT_EQ(wy, 4.5);
 
   // Off the map in x - assume it ignores the change
   ma.updateForRobotPosition(10.5, 9.5);
   ma.MC_WC(0, 0, wx, wy);
-  ASSERT_EQ(wx, 5.5);
-  ASSERT_EQ(wy, 5.5);
+  ASSERT_EQ(wx, 4.5);
+  ASSERT_EQ(wy, 4.5);
 
   // Off the map in y - assume it ignores the change
   ma.updateForRobotPosition(9.5, 10.5);
   ma.MC_WC(0, 0, wx, wy);
-  ASSERT_EQ(wx, 5.5);
-  ASSERT_EQ(wy, 5.5);
+  ASSERT_EQ(wx, 4.5);
+  ASSERT_EQ(wy, 4.5);
 
   ASSERT_EQ(map.getCircumscribedCostLowerBound(), ma.getCircumscribedCostLowerBound());
 }

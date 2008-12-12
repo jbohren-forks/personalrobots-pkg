@@ -485,8 +485,7 @@ namespace costmap_2d {
     origin_y_ = computeWY(costMap_, maxSize_, wx, wy);
     costMap_.WC_MC(origin_x_, origin_y_, mx_0_, my_0_); 
 
-    ROS_DEBUG_NAMED("costmap_2d", 
-        "Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
+    ROS_DEBUG( "Moving map to locate at <%f, %f> and size of %f meters for position <%f, %f>\n",
         origin_x_, origin_y_, maxSize_, wx, wy);
 
     // Now update all the cells from the cost map
@@ -510,7 +509,7 @@ namespace costmap_2d {
       origin_mx = mx - cellWidth/2;
 
     if(origin_mx + cellWidth > costMap.getWidth())
-      origin_mx = costMap.getWidth() - cellWidth;
+      origin_mx = costMap.getWidth() - cellWidth - 1;
 
     return origin_mx * costMap.getResolution();
   }
@@ -526,14 +525,14 @@ namespace costmap_2d {
       origin_my = my - cellWidth/2;
 
     if(origin_my + cellWidth > costMap.getHeight())
-      origin_my = costMap.getHeight() - cellWidth;
+      origin_my = costMap.getHeight() - cellWidth - 1;
 
     return origin_my * costMap.getResolution();
   }
 
   unsigned int CostMapAccessor::computeSize(double maxSize, double resolution){
     unsigned int cellWidth = (unsigned int) ceil(maxSize/resolution);
-    ROS_DEBUG_NAMED("costmap_2d", "Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
+    ROS_DEBUG("Given a size of %f and a resolution of %f, we have a cell width of %d\n", maxSize, resolution, cellWidth);
     return cellWidth;
   }
 
