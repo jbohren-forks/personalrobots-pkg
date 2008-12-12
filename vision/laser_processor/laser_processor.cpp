@@ -257,10 +257,15 @@ ScanProcessor::splitConnected(float thresh)
         while ( (s_rest != (*c_iter)->end() &&
                  (*s_rest)->index < (*s_q)->index + expand ) )
         {
-          if (sqrt( pow( (*s_q)->x - (*s_rest)->x, 2.0) + pow( (*s_q)->y - (*s_rest)->y, 2.0)) < thresh)
+          if ( (*s_rest)->range - (*s_q)->range > thresh)
+          {
+            break;
+          }
+          else if (sqrt( pow( (*s_q)->x - (*s_rest)->x, 2.0) + pow( (*s_q)->y - (*s_rest)->y, 2.0)) < thresh)
           {
             sample_queue.push_back(*s_rest);
             (*c_iter)->erase(s_rest++);
+            break;
           } else {
             ++s_rest;
           }
