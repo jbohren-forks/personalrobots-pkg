@@ -43,9 +43,37 @@
 
 #include "robot_msgs/PositionMeasurement.h"
 
+#include "rostools/Header.h"
+
 using namespace std;
 using namespace laser_processor;
 using namespace ros;
+
+class SavedFeature
+{
+public:
+  ros::Time time_;
+  std_msgs::Point  loc_;
+  vector<float>    features_;
+  vector<char>    color_;
+
+  SavedFeature(std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features, char r, char g, char b)
+  {
+    time_ = scan.header.stamp;
+    loc_ = loc;
+    features_ = features;
+    color_.push_back(r);
+    color_.push_back(g);
+    color_.push_back(b);
+  }
+
+  void update(std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features)
+  {
+    time_ = scan.header.stamp;
+    loc_ = loc;
+    features_ = features;
+  }
+};
 
 class LegDetector : public node
 {
@@ -65,7 +93,9 @@ public:
 
   char save_[100];
 
-  LegDetector() : node("laser_processor"), mask_count_(0), connected_thresh_(0.08), feat_count_(0)
+  list<SavedFeature> saved_features_;
+
+  LegDetector() : node("laser_processor"), mask_count_(0), connected_thresh_(0.05), feat_count_(0)
   {
     if (argc > 1) {
       forest.load(argv[1]);
@@ -95,6 +125,17 @@ public:
 
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
 
+    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-0.25);
+
+    list<SavedFeature>::iterator sf_iter = saved_features_.begin();
+    while (sf_iter != saved_features_.end())
+    {
+      if (sf_iter->time_ < purge)
+        saved_features_.erase(sf_iter++);
+      else
+        ++sf_iter;
+    }
+
     for (list<SampleSet*>::iterator i = processor.getClusters().begin();
          i != processor.getClusters().end();
          i++)
@@ -104,10 +145,60 @@ public:
       for (int k = 0; k < feat_count_; k++)
         tmp_mat->data.fl[k] = (float)(f[k]);
 
+      // Look for match:
+
       if (forest.predict( tmp_mat ) > 0)
       {
-        (*i)->appendToCloud(cloud_, 255, 0, 0);
+      
+        std_msgs::Point loc = (*i)->center();
 
+        list<SavedFeature>::iterator closest = saved_features_.end();
+        float closest_dist = 0.3;
+        
+        for (list<SavedFeature>::iterator sf_iter = saved_features_.begin();
+             sf_iter != saved_features_.end();
+             sf_iter++)
+        {
+          // If it is close to a saved feature
+          float dist = sqrt( pow(sf_iter->loc_.x - loc.x, 2.0) + pow(sf_iter->loc_.y - loc.y, 2.0) );
+          if ( dist < closest_dist )
+          {
+            
+            // Any nobody else is any closer
+            bool any_closer = false;
+            for (list<SampleSet*>::iterator j = processor.getClusters().begin();
+                 j != processor.getClusters().end();
+                 j++)
+            {
+              std_msgs::Point other_loc = (*j)->center();
+              float other_dist = sqrt( pow(sf_iter->loc_.x - other_loc.x, 2.0) + pow(sf_iter->loc_.y - other_loc.y, 2.0) );
+              
+              if (other_dist < dist)
+              {
+                any_closer = true;
+                break;
+              }
+            }
+
+            if (!any_closer)
+            {
+              closest = sf_iter;
+              closest_dist = dist;
+            }
+          }
+        }
+
+        if (closest != saved_features_.end())
+        {
+          closest->update(scan_, loc, f);
+        }
+        else
+        {
+          closest = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, f, rand()%255, rand()%255, rand()%255));
+        }
+
+        (*i)->appendToCloud(cloud_, closest->color_[0], closest->color_[1], closest->color_[2]);
+      
         robot_msgs::PositionMeasurement pos;
         pos.header.stamp = scan_.header.stamp;
         pos.header.frame_id = scan_.header.frame_id;
@@ -119,10 +210,11 @@ public:
         pos.covariance[4] = 1.0;
         pos.covariance[8] = 0.1;
         pos.initialization = 0;
-        
+      
         publish("person_measurement", pos);
       }
     }
+
 
     cloud_.header = scan_.header;
 

@@ -65,7 +65,7 @@ public:
 
   int feat_count_;
 
-  TrainLegDetector() : mask_count_(0), connected_thresh_(0.08), feat_count_(0)
+  TrainLegDetector() : mask_count_(0), connected_thresh_(0.05), feat_count_(0)
   {
   }
 
@@ -175,7 +175,7 @@ public:
     
     float priors[] = {1.0, 1.0};
     
-    CvRTParams fparam(12,10,0,false,10,priors,true,5,100,0.001f,CV_TERMCRIT_ITER);
+    CvRTParams fparam(5,10,0,false,20,priors,false,5,100,0.001f,CV_TERMCRIT_ITER);
     fparam.term_crit = cvTermCriteria(CV_TERMCRIT_ITER, 100, 0.1);
     
     forest.train( cv_data, CV_ROW_SAMPLE, cv_resp, 0, 0, var_type, 0,
