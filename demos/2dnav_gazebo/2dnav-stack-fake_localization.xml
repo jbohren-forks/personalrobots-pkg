@@ -28,6 +28,9 @@
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     -->
 
+    <!-- filter out veil effect from range scans -->
+    <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" respawn="false" output="screen" />
+
     <!-- move_base_sbpl settings -->
     <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
