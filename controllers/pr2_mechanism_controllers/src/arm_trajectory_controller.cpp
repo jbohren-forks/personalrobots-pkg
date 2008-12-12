@@ -103,13 +103,16 @@ bool ArmTrajectoryController::initXml(mechanism::RobotState * robot, TiXmlElemen
   trajectory_point_.setDimension((int) joint_position_controllers_.size());
   dimension_ = (int) joint_position_controllers_.size();
 
-  for(int i=0; i < dimension_; i++)
-     trajectory_point_.q_[i] = 0.0;
-
-  trajectory_point_.time_ = 0.0;
 
 // Add two points since every good trajectory must have at least two points, otherwise its just a point :-)
+  for(int j=0; j < dimension_; j++)
+    trajectory_point_.q_[j] = joint_position_controllers_[j]->joint_state_->position_;
+  trajectory_point_.time_ = 0.0;
   trajectory_points_vector.push_back(trajectory_point_);
+
+  for(int i=0; i < dimension_; i++)
+     trajectory_point_.q_[i] = 0.0;
+  trajectory_point_.time_ = 0.0;
   trajectory_points_vector.push_back(trajectory_point_);
 
   joint_trajectory_->autocalc_timing_ = true;

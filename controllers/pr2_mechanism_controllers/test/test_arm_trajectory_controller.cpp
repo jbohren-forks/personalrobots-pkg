@@ -58,7 +58,7 @@ int main( int argc, char** argv )
   pr2_mechanism_controllers::JointTraj cmd;
 
   int num_points = 2;
-  int num_joints = 5;
+  int num_joints = 7;
 
   cmd.set_points_size(num_points);
 
@@ -70,13 +70,17 @@ int main( int argc, char** argv )
   cmd.points[0].positions[2] = 0.0;
   cmd.points[0].positions[3] = 0.0;
   cmd.points[0].positions[4] = 0.0;
+  cmd.points[0].positions[5] = 0.0;
+  cmd.points[0].positions[6] = 0.0;
   cmd.points[0].time = 0.0;
 
   cmd.points[1].positions[0] = 1.0;
   cmd.points[1].positions[1] = 1.0;
   cmd.points[1].positions[2] = 0.2;
-  cmd.points[1].positions[3] = 0.5;
+  cmd.points[1].positions[3] = -0.5;
   cmd.points[1].positions[4] = 0.4;
+  cmd.points[1].positions[5] = 0.0;
+  cmd.points[1].positions[6] = 0.0;
   cmd.points[1].time = 10.0;
 
   node->advertise<pr2_mechanism_controllers::JointTraj>("arm_trajectory_command",1);
