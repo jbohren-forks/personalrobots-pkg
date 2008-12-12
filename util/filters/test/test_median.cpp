@@ -57,9 +57,9 @@ TEST(MedianFilter, ConfirmIdentityNRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
-  MedianFilter filter(rows,length);
-  double input1[] = {1,2,3,4,5};
-  double input1a[] = {1,2,3,4,5};
+  MedianFilter<float> filter(rows,length);
+  float input1[] = {1,2,3,4,5};
+  float input1a[] = {1,2,3,4,5};
 
   for (uint32_t i =0; i < rows*10; i++)
   {
@@ -77,11 +77,11 @@ TEST(MedianFilter, ThreeRows)
   double epsilon = 1e-6;
   int length = 5;
   int rows = 5;
-  MedianFilter filter(rows,length);
-  double input1[] = {0,1,2,3,4};
-  double input2[] = {1,2,3,4,5};
-  double input3[] = {2,3,4,5,6};
-  double input1a[] = {1,2,3,4,5};
+  MedianFilter<float> filter(rows,length);
+  float input1[] = {0,1,2,3,4};
+  float input2[] = {1,2,3,4,5};
+  float input3[] = {2,3,4,5,6};
+  float input1a[] = {1,2,3,4,5};
 
   filter.update(input1, input1a);
   filter.update(input2, input1a);
