@@ -9,7 +9,7 @@
 <depend package="laser_scan" />
 <depend package="random_utils" /> 
 <depend package="wg_robot_description_parser" /> 
-<depend package="planning_models" /> 
+<depend package="planning_models_with_libTF" /> 
 <depend package="collision_space" /> 
 <depend package="planning_node_util" /> 
 </package>

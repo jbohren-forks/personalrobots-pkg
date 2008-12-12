@@ -12,7 +12,7 @@
   <depend package="libTF"/>
 
   <export>
-    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lplanning_models"/>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lplanning_models_with_libtf"/>
   </export>
   
 </package>

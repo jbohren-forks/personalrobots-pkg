@@ -13,9 +13,8 @@
   <depend package="robot_msgs"/>
   <depend package="tf"/>
   <depend package="wg_robot_description_parser"/>
-  <depend package="planning_models"/>
+  <depend package="planning_models_with_libTF"/>
   <depend package="collision_space"/>
-
 
   <export>
     <cpp cflags="-I${prefix}/include" lflags=""/>

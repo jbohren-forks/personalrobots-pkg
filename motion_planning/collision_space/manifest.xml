@@ -8,7 +8,7 @@
   <review status="unreviewed" notes=""/>
 
   <depend package="rosthread"/>
-  <depend package="planning_models"/>
+  <depend package="planning_models_with_libTF"/>
 
 <!--
  We currently disable Octree collision checking since dependency on
