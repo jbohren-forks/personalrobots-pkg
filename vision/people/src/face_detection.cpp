@@ -83,12 +83,15 @@ public:
   People *people_;
   const char *haar_filename_;
 
+  bool external_init_;
+  robot_msgs::PositionMeasurement pos_;
+
   bool quit_;
   int detect_;
 
   ros::thread::mutex cv_mutex_;
 
-  FaceDetector(const char *haar_filename, bool use_depth, bool do_display) : 
+  FaceDetector(const char *haar_filename, bool use_depth, bool do_display, bool external_init) : 
     ros::node("face_detector", ros::node::ANONYMOUS_NAME ),
     sync_(this, &FaceDetector::image_cb_all, ros::Duration().fromSec(0.05), &FaceDetector::image_cb_timeout),
     cv_image_left_(NULL),
@@ -99,10 +102,11 @@ public:
     cam_model_(NULL),
     people_(NULL),
     haar_filename_(haar_filename),
+    external_init_(external_init),
     quit_(false),
     detect_(0)
   { 
-
+    
     if (do_display_) {
       // OpenCV: pop up an OpenCV highgui window
       cvNamedWindow("Face detector: Disparity",CV_WINDOW_AUTOSIZE);
@@ -121,8 +125,10 @@ public:
     sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
 
     // Advertise a position measure message.
-    advertise<robot_msgs::PositionMeasurement>("face_detection/position_measurement",1);
-    //subscribe<robot_msgs::PositionMeasurement>("face_detection",pos,&FaceDetector::pos_cb,1);
+    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+    if (external_init_) {
+      subscribe<robot_msgs::PositionMeasurement>("person_measurement",pos_,&FaceDetector::pos_cb,1);
+    }
 
   }
 
@@ -142,6 +148,30 @@ public:
       delete cam_model_;
 
     delete people_;
+
+  }
+
+  // Position message callback.
+  void pos_cb() {
+    cv_mutex_.lock();
+    int iperson;
+    if (pos_.initialization == 1) {
+      // Create a person with this id and position.
+      people_->addPerson();
+      iperson = people_->getNumPeople();
+      people_->setID(pos_.object_id, iperson);
+    }
+    else {
+      // Find the person in my list. If they don't exist, re-create them as above.
+      // If the message is within a short time of the current image, reset the position.
+      iperson = people_->findID(pos_.object_id);
+      if (iperson < 0) {
+	cv_mutex_.unlock();
+	return;
+      }
+    }
+    people_->setFaceCenter3D(-pos_.pos.y, -pos_.pos.z, pos_.pos.x, iperson);
+    cv_mutex_.unlock();
 
   }
 
@@ -180,7 +210,7 @@ public:
     double Crx = Clx;
     double Cy = rcinfo_.P[6];
     double Tx = -rcinfo_.P[3]/Fx;
-    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/stinfo_.dpp);
+    cam_model_ = new CvStereoCamModel(Fx,Fy,Tx,Clx,Crx,Cy,1.0/(double)stinfo_.dpp);
  
     if ( cv_image_left_ )  {
       im_size = cvGetSize(cv_image_left_);
@@ -214,31 +244,42 @@ public:
 	  cvmSet(uvd,0,1,one_face->y+one_face->height/2.0);
 	  cvmSet(uvd,0,2,avg_disp);
 	  cam_model_->dispToCart(uvd,xyz);
-	  pos.header.stamp = limage_.header.stamp;
-	  pos.name = "face_detection";
-	  pos.object_id = -1;
-	  pos.pos.x = cvmGet(xyz,0,2);
-	  pos.pos.y = -1.0*cvmGet(xyz,0,0);
-	  pos.pos.z = -1.0*cvmGet(xyz,0,1);
-	  pos.header.frame_id = "stereo_link";
-	  pos.reliability = 0.8;
-	  pos.initialization = 0;
-	  //pos.covariance = ;
-	  publish("face_detection/position_measurement",pos);
+	  
+	  bool do_publish = true;
+	  if (external_init_) {
+	    // Check if this person's face is close enough to one of the previously known faces and associate it.
+	    // If not, don't publish it.
+	  }
+
+	  if (do_publish) {
+	    pos.header.stamp = limage_.header.stamp;
+	    pos.name = "face_detection";
+	    pos.object_id = "-1";
+	    pos.pos.x = cvmGet(xyz,0,2);
+	    pos.pos.y = -1.0*cvmGet(xyz,0,0);
+	    pos.pos.z = -1.0*cvmGet(xyz,0,1);
+	    pos.header.frame_id = "stereo_link";
+	    pos.reliability = 0.8;
+	    pos.initialization = 0;
+	    //pos.covariance = ;
+	    publish("person_measurement",pos);
+	  }
 	}
+
 	cvReleaseMat(&uvd);
-	cvReleaseMat(&xyz);
-      }
+	cvReleaseMat(&xyz);	
+      
+	if (do_display_) {
+	  if (!cv_image_disp_out_) {
+	    cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	  }
+	  cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
 
-      if (do_display_) {
-	if (!cv_image_disp_out_) {
-	  cv_image_disp_out_ = cvCreateImage(im_size,IPL_DEPTH_8U,1);
+	  cvShowImage("Face detector: Face Detection",cv_image_left_);
+	  cvShowImage("Face detector: Disparity",cv_image_disp_out_);
 	}
-	cvCvtScale(cv_image_disp_,cv_image_disp_out_,4.0/stinfo_.dpp);
-
-	cvShowImage("Face detector: Face Detection",cv_image_left_);
-	cvShowImage("Face detector: Disparity",cv_image_disp_out_);
       }
+      
     }
     cv_mutex_.unlock();
   }
@@ -274,16 +315,20 @@ int main(int argc, char **argv)
   ros::init(argc, argv);
   bool use_depth = true;
   bool do_display = true;
+  bool external_init = false;
 
-  if (argc < 2) {
+  if (argc < 3) {
     cerr << "Path to cascade file required.\n" << endl;
     return 0;
   }
   char *haar_filename = argv[1]; 
-  if (argc >= 2) {
+  if (argc >= 3) {
     do_display = atoi(argv[2]);
+    if (argc >= 4) {
+      external_init = atoi(argv[3]);
+    }
   }
-  FaceDetector fd(haar_filename, use_depth, do_display);
+  FaceDetector fd(haar_filename, use_depth, do_display, external_init);
  
   fd.spin();
   ros::fini();
