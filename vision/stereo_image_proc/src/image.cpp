@@ -259,6 +259,9 @@ StereoData::StereoData()
   buf = NULL;
   flim = NULL;
   frim = NULL;
+  wbuf = NULL;
+  rbuf = NULL;
+  lbuf = NULL;
 
   // nominal values
   imWidth = 640;
@@ -273,6 +276,8 @@ StereoData::StereoData()
 
   textureThresh = 10;
   uniqueThresh = 12;
+  speckleDiff = 8;
+  speckleRegionSize = 100;
 
   hasRectification = false;
 
@@ -396,6 +401,10 @@ StereoData::doRectify()
 }
 
 
+//
+// includes post-filtering
+//
+
 bool 
 StereoData::doDisparity()
 {
@@ -447,6 +456,20 @@ StereoData::doDisparity()
 	    ftzero, corr, corr, dlen, tthresh, uthresh, buf);
 
   hasDisparity = true;
+
+  // speckle filter
+  if (speckleRegionSize > 0)
+    {
+      if (!rbuf)
+	rbuf  = (uint8_t *)malloc(xim*yim); // local storage for the algorithm
+      if (!lbuf)
+	lbuf = (uint32_t *)malloc(xim*yim*sizeof(uint32_t)); // local storage for the algorithm
+      if (!wbuf)
+	wbuf = (uint32_t *)malloc(xim*yim*sizeof(uint32_t)); // local storage for the algorithm
+      do_speckle(imDisp, 0, xim, yim, speckleDiff, speckleRegionSize, 
+		 lbuf, wbuf, rbuf);
+    }
+
   return true;
 }
 

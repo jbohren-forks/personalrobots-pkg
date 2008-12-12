@@ -180,6 +180,13 @@ do_stereo_sparse_fast(uint8_t *refpat, uint8_t *rim, // input feature images
 	  );
 
 
+// speckle filter
+// needs buffers: labels[image size], wbuf[image size], rtype[image size]
+void do_speckle(int16_t *disp, int16_t badval, int width, int height, 
+		int rdiff, int rcount, 
+		uint32_t *labels, uint32_t *wbuf, uint8_t *rtype);
+
+
 #ifdef __cplusplus
 }
 #endif

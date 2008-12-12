@@ -242,7 +242,6 @@ namespace cam
     bool doDisparity();		// calculate disparity image
     bool doCalcPts();		// calculate 3D points
 
-
     // valid stereo data rectangle
     int imDtop, imDleft;
     int imDwidth, imDheight;
@@ -277,13 +276,20 @@ namespace cam
     // filter thresholds
     int textureThresh;		// percent
     int uniqueThresh;		// percent
+    int speckleDiff;		// max difference between adjacent disparities in a region
+    int speckleRegionSize;	// minimum size of region to be not a speckle
 
     bool setTextureThresh(int thresh);
     bool setUniqueThresh(int thresh);
+    bool setSpeckleDiff(int diff);
+    bool setSpeckleRegionSize(int size);
 
   private:
     // buffers for stereo
     uint8_t *buf, *flim, *frim;
+    // buffers for speckle filter
+    uint8_t *rbuf;
+    uint32_t *lbuf, *wbuf;
 
   }; 
 

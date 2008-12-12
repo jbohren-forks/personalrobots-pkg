@@ -1316,3 +1316,127 @@ do_stereo_sparse(uint8_t *refpat, uint8_t *rim, // input feature images
   v = (float)(dlen-ind-1) + (p-n)/(2*(p+n-2*c));
   return (int)(0.5 + 16*v);
 }
+
+
+
+
+
+//
+// speckle removal algorithm
+//
+// basic idea: find coherent regions of similar disparities
+// use 4-neighbors for checking disparity diffs
+// reject regions less than a certain size
+//
+// algorithm: 
+//   read through pixels in scan-line order
+//   for each pixel
+//     - if not a disparity, ignore
+//     - if labeled, check label status (good/bad) and assign disparity
+//     - if not labeled, assign next label and propagate
+//          * put on wavefront list
+//          * pop first wavefront member
+//              - if labeled, ignore
+//              - if no disparity, ignore
+//              - if not within diff, ignore
+//              - label, increment count, and push 4 neighbors
+//              - repeat until wavefront empty
+//
+//
+//
+// args:
+//   disp:  disparity image (16b)
+//   badval: value of bad disparity, usually 0
+//   width, height: size of image
+//   rdiff: max diff between pixels in a region
+//   rcount: min count for non-speckle region, in pixels
+//
+// buffers:
+//   labs:  holds pixel labels (32b), size is image
+//   wbuf:  holds propagating wavefront (32b), size is image
+//   rtype: holds region types (1=bad, 0=good)
+//
+
+
+#define push(x,y) { if ((disp[x] != badval) && (!labels[x])	    \
+			&& (disp[x]-y < rdiff) && (disp[x]-y > -rdiff))	\
+    { labels[x] = cur; *ws++ = x; }}
+
+void
+do_speckle(int16_t *disp, int16_t badval, int width, int height, 
+	   int rdiff, int rcount, 
+	   uint32_t *labels, uint32_t *wbuf, uint8_t *rtype)
+{
+  int i,j,k,cnt;
+  uint32_t *ws, *ls;
+  uint32_t p, cur;
+  int16_t dp, *ds;
+
+//  printf("diff: %d  count: %d\n", rdiff, rcount);
+//  printf("width: %d  height: %d  badval: %d\n", width, height, badval);
+
+  // clear out label assignments
+  memset(labels,0x0,width*height*sizeof(uint32_t));
+
+  // loop over rows, omit borders (TDB: use dtop etc here)
+  cur = 0;			// current label
+  for (i=4; i<height-4; i++)
+    {
+      k = i*width+4;		// index of pixel
+      ds = disp+k;		// buffer ptrs
+      ls = labels+k;
+      for (j=4; j<width-4; j++, k++, ls++, ds++)
+	{
+	  if (*ds != badval)	// not a bad disparity
+	    {
+	      if (*ls)		// has a label, check for bad label
+		{  
+		  if (rtype[*ls]) // small region, zero out disparity
+		    *ds = badval;
+		}
+
+	      // no label, assign and propagate
+	      else
+		{
+		  ws = wbuf;	// initialize wavefront
+		  p = k;	// current pixel
+		  cur++;	// next label
+		  cnt = 0;	// current region count
+		  labels[p] = cur; 
+
+		  // wavefront propagation
+		  while (ws >= wbuf) // wavefront not empty
+		    {
+		      cnt++;
+		      // put neighbors onto wavefront
+		      dp = disp[p];
+		      push(p+1,dp);
+		      push(p-1,dp);
+		      push(p-width,dp);
+		      push(p+width,dp);
+
+		      // pop most recent and propagate
+		      // NB: could try least recent, maybe better convergence
+		      p = *--ws;
+		    }
+
+		  // assign label type
+		  if (cnt < rcount)	// speckle region
+		    {
+		      rtype[*ls] = 1;	// small region label
+		      *ds = badval;
+		    }
+		  else
+		    {
+		      rtype[*ls] = 0;	// large region label
+//		      printf("Count: %d  label: %d\n", cnt, k);
+		    }
+		  
+		}
+	    }
+
+	}
+    }
+}
+
+
