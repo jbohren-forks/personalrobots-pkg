@@ -73,6 +73,7 @@ TARGET_T =  0.0
 class NavStackTest(unittest.TestCase):
     def __init__(self, *args):
         super(NavStackTest, self).__init__(*args)
+        self.bumped  = False
         self.success = False
         self.reached_target_vw = False
         self.duration_start = 0
@@ -156,13 +157,18 @@ class NavStackTest(unittest.TestCase):
                          ,p3d.pos.orientation.z \
                          ,p3d.pos.orientation.w]
 
+    def bumpedInput(self, bumpString):
+        print "robot touched something! ", bumpString.data
+        self.bumped = True
     
     def test_2dnav(self):
         print "LNK\n"
         #pub_base = rospy.Publisher("cmd_vel", BaseVel)
         pub_goal = rospy.Publisher("goal", Planner2DGoal) #received by wavefront_player or equivalent
         rospy.Subscriber("base_pose_ground_truth", PoseWithRatesStamped, self.p3dInput)
-        rospy.Subscriber("odom",                   RobotBase2DOdom,      self.odomInput)
+        rospy.Subscriber("odom"                  , RobotBase2DOdom     , self.odomInput)
+        rospy.Subscriber("base_bumper"           , String              , self.bumpedInput)
+        rospy.Subscriber("torso_lift_bumper"     , String              , self.bumpedInput)
         rospy.init_node(NAME, anonymous=True)
         timeout_t = time.time() + TEST_TIMEOUT
         # wait for result
@@ -208,7 +214,7 @@ class NavStackTest(unittest.TestCase):
                         + abs(current_yaw -  TARGET_T)
             print "nav error:" + str(nav_error) + " tol:" + str(TARGET_TOL) + " odom error:" + str(odom_error)
 
-            if nav_error < TARGET_TOL:
+            if nav_error < TARGET_TOL and self.bumped == False:
                 self.success = True
 
         self.assert_(self.success)
