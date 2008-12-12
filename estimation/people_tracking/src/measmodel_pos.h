@@ -32,54 +32,69 @@
 *********************************************************************/
 
 
-#ifndef STATE_POS_VEL_H
-#define STATE_POS_VEL_H
+#ifndef MEASMODEL_POS_H
+#define MEASMODEL_POS_H
 
-#include <tf/tf.h>
+#define NUM_MEASMODEL_POS_COND_ARGS    1
+#define DIM_MEASMODEL_POS              13
+
+
+#include "state_pos_vel.h"
+#include "tf/tf.h"
+#include "gaussian_vector.h"
+#include <model/measurementmodel.h>
+#include <pdf/conditionalpdf.h>
+#include <wrappers/matrix/matrix_wrapper.h>
+#include <string>
 
 namespace BFL
 {
-/// Class representing state with pos and vel
-class StatePosVel
-{
- public:
-  tf::Vector3 pos_, vel_;
-  
-  /// Constructor
-  StatePosVel(const tf::Vector3& pos=tf::Vector3(0,0,0), 
-	      const tf::Vector3& vel=tf::Vector3(0,0,0)):  pos_(pos), vel_(vel) {};
-  
-  StatePosVel(unsigned int dim):  pos_(tf::Vector3(0,0,0)), vel_(tf::Vector3(0,0,0)) {};
 
-  /// Destructor
-  ~StatePosVel() {};
-  
-  /// operator +=
-  StatePosVel& operator += (const StatePosVel& s) 
+  class MeasPdfPos 
+    : public BFL::ConditionalPdf<tf::Vector3, StatePosVel>
   {
-    this->pos_ += s.pos_;
-    this->vel_ += s.vel_;
-    return *this;
- }
+  public:
+    /// Constructor
+    MeasPdfPos(const tf::Vector3& sigma);
+    
+    /// Destructor
+    virtual ~MeasPdfPos();
+    
+    // Redefining pure virtual methods
+    virtual BFL::Probability ProbabilityGet(const tf::Vector3& input) const;
+    virtual bool SampleFrom (BFL::Sample<tf::Vector3>& one_sample, int method, void *args) const;  // Not applicable
+    virtual tf::Vector3 ExpectedValueGet() const; // Not applicable
+    virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
 
-  /// operator +
-  StatePosVel operator + (const StatePosVel& s) 
+
+  private:
+    GaussianVector meas_noise_;
+    
+  }; // class
+  
+
+
+
+
+
+  class MeasModelPos
+    : public BFL::MeasurementModel<tf::Vector3, StatePosVel>
   {
-    StatePosVel res;
+  public:
+    /// constructor
+    MeasModelPos(const tf::Vector3& sigma)
+      : BFL::MeasurementModel<tf::Vector3, StatePosVel>(new MeasPdfPos(sigma))
+    {};
 
-    res.pos_ = this->pos_ + s.pos_;
-    res.vel_ = this->vel_ + s.vel_;
-    return res;
- }
+    /// destructor
+    ~MeasModelPos()
+    {
+      delete MeasurementPdfGet();
+    };
 
-  /// output stream for StatePosVel
-  friend std::ostream& operator<< (std::ostream& os, const StatePosVel& s) 
-    { os << "(" << s.pos_[0] << ", " << s.pos_[1] << ", "  << s.pos_[2] << ")--("
-	 << "(" << s.vel_[0] << ", " << s.vel_[1] << ", "  << s.vel_[2] << ") "; return os;};
+  }; // class
+
+} //namespace
   
-
   
-
-};
-} // end namespace
-#endif
+#endif 

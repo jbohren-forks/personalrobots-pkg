@@ -31,61 +31,68 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
+#include "measmodel_pos.h"
 
-#include "posvel_mcpdf.hpp"
-#include <assert.h>
-#include <vector>
-
-
-  using namespace MatrixWrapper;
-  using namespace KDL;
-  using namespace BFL;
-  
-
-  PosVelMCPdf::PosVelMCPdf (unsigned int num_samples) 
-    : MCPdf<Posvel_State> ( num_samples, 7 )
-  {}
-
-  PosVelMCPdf::~PosVelMCPdf(){}
+using namespace std;
+using namespace BFL;
+using namespace tf;
 
 
-  void 
-  PosVelMCPdf::ContactformationProbabilityGet(std::vector<double>& cf_probability, std::vector<unsigned int>& cf_num_samples) const
-  {
-    assert(cf_num_samples.size() == cf_probability.size());
-
-    unsigned int num_nodes   = cf_probability.size();
-    unsigned int num_smaples = _listOfSamples.size();
-    
-    // set to zero
-    for (unsigned int id=0; id<num_nodes; id++){
-      cf_probability[id] = 0;
-      cf_num_samples[id] = 0;
-    }
-
-    // calculate probability
-    for (unsigned int i=0; i<num_smaples; i++){
-      unsigned int id = _listOfSamples[i].ValueGet().ContactFormationGet()->IdGet();
-      //cout << _listOfSamples[i].ValueGet().ContactFormationGet()->LabelGet() << " with probability of " << _listOfSamples[i].WeightGet() / _SumWeights << endl;
-      assert(id <= num_nodes);
-      cf_probability[id-1] += (_listOfSamples[i].WeightGet() / _SumWeights);
-      cf_num_samples[id-1] += 1;
-    }
-  }
+// Constructor
+MeasPdfPos::MeasPdfPos(const Vector3& sigma)
+  : ConditionalPdf<Vector3, StatePosVel>(DIM_MEASMODEL_POS, NUM_MEASMODEL_POS_COND_ARGS),
+    meas_noise_(Vector3(0,0,0), sigma)
+{}
 
 
-  WeightedSample<Posvel_State>
-  PosVelMCPdf::SampleGet(unsigned int particle) const
-  {
-    assert (particle >= 0 && particle < _listOfSamples.size());
-    return _listOfSamples[particle];
-  }
+// Destructor
+MeasPdfPos::~MeasPdfPos()
+{}
 
 
-  unsigned int
-  PosVelMCPdf::numParticlesGet() const
-  {
-    return _listOfSamples.size();
-  }
-  
+
+Probability 
+MeasPdfPos::ProbabilityGet(const Vector3& measurement) const
+{
+  return meas_noise_.ProbabilityGet(measurement - ConditionalArgumentGet(0).pos_);
+}
+
+
+
+bool
+MeasPdfPos::SampleFrom (Sample<Vector3>& one_sample, int method, void *args) const
+{
+  cerr << "MeasPdfPos::SampleFrom Method not applicable" << endl;
+  assert(0);
+  return false;
+}
+
+
+
+
+Vector3
+MeasPdfPos::ExpectedValueGet() const
+{
+  cerr << "MeasPdfPos::ExpectedValueGet Method not applicable" << endl;
+  Vector3 result;
+  assert(0);
+  return result;
+}
+
+
+
+
+SymmetricMatrix 
+MeasPdfPos::CovarianceGet() const
+{
+  cerr << "MeasPdfPos::CovarianceGet Method not applicable" << endl;
+  SymmetricMatrix Covar(DIM_MEASMODEL_POS);
+  assert(0);
+  return Covar;
+}
+
+
+
+
+
 

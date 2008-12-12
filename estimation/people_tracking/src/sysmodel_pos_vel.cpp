@@ -32,54 +32,76 @@
 *********************************************************************/
 
 
-#ifndef STATE_POS_VEL_H
-#define STATE_POS_VEL_H
+#include "sysmodel_pos_vel.h"
 
-#include <tf/tf.h>
 
-namespace BFL
+using namespace std;
+using namespace BFL;
+using namespace tf;
+
+
+#define NUM_SYS_POS_VEL_COND_ARGS    1
+#define DIM_SYS_POS_VEL              6
+
+
+// Constructor
+SysPdfPosVel::SysPdfPosVel(const StatePosVel& sigma)
+  : ConditionalPdf<StatePosVel, StatePosVel>(DIM_SYS_POS_VEL, NUM_SYS_POS_VEL_COND_ARGS),
+    noise_(StatePosVel(Vector3(0,0,0), Vector3(0,0,0)), sigma)
+{}
+
+
+
+// Destructor
+SysPdfPosVel::~SysPdfPosVel()
+{}
+
+
+
+Probability 
+SysPdfPosVel::ProbabilityGet(const StatePosVel& state) const
 {
-/// Class representing state with pos and vel
-class StatePosVel
+  cerr << "SysPdfPosVel::ProbabilityGet Method not applicable" << endl;
+  assert(0);
+  return 0;
+}
+
+
+bool
+SysPdfPosVel::SampleFrom (Sample<StatePosVel>& one_sample, int method, void *args) const
 {
- public:
-  tf::Vector3 pos_, vel_;
-  
-  /// Constructor
-  StatePosVel(const tf::Vector3& pos=tf::Vector3(0,0,0), 
-	      const tf::Vector3& vel=tf::Vector3(0,0,0)):  pos_(pos), vel_(vel) {};
-  
-  StatePosVel(unsigned int dim):  pos_(tf::Vector3(0,0,0)), vel_(tf::Vector3(0,0,0)) {};
+  StatePosVel& res = one_sample.ValueGet();
 
-  /// Destructor
-  ~StatePosVel() {};
-  
-  /// operator +=
-  StatePosVel& operator += (const StatePosVel& s) 
-  {
-    this->pos_ += s.pos_;
-    this->vel_ += s.vel_;
-    return *this;
- }
+  // get conditional argument: state
+  res = this->ConditionalArgumentGet(0);
 
-  /// operator +
-  StatePosVel operator + (const StatePosVel& s) 
-  {
-    StatePosVel res;
+  // apply system model
+  res.pos_ += (res.vel_ * dt_);
 
-    res.pos_ = this->pos_ + s.pos_;
-    res.vel_ = this->vel_ + s.vel_;
-    return res;
- }
+  // add noise
+  Sample<StatePosVel> noise_sample;
+  noise_.SampleFrom(noise_sample, method, args);
+  res += noise_sample.ValueGet();
 
-  /// output stream for StatePosVel
-  friend std::ostream& operator<< (std::ostream& os, const StatePosVel& s) 
-    { os << "(" << s.pos_[0] << ", " << s.pos_[1] << ", "  << s.pos_[2] << ")--("
-	 << "(" << s.vel_[0] << ", " << s.vel_[1] << ", "  << s.vel_[2] << ") "; return os;};
-  
+  return true;
+}
 
-  
 
-};
-} // end namespace
-#endif
+StatePosVel
+SysPdfPosVel::ExpectedValueGet() const
+{
+  cerr << "SysPdfPosVel::ExpectedValueGet Method not applicable" << endl;
+  assert(0);
+  return StatePosVel();
+
+}
+
+SymmetricMatrix 
+SysPdfPosVel::CovarianceGet() const
+{
+  cerr << "SysPdfPosVel::CovarianceGet Method not applicable" << endl;
+  SymmetricMatrix Covar(DIM_SYS_POS_VEL);
+  assert(0);
+  return Covar;
+}
+

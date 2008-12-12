@@ -31,32 +31,72 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef POSVEL_MCPDF_H
-#define POSVEL_MCPDF_H
+#ifndef SYSMODEL_POS_VEL_H
+#define SYSMODEL_POS_VEL_H
 
-#include <pdf/mcpdf.h>
-#include "posvel_state.hpp"
 
+#include "state_pos_vel.h"
+#include "gaussian_pos_vel.h"
+#include <model/systemmodel.h>
+#include <pdf/conditionalpdf.h>
+#include <wrappers/matrix/matrix_wrapper.h>
+#include <string>
 
 namespace BFL
 {
-  /// Class representing posvel_mcpdf (or normal density)
-  class PosVelMCPdf: public MCPdf<Posvel_State>
-    {
-    public:
-      /// Constructor
-      PosVelMCPdf (unsigned int num_samples);
 
-      /// Destructor
-      virtual ~PosVelMCPdf();
+  class SysPdfPosVel 
+    : public ConditionalPdf<StatePosVel, StatePosVel>
+  {
+  public:
+    /// Constructor
+    SysPdfPosVel(const StatePosVel& sigma);
+    
+    /// Destructor
+    virtual ~SysPdfPosVel();
+    
+    // set time
+    void SetDt(double dt) {dt_ = dt;};
 
-      /// Get probability of each contact formation
-      void ContactformationProbabilityGet(std::vector<double>& cf_probability, std::vector<unsigned int>& cf_num_samples) const;
+    // Redefining pure virtual methods
+    virtual bool SampleFrom (BFL::Sample<StatePosVel>& one_sample, int method, void *args) const;  
+    virtual StatePosVel ExpectedValueGet() const; // not applicable
+    virtual Probability ProbabilityGet(const StatePosVel& state) const; // not applicable
+    virtual MatrixWrapper::SymmetricMatrix  CovarianceGet() const; // Not applicable
 
-      WeightedSample<Posvel_State> SampleGet(unsigned int particle) const;
-      unsigned int numParticlesGet() const;
 
-    };
+  private:
+    GaussianPosVel noise_;
+    double dt_;
 
-} // end namespace
+  }; // class
+  
+
+
+
+
+
+
+  class SysModelPosVel
+    : public SystemModel<StatePosVel>
+  {
+  public:
+    SysModelPosVel(const StatePosVel& sigma)
+      :SystemModel<StatePosVel>(new SysPdfPosVel(sigma))
+    {};
+
+    /// destructor
+    ~SysModelPosVel()
+    { delete SystemPdfGet(); };
+
+    // set time
+    void SetDt(double dt) {((SysPdfPosVel*)SystemPdfGet())->SetDt(dt);};
+
+  }; // class
+  
+
+  
+} //namespace
+  
+  
 #endif

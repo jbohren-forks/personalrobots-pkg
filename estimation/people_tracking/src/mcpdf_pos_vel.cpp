@@ -63,9 +63,10 @@
     for (unsigned int i=0; i<num_smaples; i++){
       Vector3 pos_rel   = _listOfSamples[i].ValueGet().pos_ - m;
 
-      unsigned int r = trunc(min((double)rows,max(1.0,pos_rel[0] * rows / M[0])));
-      unsigned int c = trunc(min((double)cols,max(1.0,pos_rel[1] * rows / M[1])));
-      hist(r,c) += _listOfSamples[i].WeightGet();
+      unsigned int r = trunc(pos_rel[0] * rows / M[0]);
+      unsigned int c = trunc(pos_rel[1] * rows / M[1]);
+      if (r >= 1 && c >= 1 && r <= rows && c <= cols)
+	hist(r,c) += _listOfSamples[i].WeightGet();
     }
 
     return hist;

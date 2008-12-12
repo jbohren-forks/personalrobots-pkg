@@ -36,12 +36,10 @@
 
 // bayesian filtering
 #include <filter/bootstrapfilter.h>
-#include <model/systemmodel.h>
 #include <model/measurementmodel.h>
 #include "state_pos_vel.h"
 #include "mcpdf_pos_vel.h"
-//#include "nonlinearSystemPdf.h"
-//#include "nonlinearMeasurementPdf.h"
+#include "sysmodel_pos_vel.h"
 
 // TF
 #include <tf/tf.h>
@@ -59,7 +57,7 @@ class Tracker
 {
 public:
   /// constructor
-  Tracker(unsigned int num_particles);
+  Tracker(unsigned int num_particles, const BFL::StatePosVel& sysnoise);
 
   /// destructor
   virtual ~Tracker();
@@ -84,6 +82,7 @@ private:
   // pdf / model / filter
   BFL::MCPdfPosVel                                          prior_;
   BFL::BootstrapFilter<BFL::StatePosVel, tf::Vector3>*      filter_;
+  BFL::SysModelPosVel                                       sys_model_;
 
   // vars
   bool tracker_initialized_;

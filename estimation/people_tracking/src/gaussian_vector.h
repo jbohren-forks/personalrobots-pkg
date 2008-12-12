@@ -32,54 +32,42 @@
 *********************************************************************/
 
 
-#ifndef STATE_POS_VEL_H
-#define STATE_POS_VEL_H
+#ifndef GAUSSIAN_VECTOR_H
+#define GAUSSIAN_VECTOR_H
 
-#include <tf/tf.h>
+#include <pdf/pdf.h>
+#include "tf/tf.h"
 
 namespace BFL
 {
-/// Class representing state with pos and vel
-class StatePosVel
-{
- public:
-  tf::Vector3 pos_, vel_;
-  
-  /// Constructor
-  StatePosVel(const tf::Vector3& pos=tf::Vector3(0,0,0), 
-	      const tf::Vector3& vel=tf::Vector3(0,0,0)):  pos_(pos), vel_(vel) {};
-  
-  StatePosVel(unsigned int dim):  pos_(tf::Vector3(0,0,0)), vel_(tf::Vector3(0,0,0)) {};
+  /// Class representing gaussian vector
+  class GaussianVector: public Pdf<tf::Vector3>
+    {
+    private:
+      tf::Vector3 mu_, sigma_;
+      mutable double sqrt_;
+      mutable tf::Vector3 sigma_sq_;
+      mutable bool sigma_changed_;
+      
+    public:
+      /// Constructor
+      GaussianVector (const tf::Vector3& mu, const tf::Vector3& sigma);
 
-  /// Destructor
-  ~StatePosVel() {};
-  
-  /// operator +=
-  StatePosVel& operator += (const StatePosVel& s) 
-  {
-    this->pos_ += s.pos_;
-    this->vel_ += s.vel_;
-    return *this;
- }
+      /// Destructor
+      virtual ~GaussianVector();
 
-  /// operator +
-  StatePosVel operator + (const StatePosVel& s) 
-  {
-    StatePosVel res;
+      /// output stream for GaussianVector
+      friend std::ostream& operator<< (std::ostream& os, const GaussianVector& g);
+    
+      // Redefinition of pure virtuals
+      virtual Probability ProbabilityGet(const tf::Vector3& input) const;
+      bool SampleFrom (vector<Sample<tf::Vector3> >& list_samples, const int num_samples, int method=DEFAULT, void * args=NULL) const;
+      virtual bool SampleFrom (Sample<tf::Vector3>& one_sample, int method=DEFAULT, void * args=NULL) const;
 
-    res.pos_ = this->pos_ + s.pos_;
-    res.vel_ = this->vel_ + s.vel_;
-    return res;
- }
+      virtual tf::Vector3 ExpectedValueGet() const;
+      virtual MatrixWrapper::SymmetricMatrix CovarianceGet() const;
 
-  /// output stream for StatePosVel
-  friend std::ostream& operator<< (std::ostream& os, const StatePosVel& s) 
-    { os << "(" << s.pos_[0] << ", " << s.pos_[1] << ", "  << s.pos_[2] << ")--("
-	 << "(" << s.vel_[0] << ", " << s.vel_[1] << ", "  << s.vel_[2] << ") "; return os;};
-  
+    };
 
-  
-
-};
 } // end namespace
 #endif

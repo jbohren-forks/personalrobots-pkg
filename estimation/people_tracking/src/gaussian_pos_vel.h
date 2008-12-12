@@ -37,6 +37,7 @@
 
 #include <pdf/pdf.h>
 #include "state_pos_vel.h"
+#include "gaussian_vector.h"
 
 namespace BFL
 {
@@ -44,9 +45,8 @@ namespace BFL
   class GaussianPosVel: public Pdf<StatePosVel>
     {
     private:
-      StatePosVel mu_, sigma_sq_;
-      mutable double sqrt_;
-      mutable bool sigma_changed_;
+      StatePosVel mu_, sigma_;
+      GaussianVector gauss_pos_, gauss_vel_;
       
     public:
       /// Constructor

@@ -45,16 +45,13 @@ using namespace ros;
 namespace estimation
 {
   // constructor
-  Tracker::Tracker(unsigned int num_particles):
+  Tracker::Tracker(unsigned int num_particles, const StatePosVel& sysnoise):
     prior_(num_particles),
     filter_(NULL),
+    sys_model_(sysnoise),
     tracker_initialized_(false),
     num_particles_(num_particles)
-  {
-    // create SYSTEM MODEL
-
-    // create MEASUREMENT MODEL 
-  };
+  {};
 
 
 
@@ -87,6 +84,12 @@ namespace estimation
   // update filter
   void Tracker::update(const Time&  filter_time)
   {
+    // calculate dt
+    double dt = 0.1;
+    sys_model_.SetDt(dt);
+
+    // update filter
+    filter_->Update(&sys_model_);
   };
 
 
@@ -113,15 +116,22 @@ using namespace estimation;
 
 int main()
 {
-  StatePosVel mu(Vector3(1,2,3), Vector3(0,0,0));
-  StatePosVel sigma(Vector3(0.5,0.5,0.00001), Vector3(0.00001,0.00001,0.00001));
+  StatePosVel prior_mu(Vector3(4,4,4), Vector3(0,0,0));
+  StatePosVel prior_sigma(Vector3(1.5, 0.5, 0.00001), Vector3(0.00001,0.00001,0.00001));
+  StatePosVel sys_sigma(Vector3(0.00001,0.000001,0.00001), Vector3(0.2,0.2,0.00001));
 
 
-  Tracker tracker(5000);
-  tracker.initialize(mu, sigma, Time());
+  cout << "Initializing tracker" << endl;
+  Tracker tracker(5000, sys_sigma);
+  tracker.initialize(prior_mu, prior_sigma, Time());
 
+  cout << "Update tracker" << endl;
+  for (unsigned int i=0; i<0; i++){
+    tracker.update(Time());
+  }
 
-  Vector3 min(0,0,0);  Vector3 max(4,4,4); Vector3 step(0.1, 0.1, 0.1);
+  cout << "Get histogram" << endl;
+  Vector3 min(0,0,0);  Vector3 max(8,8,8); Vector3 step(0.05, 0.05, 0.05);
   Matrix hist = tracker.getHistogram(min, max, step);
   cout << hist.rows() << " " << hist.columns() << endl;
   ofstream file; file.open("test.txt");
