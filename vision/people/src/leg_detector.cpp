@@ -52,13 +52,15 @@ using namespace ros;
 class SavedFeature
 {
 public:
+  int id_;
   ros::Time time_;
   std_msgs::Point  loc_;
   vector<float>    features_;
   vector<char>    color_;
 
-  SavedFeature(std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features, char r, char g, char b)
+  SavedFeature(int id, std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features, char r, char g, char b)
   {
+    id_ = id;
     time_ = scan.header.stamp;
     loc_ = loc;
     features_ = features;
@@ -95,6 +97,8 @@ public:
 
   list<SavedFeature> saved_features_;
 
+  int feature_id_;
+
   LegDetector() : node("laser_processor"), mask_count_(0), connected_thresh_(0.05), feat_count_(0)
   {
     if (argc > 1) {
@@ -109,6 +113,8 @@ public:
     subscribe("scan", scan_, &LegDetector::laserCallback, 10);
     advertise<std_msgs::PointCloud>("filt_cloud",10);
     advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
+
+    feature_id_ = 0;
   }
 
   void laserCallback()
@@ -125,7 +131,7 @@ public:
 
     CvMat* tmp_mat = cvCreateMat(1,feat_count_,CV_32FC1);
 
-    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-0.25);
+    ros::Time purge = scan_.header.stamp + ros::Duration().fromSec(-1.0);
 
     list<SavedFeature>::iterator sf_iter = saved_features_.begin();
     while (sf_iter != saved_features_.end())
@@ -153,7 +159,7 @@ public:
         std_msgs::Point loc = (*i)->center();
 
         list<SavedFeature>::iterator closest = saved_features_.end();
-        float closest_dist = 0.3;
+        float closest_dist = 0.5;
         
         for (list<SavedFeature>::iterator sf_iter = saved_features_.begin();
              sf_iter != saved_features_.end();
@@ -164,12 +170,13 @@ public:
           if ( dist < closest_dist )
           {
             
-            // Any nobody else is any closer
+            // And nobody else is any closer
             bool any_closer = false;
             for (list<SampleSet*>::iterator j = processor.getClusters().begin();
                  j != processor.getClusters().end();
                  j++)
             {
+              // This computation should be done in odometry frame.
               std_msgs::Point other_loc = (*j)->center();
               float other_dist = sqrt( pow(sf_iter->loc_.x - other_loc.x, 2.0) + pow(sf_iter->loc_.y - other_loc.y, 2.0) );
               
@@ -194,8 +201,10 @@ public:
         }
         else
         {
-          closest = saved_features_.insert(saved_features_.end(), SavedFeature(scan_, loc, f, rand()%255, rand()%255, rand()%255));
+          closest = saved_features_.insert(saved_features_.end(), SavedFeature(feature_id_++, scan_, loc, f, rand()%255, rand()%255, rand()%255));
         }
+
+        printf("%d ", closest->id_);
 
         (*i)->appendToCloud(cloud_, closest->color_[0], closest->color_[1], closest->color_[2]);
       
@@ -214,7 +223,7 @@ public:
         publish("person_measurement", pos);
       }
     }
-
+    printf("\n\n");
 
     cloud_.header = scan_.header;
 

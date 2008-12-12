@@ -173,7 +173,7 @@ public:
     cvSet( var_type, cvScalarAll(CV_VAR_ORDERED));
     cvSetReal1D( var_type, feat_count_, CV_VAR_CATEGORICAL );
     
-    float priors[] = {1.0, 1.0};
+    float priors[] = {1.0, 2.0};
     
     CvRTParams fparam(5,10,0,false,20,priors,false,5,100,0.001f,CV_TERMCRIT_ITER);
     fparam.term_crit = cvTermCriteria(CV_TERMCRIT_ITER, 100, 0.1);
