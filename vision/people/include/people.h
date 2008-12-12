@@ -50,9 +50,9 @@
 #include "CvStereoCamModel.h"
 
 // Thresholds for the face detection algorithm
-#define FACE_SIZE_MIN_MM 100
-#define FACE_SIZE_MAX_MM 500
-#define MAX_Z_MM 10000
+#define FACE_SIZE_MIN_M .1
+#define FACE_SIZE_MAX_M .5
+#define MAX_Z_M 10
 
 using namespace std;
 
@@ -67,7 +67,7 @@ struct Person {
   CvRect face_bbox_2d;
   IplImage *face_mask_2d;
   CvScalar face_center_3d;
-  int id;
+  std::string id;
   string name;
 };
 
@@ -98,6 +98,9 @@ class People
 
   // Set a person's position.
   void setFaceCenter3D(double cx, double cy, double cz, int iperson);
+  
+  // Find the closest person within a certain face distance in 3D.
+  int findPersonFaceLTDist3D(double dist, double cx, double cy, double cz);
 
   // Takes in a rectangle center and size and outputs the four corners in the order (TL; TR; BL; BR)
   void centerSizeToFourCorners( CvMat *centers, CvMat *sizes, CvMat *four_corners);
@@ -109,10 +112,13 @@ class People
   void recognizePerson(){}
 
   // Set a person's id
-  void setID(int id, int iperson);
+  void setID(std::string id, int iperson);
 
   // Get a person's id
-  int getID(int iperson);
+  std::string getID(int iperson);
+  
+  // Find the first person with a given id.
+  int findID(std::string id);
 
   // Make a histogram into an image.
   IplImage* faceHist2Im(int iperson);
@@ -138,7 +144,7 @@ class People
   void track(){}
 
   // Track a face based on the face colour histogram.
-  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_mm, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
+  bool track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople,  int* which_people, CvMat* start_points, CvMat* end_points);
 
  ////////////////////
  private:
