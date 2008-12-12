@@ -1,18 +1,5 @@
 <?xml version="1.0"?>
-<robot name="pr2"
-       xmlns:xi="http://www.w3.org/2001/XInclude"
-       xmlns:gazebo="http://playerstage.sourceforge.net/gazebo/xmlschema/#gz"
-       xmlns:model="http://playerstage.sourceforge.net/gazebo/xmlschema/#model"
-       xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
-       xmlns:body="http://playerstage.sourceforge.net/gazebo/xmlschema/#body"
-       xmlns:geom="http://playerstage.sourceforge.net/gazebo/xmlschema/#geom"
-       xmlns:joint="http://playerstage.sourceforge.net/gazebo/xmlschema/#joint"
-       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
-       xmlns:rendering="http://playerstage.sourceforge.net/gazebo/xmlschema/#rendering"
-       xmlns:renderable="http://playerstage.sourceforge.net/gazebo/xmlschema/#renderable"
-       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
-       xmlns:physics="http://playerstage.sourceforge.net/gazebo/xmlschema/#physics">
-
+<robot name="pr2">
 
   <!-- declare the path where all models/textures/materials are stored -->
   <resource location="ros-pkg://wg_robot_description/models/pr2"/>
