@@ -84,8 +84,8 @@
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_${name}_ray">
           <sensor:ray name="${name}">
-            <rayCount>683</rayCount>
-            <rangeCount>683</rangeCount>
+            <rayCount>640</rayCount>
+            <rangeCount>640</rangeCount>
             <laserCount>1</laserCount>
 
             <origin>0.0 0.0 0.0</origin>

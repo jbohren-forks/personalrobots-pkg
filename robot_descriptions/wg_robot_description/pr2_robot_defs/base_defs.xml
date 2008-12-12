@@ -205,8 +205,8 @@
       <map name="sensor" flag="gazebo">
         <verbatim key="sensor_base_laser_ray">
           <sensor:ray name="base_laser">
-            <rayCount>683</rayCount>
-            <rangeCount>683</rangeCount>
+            <rayCount>640</rayCount>
+            <rangeCount>640</rangeCount>
             <laserCount>1</laserCount>
             <origin>0.0 0.0 0.17</origin> <!-- FIXME: for verbatim, adjust this number according to base_laser_center_box_center_offset_z -->
             <displayRays>false</displayRays>
