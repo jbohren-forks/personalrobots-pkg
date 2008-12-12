@@ -134,7 +134,7 @@ public:
     uvd_ = cvCreateMat(1,3,CV_32FC1);
     xyz_ = cvCreateMat(1,3,CV_32FC1);
 
-    advertise<robot_msgs::PositionMeasurement>("/track_starter_gui/position_measurement",1);
+    advertise<robot_msgs::PositionMeasurement>("person_measurement",1);
     std::list<std::string> left_list;
     left_list.push_back(std::string("dcam/left/image_rect_color"));
     left_list.push_back(std::string("dcam/left/image_rect"));    
@@ -142,7 +142,7 @@ public:
     sync_.subscribe("dcam/disparity",dimage_,1);
     sync_.subscribe("dcam/stereo_info", stinfo_,1);
     sync_.subscribe("dcam/right/cam_info",rcinfo_,1);
-    subscribe("track_starter_gui/position_measurement",pos,&TrackStarterGUI::point_cb,1);
+    subscribe("person_measurement",pos,&TrackStarterGUI::point_cb,1);
     
   }
 
@@ -152,12 +152,13 @@ public:
     cvDestroyWindow("Track Starter: Left Image");
     cvDestroyWindow("Track Starter: Disparity");
     
-    cvReleaseImage(&cv_disp_image_out_);
-    cvReleaseMat(&uvd_);
-    cvReleaseMat(&xyz_);
+    cvReleaseImage(&cv_disp_image_out_); cv_disp_image_out_ = 0;
+    cvReleaseMat(&uvd_); uvd_ = 0;
+    cvReleaseMat(&xyz_); xyz_ = 0;
 
     if (cam_model_) {
       delete cam_model_;
+      cam_model_ = 0;
     }
   }
 
@@ -268,7 +269,7 @@ public:
 	  pm.header.frame_id = "stereo_link";
 	  pm.reliability = 1;
 	  pm.initialization = 1;
-	  publish("track_starter_gui/position_measurement",pm);
+	  publish("person_measurement",pm);
 	  gxys[i].published = true;
 	}	
       }
