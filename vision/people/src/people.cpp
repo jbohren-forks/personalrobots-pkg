@@ -163,13 +163,23 @@ static CvRect center_size_to_rect_2d( CvScalar center, CvScalar size) {
 
 
 // Set a person's id
-void People::setID(int id, int iperson){
+void People::setID(std::string id, int iperson){
   list_[iperson].id = id;
 }
 
 // Get a person's id
-int People::getID(int iperson){
+std::string People::getID(int iperson){
   return list_[iperson].id;
+}
+
+// Get the index of a person with a given id.
+int People::findID(std::string id) {
+  for (uint i=0; i<list_.size(); i++) {
+    if (list_[i].id == id) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 // Return the face size in 3D
@@ -233,6 +243,19 @@ void People::setFaceCenter3D(double cx, double cy, double cz, int iperson) {
   list_[iperson].face_center_3d = cvScalar(cx,cy,cz);
 }
 
+// Find the closest person with a face within a certain distance in 3D.
+int People::findPersonFaceLTDist3D(double dist, double cx, double cy, double cz){
+  double mindist = dist;
+  int person = -1;
+  for (uint iperson = 0; iperson < list_.size(); iperson++) {
+    double tdist = pow(cx-list_[iperson].face_center_3d.val[0],2.0)+pow(cy-list_[iperson].face_center_3d.val[1],2.0) + pow(cz-list_[iperson].face_center_3d.val[2],2.0);
+    if (tdist <= mindist) {
+      mindist = dist;
+      person = iperson;
+    }
+  }
+  return person;    
+}
 
 
 // Make a histogram into an image. 
@@ -329,9 +352,9 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
       avg_disp /= (double)good_pix; // Take the average.
 
       // If the disparity exists but the size is out of bounds, mark it red on the image and don't add it to the output vector.
-      if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_MM) {
+      if (avg_disp > 0 && cam_model->getZ(avg_disp) < MAX_Z_M) {
 	real_size = cam_model->getDeltaX(one_face.width,avg_disp);
-	if (real_size < FACE_SIZE_MIN_MM || real_size > FACE_SIZE_MAX_MM) {
+	if (real_size < FACE_SIZE_MIN_M || real_size > FACE_SIZE_MAX_M) {
 	  color = cvScalar(0,0,255);
 	  good_face = false;
 	}
@@ -373,7 +396,7 @@ vector<CvRect> People::detectAllFaces(IplImage *image, const char* haar_classifi
  *   end_points: List of the new face centers. Does *not* update the face centers of the people without further intervention. Assumes the endpoint array is allocated.
  *   Side effect: can update the person's colour histogram.
  *********************************************/
-bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_mm, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
+bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *disparity_image, CvStereoCamModel *cam_model, double kernel_radius_m, int npeople, int* t_which_people, CvMat* start_points, CvMat* end_points) {
  
 #if __PEOPLE_DEBUG__
   printf("in tracker\n");
@@ -589,7 +612,7 @@ bool People::track_color_3d_bhattacharya(const IplImage *image, IplImage *dispar
     int cp[3], u1, u2, v1, v2;
     float *xptr, *yptr, *zptr, *nptr;
     uchar *rptr, *gptr;
-    double kernel_mult = kernel_radius_mm / t_person->face_size_3d;//4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
+    double kernel_mult = kernel_radius_m / t_person->face_size_3d;//4.0; // Magical kernel size multiplier. Kernel size is kernel_mult * t_person->face_size_3d. (3d face size is the radius of the face, *not* the diameter.)
     double denom;
 
     // Compute the Bhattacharya coeff of the start hist vs the true face hist.
