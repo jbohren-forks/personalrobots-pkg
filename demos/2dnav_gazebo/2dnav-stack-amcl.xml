@@ -36,7 +36,11 @@
     <node pkg="wavefront_player" type="wavefront_player" args="scan:=base_scan" respawn="false" output="screen" />
     -->
 
+    <!-- filter out veil effect from range scans -->
+    <node pkg="scan_shadows_filter" type="scan_shadows_filter_node" respawn="false" output="screen" />
+
     <!-- move_base_sbpl settings -->
+    <!-- for the moment use e.g.: ./shparam set move_base/plannerType string ADPlanner -->
     <param name="move_base/environmentList" value="2D,3DKIN"/> <!-- future extension -->
     <param name="move_base/plannerList" value="ADPlanner,ARAPlanner"/> <!-- future extension -->
     <param name="move_base/plannerType" value="ARAPlanner"/>
@@ -55,6 +59,13 @@
     <param name="/costmap_2d/inscribed_radius" value="0.325"/>
     <param name="/costmap_2d/weight" value="0.1"/>
     <param name="/costmap_2d/dynamic_obstacle_window" type="double" value="5.0"/> <!-- is this still needed? -->
+    <!-- Forces a check that we are receiving base scans that are correctly up to date at a rate of at least 5 Hz -->
+    <!-- due to sim time wall clock time difference, use .5Hz for now until rostime is organized -->
+    <param name="/costmap_2d/base_laser_update_rate" value="0.5"/>
+    <!-- Setting these parameters to 0.0 disables the watchdo on them. For stage this is required since we are not getting any data -->
+    <param name="/costmap_2d/tilt_laser_update_rate" value="0.0"/>
+    <param name="/costmap_2d/stereo_update_rate" value="0.0"/>
+    <!-- start node to move base -->
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
     <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
