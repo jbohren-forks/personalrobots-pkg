@@ -29,6 +29,7 @@
 
 #include "filters/median.h"
 #include <cstring>
+#include <stdio.h>
 
 /*
  * Algorithm from N. Wirth's book, implementation by N. Devillard.
@@ -96,7 +97,7 @@ bool MedianFilter::update(double * data)
   return update (data, data);
 }
 
-bool MedianFilter::update(const double* data_in, double* data_out)
+bool MedianFilter::update(double const* const data_in, double* data_out)
 {
   //update active row
   if (last_updated_row_ >= number_of_observations_ - 1)
@@ -126,11 +127,15 @@ bool MedianFilter::update(const double* data_in, double* data_out)
   //Return each value
   for (uint32_t i = 0; i < number_of_observations_; i++)
   {
+    printf("values: ");
     for (uint32_t row = 0; row < length; row ++)
     {
       temp_storage_[row] = data_storage_[i + row * elements_per_observation_];
+      printf("%f, ", temp_storage_[row]);
     }
     data_out[i] = median(temp_storage_, length);
+    printf("NET: %f\n", data_out[i]);
+    
   }    
   
   return true;

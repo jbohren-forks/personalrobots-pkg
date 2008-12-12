@@ -42,12 +42,12 @@ public:
   /** \brief Update filter mutating data in place
    * This will overwrite the results on top of the input
    */
-  virtual bool update(T data)=0;
+  virtual bool update(T* data)=0;
 
 
   /** \brief Update the filter and return the data seperately
    */
-  virtual bool update(const T data_in, T data_out)=0;
+  virtual bool update(const T* const data_in, T* data_out)=0;
 
 };
 
