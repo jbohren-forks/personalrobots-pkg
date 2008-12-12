@@ -89,14 +89,6 @@ class Transformer;
  * MessageNotifier spins up a single thread to call your callback from, so that it's possible to do a lot of work in your callback
  * without blocking the rest of the application.
  *
- * \section linking_boost LINKING BOOST
- * MessageNotifier uses boost::thread.  Since MessageNotifier is entirely implemented in a header (because it is templated),
- * you must link against boost thread.  An example of doing so in CMake:
- \verbatim
- find_package(Boost 0 REQUIRED COMPONENTS thread)
- include_directories(${Boost_INCLUDE_DIRS})
- link_directories(${Boost_LIBRARY_DIRS})
- target_link_libraries(tf ${Boost_LIBRARIES})
  \endverbatim
  */
 template<class Message>
