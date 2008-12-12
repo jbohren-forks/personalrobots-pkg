@@ -31,6 +31,7 @@
 #include <sys/time.h>
 
 #include "filters/median.h"
+#include "filters/mean.h"
 
 void seed_rand()
 {
@@ -93,6 +94,47 @@ TEST(MedianFilter, ThreeRows)
   
 }
 
+TEST(MeanFilter, ConfirmIdentityNRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  MeanFilter filter(rows,length);
+  double input1[] = {1,2,3,4,5};
+  double input1a[] = {1,2,3,4,5};
+
+  for (uint32_t i =0; i < rows*10; i++)
+  {
+    filter.update(input1, input1a);
+    
+    for (int i = 1; i < length; i++)
+    {
+      EXPECT_NEAR(input1[i], input1a[i], epsilon);
+    }
+  }
+}
+
+TEST(MeanFilter, ThreeRows)
+{
+  double epsilon = 1e-6;
+  int length = 5;
+  int rows = 5;
+  MeanFilter filter(rows,length);
+  double input1[] = {0,1,2,3,4};
+  double input2[] = {1,2,3,4,5};
+  double input3[] = {2,3,4,5,6};
+  double input1a[] = {1,2,3,4,5};
+
+  filter.update(input1, input1a);
+  filter.update(input2, input1a);
+  filter.update(input3, input1a);
+  
+  for (int i = 1; i < length; i++)
+  {
+    EXPECT_NEAR(input2[i], input1a[i], epsilon);
+  }
+  
+}
 
 
 int main(int argc, char **argv){
