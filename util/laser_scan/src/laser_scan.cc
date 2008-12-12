@@ -72,7 +72,8 @@ namespace laser_scan{
     unsigned int count = 0;
     for (unsigned int index = 0; index< scan_in.get_ranges_size(); index++)
     {
-      if (!preservative){ //Default behaviour will throw out invalid data
+      if (!preservative) //Default behaviour will throw out invalid data
+      {
         if ((matPointer[index] < range_cutoff) &&
             (matPointer[index] > scan_in.range_min)) //only valid
         {
@@ -89,7 +90,8 @@ namespace laser_scan{
           count++;
         }
       }
-      else { //Keep all points
+      else //Keep all points
+      {
         cloud_out.pts[count].x = outputMat[index];
         cloud_out.pts[count].y = outputMat[index + scan_in.get_ranges_size()];
         cloud_out.pts[count].z = 0.0;
@@ -108,8 +110,15 @@ namespace laser_scan{
 
     //downsize if necessary
     cloud_out.set_pts_size(count);
-    cloud_out.chan[0].set_vals_size(count);
-    cloud_out.chan[1].set_vals_size(count);
+    if (count == 0)
+    {
+      cloud_out.chan.resize(0);
+    }
+    else
+    {
+      cloud_out.chan[0].set_vals_size(count);
+      cloud_out.chan[1].set_vals_size(count);
+    }
  
   };
 
