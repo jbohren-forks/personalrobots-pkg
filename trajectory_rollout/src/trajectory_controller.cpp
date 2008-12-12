@@ -281,7 +281,7 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
   double max_vel_x, max_vel_theta;
   double min_vel_x, min_vel_theta;
 
-  max_vel_x = min(0.55, vx + acc_x * sim_time_);
+  max_vel_x = min(0.5, vx + acc_x * sim_time_);
   min_vel_x = max(0.1, vx - acc_x * sim_time_);
 
   std::vector<double> y_vels(4);
@@ -483,24 +483,18 @@ Trajectory TrajectoryController::createTrajectories(double x, double y, double t
     return *best_traj;
   }
 
-  //and finally we want to generate trajectories that move backwards slowly
-  //vtheta_samp = min_vel_theta;
-  /*
+  //and finally, if we can't do anything else, we want to generate trajectories that move backwards slowly
   vtheta_samp = 0.0;
   vx_samp = -0.1;
   vy_samp = 0.0;
-  for(int i = 0; i < samples_per_dim_; ++i){
-    generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
+  generateTrajectory(x, y, theta, vx, vy, vtheta, vx_samp, vy_samp, vtheta_samp, acc_x, acc_y, acc_theta, impossible_cost, *comp_traj);
 
-    //if the new trajectory is better... let's take it
-    if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
-      swap = best_traj;
-      best_traj = comp_traj;
-      comp_traj = swap;
-    }
-    //vtheta_samp += dvtheta;
+  //if the new trajectory is better... let's take it
+  if(comp_traj->cost_ >= 0 && (comp_traj->cost_ < best_traj->cost_ || best_traj->cost_ < 0)){
+	  swap = best_traj;
+	  best_traj = comp_traj;
+	  comp_traj = swap;
   }
-  */
 
   strafe_left = false;
   strafe_right = false;
