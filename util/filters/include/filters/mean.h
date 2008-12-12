@@ -31,13 +31,16 @@
 #define FILTERS_MEAN_H_
 
 #include <stdint.h>
+#include <cstring>
+#include <stdio.h>
 
 #include "filters/filter_base.h"
 
 /** \brief A median filter which works on double arrays.
  * 
  */
-class MeanFilter: public FilterBase <double>
+template <typename T>
+class MeanFilter: public FilterBase <T>
 {
 public:
   /** \brief Construct the filter with the expected width and height */
@@ -51,17 +54,17 @@ public:
    * This will overwrite the results on top of the input
    * \param data This must be an array which is elements_per_observation long
    */
-  virtual bool update(double * data);
+  virtual bool update(T * data);
 
 
   /** \brief Update the filter and return the data seperately
-   * \param data_in double array with length elements_per_observation
-   * \param data_out double array with length elements_per_observation
+   * \param data_in T array with length elements_per_observation
+   * \param data_out T array with length elements_per_observation
    */
-  virtual bool update(double const * const data_in, double* data_out);
+  virtual bool update(T const * const data_in, T* data_out);
   
 protected:
-  double * data_storage_;                       ///< Storage for data between updates
+  T * data_storage_;                       ///< Storage for data between updates
   uint32_t last_updated_row_;                   ///< The last row to have been updated by the filter
   uint32_t iterations_;                         ///< Number of iterations up to number of observations
 
@@ -69,6 +72,71 @@ protected:
   uint32_t elements_per_observation_;           ///< Number of elements per observation
 
 };
+
+
+template <typename T>
+MeanFilter<T>::MeanFilter(uint32_t number_of_observations, uint32_t elements_per_observation):
+  last_updated_row_(number_of_observations),
+  iterations_(0),
+  number_of_observations_(number_of_observations),
+  elements_per_observation_(elements_per_observation)
+{
+  data_storage_ = new T[number_of_observations_ * elements_per_observation];
+}
+
+template <typename T>
+MeanFilter<T>::~MeanFilter()
+{
+  delete [] data_storage_;
+}
+
+template <typename T>
+bool MeanFilter<T>::update(T * data)
+{
+  return update (data, data);
+}
+
+template <typename T>
+bool MeanFilter<T>::update(T const* const data_in, T* data_out)
+{
+  //update active row
+  if (last_updated_row_ >= number_of_observations_ - 1)
+    last_updated_row_ = 0;
+  else 
+    last_updated_row_++;
+
+  //copy incoming data into perminant storage
+  memcpy(&data_storage_[elements_per_observation_ * last_updated_row_],
+         data_in, 
+         sizeof(T) * elements_per_observation_);
+  
+  //Return values
+  
+  //keep track of number of rows used while starting up
+  uint32_t length;
+  if (iterations_ < number_of_observations_ )
+  {
+    iterations_++;
+    length = iterations_;
+  }
+  else //all rows are allocated
+  {
+    length = number_of_observations_;
+  }
+
+  //Return each value
+  for (uint32_t i = 0; i < elements_per_observation_; i++)
+  {
+    data_out[i] = 0;
+    for (uint32_t row = 0; row < length; row ++)
+    {
+      data_out[i] += data_storage_[i + row * elements_per_observation_];
+    }
+    data_out[i] /= length;
+  }    
+  
+  return true;
+}
 
 
 
