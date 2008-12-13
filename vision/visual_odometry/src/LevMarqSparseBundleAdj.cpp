@@ -45,9 +45,13 @@
 #include "PointTracks.h"
 #include "boost/foreach.hpp"
 
+// eigen2
+#include <Eigen/Cholesky>
+
 //#define DEBUG2 1
 
 //#define DEBUG 1
+#undef DEBUG
 
 #define CHECKTIMING 1
 
@@ -425,7 +429,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("point %d: [%f, %f, %f]\n", p->id_, px, py, pz);
 #endif
 
-      TIMERSTART2(SBADerivatives);
+//      TIMERSTART2(SBADerivatives);
       // - Compute derivatives.  For each camera c on track p.
       //   {
       BOOST_FOREACH( PointTrackObserv* obsv, *p) {
@@ -698,7 +702,7 @@ bool LevMarqSparseBundleAdj::optimize(
           Hpp_inv[i*NUM_POINT_PARAMS +1] * bp[1] + Hpp_inv[i*NUM_POINT_PARAMS +2]*bp[2];
       }
 //      TIMEREND2(SBADerivativesHppInv);
-      TIMEREND2(SBADerivatives);
+//      TIMEREND2(SBADerivatives);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_B before Outer Product of Tracks\n");
@@ -706,7 +710,7 @@ bool LevMarqSparseBundleAdj::optimize(
       printf("bp=[%f, %f, %f]\n", bp[0], bp[1], bp[2]);
       printf("tp=[%f, %f, %f]\n", tp[0], tp[1], tp[2]);
 #endif
-      TIMERSTART2(SBAOuterProdOfTrack);
+//      TIMERSTART2(SBAOuterProdOfTrack);
 
       // (Outer product of track) For each free camera c on track p
       for (PointTrack::iterator iObsv=p->begin(); iObsv!=p->end(); iObsv++) {
@@ -823,7 +827,7 @@ bool LevMarqSparseBundleAdj::optimize(
 #endif
         }
       } // (Outer product of track)
-      TIMEREND2(SBAOuterProdOfTrack);
+//      TIMEREND2(SBAOuterProdOfTrack);
 
 #if DEBUG2==1
       printf("[LevMarqSBA] mat_A after Outer Product of Tracks\n");
@@ -841,20 +845,30 @@ bool LevMarqSparseBundleAdj::optimize(
     // (Instead we use SVD for symmetric square matrix
 
     // fill out of lower left part of the matrix
-    TIMERSTART2(SBALinearSolving);
+//    TIMERSTART2(SBALinearSolving);
     cvCompleteSymm(&mat_A_, 0);
+    TIMERSTART2(SBALinearSolving);
+#if 1
     cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
-#if DEBUG2==1
-    printf("[LevMarqSBA]: cvSolve\n");
-    printf("[LevMarqSBA]: matrix A:\n");
-    CvMatUtils::printMat(&mat_A_);
-    printf("[LevMarqSBA]: matrix B:\n");
-    CvMatUtils::printMat(&mat_B_);
-    printf("[LevMarqSBA]: matrix dC:\n");
-    CvMatUtils::printMat(&mat_dC_);
+#else
+    {
+      Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
+      Eigen::VectorXd B0(mat_B_.rows);
+      Eigen::VectorXd C0;
+      for (int j=0; j<A0.cols(); j++) {
+        for (int i=0; j<A0.rows(); j++) {
+          A0(i, j) = cvmGet(&mat_A_, i, j);
+        }
+      }
+      for (int i=0; i<B0.size(); i++) {
+        B0(i) = cvmGet(&mat_B_, i, 0);
+      }
+      A0.llt().solve(B0, &C0);
+      for (int i=0; i<C0.size(); i++) {
+        cvmSet(&mat_dC_, i, 0, C0(i));
+      }
+    }
 #endif
-
-
     // update camera parameters with mat_dC
     cvAdd(&mat_C_, &mat_dC_, &mat_C_);
     TIMEREND2(SBALinearSolving);

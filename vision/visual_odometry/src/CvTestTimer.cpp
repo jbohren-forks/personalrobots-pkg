@@ -35,7 +35,7 @@ void CvTestTimer::printStat(const char* title, int64 val, int64 count) {
 }
 
 void CvTestTimer::printStatSBA(const char* title, int64 val, int64 count) {
-  fprintf(stdout, "%s: %10.2f, %6.2f%%, %10.2f, %10.2f, %12.2f%%\n",
+  fprintf(stdout, "%s: %11.3f, %7.3f%%, %11.3f, %11.3f, %13.3f%%\n",
       title,
       // average time
       (mNumIters>0&&mFrequency>0)?((double)val/(double)mNumIters/(double)mFrequency):0.0,

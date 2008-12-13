@@ -670,12 +670,34 @@ bool CvTest3DPoseEstimate::testVideo4() {
   return status;
 }
 
+static void generateRandomCartesian3DPoints(const string& data_path) {
+  double points[260*3];
+  CvMat threeDPoints = cvMat(260, 3, CV_64FC1, points);
+  CvRNG rng_state = cvRNG(0xffffffff);
+
+  CvMat values;
+  cvReshape(&threeDPoints, &values, 3, 0);
+  cvRandArr(&rng_state, &values, CV_RAND_UNI,
+      cvScalar(-5,-5,2,0), // inclusive lower bound
+      cvScalar(5,5,32,0) // exclusive upper bound
+  );
+
+  string file_path = data_path+string("randomPoints.xml");
+  cvSave(file_path.c_str(), &threeDPoints, "randomPoitns", "random 3d points");
+}
+
 bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_points) {
   bool status = true;
+
+#if 0 // set it to 1 to generate a set of random 3d points
+  generateRandomCartesian3DPoints(input_data_path_);
+
+#endif
 
   // rows of 3d points in Cartesian space
   string point_file(input_data_path_);
   point_file.append("cartesianPoints.xml");
+//  point_file.append("randomPoints.xml");
   CvMat *points = (CvMat *)cvLoad(point_file.c_str());
   // rows of euler angle and shift
   string frames_file(input_data_path_);
@@ -754,7 +776,7 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
 
   int full_free_window_size  = 5;
   int full_fixed_window_size = 5;
-  int max_num_iters = 5;
+  int max_num_iters = 500;
   double epsilon = DBL_EPSILON;
 //  epsilon = FLT_EPSILON;
 //  epsilon = LDBL_EPSILON;
@@ -769,92 +791,115 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
   vector<FramePose*> fixed_frames;
 
   // the fixed windows
-  fixed_frames.push_back(frame_poses[0]);
-  fixed_frames.push_back(frame_poses[1]);
-  fixed_frames.push_back(frame_poses[2]);
-  fixed_frames.push_back(frame_poses[3]);
-  fixed_frames.push_back(frame_poses[4]);
-
+  int fi=0;
+  for (fi=0; fi<full_fixed_window_size; fi++) {
+    fixed_frames.push_back(frame_poses[fi]);
+  }
   // the free windows
-  free_frames.push_back(frame_poses[5]);
-  free_frames.push_back(frame_poses[6]);
-  free_frames.push_back(frame_poses[7]);
-  free_frames.push_back(frame_poses[8]);
-  free_frames.push_back(frame_poses[9]);
-
-  // disturb the point parameters.
-  if (disturb_points == true) {
-    double disturb_scale = .001;
-    double sigma = disturb_scale/2.0; // ~ 95%
-    int numPoints = tracks.tracks_.size();
-    CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
-    cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
-    int iPoints = 0;
-    BOOST_FOREACH(PointTrack* p, tracks.tracks_) {
-      p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
-      p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
-      p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
-      if (verbose_)
-        printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
-            p->coordinates_.y, p->coordinates_.z);
-      iPoints++;
-    }
-    cvReleaseMat(&xyzsNoised);
-
-    if (verbose_) {
-      printf("Disturbed Points:\n");
-      tracks.print();
-    }
+  for (; fi < frames->rows; fi++) {
+    free_frames.push_back(frame_poses[fi]);
   }
 
-  string output_dir(output_data_path_);
-  tracks.save(output_dir);
-
-  int numFreeFrames = free_frames.size();
-  CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
-  CvMat* frame_params_est   = cvCreateMat(numFreeFrames, 6, CV_64FC1);
-
-  // make a copy of the input params
-  {
-    int iFrames = 0;
-    BOOST_FOREACH(FramePose *fp, free_frames){
-      CvMat rot, transl;
-      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
-      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
-      CvPoint3D64f euler;
-      CvMatUtils::rotMatToEuler(rot, euler);
-      cvmSet(frame_params_input, iFrames, 0, euler.x );
-      cvmSet(frame_params_input, iFrames, 1, euler.y );
-      cvmSet(frame_params_input, iFrames, 2, euler.z );
-      cvmSet(frame_params_input, iFrames, 3, cvmGet(&transl, 0, 0));
-      cvmSet(frame_params_input, iFrames, 4, cvmGet(&transl, 1, 0));
-      cvmSet(frame_params_input, iFrames, 5, cvmGet(&transl, 2, 0));
-      iFrames++;
-    }
-  }
-
-  double transpose_transl_data[3];
-  CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
-
-  if (disturb_frames == true) {
-    // disturb the frame parameters
-    if (verbose_)
-      printf("Disturbed Free Frames\n");
-
-    double disturb_scale = .001;
-    double sigma = disturb_scale/2.0; // ~ 95%
-    CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
-    cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
-    int iFrames = 0;
-    BOOST_FOREACH(FramePose *fp, free_frames){
-      CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
-      for (int i=0; i<6; i++) {
-        rod_shift[i] += cvmGet(xyzsNoised, iFrames, i);
+  int num_tries = 1;
+  for (int k=0; k < num_tries; k++ ) {
+    // disturb the point parameters.
+    if (disturb_points == true) {
+      double disturb_scale = .001;
+      double sigma = disturb_scale/2.0; // ~ 95%
+      int numPoints = tracks.tracks_.size();
+      CvMat* xyzsNoised = cvCreateMat(numPoints, 3, CV_64FC1);
+      cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+      int iPoints = 0;
+      BOOST_FOREACH(PointTrack* p, tracks.tracks_) {
+        p->coordinates_.x += cvmGet(xyzsNoised, iPoints, 0);
+        p->coordinates_.y += cvmGet(xyzsNoised, iPoints, 1);
+        p->coordinates_.z += cvmGet(xyzsNoised, iPoints, 2);
+        if (verbose_)
+          printf("point %3d, [%9.4f, %9.4f, %9.4f]\n", p->id_, p->coordinates_.x,
+              p->coordinates_.y, p->coordinates_.z);
+        iPoints++;
       }
-      // update the transformation matrix of fp
-      CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+      cvReleaseMat(&xyzsNoised);
 
       if (verbose_) {
+        printf("Disturbed Points:\n");
+        tracks.print();
+      }
+    }
+
+    string output_dir(output_data_path_);
+    tracks.save(output_dir);
+
+    int numFreeFrames = free_frames.size();
+    CvMat* frame_params_input = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+    CvMat* frame_params_est   = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+
+    // make a copy of the input params
+    {
+      int iFrames = 0;
+      BOOST_FOREACH(FramePose *fp, free_frames){
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvmSet(frame_params_input, iFrames, 0, euler.x );
+        cvmSet(frame_params_input, iFrames, 1, euler.y );
+        cvmSet(frame_params_input, iFrames, 2, euler.z );
+        cvmSet(frame_params_input, iFrames, 3, cvmGet(&transl, 0, 0));
+        cvmSet(frame_params_input, iFrames, 4, cvmGet(&transl, 1, 0));
+        cvmSet(frame_params_input, iFrames, 5, cvmGet(&transl, 2, 0));
+        iFrames++;
+      }
+    }
+
+    double transpose_transl_data[3];
+    CvMat transpose_transl = cvMat(1, 3, CV_64FC1, transpose_transl_data);
+
+    if (disturb_frames == true) {
+      // disturb the frame parameters
+      if (verbose_)
+        printf("Disturbed Free Frames\n");
+
+      double disturb_scale = .001;
+      double sigma = disturb_scale/2.0; // ~ 95%
+      CvMat* xyzsNoised = cvCreateMat(numFreeFrames, 6, CV_64FC1);
+      cvRandArr( &mRng, xyzsNoised, CV_RAND_NORMAL, cvScalar(0.0), cvScalar(sigma));
+      int iFrames = 0;
+      BOOST_FOREACH(FramePose *fp, free_frames){
+        CvMatUtils::transformToRodriguesAndShift(fp->transf_local_to_global_, mat_rod_shift);
+        for (int i=0; i<6; i++) {
+          rod_shift[i] += cvmGet(xyzsNoised, iFrames, i);
+        }
+        // update the transformation matrix of fp
+        CvMatUtils::transformFromRodriguesAndShift(mat_rod_shift, fp->transf_local_to_global_);
+
+        if (verbose_) {
+          printf("transf of frame: %d\n", fp->mIndex);
+          CvMatUtils::printMat(&fp->transf_local_to_global_);
+          // in Euler angle and translation
+          CvMat rot, transl;
+          cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+          CvPoint3D64f euler;
+          CvMatUtils::rotMatToEuler(rot, euler);
+          cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+          printf("In Euler angle and translation:\n");
+          printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
+          cvTranspose(&transl, &transpose_transl);
+          CvMatUtils::printMat(&transpose_transl, "%9.4f");
+        }
+
+        iFrames++;
+      }
+
+      cvReleaseMat(&xyzsNoised);
+    }
+
+    sba.optimize(&free_frames, &fixed_frames, &tracks);
+
+    if (verbose_) {
+      // print some output
+      BOOST_FOREACH(const FramePose* fp, free_frames) {
         printf("transf of frame: %d\n", fp->mIndex);
         CvMatUtils::printMat(&fp->transf_local_to_global_);
         // in Euler angle and translation
@@ -868,105 +913,84 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
         cvTranspose(&transl, &transpose_transl);
         CvMatUtils::printMat(&transpose_transl, "%9.4f");
       }
-
-      iFrames++;
     }
 
-    cvReleaseMat(&xyzsNoised);
-  }
+    // compare frame params
+    double error_norm_frames;
+    {
+      int iFrames = 0;
+      BOOST_FOREACH(FramePose *fp, free_frames){
+        CvMat rot, transl;
+        cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
+        cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
+        CvPoint3D64f euler;
+        CvMatUtils::rotMatToEuler(rot, euler);
+        cvmSet(frame_params_est, iFrames, 0, euler.x );
+        cvmSet(frame_params_est, iFrames, 1, euler.y );
+        cvmSet(frame_params_est, iFrames, 2, euler.z );
+        cvmSet(frame_params_est, iFrames, 3, cvmGet(&transl, 0, 0));
+        cvmSet(frame_params_est, iFrames, 4, cvmGet(&transl, 1, 0));
+        cvmSet(frame_params_est, iFrames, 5, cvmGet(&transl, 2, 0));
+        iFrames++;
+      }
 
-  sba.optimize(&free_frames, &fixed_frames, &tracks);
+      error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
 
-  if (verbose_) {
-    // print some output
-    BOOST_FOREACH(const FramePose* fp, free_frames) {
-      printf("transf of frame: %d\n", fp->mIndex);
-      CvMatUtils::printMat(&fp->transf_local_to_global_);
-      // in Euler angle and translation
-      CvMat rot, transl;
-      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
-      CvPoint3D64f euler;
-      CvMatUtils::rotMatToEuler(rot, euler);
-      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
-      printf("In Euler angle and translation:\n");
-      printf("Euler angle: [%9.4f, %9.4f, %9.4f]\n", euler.x, euler.y, euler.z);
-      cvTranspose(&transl, &transpose_transl);
-      CvMatUtils::printMat(&transpose_transl, "%9.4f");
-    }
-  }
+      status = status && (error_norm_frames < 1.e-8);
 
-  // compare frame params
-  double error_norm_frames;
-  {
-    int iFrames = 0;
-    BOOST_FOREACH(FramePose *fp, free_frames){
-      CvMat rot, transl;
-      cvGetSubRect(&fp->transf_local_to_global_, &rot, cvRect(0,0,3,3));
-      cvGetSubRect(&fp->transf_local_to_global_, &transl, cvRect(3,0,1,3));
-      CvPoint3D64f euler;
-      CvMatUtils::rotMatToEuler(rot, euler);
-      cvmSet(frame_params_est, iFrames, 0, euler.x );
-      cvmSet(frame_params_est, iFrames, 1, euler.y );
-      cvmSet(frame_params_est, iFrames, 2, euler.z );
-      cvmSet(frame_params_est, iFrames, 3, cvmGet(&transl, 0, 0));
-      cvmSet(frame_params_est, iFrames, 4, cvmGet(&transl, 1, 0));
-      cvmSet(frame_params_est, iFrames, 5, cvmGet(&transl, 2, 0));
-      iFrames++;
     }
 
-    error_norm_frames = cvNorm(frame_params_input, frame_params_est, CV_RELATIVE_L2);
-
-    status = status && (error_norm_frames < 1.e-8);
-
-  }
-
-  CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
-  int iPoints=0;
-  BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
-    if (verbose_) {
-      printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
-          p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+    CvMat* points_est = cvCreateMat(points->rows, points->cols, CV_64FC1);
+    int iPoints=0;
+    BOOST_FOREACH(const PointTrack* p, tracks.tracks_) {
+      if (verbose_) {
+        printf("point %3d, [%17.10f, %17.10f, %17.10f]\n",
+            p->id_, p->coordinates_.x, p->coordinates_.y, p->coordinates_.z);
+      }
+      cvmSet(points_est, iPoints, 0, p->coordinates_.x);
+      cvmSet(points_est, iPoints, 1, p->coordinates_.y);
+      cvmSet(points_est, iPoints, 2, p->coordinates_.z);
+      iPoints++;
     }
-    cvmSet(points_est, iPoints, 0, p->coordinates_.x);
-    cvmSet(points_est, iPoints, 1, p->coordinates_.y);
-    cvmSet(points_est, iPoints, 2, p->coordinates_.z);
-    iPoints++;
-  }
 
-  // compare input points and estimated points.
-  double error_norm_points = cvNorm(points, points_est, CV_RELATIVE_L2);
+    // compare input points and estimated points.
+    double error_norm_points = cvNorm(points, points_est, CV_RELATIVE_L2);
 
-  status = status && (error_norm_points < 1.e-8);
+    status = status && (error_norm_points < 1.e-8);
+
+    if (verbose_ == true) {
+      if (status == true) {
+        printf("testBundleAdj() passed\n");
+      } else {
+        printf("testBundleAdj() failed\n");
+      }
+      printf("Number of good updates: %d\n", sba.num_good_updates_);
+      printf("Number of retractions:  %d\n", sba.num_retractions_);
+
+      printf("Relative L2 Norm of Error vector for frames: %e\n", error_norm_frames);
+      printf("Relative L2 Norm of Error vector for points: %e\n", error_norm_points);
+    }
+
+    // cleanup
+    cvReleaseMat(&frame_params_input);
+    cvReleaseMat(&frame_params_est  );
+    cvReleaseMat(&points_est);
+  } // num_tries
 
   // clean up
-  // remove the points;
+  /// @todo remove the points;
 
   // remove the frames
   BOOST_FOREACH(FramePose* fp, frame_poses) {
     delete fp;
   }
 
-  cvReleaseMat(&frame_params_input);
-  cvReleaseMat(&frame_params_est  );
-  cvReleaseMat(&points_est);
   cvReleaseMat(&global_to_disp);
   cvReleaseMat(&global_to_local);
   cvReleaseMat(&frames);
   cvReleaseMat(&points);
 
   if (verbose_ == true) {
-    if (status == true) {
-      printf("testBundleAdj() passed\n");
-    } else {
-      printf("testBundleAdj() failed\n");
-    }
-    printf("Number of good updates: %d\n", sba.num_good_updates_);
-    printf("Number of retractions:  %d\n", sba.num_retractions_);
-
-    printf("Relative L2 Norm of Error vector for frames: %e\n", error_norm_frames);
-    printf("Relative L2 Norm of Error vector for points: %e\n", error_norm_points);
-
-
     CvTestTimer& timer = CvTestTimer::getTimer();
     timer.mNumIters = 1;
     CvTestTimer::getTimer().printStat();
