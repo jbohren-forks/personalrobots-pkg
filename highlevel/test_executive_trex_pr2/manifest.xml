@@ -4,7 +4,7 @@
  so that dependencies such as simulators don't have to go in the 
  executive_trex_pr2 itself.
  </description>
- <author>Tony Pratkanis</author>
+ <author>Tony Pratkanis, Conor Mcgann and many others</author>
  <license>BSD</license>
  <review status="unreviewed" notes=""/>
  <url>http://pr.willowgarage.com</url>
@@ -17,4 +17,6 @@
  <depend package="nav_view"/>
  <depend package="rosstage"/>
  <depend package="pr2_gazebo"/>
+ <depend package="world_3d_map"/>
+ <depend package="kinematic_planning"/>
 </package>
