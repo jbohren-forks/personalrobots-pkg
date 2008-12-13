@@ -45,10 +45,11 @@ using namespace ros;
 namespace estimation
 {
   // constructor
-  Tracker::Tracker(unsigned int num_particles, const StatePosVel& sysnoise):
+  Tracker::Tracker(unsigned int num_particles, const StatePosVel& sysnoise, const Vector3& measnoise):
     prior_(num_particles),
     filter_(NULL),
     sys_model_(sysnoise),
+    meas_model_(measnoise),
     tracker_initialized_(false),
     num_particles_(num_particles)
   {};
@@ -81,8 +82,8 @@ namespace estimation
 
 
 
-  // update filter
-  void Tracker::update(const Time&  filter_time)
+  // update filter prediction
+  void Tracker::updatePrediction(const Time&  filter_time)
   {
     // calculate dt
     double dt = 0.1;
@@ -94,6 +95,15 @@ namespace estimation
 
 
 
+  // update filter correction
+  void Tracker::updateCorrection(const Vector3&  meas)
+  {
+    // update filter
+    filter_->Update(&meas_model_, meas);
+  };
+
+
+
   // get most recent filter posterior as PositionMeasurement
   void Tracker::getEstimate(robot_msgs::PositionMeasurement& estimate)
   {
@@ -101,9 +111,14 @@ namespace estimation
 
 
   /// Get histogram from certain area
-  Matrix Tracker::getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
+  Matrix Tracker::getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
   {
-    return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogram(min, max, step);
+    return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogramPos(min, max, step);
+  };
+
+  Matrix Tracker::getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const
+  {
+    return ((MCPdfPosVel*)(filter_->PostGet()))->getHistogramVel(min, max, step);
   };
 
 }; // namespace
@@ -116,30 +131,48 @@ using namespace estimation;
 
 int main()
 {
-  StatePosVel prior_mu(Vector3(4,4,4), Vector3(0,0,0));
-  StatePosVel prior_sigma(Vector3(1.5, 0.5, 0.00001), Vector3(0.00001,0.00001,0.00001));
-  StatePosVel sys_sigma(Vector3(0.00001,0.000001,0.00001), Vector3(0.2,0.2,0.00001));
+  StatePosVel prior_mu(Vector3(3, 3, 3), Vector3(0, 0, 0));
+  StatePosVel prior_sigma(Vector3(0.3, 0.3, 0.00001), Vector3(0.00001, 0.00001, 0.00001));
+  StatePosVel sys_sigma(Vector3(0.1, 0.1, 0.00001), Vector3(0.1, 0.1, 0.00001));
+  Vector3 meas_sigma(0.5, 0.5, 1000);
 
 
   cout << "Initializing tracker" << endl;
-  Tracker tracker(5000, sys_sigma);
+  Tracker tracker(5000, sys_sigma, meas_sigma);
   tracker.initialize(prior_mu, prior_sigma, Time());
 
   cout << "Update tracker" << endl;
-  for (unsigned int i=0; i<0; i++){
-    tracker.update(Time());
+  Vector3 meas = prior_mu.pos_;
+  Vector3 move(0.05, 0.0, 0.0);
+  for (unsigned int i=0; i<100; i++){
+    tracker.updatePrediction(Time());
+    tracker.updateCorrection(meas);
+    meas += move;
   }
 
   cout << "Get histogram" << endl;
-  Vector3 min(0,0,0);  Vector3 max(8,8,8); Vector3 step(0.05, 0.05, 0.05);
-  Matrix hist = tracker.getHistogram(min, max, step);
-  cout << hist.rows() << " " << hist.columns() << endl;
-  ofstream file; file.open("test.txt");
-  for (unsigned int i=1; i<= hist.rows(); i++){
-    for (unsigned int j=1; j<= hist.columns(); j++)
-      file << hist(i,j) << " ";
-    file << endl;
+  Vector3 min_pos(0,0,0);  Vector3 max_pos(12,6,8); Vector3 step_pos(0.05, 0.05, 0.05);
+  Matrix hist_pos = tracker.getHistogramPos(min_pos, max_pos, step_pos);
+  cout << hist_pos.rows() << " " << hist_pos.columns() << endl;
+  ofstream file_pos; file_pos.open("pos_hist.txt");
+  for (unsigned int i=1; i<= hist_pos.columns(); i++){
+    for (unsigned int j=1; j<= hist_pos.rows(); j++)
+      file_pos << hist_pos(j,i) << " ";
+    file_pos << endl;
   }
-  file.close();
+  file_pos.close();
+
+  Vector3 min_vel(-2,-2,0);  Vector3 max_vel(2,2,8); Vector3 step_vel(0.05, 0.05, 0.05);
+  Matrix hist_vel = tracker.getHistogramVel(min_vel, max_vel, step_vel);
+  cout << hist_vel.rows() << " " << hist_vel.columns() << endl;
+  ofstream file_vel; file_vel.open("vel_hist.txt");
+  for (unsigned int i=1; i<= hist_vel.columns(); i++){
+    for (unsigned int j=1; j<= hist_vel.rows(); j++)
+      file_vel << hist_vel(j,i) << " ";
+    file_vel << endl;
+  }
+  file_vel.close();
+
+
   return 0;
 }

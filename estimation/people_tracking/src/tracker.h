@@ -40,6 +40,7 @@
 #include "state_pos_vel.h"
 #include "mcpdf_pos_vel.h"
 #include "sysmodel_pos_vel.h"
+#include "measmodel_pos.h"
 
 // TF
 #include <tf/tf.h>
@@ -57,13 +58,14 @@ class Tracker
 {
 public:
   /// constructor
-  Tracker(unsigned int num_particles, const BFL::StatePosVel& sysnoise);
+  Tracker(unsigned int num_particles, const BFL::StatePosVel& sysnoise, const tf::Vector3& measnoise);
 
   /// destructor
   virtual ~Tracker();
 
   /// update tracker
-  void update(const ros::Time& filter_time);
+  void updatePrediction(const ros::Time& filter_time);
+  void updateCorrection(const tf::Vector3& meas);
 
   /// initialize tracker
   void initialize(const BFL::StatePosVel& mu, const BFL::StatePosVel& sigma, const ros::Time& time);
@@ -75,14 +77,15 @@ public:
   void getEstimate(robot_msgs::PositionMeasurement& estimate);
 
   /// Get histogram from certain area
-  MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
-
+  MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
+  MatrixWrapper::Matrix getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
 private:
   // pdf / model / filter
   BFL::MCPdfPosVel                                          prior_;
   BFL::BootstrapFilter<BFL::StatePosVel, tf::Vector3>*      filter_;
   BFL::SysModelPosVel                                       sys_model_;
+  BFL::MeasModelPos                                         meas_model_;
 
   // vars
   bool tracker_initialized_;

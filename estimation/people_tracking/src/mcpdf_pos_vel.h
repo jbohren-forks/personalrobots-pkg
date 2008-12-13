@@ -50,12 +50,19 @@ namespace BFL
       /// Destructor
       virtual ~MCPdfPosVel();
 
-      /// Get histogram from certain area
-      MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
+      /// Get pos histogram from certain area
+      MatrixWrapper::Matrix getHistogramPos(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
+
+      /// Get vel histogram from certain area
+      MatrixWrapper::Matrix getHistogramVel(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step) const;
 
       virtual WeightedSample<StatePosVel> SampleGet(unsigned int particle) const;
       virtual unsigned int numParticlesGet() const;
       virtual MCPdfPosVel* PostGet() {return (MCPdfPosVel*)PostGet();};
+
+    private:
+      /// Get histogram from certain area
+      MatrixWrapper::Matrix getHistogram(const tf::Vector3& min, const tf::Vector3& max, const tf::Vector3& step, bool pos_hist) const;
 
     };
 

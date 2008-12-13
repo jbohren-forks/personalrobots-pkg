@@ -50,8 +50,31 @@
 
   MCPdfPosVel::~MCPdfPosVel(){}
 
+
+  WeightedSample<StatePosVel>
+  MCPdfPosVel::SampleGet(unsigned int particle) const
+  {
+    assert ((int)particle >= 0 && particle < _listOfSamples.size());
+    return _listOfSamples[particle];
+  }
+
+
+  /// Get histogram from pos
+  MatrixWrapper::Matrix MCPdfPosVel::getHistogramPos(const Vector3& m, const Vector3& M, const Vector3& step) const
+  { 
+    return getHistogram(m, M, step, true);
+  }
+
+
+  /// Get histogram from vel
+  MatrixWrapper::Matrix MCPdfPosVel::getHistogramVel(const Vector3& m, const Vector3& M, const Vector3& step) const
+  { 
+    return getHistogram(m, M, step, false);
+  }
+
+
   /// Get histogram from certain area
-  MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step) const
+MatrixWrapper::Matrix MCPdfPosVel::getHistogram(const Vector3& m, const Vector3& M, const Vector3& step, bool pos_hist) const
   {  
     unsigned int num_smaples = _listOfSamples.size();
     unsigned int rows = trunc((M[0]-m[0])/step[0]);
@@ -61,10 +84,14 @@
 
     // calculate histogram
     for (unsigned int i=0; i<num_smaples; i++){
-      Vector3 pos_rel   = _listOfSamples[i].ValueGet().pos_ - m;
+      Vector3 rel;
+      if (pos_hist)
+	rel = _listOfSamples[i].ValueGet().pos_ - m;
+      else
+	rel = _listOfSamples[i].ValueGet().vel_ - m;
 
-      unsigned int r = trunc(pos_rel[0] * rows / M[0]);
-      unsigned int c = trunc(pos_rel[1] * rows / M[1]);
+      unsigned int r = trunc(rel[0] * rows / (M[0] - m[0]));
+      unsigned int c = trunc(rel[1] * cols / (M[1] - m[0]));
       if (r >= 1 && c >= 1 && r <= rows && c <= cols)
 	hist(r,c) += _listOfSamples[i].WeightGet();
     }
@@ -72,13 +99,6 @@
     return hist;
   }
 
-
-  WeightedSample<StatePosVel>
-  MCPdfPosVel::SampleGet(unsigned int particle) const
-  {
-    assert ((int)particle >= 0 && particle < _listOfSamples.size());
-    return _listOfSamples[particle];
-  }
 
 
   unsigned int
