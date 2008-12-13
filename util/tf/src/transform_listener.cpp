@@ -1,10 +1,10 @@
 /*
  * Copyright (c) 2008, Willow Garage, Inc.
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -13,7 +13,7 @@
  *     * Neither the name of the Willow Garage, Inc. nor the names of its
  *       contributors may be used to endorse or promote products derived from
  *       this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -72,8 +72,8 @@ void TransformListener::transformPose(const std::string& target_frame,
   transformPose(target_frame, pin, pout);
   PoseStampedTFToMsg(pout, msg_out);
 }
-void TransformListener::transformQuaternion(const std::string& target_frame, const ros::Time& target_time, 
-    const std_msgs::QuaternionStamped& msg_in, 
+void TransformListener::transformQuaternion(const std::string& target_frame, const ros::Time& target_time,
+    const std_msgs::QuaternionStamped& msg_in,
     const std::string& fixed_frame, std_msgs::QuaternionStamped& msg_out)
 {
   Stamped<Quaternion> pin, pout;
@@ -82,8 +82,8 @@ void TransformListener::transformQuaternion(const std::string& target_frame, con
   QuaternionStampedTFToMsg(pout, msg_out);
 }
 
-void TransformListener::transformVector(const std::string& target_frame, const ros::Time& target_time, 
-    const std_msgs::Vector3Stamped& msg_in, 
+void TransformListener::transformVector(const std::string& target_frame, const ros::Time& target_time,
+    const std_msgs::Vector3Stamped& msg_in,
     const std::string& fixed_frame, std_msgs::Vector3Stamped& msg_out)
 {
   Stamped<Vector3> pin, pout;
@@ -92,8 +92,8 @@ void TransformListener::transformVector(const std::string& target_frame, const r
   Vector3StampedTFToMsg(pout, msg_out);
 }
 
-void TransformListener::transformPoint(const std::string& target_frame, const ros::Time& target_time, 
-    const std_msgs::PointStamped& msg_in, 
+void TransformListener::transformPoint(const std::string& target_frame, const ros::Time& target_time,
+    const std_msgs::PointStamped& msg_in,
     const std::string& fixed_frame, std_msgs::PointStamped& msg_out)
 {
   Stamped<Point> pin, pout;
@@ -102,8 +102,8 @@ void TransformListener::transformPoint(const std::string& target_frame, const ro
   PointStampedTFToMsg(pout, msg_out);
 }
 
-void TransformListener::transformPose(const std::string& target_frame, const ros::Time& target_time, 
-    const std_msgs::PoseStamped& msg_in, 
+void TransformListener::transformPose(const std::string& target_frame, const ros::Time& target_time,
+    const std_msgs::PoseStamped& msg_in,
     const std::string& fixed_frame, std_msgs::PoseStamped& msg_out)
 {
   Stamped<Pose> pin, pout;
@@ -119,14 +119,14 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
 
   transformPointCloud(target_frame, transform, cloudIn.header.stamp, cloudIn, cloudOut);
 }
-void TransformListener::transformPointCloud(const std::string& target_frame, const ros::Time& target_time, 
-    const std_msgs::PointCloud& cloudIn, 
+void TransformListener::transformPointCloud(const std::string& target_frame, const ros::Time& target_time,
+    const std_msgs::PointCloud& cloudIn,
     const std::string& fixed_frame, std_msgs::PointCloud& cloudOut)
 {
   Stamped<Transform> transform;
-  lookupTransform(target_frame, target_time, 
+  lookupTransform(target_frame, target_time,
       cloudIn.header.frame_id, cloudIn.header.stamp,
-      fixed_frame, 
+      fixed_frame,
       transform);
 
   transformPointCloud(target_frame, transform, target_time, cloudIn, cloudOut);
@@ -145,8 +145,8 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
 
   double * matrixPtr = matIn.Store();
 
-  for (unsigned int i = 0; i < length ; i++) 
-  { 
+  for (unsigned int i = 0; i < length ; i++)
+  {
     matrixPtr[i] = cloudIn.pts[i].x;
     matrixPtr[length +i] = cloudIn.pts[i].y;
     matrixPtr[2 * length + i] = cloudIn.pts[i].z;
@@ -159,7 +159,7 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   if (&cloudIn != &cloudOut)
   {
     cloudOut.header = cloudIn.header;
-    cloudOut.set_pts_size(length);  
+    cloudOut.set_pts_size(length);
     cloudOut.set_chan_size(cloudIn.get_chan_size());
     for (unsigned int i = 0 ; i < cloudIn.get_chan_size() ; ++i)
       cloudOut.chan[i] = cloudIn.chan[i];
@@ -170,8 +170,8 @@ void TransformListener::transformPointCloud(const std::string & target_frame, co
   //Override the positions
   cloudOut.header.stamp = target_time;
   cloudOut.header.frame_id = target_frame;
-  for (unsigned int i = 0; i < length ; i++) 
-  { 
+  for (unsigned int i = 0; i < length ; i++)
+  {
     cloudOut.pts[i].x = matrixPtr[i];
     cloudOut.pts[i].y = matrixPtr[1*length + i];
     cloudOut.pts[i].z = matrixPtr[2*length + i];
@@ -187,7 +187,7 @@ void TransformListener::subscription_callback()
   {
     Stamped<Transform> trans;
     TransformStampedMsgToTF(msg_in_.transforms[i], trans);
-    try 
+    try
     {
       setTransform(trans);
     }
@@ -203,3 +203,49 @@ void TransformListener::subscription_callback()
 
 
 };
+
+void TransformListener::receiveArray()
+{
+  for (unsigned int i = 0; i < tfArrayIn.get_eulers_size(); i++)
+  {
+    try{
+      //      setWithEulers(tfArrayIn.eulers[i].header.frame_id, tfArrayIn.eulers[i].parent, tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z, tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll, tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + tfArrayIn.eulers[i].header.stamp.nsec);
+      setTransform(Stamped<Transform>(Transform(Quaternion(tfArrayIn.eulers[i].yaw, tfArrayIn.eulers[i].pitch, tfArrayIn.eulers[i].roll),
+                                                    Vector3(tfArrayIn.eulers[i].x, tfArrayIn.eulers[i].y, tfArrayIn.eulers[i].z)),
+                                        tfArrayIn.eulers[i].header.stamp,
+                                      tfArrayIn.eulers[i].header.frame_id , tfArrayIn.eulers[i].parent) );
+    }
+    catch (tf::TransformException &ex)
+    {
+      std::cerr << "receiveArray: setWithEulers failed with frame_id "<< tfArrayIn.eulers[i].header.frame_id << " parent " << tfArrayIn.eulers[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
+  }
+  //std::cout << "received euler frame: " << tfArrayIn.eulers[i].header.frame_id << " with parent:" << tfArrayIn.eulers[i].parent << "time " << tfArrayIn.eulers[i].header.stamp.sec * 1000000000ULL + eulerIn.header.stamp.nsec << std::endl;
+  for (unsigned int i = 0; i < tfArrayIn.get_dhparams_size(); i++)
+  {
+    std::cerr << "receiveArray: setWithDH failed No longer supported" << std::endl;
+  }
+
+  for (unsigned int i = 0; i < tfArrayIn.get_quaternions_size(); i++)
+  {
+    try{
+      //    setWithQuaternion(tfArrayIn.quaternions[i].header.frame_id, tfArrayIn.quaternions[i].parent, tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt, tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w, tfArrayIn.quaternions[i].header.stamp.sec * 1000000000ULL + tfArrayIn.quaternions[i].header.stamp.nsec);
+      setTransform(Stamped<Transform>(Transform(Quaternion(tfArrayIn.quaternions[i].xr, tfArrayIn.quaternions[i].yr, tfArrayIn.quaternions[i].zr, tfArrayIn.quaternions[i].w),
+                                                Vector3(tfArrayIn.quaternions[i].xt, tfArrayIn.quaternions[i].yt, tfArrayIn.quaternions[i].zt)),
+                                      tfArrayIn.quaternions[i].header.stamp,
+                                      tfArrayIn.quaternions[i].header.frame_id , tfArrayIn.quaternions[i].parent)
+                   );
+    }
+    catch (tf::TransformException &ex)
+    {
+      std::cerr << "receiveArray: setWithQuaternion failed with frame_id "<< tfArrayIn.quaternions[i].header.frame_id << " parent " << tfArrayIn.quaternions[i].parent << std::endl;
+      std::cerr<< ex.what();
+    };
+    //  std::cout << "recieved quaternion frame: " << tfArrayIn.quaternions[i].header.frame_id << " with parent:" << tfArrayIn.quaternions[i].parent << std::endl;
+  }
+  for (unsigned int i = 0; i < tfArrayIn.get_matrices_size(); i++)
+  {
+    std::cerr << "receiveArray: setWithMatrix failed No longer supported" << std::endl;
+  }
+}
