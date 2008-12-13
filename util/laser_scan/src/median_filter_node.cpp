@@ -27,50 +27,37 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "ros/node.h"
+#include "std_msgs/LaserScan.h"
 #include "laser_scan/median_filter.h"
-#include <algorithm>
 
-namespace laser_scan{
-
-LaserMedianFilter::LaserMedianFilter(unsigned int filter_length):
-  filter_length_(filter_length),
-  num_ranges_(1)
+class MedianFilterNode : public ros::node
 {
-  range_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-  intensity_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-};
+public:
+  std_msgs::LaserScan msg;
 
-LaserMedianFilter::~LaserMedianFilter()
-{
-  delete range_filter_;
-  delete intensity_filter_;
-};
 
-bool LaserMedianFilter::update(const std_msgs::LaserScan& scan_in, std_msgs::LaserScan& scan_out)
-{
-  data_lock.lock();
-  scan_out = scan_in; ///Quickly pass through all data \todo don't copy data too
-
-  if (scan_in.get_ranges_size() != num_ranges_) //Reallocating
+  MedianFilterNode() : ros::node("median_filter_node"), filter(5)
   {
-    ROS_INFO("Median filter clearning and reallocating due to larger scan size");
-    delete range_filter_;
-    delete intensity_filter_;
-
-
-    num_ranges_ = scan_in.get_ranges_size();
-    range_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-    intensity_filter_ = new MedianFilter<float>(filter_length_, num_ranges_);
-    
+    advertise<std_msgs::LaserScan>("~output", 1000);
+    subscribe("scan_in", msg, &MedianFilterNode::callback, 3);
+  }
+  void callback()
+  {
+    filter.update (msg, msg);
+    publish("~output", msg);
   }
 
-  /** \todo check for length of intensities too */
-  range_filter_->update(&scan_in.ranges[0], &scan_out.ranges[0]);
-  intensity_filter_->update(&scan_in.intensities[0], &scan_out.intensities[0]);
+protected:
+  laser_scan::LaserMedianFilter filter;
+};
 
-
-  data_lock.unlock();
-  return true;
+int main(int argc, char **argv)
+{
+  ros::init(argc, argv);
+  MedianFilterNode t;
+  t.spin();
+  ros::fini();
+  return 0;
 }
 
-}

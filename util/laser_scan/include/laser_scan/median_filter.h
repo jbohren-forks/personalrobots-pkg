@@ -34,19 +34,9 @@
 #include <iostream>
 #include <sstream>
 
-#include <newmat10/newmat.h>
-#include <newmat10/newmatio.h>
-#include <newmat10/newmatap.h>
-
-#include "rosthread/mutex.h"
 #include "std_msgs/LaserScan.h"
 
-/* \mainpage 
- * This is a class for laser scan utilities.  
- * \todo The first goal will be to project laser scans into point clouds efficiently.  
- * The second goal is to provide median filtering.  
- * \todo Other potential additions are upsampling and downsampling algorithms for the scans.
- */
+#include "filters/median.h"
 
 namespace laser_scan{
 
@@ -54,33 +44,27 @@ namespace laser_scan{
 class LaserMedianFilter
 {
 public:
-  enum MedianMode_t { MEDIAN_TRAILING, MEDIAN_DOWNSAMPLE};
-      
   /** \brief Constructor
    * \param averaging_length How many scans to average over.
-   * \param num_ranges Whether to downsample and return or compute a rolling median over the last n scans
-   * \param mode What mode to operate in Trailing or Downsampling (Effectively changes returning true every time or every 3)
    */
-  LaserMedianFilter(unsigned int averaging_length, MedianMode_t mode = MEDIAN_DOWNSAMPLE);
-  /** \brief Add a scan to the filter
+  LaserMedianFilter(unsigned int averaging_length);
+  ~LaserMedianFilter();
+  /** \brief Update the filter and get the response
    * \param scan_in The new scan to filter
-   * return whether there is a new output to get */
-  bool addScan(const std_msgs::LaserScan& scan_in);
-  /** \brief get the Filtered results
-   * \param scan_result The scan to fill with the median results */
-  void getMedian(std_msgs::LaserScan& scan_result);
+   * \param scan_out The filtered scan
+   */
+  bool update(const std_msgs::LaserScan& scan_in, std_msgs::LaserScan& scan_out);
       
       
 private:
-  unsigned int current_packet_num_; ///The number of scans recieved
-  NEWMAT::Matrix range_data_; ///Storage for range_data
-  NEWMAT::Matrix intensity_data_; ///Storage for intensity data
   unsigned int filter_length_; ///How many scans to average over
   unsigned int num_ranges_; /// How many data point are in each row
-  MedianMode_t mode_; ///Whether to return true every time or once every 3
       
   ros::thread::mutex data_lock; /// Protection from multi threaded programs
   std_msgs::LaserScan temp_scan_; /** \todo cache only shallow info not full scan */
+
+  MedianFilter<float> * range_filter_;
+  MedianFilter<float> * intensity_filter_;
       
 };
   
