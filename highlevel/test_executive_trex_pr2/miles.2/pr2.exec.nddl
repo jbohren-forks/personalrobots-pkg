@@ -1,0 +1,23 @@
+/**
+ * This test defines a set of waypoints and charging stations in and around the office.
+ */ 
+
+#include "milo.init.nddl";
+
+/* Waypoints */
+Waypoint w1 = new Waypoint(19.5, 28.5, 3.14);
+Waypoint w2 = new Waypoint(15.0, 25.2, 0.0);
+Waypoint w3 = new Waypoint(10.6, 27.15, 1.0);
+
+/* Charging Stations */
+ChargingStation c1 = new ChargingStation(18.8, 29.9, 0.0); // Outside Eitan's office
+ChargingStation c2 = new ChargingStation(18.8, 24.8, -0.540); // Green room towards lab
+
+close();
+
+rejectable(venusDeMiles.Holds g);
+g.iterationCount = 0;
+g.alwaysBusy = true;
+
+
+

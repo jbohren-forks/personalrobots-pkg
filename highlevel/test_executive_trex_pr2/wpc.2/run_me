@@ -1,0 +1,5 @@
+#!/bin/bash
+
+source ../trex_env_vars
+
+$TREX_PACKAGE_PATH/$TREX_DIR/$TREX_EXE $TREX_PACKAGE_PATH/cfg/nav.cfg

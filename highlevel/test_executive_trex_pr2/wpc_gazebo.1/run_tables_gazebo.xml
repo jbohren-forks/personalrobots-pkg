@@ -1,0 +1,13 @@
+<launch>
+  <master auto="start"/>
+  <!--include file="$(find executive_trex_pr2)/wpc_gazebo.1/launch_gazebo_prototype1_tables_no_x.xml" /-->
+  <include file="$(find test_executive_trex_pr2)/wpc_gazebo.1/launch_gazebo_prototype1_wg_no_x.xml" />
+  <param name="/trex/input_file" value="nav_gazebo.cfg"/>
+  <param name="/trex/path" value="$(find test_executive_trex_pr2)/wpc_gazebo.1:$(find executive_trex_pr2)/cfg"/>
+  <param name="/trex/time_limit" value="2000"/>
+  <param name="/trex/log_dir" value="$(find test_executive_trex_pr2)/wpc_gazebo.1"/>
+  <param name="/trex/play_back" value="0"/>
+  <node pkg="executive_trex_pr2" type="trexfast" />
+  <node pkg="ogre_visualizer" type="standalone_visualizer.py" />
+  <test test-name="executive_trex_wpc.1" pkg="executive_trex_pr2" type="trexdebug" time-limit="40"/>
+</launch>

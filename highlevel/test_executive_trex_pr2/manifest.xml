@@ -1,0 +1,20 @@
+<package>
+ <description brief="Tests for the executive_trex_pr2 package.">
+ The tests for executive_trex_pr2 are separated into a different package
+ so that dependencies such as simulators don't have to go in the 
+ executive_trex_pr2 itself.
+ </description>
+ <author>Tony Pratkanis</author>
+ <license>BSD</license>
+ <review status="unreviewed" notes=""/>
+ <url>http://pr.willowgarage.com</url>
+
+ <depend package="highlevel_controllers"/>
+ <depend package="executive_trex_pr2"/>
+ <depend package="amcl_player"/>
+ <depend package="fake_localization"/>
+ <depend package="map_server"/>
+ <depend package="nav_view"/>
+ <depend package="rosstage"/>
+ <depend package="pr2_gazebo"/>
+</package>

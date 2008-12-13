@@ -1,0 +1,8 @@
+#!/bin/bash
+
+
+cd `rospack find test_executive_trex_pr2`
+PLASMA_HOME=`rospack find trex`/PLASMA/
+
+jam exec_test_inputs
+

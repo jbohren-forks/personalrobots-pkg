@@ -1,0 +1,29 @@
+SubDir test_executive_trex_pr2 ;
+
+
+#if ! $(test_executive_trex_pr2_READY) {
+
+   # Enables header scanning of NDDL files
+   SEARCH_SOURCE = $(EXEC_HOME)/nddl $(TREX)/agent/base $(PLASMA_HOME)/src/PLASMA/NDDL/base ;
+
+   # Input files
+   local TestInputs = 
+		[ FDirName $(TESTEXEC_HOME) wpc.0 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) wpc.1 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) wpc.2 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) wpc_gazebo.0 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) wpc_gazebo.1 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) miles.0 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) miles.2 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) miles.4 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) arm.0 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) arm.1 pr2.exec.nddl ]
+		[ FDirName $(TESTEXEC_HOME) arm.2 pr2.exec.nddl ]
+		;
+   local file ;
+   for file in [ FGristFiles $(TestInputs) ] {
+       local xml = $(file:S=.xml:G=) ;
+       LocalDepends exec_test_inputs : $(xml) ;
+       NddlParser $(xml) : $(file) ;
+   }
+#}
