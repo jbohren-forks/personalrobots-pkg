@@ -94,7 +94,7 @@ NavViewPanel::NavViewPanel( wxWindow* parent )
   {
     int argc = 0;
     ros::init( argc, 0 );
-    ros_node_ = new ros::node( "NavViewPanel", ros::node::DONT_HANDLE_SIGINT );
+    ros_node_ = new ros::node( "nav_view_panel", ros::node::DONT_HANDLE_SIGINT );
   }
   ROS_ASSERT( ros_node_ );
 
