@@ -261,29 +261,6 @@ private:
     }
     delete d;
   }
-
-  /*void publishDataThread(void)
-  {
-    ros::Duration *d = new ros::Duration(1.0/m_maxPublishFrequency);
-	
-    /* Pump out buffered, filtered point clouds and clear the buffer 
-    while (m_active)
-      {
-	ROS_INFO("Loop\n");
-	for(unsigned int i = 0; i < m_currentWorld.size(); i++){
-	  std_msgs::PointCloud* p = m_currentWorld[i];
-	  ROS_INFO("Publish\n");
-	  publish("world_3d_map", *p);
-	  delete p;
-	}
-
-	m_currentWorld.clear();
-
-	d->sleep();
-      }
-
-    delete d;
-  }*/
     
   void addSelfSeeBodies(void)
   {
@@ -365,19 +342,19 @@ private:
       /* Transform to the map frame */
       try
 	{
-	  m_tf.transformPointCloud("map", map_cloud, point_cloud);
+	  m_tf.transformPointCloud("map", point_cloud, map_cloud);
 	}
-      catch(libTF::TransformReference::LookupException& ex)
+      catch(tf::LookupException& ex)
 	{
 	  ROS_ERROR("Lookup exception: %s\n", ex.what());
 	  break;
 	}
-      catch(libTF::TransformReference::ExtrapolateException& ex)
+      catch(tf::ExtrapolationException& ex)
 	{
 	  ROS_ERROR("Extrapolation exception: %s\n", ex.what());
 	  break;
 	}
-      catch(libTF::TransformReference::ConnectivityException& ex)
+      catch(tf::ConnectivityException& ex)
 	{
 	  ROS_ERROR("Connectivity exception: %s\n", ex.what());
 	  break;
