@@ -4,6 +4,7 @@
 float XY_ERROR = 1.0;
 float THETA_ERROR = 0.1;
 float MIN_RECHARGE = 500.0;
+int WAIT_TIME_AFTER_UNPLUGGING = 5;
 typedef float [0.0 1.0] UNIT_FLOAT;
 
 
@@ -168,10 +169,10 @@ class RechargeController extends Behavior {
    * The recharge controller has an expected pose when in an inactive state
    */
   predicate Inactive{
-    float desX;
-    float desY;
-    float desTh;
-    UNIT_FLOAT goal_recharge_level;
+    float x;
+    float y;
+    float th;
+    UNIT_FLOAT recharge_level;
   }
 
   /**
@@ -183,9 +184,6 @@ class RechargeController extends Behavior {
     float y;
     float th;
     UNIT_FLOAT recharge_level;
-    // Should be in the base class
-    int dispatch_time; // The time at which the goal was dispatched
-    precedes(dispatch_time, start); // This is a <= constraint
   }
 
 };
@@ -226,7 +224,7 @@ WorkingStatus::Holds{
     // However, no such integration is available and it is an open question how to interpret that constraint given a temporal
     // context.
     //
-    // We can select from the available set via the planner. This would allow branching over thde decision. This could yield a very
+    // We can select from the available set via the planner. This would allow branching over the decision. This could yield a very
     // high branching factor.
     // We can pick the nearest available - which is simple and efficient. However, it may force a situation where we  re-commit to an
     // unreachable location. This would look like what we had implemented before:
@@ -237,12 +235,12 @@ WorkingStatus::Holds{
     ChargingStation cs;
     randomSelect(cs);
 
-    // allow a delay of 5 seconds after recharging before releasing the robot
-    any(RechargeController.Active rc);
+    // allow a delay after recharging before releasing the robot
+    any(RechargeController.Inactive rc);
     eq(rc.x, cs.x);
     eq(rc.y, cs.y);
     eq(rc.th, cs.th);
-    temporalDistance(rc.end, 5, end);
+    temporalDistance(rc.start, WAIT_TIME_AFTER_UNPLUGGING, end);
 
     // check expected end conditions. Notation assumes a single predicate, otherwise it would be
     // ambiguous. Actually, it assumes that there is exactly one predicate with that parameter. At run
@@ -263,15 +261,21 @@ WorkingStatus::Holds{
  */
 RechargeController::Inactive{
   // Preceded by an effort to get to a desired pose. This drives regression from the goal for planning
-  // this[start-1] == Active(desX, desY, desTh, goal_recharge_level)
-  if(desX){
-    if(desY){
-      if(desTh){
+  // previous() == Active(x, y, th, recharge_level)
+  if(x){
+    if(y){
+      if(th){
 	met_by(Active p);
-	eq(p.x, desX);
-	eq(p.y, desY);
-	eq(p.th, desTh);
-	eq(p.recharge_level, goal_recharge_level);
+	eq(p.x, x);
+	eq(p.y, y);
+	eq(p.th, th);
+	eq(p.recharge_level, recharge_level);
+
+
+	// Derive the recharge level from battery state configuration
+	BatteryState bs;
+	eq(bs.actual_value, true);
+	eq(recharge_level, bs.recharge_level);
       }
     }
   }
@@ -283,19 +287,15 @@ RechargeController::Inactive{
   // baseState[start] == Holds( desX + [-0.25, 0.25], desY + [-0.25, 0.25], desTh + [-0.25, 0.25])
   if(start){
     starts(BaseState.Holds bs);
-    addEq(bs.x, [-0.25, 0.25], desX);
-    addEq(bs.y, [-0.25, 0.25], desY);
-    addEq(bs.th, [-0.25, 0.25], desTh);
+    addEq(bs.x, [-0.25, 0.25], x);
+    addEq(bs.y, [-0.25, 0.25], y);
+    addEq(bs.th, [-0.25, 0.25], th);
   }
 }
 
 RechargeController::Active{
   contained_by(WorkingStatus.Holds ws);
   eq(ws.recharging, true);
-
-  BatteryState bs;
-  eq(bs.actual_value, true);
-  eq(recharge_level, bs.recharge_level);
 
   // When busy pluging in or unplugging, we require that we are located, and stationary, at the
   // correct charging station. This is derived by the given parameters

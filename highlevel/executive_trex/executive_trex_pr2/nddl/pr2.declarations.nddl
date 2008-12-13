@@ -123,6 +123,8 @@ class Behavior extends AgentTimeline {
 	predicate Inactive{}
 
 	predicate Active{
+	  int dispatch_time; // The time at which the goal was dispatched
+	  precedes(dispatch_time, start); // This is a <= constraint
 	}
 
 	Behavior(Mode _mode){
@@ -155,7 +157,6 @@ class MoveBase extends Behavior {
     // Should be in the base class
     int max_duration;
     bool timed_out;
-    int dispatch_time; // The time at which the goal was dispatched
     leq(duration, max_duration);
     testEQ(timed_out, duration, max_duration);
     precedes(dispatch_time, start); // This is a <= constraint
