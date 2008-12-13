@@ -3,7 +3,7 @@
   <group name="wg">
 
     <!-- Launch the node collection for a gazebo sim -->
-    <include file="$(find executive_trex_pr2)/cfg/launch_gazebo.xml"/>
+    <include file="$(find executive_trex_pr2)/cfg/launch_gazebo_obstacle.xml"/>
 
     <node pkg="executive_trex_pr2" type="trex_fast" args="$(find executive_trex_pr2)/cfg/pr2.cfg" respawn="false" />
 
