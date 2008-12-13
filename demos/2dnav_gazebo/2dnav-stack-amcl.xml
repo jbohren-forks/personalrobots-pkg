@@ -68,13 +68,19 @@
     <!-- start node to move base -->
     <node pkg="highlevel_controllers" type="move_base_sbpl" respawn="false" />
 
-    <param name="recharge/email_addresses" value="eitan@willowgarage.com mcgann@willowgarage.com pr2-users@lists.willowgarage.com raschemmel@yahoo.com"/>
+    <param name="recharge/email_addresses" value="johnhsu@willowgarage.com pr2-users@lists.willowgarage.com"/>
     <param name="recharge/subject_plugin" value="Robot Needs To Be Plugged In"/>
     <param name="recharge/subject_unplug" value="Robot Needs To Be Unplugged"/>
     <param name="recharge/body_plugin" value="Hello, could you please plug me in?\nThanks, PR2"/>
     <param name="recharge/body_unplug" value="Hello, could you please unplug me?\nThanks, PR2"/>
     <param name="recharge/mail_client" value="mailx -s"/>
     <node pkg="highlevel_controllers" type="recharge_controller" respawn="false" />
+
+    <!-- For logging distance traveled -->
+    <node pkg="rosrecord" type="rosrecord" args="-f /bags/robot_runs/milestone_trials/attempt /base_scan /tilt_scan /TransformArray /localizedpose /odom /base_controller/odometer /odom_estimation" />
+
+    <!-- For telling the robot to go charge -->
+    <node pkg="highlevel_controllers" type="joy_batt_sender" respawn="true" />
 
   </group>
 </launch>
