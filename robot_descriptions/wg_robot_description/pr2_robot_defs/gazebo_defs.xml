@@ -16,9 +16,10 @@
       <alwaysOn>true</alwaysOn>
       <updateRate>1.0</updateRate>
       <timeout>5</timeout>
+      <default_consumption_rate>-10.0</default_consumption_rate> <!-- -5 is the magic number, need to be smaller than that CM -->
       <diagnostic_rate>1.0</diagnostic_rate>
-      <battery_state_rate>1.0</battery_state_rate>
-      <full_charge_energy>120.0</full_charge_energy>
+      <battery_state_rate>10.0</battery_state_rate> <!-- does nothing for now-->
+      <full_charge_energy>1200000.0</full_charge_energy>
       <diagnosticTopicName>diagnostic</diagnosticTopicName>
       <stateTopicName>battery_state</stateTopicName>
       <selfTestServiceName>self_test</selfTestServiceName>

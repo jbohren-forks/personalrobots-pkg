@@ -151,13 +151,11 @@ private:
 
   /// \brief power drain, if this is negative, we are charging the battery.
   private: double consumption_rate_;
+  private: double default_consumption_rate_;
 
   /// \brief listen to ROS to see if we are charging
   private: void SetPlug();
   private: gazebo_plugin::PlugCommand plug_msg_;
-
-/// @todo make DISCHAGE_RATE something else
-#define DISCHARGE_RATE 1.0
 
 };
 
