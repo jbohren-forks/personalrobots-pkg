@@ -60,7 +60,7 @@ bool testSparseBundleAdjustment() {
   testVisOdom.output_data_path_ = string(ros_pkg_path).append("/vision/visual_odometry/test/Output/");
   testVisOdom.verbose_ = false;
 
-  testVisOdom.mTestType = CvTest3DPoseEstimate::BundleAdj;
+  testVisOdom.mTestType = CvTest3DPoseEstimate::BundleAdjUTest;
 
   return testVisOdom.test();
 }

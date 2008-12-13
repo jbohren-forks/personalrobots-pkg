@@ -197,9 +197,24 @@ bool CvTest3DPoseEstimate::test() {
   case VideoBundleAdj:
     return testVideoBundleAdj();
     break;
-  case BundleAdj:
-    return testBundleAdj(true, true);
+  case BundleAdjUTest: {
+    string frame_file("frames.xml");
+    string point_file("cartesianPoints.xml");
+    return testBundleAdj(point_file, frame_file, 5, 5, 10, 1, true, true);
     break;
+  }
+  case BundleAdj: {
+    string frame_file("frames.xml");
+    string point_file("cartesianPoints.xml");
+    int num_free_frames = 5;
+    int num_fixed_frames = 5;
+    int num_iterations = 10;
+    int num_repeats = 1;
+    return testBundleAdj(point_file, frame_file, num_free_frames,
+        num_fixed_frames, num_iterations, num_repeats,
+        true, true);
+    break;
+  }
   default:
     cout << "Unknown test type: "<<  mTestType << endl;
   }
@@ -228,13 +243,13 @@ void CvTest3DPoseEstimate::setInputData(DataSet data_set) {
 //    setCameraParams(432.0, 432.0, 88.981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
     // now Tx is in meters
     setCameraParams(432.0, 432.0, .088981018518518529, 313.78210000000001, 313.78210000000001, 220.40700000000001);
-//    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
-    string dirname("/u/prdata/videre-bags/james4");
+    string dirname("/home/jdchen/Data/VisOdom/Data/james4");
+//    string dirname("/u/prdata/videre-bags/james4");
     string leftimgfmt("/im.%06d.left_rectified.tiff");
     string rightimgfmt("/im.%06d.right_rectified.tiff");
     string dispimgfmt(".dispmap-%06d.xml");
     int start = 0;
-    int end   = 2324;
+    int end   = 20;
     int step  = 1;
 
     // set up a FileSeq
@@ -670,9 +685,10 @@ bool CvTest3DPoseEstimate::testVideo4() {
   return status;
 }
 
-static void generateRandomCartesian3DPoints(const string& data_path) {
-  double points[260*3];
-  CvMat threeDPoints = cvMat(260, 3, CV_64FC1, points);
+static void synthesizePoints(const string& data_path) {
+  int num_points = 260;
+  double points[num_points*3];
+  CvMat threeDPoints = cvMat(num_points, 3, CV_64FC1, points);
   CvRNG rng_state = cvRNG(0xffffffff);
 
   CvMat values;
@@ -686,32 +702,53 @@ static void generateRandomCartesian3DPoints(const string& data_path) {
   cvSave(file_path.c_str(), &threeDPoints, "randomPoitns", "random 3d points");
 }
 
-bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_points) {
+static void synthesizeFrames(const string& data_path) {
+  int num_frames = 101;
+  double frames[num_frames*7];
+  CvMat  mat_frames = cvMat(num_frames, 7, CV_64FC1, frames);
+  cvSetZero(&mat_frames);
+  for (int i=0; i<num_frames; i++ ) {
+    // frame id
+    cvmSet(&mat_frames, i, 0, (double)i);
+    // set z value
+    cvmSet(&mat_frames, i, 6, (double)i*.01);
+  }
+
+  string file_path = data_path+string("frames101.xml");
+  cvSave(file_path.c_str(), &mat_frames, "frames101",
+      "frames in euler/meter, straight forward, .01 meter each step");
+}
+
+bool CvTest3DPoseEstimate::testBundleAdj(
+    string& points_file, string& frames_file,
+    int num_free_frames, int num_fixed_frames, int num_iterations,
+    int num_repeats,
+    bool disturb_frames, bool disturb_points) {
   bool status = true;
 
 #if 0 // set it to 1 to generate a set of random 3d points
-  generateRandomCartesian3DPoints(input_data_path_);
+  synthesizePoints(input_data_path_);
+#endif
 
+#if 1 // set it to 1 to generate a set of random 3d points
+  synthesizeFrames(input_data_path_);
 #endif
 
   // rows of 3d points in Cartesian space
-  string point_file(input_data_path_);
-  point_file.append("cartesianPoints.xml");
-//  point_file.append("randomPoints.xml");
-  CvMat *points = (CvMat *)cvLoad(point_file.c_str());
+  string points_file_path(input_data_path_);
+//  point_file.append("cartesianPoints.xml");
+  points_file_path.append(points_file);
+  CvMat *points = (CvMat *)cvLoad(points_file_path.c_str());
   // rows of euler angle and shift
-  string frames_file(input_data_path_);
-  frames_file.append("frames.xml");
-  CvMat *frames = (CvMat *)cvLoad(frames_file.c_str());
+  string frames_file_path(input_data_path_);
+//  frames_file.append("frames.xml");
+  frames_file_path.append(frames_file);
+  CvMat *frames = (CvMat *)cvLoad(frames_file_path.c_str());
   CvMat cartToDisp;
   CvMat dispToCart;
 
   this->setCameraParams(389.0, 389.0, 89.23, 323.42, 323.42, 274.95);
   this->getProjectionMatrices(&cartToDisp, &dispToCart);
-
-//  cvSetIdentity(&cartToDisp);
-//  cvSetIdentity(&dispToCart);
-
 
   // set up cameras
   vector<FramePose* > frame_poses;
@@ -774,9 +811,9 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     tracks.oldest_frame_index_in_tracks_ = oldest_index;
   }
 
-  int full_free_window_size  = 5;
-  int full_fixed_window_size = 5;
-  int max_num_iters = 500;
+  int full_free_window_size  = num_free_frames;
+  int full_fixed_window_size = num_fixed_frames;
+  int max_num_iters = num_iterations;
   double epsilon = DBL_EPSILON;
 //  epsilon = FLT_EPSILON;
 //  epsilon = LDBL_EPSILON;
@@ -796,12 +833,11 @@ bool CvTest3DPoseEstimate::testBundleAdj(bool disturb_frames, bool disturb_point
     fixed_frames.push_back(frame_poses[fi]);
   }
   // the free windows
-  for (; fi < frames->rows; fi++) {
+  for (; fi < full_fixed_window_size + full_free_window_size; fi++) {
     free_frames.push_back(frame_poses[fi]);
   }
 
-  int num_tries = 1;
-  for (int k=0; k < num_tries; k++ ) {
+  for (int k=0; k < num_repeats; k++ ) {
     // disturb the point parameters.
     if (disturb_points == true) {
       double disturb_scale = .001;

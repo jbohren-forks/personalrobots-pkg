@@ -30,7 +30,8 @@ public:
     	Video3,
     	/// bundle adjustment over a sequence of video images
     	VideoBundleAdj,
-    	BundleAdj
+    	BundleAdj,
+    	BundleAdjUTest
     } TestType;
     typedef enum {
       Indoor1,
@@ -45,7 +46,11 @@ public:
     bool testVideo3();
     bool testVideo4();
     bool testVideoBundleAdj();
-    bool testBundleAdj(bool disturb_frames, bool disturb_points);
+    bool testBundleAdj(
+        string& points_file, string& frames_file,
+        int num_free_frames, int num_fixed_frames, int num_iterations,
+        int repeats,
+        bool disturb_frames, bool disturb_points);
     bool test();
     TestType mTestType;
 

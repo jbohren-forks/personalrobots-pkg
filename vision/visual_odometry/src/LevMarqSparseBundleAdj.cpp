@@ -848,15 +848,15 @@ bool LevMarqSparseBundleAdj::optimize(
 //    TIMERSTART2(SBALinearSolving);
     cvCompleteSymm(&mat_A_, 0);
     TIMERSTART2(SBALinearSolving);
-#if 1
+#if 0
     cvSolve(&mat_A_, &mat_B_, &mat_dC_, CV_SVD_SYM);
 #else
     {
       Eigen::MatrixXd A0(mat_A_.rows, mat_A_.cols);
       Eigen::VectorXd B0(mat_B_.rows);
-      Eigen::VectorXd C0;
+      Eigen::VectorXd C0(mat_C_.rows);
       for (int j=0; j<A0.cols(); j++) {
-        for (int i=0; j<A0.rows(); j++) {
+        for (int i=0; i<A0.rows(); i++) {
           A0(i, j) = cvmGet(&mat_A_, i, j);
         }
       }
