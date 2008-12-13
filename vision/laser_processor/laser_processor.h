@@ -56,6 +56,8 @@
 #include <utility>
 #include <algorithm>
 
+#include "tf/transform_datatypes.h"
+
 namespace laser_processor
 {
   //! A struct representing a single sample from the laser.
@@ -95,7 +97,7 @@ namespace laser_processor
 
     void appendToCloud(std_msgs::PointCloud& cloud, int r = 0, int g = 0, int b = 0);
 
-    std_msgs::Point center();
+    tf::Point center();
   };
 
   //! A mask for filtering out Samples based on range

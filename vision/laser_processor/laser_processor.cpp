@@ -95,10 +95,8 @@ void SampleSet::appendToCloud(std_msgs::PointCloud& cloud, int r, int g, int b)
   }
 }
 
-std_msgs::Point SampleSet::center()
+tf::Point SampleSet::center()
 {
-  std_msgs::Point p;
-
   float x_mean = 0.0;
   float y_mean = 0.0;
   for (iterator i = begin();
@@ -109,12 +107,8 @@ std_msgs::Point SampleSet::center()
     x_mean += ((*i)->x)/size();
     y_mean += ((*i)->y)/size();
   }
-
-  p.x = x_mean;
-  p.y = y_mean;
-  p.z = 0.0;
   
-  return p;
+  return tf::Point (x_mean, y_mean, 0.0);
 }
 
 
