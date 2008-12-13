@@ -45,6 +45,8 @@
 
 #include "rostools/Header.h"
 
+#include "tf/transform_listener.h"
+
 using namespace std;
 using namespace laser_processor;
 using namespace ros;
@@ -54,11 +56,12 @@ class SavedFeature
 public:
   int id_;
   ros::Time time_;
-  std_msgs::Point  loc_;
+  //  std_msgs::Point  loc_;
+  tf::Stamped<tf::Point> loc_;
   vector<float>    features_;
   vector<char>    color_;
 
-  SavedFeature(int id, std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features, char r, char g, char b)
+  SavedFeature(int id, std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, vector<float> features, char r, char g, char b)
   {
     id_ = id;
     time_ = scan.header.stamp;
@@ -69,7 +72,7 @@ public:
     color_.push_back(b);
   }
 
-  void update(std_msgs::LaserScan& scan, std_msgs::Point loc, vector<float> features)
+  void update(std_msgs::LaserScan& scan, tf::Stamped<tf::Point> loc, vector<float> features)
   {
     time_ = scan.header.stamp;
     loc_ = loc;
@@ -80,6 +83,8 @@ public:
 class LegDetector : public node
 {
 public:
+  tf::TransformListener tf;
+
   std_msgs::LaserScan scan_;
   std_msgs::PointCloud cloud_;
 
@@ -99,7 +104,7 @@ public:
 
   int feature_id_;
 
-  LegDetector() : node("laser_processor"), mask_count_(0), connected_thresh_(0.05), feat_count_(0)
+  LegDetector() : node("laser_processor"), tf(*this), mask_count_(0), connected_thresh_(0.05), feat_count_(0)
   {
     if (argc > 1) {
       forest.load(argv[1]);
@@ -156,7 +161,7 @@ public:
       if (forest.predict( tmp_mat ) > 0)
       {
       
-        std_msgs::Point loc = (*i)->center();
+        tf::Stamped<tf::Point> loc((*i)->center(), scan_.header.stamp, scan_.header.frame_id);
 
         list<SavedFeature>::iterator closest = saved_features_.end();
         float closest_dist = 0.5;
@@ -165,8 +170,19 @@ public:
              sf_iter != saved_features_.end();
              sf_iter++)
         {
+          tf::Stamped<tf::Point> sf_loc;
+          if (tf.canTransform(scan_.header.frame_id, scan_.header.stamp,
+                              sf_iter->loc_.frame_id_, sf_iter->loc_.stamp_,
+                              "odom_combined"))
+          {
+            tf.transformPoint(scan_.header.frame_id, scan_.header.stamp,
+                              sf_iter->loc_, "odom_combined", sf_loc);
+          } else {
+            sf_loc = sf_iter->loc_;
+          }
+
           // If it is close to a saved feature
-          float dist = sqrt( pow(sf_iter->loc_.x - loc.x, 2.0) + pow(sf_iter->loc_.y - loc.y, 2.0) );
+          float dist = sf_loc.distance(loc);//sqrt( pow(sf_iter->loc_.x - loc.x, 2.0) + pow(sf_iter->loc_.y - loc.y, 2.0) );
           if ( dist < closest_dist )
           {
             
@@ -177,8 +193,8 @@ public:
                  j++)
             {
               // This computation should be done in odometry frame.
-              std_msgs::Point other_loc = (*j)->center();
-              float other_dist = sqrt( pow(sf_iter->loc_.x - other_loc.x, 2.0) + pow(sf_iter->loc_.y - other_loc.y, 2.0) );
+              tf::Stamped<tf::Point> other_loc((*j)->center(), scan_.header.stamp, scan_.header.frame_id);
+              float other_dist = sf_loc.distance(other_loc);
               
               if (other_dist < dist)
               {
@@ -204,8 +220,6 @@ public:
           closest = saved_features_.insert(saved_features_.end(), SavedFeature(feature_id_++, scan_, loc, f, rand()%255, rand()%255, rand()%255));
         }
 
-        printf("%d ", closest->id_);
-
         (*i)->appendToCloud(cloud_, closest->color_[0], closest->color_[1], closest->color_[2]);
       
         robot_msgs::PositionMeasurement pos;
@@ -213,7 +227,7 @@ public:
         pos.header.frame_id = scan_.header.frame_id;
         pos.name = "leg_detector";
         pos.object_id = "unknown";
-        pos.pos = (*i)->center();
+        tf::PointTFToMsg((*i)->center(),pos.pos);
         pos.reliability = 0.7;
         pos.covariance[0] = 1.0;
         pos.covariance[4] = 1.0;
@@ -223,7 +237,6 @@ public:
         publish("person_measurement", pos);
       }
     }
-    printf("\n\n");
 
     cloud_.header = scan_.header;
 

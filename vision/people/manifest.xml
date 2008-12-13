@@ -22,6 +22,7 @@
 <depend package="image_msgs"/>
 <depend package="topic_synchronizer"/>
 <depend package="laser_processor"/>
+<depend package="tf"/>
 <sysdepend os="ubuntu" version="7.04-feisty" package="python-numpy"/>
 <sysdepend os="ubuntu" version="8.04-hardy" package="python-numpy"/>
 </package>
