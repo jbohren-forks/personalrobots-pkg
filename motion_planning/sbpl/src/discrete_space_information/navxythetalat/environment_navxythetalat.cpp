@@ -461,7 +461,6 @@ void EnvironmentNAVXYTHETALAT::PrecomputeActions(vector<SBPL_xytheta_mprimitive>
 		for(int aind = 0; aind < EnvNAVXYTHETALATCfg.actionwidth; aind++)
 		{
 			EnvNAVXYTHETALATCfg.ActionsV[tind][aind].starttheta = tind;
-			double endangle = sourcepose.theta + motionprimitiveV->at(aind).endtheta_rad;
 			double endx = sourcepose.x + (motionprimitiveV->at(aind).endx_m*cos(sourcepose.theta) - motionprimitiveV->at(aind).endy_m*sin(sourcepose.theta));
 			double endy = sourcepose.y + (motionprimitiveV->at(aind).endx_m*sin(sourcepose.theta) + motionprimitiveV->at(aind).endy_m*cos(sourcepose.theta));
 			
