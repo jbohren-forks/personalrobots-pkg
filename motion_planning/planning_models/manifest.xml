@@ -1,0 +1,18 @@
+<package>
+  <description brief="A set of robot models">
+    A set of robot models that can be instantiated from a parsed URDF file.
+    See: http://pr.willowgarage.com/wiki/RobotDescriptionFormat
+  </description>
+  <author>Ioan Sucan/isucan@willowgarage.com</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://pr.willowgarage.com/wiki/RobotDescriptionFormat</url>
+
+  <depend package="wg_robot_description_parser"/>
+  <depend package="bullet"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lplanning_models"/>
+  </export>
+  
+</package>
