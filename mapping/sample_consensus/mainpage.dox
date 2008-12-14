@@ -1,0 +1,101 @@
+
+/** \mainpage
+
+@htmlinclude manifest.html
+
+@b sample_consensus is a general library for Sample-Consensus like methods
+(e.g. RANSAC, MSAC, MLESAC, RMSAC, RRANSAC, etc) and applications for point
+cloud geometry.
+
+@section summary Summary
+
+The sample_consensus library is divided into two parts:
+
+- a SAC algorithmic part, which deals with various implementations of sample
+consensus methods;
+
+- a 3D modeling part, which contains code for solving particular problems
+oftenly encountered in 3D geometric shape fitting in point clouds.
+
+As a general non-linear solver for various optimizations problems, the
+library makes use of the Levenberg-Marquardt levmar implementation of
+Manolis Lourakis, available at http://www.ics.forth.gr/~lourakis/levmar/.
+
+Overall, the terminology employed throughout the sample_consensus code is:
+
+- a <b>model</b> is a set of N data points that define an unique data model
+
+- the <b>coefficients</b> or <b>model coefficients</b> are the actual
+parameters (e.g. shape coefficients for 3D geometric shapes), computed from
+the set of points which define the model (see above)
+
+@subsection input_output Input and Output Data
+
+All data points are expected to be given in a ROS PointCloud compatible
+message format. For simplicity and generality with regards to the underlying
+implemented models, all model coefficients are represented via a vector of
+doubles.
+
+Internally, the library keeps a pointer in SACModel to the actual point
+cloud data, and refers to each point when needed through the use of point
+indices (represented by vectors of ints).
+
+@subsection methods Methods
+
+The methods implemented so far are:
+
+- RANSAC (Random Sample Consensus)
+- MSAC (M-estimator Sample Consensus)
+- MLESAC (Maximum Likelihood Estimator Sample Consensus)
+- RRANSAC (Randomized RANSAC, ie. with pre-test)
+- RMSAC (Randomized MSAC, ie. with pre-test)
+- LMedS (Least-Median-of-Squares), though not part of Sample Consensus methods per se
+
+Future versions will include:
+- AMLESAC (Adaptive MLESAC)
+- PFSAC (Particle Filter based SAC)
+
+@subsection models Models
+
+The geometric shape models implemented so far are:
+- plane, 3 points
+- 3D line, 2 points
+- 2D/3D circle, 3 points
+- 3D sphere, 4 points
+- 3D cylinder, 4 points (with normals)
+
+Future versions will include:
+- 3D toruses and cones
+- localized sampling and pre-shape detection using libcloud_octree.
+
+Additionally, the library contains a few specialized axis-aligned
+implementations for plane and line models.
+
+@subsection example Usage example
+
+The easiest way to use the sample_consensus library is to instantiate two
+objects, a SAC and a SACModel type, and then run sac->computeModel ().
+Here's an example which attemps to iteratively segment all the planar areas
+present in a point cloud, using RANSAC:
+
+\code
+SACModel *model = new SACModelPlanes ();
+SAC *sac = new RANSAC (distance_to_model_threshold, model);
+model->setDataSet (point_cloud);
+
+while (nr_points_left > MIN_INLIER_POINTS)
+{
+  if (!sac->computeModel ())
+    break;
+
+  sac->computeCoefficients ();
+
+  std::vector<double> coefficients = sac->refineCoefficients ();
+
+  // print coefficients on screen here...
+
+  nr_points_left = sac->removeInliers ();
+}
+\endcode
+
+*/
