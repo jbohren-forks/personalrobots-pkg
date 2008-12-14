@@ -131,7 +131,7 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
     exit(1);
   }
   if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
-    printf("WARNING: invalid start configuration\n");
+    printf("ERROR: invalid start configuration %d %d %d\n", EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta);
   }
  
 
@@ -153,7 +153,7 @@ void EnvironmentNAV3DKIN::SetConfiguration(int width, int height,
     exit(1);
   }
   if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
-    printf("WARNING: invalid goal configuration\n");
+    printf("ERROR: invalid goal configuration %d %d %d\n", EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta);
   }
 
   EnvNAV3DKINCfg.FootprintPolygon = robot_perimeterV;
@@ -1043,10 +1043,10 @@ bool EnvironmentNAV3DKIN::InitGeneral() {
   ComputeHeuristicValues();
 
   if(!IsValidConfiguration(EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta)) {
-    printf("WARNING: invalid start configuration\n");
+    printf("ERROR: invalid start configuration %d %d %d\n", EnvNAV3DKINCfg.StartX_c, EnvNAV3DKINCfg.StartY_c, EnvNAV3DKINCfg.StartTheta);
   }
   if(!IsValidConfiguration(EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta)) {
-    printf("WARNING: invalid goal configuration\n");
+    printf("ERROR: invalid goal configuration %d %d %d\n", EnvNAV3DKINCfg.EndX_c, EnvNAV3DKINCfg.EndY_c, EnvNAV3DKINCfg.EndTheta);
   }
  
 
@@ -1433,7 +1433,7 @@ int EnvironmentNAV3DKIN::SetGoal(double x_m, double y_m, double theta_rad){
 
     if(!IsValidConfiguration(x,y,theta))
 	{
-		printf("WARNING: goal configuration is invalid\n");
+		printf("ERROR: goal configuration is invalid %d %d %d\n", x,y,theta);
 	}
 
     EnvNAV3DKINHashEntry_t* OutHashEntry;
@@ -1469,7 +1469,7 @@ int EnvironmentNAV3DKIN::SetStart(double x_m, double y_m, double theta_rad){
 
     if(!IsValidConfiguration(x,y,theta))
 	{
-		printf("WARNING: start configuration %d %d %d is invalid\n", x,y,theta);
+		printf("ERROR: start configuration %d %d %d is invalid\n", x,y,theta);
 	}
 
     EnvNAV3DKINHashEntry_t* OutHashEntry;

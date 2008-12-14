@@ -34,7 +34,7 @@
 
 //control of EPS
 #define ARA_DEFAULT_INITIAL_EPS	    5.0
-#define ARA_DECREASE_EPS    .2
+#define ARA_DECREASE_EPS    0.2
 #define ARA_FINAL_EPS	    1.0
 
 

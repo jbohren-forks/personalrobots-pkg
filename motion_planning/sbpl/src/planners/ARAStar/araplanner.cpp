@@ -966,7 +966,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	while(pSearchStateSpace->eps_satisfied > ARA_FINAL_EPS && 
 		(clock()- TimeStarted) < MaxNumofSecs*(double)CLOCKS_PER_SEC)
 	{
-                loop_time = clock();
+        loop_time = clock();
 		//decrease eps for all subsequent iterations
 		if(fabs(pSearchStateSpace->eps_satisfied - pSearchStateSpace->eps) < ERR_EPS && !bFirstSolution)
 		{
@@ -1033,7 +1033,7 @@ bool ARAPlanner::Search(ARASearchStateSpace_t* pSearchStateSpace, vector<int>& p
 	printf("MaxMemoryCounter = %d\n", MaxMemoryCounter);
 
 	int solcost = INFINITECOST;
-        bool ret = false;
+    bool ret = false;
 	if(PathCost == INFINITECOST)
 	{
 		printf("could not find a solution\n");

@@ -147,7 +147,7 @@ int plan3dkin(int argc, char *argv[])
 {
 
 	int bRet = 0;
-	double allocated_time_secs = 60.0; //in seconds
+	double allocated_time_secs = 3.0; //in seconds
 	MDPConfig MDPCfg;
 
 	//set the perimeter of the robot (it is given with 0,0,0 robot ref. point for which planning is done)
@@ -242,7 +242,7 @@ int plan3dkin(int argc, char *argv[])
 	bRet = planner.replan(allocated_time_secs, &solution_stateIDs_V);
     printf("done planning\n");
 	std::cout << "size of solution=" << solution_stateIDs_V.size() << std::endl;
-
+	
     FILE* fSol = fopen("sol.txt", "w");
 	for(unsigned int i = 0; i < solution_stateIDs_V.size(); i++) {
 	  environment_nav3Dkin.PrintState(solution_stateIDs_V[i], false, fSol);

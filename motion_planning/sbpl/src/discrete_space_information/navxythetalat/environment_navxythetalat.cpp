@@ -952,7 +952,16 @@ void EnvironmentNAVXYTHETALAT::CalculateFootprintForPose(EnvNAVXYTHETALAT3Dpt_t 
 			sbpl_2Dcell_t cell;
 			cell.x = discrete_x;
 			cell.y = discrete_y;
-			footprint->push_back(cell);
+
+			//insert point if not there already
+			int pind = 0;
+			for(pind = 0; pind < (int)footprint->size(); pind++)
+			{
+				if(cell.x == footprint->at(pind).x && cell.y == footprint->at(pind).y)
+					break;
+			}
+			if(pind == (int)footprint->size()) footprint->push_back(cell);
+
 			prev_inside = 1;
 
 #if DEBUG
