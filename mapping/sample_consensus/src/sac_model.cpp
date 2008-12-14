@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <algorithm>
 #include "sample_consensus/sac_model.h"
 
 namespace sample_consensus
@@ -44,8 +45,8 @@ namespace sample_consensus
     std::vector<int> remaining_indices;
 
     // Sort the inliers and the point cloud indices
-    sort (best_inliers_.begin (), best_inliers_.end ());
-    sort (indices_.begin (), indices_.end ());
+    std::sort (best_inliers_.begin (), best_inliers_.end ());
+    std::sort (indices_.begin (), indices_.end ());
 
     set_difference (indices_.begin (), indices_.end (), best_inliers_.begin (), best_inliers_.end (),
                     inserter (remaining_indices, remaining_indices.begin ()));

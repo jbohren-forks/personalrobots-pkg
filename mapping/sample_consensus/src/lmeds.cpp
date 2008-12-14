@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <algorithm>
 #include <cfloat>
 #include "sample_consensus/lmeds.h"
 
@@ -86,7 +87,7 @@ namespace sample_consensus
       // Iterate through the 3d points and calculate the distances from them to the model
       std::vector<double> distances = sac_model_->getDistancesToModel (sac_model_->getModelCoefficients ());
 
-      sort (distances.begin (), distances.end ());
+      std::sort (distances.begin (), distances.end ());
 
       // d_cur_penalty = median (distances)
       int mid = sac_model_->getIndices ()->size () / 2;

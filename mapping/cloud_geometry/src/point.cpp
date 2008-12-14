@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <algorithm>
 #include <cfloat>
 #include "cloud_geometry/point.h"
 
@@ -55,9 +56,9 @@ namespace cloud_geometry
       y[i] = points.pts[i].y;
       z[i] = points.pts[i].z;
     }
-    sort (x.begin (), x.end ());
-    sort (y.begin (), y.end ());
-    sort (z.begin (), z.end ());
+    std::sort (x.begin (), x.end ());
+    std::sort (y.begin (), y.end ());
+    std::sort (z.begin (), z.end ());
 
     int mid = points.pts.size () / 2;
     if (points.pts.size () % 2 == 0)
@@ -96,9 +97,9 @@ namespace cloud_geometry
       y[i] = points.pts.at (indices.at (i)).y;
       z[i] = points.pts.at (indices.at (i)).z;
     }
-    sort (x.begin (), x.end ());
-    sort (y.begin (), y.end ());
-    sort (z.begin (), z.end ());
+    std::sort (x.begin (), x.end ());
+    std::sort (y.begin (), y.end ());
+    std::sort (z.begin (), z.end ());
 
     int mid = indices.size () / 2;
     if (indices.size () % 2 == 0)
@@ -139,7 +140,7 @@ namespace cloud_geometry
                      (points.pts[i].y - median.y) * (points.pts[i].y - median.y) +
                      (points.pts[i].z - median.z) * (points.pts[i].z - median.z);
 
-    sort (distances.begin (), distances.end ());
+    std::sort (distances.begin (), distances.end ());
 
     double result;
     int mid = points.pts.size () / 2;
@@ -174,7 +175,7 @@ namespace cloud_geometry
                      (points.pts.at (indices.at (i)).y - median.y) * (points.pts.at (indices.at (i)).y - median.y) +
                      (points.pts.at (indices.at (i)).z - median.z) * (points.pts.at (indices.at (i)).z - median.z);
 
-    sort (distances.begin (), distances.end ());
+    std::sort (distances.begin (), distances.end ());
 
     double result;
     int mid = indices.size () / 2;

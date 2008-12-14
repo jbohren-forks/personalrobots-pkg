@@ -31,7 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <cfloat>
-
+#include <limits>
 #include "sample_consensus/mlesac.h"
 #include "cloud_geometry/point.h"
 

@@ -30,6 +30,7 @@
 
 /** \author Radu Bogdan Rusu */
 
+#include <stdlib.h>
 #include "cloud_io/cloud_io.h"
 #include "string_utils/string_utils.h"
 

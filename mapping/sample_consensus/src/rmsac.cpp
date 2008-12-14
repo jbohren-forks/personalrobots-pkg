@@ -31,6 +31,7 @@
 /** \author Radu Bogdan Rusu */
 
 #include <cfloat>
+#include <limits>
 #include "sample_consensus/rmsac.h"
 
 namespace sample_consensus

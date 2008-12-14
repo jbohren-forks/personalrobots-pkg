@@ -36,6 +36,7 @@
 #include <std_msgs/Point32.h>     // ROS float point type
 #include <std_msgs/PointCloud.h>  // ROS point cloud type
 
+#include <stdlib.h>
 #include "sample_consensus/sac_model.h"
 
 namespace sample_consensus
