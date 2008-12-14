@@ -1,6 +1,4 @@
 # Returns the transformations of all the body's links in the global coordinate system
-string sessionname
-int32 sessionid
 int32 bodyid
 ---
 AffineTransformMatrix[] links

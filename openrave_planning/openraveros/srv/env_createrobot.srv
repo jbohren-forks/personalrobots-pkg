@@ -1,6 +1,4 @@
 # Creates a robot of the given type. If type is not specified, creates a generic robot
-string sessionname
-int32 sessionid
 
 # the name to give the body (should be unique!)
 string name

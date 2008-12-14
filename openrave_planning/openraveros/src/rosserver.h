@@ -54,6 +54,7 @@ public:
         _bCloseClient = false;
         _fSimulationTimestep = 0.01;
         _vgravity = Vector(0,0,-9.8f);
+        GetEnv()->SetDebugLevel(1);
     }
     virtual ~ROSServer() {
         Destroy();
@@ -158,6 +159,7 @@ public:
             resbox.center[0] = ab.pos.x; resbox.center[1] = ab.pos.y; resbox.center[2] = ab.pos.z;
             resbox.extents[0] = ab.extents.x; resbox.extents[1] = ab.extents.y; resbox.extents[2] = ab.extents.z;
         }
+        return true;
     }
 
     bool body_getdof_srv(body_getdof::request& req, body_getdof::response& res)
@@ -765,6 +767,8 @@ public:
         if( req.setmask & env_set::request::Set_Simulation ) {
             switch(req.sim_action) {
             case env_set::request::SimAction_Start:
+                if( req.sim_timestep > 0 )
+                    _fSimulationTimestep = req.sim_timestep;
                 GetEnv()->StartSimulation(_fSimulationTimestep);
                 break;
             case env_set::request::SimAction_Stop:

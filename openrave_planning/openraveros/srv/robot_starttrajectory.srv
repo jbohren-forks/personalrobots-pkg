@@ -1,6 +1,4 @@
 # Starts a trajectory on the robot
-string sessionname
-int32 sessionid
 int32 bodyid
 
 # mask of Traj_X options

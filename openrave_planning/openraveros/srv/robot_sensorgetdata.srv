@@ -1,6 +1,4 @@
 # Gets the sensor data. The format returned is dependent on the type of sensor. 
-string sessionname
-int32 sessionid
 
 int32 bodyid
 uint32 sensorindex

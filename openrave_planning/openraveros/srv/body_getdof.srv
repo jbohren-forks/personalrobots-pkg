@@ -1,6 +1,4 @@
 # returns the number of joints of the body
-string sessionname
-int32 sessionid
 int32 bodyid
 ---
 int32 dof

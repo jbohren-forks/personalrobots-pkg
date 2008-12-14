@@ -1,6 +1,4 @@
 # loads a scene
-string sessionname
-int32 sessionid
 
 # absolute path of scene recommended
 string filename

@@ -1,6 +1,4 @@
 # plots various primitives in the viewer
-string sessionname
-int32 sessionid
 
 # 3xN values for N points
 float32[] points

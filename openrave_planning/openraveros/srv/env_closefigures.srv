@@ -1,6 +1,4 @@
 # closes the figures and plots
-string sessionname
-int32 sessionid
 
 # array of ids returned from orEnvPlot or other plotting functions
 # if empty, delete all

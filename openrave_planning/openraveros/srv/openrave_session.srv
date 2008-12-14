@@ -1,7 +1,9 @@
 # Starts an openrave instance. This instance will have exclusive control over every object
 # that gets loaded.
 
-# creates an openrave session
+# if 0, creates an openrave session
+# if -1, destroys all other session instances and creates an openrave session
+# otherwise, destroy the sessionid
 int32 sessionid
 
 # if non-zero, environment is cloned from the environment pointed by clone_sessionid

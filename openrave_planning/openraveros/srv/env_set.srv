@@ -1,6 +1,4 @@
 # Set various options of the environment
-string sessionname
-int32 sessionid
 
 uint32 setmask
 uint32 Set_Simulation=1

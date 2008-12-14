@@ -1,7 +1,5 @@
 # Check collision of the robot with the environment. collision is 1 if the robot
 # is colliding, colbodyid is the id of the object that body collided with
-string sessionname
-int32 sessionid
 int32 bodyid
 
 # the link of the body to check collision again, if -1 check all links

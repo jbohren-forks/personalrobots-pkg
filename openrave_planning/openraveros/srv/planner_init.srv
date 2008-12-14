@@ -1,6 +1,4 @@
 # Initialize a planner to plan for a robot and give some parameters
-string sessionname
-int32 sessionid
 
 uint32 plannerid
 uint32 robotid

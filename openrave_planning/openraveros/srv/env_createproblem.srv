@@ -1,6 +1,4 @@
 # creates a problem instance
-string sessionname
-int32 sessionid
 string problemtype
 
 # a string of arguments to send to the problem's main function

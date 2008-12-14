@@ -1,6 +1,4 @@
 # performs ray collision checks and returns the contact points of the collisions
-string sessionname
-int32 sessionid
 
 Ray[] rays
 

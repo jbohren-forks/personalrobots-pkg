@@ -1,6 +1,4 @@
 # Sets a new robot controller and destroys the old.
-string sessionname
-int32 sessionid
 
 int32 bodyid
 

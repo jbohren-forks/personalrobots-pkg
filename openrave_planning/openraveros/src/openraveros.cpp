@@ -31,12 +31,16 @@ int main(int argc, char ** argv)
     ros::init(argc,argv);
     ros::node masternode("openraveserver");
 
-    if( !masternode.check_master() )
+    if( !masternode.checkMaster() )
         return -1;
     
     boost::shared_ptr<SessionServer> sessionserver(new SessionServer());
+    if( !sessionserver->Init() )
+        return -1;
+
     masternode.spin();
     
     sessionserver.reset();
     ros::fini();
+    return 0;
 }

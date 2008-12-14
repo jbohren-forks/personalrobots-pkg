@@ -1,8 +1,6 @@
 # wait until all previously sent commands to matlab are finished.
 # Since problems are meant to last for a long time orEnvWait waits
 # until the problem's main function finishes.
-string sessionname
-int32 sessionid
 
 # If a robot id is != 0, will wait until the robot finishes with its trajectory.
 int32 bodyid

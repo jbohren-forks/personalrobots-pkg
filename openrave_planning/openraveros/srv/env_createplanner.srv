@@ -1,6 +1,4 @@
 # creates a planner
-string sessionname
-int32 sessionid
 string plannertype
 ---
 uint32 plannerid

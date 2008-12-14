@@ -1,7 +1,5 @@
 # Sends a command to the problem. The function doesn't return until
 # the string command to send the problem
-string sessionname
-int32 sessionid
 
 # id of problem to send command to. if problemid is 0, then command is sent to all problems
 uint32 problemid
