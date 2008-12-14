@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: read.cpp,v 1.0 2008/12/04 12:00:00 rusu Exp $
+ * $Id$
  *
  */
 
@@ -40,7 +40,7 @@ namespace cloud_io
   /** \brief Load point cloud data from a PCD file containing n-D points.
   * Returns -1 on error, 0 on success.
   * \note Only ASCII files are currently supported
-  * \note all lines besides:
+  * \note All lines besides:
   * - the ones beginning with # (treated as comments)
   * - COLUMNS ...
   * - POINTS ...
