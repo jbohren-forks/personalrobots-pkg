@@ -37,7 +37,7 @@ rospack_add_rostest(test/hztest_pr2_odom.xml)
 
 # below need xvfb-run
 # test_camera seems to fail a lot
-rospack_add_rostest_future(test/test_camera.xml)
+rospack_add_rostest_graphical(test/test_camera.xml)
 rospack_add_rostest_graphical(test/hztest_pr2_image.xml)
 
 rospack_add_executable(urdf2factory src/urdf2factory.cc)
