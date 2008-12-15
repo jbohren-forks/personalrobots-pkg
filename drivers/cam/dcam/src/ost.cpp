@@ -423,7 +423,7 @@ main(int argc, char **argv)	// no arguments
 	      // display right image
 	      cwin = stg->mainRight;
 	      if (dev->stIm->hasDisparity)
-		cwin->DisplayImage((unsigned char *)dev->stIm->imDisp, w, h, w, DISPARITY, 64*16);
+		cwin->DisplayImage((unsigned char *)dev->stIm->imDisp, w, h, w, DISPARITY, sp_dlen*16);
 	      else if (dev->stIm->imRight->imRectType != COLOR_CODING_NONE)
 		cwin->DisplayImage((unsigned char *)dev->stIm->imRight->imRect, w, h, w);
 	      else if (dev->stIm->imRight->imColorType != COLOR_CODING_NONE)
