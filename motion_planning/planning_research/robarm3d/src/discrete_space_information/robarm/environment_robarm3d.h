@@ -132,6 +132,11 @@ typedef struct ENV_ROBARM_CONFIG
     bool dijkstra_heuristic;
     bool endeff_check_only;
 
+    //velocities
+    int nVelSucc;
+    double ** succ_vel;
+    int ** ActionCosts;
+
     //for precomputing cos/sin & DH matrices 
     double cos_r[360];
     double sin_r[360];
@@ -150,9 +155,11 @@ typedef struct ENVROBARMHASHENTRY
     short unsigned int coord[NUMOFLINKS];
     short unsigned int wrist[3];
     short unsigned int elbow[3];
+    short unsigned int endeff[3];
     short unsigned int endeffx;
     short unsigned int endeffy;
     short unsigned int endeffz;
+    short unsigned int action;
 } EnvROBARMHashEntry_t;
 
 // main structure that stores environment data used in planning
@@ -211,7 +218,7 @@ private:
     unsigned int GETHASHBIN(short unsigned int* coord, int numofcoord);
     void PrintHashTableHist();
     EnvROBARMHashEntry_t* GetHashEntry(short unsigned int* coord, int numofcoord, bool bIsGoal);
-    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeffx, short unsigned int endeffy,short unsigned int endeffz, short unsigned int wrist[3], short unsigned int elbow[3]);
+    EnvROBARMHashEntry_t* CreateNewHashEntry(short unsigned int* coord, int numofcoord, short unsigned int endeff[3], short unsigned int wrist[3], short unsigned int elbow[3],short unsigned int action);
 
     //initialization
     void ReadParams(FILE* fCfg);
@@ -219,6 +226,7 @@ private:
     void InitializeEnvConfig();
     void CreateStartandGoalStates();
     bool InitializeEnvironment();
+    void ReadSuccActionsFile(FILE* fCfg);
 
     //coordinate frame/angle functions
     void DiscretizeAngles();
@@ -241,6 +249,7 @@ private:
     int cost(short unsigned int state1coord[], short unsigned int state2coord[]); 
     int cost(short unsigned int state1coord[], short unsigned int state2coord[],bool bState2IsGoal);
     int GetEdgeCost(int FromStateID, int ToStateID);
+    void ComputeActionCosts();
 
     //output
     void PrintHeader(FILE* fOut);
@@ -248,6 +257,8 @@ private:
     void PrintConfiguration();
     void printangles(FILE* fOut, short unsigned int* coord, bool bGoal, bool bVerbose, bool bLocal);
     void PrintSuccGoal(int SourceStateID, int costtogoal, bool bVerbose, bool bLocal /*=false*/, FILE* fOut /*=NULL*/);
+    void OutputActionCostTable();
+    void OutputActions();
 
     //compute heuristic
     void InitializeKinNode();

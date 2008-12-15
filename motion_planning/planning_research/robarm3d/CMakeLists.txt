@@ -13,7 +13,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 rospack_add_executable(plan_path src/test/test.cpp)
 rospack_add_executable(test_forward_kinematics src/test/test_forward_kinematics.cpp)
-rospack_add_executable(sim_path_gazebo src/test/simulate_arm_path.cpp)
+# rospack_add_executable(sim_path_gazebo src/test/simulate_arm_path.cpp)
 target_link_libraries(plan_path robarm3d)
 rospack_add_compile_flags(plan_path "-g -pg")
 rospack_add_link_flags(plan_path "-g -pg")
