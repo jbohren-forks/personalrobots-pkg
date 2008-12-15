@@ -22,7 +22,7 @@ rospack_add_executable(move_base_sbpl src/move_base_sbpl.cpp)
 target_link_libraries(move_base_sbpl highlevel_controllers sbpl_util)
 
 # MoveArmEndEffector
-rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
+# rospack_add_executable(move_end_effector src/MoveEndEffector.cpp)
 
 #Joystick Sleep Button
 rospack_add_executable(joy_batt_sender src/joy_batt_sender.cpp)
