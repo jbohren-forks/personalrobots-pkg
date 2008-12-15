@@ -18,9 +18,11 @@ include $(shell rospack find mk)/download_unpack_build.mk
 CMAKE = `rospack find cmake`/cmake/bin/cmake 
 CMAKE_ARGS = -D CMAKE_BUILD_TYPE=RELEASE \
              -D CMAKE_INSTALL_PREFIX=$(PWD)/player \
-	     -D INCLUDE_RTKGUI=ON \
-	     -D BUILD_PLAYERCC_BOOST=OFF \
-	     -D BUILD_UTILS_PMAP=OFF \
+	     -D INCLUDE_RTK=OFF \
+	     -D BUILD_PLAYERCC=OFF \
+	     -D BUILD_UTILS=OFF \
+	     -D BUILD_EXAMPLES=OFF \
+	     -D PLAYER_BUILD_TESTS=OFF \
 	     -D ENABLE_DRIVER_CAMERA1394=OFF \
 	     -D BUILD_PYTHON_BINDINGS=OFF
 
