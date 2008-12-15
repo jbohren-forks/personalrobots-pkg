@@ -285,9 +285,10 @@ namespace cam
     bool setSpeckleDiff(int diff);
     bool setSpeckleRegionSize(int size);
 
-  private:
     // buffers for stereo
     uint8_t *buf, *flim, *frim;
+
+  private:
     // buffers for speckle filter
     uint8_t *rbuf;
     uint32_t *lbuf, *wbuf;

@@ -129,13 +129,14 @@ do_prefilter_norm(uint8_t *im,	// input image
 	      // now calculate diff from mean value and save
 	      qval = 4*(*cenp) + *(cenp-1) + *(cenp+1) + *(cenp-xim) + *(cenp+xim);
 #if (XKERN==9)
-	      qval = (qval*10) - *accp;	// difference with mean, norm is 81
+	      qval = (qval*10)+*cenp - *accp;	// difference with mean, norm is 81
 	      qval = qval>>4;	// divide by 16 (cenp val divide by ~2)
 #endif
 #if (XKERN==7)
-	      qval = (qval*6) - *accp;	// difference with mean, norm is 49
+	      qval = (qval*6)+*cenp - *accp;	// difference with mean, norm is 49
 	      qval = qval>>3;	// divide by 8 (cenp val divide by ~2)
 #endif
+
 	      if (qval < -ftzero)
 		uqval = 0;
 	      else if (qval > ftzero)
@@ -589,7 +590,7 @@ do_prefilter_fast(uint8_t *im,	// input image
   int16_t *accbuf, *accp;
   int16_t *intbuf, *intp;	// intbuf is size xim
   uint8_t *imp, *impp, *ftimp;
-  __m128i acc, accs, acc1, acct, pxs, opxs, zeros;
+  __m128i acc, accs, acc1, accn1, accn2, acct, pxs, opxs, zeros;
   __m128i const_ftzero, const_ftzero_x48, const_ftzero_x2;
 
   int FACCBUFSIZE = xim+64;
@@ -731,10 +732,10 @@ do_prefilter_fast(uint8_t *im,	// input image
 	    {
 	      // sum up weighted pixels in a 4-square pattern
 	      pxs = _mm_loadu_si128((__m128i *)imp); // next 16 pixels
-	      accs = _mm_unpacklo_epi8(pxs,zeros); // unpack first 8 into words
-	      acc  = _mm_unpackhi_epi8(pxs,zeros); // unpack second 8 into words
-	      accs = _mm_slli_epi16(accs,2); // multiply by 4
-	      acc  = _mm_slli_epi16(acc,2); // multiply by 4	      
+	      accn1 = _mm_unpacklo_epi8(pxs,zeros); // unpack first 8 into words
+	      accn2  = _mm_unpackhi_epi8(pxs,zeros); // unpack second 8 into words
+	      accs = _mm_slli_epi16(accn1,2); // multiply by 4
+	      acc  = _mm_slli_epi16(accn2,2); // multiply by 4	      
 	      pxs  = _mm_loadu_si128((__m128i *)(imp+1)); // 16 pixels to the right
 	      acct = _mm_unpacklo_epi8(pxs,zeros); // unpack first 8 into words
 	      acc1 = _mm_unpackhi_epi8(pxs,zeros); // unpack second 8 into words
@@ -760,6 +761,7 @@ do_prefilter_fast(uint8_t *im,	// input image
 	      acct = _mm_slli_epi16(accs,2); // multiply by 4
 	      accs = _mm_add_epi16(accs,accs); // double
 	      accs = _mm_add_epi16(accs,acct); // now x6
+	      accs = _mm_add_epi16(accs,accn1); // +1 is 49x
 	      // subtract from window sum
 	      acct = _mm_loadu_si128((__m128i *)accp);
 	      accs = _mm_sub_epi16(accs,acct); // subtract out norm
@@ -775,6 +777,7 @@ do_prefilter_fast(uint8_t *im,	// input image
 	      acct = _mm_slli_epi16(acc,2); // multiply by 4
 	      acc = _mm_add_epi16(acc,acc); // double
 	      acc = _mm_add_epi16(acc,acct); // now x6
+	      acc = _mm_add_epi16(acc,accn2); // now 49x
 	      // subtract from window sum, get absolute value
 	      acct = _mm_loadu_si128((__m128i *)(accp+8));
 	      acc1 = _mm_sub_epi16(acc,acct);
@@ -1146,7 +1149,8 @@ do_stereo_d_fast(uint8_t *lim, uint8_t *rim, // input feature images
 #endif
 		  if (*textpp < tfilter_thresh)
 		    uniqcnt = val_epi16_8; // cancel out this value
-		  uval = _mm_or_si128(_mm_and_si128(uval,p0xfffffff0),_mm_and_si128(uniqcnt,p0x0000000f)); 		  
+		  uval = _mm_or_si128(_mm_and_si128(uval,p0xfffffff0),
+				      _mm_and_si128(uniqcnt,p0x0000000f));
 		}
 
 	      // disparity interpolation (to 1/16 pixel)
